@@ -808,7 +808,7 @@ const __mirrorLikvardighet = (() => {
  *
  * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
  *   Klassning — EN definition i hela verktyget: arKvinnodominerad()/konsklass() nedan.
- *            DO: mer än gränsen (standard 60 %); SCB: gränsen eller mer. Mansdominerat
+ *            'do': mer än gränsen (standard 60 %); 'scb': gränsen eller mer. Mansdominerat
  *            speglas för män; övriga är blandade.
  *   Steg 1 — Organisationens AID×BAS-grupper delas i:
  *            • kvinnodominerade — analysens subjekt
@@ -839,13 +839,14 @@ const __mirrorLikvardighet = (() => {
 
 
 
-const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (DO: mer än 60 % kvinnor)
-const ICKE_KV_TAK = 40;              // < → mansdominerat med DO och standardgränsen (klassen, inte urvalet; ADR-60)
+const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
+const ICKE_KV_TAK = 40;              // < → mansdominerat med 'do' och standardgränsen (klassen, inte urvalet; ADR-60)
 const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
 
 /**
  * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
- * DO: mer än gränsen. SCB: gränsen eller mer.
+ * 'do' (*Mer än X %*): mer än gränsen. 'scb' (*X % eller mer*): gränsen eller mer. Nycklarna är historiska och
+ * står kvar för sparade konfigurationsfiler; valen heter efter lydelsen (ADR-72).
  * @param {number|null|undefined} pct - procent kvinnor
  * @param {'do'|'scb'|string} [definition='do']
  * @param {number} [grans=60]
@@ -1002,7 +1003,7 @@ function _aldersFalt(f, g, ärIntern, golv) {
  * @param {Array<{aid:string, bas:string, lon:number, kon:string, yrkeLabel?:string, yrke?:string, alder?:number}>} data
  * @param {number} kvinnoThr - kvinnotröskel i procent
  * @param {number} [K=10]
- * @param {'do'|'scb'} [definition='do'] - DO: mer än tröskeln; SCB: tröskeln eller mer
+ * @param {'do'|'scb'} [definition='do'] - 'do': mer än tröskeln; 'scb': tröskeln eller mer
  * @returns {{orgKvDom:Array, orgIckeKv:Array, antalAidxBas:number, kvDomMedNLessThanK:number}}
  */
 function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
@@ -1373,7 +1374,7 @@ function basRangFn(allaBas) {
  * @param {Array} [input.statistik] - jämförelsestatistiken
  * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.scbKlass]
  * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
- *   kvDomDefinition: 'do' (mer än tröskeln, standard) | 'scb' (tröskeln eller mer).
+ *   kvDomDefinition: 'do' (*Mer än X %*, standard) | 'scb' (*X % eller mer*; ADR-72).
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
@@ -1993,17 +1994,22 @@ const __mirrorAidbas = (() => {
  * Reglerna för små grupper följer med som parametrar: `k` är antalet per kön (och per grupp i tabell 2 och 3) som
  * krävs för ett lönemått, `golv` är antalet i gruppen som krävs för en egen rad; mindre grupper räknas upp i `sma`.
  *
- * Klassningen av kvinnodominerat arbete har två definitioner: DO:s (mer än gränsen) och SCB:s (gränsen eller mer).
- * Gränsen är 60 % om inget annat anges. Mansdominerat speglas; övriga är könsblandade.
+ * Klassningen av kvinnodominerat arbete har två definitioner, som heter efter lydelsen (ADR-72): *Mer än X %*
+ * (nyckeln 'do') och *X % eller mer* (nyckeln 'scb'). Gränsen X är 60 % om inget annat anges. Mansdominerat
+ * speglas; övriga är könsblandade.
  *
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 
-/** Definitionerna av kvinnodominerat arbete: nyckel → namn och text för metodbladet. */
+/**
+ * Definitionerna av kvinnodominerat arbete: nyckel → namn (valet i inställningarna) och text (tabellerna och
+ * metodbladet). Namnen säger lydelsen, inte en avsändare (ADR-72). Nycklarna 'do' och 'scb' är historiska och står
+ * kvar, så att sparade konfigurationsfiler (`likvardighet.kvDomDefinition`) fortsätter att läsas.
+ */
 const KV_DEFINITIONER = Object.freeze({
-    do: Object.freeze({ namn: 'Förarbetena', text: 'mer än {grans} % kvinnor (riktmärket i lagens förarbeten)' }),
-    scb: Object.freeze({ namn: 'SCB', text: '{grans} % kvinnor eller mer (Statistiska centralbyrån)' })
+    do: Object.freeze({ namn: 'Mer än {grans} %', text: 'mer än {grans} % kvinnor' }),
+    scb: Object.freeze({ namn: '{grans} % eller mer', text: '{grans} % kvinnor eller mer' })
 });
 const KV_GRANS_STANDARD = 60;
 
@@ -2011,16 +2017,17 @@ const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 
 const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
 const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
-/** Definitionens namn: Förarbetena eller SCB. */
-function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
+/** Definitionens namn, med gränsen insatt: "Mer än 60 %" eller "60 % eller mer". */
+function kvDefinitionNamn(definition, grans = KV_GRANS_STANDARD) {
+    return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn.replace('{grans}', String(grans));
+}
 /** Klassernas namn, för den som jämför klassningen. */
 function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }
 /** Texten när den hierarkiska jämförelsen inte har några par. */
 function ingaParText() { return INGA_HIERARKISKA_PAR; }
-/** Texten för definitionen, med gränsen insatt. */
+/** Texten för definitionen, med gränsen insatt: "mer än 60 % kvinnor" eller "60 % kvinnor eller mer". */
 function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
-    const d = KV_DEFINITIONER[definition] || KV_DEFINITIONER.do;
-    return `${d.namn}: ${d.text.replace('{grans}', String(grans))}`;
+    return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).text.replace('{grans}', String(grans));
 }
 
 /**

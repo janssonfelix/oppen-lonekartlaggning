@@ -78,7 +78,7 @@ Datum står där beslutet har ett.
 | ADR-57 | Tabellerna per AID-kod och BAS-intervall | Gällande | 2026-11-05 |
 | ADR-58 | BAS-dossiern: ett BAS-intervall på en sida | Gällande | 2026-11-06 |
 | ADR-59 | Uppmärksamhetstrappan på statistisk signal, direktivmarkeringen åtskild | Ändrad av ADR-71 | 2026-11-08 |
-| ADR-60 | Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av kvinnodominerat | Gällande | 2026-11-08 |
+| ADR-60 | Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av kvinnodominerat | Ändrad av ADR-72 | 2026-11-08 |
 | ADR-61 | Minsta skillnad 0 % som standard i likvärdigt arbete | Gällande | 2026-11-08 |
 | ADR-62 | Prioriteringens egna ord för läget mot referensen | Gällande | 2026-11-08 |
 | ADR-63 | Kvantilregressionen på huvudmodellens design, villkorad tolkning | Gällande | 2026-11-08 |
@@ -88,6 +88,7 @@ Datum står där beslutet har ett.
 | ADR-69 | Löneöversyns förslag följer den inställda tröskeln | Gällande | 2026-11-13 |
 | ADR-70 | Skyddet gäller lönemått; antal och andelar är handläggarens ansvar | Gällande | 2026-11-14 |
 | ADR-71 | Trappan i livscykeln, protokollet och Prioriteringen; ingen färg på storleken ensam | Gällande | 2026-11-14 |
+| ADR-72 | Definitionerna av kvinnodominerat heter efter lydelsen | Gällande | 2026-11-14 |
 
 ## Besluten
 
@@ -996,12 +997,12 @@ mansdominerade yrken* (av som standard) begränsar mängden innan paren byggs, s
 jämförelsestatistiken per BAS fungerar som förut, och återskapar det tidigare urvalet. Samma mängd används i
 kandidatparen, *Lägre krav, högre lön*, *Hierarkisk jämförelse* och sammanfattningen per BAS-intervall. Valet följer
 med i konfigurationsfilen och organisationspaketet.
-*En definition (teknisk-plan §9 punkt 22):* verktyget har en enda definition av kvinnodominerat, DO (i gränssnittet
-*Förarbetena*: mer än kvinnotröskeln) eller SCB (kvinnotröskeln eller mer), mansdominerat speglat för män och övriga
-blandade. Den används av likvärdighetsanalysen, tabellerna per AID-kod och BAS-intervall, Lika arbete, Löneöversyn,
+*En definition (teknisk-plan §9 punkt 22):* verktyget har en enda definition av kvinnodominerat, mer än kvinnotröskeln
+(nyckeln `'do'`) eller kvinnotröskeln eller mer (nyckeln `'scb'`), mansdominerat speglat för män och övriga
+blandade; valen heter efter lydelsen, *Mer än X %* och *X % eller mer* (ADR-72). Den används av likvärdighetsanalysen, tabellerna per AID-kod och BAS-intervall, Lika arbete, Löneöversyn,
 Lönepolitik och uppslaget i den nationella statistiken; jämförelsestatistikens klassning följer kvinnotröskeln i
 stället för fasta 60 %. Prioriteringen klassar inga grupper efter könsdominans och berörs inte. Texterna säger *mer
-än* (DO) eller *minst* (SCB) efter valet.
+än* eller *minst* efter valet.
 *Motiv:* Tidigare fick bara grupper med under 40 % kvinnor vara jämförelseyrken, så blandade yrken (40–60 %) föll bort
 ur både kandidatparen och jämförelsestatistiken — i demot jämfördes Barnskötare och Undersköterska inte med
 Systemutvecklare (23 kvinnor av 45) i samma BAS-intervall. Med en definition klassas samma grupp lika i varje flik.
@@ -1204,3 +1205,22 @@ p-värdet (ett annat urval än kortet och Att göra).
 *Vakt:* `tests/status-trappa.test.js` (ingen färg- eller viktklass på en skillnad jämförd med en storleksgräns i
 någon fil under `src/app/`), `tests/livscykel.test.js`
 (`livscykelNiva`, `samspelSakerstallt`) och `tests/ktroskel-utdata.test.js` (protokollets BAS-intervall).
+
+**ADR-72 — Definitionerna av kvinnodominerat heter efter lydelsen.** Beslut 2026-11-14.
+*Beslut:* De två valen av definition av kvinnodominerat heter *Mer än X %* och *X % eller mer*, där X är den inställda
+kvinnotröskeln (standard 60), i inställningarna, tabellerna, metodbladen och exporterna. Inget val bär en avsändare:
+källan för båda lydelserna är samma proposition, och den står i `lagrum.md`, inte i gränssnittet. Beräkningen ändras
+inte. De interna nycklarna `'do'` och `'scb'` (`state.likvardighet.kvDomDefinition`, konfigurationsfilen,
+`KV_DEFINITIONER`) står kvar, så att sparade konfigurationsfiler fortsätter att läsas; en kommentar vid nycklarna säger
+det. Beslutet ersätter beslutet 2026-11-08 att etiketten säger *riktmärket i lagens förarbeten* och inte "DO".
+*Motiv:* Valen hette *Förarbetena — mer än X % kvinnor* och *SCB — X % kvinnor eller mer*. Etiketten SCB hade inget
+stöd: SCB:s *På tal om kvinnor och män* (2024) säger "mer än 60 procent". Båda lydelserna finns i samma proposition,
+den ena i ett avsnitt och den andra i författningskommentaren (ställena står i `lagrum.md`), så ingen av dem kan
+knytas till en annan avsändare än den andra. Ett namn efter lydelsen säger vad valet gör. ADR-16 håller lagrum och propositionshänvisningar ur
+gränssnittet; "förarbetena" utan proposition går inte att slå upp och stryks därför också ur hjälptexterna.
+*Avvisat:* att behålla *SCB* (fel källa); att döpa valen efter propositionens två ställen (avsnittet och
+författningskommentaren är hänvisningar som ADR-16 håller i `lagrum.md`, och namnen blir oläsliga); att byta nycklarna
+till `'mer'` och `'minst'` (sparade konfigurationsfiler skulle avvisas, och nycklarna syns inte för användaren).
+*Gäller i dag:* `likvardighetsmodellen.md` §2 och §8, `lagrum.md` (raden *Gränsen för kvinnodominerat arbete*).
+*Vakt:* `tests/aidbas.test.js` ("vakt: definitionerna heter efter lydelsen"), `tests/smoke-aidbas.test.js` (valens
+namn i inställningarna).

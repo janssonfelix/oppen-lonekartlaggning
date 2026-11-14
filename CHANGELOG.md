@@ -38,8 +38,22 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   (1973) med fullständiga uppgifter, eftersom regressionskortet hänvisar till dem. Referensdatan för åldersstrukturen
   säger nu vilket år den gäller: SCB:s arbetskraftsundersökningar (AKU), årsmedeltal 2023, avrundade, i
   verktygstipset, diagramtexten, referenslistan och referenslinjens namn (*Sveriges sysselsatta (SCB AKU 2023)*).
+- **Definitionerna av kvinnodominerat heter efter lydelsen.** Valen i Likvärdigt arbetes inställningar hette
+  *Förarbetena — mer än 60 % kvinnor* och *SCB — 60 % kvinnor eller mer*. SCB definierar kvinnodominerat som mer än
+  60 procent kvinnor, och båda lydelserna står i samma proposition, så namnet SCB var fel. Valen heter nu
+  *Mer än 60 %* och *60 % eller mer* (med den inställda kvinnotröskeln), under rubriken *Kvinnodominerat när andelen
+  kvinnor är* (ADR-72). Tabellerna per AID-kod och BAS-intervall, Lika arbetes metodtext och nyckeltalet skriver
+  *Kvinnodominerad vid mer än 60 % kvinnor* i stället för *enligt Förarbetena* eller *enligt SCB*, och ordlistan
+  nämner inte längre förarbetena; källan står i utvecklardokumentationen. Klassningen är oförändrad, och sparade
+  konfigurationsfiler läses som förut.
 
 ### Exporter
+
+- **Metodtexterna säger definitionen av kvinnodominerat med dess lydelse.** Raden *Kvinnodominerat enligt* i
+  Likvärdigt arbetes CSV- och Excel-export heter *Kvinnodominerat vid* och har värdet *mer än 60 % kvinnor* (eller
+  *60 % kvinnor eller mer*), och metodbladen i Excel-exporten och PDF-rapportens formler skriver *Kvinnodominerad vid
+  mer än 60 % kvinnor* i stället för *Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens
+  förarbeten)* (ADR-72). Inga tal har ändrats.
 
 - **Protokollet för gemensam lönebedömning väljer BAS-intervall efter korrigering för många tester.** Bladet
   *3. Likvärdigt arbete (BAS)* tog med ett intervall när det råa p-värdet var under 0,05 och skillnaden minst 3 %,

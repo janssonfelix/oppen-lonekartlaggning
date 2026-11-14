@@ -193,7 +193,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Båda grupperna har minst 10 personer. BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor; mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Båda grupperna har minst 10 personer. BAS-ordningen är bokstavsordningen.",
       null,
       null,
       null,
@@ -660,7 +660,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade.",
+      "Kvinnodominerad vid mer än 60 % kvinnor; mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade.",
       null,
       null,
       null,
@@ -1484,7 +1484,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten). Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Metodik": [
@@ -1718,7 +1718,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Dominans",
-      "Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).",
+      "Kvinnodominerad vid mer än 60 % kvinnor; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).",
     ],
     [
       "  OLS-regression",
@@ -1894,7 +1894,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten). Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Per BAS": [
@@ -4349,8 +4349,8 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
       60,
     ],
     [
-      "Kvinnodominerat enligt",
-      "Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten)",
+      "Kvinnodominerat vid",
+      "mer än 60 % kvinnor",
     ],
     [
       "Jämförelseyrken",
@@ -4970,7 +4970,7 @@ exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urval
                             
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>4</strong></td></tr>
                         </tbody></table>
-                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Löneskillnad per yrke:</strong> (median kvinnor / median män − 1) × 100 %</li><li><strong>Status:</strong> Värt att granska = utanför slumpens gränser för gruppen (omkastning av könen, 1 000 gånger) och minst 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under 10</li><li><strong>Direktivmarkering:</strong> ≥ 5 % på den ojusterade medianskillnaden. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.</li><li><strong>Dominans:</strong> Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).</li><li><strong>OLS-regression:</strong> log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)</li><li><strong>BAS-rangordning:</strong> Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete</li><li><strong>Per-BAS regression:</strong> Separat log(lön) ~ kön + ålder inom varje BAS med ≥10 av varje kön</li></ul>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Löneskillnad per yrke:</strong> (median kvinnor / median män − 1) × 100 %</li><li><strong>Status:</strong> Värt att granska = utanför slumpens gränser för gruppen (omkastning av könen, 1 000 gånger) och minst 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under 10</li><li><strong>Direktivmarkering:</strong> ≥ 5 % på den ojusterade medianskillnaden. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.</li><li><strong>Dominans:</strong> Kvinnodominerad vid mer än 60 % kvinnor; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).</li><li><strong>OLS-regression:</strong> log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)</li><li><strong>BAS-rangordning:</strong> Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete</li><li><strong>Per-BAS regression:</strong> Separat log(lön) ~ kön + ålder inom varje BAS med ≥10 av varje kön</li></ul>
                         <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Regression estimerad: log(lön) ~ kön + ålder + BAS-intervall (indikatorer) · n=62, R²=70,2 %</li><li>Om en skillnad har sakliga skäl avgör du – verktyget hittar bara skillnaderna</li></ul>
                     
                         <h3 class="pr-ned-14">Prioriteringsanalys</h3>
@@ -5196,7 +5196,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
       null,
     ],
     [
-      "Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Båda grupperna har minst 10 personer. BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor; mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Båda grupperna har minst 10 personer. BAS-ordningen är bokstavsordningen.",
       null,
       null,
       null,
@@ -5663,7 +5663,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
       null,
     ],
     [
-      "Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade.",
+      "Kvinnodominerad vid mer än 60 % kvinnor; mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade.",
       null,
       null,
       null,
@@ -6435,7 +6435,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten). Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Metodik": [
@@ -6669,7 +6669,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "  Dominans",
-      "Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).",
+      "Kvinnodominerad vid mer än 60 % kvinnor; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).",
     ],
     [
       "  OLS-regression",
@@ -6845,7 +6845,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "  Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten). Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Per BAS": [
@@ -7764,7 +7764,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > PDF-rapporten (komplett) byggs 
                             
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>4</strong></td></tr>
                         </tbody></table>
-                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Löneskillnad per yrke:</strong> (median kvinnor / median män − 1) × 100 %</li><li><strong>Status:</strong> Värt att granska = utanför slumpens gränser för gruppen (omkastning av könen, 1 000 gånger) och minst 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under 10</li><li><strong>Direktivmarkering:</strong> ≥ 5 % på den ojusterade medianskillnaden. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.</li><li><strong>Dominans:</strong> Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).</li><li><strong>OLS-regression:</strong> log(lön) ~ kön + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)</li><li><strong>BAS-rangordning:</strong> Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete</li><li><strong>Per-BAS regression:</strong> Separat log(lön) ~ kön inom varje BAS med ≥10 av varje kön</li></ul>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Löneskillnad per yrke:</strong> (median kvinnor / median män − 1) × 100 %</li><li><strong>Status:</strong> Värt att granska = utanför slumpens gränser för gruppen (omkastning av könen, 1 000 gånger) och minst 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under 10</li><li><strong>Direktivmarkering:</strong> ≥ 5 % på den ojusterade medianskillnaden. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.</li><li><strong>Dominans:</strong> Kvinnodominerad vid mer än 60 % kvinnor; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).</li><li><strong>OLS-regression:</strong> log(lön) ~ kön + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)</li><li><strong>BAS-rangordning:</strong> Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete</li><li><strong>Per-BAS regression:</strong> Separat log(lön) ~ kön inom varje BAS med ≥10 av varje kön</li></ul>
                         <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Regression estimerad: log(lön) ~ kön + BAS-intervall (indikatorer) · n=62, R²=68,1 %</li><li>Om en skillnad har sakliga skäl avgör du – verktyget hittar bara skillnaderna</li></ul>
                     
                         <h3 class="pr-ned-14">Prioriteringsanalys</h3>

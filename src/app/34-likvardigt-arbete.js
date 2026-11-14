@@ -239,7 +239,7 @@ function renderLikvardighet() {
                        <strong>Mått på kraven: BAS-intervallet</strong> — yrken inom samma BAS-intervall antas ha likvärdiga krav. Har organisationen en egen arbetsvärdering kan du lägga till poängen i lönefilen; poäng mäter kraven i arbetet bättre.</p>`}
             <ul class="fs-sm lh-1_6 marg-8-0 pad-v-22">
                 <li><strong>Steg 1</strong>: Identifiera <em>organisationens kvinnodominerade</em>
-                    AID×BAS-grupper (${kvDomGransText()} kvinnor, ${_aidbasDefinitionNamn(aidbasDefinition())}).
+                    AID×BAS-grupper (${esc(aidbasDefinitionText())}).
                     K-anonymitet tillämpas <strong>inte</strong> i denna analys eftersom
                     resultatet är aggregerat per yrkesgrupp.</li>
                 <li><strong>Steg 2</strong>: Välj jämförelseyrken inom samma BAS-intervall
@@ -502,6 +502,8 @@ function renderLikvardighet() {
     }
 
     // ====== Kontroller ======
+    // Definitionens värden 'do' och 'scb' är historiska nycklar; valen heter efter lydelsen och nycklarna står kvar,
+    // så att sparade konfigurationsfiler fortsätter att läsas (ADR-72).
     const controlsHtml = `
         <div class="card mb-14">
             <div class="controls-row mitt bryt gap-18">
@@ -511,10 +513,10 @@ function renderLikvardighet() {
                     <span>%</span>
                 </div>
                 <div class="mitt rad-inline gap-8">
-                    <label for="lv-kv-definition">Kvinnodominerat enligt:</label>
-                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller hela verktyget: kandidatparen, tabellerna per AID-kod och BAS-intervall, Lika arbete, Löneöversyn och Lönepolitik. Förarbetena: fler kvinnor än gränsen (lagens förarbeten använder 60 procent som riktmärke). SCB: gränsen eller fler.">
-                        <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>Förarbetena — mer än ${cfg.kvinnoTrosholdPct} % kvinnor</option>
-                        <option value="scb"${aidbasDefinition() === 'scb' ? ' selected' : ''}>SCB — ${cfg.kvinnoTrosholdPct} % kvinnor eller mer</option>
+                    <label for="lv-kv-definition">Kvinnodominerat när andelen kvinnor är:</label>
+                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller hela verktyget: kandidatparen, tabellerna per AID-kod och BAS-intervall, Lika arbete, Löneöversyn och Lönepolitik. Gränsen är kvinnotröskeln; välj om en grupp som ligger precis på gränsen räknas som kvinnodominerad. Lagen anger ingen siffra.">
+                        <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>${esc(_aidbasDefinitionNamn('do', cfg.kvinnoTrosholdPct))}</option>
+                        <option value="scb"${aidbasDefinition() === 'scb' ? ' selected' : ''}>${esc(_aidbasDefinitionNamn('scb', cfg.kvinnoTrosholdPct))}</option>
                     </select>
                 </div>
                 <div class="mitt rad-inline gap-8">
@@ -897,7 +899,7 @@ function _exportLikvardighetCSVExport() {
     rows.push(['Genererad', new Date().toLocaleString('sv-SE')]);
     rows.push(['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')]);
     rows.push(['Kvinnotröskel (%)', result.opts.kvinnoTrosholdPct]);
-    rows.push(['Kvinnodominerat enligt', aidbasDefinitionText()]);
+    rows.push(['Kvinnodominerat vid', aidbasDefinitionText()]);
     rows.push(['Jämförelseyrken', jamforelseGransText()]);
     rows.push(['Minsta skillnad (%)', result.opts.minGapPct]);
     rows.push(['Antal par', result.pairs.length]);
@@ -1012,7 +1014,7 @@ function _exportLikvardighetExport() {
             ['', ''],
             ['— PARAMETRAR —', ''],
             ['Kvinnotröskel (%)', safe(() => opts.kvinnoTrosholdPct, '')],
-            ['Kvinnodominerat enligt', aidbasDefinitionText()],
+            ['Kvinnodominerat vid', aidbasDefinitionText()],
             ['Jämförelseyrken', jamforelseGransText()],
             ['Minsta skillnad (%)', safe(() => opts.minGapPct, '')],
             ['Visa max antal par', safe(() => opts.topN, '')],

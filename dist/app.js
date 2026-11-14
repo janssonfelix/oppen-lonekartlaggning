@@ -776,11 +776,11 @@ const GLOSSARY = [
     { cat:'Lönekartläggning', term:'Rå (ojusterad) löneskillnad', sok:'lönegap rågap ojusterad löneskillnad', short:'Löneskillnad utan kontroll för andra variabler', long:'Ren skillnad i median mellan män och kvinnor. Påverkas av strukturella faktorer som åldersstruktur, BAS-fördelning och yrkesval. Det vanligaste måttet i medierna, men det säger lite om diskriminering i sig.' },
     { cat:'Lönekartläggning', term:'Åldersjusterad löneskillnad', short:'Löneskillnad vid samma genomsnittsålder', long:'Beräknas med en trendlinje per kön som läses av vid genomsnittsåldern. Räknar bort att ett kön i snitt är äldre. Mer rättvisande än den ojusterade.' },
     { cat:'Lönekartläggning', term:'Oförklarad löneskillnad', sok:'lönegap', short:'Skillnad efter kontroll för strukturella variabler', long:'En regression med kön, ålder och BAS-intervall ger könskoefficienten. Viktigt: "oförklarat" betyder att skillnaden inte fångas av variablerna — inte att den beror på kön eller är osaklig. Det är en signal om var man bör titta närmare, inte ett bevis, och ska inte blandas ihop med "osaklig löneskillnad".' },
-    { cat:'Lönekartläggning', term:'Kvinnodominerat arbete', short:'Ett arbete där klart fler än hälften är kvinnor', long:'Verktyget räknar ett yrke som kvinnodominerat när andelen kvinnor är över gränsen under Inställningar (standard 60 procent, riktmärket i lagens förarbeten). Likvärdigt arbete jämför kvinnodominerade yrken med yrken som inte är kvinnodominerade.' },
+    { cat:'Lönekartläggning', term:'Kvinnodominerat arbete', short:'Ett arbete där klart fler än hälften är kvinnor', long:'Verktyget räknar ett yrke som kvinnodominerat när andelen kvinnor är mer än gränsen, eller gränsen eller mer, efter valet i Likvärdigt arbetes inställningar (standard mer än 60 procent). Lagen anger ingen siffra. Likvärdigt arbete jämför kvinnodominerade yrken med yrken som inte är kvinnodominerade.' },
     { cat:'Lönekartläggning', term:'Kandidatpar', short:'Ett kvinnodominerat yrke och ett jämförelseyrke med likvärdiga eller lägre krav', long:'Ett par i Likvärdigt arbete där det kvinnodominerade yrket har lägre lön än ett yrke med jämförbara eller lägre krav. Paret är en kandidat att granska, inget konstaterande: om arbetena verkligen är likvärdiga avgör du.' },
     { cat:'Struktur', term:'Klibbigt golv', short:'Löneskillnaden är störst bland de lägst betalda', long:'När skillnaden mellan kvinnors och mäns lön är större vid P10 än vid P90 talar man om ett klibbigt golv: kvinnor blir kvar i de lägsta lönelägena. Granska ingångslöner och lägstanivåer.' },
     { cat:'Struktur', term:'Glastak', short:'Löneskillnaden är störst bland de högst betalda', long:'När skillnaden mellan kvinnors och mäns lön är större vid P90 än vid P10, eller andelen kvinnor sjunker mot högre BAS-intervall, talar man om ett glastak. Granska befordran och lönesättningen i toppen.' },
-    { cat:'Lönekartläggning', term:'Jämn könsfördelning', short:'Båda könen utgör minst 40 % av gruppen', long:'En grupp anses ha jämn könsfördelning när minst 40 % är kvinnor och minst 40 % är män. En fördelning på 60/40 räknas alltså som jämn; från 61/39 och uppåt blir gruppen ojämn (könsdominerad). Gränsen 40/60 är verktygets; lagen anger ingen siffra. Förarbetena använder 60 procent som riktmärke för kvinnodominerat arbete.' },
+    { cat:'Lönekartläggning', term:'Jämn könsfördelning', short:'Båda könen utgör minst 40 % av gruppen', long:'En grupp anses ha jämn könsfördelning när minst 40 % är kvinnor och minst 40 % är män. En fördelning på 60/40 räknas alltså som jämn; från 61/39 och uppåt blir gruppen ojämn (könsdominerad). Gränsen 40/60 är verktygets; lagen anger ingen siffra.' },
     { cat:'Lönekartläggning', term:'Könsskevhet', short:'Ojämn könsfördelning i en grupp', long:'När ett kön utgör mindre än 40 % av en grupp betraktas könsfördelningen som ojämn (könsdominerad). I sådana grupper kan lönejämförelser bli statistiskt svårtolkade.' },
     { cat:'Lönekartläggning', term:'Lönepolitiskt ställningstagande', short:'Organisationens egen ambitionsnivå per BAS-intervall', long:'Anger önskade lönenivåer (P10, Median, P90) per BAS-intervall. Används för att jämföra faktiskt löneläge mot egen policy.' },
     { cat:'Lönekartläggning', term:'Diskrimineringslagen 3 kap.', short:'Aktiva åtgärder och lönekartläggning', long:'Reglerar arbetsgivares skyldighet att varje år kartlägga och analysera bestämmelser, praxis och löneskillnader mellan kvinnor och män i lika och likvärdigt arbete, att genomföra åtgärder så snart som möjligt och senast inom tre år, att samverka med arbetstagarna och att dokumentera arbetet skriftligt (fullständigt med 25 anställda eller fler, i förenklad form med 10–24). De enskilda lagrummen står i verktygets dokumentation (lagrum.md).' },
@@ -3269,7 +3269,7 @@ const __mirrorLikvardighet = (() => {
  *
  * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
  *   Klassning — EN definition i hela verktyget: arKvinnodominerad()/konsklass() nedan.
- *            DO: mer än gränsen (standard 60 %); SCB: gränsen eller mer. Mansdominerat
+ *            'do': mer än gränsen (standard 60 %); 'scb': gränsen eller mer. Mansdominerat
  *            speglas för män; övriga är blandade.
  *   Steg 1 — Organisationens AID×BAS-grupper delas i:
  *            • kvinnodominerade — analysens subjekt
@@ -3300,13 +3300,14 @@ const __mirrorLikvardighet = (() => {
 
 
 
-const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (DO: mer än 60 % kvinnor)
-const ICKE_KV_TAK = 40;              // < → mansdominerat med DO och standardgränsen (klassen, inte urvalet; ADR-60)
+const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
+const ICKE_KV_TAK = 40;              // < → mansdominerat med 'do' och standardgränsen (klassen, inte urvalet; ADR-60)
 const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
 
 /**
  * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
- * DO: mer än gränsen. SCB: gränsen eller mer.
+ * 'do' (*Mer än X %*): mer än gränsen. 'scb' (*X % eller mer*): gränsen eller mer. Nycklarna är historiska och
+ * står kvar för sparade konfigurationsfiler; valen heter efter lydelsen (ADR-72).
  * @param {number|null|undefined} pct - procent kvinnor
  * @param {'do'|'scb'|string} [definition='do']
  * @param {number} [grans=60]
@@ -3463,7 +3464,7 @@ function _aldersFalt(f, g, ärIntern, golv) {
  * @param {Array<{aid:string, bas:string, lon:number, kon:string, yrkeLabel?:string, yrke?:string, alder?:number}>} data
  * @param {number} kvinnoThr - kvinnotröskel i procent
  * @param {number} [K=10]
- * @param {'do'|'scb'} [definition='do'] - DO: mer än tröskeln; SCB: tröskeln eller mer
+ * @param {'do'|'scb'} [definition='do'] - 'do': mer än tröskeln; 'scb': tröskeln eller mer
  * @returns {{orgKvDom:Array, orgIckeKv:Array, antalAidxBas:number, kvDomMedNLessThanK:number}}
  */
 function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
@@ -3834,7 +3835,7 @@ function basRangFn(allaBas) {
  * @param {Array} [input.statistik] - jämförelsestatistiken
  * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.scbKlass]
  * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
- *   kvDomDefinition: 'do' (mer än tröskeln, standard) | 'scb' (tröskeln eller mer).
+ *   kvDomDefinition: 'do' (*Mer än X %*, standard) | 'scb' (*X % eller mer*; ADR-72).
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
@@ -4454,17 +4455,22 @@ const __mirrorAidbas = (() => {
  * Reglerna för små grupper följer med som parametrar: `k` är antalet per kön (och per grupp i tabell 2 och 3) som
  * krävs för ett lönemått, `golv` är antalet i gruppen som krävs för en egen rad; mindre grupper räknas upp i `sma`.
  *
- * Klassningen av kvinnodominerat arbete har två definitioner: DO:s (mer än gränsen) och SCB:s (gränsen eller mer).
- * Gränsen är 60 % om inget annat anges. Mansdominerat speglas; övriga är könsblandade.
+ * Klassningen av kvinnodominerat arbete har två definitioner, som heter efter lydelsen (ADR-72): *Mer än X %*
+ * (nyckeln 'do') och *X % eller mer* (nyckeln 'scb'). Gränsen X är 60 % om inget annat anges. Mansdominerat
+ * speglas; övriga är könsblandade.
  *
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 
-/** Definitionerna av kvinnodominerat arbete: nyckel → namn och text för metodbladet. */
+/**
+ * Definitionerna av kvinnodominerat arbete: nyckel → namn (valet i inställningarna) och text (tabellerna och
+ * metodbladet). Namnen säger lydelsen, inte en avsändare (ADR-72). Nycklarna 'do' och 'scb' är historiska och står
+ * kvar, så att sparade konfigurationsfiler (`likvardighet.kvDomDefinition`) fortsätter att läsas.
+ */
 const KV_DEFINITIONER = Object.freeze({
-    do: Object.freeze({ namn: 'Förarbetena', text: 'mer än {grans} % kvinnor (riktmärket i lagens förarbeten)' }),
-    scb: Object.freeze({ namn: 'SCB', text: '{grans} % kvinnor eller mer (Statistiska centralbyrån)' })
+    do: Object.freeze({ namn: 'Mer än {grans} %', text: 'mer än {grans} % kvinnor' }),
+    scb: Object.freeze({ namn: '{grans} % eller mer', text: '{grans} % kvinnor eller mer' })
 });
 const KV_GRANS_STANDARD = 60;
 
@@ -4472,16 +4478,17 @@ const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 
 const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
 const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
-/** Definitionens namn: Förarbetena eller SCB. */
-function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
+/** Definitionens namn, med gränsen insatt: "Mer än 60 %" eller "60 % eller mer". */
+function kvDefinitionNamn(definition, grans = KV_GRANS_STANDARD) {
+    return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn.replace('{grans}', String(grans));
+}
 /** Klassernas namn, för den som jämför klassningen. */
 function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }
 /** Texten när den hierarkiska jämförelsen inte har några par. */
 function ingaParText() { return INGA_HIERARKISKA_PAR; }
-/** Texten för definitionen, med gränsen insatt. */
+/** Texten för definitionen, med gränsen insatt: "mer än 60 % kvinnor" eller "60 % kvinnor eller mer". */
 function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
-    const d = KV_DEFINITIONER[definition] || KV_DEFINITIONER.do;
-    return `${d.namn}: ${d.text.replace('{grans}', String(grans))}`;
+    return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).text.replace('{grans}', String(grans));
 }
 
 /**
@@ -15844,7 +15851,7 @@ const state = {
     likvardighet: {
         source: 'organisation',    // 'organisation' | 'statistik'
         kvinnoTrosholdPct: 60,
-        kvDomDefinition: 'do',     // 'do' (mer än tröskeln) | 'scb' (tröskeln eller mer): den enda definitionen i verktyget (ADR-60)
+        kvDomDefinition: 'do',     // 'do' (*Mer än X %*) | 'scb' (*X % eller mer*): den enda definitionen i verktyget (ADR-60); nycklarna är historiska och står kvar för sparade konfigurationsfiler (ADR-72)
         jamforelse: 'alla',        // 'alla' som inte är kvinnodominerade | 'mansdominerade' (filtret i Inställningar, ADR-60)
         minGapPct: 0,              // 0 = alla par där jämförelseyrket ligger högre; 5 % är ett valbart filter (ADR-61)
         topN: 20,
@@ -18029,6 +18036,8 @@ function applyConfigSnapshot(cfg) {
             }
         }
         if (cfg.likvardighet.kvDomDefinition != null) {
+            // Nycklarna 'do' (*Mer än X %*) och 'scb' (*X % eller mer*) är historiska och står kvar, så att sparade
+            // konfigurationsfiler fortsätter att läsas (ADR-72).
             if (cfg.likvardighet.kvDomDefinition !== 'do' && cfg.likvardighet.kvDomDefinition !== 'scb')
                 throw new Error('likvardighet.kvDomDefinition måste vara "do" eller "scb".');
             lv.kvDomDefinition = cfg.likvardighet.kvDomDefinition;
@@ -23220,7 +23229,7 @@ function renderLikvardighet() {
                        <strong>Mått på kraven: BAS-intervallet</strong> — yrken inom samma BAS-intervall antas ha likvärdiga krav. Har organisationen en egen arbetsvärdering kan du lägga till poängen i lönefilen; poäng mäter kraven i arbetet bättre.</p>`}
             <ul class="fs-sm lh-1_6 marg-8-0 pad-v-22">
                 <li><strong>Steg 1</strong>: Identifiera <em>organisationens kvinnodominerade</em>
-                    AID×BAS-grupper (${kvDomGransText()} kvinnor, ${_aidbasDefinitionNamn(aidbasDefinition())}).
+                    AID×BAS-grupper (${esc(aidbasDefinitionText())}).
                     K-anonymitet tillämpas <strong>inte</strong> i denna analys eftersom
                     resultatet är aggregerat per yrkesgrupp.</li>
                 <li><strong>Steg 2</strong>: Välj jämförelseyrken inom samma BAS-intervall
@@ -23483,6 +23492,8 @@ function renderLikvardighet() {
     }
 
     // ====== Kontroller ======
+    // Definitionens värden 'do' och 'scb' är historiska nycklar; valen heter efter lydelsen och nycklarna står kvar,
+    // så att sparade konfigurationsfiler fortsätter att läsas (ADR-72).
     const controlsHtml = `
         <div class="card mb-14">
             <div class="controls-row mitt bryt gap-18">
@@ -23492,10 +23503,10 @@ function renderLikvardighet() {
                     <span>%</span>
                 </div>
                 <div class="mitt rad-inline gap-8">
-                    <label for="lv-kv-definition">Kvinnodominerat enligt:</label>
-                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller hela verktyget: kandidatparen, tabellerna per AID-kod och BAS-intervall, Lika arbete, Löneöversyn och Lönepolitik. Förarbetena: fler kvinnor än gränsen (lagens förarbeten använder 60 procent som riktmärke). SCB: gränsen eller fler.">
-                        <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>Förarbetena — mer än ${cfg.kvinnoTrosholdPct} % kvinnor</option>
-                        <option value="scb"${aidbasDefinition() === 'scb' ? ' selected' : ''}>SCB — ${cfg.kvinnoTrosholdPct} % kvinnor eller mer</option>
+                    <label for="lv-kv-definition">Kvinnodominerat när andelen kvinnor är:</label>
+                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller hela verktyget: kandidatparen, tabellerna per AID-kod och BAS-intervall, Lika arbete, Löneöversyn och Lönepolitik. Gränsen är kvinnotröskeln; välj om en grupp som ligger precis på gränsen räknas som kvinnodominerad. Lagen anger ingen siffra.">
+                        <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>${esc(_aidbasDefinitionNamn('do', cfg.kvinnoTrosholdPct))}</option>
+                        <option value="scb"${aidbasDefinition() === 'scb' ? ' selected' : ''}>${esc(_aidbasDefinitionNamn('scb', cfg.kvinnoTrosholdPct))}</option>
                     </select>
                 </div>
                 <div class="mitt rad-inline gap-8">
@@ -23878,7 +23889,7 @@ function _exportLikvardighetCSVExport() {
     rows.push(['Genererad', new Date().toLocaleString('sv-SE')]);
     rows.push(['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')]);
     rows.push(['Kvinnotröskel (%)', result.opts.kvinnoTrosholdPct]);
-    rows.push(['Kvinnodominerat enligt', aidbasDefinitionText()]);
+    rows.push(['Kvinnodominerat vid', aidbasDefinitionText()]);
     rows.push(['Jämförelseyrken', jamforelseGransText()]);
     rows.push(['Minsta skillnad (%)', result.opts.minGapPct]);
     rows.push(['Antal par', result.pairs.length]);
@@ -23993,7 +24004,7 @@ function _exportLikvardighetExport() {
             ['', ''],
             ['— PARAMETRAR —', ''],
             ['Kvinnotröskel (%)', safe(() => opts.kvinnoTrosholdPct, '')],
-            ['Kvinnodominerat enligt', aidbasDefinitionText()],
+            ['Kvinnodominerat vid', aidbasDefinitionText()],
             ['Jämförelseyrken', jamforelseGransText()],
             ['Minsta skillnad (%)', safe(() => opts.minGapPct, '')],
             ['Visa max antal par', safe(() => opts.topN, '')],
@@ -26975,7 +26986,7 @@ function generateEUDirectiveMatrix() {
     lika.grupper.forEach(g => {
         const { yrke, nKv, nMa, tot } = g;
         const pctKv = nKv / tot;
-        // Samma definition som Likvärdigt arbete (DO/SCB-valet och kvinnotröskeln; ADR-60).
+        // Samma definition som Likvärdigt arbete (valet Mer än/eller mer och kvinnotröskeln; ADR-60, ADR-72).
         const dominans = _aidbasDominans(pctKv * 100, aidbasDefinition(), aidbasGrans());
         // k-anonymitet: yrken där ett kön är under k redovisas med gruppens SAMLADE
         // median (den bygger på n >= kTroskel() och röjer ingen enskild); yrken som
@@ -27093,7 +27104,7 @@ function generateEUDirectiveMatrix() {
             ['Löneskillnad per yrke', '<code>(median kvinnor / median män − 1) × 100 %</code>'],
             ['Status', `Värt att granska = utanför slumpens gränser för gruppen (omkastning av könen, 1 000 gånger) och minst 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under ${statGolv()}`],
             ['Direktivmarkering', `≥ 5 % på den ojusterade medianskillnaden. ${esc(_STS_DIR_TIPS)}`],
-            ['Dominans', `Kvinnodominerad enligt ${esc(aidbasDefinitionText())}; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).`],
+            ['Dominans', `Kvinnodominerad vid ${esc(aidbasDefinitionText())}; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).`],
             ['OLS-regression', `log(lön) ~ kön${harAlder() ? ' + ålder' : ''} + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)`],
             ['BAS-rangordning', 'Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete'],
             ['Per-BAS regression', `Separat <code>log(lön) ~ kön${harAlder() ? ' + ålder' : ''}</code> inom varje BAS med ≥${statGolv()} av varje kön`]
@@ -28077,8 +28088,8 @@ function renderReferensOverblick() {
 //     tabellen, med namn och antal men utan löner (ADR-12). På skärmen visas alla grupper (ADR-51).
 //   - Gränserna för slumpen är trattdiagrammets (41-lika-arbete.js): omkastning av könen inom gruppen, räknad per
 //     AID-kod och BAS-intervall, så att tabellen och fliken Slumpens gränser säger samma sak.
-//   - Kvinnodominerat enligt DO (mer än tröskeln) eller SCB (tröskeln eller mer): valet i Likvärdigt arbetes
-//     inställningar, standard DO; tröskeln är kvinnotröskeln där (standard 60 %). Samma definition gäller i hela
+//   - Kvinnodominerat vid *Mer än X %* (nyckeln 'do') eller *X % eller mer* (nyckeln 'scb'; ADR-72): valet i
+//     Likvärdigt arbetes inställningar, standard *Mer än*; X är kvinnotröskeln där (standard 60 %). Samma definition gäller i hela
 //     verktyget (ADR-60): kvDomNu() och konsklassNu() nedan, som anropar _arKvinnodominerad/_konsklass ur
 //     src/lib/likvardighet.js.
 //   - Jämförelseyrken är alla grupper som inte är kvinnodominerade, eller bara de mansdominerade med filtret
@@ -28089,7 +28100,8 @@ function renderReferensOverblick() {
 function aidbasK() { return statGolv(); }
 /** Antalet i gruppen som krävs för en egen rad: 5 i exportläget, alla på skärmen (ADR-51). */
 function aidbasGolv() { return kTroskel() > K_SKARM ? LITET_UNDERLAG : 1; }
-/** Vald definition av kvinnodominerat arbete: 'do' eller 'scb'. */
+/** Vald definition av kvinnodominerat arbete: 'do' (*Mer än X %*) eller 'scb' (*X % eller mer*). Nycklarna är historiska och
+ *  står kvar för sparade konfigurationsfiler (ADR-72). */
 function aidbasDefinition() { return state.likvardighet && state.likvardighet.kvDomDefinition === 'scb' ? 'scb' : 'do'; }
 /** Gränsen i procent kvinnor: kvinnotröskeln i Likvärdigt arbete. */
 function aidbasGrans() { return (state.likvardighet && state.likvardighet.kvinnoTrosholdPct) || 60; }
@@ -28099,7 +28111,7 @@ function lvJamforelse() { return state.likvardighet && state.likvardighet.jamfor
 function kvDomNu(pct) { return _arKvinnodominerad(pct, aidbasDefinition(), aidbasGrans()); }
 /** Klassen för en andel kvinnor: 'kvinnodominerad', 'mansdominerad', 'blandad' eller '' (ADR-60). */
 function konsklassNu(pct) { return _konsklass(pct, aidbasDefinition(), aidbasGrans()); }
-/** Gränsen för kvinnodominerat i ord: "mer än 60 %" (DO) eller "minst 60 %" (SCB). */
+/** Gränsen för kvinnodominerat i ord: "mer än 60 %" ('do') eller "minst 60 %" ('scb'). */
 function kvDomGransText() { return `${aidbasDefinition() === 'scb' ? 'minst' : 'mer än'} ${svTal(aidbasGrans(), 0)} %`; }
 /** Jämförelsemängden i ord, med gränsen: "inte kvinnodominerade, ≤ 60 %" eller "mansdominerade, < 40 %". */
 function jamforelseGransText() {
@@ -28240,16 +28252,16 @@ function renderAidBasLikvardigt() {
     const d = getData();
     if (!d.length) { lv.innerHTML = ''; hi.innerHTML = ''; _aidbasNyckel('nyckel-lv-aidbas', ''); _aidbasNyckel('nyckel-lv-hierarki', ''); return; }
     const t = aidbasTabeller(d);
-    const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition.`;
+    const def = `Kvinnodominerad vid ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition.`;
     lv.innerHTML = _aidbasTabellHtml('aidbas-likvardigt-tabell', AIDBAS_KOL.likvardigt, t.likvardigt.rader, { not: _aidbasSmaNot(t.likvardigt.sma, t.golv), fil: 'likvardigt_arbete' })
         + `<p class="text-dampad-xs marg-8-0-0">${esc(def)} Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} ${personOrd(t.k)}.</p>`
         + (t.likvardigt.sammanfattning.length ? `<h3 class="fs-md marg-14-0-4">Sammanfattning per BAS-intervall</h3><ul class="text-dampad-sm">${t.likvardigt.sammanfattning.map(s => `<li>${esc(_aidbasSammanfattningText(s))}</li>`).join('')}</ul>`
                                                : `<p class="text-dampad-xs marg-8-0-0">Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} ${personOrd(t.k)}, så det finns ingen sammanfattning.</p>`);
     _aidbasEfter('aidbas-likvardigt-tabell');
     const kvDom = t.likvardigt.rader.filter(r => r.klass === _aidbasKlassNamn().kv).length;
-    _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (enligt ${_aidbasDefinitionNamn(t.definition) === 'SCB' ? 'SCB' : 'förarbetenas riktmärke'})` : '');
+    _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (${_aidbasDefinitionText(t.definition, t.grans)})` : '');
     hi.innerHTML = _aidbasTabellHtml('aidbas-hierarki-tabell', AIDBAS_KOL.par, t.par, { tom: _aidbasIngaParText(), fil: 'hierarkisk_jamforelse' })
-        + `<p class="text-dampad-xs marg-8-0-0">Kvinnodominerad enligt ${esc(aidbasDefinitionText())}. Båda grupperna har minst ${t.k} ${personOrd(t.k)}. BAS-ordningen är bokstavsordningen.</p>`;
+        + `<p class="text-dampad-xs marg-8-0-0">Kvinnodominerad vid ${esc(aidbasDefinitionText())}. Båda grupperna har minst ${t.k} ${personOrd(t.k)}. BAS-ordningen är bokstavsordningen.</p>`;
     _aidbasEfter('aidbas-hierarki-tabell');
     _aidbasNyckel('nyckel-lv-hierarki', t.par.length ? `${t.par.length} par` : 'inga par');
 }
@@ -28294,7 +28306,7 @@ function _aidbasExcelBlad() {
     const d = getData();
     if (!d.length) return [];
     const t = aidbasTabeller(d);
-    const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
+    const def = `Kvinnodominerad vid ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
     const lika = _aidbasBlad('Lika arbete: kvinnors medianlön i procent av mäns per AID-kod och BAS-intervall', AIDBAS_KOL.lika, t.lika.rader,
         { fore: [`Medianer, kvot och gränser bara när varje kön har minst ${t.k} ${personOrd(t.k)}; annars "Analyseras på individnivå". Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning (omkastning av könen inom gruppen, som trattdiagrammet).`, `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`],
           efter: [_aidbasSmaNot(t.lika.sma, t.golv)], tom: 'Inga grupper att visa.' });
@@ -28322,7 +28334,7 @@ function _aidbasMetodRader() {
         ['Tabellerna per AID-kod och BAS-intervall', `Bladen ${AIDBAS_BLADNAMN.join(', ')} grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: lika arbete är samma yrkesgrupp på samma nivå, och en yrkesgrupp i flera intervall får en rad per intervall. ${lonemanadText()}.`],
         ['Små grupper i tabellerna per AID och BAS', `Grupper med färre än ${golv} ${personOrd(golv)} får ingen egen rad utan räknas upp i en not under tabellen med namn och antal. Ett köns median, kvoten och gränserna redovisas bara när varje kön har minst ${k} ${personOrd(k)}; gruppens median och lönespridning bara när gruppen har minst ${k} ${personOrd(k)}. Arbetslistan Analys på individnivå tar upp grupperna där något kön är mindre än ${k}, utan löner.`],
         ['Gränser för slumpen (Lika arbete AID x BAS, Slumpens gränser)', 'Kvinnors median i procent av mäns jämförs med de mittersta 95 procenten av de kvoter slumpen ger när könen kastas om slumpvis mellan gruppens löner 1 000 gånger (för grupper över 300 personer en normalapproximation med gruppens egen spridning). Gränserna gäller gruppens egna löner, antal och könsfördelning. En kvot utanför gränserna är svår att förklara med slumpen; gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.'],
-        ['Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)', `${aidbasDefinitionText()}. Mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (${skrKallaKort()}) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.`]
+        ['Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)', `Kvinnodominerad vid ${aidbasDefinitionText()}. Mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (${skrKallaKort()}) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.`]
     ];
 }
 // SPDX-License-Identifier: MIT
@@ -37752,7 +37764,7 @@ function _instRita() {
     const lvAnpassad = lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 0 || lv.topN !== 20 || aidbasDefinition() !== 'do' || lvJamforelse() !== 'alla';
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
-        { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (förarbetena eller SCB), vilka yrken som jämförs, minsta skillnad och antal par',
+        { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (mer än tröskeln eller tröskeln eller mer), vilka yrken som jämförs, minsta skillnad och antal par',
           lage: anpassad(lvAnpassad), andrad: lvAnpassad },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
@@ -37921,7 +37933,7 @@ const SOK_FUNKTIONER = [
     // Avsnitten nedan byggs när fliken ritas (34-likvardigt-arbete.js, 75-lonepolitik.js; listan i tests/sok-funktioner.test.js)
     { namn: 'Par att titta närmare på', synonymer: ['kandidatpar', 'par', 'jämförelseyrke', 'kvinnodominerat yrke', 'kandidatparen i kronor'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-par' },
     { namn: 'Yrkena bakom jämförelsen', synonymer: ['kvinnodominerade yrken', 'jämförelseyrken', 'underlag', 'steg för steg'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-underlag' },
-    { namn: 'Inställningar för Likvärdigt arbete', synonymer: ['kvinnotröskel', 'minsta skillnad', 'minsta gap', 'antal par', 'definition av kvinnodominerat', 'förarbetena', 'do', 'scb'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar' },
+    { namn: 'Inställningar för Likvärdigt arbete', synonymer: ['kvinnotröskel', 'minsta skillnad', 'minsta gap', 'antal par', 'definition av kvinnodominerat', 'mer än 60 %', '60 % eller mer', 'förarbetena', 'do', 'scb'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar' },
     { namn: 'Så fungerar analysen', synonymer: ['metod', 'likvärdigt arbete', 'diagnostik', 'krav-proxy'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-analys' },
     // Lika arbete
     { namn: 'Kvinnor och män i samma yrkesgrupp', synonymer: ['lika arbete', 'yrkesgrupp', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },

@@ -55,7 +55,7 @@ function _instRita() {
     const lvAnpassad = lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 0 || lv.topN !== 20 || aidbasDefinition() !== 'do' || lvJamforelse() !== 'alla';
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
-        { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (förarbetena eller SCB), vilka yrken som jämförs, minsta skillnad och antal par',
+        { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (mer än tröskeln eller tröskeln eller mer), vilka yrken som jämförs, minsta skillnad och antal par',
           lage: anpassad(lvAnpassad), andrad: lvAnpassad },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },

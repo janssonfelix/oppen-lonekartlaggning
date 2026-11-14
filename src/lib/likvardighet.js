@@ -9,7 +9,7 @@
  *
  * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
  *   Klassning — EN definition i hela verktyget: arKvinnodominerad()/konsklass() nedan.
- *            DO: mer än gränsen (standard 60 %); SCB: gränsen eller mer. Mansdominerat
+ *            'do': mer än gränsen (standard 60 %); 'scb': gränsen eller mer. Mansdominerat
  *            speglas för män; övriga är blandade.
  *   Steg 1 — Organisationens AID×BAS-grupper delas i:
  *            • kvinnodominerade — analysens subjekt
@@ -41,13 +41,14 @@ import { median as _median } from './stat.js';
 import { rngFor } from './rng.js';
 import { direktivMarkering } from './status.js';
 
-export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (DO: mer än 60 % kvinnor)
-export const ICKE_KV_TAK = 40;              // < → mansdominerat med DO och standardgränsen (klassen, inte urvalet; ADR-60)
+export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
+export const ICKE_KV_TAK = 40;              // < → mansdominerat med 'do' och standardgränsen (klassen, inte urvalet; ADR-60)
 export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
 
 /**
  * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
- * DO: mer än gränsen. SCB: gränsen eller mer.
+ * 'do' (*Mer än X %*): mer än gränsen. 'scb' (*X % eller mer*): gränsen eller mer. Nycklarna är historiska och
+ * står kvar för sparade konfigurationsfiler; valen heter efter lydelsen (ADR-72).
  * @param {number|null|undefined} pct - procent kvinnor
  * @param {'do'|'scb'|string} [definition='do']
  * @param {number} [grans=60]
@@ -204,7 +205,7 @@ function _aldersFalt(f, g, ärIntern, golv) {
  * @param {Array<{aid:string, bas:string, lon:number, kon:string, yrkeLabel?:string, yrke?:string, alder?:number}>} data
  * @param {number} kvinnoThr - kvinnotröskel i procent
  * @param {number} [K=10]
- * @param {'do'|'scb'} [definition='do'] - DO: mer än tröskeln; SCB: tröskeln eller mer
+ * @param {'do'|'scb'} [definition='do'] - 'do': mer än tröskeln; 'scb': tröskeln eller mer
  * @returns {{orgKvDom:Array, orgIckeKv:Array, antalAidxBas:number, kvDomMedNLessThanK:number}}
  */
 export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
@@ -575,7 +576,7 @@ export function basRangFn(allaBas) {
  * @param {Array} [input.statistik] - jämförelsestatistiken
  * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.scbKlass]
  * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
- *   kvDomDefinition: 'do' (mer än tröskeln, standard) | 'scb' (tröskeln eller mer).
+ *   kvDomDefinition: 'do' (*Mer än X %*, standard) | 'scb' (*X % eller mer*; ADR-72).
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */

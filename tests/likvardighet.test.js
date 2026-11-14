@@ -95,7 +95,7 @@ describe('aggregeraOrgKvDom — Steg 1 klassificering', () => {
         expect(aggregeraOrgKvDom(data, 60).orgIckeKv[0].klass).toBe('mansdominerad');
     });
 
-    it('exakt 60 %: DO räknar gruppen som jämförelseyrke, SCB som kvinnodominerad', () => {
+    it('exakt 60 %: *Mer än 60 %* räknar gruppen som jämförelseyrke, *60 % eller mer* som kvinnodominerad', () => {
         const data = orgRows({ aid: '3100', bas: 'C', kvLons: [30000, 31000, 32000], maLons: [30000, 31000] }); // 3/5 = 60 %
         const doRes = aggregeraOrgKvDom(data, 60, 10, 'do');
         expect(doRes.orgKvDom).toHaveLength(0);
@@ -164,7 +164,7 @@ describe('klassificeraStatistik — Steg 2 klassificering', () => {
         expect(klass.ickeKv).toBe(1);    // alla jämförelsekandidater
     });
 
-    it('statistikrad med exakt 60 %: kandidat enligt DO, kvinnodominerad enligt SCB', () => {
+    it('statistikrad med exakt 60 %: kandidat med *Mer än 60 %*, kvinnodominerad med *60 % eller mer*', () => {
         const stat = [statRow({ aid: '3000', bas: 'B', median: 35000, andelKv: 60 })];
         expect(klassificeraStatistik(stat, scbStub, { definition: 'do' }).statIckeKv).toHaveLength(1);
         const scb = klassificeraStatistik(stat, scbStub, { definition: 'scb' });
@@ -634,7 +634,7 @@ describe('aldersjusteradSkillnad — jämförelseyrkets lön omräknad till den 
 
 // ===================================================================
 describe('en definition av kvinnodominerat (ADR-60, §9.22)', () => {
-    it('arKvinnodominerad: DO är mer än gränsen, SCB gränsen eller mer', () => {
+    it('arKvinnodominerad: \'do\' är mer än gränsen, \'scb\' gränsen eller mer', () => {
         expect(arKvinnodominerad(60, 'do')).toBe(false);
         expect(arKvinnodominerad(60.01, 'do')).toBe(true);
         expect(arKvinnodominerad(60, 'scb')).toBe(true);

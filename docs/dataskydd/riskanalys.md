@@ -641,7 +641,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **De fyra bladen per AID-kod och BAS-intervall** (*Lika arbete AID x BAS*, *Likvärdigt arbete*, *Hierarkisk
   jämförelse* och *Analys på individnivå*) finns i Excelfilen med alla flikar och i ZIP-filens Excelfil. De byggs
   i exportläget enligt §6.5. Lönemånaden från Inställningar (användarens fritext, §2) står på raden ovanför tabellen, och vald
-  definition av kvinnodominerat (DO eller SCB) i bladet *Metodik*. Samma tabeller har Kopiera och CSV i flikarna
+  definition av kvinnodominerat (*Mer än X %* eller *X % eller mer*) i bladet *Metodik*. Samma tabeller har Kopiera och CSV i flikarna
   (ADR-57).
 - **Exportgrinden:** ingen export läser en tabell eller ett diagram ur en flik som är ritad
   med en äldre tröskel. När tröskeln ändras ritas bara den flik som syns om; övriga töms och ritas på nytt när de
@@ -761,7 +761,7 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
   till 300 tecken. Ett ogiltigt värde ger standard med varning, aldrig fel (ADR-56).
 - uppdelningens variabler (`gapUppdelning`): vilka variabler *Var uppstår löneskillnaden?* delar med, i ordning, utan
   fritext. Ett ogiltigt värde ger standard med varning, aldrig fel; en fil utan fältet ger standard (ADR-65).
-- definitionen av kvinnodominerat (`likvardighet.kvDomDefinition`, DO eller SCB)
+- definitionen av kvinnodominerat (`likvardighet.kvDomDefinition`, `'do'` för *Mer än X %* eller `'scb'` för *X % eller mer*)
 - vilka yrken som jämförs i likvärdigt arbete (`likvardighet.jamforelse`, `alla` eller `mansdominerade`, ADR-60)
 - lönemånaden (`lonemanad`), fritext kortad till 40 tecken (ADR-57)
 - om inläsningen ska stoppa vid förhandskontrollen (`forhandskontrollStopp`, sant eller falskt). Förhandskontrollens

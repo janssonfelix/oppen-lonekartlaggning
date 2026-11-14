@@ -309,8 +309,8 @@ rubrikraden, också när det är hopfällt.
    Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje yrkesgrupp i varje
    intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall. De listar
    också par där ett arbete i lägre BAS som inte är kvinnodominerat har högre medianlön än ett kvinnodominerat
-   arbete i högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **Förarbetena** (mer än tröskeln, standard)
-   eller **SCB** (tröskeln eller mer); mansdominerat är samma gräns för män och övriga är könsblandade. Samma
+   arbete i högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **Mer än 60 %** (mer än tröskeln,
+   standard) eller **60 % eller mer** (tröskeln eller mer), med den inställda kvinnotröskeln i stället för 60; mansdominerat är samma gräns för män och övriga är könsblandade. Samma
    definition och samma jämförelseyrken gäller i hela verktyget: kandidatparen, *Lägre krav, högre lön*,
    tabellerna per BAS-intervall, Lika arbetes kolumn Dominans, Löneöversynens *Varav till kvinnodominerade
    grupper* och Lönepolitikens diagram. Valet står i Excel-bladen och i metodbladet.

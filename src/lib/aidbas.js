@@ -15,18 +15,23 @@
  * Reglerna för små grupper följer med som parametrar: `k` är antalet per kön (och per grupp i tabell 2 och 3) som
  * krävs för ett lönemått, `golv` är antalet i gruppen som krävs för en egen rad; mindre grupper räknas upp i `sma`.
  *
- * Klassningen av kvinnodominerat arbete har två definitioner: DO:s (mer än gränsen) och SCB:s (gränsen eller mer).
- * Gränsen är 60 % om inget annat anges. Mansdominerat speglas; övriga är könsblandade.
+ * Klassningen av kvinnodominerat arbete har två definitioner, som heter efter lydelsen (ADR-72): *Mer än X %*
+ * (nyckeln 'do') och *X % eller mer* (nyckeln 'scb'). Gränsen X är 60 % om inget annat anges. Mansdominerat
+ * speglas; övriga är könsblandade.
  *
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median, quantile } from './stat.js';
 import { basRangFn, konsklass } from './likvardighet.js';
 
-/** Definitionerna av kvinnodominerat arbete: nyckel → namn och text för metodbladet. */
+/**
+ * Definitionerna av kvinnodominerat arbete: nyckel → namn (valet i inställningarna) och text (tabellerna och
+ * metodbladet). Namnen säger lydelsen, inte en avsändare (ADR-72). Nycklarna 'do' och 'scb' är historiska och står
+ * kvar, så att sparade konfigurationsfiler (`likvardighet.kvDomDefinition`) fortsätter att läsas.
+ */
 export const KV_DEFINITIONER = Object.freeze({
-    do: Object.freeze({ namn: 'Förarbetena', text: 'mer än {grans} % kvinnor (riktmärket i lagens förarbeten)' }),
-    scb: Object.freeze({ namn: 'SCB', text: '{grans} % kvinnor eller mer (Statistiska centralbyrån)' })
+    do: Object.freeze({ namn: 'Mer än {grans} %', text: 'mer än {grans} % kvinnor' }),
+    scb: Object.freeze({ namn: '{grans} % eller mer', text: '{grans} % kvinnor eller mer' })
 });
 export const KV_GRANS_STANDARD = 60;
 
@@ -34,16 +39,17 @@ export const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLA
 export const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
 export const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
-/** Definitionens namn: Förarbetena eller SCB. */
-export function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
+/** Definitionens namn, med gränsen insatt: "Mer än 60 %" eller "60 % eller mer". */
+export function kvDefinitionNamn(definition, grans = KV_GRANS_STANDARD) {
+    return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn.replace('{grans}', String(grans));
+}
 /** Klassernas namn, för den som jämför klassningen. */
 export function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }
 /** Texten när den hierarkiska jämförelsen inte har några par. */
 export function ingaParText() { return INGA_HIERARKISKA_PAR; }
-/** Texten för definitionen, med gränsen insatt. */
+/** Texten för definitionen, med gränsen insatt: "mer än 60 % kvinnor" eller "60 % kvinnor eller mer". */
 export function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
-    const d = KV_DEFINITIONER[definition] || KV_DEFINITIONER.do;
-    return `${d.namn}: ${d.text.replace('{grans}', String(grans))}`;
+    return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).text.replace('{grans}', String(grans));
 }
 
 /**
