@@ -69,6 +69,11 @@ I appen läses de genom `aidbasDefinition()` och `aidbasGrans()`, och `kvDomNu(p
 `45-aid-bas-tabeller.js` anropar definitionen med dem. Texterna säger *mer än* eller *minst* efter valet
 (`kvDomGransText()`).
 
+**Jämn könsfördelning är något annat.** Lönestrukturs tabell över könsfördelningen per BAS-intervall, rutan *Ojämn
+könsfördelning* på Översikt och måttet på statistisk styrka räknar en grupp som jämn när båda könen är minst 40 %.
+Den gränsen är fast och följer varken kvinnotröskeln eller valet; en grupp med exakt 60 % kvinnor är jämn där, men
+kvinnodominerad med *X % eller mer* vid gränsen 60. Ordlistan (*Jämn könsfördelning*) säger det.
+
 **Var definitionen används:**
 
 - I modellen: `aggregeraOrgKvDom` och `klassificeraStatistik`, som följer kvinnotröskeln (orkestratorn skickar

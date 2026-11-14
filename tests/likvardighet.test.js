@@ -27,7 +27,7 @@ import {
     arKvinnodominerad,
     konsklass
 } from '../src/lib/likvardighet.js';
-import { dominans } from '../src/lib/aidbas.js';
+import { dominans, kvDefinitionNamn } from '../src/lib/aidbas.js';
 
 // ---- Helpers ----
 function orgRows({ aid, bas, label, kvLons = [], maLons = [] }) {
@@ -661,6 +661,18 @@ describe('en definition av kvinnodominerat (ADR-60, §9.22)', () => {
                 expect({ kvinnodominerad: 'Kvinnodominerad', mansdominerad: 'Mansdominerad', blandad: 'Könsblandad' }[k]).toBe(d);
             }
         }
+    });
+
+    it('ordlistans Jämn könsfördelning är sann för båda valen: gränsen 40/60 är fast, kvinnodominerat följer valet', async () => {
+        // 60/40 är jämn könsfördelning (båda könen minst 40 %) men kvinnodominerad med X % eller mer.
+        expect(konsklass(60, 'scb')).toBe('kvinnodominerad');
+        expect(konsklass(60, 'do')).toBe('blandad');
+        const { readFileSync } = await import('node:fs');
+        const rad = readFileSync(new URL('../src/app/04-ordlista.js', import.meta.url), 'utf8').split('\n').find(l => l.includes("term:'Jämn könsfördelning'"));
+        expect(rad).not.toMatch(/61\/39|könsdominerad/);
+        expect(rad).toContain(kvDefinitionNamn('scb'));
+        expect(rad).toContain(kvDefinitionNamn('do'));
+        expect(rad).toContain('Likvärdigt arbetes inställningar');
     });
 });
 

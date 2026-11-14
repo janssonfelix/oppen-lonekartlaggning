@@ -48,6 +48,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   konfigurationsfiler läses som förut.
 - **Åldersdiagrammets text säger hur referenslinjen ser ut.** Texten under åldersfördelningen i Ålder & karriär
   kallade referenslinjen för Sveriges sysselsatta streckad; den ritas prickad, och texten säger nu det.
+- **Jämn könsfördelning blandas inte ihop med kvinnodominerat.** Ordlistan sade att en grupp blir könsdominerad från
+  61/39. Gränsen för jämn könsfördelning (båda könen minst 40 %) är fast, men kvinnodominerat följer valet i
+  Likvärdigt arbetes inställningar, och med *60 % eller mer* är en grupp med precis 60 % kvinnor kvinnodominerad.
+  Ordlistan (*Jämn könsfördelning*, *Könsskevhet*) och texten över Lönestrukturs tabell över könsfördelningen skiljer
+  nu de två åt.
 
 ### Exporter
 
