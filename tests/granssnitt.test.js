@@ -514,6 +514,31 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         });
         expect(d.querySelector('#livscykel-content .livscykel-kvot-not').textContent).toContain('Modellen ger skillnaden i procent');
     });
+    it('förändringen 25–65 år färgas på prövningen av samspelet mellan kön och ålder, inte på storleken', () => {
+        const w = demo();
+        w.__renderTabContent('kon');
+        // Samma modell med andra p-värden för samspelet och en annan förändring: bara prövningen avgör färgen.
+        const ruta = (kvAgePVal, kvAge2PVal, gapDelta) => {
+            w.eval(`globalThis.__lcOrig = runLifecycleRegression; runLifecycleRegression = b => ({ ...__lcOrig(b), kvAgePVal: ${kvAgePVal}, kvAge2PVal: ${kvAge2PVal}, gapDelta: ${gapDelta} });`);
+            try { w.eval('renderLifecycleAnalysis()'); }
+            finally { w.eval('runLifecycleRegression = __lcOrig; delete globalThis.__lcOrig;'); }
+            const box = [...w.document.querySelectorAll('#livscykel-content .stat-box')]
+                .find(b => b.querySelector('.stat-etikett').textContent.startsWith('Förändring 25–65 år'));
+            return { tal: box.querySelector('.fs-xl'), sr: box.querySelector('.sr-only')?.textContent };
+        };
+        // Säkerställd (p < 0,10, samma gräns som tolkningen), också när förändringen är liten: varningsfärg.
+        const saker = ruta(0.04, 0.5, 0.5);
+        expect(saker.tal.classList.contains('farg-varning')).toBe(true);
+        expect(saker.tal.getAttribute('title')).toBe('säkerställd förändring');
+        expect(saker.sr).toBe('säkerställd förändring');
+        // Inte säkerställd, också när förändringen är stor: neutral, inte grön och inte varning.
+        const inte = ruta(0.4, 0.5, -4);
+        expect(inte.tal.classList.contains('farg-dampad')).toBe(true);
+        expect(inte.tal.className).not.toMatch(/varning|farg-ok|fg-ok/);
+        expect(inte.tal.getAttribute('title')).toBe('inte säkerställd');
+        expect(inte.sr).toBe('inte säkerställd');
+        w.eval('renderLifecycleAnalysis()');
+    });
     it('livscykeln säger "inte säkerställd" i ord, stjärnorna förklaras, och modellformeln står i beräkningspanelen', () => {
         const w = demo();
         w.__renderTabContent('kon');

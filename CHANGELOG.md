@@ -14,6 +14,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   är minst 3 % men inte säkerställd eller säkerställd men under 3 %, *Balanserat* annars, och *Går ej att bedöma*
   när intervallet inte kan räknas. Statusens ikon står bredvid talet och ordet i verktygstipset, så att färgen inte
   bär betydelsen ensam.
+- **Livscykelns förändring 25–65 år färgas på prövningen, inte på storleken.** Rutan var gul när förändringen var
+  större än 1 procentenhet och grön annars, oavsett om den var säkerställd. Nu är den varningsfärgad när samspelet
+  mellan kön och ålder är säkerställt (p < 0,10, samma gräns som tolkningen och rutan *Är förändringen säkerställd?*)
+  och neutral annars, inte grön: att en förändring inte är säkerställd betyder inte att läget är balanserat. Ordet
+  (*säkerställd förändring* eller *inte säkerställd*) står i verktygstipset och för skärmläsaren (ADR-59).
 
 ### Exporter
 

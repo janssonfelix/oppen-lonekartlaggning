@@ -29952,6 +29952,13 @@ function renderLifecycleAnalysis() {
 
     coachText += modellMening;
 
+    // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-59): varningsfärg när samspelet mellan kön
+    // och ålder är säkerställt (interaktionSig, samma gräns som tolkningen och rutan bredvid), annars neutral. Inte
+    // grön: "inte säkerställd" är inte "balanserat". Ordet står i verktygstipset och för skärmläsaren (WCAG 1.4.1).
+    const forandringOrd = interaktionSig ? 'säkerställd förändring' : 'inte säkerställd';
+    const forandring = `<div class="fs-xl fw-700 ${interaktionSig ? 'farg-varning' : 'farg-dampad'}" title="${forandringOrd}">${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)}</div>
+                <span class="sr-only">${forandringOrd}</span>`;
+
     // ====== UI ======
     wrap.innerHTML = `
         <!-- B2: Klarspråklig rubrik och intro -->
@@ -29977,7 +29984,7 @@ function renderLifecycleAnalysis() {
             </div>
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Förändring 25–65 år, procentenheter</div>
-                <div class="fs-xl fw-700 ${Math.abs(result.gapDelta) > 1 ? 'fg-varning' : 'fg-ok'}">${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)}</div>
+                ${forandring}
                 <div class="stat-under">i kvinnors lön i % av mäns; minus: kvinnorna halkar efter</div>
             </div>
             <div class="stat-box" title="Test av om skillnaden förändras med åldern (kön×ålder). Vid p ≥ 0,10 är förändringen inte säkerställd.">
