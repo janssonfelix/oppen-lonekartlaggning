@@ -136,7 +136,7 @@ const INFO_SECTIONS = {
 
     metodik: () => `
         <h3>Multivariat regression (kärnmodellen)</h3>
-        <p>Modell: <code>log(lön) ~ kön + ålder (centrerad) + BAS-intervall (indikatorvariabler)</code> — i linje med Medlingsinstitutets standardvägning. Går modellen inte att skatta faller verktyget tillbaka på kön + ålder.</p>
+        <p>Modell: <code>log(lön) ~ kön + ålder (centrerad) + BAS-intervall (indikatorvariabler)</code>. Går modellen inte att skatta faller verktyget tillbaka på kön + ålder.</p>
         <ul>
             <li><strong>OLS-estimering</strong> (vanliga minsta kvadrater) med <strong>HC3-robusta standardfel</strong> (Long & Ervin 2000). Robusta standardfel håller även när spridningen skiljer sig mellan grupper, och HC3 rekommenderas som standard för små och medelstora urval</li>
             <li><strong>Sekventiell dekomponering</strong> (stegvis uppdelning): tre steg visar hur stor del av den råa löneskillnaden som förklaras av strukturella variabler. Stegen är Endast kön, sedan +BAS och sedan +Ålder. Därefter kommer ett steg +Yrkesgrupp: löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS och ålder. Steget har fasta effekter för yrkesgrupp inom BAS (AID×BAS), alltså en egen lönenivå för varje grupp. Det skattas med inomtransformation: gruppmedelvärdet dras av från log-lön, kön och ålder, och sedan körs OLS utan intercept, alltså utan den gemensamma startnivå som regressionen annars skattar. Steget visas i kortet och förklaringsbudgeten men ingår inte i huvudtalet. Har lönefilen ansvarskod tillkommer ett steg +Ansvar</li>
@@ -292,7 +292,9 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
             <li>Koenker, R. (2005). <em>Quantile Regression.</em> Cambridge University Press. <small>(IRLS-implementation)</small></li>
             <li>Efron, B., &amp; Tibshirani, R. (1993). <em>An Introduction to the Bootstrap.</em> Chapman &amp; Hall. <small>(Percentil-bootstrap-CI)</small></li>
             <li>Cohen, J. (1988). <em>Statistical Power Analysis for the Behavioral Sciences</em> (2nd ed.). Routledge. <small>(MDE-formel)</small></li>
-            <li>Medlingsinstitutet (årlig). <em>Vad säger den officiella lönestatistiken om löneskillnaden mellan kvinnor och män?</em></li>
+            <li>Blinder, A. S. (1973). <em>Wage Discrimination: Reduced Form and Structural Estimates.</em> The Journal of Human Resources, 8(4), 436–455. <small>(Blinder-Oaxaca-uppdelningen)</small></li>
+            <li>Oaxaca, R. (1973). <em>Male-Female Wage Differentials in Urban Labor Markets.</em> International Economic Review, 14(3), 693–709. <small>(Blinder-Oaxaca-uppdelningen)</small></li>
+            <li>Medlingsinstitutet (2026). <em>Löneskillnaden mellan kvinnor och män 2025.</em></li>
         </ul>
 
         <h3>Externa datakällor</h3>
@@ -301,7 +303,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
             <li>AID — yrkesindelningen (Arbetsidentifikation kommuner och regioner), som yrkeskoderna i lönefilen följer</li>
             <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per AID-kod i kommuner och regioner. I verktyget kallad <em>Kvinnor nationellt</em>: ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete</li>
             <li>SKR:s cirkulär 2025 — PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen (andra arbetsgivare sätter sitt eget)</li>
-            <li>SCB, Arbetskraftsundersökningen (AKU) — åldersfördelningen som referens i Ålder &amp; karriär</li>
+            <li>SCB, Arbetskraftsundersökningarna (AKU), årsmedeltal 2023, avrundade — åldersfördelningen som referens i Ålder &amp; karriär</li>
         </ul>
 
         <h3>Licens</h3>

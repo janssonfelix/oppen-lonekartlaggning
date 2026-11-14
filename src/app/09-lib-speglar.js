@@ -2612,7 +2612,7 @@ function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = null) {
  * "Interaction" = samspel mellan skillnader i karakteristika och
  *    skillnader i avkastning. Räknas som "oförklarat" i en tredelad uppdelning.
  *
- * Klassisk presentation (Medlingsinstitutet använder denna form):
+ * Klassisk presentation:
  *   Förklarat   = Endowment
  *   Oförklarat  = Coefficient + Interaction
  *

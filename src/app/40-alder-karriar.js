@@ -592,7 +592,7 @@ function _demoHistFigur({ pctKv, pctMa, refPct, isAll }) {
         x: { skala: 'band', titel: 'Åldersgrupp', ordning: AGE_BRACKETS.slice() },
         y: { skala: 'linjar', titel: isAll ? 'Andel av organisationen (%)' : 'Andel av BAS-intervall (%)' },
         lager: [serie('Kvinna', PALETTE.kon.kvinna, pctKv), serie('Man', PALETTE.kon.man, pctMa),
-            { marke: 'linje', serie: 'Sveriges sysselsatta (SCB AKU)', farg: PALETTE.semantic.referens, streck: 'prickad', punkter: true,
+            { marke: 'linje', serie: 'Sveriges sysselsatta (SCB AKU 2023)', farg: PALETTE.semantic.referens, streck: 'prickad', punkter: true,
               data: AGE_BRACKETS.map((x, i) => ({ x, y: refPct[i] })),
               tips: d => [[d.x], ['Sveriges sysselsatta', _figTalformat(d.y, 'pct')]] }] };
 }

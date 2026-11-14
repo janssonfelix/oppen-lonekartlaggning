@@ -314,7 +314,7 @@ function _jmfStatlageFigur(rader) {
 }
 
 // ---- OLS Regression: oförklarad löneskillnad ----
-// Standardmetod (Medlingsinstitutet/EU 2023/970): log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler)
+// Standardmetod (EU 2023/970): log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler)
 /**
  * Standardnormal CDF Φ(x) via Abramowitz & Stegun 26.2.17 (5 termer, abs.fel < 7.5e-8).
  * @param {number} x

@@ -27,6 +27,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   nyckeltalet räknade samspelet som säkerställt vid p < 0,10, medan tolkningstexten räknade det som inte säkerställt
   först vid p > 0,10, så att de sade olika saker vid exakt 0,10. Alla fyra använder nu samma regel: säkerställt när
   något av de två p-värdena är under 0,10; exakt 0,10 är inte säkerställt.
+- **Källorna pekas ut exakt eller inte alls.** Ordlistan (*Oförklarad löneskillnad*), metodtexten i Om verktyget,
+  två verktygstips i regressionskortet, verktygstipset på nyckeltalet *Kvinnors lön i % av mäns* och *Så används fliken i arbetet*
+  i Lika arbete jämförde verktygets mått med Medlingsinstitutets utan att peka ut någon källa. Jämförelserna är
+  strukna. Bland referenserna i Om verktyget står i stället för en årlig skrift utan år den rapport verktyget
+  citerar, Medlingsinstitutet (2026), *Löneskillnaden mellan kvinnor och män 2025*, och Blinder (1973) och Oaxaca
+  (1973) med fullständiga uppgifter, eftersom regressionskortet hänvisar till dem. Referensdatan för åldersstrukturen
+  säger nu vilket år den gäller: SCB:s arbetskraftsundersökningar (AKU), årsmedeltal 2023, avrundade, i
+  verktygstipset, diagramtexten, referenslistan och referenslinjens namn (*Sveriges sysselsatta (SCB AKU 2023)*).
 
 ### Exporter
 
