@@ -1002,7 +1002,7 @@ med i konfigurationsfilen och organisationspaketet.
 blandade; valen heter efter lydelsen, *Mer än X %* och *X % eller mer* (ADR-72). Den används av likvärdighetsanalysen, tabellerna per AID-kod och BAS-intervall, Lika arbete, Löneöversyn,
 Lönepolitik och uppslaget i den nationella statistiken; jämförelsestatistikens klassning följer kvinnotröskeln i
 stället för fasta 60 %. Prioriteringen klassar inga grupper efter könsdominans och berörs inte. Texterna säger *mer
-än* eller *minst* efter valet.
+än X %* eller *X % eller mer* efter valet, med en källa för lydelsen (`kvDefinitionText`, ADR-72).
 *Motiv:* Tidigare fick bara grupper med under 40 % kvinnor vara jämförelseyrken, så blandade yrken (40–60 %) föll bort
 ur både kandidatparen och jämförelsestatistiken — i demot jämfördes Barnskötare och Undersköterska inte med
 Systemutvecklare (23 kvinnor av 45) i samma BAS-intervall. Med en definition klassas samma grupp lika i varje flik.
