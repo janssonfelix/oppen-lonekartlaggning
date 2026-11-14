@@ -34,6 +34,12 @@ const outFile = join(root, 'src', 'app', '09-lib-speglar.js');
 // inget alias.
 export const MODULES = [
     {
+        // Termerna (ADR-74): först, så att varje senare lib-modul kan importera dem; namn.js importerar genitiv
+        file: 'termer.js', ns: '__mirrorTermer',
+        expose: { skapaTermer: '_tmSkapa', fyllTermer: '_tmFyll', termFras: 'termFras', artikel: 'termArtikel',
+                  adjektiv: 'termAdjektiv', genitiv: 'termGenitiv', stor: 'termStor', ordForAntal: 'termForAntal' }
+    },
+    {
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',

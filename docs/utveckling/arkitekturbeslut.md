@@ -80,6 +80,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-71 | Trappan i livscykeln, protokollet och Prioriteringen; ingen färg på storleken ensam | Gällande | 2026-11-14 |
 | ADR-72 | Definitionerna av kvinnodominerat heter efter lydelsen | Gällande | 2026-11-14 |
 | ADR-73 | Skydden och principerna binder; besluten är en logg | Gällande | 2026-11-14 |
+| ADR-74 | AID:s egna ord, och termerna på ett ställe | Gällande | 2026-11-14 |
 
 ## Besluten
 
@@ -395,3 +396,10 @@ att referensen och koden ändras i samma ändring. Regelmatrisen, kvalitetskrave
 borttagna; mål och öppna punkter har var sitt korta dokument. *Avvisat:* att låta varje beslut binda med full lydelse,
 som gjorde att en liten ändring krävde rättelser på många ställen. *Gäller i dag:* `skydd.md`, `principer.md` och
 `.github/GOVERNANCE.md`.
+
+**ADR-74 — AID:s egna ord, och termerna på ett ställe.** Verktyget säger AID-etikett, AID-kod, etikettnamn och
+huvudområde, som handboken för kodning, i stället för yrke och yrkesgrupp, och analysenheten är AID-etikett i
+BAS-intervall. Orden står som variabler med ordformer och genus i `src/lib/termer.js`, så att en annan uppsättning byts
+på ett ställe, och vakten i `tests/termer.test.js` håller dem borta från resten av gränssnittet. *Avvisat:* påhittade
+ord (grupp, AID-grupp), som inte blev tydligare; att behålla yrke, som handboken inte använder om etiketterna.
+*Gäller i dag:* `src/lib/termer.js`.

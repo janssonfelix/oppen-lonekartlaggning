@@ -43,10 +43,17 @@ const DEFAULT_PROFILE = Object.freeze({
 });
 
 /**
- * Tillämpar profilens etiketter på alla DOM-noder med data-profile-attribut.
- * Anropas vid uppstart och varje gång state.profile uppdateras.
+ * Tillämpar profilens etiketter på alla DOM-noder med data-profile-attribut, och termerna (ADR-74) på noderna med
+ * data-term-template. Anropas vid uppstart och varje gång state.profile uppdateras.
  */
 function applyProfileLabels() {
+    // Mall som "Kvinnor och män med samma {enhet.en}" → fylls med de gällande termerna (termText, 09-termer.js).
+    // Med data-term-attr fylls det attributet (till exempel data-tip) i stället för texten.
+    document.querySelectorAll('[data-term-template]').forEach(el => {
+        const text = termText(el.getAttribute('data-term-template') || '');
+        const attr = el.getAttribute('data-term-attr');
+        if (attr) el.setAttribute(attr, text); else el.textContent = text;
+    });
     const p = state.profile;
     document.querySelectorAll('[data-profile-label]').forEach(el => {
         const key = el.getAttribute('data-profile-label') || '';

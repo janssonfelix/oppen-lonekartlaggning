@@ -173,7 +173,7 @@ const INFO_SECTIONS = {
 
         <section id="om-aid">
         <h3>AID och sektorer</h3>
-        <p>${esc(AID_METODTEXT)}</p>
+        <p>${esc(termText(AID_METODTEXT))}</p>
         <p>Verktyget känner till AID:s 13 huvudområden — till exempel vård och omsorg, skola och förskola
         och teknik — och använder dem som <strong>sektorer</strong> i sektorsöversikten i Lönestruktur
         och som gruppering i Tabeller och egna vyer. Koder som inte finns i etikettlistan ingår i analyserna men får ingen sektor.</p>
