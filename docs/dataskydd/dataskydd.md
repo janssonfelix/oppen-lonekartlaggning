@@ -20,10 +20,10 @@ Granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående
 | Personuppgiftsansvarig | Arbetsgivaren som genomför kartläggningen |
 | Personuppgiftsbiträde | Inget. Verktyget körs på arbetsgivarens egen dator; ingen uppgift når verktygets leverantör eller någon annan |
 | Rättslig grund | Rättslig förpliktelse (dataskyddsförordningen art. 6.1 c med 6.3): diskrimineringslagens regler om lönekartläggning och dokumentation, se lagrum.md |
-| Uppgifter som läses in | Fyra fält per anställd: månadslön, kön, yrkesgrupp (AID) och BAS-intervall — plus valfri ålder (rekommenderad, ADR-64), valfri arbetsvärderingspoäng per befattning, valfri ansvarskod enligt AID (grupperas i tre ansvarsgrupper; används för att pröva ansvar som sakligt skäl) och radens nummer i källfilen. Alla andra kolumner läses inte in |
+| Uppgifter som läses in | Fyra fält per anställd: månadslön, kön, AID-etikett och BAS-intervall — plus valfri ålder (rekommenderad, ADR-64), valfri arbetsvärderingspoäng per befattning, valfri ansvarskod enligt AID (grupperas i tre ansvarsgrupper; används för att pröva ansvar som sakligt skäl) och radens nummer i källfilen. Alla andra kolumner läses inte in |
 | Uppgifter som avvisas | Lönefilen avvisas helt om en kolumnrubrik anger personnummer, namn eller e-post, eller om någon kolumn i 50 rader spridda jämnt över filen innehåller sådana värden (minst tre personnummer eller e-postadresser, eller minst fem för- och efternamn). Rubrikkontrollen bortser från stora/små bokstäver och svenska tecken, så *Förnamn* och *Fornamn* avvisas båda. Filen avvisas också om en rubrik antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion med mera); där prövas bara rubriken |
 | Organisationens referensdata | Ställningstagande och jämförelsestatistik — som egna filer eller i ett organisationspaket (JSON). Bara aggregat; ett paket med något som liknar personnummer eller e-post avvisas. Ingen organisation eller referens är inbyggd |
-| Särskilda kategorier | Inga (bestämmelserna om särskilda kategorier är inte tillämpliga). Lön är däremot integritetskänslig, och i små grupper kan kombinationen kön, ålder, yrke och BAS peka ut enskilda |
+| Särskilda kategorier | Inga (bestämmelserna om särskilda kategorier är inte tillämpliga). Lön är däremot integritetskänslig, och i små grupper kan kombinationen kön, ålder, AID-etikett och BAS-intervall peka ut enskilda |
 | Lagring | Ingen. Uppgifterna finns bara i webbläsarens arbetsminne och försvinner när fliken stängs eller användaren väljer *Rensa all data* |
 | Överföring | Ingen, inte heller till tredje land. Webbläsaren spärrar all nätverkstrafik |
 
@@ -49,7 +49,7 @@ Granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående
   lagringskod som är skyddet — spärren fångar misstag (riskanalysen §6.2).
 - **Uppgiftsminimering vid inläsningen:** filen läses in i webbläsarens minne och gås
   igenom rad för rad. Bara de godkända fälten sparas, och filens övriga innehåll släpps
-  när inläsningen är klar. Namn som hamnat i yrkesfältet maskeras.
+  när inläsningen är klar. Namn som hamnat i fältet för AID-etikett maskeras.
 - **Skydd mot skadlig indata:** bara verktygets egna skript får köras (hash-baserad CSP).
   All text från filen kodas innan den visas. Formler i CSV och urklipp neutraliseras, så
   att Excel inte kör dem (ADR-15).
@@ -97,17 +97,17 @@ Exporterna byter då inte läge.
   åldersjusterad), lutningen per kön, trendlinjerna med konfidensband och lådorna per kön. Där ett kön är under
   tröskeln står ett streck, och en not under diagrammet säger vad som utelämnats. Livscykelns lönekurva för ett valt
   BAS-intervall med färre än 10 personer ritas inte; en not säger vilket intervall som är valt.
-- **Spridningsdiagrammen:** i bilder och diagramdata finns en persons punkt bara när personens grupp (yrke inom
-  BAS) och personens kön i gruppen når tröskeln. En not säger hur många som inte är med.
+- **Spridningsdiagrammen:** i bilder och diagramdata finns en persons punkt bara när personens grupp (AID-etikett
+  inom BAS-intervallet) och personens kön i gruppen når tröskeln. En not säger hur många som inte är med.
 - **Löneläget:** avsnittet mot ställningstagandet har en mellannivå i exporten. För grupper med 5 eller fler
   men under tröskeln anges antal, inga lönemått. Bladet *Lönepolitik* i Excelfilen med alla flikar följer den
   trappan och samma regel per kön. Överblicken i Löneläget och bladet *Referenser* redovisar organisationens
-  lönemått bara för yrkesgrupper som når tröskeln. Referensernas egna tal och tabellen statistiken mot
+  lönemått bara för AID-etiketter som når tröskeln. Referensernas egna tal och tabellen statistiken mot
   ställningstagandet bär inga organisationsvärden och maskeras inte.
 - **Filter och *Räkna för* i diagrammen:** filtren ovanför diagrammen döljer märken och ändrar inga tal i text och
   tabeller. I *Lön mot ålder* räknas trendlinjerna om ur de punkter som syns, och en linje ritas bara ur minst 10
-  synliga punkter. Raden *Räkna för* räknar om fem sammanfattande diagram för en del av underlaget, till exempel en
-  sektor. Ett sådant val görs bara när både urvalet och resten av underlaget har inga eller minst 10 kvinnor och
+  synliga punkter. Raden *Räkna för* räknar om fem sammanfattande diagram för en del av underlaget, till exempel ett
+  huvudområde. Ett sådant val görs bara när både urvalet och resten av underlaget har inga eller minst 10 kvinnor och
   inga eller minst 10 män, så att en liten grupp inte kan räknas fram som skillnaden mellan två exporter.
   Diagrammets egen export säger vad det är räknat för. Rapporten, utskriften, ZIP-filen och rapportunderlaget visar
   alltid hela underlaget (riskanalysen §6.6).
@@ -156,7 +156,7 @@ golv är minst 10.
 
 Fyra medvetna undantag:
 
-1. **Likvärdigt arbete:** lagen kräver att även små kvinnodominerade yrken prövas. Därför
+1. **Likvärdigt arbete:** lagen kräver att kvinnodominerat arbete prövas också när gruppen är liten. Därför
    redovisar fliken och dess egen export (Excel och CSV) kandidatpar även när en grupp har
    färre än 10 personer. Undantaget gäller bara dit. Överallt annars tas bara par med där båda
    grupperna har minst 10 personer, och utdata anger hur många par som utelämnats. Det gäller
@@ -176,11 +176,11 @@ Fyra medvetna undantag:
 4. **Diagram med en punkt per person:** spridningsdiagrammen lön mot ålder och låddiagrammet
    per kön (Ålder & karriär) och individpunkterna i Tabeller och egna vyer visar varje persons lön.
    I bilder och diagramdata ritar låddiagrammet bara en låda för ett kön som når tröskeln. I
-   spridningsdiagrammen finns en persons punkt bara när personens grupp (yrke inom BAS) och personens kön
-   i gruppen når tröskeln. Övriga personer finns varken i bilden eller i diagramdatan, men
+   spridningsdiagrammen finns en persons punkt bara när personens grupp (AID-etikett inom BAS-intervallet) och
+   personens kön i gruppen når tröskeln. Övriga personer finns varken i bilden eller i diagramdatan, men
    trendlinjen bygger på alla. Demografidelens trendlinje och lutning för hela urvalet exporteras bara när
    urvalet (alla BAS eller det valda) når tröskeln. Annars säger en not under diagrammet det. Lådornas
-   avvikare i låddiagrammet per kön är enskilda löner, utan yrke. De får exporteras som bild och som
+   avvikare i låddiagrammet per kön är enskilda löner, utan AID-etikett. De får exporteras som bild och som
    diagramdata (en rad per person, utan identifierare). Diagramdatan säger på rad 2 att filen
    innehåller en rad per person och ska hanteras som personuppgifter.
    **Word-utkastet och rapportens avsnitt innehåller inga sådana diagram.** Båda ritas ur samma
@@ -193,7 +193,7 @@ Fyra medvetna undantag:
 **Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön.** Översikten per BAS-intervall
 (*Löneskillnad per BAS-intervall* i Lönestruktur) har bara rader för BAS-intervall där både kvinnor och män når
 tröskeln. Det gäller i Word-utkastet, PDF-rapporten och flikens export; på skärmen visas alla intervall. I det
-som exporteras visar trattdiagrammet en punkt per yrkesgrupp, och bara yrkesgrupper där båda könen når tröskeln.
+som exporteras visar trattdiagrammet en punkt per AID-etikett, och bara AID-etiketter där båda könen når tröskeln.
 Lådorna över lönespridning per BAS-intervall och kön ritas bara för ett kön som når tröskeln i intervallet, och
 utan enskilda avvikande löner. Löneskillnaden per åldersgrupp visar bara åldersgrupper där båda könen når
 tröskeln, och de övriga namnges under diagrammet. Fördelningen i lönespannets tredjedelar per kön redovisas bara
@@ -227,10 +227,10 @@ visas bara när varje kön når tröskeln.
 
 **Löneöversyns tröskelmål följer regeln.** Lyftet i procent till kvinnor och dess kostnad visas bara
 när varje kön i urvalet når tröskeln. Annars står ett streck och meningen om utelämnat könsuppdelat
-mått. Verktyget föreslår inga riktade rader ur kandidatpar där det kvinnodominerade yrket eller
-jämförelseyrket har färre personer än tröskeln, inte heller på skärmen, eftersom förslagets belopp räknas ur
-jämförelseyrkets median. Varje kvinnodominerat yrke får en föreslagen rad, mot jämförelseyrket med störst
-skillnad. En riktad rad som verktyget självt föreslog ur kandidatparen tas bort när tröskeln höjs över någon av
+mått. Verktyget föreslår inga riktade rader ur kandidatpar där den kvinnodominerade AID-etiketten eller
+jämförelseetiketten har färre personer än tröskeln, inte heller på skärmen, eftersom förslagets belopp räknas ur
+jämförelseetikettens median. Varje kvinnodominerad AID-etikett får en föreslagen rad, mot jämförelseetiketten med
+störst skillnad. En riktad rad som verktyget självt föreslog ur kandidatparen tas bort när tröskeln höjs över någon av
 parets grupper, också på skärmen. En föreslagen rad ur en konfigurationsfil, som bär uppgiften om vilka rader som
 var förslag men inte vilket par, tas bort när verktyget inte kan avgöra att paret den räknades ur når tröskeln.
 Verktyget säger vid förslagen när en rad har tagits bort. Varningen "underlaget är litet" i Prioriteringens motiveringsförslag visas vid färre
@@ -248,12 +248,12 @@ eller via urklipp — aldrig över nätverket:
 
 | Utdata | Innehåll | Hantering |
 |---|---|---|
-| Excel- och CSV-exporter | Aggregat per grupp. Bladet *Referenser* bär organisationens lönemått per yrkesgrupp som når tröskeln, och referensernas egna tal. Kandidatpar med små grupper ingår bara i likvärdighetsexporten (§3, undantag 1); övriga exporter utelämnar dem och anger antalet. Likvärdighetsexporten, och exporten från Tabeller och egna vyer när rutan för små grupper är ikryssad, anger i filen att den kan innehålla grupper under tröskeln. Handlingsplanens Excel-fil bär också det som fyllts i på fliken Handlingsplan (sakligt skäl, ansvarig, tidsplan och status per rad, och för egna rader åtgärd och berörd grupp), som Word-utkastets åtgärdstabell och utskriften av mallen. De fyra bladen per AID-kod och BAS-intervall (*Lika arbete AID x BAS*, *Likvärdigt arbete*, *Hierarkisk jämförelse*, *Analys på individnivå*) ger en grupp en egen rad från 5 personer med antal per kön men utan lönemått, räknar upp mindre grupper i en not med namn och antal, och redovisar lönemått bara för grupper och kön som når tröskeln (riskanalysen §6.5); lönemånaden ovanför tabellerna är användarens egen text | Som personuppgifter |
+| Excel- och CSV-exporter | Aggregat per grupp. Bladet *Referenser* bär organisationens lönemått per AID-etikett som når tröskeln, och referensernas egna tal. Kandidatpar med små grupper ingår bara i likvärdighetsexporten (§3, undantag 1); övriga exporter utelämnar dem och anger antalet. Likvärdighetsexporten, och exporten från Tabeller och egna vyer när rutan för små grupper är ikryssad, anger i filen att den kan innehålla grupper under tröskeln. Handlingsplanens Excel-fil bär också det som fyllts i på fliken Handlingsplan (sakligt skäl, ansvarig, tidsplan och status per rad, och för egna rader åtgärd och berörd grupp), som Word-utkastets åtgärdstabell och utskriften av mallen. De fyra bladen per AID-kod och BAS-intervall (*Lika arbete AID x BAS*, *Likvärdigt arbete*, *Hierarkisk jämförelse*, *Analys på individnivå*) ger en grupp en egen rad från 5 personer med antal per kön men utan lönemått, räknar upp mindre grupper i en not med namn och antal, och redovisar lönemått bara för grupper och kön som når tröskeln (riskanalysen §6.5); lönemånaden ovanför tabellerna är användarens egen text | Som personuppgifter |
 | Diagramdata från diagram med enskilda personer | En rad per person: lön, kön och ålder eller grupp — utan identifierare | Som personuppgifter |
 | Word-utkast, PDF och utskrift | Verktygets fynd och HR:s egna bedömningar. Tabeller, text och diagrambilder redovisar lönemått för grupper över tröskeln; antal och andelar kan stå också för mindre grupper (§3), bland annat i tabellerna per AID-kod och BAS-intervall och könsfördelningen per BAS-intervall, som har en rad från fem personer med antal och andelar men inga lönemått (ADR-57); kandidatpar med en grupp under tröskeln utelämnas. PDF-rapporten är en låst kopia av Word-utkastet med samma innehåll. Rapportens avsnitt har inga diagram med enskilda personers löner; utskriften av hela dokumentationen (*Komplett rapport*) har bilagor med bilder av Ålder & karriärs spridnings-, låd- och täthetsdiagram (§3, undantag 4) | Som personuppgifter |
 | ZIP-export | Word-utkastet, Excelfilen med alla flikar (aggregat) och bilder av alla ritade diagram från alla flikar. ZIP-filen är alltså inte enbart aggregat: spridningsdiagrammen i Ålder & karriär har en punkt per anställd (bara personer vars grupp och kön i gruppen når tröskeln), och låddiagrammet visar enskilda avvikande löner | Som personuppgifter |
 | Rapportunderlag via urklipp | Aggregat, med lönemått bara för grupper som når minsta gruppstorlek (standard 10); kandidatpar med en grupp under tröskeln utelämnas | Som rapportmaterial |
-| Konfigurationsfil | Inställningar, organisationens namn och jämförelsestatistikens namn (användarens egna namn; text som liknar personnummer eller e-post avvisas), HR:s anteckningar (bedömningarna i Regler & praxis och det som fyllts i på fliken Handlingsplan: sakligt skäl, ansvarig, tidsplan och status per rad, och för egna rader åtgärd och berörd grupp; fritext som liknar personnummer eller e-post ger en varning men sparas), förklaringsmodellen i Lika arbete med skälet (fritext, högst 300 tecken), variablerna i *Var uppstår löneskillnaden?*, definitionen av kvinnodominerat (*Mer än X %* eller *X % eller mer*), lönemånaden (fritext, högst 40 tecken), rapportens innehåll och egna tabeller som recept utan tal (med ett namn som fritext, högst 80 tecken), och avbockningarna i Att göra, och ett årsbokslut (nyckeltal, en rad per yrkesgrupp där båda könen når minsta gruppstorlek och en per BAS-intervall med minst så många personer, med lönespridningen (P90 − P10) / median, Att göra-punkternas läge; ADR-54) — aldrig individrader; noterar vilket organisationspaket som användes | Som övriga exportfiler |
+| Konfigurationsfil | Inställningar, organisationens namn och jämförelsestatistikens namn (användarens egna namn; text som liknar personnummer eller e-post avvisas), HR:s anteckningar (bedömningarna i Regler & praxis och det som fyllts i på fliken Handlingsplan: sakligt skäl, ansvarig, tidsplan och status per rad, och för egna rader åtgärd och berörd grupp; fritext som liknar personnummer eller e-post ger en varning men sparas), förklaringsmodellen i Lika arbete med skälet (fritext, högst 300 tecken), variablerna i *Var uppstår löneskillnaden?*, definitionen av kvinnodominerat (*Mer än X %* eller *X % eller mer*), lönemånaden (fritext, högst 40 tecken), rapportens innehåll och egna tabeller som recept utan tal (med ett namn som fritext, högst 80 tecken), och avbockningarna i Att göra, och ett årsbokslut (nyckeltal, en rad per AID-etikett där båda könen når minsta gruppstorlek och en per BAS-intervall med minst så många personer, med lönespridningen (P90 − P10) / median, Att göra-punkternas läge; ADR-54) — aldrig individrader; noterar vilket organisationspaket som användes | Som övriga exportfiler |
 | Organisationspaket (systemägaren) | Organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik — bara aggregat | Kan spridas internt; innehåller inga personuppgifter |
 
 Det som kopieras till urklipp (tabeller, diagramdata och rapportunderlag) kan synkas till molnet eller
@@ -274,7 +274,7 @@ på gruppnivå — inga namn eller personnummer; texten kontrolleras inte av ver
 3. Hantera alla exporterade filer som personuppgifter: behörighetsstyrd lagring, ingen
    okrypterad e-post, radering när de inte längre behövs.
 4. Bedöm vad som kan spridas innan en fil lämnas vidare. Exporterna kan bära antal och andelar
-   för små grupper och per kön, till exempel antalet kvinnor och män i ett yrke med få personer.
+   för små grupper och per kön, till exempel antalet kvinnor och män i en AID-etikett med få personer.
 5. Var försiktig vid skärmdelning och i öppna kontorsmiljöer.
 6. Stäng fliken eller välj *Rensa all data* när arbetet är klart, och radera källfilen
    enligt organisationens rutiner.

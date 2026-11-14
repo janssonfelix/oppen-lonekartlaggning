@@ -10,4 +10,4 @@ Definition of Done i `.github/CONTRIBUTING.md` (punkt 3):
 - [ ] `npm run kontroll` är grönt.
 - [ ] Ny utdata som lämnar verktyget (text, tabell, bild, fil) ligger i k-riggen (`tests/helpers/ktroskel-rigg.js`)
       och i riskanalysens tabell över utdata. Kryssa om ändringen inte rör något sådant.
-- [ ] Det som syns är sett i webbläsaren, ett diagram också med många yrkesgrupper. Kryssa om inget syns.
+- [ ] Det som syns är sett i webbläsaren, ett diagram också med många AID-etiketter. Kryssa om inget syns.

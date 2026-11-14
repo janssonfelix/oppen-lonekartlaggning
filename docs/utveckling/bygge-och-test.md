@@ -1,8 +1,8 @@
 # Bygge och test — referens
 
 Hur verktyget byggs, testas, typkontrolleras och släpps i dag: körtiden, bygget och dess skyddsnät, versioneringen,
-stilmallen, testsviten och testmiljön, typkontrollen, linten, `npm run kontroll`, CI, releasen och demosidan. Det
-här dokumentet är referensen för den som ändrar bygget, testmiljön, CI eller releasen. Koden och konfigurationen är
+stilmallen, testsviten och testmiljön, typkontrollen, linten, `npm run kontroll`, CI, releasen och demosidan, och
+termerna. Det här dokumentet är referensen för den som ändrar bygget, testmiljön, CI eller releasen. Koden och konfigurationen är
 sanningen; där dokumentet och filerna skiljer sig är det dokumentet som ska rättas.
 
 Dokumentet är inte Definition of Done — vad som krävs innan en ändring är klar står i *Definition of Done* i
@@ -15,13 +15,14 @@ CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas
 | Del | Fil |
 |---|---|
 | Skripten och Node-kravet | `package.json` (`scripts`, `engines`) |
-| Bygget | `tools/build-app.mjs`, `tools/bundle.mjs`, `tools/gen-mirrors.mjs`, `tools/gen-version.mjs`, `tools/lib/minify-css.mjs` |
+| Bygget | `tools/build-app.mjs`, `tools/bundle.mjs`, `tools/gen-mirrors.mjs`, `tools/gen-version.mjs`, `tools/lib/minify-css.mjs`, `tools/lib/minify-html.mjs` |
 | Testsviten och testmiljön | `vitest.config.js`, `tools/test.mjs`, `tests/helpers/app-harness.js` |
 | Webbläsarröktestet och prestandamätningen | `tools/browser-smoke.mjs`, `tools/browser-smoke/`, `tools/perf-smoke.mjs` |
 | Typkontrollen och linten | `tsconfig.json`, `tsconfig.app.json`, `types/globals.d.ts`, `eslint.config.js` |
 | Kedjan lokalt | `tools/kontroll.mjs` |
 | CI, release och demosidan | `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.github/workflows/pages.yml`, `tools/release.mjs`, `tools/site.mjs` |
 | Beroendeuppdateringar | `.github/dependabot.yml` |
+| Termerna | `src/lib/termer.js`, `src/app/09-termer.js`, `tests/termer.test.js` |
 
 ## 1. Körtid och mappar
 
@@ -60,6 +61,8 @@ speglarna är i synk med `src/lib/`.
 - CSS och HTML minifieras; **JS minifieras inte** (template literals bevaras; ADR-2). Förminskningen av stilmallen
   ligger i `tools/lib/minify-css.mjs` med tester i `tests/byggminify.test.js`: strängar och `url()` rörs inte,
   blanksteg runt `+` och `-` i värden står kvar, och blanksteget före en pseudoklass i en väljare står kvar.
+  Förminskningen av sidan ligger i `tools/lib/minify-html.mjs`, med tester i samma fil: blanksteg mellan två
+  textelement (`</span> <em>`) är ett ordmellanrum och blir ett mellanslag, övrigt blanksteg mellan taggar tas bort.
 - Licenstexterna ur `src/licenser.txt` läggs i en inaktiv `<template>` efter sista skriptet, så att CSP:ns
   kontrollsummor inte påverkas.
 - SHA-256 loggas i `dist/RELEASE.txt` tillsammans med version, storlek, källorna och kommandona för att kontrollera
@@ -301,3 +304,20 @@ körtidsberoenden från npm: biblioteken ligger låsta i `vendor/`.
 
 Förteckningen över dokumenten i `docs/`, efter läsare, står i [`docs/README.md`](../README.md), och mapparna i
 `README.md` (*Repot*). Hur filer namnges står i §1. Metoderna beskrivs för användaren i appens flik *Om verktyget*.
+
+## 13. Termerna
+
+Orden för AID:s begrepp (AID-etikett, jämförelseetikett, AID-kod, etikettnamn, huvudområde och BAS-intervall) står bara
+i `STANDARDTERMER` i `src/lib/termer.js` (ADR-74), med de fyra ordformerna och genus per begrepp, så att artikel,
+adjektiv och genitiv böjs rätt. I appen är `T` den gällande uppsättningen (`src/app/09-termer.js`).
+
+- **En text i koden** byggs med `T` och hjälparna (`termFras`, `termArtikel`, `termAdjektiv`, `termGenitiv`, `termStor`,
+  `termForAntal`), aldrig med orden själva. Kommentaren överst i `src/app/09-termer.js` har exemplen.
+- **Fast text** (ordlistan, `src/index.html`) är en mall, `{Enhet.bfl} i samma {niva.en}`, som `termText` fyller. I
+  `index.html` bär elementet mallen i `data-term-template`, och standardtexten står kvar i elementet.
+- **Vakten** `tests/termer.test.js` kräver att de avförda orden (listan `AVFORDA`) och termernas ordformer inte står i
+  synlig text utanför `termer.js`, och att de avförda orden inte står i löptexten i `docs/anvandare/` och
+  `docs/dataskydd/`. Undantagen (lönefilens kolumnnamn, vardagliga ord) står i testet med skäl.
+- **Byta uppsättning** är att ändra `STANDARDTERMER`, eller att ge `skapaTermer` en egen uppsättning i
+  `src/app/09-termer.js` (den avvisar tomma och för långa former), och sedan köra `npm run build:app`. Dokumenten kan inte
+  läsa variablerna och är skrivna med standardorden.

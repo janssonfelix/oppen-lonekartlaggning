@@ -46,8 +46,8 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
 
 ## C. Analys
 
-*Några punkter kan bara verklig data visa (punkt 1 och 3 i `docs/utveckling/oppna-punkter.md`): många yrkesgrupper, trattdiagrammet
-och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag med 42 yrken, och Word-utkastet
+*Några punkter kan bara verklig data visa (punkt 1 och 3 i `docs/utveckling/oppna-punkter.md`): många AID-etiketter, trattdiagrammet
+och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag med 42 AID-etiketter, och Word-utkastet
 är öppnat i Microsoft Word 365 och 2019 med demodatan (avsnitt D).*
 - [ ] **Regressionen** (Lönestruktur, *Vad blir kvar av löneskillnaden?*) körs; ojusterad och **oförklarad** skillnad
       samt per-BAS ser rimliga ut. (Vid tunt underlag visas "Tolka resultatet med försiktighet".)
@@ -59,14 +59,14 @@ och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag me
       *"representativt urval … alla beräkningar använder fullständig data"* visas och
       **KPI:erna räknas på hela underlaget**.
 - [ ] **Regler & praxis:** status och anteckning kan fyllas i för alla sex granskningsområden.
-- [ ] **Många yrkesgrupper:** yrkesgruppstabellen i Lika arbete ryms utan att rulla i sidled, och yrkesnamnen går att
+- [ ] **Många AID-etiketter:** tabellen över AID-etiketterna i Lika arbete ryms utan att rulla i sidled, och etikettnamnen går att
       läsa. Grafiken i raderna (punkten mot linjen för lika lön) stämmer med talet bredvid. *Verktyget är
       utvecklat mot ett litet exempelunderlag och ett påhittat större — din fil är det första riktiga provet.*
 - [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** och diagrammet över **statistikens spann** (Löneläget, avsnittet Överblick) går att läsa med dina grupper.
       Punkterna går att skilja åt, och namnen krockar inte. Bandkartan är inte prövad
-      med många yrken i samma BAS-intervall — notera i avsnitt G om grupper med nästan samma median täcker
+      med många AID-etiketter i samma BAS-intervall — notera i avsnitt G om grupper med nästan samma median täcker
       varandra.
-- [ ] **Sök** (sidhuvudet) hittar ett yrke och markerar det i diagram och tabeller; Escape tar bort markeringen.
+- [ ] **Sök** (sidhuvudet) hittar en AID-etikett och markerar den i diagram och tabeller; Escape tar bort markeringen.
       Ett avsnitt går också att söka fram (prova *regression* eller *förra året*), och sidindexet *På den här sidan*
       leder till flikens avsnitt.
 

@@ -378,7 +378,7 @@ export async function diagramkarnan() {
             return { sida: [document.documentElement.scrollWidth, window.innerWidth], rad: [r.scrollWidth, r.clientWidth], lista: [ul.scrollWidth, ul.clientWidth, ul.scrollHeight > ul.clientHeight],
                 oppen: r.querySelector('details').open, summering: r.querySelector('summary').textContent };
         });
-        ok(matt.oppen && matt.summering === 'Yrkesgrupp: alla 40', `listan öppnas med summeringen (${matt.summering})`);
+        ok(matt.oppen && matt.summering === 'AID-etikett: alla 40', `listan öppnas med summeringen (${matt.summering})`);
         ok(matt.sida[0] <= matt.sida[1] && matt.rad[0] <= matt.rad[1] && matt.lista[0] <= matt.lista[1],
             `listan med 40 långa namn vid 375 punkter: ingen vågrät rullning (sidan ${matt.sida.join(' / ')}, raden ${matt.rad.join(' / ')}, listan ${matt.lista[0]} / ${matt.lista[1]})`);
         ok(matt.lista[2], 'listan rullar lodrätt');
@@ -395,7 +395,7 @@ export async function diagramkarnan() {
         const efter = await page.evaluate(() => ({ punkter: document.querySelectorAll('#chart-rok-lista svg circle[data-marke="punkt"]').length,
             summering: document.querySelector('#rok-lista-kort summary').textContent,
             not: (document.querySelector('#rok-lista-kort [data-rf="urval"]') || {}).textContent || '' }));
-        ok(efter.punkter === 4 && efter.summering === 'Yrkesgrupp: 2 av 40', `två valda yrkesgrupper ritar fyra punkter (${efter.punkter}, ${efter.summering})`);
+        ok(efter.punkter === 4 && efter.summering === 'AID-etikett: 2 av 40', `två valda AID-etiketter ritar fyra punkter (${efter.punkter}, ${efter.summering})`);
         ok(/Trendlinjen för kvinnor gäller urvalet\. Trendlinjen för män gäller urvalet\./.test(efter.not), 'noten säger att trendlinjerna gäller urvalet');
         await rad.locator('input[type="checkbox"]').nth(1).uncheck();
         await page.waitForTimeout(200);
@@ -444,7 +444,7 @@ export async function diagramkarnan() {
             return { ritade: el.querySelectorAll('svg circle[data-marke="punkt"], svg path[data-marke="punkt"]').length, vantat,
                 summering: el.parentElement.querySelector('.diagram-urval[data-urval-falt="yrke"] summary').textContent };
         });
-        ok(tratt.ritade === tratt.vantat && /^Yrkesgrupp: 1 av \d+$/.test(tratt.summering), `trattdiagrammet: en yrkesgrupp i listan ritar dess ${tratt.vantat} punkter (${tratt.ritade}, ${tratt.summering})`);
+        ok(tratt.ritade === tratt.vantat && /^AID-etikett: 1 av \d+$/.test(tratt.summering), `trattdiagrammet: en AID-etikett i listan ritar dess ${tratt.vantat} punkter (${tratt.ritade}, ${tratt.summering})`);
         await page.evaluate(() => { _rfUrvalGlom(); renderTabContent('matrix'); });
         await page.waitForTimeout(200);
     }

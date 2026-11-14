@@ -167,9 +167,9 @@ Domänerna räknas aldrig ur referenserna.
 | `utanSmaGrupper(figur)` | Figuren utan små punkter, utan tömda lager och utan namn på borttagna kategorier och paneler. Originalet rörs inte. Det här är det som får lämnas vidare som **data**. |
 | `kronorSkillnad(medKv, medMa)`, `kronorTipsRad(belopp)` | Skillnaden mellan kvinnors och mäns median i kronor per månad, avrundad till hundratal och negativ när kvinnorna ligger lägre (`null` när en median saknas), och verktygstipsets rad `Skillnad: −3 200 kr/mån`. En vy som visar ett gap i procent och har båda medianerna lägger beloppet på datapunkten som `skillnadKr` (`_kronorFalt` i `03-hjalpfunktioner.js`), så att tipset och diagramdatan bär det. Vyn skickar bara medianer som får redovisas. |
 | `figurTillTabell(figur)` | Diagramdata som rader. Filtrerar inte själv. `ruta` blir en korstabell per lager; övriga `Serie \| x \| y`, med `Undre \| Övre` när figuren har band, intervall, felstaplar eller lådor. En låda skrivs aldrig som individer: en rad per kategori med median, första och tredje kvartilen. Ett lager på höger axel får tillägget ` (höger axel: <titel>)` i serienamnet, ett lager i en panel ` · <panel>`. Bär någon datapunkt `skillnadKr` får tabellen kolumnen `Skillnad (kr/mån)`. |
-| `urvalLista(figur)`, `urvalVarden(figur, dim, { visaSma })`, `urvalSpann(figur, dim, { visaSma })`, `urvalEtikett(figur, dim, v)`, `arBortvald(figur, filter, d)`, `urvalBeskrivning(figur, filter, { visaSma })`, `urvalIntervallText(dim, { min, max })`, `urvalSomLista(dim, antal)`, `urvalAktivt(filter)` | Figurens `urval`. `dim` är en dimension eller dess fält; utan `dim` gäller den första dimensionen av rätt typ. `urvalLista`: dimensionerna som en lista med `typ` utskriven. `urvalVarden` (kategori): de olika värdena (som strängar) bland punkter som har fältet och inte är små (om inte `visaSma`), i bandaxelns ordning när värdet med etiketten insatt är en kategori där, övriga efter i svensk sorteringsordning; utan dimensionen en tom lista. `urvalSpann` (intervall): `{ min, max }` bland punkter som har fältet som ändligt tal och inte är små (om inte `visaSma`), eller null under två olika tal. `urvalEtikett`: mallen med värdet insatt. `arBortvald`: sant när punkten har fältet för en av figurens dimensioner och värdet är bortvalt eller ligger utanför intervallet (gränserna ingår, en saknad gräns gäller inte); en punkt utan fältet påverkas aldrig, och ett filter på ett fält som inte är en dimension gäller inte. `filter` är `{ kategori: Map<falt, Set>, intervall: Map<falt, { min?, max? }> }` eller en mängd (det äldre formatet: första kategoridimensionen). `urvalBeskrivning`: det aktiva filtret som text, en del per dimension ("utan BAS A, BAS N", "10–50 personer i gruppen"); en lista med fler än tre bortvalda säger "bara X, Y" (högst tre valda) eller namnet och antalet ("Yrkesgrupp 12 av 40", räknat bland värdena som får visas); noten och exportens fotrad visar samma text. `urvalSomLista`: sant för `visning: 'lista'` eller fler än `URVAL_LISTA_MAX` värden. `urvalAktivt`: sant när filtret har ett bortvalt värde eller en gräns. |
+| `urvalLista(figur)`, `urvalVarden(figur, dim, { visaSma })`, `urvalSpann(figur, dim, { visaSma })`, `urvalEtikett(figur, dim, v)`, `arBortvald(figur, filter, d)`, `urvalBeskrivning(figur, filter, { visaSma })`, `urvalIntervallText(dim, { min, max })`, `urvalSomLista(dim, antal)`, `urvalAktivt(filter)` | Figurens `urval`. `dim` är en dimension eller dess fält; utan `dim` gäller den första dimensionen av rätt typ. `urvalLista`: dimensionerna som en lista med `typ` utskriven. `urvalVarden` (kategori): de olika värdena (som strängar) bland punkter som har fältet och inte är små (om inte `visaSma`), i bandaxelns ordning när värdet med etiketten insatt är en kategori där, övriga efter i svensk sorteringsordning; utan dimensionen en tom lista. `urvalSpann` (intervall): `{ min, max }` bland punkter som har fältet som ändligt tal och inte är små (om inte `visaSma`), eller null under två olika tal. `urvalEtikett`: mallen med värdet insatt. `arBortvald`: sant när punkten har fältet för en av figurens dimensioner och värdet är bortvalt eller ligger utanför intervallet (gränserna ingår, en saknad gräns gäller inte); en punkt utan fältet påverkas aldrig, och ett filter på ett fält som inte är en dimension gäller inte. `filter` är `{ kategori: Map<falt, Set>, intervall: Map<falt, { min?, max? }> }` eller en mängd (det äldre formatet: första kategoridimensionen). `urvalBeskrivning`: det aktiva filtret som text, en del per dimension ("utan BAS A, BAS N", "10–50 personer i gruppen"); en lista med fler än tre bortvalda säger "bara X, Y" (högst tre valda) eller namnet och antalet ("AID-etikett 12 av 40", räknat bland värdena som får visas); noten och exportens fotrad visar samma text. `urvalSomLista`: sant för `visning: 'lista'` eller fler än `URVAL_LISTA_MAX` värden. `urvalAktivt`: sant när filtret har ett bortvalt värde eller en gräns. |
 | `harleddaLager(figur, filter, { visaSma })`, `harlettNamn(lager)`, `harlettNot(resultat)` | Härledda lager (`harleddAv`). `harleddaLager` ger `{ figur, omraknade, utelamnade }`: utan aktivt filter (eller utan härledda lager) är `figur` samma objekt; annars en ny figur där varje härlett lager har `berakna(synliga punkter som uppfyller villkor)` som data (och dess `serie` när `berakna` ger `{ data, serie }`), eller tom data när källorna har färre än `minN` punkter (`utelamnade: [{ index, namn, minN, antal }]`). Den nya figuren prövas med `valideraFigur`. `harlettNot` ger meningarna "Trendlinjen för kvinnor gäller urvalet." och "Trendlinjen för kvinnor visas inte: färre än 5 synliga punkter.", en per namn. |
-| `underlagKonAntal(underlag, rader)`, `underlagSkyddat(antal, k)`, `underlagVarde(dim, rad)`, `underlagDimension(underlag, falt)`, `underlagVarden(underlag, dim)`, `underlagValet(underlag, filter)`, `underlagProva(underlag, filter)`, `underlagBeskrivning(underlag, filter)`, `namnIMening(namn)` | Figurens `underlag`. `underlagKonAntal`: `{ kv, ma }`. `underlagSkyddat`: sant när vartdera talet är 0 eller minst `k`. `underlagVarden`: `{ varden, utelamnade }`, där `varden` är de värden vars egen grupp klarar regeln (i `ordning`, annars svensk sorteringsordning med tal) och `utelamnade` antalet andra. `underlagValet`: den första dimensionen med ett bortvalt valbart värde, `{ dim, varden, valda }`, eller null. `underlagProva`: `{ ok, valet, valda, antal: { urval, rest } }`, där `ok` är att både urvalet och resten klarar regeln. `underlagBeskrivning`: "sektor Vård", "sektor Vård, Skola", "sektor 4 av 6" eller "sektor: inga". `filter` är `Map<falt, Set>` med de bortvalda värdena. |
+| `underlagKonAntal(underlag, rader)`, `underlagSkyddat(antal, k)`, `underlagVarde(dim, rad)`, `underlagDimension(underlag, falt)`, `underlagVarden(underlag, dim)`, `underlagValet(underlag, filter)`, `underlagProva(underlag, filter)`, `underlagBeskrivning(underlag, filter)`, `namnIMening(namn)` | Figurens `underlag`. `underlagKonAntal`: `{ kv, ma }`. `underlagSkyddat`: sant när vartdera talet är 0 eller minst `k`. `underlagVarden`: `{ varden, utelamnade }`, där `varden` är de värden vars egen grupp klarar regeln (i `ordning`, annars svensk sorteringsordning med tal) och `utelamnade` antalet andra. `underlagValet`: den första dimensionen med ett bortvalt valbart värde, `{ dim, varden, valda }`, eller null. `underlagProva`: `{ ok, valet, valda, antal: { urval, rest } }`, där `ok` är att både urvalet och resten klarar regeln. `underlagBeskrivning`: "huvudområde Teknikarbete", "huvudområde Teknikarbete, Ledningsarbete", "huvudområde 4 av 6" eller "huvudområde: inga". `filter` är `Map<falt, Set>` med de bortvalda värdena. |
 | `skalDoman`, `axelVarden`, `panelerMedLager`, `antalPunkter`, `ladstatistik`, `talformat` | Hjälpare som ritaren och testerna delar. |
 
 ## 3. `ritaFigur(id, figur, val)`
@@ -246,7 +246,7 @@ aktivt och inget fält är fel); den nollställer alla dimensioner, tömmer fäl
   större än högst. Filtret är oförändrat."). Ett intervall får dölja allt: då står "Inga grupper i urvalet" i
   behållaren (`data-rf="tom"`), och raderna och noten står kvar.
 - Kategori som lista (`visning: 'lista'` eller fler än 12 värden; `aria-label="Visa <namn>"`): en hopfälld
-  `<details data-urval-lista>` vars `<summary data-urval-summering>` säger "Yrkesgrupp: 12 av 40" ("Yrkesgrupp: alla
+  `<details data-urval-lista>` vars `<summary data-urval-summering>` säger "AID-etikett: 12 av 40" ("AID-etikett: alla
   40" när inget är bortvalt). Inuti: ett sökfält (`<input type="search" data-urval-sok aria-label="Sök <namn>">`) som
   döljer poster som inte innehåller texten (utan skiftläge), "Markera alla" och "Avmarkera alla"
   (`data-urval-markera="alla|inga"`; med en sökning "Markera träffarna" och "Avmarkera träffarna", och de gäller
@@ -279,56 +279,57 @@ figur med sina egna filter och räknar om för dem.
 Vyerna tar dimensionerna ur `URVAL` (`10-diagramtema.js`): `URVAL.bas` (kategori på `bas`, etikett `'BAS {v}'`),
 `URVAL.antal` (intervall på `n`, gruppens antal personer, format `antal`), `URVAL.konsdominans` (kategori på
 `konsdom`: Kvinnodominerad, Mansdominerad, Blandad), `URVAL.matchning` (kategori på `matchning`: AID + BAS, Endast
-AID), `URVAL.avvikelse` (intervall på `x`, format `pct`), `URVAL.yrkesgrupp` (kategori på `yrke`, visad som
-lista), `URVAL.sektor` (kategori på `sektor`, visad som lista), `URVAL.alder` (intervall på `alder`, format `ar`),
-`URVAL.lon` (intervall på `lon`, format `kr`), `URVAL.aldersgrupp` (kategori på `aldersgrupp`), `URVAL.minstaKon`
-(intervall på `nMin`, antalet av det minst företrädda könet) och `URVAL.lonegap` (intervall på `gap`, format `pct`).
-Varje punkt som hör till ett BAS-intervall bär `bas` med det nakna värdet. Diagram vars punkter är yrkesgrupper har
+AID), `URVAL.avvikelse` (intervall på `x`, format `pct`), `URVAL.yrkesgrupp` (kategori på `yrke`, namnet
+*AID-etikett*, visad som lista), `URVAL.sektor` (kategori på `sektor`, namnet *Huvudområde*, visad som lista),
+`URVAL.alder` (intervall på `alder`, format `ar`), `URVAL.lon` (intervall på `lon`, format `kr`), `URVAL.aldersgrupp`
+(kategori på `aldersgrupp`), `URVAL.minstaKon` (intervall på `nMin`, antalet av det minst företrädda könet) och `URVAL.lonegap` (intervall på `gap`, format `pct`).
+Varje punkt som hör till ett BAS-intervall bär `bas` med det nakna värdet. Diagram vars punkter är AID-etiketter har
 fler dimensioner, och punkterna bär fälten med samma värden som tipset eller tabellen för gruppen (inget nytt röjs):
 prioriteringsmatrisen (BAS, antal, avvikelse), prioriteringens kostnadsdiagram, trattdiagrammet i Lika arbete, krav
 mot lön i Likvärdigt arbete och överblickens bild i Löneläget (BAS, antal), bandkartan (BAS, könsdominans, antal),
 statistikläget (BAS, matchning, könsdominans, antal) och spannen och skillnaden mot statistiken (BAS, matchning,
-antal; en grupp utan statistik har ingen matchning). Ett märke som inte är en yrkesgrupp (bandkartans spann per BAS)
+antal; en grupp utan statistik har ingen matchning). Ett märke som inte är en AID-etikett (bandkartans spann per BAS)
 bär inte `n`, så att antalsfiltret bara läser gruppernas antal. Diagram vars punkter är BAS-intervall, personer eller
 åldersklasser har bara BAS. Regeln är att
 inget räknas om: urvalet ges bara där varje märke (punkt, stapel, spann, låda, linjens hörnpunkt) hör till ett enda
 BAS-intervall, så att ett bortval döljer hela märken. Ett märke som samlar flera intervall (lägena per kön i
 Lönepolitik) skulle räknas om ur det som syns, och sådana figurer har inget BAS-urval. Kandidatparet i Likvärdigt
-arbete har ett: det kvinnodominerade yrkets BAS-intervall, som paret har ett enda av. En trend- eller referenslinje utan
+arbete har ett: den kvinnodominerade AID-etikettens BAS-intervall, som paret har ett enda av. En trend- eller referenslinje utan
 `bas` ritas oavsett urval. Testet i `tests/diagramvyer.test.js` (*BAS-urval på diagrammen där BAS är en dimension*)
 listar vilka diagram som har urvalet och vilka som inte har det.
 
-*Diagramfilter v3* (testerna i *Diagramfilter v3: filtren i vyerna*). Diagrammen med yrkesgrupper har också
-yrkesgrupp och sektor efter BAS: prioriteringens två diagram, trattdiagrammet, statistikläget, spannen och skillnaden mot
-statistiken och överblickens bild (yrkesgrupp och sektor), bandkartan (yrkesgrupp) och krav mot lön (sektor). Sektorn är
-`sektorsnamn(aid)`, samma namn som sektorsöversikten. Övriga:
-- Lön mot ålder (`_konScatterFigur`): BAS (bara när hela urvalet visas), yrkesgrupp, ålder och lön. Punkterna bär `alder`
+*Diagramfilter v3* (testerna i *Diagramfilter v3: filtren i vyerna*). Diagrammen med AID-etiketter har också
+AID-etikett och huvudområde efter BAS: prioriteringens två diagram, trattdiagrammet, statistikläget, spannen och
+skillnaden mot statistiken och överblickens bild (AID-etikett och huvudområde), bandkartan (AID-etikett) och krav mot lön
+(huvudområde). Huvudområdet är `sektorsnamn(aid)`, samma namn som i översikten per huvudområde. Övriga:
+- Lön mot ålder (`_konScatterFigur`): BAS (bara när hela urvalet visas), AID-etikett, ålder och lön. Punkterna bär `alder`
   och `lon` (samma tal som tipset) i stället för att filtren läser `x` och `y`: trendlinjerna och statistikens median har
   också `x` och `y` men ska inte döljas av dem. Trendlinjerna per kön, deras konfidensband och trenden för hela urvalet
   är härledda lager med `minN = kTroskel()` och samma funktioner som vyn (`Stat.linearRegression`,
   `linearRegressionCI`, `_konScatterTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
-  yrkesgrupp är källan alla punktlager och `villkor` väljer könet. Hela urvalets trend byter R² i namnet. Utan filter
+  AID-etikett är källan alla punktlager och `villkor` väljer könet. Hela urvalets trend byter R² i namnet. Utan filter
   är bilden byte för byte densamma som förut. Lön mot ålder per BAS-intervall har samma filter, men trendlinjen i en
   panel räknas inte om (en mening per panel i noten); den gäller alla i intervallet och döljs med sitt BAS-intervall.
-- Trädkartan (`_strukturTradkartaFigur`): BAS, sektor och antal. Båda lagren är härledda ur yrkesgruppernas ytor
+- Trädkartan (`_strukturTradkartaFigur`): BAS, huvudområde och antal. Båda lagren är härledda ur AID-etiketternas ytor
   (lagret nämner sin egen serie): med ett filter läggs kartan om ur de synliga grupperna (`_tradkartaLagen`, samma
   d3.treemap). Det är en egen omritning, inte underlagets mekanism: inget räknas om utöver ytornas läge och storlek
   (BAS-ytans antal är hela intervallets), och eftersom inget nytt aggregat uppstår behövs ingen restregel. Ytan
-  "Övriga små grupper" bär ingen sektor (den samlar flera yrken) och påverkas inte av sektorsfiltret.
+  "Övriga små grupper" bär inget huvudområde (den samlar flera AID-etiketter) och påverkas inte av filtret på
+  huvudområde.
 - Löneskillnaden per åldersgrupp: åldersgrupp och antalet av det minsta könet (`nMin`), också i ett underlag.
 - Ålderskurvan och lönespridningen över ålder: ålder; i spridningen femårsgruppens första år. Pyramiden har inget filter.
-- Sektordiagrammet: sektor och antal (`n`, tabellens Antal).
-- Kandidatparen: det kvinnodominerade yrkets BAS, löneskillnaden (`gap`, tipsets Skillnad) och antalet i det yrket.
-- Löneöversynens före och efter: BAS-intervall eller yrkesgrupp efter nivån, och antal (`foreEfterFigur` för vidare
+- Diagrammet per huvudområde: huvudområde och antal (`n`, tabellens Antal).
+- Kandidatparen: den kvinnodominerade AID-etikettens BAS, löneskillnaden (`gap`, tipsets Skillnad) och antalet i den.
+- Löneöversynens före och efter: BAS-intervall eller AID-etikett efter nivån, och antal (`foreEfterFigur` för vidare
   `bas`, `yrke` och `n`).
-- Årsbokslutet per yrkesgrupp: BAS, yrkesgrupp och antal. Bokslutet sparar inte gruppens BAS; det läses ur årets
-  lönefil och sätts bara när yrket finns i ett enda BAS-intervall.
+- Årsbokslutet per AID-etikett: BAS, AID-etikett och antal. Bokslutet sparar inte gruppens BAS; det läses ur årets
+  lönefil och sätts bara när AID-etiketten finns i ett enda BAS-intervall.
 
 **Underlaget: raden "Räkna för".** Ett filter (`urval`) döljer märken; ett underlag (`underlag`) räknar om hela
 diagrammet för en del av personerna. Det ges till sammanfattande diagram vars märken samlar många personer, där ett
 dolt märke inte vore något urval: lådor och histogram per kön, löneskillnaden per åldersgrupp, percentilerna och
 kvartilerna. `ritaFigur` lägger då en rad per dimension före filterraderna, `<div class="diagram-urval" role="group"
-data-underlag data-urval-falt="underlag:<falt>" aria-label="Räkna för <namn>">`, med texten "Räkna för sektor" först
+data-underlag data-urval-falt="underlag:<falt>" aria-label="Räkna för <namn>">`, med texten "Räkna för huvudområde" först
 och knappar eller (med `visning: 'lista'`) en lista med kryssrutor som filterraderna (avsnittet ovan). Efter den sista
 raden står knappen "Räkna för alla" (`data-underlag-alla`), dold när hela underlaget visas. Bara värden vars egen grupp
 klarar regeln går att välja; finns andra står "N till går inte att välja för sig: färre än k kvinnor eller män"
@@ -338,29 +339,29 @@ klarar regeln går att välja; finns andra står "N till går inte att välja f�
 män. Resten är personerna i `underlag.rader` (hela det underlag vyn ritar: i Ålder & karriär fliken valda BAS-intervall
 eller hela urvalet, i Lönestruktur hela urvalet) som inte är med i valet. Utan regeln för resten kunde två exporter —
 hela underlaget och urvalet — ge en liten grupp genom subtraktion. Eftersom bara valbara värden kan väljas och bara en
-dimension åt gången (ett val i en annan dimension tar bort det förra, och noten säger "Valet för sektor togs bort:
+dimension åt gången (ett val i en annan dimension tar bort det förra, och noten säger "Valet för huvudområde togs bort:
 diagrammet räknas för en sak i taget."), är skillnaden mellan två godkända val alltid en förening av grupper som själva
 klarar regeln. Ett val som bryter regeln görs inte: kontrollen får `aria-invalid="true"` och noten börjar "Urvalet eller
 resten har färre än k kvinnor eller män. Valet är inte gjort, och diagrammet är oförändrat." På skärmen är `k` =
 `K_SKARM` (1, ADR-51), så regeln avvisar nästan inget där; i exportläget (`medExportLage`) ritar vyn om med den inställda
-tröskeln, och ett minne som då bryter regeln släpps: "… Det tidigare valet för sektor gäller inte, och diagrammet visar
+tröskeln, och ett minne som då bryter regeln släpps: "… Det tidigare valet för huvudområde gäller inte, och diagrammet visar
 hela underlaget."
 
 *Noten och ritningen.* Med ett val ritar `_rfRitaOm` figuren från `rita(valdaRader, { beskrivning })`, buren i
 `_rfUnderlagFigur`; ger `rita` en text, eller är urvalet tomt ("Inga personer i urvalet"), visas den som tomt läge.
-Noten (`data-rf="urval"`) säger "Diagrammet är räknat för: sektor Vård (60 personer). Talen i texten och tabellerna
+Noten (`data-rf="urval"`) säger "Diagrammet är räknat för: huvudområde Teknikarbete (60 personer). Talen i texten och tabellerna
 gäller hela underlaget." Valet minns per diagram och dimension (`<id>|underlag:<falt>`) som filtren, och kopiorna i Alla
 diagram har sitt eget.
 
 *Export.* Exportmenyns bild och diagramdata följer valet: bilden ritas ur underlagsfiguren, fotraden får " · Räknat för:
-sektor Vård" (vyns `exportBeskrivning` lämnas då bort, eftersom den beskriver hela underlaget), och diagramdatan får
-raden "Räknat för: sektor Vård". Ger valet tomt läge exporteras inget. `diagramTillBild` (rapport, utskrift, ZIP,
+huvudområde Teknikarbete" (vyns `exportBeskrivning` lämnas då bort, eftersom den beskriver hela underlaget), och diagramdatan får
+raden "Räknat för: huvudområde Teknikarbete". Ger valet tomt läge exporteras inget. `diagramTillBild` (rapport, utskrift, ZIP,
 rapportunderlag) ritar alltid hela underlaget.
 
-`UNDERLAG` (`10-diagramtema.js`) har `sektor` (`groupKey(r, 'sektor')`, lista), `aldersgrupp` (`groupKey(r, 'alder')`,
-lista, i åldersordning), `yrkesgrupp` (`r.yrke`, lista) och `bas` (`r.bas`, etikett `'BAS {v}'`). Lådorna och histogrammet
-i Ålder & karriär har sektor och åldersgrupp, löneskillnaden per åldersgrupp sektor och yrkesgrupp, percentilerna och
-kvartilerna i Lönestruktur sektor och BAS. Testerna står i `tests/figur.test.js`, `tests/diagramurval.test.js`
+`UNDERLAG` (`10-diagramtema.js`) har `sektor` (huvudområdet, `groupKey(r, 'sektor')`, lista), `aldersgrupp`
+(`groupKey(r, 'alder')`, lista, i åldersordning), `yrkesgrupp` (AID-etiketten, `r.yrke`, lista) och `bas` (`r.bas`,
+etikett `'BAS {v}'`). Lådorna och histogrammet i Ålder & karriär har huvudområde och åldersgrupp, löneskillnaden per
+åldersgrupp huvudområde och AID-etikett, percentilerna och kvartilerna i Lönestruktur huvudområde och BAS. Testerna står i `tests/figur.test.js`, `tests/diagramurval.test.js`
 (*underlag: Räkna för*) och `tests/ktroskel-invarianter.test.js` (I6: precis under och precis över regeln i exportläget).
 
 **Rubrik och fotrad i exporten.** `figurTillSvg` och `figurTillBild` tar `rubrik` och `fot` (en rad var, avkortas).
@@ -368,7 +369,7 @@ Exportmenyn och den gemensamma bildvägen sätter dem: rubriken är kortets rubr
 följt av urvalet om vyn har angett `exportBeskrivning`. Skärmens diagram har varken rubrik eller fot — kortet har
 dem redan. Utskriften sätter egna rubriker och får därför bilderna utan.
 
-**Länkade vyer: fältet `markering`.** En datapunkt som hör till ett BAS-intervall eller en yrkesgrupp bär
+**Länkade vyer: fältet `markering`.** En datapunkt som hör till ett BAS-intervall eller en AID-etikett bär
 `markering: markeringFor(bas, aid?)` — `['bas:C']` eller `['bas:C', 'grupp:207011|C']`. Ett klick på märket markerar
 gruppen (den mest specifika nyckeln) i hela verktyget, och varje ritat diagram framhäver sina märken för gruppen
 och tonar ned de andra (`11-markering.js`). Kärnan gör det efter varje ritning och när markeringen ändras, utan
@@ -577,7 +578,7 @@ ett trasigt diagram.
   Ofylld finns bara per lager (`ofylld`), inte per punkt: en vy som blandar fyllda och ofyllda punkter i en serie
   delar den i två lager (statistikens spann i Löneläget har sex: tre klasser för könsdominans, fylld och ofylld).
 - Punkter som ligger på varandra flyttas inte isär (bara deras etiketter): många grupper med nästan samma värde
-  i samma kategori täcker varandra (sett i bandkartan och i *Krav mot lön* med ett fyrtiotal yrkesgrupper).
+  i samma kategori täcker varandra (sett i bandkartan och i *Krav mot lön* med ett fyrtiotal AID-etiketter).
 - WebKit körs inte direkt på utvecklingsdatorn (systembibliotek saknas) utan i en behållare: `npm run test:browser:webkit:behallare` (Podman och Playwrights avbild, utan nätverk, projektet monterat skrivskyddat). Avbildens version ska följa Playwrights version i `package.json`.
 
 ## 10. Form och färg efter uppgift
@@ -631,6 +632,6 @@ intervallet är skillnadens eget.
 
 **Många kategorier.** Liggande staplar, hantlar och punkter per kategori ritas med `paneler: 'auto'`, så att mer än femton kategorier blir små multiplar (hanteln i Tabeller och egna vyer, de två figurerna mot statistiken i Löneläget). Kandidatparens figur visar högst 14 par och behöver det inte.
 
-**Pröva med många grupper.** Demodatan har åtta yrkesgrupper. Tre fel syntes först med ett fyrtiotal: en tabell
+**Pröva med många grupper.** Demodatan har åtta AID-etiketter. Tre fel syntes först med ett fyrtiotal: en tabell
 som inte rymdes, namn som låg på varandra och ett diagram som blev över tusen punkter högt. Ett nytt diagram ska
 ses med ett stort underlag innan det är klart.

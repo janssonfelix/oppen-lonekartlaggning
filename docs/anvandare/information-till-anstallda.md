@@ -16,7 +16,7 @@ bedöma enskilda personer.
 
 **Vilka uppgifter används?**
 Från personal- och lönesystemet tas följande uppgifter om varje anställd: månadslön omräknad till heltid, kön,
-ålder, yrkesgrupp och befattningens nivå i arbetsvärderingen.[ Dessutom tas uppgift om chefs- eller
+ålder, AID-etikett (den grupp av arbetsuppgifter man är klassificerad i) och befattningens nivå i arbetsvärderingen.[ Dessutom tas uppgift om chefs- eller
 specialistuppdrag med.]
 Namn, personnummer och kontaktuppgifter tas inte med.
 

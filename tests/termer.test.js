@@ -6,7 +6,8 @@
  * Vakten håller de avförda orden (yrke, yrkesgrupp, jämförelseyrke, yrkeskod, yrkesbenämning, AID-grupp, sektor
  * om AID:s huvudområde) och termernas egna ordformer borta från det användaren läser i src/app/, src/lib/ och
  * src/index.html, på samma sätt som tests/farger.test.js håller färgkoderna på ett ställe. Alla filer prövas; det
- * som får stå kvar står som uttryckliga undantag med skäl nedan.
+ * som får stå kvar står som uttryckliga undantag med skäl nedan. Användardokumenten (docs/anvandare/, docs/dataskydd/)
+ * prövas för de avförda orden i löptexten.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -341,5 +342,44 @@ describe('vakt: AID:s ord står bara i termer.js (ADR-74)', () => {
     it('index.html har samma metodtext som AID_METODTEXT', () => {
         const d = new JSDOM(läs('src/index.html')).window.document;
         expect(d.querySelector('#la-aid-bakgrund span[data-term-template]').getAttribute('data-term-template')).toBe(AID_METODTEXT);
+    });
+});
+
+// ---- Användardokumenten ----
+// Dokumenten för användaren och dataskyddet kan inte läsa termerna och är skrivna med standardorden; de avförda orden får
+// inte stå där heller. Termernas ordformer prövas inte (dokumenten skriver dem), och kod inom backtick prövas inte: där
+// står namn i koden och lönefilens kolumnnamn. Utvecklardokumenten i docs/utveckling/ prövas inte.
+const DOK_KATALOGER = ['docs/anvandare', 'docs/dataskydd'];
+// Ord: verbet styrka (styrker) är inget yrke.
+const DOK_UNDANTAG_ORD = /^[Ss]tyrk\p{Ll}*$/u;
+const DOK_UNDANTAG_FRASER = [
+    { fil: 'docs/anvandare/datauttag.md', fras: '*Yrke* eller *Befattning*', skal: 'lönefilens kolumnnamn, som verktyget känner igen (ALLOWED_FIELDS)' },
+    { fil: 'docs/anvandare/korguide.md', fras: '*Yrke* eller *Befattning*', skal: 'lönefilens kolumnnamn, som verktyget känner igen (ALLOWED_FIELDS)' },
+];
+const DOKUMENT = DOK_KATALOGER.flatMap(k => readdirSync(join(ROOT, k)).filter(f => f.endsWith('.md')).map(f => `${k}/${f}`));
+
+/** De avförda orden i en text ur ett dokument, utan kod inom backtick (också över radbrytning) och undantagen. */
+function dokTraffar(text, fil = '') {
+    let t = text.replace(/`[^`]*`/g, ' ');
+    for (const u of DOK_UNDANTAG_FRASER) if (u.fil === fil) t = t.split(u.fras).join(' ');
+    const ut = [];
+    for (const [namn, re] of AVFORDA) for (const m of t.matchAll(re))
+        if (!UNDANTAG_ORD.test(m[0]) && !DOK_UNDANTAG_ORD.test(m[0])) ut.push(`${namn}: ${m[0]}`);
+    return ut;
+}
+
+describe('vakt: användardokumenten har inte de avförda orden (ADR-74)', () => {
+    it('mönstret släpper kod inom backtick och undantagen men fångar orden i löptext', () => {
+        expect(DOKUMENT).toContain('docs/anvandare/korguide.md');
+        expect(DOKUMENT).toContain('docs/dataskydd/riskanalys.md');
+        expect(dokTraffar('Signaturen styrker. Fältet `yrke` och `{ "yrke": […],\n "lon": […] }`; bristyrke.')).toEqual([]);
+        expect(dokTraffar('Kolumnen heter ofta *Yrke* eller *Befattning*.', 'docs/anvandare/korguide.md')).toEqual([]);
+        expect(dokTraffar('kvinnor och män i samma yrke, per sektor, *Yrke*')).toEqual(['yrke: yrke', 'yrke: Yrke', 'sektor: sektor']);
+    });
+    it('inget dokument i docs/anvandare/ och docs/dataskydd/ har avförda ord i löptexten', () => {
+        expect(DOKUMENT.flatMap(f => dokTraffar(läs(f), f).map(n => `${f}: ${n}`))).toEqual([]);
+    });
+    it('undantagen står där de sägs stå', () => {
+        for (const u of DOK_UNDANTAG_FRASER) expect(läs(u.fil), `${u.fil}: ${u.fras}`).toContain(u.fras);
     });
 });
