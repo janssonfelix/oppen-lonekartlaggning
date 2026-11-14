@@ -24715,6 +24715,9 @@ function _forecastSaveScenario(slot) {
         targetsCount: state.forecast.targets.length,
         // Antalen följer med, så att jämförelsen kan pröva rågapet mot den tröskel som gäller när den visas.
         nKv, nMa,
+        // Grupperna med påslag (som utfallets rader), så att Till kv-dom kan prövas med samma regel som Varav till
+        // kvinnodominerade grupper mot den tröskel som gäller när jämförelsen visas (ADR-70, _renderScenarioCompare).
+        grupper: o.alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5).map(g => ({ bas: g.bas, aid: g.aid, n: g.n, andelKv: g.andelKv, kostnad: g.kostnad })),
         summary: {
             använt: o.använt, totalKostnad: o.totalKostnad,
             rawGapFore: konOk ? o.rawGapFore : null, rawGapEfter: konOk ? o.rawGapEfter : null,
@@ -24738,7 +24741,11 @@ function _renderScenarioCompare() {
     const nu = _konAntal(getData());
     const konOk = s => _konFarRedovisas(s.nKv ?? nu.nKv, s.nMa ?? nu.nMa);
     const maskerat = [sc.A, sc.B].some(s => s && s.summary.rawGapEfter != null && !konOk(s));
-    const col = (s) => s ? `<td class="t-hoger">${kr(s.summary.använt)}</td><td class="t-hoger">${kr(s.summary.totalKostnad)}</td><td class="t-hoger">${andelAvMan(konOk(s) ? s.summary.rawGapEfter : null)}</td><td class="t-hoger">${pc(s.summary.oforklaratEfter)}</td><td class="t-hoger">${kr(s.summary.equityCost)}</td><td class="t-hoger">${s.summary.leapfrog}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
+    // Till kv-dom följer regeln för Varav till kvinnodominerade grupper i utfallet, med samma funktion: i exportläget
+    // står talet bara när det inte ger en del av den samlade kostnaden för grupperna under tröskeln (ADR-70).
+    const K = kTroskel();
+    const tillKvDom = s => Array.isArray(s.grupper) ? _fcVaravKvDom(_fcUtfallsrader(s.grupper, K), s.summary.equityCost, K) : null;
+    const col = (s) => s ? `<td class="t-hoger">${kr(s.summary.använt)}</td><td class="t-hoger">${kr(s.summary.totalKostnad)}</td><td class="t-hoger">${andelAvMan(konOk(s) ? s.summary.rawGapEfter : null)}</td><td class="t-hoger">${pc(s.summary.oforklaratEfter)}</td><td class="t-hoger">${kr(tillKvDom(s))}</td><td class="t-hoger">${s.summary.leapfrog}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
     host.innerHTML = `<table class="data-table fs-sm">
         <thead><tr><th>Scenario</th><th class="t-hoger">Använt/mån</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kv. median i % av mäns, efter</th><th class="t-hoger">Oförkl. efter</th><th class="t-hoger">Till kv-dom</th><th class="t-hoger">Spillover</th></tr></thead>
         <tbody>
