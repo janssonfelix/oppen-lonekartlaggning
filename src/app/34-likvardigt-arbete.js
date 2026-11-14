@@ -305,7 +305,7 @@ function renderLikvardighet() {
                     varav <strong>${d.jämförelse.statHögre} där jämförelseyrkets median är högre</strong> än det kvinnodominerade yrkets
                     (${d.jämförelse.statLägreEllerLika} där jämförelseyrket ≤ organisation — visas ej, inget problem med likvärdigt arbete).
                     <br><span class="f-dampad">Flaggade par: <strong>${d.jämförelse.internaPar}</strong> interna (organisation mot organisation),
-                    <strong>${d.jämförelse.externaPar}</strong> externa (mot jämförelsestatistiken)${d.jämförelse.basMedExternFallback > 0 ? ` — ${d.jämförelse.basMedExternFallback} ${d.jämförelse.basMedExternFallback === 1 ? 'kvinnodominerad grupp' : 'kvinnodominerade grupper'} (AID-kod i ett BAS-intervall) hade ingen jämförelsegrupp i organisationen och jämfördes i stället med jämförelsestatistiken` : ''}.</span>
+                    <strong>${d.jämförelse.externaPar}</strong> externa (mot jämförelsestatistiken)${d.jämförelse.basMedExternFallback > 0 ? ` — ${d.jämförelse.basMedExternFallback} ${d.jämförelse.basMedExternFallback === 1 ? 'kvinnodominerad AID-etikett' : 'kvinnodominerade AID-etiketter'} (i ett BAS-intervall) hade ingen AID-etikett att jämföra med i organisationen och jämfördes i stället med jämförelsestatistiken` : ''}.</span>
                 </div>` : ''}
         </div>`;
 
@@ -905,7 +905,7 @@ function _exportLikvardighetCSVExport() {
     rows.push(['Antal par', result.pairs.length]);
     rows.push(['•varav interna (organisation mot organisation)', result.diagnostik?.jämförelse?.internaPar ?? 0]);
     rows.push(['•varav externa (mot jämförelsestatistiken)', result.diagnostik?.jämförelse?.externaPar ?? 0]);
-    rows.push(['Kvinnodominerade grupper (AID-kod i BAS-intervall) jämförda med jämförelsestatistiken', result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
+    rows.push(['Kvinnodominerade AID-etiketter (i BAS-intervall) jämförda med jämförelsestatistiken', result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
     rows.push(['Klassificeringskälla — jämförelsestatistiken', result.diagnostik?.statistik?.klassKalla?.lokal ?? 0]);
     rows.push(['Klassificeringskälla — SKR:s personalstatistik', result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
     rows.push(['KI-metod', 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
@@ -1038,7 +1038,7 @@ function _exportLikvardighetExport() {
             ['•varav jämförelseyrke > organisation', safe(() => diagnostik.jämförelse.statHögre, 0)],
             ['Flaggade interna par', safe(() => diagnostik.jämförelse.internaPar, 0)],
             ['Flaggade externa par (jämförelsestatistiken)', safe(() => diagnostik.jämförelse.externaPar, 0)],
-            ['Kvinnodominerade grupper (AID-kod i BAS-intervall) jämförda med jämförelsestatistiken', safe(() => diagnostik.jämförelse.basMedExternFallback, 0)],
+            ['Kvinnodominerade AID-etiketter (i BAS-intervall) jämförda med jämförelsestatistiken', safe(() => diagnostik.jämförelse.basMedExternFallback, 0)],
             ['Par i utdata', pairs.length],
             ['', ''],
             ['— RÄTTSLIG GRUND —', ''],
