@@ -1393,6 +1393,30 @@ function _regStegForRedovisning(reg) {
 }
 
 /**
+ * Regressionens BAS-effekter så som de får redovisas (ADR-70, beslut 2026-11-14). Effekten för ett BAS-intervall med
+ * färre personer än tröskeln ligger nära deras genomsnittliga lönenivå: den skrivs inte ut, och intervallet namnges i
+ * noten (redovisningsformen i ADR-12). Är referensintervallet självt under tröskeln beskriver varje effekt dess nivå
+ * baklänges; då skrivs ingen effekt ut. Modellen och dess referens (ADR-44) ändras inte; bara vad som visas. På
+ * skärmen är tröskeln 1 och allt visas (ADR-51).
+ * @param {any} reg  regressionsresultatet (basEffekter, basRef, basN)
+ * @returns {{effekter: Array|null, utelamnade: string[], referensUtelamnad: boolean, not: string}}
+ *   effekter är null när modellen inte har BAS-effekter; noten är text utan markup.
+ */
+function _basEffekterForRedovisning(reg) {
+    const alla = reg && reg.basEffekter;
+    if (!alla) return { effekter: null, utelamnade: [], referensUtelamnad: false, not: '' };
+    const n = b => (reg.basN && reg.basN[b]) || 0;
+    const k = kTroskel();
+    if (reg.basRef != null && isKMasked(n(reg.basRef))) {
+        return { effekter: [], utelamnade: alla.map(e => e.bas), referensUtelamnad: true,
+            not: `BAS-effekterna visas inte här: referensintervallet, BAS ${reg.basRef}, har färre än ${k} ${personOrd(k)}, och varje effekt mot det skulle visa dess lönenivå. Personerna ingår fortfarande i modellen.` };
+    }
+    const utelamnade = alla.filter(e => isKMasked(n(e.bas))).map(e => e.bas);
+    return { effekter: alla.filter(e => !isKMasked(n(e.bas))), utelamnade, referensUtelamnad: false,
+        not: utelamnade.length ? _kMaskNoteText(utelamnade, 'BAS-intervall|BAS-intervall', k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen') : '' };
+}
+
+/**
  * Not under ett diagram där något utelämnats på grund av tröskeln (samma utseende som tabellernas
  * noter). Tom text tar bort noten. Noten läggs efter diagrammets behållare, så att den inte tränger
  * ihop ritytan.
@@ -1901,6 +1925,25 @@ function kMaskNote(namn, sammanhang, trosk) {
         + `${_kNoteNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna `
         + `peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är `
         + `redovisningen per grupp som utgår.</p>`;
+}
+
+/**
+ * Samma not som text utan markup, för rapportmodellen och kortets egna noter: vad som inte visas (`vad`, i plural)
+ * och var personerna fortfarande ingår (`dar`).
+ * @param {string[]} namn
+ * @param {string} sammanhang  "singular|plural"
+ * @param {number} t           tröskeln
+ * @param {string} vad
+ * @param {string} dar
+ */
+function _kMaskNoteText(namn, sammanhang, t, vad, dar) {
+    const lista = (namn || []).filter(Boolean);
+    if (!lista.length) return '';
+    const n = lista.length;
+    const visade = lista.slice(0, K_NOTE_MAX_NAMN).join(', ') + (n > K_NOTE_MAX_NAMN ? ` och ${n - K_NOTE_MAX_NAMN} till` : '');
+    const text = n === 1 ? vad.replace(/\bderas\b/g, 'dess') : vad;
+    return `${n} ${_kNoteForm(sammanhang, n)} visas inte här: ${visade}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, `
+        + `och ${text}. Personerna ingår fortfarande i ${dar}; det är redovisningen per ${_kNoteForm(sammanhang, 1)} som utgår.`;
 }
 
 /**
@@ -28378,6 +28421,10 @@ function runOLSRegression() {
         });
     }
     const basRef = skattad.bas ? basRef0 : null;
+    // Antal personer per BAS-intervall i modellen: redovisningen av effekterna följer tröskeln (_basEffekterForRedovisning).
+    /** @type {Record<string, number>} */
+    const basN = {};
+    for (const d of raw) basN[d.bas] = (basN[d.bas] || 0) + 1;
 
     // Sekventiell dekomponering på den skattade modellen.
     // Ansvarssteget lyfts ut: det redovisas på en egen rad och påverkar inte huvudtalet.
@@ -28442,6 +28489,7 @@ function runOLSRegression() {
         ageEffect, ageP,
         basEffekter,                          // per BAS-intervall utom referensen: nivå mot referensen (null vid reservmodell)
         basRef,                               // referensintervallet (alfabetiskt första)
+        basN,                                 // antal personer per BAS-intervall i modellen
         basList,                              // alfabetiskt sorterad lista, för referens i UI
         R2: chosen.R2, adjR2: chosen.adjR2,
         rawGapPct,
@@ -29184,6 +29232,8 @@ function renderRegressionCard() {
     // beräknas vid klick (inte i förväg) för att minska minne — pekar bara
     // på bas-namnet och slår upp i r.perBas + bhQByBas vid behov.
     const allM = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
+    // BAS-effekterna så som de får redovisas (ADR-70): intervall under tröskeln namnges i en not.
+    const basEffUt = _basEffekterForRedovisning(r);
     const perBasRows = (r.perBas || []).map(p => {
         if (p.status !== 'ok') {
             const note = p.status === 'too_few' ? `För få: ${p.kvN} kvinnor, ${p.maN} män (kräver minst ${statGolv()} av varje kön)` : 'Singulär';
@@ -29468,13 +29518,14 @@ function renderRegressionCard() {
                         <tr><th>Procentuell löneförändring per levnadsår</th><td>${r.ageEffect >= 0 ? '+' : ''}${svPct(r.ageEffect, 3)}</td></tr>
                         <tr><th>p-värde</th><td>${_formatPValue(r.ageP)}</td></tr>
                     </table>` : ''}
-                    ${r.basEffekter ? `
+                    ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje BAS-intervall har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
-                    <table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
+                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
-                        ${r.basEffekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
-                    </table>
+                        ${basEffUt.effekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
+                    </table>` : ''}
+                    ${basEffUt.not ? `<p class="k-mask-note">${esc(basEffUt.not)}</p>` : ''}
                     ` : ''}
                     <h3>Modellspecifikationer som testades (kaskadval)</h3>
                     <p class="lh-1_7">${triedRow}</p>
@@ -32201,6 +32252,7 @@ function _rmAvsnittenUtanUrval() {
     if (reg && !reg.error) {
         const stegUt = _regStegForRedovisning(reg);
         const kritisk = _laRegGranska(reg);   // säkerställd och minst 3 % (ADR-59); regressionens tal bär ingen direktivmarkering
+        const basEffUt = _basEffekterForRedovisning(reg);   // intervall under tröskeln utelämnas och namnges (ADR-70)
         regression.delar.push(
             dampad(`Skattad modell: log(lön) ~ ${reg.modelDesc} (OLS-regression). Löneskillnaden anges i procent: negativ när kvinnor ligger lägre.`),
             nyckel([
@@ -32211,8 +32263,9 @@ function _rmAvsnittenUtanUrval() {
                 ['R² / justerad R²', `${svPct(reg.R2 * 100, 1)} / ${svPct(reg.adjR2 * 100, 1)}`],
                 ...(reg.basRef != null && !reg.modell.yrkesgrupp ? [['BAS-intervall i modellen', `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`]] : []),
                 ...(reg.modell.yrkesgrupp && reg.yrkesSteg ? [['Yrkesgrupper i modellen', `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : []),
-                ...(reg.basEffekter ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${reg.basEffekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formatPValue(e.p)})`).join('; ')}`]] : []),
+                ...(basEffUt.effekter?.length ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formatPValue(e.p)})`).join('; ')}`]] : []),
             ]));
+        if (basEffUt.not) { regression.delar.push(stycke(basEffUt.not, 'not')); regression.utelamnat.push(basEffUt.referensUtelamnad ? 'BAS-effekterna (referensintervallet under tröskeln)' : 'BAS-effekter för intervall under tröskeln'); }
         // Det bortvalda (ADR-56): en mening per variabel, med skälet.
         for (const b of reg.bortvalt || []) regression.delar.push(stycke(_ruBortvaltNotering(b)));
         if (reg.fellBackFromFull && reg.diagnostics.length) regression.delar.push(stycke(`Notering: den valda modellen kunde inte skattas. Föll tillbaka till ${reg.modelDesc}. ${reg.diagnostics.map(utanTaggar).join(' ')}`));
