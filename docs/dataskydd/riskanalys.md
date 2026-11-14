@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `4e1b8543cf4e34621822a941e640fe28788fd6a960affecdd6b96df13b20dfaa` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-11-07.
+**Bygge:** `2026.11.14` · **Artefakt-SHA-256:** `2eccb9d6f067e1ac44b09775dba1fbd0d2f0caaafb1b383a0ae7fd94470ef331` (se `dist/RELEASE.txt`).
+**Granskningsdatum:** 2026-11-14.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
 Varje teknisk kontroll nedan är **verifierad mot koden och i webbläsaren**, inte antagen. Vad
@@ -15,8 +15,8 @@ verifieringen omfattar, och vad den inte prövar, står i §11.
 
 **Verktyget är en lågrisk-komponent ur dataskyddssynpunkt.** All bearbetning sker
 lokalt i HR-handläggarens webbläsare. Ingen data lämnar enheten, och inget sparas
-persistent. Indata minimeras till fem obligatoriska fält. Till dem kommer valfri arbetsvärderingspoäng per
-befattning, valfri ansvarskod enligt AID och radens nummer i källfilen. Jämfört med molnbaserade verktyg
+persistent. Indata minimeras till fyra obligatoriska fält. Till dem kommer valfri ålder (ADR-64), valfri
+arbetsvärderingspoäng per befattning, valfri ansvarskod enligt AID och radens nummer i källfilen. Jämfört med molnbaserade verktyg
 eller manuell Excel-hantering **minskar** verktyget snarare än ökar de tekniska
 dataskyddsriskerna.
 
@@ -75,7 +75,8 @@ aktivt vid uppladdning (se §6.4).
 - redigerat struktur-narrativ
 - skälet till en vald förklaringsmodell (högst 300 tecken). En text som liknar personnummer eller e-post sparas
   inte från panelen (ADR-56).
-- lönemånaden som skrivs ovanför tabellerna per AID-kod och BAS-intervall (högst 40 tecken, ADR-57).
+- lönemånaden som skrivs ovanför tabellerna per AID-kod och BAS-intervall (högst 40 tecken, ADR-57)
+- namnet på en egen tabell som lagts i rapporten från Tabeller och egna vyer (högst 80 tecken, ADR-52).
 
 Texten lever endast i minnet: handlingsplanens fält i `state.handlingsplan`, förklaringsmodellen i
 `state.forklaringsmodell` och lönemånaden i `state.lonemanad`, alla nollade av *Rensa all data*. Texten
@@ -136,7 +137,7 @@ exporter märks DEMODATA så att syntetisk data aldrig förväxlas med verklig a
 
 **Ej avsett / utanför avgränsningen (hanteras separat av arbetsgivaren):** statlig
 rapportering (direktivets lönerapportering), könsneutrala lönestrukturer (direktivets art. 4 och 6),
-individuella lönebeslut, samt rörliga lönedelar och andra fält än de fem minimerade.
+individuella lönebeslut, samt rörliga lönedelar och andra fält än de godkända (§2).
 Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte i verktyget.
 
 ---
@@ -295,8 +296,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   `_stripHtmlMeta`), och talen läses som tal.
   Det finns **ingen inbyggd referens** (ADR-28). Ställningstagandet och statistiken läses
   in som egna filer eller ur ett **organisationspaket** (JSON). Paketet valideras mot en lista över godkända fält:
-  organisation, utgivare, datum, benämningar, PO-påslag, period, minsta gruppstorlek, de tre låsningarna i
-  ADR-47 och aggregatrader. Valideringen tar bort tecknen `< > " ' &` ur textfälten och kortar dem till 200
+  organisation, utgivare, datum, benämningar, organisationstyp, PO-påslag, period, minsta gruppstorlek, valet av
+  jämförelseyrken i likvärdigt arbete, de tre låsningarna i ADR-47, aggregatrader, rapportens recept (egna tabeller
+  och avsnittet per BAS-intervall, utan tal, ADR-52) och importprofiler (bara rubriknamn). Valideringen tar bort tecknen `< > " ' &` ur textfälten och kortar dem till 200
   tecken. Den avvisar filer över 5 MB, och hela paketet om ett textfält liknar personnummer eller e-post. Ett ogiltigt värde i en låsning
   utelämnas med en varning (`_lasningar` i `src/lib/organisationspaket.js`). Referensens och statistikens
   namn och källa följer med i exporterna. Paketet lagras aldrig i verktyget, och demoläget har
@@ -428,7 +430,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
      PDF-rapportens rubrik, den utskrivna handlingsplanen, rapportunderlagets block och den kopierade gruppdossiern.
 
   Konfigurationsfilen och organisationspaketet bär värdet som ett fält, inte meningen. Flera skattningar läser
-  `statGolv()` = `max(kTroskel(), 10)` och följer inte tröskeln nedåt: regression per BAS, Blinder-Oaxaca,
+  `statGolv()` = `max(kInstalld(), 10)`, lika på skärmen och i exportläget, och följer inte tröskeln nedåt: regression per BAS, Blinder-Oaxaca,
   bootstrap-KI, livscykelmodellen, extremvärdesdetektorn, justerad löneskillnad inom yrke och Personer att granska.
   Verktyget har också andra, fasta golv (ADR-38; de står kvar enligt beslut). Detta betyder alltså inte att alla
   golv är minst 10. En konfigurationsfil eller ett organisationspaket utan fältet ändrar inte gällande värde. En organisation kan sätta sin egen standard i
@@ -663,10 +665,26 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   2026-10-16). Lådorna i Tabeller och egna vyer (individpunkter, punktsvärm, regnmoln) exporteras som
   statistik per grupp, aldrig som individer. Sådana filer ska hanteras som personuppgifter (§8, punkt 1).
 - **Diagrammens urval** (filterraderna ovanför diagrammen: knappar per BAS-intervall och andra kategorier, fälten
-  Minst och Högst för ett tal som antal personer i gruppen) skapar ingen ny utdata: det döljer bara märken på
-  skärmen och räknar inte om något tal. Diagrammets egen exportmeny (PNG/SVG) kan visa samma urval och säger det
-  då i fotraden ("Urval i diagrammet: utan BAS A"); diagramdatan har alla rader och samma rad. Rapporten, Word, PDF, utskriften, ZIP-filen och rapportunderlaget är alltid fullständiga, och urvalet
-  sparas inte i konfigurationsfilen.
+  Minst och Högst för ett tal som antal personer i gruppen, och hopfällda listor för yrkesgrupp och sektor) döljer
+  märken och ändrar inget tal i texten eller tabellerna. Diagrammets egen exportmeny (PNG/SVG) kan visa samma urval
+  och säger det då i fotraden ("Urval i diagrammet: utan BAS A"); diagramdatan har alla rader och samma rad.
+  Ett undantag från att inget räknas om: i *Lön mot ålder* räknas trendlinjerna per kön, deras konfidensband och
+  trenden för hela urvalet om ur de punkter som syns när ett filter är aktivt. En linje räknas bara ur minst så många
+  synliga punkter som tröskeln (`minN = kTroskel()`); annars ritas den inte, och noten och exportens fotrad säger
+  det. Trädkartan i Lönestruktur läggs om ur de synliga grupperna utan att något tal ändras. Rapporten, Word, PDF,
+  utskriften, ZIP-filen och rapportunderlaget är alltid fullständiga, och urvalet sparas inte i konfigurationsfilen.
+- **Räkna för** (raden ovanför fem sammanfattande diagram: lådorna och histogrammet per kön i Ålder & karriär,
+  löneskillnaden per åldersgrupp, och percentilerna och kvartilerna i Lönestruktur) räknar om hela diagrammet för
+  en del av underlaget: en sektor, en åldersgrupp, en yrkesgrupp eller ett BAS-intervall, en sak i taget. Det är ny
+  utdata, eftersom diagrammets egen exportmeny bär det omräknade diagrammet (bilden med "Räknat för: …" i fotraden
+  och diagramdatan med samma rad). Här finns ett differensskydd: ett val görs bara när både urvalet och resten av
+  underlaget har inga eller minst tröskelns antal kvinnor och inga eller minst tröskelns antal män, så att hela
+  underlaget minus urvalet inte ger en liten grupp. En grupp som själv är för liten går inte att välja. På skärmen
+  är tröskeln 1 (ADR-51); i exportläget prövas valet mot den inställda tröskeln, och ett val som då bryter regeln
+  släpps så att diagrammet visar hela underlaget. Rapporten, utskriften, ZIP-filen och rapportunderlaget ritar
+  alltid hela underlaget. Valet minns per diagram under sessionen och sparas inte i konfigurationsfilen. Vaktas av
+  `tests/diagramurval.test.js` och I6 i `tests/ktroskel-invarianter.test.js` (precis under och precis över
+  regeln i exportläget). Inte prövat: innehållet i bilden, som för övriga diagrambilder.
 - **Alla diagram** (underfliken i Tabeller och egna vyer, `74-alla-diagram.js`) skapar ingen ny utdata, men är en ny
   väg till diagrammens exportmeny. Varje diagram där är en kopia av ett diagram i en annan flik, ritad ur källans figur
   (`ut-diagram-<källans id>`), med egna filter och egen meny. Urvalet är detsamma som ZIP-filens (`diagramUrval`): bara
@@ -732,6 +750,12 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 
 **Inställningar:**
 - trösklar, vikter, kostnadsinställningar och bristyrken
+- rapportens innehåll: vilka avsnitt som är med och i vilken ordning (`rapportUrval`), receptet för avsnittet per
+  BAS-intervall (`perBasRecept`) och egna tabeller som recept (`rapportTabeller`, ADR-52): rader, kolumner, mått,
+  urval och ett namn som är fritext, kortat till 80 tecken och prövat bara mot längden. Recepten bär inga tal;
+  tabellerna ritas om ur underlaget i exportläget.
+- val i gränssnittet (`ui`): referens och etiketter i Prioritering, färgning i Ålder & karriär, organisationstyp
+  och jämförelsestatistikens källa, BAS-intervall och sektor
 - löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete
 - förklaringsmodellen (`forklaringsmodell`): vilka variabler regressionen räknar bort och skälet som fritext, kortad
   till 300 tecken. Ett ogiltigt värde ger standard med varning, aldrig fel (ADR-56).
@@ -784,7 +808,7 @@ och text som liknar personnummer eller e-post avvisas. Organisationstypen (kommu
 inställning. Ansvarskoderna och ansvarskolumnens namn ingår inte heller (vaktas av röktest). Inte heller lönedata
 eller anteckningar per år ingår (se §2 i teknisk-plan.md). Organisationspaketet ingår inte. Filen noterar bara
 paketets organisation och datum. Paketets låsningar (ADR-47) ingår inte heller, så en konfigurationsfil kan varken
-sätta eller häva en låsning. BAS-ordningen är fast och ingår inte i filen (se §5 i teknisk-plan.md).
+sätta eller häva en låsning. BAS-ordningen är fast och ingår inte i filen (`docs/utveckling/likvardighetsmodellen.md`).
 
 Filen kan alltså innehålla inställningar och **användarförfattad text**. Den ska hanteras med samma disciplin som
 övriga exportfiler (§8, punkt 1). Anteckningsfältens platshållartext påminner om att skriva på gruppnivå utan namn
@@ -972,6 +996,35 @@ säger detsamma. Releasen bär dessutom en programvaruförteckning (`sbom.cdx.js
 andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppgifter om användare. Testsviten är
 79 filer.
 
+**Granskningen 2026-11-14** prövade hela dokumentet mot koden som ändrats sedan föregående granskning (2026-11-07
+till 2026-11-14: ADR-59–65 och ADR-69–70, diagramfiltren, *Räkna för*, sakliga skäl och delningen av tröskelns
+modul). Varje namngiven fil, funktion, konstant och testfil söktes upp i `src/`, `tools/`, `tests/` och
+bygget; alla finns. Kontrollerat på nytt:
+- CSP-raden i bygget (ordagrant som §6.1, fem skript och fem hashar)
+- sökningen i `dist/app.js` och biblioteksfilerna efter nätverks- och lagringsanrop (träffarna i `dist/app.js` är
+  lagringsspärren och verktygets egen text; 0 `setItem` och 0 `document.cookie` i biblioteken; D3 7.9.2 har ett
+  `new Function(`, fyra `fetch(` och ett `new Image`)
+- att stilmallen saknar `url(`
+- att `buildConfigSnapshot()` inte läser `state.data`, och fälten i ögonblicksbilden mot §6.8
+- att *Rensa all data* nollar `state.gapUppdelning`, `state.rapportTabeller` och `state.perBasRecept`
+- rensningstidens val (30, 60, 90, 120 minuter eller av), `K_STANDARD`, `statGolv()` och `LITET_UNDERLAG`.
+
+Sex påståenden rättades:
+- Obligatoriska fält är fyra, inte fem, sedan ålder blev valfri (ADR-64): §0, §5 och raden *Dataminimering* nedan
+  sade fem.
+- `statGolv()` läser den inställda tröskeln (`kInstalld()`), inte lägets (§6.5).
+- Diagrammens filter räknar om trendlinjerna i *Lön mot ålder*, och *Räkna för* räknar om fem diagram för en del av
+  underlaget med ett differensskydd; §6.6 sade att inget tal räknas om och nämnde inte *Räkna för*.
+- Konfigurationsfilen bär också rapportens innehåll, recepten för egna tabeller (med ett namn som fritext) och val i
+  gränssnittet (§2, §6.8).
+- Organisationspaketets godkända fält är fler än de uppräknade: organisationstyp, valet av jämförelseyrken,
+  rapportens recept och importprofiler (§6.4).
+- Svaret om filens äkthet i §13 hänvisade bara till kontrollsumman; det hänvisar nu till signaturen, som A6.
+
+Testsviten (109 filer) och röktestet i Chromium kördes mot bygget. Inte prövat i den här granskningen: röktestet i
+Firefox och WebKit (det körs i CI) och de påståenden märkta *Verifierat i webbläsare* som inte har ett automatiskt
+test.
+
 | Kontroll | Metod | Resultat |
 |---|---|---|
 | Ingen utgående trafik | Statisk sökning (fetch/XHR/WS/beacon/Worker/IndexedDB/Cache) + CSP-läsning + webbläsarröktestet, som registrerar varje förfrågan från alla sidor under en körning med alla flikar, utskriften och samtliga exporter | ✔ 0 verkliga anrop, 0 nätverksförfrågningar |
@@ -981,7 +1034,7 @@ andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppg
 | Lagringsspärren | Automatiskt test i jsdom och röktest i Chromium och Firefox: `setItem` med olika nycklar, direkt tilldelning och `defineProperty`, i localStorage och sessionStorage; cookie; sökning efter `setItem` i biblioteksfilerna | ✔ varje skrivning kastar, inga undantag, inget lagras; ✔ 0 `setItem` i de fyra biblioteken (§6.2) |
 | Web Workers | Webbläsarröktestet skapar en worker från `blob:` | ✔ avvisas av CSP (`script-src` som reserv för `worker-src`) |
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
-| Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/smoke-ansvar.test.js`) | ✔ 5 obligatoriska fält + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
+| Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/smoke-ansvar.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
 | PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ lönefilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/parsing.test.js` (§6.4) |
 | Namnmaskering | `_cleanYrkeField` + körning i Chromium | ✔ "101 Anna Andersson" → "101 ***" |
 | k-anonymitet | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |
@@ -1044,8 +1097,9 @@ dator (Chrome/Edge, Firefox, Safari 16.4+; surfplatta och mobil stöds inte). In
 serverdrift, inga beroenden, ingen administratörsbehörighet.
 
 **Hur vet vi att filen vi fått är äkta?**
-Jämför filens SHA-256 mot `RELEASE.txt` (kommandon står i filen). Bygget är
-reproducerbart (§6.7, risk A6).
+Verifiera signaturen med `cosign verify-blob` enligt `SECURITY.md`: det är signaturen från
+release-arbetsflödet som styrker äktheten. Kontrollsumman (SHA-256) i `RELEASE.txt` (kommandon står i filen)
+visar bara att filen inte skadats eller förväxlats. Bygget är reproducerbart (§6.7, risk A6).
 
 **Används AI eller molntjänster i analysen?**
 Nej. All beräkning är deterministisk, lokal statistik (OLS-regression,

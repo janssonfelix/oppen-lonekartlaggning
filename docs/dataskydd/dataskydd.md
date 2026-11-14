@@ -7,7 +7,7 @@ dataflöde, tekniska skydd, riskregister och verifieringslogg — finns i
 konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
 [`lagrum.md`](../utveckling/lagrum.md).
 
-**Granskad mot koden:** 2026-11-06.
+**Granskad mot koden:** 2026-11-14.
 
 ---
 
@@ -103,6 +103,13 @@ Exporterna byter då inte läge.
   trappan och samma regel per kön. Överblicken i Löneläget och bladet *Referenser* redovisar organisationens
   lönemått bara för yrkesgrupper som når tröskeln. Referensernas egna tal och tabellen statistiken mot
   ställningstagandet bär inga organisationsvärden och maskeras inte.
+- **Filter och *Räkna för* i diagrammen:** filtren ovanför diagrammen döljer märken och ändrar inga tal i text och
+  tabeller. I *Lön mot ålder* räknas trendlinjerna om ur de punkter som syns, och en linje ritas bara ur minst 10
+  synliga punkter. Raden *Räkna för* räknar om fem sammanfattande diagram för en del av underlaget, till exempel en
+  sektor. Ett sådant val görs bara när både urvalet och resten av underlaget har inga eller minst 10 kvinnor och
+  inga eller minst 10 män, så att en liten grupp inte kan räknas fram som skillnaden mellan två exporter.
+  Diagrammets egen export säger vad det är räknat för. Rapporten, utskriften, ZIP-filen och rapportunderlaget visar
+  alltid hela underlaget (riskanalysen §6.6).
 - **Diagram som aldrig lämnar verktyget:** Personer att granskas diagram är märkt så i koden, med ett uppräknat
   skäl som står i behållarens verktygstips. Ingen exportväg (meny, bild, diagramdata, ZIP, utskrift) tar med det.
 
@@ -245,7 +252,7 @@ eller via urklipp — aldrig över nätverket:
 | Word-utkast, PDF och utskrift | Verktygets fynd och HR:s egna bedömningar. Tabeller, text och diagrambilder redovisar lönemått för grupper över tröskeln; antal och andelar kan stå också för mindre grupper (§3), bland annat i tabellerna per AID-kod och BAS-intervall och könsfördelningen per BAS-intervall, som har en rad från fem personer med antal och andelar men inga lönemått (ADR-57); kandidatpar med en grupp under tröskeln utelämnas. PDF-rapporten är en låst kopia av Word-utkastet med samma innehåll. Rapportens avsnitt har inga diagram med enskilda personers löner; utskriften av hela dokumentationen (*Komplett rapport*) har bilagor med bilder av Ålder & karriärs spridnings-, låd- och täthetsdiagram (§3, undantag 4) | Som personuppgifter |
 | ZIP-export | Word-utkastet, Excelfilen med alla flikar (aggregat) och bilder av alla ritade diagram från alla flikar. ZIP-filen är alltså inte enbart aggregat: spridningsdiagrammen i Ålder & karriär har en punkt per anställd (bara personer vars grupp och kön i gruppen når tröskeln), och låddiagrammet visar enskilda avvikande löner | Som personuppgifter |
 | Rapportunderlag via urklipp | Aggregat, med lönemått bara för grupper som når minsta gruppstorlek (standard 10); kandidatpar med en grupp under tröskeln utelämnas | Som rapportmaterial |
-| Konfigurationsfil | Inställningar, organisationens namn och jämförelsestatistikens namn (användarens egna namn; text som liknar personnummer eller e-post avvisas), HR:s anteckningar (bedömningarna i Regler & praxis och det som fyllts i på fliken Handlingsplan: sakligt skäl, ansvarig, tidsplan och status per rad, och för egna rader åtgärd och berörd grupp; fritext som liknar personnummer eller e-post ger en varning men sparas), förklaringsmodellen i Lika arbete med skälet (fritext, högst 300 tecken), definitionen av kvinnodominerat (DO eller SCB) och lönemånaden (fritext, högst 40 tecken), och avbockningarna i Att göra, och ett årsbokslut (nyckeltal, en rad per yrkesgrupp där båda könen når minsta gruppstorlek och en per BAS-intervall med minst så många personer, med lönespridningen (P90 − P10) / median, Att göra-punkternas läge; ADR-54) — aldrig individrader; noterar vilket organisationspaket som användes | Som övriga exportfiler |
+| Konfigurationsfil | Inställningar, organisationens namn och jämförelsestatistikens namn (användarens egna namn; text som liknar personnummer eller e-post avvisas), HR:s anteckningar (bedömningarna i Regler & praxis och det som fyllts i på fliken Handlingsplan: sakligt skäl, ansvarig, tidsplan och status per rad, och för egna rader åtgärd och berörd grupp; fritext som liknar personnummer eller e-post ger en varning men sparas), förklaringsmodellen i Lika arbete med skälet (fritext, högst 300 tecken), variablerna i *Var uppstår löneskillnaden?*, definitionen av kvinnodominerat (DO eller SCB), lönemånaden (fritext, högst 40 tecken), rapportens innehåll och egna tabeller som recept utan tal (med ett namn som fritext, högst 80 tecken), och avbockningarna i Att göra, och ett årsbokslut (nyckeltal, en rad per yrkesgrupp där båda könen når minsta gruppstorlek och en per BAS-intervall med minst så många personer, med lönespridningen (P90 − P10) / median, Att göra-punkternas läge; ADR-54) — aldrig individrader; noterar vilket organisationspaket som användes | Som övriga exportfiler |
 | Organisationspaket (systemägaren) | Organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik — bara aggregat | Kan spridas internt; innehåller inga personuppgifter |
 
 Det som kopieras till urklipp (tabeller, diagramdata och rapportunderlag) kan synkas till molnet eller

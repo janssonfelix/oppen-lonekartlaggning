@@ -4,7 +4,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`.
 
-## Oförlöst
+## 2026.11.14
 
 ### Gränssnitt
 
@@ -459,6 +459,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
 
 ### Dataskydd
+
+- **Dataskyddsdokumenten granskade mot koden inför versionen.** Risk- och sårbarhetsanalysen och
+  dataskyddsbeskrivningen är lästa påstående för påstående mot koden (granskningen 2026-11-14 i riskanalysen §11).
+  Sex påståenden är rättade: de obligatoriska fälten är fyra sedan ålder blev valfri, `statGolv()` läser den
+  inställda tröskeln, diagrammens filter och *Räkna för* är beskrivna med sin skyddsregel, konfigurationsfilen och
+  organisationspaketet har fler fält än de uppräknade, och svaret om filens äkthet hänvisar till signaturen.
+  Ingen kod är ändrad.
 
 - **Skyddet gäller lönemått (ADR-70).** Minsta gruppstorlek gäller lönemått, som förut. Antal och andelar, också per
   kön, för en grupp eller ett kön under tröskeln omfattas inte av skyddet utöver de golv som redan är beslutade
