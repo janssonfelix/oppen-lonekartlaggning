@@ -23,6 +23,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   var cellen *Kvinnors lön i % av mäns* rosa och halvfet när kvinnor låg mer än 5 % lägre vid percentilen, utan
   prövning. Cellen är nu neutral, som uppmärksamhetstrappan kräver (ADR-59); stapeln bredvid visar fortfarande
   skillnadens riktning och storlek.
+- **Livscykeln har en gräns för om samspelet mellan kön och ålder är säkerställt.** Rutan, Att utforska och
+  nyckeltalet räknade samspelet som säkerställt vid p < 0,10, medan tolkningstexten räknade det som inte säkerställt
+  först vid p > 0,10, så att de sade olika saker vid exakt 0,10. Alla fyra använder nu samma regel: säkerställt när
+  något av de två p-värdena är under 0,10; exakt 0,10 är inte säkerställt.
 
 ### Exporter
 

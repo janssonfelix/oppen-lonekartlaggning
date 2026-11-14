@@ -6,8 +6,9 @@
  * bara "ser rimlig ut" utan faktiskt skattar det den säger att den skattar.
  */
 import { describe, it, expect } from 'vitest';
-import { livscykelRegression, livscykelNiva } from '../src/lib/livscykel.js';
+import { livscykelRegression, livscykelNiva, samspelSakerstallt, SAMSPEL_GRANS } from '../src/lib/livscykel.js';
 import { fitOLS } from '../src/lib/stat.js';
+import { readFileSync } from 'node:fs';
 
 function lcg(seed) {
     return () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
@@ -220,5 +221,31 @@ describe('livscykelRegression: lönefil utan ålder (ADR-64)', () => {
         const res = livscykelRegression(fixtur(240).map(d => ({ ...d, alder: 0 })), { golv: 10 });
         expect(res.errorCode).toBe('no_age');
         expect(res.error).toMatch(/ålder/i);
+    });
+});
+
+describe('samspelSakerstallt: en gräns för samspelet kön × ålder', () => {
+    it('gränsen är p < 0,10', () => {
+        expect(SAMSPEL_GRANS).toBe(0.10);
+    });
+    it('säkerställt när något av p-värdena är under 0,10', () => {
+        expect(samspelSakerstallt(0.09, 0.5)).toBe(true);
+        expect(samspelSakerstallt(0.5, 0.0999)).toBe(true);
+        expect(samspelSakerstallt(0.001)).toBe(true);
+    });
+    it('exakt 0,10 är inte säkerställt, för ett p-värde och för båda', () => {
+        expect(samspelSakerstallt(0.10)).toBe(false);
+        expect(samspelSakerstallt(0.10, 0.10)).toBe(false);
+        expect(samspelSakerstallt(0.10, 0.5)).toBe(false);
+    });
+    it('ett p-värde som saknas eller inte är ett tal säkerställer inget', () => {
+        expect(samspelSakerstallt(NaN, 0.5)).toBe(false);
+        expect(samspelSakerstallt(undefined, null)).toBe(false);
+        expect(samspelSakerstallt()).toBe(false);
+    });
+    it('appens livscykel har ingen egen gräns: nyckeltalet, Att utforska och tolkningen använder funktionen', () => {
+        const kalla = readFileSync(new URL('../src/app/52-livscykel.js', import.meta.url), 'utf8');
+        expect(kalla).not.toMatch(/(?:PVal|\bp)\s*[<>]=?\s*0?\.10?\b/);
+        expect((kalla.match(/_lcSamspelSakerstallt\(/g) || []).length).toBeGreaterThanOrEqual(3);
     });
 });

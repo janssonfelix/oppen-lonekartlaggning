@@ -29,6 +29,20 @@ export function livscykelNiva(g) {
     return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
 }
 
+/** Gränsen för samspelet mellan kön och ålder: säkerställt när ett p-värde är under 0,10, inte vid exakt 0,10. */
+export const SAMSPEL_GRANS = 0.10;
+
+/**
+ * Är samspelet mellan kön och ålder säkerställt? Ja när något av p-värdena (kön×ålder, kön×ålder²) är under
+ * SAMSPEL_GRANS. Den enda gränsen för nyckeltalet *Förändring 25–65 år*, rutan *Är förändringen säkerställd?*,
+ * Att utforska och tolkningstexten. Ett p-värde som inte är ett tal säkerställer inget.
+ * @param {...number} pVarden
+ * @returns {boolean}
+ */
+export function samspelSakerstallt(...pVarden) {
+    return pVarden.some(p => typeof p === 'number' && p < SAMSPEL_GRANS);
+}
+
 /**
  * @param {Array<{lon:number, alder:number, kon:string, bas:string}>} rader
  * @param {{fixBas?:string|null, golv:number}} opt

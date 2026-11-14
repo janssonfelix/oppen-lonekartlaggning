@@ -121,7 +121,7 @@ export const MODULES = [
     {
         // Livscykelmodellen (log-lön med kön×ålder och BAS-indikatorer); importerar stat.js
         file: 'livscykel.js', ns: '__mirrorLivscykel',
-        expose: { livscykelRegression: '_lcLivscykelRegression' }
+        expose: { livscykelRegression: '_lcLivscykelRegression', samspelSakerstallt: '_lcSamspelSakerstallt' }
     },
     {
         // Organisationsfilen: verktyget med organisationspaketet inbakat (ren strängmodul)

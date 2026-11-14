@@ -5685,6 +5685,20 @@ function livscykelNiva(g) {
     return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
 }
 
+/** Gränsen för samspelet mellan kön och ålder: säkerställt när ett p-värde är under 0,10, inte vid exakt 0,10. */
+const SAMSPEL_GRANS = 0.10;
+
+/**
+ * Är samspelet mellan kön och ålder säkerställt? Ja när något av p-värdena (kön×ålder, kön×ålder²) är under
+ * SAMSPEL_GRANS. Den enda gränsen för nyckeltalet *Förändring 25–65 år*, rutan *Är förändringen säkerställd?*,
+ * Att utforska och tolkningstexten. Ett p-värde som inte är ett tal säkerställer inget.
+ * @param {...number} pVarden
+ * @returns {boolean}
+ */
+function samspelSakerstallt(...pVarden) {
+    return pVarden.some(p => typeof p === 'number' && p < SAMSPEL_GRANS);
+}
+
 /**
  * @param {Array<{lon:number, alder:number, kon:string, bas:string}>} rader
  * @param {{fixBas?:string|null, golv:number}} opt
@@ -5856,9 +5870,10 @@ function livscykelRegression(rader, { fixBas, golv }) {
     };
 }
 
-    return { livscykelRegression };
+    return { livscykelRegression, samspelSakerstallt };
 })();
 const _lcLivscykelRegression = __mirrorLivscykel.livscykelRegression;
+const _lcSamspelSakerstallt = __mirrorLivscykel.samspelSakerstallt;
 
 // ---- speglar src/lib/organisationsfil.js ----
 const __mirrorOrganisationsfil = (() => {
@@ -29856,12 +29871,12 @@ function renderLifecycleAnalysis() {
         : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(primaryN[0], primaryN[1])} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
 
     // Modelljämförelsens tabell markerar säkerheten med stjärnor, som tabellens not förklarar; utan stjärna är
-    // p ≥ 0,05. Nyckeltalet säger det med ord, med samma gräns som tolkningsregeln (p < 0,10 är säkerställd).
+    // p ≥ 0,05. Nyckeltalet säger det med ord, med samma gräns som tolkningsregeln (samspelSakerstallt i src/lib/livscykel.js: p < 0,10).
     const sigBadge = p => p < 0.001 ? `<span class="farg-kritisk">***</span>`
                        : p < 0.01  ? `<span class="farg-kritisk">**</span>`
                        : p < 0.05  ? `<span class="farg-varning">*</span>`
                        : '';
-    const sakerOrd = p => p < 0.10 ? 'säkerställd' : '<span class="f-dampad">inte säkerställd</span>';
+    const sakerOrd = p => _lcSamspelSakerstallt(p) ? 'säkerställd' : '<span class="f-dampad">inte säkerställd</span>';
     const pText = p => p < 0.001 ? '< 0,001' : svTal(p, 3);
 
     const basOptions = result.basList.map(b =>
@@ -29930,7 +29945,7 @@ function renderLifecycleAnalysis() {
         : '';
 
     // ====== B7: Regelbaserad HR-coach ======
-    const interaktionSig = result.kvAgePVal < 0.10 || result.kvAge2PVal < 0.10;
+    const interaktionSig = _lcSamspelSakerstallt(result.kvAgePVal, result.kvAge2PVal);
     let coachKategori, coachRubrik, coachText;
     if (!interaktionSig) {
         coachKategori = 'konstant';
@@ -30242,7 +30257,7 @@ function runLifecycleRegression(fixBas) {
     const { gapAt25, gapAt65, gapDelta, kvAgePVal, kvAge2PVal } = res;
     // Tolkningstexten är presentation och hör därför till appen.
     let interpretation;
-    if (kvAgePVal > 0.10 && kvAge2PVal > 0.10) {
+    if (!_lcSamspelSakerstallt(kvAgePVal, kvAge2PVal)) {
         interpretation = 'Skillnaden är **densamma över karriären** (samspelet mellan kön och ålder är inte statistiskt signifikant).';
     } else if (gapDelta < -1) {
         interpretation = `Skillnaden **växer med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på ett glastak och behöver granskas.`;
