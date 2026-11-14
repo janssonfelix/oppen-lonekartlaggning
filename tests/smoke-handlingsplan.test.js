@@ -94,7 +94,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     });
     it('en egen rad läggs till, fylls i, följer med i underlaget och konfigurationsfilen, och tas bort', () => {
         const w = fonster();
-        w.__renderTabContent('handlingsplan');
+        w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
         const fore = rader(w).length;
         w.document.getElementById('btn-hp-lagg-till').click();
         const egen = w.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen');

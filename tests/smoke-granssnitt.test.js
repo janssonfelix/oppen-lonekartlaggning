@@ -477,6 +477,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item').focus();
         tangent(d.querySelector('.nav-item'), '/');
         expect(d.activeElement).toBe(falt);
+        d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         const annat = d.getElementById('kl-org-name');
         annat.focus(); tangent(annat, '/');
         expect(d.activeElement).toBe(annat);
@@ -953,7 +954,7 @@ describe('kvartiler utan enskilda löner', () => {
 // konfigurationsfilen, Rensa all data, rapportunderlaget och metodbilagan.
 // ===================================================================================
 describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)', () => {
-    const demo = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('struktur'); return w; };
+    const demo = () => { const w = createAppWindow(); w.__loadDemoData(); w.document.querySelector('.nav-item[data-tab="struktur"]').click(); return w; };
     const kort = w => w.document.getElementById('gap-uppdelning');
     const rutor = w => [...kort(w).querySelectorAll('.gu-val input[data-gu-var]')];
     const valda = w => rutor(w).filter(r => r.checked).map(r => r.getAttribute('data-gu-var'));

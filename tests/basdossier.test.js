@@ -87,7 +87,7 @@ describe('BAS-dossiern: kandidater och modell', () => {
 describe('BAS-dossiern: dialogen och ingångarna', () => {
     it('öppnas från Löneöversiktens BAS-rad: dialog med rubrik och väljare, raden fälls inte, Escape stänger och fokus går tillbaka', () => {
         const w = demo(), doc = w.document;
-        w.__renderTabContent('utforska');
+        doc.querySelector('.nav-item[data-tab="utforska"]').click();
         const rubrikrad = [...doc.querySelectorAll('#rapport-table tbody tr.group-header')].find(tr => tr.dataset.bas === 'C');
         const knapp = rubrikrad.querySelector('[data-open-basdossier="C"]');
         expect(knapp).not.toBeNull();

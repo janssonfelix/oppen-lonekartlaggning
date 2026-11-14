@@ -11,7 +11,7 @@ const fonster = () => {
     const w = createAppWindow();
     w.__loadDemoData();
     w.__state.handlingsplan = {};
-    w.__renderTabContent('handlingsplan');
+    w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
     return w;
 };
 const rader = w => [...w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-seeded')];
