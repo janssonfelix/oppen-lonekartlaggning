@@ -751,7 +751,7 @@ const GLOSSARY = [
     { cat:'Statistik', term:'P10 (10:e percentilen)', short:'Värdet där 10 % av gruppen tjänar mindre', long:'Speglar lönenivån för de lägst betalda i gruppen. Används som "lägsta önskad nivå" i lönepolitiska ställningstaganden.' },
     { cat:'Statistik', term:'P90 (90:e percentilen)', short:'Värdet där 90 % av gruppen tjänar mindre', long:'Speglar lönenivån för de högst betalda. Används som "toppnivå" i lönepolitiska ställningstaganden.' },
     { cat:'Statistik', term:'Lönespridning', short:'P90 / P10 — bredd i lönenivåer inom en grupp', long:'1,0 = alla tjänar lika. 1,3 = de högst betalda tjänar 30 % mer än de lägst betalda. Värden över ungefär 1,5 kan tyda på stora löneskillnader inom gruppen som bör granskas.' },
-    { cat:'Statistik', term:'OLS-regression', short:'Standardmetoden för att räkna ut hur lönen hänger ihop med kön, ålder m.m. (eng. OLS)', long:'Estimerar samband mellan en förklarad variabel (t.ex. lön) och flera förklarande variabler (kön, ålder, BAS) genom att minimera summan av kvadrerade residualer. Vanlig metod i lönekartläggning.' },
+    { cat:'Statistik', term:'OLS-regression', short:'Metod för att räkna ut hur lönen hänger ihop med kön, ålder m.m. (eng. OLS)', long:'Estimerar samband mellan en förklarad variabel (t.ex. lön) och flera förklarande variabler (kön, ålder, BAS) genom att minimera summan av kvadrerade residualer.' },
     { cat:'Statistik', term:'HC3 robust standardfel', short:'Felmarginal som tål att höga löner varierar mer än låga — ger mer pålitlig osäkerhet', long:'Standardfel som korrigeras för heteroskedasticitet och inflytelserika punkter. Lönedata uppvisar typiskt heteroskedasticitet (variansen växer med lönenivån), och klassiska SE underskattar då osäkerheten. HC3 är det vanliga valet för små och medelstora urval.' },
     { cat:'Statistik', term:'Heteroskedasticitet', short:'Spridningen är olika stor i olika delar av datat (höga löner varierar mer än låga)', long:'I lönedata växer typiskt variansen med lönenivån — höga löner har bredare spridning än låga. Bryter mot OLS-antagandet om homoskedasticitet, vilket motiverar robusta standardfel.' },
     { cat:'Statistik', term:'Multikollinearitet', short:'Två faktorer (t.ex. yrke och BAS) följs så tätt åt att modellen inte kan skilja dem', long:'När t.ex. yrke och BAS är (nästan) perfekt korrelerade kan modellen inte separera deras effekter och estimeringen blir instabil eller omöjlig. Verktyget faller tillbaka till en enklare modell när det upptäcks.' },
@@ -12428,8 +12428,8 @@ function _rfPunkt(g, l, li, c) {
         if (x == null || y == null) return;
         const r = _rfTal(d.storlek) ? d.storlek : (l.storlek || 4);
         const farg = d.fargvarde != null && c.fargskala ? c.fargskala(d.fargvarde) : (d.farg || c.farg(l, li));
-        // Punktens osäkerhet (`fel`: undre och övre gräns) är ett streck genom punkten längs värdeaxeln — vedertagen form
-        // för ett skattat värde som jämförs mot en referens. Strecket ritas före punkten, så att punkten ligger överst.
+        // Punktens osäkerhet (`fel`: undre och övre gräns) är ett streck genom punkten längs värdeaxeln, från den undre
+        // till den övre gränsen. Strecket ritas före punkten, så att punkten ligger överst.
         if (d.fel && _rfTal(d.fel.lag) && _rfTal(d.fel.hog)) {
             const ligg = l.riktning === 'liggande', vs = ligg ? c.x : ys;
             const f1 = vs.bandwidth ? NaN : vs(d.fel.lag), f2 = vs.bandwidth ? NaN : vs(d.fel.hog);
@@ -16454,8 +16454,8 @@ function computeBootstrapCI() {
     if (kv.length < statGolv() || ma.length < statGolv()) { state.bootstrapCI = null; return; }
 
     // B=2000: med B=600 blir Monte Carlo-variabiliteten på CI-gränserna
-    // ~±0,5 pp, vilket märks för gränsfalls-par. B=2000 är vedertagen standard för 95%-CI och
-    // räknar i praktiken inom ~50-200 ms på alla typiska storlekar.
+    // ~±0,5 pp, vilket märks för gränsfalls-par. Variationen minskar med 1/√B, så B=2000 ger ungefär hälften,
+    // och räkningen tar i praktiken ~50-200 ms på alla typiska storlekar.
     const B = 2000;
     const ratios = new Array(B);
     // Quickselect-median (O(n)) — sortering ger O(B·n log n), flera sekunder
@@ -27228,8 +27228,8 @@ function _laOversiktTabell(bars, d = getData()) {
 }
 
 // ---- Trattdiagram: yrkesgrupperna mot slumpens gränser ----
-// Standardmetoden för att jämföra enheter av olika storlek (Spiegelhalter): värdet mot storleken, med gränser som
-// smalnar när enheten växer. Här: kvinnors median i % av mäns per yrkesgrupp mot antalet personer.
+// Varje grupps värde ritas mot gruppens storlek, med gränser för slumpen som smalnar när gruppen växer. Här: kvinnors
+// median i % av mäns per yrkesgrupp mot antalet personer.
 //
 // BEDÖMNINGEN av en grupp görs med omkastning (permutation) inom gruppen: könen kastas om slumpvis mellan gruppens
 // löner 1 000 gånger, och gruppens kvot jämförs med de mittersta 95 % av de kvoter slumpen ger. Det är exakt för
@@ -27751,7 +27751,7 @@ function _jmfStatlageFigur(rader) {
 }
 
 // ---- OLS Regression: oförklarad löneskillnad ----
-// Standardmetod (EU 2023/970): log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler)
+// Modellen: log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler)
 /**
  * Standardnormal CDF Φ(x) via Abramowitz & Stegun 26.2.17 (5 termer, abs.fel < 7.5e-8).
  * @param {number} x
@@ -29444,7 +29444,7 @@ function renderRegressionCard() {
 
     // #5 Statistisk transparens: flagga när underlaget gör skattningen
     // osäker — så HR inte övertolkar ett punktvärde som bygger på tunt data.
-    // Tröskelvärdena är vedertagna tumregler (ej lagstadgade): n<50 = litet
+    // Tröskelvärdena är verktygets egna gränser (inte lagstadgade): n<50 = litet
     // urval; <15 obs/parameter = överanpassningsrisk; KI-bredd >10 p.e. =
     // instabil punktskattning; <10 av ena könet = svag könskontrast.
     const _obsPerParam = r.n / Math.max(1, r.k);
@@ -29775,7 +29775,7 @@ function renderBlinderOaxacaCard(reg) {
     wrap.innerHTML = `
         <div class="card ram-v-4-granska-ljus">
             <h3 class="marg-0-0-6">Förklarad och oförklarad löneskillnad
-                <span class="info-tip" data-tooltip="Standardmetod inom arbetsmarknadsekonomi (Blinder 1973, Oaxaca 1973). Delar upp den råa skillnaden i tre delar: hur mycket beror på att kvinnor och män har olika karakteristika (förklarat), och hur mycket beror på att samma egenskaper betalas olika (oförklarat — det statistiken inte kan förklara, inte ett mått på diskriminering).">${ikon('info', 14)}</span>
+                <span class="info-tip" data-tooltip="Uppdelningen enligt Blinder (1973) och Oaxaca (1973). Delar upp den råa skillnaden i tre delar: hur mycket beror på att kvinnor och män har olika karakteristika (förklarat), och hur mycket beror på att samma egenskaper betalas olika (oförklarat — det statistiken inte kan förklara, inte ett mått på diskriminering).">${ikon('info', 14)}</span>
             </h3>
             <p class="text-dampad-sm lh-1_55 marg-0-0-14">
                 Den råa skillnaden i månadslön delas upp i den del som <em>förklaras</em> av strukturella skillnader

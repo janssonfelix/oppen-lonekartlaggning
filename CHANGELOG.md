@@ -48,6 +48,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   konfigurationsfiler läses som förut.
 - **Åldersdiagrammets text säger hur referenslinjen ser ut.** Texten under åldersfördelningen i Ålder & karriär
   kallade referenslinjen för Sveriges sysselsatta streckad; den ritas prickad, och texten säger nu det.
+- **Inga påståenden om standardmetoder utan källa.** Ordlistans *OLS-regression* kallade metoden *standardmetoden*
+  och *vanlig metod i lönekartläggning*, och verktygstipset för Blinder-Oaxaca i regressionskortet *standardmetod inom
+  arbetsmarknadsekonomi*, utan att peka ut någon källa. Ordlistan säger nu bara vad metoden gör, och verktygstipset
+  börjar *Uppdelningen enligt Blinder (1973) och Oaxaca (1973)*, som står med fullständiga uppgifter bland
+  referenserna i Om verktyget. Kodkommentarer som åberopade "vedertagen standard", "vedertagna tumregler",
+  "vedertagen form" och ett författarnamn utan referens säger nu vad koden gör.
 - **Jämn könsfördelning blandas inte ihop med kvinnodominerat.** Ordlistan sade att en grupp blir könsdominerad från
   61/39. Gränsen för jämn könsfördelning (båda könen minst 40 %) är fast, men kvinnodominerat följer valet i
   Likvärdigt arbetes inställningar, och med *60 % eller mer* är en grupp med precis 60 % kvinnor kvinnodominerad.

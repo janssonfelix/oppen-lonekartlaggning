@@ -565,8 +565,8 @@ function _laOversiktTabell(bars, d = getData()) {
 }
 
 // ---- Trattdiagram: yrkesgrupperna mot slumpens gränser ----
-// Standardmetoden för att jämföra enheter av olika storlek (Spiegelhalter): värdet mot storleken, med gränser som
-// smalnar när enheten växer. Här: kvinnors median i % av mäns per yrkesgrupp mot antalet personer.
+// Varje grupps värde ritas mot gruppens storlek, med gränser för slumpen som smalnar när gruppen växer. Här: kvinnors
+// median i % av mäns per yrkesgrupp mot antalet personer.
 //
 // BEDÖMNINGEN av en grupp görs med omkastning (permutation) inom gruppen: könen kastas om slumpvis mellan gruppens
 // löner 1 000 gånger, och gruppens kvot jämförs med de mittersta 95 % av de kvoter slumpen ger. Det är exakt för

@@ -1003,7 +1003,7 @@ function renderRegressionCard() {
 
     // #5 Statistisk transparens: flagga när underlaget gör skattningen
     // osäker — så HR inte övertolkar ett punktvärde som bygger på tunt data.
-    // Tröskelvärdena är vedertagna tumregler (ej lagstadgade): n<50 = litet
+    // Tröskelvärdena är verktygets egna gränser (inte lagstadgade): n<50 = litet
     // urval; <15 obs/parameter = överanpassningsrisk; KI-bredd >10 p.e. =
     // instabil punktskattning; <10 av ena könet = svag könskontrast.
     const _obsPerParam = r.n / Math.max(1, r.k);
@@ -1334,7 +1334,7 @@ function renderBlinderOaxacaCard(reg) {
     wrap.innerHTML = `
         <div class="card ram-v-4-granska-ljus">
             <h3 class="marg-0-0-6">Förklarad och oförklarad löneskillnad
-                <span class="info-tip" data-tooltip="Standardmetod inom arbetsmarknadsekonomi (Blinder 1973, Oaxaca 1973). Delar upp den råa skillnaden i tre delar: hur mycket beror på att kvinnor och män har olika karakteristika (förklarat), och hur mycket beror på att samma egenskaper betalas olika (oförklarat — det statistiken inte kan förklara, inte ett mått på diskriminering).">${ikon('info', 14)}</span>
+                <span class="info-tip" data-tooltip="Uppdelningen enligt Blinder (1973) och Oaxaca (1973). Delar upp den råa skillnaden i tre delar: hur mycket beror på att kvinnor och män har olika karakteristika (förklarat), och hur mycket beror på att samma egenskaper betalas olika (oförklarat — det statistiken inte kan förklara, inte ett mått på diskriminering).">${ikon('info', 14)}</span>
             </h3>
             <p class="text-dampad-sm lh-1_55 marg-0-0-14">
                 Den råa skillnaden i månadslön delas upp i den del som <em>förklaras</em> av strukturella skillnader
