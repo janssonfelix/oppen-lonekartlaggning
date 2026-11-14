@@ -13,7 +13,7 @@
 //
 //   npm run bundle && npm run perf            (55 000 rader)
 //   node tools/perf-smoke.mjs --rader=120000  (annat n)
-//   node tools/perf-smoke.mjs --rader=20000   (talen för sidindexet, sökningen och dossiererna i teknisk-plan.md § 9)
+//   node tools/perf-smoke.mjs --rader=20000   (navigeringen på ett mindre underlag)
 //
 // Efter flikarna mäts också navigeringen: sidindexets byggtid per flik, sökfältets första sökning (registret och
 // grupperna byggs då) och tiden att öppna BAS-dossiern och gruppdossiern. Ett steg över 2 s flaggas.

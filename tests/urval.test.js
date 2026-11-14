@@ -101,7 +101,7 @@ describe('beskrivUrval', () => {
         expect(nbsp(beskrivUrval({ lage: 'nagot', villkor: [v('bas', 'enAv', ['B'], true)] }, [])))
             .toBe('Något av: BAS är inte en av B');
     });
-    it('enhet är inget urvalsfält (se §2 i teknisk-plan.md)', () => {
+    it('enhet är inget urvalsfält (se avgränsningen i mal.md)', () => {
         expect(faltInfo()).not.toHaveProperty('enhet');
     });
     it('getters ger fält- och måttinfo', () => {

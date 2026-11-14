@@ -552,7 +552,7 @@ export function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
 }
 
 /**
- * BAS-rang (BAS-ordningen är fast, se §5 i teknisk-plan.md): bokstavens plats i alfabetet, A=1, B=2 … Varje bokstav är ett lika brett
+ * BAS-rang (BAS-ordningen är fast, se likvardighetsmodellen.md §6): bokstavens plats i alfabetet, A=1, B=2 … Varje bokstav är ett lika brett
  * poängintervall i BAS-systemet, så ett BAS-steg är alltid ett intervall — B → D är två steg
  * även när C saknas i underlaget. Samma rang används av regressionerna och Lägre krav.
  * Något som inte är en bokstav läggs alfabetiskt efter bokstäverna.

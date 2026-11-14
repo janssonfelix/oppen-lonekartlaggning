@@ -167,7 +167,7 @@ describe('Struktur: chart-sektorer', () => {
 });
 
 describe('Rapporttext: auto-utkastets mening om vertikal könssegregering', () => {
-    // representationByBas sorterar BAS A–Ö: första BAS:et är lägst värderat, sista högst (teknisk-plan §9 punkt 24).
+    // representationByBas sorterar BAS A–Ö: första BAS:et är lägst värderat, sista högst.
     const text = (andelKvA, andelKvJ) => {
         const win = createAppWindow();
         const rad = (bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: '6000 Yrke', aid: '6000', yrkeLabel: 'Yrke', enhet: '' });

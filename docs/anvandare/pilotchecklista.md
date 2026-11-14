@@ -46,7 +46,7 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
 
 ## C. Analys
 
-*Några punkter kan bara verklig data visa (teknisk-plan §9 punkt 1 och 3): många yrkesgrupper, trattdiagrammet
+*Några punkter kan bara verklig data visa (punkt 1 och 3 i `docs/utveckling/oppna-punkter.md`): många yrkesgrupper, trattdiagrammet
 och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag med 42 yrken, och Word-utkastet
 är öppnat i Microsoft Word 365 och 2019 med demodatan (avsnitt D).*
 - [ ] **Regressionen** (Lönestruktur, *Vad blir kvar av löneskillnaden?*) körs; ojusterad och **oförklarad** skillnad

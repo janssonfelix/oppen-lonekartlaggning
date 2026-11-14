@@ -1,5 +1,5 @@
 /**
- * Vakt: språket i det användaren läser (kvalitetskrav K10).
+ * Vakt: språket i det användaren läser (princip 6 i docs/utveckling/principer.md).
  *
  * Ordvalen från språkgenomgången och lagrummen, p-värdets och konfidensintervallets
  * förklaring, ordet "förvaltning", och att användartexternas hänvisningar till
@@ -175,7 +175,7 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         for (const t of ['Diskrimineringslagen kräver att du analyserar varje skillnad (3 kap.).', 'lagen'])
             expect(traffar(t, LAGRUM_UI), t).toEqual([]);
         for (const t of ['§ 8-bedömningarna', '9 §', '§§ 1–11']) expect(traffar(t, LAGRUM_DOK), t).not.toEqual([]);
-        for (const t of ['(§6.4)', 'teknisk-plan §9 punkt 1', '`organisationspaket.md` §5']) expect(traffar(t, LAGRUM_DOK), t).toEqual([]);
+        for (const t of ['(§6.4)', 'riskanalysen §8 punkt 1', '`organisationspaket.md` §5']) expect(traffar(t, LAGRUM_DOK), t).toEqual([]);
     });
     it('strängfiltret prövar text men inte identifierare, kommentarer, synonymer eller ordlistans sok-fält', () => {
         const src = "const lonegapPct = 1; // Lönegapets form\n/* Gapet */ x('gap-uppdelning', 'Gapet visar');\n"

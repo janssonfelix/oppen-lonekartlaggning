@@ -14,8 +14,8 @@ systemägaren tar fram den en gång, och det är den som sprids.
 
 En fil som öppnas från disk kan inte läsa andra filer i samma mapp — webbläsaren förbjuder det, och
 verktygets egen policy (`connect-src 'none'`) stänger all hämtning. Automatisk inläsning av en fil
-bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd (ADR om dataskydd, §3 i
-den tekniska planen). Paketet måste ligga **inuti** HTML-filen.
+bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd (skyddet S1 i
+[`skydd.md`](skydd.md)). Paketet måste ligga **inuti** HTML-filen.
 
 ## 2. Mål, icke-mål, antimål
 

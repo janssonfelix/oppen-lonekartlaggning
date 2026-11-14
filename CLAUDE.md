@@ -7,8 +7,8 @@
   den citeras, som system, aldrig som någons kund eller arbetsgivare; källan till jämförelsestatistiken får namnges
   som källa; demodatan har en påhittad organisation. Se `.github/CONTRIBUTING.md`.
 - **Lönedata lämnar aldrig datorn**, och varje ny utdata prövas mot k-tröskeln (`.github/CONTRIBUTING.md`, punkt 3).
-- Läs principerna (`docs/utveckling/principer.md`) och arkitekturbesluten (`docs/utveckling/arkitekturbeslut.md`)
-  innan du ändrar beteende.
+- Läs principerna (`docs/utveckling/principer.md`) och referensen för området innan du ändrar beteende; varför
+  något blev som det är står i beslutsloggen (`docs/utveckling/arkitekturbeslut.md`).
 - Skriv på svenska, i samma stil som omgivande kod och dokument.
 
 **Skydden** går före allt annat, också principerna och arkitekturbesluten. En ändring som rör ett skydd tas upp med underhållaren

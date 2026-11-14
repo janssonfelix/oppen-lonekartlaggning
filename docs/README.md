@@ -30,8 +30,9 @@ Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela r
 |---|---|
 | [`skydd.md`](utveckling/skydd.md) | De fem skydden som går före besluten: regeln, varför, beslut, vakt och vad som inte vaktas. |
 | [`principer.md`](utveckling/principer.md) | De sex principerna som binder tillsammans med skydden, med sina vakter. |
-| [`teknisk-plan.md`](utveckling/teknisk-plan.md) | Syfte, avgränsning, funktionsmål, kvalitetskrav och öppna punkter; skydden och referenserna står i egna dokument, som planen pekar på. |
-| [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Arkitekturbesluten (ADR) med motiv, avvisade alternativ och status; numren som koden och testerna pekar på. |
+| [`mal.md`](utveckling/mal.md) | Syfte, avgränsning och funktionsmål. |
+| [`oppna-punkter.md`](utveckling/oppna-punkter.md) | Kända brister och obesvarade frågor, med numren som koden och dokumenten pekar på. |
+| [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Loggen över arkitekturbesluten (ADR): vad som valdes och varför, med status; numren som koden och testerna pekar på. |
 | [`k-troskeln.md`](utveckling/k-troskeln.md) | Minsta gruppstorlek (skyddet S4) som den gäller: de två lägena, redovisningsformen, vägen ut, undantagen, golven, inställningen och vakterna. |
 | [`regressionsmodellen.md`](utveckling/regressionsmodellen.md) | Regressionen och uppdelningen av löneskillnaden som de räknas: huvudtalet, förklaringsmodellen, BAS-kodningen, Blinder-Oaxaca, kvantilregressionen, konfidensintervallen, *Var uppstår löneskillnaden?* och referensvärdena. |
 | [`likvardighetsmodellen.md`](utveckling/likvardighetsmodellen.md) | Analysen av likvärdigt arbete som den räknas: definitionen av kvinnodominerat, jämförelseyrkena, kandidatparen med konfidensintervall och åldersjustering, *Lägre krav, högre lön*, inställningarna och vakterna. |

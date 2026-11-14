@@ -9,7 +9,7 @@
 //
 // Ingen ny statistik — enbart en sammanställning av befintliga beräkningar.
 // Dossiern DOKUMENTERAR INTE sakliga skäl; det är en medveten produktgräns
-// (teknisk-plan.md §2). Den samlar underlaget för den bedömning som görs någon annanstans.
+// (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 
 // Bootstrap-KI på mediankvoten (kvinnors median som % av männens). Samma metod

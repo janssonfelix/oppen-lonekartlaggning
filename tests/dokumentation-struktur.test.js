@@ -1,5 +1,5 @@
 /**
- * Vakt: dokumentationen ska beskriva den BYGGDA versionen (kvalitetskrav K4).
+ * Vakt: dokumentationen ska beskriva den BYGGDA versionen (princip 4 i docs/utveckling/principer.md).
  *
  * Dokumentation glider isär från koden i varje commit: deltabeller som saknar
  * moduler, filer som inte finns och byggkommandon som inte stämmer.
@@ -9,7 +9,7 @@
  * dokumentation-sprak.test.js.
  *
  * Det som inte går att mekanisera — om en förklaring är korrekt och begriplig —
- * står kvar som en öppen punkt i docs/utveckling/teknisk-plan.md § 9.
+ * prövas inte här.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -21,10 +21,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const läs = f => readFileSync(join(root, f), 'utf8');
 
-const PLAN = 'docs/utveckling/teknisk-plan.md';
-const planMd = läs(PLAN);
+const MAL = 'docs/utveckling/mal.md';
 const ADR = 'docs/utveckling/arkitekturbeslut.md';
 const adrMd = läs(ADR);
+// Utvecklardokumenten vars sökvägar och npm-skript prövas mot projektet.
+const UTV_DOK = [MAL, ADR, 'docs/utveckling/oppna-punkter.md'];
+const utvMd = UTV_DOK.map(läs).join('\n');
 const appReadme = läs('src/app/README.md');
 const pkg = JSON.parse(läs('package.json'));
 const appDelar = readdirSync(join(root, 'src', 'app')).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
@@ -42,22 +44,21 @@ describe('dokumentation: src/app/README.md speglar katalogen', () => {
     });
 });
 
-describe('dokumentation: teknisk-plan.md stämmer med projektet', () => {
+describe('dokumentation: målen, arkitekturbesluten och de öppna punkterna stämmer med projektet', () => {
     it('alla npm-skript som nämns finns i package.json', () => {
-        const nämnda = [...(planMd + adrMd).matchAll(/`npm run ([\w:]+)`/g)].map(m => m[1]);
+        const nämnda = [...utvMd.matchAll(/`npm run ([\w:]+)`/g)].map(m => m[1]);
         expect(nämnda.length).toBeGreaterThan(0);
         const okända = [...new Set(nämnda)].filter(n => !pkg.scripts[n]);
         expect(okända, `npm-skript som inte finns: ${okända.join(', ')}`).toEqual([]);
     });
 
-    // Hela planen och arkitekturbesluten beskriver nuläget, så varje fil de pekar ut ska finnas.
-    it('filerna som den tekniska planen och arkitekturbesluten pekar ut finns på disk', () => {
-        const kandidater = [...(planMd + adrMd).matchAll(/`([\w.-]+\/[\w./-]+\.(?:js|mjs|json|md|html|css|txt|yml))`/g)]
+    it('filerna som dokumenten pekar ut finns på disk', () => {
+        const kandidater = [...utvMd.matchAll(/`([\w.-]+\/[\w./-]+\.(?:js|mjs|json|md|html|css|txt|yml))`/g)]
             .map(m => m[1])
             .filter(f => !f.includes('*'));
         expect(kandidater.length).toBeGreaterThan(0);
         const saknade = [...new Set(kandidater)].filter(f => !existsSync(join(root, f)));
-        expect(saknade, `planen pekar ut filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
+        expect(saknade, `dokumenten pekar ut filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
     });
 });
 
@@ -119,7 +120,7 @@ describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
     // (vaktas i ktroskel.test.js), och dokumenten nedan anger standardvärdet. Det här är den enda kontrollen av talet.
     const K = Number(/const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-troskel.js'))[1]);
     const filer = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
-                   'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', PLAN, ADR];
+                   'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', MAL, ADR];
 
     for (const fil of filer) {
         it(`${fil}: "färre än/minst N personer" och "standardvärdet N" har N = ${K}`, () => {
@@ -130,8 +131,7 @@ describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
             expect(fel, `${fil} anger fel tröskel: ${fel.join(', ')}`).toEqual([]);
         });
     }
-    it('den tekniska planen och dataskyddsdokumenten anger standardvärdet', () => {
-        expect(planMd).toContain(`K_STANDARD = ${K}`);
+    it('dataskyddsdokumenten anger standardvärdet', () => {
         for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md'])
             expect(läs(fil), fil).toMatch(new RegExp(`[Ss]tandardvärdet (är )?${K}\\b`));
     });
@@ -173,7 +173,7 @@ describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
         });
     }
     it('dokumenten säger inte att en konfigurationsfil utan fältet ger 10, eller att ett paket alltid bär tröskeln', () => {
-        for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md', PLAN, ADR, 'CHANGELOG.md',
+        for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md', MAL, ADR, 'CHANGELOG.md',
                            'docs/anvandare/korguide.md', 'docs/anvandare/organisationspaket.md']) {
             const t = läs(fil);
             expect(t, fil).not.toMatch(/fil\s+utan fältet ger 10/);
@@ -246,43 +246,17 @@ describe('produktnamnet', () => {
     });
 });
 
-// Statusorden i indexet (ADR-68). Sammanförd i och Flyttad till nämner dokumentet inom backtick.
-const STATUS = /^(Gällande|Ändrad av ADR-\d+|Sammanförd i |Flyttad till |Upphävd)/;
 // Ett dokument inom backtick söks relativt de här katalogerna (roten sist).
 const DOKUMENTKATALOGER = ['docs/utveckling', '.github', ''];
+const dokumentFinns = s => [...s.matchAll(/`([^`\s]+\.\w+)`/g)]
+    .some(([, f]) => DOKUMENTKATALOGER.some(k => existsSync(join(root, k ? `${k}/${f}` : f))));
+// Indexets rader: nummer, rubrik, status, datum.
+const indexrader = [...adrMd.matchAll(/^\| ADR-(\d+) \| [^|\n]+? \| ([^|\n]+) \| [^|\n]+ \|$/gm)];
+const beslutsnummer = [...adrMd.matchAll(/^\*\*ADR-(\d+) —/gm)].map(m => Number(m[1]));
 
-/**
- * Status och hänvisningar till gällande lydelse i arkitekturbesluten (ADR-68). Tar dokumentets text och en funktion
- * som säger om en sökväg (relativ roten) finns, och returnerar en lista med fel: en status utanför statusorden, en
- * status *Sammanförd i* eller *Flyttad till* som inte nämner ett dokument som finns, och en rad *Gäller i dag:* som
- * inte pekar på ett dokument som finns. Ren funktion, så att självtestet kan ge den en påhittad text.
- */
-function granskaStatusOchHänvisningar(text, finns) {
-    const fel = [];
-    const dokumentFinns = s => [...s.matchAll(/`([^`\s]+\.\w+)`/g)]
-        .some(([, f]) => DOKUMENTKATALOGER.some(k => finns(k ? `${k}/${f}` : f)));
-    for (const [, nr, status] of text.matchAll(/^\| ADR-(\d+) \| [^|\n]+? \| ([^|\n]+) \| [^|\n]+ \|$/gm)) {
-        if (!STATUS.test(status)) fel.push({ slag: 'status', adr: Number(nr), status });
-        else if (/^(Sammanförd i|Flyttad till) /.test(status) && !dokumentFinns(status))
-            fel.push({ slag: 'status-utan-dokument', adr: Number(nr), status });
-    }
-    // Raden Gäller i dag fortsätter till nästa fält (*Vakt:* …), nästa beslut eller en tom rad.
-    for (const [rad] of text.matchAll(/^\*Gäller i dag:\*[^\n]*(?:\n(?!\n|\*[^*\s][^*\n]*:\*|\*\*ADR-)[^\n]*)*/gm)) {
-        if (!dokumentFinns(rad)) fel.push({ slag: 'gäller-i-dag', rad });
-    }
-    return fel;
-}
-
-describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => {
-    const plan = adrMd;
-    it('ADR-loggen bär inga datum i rubrikerna och inga beslut om tidigare lägen', () => {
-        const rubriker = [...plan.matchAll(/^\*\*ADR-(\d+) — ([^*]+)\*\*/gm)];
-        expect(rubriker.length).toBeGreaterThan(20);
-        for (const [hel] of rubriker) expect(hel, hel).not.toMatch(/\(\d{4}-\d{2}(-\d{2})?[^)]*\)/);
-        expect(plan).not.toMatch(/ersätter ADR-|ersatt av ADR-|Delvis ersatt/i);
-    });
+describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisningarna går att följa', () => {
     it('varje ADR som koden, testerna och dokumenten pekar på finns i arkitekturbesluten', () => {
-        const finns = new Set([...plan.matchAll(/^\*\*ADR-(\d+) —/gm)].map(m => Number(m[1])));
+        const finns = new Set(beslutsnummer);
         const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
             e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
         const filer = [...gå('src'), ...gå('tools'), ...gå('tests'), ...gå('docs')]
@@ -290,78 +264,18 @@ describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => 
         const saknas = filer.flatMap(f => [...läs(f).matchAll(/ADR-(\d+)\b/g)].map(m => Number(m[1])).filter(n => !finns.has(n)).map(n => `${f}: ADR-${n}`));
         expect([...new Set(saknas)]).toEqual([]);
     });
-    it('inga länkar till arbetsverktyg och inga väntande platshållare för lönesystem', () => {
-        expect(planMd + adrMd).not.toMatch(/väntar på systemförvaltarna|är platshållare/);
+    it('indextabellen och besluten har samma nummer, i samma ordning', () => {
+        expect(beslutsnummer.length).toBeGreaterThan(20);
+        expect(indexrader.map(m => Number(m[1]))).toEqual(beslutsnummer);
     });
-    it('indextabellen och besluten har samma nummer, i samma ordning, och varje rad har en status', () => {
-        const beslut = [...adrMd.matchAll(/^\*\*ADR-(\d+) —/gm)].map(m => Number(m[1]));
-        const rader = [...adrMd.matchAll(/^\| ADR-(\d+) \| [^|\n]+? \| ([^|\n]+) \| [^|\n]+ \|$/gm)];
-        expect(beslut.length).toBeGreaterThan(20);
-        expect(rader.map(m => Number(m[1]))).toEqual(beslut);
-        for (const [rad, , status] of rader) expect(status, rad).toMatch(STATUS);
-        // En status som pekar på ett annat beslut pekar på ett som finns.
-        const pekar = rader.flatMap(m => [...m[2].matchAll(/ADR-(\d+)/g)].map(p => Number(p[1])));
-        expect(pekar.filter(n => !beslut.includes(n))).toEqual([]);
-    });
-    it('Sammanförd i, Flyttad till och Gäller i dag pekar på ett dokument som finns (ADR-68)', () => {
-        expect(granskaStatusOchHänvisningar(adrMd, f => existsSync(join(root, f)))).toEqual([]);
-    });
-    it('den tekniska planen har kvar avsnittsnumreringen och hänvisar till arkitekturbesluten', () => {
-        const avsnitt = [...planMd.matchAll(/^## (\d+)\. /gm)].map(m => Number(m[1]));
-        expect(avsnitt).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        expect(planMd).toContain('[`arkitekturbeslut.md`](arkitekturbeslut.md)');
-        expect(planMd).not.toMatch(/^\*\*ADR-\d+ —/m);
-    });
-});
-
-describe('arkitekturbesluten: självtest av status- och hänvisningskontrollen', () => {
-    // En påhittad index- och beslutstext med ett fel av varje slag. Numren är beslut som finns, så att sökningen
-    // efter beslutsnummer ovan inte fäller på den här filen.
-    const text = [
-        '| ADR-1 | Ett | Gällande | – |',
-        '| ADR-2 | Två | Sammanförd i `finns.md` §2 | – |',
-        '| ADR-4 | Fyra | Flyttad till `saknas.md` | – |',
-        '| ADR-5 | Fem | Sammanförd i referensen | – |',
-        '| ADR-6 | Sex | Borttagen | – |',
-        '| ADR-7 | Sju | Flyttad till `.github/annat.md` | – |',
-        '',
-        '**ADR-1 — Ett.** Beslut 2026-01-01.',
-        '*Beslut:* något.',
-        '*Gäller i dag:* `finns.md` §2.',
-        '*Vakt:* ingen: text.',
-        '',
-        '**ADR-2 — Två.** Beslut 2026-01-02.',
-        '*Gäller i dag:* `saknas.md` §1 och',
-        '`också-saknas.md` §3.',
-        '*Vakt:* ingen: text.',
-        '',
-        '**ADR-4 — Fyra.** Beslut 2026-01-03.',
-        '*Gäller i dag:* referensen för området.',
-    ].join('\n');
-    const finns = s => ['docs/utveckling/finns.md', '.github/annat.md'].includes(s);
-    const fel = granskaStatusOchHänvisningar(text, finns);
-    it('statusmönstret godtar statusorden och inget annat', () => {
-        for (const s of ['Gällande', 'Ändrad av ADR-51', 'Ändrad av ADR-53 och ADR-63', 'Sammanförd i `k.md`',
-            'Flyttad till `teknisk-plan.md` §6', 'Upphävd']) expect(STATUS.test(s), s).toBe(true);
-        for (const s of ['Borttagen', 'Ändrad', 'Sammanförd', 'gällande']) expect(STATUS.test(s), s).toBe(false);
-    });
-    it('rapporterar en status utanför statusorden', () => {
-        expect(fel.filter(f => f.slag === 'status')).toEqual([{ slag: 'status', adr: 6, status: 'Borttagen' }]);
-    });
-    it('rapporterar Sammanförd i och Flyttad till utan ett dokument som finns, och godtar ett som finns', () => {
-        expect(fel.filter(f => f.slag === 'status-utan-dokument')).toEqual([
-            { slag: 'status-utan-dokument', adr: 4, status: 'Flyttad till `saknas.md`' },
-            { slag: 'status-utan-dokument', adr: 5, status: 'Sammanförd i referensen' },
-        ]);
-    });
-    it('rapporterar en rad Gäller i dag utan ett dokument som finns, också när raden fortsätter', () => {
-        expect(fel.filter(f => f.slag === 'gäller-i-dag')).toEqual([
-            { slag: 'gäller-i-dag', rad: '*Gäller i dag:* `saknas.md` §1 och\n`också-saknas.md` §3.' },
-            { slag: 'gäller-i-dag', rad: '*Gäller i dag:* referensen för området.' },
-        ]);
-    });
-    it('inga andra fel', () => {
-        expect(fel).toHaveLength(5);
+    it('Gäller i dag, Sammanförd i och Flyttad till pekar på ett dokument som finns', () => {
+        const fel = [];
+        for (const [, nr, status] of indexrader)
+            if (/^(Sammanförd i|Flyttad till) /.test(status) && !dokumentFinns(status)) fel.push(`ADR-${nr}: ${status}`);
+        // Fältet Gäller i dag går till nästa fält i stycket (*Avvisat:* …) eller till styckets slut.
+        for (const [fält] of adrMd.matchAll(/\*Gäller i dag:\*(?:(?!\n\n|\*[^*\s][^*\n]*:\*)[\s\S])*/g))
+            if (!dokumentFinns(fält)) fel.push(fält);
+        expect(fel).toEqual([]);
     });
 });
 

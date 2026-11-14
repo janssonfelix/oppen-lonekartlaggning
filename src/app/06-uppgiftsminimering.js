@@ -94,7 +94,7 @@ function _cleanYrkeField(raw) {
 /**
  * Extraherar ENBART vitlistade fält ur en CSV-rad — GDPR Art. 5(1)(c) uppgiftsminimering.
  * Säkerställer att verktyget aldrig laddar identifierande fält (PNR, namn, e-post)
- * även om användarens CSV innehåller dem. Ansvar läses inte in (se §2 i teknisk-plan.md).
+ * även om användarens CSV innehåller dem. Ansvar läses inte in (se avgränsningen i docs/utveckling/mal.md).
  * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, namn-mönster maskeras).
  * @param {Object<string,*>} row - Rå CSV-rad (PapaParse-objekt).
  * @returns {{bas:string, yrke:string, lon:number, alder:number, kon:string}}

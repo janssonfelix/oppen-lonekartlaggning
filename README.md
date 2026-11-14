@@ -9,7 +9,7 @@ dator: ingen server, inga nätverksanrop och ingen lagring. **Lönedata lämnar 
 det kommuner och regioner.
 Varje organisation tar in sitt eget ställningstagande, sin statistik och sina benämningar i ett
 organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra arbetsvärderingssystem är en
-öppen punkt (teknisk plan §9).
+öppen punkt ([`oppna-punkter.md`](docs/utveckling/oppna-punkter.md)).
 Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; checklistan för skarp data finns
 för den som gör det först.
 
@@ -97,7 +97,7 @@ säkerhetsregler*.
 | `docs/` | Dokumentationen; [`docs/README.md`](docs/README.md) listar dokumenten efter läsare |
 | `docs/anvandare/` | Dokument som följer med verktyget: körguide, datauttag, organisationspaket, införande |
 | `docs/dataskydd/` | Dataskyddsbeskrivning och risk- och sårbarhetsanalys |
-| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md) (syfte, avgränsning och öppna punkter), [`skydd.md`](docs/utveckling/skydd.md) (skydden S1–S5), [`principer.md`](docs/utveckling/principer.md) (principerna), [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md) (ADR), referenserna per område (bland dem [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md) och [`bygge-och-test.md`](docs/utveckling/bygge-och-test.md)), [`organisationsfil.md`](docs/utveckling/organisationsfil.md) och [`lagrum.md`](docs/utveckling/lagrum.md) |
+| `docs/utveckling/` | [`mal.md`](docs/utveckling/mal.md) (syfte och avgränsning), [`oppna-punkter.md`](docs/utveckling/oppna-punkter.md) (öppna punkter), [`skydd.md`](docs/utveckling/skydd.md) (skydden S1–S5), [`principer.md`](docs/utveckling/principer.md) (principerna), [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md) (ADR), referenserna per område (bland dem [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md) och [`bygge-och-test.md`](docs/utveckling/bygge-och-test.md)), [`organisationsfil.md`](docs/utveckling/organisationsfil.md) och [`lagrum.md`](docs/utveckling/lagrum.md) |
 | `tests/` | Vitest-sviten (enhetstester, röktester i jsdom, golden-facit, k-anonymitet, tillgänglighet) |
 | `tools/` | Bygge, speglingsgenerator, röktest i webbläsare, prestandamätning och testdatageneratorer. `tools/data/` håller lokala indata och är inte incheckad |
 | `types/` | Deklarationerna för typkontrollen (bibliotekens globaler och appens egna fält på DOM-element) |
@@ -142,7 +142,7 @@ Versionen står i `VERSION` (CalVer, `ÅÅÅÅ.MM.DD`) och ändringar dokumenter
 ### Släppa en version
 
 1. Granska `docs/dataskydd/riskanalys.md` och `docs/dataskydd/dataskydd.md` mot koden och sätt
-   granskningsdatumet (teknisk-plan.md §9 punkt 17b).
+   granskningsdatumet (punkt 17b i `docs/utveckling/oppna-punkter.md`).
 2. Sätt versionen i `VERSION` och `package.json`, och byt rubriken *Oförlöst* i `CHANGELOG.md` mot versionen.
 3. `npm run build:app && npm run bundle`; för in byggets kontrollsumma och version på rad 3 i riskanalysen.
 4. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden prövar det som bara gäller vid

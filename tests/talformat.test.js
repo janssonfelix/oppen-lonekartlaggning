@@ -1,5 +1,5 @@
 /**
- * Svenskt talformat i exporterna (teknisk-plan §9 punkt 10).
+ * Svenskt talformat i exporterna.
  *
  * Tre vägar prövas:
  *   1. CSV- och urklippsexporten (`_toCsv`, `_tillTsv`, `_CSV_TALLIKT` i src/app/22-exporthjalpare.js): ett tal i

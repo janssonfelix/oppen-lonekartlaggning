@@ -133,7 +133,7 @@ testfil hamnar rätt utan att listas: en fil hör till `app` om källan nämner 
 - `npm run test:app` kör bara `app`; `npm run test:watch` startar Vitest direkt i bevakningsläge.
 
 `npm test`, `npm run test:full` och `npm run test:app` går genom `tools/test.mjs`, som kör sviten och sedan kör om de filer vars arbetare dog i Node
-(SIGSEGV i V8:s skräpsamlare, sällsynt; orsaken ligger i Node, teknisk-plan §9 punkt 6), högst två gånger. Ett test
+(SIGSEGV i V8:s skräpsamlare, sällsynt; orsaken ligger i Node, punkt 6 i [`oppna-punkter.md`](oppna-punkter.md)), högst två gånger. Ett test
 som faller körs aldrig om, och utgångskoden är 0 först när alla filer har rapporterat och inget test har fallit.
 
 ### 5.3 Testmiljön
@@ -194,8 +194,8 @@ genom den riktiga filuppladdningen i Chromium, mäter tiden tills gränssnittet 
 är klara, tar tid på varje fliks rendering och mäter därefter navigeringen (sidindexet, första sökningen,
 BAS-dossiern och gruppdossiern). Vakten är en snäv budget på tiden till klart gränssnitt (5 s), snäv för att en
 kvadratisk loop ska synas, och 1 s för förhandsbeskedet efter ett ändrat kryss under *Rapportens innehåll*. Budgeten
-är maskinberoende, så skriptet körs inför en release på en utvecklarmaskin, inte i CI. Mätvärdena står i
-teknisk-plan §9 punkt 5. Översiktens bootstrap och trattdiagrammets omkastning räknas en gång per underlag.
+är maskinberoende, så skriptet körs inför en release på en utvecklarmaskin, inte i CI. Mätvärdena står i punkt 5 i
+[`oppna-punkter.md`](oppna-punkter.md). Översiktens bootstrap och trattdiagrammets omkastning räknas en gång per underlag.
 
 ## 6. Typkontrollen
 
