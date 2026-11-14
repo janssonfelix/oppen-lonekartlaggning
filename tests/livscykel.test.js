@@ -6,7 +6,7 @@
  * bara "ser rimlig ut" utan faktiskt skattar det den säger att den skattar.
  */
 import { describe, it, expect } from 'vitest';
-import { livscykelRegression } from '../src/lib/livscykel.js';
+import { livscykelRegression, livscykelNiva } from '../src/lib/livscykel.js';
 import { fitOLS } from '../src/lib/stat.js';
 
 function lcg(seed) {
@@ -157,6 +157,61 @@ describe('livscykelRegression: fixBas', () => {
         const c = livscykelRegression(rader, { fixBas: 'C', golv: 10 });
         expect(c.predMan[0].lon).toBeGreaterThan(a.predMan[0].lon);
         expect(c.gapAt25).toBeCloseTo(a.gapAt25, 10);
+    });
+});
+
+// Kvinnor får `effekt` lägre log-lön i alla åldrar. Varje cell (kön, ålder, BAS) har två personer med bruset +e och
+// −e, så att residualerna summerar till noll i varje cell: alla designkolumner är konstanta inom cellen, så OLS ger
+// exakt den inbyggda effekten, och bruset styr bara intervallets bredd.
+function trappFixtur(skillnadPct, brus) {
+    const effekt = Math.log(1 + skillnadPct / 100), rader = [];
+    for (let alder = 25; alder <= 65; alder += 5)
+        for (const bas of ['A', 'B'])
+            for (const kon of ['kvinna', 'man'])
+                for (const e of [brus, -brus]) {
+                    const log = 10 + (kon === 'kvinna' ? effekt : 0) + 0.01 * (alder - 25) + (bas === 'B' ? 0.1 : 0) + e;
+                    rader.push({ kon, alder, bas, lon: Math.exp(log) });
+                }
+    return rader;
+}
+
+describe('livscykelRegression: nyckeltalen vid 25 och 65 år följer trappan (ADR-59)', () => {
+    it('en tydlig skillnad (−8 %) med ett intervall som utesluter lika lön är värd att granska', () => {
+        const res = livscykelRegression(trappFixtur(-8, 0.01), { golv: 10 });
+        expect(res.gapAt25).toBeCloseTo(-8, 6);
+        expect(res.gapPerAge[0].gapHiPct).toBeLessThan(0);
+        expect(res.niva25).toBe('granska');
+        expect(res.niva65).toBe('granska');
+    });
+
+    it('en skillnad på −4 % med ett intervall som täcker lika lön är följ upp, inte granska', () => {
+        const res = livscykelRegression(trappFixtur(-4, 0.4), { golv: 10 });
+        expect(res.gapAt25).toBeCloseTo(-4, 6);
+        expect(res.gapPerAge[0].gapLoPct).toBeLessThan(0);
+        expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
+        expect(res.niva25).toBe('folj');
+    });
+
+    it('under 3 % med ett intervall som täcker lika lön är balanserat', () => {
+        const res = livscykelRegression(trappFixtur(-2, 0.4), { golv: 10 });
+        expect(res.gapAt25).toBeCloseTo(-2, 6);
+        expect(res.gapPerAge[0].gapLoPct).toBeLessThan(0);
+        expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
+        expect(res.niva25).toBe('balanserat');
+    });
+
+    it('storleken ensam ger ingen status: −6 % med ett intervall som täcker lika lön är följ upp', () => {
+        const res = livscykelRegression(trappFixtur(-6, 0.6), { golv: 10 });
+        expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
+        expect(res.niva25).toBe('folj');
+    });
+
+    it('ett intervall som saknas eller inte är ändligt går ej att bedöma, inte balanserat', () => {
+        expect(livscykelNiva({ gapPct: -8, gapLoPct: NaN, gapHiPct: -6 })).toBe('ejbedomd');
+        expect(livscykelNiva({ gapPct: -1, gapLoPct: -Infinity, gapHiPct: Infinity })).toBe('ejbedomd');
+        expect(livscykelNiva({ gapPct: NaN, gapLoPct: -2, gapHiPct: 1 })).toBe('ejbedomd');
+        expect(livscykelNiva(undefined)).toBe('ejbedomd');
+        expect(livscykelNiva({ gapPct: -8, gapLoPct: -10, gapHiPct: -6 })).toBe('granska');
     });
 });
 

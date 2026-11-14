@@ -60,7 +60,15 @@ function renderLifecycleAnalysis() {
     // Sammanfattningsrutor för gap-utveckling
     const gapStart = result.gapAt25;
     const gapEnd   = result.gapAt65;
-    const gapKlass = (g) => Math.abs(g) > 5 ? 'fg-kritisk' : Math.abs(g) > 2 ? 'fg-varning' : 'fg-ok';
+    // Nyckeltalens färg följer uppmärksamhetstrappan (ADR-59): modellens 95 %-intervall för skillnaden vid åldern
+    // prövar den (result.niva25, result.niva65 ur src/lib/livscykel.js). Färgen bär inte betydelsen ensam: statusens
+    // ikon står bredvid talet och ordet i verktygstipset och för skärmläsaren (WCAG 1.4.1).
+    const nyckeltal = (niva, kvot) => {
+        const st = gapStatusNiva(niva);
+        const klass = { granska: 'farg-granska', varning: 'farg-varning', ok: 'farg-ok' }[st.farg] || 'farg-dampad';
+        return `<div class="fs-xl fw-700 ${klass}" data-niva="${st.niva}" title="${esc(st.serie)}">${ikon(st.ikon)} ${svPct(kvot, 1)}</div>
+                <span class="sr-only">${esc(st.serie)}</span>`;
+    };
     // Nyckeltalen är kvinnors lön i % av mäns, som i resten av verktyget. Modellen är log-linjär och ger skillnaden
     // (exp(skillnaden på log-skalan) − 1) × 100, så kvoten är 100 + skillnaden; förändringen 25–65 år är densamma i
     // procentenheter vilket mått man än läser.
@@ -148,12 +156,12 @@ function renderLifecycleAnalysis() {
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 25 år</div>
-                <div class="fs-xl fw-700 ${gapKlass(gapStart)}">${svPct(kvot25, 1)}</div>
+                ${nyckeltal(result.niva25, kvot25)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 65 år</div>
-                <div class="fs-xl fw-700 ${gapKlass(gapEnd)}">${svPct(kvot65, 1)}</div>
+                ${nyckeltal(result.niva65, kvot65)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">

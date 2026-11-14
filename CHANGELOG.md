@@ -4,6 +4,17 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`.
 
+## Oförlöst
+
+### Gränssnitt
+
+- **Livscykelns nyckeltal följer uppmärksamhetstrappan.** Kvinnors lön i % av mäns vid 25 och 65 år färgades rött
+  över 5 % och gult över 2 %, på storleken ensam. Färgen följer nu trappan (ADR-59): *Värt att granska* när modellens
+  95 % konfidensintervall för skillnaden vid åldern utesluter lika lön och skillnaden är minst 3 %, *Följ upp* när den
+  är minst 3 % men inte säkerställd eller säkerställd men under 3 %, *Balanserat* annars, och *Går ej att bedöma*
+  när intervallet inte kan räknas. Statusens ikon står bredvid talet och ordet i verktygstipset, så att färgen inte
+  bär betydelsen ensam.
+
 ## 2026.11.14
 
 ### Gränssnitt

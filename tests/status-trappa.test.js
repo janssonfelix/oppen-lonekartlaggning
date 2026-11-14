@@ -11,6 +11,9 @@
  * regressionens justerade tal.
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { statusNiva, direktivMarkering, slumpensGranser, bedomSkillnad, perBasSignal, STORLEKSGRANS, DIREKTIVNIVA,
     STATUS_ORD, DIREKTIV_TIPS, DIREKTIV_KOLUMN } from '../src/lib/status.js';
 import { likaArbeteGrupper, stabilitetKort, avsnittBlock } from '../src/lib/rapportunderlag.js';
@@ -135,5 +138,21 @@ describe('direktivmarkeringen', () => {
         expect(perBasSignal(8, false, true).niva).toBe('osakert');
         expect(perBasSignal(8, false, false).niva).toBe('inget');
         expect('direktiv' in s).toBe(false);
+    });
+});
+
+describe('ingen färg på storleken ensam i appen', () => {
+    // Den gamla gapKlass i livscykeln färgade nyckeltalen rött över 5 % och gult över 2 %, på storleken ensam. En
+    // jämförelse med 5 % som direkt väljer en färgklass (fg-, farg-, ar-, bricka-, bg-, f-) är samma fel.
+    const MONSTER = /Math\.abs\([^)]*\)\s*>=?\s*5(?:\.0+)?\s*\?\s*['"`](?:fg|farg|ar|bricka|bg|f)-[\w-]+/;
+    const appDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'app');
+    it('ingen fil under src/app/ (utom spegeln) sätter en färgklass på |skillnad| > 5', () => {
+        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js')
+            .flatMap(f => readFileSync(join(appDir, f), 'utf8').split('\n')
+                .map((rad, i) => (MONSTER.test(rad) ? `${f}:${i + 1}: ${rad.trim()}` : null)).filter(Boolean));
+        expect(traffar).toEqual([]);
+    });
+    it('mönstret fäller den gamla gapKlass', () => {
+        expect(MONSTER.test("const gapKlass = (g) => Math.abs(g) > 5 ? 'fg-kritisk' : Math.abs(g) > 2 ? 'fg-varning' : 'fg-ok';")).toBe(true);
     });
 });

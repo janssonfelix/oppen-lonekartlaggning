@@ -503,6 +503,15 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         const rutor = [...d.querySelectorAll('#livscykel-content .stat-box')].map(b => [b.querySelector('.stat-etikett').textContent, b.querySelector('.fs-xl')?.textContent.trim()]);
         expect(rutor[0]).toEqual(['Kvinnors lön i % av mäns, 25 år', pct(100 + r.gapAt25)]);
         expect(rutor[1]).toEqual(['Kvinnors lön i % av mäns, 65 år', pct(100 + r.gapAt65)]);
+        // Färgen följer trappan (ADR-59), med statusens ikon bredvid talet och ordet i verktygstipset.
+        const tal = [...d.querySelectorAll('#livscykel-content .stat-box .fs-xl')].slice(0, 2);
+        tal.forEach((el, i) => {
+            const st = w.eval(`gapStatusNiva(${JSON.stringify(i ? r.niva65 : r.niva25)})`);
+            expect(el.dataset.niva).toBe(st.niva);
+            expect(el.getAttribute('title')).toBe(st.serie);
+            expect(el.querySelector('svg.ikon-' + st.ikon)).not.toBeNull();
+            expect(el.className).not.toMatch(/fg-kritisk/);
+        });
         expect(d.querySelector('#livscykel-content .livscykel-kvot-not').textContent).toContain('Modellen ger skillnaden i procent');
     });
     it('livscykeln säger "inte säkerställd" i ord, stjärnorna förklaras, och modellformeln står i beräkningspanelen', () => {

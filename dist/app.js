@@ -5628,6 +5628,7 @@ const __mirrorLivscykel = (() => {
     const fitOLS = __mirrorStat.fitOLS;
     const pValue2Sided = __mirrorStat.pValue2Sided;
     const tQuantile = __mirrorStat.tQuantile;
+    const statusNiva = __mirrorStatus.statusNiva;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5645,6 +5646,19 @@ const __mirrorLivscykel = (() => {
  * src/app/52-livscykel.js är den tunna adaptern som läser getData() och statGolv().
  */
 
+
+
+/**
+ * Trappans nivå för skillnaden vid en ålder (ADR-59): avståndet från lika lön är |gapPct|, och skillnaden är
+ * säkerställd när modellens 95 %-intervall för den utesluter 0. Ett intervall som saknas eller inte är ändligt går
+ * ej att bedöma.
+ * @param {{gapPct:number, gapLoPct:number, gapHiPct:number}|null|undefined} g  en rad ur gapPerAge
+ * @returns {'granska'|'folj'|'balanserat'|'ejbedomd'}
+ */
+function livscykelNiva(g) {
+    if (!g || !isFinite(g.gapPct) || !isFinite(g.gapLoPct) || !isFinite(g.gapHiPct)) return 'ejbedomd';
+    return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
+}
 
 /**
  * @param {Array<{lon:number, alder:number, kon:string, bas:string}>} rader
@@ -5800,6 +5814,9 @@ function livscykelRegression(rader, { fixBas, golv }) {
     const gapAt25 = gapPerAge[0].gapPct;
     const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
     const gapDelta = gapAt65 - gapAt25;
+    // Nyckeltalens status följer trappan, inte storleken ensam.
+    const niva25 = livscykelNiva(gapPerAge[0]);
+    const niva65 = livscykelNiva(gapPerAge[gapPerAge.length - 1]);
 
     return {
         ok: true,
@@ -5810,7 +5827,7 @@ function livscykelRegression(rader, { fixBas, golv }) {
         kvCoef, kvSE, kvPValue,
         kvAgeCoef: fit.beta[idxKvAge], kvAgePVal,
         kvAge2Coef: fit.beta[idxKvAge2], kvAge2PVal,
-        gapAt25, gapAt65, gapDelta
+        gapAt25, gapAt65, gapDelta, niva25, niva65
     };
 }
 
@@ -29827,7 +29844,15 @@ function renderLifecycleAnalysis() {
     // Sammanfattningsrutor för gap-utveckling
     const gapStart = result.gapAt25;
     const gapEnd   = result.gapAt65;
-    const gapKlass = (g) => Math.abs(g) > 5 ? 'fg-kritisk' : Math.abs(g) > 2 ? 'fg-varning' : 'fg-ok';
+    // Nyckeltalens färg följer uppmärksamhetstrappan (ADR-59): modellens 95 %-intervall för skillnaden vid åldern
+    // prövar den (result.niva25, result.niva65 ur src/lib/livscykel.js). Färgen bär inte betydelsen ensam: statusens
+    // ikon står bredvid talet och ordet i verktygstipset och för skärmläsaren (WCAG 1.4.1).
+    const nyckeltal = (niva, kvot) => {
+        const st = gapStatusNiva(niva);
+        const klass = { granska: 'farg-granska', varning: 'farg-varning', ok: 'farg-ok' }[st.farg] || 'farg-dampad';
+        return `<div class="fs-xl fw-700 ${klass}" data-niva="${st.niva}" title="${esc(st.serie)}">${ikon(st.ikon)} ${svPct(kvot, 1)}</div>
+                <span class="sr-only">${esc(st.serie)}</span>`;
+    };
     // Nyckeltalen är kvinnors lön i % av mäns, som i resten av verktyget. Modellen är log-linjär och ger skillnaden
     // (exp(skillnaden på log-skalan) − 1) × 100, så kvoten är 100 + skillnaden; förändringen 25–65 år är densamma i
     // procentenheter vilket mått man än läser.
@@ -29915,12 +29940,12 @@ function renderLifecycleAnalysis() {
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 25 år</div>
-                <div class="fs-xl fw-700 ${gapKlass(gapStart)}">${svPct(kvot25, 1)}</div>
+                ${nyckeltal(result.niva25, kvot25)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 65 år</div>
-                <div class="fs-xl fw-700 ${gapKlass(gapEnd)}">${svPct(kvot65, 1)}</div>
+                ${nyckeltal(result.niva65, kvot65)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">

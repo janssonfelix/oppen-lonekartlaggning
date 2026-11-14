@@ -15,6 +15,19 @@
  */
 
 import { fitOLS, pValue2Sided, tQuantile } from './stat.js';
+import { statusNiva } from './status.js';
+
+/**
+ * Trappans nivå för skillnaden vid en ålder (ADR-59): avståndet från lika lön är |gapPct|, och skillnaden är
+ * säkerställd när modellens 95 %-intervall för den utesluter 0. Ett intervall som saknas eller inte är ändligt går
+ * ej att bedöma.
+ * @param {{gapPct:number, gapLoPct:number, gapHiPct:number}|null|undefined} g  en rad ur gapPerAge
+ * @returns {'granska'|'folj'|'balanserat'|'ejbedomd'}
+ */
+export function livscykelNiva(g) {
+    if (!g || !isFinite(g.gapPct) || !isFinite(g.gapLoPct) || !isFinite(g.gapHiPct)) return 'ejbedomd';
+    return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
+}
 
 /**
  * @param {Array<{lon:number, alder:number, kon:string, bas:string}>} rader
@@ -170,6 +183,9 @@ export function livscykelRegression(rader, { fixBas, golv }) {
     const gapAt25 = gapPerAge[0].gapPct;
     const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
     const gapDelta = gapAt65 - gapAt25;
+    // Nyckeltalens status följer trappan, inte storleken ensam.
+    const niva25 = livscykelNiva(gapPerAge[0]);
+    const niva65 = livscykelNiva(gapPerAge[gapPerAge.length - 1]);
 
     return {
         ok: true,
@@ -180,6 +196,6 @@ export function livscykelRegression(rader, { fixBas, golv }) {
         kvCoef, kvSE, kvPValue,
         kvAgeCoef: fit.beta[idxKvAge], kvAgePVal,
         kvAge2Coef: fit.beta[idxKvAge2], kvAge2PVal,
-        gapAt25, gapAt65, gapDelta
+        gapAt25, gapAt65, gapDelta, niva25, niva65
     };
 }
