@@ -9,7 +9,7 @@
  *
  * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
  *   Klassning — EN definition i hela verktyget: arKvinnodominerad()/konsklass() nedan.
- *            DO: mer än gränsen (standard 60 %); SCB: gränsen eller mer. Mansdominerat
+ *            'do': mer än gränsen (standard 60 %); 'scb': gränsen eller mer. Mansdominerat
  *            speglas för män; övriga är blandade.
  *   Steg 1 — Organisationens AID×BAS-grupper delas i:
  *            • kvinnodominerade — analysens subjekt
@@ -17,8 +17,8 @@
  *              med klassen synlig (PRIMÄR jämförelsekälla; § 3:10 är en
  *              inom-arbetsgivare-analys). K-anonymitet tillämpas EJ.
  *   Steg 2 — jämförelsestatistikens AID×BAS som inte är kvinnodominerade blir
- *            kandidater med klass. Lokal könsdata primär,
- *            SCB-prefix-fallback (injicerad `scbKlass`-funktion) annars.
+ *            kandidater med klass. Lokal könsdata primär, den nationella
+ *            personalstatistiken som reserv (injicerad `nationellKlass`-funktion) annars.
  *            Används som EXTERN fallback per BAS.
  *            Filtret `jamforelse: 'mansdominerade'` begränsar båda mängderna till de
  *            mansdominerade (det tidigare urvalet).
@@ -41,13 +41,14 @@ import { median as _median } from './stat.js';
 import { rngFor } from './rng.js';
 import { direktivMarkering } from './status.js';
 
-export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (DO: mer än 60 % kvinnor)
-export const ICKE_KV_TAK = 40;              // < → mansdominerat med DO och standardgränsen (klassen, inte urvalet; ADR-60)
+export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
+export const ICKE_KV_TAK = 40;              // < → mansdominerat med 'do' och standardgränsen (klassen, inte urvalet; ADR-60)
 export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
 
 /**
  * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
- * DO: mer än gränsen. SCB: gränsen eller mer.
+ * 'do' (*Mer än X %*): mer än gränsen. 'scb' (*X % eller mer*): gränsen eller mer. Nycklarna är historiska och
+ * står kvar för sparade konfigurationsfiler; valen heter efter lydelsen (ADR-72).
  * @param {number|null|undefined} pct - procent kvinnor
  * @param {'do'|'scb'|string} [definition='do']
  * @param {number} [grans=60]
@@ -204,7 +205,7 @@ function _aldersFalt(f, g, ärIntern, golv) {
  * @param {Array<{aid:string, bas:string, lon:number, kon:string, yrkeLabel?:string, yrke?:string, alder?:number}>} data
  * @param {number} kvinnoThr - kvinnotröskel i procent
  * @param {number} [K=10]
- * @param {'do'|'scb'} [definition='do'] - DO: mer än tröskeln; SCB: tröskeln eller mer
+ * @param {'do'|'scb'} [definition='do'] - 'do': mer än tröskeln; 'scb': tröskeln eller mer
  * @returns {{orgKvDom:Array, orgIckeKv:Array, antalAidxBas:number, kvDomMedNLessThanK:number}}
  */
 export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
@@ -252,30 +253,30 @@ export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 
  * `klass.ickeKv` är alla kandidater; `klass.blandat` är hur många av dem som är blandade.
  *
  * @param {Array<{aid:string, bas:string, median:number, andelKv?:number, aidFull?:string, nKv?:number, nMa?:number}>} statistik
- * @param {((aid:string) => ({kvAndel:number}|null))|null} [scbKlass] - SCB-prefix-fallback
+ * @param {((aid:string) => ({kvAndel:number}|null))|null} [nationellKlass] - reserven: den nationella kvinnoandelen per AID-kod
  * @param {{definition?:'do'|'scb', grans?:number}} [val]
  * @returns {{statIckeKv:Array, statByBas:Map, klass:Object, klassKalla:Object}}
  */
-export function klassificeraStatistik(statistik, scbKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
+export function klassificeraStatistik(statistik, nationellKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
     const statByBas = new Map();
     const statIckeKv = [];
     const klass = { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 };
-    const klassKalla = { lokal: 0, scb: 0 };
+    const klassKalla = { lokal: 0, nationell: 0 };
 
     for (const s of (statistik || [])) {
         if (!s || !s.aid || !s.bas || !(s.median > 0)) continue;
         if (!/^\d+$/.test(String(s.aid))) continue;   // hoppa över yrkesfamiljerubriker
 
         /** @type {number|null} */ let kvAndel = null;
-        /** @type {'lokal'|'scb'|null} */ let källa = null;
+        /** @type {'lokal'|'nationell'|null} */ let källa = null;
         if (s.andelKv != null && s.andelKv >= 0 && s.andelKv <= 100) {
             kvAndel = s.andelKv; källa = 'lokal';
-        } else if (typeof scbKlass === 'function') {
-            const scb = scbKlass(s.aid);
-            if (scb && scb.kvAndel != null) { kvAndel = scb.kvAndel; källa = 'scb'; }
+        } else if (typeof nationellKlass === 'function') {
+            const nat = nationellKlass(s.aid);
+            if (nat && nat.kvAndel != null) { kvAndel = nat.kvAndel; källa = 'nationell'; }
         }
         if (kvAndel == null) { klass.oklassificerad++; continue; }
-        if (källa === 'lokal') klassKalla.lokal++; else klassKalla.scb++;
+        if (källa === 'lokal') klassKalla.lokal++; else klassKalla.nationell++;
 
         const ks = konsklass(kvAndel, definition, grans);
         if (ks === 'kvinnodominerad') { klass.kvDom++; continue; }
@@ -408,9 +409,7 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,                       // 'intern' | 'extern'
-                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'SCB'),
-                maScbKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
-                maScbPrefix: (!ärIntern && g.källa === 'scb') ? String(g.aid).slice(0, 3) : null,
+                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'nationell'),   // var andelen kommer ifrån
                 gapKr, gapPct, gapCI,
                 ..._aldersFalt(f, g, ärIntern, golv),
                 allvarsindex: Math.abs(gapKr) * f.n
@@ -499,9 +498,7 @@ export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts =
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,
-                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'SCB'),
-                maScbKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
-                maScbPrefix: (!ärIntern && g.källa === 'scb') ? String(g.aid).slice(0, 3) : null,
+                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'nationell'),   // var andelen kommer ifrån
                 gapKr, gapPct, gapCI,
                 ..._aldersFalt(f, g, ärIntern, golv),
                 kvPoang: fP, maPoang: poangFor(g),
@@ -573,13 +570,13 @@ export function basRangFn(allaBas) {
  * @param {Object} [input]
  * @param {Array} [input.data] - organisationens individdata
  * @param {Array} [input.statistik] - jämförelsestatistiken
- * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.scbKlass]
+ * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.nationellKlass]
  * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
- *   kvDomDefinition: 'do' (mer än tröskeln, standard) | 'scb' (tröskeln eller mer).
+ *   kvDomDefinition: 'do' (*Mer än X %*, standard) | 'scb' (*X % eller mer*; ADR-72).
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
-export function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, opts = {} } = {}) {
+export function computeLikvardighetPairs({ data = [], statistik = [], nationellKlass = null, opts = {} } = {}) {
     const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_DEFAULT;
     const definition = opts.kvDomDefinition === 'scb' ? 'scb' : 'do';
     const jamforelse = opts.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
@@ -599,7 +596,7 @@ export function computeLikvardighetPairs({ data = [], statistik = [], scbKlass =
 
     // k-tröskeln används bara för att RÄKNA små kvinnodominerade grupper i diagnostiken (de ingår ändå).
     const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10, definition);
-    const s2 = klassificeraStatistik(statistik, scbKlass, { definition, grans: kvinnoThr });
+    const s2 = klassificeraStatistik(statistik, nationellKlass, { definition, grans: kvinnoThr });
     // Filtret 'mansdominerade' begränsar jämförelsemängden innan paren byggs, så att reserven
     // till jämförelsestatistiken per BAS fungerar som förut när bara blandade egna yrken finns.
     if (jamforelse === 'mansdominerade') {

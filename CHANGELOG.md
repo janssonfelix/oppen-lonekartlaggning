@@ -4,6 +4,121 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`.
 
+## Oförlöst
+
+### Gränssnitt
+
+- **Livscykelns nyckeltal följer uppmärksamhetstrappan.** Kvinnors lön i % av mäns vid 25 och 65 år färgades rött
+  över 5 % och gult över 2 %, på storleken ensam. Färgen följer nu trappan (ADR-71): *Värt att granska* när modellens
+  95 % konfidensintervall för skillnaden vid åldern utesluter lika lön och skillnaden är minst 3 %, *Följ upp* när den
+  är minst 3 % men inte säkerställd eller säkerställd men under 3 %, *Balanserat* annars, och *Går ej att bedöma*
+  när intervallet inte kan räknas. Statusens ikon står bredvid talet och ordet i verktygstipset, så att färgen inte
+  bär betydelsen ensam.
+- **Livscykelns förändring 25–65 år färgas på prövningen, inte på storleken, med en gräns för samspelet.** Rutan
+  var gul när förändringen var större än 1 procentenhet och grön annars, oavsett om den var säkerställd. Nu är den
+  varningsfärgad när samspelet mellan kön och ålder är säkerställt och neutral annars, inte grön: att en förändring
+  inte är säkerställd betyder inte att läget är balanserat. Ordet (*säkerställd förändring* eller *inte säkerställd*)
+  står i verktygstipset och för skärmläsaren (ADR-71). Rutan, *Är förändringen säkerställd?* och Att utforska
+  räknade samspelet som säkerställt vid p < 0,10, medan tolkningstexten räknade det som inte säkerställt först vid
+  p > 0,10, så att de sade olika saker vid exakt 0,10. Alla fyra använder nu en regel (`samspelSakerstallt`):
+  säkerställt när något av de två p-värdena är under 0,10; exakt 0,10 är inte säkerställt.
+- **Percentiltabellen i Lönestruktur markerar inte på storleken.** I *Var i lönefördelningen är skillnaden störst?*
+  var cellen *Kvinnors lön i % av mäns* rosa och halvfet när kvinnor låg mer än 5 % lägre vid percentilen, utan
+  prövning. Cellen är nu neutral, som uppmärksamhetstrappan kräver (ADR-71); stapeln bredvid visar fortfarande
+  skillnadens riktning och storlek.
+- **Livscykelns tabell per BAS-intervall markerar inte på storleken.** I *Modellens lönenivåer per BAS-intervall vid
+  25 och 65 år* var cellerna *Skillnad 25 år (kr)* och *Skillnad 65 år (kr)* varningsfärgade när kvinnor låg mer än
+  1 000 kr lägre, utan prövning. Cellerna är nu neutrala (ADR-71). Vakten mot färg på storleken ensam söker nu i alla
+  filer under `src/app/`, inte bara Lönestruktur.
+- **Källorna pekas ut exakt eller inte alls.** Ordlistan (*Oförklarad löneskillnad*), metodtexten i Om verktyget,
+  två verktygstips i regressionskortet, verktygstipset på nyckeltalet *Kvinnors lön i % av mäns* och *Så används
+  fliken i arbetet* i Lika arbete jämförde verktygets mått med Medlingsinstitutets utan att peka ut någon källa.
+  Jämförelserna är strukna. Bland referenserna i Om verktyget står i stället för en årlig skrift utan år den rapport verktyget
+  citerar, Medlingsinstitutet (2026), *Löneskillnaden mellan kvinnor och män 2025*, och Blinder (1973) och Oaxaca
+  (1973) med fullständiga uppgifter, eftersom regressionskortet hänvisar till dem. Referensdatan för åldersstrukturen
+  säger nu vilket år den gäller: SCB:s arbetskraftsundersökningar (AKU), årsmedeltal 2023, avrundade, i
+  verktygstipset, diagramtexten, referenslistan och referenslinjens namn (*Sveriges sysselsatta (SCB AKU 2023)*).
+- **Definitionerna av kvinnodominerat heter efter lydelsen.** Valen i Likvärdigt arbetes inställningar hette
+  *Förarbetena — mer än 60 % kvinnor* och *SCB — 60 % kvinnor eller mer*. SCB definierar kvinnodominerat som mer än
+  60 procent kvinnor, och båda lydelserna står i samma proposition, så namnet SCB var fel. Valen heter nu
+  *Mer än 60 %* och *60 % eller mer* (med den inställda kvinnotröskeln), under rubriken *Kvinnodominerat när andelen
+  kvinnor är* (ADR-72). Tabellerna per AID-kod och BAS-intervall, Lika arbetes metodtext och nyckeltalet skriver
+  *Kvinnodominerad vid mer än 60 % kvinnor* i stället för *enligt Förarbetena* eller *enligt SCB*, och ordlistan
+  nämner inte längre förarbetena; källan står i utvecklardokumentationen. Klassningen är oförändrad, och sparade
+  konfigurationsfiler läses som förut.
+- **Åldersdiagrammets text säger hur referenslinjen ser ut.** Texten under åldersfördelningen i Ålder & karriär
+  kallade referenslinjen för Sveriges sysselsatta streckad; den ritas prickad, och texten säger nu det.
+- **q-värdet visas också när bara ett BAS-intervall prövas.** Regressionskortet visade — som q-värde när ett enda
+  BAS-intervall kunde prövas, medan protokollet för gemensam lönebedömning skrev q-värdet (lika med p-värdet). Med ett
+  enda test är q = p, och kortet, beräkningsbeviset och Att göra visar nu talet, som protokollet. Texten under
+  tabellen säger att q-värdet är detsamma som p-värdet. Vilka intervall som är säkerställda ändras inte.
+- **Inga påståenden om standardmetoder utan källa.** Ordlistans *OLS-regression* kallade metoden *standardmetoden*
+  och *vanlig metod i lönekartläggning*, och verktygstipset för Blinder-Oaxaca i regressionskortet *standardmetod inom
+  arbetsmarknadsekonomi*, utan att peka ut någon källa. Ordlistan säger nu bara vad metoden gör, och verktygstipset
+  börjar *Uppdelningen enligt Blinder (1973) och Oaxaca (1973)*, som står med fullständiga uppgifter bland
+  referenserna i Om verktyget. Kodkommentarer som åberopade "vedertagen standard", "vedertagna tumregler",
+  "vedertagen form" och ett författarnamn utan referens säger nu vad koden gör.
+- **Jämn könsfördelning blandas inte ihop med kvinnodominerat.** Ordlistan sade att en grupp blir könsdominerad från
+  61/39. Gränsen för jämn könsfördelning (båda könen minst 40 %) är fast, men kvinnodominerat följer valet i
+  Likvärdigt arbetes inställningar, och med *60 % eller mer* är en grupp med precis 60 % kvinnor kvinnodominerad.
+  Ordlistan (*Jämn könsfördelning*, *Könsskevhet*) och texten över Lönestrukturs tabell över könsfördelningen skiljer
+  nu de två åt.
+
+### Exporter
+
+- **Metodtexterna säger definitionen av kvinnodominerat med dess lydelse.** Raden *Kvinnodominerat enligt* i
+  Likvärdigt arbetes CSV- och Excel-export heter *Kvinnodominerat vid* och har värdet *mer än 60 % kvinnor* (eller
+  *60 % kvinnor eller mer*), och metodbladen i Excel-exporten och PDF-rapportens formler skriver *Kvinnodominerad vid
+  mer än 60 % kvinnor* i stället för *Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens
+  förarbeten)* (ADR-72). Inga tal har ändrats.
+- **Gränsen för kvinnodominerat skrivs med samma ord överallt.** Med valet *60 % eller mer* skrev rapportunderlaget
+  och rapporttexten *Ett yrke räknas som kvinnodominerat vid minst 60 % kvinnor*, och Steg 1-raden, slutsatsen och
+  diagramtexten i Likvärdigt arbete, Löneöversyn och beräkningsbeviset *minst 60 % kvinnor*. De skriver nu *60 %
+  kvinnor eller mer*, som valet, tabellerna och metodbladen; texten kommer från samma funktion (`kvDefinitionText`).
+  Med *Mer än 60 %* är texten oförändrad.
+
+- **Protokollet för gemensam lönebedömning väljer BAS-intervall efter korrigering för många tester.** Bladet
+  *3. Likvärdigt arbete (BAS)* tog med ett intervall när det råa p-värdet var under 0,05 och skillnaden minst 3 %,
+  utan den korrigering som regressionskortet och Att göra gör (Benjamini–Hochberg). Nu gäller samma regel som där: ett
+  intervall tas med när q-värdet efter korrigeringen är under 0,05 och skillnaden minst 3 % (ADR-71). Bladet har
+  kolumnen *q-värde (BH-justerat)* efter p-värdet, och kolumnen som sade Ja eller Nej på p säger det nu på q
+  (*Säkerställd efter korrigering (q < 0,05)*). Försättsbladets antal, raden i bladet med exkluderade grupper och
+  metodbladets rader om signifikans och multipel jämförelse följer. Korrigeringen räknas på ett ställe
+  (`bhJustera` i `src/lib/stat.js`) för kortet, Att göra och protokollet; kortets och Att göras tal är oförändrade.
+- **Handlingsplanen säger vad kostnaden avser.** Kolumnen *Beräknad kostnad* bär två slag av kostnad: för rader ur
+  Prioritering kostnaden att lyfta gruppen till referensens median, för kandidatpar i likvärdigt arbete kostnaden att
+  lyfta det kvinnodominerade yrket till jämförelseyrkets median. Bara vägledningsbladet sade det. Nu har varje rad
+  kolumnen *Kostnaden avser* direkt efter kostnaden, med *Nå referensens median* eller *Nå jämförelseyrkets median*
+  och en tom cell för en egen rad: på fliken och i utskriften av mallen, i
+  Excel-underlaget, i åtgärdstabellen i Word-utkastet och PDF-rapporten och i Rapporttext. Rapporttextens summa delas
+  på de två slagen. Kolumnen härleds ur radens underlag; konfigurationsfilen är oförändrad, och inga tal har ändrats.
+  Ingressen till avsnittet *Åtgärder och tidsplan* i Word-utkastet och PDF-rapporten förklarar nu båda slagen med
+  kolumnens ord; tidigare förklarade den bara kostnaden för raderna ur Prioritering.
+- **Protokollets metodblad hänvisar inte längre löst till praxis.** Raden *Statistisk signifikans* sade att gränsen
+  följde en myndighets praxis utan att peka ut någon källa. Meningen är struken; gränsen och korrigeringen står kvar
+  som förut.
+
+### Utveckling
+
+- **Reserven för kvinnoandel heter efter vad den är, inte SCB.** Den nationella kvinnoandelen per AID-kod kommer ur
+  SKR:s personalstatistik, men hette SCB i likvärdighetsanalysens kärna. Parametern `scbKlass` till
+  `computeLikvardighetPairs` och `klassificeraStatistik` heter `nationellKlass`, källan på en statistikrad `'nationell'`
+  i stället för `'scb'`, räknaren `diagnostik.statistik.klassKalla.scb` heter `klassKalla.nationell` och parets
+  `maKlassKort` är `'nationell'` i stället för `'SCB'`. De oanvända fälten `maScbKvAndel` (samma tal som `maKvAndel`)
+  och `maScbPrefix` är borttagna. Fälten är interna: de skrivs inte till någon export, konfigurationsfil eller
+  organisationspaket, och användaren såg aldrig värdet `'SCB'` (gränssnittet och exporterna skrev redan
+  *nationell statistik (SKR)* och *SKR:s personalstatistik*). Nyckeln `'scb'` för definitionen av kvinnodominerat
+  (*X % eller mer*, ADR-72) är oförändrad.
+- **Ändringarna efter uppmärksamhetstrappan är ett eget beslut, ADR-71.** De fördes in som ett tillägg i ADR-59:
+  livscykelns nyckeltal och förändringen 25–65 år, protokollets BAS-intervall efter BH-korrigering, kolumnen
+  *Skillnad kön* i Prioriteringen och percentiltabellen i Lönestruktur. Ett beslut som ändrar ett annat får nästa
+  lediga nummer (`.github/GOVERNANCE.md`); ADR-59 har status *Ändrad av ADR-71*, och regel R28, teknisk-plan
+  punkt 9e och kommentarerna pekar på det nya beslutet.
+- **BH-korrigeringen prövas mot statsmodels.** `bhJustera` prövades bara mot handräknade fall. Referenstestet
+  jämför nu q-värdena med `multipletests(method='fdr_bh')` i statsmodels för fem p-vektorer (lika p-värden, ett enda
+  p-värde, tio osorterade, ett fall där monotoniseringen slår till och p-värden nära 1), inom 1e-12. Skriptet som
+  räknade står i `tests/fixtures/ref-bh-justera.py`; inga tal i verktyget har ändrats.
+
 ## 2026.11.14
 
 ### Gränssnitt

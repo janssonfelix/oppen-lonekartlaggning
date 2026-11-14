@@ -29,6 +29,7 @@ const __mirrorStat = (() => {
  *   - matMul, transpose, invert            (matrisalgebra)
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
+ *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  */
 
 /**
@@ -301,12 +302,36 @@ function fitOLS(X, y) {
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }
 
-    return { tQuantile, pValue2Sided, fitOLS, quantile, matMul, invert, median };
+/**
+ * Benjamini–Hochbergs korrigering för många samtidiga tester (FDR). Ger q-värdena i samma ordning som indata:
+ * q = min(1, p·m/rang) med p-värdena sorterade stigande, gjorda monotona bakifrån så att q inte minskar med
+ * stigande rang. Lika p-värden får lika q. Ett enda test ger p oförändrat; en tom lista ger en tom lista.
+ * Indata ska vara ändliga p-värden; anroparen väljer vilka tester som ingår (ett per BAS-intervall med
+ * status ok i regressionen per BAS-intervall, så att kortet, Att göra och protokollet räknar på samma m).
+ * Samma tal som statsmodels multipletests(method='fdr_bh').
+ * @param {number[]} pVarden
+ * @returns {number[]}
+ */
+function bhJustera(pVarden) {
+    const m = pVarden.length;
+    const ordning = pVarden.map((_, i) => i).sort((a, b) => pVarden[a] - pVarden[b]);
+    const q = new Array(m);
+    let lagst = 1;
+    for (let r = m; r >= 1; r--) {
+        const i = ordning[r - 1];
+        lagst = Math.min(lagst, pVarden[i] * m / r);
+        q[i] = lagst;
+    }
+    return q;
+}
+
+    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, matMul, invert, median };
 })();
 const _tQuantile = __mirrorStat.tQuantile;
 const _pValue2Sided = __mirrorStat.pValue2Sided;
 const _fitOLS = __mirrorStat.fitOLS;
 const _libQuantile = __mirrorStat.quantile;
+const _bhJustera = __mirrorStat.bhJustera;
 
 // ---- speglar src/lib/struktur.js ----
 const __mirrorStructure = (() => {
@@ -783,7 +808,7 @@ const __mirrorLikvardighet = (() => {
  *
  * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
  *   Klassning — EN definition i hela verktyget: arKvinnodominerad()/konsklass() nedan.
- *            DO: mer än gränsen (standard 60 %); SCB: gränsen eller mer. Mansdominerat
+ *            'do': mer än gränsen (standard 60 %); 'scb': gränsen eller mer. Mansdominerat
  *            speglas för män; övriga är blandade.
  *   Steg 1 — Organisationens AID×BAS-grupper delas i:
  *            • kvinnodominerade — analysens subjekt
@@ -791,8 +816,8 @@ const __mirrorLikvardighet = (() => {
  *              med klassen synlig (PRIMÄR jämförelsekälla; § 3:10 är en
  *              inom-arbetsgivare-analys). K-anonymitet tillämpas EJ.
  *   Steg 2 — jämförelsestatistikens AID×BAS som inte är kvinnodominerade blir
- *            kandidater med klass. Lokal könsdata primär,
- *            SCB-prefix-fallback (injicerad `scbKlass`-funktion) annars.
+ *            kandidater med klass. Lokal könsdata primär, den nationella
+ *            personalstatistiken som reserv (injicerad `nationellKlass`-funktion) annars.
  *            Används som EXTERN fallback per BAS.
  *            Filtret `jamforelse: 'mansdominerade'` begränsar båda mängderna till de
  *            mansdominerade (det tidigare urvalet).
@@ -814,13 +839,14 @@ const __mirrorLikvardighet = (() => {
 
 
 
-const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (DO: mer än 60 % kvinnor)
-const ICKE_KV_TAK = 40;              // < → mansdominerat med DO och standardgränsen (klassen, inte urvalet; ADR-60)
+const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
+const ICKE_KV_TAK = 40;              // < → mansdominerat med 'do' och standardgränsen (klassen, inte urvalet; ADR-60)
 const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
 
 /**
  * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
- * DO: mer än gränsen. SCB: gränsen eller mer.
+ * 'do' (*Mer än X %*): mer än gränsen. 'scb' (*X % eller mer*): gränsen eller mer. Nycklarna är historiska och
+ * står kvar för sparade konfigurationsfiler; valen heter efter lydelsen (ADR-72).
  * @param {number|null|undefined} pct - procent kvinnor
  * @param {'do'|'scb'|string} [definition='do']
  * @param {number} [grans=60]
@@ -977,7 +1003,7 @@ function _aldersFalt(f, g, ärIntern, golv) {
  * @param {Array<{aid:string, bas:string, lon:number, kon:string, yrkeLabel?:string, yrke?:string, alder?:number}>} data
  * @param {number} kvinnoThr - kvinnotröskel i procent
  * @param {number} [K=10]
- * @param {'do'|'scb'} [definition='do'] - DO: mer än tröskeln; SCB: tröskeln eller mer
+ * @param {'do'|'scb'} [definition='do'] - 'do': mer än tröskeln; 'scb': tröskeln eller mer
  * @returns {{orgKvDom:Array, orgIckeKv:Array, antalAidxBas:number, kvDomMedNLessThanK:number}}
  */
 function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
@@ -1025,30 +1051,30 @@ function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, def
  * `klass.ickeKv` är alla kandidater; `klass.blandat` är hur många av dem som är blandade.
  *
  * @param {Array<{aid:string, bas:string, median:number, andelKv?:number, aidFull?:string, nKv?:number, nMa?:number}>} statistik
- * @param {((aid:string) => ({kvAndel:number}|null))|null} [scbKlass] - SCB-prefix-fallback
+ * @param {((aid:string) => ({kvAndel:number}|null))|null} [nationellKlass] - reserven: den nationella kvinnoandelen per AID-kod
  * @param {{definition?:'do'|'scb', grans?:number}} [val]
  * @returns {{statIckeKv:Array, statByBas:Map, klass:Object, klassKalla:Object}}
  */
-function klassificeraStatistik(statistik, scbKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
+function klassificeraStatistik(statistik, nationellKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
     const statByBas = new Map();
     const statIckeKv = [];
     const klass = { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 };
-    const klassKalla = { lokal: 0, scb: 0 };
+    const klassKalla = { lokal: 0, nationell: 0 };
 
     for (const s of (statistik || [])) {
         if (!s || !s.aid || !s.bas || !(s.median > 0)) continue;
         if (!/^\d+$/.test(String(s.aid))) continue;   // hoppa över yrkesfamiljerubriker
 
         /** @type {number|null} */ let kvAndel = null;
-        /** @type {'lokal'|'scb'|null} */ let källa = null;
+        /** @type {'lokal'|'nationell'|null} */ let källa = null;
         if (s.andelKv != null && s.andelKv >= 0 && s.andelKv <= 100) {
             kvAndel = s.andelKv; källa = 'lokal';
-        } else if (typeof scbKlass === 'function') {
-            const scb = scbKlass(s.aid);
-            if (scb && scb.kvAndel != null) { kvAndel = scb.kvAndel; källa = 'scb'; }
+        } else if (typeof nationellKlass === 'function') {
+            const nat = nationellKlass(s.aid);
+            if (nat && nat.kvAndel != null) { kvAndel = nat.kvAndel; källa = 'nationell'; }
         }
         if (kvAndel == null) { klass.oklassificerad++; continue; }
-        if (källa === 'lokal') klassKalla.lokal++; else klassKalla.scb++;
+        if (källa === 'lokal') klassKalla.lokal++; else klassKalla.nationell++;
 
         const ks = konsklass(kvAndel, definition, grans);
         if (ks === 'kvinnodominerad') { klass.kvDom++; continue; }
@@ -1181,9 +1207,7 @@ function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,                       // 'intern' | 'extern'
-                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'SCB'),
-                maScbKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
-                maScbPrefix: (!ärIntern && g.källa === 'scb') ? String(g.aid).slice(0, 3) : null,
+                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'nationell'),   // var andelen kommer ifrån
                 gapKr, gapPct, gapCI,
                 ..._aldersFalt(f, g, ärIntern, golv),
                 allvarsindex: Math.abs(gapKr) * f.n
@@ -1272,9 +1296,7 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,
-                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'SCB'),
-                maScbKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
-                maScbPrefix: (!ärIntern && g.källa === 'scb') ? String(g.aid).slice(0, 3) : null,
+                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'nationell'),   // var andelen kommer ifrån
                 gapKr, gapPct, gapCI,
                 ..._aldersFalt(f, g, ärIntern, golv),
                 kvPoang: fP, maPoang: poangFor(g),
@@ -1346,13 +1368,13 @@ function basRangFn(allaBas) {
  * @param {Object} [input]
  * @param {Array} [input.data] - organisationens individdata
  * @param {Array} [input.statistik] - jämförelsestatistiken
- * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.scbKlass]
+ * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.nationellKlass]
  * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
- *   kvDomDefinition: 'do' (mer än tröskeln, standard) | 'scb' (tröskeln eller mer).
+ *   kvDomDefinition: 'do' (*Mer än X %*, standard) | 'scb' (*X % eller mer*; ADR-72).
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
-function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, opts = {} } = {}) {
+function computeLikvardighetPairs({ data = [], statistik = [], nationellKlass = null, opts = {} } = {}) {
     const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_DEFAULT;
     const definition = opts.kvDomDefinition === 'scb' ? 'scb' : 'do';
     const jamforelse = opts.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
@@ -1372,7 +1394,7 @@ function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, 
 
     // k-tröskeln används bara för att RÄKNA små kvinnodominerade grupper i diagnostiken (de ingår ändå).
     const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10, definition);
-    const s2 = klassificeraStatistik(statistik, scbKlass, { definition, grans: kvinnoThr });
+    const s2 = klassificeraStatistik(statistik, nationellKlass, { definition, grans: kvinnoThr });
     // Filtret 'mansdominerade' begränsar jämförelsemängden innan paren byggs, så att reserven
     // till jämförelsestatistiken per BAS fungerar som förut när bara blandade egna yrken finns.
     if (jamforelse === 'mansdominerade') {
@@ -1968,17 +1990,22 @@ const __mirrorAidbas = (() => {
  * Reglerna för små grupper följer med som parametrar: `k` är antalet per kön (och per grupp i tabell 2 och 3) som
  * krävs för ett lönemått, `golv` är antalet i gruppen som krävs för en egen rad; mindre grupper räknas upp i `sma`.
  *
- * Klassningen av kvinnodominerat arbete har två definitioner: DO:s (mer än gränsen) och SCB:s (gränsen eller mer).
- * Gränsen är 60 % om inget annat anges. Mansdominerat speglas; övriga är könsblandade.
+ * Klassningen av kvinnodominerat arbete har två definitioner, som heter efter lydelsen (ADR-72): *Mer än X %*
+ * (nyckeln 'do') och *X % eller mer* (nyckeln 'scb'). Gränsen X är 60 % om inget annat anges. Mansdominerat
+ * speglas; övriga är könsblandade.
  *
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 
-/** Definitionerna av kvinnodominerat arbete: nyckel → namn och text för metodbladet. */
+/**
+ * Definitionerna av kvinnodominerat arbete: nyckel → namn (valet i inställningarna) och text (tabellerna och
+ * metodbladet). Namnen säger lydelsen, inte en avsändare (ADR-72). Nycklarna 'do' och 'scb' är historiska och står
+ * kvar, så att sparade konfigurationsfiler (`likvardighet.kvDomDefinition`) fortsätter att läsas.
+ */
 const KV_DEFINITIONER = Object.freeze({
-    do: Object.freeze({ namn: 'Förarbetena', text: 'mer än {grans} % kvinnor (riktmärket i lagens förarbeten)' }),
-    scb: Object.freeze({ namn: 'SCB', text: '{grans} % kvinnor eller mer (Statistiska centralbyrån)' })
+    do: Object.freeze({ namn: 'Mer än {grans} %', text: 'mer än {grans} % kvinnor' }),
+    scb: Object.freeze({ namn: '{grans} % eller mer', text: '{grans} % kvinnor eller mer' })
 });
 const KV_GRANS_STANDARD = 60;
 
@@ -1986,16 +2013,21 @@ const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 
 const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
 const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
-/** Definitionens namn: Förarbetena eller SCB. */
-function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
+/** Definitionens namn, med gränsen insatt: "Mer än 60 %" eller "60 % eller mer". */
+function kvDefinitionNamn(definition, grans = KV_GRANS_STANDARD) {
+    return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn.replace('{grans}', String(grans));
+}
 /** Klassernas namn, för den som jämför klassningen. */
 function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }
 /** Texten när den hierarkiska jämförelsen inte har några par. */
 function ingaParText() { return INGA_HIERARKISKA_PAR; }
-/** Texten för definitionen, med gränsen insatt. */
+/**
+ * Texten för definitionen, med gränsen insatt: "mer än 60 % kvinnor" eller "60 % kvinnor eller mer".
+ * @param {string} definition - 'do' eller 'scb'
+ * @param {number|string} [grans] - gränsen, eller gränsen redan formaterad som text (rapportunderlaget, appen)
+ */
 function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
-    const d = KV_DEFINITIONER[definition] || KV_DEFINITIONER.do;
-    return `${d.namn}: ${d.text.replace('{grans}', String(grans))}`;
+    return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).text.replace('{grans}', String(grans));
 }
 
 /**
@@ -2587,7 +2619,7 @@ function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = null) {
  * "Interaction" = samspel mellan skillnader i karakteristika och
  *    skillnader i avkastning. Räknas som "oförklarat" i en tredelad uppdelning.
  *
- * Klassisk presentation (Medlingsinstitutet använder denna form):
+ * Klassisk presentation:
  *   Förklarat   = Endowment
  *   Oförklarat  = Coefficient + Interaction
  *
@@ -3166,6 +3198,7 @@ const __mirrorLivscykel = (() => {
     const fitOLS = __mirrorStat.fitOLS;
     const pValue2Sided = __mirrorStat.pValue2Sided;
     const tQuantile = __mirrorStat.tQuantile;
+    const statusNiva = __mirrorStatus.statusNiva;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3183,6 +3216,33 @@ const __mirrorLivscykel = (() => {
  * src/app/52-livscykel.js är den tunna adaptern som läser getData() och statGolv().
  */
 
+
+
+/**
+ * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är
+ * säkerställd när modellens 95 %-intervall för den utesluter 0. Ett intervall som saknas eller inte är ändligt går
+ * ej att bedöma.
+ * @param {{gapPct:number, gapLoPct:number, gapHiPct:number}|null|undefined} g  en rad ur gapPerAge
+ * @returns {'granska'|'folj'|'balanserat'|'ejbedomd'}
+ */
+function livscykelNiva(g) {
+    if (!g || !isFinite(g.gapPct) || !isFinite(g.gapLoPct) || !isFinite(g.gapHiPct)) return 'ejbedomd';
+    return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
+}
+
+/** Gränsen för samspelet mellan kön och ålder (ADR-71): säkerställt när ett p-värde är under 0,10, inte vid exakt 0,10. */
+const SAMSPEL_GRANS = 0.10;
+
+/**
+ * Är samspelet mellan kön och ålder säkerställt? Ja när något av p-värdena (kön×ålder, kön×ålder²) är under
+ * SAMSPEL_GRANS. Den enda gränsen för nyckeltalet *Förändring 25–65 år*, rutan *Är förändringen säkerställd?*,
+ * Att utforska och tolkningstexten. Ett p-värde som inte är ett tal säkerställer inget.
+ * @param {...number} pVarden
+ * @returns {boolean}
+ */
+function samspelSakerstallt(...pVarden) {
+    return pVarden.some(p => typeof p === 'number' && p < SAMSPEL_GRANS);
+}
 
 /**
  * @param {Array<{lon:number, alder:number, kon:string, bas:string}>} rader
@@ -3338,6 +3398,9 @@ function livscykelRegression(rader, { fixBas, golv }) {
     const gapAt25 = gapPerAge[0].gapPct;
     const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
     const gapDelta = gapAt65 - gapAt25;
+    // Nyckeltalens status följer trappan, inte storleken ensam.
+    const niva25 = livscykelNiva(gapPerAge[0]);
+    const niva65 = livscykelNiva(gapPerAge[gapPerAge.length - 1]);
 
     return {
         ok: true,
@@ -3348,13 +3411,14 @@ function livscykelRegression(rader, { fixBas, golv }) {
         kvCoef, kvSE, kvPValue,
         kvAgeCoef: fit.beta[idxKvAge], kvAgePVal,
         kvAge2Coef: fit.beta[idxKvAge2], kvAge2PVal,
-        gapAt25, gapAt65, gapDelta
+        gapAt25, gapAt65, gapDelta, niva25, niva65
     };
 }
 
-    return { livscykelRegression };
+    return { livscykelRegression, samspelSakerstallt };
 })();
 const _lcLivscykelRegression = __mirrorLivscykel.livscykelRegression;
+const _lcSamspelSakerstallt = __mirrorLivscykel.samspelSakerstallt;
 
 // ---- speglar src/lib/organisationsfil.js ----
 const __mirrorOrganisationsfil = (() => {
@@ -5939,6 +6003,7 @@ const __mirrorRapportunderlag = (() => {
     const statusKonstanter = __mirrorStatus.statusKonstanter;
     const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
     const personOrd = __mirrorNamn.personOrd;
+    const kvDefinitionText = __mirrorAidbas.kvDefinitionText;
     const gapDelar = __mirrorGapuppdelning.gapDelar;
     const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
     const gapVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
@@ -5957,6 +6022,7 @@ const __mirrorRapportunderlag = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -6293,7 +6359,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const proxy = u.kravProxy === 'poäng' ? 'arbetsvärderingspoäng' : 'BAS-intervall';
         const st = [(_kapad(u) ? `De ${u.topN} största kandidatparen` : `${par.length} kandidatpar`)
             + ` där ett kvinnodominerat yrke har lägre medianlön än ett yrke med lika eller lägre krav. Kraven mäts med ${proxy}.`
-            + (u.kvinnoTroskel != null ? ` Ett yrke räknas som kvinnodominerat vid ${u.kvDomDefinition === 'scb' ? 'minst' : 'mer än'} ${formatTal(u.kvinnoTroskel)} % kvinnor.` : '')
+            + (u.kvinnoTroskel != null ? ` Ett yrke räknas som kvinnodominerat vid ${kvDefinitionText(u.kvDomDefinition, formatTal(u.kvinnoTroskel))}.` : '')
             // ADR-60: jämförelsemängden är alla yrken som inte är kvinnodominerade, eller bara de mansdominerade.
             + (u.jamforelse === 'mansdominerade'
                 ? ' Yrkena jämförs bara med mansdominerade yrken på samma nivå; könsandelen i jämförelseyrket står i tabellen.'
@@ -6352,13 +6418,19 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'handlingsplan') {
         const rader = u.rader || [];
+        // Summan lägger ihop två slag av kostnad; den delas med samma ord som kolumnen Kostnaden avser. Prioriteringens del
+        // är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
+        const delar = [
+            u.summaReferens ? `${_kr(u.summaReferens)} kostnad att nå referensens median för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader)` : '',
+            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå jämförelseyrkets median för kandidatparen i likvärdigt arbete` : '',
+        ].filter(Boolean);
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
-            // Prioriteringens del är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
-            + (u.summaReferens ? ` Av den är ${_kr(u.summaReferens)} kostnad att nå referensen för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader).` : '')];
+            + (u.summa && delar.length ? ` Av den är ${delar.join(' och ')}.` : '')];
         if (!rader.length) return blk('Handlingsplan', st, null);
         // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
-        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
-            rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad)]) });
+        // Kostnaden avser: vilken kostnad raden har (_hpKostnadAvser i appen); tomt för en egen rad.
+        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år', 'Kostnaden avser'],
+            rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad), r.kostnadAvser || '']) });
         // Sakliga skäl (u.skal, ur handlingsplanen): en rad per skäl med gruppen på första raden, och summan per kategori.
         const sk = u.skal;
         if (sk && Array.isArray(sk.grupper) && sk.grupper.length && sk.perKategori) {

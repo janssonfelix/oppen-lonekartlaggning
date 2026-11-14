@@ -4,8 +4,8 @@ Oppen lonekartlaggning - Release report
 Version:    2026.11.14
 Build:      2026-11-14
 Output:     oppen-lonekartlaggning.html
-Size:       3.37 MB (3534523 bytes)
-SHA-256:    2eccb9d6f067e1ac44b09775dba1fbd0d2f0caaafb1b383a0ae7fd94470ef331
+Size:       3.38 MB (3542944 bytes)
+SHA-256:    77fffbd7f4fdcdd0f33ac9d34df66a3f426e7992cb7ab7e65dce573d60775222
 
 Sources (storlek post-minify):
   - style.css (minified)          117.4 KB
@@ -13,7 +13,7 @@ Sources (storlek post-minify):
   - vendor/xlsx.mini.min.js       272.5 KB
   - vendor/d3.min.js              274.0 KB
   - vendor/jszip.min.js           95.5 KB
-  - dist/app.js                   2.35 MB
+  - dist/app.js                   2.36 MB
   - src/licenser.txt              16.8 KB
 
 Verifiering:

@@ -705,3 +705,107 @@ describe('k-tröskeln i organisationspaketet', () => {
         expect(w.eval('skapaPaket()').installningar.kTroskel).toBe(12);
     });
 });
+
+describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efter korrigering för många tester (ADR-71)', () => {
+    // Sex BAS-intervall med 20 kvinnor och 20 män var. Brusets storlek per intervall styr p-värdet: i C är kvinnornas
+    // lön 5 % lägre och bruset stort, så att rått p hamnar strax under 0,05 men q efter Benjamini–Hochberg över 0,05.
+    // I E (bara i det andra underlaget) är skillnaden 8 % och bruset litet: säkerställd också efter korrigering.
+    const BAS = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const fonsterBas = medE => {
+        const w = createAppWindow();
+        const rader = [];
+        BAS.forEach((bas, b) => {
+            const eff = bas === 'C' ? -0.05 : (bas === 'E' && medE ? -0.08 : 0);
+            const amp = bas === 'E' && medE ? 300 : 3500;
+            for (let i = 0; i < 40; i++) {
+                const kv = i % 2 === 0, j = i >> 1;
+                const brus = (((j * 7) % 11) - 5) / 5 * amp * (kv ? 1 : -1);
+                rader.push({ bas, kon: kv ? 'kvinna' : 'man', lon: Math.round((26000 + b * 1500 + brus) * (kv ? 1 + eff : 1)),
+                    alder: 25 + ((j * 13) % 40), yrke: `${7000 + b} Yrke ${b}`, aid: String(7000 + b), yrkeLabel: `Yrke ${b}`, enhet: '' });
+            }
+        });
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        return w;
+    };
+    const perBas = w => {
+        const pb = w.eval(`_computePerBasGap(getData(), ${JSON.stringify(BAS)})`);
+        const q = w.eval(`_bhJustera(${JSON.stringify(pb.map(b => b.pValue))})`);
+        return Object.fromEntries(pb.map((b, i) => [b.bas, { ...b, q: q[i] }]));
+    };
+    const protokollet = async w => {
+        const { readFileSync } = await import('node:fs');
+        const { join, dirname } = await import('node:path');
+        const { fileURLToPath } = await import('node:url');
+        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'xlsx.mini.min.js'), 'utf8'));
+        w.alert = () => {};
+        let wb = null;
+        w.XLSX.writeFile = b => { wb = b; };
+        w.eval('exportJPAProtocol()');
+        const blad = n => w.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true }).map(r => r.map(c => String(c ?? '')));
+        return { forsatt: blad('1. Försättssida'), bas: blad('3. Likvärdigt arbete (BAS)') };
+    };
+    const antalBas = forsatt => forsatt.find(r => r[0].startsWith('Antal BAS-intervall med en säkerställd'))?.[1];
+
+    it('säkerställt på rått p men inte efter korrigering: bladet säger att inget intervall finns, och antalet är 0', async () => {
+        const w = fonsterBas(false);
+        const pb = perBas(w);
+        // Förutsättningen: alla sex är prövade, C har rått p under 0,05 och minst 3 % men q över 0,05; ingen annan har utslag.
+        expect(BAS.every(b => pb[b].status === 'ok')).toBe(true);
+        expect(pb.C.pValue).toBeLessThan(0.05);
+        expect(Math.abs(pb.C.gapPct)).toBeGreaterThanOrEqual(3);
+        expect(pb.C.q).toBeGreaterThan(0.05);
+        expect(BAS.filter(b => b !== 'C').every(b => pb[b].pValue > 0.05)).toBe(true);
+        const { forsatt, bas } = await protokollet(w);
+        expect(bas[0][8]).toBe('p-värde');
+        expect(bas[0][9]).toBe('q-värde (BH-justerat)');
+        expect(bas).toHaveLength(2);
+        expect(bas[1][1]).toMatch(/^Inga BAS-intervall med en säkerställd oförklarad skillnad på minst 3 %/);
+        expect(antalBas(forsatt)).toBe('0');
+    });
+
+    it('säkerställt också efter korrigering: intervallet står kvar med sitt q-värde, det andra utelämnas', async () => {
+        const w = fonsterBas(true);
+        const pb = perBas(w);
+        expect(pb.E.q).toBeLessThan(0.05);
+        expect(Math.abs(pb.E.gapPct)).toBeGreaterThanOrEqual(3);
+        expect(pb.C.pValue).toBeLessThan(0.05);
+        expect(pb.C.q).toBeGreaterThan(0.05);
+        const { forsatt, bas } = await protokollet(w);
+        const rader = bas.slice(1).filter(r => r[0] !== '' && r[0] !== '—');
+        expect(rader.map(r => r[1])).toEqual(['E']);
+        const q = pb.E.q;
+        expect(rader[0][9]).toBe(q < 0.001 ? '< 0.001' : String(+q.toFixed(4)));
+        expect(rader[0][11]).toBe('Ja');
+        expect(antalBas(forsatt)).toBe('1');
+    });
+
+    it('ett enda prövat BAS-intervall: q = p, och kortet och protokollet visar samma q', async () => {
+        const w = createAppWindow();
+        const rader = [];
+        for (let i = 0; i < 40; i++) {
+            const kv = i % 2 === 0, j = i >> 1;
+            const brus = (((j * 7) % 11) - 5) / 5 * 300 * (kv ? 1 : -1);
+            rader.push({ bas: 'E', kon: kv ? 'kvinna' : 'man', lon: Math.round((30000 + brus) * (kv ? 0.92 : 1)),
+                alder: 25 + ((j * 13) % 40), yrke: '7004 Yrke 4', aid: '7004', yrkeLabel: 'Yrke 4', enhet: '' });
+        }
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        const pb = w.eval(`_computePerBasGap(getData(), ['E'])`);
+        expect(pb).toHaveLength(1);
+        expect(pb[0].status).toBe('ok');
+        const p = pb[0].pValue;
+        expect(p).toBeLessThan(0.05);
+        expect(w.eval(`_bhJustera([${p}])`)).toEqual([p]);
+        // Kortet: q-cellen visar talet, inte —.
+        w.eval('renderRegressionCard()');
+        const rad = [...w.document.querySelectorAll('#perbas-table tbody tr')].find(tr => tr.cells[0].textContent.trim() === 'E');
+        expect(rad.cells[6].textContent.trim()).toBe(w.eval(`_formatPValue(${p})`));
+        // Protokollet: samma q, lika med p.
+        const { bas } = await protokollet(w);
+        const prot = bas.slice(1).filter(r => r[1] === 'E');
+        expect(prot).toHaveLength(1);
+        expect(prot[0][9]).toBe(p < 0.001 ? '< 0.001' : String(+p.toFixed(4)));
+        expect(prot[0][9]).toBe(prot[0][8]);
+    });
+});

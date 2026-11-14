@@ -4,8 +4,8 @@
  * Testar den GÄLLANDE modellen: organisationens kvinnodominerade AID×BAS-grupper
  * jämförs INOM samma BAS-intervall, primärt mot organisationens egna
  * icke-kvinnodominerade yrken (intern), annars mot jämförelsestatistikens
- * icke-kvinnodominerade yrken (extern fallback). SCB-klassificeraren injiceras
- * som stub. Varje par får ett bootstrap-CI på medianskillnaden.
+ * icke-kvinnodominerade yrken (extern fallback). Den nationella reserven för
+ * kvinnoandel (nationellKlass) injiceras som stub. Varje par får ett bootstrap-CI på medianskillnaden.
  *
  * Speglar app.js `computeLikvardighetPairs()` — håll dessa i synk.
  */
@@ -27,7 +27,7 @@ import {
     arKvinnodominerad,
     konsklass
 } from '../src/lib/likvardighet.js';
-import { dominans } from '../src/lib/aidbas.js';
+import { dominans, kvDefinitionNamn } from '../src/lib/aidbas.js';
 
 // ---- Helpers ----
 function orgRows({ aid, bas, label, kvLons = [], maLons = [] }) {
@@ -39,8 +39,8 @@ function orgRows({ aid, bas, label, kvLons = [], maLons = [] }) {
 function statRow({ aid, bas, median, andelKv, aidFull, nKv, nMa }) {
     return { aid, bas, median, andelKv, aidFull, nKv, nMa };
 }
-// SCB-stub: prefix "20" → mansdominerat (20% kvinnor), prefix "90" → kvinnodominerat
-const scbStub = (aid) => {
+// Stub för den nationella reserven: prefix "20" → mansdominerat (20% kvinnor), prefix "90" → kvinnodominerat
+const nationellStub = (aid) => {
     const p = String(aid).slice(0, 2);
     if (p === '20') return { kvAndel: 20 };
     if (p === '90') return { kvAndel: 85 };
@@ -95,7 +95,7 @@ describe('aggregeraOrgKvDom — Steg 1 klassificering', () => {
         expect(aggregeraOrgKvDom(data, 60).orgIckeKv[0].klass).toBe('mansdominerad');
     });
 
-    it('exakt 60 %: DO räknar gruppen som jämförelseyrke, SCB som kvinnodominerad', () => {
+    it('exakt 60 %: *Mer än 60 %* räknar gruppen som jämförelseyrke, *60 % eller mer* som kvinnodominerad', () => {
         const data = orgRows({ aid: '3100', bas: 'C', kvLons: [30000, 31000, 32000], maLons: [30000, 31000] }); // 3/5 = 60 %
         const doRes = aggregeraOrgKvDom(data, 60, 10, 'do');
         expect(doRes.orgKvDom).toHaveLength(0);
@@ -137,26 +137,26 @@ describe('aggregeraOrgKvDom — Steg 1 klassificering', () => {
 
 // ===================================================================
 describe('klassificeraStatistik — Steg 2 klassificering', () => {
-    it('använder lokal könsdata före SCB-fallback', () => {
+    it('använder lokal könsdata före den nationella reserven', () => {
         const stat = [statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: 30, aidFull: '2051 Ingenjör' })];
-        const { statIckeKv, klassKalla } = klassificeraStatistik(stat, scbStub);
+        const { statIckeKv, klassKalla } = klassificeraStatistik(stat, nationellStub);
         expect(statIckeKv).toHaveLength(1);
         expect(statIckeKv[0].källa).toBe('lokal');
         expect(klassKalla.lokal).toBe(1);
-        expect(klassKalla.scb).toBe(0);
+        expect(klassKalla).toEqual({ lokal: 1, nationell: 0 });
     });
 
-    it('faller tillbaka på SCB när lokal könsdata saknas', () => {
+    it('faller tillbaka på den nationella reserven när lokal könsdata saknas', () => {
         const stat = [statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: null, aidFull: '2051 Ingenjör' })];
-        const { statIckeKv, klassKalla } = klassificeraStatistik(stat, scbStub);
+        const { statIckeKv, klassKalla } = klassificeraStatistik(stat, nationellStub);
         expect(statIckeKv).toHaveLength(1);                 // prefix 20 → 20% kv → icke-kv
-        expect(statIckeKv[0].källa).toBe('scb');
-        expect(klassKalla.scb).toBe(1);
+        expect(statIckeKv[0].källa).toBe('nationell');
+        expect(klassKalla).toEqual({ lokal: 0, nationell: 1 });
     });
 
     it('statistikrad med 45 % kvinnor blir jämförelsekandidat med klassen blandad (ADR-60)', () => {
         const stat = [statRow({ aid: '3000', bas: 'B', median: 35000, andelKv: 45 })];
-        const { statIckeKv, statByBas, klass } = klassificeraStatistik(stat, scbStub);
+        const { statIckeKv, statByBas, klass } = klassificeraStatistik(stat, nationellStub);
         expect(statIckeKv).toHaveLength(1);
         expect(statIckeKv[0].klass).toBe('blandad');
         expect(statByBas.get('B')).toHaveLength(1);
@@ -164,24 +164,24 @@ describe('klassificeraStatistik — Steg 2 klassificering', () => {
         expect(klass.ickeKv).toBe(1);    // alla jämförelsekandidater
     });
 
-    it('statistikrad med exakt 60 %: kandidat enligt DO, kvinnodominerad enligt SCB', () => {
+    it('statistikrad med exakt 60 %: kandidat med *Mer än 60 %*, kvinnodominerad med *60 % eller mer*', () => {
         const stat = [statRow({ aid: '3000', bas: 'B', median: 35000, andelKv: 60 })];
-        expect(klassificeraStatistik(stat, scbStub, { definition: 'do' }).statIckeKv).toHaveLength(1);
-        const scb = klassificeraStatistik(stat, scbStub, { definition: 'scb' });
+        expect(klassificeraStatistik(stat, nationellStub, { definition: 'do' }).statIckeKv).toHaveLength(1);
+        const scb = klassificeraStatistik(stat, nationellStub, { definition: 'scb' });
         expect(scb.statIckeKv).toHaveLength(0);
         expect(scb.klass.kvDom).toBe(1);
     });
 
     it('klassar mer än 60 % som kvinnodominerat (skippas)', () => {
         const stat = [statRow({ aid: '5301', bas: 'B', median: 31000, andelKv: 80 })];
-        const { statIckeKv, klass } = klassificeraStatistik(stat, scbStub);
+        const { statIckeKv, klass } = klassificeraStatistik(stat, nationellStub);
         expect(statIckeKv).toHaveLength(0);
         expect(klass.kvDom).toBe(1);
     });
 
-    it('räknar oklassificerade när varken lokal eller SCB ger svar', () => {
+    it('räknar oklassificerade när varken lokal könsdata eller den nationella reserven ger svar', () => {
         const stat = [statRow({ aid: '4444', bas: 'B', median: 35000, andelKv: null })];
-        const { statIckeKv, klass } = klassificeraStatistik(stat, scbStub);   // prefix 44 → null
+        const { statIckeKv, klass } = klassificeraStatistik(stat, nationellStub);   // prefix 44 → null
         expect(statIckeKv).toHaveLength(0);
         expect(klass.oklassificerad).toBe(1);
     });
@@ -191,7 +191,7 @@ describe('klassificeraStatistik — Steg 2 klassificering', () => {
             statRow({ aid: '5 Vård', bas: 'B', median: 30000, andelKv: 20 }),
             statRow({ aid: '2051', bas: 'B', median: 0, andelKv: 20 })
         ];
-        const { statIckeKv } = klassificeraStatistik(stat, scbStub);
+        const { statIckeKv } = klassificeraStatistik(stat, nationellStub);
         expect(statIckeKv).toHaveLength(0);
     });
 });
@@ -326,7 +326,7 @@ describe('computeLikvardighetPairs — full pipeline (v4)', () => {
         const statistik = [
             statRow({ aid: '2051', bas: 'B', median: 99000, andelKv: 25, aidFull: '2051 Ingenjör' })
         ];
-        const res = computeLikvardighetPairs({ data, statistik, scbKlass: scbStub,
+        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng } });
         expect(res.orgKvDom).toHaveLength(1);
         expect(res.orgIckeKv).toHaveLength(1);
@@ -345,7 +345,7 @@ describe('computeLikvardighetPairs — full pipeline (v4)', () => {
             statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: 25, aidFull: '2051 Ingenjör' }),
             statRow({ aid: '7000', bas: 'B', median: 41000, andelKv: 75, aidFull: '7000 Chef' })  // kv-dom → skippas
         ];
-        const res = computeLikvardighetPairs({ data, statistik, scbKlass: scbStub,
+        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng } });
         expect(res.orgIckeKv).toHaveLength(0);
         expect(res.statIckeKv).toHaveLength(1);
@@ -356,10 +356,23 @@ describe('computeLikvardighetPairs — full pipeline (v4)', () => {
         expect(res.diagnostik.jämförelse.basMedExternFallback).toBe(1);
     });
 
+    it('ett jämförelseyrke klassat ur den nationella reserven får källan nationell, inte SCB', () => {
+        const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
+            kvLons: Array(16).fill(30000), maLons: Array(4).fill(30000) });
+        const statistik = [statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: null, aidFull: '2051 Ingenjör' })];
+        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub,
+            opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng: makeRng() } });
+        expect(res.pairs).toHaveLength(1);
+        expect(res.pairs[0].maKlassKort).toBe('nationell');
+        expect(res.pairs[0].maKvAndel).toBe(20);
+        expect(res.diagnostik.statistik.klassKalla).toEqual({ lokal: 0, nationell: 1 });
+        expect(JSON.stringify(res.pairs[0])).not.toMatch(/SCB|Scb|scb/);
+    });
+
     it('ger tomt resultat utan jämförbara BAS-intervall', () => {
         const data = orgRows({ aid: '5301', bas: 'A', kvLons: Array(12).fill(28000), maLons: [] });
         const statistik = [statRow({ aid: '2051', bas: 'C', median: 40000, andelKv: 20 })];
-        const res = computeLikvardighetPairs({ data, statistik, scbKlass: scbStub });
+        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub });
         expect(res.pairs).toHaveLength(0);
         expect(res.diagnostik.jämförelse.gemensammaBas).toBe(0);
     });
@@ -459,7 +472,7 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
                 kvLons: [34000], maLons: [33000, 34000, 35000, 34000, 34000, 34000, 34000, 34000, 34000] })
         ];
         const poangByKey = new Map([['5301|B', 100], ['4100|D', 100]]);
-        const res = computeLikvardighetPairs({ data, statistik: [], scbKlass: scbStub,
+        const res = computeLikvardighetPairs({ data, statistik: [], nationellKlass: nationellStub,
             opts: { poangByKey, poangBandPct: 5, rng: makeRng() } });
         expect(res.diagnostik.jämförelse.kravProxy).toBe('poäng');
         expect(res.pairs.length).toBe(1);
@@ -469,7 +482,7 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
     it('faller tillbaka på BAS-läge utan poangByKey (oförändrat)', () => {
         const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
             kvLons: [29000, 30000, 31000], maLons: [30000] });
-        const res = computeLikvardighetPairs({ data, statistik: [], scbKlass: scbStub,
+        const res = computeLikvardighetPairs({ data, statistik: [], nationellKlass: nationellStub,
             opts: { rng: makeRng() } });
         expect(res.diagnostik.jämförelse.kravProxy).toBe('bas');
     });
@@ -634,7 +647,7 @@ describe('aldersjusteradSkillnad — jämförelseyrkets lön omräknad till den 
 
 // ===================================================================
 describe('en definition av kvinnodominerat (ADR-60, §9.22)', () => {
-    it('arKvinnodominerad: DO är mer än gränsen, SCB gränsen eller mer', () => {
+    it('arKvinnodominerad: \'do\' är mer än gränsen, \'scb\' gränsen eller mer', () => {
         expect(arKvinnodominerad(60, 'do')).toBe(false);
         expect(arKvinnodominerad(60.01, 'do')).toBe(true);
         expect(arKvinnodominerad(60, 'scb')).toBe(true);
@@ -661,6 +674,18 @@ describe('en definition av kvinnodominerat (ADR-60, §9.22)', () => {
                 expect({ kvinnodominerad: 'Kvinnodominerad', mansdominerad: 'Mansdominerad', blandad: 'Könsblandad' }[k]).toBe(d);
             }
         }
+    });
+
+    it('ordlistans Jämn könsfördelning är sann för båda valen: gränsen 40/60 är fast, kvinnodominerat följer valet', async () => {
+        // 60/40 är jämn könsfördelning (båda könen minst 40 %) men kvinnodominerad med X % eller mer.
+        expect(konsklass(60, 'scb')).toBe('kvinnodominerad');
+        expect(konsklass(60, 'do')).toBe('blandad');
+        const { readFileSync } = await import('node:fs');
+        const rad = readFileSync(new URL('../src/app/04-ordlista.js', import.meta.url), 'utf8').split('\n').find(l => l.includes("term:'Jämn könsfördelning'"));
+        expect(rad).not.toMatch(/61\/39|könsdominerad/);
+        expect(rad).toContain(kvDefinitionNamn('scb'));
+        expect(rad).toContain(kvDefinitionNamn('do'));
+        expect(rad).toContain('Likvärdigt arbetes inställningar');
     });
 });
 
@@ -702,12 +727,12 @@ describe('jämförelseyrken: alla som inte är kvinnodominerade (ADR-60)', () =>
     it('externa par bär klassen från statistiken', () => {
         const d3 = orgRows({ aid: '5301', bas: 'B', kvLons: Array(16).fill(30000), maLons: Array(4).fill(30000) });
         const statistik = [statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: 45 })];
-        const res = computeLikvardighetPairs({ data: d3, statistik, scbKlass: scbStub, opts: { B: 20, rng: makeRng() } });
+        const res = computeLikvardighetPairs({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng() } });
         expect(res.pairs).toHaveLength(1);
         expect(res.pairs[0].jamforKalla).toBe('extern');
         expect(res.pairs[0].maKlass).toBe('blandad');
         expect(res.pairs[0].maKvinnoPct).toBe(45);
-        const ma = computeLikvardighetPairs({ data: d3, statistik, scbKlass: scbStub, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
+        const ma = computeLikvardighetPairs({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
         expect(ma.pairs).toHaveLength(0);
     });
 });

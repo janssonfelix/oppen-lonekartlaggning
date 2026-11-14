@@ -9,8 +9,13 @@
  *
  * Direktivmarkeringen (≥ 5 %) är något annat: den följer den OJUSTERADE medianskillnaden och står aldrig på
  * regressionens justerade tal.
+ *
+ * Vaktar: R28 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { statusNiva, direktivMarkering, slumpensGranser, bedomSkillnad, perBasSignal, STORLEKSGRANS, DIREKTIVNIVA,
     STATUS_ORD, DIREKTIV_TIPS, DIREKTIV_KOLUMN } from '../src/lib/status.js';
 import { likaArbeteGrupper, stabilitetKort, avsnittBlock } from '../src/lib/rapportunderlag.js';
@@ -135,5 +140,46 @@ describe('direktivmarkeringen', () => {
         expect(perBasSignal(8, false, true).niva).toBe('osakert');
         expect(perBasSignal(8, false, false).niva).toBe('inget');
         expect('direktiv' in s).toBe(false);
+    });
+});
+
+describe('ingen färg på storleken ensam i appen', () => {
+    // Den gamla gapKlass i livscykeln färgade nyckeltalen rött över 5 % och gult över 2 %, på storleken ensam. En
+    // jämförelse med 5 % som direkt väljer en färgklass (fg-, farg-, ar-, bricka-, bg-, f-) är samma fel.
+    const MONSTER = /Math\.abs\([^)]*\)\s*>=?\s*5(?:\.0+)?\s*\?\s*['"`](?:fg|farg|ar|bricka|bg|f)-[\w-]+/;
+    const appDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'app');
+    it('ingen fil under src/app/ (utom spegeln) sätter en färgklass på |skillnad| > 5', () => {
+        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js')
+            .flatMap(f => readFileSync(join(appDir, f), 'utf8').split('\n')
+                .map((rad, i) => (MONSTER.test(rad) ? `${f}:${i + 1}: ${rad.trim()}` : null)).filter(Boolean));
+        expect(traffar).toEqual([]);
+    });
+    it('mönstret fäller den gamla gapKlass', () => {
+        expect(MONSTER.test("const gapKlass = (g) => Math.abs(g) > 5 ? 'fg-kritisk' : Math.abs(g) > 2 ? 'fg-varning' : 'fg-ok';")).toBe(true);
+    });
+
+    // Percentiltabellen i Lönestruktur färgade cellen Kvinnors lön i % av mäns rosa och halvfet när skillnaden var
+    // större än 5 %, och livscykelns tabell per BAS-intervall färgade Skillnad 25 och 65 år (kr) under -1000 kr, båda
+    // på storleken ensam (ADR-71). En skillnad (gap, gapPct, gap25Kr, skillnad, diff …) som jämförs med en gräns skild
+    // från 0 och direkt väljer en färg- eller viktklass är samma fel. Tecknet (< 0, kvinnor lägre) får välja färg på
+    // en stapel.
+    const STORLEK = /\b\w*(?:gap|skillnad|diff)\w*\s*[<>]=?\s*-?(?!0(?:\.0+)?\b)\d+(?:\.\d+)?\s*\?\s*['"`]\s*(?:fg|farg|ar|bricka|bg|f|halvfet)[\w-]*/i;
+    // Undantag: rader som får jämföra en skillnad med en storleksgräns och välja klass, som "fil:rad-text" med motiv.
+    // Listan är tom: inget ställe under src/app/ har i dag ett beslut som tillåter det.
+    const STORLEK_UNDANTAG = /** @type {Set<string>} */ (new Set([]));
+    it('ingen fil under src/app/ (utom spegeln) sätter färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {
+        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js')
+            .flatMap(f => readFileSync(join(appDir, f), 'utf8').split('\n')
+                .map((rad, i) => (STORLEK.test(rad) && !STORLEK_UNDANTAG.has(`${f}:${rad.trim()}`) ? `${f}:${i + 1}: ${rad.trim()}` : null))
+                .filter(Boolean));
+        expect(traffar).toEqual([]);
+    });
+    it('mönstret fäller percentiltabellens gamla markering men inte stapelns tecken', () => {
+        expect(STORLEK.test("<td class=\"t-hoger${x.gapPct < -5 ? ' fg-rosa halvfet' : ''}\">")).toBe(true);
+        expect(STORLEK.test("${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}")).toBe(false);
+    });
+    it('mönstret fäller livscykeltabellens gamla markering i kronor', () => {
+        expect(STORLEK.test("<td class=\"t-hoger halvfet${r.gap25Kr < -1000 ? ' fg-varning' : ''}\">")).toBe(true);
+        expect(STORLEK.test("${skillnadPct >= 5 ? 'farg-granska' : ''}")).toBe(true);
     });
 });

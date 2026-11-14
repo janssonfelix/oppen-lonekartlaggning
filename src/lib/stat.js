@@ -15,6 +15,7 @@
  *   - matMul, transpose, invert            (matrisalgebra)
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
+ *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  */
 
 /**
@@ -285,4 +286,27 @@ export function fitOLS(X, y) {
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
 
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
+}
+
+/**
+ * Benjamini–Hochbergs korrigering för många samtidiga tester (FDR). Ger q-värdena i samma ordning som indata:
+ * q = min(1, p·m/rang) med p-värdena sorterade stigande, gjorda monotona bakifrån så att q inte minskar med
+ * stigande rang. Lika p-värden får lika q. Ett enda test ger p oförändrat; en tom lista ger en tom lista.
+ * Indata ska vara ändliga p-värden; anroparen väljer vilka tester som ingår (ett per BAS-intervall med
+ * status ok i regressionen per BAS-intervall, så att kortet, Att göra och protokollet räknar på samma m).
+ * Samma tal som statsmodels multipletests(method='fdr_bh').
+ * @param {number[]} pVarden
+ * @returns {number[]}
+ */
+export function bhJustera(pVarden) {
+    const m = pVarden.length;
+    const ordning = pVarden.map((_, i) => i).sort((a, b) => pVarden[a] - pVarden[b]);
+    const q = new Array(m);
+    let lagst = 1;
+    for (let r = m; r >= 1; r--) {
+        const i = ordning[r - 1];
+        lagst = Math.min(lagst, pVarden[i] * m / r);
+        q[i] = lagst;
+    }
+    return q;
 }

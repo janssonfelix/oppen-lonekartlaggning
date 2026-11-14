@@ -45,12 +45,12 @@ function renderLifecycleAnalysis() {
         : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(primaryN[0], primaryN[1])} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
 
     // Modelljämförelsens tabell markerar säkerheten med stjärnor, som tabellens not förklarar; utan stjärna är
-    // p ≥ 0,05. Nyckeltalet säger det med ord, med samma gräns som tolkningsregeln (p < 0,10 är säkerställd).
+    // p ≥ 0,05. Nyckeltalet säger det med ord, med samma gräns som tolkningsregeln (samspelSakerstallt i src/lib/livscykel.js: p < 0,10).
     const sigBadge = p => p < 0.001 ? `<span class="farg-kritisk">***</span>`
                        : p < 0.01  ? `<span class="farg-kritisk">**</span>`
                        : p < 0.05  ? `<span class="farg-varning">*</span>`
                        : '';
-    const sakerOrd = p => p < 0.10 ? 'säkerställd' : '<span class="f-dampad">inte säkerställd</span>';
+    const sakerOrd = p => _lcSamspelSakerstallt(p) ? 'säkerställd' : '<span class="f-dampad">inte säkerställd</span>';
     const pText = p => p < 0.001 ? '< 0,001' : svTal(p, 3);
 
     const basOptions = result.basList.map(b =>
@@ -60,7 +60,15 @@ function renderLifecycleAnalysis() {
     // Sammanfattningsrutor för gap-utveckling
     const gapStart = result.gapAt25;
     const gapEnd   = result.gapAt65;
-    const gapKlass = (g) => Math.abs(g) > 5 ? 'fg-kritisk' : Math.abs(g) > 2 ? 'fg-varning' : 'fg-ok';
+    // Nyckeltalens färg följer uppmärksamhetstrappan (ADR-59, ADR-71): modellens 95 %-intervall för skillnaden vid åldern
+    // prövar den (result.niva25, result.niva65 ur src/lib/livscykel.js). Färgen bär inte betydelsen ensam: statusens
+    // ikon står bredvid talet och ordet i verktygstipset och för skärmläsaren (WCAG 1.4.1).
+    const nyckeltal = (niva, kvot) => {
+        const st = gapStatusNiva(niva);
+        const klass = { granska: 'farg-granska', varning: 'farg-varning', ok: 'farg-ok' }[st.farg] || 'farg-dampad';
+        return `<div class="fs-xl fw-700 ${klass}" data-niva="${st.niva}" title="${esc(st.serie)}">${ikon(st.ikon)} ${svPct(kvot, 1)}</div>
+                <span class="sr-only">${esc(st.serie)}</span>`;
+    };
     // Nyckeltalen är kvinnors lön i % av mäns, som i resten av verktyget. Modellen är log-linjär och ger skillnaden
     // (exp(skillnaden på log-skalan) − 1) × 100, så kvoten är 100 + skillnaden; förändringen 25–65 år är densamma i
     // procentenheter vilket mått man än läser.
@@ -111,7 +119,7 @@ function renderLifecycleAnalysis() {
         : '';
 
     // ====== B7: Regelbaserad HR-coach ======
-    const interaktionSig = result.kvAgePVal < 0.10 || result.kvAge2PVal < 0.10;
+    const interaktionSig = _lcSamspelSakerstallt(result.kvAgePVal, result.kvAge2PVal);
     let coachKategori, coachRubrik, coachText;
     if (!interaktionSig) {
         coachKategori = 'konstant';
@@ -133,6 +141,13 @@ function renderLifecycleAnalysis() {
 
     coachText += modellMening;
 
+    // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-71): varningsfärg när samspelet mellan kön
+    // och ålder är säkerställt (interaktionSig, samma gräns som tolkningen och rutan bredvid), annars neutral. Inte
+    // grön: "inte säkerställd" är inte "balanserat". Ordet står i verktygstipset och för skärmläsaren (WCAG 1.4.1).
+    const forandringOrd = interaktionSig ? 'säkerställd förändring' : 'inte säkerställd';
+    const forandring = `<div class="fs-xl fw-700 ${interaktionSig ? 'farg-varning' : 'farg-dampad'}" title="${forandringOrd}">${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)}</div>
+                <span class="sr-only">${forandringOrd}</span>`;
+
     // ====== UI ======
     wrap.innerHTML = `
         <!-- B2: Klarspråklig rubrik och intro -->
@@ -148,17 +163,17 @@ function renderLifecycleAnalysis() {
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 25 år</div>
-                <div class="fs-xl fw-700 ${gapKlass(gapStart)}">${svPct(kvot25, 1)}</div>
+                ${nyckeltal(result.niva25, kvot25)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 65 år</div>
-                <div class="fs-xl fw-700 ${gapKlass(gapEnd)}">${svPct(kvot65, 1)}</div>
+                ${nyckeltal(result.niva65, kvot65)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Förändring 25–65 år, procentenheter</div>
-                <div class="fs-xl fw-700 ${Math.abs(result.gapDelta) > 1 ? 'fg-varning' : 'fg-ok'}">${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)}</div>
+                ${forandring}
                 <div class="stat-under">i kvinnors lön i % av mäns; minus: kvinnorna halkar efter</div>
             </div>
             <div class="stat-box" title="Test av om skillnaden förändras med åldern (kön×ålder). Vid p ≥ 0,10 är förändringen inte säkerställd.">
@@ -215,10 +230,10 @@ function renderLifecycleAnalysis() {
                                 <td class="t-hoger">${r.n}</td>
                                 <td class="t-hoger">${Math.round(r.kv25).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.ma25).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet${r.gap25Kr < -1000 ? ' fg-varning' : ''}">${Math.round(r.gap25Kr).toLocaleString('sv-SE')} kr</td>
+                                <td class="t-hoger halvfet">${Math.round(r.gap25Kr).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.kv65).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.ma65).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet${r.gap65Kr < -1000 ? ' fg-varning' : ''}">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
+                                <td class="t-hoger halvfet">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
                             </tr>`).join('')}
                     </tbody>
@@ -416,7 +431,7 @@ function runLifecycleRegression(fixBas) {
     const { gapAt25, gapAt65, gapDelta, kvAgePVal, kvAge2PVal } = res;
     // Tolkningstexten är presentation och hör därför till appen.
     let interpretation;
-    if (kvAgePVal > 0.10 && kvAge2PVal > 0.10) {
+    if (!_lcSamspelSakerstallt(kvAgePVal, kvAge2PVal)) {
         interpretation = 'Skillnaden är **densamma över karriären** (samspelet mellan kön och ålder är inte statistiskt signifikant).';
     } else if (gapDelta < -1) {
         interpretation = `Skillnaden **växer med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på ett glastak och behöver granskas.`;

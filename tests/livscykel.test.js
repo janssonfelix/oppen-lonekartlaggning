@@ -4,10 +4,13 @@
  * Fixturen är deterministisk (LCG) och har ett känt kön-effekt-mönster. Könskoefficienten
  * jämförs mot fitOLS på samma designmatris, skriven här för hand, så att modellen inte
  * bara "ser rimlig ut" utan faktiskt skattar det den säger att den skattar.
+ *
+ * Vaktar: R28 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
-import { livscykelRegression } from '../src/lib/livscykel.js';
+import { livscykelRegression, livscykelNiva, samspelSakerstallt, SAMSPEL_GRANS } from '../src/lib/livscykel.js';
 import { fitOLS } from '../src/lib/stat.js';
+import { readFileSync } from 'node:fs';
 
 function lcg(seed) {
     return () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
@@ -160,10 +163,91 @@ describe('livscykelRegression: fixBas', () => {
     });
 });
 
+// Kvinnor får `effekt` lägre log-lön i alla åldrar. Varje cell (kön, ålder, BAS) har två personer med bruset +e och
+// −e, så att residualerna summerar till noll i varje cell: alla designkolumner är konstanta inom cellen, så OLS ger
+// exakt den inbyggda effekten, och bruset styr bara intervallets bredd.
+function trappFixtur(skillnadPct, brus) {
+    const effekt = Math.log(1 + skillnadPct / 100), rader = [];
+    for (let alder = 25; alder <= 65; alder += 5)
+        for (const bas of ['A', 'B'])
+            for (const kon of ['kvinna', 'man'])
+                for (const e of [brus, -brus]) {
+                    const log = 10 + (kon === 'kvinna' ? effekt : 0) + 0.01 * (alder - 25) + (bas === 'B' ? 0.1 : 0) + e;
+                    rader.push({ kon, alder, bas, lon: Math.exp(log) });
+                }
+    return rader;
+}
+
+describe('livscykelRegression: nyckeltalen vid 25 och 65 år följer trappan (ADR-71)', () => {
+    it('en tydlig skillnad (−8 %) med ett intervall som utesluter lika lön är värd att granska', () => {
+        const res = livscykelRegression(trappFixtur(-8, 0.01), { golv: 10 });
+        expect(res.gapAt25).toBeCloseTo(-8, 6);
+        expect(res.gapPerAge[0].gapHiPct).toBeLessThan(0);
+        expect(res.niva25).toBe('granska');
+        expect(res.niva65).toBe('granska');
+    });
+
+    it('en skillnad på −4 % med ett intervall som täcker lika lön är följ upp, inte granska', () => {
+        const res = livscykelRegression(trappFixtur(-4, 0.4), { golv: 10 });
+        expect(res.gapAt25).toBeCloseTo(-4, 6);
+        expect(res.gapPerAge[0].gapLoPct).toBeLessThan(0);
+        expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
+        expect(res.niva25).toBe('folj');
+    });
+
+    it('under 3 % med ett intervall som täcker lika lön är balanserat', () => {
+        const res = livscykelRegression(trappFixtur(-2, 0.4), { golv: 10 });
+        expect(res.gapAt25).toBeCloseTo(-2, 6);
+        expect(res.gapPerAge[0].gapLoPct).toBeLessThan(0);
+        expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
+        expect(res.niva25).toBe('balanserat');
+    });
+
+    it('storleken ensam ger ingen status: −6 % med ett intervall som täcker lika lön är följ upp', () => {
+        const res = livscykelRegression(trappFixtur(-6, 0.6), { golv: 10 });
+        expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
+        expect(res.niva25).toBe('folj');
+    });
+
+    it('ett intervall som saknas eller inte är ändligt går ej att bedöma, inte balanserat', () => {
+        expect(livscykelNiva({ gapPct: -8, gapLoPct: NaN, gapHiPct: -6 })).toBe('ejbedomd');
+        expect(livscykelNiva({ gapPct: -1, gapLoPct: -Infinity, gapHiPct: Infinity })).toBe('ejbedomd');
+        expect(livscykelNiva({ gapPct: NaN, gapLoPct: -2, gapHiPct: 1 })).toBe('ejbedomd');
+        expect(livscykelNiva(undefined)).toBe('ejbedomd');
+        expect(livscykelNiva({ gapPct: -8, gapLoPct: -10, gapHiPct: -6 })).toBe('granska');
+    });
+});
+
 describe('livscykelRegression: lönefil utan ålder (ADR-64)', () => {
     it('ger felkod no_age när ingen rad har ålder', () => {
         const res = livscykelRegression(fixtur(240).map(d => ({ ...d, alder: 0 })), { golv: 10 });
         expect(res.errorCode).toBe('no_age');
         expect(res.error).toMatch(/ålder/i);
+    });
+});
+
+describe('samspelSakerstallt: en gräns för samspelet kön × ålder (ADR-71)', () => {
+    it('gränsen är p < 0,10', () => {
+        expect(SAMSPEL_GRANS).toBe(0.10);
+    });
+    it('säkerställt när något av p-värdena är under 0,10', () => {
+        expect(samspelSakerstallt(0.09, 0.5)).toBe(true);
+        expect(samspelSakerstallt(0.5, 0.0999)).toBe(true);
+        expect(samspelSakerstallt(0.001)).toBe(true);
+    });
+    it('exakt 0,10 är inte säkerställt, för ett p-värde och för båda', () => {
+        expect(samspelSakerstallt(0.10)).toBe(false);
+        expect(samspelSakerstallt(0.10, 0.10)).toBe(false);
+        expect(samspelSakerstallt(0.10, 0.5)).toBe(false);
+    });
+    it('ett p-värde som saknas eller inte är ett tal säkerställer inget', () => {
+        expect(samspelSakerstallt(NaN, 0.5)).toBe(false);
+        expect(samspelSakerstallt(undefined, null)).toBe(false);
+        expect(samspelSakerstallt()).toBe(false);
+    });
+    it('appens livscykel har ingen egen gräns: nyckeltalet, Att utforska och tolkningen använder funktionen', () => {
+        const kalla = readFileSync(new URL('../src/app/52-livscykel.js', import.meta.url), 'utf8');
+        expect(kalla).not.toMatch(/(?:PVal|\bp)\s*[<>]=?\s*0?\.10?\b/);
+        expect((kalla.match(/_lcSamspelSakerstallt\(/g) || []).length).toBeGreaterThanOrEqual(3);
     });
 });

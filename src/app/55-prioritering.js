@@ -153,7 +153,7 @@ const PRIO_STATUS_INFO = {
     analysera: { label: 'Över referens', icon: ikon('info'), color: FARG.info, bg: FARG.infoBg, klass: 'bricka-info' }
 };
 /**
- * Uppmärksamhetstrappans bricka för kolumnen Skillnad kön (ADR-59, 9e). Prioriteringen prövar inte skillnaden mot
+ * Uppmärksamhetstrappans bricka för kolumnen Skillnad kön (ADR-71). Prioriteringen prövar inte skillnaden mot
  * slumpen, så brickan sätts efter storleken som i Utforska (högst Följ upp); under statGolv() per kön, eller utan
  * jämförelse per kön, står Går ej att bedöma. Brickan står bara på skärmen: exporten bär talet.
  * @param {{gapPct:number|null, kvN:number, maN:number}} i

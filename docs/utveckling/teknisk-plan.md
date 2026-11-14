@@ -222,13 +222,15 @@ pekar på står kvar med en rad om hur den avslutades.
 9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
-9e. **Kvar efter uppmärksamhetstrappan och Prioriteringens egna ord (ADR-59, ADR-62, till spår C):** livscykelns
-    färger (`52-livscykel.js`) följer fortfarande 5 %. Utforska och kolumnen *Skillnad kön* i Prioriteringens åtgärdslista visar storlek utan prövning
-    (högst *Följ upp*). Protokollets blad per BAS-intervall för gemensam lönebedömning väljer på rått p-värde utan
-    BH-korrigering. På skärmen (k = 1) står många små grupper som *Går ej att bedöma*, eftersom prövningen kräver
-    `statGolv()` per kön. Handlingsplanens kostnadskolumn blandar kostnad att nå referensen (rader ur Prioritering) och
-    kostnaden att lyfta ett kvinnodominerat yrke till jämförelseyrket (kandidatpar); vägledningsbladet, rapporten och
-    rapportunderlaget säger vilken som är vilken.
+9e. **Storlek utan prövning, som beslut (ADR-59, ADR-62, ADR-71):** Utforska och kolumnen *Skillnad kön* i Prioriteringens
+    åtgärdslista visar storleken utan att pröva den mot slumpen och når därför högst *Följ upp*. Det är ett beslut,
+    inte en rest: Utforskas celler är fria urval, där en prövning per cell vore många tester utan korrigering, och
+    Prioriteringens grupper prövas i Lika arbete, dit brickans verktygstips hänvisar. På skärmen (k = 1) står många
+    små grupper som *Går ej att bedöma*, eftersom prövningen kräver `statGolv()` per kön (ADR-38). Övriga rester
+    efter trappan är lösta (2026-11-14, ADR-71): livscykelns nyckeltal följer trappan med modellens konfidensintervall och
+    förändringen 25–65 år färgas på prövningen av samspelet mellan kön och ålder, protokollet för gemensam
+    lönebedömning väljer BAS-intervall efter BH-korrigeringen, och handlingsplanen säger i kolumnen *Kostnaden
+    avser* vilken kostnad raden har.
 
 **Export:**
 22. *(Löst 2026-11-08: en definition av kvinnodominerat i hela verktyget, `arKvinnodominerad`/`konsklass` i
@@ -242,7 +244,7 @@ pekar på står kvar med en rad om hur den avslutades.
     för påstående mot den kod som släpps, granskningsdatumen i dokumenten sätts och avvikelser förs hit.
     Release-grinden (`tools/release.mjs`) stoppar en release när granskningen är äldre än koden eller gäller ett
     annat bygge.
-18. **Uttagsstegen för Heroma, Personec P och Visma i `datauttag.md` är inte verifierade mot systemen**; de
+18. **Uttagsstegen per lönesystem i `datauttag.md` är inte verifierade mot systemen**; de
     bygger på det gemensamma statistikuttaget och har rader som varje organisations systemförvaltare fyller i
     och bekräftar för sin installation.
 19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett

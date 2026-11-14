@@ -325,7 +325,7 @@ function generateEUDirectiveMatrix() {
     lika.grupper.forEach(g => {
         const { yrke, nKv, nMa, tot } = g;
         const pctKv = nKv / tot;
-        // Samma definition som Likvärdigt arbete (DO/SCB-valet och kvinnotröskeln; ADR-60).
+        // Samma definition som Likvärdigt arbete (valet Mer än/eller mer och kvinnotröskeln; ADR-60, ADR-72).
         const dominans = _aidbasDominans(pctKv * 100, aidbasDefinition(), aidbasGrans());
         // k-anonymitet: yrken där ett kön är under k redovisas med gruppens SAMLADE
         // median (den bygger på n >= kTroskel() och röjer ingen enskild); yrken som
@@ -443,7 +443,7 @@ function generateEUDirectiveMatrix() {
             ['Löneskillnad per yrke', '<code>(median kvinnor / median män − 1) × 100 %</code>'],
             ['Status', `Värt att granska = utanför slumpens gränser för gruppen (omkastning av könen, 1 000 gånger) och minst 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under ${statGolv()}`],
             ['Direktivmarkering', `≥ 5 % på den ojusterade medianskillnaden. ${esc(_STS_DIR_TIPS)}`],
-            ['Dominans', `Kvinnodominerad enligt ${esc(aidbasDefinitionText())}; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).`],
+            ['Dominans', `Kvinnodominerad vid ${esc(aidbasDefinitionText())}; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).`],
             ['OLS-regression', `log(lön) ~ kön${harAlder() ? ' + ålder' : ''} + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)`],
             ['BAS-rangordning', 'Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete'],
             ['Per-BAS regression', `Separat <code>log(lön) ~ kön${harAlder() ? ' + ålder' : ''}</code> inom varje BAS med ≥${statGolv()} av varje kön`]
@@ -565,8 +565,8 @@ function _laOversiktTabell(bars, d = getData()) {
 }
 
 // ---- Trattdiagram: yrkesgrupperna mot slumpens gränser ----
-// Standardmetoden för att jämföra enheter av olika storlek (Spiegelhalter): värdet mot storleken, med gränser som
-// smalnar när enheten växer. Här: kvinnors median i % av mäns per yrkesgrupp mot antalet personer.
+// Varje grupps värde ritas mot gruppens storlek, med gränser för slumpen som smalnar när gruppen växer. Här: kvinnors
+// median i % av mäns per yrkesgrupp mot antalet personer.
 //
 // BEDÖMNINGEN av en grupp görs med omkastning (permutation) inom gruppen: könen kastas om slumpvis mellan gruppens
 // löner 1 000 gånger, och gruppens kvot jämförs med de mittersta 95 % av de kvoter slumpen ger. Det är exakt för

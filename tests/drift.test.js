@@ -229,7 +229,7 @@ describe('likvärdigt arbete: app.js delegerar till lib-spegeln', () => {
         expect(sedd.opts.k).toBe(15);   // tröskeln följer med (räknar små grupper i diagnostiken)
         expect(sedd.data).toBe(state.data);
         expect(sedd.statistik).toBe(state.statistik);
-        expect(typeof sedd.scbKlass).toBe('function');
+        expect(typeof sedd.nationellKlass).toBe('function');
         // BAS-ordningen är fast (se §6 i likvardighetsmodellen.md): ingen basRang skickas.
         // Definitionen av kvinnodominerat och jämförelsemängden följer med (ADR-60).
         expect(sedd.opts).toEqual({ kvinnoTrosholdPct: 55, kvDomDefinition: 'scb', jamforelse: 'mansdominerade', minGapPct: 3, topN: 20, k: 15 });
@@ -287,7 +287,7 @@ describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', ()
     ];
 
     it('två körningar ger identiska gapCI', () => {
-        const kör = () => M._lvComputePairs({ data, statistik: [], scbKlass: () => null,
+        const kör = () => M._lvComputePairs({ data, statistik: [], nationellKlass: () => null,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 0, topN: 100 } });
         const a = kör(), b = kör();
         expect(a.pairs.length).toBeGreaterThan(0);
@@ -297,7 +297,7 @@ describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', ()
 
     it('en injicerad rng används när testet ber om det', () => {
         const konst = () => 0.5;
-        const res = M._lvComputePairs({ data, statistik: [], scbKlass: () => null,
+        const res = M._lvComputePairs({ data, statistik: [], nationellKlass: () => null,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 0, topN: 100, rng: konst } });
         // Alla resamplingar blir identiska → noll bredd på intervallet.
         expect(res.pairs[0].gapCI.lo).toBe(res.pairs[0].gapCI.hi);
@@ -360,10 +360,11 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till sp
         const pr = MODULES.find(m => m.file === 'prioritering.js');
         const lc = MODULES.find(m => m.file === 'livscykel.js');
         expect(pr.expose).toEqual({ prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening' });
-        expect(lc.expose).toEqual({ livscykelRegression: '_lcLivscykelRegression' });
+        expect(lc.expose).toEqual({ livscykelRegression: '_lcLivscykelRegression', samspelSakerstallt: '_lcSamspelSakerstallt' });
         expect(typeof M._prPrioritera).toBe('function');
         expect(typeof M._prArsbeloppMening).toBe('function');
         expect(typeof M._lcLivscykelRegression).toBe('function');
+        expect(typeof M._lcSamspelSakerstallt).toBe('function');
     });
 
     it('spegeln ger samma resultat som lib-modulen på samma indata', () => {

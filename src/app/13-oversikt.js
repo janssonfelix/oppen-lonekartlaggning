@@ -164,8 +164,8 @@ function computeBootstrapCI() {
     if (kv.length < statGolv() || ma.length < statGolv()) { state.bootstrapCI = null; return; }
 
     // B=2000: med B=600 blir Monte Carlo-variabiliteten på CI-gränserna
-    // ~±0,5 pp, vilket märks för gränsfalls-par. B=2000 är vedertagen standard för 95%-CI och
-    // räknar i praktiken inom ~50-200 ms på alla typiska storlekar.
+    // ~±0,5 pp, vilket märks för gränsfalls-par. Variationen minskar med 1/√B, så B=2000 ger ungefär hälften,
+    // och räkningen tar i praktiken ~50-200 ms på alla typiska storlekar.
     const B = 2000;
     const ratios = new Array(B);
     // Quickselect-median (O(n)) — sortering ger O(B·n log n), flera sekunder

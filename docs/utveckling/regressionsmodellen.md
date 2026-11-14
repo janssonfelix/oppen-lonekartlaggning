@@ -311,15 +311,20 @@ normalfördelningen. Normalfördelningens fördelningsfunktion (`normalCdf`) är
 inom intervallet) inom varje BAS-intervall med minst `statGolv()` av varje kön, med HC3 och t-kvantil. Intervall under
 golvet redovisas som *för få*, med antalen.
 
-**BH-korrigeringen.** Testerna per BAS-intervall korrigeras för att många prövas samtidigt (Benjamini–Hochberg, i
-`renderRegressionCard`). m är antalet intervall som kunde skattas; med m > 1 sorteras p-värdena stigande, q = min(1, p
-· m / rang), och q tvingas vara monotont bakifrån. Med ett enda test görs ingen korrigering. En skillnad är säkerställd
-efter korrigering när p < 0,05 och q < 0,05 (eller p < 0,05 när bara ett test körs). Signalen per intervall
+**BH-korrigeringen.** Testerna per BAS-intervall korrigeras för att många prövas samtidigt (Benjamini–Hochberg).
+Räkningen står på ett ställe, `bhJustera` i `src/lib/stat.js` (i appen `_bhJustera`): q-värdena i samma ordning som
+p-värdena, q = min(1, p · m / rang) med p-värdena sorterade stigande, gjort monotont bakifrån; ett enda test ger q = p.
+m är antalet intervall som kunde skattas (status ok och ändligt p-värde). Regressionskortet (`renderRegressionCard`),
+Att göra och protokollet för gemensam lönebedömning anropar den över samma tester, så att samma intervall får samma q.
+Med ett enda test är q = p, och kortet, beräkningsbeviset, Att göra och protokollet visar talet. En skillnad är
+säkerställd efter korrigering när p < 0,05 och q < 0,05, vilket är detsamma som q < 0,05 eftersom q aldrig är
+mindre än p. Signalen per intervall
 (`perBasSignal` i `src/lib/status.js`, ADR-59) är *Titta närmare* när den är säkerställd efter korrigering och minst
 3 %, *Dokumentera* när den är säkerställd efter korrigering men under 3 %, *Osäkert utslag* när bara det råa p-värdet
 är under 0,05 (varningstriangeln), annars *Inget utslag*. Texten om korrigeringen räknas ur antalet tester
-(`_bhTextFor`). Protokollet för gemensam lönebedömning väljer sina BAS-intervall på det råa p-värdet, utan korrigering
-(teknisk-plan §9, punkt 9e).
+(`_bhTextFor`). Protokollet för gemensam lönebedömning tar med de BAS-intervall som har signalen *Titta närmare*, med
+q < 0,05 som säkerställt efter korrigering; bladet har kolumnen *q-värde (BH-justerat)* efter p-värdet, och
+kolumnen *Säkerställd efter korrigering* gäller q (ADR-71).
 
 ## 8. Utan ålder
 
@@ -456,8 +461,8 @@ Filen ändras aldrig.
 
 | Fil | Prövar |
 |---|---|
-| `tests/stat.test.js` | OLS, HC3, `tDistCdf`, `tQuantile` mot t-tabellen, `pValue2Sided` och matrisalgebran: egenskaper |
-| `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell |
+| `tests/stat.test.js` | OLS, HC3, `tDistCdf`, `tQuantile` mot t-tabellen, `pValue2Sided` och matrisalgebran: egenskaper; `bhJustera` mot handräknade fall |
+| `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell; `bhJustera` mot statsmodels `multipletests(method='fdr_bh')` |
 | `tests/regression.test.js` | `src/lib/regression.js` direkt: förklaringsmodellen som värde, stegen på vald modell, vad varje variabel tillför, `kvantilDesign` och `quantileRegressionAtAllTau`, modellerna utan ålder och radfiltret |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ Yrkesgrupp* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
@@ -465,6 +470,7 @@ Filen ändras aldrig.
 | `tests/smoke-granssnitt.test.js` | Kortet *Förklara med:*: valet, tangentbordet och texterna |
 | `tests/ktroskel-invarianter.test.js` | I7: uppdelningen med andra val av variabler, vid 10 och 25 (`k-troskeln.md` §10) |
 | `tests/ktroskel-regression.test.js` | Regel R1 och BH-texten i regressionskortet |
+| `tests/ktroskel-utdata.test.js` | Protokollets blad per BAS-intervall: ett intervall som bara är säkerställt på rått p utelämnas, ett som är säkerställt efter korrigering står med sitt q-värde |
 | `tests/ktroskel-utan-alder.test.js`, `tests/exports.golden.test.js` | Utan ålder: varje utdataväg, och facit *lönefil utan ålder* |
 | `tests/diagramritare.test.js` | Att ingen text i en ritad figur är ett tal med decimalpunkt (kvantildiagrammet, ADR-63) |
 | `tests/forhandsvisning.test.js` | Att regressionen inte cachas (regel R9) |
@@ -473,5 +479,5 @@ Filen ändras aldrig.
 Golden-facit och docx-facit (`tests/exports.golden.test.js`) är oförändrade i standardläget, vilket är kontrollen att
 standardmodellen räknar som före ADR-56.
 
-**Det som inte prövas för sig:** frihetsgradsskalningen när yrkesgrupp är vald in i huvudtalet (avsnitt 4) och
-BH-korrigeringens q-värden (avsnitt 7) har inget eget test av talen.
+**Det som inte prövas för sig:** frihetsgradsskalningen när yrkesgrupp är vald in i huvudtalet (avsnitt 4) har inget
+eget test av talen.

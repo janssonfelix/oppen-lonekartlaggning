@@ -8,7 +8,7 @@ inställningarna och vakterna. Koden är sanningen; där dokumentet och koden sk
 rättas.
 
 Dokumentet är inte beslutsloggen och inte en tolkning av lagen. Varför det är så här, vad som övervägdes och när det
-beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-25, 60 och 61, och för reserven för
+beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-25, 60, 61 och 72, och för reserven för
 kvinnoandel ADR-34. Lagrummen står i [`lagrum.md`](lagrum.md). Minsta gruppstorlek, undantaget för fliken och regeln
 för paren utanför fliken står i [`k-troskeln.md`](k-troskeln.md) (§4 och §2) och upprepas inte här. Hur BAS kodas i
 regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
@@ -29,7 +29,7 @@ Modellen bor i `src/lib/likvardighet.js` och speglas in i bygget som övriga kä
 `src/app/34-likvardigt-arbete.js` innehåller bara tillståndsadaptern och gränssnittet: rendering, diagram och export.
 Att adaptern verkligen delegerar vaktas av `tests/drift.test.js`.
 
-**Orkestratorn** `computeLikvardighetPairs({ data, statistik, scbKlass, opts })` i lib kör stegen i ordning:
+**Orkestratorn** `computeLikvardighetPairs({ data, statistik, nationellKlass, opts })` i lib kör stegen i ordning:
 `aggregeraOrgKvDom` (steg 1, och organisationens jämförelseyrken), `klassificeraStatistik` (jämförelsestatistikens
 jämförelseyrken), filtret för jämförelsemängden (avsnitt 4), `byggPar` eller `byggParPoäng` (steg 3) och
 `byggParLagreKrav` (avsnitt 6). Den returnerar `orgKvDom`, `orgIckeKv`, `statIckeKv`, `pairs`, `parAntal`,
@@ -48,23 +48,32 @@ nollställer resultatet.
 **Definitionen.** `arKvinnodominerad(pct, definition, grans)` och `konsklass(pct, definition, grans)` i
 `src/lib/likvardighet.js` är den enda definitionen i verktyget (ADR-60). `pct` är andelen kvinnor i procent.
 
-- **DO** (`'do'`, i gränssnittet *Förarbetena*): kvinnodominerat när andelen är **mer än** gränsen.
-- **SCB** (`'scb'`): kvinnodominerat när andelen är gränsen **eller mer**.
-- **Mansdominerat** speglas: samma prövning på andelen män (100 − `pct`). Vid gränsen 60 är en grupp med DO
-  mansdominerad under 40 % kvinnor, med SCB vid 40 % eller mindre.
+- *Mer än X %* (nyckeln `'do'`): kvinnodominerat när andelen är **mer än** gränsen.
+- *X % eller mer* (nyckeln `'scb'`): kvinnodominerat när andelen är gränsen **eller mer**.
+- **Mansdominerat** speglas: samma prövning på andelen män (100 − `pct`). Vid gränsen 60 är en grupp med *Mer än*
+  mansdominerad under 40 % kvinnor, med *eller mer* vid 40 % eller mindre.
+
+Valen heter efter lydelsen, inte efter en avsändare (ADR-72): namnen och texterna står i `KV_DEFINITIONER` i
+`src/lib/aidbas.js` (`kvDefinitionNamn`, `kvDefinitionText`), och källan för båda lydelserna står i `lagrum.md`. Nycklarna
+`'do'` och `'scb'` är historiska och står kvar, så att sparade konfigurationsfiler fortsätter att läsas.
 - **Övriga** är blandade. `konsklass` ger `'kvinnodominerad'`, `'mansdominerad'`, `'blandad'`, eller `''` när
   andelen är okänd; `arKvinnodominerad` ger `false` för en okänd andel.
 
-**Gränsen** är kvinnotröskeln, standard 60 % (`KVINNO_TROSKEL_DEFAULT`; förarbetenas riktmärke, beslut 2026-10-19,
-`lagrum.md`). Konstanterna `ICKE_KV_TAK` (40) och `KV_DOM_STAT` (60) står kvar i modulen; `ICKE_KV_TAK` är klassens
-gräns för män med DO och standardgränsen, inte ett urval, och `KV_DOM_STAT` är bara standardvärdet i
+**Gränsen** är kvinnotröskeln, standard 60 % (`KVINNO_TROSKEL_DEFAULT`; beslut 2026-10-19, källan i `lagrum.md`). Konstanterna `ICKE_KV_TAK` (40) och `KV_DOM_STAT` (60) står kvar i modulen; `ICKE_KV_TAK` är klassens
+gräns för män med *Mer än* och standardgränsen, inte ett urval, och `KV_DOM_STAT` är bara standardvärdet i
 `klassificeraStatistik` när den anropas utan gräns.
 
 **Valet** görs i Likvärdigt arbetes inställningar och gäller hela verktyget: kvinnotröskeln
 (`state.likvardighet.kvinnoTrosholdPct`) och definitionen (`state.likvardighet.kvDomDefinition`, standard `'do'`).
 I appen läses de genom `aidbasDefinition()` och `aidbasGrans()`, och `kvDomNu(pct)` och `konsklassNu(pct)` i
-`45-aid-bas-tabeller.js` anropar definitionen med dem. Texterna säger *mer än* (DO) eller *minst* (SCB) efter valet
-(`kvDomGransText()`).
+`45-aid-bas-tabeller.js` anropar definitionen med dem. Texterna säger gränsen med valets lydelse, *mer än 60 %
+kvinnor* eller *60 % kvinnor eller mer*: i appen `kvDomGransText()` och i rapportunderlaget `avsnittBlock`, båda med
+`kvDefinitionText`.
+
+**Jämn könsfördelning är något annat.** Lönestrukturs tabell över könsfördelningen per BAS-intervall, rutan *Ojämn
+könsfördelning* på Översikt och måttet på statistisk styrka räknar en grupp som jämn när båda könen är minst 40 %.
+Den gränsen är fast och följer varken kvinnotröskeln eller valet; en grupp med exakt 60 % kvinnor är jämn där, men
+kvinnodominerad med *X % eller mer* vid gränsen 60. Ordlistan (*Jämn könsfördelning*) säger det.
 
 **Var definitionen används:**
 
@@ -96,7 +105,7 @@ organisationens jämförelseyrken (avsnitt 4). Båda sorteras efter antal, stör
 ## 4. Steg 2: jämförelseyrkena
 
 **Jämförelsemängden** är alla grupper som **inte är kvinnodominerade** enligt vald definition (ADR-60):
-mansdominerade och blandade. Med DO och gränsen 60 betyder det högst 60 % kvinnor, med SCB under 60 %. Klassen och
+mansdominerade och blandade. Med *Mer än* och gränsen 60 betyder det högst 60 % kvinnor, med *eller mer* under 60 %. Klassen och
 könsandelen står på varje par (`maKlass`, `maKvinnoPct`; `maKvAndel` bär samma andel), för interna och externa
 jämförelseyrken. Tolkningen att jämförelsemängden är alla som inte är kvinnodominerade är ett förslag, inte prövat av
 jurist; lagens regler om kvinnodominerat arbete beskrivs i `lagrum.md`.
@@ -113,14 +122,16 @@ BAS-intervall i tabellerna per AID-kod och BAS-intervall (`arJamforelseKlass` i 
 
 **Organisationens jämförelseyrken** är `orgIckeKv` ur steg 1, grupperade per BAS av `orgIckeKvByBas`.
 
-**Jämförelsestatistikens jämförelseyrken.** `klassificeraStatistik(statistik, scbKlass, { definition, grans })`
+**Jämförelsestatistikens jämförelseyrken.** `klassificeraStatistik(statistik, nationellKlass, { definition, grans })`
 tar rader med AID, BAS och median över 0; en rad vars AID inte bara är siffror är en rubrik för en yrkesfamilj och
 hoppas över. Andelen kvinnor tas i första hand ur statistikens egen könsfördelning (`andelKv` mellan 0 och 100,
-källan `'lokal'`), annars ur reserven `scbKlass` (källan `'scb'`); ger ingen av dem en andel räknas raden som
+källan `'lokal'`), annars ur reserven `nationellKlass` (källan `'nationell'`); ger ingen av dem en andel räknas raden som
 oklassificerad. Kvinnodominerade rader hoppas över; övriga blir kandidater med klass och källa, grupperade per BAS
 (`statByBas`) och sorterade efter andel kvinnor. Diagnostiken räknar `klass.kvDom`, `klass.ickeKv`, `klass.blandat`
 (hur många av kandidaterna som är blandade) och `klass.oklassificerad`, och `klassKalla` hur många andelar som kom
-ur statistiken respektive reserven.
+ur statistiken respektive reserven (`lokal` och `nationell`). Paret bär källan i
+`maKlassKort`: `'intern'`, `'lokal'` eller `'nationell'`. Namnen säger källan, inte en avsändare: reserven är SKR:s
+personalstatistik, inte SCB, och syns för användaren som *nationell statistik (SKR)*.
 
 **Reserven för kvinnoandel** är den nationella personalstatistiken (ADR-34). Adaptern skickar `nationellAidKlass`:
 en sexsiffrig AID-kod slås upp med `skrKvinnoandel` i `src/lib/skrreferens.js` — etiketten och sedan prefixet (tre
@@ -264,7 +275,7 @@ dess export är undantagna från tröskeln och märks med undantaget (`k-troskel
 | Fält | Standard | Vad |
 |---|---|---|
 | `kvinnoTrosholdPct` | 60 | Kvinnotröskeln i procent; fältet *Kvinnotröskel*, 50–70 i steg om 5 |
-| `kvDomDefinition` | `'do'` | Definitionen av kvinnodominerat, `'do'` eller `'scb'`; gäller hela verktyget (avsnitt 2) |
+| `kvDomDefinition` | `'do'` | Definitionen av kvinnodominerat, `'do'` (*Mer än X %*) eller `'scb'` (*X % eller mer*); gäller hela verktyget (avsnitt 2) |
 | `jamforelse` | `'alla'` | Jämförelsemängden, `'alla'` eller `'mansdominerade'` (avsnitt 4) |
 | `minGapPct` | 0 | Minsta skillnad i procent (avsnitt 5) |
 | `topN` | 20 | Högst så många par i resultatet (avsnitt 5) |
@@ -288,9 +299,9 @@ bär inte minsta skillnaden (ADR-61), antalet par, kvinnotröskeln eller definit
 
 | Fil | Prövar |
 |---|---|
-| `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med DO och SCB vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget, *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangFn`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
+| `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med båda definitionerna vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget, *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangFn`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
 | `tests/drift.test.js` | Att adaptern delegerar till spegeln och översätter tillståndet till anropet, att den ger ett strukturerat resultat när spegeln kastar, och att spegeln ger reproducerbara konfidensintervall |
-| `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` | Definitionen och jämförelsemängden i tabellerna per AID-kod och BAS-intervall; definitionen och jämförelsemängden i konfigurationsfilen |
+| `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` | Definitionen och jämförelsemängden i tabellerna per AID-kod och BAS-intervall; definitionen och jämförelsemängden i konfigurationsfilen; att definitionernas namn säger lydelsen och inte en avsändare (ADR-72) |
 | `tests/smoke-vyer.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseyrke i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock |
 | `tests/granssnitt-vyer.test.js` | Partabellens intervall och märke, kolumnerna, att ett par under 5 % syns utan att något ändrats och fältets text, och att Översiktens tal är flikens |
 | `tests/smoke-organisation.test.js` | Organisationspaketets jämförelsemängd, poängläget i fliken och att resultatet nollställs |

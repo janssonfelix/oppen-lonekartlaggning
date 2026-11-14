@@ -37,6 +37,7 @@ export const MODULES = [
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',
+            bhJustera: '_bhJustera',
             // returneras för att andra lib-moduler importerar dem (se _parseImports); appen använder dem inte
             matMul: null, invert: null, median: null
         }
@@ -120,7 +121,7 @@ export const MODULES = [
     {
         // Livscykelmodellen (log-lön med kön×ålder och BAS-indikatorer); importerar stat.js
         file: 'livscykel.js', ns: '__mirrorLivscykel',
-        expose: { livscykelRegression: '_lcLivscykelRegression' }
+        expose: { livscykelRegression: '_lcLivscykelRegression', samspelSakerstallt: '_lcSamspelSakerstallt' }
     },
     {
         // Organisationsfilen: verktyget med organisationspaketet inbakat (ren strängmodul)

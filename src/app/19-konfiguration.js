@@ -166,6 +166,8 @@ function applyConfigSnapshot(cfg) {
             }
         }
         if (cfg.likvardighet.kvDomDefinition != null) {
+            // Nycklarna 'do' (*Mer än X %*) och 'scb' (*X % eller mer*) är historiska och står kvar, så att sparade
+            // konfigurationsfiler fortsätter att läsas (ADR-72).
             if (cfg.likvardighet.kvDomDefinition !== 'do' && cfg.likvardighet.kvDomDefinition !== 'scb')
                 throw new Error('likvardighet.kvDomDefinition måste vara "do" eller "scb".');
             lv.kvDomDefinition = cfg.likvardighet.kvDomDefinition;

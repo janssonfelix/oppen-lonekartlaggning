@@ -309,8 +309,8 @@ rubrikraden, också när det är hopfällt.
    Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje yrkesgrupp i varje
    intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall. De listar
    också par där ett arbete i lägre BAS som inte är kvinnodominerat har högre medianlön än ett kvinnodominerat
-   arbete i högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **Förarbetena** (mer än tröskeln, standard)
-   eller **SCB** (tröskeln eller mer); mansdominerat är samma gräns för män och övriga är könsblandade. Samma
+   arbete i högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **Mer än 60 %** (mer än tröskeln,
+   standard) eller **60 % eller mer** (tröskeln eller mer), med den inställda kvinnotröskeln i stället för 60; mansdominerat är samma gräns för män och övriga är könsblandade. Samma
    definition och samma jämförelseyrken gäller i hela verktyget: kandidatparen, *Lägre krav, högre lön*,
    tabellerna per BAS-intervall, Lika arbetes kolumn Dominans, Löneöversynens *Varav till kvinnodominerade
    grupper* och Lönepolitikens diagram. Valet står i Excel-bladen och i metodbladet.
@@ -386,7 +386,11 @@ rubrikraden, också när det är hopfällt.
    prioriteringsindexet in. Trösklarna är granskningsgränsen, *Börja här*-tröskeln och gränserna för uppföljning
    och över referensen. Raden *Trösklar och viktning* i fliken Prioritering säger om värdena är ändrade, och *Ändra*
    öppnar Inställningar där. **Handlingsplanen** förifylls ur de två; egna åtgärder läggs
-   till med *Lägg till rad* och följer med i exporterna som de förifyllda. Kortet **Samverkan & uppföljning** i
+   till med *Lägg till rad* och följer med i exporterna som de förifyllda. Kolumnen *Kostnaden avser*, direkt
+   efter kostnaden, säger vilken kostnad raden har: *Nå referensens median* för rader ur Prioritering och *Nå
+   jämförelseyrkets median* för kandidatpar i likvärdigt arbete. En egen rad har ingen beräknad kostnad, och cellen
+   är tom. Kolumnen står också i Excel-underlaget, utskriften, Word-utkastet, PDF-rapporten och Rapporttext, där
+   summan delas på de två slagen. Kortet **Samverkan & uppföljning** i
    Handlingsplan har momenten att bocka av och knapparna för **protokollet för gemensam lönebedömning** och
    **handlingsplanen** som Excel.
    Knappen **Sakliga skäl** på varje rad öppnar en dialog där du dokumenterar skälen till gruppens löneskillnad: en
@@ -577,8 +581,8 @@ du ordna om och ta bort tabellerna.
    rapportunderlagets grupp **Per BAS-intervall**.
    Avsnittet **Rapportunderlag** har de färdiga avsnitten att klistra in. Överst i rapportunderlaget finns en
    förteckning över blocken och knappen **Kopiera alla avsnitt**, som lägger alla avsnitt i en enda kopiering.
-   Varje avsnitt har en knapp **Kopiera**. Det har också varje yrkesgrupp med skillnad över 5 % och varje
-   kandidatpar där båda grupperna är stora nog att redovisas. Faktastycket och tabellen hamnar på urklipp och tar mallens format när
+   Varje avsnitt har en knapp **Kopiera**. Det har också varje yrkesgrupp med statusen *Värt att granska*
+   (statistiskt säkerställd skillnad på minst 3 %) och varje kandidatpar där båda grupperna är stora nog att redovisas. Faktastycket och tabellen hamnar på urklipp och tar mallens format när
    du klistrar in. Diagrammen kopieras som bild med **Kopiera diagram**. Under varje grupp
    finns **frågor till verksamheten** — skicka dem till ansvarig chef inför bedömningen av
    om skillnaden är saklig.

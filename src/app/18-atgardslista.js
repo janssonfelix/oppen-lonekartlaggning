@@ -170,16 +170,12 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // många tester (Benjamini–Hochberg) och minst 3 % (ADR-59). Justerat tal: ingen direktivmarkering. ===
         try {
             if (reg && !reg.error && reg.perBas) {
-                // BH-justering
+                // BH-justering (src/lib/stat.js bhJustera), samma tester som regressionskortet och protokollet; ett
+                // enda test ger q = p
                 const okTests = reg.perBas.filter(p => p.status === 'ok' && isFinite(p.pValue));
                 const bhQ = {};
-                if (okTests.length > 1) {
-                    const sorted = [...okTests].sort((a, b) => a.pValue - b.pValue);
-                    const m = sorted.length;
-                    const qRaw = sorted.map((t, i) => Math.min(1, t.pValue * m / (i + 1)));
-                    for (let i = m - 2; i >= 0; i--) qRaw[i] = Math.min(qRaw[i], qRaw[i + 1]);
-                    sorted.forEach((t, i) => { bhQ[t.bas] = qRaw[i]; });
-                }
+                const qOk = _bhJustera(okTests.map(t => t.pValue));
+                okTests.forEach((t, i) => { bhQ[t.bas] = qOk[i]; });
                 reg.perBas.forEach(p => {
                     if (p.status !== 'ok') return;
                     const q = bhQ[p.bas];

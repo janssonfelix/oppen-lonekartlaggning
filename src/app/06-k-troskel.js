@@ -11,8 +11,7 @@
 // (23-exportgrind.js: medExportLage), där kTroskel() är den inställda tröskeln, kInstalld(). Inställningen,
 // stämpeln och texterna om regeln talar alltid om den inställda tröskeln.
 //
-// Standardvärdet 10 matchar SCB:s rekommendation för publicerad lönestatistik på små
-// grupper. Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
+// Standardvärdet 10 är verktygets eget (docs/utveckling/k-troskeln.md). Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
 // står i metodbilagan, i exporterad diagramdata och i tabell-CSV; under standard står meningen
 // om sänkt tröskel dessutom på det som kan spridas för sig (se kStampel och _kSanktNot).
 const K_STANDARD = 10;

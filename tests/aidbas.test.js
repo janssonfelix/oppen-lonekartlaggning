@@ -2,6 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Tabellerna per AID-kod och BAS-intervall (src/lib/aidbas.js): lika arbete, likvärdigt arbete, hierarkisk
 // jämförelse och arbetslistan för analys på individnivå. Underlaget är helt påhittat: 58 personer.
+// Vaktar: R29 (docs/utveckling/regler.md)
 import { describe, it, expect } from 'vitest';
 import { grupperaAidBas, dominans, likaArbeteTabell, likvardigtTabell, hierarkiskaPar, individnivaTabell, arJamforelseKlass, KV_DEFINITIONER, kvDefinitionText, kvDefinitionNamn, klassNamn, ingaParText } from '../src/lib/aidbas.js';
 
@@ -11,7 +12,7 @@ const grupp = (bas, aid, kon, n, lon0, steg = 100) => Array.from({ length: n }, 
  * 58 personer:
  *  - AID 1001 finns i två BAS-intervall: A (10 personer, mansdominerad, hög lön) och C (4 personer, under golvet)
  *  - AID 2002 i BAS E: 30 kvinnor och 9 män → Analyseras på individnivå; kvinnodominerad (76,9 %)
- *  - AID 3003 i BAS B: exakt 60 % kvinnor (3 av 5): olika klassning med DO och SCB
+ *  - AID 3003 i BAS B: exakt 60 % kvinnor (3 av 5): olika klassning med *Mer än 60 %* och *60 % eller mer*
  *  - hierarkiskt par: 1001 i BAS A (ej kvinnodominerad, lägre BAS, högre median) mot 2002 i BAS E
  */
 const underlag = () => [
@@ -30,7 +31,7 @@ describe('aidbas: gruppering och dominans', () => {
         expect(c).toMatchObject({ n: 4, nKv: 2, nMa: 2, yrke: 'Yrke 1001' });
         expect(g.reduce((s, x) => s + x.n, 0)).toBe(58);
     });
-    it('DO: kvinnodominerad över 60 %; SCB: från 60 %. Mansdominerad speglat, övriga könsblandade', () => {
+    it('Mer än 60 %: kvinnodominerad över 60 %; 60 % eller mer: från 60 %. Mansdominerad speglat, övriga könsblandade', () => {
         expect(dominans(60, 'do')).toBe('Könsblandad');
         expect(dominans(60, 'scb')).toBe('Kvinnodominerad');
         expect(dominans(60.1, 'do')).toBe('Kvinnodominerad');
@@ -39,11 +40,20 @@ describe('aidbas: gruppering och dominans', () => {
         expect(dominans(39.9, 'do')).toBe('Mansdominerad');
         expect(dominans(null, 'do')).toBe('');
         expect(Object.keys(KV_DEFINITIONER)).toEqual(['do', 'scb']);
-        expect(kvDefinitionText('do')).toBe('Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten)');
-        expect(kvDefinitionText('scb', 55)).toBe('SCB: 55 % kvinnor eller mer (Statistiska centralbyrån)');
-        expect(kvDefinitionNamn('scb')).toBe('SCB');
+        expect(kvDefinitionText('do')).toBe('mer än 60 % kvinnor');
+        expect(kvDefinitionText('scb', 55)).toBe('55 % kvinnor eller mer');
+        expect(kvDefinitionNamn('do')).toBe('Mer än 60 %');
+        expect(kvDefinitionNamn('scb', 55)).toBe('55 % eller mer');
         expect(klassNamn().kv).toBe('Kvinnodominerad');
         expect(ingaParText()).toMatch(/^Inga fall där/);
+    });
+    it('vakt: definitionerna heter efter lydelsen, inte efter en avsändare (ADR-72)', () => {
+        // Varken förarbetena eller SCB säger "X % eller mer"; propositionen är källa för båda lydelserna (lagrum.md).
+        for (const def of Object.keys(KV_DEFINITIONER)) {
+            for (const t of [kvDefinitionNamn(def), kvDefinitionNamn(def, 65), kvDefinitionText(def), KV_DEFINITIONER[def].namn, KV_DEFINITIONER[def].text]) {
+                expect(t, def).not.toMatch(/SCB|Statistiska centralbyrån|förarbete|\bDO\b/i);
+            }
+        }
     });
 });
 
@@ -96,11 +106,11 @@ describe('aidbas: Tabell 2 — Likvärdigt arbete', () => {
         expect(b).toMatchObject({ klass: 'Könsblandad', andelKvNat: null, brukar: '', median: null, spridning: null });
         expect(t.sma.map(s => s.aid)).toEqual(['1001']);
     });
-    it('en grupp med exakt 60 % kvinnor klassas olika med DO och SCB', () => {
+    it('en grupp med exakt 60 % kvinnor klassas olika med *Mer än 60 %* och *60 % eller mer*', () => {
         const kl = def => likvardigtTabell(underlag(), { ...INST, definition: def, nationell }).rader.find(r => r.aid === '3003').klass;
         expect(kl('do')).toBe('Könsblandad');
         expect(kl('scb')).toBe('Kvinnodominerad');
-        // Nationellt: 60 % brukar anses kvinnodominerat bara med SCB:s definition.
+        // Nationellt: 60 % brukar anses kvinnodominerat bara med *60 % eller mer*.
         const brukar = def => likvardigtTabell(underlag(), { ...INST, definition: def, nationell: () => 60 }).rader[0].brukar;
         expect(brukar('do')).toBe('Nej');
         expect(brukar('scb')).toBe('Ja');

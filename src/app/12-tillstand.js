@@ -93,7 +93,7 @@ const state = {
     likvardighet: {
         source: 'organisation',    // 'organisation' | 'statistik'
         kvinnoTrosholdPct: 60,
-        kvDomDefinition: 'do',     // 'do' (mer än tröskeln) | 'scb' (tröskeln eller mer): den enda definitionen i verktyget (ADR-60)
+        kvDomDefinition: 'do',     // 'do' (*Mer än X %*) | 'scb' (*X % eller mer*): den enda definitionen i verktyget (ADR-60); nycklarna är historiska och står kvar för sparade konfigurationsfiler (ADR-72)
         jamforelse: 'alla',        // 'alla' som inte är kvinnodominerade | 'mansdominerade' (filtret i Inställningar, ADR-60)
         minGapPct: 0,              // 0 = alla par där jämförelseyrket ligger högre; 5 % är ett valbart filter (ADR-61)
         topN: 20,

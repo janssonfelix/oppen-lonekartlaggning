@@ -290,7 +290,8 @@ function _jpaExkluderadeTexter() {
  * Strikt EU 2023/970 Art. 10-process:
  *   - Listar yrkesgrupper med statusen Värt att granska (säkerställd skillnad på minst 3 %, ADR-59) med kolumnen
  *     Ojusterad löneskillnad ≥ 5 % (direktivmarkeringen), och BAS-intervall där regressionens skillnad är
- *     säkerställd (p < 0,05) och minst 3 %
+ *     säkerställd också efter korrigering för många tester (Benjamini–Hochberg, q < 0,05) och minst 3 %, som
+ *     regressionskortet och Att göra (ADR-71)
  *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas helt
  *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder
  *   - Signaturblad för arbetsgivare + fackliga representanter
@@ -342,6 +343,11 @@ function _exportJPAProtocolExport() {
     // OLS-regression per BAS, kräver minst statGolv() av varje kön
     const basList = [...new Set(d.map(r => r.bas))].sort();
     const perBas = _computePerBasGap(d, basList);
+    // Korrigering för många samtidiga tester (Benjamini–Hochberg) över samma tester som regressionskortet och Att
+    // göra: intervallen med status ok och ändligt p-värde. Ett enda test ger q = p.
+    const okTests = perBas.filter(b => b.status === 'ok' && isFinite(b.pValue));
+    const qVarden = _bhJustera(okTests.map(b => b.pValue));
+    const bhQ = new Map(okTests.map((b, i) => [b, qVarden[i]]));
     let basExkluderadeMaskerade = 0;
     let basExkluderadeSingular = 0;
     let basExkluderadeUnderTröskel = 0;
@@ -349,9 +355,11 @@ function _exportJPAProtocolExport() {
     perBas.forEach(b => {
         if (b.status === 'too_few')    { basExkluderadeMaskerade++; return; }
         if (b.status === 'singular')   { basExkluderadeSingular++; return; }
-        // Regressionens tal är justerat: samma regel som statusen (säkerställd och minst 3 %), ingen direktivmarkering.
-        if (_stsPerBasSignal(b.gapPct, b.pValue < 0.05, b.pValue < 0.05).niva !== 'titta') { basExkluderadeUnderTröskel++; return; }
-        jpaBas.push(b);
+        // Regressionens tal är justerat: samma regel som statusen (säkerställd efter korrigering och minst 3 %), ingen
+        // direktivmarkering. Ett intervall utan ändligt p-värde har inget q och räknas som inte säkerställt.
+        const q = bhQ.get(b);
+        if (q == null || _stsPerBasSignal(b.gapPct, q < 0.05, b.pValue < 0.05).niva !== 'titta') { basExkluderadeUnderTröskel++; return; }
+        jpaBas.push({ ...b, q });
     });
     jpaBas.sort((a, b) => a.gapPct - b.gapPct);
 
@@ -449,7 +457,7 @@ function _exportJPAProtocolExport() {
     const basHeaderRow = [
         'Nr', 'BAS-intervall', 'N totalt', 'N kvinnor', 'N män',
         'Oförklarad skillnad (%)', '95 % KI lägre', '95 % KI övre',
-        'p-värde', 'R² för modellen', 'Statistiskt säkerställd',
+        'p-värde', 'q-värde (BH-justerat)', 'R² för modellen', 'Säkerställd efter korrigering (q < 0,05)',
         // Protokoll-fält
         'Sakliga skäl — arbetsgivarens analys',
         'Fackliga partens kommentar',
@@ -460,15 +468,16 @@ function _exportJPAProtocolExport() {
     ];
     const basRows = [basHeaderRow];
     if (jpaBas.length === 0) {
-        basRows.push(['—', 'Inga BAS-intervall med en säkerställd oförklarad skillnad på minst 3 %, bland intervallen som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        basRows.push(['—', 'Inga BAS-intervall med en säkerställd oförklarad skillnad på minst 3 %, bland intervallen som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
         jpaBas.forEach((b, idx) => {
             basRows.push([
                 idx + 1, b.bas, b.n, b.kvN, b.maN,
                 +b.gapPct.toFixed(2), +b.ciLow.toFixed(2), +b.ciHigh.toFixed(2),
                 b.pValue < 0.001 ? '< 0.001' : +b.pValue.toFixed(4),
+                b.q < 0.001 ? '< 0.001' : +b.q.toFixed(4),
                 +(b.R2 * 100).toFixed(1) + '%',
-                b.pValue < 0.05 ? 'Ja' : 'Nej',
+                b.q < 0.05 ? 'Ja' : 'Nej',
                 '', '', '', '', '', ''
             ]);
         });
@@ -476,7 +485,7 @@ function _exportJPAProtocolExport() {
     const basSheet = XLSX.utils.aoa_to_sheet(basRows);
     basSheet['!cols'] = [
         { wch: 4 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-        { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+        { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 18 },
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     basSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
@@ -550,7 +559,7 @@ function _exportJPAProtocolExport() {
         ['Likvärdigt arbete (BAS-intervall):', ''],
         [_jpaExkluderadeTexter().bas, basExkluderadeMaskerade],
         ['  Utelämnade: regressionen gick inte att skatta (multikollinearitet)', basExkluderadeSingular],
-        ['  Inte säkerställd eller under 3 % (oförklarad skillnad)', basExkluderadeUnderTröskel],
+        ['  Inte säkerställd efter korrigering för många tester, eller under 3 % (oförklarad skillnad)', basExkluderadeUnderTröskel],
         ['', ''],
         ['Statusen bygger på statistisk signal: säkerställd skillnad och minst 3 % (verktygets storleksgräns). Lagen kräver ändå att varje skillnad analyseras.', ''],
         [`${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`, ''],
@@ -578,7 +587,7 @@ function _exportJPAProtocolExport() {
         ['Lika arbete (yrkesgrupp)', 'Direkt median-jämförelse mellan kvinnors och mäns löner inom samma AID-kod. Kvinnors median i procent av mäns = median_kv / median_mä × 100; under 100 betyder att kvinnor ligger lägre.'],
         ['Likvärdigt arbete (BAS-intervall)', `OLS-regression: log(lön) ~ kön${harAlder() ? ' + ålder (centrerad)' : ''} inom varje BAS. Oförklarad skillnad = könskoefficienten omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).${harAlder() ? '' : ' Lönefilen saknar ålder, så ålder räknas inte bort.'}`],
         ['Konfidensintervall', '95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader.'],
-        ['Statistisk signifikans', 'p < 0.05 = ej slumpmässig skillnad. Tröskel följer Medlingsinstitutets praxis.'],
+        ['Statistisk signifikans', 'p < 0.05 = ej slumpmässig skillnad. För BAS-intervallen gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).'],
         ['', ''],
         ['— k-anonymitet —', ''],
         ['Tröskel', `n ≥ ${kTroskel()} per kön krävs för att en grupp ska redovisas individuellt.`],
@@ -588,7 +597,7 @@ function _exportJPAProtocolExport() {
         ['— Begränsningar att vara medvetna om —', ''],
         ['Sakliga skäl', 'Verktyget identifierar löneskillnader men avgör inte vad som är saklig grund. Den bedömningen är gemensamma parters ansvar.'],
         ...(harAlder() ? [['Modellantaganden', 'OLS antar linjär samband mellan ålder och log(lön). Lifecycle-analysen (i verktygets EU-flik) testar detta antagande med kvadratisk åldersterm.']] : []),
-        ['Multipel jämförelse', 'Många p-värden testas samtidigt. Vid stort antal BAS-intervall förväntas 1 falskt positivt resultat per 20 tester av slump. Tolka p-värden i kontext.']
+        ['Multipel jämförelse', 'Ett test per BAS-intervall körs samtidigt, och av ren slump förväntas ungefär 1 falskt positivt resultat per 20 tester. Därför korrigeras p-värdena med Benjamini–Hochbergs metod (andelen falska upptäckter). Flik 3 tar med ett BAS-intervall bara när q-värdet efter korrigeringen är under 0,05 och skillnaden är minst 3 %, samma regel som i verktyget. Det råa p-värdet står bredvid för jämförelse.']
     ];
     const metodikSheet = XLSX.utils.aoa_to_sheet(metodikRows);
     metodikSheet['!cols'] = [{ wch: 32 }, { wch: 90 }];

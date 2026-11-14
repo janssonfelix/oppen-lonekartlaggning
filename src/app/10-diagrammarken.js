@@ -201,8 +201,8 @@ function _rfPunkt(g, l, li, c) {
         if (x == null || y == null) return;
         const r = _rfTal(d.storlek) ? d.storlek : (l.storlek || 4);
         const farg = d.fargvarde != null && c.fargskala ? c.fargskala(d.fargvarde) : (d.farg || c.farg(l, li));
-        // Punktens osäkerhet (`fel`: undre och övre gräns) är ett streck genom punkten längs värdeaxeln — vedertagen form
-        // för ett skattat värde som jämförs mot en referens. Strecket ritas före punkten, så att punkten ligger överst.
+        // Punktens osäkerhet (`fel`: undre och övre gräns) är ett streck genom punkten längs värdeaxeln, från den undre
+        // till den övre gränsen. Strecket ritas före punkten, så att punkten ligger överst.
         if (d.fel && _rfTal(d.fel.lag) && _rfTal(d.fel.hog)) {
             const ligg = l.riktning === 'liggande', vs = ligg ? c.x : ys;
             const f1 = vs.bandwidth ? NaN : vs(d.fel.lag), f2 = vs.bandwidth ? NaN : vs(d.fel.hog);

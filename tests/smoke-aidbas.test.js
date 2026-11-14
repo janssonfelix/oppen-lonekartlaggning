@@ -7,6 +7,8 @@
  *
  * Underlaget är helt påhittat: 58 personer, samma fall som tests/aidbas.test.js, och en yrkesgrupp i två intervall
  * med båda könen över tröskeln så att tratten har två punkter för samma AID-kod.
+ *
+ * Vaktar: R29 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -91,21 +93,27 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
 });
 
 describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska jämförelsen', () => {
-    it('klassningen följer vald definition: exakt 60 % kvinnor är könsblandad enligt DO och kvinnodominerad enligt SCB', () => {
+    it('klassningen följer vald definition: exakt 60 % kvinnor är könsblandad med *Mer än 60 %* och kvinnodominerad med *60 % eller mer*', () => {
         const w = fonster();
         w.__renderTabContent('likvardighet');
         const t = tabell(w, 'aidbas-likvardigt-tabell');
         expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
         const b = () => tabell(w, 'aidbas-likvardigt-tabell').rader.find(r => r[1] === '3003');
         expect(b()[4]).toBe('60,0 %'); expect(b()[6]).toBe('Könsblandad'); expect(b()[8]).toBe('–');   // 5 personer: ingen median
-        expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Förarbetena: mer än 60 % kvinnor');
+        expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Kvinnodominerad vid mer än 60 % kvinnor');
         const val = w.document.getElementById('lv-kv-definition');
         expect(val).not.toBeNull();
+        expect(Array.from(val.options).map(o => `${o.value}: ${o.textContent}`)).toEqual(['do: Mer än 60 %', 'scb: 60 % eller mer']);   // ADR-72
         val.value = 'scb'; val.dispatchEvent(new w.Event('change'));
         expect(w.__state.likvardighet.kvDomDefinition).toBe('scb');
         expect(b()[6]).toBe('Kvinnodominerad');
-        expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('SCB: 60 % kvinnor eller mer');
-        expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (enligt SCB)');   // skärmen visar också gruppen med 4 personer
+        expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Kvinnodominerad vid 60 % kvinnor eller mer');
+        expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (60 % kvinnor eller mer)');   // skärmen visar också gruppen med 4 personer
+        // Steg 1-raden, slutsatsen, Löneöversyn och beräkningsbeviset skriver gränsen med kvDomGransText(): samma lydelse
+        // som valet och tabellerna, inte "minst".
+        expect(w.eval('kvDomGransText()')).toBe('60 % kvinnor eller mer');
+        val.value = 'do'; val.dispatchEvent(new w.Event('change'));
+        expect(w.eval('kvDomGransText()')).toBe('mer än 60 % kvinnor');
     });
     it('rutan Jämför bara med mansdominerade yrken sätter filtret och ritar om (ADR-60)', () => {
         const w = fonster();
@@ -174,7 +182,7 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         const met = blad('Metodik').flat().join('\n');
         expect(met).toContain('Tabellerna per AID-kod och BAS-intervall');
         expect(met).toContain('Gränser för slumpen (Lika arbete AID x BAS, Slumpens gränser)');
-        expect(met).toContain('Förarbetena: mer än 60 % kvinnor');
+        expect(met).toContain('Kvinnodominerad vid mer än 60 % kvinnor');
         expect(w.eval('_excelAlltBok()').Sheets['Metod & parametrar']).toBeDefined();
     });
     it('utan par står texten om inga fall i bladet Hierarkisk jämförelse', async () => {

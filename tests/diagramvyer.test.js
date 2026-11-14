@@ -562,7 +562,7 @@ describe('Ålder & karriär: chart-demo-hist', () => {
         w.__in = { pctKv: AB.map((_, i) => 6 + i), pctMa: AB.map(() => 4), refPct: AB.map(() => 10), isAll: true };
         const f = w.eval('_demoHistFigur(window.__in)');
         expect(f.lager.map(l => [l.marke, l.serie, l.lage, l.farg])).toEqual(
-            [['stapel', 'Kvinna', 'staplad', '#833a8f'], ['stapel', 'Man', 'staplad', '#5f7f16'], ['linje', 'Sveriges sysselsatta (SCB AKU)', undefined, '#64748b']]);
+            [['stapel', 'Kvinna', 'staplad', '#833a8f'], ['stapel', 'Man', 'staplad', '#5f7f16'], ['linje', 'Sveriges sysselsatta (SCB AKU 2023)', undefined, '#64748b']]);
         expect(f.lager[2]).toMatchObject({ streck: 'prickad', punkter: true });
         expect(f.lager[0].data[9]).toEqual({ x: '65+', y: 15 });
         expect(f.x.ordning).toEqual(AB);
