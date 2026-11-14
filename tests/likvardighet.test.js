@@ -502,7 +502,7 @@ describe('lägre krav, högre lön', () => {
         expect(kor(d, { minGapPct: 5 }).lagreKrav).toEqual([]);
         expect(kor(d, { minGapPct: 3 }).lagreKrav).toHaveLength(1);
     });
-    it('BAS-ordningen är fast: ett basRang i opts ignoreras (se §5 i teknisk-plan.md)', () => {
+    it('BAS-ordningen är fast: ett basRang i opts ignoreras (se §6 i likvardighetsmodellen.md)', () => {
         const d = [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000)];
         expect(kor(d, { basRang: { C: 5, E: 3 } }).lagreKrav[0].basSteg).toBe(2);
     });
@@ -541,7 +541,7 @@ describe('lägre krav: konfidensintervall bara för de par som behålls', () => 
     });
 });
 
-describe('basRangFn: BAS-steg i bokstäver (se §5 i teknisk-plan.md)', () => {
+describe('basRangFn: BAS-steg i bokstäver (se §6 i likvardighetsmodellen.md)', () => {
     it('A=1 och B → D är två steg även när C saknas', async () => {
         const { basRangFn } = await import('../src/lib/likvardighet.js');
         const rang = basRangFn(['A', 'B', 'D', 'E']);

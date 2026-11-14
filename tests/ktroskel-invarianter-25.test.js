@@ -1,5 +1,5 @@
 /**
- * K-tröskeln som inställning: invarianten över flikar och exporter vid 25 (I4) och sakliga skäl (I5).
+ * K-tröskeln som inställning: invarianten över flikar och exporter vid 25 (I4) och sakliga skäl (I8).
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js och invarianten i
  * tests/helpers/ktroskel-invariant.js. Invarianten vid 10 körs i tests/ktroskel-invarianter.test.js:
@@ -23,7 +23,7 @@ invariantSvit(25, SENT_MELLAN);
 // verktyget. En rad där ett kön är under tröskeln (den minsta gruppen bakom skillnaden) följer med, men bara med
 // kategorin: belopp och kommentar utelämnas. Konfigurationsfilen är användarens egen fil med det som skrivits in och
 // undantas (riskanalysen § 6.8), men dess årsbokslut prövas.
-describe('I5: sakliga skäl på en rad under tröskeln lämnar inte verktyget', () => {
+describe('I8: sakliga skäl på en rad under tröskeln lämnar inte verktyget', () => {
     let utdata;
     beforeAll(async () => {
         const w = fonsterKon(10);

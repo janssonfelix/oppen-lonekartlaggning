@@ -13,7 +13,7 @@
  * Själva lib-logiken testas direkt i stat/loneoversyn/struktur.test.js m.fl., och
  * exports.golden.test.js vaktar att exporterna är oförändrade (facit byte för byte).
  *
- * § 3:10 (computeLikvardighetPairs) speglas också; app.js har en tunn state-adapter
+ * Likvärdigt arbete (computeLikvardighetPairs) speglas också; app.js har en tunn state-adapter
  * runt spegeln. Att adaptern verkligen DELEGERAR — och inte smyger tillbaka en egen implementation — vaktas
  * längst ned.
  *
@@ -165,7 +165,7 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
 });
 
 // ===================================================================
-// § 3:10: app.js ska DELEGERA till spegeln, inte reimplementera den.
+// Likvärdigt arbete: app.js ska DELEGERA till spegeln, inte reimplementera den.
 //
 // App-funktionen är en adapter: läs state, anropa `_lvComputePairs`, fyll på med
 // UI-diagnostik. Testet nedan kör adaptern med en SPION i stället för spegeln

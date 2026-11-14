@@ -29,11 +29,13 @@
  *     ±1e-6/±1e-4 av någon koordinat sänker förlusten, och samma skript gav på den gamla rangdesignen ovan
  *     scipy/HiGHS-lösningen inom 2e-15 i varje β och i förlusten.
  *
- * Uppmätt avvikelse i verktyget (toleranserna nedan speglar den):
+ * Uppmätt avvikelse i verktyget (toleranserna nedan speglar den, utom för tDistCdf):
  *   - fitOLS: β, vcovClassic, vcovHC3, R², σ² inom relativt 1e-12 av statsmodels.
- *   - tDistCdf (Hills approximation): största absoluta fel 2,1e-3 vid df 5, 4,8e-4 vid df 10,
- *     6,6e-5 vid df 26, 4,4e-6 vid df 99. Kommentaren i stat.js lovar «~4 decimaler för df ≥ 2»,
- *     vilket alltså bara håller från df ≈ 10 och uppåt.
+ *   - tDistCdf: exakt sedan ADR-45, via den regulariserade ofullständiga betafunktionen
+ *     (P(|T| > t) = I_x(df/2, 1/2) med x = df / (df + t²)); avvikelsen från scipy är avrundningsfel, under 1e-14
+ *     vid df 5, 10, 26 och 99. Toleranserna i testerna av tDistCdf och pValue2Sided (3e-3 vid df 5 ned till 1e-5
+ *     vid df 99) sattes efter felen i Hills approximation, som funktionen byggde på före ADR-45. De är äldre och
+ *     generösare än funktionen kräver, och de är inte skärpta.
  *   - _quantileRegression (IRLS): könskoefficienten avviker 0,21 procentenheter från den exakta
  *     lösningen vid τ = 0,5 men under 0,002 procentenheter vid τ = 0,1 och 0,9. Under den
  *     rapporteringsgräns på 0,5 procentenheter uppdraget satte; algoritmen är oförändrad.
@@ -107,13 +109,13 @@ describe('fitOLS mot statsmodels', () => {
     it('p-värdet för könskoefficienten (t = β/SE_HC3, df = n−k) mot scipy', () => {
         const t = fit.beta[1] / Math.sqrt(fit.vcovHC3[1][1]);
         expect(t).toBeCloseTo(ref.ols.tKon, 8);
-        // df = 96: Hills approximation ligger inom 1e-5 av exakt CDF här.
+        // df = 96: tDistCdf är exakt (ADR-45); toleransen är äldre och generösare än funktionen kräver.
         expect(pValue2Sided(t, fit.n, fit.k)).toBeCloseTo(ref.ols.pKon, 4);
     });
 });
 
 describe('tDistCdf och pValue2Sided mot scipy.stats.t', () => {
-    // Uppmätt maxfel per df (se filhuvudet) med marginal.
+    // Hills approximations uppmätta maxfel per df med marginal, från före ADR-45; inte skärpta (se filhuvudet).
     const tol = { 5: 3e-3, 10: 1e-3, 26: 1e-4, 99: 1e-5 };
     for (const df of [5, 10, 26, 99]) {
         it(`CDF vid df=${df} inom ${tol[df]}`, () => {

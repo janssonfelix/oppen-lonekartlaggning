@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 /**
- * Programvaruförteckningen (tools/sbom.mjs, npm run sbom): listar exakt biblioteken i vendor/, med
- * versionerna ur biblioteksfilerna och kontrollsummorna ur vendor/SHA256SUMS, deterministiskt, och
- * release-arbetsflödet lägger den signerad på releasen.
+ * Programvaruförteckningen (tools/sbom.mjs, npm run sbom): att den är CycloneDX och listar exakt biblioteken i
+ * vendor/, med kontrollsummorna i vendor/SHA256SUMS, licenserna som SPDX-id, versionen i paketadressen, verktygets
+ * version ur VERSION och en beroendegraf till alla bibliotek, och att den är deterministisk. Därtill att förteckningen
+ * inte checkas in och att SECURITY.md säger att den finns på releasen.
+ *
+ * Att release-arbetsflödet bygger, signerar och publicerar förteckningen, och att TREDJEPARTSLICENSER.md anger
+ * bibliotekens faktiska versioner, prövas i tests/sakerhet.test.js.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';

@@ -69,7 +69,7 @@ describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräv
     });
 });
 
-describe('Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
+describe('R5: Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
     const resultat = w => { iExport(w); w.eval("renderTabContent('loneoversyn'); _forecastThreshold()"); return text(w.document.getElementById('forecast-threshold-result')); };
     it('med 6 kvinnor i urvalet: streck och meningen om utelämnat könsuppdelat mått', () => {
         const alla = byggDataset();

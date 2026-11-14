@@ -410,7 +410,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     });
 });
 
-describe('BAS-ordningen är fast (se §5 i teknisk-plan.md)', () => {
+describe('BAS-ordningen är fast (se §6 i likvardighetsmodellen.md)', () => {
     it('BAS-ordningen har ingen panel, inget tillstånd och inget fält i konfigurationsfilen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
@@ -514,7 +514,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
     });
 });
 
-describe('BAS-steg räknas i bokstäver överallt (se §5 i teknisk-plan.md)', () => {
+describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.md)', () => {
     // Lönen beror bara på bokstaven: +5 % per BAS-intervall. C saknas, så B → D är två intervall.
     // Kvinnorna finns mest i B, männen mest i D. Med rätt numrering förklarar BAS hela skillnaden.
     const PLATS = { A: 1, B: 2, D: 4, E: 5 };

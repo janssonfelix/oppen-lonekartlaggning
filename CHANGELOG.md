@@ -629,6 +629,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Testernas märkning följer reglerna.** Testerna för reglerna R1–R5 i `k-troskeln.md` §8 heter nu som regeln de
+  vaktar (förut följde bara R1 numreringen, och R5 saknade märkning), och sakliga skäl i
+  `tests/ktroskel-invarianter-25.test.js` heter I8, så att I5 bara står för omritningen efter konfigurationsfil och
+  organisationspaket. Inaktuella filhuvuden och rubriker är rättade: `tDistCdf` beskrivs som exakt (ADR-45),
+  programvaruförteckningens test beskriver det det prövar, och rubriker som pekade på flyttad text i
+  `teknisk-plan.md` pekar på `likvardighetsmodellen.md` och `regressionsmodellen.md`. Inga tester är tillagda eller
+  borttagna.
 - **K-invarianten prövar varje ritat diagram.** Riggen för invarianten I4 (`samlaUtdata` i
   `tests/helpers/ktroskel-rigg.js`) tar diagrammen ur diagramkärnans register i stället för ur en väljare, väntar in
   kvantilregressionens bakgrundsräkning och nästa bildruta, och läser alla diagram i ett och samma exportläge. Förut
