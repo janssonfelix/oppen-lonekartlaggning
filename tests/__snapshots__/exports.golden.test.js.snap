@@ -3583,7 +3583,7 @@ exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar fac
     ],
     [
       "Statistisk signifikans",
-      "p < 0.05 = ej slumpmässig skillnad. Tröskel följer Medlingsinstitutets praxis. För BAS-intervallen gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).",
+      "p < 0.05 = ej slumpmässig skillnad. För BAS-intervallen gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).",
     ],
     [
       "",

@@ -37,6 +37,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   och en tom cell för en egen rad: på fliken och i utskriften av mallen, i
   Excel-underlaget, i åtgärdstabellen i Word-utkastet och PDF-rapporten och i Rapporttext. Rapporttextens summa delas
   på de två slagen. Kolumnen härleds ur radens underlag; konfigurationsfilen är oförändrad, och inga tal har ändrats.
+- **Protokollets metodblad hänvisar inte längre löst till praxis.** Raden *Statistisk signifikans* sade att gränsen
+  följde en myndighets praxis utan att peka ut någon källa. Meningen är struken; gränsen och korrigeringen står kvar
+  som förut.
 
 ## 2026.11.14
 
