@@ -476,7 +476,9 @@ inställningen (standardvärdet).
   intervallet, inte gruppens löner. Med felet från lagningen av kurvan återinfört och ett intervall med 6 personer valt
   står kurvan i invariantens väg för `lifecycle-chart`, men I4 faller inte. Riggen ritar kurvan för det förvalda
   intervallet (det största); kurvan för ett litet intervall prövas i `tests/ktroskel-livscykel.test.js`, som söker efter
-  kurvans egna tal.
+  kurvans egna tal. Detsamma gäller regressionens BAS-effekter och dess ojusterade steg: med båda omaskade i
+  exportläget (läckprov 2026-11-14) står effekterna för riggens små intervall i fliken, Word-utkastet och utskriften,
+  men I4 faller inte; `tests/ktroskel-bas-effekter.test.js` och R1 i `tests/ktroskel-regression.test.js` faller.
 - **Diagram som riggens underlag inte ritar.** Testet om att varje ritat diagram har en väg ser bara det som står i
   registret. Hanteln per yrkesgrupp med förra årets bokslut (`chart-arsjamforelse`) ritas inte, eftersom riggens bokslut
   inte ger den några rader. Lönehistogrammet per kön och Var uppstår löneskillnaden ritas på skärmen men inte i
