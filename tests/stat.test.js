@@ -9,6 +9,7 @@
  *   - normalCdf (Φ vid kända punkter ±1σ ±2σ)
  *   - matMul / transpose / invert (identitet, singulär)
  *   - fitOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2)
+ *   - bhJustera (Benjamini–Hochberg: ordning, m = 1, tom lista, lika p-värden, tak 1, monotonicitet)
  *
  * Vaktar: R21 (docs/utveckling/regler.md)
  */
@@ -25,7 +26,8 @@ import {
     matMul,
     transpose,
     invert,
-    fitOLS
+    fitOLS,
+    bhJustera
 } from '../src/lib/stat.js';
 
 const close = (a, b, tol = 1e-9) => Math.abs(a - b) < tol;
@@ -352,5 +354,41 @@ describe('pValue2Sided', () => {
     it('returnerar NaN för df ≤ 0', () => {
         expect(Number.isNaN(pValue2Sided(1, 3, 3))).toBe(true);
         expect(Number.isNaN(pValue2Sided(1, 2, 3))).toBe(true);
+    });
+});
+
+describe('bhJustera', () => {
+    // Handräknat (m = 4): sorterat 0,005 · 0,01 · 0,03 · 0,04 ger p·m/rang = 0,02 · 0,02 · 0,04 · 0,04, redan monotont.
+    it('ger q i indatans ordning', () => {
+        const q = bhJustera([0.01, 0.04, 0.03, 0.005]);
+        [0.02, 0.04, 0.04, 0.02].forEach((v, i) => expect(q[i]).toBeCloseTo(v, 15));
+    });
+    it('ger p oförändrat för ett enda test och en tom lista för inga', () => {
+        expect(bhJustera([0.03])).toEqual([0.03]);
+        expect(bhJustera([])).toEqual([]);
+    });
+    it('ger lika q för lika p-värden', () => {
+        const q = bhJustera([0.03, 0.2, 0.03, 0.03]);
+        expect(q[0]).toBe(q[2]);
+        expect(q[0]).toBe(q[3]);
+    });
+    // Handräknat (m = 6): sorterat 0 · 0,01 · 0,04 · 0,04 · 0,5 · 1 ger p·m/rang = 0 · 0,03 · 0,08 · 0,06 · 0,6 · 1;
+    // bakifrån blir rang 3 min(0,08; 0,06) = 0,06.
+    it('gör q monotont bakifrån, med p = 0 och p = 1', () => {
+        const q = bhJustera([1, 0.04, 0, 0.5, 0.01, 0.04]);
+        [1, 0.06, 0, 0.6, 0.03, 0.06].forEach((v, i) => expect(q[i]).toBeCloseTo(v, 15));
+    });
+    it('ger inget q över 1 och inget q under p', () => {
+        const p = [0.9, 0.95, 0.99, 0.2, 0.6, 0.8, 1];
+        const q = bhJustera(p);
+        q.forEach((v, i) => { expect(v).toBeLessThanOrEqual(1); expect(v).toBeGreaterThanOrEqual(p[i]); });
+        // q ordnat som p
+        const ord = p.map((v, i) => i).sort((a, b) => p[a] - p[b]);
+        for (let i = 1; i < ord.length; i++) expect(q[ord[i]]).toBeGreaterThanOrEqual(q[ord[i - 1]]);
+    });
+    it('ändrar inte indatan', () => {
+        const p = [0.04, 0.01];
+        bhJustera(p);
+        expect(p).toEqual([0.04, 0.01]);
     });
 });

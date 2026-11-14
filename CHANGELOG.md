@@ -15,6 +15,17 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   när intervallet inte kan räknas. Statusens ikon står bredvid talet och ordet i verktygstipset, så att färgen inte
   bär betydelsen ensam.
 
+### Exporter
+
+- **Protokollet för gemensam lönebedömning väljer BAS-intervall efter korrigering för många tester.** Bladet
+  *3. Likvärdigt arbete (BAS)* tog med ett intervall när det råa p-värdet var under 0,05 och skillnaden minst 3 %,
+  utan den korrigering som regressionskortet och Att göra gör (Benjamini–Hochberg). Nu gäller samma regel som där: ett
+  intervall tas med när q-värdet efter korrigeringen är under 0,05 och skillnaden minst 3 % (ADR-59). Bladet har
+  kolumnen *q-värde (BH-justerat)* efter p-värdet, och kolumnen som sade Ja eller Nej på p säger det nu på q
+  (*Säkerställd efter korrigering (q < 0,05)*). Försättsbladets antal, raden i bladet med exkluderade grupper och
+  metodbladets rader om signifikans och multipel jämförelse följer. Korrigeringen räknas på ett ställe
+  (`bhJustera` i `src/lib/stat.js`) för kortet, Att göra och protokollet; kortets och Att göras tal är oförändrade.
+
 ## 2026.11.14
 
 ### Gränssnitt

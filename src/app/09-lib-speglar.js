@@ -29,6 +29,7 @@ const __mirrorStat = (() => {
  *   - matMul, transpose, invert            (matrisalgebra)
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
+ *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  */
 
 /**
@@ -301,12 +302,36 @@ function fitOLS(X, y) {
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }
 
-    return { tQuantile, pValue2Sided, fitOLS, quantile, matMul, invert, median };
+/**
+ * Benjamini–Hochbergs korrigering för många samtidiga tester (FDR). Ger q-värdena i samma ordning som indata:
+ * q = min(1, p·m/rang) med p-värdena sorterade stigande, gjorda monotona bakifrån så att q inte minskar med
+ * stigande rang. Lika p-värden får lika q. Ett enda test ger p oförändrat; en tom lista ger en tom lista.
+ * Indata ska vara ändliga p-värden; anroparen väljer vilka tester som ingår (ett per BAS-intervall med
+ * status ok i regressionen per BAS-intervall, så att kortet, Att göra och protokollet räknar på samma m).
+ * Samma tal som statsmodels multipletests(method='fdr_bh').
+ * @param {number[]} pVarden
+ * @returns {number[]}
+ */
+function bhJustera(pVarden) {
+    const m = pVarden.length;
+    const ordning = pVarden.map((_, i) => i).sort((a, b) => pVarden[a] - pVarden[b]);
+    const q = new Array(m);
+    let lagst = 1;
+    for (let r = m; r >= 1; r--) {
+        const i = ordning[r - 1];
+        lagst = Math.min(lagst, pVarden[i] * m / r);
+        q[i] = lagst;
+    }
+    return q;
+}
+
+    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, matMul, invert, median };
 })();
 const _tQuantile = __mirrorStat.tQuantile;
 const _pValue2Sided = __mirrorStat.pValue2Sided;
 const _fitOLS = __mirrorStat.fitOLS;
 const _libQuantile = __mirrorStat.quantile;
+const _bhJustera = __mirrorStat.bhJustera;
 
 // ---- speglar src/lib/struktur.js ----
 const __mirrorStructure = (() => {

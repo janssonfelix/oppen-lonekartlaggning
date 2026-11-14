@@ -2491,6 +2491,7 @@ const __mirrorStat = (() => {
  *   - matMul, transpose, invert            (matrisalgebra)
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
+ *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  */
 
 /**
@@ -2763,12 +2764,36 @@ function fitOLS(X, y) {
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }
 
-    return { tQuantile, pValue2Sided, fitOLS, quantile, matMul, invert, median };
+/**
+ * Benjamini–Hochbergs korrigering för många samtidiga tester (FDR). Ger q-värdena i samma ordning som indata:
+ * q = min(1, p·m/rang) med p-värdena sorterade stigande, gjorda monotona bakifrån så att q inte minskar med
+ * stigande rang. Lika p-värden får lika q. Ett enda test ger p oförändrat; en tom lista ger en tom lista.
+ * Indata ska vara ändliga p-värden; anroparen väljer vilka tester som ingår (ett per BAS-intervall med
+ * status ok i regressionen per BAS-intervall, så att kortet, Att göra och protokollet räknar på samma m).
+ * Samma tal som statsmodels multipletests(method='fdr_bh').
+ * @param {number[]} pVarden
+ * @returns {number[]}
+ */
+function bhJustera(pVarden) {
+    const m = pVarden.length;
+    const ordning = pVarden.map((_, i) => i).sort((a, b) => pVarden[a] - pVarden[b]);
+    const q = new Array(m);
+    let lagst = 1;
+    for (let r = m; r >= 1; r--) {
+        const i = ordning[r - 1];
+        lagst = Math.min(lagst, pVarden[i] * m / r);
+        q[i] = lagst;
+    }
+    return q;
+}
+
+    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, matMul, invert, median };
 })();
 const _tQuantile = __mirrorStat.tQuantile;
 const _pValue2Sided = __mirrorStat.pValue2Sided;
 const _fitOLS = __mirrorStat.fitOLS;
 const _libQuantile = __mirrorStat.quantile;
+const _bhJustera = __mirrorStat.bhJustera;
 
 // ---- speglar src/lib/struktur.js ----
 const __mirrorStructure = (() => {
@@ -17585,15 +17610,12 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // många tester (Benjamini–Hochberg) och minst 3 % (ADR-59). Justerat tal: ingen direktivmarkering. ===
         try {
             if (reg && !reg.error && reg.perBas) {
-                // BH-justering
+                // BH-justering (src/lib/stat.js bhJustera), samma tester som regressionskortet; ett enda test: q saknas
                 const okTests = reg.perBas.filter(p => p.status === 'ok' && isFinite(p.pValue));
                 const bhQ = {};
                 if (okTests.length > 1) {
-                    const sorted = [...okTests].sort((a, b) => a.pValue - b.pValue);
-                    const m = sorted.length;
-                    const qRaw = sorted.map((t, i) => Math.min(1, t.pValue * m / (i + 1)));
-                    for (let i = m - 2; i >= 0; i--) qRaw[i] = Math.min(qRaw[i], qRaw[i + 1]);
-                    sorted.forEach((t, i) => { bhQ[t.bas] = qRaw[i]; });
+                    const q = _bhJustera(okTests.map(t => t.pValue));
+                    okTests.forEach((t, i) => { bhQ[t.bas] = q[i]; });
                 }
                 reg.perBas.forEach(p => {
                     if (p.status !== 'ok') return;
@@ -19793,7 +19815,8 @@ function _jpaExkluderadeTexter() {
  * Strikt EU 2023/970 Art. 10-process:
  *   - Listar yrkesgrupper med statusen Värt att granska (säkerställd skillnad på minst 3 %, ADR-59) med kolumnen
  *     Ojusterad löneskillnad ≥ 5 % (direktivmarkeringen), och BAS-intervall där regressionens skillnad är
- *     säkerställd (p < 0,05) och minst 3 %
+ *     säkerställd också efter korrigering för många tester (Benjamini–Hochberg, q < 0,05) och minst 3 %, som
+ *     regressionskortet och Att göra
  *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas helt
  *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder
  *   - Signaturblad för arbetsgivare + fackliga representanter
@@ -19845,6 +19868,11 @@ function _exportJPAProtocolExport() {
     // OLS-regression per BAS, kräver minst statGolv() av varje kön
     const basList = [...new Set(d.map(r => r.bas))].sort();
     const perBas = _computePerBasGap(d, basList);
+    // Korrigering för många samtidiga tester (Benjamini–Hochberg) över samma tester som regressionskortet och Att
+    // göra: intervallen med status ok och ändligt p-värde. Ett enda test ger q = p.
+    const okTests = perBas.filter(b => b.status === 'ok' && isFinite(b.pValue));
+    const qVarden = _bhJustera(okTests.map(b => b.pValue));
+    const bhQ = new Map(okTests.map((b, i) => [b, qVarden[i]]));
     let basExkluderadeMaskerade = 0;
     let basExkluderadeSingular = 0;
     let basExkluderadeUnderTröskel = 0;
@@ -19852,9 +19880,11 @@ function _exportJPAProtocolExport() {
     perBas.forEach(b => {
         if (b.status === 'too_few')    { basExkluderadeMaskerade++; return; }
         if (b.status === 'singular')   { basExkluderadeSingular++; return; }
-        // Regressionens tal är justerat: samma regel som statusen (säkerställd och minst 3 %), ingen direktivmarkering.
-        if (_stsPerBasSignal(b.gapPct, b.pValue < 0.05, b.pValue < 0.05).niva !== 'titta') { basExkluderadeUnderTröskel++; return; }
-        jpaBas.push(b);
+        // Regressionens tal är justerat: samma regel som statusen (säkerställd efter korrigering och minst 3 %), ingen
+        // direktivmarkering. Ett intervall utan ändligt p-värde har inget q och räknas som inte säkerställt.
+        const q = bhQ.get(b);
+        if (q == null || _stsPerBasSignal(b.gapPct, q < 0.05, b.pValue < 0.05).niva !== 'titta') { basExkluderadeUnderTröskel++; return; }
+        jpaBas.push({ ...b, q });
     });
     jpaBas.sort((a, b) => a.gapPct - b.gapPct);
 
@@ -19952,7 +19982,7 @@ function _exportJPAProtocolExport() {
     const basHeaderRow = [
         'Nr', 'BAS-intervall', 'N totalt', 'N kvinnor', 'N män',
         'Oförklarad skillnad (%)', '95 % KI lägre', '95 % KI övre',
-        'p-värde', 'R² för modellen', 'Statistiskt säkerställd',
+        'p-värde', 'q-värde (BH-justerat)', 'R² för modellen', 'Säkerställd efter korrigering (q < 0,05)',
         // Protokoll-fält
         'Sakliga skäl — arbetsgivarens analys',
         'Fackliga partens kommentar',
@@ -19963,15 +19993,16 @@ function _exportJPAProtocolExport() {
     ];
     const basRows = [basHeaderRow];
     if (jpaBas.length === 0) {
-        basRows.push(['—', 'Inga BAS-intervall med en säkerställd oförklarad skillnad på minst 3 %, bland intervallen som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        basRows.push(['—', 'Inga BAS-intervall med en säkerställd oförklarad skillnad på minst 3 %, bland intervallen som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
         jpaBas.forEach((b, idx) => {
             basRows.push([
                 idx + 1, b.bas, b.n, b.kvN, b.maN,
                 +b.gapPct.toFixed(2), +b.ciLow.toFixed(2), +b.ciHigh.toFixed(2),
                 b.pValue < 0.001 ? '< 0.001' : +b.pValue.toFixed(4),
+                b.q < 0.001 ? '< 0.001' : +b.q.toFixed(4),
                 +(b.R2 * 100).toFixed(1) + '%',
-                b.pValue < 0.05 ? 'Ja' : 'Nej',
+                b.q < 0.05 ? 'Ja' : 'Nej',
                 '', '', '', '', '', ''
             ]);
         });
@@ -19979,7 +20010,7 @@ function _exportJPAProtocolExport() {
     const basSheet = XLSX.utils.aoa_to_sheet(basRows);
     basSheet['!cols'] = [
         { wch: 4 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-        { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+        { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 18 },
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     basSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
@@ -20053,7 +20084,7 @@ function _exportJPAProtocolExport() {
         ['Likvärdigt arbete (BAS-intervall):', ''],
         [_jpaExkluderadeTexter().bas, basExkluderadeMaskerade],
         ['  Utelämnade: regressionen gick inte att skatta (multikollinearitet)', basExkluderadeSingular],
-        ['  Inte säkerställd eller under 3 % (oförklarad skillnad)', basExkluderadeUnderTröskel],
+        ['  Inte säkerställd efter korrigering för många tester, eller under 3 % (oförklarad skillnad)', basExkluderadeUnderTröskel],
         ['', ''],
         ['Statusen bygger på statistisk signal: säkerställd skillnad och minst 3 % (verktygets storleksgräns). Lagen kräver ändå att varje skillnad analyseras.', ''],
         [`${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`, ''],
@@ -20081,7 +20112,7 @@ function _exportJPAProtocolExport() {
         ['Lika arbete (yrkesgrupp)', 'Direkt median-jämförelse mellan kvinnors och mäns löner inom samma AID-kod. Kvinnors median i procent av mäns = median_kv / median_mä × 100; under 100 betyder att kvinnor ligger lägre.'],
         ['Likvärdigt arbete (BAS-intervall)', `OLS-regression: log(lön) ~ kön${harAlder() ? ' + ålder (centrerad)' : ''} inom varje BAS. Oförklarad skillnad = könskoefficienten omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).${harAlder() ? '' : ' Lönefilen saknar ålder, så ålder räknas inte bort.'}`],
         ['Konfidensintervall', '95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader.'],
-        ['Statistisk signifikans', 'p < 0.05 = ej slumpmässig skillnad. Tröskel följer Medlingsinstitutets praxis.'],
+        ['Statistisk signifikans', 'p < 0.05 = ej slumpmässig skillnad. Tröskel följer Medlingsinstitutets praxis. För BAS-intervallen gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).'],
         ['', ''],
         ['— k-anonymitet —', ''],
         ['Tröskel', `n ≥ ${kTroskel()} per kön krävs för att en grupp ska redovisas individuellt.`],
@@ -20091,7 +20122,7 @@ function _exportJPAProtocolExport() {
         ['— Begränsningar att vara medvetna om —', ''],
         ['Sakliga skäl', 'Verktyget identifierar löneskillnader men avgör inte vad som är saklig grund. Den bedömningen är gemensamma parters ansvar.'],
         ...(harAlder() ? [['Modellantaganden', 'OLS antar linjär samband mellan ålder och log(lön). Lifecycle-analysen (i verktygets EU-flik) testar detta antagande med kvadratisk åldersterm.']] : []),
-        ['Multipel jämförelse', 'Många p-värden testas samtidigt. Vid stort antal BAS-intervall förväntas 1 falskt positivt resultat per 20 tester av slump. Tolka p-värden i kontext.']
+        ['Multipel jämförelse', 'Ett test per BAS-intervall körs samtidigt, och av ren slump förväntas ungefär 1 falskt positivt resultat per 20 tester. Därför korrigeras p-värdena med Benjamini–Hochbergs metod (andelen falska upptäckter). Flik 3 tar med ett BAS-intervall bara när q-värdet efter korrigeringen är under 0,05 och skillnaden är minst 3 %, samma regel som i verktyget. Det råa p-värdet står bredvid för jämförelse.']
     ];
     const metodikSheet = XLSX.utils.aoa_to_sheet(metodikRows);
     metodikSheet['!cols'] = [{ wch: 32 }, { wch: 90 }];
@@ -29304,26 +29335,16 @@ function renderRegressionCard() {
     }
 
     // Per-BAS conditional gap-tabell
-    // Multipel jämförelse-korrigering (Benjamini-Hochberg FDR)
+    // Multipel jämförelse-korrigering (Benjamini-Hochberg FDR, src/lib/stat.js bhJustera)
     // Vid 20+ per-BAS-tester förväntas ~1 falskt positivt per α=0.05-batch
     // av ren slump. BH-FDR skyddar mot detta utan att vara så strikt som
-    // Bonferroni. Logik:
-    //   1. Samla alla p-värden från OK-tester
-    //   2. Sortera stigande
-    //   3. q[i] = min(1, p[i] * m / rank)
-    //   4. Tvinga monotonicitet bakifrån: q[i] = min(q[i], q[i+1], ...)
+    // Bonferroni. Testerna är de OK-tester som har ändligt p-värde. Med ett
+    // enda test finns ingen korrigering: q saknas och tabellen visar —.
     const okTests = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue));
     const bhQByBas = {};
     if (okTests.length > 1) {
-        const sorted = [...okTests].sort((a, b) => a.pValue - b.pValue);
-        const m = sorted.length;
-        // Steg 1: rå BH-justering
-        const qRaw = sorted.map((t, i) => Math.min(1, t.pValue * m / (i + 1)));
-        // Steg 2: tvinga monotonicitet (q ska inte minska med stigande rank)
-        for (let i = m - 2; i >= 0; i--) {
-            qRaw[i] = Math.min(qRaw[i], qRaw[i + 1]);
-        }
-        sorted.forEach((t, i) => { bhQByBas[t.bas] = qRaw[i]; });
+        const q = _bhJustera(okTests.map(t => t.pValue));
+        okTests.forEach((t, i) => { bhQByBas[t.bas] = q[i]; });
     }
 
     // Bevis-knapp per BAS-rad. Bevis-payload

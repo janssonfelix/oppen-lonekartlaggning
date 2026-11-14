@@ -929,26 +929,16 @@ function renderRegressionCard() {
     }
 
     // Per-BAS conditional gap-tabell
-    // Multipel jämförelse-korrigering (Benjamini-Hochberg FDR)
+    // Multipel jämförelse-korrigering (Benjamini-Hochberg FDR, src/lib/stat.js bhJustera)
     // Vid 20+ per-BAS-tester förväntas ~1 falskt positivt per α=0.05-batch
     // av ren slump. BH-FDR skyddar mot detta utan att vara så strikt som
-    // Bonferroni. Logik:
-    //   1. Samla alla p-värden från OK-tester
-    //   2. Sortera stigande
-    //   3. q[i] = min(1, p[i] * m / rank)
-    //   4. Tvinga monotonicitet bakifrån: q[i] = min(q[i], q[i+1], ...)
+    // Bonferroni. Testerna är de OK-tester som har ändligt p-värde. Med ett
+    // enda test finns ingen korrigering: q saknas och tabellen visar —.
     const okTests = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue));
     const bhQByBas = {};
     if (okTests.length > 1) {
-        const sorted = [...okTests].sort((a, b) => a.pValue - b.pValue);
-        const m = sorted.length;
-        // Steg 1: rå BH-justering
-        const qRaw = sorted.map((t, i) => Math.min(1, t.pValue * m / (i + 1)));
-        // Steg 2: tvinga monotonicitet (q ska inte minska med stigande rank)
-        for (let i = m - 2; i >= 0; i--) {
-            qRaw[i] = Math.min(qRaw[i], qRaw[i + 1]);
-        }
-        sorted.forEach((t, i) => { bhQByBas[t.bas] = qRaw[i]; });
+        const q = _bhJustera(okTests.map(t => t.pValue));
+        okTests.forEach((t, i) => { bhQByBas[t.bas] = q[i]; });
     }
 
     // Bevis-knapp per BAS-rad. Bevis-payload
