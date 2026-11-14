@@ -980,7 +980,15 @@ bär ingen markering; per-BAS-signalen heter *Titta närmare* (säkerställd eft
 för gemensam lönebedömning. Att göra grupperar efter källa (*Lika arbete*, *Lika arbete, fördjupning*, *Likvärdigt
 arbete*, *Löneläge mot referens*, *Underlagets kvalitet*), Översiktens ruta heter *Säkerställd löneskillnad*, och
 protokollet för gemensam lönebedömning väljer yrkesgrupper som är värda att granska med markeringen som egen kolumn.
-Utforska prövar ingen skillnad och visar därför högst *Följ upp*. Vaktas av `tests/status-trappa.test.js`.
+Utforska prövar ingen skillnad och visar därför högst *Följ upp*. Tillägg 2026-11-14 (teknisk-plan §9 punkt 9e):
+livscykelns nyckeltal vid 25 och 65 år följer trappan, med modellens 95 % konfidensintervall för skillnaden vid
+åldern som prövning (`livscykelNiva` i `src/lib/livscykel.js`), och rutan *Förändring 25–65 år* är varningsfärgad
+bara när samspelet mellan kön och ålder är säkerställt (samma gräns som tolkningstexten), annars neutral. Protokollet
+för gemensam lönebedömning väljer BAS-intervall efter BH-korrigeringen (`bhJustera` i `src/lib/stat.js`), som
+regressionskortet och Att göra. Kolumnen *Skillnad kön* i Prioriteringens åtgärdslista prövar, liksom Utforska,
+ingen skillnad och når högst *Följ upp*; det är ett beslut: Prioriteringens grupper prövas i Lika arbete, dit
+brickans verktygstips hänvisar, och en andra prövning skulle ge två utslag för samma fråga. Vaktas av
+`tests/status-trappa.test.js`.
 
 **ADR-60 — Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av
 kvinnodominerat.** Beslut 2026-11-08.
