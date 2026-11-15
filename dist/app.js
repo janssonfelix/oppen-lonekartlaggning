@@ -21198,6 +21198,11 @@ function _evidenceForLikvardighetPair(p) {
     const jämförKällaText = ärIntern
         ? `organisationens egna data (${klassOrd} ${T.enhet.en})`
         : `jämförelsestatistiken (${klassOrd})`;
+    // Poängläget parar över BAS-gränserna, på lika eller lägre poäng.
+    const poangText = v => svTal(v, Number.isInteger(v) ? 0 : 1);
+    const kravText = p.kvPoang != null && p.maPoang != null
+        ? `som enligt arbetsvärderingen har <em>lika eller lägre krav</em> (${poangText(p.maPoang)} poäng mot ${poangText(p.kvPoang)})`
+        : `inom <em>samma ${T.niva.en}</em> (= likvärdiga krav)`;
     // Bootstrap-metoden skiljer sig per källa: intern = bägge individurvalen,
     // extern = organisationens löner mot jämförelsestatistikens median som konstant.
     const ciNote = ärIntern
@@ -21205,7 +21210,7 @@ function _evidenceForLikvardighetPair(p) {
         : 'Bootstrap mot konstant jämförelsestatistikens median, B=1000 omdragningar av organisationens löner';
     return {
         title: `Beräkningen — ${p.kvLabel || p.kvAid} mot ${p.maLabel || p.maAid}`,
-        intro: `Detta par flaggades i likvärdighetsanalysen: <strong>${esc(p.kvLabel || p.kvAid)}</strong> i organisationen (kvinnodominerat) har lägre medianlön än <strong>${esc(p.maLabel || p.maAid)}</strong> i ${jämförKällaText} inom <em>samma ${T.niva.en}</em> (= likvärdiga krav). ${ärIntern ? `Det här är en <strong>jämförelse inom organisationen</strong>: båda ${T.enhet.bfl} finns i organisationen.` : `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.jamforelse))} ${T.jamforelse.en} i organisationen fanns i ${termArtikel(T.niva, { bestamd: true })} här ${T.niva.bf}, därför används jämförelsestatistiken.`} Tabellraden visar antal, medianer och skillnad — nedan visas <em>hur</em> klassning och säkerhet räknats fram.`,
+        intro: `Detta par flaggades i likvärdighetsanalysen: <strong>${esc(p.kvLabel || p.kvAid)}</strong> i organisationen (kvinnodominerat) har lägre medianlön än <strong>${esc(p.maLabel || p.maAid)}</strong> i ${jämförKällaText} ${kravText}. ${ärIntern ? `Det här är en <strong>jämförelse inom organisationen</strong>: båda ${T.enhet.bfl} finns i organisationen.` : `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.jamforelse))} ${T.jamforelse.en} i organisationen fanns i ${termArtikel(T.niva, { bestamd: true })} här ${T.niva.bf}, därför används jämförelsestatistiken.`} Tabellraden visar antal, medianer och skillnad — nedan visas <em>hur</em> klassning och säkerhet räknats fram.`,
         rows: [
             // Endast det som INTE redan står i tabellraden: varför jämförelseetiketten räknas
             // som inte kvinnodominerat, hur säkerheten bedöms, och vad påverkansindex betyder.
@@ -23837,7 +23842,7 @@ function _lagreKravHtml(result) {
             <td>${p.gapCI ? `${fmt.format(p.gapCI.lo)}–${fmt.format(p.gapCI.hi)}\u00a0kr` : '–'}</td></tr>`).join('')}</tbody></table></div>`;
     return `<section id="likvardighet-lagre-krav" class="card marg-t-18">
         <h3 class="fs-lg">Lägre krav, högre lön</h3>
-        <p class="text-dampad-sm">${termText('{Enhet.fl:kvinnodominerad} som har lägre medianlön än {enhet.art} av organisationens {enhet.fl} i lägre BAS.')} BAS används som mått på krav och är grovt — pröva mot befattningsbeskrivningarna.</p>
+        ${poang ? '' : `<p class="text-dampad-sm">${termText('{Enhet.fl:kvinnodominerad} som har lägre medianlön än {enhet.art} av organisationens {enhet.fl} i lägre BAS.')} BAS används som mått på krav och är grovt — pröva mot befattningsbeskrivningarna.</p>`}
         ${innehall}</section>`;
 }
 
@@ -23923,8 +23928,9 @@ function renderLikvardighet() {
                 Lönekartläggningens regler omfattar en jämförelse mellan kvinnodominerat arbete och arbete som inte är kvinnodominerat
                 och har <em>likvärdiga eller lägre krav</em>. Verktyget jämför kvinnodominerade ${T.enhet.fl} med alla ${T.enhet.fl} som inte är kvinnodominerade —
                 både mansdominerade och blandade — och visar könsandelen i varje ${T.jamforelse.en}. Analysen är en
-                <strong>jämförelse inom organisationen</strong> — därför jämförs i första hand
-                organisationens egna ${T.enhet.fl} med varandra.
+                <strong>jämförelse inom organisationen</strong> — därför jämförs ${d.jämförelse.kravProxy === 'poäng'
+                    ? `organisationens egna ${T.enhet.fl} med varandra; jämförelsestatistiken har inga poäng och används inte.`
+                    : `i första hand organisationens egna ${T.enhet.fl} med varandra.`}
             </p>
             ${d.jämförelse.kravProxy === 'poäng'
                 ? `<p class="bak-ok-bg ram-v-4-ok rund-4 fs-sm marg-8-0 pad-8-12">
@@ -24115,7 +24121,7 @@ function renderLikvardighet() {
             <td>${i + 1}</td>
             <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + esc(p.kvLabel) : ''}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor med ${T.enhet.bf} nationellt (${esc(skrKallaKort())}):${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ''))}"` : ''}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
             <td class="t-hoger">${fmtKr(p.kvMedian)}</td>
-            <td><strong>${esc(p.maAid)}</strong>${p.maLabel && p.maLabel !== p.maAid ? ' ' + esc(p.maLabel) : ''}<br><small class="f-dampad lv-under">BAS ${esc(p.maBas)} · ${källBadge(p)}${p.maN != null ? ` · n=${p.maN}` : ''}</small></td>
+            <td><strong>${esc(p.maAid)}</strong>${p.maLabel && p.maLabel !== p.maAid ? ' ' + esc(p.maLabel) : ''}<br><small class="f-dampad lv-under">BAS ${esc(p.maBas)}${_lvPoang(result) ? '' : ` · ${källBadge(p)}`}${p.maN != null ? ` · n=${p.maN}` : ''}</small></td>
             <td class="t-hoger">${p.kvN} / ${p.maN != null ? p.maN : '–'}</td>
             <td class="lv-konsandel" data-sort-value="${p.maKvAndel ?? ''}">${svPct(p.maKvAndel, 0)}<br><small class="f-dampad">${konsklassOrd(p.maKlass)}</small></td>
             <td class="t-hoger">${fmtKr(p.maMedian)}</td>
@@ -24158,7 +24164,7 @@ function renderLikvardighet() {
                             <th data-kol="nr">#</th>
                             <th data-kol="${LV_KOL_KVDOM}" title="${termText('{Enhet.en:kvinnodominerad} i organisationen (faktisk könsfördelning).')}">Kvinnodom. ${T.enhet.en} (${esc(orgNamn('org.'))})</th>
                             <th data-kol="median" title="Median månadslön i organisationens grupp.">Median ${esc(orgNamn('org.'))}</th>
-                            <th data-kol="${LV_KOL_JAMF}" title="${termText('{Jamforelse.en}: {enhet.art} {enhet.en} i organisationen som inte är {enhet.adj:kvinnodominerad} (intern), annars jämförelsestatistiken (extern).')}">${termText('{Jamforelse.en}')}</th>
+                            <th data-kol="${LV_KOL_JAMF}" title="${termText(_lvPoang(result) ? '{Jamforelse.en}: {enhet.art} {enhet.en} i organisationen som inte är {enhet.adj:kvinnodominerad} och har lika eller lägre poäng.' : '{Jamforelse.en}: {enhet.art} {enhet.en} i organisationen som inte är {enhet.adj:kvinnodominerad} (intern), annars jämförelsestatistiken (extern).')}">${termText('{Jamforelse.en}')}</th>
                             <th data-kol="antal" title="${termText('Antal personer med {enhet.bf:kvinnodominerad} och med {jamforelse.bf} (– när jämförelsestatistiken inte anger antal).')}">Antal (kvinnodom. / jämf.)</th>
                             <th data-kol="konsandel" title="${termText('Könsandel i {jamforelse.bf} och dess klass: mansdominerad eller blandad.')}" data-export-label="Könsandel jämf. (% kvinnor)">Könsandel</th>
                             <th data-kol="medianjamf" title="${termText('Median månadslön i {jamforelse.bf}.')}">Median jämf.</th>
