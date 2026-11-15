@@ -4608,7 +4608,7 @@ exports[`golden: Excel-exporterna på fast dataset > handlingsplansunderlaget ma
       "Förklarad andel av skillnaden (%)",
     ],
     [
-      "Granska likvärdigt arbete (kvinnodominerad AID-etikett)",
+      "Granska likvärdigt arbete (kvinnodominerad)",
       "5301 Undersköterska · BAS B",
       17,
       "Likvärdigt arbete (kandidatpar)",
@@ -4622,7 +4622,7 @@ exports[`golden: Excel-exporterna på fast dataset > handlingsplansunderlaget ma
       66,
     ],
     [
-      "Granska likvärdigt arbete (kvinnodominerad AID-etikett)",
+      "Granska likvärdigt arbete (kvinnodominerad)",
       "5500 Sjuksköterska · BAS C",
       14,
       "Likvärdigt arbete (kandidatpar)",

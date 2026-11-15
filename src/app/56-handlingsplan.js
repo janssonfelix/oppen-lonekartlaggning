@@ -137,7 +137,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
             parUtelamnade = utelamnade;
             par.forEach(p => {
                 const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
-                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), `Granska likvärdigt arbete (${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })})`, _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
+                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerad)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
                 lvCount++;
             });
         }
@@ -364,7 +364,9 @@ function renderHandlingsplanSeed() {
             ? `<td>${text(`hp-${i}-atgard`, n, 'atgard', r[0], 'Vad ska göras?', 'Åtgärd, egen rad')}</td>`
               + `<td>${text(`hp-${i}-grupp`, n, 'grupp', r[1], `Grupp eller ${T.enhet.en}, inga namn`, 'Berörd grupp, egen rad')}</td>${antal}`
               + `<td>${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" data-noprint aria-label="Ta bort den egna raden">Ta bort</button></td>`
-            : `<td>${esc(r[0])}</td><td>${esc(g)}</td>${antal}<td>${esc(r[2])}</td>`;
+            // BAS och bokstaven hålls ihop med ett hårt mellanslag på skärmen och i utskriften (S2 i punkt 26); exporterna
+            // och fältens etiketter har ett vanligt.
+            : `<td>${esc(r[0])}</td><td>${esc(g).replace(/ · BAS (\S+)$/, ' · BAS&nbsp;$1')}</td>${antal}<td>${esc(r[2])}</td>`;
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
             + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)} ${_hpSkalKnapp(n, g, seed.skillnader[i])}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td><td>${esc(_hpKostnadAvser(r[2]))}</td>`

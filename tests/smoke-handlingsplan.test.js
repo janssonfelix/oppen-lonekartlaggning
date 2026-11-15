@@ -6,6 +6,8 @@ vi.setConfig({ testTimeout: 30000 });
 const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); w.__state.handlingsplan = {}; return w; };
 const UNDERLAG = ['Prioritering (under referensen)', 'Likvärdigt arbete (kandidatpar)'];
 const rader = w => [...w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-seeded')];
+// Gruppen som i exporterna: på skärmen står BAS och bokstaven ihop med ett hårt mellanslag.
+const grupp = tr => tr.cells[1].textContent.replace(/\u00a0/g, ' ');
 const fyll = (w, el, varde) => { el.value = varde; el.dispatchEvent(new w.Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); };
 
 describe('Handlingsplan: fälten fylls i på skärmen', () => {
@@ -15,7 +17,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const r = rader(w);
         expect(r.length).toBeGreaterThan(0);
         for (const tr of r) {
-            expect(tr.cells[1].textContent).toMatch(/^\d+ \S.* · BAS \S+$/);
+            expect(tr.cells[1].textContent).toMatch(/^\d+ \S.* · BAS\u00a0\S+$/);
             expect(UNDERLAG).toContain(tr.cells[3].textContent);   // efter Åtgärd, grupp och Antal berörda
         }
         const antal = etikett => r.filter(tr => tr.cells[3].textContent === etikett).length;
@@ -26,13 +28,13 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     it('fälten har etiketter med yrke och kolumn, lagras i state och står kvar efter flikbyte', () => {
         const w = fonster();
         w.__renderTabContent('handlingsplan');
-        const tr = rader(w)[0], grupp = tr.cells[1].textContent;
+        const tr = rader(w)[0], g = grupp(tr);
         const [sakligt, ansvarig, tidsplan, status] = [4, 7, 8, 9].map(i => tr.cells[i].querySelector('.hp-falt'));
         expect(sakligt.tagName).toBe('SELECT');
         expect([...sakligt.options].map(o => o.textContent)).toEqual(['—', 'Ja, sakligt skäl finns', 'Nej, åtgärd behövs', 'Pågår']);
         expect([...status.options].map(o => o.value)).toEqual(['', 'Planerad', 'Pågår', 'Genomförd', 'Skjuts upp']);
-        expect(ansvarig.getAttribute('aria-label')).toBe(`Ansvarig: ${grupp}`);
-        expect(sakligt.getAttribute('aria-label')).toBe(`Sakliga skäl prövade?: ${grupp}`);
+        expect(ansvarig.getAttribute('aria-label')).toBe(`Ansvarig: ${g}`);
+        expect(sakligt.getAttribute('aria-label')).toBe(`Sakliga skäl prövade?: ${g}`);
         fyll(w, sakligt, 'Nej, åtgärd behövs'); fyll(w, ansvarig, 'HR-chef'); fyll(w, tidsplan, 'Lönerevisionen 2027'); fyll(w, status, 'Planerad');
         const nyckel = ansvarig.dataset.hpNyckel;
         expect(w.__state.handlingsplan[nyckel]).toEqual({ sakligt: 'Nej, åtgärd behövs', ansvarig: 'HR-chef', tidsplan: 'Lönerevisionen 2027', status: 'Planerad' });
@@ -79,12 +81,12 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const bok = Object.values(fangaBocker(w, () => w.eval('exportHandlingsplan()')))[0];
         const rad = bok.split('\n').find(l => l.includes('HR-chef'));
         expect(rad).toContain('Ja, sakligt skäl finns');
-        expect(rad).toContain(tr.cells[1].textContent);
+        expect(rad).toContain(grupp(tr));
         expect(bok).toContain('Åtgärd | Grupp (AID-etikett och BAS-intervall) | Antal berörda | Underlag | Sakliga skäl prövade?');
         const atgarder = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'atgarder');
         const tabell = atgarder.delar.find(p => p.typ === 'tabell');
         expect(tabell.kolumner.map(k => k.rubrik)).toEqual(['Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad', 'Kostnaden avser', 'Sakliga skäl prövade?', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status']);
-        expect(tabell.rader.find(r => r[0] === tr.cells[1].textContent).slice(5, 7)).toEqual(['Ja, sakligt skäl finns', 'HR-chef']);
+        expect(tabell.rader.find(r => r[0] === grupp(tr)).slice(5, 7)).toEqual(['Ja, sakligt skäl finns', 'HR-chef']);
         const oppnat = [];
         w.open = () => { const doc = { html: '', write(s) { this.html += s; }, close() {}, adoptedStyleSheets: [], createElement: () => ({ sheet: { insertRule() {}, cssRules: [] } }), head: { appendChild() {} } };
             oppnat.push(doc); return { document: doc, focus() {}, print() {} }; };
@@ -135,6 +137,17 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         w.eval('_rensaAllData()');
         expect(w.__state.handlingsplan).toEqual({});
         expect(w.document.querySelectorAll('#handlingsplan-tbody .hp-falt')).toHaveLength(0);
+    });
+    // S2 i punkt 26: åtgärden tog fyra rader i varje rad, och BAS-bokstaven hamnade ensam på en rad.
+    it('åtgärden för ett kandidatpar är kort, och BAS och bokstaven står ihop i gruppkolumnen', () => {
+        const w = fonster();
+        w.__renderTabContent('handlingsplan');
+        const par = rader(w).filter(tr => tr.cells[3].textContent === UNDERLAG[1]);
+        expect(par.length).toBeGreaterThan(0);
+        for (const tr of par) expect(tr.cells[0].textContent.length, tr.cells[0].textContent).toBeLessThanOrEqual(45);
+        for (const tr of rader(w)) expect(tr.cells[1].textContent).toMatch(/ · BAS\u00a0\S+$/);
+        // Exporterna och fältens etiketter har ett vanligt mellanslag.
+        expect(w.eval('_handlingsplanSeedRows({})').rows.map(r => r[1]).join('')).not.toContain('\u00a0');
     });
 });
 

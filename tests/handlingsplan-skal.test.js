@@ -87,7 +87,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
             expect(b, 'knappen saknas').toBeTruthy();
             expect(tr.cells[4].contains(b)).toBe(true);
             expect(ren(b.textContent)).toBe('Sakliga skäl: inga');
-            expect(b.getAttribute('aria-label')).toBe(`Sakliga skäl, ${tr.cells[1].textContent}: inga`);
+            expect(b.getAttribute('aria-label')).toBe(`Sakliga skäl, ${ren(tr.cells[1].textContent)}: inga`);
             expect(b.hasAttribute('data-noprint')).toBe(true);
         }
     });
@@ -102,7 +102,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         expect(oppen(w)).toBe(true);
         expect(w.__state.kLage).not.toBe('export');   // dialogen räknar i exportläget och lämnar skärmläget kvar
         const text = ren(modal(w).textContent);
-        expect(text).toContain(tr.cells[1].textContent);
+        expect(text).toContain(ren(tr.cells[1].textContent));
         expect(text).toContain(`Medianskillnad ${w.eval(`svTal(${skillnad}, 0)`).replace(/\s/g, ' ')} kr/mån`);
         expect(skalRader(w)).toHaveLength(0);
         modal(w).dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -351,7 +351,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         const skillnad = skillnader[nycklar.indexOf(nyckel)];
         w.eval(`_hpSattSkal(${JSON.stringify(nyckel)}, [{ kategori: 'marknad', belopp: ${Math.round(skillnad / 2)}, kommentar: '' }, { kategori: 'erfarenhet', belopp: 0, kommentar: '' }])`);
         const [, aid, bas] = nyckel.split('|');
-        return { w, nyckel, aid, bas, grupp: tr.cells[1].textContent, pct: w.eval(`svPct(${Math.round(skillnad / 2) / skillnad * 100}, 0)`).replace(/\s/g, ' ') };
+        return { w, nyckel, aid, bas, grupp: ren(tr.cells[1].textContent), pct: w.eval(`svPct(${Math.round(skillnad / 2) / skillnad * 100}, 0)`).replace(/\s/g, ' ') };
     };
     it('gruppdossiern: "Bedömning i handlingsplanen: 2 skäl, NN % av skillnaden förklarad", produktgränsen står kvar', () => {
         const { w, aid, bas, pct, grupp } = medSkal();
@@ -396,7 +396,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         const tr = radMedSkillnad(w);
         const [, , , maAid, maBas] = knapp(tr).dataset.hpSkal.split('|');
         w.eval(`openGruppdossier(${JSON.stringify(`${maAid}|${maBas}`)})`);
-        expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain(`${tr.cells[1].textContent} (kandidatpar, jämförelseetikett): Bedömning i handlingsplanen`);
+        expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain(`${ren(tr.cells[1].textContent)} (kandidatpar, jämförelseetikett): Bedömning i handlingsplanen`);
     });
     it('en rad utan skäl: läs-raden säger att inga skäl är angivna', () => {
         const w = fonster();
