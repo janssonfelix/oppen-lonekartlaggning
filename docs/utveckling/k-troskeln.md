@@ -174,7 +174,9 @@ Att göra (vars CSV-knapp bär listan den ritades med), processöversikten, inl�
 visad A/B-jämförelse och en öppen gruppdossier (`_renderaOmAllaFlikar`). Från fältet ritas allt om ett steg i taget, med
 en ruta som visar förloppet och tar emot alla klick och tangenter tills omritningen är klar. Inläsning av
 konfigurationsfil och organisationspaket sätter värdet med `rita: false` och gör omritningen själva, sist, så att allt
-ritas en gång. Ett tröskelbyte räknar om skattningarna (`invalidateStatCaches`) bara när `statGolv()` ändras.
+ritas en gång. Ett tröskelbyte räknar om skattningarna (`invalidateStatCaches`) bara när `statGolv()` ändras. Paren i
+Likvärdigt arbete läser ingen tröskel och räknas inte om; antalet små grupper i deras diagnostik räknas när resultatet
+läses (`likvardighetsmodellen.md` §1).
 
 **Efter en export** ritas bara det tillbaka som exporten ritade (`_ritaOmEfterExport`). Lika arbetes minne har ett rum
 per tröskel, så att ett lägesbyte inte räknar om något. Det som räknas på knapptryck i Löneöversyn räknas om när fliken

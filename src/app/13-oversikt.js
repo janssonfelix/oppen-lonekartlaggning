@@ -343,11 +343,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 4. § 3:10 Likvärdigt arbete (antal kandidatpar)
     rows.push(safe(() => {
         if (!hasData) return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' };
-        let lv = state.likvardighet ? state.likvardighet.result : null;   // återanvänd cache (wizarden fyller den)
-        if (lv == null && typeof computeLikvardighetPairs === 'function') {
-            lv = computeLikvardighetPairs();
-            if (state.likvardighet) state.likvardighet.result = lv;
-        }
+        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
         // Antalet står bredvid antalet hanterade punkter i Att göra, som utelämnar par med en grupp
         // under tröskeln — därför räknas de redovisade paren och de utelämnade nämns. Finns bara utelämnade
         // par säger steget det självt (tillståndet `inget`, knappen leder till fliken).

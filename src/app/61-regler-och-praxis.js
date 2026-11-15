@@ -76,16 +76,12 @@ bes8Uppdatera();
 // ---- Stöd i verktyget: talet från fliken och en länk dit ----
 // Där en flik har ett tal som hör till området (Likvärdigt arbetes par, Lika arbetes yrkesgrupper att granska,
 // Lönestrukturens lönekvartiler) står talet i områdets rad Stöd i verktyget, med länken Gå dit. Talen
-// hämtas ur samma källor som flikarna själva visar: Likvärdigt arbetes cache (state.likvardighet.result, som
+// hämtas ur samma källor som flikarna själva visar: Likvärdigt arbetes resultat (likvardighetResultat(), som
 // Översiktens Att göra också fyller) och de delade funktionerna för yrkesgrupperna och kvartilerna. Utan underlag,
 // eller när fliken inte kan räkna, står radens fasta text kvar.
 const BES8_STOD = {
     likvardighet(d) {
-        let lv = state.likvardighet ? state.likvardighet.result : null;
-        if (lv == null && typeof computeLikvardighetPairs === 'function') {
-            lv = computeLikvardighetPairs();
-            if (state.likvardighet) state.likvardighet.result = lv;
-        }
+        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
         if (!lv || !Array.isArray(lv.pairs) || !d.length) return null;
         const { totalt, sakra } = lvParAntal(lv);
         return totalt ? `Likvärdigt arbete har ${svTal(totalt, 0)} par att titta närmare på, ${svTal(sakra, 0)} med säker skillnad.`

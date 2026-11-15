@@ -804,6 +804,80 @@ describe('demodata med kandidatpar', () => {
     });
 });
 
+// Paren räknas en gång per underlag och val (likvardighetResultat): fliken, Översikt, regler och praxis och protokollet
+// läser samma resultat, och varje ändring av något som beräkningen läser nollställer det. På 55 000 rader är en
+// beräkning sekunder.
+describe('Likvärdigt arbete räknas en gång per underlag', () => {
+    // Adaptern computeLikvardighetPairs() är den enda som anropar spegeln (_lvComputePairs); den räknas.
+    const raknaBerakningar = w => w.eval('window.__lvBerakningar = 0; const __lvOrig = computeLikvardighetPairs; '
+        + 'computeLikvardighetPairs = function () { window.__lvBerakningar++; return __lvOrig(); };');
+    const flik = (w, f) => w.document.querySelector(`.nav-item[data-tab="${f}"]`).click();
+    const demo = () => { const w = createAppWindow(); raknaBerakningar(w); w.__loadDemoData(); return w; };
+
+    it('inläsningen, varje flik och protokollet för gemensam lönebedömning räknar paren en gång', async () => {
+        const w = demo();
+        expect(w.__lvBerakningar).toBe(1);
+        [...w.document.querySelectorAll('.nav-item[data-tab]')].forEach(b => { if (!b.disabled && !b.hidden) b.click(); });
+        flik(w, 'likvardighet');
+        expect(w.__lvBerakningar).toBe(1);
+        const { readFileSync } = await import('node:fs');
+        w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
+        w.alert = () => {};
+        w.XLSX.writeFile = () => {};
+        w.eval('exportJPAProtocol()');
+        expect(w.__lvBerakningar).toBe(1);
+    });
+    // Fältens ändringar i fliken: resultatet nollställs, och det nya räknas med det nya värdet (en gång).
+    for (const [id, nyckel, varde] of [['lv-kvinno-thr', 'kvinnoTrosholdPct', 65], ['lv-min-gap', 'minGapPct', 5], ['lv-top-n', 'topN', 10]]) {
+        it(`ändrat fält ${id} räknar om paren med det nya värdet`, () => {
+            const w = demo();
+            flik(w, 'likvardighet');
+            const fore = w.__state.likvardighet.result;
+            const falt = w.document.getElementById(id);
+            falt.value = String(varde);
+            falt.dispatchEvent(new w.Event('change'));
+            const efter = w.eval('likvardighetResultat()');
+            expect(efter).not.toBe(fore);
+            expect(efter.opts[nyckel]).toBe(varde);
+            expect(w.__lvBerakningar).toBe(2);
+        });
+    }
+    it('Visa alla räknar om paren med alla par', () => {
+        const w = demo();
+        w.__state.likvardighet.topN = 2;
+        w.__state.likvardighet.result = null;
+        flik(w, 'likvardighet');
+        const fore = w.__state.likvardighet.result;
+        const totalt = fore.parAntal.totalt;
+        expect(fore.pairs).toHaveLength(2);
+        w.document.getElementById('lv-visa-alla').click();
+        expect(w.__state.likvardighet.result).not.toBe(fore);
+        expect(w.__state.likvardighet.result.pairs).toHaveLength(totalt);
+    });
+    it('robusthetsprövningen räknar bara de andra kvinnotrösklarna och lämnar flikens resultat orört', () => {
+        const w = demo();
+        const fore = w.__state.likvardighet.result;
+        w.__robusthetLikvardighet([55, 60, 65]);
+        expect(w.__lvBerakningar).toBe(3);
+        expect(w.__state.likvardighet.result).toBe(fore);
+        expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(60);
+    });
+    it('definitionen, jämförelsemängden och poängbandet nollställer resultatet', () => {
+        const w = demo();
+        flik(w, 'likvardighet');
+        const andra = (sel, satt) => {
+            const fore = w.eval('likvardighetResultat()');
+            const el = w.document.getElementById(sel);
+            satt(el);
+            el.dispatchEvent(new w.Event('change'));
+            expect(w.eval('likvardighetResultat()'), sel).not.toBe(fore);
+        };
+        andra('lv-kv-definition', el => { el.value = 'scb'; });
+        andra('lv-bara-mansdominerade', el => { el.checked = true; });
+        andra('arbvard-band', el => { el.value = '7'; });
+    });
+});
+
 // Ålder är valfri i lönefilen (ADR-64): utan ålder är Ålder & karriär låst med ett eget skäl.
 describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
     const utanAlder = w => { w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 })); w.eval('unlockTabs()'); };

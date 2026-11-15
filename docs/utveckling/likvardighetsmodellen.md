@@ -40,8 +40,12 @@ jämförelseetiketter), filtret för jämförelsemängden (avsnitt 4), `byggPar`
 `kInstalld()` som `k`, och fyller på med diagnostik som bara gränssnittet behöver (exempelrader, om statistiken har
 egen könsfördelning). Kastar spegeln returneras ändå ett strukturerat resultat, med tomma listor och felet i
 `diagnostik.fel`, så att fliken kan visa vad som gick fel. `likvardighetResultat()` sparar resultatet i
-`state.likvardighet.result`; allt som bara läser paren går via den, och varje ändring av data eller inställningar
-nollställer resultatet.
+`state.likvardighet.result`; fliken, Översikt, exporterna och allt annat som läser paren går via den, så att paren
+räknas en gång per underlag och val. Varje ändring av något som beräkningen läser nollställer resultatet: underlaget,
+jämförelsestatistiken, arbetsvärderingen, organisationstypen (reserven för kvinnoandel) och valen i fliken. Bara
+robusthetsprövningen räknar med andra kvinnotrösklar, och de resultaten sparas inte. Ett byte av k-tröskeln nollställer
+inte: paren läser ingen tröskel, och antalet små kvinnodominerade grupper (`kvDomMedNLessThanK`) räknas med gällande
+tröskel varje gång resultatet läses.
 
 ## 2. En definition av kvinnodominerat
 
@@ -306,7 +310,8 @@ bär inte minsta skillnaden (ADR-61), antalet par, kvinnotröskeln eller definit
 | `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med båda definitionerna vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget (inga par mot statistiken), *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangFn`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
 | `tests/drift.test.js` | Att adaptern delegerar till spegeln och översätter tillståndet till anropet, att den ger ett strukturerat resultat när spegeln kastar, och att spegeln ger reproducerbara konfidensintervall |
 | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` | Definitionen och jämförelsemängden i tabellerna per AID-kod och BAS-intervall; definitionen och jämförelsemängden i konfigurationsfilen; att definitionernas namn säger lydelsen och inte en avsändare (ADR-72) |
-| `tests/smoke-vyer.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseetikett i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock |
+| `tests/smoke-vyer.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseetikett i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock; att paren räknas en gång vid inläsning, flikbyten och protokollet, och att fliken och valen nollställer resultatet |
+| `tests/ktroskel-exporter.test.js` | Antalet små kvinnodominerade grupper med gällande tröskel, och att ett tröskelbyte inte räknar om paren |
 | `tests/granssnitt-vyer.test.js` | Partabellens intervall och märke, kolumnerna, att ett par under 5 % syns utan att något ändrats och fältets text, och att Översiktens tal är flikens |
 | `tests/smoke-organisation.test.js` | Organisationspaketets jämförelsemängd, poängläget i fliken och att resultatet nollställs |
 | `tests/organisationspaket.test.js` | Fältet `installningar.jamforelse` i paketet |

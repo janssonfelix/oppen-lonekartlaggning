@@ -1704,10 +1704,11 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
-    // Skattningarna (bootstrap-KI och styrkan läser statGolv(); § 3:10-paren läser ingen tröskel) räknas om bara när
-    // golvet ändras — på 55 000 rader är bootstrapen sekunder. Det som är ritat bär den gamla tröskeln och ritas om.
+    // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
+    // bootstrapen sekunder. § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
+    // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
-    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false });   // räknas om i bakgrunden nedan
+    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
     // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
@@ -17248,11 +17249,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 4. § 3:10 Likvärdigt arbete (antal kandidatpar)
     rows.push(safe(() => {
         if (!hasData) return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' };
-        let lv = state.likvardighet ? state.likvardighet.result : null;   // återanvänd cache (wizarden fyller den)
-        if (lv == null && typeof computeLikvardighetPairs === 'function') {
-            lv = computeLikvardighetPairs();
-            if (state.likvardighet) state.likvardighet.result = lv;
-        }
+        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
         // Antalet står bredvid antalet hanterade punkter i Att göra, som utelämnar par med en grupp
         // under tröskeln — därför räknas de redovisade paren och de utelämnade nämns. Finns bara utelämnade
         // par säger steget det självt (tillståndet `inget`, knappen leder till fliken).
@@ -20503,13 +20500,9 @@ function _exportJPAProtocolExport() {
     const localDate = now.toLocaleDateString('sv-SE');
     const profileLabel = state.profile.benchmarkLabel;
 
-    // § 3:10-paren beräknas EN GÅNG här, så att försättssidan och flik 3b
-    // alltid är konsistenta.
-    const lvResult = typeof computeLikvardighetPairs === 'function'
-        ? computeLikvardighetPairs()
-        : null;
-    // Synka cachen så ev. efterföljande tabb-render visar samma siffror.
-    if (state.likvardighet) state.likvardighet.result = lvResult;
+    // § 3:10-paren hämtas EN GÅNG här, så att försättssidan och flik 3b alltid är konsistenta, och ur samma resultat som
+    // fliken visar (likvardighetResultat, som nollställs när underlaget eller valen ändras).
+    const lvResult = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
     // k-anonymitet: protokollet redovisar bara par där båda grupperna når tröskeln (undantaget gäller
     // bara fliken Likvärdigt arbete); antalet som utelämnats anges i stället.
     const lvRedovisning = _parForRedovisning(lvResult?.pairs);
@@ -22263,15 +22256,16 @@ _synkaOrgTyp();
  * Återskapar dem direkt — billigt nog att göra synkront, undviker att
  * UI:t visar inaktuella CI/MDE-värden för felaktigt urval.
  */
-function invalidateStatCaches({ recompute = true } = {}) {
+function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
     if (typeof ritGenerationNy === 'function') ritGenerationNy();   // det som är ritat bygger på det som nu räknas om (exportgrinden)
     state.bootstrapCI = null;
     state.powerAnalysis = null;
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // översiktens och trattdiagrammets minne följer underlaget
     // Rensa även § 3:10-cachen så att JPA-export
     // inte plockar resultat beräknat på ett tidigare dataset.
-    // Recompute sker lat — nästa render eller export gör en fresh compute.
-    if (state.likvardighet) state.likvardighet.result = null;
+    // Recompute sker lat — nästa render eller export gör en fresh compute. Ett tröskelbyte behåller paren
+    // (likvardighet: false): de läser ingen tröskel, och antalet små grupper räknas när resultatet läses.
+    if (likvardighet && state.likvardighet) state.likvardighet.result = null;
     if (recompute && state.data && state.data.length) {
         // MEDVETEN DEGRADERING (inte bug-gömning):
         //
@@ -23693,9 +23687,16 @@ function _lvStatJamfor(result) {
 }
 
 function likvardighetResultat() {
-    if (state.likvardighet && state.likvardighet.result) return state.likvardighet.result;
-    const lv = computeLikvardighetPairs();
-    if (state.likvardighet) state.likvardighet.result = lv;
+    let lv = state.likvardighet && state.likvardighet.result;
+    if (!lv) {
+        lv = computeLikvardighetPairs();
+        if (state.likvardighet) state.likvardighet.result = lv;
+    }
+    // Det enda i resultatet som beror på k-tröskeln är antalet små kvinnodominerade grupper i diagnostiken. Det räknas
+    // här vid varje läsning med gällande tröskel, så att ett tröskelbyte inte behöver räkna om paren (de läser ingen
+    // tröskel; det som redovisas utanför fliken prövas mot tröskeln när det läses, _parForRedovisning).
+    const org = lv.diagnostik && lv.diagnostik.organisation;
+    if (org && Array.isArray(lv.orgKvDom)) { const k = kInstalld(); org.kvDomMedNLessThanK = lv.orgKvDom.filter(g => g.n < k).length; }
     return lv;
 }
 
@@ -23840,8 +23841,7 @@ function renderLikvardighet() {
 
     let result;
     try {
-        result = computeLikvardighetPairs();
-        state.likvardighet.result = result;
+        result = likvardighetResultat();
     } catch (e) {
         _lvRitaTopp(null);
         wrap.innerHTML = `
@@ -24268,6 +24268,7 @@ function renderLikvardighet() {
             if (min != null && v < min) v = min;
             if (max != null && v > max) v = max;
             state.likvardighet[key] = v;
+            state.likvardighet.result = null;   // paren räknas med det nya värdet
             renderLikvardighet();
         });
     };
@@ -24276,6 +24277,7 @@ function renderLikvardighet() {
     onNumChange('lv-top-n',      'topN',              10, 500);
     document.getElementById('lv-visa-alla')?.addEventListener('click', () => {
         state.likvardighet.topN = Math.max(10, antal.totalt);
+        state.likvardighet.result = null;
         renderLikvardighet();
     });
     document.getElementById('lv-kv-definition')?.addEventListener('change', e => {
@@ -33794,16 +33796,12 @@ bes8Uppdatera();
 // ---- Stöd i verktyget: talet från fliken och en länk dit ----
 // Där en flik har ett tal som hör till området (Likvärdigt arbetes par, Lika arbetes yrkesgrupper att granska,
 // Lönestrukturens lönekvartiler) står talet i områdets rad Stöd i verktyget, med länken Gå dit. Talen
-// hämtas ur samma källor som flikarna själva visar: Likvärdigt arbetes cache (state.likvardighet.result, som
+// hämtas ur samma källor som flikarna själva visar: Likvärdigt arbetes resultat (likvardighetResultat(), som
 // Översiktens Att göra också fyller) och de delade funktionerna för yrkesgrupperna och kvartilerna. Utan underlag,
 // eller när fliken inte kan räkna, står radens fasta text kvar.
 const BES8_STOD = {
     likvardighet(d) {
-        let lv = state.likvardighet ? state.likvardighet.result : null;
-        if (lv == null && typeof computeLikvardighetPairs === 'function') {
-            lv = computeLikvardighetPairs();
-            if (state.likvardighet) state.likvardighet.result = lv;
-        }
+        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
         if (!lv || !Array.isArray(lv.pairs) || !d.length) return null;
         const { totalt, sakra } = lvParAntal(lv);
         return totalt ? `Likvärdigt arbete har ${svTal(totalt, 0)} par att titta närmare på, ${svTal(sakra, 0)} med säker skillnad.`
@@ -38197,8 +38195,9 @@ function robusthetLikvardighet(trösklar = [55, 60, 65]) {
     try {
         trösklar.forEach(t => {
             state.likvardighet.kvinnoTrosholdPct = t;
+            // Vid den inställda kvinnotröskeln är paren flikens (samma val); de andra trösklarna räknas för sig och sparas inte.
             let alla = [];
-            try { alla = (computeLikvardighetPairs() || {}).pairs || []; } catch (_e) { alla = []; }
+            try { alla = ((t === original ? likvardighetResultat() : computeLikvardighetPairs()) || {}).pairs || []; } catch (_e) { alla = []; }
             const { par: pairs } = _parForRedovisning(alla);
             alla.forEach(p => { if (!_parOverTroskel(p)) utelamnadePar.add(`${p.kvAid}|${p.kvBas}|${p.maAid}|${p.maBas}`); });
             const inThisRun = new Set();
@@ -38218,7 +38217,8 @@ function robusthetLikvardighet(trösklar = [55, 60, 65]) {
         });
     } finally {
         state.likvardighet.kvinnoTrosholdPct = original;
-        state.likvardighet.result = originalResult;
+        // Resultatet vid den inställda tröskeln står kvar om det räknades här; inget annat skrivs till det.
+        state.likvardighet.result = originalResult || state.likvardighet.result;
     }
     const rows = [...seen.values()]
         .map(r => ({ ...r, of: trösklar.length }))
