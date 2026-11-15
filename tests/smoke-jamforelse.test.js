@@ -72,6 +72,16 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         expect(w.document.getElementById('benchmark-table').textContent).toMatch(/Jämförelsestatistik saknas/);
         expect(w.document.querySelector('#jmf-diagram svg')).toBeNull();
     });
+    it('utan statistik gömmer tabellen P10 och P90 som när statistik finns (Fler kolumner)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('benchmark');
+        const rubrik = kol => /** @type {HTMLElement} */ (w.document.querySelector(`#benchmark-thead th[data-kol="${kol}"]`));
+        for (const kol of ['p10org', 'p10jmf', 'p10diff', 'p90org', 'p90jmf', 'p90diff']) expect(rubrik(kol).hidden).toBe(true);
+        expect(w.document.querySelector('[data-fler-kolumner="benchmark-table"]')).not.toBeNull();
+        // Den tomma raden spänner över de synliga kolumnerna.
+        expect(w.document.querySelector('#benchmark-table tbody td').getAttribute('colspan')).toBe('7');
+    });
     it('jamforelseMarkeraRad markerar raden', () => {
         const w = oppna();
         const u = w.eval('jamforelseUnderlag()').rader[0];
