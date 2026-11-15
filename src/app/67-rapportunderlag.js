@@ -176,6 +176,9 @@ function renderRapportunderlag() {
     host.innerHTML = `<p class="ru-forbehall">${esc(ANSVARSFORBEHALL)}</p>` + forteckning + grupp('Avsnitt', avsnitt) + grupp(`Per ${T.niva.en}`, basBl) + grupp(`${termStor(T.enhet.fl)} i Lika arbete`, yrken)
         + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
+    // Ett tal eller intervall står på en rad (95 % KI bröts annars på tre rader i en smal kolumn). Bara på skärmen:
+    // urklippet byggs om ur blocket, utan klasser.
+    host.querySelectorAll('.ru-innehall td').forEach(td => { if (_cellArTal(td.textContent)) td.classList.add('ru-tal'); });
 }
 
 // Blockets element-id för hopplänkar (block-id:n innehåller ':').

@@ -20,7 +20,8 @@ const __mirrorTermer = (() => {
  * Verktyget använder AID:s egna ord: AID-etikett, AID-kod, etikettnamn och huvudområde. Orden står bara här, som
  * variabler, så att en annan uppsättning (till exempel för en annan bransch) byts på ett ställe. Varje begrepp har
  * de ordformer svenskan kräver och sitt genus, så att artikel och adjektiv böjs rätt också för ett ett-ord:
- * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke".
+ * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke". Ett begrepp kan ha en kort form för en
+ * kolumnrubrik där hela termen inte ryms (ADR-75); utan den används obestämd form.
  *
  * I appen: `T` är den gällande uppsättningen (`src/app/09-termer.js`), `${T.enhet.fl}` i stället för ordet, och
  * fast text skrivs som mall: `{enhet.en}`, se `fyllTermer`. Vakten i `tests/termer.test.js` håller orden borta
@@ -30,10 +31,11 @@ const __mirrorTermer = (() => {
  */
 
 /** @typedef {'utrum'|'neutrum'} Genus */
-/** @typedef {'en'|'bf'|'fl'|'bfl'} Form */
+/** @typedef {'en'|'bf'|'fl'|'bfl'|'kort'} Form */
 /**
- * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl) och genus.
- * @typedef {{ en: string, bf: string, fl: string, bfl: string, genus: Genus }} Begrepp
+ * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl), genus och en valfri kort
+ * form (kort) för kolumnrubriker där hela termen inte ryms. Exporternas etiketter behåller hela termen (ADR-75).
+ * @typedef {{ en: string, bf: string, fl: string, bfl: string, kort?: string, genus: Genus }} Begrepp
  */
 /**
  * En uppsättning termer. `enhet` är det verktyget grupperar på, `jamforelse` den enhet ett kvinnodominerat arbete
@@ -45,14 +47,14 @@ const __mirrorTermer = (() => {
 
 /** Begreppen, i den ordning de står i tabellen. */
 const TERM_BEGREPP = /** @type {const} */ (['enhet', 'jamforelse', 'kod', 'namn', 'huvudomrade', 'niva']);
-/** Ordformerna per begrepp. */
+/** Ordformerna per begrepp. Den korta formen är valfri och står inte här; vakten prövar inte "AID" ensamt. */
 const TERM_FORMER = /** @type {const} */ (['en', 'bf', 'fl', 'bfl']);
 /** Högsta längd för en ordform. */
 const TERM_MAX = 40;
 
 /** Standarduppsättningen. @type {Termer} */
 const STANDARDTERMER = Object.freeze({
-    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', genus: /** @type {Genus} */ ('utrum') }),
+    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', kort: 'AID', genus: /** @type {Genus} */ ('utrum') }),
     jamforelse:  Object.freeze({ en: 'jämförelseetikett', bf: 'jämförelseetiketten', fl: 'jämförelseetiketter', bfl: 'jämförelseetiketterna', genus: /** @type {Genus} */ ('utrum') }),
     kod:         Object.freeze({ en: 'AID-kod', bf: 'AID-koden', fl: 'AID-koder', bfl: 'AID-koderna', genus: /** @type {Genus} */ ('utrum') }),
     namn:        Object.freeze({ en: 'etikettnamn', bf: 'etikettnamnet', fl: 'etikettnamn', bfl: 'etikettnamnen', genus: /** @type {Genus} */ ('neutrum') }),
@@ -74,8 +76,8 @@ function _ord(v, vad) {
 }
 
 /**
- * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus;
- * begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
+ * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus, och
+ * kan ha en kort form; begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
  * @param {Partial<Record<typeof TERM_BEGREPP[number], Partial<Begrepp>>> & { system?: string } | null} [egna]
  * @returns {Termer}
  */
@@ -93,6 +95,7 @@ function skapaTermer(egna) {
         ut[nyckel] = Object.freeze({
             en: _ord(b.en, `${nyckel}.en`), bf: _ord(b.bf, `${nyckel}.bf`),
             fl: _ord(b.fl, `${nyckel}.fl`), bfl: _ord(b.bfl, `${nyckel}.bfl`),
+            ...(b.kort != null ? { kort: _ord(b.kort, `${nyckel}.kort`) } : {}),
             genus: b.genus
         });
     }
@@ -162,13 +165,14 @@ function adjektiv(stam, b, { bestamd = false, plural = false } = {}) {
  *   termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerad AID-etikett"
  *   termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerade AID-etiketter"
  *   termFras(T.enhet, 'bf', { genitiv: true })                → "AID-etikettens"
+ *   termFras(T.enhet, 'kort')                                 → "AID" (obestämd form när kort form saknas)
  * @param {Begrepp} b
  * @param {Form} [form]
  * @param {{ adjektiv?: Adjektiv, genitiv?: boolean }} [val]
  */
 function termFras(b, form = 'en', { adjektiv: adj, genitiv: gen = false } = {}) {
-    if (!(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
-    let t = b[form];
+    if (form !== 'kort' && !(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
+    let t = form === 'kort' ? b.kort ?? b.en : b[form];
     if (adj) {
         const plural = form === 'fl' || form === 'bfl', bestamd = form === 'bf' || form === 'bfl';
         t = `${adjektiv(adj, b, { plural, bestamd })} ${t}`;
@@ -182,9 +186,10 @@ function ordForAntal(n, b) {
     return Number(n) === 1 ? b.en : b.fl;
 }
 
-// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv} och
-// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}").
-const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
+// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv},
+// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}") och
+// {begrepp.kort} (kolumnrubrikens korta form, utan adjektiv).
+const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|kort|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
 
 /**
  * Fyller en mall med termerna. Versal först i begreppets namn ger stor begynnelsebokstav. Klamrar som inte är ett
@@ -194,6 +199,7 @@ const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?
  *   "{enhet.art} {enhet.en:kvinnodominerad}"          → "en kvinnodominerad AID-etikett" (ett-ord: "ett kvinnodominerat yrke")
  *   "{enhet.bf.s} median"                             → "AID-etikettens median"
  *   "räknas som {enhet.adj:kvinnodominerad}"          → "räknas som kvinnodominerad" (ett-ord: "kvinnodominerat")
+ *   "{Enhet.kort} median högre (kr)"                  → "AID median högre (kr)"
  * @param {string} mall
  * @param {Termer} [termer]
  */
@@ -213,6 +219,9 @@ function fyllTermer(mall, termer = STANDARDTERMER) {
             } else if (form === 'adj') {
                 if (gen || !adj) return hel;
                 t = adjektiv(adj, b);
+            } else if (form === 'kort') {
+                if (adj) return hel;
+                t = termFras(b, 'kort', { genitiv: !!gen });
             } else {
                 t = termFras(b, form || 'en', { adjektiv: adj, genitiv: !!gen });
             }
@@ -4184,7 +4193,7 @@ const __mirrorHtmlText = (() => {
  * Verktygets egna texter (metodbilagans regler, förslagen i gruppdossiern) är skrivna som HTML. I Excel, utskriftens
  * listor och textkopior ska de stå som vanlig text. Taggarna tas bort tills inga finns kvar (en ersättning i ett svep
  * lämnar `<scr<b>ipt>` som `<script>`), och ett ensamt `<` som blir kvar tas bort. Avkodningen tar &amp; sist, så att
- * `&amp;lt;` blir `&lt;` och inte `<`.
+ * `&amp;lt;` blir `&lt;` och inte `<`. Här står också regeln för en cell som är ett tal (`arTal`).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -4201,10 +4210,22 @@ function htmlTillText(text) {
     return utanTaggar(text).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 }
 
-    return { utanTaggar, htmlTillText };
+/**
+ * Cellens text är ett tal med ev. enhet ("33 932 kr", "93,6 %", "46 (28/18)", "1 427 679 kr/år", "20 / 45"), eller ett
+ * intervall av två sådana ("0,9–3,8 %", och "−0,8 till 1,7 %" när ett av talen är negativt). Word-utkastet (docx.js),
+ * utskriften (60-utskrift.js) och Rapporttext (67-rapportunderlag.js) håller en sådan cell på en rad.
+ */
+const _TAL = String.raw`[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*`;
+const _AR_TAL = new RegExp(String.raw`^${_TAL}(?:\still\s+${_TAL})?(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$`);
+function arTal(text) {
+    return _AR_TAL.test(String(text ?? '').trim());
+}
+
+    return { utanTaggar, htmlTillText, arTal };
 })();
 const _utanTaggar = __mirrorHtmlText.utanTaggar;
 const _htmlTillText = __mirrorHtmlText.htmlTillText;
+const _cellArTal = __mirrorHtmlText.arTal;
 
 // ---- speglar src/lib/namn.js ----
 const __mirrorNamn = (() => {
@@ -6956,6 +6977,9 @@ const _ruSkalNot = __mirrorRapportunderlag.skalSammanstallningNot;
 
 // ---- speglar src/lib/docx.js ----
 const __mirrorDocx = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const arTal = __mirrorHtmlText.arTal;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -6967,6 +6991,7 @@ const __mirrorDocx = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
@@ -6984,26 +7009,107 @@ function xmlText(s) {
         .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-const _kor = d => `<w:r>${d.fet || d.kursiv ? `<w:rPr>${d.fet ? '<w:b/>' : ''}${d.kursiv ? '<w:i/>' : ''}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlText(d.text)}</w:t></w:r>`;
-const _stycke = (delar, stil) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(_kor).join('')}</w:p>`;
+/** En textkörning; `sz` (halva punkter) bara när texten ska ha en annan storlek än stilens. */
+const _kor = (d, sz) => {
+    const pr = (d.fet ? '<w:b/>' : '') + (d.kursiv ? '<w:i/>' : '') + (sz ? `<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>` : '');
+    return `<w:r>${pr ? `<w:rPr>${pr}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlText(d.text)}</w:t></w:r>`;
+};
+const _stycke = (delar, stil, sz) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(d => _kor(d, sz)).join('')}</w:p>`;
 const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
+
+// Teckenbredder i Calibri 10 pt, fet, i twips, avrundade uppåt i grupper; övriga gemener 108, versaler 128.
+/** @type {[string, number][]} */
+const _TECKENBREDD = [['iljI.,:;!|\' ', 55], ['frt-()', 72], ['sczJ/', 86], ['agkvxyåäeEFLSTZ0123456789', 101], ['mw%&', 163],
+    ['DGHNOQUÖ', 137], ['MW', 181]];
+// Tabellstilens cellmarginal till vänster och höger, och ovanför och under (twips). En tabell som inte ryms i stilens
+// 10 pt skrivs tätare: 9 pt och smalare cellmarginaler till vänster och höger (ADR-75).
+const CELLMARGINAL = 85, CELLMARGINAL_LODRAT = 57;
+const TAT = { skala: 0.9, cellmarginal: 57, sz: 18 };
+/** Ett ords ungefärliga bredd i twips i Calibri 10 pt, fet eller normal (normala bokstäver är omkring 3 % smalare, siffror lika). */
+function _ordbredd(ord, fet = true) {
+    let s = 0;
+    for (const ch of ord) {
+        const g = _TECKENBREDD.find(([tecken]) => tecken.includes(ch));
+        const b = g ? g[1] : ch !== ch.toLocaleLowerCase('sv') ? 128 : 108;
+        s += fet || /[\d\s.,]/.test(ch) ? b : b * 0.97;
+    }
+    return s;
+}
+const _celltext = c => (c.delar || []).map(d => d.text).join('');
+const _summa = v => v.reduce((s, x) => s + x, 0);
+/**
+ * Höjer varje kolumn mot sitt mål, upp till en gemensam nivå som väljs så att tabellen ryms i textytan. Ryms alla mål
+ * får varje kolumn sitt; annars når de smala kolumnerna sitt mål och de bredaste delar lika på det som är kvar.
+ */
+function _tillNiva(bredd, mal) {
+    const vidNiva = niva => bredd.map((x, k) => Math.max(x, Math.min(mal[k], niva)));
+    let lag = 0, hog = Math.max(...mal);
+    if (_summa(vidNiva(hog)) <= TEXTBREDD) return vidNiva(hog);
+    for (let i = 0; i < 40; i++) { const mitt = (lag + hog) / 2; if (_summa(vidNiva(mitt)) > TEXTBREDD) hog = mitt; else lag = mitt; }
+    return vidNiva(lag);
+}
+/**
+ * Kolumnbredderna efter innehållet (F5 i punkt 26), ungefär som en webbläsare fördelar en tabell. Först ryms det
+ * längsta ordet och det hela talet i varje datacell, så att ett namn inte bryts mitt i och ett belopp står på en rad;
+ * sedan rubrikernas längsta ord; sist hela texten. Ryms ett steg inte, delar de bredaste kolumnerna på det som fattas.
+ * Tabellen fyller textytan. `ryms` säger om datacellerna och rubrikernas ord rymdes.
+ * @returns {{ bredder: number[], ryms: boolean }}
+ */
+function _kolumnbredder(b, kolumner, { skala = 1, cellmarginal = CELLMARGINAL } = {}) {
+    const marginal = 2 * cellmarginal + 10;   // cellens marginaler och lite luft (uppskattningen ligger redan 2–6 % över)
+    // Rubrikraden är fet, dataraderna normala.
+    const matt = (rader, fet) => Array.from({ length: kolumner }, (_, k) => {
+        let ord = 0, hel = 0;
+        for (const r of rader) {
+            const text = r[k] ? _celltext(r[k]) : '';
+            for (const o of text.split(/\s+/)) ord = Math.max(ord, _ordbredd(o, fet));
+            if (!fet && arTal(text)) ord = Math.max(ord, _ordbredd(text, false));
+            hel = Math.max(hel, _ordbredd(text, fet));
+        }
+        return { ord: ord * skala + marginal, hel: hel * skala + marginal };
+    });
+    const data = matt(b.rader || [], false), rubrik = matt(b.rubrikrad ? [b.rubrikrad] : [], true);
+    const ordMal = data.map((m, k) => Math.max(m.ord, rubrik[k].ord));
+    let bredd = _tillNiva(Array(kolumner).fill(0), data.map(m => m.ord));
+    bredd = _tillNiva(bredd, ordMal);
+    // Hela texten: det som är kvar fördelas efter vad varje kolumn saknar, och det som är kvar sedan efter bredden.
+    const brist = data.map((m, k) => Math.max(0, Math.max(m.hel, rubrik[k].hel) - bredd[k]));
+    const kvar = TEXTBREDD - _summa(bredd);
+    if (kvar > 0 && _summa(brist)) bredd = bredd.map((x, k) => x + brist[k] * Math.min(1, kvar / _summa(brist)));
+    const rest = TEXTBREDD - _summa(bredd);
+    if (rest > 0) bredd = bredd.map(x => x + rest * x / _summa(bredd));
+    const hela = bredd.map(Math.floor);
+    hela[hela.indexOf(Math.max(...hela))] += TEXTBREDD - _summa(hela);
+    return { bredder: hela, ryms: _summa(ordMal) <= TEXTBREDD };
+}
+
+/** Cellmarginalerna i schemats ordning (top, left, bottom, right). */
+const _cellmarginaler = (lodrat, sidled) => '<w:tblCellMar>'
+    + [['top', lodrat], ['left', sidled], ['bottom', lodrat], ['right', sidled]].map(([s, w]) => `<w:${s} w:w="${w}" w:type="dxa"/>`).join('')
+    + '</w:tblCellMar>';
 
 function _tabell(b) {
     const alla = [...(b.rubrikrad ? [b.rubrikrad] : []), ...(b.rader || [])];
     const kolumner = Math.max(1, ...alla.map(r => r.length));
-    const bredd = Math.floor(TEXTBREDD / kolumner);
+    // Ryms inte cellernas ord och tal och rubrikernas ord i 10 pt, skrivs tabellen tätare.
+    const vanlig = _kolumnbredder(b, kolumner);
+    const tat = !vanlig.ryms;
+    const { bredder } = tat ? _kolumnbredder(b, kolumner, TAT) : vanlig;
+    const sz = tat ? TAT.sz : undefined;
     const rad = (celler, rubrik) => {
         const fyllda = [...celler, ...Array(kolumner - celler.length).fill({ delar: [] })];
-        return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map(c =>
-            `<w:tc><w:tcPr><w:tcW w:w="${bredd}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
-            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d))) + '</w:tc>').join('')}</w:tr>`;
+        return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map((c, k) =>
+            `<w:tc><w:tcPr><w:tcW w:w="${bredder[k]}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
+            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d)), undefined, sz) + '</w:tc>').join('')}</w:tr>`;
     };
     // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver (A9): Word räknar
     // annars om en procentbredd mot cellbredderna, och LibreOffice och Word kan rita tabellen olika.
     const look = b.rubrikrad ? 'w:val="04A0" w:firstRow="1"' : 'w:val="0480" w:firstRow="0"';
-    return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${bredd * kolumner}" w:type="dxa"/>`
+    // Det täta läget skriver alla fyra sidorna, topp och botten med stilens värden: Word nollar en sida som saknas.
+    const mar = tat ? _cellmarginaler(CELLMARGINAL_LODRAT, TAT.cellmarginal) : '';
+    return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${TEXTBREDD}" w:type="dxa"/>${mar}`
         + `<w:tblLook ${look} w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
-        + `<w:tblGrid>${Array(kolumner).fill(`<w:gridCol w:w="${bredd}"/>`).join('')}</w:tblGrid>`
+        + `<w:tblGrid>${bredder.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>`
         + (b.rubrikrad ? rad(b.rubrikrad, true) : '') + (b.rader || []).map(r => rad(r, false)).join('') + '</w:tbl>';
 }
 
@@ -7062,7 +7168,7 @@ function _stilar() {
         + '<w:style w:type="table" w:customStyle="1" w:styleId="Tabell"><w:name w:val="Tabell"/>'
         + '<w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:tblPr><w:tblBorders>'
         + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`).join('')
-        + '</w:tblBorders><w:tblCellMar><w:top w:w="57" w:type="dxa"/><w:left w:w="85" w:type="dxa"/><w:bottom w:w="57" w:type="dxa"/><w:right w:w="85" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>'
+        + '</w:tblBorders>' + _cellmarginaler(CELLMARGINAL_LODRAT, CELLMARGINAL) + '</w:tblPr></w:style>'
         + '</w:styles>';
 }
 

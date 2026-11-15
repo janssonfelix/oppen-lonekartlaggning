@@ -70,7 +70,7 @@ document.addEventListener('keydown', e => {
  * @param {Object} p - par-objekt från computeLikvardighetPairs
  */
 function _evidenceForLikvardighetPair(p) {
-    const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v);
     const fmtN = v => v.toLocaleString('sv-SE');
     const alderText = v => typeof v === 'number' && isFinite(v) ? svTal(v, 0) : '–';
     const sigStatus = p.gapCI
@@ -133,7 +133,7 @@ function _evidenceForLikvardighetPair(p) {
  * @param {string} _reference - 'stallningstagande' eller 'statistik' (f.n. ej använd i beviset)
  */
 function _evidenceForPrioItem(it, _reference) {
-    const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v);
     const fmtN = v => v.toLocaleString('sv-SE');
     const w = state.prioWeights;
     const wTotal = Math.max(1, w.avvikelse + w.volym + w.jamstalldhet);
@@ -180,7 +180,7 @@ function _evidenceForPrioItem(it, _reference) {
  * @param {Object} r - rad från EU-matris-aggregering
  */
 function _evidenceForEUMatrixRow(r) {
-    const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v);
     // Andelen kvinnor i AID-etiketten nationellt (kolumnen Kvinnor nationellt, som grundvyn gömmer).
     const skr = _skrKvinnoandel(r.yrke, { del: _skrDel() });
     const nationellt = { label: 'Andel kvinnor nationellt', value: skr ? svPct(skr.pct, 0) : '–',
@@ -284,7 +284,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
  * @param {Object} p - { kategori, bas, lons, polRow, statRefMedian, masked }
  */
 function _evidenceForRapportRow(p) {
-    const fmtKr = v => v == null ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v, '—');
     const n = (p.lons || []).length;
     const masked = !!p.masked;
     const med = masked || !n ? null : Stat.median(p.lons);
@@ -344,7 +344,7 @@ function _evidenceForRapportRow(p) {
  * @param {Object} p - { bas, kvLons, maLons, masked }
  */
 function _evidenceForPaygapRow(p) {
-    const fmtKr = v => v == null ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v, '—');
     const nKv = (p.kvLons || []).length;
     const nMa = (p.maLons || []).length;
     if (p.masked) {

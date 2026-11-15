@@ -35,6 +35,25 @@ function bibliotekCssForUtskrift() {
     return ut;
 }
 
+/**
+ * Avstavar webbläsaren svenska? Ett långt ord i en ruta smalare än ordet (.avstavningsprov i stilmallen): med avstavning
+ * bryts ordet och ryms, utan avstavning sticker det ut. Två ord prövas, ett med liten och ett med stor begynnelsebokstav:
+ * Firefox avstavar inte ord med stor bokstav, och rubrikerna börjar med en («Jämförelseetikett»). En miljö som inte
+ * mäter (bredderna 0) räknas som att den avstavar.
+ */
+function _utskriftAvstavar() {
+    return ['jämförelseetikettens', 'Kvinnodominerad'].every(ord => {
+        const prov = document.createElement('div');
+        prov.className = 'avstavningsprov';
+        prov.lang = 'sv';
+        prov.textContent = ord;
+        document.body.appendChild(prov);
+        const ja = prov.scrollWidth <= prov.clientWidth + 1;
+        prov.remove();
+        return ja;
+    });
+}
+
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
 async function _buildPrintReportExport() {
@@ -64,7 +83,17 @@ async function _buildPrintReportExport() {
                 const elD = document.getElementById(String(id));
                 if (diagramRitat(elD)) { try { imgs[nyckel] = await diagramTillBild(elD, { bredd: 1400, hojd, utanRubrik: true }); } catch (e) { rapporteraFel(`utskrift: ${id}`, e); } }
             }
-            const cloneTable = id => { const t = exportElement(id); return t ? _exportVisaAllaRader(t.cloneNode(true)).outerHTML : ''; };   // genom exportgrinden; hopfällda rader följer med
+            // Genom exportgrinden; hopfällda rader följer med. Skärmens egna kolumner (Detalj, Beräkning), knappar och
+            // infoikoner gör inget på papper och tar bredd från sidan. Rubrikens ombrytningsskydd håller bara ihop ordet
+            // med infoikonen på skärmen; på papper ska rubriken få avstavas som förut.
+            const cloneTable = id => {
+                const t = exportElement(id);
+                if (!t) return '';
+                const klon = _exportUtanSkarmkolumner(_exportVisaAllaRader(t.cloneNode(true)));
+                klon.querySelectorAll('button, .info-tip').forEach(b => b.remove());
+                klon.querySelectorAll('thead .ingen-radbrytning').forEach(s => s.replaceWith(...s.childNodes));
+                return klon.outerHTML;
+            };
         const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en}</h2><p>${termStor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
         const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
             const bildSektion = (rubrik, src, alt) => (src ? `<section class="page-break"><h2>${rubrik}</h2><img src="${src}" alt="${alt}"></section>` : '');
@@ -109,6 +138,10 @@ async function _buildPrintReportExport() {
         const root = /** @type {HTMLElement} */ (document.getElementById('print-report'));
         root.innerHTML = _kSanktStycke() + rmTillHtml(modell, { utskrift: true, bilder }) + kStampelRad + bilagor;
         tillampaDataStil(root);   // staplarna i de klonade tabellerna bär måttet som data-stil-*; style-attribut i markeringen stoppas av CSP:n
+        // Avstavar inte webbläsaren svenska, får rubriker och textceller brytas var som helst (stilmallen), men inte talen.
+        const utanAvstavning = !_utskriftAvstavar();
+        root.classList.toggle('pr-utan-avstavning', utanAvstavning);
+        if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (_cellArTal(td.textContent)) td.classList.add('pr-tal'); });
 
         document.body.classList.add('print-mode');
         hideLoading();

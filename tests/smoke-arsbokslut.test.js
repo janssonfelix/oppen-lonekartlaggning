@@ -166,7 +166,7 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         expect(rubriker.filter(r => /^Median/.test(r)).length).toBeGreaterThan(0);
         const rader = [...tab.querySelectorAll('tbody tr')];
         expect(rader.length).toBe(cfg.arsbokslut.basIntervall.length);
-        expect(rader[0].textContent).toContain('+500 kr');
+        expect(rader[0].textContent).toContain('+500\u00a0kr');
         const fig = w.document.getElementById('chart-arsjamforelse-bas')._figur;
         expect(fig).toBeTruthy();
         expect(fig.lager[1].serie).toBe(String(cfg.arsbokslut.ar));
@@ -198,7 +198,7 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         expect(tab.kolumner[0].rubrik).toBe('BAS-intervall');
         expect(tab.kolumner.map(c => c.rubrik)).toContain('Antal');
         expect(tab.rader.length).toBe(cfg.arsbokslut.basIntervall.length);
-        expect(JSON.stringify(tab.rader[0])).toContain('+300 kr');
+        expect(JSON.stringify(tab.rader[0])).toContain('+300\u00a0kr');
         for (const s of SENT_SMA) expect(JSON.stringify(avsnitt)).not.toContain(String(s));
     });
 });
@@ -239,7 +239,7 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
         const celler = [...rad.cells].map(c => c.textContent.trim().replace(/\s+/g, ' '));
         expect(celler.at(-2)).toBe('50 %');
         const nu = w.eval('byggArsbokslutNu()').basIntervall[0].spridning;
-        expect(celler.at(-1)).toBe(w.eval('svPct')(nu * 100, 0));
+        expect(celler.at(-1)).toBe(w.eval('svPct')(nu * 100, 0).replace(/\s+/g, ' '));
         const grupp = [...w.document.querySelectorAll('#arsjamforelse table')].find(t => /^AID-etikett/.test(t.querySelector('th').textContent));
         expect(grupp).toBeTruthy();
         expect([...grupp.querySelectorAll('thead th')].map(th => th.textContent.trim()).slice(-2)).toEqual([`Lönespridning ${cfg.arsbokslut.ar}`, `Lönespridning ${cfg.arsbokslut.ar + 1}`]);
@@ -255,7 +255,7 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
         const tab = avsnitt.delar.slice(i).find(p => p.typ === 'tabell');
         expect(tab.kolumner.map(c => c.rubrik)).toEqual(['BAS-intervall', 'Antal', 'P10', 'Median', 'P90', 'Lönespridning']);
         const s1 = tab.rader.find(r => r[0] === `BAS ${STORA[0]}`);
-        expect(w.eval('rmCell')(s1[5], 'text')).toMatch(/^– till \d+ %$/);
+        expect(w.eval('rmCell')(s1[5], 'text')).toMatch(/^– till \d+\s%$/);
         // Panelen visar streck för förra året.
         w.__renderTabContent('arbetet');
         const rad = [...w.document.querySelectorAll('#arsjamforelse-bas tbody tr')].find(tr => tr.cells[0].textContent.trim() === `BAS ${STORA[0]}`);

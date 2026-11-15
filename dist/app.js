@@ -621,8 +621,15 @@ function svTal(v, dec = 0) {
     const f = 10 ** dec, r = Math.round(v * f) / f;
     return _svNf.get(dec).format(r === 0 ? 0 : r);   // ingen "−0,0"
 }
-/** Som svTal, med " %" efter. */
-function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+// Mellan talet och enheten står ett hårt mellanslag (U+00A0), som Intl redan skriver mellan tusentalen: då bryts
+// «36 262 kr» och «73 %» aldrig isär i en smal kolumn, på skärmen eller i utskriften. Excel-exporten gör det hårda
+// mellanslaget till ett vanligt (22-exporthjalpare.js), liksom CSV och urklipp (_tableCellText i 12-tillstand.js), så
+// där står talen som förut. Word-utkastet gör om allt blanktecken till vanligt mellanslag (62-word-utkast.js); där
+// hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så att talet ryms på en rad.
+/** Som svTal, med " %" efter (hårt mellanslag). */
+function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+/** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal. */
+function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(Math.round(v), 0)} kr` : tom; }
 
 // ---- Underlagets storlek i en tabell ----
 // En tabell med ett lönemått för en grupp visar gruppens antal (som egen kolumn); en modelltabell, där alla rader
@@ -2497,7 +2504,8 @@ const __mirrorTermer = (() => {
  * Verktyget använder AID:s egna ord: AID-etikett, AID-kod, etikettnamn och huvudområde. Orden står bara här, som
  * variabler, så att en annan uppsättning (till exempel för en annan bransch) byts på ett ställe. Varje begrepp har
  * de ordformer svenskan kräver och sitt genus, så att artikel och adjektiv böjs rätt också för ett ett-ord:
- * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke".
+ * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke". Ett begrepp kan ha en kort form för en
+ * kolumnrubrik där hela termen inte ryms (ADR-75); utan den används obestämd form.
  *
  * I appen: `T` är den gällande uppsättningen (`src/app/09-termer.js`), `${T.enhet.fl}` i stället för ordet, och
  * fast text skrivs som mall: `{enhet.en}`, se `fyllTermer`. Vakten i `tests/termer.test.js` håller orden borta
@@ -2507,10 +2515,11 @@ const __mirrorTermer = (() => {
  */
 
 /** @typedef {'utrum'|'neutrum'} Genus */
-/** @typedef {'en'|'bf'|'fl'|'bfl'} Form */
+/** @typedef {'en'|'bf'|'fl'|'bfl'|'kort'} Form */
 /**
- * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl) och genus.
- * @typedef {{ en: string, bf: string, fl: string, bfl: string, genus: Genus }} Begrepp
+ * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl), genus och en valfri kort
+ * form (kort) för kolumnrubriker där hela termen inte ryms. Exporternas etiketter behåller hela termen (ADR-75).
+ * @typedef {{ en: string, bf: string, fl: string, bfl: string, kort?: string, genus: Genus }} Begrepp
  */
 /**
  * En uppsättning termer. `enhet` är det verktyget grupperar på, `jamforelse` den enhet ett kvinnodominerat arbete
@@ -2522,14 +2531,14 @@ const __mirrorTermer = (() => {
 
 /** Begreppen, i den ordning de står i tabellen. */
 const TERM_BEGREPP = /** @type {const} */ (['enhet', 'jamforelse', 'kod', 'namn', 'huvudomrade', 'niva']);
-/** Ordformerna per begrepp. */
+/** Ordformerna per begrepp. Den korta formen är valfri och står inte här; vakten prövar inte "AID" ensamt. */
 const TERM_FORMER = /** @type {const} */ (['en', 'bf', 'fl', 'bfl']);
 /** Högsta längd för en ordform. */
 const TERM_MAX = 40;
 
 /** Standarduppsättningen. @type {Termer} */
 const STANDARDTERMER = Object.freeze({
-    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', genus: /** @type {Genus} */ ('utrum') }),
+    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', kort: 'AID', genus: /** @type {Genus} */ ('utrum') }),
     jamforelse:  Object.freeze({ en: 'jämförelseetikett', bf: 'jämförelseetiketten', fl: 'jämförelseetiketter', bfl: 'jämförelseetiketterna', genus: /** @type {Genus} */ ('utrum') }),
     kod:         Object.freeze({ en: 'AID-kod', bf: 'AID-koden', fl: 'AID-koder', bfl: 'AID-koderna', genus: /** @type {Genus} */ ('utrum') }),
     namn:        Object.freeze({ en: 'etikettnamn', bf: 'etikettnamnet', fl: 'etikettnamn', bfl: 'etikettnamnen', genus: /** @type {Genus} */ ('neutrum') }),
@@ -2551,8 +2560,8 @@ function _ord(v, vad) {
 }
 
 /**
- * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus;
- * begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
+ * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus, och
+ * kan ha en kort form; begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
  * @param {Partial<Record<typeof TERM_BEGREPP[number], Partial<Begrepp>>> & { system?: string } | null} [egna]
  * @returns {Termer}
  */
@@ -2570,6 +2579,7 @@ function skapaTermer(egna) {
         ut[nyckel] = Object.freeze({
             en: _ord(b.en, `${nyckel}.en`), bf: _ord(b.bf, `${nyckel}.bf`),
             fl: _ord(b.fl, `${nyckel}.fl`), bfl: _ord(b.bfl, `${nyckel}.bfl`),
+            ...(b.kort != null ? { kort: _ord(b.kort, `${nyckel}.kort`) } : {}),
             genus: b.genus
         });
     }
@@ -2639,13 +2649,14 @@ function adjektiv(stam, b, { bestamd = false, plural = false } = {}) {
  *   termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerad AID-etikett"
  *   termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerade AID-etiketter"
  *   termFras(T.enhet, 'bf', { genitiv: true })                → "AID-etikettens"
+ *   termFras(T.enhet, 'kort')                                 → "AID" (obestämd form när kort form saknas)
  * @param {Begrepp} b
  * @param {Form} [form]
  * @param {{ adjektiv?: Adjektiv, genitiv?: boolean }} [val]
  */
 function termFras(b, form = 'en', { adjektiv: adj, genitiv: gen = false } = {}) {
-    if (!(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
-    let t = b[form];
+    if (form !== 'kort' && !(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
+    let t = form === 'kort' ? b.kort ?? b.en : b[form];
     if (adj) {
         const plural = form === 'fl' || form === 'bfl', bestamd = form === 'bf' || form === 'bfl';
         t = `${adjektiv(adj, b, { plural, bestamd })} ${t}`;
@@ -2659,9 +2670,10 @@ function ordForAntal(n, b) {
     return Number(n) === 1 ? b.en : b.fl;
 }
 
-// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv} och
-// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}").
-const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
+// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv},
+// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}") och
+// {begrepp.kort} (kolumnrubrikens korta form, utan adjektiv).
+const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|kort|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
 
 /**
  * Fyller en mall med termerna. Versal först i begreppets namn ger stor begynnelsebokstav. Klamrar som inte är ett
@@ -2671,6 +2683,7 @@ const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?
  *   "{enhet.art} {enhet.en:kvinnodominerad}"          → "en kvinnodominerad AID-etikett" (ett-ord: "ett kvinnodominerat yrke")
  *   "{enhet.bf.s} median"                             → "AID-etikettens median"
  *   "räknas som {enhet.adj:kvinnodominerad}"          → "räknas som kvinnodominerad" (ett-ord: "kvinnodominerat")
+ *   "{Enhet.kort} median högre (kr)"                  → "AID median högre (kr)"
  * @param {string} mall
  * @param {Termer} [termer]
  */
@@ -2690,6 +2703,9 @@ function fyllTermer(mall, termer = STANDARDTERMER) {
             } else if (form === 'adj') {
                 if (gen || !adj) return hel;
                 t = adjektiv(adj, b);
+            } else if (form === 'kort') {
+                if (adj) return hel;
+                t = termFras(b, 'kort', { genitiv: !!gen });
             } else {
                 t = termFras(b, form || 'en', { adjektiv: adj, genitiv: !!gen });
             }
@@ -6661,7 +6677,7 @@ const __mirrorHtmlText = (() => {
  * Verktygets egna texter (metodbilagans regler, förslagen i gruppdossiern) är skrivna som HTML. I Excel, utskriftens
  * listor och textkopior ska de stå som vanlig text. Taggarna tas bort tills inga finns kvar (en ersättning i ett svep
  * lämnar `<scr<b>ipt>` som `<script>`), och ett ensamt `<` som blir kvar tas bort. Avkodningen tar &amp; sist, så att
- * `&amp;lt;` blir `&lt;` och inte `<`.
+ * `&amp;lt;` blir `&lt;` och inte `<`. Här står också regeln för en cell som är ett tal (`arTal`).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -6678,10 +6694,22 @@ function htmlTillText(text) {
     return utanTaggar(text).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 }
 
-    return { utanTaggar, htmlTillText };
+/**
+ * Cellens text är ett tal med ev. enhet ("33 932 kr", "93,6 %", "46 (28/18)", "1 427 679 kr/år", "20 / 45"), eller ett
+ * intervall av två sådana ("0,9–3,8 %", och "−0,8 till 1,7 %" när ett av talen är negativt). Word-utkastet (docx.js),
+ * utskriften (60-utskrift.js) och Rapporttext (67-rapportunderlag.js) håller en sådan cell på en rad.
+ */
+const _TAL = String.raw`[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*`;
+const _AR_TAL = new RegExp(String.raw`^${_TAL}(?:\still\s+${_TAL})?(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$`);
+function arTal(text) {
+    return _AR_TAL.test(String(text ?? '').trim());
+}
+
+    return { utanTaggar, htmlTillText, arTal };
 })();
 const _utanTaggar = __mirrorHtmlText.utanTaggar;
 const _htmlTillText = __mirrorHtmlText.htmlTillText;
+const _cellArTal = __mirrorHtmlText.arTal;
 
 // ---- speglar src/lib/namn.js ----
 const __mirrorNamn = (() => {
@@ -9433,6 +9461,9 @@ const _ruSkalNot = __mirrorRapportunderlag.skalSammanstallningNot;
 
 // ---- speglar src/lib/docx.js ----
 const __mirrorDocx = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const arTal = __mirrorHtmlText.arTal;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -9444,6 +9475,7 @@ const __mirrorDocx = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
@@ -9461,26 +9493,107 @@ function xmlText(s) {
         .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-const _kor = d => `<w:r>${d.fet || d.kursiv ? `<w:rPr>${d.fet ? '<w:b/>' : ''}${d.kursiv ? '<w:i/>' : ''}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlText(d.text)}</w:t></w:r>`;
-const _stycke = (delar, stil) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(_kor).join('')}</w:p>`;
+/** En textkörning; `sz` (halva punkter) bara när texten ska ha en annan storlek än stilens. */
+const _kor = (d, sz) => {
+    const pr = (d.fet ? '<w:b/>' : '') + (d.kursiv ? '<w:i/>' : '') + (sz ? `<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>` : '');
+    return `<w:r>${pr ? `<w:rPr>${pr}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlText(d.text)}</w:t></w:r>`;
+};
+const _stycke = (delar, stil, sz) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(d => _kor(d, sz)).join('')}</w:p>`;
 const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
+
+// Teckenbredder i Calibri 10 pt, fet, i twips, avrundade uppåt i grupper; övriga gemener 108, versaler 128.
+/** @type {[string, number][]} */
+const _TECKENBREDD = [['iljI.,:;!|\' ', 55], ['frt-()', 72], ['sczJ/', 86], ['agkvxyåäeEFLSTZ0123456789', 101], ['mw%&', 163],
+    ['DGHNOQUÖ', 137], ['MW', 181]];
+// Tabellstilens cellmarginal till vänster och höger, och ovanför och under (twips). En tabell som inte ryms i stilens
+// 10 pt skrivs tätare: 9 pt och smalare cellmarginaler till vänster och höger (ADR-75).
+const CELLMARGINAL = 85, CELLMARGINAL_LODRAT = 57;
+const TAT = { skala: 0.9, cellmarginal: 57, sz: 18 };
+/** Ett ords ungefärliga bredd i twips i Calibri 10 pt, fet eller normal (normala bokstäver är omkring 3 % smalare, siffror lika). */
+function _ordbredd(ord, fet = true) {
+    let s = 0;
+    for (const ch of ord) {
+        const g = _TECKENBREDD.find(([tecken]) => tecken.includes(ch));
+        const b = g ? g[1] : ch !== ch.toLocaleLowerCase('sv') ? 128 : 108;
+        s += fet || /[\d\s.,]/.test(ch) ? b : b * 0.97;
+    }
+    return s;
+}
+const _celltext = c => (c.delar || []).map(d => d.text).join('');
+const _summa = v => v.reduce((s, x) => s + x, 0);
+/**
+ * Höjer varje kolumn mot sitt mål, upp till en gemensam nivå som väljs så att tabellen ryms i textytan. Ryms alla mål
+ * får varje kolumn sitt; annars når de smala kolumnerna sitt mål och de bredaste delar lika på det som är kvar.
+ */
+function _tillNiva(bredd, mal) {
+    const vidNiva = niva => bredd.map((x, k) => Math.max(x, Math.min(mal[k], niva)));
+    let lag = 0, hog = Math.max(...mal);
+    if (_summa(vidNiva(hog)) <= TEXTBREDD) return vidNiva(hog);
+    for (let i = 0; i < 40; i++) { const mitt = (lag + hog) / 2; if (_summa(vidNiva(mitt)) > TEXTBREDD) hog = mitt; else lag = mitt; }
+    return vidNiva(lag);
+}
+/**
+ * Kolumnbredderna efter innehållet (F5 i punkt 26), ungefär som en webbläsare fördelar en tabell. Först ryms det
+ * längsta ordet och det hela talet i varje datacell, så att ett namn inte bryts mitt i och ett belopp står på en rad;
+ * sedan rubrikernas längsta ord; sist hela texten. Ryms ett steg inte, delar de bredaste kolumnerna på det som fattas.
+ * Tabellen fyller textytan. `ryms` säger om datacellerna och rubrikernas ord rymdes.
+ * @returns {{ bredder: number[], ryms: boolean }}
+ */
+function _kolumnbredder(b, kolumner, { skala = 1, cellmarginal = CELLMARGINAL } = {}) {
+    const marginal = 2 * cellmarginal + 10;   // cellens marginaler och lite luft (uppskattningen ligger redan 2–6 % över)
+    // Rubrikraden är fet, dataraderna normala.
+    const matt = (rader, fet) => Array.from({ length: kolumner }, (_, k) => {
+        let ord = 0, hel = 0;
+        for (const r of rader) {
+            const text = r[k] ? _celltext(r[k]) : '';
+            for (const o of text.split(/\s+/)) ord = Math.max(ord, _ordbredd(o, fet));
+            if (!fet && arTal(text)) ord = Math.max(ord, _ordbredd(text, false));
+            hel = Math.max(hel, _ordbredd(text, fet));
+        }
+        return { ord: ord * skala + marginal, hel: hel * skala + marginal };
+    });
+    const data = matt(b.rader || [], false), rubrik = matt(b.rubrikrad ? [b.rubrikrad] : [], true);
+    const ordMal = data.map((m, k) => Math.max(m.ord, rubrik[k].ord));
+    let bredd = _tillNiva(Array(kolumner).fill(0), data.map(m => m.ord));
+    bredd = _tillNiva(bredd, ordMal);
+    // Hela texten: det som är kvar fördelas efter vad varje kolumn saknar, och det som är kvar sedan efter bredden.
+    const brist = data.map((m, k) => Math.max(0, Math.max(m.hel, rubrik[k].hel) - bredd[k]));
+    const kvar = TEXTBREDD - _summa(bredd);
+    if (kvar > 0 && _summa(brist)) bredd = bredd.map((x, k) => x + brist[k] * Math.min(1, kvar / _summa(brist)));
+    const rest = TEXTBREDD - _summa(bredd);
+    if (rest > 0) bredd = bredd.map(x => x + rest * x / _summa(bredd));
+    const hela = bredd.map(Math.floor);
+    hela[hela.indexOf(Math.max(...hela))] += TEXTBREDD - _summa(hela);
+    return { bredder: hela, ryms: _summa(ordMal) <= TEXTBREDD };
+}
+
+/** Cellmarginalerna i schemats ordning (top, left, bottom, right). */
+const _cellmarginaler = (lodrat, sidled) => '<w:tblCellMar>'
+    + [['top', lodrat], ['left', sidled], ['bottom', lodrat], ['right', sidled]].map(([s, w]) => `<w:${s} w:w="${w}" w:type="dxa"/>`).join('')
+    + '</w:tblCellMar>';
 
 function _tabell(b) {
     const alla = [...(b.rubrikrad ? [b.rubrikrad] : []), ...(b.rader || [])];
     const kolumner = Math.max(1, ...alla.map(r => r.length));
-    const bredd = Math.floor(TEXTBREDD / kolumner);
+    // Ryms inte cellernas ord och tal och rubrikernas ord i 10 pt, skrivs tabellen tätare.
+    const vanlig = _kolumnbredder(b, kolumner);
+    const tat = !vanlig.ryms;
+    const { bredder } = tat ? _kolumnbredder(b, kolumner, TAT) : vanlig;
+    const sz = tat ? TAT.sz : undefined;
     const rad = (celler, rubrik) => {
         const fyllda = [...celler, ...Array(kolumner - celler.length).fill({ delar: [] })];
-        return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map(c =>
-            `<w:tc><w:tcPr><w:tcW w:w="${bredd}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
-            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d))) + '</w:tc>').join('')}</w:tr>`;
+        return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map((c, k) =>
+            `<w:tc><w:tcPr><w:tcW w:w="${bredder[k]}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
+            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d)), undefined, sz) + '</w:tc>').join('')}</w:tr>`;
     };
     // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver (A9): Word räknar
     // annars om en procentbredd mot cellbredderna, och LibreOffice och Word kan rita tabellen olika.
     const look = b.rubrikrad ? 'w:val="04A0" w:firstRow="1"' : 'w:val="0480" w:firstRow="0"';
-    return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${bredd * kolumner}" w:type="dxa"/>`
+    // Det täta läget skriver alla fyra sidorna, topp och botten med stilens värden: Word nollar en sida som saknas.
+    const mar = tat ? _cellmarginaler(CELLMARGINAL_LODRAT, TAT.cellmarginal) : '';
+    return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${TEXTBREDD}" w:type="dxa"/>${mar}`
         + `<w:tblLook ${look} w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
-        + `<w:tblGrid>${Array(kolumner).fill(`<w:gridCol w:w="${bredd}"/>`).join('')}</w:tblGrid>`
+        + `<w:tblGrid>${bredder.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>`
         + (b.rubrikrad ? rad(b.rubrikrad, true) : '') + (b.rader || []).map(r => rad(r, false)).join('') + '</w:tbl>';
 }
 
@@ -9539,7 +9652,7 @@ function _stilar() {
         + '<w:style w:type="table" w:customStyle="1" w:styleId="Tabell"><w:name w:val="Tabell"/>'
         + '<w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:tblPr><w:tblBorders>'
         + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`).join('')
-        + '</w:tblBorders><w:tblCellMar><w:top w:w="57" w:type="dxa"/><w:left w:w="85" w:type="dxa"/><w:bottom w:w="57" w:type="dxa"/><w:right w:w="85" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>'
+        + '</w:tblBorders>' + _cellmarginaler(CELLMARGINAL_LODRAT, CELLMARGINAL) + '</w:tblPr></w:style>'
         + '</w:styles>';
 }
 
@@ -17431,7 +17544,7 @@ function renderRealityCheck() {
     const p10 = Stat.quantile(lons, 0.10);
     const p50 = Stat.median(lons);
     const p90 = Stat.quantile(lons, 0.90);
-    const fmtK = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtK = v => svKr(v);
     let lonStatus, lonMsg;
     if (p50 >= 25000 && p50 <= 60000) {
         lonStatus = 'ok';
@@ -17809,7 +17922,7 @@ function _fkCellHtml(cell) {
     return `<td class="fk-fel">${ikon('statusVarning', 14)} <span class="fk-varde">${esc(cell.text)}</span><span class="fk-skal">${esc(cell.fel)}</span></td>`;
 }
 const _fkLista = (rader) => `<ul class="fk-lista">${rader.map(r => `<li>${r}</li>`).join('')}</ul>`;
-const _fkKr = v => (typeof v === 'number' ? `${svTal(v, 0)} kr` : '–');
+const _fkKr = v => svKr(v);
 
 /** Ritar avsnittet Förhandskontroll av lönefilen ur state.forhandskontroll (dolt när den saknas). */
 function renderForhandskontroll() {
@@ -19351,6 +19464,14 @@ function _methodAppendixData() {
         ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.']
     ];
 }
+/**
+ * Ett bladnamn som Excel godtar: högst 31 tecken och inga av tecknen : \ / ? * [ ]. Ett namn som byggs av en term kan
+ * bli för långt eller få ett sådant tecken (termerna får ha 40 tecken); då används reservnamnet, som är fast text.
+ * @param {string} namn @param {string} reserv
+ */
+function _excelBladnamn(namn, reserv) {
+    return namn.length <= 31 && namn.trim() && !/[:\\/?*[\]]/.test(namn) ? namn : reserv;
+}
 // Lägger till ett "Metod & parametrar"-blad sist i en XLSX-arbetsbok.
 // `undantag`: exporten hör till ett dokumenterat undantag från minsta gruppstorlek och säger det.
 // `extra`: rader [rubrik, text] som bara gäller den här arbetsboken (ett blads mått och regler); läggs sist.
@@ -19369,7 +19490,9 @@ function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
         rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', _kUndantagNot(undantag)]);
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{ wch: 32 }, { wch: 88 }];
+    // Kolumn A så bred som den längsta etiketten (rubriken på rad 1 räknas inte), högst 70 tecken (F6 i punkt 26).
+    const etikett = Math.max(0, ...rows.slice(1).map(r => String(r[0] ?? '').length));
+    ws['!cols'] = [{ wch: Math.min(70, etikett + 2) }, { wch: 88 }];
     try { XLSX.utils.book_append_sheet(wb, ws, 'Metod & parametrar'); } catch (_e) { /* dubblettnamn: hoppa */ }
 }
 // ---- Excel-export-hjälpare: rensar HTML-tabell för läsbara Excel-celler ----
@@ -19412,12 +19535,7 @@ function __cloneAndCleanTableForExportExport(tableId) {
     _exportText(clone);
     _exportVisaAllaRader(clone);
 
-    // Identifiera kolumnindex att skippa
-    const skipCols = [];
     const ths = /** @type {HTMLElement} */ (clone).querySelectorAll('thead th');
-    ths.forEach((th, i) => {
-        if (th.hasAttribute('data-export-skip')) skipCols.push(i);
-    });
 
     // Rensa header-celler
     ths.forEach(th => {
@@ -19459,26 +19577,35 @@ function __cloneAndCleanTableForExportExport(tableId) {
         tr.querySelectorAll('td, th').forEach(td => _exportMarkCell(td));
     });
 
-    // Skippa kolumner via DOM-manipulation. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan
-    // täcker flera, så en rad med en sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median").
-    if (skipCols.length) {
-        ['thead tr', 'tbody tr', 'tfoot tr'].forEach(sel => {
-            /** @type {HTMLElement} */ (clone).querySelectorAll(sel).forEach(tr => {
-                let kol = 0;
-                [...tr.children].forEach(cell => {
-                    const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '', 10) || 1);
-                    const start = kol, slut = kol + span - 1;
-                    kol += span;
-                    const traffar = skipCols.filter(i => i >= start && i <= slut).length;
-                    if (!traffar) return;
-                    if (traffar >= span) cell.remove();
-                    else cell.setAttribute('colspan', String(span - traffar));
-                });
+    return _exportUtanSkarmkolumner(clone);
+}
+
+/**
+ * Kolumnerna som bara hör till skärmen (rubrik med `data-export-skip`: Detalj, Beräkning) tas bort ur en kopia av
+ * tabellen. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan täcker flera, så en rad med en
+ * sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median"). Görs på en kopia, aldrig på skärmens tabell.
+ */
+function _exportUtanSkarmkolumner(klon) {
+    const skipCols = [];
+    klon.querySelectorAll('thead th').forEach((th, i) => {
+        if (th.hasAttribute('data-export-skip')) skipCols.push(i);
+    });
+    if (!skipCols.length) return klon;
+    ['thead tr', 'tbody tr', 'tfoot tr'].forEach(sel => {
+        klon.querySelectorAll(sel).forEach(tr => {
+            let kol = 0;
+            [...tr.children].forEach(cell => {
+                const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '', 10) || 1);
+                const start = kol, slut = kol + span - 1;
+                kol += span;
+                const traffar = skipCols.filter(i => i >= start && i <= slut).length;
+                if (!traffar) return;
+                if (traffar >= span) cell.remove();
+                else cell.setAttribute('colspan', String(span - traffar));
             });
         });
-    }
-
-    return clone;
+    });
+    return klon;
 }
 
 /**
@@ -19984,7 +20111,7 @@ function tomFlikarUtom(utom = new Set()) {
 // Bladlistan räknas som exporten: i exportläget (ADR-51), så att beskedet och arbetsboken får samma blad.
 function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
 /** Bladet med översikten per AID-huvudområde (ADR-33); namnet kommer ur termerna (ADR-74). */
-const EXCEL_BLAD_HUVUDOMRADEN = termStor(T.huvudomrade.fl).slice(0, 31);
+const EXCEL_BLAD_HUVUDOMRADEN = _excelBladnamn(termStor(T.huvudomrade.fl), 'Områden');
 
 function _excelAlltBladExport() {
     // Bladet Underlagets kvalitet finns när bedomningUnderlag() ger något, alltså när det finns rader; listan räknar
@@ -20430,7 +20557,7 @@ function _exportJPAProtocolExport() {
     ];
     yrkenSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
     _applyColumnNumFormats(yrkenSheet, SV_NUM_FORMATS);
-    XLSX.utils.book_append_sheet(wb, yrkenSheet, `2. Lika arbete (${T.enhet.fl})`.slice(0, 31));
+    XLSX.utils.book_append_sheet(wb, yrkenSheet, _excelBladnamn(`2. Lika arbete (${T.system})`, '2. Lika arbete'));
 
     // === Sheet 3: BAS-intervall med säkerställd oförklarad skillnad på minst 3 % (likvärdigt arbete) ===
     const basHeaderRow = [
@@ -20941,7 +21068,7 @@ document.addEventListener('keydown', e => {
  * @param {Object} p - par-objekt från computeLikvardighetPairs
  */
 function _evidenceForLikvardighetPair(p) {
-    const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v);
     const fmtN = v => v.toLocaleString('sv-SE');
     const alderText = v => typeof v === 'number' && isFinite(v) ? svTal(v, 0) : '–';
     const sigStatus = p.gapCI
@@ -21004,7 +21131,7 @@ function _evidenceForLikvardighetPair(p) {
  * @param {string} _reference - 'stallningstagande' eller 'statistik' (f.n. ej använd i beviset)
  */
 function _evidenceForPrioItem(it, _reference) {
-    const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v);
     const fmtN = v => v.toLocaleString('sv-SE');
     const w = state.prioWeights;
     const wTotal = Math.max(1, w.avvikelse + w.volym + w.jamstalldhet);
@@ -21051,7 +21178,7 @@ function _evidenceForPrioItem(it, _reference) {
  * @param {Object} r - rad från EU-matris-aggregering
  */
 function _evidenceForEUMatrixRow(r) {
-    const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v);
     // Andelen kvinnor i AID-etiketten nationellt (kolumnen Kvinnor nationellt, som grundvyn gömmer).
     const skr = _skrKvinnoandel(r.yrke, { del: _skrDel() });
     const nationellt = { label: 'Andel kvinnor nationellt', value: skr ? svPct(skr.pct, 0) : '–',
@@ -21155,7 +21282,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
  * @param {Object} p - { kategori, bas, lons, polRow, statRefMedian, masked }
  */
 function _evidenceForRapportRow(p) {
-    const fmtKr = v => v == null ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v, '—');
     const n = (p.lons || []).length;
     const masked = !!p.masked;
     const med = masked || !n ? null : Stat.median(p.lons);
@@ -21215,7 +21342,7 @@ function _evidenceForRapportRow(p) {
  * @param {Object} p - { bas, kvLons, maLons, masked }
  */
 function _evidenceForPaygapRow(p) {
-    const fmtKr = v => v == null ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v, '—');
     const nKv = (p.kvLons || []).length;
     const nMa = (p.maLons || []).length;
     if (p.masked) {
@@ -23570,8 +23697,8 @@ function _lagreKravHtml(result) {
             <th>BAS-steg</th><th>Skillnad (kr)</th><th>Skillnad (%)</th><th>95 % KI</th></tr></thead><tbody>${par.map(p => `<tr>
             <td>${esc(p.kvLabel)}</td><td>${esc(p.kvBas)}</td><td data-sort-value="${p.kvMedian}">${fmt.format(p.kvMedian)}</td>
             <td>${esc(p.maLabel)}</td><td>${esc(p.maBas)}</td><td data-sort-value="${p.maMedian}">${fmt.format(p.maMedian)}</td>
-            <td>${p.basSteg}</td><td data-sort-value="${p.gapKr}">${fmt.format(p.gapKr)}</td><td data-sort-value="${p.gapPct}">${pct(p.gapPct)} %</td>
-            <td>${p.gapCI ? `${fmt.format(p.gapCI.lo)}–${fmt.format(p.gapCI.hi)} kr` : '–'}</td></tr>`).join('')}</tbody></table></div>`;
+            <td>${p.basSteg}</td><td data-sort-value="${p.gapKr}">${fmt.format(p.gapKr)}</td><td data-sort-value="${p.gapPct}">${pct(p.gapPct)}\u00a0%</td>
+            <td>${p.gapCI ? `${fmt.format(p.gapCI.lo)}–${fmt.format(p.gapCI.hi)}\u00a0kr` : '–'}</td></tr>`).join('')}</tbody></table></div>`;
     return `<section id="likvardighet-lagre-krav" class="card marg-t-18">
         <h3 class="fs-lg">Lägre krav, högre lön</h3>
         <p class="text-dampad-sm">${termText('{Enhet.fl:kvinnodominerad} som har lägre medianlön än {enhet.art} av organisationens {enhet.fl} i lägre BAS.')} BAS används som mått på krav och är grovt — pröva mot befattningsbeskrivningarna.</p>
@@ -23630,7 +23757,7 @@ function renderLikvardighet() {
         return;
     }
 
-    const fmtKr = v => v == null ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v);
 
     const d = result.diagnostik;
 
@@ -24732,7 +24859,7 @@ function updateForecast() {
     const ols = _forecastOlsGap(d, simRows);
     _renderForecastLutning(d, simRows);
 
-    const kr = n => Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
     const pct = n => (n == null ? '–' : (n >= 0 ? '+' : '') + svPct(n, 1));
     // Budgetmätare
     const anvPct = out.pott > 0 ? Math.min(100, 100 * out.använt / out.pott) : 0;
@@ -25261,7 +25388,7 @@ function _renderScenarioCompare() {
     if (!host) return;
     const sc = state.forecast.scenarios || {};
     if (!sc.A && !sc.B) { host.innerHTML = '<p class="text-dampad-sm marg-0">Spara två scenarier (A/B) för att jämföra utfall sida vid sida.</p>'; return; }
-    const kr = n => n == null ? '–' : Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
     const pc = n => n == null ? '–' : (n >= 0 ? '+' : '') + svPct(n, 1);
     // Ett scenario sparat vid en lägre tröskel kan bära ett rågap som inte längre får visas (som
     // A/B-bilden i 19-konfiguration.js). Saknas antalen prövas det mot underlaget som det är nu.
@@ -25359,7 +25486,7 @@ function _forecastSensitivity() {
     const curve = _fcSensitivityCurve(d, cand, cost, 10);
     if (!_konFarRedovisasFor(d)) curve.forEach(c => { c.rawGap = null; });   // k: det råa gapet följer tröskeln
     const maxGap = Math.max(...curve.map(c => Math.abs(c.rawGap || 0)), 0.01);
-    const kr = n => Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
     host.innerHTML = `<table class="data-table fs-sm"><thead><tr><th>Minskning av skillnaderna</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kvinnors median i % av mäns</th><th>　</th></tr></thead><tbody>
         ${curve.map(c => `<tr><td>${svPct((c.fraction * 100), 0)}</td><td class="t-hoger">${kr(c.kostnad)}</td><td class="t-hoger">${c.rawGap == null ? '–' : andelAvMan(c.rawGap)}</td><td><div class="rund-4 hojd-9 min-bredd-2 bg-info" data-stil-bredd="${(Math.abs(c.rawGap || 0) / maxGap * 100).toFixed(0)}%"></div></td></tr>`).join('')}
     </tbody></table><p class="text-dampad-xs marg-6-0-0">Avtagande avkastning: visar hur den råa skillnaden och kostnaden utvecklas när skillnaderna i likvärdigt arbete minskar allt mer.${_fcParNot ? ' ' + esc(_fcParNot) : ''}</p>`; tillampaDataStil(host);
@@ -25378,7 +25505,7 @@ function _forecastRemediation() {
     state.forecast._remediation = rem;
     const months = (state.costSettings && state.costSettings.months) || 12;
     const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
-    const kr = n => Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
     if (!rem.count) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Inga kvinnor ligger mer än tröskeln under sitt jämförelsevärde.</span>`; return; }
     const K = kTroskel();
     const visade = rem.perGroup.filter(g => g.count >= K);
@@ -25553,7 +25680,7 @@ function renderStructure() {
         _stRitaTopp(d, null);
         return;
     }
-    const kr = n => n == null ? '–' : Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
 
     // (1) Representations-pyramid
     // Könsuppdelade mått kräver tröskeln för varje kön (ADR-12); lib-funktionerna får alltid värdet.
@@ -25853,8 +25980,8 @@ function renderSektorer(d) {
         tabell = _skSektorsTabell(d, { k: kTroskel(), punkter: _sektorPunkter(), skrDel: _skrDel() });
         andel = _skSektorernasAndel(d, { k: kTroskel() });
     } catch (e) { rapporteraFel(termStor(T.huvudomrade.fl), e); host.innerHTML = ''; return; }
-    const kr = n => (n == null ? '–' : `${Math.round(n).toLocaleString('sv-SE')} kr`);
-    const pc = n => (n == null ? '–' : `${n.toFixed(1).replace('.', ',')} %`);
+    const kr = n => svKr(n);
+    const pc = n => (n == null ? '–' : `${n.toFixed(1).replace('.', ',')}\u00a0%`);
     const harLedning = tabell.some(r => r.ledningKv != null || r.ledningMa != null);
     const rader = tabell.map(r => {
         const loner = r.maskerad
@@ -26464,7 +26591,7 @@ const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna i dag: 
 // skillnaden förklarar åldersfördelningen? Ren funktion. lutKv/lutMa är trendlinjernas lutning i kronor per år;
 // ra och vidSammaAlder är kvinnors lön i procent av mäns, utan justering respektive avläst vid medelåldern.
 function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
-    const kr = v => `${v >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(v)), 0)} kr`;
+    const kr = v => `${v >= 0 ? '+' : '−'}${svKr(Math.abs(v))}`;
     const medel = (Math.abs(lutKv) + Math.abs(lutMa)) / 2;
     const likaLutning = medel === 0 || Math.abs(lutKv - lutMa) / medel <= 0.25;
     const lutning = likaLutning
@@ -26780,7 +26907,7 @@ function renderKonMultiplar() {
     const { figur, utanfor, nedsamplade } = _konMultiplarFigur(d, individLitenFor(d));
     if (figur.paneler.length) ritaFigur(el, figur); else rensaFigur(el);
     const not = document.getElementById('kon-multiplar-not');
-    const delar = [utanfor.length ? `Visas inte här (färre än ${kTroskel()} ${personOrd(kTroskel())}, eller fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(', ')}.` : '',
+    const delar = [utanfor.length ? `Visas inte här (${kTroskel() > 1 ? `färre än ${kTroskel()} ${personOrd(kTroskel())}, eller ` : ''}fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(', ')}.` : '',
                    nedsamplade.length ? `I ${nedsamplade.join(', ')} visas ett urval av punkterna (högst ${KON_MULTIPLAR_PUNKTER} per intervall); trendlinjen räknas ur alla.` : ''].filter(Boolean);
     if (not) { not.hidden = !delar.length; not.textContent = delar.join(' '); }
 }
@@ -27370,7 +27497,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
     if (!yrkesRader.some(x => x.ansvarsgrupp)) return [];
     const under = _anUnderrader(yrkesRader, { k: kTroskel() });
     if (under.length < 2) return [];
-    const pct = v => `${v.toFixed(1).replace('.', ',')} %`;
+    const pct = v => `${v.toFixed(1).replace('.', ',')}\u00a0%`;
     const ut = under.map(u => {
         const tr = document.createElement('tr');
         tr.className = 'la-underrad';
@@ -28037,7 +28164,7 @@ document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamfore
 // ---- Diagrammen ----
 const _JMF_MAX = 25;
 const _jmfEtikett = r => `${r.yrke} · BAS ${r.bas}`;
-const _jmfPct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
+const _jmfPct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
 // Fälten som diagrammens filter läser (URVAL.bas, .yrkesgrupp, .sektor, .matchning, .antal), samma värden som tabellens
 // kolumner och dess sektorsfilter. En grupp utan statistik får ingen matchning (tabellens "–") och påverkas inte av det filtret.
 const _jmfUrvalFalt = r => ({ bas: r.bas, yrke: r.yrke, ...(r.sektor != null ? { sektor: r.sektor } : {}), n: r.n, ...(r.statistikMatchning ? { matchning: _jfMatchningEtikett(r.statistikMatchning) } : {}) });
@@ -28254,8 +28381,8 @@ function renderPersonerAttGranska(visaAlla = false) {
     const rader = visade.map(f => `<tr>
         <td>${f.radnr ?? '—'}</td><td>${esc(f.kon)}</td><td class="num">${tal(f.alder)}</td>
         <td>${esc(f.aid)}</td><td>${esc(f.bas)}</td>
-        <td class="num">${tal(Math.round(f.lon))} kr</td><td class="num">${tal(Math.round(f.forvantad))} kr${f.metod === 'alder' ? '' : '<span class="pag-median" title="Förväntad lön är gruppens median">*</span>'}</td>
-        <td class="num">${tal(f.avvikelsePct, 1).replace('-', '−')} %</td><td class="num">${tal(f.kollegor)}</td>${medAnsvar ? `<td class="pag-ansvar"${_pagAnsvarKort(f.ansvarsgrupp) !== ansvarsgruppNamn(f.ansvarsgrupp) ? ` title="${esc(ansvarsgruppNamn(f.ansvarsgrupp))}"` : ''}>${esc(_pagAnsvarKort(f.ansvarsgrupp))}</td>` : ''}</tr>`).join('');
+        <td class="num">${svKr(f.lon)}</td><td class="num">${svKr(f.forvantad)}${f.metod === 'alder' ? '' : '<span class="pag-median" title="Förväntad lön är gruppens median">*</span>'}</td>
+        <td class="num">${tal(f.avvikelsePct, 1).replace('-', '−')}\u00a0%</td><td class="num">${tal(f.kollegor)}</td>${medAnsvar ? `<td class="pag-ansvar"${_pagAnsvarKort(f.ansvarsgrupp) !== ansvarsgruppNamn(f.ansvarsgrupp) ? ` title="${esc(ansvarsgruppNamn(f.ansvarsgrupp))}"` : ''}>${esc(_pagAnsvarKort(f.ansvarsgrupp))}</td>` : ''}</tr>`).join('');
     // Hur den förväntade lönen räknats står i en not under tabellen, inte i en kolumn: nästan alltid ur åldern.
     const medMedian = visade.some(f => f.metod !== 'alder');
     const metodNot = `<p class="pag-not pag-metod">Förväntad lön är räknad ur åldern bland kollegorna i samma AID och BAS.`
@@ -28362,7 +28489,7 @@ function referensOverblick() {
 // Läget i spannet är ett index: rubriken säger skalan, verktygstipset vad talet betyder.
 const _RR_LAGE_TIPS = 'Var gruppens medianlön ligger i referensens spann: 0 är referensens P10 och 100 dess P90. Under 0 ligger medianen nedanför spannet, över 100 ovanför. Orden före talet säger samma sak.';
 const _RR_MATCHNING_TIPS = `Hur ${T.enhet.bf} matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. Rader för andra ${T.niva.fl} används aldrig. – betyder att statistik saknas för gruppen.`;
-const _rrPct = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)} %`);
+const _rrPct = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)}\u00a0%`);
 const _rrSkillnad = (org, ref) => (org != null && ref != null ? (org / ref - 1) * 100 : null);
 const _rrLageText = l => (l.pos == null ? '–' : `${l.ord} (${svTal(l.pos, 0)})`);
 
@@ -28653,7 +28780,7 @@ function _aidbasSammanfattningText(s) {
 function _aidbasCell(v, typ) {
     if (v == null || v === '') return '<td class="tal">–</td>';
     if (typ === 'text') return `<td>${esc(String(v))}</td>`;
-    const text = typ === 'kr' ? `${svTal(v, 0)} kr` : typ === 'pct' ? svPct(v, 1) : typ === 'kvot' ? svTal(v, 2) : svTal(v, 0);
+    const text = typ === 'kr' ? svKr(v) : typ === 'pct' ? svPct(v, 1) : typ === 'kvot' ? svTal(v, 2) : svTal(v, 0);
     // Sorteringsvärdet avrundas: ett tal med många decimaler kan av en slump innehålla en lön som siffersekvens.
     return `<td class="tal" data-sort-value="${typeof v === 'number' ? Math.round(v * 100) / 100 : ''}">${text}</td>`;
 }
@@ -29144,11 +29271,12 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
         adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
+// Hårda mellanslag (U+00A0): «p < 0,001» bryts inte mellan tecknet och talet i en smal kolumn.
 function _formatPValue(p) {
-    if (p < 0.001) return 'p < 0,001';
-    if (p < 0.01)  return 'p < 0,01';
-    if (p < 0.05)  return 'p < 0,05';
-    return 'p = ' + svTal(p, 3);
+    if (p < 0.001) return 'p\u00a0<\u00a00,001';
+    if (p < 0.01)  return 'p\u00a0<\u00a00,01';
+    if (p < 0.05)  return 'p\u00a0<\u00a00,05';
+    return 'p\u00a0=\u00a0' + svTal(p, 3);
 }
 
 // Plain-text tolkning av p-värdet, används som tooltip
@@ -29341,7 +29469,7 @@ const _REG_TRAPPSTEG = { [_RG_STEG_BAS]: termStor(T.niva.en), '+ Ålder': 'Ålde
 function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en}`) {
     const forst = seqOk[0], sist = seqOk[seqOk.length - 1];
     const yrke = yrkesSteg && yrkesSteg.status === 'ok' && typeof yrkesSteg.gapPct === 'number' ? yrkesSteg : null;
-    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
+    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const pp = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} procentenheter`;
     const kategorier = ['Ojusterad skillnad', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarad skillnad', ...(yrke ? [_REG_TRAPPSTEG[_RG_STEG_YRKE]] : [])];
     // Varje förklaringssteg: från gapet före steget till gapet efter. Seriens blå när gapet krymper mot noll, orange när
@@ -29473,7 +29601,7 @@ function _regKvantilBootstrap(raw, modell, results, arKv) {
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.
 function _regKvantilFigur(resultat) {
     const namn = { 0.1: 'P10 (lägst betalda)', 0.5: 'Median', 0.9: 'P90 (högst betalda)' };
-    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
+    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const data = resultat.map(r => ({ y: namn[r.tau] || `P${Math.round(r.tau * 100)}`, x: +r.konPct.toFixed(2),
         ...(r.ki ? { fel: { lag: +r.ki.lag.toFixed(2), hog: +r.ki.hog.toFixed(2) } } : {}) }));
     const kanter = data.flatMap(d => d.fel ? [d.x, d.fel.lag, d.fel.hog] : [d.x]);
@@ -29730,7 +29858,7 @@ function renderRegressionCard() {
         : '';
 
     // ---- Pedagogik: kronor, konkret exempel, stående reservation, budget ----
-    const krFmt = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const krFmt = v => svKr(v);
     // Kronexemplet utgår från männens medianlön — ett könsuppdelat mått som följer tröskeln (ADR-12),
     // även när regressionen själv får köras (fast golv, ADR-38).
     const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);
@@ -30525,12 +30653,12 @@ function renderLifecycleAnalysis() {
                             <tr${r.bas === result.fixBas ? ' class="bg-ok-yta"' : ''}>
                                 <td><strong>${esc(r.bas)}</strong>${r.bas === result.fixBas ? ' <small class="f-dampad">(visad)</small>' : ''}</td>
                                 <td class="t-hoger">${r.n}</td>
-                                <td class="t-hoger">${Math.round(r.kv25).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger">${Math.round(r.ma25).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet">${Math.round(r.gap25Kr).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger">${Math.round(r.kv65).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger">${Math.round(r.ma65).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
+                                <td class="t-hoger">${svKr(r.kv25)}</td>
+                                <td class="t-hoger">${svKr(r.ma25)}</td>
+                                <td class="t-hoger halvfet">${svKr(r.gap25Kr)}</td>
+                                <td class="t-hoger">${svKr(r.kv65)}</td>
+                                <td class="t-hoger">${svKr(r.ma65)}</td>
+                                <td class="t-hoger halvfet">${svKr(r.gap65Kr)}</td>
                                 <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
                             </tr>`).join('')}
                     </tbody>
@@ -30649,7 +30777,7 @@ function _lifecycleKurvaUtelamnad(result, basRows) {
  * intervallets lönenivå.
  */
 function _evidenceForLifecycleBas(row, result, utanKurva = false) {
-    const fmtKr = v => v == null || !isFinite(v) ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v, '—');
     const fmtPct = v => v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + svPct(v, 1);
     return {
         title: `Beräkningen — BAS ${row.bas} (ålder och karriär)`,
@@ -30952,10 +31080,11 @@ function _niceCostLevels(maxCost) {
     const cap = base * Math.ceil(maxCost / base);
     return [Math.round(cap * 0.1), Math.round(cap * 0.3), Math.round(cap)];
 }
+// Kostnaden i kort form, i nyckeltalen, rutan Total och staplarnas etiketter: "386 Mkr", "4,2 Mkr", "950 tkr".
 function _fmtCost(kr) {
-    if (kr >= 1e6) return svTal(kr/1e6, kr >= 1e7 ? 0 : 1) + ' Mkr';
-    if (kr >= 1e3) return Math.round(kr/1e3) + ' tkr';
-    return Math.round(kr) + ' kr';
+    if (kr >= 1e6) return svTal(kr/1e6, kr >= 1e7 ? 0 : 1) + '\u00a0Mkr';
+    if (kr >= 1e3) return svTal(Math.round(kr/1e3), 0) + '\u00a0tkr';
+    return svKr(kr);
 }
 
 // Kolumnerna som prioriteringslistans grundvy gömmer bakom Fler kolumner (data-kol i src/index.html).
@@ -30996,8 +31125,7 @@ function renderPrioritering() {
     const overCount  = items.filter(i => i.diffPct >  5).length;
     const totalCost  = items.reduce((s, i) => s + i.annualGapTotal, 0);
     const fmt = new Intl.NumberFormat('sv-SE');
-    const fmtMkr = totalCost >= 1e6 ? svTal(totalCost/1e6, 1) + ' Mkr' :
-                   totalCost >= 1e3 ? Math.round(totalCost/1e3) + ' tkr' : Math.round(totalCost) + ' kr';
+    const fmtMkr = _fmtCost(totalCost);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-akut')).textContent  = String(akutCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-under')).textContent = String(underCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-over')).textContent  = String(overCount);
@@ -31126,7 +31254,7 @@ function renderPrioritering() {
         const sgnKr  = i.diffKr  >= 0 ? '+' : '';
         const gapBar = buildBarCell(i.gapPct, 15);
         const diffBar = buildBarCell(i.diffPct, 25);
-        const costTxt = i.annualGapTotal > 0 ? fmt.format(Math.round(i.annualGapTotal)) + ' kr' : '–';
+        const costTxt = i.annualGapTotal > 0 ? svKr(i.annualGapTotal) : '–';
         const costSort = i.annualGapTotal > 0 ? i.annualGapTotal : 0;
         const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : '–';
         const quickwinBadge = i.isQuickWin ? ' <span title="Snabb vinst" class="hjalpmarke hjalp-markor">' + ikon('blixt', 14) + '</span>' : '';
@@ -31407,10 +31535,9 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     const namn = (i, n) => `#${n + 1} ${_rfKorta(String(i.yrke), 26)} · BAS ${i.bas}`;
     const y = visade.map(namn), n80 = cumPct.findIndex(p => p >= 80);
     const inom = n => n80 < 0 || n <= n80;
-    const mnkr = v => (v >= 1e6 ? `${svTal(v / 1e6, 2)} mnkr` : _figTalformat(Math.round(v), 'kr'));
     const lager = (serie, farg, opacitet, valj) => ({ marke: 'stapel', riktning: 'liggande', lage: 'overlagrad', serie, farg, opacitet,
         data: visade.map((i, n) => ({ i, n })).filter(({ n }) => valj(n)).map(({ i, n }) => ({ y: y[n], x: i.annualGapTotal, yrke: i.yrke, bas: i.bas, sektor: _aidSektorsnamn(i.aid), n: i.n, kum: cumPct[n],
-            etikett: `${mnkr(i.annualGapTotal)} · ${svTal(cumPct[n], 0)} %`, markering: markeringFor(i.bas, i.yrke) })),
+            etikett: `${_fmtCost(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`, markering: markeringFor(i.bas, i.yrke) })),
         tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${_figTalformat(d.x, 'kr')}/år`], ['Kumulativ andel', _figTalformat(d.kum, 'pct')]] });
     return { beskrivning: 'Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.',
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
@@ -31809,7 +31936,7 @@ function renderHandlingsplanSeed() {
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
     const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
-    const fmtKr = n => (n ? Math.round(n).toLocaleString('sv-SE') + ' kr' : '');
+    const fmtKr = n => (n ? svKr(n) : '');
     const lista = (id, nyckel, falt, val, alt, etikett) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett)}">`
         + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
     const text = (id, nyckel, falt, val, platshallare, etikett) => `<input type="text" id="${id}" class="hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" value="${esc(val)}"`
@@ -31952,7 +32079,7 @@ document.getElementById('btn-export-handlingsplan')?.addEventListener('click', e
 /** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, konUnder: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
 let _skal = null;
 const SKAL_JA = 'Ja, sakligt skäl finns';
-const _skalKr = v => `${svTal(Math.round(v), 0)} kr`;
+const _skalKr = v => svKr(v);
 const _skalPct = v => svPct(v * 100, 0);
 
 /** Beloppet i fältet som heltal, eller null när det inte är ett giltigt belopp (0–200 000). */
@@ -32216,8 +32343,8 @@ function rmCell(v, typ) {
     if (typ === 'antal') return svTal(v, 0);
     if (typ === 'ar') return `${svTal(v, 0)} år`;
     if (typ === 'tal2') return svTal(v, 2);
-    if (typ === 'kr') return `${svTal(Math.round(v), 0)} kr`;
-    if (typ === 'krAr') return `${svTal(Math.round(v), 0)} kr/år`;
+    if (typ === 'kr') return svKr(v);
+    if (typ === 'krAr') return `${svTal(Math.round(v), 0)}\u00a0kr/år`;
     if (typ === 'pct0') return svPct(v, 0);
     if (typ === 'pct1') return svPct(v, 1);
     if (typ === 'pct2') return svPct(v, 2);
@@ -32383,7 +32510,7 @@ function rmSakligaSkalDelar(skal, dampad) {
     const pk = skal.perKategori;
     const kat = pk.kategorier.map(k => [k.namn, k.summa, k.andel != null ? k.andel * 100 : null, k.antalGrupper]);
     const over = skal.grupper.filter(g => g.sammanstallning.overstiger);
-    const kr = v => `${svTal(Math.round(v), 0)} kr`;
+    const kr = v => svKr(v);
     return [
         { typ: 'rubrik', niva: 3, text: 'Sakliga skäl per grupp' },
         { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal berörda', typ: 'antal' }, { rubrik: 'Medianskillnad (kr/mån)', typ: 'kr' }, { rubrik: 'Kategori', typ: 'text' },
@@ -32517,7 +32644,7 @@ function rmArsjamforelseAvsnitt(diagram) {
     const { forra, nu, j } = jf;
     if (!j) return null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
-    const skriv = (v, typ) => (v == null ? '—' : typ === 'kr' ? `${svTal(Math.round(v), 0)} kr` : typ === 'pct' ? svPct(v, 1) : svTal(v, 0));
+    const skriv = (v, typ) => (v == null ? '—' : typ === 'kr' ? svKr(v) : typ === 'pct' ? svPct(v, 1) : svTal(v, 0));
     const diff = (v, typ) => (v == null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
     const text = s => ({ text: s });
     /** @type {any[]} */ const delar = [
@@ -32835,7 +32962,7 @@ function _rmAvsnittenUtanUrval() {
     if (par.length) {
         likvardigt.delar.push({ typ: 'tabell', kolumner: [{ rubrik: '#', typ: 'antal' }, { rubrik: termStor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })), typ: 'text' }, { rubrik: termStor(T.jamforelse.en), typ: 'text' },
             { rubrik: 'Antal (kvinnodom. / jämf.)', typ: 'text' }, { rubrik: `Könsandel i ${T.jamforelse.bf}`, typ: 'text' },
-            { rubrik: `${termStor(termGenitiv(T.jamforelse.bf))} median högre med (kr)`, typ: 'kr' }, { rubrik: 'Högre med (%)', typ: 'pct1' }, { rubrik: 'Kravvärdering / sakligt skäl (fyll i)', typ: 'fyllIn' }],
+            { rubrik: termText('{Enhet.kort} median högre (kr)'), typ: 'kr' }, { rubrik: 'Högre med (%)', typ: 'pct1' }, { rubrik: 'Kravvärdering / sakligt skäl (fyll i)', typ: 'fyllIn' }],
             rader: par.slice(0, 25).map((p, i) => [i + 1, medNamn(p.kvAid, p.kvLabel, p.kvBas), medNamn(p.maAid, p.maLabel, p.maBas), `${p.kvN} / ${p.maN != null ? p.maN : '–'}`,
                 `${svPct(p.maKvAndel, 0)}${p.maKlass ? ` (${konsklassOrd(p.maKlass)})` : ''}`, p.gapKr, p.gapPct, '']) });
         if (par.length > 25) likvardigt.utelamnat.push(`${par.length - 25} par utöver de 25 första`);
@@ -33242,6 +33369,25 @@ function bibliotekCssForUtskrift() {
     return ut;
 }
 
+/**
+ * Avstavar webbläsaren svenska? Ett långt ord i en ruta smalare än ordet (.avstavningsprov i stilmallen): med avstavning
+ * bryts ordet och ryms, utan avstavning sticker det ut. Två ord prövas, ett med liten och ett med stor begynnelsebokstav:
+ * Firefox avstavar inte ord med stor bokstav, och rubrikerna börjar med en («Jämförelseetikett»). En miljö som inte
+ * mäter (bredderna 0) räknas som att den avstavar.
+ */
+function _utskriftAvstavar() {
+    return ['jämförelseetikettens', 'Kvinnodominerad'].every(ord => {
+        const prov = document.createElement('div');
+        prov.className = 'avstavningsprov';
+        prov.lang = 'sv';
+        prov.textContent = ord;
+        document.body.appendChild(prov);
+        const ja = prov.scrollWidth <= prov.clientWidth + 1;
+        prov.remove();
+        return ja;
+    });
+}
+
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
 async function _buildPrintReportExport() {
@@ -33271,7 +33417,17 @@ async function _buildPrintReportExport() {
                 const elD = document.getElementById(String(id));
                 if (diagramRitat(elD)) { try { imgs[nyckel] = await diagramTillBild(elD, { bredd: 1400, hojd, utanRubrik: true }); } catch (e) { rapporteraFel(`utskrift: ${id}`, e); } }
             }
-            const cloneTable = id => { const t = exportElement(id); return t ? _exportVisaAllaRader(t.cloneNode(true)).outerHTML : ''; };   // genom exportgrinden; hopfällda rader följer med
+            // Genom exportgrinden; hopfällda rader följer med. Skärmens egna kolumner (Detalj, Beräkning), knappar och
+            // infoikoner gör inget på papper och tar bredd från sidan. Rubrikens ombrytningsskydd håller bara ihop ordet
+            // med infoikonen på skärmen; på papper ska rubriken få avstavas som förut.
+            const cloneTable = id => {
+                const t = exportElement(id);
+                if (!t) return '';
+                const klon = _exportUtanSkarmkolumner(_exportVisaAllaRader(t.cloneNode(true)));
+                klon.querySelectorAll('button, .info-tip').forEach(b => b.remove());
+                klon.querySelectorAll('thead .ingen-radbrytning').forEach(s => s.replaceWith(...s.childNodes));
+                return klon.outerHTML;
+            };
         const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en}</h2><p>${termStor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
         const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
             const bildSektion = (rubrik, src, alt) => (src ? `<section class="page-break"><h2>${rubrik}</h2><img src="${src}" alt="${alt}"></section>` : '');
@@ -33316,6 +33472,10 @@ async function _buildPrintReportExport() {
         const root = /** @type {HTMLElement} */ (document.getElementById('print-report'));
         root.innerHTML = _kSanktStycke() + rmTillHtml(modell, { utskrift: true, bilder }) + kStampelRad + bilagor;
         tillampaDataStil(root);   // staplarna i de klonade tabellerna bär måttet som data-stil-*; style-attribut i markeringen stoppas av CSP:n
+        // Avstavar inte webbläsaren svenska, får rubriker och textceller brytas var som helst (stilmallen), men inte talen.
+        const utanAvstavning = !_utskriftAvstavar();
+        root.classList.toggle('pr-utan-avstavning', utanAvstavning);
+        if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (_cellArTal(td.textContent)) td.classList.add('pr-tal'); });
 
         document.body.classList.add('print-mode');
         hideLoading();
@@ -34533,6 +34693,9 @@ function renderRapportunderlag() {
     host.innerHTML = `<p class="ru-forbehall">${esc(ANSVARSFORBEHALL)}</p>` + forteckning + grupp('Avsnitt', avsnitt) + grupp(`Per ${T.niva.en}`, basBl) + grupp(`${termStor(T.enhet.fl)} i Lika arbete`, yrken)
         + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
+    // Ett tal eller intervall står på en rad (95 % KI bröts annars på tre rader i en smal kolumn). Bara på skärmen:
+    // urklippet byggs om ur blocket, utan klasser.
+    host.querySelectorAll('.ru-innehall td').forEach(td => { if (_cellArTal(td.textContent)) td.classList.add('ru-tal'); });
 }
 
 // Blockets element-id för hopplänkar (block-id:n innehåller ':').
@@ -34772,10 +34935,10 @@ document.addEventListener('click', e => {
 function _guKr(v, tecken = true) {
     const r = Math.round(v);
     const s = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(Math.abs(r));
-    return `${tecken && r !== 0 ? (r < 0 ? '−' : '+') : ''}${s} kr`;
+    return `${tecken && r !== 0 ? (r < 0 ? '−' : '+') : ''}${s}\u00a0kr`;
 }
 function _guPct(v, dec = 1) {
-    return `${new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)} %`;
+    return `${new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)}\u00a0%`;
 }
 
 function renderGapUppdelning() {
@@ -34827,8 +34990,9 @@ function renderGapUppdelning() {
         + _guValHtml()
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
         + rader
-        + `<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade ${T.enhet.bfl} i Lika arbete, som sorteras efter skillnadens storlek. Grupper där ett kön har färre än `
-        + `${kTroskel()} ${personOrd(kTroskel())} namnges inte.</p>`; tillampaDataStil(body);
+        + `<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade ${T.enhet.bfl} i Lika arbete, som sorteras efter skillnadens storlek.`
+        // Med tröskeln 1 (skärmen, ADR-51) namnges alla grupper, och meningen om små grupper har inget att säga.
+        + (kTroskel() > 1 ? ` Grupper där ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} namnges inte.` : '') + '</p>'; tillampaDataStil(body);
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 
@@ -34906,10 +35070,10 @@ function _exploreFmt(v, matt) {
     if (v == null || !isFinite(v)) return '–';
     if (matt === 'n') return Math.round(v).toLocaleString('sv-SE');
     if (matt === 'gap' || matt === 'andelKv') {
-        return v.toLocaleString('sv-SE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %';
+        return v.toLocaleString('sv-SE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '\u00a0%';
     }
     if (matt === 'spridning') return v.toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return Math.round(v).toLocaleString('sv-SE') + ' kr';
+    return svKr(v);
 }
 
 /** Varför en diagramtyp inte går att välja just nu, eller null om den går. */
@@ -36039,7 +36203,7 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
  * Löneutvecklingen per BAS-intervall som text för skärm och rapport: ett mått förra året och i år, och förändringen
  * i kronor och procent. Tecknen som i nyckeltalen (+, − och ± för oförändrat).
  */
-function _abKr(v) { return v == null ? '–' : `${svTal(Math.round(v), 0)} kr`; }
+function _abKr(v) { return svKr(v); }
 function _abForandringText(f, { kr = true } = {}) {
     if (!f || f.diff == null) return '–';
     const t = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
@@ -36147,7 +36311,7 @@ function renderArsjamforelse() {
     const jf = arsjamforelse();
     const j = jf ? jf.j : null, nu = jf ? jf.nu : null;
     if (!j || !nu) { host.innerHTML = huvud; return; }
-    const kr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const kr = v => svKr(v);
     const skriv = (v, typ) => v == null ? '–' : typ === 'kr' ? kr(v) : typ === 'pct' ? svPct(v, 1) : String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     const diff = (v, typ) => {
         if (v == null) return '<span class="f-dampad">–</span>';
@@ -36912,14 +37076,29 @@ function _lpRenderCompliance(model) {
     }
 }
 
+/** Gruppens namn i tabellen, noten och Excel-bladet: AID-koden en gång och sedan benämningen ("206017 Sjuksköterska").
+ * Yrket är "AID benämning" när filen har båda, och bara koden när benämning saknas. */
+function _lpGruppnamn(g) {
+    const benamning = _lpBenamning(g);
+    return benamning ? `${g.aid} ${benamning}` : String(g.aid);
+}
+/** Yrkets benämning utan AID-koden först. Bara koden tas bort, så att en benämning som börjar med en siffra
+ * («3D-tekniker») står kvar hel. */
+function _lpBenamning(g) {
+    const yrke = String(g.yrke || ''), aid = String(g.aid ?? '');
+    if (!aid || !yrke.startsWith(aid)) return yrke;
+    const rest = yrke.slice(aid.length);
+    return rest === '' || /^\s/.test(rest) ? rest.trim() : yrke;
+}
+
 function _lpTableHtml(model) {
-    const kr = v => v == null ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const kr = v => svKr(v);
     const rows = [];
     model.byBas.forEach(b => {
         rows.push(`<tr class="group-header"><td colspan="7">BAS ${esc(b.bas)}${b.pol ? '' : ' — <em>ingen policyreferens</em>'}</td></tr>`);
         const utelamnade = [];
         b.groups.forEach(g => {
-            const name = `${esc(g.aid)}${g.yrke && g.yrke !== g.aid ? ' ' + esc(g.yrke) : ''}`;
+            const name = esc(_lpGruppnamn(g));
             if (!g.pol) {
                 rows.push(`<tr><td>${name}</td><td class="t-hoger">${g.n}</td><td colspan="5" class="farg-dampad kursiv">Ingen policyreferens</td></tr>`);
                 return;
@@ -36928,7 +37107,7 @@ function _lpTableHtml(model) {
             // antalet får visas. Raden bar ingenting annat än "< 5" — den
             // utelämnas och gruppen räknas upp i noten sist i BAS-blocket.
             // Personerna ingår fortfarande i BAS-totalen.
-            if (g.tier === 'masked') { utelamnade.push(g.yrke && g.yrke !== g.aid ? `${g.aid} ${g.yrke}` : g.aid); return; }
+            if (g.tier === 'masked') { utelamnade.push(_lpGruppnamn(g)); return; }
             if (g.tier === 'count') {
                 const c = g.compliance;
                 rows.push(`<tr><td>${name}</td><td class="t-hoger">${g.n}</td>`
@@ -36991,9 +37170,6 @@ function _lpExcelBlad() {
     if (!model.hasPolicy || !model.byBas.length) return null;
     const k = kTroskel(), r1 = v => Math.round(v * 10) / 10, kr = v => Math.round(v);
     const pct = (a, n) => (n ? r1(100 * a / n) : '');
-    // Yrkets benämning utan AID-koden först (yrke är "AID benämning" när filen har båda).
-    const benamning = g => String(g.yrke || '').replace(/^\d+\s*/, '');
-    const namn = g => (benamning(g) ? `${g.aid} ${benamning(g)}` : String(g.aid));
     /** @type {any[][]} */
     const ut = [
         [`Lönerna mot ${referensNamn()} (fliken Löneläget)`],
@@ -37007,12 +37183,12 @@ function _lpExcelBlad() {
     const utelamnade = [];
     for (const b of model.byBas) {
         for (const g of b.groups) {
-            if (!g.pol) { ut.push([b.bas, g.aid, benamning(g), g.n, '', '', '', '', '', 'Ingen referens']); continue; }
-            if (g.tier === 'masked') { utelamnade.push(namn(g)); continue; }
+            if (!g.pol) { ut.push([b.bas, g.aid, _lpBenamning(g), g.n, '', '', '', '', '', 'Ingen referens']); continue; }
+            if (g.tier === 'masked') { utelamnade.push(_lpGruppnamn(g)); continue; }
             const c = g.compliance;
-            if (g.tier === 'count') { ut.push([b.bas, g.aid, benamning(g), g.n, '', '', '', '', c ? c.under : '', g.level || '']); continue; }
+            if (g.tier === 'count') { ut.push([b.bas, g.aid, _lpBenamning(g), g.n, '', '', '', '', c ? c.under : '', g.level || '']); continue; }
             const s = g.stats;
-            ut.push([b.bas, g.aid, benamning(g), g.n, s ? kr(s.median) : '', kr(g.pol.p10), kr(g.pol.p90),
+            ut.push([b.bas, g.aid, _lpBenamning(g), g.n, s ? kr(s.median) : '', kr(g.pol.p10), kr(g.pol.p90),
                 s && s.position != null ? r1(s.position * 100) : '', c ? c.under : '', g.level || '']);
         }
     }
@@ -37287,7 +37463,7 @@ function gruppNamn(g) {
 }
 
 function _gdRenderBody(d) {
-    const kr = v => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const kr = v => svKr(v);
     const pct = (v, dec = 1) => svPct(v, dec);
     const card = (title, inner, note) => `
         <div class="gd-card">
@@ -37609,7 +37785,7 @@ function renderBasdossier(bas) {
     }
 }
 
-const _bdKr = v => (v == null || !isFinite(v) ? '–' : `${svTal(Math.round(v), 0)} kr`);
+const _bdKr = v => svKr(v);
 const _bdTecken = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
 const _bdPctTecken = v => (v == null ? '–' : `${_bdTecken(v)}${svPct(Math.abs(v), 1)}`);
 

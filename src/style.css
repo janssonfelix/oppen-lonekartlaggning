@@ -647,11 +647,20 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 .data-table th.sticky-col-2,
 .data-table td.sticky-col-2 {
     position: sticky;
-    left: 60px; /* Bredd på första kolumnen Prio */
+    left: 80px; /* Prio-kolumnens bredd, nedan */
     background-color: var(--bg-card);
     z-index: 5;
     box-shadow: 2px 0 5px rgba(0,0,0,0.05); /* Skugga för att avgränsa */
 }
+/* Prio-kolumnen är exakt så bred som sticky-col-2:s left, så att namnkolumnen inte glider in över BAS-kolumnen.
+   80 punkter rymmer rubriken «Prio» med infoikonen och sorteringspilarna på en rad. */
+.data-table th.sticky-col-1,
+.data-table td.sticky-col-1 { width: 80px; min-width: 80px; max-width: 80px; box-sizing: border-box; }
+/* En sorterbar rubrik är position: relative (för pilarna); de fasta kolumnernas rubriker ska ändå vara sticky,
+   annars förskjuts rubriken med left och hamnar över fel kolumn. Sticky håller också pilarna på plats. */
+.data-table thead th.sortable.sticky-col-1,
+.data-table thead th.sortable.sticky-col-2 { position: sticky; }
+.data-table thead th.sticky-col-2 { text-align: left; }   /* som namnen under */
 /* Ensure headers remain above data cells and have correct background during scroll */
 .data-table th.sticky-col-1 {
     z-index: 15;
@@ -2389,6 +2398,8 @@ summary:focus-visible {
 
 /* ----- Print-rapport (PDF via webbläsarens print-dialog) ----- */
 #print-report { display: none; }
+/* Provet om webbläsaren avstavar svenska (60-utskrift.js): ett långt ord i en ruta smalare än ordet, utanför bild. */
+.avstavningsprov { position: absolute; left: -9999px; top: 0; width: 5em; hyphens: auto; visibility: hidden; }
 
 /* PDF-knappen bygger rapporten i #print-report och sätter body.print-mode; då skrivs bara rapporten ut.
    Utan klassen (Ctrl+P) skrivs den aktiva fliken ut, se «Utskrift av den aktiva fliken» nedan. */
@@ -2445,6 +2456,21 @@ summary:focus-visible {
         border-bottom: 0.5pt solid var(--border-stark);
         vertical-align: top;
     }
+    /* Tabellen ryms i sidans textbredd: långa ord avstavas, skärmens minsta cellbredder och versala rubriker gäller inte,
+       och statusmärkena får bryta rad. Annars hamnar de sista kolumnerna, också de att fylla i, utanför sidan. */
+    #print-report table:not(.meta):not(.kpi) th,
+    #print-report table:not(.meta):not(.kpi) td { hyphens: auto; overflow-wrap: break-word; min-width: 0; }
+    #print-report table:not(.meta):not(.kpi) th { text-transform: none; letter-spacing: normal; }
+    #print-report table:not(.meta):not(.kpi) .la-status,
+    #print-report table:not(.meta):not(.kpi) .la-stabilitet { white-space: normal; }
+    /* Reserven när webbläsaren inte avstavar svenska (60-utskrift.js sätter klassen): rubriker och textceller får brytas var
+       som helst, talen (belopp, procent, antal) står på en rad. Bara då, eftersom brytningen var som helst ger smalare
+       textkolumner också där avstavningen hade räckt. */
+    #print-report.pr-utan-avstavning table:not(.meta):not(.kpi) th,
+    #print-report.pr-utan-avstavning table:not(.meta):not(.kpi) td { overflow-wrap: anywhere; }
+    #print-report.pr-utan-avstavning table:not(.meta):not(.kpi) td.pr-tal { overflow-wrap: normal; white-space: nowrap; }
+    /* Skärmens sorteringspilar följer inte med på papper. */
+    #print-report th.sortable::before, #print-report th.sortable::after { content: none; }
     #print-report tr.group-header td {
         background: var(--border) !important;
         font-weight: 700;
@@ -2786,6 +2812,7 @@ summary:focus-visible {
 .ru-innehall h3 { font-size: var(--fs-md); margin: 0 0 6px; }
 .ru-innehall table { border-collapse: collapse; margin: 6px 0; font-size: var(--fs-sm); }
 .ru-innehall th, .ru-innehall td { border: 1px solid var(--border); padding: 3px 8px; text-align: left; }
+.ru-innehall td.ru-tal { white-space: nowrap; }
 .ru-innehall p, .ru-innehall li { font-size: var(--fs-sm); line-height: 1.5; }
 .ru-atgard { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
 .ru-kvitto { font-size: var(--fs-xs); color: var(--text-muted); }

@@ -567,6 +567,17 @@ describe('rapportunderlag', () => {
         expect(w.document.querySelectorAll('#rapportunderlag-innehall [data-rapport-diagram]').length).toBe(harPar ? 3 : 2);
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).toContain('DEMODATA');
     });
+    it('tal och intervall i blockens tabeller står på en rad på skärmen (95 % KI); urklippet är fortfarande utan klasser', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
+        const celler = [...w.document.querySelectorAll('#rapportunderlag-innehall .ru-innehall td')];
+        const tal = celler.filter(td => w.eval('_cellArTal')(td.textContent));
+        const intervall = tal.filter(td => /\d\s*(–|till)\s*[−+]?\d/.test(td.textContent));
+        expect(intervall.length).toBeGreaterThan(0);
+        expect(tal.every(td => td.classList.contains('ru-tal'))).toBe(true);
+        expect(celler.filter(td => td.classList.contains('ru-tal')).length).toBe(tal.length);
+    });
     it('Kopiera lägger ren HTML och text på urklipp', async () => {
         const w = createAppWindow();
         w.__loadDemoData();

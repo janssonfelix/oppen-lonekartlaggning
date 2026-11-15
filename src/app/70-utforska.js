@@ -53,10 +53,10 @@ function _exploreFmt(v, matt) {
     if (v == null || !isFinite(v)) return '–';
     if (matt === 'n') return Math.round(v).toLocaleString('sv-SE');
     if (matt === 'gap' || matt === 'andelKv') {
-        return v.toLocaleString('sv-SE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %';
+        return v.toLocaleString('sv-SE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '\u00a0%';
     }
     if (matt === 'spridning') return v.toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return Math.round(v).toLocaleString('sv-SE') + ' kr';
+    return svKr(v);
 }
 
 /** Varför en diagramtyp inte går att välja just nu, eller null om den går. */

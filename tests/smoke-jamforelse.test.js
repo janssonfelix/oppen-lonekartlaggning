@@ -22,7 +22,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
     it('rubrikerna har P10, median och P90 med Org, Jmf och Diff', () => {
         const w = oppna();
         const org = w.eval("orgNamn('org')");   // demot heter Exempelkommunen (ADR-36)
-        expect(rubriker(w)).toEqual(['AID-etikett', 'BAS', 'Matchning', 'N', `P10 ${org}`, 'P10 statistik', 'P10 skillnad', `Median ${org}`, 'Median statistik', 'Median skillnad',
+        expect(rubriker(w)).toEqual(['AID', 'BAS', 'Matchning', 'N', `P10 ${org}`, 'P10 statistik', 'P10 skillnad', `Median ${org}`, 'Median statistik', 'Median skillnad',
             `P90 ${org}`, 'P90 statistik', 'P90 skillnad']);
         expect(w.document.querySelectorAll('.benchmark-metric-btn[data-metric]').length).toBe(0);
     });
@@ -124,7 +124,7 @@ describe('Jämförelsestatistik: diagrammen', () => {
         const li = el._figur.lager.findIndex(l => l.serie === 'Skillnad i median'), median = el._figur.lager[li];
         const x = median.data.map(p => p.x);
         expect([...x].sort((a, b) => a - b)).toEqual([...x]);
-        expect(el._figur.lager.find(l => l.serie === 'Medianens värde').data.every(p => /^[+−]\d+,\d %$/.test(p.etikett))).toBe(true);
+        expect(el._figur.lager.find(l => l.serie === 'Medianens värde').data.every(p => /^[+−]\d+,\d\s%$/.test(p.etikett))).toBe(true);
         const { aid, bas } = median.data[0];
         // Klick på första medianpunkten (ritad i samma ordning som datan) markerar yrkets rad.
         el.querySelector(`[data-marke="punkt"][data-l="${li}"][data-i="0"]`).dispatchEvent(new w.Event('click', { bubbles: true }));
@@ -492,7 +492,8 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     it('tabellen mot statistiken har kolumnen Matchning efter BAS, med regeln i rubriken', () => {
         const w = medMatchning();
         const th = [...w.document.querySelectorAll('#benchmark-table thead th')];
-        expect(th.map(t => t.textContent.trim()).slice(0, 4)).toEqual(['AID-etikett', 'BAS', 'Matchning', 'N']);
+        expect(th.map(t => t.textContent.trim()).slice(0, 4)).toEqual(['AID', 'BAS', 'Matchning', 'N']);
+        expect(th[0].getAttribute('data-export-label')).toBe('AID-etikett');
         expect(th[2].getAttribute('data-export-label')).toBe('Matchning mot jämförelsestatistiken');
         expect(th[2].title).toMatch(/samma AID och samma BAS.*samma AID som saknar BAS.*andra BAS-intervall används aldrig/);
         const rad = (aid, bas) => w.document.querySelector(`#benchmark-table tbody tr[data-rad="${aid}|${bas}"]`).children[2];

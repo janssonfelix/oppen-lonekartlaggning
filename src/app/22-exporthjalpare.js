@@ -69,6 +69,14 @@ function _methodAppendixData() {
         ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.']
     ];
 }
+/**
+ * Ett bladnamn som Excel godtar: högst 31 tecken och inga av tecknen : \ / ? * [ ]. Ett namn som byggs av en term kan
+ * bli för långt eller få ett sådant tecken (termerna får ha 40 tecken); då används reservnamnet, som är fast text.
+ * @param {string} namn @param {string} reserv
+ */
+function _excelBladnamn(namn, reserv) {
+    return namn.length <= 31 && namn.trim() && !/[:\\/?*[\]]/.test(namn) ? namn : reserv;
+}
 // Lägger till ett "Metod & parametrar"-blad sist i en XLSX-arbetsbok.
 // `undantag`: exporten hör till ett dokumenterat undantag från minsta gruppstorlek och säger det.
 // `extra`: rader [rubrik, text] som bara gäller den här arbetsboken (ett blads mått och regler); läggs sist.
@@ -87,7 +95,9 @@ function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
         rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', _kUndantagNot(undantag)]);
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{ wch: 32 }, { wch: 88 }];
+    // Kolumn A så bred som den längsta etiketten (rubriken på rad 1 räknas inte), högst 70 tecken (F6 i punkt 26).
+    const etikett = Math.max(0, ...rows.slice(1).map(r => String(r[0] ?? '').length));
+    ws['!cols'] = [{ wch: Math.min(70, etikett + 2) }, { wch: 88 }];
     try { XLSX.utils.book_append_sheet(wb, ws, 'Metod & parametrar'); } catch (_e) { /* dubblettnamn: hoppa */ }
 }
 // ---- Excel-export-hjälpare: rensar HTML-tabell för läsbara Excel-celler ----
@@ -130,12 +140,7 @@ function __cloneAndCleanTableForExportExport(tableId) {
     _exportText(clone);
     _exportVisaAllaRader(clone);
 
-    // Identifiera kolumnindex att skippa
-    const skipCols = [];
     const ths = /** @type {HTMLElement} */ (clone).querySelectorAll('thead th');
-    ths.forEach((th, i) => {
-        if (th.hasAttribute('data-export-skip')) skipCols.push(i);
-    });
 
     // Rensa header-celler
     ths.forEach(th => {
@@ -177,26 +182,35 @@ function __cloneAndCleanTableForExportExport(tableId) {
         tr.querySelectorAll('td, th').forEach(td => _exportMarkCell(td));
     });
 
-    // Skippa kolumner via DOM-manipulation. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan
-    // täcker flera, så en rad med en sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median").
-    if (skipCols.length) {
-        ['thead tr', 'tbody tr', 'tfoot tr'].forEach(sel => {
-            /** @type {HTMLElement} */ (clone).querySelectorAll(sel).forEach(tr => {
-                let kol = 0;
-                [...tr.children].forEach(cell => {
-                    const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '', 10) || 1);
-                    const start = kol, slut = kol + span - 1;
-                    kol += span;
-                    const traffar = skipCols.filter(i => i >= start && i <= slut).length;
-                    if (!traffar) return;
-                    if (traffar >= span) cell.remove();
-                    else cell.setAttribute('colspan', String(span - traffar));
-                });
+    return _exportUtanSkarmkolumner(clone);
+}
+
+/**
+ * Kolumnerna som bara hör till skärmen (rubrik med `data-export-skip`: Detalj, Beräkning) tas bort ur en kopia av
+ * tabellen. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan täcker flera, så en rad med en
+ * sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median"). Görs på en kopia, aldrig på skärmens tabell.
+ */
+function _exportUtanSkarmkolumner(klon) {
+    const skipCols = [];
+    klon.querySelectorAll('thead th').forEach((th, i) => {
+        if (th.hasAttribute('data-export-skip')) skipCols.push(i);
+    });
+    if (!skipCols.length) return klon;
+    ['thead tr', 'tbody tr', 'tfoot tr'].forEach(sel => {
+        klon.querySelectorAll(sel).forEach(tr => {
+            let kol = 0;
+            [...tr.children].forEach(cell => {
+                const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '', 10) || 1);
+                const start = kol, slut = kol + span - 1;
+                kol += span;
+                const traffar = skipCols.filter(i => i >= start && i <= slut).length;
+                if (!traffar) return;
+                if (traffar >= span) cell.remove();
+                else cell.setAttribute('colspan', String(span - traffar));
             });
         });
-    }
-
-    return clone;
+    });
+    return klon;
 }
 
 /**

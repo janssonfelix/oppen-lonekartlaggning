@@ -64,7 +64,7 @@ function renderRealityCheck() {
     const p10 = Stat.quantile(lons, 0.10);
     const p50 = Stat.median(lons);
     const p90 = Stat.quantile(lons, 0.90);
-    const fmtK = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtK = v => svKr(v);
     let lonStatus, lonMsg;
     if (p50 >= 25000 && p50 <= 60000) {
         lonStatus = 'ok';

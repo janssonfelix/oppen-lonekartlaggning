@@ -217,7 +217,7 @@ function updateForecast() {
     const ols = _forecastOlsGap(d, simRows);
     _renderForecastLutning(d, simRows);
 
-    const kr = n => Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
     const pct = n => (n == null ? '–' : (n >= 0 ? '+' : '') + svPct(n, 1));
     // Budgetmätare
     const anvPct = out.pott > 0 ? Math.min(100, 100 * out.använt / out.pott) : 0;
@@ -746,7 +746,7 @@ function _renderScenarioCompare() {
     if (!host) return;
     const sc = state.forecast.scenarios || {};
     if (!sc.A && !sc.B) { host.innerHTML = '<p class="text-dampad-sm marg-0">Spara två scenarier (A/B) för att jämföra utfall sida vid sida.</p>'; return; }
-    const kr = n => n == null ? '–' : Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
     const pc = n => n == null ? '–' : (n >= 0 ? '+' : '') + svPct(n, 1);
     // Ett scenario sparat vid en lägre tröskel kan bära ett rågap som inte längre får visas (som
     // A/B-bilden i 19-konfiguration.js). Saknas antalen prövas det mot underlaget som det är nu.
@@ -844,7 +844,7 @@ function _forecastSensitivity() {
     const curve = _fcSensitivityCurve(d, cand, cost, 10);
     if (!_konFarRedovisasFor(d)) curve.forEach(c => { c.rawGap = null; });   // k: det råa gapet följer tröskeln
     const maxGap = Math.max(...curve.map(c => Math.abs(c.rawGap || 0)), 0.01);
-    const kr = n => Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
     host.innerHTML = `<table class="data-table fs-sm"><thead><tr><th>Minskning av skillnaderna</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kvinnors median i % av mäns</th><th>　</th></tr></thead><tbody>
         ${curve.map(c => `<tr><td>${svPct((c.fraction * 100), 0)}</td><td class="t-hoger">${kr(c.kostnad)}</td><td class="t-hoger">${c.rawGap == null ? '–' : andelAvMan(c.rawGap)}</td><td><div class="rund-4 hojd-9 min-bredd-2 bg-info" data-stil-bredd="${(Math.abs(c.rawGap || 0) / maxGap * 100).toFixed(0)}%"></div></td></tr>`).join('')}
     </tbody></table><p class="text-dampad-xs marg-6-0-0">Avtagande avkastning: visar hur den råa skillnaden och kostnaden utvecklas när skillnaderna i likvärdigt arbete minskar allt mer.${_fcParNot ? ' ' + esc(_fcParNot) : ''}</p>`; tillampaDataStil(host);
@@ -863,7 +863,7 @@ function _forecastRemediation() {
     state.forecast._remediation = rem;
     const months = (state.costSettings && state.costSettings.months) || 12;
     const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
-    const kr = n => Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
     if (!rem.count) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Inga kvinnor ligger mer än tröskeln under sitt jämförelsevärde.</span>`; return; }
     const K = kTroskel();
     const visade = rem.perGroup.filter(g => g.count >= K);

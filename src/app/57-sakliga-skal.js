@@ -17,7 +17,7 @@
 /** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, konUnder: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
 let _skal = null;
 const SKAL_JA = 'Ja, sakligt skäl finns';
-const _skalKr = v => `${svTal(Math.round(v), 0)} kr`;
+const _skalKr = v => svKr(v);
 const _skalPct = v => svPct(v * 100, 0);
 
 /** Beloppet i fältet som heltal, eller null när det inte är ett giltigt belopp (0–200 000). */

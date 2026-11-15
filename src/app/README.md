@@ -29,7 +29,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `01-html-och-tillganglighet.js` | `esc`-hjälpare, fokusfällor, skärmläsarmeddelanden |
 | `01-farger.js` | `FARG`: gränssnittets färger på ett ställe — statusarna (text, botten, yta, kant), neutrala och blå accent. Mallar, palett och stilmallens `--status-*` läser härifrån; `tests/farger.test.js` håller hexkoderna borta från resten |
 | `02-verktygstips.js` | Diagrammens verktygstipsportal, gränsen för nedsampling av punktmoln, verktygstips |
-| `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator, fält- och kolumnigenkänning, svenska talformat (`svTal`, `svPct`) |
+| `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator, fält- och kolumnigenkänning, svenska talformat (`svTal`, `svPct`, `svKr`) |
 | `03-ikoner.js` | Linjeikonerna (`ikon`): ett bildspråk i stället för bildtecken; statusmärken med egen form |
 | `04-ordlista.js` | Ordlistan, symbolförklaringen och metodtexten om AID (`AID_METODTEXT`); texterna är mallar med termerna (`{enhet.en}`), fyllda med `termText` |
 | `05-tabeller-och-lankar.js` | Beräkningspaneler (audit), sorterbara (underrader följer sin rad) och hopfällbara tabeller, växeln *Fler kolumner* för breda tabeller (`flerKolumner`; grundvyn gömmer sekundära kolumner, exporterna tar alla), `navigateTo`, korslänkar, stapelceller |

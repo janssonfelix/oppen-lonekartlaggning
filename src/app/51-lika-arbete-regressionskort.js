@@ -252,11 +252,12 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
         adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
+// Hårda mellanslag (U+00A0): «p < 0,001» bryts inte mellan tecknet och talet i en smal kolumn.
 function _formatPValue(p) {
-    if (p < 0.001) return 'p < 0,001';
-    if (p < 0.01)  return 'p < 0,01';
-    if (p < 0.05)  return 'p < 0,05';
-    return 'p = ' + svTal(p, 3);
+    if (p < 0.001) return 'p\u00a0<\u00a00,001';
+    if (p < 0.01)  return 'p\u00a0<\u00a00,01';
+    if (p < 0.05)  return 'p\u00a0<\u00a00,05';
+    return 'p\u00a0=\u00a0' + svTal(p, 3);
 }
 
 // Plain-text tolkning av p-värdet, används som tooltip
@@ -449,7 +450,7 @@ const _REG_TRAPPSTEG = { [_RG_STEG_BAS]: termStor(T.niva.en), '+ Ålder': 'Ålde
 function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en}`) {
     const forst = seqOk[0], sist = seqOk[seqOk.length - 1];
     const yrke = yrkesSteg && yrkesSteg.status === 'ok' && typeof yrkesSteg.gapPct === 'number' ? yrkesSteg : null;
-    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
+    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const pp = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} procentenheter`;
     const kategorier = ['Ojusterad skillnad', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarad skillnad', ...(yrke ? [_REG_TRAPPSTEG[_RG_STEG_YRKE]] : [])];
     // Varje förklaringssteg: från gapet före steget till gapet efter. Seriens blå när gapet krymper mot noll, orange när
@@ -581,7 +582,7 @@ function _regKvantilBootstrap(raw, modell, results, arKv) {
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.
 function _regKvantilFigur(resultat) {
     const namn = { 0.1: 'P10 (lägst betalda)', 0.5: 'Median', 0.9: 'P90 (högst betalda)' };
-    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
+    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const data = resultat.map(r => ({ y: namn[r.tau] || `P${Math.round(r.tau * 100)}`, x: +r.konPct.toFixed(2),
         ...(r.ki ? { fel: { lag: +r.ki.lag.toFixed(2), hog: +r.ki.hog.toFixed(2) } } : {}) }));
     const kanter = data.flatMap(d => d.fel ? [d.x, d.fel.lag, d.fel.hog] : [d.x]);
@@ -838,7 +839,7 @@ function renderRegressionCard() {
         : '';
 
     // ---- Pedagogik: kronor, konkret exempel, stående reservation, budget ----
-    const krFmt = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const krFmt = v => svKr(v);
     // Kronexemplet utgår från männens medianlön — ett könsuppdelat mått som följer tröskeln (ADR-12),
     // även när regressionen själv får köras (fast golv, ADR-38).
     const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);

@@ -140,8 +140,15 @@ function svTal(v, dec = 0) {
     const f = 10 ** dec, r = Math.round(v * f) / f;
     return _svNf.get(dec).format(r === 0 ? 0 : r);   // ingen "−0,0"
 }
-/** Som svTal, med " %" efter. */
-function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+// Mellan talet och enheten står ett hårt mellanslag (U+00A0), som Intl redan skriver mellan tusentalen: då bryts
+// «36 262 kr» och «73 %» aldrig isär i en smal kolumn, på skärmen eller i utskriften. Excel-exporten gör det hårda
+// mellanslaget till ett vanligt (22-exporthjalpare.js), liksom CSV och urklipp (_tableCellText i 12-tillstand.js), så
+// där står talen som förut. Word-utkastet gör om allt blanktecken till vanligt mellanslag (62-word-utkast.js); där
+// hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så att talet ryms på en rad.
+/** Som svTal, med " %" efter (hårt mellanslag). */
+function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+/** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal. */
+function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(Math.round(v), 0)} kr` : tom; }
 
 // ---- Underlagets storlek i en tabell ----
 // En tabell med ett lönemått för en grupp visar gruppens antal (som egen kolumn); en modelltabell, där alla rader

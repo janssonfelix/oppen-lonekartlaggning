@@ -266,7 +266,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
     if (!yrkesRader.some(x => x.ansvarsgrupp)) return [];
     const under = _anUnderrader(yrkesRader, { k: kTroskel() });
     if (under.length < 2) return [];
-    const pct = v => `${v.toFixed(1).replace('.', ',')} %`;
+    const pct = v => `${v.toFixed(1).replace('.', ',')}\u00a0%`;
     const ut = under.map(u => {
         const tr = document.createElement('tr');
         tr.className = 'la-underrad';

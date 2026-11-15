@@ -146,7 +146,7 @@ function _fkCellHtml(cell) {
     return `<td class="fk-fel">${ikon('statusVarning', 14)} <span class="fk-varde">${esc(cell.text)}</span><span class="fk-skal">${esc(cell.fel)}</span></td>`;
 }
 const _fkLista = (rader) => `<ul class="fk-lista">${rader.map(r => `<li>${r}</li>`).join('')}</ul>`;
-const _fkKr = v => (typeof v === 'number' ? `${svTal(v, 0)} kr` : '–');
+const _fkKr = v => svKr(v);
 
 /** Ritar avsnittet Förhandskontroll av lönefilen ur state.forhandskontroll (dolt när den saknas). */
 function renderForhandskontroll() {

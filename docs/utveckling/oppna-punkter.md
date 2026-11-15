@@ -62,13 +62,19 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     i lönefilens poängtabell (`byggParPoäng`). Det har den sällan, så reserven används i praktiken nästan aldrig.
 
 **Efter bytet till AID:s ord (ADR-74, 2026-11-15):**
-26. **Utseendet med de nya orden är mätt, inte sett.** Mot bygget före bytet, med demodatan och det stora demot,
-    hamnar ingen diagramtext utanför eller ovanpå annan text, och ingen flik får vågrät rullning. Fyra tabeller som
-    redan rullade i sidled blev 7–28 punkter bredare (Handlingsplanen, Löneläget mot statistiken, *Lägre krav, högre
-    lön* och huvudområdena i Lönestruktur). Inte prövat: kolumnrubrikernas radbrytning, skärmar smalare än 1 100
-    punkter, och exporterna öppnade i Word, Excel och en PDF-läsare.
+26. **Utseendet med de nya orden är prövat i webbläsare och LibreOffice, inte i Word och Excel.** Mot bygget före
+    bytet, med demodatan och det stora demot, hamnar ingen diagramtext utanför eller ovanpå annan text, och ingen flik
+    får vågrät rullning. Kolumnrubrikerna bryts bara mellan ord och beloppen står på en rad med «kr» vid 1 100–1 440
+    punkter (vakt i `tools/browser-smoke/layout.mjs`). PDF-rapportens tabeller ryms på sidan med och utan webbläsarens
+    avstavning (vakt i `tools/browser-smoke/exporter.mjs`). Word-utkastet och Excel-filen är renderade i LibreOffice.
+    Inte prövat: exporterna öppnade i Word och Excel, skärmen i Firefox och Safari för hand, och bredder under 1 100
+    punkter (till exempel Windows med skalning 125 %).
 27. **Termerna byts i koden, inte i en fil.** En annan uppsättning (till exempel för en annan bransch) kräver ett
     eget bygge. Organisationspaketet kan inte bära en uppsättning, och dokumenten är skrivna med standardorden.
+30. *Avslutad 2026-11-15:* utseendebesluten är fattade i ADR-75 (kort ordform *AID* i kolumnrubriker, *AID median
+    högre (kr)* i rapporten, 9 pt i Word-utkastet när en tabell inte ryms i 10 pt).
+31. **Excel kan inte radbryta en etikett som är bredare än kolumnens tak** (70 tecken): den inbäddade SheetJS
+    community skriver inte cellstilar. En längre etikett syns hel bara i cellen eller formelfältet.
 
 **Dokumentation och lansering:**
 17b. **Före varje release: riskanalysen granskas mot koden.** `riskanalys.md` och `dataskydd.md` läses påstående

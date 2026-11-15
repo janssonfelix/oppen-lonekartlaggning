@@ -39,7 +39,7 @@ function renderStructure() {
         _stRitaTopp(d, null);
         return;
     }
-    const kr = n => n == null ? '–' : Math.round(n).toLocaleString('sv-SE') + ' kr';
+    const kr = n => svKr(n);
 
     // (1) Representations-pyramid
     // Könsuppdelade mått kräver tröskeln för varje kön (ADR-12); lib-funktionerna får alltid värdet.
@@ -339,8 +339,8 @@ function renderSektorer(d) {
         tabell = _skSektorsTabell(d, { k: kTroskel(), punkter: _sektorPunkter(), skrDel: _skrDel() });
         andel = _skSektorernasAndel(d, { k: kTroskel() });
     } catch (e) { rapporteraFel(termStor(T.huvudomrade.fl), e); host.innerHTML = ''; return; }
-    const kr = n => (n == null ? '–' : `${Math.round(n).toLocaleString('sv-SE')} kr`);
-    const pc = n => (n == null ? '–' : `${n.toFixed(1).replace('.', ',')} %`);
+    const kr = n => svKr(n);
+    const pc = n => (n == null ? '–' : `${n.toFixed(1).replace('.', ',')}\u00a0%`);
     const harLedning = tabell.some(r => r.ledningKv != null || r.ledningMa != null);
     const rader = tabell.map(r => {
         const loner = r.maskerad

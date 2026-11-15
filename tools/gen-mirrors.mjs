@@ -151,7 +151,7 @@ export const MODULES = [
     },
     {
         file: 'htmltext.js', ns: '__mirrorHtmlText',
-        expose: { utanTaggar: '_utanTaggar', htmlTillText: '_htmlTillText' }
+        expose: { utanTaggar: '_utanTaggar', htmlTillText: '_htmlTillText', arTal: '_cellArTal' }
     },
     {
         file: 'namn.js', ns: '__mirrorNamn',

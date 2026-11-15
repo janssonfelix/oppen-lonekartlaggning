@@ -350,7 +350,7 @@ function renderHandlingsplanSeed() {
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
     const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
-    const fmtKr = n => (n ? Math.round(n).toLocaleString('sv-SE') + ' kr' : '');
+    const fmtKr = n => (n ? svKr(n) : '');
     const lista = (id, nyckel, falt, val, alt, etikett) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett)}">`
         + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
     const text = (id, nyckel, falt, val, platshallare, etikett) => `<input type="text" id="${id}" class="hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" value="${esc(val)}"`
