@@ -58,6 +58,123 @@ function _rfRadbryt(text, maxTecken, maxRader) {
     return ut;
 }
 
+// Punktetiketter som undviker (lagrets `etikettLage: 'undvik'`). Etiketterna läggs en i taget, i den ordning de
+// kommer. Var och en prövas på åtta platser runt sin punkt — höger, vänster, över, under och de fyra hörnen — först
+// intill punkten och sedan längre ut (där i sexton riktningar), en textrad i taget (högst RF_UNDVIK_VARV varv). En etikett som står längre ut
+// än intill punkten får en hänvisningslinje från punktens kant till texten. Den första platsen tas där rutan varken
+// täcker en ritad punkt, en redan lagd etikett eller en redan dragen linje, där den egna linjen inte skär en redan
+// lagd etikett, och där rutan står inom panelen. Finns ingen fri plats står etiketten på den plats där den krockar
+// minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka punkter som namnges.
+// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd); `hinder`: [{ x, y, r }],
+// de ritade punkterna i panelen. Bara ritade punkter är hinder, så en dold liten punkt påverkar inte lägena.
+// `bt` och `ht` är textens egen bredd och höjd när rutan har luft runt texten (texten står mitt i rutan; linjen når
+// texten, inte luften). Ren beräkning: ingen DOM, samma svar varje gång. Ger [{ x0, y0, x1, y1, linje: { x1, y1, x2,
+// y2 } | null }].
+const RF_UNDVIK_VARV = 20, RF_UNDVIK_RIKTNINGAR = 32, RF_UNDVIK_LAGNING = 3;
+/**
+ * Skär sträckan (x1, y1)–(x2, y2) rutan? (Liang–Barsky.)
+ * @param {{x1:number, y1:number, x2:number, y2:number}} l @param {{x0:number, y0:number, x1:number, y1:number}} q
+ */
+function _rfLinjeSkarRuta(l, q) {
+    const dx = l.x2 - l.x1, dy = l.y2 - l.y1;
+    let t0 = 0, t1 = 1;
+    for (const [p, v] of [[-dx, l.x1 - q.x0], [dx, q.x1 - l.x1], [-dy, l.y1 - q.y0], [dy, q.y1 - l.y1]]) {
+        if (p === 0) { if (v < 0) return false; continue; }
+        const t = v / p;
+        if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
+    }
+    return t0 <= t1;
+}
+/**
+ * @param {Array<{x:number, y:number, r:number, b:number, h:number, bt?:number, ht?:number}>} etiketter
+ * @param {Array<{x:number, y:number, r:number}>} hinder
+ * @param {number} B @param {number} H
+ * @returns {Array<{x0:number, y0:number, x1:number, y1:number, linje:{x1:number, y1:number, x2:number, y2:number}|null}>}
+ */
+function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
+    /** @typedef {{x1:number, y1:number, x2:number, y2:number}} Linje */
+    /** @typedef {{x0:number, y0:number, x1:number, y1:number, varv:number, linje:Linje|null}} Plats */
+    const luft = 2;
+    const vidgad = (/** @type {{x0:number, y0:number, x1:number, y1:number}} */ q) => ({ x0: q.x0 - luft, y0: q.y0 - luft, x1: q.x1 + luft, y1: q.y1 + luft });
+    /** @type {Array<Plats|null>} */
+    const lage = etiketter.map(() => null);
+    // Platsens fasta hinder: utanför panelen och ritade punkter. Vikterna avgör bara reserven när ingen plats är fri:
+    // text över text är värst, sedan text över en punkt, sedan en linje genom en text.
+    const fast = (/** @type {Plats} */ q) => {
+        let n = q.x0 < 0 || q.y0 < 0 || q.x1 > B || q.y1 > H ? 100 : 0;
+        for (const p of hinder) {
+            const dx = Math.max(q.x0 - p.x, 0, p.x - q.x1), dy = Math.max(q.y0 - p.y, 0, p.y - q.y1);
+            if (dx * dx + dy * dy < (p.r + 2) * (p.r + 2)) n += 5;
+        }
+        return n;
+    };
+    // Krocken med etikett j (dess ruta och linje): 0 när de går fria.
+    const mot = (/** @type {Plats} */ q, /** @type {Plats} */ p) => {
+        let n = 0;
+        if (q.x0 < p.x1 + luft && p.x0 < q.x1 + luft && q.y0 < p.y1 + luft && p.y0 < q.y1 + luft) n += 10;
+        if (q.linje && _rfLinjeSkarRuta(q.linje, vidgad(p))) n += 3;   // den egna linjen genom en lagd etikett
+        if (p.linje && _rfLinjeSkarRuta(p.linje, vidgad(q))) n += 3;   // en dragen linje genom rutan
+        return n;
+    };
+    const kostnad = (/** @type {Plats} */ q, /** @type {number} */ i) => {
+        let n = fast(q);
+        lage.forEach((p, j) => { if (p && j !== i) n += mot(q, p); });
+        return n;
+    };
+    // Platserna för etikett i, i den ordning de prövas.
+    const kandidater = (/** @type {number} */ i) => {
+        const { x, y, r, b, h, bt = b, ht = h } = etiketter[i];
+        // Linjen från punktens kant till närmaste punkt på textens ruta (mitt i platsen); ingen när texten står intill.
+        const linjeTill = (/** @type {number} */ x0, /** @type {number} */ y0, /** @type {number} */ varv) => {
+            if (!varv) return null;
+            const tx0 = x0 + (b - bt) / 2, ty0 = y0 + (h - ht) / 2;
+            const nx = Math.min(Math.max(x, tx0), tx0 + bt), ny = Math.min(Math.max(y, ty0), ty0 + ht), L = Math.hypot(nx - x, ny - y);
+            return L > r + 3 ? { x1: x + (nx - x) * (r + 1) / L, y1: y + (ny - y) * (r + 1) / L, x2: nx, y2: ny } : null;
+        };
+        /** @type {Plats[]} */
+        const ut = [];
+        for (let varv = 0; varv <= RF_UNDVIK_VARV; varv++) {
+            const d = r + 4 + varv * (h + 2), dd = d * Math.SQRT1_2;
+            const platser = [[x + d, y - h / 2], [x - d - b, y - h / 2], [x - b / 2, y - d - h], [x - b / 2, y + d],
+                [x + dd, y - dd - h], [x - dd - b, y - dd - h], [x + dd, y + dd], [x - dd - b, y + dd]];
+            // Längre ut också riktningar emellan, så att en linje kan nå förbi etiketterna närmast punkten.
+            if (varv) for (let k = 0; k < RF_UNDVIK_RIKTNINGAR; k++) {
+                const v = (k + 0.5) * 360 / RF_UNDVIK_RIKTNINGAR;
+                const cx = x + d * Math.cos(v * Math.PI / 180), cy = y - d * Math.sin(v * Math.PI / 180);
+                platser.push([cx >= x ? cx : cx - b, cy <= y ? cy - h : cy]);
+            }
+            for (const [x0, y0] of platser) ut.push({ x0, y0, x1: x0 + b, y1: y0 + h, varv, linje: linjeTill(x0, y0, varv) });
+        }
+        return ut;
+    };
+    const forsta = (/** @type {number} */ i) => {
+        /** @type {Plats|null} */ let bast = null; let bastN = Infinity;
+        for (const q of kandidater(i)) { const n = kostnad(q, i); if (!n) return { q, n }; if (n < bastN) { bast = q; bastN = n; } }
+        return { q: /** @type {Plats} */ (bast), n: bastN };
+    };
+    // Först i tur och ordning.
+    const fel = new Set();
+    etiketter.forEach((_, i) => { const { q, n } = forsta(i); lage[i] = q; if (n) fel.add(i); });
+    // Sedan en lagning: en etikett som inte fick en fri plats prövar platser där bara en annan etikett står i vägen;
+    // den andra flyttas om den själv hittar en fri plats någon annanstans.
+    for (let varv = 0; varv < RF_UNDVIK_LAGNING && fel.size; varv++) {
+        for (const i of [...fel]) {
+            for (const q of kandidater(i)) {
+                if (fast(q)) continue;
+                const ivagen = [];
+                lage.forEach((p, j) => { if (p && j !== i && mot(q, p)) ivagen.push(j); });
+                if (ivagen.length !== 1 || fel.has(ivagen[0])) continue;
+                const j = ivagen[0], gammalt = lage[j], gammaltI = lage[i];
+                lage[j] = null; lage[i] = q;
+                const ny = forsta(j);
+                if (!ny.n) { lage[j] = ny.q; fel.delete(i); break; }
+                lage[j] = gammalt; lage[i] = gammaltI;
+            }
+        }
+    }
+    return lage.map(q => { const p = /** @type {Plats} */ (q); return { x0: p.x0, y0: p.y0, x1: p.x1, y1: p.y1, linje: p.linje }; });
+}
+
 function _rfSkala(axel, doman, omfang) {
     if (axel.skala === 'band') return d3.scaleBand().domain(doman).range(omfang).paddingInner(0.2).paddingOuter(0.1);
     const log = axel.skala === 'log';

@@ -675,6 +675,11 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
         lager: [lager('Når tillsammans 80 % av kostnaden', PALETTE.serie[0], 1, inom), lager('Övriga', PALETTE.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
 
+// Zonernas rubriker i matrisen: statusens namn med versaler, högst 14 tecken. «Nära referens, under» (20 tecken) blev
+// klippt i en smal zon; zonen heter «Nära, under».
+const PRIO_ZON_NAMN = { bevaka: 'Nära, under' };
+function _prioZonNamn(status) { return (PRIO_ZON_NAMN[status] || PRIO_STATUS_INFO[status].label).toUpperCase(); }
+
 // Matrisen: en punktserie per status (förklaringen kan dölja en status), zoner för tröskelvärdena med namn, och
 // gruppens namn som text på punkten enligt valt etikettläge.
 function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
@@ -687,8 +692,10 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         ...(d.gapPct != null ? [['Skillnad kvinnor–män', `${pm(d.gapPct, 1)} %`]] : []),
         ...(d.atgard > 0 ? [['Kostnad att nå referensen/år', kr(d.atgard)]] : d.over > 0 ? [['Överlönekostnad/år', kr(d.over)]] : []),
         ['Prioriteringsindex', `${svTal(d.index, 0)}/100`]];
+    // Namnen undviker bubblorna och varandra (etikettLage 'undvik'); ett namn som står en bit från sin bubbla får en
+    // hänvisningslinje.
     const lager = Object.keys(PRIO_STATUS_INFO).map(status => ({
-        marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETTE.prio[status], opacitet: 0.72, kant: FARG.vit, tips,
+        marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETTE.prio[status], opacitet: 0.72, kant: FARG.vit, tips, etikettLage: 'undvik',
         data: items.filter(i => i.status === status && isFinite(i.diffPct) && i.n > 0).map(i => {
             const etikett = _makePrioLabel(i, i.rank, etikettlage);
             return { x: +i.diffPct.toFixed(2), y: i.n, storlek: Math.max(4, 16 * Math.sqrt(Math.max(kostnad(i), storst * 0.02) / storst)),
@@ -709,8 +716,10 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal, URVAL.avvikelse], x: { skala: 'linjar', titel: `Avvikelse mot ${refLabel} (%)`, doman: [xMin, xMax], nollinje: true },
         // Logskala bara när grupperna skiljer sig med mer än en tiopotens; annars är en vanlig axel lättare att läsa.
         y: stor ? { skala: 'log', titel: 'Antal personer i gruppen (log skala)' } : { skala: 'linjar', titel: 'Antal personer i gruppen' },
-        // Zonerna heter som statusarna i tabellen och förklaringen under den («Börja här» är de största grupperna i den första zonen).
-        referens: [zon(xMin, tAt, PALETTE.prio.akut, PRIO_STATUS_INFO.atgard.label.toUpperCase(), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, PRIO_STATUS_INFO.bevaka.label.toUpperCase(), FARG.varning),
-                   zon(tBe, tAn, PALETTE.semantic.ok, PRIO_STATUS_INFO.ok.label.toUpperCase(), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, PRIO_STATUS_INFO.analysera.label.toUpperCase(), FARG.infoMork)].filter(z => z.x1 > z.x0),
+        // Zonerna heter som statusarna i tabellen och förklaringen under den («Börja här» är de största grupperna i den första zonen),
+        // i en kortare form där statusens namn är längre än 14 tecken (PRIO_ZON_NAMN). En zonrubrik som inte ryms på en
+        // rad bryts på två.
+        referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard'), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka'), FARG.varning),
+                   zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok'), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera'), FARG.infoMork)].filter(z => z.x1 > z.x0),
         lager };
 }

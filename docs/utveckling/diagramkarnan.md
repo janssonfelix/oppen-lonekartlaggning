@@ -113,7 +113,7 @@ och finns till för `tips`.
 | Märke | Datapunkt | Lagrets val |
 |---|---|---|
 | `stapel` | `{ x, y, etikett?, fel?: { lag, hog }, farg?, monster? }` (`monster` på en datapunkt ger just den stapeln mönstret, t.ex. en stapel med litet underlag) | `riktning?: 'liggande'`; `lage?: 'bredvid'` (standard) \| `'staplad'` \| `'overlagrad'`; `bredd?` (andel av bandet, bara `overlagrad`); `opacitet?`; `absolut?: true` (lagret ritas åt det negativa hållet i en divergerande stapel men bär en storlek: diagramdatan skriver värdet utan tecken); `etikettKant?: true` (vit kant kring stapeletiketterna, när andra märken kan ligga på dem); `monster?: 'linjer'` \| `'prickar'` (vitt mönster över fyllningen, också i förklaringens ruta — för status som inte får bäras av färgen ensam) |
-| `punkt` | `{ x, y, storlek?, fargvarde?, farg?, forskjutning?, etikett?, fel?: { lag, hog } }` (`fel`: punktens osäkerhet, ritad som ett streck genom punkten längs värdeaxeln — y, eller x när lagret har `riktning: 'liggande'`; intervallets ändar räknas in i axelns omfång. `etikett`: text över punkten, högst 28 tecken, hela texten i `<title>`; etiketter som skulle skriva över varandra flyttas isär i höjdled) | `symbol?: 'cirkel'` (standard) \| `'romb'` \| `'kvadrat'` \| `'streck'` \| `'triangelVanster'` \| `'triangelHoger'` (cirkel, romb, kvadrat och streck ritas också som prov i förklaringen, så att formen och inte bara färgen skiljer serierna); `riktning?: 'liggande'` (bara för `fel`); `storlek?` (radie, standard 4); `opacitet?`; `kant?` (färg på en 1 px kant); `ofylld?: boolean` (bara cirkel, romb och kvadrat: punkten ritas som en ring i lagrets färg utan fyllning, `fill="none"`, och lagrets `kant` gäller inte; provet i förklaringen är också en ring. Ringens inre tar emot pekaren som en fylld punkt. För en andra status i samma färg — i Löneläget statistikens matchning: fylld = AID + BAS, ofylld = Endast AID. `valideraFigur` avvisar `ofylld` på andra märken och symboler); `etikettLage?: 'vanster'` \| `'hoger'` (etiketten bredvid punkten i stället för över den); `utanData?: true` (lagret bär bara etiketter till värden som står i ett annat lager, och får inga rader i diagramdatan — gäller alla märken utom `ruta`) |
+| `punkt` | `{ x, y, storlek?, fargvarde?, farg?, forskjutning?, etikett?, fel?: { lag, hog } }` (`fel`: punktens osäkerhet, ritad som ett streck genom punkten längs värdeaxeln — y, eller x när lagret har `riktning: 'liggande'`; intervallets ändar räknas in i axelns omfång. `etikett`: text över punkten, högst 28 tecken, hela texten i `<title>`; etiketter som skulle skriva över varandra flyttas isär i höjdled. `etikettLage: 'under'` \| `'over'` på datapunkten ställer etiketten på den sidan av punkten, och bredvid märket, förbi den bredaste stapel bandet rymmer, när den inte ryms där: värdet vid änden av en stapel i en trappa, utanför stapeln. Gäller när lagret saknar `etikettLage`) | `symbol?: 'cirkel'` (standard) \| `'romb'` \| `'kvadrat'` \| `'streck'` \| `'triangelVanster'` \| `'triangelHoger'` (cirkel, romb, kvadrat och streck ritas också som prov i förklaringen, så att formen och inte bara färgen skiljer serierna); `riktning?: 'liggande'` (bara för `fel`); `storlek?` (radie, standard 4); `opacitet?`; `kant?` (färg på en 1 px kant); `ofylld?: boolean` (bara cirkel, romb och kvadrat: punkten ritas som en ring i lagrets färg utan fyllning, `fill="none"`, och lagrets `kant` gäller inte; provet i förklaringen är också en ring. Ringens inre tar emot pekaren som en fylld punkt. För en andra status i samma färg — i Löneläget statistikens matchning: fylld = AID + BAS, ofylld = Endast AID. `valideraFigur` avvisar `ofylld` på andra märken och symboler); `etikettLage?: 'vanster'` \| `'hoger'` (etiketten bredvid punkten i stället för över den) \| `'auto'` (till höger, till vänster vid panelens högerkant) \| `'undvik'` (etiketten ställs där den varken täcker en ritad punkt eller en annan etikett, och får en hänvisningslinje när den står en bit från punkten; nedan); `utanData?: true` (lagret bär bara etiketter till värden som står i ett annat lager, och får inga rader i diagramdatan — gäller alla märken utom `ruta`) |
 | `linje` | `{ x, y }`; `y: null` bryter linjen | `streck?: 'hel'` \| `'streckad'` \| `'prickad'`; `kurva?: 'monoton'`; `punkter?: boolean`; `tjocklek?` (standard 2) |
 | `band` | `{ x, lag, hog }` | `kurva?: 'monoton'`; `opacitet?` (standard 0,18) |
 | `intervall` | `{ x \| y, lag, hog, farg?, forskjutning? }` | `riktning?: 'liggande'`; `tjocklek?` (standard 6); `opacitet?` |
@@ -122,6 +122,17 @@ och finns till för `tips`.
 | `yta` | `{ x0, x1, y0, y1, namn?, varde?, fargvarde?, farg?, etikett?, undertext? }` — en fri rektangel mellan två hörn på talaxlar (trädkarta: vyn räknar lägena). Färgen är punktens `farg`, annars färgskalan för `fargvarde`, annars lagrets. I diagramdatan: en rad per yta med `namn` (annars `etikett`) och `varde` | `opacitet?`; `etikettLage?: 'topp'` (bara etiketten, ingen undertext). Etiketten ritas uppe till vänster när ytan rymmer den |
 
 - `forskjutning` flyttar en punkt eller ett intervall i sidled på en bandaxel, i andelar av bandets bredd.
+- Punktetiketter med `etikettLage: 'undvik'` läggs när panelens alla punkter är ritade (`_rfPlaceraEtiketter` i
+  `10-diagramlayout.js`). Etiketterna läggs en i taget, i lagrens och punkternas ordning. Var och en prövas på åtta
+  platser runt sin punkt (höger, vänster, över, under och hörnen), först intill punkten och sedan längre ut en textrad i
+  taget. Den första platsen där rutan varken täcker en ritad punkt eller en redan lagd etikett, och står inom panelen,
+  tas. En etikett som står längre ut än intill punkten får en tunn linje (`data-marke="hanvisning"`) från punktens kant
+  till rutan, och längre ut prövas också 32 riktningar mellan de åtta. En linje som går genom en annan etiketts ruta
+  räknas som en krock, åt båda hållen. Prövningen går högst 20 textrader ut. En etikett som inte fick en fri plats
+  prövar sedan platser där bara en annan etikett står i vägen; den andra flyttas, om den själv hittar en fri plats. Finns ingen fri plats står den där den täcker minst: etiketten ritas alltid, för det är vyn
+  som har valt vilka punkter som namnges. Bara ritade punkter är hinder, så en dold liten punkt påverkar inte lägena.
+  Etikettens ruta räknas med en tiondel och 2 px utöver den uppskattade textbredden, och 1,3 gånger teckenstorleken
+  på höjden.
 - `stapel` och `lada` kräver bandskala på kategoriaxeln; `ruta` på både x och y. `lada` ritas bara stående
   (`riktning: 'liggande'` avvisas av `valideraFigur`).
 - Staplade staplar summerar positiva värden uppåt och negativa nedåt, var för sig, per kategori och panel.
@@ -149,8 +160,12 @@ data — och ritas som en färgstapel i högermarginalen med ändvärdena och ti
 ### Referenser
 
 - Zon: `{ typ: 'zon', x0?, x1? | y0?, y1?, axel?: 'y2', farg?, opacitet?, etikett?, textfarg? }`. Ritas under
-  märkena. En gräns som saknas är panelens kant. Etiketten ritas överst i zonen, ovanpå märkena; ryms den
-  inte kortas den (hela texten i `<title>`), och ryms inte tre tecken ritas den inte.
+  märkena. En gräns som saknas är panelens kant. Etiketten ritas överst i zonen, ovanpå märkena. En etikett i en
+  lodrät zon som inte ryms på en rad men hel på två bryts vid ordgränsen; annars kortas den (hela texten i `<title>`),
+  och ryms inte tre tecken ritas den inte. Etiketten läggs i zonens överkant där den varken täcker en ritad punkt,
+  en hänvisningslinje eller en annan text: mitt i zonen om det går, annars förskjuten i sidled eller en rad i taget
+  nedåt (högst tolv rader). Finns ingen sådan plats gäller den äldre regeln: mitt i zonen, under en text som redan
+  står där.
   På en bandaxel är gränserna kategorinamn och zonen täcker dem inklusive; saknas en gränskategori bland de
   ritade kategorierna ritas ingen zon.
 - Linje: `{ typ?: 'linje', x | y, axel?: 'y2', streck?, farg?, tjocklek?, etikett?, textfarg? }`. `etikett` står vid linjens
@@ -440,7 +455,7 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
 - Roten har `role="group"` och ritytan `role="img"`: förklaringens knappar ligger utanför bilden så att
   hjälpmedel når dem.
 - `data-marke` har värdena `stapel`, `punkt`, `linje`, `linjepunkt`, `litenpunkt`, `band`, `intervall`,
-  `lada`, `median`, `morrhar`, `avvikare`, `individ`, `ruta`, `rutatext`, `etikett`, `fel`, `rander`,
+  `lada`, `median`, `morrhar`, `avvikare`, `individ`, `ruta`, `rutatext`, `etikett`, `punktetikett`, `hanvisning`, `fel`, `rander`,
   `fargstapel`, `zon`, `zonetikett`, `referenslinje`, `nollinje`.
 - `data-l` är lagrets index i figuren som skickades in och `data-i` punktens index i lagrets data — alltid,
   med eller utan små grupper, dolda serier och bortvalda punkter. De bärs av märken som går att träffa: `stapel`, `punkt`,
@@ -620,7 +635,11 @@ ADR-39 gäller för allt som är ett diagram.
 
 **Märken.** Staplar har ett tak för tjockleken och rundade hörn; staplade delar och punkter har en tunn kant i
 ytans färg; axelsiffror är dämpade. Mönster (tunna sneda streck, små prickar) används bara för litet underlag.
-Etiketter sätts på det som behöver namnges, inte på allt: trattdiagrammet namnger högst sex grupper.
+Etiketter sätts på det som behöver namnges, inte på allt: trattdiagrammet namnger högst sex grupper, och ett namn
+som förekommer i mer än ett BAS-intervall får `·BAS`, som i matrisen. Namn på punkter i
+ett moln (trattdiagrammet, prioriteringsmatrisen) undviker punkterna och varandra (`etikettLage: 'undvik'`), och ett
+värde vid änden av en stapel står utanför stapeln (datapunktens `etikettLage`, trapporna). Pröva det med det stora
+demot: ett namn som täcker en annan punkt går inte att knyta till sin egen.
 
 **Förbehåll under diagrammet.** Ett metodförbehåll står i en egen not under diagrammet (`_setDiagramMetodNot` i
 `06-k-troskel.js`), efter k-noten och utan att skriva över den, och samma mening står under

@@ -171,7 +171,10 @@ function _guTrappaFigur(u) {
     const steg = delar.map((d, i) => { const fore = niva; niva += u.delar[d.id];
         return { x: kategorier[i], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: u.delar[d.id], efter: niva,
                  farg: u.delar[d.id] >= 0 ? PALETTE.serie[0] : PALETTE.serie[1] }; });
-    const streck = [...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: _guKr(s.del) })), { x: 'Hela skillnaden', y: Math.round(u.gap), etikett: _guKr(u.gap) }];
+    // Värdet står utanför stapeln, vid den ände där strecket står: under strecket när stapeln går uppåt från det (en del
+    // som minskar summan, en negativ helhet), annars över. En etikett som är bredare än stapeln täcker den då inte.
+    const under = neg => ({ etikettLage: neg ? 'under' : 'over' });
+    const streck = [...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: _guKr(s.del), ...under(s.del < 0) })), { x: 'Hela skillnaden', y: Math.round(u.gap), etikett: _guKr(u.gap), ...under(u.gap < 0) }];
     const antal = ['', 'en', 'två', 'tre', 'fyra', 'fem'][delar.length];
     return { beskrivning: `Skillnaden i medellön, kvinnor mot män, delad i ${antal} delar som läggs på varandra: ${_guDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
         legend: false, hojd: 280, x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true },

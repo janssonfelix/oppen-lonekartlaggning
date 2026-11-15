@@ -12448,6 +12448,123 @@ function _rfRadbryt(text, maxTecken, maxRader) {
     return ut;
 }
 
+// Punktetiketter som undviker (lagrets `etikettLage: 'undvik'`). Etiketterna läggs en i taget, i den ordning de
+// kommer. Var och en prövas på åtta platser runt sin punkt — höger, vänster, över, under och de fyra hörnen — först
+// intill punkten och sedan längre ut (där i sexton riktningar), en textrad i taget (högst RF_UNDVIK_VARV varv). En etikett som står längre ut
+// än intill punkten får en hänvisningslinje från punktens kant till texten. Den första platsen tas där rutan varken
+// täcker en ritad punkt, en redan lagd etikett eller en redan dragen linje, där den egna linjen inte skär en redan
+// lagd etikett, och där rutan står inom panelen. Finns ingen fri plats står etiketten på den plats där den krockar
+// minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka punkter som namnges.
+// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd); `hinder`: [{ x, y, r }],
+// de ritade punkterna i panelen. Bara ritade punkter är hinder, så en dold liten punkt påverkar inte lägena.
+// `bt` och `ht` är textens egen bredd och höjd när rutan har luft runt texten (texten står mitt i rutan; linjen når
+// texten, inte luften). Ren beräkning: ingen DOM, samma svar varje gång. Ger [{ x0, y0, x1, y1, linje: { x1, y1, x2,
+// y2 } | null }].
+const RF_UNDVIK_VARV = 20, RF_UNDVIK_RIKTNINGAR = 32, RF_UNDVIK_LAGNING = 3;
+/**
+ * Skär sträckan (x1, y1)–(x2, y2) rutan? (Liang–Barsky.)
+ * @param {{x1:number, y1:number, x2:number, y2:number}} l @param {{x0:number, y0:number, x1:number, y1:number}} q
+ */
+function _rfLinjeSkarRuta(l, q) {
+    const dx = l.x2 - l.x1, dy = l.y2 - l.y1;
+    let t0 = 0, t1 = 1;
+    for (const [p, v] of [[-dx, l.x1 - q.x0], [dx, q.x1 - l.x1], [-dy, l.y1 - q.y0], [dy, q.y1 - l.y1]]) {
+        if (p === 0) { if (v < 0) return false; continue; }
+        const t = v / p;
+        if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
+    }
+    return t0 <= t1;
+}
+/**
+ * @param {Array<{x:number, y:number, r:number, b:number, h:number, bt?:number, ht?:number}>} etiketter
+ * @param {Array<{x:number, y:number, r:number}>} hinder
+ * @param {number} B @param {number} H
+ * @returns {Array<{x0:number, y0:number, x1:number, y1:number, linje:{x1:number, y1:number, x2:number, y2:number}|null}>}
+ */
+function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
+    /** @typedef {{x1:number, y1:number, x2:number, y2:number}} Linje */
+    /** @typedef {{x0:number, y0:number, x1:number, y1:number, varv:number, linje:Linje|null}} Plats */
+    const luft = 2;
+    const vidgad = (/** @type {{x0:number, y0:number, x1:number, y1:number}} */ q) => ({ x0: q.x0 - luft, y0: q.y0 - luft, x1: q.x1 + luft, y1: q.y1 + luft });
+    /** @type {Array<Plats|null>} */
+    const lage = etiketter.map(() => null);
+    // Platsens fasta hinder: utanför panelen och ritade punkter. Vikterna avgör bara reserven när ingen plats är fri:
+    // text över text är värst, sedan text över en punkt, sedan en linje genom en text.
+    const fast = (/** @type {Plats} */ q) => {
+        let n = q.x0 < 0 || q.y0 < 0 || q.x1 > B || q.y1 > H ? 100 : 0;
+        for (const p of hinder) {
+            const dx = Math.max(q.x0 - p.x, 0, p.x - q.x1), dy = Math.max(q.y0 - p.y, 0, p.y - q.y1);
+            if (dx * dx + dy * dy < (p.r + 2) * (p.r + 2)) n += 5;
+        }
+        return n;
+    };
+    // Krocken med etikett j (dess ruta och linje): 0 när de går fria.
+    const mot = (/** @type {Plats} */ q, /** @type {Plats} */ p) => {
+        let n = 0;
+        if (q.x0 < p.x1 + luft && p.x0 < q.x1 + luft && q.y0 < p.y1 + luft && p.y0 < q.y1 + luft) n += 10;
+        if (q.linje && _rfLinjeSkarRuta(q.linje, vidgad(p))) n += 3;   // den egna linjen genom en lagd etikett
+        if (p.linje && _rfLinjeSkarRuta(p.linje, vidgad(q))) n += 3;   // en dragen linje genom rutan
+        return n;
+    };
+    const kostnad = (/** @type {Plats} */ q, /** @type {number} */ i) => {
+        let n = fast(q);
+        lage.forEach((p, j) => { if (p && j !== i) n += mot(q, p); });
+        return n;
+    };
+    // Platserna för etikett i, i den ordning de prövas.
+    const kandidater = (/** @type {number} */ i) => {
+        const { x, y, r, b, h, bt = b, ht = h } = etiketter[i];
+        // Linjen från punktens kant till närmaste punkt på textens ruta (mitt i platsen); ingen när texten står intill.
+        const linjeTill = (/** @type {number} */ x0, /** @type {number} */ y0, /** @type {number} */ varv) => {
+            if (!varv) return null;
+            const tx0 = x0 + (b - bt) / 2, ty0 = y0 + (h - ht) / 2;
+            const nx = Math.min(Math.max(x, tx0), tx0 + bt), ny = Math.min(Math.max(y, ty0), ty0 + ht), L = Math.hypot(nx - x, ny - y);
+            return L > r + 3 ? { x1: x + (nx - x) * (r + 1) / L, y1: y + (ny - y) * (r + 1) / L, x2: nx, y2: ny } : null;
+        };
+        /** @type {Plats[]} */
+        const ut = [];
+        for (let varv = 0; varv <= RF_UNDVIK_VARV; varv++) {
+            const d = r + 4 + varv * (h + 2), dd = d * Math.SQRT1_2;
+            const platser = [[x + d, y - h / 2], [x - d - b, y - h / 2], [x - b / 2, y - d - h], [x - b / 2, y + d],
+                [x + dd, y - dd - h], [x - dd - b, y - dd - h], [x + dd, y + dd], [x - dd - b, y + dd]];
+            // Längre ut också riktningar emellan, så att en linje kan nå förbi etiketterna närmast punkten.
+            if (varv) for (let k = 0; k < RF_UNDVIK_RIKTNINGAR; k++) {
+                const v = (k + 0.5) * 360 / RF_UNDVIK_RIKTNINGAR;
+                const cx = x + d * Math.cos(v * Math.PI / 180), cy = y - d * Math.sin(v * Math.PI / 180);
+                platser.push([cx >= x ? cx : cx - b, cy <= y ? cy - h : cy]);
+            }
+            for (const [x0, y0] of platser) ut.push({ x0, y0, x1: x0 + b, y1: y0 + h, varv, linje: linjeTill(x0, y0, varv) });
+        }
+        return ut;
+    };
+    const forsta = (/** @type {number} */ i) => {
+        /** @type {Plats|null} */ let bast = null; let bastN = Infinity;
+        for (const q of kandidater(i)) { const n = kostnad(q, i); if (!n) return { q, n }; if (n < bastN) { bast = q; bastN = n; } }
+        return { q: /** @type {Plats} */ (bast), n: bastN };
+    };
+    // Först i tur och ordning.
+    const fel = new Set();
+    etiketter.forEach((_, i) => { const { q, n } = forsta(i); lage[i] = q; if (n) fel.add(i); });
+    // Sedan en lagning: en etikett som inte fick en fri plats prövar platser där bara en annan etikett står i vägen;
+    // den andra flyttas om den själv hittar en fri plats någon annanstans.
+    for (let varv = 0; varv < RF_UNDVIK_LAGNING && fel.size; varv++) {
+        for (const i of [...fel]) {
+            for (const q of kandidater(i)) {
+                if (fast(q)) continue;
+                const ivagen = [];
+                lage.forEach((p, j) => { if (p && j !== i && mot(q, p)) ivagen.push(j); });
+                if (ivagen.length !== 1 || fel.has(ivagen[0])) continue;
+                const j = ivagen[0], gammalt = lage[j], gammaltI = lage[i];
+                lage[j] = null; lage[i] = q;
+                const ny = forsta(j);
+                if (!ny.n) { lage[j] = ny.q; fel.delete(i); break; }
+                lage[j] = gammalt; lage[i] = gammaltI;
+            }
+        }
+    }
+    return lage.map(q => { const p = /** @type {Plats} */ (q); return { x0: p.x0, y0: p.y0, x1: p.x1, y1: p.y1, linje: p.linje }; });
+}
+
 function _rfSkala(axel, doman, omfang) {
     if (axel.skala === 'band') return d3.scaleBand().domain(doman).range(omfang).paddingInner(0.2).paddingOuter(0.1);
     const log = axel.skala === 'log';
@@ -13104,16 +13221,34 @@ function _rfPunkt(g, l, li, c) {
                 .attr('transform', `translate(${x},${y}) rotate(${vinkel})`).attr('fill', farg);
         }
         m.attr('data-marke', 'punkt').attr('data-l', li).attr('data-i', i);
+        // Den ritade punkten är ett hinder för etiketterna som undviker (_rfUndvikEtiketter). Punktens yttre radie:
+        // romben och kvadraten sticker ut förbi r, strecket är 2r brett.
+        if (c.punkthinder) c.punkthinder.push({ x, y, r: (l.symbol === 'streck' ? 2 * r : l.symbol === 'romb' || l.symbol === 'kvadrat' ? 1.3 * r : r) + 0.5 });
         // Punktens etikett (t.ex. gruppens namn i en matris): mitt över punkten, med vit kant. Den hör till punkten och
         // ritas därför aldrig för en punkt som inte ritas.
-        if (d.etikett != null && String(d.etikett) !== '') {
+        if (d.etikett != null && String(d.etikett) !== '' && l.etikettLage === 'undvik' && c.undvik) {
+            // Läget räknas när panelens alla punkter är ritade (_rfUndvikEtiketter): de är hinder.
+            const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28);
+            c.undvik.push({ x, y, r: (l.symbol === 'romb' || l.symbol === 'kvadrat' ? 1.3 * r : r) + 0.5, text, hel, fpx });
+        } else if (d.etikett != null && String(d.etikett) !== '') {
             const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
             // Lagrets etikettLage ställer texten till vänster eller höger om punkten (värdet bredvid en punkt i ett liggande diagram);
             // annars mitt över punkten — eller under, om den inte ryms ovanför (panelens överkant).
             // 'auto' är till höger om punkten, och till vänster när texten annars skulle gå utanför panelens högerkant.
-            const sida = l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1) : 0;
-            const tx = x + sida * (r + 5);
-            const ty = sida ? y + fpx * 0.35 : (y - r - 3 < fpx ? y + r + fpx : y - r - 3);
+            // Datapunktens etikettLage 'under' eller 'over' ställer etiketten på den sidan av punkten (värdet vid änden av
+            // en stapel i en trappa: utanför stapeln). Ryms den inte där (panelens kant) står den bredvid, förbi den
+            // bredaste stapel bandet rymmer, till höger eller vid högerkanten till vänster — aldrig på andra sidan, där
+            // stapeln är.
+            const fast = !l.etikettLage && (d.etikettLage === 'under' || d.etikettLage === 'over') ? d.etikettLage : null;
+            const fastRyms = fast === 'under' ? y + r + fpx * 1.25 <= c.inreH : y - r - 3 >= fpx;
+            const ut = Math.max(l.symbol === 'streck' && !vagrat ? 2 * r : r, c.x.bandwidth ? Math.min(c.x.bandwidth(), _RF.stapelMax) / 2 : 0);
+            const sida = l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1)
+                : fast && !fastRyms ? (x + ut + 5 + tb > c.panelB ? -1 : 1) : 0;
+            const tx = x + sida * ((fast ? ut : r) + 5);
+            const ty = sida ? y + fpx * 0.35
+                : fast === 'under' ? y + r + fpx
+                : fast === 'over' ? y - r - 3
+                : (y - r - 3 < fpx ? y + r + fpx : y - r - 3);
             const t = _rfText(c.texter, tx, ty, text, { px: fpx, ankare: sida < 0 ? 'end' : sida > 0 ? 'start' : 'middle', title: hel,
                 attr: { 'data-marke': 'punktetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
             if (c.punktetiketter) c.punktetiketter.push({ t, y: ty, hojd: fpx + 3, over: !sida && ty < y, x0: sida < 0 ? tx - tb : sida > 0 ? tx : tx - tb / 2, x1: sida < 0 ? tx : sida > 0 ? tx + tb : tx + tb / 2 });
@@ -13164,6 +13299,27 @@ function _rfEtikettKrockar(etiketter, inreH) {
         }
     }
     for (const e of lista) if (e.ny !== e.y) e.t.attr('y', spegla(e.ny));
+}
+
+// Etiketterna i lager med `etikettLage: 'undvik'` ritas när panelens alla punkter är ritade: läget räknas av
+// _rfPlaceraEtiketter (10-diagramlayout.js) med de ritade punkterna som hinder, och en etikett som står en bit från sin
+// punkt får en tunn hänvisningslinje (data-marke="hanvisning") under texten. Linjen och texten hör till en ritad punkt
+// och tar inte emot pekaren.
+function _rfUndvikEtiketter(c) {
+    if (!c.undvik || !c.undvik.length) return;
+    // Rutan räknas med en tiondel och 2 px luft utöver den uppskattade bredden och 1,3 gånger teckenstorleken på höjden
+    // (texten mitt i): teckensnittet i webbläsaren kan vara bredare och högre än uppskattningen (_RF.tecken), och en
+    // etikett som står tätt intill en annan ska inte nå in i den.
+    const matt = c.undvik.map(e => { const bt = _rfBredd(e.text, e.fpx); return { x: e.x, y: e.y, r: e.r, b: bt * 1.1 + 2, h: e.fpx * 1.3, bt, ht: e.fpx * 1.05 }; });
+    const lagen = _rfPlaceraEtiketter(matt, c.punkthinder || [], c.panelB, c.inreH);
+    c.undvik.forEach((e, n) => {
+        const q = lagen[n];
+        if (q.linje) c.texter.append('line').attr('data-marke', 'hanvisning').attr('pointer-events', 'none')
+            .attr('x1', q.linje.x1).attr('y1', q.linje.y1).attr('x2', q.linje.x2).attr('y2', q.linje.y2)
+            .attr('stroke', FARG.dampad).attr('stroke-width', 1);
+        _rfText(c.texter, q.x0 + (matt[n].b - matt[n].bt) / 2, q.y0 + (matt[n].h - matt[n].ht) / 2 + e.fpx * 0.8, e.text, { px: e.fpx, ankare: 'start', title: e.hel,
+            attr: { 'data-marke': 'punktetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+    });
 }
 
 // Märket för en liten punkt på en linje eller vid ett bands gräns (bara med visaSma): ihålig, streckad cirkel.
@@ -13643,12 +13799,21 @@ function _rfZoner(figur, c, bredd, hojd) {
 // att läsa mot vad som än ligger under. Överst i zonen: mitt över en lodrät zon, i övre vänstra hörnet av en vågrät.
 // En etikett som inte ryms i zonens bredd kortas (hela texten i <title>, och etiketten tar då emot pekaren); ryms
 // färre än tre tecken ritas den inte.
-// Ligger en text redan där (en stapeletikett eller en tidigare zonetikett) läggs etiketten en rad längre ned;
-// ryms den inte på tre försök ritas den inte.
+// Etiketten läggs helst där den varken täcker en text, en ritad punkt eller en hänvisningslinje: rad för rad nedåt
+// från zonens överkant (högst RF_ZON_RADER rader) och i varje rad i sidled inom zonen. Finns ingen sådan plats gäller
+// den äldre regeln: ligger en text redan där (en stapeletikett eller en tidigare zonetikett) läggs etiketten en rad
+// längre ned, och ryms den inte på tre försök ritas den inte.
+const RF_ZON_RADER = 12;
 function _rfZonEtiketter(zoner, c, bredd, hojd) {
     const fpx = c.px - 1;
     // Rutorna för de texter som redan ligger i textgruppen, uppskattade ur deras egna attribut (ingen DOM-mätning).
     const tagna = [];
+    // De ritade punkterna och hänvisningslinjerna: en zonetikett läggs helst där den inte täcker dem.
+    const punkter = c.punkthinder || [];
+    const linjer = [];
+    c.texter.selectAll('line[data-marke="hanvisning"]').each(/** @this {SVGLineElement} */ function () {
+        linjer.push({ x1: Number(this.getAttribute('x1')), y1: Number(this.getAttribute('y1')), x2: Number(this.getAttribute('x2')), y2: Number(this.getAttribute('y2')) });
+    });
     c.texter.selectAll('text').each(/** @this {SVGTextElement} */ function () {
         const px = Number(this.getAttribute('font-size')), x = Number(this.getAttribute('x')), y = Number(this.getAttribute('y'));
         const b = _rfBredd(this.firstChild ? this.firstChild.nodeValue : '', px), a = this.getAttribute('text-anchor');
@@ -13660,20 +13825,48 @@ function _rfZonEtiketter(zoner, c, bredd, hojd) {
         const hel = String(r.etikett);
         const ryms = Math.floor(((lodrat ? till - fran : bredd) - 8) / (fpx * _RF.tecken));   // 4 px luft på var sida
         if (ryms < Math.min(3, hel.length)) continue;
-        const text = _rfKorta(hel, ryms), tb = _rfBredd(text, fpx);
-        const x0 = lodrat ? (fran + till) / 2 - tb / 2 : Math.min(4, Math.max(0, bredd - tb));
-        for (let rad = 0; rad < 3; rad++) {
-            const y0 = (lodrat ? 2 : fran + 2) + rad * (fpx + 3);
-            const ruta = { x0, x1: x0 + tb, y0, y1: y0 + fpx * 1.05 };
-            if (ruta.y1 > hojd) break;
-            if (tagna.some(q => ruta.x0 < q.x1 + 2 && q.x0 < ruta.x1 + 2 && ruta.y0 < q.y1 && q.y0 < ruta.y1)) continue;
-            tagna.push(ruta);
+        // En etikett i en lodrät zon som inte ryms på en rad men hel på två bryts vid ordgränsen; annars kortas den.
+        const tva = lodrat && hel.length > ryms ? _rfRadbryt(hel, ryms, 2) : null;
+        const rader = tva && tva.length === 2 && tva.join(' ') === hel && tva.every(s => s.length <= ryms) ? tva : [_rfKorta(hel, ryms)];
+        const radH = fpx + 3;
+        const x0Av = (text, dx) => (lodrat ? (fran + till) / 2 - _rfBredd(text, fpx) / 2 : Math.min(4, Math.max(0, bredd - _rfBredd(text, fpx)))) + dx;
+        // Förskjutningar i sidled inom zonen (4 px luft): först mitt i (lodrät zon) eller vid vänsterkanten (vågrät),
+        // sedan omväxlande åt höger och vänster i steg om två tecken. Alla rader flyttas lika.
+        const vK = lodrat ? fran + 4 : 0, hK = lodrat ? till - 4 : bredd;
+        const lo = Math.max(...rader.map(t => vK - x0Av(t, 0))), hi = Math.min(...rader.map(t => hK - _rfBredd(t, fpx) - x0Av(t, 0)));
+        const sidled = [0];
+        for (let k = 1, steg = fpx * 1.2; k * steg <= Math.max(-lo, hi) && sidled.length < 40; k++) for (const dx of [k * steg, -k * steg]) if (dx >= lo && dx <= hi) sidled.push(dx);
+        const ledig = (rutor, motPunkter) => !rutor.some(ruta => tagna.some(q => ruta.x0 < q.x1 + 2 && q.x0 < ruta.x1 + 2 && ruta.y0 < q.y1 && q.y0 < ruta.y1)
+            || (motPunkter && (punkter.some(p => { const dx = Math.max(ruta.x0 - p.x, 0, p.x - ruta.x1), dy = Math.max(ruta.y0 - p.y, 0, p.y - ruta.y1); return dx * dx + dy * dy < (p.r + 2) * (p.r + 2); })
+                || linjer.some(l => _rfLinjeSkarRuta(l, ruta)))));
+        const rutorFor = (rad, dx) => { const y0 = (lodrat ? 2 : fran + 2) + rad * radH;
+            return rader.map((text, n) => { const x0 = x0Av(text, dx); return { x0, x1: x0 + _rfBredd(text, fpx), y0: y0 + n * radH, y1: y0 + n * radH + fpx * 1.05 }; }); };
+        // Först en plats överst i zonen som varken täcker en text, en ritad punkt eller en hänvisningslinje: rad för rad
+        // nedåt (högst RF_ZON_RADER), och i varje rad i sidled. Finns ingen sådan, som förut de tre översta raderna mitt i
+        // zonen, där bara texter undviks.
+        /** @type {Array<{x0:number, x1:number, y0:number, y1:number}>|null} */ let val = null;
+        for (let rad = 0; rad < RF_ZON_RADER && !val; rad++) {
+            for (const dx of sidled) {
+                const rutor = rutorFor(rad, dx);
+                if (rutor[rutor.length - 1].y1 > hojd || (!lodrat && rutor[rutor.length - 1].y1 > till)) break;
+                if (ledig(rutor, true)) { val = rutor; break; }
+            }
+        }
+        for (let rad = 0; rad < 3 && !val; rad++) {
+            const rutor = rutorFor(rad, 0);
+            if (rutor[rutor.length - 1].y1 > hojd) break;
+            if (ledig(rutor, false)) val = rutor;
+        }
+        if (!val) continue;
+        const rutor = val;
+        rader.forEach((text, n) => {
+            tagna.push(rutor[n]);
             // En kortad etikett (den får ett <title> med hela texten) tar emot pekaren, så att webbläsaren visar
             // hela texten; en okortad gör det inte — märkena under den går då att träffa.
-            _rfText(c.texter, x0, y0 + fpx * 0.8, text, { px: fpx, farg: r.textfarg || FARG.dampad, fet: true, title: hel,
-                attr: { 'data-marke': 'zonetikett', ...(text === hel ? { 'pointer-events': 'none' } : {}), stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
-            break;
-        }
+            const kortad = rader.length === 1 && text !== hel;
+            _rfText(c.texter, rutor[n].x0, rutor[n].y0 + fpx * 0.8, text, { px: fpx, farg: r.textfarg || FARG.dampad, fet: true, title: kortad ? hel : text,
+                attr: { 'data-marke': 'zonetikett', ...(kortad ? {} : { 'pointer-events': 'none' }), stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+        });
     }
 }
 
@@ -13845,6 +14038,8 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
         lador: iPanel.filter(({ l }) => l.marke === 'lada').map(({ li }) => li),
         stapel: new Map(),
         punktetiketter: [],
+        punkthinder: [],
+        undvik: [],
     };
     // Referenser under märkena (zoner först).
     _rfReferenser(gm, figurIn, c, panelB, inreH, 'zon');
@@ -13853,6 +14048,7 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
         if (ritaMarke) ritaMarke(gm, l, li, { ...c, nedsamplat: (ritade, totalt) => urval.set(li, [ritade, totalt]) });
     }
     _rfEtikettKrockar(c.punktetiketter, inreH);
+    _rfUndvikEtiketter(c);
     _rfReferenser(gm, figurIn, c, panelB, inreH, 'linje');
     // Nollinjer (data-marke="nollinje"): sist i den klippta svg:n, över märken och referenser.
     for (const [axel, skala, lodrat] of [[figurIn.x, x, true], [figurIn.y, y, false]]) {
@@ -28055,10 +28251,15 @@ function _laTrattFigur(u, k = kTroskel()) {
     const tips = d => [[`${d.p.yrke} · BAS ${d.p.bas}`], ['Kvinnors median', `${_figTalformat(d.y, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr), ['Antal kvinnor / män', `${d.p.nKv} / ${d.p.nMa}`],
         ['Slumpens gränser för gruppen', `${_figTalformat(d.p.gransLag, 'pct', { enhet: false })}–${_figTalformat(d.p.gransHog, 'pct')}`], ['Bedömning', d.p.utanfor ? 'utanför slumpens gränser' : 'inom slumpens gränser']];
     // Bara de sex grupper utanför gränserna som avviker mest namnges i bilden: med fler krockar namnen med varandra.
-    // Alla grupper har sitt namn i verktygstipset och i tabellen under.
+    // Alla grupper har sitt namn i verktygstipset och i tabellen under. Namnen undviker punkterna och varandra
+    // (etikettLage 'undvik'); ett namn som står en bit från sin punkt får en hänvisningslinje.
+    // Ett namn som förekommer i mer än ett BAS-intervall får ·BAS, som i matrisen, så att punkterna går att skilja åt.
     const namngivna = new Set(u.punkter.filter(p => p.utanfor).sort((a, b) => Math.abs(b.kvot - 100) - Math.abs(a.kvot - 100)).slice(0, 6));
-    const lager = (serie, farg, symbol, valj) => ({ marke: 'punkt', serie, farg, symbol, storlek: 6, etikettLage: 'auto',
-        data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, bas: p.bas, yrke: p.yrke, sektor: _aidSektorsnamn(p.aid), n: p.n, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: _rfKorta(String(p.yrke), 24) } : {}) })), tips });
+    const antalNamn = new Map();
+    for (const p of u.punkter) antalNamn.set(String(p.yrke), (antalNamn.get(String(p.yrke)) || 0) + 1);
+    const etikett = p => _rfKorta(String(p.yrke), 24) + (antalNamn.get(String(p.yrke)) > 1 ? `·${p.bas}` : '');
+    const lager = (serie, farg, symbol, valj) => ({ marke: 'punkt', serie, farg, symbol, storlek: 6, etikettLage: 'undvik',
+        data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, bas: p.bas, yrke: p.yrke, sektor: _aidSektorsnamn(p.aid), n: p.n, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: etikett(p) } : {}) })), tips });
     const ys = [...falt.flatMap(f => [f.lag, f.hog]), ...u.punkter.map(p => p.kvot)];
     return { beskrivning: `Trattdiagram: kvinnors medianlön i procent av mäns per ${T.enhet.en} och ${T.niva.en} mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
@@ -29687,7 +29888,9 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
         return { x: kategorier[i + 1], lag: Math.min(fore, efter), hog: Math.max(fore, efter), fore, efter, andring: efter - fore,
                  farg: Math.abs(efter) <= Math.abs(fore) ? PALETTE.serie[0] : PALETTE.serie[1] };
     });
-    const niva = (x, v) => ({ x, y: +v.toFixed(2), etikett: pct(v) });
+    // Nivåns värde står utanför stapeln, vid den ände där strecket står: under strecket när stapeln (eller steget) går
+    // uppåt från det, annars över. Så täcker värdet inte stapeln, också när den nästan inte syns.
+    const niva = (x, v, fore = 0) => ({ x, y: +v.toFixed(2), etikett: pct(v), etikettLage: v < fore ? 'under' : 'over' });
     const efterHuvudtalet = yrke ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${pct(yrke.gapPct)} kvar; det steget ingår inte i huvudtalet.` : '';
     return { beskrivning: `Hur löneskillnaden förklaras steg för steg: från den ojusterade skillnaden ${pct(forst.gapPct)} till det oförklarade ${pct(sist.gapPct)} när ${fras} räknas in.${efterHuvudtalet} Negativ skillnad betyder att kvinnor har lägre lön. Samma tal står i förklaringsbudgeten.`,
         legend: false, hojd: 300,
@@ -29705,8 +29908,8 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
               tips: d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ['Ingår inte i huvudtalet', '']] }] : []),
             // Nivån efter varje steg, med sitt värde: ett streck och en etikett.
             { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', farg: PALETTE.semantic.mork, storlek: 11,
-              data: [niva('Ojusterad skillnad', forst.gapPct), ...seqOk.slice(1).map((s, i) => niva(kategorier[i + 1], s.gapPct)), niva('Oförklarad skillnad', sist.gapPct),
-                     ...(yrke ? [niva(_REG_TRAPPSTEG[_RG_STEG_YRKE], yrke.gapPct)] : [])] }
+              data: [niva('Ojusterad skillnad', forst.gapPct), ...seqOk.slice(1).map((s, i) => niva(kategorier[i + 1], s.gapPct, seqOk[i].gapPct)), niva('Oförklarad skillnad', sist.gapPct),
+                     ...(yrke ? [niva(_REG_TRAPPSTEG[_RG_STEG_YRKE], yrke.gapPct, sist.gapPct)] : [])] }
         ] };
 }
 
@@ -31753,6 +31956,11 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
         lager: [lager('Når tillsammans 80 % av kostnaden', PALETTE.serie[0], 1, inom), lager('Övriga', PALETTE.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
 
+// Zonernas rubriker i matrisen: statusens namn med versaler, högst 14 tecken. «Nära referens, under» (20 tecken) blev
+// klippt i en smal zon; zonen heter «Nära, under».
+const PRIO_ZON_NAMN = { bevaka: 'Nära, under' };
+function _prioZonNamn(status) { return (PRIO_ZON_NAMN[status] || PRIO_STATUS_INFO[status].label).toUpperCase(); }
+
 // Matrisen: en punktserie per status (förklaringen kan dölja en status), zoner för tröskelvärdena med namn, och
 // gruppens namn som text på punkten enligt valt etikettläge.
 function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
@@ -31765,8 +31973,10 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         ...(d.gapPct != null ? [['Skillnad kvinnor–män', `${pm(d.gapPct, 1)} %`]] : []),
         ...(d.atgard > 0 ? [['Kostnad att nå referensen/år', kr(d.atgard)]] : d.over > 0 ? [['Överlönekostnad/år', kr(d.over)]] : []),
         ['Prioriteringsindex', `${svTal(d.index, 0)}/100`]];
+    // Namnen undviker bubblorna och varandra (etikettLage 'undvik'); ett namn som står en bit från sin bubbla får en
+    // hänvisningslinje.
     const lager = Object.keys(PRIO_STATUS_INFO).map(status => ({
-        marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETTE.prio[status], opacitet: 0.72, kant: FARG.vit, tips,
+        marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETTE.prio[status], opacitet: 0.72, kant: FARG.vit, tips, etikettLage: 'undvik',
         data: items.filter(i => i.status === status && isFinite(i.diffPct) && i.n > 0).map(i => {
             const etikett = _makePrioLabel(i, i.rank, etikettlage);
             return { x: +i.diffPct.toFixed(2), y: i.n, storlek: Math.max(4, 16 * Math.sqrt(Math.max(kostnad(i), storst * 0.02) / storst)),
@@ -31787,9 +31997,11 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal, URVAL.avvikelse], x: { skala: 'linjar', titel: `Avvikelse mot ${refLabel} (%)`, doman: [xMin, xMax], nollinje: true },
         // Logskala bara när grupperna skiljer sig med mer än en tiopotens; annars är en vanlig axel lättare att läsa.
         y: stor ? { skala: 'log', titel: 'Antal personer i gruppen (log skala)' } : { skala: 'linjar', titel: 'Antal personer i gruppen' },
-        // Zonerna heter som statusarna i tabellen och förklaringen under den («Börja här» är de största grupperna i den första zonen).
-        referens: [zon(xMin, tAt, PALETTE.prio.akut, PRIO_STATUS_INFO.atgard.label.toUpperCase(), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, PRIO_STATUS_INFO.bevaka.label.toUpperCase(), FARG.varning),
-                   zon(tBe, tAn, PALETTE.semantic.ok, PRIO_STATUS_INFO.ok.label.toUpperCase(), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, PRIO_STATUS_INFO.analysera.label.toUpperCase(), FARG.infoMork)].filter(z => z.x1 > z.x0),
+        // Zonerna heter som statusarna i tabellen och förklaringen under den («Börja här» är de största grupperna i den första zonen),
+        // i en kortare form där statusens namn är längre än 14 tecken (PRIO_ZON_NAMN). En zonrubrik som inte ryms på en
+        // rad bryts på två.
+        referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard'), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka'), FARG.varning),
+                   zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok'), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera'), FARG.infoMork)].filter(z => z.x1 > z.x0),
         lager };
 }
 // SPDX-License-Identifier: MIT
@@ -35213,7 +35425,10 @@ function _guTrappaFigur(u) {
     const steg = delar.map((d, i) => { const fore = niva; niva += u.delar[d.id];
         return { x: kategorier[i], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: u.delar[d.id], efter: niva,
                  farg: u.delar[d.id] >= 0 ? PALETTE.serie[0] : PALETTE.serie[1] }; });
-    const streck = [...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: _guKr(s.del) })), { x: 'Hela skillnaden', y: Math.round(u.gap), etikett: _guKr(u.gap) }];
+    // Värdet står utanför stapeln, vid den ände där strecket står: under strecket när stapeln går uppåt från det (en del
+    // som minskar summan, en negativ helhet), annars över. En etikett som är bredare än stapeln täcker den då inte.
+    const under = neg => ({ etikettLage: neg ? 'under' : 'over' });
+    const streck = [...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: _guKr(s.del), ...under(s.del < 0) })), { x: 'Hela skillnaden', y: Math.round(u.gap), etikett: _guKr(u.gap), ...under(u.gap < 0) }];
     const antal = ['', 'en', 'två', 'tre', 'fyra', 'fem'][delar.length];
     return { beskrivning: `Skillnaden i medellön, kvinnor mot män, delad i ${antal} delar som läggs på varandra: ${_guDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
         legend: false, hojd: 280, x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true },

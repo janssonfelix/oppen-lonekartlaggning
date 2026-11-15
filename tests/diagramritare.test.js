@@ -2286,7 +2286,8 @@ describe('ritaFigur: små grupper når aldrig en hanterare', () => {
 describe('Uppgift 6: ritarens ändringar (G4, G5, smått)', () => {
     const xy = (referens, over = {}) => ({ beskrivning: 'b', x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 10] }, referens, lager: [{ marke: 'punkt', data: [{ x: 10, y: 1 }, { x: 90, y: 9 }] }], ...over });
     it('G4: en kortad zonetikett (med <title>) tar emot pekaren så att hela texten visas; en okortad gör det inte', () => {
-        const lang = 'En zonetikett som är alldeles för lång för sin smala zon';
+        // För lång också för två rader: en etikett som ryms hel på två rader bryts i stället (etapp 1b, U7).
+        const lang = 'En zonetikett som är alldeles för lång för sin smala zon, också på två rader';
         const svg = rita(xy([{ typ: 'zon', x0: 60, x1: 100, etikett: lang }, { typ: 'zon', x0: 0, x1: 30, etikett: 'Nya' }]));
         const [kortad, hel] = alla(svg, 'text[data-marke="zonetikett"]');
         expect(texten(kortad)).toMatch(/…$/);
@@ -3574,5 +3575,119 @@ describe('bortvalda', () => {
         expect(tips.at(-1).n).toBe(3);
         expect(tips.at(-1).median).toBe(50);
         w.eval('rensaFigur(window.__el)');
+    });
+});
+
+describe('etiketter som inte täcker varandra (etapp 1b, U7)', () => {
+    // Etikettens ruta i panelens koordinater ur textens egna attribut, med ritarens teckenbredd (ingen DOM-mätning):
+    // samma ruta som layoutens kollisionsberäkning räknar med.
+    const ruta = t => { const px = tal(t, 'font-size'), b = texten(t).length * px * NF, a = t.getAttribute('text-anchor') || 'start', x = tal(t, 'x'), y = tal(t, 'y');
+        const x0 = a === 'end' ? x - b : a === 'middle' ? x - b / 2 : x; return { x0, x1: x0 + b, y0: y - px * 0.8, y1: y + px * 0.25 }; };
+    const motCirkel = (q, c) => { const dx = Math.max(q.x0 - c.x, 0, c.x - q.x1), dy = Math.max(q.y0 - c.y, 0, c.y - q.y1); return dx * dx + dy * dy < c.r * c.r; };
+    // Hänvisningslinjer som skär en annan etiketts text (ruta ur textens attribut).
+    const linjerGenomText = svg => {
+        const skar = w.eval('_rfLinjeSkarRuta'), t = alla(svg, 'text[data-marke="punktetikett"]'), fel = [];
+        for (const l of alla(svg, 'line[data-marke="hanvisning"]')) {
+            const s = { x1: tal(l, 'x1'), y1: tal(l, 'y1'), x2: tal(l, 'x2'), y2: tal(l, 'y2') };
+            for (const e of t) { const q = ruta(e); if (Math.abs(s.x2 - Math.min(Math.max(s.x2, q.x0), q.x1)) < 0.5 && Math.abs(s.y2 - Math.min(Math.max(s.y2, q.y0), q.y1)) < 0.5) continue;   // den egna texten
+                if (skar(s, q)) fel.push(texten(e)); }
+        }
+        return fel;
+    };
+    const kluster = (extra = []) => ({ beskrivning: 'K', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 100] },
+        lager: [{ marke: 'punkt', serie: 'S', storlek: 6, etikettLage: 'undvik',
+            data: [...Array.from({ length: 10 }, (_, i) => ({ x: 40 + (i % 4) * 2.5, y: 50 + Math.floor(i / 4) * 3, etikett: `Grupp nummer ${i + 1}` })), ...extra] }] });
+    it('_rfPlaceraEtiketter: ingen ruta täcker en annan ruta eller en punkt, alla står i panelen, och en flyttad etikett får en linje', () => {
+        w.__e = Array.from({ length: 12 }, (_, i) => ({ x: 150 + (i % 4) * 9, y: 140 + Math.floor(i / 4) * 9, r: 5, b: 90, h: 12 }));
+        w.__h = w.__e.map(e => ({ x: e.x, y: e.y, r: e.r }));
+        const ut = w.eval('_rfPlaceraEtiketter(window.__e, window.__h, 400, 300)');
+        expect(ut).toHaveLength(12);
+        for (const [i, q] of ut.entries()) {
+            expect(q.x0).toBeGreaterThanOrEqual(0); expect(q.y0).toBeGreaterThanOrEqual(0);
+            expect(q.x1).toBeLessThanOrEqual(400); expect(q.y1).toBeLessThanOrEqual(300);
+            for (const [j, p] of ut.entries()) if (i !== j) expect(tom(q, p), `${i} och ${j}`).toBe(false);
+            for (const c of w.__h) expect(motCirkel(q, c), `${i}`).toBe(false);
+        }
+        expect(ut[0].linje).toBeNull();                                  // den första står intill sin punkt
+        expect(ut.some(q => q.linje)).toBe(true);                         // i en klunga måste några stå längre ut
+    });
+    it("etikettLage 'undvik': etiketterna i en klunga täcker varken varandra eller punkterna, och den som flyttats ut har en hänvisningslinje", () => {
+        const svg = rita(kluster(), 600);
+        const t = alla(svg, 'text[data-marke="punktetikett"]'), rutor = t.map(ruta);
+        expect(t).toHaveLength(10);
+        for (let i = 0; i < rutor.length; i++) for (let j = i + 1; j < rutor.length; j++) expect(tom(rutor[i], rutor[j]), `${texten(t[i])} / ${texten(t[j])}`).toBe(false);
+        const cirklar = alla(svg, 'circle[data-marke="punkt"]').map(c => ({ x: tal(c, 'cx'), y: tal(c, 'cy'), r: tal(c, 'r') }));
+        for (const [i, q] of rutor.entries()) for (const c of cirklar) expect(motCirkel(q, c), texten(t[i])).toBe(false);
+        const linjer = alla(svg, 'line[data-marke="hanvisning"]');
+        expect(linjer.length).toBeGreaterThan(0);
+        for (const l of linjer) {
+            expect(l.getAttribute('pointer-events')).toBe('none');
+            expect(l.hasAttribute('data-l') || l.hasAttribute('data-i')).toBe(false);
+            // Linjen börjar vid en punkt och slutar vid en etiketts ruta.
+            const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map(a => tal(l, a));
+            expect(cirklar.some(c => Math.hypot(c.x - x1, c.y - y1) <= c.r + 2)).toBe(true);
+            expect(rutor.some(q => x2 >= q.x0 - 0.5 && x2 <= q.x1 + 0.5 && y2 >= q.y0 - 0.5 && y2 <= q.y1 + 0.5)).toBe(true);
+        }
+        expect(kontrolleraYta(svg, 'klunga')).toEqual([]);
+        // Fixrunda 1: ingen hänvisningslinje skär en annan etiketts text.
+        expect(linjerGenomText(svg)).toEqual([]);
+    });
+    it('_rfPlaceraEtiketter: en hänvisningslinje skär ingen annan etiketts ruta (fixrunda 1)', () => {
+        // Två klungor om sex punkter med långa namn, som i matrisens övre vänstra hörn.
+        w.__e = [...Array.from({ length: 6 }, (_, i) => ({ x: 120 + (i % 3) * 30, y: 90 + Math.floor(i / 3) * 26, r: 8, b: 150, h: 13 })),
+                 ...Array.from({ length: 6 }, (_, i) => ({ x: 300 + (i % 3) * 30, y: 200 + Math.floor(i / 3) * 26, r: 8, b: 150, h: 13 }))];
+        w.__h = w.__e.map(e => ({ x: e.x, y: e.y, r: e.r }));
+        const ut = w.eval('_rfPlaceraEtiketter(window.__e, window.__h, 560, 360)');
+        const skar = w.eval('_rfLinjeSkarRuta');
+        expect(ut.some(q => q.linje)).toBe(true);
+        for (const [i, q] of ut.entries()) if (q.linje) for (const [j, p] of ut.entries()) if (i !== j) expect(skar(q.linje, p), `linje ${i} genom ruta ${j}`).toBe(false);
+        for (const [i, q] of ut.entries()) for (const [j, p] of ut.entries()) if (i < j) expect(tom(q, p), `${i} och ${j}`).toBe(false);
+        // Sträckan mot rutan: skär, går förbi, slutar före.
+        expect(skar({ x1: 0, y1: 0, x2: 10, y2: 10 }, { x0: 4, y0: 4, x1: 6, y1: 6 })).toBe(true);
+        expect(skar({ x1: 0, y1: 0, x2: 10, y2: 0 }, { x0: 4, y0: 4, x1: 6, y1: 6 })).toBe(false);
+        expect(skar({ x1: 0, y1: 0, x2: 3, y2: 3 }, { x0: 4, y0: 4, x1: 6, y1: 6 })).toBe(false);
+    });
+    it('en zonetikett läggs där den inte täcker en ritad punkt, överst i zonen och fortfarande hel (fixrunda 1)', () => {
+        // En stor punkt mitt i zonens överkant, där rubriken annars står.
+        const f = { beskrivning: 'Z', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 100] },
+            referens: [{ typ: 'zon', x0: 0, x1: 60, etikett: 'UNDER REFERENS' }],
+            lager: [{ marke: 'punkt', serie: 'S', storlek: 16, data: [{ x: 30, y: 97 }, { x: 10, y: 50 }] }] };
+        const svg = rita(f, 700);
+        const [z] = alla(svg, 'text[data-marke="zonetikett"]'), q = ruta(z), zon = svg.querySelector('[data-marke="zon"]');
+        expect(texten(z)).toBe('UNDER REFERENS');
+        for (const c of alla(svg, 'circle[data-marke="punkt"]')) expect(motCirkel(q, { x: tal(c, 'cx'), y: tal(c, 'cy'), r: tal(c, 'r') })).toBe(false);
+        expect(q.x0).toBeGreaterThanOrEqual(tal(zon, 'x')); expect(q.x1).toBeLessThanOrEqual(tal(zon, 'x') + tal(zon, 'width'));
+        expect(q.y0).toBeLessThan(40);                                    // i zonens överkant, inte längst ned
+        // Utan punkten står rubriken mitt i zonen överst, som förut.
+        const utan = rita({ ...f, lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 10, y: 50 }] }] }, 700);
+        const q2 = ruta(alla(utan, 'text[data-marke="zonetikett"]')[0]), zon2 = utan.querySelector('[data-marke="zon"]');
+        expect((q2.x0 + q2.x1) / 2).toBeCloseTo(tal(zon2, 'x') + tal(zon2, 'width') / 2, 0);
+    });
+    it("etikettLage 'undvik': en dold liten punkt påverkar inte de övriga etiketternas lägen och lämnar ingen linje", () => {
+        const utan = rita(kluster(), 600), med = rita(kluster([{ x: 43, y: 52, etikett: 'HEMLIG', liten: true }]), 600);
+        const lagen = svg => alla(svg, 'text[data-marke="punktetikett"], line[data-marke="hanvisning"]').map(e => e.outerHTML);
+        expect(lagen(med)).toEqual(lagen(utan));
+        expect(med.outerHTML).not.toContain('HEMLIG');
+    });
+    it("en datapunkt med etikettLage 'under' har etiketten under punkten; utan har den den över", () => {
+        const svg = rita({ beskrivning: 'U', legend: false, x: { skala: 'band', ordning: ['A', 'B'] }, y: { skala: 'linjar', doman: [0, 100] },
+            lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 'A', y: 50, etikett: 'under', etikettLage: 'under' }, { x: 'B', y: 50, etikett: 'över' }] }] }, 600);
+        const [u, o] = alla(svg, 'text[data-marke="punktetikett"]'), [cu, co] = alla(svg, 'circle[data-marke="punkt"]');
+        expect(ruta(u).y0).toBeGreaterThan(tal(cu, 'cy') + tal(cu, 'r'));
+        expect(ruta(o).y1).toBeLessThan(tal(co, 'cy') - tal(co, 'r'));
+    });
+    it('en zonetikett som inte ryms på en rad men på två bryts vid ordgränsen, utan …, och står inom zonen', () => {
+        const f = () => ({ beskrivning: 'Z', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 10] },
+            referens: [{ typ: 'zon', x0: 80, x1: 92, etikett: 'ÖVER REFERENS' }], lager: [{ marke: 'punkt', data: [{ x: 10, y: 1 }] }] });
+        const svg = rita(f(), 700);
+        const t = alla(svg, 'text[data-marke="zonetikett"]'), z = svg.querySelector('[data-marke="zon"]');
+        expect(t.map(texten)).toEqual(['ÖVER', 'REFERENS']);
+        expect(tal(t[1], 'y')).toBeGreaterThan(tal(t[0], 'y'));
+        for (const e of t) {
+            expect(e.querySelector('title')).toBeNull();
+            const q = ruta(e);
+            expect(q.x0).toBeGreaterThanOrEqual(tal(z, 'x')); expect(q.x1).toBeLessThanOrEqual(tal(z, 'x') + tal(z, 'width'));
+        }
+        expect(kontrolleraYta(svg, 'zon på två rader')).toEqual([]);
     });
 });

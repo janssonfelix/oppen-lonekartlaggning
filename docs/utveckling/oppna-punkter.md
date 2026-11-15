@@ -71,7 +71,10 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     bytet, med demodatan och det stora demot, hamnar ingen diagramtext utanför eller ovanpå annan text, och ingen flik
     får vågrät rullning. Kolumnrubrikerna bryts bara mellan ord och beloppen står på en rad med «kr» vid 1 100–1 440
     punkter (vakt i `tools/browser-smoke/layout.mjs`). PDF-rapportens tabeller ryms på sidan med och utan webbläsarens
-    avstavning (vakt i `tools/browser-smoke/exporter.mjs`). Word-utkastet och Excel-filen är renderade i LibreOffice.
+    avstavning (vakt i `tools/browser-smoke/exporter.mjs`). Breda tabeller får rulla i sidled inne i sin ruta, men
+    inget klipps i cellerna (vakt i `layout.mjs`); diagrammens namn och värden täcker inte varandra, punkterna eller
+    andra namn (tester i `tests/diagramritare.test.js` och `tests/diagramvyer.test.js`). Word-utkastet och
+    Excel-filen är renderade i LibreOffice.
     Inte prövat: exporterna öppnade i Word och Excel, skärmen i Firefox och Safari för hand, och bredder under 1 100
     punkter (till exempel Windows med skalning 125 %).
 27. **Termerna byts i koden, inte i en fil.** En annan uppsättning (till exempel för en annan bransch) kräver ett
