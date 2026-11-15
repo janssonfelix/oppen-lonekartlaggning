@@ -104,26 +104,35 @@ export async function beskedPdfZip() {
         ok(hela.bilagor && hela.dekomponering && !hela.stampel, 'hela dokumentationen har bilagorna, det justerade lönegapet i detalj och tröskeln i metodbilagan');
         const ledning = await skriv('ledning');
         ok(ledning.avsnitt === 'sammanfattning,lika,likvardigt,atgarder' && !ledning.bilagor && ledning.stampel, 'ledningsbriefen är fyra avsnitt utan bilagor, med tröskeln som egen rad sist');
-        // Utskriften på papper: fönstret är A4:s textbredd (210 − 2 × 15 mm = 180 mm = 680 px). Ingen tabell får vara bredare,
-        // annars hamnar kolumner (också de att fylla i) utanför sidan. Skärmens sorteringspilar och egna kolumner (Detalj,
-        // knappar, infoikoner) följer inte med.
+        // Utskriften på papper: fönstret är A4:s textbredd (210 − 2 × 15 mm = 180 mm = 680 px). Varken rapporten eller någon
+        // tabell får vara bredare, annars hamnar kolumner (också de att fylla i) utanför sidan. Mätningen görs två gånger:
+        // med webbläsarens avstavning och utan (hyphens: manual, satt innan rapporten byggs), eftersom inte alla webbläsare
+        // avstavar svenska. Skärmens sorteringspilar och egna kolumner (Detalj, knappar, infoikoner) följer inte med.
         const fonster = page.viewportSize();
         await page.setViewportSize({ width: 680, height: 1000 });
+        const mat = () => page.evaluate(() => {
+            const rot = document.getElementById('print-report'), kant = rot.getBoundingClientRect().right;
+            const rubrik = t => { const s = t.closest('section'); const h = s && s.querySelector('h1,h2,h3'); return (h ? h.textContent : '?').trim().replace(/\s+/g, ' ').slice(0, 50); };
+            const breda = [...rot.querySelectorAll('table')].filter(t => t.getBoundingClientRect().right > kant + 1)
+                .map(t => `${rubrik(t)} (${Math.round(t.getBoundingClientRect().width)} px)`);
+            const pilar = [...rot.querySelectorAll('th')].filter(th => ['::before', '::after'].some(p => !['none', 'normal'].includes(getComputedStyle(th, p).content))).length;
+            const skarm = [...rot.querySelectorAll('table [data-export-skip], table button, table .info-tip')].map(e => e.textContent.trim().replace(/\s+/g, ' ').slice(0, 20) || e.tagName);
+            return { bredd: Math.round(rot.getBoundingClientRect().width), tabeller: rot.querySelectorAll('table').length, breda, pilar, skarm };
+        });
         for (const urval of ['hela', 'ledning', 'facklig']) {
-            await page.evaluate(async u => { window.print = () => {}; sattRapportUrval(u); await buildPrintReport(); await new Promise(r => setTimeout(r, 1300)); document.body.classList.add('print-mode'); }, urval);
-            await page.emulateMedia({ media: 'print' });
-            const m = await page.evaluate(() => {
-                const rot = document.getElementById('print-report'), kant = rot.getBoundingClientRect().right;
-                const rubrik = t => { const s = t.closest('section'); const h = s && s.querySelector('h1,h2,h3'); return (h ? h.textContent : '?').trim().replace(/\s+/g, ' ').slice(0, 50); };
-                const breda = [...rot.querySelectorAll('table')].filter(t => t.getBoundingClientRect().right > kant + 1)
-                    .map(t => `${rubrik(t)} (${Math.round(t.getBoundingClientRect().width)} px)`);
-                const pilar = [...rot.querySelectorAll('th')].filter(th => ['::before', '::after'].some(p => !['none', 'normal'].includes(getComputedStyle(th, p).content))).length;
-                const skarm = [...rot.querySelectorAll('table [data-export-skip], table button, table .info-tip')].map(e => e.textContent.trim().replace(/\s+/g, ' ').slice(0, 20) || e.tagName);
-                return { bredd: Math.round(rot.getBoundingClientRect().width), tabeller: rot.querySelectorAll('table').length, breda, pilar, skarm };
-            });
-            ok(m.tabeller > 0 && m.breda.length === 0, `PDF-rapporten (${urval}): alla ${m.tabeller} tabeller ryms i textbredden ${m.bredd} px${m.breda.length ? ` — bredare: ${m.breda.join('; ')}` : ''}`);
-            ok(m.pilar === 0 && m.skarm.length === 0, `PDF-rapporten (${urval}): inga sorteringspilar (${m.pilar}) och inga av skärmens egna kolumner, knappar eller infoikoner (${m.skarm.join(', ') || 'inga'})`);
-            await page.emulateMedia({ media: 'screen' });
+            for (const avstavning of [true, false]) {
+                // Utan avstavning: ett byggt stilark (CSP:n stoppar <style>) tvingar hyphens: manual på hela sidan innan
+                // rapporten byggs, som i en webbläsare som inte avstavar svenska.
+                if (!avstavning) await page.evaluate(() => { const a = new CSSStyleSheet(); a.replaceSync('* { hyphens: manual !important; }'); window.__utanAvstavning = a; document.adoptedStyleSheets = [...document.adoptedStyleSheets, a]; });
+                await page.evaluate(async u => { window.print = () => {}; sattRapportUrval(u); await buildPrintReport(); await new Promise(r => setTimeout(r, 1300)); document.body.classList.add('print-mode'); }, urval);
+                await page.emulateMedia({ media: 'print' });
+                const m = await mat();
+                const lage = avstavning ? 'med avstavning' : 'utan avstavning';
+                ok(m.tabeller > 0 && m.bredd <= 681 && m.breda.length === 0, `PDF-rapporten (${urval}, ${lage}): rapporten (${m.bredd} px) och alla ${m.tabeller} tabeller ryms i textbredden 680 px${m.breda.length ? ` — bredare: ${m.breda.join('; ')}` : ''}`);
+                if (avstavning) ok(m.pilar === 0 && m.skarm.length === 0, `PDF-rapporten (${urval}): inga sorteringspilar (${m.pilar}) och inga av skärmens egna kolumner, knappar eller infoikoner (${m.skarm.join(', ') || 'inga'})`);
+                else await page.evaluate(() => { document.adoptedStyleSheets = document.adoptedStyleSheets.filter(a => a !== window.__utanAvstavning); delete window.__utanAvstavning; });
+                await page.emulateMedia({ media: 'screen' });
+            }
         }
         await page.setViewportSize(fonster);
         await page.evaluate(() => { sattRapportUrval('hela'); document.getElementById('print-report').innerHTML = ''; document.body.classList.remove('print-mode'); });

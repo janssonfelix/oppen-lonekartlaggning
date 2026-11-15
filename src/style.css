@@ -2389,6 +2389,8 @@ summary:focus-visible {
 
 /* ----- Print-rapport (PDF via webbläsarens print-dialog) ----- */
 #print-report { display: none; }
+/* Provet om webbläsaren avstavar svenska (60-utskrift.js): ett långt ord i en ruta smalare än ordet, utanför bild. */
+.avstavningsprov { position: absolute; left: -9999px; top: 0; width: 5em; hyphens: auto; visibility: hidden; }
 
 /* PDF-knappen bygger rapporten i #print-report och sätter body.print-mode; då skrivs bara rapporten ut.
    Utan klassen (Ctrl+P) skrivs den aktiva fliken ut, se «Utskrift av den aktiva fliken» nedan. */
@@ -2452,6 +2454,12 @@ summary:focus-visible {
     #print-report table:not(.meta):not(.kpi) th { text-transform: none; letter-spacing: normal; }
     #print-report table:not(.meta):not(.kpi) .la-status,
     #print-report table:not(.meta):not(.kpi) .la-stabilitet { white-space: normal; }
+    /* Reserven när webbläsaren inte avstavar svenska (60-utskrift.js sätter klassen): rubriker och textceller får brytas var
+       som helst, talen (belopp, procent, antal) står på en rad. Bara då, eftersom brytningen var som helst ger smalare
+       textkolumner också där avstavningen hade räckt. */
+    #print-report.pr-utan-avstavning table:not(.meta):not(.kpi) th,
+    #print-report.pr-utan-avstavning table:not(.meta):not(.kpi) td { overflow-wrap: anywhere; }
+    #print-report.pr-utan-avstavning table:not(.meta):not(.kpi) td.pr-tal { overflow-wrap: normal; white-space: nowrap; }
     /* Skärmens sorteringspilar följer inte med på papper. */
     #print-report th.sortable::before, #print-report th.sortable::after { content: none; }
     #print-report tr.group-header td {

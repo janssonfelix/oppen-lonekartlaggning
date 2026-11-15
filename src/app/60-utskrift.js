@@ -35,6 +35,26 @@ function bibliotekCssForUtskrift() {
     return ut;
 }
 
+/**
+ * Avstavar webbläsaren svenska? Ett långt ord i en ruta smalare än ordet (.avstavningsprov i stilmallen): med avstavning
+ * bryts ordet och ryms, utan avstavning sticker det ut. En miljö som inte mäter (bredderna 0) räknas som att den avstavar.
+ */
+function _utskriftAvstavar() {
+    const prov = document.createElement('div');
+    prov.className = 'avstavningsprov';
+    prov.lang = 'sv';
+    prov.textContent = 'jämförelseetikettens';
+    document.body.appendChild(prov);
+    const ja = prov.scrollWidth <= prov.clientWidth + 1;
+    prov.remove();
+    return ja;
+}
+
+/** Cellens text är ett tal med ev. enhet ("33 932 kr", "93,6 %", "46 (28/18)", "1 427 679 kr/år", "20 / 45"). */
+function _utskriftArTal(text) {
+    return /^[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$/.test(String(text).trim());
+}
+
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
 async function _buildPrintReportExport() {
@@ -117,6 +137,10 @@ async function _buildPrintReportExport() {
         const root = /** @type {HTMLElement} */ (document.getElementById('print-report'));
         root.innerHTML = _kSanktStycke() + rmTillHtml(modell, { utskrift: true, bilder }) + kStampelRad + bilagor;
         tillampaDataStil(root);   // staplarna i de klonade tabellerna bär måttet som data-stil-*; style-attribut i markeringen stoppas av CSP:n
+        // Avstavar inte webbläsaren svenska, får rubriker och textceller brytas var som helst (stilmallen), men inte talen.
+        const utanAvstavning = !_utskriftAvstavar();
+        root.classList.toggle('pr-utan-avstavning', utanAvstavning);
+        if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (_utskriftArTal(td.textContent)) td.classList.add('pr-tal'); });
 
         document.body.classList.add('print-mode');
         hideLoading();
