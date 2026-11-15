@@ -64,7 +64,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-53 | Blinder-Oaxaca med BAS som indikatorer | Gällande | 2026-10-29 |
 | ADR-54 | Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen | Gällande | 2026-10-30 |
 | ADR-55 | Löneläget mot båda referenserna, Lönepolitik som avsnitt | Gällande | 2026-10-30 |
-| ADR-56 | Valbar förklaringsmodell | Ändrad av ADR-77 | 2026-11-05 |
+| ADR-56 | Valbar förklaringsmodell | Gällande | 2026-11-05 |
 | ADR-57 | Tabellerna per AID-kod och BAS-intervall | Gällande | 2026-11-05 |
 | ADR-58 | BAS-dossiern: ett BAS-intervall på en sida | Gällande | 2026-11-06 |
 | ADR-59 | Uppmärksamhetstrappan på statistisk signal, direktivmarkeringen åtskild | Ändrad av ADR-71 | 2026-11-08 |
@@ -425,7 +425,9 @@ poängtabell för statistiken. *Gäller i dag:* `likvardighetsmodellen.md` §4.
 **ADR-77 — HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång.** Med AID-etikett inom BAS vald in i
 huvudtalet räknas HC3 med hävstången h_i + 1/n_g, den som designen med en indikator per grupp har, och utan
 skalningen med (n − p) / (n − p − G); skalningen gäller bara den klassiska kovariansen. `hHoga` räknas på samma
-hävstång. Standardfelen blir då exakt de som statsmodels och R ger på den fulla designen (principen 2). Med hävstången
+hävstång. Standardfelen blir då de som statsmodels och R ger med en indikator per grupp (principen 2). En person
+ensam i en grupp har h = 1 och får vikten 0, vilket ger samma tal som statsmodels och R när de personerna tas bort;
+med dem kvar ger statsmodels och R NaN. Med hävstången
 på de transformerade kolumnerna ensam var standardfelet för kön i det lilla demot 1,0–1,6 % för litet, och i urval med
 små grupper upp till 9 %; ingen status i trappan ändrades i mätningen. *Avvisat:* att behålla beräkningen och stänga
 punkten som mätt; att behålla skalningen ovanpå den fulla hävstången. *Gäller i dag:* `regressionsmodellen.md` §4.
