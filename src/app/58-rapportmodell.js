@@ -34,8 +34,8 @@ function rmCell(v, typ) {
     if (typ === 'antal') return svTal(v, 0);
     if (typ === 'ar') return `${svTal(v, 0)} år`;
     if (typ === 'tal2') return svTal(v, 2);
-    if (typ === 'kr') return `${svTal(Math.round(v), 0)} kr`;
-    if (typ === 'krAr') return `${svTal(Math.round(v), 0)} kr/år`;
+    if (typ === 'kr') return svKr(v);
+    if (typ === 'krAr') return `${svTal(Math.round(v), 0)}\u00a0kr/år`;
     if (typ === 'pct0') return svPct(v, 0);
     if (typ === 'pct1') return svPct(v, 1);
     if (typ === 'pct2') return svPct(v, 2);
@@ -201,7 +201,7 @@ function rmSakligaSkalDelar(skal, dampad) {
     const pk = skal.perKategori;
     const kat = pk.kategorier.map(k => [k.namn, k.summa, k.andel != null ? k.andel * 100 : null, k.antalGrupper]);
     const over = skal.grupper.filter(g => g.sammanstallning.overstiger);
-    const kr = v => `${svTal(Math.round(v), 0)} kr`;
+    const kr = v => svKr(v);
     return [
         { typ: 'rubrik', niva: 3, text: 'Sakliga skäl per grupp' },
         { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal berörda', typ: 'antal' }, { rubrik: 'Medianskillnad (kr/mån)', typ: 'kr' }, { rubrik: 'Kategori', typ: 'text' },
@@ -335,7 +335,7 @@ function rmArsjamforelseAvsnitt(diagram) {
     const { forra, nu, j } = jf;
     if (!j) return null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
-    const skriv = (v, typ) => (v == null ? '—' : typ === 'kr' ? `${svTal(Math.round(v), 0)} kr` : typ === 'pct' ? svPct(v, 1) : svTal(v, 0));
+    const skriv = (v, typ) => (v == null ? '—' : typ === 'kr' ? svKr(v) : typ === 'pct' ? svPct(v, 1) : svTal(v, 0));
     const diff = (v, typ) => (v == null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
     const text = s => ({ text: s });
     /** @type {any[]} */ const delar = [

@@ -99,10 +99,10 @@ document.addEventListener('click', e => {
 function _guKr(v, tecken = true) {
     const r = Math.round(v);
     const s = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(Math.abs(r));
-    return `${tecken && r !== 0 ? (r < 0 ? '−' : '+') : ''}${s} kr`;
+    return `${tecken && r !== 0 ? (r < 0 ? '−' : '+') : ''}${s}\u00a0kr`;
 }
 function _guPct(v, dec = 1) {
-    return `${new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)} %`;
+    return `${new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)}\u00a0%`;
 }
 
 function renderGapUppdelning() {
@@ -154,8 +154,9 @@ function renderGapUppdelning() {
         + _guValHtml()
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
         + rader
-        + `<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade ${T.enhet.bfl} i Lika arbete, som sorteras efter skillnadens storlek. Grupper där ett kön har färre än `
-        + `${kTroskel()} ${personOrd(kTroskel())} namnges inte.</p>`; tillampaDataStil(body);
+        + `<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade ${T.enhet.bfl} i Lika arbete, som sorteras efter skillnadens storlek.`
+        // Med tröskeln 1 (skärmen, ADR-51) namnges alla grupper, och meningen om små grupper har inget att säga.
+        + (kTroskel() > 1 ? ` Grupper där ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} namnges inte.` : '') + '</p>'; tillampaDataStil(body);
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 

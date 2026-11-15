@@ -135,7 +135,7 @@ function _aidbasSammanfattningText(s) {
 function _aidbasCell(v, typ) {
     if (v == null || v === '') return '<td class="tal">–</td>';
     if (typ === 'text') return `<td>${esc(String(v))}</td>`;
-    const text = typ === 'kr' ? `${svTal(v, 0)} kr` : typ === 'pct' ? svPct(v, 1) : typ === 'kvot' ? svTal(v, 2) : svTal(v, 0);
+    const text = typ === 'kr' ? svKr(v) : typ === 'pct' ? svPct(v, 1) : typ === 'kvot' ? svTal(v, 2) : svTal(v, 0);
     // Sorteringsvärdet avrundas: ett tal med många decimaler kan av en slump innehålla en lön som siffersekvens.
     return `<td class="tal" data-sort-value="${typeof v === 'number' ? Math.round(v * 100) / 100 : ''}">${text}</td>`;
 }

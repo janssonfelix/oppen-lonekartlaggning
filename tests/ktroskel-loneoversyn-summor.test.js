@@ -206,7 +206,7 @@ describe('Löneöversyn på skärmen och med egna riktade rader', () => {
         for (const [bas, aid] of SMA_GRUPPER) {
             const c = tabell.find(x => x[0] === bas && x[1] === aid);
             expect(c, `${bas} ${aid}`).toBeTruthy();
-            expect(c[7], `${bas} ${aid}`).toMatch(/\d kr\/mån/);
+            expect(c[7], `${bas} ${aid}`).toMatch(/\d\skr\/mån/);
         }
         expect(tabell.some(c => c[0] === SAMLAD)).toBe(false);
     });

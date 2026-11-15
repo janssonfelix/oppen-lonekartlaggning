@@ -1752,7 +1752,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         const not = d.getElementById('prio-stat-cost-not').textContent.replace(/\s+/g, ' ');
         expect(not).toContain('Vad det kostar att lyfta grupper under referensen till dess median. Detta är löneläget mot er referens, inte lönekartläggningens könsskillnader — dem visar Lika arbete och Löneöversyn.');
         expect(not).toContain('inkl. PO-påslag 39,15 % (SKR:s standardvärde för kommuner; ändras under Inställningar)');
-        expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 39,15 %');
+        expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 39,15\u00a0%');
         expect(vy.textContent).not.toMatch(/åtgärdskostnad/i);
     });
     it('kolumnen Skillnad kön bär uppmärksamhetstrappans bricka efter storleken, utan prövning (ADR-71)', () => {
@@ -1795,7 +1795,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         expect(nara).toContain('Gruppens median ligger inom ±2 % av referensen.');
         expect(nara).not.toMatch(/normal variation|kräver ytterligare utredning/);
         w.__it = { ...w.__it, diffPct: 7.4 };
-        expect(w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text)).toContain('Ligger 7,4 % över referensen. Dokumentera gärna varför.');
+        expect(w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text)).toContain('Ligger 7,4\u00a0% över referensen. Dokumentera gärna varför.');
     });
     it('Excel-bladet Prioritering, handlingsplanen och rapporten har samma ord', async () => {
         const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');

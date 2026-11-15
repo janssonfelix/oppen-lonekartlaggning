@@ -4202,11 +4202,14 @@ function htmlTillText(text) {
 }
 
 /**
- * Cellens text är ett tal med ev. enhet ("33 932 kr", "93,6 %", "46 (28/18)", "1 427 679 kr/år", "20 / 45"). Word-utkastet
- * (docx.js) och utskriften (60-utskrift.js) håller en sådan cell på en rad.
+ * Cellens text är ett tal med ev. enhet ("33 932 kr", "93,6 %", "46 (28/18)", "1 427 679 kr/år", "20 / 45"), eller ett
+ * intervall av två sådana ("0,9–3,8 %", och "−0,8 till 1,7 %" när ett av talen är negativt). Word-utkastet (docx.js),
+ * utskriften (60-utskrift.js) och Rapporttext (67-rapportunderlag.js) håller en sådan cell på en rad.
  */
+const _TAL = String.raw`[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*`;
+const _AR_TAL = new RegExp(String.raw`^${_TAL}(?:\still\s+${_TAL})?(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$`);
 function arTal(text) {
-    return /^[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$/.test(String(text ?? '').trim());
+    return _AR_TAL.test(String(text ?? '').trim());
 }
 
     return { utanTaggar, htmlTillText, arTal };

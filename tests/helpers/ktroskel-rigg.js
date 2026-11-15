@@ -26,7 +26,7 @@ export function byggDataset() {
     SMA.forEach((bas, g) => { for (let i = 0; i < 6; i++) rader.push(rad(bas, i, SENT_SMA[g], 5400 + g, `Småyrke ${g}`)); });
     return rader;
 }
-export const normalisera = t => t.replace(/(\d)[\s  ](?=\d)/g, '$1');
+export const normalisera = t => t.replace(/(\d)[\s  ](?=\d)/g, '$1').replace(/[\u00a0\u202f]/g, ' ');
 
 // Likvärdighetsanalysens par och yrkestabeller i fliken Likvärdigt arbete är undantagna från k (fliken prövar alla
 // grupper, också små; exporten stämplas "undantag: Likvärdigt arbete"). Sedan ADR-60 är också små blandade grupper

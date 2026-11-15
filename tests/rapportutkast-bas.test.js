@@ -72,7 +72,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
         const del = utkast(w).value.split('\nPER BAS-INTERVALL\n')[1];
         expect(del).toContain('\nFörra året\n');
         expect(del).toContain(`Jämfört med ${cfg.arsbokslut.ar}:`);
-        expect(del).toContain('+500 kr');
+        expect(del).toContain('+500\u00a0kr');
     });
 
     it('väljaren ovanför textrutan: standard med intervallen; valet ligger i state, inte i filen, och Återskapa följer det', () => {

@@ -30,6 +30,82 @@ export async function utseende() {
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
 
+    console.log('\n── Kolumnrubriker bryts inte mitt i ett ord ──');
+    {
+        // Vid 1 100 punkter (minsta stödda bredden) får en kolumnrubrik bara brytas mellan ord, inte inne i ett:
+        // ingen rubrik har fler textrader än ord. Ett ord med bindestreck som bryts vid strecket («AID- / etikett»)
+        // räknas som två ord. Raderna räknas ur textnodernas rutor, så en infoikon räknas inte. Stort demo, som har
+        // par i Lägre krav, högre lön; ett belopp med «kr» i huvudområdena och Prioriteringen står på en rad.
+        const s = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+        await s.goto('file://' + FIL);
+        await s.click('#first-run-stort-demo');
+        await s.waitForFunction(() => /stort demo/.test(document.getElementById('data-status')?.textContent || '') && !!document.querySelector('#view-dashboard svg'), null, { timeout: 30000 });
+        const oppnaFlik = async flik => {
+            await s.click(`.nav-item[data-tab="${flik}"]`);
+            await s.waitForTimeout(400);
+            await s.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
+            await s.waitForTimeout(300);
+        };
+        const rubriker = sel => s.evaluate(sel => [...document.querySelectorAll(sel)].filter(th => th.getBoundingClientRect().height > 0).map(th => {
+            const text = th.textContent.replace(/\s+/g, ' ').trim();
+            const toppar = new Set(), w = document.createTreeWalker(th, NodeFilter.SHOW_TEXT);
+            for (let n = w.nextNode(); n; n = w.nextNode()) {
+                if (!n.textContent.trim()) continue;
+                const r = document.createRange(); r.selectNodeContents(n);
+                for (const q of r.getClientRects()) if (q.width > 0) toppar.add(Math.round(q.top));
+            }
+            return { text, ord: text.split(/[\s-]+/).filter(Boolean).length, rader: toppar.size };
+        }).filter(r => r.text), sel);
+        const rader = sel => s.evaluate(sel => [...document.querySelectorAll(sel)].filter(el => el.getBoundingClientRect().height > 0).map(el => {
+            const r = document.createRange(); r.selectNodeContents(el);
+            return { text: el.textContent.trim(), rader: new Set([...r.getClientRects()].filter(q => q.width > 0).map(q => Math.round(q.top))).size };
+        }), sel);
+        for (const [flik, namn, sel] of [['handlingsplan', 'Handlingsplanen', '#view-handlingsplan table thead th'],
+            ['benchmark', 'Löneläget mot statistiken', '#benchmark-table thead th'],
+            ['likvardighet', 'Lägre krav, högre lön', '#likvardighet-lagre-krav-table thead th'],
+            ['struktur', 'Per huvudområde', '#sektor-table thead th']]) {
+            await oppnaFlik(flik);
+            const r = await rubriker(sel), brutna = r.filter(x => x.rader > x.ord);
+            ok(r.length > 0 && !brutna.length, `1100 punkter: ${namn}, ${r.length} kolumnrubriker bryts bara mellan ord${brutna.length ? ' — brutna: ' + brutna.slice(0, 3).map(x => `«${x.text}» (${x.ord} ord, ${x.rader} rader)`).join(', ') : ''}`);
+            if (flik === 'struktur') {
+                const kr = (await rader('#sektor-table tbody td')).filter(c => /\d\s*kr$/.test(c.text)), isar = kr.filter(c => c.rader !== 1);
+                ok(kr.length > 0 && !isar.length, `1100 punkter: huvudområdenas ${kr.length} belopp står på en rad med «kr»${isar.length ? ' — brutna: ' + isar.slice(0, 3).map(c => c.text).join(', ') : ''}`);
+            }
+        }
+        await oppnaFlik('prioritering');
+        const kr = (await rader('#prio-table tbody td')).filter(c => /\d\s*kr$/.test(c.text)), isar = kr.filter(c => c.rader !== 1);
+        ok(kr.length > 0 && !isar.length, `1100 punkter: Prioriteringens ${kr.length} belopp står på en rad med «kr»${isar.length ? ' — brutna: ' + isar.slice(0, 3).map(c => c.text).join(', ') : ''}`);
+        // Prioriteringens tabellhuvud står över sina kolumner: de fasta kolumnerna (Prio, AID-etikett) förskjuts inte.
+        const fel = await s.evaluate(() => { const t = document.getElementById('prio-table'), syns = e => e.getBoundingClientRect().width > 0;
+            const th = [...t.querySelectorAll('thead th')].filter(syns), td = [...t.querySelector('tbody tr').children].filter(syns);
+            return th.map((h, i) => ({ kol: h.textContent.trim(), dv: Math.abs(h.getBoundingClientRect().left - td[i].getBoundingClientRect().left), dh: Math.abs(h.getBoundingClientRect().right - td[i].getBoundingClientRect().right) }))
+                .filter(x => x.dv > 1 || x.dh > 1); });
+        ok(!fel.length, `1100 punkter: Prioriteringens kolumnrubriker står över sina kolumner${fel.length ? ' — förskjutna: ' + fel.map(x => x.kol).join(', ') : ''}`);
+        // Infoikonen i en kolumnrubrik står på samma rad som rubrikens sista ord.
+        const ensam = [];
+        for (const [flik, tabell] of [['prioritering', 'prio-table'], ['utforska', 'rapport-table']]) {
+            await oppnaFlik(flik);
+            ensam.push(...await s.evaluate(id => [...document.querySelectorAll(`#${id} thead th`)].filter(th => th.getBoundingClientRect().width > 0 && th.querySelector('.info-tip')).filter(th => {
+                const ikon = th.querySelector('.info-tip').getBoundingClientRect(), r = document.createRange();
+                r.selectNodeContents(th);
+                const text = [...r.getClientRects()].filter(q => q.width > 0 && q.height > 0 && q.right <= ikon.left + 1);
+                const sista = text.reduce((a, q) => (q.top > a.top ? q : a), text[0]);
+                return !sista || ikon.top >= sista.bottom - 1 || ikon.bottom <= sista.top + 1;
+            }).map(th => `#${id} «${th.textContent.replace(/\s+/g, ' ').trim()}»`), tabell));
+        }
+        ok(!ensam.length, `1100 punkter: infoikonerna i Prioriteringens och Löneöversiktens rubriker står på samma rad som sista ordet${ensam.length ? ' — ensamma: ' + ensam.join(', ') : ''}`);
+        await s.close();
+        // Sökfältets platshållare ryms i fältet på de bredder verktyget är gjort för.
+        for (const bredd of [1100, 1280, 1440]) {
+            await page.setViewportSize({ width: bredd, height: 900 });
+            const sok = await page.evaluate(() => { const i = document.getElementById('sok-grupp'), cs = getComputedStyle(i), c = document.createElement('canvas').getContext('2d');
+                c.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+                return { text: i.placeholder, bredd: Math.ceil(c.measureText(i.placeholder).width), plats: Math.floor(i.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) }; });
+            ok(sok.bredd <= sok.plats, `${bredd} punkter: sökfältets platshållare «${sok.text}» ryms (${sok.bredd} av ${sok.plats} punkter)`);
+        }
+        await page.setViewportSize({ width: 1400, height: 1000 });
+    }
+
     console.log('\n── Noten om små grupper klipps inte i en bred tabell ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });

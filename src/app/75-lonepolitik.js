@@ -431,14 +431,23 @@ function _lpRenderCompliance(model) {
     }
 }
 
+/** Gruppens namn i tabellen, noten och Excel-bladet: AID-koden en gång och sedan benämningen ("206017 Sjuksköterska").
+ * Yrket är "AID benämning" när filen har båda, och bara koden när benämning saknas. */
+function _lpGruppnamn(g) {
+    const benamning = _lpBenamning(g);
+    return benamning ? `${g.aid} ${benamning}` : String(g.aid);
+}
+/** Yrkets benämning utan AID-koden först. */
+function _lpBenamning(g) { return String(g.yrke || '').replace(/^\d+\s*/, ''); }
+
 function _lpTableHtml(model) {
-    const kr = v => v == null ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const kr = v => svKr(v);
     const rows = [];
     model.byBas.forEach(b => {
         rows.push(`<tr class="group-header"><td colspan="7">BAS ${esc(b.bas)}${b.pol ? '' : ' — <em>ingen policyreferens</em>'}</td></tr>`);
         const utelamnade = [];
         b.groups.forEach(g => {
-            const name = `${esc(g.aid)}${g.yrke && g.yrke !== g.aid ? ' ' + esc(g.yrke) : ''}`;
+            const name = esc(_lpGruppnamn(g));
             if (!g.pol) {
                 rows.push(`<tr><td>${name}</td><td class="t-hoger">${g.n}</td><td colspan="5" class="farg-dampad kursiv">Ingen policyreferens</td></tr>`);
                 return;
@@ -447,7 +456,7 @@ function _lpTableHtml(model) {
             // antalet får visas. Raden bar ingenting annat än "< 5" — den
             // utelämnas och gruppen räknas upp i noten sist i BAS-blocket.
             // Personerna ingår fortfarande i BAS-totalen.
-            if (g.tier === 'masked') { utelamnade.push(g.yrke && g.yrke !== g.aid ? `${g.aid} ${g.yrke}` : g.aid); return; }
+            if (g.tier === 'masked') { utelamnade.push(_lpGruppnamn(g)); return; }
             if (g.tier === 'count') {
                 const c = g.compliance;
                 rows.push(`<tr><td>${name}</td><td class="t-hoger">${g.n}</td>`
@@ -510,9 +519,6 @@ function _lpExcelBlad() {
     if (!model.hasPolicy || !model.byBas.length) return null;
     const k = kTroskel(), r1 = v => Math.round(v * 10) / 10, kr = v => Math.round(v);
     const pct = (a, n) => (n ? r1(100 * a / n) : '');
-    // Yrkets benämning utan AID-koden först (yrke är "AID benämning" när filen har båda).
-    const benamning = g => String(g.yrke || '').replace(/^\d+\s*/, '');
-    const namn = g => (benamning(g) ? `${g.aid} ${benamning(g)}` : String(g.aid));
     /** @type {any[][]} */
     const ut = [
         [`Lönerna mot ${referensNamn()} (fliken Löneläget)`],
@@ -526,12 +532,12 @@ function _lpExcelBlad() {
     const utelamnade = [];
     for (const b of model.byBas) {
         for (const g of b.groups) {
-            if (!g.pol) { ut.push([b.bas, g.aid, benamning(g), g.n, '', '', '', '', '', 'Ingen referens']); continue; }
-            if (g.tier === 'masked') { utelamnade.push(namn(g)); continue; }
+            if (!g.pol) { ut.push([b.bas, g.aid, _lpBenamning(g), g.n, '', '', '', '', '', 'Ingen referens']); continue; }
+            if (g.tier === 'masked') { utelamnade.push(_lpGruppnamn(g)); continue; }
             const c = g.compliance;
-            if (g.tier === 'count') { ut.push([b.bas, g.aid, benamning(g), g.n, '', '', '', '', c ? c.under : '', g.level || '']); continue; }
+            if (g.tier === 'count') { ut.push([b.bas, g.aid, _lpBenamning(g), g.n, '', '', '', '', c ? c.under : '', g.level || '']); continue; }
             const s = g.stats;
-            ut.push([b.bas, g.aid, benamning(g), g.n, s ? kr(s.median) : '', kr(g.pol.p10), kr(g.pol.p90),
+            ut.push([b.bas, g.aid, _lpBenamning(g), g.n, s ? kr(s.median) : '', kr(g.pol.p10), kr(g.pol.p90),
                 s && s.position != null ? r1(s.position * 100) : '', c ? c.under : '', g.level || '']);
         }
     }

@@ -145,8 +145,8 @@ function _lagreKravHtml(result) {
             <th>BAS-steg</th><th>Skillnad (kr)</th><th>Skillnad (%)</th><th>95 % KI</th></tr></thead><tbody>${par.map(p => `<tr>
             <td>${esc(p.kvLabel)}</td><td>${esc(p.kvBas)}</td><td data-sort-value="${p.kvMedian}">${fmt.format(p.kvMedian)}</td>
             <td>${esc(p.maLabel)}</td><td>${esc(p.maBas)}</td><td data-sort-value="${p.maMedian}">${fmt.format(p.maMedian)}</td>
-            <td>${p.basSteg}</td><td data-sort-value="${p.gapKr}">${fmt.format(p.gapKr)}</td><td data-sort-value="${p.gapPct}">${pct(p.gapPct)} %</td>
-            <td>${p.gapCI ? `${fmt.format(p.gapCI.lo)}–${fmt.format(p.gapCI.hi)} kr` : '–'}</td></tr>`).join('')}</tbody></table></div>`;
+            <td>${p.basSteg}</td><td data-sort-value="${p.gapKr}">${fmt.format(p.gapKr)}</td><td data-sort-value="${p.gapPct}">${pct(p.gapPct)}\u00a0%</td>
+            <td>${p.gapCI ? `${fmt.format(p.gapCI.lo)}–${fmt.format(p.gapCI.hi)}\u00a0kr` : '–'}</td></tr>`).join('')}</tbody></table></div>`;
     return `<section id="likvardighet-lagre-krav" class="card marg-t-18">
         <h3 class="fs-lg">Lägre krav, högre lön</h3>
         <p class="text-dampad-sm">${termText('{Enhet.fl:kvinnodominerad} som har lägre medianlön än {enhet.art} av organisationens {enhet.fl} i lägre BAS.')} BAS används som mått på krav och är grovt — pröva mot befattningsbeskrivningarna.</p>
@@ -205,7 +205,7 @@ function renderLikvardighet() {
         return;
     }
 
-    const fmtKr = v => v == null ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v);
 
     const d = result.diagnostik;
 

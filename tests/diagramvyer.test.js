@@ -183,7 +183,7 @@ describe('Rapporttext: auto-utkastets mening om vertikal könssegregering', () =
     it('hög kvinnoandel i BAS A och låg i BAS J: A kallas lägre betalda och J högre betalda', () => {
         const seg = text(80, 20);
         expect(seg).toBeDefined();
-        expect(seg).toMatch(/andelen kvinnor är högre i lägre betalda BAS \(A: 80 %\) än i högre betalda \(J: 20 %\)/);
+        expect(seg).toMatch(/andelen kvinnor är högre i lägre betalda BAS \(A: 80\s%\) än i högre betalda \(J: 20\s%\)/);
     });
     it('det omvända fallet (fler kvinnor i BAS J än i BAS A) ger ingen mening', () => {
         expect(text(20, 80)).toBeUndefined();
@@ -778,7 +778,7 @@ describe('Jämförelsestatistik: figurerna', () => {
         expect(f.lager.map(l => [l.marke, l.symbol || null, l.serie, l.data.length])).toEqual([['intervall', null, 'Spann P10–P90', 2], ['punkt', null, 'Medianens värde', 2],
             ['punkt', 'streck', 'Skillnad i P10', 1], ['punkt', 'streck', 'Skillnad i P90', 2], ['punkt', null, 'Skillnad i median', 2]]);
         expect(f.lager[0].data.map(d => [d.lag, d.hog])).toEqual([[-6, -2], [3.1, 5]]);                  // spannet rymmer alla tre värdena
-        expect(f.lager[1].data.map(d => [d.x, d.etikett])).toEqual([[-2, '−4,3 %'], [5, '+3,1 %']]);     // etiketten vid radens högra ände
+        expect(f.lager[1].data.map(d => [d.x, d.etikett])).toEqual([[-2, '−4,3\u00a0%'], [5, '+3,1\u00a0%']]);     // etiketten vid radens högra ände
         expect(f.lager[1]).toMatchObject({ utanData: true, legend: false, opacitet: 0 });                // bara text: varken i förklaringen eller i diagramdatan
         expect(f.lager[4].data.map(d => [d.x, d.aid])).toEqual([[-4.25, '207011'], [3.1, '502010']]);
         expect(f.lager[4].farg).toBe('#2a78d6');                                                         // en färg: läget mot nollinjen bär riktningen
@@ -823,7 +823,8 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         // BAS-delen läses som filterknappen ovanför diagrammet (BAS C), inte bara bokstaven.
         expect(f.y.ordning[0]).toBe('#1 207011 Ett ganska långt y… · BAS C');
         expect(f.lager[0].data[0].y).toBe(f.y.ordning[0]);
-        expect(vanliga([f.lager[0].data.map(d => d.etikett)])[0]).toEqual(['400 000 kr · 55 %', '200 000 kr · 82 %']);
+        // Etiketterna skriver kostnaden som nyckeltalen och rutan Total (_fmtCost): tkr och Mkr, inte "mnkr".
+        expect(vanliga([f.lager[0].data.map(d => d.etikett)])[0]).toEqual(['400 tkr · 55 %', '200 tkr · 82 %']);
         expect(vanliga(f.lager[0].tips(f.lager[0].data[0]))).toEqual([['207011 Ett ganska långt yrkesnamn · BAS C'], ['Kostnad', '400 000 kr/år'], ['Kumulativ andel', '54,5 %']]);
         expect(f.lager[0].data[0].markering).toEqual(w.eval("markeringFor('C', '207011 Ett ganska långt yrkesnamn')"));
         // Fler än femton grupper: femton ritas, och meningen under diagrammet säger vad de övriga står för.
@@ -833,6 +834,8 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         w.__k = kum;
         const f2 = w.eval('_prioKostnadFigur(window.__m, window.__k)');
         expect(f2.y.ordning).toHaveLength(15);
+        expect(vanliga([f2.lager[0].data.map(d => d.etikett)])[0][0]).toMatch(/^1,0 Mkr · \d+ %$/);
+        expect(f2.lager[0].data[0].etikett.split(' · ')[0]).toBe(w.eval('_fmtCost(1000000)'));
         expect(f2.lager.reduce((n, l) => n + l.data.length, 0)).toBe(15);
         expect(vanliga([[w.eval(`_prioKostnadNot(window.__m, ${tot})`)]])[0][0]).toMatch(/^Diagrammet visar de 15 grupper som kostar mest\. Övriga 7 grupper står tillsammans för [\d ]+ kr per år \(\d+ % av kostnaden\)/);
         expect(w.eval(`_prioKostnadNot(window.__m.slice(0, 15), ${tot})`)).toBe('');
@@ -888,7 +891,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
         expect(f.y.ordning).toEqual(['K2 mot J1', 'K1 mot J1']);
         expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad'], ['punkt', 'Kvinnodominerad AID-etikett'], ['punkt', 'Jämförelseetikett']]);
         expect(f.lager[0].data.map(d => [d.lag, d.hog])).toEqual([[31000, 33000], [30000, 33000]]);
-        expect(f.lager[2].data.map(d => d.etikett)).toEqual(['6,1 %', '9,1 %']);
+        expect(f.lager[2].data.map(d => d.etikett)).toEqual(['6,1\u00a0%', '9,1\u00a0%']);
         expect(f.lager[1].data.every(d => d.etikett === undefined)).toBe(true);
         expect(f.fargskala).toBeUndefined();
         expect(() => valideraFigur(f, 't')).not.toThrow();

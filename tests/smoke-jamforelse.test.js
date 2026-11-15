@@ -124,7 +124,7 @@ describe('Jämförelsestatistik: diagrammen', () => {
         const li = el._figur.lager.findIndex(l => l.serie === 'Skillnad i median'), median = el._figur.lager[li];
         const x = median.data.map(p => p.x);
         expect([...x].sort((a, b) => a - b)).toEqual([...x]);
-        expect(el._figur.lager.find(l => l.serie === 'Medianens värde').data.every(p => /^[+−]\d+,\d %$/.test(p.etikett))).toBe(true);
+        expect(el._figur.lager.find(l => l.serie === 'Medianens värde').data.every(p => /^[+−]\d+,\d\s%$/.test(p.etikett))).toBe(true);
         const { aid, bas } = median.data[0];
         // Klick på första medianpunkten (ritad i samma ordning som datan) markerar yrkets rad.
         el.querySelector(`[data-marke="punkt"][data-l="${li}"][data-i="0"]`).dispatchEvent(new w.Event('click', { bubbles: true }));

@@ -24,7 +24,7 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(f.lager.map(l => l.marke)).toEqual(['stapel', 'intervall', 'punkt']);
         expect(f.lager[0].data).toEqual([{ x: 'Ojusterad skillnad', y: -9.4 }, { x: 'Oförklarad skillnad', y: -4.6 }]);
         expect(f.lager[1].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['BAS-intervall', -9.4, -4.1, '#2a78d6'], ['Ålder', -4.6, -4.1, '#eb6834']]);   // krymper: seriens blå; växer: orange — inga statusfärger
-        expect(f.lager[2].data.map(d => d.etikett)).toEqual(['−9,4 %', '−4,1 %', '−4,6 %', '−4,6 %']);
+        expect(f.lager[2].data.map(d => d.etikett)).toEqual(['−9,4\u00a0%', '−4,1\u00a0%', '−4,6\u00a0%', '−4,6\u00a0%']);
         expect(f.y.nollinje).toBe(true);
         expect(vanliga([f.lager[1].tips(f.lager[1].data[0])[1]])[0]).toEqual(['Ändrar skillnaden med', '+5,3 procentenheter']);
         expect(() => valideraFigur(f, 't')).not.toThrow();
@@ -36,8 +36,8 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(f.lager.map(l => l.marke)).toEqual(['stapel', 'intervall', 'intervall', 'punkt']);
         expect(f.lager[2]).toMatchObject({ opacitet: 0.45, serie: 'AID-etikett inom BAS (ingår inte i huvudtalet)' });
         expect(f.lager[2].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['AID-etikett inom BAS', -4.6, -2.3, '#2a78d6']]);
-        expect(f.lager[3].data.map(d => d.etikett)).toEqual(['−9,4 %', '−4,1 %', '−4,6 %', '−4,6 %', '−2,3 %']);
-        expect(f.beskrivning).toMatch(/Räknas också AID-etikett inom BAS bort blir −2,3 % kvar; det steget ingår inte i huvudtalet/);
+        expect(f.lager[3].data.map(d => d.etikett)).toEqual(['−9,4\u00a0%', '−4,1\u00a0%', '−4,6\u00a0%', '−4,6\u00a0%', '−2,3\u00a0%']);
+        expect(f.beskrivning).toMatch(/Räknas också AID-etikett inom BAS bort blir −2,3\s% kvar; det steget ingår inte i huvudtalet/);
         expect(() => valideraFigur(f, 't')).not.toThrow();
         // Ett utelämnat yrkesgruppssteg ger trappan utan det steget.
         w.__y = { name: '+ Yrkesgrupp', status: 'too_few' };
@@ -77,7 +77,7 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(f.lager.map(l => l.marke)).toEqual(['intervall', 'punkt']);
         expect(f.lager[0].data.map(d => [d.lag, d.hog])).toEqual([[-6.12, 0], [-4.5, 0], [-2.25, 0]]);   // strecket börjar i noll
         expect(f.lager[1].data.map(d => d.x)).toEqual([-6.12, -4.5, -2.25]);
-        expect(f.lager[1].data.map(d => d.etikett)).toEqual(['−6,1 %', '−4,5 %', '−2,3 %']);
+        expect(f.lager[1].data.map(d => d.etikett)).toEqual(['−6,1\u00a0%', '−4,5\u00a0%', '−2,3\u00a0%']);
         expect(f.x.nollinje).toBe(true);
         expect(f.x.doman[1]).toBeGreaterThan(0);
         expect(f.lager[1].data.every(d => d.fel === undefined)).toBe(true);
@@ -848,6 +848,17 @@ describe('Ålder & karriär: lön mot ålder i små multiplar', () => {
         expect(d.getElementById('kon-multiplar-not').textContent).toMatch(/BAS S/);
         const allt = (el.outerHTML + JSON.stringify(w2.eval('chartExportRows(document.getElementById("chart-kon-multiplar"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1').replace(/\s(?:d|c?[xy][12]?|transform|width|height|r)="[^"]*"/g, '');
         expect(allt).not.toMatch(/7533\d|7538\d|BAS S/);
+        expect(d.getElementById('kon-multiplar-not').textContent).toMatch(/^Visas inte här \(färre än \d+ personer, eller fler intervall än \d+\): BAS S\./);
+    });
+    it('på skärmen (tröskeln 1) säger noten inte «färre än 1 person»', () => {
+        const w2 = createAppWindow();
+        w2.__state.data = [...data(), ...Array.from({ length: 30 }, (_, i) => ({ bas: String.fromCharCode(67 + (i % 15)), kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i, alder: 30 + i, yrke: '500 Q', aid: '500', yrkeLabel: 'Q', enhet: '' }))];
+        w2.eval('populateSelects(); unlockTabs();');
+        w2.__renderTabContent('kon');
+        expect(w2.eval('kTroskel()')).toBe(1);
+        const not = w2.document.getElementById('kon-multiplar-not').textContent;
+        expect(not).toMatch(/^Visas inte här \(fler intervall än \d+\): /);
+        expect(not).not.toMatch(/färre än/);
     });
 });
 

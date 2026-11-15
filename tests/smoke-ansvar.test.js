@@ -269,7 +269,7 @@ describe('ansvarskod i Lika arbete', () => {
         expect(under.map(tr => tr.textContent)).toEqual([expect.stringMatching(/Ledningsansvar/), expect.stringMatching(/Inget särskilt ansvar|Utan ansvar/),
             expect.stringMatching(/Utan ledningsansvar/)]);
         expect(under[0].textContent).toMatch(/Gruppens median/);
-        expect(under[2].textContent).toMatch(/9[89],\d %/);
+        expect(under[2].textContent).toMatch(/9[89],\d\s%/);
         // yrket utan ledningsansvar hos någon får inga underrader
         const j = rader.findIndex(tr => /207011/.test(tr.textContent));
         expect(rader[j + 1]?.classList.contains('la-underrad') ?? false).toBe(false);
@@ -629,7 +629,7 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
         const i = kol('matrix-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
-        expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)} %`);   // demot är en kommun
+        expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)}\u00a0%`);   // demot är en kommun
         const antal = rubriker('matrix-table').length;
         // Hela bredden räknas med data-hel-colspan; i grundvyn (Fler kolumner av) täcker de synliga cellerna de synliga kolumnerna.
         const synligaRubriker = [...w.document.querySelectorAll('#matrix-table thead th')].filter(th => !th.hidden).length;
@@ -647,7 +647,7 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
         const i = kol('sektor-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#sektor-table tbody tr')].find(t => /Teknikarbete/.test(t.textContent));
-        expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandelSektor('Teknikarbete', { del: 'kommun' }).pct.toFixed(1).replace('.', ',')} %`);
+        expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandelSektor('Teknikarbete', { del: 'kommun' }).pct.toFixed(1).replace('.', ',')}\u00a0%`);
     });
     it('Likvärdigt arbete: organisationens yrkeslistor har "% kvinnor, SKR"', () => {
         w.__renderTabContent('likvardighet');
@@ -658,8 +658,8 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
         const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
         const d = w.__buildGruppdossier(key);
         expect(d.skr).toMatchObject({ niva: 'etikett' });
-        expect(w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+ % kvinnor i kommuner</);
-        expect(w.__gruppdossierAsText(d)).toMatch(/Nationell referens: \d+ % kvinnor/);
+        expect(w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+\s% kvinnor i kommuner</);
+        expect(w.__gruppdossierAsText(d)).toMatch(/Nationell referens: \d+\s% kvinnor/);
     });
     it('Om verktyget anger SKR:s personalstatistik som källa', () => {
         w.document.querySelector('.nav-item[data-tab="info"]').click();
@@ -684,7 +684,7 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
         expect(sel.value).toBe('alla');
         w.__loadDemoData();
         expect(sel.value).toBe('kommun');
-        expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)} %`);
+        expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)}\u00a0%`);
     });
     it('byte till region ritar om med regionernas andel och rätt text', async () => {
         const { skrKvinnoandel } = await skr();
@@ -694,9 +694,9 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
         sel.value = 'region';
         sel.dispatchEvent(new w.Event('change'));
         expect(w.__state.profile.orgTyp).toBe('region');
-        expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'region' }).pct.toFixed(0)} %`);
+        expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'region' }).pct.toFixed(0)}\u00a0%`);
         const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
-        expect(w.__gruppdossierAsText(w.__buildGruppdossier(key))).toMatch(/Nationell referens: \d+ % kvinnor i regioner/);
+        expect(w.__gruppdossierAsText(w.__buildGruppdossier(key))).toMatch(/Nationell referens: \d+\s% kvinnor i regioner/);
     });
     it('konfigurationsfilen bär organisationstypen', () => {
         const w = createAppWindow();

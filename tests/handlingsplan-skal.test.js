@@ -132,7 +132,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         expect(summa).toBe(`Förklarat av skälen: ${kr(belopp)} kr (${pct(belopp / skillnad * 100)}) · Återstår att förklara: ${kr(skillnad - belopp)} kr (${pct((skillnad - belopp) / skillnad * 100)})`);
         expect(ren(knapp(tr).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);
         // Sammanfattningen står också i knappens tillgängliga namn, och följer med när den räknas om.
-        expect(knapp(tr).getAttribute('aria-label')).toBe(`Sakliga skäl, ${tr.cells[1].textContent}: 1 skäl, ${pct(belopp / skillnad * 100)} förklarat`);
+        expect(ren(knapp(tr).getAttribute('aria-label'))).toBe(`Sakliga skäl, ${ren(tr.cells[1].textContent)}: 1 skäl, ${pct(belopp / skillnad * 100)} förklarat`);
         // Står kvar efter flikbyte
         w.__renderTabContent('dashboard'); w.__renderTabContent('handlingsplan');
         expect(ren(knapp(radMedSkillnad(w)).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);

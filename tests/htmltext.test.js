@@ -22,4 +22,10 @@ describe('htmltext', () => {
         for (const t of ['Barnskötare', '403010 Barnskötare', '≥ 5 %', '', 'Nå referensens median', '[HR fyller i]', null])
             expect(arTal(t), String(t)).toBe(false);
     });
+    it('arTal: ett intervall är ett tal, också med «till» när ett av talen är negativt (95 % KI i Rapporttext)', () => {
+        for (const t of ['0,9–3,8 %', '−0,8 till 1,7 %', '−0,8\u00a0till\u00a01,7\u00a0%', '−12,90 till −8,14 %', '1 200–3 400 kr'])
+            expect(arTal(t), t).toBe(true);
+        for (const t of ['till 5 %', '5 till', 'från 5 till 10 kr', '5 till 10 personer'])
+            expect(arTal(t), t).toBe(false);
+    });
 });

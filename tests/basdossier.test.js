@@ -214,7 +214,7 @@ describe('BAS-dossiern: förra året och textversionen', () => {
         w.eval("openBasdossier('C')");
         const text = w.document.getElementById('basdossier-body').textContent;
         expect(text).toMatch(new RegExp(`Förra året.*${cfg.arsbokslut.ar}`, 's'));
-        expect(text).toContain('+800 kr');
+        expect(text).toContain('+800\u00a0kr');
         w.eval('closeBasdossier()');
         const { w: w2 } = medBokslut(ab => { delete ab.basIntervall; });
         expect(w2.eval("buildBasdossier('C')").forra.lage).toBe('saknasFalt');

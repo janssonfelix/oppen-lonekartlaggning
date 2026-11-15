@@ -168,7 +168,7 @@ function renderBasdossier(bas) {
     }
 }
 
-const _bdKr = v => (v == null || !isFinite(v) ? '–' : `${svTal(Math.round(v), 0)} kr`);
+const _bdKr = v => svKr(v);
 const _bdTecken = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
 const _bdPctTecken = v => (v == null ? '–' : `${_bdTecken(v)}${svPct(Math.abs(v), 1)}`);
 

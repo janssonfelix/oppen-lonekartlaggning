@@ -111,6 +111,40 @@ describe('CSV-exporten av en tabell: talen som de står på skärmen', () => {
     });
 });
 
+describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)', () => {
+    let w;
+    beforeAll(() => { w = createAppWindow(); });
+    it('procent och kronor skrivs med U+00A0 före enheten, så att en smal kolumn inte bryter isär dem', () => {
+        expect(w.eval('svPct(12.5, 1)')).toBe(`12,5${NBSP}%`);
+        expect(w.eval('svKr(36262)')).toBe(`36${NBSP}262${NBSP}kr`);
+        expect(w.eval('svKr(-1250.4)')).toBe(`${MINUS}1${NBSP}250${NBSP}kr`);
+        expect(w.eval('svKr(null)')).toBe('–');
+        expect(w.eval(`svKr(undefined, '—')`)).toBe('—');
+        expect(w.eval('svKr(NaN)')).toBe('–');
+    });
+    it('Excel läser cellen som ett tal med enhet, och CSV och urklipp skriver vanliga mellanslag som förut', () => {
+        expect(w.eval('_exportTalMedEnhet(svKr(36262))')).toEqual({ tal: 36262, enhet: 'kr', dec: 0 });
+        expect(w.eval('_exportTalMedEnhet(svPct(-3.25, 2))')).toEqual({ tal: -3.25, enhet: '%', dec: 2 });
+        const t = w.document.createElement('table');
+        t.id = 'talformat-enhet';
+        t.innerHTML = `<thead><tr><th>Yrke</th><th>Kr</th><th>Pct</th></tr></thead>
+            <tbody><tr><td>012345 Påhittat yrke</td><td>${w.eval('svKr(36262)')}</td><td>${w.eval('svPct(-3.25, 2)')}</td></tr></tbody>`;
+        w.document.body.appendChild(t);
+        const rader = w.__tableToMatrix('talformat-enhet');
+        expect(rader[1]).toEqual(['012345 Påhittat yrke', '36 262 kr', `${MINUS}3,25 %`]);
+        expect(w.__toCsv(rader.slice(1))).toBe('012345 Påhittat yrke;36 262 kr;-3,25 %');
+    });
+    it('p-värdet hålls ihop: «p < 0,001» bryts inte mellan tecknet och talet', () => {
+        expect(w.eval('_formatPValue(0.0004)')).toBe(`p${NBSP}<${NBSP}0,001`);
+        expect(w.eval('_formatPValue(0.03)')).toBe(`p${NBSP}<${NBSP}0,05`);
+        expect(w.eval('_formatPValue(0.1234)')).toBe(`p${NBSP}=${NBSP}0,123`);
+    });
+    it('talinläsningen läser tillbaka samma värde', () => {
+        expect(w.eval(`parseNumberStrict(svKr(-31417)).value`)).toBe(-31417);
+        expect(w.eval(`parseNumberStrict(svPct(-3.25, 2)).value`)).toBe(-3.25);
+    });
+});
+
 describe('Rundtur: verktygets svenska tal läses tillbaka till samma värde', () => {
     let w;
     beforeAll(() => { w = createAppWindow(); });

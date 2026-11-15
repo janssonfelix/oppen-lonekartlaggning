@@ -186,8 +186,8 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         iExport(w);
         w.__renderTabContent('rapporttext');
         const seg = w.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
-        expect(seg).toMatch(/lägre betalda BAS \(B: 75 %\)/);
-        expect(seg).toMatch(/högre betalda \(C: 25 %\)/);
+        expect(seg).toMatch(/lägre betalda BAS \(B: 75\s%\)/);
+        expect(seg).toMatch(/högre betalda \(C: 25\s%\)/);
         expect(seg).not.toMatch(/\((A|D): /);
     });
     it('Likvärdigt arbete: antalet små kvinnodominerade grupper räknas med gällande tröskel', () => {

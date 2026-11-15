@@ -10,7 +10,7 @@ const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna i dag: 
 // skillnaden förklarar åldersfördelningen? Ren funktion. lutKv/lutMa är trendlinjernas lutning i kronor per år;
 // ra och vidSammaAlder är kvinnors lön i procent av mäns, utan justering respektive avläst vid medelåldern.
 function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
-    const kr = v => `${v >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(v)), 0)} kr`;
+    const kr = v => `${v >= 0 ? '+' : '−'}${svKr(Math.abs(v))}`;
     const medel = (Math.abs(lutKv) + Math.abs(lutMa)) / 2;
     const likaLutning = medel === 0 || Math.abs(lutKv - lutMa) / medel <= 0.25;
     const lutning = likaLutning
@@ -326,7 +326,7 @@ function renderKonMultiplar() {
     const { figur, utanfor, nedsamplade } = _konMultiplarFigur(d, individLitenFor(d));
     if (figur.paneler.length) ritaFigur(el, figur); else rensaFigur(el);
     const not = document.getElementById('kon-multiplar-not');
-    const delar = [utanfor.length ? `Visas inte här (färre än ${kTroskel()} ${personOrd(kTroskel())}, eller fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(', ')}.` : '',
+    const delar = [utanfor.length ? `Visas inte här (${kTroskel() > 1 ? `färre än ${kTroskel()} ${personOrd(kTroskel())}, eller ` : ''}fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(', ')}.` : '',
                    nedsamplade.length ? `I ${nedsamplade.join(', ')} visas ett urval av punkterna (högst ${KON_MULTIPLAR_PUNKTER} per intervall); trendlinjen räknas ur alla.` : ''].filter(Boolean);
     if (not) { not.hidden = !delar.length; not.textContent = delar.join(' '); }
 }

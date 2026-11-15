@@ -567,7 +567,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         await w.eval('_regKvantilKlar()');
         const tabell = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klibbigt golv'));
         expect(tabell.querySelector('thead').textContent).toContain('95 % KI (bootstrap)');
-        expect(tabell.querySelectorAll('tbody tr')[0].children[2].textContent).toMatch(/^[+−]\d+,\d % till [+−]\d+,\d %$/);
+        expect(tabell.querySelectorAll('tbody tr')[0].children[2].textContent).toMatch(/^[+−]\d+,\d\s% till [+−]\d+,\d\s%$/);
         expect(w.document.getElementById('regression-card').textContent).toMatch(/approximation av kvantillösningen/);
         expect(w.document.getElementById('regression-card').textContent).toMatch(/percentil-bootstrap med 200 omsamplingar/);
         const f = w.document.getElementById('chart-reg-kvantil')._figur;
@@ -623,7 +623,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         w.eval('renderRegressionCard()');
         const html = w.document.body.innerHTML;
         expect(html).toContain('<code>A</code>, är referens');
-        expect(html).toMatch(/<td>D<\/td><td>\+16,2 %/);
+        expect(html).toMatch(/<td>D<\/td><td>\+16,2(?:\s|&nbsp;)%/);
     });
 });
 

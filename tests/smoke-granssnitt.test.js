@@ -22,7 +22,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         for (let i = 0; i < 20; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301`);
         rader.push('K;90000;50;Man;7101');
         await lasIn(w, rader);
-        expect(w.document.getElementById('data-validation-report').textContent).toContain('Användbarhetsgrad: 100,0 %');
+        expect(w.document.getElementById('data-validation-report').textContent).toContain('Användbarhetsgrad: 100,0\u00a0%');
         expect(w.document.getElementById('data-status').textContent).toContain('21 rader');
     });
     it('kompliansrutan för referensens P10 räknar bara BAS med minst k personer', () => {
@@ -122,13 +122,13 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(rutor).toHaveLength(5);
         // Andelen kvinnor i kvartilerna står också i kvartiltabellen (sista kolumnen), och i samma form.
         const kvartiler = [...d.querySelectorAll('#struktur-eu table tbody tr')].map(tr => tr.textContent);
-        const andel = t => t.match(/(\d+) %/)[0];
+        const andel = t => t.match(/(\d+)\s%/)[0];
         expect(kvartiler[0]).toContain(andel(rutor[2]));
         expect(kvartiler[3]).toContain(andel(rutor[3]));
         expect(d.getElementById('nyckel-st-representation').textContent).toBe(`${d.querySelectorAll('#struktur-representation tbody tr').length} BAS-intervall`);
         expect(['Jämnt', 'Glastak', 'Klibbigt golv']).toContain(d.getElementById('nyckel-st-fordelning').textContent);
         expect(rutor[4]).toContain(d.getElementById('nyckel-st-fordelning').textContent);
-        expect(d.getElementById('nyckel-st-eu').textContent).toMatch(/^Kvinnors medianlön \d+,\d % av mäns$/);
+        expect(d.getElementById('nyckel-st-eu').textContent).toMatch(/^Kvinnors medianlön \d+,\d\s% av mäns$/);
         expect(d.getElementById('view-struktur').textContent).not.toMatch(/Sticky floor/);
     });
     it('Struktur utan könsuppdelning visar inga könstal i toppen', () => {
@@ -209,6 +209,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         // Positionen står i tabellens femte kolumn; bara rader med en position räknas.
         const pos = [...d.querySelectorAll('#lonepolitik-table tbody tr')].map(tr => tr.children[4]).filter(td => td && /^-?\d/.test(td.dataset.sortValue || '')).map(td => +td.dataset.sortValue);
         expect(pos.length).toBeGreaterThan(0);
+        // Gruppens namn står som i exporten: AID-koden en gång och sedan etikettnamnet («206017 Sjuksköterska»).
+        const namn = [...d.querySelectorAll('#lonepolitik-table tbody tr:not(.group-header) > td:first-child')].map(td => td.textContent.trim());
+        expect(namn.length).toBeGreaterThan(0);
+        expect(namn.filter(t => /^(\d+) \1\b/.test(t))).toEqual([]);
+        expect(namn.filter(t => /^\d+ \S/.test(t)).length).toBeGreaterThan(0);
         const tal = [...d.querySelectorAll('#lp-slutsatser .slutsats-varde')].map(e => e.textContent);
         expect(tal).toHaveLength(4);
         expect(tal.slice(1).map(Number)).toEqual([pos.filter(p => p < 0).length, pos.filter(p => p >= 0 && p <= 100).length, pos.filter(p => p > 100).length]);
@@ -381,7 +386,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(po.closest('#installningar-modal')).not.toBeNull();
         po.value = '42'; po.dispatchEvent(new w.Event('input', { bubbles: true })); po.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(w.__state.costSettings.poPct).toBe(42);
-        expect(d.getElementById('prio-cost-summary').textContent).toMatch(/Anpassad.*42,00 %/);
+        expect(d.getElementById('prio-cost-summary').textContent).toMatch(/Anpassad.*42,00\s%/);
         d.getElementById('prio-cost-reset').click();
         expect(w.__state.costSettings.poPct).toBe(39.15);
         w.eval('stangInstallningar()');
@@ -653,6 +658,19 @@ describe('Var uppstår löneskillnaden?', () => {
         expect(t).toContain('För få personer för att dela upp skillnaden');
         expect(w.document.querySelectorAll('#gap-uppdelning [data-gu-del]').length).toBe(0);
     });
+    it('noten om små grupper står bara när tröskeln är större än 1 (skärmen har tröskeln 1, ADR-51)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const not = () => w.document.getElementById('gap-uppdelning-innehall').textContent.replace(/\s+/g, ' ');
+        w.__state.kLage = 'skarm';
+        w.eval('renderGapUppdelning()');
+        expect(w.eval('kTroskel()')).toBe(1);
+        expect(not()).not.toMatch(/färre än 1 person/);
+        expect(not()).not.toMatch(/namnges inte/);
+        w.__state.kLage = 'export';
+        w.eval('renderGapUppdelning()');
+        expect(not()).toMatch(new RegExp(`Grupper där ett kön har färre än ${w.eval('kTroskel()')} personer namnges inte\\.`));
+    });
     it('AID-namn kodas', () => {
         const w = createAppWindow();
         w.__loadDemoData();
@@ -843,9 +861,9 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     });
     it('belopp som avrundas till noll visas utan tecken', () => {
         const w = createAppWindow();
-        expect(w.eval('_guKr(-0.3)')).toBe('0 kr');
-        expect(w.eval('_guKr(0.4)')).toBe('0 kr');
-        expect(w.eval('_guKr(-12)')).toBe('−12 kr');
+        expect(w.eval('_guKr(-0.3)')).toBe('0\u00a0kr');
+        expect(w.eval('_guKr(0.4)')).toBe('0\u00a0kr');
+        expect(w.eval('_guKr(-12)')).toBe('−12\u00a0kr');
     });
     it('kortet förklarar beloppens tecken', () => {
         const w = createAppWindow();
