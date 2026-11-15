@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.15` · **Artefakt-SHA-256:** `faeb9f9044d132ac59e9397123599db6bd148da39f115907128513b5ad559c6b` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.16` · **Artefakt-SHA-256:** `343d3de437aacd8c0cb8e647c7c4a006dd086275b3bac4bd91139bb4bc55593c` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-15.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
@@ -732,7 +732,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   personuppgifter (§8, punkt 1).
 - **Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön** följer tröskeln för varje kön:
   - Översikten per BAS-intervall (skärm, Word, PDF) har bara rader där båda könen når den.
-  - Trattdiagrammet har bara AID-etiketter där båda könen når den.
+  - Trattdiagrammet har en punkt per AID-etikett i BAS-intervall, och bara där båda könen i gruppen når den.
   - Lådorna över lönespridning per BAS-intervall och kön ritas bara för ett kön som når den, och utan enskilda
     avvikare (`avvikare: false`).
   - Löneskillnaden per åldersgrupp och fördelningen i spannets tredjedelar redovisas bara när båda könen når den.
@@ -998,32 +998,51 @@ säger detsamma. Releasen bär dessutom en programvaruförteckning (`sbom.cdx.js
 andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppgifter om användare. Testsviten är
 109 filer.
 
-**Granskningen 2026-11-15** prövade dokumentet mot koden som ändrats efter bygget 2026.11.14: bytet till AID:s
-egna ord (ADR-74, termerna i `src/lib/termer.js`), förminskningen av sidan i bygget, konfigurationsfilens prövning av
-likvärdighetens inställningar, raderna kvantilregressionen räknar på, och statusstycket i *Om verktyget*. Modulerna
-för lagringsspärren, rensningen, uppgiftsminimeringen, k-tröskeln och exportgrinden är oförändrade utom i ord och
-kommentarer. Varje namngiven fil, funktion, konstant och testfil söktes upp i `src/`, `tools/`, `tests/` och bygget;
-alla finns. Varje namn på en flik, ett avsnitt, en knapp, ett blad eller en kolumn som dokumentet citerar söktes i
-verktygets skärmtext och i samtliga exporter, insamlade med k-riggen. Kontrollerat på nytt:
-- CSP-raden i bygget (fem skript och fem hashar)
-- sökningen i `dist/app.js` efter nätverks- och lagringsanrop (träffarna är lagringsspärren och verktygets egen
-  text); biblioteken i `vendor/` är oförändrade
-- att stilmallen saknar `url(`
-- att `buildConfigSnapshot()` inte läser `state.data`
-- att termerna sätts in som text (`textContent`) eller som fasta ord i mallarna, aldrig ur en inläst fil.
+**Granskningen 2026-11-15** (inför bygget 2026.11.16) prövade dokumentet mot koden som ändrats efter bygget
+2026.11.15: växeln *Fler kolumner* i tabellerna i Lika arbete och Likvärdigt arbete, tabellbredderna i utskriften och
+Word-utkastet (`60-utskrift.js`, `src/lib/docx.js`), det hårda mellanslaget i talformaten, diagrammens etiketter,
+poänglägets jämförelser (ADR-76), HC3 med AID-etikett inom BAS (ADR-77), översikten per huvudområde (ADR-78),
+protokollet för gemensam lönebedömning (ADR-79), och att paren i likvärdigt arbete och regressionen räknas en gång. Biblioteken i `vendor/` och `tools/bundle.mjs` är
+oförändrade. Varje namngiven fil, funktion, konstant och testfil som berörs söktes upp i `src/`, `tools/`, `tests/`
+och bygget; alla finns. Kontrollerat:
+- CSP-raden i bygget (fem skript och fem hashar, två stilhashar), ordagrant som §6.1; sökningen i `dist/app.js` efter
+  nätverks- och lagringsanrop ger samma träffar som i bygget 2026.11.15 (lagringsspärren och verktygets egen text).
+  Ändringarna lägger inte till något nätverks- eller lagringsanrop, `window.open`, `location`, `style="…"` eller
+  `url(` i stilmallen.
+- *Fler kolumner* gömmer cellerna med `hidden` på skärmen. Exporterna och utskriftens bilagor tar fram dem i en kopia
+  (`_flerKolumnerAlla`, via `_exportVisaAllaRader`). Cellernas värden räknas i exportläget som förut, oberoende av
+  om kolumnen syns, så de gömda kolumnerna följer tröskeln som de andra (`tests/tabeller-fler-kolumner.test.js`:
+  kopian och CSV-underlaget har alla kolumner i båda vyerna). Den nya text som bara står på skärmen
+  (`data-export-text=""` i *Lägre krav, högre lön*) är BAS-intervallet, inget lönemått.
+- Word-utkastets kolumnbredder, det täta läget och att stycken hålls ihop ändrar layouten, inte innehållet; filens
+  metadata är oförändrad (§6.6). Utskriftens prov om webbläsaren avstavar svenska lägger ett element med ett fast ord
+  i sidan, mäter det och tar bort det.
+- Paren i likvärdigt arbete läser ingen tröskel (`computeLikvardighetPairs`, `src/lib/likvardighet.js`) och står
+  kvar efter ett tröskelbyte. Varje utdata utanför fliken prövar dem mot tröskeln när de läses (`_parForRedovisning`):
+  protokollet, Att göra, handlingsplanen, rapportmodellen, rapportunderlaget, gruppdossiern, BAS-dossiern,
+  årsbokslutet, Löneöversyn och robusthetspanelen. Bootstrapmedianens rangräkning håller inga löner mellan
+  anropen. `_skattningarIBakgrunden` räknar om bootstrap-KI och styrkan med `statGolv()`, som förut.
+- Regressionen skickas vidare som ett värde inom ett varv och läggs inte i `state` (ADR-17). Ändringarna lägger inget
+  nytt fält i `state` utom valen i `state.flerKolumner`, som inte bär några uppgifter ur lönefilen.
+- Översikten per huvudområde räknar den justerade skillnaden bara när huvudområdet har 30 giltiga rader eller fler och
+  båda könen når tröskeln, som förut (`_justerat` i `src/lib/sektor.js`). Nytt är att talet också ges när lönefilen saknar
+  ålder, på samma villkor; rapportunderlaget visar det bara när båda könen når tröskeln.
+- Protokollet för gemensam lönebedömning (ADR-79) redovisar median och medelvärde per kön i bladen för lika arbete
+  och BAS-intervall, bara för grupper som protokollet redan redovisar. `_jpaNivaCeller` skriver talen bara när båda
+  könen når tröskeln, och bladet för BAS-intervall tar bara intervall där båda könen når `statGolv()`, som aldrig är
+  under tröskeln (`tests/ktroskel-utdata.test.js`, vid 10 och 25). Försättssidans nya fält är tomma och fylls i av
+  parterna; verktyget skriver inget i dem.
+- Uppgiftsminimeringen: inläsningen ändras bara i att regressionen körs en gång. Fälten i minnet och PII-kontrollen
+  är oförändrade.
 
-Tre påståenden rättades:
-- Knappen i Löneöversyn heter *Föreslå fördelning mot skillnaderna i likvärdigt arbete*; raden om Löneöversyns
-  förslag nedan angav ett annat namn.
-- Testsviten är 109 filer, inte 79.
-- Orden för AID:s begrepp följer verktygets (AID-etikett, AID-kod, etikettnamn, huvudområde), också i tabellen över
-  utdata.
+Ett påstående rättades: trattdiagrammet har en punkt per AID-etikett i BAS-intervall, inte per AID-etikett (§6.6 och
+dataskyddsbeskrivningen §3). Ingen avvikelse mot skydden hittades.
 
 Granskningen är avgränsad till det som ändrats; påståenden om oförändrad kod lästes inte om mot koden.
 
-Testsviten (109 filer) och röktestet i Chromium kördes mot bygget. Inte prövat i den här granskningen: röktestet i
-Firefox och WebKit (det körs i CI) och de påståenden märkta *Verifierat i webbläsare* som inte har ett automatiskt
-test.
+Testsviten (109 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
+granskningen: röktestet i Firefox och WebKit (det körs i CI), de påståenden märkta *Verifierat i webbläsare* som inte
+har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsare.
 
 | Kontroll | Metod | Resultat |
 |---|---|---|
