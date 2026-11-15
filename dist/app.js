@@ -4989,6 +4989,7 @@ const __mirrorRegression = (() => {
     const fitOLS = __mirrorStat.fitOLS;
     const invert = __mirrorStat.invert;
     const matMul = __mirrorStat.matMul;
+    const median = __mirrorStat.median;
     const pValue2Sided = __mirrorStat.pValue2Sided;
     const tQuantile = __mirrorStat.tQuantile;
     const skapaTermer = __mirrorTermer.skapaTermer;
@@ -5174,7 +5175,12 @@ function computePerBasGap(rows, basList, { golv }) {
         const tq   = tQuantile(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
         const ciLo = (Math.exp(beta - tq*se) - 1) * 100;
         const ciHi = (Math.exp(beta + tq*se) - 1) * 100;
-        out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, gapPct: (Math.exp(beta)-1)*100, ciLow: ciLo, ciHigh: ciHi, pValue: p, R2: fit.R2, status: 'ok' });
+        // Lönenivåerna för samma personer som regressionen (protokollet redovisar median och medelvärde, ADR-79). De
+        // räknas bara här, där båda könen når golvet.
+        const lonKv = kv.map(d => d.lon), lonMa = ma.map(d => d.lon);
+        const medel = l => l.reduce((s, x) => s + x, 0) / l.length;
+        out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, gapPct: (Math.exp(beta)-1)*100, ciLow: ciLo, ciHigh: ciHi, pValue: p, R2: fit.R2, status: 'ok',
+            medKv: median(lonKv), medMa: median(lonMa), medelKv: medel(lonKv), medelMa: medel(lonMa) });
     });
     return out;
 }
@@ -9031,11 +9037,13 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
             continue;
         }
         const medKv = median(kv), medMa = median(ma);
+        // Medelvärdet på samma löner som medianen; protokollet redovisar båda (ADR-79), statusen följer medianen.
+        const medelKv = kv.reduce((s, x) => s + x, 0) / kv.length, medelMa = ma.reduce((s, x) => s + x, 0) / ma.length;
         const kvot = medKv / medMa;
         const gapPct = Math.abs(kvot * 100 - 100);
         const b = bedomSkillnad(kv, ma, { golv });
         const g = { yrke, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
-            medKv, medMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
+            medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
         // varje grupp på minst 3 % och visas för grupperna Värt att granska.
@@ -20715,6 +20723,19 @@ function _jpaExkluderadeTexter() {
         bas: `  Utelämnade: färre än ${statGolv()} av ett kön (k-anonymitet)`
     };
 }
+/** Rubrikerna för medelvärdet i protokollets blad 2 och 3, bredvid medianens (ADR-79). */
+const _JPA_MEDEL_KOLUMNER = ['Medelvärde kvinnor (kr)', 'Medelvärde män (kr)', 'Differens medelvärde (kr)', 'Kvinnors medelvärde i % av mäns'];
+/** Rubrikerna för medianen i protokollets blad 2 och 3. */
+const _JPA_MEDIAN_KOLUMNER = ['Median kvinnor (kr)', 'Median män (kr)', 'Differens (kr)', 'Kvinnors median i % av mäns'];
+/**
+ * Cellerna för ett lönemått per kön: kvinnor, män, differens (kr) och kvinnors i % av mäns. Bara för en grupp där
+ * båda könen når tröskeln (S4); annars fyra tankstreck.
+ */
+function _jpaNivaCeller(kv, ma, nKv, nMa) {
+    const k = kTroskel();
+    if (!(nKv >= k && nMa >= k) || !isFinite(kv) || !isFinite(ma) || !(ma > 0)) return ['—', '—', '—', '—'];
+    return [Math.round(kv), Math.round(ma), Math.round(kv - ma), +(kv / ma * 100).toFixed(1)];
+}
 /**
  * Genererar en samrådsprotokoll-Excel speciellt utformad för facklig samverkan.
  *
@@ -20724,7 +20745,9 @@ function _jpaExkluderadeTexter() {
  *     säkerställd också efter korrigering för många tester (Benjamini–Hochberg, q < 0,05) och minst 3 %, som
  *     regressionskortet och Att göra (ADR-71)
  *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas helt
- *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder
+ *   - Median och medelvärde per kön för varje redovisad grupp och intervall; statusen följer medianen (ADR-79)
+ *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder, och på försättssidan för löneökning efter
+ *     ledighet, utvärderingen av föregående lönebedömnings åtgärder och systemen för arbetsvärdering (ADR-79)
  *   - Signaturblad för arbetsgivare + fackliga representanter
  *   - Transparens om vad som EXKLUDERATS p.g.a. k-anonymitet (antal, ingen PII)
  *
@@ -20759,7 +20782,9 @@ function _exportJPAProtocolExport() {
         yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
         medKv: Math.round(g.medKv), medMa: Math.round(g.medMa),
         gapPct: +((g.kvot - 1) * 100).toFixed(2),   // negativ = kvinnor lägre
-        diffKr: Math.round(g.medKv - g.medMa), direktiv: g.direktiv
+        diffKr: Math.round(g.medKv - g.medMa), direktiv: g.direktiv,
+        // Medelvärdet redovisas bredvid medianen (ADR-79); urvalet och statusen bestäms av medianen som förut.
+        medel: _jpaNivaCeller(g.medelKv, g.medelMa, g.nKv, g.nMa)
     }));
     const yrkenExkluderadeMaskerade = lika.grupper.filter(g => g.samladMedian).length + lika.utelamnade.length + lika.ejJamforbara.length;
     const yrkenEjBedomda = jamforda.filter(g => g.niva === 'ejbedomd').length;
@@ -20832,6 +20857,9 @@ function _exportJPAProtocolExport() {
         ['Övergripande åtgärdsplan', ''],
         ['Tidplan för åtgärder', ''],
         ['Nästa uppföljning (datum)', ''],
+        ['Hur stor andel av kvinnorna och av männen fick löneökning efter föräldraledighet eller ledighet för vård av anhörig?', ''],
+        ['Hur väl har åtgärderna från föregående gemensamma lönebedömning fungerat?', ''],
+        ['Hur fungerar systemen för könsneutral arbetsvärdering och arbetsindelning, och behöver de ändras?', ''],
         ['', ''],
         ['Bifoga protokollet till årets dokumentation av lönekartläggningen.', ''],
         ['Originalexemplar förvaras i låst arkiv enligt arbetsgivarens dokumenthanteringsplan.', '']
@@ -20848,7 +20876,7 @@ function _exportJPAProtocolExport() {
     // === Sheet 2: Yrkesgrupper med statusen Värt att granska (lika arbete) ===
     const yrkenHeaderRow = [
         'Nr', termStor(T.enhet.en), 'N totalt', 'N kvinnor', 'N män',
-        'Median kvinnor (kr)', 'Median män (kr)', 'Differens (kr)', 'Kvinnors median i % av mäns', _STS_DIR_KOLUMN,
+        ..._JPA_MEDIAN_KOLUMNER, _STS_DIR_KOLUMN, ..._JPA_MEDEL_KOLUMNER,
         // Tomma protokollfält
         'Sakliga skäl — arbetsgivarens analys',
         'Fackliga partens kommentar / motargument',
@@ -20859,12 +20887,13 @@ function _exportJPAProtocolExport() {
     ];
     const yrkenRows = [yrkenHeaderRow];
     if (jpaYrken.length === 0) {
-        yrkenRows.push(['—', `Inga ${T.enhet.fl} med statusen Värt att granska, bland grupperna som når minsta gruppstorlek`, '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        yrkenRows.push(['—', `Inga ${T.enhet.fl} med statusen Värt att granska, bland grupperna som når minsta gruppstorlek`, ...Array(yrkenHeaderRow.length - 2).fill('')]);
     } else {
         jpaYrken.forEach((j, idx) => {
             yrkenRows.push([
                 idx + 1, j.yrke, j.tot, j.nKv, j.nMa,
                 j.medKv, j.medMa, j.diffKr, typeof j.gapPct === 'number' ? +(100 + j.gapPct).toFixed(1) : j.gapPct, j.direktiv ? _STS_DIR_ETIKETT : '',
+                ...j.medel,
                 '', '', '', '', '', ''  // protokoll-celler tomma
             ]);
         });
@@ -20874,6 +20903,7 @@ function _exportJPAProtocolExport() {
     yrkenSheet['!cols'] = [
         { wch: 4 }, { wch: 42 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
         { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
+        { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 },
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     yrkenSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
@@ -20885,6 +20915,8 @@ function _exportJPAProtocolExport() {
         'Nr', termStor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
         'Oförklarad skillnad (%)', '95 % KI lägre', '95 % KI övre',
         'p-värde', 'q-värde (BH-justerat)', 'R² för modellen', 'Säkerställd efter korrigering (q < 0,05)',
+        // Lönenivåerna för samma personer som regressionen (ADR-79)
+        ..._JPA_MEDIAN_KOLUMNER, ..._JPA_MEDEL_KOLUMNER,
         // Protokoll-fält
         'Sakliga skäl — arbetsgivarens analys',
         'Fackliga partens kommentar',
@@ -20895,7 +20927,7 @@ function _exportJPAProtocolExport() {
     ];
     const basRows = [basHeaderRow];
     if (jpaBas.length === 0) {
-        basRows.push(['—', `Inga ${T.niva.fl} med en säkerställd oförklarad skillnad på minst 3 %, bland intervallen som når minsta gruppstorlek`, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        basRows.push(['—', `Inga ${T.niva.fl} med en säkerställd oförklarad skillnad på minst 3 %, bland intervallen som når minsta gruppstorlek`, ...Array(basHeaderRow.length - 2).fill('')]);
     } else {
         jpaBas.forEach((b, idx) => {
             basRows.push([
@@ -20905,6 +20937,8 @@ function _exportJPAProtocolExport() {
                 b.q < 0.001 ? '< 0.001' : +b.q.toFixed(4),
                 +(b.R2 * 100).toFixed(1) + '%',
                 b.q < 0.05 ? 'Ja' : 'Nej',
+                // Intervallet har båda könen på minst statGolv() ≥ tröskeln; cellerna prövar ändå tröskeln själva (S4).
+                ..._jpaNivaCeller(b.medKv, b.medMa, b.kvN, b.maN), ..._jpaNivaCeller(b.medelKv, b.medelMa, b.kvN, b.maN),
                 '', '', '', '', '', ''
             ]);
         });
@@ -20913,6 +20947,7 @@ function _exportJPAProtocolExport() {
     basSheet['!cols'] = [
         { wch: 4 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
         { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 18 },
+        { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 },
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     basSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
@@ -21012,6 +21047,7 @@ function _exportJPAProtocolExport() {
         ['', ''],
         ['— Statistisk metodik —', ''],
         [`Lika arbete (${T.enhet.en})`, `Direkt median-jämförelse mellan kvinnors och mäns löner inom samma ${T.kod.en}. Kvinnors median i procent av mäns = median_kv / median_mä × 100; under 100 betyder att kvinnor ligger lägre.`],
+        ['Median och medelvärde', `Blad 2 och 3 redovisar både median och medelvärde för kvinnor och män, i kronor och som kvinnors i procent av mäns. Statusen och urvalet följer medianen i blad 2 och regressionen i blad 3; medelvärdet står bredvid som underlag. I blad 3 räknas båda på samma personer som regressionen.`],
         [`Likvärdigt arbete (${T.niva.en})`, `OLS-regression: log(lön) ~ kön${harAlder() ? ' + ålder (centrerad)' : ''} inom varje BAS. Oförklarad skillnad = könskoefficienten omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).${harAlder() ? '' : ' Lönefilen saknar ålder, så ålder räknas inte bort.'}`],
         ['Konfidensintervall', '95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader.'],
         ['Statistisk signifikans', `p < 0.05 = ej slumpmässig skillnad. För ${T.niva.bfl} gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).`],

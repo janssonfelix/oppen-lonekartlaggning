@@ -68,11 +68,13 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
             continue;
         }
         const medKv = median(kv), medMa = median(ma);
+        // Medelvärdet på samma löner som medianen; protokollet redovisar båda (ADR-79), statusen följer medianen.
+        const medelKv = kv.reduce((s, x) => s + x, 0) / kv.length, medelMa = ma.reduce((s, x) => s + x, 0) / ma.length;
         const kvot = medKv / medMa;
         const gapPct = Math.abs(kvot * 100 - 100);
         const b = bedomSkillnad(kv, ma, { golv });
         const g = { yrke, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
-            medKv, medMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
+            medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
         // varje grupp på minst 3 % och visas för grupperna Värt att granska.

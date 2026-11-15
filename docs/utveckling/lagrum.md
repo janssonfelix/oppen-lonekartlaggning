@@ -69,16 +69,17 @@ Excel-filen *Protokoll för gemensam lönebedömning* (`exportJPAProtocol`, `src
 | Led | Innehållet enligt art. 10.2 | Protokollet | Täckning |
 |---|---|---|---|
 | a | andelen kvinnor och män i varje arbetstagarkategori | antal kvinnor och män, men bara för grupper med statusen *Värt att granska* (blad 2) och intervall med säkerställd skillnad (blad 3) | delvis: inte alla kategorier |
-| b | kvinnors och mäns genomsnittliga lönenivåer, och tillägg eller rörliga ersättningar, per kategori | medianer, inte medelvärden; lönefilen har en lönekolumn, så tillägg och rörliga delar redovisas inte för sig | delvis |
-| c | alla skillnader i genomsnittlig lönenivå per kategori | skillnaden för de flaggade grupperna och intervallen; övriga räknas bara i blad 4 | delvis: inte alla kategorier |
+| b | kvinnors och mäns genomsnittliga lönenivåer, och tillägg eller rörliga ersättningar, per kategori | median och medelvärde per kön i blad 2 och 3 (ADR-79), för de redovisade grupperna och intervallen; lönefilen har en lönekolumn, så tillägg och rörliga delar redovisas inte för sig | delvis |
+| c | alla skillnader i genomsnittlig lönenivå per kategori | skillnaden i median och i medelvärde, i kronor och som kvinnors i procent av mäns, för de flaggade grupperna och intervallen; övriga räknas bara i blad 4 | delvis: inte alla kategorier |
 | d | skälen till skillnaderna, med objektiva och könsneutrala kriterier som parterna fastställt | fält att fylla i: *Sakliga skäl*, *Fackliga partens kommentar*, *Status efter samråd* | ja, som fält att fylla i |
-| e | andelen kvinnor och män som fått löneökning efter föräldraledighet eller ledighet för vård av anhörig | saknas; underlaget har inga uppgifter om ledighet | nej |
+| e | andelen kvinnor och män som fått löneökning efter föräldraledighet eller ledighet för vård av anhörig | fält att fylla i på försättssidan; underlaget har inga uppgifter om ledighet, så verktyget räknar inget | ja, som fält att fylla i |
 | f | åtgärder mot löneskillnader som inte motiveras av objektiva, könsneutrala kriterier | *Överenskommen åtgärd*, *Tidplan*, *Ansvarig* per rad; *Övergripande åtgärdsplan* på försättssidan | ja, som fält att fylla i |
-| g | utvärdering av hur effektiva åtgärderna från tidigare gemensamma lönebedömningar har varit | saknas; försättssidan har bara *Nästa uppföljning* | nej |
+| g | utvärdering av hur effektiva åtgärderna från tidigare gemensamma lönebedömningar har varit | fält att fylla i på försättssidan, bredvid *Nästa uppföljning* | ja, som fält att fylla i |
 
 Utanför 10.2: art. 10.3 (bedömningen görs tillgänglig för arbetstagare, deras företrädare och övervakningsorganet)
 ligger utanför verktyget. Art. 10.4 kräver att åtgärderna omfattar en analys av befintliga system för könsneutral
-arbetsvärdering och arbetsindelning, eller att sådana införs; protokollet har inget fält för det.
+arbetsvärdering och arbetsindelning, eller att sådana införs; försättssidan har ett fält för den analysen, som parterna
+fyller i (ADR-79).
 
 ## Dataskyddsförordningen (EU) 2016/679
 
