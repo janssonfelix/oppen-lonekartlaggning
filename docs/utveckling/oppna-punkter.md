@@ -29,10 +29,12 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
 8. **Ett gemensamt globalt scope** på omkring 20 000 rader. Logik flyttas till `src/lib/` när en del ändå ändras.
-28. **Hela testsviten tar omkring fem minuter lokalt och fyra till fem i CI** (delad på fyra jobb). Två
-    testfamiljer står för två tredjedelar av tiden: k-tröskeln och röktesterna av flikarna, där varje fil bygger
-    alla vägar ut ur verktyget. En kortare svit kräver att riggen som samlar in utdata (`tests/helpers/ktroskel-rigg.js`)
-    skrivs om, och den vaktar skyddet S4.
+28. **Testsviten tar knappt tre minuter lokalt och två till tre per jobb i CI** (delad på fyra jobb, mätt
+    2026-11-15). Väntetiden för en pull request sätts av röktestet i webbläsarna (4,5–5,5 min), inte av sviten. Två
+    testfamiljer står för två tredjedelar av svitens tid: k-tröskeln och röktesterna av flikarna. En kortare svit
+    kräver att tester som bara läser delar fönster i riggen som vaktar skyddet S4 (`tests/helpers/ktroskel-rigg.js`);
+    det avstods 2026-11-15, eftersom vinsten är någon minut lokalt och ingen i väntetiden. Tas upp igen om sviten
+    blir det som sätter väntetiden i CI.
 
 **Gränssnitt och analys (översynen 2026-10-29):**
 9b. **Ett tecken i hela verktyget:** löneskillnader anges kvinnor mot män, negativt när kvinnor ligger lägre
