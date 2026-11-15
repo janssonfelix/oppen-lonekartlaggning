@@ -205,6 +205,26 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         expect(antal(null)).toBe(1);
         expect(antal(25)).toBe(2);
     });
+    it('Likvärdigt arbete: ett tröskelbyte efter inläsningen räknar inte om paren, och antalet små grupper följer tröskeln', () => {
+        const w = createAppWindow();
+        const rader = [];
+        const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
+        lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        const antal = () => w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
+        expect(antal()).toBe(1);
+        const par = w.eval('likvardighetResultat().pairs');
+        w.eval('window.__lvBerakningar = 0; const __lvOrig = computeLikvardighetPairs; computeLikvardighetPairs = function () { window.__lvBerakningar++; return __lvOrig(); };');
+        // Golvet för skattningarna står kvar (5 < 10) och flyttas (25): i inget av fallen räknas paren om.
+        for (const [k, vantat] of [[5, 0], [25, 2], [10, 1]]) {
+            w.eval(`sattKTroskel(${k}, { fraga: false })`);
+            w.__renderTabContent('likvardighet');
+            expect(antal(), `k = ${k}`).toBe(vantat);
+        }
+        expect(w.__lvBerakningar).toBe(0);
+        expect(JSON.stringify(w.eval('likvardighetResultat().pairs'))).toBe(JSON.stringify(par));
+    });
 });
 
 describe('I5: konfigurationsfil och organisationspaket: det som syns ritas om en gång när tröskeln ändras, resten töms', () => {

@@ -1704,10 +1704,11 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
-    // Skattningarna (bootstrap-KI och styrkan läser statGolv(); § 3:10-paren läser ingen tröskel) räknas om bara när
-    // golvet ändras — på 55 000 rader är bootstrapen sekunder. Det som är ritat bär den gamla tröskeln och ritas om.
+    // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
+    // bootstrapen sekunder. § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
+    // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
-    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false });   // räknas om i bakgrunden nedan
+    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
     // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
@@ -1776,11 +1777,34 @@ function _omritningssteg() {
     // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
-    steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
+    // Underlagets kvalitet, Att göra och processöversikten läser samma regression: den körs en gång i omritningen och
+    // skickas vidare, som punkterna nedan (ADR-17: ett värde inom omritningen, ingen cache). Kastar den ritar varje del
+    // med en egen körning. Mellan stegen kan en tidtagare byta underlaget (en fil som läses klart, rensningen vid
+    // inaktivitet) utan att gå genom händelserna som rutan stoppar; därför skickas regressionen bara vidare så länge det
+    // den läser (underlaget, k och förklaringsmodellen) är oförändrat, annars räknar steget en egen.
+    // Detsamma gäller punkterna.
+    const indata = () => ({ data: state.data, rest: `${kInstalld()}|${JSON.stringify(typeof forklaringsmodell === 'function' ? forklaringsmodell() : null)}` });
+    const oforandrat = f => { const nu = indata(); return !!f && f.data === nu.data && f.rest === nu.rest; };
+    /** @type {any} */ let reg;
+    /** @type {any} */ let regFangst = null;
+    steg.push(['underlagets kvalitet', () => {
+        if (typeof renderUnderlagetsKvalitet !== 'function') return;
+        regFangst = indata();
+        reg = typeof runOLSRegression === 'function' ? runOLSRegression() : undefined;
+        renderUnderlagetsKvalitet({ reg });
+    }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
     /** @type {any[]|undefined} */ let punkter;
-    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist(); }]);
-    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter }); }]);
+    /** @type {any} */ let punktFangst = null;
+    steg.push(['Att göra', () => {
+        if (typeof renderActionChecklist !== 'function') return;
+        punktFangst = indata();
+        punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : undefined });
+    }]);
+    steg.push(['processöversikten', () => {
+        if (typeof renderProcessTracker !== 'function') return;
+        renderProcessTracker({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
+    }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {
@@ -1820,7 +1844,10 @@ function _renderaOmAllaFlikarStegvis() {
     ruta.appendChild(text);
     document.body.appendChild(ruta);
     const stoppa = e => { e.stopPropagation(); e.preventDefault(); };
-    const HANDELSER = ['keydown', 'keyup', 'keypress', 'click', 'pointerdown', 'mousedown', 'submit', 'change', 'input'];
+    // Också dragover och drop: filytorna läser in en släppt fil direkt (32-filinlasning.js), och en ny lönefil mitt i
+    // omritningen skulle låta stegen efter rita med det gamla underlagets värden.
+    const HANDELSER = ['keydown', 'keyup', 'keypress', 'click', 'pointerdown', 'mousedown', 'submit', 'change', 'input',
+        'dragover', 'drop'];
     for (const h of HANDELSER) document.addEventListener(h, stoppa, true);
     const klar = () => {
         for (const h of HANDELSER) document.removeEventListener(h, stoppa, true);
@@ -3597,16 +3624,61 @@ function konsklass(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
     return 'blandad';
 }
 
-function _sortedMedian(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return s.length & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
+/**
+ * Förbereder en grupps löner för bootstrapmedianen: lönerna sorteras en gång och varje position får sin rang.
+ * En dragning räknar sedan hur många gånger varje rang dras, och medianen läses ur den kumulativa räkningen.
+ * Det ger samma median som att sortera varje dragning, men i O(n) i stället för O(n log n) och utan
+ * allokeringar per dragning. Lika löner får olika rang men samma värde, så medianen blir densamma.
+ * @param {number[]} lons
+ * @returns {{n:number, rang:Int32Array, sorterad:Float64Array, antal:Int32Array}}
+ */
+function _rangUnderlag(lons) {
+    const n = lons.length;
+    const ordning = Array.from({ length: n }, (_, i) => i).sort((a, b) => lons[a] - lons[b]);
+    const rang = new Int32Array(n);
+    const sorterad = new Float64Array(n);
+    for (let r = 0; r < n; r++) {
+        rang[ordning[r]] = r;
+        sorterad[r] = lons[ordning[r]];
+    }
+    return { n, rang, sorterad, antal: new Int32Array(n) };
+}
+
+/**
+ * Medianen av en dragning med återläggning ur underlaget. Anropar `rng()` n gånger, i samma ordning som en
+ * dragning `lons[(rng() * n) | 0]` per position. Udda n: det mittersta elementet; jämnt n: medel av de två
+ * mittersta.
+ * @param {{n:number, rang:Int32Array, sorterad:Float64Array, antal:Int32Array}} u
+ * @param {() => number} rng
+ * @returns {number}
+ */
+function _dragningsmedian(u, rng) {
+    const { n, rang, sorterad, antal } = u;
+    antal.fill(0);
+    for (let i = 0; i < n; i++) antal[rang[(rng() * n) | 0]]++;
+    const m = n >> 1;
+    let summa = 0, r = 0;
+    if (n & 1) {
+        for (; r < n; r++) { summa += antal[r]; if (summa > m) return sorterad[r]; }
+    }
+    // Jämnt n: det nedre mittelementet har index m − 1, det övre index m (räknat från 0).
+    for (; r < n; r++) {
+        summa += antal[r];
+        if (summa >= m) break;
+    }
+    const nedre = sorterad[r];
+    if (summa >= m + 1) return nedre;
+    for (r++; r < n; r++) {
+        summa += antal[r];
+        if (summa >= m + 1) break;
+    }
+    return (nedre + sorterad[r]) / 2;
 }
 
 /**
  * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), percentil [2.5,97.5].
- * Används för INTERNA par (bägge sidor har individdata).
+ * Används för INTERNA par (bägge sidor har individdata). Per dragning dras först kvN löner ur kv och sedan maN
+ * ur ma; medianerna tas ur rangräkning (`_dragningsmedian`).
  * @param {number[]} kvLons
  * @param {number[]} maLons
  * @param {number} [B=1000]
@@ -3616,13 +3688,11 @@ function _sortedMedian(arr) {
 function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
     if (!Array.isArray(kvLons) || !Array.isArray(maLons)) return null;
     if (kvLons.length < 3 || maLons.length < 3) return null;
+    const kv = _rangUnderlag(kvLons), ma = _rangUnderlag(maLons);
     const diffs = new Array(B);
-    const kvN = kvLons.length, maN = maLons.length;
     for (let b = 0; b < B; b++) {
-        const sKv = new Array(kvN), sMa = new Array(maN);
-        for (let i = 0; i < kvN; i++) sKv[i] = kvLons[(rng() * kvN) | 0];
-        for (let i = 0; i < maN; i++) sMa[i] = maLons[(rng() * maN) | 0];
-        diffs[b] = _sortedMedian(sMa) - _sortedMedian(sKv);
+        const mKv = _dragningsmedian(kv, rng);
+        diffs[b] = _dragningsmedian(ma, rng) - mKv;
     }
     diffs.sort((a, b) => a - b);
     return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
@@ -3640,13 +3710,9 @@ function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
 function bootstrapMedianVsConstantKr(orgLons, constMedian, B = 1000, rng = Math.random) {
     if (!Array.isArray(orgLons) || orgLons.length < 3) return null;
     if (!(constMedian > 0)) return null;
-    const n = orgLons.length;
+    const org = _rangUnderlag(orgLons);
     const diffs = new Array(B);
-    for (let b = 0; b < B; b++) {
-        const sample = new Array(n);
-        for (let i = 0; i < n; i++) sample[i] = orgLons[(rng() * n) | 0];
-        diffs[b] = constMedian - _sortedMedian(sample);
-    }
+    for (let b = 0; b < B; b++) diffs[b] = constMedian - _dragningsmedian(org, rng);
     diffs.sort((a, b) => a - b);
     return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
 }
@@ -16980,10 +17046,11 @@ function bedomningUnderlag({ reg: given } = {}) {
 }
 
 const UK_ETIKETT = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' };
-function renderUnderlagetsKvalitet() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function renderUnderlagetsKvalitet({ reg } = {}) {
     const host = document.getElementById('underlagets-kvalitet');
     if (!host) return;
-    const b = bedomningUnderlag();
+    const b = bedomningUnderlag({ reg });
     const detaljer = document.getElementById('underlag-detaljer');
     if (!b) { host.hidden = true; host.removeAttribute('data-status'); _laNyckel('nyckel-ov-kvalitet', ''); return; }
     host.hidden = false;
@@ -17161,7 +17228,11 @@ function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
  * 03-hjalpfunktioner.js) — inga inline-onclick (hash-CSP, ADR-9).
  */
 /** @param {{punkter?: any[]}} [val] punkter: Att göras lista när anroparen just byggt den (annars byggs den här) */
-function renderProcessTracker({ punkter: givna } = {}) {
+/**
+ * @param {{punkter?: any[], reg?: any}} [val] punkter: Att göras lista; reg: regressionen när anroparen just kört den i
+ *   samma varv (ADR-17). Båda är värden som skickas vidare, ingen cache.
+ */
+function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
@@ -17174,7 +17245,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
 
     // Ett analyssteg är klart först när dess punkter i Att göra är hanterade — att analysen
     // har körts räcker inte (ADR-29). Listan byggs en gång för alla steg.
-    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : []);
+    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist({ reg: givenReg }) : []), []) : []);
     const klarmarkerade = state._actionChecklistDone || new Set();
     const hanterade = kategorier => _agHanterade(punkter, klarmarkerade, kategorier);   // src/lib/attgora.js
 
@@ -17200,7 +17271,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 3. § 9 Lika arbete (oförklarat gap + antal grupper att förklara/åtgärda)
     rows.push(safe(() => {
         if (!hasData) return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' };
-        const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
+        const reg = givenReg || ((typeof runOLSRegression === 'function') ? runOLSRegression() : null);
         const ok = !!(reg && !reg.error);
         const { t, d } = hanterade(['Lika arbete', 'Lika arbete, fördjupning']);
         return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
@@ -17209,11 +17280,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 4. § 3:10 Likvärdigt arbete (antal kandidatpar)
     rows.push(safe(() => {
         if (!hasData) return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' };
-        let lv = state.likvardighet ? state.likvardighet.result : null;   // återanvänd cache (wizarden fyller den)
-        if (lv == null && typeof computeLikvardighetPairs === 'function') {
-            lv = computeLikvardighetPairs();
-            if (state.likvardighet) state.likvardighet.result = lv;
-        }
+        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
         // Antalet står bredvid antalet hanterade punkter i Att göra, som utelämnar par med en grupp
         // under tröskeln — därför räknas de redovisade paren och de utelämnade nämns. Finns bara utelämnade
         // par säger steget det självt (tillståndet `inget`, knappen leder till fliken).
@@ -17395,10 +17462,11 @@ function updateDashboardStats() {
 /** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
 function renderOversiktDelar() {
     /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
+    /** @type {any} */ let reg;   // och samma regression: körs en gång och skickas vidare (ADR-17)
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
-        ['Att göra', () => { punkter = renderActionChecklist(); }],
-        ['processöversikten', () => renderProcessTracker({ punkter })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
+        ['Att göra', () => { reg = runOLSRegression(); punkter = renderActionChecklist({ reg }); }],
+        ['processöversikten', () => renderProcessTracker({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
     if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
@@ -17767,8 +17835,9 @@ function renderDataValidationReport() {
 // Underlagets kvalitet (ADR-19): rimlighetskontrollen och inläsningsrapporten är
 // underlag i panelen; statusen kommer från bedomningUnderlag().
 // Anropas efter renderRealityCheck() + renderDataValidationReport().
-function syncDatakvalitetPanel() {
-    renderUnderlagetsKvalitet();
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function syncDatakvalitetPanel(val) {
+    renderUnderlagetsKvalitet(val);
 }
 
 // ---- Konsistenscheck mellan filer ----
@@ -18063,14 +18132,15 @@ const _agRiktning = v => (v < 0 ? 'lägre' : 'högre');
  * Varje punkt har stabilt id så användarens "klar"-markering kvarstår även
  * om listan regenereras efter dataändring (samma grupp = samma id).
  *
+ * @param {{endastGrupper?: boolean, reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17)
  * @returns {Array<{id, kategori, prioritet, titel, detalj, tab, källa}>}
  */
-function buildActionChecklist({ endastGrupper = false } = {}) {
+function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
     /** @type {any[]} */
     const items = [];
     if (!state.data.length) return items;
     // Regressionen körs en gång här och skickas vidare till det som läser den (ADR-17: ingen cache, bara ett värde).
-    const reg = !endastGrupper && typeof runOLSRegression === 'function' ? runOLSRegression() : null;
+    const reg = endastGrupper ? null : (given || (typeof runOLSRegression === 'function' ? runOLSRegression() : null));
 
     // Punkterna per grupp (prioriteringen och likvärdighetsparen) bär AID-koden; sektorsöversikten
     // räknar bara dem och bygger därför inte de tunga, organisationsövergripande delarna.
@@ -18300,7 +18370,8 @@ function _attGoraParNot() {
  * checkboxar (state i minnet via state._actionChecklistDone-Set), CSV-export.
  */
 /** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
-function renderActionChecklist() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function renderActionChecklist({ reg } = {}) {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
@@ -18308,7 +18379,7 @@ function renderActionChecklist() {
     if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return []; }
     if (kort) kort.hidden = false;
 
-    const items = buildActionChecklist();   // returneras, så att processöversikten kan läsa samma lista
+    const items = buildActionChecklist({ reg });   // returneras, så att processöversikten kan läsa samma lista
     // Hela listan är ett avsnitt som fälls ut: "Börja här" ovanför bär det som ska göras först.
     // Listan ritas om vid varje avbockning, så avsnittets läge bevaras.
     const varOppen = !!/** @type {HTMLDetailsElement} */ ((wrap.querySelector('#avsnitt-ov-punkter') || {})).open;
@@ -19129,7 +19200,7 @@ function runDiagnostics() {
     }
 
     // Test 3: Underlagets kvalitet får inte vara kritisk för testdatan
-    const dq = bedomningUnderlag();
+    const dq = bedomningUnderlag({ reg });   // regressionen ovan skickas vidare (ADR-17)
     if (dq) {
         tests.push({
             name: 'Underlagets kvalitet är inte kritisk (testdata)',
@@ -19247,15 +19318,16 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     generateSkevhet();
     renderKon('__ALLA__');
     updateCompliance();
-    renderUnderlagetsKvalitet();
+    const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
+    renderUnderlagetsKvalitet({ reg });
     updateGdprBanner();
     renderConsistencyBanner();
-    renderActionChecklist();
+    renderActionChecklist({ reg });
     renderOutliers();
     renderRealityCheck();
     renderDataValidationReport();
-    syncDatakvalitetPanel();
-    renderProcessTracker();
+    syncDatakvalitetPanel({ reg });
+    renderProcessTracker({ reg });
     const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';
@@ -20464,13 +20536,9 @@ function _exportJPAProtocolExport() {
     const localDate = now.toLocaleDateString('sv-SE');
     const profileLabel = state.profile.benchmarkLabel;
 
-    // § 3:10-paren beräknas EN GÅNG här, så att försättssidan och flik 3b
-    // alltid är konsistenta.
-    const lvResult = typeof computeLikvardighetPairs === 'function'
-        ? computeLikvardighetPairs()
-        : null;
-    // Synka cachen så ev. efterföljande tabb-render visar samma siffror.
-    if (state.likvardighet) state.likvardighet.result = lvResult;
+    // § 3:10-paren hämtas EN GÅNG här, så att försättssidan och flik 3b alltid är konsistenta, och ur samma resultat som
+    // fliken visar (likvardighetResultat, som nollställs när underlaget eller valen ändras).
+    const lvResult = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
     // k-anonymitet: protokollet redovisar bara par där båda grupperna når tröskeln (undantaget gäller
     // bara fliken Likvärdigt arbete); antalet som utelämnats anges i stället.
     const lvRedovisning = _parForRedovisning(lvResult?.pairs);
@@ -22224,15 +22292,16 @@ _synkaOrgTyp();
  * Återskapar dem direkt — billigt nog att göra synkront, undviker att
  * UI:t visar inaktuella CI/MDE-värden för felaktigt urval.
  */
-function invalidateStatCaches({ recompute = true } = {}) {
+function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
     if (typeof ritGenerationNy === 'function') ritGenerationNy();   // det som är ritat bygger på det som nu räknas om (exportgrinden)
     state.bootstrapCI = null;
     state.powerAnalysis = null;
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // översiktens och trattdiagrammets minne följer underlaget
     // Rensa även § 3:10-cachen så att JPA-export
     // inte plockar resultat beräknat på ett tidigare dataset.
-    // Recompute sker lat — nästa render eller export gör en fresh compute.
-    if (state.likvardighet) state.likvardighet.result = null;
+    // Recompute sker lat — nästa render eller export gör en fresh compute. Ett tröskelbyte behåller paren
+    // (likvardighet: false): de läser ingen tröskel, och antalet små grupper räknas när resultatet läses.
+    if (likvardighet && state.likvardighet) state.likvardighet.result = null;
     if (recompute && state.data && state.data.length) {
         // MEDVETEN DEGRADERING (inte bug-gömning):
         //
@@ -22690,8 +22759,11 @@ function _afterDataLoaded() {
     dataStatus.className = "status-msg success";
     markUploadLoaded('upload-cell-data', 'Inläst');
     updateCompliance();
-    renderUnderlagetsKvalitet();
-    renderProcessTracker();
+    // Regressionen körs en gång i det här varvet och skickas vidare till underlagets kvalitet, processöversikten och
+    // Att göra, som annars kör den var för sig på samma underlag (ADR-17: ett värde, ingen cache).
+    const reg = runOLSRegression();
+    renderUnderlagetsKvalitet({ reg });
+    renderProcessTracker({ reg });
     updateGdprBanner();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
     if (typeof _resetInactivityTimer === 'function') _resetInactivityTimer();
@@ -22700,7 +22772,7 @@ function _afterDataLoaded() {
     renderRealityCheck();
     renderDataValidationReport();
     renderForhandskontroll();
-    syncDatakvalitetPanel();
+    syncDatakvalitetPanel({ reg });
     announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
     hideLoading();
 
@@ -23654,9 +23726,16 @@ function _lvStatJamfor(result) {
 }
 
 function likvardighetResultat() {
-    if (state.likvardighet && state.likvardighet.result) return state.likvardighet.result;
-    const lv = computeLikvardighetPairs();
-    if (state.likvardighet) state.likvardighet.result = lv;
+    let lv = state.likvardighet && state.likvardighet.result;
+    if (!lv) {
+        lv = computeLikvardighetPairs();
+        if (state.likvardighet) state.likvardighet.result = lv;
+    }
+    // Det enda i resultatet som beror på k-tröskeln är antalet små kvinnodominerade grupper i diagnostiken. Det räknas
+    // här vid varje läsning med gällande tröskel, så att ett tröskelbyte inte behöver räkna om paren (de läser ingen
+    // tröskel; det som redovisas utanför fliken prövas mot tröskeln när det läses, _parForRedovisning).
+    const org = lv.diagnostik && lv.diagnostik.organisation;
+    if (org && Array.isArray(lv.orgKvDom)) { const k = kInstalld(); org.kvDomMedNLessThanK = lv.orgKvDom.filter(g => g.n < k).length; }
     return lv;
 }
 
@@ -23801,8 +23880,7 @@ function renderLikvardighet() {
 
     let result;
     try {
-        result = computeLikvardighetPairs();
-        state.likvardighet.result = result;
+        result = likvardighetResultat();
     } catch (e) {
         _lvRitaTopp(null);
         wrap.innerHTML = `
@@ -24229,6 +24307,7 @@ function renderLikvardighet() {
             if (min != null && v < min) v = min;
             if (max != null && v > max) v = max;
             state.likvardighet[key] = v;
+            state.likvardighet.result = null;   // paren räknas med det nya värdet
             renderLikvardighet();
         });
     };
@@ -24237,6 +24316,7 @@ function renderLikvardighet() {
     onNumChange('lv-top-n',      'topN',              10, 500);
     document.getElementById('lv-visa-alla')?.addEventListener('click', () => {
         state.likvardighet.topN = Math.max(10, antal.totalt);
+        state.likvardighet.result = null;
         renderLikvardighet();
     });
     document.getElementById('lv-kv-definition')?.addEventListener('change', e => {
@@ -33755,16 +33835,12 @@ bes8Uppdatera();
 // ---- Stöd i verktyget: talet från fliken och en länk dit ----
 // Där en flik har ett tal som hör till området (Likvärdigt arbetes par, Lika arbetes yrkesgrupper att granska,
 // Lönestrukturens lönekvartiler) står talet i områdets rad Stöd i verktyget, med länken Gå dit. Talen
-// hämtas ur samma källor som flikarna själva visar: Likvärdigt arbetes cache (state.likvardighet.result, som
+// hämtas ur samma källor som flikarna själva visar: Likvärdigt arbetes resultat (likvardighetResultat(), som
 // Översiktens Att göra också fyller) och de delade funktionerna för yrkesgrupperna och kvartilerna. Utan underlag,
 // eller när fliken inte kan räkna, står radens fasta text kvar.
 const BES8_STOD = {
     likvardighet(d) {
-        let lv = state.likvardighet ? state.likvardighet.result : null;
-        if (lv == null && typeof computeLikvardighetPairs === 'function') {
-            lv = computeLikvardighetPairs();
-            if (state.likvardighet) state.likvardighet.result = lv;
-        }
+        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
         if (!lv || !Array.isArray(lv.pairs) || !d.length) return null;
         const { totalt, sakra } = lvParAntal(lv);
         return totalt ? `Likvärdigt arbete har ${svTal(totalt, 0)} par att titta närmare på, ${svTal(sakra, 0)} med säker skillnad.`
@@ -38158,8 +38234,9 @@ function robusthetLikvardighet(trösklar = [55, 60, 65]) {
     try {
         trösklar.forEach(t => {
             state.likvardighet.kvinnoTrosholdPct = t;
+            // Vid den inställda kvinnotröskeln är paren flikens (samma val); de andra trösklarna räknas för sig och sparas inte.
             let alla = [];
-            try { alla = (computeLikvardighetPairs() || {}).pairs || []; } catch (_e) { alla = []; }
+            try { alla = ((t === original ? likvardighetResultat() : computeLikvardighetPairs()) || {}).pairs || []; } catch (_e) { alla = []; }
             const { par: pairs } = _parForRedovisning(alla);
             alla.forEach(p => { if (!_parOverTroskel(p)) utelamnadePar.add(`${p.kvAid}|${p.kvBas}|${p.maAid}|${p.maBas}`); });
             const inThisRun = new Set();
@@ -38179,7 +38256,8 @@ function robusthetLikvardighet(trösklar = [55, 60, 65]) {
         });
     } finally {
         state.likvardighet.kvinnoTrosholdPct = original;
-        state.likvardighet.result = originalResult;
+        // Resultatet vid den inställda tröskeln står kvar om det räknades här; inget annat skrivs till det.
+        state.likvardighet.result = originalResult || state.likvardighet.result;
     }
     const rows = [...seen.values()]
         .map(r => ({ ...r, of: trösklar.length }))

@@ -94,7 +94,7 @@ function runDiagnostics() {
     }
 
     // Test 3: Underlagets kvalitet får inte vara kritisk för testdatan
-    const dq = bedomningUnderlag();
+    const dq = bedomningUnderlag({ reg });   // regressionen ovan skickas vidare (ADR-17)
     if (dq) {
         tests.push({
             name: 'Underlagets kvalitet är inte kritisk (testdata)',
@@ -212,15 +212,16 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     generateSkevhet();
     renderKon('__ALLA__');
     updateCompliance();
-    renderUnderlagetsKvalitet();
+    const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
+    renderUnderlagetsKvalitet({ reg });
     updateGdprBanner();
     renderConsistencyBanner();
-    renderActionChecklist();
+    renderActionChecklist({ reg });
     renderOutliers();
     renderRealityCheck();
     renderDataValidationReport();
-    syncDatakvalitetPanel();
-    renderProcessTracker();
+    syncDatakvalitetPanel({ reg });
+    renderProcessTracker({ reg });
     const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';

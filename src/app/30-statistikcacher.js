@@ -7,15 +7,16 @@
  * Återskapar dem direkt — billigt nog att göra synkront, undviker att
  * UI:t visar inaktuella CI/MDE-värden för felaktigt urval.
  */
-function invalidateStatCaches({ recompute = true } = {}) {
+function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
     if (typeof ritGenerationNy === 'function') ritGenerationNy();   // det som är ritat bygger på det som nu räknas om (exportgrinden)
     state.bootstrapCI = null;
     state.powerAnalysis = null;
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // översiktens och trattdiagrammets minne följer underlaget
     // Rensa även § 3:10-cachen så att JPA-export
     // inte plockar resultat beräknat på ett tidigare dataset.
-    // Recompute sker lat — nästa render eller export gör en fresh compute.
-    if (state.likvardighet) state.likvardighet.result = null;
+    // Recompute sker lat — nästa render eller export gör en fresh compute. Ett tröskelbyte behåller paren
+    // (likvardighet: false): de läser ingen tröskel, och antalet små grupper räknas när resultatet läses.
+    if (likvardighet && state.likvardighet) state.likvardighet.result = null;
     if (recompute && state.data && state.data.length) {
         // MEDVETEN DEGRADERING (inte bug-gömning):
         //

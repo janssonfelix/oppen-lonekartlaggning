@@ -18,14 +18,15 @@ const _agRiktning = v => (v < 0 ? 'lägre' : 'högre');
  * Varje punkt har stabilt id så användarens "klar"-markering kvarstår även
  * om listan regenereras efter dataändring (samma grupp = samma id).
  *
+ * @param {{endastGrupper?: boolean, reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17)
  * @returns {Array<{id, kategori, prioritet, titel, detalj, tab, källa}>}
  */
-function buildActionChecklist({ endastGrupper = false } = {}) {
+function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
     /** @type {any[]} */
     const items = [];
     if (!state.data.length) return items;
     // Regressionen körs en gång här och skickas vidare till det som läser den (ADR-17: ingen cache, bara ett värde).
-    const reg = !endastGrupper && typeof runOLSRegression === 'function' ? runOLSRegression() : null;
+    const reg = endastGrupper ? null : (given || (typeof runOLSRegression === 'function' ? runOLSRegression() : null));
 
     // Punkterna per grupp (prioriteringen och likvärdighetsparen) bär AID-koden; sektorsöversikten
     // räknar bara dem och bygger därför inte de tunga, organisationsövergripande delarna.
@@ -255,7 +256,8 @@ function _attGoraParNot() {
  * checkboxar (state i minnet via state._actionChecklistDone-Set), CSV-export.
  */
 /** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
-function renderActionChecklist() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function renderActionChecklist({ reg } = {}) {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
@@ -263,7 +265,7 @@ function renderActionChecklist() {
     if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return []; }
     if (kort) kort.hidden = false;
 
-    const items = buildActionChecklist();   // returneras, så att processöversikten kan läsa samma lista
+    const items = buildActionChecklist({ reg });   // returneras, så att processöversikten kan läsa samma lista
     // Hela listan är ett avsnitt som fälls ut: "Börja här" ovanför bär det som ska göras först.
     // Listan ritas om vid varje avbockning, så avsnittets läge bevaras.
     const varOppen = !!/** @type {HTMLDetailsElement} */ ((wrap.querySelector('#avsnitt-ov-punkter') || {})).open;

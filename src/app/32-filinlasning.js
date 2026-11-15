@@ -106,8 +106,11 @@ function _afterDataLoaded() {
     dataStatus.className = "status-msg success";
     markUploadLoaded('upload-cell-data', 'Inläst');
     updateCompliance();
-    renderUnderlagetsKvalitet();
-    renderProcessTracker();
+    // Regressionen körs en gång i det här varvet och skickas vidare till underlagets kvalitet, processöversikten och
+    // Att göra, som annars kör den var för sig på samma underlag (ADR-17: ett värde, ingen cache).
+    const reg = runOLSRegression();
+    renderUnderlagetsKvalitet({ reg });
+    renderProcessTracker({ reg });
     updateGdprBanner();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
     if (typeof _resetInactivityTimer === 'function') _resetInactivityTimer();
@@ -116,7 +119,7 @@ function _afterDataLoaded() {
     renderRealityCheck();
     renderDataValidationReport();
     renderForhandskontroll();
-    syncDatakvalitetPanel();
+    syncDatakvalitetPanel({ reg });
     announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
     hideLoading();
 

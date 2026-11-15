@@ -314,13 +314,9 @@ function _exportJPAProtocolExport() {
     const localDate = now.toLocaleDateString('sv-SE');
     const profileLabel = state.profile.benchmarkLabel;
 
-    // § 3:10-paren beräknas EN GÅNG här, så att försättssidan och flik 3b
-    // alltid är konsistenta.
-    const lvResult = typeof computeLikvardighetPairs === 'function'
-        ? computeLikvardighetPairs()
-        : null;
-    // Synka cachen så ev. efterföljande tabb-render visar samma siffror.
-    if (state.likvardighet) state.likvardighet.result = lvResult;
+    // § 3:10-paren hämtas EN GÅNG här, så att försättssidan och flik 3b alltid är konsistenta, och ur samma resultat som
+    // fliken visar (likvardighetResultat, som nollställs när underlaget eller valen ändras).
+    const lvResult = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
     // k-anonymitet: protokollet redovisar bara par där båda grupperna når tröskeln (undantaget gäller
     // bara fliken Likvärdigt arbete); antalet som utelämnats anges i stället.
     const lvRedovisning = _parForRedovisning(lvResult?.pairs);

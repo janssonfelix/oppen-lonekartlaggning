@@ -804,6 +804,151 @@ describe('demodata med kandidatpar', () => {
     });
 });
 
+// Paren räknas en gång per underlag och val (likvardighetResultat): fliken, Översikt, regler och praxis och protokollet
+// läser samma resultat, och varje ändring av något som beräkningen läser nollställer det. På 55 000 rader är en
+// beräkning sekunder.
+describe('Likvärdigt arbete räknas en gång per underlag', () => {
+    // Adaptern computeLikvardighetPairs() är den enda som anropar spegeln (_lvComputePairs); den räknas.
+    const raknaBerakningar = w => w.eval('window.__lvBerakningar = 0; const __lvOrig = computeLikvardighetPairs; '
+        + 'computeLikvardighetPairs = function () { window.__lvBerakningar++; return __lvOrig(); };');
+    const flik = (w, f) => w.document.querySelector(`.nav-item[data-tab="${f}"]`).click();
+    const demo = () => { const w = createAppWindow(); raknaBerakningar(w); w.__loadDemoData(); return w; };
+
+    it('inläsningen, varje flik och protokollet för gemensam lönebedömning räknar paren en gång', async () => {
+        const w = demo();
+        expect(w.__lvBerakningar).toBe(1);
+        [...w.document.querySelectorAll('.nav-item[data-tab]')].forEach(b => { if (!b.disabled && !b.hidden) b.click(); });
+        flik(w, 'likvardighet');
+        expect(w.__lvBerakningar).toBe(1);
+        const { readFileSync } = await import('node:fs');
+        w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
+        w.alert = () => {};
+        w.XLSX.writeFile = () => {};
+        w.eval('exportJPAProtocol()');
+        expect(w.__lvBerakningar).toBe(1);
+    });
+    // Fältens ändringar i fliken: resultatet nollställs, och det nya räknas med det nya värdet (en gång).
+    for (const [id, nyckel, varde] of [['lv-kvinno-thr', 'kvinnoTrosholdPct', 65], ['lv-min-gap', 'minGapPct', 5], ['lv-top-n', 'topN', 10]]) {
+        it(`ändrat fält ${id} räknar om paren med det nya värdet`, () => {
+            const w = demo();
+            flik(w, 'likvardighet');
+            const fore = w.__state.likvardighet.result;
+            const falt = w.document.getElementById(id);
+            falt.value = String(varde);
+            falt.dispatchEvent(new w.Event('change'));
+            const efter = w.eval('likvardighetResultat()');
+            expect(efter).not.toBe(fore);
+            expect(efter.opts[nyckel]).toBe(varde);
+            expect(w.__lvBerakningar).toBe(2);
+        });
+    }
+    it('Visa alla räknar om paren med alla par', () => {
+        const w = demo();
+        w.__state.likvardighet.topN = 2;
+        w.__state.likvardighet.result = null;
+        flik(w, 'likvardighet');
+        const fore = w.__state.likvardighet.result;
+        const totalt = fore.parAntal.totalt;
+        expect(fore.pairs).toHaveLength(2);
+        w.document.getElementById('lv-visa-alla').click();
+        expect(w.__state.likvardighet.result).not.toBe(fore);
+        expect(w.__state.likvardighet.result.pairs).toHaveLength(totalt);
+    });
+    it('robusthetsprövningen räknar bara de andra kvinnotrösklarna och lämnar flikens resultat orört', () => {
+        const w = demo();
+        const fore = w.__state.likvardighet.result;
+        w.__robusthetLikvardighet([55, 60, 65]);
+        expect(w.__lvBerakningar).toBe(3);
+        expect(w.__state.likvardighet.result).toBe(fore);
+        expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(60);
+    });
+    it('definitionen, jämförelsemängden och poängbandet nollställer resultatet', () => {
+        const w = demo();
+        flik(w, 'likvardighet');
+        const andra = (sel, satt) => {
+            const fore = w.eval('likvardighetResultat()');
+            const el = w.document.getElementById(sel);
+            satt(el);
+            el.dispatchEvent(new w.Event('change'));
+            expect(w.eval('likvardighetResultat()'), sel).not.toBe(fore);
+        };
+        andra('lv-kv-definition', el => { el.value = 'scb'; });
+        andra('lv-bara-mansdominerade', el => { el.checked = true; });
+        andra('arbvard-band', el => { el.value = '7'; });
+    });
+});
+
+// Regressionen cachas aldrig (ADR-17), men inom ett varv körs den en gång och skickas vidare som argument: underlagets
+// kvalitet, Att göra och processöversikten läser samma underlag och samma val. På 55 000 rader är en körning ~0,4 s.
+describe('regressionen körs en gång per varv vid inläsning och tröskelbyte', () => {
+    const raknaRegressioner = w => w.eval('window.__regKorningar = 0; const __regOrig = runOLSRegression; '
+        + 'runOLSRegression = function () { window.__regKorningar++; return __regOrig(); };');
+    const html = (w, id) => w.document.getElementById(id).innerHTML;
+    const DELAR = ['underlagets-kvalitet', 'process-tracker'];
+    it('inläsningen (lönefil och demo) kör regressionen en gång och ritar samma sak som en egen körning per del', () => {
+        const w = createAppWindow();
+        raknaRegressioner(w);
+        w.eval('_lasInDemounderlag(generateDemoData)');   // demots inläsning; diagnostiken efteråt kör en egen
+        expect(w.__regKorningar).toBe(1);
+        w.__regKorningar = 0;
+        w.eval('_afterDataLoaded()');
+        expect(w.__regKorningar).toBe(1);
+        const delad = DELAR.map(id => html(w, id));
+        w.eval('renderUnderlagetsKvalitet(); renderProcessTracker();');
+        expect(DELAR.map(id => html(w, id))).toEqual(delad);
+    });
+    it('omritningen efter ett tröskelbyte kör regressionen en gång och ritar samma sak', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        raknaRegressioner(w);
+        w.eval('sattKTroskel(11, { fraga: false })');
+        expect(w.__regKorningar).toBe(1);
+        const delad = [...DELAR, 'action-checklist-container'].map(id => html(w, id));
+        w.eval('renderUnderlagetsKvalitet(); renderProcessTracker({ punkter: renderActionChecklist() });');
+        expect([...DELAR, 'action-checklist-container'].map(id => html(w, id))).toEqual(delad);
+    });
+    // Omritningen i steg släpper fram tidtagare mellan stegen: en fil som läses klart (FileReader) eller en rensning vid
+    // inaktivitet kan byta underlaget där, och då får stegen efter inte rita med regressionen från det gamla.
+    it('byts underlaget mitt i omritningen räknar stegen efter en egen regression', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.eval('sattKTroskel(11, { fraga: false, rita: false })');
+        raknaRegressioner(w);
+        w.eval('const __ukOrig = renderUnderlagetsKvalitet; renderUnderlagetsKvalitet = function (v) { __ukOrig(v); '
+            + 'state.data = state.data.slice(0, 150); };');
+        w.eval('_renderaOmAllaFlikar()');
+        expect(w.__regKorningar).toBe(3);   // underlagets kvalitet, Att göra och processöversikten var för sig
+        const delad = ['action-checklist-container', 'process-tracker'].map(id => html(w, id));
+        w.eval('renderProcessTracker({ punkter: renderActionChecklist() });');
+        expect(['action-checklist-container', 'process-tracker'].map(id => html(w, id))).toEqual(delad);
+    });
+    it('en fil som släpps under en pågående omritning i steg når inte filinläsningen', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const r = w.eval('sattKTroskel(11, { fraga: false, stegvis: true })');
+        const omrade = w.document.getElementById('drop-area-data');
+        let last = false;
+        for (const typ of ['dragover', 'drop']) {
+            const ev = new w.Event(typ, { bubbles: true, cancelable: true });
+            Object.defineProperty(ev, 'dataTransfer', { get: () => { last = true; return { files: { length: 0 } }; } });
+            omrade.dispatchEvent(ev);
+        }
+        expect(omrade.classList.contains('drag-over')).toBe(false);
+        expect(last).toBe(false);
+        await r.klar;
+        const ev = new w.Event('dragover', { bubbles: true, cancelable: true });
+        omrade.dispatchEvent(ev);
+        expect(omrade.classList.contains('drag-over')).toBe(true);   // efter omritningen tar ytan emot filer igen
+    });
+    it('Översikts delar (exportgrinden) kör regressionen en gång', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        raknaRegressioner(w);
+        w.eval('renderOversiktDelar()');
+        expect(w.__regKorningar).toBe(1);
+    });
+});
+
 // Ålder är valfri i lönefilen (ADR-64): utan ålder är Ålder & karriär låst med ett eget skäl.
 describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
     const utanAlder = w => { w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 })); w.eval('unlockTabs()'); };

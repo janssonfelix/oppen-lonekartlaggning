@@ -424,10 +424,11 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
-    // Skattningarna (bootstrap-KI och styrkan läser statGolv(); § 3:10-paren läser ingen tröskel) räknas om bara när
-    // golvet ändras — på 55 000 rader är bootstrapen sekunder. Det som är ritat bär den gamla tröskeln och ritas om.
+    // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
+    // bootstrapen sekunder. § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
+    // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
-    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false });   // räknas om i bakgrunden nedan
+    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
     // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
@@ -496,11 +497,34 @@ function _omritningssteg() {
     // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
-    steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
+    // Underlagets kvalitet, Att göra och processöversikten läser samma regression: den körs en gång i omritningen och
+    // skickas vidare, som punkterna nedan (ADR-17: ett värde inom omritningen, ingen cache). Kastar den ritar varje del
+    // med en egen körning. Mellan stegen kan en tidtagare byta underlaget (en fil som läses klart, rensningen vid
+    // inaktivitet) utan att gå genom händelserna som rutan stoppar; därför skickas regressionen bara vidare så länge det
+    // den läser (underlaget, k och förklaringsmodellen) är oförändrat, annars räknar steget en egen.
+    // Detsamma gäller punkterna.
+    const indata = () => ({ data: state.data, rest: `${kInstalld()}|${JSON.stringify(typeof forklaringsmodell === 'function' ? forklaringsmodell() : null)}` });
+    const oforandrat = f => { const nu = indata(); return !!f && f.data === nu.data && f.rest === nu.rest; };
+    /** @type {any} */ let reg;
+    /** @type {any} */ let regFangst = null;
+    steg.push(['underlagets kvalitet', () => {
+        if (typeof renderUnderlagetsKvalitet !== 'function') return;
+        regFangst = indata();
+        reg = typeof runOLSRegression === 'function' ? runOLSRegression() : undefined;
+        renderUnderlagetsKvalitet({ reg });
+    }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
     /** @type {any[]|undefined} */ let punkter;
-    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist(); }]);
-    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter }); }]);
+    /** @type {any} */ let punktFangst = null;
+    steg.push(['Att göra', () => {
+        if (typeof renderActionChecklist !== 'function') return;
+        punktFangst = indata();
+        punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : undefined });
+    }]);
+    steg.push(['processöversikten', () => {
+        if (typeof renderProcessTracker !== 'function') return;
+        renderProcessTracker({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
+    }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {
@@ -540,7 +564,10 @@ function _renderaOmAllaFlikarStegvis() {
     ruta.appendChild(text);
     document.body.appendChild(ruta);
     const stoppa = e => { e.stopPropagation(); e.preventDefault(); };
-    const HANDELSER = ['keydown', 'keyup', 'keypress', 'click', 'pointerdown', 'mousedown', 'submit', 'change', 'input'];
+    // Också dragover och drop: filytorna läser in en släppt fil direkt (32-filinlasning.js), och en ny lönefil mitt i
+    // omritningen skulle låta stegen efter rita med det gamla underlagets värden.
+    const HANDELSER = ['keydown', 'keyup', 'keypress', 'click', 'pointerdown', 'mousedown', 'submit', 'change', 'input',
+        'dragover', 'drop'];
     for (const h of HANDELSER) document.addEventListener(h, stoppa, true);
     const klar = () => {
         for (const h of HANDELSER) document.removeEventListener(h, stoppa, true);

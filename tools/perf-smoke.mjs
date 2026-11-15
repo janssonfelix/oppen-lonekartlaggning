@@ -68,7 +68,9 @@ async function mätInläsning(n) {
     const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
     page.on('pageerror', e => sidfel.push(String(e && e.message || e)));
     await page.goto('file://' + FIL);
-    const csv = byggCsv(n);
+    // Med mansdominerade yrken, som i en verklig organisation: utan dem fick Likvärdigt arbete inga par före ADR-60
+    // och mätningen såg inte bootstrapens kostnad.
+    const csv = byggCsv(n, undefined, { mansdominerade: true });
     const t0 = Date.now();
     await page.setInputFiles('#file-input-data', {
         name: 'perf.csv', mimeType: 'text/csv', buffer: Buffer.from(csv, 'utf8')

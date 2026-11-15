@@ -37,8 +37,9 @@ function robusthetLikvardighet(trösklar = [55, 60, 65]) {
     try {
         trösklar.forEach(t => {
             state.likvardighet.kvinnoTrosholdPct = t;
+            // Vid den inställda kvinnotröskeln är paren flikens (samma val); de andra trösklarna räknas för sig och sparas inte.
             let alla = [];
-            try { alla = (computeLikvardighetPairs() || {}).pairs || []; } catch (_e) { alla = []; }
+            try { alla = ((t === original ? likvardighetResultat() : computeLikvardighetPairs()) || {}).pairs || []; } catch (_e) { alla = []; }
             const { par: pairs } = _parForRedovisning(alla);
             alla.forEach(p => { if (!_parOverTroskel(p)) utelamnadePar.add(`${p.kvAid}|${p.kvBas}|${p.maAid}|${p.maBas}`); });
             const inThisRun = new Set();
@@ -58,7 +59,8 @@ function robusthetLikvardighet(trösklar = [55, 60, 65]) {
         });
     } finally {
         state.likvardighet.kvinnoTrosholdPct = original;
-        state.likvardighet.result = originalResult;
+        // Resultatet vid den inställda tröskeln står kvar om det räknades här; inget annat skrivs till det.
+        state.likvardighet.result = originalResult || state.likvardighet.result;
     }
     const rows = [...seen.values()]
         .map(r => ({ ...r, of: trösklar.length }))

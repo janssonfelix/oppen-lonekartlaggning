@@ -114,10 +114,11 @@ function bedomningUnderlag({ reg: given } = {}) {
 }
 
 const UK_ETIKETT = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' };
-function renderUnderlagetsKvalitet() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function renderUnderlagetsKvalitet({ reg } = {}) {
     const host = document.getElementById('underlagets-kvalitet');
     if (!host) return;
-    const b = bedomningUnderlag();
+    const b = bedomningUnderlag({ reg });
     const detaljer = document.getElementById('underlag-detaljer');
     if (!b) { host.hidden = true; host.removeAttribute('data-status'); _laNyckel('nyckel-ov-kvalitet', ''); return; }
     host.hidden = false;
@@ -295,7 +296,11 @@ function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
  * 03-hjalpfunktioner.js) — inga inline-onclick (hash-CSP, ADR-9).
  */
 /** @param {{punkter?: any[]}} [val] punkter: Att göras lista när anroparen just byggt den (annars byggs den här) */
-function renderProcessTracker({ punkter: givna } = {}) {
+/**
+ * @param {{punkter?: any[], reg?: any}} [val] punkter: Att göras lista; reg: regressionen när anroparen just kört den i
+ *   samma varv (ADR-17). Båda är värden som skickas vidare, ingen cache.
+ */
+function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
@@ -308,7 +313,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
 
     // Ett analyssteg är klart först när dess punkter i Att göra är hanterade — att analysen
     // har körts räcker inte (ADR-29). Listan byggs en gång för alla steg.
-    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : []);
+    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist({ reg: givenReg }) : []), []) : []);
     const klarmarkerade = state._actionChecklistDone || new Set();
     const hanterade = kategorier => _agHanterade(punkter, klarmarkerade, kategorier);   // src/lib/attgora.js
 
@@ -334,7 +339,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 3. § 9 Lika arbete (oförklarat gap + antal grupper att förklara/åtgärda)
     rows.push(safe(() => {
         if (!hasData) return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' };
-        const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
+        const reg = givenReg || ((typeof runOLSRegression === 'function') ? runOLSRegression() : null);
         const ok = !!(reg && !reg.error);
         const { t, d } = hanterade(['Lika arbete', 'Lika arbete, fördjupning']);
         return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
@@ -343,11 +348,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 4. § 3:10 Likvärdigt arbete (antal kandidatpar)
     rows.push(safe(() => {
         if (!hasData) return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' };
-        let lv = state.likvardighet ? state.likvardighet.result : null;   // återanvänd cache (wizarden fyller den)
-        if (lv == null && typeof computeLikvardighetPairs === 'function') {
-            lv = computeLikvardighetPairs();
-            if (state.likvardighet) state.likvardighet.result = lv;
-        }
+        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
         // Antalet står bredvid antalet hanterade punkter i Att göra, som utelämnar par med en grupp
         // under tröskeln — därför räknas de redovisade paren och de utelämnade nämns. Finns bara utelämnade
         // par säger steget det självt (tillståndet `inget`, knappen leder till fliken).
@@ -529,10 +530,11 @@ function updateDashboardStats() {
 /** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
 function renderOversiktDelar() {
     /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
+    /** @type {any} */ let reg;   // och samma regression: körs en gång och skickas vidare (ADR-17)
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
-        ['Att göra', () => { punkter = renderActionChecklist(); }],
-        ['processöversikten', () => renderProcessTracker({ punkter })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
+        ['Att göra', () => { reg = runOLSRegression(); punkter = renderActionChecklist({ reg }); }],
+        ['processöversikten', () => renderProcessTracker({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
     if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();

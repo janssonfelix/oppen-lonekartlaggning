@@ -55,9 +55,16 @@ function _lvStatJamfor(result) {
 }
 
 function likvardighetResultat() {
-    if (state.likvardighet && state.likvardighet.result) return state.likvardighet.result;
-    const lv = computeLikvardighetPairs();
-    if (state.likvardighet) state.likvardighet.result = lv;
+    let lv = state.likvardighet && state.likvardighet.result;
+    if (!lv) {
+        lv = computeLikvardighetPairs();
+        if (state.likvardighet) state.likvardighet.result = lv;
+    }
+    // Det enda i resultatet som beror på k-tröskeln är antalet små kvinnodominerade grupper i diagnostiken. Det räknas
+    // här vid varje läsning med gällande tröskel, så att ett tröskelbyte inte behöver räkna om paren (de läser ingen
+    // tröskel; det som redovisas utanför fliken prövas mot tröskeln när det läses, _parForRedovisning).
+    const org = lv.diagnostik && lv.diagnostik.organisation;
+    if (org && Array.isArray(lv.orgKvDom)) { const k = kInstalld(); org.kvDomMedNLessThanK = lv.orgKvDom.filter(g => g.n < k).length; }
     return lv;
 }
 
@@ -202,8 +209,7 @@ function renderLikvardighet() {
 
     let result;
     try {
-        result = computeLikvardighetPairs();
-        state.likvardighet.result = result;
+        result = likvardighetResultat();
     } catch (e) {
         _lvRitaTopp(null);
         wrap.innerHTML = `
@@ -630,6 +636,7 @@ function renderLikvardighet() {
             if (min != null && v < min) v = min;
             if (max != null && v > max) v = max;
             state.likvardighet[key] = v;
+            state.likvardighet.result = null;   // paren räknas med det nya värdet
             renderLikvardighet();
         });
     };
@@ -638,6 +645,7 @@ function renderLikvardighet() {
     onNumChange('lv-top-n',      'topN',              10, 500);
     document.getElementById('lv-visa-alla')?.addEventListener('click', () => {
         state.likvardighet.topN = Math.max(10, antal.totalt);
+        state.likvardighet.result = null;
         renderLikvardighet();
     });
     document.getElementById('lv-kv-definition')?.addEventListener('change', e => {
