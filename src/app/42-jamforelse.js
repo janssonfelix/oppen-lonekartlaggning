@@ -159,7 +159,7 @@ document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamfore
 // ---- Diagrammen ----
 const _JMF_MAX = 25;
 const _jmfEtikett = r => `${r.yrke} · BAS ${r.bas}`;
-const _jmfPct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
+const _jmfPct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
 // Fälten som diagrammens filter läser (URVAL.bas, .yrkesgrupp, .sektor, .matchning, .antal), samma värden som tabellens
 // kolumner och dess sektorsfilter. En grupp utan statistik får ingen matchning (tabellens "–") och påverkas inte av det filtret.
 const _jmfUrvalFalt = r => ({ bas: r.bas, yrke: r.yrke, ...(r.sektor != null ? { sektor: r.sektor } : {}), n: r.n, ...(r.statistikMatchning ? { matchning: _jfMatchningEtikett(r.statistikMatchning) } : {}) });

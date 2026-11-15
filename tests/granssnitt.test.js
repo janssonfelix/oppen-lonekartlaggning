@@ -383,13 +383,13 @@ describe('samma skillnad sägs på ett sätt', () => {
         const punkter = w.eval('buildActionChecklist()').filter(p => p.id.startsWith('gap-bas-'));
         expect(punkter.length).toBeGreaterThan(0);
         for (const p of punkter) {
-            expect(p.titel).toMatch(/^BAS \S+: kvinnors medianlön \d+,\d % av mäns$/);
+            expect(p.titel).toMatch(/^BAS \S+: kvinnors medianlön \d+,\d\s% av mäns$/);
             expect(p.titel).not.toMatch(/lägre|högre/);
         }
         w.__renderTabContent('matrix');
         const kvoter = [...w.document.querySelectorAll('#la-oversikt tbody tr')].map(tr => tr.textContent);
-        const b = punkter[0].titel.match(/^BAS (\S+): kvinnors medianlön (\d+,\d) %/);
-        expect(kvoter.some(t => t.includes(`BAS ${b[1]}`) && t.includes(`${b[2]} %`))).toBe(true);
+        const b = punkter[0].titel.match(/^BAS (\S+): kvinnors medianlön (\d+,\d)\s%/);
+        expect(kvoter.some(t => t.includes(`BAS ${b[1]}`) && t.replace(/\s/g, ' ').includes(`${b[2]} %`))).toBe(true);
     });
     it('där skillnaden står kvar heter den skillnad, och den oförklarade skillnaden har en decimal där den står som huvudtal', () => {
         const w = demo();
@@ -499,7 +499,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         w.__renderTabContent('kon');
         w.eval('renderLifecycleAnalysis()');
         const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
-        const pct = v => v.toFixed(1).replace('.', ',') + ' %';
+        const pct = v => v.toFixed(1).replace('.', ',') + '\u00a0%';
         const rutor = [...d.querySelectorAll('#livscykel-content .stat-box')].map(b => [b.querySelector('.stat-etikett').textContent, b.querySelector('.fs-xl')?.textContent.trim()]);
         expect(rutor[0]).toEqual(['Kvinnors lön i % av mäns, 25 år', pct(100 + r.gapAt25)]);
         expect(rutor[1]).toEqual(['Kvinnors lön i % av mäns, 65 år', pct(100 + r.gapAt65)]);

@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { bakaIn, lasUt } from '../src/lib/organisationsfil.js';
+import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 
 describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
     it('sortering: en notrad (colspan, utan värde) stannar sist i sin grupp åt båda håll', () => {
@@ -117,6 +118,69 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
         const t = w.document.getElementById('view-likvardighet').textContent;
         expect(t).toMatch(/Mått på kraven: arbetsvärdering \(poäng\)/);
         expect(t).toMatch(/Med arbetsvärderingspoäng jämförs AID-etiketter redan över BAS-gränserna/);
+    });
+    // ADR-76: i poängläget används jämförelsestatistiken inte, och varken fliken eller exporterna beskriver en reserv
+    // eller visar rader som alltid är 0 (externa par, reserven per BAS, gemensamma BAS-intervall).
+    const poangFonster = () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__state.arbetsvardering = { byKey: new Map(w.__getData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
+        w.__state.likvardighet.result = null;
+        return w;
+    };
+    it('Likvärdigt arbete i poängläget: introduktionen beskriver ingen reserv och inga gemensamma BAS-intervall', () => {
+        const w = poangFonster();
+        w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
+        const t = w.document.getElementById('view-likvardighet').textContent.replace(/\s+/g, ' ');
+        expect(t).not.toMatch(/används jämförelsestatistiken i stället/);
+        expect(t).toMatch(/Steg 2: Välj jämförelseetiketter med lika eller lägre poäng/);
+        expect(t).not.toMatch(/gemensamma BAS-intervall/);
+        expect(t).not.toMatch(/primär jämförelsekälla/);   // de egna är den enda källan med poäng
+        expect(t).toMatch(/Steg 2a — Organisationens interna jämförelseetiketter \(\d+ st\) — den enda jämförelsekällan med poäng/);
+    });
+    it('Likvärdigt arbete i poängläget: rutan Inga kandidatpar räknar inga interna och externa jämförelseetiketter', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        // De kvinnodominerade AID-etiketterna får lägst poäng: ingen jämförelseetikett har lika eller lägre poäng.
+        const andel = new Map();
+        for (const r of w.__getData()) {
+            const n = `${r.aid}|${r.bas}`, a = andel.get(n) || [0, 0];
+            andel.set(n, [a[0] + (r.kon.includes('kvinna') ? 1 : 0), a[1] + 1]);
+        }
+        w.__state.arbetsvardering = { byKey: new Map([...andel].map(([n, [kv, alla]]) => [n, kv / alla > 0.6 ? 1 : 1000])) };
+        w.__state.likvardighet.result = null;
+        w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
+        const t = w.document.getElementById('view-likvardighet').textContent.replace(/\s+/g, ' ');
+        expect(t).toMatch(/Inga kandidatpar hittades/);
+        expect(t).not.toMatch(/externa jämförelseetiketter/);
+        expect(t).toMatch(/Organisationen har \d+ kvinnodominerade grupper och \d+ jämförelseetiketter\./);
+    });
+    it('Likvärdigt arbete i poängläget: CSV- och Excel-exportens metadata beskriver ingen reserv', async () => {
+        const w = poangFonster();
+        expect(w.eval('likvardighetResultat()').pairs.length).toBeGreaterThan(0);
+        let csv = null;
+        w.eval('_downloadCSV = rows => { window.__lvCsv = rows; }');
+        w.eval('exportLikvardighetCSV()');
+        csv = w.__lvCsv;
+        const csvMeta = csv.slice(csv.findIndex(r => r[0] === '# METADATA'));
+        const csvText = csvMeta.map(r => r.join(' | ')).join('\n');
+        expect(csvText).not.toMatch(/externa/);
+        expect(csvText).not.toMatch(/jämförda med jämförelsestatistiken/);
+        expect(csvText).not.toMatch(/extern =/);
+
+        await laddaXlsx(w);
+        let bok = null;
+        w.XLSX.writeFile = wb => { bok = wb; };
+        w.eval('exportLikvardighet()');
+        const meta = w.XLSX.utils.sheet_to_json(bok.Sheets.Metadata, { header: 1, raw: true });
+        const rad = namn => meta.find(r => r[0] === namn);
+        const metaText = meta.map(r => r.join(' | ')).join('\n');
+        expect(metaText).not.toMatch(/externa par|jämförda med jämförelsestatistiken|Gemensamma BAS/);
+        expect(rad('Modell')[1]).not.toMatch(/extern/);
+        expect(rad('Modell')[1]).toMatch(/poäng/);
+        expect(rad('Jämförelsekälla')[1]).not.toMatch(/i stället/);
+        expect(rad('95 % KI')[1]).not.toMatch(/Extern/);
+        expect(rad('Mått på kraven')[1]).toMatch(/poäng/);
     });
     it('Att göra: rubrikordning h2 → h3, och länken till Jämförelse döljs utan jämförelsestatistik', () => {
         const w = createAppWindow();

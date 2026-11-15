@@ -34,7 +34,7 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
       tiden och går inte att ändra. Rutan för små grupper i Tabeller och egna vyer är dold. *Rensa all data*
       tar bort låsningarna med paketet.
 - [ ] Lönefilen läses in; **antal rader** stämmer med förväntat.
-- [ ] Kolumnerna mappas rätt automatiskt — eller via **kolumnmappnings-guiden**.
+- [ ] Kolumnerna mappas rätt automatiskt — eller via **kolumnmappningen**.
 - [ ] **å/ä/ö** visas korrekt (testa gärna både en UTF-8- och en Windows-1252-fil).
 - [ ] **Underlagets kvalitet** och inläsningsrapporten (Filer och kvalitet) visar rimliga uteslutningar med
       begripliga skäl.
@@ -51,21 +51,24 @@ och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag me
 är öppnat i Microsoft Word 365 och 2019 med demodatan (avsnitt D).*
 - [ ] **Regressionen** (Lönestruktur, *Vad blir kvar av löneskillnaden?*) körs; ojusterad och **oförklarad** skillnad
       samt per-BAS ser rimliga ut. (Vid tunt underlag visas "Tolka resultatet med försiktighet".)
-- [ ] **Kandidatpar i likvärdigt arbete** genereras i både **BAS-läge** och **poäng-läge** (om
-      lönefilen har kolumnen Poäng).
-- [ ] **Lönestruktur med EU-måtten, prioritering, löneöversyn och handlingsplan** renderar utan
-      fel.
+- [ ] **Kandidatparen i Likvärdigt arbete** tas fram både med **BAS-intervallet** och med **organisationens poäng**
+      som mått på kraven (*Arbetsvärdering med poäng*; om lönefilen har kolumnen Poäng).
+- [ ] **Lönestruktur med *Lönetransparensdirektivets mått*, Prioritering, Löneöversyn och Handlingsplan** renderar
+      utan fel.
 - [ ] **Diagrammen** renderar. Vid mycket stort underlag (tiotusentals rader): notisen
       *"representativt urval … alla beräkningar använder fullständig data"* visas och
       **KPI:erna räknas på hela underlaget**.
 - [ ] **Regler & praxis:** status och anteckning kan fyllas i för alla sex granskningsområden.
-- [ ] **Många AID-etiketter:** tabellen över AID-etiketterna i Lika arbete ryms utan att rulla i sidled, och etikettnamnen går att
-      läsa. Grafiken i raderna (punkten mot linjen för lika lön) stämmer med talet bredvid. *Verktyget är
-      utvecklat mot ett litet exempelunderlag och ett påhittat större — din fil är det första riktiga provet.*
+- [ ] **Många AID-etiketter:** tabellen i avsnittet *Kvinnor och män med samma AID-etikett* (Lika arbete) ryms utan
+      att rulla i sidled, och etikettnamnen går att läsa. Grafiken i raderna (punkten mot linjen för lika lön) stämmer
+      med talet bredvid. *Verktyget är utvecklat mot ett litet exempelunderlag och ett påhittat större — din fil är det första*
+      *riktiga provet.*
 - [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** och diagrammet över **statistikens spann** (Löneläget, avsnittet Överblick) går att läsa med dina grupper.
-      Punkterna går att skilja åt, och namnen krockar inte. Bandkartan är inte prövad
-      med många AID-etiketter i samma BAS-intervall — notera i avsnitt G om grupper med nästan samma median täcker
-      varandra.
+      Punkterna går att skilja åt, och namnen krockar inte.
+- [ ] **Bandkartan i det BAS-intervall som har flest AID-etiketter** (Löneläget, *Bandkartan — var ligger varje
+      AID-etikett i sitt spann?*, kräver ett ställningstagande): går varje punkt i intervallet att skilja från de andra?
+      Kartan visar bara AID-etiketter som når minsta gruppstorleken (standard 10). Anteckna i avsnitt G hur många
+      punkter intervallet har och hur många som täcker varandra. Anteckningen räcker: ingen skärmbild av kartan, inga löner och inga namn.
 - [ ] **Sök** (sidhuvudet) hittar en AID-etikett och markerar den i diagram och tabeller; Escape tar bort markeringen.
       Ett avsnitt går också att söka fram (prova *regression* eller *förra året*), och sidindexet *På den här sidan*
       leder till flikens avsnitt.
@@ -77,8 +80,8 @@ och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag me
       *tabellerna ryms på sidan, bland dem översikten per BAS-intervall med åtta kolumner. Kontrollera också*
       *att diagrambilderna syns och har sina bildtexter.*
 - [ ] **ZIP-filen** innehåller Word-utkastet, Excel-filen och diagrammen som bilder, och bilderna går att öppna.
-- [ ] **PDF-rapporten** (testa de tre urvalen: hela dokumentationen, ledningsbrief och facklig dialog) skrivs ut korrekt med **svensk
-      talformatering**.
+- [ ] **PDF-rapporten** (testa de tre urvalen under *Rapportens innehåll*: *Hela dokumentationen*, *Ledningsbrief* och
+      *Facklig dialog*) skrivs ut korrekt med **svensk talformatering**.
 - [ ] **Protokollet för gemensam lönebedömning** och **Excel (alla flikar)** laddas ner och
       öppnas felfritt.
 - [ ] Vid test i demoläge: alla exporter märks **DEMODATA** (i innehållet eller med
@@ -89,7 +92,7 @@ och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag me
 
 ## E. Webbläsare & tillgänglighet (på riktig hårdvara — det automatiken inte når)
 - [ ] **Firefox** och **Safari** (Mac): uppstart, alla flikar, diagrammen och minst en
-      export fungerar. I Safari: prova även *Kopiera diagram* i rapportunderlaget.
+      export fungerar. I Safari: prova även *Kopiera diagram* under *Rapportunderlag* i Rapporttext.
 - [ ] **Färgkontrast** (axe DevTools eller Lighthouse) — inga allvarliga fel.
 - [ ] **Tangentbord:** Tab når sidopanelens knappar, **fokusmarkering syns**, och
       pil-/Home/End-tangenter byter flik.
@@ -101,7 +104,7 @@ och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag me
       ("förbereder analyser …") visas och försvinner.
 - [ ] **"Rensa all data"** tömmer allt (tabeller, diagram, anteckningarna i Regler & praxis) — även i
       Tabeller och egna vyer, Lönestruktur och Löneöversyn.
-- [ ] **"Spara konfiguration"** + **"Ladda konfiguration"** (Spara och jämför år) återställer inställningar
+- [ ] **"Spara konfiguration (JSON)"** + **"Ladda konfiguration"** (Spara och jämför år) återställer inställningar
       (datafilen laddas om).
 
 ## G. Sammanfattning & sign-off

@@ -132,7 +132,7 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
  * Löneutvecklingen per BAS-intervall som text för skärm och rapport: ett mått förra året och i år, och förändringen
  * i kronor och procent. Tecknen som i nyckeltalen (+, − och ± för oförändrat).
  */
-function _abKr(v) { return v == null ? '–' : `${svTal(Math.round(v), 0)} kr`; }
+function _abKr(v) { return svKr(v); }
 function _abForandringText(f, { kr = true } = {}) {
     if (!f || f.diff == null) return '–';
     const t = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
@@ -240,7 +240,7 @@ function renderArsjamforelse() {
     const jf = arsjamforelse();
     const j = jf ? jf.j : null, nu = jf ? jf.nu : null;
     if (!j || !nu) { host.innerHTML = huvud; return; }
-    const kr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const kr = v => svKr(v);
     const skriv = (v, typ) => v == null ? '–' : typ === 'kr' ? kr(v) : typ === 'pct' ? svPct(v, 1) : String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     const diff = (v, typ) => {
         if (v == null) return '<span class="f-dampad">–</span>';

@@ -571,3 +571,62 @@ describe('golden: lönefil utan ålder (ADR-64)', () => {
         expect(html).toMatchSnapshot();
     });
 });
+
+/**
+ * Bladnamnen och metodbladets etikettkolumn (S4 och F6 i punkt 26). Excel godtar ett bladnamn på högst 31 tecken utan
+ * : \ / ? * [ ]; SheetJS kastar ett fel för ett sådant namn, och ett blad som läggs till inom try hoppas då tyst över.
+ * Namnet fångas därför när bladet läggs till, före SheetJS prövning.
+ */
+describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
+    const OTILLATET = /[:\\/?*[\]]/;
+    let namn, fel, bocker;
+    beforeAll(() => {
+        expect(win.__loadFixture()).toBe(62);
+        const X = win.__XLSX, lagg = X.utils.book_append_sheet;
+        namn = []; fel = [];
+        X.utils.book_append_sheet = function (wb, ws, n, ...rest) {
+            namn.push(String(n));
+            try { return lagg.call(this, wb, ws, n, ...rest); } catch (e) { fel.push(`${n}: ${e.message}`); throw e; }
+        };
+        try {
+            win.__runExports();
+            bocker = { ...win.__captured };
+            // Arbetsböckerna utanför de sex ovan: Löneöversikten, prioriteringslistan, löneöversynen och ZIP-filens bok.
+            win.document.getElementById('forecast-budget-value').value = '2';   // utan pott finns ingen prognos att exportera
+            win.eval('updateForecast(); exportForecast()');
+            win.document.getElementById('btn-export-excel').click();
+            win.document.getElementById('btn-export-prio-excel').click();
+            Object.assign(bocker, win.__captured, { 'ZIP-filens Excel-fil': win.eval('_excelAlltBok()') });
+        } finally { X.utils.book_append_sheet = lagg; }
+    });
+    it('varje arbetsbok skrevs, och varje bladnamn har högst 31 tecken och inga av tecknen : \\ / ? * [ ]', () => {
+        expect(Object.keys(bocker).length, Object.keys(bocker).join(', ')).toBe(10);
+        expect(fel).toEqual([]);
+        expect(namn.length).toBeGreaterThan(30);
+        expect(namn.filter(n => n.length > 31 || OTILLATET.test(n) || !n.trim())).toEqual([]);
+    });
+    it('ett bladnamn med en term ryms också med den längsta term som termmodulen tillåter', () => {
+        const blad = (n, r) => win.eval(`_excelBladnamn(${JSON.stringify(n)}, ${JSON.stringify(r)})`);
+        expect(blad('2. Lika arbete (AID)', '2. Lika arbete')).toBe('2. Lika arbete (AID)');
+        expect(blad(`2. Lika arbete (${'x'.repeat(40)})`, '2. Lika arbete')).toBe('2. Lika arbete');
+        expect(blad('Kod/namn', 'Reserv')).toBe('Reserv');
+        expect(blad('[Huvud]', 'Reserv')).toBe('Reserv');
+    });
+    it('protokollets blad om lika arbete heter "2. Lika arbete (AID)"', () => {
+        // Samma namn som exportJPAProtocol skriver.
+        const prot = bocker[`lonekartlaggning_protokoll_gemensam_lonebedomning_${new Date().toISOString().slice(0, 10)}.xlsx`];
+        expect(prot, Object.keys(bocker).join(', ')).toBeTruthy();
+        expect(prot.SheetNames).toContain('2. Lika arbete (AID)');
+    });
+    it('Metod & parametrar: kolumn A är så bred som den längsta etiketten, med ett tak', () => {
+        const X = win.__XLSX;
+        for (const [fil, wb] of Object.entries(bocker)) {
+            const ws = wb.Sheets['Metod & parametrar'];
+            if (!ws) continue;
+            const etiketter = X.utils.sheet_to_json(ws, { header: 1, defval: '' }).slice(1).map(r => String(r[0] || ''));
+            const langst = Math.max(...etiketter.map(e => e.length));
+            expect(ws['!cols'][0].wch, fil).toBe(Math.min(70, langst + 2));
+            expect(ws['!cols'][0].wch, fil).toBeGreaterThan(langst);
+        }
+    });
+});

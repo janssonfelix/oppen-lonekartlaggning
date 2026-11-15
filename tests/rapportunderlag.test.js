@@ -541,6 +541,24 @@ describe('rapportunderlag: sektorer', () => {
         expect(teknik.slice(4)).toEqual(['–', '–']);   // kvot och justerad; kolumn 3 är SKR:s referens
         expect(b.stycken.join(' ')).toMatch(/1 huvudområde med färre än 10 personer redovisas inte/);
         expect(b.stycken.join(' ')).toMatch(/olika huvudområden/);
+        expect(b.tabell.rubriker.at(-1)).toBe('Justerad (ålder, BAS)');
+        expect(b.stycken[0]).toMatch(/justerad för ålder och BAS-intervall/);
+    });
+    it('utan ålder i lönefilen säger rubriken och texten att bara BAS är justerat (ADR-78)', () => {
+        const b = avsnittBlock('sektorer', { sektorer: [rad('Vård- och omsorgsarbete med mera', { justeratMedAlder: false })], andel: null }, { k: 10 });
+        expect(b.tabell.rubriker.at(-1)).toBe('Justerad (BAS)');
+        expect(b.stycken[0]).toMatch(/justerad för BAS-intervall\./);
+        expect(b.stycken.join(' ')).not.toMatch(/ålder/);
+    });
+});
+
+describe('rapportunderlag: sektorer där kön och BAS inte går att skilja åt', () => {
+    it('cellen säger att skillnaden inte kan justeras för BAS, och en mening säger varför', () => {
+        const rad = { namn: 'Vård- och omsorgsarbete med mera', n: 32, nKv: 16, nMa: 16, andelKv: 50, maskerad: false, samladMedian: false,
+            medTot: 30000, medKv: 28000, medMa: 33000, kvot: 84.8, justerat: null, justeratSkal: 'ejBas', justeratMedAlder: false, antalAid: 1, punkter: 0 };
+        const b = avsnittBlock('sektorer', { sektorer: [rad], andel: null }, { k: 10 });
+        expect(b.tabell.rader[0].at(-1)).toBe('Kan inte justeras för BAS');
+        expect(b.stycken.join(' ')).toMatch(/I 1 huvudområde går kön och BAS-intervall inte att skilja åt/);
     });
 });
 

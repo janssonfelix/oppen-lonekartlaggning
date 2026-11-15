@@ -298,9 +298,9 @@ rubrikraden, också när det är hopfällt.
    är kvinnodominerade**, både mansdominerade och könsblandade, och könsandelen i jämförelseetiketten står i
    partabellen (kolumnen *Könsandel*, med klassen mansdominerad eller blandad). Vill ni bara jämföra med
    mansdominerade AID-etiketter kryssar ni i *Jämför bara med mansdominerade AID-etiketter* i flikens inställningar
-   (av som standard); valet följer med i konfigurationsfilen och organisationspaketet. Jämförelseetiketterna hämtas i
-   första hand ur den egna organisationen; jämförelsestatistiken används bara där en egen
-   jämförelseetikett saknas. Den slutliga kravvärderingen gör du utifrån befattningsbeskrivning.
+   (av som standard); valet följer med i konfigurationsfilen och organisationspaketet. Med BAS-intervall hämtas
+   jämförelseetiketterna i första hand ur den egna organisationen, och jämförelsestatistiken används bara där en egen
+   jämförelseetikett saknas. Med poäng jämförs bara organisationens egna AID-etiketter. Den slutliga kravvärderingen gör du utifrån befattningsbeskrivning.
    Fliken visar som standard alla par där jämförelseetiketten har högre lön, de 20 största i tabellen (knappen
    *Visa alla* visar resten). Nyckeltalet *Par att titta närmare på* säger hur många par det är och hur många av dem
    som har en ojusterad löneskillnad på minst 5 %. Vill ni bara se par med minst en viss skillnad, till exempel 5 %,
@@ -339,7 +339,8 @@ rubrikraden, också när det är hopfällt.
 
    Avsnittet **Per huvudområde** visar läget i AID:s 13 huvudområden, ett i taget, till exempel vård och omsorg,
    skola och teknik. Där står antal, andel kvinnor, medianer, kvinnors lön i procent av mäns (rå och justerad
-   för ålder och BAS) och antal punkter i Att göra. Under tabellen står hur mycket av
+   för ålder, när lönefilen har ålder, och BAS) och antal punkter i Att göra. Har varje BAS-intervall i ett
+   huvudområde bara ett kön går kön och BAS inte att skilja åt, och där står *Kan inte justeras för BAS*. Under tabellen står hur mycket av
    skillnaden i hela organisationen som beror på att kvinnor och män arbetar i olika
    huvudområden. Pilen vid ett huvudområde öppnar dess AID-etiketter i Tabeller och egna vyer. Lika arbete, likvärdigt arbete
    och övriga analyser gäller alltid hela organisationen.

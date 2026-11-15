@@ -15,13 +15,16 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    varje grupp görs med omkastning, utom för grupper över 300 personer.
 
 **Prestanda:**
-5. **Ändrad minsta gruppstorlek tar 4,1 s på 55 000 rader** (10 → 11): bootstrap-KI och styrkan räknas om i
+5. **Ändrad minsta gruppstorlek tar 12,7 s på 55 000 rader** (10 → 11): bootstrap-KI och styrkan räknas om i
    bakgrunden efteråt (`_skattningarIBakgrunden`), och Att göra, processöversikten och den öppna fliken räknas om. Det
    som återstår är regressionen i processöversikten och underlagets kvalitet, som inte får cachas (ADR-17).
    Kvantilregressionens bootstrap-intervall räknas i bakgrunden efter att kortet ritats, också i exportläget
    (`_regKvantilBerakna`): en bild eller utskrift som görs innan intervallet är klart bär kortet utan det.
-   Mätvärden (`npm run perf`, Chromium, 55 000 syntetiska rader, 2026-10-29): uppladdning till klart gränssnitt
-   ~2,8 s och till klara bakgrundsanalyser ~7,7 s; tyngst är Likvärdigt arbete (2,6 s) och Lika arbete (2,0 s).
+   Mätvärden (`npm run perf`, Chromium, 55 000 syntetiska rader, 2026-11-15): uppladdning till klart gränssnitt
+   ~12,1 s och till klara bakgrundsanalyser ~15,8 s; tyngst är Likvärdigt arbete (10,2 s), Exportera (3,1 s) och
+   Lönestruktur (2,6 s). Tiden till klart gränssnitt är över budgeten (5 s) sedan jämförelsemängden blev alla
+   AID-etiketter som inte är kvinnodominerade (ADR-60, 2026-11-08); Likvärdigt arbete tog 2,6 s före.
+   Förhandsbeskedet under *Rapportens innehåll* tar ~2,3 s.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
@@ -53,22 +56,35 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     avser* vilken kostnad raden har.
 
 **Metodval att ta ställning till (noterade 2026-11-14, inte fel):**
-23. **Översikten per huvudområde räknar BAS som rang och kräver ålder** (`src/lib/sektor.js`), medan
-    huvudregressionen kodar BAS som indikatorer och räknar utan ålder när lönefilen saknar den (ADR-53, ADR-64).
-    Utan ålder i lönefilen ger översikten ingen justerad skillnad.
-24. **HC3 i steget för AID-etikett inom BAS räknas på den inomtransformerade designen**, så hävstången saknar
-    gruppdelen. Ett metodpåpekande; inverkan på standardfelen är inte mätt.
-25. **Poänglägets reserv mot jämförelsestatistiken** kräver att statistikradens AID-kod och BAS-intervall har poäng
-    i lönefilens poängtabell (`byggParPoäng`). Det har den sällan, så reserven används i praktiken nästan aldrig.
+23. *Avslutad 2026-11-15:* översikten per huvudområde räknar den justerade skillnaden med huvudregressionens kodning
+    (BAS som indikatorer, ålder bara när lönefilen har den, t-kvantil), ADR-78; utan ålder ger den kön + BAS.
+24. *Avslutad 2026-11-15:* HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång (h_i + 1/n_g) och
+    utan skalning, ADR-77; standardfelen är desamma som statsmodels och R ger med en indikator per grupp (en person
+    ensam i en grupp får vikten 0, se `regressionsmodellen.md` §4).
+25. *Avslutad 2026-11-15:* poänglägets reserv mot jämförelsestatistiken är borttagen i ADR-76; poängläget jämför
+    bara med organisationens egna jämförelseetiketter.
+32. **Texter i Likvärdigt arbete som inte skiljer på poängläget.** Ingressen (`src/index.html`, *Här jämför verktyget
+    kvinnodominerade AID-etiketter med AID-etiketter i samma BAS-intervall*) säger «i samma BAS-intervall» också när
+    kraven mäts med poäng och paren bildas över BAS-gränserna. Samma slag: bakgrundsavsnittet i fliken (*därför
+    jämförs i första hand organisationens egna*, `34-likvardigt-arbete.js`) och beräkningsbeviset för ett par
+    (*inom samma BAS-intervall (= likvärdiga krav)*, `27-berakningsbevis.js`), ingressen till *Lägre krav, högre lön*
+    (*i lägre BAS. BAS används som mått på krav*, ovanför meningen om poäng) och märket *intern* på varje par, som i
+    poängläget inte skiljer något från något. Rättas i en egen ändring.
 
 **Efter bytet till AID:s ord (ADR-74, 2026-11-15):**
-26. **Utseendet med de nya orden är mätt, inte sett.** Mot bygget före bytet, med demodatan och det stora demot,
-    hamnar ingen diagramtext utanför eller ovanpå annan text, och ingen flik får vågrät rullning. Fyra tabeller som
-    redan rullade i sidled blev 7–28 punkter bredare (Handlingsplanen, Löneläget mot statistiken, *Lägre krav, högre
-    lön* och huvudområdena i Lönestruktur). Inte prövat: kolumnrubrikernas radbrytning, skärmar smalare än 1 100
-    punkter, och exporterna öppnade i Word, Excel och en PDF-läsare.
+26. **Utseendet med de nya orden är prövat i webbläsare och LibreOffice, inte i Word och Excel.** Mot bygget före
+    bytet, med demodatan och det stora demot, hamnar ingen diagramtext utanför eller ovanpå annan text, och ingen flik
+    får vågrät rullning. Kolumnrubrikerna bryts bara mellan ord och beloppen står på en rad med «kr» vid 1 100–1 440
+    punkter (vakt i `tools/browser-smoke/layout.mjs`). PDF-rapportens tabeller ryms på sidan med och utan webbläsarens
+    avstavning (vakt i `tools/browser-smoke/exporter.mjs`). Word-utkastet och Excel-filen är renderade i LibreOffice.
+    Inte prövat: exporterna öppnade i Word och Excel, skärmen i Firefox och Safari för hand, och bredder under 1 100
+    punkter (till exempel Windows med skalning 125 %).
 27. **Termerna byts i koden, inte i en fil.** En annan uppsättning (till exempel för en annan bransch) kräver ett
     eget bygge. Organisationspaketet kan inte bära en uppsättning, och dokumenten är skrivna med standardorden.
+30. *Avslutad 2026-11-15:* utseendebesluten är fattade i ADR-75 (kort ordform *AID* i kolumnrubriker, *AID median
+    högre (kr)* i rapporten, 9 pt i Word-utkastet när en tabell inte ryms i 10 pt).
+31. **Excel kan inte radbryta en etikett som är bredare än kolumnens tak** (70 tecken): den inbäddade SheetJS
+    community skriver inte cellstilar. En längre etikett syns hel bara i cellen eller formelfältet.
 
 **Dokumentation och lansering:**
 17b. **Före varje release: riskanalysen granskas mot koden.** `riskanalys.md` och `dataskydd.md` läses påstående

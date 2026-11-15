@@ -86,18 +86,18 @@ describe('Word-utkastet som .docx', () => {
         const direktiv = [...dok.querySelectorAll('table')].find(t => /Andel kvinnor/.test(t.textContent) && /Löneskillnad enligt direktivet/.test(t.textContent));
         const dVarden = [...direktiv.querySelectorAll('tbody tr')].map(tr => tr.children[4].textContent);   // sist står direktivmarkeringen
         expect(dVarden.length).toBeGreaterThan(0);
-        for (const v of dVarden) expect(v).toMatch(/^([+−]\d{1,2},\d %|0,0 %|—)$/);
+        for (const v of dVarden) expect(v).toMatch(/^([+−]\d{1,2},\d\s%|0,0\s%|—)$/);
         const gapB = struktur.rader.find(r => r[4] !== null);
-        expect(dVarden[struktur.rader.indexOf(gapB)]).toBe(`${gapB[4] < 0 ? '+' : '−'}${Math.abs(gapB[4]).toFixed(1).replace('.', ',')} %`);
+        expect(dVarden[struktur.rader.indexOf(gapB)]).toBe(`${gapB[4] < 0 ? '+' : '−'}${Math.abs(gapB[4]).toFixed(1).replace('.', ',')}\u00a0%`);
         // Lönegapets form i övrigt: kvinnors lön i procent av mäns — inget minustecken i de kolumnerna.
         const kolumn = [...dok.querySelectorAll('table')].find(t => /Kvinnors lön i % av mäns/.test(t.textContent) && /Median kvinnor/.test(t.textContent));
         const varden = [...kolumn.querySelectorAll('tbody tr')].map(tr => tr.children[5].textContent);
         expect(varden.length).toBeGreaterThan(0);
-        for (const v of varden) expect(v).toMatch(/^(\d{2,3},\d %|—)$/);
-        expect(html).toMatch(/<th>Kvinnors medianlön i procent av mäns<\/th><td>\d{2,3},\d %<\/td>/);
+        for (const v of varden) expect(v).toMatch(/^(\d{2,3},\d\s%|—)$/);
+        expect(html).toMatch(/<th>Kvinnors medianlön i procent av mäns<\/th><td>\d{2,3},\d(?:\s|&nbsp;)%<\/td>/);
         expect(html).not.toMatch(/Ojusterat lönegap|Ojusterad löneskillnad(?! ≥ 5 %)|Gap \(Kv vs Mä\)/);
         // Regressionens gap behåller sin form, och det sägs i klartext.
-        expect(html).toMatch(/Löneskillnad som står kvar efter ålder och BAS-intervall<\/th><td><strong>[+−]\d+,\d\d %/);
+        expect(html).toMatch(/Löneskillnad som står kvar efter ålder och BAS-intervall<\/th><td><strong>[+−]\d+,\d\d(?:\s|&nbsp;)%/);
         expect(html).toContain('negativ när kvinnor ligger lägre');
         // Diagrammen hör till ett avsnitt och pekar ut fliken som ritar dem.
         const diagram = m.avsnitt.flatMap(a => a.delar.filter(p => p.typ === 'diagram').map(p => `${a.id}:${p.id}:${p.flik}`));

@@ -81,6 +81,10 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-72 | Definitionerna av kvinnodominerat heter efter lydelsen | Gällande | 2026-11-14 |
 | ADR-73 | Skydden och principerna binder; besluten är en logg | Gällande | 2026-11-14 |
 | ADR-74 | AID:s egna ord, och termerna på ett ställe | Gällande | 2026-11-14 |
+| ADR-75 | Kort ordform i kolumnrubriker, och Word-utkastets täta läge | Gällande | 2026-11-15 |
+| ADR-76 | Poängläget jämför bara med organisationens egna jämförelseetiketter | Gällande | 2026-11-15 |
+| ADR-77 | HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång | Gällande | 2026-11-15 |
+| ADR-78 | Översikten per huvudområde räknar med huvudregressionens kodning | Gällande | 2026-11-15 |
 
 ## Besluten
 
@@ -403,3 +407,38 @@ BAS-intervall. Orden står som variabler med ordformer och genus i `src/lib/term
 på ett ställe, och vakten i `tests/termer.test.js` håller dem borta från resten av gränssnittet. *Avvisat:* påhittade
 ord (grupp, AID-grupp), som inte blev tydligare; att behålla *yrke*, som handboken inte använder om
 etiketterna. *Gäller i dag:* `src/lib/termer.js` och `bygge-och-test.md` §13.
+
+**ADR-75 — Kort ordform i kolumnrubriker, och Word-utkastets täta läge.** En kolumnrubrik där hela termen inte ryms
+får begreppets korta form (`kort` i `src/lib/termer.js`, *AID* för AID-etikett), på skärmen och i rapporten: Lönelägets
+första kolumn och *AID median högre (kr)* i Likvärdigt arbete i Word-utkastet och PDF-rapporten. Exporternas etiketter
+behåller hela termen. En tabell i Word-utkastet som inte ryms i 10 pt skrivs i 9 pt med cellmarginalen 57 twips.
+*Avvisat:* rubriken «Jämförelseetikettens median högre med», som inte rymdes. *Gäller i dag:* `bygge-och-test.md` §13
+och `src/lib/docx.js`.
+
+**ADR-76 — Poängläget jämför bara med organisationens egna jämförelseetiketter.** Med arbetsvärderingspoäng i
+lönefilen används jämförelsestatistiken inte längre som reserv. Statistikens rader har inga egna poäng; en rad fick
+poäng bara när organisationen själv hade samma AID-kod och BAS-intervall, och jämförde då oftast den kvinnodominerade
+AID-etiketten med sig själv i statistiken, inte med ett likvärdigt arbete. I mätningen på demona med den nationella
+andelen kvinnor användes reserven aldrig. *Avvisat:* att behålla reserven; att ge statistikens rader poäng efter
+AID-kod ensam, som jämför samma arbete i olika BAS-intervall. En extern jämförelse i poängläget kräver en egen
+poängtabell för statistiken. *Gäller i dag:* `likvardighetsmodellen.md` §4.
+
+**ADR-77 — HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång.** Med AID-etikett inom BAS vald in i
+huvudtalet räknas HC3 med hävstången h_i + 1/n_g, den som designen med en indikator per grupp har, och utan
+skalningen med (n − p) / (n − p − G); skalningen gäller bara den klassiska kovariansen. `hHoga` räknas på samma
+hävstång. Standardfelen blir då de som statsmodels och R ger med en indikator per grupp (principen 2). En person
+ensam i en grupp har h = 1 och får vikten 0, vilket ger samma tal som statsmodels och R när de personerna tas bort;
+med dem kvar ger statsmodels och R NaN eller ett tal som avrundningen avgör. Med hävstången
+på de transformerade kolumnerna ensam var standardfelet för kön i det lilla demot 1,0–1,6 % för litet, och i urval med
+små grupper upp till 9 %; ingen status i trappan ändrades i mätningen. *Avvisat:* att behålla beräkningen och stänga
+punkten som mätt; att behålla skalningen ovanpå den fulla hävstången. *Gäller i dag:* `regressionsmodellen.md` §4.
+
+**ADR-78 — Översikten per huvudområde räknar med huvudregressionens kodning.** Den justerade skillnaden per huvudområde
+räknas som huvudregressionens standardmodell: kön, ålder när lönefilen har ålder och BAS-intervall som indikatorer,
+HC3 och t-kvantil. Går modellen med BAS inte att skatta i ett huvudområde med minst två BAS-intervall (kön och BAS går
+inte att skilja åt) står *Kan inte justeras för BAS* i stället för ett tal. Med BAS som rang lades en del av BAS-skillnaden på kön där lönestegen
+mellan intervallen är olika stora (upp till 2,1 procentenheter i det lilla demot), och utan ålder i lönefilen gav
+översikten inget tal alls. Användarens val av förklaringsvariabler i Lika arbete påverkar inte översikten.
+*Avvisat:* att behålla BAS som rang och kravet på ålder; att också följa förklaringsmodellen, som skulle ändra
+översikten när någon väljer variabler i en annan flik; huvudregressionens reservsteg utan BAS, som i det läget visar den
+råa skillnaden (eller den bara åldersjusterade) under en rubrik som säger BAS. *Gäller i dag:* `regressionsmodellen.md` §3.

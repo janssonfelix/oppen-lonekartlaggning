@@ -8,7 +8,7 @@ inställningarna och vakterna. Koden är sanningen; där dokumentet och koden sk
 rättas.
 
 Dokumentet är inte beslutsloggen och inte en tolkning av lagen. Varför det är så här, vad som övervägdes och när det
-beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-25, 60, 61 och 72, och för reserven för
+beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-25, 60, 61, 72 och 76, och för reserven för
 kvinnoandel ADR-34. Lagrummen står i [`lagrum.md`](lagrum.md). Minsta gruppstorlek, undantaget för fliken och regeln
 för paren utanför fliken står i [`k-troskeln.md`](k-troskeln.md) (§4 och §2) och upprepas inte här. Hur BAS kodas i
 regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
@@ -147,9 +147,10 @@ räknar det i `basMedExternFallback`. Saknas båda bildas inga par för AID-etik
 (det första värdet per grupp) i `state.arbetsvardering.byKey`, och `byggParPoäng` ersätter `byggPar`. En
 jämförelseetikett kvalificerar när dess poäng är högst den kvinnodominerade AID-etikettens poäng × (1 + band / 100) — lika eller
 lägre krav — **även över BAS-gränserna**. Bandet är standard 5 % (`state.likvardighet.poangBandPct`, fältet *Räkna som
-lika krav inom ± … %* i avsnittet *Arbetsvärdering med poäng*, 0–50). Organisationens egna jämförelseetiketter används i
-första hand; finns inget som kvalificerar används statistikens rader som har poäng i samma tabell. En kvinnodominerad
-AID-etikett utan poäng får inga par och räknas i `kvUtanPoang`, som fliken visar. Diagnostikens `kravProxy` är `'poäng'`
+lika krav inom ± … %* i avsnittet *Arbetsvärdering med poäng*, 0–50). Bara organisationens egna jämförelseetiketter jämförs:
+jämförelsestatistiken har inga poäng och används inte i poängläget (ADR-76). En kvinnodominerad AID-etikett utan
+jämförelseetikett som kvalificerar får inga par. En kvinnodominerad AID-etikett utan poäng får inga par och räknas i
+`kvUtanPoang`, som fliken visar. Diagnostikens `kravProxy` är `'poäng'`
 eller `'bas'`.
 
 ## 5. Steg 3: paren
@@ -302,7 +303,7 @@ bär inte minsta skillnaden (ADR-61), antalet par, kvinnotröskeln eller definit
 
 | Fil | Prövar |
 |---|---|
-| `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med båda definitionerna vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget, *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangFn`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
+| `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med båda definitionerna vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget (inga par mot statistiken), *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangFn`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
 | `tests/drift.test.js` | Att adaptern delegerar till spegeln och översätter tillståndet till anropet, att den ger ett strukturerat resultat när spegeln kastar, och att spegeln ger reproducerbara konfidensintervall |
 | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` | Definitionen och jämförelsemängden i tabellerna per AID-kod och BAS-intervall; definitionen och jämförelsemängden i konfigurationsfilen; att definitionernas namn säger lydelsen och inte en avsändare (ADR-72) |
 | `tests/smoke-vyer.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseetikett i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock |

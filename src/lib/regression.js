@@ -217,6 +217,37 @@ export function computeSequentialGap(rows0, ageMean, basList, { golv, modell = F
 }
 
 /**
+ * Könsskillnaden med huvudregressionens standardkodning, för ett urval (ADR-78; översikten per huvudområde i
+ * sektor.js): log lön = kön + [ålder centrerad] + en indikator per BAS-intervall utom det alfabetiskt första, HC3 och
+ * t-kvantil, med reservsteget utan BAS när modellen inte kan skattas (medBas = false; sektor.js ger då inget tal när
+ * urvalet har minst två BAS-intervall, antalBas). Förklaringsmodellen läses inte: översikten
+ * följer inte användarens val i Lika arbete. Raderna filtreras som i stegen (B4).
+ * @param {any[]} rows0
+ * @param {{medAlder?: boolean}} [opts] medAlder = lönefilen har ålder (ADR-64); anroparen ger den för hela filen
+ * @returns {null | {pct:number, low:number, high:number, n:number, k:number, medBas:boolean, medAlder:boolean, antalBas:number}}
+ */
+export function justeradSkillnad(rows0, { medAlder = harAlderIRader(rows0) } = {}) {
+    const giltiga = (rows0 || []).filter(d => _modellRad(d, medAlder));
+    if (!giltiga.length) return null;
+    const basList = [...new Set(giltiga.map(d => d.bas))].sort();
+    const ageMean = medAlder ? giltiga.reduce((s, d) => s + d.alder, 0) / giltiga.length : 0;
+    const { y, bygg } = _sekvensRigg(giltiga, ageMean, basList, { medAlder });
+    // Kolumnordningen som i huvudregressionen: [1, kön, (ålder), (BAS-indikatorer)].
+    const alder = medAlder ? ['alder'] : [];
+    for (const medBas of [true, false]) {
+        const X = bygg(medBas ? [...alder, 'bas'] : alder);
+        if (giltiga.length < X[0].length + 5) continue;
+        const fit = fitOLS(X, y);
+        if (!fit) continue;
+        const b = fit.beta[1], se = Math.sqrt(fit.vcovHC3[1][1]);
+        const tq = tQuantile(0.975, fit.n - fit.k);
+        return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - tq * se) - 1) * 100, high: (Math.exp(b + tq * se) - 1) * 100,
+            n: fit.n, k: fit.k, medBas, medAlder, antalBas: basList.length };
+    }
+    return null;
+}
+
+/**
  * Vad varje variabel tillför (ADR-56): förklaringsgraden och könsgapet med och utan variabeln, räknat mot
  * fullmodellen kön + BAS + ålder oberoende av vad som är valt, så att tabellen i panelen står still när man
  * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget). Utan ålder i
@@ -319,7 +350,9 @@ export function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, ext
  * Inomtransformationen för yrkesgrupp inom BAS (ADR-46): drar gruppmedelvärdet från log-lön och från varje kolumn i
  * `kol` inom AID×BAS-gruppen. Delas av steget + Yrkesgrupp och av huvudregressionen när yrkesgrupp är vald (ADR-56).
  * @param {any[]} rows @param {number[]} y @param {number[][]} kol kolumner per rad (utan intercept)
- * @returns {{ok:boolean, X:number[][], yW:number[], k:number, nGrupper:number, meta:{nGrupper:number, nGrupperBada:number, nPersoner:number, nEnkonade:number}, R2Total:(rss:number)=>number}}
+ * hGrupp är 1/n_g per rad, gruppdelen av den fulla designens hävstång (en indikator per grupp): den läggs till
+ * hävstången på de transformerade kolumnerna när HC3 räknas (ADR-77).
+ * @returns {{ok:boolean, X:number[][], yW:number[], hGrupp:number[], k:number, nGrupper:number, meta:{nGrupper:number, nGrupperBada:number, nPersoner:number, nEnkonade:number}, R2Total:(rss:number)=>number}}
  */
 export function inomYrkesgrupp(rows, y, kol) {
     const N = rows.length;
@@ -341,14 +374,15 @@ export function inomYrkesgrupp(rows, y, kol) {
     let tss = 0; for (let i = 0; i < N; i++) tss += (y[i] - yMedel) ** 2;
     const R2Total = rss => (tss > 0 ? 1 - rss / tss : 0);
     // Frihetsgrader: lutningarna plus en nivå per grupp
-    if (N < grupper.size + p + 5 || nGrupperBada === 0) return { ok: false, X: [], yW: [], k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
-    const X = new Array(N), yW = new Array(N);
+    if (N < grupper.size + p + 5 || nGrupperBada === 0) return { ok: false, X: [], yW: [], hGrupp: [], k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
+    const X = new Array(N), yW = new Array(N), hGrupp = new Array(N);
     for (let i = 0; i < N; i++) {
         const g = grupper.get(key[i]);
         X[i] = kol[i].map((v, j) => v - g.s[j] / g.n);
         yW[i] = y[i] - g.sy / g.n;
+        hGrupp[i] = 1 / g.n;
     }
-    return { ok: true, X, yW, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
+    return { ok: true, X, yW, hGrupp, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
 }
 
 /**

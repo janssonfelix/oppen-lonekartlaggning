@@ -20,7 +20,8 @@ const __mirrorTermer = (() => {
  * Verktyget använder AID:s egna ord: AID-etikett, AID-kod, etikettnamn och huvudområde. Orden står bara här, som
  * variabler, så att en annan uppsättning (till exempel för en annan bransch) byts på ett ställe. Varje begrepp har
  * de ordformer svenskan kräver och sitt genus, så att artikel och adjektiv böjs rätt också för ett ett-ord:
- * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke".
+ * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke". Ett begrepp kan ha en kort form för en
+ * kolumnrubrik där hela termen inte ryms (ADR-75); utan den används obestämd form.
  *
  * I appen: `T` är den gällande uppsättningen (`src/app/09-termer.js`), `${T.enhet.fl}` i stället för ordet, och
  * fast text skrivs som mall: `{enhet.en}`, se `fyllTermer`. Vakten i `tests/termer.test.js` håller orden borta
@@ -30,10 +31,11 @@ const __mirrorTermer = (() => {
  */
 
 /** @typedef {'utrum'|'neutrum'} Genus */
-/** @typedef {'en'|'bf'|'fl'|'bfl'} Form */
+/** @typedef {'en'|'bf'|'fl'|'bfl'|'kort'} Form */
 /**
- * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl) och genus.
- * @typedef {{ en: string, bf: string, fl: string, bfl: string, genus: Genus }} Begrepp
+ * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl), genus och en valfri kort
+ * form (kort) för kolumnrubriker där hela termen inte ryms. Exporternas etiketter behåller hela termen (ADR-75).
+ * @typedef {{ en: string, bf: string, fl: string, bfl: string, kort?: string, genus: Genus }} Begrepp
  */
 /**
  * En uppsättning termer. `enhet` är det verktyget grupperar på, `jamforelse` den enhet ett kvinnodominerat arbete
@@ -45,14 +47,14 @@ const __mirrorTermer = (() => {
 
 /** Begreppen, i den ordning de står i tabellen. */
 const TERM_BEGREPP = /** @type {const} */ (['enhet', 'jamforelse', 'kod', 'namn', 'huvudomrade', 'niva']);
-/** Ordformerna per begrepp. */
+/** Ordformerna per begrepp. Den korta formen är valfri och står inte här; vakten prövar inte "AID" ensamt. */
 const TERM_FORMER = /** @type {const} */ (['en', 'bf', 'fl', 'bfl']);
 /** Högsta längd för en ordform. */
 const TERM_MAX = 40;
 
 /** Standarduppsättningen. @type {Termer} */
 const STANDARDTERMER = Object.freeze({
-    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', genus: /** @type {Genus} */ ('utrum') }),
+    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', kort: 'AID', genus: /** @type {Genus} */ ('utrum') }),
     jamforelse:  Object.freeze({ en: 'jämförelseetikett', bf: 'jämförelseetiketten', fl: 'jämförelseetiketter', bfl: 'jämförelseetiketterna', genus: /** @type {Genus} */ ('utrum') }),
     kod:         Object.freeze({ en: 'AID-kod', bf: 'AID-koden', fl: 'AID-koder', bfl: 'AID-koderna', genus: /** @type {Genus} */ ('utrum') }),
     namn:        Object.freeze({ en: 'etikettnamn', bf: 'etikettnamnet', fl: 'etikettnamn', bfl: 'etikettnamnen', genus: /** @type {Genus} */ ('neutrum') }),
@@ -74,8 +76,8 @@ function _ord(v, vad) {
 }
 
 /**
- * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus;
- * begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
+ * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus, och
+ * kan ha en kort form; begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
  * @param {Partial<Record<typeof TERM_BEGREPP[number], Partial<Begrepp>>> & { system?: string } | null} [egna]
  * @returns {Termer}
  */
@@ -93,6 +95,7 @@ function skapaTermer(egna) {
         ut[nyckel] = Object.freeze({
             en: _ord(b.en, `${nyckel}.en`), bf: _ord(b.bf, `${nyckel}.bf`),
             fl: _ord(b.fl, `${nyckel}.fl`), bfl: _ord(b.bfl, `${nyckel}.bfl`),
+            ...(b.kort != null ? { kort: _ord(b.kort, `${nyckel}.kort`) } : {}),
             genus: b.genus
         });
     }
@@ -162,13 +165,14 @@ function adjektiv(stam, b, { bestamd = false, plural = false } = {}) {
  *   termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerad AID-etikett"
  *   termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerade AID-etiketter"
  *   termFras(T.enhet, 'bf', { genitiv: true })                → "AID-etikettens"
+ *   termFras(T.enhet, 'kort')                                 → "AID" (obestämd form när kort form saknas)
  * @param {Begrepp} b
  * @param {Form} [form]
  * @param {{ adjektiv?: Adjektiv, genitiv?: boolean }} [val]
  */
 function termFras(b, form = 'en', { adjektiv: adj, genitiv: gen = false } = {}) {
-    if (!(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
-    let t = b[form];
+    if (form !== 'kort' && !(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
+    let t = form === 'kort' ? b.kort ?? b.en : b[form];
     if (adj) {
         const plural = form === 'fl' || form === 'bfl', bestamd = form === 'bf' || form === 'bfl';
         t = `${adjektiv(adj, b, { plural, bestamd })} ${t}`;
@@ -182,9 +186,10 @@ function ordForAntal(n, b) {
     return Number(n) === 1 ? b.en : b.fl;
 }
 
-// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv} och
-// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}").
-const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
+// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv},
+// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}") och
+// {begrepp.kort} (kolumnrubrikens korta form, utan adjektiv).
+const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|kort|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
 
 /**
  * Fyller en mall med termerna. Versal först i begreppets namn ger stor begynnelsebokstav. Klamrar som inte är ett
@@ -194,6 +199,7 @@ const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?
  *   "{enhet.art} {enhet.en:kvinnodominerad}"          → "en kvinnodominerad AID-etikett" (ett-ord: "ett kvinnodominerat yrke")
  *   "{enhet.bf.s} median"                             → "AID-etikettens median"
  *   "räknas som {enhet.adj:kvinnodominerad}"          → "räknas som kvinnodominerad" (ett-ord: "kvinnodominerat")
+ *   "{Enhet.kort} median högre (kr)"                  → "AID median högre (kr)"
  * @param {string} mall
  * @param {Termer} [termer]
  */
@@ -213,6 +219,9 @@ function fyllTermer(mall, termer = STANDARDTERMER) {
             } else if (form === 'adj') {
                 if (gen || !adj) return hel;
                 t = adjektiv(adj, b);
+            } else if (form === 'kort') {
+                if (adj) return hel;
+                t = termFras(b, 'kort', { genitiv: !!gen });
             } else {
                 t = termFras(b, form || 'en', { adjektiv: adj, genitiv: !!gen });
             }
@@ -476,13 +485,16 @@ function invert(A) {
  *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
  * hHoga = antalet observationer med hävstång h_i > 0,99 (B4). De har (nästan) noll residual och bidrar inte till
  * HC3-köttet; antalet visas i regressionskortets tekniska specifikation (en ensam person i en indikator ger h = 1).
+ * hTillagg (valfri) läggs till hävstången per rad innan HC3 och hHoga räknas: när X är inomtransformerad ger
+ * 1/n_g per rad den fulla designens hävstång (ADR-77, inomYrkesgrupp i regression.js).
  * Detta är "single source of truth" — app.js mirrar denna implementation.
  *
  * @param {number[][]} X - n×k designmatris.
  * @param {number[]} y    - n-vektor.
+ * @param {number[]|null} [hTillagg] - n-vektor som läggs till hävstången h_i (gruppdelen vid inomtransformation).
  * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][], hHoga:number}}
  */
-function fitOLS(X, y) {
+function fitOLS(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 2) return null;
     const Xt = transpose(X);
@@ -505,9 +517,9 @@ function fitOLS(X, y) {
 
     const vcovClassic = XtXinv.map(row => row.map(v => v * sigma2));
 
-    // HC3: leverages h_i = x_i' (X'X)^-1 x_i
-    const h = X.map(xi => {
-        let s = 0;
+    // HC3: leverages h_i = x_i' (X'X)^-1 x_i (+ hTillagg_i)
+    const h = X.map((xi, i) => {
+        let s = hTillagg ? hTillagg[i] : 0;
         for (let a = 0; a < k; a++) {
             let sa = 0;
             for (let b = 0; b < k; b++) sa += XtXinv[a][b] * xi[b];
@@ -1452,17 +1464,16 @@ function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
  * Steg 3 (#5) — bygg kandidatpar med ARBETSVÄRDERINGSPOÄNG som krav-proxy
  * istället för BAS. Parar över BAS-gränser: ett jämförelseyrke kvalificerar om
  * dess poäng ≤ det kvinnodominerade yrkets poäng × (1 + band) — dvs likvärdiga
- * eller lägre krav (DiskrL 3:10). Intern jämförelse är primär; saknas internt
- * kvalificerande yrke används jämförelsestatistiken (extern fallback).
+ * eller lägre krav (DiskrL 3:10). Bara organisationens egna jämförelseetiketter
+ * jämförs: jämförelsestatistiken har inga poäng (ADR-76).
  *
  * @param {Array} orgKvDom
  * @param {Array} internAll - organisationens icke-kv-dom yrken (flat)
- * @param {Array} externAll - jämförelsestatistikens icke-kv-dom yrken (flat)
  * @param {Map<string,number>} poangByKey - 'AID|BAS' eller 'AID' → poäng
  * @param {Object} [opts] - { minGap, topN, B, rng, bandPct, golv }
  * @returns {{pairs:Array, jämförelse:Object, antal:{totalt:number, overDirektiv:number, sakra:number}}}
  */
-function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
+function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
     const minGap = opts.minGap ?? 0;
     const topN = opts.topN ?? 100;
     const B = opts.B ?? 1000;
@@ -1474,6 +1485,8 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
     const rngOpt = opts.rng ?? null;
     const prngFor = (a, b) => rngOpt || rngFor(a, b);
     const bandPct = opts.bandPct ?? 5;
+    // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget;
+    // fliken och exporterna visar dem inte när kravProxy är 'poäng'.
     const jämförelse = {
         gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
         internaPar: 0, externaPar: 0, basMedExternFallback: 0,
@@ -1482,7 +1495,6 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
     const pairs = [];
     orgKvDom = orgKvDom || [];
     internAll = internAll || [];
-    externAll = externAll || [];
     poangByKey = poangByKey || new Map();
     if (!orgKvDom.length || !poangByKey.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
 
@@ -1492,13 +1504,7 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
         const fP = poangFor(f);
         if (fP == null) { jämförelse.kvUtanPoang++; continue; }
         const tak = fP * (1 + bandPct / 100);
-        let jämförRader = internAll.filter(g => { const p = poangFor(g); return p != null && p <= tak; });
-        let källa = 'intern';
-        if (!jämförRader.length) {
-            jämförRader = externAll.filter(g => { const p = poangFor(g); return p != null && p <= tak; });
-            källa = 'extern';
-            if (jämförRader.length) jämförelse.basMedExternFallback++;
-        }
+        const jämförRader = internAll.filter(g => { const p = poangFor(g); return p != null && p <= tak; });
         for (const g of jämförRader) {
             jämförelse.möjligaPar++;
             if (g.median <= f.median) { jämförelse.statLägreEllerLika++; continue; }
@@ -1506,29 +1512,26 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
             const gapKr = g.median - f.median;
             const gapPct = (gapKr / f.median) * 100;
             if (gapPct < minGap) continue;
-            const ärIntern = källa === 'intern';
             /** @type {{lo:number, hi:number}|null} */
             let gapCI = null;
             try {
-                gapCI = (ärIntern && Array.isArray(g.lons))
-                    ? bootstrapMedianDiffKr(f.lons, g.lons, B, prngFor(f.lons, g.lons))
-                    : bootstrapMedianVsConstantKr(f.lons, g.median, B, prngFor(f.lons, [g.median]));
+                gapCI = bootstrapMedianDiffKr(f.lons, g.lons, B, prngFor(f.lons, g.lons));
             } catch (_) { gapCI = null; }
-            if (ärIntern) jämförelse.internaPar++; else jämförelse.externaPar++;
+            jämförelse.internaPar++;
             candidates.push({
                 kvAid: f.aid, kvLabel: f.label, kvBas: f.bas,
                 kvN: f.n, kvNKv: f.nKv, kvMedian: f.median, kvKvinnoPct: f.kvinnoPct,
                 maAid: g.aid, maLabel: g.label, maBas: g.bas,
                 maMedian: g.median,
-                maKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
-                maKvinnoPct: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKvAndel: g.kvinnoPct,
+                maKvinnoPct: g.kvinnoPct,
                 maKlass: g.klass || '',
-                maN: ärIntern ? g.n : null,
+                maN: g.n,
                 maNKv: g.nKv, maNMa: g.nMa,
-                jamforKalla: källa,
-                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'nationell'),   // var andelen kommer ifrån
+                jamforKalla: 'intern',
+                maKlassKort: 'intern',
                 gapKr, gapPct, gapCI,
-                ..._aldersFalt(f, g, ärIntern, golv),
+                ..._aldersFalt(f, g, true, golv),
                 kvPoang: fP, maPoang: poangFor(g),
                 allvarsindex: Math.abs(gapKr) * f.n
             });
@@ -1637,7 +1640,7 @@ function computeLikvardighetPairs({ data = [], statistik = [], nationellKlass = 
     }
     const internByBas = orgIckeKvByBas(s1.orgIckeKv);
     const s3 = (poangByKey && poangByKey.size)
-        ? byggParPoäng(s1.orgKvDom, s1.orgIckeKv, s2.statIckeKv, poangByKey, { minGap, topN, B, rng, bandPct, golv })
+        ? byggParPoäng(s1.orgKvDom, s1.orgIckeKv, poangByKey, { minGap, topN, B, rng, bandPct, golv })
         : byggPar(s1.orgKvDom, internByBas, s2.statByBas, { minGap, topN, B, rng, golv });
     const lagreKrav = (poangByKey && poangByKey.size) ? [] : byggParLagreKrav(s1.orgKvDom, s1.orgIckeKv, {
         rang: basRangFn([...s1.orgKvDom, ...s1.orgIckeKv].map(g => g.bas)),
@@ -2660,6 +2663,37 @@ function computeSequentialGap(rows0, ageMean, basList, { golv, modell = FORKLARI
 }
 
 /**
+ * Könsskillnaden med huvudregressionens standardkodning, för ett urval (ADR-78; översikten per huvudområde i
+ * sektor.js): log lön = kön + [ålder centrerad] + en indikator per BAS-intervall utom det alfabetiskt första, HC3 och
+ * t-kvantil, med reservsteget utan BAS när modellen inte kan skattas (medBas = false; sektor.js ger då inget tal när
+ * urvalet har minst två BAS-intervall, antalBas). Förklaringsmodellen läses inte: översikten
+ * följer inte användarens val i Lika arbete. Raderna filtreras som i stegen (B4).
+ * @param {any[]} rows0
+ * @param {{medAlder?: boolean}} [opts] medAlder = lönefilen har ålder (ADR-64); anroparen ger den för hela filen
+ * @returns {null | {pct:number, low:number, high:number, n:number, k:number, medBas:boolean, medAlder:boolean, antalBas:number}}
+ */
+function justeradSkillnad(rows0, { medAlder = harAlderIRader(rows0) } = {}) {
+    const giltiga = (rows0 || []).filter(d => _modellRad(d, medAlder));
+    if (!giltiga.length) return null;
+    const basList = [...new Set(giltiga.map(d => d.bas))].sort();
+    const ageMean = medAlder ? giltiga.reduce((s, d) => s + d.alder, 0) / giltiga.length : 0;
+    const { y, bygg } = _sekvensRigg(giltiga, ageMean, basList, { medAlder });
+    // Kolumnordningen som i huvudregressionen: [1, kön, (ålder), (BAS-indikatorer)].
+    const alder = medAlder ? ['alder'] : [];
+    for (const medBas of [true, false]) {
+        const X = bygg(medBas ? [...alder, 'bas'] : alder);
+        if (giltiga.length < X[0].length + 5) continue;
+        const fit = fitOLS(X, y);
+        if (!fit) continue;
+        const b = fit.beta[1], se = Math.sqrt(fit.vcovHC3[1][1]);
+        const tq = tQuantile(0.975, fit.n - fit.k);
+        return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - tq * se) - 1) * 100, high: (Math.exp(b + tq * se) - 1) * 100,
+            n: fit.n, k: fit.k, medBas, medAlder, antalBas: basList.length };
+    }
+    return null;
+}
+
+/**
  * Vad varje variabel tillför (ADR-56): förklaringsgraden och könsgapet med och utan variabeln, räknat mot
  * fullmodellen kön + BAS + ålder oberoende av vad som är valt, så att tabellen i panelen står still när man
  * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget). Utan ålder i
@@ -2762,7 +2796,9 @@ function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = nu
  * Inomtransformationen för yrkesgrupp inom BAS (ADR-46): drar gruppmedelvärdet från log-lön och från varje kolumn i
  * `kol` inom AID×BAS-gruppen. Delas av steget + Yrkesgrupp och av huvudregressionen när yrkesgrupp är vald (ADR-56).
  * @param {any[]} rows @param {number[]} y @param {number[][]} kol kolumner per rad (utan intercept)
- * @returns {{ok:boolean, X:number[][], yW:number[], k:number, nGrupper:number, meta:{nGrupper:number, nGrupperBada:number, nPersoner:number, nEnkonade:number}, R2Total:(rss:number)=>number}}
+ * hGrupp är 1/n_g per rad, gruppdelen av den fulla designens hävstång (en indikator per grupp): den läggs till
+ * hävstången på de transformerade kolumnerna när HC3 räknas (ADR-77).
+ * @returns {{ok:boolean, X:number[][], yW:number[], hGrupp:number[], k:number, nGrupper:number, meta:{nGrupper:number, nGrupperBada:number, nPersoner:number, nEnkonade:number}, R2Total:(rss:number)=>number}}
  */
 function inomYrkesgrupp(rows, y, kol) {
     const N = rows.length;
@@ -2784,14 +2820,15 @@ function inomYrkesgrupp(rows, y, kol) {
     let tss = 0; for (let i = 0; i < N; i++) tss += (y[i] - yMedel) ** 2;
     const R2Total = rss => (tss > 0 ? 1 - rss / tss : 0);
     // Frihetsgrader: lutningarna plus en nivå per grupp
-    if (N < grupper.size + p + 5 || nGrupperBada === 0) return { ok: false, X: [], yW: [], k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
-    const X = new Array(N), yW = new Array(N);
+    if (N < grupper.size + p + 5 || nGrupperBada === 0) return { ok: false, X: [], yW: [], hGrupp: [], k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
+    const X = new Array(N), yW = new Array(N), hGrupp = new Array(N);
     for (let i = 0; i < N; i++) {
         const g = grupper.get(key[i]);
         X[i] = kol[i].map((v, j) => v - g.s[j] / g.n);
         yW[i] = y[i] - g.sy / g.n;
+        hGrupp[i] = 1 / g.n;
     }
-    return { ok: true, X, yW, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
+    return { ok: true, X, yW, hGrupp, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
 }
 
 /**
@@ -3048,7 +3085,7 @@ function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD,
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
-    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, stegNamn, stegEtikett };
+    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
 })();
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
@@ -3067,6 +3104,7 @@ const _rgModellFras = __mirrorRegression.modellFras;
 const _rgModellBeskrivning = __mirrorRegression.modellBeskrivning;
 const _rgTillforGransPp = __mirrorRegression.tillforGransPp;
 const _rgHarAlderIRader = __mirrorRegression.harAlderIRader;
+const _rgJusteradSkillnad = __mirrorRegression.justeradSkillnad;
 const _rgStegNamn = __mirrorRegression.stegNamn;
 const _rgStegEtikett = __mirrorRegression.stegEtikett;
 
@@ -4184,7 +4222,7 @@ const __mirrorHtmlText = (() => {
  * Verktygets egna texter (metodbilagans regler, förslagen i gruppdossiern) är skrivna som HTML. I Excel, utskriftens
  * listor och textkopior ska de stå som vanlig text. Taggarna tas bort tills inga finns kvar (en ersättning i ett svep
  * lämnar `<scr<b>ipt>` som `<script>`), och ett ensamt `<` som blir kvar tas bort. Avkodningen tar &amp; sist, så att
- * `&amp;lt;` blir `&lt;` och inte `<`.
+ * `&amp;lt;` blir `&lt;` och inte `<`. Här står också regeln för en cell som är ett tal (`arTal`).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -4201,10 +4239,22 @@ function htmlTillText(text) {
     return utanTaggar(text).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 }
 
-    return { utanTaggar, htmlTillText };
+/**
+ * Cellens text är ett tal med ev. enhet ("33 932 kr", "93,6 %", "46 (28/18)", "1 427 679 kr/år", "20 / 45"), eller ett
+ * intervall av två sådana ("0,9–3,8 %", och "−0,8 till 1,7 %" när ett av talen är negativt). Word-utkastet (docx.js),
+ * utskriften (60-utskrift.js) och Rapporttext (67-rapportunderlag.js) håller en sådan cell på en rad.
+ */
+const _TAL = String.raw`[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*`;
+const _AR_TAL = new RegExp(String.raw`^${_TAL}(?:\still\s+${_TAL})?(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$`);
+function arTal(text) {
+    return _AR_TAL.test(String(text ?? '').trim());
+}
+
+    return { utanTaggar, htmlTillText, arTal };
 })();
 const _utanTaggar = __mirrorHtmlText.utanTaggar;
 const _htmlTillText = __mirrorHtmlText.htmlTillText;
+const _cellArTal = __mirrorHtmlText.arTal;
 
 // ---- speglar src/lib/namn.js ----
 const __mirrorNamn = (() => {
@@ -5674,13 +5724,14 @@ const _agStegLikvardigt = __mirrorAttgora.stegLikvardigt;
 // ---- speglar src/lib/sektor.js ----
 const __mirrorSektor = (() => {
     // importer ur tidigare speglade lib-moduler
-    const fitOLS = __mirrorStat.fitOLS;
     const median = __mirrorStat.median;
-    const basRangFn = __mirrorLikvardighet.basRangFn;
+    const justeradSkillnad = __mirrorRegression.justeradSkillnad;
+    const harAlderIRader = __mirrorRegression.harAlderIRader;
     const sektorsnamn = __mirrorAid.sektorsnamn;
     const jamforSektor = __mirrorAid.jamforSektor;
     const konOf = __mirrorFalt.konOf;
     const skrKvinnoandelSektor = __mirrorSkrReferens.skrKvinnoandelSektor;
+    const skapaTermer = __mirrorTermer.skapaTermer;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5689,9 +5740,11 @@ const __mirrorSektor = (() => {
  *
  * En sektor är ett AID-huvudområde. Per sektor: antal, andel kvinnor, medianer och kvot med samma
  * k-regler som Lika arbete (ett kön under k → samlad median; gruppen under k → maskerad), justerad
- * skillnad (OLS: log lön ~ kön + ålder + BAS-rang) när sektorn har ≥ 30 personer och ≥ k av varje
+ * skillnad med huvudregressionens kodning (kön + ålder när lönefilen har den + BAS som indikatorer, HC3 och
+ * t-kvantil; justeradSkillnad i regression.js, ADR-78) när sektorn har ≥ 30 personer och ≥ k av varje
  * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel som del A i
- * gapuppdelning.js, med sektor i stället för BAS).
+ * gapuppdelning.js, med sektor i stället för BAS). Går modellen med BAS inte att skatta i ett huvudområde med minst två
+ * BAS-intervall (kön och BAS går inte att skilja åt) ges inget justerat tal: ett tal utan BAS vore inte justerat för BAS.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -5700,24 +5753,30 @@ const __mirrorSektor = (() => {
 
 
 
+
+const T = skapaTermer();
+
 const MIN_REGRESSION = 30;
 
-function _justerat(rader, k) {
-    const giltiga = rader.filter(r => r.lon > 0 && r.alder > 0 && konOf(r) !== 'Övrig/okänd');
+// Justerad skillnad med huvudregressionens kodning (ADR-78): k-villkoren här, modellen i regression.js.
+function _justerat(rader, k, medAlder) {
+    const giltiga = rader.filter(r => r.lon > 0 && (!medAlder || r.alder > 0) && konOf(r) !== 'Övrig/okänd');
     const nKv = giltiga.filter(r => konOf(r) === 'Kvinna').length;
-    if (giltiga.length < MIN_REGRESSION || nKv < k || giltiga.length - nKv < k) return null;
-    const basLista = [...new Set(giltiga.map(r => r.bas))];
-    const rang = basRangFn(basLista);
-    const alderMedel = giltiga.reduce((s, r) => s + r.alder, 0) / giltiga.length;
-    const basMedel = giltiga.reduce((s, r) => s + rang(r.bas), 0) / giltiga.length;
-    const X = giltiga.map(r => [1, konOf(r) === 'Kvinna' ? 1 : 0, r.alder - alderMedel, rang(r.bas) - basMedel]);
-    const y = giltiga.map(r => Math.log(r.lon));
-    let fit = fitOLS(X, y);
-    if (!fit) fit = fitOLS(X.map(x => x.slice(0, 3)), y);   // en enda BAS i sektorn
-    if (!fit) return null;
-    const se = Math.sqrt(fit.vcovHC3[1][1]);
-    const b = fit.beta[1];
-    return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - 1.96 * se) - 1) * 100, high: (Math.exp(b + 1.96 * se) - 1) * 100 };
+    if (giltiga.length < MIN_REGRESSION || nKv < k || giltiga.length - nKv < k) return { just: null, skal: 'fa' };
+    const just = justeradSkillnad(giltiga, { medAlder });
+    // Räknat utan BAS fast huvudområdet har flera BAS-intervall: talet är inte justerat för BAS och visas inte.
+    if (just && !just.medBas && just.antalBas >= 2) return { just: null, skal: 'ejBas' };
+    return { just, skal: just ? 'ok' : 'fa' };
+}
+
+/**
+ * Rubriken och bisatsen för den justerade skillnaden, för vyn och rapportunderlaget (ADR-78): med ålder bara när
+ * lönefilen har ålder.
+ * @param {{justeratMedAlder?:boolean}[]} tabell - sektorsTabell()
+ */
+function sektorJusteradText(tabell) {
+    const medAlder = (tabell || []).every(r => r.justeratMedAlder !== false);
+    return { medAlder, rubrik: medAlder ? 'Justerad (ålder, BAS)' : 'Justerad (BAS)', justeradFor: `${medAlder ? 'ålder och ' : ''}${T.niva.en}` };
 }
 
 /**
@@ -5734,6 +5793,7 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
         per.get(namn).push(r);
     }
     const harAnsvar = (rader || []).some(r => r.ansvarsgrupp);
+    const medAlder = harAlderIRader(rader);   // lönefilen har ålder (ADR-64): gäller alla huvudområden
     return [...per.keys()].sort(jamforSektor).map(namn => {
         const g = per.get(namn);
         const kv = g.filter(r => konOf(r) === 'Kvinna'), ma = g.filter(r => konOf(r) === 'Man');
@@ -5741,7 +5801,7 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
         const bada = kv.length >= k && ma.length >= k;
         const medKv = !maskerad && bada ? median(kv.map(r => r.lon)) : null;
         const medMa = !maskerad && bada ? median(ma.map(r => r.lon)) : null;
-        const just = maskerad ? null : _justerat(g, k);
+        const just = maskerad ? { just: null, skal: null } : _justerat(g, k, medAlder);
         const andelLedning = grupp => (grupp.length ? grupp.filter(r => r.ansvarsgrupp === 'ledning').length / grupp.length * 100 : null);
         return {
             namn, n, nKv: kv.length, nMa: ma.length,
@@ -5751,7 +5811,8 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
             maskerad, samladMedian: !maskerad && !bada,
             medTot: maskerad ? null : median(g.map(r => r.lon)),
             medKv, medMa, kvot: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
-            justerat: just, justeratSkal: maskerad ? null : (just ? 'ok' : 'fa'),
+            justerat: just.just, justeratSkal: just.skal,   // 'ok' | 'fa' (för få) | 'ejBas' (kön och BAS går inte att skilja åt)
+            justeratMedAlder: medAlder,   // rubriken och texterna säger vad som justeras för
             antalAid: new Set(g.map(r => r.aid)).size,
             punkter: punkter[namn] || 0,
             ledningKv: harAnsvar && !maskerad && kv.length >= k ? andelLedning(kv) : null,
@@ -5783,10 +5844,11 @@ function sektorernasAndel(rader, { k = 10 } = {}) {
     return { gapKr, sektorKr, andel: Math.abs(gapKr) > 1e-9 ? sektorKr / gapKr : null };
 }
 
-    return { sektorsTabell, sektorernasAndel };
+    return { sektorsTabell, sektorernasAndel, sektorJusteradText };
 })();
 const _skSektorsTabell = __mirrorSektor.sektorsTabell;
 const _skSektorernasAndel = __mirrorSektor.sektorernasAndel;
+const _skSektorJusteradText = __mirrorSektor.sektorJusteradText;
 
 // ---- speglar src/lib/ansvar.js ----
 const __mirrorAnsvar = (() => {
@@ -6337,6 +6399,7 @@ const __mirrorRapportunderlag = (() => {
     const statusKonstanter = __mirrorStatus.statusKonstanter;
     const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
     const personOrd = __mirrorNamn.personOrd;
+    const sektorJusteradText = __mirrorSektor.sektorJusteradText;
     const kvDefinitionText = __mirrorAidbas.kvDefinitionText;
     const gapDelar = __mirrorGapuppdelning.gapDelar;
     const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
@@ -6362,6 +6425,7 @@ const __mirrorRapportunderlag = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -6746,19 +6810,23 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         // Sektorsöversikten (ADR-33): samma k-regler som vyn.
         const alla = u.sektorer || [];
         const visas = alla.filter(r => !r.maskerad);
-        const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ålder och ${T.niva.en}.`];
+        // Justerat för ålder bara när lönefilen har ålder (ADR-64, ADR-78).
+        const justText = sektorJusteradText(alla);
+        const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${justText.justeradFor}.`];
         const a = u.andel;
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
             ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
             : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
+        const ejBas = visas.filter(r => r.justeratSkal === 'ejBas').length;
+        if (ejBas) st.push(`I ${_st(ejBas, T.huvudomrade.en, T.huvudomrade.fl)} går kön och ${T.niva.en} inte att skilja åt, så skillnaden kan inte justeras för ${T.niva.en} där.`);
         const skr = visas.find(r => r.skrAndelKv != null);
         if (skr) st.push(`Andel kvinnor i samma ${T.huvudomrade.en} i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
-        return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', 'Justerad (ålder, BAS)'],
+        return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', justText.rubrik],
             rader: visas.map(r => [r.namn, String(r.n), _pct(r.andelKv), r.skrAndelKv != null ? _pct(r.skrAndelKv) : '–',
                 !r.samladMedian && r.kvot != null ? _pct(r.kvot) : '–',
-                !r.samladMedian && r.justerat ? _pct(100 + r.justerat.pct) : '–']) });
+                !r.samladMedian && r.justerat ? _pct(100 + r.justerat.pct) : r.justeratSkal === 'ejBas' ? 'Kan inte justeras för BAS' : '–']) });
     }
     if (typ === 'handlingsplan') {
         const rader = u.rader || [];
@@ -6956,6 +7024,9 @@ const _ruSkalNot = __mirrorRapportunderlag.skalSammanstallningNot;
 
 // ---- speglar src/lib/docx.js ----
 const __mirrorDocx = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const arTal = __mirrorHtmlText.arTal;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -6967,6 +7038,7 @@ const __mirrorDocx = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
@@ -6984,26 +7056,107 @@ function xmlText(s) {
         .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-const _kor = d => `<w:r>${d.fet || d.kursiv ? `<w:rPr>${d.fet ? '<w:b/>' : ''}${d.kursiv ? '<w:i/>' : ''}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlText(d.text)}</w:t></w:r>`;
-const _stycke = (delar, stil) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(_kor).join('')}</w:p>`;
+/** En textkörning; `sz` (halva punkter) bara när texten ska ha en annan storlek än stilens. */
+const _kor = (d, sz) => {
+    const pr = (d.fet ? '<w:b/>' : '') + (d.kursiv ? '<w:i/>' : '') + (sz ? `<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>` : '');
+    return `<w:r>${pr ? `<w:rPr>${pr}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlText(d.text)}</w:t></w:r>`;
+};
+const _stycke = (delar, stil, sz) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(d => _kor(d, sz)).join('')}</w:p>`;
 const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
+
+// Teckenbredder i Calibri 10 pt, fet, i twips, avrundade uppåt i grupper; övriga gemener 108, versaler 128.
+/** @type {[string, number][]} */
+const _TECKENBREDD = [['iljI.,:;!|\' ', 55], ['frt-()', 72], ['sczJ/', 86], ['agkvxyåäeEFLSTZ0123456789', 101], ['mw%&', 163],
+    ['DGHNOQUÖ', 137], ['MW', 181]];
+// Tabellstilens cellmarginal till vänster och höger, och ovanför och under (twips). En tabell som inte ryms i stilens
+// 10 pt skrivs tätare: 9 pt och smalare cellmarginaler till vänster och höger (ADR-75).
+const CELLMARGINAL = 85, CELLMARGINAL_LODRAT = 57;
+const TAT = { skala: 0.9, cellmarginal: 57, sz: 18 };
+/** Ett ords ungefärliga bredd i twips i Calibri 10 pt, fet eller normal (normala bokstäver är omkring 3 % smalare, siffror lika). */
+function _ordbredd(ord, fet = true) {
+    let s = 0;
+    for (const ch of ord) {
+        const g = _TECKENBREDD.find(([tecken]) => tecken.includes(ch));
+        const b = g ? g[1] : ch !== ch.toLocaleLowerCase('sv') ? 128 : 108;
+        s += fet || /[\d\s.,]/.test(ch) ? b : b * 0.97;
+    }
+    return s;
+}
+const _celltext = c => (c.delar || []).map(d => d.text).join('');
+const _summa = v => v.reduce((s, x) => s + x, 0);
+/**
+ * Höjer varje kolumn mot sitt mål, upp till en gemensam nivå som väljs så att tabellen ryms i textytan. Ryms alla mål
+ * får varje kolumn sitt; annars når de smala kolumnerna sitt mål och de bredaste delar lika på det som är kvar.
+ */
+function _tillNiva(bredd, mal) {
+    const vidNiva = niva => bredd.map((x, k) => Math.max(x, Math.min(mal[k], niva)));
+    let lag = 0, hog = Math.max(...mal);
+    if (_summa(vidNiva(hog)) <= TEXTBREDD) return vidNiva(hog);
+    for (let i = 0; i < 40; i++) { const mitt = (lag + hog) / 2; if (_summa(vidNiva(mitt)) > TEXTBREDD) hog = mitt; else lag = mitt; }
+    return vidNiva(lag);
+}
+/**
+ * Kolumnbredderna efter innehållet (F5 i punkt 26), ungefär som en webbläsare fördelar en tabell. Först ryms det
+ * längsta ordet och det hela talet i varje datacell, så att ett namn inte bryts mitt i och ett belopp står på en rad;
+ * sedan rubrikernas längsta ord; sist hela texten. Ryms ett steg inte, delar de bredaste kolumnerna på det som fattas.
+ * Tabellen fyller textytan. `ryms` säger om datacellerna och rubrikernas ord rymdes.
+ * @returns {{ bredder: number[], ryms: boolean }}
+ */
+function _kolumnbredder(b, kolumner, { skala = 1, cellmarginal = CELLMARGINAL } = {}) {
+    const marginal = 2 * cellmarginal + 10;   // cellens marginaler och lite luft (uppskattningen ligger redan 2–6 % över)
+    // Rubrikraden är fet, dataraderna normala.
+    const matt = (rader, fet) => Array.from({ length: kolumner }, (_, k) => {
+        let ord = 0, hel = 0;
+        for (const r of rader) {
+            const text = r[k] ? _celltext(r[k]) : '';
+            for (const o of text.split(/\s+/)) ord = Math.max(ord, _ordbredd(o, fet));
+            if (!fet && arTal(text)) ord = Math.max(ord, _ordbredd(text, false));
+            hel = Math.max(hel, _ordbredd(text, fet));
+        }
+        return { ord: ord * skala + marginal, hel: hel * skala + marginal };
+    });
+    const data = matt(b.rader || [], false), rubrik = matt(b.rubrikrad ? [b.rubrikrad] : [], true);
+    const ordMal = data.map((m, k) => Math.max(m.ord, rubrik[k].ord));
+    let bredd = _tillNiva(Array(kolumner).fill(0), data.map(m => m.ord));
+    bredd = _tillNiva(bredd, ordMal);
+    // Hela texten: det som är kvar fördelas efter vad varje kolumn saknar, och det som är kvar sedan efter bredden.
+    const brist = data.map((m, k) => Math.max(0, Math.max(m.hel, rubrik[k].hel) - bredd[k]));
+    const kvar = TEXTBREDD - _summa(bredd);
+    if (kvar > 0 && _summa(brist)) bredd = bredd.map((x, k) => x + brist[k] * Math.min(1, kvar / _summa(brist)));
+    const rest = TEXTBREDD - _summa(bredd);
+    if (rest > 0) bredd = bredd.map(x => x + rest * x / _summa(bredd));
+    const hela = bredd.map(Math.floor);
+    hela[hela.indexOf(Math.max(...hela))] += TEXTBREDD - _summa(hela);
+    return { bredder: hela, ryms: _summa(ordMal) <= TEXTBREDD };
+}
+
+/** Cellmarginalerna i schemats ordning (top, left, bottom, right). */
+const _cellmarginaler = (lodrat, sidled) => '<w:tblCellMar>'
+    + [['top', lodrat], ['left', sidled], ['bottom', lodrat], ['right', sidled]].map(([s, w]) => `<w:${s} w:w="${w}" w:type="dxa"/>`).join('')
+    + '</w:tblCellMar>';
 
 function _tabell(b) {
     const alla = [...(b.rubrikrad ? [b.rubrikrad] : []), ...(b.rader || [])];
     const kolumner = Math.max(1, ...alla.map(r => r.length));
-    const bredd = Math.floor(TEXTBREDD / kolumner);
+    // Ryms inte cellernas ord och tal och rubrikernas ord i 10 pt, skrivs tabellen tätare.
+    const vanlig = _kolumnbredder(b, kolumner);
+    const tat = !vanlig.ryms;
+    const { bredder } = tat ? _kolumnbredder(b, kolumner, TAT) : vanlig;
+    const sz = tat ? TAT.sz : undefined;
     const rad = (celler, rubrik) => {
         const fyllda = [...celler, ...Array(kolumner - celler.length).fill({ delar: [] })];
-        return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map(c =>
-            `<w:tc><w:tcPr><w:tcW w:w="${bredd}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
-            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d))) + '</w:tc>').join('')}</w:tr>`;
+        return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map((c, k) =>
+            `<w:tc><w:tcPr><w:tcW w:w="${bredder[k]}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
+            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d)), undefined, sz) + '</w:tc>').join('')}</w:tr>`;
     };
     // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver (A9): Word räknar
     // annars om en procentbredd mot cellbredderna, och LibreOffice och Word kan rita tabellen olika.
     const look = b.rubrikrad ? 'w:val="04A0" w:firstRow="1"' : 'w:val="0480" w:firstRow="0"';
-    return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${bredd * kolumner}" w:type="dxa"/>`
+    // Det täta läget skriver alla fyra sidorna, topp och botten med stilens värden: Word nollar en sida som saknas.
+    const mar = tat ? _cellmarginaler(CELLMARGINAL_LODRAT, TAT.cellmarginal) : '';
+    return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${TEXTBREDD}" w:type="dxa"/>${mar}`
         + `<w:tblLook ${look} w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
-        + `<w:tblGrid>${Array(kolumner).fill(`<w:gridCol w:w="${bredd}"/>`).join('')}</w:tblGrid>`
+        + `<w:tblGrid>${bredder.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>`
         + (b.rubrikrad ? rad(b.rubrikrad, true) : '') + (b.rader || []).map(r => rad(r, false)).join('') + '</w:tbl>';
 }
 
@@ -7062,7 +7215,7 @@ function _stilar() {
         + '<w:style w:type="table" w:customStyle="1" w:styleId="Tabell"><w:name w:val="Tabell"/>'
         + '<w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:tblPr><w:tblBorders>'
         + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`).join('')
-        + '</w:tblBorders><w:tblCellMar><w:top w:w="57" w:type="dxa"/><w:left w:w="85" w:type="dxa"/><w:bottom w:w="57" w:type="dxa"/><w:right w:w="85" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>'
+        + '</w:tblBorders>' + _cellmarginaler(CELLMARGINAL_LODRAT, CELLMARGINAL) + '</w:tblPr></w:style>'
         + '</w:styles>';
 }
 

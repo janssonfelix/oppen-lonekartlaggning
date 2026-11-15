@@ -54,8 +54,8 @@ function renderPersonerAttGranska(visaAlla = false) {
     const rader = visade.map(f => `<tr>
         <td>${f.radnr ?? '—'}</td><td>${esc(f.kon)}</td><td class="num">${tal(f.alder)}</td>
         <td>${esc(f.aid)}</td><td>${esc(f.bas)}</td>
-        <td class="num">${tal(Math.round(f.lon))} kr</td><td class="num">${tal(Math.round(f.forvantad))} kr${f.metod === 'alder' ? '' : '<span class="pag-median" title="Förväntad lön är gruppens median">*</span>'}</td>
-        <td class="num">${tal(f.avvikelsePct, 1).replace('-', '−')} %</td><td class="num">${tal(f.kollegor)}</td>${medAnsvar ? `<td class="pag-ansvar"${_pagAnsvarKort(f.ansvarsgrupp) !== ansvarsgruppNamn(f.ansvarsgrupp) ? ` title="${esc(ansvarsgruppNamn(f.ansvarsgrupp))}"` : ''}>${esc(_pagAnsvarKort(f.ansvarsgrupp))}</td>` : ''}</tr>`).join('');
+        <td class="num">${svKr(f.lon)}</td><td class="num">${svKr(f.forvantad)}${f.metod === 'alder' ? '' : '<span class="pag-median" title="Förväntad lön är gruppens median">*</span>'}</td>
+        <td class="num">${tal(f.avvikelsePct, 1).replace('-', '−')}\u00a0%</td><td class="num">${tal(f.kollegor)}</td>${medAnsvar ? `<td class="pag-ansvar"${_pagAnsvarKort(f.ansvarsgrupp) !== ansvarsgruppNamn(f.ansvarsgrupp) ? ` title="${esc(ansvarsgruppNamn(f.ansvarsgrupp))}"` : ''}>${esc(_pagAnsvarKort(f.ansvarsgrupp))}</td>` : ''}</tr>`).join('');
     // Hur den förväntade lönen räknats står i en not under tabellen, inte i en kolumn: nästan alltid ur åldern.
     const medMedian = visade.some(f => f.metod !== 'alder');
     const metodNot = `<p class="pag-not pag-metod">Förväntad lön är räknad ur åldern bland kollegorna i samma AID och BAS.`

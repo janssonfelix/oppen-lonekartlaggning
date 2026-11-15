@@ -197,7 +197,7 @@ describe('Löneöversikten i Utforska', () => {
             expect([...klon.querySelectorAll('tbody tr')].filter(tr => tr.hidden || tr.style.display === 'none' || tr.classList.contains('collapsed')).length, id).toBe(0);
         }
         expect(w.document.querySelectorAll('#matrix-table tr.la-underrad-ansvar[hidden]').length).toBeGreaterThan(0);   // skärmens tabell är orörd
-        expect(las('src/app/60-utskrift.js')).toContain('_exportVisaAllaRader(t.cloneNode(true)).outerHTML');
+        expect(las('src/app/60-utskrift.js')).toContain('_exportUtanSkarmkolumner(_exportVisaAllaRader(t.cloneNode(true)))');   // utskriften: alla rader, utan skärmens egna kolumner
     });
     it('i arbetsboken är också de hopfällda raderna synliga', () => {
         const w = rita();

@@ -210,10 +210,11 @@ function _niceCostLevels(maxCost) {
     const cap = base * Math.ceil(maxCost / base);
     return [Math.round(cap * 0.1), Math.round(cap * 0.3), Math.round(cap)];
 }
+// Kostnaden i kort form, i nyckeltalen, rutan Total och staplarnas etiketter: "386 Mkr", "4,2 Mkr", "950 tkr".
 function _fmtCost(kr) {
-    if (kr >= 1e6) return svTal(kr/1e6, kr >= 1e7 ? 0 : 1) + ' Mkr';
-    if (kr >= 1e3) return Math.round(kr/1e3) + ' tkr';
-    return Math.round(kr) + ' kr';
+    if (kr >= 1e6) return svTal(kr/1e6, kr >= 1e7 ? 0 : 1) + '\u00a0Mkr';
+    if (kr >= 1e3) return svTal(Math.round(kr/1e3), 0) + '\u00a0tkr';
+    return svKr(kr);
 }
 
 // Kolumnerna som prioriteringslistans grundvy gömmer bakom Fler kolumner (data-kol i src/index.html).
@@ -254,8 +255,7 @@ function renderPrioritering() {
     const overCount  = items.filter(i => i.diffPct >  5).length;
     const totalCost  = items.reduce((s, i) => s + i.annualGapTotal, 0);
     const fmt = new Intl.NumberFormat('sv-SE');
-    const fmtMkr = totalCost >= 1e6 ? svTal(totalCost/1e6, 1) + ' Mkr' :
-                   totalCost >= 1e3 ? Math.round(totalCost/1e3) + ' tkr' : Math.round(totalCost) + ' kr';
+    const fmtMkr = _fmtCost(totalCost);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-akut')).textContent  = String(akutCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-under')).textContent = String(underCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-over')).textContent  = String(overCount);
@@ -384,7 +384,7 @@ function renderPrioritering() {
         const sgnKr  = i.diffKr  >= 0 ? '+' : '';
         const gapBar = buildBarCell(i.gapPct, 15);
         const diffBar = buildBarCell(i.diffPct, 25);
-        const costTxt = i.annualGapTotal > 0 ? fmt.format(Math.round(i.annualGapTotal)) + ' kr' : '–';
+        const costTxt = i.annualGapTotal > 0 ? svKr(i.annualGapTotal) : '–';
         const costSort = i.annualGapTotal > 0 ? i.annualGapTotal : 0;
         const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : '–';
         const quickwinBadge = i.isQuickWin ? ' <span title="Snabb vinst" class="hjalpmarke hjalp-markor">' + ikon('blixt', 14) + '</span>' : '';
@@ -665,10 +665,9 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     const namn = (i, n) => `#${n + 1} ${_rfKorta(String(i.yrke), 26)} · BAS ${i.bas}`;
     const y = visade.map(namn), n80 = cumPct.findIndex(p => p >= 80);
     const inom = n => n80 < 0 || n <= n80;
-    const mnkr = v => (v >= 1e6 ? `${svTal(v / 1e6, 2)} mnkr` : _figTalformat(Math.round(v), 'kr'));
     const lager = (serie, farg, opacitet, valj) => ({ marke: 'stapel', riktning: 'liggande', lage: 'overlagrad', serie, farg, opacitet,
         data: visade.map((i, n) => ({ i, n })).filter(({ n }) => valj(n)).map(({ i, n }) => ({ y: y[n], x: i.annualGapTotal, yrke: i.yrke, bas: i.bas, sektor: _aidSektorsnamn(i.aid), n: i.n, kum: cumPct[n],
-            etikett: `${mnkr(i.annualGapTotal)} · ${svTal(cumPct[n], 0)} %`, markering: markeringFor(i.bas, i.yrke) })),
+            etikett: `${_fmtCost(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`, markering: markeringFor(i.bas, i.yrke) })),
         tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${_figTalformat(d.x, 'kr')}/år`], ['Kumulativ andel', _figTalformat(d.kum, 'pct')]] });
     return { beskrivning: 'Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.',
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },

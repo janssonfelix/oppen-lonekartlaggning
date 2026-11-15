@@ -234,7 +234,7 @@ function gruppNamn(g) {
 }
 
 function _gdRenderBody(d) {
-    const kr = v => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const kr = v => svKr(v);
     const pct = (v, dec = 1) => svPct(v, dec);
     const card = (title, inner, note) => `
         <div class="gd-card">

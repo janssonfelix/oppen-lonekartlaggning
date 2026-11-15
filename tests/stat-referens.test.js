@@ -31,6 +31,12 @@
  *     p-värden, ett enda p-värde, tio osorterade, ett fall där monotoniseringen slår till, p-värden nära och lika med
  *     1). Räknade med tests/fixtures/ref-bh-justera.py (python3 -I; statsmodels 0.15.0, scipy 1.18.1, numpy 2.5.4,
  *     Python 3.14.8) i en tillfällig venv utanför repot.
+ *   - HC3 med AID-etikett inom BAS (ADR-77, 2026-11-15): statsmodels OLS på designen med en indikator per grupp,
+ *     cov_HC3 och cov_params(), räknade med tests/fixtures/ref-hc3-inom.py (python3 -I; statsmodels 0.15.0, numpy
+ *     2.5.4, scipy 1.18.1, Python 3.14.8) i en tillfällig venv utanför repot. En person ensam i en grupp (h = 1) får
+ *     vikten 0 i verktyget, vilket ger samma tal som statsmodels när personen tas bort; statsmodels räknas därför
+ *     utan enpersonsgrupperna (med dem kvar ger statsmodels och R NaN eller ett tal som avrundningen avgör). Talen
+ *     står som konstanter i testet.
  *
  * Uppmätt avvikelse i verktyget (toleranserna nedan speglar den, utom för tDistCdf):
  *   - fitOLS: β, vcovClassic, vcovHC3, R², σ² inom relativt 1e-12 av statsmodels.
@@ -44,6 +50,7 @@
  *     rapporteringsgräns på 0,5 procentenheter uppdraget satte; algoritmen är oförändrad.
  *   - Blinder-Oaxaca: komponenterna inom 1e-12.
  *   - bhJustera: q-värdena inom 1e-12 av statsmodels.
+ *   - HC3 och klassisk kovarians med AID-etikett inom BAS: standardfelen inom relativt 3e-15 av statsmodels.
  *   - quantileRegressionAtAllTau på indikatormodellen: könskoefficienten inom 0,001 procentenheter av LP-lösningen
  *     (bara BAS: 0,012 vid τ = 0,1), förlusten inom relativt 4e-5. Vid τ = 0,5 är LP-optimum inte unikt (medianen i
  *     ett intervall med jämnt antal personer är ett spann), så IRLS landar på en annan punkt på samma optimala yta:
@@ -348,6 +355,52 @@ describe('Blinder-Oaxaca på vald modell (ADR-56)', () => {
     });
     it('endast kön: ingen uppdelning (null)', () => {
         expect(kor({ bas: false, alder: false, yrkesgrupp: false, skal: '' })).toBeNull();
+    });
+});
+
+describe('HC3 med AID-etikett inom BAS mot statsmodels: hävstången med gruppdelen (ADR-77)', () => {
+    // Referensen: statsmodels OLS (cov_HC3 ≡ R sandwich::vcovHC(type = "HC3"), och cov_params()) på designen
+    // [kvinna, ålder − medel, en indikator per yrke|BAS], räknad med tests/fixtures/ref-hc3-inom.py (python3 -I,
+    // statsmodels 0.15.0, numpy 2.5.4, 2026-11-15). Huvudregressionen skattar på inomtransformerade kolumner
+    // (Frisch–Waugh–Lovell): koefficienterna är exakta, och HC3 blir statsmodels när hävstången får tillbaka gruppdelen
+    // 1/n_g. Designen har en grupp med en person och en med två. Den ensamma personen har h = 1 och får vikten 0 i
+    // verktyget, vilket ger samma tal som statsmodels när personen tas bort (med personen kvar ger statsmodels och R
+    // NaN eller ett tal som avrundningen avgör), så statsmodels räknas utan enpersonsgruppen: samma df = n − k och RSS.
+    // n, k och hHoga gäller hela designen, som verktyget räknar den.
+    const REF = {
+        n: 100, k: 16, grupper: 14, hHoga: 1,
+        betaKon: -0.03642355832691335, betaAlder: 0.005920035152343838,
+        seKonHC3: 0.030545917290529672, seAlderHC3: 0.0011057694462458193, seKonKlassisk: 0.026302343374844706,
+    };
+    // Samma yrkesregel som i ref-hc3-inom.py.
+    const yrke = i => (i === 0 ? '300 Yrke tre' : i === 4 || i === 5 ? '400 Yrke fyra' : i % 2 === 0 ? '100 Yrke ett' : '200 Yrke två');
+    const kor = () => {
+        const w = createAppWindow();
+        w.__state.data = fx.rows.map((r, i) => ({ ...r, yrke: yrke(i) }));
+        w.__state.forklaringsmodell = { bas: true, alder: true, yrkesgrupp: true, skal: '' };
+        return w.eval('runOLSRegression()');
+    };
+    it('designen: rad 4 och 5 delar BAS och kön, så gruppen har två personer', () => {
+        expect(fx.rows[4].bas).toBe(fx.rows[5].bas);
+        expect(new Set(fx.rows.map((r, i) => `${yrke(i)}|${r.bas}`)).size).toBe(REF.grupper);
+    });
+    it('könskoefficienten, n och k (en nivå per grupp)', () => {
+        const ut = kor();
+        expect(ut.modelName).toBe('full');
+        expect(ut.n).toBe(REF.n);
+        expect(ut.k).toBe(REF.k);
+        expect(ut.konPct).toBeCloseTo(pct(REF.betaKon), 10);
+    });
+    it('HC3-standardfelet för kön och p-värdet för ålder som statsmodels (relativt 1e-9)', () => {
+        const ut = kor();
+        relNara(ut.seKonR, REF.seKonHC3, 1e-9);
+        relNara(ut.ageP, pValue2Sided(REF.betaAlder / REF.seAlderHC3, REF.n, REF.k), 1e-9);
+    });
+    it('den klassiska kovariansen som statsmodels (relativt 1e-9)', () => {
+        relNara(kor().seKonC, REF.seKonKlassisk, 1e-9);
+    });
+    it('hHoga räknas på den fulla hävstången: den ensamma personen i en grupp har h = 1', () => {
+        expect(kor().hHoga).toBe(REF.hHoga);
     });
 });
 

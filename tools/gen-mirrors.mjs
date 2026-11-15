@@ -110,6 +110,8 @@ export const MODULES = [
             modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp',
             // Ålder valfri (ADR-64)
             harAlderIRader: '_rgHarAlderIRader',
+            // Översikten per huvudområde med huvudregressionens kodning (ADR-78; sektor.js)
+            justeradSkillnad: '_rgJusteradSkillnad',
             // Stegens nycklar och det som visas för dem (ADR-74)
             stegNamn: '_rgStegNamn', stegEtikett: '_rgStegEtikett'
         }
@@ -151,7 +153,7 @@ export const MODULES = [
     },
     {
         file: 'htmltext.js', ns: '__mirrorHtmlText',
-        expose: { utanTaggar: '_utanTaggar', htmlTillText: '_htmlTillText' }
+        expose: { utanTaggar: '_utanTaggar', htmlTillText: '_htmlTillText', arTal: '_cellArTal' }
     },
     {
         file: 'namn.js', ns: '__mirrorNamn',
@@ -209,7 +211,7 @@ export const MODULES = [
     },
     {
         file: 'sektor.js', ns: '__mirrorSektor',
-        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel' }
+        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel', sektorJusteradText: '_skSektorJusteradText' }
     },
     {
         file: 'ansvar.js', ns: '__mirrorAnsvar',

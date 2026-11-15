@@ -228,12 +228,12 @@ function renderLifecycleAnalysis() {
                             <tr${r.bas === result.fixBas ? ' class="bg-ok-yta"' : ''}>
                                 <td><strong>${esc(r.bas)}</strong>${r.bas === result.fixBas ? ' <small class="f-dampad">(visad)</small>' : ''}</td>
                                 <td class="t-hoger">${r.n}</td>
-                                <td class="t-hoger">${Math.round(r.kv25).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger">${Math.round(r.ma25).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet">${Math.round(r.gap25Kr).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger">${Math.round(r.kv65).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger">${Math.round(r.ma65).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
+                                <td class="t-hoger">${svKr(r.kv25)}</td>
+                                <td class="t-hoger">${svKr(r.ma25)}</td>
+                                <td class="t-hoger halvfet">${svKr(r.gap25Kr)}</td>
+                                <td class="t-hoger">${svKr(r.kv65)}</td>
+                                <td class="t-hoger">${svKr(r.ma65)}</td>
+                                <td class="t-hoger halvfet">${svKr(r.gap65Kr)}</td>
                                 <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
                             </tr>`).join('')}
                     </tbody>
@@ -352,7 +352,7 @@ function _lifecycleKurvaUtelamnad(result, basRows) {
  * intervallets lönenivå.
  */
 function _evidenceForLifecycleBas(row, result, utanKurva = false) {
-    const fmtKr = v => v == null || !isFinite(v) ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const fmtKr = v => svKr(v, '—');
     const fmtPct = v => v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + svPct(v, 1);
     return {
         title: `Beräkningen — BAS ${row.bas} (ålder och karriär)`,

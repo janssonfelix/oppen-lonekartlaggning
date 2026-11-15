@@ -8,7 +8,7 @@
 // Bladlistan räknas som exporten: i exportläget (ADR-51), så att beskedet och arbetsboken får samma blad.
 function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
 /** Bladet med översikten per AID-huvudområde (ADR-33); namnet kommer ur termerna (ADR-74). */
-const EXCEL_BLAD_HUVUDOMRADEN = termStor(T.huvudomrade.fl).slice(0, 31);
+const EXCEL_BLAD_HUVUDOMRADEN = _excelBladnamn(termStor(T.huvudomrade.fl), 'Områden');
 
 function _excelAlltBladExport() {
     // Bladet Underlagets kvalitet finns när bedomningUnderlag() ger något, alltså när det finns rader; listan räknar
@@ -454,7 +454,7 @@ function _exportJPAProtocolExport() {
     ];
     yrkenSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
     _applyColumnNumFormats(yrkenSheet, SV_NUM_FORMATS);
-    XLSX.utils.book_append_sheet(wb, yrkenSheet, `2. Lika arbete (${T.enhet.fl})`.slice(0, 31));
+    XLSX.utils.book_append_sheet(wb, yrkenSheet, _excelBladnamn(`2. Lika arbete (${T.system})`, '2. Lika arbete'));
 
     // === Sheet 3: BAS-intervall med säkerställd oförklarad skillnad på minst 3 % (likvärdigt arbete) ===
     const basHeaderRow = [

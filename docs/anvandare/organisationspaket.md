@@ -22,7 +22,7 @@ filer) finns ingen referens att jämföra mot.
 | Rapportens recept (valfritt) | Egna tabeller byggda i Tabeller och egna vyer och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
 | Importprofiler (valfritt) | Sparade kolumnmappningar för lönesystemets uttag: vilken rubrik som är BAS-intervall, AID-etikett, lön, ålder och kön (och poäng och ansvarskod). Dessutom vilka rubriker som måste finnas. Bara rubrikernas namn, inga värden | Uttaget känns igen utan kolumnmappning hos alla handläggare; paketets profiler prövas före handläggarens egna och verktygets inbyggda |
 | Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per AID-etikett) | Prioritering, Löneläget och statusrutan i Att göra |
-| Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per AID-etikett och BAS-intervall | Fliken Löneläget, prioritering mot statistiken och reserven i Likvärdigt arbete |
+| Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per AID-etikett och BAS-intervall | Fliken Löneläget, prioritering mot statistiken och reserven i Likvärdigt arbete (med BAS-intervall) |
 
 Ställningstagandet och jämförelsestatistiken är var för sig valfria, men paketet måste
 innehålla minst det ena. Analysens trösklar (t.ex. 60 % för kvinnodominans och minsta skillnad för

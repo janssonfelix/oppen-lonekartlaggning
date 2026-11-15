@@ -231,13 +231,16 @@ export function invert(A) {
  *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
  * hHoga = antalet observationer med hävstång h_i > 0,99 (B4). De har (nästan) noll residual och bidrar inte till
  * HC3-köttet; antalet visas i regressionskortets tekniska specifikation (en ensam person i en indikator ger h = 1).
+ * hTillagg (valfri) läggs till hävstången per rad innan HC3 och hHoga räknas: när X är inomtransformerad ger
+ * 1/n_g per rad den fulla designens hävstång (ADR-77, inomYrkesgrupp i regression.js).
  * Detta är "single source of truth" — app.js mirrar denna implementation.
  *
  * @param {number[][]} X - n×k designmatris.
  * @param {number[]} y    - n-vektor.
+ * @param {number[]|null} [hTillagg] - n-vektor som läggs till hävstången h_i (gruppdelen vid inomtransformation).
  * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][], hHoga:number}}
  */
-export function fitOLS(X, y) {
+export function fitOLS(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 2) return null;
     const Xt = transpose(X);
@@ -260,9 +263,9 @@ export function fitOLS(X, y) {
 
     const vcovClassic = XtXinv.map(row => row.map(v => v * sigma2));
 
-    // HC3: leverages h_i = x_i' (X'X)^-1 x_i
-    const h = X.map(xi => {
-        let s = 0;
+    // HC3: leverages h_i = x_i' (X'X)^-1 x_i (+ hTillagg_i)
+    const h = X.map((xi, i) => {
+        let s = hTillagg ? hTillagg[i] : 0;
         for (let a = 0; a < k; a++) {
             let sa = 0;
             for (let b = 0; b < k; b++) sa += XtXinv[a][b] * xi[b];

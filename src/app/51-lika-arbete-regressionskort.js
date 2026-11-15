@@ -230,33 +230,35 @@ function runOLSRegression() {
 /**
  * Huvudregressionen med yrkesgrupp inom BAS (ADR-56): fasta effekter för AID×BAS med inomtransformation (ADR-46),
  * som steget + Yrkesgrupp, men här behövs också standardfel. Skattningen görs på de transformerade variablerna
- * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Kovarianserna
- * (klassisk och HC3) skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader, och k räknas med dem, så att
- * t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
+ * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Standardfelen är
+ * den fulla designens (ADR-77): HC3 räknas med hävstången h_i + 1/n_g, den fulla designens, och skalas inte; den
+ * klassiska kovariansen skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader. k räknas med gruppnivåerna,
+ * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
  * tom konstant), så att resten av runOLSRegression läser kön på index 1 och ålder på index 2.
- * hHoga räknas på den inomtransformerade designen, den som HC3 här räknas på.
+ * hHoga räknas på samma fulla hävstång: en ensam person i en grupp har h = 1.
  * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number}}
  */
 function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
     const inom = _rgInomYrkesgrupp(raw, y, kol);
     if (!inom.ok) return null;
-    const fit = _fitOLS(inom.X, inom.yW);
+    const fit = _fitOLS(inom.X, inom.yW, inom.hGrupp);
     if (!fit) return null;
     const n = raw.length, p = kol[0].length, k = inom.k;
     if (n - k <= 0) return null;
     const skala = (n - p) / (n - k);
-    const vidga = V => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * skala)]); return ut; };
+    const vidga = (V, s) => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * s)]); return ut; };
     const R2 = inom.R2Total(fit.rss);
-    return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3), vcovClassic: vidga(fit.vcovClassic), R2,
+    return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3, 1), vcovClassic: vidga(fit.vcovClassic, skala), R2,
         adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
+// Hårda mellanslag (U+00A0): «p < 0,001» bryts inte mellan tecknet och talet i en smal kolumn.
 function _formatPValue(p) {
-    if (p < 0.001) return 'p < 0,001';
-    if (p < 0.01)  return 'p < 0,01';
-    if (p < 0.05)  return 'p < 0,05';
-    return 'p = ' + svTal(p, 3);
+    if (p < 0.001) return 'p\u00a0<\u00a00,001';
+    if (p < 0.01)  return 'p\u00a0<\u00a00,01';
+    if (p < 0.05)  return 'p\u00a0<\u00a00,05';
+    return 'p\u00a0=\u00a0' + svTal(p, 3);
 }
 
 // Plain-text tolkning av p-värdet, används som tooltip
@@ -449,7 +451,7 @@ const _REG_TRAPPSTEG = { [_RG_STEG_BAS]: termStor(T.niva.en), '+ Ålder': 'Ålde
 function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en}`) {
     const forst = seqOk[0], sist = seqOk[seqOk.length - 1];
     const yrke = yrkesSteg && yrkesSteg.status === 'ok' && typeof yrkesSteg.gapPct === 'number' ? yrkesSteg : null;
-    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
+    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const pp = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} procentenheter`;
     const kategorier = ['Ojusterad skillnad', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarad skillnad', ...(yrke ? [_REG_TRAPPSTEG[_RG_STEG_YRKE]] : [])];
     // Varje förklaringssteg: från gapet före steget till gapet efter. Seriens blå när gapet krymper mot noll, orange när
@@ -581,7 +583,7 @@ function _regKvantilBootstrap(raw, modell, results, arKv) {
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.
 function _regKvantilFigur(resultat) {
     const namn = { 0.1: 'P10 (lägst betalda)', 0.5: 'Median', 0.9: 'P90 (högst betalda)' };
-    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
+    const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const data = resultat.map(r => ({ y: namn[r.tau] || `P${Math.round(r.tau * 100)}`, x: +r.konPct.toFixed(2),
         ...(r.ki ? { fel: { lag: +r.ki.lag.toFixed(2), hog: +r.ki.hog.toFixed(2) } } : {}) }));
     const kanter = data.flatMap(d => d.fel ? [d.x, d.fel.lag, d.fel.hog] : [d.x]);
@@ -838,7 +840,7 @@ function renderRegressionCard() {
         : '';
 
     // ---- Pedagogik: kronor, konkret exempel, stående reservation, budget ----
-    const krFmt = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const krFmt = v => svKr(v);
     // Kronexemplet utgår från männens medianlön — ett könsuppdelat mått som följer tröskeln (ADR-12),
     // även när regressionen själv får köras (fast golv, ADR-38).
     const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);
