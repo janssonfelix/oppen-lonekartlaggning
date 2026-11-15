@@ -16100,7 +16100,7 @@ function _attachChartExport(graphDiv) {
     wrap.className = 'chart-export';
     wrap.innerHTML =
         `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${menyId}" `
-        + `aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon('laddaNed', 14)} Exportera</button>`
+        + `aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon('laddaNed', 14)} Exportera diagrammet</button>`
         + `<div class="chart-export-meny" id="${menyId}" hidden>`
         + '<button type="button" data-chart-export="png-presentation">PNG, presentation (1920 × 1080)</button>'
         + '<button type="button" data-chart-export="png-dokument">PNG, dokument (1600 × 900)</button>'
@@ -18450,7 +18450,7 @@ function renderActionChecklist({ reg } = {}) {
                             <li class="topp ram-t-1-kant rad gap-12 pad-10-14${done.has(it.id) ? ' bg-ok-yta' : ''}">
                                 <input type="checkbox" class="act-cb pekare marg-t-3" data-id="${esc(it.id)}" ${done.has(it.id) ? 'checked' : ''} aria-label="Markera som hanterad: ${esc(it.titel)}">
                                 <div class="flex-1">
-                                    <div class="rad-bryt baslinje gap-8">
+                                    <div class="ag-huvud">
                                         <span class="ag-prio ${prioKlass(it.prioritet)}">${prioIcon(it.prioritet)} ${esc(it.prioritet.charAt(0).toUpperCase() + it.prioritet.slice(1))}</span>
                                         <strong class="fs-md${done.has(it.id) ? ' farg-dampad genomstruken' : ''}">${esc(it.titel)}</strong>
                                     </div>
@@ -24263,7 +24263,7 @@ function renderLikvardighet() {
     const exportHtml = (jämförOK && result.pairs.length) ? `
         <div class="tabell-export-rad">
             <div class="chart-export tabell-export">
-                <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera kandidatparens tabell">Exportera</button>
+                <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera kandidatparens tabell">Exportera tabellen</button>
                 <div class="chart-export-meny" id="lv-export-meny" hidden>
                     <button type="button" id="btn-export-likvardighet-csv">CSV (öppnas direkt i Excel)</button>
                     <button type="button" id="btn-export-likvardighet">Excel (.xlsx) med metodblad</button>
@@ -26157,6 +26157,12 @@ function _strukturKvartilFigur(q, totAndel, omfang) {
         lager: [serie('Kvinnor', PALETTE.kon.kvinna, x => x.andelKv, x => x.nKv), serie('Män', PALETTE.kon.man, x => 100 * x.nMa / x.n, x => x.nMa)] };
 }
 
+/** Verktygstipset när modellen med BAS inte går att skatta i ett huvudområde (ADR-78): båda orsakerna. */
+function _sektorEjBasTitel() {
+    return `Modellen med ${T.niva.en} går inte att skatta i ${T.huvudomrade.bf}: kön och ${T.niva.en} går inte att skilja åt, `
+        + `eller raderna är för få för så många ${T.niva.fl}. Ett tal utan ${T.niva.en} vore inte justerat för ${T.niva.en}.`;
+}
+
 function renderSektorer(d) {
     const host = document.getElementById('struktur-sektorer');
     if (!host) return;
@@ -26180,7 +26186,7 @@ function renderSektorer(d) {
         const just = r.justerat
             ? `${pc(100 + r.justerat.pct)} <small class="muted">(${pc(100 + r.justerat.low)}–${pc(100 + r.justerat.high)})</small>`
             : r.justeratSkal === 'fa' ? '<span class="muted">För få</span>'
-            : r.justeratSkal === 'ejBas' ? `<span class="muted" title="Kön och ${T.niva.en} går inte att skilja åt i ${T.huvudomrade.bf}, så skillnaden kan inte justeras för ${T.niva.en}. Ett tal utan ${T.niva.en} vore inte justerat för ${T.niva.en}.">Kan inte justeras för BAS</span>`
+            : r.justeratSkal === 'ejBas' ? `<span class="muted" title="${esc(_sektorEjBasTitel())}">Kan inte justeras för BAS</span>`
             : '–';
         const ledning = harLedning ? `<td class="num">${pc(r.ledningKv)} / ${pc(r.ledningMa)}</td>` : '';
         // Namnet står som text (följer med i exporten); pilknappen öppnar sektorn i Tabeller och egna vyer.
@@ -26208,16 +26214,17 @@ function renderSektorer(d) {
     const visa = tabell.filter(r => r.kvot != null);
     const el = document.getElementById('chart-sektorer');
     if (!el) return;
-    if (visa.length) ritaFigur(el, _sektorFigur(visa, { medAlder: justText.medAlder })); else rensaFigur(el);
+    if (visa.length) ritaFigur(el, _sektorFigur(visa, justText)); else rensaFigur(el);
 }
 
 // Sektordiagrammets figur (diagramkärnan, ADR-39): rå och justerad kvot som punkter mot linjen 100 % — inte staplar
 // på en avkortad axel, där stapelns längd säger något annat än värdet.
 // `visa` är de sektorer vars kvot redovisas i tabellen; inga andra når figuren, och axeln räknas bara ur dem.
 // Filtren: sektor (lista) och antal personer i sektorn, samma namn och antal som tabellens kolumner Sektor och Antal.
-// medAlder gäller hela tabellen (lönefilen har ålder); rubriken och bisatsen kommer ur sektorJusteradText (sektor.js).
-function _sektorFigur(visa, { medAlder = true } = {}) {
-    const { rubrik, justeradFor } = _skSektorJusteradText([{ justeratMedAlder: medAlder }]);
+// Rubriken och bisatsen är tabellens: renderSektorer skickar sektorJusteradText (sektor.js) för hela tabellen, och utan
+// den räknas samma regel ur de visade raderna.
+function _sektorFigur(visa, justText = _skSektorJusteradText(visa)) {
+    const { medAlder, rubrik, justeradFor } = justText;
     const falt = r => ({ sektor: r.namn, n: r.n });
     const just = r => (r.justerat ? +(100 + r.justerat.pct).toFixed(1) : null);
     const varden = visa.flatMap(r => [r.kvot, just(r)]).filter(v => v != null);

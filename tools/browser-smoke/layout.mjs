@@ -207,6 +207,42 @@ export async function utseende() {
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
 
+    console.log('\n── Sökfältet ligger inte över rubriken vid 1 280 punkter ──');
+    {
+        // F7 i punkt 26: med den utfällda sidomenyn låg sökfältet över slutet av rubriken och över «Vad lagras?».
+        await page.setViewportSize({ width: 1280, height: 900 });
+        const over = [];
+        let antal = 0;
+        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
+            await page.click(`.nav-item[data-tab="${flik}"]`);
+            const m = await page.evaluate(() => {
+                const ruta = el => { const r = el.getBoundingClientRect(); return r; };
+                const h1 = document.getElementById('page-title'), rng = document.createRange(); rng.selectNodeContents(h1);
+                const sok = ruta(document.getElementById('sok-ruta'));
+                const kolliderar = r => r.width > 0 && sok.width > 0 && r.left < sok.right - 1 && r.right > sok.left + 1 && r.top < sok.bottom - 1 && r.bottom > sok.top + 1;
+                return { titel: h1.textContent.trim(), rubrik: kolliderar(rng.getBoundingClientRect()), vadLagras: kolliderar(ruta(document.getElementById('btn-data-residency'))),
+                    sidomeny: Math.round(document.querySelector('.sidebar').getBoundingClientRect().width) };
+            });
+            antal++;
+            if (m.rubrik || m.vadLagras) over.push(`${m.titel}${m.rubrik ? ' (rubriken)' : ''}${m.vadLagras ? ' (Vad lagras?)' : ''}`);
+            if (flik === 'dashboard') ok(m.sidomeny > 200, `1280 punkter: sidomenyn är utfälld (${m.sidomeny} punkter)`);
+        }
+        ok(!over.length, `1280 punkter: sökfältet ligger inte över rubriken eller «Vad lagras?» på någon av ${antal} flikar${over.length ? ' — ' + over.join(', ') : ''}`);
+        await page.setViewportSize({ width: 1400, height: 1000 });
+    }
+
+    console.log('\n── Att göra: märket står på en egen rad ──');
+    {
+        // S7 i punkt 26: märket stod ibland på rubrikens rad och ibland ovanför, efter rubrikens längd.
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await page.click('.nav-item[data-tab="dashboard"]');
+        await page.waitForTimeout(200);
+        const m = await page.evaluate(() => [...document.querySelectorAll('#action-checklist-container .ag-prio')].filter(p => p.getBoundingClientRect().height > 0)
+            .map(p => { const t = p.parentElement.querySelector('strong'); return p.getBoundingClientRect().bottom <= t.getBoundingClientRect().top + 1; }));
+        ok(m.length > 0 && m.every(Boolean), `märket står ovanför rubriken i alla ${m.length} synliga punkter i Att göra`);
+        await page.setViewportSize({ width: 1400, height: 1000 });
+    }
+
     console.log('\n── Nyckeltalens förklaring klipps inte ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });

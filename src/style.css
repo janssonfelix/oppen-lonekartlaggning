@@ -2359,8 +2359,9 @@ summary:focus-visible {
 .export-lista { display: grid; gap: 8px; }
 .export-lista .export-hub-row .btn { min-width: 150px; justify-content: center; }
 .export-rad-primar { border-color: var(--primary, #1d4ed8); background: var(--yta); }
-/* PDF-raden: organisationens namn står intill knappen (etikett, fält, knapp i en rad), med förklaringen i texten. */
-.export-hub-row > .export-org { flex: 0 1 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 360px; }
+/* PDF-raden: organisationens namn står under beskrivningen och förklaringen (S9 i punkt 26), så att texten har radens
+   hela bredd som i Word-raden; knappen står kvar till höger. */
+.export-hub-row .export-org { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 360px; margin-top: 8px; }
 .export-org label { white-space: nowrap; }
 .export-org input { width: 230px; max-width: 100%; }
 .export-org .upload-namn-fel { flex-basis: 100%; margin: 0; }
@@ -3004,7 +3005,7 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 .table-responsive, #struktur-sektorer { overflow-x: auto; }
 .export-lista { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 640px) {
-    .export-hub-row > .export-org { max-width: none; }
+    .export-hub-row .export-org { max-width: none; }
     /* Rader och rutnät som är satta direkt på elementet: de bryts respektive staplas på telefonbredd. */
     .view-panel [style*="flex"], .controls-row { flex-wrap: wrap !important; }
     .view-panel [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
@@ -3190,6 +3191,23 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .header-title h1 { white-space: nowrap; }
 .header-knappar { flex: 0 0 auto; }
 .header-knappar .sok-ruta { flex: 0 1 150px; min-width: 130px; }
+/* Med den utfällda sidomenyn (över 1 100 punkter) krymper rubriken och raden om lokal bearbetning inte; sökfältet
+   krymper i stället, så att det aldrig ligger över rubriken eller «Vad lagras?» (F7 i punkt 26). Knapparna behåller
+   sin bredd och sin rad. Under 1 100 punkter är sidomenyn en ikonlist och sidhuvudet som förut. */
+@media (min-width: 1101px) {
+    .top-header .header-title { flex: 1 0 auto; }
+    .header-knappar { flex: 0 1 auto; min-width: 0; }
+    .header-knappar > .btn { flex-shrink: 0; white-space: nowrap; }
+    .header-knappar .sok-ruta { min-width: 80px; }
+}
+/* Upp till 1 365 punkter är platsen trång med den utfällda sidomenyn: som under 1 100 punkter lämnar orden «bearbetas
+   lokalt» plats (skärmläsare får dem ändå), och avstånden i sidhuvudet är tätare, så att sökfältets platshållare ryms
+   vid 1 280 punkter också på fliken med den längsta rubriken. */
+@media (min-width: 1101px) and (max-width: 1365px) {
+    .top-header.gap-24.gap-24.gap-24 { column-gap: 10px; }   /* över hjälpklassens tre klasser */
+    .header-knappar { gap: 5px; }
+    .gdpr-banner-lokalt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+}
 @media (max-width: 900px) { .top-header { flex-wrap: wrap; } .header-knappar { flex: 1 1 100%; } }
 /* Sökfältet får aldrig bli bredare än sin plats i sidhuvudet (det gick in över knappen bredvid). */
 .header-knappar .sok-ruta input { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
@@ -3228,6 +3246,8 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .ag-grupp > summary { cursor: pointer; padding: 10px 14px; background: var(--yta); font-weight: 600; border-radius: 6px; list-style: none; }
 .ag-grupp > summary::-webkit-details-marker { display: none; }
 .ag-prio { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-xs); font-weight: 700; white-space: nowrap; }
+/* Märket står alltid på en egen rad ovanför rubriken, oavsett rubrikens längd (S7 i punkt 26). */
+.ag-huvud { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 
 /* ---- Pilen framför en hopfällbar rubrik ----
    En vinkel ritad med kanter, som avsnittens pil (details.avsnitt): pekar åt höger när raden är hopfälld och nedåt

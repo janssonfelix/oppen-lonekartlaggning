@@ -436,7 +436,8 @@ punkten som mätt; att behålla skalningen ovanpå den fulla hävstången. *Gäl
 **ADR-78 — Översikten per huvudområde räknar med huvudregressionens kodning.** Den justerade skillnaden per huvudområde
 räknas som huvudregressionens standardmodell: kön, ålder när lönefilen har ålder och BAS-intervall som indikatorer,
 HC3 och t-kvantil. Går modellen med BAS inte att skatta i ett huvudområde med minst två BAS-intervall (kön och BAS går
-inte att skilja åt) står *Kan inte justeras för BAS* i stället för ett tal. Med BAS som rang lades en del av BAS-skillnaden på kön där lönestegen
+inte att skilja åt, eller raderna är för få för så många BAS-intervall) står *Kan inte justeras för BAS* i stället för
+ett tal; har huvudområdet färre än 30 rader eller färre än k av ett kön står *För få*. Med BAS som rang lades en del av BAS-skillnaden på kön där lönestegen
 mellan intervallen är olika stora (upp till 2,1 procentenheter i det lilla demot), och utan ålder i lönefilen gav
 översikten inget tal alls. Användarens val av förklaringsvariabler i Lika arbete påverkar inte översikten.
 *Avvisat:* att behålla BAS som rang och kravet på ålder; att också följa förklaringsmodellen, som skulle ändra

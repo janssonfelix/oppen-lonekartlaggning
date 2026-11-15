@@ -328,7 +328,7 @@ function renderActionChecklist({ reg } = {}) {
                             <li class="topp ram-t-1-kant rad gap-12 pad-10-14${done.has(it.id) ? ' bg-ok-yta' : ''}">
                                 <input type="checkbox" class="act-cb pekare marg-t-3" data-id="${esc(it.id)}" ${done.has(it.id) ? 'checked' : ''} aria-label="Markera som hanterad: ${esc(it.titel)}">
                                 <div class="flex-1">
-                                    <div class="rad-bryt baslinje gap-8">
+                                    <div class="ag-huvud">
                                         <span class="ag-prio ${prioKlass(it.prioritet)}">${prioIcon(it.prioritet)} ${esc(it.prioritet.charAt(0).toUpperCase() + it.prioritet.slice(1))}</span>
                                         <strong class="fs-md${done.has(it.id) ? ' farg-dampad genomstruken' : ''}">${esc(it.titel)}</strong>
                                     </div>
