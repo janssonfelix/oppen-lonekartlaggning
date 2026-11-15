@@ -2445,6 +2445,15 @@ summary:focus-visible {
         border-bottom: 0.5pt solid var(--border-stark);
         vertical-align: top;
     }
+    /* Tabellen ryms i sidans textbredd: långa ord avstavas, skärmens minsta cellbredder och versala rubriker gäller inte,
+       och statusmärkena får bryta rad. Annars hamnar de sista kolumnerna, också de att fylla i, utanför sidan. */
+    #print-report table:not(.meta):not(.kpi) th,
+    #print-report table:not(.meta):not(.kpi) td { hyphens: auto; overflow-wrap: break-word; min-width: 0; }
+    #print-report table:not(.meta):not(.kpi) th { text-transform: none; letter-spacing: normal; }
+    #print-report table:not(.meta):not(.kpi) .la-status,
+    #print-report table:not(.meta):not(.kpi) .la-stabilitet { white-space: normal; }
+    /* Skärmens sorteringspilar följer inte med på papper. */
+    #print-report th.sortable::before, #print-report th.sortable::after { content: none; }
     #print-report tr.group-header td {
         background: var(--border) !important;
         font-weight: 700;

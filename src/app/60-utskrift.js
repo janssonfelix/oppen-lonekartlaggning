@@ -64,7 +64,15 @@ async function _buildPrintReportExport() {
                 const elD = document.getElementById(String(id));
                 if (diagramRitat(elD)) { try { imgs[nyckel] = await diagramTillBild(elD, { bredd: 1400, hojd, utanRubrik: true }); } catch (e) { rapporteraFel(`utskrift: ${id}`, e); } }
             }
-            const cloneTable = id => { const t = exportElement(id); return t ? _exportVisaAllaRader(t.cloneNode(true)).outerHTML : ''; };   // genom exportgrinden; hopfällda rader följer med
+            // Genom exportgrinden; hopfällda rader följer med. Skärmens egna kolumner (Detalj, Beräkning), knappar och
+            // infoikoner gör inget på papper och tar bredd från sidan.
+            const cloneTable = id => {
+                const t = exportElement(id);
+                if (!t) return '';
+                const klon = _exportUtanSkarmkolumner(_exportVisaAllaRader(t.cloneNode(true)));
+                klon.querySelectorAll('button, .info-tip').forEach(b => b.remove());
+                return klon.outerHTML;
+            };
         const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en}</h2><p>${termStor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
         const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
             const bildSektion = (rubrik, src, alt) => (src ? `<section class="page-break"><h2>${rubrik}</h2><img src="${src}" alt="${alt}"></section>` : '');

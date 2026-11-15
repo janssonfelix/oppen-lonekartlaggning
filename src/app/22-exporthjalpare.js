@@ -130,12 +130,7 @@ function __cloneAndCleanTableForExportExport(tableId) {
     _exportText(clone);
     _exportVisaAllaRader(clone);
 
-    // Identifiera kolumnindex att skippa
-    const skipCols = [];
     const ths = /** @type {HTMLElement} */ (clone).querySelectorAll('thead th');
-    ths.forEach((th, i) => {
-        if (th.hasAttribute('data-export-skip')) skipCols.push(i);
-    });
 
     // Rensa header-celler
     ths.forEach(th => {
@@ -177,26 +172,35 @@ function __cloneAndCleanTableForExportExport(tableId) {
         tr.querySelectorAll('td, th').forEach(td => _exportMarkCell(td));
     });
 
-    // Skippa kolumner via DOM-manipulation. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan
-    // täcker flera, så en rad med en sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median").
-    if (skipCols.length) {
-        ['thead tr', 'tbody tr', 'tfoot tr'].forEach(sel => {
-            /** @type {HTMLElement} */ (clone).querySelectorAll(sel).forEach(tr => {
-                let kol = 0;
-                [...tr.children].forEach(cell => {
-                    const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '', 10) || 1);
-                    const start = kol, slut = kol + span - 1;
-                    kol += span;
-                    const traffar = skipCols.filter(i => i >= start && i <= slut).length;
-                    if (!traffar) return;
-                    if (traffar >= span) cell.remove();
-                    else cell.setAttribute('colspan', String(span - traffar));
-                });
+    return _exportUtanSkarmkolumner(clone);
+}
+
+/**
+ * Kolumnerna som bara hör till skärmen (rubrik med `data-export-skip`: Detalj, Beräkning) tas bort ur en kopia av
+ * tabellen. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan täcker flera, så en rad med en
+ * sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median"). Görs på en kopia, aldrig på skärmens tabell.
+ */
+function _exportUtanSkarmkolumner(klon) {
+    const skipCols = [];
+    klon.querySelectorAll('thead th').forEach((th, i) => {
+        if (th.hasAttribute('data-export-skip')) skipCols.push(i);
+    });
+    if (!skipCols.length) return klon;
+    ['thead tr', 'tbody tr', 'tfoot tr'].forEach(sel => {
+        klon.querySelectorAll(sel).forEach(tr => {
+            let kol = 0;
+            [...tr.children].forEach(cell => {
+                const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '', 10) || 1);
+                const start = kol, slut = kol + span - 1;
+                kol += span;
+                const traffar = skipCols.filter(i => i >= start && i <= slut).length;
+                if (!traffar) return;
+                if (traffar >= span) cell.remove();
+                else cell.setAttribute('colspan', String(span - traffar));
             });
         });
-    }
-
-    return clone;
+    });
+    return klon;
 }
 
 /**

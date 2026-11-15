@@ -19412,12 +19412,7 @@ function __cloneAndCleanTableForExportExport(tableId) {
     _exportText(clone);
     _exportVisaAllaRader(clone);
 
-    // Identifiera kolumnindex att skippa
-    const skipCols = [];
     const ths = /** @type {HTMLElement} */ (clone).querySelectorAll('thead th');
-    ths.forEach((th, i) => {
-        if (th.hasAttribute('data-export-skip')) skipCols.push(i);
-    });
 
     // Rensa header-celler
     ths.forEach(th => {
@@ -19459,26 +19454,35 @@ function __cloneAndCleanTableForExportExport(tableId) {
         tr.querySelectorAll('td, th').forEach(td => _exportMarkCell(td));
     });
 
-    // Skippa kolumner via DOM-manipulation. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan
-    // täcker flera, så en rad med en sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median").
-    if (skipCols.length) {
-        ['thead tr', 'tbody tr', 'tfoot tr'].forEach(sel => {
-            /** @type {HTMLElement} */ (clone).querySelectorAll(sel).forEach(tr => {
-                let kol = 0;
-                [...tr.children].forEach(cell => {
-                    const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '', 10) || 1);
-                    const start = kol, slut = kol + span - 1;
-                    kol += span;
-                    const traffar = skipCols.filter(i => i >= start && i <= slut).length;
-                    if (!traffar) return;
-                    if (traffar >= span) cell.remove();
-                    else cell.setAttribute('colspan', String(span - traffar));
-                });
+    return _exportUtanSkarmkolumner(clone);
+}
+
+/**
+ * Kolumnerna som bara hör till skärmen (rubrik med `data-export-skip`: Detalj, Beräkning) tas bort ur en kopia av
+ * tabellen. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan täcker flera, så en rad med en
+ * sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median"). Görs på en kopia, aldrig på skärmens tabell.
+ */
+function _exportUtanSkarmkolumner(klon) {
+    const skipCols = [];
+    klon.querySelectorAll('thead th').forEach((th, i) => {
+        if (th.hasAttribute('data-export-skip')) skipCols.push(i);
+    });
+    if (!skipCols.length) return klon;
+    ['thead tr', 'tbody tr', 'tfoot tr'].forEach(sel => {
+        klon.querySelectorAll(sel).forEach(tr => {
+            let kol = 0;
+            [...tr.children].forEach(cell => {
+                const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '', 10) || 1);
+                const start = kol, slut = kol + span - 1;
+                kol += span;
+                const traffar = skipCols.filter(i => i >= start && i <= slut).length;
+                if (!traffar) return;
+                if (traffar >= span) cell.remove();
+                else cell.setAttribute('colspan', String(span - traffar));
             });
         });
-    }
-
-    return clone;
+    });
+    return klon;
 }
 
 /**
@@ -33271,7 +33275,15 @@ async function _buildPrintReportExport() {
                 const elD = document.getElementById(String(id));
                 if (diagramRitat(elD)) { try { imgs[nyckel] = await diagramTillBild(elD, { bredd: 1400, hojd, utanRubrik: true }); } catch (e) { rapporteraFel(`utskrift: ${id}`, e); } }
             }
-            const cloneTable = id => { const t = exportElement(id); return t ? _exportVisaAllaRader(t.cloneNode(true)).outerHTML : ''; };   // genom exportgrinden; hopfällda rader följer med
+            // Genom exportgrinden; hopfällda rader följer med. Skärmens egna kolumner (Detalj, Beräkning), knappar och
+            // infoikoner gör inget på papper och tar bredd från sidan.
+            const cloneTable = id => {
+                const t = exportElement(id);
+                if (!t) return '';
+                const klon = _exportUtanSkarmkolumner(_exportVisaAllaRader(t.cloneNode(true)));
+                klon.querySelectorAll('button, .info-tip').forEach(b => b.remove());
+                return klon.outerHTML;
+            };
         const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en}</h2><p>${termStor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
         const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
             const bildSektion = (rubrik, src, alt) => (src ? `<section class="page-break"><h2>${rubrik}</h2><img src="${src}" alt="${alt}"></section>` : '');
