@@ -493,7 +493,7 @@ Filen ändras aldrig.
 |---|---|
 | `tests/stat.test.js` | OLS, HC3, `tDistCdf`, `tQuantile` mot t-tabellen, `pValue2Sided` och matrisalgebran: egenskaper; `bhJustera` mot handräknade fall |
 | `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell; `bhJustera` mot statsmodels `multipletests(method='fdr_bh')` |
-| `tests/sektor.test.js` | Översikten per huvudområde: könskoefficienten som huvudregressionens på samma urval, med och utan ålder, intervallet med HC3 och t-kvantil, k-villkoren, inget tal när kön och BAS inte går att skilja åt, och rubrikregeln |
+| `tests/sektor.test.js` | Översikten per huvudområde: könskoefficienten som huvudregressionens på samma urval, med och utan ålder (mot stegen och mot `runOLSRegression`: koefficienten, gränserna, n och k), intervallet med HC3 och t-kvantil, k-villkoren, inget tal när kön och BAS inte går att skilja åt, och rubrikregeln |
 | `tests/regression.test.js` | `src/lib/regression.js` direkt: förklaringsmodellen som värde, stegen på vald modell, vad varje variabel tillför, `kvantilDesign` och `quantileRegressionAtAllTau`, modellerna utan ålder och radfiltret |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |

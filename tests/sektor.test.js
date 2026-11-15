@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { sektorsTabell, sektorernasAndel, sektorJusteradText } from '../src/lib/sektor.js';
 import { computeSequentialGap } from '../src/lib/regression.js';
 import { fitOLS, tQuantile } from '../src/lib/stat.js';
+import { createAppWindow } from './helpers/app-harness.js';
 
 const rad = (aid, kon, lon, alder = 40, bas = 'C', extra = {}) => ({ aid, kon, lon, alder, bas, ...extra });
 const flera = (n, f) => Array.from({ length: n }, (_, i) => f(i));
@@ -114,6 +115,34 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
         const under = sektorsTabell(fa.slice(0, 6), { k: 10 })[0];
         expect([under.maskerad, under.justerat]).toEqual([true, null]);
     });
+});
+
+describe('sektor: översikten och huvudregressionen ger samma tal på samma urval (två kopior av modellen)', () => {
+    // justeradSkillnad (regression.js) och runOLSRegression (regressionskortet) räknar samma modell var för sig. På ett
+    // urval med ett enda huvudområde ska översikten ge huvudtalet: koefficienten, gränserna, n och k.
+    const LON = { A: 28000, C: 29000, D: 36000 };
+    const BAS_KV = ['A', 'A', 'C', 'C', 'C', 'D'], BAS_MA = ['A', 'C', 'D', 'D'];
+    const urval = medAlder => [
+        ...flera(30, i => rad('207011', 'kvinna', Math.round(LON[BAS_KV[i % 6]] * (0.96 + (i % 7) * 0.01) + (medAlder ? i * 35 : 0)), medAlder ? 24 + i : 0, BAS_KV[i % 6])),
+        ...flera(20, i => rad('207011', 'man', Math.round(LON[BAS_MA[i % 4]] * (0.98 + (i % 5) * 0.01) + (medAlder ? i * 55 : 0)), medAlder ? 27 + i : 0, BAS_MA[i % 4])),
+    ];
+    for (const medAlder of [true, false]) {
+        it(medAlder ? 'med ålder' : 'utan ålder', () => {
+            const rader = urval(medAlder);
+            const w = createAppWindow();
+            w.__state.data = rader.map(r => ({ ...r }));
+            const huvud = w.eval('runOLSRegression()');
+            expect(huvud.error).toBeUndefined();
+            expect(huvud.fellBackFromFull).toBeFalsy();
+            const v = sektorsTabell(rader, { k: 10 })[0];
+            expect(v.justeratSkal).toBe('ok');
+            expect(v.justeratMedAlder).toBe(medAlder);
+            expect([v.justerat.n, v.justerat.k]).toEqual([huvud.n, huvud.k]);
+            expect(v.justerat.pct).toBeCloseTo(huvud.konPct, 10);
+            expect(v.justerat.low).toBeCloseTo(huvud.konPctLow, 10);
+            expect(v.justerat.high).toBeCloseTo(huvud.konPctHigh, 10);
+        });
+    }
 });
 
 describe('sektor: kön och BAS går inte att skilja åt', () => {
