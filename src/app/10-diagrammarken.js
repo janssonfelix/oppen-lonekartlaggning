@@ -226,16 +226,34 @@ function _rfPunkt(g, l, li, c) {
                 .attr('transform', `translate(${x},${y}) rotate(${vinkel})`).attr('fill', farg);
         }
         m.attr('data-marke', 'punkt').attr('data-l', li).attr('data-i', i);
+        // Den ritade punkten är ett hinder för etiketterna som undviker (_rfUndvikEtiketter). Punktens yttre radie:
+        // romben och kvadraten sticker ut förbi r, strecket är 2r brett.
+        if (c.punkthinder) c.punkthinder.push({ x, y, r: (l.symbol === 'streck' ? 2 * r : l.symbol === 'romb' || l.symbol === 'kvadrat' ? 1.3 * r : r) + 0.5 });
         // Punktens etikett (t.ex. gruppens namn i en matris): mitt över punkten, med vit kant. Den hör till punkten och
         // ritas därför aldrig för en punkt som inte ritas.
-        if (d.etikett != null && String(d.etikett) !== '') {
+        if (d.etikett != null && String(d.etikett) !== '' && l.etikettLage === 'undvik' && c.undvik) {
+            // Läget räknas när panelens alla punkter är ritade (_rfUndvikEtiketter): de är hinder.
+            const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28);
+            c.undvik.push({ x, y, r: (l.symbol === 'romb' || l.symbol === 'kvadrat' ? 1.3 * r : r) + 0.5, text, hel, fpx });
+        } else if (d.etikett != null && String(d.etikett) !== '') {
             const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
             // Lagrets etikettLage ställer texten till vänster eller höger om punkten (värdet bredvid en punkt i ett liggande diagram);
             // annars mitt över punkten — eller under, om den inte ryms ovanför (panelens överkant).
             // 'auto' är till höger om punkten, och till vänster när texten annars skulle gå utanför panelens högerkant.
-            const sida = l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1) : 0;
-            const tx = x + sida * (r + 5);
-            const ty = sida ? y + fpx * 0.35 : (y - r - 3 < fpx ? y + r + fpx : y - r - 3);
+            // Datapunktens etikettLage 'under' eller 'over' ställer etiketten på den sidan av punkten (värdet vid änden av
+            // en stapel i en trappa: utanför stapeln). Ryms den inte där (panelens kant) står den bredvid, förbi den
+            // bredaste stapel bandet rymmer, till höger eller vid högerkanten till vänster — aldrig på andra sidan, där
+            // stapeln är.
+            const fast = !l.etikettLage && (d.etikettLage === 'under' || d.etikettLage === 'over') ? d.etikettLage : null;
+            const fastRyms = fast === 'under' ? y + r + fpx * 1.25 <= c.inreH : y - r - 3 >= fpx;
+            const ut = Math.max(l.symbol === 'streck' && !vagrat ? 2 * r : r, c.x.bandwidth ? Math.min(c.x.bandwidth(), _RF.stapelMax) / 2 : 0);
+            const sida = l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1)
+                : fast && !fastRyms ? (x + ut + 5 + tb > c.panelB ? -1 : 1) : 0;
+            const tx = x + sida * ((fast ? ut : r) + 5);
+            const ty = sida ? y + fpx * 0.35
+                : fast === 'under' ? y + r + fpx
+                : fast === 'over' ? y - r - 3
+                : (y - r - 3 < fpx ? y + r + fpx : y - r - 3);
             const t = _rfText(c.texter, tx, ty, text, { px: fpx, ankare: sida < 0 ? 'end' : sida > 0 ? 'start' : 'middle', title: hel,
                 attr: { 'data-marke': 'punktetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
             if (c.punktetiketter) c.punktetiketter.push({ t, y: ty, hojd: fpx + 3, over: !sida && ty < y, x0: sida < 0 ? tx - tb : sida > 0 ? tx : tx - tb / 2, x1: sida < 0 ? tx : sida > 0 ? tx + tb : tx + tb / 2 });
@@ -286,6 +304,27 @@ function _rfEtikettKrockar(etiketter, inreH) {
         }
     }
     for (const e of lista) if (e.ny !== e.y) e.t.attr('y', spegla(e.ny));
+}
+
+// Etiketterna i lager med `etikettLage: 'undvik'` ritas när panelens alla punkter är ritade: läget räknas av
+// _rfPlaceraEtiketter (10-diagramlayout.js) med de ritade punkterna som hinder, och en etikett som står en bit från sin
+// punkt får en tunn hänvisningslinje (data-marke="hanvisning") under texten. Linjen och texten hör till en ritad punkt
+// och tar inte emot pekaren.
+function _rfUndvikEtiketter(c) {
+    if (!c.undvik || !c.undvik.length) return;
+    // Rutan räknas med en tiondel och 2 px luft utöver den uppskattade bredden och 1,3 gånger teckenstorleken på höjden
+    // (texten mitt i): teckensnittet i webbläsaren kan vara bredare och högre än uppskattningen (_RF.tecken), och en
+    // etikett som står tätt intill en annan ska inte nå in i den.
+    const matt = c.undvik.map(e => { const bt = _rfBredd(e.text, e.fpx); return { x: e.x, y: e.y, r: e.r, b: bt * 1.1 + 2, h: e.fpx * 1.3, bt, ht: e.fpx * 1.05 }; });
+    const lagen = _rfPlaceraEtiketter(matt, c.punkthinder || [], c.panelB, c.inreH);
+    c.undvik.forEach((e, n) => {
+        const q = lagen[n];
+        if (q.linje) c.texter.append('line').attr('data-marke', 'hanvisning').attr('pointer-events', 'none')
+            .attr('x1', q.linje.x1).attr('y1', q.linje.y1).attr('x2', q.linje.x2).attr('y2', q.linje.y2)
+            .attr('stroke', FARG.dampad).attr('stroke-width', 1);
+        _rfText(c.texter, q.x0 + (matt[n].b - matt[n].bt) / 2, q.y0 + (matt[n].h - matt[n].ht) / 2 + e.fpx * 0.8, e.text, { px: e.fpx, ankare: 'start', title: e.hel,
+            attr: { 'data-marke': 'punktetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+    });
 }
 
 // Märket för en liten punkt på en linje eller vid ett bands gräns (bara med visaSma): ihålig, streckad cirkel.
@@ -782,18 +821,23 @@ function _rfZonEtiketter(zoner, c, bredd, hojd) {
         const hel = String(r.etikett);
         const ryms = Math.floor(((lodrat ? till - fran : bredd) - 8) / (fpx * _RF.tecken));   // 4 px luft på var sida
         if (ryms < Math.min(3, hel.length)) continue;
-        const text = _rfKorta(hel, ryms), tb = _rfBredd(text, fpx);
-        const x0 = lodrat ? (fran + till) / 2 - tb / 2 : Math.min(4, Math.max(0, bredd - tb));
+        // En etikett i en lodrät zon som inte ryms på en rad men hel på två bryts vid ordgränsen; annars kortas den.
+        const tva = lodrat && hel.length > ryms ? _rfRadbryt(hel, ryms, 2) : null;
+        const rader = tva && tva.length === 2 && tva.join(' ') === hel && tva.every(s => s.length <= ryms) ? tva : [_rfKorta(hel, ryms)];
+        const radH = fpx + 3, x0Av = text => lodrat ? (fran + till) / 2 - _rfBredd(text, fpx) / 2 : Math.min(4, Math.max(0, bredd - _rfBredd(text, fpx)));
         for (let rad = 0; rad < 3; rad++) {
-            const y0 = (lodrat ? 2 : fran + 2) + rad * (fpx + 3);
-            const ruta = { x0, x1: x0 + tb, y0, y1: y0 + fpx * 1.05 };
-            if (ruta.y1 > hojd) break;
-            if (tagna.some(q => ruta.x0 < q.x1 + 2 && q.x0 < ruta.x1 + 2 && ruta.y0 < q.y1 && q.y0 < ruta.y1)) continue;
-            tagna.push(ruta);
-            // En kortad etikett (den får ett <title> med hela texten) tar emot pekaren, så att webbläsaren visar
-            // hela texten; en okortad gör det inte — märkena under den går då att träffa.
-            _rfText(c.texter, x0, y0 + fpx * 0.8, text, { px: fpx, farg: r.textfarg || FARG.dampad, fet: true, title: hel,
-                attr: { 'data-marke': 'zonetikett', ...(text === hel ? { 'pointer-events': 'none' } : {}), stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+            const y0 = (lodrat ? 2 : fran + 2) + rad * radH;
+            const rutor = rader.map((text, n) => { const x0 = x0Av(text); return { x0, x1: x0 + _rfBredd(text, fpx), y0: y0 + n * radH, y1: y0 + n * radH + fpx * 1.05 }; });
+            if (rutor[rutor.length - 1].y1 > hojd) break;
+            if (rutor.some(ruta => tagna.some(q => ruta.x0 < q.x1 + 2 && q.x0 < ruta.x1 + 2 && ruta.y0 < q.y1 && q.y0 < ruta.y1))) continue;
+            rader.forEach((text, n) => {
+                tagna.push(rutor[n]);
+                // En kortad etikett (den får ett <title> med hela texten) tar emot pekaren, så att webbläsaren visar
+                // hela texten; en okortad gör det inte — märkena under den går då att träffa.
+                const kortad = rader.length === 1 && text !== hel;
+                _rfText(c.texter, rutor[n].x0, rutor[n].y0 + fpx * 0.8, text, { px: fpx, farg: r.textfarg || FARG.dampad, fet: true, title: kortad ? hel : text,
+                    attr: { 'data-marke': 'zonetikett', ...(kortad ? {} : { 'pointer-events': 'none' }), stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+            });
             break;
         }
     }

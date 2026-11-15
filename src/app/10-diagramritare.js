@@ -93,6 +93,8 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
         lador: iPanel.filter(({ l }) => l.marke === 'lada').map(({ li }) => li),
         stapel: new Map(),
         punktetiketter: [],
+        punkthinder: [],
+        undvik: [],
     };
     // Referenser under märkena (zoner först).
     _rfReferenser(gm, figurIn, c, panelB, inreH, 'zon');
@@ -101,6 +103,7 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
         if (ritaMarke) ritaMarke(gm, l, li, { ...c, nedsamplat: (ritade, totalt) => urval.set(li, [ritade, totalt]) });
     }
     _rfEtikettKrockar(c.punktetiketter, inreH);
+    _rfUndvikEtiketter(c);
     _rfReferenser(gm, figurIn, c, panelB, inreH, 'linje');
     // Nollinjer (data-marke="nollinje"): sist i den klippta svg:n, över märken och referenser.
     for (const [axel, skala, lodrat] of [[figurIn.x, x, true], [figurIn.y, y, false]]) {

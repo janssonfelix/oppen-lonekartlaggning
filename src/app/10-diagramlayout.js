@@ -58,6 +58,69 @@ function _rfRadbryt(text, maxTecken, maxRader) {
     return ut;
 }
 
+// Punktetiketter som undviker (lagrets `etikettLage: 'undvik'`). Etiketterna läggs en i taget, i den ordning de
+// kommer. Var och en prövas på åtta platser runt sin punkt — höger, vänster, över, under och de fyra hörnen — först
+// intill punkten och sedan längre ut, en textrad i taget (högst RF_UNDVIK_VARV varv). Den första platsen där rutan
+// varken täcker en ritad punkt eller en redan lagd etikett, och står inom panelen, tas. En etikett som står längre ut
+// än intill punkten får en hänvisningslinje från punktens kant till rutan. Finns ingen fri plats står etiketten på
+// den plats där den täcker minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka
+// punkter som namnges.
+// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd); `hinder`: [{ x, y, r }],
+// de ritade punkterna i panelen. Bara ritade punkter är hinder, så en dold liten punkt påverkar inte lägena.
+// `bt` och `ht` är textens egen bredd och höjd när rutan har luft runt texten (texten står mitt i rutan; linjen når
+// texten, inte luften). Ren beräkning: ingen DOM, samma svar varje gång. Ger [{ x0, y0, x1, y1, linje: { x1, y1, x2,
+// y2 } | null }].
+const RF_UNDVIK_VARV = 20;
+/**
+ * @param {Array<{x:number, y:number, r:number, b:number, h:number, bt?:number, ht?:number}>} etiketter
+ * @param {Array<{x:number, y:number, r:number}>} hinder
+ * @param {number} B @param {number} H
+ * @returns {Array<{x0:number, y0:number, x1:number, y1:number, linje:{x1:number, y1:number, x2:number, y2:number}|null}>}
+ */
+function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
+    /** @typedef {{x0:number, y0:number, x1:number, y1:number, varv:number, n?:number}} Plats */
+    /** @type {Plats[]} */
+    const lagda = [];
+    const luft = 2;
+    /** @param {Plats} q */
+    const tacker = q => {
+        let n = q.x0 < 0 || q.y0 < 0 || q.x1 > B || q.y1 > H ? 100 : 0;
+        for (const p of hinder) {
+            const dx = Math.max(q.x0 - p.x, 0, p.x - q.x1), dy = Math.max(q.y0 - p.y, 0, p.y - q.y1);
+            if (dx * dx + dy * dy < (p.r + 2) * (p.r + 2)) n++;
+        }
+        for (const b of lagda) if (q.x0 < b.x1 + luft && b.x0 < q.x1 + luft && q.y0 < b.y1 + luft && b.y0 < q.y1 + luft) n++;
+        return n;
+    };
+    return etiketter.map(({ x, y, r, b, h, bt = b, ht = h }) => {
+        /** @type {Plats|null} */
+        let val = null;
+        /** @type {Plats|null} */
+        let bast = null;
+        for (let varv = 0; varv <= RF_UNDVIK_VARV && !val; varv++) {
+            const d = r + 4 + varv * (h + 2), dd = d * Math.SQRT1_2;
+            const platser = [[x + d, y - h / 2], [x - d - b, y - h / 2], [x - b / 2, y - d - h], [x - b / 2, y + d],
+                [x + dd, y - dd - h], [x - dd - b, y - dd - h], [x + dd, y + dd], [x - dd - b, y + dd]];
+            for (const [x0, y0] of platser) {
+                const q = { x0, y0, x1: x0 + b, y1: y0 + h, varv }, n = tacker(q);
+                if (!n) { val = q; break; }
+                if (!bast || n < (bast.n ?? Infinity)) bast = { ...q, n };
+            }
+        }
+        const q = /** @type {Plats} */ (val || bast);
+        lagda.push(q);
+        /** @type {{x1:number, y1:number, x2:number, y2:number}|null} */
+        let linje = null;
+        if (q.varv > 0) {
+            // Från punktens kant till närmaste punkt på textens ruta (mitt i platsen).
+            const tx0 = q.x0 + (b - bt) / 2, ty0 = q.y0 + (h - ht) / 2;
+            const nx = Math.min(Math.max(x, tx0), tx0 + bt), ny = Math.min(Math.max(y, ty0), ty0 + ht), L = Math.hypot(nx - x, ny - y);
+            if (L > r + 3) linje = { x1: x + (nx - x) * (r + 1) / L, y1: y + (ny - y) * (r + 1) / L, x2: nx, y2: ny };
+        }
+        return { x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1, linje };
+    });
+}
+
 function _rfSkala(axel, doman, omfang) {
     if (axel.skala === 'band') return d3.scaleBand().domain(doman).range(omfang).paddingInner(0.2).paddingOuter(0.1);
     const log = axel.skala === 'log';

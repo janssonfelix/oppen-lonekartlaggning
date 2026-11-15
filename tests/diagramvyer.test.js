@@ -514,7 +514,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(namn).toHaveLength(6);                                                // tio grupper utanför, sex namngivna
         expect(namn).toContain('Y8');                                                // de som avviker mest
         expect(namn).not.toContain('Jättestor');
-        expect(f.lager.filter(l => l.marke === 'punkt').every(l => l.etikettLage === 'auto')).toBe(true);   // till höger, till vänster vid högerkanten
+        expect(f.lager.filter(l => l.marke === 'punkt').every(l => l.etikettLage === 'undvik')).toBe(true);   // namnen undviker punkterna och varandra
     });
     it('läget i spannet per kön: fem klasser som summerar till 100 %, och ingen figur när ett kön är under tröskeln', () => {
         const pol = { p10: 30000, p90: 36000 };
@@ -881,7 +881,7 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         w.__v2 = [grupp(1, 'akut'), { ...grupp(2, 'atgard'), n: 400 }];
         expect(w.eval("_prioMatrisFigur(window.__v2, 'topp10', 'referensen', window.__cfg)").y.skala).toBe('log');
         expect(f.lager.map(l => l.farg)).toEqual(['#4338ca', '#6366f1', '#0f766e']);     // lila för de två första, som i Lika arbetes tabell
-        expect(f.referens.map(z => z.etikett)).toEqual(['UNDER REFERENS', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'ÖVER REFERENS']);   // samma ord som statusarna i tabellen
+        expect(f.referens.map(z => z.etikett)).toEqual(['UNDER REFERENS', 'NÄRA, UNDER', 'NÄRA REFERENS', 'ÖVER REFERENS']);   // statusarnas ord, högst 14 tecken
         expect(f.lager[0].data[0]).toMatchObject({ x: -5.25, y: 13, etikett: expect.stringContaining('·C') });
         expect(f.lager[2].data[0].etikett).toBeUndefined();                    // rang 12 får ingen etikett i läget topp 10
         expect(f.lager[0].data[0].storlek).toBeGreaterThan(f.lager[1].data[0].storlek);   // större kostnad, större bubbla
@@ -2064,5 +2064,96 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         const w2 = fonster();
         w2.__d = [{ yrke: 'Usk', bas: 'C' }, { yrke: 'Usk', bas: 'C' }, { yrke: 'Sys', bas: 'C' }, { yrke: 'Sys', bas: 'D' }];
         expect(w2.eval("(() => { const f = _abYrketsBas(window.__d); return [f('Usk'), f('Sys'), f('Okänd')]; })()")).toEqual(['C', null, null]);
+    });
+});
+
+describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (etapp 1b, U7)', () => {
+    // Etikettens ruta i panelens koordinater ur textens attribut och ritarens teckenbredd (_rfBredd): samma ruta som
+    // layoutens kollisionsberäkning.
+    const rfBredd = (text, px) => w.eval('_rfBredd')(text, px);
+    const ruta = t => { const px = Number(t.getAttribute('font-size')), text = [...t.childNodes].filter(n => n.nodeType === 3).map(n => n.nodeValue).join(''),
+        b = rfBredd(text, px), a = t.getAttribute('text-anchor') || 'start', x = Number(t.getAttribute('x')), y = Number(t.getAttribute('y'));
+        const x0 = a === 'end' ? x - b : a === 'middle' ? x - b / 2 : x; return { text, x0, x1: x0 + b, y0: y - px * 0.8, y1: y + px * 0.25 }; };
+    const over = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+    const motPunkt = (q, c) => { const dx = Math.max(q.x0 - c.x, 0, c.x - q.x1), dy = Math.max(q.y0 - c.y, 0, c.y - q.y1); return dx * dx + dy * dy < c.r * c.r; };
+    const bygg = (uttryck, bredd = 800, val = '{}') => w.eval(`_rfByggSvg(${uttryck}, ${bredd}, ${val})`);
+    const inga = (svg, kalla) => {
+        const t = [...svg.querySelectorAll('text[data-marke="punktetikett"]')], rutor = t.map(ruta), fel = [];
+        for (let i = 0; i < rutor.length; i++) for (let j = i + 1; j < rutor.length; j++) if (over(rutor[i], rutor[j])) fel.push(`${rutor[i].text} / ${rutor[j].text}`);
+        for (const q of rutor) for (const c of kalla(svg)) if (motPunkt(q, c)) fel.push(`${q.text} på en punkt`);
+        return fel;
+    };
+
+    it('slumpens gränser: bara punkter utanför gränserna har en ritad etikett, högst sex; övriga har namnet i verktygstipset', () => {
+        // Tjugo grupper i en klunga, åtta av dem utanför gränserna.
+        w.eval(`window.__u = { sigma: 0.05, halv: (a, b) => 8 * Math.sqrt(1 / a + 1 / b), punkter: Array.from({ length: 20 }, (_, i) => {
+            const utanfor = i % 5 < 2, kvot = utanfor ? 90 - (i % 3) : 99 + (i % 3) * 0.4, n = 60 + (i % 7) * 4;
+            return { nyckel: 'G' + i + '|C', yrke: '50201' + i + ' Ett ganska långt yrkesnamn', bas: 'C', aid: '50201' + i, n, nKv: n / 2, nMa: n / 2, medKv: 30000, medMa: 31000, kvot, gransLag: 95, gransHog: 105, utanfor }; }) }`);
+        const f = w.eval('_laTrattFigur(window.__u, 10)');
+        const punkter = f.lager.filter(l => l.marke === 'punkt');
+        expect(punkter.every(l => l.etikettLage === 'undvik')).toBe(true);
+        const namngivna = punkter.flatMap(l => l.data).filter(d => d.etikett);
+        expect(namngivna).toHaveLength(6);
+        expect(namngivna.every(d => d.p.utanfor)).toBe(true);
+        expect(punkter.flatMap(l => l.data).filter(d => !d.p.utanfor).every(d => d.etikett === undefined)).toBe(true);
+        expect(vanliga(punkter[0].tips(punkter[0].data[0]))[0][0]).toMatch(/Ett ganska långt yrkesnamn · BAS C/);   // namnet i tipset
+        // Ritad: sex etiketter som varken täcker varandra eller en punkt.
+        const svg = bygg("_laTrattFigur(window.__u, 10)");
+        expect(svg.querySelectorAll('text[data-marke="punktetikett"]')).toHaveLength(6);
+        const symboler = s => [...s.querySelectorAll('[data-marke="punkt"]')].map(m => {
+            if (m.tagName === 'circle') return { x: +m.getAttribute('cx'), y: +m.getAttribute('cy'), r: +m.getAttribute('r') };
+            const [x, y] = /M([-\d.e]+),([-\d.e]+)/.exec(m.getAttribute('d')).slice(1).map(Number), r = /L([-\d.e]+)/.exec(m.getAttribute('d'))[1] - x;
+            return { x, y: y + r, r };   // romben: första hörnet är toppen
+        });
+        expect(inga(svg, symboler)).toEqual([]);
+    });
+
+    it('prioriteringsmatrisen: zonrubrikerna är högst 14 tecken, och inga två etikettrutor överlappar varandra eller en bubbla', () => {
+        const grupp = (rank, status, diffPct, n, kost) => ({ rank, status, yrke: `${351000 + rank} Personlig assistent nummer ${rank}`, bas: 'ABCDE'[rank % 5], n, kvN: Math.ceil(n / 2), maN: Math.floor(n / 2), median: 30000,
+            refSource: 'referens', refMedian: 32000, diffPct, diffKr: diffPct * 300, gapPct: null, annualGapTotal: kost, annualOverTotal: 0, priorityIndex: 100 - rank });
+        // Fyrtio grupper som ligger tätt, som i det stora demot: de tio första namnges (Topp 10).
+        w.__v = Array.from({ length: 40 }, (_, i) => grupp(i + 1, i < 4 ? 'akut' : i < 30 ? 'atgard' : i < 35 ? 'bevaka' : 'ok',
+            i < 30 ? -6 - (i % 10) * 0.9 : i < 35 ? -3.5 - (i % 3) * 0.4 : -1 + (i % 3), 150 + ((i * 37) % 9) * 50, 2000000 / (i + 1)));
+        w.__cfg = { atgardThreshold: -5, bevakaThreshold: -2, analyseraThreshold: 5 };
+        const f = w.eval("_prioMatrisFigur(window.__v, 'topp10', 'referensen', window.__cfg)");
+        expect(f.referens.map(z => z.etikett)).toEqual(['UNDER REFERENS', 'NÄRA, UNDER', 'NÄRA REFERENS', 'ÖVER REFERENS']);
+        for (const z of f.referens) expect(z.etikett.length, z.etikett).toBeLessThanOrEqual(14);
+        expect(f.lager.every(l => l.etikettLage === 'undvik')).toBe(true);
+        for (const bredd of [800, 1000]) {
+            const svg = bygg("_prioMatrisFigur(window.__v, 'topp10', 'referensen', window.__cfg)", bredd, '{ hojd: 520 }');
+            expect(svg.querySelectorAll('text[data-marke="punktetikett"]')).toHaveLength(10);
+            const bubblor = s => [...s.querySelectorAll('circle[data-marke="punkt"]')].map(c => ({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy'), r: +c.getAttribute('r') }));
+            expect(inga(svg, bubblor), `${bredd}`).toEqual([]);
+            // Zonrubrikerna klipps inte: ingen står kortad med …
+            for (const t of svg.querySelectorAll('text[data-marke="zonetikett"]')) expect(t.textContent, `${bredd}`).not.toMatch(/…/);
+        }
+    });
+
+    const utanforStapeln = svg => {
+        // Varje värdeetikett ligger utanför stapeln (spannet eller stapeln) i sin kategori: ingen överlappar den i höjdled.
+        const staplar = [...svg.querySelectorAll('line[data-marke="intervall"]')].map(l => ({ x0: +l.getAttribute('x1') - +l.getAttribute('stroke-width') / 2, x1: +l.getAttribute('x1') + +l.getAttribute('stroke-width') / 2, y0: +l.getAttribute('y1'), y1: +l.getAttribute('y2') }))
+            .concat([...svg.querySelectorAll('[data-marke="stapel"]')].map(r => ({ x0: +r.getAttribute('x'), x1: +r.getAttribute('x') + +r.getAttribute('width'), y0: +r.getAttribute('y'), y1: +r.getAttribute('y') + +r.getAttribute('height') })));
+        const fel = [];
+        for (const t of svg.querySelectorAll('text[data-marke="punktetikett"]')) { const q = ruta(t); for (const s of staplar) if (over(q, s)) fel.push(q.text); }
+        return fel;
+    };
+    it('Var uppstår löneskillnaden?: värdet står utanför stapeln, också när texten är bredare än stapeln', () => {
+        // Som i det stora demot: «−229 kr» är bredare än sin stapel.
+        const u = '{ gap: -2091, delar: { A: -1428, B: -434, C: -229 } }';
+        const f = w.eval(`_guTrappaFigur(${u})`);
+        const streck = f.lager.find(l => l.symbol === 'streck').data;
+        expect(streck.map(d => d.etikettLage)).toEqual(['under', 'under', 'under', 'under']);   // nedåt: stapeln står ovanför strecket
+        for (const bredd of [640, 800]) expect(utanforStapeln(bygg(`_guTrappaFigur(${u})`, bredd)), `${bredd}`).toEqual([]);
+        // En del som ökar skillnaden: värdet står över strecket, där stapeln slutar.
+        expect(w.eval('_guTrappaFigur({ gap: 6000, delar: { A: 3400, B: -600, C: 3200 } })').lager[2].data.map(d => d.etikettLage)).toEqual(['over', 'under', 'over', 'over']);
+        expect(utanforStapeln(bygg('_guTrappaFigur({ gap: 6000, delar: { A: 3400, B: -600, C: 3200 } })'))).toEqual([]);
+        expect(figurTillTabell(f)).toEqual(figurTillTabell({ ...f, lager: f.lager.map(l => ({ ...l, data: l.data.map(({ etikettLage: _ritning, ...d }) => d) })) }));   // ritning, inte data
+    });
+    it('regressionens trappa: nivåns värde står utanför stapeln, också på ett steg som nästan inte syns', () => {
+        w.__s = [{ name: 'Endast kön', status: 'ok', gapPct: -5.0 }, { name: '+ BAS-intervall', status: 'ok', gapPct: -1.6 }, { name: '+ Ålder', status: 'ok', gapPct: -1.7 }];
+        w.__y = { name: '+ Yrkesgrupp', status: 'ok', gapPct: -0.7 };
+        const f = w.eval('_regTrappaFigur(window.__s, window.__y)');
+        expect(f.lager.at(-1).data.map(d => [d.etikett, d.etikettLage])).toEqual([['−5,0\u00a0%', 'under'], ['−1,6\u00a0%', 'over'], ['−1,7\u00a0%', 'under'], ['−1,7\u00a0%', 'under'], ['−0,7\u00a0%', 'over']]);
+        for (const bredd of [640, 800]) expect(utanforStapeln(bygg('_regTrappaFigur(window.__s, window.__y)', bredd)), `${bredd}`).toEqual([]);
     });
 });
