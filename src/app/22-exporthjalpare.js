@@ -69,6 +69,14 @@ function _methodAppendixData() {
         ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.']
     ];
 }
+/**
+ * Ett bladnamn som Excel godtar: högst 31 tecken och inga av tecknen : \ / ? * [ ]. Ett namn som byggs av en term kan
+ * bli för långt eller få ett sådant tecken (termerna får ha 40 tecken); då används reservnamnet, som är fast text.
+ * @param {string} namn @param {string} reserv
+ */
+function _excelBladnamn(namn, reserv) {
+    return namn.length <= 31 && namn.trim() && !/[:\\/?*[\]]/.test(namn) ? namn : reserv;
+}
 // Lägger till ett "Metod & parametrar"-blad sist i en XLSX-arbetsbok.
 // `undantag`: exporten hör till ett dokumenterat undantag från minsta gruppstorlek och säger det.
 // `extra`: rader [rubrik, text] som bara gäller den här arbetsboken (ett blads mått och regler); läggs sist.
@@ -87,7 +95,9 @@ function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
         rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', _kUndantagNot(undantag)]);
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{ wch: 32 }, { wch: 88 }];
+    // Kolumn A så bred som den längsta etiketten (rubriken på rad 1 räknas inte), högst 70 tecken (F6 i punkt 26).
+    const etikett = Math.max(...rows.slice(1).map(r => String(r[0] ?? '').length));
+    ws['!cols'] = [{ wch: Math.min(70, etikett + 2) }, { wch: 88 }];
     try { XLSX.utils.book_append_sheet(wb, ws, 'Metod & parametrar'); } catch (_e) { /* dubblettnamn: hoppa */ }
 }
 // ---- Excel-export-hjälpare: rensar HTML-tabell för läsbara Excel-celler ----

@@ -6988,22 +6988,84 @@ const _kor = d => `<w:r>${d.fet || d.kursiv ? `<w:rPr>${d.fet ? '<w:b/>' : ''}${
 const _stycke = (delar, stil) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(_kor).join('')}</w:p>`;
 const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
 
+// Teckenbredder i Calibri 10 pt, fet, i twips, avrundade uppåt i grupper; övriga gemener 108, versaler 128.
+/** @type {[string, number][]} */
+const _TECKENBREDD = [['iljI.,:;!|\' ', 55], ['frt-()', 72], ['sczJ/', 86], ['agkvxyåäeEFLSTZ0123456789', 101], ['mw%&', 163],
+    ['DGHNOQUÖ', 137], ['MW', 181]];
+const _CELLMARGINAL = 2 * 85 + 20;   // tabellstilens vänster- och högermarginal, och lite luft
+/** Ett ords ungefärliga bredd i twips i Calibri 10 pt, fet eller normal (normala bokstäver är omkring 3 % smalare, siffror lika). */
+function _ordbredd(ord, fet = true) {
+    let s = 0;
+    for (const ch of ord) {
+        const g = _TECKENBREDD.find(([tecken]) => tecken.includes(ch));
+        const b = g ? g[1] : ch !== ch.toLocaleLowerCase('sv') ? 128 : 108;
+        s += fet || /[\d\s.,]/.test(ch) ? b : b * 0.97;
+    }
+    return s;
+}
+const _celltext = c => (c.delar || []).map(d => d.text).join('');
+/** Cellen är ett tal med ev. enhet ("33 932 kr", "93,6 %", "20 / 45", "1 427 679 kr/år"). */
+const _arTal = text => /^[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$/.test(text.trim());
+const _summa = v => v.reduce((s, x) => s + x, 0);
+/**
+ * Höjer varje kolumn mot sitt mål, upp till en gemensam nivå som väljs så att tabellen ryms i textytan. Ryms alla mål
+ * får varje kolumn sitt; annars når de smala kolumnerna sitt mål och de bredaste delar lika på det som är kvar.
+ */
+function _tillNiva(bredd, mal) {
+    const vidNiva = niva => bredd.map((x, k) => Math.max(x, Math.min(mal[k], niva)));
+    let lag = 0, hog = Math.max(...mal);
+    if (_summa(vidNiva(hog)) <= TEXTBREDD) return vidNiva(hog);
+    for (let i = 0; i < 40; i++) { const mitt = (lag + hog) / 2; if (_summa(vidNiva(mitt)) > TEXTBREDD) hog = mitt; else lag = mitt; }
+    return vidNiva(lag);
+}
+/**
+ * Kolumnbredderna efter innehållet (F5 i punkt 26), ungefär som en webbläsare fördelar en tabell. Först ryms det
+ * längsta ordet i varje datacell, så att ett namn inte bryts mitt i; sedan rubrikernas längsta ord och talen hela, så
+ * att ett belopp står på en rad; sist hela texten. Ryms ett steg inte, delar de bredaste kolumnerna på det som fattas.
+ * Tabellen fyller textytan.
+ */
+function _kolumnbredder(b, kolumner) {
+    // Rubrikraden är fet, dataraderna normala.
+    const matt = (rader, fet) => Array.from({ length: kolumner }, (_, k) => {
+        let ord = 0, tal = 0, hel = 0;
+        for (const r of rader) {
+            const text = r[k] ? _celltext(r[k]) : '';
+            for (const o of text.split(/\s+/)) ord = Math.max(ord, _ordbredd(o, fet));
+            if (!fet && _arTal(text)) tal = Math.max(tal, _ordbredd(text, false));
+            hel = Math.max(hel, _ordbredd(text, fet));
+        }
+        return { ord: ord + _CELLMARGINAL, tal: tal + _CELLMARGINAL, hel: hel + _CELLMARGINAL };
+    });
+    const data = matt(b.rader || [], false), rubrik = matt(b.rubrikrad ? [b.rubrikrad] : [], true);
+    let bredd = _tillNiva(Array(kolumner).fill(0), data.map(m => m.ord));
+    bredd = _tillNiva(bredd, data.map((m, k) => Math.max(m.ord, m.tal, rubrik[k].ord)));
+    // Hela texten: det som är kvar fördelas efter vad varje kolumn saknar, och det som är kvar sedan efter bredden.
+    const brist = data.map((m, k) => Math.max(0, Math.max(m.hel, rubrik[k].hel) - bredd[k]));
+    const kvar = TEXTBREDD - _summa(bredd);
+    if (kvar > 0 && _summa(brist)) bredd = bredd.map((x, k) => x + brist[k] * Math.min(1, kvar / _summa(brist)));
+    const rest = TEXTBREDD - _summa(bredd);
+    if (rest > 0) bredd = bredd.map(x => x + rest * x / _summa(bredd));
+    const hela = bredd.map(Math.floor);
+    hela[hela.indexOf(Math.max(...hela))] += TEXTBREDD - _summa(hela);
+    return hela;
+}
+
 function _tabell(b) {
     const alla = [...(b.rubrikrad ? [b.rubrikrad] : []), ...(b.rader || [])];
     const kolumner = Math.max(1, ...alla.map(r => r.length));
-    const bredd = Math.floor(TEXTBREDD / kolumner);
+    const bredder = _kolumnbredder(b, kolumner);
     const rad = (celler, rubrik) => {
         const fyllda = [...celler, ...Array(kolumner - celler.length).fill({ delar: [] })];
-        return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map(c =>
-            `<w:tc><w:tcPr><w:tcW w:w="${bredd}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
+        return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map((c, k) =>
+            `<w:tc><w:tcPr><w:tcW w:w="${bredder[k]}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
             + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d))) + '</w:tc>').join('')}</w:tr>`;
     };
     // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver (A9): Word räknar
     // annars om en procentbredd mot cellbredderna, och LibreOffice och Word kan rita tabellen olika.
     const look = b.rubrikrad ? 'w:val="04A0" w:firstRow="1"' : 'w:val="0480" w:firstRow="0"';
-    return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${bredd * kolumner}" w:type="dxa"/>`
+    return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${TEXTBREDD}" w:type="dxa"/>`
         + `<w:tblLook ${look} w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
-        + `<w:tblGrid>${Array(kolumner).fill(`<w:gridCol w:w="${bredd}"/>`).join('')}</w:tblGrid>`
+        + `<w:tblGrid>${bredder.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>`
         + (b.rubrikrad ? rad(b.rubrikrad, true) : '') + (b.rader || []).map(r => rad(r, false)).join('') + '</w:tbl>';
 }
 

@@ -173,3 +173,46 @@ describe('docx: tabellerna som Word läser dem (A9)', () => {
         }
     });
 });
+
+// F5 i punkt 26: kolumnerna efter innehållet, så att ett ord i en cell inte bryts mitt i.
+describe('docx: kolumnbredderna följer innehållet', () => {
+    const c = s => ({ delar: [t(s)] });
+    // Som Likvärdigt arbete i utkastet: en smal löpnummerkolumn, namn som långa ord, tal och en tom kolumn att fylla i.
+    const lv = { typ: 'tabell',
+        rubrikrad: ['#', 'Kvinnodominerad AID-etikett', 'Jämförelseetikett', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseetiketten',
+            'Jämförelseetikettens median högre med (kr)', 'Högre med (%)', 'Kravvärdering / sakligt skäl (fyll i)'].map(c),
+        rader: [
+            ['1', '403010 Barnskötare (BAS C)', '503012 Drifttekniker (BAS C)', '20 / 20', '15 % (mansdominerad)', '6 000 kr', '16,3 %', ''].map(c),
+            ['3', '207011 Undersköterska (BAS C)', '502010 Systemutvecklare (BAS C)', '20 / 45', '51 % (blandad)', '1 413 kr', '3,7 %', ''].map(c),
+        ] };
+    const grid = block => [...tolka(docxDelar([block], OPT)['word/document.xml']).getElementsByTagName('w:gridCol')].map(g => Number(g.getAttribute('w:w')));
+    // Ordens bredd i Calibri 10 pt (twips, ur typsnittets mått), och cellens marginaler (2 × 85).
+    const MARGINAL = 170;
+    it('tabellen fyller textytan, och cellerna har kolumnernas bredd', () => {
+        const g = grid(lv);
+        expect(g.reduce((s, v) => s + v, 0)).toBe(9070);
+        const x = tolka(docxDelar([lv], OPT)['word/document.xml']);
+        const rad = x.getElementsByTagName('w:tr')[1];
+        expect([...rad.getElementsByTagName('w:tcW')].map(w => Number(w.getAttribute('w:w')))).toEqual(g);
+    });
+    it('löpnumret får en smal kolumn', () => {
+        const g = grid(lv);
+        expect(g[0]).toBeLessThan(600);
+        expect(g[0]).toBeLessThan(Math.min(...g.slice(1)));
+    });
+    it('det längsta ordet i varje cell ryms i sin kolumn', () => {
+        const g = grid(lv);
+        expect(g[1]).toBeGreaterThanOrEqual(1283 + MARGINAL);   // Undersköterska
+        expect(g[2]).toBeGreaterThanOrEqual(1435 + MARGINAL);   // Systemutvecklare
+        expect(g[4]).toBeGreaterThanOrEqual(1452 + MARGINAL);   // (mansdominerad)
+    });
+    it('ett belopp eller en procentsats står på en rad', () => {
+        const g = grid(lv);
+        expect(g[5]).toBeGreaterThanOrEqual(657 + MARGINAL);   // 6 000 kr
+        expect(g[6]).toBeGreaterThanOrEqual(542 + MARGINAL);  // 16,3 %
+    });
+    it('en tabell med korta celler delar bredden efter innehållet, inte lika', () => {
+        const g = grid({ typ: 'tabell', rubrikrad: [c('N'), c('Beskrivning')], rader: [[c('12'), c('En lång text som behöver mycket mer plats än talet bredvid')]] });
+        expect(g[0]).toBeLessThan(g[1] / 3);
+    });
+});
