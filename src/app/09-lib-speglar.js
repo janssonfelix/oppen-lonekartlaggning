@@ -1113,16 +1113,61 @@ function konsklass(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
     return 'blandad';
 }
 
-function _sortedMedian(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return s.length & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
+/**
+ * Förbereder en grupps löner för bootstrapmedianen: lönerna sorteras en gång och varje position får sin rang.
+ * En dragning räknar sedan hur många gånger varje rang dras, och medianen läses ur den kumulativa räkningen.
+ * Det ger samma median som att sortera varje dragning, men i O(n) i stället för O(n log n) och utan
+ * allokeringar per dragning. Lika löner får olika rang men samma värde, så medianen blir densamma.
+ * @param {number[]} lons
+ * @returns {{n:number, rang:Int32Array, sorterad:Float64Array, antal:Int32Array}}
+ */
+function _rangUnderlag(lons) {
+    const n = lons.length;
+    const ordning = Array.from({ length: n }, (_, i) => i).sort((a, b) => lons[a] - lons[b]);
+    const rang = new Int32Array(n);
+    const sorterad = new Float64Array(n);
+    for (let r = 0; r < n; r++) {
+        rang[ordning[r]] = r;
+        sorterad[r] = lons[ordning[r]];
+    }
+    return { n, rang, sorterad, antal: new Int32Array(n) };
+}
+
+/**
+ * Medianen av en dragning med återläggning ur underlaget. Anropar `rng()` n gånger, i samma ordning som en
+ * dragning `lons[(rng() * n) | 0]` per position. Udda n: det mittersta elementet; jämnt n: medel av de två
+ * mittersta.
+ * @param {{n:number, rang:Int32Array, sorterad:Float64Array, antal:Int32Array}} u
+ * @param {() => number} rng
+ * @returns {number}
+ */
+function _dragningsmedian(u, rng) {
+    const { n, rang, sorterad, antal } = u;
+    antal.fill(0);
+    for (let i = 0; i < n; i++) antal[rang[(rng() * n) | 0]]++;
+    const m = n >> 1;
+    let summa = 0, r = 0;
+    if (n & 1) {
+        for (; r < n; r++) { summa += antal[r]; if (summa > m) return sorterad[r]; }
+    }
+    // Jämnt n: det nedre mittelementet har index m − 1, det övre index m (räknat från 0).
+    for (; r < n; r++) {
+        summa += antal[r];
+        if (summa >= m) break;
+    }
+    const nedre = sorterad[r];
+    if (summa >= m + 1) return nedre;
+    for (r++; r < n; r++) {
+        summa += antal[r];
+        if (summa >= m + 1) break;
+    }
+    return (nedre + sorterad[r]) / 2;
 }
 
 /**
  * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), percentil [2.5,97.5].
- * Används för INTERNA par (bägge sidor har individdata).
+ * Används för INTERNA par (bägge sidor har individdata). Per dragning dras först kvN löner ur kv och sedan maN
+ * ur ma; medianerna tas ur rangräkning (`_dragningsmedian`).
  * @param {number[]} kvLons
  * @param {number[]} maLons
  * @param {number} [B=1000]
@@ -1132,13 +1177,11 @@ function _sortedMedian(arr) {
 function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
     if (!Array.isArray(kvLons) || !Array.isArray(maLons)) return null;
     if (kvLons.length < 3 || maLons.length < 3) return null;
+    const kv = _rangUnderlag(kvLons), ma = _rangUnderlag(maLons);
     const diffs = new Array(B);
-    const kvN = kvLons.length, maN = maLons.length;
     for (let b = 0; b < B; b++) {
-        const sKv = new Array(kvN), sMa = new Array(maN);
-        for (let i = 0; i < kvN; i++) sKv[i] = kvLons[(rng() * kvN) | 0];
-        for (let i = 0; i < maN; i++) sMa[i] = maLons[(rng() * maN) | 0];
-        diffs[b] = _sortedMedian(sMa) - _sortedMedian(sKv);
+        const mKv = _dragningsmedian(kv, rng);
+        diffs[b] = _dragningsmedian(ma, rng) - mKv;
     }
     diffs.sort((a, b) => a - b);
     return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
@@ -1156,13 +1199,9 @@ function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
 function bootstrapMedianVsConstantKr(orgLons, constMedian, B = 1000, rng = Math.random) {
     if (!Array.isArray(orgLons) || orgLons.length < 3) return null;
     if (!(constMedian > 0)) return null;
-    const n = orgLons.length;
+    const org = _rangUnderlag(orgLons);
     const diffs = new Array(B);
-    for (let b = 0; b < B; b++) {
-        const sample = new Array(n);
-        for (let i = 0; i < n; i++) sample[i] = orgLons[(rng() * n) | 0];
-        diffs[b] = constMedian - _sortedMedian(sample);
-    }
+    for (let b = 0; b < B; b++) diffs[b] = constMedian - _dragningsmedian(org, rng);
     diffs.sort((a, b) => a - b);
     return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
 }

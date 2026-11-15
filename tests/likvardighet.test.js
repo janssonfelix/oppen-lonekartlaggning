@@ -27,6 +27,7 @@ import {
     konsklass
 } from '../src/lib/likvardighet.js';
 import { dominans, kvDefinitionNamn } from '../src/lib/aidbas.js';
+import { rngFor } from '../src/lib/rng.js';
 
 // ---- Helpers ----
 function orgRows({ aid, bas, label, kvLons = [], maLons = [] }) {
@@ -412,6 +413,70 @@ describe('bootstrapMedianVsConstantKr', () => {
         expect(ci).not.toBeNull();
         expect(ci.lo).toBe(8000);   // konstant 38000 − median 30000
         expect(ci.hi).toBe(8000);
+    });
+});
+
+// Referensen: den tidigare algoritmen, där varje dragning sorteras för medianen. Den nya
+// funktionen tar medianen ur en rangräkning och ska ge exakt samma intervall med samma rng.
+function refMedian(arr) {
+    const s = arr.slice().sort((a, b) => a - b);
+    const m = s.length >> 1;
+    return s.length & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function refDiffKr(kvLons, maLons, B, rng) {
+    const diffs = new Array(B);
+    const kvN = kvLons.length, maN = maLons.length;
+    for (let b = 0; b < B; b++) {
+        const sKv = new Array(kvN), sMa = new Array(maN);
+        for (let i = 0; i < kvN; i++) sKv[i] = kvLons[(rng() * kvN) | 0];
+        for (let i = 0; i < maN; i++) sMa[i] = maLons[(rng() * maN) | 0];
+        diffs[b] = refMedian(sMa) - refMedian(sKv);
+    }
+    diffs.sort((a, b) => a - b);
+    return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
+}
+function refVsConstantKr(orgLons, constMedian, B, rng) {
+    const n = orgLons.length;
+    const diffs = new Array(B);
+    for (let b = 0; b < B; b++) {
+        const sample = new Array(n);
+        for (let i = 0; i < n; i++) sample[i] = orgLons[(rng() * n) | 0];
+        diffs[b] = constMedian - refMedian(sample);
+    }
+    diffs.sort((a, b) => a - b);
+    return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
+}
+// Syntetiska löner: deterministiska, osorterade, med en del lika värden.
+const loner = (n, s) => Array.from({ length: n }, (_, i) => 25000 + Math.round(((i * 7919 + s) % 1000) * 15 + (i % 13) * 3));
+
+describe('bootstrapmedianen ur rangräkning ger samma intervall som sortering', () => {
+    const fall = [
+        ['n = 3 mot 3', loner(3, 1), loner(3, 2)],
+        ['udda mot jämnt n', loner(11, 1), loner(4, 2)],
+        ['jämnt mot udda n', loner(10, 3), loner(7, 4)],
+        ['många lika löner', [30000, 30000, 30000, 31000, 31000, 29000, 30000, 30000], [33000, 33000, 34000, 33000, 33000, 33000]],
+        ['alla lika', Array(9).fill(30000), Array(6).fill(35000)],
+        ['decimaler', [30000.5, 29999.25, 30001.75, 30000.5, 30002], [33000.1, 32999.9, 33000.3, 33000.1]],
+        ['stora grupper', loner(860, 5), loner(401, 6)]
+    ];
+    for (const [namn, kv, ma] of fall) {
+        it(`bootstrapMedianDiffKr: ${namn}`, () => {
+            expect(bootstrapMedianDiffKr(kv, ma, 1000, rngFor(kv, ma))).toEqual(refDiffKr(kv, ma, 1000, rngFor(kv, ma)));
+            expect(bootstrapMedianDiffKr(kv, ma, 200, makeRng())).toEqual(refDiffKr(kv, ma, 200, makeRng()));
+        });
+        it(`bootstrapMedianVsConstantKr: ${namn}`, () => {
+            expect(bootstrapMedianVsConstantKr(kv, 38000, 1000, rngFor(kv, [38000]))).toEqual(refVsConstantKr(kv, 38000, 1000, rngFor(kv, [38000])));
+            expect(bootstrapMedianVsConstantKr(ma, 31000, 200, makeRng())).toEqual(refVsConstantKr(ma, 31000, 200, makeRng()));
+        });
+    }
+
+    it('lönerna som skickas in ändras inte', () => {
+        const kv = loner(11, 1), ma = loner(8, 2);
+        const kvKopia = kv.slice(), maKopia = ma.slice();
+        bootstrapMedianDiffKr(kv, ma, 100, makeRng());
+        bootstrapMedianVsConstantKr(kv, 38000, 100, makeRng());
+        expect(kv).toEqual(kvKopia);
+        expect(ma).toEqual(maKopia);
     });
 });
 
