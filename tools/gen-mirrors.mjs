@@ -110,6 +110,8 @@ export const MODULES = [
             modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp',
             // Ålder valfri (ADR-64)
             harAlderIRader: '_rgHarAlderIRader',
+            // Översikten per huvudområde med huvudregressionens kodning (ADR-78; sektor.js)
+            justeradSkillnad: '_rgJusteradSkillnad',
             // Stegens nycklar och det som visas för dem (ADR-74)
             stegNamn: '_rgStegNamn', stegEtikett: '_rgStegEtikett'
         }

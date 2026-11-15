@@ -187,6 +187,18 @@ describe('sektorsöversikten', () => {
         expect(w.document.getElementById('struktur-sektorer').textContent).toMatch(/på att kvinnor och män arbetar i olika huvudområden/);
         expect(w.document.getElementById('chart-sektorer')._figur.lager.map(l => l.serie)).toEqual(['Förklaras av ålder och BAS', 'Rå', 'Justerad (ålder, BAS)']);
     });
+    it('lönefil utan ålder: ett justerat tal per huvudområde, rubriken säger BAS (ADR-78)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
+        w.eval('invalidateStatCaches(); populateSelects(); unlockTabs();');
+        w.__renderTabContent('struktur');
+        const rubriker = [...w.document.querySelectorAll('#sektor-table thead th')].map(th => th.textContent.trim());
+        expect(rubriker).toContain('Justerad (BAS)');
+        expect(rubriker).not.toContain('Justerad (ålder, BAS)');
+        expect(w.document.getElementById('sektor-table').textContent).not.toMatch(/För få/);
+        expect(w.document.getElementById('chart-sektorer')._figur.lager.map(l => l.serie)).toEqual(['Förklaras av BAS', 'Rå', 'Justerad (BAS)']);
+    });
     it('klick på en sektor öppnar Utforska med sektorn som villkor', () => {
         const w = createAppWindow();
         w.__loadDemoData();

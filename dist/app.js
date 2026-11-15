@@ -5147,6 +5147,36 @@ function computeSequentialGap(rows0, ageMean, basList, { golv, modell = FORKLARI
 }
 
 /**
+ * Könsskillnaden med huvudregressionens standardkodning, för ett urval (ADR-78; översikten per huvudområde i
+ * sektor.js): log lön = kön + [ålder centrerad] + en indikator per BAS-intervall utom det alfabetiskt första, HC3 och
+ * t-kvantil, med reservsteget utan BAS när modellen inte kan skattas. Förklaringsmodellen läses inte: översikten
+ * följer inte användarens val i Lika arbete. Raderna filtreras som i stegen (B4).
+ * @param {any[]} rows0
+ * @param {{medAlder?: boolean}} [opts] medAlder = lönefilen har ålder (ADR-64); anroparen ger den för hela filen
+ * @returns {null | {pct:number, low:number, high:number, n:number, k:number, medBas:boolean, medAlder:boolean}}
+ */
+function justeradSkillnad(rows0, { medAlder = harAlderIRader(rows0) } = {}) {
+    const giltiga = (rows0 || []).filter(d => _modellRad(d, medAlder));
+    if (!giltiga.length) return null;
+    const basList = [...new Set(giltiga.map(d => d.bas))].sort();
+    const ageMean = medAlder ? giltiga.reduce((s, d) => s + d.alder, 0) / giltiga.length : 0;
+    const { y, bygg } = _sekvensRigg(giltiga, ageMean, basList, { medAlder });
+    // Kolumnordningen som i huvudregressionen: [1, kön, (ålder), (BAS-indikatorer)].
+    const alder = medAlder ? ['alder'] : [];
+    for (const medBas of [true, false]) {
+        const X = bygg(medBas ? [...alder, 'bas'] : alder);
+        if (giltiga.length < X[0].length + 5) continue;
+        const fit = fitOLS(X, y);
+        if (!fit) continue;
+        const b = fit.beta[1], se = Math.sqrt(fit.vcovHC3[1][1]);
+        const tq = tQuantile(0.975, fit.n - fit.k);
+        return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - tq * se) - 1) * 100, high: (Math.exp(b + tq * se) - 1) * 100,
+            n: fit.n, k: fit.k, medBas, medAlder };
+    }
+    return null;
+}
+
+/**
  * Vad varje variabel tillför (ADR-56): förklaringsgraden och könsgapet med och utan variabeln, räknat mot
  * fullmodellen kön + BAS + ålder oberoende av vad som är valt, så att tabellen i panelen står still när man
  * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget). Utan ålder i
@@ -5538,7 +5568,7 @@ function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD,
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
-    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, stegNamn, stegEtikett };
+    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
 })();
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
@@ -5557,6 +5587,7 @@ const _rgModellFras = __mirrorRegression.modellFras;
 const _rgModellBeskrivning = __mirrorRegression.modellBeskrivning;
 const _rgTillforGransPp = __mirrorRegression.tillforGransPp;
 const _rgHarAlderIRader = __mirrorRegression.harAlderIRader;
+const _rgJusteradSkillnad = __mirrorRegression.justeradSkillnad;
 const _rgStegNamn = __mirrorRegression.stegNamn;
 const _rgStegEtikett = __mirrorRegression.stegEtikett;
 
@@ -8176,9 +8207,9 @@ const _agStegLikvardigt = __mirrorAttgora.stegLikvardigt;
 // ---- speglar src/lib/sektor.js ----
 const __mirrorSektor = (() => {
     // importer ur tidigare speglade lib-moduler
-    const fitOLS = __mirrorStat.fitOLS;
     const median = __mirrorStat.median;
-    const basRangFn = __mirrorLikvardighet.basRangFn;
+    const justeradSkillnad = __mirrorRegression.justeradSkillnad;
+    const harAlderIRader = __mirrorRegression.harAlderIRader;
     const sektorsnamn = __mirrorAid.sektorsnamn;
     const jamforSektor = __mirrorAid.jamforSektor;
     const konOf = __mirrorFalt.konOf;
@@ -8191,7 +8222,8 @@ const __mirrorSektor = (() => {
  *
  * En sektor är ett AID-huvudområde. Per sektor: antal, andel kvinnor, medianer och kvot med samma
  * k-regler som Lika arbete (ett kön under k → samlad median; gruppen under k → maskerad), justerad
- * skillnad (OLS: log lön ~ kön + ålder + BAS-rang) när sektorn har ≥ 30 personer och ≥ k av varje
+ * skillnad med huvudregressionens kodning (kön + ålder när lönefilen har den + BAS som indikatorer, HC3 och
+ * t-kvantil; justeradSkillnad i regression.js, ADR-78) när sektorn har ≥ 30 personer och ≥ k av varje
  * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel som del A i
  * gapuppdelning.js, med sektor i stället för BAS).
  *
@@ -8204,22 +8236,12 @@ const __mirrorSektor = (() => {
 
 const MIN_REGRESSION = 30;
 
-function _justerat(rader, k) {
-    const giltiga = rader.filter(r => r.lon > 0 && r.alder > 0 && konOf(r) !== 'Övrig/okänd');
+// Justerad skillnad med huvudregressionens kodning (ADR-78): k-villkoren här, modellen i regression.js.
+function _justerat(rader, k, medAlder) {
+    const giltiga = rader.filter(r => r.lon > 0 && (!medAlder || r.alder > 0) && konOf(r) !== 'Övrig/okänd');
     const nKv = giltiga.filter(r => konOf(r) === 'Kvinna').length;
     if (giltiga.length < MIN_REGRESSION || nKv < k || giltiga.length - nKv < k) return null;
-    const basLista = [...new Set(giltiga.map(r => r.bas))];
-    const rang = basRangFn(basLista);
-    const alderMedel = giltiga.reduce((s, r) => s + r.alder, 0) / giltiga.length;
-    const basMedel = giltiga.reduce((s, r) => s + rang(r.bas), 0) / giltiga.length;
-    const X = giltiga.map(r => [1, konOf(r) === 'Kvinna' ? 1 : 0, r.alder - alderMedel, rang(r.bas) - basMedel]);
-    const y = giltiga.map(r => Math.log(r.lon));
-    let fit = fitOLS(X, y);
-    if (!fit) fit = fitOLS(X.map(x => x.slice(0, 3)), y);   // en enda BAS i sektorn
-    if (!fit) return null;
-    const se = Math.sqrt(fit.vcovHC3[1][1]);
-    const b = fit.beta[1];
-    return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - 1.96 * se) - 1) * 100, high: (Math.exp(b + 1.96 * se) - 1) * 100 };
+    return justeradSkillnad(giltiga, { medAlder });
 }
 
 /**
@@ -8236,6 +8258,7 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
         per.get(namn).push(r);
     }
     const harAnsvar = (rader || []).some(r => r.ansvarsgrupp);
+    const medAlder = harAlderIRader(rader);   // lönefilen har ålder (ADR-64): gäller alla huvudområden
     return [...per.keys()].sort(jamforSektor).map(namn => {
         const g = per.get(namn);
         const kv = g.filter(r => konOf(r) === 'Kvinna'), ma = g.filter(r => konOf(r) === 'Man');
@@ -8243,7 +8266,7 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
         const bada = kv.length >= k && ma.length >= k;
         const medKv = !maskerad && bada ? median(kv.map(r => r.lon)) : null;
         const medMa = !maskerad && bada ? median(ma.map(r => r.lon)) : null;
-        const just = maskerad ? null : _justerat(g, k);
+        const just = maskerad ? null : _justerat(g, k, medAlder);
         const andelLedning = grupp => (grupp.length ? grupp.filter(r => r.ansvarsgrupp === 'ledning').length / grupp.length * 100 : null);
         return {
             namn, n, nKv: kv.length, nMa: ma.length,
@@ -8254,6 +8277,7 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
             medTot: maskerad ? null : median(g.map(r => r.lon)),
             medKv, medMa, kvot: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
             justerat: just, justeratSkal: maskerad ? null : (just ? 'ok' : 'fa'),
+            justeratMedAlder: medAlder,   // rubriken och texterna säger vad som justeras för
             antalAid: new Set(g.map(r => r.aid)).size,
             punkter: punkter[namn] || 0,
             ledningKv: harAnsvar && !maskerad && kv.length >= k ? andelLedning(kv) : null,
@@ -9248,7 +9272,9 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         // Sektorsöversikten (ADR-33): samma k-regler som vyn.
         const alla = u.sektorer || [];
         const visas = alla.filter(r => !r.maskerad);
-        const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ålder och ${T.niva.en}.`];
+        // Justerat för ålder bara när lönefilen har ålder (ADR-64, ADR-78).
+        const medAlder = alla.every(r => r.justeratMedAlder !== false);
+        const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${medAlder ? 'ålder och ' : ''}${T.niva.en}.`];
         const a = u.andel;
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
             ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
@@ -9257,7 +9283,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const skr = visas.find(r => r.skrAndelKv != null);
         if (skr) st.push(`Andel kvinnor i samma ${T.huvudomrade.en} i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
-        return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', 'Justerad (ålder, BAS)'],
+        return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', medAlder ? 'Justerad (ålder, BAS)' : 'Justerad (BAS)'],
             rader: visas.map(r => [r.namn, String(r.n), _pct(r.andelKv), r.skrAndelKv != null ? _pct(r.skrAndelKv) : '–',
                 !r.samladMedian && r.kvot != null ? _pct(r.kvot) : '–',
                 !r.samladMedian && r.justerat ? _pct(100 + r.justerat.pct) : '–']) });
@@ -26012,6 +26038,8 @@ function renderSektorer(d) {
     const kr = n => svKr(n);
     const pc = n => (n == null ? '–' : `${n.toFixed(1).replace('.', ',')}\u00a0%`);
     const harLedning = tabell.some(r => r.ledningKv != null || r.ledningMa != null);
+    // Justerat för ålder bara när lönefilen har ålder (ADR-64, ADR-78); rubriken säger vad som justeras för.
+    const medAlder = tabell.every(r => r.justeratMedAlder !== false);
     const rader = tabell.map(r => {
         const loner = r.maskerad
             ? `<td colspan="3" class="muted">Färre än ${kTroskel()} ${personOrd(kTroskel())} — lönemått redovisas inte</td>`
@@ -26036,7 +26064,7 @@ function renderSektorer(d) {
             : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror
                ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`;
     host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${termStor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
-        <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>Justerad (ålder, BAS)</th>
+        <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>${_sektorJusteradRubrik(medAlder)}</th>
         <th>${termStor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
         <tbody>${rader}</tbody></table>${andelText}`;
     host.querySelectorAll('[data-sektor]').forEach(b => b.addEventListener('click', () => {
@@ -26048,14 +26076,19 @@ function renderSektorer(d) {
     const visa = tabell.filter(r => r.kvot != null);
     const el = document.getElementById('chart-sektorer');
     if (!el) return;
-    if (visa.length) ritaFigur(el, _sektorFigur(visa)); else rensaFigur(el);
+    if (visa.length) ritaFigur(el, _sektorFigur(visa, { medAlder })); else rensaFigur(el);
+}
+
+/** Kolumnrubriken för den justerade skillnaden: med ålder bara när lönefilen har ålder (ADR-78). */
+function _sektorJusteradRubrik(medAlder) {
+    return medAlder ? 'Justerad (ålder, BAS)' : 'Justerad (BAS)';
 }
 
 // Sektordiagrammets figur (diagramkärnan, ADR-39): rå och justerad kvot som punkter mot linjen 100 % — inte staplar
 // på en avkortad axel, där stapelns längd säger något annat än värdet.
 // `visa` är de sektorer vars kvot redovisas i tabellen; inga andra når figuren, och axeln räknas bara ur dem.
 // Filtren: sektor (lista) och antal personer i sektorn, samma namn och antal som tabellens kolumner Sektor och Antal.
-function _sektorFigur(visa) {
+function _sektorFigur(visa, { medAlder = true } = {}) {
     const falt = r => ({ sektor: r.namn, n: r.n });
     const just = r => (r.justerat ? +(100 + r.justerat.pct).toFixed(1) : null);
     const varden = visa.flatMap(r => [r.kvot, just(r)]).filter(v => v != null);
@@ -26065,16 +26098,17 @@ function _sektorFigur(visa) {
         data: visa.filter(r => varde(r) != null).map(r => ({ y: r.namn, x: +varde(r).toFixed(1), forskjutning, ...falt(r) })),
         tips: d => [[d.y], [serie, _figTalformat(d.x, 'pct')]]
     });
-    return { beskrivning: `Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ålder och ${T.niva.en}. Samma värden finns i tabellen.`,
+    const forklaras = medAlder ? 'ålder och BAS' : 'BAS';
+    return { beskrivning: `Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${medAlder ? 'ålder och ' : ''}${T.niva.en}. Samma värden finns i tabellen.`,
         urval: [URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Kvinnors lön i % av mäns', doman: [xMin, xMax] },
         y: { skala: 'band', ordning: visa.map(r => r.namn), etikettMax: 64 },   // sektornamnen är långa och ska gå att läsa
         hojd: Math.max(170, 90 + visa.length * 36),
         referens: [{ x: 100, streck: 'prickad', farg: PALETTE.semantic.referens, etikett: 'Lika lön' }],
-        // Strecket från rå till justerad visar hur mycket ålder och nivå förklarar: långt streck = mycket.
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Förklaras av ålder och BAS', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
+        // Strecket från rå till justerad visar hur mycket ålder (när lönefilen har den) och nivå förklarar: långt streck = mycket.
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: `Förklaras av ${forklaras}`, farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
                   data: visa.filter(r => just(r) != null).map(r => ({ y: r.namn, lag: +Math.min(r.kvot ?? 0, just(r) ?? 0).toFixed(1), hog: +Math.max(r.kvot ?? 0, just(r) ?? 0).toFixed(1), ra: r.kvot, ju: just(r), ...falt(r) })),
                   tips: d => [[d.y], ['Rå', _figTalformat(d.ra, 'pct')], ['Justerad', _figTalformat(d.ju, 'pct')]] },
-                lager('Rå', PALETTE.semantic.neutral, r => r.kvot, 0), lager('Justerad (ålder, BAS)', PALETTE.serie[0], just, 0)] };
+                lager('Rå', PALETTE.semantic.neutral, r => r.kvot, 0), lager(_sektorJusteradRubrik(medAlder), PALETTE.serie[0], just, 0)] };
 }
 
 // (4) Bygg ett klarspråksutkast av fynden.

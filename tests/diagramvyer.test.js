@@ -148,6 +148,12 @@ describe('Struktur: chart-sektorer', () => {
         expect(f.lager[2].tips(f.lager[2].data[0])).toEqual([['Vård och omsorg'], ['Justerad (ålder, BAS)', '98,8 %']]);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
+    it('utan ålder i lönefilen: serierna och beskrivningen säger justerad för BAS (ADR-78)', () => {
+        const f = w.eval(`_sektorFigur([{ namn: 'Vård och omsorg', kvot: 96.4, justerat: { pct: -1.2 } }], { medAlder: false })`);
+        expect(f.lager.map(l => l.serie)).toEqual(['Förklaras av BAS', 'Rå', 'Justerad (BAS)']);
+        expect(f.beskrivning).toMatch(/justerad för BAS-intervall\./);
+        expect(f.beskrivning).not.toMatch(/ålder/);
+    });
     it('ritas av kärnan med demodatan: en punkt per sektor och serie, inga staplar, talen i tips stämmer med tabellen', () => {
         const w2 = demo();
         w2.__renderTabContent('struktur');

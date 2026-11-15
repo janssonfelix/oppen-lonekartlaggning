@@ -84,6 +84,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-75 | Kort ordform i kolumnrubriker, och Word-utkastets täta läge | Gällande | 2026-11-15 |
 | ADR-76 | Poängläget jämför bara med organisationens egna jämförelseetiketter | Gällande | 2026-11-15 |
 | ADR-77 | HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång | Gällande | 2026-11-15 |
+| ADR-78 | Översikten per huvudområde räknar med huvudregressionens kodning | Gällande | 2026-11-15 |
 
 ## Besluten
 
@@ -431,3 +432,11 @@ med dem kvar ger statsmodels och R NaN. Med hävstången
 på de transformerade kolumnerna ensam var standardfelet för kön i det lilla demot 1,0–1,6 % för litet, och i urval med
 små grupper upp till 9 %; ingen status i trappan ändrades i mätningen. *Avvisat:* att behålla beräkningen och stänga
 punkten som mätt; att behålla skalningen ovanpå den fulla hävstången. *Gäller i dag:* `regressionsmodellen.md` §4.
+
+**ADR-78 — Översikten per huvudområde räknar med huvudregressionens kodning.** Den justerade skillnaden per huvudområde
+räknas som huvudregressionens standardmodell: kön, ålder när lönefilen har ålder och BAS-intervall som indikatorer,
+HC3 och t-kvantil, med reservsteget utan BAS. Med BAS som rang lades en del av BAS-skillnaden på kön där lönestegen
+mellan intervallen är olika stora (upp till 2,1 procentenheter i det lilla demot), och utan ålder i lönefilen gav
+översikten inget tal alls. Användarens val av förklaringsvariabler i Lika arbete påverkar inte översikten.
+*Avvisat:* att behålla BAS som rang och kravet på ålder; att också följa förklaringsmodellen, som skulle ändra
+översikten när någon väljer variabler i en annan flik. *Gäller i dag:* `regressionsmodellen.md` §3.

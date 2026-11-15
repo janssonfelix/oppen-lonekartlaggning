@@ -56,9 +56,8 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     avser* vilken kostnad raden har.
 
 **Metodval att ta ställning till (noterade 2026-11-14, inte fel):**
-23. **Översikten per huvudområde räknar BAS som rang och kräver ålder** (`src/lib/sektor.js`), medan
-    huvudregressionen kodar BAS som indikatorer och räknar utan ålder när lönefilen saknar den (ADR-53, ADR-64).
-    Utan ålder i lönefilen ger översikten ingen justerad skillnad.
+23. *Avslutad 2026-11-15:* översikten per huvudområde räknar den justerade skillnaden med huvudregressionens kodning
+    (BAS som indikatorer, ålder bara när lönefilen har den, t-kvantil), ADR-78; utan ålder ger den kön + BAS.
 24. *Avslutad 2026-11-15:* HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång (h_i + 1/n_g) och
     utan skalning, ADR-77; standardfelen är desamma som statsmodels och R ger med en indikator per grupp (en person
     ensam i en grupp får vikten 0, se `regressionsmodellen.md` §4).

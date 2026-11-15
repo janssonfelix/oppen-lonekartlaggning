@@ -5,36 +5,27 @@
  *
  * En sektor är ett AID-huvudområde. Per sektor: antal, andel kvinnor, medianer och kvot med samma
  * k-regler som Lika arbete (ett kön under k → samlad median; gruppen under k → maskerad), justerad
- * skillnad (OLS: log lön ~ kön + ålder + BAS-rang) när sektorn har ≥ 30 personer och ≥ k av varje
+ * skillnad med huvudregressionens kodning (kön + ålder när lönefilen har den + BAS som indikatorer, HC3 och
+ * t-kvantil; justeradSkillnad i regression.js, ADR-78) när sektorn har ≥ 30 personer och ≥ k av varje
  * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel som del A i
  * gapuppdelning.js, med sektor i stället för BAS).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { fitOLS, median } from './stat.js';
-import { basRangFn } from './likvardighet.js';
+import { median } from './stat.js';
+import { justeradSkillnad, harAlderIRader } from './regression.js';
 import { sektorsnamn, jamforSektor } from './aid.js';
 import { konOf } from './falt.js';
 import { skrKvinnoandelSektor } from './skrreferens.js';
 
 const MIN_REGRESSION = 30;
 
-function _justerat(rader, k) {
-    const giltiga = rader.filter(r => r.lon > 0 && r.alder > 0 && konOf(r) !== 'Övrig/okänd');
+// Justerad skillnad med huvudregressionens kodning (ADR-78): k-villkoren här, modellen i regression.js.
+function _justerat(rader, k, medAlder) {
+    const giltiga = rader.filter(r => r.lon > 0 && (!medAlder || r.alder > 0) && konOf(r) !== 'Övrig/okänd');
     const nKv = giltiga.filter(r => konOf(r) === 'Kvinna').length;
     if (giltiga.length < MIN_REGRESSION || nKv < k || giltiga.length - nKv < k) return null;
-    const basLista = [...new Set(giltiga.map(r => r.bas))];
-    const rang = basRangFn(basLista);
-    const alderMedel = giltiga.reduce((s, r) => s + r.alder, 0) / giltiga.length;
-    const basMedel = giltiga.reduce((s, r) => s + rang(r.bas), 0) / giltiga.length;
-    const X = giltiga.map(r => [1, konOf(r) === 'Kvinna' ? 1 : 0, r.alder - alderMedel, rang(r.bas) - basMedel]);
-    const y = giltiga.map(r => Math.log(r.lon));
-    let fit = fitOLS(X, y);
-    if (!fit) fit = fitOLS(X.map(x => x.slice(0, 3)), y);   // en enda BAS i sektorn
-    if (!fit) return null;
-    const se = Math.sqrt(fit.vcovHC3[1][1]);
-    const b = fit.beta[1];
-    return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - 1.96 * se) - 1) * 100, high: (Math.exp(b + 1.96 * se) - 1) * 100 };
+    return justeradSkillnad(giltiga, { medAlder });
 }
 
 /**
@@ -51,6 +42,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
         per.get(namn).push(r);
     }
     const harAnsvar = (rader || []).some(r => r.ansvarsgrupp);
+    const medAlder = harAlderIRader(rader);   // lönefilen har ålder (ADR-64): gäller alla huvudområden
     return [...per.keys()].sort(jamforSektor).map(namn => {
         const g = per.get(namn);
         const kv = g.filter(r => konOf(r) === 'Kvinna'), ma = g.filter(r => konOf(r) === 'Man');
@@ -58,7 +50,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
         const bada = kv.length >= k && ma.length >= k;
         const medKv = !maskerad && bada ? median(kv.map(r => r.lon)) : null;
         const medMa = !maskerad && bada ? median(ma.map(r => r.lon)) : null;
-        const just = maskerad ? null : _justerat(g, k);
+        const just = maskerad ? null : _justerat(g, k, medAlder);
         const andelLedning = grupp => (grupp.length ? grupp.filter(r => r.ansvarsgrupp === 'ledning').length / grupp.length * 100 : null);
         return {
             namn, n, nKv: kv.length, nMa: ma.length,
@@ -69,6 +61,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
             medTot: maskerad ? null : median(g.map(r => r.lon)),
             medKv, medMa, kvot: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
             justerat: just, justeratSkal: maskerad ? null : (just ? 'ok' : 'fa'),
+            justeratMedAlder: medAlder,   // rubriken och texterna säger vad som justeras för
             antalAid: new Set(g.map(r => r.aid)).size,
             punkter: punkter[namn] || 0,
             ledningKv: harAnsvar && !maskerad && kv.length >= k ? andelLedning(kv) : null,

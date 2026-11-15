@@ -541,6 +541,14 @@ describe('rapportunderlag: sektorer', () => {
         expect(teknik.slice(4)).toEqual(['–', '–']);   // kvot och justerad; kolumn 3 är SKR:s referens
         expect(b.stycken.join(' ')).toMatch(/1 huvudområde med färre än 10 personer redovisas inte/);
         expect(b.stycken.join(' ')).toMatch(/olika huvudområden/);
+        expect(b.tabell.rubriker.at(-1)).toBe('Justerad (ålder, BAS)');
+        expect(b.stycken[0]).toMatch(/justerad för ålder och BAS-intervall/);
+    });
+    it('utan ålder i lönefilen säger rubriken och texten att bara BAS är justerat (ADR-78)', () => {
+        const b = avsnittBlock('sektorer', { sektorer: [rad('Vård- och omsorgsarbete med mera', { justeratMedAlder: false })], andel: null }, { k: 10 });
+        expect(b.tabell.rubriker.at(-1)).toBe('Justerad (BAS)');
+        expect(b.stycken[0]).toMatch(/justerad för BAS-intervall\./);
+        expect(b.stycken.join(' ')).not.toMatch(/ålder/);
     });
 });
 

@@ -8,7 +8,7 @@ redovisas, hur konfidensintervall och p-värden räknas, vad som händer utan å
 siffrorna. Koden är sanningen; där dokumentet och koden skiljer sig är det dokumentet som ska rättas.
 
 Dokumentet är inte beslutsloggen och inte en metodlära. Varför det är så här, vad som övervägdes och när det
-beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-22, 44, 45, 46, 53, 56, 63, 64 och 65.
+beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-22, 44, 45, 46, 53, 56, 63, 64, 65, 77 och 78.
 Att regressionen aldrig cachas står i ADR-17. Minsta gruppstorlek och golven står i [`k-troskeln.md`](k-troskeln.md)
 och upprepas inte här (avsnitt 9).
 
@@ -117,8 +117,8 @@ arbetes nyckeltal, rapporten och rapportunderlaget visar samma huvudtal. Trappan
 Blinder-Oaxaca (avsnitt 5) och kvantilregressionen (avsnitt 6, utan AID-etikett inom BAS) räknar på samma modell. Valet slår inte
 igenom i:
 
-- **översikten per huvudområde** i Lönestruktur (`src/lib/sektor.js`), som har en egen modell: kön + ålder + BAS-rang
-  per huvudområde med minst 30 personer, med fast faktor 1,96 för intervallet;
+- **översikten per huvudområde** i Lönestruktur (`src/lib/sektor.js`), som alltid räknar standardmodellens kodning
+  per huvudområde (avsnitt 3);
 - **regressionerna per BAS-intervall** (`computePerBasGap`), som skattar kön och, när lönefilen har ålder, ålder inom
   varje BAS-intervall;
 - **livscykelmodellen** (`src/lib/livscykel.js`), som har sin egen modell i Ålder & karriär;
@@ -158,8 +158,18 @@ som når tröskeln; de övriga namnges i en not, och är referensintervallet und
 
 **BAS som rang.** Ingen modell i `src/lib/regression.js` räknar BAS som ett tal. BAS-rangen, bokstavens plats
 (`basRangFn` i `src/lib/likvardighet.js`), används av *Lägre krav, högre lön* (`likvardighetsmodellen.md` §6), som
-ordning i tabellerna per AID-kod och BAS-intervall (`src/lib/aidbas.js`) och som förklaringsvariabel i
-den egna modellen i översikten per huvudområde (`src/lib/sektor.js`, avsnitt 2).
+ordning i tabellerna per AID-kod och BAS-intervall (`src/lib/aidbas.js`).
+
+**Översikten per huvudområde** (`src/lib/sektor.js`, kolumnen *Justerad (ålder, BAS)*) räknar den justerade
+skillnaden med samma kodning som huvudregressionens standardmodell (ADR-78): `justeradSkillnad(rows, { medAlder })` i
+`src/lib/regression.js` skattar ln(lön) = kön + [ålder centrerad] + en indikator per BAS-intervall utom det alfabetiskt
+första i huvudområdet, med HC3 och t-kvantil (avsnitt 7). Ålder är med när lönefilen har ålder (`harAlderIRader` på hela
+filen, inte per huvudområde; avsnitt 8). Kan modellen inte skattas, med färre rader än kolumnerna + 5 eller singulär
+design, räknas den utan BAS, som reservsteget i avsnitt 1. Raderna filtreras som i stegen (avsnitt 4). Ett tal ges när
+huvudområdet har minst 30 sådana rader och minst k av varje kön; annars står *För få*, och ett huvudområde under k
+maskeras som förut. Förklaringsmodellen (avsnitt 2) läses inte: översikten ändras inte när handläggaren väljer
+variabler i Lika arbete. Kolumnrubriken och diagrammets beskrivning säger *Justerad (BAS)* och *justerad för
+BAS-intervall* när lönefilen saknar ålder.
 
 ## 4. Den stegvisa uppdelningen och steget *+ AID-etikett inom BAS*
 
@@ -304,7 +314,7 @@ skattningarna som avstånd från nollinjen med intervallet. Kortet visas när mi
 ## 7. Konfidensintervall och p-värden
 
 **t-kvantilen.** Konfidensintervallen i huvudregressionen (huvudtalet och `basEffekter`), regressionerna per
-BAS-intervall och livscykelmodellen är exp(β ± t(0,975; n − k) · SE) − 1, i procent, med `tQuantile(p, df)` i
+BAS-intervall, översikten per huvudområde och livscykelmodellen är exp(β ± t(0,975; n − k) · SE) − 1, i procent, med `tQuantile(p, df)` i
 `src/lib/stat.js`. Funktionen inverterar `tDistCdf` med bisektion. Vid **df ≥ 100** används normalfördelningen (1,96),
 samma gräns som `pValue2Sided`; vid färre frihetsgrader är intervallet bredare (df 5: 2,571; df 10: 2,228; df 26:
 2,056; df 60: 2,000).
@@ -318,8 +328,8 @@ normalfördelningen. Normalfördelningens fördelningsfunktion (`normalCdf`) är
 26.2.17.
 
 **Utanför t-kvantilen** ligger bootstrap-intervallen (percentilmetoden; mediankvoten med B = 2 000 i
-`computeBootstrapCI`, de övriga med 1 000–2 000, kvantilregressionen med 200, avsnitt 6), modulen för huvudområdena
-(`src/lib/sektor.js`, fast 1,96) och jämförelsens osäkerhetsband i Lika arbete (`41-lika-arbete.js`, fast 1,96).
+`computeBootstrapCI`, de övriga med 1 000–2 000, kvantilregressionen med 200, avsnitt 6) och jämförelsens
+osäkerhetsband i Lika arbete (`41-lika-arbete.js`, fast 1,96). Översikten per huvudområde använder t-kvantilen (avsnitt 3).
 
 **Regressionerna per BAS-intervall** (`computePerBasGap`) skattar kön och, när lönefilen har ålder, ålder (centrerad
 inom intervallet) inom varje BAS-intervall med minst `statGolv()` av varje kön, med HC3 och t-kvantil. Intervall under
@@ -354,6 +364,7 @@ kolumnen *Säkerställd efter korrigering* gäller q (ADR-71).
 - **Stegen** saknar *+ Ålder*, och steget *+ AID-etikett inom BAS* räknas utan ålder.
 - **Vad varje variabel tillför** räknar fullmodellen kön + BAS, och ålder får ingen rad.
 - **Regressionerna per BAS-intervall** skattar kön ensamt inom varje intervall.
+- **Översikten per huvudområde** räknar kön + BAS per huvudområde, med rubriken *Justerad (BAS)* (avsnitt 3).
 - **Blinder-Oaxaca** räknar på kön och BAS (eller AID-etikett inom BAS), utan ålderskomponent.
 - **Kvantilregressionen** räknar på kön och BAS.
 - **Livscykelmodellen** svarar `no_age`.
@@ -478,6 +489,7 @@ Filen ändras aldrig.
 |---|---|
 | `tests/stat.test.js` | OLS, HC3, `tDistCdf`, `tQuantile` mot t-tabellen, `pValue2Sided` och matrisalgebran: egenskaper; `bhJustera` mot handräknade fall |
 | `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell; `bhJustera` mot statsmodels `multipletests(method='fdr_bh')` |
+| `tests/sektor.test.js` | Översikten per huvudområde: könskoefficienten som huvudregressionens på samma urval, med och utan ålder, intervallet med HC3 och t-kvantil, och k-villkoren |
 | `tests/regression.test.js` | `src/lib/regression.js` direkt: förklaringsmodellen som värde, stegen på vald modell, vad varje variabel tillför, `kvantilDesign` och `quantileRegressionAtAllTau`, modellerna utan ålder och radfiltret |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
