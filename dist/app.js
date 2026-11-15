@@ -23824,7 +23824,9 @@ function computeLikvardighetPairs() {
     return res;
 }
 
-// Lägre krav, högre lön (ADR-25) — par över BAS-gränserna.
+// Lägre krav, högre lön (ADR-25) — par över BAS-gränserna. På skärmen står BAS som liten text under etiketterna, som i
+// partabellen, och BAS-steget bakom Fler kolumner. BAS-kolumnerna står kvar i tabellen för exporterna (.bara-export,
+// dolda på skärmen), och texten under etiketten följer inte med ut (data-export-text): exporten är densamma som förut.
 function _lagreKravHtml(result) {
     const poang = result.diagnostik?.jämförelse?.kravProxy === 'poäng';
     const par = result.lagreKrav || [];
@@ -23834,10 +23836,10 @@ function _lagreKravHtml(result) {
     if (poang) innehall = `<p>${termText('Med arbetsvärderingspoäng jämförs {enhet.fl} redan över BAS-gränserna i kandidatparen ovan.')}</p>`;
     else if (!par.length) innehall = `<p>${termText('Ingen av {enhet.bfl:kvinnodominerad} har lägre medianlön än {enhet.art} {enhet.en} i lägre BAS.')}</p>`;
     else innehall = `<div class="rulla-x"><table id="likvardighet-lagre-krav-table" class="data-table"><thead><tr>
-            <th>${termText('{Enhet.en:kvinnodominerad}')}</th><th>BAS</th><th>Median</th><th>${termText('{Jamforelse.en}')}</th><th>BAS</th><th>Median</th>
-            <th>BAS-steg</th><th>Skillnad (kr)</th><th>Skillnad (%)</th><th>95 % KI</th></tr></thead><tbody>${par.map(p => `<tr>
-            <td>${esc(p.kvLabel)}</td><td>${esc(p.kvBas)}</td><td data-sort-value="${p.kvMedian}">${fmt.format(p.kvMedian)}</td>
-            <td>${esc(p.maLabel)}</td><td>${esc(p.maBas)}</td><td data-sort-value="${p.maMedian}">${fmt.format(p.maMedian)}</td>
+            <th>${termText('{Enhet.en:kvinnodominerad}')}</th><th class="bara-export">BAS</th><th>Median</th><th>${termText('{Jamforelse.en}')}</th><th class="bara-export">BAS</th><th>Median</th>
+            <th data-kol="bassteg">BAS-steg</th><th>Skillnad (kr)</th><th>Skillnad (%)</th><th>95 % KI</th></tr></thead><tbody>${par.map(p => `<tr>
+            <td>${esc(p.kvLabel)}<br><small class="f-dampad lv-under" data-export-text="">BAS ${esc(p.kvBas)}</small></td><td class="bara-export">${esc(p.kvBas)}</td><td data-sort-value="${p.kvMedian}">${fmt.format(p.kvMedian)}</td>
+            <td>${esc(p.maLabel)}<br><small class="f-dampad lv-under" data-export-text="">BAS ${esc(p.maBas)}</small></td><td class="bara-export">${esc(p.maBas)}</td><td data-sort-value="${p.maMedian}">${fmt.format(p.maMedian)}</td>
             <td>${p.basSteg}</td><td data-sort-value="${p.gapKr}">${fmt.format(p.gapKr)}</td><td data-sort-value="${p.gapPct}">${pct(p.gapPct)}\u00a0%</td>
             <td>${p.gapCI ? `${fmt.format(p.gapCI.lo)}–${fmt.format(p.gapCI.hi)}\u00a0kr` : '–'}</td></tr>`).join('')}</tbody></table></div>`;
     return `<section id="likvardighet-lagre-krav" class="card marg-t-18">
@@ -23847,7 +23849,10 @@ function _lagreKravHtml(result) {
 }
 
 // Kolumnerna som partabellens grundvy gömmer bakom Fler kolumner (data-kol på rubrikerna i renderLikvardighet).
-const LV_DOLDA_KOLUMNER = ['median', 'medianjamf', 'gapkr', 'justerad', 'paverkan'];
+// Antalen står också under båda etiketterna (n=).
+const LV_DOLDA_KOLUMNER = ['median', 'antal', 'medianjamf', 'gapkr', 'justerad', 'paverkan'];
+// Lägre krav, högre lön: BAS-steget bakom Fler kolumner (_lagreKravHtml).
+const LV_LAGRE_KRAV_DOLDA_KOLUMNER = ['bassteg'];
 // Nycklarna för kolumnerna med paret (data-kol) är historiska och står kvar; texten i kolumnen kommer ur termerna.
 const LV_KOL_KVDOM = 'yrke', LV_KOL_JAMF = 'jamfyrke';
 /**
@@ -24355,6 +24360,7 @@ function renderLikvardighet() {
     if (document.getElementById('likvardighet-lagre-krav-table')) {
         if (typeof enableTableSort === 'function') enableTableSort('likvardighet-lagre-krav-table');
         if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
+        if (typeof flerKolumner === 'function') flerKolumner('likvardighet-lagre-krav-table', LV_LAGRE_KRAV_DOLDA_KOLUMNER, 'lvLagreKrav');
     }
 
     // Kandidatparen som bild (visualiserings-Steg 2), om det finns par.
@@ -28914,18 +28920,19 @@ function aidbasTabeller(d = getData()) {
 
 // ---- Kolumnerna: exakt de namn rapporten använder. typ styr talformatet på skärmen och i Excel. ----
 // Kolumnerna för intervallet, koden och etikettnamnet heter efter termerna (ADR-74); kolumnen med r.yrke visar
-// etikettnamnet, eftersom koden står i kolumnen före.
+// etikettnamnet, eftersom koden står i kolumnen före. Ett fjärde värde är rubrikens data-kol, för kolumnerna som
+// grundvyn gömmer bakom Fler kolumner (AIDBAS_LIKA_DOLDA_KOLUMNER, AIDBAS_LV_DOLDA_KOLUMNER); exporterna har alla.
 const _AIDBAS_NIVA = termStor(T.niva.en), _AIDBAS_KOD = termStor(T.kod.en), _AIDBAS_NAMN = termStor(T.namn.en);
-/** @type {{[tabell: string]: Array<[string, string, (r: any) => any]>}} */
+/** @type {{[tabell: string]: Array<[string, string, (r: any) => any, string?]>}} */
 const AIDBAS_KOL = {
     lika: [[_AIDBAS_NIVA, 'text', r => r.bas], [_AIDBAS_KOD, 'text', r => r.aid], [_AIDBAS_NAMN, 'text', r => r.yrke], ['Antal kvinnor', 'antal', r => r.nKv], ['Antal män', 'antal', r => r.nMa],
            ['Medianlön kvinnor', 'kr', r => r.medKv], ['Medianlön män', 'kr', r => r.medMa], ['Kvinnors median i % av mäns', 'pct', r => r.kvot],
-           ['Nedre gräns', 'pct', r => r.lag], ['Övre gräns', 'pct', r => r.hog], ['Bedömning', 'text', r => r.bedomning],
+           ['Nedre gräns', 'pct', r => r.lag, 'nedre'], ['Övre gräns', 'pct', r => r.hog, 'ovre'], ['Bedömning', 'text', r => r.bedomning],
            // Direktivmarkeringen på den ojusterade löneskillnaden (ADR-59): ingen bedömning, bara var 5 % nås.
-           [_STS_DIR_KOLUMN, 'text', r => (r.kvot != null && _stsDirektiv(r.kvot) ? _STS_DIR_ETIKETT : '')]],
+           [_STS_DIR_KOLUMN, 'text', r => (r.kvot != null && _stsDirektiv(r.kvot) ? _STS_DIR_ETIKETT : ''), 'direktiv']],
     likvardigt: [[_AIDBAS_NIVA, 'text', r => r.bas], [_AIDBAS_KOD, 'text', r => r.aid], [_AIDBAS_NAMN, 'text', r => r.yrke], ['Antal', 'antal', r => r.n],
-                 ['Andel kvinnor (%)', 'pct', r => r.andelKv], ['Andel kvinnor nationellt (%)', 'pct', r => r.andelKvNat], ['Klassning', 'text', r => r.klass],
-                 ['Brukar anses kvinnodominerad', 'text', r => r.brukar], ['Medianlön', 'kr', r => r.median], ['Lönespridning', 'kvot', r => r.spridning]],
+                 ['Andel kvinnor (%)', 'pct', r => r.andelKv], ['Andel kvinnor nationellt (%)', 'pct', r => r.andelKvNat, 'nationellt'], ['Klassning', 'text', r => r.klass],
+                 ['Brukar anses kvinnodominerad', 'text', r => r.brukar, 'brukar'], ['Medianlön', 'kr', r => r.median], ['Lönespridning', 'kvot', r => r.spridning, 'spridning']],
     sammanfattning: [[_AIDBAS_NIVA, 'text', s => s.bas], ['Kvinnodominerade grupper', 'antal', s => s.antalKvDom], ['Högsta medianlön kvinnodominerad', 'kr', s => s.kvDom.hogst], ['Lägsta medianlön kvinnodominerad', 'kr', s => s.kvDom.lagst],
                      ['Övriga grupper', 'antal', s => s.antalOvriga], ['Högsta medianlön övriga', 'kr', s => s.ovriga.hogst], ['Lägsta medianlön övriga', 'kr', s => s.ovriga.lagst],
                      ['Skillnad (kr)', 'kr', s => s.skillnadKr], ['Skillnad (%)', 'pct', s => s.skillnadPct]],
@@ -28935,6 +28942,10 @@ const AIDBAS_KOL = {
     individ: [[_AIDBAS_NIVA, 'text', r => r.bas], [_AIDBAS_KOD, 'text', r => r.aid], [_AIDBAS_NAMN, 'text', r => r.yrke], ['Antal kvinnor', 'antal', r => r.nKv], ['Antal män', 'antal', r => r.nMa],
               ['Analys genomförd', 'text', () => ''], ['Resultat', 'text', () => '']]
 };
+// Kolumnerna som grundvyn gömmer bakom Fler kolumner (F12, F14 i etapp 1b): gränserna och direktivmarkeringen i Lika
+// arbete, de nationella kolumnerna och spridningen i Likvärdigt arbete. Bedömningen och klassningen står kvar.
+const AIDBAS_LIKA_DOLDA_KOLUMNER = ['nedre', 'ovre', 'direktiv'];
+const AIDBAS_LV_DOLDA_KOLUMNER = ['nationellt', 'brukar', 'spridning'];
 /** Noten om grupperna under golvet: namn och antal, inga löner. '' när alla grupper har en rad. */
 function _aidbasSmaNot(sma, golv) {
     if (!sma.length) return '';
@@ -28959,21 +28970,28 @@ function _aidbasCell(v, typ) {
 /**
  * En tabell på skärmen: lönemånad, kolumnerna, raderna och noten; sortering och Kopiera/CSV som övriga tabeller.
  * @param {string} id
- * @param {Array<[string, string, (r: any) => any]>} kolumner
+ * @param {Array<[string, string, (r: any) => any, string?]>} kolumner
  * @param {any[]} rader
  * @param {{not?: string, tom?: string, fil?: string}} [val]
  */
 function _aidbasTabellHtml(id, kolumner, rader, { not = '', tom = 'Inga grupper att visa.', fil = id } = {}) {
     const kropp = rader.length ? rader.map(r => `<tr>${kolumner.map(([, typ, f]) => _aidbasCell(f(r), typ)).join('')}</tr>`).join('') : '';
     return `<p class="text-dampad-sm marg-0-0-6"><strong>${esc(lonemanadText())}</strong></p>`
-        + (rader.length ? `<div class="table-container"><table id="${id}" class="data-table" data-aidbas-fil="${esc(fil)}"><thead><tr>${kolumner.map(([namn, typ]) => `<th${typ === 'text' ? '' : ' class="tal"'}${namn === _STS_DIR_KOLUMN ? ` title="${esc(_STS_DIR_TIPS)}"` : ''}>${esc(namn)}</th>`).join('')}</tr></thead><tbody>${kropp}</tbody></table></div>`
+        + (rader.length ? `<div class="table-container"><table id="${id}" class="data-table" data-aidbas-fil="${esc(fil)}"><thead><tr>${kolumner.map(([namn, typ, , kol]) => `<th${kol ? ` data-kol="${kol}"` : ''}${typ === 'text' ? '' : ' class="tal"'}${namn === _STS_DIR_KOLUMN ? ` title="${esc(_STS_DIR_TIPS)}"` : ''}>${esc(namn)}</th>`).join('')}</tr></thead><tbody>${kropp}</tbody></table></div>`
                         : `<p class="text-dampad-sm">${esc(tom)}</p>`)
         + (not ? `<p class="text-dampad-xs marg-8-0-0">${esc(not)}</p>` : '');
 }
-function _aidbasEfter(id) {
+/**
+ * Sortering, Kopiera/CSV och, för en tabell med kolumner bakom växeln, Fler kolumner.
+ * @param {string} id
+ * @param {string[]} [dolda]  data-kol för kolumnerna som grundvyn gömmer
+ * @param {string} [nyckel]   nyckeln i state.flerKolumner
+ */
+function _aidbasEfter(id, dolda, nyckel) {
     if (!document.getElementById(id)) return;
     if (typeof enableTableSort === 'function') enableTableSort(id);
     if (typeof addTableExportTools === 'function') addTableExportTools(id, document.getElementById(id)?.getAttribute('data-aidbas-fil') || id);
+    if (dolda && nyckel && typeof flerKolumner === 'function') flerKolumner(id, dolda, nyckel);
 }
 function _aidbasNyckel(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
 
@@ -28986,7 +29004,7 @@ function renderAidBasLika() {
     const t = aidbasTabeller(d);
     lika.innerHTML = _aidbasTabellHtml('aidbas-lika-tabell', AIDBAS_KOL.lika, t.lika.rader, { not: _aidbasSmaNot(t.lika.sma, t.golv), fil: 'lika_arbete_aid_bas' })
         + `<p class="text-dampad-xs marg-8-0-0">Medianer, kvot och gränser bara när varje kön har minst ${t.k} ${personOrd(t.k)}; annars <em>Analyseras på individnivå</em>. Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning, räknade med omkastning av könen inom gruppen som i trattdiagrammet. Kolumnen ${esc(_STS_DIR_KOLUMN)}: ${esc(_STS_DIR_TIPS)}</p>`;
-    _aidbasEfter('aidbas-lika-tabell');
+    _aidbasEfter('aidbas-lika-tabell', AIDBAS_LIKA_DOLDA_KOLUMNER, 'aidbasLika');
     const ute = t.lika.rader.filter(r => r.bedomning === 'Utanför gränserna').length, bedomda = t.lika.rader.filter(r => r.bedomning !== 'Analyseras på individnivå').length;
     _aidbasNyckel('nyckel-la-aidbas', t.lika.rader.length ? `${ute} av ${bedomda} bedömda grupper utanför gränserna` : '');
     individ.innerHTML = _aidbasTabellHtml('aidbas-individ-tabell', AIDBAS_KOL.individ, t.individ.rader, { not: _aidbasSmaNot(t.individ.sma, t.golv), tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.`, fil: 'analys_pa_individniva' });
@@ -29005,7 +29023,7 @@ function renderAidBasLikvardigt() {
         + `<p class="text-dampad-xs marg-8-0-0">${esc(def)} Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} ${personOrd(t.k)}.</p>`
         + (t.likvardigt.sammanfattning.length ? `<h3 class="fs-md marg-14-0-4">${esc(termText('Sammanfattning per {niva.en}'))}</h3><ul class="text-dampad-sm">${t.likvardigt.sammanfattning.map(s => `<li>${esc(_aidbasSammanfattningText(s))}</li>`).join('')}</ul>`
                                                : `<p class="text-dampad-xs marg-8-0-0">${_aidbasIngetIntervall()} har både kvinnodominerade grupper och andra grupper med minst ${t.k} ${personOrd(t.k)}, så det finns ingen sammanfattning.</p>`);
-    _aidbasEfter('aidbas-likvardigt-tabell');
+    _aidbasEfter('aidbas-likvardigt-tabell', AIDBAS_LV_DOLDA_KOLUMNER, 'aidbasLikvardigt');
     const kvDom = t.likvardigt.rader.filter(r => r.klass === _aidbasKlassNamn().kv).length;
     _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (${_aidbasDefinitionText(t.definition, t.grans)})` : '');
     hi.innerHTML = _aidbasTabellHtml('aidbas-hierarki-tabell', AIDBAS_KOL.par, t.par, { tom: _aidbasIngaParText(), fil: 'hierarkisk_jamforelse' })
@@ -29024,7 +29042,7 @@ function _aidbasVarde(v, typ) {
 /**
  * Ett blad: rubrik, lönemånad, eventuella inledande rader, kolumnerna, raderna (eller en tom-text) och noter.
  * @param {string} rubrik
- * @param {Array<[string, string, (r: any) => any]>} kolumner
+ * @param {Array<[string, string, (r: any) => any, string?]>} kolumner
  * @param {any[]} rader
  * @param {{fore?: string[], efter?: string[], tom?: string}} [val]
  */

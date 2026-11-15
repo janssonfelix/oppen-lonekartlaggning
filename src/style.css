@@ -3200,6 +3200,18 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .pag-tabell-wrap { overflow-x: auto; max-width: 100%; }
 /* Yrkesgruppstabellen har nio kolumner: snävare sidmarginaler i cellerna, så att den ryms utan att rulla i sidled. */
 #matrix-table th, #matrix-table td { padding-left: 8px; padding-right: 8px; }
+/* Lika arbete per AID-kod och BAS-intervall har nio kolumner i grundvyn: snävare sidmarginaler i cellerna och en tätare
+   sorteringspil, så att grundvyn (Fler kolumner) ryms vid 1 280 punkter också med långa etikettnamn. */
+#aidbas-lika-tabell td { padding-left: 6px; padding-right: 6px; }
+#aidbas-lika-tabell th { padding-left: 6px; }
+#aidbas-lika-tabell th:not(.sortable) { padding-right: 6px; }
+#aidbas-lika-tabell thead th.sortable { padding-right: 14px; }
+#aidbas-lika-tabell thead th.sortable::before, #aidbas-lika-tabell thead th.sortable::after { right: 3px; }
+/* Kandidatparen och Lägre krav, högre lön: snävare sidmarginaler i cellerna, så att grundvyn ryms vid 1 280 punkter;
+   intervallet i Lägre krav står på en rad. */
+#likvardighet-table td, #likvardighet-lagre-krav-table td { padding-left: 8px; padding-right: 8px; }
+#likvardighet-table th, #likvardighet-lagre-krav-table th { padding-left: 8px; }
+#likvardighet-lagre-krav-table td:last-child { white-space: nowrap; }
 /* Prioriteringslistan: smalare sidmarginal i cellerna och en tätare sorteringspil, detaljknapparna två och två, och
    statusmärket och kronorna på en rad, så att grundvyn ryms vid 1280 px med menyn utfälld. */
 #prio-table td { padding-left: 8px; padding-right: 8px; }
