@@ -95,13 +95,17 @@ export async function utseende() {
         }
         ok(!ensam.length, `1100 punkter: infoikonerna i Prioriteringens och Löneöversiktens rubriker står på samma rad som sista ordet${ensam.length ? ' — ensamma: ' + ensam.join(', ') : ''}`);
         await s.close();
-        // Sökfältets platshållare ryms i fältet på de bredder verktyget är gjort för.
+        // Sökfältets platshållare ryms i fältet på de bredder verktyget är gjort för. Mellan 1 101 och 1 365 punkter, med
+        // den utfällda sidomenyn, går rubriken och raden om lokal bearbetning före (F7 i punkt 26): där är sökfältet
+        // minst 80 punkter brett, och att det inte ligger över rubriken prövas i avsnittet om sidhuvudet nedan.
         for (const bredd of [1100, 1280, 1440]) {
             await page.setViewportSize({ width: bredd, height: 900 });
             const sok = await page.evaluate(() => { const i = document.getElementById('sok-grupp'), cs = getComputedStyle(i), c = document.createElement('canvas').getContext('2d');
                 c.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-                return { text: i.placeholder, bredd: Math.ceil(c.measureText(i.placeholder).width), plats: Math.floor(i.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) }; });
-            ok(sok.bredd <= sok.plats, `${bredd} punkter: sökfältets platshållare «${sok.text}» ryms (${sok.bredd} av ${sok.plats} punkter)`);
+                return { text: i.placeholder, bredd: Math.ceil(c.measureText(i.placeholder).width), plats: Math.floor(i.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)),
+                    falt: Math.round(document.getElementById('sok-ruta').getBoundingClientRect().width) }; });
+            if (bredd > 1100 && bredd <= 1365) ok(sok.falt >= 80, `${bredd} punkter: sökfältet är minst 80 punkter brett (${sok.falt})`);
+            else ok(sok.bredd <= sok.plats, `${bredd} punkter: sökfältets platshållare «${sok.text}» ryms (${sok.bredd} av ${sok.plats} punkter)`);
         }
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
@@ -197,27 +201,39 @@ export async function utseende() {
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
 
-    console.log('\n── Sökfältet ligger inte över rubriken vid 1 280 punkter ──');
+    console.log('\n── Sidhuvudet med den utfällda sidomenyn: inget överlapp, raden om lokal bearbetning hel ──');
     {
-        // F7 i punkt 26: med den utfällda sidomenyn låg sökfältet över slutet av rubriken och över «Vad lagras?».
-        await page.setViewportSize({ width: 1280, height: 900 });
-        const over = [];
-        let antal = 0;
-        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
-            await page.click(`.nav-item[data-tab="${flik}"]`);
-            const m = await page.evaluate(() => {
-                const ruta = el => { const r = el.getBoundingClientRect(); return r; };
-                const h1 = document.getElementById('page-title'), rng = document.createRange(); rng.selectNodeContents(h1);
-                const sok = ruta(document.getElementById('sok-ruta'));
-                const kolliderar = r => r.width > 0 && sok.width > 0 && r.left < sok.right - 1 && r.right > sok.left + 1 && r.top < sok.bottom - 1 && r.bottom > sok.top + 1;
-                return { titel: h1.textContent.trim(), rubrik: kolliderar(rng.getBoundingClientRect()), vadLagras: kolliderar(ruta(document.getElementById('btn-data-residency'))),
-                    sidomeny: Math.round(document.querySelector('.sidebar').getBoundingClientRect().width) };
-            });
-            antal++;
-            if (m.rubrik || m.vadLagras) over.push(`${m.titel}${m.rubrik ? ' (rubriken)' : ''}${m.vadLagras ? ' (Vad lagras?)' : ''}`);
-            if (flik === 'dashboard') ok(m.sidomeny > 200, `1280 punkter: sidomenyn är utfälld (${m.sidomeny} punkter)`);
+        // F7 i punkt 26: med den utfällda sidomenyn låg sökfältet över slutet av rubriken och över «Vad lagras?». Ordningen
+        // när kraven krockar: inget överlapp, «bearbetas lokalt» syns, sökfältets platshållare ryms.
+        for (const bredd of [1101, 1280, 1365]) {
+            await page.setViewportSize({ width: bredd, height: 900 });
+            const over = [], utanfor = [];
+            let antal = 0, sidomeny = 0;
+            for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
+                await page.click(`.nav-item[data-tab="${flik}"]`);
+                const m = await page.evaluate(() => {
+                    const h1 = document.getElementById('page-title'), rng = document.createRange(); rng.selectNodeContents(h1);
+                    const sok = document.getElementById('sok-ruta').getBoundingClientRect();
+                    const kolliderar = r => r.width > 0 && sok.width > 0 && r.left < sok.right - 1 && r.right > sok.left + 1 && r.top < sok.bottom - 1 && r.bottom > sok.top + 1;
+                    const hdr = document.querySelector('.top-header'), kant = hdr.getBoundingClientRect().right - parseFloat(getComputedStyle(hdr).paddingRight);
+                    return { titel: h1.textContent.trim(), rubrik: kolliderar(rng.getBoundingClientRect()), vadLagras: kolliderar(document.getElementById('btn-data-residency').getBoundingClientRect()),
+                        utanfor: document.querySelector('.header-knappar').getBoundingClientRect().right > kant + 1,
+                        sidomeny: Math.round(document.querySelector('.sidebar').getBoundingClientRect().width) };
+                });
+                antal++; sidomeny = Math.max(sidomeny, m.sidomeny);
+                if (m.rubrik || m.vadLagras) over.push(`${m.titel}${m.rubrik ? ' (rubriken)' : ''}${m.vadLagras ? ' (Vad lagras?)' : ''}`);
+                if (m.utanfor) utanfor.push(m.titel);
+            }
+            ok(sidomeny > 200, `${bredd} punkter: sidomenyn är utfälld (${sidomeny} punkter)`);
+            ok(!over.length, `${bredd} punkter: sökfältet ligger inte över rubriken eller «Vad lagras?» på någon av ${antal} flikar${over.length ? ' — ' + over.join(', ') : ''}`);
+            ok(!utanfor.length, `${bredd} punkter: knapparna står inom sidhuvudet på alla ${antal} flikar${utanfor.length ? ' — ' + utanfor.join(', ') : ''}`);
         }
-        ok(!over.length, `1280 punkter: sökfältet ligger inte över rubriken eller «Vad lagras?» på någon av ${antal} flikar${over.length ? ' — ' + over.join(', ') : ''}`);
+        await page.setViewportSize({ width: 1280, height: 900 });
+        const lokalt = await page.evaluate(() => {
+            const el = document.querySelector('#gdpr-banner .gdpr-banner-lokalt'), r = el.getBoundingClientRect(), b = document.getElementById('gdpr-banner').getBoundingClientRect(), cs = getComputedStyle(el);
+            return { bredd: Math.round(r.width), inom: r.left >= b.left - 1 && r.right <= b.right + 1, klippt: cs.clipPath !== 'none' || cs.clip !== 'auto' || cs.position === 'absolute', text: el.textContent.trim() };
+        });
+        ok(lokalt.bredd > 0 && lokalt.inom && !lokalt.klippt, `1280 punkter: «${lokalt.text}» syns i raden om lokal bearbetning (${lokalt.bredd} punkter)`);
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
 

@@ -248,6 +248,7 @@ body {
 
 .top-header {
     background-color: var(--bg-card);
+    gap: 24px;
     padding: 20px 40px;
     border-bottom: 1px solid var(--border);
 }
@@ -3200,13 +3201,17 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
     .header-knappar > .btn { flex-shrink: 0; white-space: nowrap; }
     .header-knappar .sok-ruta { min-width: 80px; }
 }
-/* Upp till 1 365 punkter är platsen trång med den utfällda sidomenyn: som under 1 100 punkter lämnar orden «bearbetas
-   lokalt» plats (skärmläsare får dem ändå), och avstånden i sidhuvudet är tätare, så att sökfältets platshållare ryms
-   vid 1 280 punkter också på fliken med den längsta rubriken. */
+/* Upp till 1 365 punkter är platsen trång med den utfällda sidomenyn. Avstånden i sidhuvudet är tätare; raden om lokal
+   bearbetning står hel. Under 1 280 punkter ryms knapparnas text inte bredvid den: knapparna är ikonknappar, som under
+   900 punkter, med texten kvar för skärmläsare. Sökfältets platshållare kan klippas här (sökfältet är minst 80 punkter). */
 @media (min-width: 1101px) and (max-width: 1365px) {
-    .top-header.gap-24.gap-24.gap-24 { column-gap: 10px; }   /* över hjälpklassens tre klasser */
-    .header-knappar { gap: 5px; }
-    .gdpr-banner-lokalt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+    .top-header { gap: 12px; }
+    .header-knappar { gap: 6px; }
+}
+@media (min-width: 1101px) and (max-width: 1279px) {
+    .header-knappar > .btn { padding: 7px 9px; gap: 0; }
+    .header-knappar > .btn .knapp-text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+        clip: rect(0, 0, 0, 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 }
 @media (max-width: 900px) { .top-header { flex-wrap: wrap; } .header-knappar { flex: 1 1 100%; } }
 /* Sökfältet får aldrig bli bredare än sin plats i sidhuvudet (det gick in över knappen bredvid). */
