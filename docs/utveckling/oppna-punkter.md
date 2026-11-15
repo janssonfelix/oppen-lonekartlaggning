@@ -15,13 +15,16 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    varje grupp görs med omkastning, utom för grupper över 300 personer.
 
 **Prestanda:**
-5. **Ändrad minsta gruppstorlek tar 4,1 s på 55 000 rader** (10 → 11): bootstrap-KI och styrkan räknas om i
+5. **Ändrad minsta gruppstorlek tar 12,7 s på 55 000 rader** (10 → 11): bootstrap-KI och styrkan räknas om i
    bakgrunden efteråt (`_skattningarIBakgrunden`), och Att göra, processöversikten och den öppna fliken räknas om. Det
    som återstår är regressionen i processöversikten och underlagets kvalitet, som inte får cachas (ADR-17).
    Kvantilregressionens bootstrap-intervall räknas i bakgrunden efter att kortet ritats, också i exportläget
    (`_regKvantilBerakna`): en bild eller utskrift som görs innan intervallet är klart bär kortet utan det.
-   Mätvärden (`npm run perf`, Chromium, 55 000 syntetiska rader, 2026-10-29): uppladdning till klart gränssnitt
-   ~2,8 s och till klara bakgrundsanalyser ~7,7 s; tyngst är Likvärdigt arbete (2,6 s) och Lika arbete (2,0 s).
+   Mätvärden (`npm run perf`, Chromium, 55 000 syntetiska rader, 2026-11-15): uppladdning till klart gränssnitt
+   ~12,1 s och till klara bakgrundsanalyser ~15,8 s; tyngst är Likvärdigt arbete (10,2 s), Exportera (3,1 s) och
+   Lönestruktur (2,6 s). Tiden till klart gränssnitt är över budgeten (5 s) sedan jämförelsemängden blev alla
+   AID-etiketter som inte är kvinnodominerade (ADR-60, 2026-11-08); Likvärdigt arbete tog 2,6 s före.
+   Förhandsbeskedet under *Rapportens innehåll* tar ~2,3 s.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
