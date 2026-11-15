@@ -186,8 +186,9 @@ describe('docx: kolumnbredderna följer innehållet', () => {
             ['3', '207011 Undersköterska (BAS C)', '502010 Systemutvecklare (BAS C)', '20 / 45', '51 % (blandad)', '1 413 kr', '3,7 %', ''].map(c),
         ] };
     const grid = block => [...tolka(docxDelar([block], OPT)['word/document.xml']).getElementsByTagName('w:gridCol')].map(g => Number(g.getAttribute('w:w')));
-    // Ordens bredd i Calibri 10 pt (twips, ur typsnittets mått), och cellens marginaler (2 × 85).
-    const MARGINAL = 170;
+    // Ordens bredd i Calibri 10 pt (twips, ur typsnittets mått). Tabellen ryms inte i 10 pt och skrivs tätare: 9 pt
+    // och cellmarginaler på 2 × 57.
+    const MARGINAL = 114, PT9 = 0.9;
     it('tabellen fyller textytan, och cellerna har kolumnernas bredd', () => {
         const g = grid(lv);
         expect(g.reduce((s, v) => s + v, 0)).toBe(9070);
@@ -202,17 +203,48 @@ describe('docx: kolumnbredderna följer innehållet', () => {
     });
     it('det längsta ordet i varje cell ryms i sin kolumn', () => {
         const g = grid(lv);
-        expect(g[1]).toBeGreaterThanOrEqual(1283 + MARGINAL);   // Undersköterska
-        expect(g[2]).toBeGreaterThanOrEqual(1435 + MARGINAL);   // Systemutvecklare
-        expect(g[4]).toBeGreaterThanOrEqual(1452 + MARGINAL);   // (mansdominerad)
+        expect(g[1]).toBeGreaterThanOrEqual(PT9 * 1283 + MARGINAL);   // Undersköterska
+        expect(g[2]).toBeGreaterThanOrEqual(PT9 * 1435 + MARGINAL);   // Systemutvecklare
+        expect(g[4]).toBeGreaterThanOrEqual(PT9 * 1452 + MARGINAL);   // (mansdominerad)
     });
     it('ett belopp eller en procentsats står på en rad', () => {
         const g = grid(lv);
-        expect(g[5]).toBeGreaterThanOrEqual(657 + MARGINAL);   // 6 000 kr
-        expect(g[6]).toBeGreaterThanOrEqual(542 + MARGINAL);  // 16,3 %
+        expect(g[5]).toBeGreaterThanOrEqual(PT9 * 657 + MARGINAL);   // 6 000 kr
+        expect(g[6]).toBeGreaterThanOrEqual(PT9 * 542 + MARGINAL);  // 16,3 %
     });
     it('en tabell med korta celler delar bredden efter innehållet, inte lika', () => {
         const g = grid({ typ: 'tabell', rubrikrad: [c('N'), c('Beskrivning')], rader: [[c('12'), c('En lång text som behöver mycket mer plats än talet bredvid')]] });
         expect(g[0]).toBeLessThan(g[1] / 3);
+    });
+    // Som Åtgärder och tidsplan: nio kolumner, belopp i kr/år, namn och fyra kolumner att fylla i. Tabellen ryms inte i
+    // 10 pt; den skrivs då tätare (9 pt och smalare cellmarginaler), så att beloppen och namnen står hela.
+    const HR = '[HR fyller i]';
+    const atgarder = { typ: 'tabell',
+        rubrikrad: ['Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad', 'Kostnaden avser', 'Sakliga skäl prövade?', 'Ansvarig',
+            'Tidsplan (senast inom tre år)', 'Status'].map(c),
+        rader: [
+            ['403010 Barnskötare · BAS C', '20', 'Prioritering (under referensen)', '1 427 679 kr/år', 'Nå referensens median', HR, HR, HR, HR].map(c),
+            ['207011 Undersköterska · BAS C', '20', 'Likvärdigt arbete (kandidatpar)', '1 669 800 kr/år', 'Nå jämförelseetikettens median', HR, HR, HR, HR].map(c),
+        ] };
+    it('en bred tabell skrivs tätare, och beloppen och namnen står ändå hela', () => {
+        const xml = docxDelar([atgarder], OPT)['word/document.xml'];
+        const g = grid(atgarder);
+        expect(g.reduce((s, v) => s + v, 0)).toBe(9070);
+        expect(xml).toContain('<w:sz w:val="18"/>');                      // 9 pt
+        expect(xml).toMatch(/<w:tblCellMar><w:left w:w="57" w:type="dxa"\/><w:right w:w="57" w:type="dxa"\/><\/w:tblCellMar>/);
+        const M9 = 114;   // cellmarginalerna i den täta tabellen
+        expect(g[3]).toBeGreaterThanOrEqual(0.9 * 1249 + M9);   // 1 669 800 kr/år i 9 pt (1249 twips i 10 pt)
+        expect(g[0]).toBeGreaterThanOrEqual(0.9 * 1283 + M9);   // Undersköterska
+        expect(g[4]).toBeGreaterThanOrEqual(0.9 * 1682 + M9);   // jämförelseetikettens
+    });
+    it('en tabell som ryms skrivs i tabellstilens 10 pt och marginaler', () => {
+        // Som Grupper att bedöma i utkastet.
+        const grupper = { typ: 'tabell',
+            rubrikrad: ['AID-etikett', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Ojusterad löneskillnad ≥ 5 %',
+                'Saklig förklaring (fyll i)', 'Åtgärd/beslut (fyll i)'].map(c),
+            rader: [['502010 Systemutvecklare', '23 / 22', '38 219 kr', '40 238 kr', '95,0 %', '≥ 5 %', '', ''].map(c)] };
+        const xml = docxDelar([grupper], OPT)['word/document.xml'];
+        expect(xml).not.toContain('<w:sz w:val="18"/>');
+        expect(xml).not.toContain('<w:tblCellMar>');
     });
 });

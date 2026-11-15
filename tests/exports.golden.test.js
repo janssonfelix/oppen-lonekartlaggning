@@ -613,7 +613,9 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
         expect(blad('[Huvud]', 'Reserv')).toBe('Reserv');
     });
     it('protokollets blad om lika arbete heter "2. Lika arbete (AID)"', () => {
-        const prot = bocker[Object.keys(bocker).find(f => /protokoll|lonebedomning/i.test(f))];
+        // Samma namn som exportJPAProtocol skriver.
+        const prot = bocker[`lonekartlaggning_protokoll_gemensam_lonebedomning_${new Date().toISOString().slice(0, 10)}.xlsx`];
+        expect(prot, Object.keys(bocker).join(', ')).toBeTruthy();
         expect(prot.SheetNames).toContain('2. Lika arbete (AID)');
     });
     it('Metod & parametrar: kolumn A är så bred som den längsta etiketten, med ett tak', () => {

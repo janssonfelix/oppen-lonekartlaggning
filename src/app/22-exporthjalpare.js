@@ -96,7 +96,7 @@ function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
     // Kolumn A så bred som den längsta etiketten (rubriken på rad 1 räknas inte), högst 70 tecken (F6 i punkt 26).
-    const etikett = Math.max(...rows.slice(1).map(r => String(r[0] ?? '').length));
+    const etikett = Math.max(0, ...rows.slice(1).map(r => String(r[0] ?? '').length));
     ws['!cols'] = [{ wch: Math.min(70, etikett + 2) }, { wch: 88 }];
     try { XLSX.utils.book_append_sheet(wb, ws, 'Metod & parametrar'); } catch (_e) { /* dubblettnamn: hoppa */ }
 }

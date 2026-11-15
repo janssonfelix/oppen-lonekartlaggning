@@ -50,11 +50,6 @@ function _utskriftAvstavar() {
     return ja;
 }
 
-/** Cellens text är ett tal med ev. enhet ("33 932 kr", "93,6 %", "46 (28/18)", "1 427 679 kr/år", "20 / 45"). */
-function _utskriftArTal(text) {
-    return /^[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$/.test(String(text).trim());
-}
-
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
 async function _buildPrintReportExport() {
@@ -140,7 +135,7 @@ async function _buildPrintReportExport() {
         // Avstavar inte webbläsaren svenska, får rubriker och textceller brytas var som helst (stilmallen), men inte talen.
         const utanAvstavning = !_utskriftAvstavar();
         root.classList.toggle('pr-utan-avstavning', utanAvstavning);
-        if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (_utskriftArTal(td.textContent)) td.classList.add('pr-tal'); });
+        if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (_cellArTal(td.textContent)) td.classList.add('pr-tal'); });
 
         document.body.classList.add('print-mode');
         hideLoading();
