@@ -2478,6 +2478,7 @@ const __mirrorRegression = (() => {
     const fitOLS = __mirrorStat.fitOLS;
     const invert = __mirrorStat.invert;
     const matMul = __mirrorStat.matMul;
+    const median = __mirrorStat.median;
     const pValue2Sided = __mirrorStat.pValue2Sided;
     const tQuantile = __mirrorStat.tQuantile;
     const skapaTermer = __mirrorTermer.skapaTermer;
@@ -2663,7 +2664,12 @@ function computePerBasGap(rows, basList, { golv }) {
         const tq   = tQuantile(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
         const ciLo = (Math.exp(beta - tq*se) - 1) * 100;
         const ciHi = (Math.exp(beta + tq*se) - 1) * 100;
-        out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, gapPct: (Math.exp(beta)-1)*100, ciLow: ciLo, ciHigh: ciHi, pValue: p, R2: fit.R2, status: 'ok' });
+        // Lönenivåerna för samma personer som regressionen (protokollet redovisar median och medelvärde, ADR-79). De
+        // räknas bara här, där båda könen når golvet.
+        const lonKv = kv.map(d => d.lon), lonMa = ma.map(d => d.lon);
+        const medel = l => l.reduce((s, x) => s + x, 0) / l.length;
+        out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, gapPct: (Math.exp(beta)-1)*100, ciLow: ciLo, ciHigh: ciHi, pValue: p, R2: fit.R2, status: 'ok',
+            medKv: median(lonKv), medMa: median(lonMa), medelKv: medel(lonKv), medelMa: medel(lonMa) });
     });
     return out;
 }
@@ -6520,11 +6526,13 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
             continue;
         }
         const medKv = median(kv), medMa = median(ma);
+        // Medelvärdet på samma löner som medianen; protokollet redovisar båda (ADR-79), statusen följer medianen.
+        const medelKv = kv.reduce((s, x) => s + x, 0) / kv.length, medelMa = ma.reduce((s, x) => s + x, 0) / ma.length;
         const kvot = medKv / medMa;
         const gapPct = Math.abs(kvot * 100 - 100);
         const b = bedomSkillnad(kv, ma, { golv });
         const g = { yrke, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
-            medKv, medMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
+            medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
         // varje grupp på minst 3 % och visas för grupperna Värt att granska.

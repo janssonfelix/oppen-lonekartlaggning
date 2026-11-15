@@ -339,7 +339,8 @@ osäkerhetsband i Lika arbete (`41-lika-arbete.js`, fast 1,96). Översikten per 
 
 **Regressionerna per BAS-intervall** (`computePerBasGap`) skattar kön och, när lönefilen har ålder, ålder (centrerad
 inom intervallet) inom varje BAS-intervall med minst `statGolv()` av varje kön, med HC3 och t-kvantil. Intervall under
-golvet redovisas som *för få*, med antalen.
+golvet redovisas som *för få*, med antalen. Ett skattat intervall bär också median och medelvärde per kön för samma
+personer (`medKv`, `medMa`, `medelKv`, `medelMa`), som protokollet för gemensam lönebedömning redovisar (ADR-79).
 
 **BH-korrigeringen.** Testerna per BAS-intervall korrigeras för att många prövas samtidigt (Benjamini–Hochberg).
 Räkningen står på ett ställe, `bhJustera` i `src/lib/stat.js` (i appen `_bhJustera`): q-värdena i samma ordning som

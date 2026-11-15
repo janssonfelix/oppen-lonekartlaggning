@@ -85,6 +85,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-76 | Poängläget jämför bara med organisationens egna jämförelseetiketter | Gällande | 2026-11-15 |
 | ADR-77 | HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång | Gällande | 2026-11-15 |
 | ADR-78 | Översikten per huvudområde räknar med huvudregressionens kodning | Gällande | 2026-11-15 |
+| ADR-79 | Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och arbetsvärdering | Gällande | 2026-11-15 |
 
 ## Besluten
 
@@ -443,3 +444,12 @@ mellan intervallen är olika stora (upp till 2,1 procentenheter i det lilla demo
 *Avvisat:* att behålla BAS som rang och kravet på ålder; att också följa förklaringsmodellen, som skulle ändra
 översikten när någon väljer variabler i en annan flik; huvudregressionens reservsteg utan BAS, som i det läget visar den
 råa skillnaden (eller den bara åldersjusterade) under en rubrik som säger BAS. *Gäller i dag:* `regressionsmodellen.md` §3.
+
+**ADR-79 — Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och
+arbetsvärdering.** Protokollet för gemensam lönebedömning redovisar både median och medelvärde per kön, med skillnaden i
+kronor och kvinnors i procent av mäns, för varje redovisad AID-etikett (blad 2) och BAS-intervall (blad 3), i blad 3 för
+samma personer som regressionen. Statusen och urvalet följer som förut medianen i blad 2 och regressionen i blad 3;
+medelvärdet står bara för en grupp där båda könen når tröskeln. Försättssidan har fält som parterna fyller i för
+löneökning efter föräldraledighet eller ledighet för vård av anhörig, för utvärderingen av åtgärderna från föregående
+gemensamma lönebedömning och för analysen av systemen för könsneutral arbetsvärdering och arbetsindelning. *Gäller i
+dag:* `lagrum.md`, avsnittet om protokollet för gemensam lönebedömning.
