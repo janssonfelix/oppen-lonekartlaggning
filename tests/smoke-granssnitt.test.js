@@ -950,6 +950,53 @@ describe('Lägre krav, högre lön', () => {
     });
 });
 
+describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall', () => {
+    const grupp = (aid, bas, kv, ma, lon) => [
+        ...Array.from({ length: kv }, (_, i) => ({ aid, bas, lon: lon + i * 10, alder: 40, kon: 'kvinna', yrke: `${aid} Yrke`, yrkeLabel: `Yrke ${aid}`, enhet: '' })),
+        ...Array.from({ length: ma }, (_, i) => ({ aid, bas, lon: lon + i * 10, alder: 40, kon: 'man', yrke: `${aid} Yrke`, yrkeLabel: `Yrke ${aid}`, enhet: '' })),
+    ];
+    // Den kvinnodominerade 100 i BAS E och den mansdominerade 200 i BAS C: ett par över BAS-gränsen bara med poäng.
+    const oppna = (poang) => {
+        const w = createAppWindow();
+        w.__state.data = [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000)];
+        w.__state.arbetsvardering = poang ? { byKey: new Map([['100', 500], ['200', 480]]), count: 2, hasBas: false } : null;
+        if (w.__state.likvardighet) w.__state.likvardighet.result = null;
+        w.eval('populateSelects(); unlockTabs();');
+        w.__renderTabContent('likvardighet');
+        return w;
+    };
+    const text = el => el.textContent.replace(/\s+/g, ' ');
+    const flikIntro = w => [...w.document.querySelectorAll('.flik-intro')].find(e => e.textContent.includes('Lika lön för jobb som är lika mycket värda'));
+
+    it('inledningen gäller båda måtten på kraven', () => {
+        const w = oppna(false);
+        expect(text(flikIntro(w))).toContain('Här jämför verktyget kvinnodominerade AID-etiketter med AID-etiketter som inte är kvinnodominerade och har likvärdiga krav. Kraven mäts med BAS-intervallet, eller med poängen om organisationen har en arbetsvärdering.');
+    });
+    it('med poäng: bakgrunden, Lägre krav, märket och beräkningsbeviset nämner inte BAS som mått', () => {
+        const w = oppna(true);
+        const r = w.eval('likvardighetResultat()');
+        expect(r.pairs).toHaveLength(1);
+        const innehall = text(w.document.getElementById('likvardighet-content'));
+        expect(innehall).toContain('därför jämförs organisationens egna AID-etiketter med varandra; jämförelsestatistiken har inga poäng och används inte.');
+        expect(innehall).not.toContain('i första hand organisationens egna');
+        const lagre = text(w.document.getElementById('likvardighet-lagre-krav'));
+        expect(lagre).not.toContain('BAS används som mått på krav');
+        expect(lagre).toContain('Med arbetsvärderingspoäng jämförs AID-etiketter redan över BAS-gränserna');
+        const under = [...w.document.querySelectorAll('#likvardighet-table .lv-under')].map(e => e.textContent);
+        expect(under.length).toBeGreaterThan(0);
+        expect(under.some(t => /intern/.test(t))).toBe(false);
+        const intro = w.eval('_evidenceForLikvardighetPair')(r.pairs[0]).intro;
+        expect(intro).toContain('som enligt arbetsvärderingen har <em>lika eller lägre krav</em> (480 poäng mot 500)');
+        expect(intro).not.toContain('samma BAS-intervall');
+    });
+    it('utan poäng: BAS-texterna står kvar', () => {
+        const w = oppna(false);
+        const innehall = text(w.document.getElementById('likvardighet-content'));
+        expect(innehall).toContain('därför jämförs i första hand organisationens egna AID-etiketter med varandra.');
+        expect(text(w.document.getElementById('likvardighet-lagre-krav'))).toContain('BAS används som mått på krav');
+    });
+});
+
 describe('kvartiler utan enskilda löner', () => {
     it('Struktur visar inte organisationens lägsta eller högsta lön', () => {
         const w = createAppWindow();
