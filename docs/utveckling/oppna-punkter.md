@@ -67,7 +67,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     kvinnodominerade AID-etiketter med AID-etiketter i samma BAS-intervall*) säger «i samma BAS-intervall» också när
     kraven mäts med poäng och paren bildas över BAS-gränserna. Samma slag: bakgrundsavsnittet i fliken (*därför
     jämförs i första hand organisationens egna*, `34-likvardigt-arbete.js`) och beräkningsbeviset för ett par
-    (*inom samma BAS-intervall (= likvärdiga krav)*, `27-berakningsbevis.js`). Rättas i en egen ändring.
+    (*inom samma BAS-intervall (= likvärdiga krav)*, `27-berakningsbevis.js`), ingressen till *Lägre krav, högre lön*
+    (*i lägre BAS. BAS används som mått på krav*, ovanför meningen om poäng) och märket *intern* på varje par, som i
+    poängläget inte skiljer något från något. Rättas i en egen ändring.
 
 **Efter bytet till AID:s ord (ADR-74, 2026-11-15):**
 26. **Utseendet med de nya orden är prövat i webbläsare och LibreOffice, inte i Word och Excel.** Mot bygget före

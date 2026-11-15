@@ -23890,7 +23890,7 @@ function renderLikvardighet() {
                         <li>Totalt inlästa rader: <strong>${d.organisation.totalRader.toLocaleString('sv-SE')}</strong></li>
                         <li>Unika ${T.enhet.fl} i ${T.niva.fl}: <strong>${d.organisation.antalAidxBas}</strong></li>
                         <li>Kvinnodominerade (${kvDomGransText()}): <strong>${d.organisation.kvDomFunna}</strong></li>
-                        <li>Interna ${T.jamforelse.fl} (${jamforelseGransText()}): <strong class="farg-ok">${d.organisation.ickeKvFunna}</strong> <small class="f-dampad">(primär jämförelsekälla)</small></li>
+                        <li>Interna ${T.jamforelse.fl} (${jamforelseGransText()}): <strong class="farg-ok">${d.organisation.ickeKvFunna}</strong> <small class="f-dampad">(${_lvPoang(result) ? 'den enda jämförelsekällan med poäng' : 'primär jämförelsekälla'})</small></li>
                         ${d.organisation.kvDomMedNLessThanK > 0
                             ? `<li><span class="f-dampad">•varav ${d.organisation.kvDomMedNLessThanK} grupp${d.organisation.kvDomMedNLessThanK === 1 ? '' : 'er'} med n &lt; ${kTroskel()} (inkluderade ändå — ingen k-mask i denna analys)</span></li>`
                             : ''}
@@ -23969,7 +23969,7 @@ function renderLikvardighet() {
     const internTblHtml = `
         <details class="mb-14" open>
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
-                Steg 2a — Organisationens interna ${T.jamforelse.fl} (${result.orgIckeKv.length} st) <small class="farg-dampad fw-400">— primär jämförelsekälla</small>
+                Steg 2a — Organisationens interna ${T.jamforelse.fl} (${result.orgIckeKv.length} st) <small class="farg-dampad fw-400">— ${_lvPoang(result) ? 'den enda jämförelsekällan med poäng' : 'primär jämförelsekälla'}</small>
             </summary>
             <div class="pad-10-0">
                 ${result.orgIckeKv.length
@@ -24065,7 +24065,7 @@ function renderLikvardighet() {
                 <strong>${ikon('info')} Inga kandidatpar hittades</strong>
                 <p class="fs-md marg-8-0">
                     Organisationen har ${result.orgKvDom.length} kvinnodominerade grupper och
-                    ${result.orgIckeKv.length} interna och ${_lvStatJamfor(result).length} externa ${T.jamforelse.fl}.
+                    ${_lvPoang(result) ? `${result.orgIckeKv.length} ${T.jamforelse.fl}` : `${result.orgIckeKv.length} interna och ${_lvStatJamfor(result).length} externa ${T.jamforelse.fl}`}.
                     ${_lvPoang(result) ? `Ingen av ${T.jamforelse.bfl} med lika eller lägre poäng har` : `Inom de ${d.jämförelse.gemensammaBas} gemensamma ${T.niva.bfl} har ingen av
                     ${T.jamforelse.bfl}`} högre lön än organisationens kvinnodominerade ${T.enhet.fl}.
                     ${cfg.minGapPct > 0 ? `(Bara par med minst ${cfg.minGapPct} % skillnad visas, efter valet i Inställningar.)` : ''}

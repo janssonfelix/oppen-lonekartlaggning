@@ -135,6 +135,25 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
         expect(t).not.toMatch(/används jämförelsestatistiken i stället/);
         expect(t).toMatch(/Steg 2: Välj jämförelseetiketter med lika eller lägre poäng/);
         expect(t).not.toMatch(/gemensamma BAS-intervall/);
+        expect(t).not.toMatch(/primär jämförelsekälla/);   // de egna är den enda källan med poäng
+        expect(t).toMatch(/Steg 2a — Organisationens interna jämförelseetiketter \(\d+ st\) — den enda jämförelsekällan med poäng/);
+    });
+    it('Likvärdigt arbete i poängläget: rutan Inga kandidatpar räknar inga interna och externa jämförelseetiketter', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        // De kvinnodominerade AID-etiketterna får lägst poäng: ingen jämförelseetikett har lika eller lägre poäng.
+        const andel = new Map();
+        for (const r of w.__getData()) {
+            const n = `${r.aid}|${r.bas}`, a = andel.get(n) || [0, 0];
+            andel.set(n, [a[0] + (r.kon.includes('kvinna') ? 1 : 0), a[1] + 1]);
+        }
+        w.__state.arbetsvardering = { byKey: new Map([...andel].map(([n, [kv, alla]]) => [n, kv / alla > 0.6 ? 1 : 1000])) };
+        w.__state.likvardighet.result = null;
+        w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
+        const t = w.document.getElementById('view-likvardighet').textContent.replace(/\s+/g, ' ');
+        expect(t).toMatch(/Inga kandidatpar hittades/);
+        expect(t).not.toMatch(/externa jämförelseetiketter/);
+        expect(t).toMatch(/Organisationen har \d+ kvinnodominerade grupper och \d+ jämförelseetiketter\./);
     });
     it('Likvärdigt arbete i poängläget: CSV- och Excel-exportens metadata beskriver ingen reserv', async () => {
         const w = poangFonster();
