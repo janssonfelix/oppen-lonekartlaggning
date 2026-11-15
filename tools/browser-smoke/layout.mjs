@@ -108,15 +108,14 @@ export async function utseende() {
 
     console.log('\n── Grundvyn ryms vid 1 280 punkter ──');
     {
-        // De breda tabellerna ryms i sin ruta vid 1 280 punkter med Fler kolumner avslaget; vid 1 100 får de rulla.
-        // Rutan är tabellens närmaste förälder som rullar i sidled (.rulla-x, .table-container, .table-responsive
-        // eller värdelementet). Både demo och stort demo: Lägre krav, högre lön och tabellerna i Underlagets kvalitet
-        // ritas bara med det stora demot, och de långa etikettnamnen finns bara där. I Lönestrukturen och
-        // Prioriteringen klipps inget tal eller statusmärke i sin cell.
-        const TABELLER = [['benchmark', ['#benchmark-table', '#ref-tabell']], ['matrix', ['#aidbas-lika-tabell']],
-            ['likvardighet', ['#likvardighet-table', '#likvardighet-lagre-krav-table', '#aidbas-likvardigt-tabell']],
-            ['struktur', ['#sektor-table', '#la-oversikt']], ['prioritering', ['#prio-table']], ['filer', ['#avsnitt-ov-kvalitet table']]];
-        const KLIPPS_INTE = ['#sektor-table', '#la-oversikt', '#prio-table'];
+        // De fyra tabellerna i Lika arbete och Likvärdigt arbete ryms i sin ruta vid 1 280 punkter med Fler kolumner
+        // avslaget; vid 1 100 får de rulla. Andra tabeller får rulla i sidled. Rutan är tabellens närmaste förälder
+        // som rullar i sidled (.rulla-x, .table-container, .table-responsive eller värdelementet). Både demo och
+        // stort demo: Lägre krav, högre lön ritas bara med det stora demot, och de långa etikettnamnen finns bara där.
+        // I Lönestrukturen och Prioriteringen klipps inget tal eller statusmärke i sin cell, också när tabellen rullar.
+        const TABELLER = [['matrix', ['#aidbas-lika-tabell']],
+            ['likvardighet', ['#likvardighet-table', '#likvardighet-lagre-krav-table', '#aidbas-likvardigt-tabell']]];
+        const KLIPPS_INTE = [['struktur', ['#sektor-table', '#la-oversikt']], ['prioritering', ['#prio-table']]];
         const s = await browser.newPage({ viewport: { width: 1280, height: 900 } });
         await s.goto('file://' + FIL);
         await s.click('#first-run-stort-demo');
@@ -124,7 +123,7 @@ export async function utseende() {
         await page.setViewportSize({ width: 1280, height: 900 });
         const ritade = new Set();
         for (const [underlag, sida] of [['demo', page], ['stort demo', s]]) {
-            for (const [flik, valjare] of TABELLER) {
+            for (const [flik, valjare, klipp] of [...TABELLER.map(([f, v]) => [f, v, []]), ...KLIPPS_INTE.map(([f, v]) => [f, [], v])]) {
                 await sida.click(`.nav-item[data-tab="${flik}"]`);
                 await sida.waitForTimeout(400);
                 await sida.evaluate(() => {
@@ -141,7 +140,7 @@ export async function utseende() {
                     ritade.add(m.sel);
                     ok(m.scroll <= m.plats + 1, `1280 punkter, ${underlag}: ${m.id} ryms i grundvyn (${m.scroll} av ${m.plats} punkter)`);
                 }
-                for (const id of valjare.filter(v => KLIPPS_INTE.includes(v))) {
+                for (const id of klipp) {
                     const k = await sida.evaluate(id => {
                         const t = document.querySelector(id);
                         if (!t) return null;
@@ -150,12 +149,14 @@ export async function utseende() {
                             .map(el => el.textContent.replace(/\s+/g, ' ').trim());
                         return { antal: celler.length, klippta: [...new Set(klippta)] };
                     }, id);
+                    if (k?.antal) ritade.add(id);
                     if (k) ok(k.antal > 0 && !k.klippta.length, `1280 punkter, ${underlag}: inget tal eller märke klipps i ${id} (${k.antal} celler)${k.klippta.length ? ' — klippta: ' + k.klippta.slice(0, 3).map(t => `«${t}»`).join(', ') : ''}`);
                 }
             }
         }
-        const saknas = TABELLER.flatMap(([, v]) => v).filter(v => !ritade.has(v));
-        ok(!saknas.length, `1280 punkter: alla ${TABELLER.flatMap(([, v]) => v).length} tabeller ritas med demo eller stort demo${saknas.length ? ' — saknas: ' + saknas.join(', ') : ''}`);
+        const alla = [...TABELLER, ...KLIPPS_INTE].flatMap(([, v]) => v);
+        const saknas = alla.filter(v => !ritade.has(v));
+        ok(!saknas.length, `1280 punkter: alla ${alla.length} tabeller ritas med demo eller stort demo${saknas.length ? ' — saknas: ' + saknas.join(', ') : ''}`);
         await s.close();
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
