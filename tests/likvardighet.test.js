@@ -432,7 +432,7 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
 
     it('parar kvinnodominerat mot likvärdigt (poäng inom band) i annan BAS', () => {
         const poang = new Map([['5301|B', 100], ['4100|D', 100]]);   // lika poäng
-        const { pairs, jämförelse } = byggParPoäng(kv, internIckeKv, [], poang,
+        const { pairs, jämförelse } = byggParPoäng(kv, internIckeKv, poang,
             { rng: makeRng(), bandPct: 5 });
         expect(pairs).toHaveLength(1);
         expect(pairs[0].maAid).toBe('4100');
@@ -445,19 +445,19 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
 
     it('exkluderar jämförelseyrke med HÖGRE krav (poäng över bandet)', () => {
         const poang = new Map([['5301|B', 100], ['4100|D', 130]]);  // 130 > 100*1.05
-        const { pairs } = byggParPoäng(kv, internIckeKv, [], poang, { rng: makeRng(), bandPct: 5 });
+        const { pairs } = byggParPoäng(kv, internIckeKv, poang, { rng: makeRng(), bandPct: 5 });
         expect(pairs).toHaveLength(0);
     });
 
     it('inkluderar jämförelseyrke med LÄGRE krav (lägre poäng) och högre lön', () => {
         const poang = new Map([['5301|B', 100], ['4100|D', 70]]);   // lägre krav, högre lön
-        const { pairs } = byggParPoäng(kv, internIckeKv, [], poang, { rng: makeRng(), bandPct: 5 });
+        const { pairs } = byggParPoäng(kv, internIckeKv, poang, { rng: makeRng(), bandPct: 5 });
         expect(pairs).toHaveLength(1);
     });
 
     it('räknar kv-dom yrken utan poäng som kvUtanPoang', () => {
         const poang = new Map([['4100|D', 100]]);   // saknar 5301
-        const { pairs, jämförelse } = byggParPoäng(kv, internIckeKv, [], poang, { rng: makeRng() });
+        const { pairs, jämförelse } = byggParPoäng(kv, internIckeKv, poang, { rng: makeRng() });
         expect(pairs).toHaveLength(0);
         expect(jämförelse.kvUtanPoang).toBe(1);
     });
@@ -475,6 +475,25 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
         expect(res.diagnostik.jämförelse.kravProxy).toBe('poäng');
         expect(res.pairs.length).toBe(1);
         expect(res.pairs[0].maAid).toBe('4100');
+    });
+
+    // ADR-76: poängläget jämför bara med organisationens egna jämförelseetiketter. Statistikens rader har inga egna
+    // poäng; en rad fick förut poäng ur lönefilens tabell när organisationen hade samma AID|BAS, och jämförde då
+    // oftast etiketten med sig själv i statistiken.
+    it('jämförelsestatistiken ger inga par i poängläget, inte heller en rad med poäng ur lönefilens tabell', () => {
+        const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
+            kvLons: [29000, 30000, 31000, 30000, 30000, 30000, 30000, 30000], maLons: [30000, 30000] });
+        const statistik = [
+            statRow({ aid: '5301', bas: 'B', median: 40000, andelKv: 50 }),   // samma AID|BAS: poäng ur lönefilens tabell
+            statRow({ aid: '2001', bas: 'B', median: 40000, andelKv: 20 })    // ingen poäng i tabellen
+        ];
+        const poangByKey = new Map([['5301|B', 100]]);
+        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub,
+            opts: { poangByKey, poangBandPct: 5, rng: makeRng() } });
+        expect(res.statIckeKv).toHaveLength(2);
+        expect(res.pairs).toHaveLength(0);
+        expect(res.diagnostik.jämförelse.externaPar).toBe(0);
+        expect(res.diagnostik.jämförelse.basMedExternFallback).toBe(0);
     });
 
     it('faller tillbaka på BAS-läge utan poangByKey (oförändrat)', () => {
@@ -633,7 +652,7 @@ describe('aldersjusteradSkillnad — jämförelseyrkets lön omräknad till den 
         aldre.forEach(alder => rows.push({ aid: '4100', bas: 'C', lon: kurva(alder), alder, kon: 'man', yrkeLabel: 'Tekniker' }));
         const { orgKvDom, orgIckeKv } = aggregeraOrgKvDom(rows, 60);
         const poang = new Map([['5301', 300], ['4100', 300]]);
-        const { pairs } = byggParPoäng(orgKvDom, orgIckeKv, [], poang, { B: 20, rng: makeRng() });
+        const { pairs } = byggParPoäng(orgKvDom, orgIckeKv, poang, { B: 20, rng: makeRng() });
         expect(pairs).toHaveLength(1);
         expect(Math.abs(pairs[0].aldersJusterad.gapPct)).toBeLessThan(0.01);
         expect(pairs[0].kvMedelAlder).toBeCloseTo(29.5, 5);

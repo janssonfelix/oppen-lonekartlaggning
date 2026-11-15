@@ -423,17 +423,16 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
  * Steg 3 (#5) — bygg kandidatpar med ARBETSVÄRDERINGSPOÄNG som krav-proxy
  * istället för BAS. Parar över BAS-gränser: ett jämförelseyrke kvalificerar om
  * dess poäng ≤ det kvinnodominerade yrkets poäng × (1 + band) — dvs likvärdiga
- * eller lägre krav (DiskrL 3:10). Intern jämförelse är primär; saknas internt
- * kvalificerande yrke används jämförelsestatistiken (extern fallback).
+ * eller lägre krav (DiskrL 3:10). Bara organisationens egna jämförelseetiketter
+ * jämförs: jämförelsestatistiken har inga poäng (ADR-76).
  *
  * @param {Array} orgKvDom
  * @param {Array} internAll - organisationens icke-kv-dom yrken (flat)
- * @param {Array} externAll - jämförelsestatistikens icke-kv-dom yrken (flat)
  * @param {Map<string,number>} poangByKey - 'AID|BAS' eller 'AID' → poäng
  * @param {Object} [opts] - { minGap, topN, B, rng, bandPct, golv }
  * @returns {{pairs:Array, jämförelse:Object, antal:{totalt:number, overDirektiv:number, sakra:number}}}
  */
-export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
+export function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
     const minGap = opts.minGap ?? 0;
     const topN = opts.topN ?? 100;
     const B = opts.B ?? 1000;
@@ -445,6 +444,7 @@ export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts =
     const rngOpt = opts.rng ?? null;
     const prngFor = (a, b) => rngOpt || rngFor(a, b);
     const bandPct = opts.bandPct ?? 5;
+    // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget.
     const jämförelse = {
         gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
         internaPar: 0, externaPar: 0, basMedExternFallback: 0,
@@ -453,7 +453,6 @@ export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts =
     const pairs = [];
     orgKvDom = orgKvDom || [];
     internAll = internAll || [];
-    externAll = externAll || [];
     poangByKey = poangByKey || new Map();
     if (!orgKvDom.length || !poangByKey.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
 
@@ -463,13 +462,7 @@ export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts =
         const fP = poangFor(f);
         if (fP == null) { jämförelse.kvUtanPoang++; continue; }
         const tak = fP * (1 + bandPct / 100);
-        let jämförRader = internAll.filter(g => { const p = poangFor(g); return p != null && p <= tak; });
-        let källa = 'intern';
-        if (!jämförRader.length) {
-            jämförRader = externAll.filter(g => { const p = poangFor(g); return p != null && p <= tak; });
-            källa = 'extern';
-            if (jämförRader.length) jämförelse.basMedExternFallback++;
-        }
+        const jämförRader = internAll.filter(g => { const p = poangFor(g); return p != null && p <= tak; });
         for (const g of jämförRader) {
             jämförelse.möjligaPar++;
             if (g.median <= f.median) { jämförelse.statLägreEllerLika++; continue; }
@@ -477,29 +470,26 @@ export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts =
             const gapKr = g.median - f.median;
             const gapPct = (gapKr / f.median) * 100;
             if (gapPct < minGap) continue;
-            const ärIntern = källa === 'intern';
             /** @type {{lo:number, hi:number}|null} */
             let gapCI = null;
             try {
-                gapCI = (ärIntern && Array.isArray(g.lons))
-                    ? bootstrapMedianDiffKr(f.lons, g.lons, B, prngFor(f.lons, g.lons))
-                    : bootstrapMedianVsConstantKr(f.lons, g.median, B, prngFor(f.lons, [g.median]));
+                gapCI = bootstrapMedianDiffKr(f.lons, g.lons, B, prngFor(f.lons, g.lons));
             } catch (_) { gapCI = null; }
-            if (ärIntern) jämförelse.internaPar++; else jämförelse.externaPar++;
+            jämförelse.internaPar++;
             candidates.push({
                 kvAid: f.aid, kvLabel: f.label, kvBas: f.bas,
                 kvN: f.n, kvNKv: f.nKv, kvMedian: f.median, kvKvinnoPct: f.kvinnoPct,
                 maAid: g.aid, maLabel: g.label, maBas: g.bas,
                 maMedian: g.median,
-                maKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
-                maKvinnoPct: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKvAndel: g.kvinnoPct,
+                maKvinnoPct: g.kvinnoPct,
                 maKlass: g.klass || '',
-                maN: ärIntern ? g.n : null,
+                maN: g.n,
                 maNKv: g.nKv, maNMa: g.nMa,
-                jamforKalla: källa,
-                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'nationell'),   // var andelen kommer ifrån
+                jamforKalla: 'intern',
+                maKlassKort: 'intern',
                 gapKr, gapPct, gapCI,
-                ..._aldersFalt(f, g, ärIntern, golv),
+                ..._aldersFalt(f, g, true, golv),
                 kvPoang: fP, maPoang: poangFor(g),
                 allvarsindex: Math.abs(gapKr) * f.n
             });
@@ -608,7 +598,7 @@ export function computeLikvardighetPairs({ data = [], statistik = [], nationellK
     }
     const internByBas = orgIckeKvByBas(s1.orgIckeKv);
     const s3 = (poangByKey && poangByKey.size)
-        ? byggParPoäng(s1.orgKvDom, s1.orgIckeKv, s2.statIckeKv, poangByKey, { minGap, topN, B, rng, bandPct, golv })
+        ? byggParPoäng(s1.orgKvDom, s1.orgIckeKv, poangByKey, { minGap, topN, B, rng, bandPct, golv })
         : byggPar(s1.orgKvDom, internByBas, s2.statByBas, { minGap, topN, B, rng, golv });
     const lagreKrav = (poangByKey && poangByKey.size) ? [] : byggParLagreKrav(s1.orgKvDom, s1.orgIckeKv, {
         rang: basRangFn([...s1.orgKvDom, ...s1.orgIckeKv].map(g => g.bas)),

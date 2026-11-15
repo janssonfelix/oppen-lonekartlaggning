@@ -82,6 +82,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-73 | Skydden och principerna binder; besluten är en logg | Gällande | 2026-11-14 |
 | ADR-74 | AID:s egna ord, och termerna på ett ställe | Gällande | 2026-11-14 |
 | ADR-75 | Kort ordform i kolumnrubriker, och Word-utkastets täta läge | Gällande | 2026-11-15 |
+| ADR-76 | Poängläget jämför bara med organisationens egna jämförelseetiketter | Gällande | 2026-11-15 |
 
 ## Besluten
 
@@ -411,3 +412,11 @@ första kolumn och *AID median högre (kr)* i Likvärdigt arbete i Word-utkastet
 behåller hela termen. En tabell i Word-utkastet som inte ryms i 10 pt skrivs i 9 pt med cellmarginalen 57 twips.
 *Avvisat:* rubriken «Jämförelseetikettens median högre med», som inte rymdes. *Gäller i dag:* `bygge-och-test.md` §13
 och `src/lib/docx.js`.
+
+**ADR-76 — Poängläget jämför bara med organisationens egna jämförelseetiketter.** Med arbetsvärderingspoäng i
+lönefilen används jämförelsestatistiken inte längre som reserv. Statistikens rader har inga egna poäng; en rad fick
+poäng bara när organisationen själv hade samma AID-kod och BAS-intervall, och jämförde då oftast den kvinnodominerade
+AID-etiketten med sig själv i statistiken, inte med ett likvärdigt arbete. I mätningen på demona användes reserven
+aldrig. *Avvisat:* att behålla reserven; att ge statistikens rader poäng efter AID-kod ensam, som jämför samma arbete i
+olika BAS-intervall. En extern jämförelse i poängläget kräver en egen poängtabell för statistiken. *Gäller i dag:*
+`likvardighetsmodellen.md` §4.

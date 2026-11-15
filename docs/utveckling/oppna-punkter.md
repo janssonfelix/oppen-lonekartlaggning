@@ -61,8 +61,8 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     Utan ålder i lönefilen ger översikten ingen justerad skillnad.
 24. **HC3 i steget för AID-etikett inom BAS räknas på den inomtransformerade designen**, så hävstången saknar
     gruppdelen. Ett metodpåpekande; inverkan på standardfelen är inte mätt.
-25. **Poänglägets reserv mot jämförelsestatistiken** kräver att statistikradens AID-kod och BAS-intervall har poäng
-    i lönefilens poängtabell (`byggParPoäng`). Det har den sällan, så reserven används i praktiken nästan aldrig.
+25. *Avslutad 2026-11-15:* poänglägets reserv mot jämförelsestatistiken är borttagen i ADR-76; poängläget jämför
+    bara med organisationens egna jämförelseetiketter.
 
 **Efter bytet till AID:s ord (ADR-74, 2026-11-15):**
 26. **Utseendet med de nya orden är prövat i webbläsare och LibreOffice, inte i Word och Excel.** Mot bygget före
