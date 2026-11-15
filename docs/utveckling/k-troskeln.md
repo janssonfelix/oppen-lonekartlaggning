@@ -181,7 +181,8 @@ läses (`likvardighetsmodellen.md` §1).
 **Efter en export** ritas bara det tillbaka som exporten ritade (`_ritaOmEfterExport`). Lika arbetes minne har ett rum
 per tröskel, så att ett lägesbyte inte räknar om något. Det som räknas på knapptryck i Löneöversyn räknas om när fliken
 ritas om, om det visas (`_fcRitaOmKnappresultat`). Att göras lista byggs en gång för Att göra och processöversikten
-(`renderProcessTracker({ punkter })`) — ingen cache, bara ett värde som skickas vidare.
+(`renderProcessTracker({ punkter })`), och regressionen körs en gång i omritningen för underlagets kvalitet, Att göra
+och processöversikten (`{ reg }`) — ingen cache, bara värden som skickas vidare (ADR-17).
 
 ## 4. Undantagen och avstegen
 

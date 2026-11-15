@@ -56,7 +56,9 @@ standardmodellen är reserven kön + ålder och med bara BAS vald är den endast
 `diagnoseCollinearity`: helt enkönade BAS-intervall (med minst 3 personer), färre än två BAS-intervall och under 50
 personer. Kan inget steg skattas blir resultatet felet `all_failed`.
 
-**Ingen cache.** Regressionen räknas om vid varje anrop och får aldrig cachas (ADR-17).
+**Ingen cache.** Regressionen räknas om vid varje anrop och får aldrig cachas (ADR-17). Inom ett varv körs den en gång
+och skickas vidare som argument (`{ reg }`): vid inläsningen och i omritningen efter ett tröskelbyte läser underlagets
+kvalitet (`bedomningUnderlag`), Att göra (`buildActionChecklist`) och processöversikten samma körning.
 
 ## 2. Förklaringsmodellen
 

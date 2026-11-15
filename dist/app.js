@@ -1777,11 +1777,19 @@ function _omritningssteg() {
     // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
-    steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
+    // Underlagets kvalitet, Att göra och processöversikten läser samma regression: den körs en gång i omritningen och
+    // skickas vidare, som punkterna nedan (ADR-17: ett värde inom omritningen, ingen cache). Kastar den ritar varje del
+    // med en egen körning.
+    /** @type {any} */ let reg;
+    steg.push(['underlagets kvalitet', () => {
+        if (typeof renderUnderlagetsKvalitet !== 'function') return;
+        reg = typeof runOLSRegression === 'function' ? runOLSRegression() : undefined;
+        renderUnderlagetsKvalitet({ reg });
+    }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
     /** @type {any[]|undefined} */ let punkter;
-    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist(); }]);
-    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter }); }]);
+    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist({ reg }); }]);
+    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter, reg }); }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {
@@ -17020,10 +17028,11 @@ function bedomningUnderlag({ reg: given } = {}) {
 }
 
 const UK_ETIKETT = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' };
-function renderUnderlagetsKvalitet() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function renderUnderlagetsKvalitet({ reg } = {}) {
     const host = document.getElementById('underlagets-kvalitet');
     if (!host) return;
-    const b = bedomningUnderlag();
+    const b = bedomningUnderlag({ reg });
     const detaljer = document.getElementById('underlag-detaljer');
     if (!b) { host.hidden = true; host.removeAttribute('data-status'); _laNyckel('nyckel-ov-kvalitet', ''); return; }
     host.hidden = false;
@@ -17201,7 +17210,11 @@ function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
  * 03-hjalpfunktioner.js) — inga inline-onclick (hash-CSP, ADR-9).
  */
 /** @param {{punkter?: any[]}} [val] punkter: Att göras lista när anroparen just byggt den (annars byggs den här) */
-function renderProcessTracker({ punkter: givna } = {}) {
+/**
+ * @param {{punkter?: any[], reg?: any}} [val] punkter: Att göras lista; reg: regressionen när anroparen just kört den i
+ *   samma varv (ADR-17). Båda är värden som skickas vidare, ingen cache.
+ */
+function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
@@ -17214,7 +17227,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
 
     // Ett analyssteg är klart först när dess punkter i Att göra är hanterade — att analysen
     // har körts räcker inte (ADR-29). Listan byggs en gång för alla steg.
-    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : []);
+    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist({ reg: givenReg }) : []), []) : []);
     const klarmarkerade = state._actionChecklistDone || new Set();
     const hanterade = kategorier => _agHanterade(punkter, klarmarkerade, kategorier);   // src/lib/attgora.js
 
@@ -17240,7 +17253,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 3. § 9 Lika arbete (oförklarat gap + antal grupper att förklara/åtgärda)
     rows.push(safe(() => {
         if (!hasData) return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' };
-        const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
+        const reg = givenReg || ((typeof runOLSRegression === 'function') ? runOLSRegression() : null);
         const ok = !!(reg && !reg.error);
         const { t, d } = hanterade(['Lika arbete', 'Lika arbete, fördjupning']);
         return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
@@ -17431,10 +17444,11 @@ function updateDashboardStats() {
 /** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
 function renderOversiktDelar() {
     /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
+    /** @type {any} */ let reg;   // och samma regression: körs en gång och skickas vidare (ADR-17)
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
-        ['Att göra', () => { punkter = renderActionChecklist(); }],
-        ['processöversikten', () => renderProcessTracker({ punkter })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
+        ['Att göra', () => { reg = runOLSRegression(); punkter = renderActionChecklist({ reg }); }],
+        ['processöversikten', () => renderProcessTracker({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
     if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
@@ -17803,8 +17817,9 @@ function renderDataValidationReport() {
 // Underlagets kvalitet (ADR-19): rimlighetskontrollen och inläsningsrapporten är
 // underlag i panelen; statusen kommer från bedomningUnderlag().
 // Anropas efter renderRealityCheck() + renderDataValidationReport().
-function syncDatakvalitetPanel() {
-    renderUnderlagetsKvalitet();
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function syncDatakvalitetPanel(val) {
+    renderUnderlagetsKvalitet(val);
 }
 
 // ---- Konsistenscheck mellan filer ----
@@ -18099,14 +18114,15 @@ const _agRiktning = v => (v < 0 ? 'lägre' : 'högre');
  * Varje punkt har stabilt id så användarens "klar"-markering kvarstår även
  * om listan regenereras efter dataändring (samma grupp = samma id).
  *
+ * @param {{endastGrupper?: boolean, reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17)
  * @returns {Array<{id, kategori, prioritet, titel, detalj, tab, källa}>}
  */
-function buildActionChecklist({ endastGrupper = false } = {}) {
+function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
     /** @type {any[]} */
     const items = [];
     if (!state.data.length) return items;
     // Regressionen körs en gång här och skickas vidare till det som läser den (ADR-17: ingen cache, bara ett värde).
-    const reg = !endastGrupper && typeof runOLSRegression === 'function' ? runOLSRegression() : null;
+    const reg = endastGrupper ? null : (given || (typeof runOLSRegression === 'function' ? runOLSRegression() : null));
 
     // Punkterna per grupp (prioriteringen och likvärdighetsparen) bär AID-koden; sektorsöversikten
     // räknar bara dem och bygger därför inte de tunga, organisationsövergripande delarna.
@@ -18336,7 +18352,8 @@ function _attGoraParNot() {
  * checkboxar (state i minnet via state._actionChecklistDone-Set), CSV-export.
  */
 /** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
-function renderActionChecklist() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function renderActionChecklist({ reg } = {}) {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
@@ -18344,7 +18361,7 @@ function renderActionChecklist() {
     if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return []; }
     if (kort) kort.hidden = false;
 
-    const items = buildActionChecklist();   // returneras, så att processöversikten kan läsa samma lista
+    const items = buildActionChecklist({ reg });   // returneras, så att processöversikten kan läsa samma lista
     // Hela listan är ett avsnitt som fälls ut: "Börja här" ovanför bär det som ska göras först.
     // Listan ritas om vid varje avbockning, så avsnittets läge bevaras.
     const varOppen = !!/** @type {HTMLDetailsElement} */ ((wrap.querySelector('#avsnitt-ov-punkter') || {})).open;
@@ -19165,7 +19182,7 @@ function runDiagnostics() {
     }
 
     // Test 3: Underlagets kvalitet får inte vara kritisk för testdatan
-    const dq = bedomningUnderlag();
+    const dq = bedomningUnderlag({ reg });   // regressionen ovan skickas vidare (ADR-17)
     if (dq) {
         tests.push({
             name: 'Underlagets kvalitet är inte kritisk (testdata)',
@@ -19283,15 +19300,16 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     generateSkevhet();
     renderKon('__ALLA__');
     updateCompliance();
-    renderUnderlagetsKvalitet();
+    const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
+    renderUnderlagetsKvalitet({ reg });
     updateGdprBanner();
     renderConsistencyBanner();
-    renderActionChecklist();
+    renderActionChecklist({ reg });
     renderOutliers();
     renderRealityCheck();
     renderDataValidationReport();
-    syncDatakvalitetPanel();
-    renderProcessTracker();
+    syncDatakvalitetPanel({ reg });
+    renderProcessTracker({ reg });
     const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';
@@ -22723,8 +22741,11 @@ function _afterDataLoaded() {
     dataStatus.className = "status-msg success";
     markUploadLoaded('upload-cell-data', 'Inläst');
     updateCompliance();
-    renderUnderlagetsKvalitet();
-    renderProcessTracker();
+    // Regressionen körs en gång i det här varvet och skickas vidare till underlagets kvalitet, processöversikten och
+    // Att göra, som annars kör den var för sig på samma underlag (ADR-17: ett värde, ingen cache).
+    const reg = runOLSRegression();
+    renderUnderlagetsKvalitet({ reg });
+    renderProcessTracker({ reg });
     updateGdprBanner();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
     if (typeof _resetInactivityTimer === 'function') _resetInactivityTimer();
@@ -22733,7 +22754,7 @@ function _afterDataLoaded() {
     renderRealityCheck();
     renderDataValidationReport();
     renderForhandskontroll();
-    syncDatakvalitetPanel();
+    syncDatakvalitetPanel({ reg });
     announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
     hideLoading();
 

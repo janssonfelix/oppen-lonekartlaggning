@@ -240,8 +240,9 @@ function renderDataValidationReport() {
 // Underlagets kvalitet (ADR-19): rimlighetskontrollen och inläsningsrapporten är
 // underlag i panelen; statusen kommer från bedomningUnderlag().
 // Anropas efter renderRealityCheck() + renderDataValidationReport().
-function syncDatakvalitetPanel() {
-    renderUnderlagetsKvalitet();
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
+function syncDatakvalitetPanel(val) {
+    renderUnderlagetsKvalitet(val);
 }
 
 // ---- Konsistenscheck mellan filer ----

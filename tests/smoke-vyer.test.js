@@ -878,6 +878,44 @@ describe('Likvärdigt arbete räknas en gång per underlag', () => {
     });
 });
 
+// Regressionen cachas aldrig (ADR-17), men inom ett varv körs den en gång och skickas vidare som argument: underlagets
+// kvalitet, Att göra och processöversikten läser samma underlag och samma val. På 55 000 rader är en körning ~0,4 s.
+describe('regressionen körs en gång per varv vid inläsning och tröskelbyte', () => {
+    const raknaRegressioner = w => w.eval('window.__regKorningar = 0; const __regOrig = runOLSRegression; '
+        + 'runOLSRegression = function () { window.__regKorningar++; return __regOrig(); };');
+    const html = (w, id) => w.document.getElementById(id).innerHTML;
+    const DELAR = ['underlagets-kvalitet', 'process-tracker'];
+    it('inläsningen (lönefil och demo) kör regressionen en gång och ritar samma sak som en egen körning per del', () => {
+        const w = createAppWindow();
+        raknaRegressioner(w);
+        w.eval('_lasInDemounderlag(generateDemoData)');   // demots inläsning; diagnostiken efteråt kör en egen
+        expect(w.__regKorningar).toBe(1);
+        w.__regKorningar = 0;
+        w.eval('_afterDataLoaded()');
+        expect(w.__regKorningar).toBe(1);
+        const delad = DELAR.map(id => html(w, id));
+        w.eval('renderUnderlagetsKvalitet(); renderProcessTracker();');
+        expect(DELAR.map(id => html(w, id))).toEqual(delad);
+    });
+    it('omritningen efter ett tröskelbyte kör regressionen en gång och ritar samma sak', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        raknaRegressioner(w);
+        w.eval('sattKTroskel(11, { fraga: false })');
+        expect(w.__regKorningar).toBe(1);
+        const delad = [...DELAR, 'action-checklist-container'].map(id => html(w, id));
+        w.eval('renderUnderlagetsKvalitet(); renderProcessTracker({ punkter: renderActionChecklist() });');
+        expect([...DELAR, 'action-checklist-container'].map(id => html(w, id))).toEqual(delad);
+    });
+    it('Översikts delar (exportgrinden) kör regressionen en gång', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        raknaRegressioner(w);
+        w.eval('renderOversiktDelar()');
+        expect(w.__regKorningar).toBe(1);
+    });
+});
+
 // Ålder är valfri i lönefilen (ADR-64): utan ålder är Ålder & karriär låst med ett eget skäl.
 describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
     const utanAlder = w => { w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 })); w.eval('unlockTabs()'); };

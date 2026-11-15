@@ -497,11 +497,19 @@ function _omritningssteg() {
     // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
-    steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
+    // Underlagets kvalitet, Att göra och processöversikten läser samma regression: den körs en gång i omritningen och
+    // skickas vidare, som punkterna nedan (ADR-17: ett värde inom omritningen, ingen cache). Kastar den ritar varje del
+    // med en egen körning.
+    /** @type {any} */ let reg;
+    steg.push(['underlagets kvalitet', () => {
+        if (typeof renderUnderlagetsKvalitet !== 'function') return;
+        reg = typeof runOLSRegression === 'function' ? runOLSRegression() : undefined;
+        renderUnderlagetsKvalitet({ reg });
+    }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
     /** @type {any[]|undefined} */ let punkter;
-    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist(); }]);
-    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter }); }]);
+    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist({ reg }); }]);
+    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter, reg }); }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {
