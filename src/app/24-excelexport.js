@@ -193,12 +193,6 @@ function __excelAlltBokExport() {
 
     // Sheet: Prioritering
     const prioSheet = tableToSheet('prio-table');
-    // Kolumn B (AID-etiketten) så bred som det längsta värdet, högst 70 tecken, inte som den långa rubriken (S3 i
-    // punkt 26): rubriken gav bladet en sida till i utskriften.
-    if (prioSheet && prioSheet['!cols'] && prioSheet['!cols'][1]) {
-        const varden = XLSX.utils.sheet_to_json(prioSheet, { header: 1, defval: '' }).slice(1).map(r => String(r[1] ?? ''));
-        prioSheet['!cols'][1] = { wch: Math.min(70, Math.max(0, ...varden.map(v => v.length)) + 2) };
-    }
     if (prioSheet) XLSX.utils.book_append_sheet(wb, prioSheet, 'Prioritering');
 
     // Sheet: Lönegap & Könsfördelning
