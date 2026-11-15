@@ -50,6 +50,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Exporter
 
+- **Protokollet för gemensam lönebedömning redovisar median och medelvärde (ADR-79).** Bladen för lika arbete och
+  BAS-intervall har medelvärdet per kön bredvid medianen, med differensen i kronor och kvinnors i procent av mäns;
+  bladet för BAS-intervall hade inga lönenivåer och räknar båda på samma personer som regressionen. Statusen och
+  urvalet följer som förut medianen och regressionen, och talen står bara där båda könen når tröskeln.
+  Försättssidan har fält som parterna fyller i för löneökning efter föräldraledighet eller ledighet för vård av
+  anhörig, för hur åtgärderna från föregående gemensamma lönebedömning har fungerat och för systemen för
+  könsneutral arbetsvärdering och arbetsindelning.
 - **PDF-rapportens tabeller ryms på sidan.** Efter termbytet låg kolumnerna att fylla i (*Kravvärdering* i Likvärdigt
   arbete, *Status* i Åtgärder och tidsplan) utanför sidan, och bilagornas tabeller klipptes. Utskriften avstavar långa
   ord, tar bort skärmens minsta cellbredder och versala rubriker och låter statusmärkena bryta rad. Avstavar

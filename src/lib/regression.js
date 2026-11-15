@@ -17,7 +17,7 @@
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
 
-import { fitOLS, invert, matMul, pValue2Sided, tQuantile } from './stat.js';
+import { fitOLS, invert, matMul, median, pValue2Sided, tQuantile } from './stat.js';
 import { skapaTermer, fyllTermer, ordForAntal } from './termer.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
@@ -178,7 +178,12 @@ export function computePerBasGap(rows, basList, { golv }) {
         const tq   = tQuantile(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
         const ciLo = (Math.exp(beta - tq*se) - 1) * 100;
         const ciHi = (Math.exp(beta + tq*se) - 1) * 100;
-        out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, gapPct: (Math.exp(beta)-1)*100, ciLow: ciLo, ciHigh: ciHi, pValue: p, R2: fit.R2, status: 'ok' });
+        // Lönenivåerna för samma personer som regressionen (protokollet redovisar median och medelvärde, ADR-79). De
+        // räknas bara här, där båda könen når golvet.
+        const lonKv = kv.map(d => d.lon), lonMa = ma.map(d => d.lon);
+        const medel = l => l.reduce((s, x) => s + x, 0) / l.length;
+        out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, gapPct: (Math.exp(beta)-1)*100, ciLow: ciLo, ciHigh: ciHi, pValue: p, R2: fit.R2, status: 'ok',
+            medKv: median(lonKv), medMa: median(lonMa), medelKv: medel(lonKv), medelMa: medel(lonMa) });
     });
     return out;
 }

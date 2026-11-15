@@ -807,3 +807,91 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         expect(prot[0][9]).toBe(prot[0][8]);
     });
 });
+
+describe('protokollet för gemensam lönebedömning: median och medelvärde, och fälten för parterna (ADR-79)', () => {
+    // Tre stora BAS-intervall utan skillnad, och två AID-etiketter med en tydlig skillnad i var sitt BAS-intervall:
+    // Q med 12 kvinnor (syns vid tröskeln 10, inte vid 25) och R med 6 kvinnor (syns aldrig). Männen är 30 i båda.
+    // En kvinna i Q har en hög lön, så att kvinnornas medelvärde och median skiljer sig åt.
+    const loner = (n, start, steg, sista) => Array.from({ length: n }, (_, i) => (sista !== undefined && i === n - 1 ? sista : start + i * steg));
+    const Q_KV = loner(12, 30000, 14, 33300), Q_MA = loner(30, 40000, 17, 45000);
+    const R_KV = loner(6, 31500, 11), R_MA = loner(30, 42000, 19);
+    const medel = l => l.reduce((s, x) => s + x, 0) / l.length;
+    const median = l => { const s = [...l].sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+    const fonsterNiva = k => {
+        const w = createAppWindow();
+        if (k !== null) w.eval(`sattKTroskel(${k}, { fraga: false })`);
+        const rader = [];
+        const rad = (bas, aid, namn, kon, lon, i) => rader.push({ bas, kon, lon, alder: 25 + ((i * 13) % 40), yrke: `${aid} ${namn}`, aid, yrkeLabel: namn, enhet: '' });
+        for (let b = 0; b < 3; b++) for (let i = 0; i < 60; i++) rad('F' + b, String(6000 + b), 'Fyllnad' + b, i % 2 ? 'man' : 'kvinna', 25000 + b * 900 + ((i * 37) % 700), i);
+        Q_KV.forEach((l, i) => rad('Q', '7100', 'Mellangrupp', 'kvinna', l, i));
+        Q_MA.forEach((l, i) => rad('Q', '7100', 'Mellangrupp', 'man', l, i));
+        R_KV.forEach((l, i) => rad('R', '7200', 'Smågrupp', 'kvinna', l, i));
+        R_MA.forEach((l, i) => rad('R', '7200', 'Smågrupp', 'man', l, i));
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        return w;
+    };
+    const protokollet = async w => {
+        const { readFileSync } = await import('node:fs');
+        const { join, dirname } = await import('node:path');
+        const { fileURLToPath } = await import('node:url');
+        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'xlsx.mini.min.js'), 'utf8'));
+        w.alert = () => {};
+        let wb = null;
+        w.XLSX.writeFile = b => { wb = b; };
+        w.eval('exportJPAProtocol()');
+        return Object.fromEntries(wb.SheetNames.map(n => [n, w.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' })]));
+    };
+    const MEDIAN = ['Median kvinnor (kr)', 'Median män (kr)', 'Differens (kr)', 'Kvinnors median i % av mäns'];
+    const MEDEL = ['Medelvärde kvinnor (kr)', 'Medelvärde män (kr)', 'Differens medelvärde (kr)', 'Kvinnors medelvärde i % av mäns'];
+    // Kvinnornas tal i en grupp (median och medelvärde, avrundade som i protokollet): de får inte stå i någon cell.
+    const kvTal = kv => [Math.round(median(kv)), Math.round(medel(kv))];
+    const celler = bok => new Set(Object.values(bok).flat(2).map(c => String(c)));
+
+    it('försättssidan har de tre fälten för parterna, som frågor utan lagrum', async () => {
+        const bok = await protokollet(fonsterNiva(null));
+        const forsatt = bok['1. Försättssida'];
+        const efter = forsatt.slice(forsatt.findIndex(r => r[0] === '— GEMENSAM SAMMANFATTNING —'));
+        for (const re of [/löneökning efter föräldraledighet eller ledighet för vård av anhörig/, /åtgärderna från föregående gemensamma lönebedömning/,
+            /systemen för könsneutral arbetsvärdering och arbetsindelning/]) {
+            const rad = efter.find(r => re.test(r[0]));
+            expect(rad, String(re)).toBeTruthy();
+            expect(rad[0]).toMatch(/\?$/);
+            expect(rad[0]).not.toMatch(/§|[Aa]rt(?:ikel|\.)\s*\d/);
+            expect(rad[1]).toBe('');
+        }
+    });
+
+    it('vid 10: blad 2 och 3 har median och medelvärde för Q, som stämmer mot underlaget; R saknas', async () => {
+        const bok = await protokollet(fonsterNiva(null));
+        const blad2 = bok['2. Lika arbete (AID)'], blad3 = bok['3. Likvärdigt arbete (BAS)'];
+        const i2 = blad2[0].indexOf(MEDEL[0]), m2 = blad2[0].indexOf(MEDIAN[0]);
+        expect(blad2[0].slice(m2, m2 + 4)).toEqual(MEDIAN);
+        expect(blad2[0].slice(i2, i2 + 4)).toEqual(MEDEL);
+        const q2 = blad2.find(r => String(r[1]).includes('Mellangrupp'));
+        expect(q2, 'Q har statusen Värt att granska').toBeTruthy();
+        expect(q2.slice(i2, i2 + 4)).toEqual([Math.round(medel(Q_KV)), Math.round(medel(Q_MA)), Math.round(medel(Q_KV) - medel(Q_MA)),
+            +(medel(Q_KV) / medel(Q_MA) * 100).toFixed(1)]);
+        expect(q2.slice(m2, m2 + 2)).toEqual([Math.round(median(Q_KV)), Math.round(median(Q_MA))]);
+        expect(Math.round(medel(Q_KV))).not.toBe(Math.round(median(Q_KV)));   // annars skiljer testet inte måtten åt
+        const b3 = blad3[0].indexOf(MEDIAN[0]);
+        expect(blad3[0].slice(b3, b3 + 8)).toEqual([...MEDIAN, ...MEDEL]);
+        const q3 = blad3.find(r => r[1] === 'Q');
+        expect(q3, 'BAS-intervallet Q är säkerställt').toBeTruthy();
+        expect(q3.slice(b3, b3 + 8)).toEqual([Math.round(median(Q_KV)), Math.round(median(Q_MA)), Math.round(median(Q_KV) - median(Q_MA)),
+            +(median(Q_KV) / median(Q_MA) * 100).toFixed(1), Math.round(medel(Q_KV)), Math.round(medel(Q_MA)),
+            Math.round(medel(Q_KV) - medel(Q_MA)), +(medel(Q_KV) / medel(Q_MA) * 100).toFixed(1)]);
+        // R har 6 kvinnor: varken median eller medelvärde i något blad.
+        const alla = celler(bok);
+        for (const v of kvTal(R_KV)) expect(alla.has(String(v)), String(v)).toBe(false);
+        expect(blad3.some(r => r[1] === 'R')).toBe(false);
+    });
+
+    it('vid 25: varken median eller medelvärde för Q eller R i protokollet', async () => {
+        const bok = await protokollet(fonsterNiva(25));
+        const alla = celler(bok);
+        for (const v of [...kvTal(Q_KV), ...kvTal(R_KV)]) expect(alla.has(String(v)), String(v)).toBe(false);
+        expect(bok['2. Lika arbete (AID)'].some(r => String(r[1]).includes('Mellangrupp'))).toBe(false);
+        expect(bok['3. Likvärdigt arbete (BAS)'].some(r => r[1] === 'Q' || r[1] === 'R')).toBe(false);
+    });
+});

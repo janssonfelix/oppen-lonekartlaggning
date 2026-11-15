@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.16` · **Artefakt-SHA-256:** `f4e07617787bd7a86c6cc5b804840ac607ecfc1cd20c05be37124d0d6c146a35` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.16` · **Artefakt-SHA-256:** `343d3de437aacd8c0cb8e647c7c4a006dd086275b3bac4bd91139bb4bc55593c` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-15.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
@@ -1001,8 +1001,8 @@ andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppg
 **Granskningen 2026-11-15** (inför bygget 2026.11.16) prövade dokumentet mot koden som ändrats efter bygget
 2026.11.15: växeln *Fler kolumner* i tabellerna i Lika arbete och Likvärdigt arbete, tabellbredderna i utskriften och
 Word-utkastet (`60-utskrift.js`, `src/lib/docx.js`), det hårda mellanslaget i talformaten, diagrammens etiketter,
-poänglägets jämförelser (ADR-76), HC3 med AID-etikett inom BAS (ADR-77), översikten per huvudområde (ADR-78), och att
-paren i likvärdigt arbete och regressionen räknas en gång. Biblioteken i `vendor/` och `tools/bundle.mjs` är
+poänglägets jämförelser (ADR-76), HC3 med AID-etikett inom BAS (ADR-77), översikten per huvudområde (ADR-78),
+protokollet för gemensam lönebedömning (ADR-79), och att paren i likvärdigt arbete och regressionen räknas en gång. Biblioteken i `vendor/` och `tools/bundle.mjs` är
 oförändrade. Varje namngiven fil, funktion, konstant och testfil som berörs söktes upp i `src/`, `tools/`, `tests/`
 och bygget; alla finns. Kontrollerat:
 - CSP-raden i bygget (fem skript och fem hashar, två stilhashar), ordagrant som §6.1; sökningen i `dist/app.js` efter
@@ -1027,6 +1027,11 @@ och bygget; alla finns. Kontrollerat:
 - Översikten per huvudområde räknar den justerade skillnaden bara när huvudområdet har 30 giltiga rader eller fler och
   båda könen når tröskeln, som förut (`_justerat` i `src/lib/sektor.js`). Nytt är att talet också ges när lönefilen saknar
   ålder, på samma villkor; rapportunderlaget visar det bara när båda könen når tröskeln.
+- Protokollet för gemensam lönebedömning (ADR-79) redovisar median och medelvärde per kön i bladen för lika arbete
+  och BAS-intervall, bara för grupper som protokollet redan redovisar. `_jpaNivaCeller` skriver talen bara när båda
+  könen når tröskeln, och bladet för BAS-intervall tar bara intervall där båda könen når `statGolv()`, som aldrig är
+  under tröskeln (`tests/ktroskel-utdata.test.js`, vid 10 och 25). Försättssidans nya fält är tomma och fylls i av
+  parterna; verktyget skriver inget i dem.
 - Uppgiftsminimeringen: inläsningen ändras bara i att regressionen körs en gång. Fälten i minnet och PII-kontrollen
   är oförändrade.
 
