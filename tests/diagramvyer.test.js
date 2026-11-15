@@ -2107,6 +2107,13 @@ describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (
         });
         expect(inga(svg, symboler)).toEqual([]);
     });
+    it('slumpens gränser: ett namn som förekommer i flera BAS-intervall får ·BAS i etiketten, som i matrisen (fixrunda 1)', () => {
+        // Samma yrke i två BAS-intervall, båda utanför gränserna; ett tredje yrke bara en gång.
+        const p = (yrke, bas, kvot) => ({ nyckel: yrke + '|' + bas, yrke, bas, aid: yrke.slice(0, 6), n: 80, nKv: 40, nMa: 40, medKv: 30000, medMa: 31000, kvot, gransLag: 95, gransHog: 105, utanfor: true });
+        w.__u = { sigma: 0.05, halv: (a, b) => 8 * Math.sqrt(1 / a + 1 / b), punkter: [p('151011 Ekonom', 'C', 88), p('151011 Ekonom', 'D', 89), p('151010 Handläggare', 'C', 110)] };
+        const etiketter = w.eval('_laTrattFigur(window.__u, 10)').lager.filter(l => l.marke === 'punkt').flatMap(l => l.data).map(d => d.etikett).sort();
+        expect(etiketter).toEqual(['151010 Handläggare', '151011 Ekonom·C', '151011 Ekonom·D']);
+    });
 
     it('prioriteringsmatrisen: zonrubrikerna är högst 14 tecken, och inga två etikettrutor överlappar varandra eller en bubbla', () => {
         const grupp = (rank, status, diffPct, n, kost) => ({ rank, status, yrke: `${351000 + rank} Personlig assistent nummer ${rank}`, bas: 'ABCDE'[rank % 5], n, kvN: Math.ceil(n / 2), maN: Math.floor(n / 2), median: 30000,
@@ -2124,6 +2131,14 @@ describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (
             expect(svg.querySelectorAll('text[data-marke="punktetikett"]')).toHaveLength(10);
             const bubblor = s => [...s.querySelectorAll('circle[data-marke="punkt"]')].map(c => ({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy'), r: +c.getAttribute('r') }));
             expect(inga(svg, bubblor), `${bredd}`).toEqual([]);
+            // Fixrunda 1: ingen hänvisningslinje går genom en annan etiketts text, och ingen zonrubrik täcker en bubbla.
+            const etiketter = [...svg.querySelectorAll('text[data-marke="punktetikett"]')].map(ruta), skar = w.eval('_rfLinjeSkarRuta');
+            for (const l of svg.querySelectorAll('line[data-marke="hanvisning"]')) {
+                const s = { x1: +l.getAttribute('x1'), y1: +l.getAttribute('y1'), x2: +l.getAttribute('x2'), y2: +l.getAttribute('y2') };
+                const andra = etiketter.filter(q => Math.hypot(s.x2 - Math.min(Math.max(s.x2, q.x0), q.x1), s.y2 - Math.min(Math.max(s.y2, q.y0), q.y1)) > 0.5);
+                expect(andra.filter(q => skar(s, q)).map(q => q.text), `${bredd}`).toEqual([]);
+            }
+            for (const t of svg.querySelectorAll('text[data-marke="zonetikett"]')) { const q = ruta(t); expect(bubblor(svg).filter(c => motPunkt(q, c)), `${bredd} ${q.text}`).toEqual([]); }
             // Zonrubrikerna klipps inte: ingen står kortad med …
             for (const t of svg.querySelectorAll('text[data-marke="zonetikett"]')) expect(t.textContent, `${bredd}`).not.toMatch(/…/);
         }

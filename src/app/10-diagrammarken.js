@@ -804,12 +804,21 @@ function _rfZoner(figur, c, bredd, hojd) {
 // att läsa mot vad som än ligger under. Överst i zonen: mitt över en lodrät zon, i övre vänstra hörnet av en vågrät.
 // En etikett som inte ryms i zonens bredd kortas (hela texten i <title>, och etiketten tar då emot pekaren); ryms
 // färre än tre tecken ritas den inte.
-// Ligger en text redan där (en stapeletikett eller en tidigare zonetikett) läggs etiketten en rad längre ned;
-// ryms den inte på tre försök ritas den inte.
+// Etiketten läggs helst där den varken täcker en text, en ritad punkt eller en hänvisningslinje: rad för rad nedåt
+// från zonens överkant (högst RF_ZON_RADER rader) och i varje rad i sidled inom zonen. Finns ingen sådan plats gäller
+// den äldre regeln: ligger en text redan där (en stapeletikett eller en tidigare zonetikett) läggs etiketten en rad
+// längre ned, och ryms den inte på tre försök ritas den inte.
+const RF_ZON_RADER = 12;
 function _rfZonEtiketter(zoner, c, bredd, hojd) {
     const fpx = c.px - 1;
     // Rutorna för de texter som redan ligger i textgruppen, uppskattade ur deras egna attribut (ingen DOM-mätning).
     const tagna = [];
+    // De ritade punkterna och hänvisningslinjerna: en zonetikett läggs helst där den inte täcker dem.
+    const punkter = c.punkthinder || [];
+    const linjer = [];
+    c.texter.selectAll('line[data-marke="hanvisning"]').each(/** @this {SVGLineElement} */ function () {
+        linjer.push({ x1: Number(this.getAttribute('x1')), y1: Number(this.getAttribute('y1')), x2: Number(this.getAttribute('x2')), y2: Number(this.getAttribute('y2')) });
+    });
     c.texter.selectAll('text').each(/** @this {SVGTextElement} */ function () {
         const px = Number(this.getAttribute('font-size')), x = Number(this.getAttribute('x')), y = Number(this.getAttribute('y'));
         const b = _rfBredd(this.firstChild ? this.firstChild.nodeValue : '', px), a = this.getAttribute('text-anchor');
@@ -824,22 +833,45 @@ function _rfZonEtiketter(zoner, c, bredd, hojd) {
         // En etikett i en lodrät zon som inte ryms på en rad men hel på två bryts vid ordgränsen; annars kortas den.
         const tva = lodrat && hel.length > ryms ? _rfRadbryt(hel, ryms, 2) : null;
         const rader = tva && tva.length === 2 && tva.join(' ') === hel && tva.every(s => s.length <= ryms) ? tva : [_rfKorta(hel, ryms)];
-        const radH = fpx + 3, x0Av = text => lodrat ? (fran + till) / 2 - _rfBredd(text, fpx) / 2 : Math.min(4, Math.max(0, bredd - _rfBredd(text, fpx)));
-        for (let rad = 0; rad < 3; rad++) {
-            const y0 = (lodrat ? 2 : fran + 2) + rad * radH;
-            const rutor = rader.map((text, n) => { const x0 = x0Av(text); return { x0, x1: x0 + _rfBredd(text, fpx), y0: y0 + n * radH, y1: y0 + n * radH + fpx * 1.05 }; });
-            if (rutor[rutor.length - 1].y1 > hojd) break;
-            if (rutor.some(ruta => tagna.some(q => ruta.x0 < q.x1 + 2 && q.x0 < ruta.x1 + 2 && ruta.y0 < q.y1 && q.y0 < ruta.y1))) continue;
-            rader.forEach((text, n) => {
-                tagna.push(rutor[n]);
-                // En kortad etikett (den får ett <title> med hela texten) tar emot pekaren, så att webbläsaren visar
-                // hela texten; en okortad gör det inte — märkena under den går då att träffa.
-                const kortad = rader.length === 1 && text !== hel;
-                _rfText(c.texter, rutor[n].x0, rutor[n].y0 + fpx * 0.8, text, { px: fpx, farg: r.textfarg || FARG.dampad, fet: true, title: kortad ? hel : text,
-                    attr: { 'data-marke': 'zonetikett', ...(kortad ? {} : { 'pointer-events': 'none' }), stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
-            });
-            break;
+        const radH = fpx + 3;
+        const x0Av = (text, dx) => (lodrat ? (fran + till) / 2 - _rfBredd(text, fpx) / 2 : Math.min(4, Math.max(0, bredd - _rfBredd(text, fpx)))) + dx;
+        // Förskjutningar i sidled inom zonen (4 px luft): först mitt i (lodrät zon) eller vid vänsterkanten (vågrät),
+        // sedan omväxlande åt höger och vänster i steg om två tecken. Alla rader flyttas lika.
+        const vK = lodrat ? fran + 4 : 0, hK = lodrat ? till - 4 : bredd;
+        const lo = Math.max(...rader.map(t => vK - x0Av(t, 0))), hi = Math.min(...rader.map(t => hK - _rfBredd(t, fpx) - x0Av(t, 0)));
+        const sidled = [0];
+        for (let k = 1, steg = fpx * 1.2; k * steg <= Math.max(-lo, hi) && sidled.length < 40; k++) for (const dx of [k * steg, -k * steg]) if (dx >= lo && dx <= hi) sidled.push(dx);
+        const ledig = (rutor, motPunkter) => !rutor.some(ruta => tagna.some(q => ruta.x0 < q.x1 + 2 && q.x0 < ruta.x1 + 2 && ruta.y0 < q.y1 && q.y0 < ruta.y1)
+            || (motPunkter && (punkter.some(p => { const dx = Math.max(ruta.x0 - p.x, 0, p.x - ruta.x1), dy = Math.max(ruta.y0 - p.y, 0, p.y - ruta.y1); return dx * dx + dy * dy < (p.r + 2) * (p.r + 2); })
+                || linjer.some(l => _rfLinjeSkarRuta(l, ruta)))));
+        const rutorFor = (rad, dx) => { const y0 = (lodrat ? 2 : fran + 2) + rad * radH;
+            return rader.map((text, n) => { const x0 = x0Av(text, dx); return { x0, x1: x0 + _rfBredd(text, fpx), y0: y0 + n * radH, y1: y0 + n * radH + fpx * 1.05 }; }); };
+        // Först en plats överst i zonen som varken täcker en text, en ritad punkt eller en hänvisningslinje: rad för rad
+        // nedåt (högst RF_ZON_RADER), och i varje rad i sidled. Finns ingen sådan, som förut de tre översta raderna mitt i
+        // zonen, där bara texter undviks.
+        /** @type {Array<{x0:number, x1:number, y0:number, y1:number}>|null} */ let val = null;
+        for (let rad = 0; rad < RF_ZON_RADER && !val; rad++) {
+            for (const dx of sidled) {
+                const rutor = rutorFor(rad, dx);
+                if (rutor[rutor.length - 1].y1 > hojd || (!lodrat && rutor[rutor.length - 1].y1 > till)) break;
+                if (ledig(rutor, true)) { val = rutor; break; }
+            }
         }
+        for (let rad = 0; rad < 3 && !val; rad++) {
+            const rutor = rutorFor(rad, 0);
+            if (rutor[rutor.length - 1].y1 > hojd) break;
+            if (ledig(rutor, false)) val = rutor;
+        }
+        if (!val) continue;
+        const rutor = val;
+        rader.forEach((text, n) => {
+            tagna.push(rutor[n]);
+            // En kortad etikett (den får ett <title> med hela texten) tar emot pekaren, så att webbläsaren visar
+            // hela texten; en okortad gör det inte — märkena under den går då att träffa.
+            const kortad = rader.length === 1 && text !== hel;
+            _rfText(c.texter, rutor[n].x0, rutor[n].y0 + fpx * 0.8, text, { px: fpx, farg: r.textfarg || FARG.dampad, fet: true, title: kortad ? hel : text,
+                attr: { 'data-marke': 'zonetikett', ...(kortad ? {} : { 'pointer-events': 'none' }), stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+        });
     }
 }
 

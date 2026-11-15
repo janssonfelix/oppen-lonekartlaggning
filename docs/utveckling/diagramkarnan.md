@@ -127,7 +127,9 @@ och finns till för `tips`.
   platser runt sin punkt (höger, vänster, över, under och hörnen), först intill punkten och sedan längre ut en textrad i
   taget. Den första platsen där rutan varken täcker en ritad punkt eller en redan lagd etikett, och står inom panelen,
   tas. En etikett som står längre ut än intill punkten får en tunn linje (`data-marke="hanvisning"`) från punktens kant
-  till rutan. Prövningen går högst 20 textrader ut. Finns ingen fri plats står den där den täcker minst: etiketten ritas alltid, för det är vyn
+  till rutan, och längre ut prövas också 32 riktningar mellan de åtta. En linje som går genom en annan etiketts ruta
+  räknas som en krock, åt båda hållen. Prövningen går högst 20 textrader ut. En etikett som inte fick en fri plats
+  prövar sedan platser där bara en annan etikett står i vägen; den andra flyttas, om den själv hittar en fri plats. Finns ingen fri plats står den där den täcker minst: etiketten ritas alltid, för det är vyn
   som har valt vilka punkter som namnges. Bara ritade punkter är hinder, så en dold liten punkt påverkar inte lägena.
   Etikettens ruta räknas med en tiondel och 2 px utöver den uppskattade textbredden, och 1,3 gånger teckenstorleken
   på höjden.
@@ -160,7 +162,10 @@ data — och ritas som en färgstapel i högermarginalen med ändvärdena och ti
 - Zon: `{ typ: 'zon', x0?, x1? | y0?, y1?, axel?: 'y2', farg?, opacitet?, etikett?, textfarg? }`. Ritas under
   märkena. En gräns som saknas är panelens kant. Etiketten ritas överst i zonen, ovanpå märkena. En etikett i en
   lodrät zon som inte ryms på en rad men hel på två bryts vid ordgränsen; annars kortas den (hela texten i `<title>`),
-  och ryms inte tre tecken ritas den inte.
+  och ryms inte tre tecken ritas den inte. Etiketten läggs i zonens överkant där den varken täcker en ritad punkt,
+  en hänvisningslinje eller en annan text: mitt i zonen om det går, annars förskjuten i sidled eller en rad i taget
+  nedåt (högst tolv rader). Finns ingen sådan plats gäller den äldre regeln: mitt i zonen, under en text som redan
+  står där.
   På en bandaxel är gränserna kategorinamn och zonen täcker dem inklusive; saknas en gränskategori bland de
   ritade kategorierna ritas ingen zon.
 - Linje: `{ typ?: 'linje', x | y, axel?: 'y2', streck?, farg?, tjocklek?, etikett?, textfarg? }`. `etikett` står vid linjens
@@ -630,7 +635,8 @@ ADR-39 gäller för allt som är ett diagram.
 
 **Märken.** Staplar har ett tak för tjockleken och rundade hörn; staplade delar och punkter har en tunn kant i
 ytans färg; axelsiffror är dämpade. Mönster (tunna sneda streck, små prickar) används bara för litet underlag.
-Etiketter sätts på det som behöver namnges, inte på allt: trattdiagrammet namnger högst sex grupper. Namn på punkter i
+Etiketter sätts på det som behöver namnges, inte på allt: trattdiagrammet namnger högst sex grupper, och ett namn
+som förekommer i mer än ett BAS-intervall får `·BAS`, som i matrisen. Namn på punkter i
 ett moln (trattdiagrammet, prioriteringsmatrisen) undviker punkterna och varandra (`etikettLage: 'undvik'`), och ett
 värde vid änden av en stapel står utanför stapeln (datapunktens `etikettLage`, trapporna). Pröva det med det stora
 demot: ett namn som täcker en annan punkt går inte att knyta till sin egen.
