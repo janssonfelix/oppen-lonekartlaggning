@@ -33362,17 +33362,21 @@ function bibliotekCssForUtskrift() {
 
 /**
  * Avstavar webbläsaren svenska? Ett långt ord i en ruta smalare än ordet (.avstavningsprov i stilmallen): med avstavning
- * bryts ordet och ryms, utan avstavning sticker det ut. En miljö som inte mäter (bredderna 0) räknas som att den avstavar.
+ * bryts ordet och ryms, utan avstavning sticker det ut. Två ord prövas, ett med liten och ett med stor begynnelsebokstav:
+ * Firefox avstavar inte ord med stor bokstav, och rubrikerna börjar med en («Jämförelseetikett»). En miljö som inte
+ * mäter (bredderna 0) räknas som att den avstavar.
  */
 function _utskriftAvstavar() {
-    const prov = document.createElement('div');
-    prov.className = 'avstavningsprov';
-    prov.lang = 'sv';
-    prov.textContent = 'jämförelseetikettens';
-    document.body.appendChild(prov);
-    const ja = prov.scrollWidth <= prov.clientWidth + 1;
-    prov.remove();
-    return ja;
+    return ['jämförelseetikettens', 'Kvinnodominerad'].every(ord => {
+        const prov = document.createElement('div');
+        prov.className = 'avstavningsprov';
+        prov.lang = 'sv';
+        prov.textContent = ord;
+        document.body.appendChild(prov);
+        const ja = prov.scrollWidth <= prov.clientWidth + 1;
+        prov.remove();
+        return ja;
+    });
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
