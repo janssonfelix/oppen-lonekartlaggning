@@ -36,7 +36,7 @@ och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). K
 | Gränsen för kvinnodominerat arbete | lagen anger ingen siffra ("är eller brukar anses vara"). Förarbetena: prop. 1999/2000:143 avsnitt 9.4 säger "mer än 60 procent", och författningskommentaren till 10 § i samma proposition säger "uppgår till eller överstiger 60 procent" (propositionen gällde den dåvarande jämställdhetslagen) | **mer än 60 % kvinnor** (`KVINNO_TROSKEL_DEFAULT`, >) eller **60 % eller mer**, valt i Likvärdigt arbete och lika i hela verktyget (`arKvinnodominerad`, ADR-60). Valen heter efter lydelsen, *Mer än X %* och *X % eller mer*, och propositionen ovan är källa för båda; gränssnittet nämner varken propositionen eller förarbetena (ADR-16, ADR-72). Nycklarna `'do'` och `'scb'` står kvar för sparade konfigurationsfiler. Jämförelseetiketterna är alla AID-etiketter som inte är kvinnodominerade, mansdominerat under 40 % är en klass, inte ett urval | Förslag — beslut 2026-10-19, 2026-11-08, 2026-11-14 (ADR-72). SCB:s *På tal om kvinnor och män* (2024) definierar kvinnodominerad som "mer än 60 procent kvinnor" och är därför inte källa för *eller mer* |
 | Samverkan med arbetstagarna | 3 kap. 11 §; redogörelse 13 § 7; information till facket 12 § | *samverkan med arbetstagarna* | Förslag |
 | Åtgärder, kostnadsberäkning och tidsplan (senast inom tre år) | 3 kap. 13 § andra stycket 4–5 (10–24 anställda via 14 §); allmänt 3 kap. 2 § 3 och 3 § | *åtgärder och tidsplan* | Förslag |
-| Ordet *handlingsplan* | inte lagens begrepp sedan 2017 (SFS 2016:828) | fliken heter fortfarande *Handlingsplan*; rapportens avsnitt heter *Åtgärder och tidsplan* | Förslag — flikens namn är ett produktbeslut |
+| Ordet *handlingsplan* | inte lagens begrepp sedan 2017 (SFS 2016:828) | fliken heter fortfarande *Handlingsplan*; rapportens avsnitt heter *Åtgärder och tidsplan* | Beslutat 2026-11-15: fliken behåller namnet, som är neutralt |
 | Dokumentation | 3 kap. 13 § (25 eller fler anställda, gäller alltid kommun och region) och 14 § (10–24) | *dokumentationen av lönekartläggningen* | Förslag |
 | Ramen | 3 kap. 8–14 §§ | *diskrimineringslagen 3 kap. (lönekartläggning)* | Förslag |
 | Svensk lag om lönetransparens | finns inte (oktober 2026). Lagrådsremiss 2026-01-15 (ikraftträdande 1 juli 2026); regeringen sköt 2026-03-11 fram det till 1 januari 2027 och meddelade 2026-03-26 att ingen proposition lämnas och att direktivet ska omförhandlas; EU-kommissionen svarade 2026-05-22 att det varken omförhandlas eller senareläggs; DO fick 2026-06-08 ett uppdrag om främjandeinsatser (A2026/00595) med redovisning 2027-11-01. Inget datum finns | ingen hänvisning; bevakas | Förslag, bevakas |
@@ -59,6 +59,26 @@ arbeten som är lika eller likvärdiga är arbetsgivarens.
 | Rätt till information | art. 7 (7.3 årlig information, 7.4 svar inom två månader) | utanför verktygets omfång | Förslag |
 | Könsneutrala lönestrukturer och kriterier | art. 4 (kriterier 4.4) och 6; art. 5 gäller tiden före anställning | *könsneutrala lönestrukturer och lönekriterier (art. 4 och 6)* i Om verktyget | Förslag |
 | Information till anställda om kartläggningen | ingen regel i direktivet (art. 13 gäller social dialog); mallen bygger på dataskyddsförordningen art. 12–13 | mallen `information-till-anstallda.md` | Förslag |
+
+### Protokollet för gemensam lönebedömning mot art. 10.2
+
+Kartlagt 2026-11-15 mot den svenska lydelsen av direktivet på EUR-Lex (CELEX 32023L0970). Protokollet är
+Excel-filen *Protokoll för gemensam lönebedömning* (`exportJPAProtocol`, `src/app/24-excelexport.js`). Status
+*Förslag*: inte juridiskt granskat.
+
+| Led | Innehållet enligt art. 10.2 | Protokollet | Täckning |
+|---|---|---|---|
+| a | andelen kvinnor och män i varje arbetstagarkategori | antal kvinnor och män, men bara för grupper med statusen *Värt att granska* (blad 2) och intervall med säkerställd skillnad (blad 3) | delvis: inte alla kategorier |
+| b | kvinnors och mäns genomsnittliga lönenivåer, och tillägg eller rörliga ersättningar, per kategori | medianer, inte medelvärden; lönefilen har en lönekolumn, så tillägg och rörliga delar redovisas inte för sig | delvis |
+| c | alla skillnader i genomsnittlig lönenivå per kategori | skillnaden för de flaggade grupperna och intervallen; övriga räknas bara i blad 4 | delvis: inte alla kategorier |
+| d | skälen till skillnaderna, med objektiva och könsneutrala kriterier som parterna fastställt | fält att fylla i: *Sakliga skäl*, *Fackliga partens kommentar*, *Status efter samråd* | ja, som fält att fylla i |
+| e | andelen kvinnor och män som fått löneökning efter föräldraledighet eller ledighet för vård av anhörig | saknas; underlaget har inga uppgifter om ledighet | nej |
+| f | åtgärder mot löneskillnader som inte motiveras av objektiva, könsneutrala kriterier | *Överenskommen åtgärd*, *Tidplan*, *Ansvarig* per rad; *Övergripande åtgärdsplan* på försättssidan | ja, som fält att fylla i |
+| g | utvärdering av hur effektiva åtgärderna från tidigare gemensamma lönebedömningar har varit | saknas; försättssidan har bara *Nästa uppföljning* | nej |
+
+Utanför 10.2: art. 10.3 (bedömningen görs tillgänglig för arbetstagare, deras företrädare och övervakningsorganet)
+ligger utanför verktyget. Art. 10.4 kräver att åtgärderna omfattar en analys av befintliga system för könsneutral
+arbetsvärdering och arbetsindelning, eller att sådana införs; protokollet har inget fält för det.
 
 ## Dataskyddsförordningen (EU) 2016/679
 

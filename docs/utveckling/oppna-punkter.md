@@ -106,8 +106,10 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 **Juridiska frågor.** Hänvisningarna gicks igenom 2026-10-19 (status *Förslag* i [`lagrum.md`](lagrum.md): inte
 juridiskt granskade). Beslut som följde: verktyget hänvisar övergripande
 och lagrummen står bara i [`lagrum.md`](lagrum.md) (ADR-16); kvinnodominerat arbete är mer än 60 % kvinnor;
-direktivet beskrivs som inte infört i Sverige, med möjlig direkt verkan mot kommun och region. Kvar att
-pröva: att 5 %-gränsen bara används för gemensam lönebedömning och aldrig för att flagga lika eller likvärdigt
-arbete (metodändring); flikens namn *Handlingsplan*; en spärr mot fält som
-fackmedlemskap eller hälsa; och protokollets täckning av art. 10.2 a–g. Ingen juridisk granskning har gjorts;
-varje arbetsgivare stämmer av mot sin egen rådgivning.
+direktivet beskrivs som inte infört i Sverige, med möjlig direkt verkan mot kommun och region. Genomfört
+och kvar att pröva juridiskt: 5 %-gränsen används bara för gemensam lönebedömning, aldrig för att flagga lika eller
+likvärdigt arbete (ADR-59); inläsningen avvisar kolumner vars rubrik antyder fackmedlemskap, hälsa eller andra
+särskilda kategorier (`detectSensitiveColumns`). Fliken *Handlingsplan* behåller namnet, som är neutralt (beslut
+2026-11-15). Protokollet för gemensam lönebedömning är kartlagt mot art. 10.2 a–g i [`lagrum.md`](lagrum.md):
+a–c delvis, d och f som fält att fylla i, e och g saknas. Ingen juridisk granskning har gjorts; varje arbetsgivare
+stämmer av mot sin egen rådgivning.
