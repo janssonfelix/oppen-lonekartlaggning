@@ -64,6 +64,8 @@ function generateBenchmark() {
         const matchEl = document.getElementById('benchmark-matchning-info'); if (matchEl) matchEl.textContent = '';
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
+        // Samma kolumner som när statistik finns, så att den tomma tabellen inte blir bredare än skärmen.
+        if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
         return;
     }
 
