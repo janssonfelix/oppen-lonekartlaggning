@@ -276,6 +276,13 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(cell('Prioritering', 'A2').z).toBe('0');
         expect(cell('Prioritering', 'A2').v).toBeCloseTo(16.87, 2);                   // sorteringsvärdet förfinar "17"
     });
+    it('Prioritering: kolumn B (AID-etiketten) är så bred som det längsta värdet, inte som rubriken, med ett tak (S3)', () => {
+        const ws = wb.Sheets.Prioritering;
+        const varden = X.utils.sheet_to_json(ws, { header: 1, defval: '' }).slice(1).map(r => String(r[1] ?? ''));
+        const langst = Math.max(...varden.map(v => v.length));
+        expect(String(ws.B1.v).length).toBeGreaterThan(langst + 2);   // rubriken är längre än värdena
+        expect(ws['!cols'][1].wch).toBe(Math.min(70, langst + 2));
+    });
     it('Löneöversikt och Jämförelsestatistik: kvoten som kvot och skillnaden i procent, inte i kronor', () => {
         expect(rad('Löneöversikt', 1)[5]).toBe('Lönespridning P90/P10 (kvot)');
         expect(cell('Löneöversikt', 'F4')).toMatchObject({ t: 'n', v: 1.2, z: '0.00' });

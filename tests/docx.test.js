@@ -249,3 +249,51 @@ describe('docx: kolumnbredderna följer innehållet', () => {
         expect(xml).not.toContain('<w:tblCellMar>');
     });
 });
+
+// S5 i punkt 26: en ruta eller en rubrik delas inte mellan två sidor, och en ruta att fylla i står på samma sida som
+// det den bedömer. Rutan själv hålls inte ihop med nästa: då skulle den följa med nästa avsnitts rubrik.
+describe('docx: rutor och rubriker hålls ihop över sidbrytningar (S5)', () => {
+    const c = s => ({ delar: [t(s)] });
+    const stilar = tolka(docxDelar([], OPT)['word/styles.xml']);
+    const stilPPr = id => [...stilar.getElementsByTagName('w:style')].find(s => s.getAttribute('w:styleId') === id)
+        .getElementsByTagName('w:pPr')[0];
+    const har = (pPr, namn) => !!pPr && pPr.getElementsByTagName(namn).length > 0;
+    it('varje rubrik hålls ihop med nästa stycke och delas inte', () => {
+        for (const id of ['Heading1', 'Heading2', 'Heading3']) {
+            expect(har(stilPPr(id), 'w:keepNext'), id).toBe(true);
+            expect(har(stilPPr(id), 'w:keepLines'), id).toBe(true);
+        }
+    });
+    it('rutorna och de dämpade styckena (som texten om AID) delas inte', () => {
+        for (const id of ['FyllIn', 'Utkastruta', 'Dampad']) expect(har(stilPPr(id), 'w:keepLines'), id).toBe(true);
+        for (const id of ['FyllIn', 'Utkastruta', 'Dampad']) expect(har(stilPPr(id), 'w:keepNext'), id).toBe(false);
+    });
+    it('styckeegenskaperna står i schemats ordning', () => {
+        const ORDNING = ['pStyle', 'keepNext', 'keepLines', 'pageBreakBefore', 'widowControl', 'pBdr', 'shd', 'tabs', 'spacing', 'ind', 'jc', 'outlineLvl', 'rPr'];
+        for (const pPr of stilar.getElementsByTagName('w:pPr')) {
+            const index = [...pPr.children].map(n => ORDNING.indexOf(n.localName));
+            expect(index).not.toContain(-1);
+            expect(index).toEqual([...index].sort((a, b) => a - b));
+        }
+    });
+    const kropp = block => [...tolka(docxDelar(block, OPT)['word/document.xml']).getElementsByTagName('w:body')[0].children];
+    const ruta = { typ: 'stycke', stil: 'fyllIn', delar: [t('[HR fyller i]', { fet: true }), t(' Bedömning')] };
+    it('stycket före en ruta att fylla i hålls ihop med rutan', () => {
+        const [fore, r, efter] = kropp([{ typ: 'stycke', delar: [t('Ett köns median står bara där …')] }, ruta, { typ: 'stycke', delar: [t('Nästa')] }]);
+        expect(har(fore.getElementsByTagName('w:pPr')[0], 'w:keepNext')).toBe(true);
+        expect(har(r.getElementsByTagName('w:pPr')[0], 'w:keepNext')).toBe(false);
+        expect(har(efter.getElementsByTagName('w:pPr')[0], 'w:keepNext')).toBe(false);
+    });
+    it('en tabell före en ruta att fylla i: tabellens sista rad hålls ihop med rutan', () => {
+        const tabell = { typ: 'tabell', rubrikrad: [c('AID-etikett'), c('Status')], rader: [[c('Vårdbiträde'), c('Värt att granska')], [c('Lärare'), c('Värt att granska')]] };
+        const [tbl] = kropp([tabell, ruta]);
+        const rader = [...tbl.getElementsByTagName('w:tr')];
+        const keep = tr => [...tr.getElementsByTagName('w:p')].map(p => har(p.getElementsByTagName('w:pPr')[0], 'w:keepNext'));
+        expect(keep(rader[rader.length - 1])).toEqual([true, true]);
+        expect(keep(rader[1])).toEqual([false, false]);
+    });
+    it('utan ruta efter får stycken och tabeller inga extra egenskaper', () => {
+        const xml = docxDelar([{ typ: 'stycke', delar: [t('A')] }, { typ: 'tabell', rader: [[c('x')]] }, { typ: 'stycke', delar: [t('B')] }], OPT)['word/document.xml'];
+        expect(xml).not.toContain('keepNext');
+    });
+});
