@@ -407,7 +407,9 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const ejBas = visas.filter(r => r.justeratSkal === 'ejBas').length;
-        if (ejBas) st.push(`I ${_st(ejBas, T.huvudomrade.en, T.huvudomrade.fl)} går kön och ${T.niva.en} inte att skilja åt, så skillnaden kan inte justeras för ${T.niva.en} där.`);
+        // Samma två orsaker som ADR-78 och verktygstipset i vyn (_sektorEjBasTitel).
+        if (ejBas) st.push(`I ${_st(ejBas, T.huvudomrade.en, T.huvudomrade.fl)} går modellen med ${T.niva.en} inte att skatta: kön och ${T.niva.en} går inte att skilja åt, `
+            + `eller raderna är för få för så många ${T.niva.fl}. Där kan skillnaden inte justeras för ${T.niva.en}.`);
         const skr = visas.find(r => r.skrAndelKv != null);
         if (skr) st.push(`Andel kvinnor i samma ${T.huvudomrade.en} i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
         return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', justText.rubrik],

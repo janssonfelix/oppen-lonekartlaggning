@@ -6859,7 +6859,9 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const ejBas = visas.filter(r => r.justeratSkal === 'ejBas').length;
-        if (ejBas) st.push(`I ${_st(ejBas, T.huvudomrade.en, T.huvudomrade.fl)} går kön och ${T.niva.en} inte att skilja åt, så skillnaden kan inte justeras för ${T.niva.en} där.`);
+        // Samma två orsaker som ADR-78 och verktygstipset i vyn (_sektorEjBasTitel).
+        if (ejBas) st.push(`I ${_st(ejBas, T.huvudomrade.en, T.huvudomrade.fl)} går modellen med ${T.niva.en} inte att skatta: kön och ${T.niva.en} går inte att skilja åt, `
+            + `eller raderna är för få för så många ${T.niva.fl}. Där kan skillnaden inte justeras för ${T.niva.en}.`);
         const skr = visas.find(r => r.skrAndelKv != null);
         if (skr) st.push(`Andel kvinnor i samma ${T.huvudomrade.en} i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
         return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', justText.rubrik],
@@ -7100,7 +7102,11 @@ const _kor = (d, sz) => {
     const pr = (d.fet ? '<w:b/>' : '') + (d.kursiv ? '<w:i/>' : '') + (sz ? `<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>` : '');
     return `<w:r>${pr ? `<w:rPr>${pr}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlText(d.text)}</w:t></w:r>`;
 };
-const _stycke = (delar, stil, sz) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(d => _kor(d, sz)).join('')}</w:p>`;
+/** Ett stycke; `hallIhop` håller det på samma sida som nästa stycke (keepNext). */
+const _stycke = (delar, stil, sz, hallIhop = false) => {
+    const pr = (stil ? `<w:pStyle w:val="${stil}"/>` : '') + (hallIhop ? '<w:keepNext/>' : '');
+    return `<w:p>${pr ? `<w:pPr>${pr}</w:pPr>` : ''}${(delar || []).map(d => _kor(d, sz)).join('')}</w:p>`;
+};
 const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
 
 // Teckenbredder i Calibri 10 pt, fet, i twips, avrundade uppåt i grupper; övriga gemener 108, versaler 128.
@@ -7174,7 +7180,8 @@ const _cellmarginaler = (lodrat, sidled) => '<w:tblCellMar>'
     + [['top', lodrat], ['left', sidled], ['bottom', lodrat], ['right', sidled]].map(([s, w]) => `<w:${s} w:w="${w}" w:type="dxa"/>`).join('')
     + '</w:tblCellMar>';
 
-function _tabell(b) {
+/** `hallIhop`: den sista raden står på samma sida som stycket efter tabellen (keepNext i radens stycken). */
+function _tabell(b, hallIhop = false) {
     const alla = [...(b.rubrikrad ? [b.rubrikrad] : []), ...(b.rader || [])];
     const kolumner = Math.max(1, ...alla.map(r => r.length));
     // Ryms inte cellernas ord och tal och rubrikernas ord i 10 pt, skrivs tabellen tätare.
@@ -7182,11 +7189,11 @@ function _tabell(b) {
     const tat = !vanlig.ryms;
     const { bredder } = tat ? _kolumnbredder(b, kolumner, TAT) : vanlig;
     const sz = tat ? TAT.sz : undefined;
-    const rad = (celler, rubrik) => {
+    const rad = (celler, rubrik, sista = false) => {
         const fyllda = [...celler, ...Array(kolumner - celler.length).fill({ delar: [] })];
         return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map((c, k) =>
             `<w:tc><w:tcPr><w:tcW w:w="${bredder[k]}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
-            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d)), undefined, sz) + '</w:tc>').join('')}</w:tr>`;
+            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d)), undefined, sz, sista && hallIhop) + '</w:tc>').join('')}</w:tr>`;
     };
     // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver (A9): Word räknar
     // annars om en procentbredd mot cellbredderna, och LibreOffice och Word kan rita tabellen olika.
@@ -7196,7 +7203,7 @@ function _tabell(b) {
     return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${TEXTBREDD}" w:type="dxa"/>${mar}`
         + `<w:tblLook ${look} w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
         + `<w:tblGrid>${bredder.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>`
-        + (b.rubrikrad ? rad(b.rubrikrad, true) : '') + (b.rader || []).map(r => rad(r, false)).join('') + '</w:tbl>';
+        + (b.rubrikrad ? rad(b.rubrikrad, true) : '') + (b.rader || []).map((r, i, alla) => rad(r, false, i === alla.length - 1)).join('') + '</w:tbl>';
 }
 
 const _harBild = b => b && b.typ === 'bild' && typeof b.base64 === 'string' && b.base64.length > 0 && b.bredd > 0 && b.hojd > 0;
@@ -7219,9 +7226,12 @@ function _bild(b, nr) {
 
 function _dokument(block) {
     let nr = 0;
+    // En ruta att fylla i står på samma sida som stycket eller tabellraden före, det som den bedömer (S5 i punkt 26).
+    // Rutan själv hålls inte ihop med nästa: då skulle den följa med nästa avsnitts rubrik.
+    const foreRuta = i => i + 1 < block.length && block[i + 1].typ === 'stycke' && block[i + 1].stil === 'fyllIn';
     const delar = block.map((b, i) => (b.typ === 'rubrik' ? _stycke(b.delar, `Heading${b.niva}`)
-        : b.typ === 'tabell' ? _tabell(b)
-        : b.typ === 'bild' ? _bild(b, _harBild(b) ? ++nr : 0) : _stycke(b.delar, STIL[b.stil]))
+        : b.typ === 'tabell' ? _tabell(b, foreRuta(i))
+        : b.typ === 'bild' ? _bild(b, _harBild(b) ? ++nr : 0) : _stycke(b.delar, STIL[b.stil], undefined, foreRuta(i)))
         // Två tabeller i följd skiljs av ett tomt stycke; utan det slår Word ihop dem till en tabell (A9).
         + (b.typ === 'tabell' && i + 1 < block.length && block[i + 1].typ === 'tabell' ? '<w:p/>' : ''));
     if (!block.length || block[block.length - 1].typ === 'tabell') delar.push('<w:p/>');   // stycke före sectPr
@@ -7235,7 +7245,7 @@ function _stilar() {
     const ram = (typ, sz, farg) => ['top', 'left', 'bottom', 'right'].map(s => `<w:${s} w:val="${typ}" w:sz="${sz}" w:space="4" w:color="${farg}"/>`).join('');
     const rubrik = (id, namn, niva, sz, extra = '') => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${namn}"/>`
         + `<w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/>`
-        + `<w:pPr><w:keepNext/>${extra}<w:outlineLvl w:val="${niva}"/></w:pPr><w:rPr><w:b/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr></w:style>`;
+        + `<w:pPr><w:keepNext/><w:keepLines/>${extra}<w:outlineLvl w:val="${niva}"/></w:pPr><w:rPr><w:b/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr></w:style>`;
     return `${XML}<w:styles xmlns:w="${W}">`
         + '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/>'
         + '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="sv-SE"/></w:rPr></w:rPrDefault>'
@@ -7245,12 +7255,12 @@ function _stilar() {
         + rubrik('Heading2', 'heading 2', 1, 28, '<w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="999999"/></w:pBdr><w:spacing w:before="360" w:after="120"/>')
         + rubrik('Heading3', 'heading 3', 2, 24, '<w:spacing w:before="240" w:after="80"/>')
         + '<w:style w:type="paragraph" w:customStyle="1" w:styleId="Dampad"><w:name w:val="Dämpad"/><w:basedOn w:val="Normal"/><w:qFormat/>'
-        + '<w:rPr><w:color w:val="555555"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>'
+        + '<w:pPr><w:keepLines/></w:pPr><w:rPr><w:color w:val="555555"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>'
         + `<w:style w:type="paragraph" w:customStyle="1" w:styleId="FyllIn"><w:name w:val="Fyll i"/><w:basedOn w:val="Normal"/><w:qFormat/>`
-        + `<w:pPr><w:pBdr>${ram('dashed', 4, 'B45309')}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF7D6"/><w:spacing w:before="120" w:after="120"/></w:pPr>`
+        + `<w:pPr><w:keepLines/><w:pBdr>${ram('dashed', 4, 'B45309')}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF7D6"/><w:spacing w:before="120" w:after="120"/></w:pPr>`
         + '<w:rPr><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr></w:style>'
         + `<w:style w:type="paragraph" w:customStyle="1" w:styleId="Utkastruta"><w:name w:val="Utkastruta"/><w:basedOn w:val="Normal"/><w:qFormat/>`
-        + `<w:pPr><w:pBdr>${ram('single', 12, 'B45309')}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF7ED"/><w:spacing w:after="240"/></w:pPr></w:style>`
+        + `<w:pPr><w:keepLines/><w:pBdr>${ram('single', 12, 'B45309')}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF7ED"/><w:spacing w:after="240"/></w:pPr></w:style>`
         + '<w:style w:type="table" w:customStyle="1" w:styleId="Tabell"><w:name w:val="Tabell"/>'
         + '<w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:tblPr><w:tblBorders>'
         + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`).join('')

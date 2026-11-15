@@ -9370,7 +9370,9 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const ejBas = visas.filter(r => r.justeratSkal === 'ejBas').length;
-        if (ejBas) st.push(`I ${_st(ejBas, T.huvudomrade.en, T.huvudomrade.fl)} går kön och ${T.niva.en} inte att skilja åt, så skillnaden kan inte justeras för ${T.niva.en} där.`);
+        // Samma två orsaker som ADR-78 och verktygstipset i vyn (_sektorEjBasTitel).
+        if (ejBas) st.push(`I ${_st(ejBas, T.huvudomrade.en, T.huvudomrade.fl)} går modellen med ${T.niva.en} inte att skatta: kön och ${T.niva.en} går inte att skilja åt, `
+            + `eller raderna är för få för så många ${T.niva.fl}. Där kan skillnaden inte justeras för ${T.niva.en}.`);
         const skr = visas.find(r => r.skrAndelKv != null);
         if (skr) st.push(`Andel kvinnor i samma ${T.huvudomrade.en} i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
         return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', justText.rubrik],
@@ -9611,7 +9613,11 @@ const _kor = (d, sz) => {
     const pr = (d.fet ? '<w:b/>' : '') + (d.kursiv ? '<w:i/>' : '') + (sz ? `<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>` : '');
     return `<w:r>${pr ? `<w:rPr>${pr}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlText(d.text)}</w:t></w:r>`;
 };
-const _stycke = (delar, stil, sz) => `<w:p>${stil ? `<w:pPr><w:pStyle w:val="${stil}"/></w:pPr>` : ''}${(delar || []).map(d => _kor(d, sz)).join('')}</w:p>`;
+/** Ett stycke; `hallIhop` håller det på samma sida som nästa stycke (keepNext). */
+const _stycke = (delar, stil, sz, hallIhop = false) => {
+    const pr = (stil ? `<w:pStyle w:val="${stil}"/>` : '') + (hallIhop ? '<w:keepNext/>' : '');
+    return `<w:p>${pr ? `<w:pPr>${pr}</w:pPr>` : ''}${(delar || []).map(d => _kor(d, sz)).join('')}</w:p>`;
+};
 const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
 
 // Teckenbredder i Calibri 10 pt, fet, i twips, avrundade uppåt i grupper; övriga gemener 108, versaler 128.
@@ -9685,7 +9691,8 @@ const _cellmarginaler = (lodrat, sidled) => '<w:tblCellMar>'
     + [['top', lodrat], ['left', sidled], ['bottom', lodrat], ['right', sidled]].map(([s, w]) => `<w:${s} w:w="${w}" w:type="dxa"/>`).join('')
     + '</w:tblCellMar>';
 
-function _tabell(b) {
+/** `hallIhop`: den sista raden står på samma sida som stycket efter tabellen (keepNext i radens stycken). */
+function _tabell(b, hallIhop = false) {
     const alla = [...(b.rubrikrad ? [b.rubrikrad] : []), ...(b.rader || [])];
     const kolumner = Math.max(1, ...alla.map(r => r.length));
     // Ryms inte cellernas ord och tal och rubrikernas ord i 10 pt, skrivs tabellen tätare.
@@ -9693,11 +9700,11 @@ function _tabell(b) {
     const tat = !vanlig.ryms;
     const { bredder } = tat ? _kolumnbredder(b, kolumner, TAT) : vanlig;
     const sz = tat ? TAT.sz : undefined;
-    const rad = (celler, rubrik) => {
+    const rad = (celler, rubrik, sista = false) => {
         const fyllda = [...celler, ...Array(kolumner - celler.length).fill({ delar: [] })];
         return `<w:tr><w:trPr><w:cantSplit/>${rubrik ? '<w:tblHeader/>' : ''}</w:trPr>${fyllda.map((c, k) =>
             `<w:tc><w:tcPr><w:tcW w:w="${bredder[k]}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
-            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d)), undefined, sz) + '</w:tc>').join('')}</w:tr>`;
+            + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d)), undefined, sz, sista && hallIhop) + '</w:tc>').join('')}</w:tr>`;
     };
     // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver (A9): Word räknar
     // annars om en procentbredd mot cellbredderna, och LibreOffice och Word kan rita tabellen olika.
@@ -9707,7 +9714,7 @@ function _tabell(b) {
     return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${TEXTBREDD}" w:type="dxa"/>${mar}`
         + `<w:tblLook ${look} w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
         + `<w:tblGrid>${bredder.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>`
-        + (b.rubrikrad ? rad(b.rubrikrad, true) : '') + (b.rader || []).map(r => rad(r, false)).join('') + '</w:tbl>';
+        + (b.rubrikrad ? rad(b.rubrikrad, true) : '') + (b.rader || []).map((r, i, alla) => rad(r, false, i === alla.length - 1)).join('') + '</w:tbl>';
 }
 
 const _harBild = b => b && b.typ === 'bild' && typeof b.base64 === 'string' && b.base64.length > 0 && b.bredd > 0 && b.hojd > 0;
@@ -9730,9 +9737,12 @@ function _bild(b, nr) {
 
 function _dokument(block) {
     let nr = 0;
+    // En ruta att fylla i står på samma sida som stycket eller tabellraden före, det som den bedömer (S5 i punkt 26).
+    // Rutan själv hålls inte ihop med nästa: då skulle den följa med nästa avsnitts rubrik.
+    const foreRuta = i => i + 1 < block.length && block[i + 1].typ === 'stycke' && block[i + 1].stil === 'fyllIn';
     const delar = block.map((b, i) => (b.typ === 'rubrik' ? _stycke(b.delar, `Heading${b.niva}`)
-        : b.typ === 'tabell' ? _tabell(b)
-        : b.typ === 'bild' ? _bild(b, _harBild(b) ? ++nr : 0) : _stycke(b.delar, STIL[b.stil]))
+        : b.typ === 'tabell' ? _tabell(b, foreRuta(i))
+        : b.typ === 'bild' ? _bild(b, _harBild(b) ? ++nr : 0) : _stycke(b.delar, STIL[b.stil], undefined, foreRuta(i)))
         // Två tabeller i följd skiljs av ett tomt stycke; utan det slår Word ihop dem till en tabell (A9).
         + (b.typ === 'tabell' && i + 1 < block.length && block[i + 1].typ === 'tabell' ? '<w:p/>' : ''));
     if (!block.length || block[block.length - 1].typ === 'tabell') delar.push('<w:p/>');   // stycke före sectPr
@@ -9746,7 +9756,7 @@ function _stilar() {
     const ram = (typ, sz, farg) => ['top', 'left', 'bottom', 'right'].map(s => `<w:${s} w:val="${typ}" w:sz="${sz}" w:space="4" w:color="${farg}"/>`).join('');
     const rubrik = (id, namn, niva, sz, extra = '') => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${namn}"/>`
         + `<w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/>`
-        + `<w:pPr><w:keepNext/>${extra}<w:outlineLvl w:val="${niva}"/></w:pPr><w:rPr><w:b/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr></w:style>`;
+        + `<w:pPr><w:keepNext/><w:keepLines/>${extra}<w:outlineLvl w:val="${niva}"/></w:pPr><w:rPr><w:b/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr></w:style>`;
     return `${XML}<w:styles xmlns:w="${W}">`
         + '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/>'
         + '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="sv-SE"/></w:rPr></w:rPrDefault>'
@@ -9756,12 +9766,12 @@ function _stilar() {
         + rubrik('Heading2', 'heading 2', 1, 28, '<w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="999999"/></w:pBdr><w:spacing w:before="360" w:after="120"/>')
         + rubrik('Heading3', 'heading 3', 2, 24, '<w:spacing w:before="240" w:after="80"/>')
         + '<w:style w:type="paragraph" w:customStyle="1" w:styleId="Dampad"><w:name w:val="Dämpad"/><w:basedOn w:val="Normal"/><w:qFormat/>'
-        + '<w:rPr><w:color w:val="555555"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>'
+        + '<w:pPr><w:keepLines/></w:pPr><w:rPr><w:color w:val="555555"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>'
         + `<w:style w:type="paragraph" w:customStyle="1" w:styleId="FyllIn"><w:name w:val="Fyll i"/><w:basedOn w:val="Normal"/><w:qFormat/>`
-        + `<w:pPr><w:pBdr>${ram('dashed', 4, 'B45309')}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF7D6"/><w:spacing w:before="120" w:after="120"/></w:pPr>`
+        + `<w:pPr><w:keepLines/><w:pBdr>${ram('dashed', 4, 'B45309')}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF7D6"/><w:spacing w:before="120" w:after="120"/></w:pPr>`
         + '<w:rPr><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr></w:style>'
         + `<w:style w:type="paragraph" w:customStyle="1" w:styleId="Utkastruta"><w:name w:val="Utkastruta"/><w:basedOn w:val="Normal"/><w:qFormat/>`
-        + `<w:pPr><w:pBdr>${ram('single', 12, 'B45309')}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF7ED"/><w:spacing w:after="240"/></w:pPr></w:style>`
+        + `<w:pPr><w:keepLines/><w:pBdr>${ram('single', 12, 'B45309')}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF7ED"/><w:spacing w:after="240"/></w:pPr></w:style>`
         + '<w:style w:type="table" w:customStyle="1" w:styleId="Tabell"><w:name w:val="Tabell"/>'
         + '<w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:tblPr><w:tblBorders>'
         + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`).join('')
@@ -16092,7 +16102,7 @@ function _attachChartExport(graphDiv) {
     wrap.className = 'chart-export';
     wrap.innerHTML =
         `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${menyId}" `
-        + `aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon('laddaNed', 14)} Exportera</button>`
+        + `aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon('laddaNed', 14)} Exportera diagrammet</button>`
         + `<div class="chart-export-meny" id="${menyId}" hidden>`
         + '<button type="button" data-chart-export="png-presentation">PNG, presentation (1920 × 1080)</button>'
         + '<button type="button" data-chart-export="png-dokument">PNG, dokument (1600 × 900)</button>'
@@ -18442,7 +18452,7 @@ function renderActionChecklist({ reg } = {}) {
                             <li class="topp ram-t-1-kant rad gap-12 pad-10-14${done.has(it.id) ? ' bg-ok-yta' : ''}">
                                 <input type="checkbox" class="act-cb pekare marg-t-3" data-id="${esc(it.id)}" ${done.has(it.id) ? 'checked' : ''} aria-label="Markera som hanterad: ${esc(it.titel)}">
                                 <div class="flex-1">
-                                    <div class="rad-bryt baslinje gap-8">
+                                    <div class="ag-huvud">
                                         <span class="ag-prio ${prioKlass(it.prioritet)}">${prioIcon(it.prioritet)} ${esc(it.prioritet.charAt(0).toUpperCase() + it.prioritet.slice(1))}</span>
                                         <strong class="fs-md${done.has(it.id) ? ' farg-dampad genomstruken' : ''}">${esc(it.titel)}</strong>
                                     </div>
@@ -24249,7 +24259,7 @@ function renderLikvardighet() {
     const exportHtml = (jämförOK && result.pairs.length) ? `
         <div class="tabell-export-rad">
             <div class="chart-export tabell-export">
-                <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera kandidatparens tabell">Exportera</button>
+                <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera kandidatparens tabell">Exportera tabellen</button>
                 <div class="chart-export-meny" id="lv-export-meny" hidden>
                     <button type="button" id="btn-export-likvardighet-csv">CSV (öppnas direkt i Excel)</button>
                     <button type="button" id="btn-export-likvardighet">Excel (.xlsx) med metodblad</button>
@@ -26143,6 +26153,12 @@ function _strukturKvartilFigur(q, totAndel, omfang) {
         lager: [serie('Kvinnor', PALETTE.kon.kvinna, x => x.andelKv, x => x.nKv), serie('Män', PALETTE.kon.man, x => 100 * x.nMa / x.n, x => x.nMa)] };
 }
 
+/** Verktygstipset när modellen med BAS inte går att skatta i ett huvudområde (ADR-78): båda orsakerna. */
+function _sektorEjBasTitel() {
+    return `Modellen med ${T.niva.en} går inte att skatta i ${T.huvudomrade.bf}: kön och ${T.niva.en} går inte att skilja åt, `
+        + `eller raderna är för få för så många ${T.niva.fl}. Ett tal utan ${T.niva.en} vore inte justerat för ${T.niva.en}.`;
+}
+
 function renderSektorer(d) {
     const host = document.getElementById('struktur-sektorer');
     if (!host) return;
@@ -26166,7 +26182,7 @@ function renderSektorer(d) {
         const just = r.justerat
             ? `${pc(100 + r.justerat.pct)} <small class="muted">(${pc(100 + r.justerat.low)}–${pc(100 + r.justerat.high)})</small>`
             : r.justeratSkal === 'fa' ? '<span class="muted">För få</span>'
-            : r.justeratSkal === 'ejBas' ? `<span class="muted" title="Kön och ${T.niva.en} går inte att skilja åt i ${T.huvudomrade.bf}, så skillnaden kan inte justeras för ${T.niva.en}. Ett tal utan ${T.niva.en} vore inte justerat för ${T.niva.en}.">Kan inte justeras för BAS</span>`
+            : r.justeratSkal === 'ejBas' ? `<span class="muted" title="${esc(_sektorEjBasTitel())}">Kan inte justeras för BAS</span>`
             : '–';
         const ledning = harLedning ? `<td class="num">${pc(r.ledningKv)} / ${pc(r.ledningMa)}</td>` : '';
         // Namnet står som text (följer med i exporten); pilknappen öppnar sektorn i Tabeller och egna vyer.
@@ -26194,16 +26210,17 @@ function renderSektorer(d) {
     const visa = tabell.filter(r => r.kvot != null);
     const el = document.getElementById('chart-sektorer');
     if (!el) return;
-    if (visa.length) ritaFigur(el, _sektorFigur(visa, { medAlder: justText.medAlder })); else rensaFigur(el);
+    if (visa.length) ritaFigur(el, _sektorFigur(visa, justText)); else rensaFigur(el);
 }
 
 // Sektordiagrammets figur (diagramkärnan, ADR-39): rå och justerad kvot som punkter mot linjen 100 % — inte staplar
 // på en avkortad axel, där stapelns längd säger något annat än värdet.
 // `visa` är de sektorer vars kvot redovisas i tabellen; inga andra når figuren, och axeln räknas bara ur dem.
 // Filtren: sektor (lista) och antal personer i sektorn, samma namn och antal som tabellens kolumner Sektor och Antal.
-// medAlder gäller hela tabellen (lönefilen har ålder); rubriken och bisatsen kommer ur sektorJusteradText (sektor.js).
-function _sektorFigur(visa, { medAlder = true } = {}) {
-    const { rubrik, justeradFor } = _skSektorJusteradText([{ justeratMedAlder: medAlder }]);
+// Rubriken och bisatsen är tabellens: renderSektorer skickar sektorJusteradText (sektor.js) för hela tabellen, och utan
+// den räknas samma regel ur de visade raderna.
+function _sektorFigur(visa, justText = _skSektorJusteradText(visa)) {
+    const { medAlder, rubrik, justeradFor } = justText;
     const falt = r => ({ sektor: r.namn, n: r.n });
     const just = r => (r.justerat ? +(100 + r.justerat.pct).toFixed(1) : null);
     const varden = visa.flatMap(r => [r.kvot, just(r)]).filter(v => v != null);
@@ -31914,7 +31931,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
             parUtelamnade = utelamnade;
             par.forEach(p => {
                 const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
-                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), `Granska likvärdigt arbete (${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })})`, _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
+                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerad)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
                 lvCount++;
             });
         }
@@ -32141,7 +32158,9 @@ function renderHandlingsplanSeed() {
             ? `<td>${text(`hp-${i}-atgard`, n, 'atgard', r[0], 'Vad ska göras?', 'Åtgärd, egen rad')}</td>`
               + `<td>${text(`hp-${i}-grupp`, n, 'grupp', r[1], `Grupp eller ${T.enhet.en}, inga namn`, 'Berörd grupp, egen rad')}</td>${antal}`
               + `<td>${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" data-noprint aria-label="Ta bort den egna raden">Ta bort</button></td>`
-            : `<td>${esc(r[0])}</td><td>${esc(g)}</td>${antal}<td>${esc(r[2])}</td>`;
+            // BAS och bokstaven hålls ihop med ett hårt mellanslag på skärmen och i utskriften (S2 i punkt 26); exporterna
+            // och fältens etiketter har ett vanligt.
+            : `<td>${esc(r[0])}</td><td>${esc(g).replace(/ · BAS (\S+)$/, ' · BAS&nbsp;$1')}</td>${antal}<td>${esc(r[2])}</td>`;
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
             + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)} ${_hpSkalKnapp(n, g, seed.skillnader[i])}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td><td>${esc(_hpKostnadAvser(r[2]))}</td>`

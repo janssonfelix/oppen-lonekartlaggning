@@ -77,9 +77,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         fler.querySelector('a[data-go-to-tab="prioritering"]').click();
         expect(d.querySelector('.nav-item.active').dataset.tab).toBe('prioritering');
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
-        // Organisationens namn står intill Generera PDF, förifyllt och förklarat.
+        // Organisationens namn står i PDF-raden under beskrivningen och förklaringen (S9 i punkt 26), förifyllt och förklarat.
         const pdfRad = d.getElementById('btn-export-pdf').parentElement;
-        expect(pdfRad.querySelector(':scope > .export-org #kl-org-name')).not.toBeNull();
+        const text = pdfRad.querySelector(':scope > div:first-child');
+        expect(text.querySelector(':scope > .export-org #kl-org-name')).not.toBeNull();
+        expect(text.querySelector('#kl-org-forklaring').compareDocumentPosition(text.querySelector('.export-org')) & 4).toBe(4);   // efter förklaringen
         expect(d.getElementById('kl-org-forklaring').textContent).toMatch(/försättsblad.*organisationspaketet/);
         expect(d.getElementById('kl-org-name').getAttribute('aria-describedby')).toBe('kl-org-forklaring');
         for (const r of rader) {

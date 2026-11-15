@@ -149,7 +149,8 @@ describe('Struktur: chart-sektorer', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('utan ålder i lönefilen: serierna och beskrivningen säger justerad för BAS (ADR-78)', () => {
-        const f = w.eval(`_sektorFigur([{ namn: 'Vård och omsorg', kvot: 96.4, justerat: { pct: -1.2 } }], { medAlder: false })`);
+        // Rubriken kommer ur tabellens rader med samma regel som tabellens rubrik (sektorJusteradText), inte ur en egen flagga.
+        const f = w.eval(`_sektorFigur([{ namn: 'Vård och omsorg', kvot: 96.4, justerat: { pct: -1.2 }, justeratMedAlder: false }])`);
         expect(f.lager.map(l => l.serie)).toEqual(['Förklaras av BAS', 'Rå', 'Justerad (BAS)']);
         expect(f.beskrivning).toMatch(/justerad för BAS-intervall\./);
         expect(f.beskrivning).not.toMatch(/ålder/);
@@ -164,6 +165,23 @@ describe('Struktur: chart-sektorer', () => {
         expect(el.querySelector('[data-marke="referenslinje"]')).not.toBeNull();
         const tabell = [...w2.document.querySelectorAll('#sektor-table tbody tr')].map(tr => tr.querySelector('.sektor-namn').textContent.trim());
         expect(el._figur.y.ordning.every(n => tabell.includes(n))).toBe(true);
+    });
+    it('verktygstipset för Kan inte justeras för BAS nämner båda orsakerna: kön och BAS går inte att skilja åt, eller för få rader', () => {
+        const tips = w.eval('_sektorEjBasTitel()');
+        expect(tips).toMatch(/går inte att skilja åt/);
+        expect(tips).toMatch(/för få för så många BAS-intervall/);
+    });
+    it('den justerade seriens namn är tabellens kolumnrubrik, med och utan ålder i lönefilen', () => {
+        const w2 = createAppWindow();
+        for (const utanAlder of [false, true]) {
+            w2.__loadDemoData();
+            if (utanAlder) w2.__state.data = w2.__state.data.map(r => ({ ...r, alder: 0 }));
+            w2.__renderTabContent('struktur');
+            const rubrik = [...w2.document.querySelectorAll('#sektor-table thead th')].map(th => th.textContent.trim()).find(t => t.startsWith('Justerad'));
+            const fig = w2.document.getElementById('chart-sektorer')._figur;
+            expect(fig.lager.map(l => l.serie), String(utanAlder)).toContain(rubrik);
+            expect(rubrik).toBe(utanAlder ? 'Justerad (BAS)' : 'Justerad (ålder, BAS)');
+        }
     });
     it('ett långt sektornamn på smal skärm: ingen text utanför bilden, hela namnet i <title>', () => {
         const langt = 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet i kommunen';

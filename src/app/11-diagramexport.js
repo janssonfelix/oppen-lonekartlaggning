@@ -268,7 +268,7 @@ function _attachChartExport(graphDiv) {
     wrap.className = 'chart-export';
     wrap.innerHTML =
         `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${menyId}" `
-        + `aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon('laddaNed', 14)} Exportera</button>`
+        + `aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon('laddaNed', 14)} Exportera diagrammet</button>`
         + `<div class="chart-export-meny" id="${menyId}" hidden>`
         + '<button type="button" data-chart-export="png-presentation">PNG, presentation (1920 × 1080)</button>'
         + '<button type="button" data-chart-export="png-dokument">PNG, dokument (1600 × 900)</button>'

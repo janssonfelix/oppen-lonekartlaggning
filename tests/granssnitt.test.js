@@ -249,6 +249,10 @@ describe('en exportknapp per kort', () => {
         const aldre = [...d.querySelectorAll('.view-panel button')].filter(b => !b.closest('.chart-export-meny')
             && /^Exportera (PNG|\(CSV\))$/.test(b.textContent.trim()));
         expect(aldre.map(b => b.id || b.textContent)).toEqual([]);
+        // S11 i punkt 26: knappen säger vad den exporterar, så att två knappar över varandra inte båda heter Exportera.
+        const knappar = [...d.querySelectorAll('.view-panel .chart-export-btn')];
+        expect(knappar.length).toBeGreaterThan(20);
+        expect(knappar.filter(b => !['Exportera diagrammet', 'Exportera tabellen'].includes(b.textContent.trim())).map(b => b.textContent.trim())).toEqual([]);
     }, 30000);
     it('kandidatparens tabell har en meny Exportera med CSV och Excel', () => {
         const w = createAppWindow();
@@ -256,7 +260,7 @@ describe('en exportknapp per kort', () => {
         w.__renderTabContent('likvardighet');
         const meny = w.document.getElementById('lv-export-meny');
         const knapp = meny.parentElement.querySelector('.chart-export-btn');
-        expect(knapp.textContent.trim()).toBe('Exportera');
+        expect(knapp.textContent.trim()).toBe('Exportera tabellen');
         expect(meny.hidden).toBe(true);
         knapp.click();
         expect(meny.hidden).toBe(false);
