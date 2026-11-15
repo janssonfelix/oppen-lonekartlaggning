@@ -552,13 +552,15 @@ describe('rapportunderlag: sektorer', () => {
     });
 });
 
-describe('rapportunderlag: sektorer där kön och BAS inte går att skilja åt', () => {
+describe('rapportunderlag: sektorer där modellen med BAS inte går att skatta', () => {
     it('cellen säger att skillnaden inte kan justeras för BAS, och en mening säger varför', () => {
         const rad = { namn: 'Vård- och omsorgsarbete med mera', n: 32, nKv: 16, nMa: 16, andelKv: 50, maskerad: false, samladMedian: false,
             medTot: 30000, medKv: 28000, medMa: 33000, kvot: 84.8, justerat: null, justeratSkal: 'ejBas', justeratMedAlder: false, antalAid: 1, punkter: 0 };
         const b = avsnittBlock('sektorer', { sektorer: [rad], andel: null }, { k: 10 });
         expect(b.tabell.rader[0].at(-1)).toBe('Kan inte justeras för BAS');
-        expect(b.stycken.join(' ')).toMatch(/I 1 huvudområde går kön och BAS-intervall inte att skilja åt/);
+        // Båda orsakerna, med samma lydelse som ADR-78 och verktygstipset i vyn.
+        expect(b.stycken.join(' ')).toContain('I 1 huvudområde går modellen med BAS-intervall inte att skatta: kön och BAS-intervall går inte att skilja åt, '
+            + 'eller raderna är för få för så många BAS-intervall. Där kan skillnaden inte justeras för BAS-intervall.');
     });
 });
 
