@@ -106,16 +106,15 @@ export async function utseende() {
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
 
-    console.log('\n── Grundvyn ryms vid 1 280 punkter ──');
+    console.log('\n── Inget klipps i cellerna vid 1 280 punkter ──');
     {
-        // De fyra tabellerna i Lika arbete och Likvärdigt arbete ryms i sin ruta vid 1 280 punkter med Fler kolumner
-        // avslaget; vid 1 100 får de rulla. Andra tabeller får rulla i sidled. Rutan är tabellens närmaste förälder
-        // som rullar i sidled (.rulla-x, .table-container, .table-responsive eller värdelementet). Både demo och
-        // stort demo: Lägre krav, högre lön ritas bara med det stora demot, och de långa etikettnamnen finns bara där.
-        // I Lönestrukturen och Prioriteringen klipps inget tal eller statusmärke i sin cell, också när tabellen rullar.
+        // Tabellerna får rulla i sidled (underhållarens beslut 2026-11-15), men inget tal, märke eller etikett klipps
+        // inne i sin cell. Hur bred en tabell blir beror på systemets typsnitt, som skiljer mellan maskinerna, så
+        // bredden prövas inte. Både demo och stort demo: Lägre krav, högre lön ritas bara med det stora demot, och de
+        // långa etikettnamnen finns bara där.
         const TABELLER = [['matrix', ['#aidbas-lika-tabell']],
-            ['likvardighet', ['#likvardighet-table', '#likvardighet-lagre-krav-table', '#aidbas-likvardigt-tabell']]];
-        const KLIPPS_INTE = [['struktur', ['#sektor-table', '#la-oversikt']], ['prioritering', ['#prio-table']]];
+            ['likvardighet', ['#likvardighet-table', '#likvardighet-lagre-krav-table', '#aidbas-likvardigt-tabell']],
+            ['struktur', ['#sektor-table', '#la-oversikt']], ['prioritering', ['#prio-table']]];
         const s = await browser.newPage({ viewport: { width: 1280, height: 900 } });
         await s.goto('file://' + FIL);
         await s.click('#first-run-stort-demo');
@@ -123,7 +122,7 @@ export async function utseende() {
         await page.setViewportSize({ width: 1280, height: 900 });
         const ritade = new Set();
         for (const [underlag, sida] of [['demo', page], ['stort demo', s]]) {
-            for (const [flik, valjare, klipp] of [...TABELLER.map(([f, v]) => [f, v, []]), ...KLIPPS_INTE.map(([f, v]) => [f, [], v])]) {
+            for (const [flik, valjare] of TABELLER) {
                 await sida.click(`.nav-item[data-tab="${flik}"]`);
                 await sida.waitForTimeout(400);
                 await sida.evaluate(() => {
@@ -131,30 +130,21 @@ export async function utseende() {
                     document.querySelectorAll('[data-fler-kolumner][aria-pressed="true"]').forEach(b => /** @type {HTMLElement} */ (b).click());
                 });
                 await sida.waitForTimeout(300);
-                const matt = await sida.evaluate(valjare => valjare.flatMap(sel => [...document.querySelectorAll(sel)].filter(t => t.getBoundingClientRect().width > 0).map(t => {
-                    let ruta = t.parentElement;
-                    while (ruta && !/^(auto|scroll|hidden|clip)$/.test(getComputedStyle(ruta).overflowX)) ruta = ruta.parentElement;
-                    return { sel, id: t.id ? '#' + t.id : sel, scroll: t.scrollWidth, plats: ruta ? ruta.clientWidth : document.documentElement.clientWidth };
-                })), valjare);
-                for (const m of matt) {
-                    ritade.add(m.sel);
-                    ok(m.scroll <= m.plats + 1, `1280 punkter, ${underlag}: ${m.id} ryms i grundvyn (${m.scroll} av ${m.plats} punkter)`);
-                }
-                for (const id of klipp) {
+                for (const id of valjare) {
                     const k = await sida.evaluate(id => {
                         const t = document.querySelector(id);
-                        if (!t) return null;
+                        if (!t || !t.getBoundingClientRect().width) return null;
                         const celler = [...t.querySelectorAll('tbody td')].filter(td => td.getBoundingClientRect().width > 0);
                         const klippta = celler.flatMap(td => [td, ...td.querySelectorAll('*')]).filter(el => el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1 && /\S/.test(el.textContent))
                             .map(el => el.textContent.replace(/\s+/g, ' ').trim());
                         return { antal: celler.length, klippta: [...new Set(klippta)] };
                     }, id);
                     if (k?.antal) ritade.add(id);
-                    if (k) ok(k.antal > 0 && !k.klippta.length, `1280 punkter, ${underlag}: inget tal eller märke klipps i ${id} (${k.antal} celler)${k.klippta.length ? ' — klippta: ' + k.klippta.slice(0, 3).map(t => `«${t}»`).join(', ') : ''}`);
+                    if (k) ok(k.antal > 0 && !k.klippta.length, `1280 punkter, ${underlag}: inget klipps i cellerna i ${id} (${k.antal} celler)${k.klippta.length ? ' — klippta: ' + k.klippta.slice(0, 3).map(t => `«${t}»`).join(', ') : ''}`);
                 }
             }
         }
-        const alla = [...TABELLER, ...KLIPPS_INTE].flatMap(([, v]) => v);
+        const alla = TABELLER.flatMap(([, v]) => v);
         const saknas = alla.filter(v => !ritade.has(v));
         ok(!saknas.length, `1280 punkter: alla ${alla.length} tabeller ritas med demo eller stort demo${saknas.length ? ' — saknas: ' + saknas.join(', ') : ''}`);
         await s.close();
