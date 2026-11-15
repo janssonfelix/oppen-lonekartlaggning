@@ -230,25 +230,26 @@ function runOLSRegression() {
 /**
  * Huvudregressionen med yrkesgrupp inom BAS (ADR-56): fasta effekter för AID×BAS med inomtransformation (ADR-46),
  * som steget + Yrkesgrupp, men här behövs också standardfel. Skattningen görs på de transformerade variablerna
- * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Kovarianserna
- * (klassisk och HC3) skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader, och k räknas med dem, så att
- * t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
+ * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Standardfelen är
+ * den fulla designens (ADR-77): HC3 räknas med hävstången h_i + 1/n_g, den fulla designens, och skalas inte; den
+ * klassiska kovariansen skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader. k räknas med gruppnivåerna,
+ * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
  * tom konstant), så att resten av runOLSRegression läser kön på index 1 och ålder på index 2.
- * hHoga räknas på den inomtransformerade designen, den som HC3 här räknas på.
+ * hHoga räknas på samma fulla hävstång: en ensam person i en grupp har h = 1.
  * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number}}
  */
 function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
     const inom = _rgInomYrkesgrupp(raw, y, kol);
     if (!inom.ok) return null;
-    const fit = _fitOLS(inom.X, inom.yW);
+    const fit = _fitOLS(inom.X, inom.yW, inom.hGrupp);
     if (!fit) return null;
     const n = raw.length, p = kol[0].length, k = inom.k;
     if (n - k <= 0) return null;
     const skala = (n - p) / (n - k);
-    const vidga = V => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * skala)]); return ut; };
+    const vidga = (V, s) => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * s)]); return ut; };
     const R2 = inom.R2Total(fit.rss);
-    return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3), vcovClassic: vidga(fit.vcovClassic), R2,
+    return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3, 1), vcovClassic: vidga(fit.vcovClassic, skala), R2,
         adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 

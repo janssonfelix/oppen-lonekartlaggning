@@ -319,7 +319,9 @@ export function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, ext
  * Inomtransformationen för yrkesgrupp inom BAS (ADR-46): drar gruppmedelvärdet från log-lön och från varje kolumn i
  * `kol` inom AID×BAS-gruppen. Delas av steget + Yrkesgrupp och av huvudregressionen när yrkesgrupp är vald (ADR-56).
  * @param {any[]} rows @param {number[]} y @param {number[][]} kol kolumner per rad (utan intercept)
- * @returns {{ok:boolean, X:number[][], yW:number[], k:number, nGrupper:number, meta:{nGrupper:number, nGrupperBada:number, nPersoner:number, nEnkonade:number}, R2Total:(rss:number)=>number}}
+ * hGrupp är 1/n_g per rad, gruppdelen av den fulla designens hävstång (en indikator per grupp): den läggs till
+ * hävstången på de transformerade kolumnerna när HC3 räknas (ADR-77).
+ * @returns {{ok:boolean, X:number[][], yW:number[], hGrupp:number[], k:number, nGrupper:number, meta:{nGrupper:number, nGrupperBada:number, nPersoner:number, nEnkonade:number}, R2Total:(rss:number)=>number}}
  */
 export function inomYrkesgrupp(rows, y, kol) {
     const N = rows.length;
@@ -341,14 +343,15 @@ export function inomYrkesgrupp(rows, y, kol) {
     let tss = 0; for (let i = 0; i < N; i++) tss += (y[i] - yMedel) ** 2;
     const R2Total = rss => (tss > 0 ? 1 - rss / tss : 0);
     // Frihetsgrader: lutningarna plus en nivå per grupp
-    if (N < grupper.size + p + 5 || nGrupperBada === 0) return { ok: false, X: [], yW: [], k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
-    const X = new Array(N), yW = new Array(N);
+    if (N < grupper.size + p + 5 || nGrupperBada === 0) return { ok: false, X: [], yW: [], hGrupp: [], k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
+    const X = new Array(N), yW = new Array(N), hGrupp = new Array(N);
     for (let i = 0; i < N; i++) {
         const g = grupper.get(key[i]);
         X[i] = kol[i].map((v, j) => v - g.s[j] / g.n);
         yW[i] = y[i] - g.sy / g.n;
+        hGrupp[i] = 1 / g.n;
     }
-    return { ok: true, X, yW, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
+    return { ok: true, X, yW, hGrupp, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
 }
 
 /**

@@ -59,8 +59,8 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 23. **Översikten per huvudområde räknar BAS som rang och kräver ålder** (`src/lib/sektor.js`), medan
     huvudregressionen kodar BAS som indikatorer och räknar utan ålder när lönefilen saknar den (ADR-53, ADR-64).
     Utan ålder i lönefilen ger översikten ingen justerad skillnad.
-24. **HC3 i steget för AID-etikett inom BAS räknas på den inomtransformerade designen**, så hävstången saknar
-    gruppdelen. Ett metodpåpekande; inverkan på standardfelen är inte mätt.
+24. *Avslutad 2026-11-15:* HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång (h_i + 1/n_g) och
+    utan skalning, ADR-77; standardfelen är desamma som statsmodels och R ger med en indikator per grupp.
 25. *Avslutad 2026-11-15:* poänglägets reserv mot jämförelsestatistiken är borttagen i ADR-76; poängläget jämför
     bara med organisationens egna jämförelseetiketter.
 

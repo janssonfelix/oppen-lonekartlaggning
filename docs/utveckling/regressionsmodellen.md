@@ -208,10 +208,17 @@ rapportens bilaga är steget en rad i dekomponeringstabellen med samma mening ef
 och inte ingår i huvudtalet. Är BAS bortvalt räknas steget inte, och raden säger det.
 
 **AID-etikett inom BAS vald in i huvudtalet.** Då skattas huvudregressionen med samma inomtransformation (`_regInomYrkesgrupp`)
-på de transformerade kolumnerna [kön, (ålder)]. Kovarianserna, klassisk och HC3, skalas med (n − p) / (n − p − G), där p
-är antalet lutningar och G antalet grupper, för gruppnivåernas frihetsgrader, och antalet parametrar k = p + G räknar
-dem, så att t-kvantilen och p-värdet använder df = n − p − G. Resultatet får samma form som en vanlig skattning (kön på
-plats 1, ålder på plats 2), R² räknas mot lönens totala variation och `hHoga` på den transformerade designen. Steget
+på de transformerade kolumnerna [kön, (ålder)]. Koefficienterna är desamma som med en indikator per grupp
+(Frisch–Waugh–Lovell), och standardfelen är den fulla designens (ADR-77). Hävstången i den fulla designen är
+h_i + 1/n_g, där h_i räknas på de transformerade kolumnerna och n_g är antalet personer i radens grupp (gruppens
+projektion är ortogonal mot de transformerade kolumnerna). HC3 räknas med den hävstången (`hGrupp` ur
+`inomYrkesgrupp`, som `fitOLS` lägger till) och skalas inte: HC3 har ingen korrektion för frihetsgrader. Den klassiska
+kovariansen skalas med (n − p) / (n − p − G), där p är antalet lutningar och G antalet grupper, så att σ² delas med
+gruppnivåernas frihetsgrader. Antalet parametrar k = p + G räknar dem, så att t-kvantilen och p-värdet använder
+df = n − p − G. Båda kovarianserna är då exakt den fulla designens, som statsmodels `cov_HC3` och R
+`sandwich::vcovHC(type = "HC3")` ger (prövas i `tests/stat-referens.test.js`). Resultatet får samma form som en vanlig
+skattning (kön på plats 1, ålder på plats 2), R² räknas mot lönens totala variation och `hHoga` på den fulla
+hävstången, så att en ensam person i en grupp (h = 1) räknas. Steget
 *+ AID-etikett inom BAS* är då huvudtalet och står bland stegen; meningen under steget och metodbilagans rad säger att steget är
 huvudtalet. Kan modellen inte skattas tar reservstegen bort AID-etikett inom BAS först (avsnitt 1).
 
