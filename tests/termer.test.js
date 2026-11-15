@@ -35,7 +35,7 @@ describe('termerna: standarduppsättningen', () => {
     it('har AID:s ord med ordformer och genus', () => {
         expect(TERM_BEGREPP).toEqual(['enhet', 'jamforelse', 'kod', 'namn', 'huvudomrade', 'niva']);
         expect(TERM_FORMER).toEqual(['en', 'bf', 'fl', 'bfl']);
-        expect(STANDARDTERMER.enhet).toEqual({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', genus: 'utrum' });
+        expect(STANDARDTERMER.enhet).toEqual({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', kort: 'AID', genus: 'utrum' });
         expect(STANDARDTERMER.jamforelse.bfl).toBe('jämförelseetiketterna');
         expect(STANDARDTERMER.kod).toEqual({ en: 'AID-kod', bf: 'AID-koden', fl: 'AID-koder', bfl: 'AID-koderna', genus: 'utrum' });
         expect(STANDARDTERMER.namn).toEqual({ en: 'etikettnamn', bf: 'etikettnamnet', fl: 'etikettnamn', bfl: 'etikettnamnen', genus: 'neutrum' });
@@ -43,6 +43,9 @@ describe('termerna: standarduppsättningen', () => {
         expect(STANDARDTERMER.niva).toEqual({ en: 'BAS-intervall', bf: 'BAS-intervallet', fl: 'BAS-intervall', bfl: 'BAS-intervallen', genus: 'neutrum' });
         expect(STANDARDTERMER.system).toBe('AID');
         expect(Object.isFrozen(STANDARDTERMER) && Object.isFrozen(STANDARDTERMER.enhet)).toBe(true);
+    });
+    it('den korta formen finns bara för AID-etikett; de andra begreppen har ingen (ADR-75)', () => {
+        for (const b of TERM_BEGREPP) if (b !== 'enhet') expect(STANDARDTERMER[b].kort, b).toBeUndefined();
     });
     it('termformer listar varje ordform en gång, längsta först', () => {
         const f = termformer();
@@ -98,6 +101,16 @@ describe('termerna: hjälparna', () => {
         expect(termFras(S.enhet, 'bf', { genitiv: true })).toBe('AID-etikettens');
         expect(() => termFras(S.enhet, /** @type {any} */ ('xx'))).toThrow(/ordform/);
     });
+    it('kort form: AID för AID-etikett, annars obestämd form; genitiv går, adjektiv inte', () => {
+        expect(termFras(S.enhet, 'kort')).toBe('AID');
+        expect(termFras(S.jamforelse, 'kort')).toBe('jämförelseetikett');
+        expect(termFras(S.enhet, 'kort', { genitiv: true })).toBe('AIDs');
+        expect(fyllTermer('{enhet.kort}')).toBe('AID');
+        expect(fyllTermer('{Enhet.kort} median högre (kr)')).toBe('AID median högre (kr)');
+        expect(fyllTermer('{Niva.kort}')).toBe('BAS-intervall');
+        expect(fyllTermer('{enhet.kort:kvinnodominerad}')).toBe('{enhet.kort:kvinnodominerad}');
+        expect(termformer()).not.toContain('AID');
+    });
     it('ordForAntal: singular vid 1, annars plural', () => {
         expect(`1 ${ordForAntal(1, S.enhet)}`).toBe('1 AID-etikett');
         expect(`3 ${ordForAntal(3, S.enhet)}`).toBe('3 AID-etiketter');
@@ -124,6 +137,10 @@ describe('termerna: en annan uppsättning (ett ett-ord) blir riktig svenska', ()
         expect(YRKE.system).toBe('AID');
         expect(skapaTermer()).toBe(STANDARDTERMER);
         expect(skapaTermer({ system: '  Egen  kod ' }).system).toBe('Egen kod');
+        expect(YRKE.enhet.kort).toBeUndefined();
+        expect(fyllTermer('{Enhet.kort} median högre (kr)', YRKE)).toBe('Yrke median högre (kr)');
+        const medKort = skapaTermer({ enhet: { ...YRKE.enhet, kort: ' Y ' } });
+        expect([medKort.enhet.kort, fyllTermer('{enhet.kort}', medKort)]).toEqual(['Y', 'Y']);
         expect(Object.isFrozen(YRKE)).toBe(true);
     });
     it('artikel, adjektiv och genitiv följer ett-ordet', () => {
@@ -162,6 +179,8 @@ describe('termerna: en annan uppsättning (ett ett-ord) blir riktig svenska', ()
         expect(() => skapaTermer({ enhet: { ...hel, en: '<b>x</b>' } })).toThrow(/tecken/);
         expect(() => skapaTermer({ enhet: { ...hel, en: '{niva.en}' } })).toThrow(/tecken/);
         expect(() => skapaTermer({ system: '' })).toThrow(/system/);
+        expect(() => skapaTermer({ enhet: { ...hel, kort: ' ' } })).toThrow(/enhet\.kort/);
+        expect(() => skapaTermer({ enhet: { ...hel, kort: '{x}' } })).toThrow(/tecken/);
         expect(() => skapaTermer(/** @type {any} */ ([]))).toThrow(/objekt/);
     });
 });
@@ -183,6 +202,13 @@ describe('termerna i appen', () => {
         expect(matrix.getAttribute('data-tip')).toBe('Kvinnor och män med samma AID-etikett — skiljer sig lönen?');
         expect(matrix.textContent).not.toMatch(/AID-etikett/);
         expect(not.textContent).toBe(fyllTermer(AID_METODTEXT));
+    });
+    it('Löneläget: kolumnrubriken har den korta formen, exportetiketten hela termen (ADR-75)', () => {
+        const w = createAppWindow(), d = w.document;
+        w.eval('applyProfileLabels()');
+        const th = d.querySelector('#benchmark-thead th');
+        expect(th.textContent.trim()).toBe('AID');
+        expect(th.getAttribute('data-export-label')).toBe('AID-etikett');
     });
     it('ordlistan visar posterna med termerna och hittar dem på de gamla orden (fältet sok)', () => {
         const w = createAppWindow(), d = w.document;

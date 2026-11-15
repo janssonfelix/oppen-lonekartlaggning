@@ -71,10 +71,8 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     punkter (till exempel Windows med skalning 125 %).
 27. **Termerna byts i koden, inte i en fil.** En annan uppsättning (till exempel för en annan bransch) kräver ett
     eget bygge. Organisationspaketet kan inte bära en uppsättning, och dokumenten är skrivna med standardorden.
-30. **Tre utseendebeslut väntar på underhållaren.** En kort ordform för *AID-etikett* som kolumnrubrik på skärmen
-    (Löneläget; ordformen hör till termmodulen `src/lib/termer.js`, ADR-74). En kortare rubrik än «Jämförelseetikettens
-    median högre med» i Word-utkastet och PDF-rapporten. Och om tre tabeller i Word-utkastet får skrivas i 9 pt när de
-    inte ryms i 10 pt.
+30. *Avslutad 2026-11-15:* utseendebesluten är fattade i ADR-75 (kort ordform *AID* i kolumnrubriker, *AID median
+    högre (kr)* i rapporten, 9 pt i Word-utkastet när en tabell inte ryms i 10 pt).
 31. **Excel kan inte radbryta en etikett som är bredare än kolumnens tak** (70 tecken): den inbäddade SheetJS
     community skriver inte cellstilar. En längre etikett syns hel bara i cellen eller formelfältet.
 

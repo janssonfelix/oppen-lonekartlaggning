@@ -41,7 +41,7 @@ const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
 const _TECKENBREDD = [['iljI.,:;!|\' ', 55], ['frt-()', 72], ['sczJ/', 86], ['agkvxyåäeEFLSTZ0123456789', 101], ['mw%&', 163],
     ['DGHNOQUÖ', 137], ['MW', 181]];
 // Tabellstilens cellmarginal till vänster och höger, och ovanför och under (twips). En tabell som inte ryms i stilens
-// 10 pt skrivs tätare: 9 pt och smalare cellmarginaler till vänster och höger.
+// 10 pt skrivs tätare: 9 pt och smalare cellmarginaler till vänster och höger (ADR-75).
 const CELLMARGINAL = 85, CELLMARGINAL_LODRAT = 57;
 const TAT = { skala: 0.9, cellmarginal: 57, sz: 18 };
 /** Ett ords ungefärliga bredd i twips i Calibri 10 pt, fet eller normal (normala bokstäver är omkring 3 % smalare, siffror lika). */

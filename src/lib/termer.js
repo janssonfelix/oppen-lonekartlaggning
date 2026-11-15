@@ -6,7 +6,8 @@
  * Verktyget använder AID:s egna ord: AID-etikett, AID-kod, etikettnamn och huvudområde. Orden står bara här, som
  * variabler, så att en annan uppsättning (till exempel för en annan bransch) byts på ett ställe. Varje begrepp har
  * de ordformer svenskan kräver och sitt genus, så att artikel och adjektiv böjs rätt också för ett ett-ord:
- * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke".
+ * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke". Ett begrepp kan ha en kort form för en
+ * kolumnrubrik där hela termen inte ryms (ADR-75); utan den används obestämd form.
  *
  * I appen: `T` är den gällande uppsättningen (`src/app/09-termer.js`), `${T.enhet.fl}` i stället för ordet, och
  * fast text skrivs som mall: `{enhet.en}`, se `fyllTermer`. Vakten i `tests/termer.test.js` håller orden borta
@@ -16,10 +17,11 @@
  */
 
 /** @typedef {'utrum'|'neutrum'} Genus */
-/** @typedef {'en'|'bf'|'fl'|'bfl'} Form */
+/** @typedef {'en'|'bf'|'fl'|'bfl'|'kort'} Form */
 /**
- * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl) och genus.
- * @typedef {{ en: string, bf: string, fl: string, bfl: string, genus: Genus }} Begrepp
+ * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl), genus och en valfri kort
+ * form (kort) för kolumnrubriker där hela termen inte ryms. Exporternas etiketter behåller hela termen (ADR-75).
+ * @typedef {{ en: string, bf: string, fl: string, bfl: string, kort?: string, genus: Genus }} Begrepp
  */
 /**
  * En uppsättning termer. `enhet` är det verktyget grupperar på, `jamforelse` den enhet ett kvinnodominerat arbete
@@ -31,14 +33,14 @@
 
 /** Begreppen, i den ordning de står i tabellen. */
 export const TERM_BEGREPP = /** @type {const} */ (['enhet', 'jamforelse', 'kod', 'namn', 'huvudomrade', 'niva']);
-/** Ordformerna per begrepp. */
+/** Ordformerna per begrepp. Den korta formen är valfri och står inte här; vakten prövar inte "AID" ensamt. */
 export const TERM_FORMER = /** @type {const} */ (['en', 'bf', 'fl', 'bfl']);
 /** Högsta längd för en ordform. */
 export const TERM_MAX = 40;
 
 /** Standarduppsättningen. @type {Termer} */
 export const STANDARDTERMER = Object.freeze({
-    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', genus: /** @type {Genus} */ ('utrum') }),
+    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', kort: 'AID', genus: /** @type {Genus} */ ('utrum') }),
     jamforelse:  Object.freeze({ en: 'jämförelseetikett', bf: 'jämförelseetiketten', fl: 'jämförelseetiketter', bfl: 'jämförelseetiketterna', genus: /** @type {Genus} */ ('utrum') }),
     kod:         Object.freeze({ en: 'AID-kod', bf: 'AID-koden', fl: 'AID-koder', bfl: 'AID-koderna', genus: /** @type {Genus} */ ('utrum') }),
     namn:        Object.freeze({ en: 'etikettnamn', bf: 'etikettnamnet', fl: 'etikettnamn', bfl: 'etikettnamnen', genus: /** @type {Genus} */ ('neutrum') }),
@@ -60,8 +62,8 @@ function _ord(v, vad) {
 }
 
 /**
- * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus;
- * begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
+ * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus, och
+ * kan ha en kort form; begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
  * @param {Partial<Record<typeof TERM_BEGREPP[number], Partial<Begrepp>>> & { system?: string } | null} [egna]
  * @returns {Termer}
  */
@@ -79,6 +81,7 @@ export function skapaTermer(egna) {
         ut[nyckel] = Object.freeze({
             en: _ord(b.en, `${nyckel}.en`), bf: _ord(b.bf, `${nyckel}.bf`),
             fl: _ord(b.fl, `${nyckel}.fl`), bfl: _ord(b.bfl, `${nyckel}.bfl`),
+            ...(b.kort != null ? { kort: _ord(b.kort, `${nyckel}.kort`) } : {}),
             genus: b.genus
         });
     }
@@ -148,13 +151,14 @@ export function adjektiv(stam, b, { bestamd = false, plural = false } = {}) {
  *   termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerad AID-etikett"
  *   termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerade AID-etiketter"
  *   termFras(T.enhet, 'bf', { genitiv: true })                → "AID-etikettens"
+ *   termFras(T.enhet, 'kort')                                 → "AID" (obestämd form när kort form saknas)
  * @param {Begrepp} b
  * @param {Form} [form]
  * @param {{ adjektiv?: Adjektiv, genitiv?: boolean }} [val]
  */
 export function termFras(b, form = 'en', { adjektiv: adj, genitiv: gen = false } = {}) {
-    if (!(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
-    let t = b[form];
+    if (form !== 'kort' && !(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
+    let t = form === 'kort' ? b.kort ?? b.en : b[form];
     if (adj) {
         const plural = form === 'fl' || form === 'bfl', bestamd = form === 'bf' || form === 'bfl';
         t = `${adjektiv(adj, b, { plural, bestamd })} ${t}`;
@@ -168,9 +172,10 @@ export function ordForAntal(n, b) {
     return Number(n) === 1 ? b.en : b.fl;
 }
 
-// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv} och
-// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}").
-const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
+// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv},
+// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}") och
+// {begrepp.kort} (kolumnrubrikens korta form, utan adjektiv).
+const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|kort|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
 
 /**
  * Fyller en mall med termerna. Versal först i begreppets namn ger stor begynnelsebokstav. Klamrar som inte är ett
@@ -180,6 +185,7 @@ const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?
  *   "{enhet.art} {enhet.en:kvinnodominerad}"          → "en kvinnodominerad AID-etikett" (ett-ord: "ett kvinnodominerat yrke")
  *   "{enhet.bf.s} median"                             → "AID-etikettens median"
  *   "räknas som {enhet.adj:kvinnodominerad}"          → "räknas som kvinnodominerad" (ett-ord: "kvinnodominerat")
+ *   "{Enhet.kort} median högre (kr)"                  → "AID median högre (kr)"
  * @param {string} mall
  * @param {Termer} [termer]
  */
@@ -199,6 +205,9 @@ export function fyllTermer(mall, termer = STANDARDTERMER) {
             } else if (form === 'adj') {
                 if (gen || !adj) return hel;
                 t = adjektiv(adj, b);
+            } else if (form === 'kort') {
+                if (adj) return hel;
+                t = termFras(b, 'kort', { genitiv: !!gen });
             } else {
                 t = termFras(b, form || 'en', { adjektiv: adj, genitiv: !!gen });
             }

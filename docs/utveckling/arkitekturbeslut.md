@@ -81,6 +81,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-72 | Definitionerna av kvinnodominerat heter efter lydelsen | Gällande | 2026-11-14 |
 | ADR-73 | Skydden och principerna binder; besluten är en logg | Gällande | 2026-11-14 |
 | ADR-74 | AID:s egna ord, och termerna på ett ställe | Gällande | 2026-11-14 |
+| ADR-75 | Kort ordform i kolumnrubriker, och Word-utkastets täta läge | Gällande | 2026-11-15 |
 
 ## Besluten
 
@@ -403,3 +404,10 @@ BAS-intervall. Orden står som variabler med ordformer och genus i `src/lib/term
 på ett ställe, och vakten i `tests/termer.test.js` håller dem borta från resten av gränssnittet. *Avvisat:* påhittade
 ord (grupp, AID-grupp), som inte blev tydligare; att behålla *yrke*, som handboken inte använder om
 etiketterna. *Gäller i dag:* `src/lib/termer.js` och `bygge-och-test.md` §13.
+
+**ADR-75 — Kort ordform i kolumnrubriker, och Word-utkastets täta läge.** En kolumnrubrik där hela termen inte ryms
+får begreppets korta form (`kort` i `src/lib/termer.js`, *AID* för AID-etikett), på skärmen och i rapporten: Lönelägets
+första kolumn och *AID median högre (kr)* i Likvärdigt arbete i Word-utkastet och PDF-rapporten. Exporternas etiketter
+behåller hela termen. En tabell i Word-utkastet som inte ryms i 10 pt skrivs i 9 pt med cellmarginalen 57 twips.
+*Avvisat:* rubriken «Jämförelseetikettens median högre med», som inte rymdes. *Gäller i dag:* `bygge-och-test.md` §13
+och `src/lib/docx.js`.

@@ -180,7 +180,7 @@ describe('docx: kolumnbredderna följer innehållet', () => {
     // Som Likvärdigt arbete i utkastet: en smal löpnummerkolumn, namn som långa ord, tal och en tom kolumn att fylla i.
     const lv = { typ: 'tabell',
         rubrikrad: ['#', 'Kvinnodominerad AID-etikett', 'Jämförelseetikett', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseetiketten',
-            'Jämförelseetikettens median högre med (kr)', 'Högre med (%)', 'Kravvärdering / sakligt skäl (fyll i)'].map(c),
+            'AID median högre (kr)', 'Högre med (%)', 'Kravvärdering / sakligt skäl (fyll i)'].map(c),
         rader: [
             ['1', '403010 Barnskötare (BAS C)', '503012 Drifttekniker (BAS C)', '20 / 20', '15 % (mansdominerad)', '6 000 kr', '16,3 %', ''].map(c),
             ['3', '207011 Undersköterska (BAS C)', '502010 Systemutvecklare (BAS C)', '20 / 45', '51 % (blandad)', '1 413 kr', '3,7 %', ''].map(c),

@@ -315,6 +315,9 @@ adjektiv och genitiv böjs rätt. I appen är `T` den gällande uppsättningen (
   `termForAntal`), aldrig med orden själva. Kommentaren överst i `src/app/09-termer.js` har exemplen.
 - **Fast text** (ordlistan, `src/index.html`) är en mall, `{Enhet.bfl} i samma {niva.en}`, som `termText` fyller. I
   `index.html` bär elementet mallen i `data-term-template`, och standardtexten står kvar i elementet.
+- **Kort form** (`kort`, mallen `{enhet.kort}`) är valfri per begrepp och används i en kolumnrubrik där hela termen
+  inte ryms, på skärmen och i rapporten (ADR-75): *AID* för AID-etikett. Saknas den står obestämd form. Exporternas
+  etiketter (`data-export-label`) behåller hela termen, och vakten prövar inte den korta formen.
 - **Vakten** `tests/termer.test.js` kräver att de avförda orden (listan `AVFORDA`) och termernas ordformer inte står i
   synlig text utanför `termer.js`, och att de avförda orden inte står i löptexten i `docs/anvandare/` och
   `docs/dataskydd/`. Undantagen (lönefilens kolumnnamn, vardagliga ord) står i testet med skäl.

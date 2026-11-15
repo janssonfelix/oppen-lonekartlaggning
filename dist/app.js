@@ -2504,7 +2504,8 @@ const __mirrorTermer = (() => {
  * Verktyget använder AID:s egna ord: AID-etikett, AID-kod, etikettnamn och huvudområde. Orden står bara här, som
  * variabler, så att en annan uppsättning (till exempel för en annan bransch) byts på ett ställe. Varje begrepp har
  * de ordformer svenskan kräver och sitt genus, så att artikel och adjektiv böjs rätt också för ett ett-ord:
- * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke".
+ * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke". Ett begrepp kan ha en kort form för en
+ * kolumnrubrik där hela termen inte ryms (ADR-75); utan den används obestämd form.
  *
  * I appen: `T` är den gällande uppsättningen (`src/app/09-termer.js`), `${T.enhet.fl}` i stället för ordet, och
  * fast text skrivs som mall: `{enhet.en}`, se `fyllTermer`. Vakten i `tests/termer.test.js` håller orden borta
@@ -2514,10 +2515,11 @@ const __mirrorTermer = (() => {
  */
 
 /** @typedef {'utrum'|'neutrum'} Genus */
-/** @typedef {'en'|'bf'|'fl'|'bfl'} Form */
+/** @typedef {'en'|'bf'|'fl'|'bfl'|'kort'} Form */
 /**
- * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl) och genus.
- * @typedef {{ en: string, bf: string, fl: string, bfl: string, genus: Genus }} Begrepp
+ * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl), genus och en valfri kort
+ * form (kort) för kolumnrubriker där hela termen inte ryms. Exporternas etiketter behåller hela termen (ADR-75).
+ * @typedef {{ en: string, bf: string, fl: string, bfl: string, kort?: string, genus: Genus }} Begrepp
  */
 /**
  * En uppsättning termer. `enhet` är det verktyget grupperar på, `jamforelse` den enhet ett kvinnodominerat arbete
@@ -2529,14 +2531,14 @@ const __mirrorTermer = (() => {
 
 /** Begreppen, i den ordning de står i tabellen. */
 const TERM_BEGREPP = /** @type {const} */ (['enhet', 'jamforelse', 'kod', 'namn', 'huvudomrade', 'niva']);
-/** Ordformerna per begrepp. */
+/** Ordformerna per begrepp. Den korta formen är valfri och står inte här; vakten prövar inte "AID" ensamt. */
 const TERM_FORMER = /** @type {const} */ (['en', 'bf', 'fl', 'bfl']);
 /** Högsta längd för en ordform. */
 const TERM_MAX = 40;
 
 /** Standarduppsättningen. @type {Termer} */
 const STANDARDTERMER = Object.freeze({
-    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', genus: /** @type {Genus} */ ('utrum') }),
+    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', kort: 'AID', genus: /** @type {Genus} */ ('utrum') }),
     jamforelse:  Object.freeze({ en: 'jämförelseetikett', bf: 'jämförelseetiketten', fl: 'jämförelseetiketter', bfl: 'jämförelseetiketterna', genus: /** @type {Genus} */ ('utrum') }),
     kod:         Object.freeze({ en: 'AID-kod', bf: 'AID-koden', fl: 'AID-koder', bfl: 'AID-koderna', genus: /** @type {Genus} */ ('utrum') }),
     namn:        Object.freeze({ en: 'etikettnamn', bf: 'etikettnamnet', fl: 'etikettnamn', bfl: 'etikettnamnen', genus: /** @type {Genus} */ ('neutrum') }),
@@ -2558,8 +2560,8 @@ function _ord(v, vad) {
 }
 
 /**
- * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus;
- * begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
+ * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus, och
+ * kan ha en kort form; begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
  * @param {Partial<Record<typeof TERM_BEGREPP[number], Partial<Begrepp>>> & { system?: string } | null} [egna]
  * @returns {Termer}
  */
@@ -2577,6 +2579,7 @@ function skapaTermer(egna) {
         ut[nyckel] = Object.freeze({
             en: _ord(b.en, `${nyckel}.en`), bf: _ord(b.bf, `${nyckel}.bf`),
             fl: _ord(b.fl, `${nyckel}.fl`), bfl: _ord(b.bfl, `${nyckel}.bfl`),
+            ...(b.kort != null ? { kort: _ord(b.kort, `${nyckel}.kort`) } : {}),
             genus: b.genus
         });
     }
@@ -2646,13 +2649,14 @@ function adjektiv(stam, b, { bestamd = false, plural = false } = {}) {
  *   termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerad AID-etikett"
  *   termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerade AID-etiketter"
  *   termFras(T.enhet, 'bf', { genitiv: true })                → "AID-etikettens"
+ *   termFras(T.enhet, 'kort')                                 → "AID" (obestämd form när kort form saknas)
  * @param {Begrepp} b
  * @param {Form} [form]
  * @param {{ adjektiv?: Adjektiv, genitiv?: boolean }} [val]
  */
 function termFras(b, form = 'en', { adjektiv: adj, genitiv: gen = false } = {}) {
-    if (!(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
-    let t = b[form];
+    if (form !== 'kort' && !(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
+    let t = form === 'kort' ? b.kort ?? b.en : b[form];
     if (adj) {
         const plural = form === 'fl' || form === 'bfl', bestamd = form === 'bf' || form === 'bfl';
         t = `${adjektiv(adj, b, { plural, bestamd })} ${t}`;
@@ -2666,9 +2670,10 @@ function ordForAntal(n, b) {
     return Number(n) === 1 ? b.en : b.fl;
 }
 
-// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv} och
-// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}").
-const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
+// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv},
+// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}") och
+// {begrepp.kort} (kolumnrubrikens korta form, utan adjektiv).
+const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|kort|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
 
 /**
  * Fyller en mall med termerna. Versal först i begreppets namn ger stor begynnelsebokstav. Klamrar som inte är ett
@@ -2678,6 +2683,7 @@ const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?
  *   "{enhet.art} {enhet.en:kvinnodominerad}"          → "en kvinnodominerad AID-etikett" (ett-ord: "ett kvinnodominerat yrke")
  *   "{enhet.bf.s} median"                             → "AID-etikettens median"
  *   "räknas som {enhet.adj:kvinnodominerad}"          → "räknas som kvinnodominerad" (ett-ord: "kvinnodominerat")
+ *   "{Enhet.kort} median högre (kr)"                  → "AID median högre (kr)"
  * @param {string} mall
  * @param {Termer} [termer]
  */
@@ -2697,6 +2703,9 @@ function fyllTermer(mall, termer = STANDARDTERMER) {
             } else if (form === 'adj') {
                 if (gen || !adj) return hel;
                 t = adjektiv(adj, b);
+            } else if (form === 'kort') {
+                if (adj) return hel;
+                t = termFras(b, 'kort', { genitiv: !!gen });
             } else {
                 t = termFras(b, form || 'en', { adjektiv: adj, genitiv: !!gen });
             }
@@ -9497,7 +9506,7 @@ const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
 const _TECKENBREDD = [['iljI.,:;!|\' ', 55], ['frt-()', 72], ['sczJ/', 86], ['agkvxyåäeEFLSTZ0123456789', 101], ['mw%&', 163],
     ['DGHNOQUÖ', 137], ['MW', 181]];
 // Tabellstilens cellmarginal till vänster och höger, och ovanför och under (twips). En tabell som inte ryms i stilens
-// 10 pt skrivs tätare: 9 pt och smalare cellmarginaler till vänster och höger.
+// 10 pt skrivs tätare: 9 pt och smalare cellmarginaler till vänster och höger (ADR-75).
 const CELLMARGINAL = 85, CELLMARGINAL_LODRAT = 57;
 const TAT = { skala: 0.9, cellmarginal: 57, sz: 18 };
 /** Ett ords ungefärliga bredd i twips i Calibri 10 pt, fet eller normal (normala bokstäver är omkring 3 % smalare, siffror lika). */
@@ -32953,7 +32962,7 @@ function _rmAvsnittenUtanUrval() {
     if (par.length) {
         likvardigt.delar.push({ typ: 'tabell', kolumner: [{ rubrik: '#', typ: 'antal' }, { rubrik: termStor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })), typ: 'text' }, { rubrik: termStor(T.jamforelse.en), typ: 'text' },
             { rubrik: 'Antal (kvinnodom. / jämf.)', typ: 'text' }, { rubrik: `Könsandel i ${T.jamforelse.bf}`, typ: 'text' },
-            { rubrik: `${termStor(termGenitiv(T.jamforelse.bf))} median högre med (kr)`, typ: 'kr' }, { rubrik: 'Högre med (%)', typ: 'pct1' }, { rubrik: 'Kravvärdering / sakligt skäl (fyll i)', typ: 'fyllIn' }],
+            { rubrik: termText('{Enhet.kort} median högre (kr)'), typ: 'kr' }, { rubrik: 'Högre med (%)', typ: 'pct1' }, { rubrik: 'Kravvärdering / sakligt skäl (fyll i)', typ: 'fyllIn' }],
             rader: par.slice(0, 25).map((p, i) => [i + 1, medNamn(p.kvAid, p.kvLabel, p.kvBas), medNamn(p.maAid, p.maLabel, p.maBas), `${p.kvN} / ${p.maN != null ? p.maN : '–'}`,
                 `${svPct(p.maKvAndel, 0)}${p.maKlass ? ` (${konsklassOrd(p.maKlass)})` : ''}`, p.gapKr, p.gapPct, '']) });
         if (par.length > 25) likvardigt.utelamnat.push(`${par.length - 25} par utöver de 25 första`);
