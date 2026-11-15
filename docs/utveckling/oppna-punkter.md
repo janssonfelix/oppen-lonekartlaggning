@@ -15,15 +15,15 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    varje grupp görs med omkastning, utom för grupper över 300 personer.
 
 **Prestanda:**
-5. **Ändrad minsta gruppstorlek tar 4,0 s på 55 000 rader** (10 → 11): bootstrap-KI och styrkan räknas om i
+5. **Ändrad minsta gruppstorlek tar 1,9 s på 55 000 rader** (10 → 11): bootstrap-KI och styrkan räknas om i
    bakgrunden efteråt (`_skattningarIBakgrunden`), och Att göra, processöversikten och den öppna fliken räknas om. Det
-   som återstår är regressionen i processöversikten och underlagets kvalitet, som inte får cachas (ADR-17).
+   som återstår är regressionen, som räknas en gång per omritning och inte får cachas (ADR-17).
    Kvantilregressionens bootstrap-intervall räknas i bakgrunden efter att kortet ritats, också i exportläget
    (`_regKvantilBerakna`): en bild eller utskrift som görs innan intervallet är klart bär kortet utan det.
    Mätvärden (`npm run perf`, Chromium, 55 000 syntetiska rader med mansdominerade yrken, 2026-11-15): uppladdning
-   till klart gränssnitt ~4,9 s, precis under budgeten (5 s), och till klara bakgrundsanalyser ~8,5 s; tyngst är
-   Exportera (3,1 s), Lönestruktur (2,6 s) och Likvärdigt arbete (1,5 s). Likvärdigt arbete tog 16,2 s på samma
-   underlag innan bootstrapmedianen togs ur rangräkning i stället för sortering per dragning.
+   till klart gränssnitt ~3,7 s (budget 5 s) och till klara bakgrundsanalyser ~7,5 s; tyngst är Exportera (3,1 s)
+   och Lönestruktur (2,7 s). Likvärdigt arbete tar 0,09 s; det tog 16,2 s på samma underlag innan bootstrapmedianen
+   togs ur rangräkning i stället för sortering per dragning och paren räknades en gång per underlag.
    Förhandsbeskedet under *Rapportens innehåll* tar ~2,3 s.
 
 **Kod och bygge:**
