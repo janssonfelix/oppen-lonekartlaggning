@@ -148,7 +148,9 @@ function computeLikvardighetPairs() {
     return res;
 }
 
-// Lägre krav, högre lön (ADR-25) — par över BAS-gränserna.
+// Lägre krav, högre lön (ADR-25) — par över BAS-gränserna. På skärmen står BAS som liten text under etiketterna, som i
+// partabellen, och BAS-steget bakom Fler kolumner. BAS-kolumnerna står kvar i tabellen för exporterna (.bara-export,
+// dolda på skärmen), och texten under etiketten följer inte med ut (data-export-text): exporten är densamma som förut.
 function _lagreKravHtml(result) {
     const poang = result.diagnostik?.jämförelse?.kravProxy === 'poäng';
     const par = result.lagreKrav || [];
@@ -158,10 +160,10 @@ function _lagreKravHtml(result) {
     if (poang) innehall = `<p>${termText('Med arbetsvärderingspoäng jämförs {enhet.fl} redan över BAS-gränserna i kandidatparen ovan.')}</p>`;
     else if (!par.length) innehall = `<p>${termText('Ingen av {enhet.bfl:kvinnodominerad} har lägre medianlön än {enhet.art} {enhet.en} i lägre BAS.')}</p>`;
     else innehall = `<div class="rulla-x"><table id="likvardighet-lagre-krav-table" class="data-table"><thead><tr>
-            <th>${termText('{Enhet.en:kvinnodominerad}')}</th><th>BAS</th><th>Median</th><th>${termText('{Jamforelse.en}')}</th><th>BAS</th><th>Median</th>
-            <th>BAS-steg</th><th>Skillnad (kr)</th><th>Skillnad (%)</th><th>95 % KI</th></tr></thead><tbody>${par.map(p => `<tr>
-            <td>${esc(p.kvLabel)}</td><td>${esc(p.kvBas)}</td><td data-sort-value="${p.kvMedian}">${fmt.format(p.kvMedian)}</td>
-            <td>${esc(p.maLabel)}</td><td>${esc(p.maBas)}</td><td data-sort-value="${p.maMedian}">${fmt.format(p.maMedian)}</td>
+            <th>${termText('{Enhet.en:kvinnodominerad}')}</th><th class="bara-export">BAS</th><th>Median</th><th>${termText('{Jamforelse.en}')}</th><th class="bara-export">BAS</th><th>Median</th>
+            <th data-kol="bassteg">BAS-steg</th><th>Skillnad (kr)</th><th>Skillnad (%)</th><th>95 % KI</th></tr></thead><tbody>${par.map(p => `<tr>
+            <td>${esc(p.kvLabel)}<br><small class="f-dampad lv-under" data-export-text="">BAS ${esc(p.kvBas)}</small></td><td class="bara-export">${esc(p.kvBas)}</td><td data-sort-value="${p.kvMedian}">${fmt.format(p.kvMedian)}</td>
+            <td>${esc(p.maLabel)}<br><small class="f-dampad lv-under" data-export-text="">BAS ${esc(p.maBas)}</small></td><td class="bara-export">${esc(p.maBas)}</td><td data-sort-value="${p.maMedian}">${fmt.format(p.maMedian)}</td>
             <td>${p.basSteg}</td><td data-sort-value="${p.gapKr}">${fmt.format(p.gapKr)}</td><td data-sort-value="${p.gapPct}">${pct(p.gapPct)}\u00a0%</td>
             <td>${p.gapCI ? `${fmt.format(p.gapCI.lo)}–${fmt.format(p.gapCI.hi)}\u00a0kr` : '–'}</td></tr>`).join('')}</tbody></table></div>`;
     return `<section id="likvardighet-lagre-krav" class="card marg-t-18">
@@ -171,7 +173,10 @@ function _lagreKravHtml(result) {
 }
 
 // Kolumnerna som partabellens grundvy gömmer bakom Fler kolumner (data-kol på rubrikerna i renderLikvardighet).
-const LV_DOLDA_KOLUMNER = ['median', 'medianjamf', 'gapkr', 'justerad', 'paverkan'];
+// Antalen står också under båda etiketterna (n=).
+const LV_DOLDA_KOLUMNER = ['median', 'antal', 'medianjamf', 'gapkr', 'justerad', 'paverkan'];
+// Lägre krav, högre lön: BAS-steget bakom Fler kolumner (_lagreKravHtml).
+const LV_LAGRE_KRAV_DOLDA_KOLUMNER = ['bassteg'];
 // Nycklarna för kolumnerna med paret (data-kol) är historiska och står kvar; texten i kolumnen kommer ur termerna.
 const LV_KOL_KVDOM = 'yrke', LV_KOL_JAMF = 'jamfyrke';
 /**
@@ -679,6 +684,7 @@ function renderLikvardighet() {
     if (document.getElementById('likvardighet-lagre-krav-table')) {
         if (typeof enableTableSort === 'function') enableTableSort('likvardighet-lagre-krav-table');
         if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
+        if (typeof flerKolumner === 'function') flerKolumner('likvardighet-lagre-krav-table', LV_LAGRE_KRAV_DOLDA_KOLUMNER, 'lvLagreKrav');
     }
 
     // Kandidatparen som bild (visualiserings-Steg 2), om det finns par.

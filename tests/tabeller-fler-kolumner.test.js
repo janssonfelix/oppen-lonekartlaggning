@@ -13,9 +13,11 @@ const TABELLER = [
     { flik: 'prioritering', id: 'prio-table', nyckel: 'prio', dolda: ['kvma', 'median', 'referens', 'avvikelsekr', 'kostnadpers', 'brist'],
         forst: ['prio', 'yrke', 'bas', 'status'] },
     { flik: 'matrix', id: 'matrix-table', nyckel: 'likaYrke', dolda: ['dominans', 'nationellt'], forst: ['yrke', 'status'] },
-    { flik: 'likvardighet', id: 'likvardighet-table', nyckel: 'likvardighet', dolda: ['median', 'medianjamf', 'gapkr', 'justerad', 'paverkan'],
+    { flik: 'likvardighet', id: 'likvardighet-table', nyckel: 'likvardighet', dolda: ['median', 'antal', 'medianjamf', 'gapkr', 'justerad', 'paverkan'],
         forst: ['nr', 'yrke'] },
-    { flik: 'struktur', id: 'la-oversikt', nyckel: 'laOversikt', dolda: ['direktiv'], forst: [] }
+    { flik: 'struktur', id: 'la-oversikt', nyckel: 'laOversikt', dolda: ['direktiv'], forst: [] },
+    { flik: 'matrix', id: 'aidbas-lika-tabell', nyckel: 'aidbasLika', dolda: ['nedre', 'ovre', 'direktiv'], forst: [] },
+    { flik: 'likvardighet', id: 'aidbas-likvardigt-tabell', nyckel: 'aidbasLikvardigt', dolda: ['nationellt', 'brukar', 'spridning'], forst: [] }
 ];
 const rita = (flik) => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent(flik); return w; };
 const rubriker = (w, id) => [...w.document.querySelectorAll(`#${id} thead th`)];

@@ -935,6 +935,30 @@ describe('Lägre krav, högre lön', () => {
         const ids = w.__rapportunderlagBlock().map(b => b.id);
         expect(ids.indexOf('lagreKrav')).toBe(ids.indexOf('likvardigt') + 1);
     });
+    it('grundvyn: BAS står under etiketterna och BAS-steg bakom Fler kolumner; exporten har alla tio kolumner (F14)', () => {
+        const w = createAppWindow();
+        oppna(w, [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000), ...grupp('300', 'C', 10, 10, 31000)]);
+        const id = 'likvardighet-lagre-krav-table';
+        const synliga = () => [...w.document.querySelectorAll(`#${id} thead th`)].filter(th => !th.hidden && !th.classList.contains('bara-export')).map(th => th.textContent.trim());
+        expect(synliga()).toEqual(['Kvinnodominerad AID-etikett', 'Median', 'Jämförelseetikett', 'Median', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
+        const rad = w.document.querySelector(`#${id} tbody tr`);
+        const celler = [...rad.children].filter(td => !td.hidden && !td.classList.contains('bara-export'));
+        expect(celler[0].querySelector('small.lv-under').textContent).toBe('BAS E');
+        expect(celler[2].querySelector('small.lv-under').textContent).toBe('BAS C');
+        // Växeln visar BAS-steg; BAS står kvar under etiketterna och aldrig som egen kolumn på skärmen.
+        w.document.querySelector(`[data-fler-kolumner="${id}"]`).click();
+        expect(synliga()).toEqual(['Kvinnodominerad AID-etikett', 'Median', 'Jämförelseetikett', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
+        // Exporten: samma tio kolumner som före, och etikettcellen utan BAS-texten.
+        const m = w.__tableToMatrix(id);
+        expect(m[0]).toEqual(['Kvinnodominerad AID-etikett', 'BAS', 'Median', 'Jämförelseetikett', 'BAS', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
+        expect(m[1].slice(0, 2)).toEqual(['Yrke 100', 'E']);
+        expect(m[1][4]).toBe('C');
+        // Sorteringen på jämförelsens median läser cellens data-sort-value, som förut.
+        const kol = [...w.document.querySelectorAll(`#${id} thead th`)].map(th => th.textContent.trim()).lastIndexOf('Median');
+        w.document.querySelectorAll(`#${id} thead th`)[kol].click();
+        const medianer = [...w.document.querySelectorAll(`#${id} tbody tr`)].map(tr => +tr.children[kol].getAttribute('data-sort-value'));
+        expect(medianer).toEqual([...medianer].sort((a, b) => a - b));
+    });
     it('utan par: förklarande rad', () => {
         const w = createAppWindow();
         oppna(w, [...grupp('100', 'C', 18, 2, 30000), ...grupp('200', 'E', 2, 18, 34000)]);

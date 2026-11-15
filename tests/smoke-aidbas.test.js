@@ -38,6 +38,8 @@ const tabell = (w, id) => {
     const rad = tr => [...tr.children].map(c => c.textContent.replace(/\s+/g, ' ').trim());   // Intl skriver mellanslag som U+00A0/U+202F
     return { rubriker: rad(t.tHead.rows[0]), rader: [...t.tBodies[0].rows].map(rad) };
 };
+/** Rubrikerna som grundvyn gömmer bakom Fler kolumner. */
+const gomdaRubriker = (w, id) => [...w.document.querySelectorAll(`#${id} thead th`)].filter(th => th.hidden).map(th => th.textContent.trim());
 async function bok(w) {
     await laddaXlsx(w);
     const wb = w.eval('_excelAlltBok()');
@@ -51,6 +53,8 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         w.__renderTabContent('matrix');
         const t = tabell(w, 'aidbas-lika-tabell');
         expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
+        // Grundvyn gömmer gränserna och direktivmarkeringen bakom Fler kolumner (F12); exporten har alla kolumner.
+        expect(gomdaRubriker(w, 'aidbas-lika-tabell')).toEqual(['Nedre gräns', 'Övre gräns', 'Ojusterad löneskillnad ≥ 5 %']);
         expect(t.rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'C 1001', 'D 7007', 'E 2002', 'F 7007']);   // skärmen: också 4 personer
         const e = t.rader.find(r => r[1] === '2002');
         expect(e.slice(3)).toEqual(['30', '9', '–', '–', '–', '–', '–', 'Analyseras på individnivå', '–']);
@@ -66,6 +70,8 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         expect(i.rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'C 1001', 'E 2002']);
         expect(w.document.getElementById('aidbas-individ').textContent).not.toMatch(/\d{2} \d{3} kr/);
         expect(w.document.getElementById('nyckel-la-individ').textContent).toBe('4 grupper');
+        // Exporten (sist: den ritar fliken i exportläget) har alla kolumner.
+        expect(w.__tableToMatrix('aidbas-lika-tabell')[0]).toEqual(t.rubriker);
     });
     it('lönemånaden från Inställningar står ovanför tabellerna och följer med i konfigurationsfilen', () => {
         const w = fonster();
@@ -118,6 +124,9 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         w.__renderTabContent('likvardighet');
         const t = tabell(w, 'aidbas-likvardigt-tabell');
         expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
+        // Grundvyn gömmer de nationella kolumnerna och spridningen bakom Fler kolumner (F14); exporten har alla kolumner.
+        expect(gomdaRubriker(w, 'aidbas-likvardigt-tabell')).toEqual(['Andel kvinnor nationellt (%)', 'Brukar anses kvinnodominerad', 'Lönespridning']);
+        expect(w.__tableToMatrix('aidbas-likvardigt-tabell')[0]).toEqual(t.rubriker);
         const b = () => tabell(w, 'aidbas-likvardigt-tabell').rader.find(r => r[1] === '3003');
         expect(b()[4]).toBe('60,0 %'); expect(b()[6]).toBe('Könsblandad'); expect(b()[8]).toBe('–');   // 5 personer: ingen median
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Kvinnodominerad vid mer än 60 % kvinnor');
