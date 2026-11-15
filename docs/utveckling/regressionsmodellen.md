@@ -232,7 +232,7 @@ gruppnivåernas frihetsgrader. Antalet parametrar k = p + G räknar dem, så att
 df = n − p − G. Båda kovarianserna är då de som statsmodels `cov_HC3` och R `sandwich::vcovHC(type = "HC3")` ger
 med en indikator per grupp (prövas i `tests/stat-referens.test.js`). En person ensam i en grupp har h = 1 och
 residualen 0; `fitOLS` ger raden vikten 0, vilket ger samma tal som statsmodels och R när de personerna tas bort (med
-dem kvar ger statsmodels och R NaN). Resultatet får samma form som en vanlig skattning (kön på plats 1, ålder på
+dem kvar ger statsmodels och R NaN eller ett tal som avrundningen avgör). Resultatet får samma form som en vanlig skattning (kön på plats 1, ålder på
 plats 2), R² räknas mot lönens totala variation och `hHoga` på den fulla hävstången, så att en ensam person i en
 grupp räknas. Steget
 *+ AID-etikett inom BAS* är då huvudtalet och står bland stegen; meningen under steget och metodbilagans rad säger att steget är

@@ -428,7 +428,7 @@ huvudtalet räknas HC3 med hävstången h_i + 1/n_g, den som designen med en ind
 skalningen med (n − p) / (n − p − G); skalningen gäller bara den klassiska kovariansen. `hHoga` räknas på samma
 hävstång. Standardfelen blir då de som statsmodels och R ger med en indikator per grupp (principen 2). En person
 ensam i en grupp har h = 1 och får vikten 0, vilket ger samma tal som statsmodels och R när de personerna tas bort;
-med dem kvar ger statsmodels och R NaN. Med hävstången
+med dem kvar ger statsmodels och R NaN eller ett tal som avrundningen avgör. Med hävstången
 på de transformerade kolumnerna ensam var standardfelet för kön i det lilla demot 1,0–1,6 % för litet, och i urval med
 små grupper upp till 9 %; ingen status i trappan ändrades i mätningen. *Avvisat:* att behålla beräkningen och stänga
 punkten som mätt; att behålla skalningen ovanpå den fulla hävstången. *Gäller i dag:* `regressionsmodellen.md` §4.
