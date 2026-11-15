@@ -195,7 +195,9 @@ att ingen trafik lämnar sidan.
 
 ### 5.6 Prestandamätningen
 
-`npm run perf` (`tools/perf-smoke.mjs`) laddar ett syntetiskt 55 000-radersdataset (`--rader=` ger ett annat antal)
+`npm run perf` (`tools/perf-smoke.mjs`) laddar ett syntetiskt 55 000-radersdataset med kvinnodominerade, blandade
+och mansdominerade yrken (`byggTestCsv` i `tools/lib/testdata.mjs` med valet `mansdominerade`; `--rader=` ger ett
+annat antal)
 genom den riktiga filuppladdningen i Chromium, mäter tiden tills gränssnittet är klart och tills bakgrundsanalyserna
 är klara, tar tid på varje fliks rendering och mäter därefter navigeringen (sidindexet, första sökningen,
 BAS-dossiern och gruppdossiern). Vakten är en snäv budget på tiden till klart gränssnitt (5 s), snäv för att en
