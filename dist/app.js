@@ -622,8 +622,10 @@ function svTal(v, dec = 0) {
     return _svNf.get(dec).format(r === 0 ? 0 : r);   // ingen "−0,0"
 }
 // Mellan talet och enheten står ett hårt mellanslag (U+00A0), som Intl redan skriver mellan tusentalen: då bryts
-// «36 262 kr» och «73 %» aldrig isär i en smal kolumn, på skärmen, i utskriften eller i Word. Exporterna till Excel,
-// CSV och urklipp gör det hårda mellanslaget till ett vanligt (22-exporthjalpare.js), så där står talen som förut.
+// «36 262 kr» och «73 %» aldrig isär i en smal kolumn, på skärmen eller i utskriften. Excel-exporten gör det hårda
+// mellanslaget till ett vanligt (22-exporthjalpare.js), liksom CSV och urklipp (_tableCellText i 12-tillstand.js), så
+// där står talen som förut. Word-utkastet gör om allt blanktecken till vanligt mellanslag (62-word-utkast.js); där
+// hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så att talet ryms på en rad.
 /** Som svTal, med " %" efter (hårt mellanslag). */
 function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
 /** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal. */
