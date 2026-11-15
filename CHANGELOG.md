@@ -4,6 +4,125 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`. Varje versions avsnitt skrivs när versionen släpps, ur incheckningarna.
 
+## 2026.11.16
+
+### Gränssnitt
+
+- **De breda tabellerna i Lika arbete och Likvärdigt arbete har växeln *Fler kolumner*.** Tabellerna per AID-kod och
+  BAS-intervall, kandidatparen och *Lägre krav, högre lön* var bredare än skärmen. Grundvyn gömmer nu, som i de andra
+  breda tabellerna, *Nedre gräns*, *Övre gräns* och direktivmarkeringen i Lika arbete per AID-kod och BAS-intervall,
+  *Andel kvinnor nationellt*, *Brukar anses kvinnodominerad* och *Lönespridning* i Likvärdigt arbete per
+  BAS-intervall, och *Antal* bland kandidatparen (n står redan under etiketterna). I *Lägre krav, högre lön* står
+  BAS-intervallet som liten text under etiketterna och BAS-steget bakom växeln. Kopiera, CSV och exporterna har alla
+  kolumner som förut. Inget klipps inne i en cell; en tabell som ändå är bredare än skärmen rullar i sidled.
+  Löneläget utan inläst jämförelsestatistik gömmer P10 och P90 som när statistik finns; den tomma tabellen blev
+  annars 1 134 punkter bred.
+- **Belopp och procent bryts inte isär.** Mellan talet och *kr* eller *%* står ett hårt mellanslag på skärmen, i
+  utskriften och i PDF-rapporten, så att ett belopp inte delas på två rader i en smal kolumn. Excel, CSV och urklipp
+  skriver talen som förut. Rapporttextens konfidensintervall och p-värde står på en rad. Kolumnrubrikerna i
+  Prioriteringen och Löneöversikten står över sina kolumner, med infoikonen på samma rad som rubrikens sista ord.
+  Kostnadsdiagrammet i Prioriteringen använder samma enhet som nyckeltalen (Mkr, tkr).
+- **Lönelägets första kolumnrubrik heter *AID* (ADR-75).** Termerna har en kort form för kolumnrubriker där hela
+  termen inte ryms; exportens etikett behåller *AID-etikett*.
+- **Sidhuvudet med den utfällda sidomenyn.** Mellan 1 101 och 1 365 punkter kunde sökfältet hamna över rubriken eller
+  *Vad lagras?*. Nu krymper sökfältet (minst 80 punkter) i stället för rubriken och raden om lokal bearbetning, som
+  står hel, och avstånden är tätare. Mellan 1 101 och 1 279 punkter är knapparna ikonknappar, med texten kvar för
+  skärmläsare. Sökfältets platshållare är *Sök AID, BAS*.
+- **Diagrammens namn täcker inte varandra.** I trattdiagrammet i Lika arbete och i prioriteringsmatrisen prövas varje
+  namn på flera platser runt punkten. Det hamnar där det varken täcker en punkt, ett annat namn eller en
+  hänvisningslinje, och ett namn som står en bit från sin punkt får en hänvisningslinje. Matrisens zonrubriker läggs
+  där de inte täcker bubblorna, och zonen *Nära referens, under* heter *Nära, under*. I trattdiagrammet får ett namn
+  som finns i flera BAS-intervall ·BAS i etiketten, som i matrisen. I *Var uppstår löneskillnaden?* och
+  regressionens trappa står värdet utanför stapeln. Diagramdatan är oförändrad.
+- **Likvärdigt arbete med arbetsvärderingspoäng jämför bara organisationens egna jämförelseetiketter (ADR-76).**
+  Jämförelsestatistiken var reserv också i poängläget. Statistikens rader har inga egna poäng; en rad fick poäng bara
+  när organisationen själv hade samma AID-kod och BAS-intervall, och jämförde då oftast den kvinnodominerade
+  AID-etiketten med sig själv i statistiken. Reserven är borttagen i poängläget, och fliken säger att statistiken
+  inte används med poäng. Flikens inledning, bakgrunden, steg 2, *Lägre krav, högre lön*, rutan *Inga kandidatpar* och
+  beräkningsbeviset för ett par sade *samma BAS-intervall* eller skilde egna från externa jämförelser också i
+  poängläget. De säger nu att kraven mäts med poängen och att bara organisationens egna AID-etiketter jämförs; märket
+  *intern* och gemensamma BAS-intervall visas inte i poängläget. Med BAS-intervall är fliken oförändrad.
+- **Smått.** Märket i Att göra står på en egen rad ovanför rubriken. Fältet *Organisation* i Exportera står under
+  PDF-radens beskrivning. Diagrammens exportknapp heter *Exportera diagrammet* och kandidatparens *Exportera
+  tabellen*. Lönepolitikens tabell skriver AID-koden en gång i gruppens namn, som exporten, och en benämning som
+  börjar med en siffra (*3D-tekniker*) står kvar hel. Meningen om att grupper med ett kön under tröskeln inte namnges i
+  *Var uppstår löneskillnaden?* står inte på skärmen, där alla grupper visas.
+
+### Exporter
+
+- **PDF-rapportens tabeller ryms på sidan.** Efter termbytet låg kolumnerna att fylla i (*Kravvärdering* i Likvärdigt
+  arbete, *Status* i Åtgärder och tidsplan) utanför sidan, och bilagornas tabeller klipptes. Utskriften avstavar långa
+  ord, tar bort skärmens minsta cellbredder och versala rubriker och låter statusmärkena bryta rad. Avstavar
+  webbläsaren inte svenska (Firefox avstavar inte ord med stor bokstav) får rubriker och textceller brytas var som
+  helst, medan talen står på en rad. Sorteringspilarna, kolumnerna *Detalj* och *Beräkning*, knapparna och
+  infoikonerna följer inte med i bilagorna.
+- **Word-utkastets kolumner följer innehållet.** Tabellerna hade lika breda kolumner, så att namn bröts mitt i ordet
+  och kolumnen # var lika bred som de andra. Bredderna sätts nu så att först det längsta ordet och beloppen ryms hela,
+  sedan rubrikernas ord, sist hela texten; tabellen fyller textytan som förut. En tabell som inte ryms i 10 pt skrivs
+  i 9 pt med smalare cellmarginaler (ADR-75). Rubrikerna, rutorna att fylla i och de dämpade styckena delas inte
+  mellan två sidor, och stycket eller tabellraden före en ruta att fylla i står på samma sida som rutan. Kolumnen
+  med jämförelseetikettens högre median i Likvärdigt arbete heter *AID median högre (kr)* i Word-utkastet och
+  PDF-rapporten.
+- **Excel.** Metodbladets kolumn A är så bred som den längsta etiketten, högst 70 tecken; etiketterna klipptes vid
+  32. Protokollets blad om lika arbete heter *2. Lika arbete (AID)*. Ett bladnamn som byggs av en term får ett fast
+  reservnamn när det blir längre än 31 tecken eller får ett tecken som Excel inte godtar, i stället för att kortas
+  mitt i.
+- **Handlingsplanen.** Åtgärden för ett kandidatpar heter *Granska likvärdigt arbete (kvinnodominerad)*, 43 tecken i
+  stället för 55; gruppkolumnen säger vilken etikett raden gäller. I mallen på skärmen och i utskriften hålls BAS och
+  bokstaven ihop.
+- **Likvärdigt arbetes CSV- och Excel-export i poängläget** utelämnar raderna om externa par, reserven per BAS och
+  gemensamma BAS-intervall, och raderna *Modell*, *Mått på kraven*, *Jämförelsekälla* och konfidensintervallet
+  beskriver poängläget (ADR-76).
+
+### Analys
+
+- **Översikten per huvudområde räknar som huvudregressionen (ADR-78).** Den justerade skillnaden per huvudområde
+  räknades med BAS som rang och krävde ålder. Med BAS som rang lades en del av BAS-skillnaden på kön där lönestegen
+  mellan intervallen är olika stora (upp till 2,1 procentenheter i det lilla demot). Nu räknas kön, ålder när
+  lönefilen har ålder och BAS-intervall som indikatorer, med HC3 och t-kvantil. Utan ålder i lönefilen får varje
+  huvudområde ett tal i stället för *För få*, och rubriken, diagrammet och rapportunderlaget säger *Justerad (BAS)*.
+  Går modellen med BAS inte att skatta i ett huvudområde med flera BAS-intervall (kön och BAS går inte att skilja åt,
+  eller raderna är för få för så många intervall) står *Kan inte justeras för BAS*, med förklaringen i verktygstipset
+  och en mening i rapportunderlaget, i stället för ett tal som inte är justerat för BAS. Förklaringsmodellen i Lika
+  arbete påverkar inte översikten.
+- **HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång (ADR-77).** Regressionen med AID-etikett inom
+  BAS skattas på inomtransformerade kolumner, och hävstången saknade gruppdelen 1/n_g; i stället skalades HC3 med
+  (n − p) / (n − p − G). Nu räknas hävstången som i designen med en indikator per grupp, utan skalningen, och
+  standardfelen är de som statsmodels ger. I det lilla demot var standardfelet för kön tidigare 1,0–1,6 % för litet;
+  ingen status i trappan ändrades i mätningen. En person ensam i sin grupp får vikten 0.
+
+### Prestanda
+
+- **Likvärdigt arbete räknas på en bråkdel av tiden.** Bootstrapmedianen tas ur en rangräkning: gruppens löner sorteras
+  en gång i stället för en gång per dragning, och intervallen blir bitidentiska. Paren räknas en gång per underlag och
+  läses av fliken, processöversikten, Regler och praxis och protokollet för gemensam lönebedömning, och ett byte av
+  minsta gruppstorlek räknar inte om dem. Antalet små kvinnodominerade grupper i diagnostiken, det enda i resultatet
+  som beror på tröskeln, räknas när resultatet läses; det var inaktuellt efter ett byte som inte flyttade det
+  statistiska golvet (till exempel 10 → 5).
+- **Regressionen körs en gång per varv** vid inläsning och vid byte av minsta gruppstorlek, i stället för fyra
+  respektive tre gånger, och skickas vidare som ett värde (ADR-17; ingen cache). En lönefil som släpps på filytan
+  under omritningen efter ett tröskelbyte läses inte in mitt i den, och regressionen skickas bara vidare så länge
+  underlaget, tröskeln och förklaringsmodellen är desamma.
+- På 55 000 syntetiska rader tar det nu 3,7 s till klart gränssnitt (budget 5 s; 12,1 s vid mätningen före
+  ändringarna) och 1,9 s att byta minsta gruppstorlek. Likvärdigt arbete tar 0,09 s i stället för 16,2 s.
+
+### Utveckling
+
+- **Webbläsarröktestet prövar utseendet.** Vid 1 280 punkter klipps inget tal, statusmärke eller etikett i sin cell i
+  de fyra tabellerna i Lika arbete och Likvärdigt arbete, Lönestrukturen och Prioriteringen. Kontrollen prövar inte
+  att tabellerna ryms, eftersom bredden beror på systemets typsnitt. Sidhuvudet prövas vid 1 101, 1 280 och 1 365
+  punkter, kolumnrubrikerna bryts inte mitt i ett ord vid 1 100 punkter, och PDF-rapportens tabeller mäts mot A4:s
+  textbredd med och utan avstavning.
+- **Talregeln står på ett ställe.** `arTal` i `src/lib/htmltext.js` avgör om en cell är ett tal, för Word-utkastet och
+  utskriften, och `svKr` skriver belopp. Ett test prövar varje bladnamn i varje arbetsbok verktyget skriver, ett
+  jämför översikten per huvudområde med huvudregressionen på samma urval, och ett jämför bootstrapmedianen med den
+  tidigare algoritmen och tar tid på den. Referensen för HC3 med AID-etikett inom BAS kommer ur statsmodels
+  (`tests/fixtures/ref-hc3-inom.py`).
+- **Prestandamätningens underlag** (`npm run perf`) har mansdominerade yrken, så att Likvärdigt arbete får par och
+  bootstrapens kostnad syns.
+- **Dokumentationen.** Pilotchecklistan använder gränssnittets namn efter termbytet och har en rad om bandkartan.
+  `lagrum.md` kartlägger protokollet för gemensam lönebedömning mot direktivets art. 10.2 a–g.
+
 ## 2026.11.15
 
 ### Gränssnitt

@@ -193,7 +193,7 @@ Fyra medvetna undantag:
 **Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön.** Översikten per BAS-intervall
 (*Löneskillnad per BAS-intervall* i Lönestruktur) har bara rader för BAS-intervall där både kvinnor och män når
 tröskeln. Det gäller i Word-utkastet, PDF-rapporten och flikens export; på skärmen visas alla intervall. I det
-som exporteras visar trattdiagrammet en punkt per AID-etikett, och bara AID-etiketter där båda könen når tröskeln.
+som exporteras visar trattdiagrammet en punkt per AID-etikett i BAS-intervall, och bara där båda könen når tröskeln.
 Lådorna över lönespridning per BAS-intervall och kön ritas bara för ett kön som når tröskeln i intervallet, och
 utan enskilda avvikande löner. Löneskillnaden per åldersgrupp visar bara åldersgrupper där båda könen når
 tröskeln, och de övriga namnges under diagrammet. Fördelningen i lönespannets tredjedelar per kön redovisas bara
