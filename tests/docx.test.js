@@ -231,7 +231,8 @@ describe('docx: kolumnbredderna följer innehållet', () => {
         const g = grid(atgarder);
         expect(g.reduce((s, v) => s + v, 0)).toBe(9070);
         expect(xml).toContain('<w:sz w:val="18"/>');                      // 9 pt
-        expect(xml).toMatch(/<w:tblCellMar><w:left w:w="57" w:type="dxa"\/><w:right w:w="57" w:type="dxa"\/><\/w:tblCellMar>/);
+        // Alla fyra sidorna, i schemats ordning: utan topp och botten nollar Word dem i stället för att ta stilens.
+        expect(xml).toMatch(/<w:tblCellMar><w:top w:w="57" w:type="dxa"\/><w:left w:w="57" w:type="dxa"\/><w:bottom w:w="57" w:type="dxa"\/><w:right w:w="57" w:type="dxa"\/><\/w:tblCellMar>/);
         const M9 = 114;   // cellmarginalerna i den täta tabellen
         expect(g[3]).toBeGreaterThanOrEqual(0.9 * 1249 + M9);   // 1 669 800 kr/år i 9 pt (1249 twips i 10 pt)
         expect(g[0]).toBeGreaterThanOrEqual(0.9 * 1283 + M9);   // Undersköterska

@@ -40,9 +40,9 @@ const STIL = { dampad: 'Dampad', fyllIn: 'FyllIn', utkastruta: 'Utkastruta' };
 /** @type {[string, number][]} */
 const _TECKENBREDD = [['iljI.,:;!|\' ', 55], ['frt-()', 72], ['sczJ/', 86], ['agkvxyåäeEFLSTZ0123456789', 101], ['mw%&', 163],
     ['DGHNOQUÖ', 137], ['MW', 181]];
-// Tabellstilens cellmarginal till vänster och höger (twips). En tabell som inte ryms i stilens 10 pt skrivs tätare:
-// 9 pt och smalare cellmarginaler.
-const CELLMARGINAL = 85;
+// Tabellstilens cellmarginal till vänster och höger, och ovanför och under (twips). En tabell som inte ryms i stilens
+// 10 pt skrivs tätare: 9 pt och smalare cellmarginaler till vänster och höger.
+const CELLMARGINAL = 85, CELLMARGINAL_LODRAT = 57;
 const TAT = { skala: 0.9, cellmarginal: 57, sz: 18 };
 /** Ett ords ungefärliga bredd i twips i Calibri 10 pt, fet eller normal (normala bokstäver är omkring 3 % smalare, siffror lika). */
 function _ordbredd(ord, fet = true) {
@@ -102,6 +102,11 @@ function _kolumnbredder(b, kolumner, { skala = 1, cellmarginal = CELLMARGINAL } 
     return { bredder: hela, ryms: _summa(ordMal) <= TEXTBREDD };
 }
 
+/** Cellmarginalerna i schemats ordning (top, left, bottom, right). */
+const _cellmarginaler = (lodrat, sidled) => '<w:tblCellMar>'
+    + [['top', lodrat], ['left', sidled], ['bottom', lodrat], ['right', sidled]].map(([s, w]) => `<w:${s} w:w="${w}" w:type="dxa"/>`).join('')
+    + '</w:tblCellMar>';
+
 function _tabell(b) {
     const alla = [...(b.rubrikrad ? [b.rubrikrad] : []), ...(b.rader || [])];
     const kolumner = Math.max(1, ...alla.map(r => r.length));
@@ -119,7 +124,8 @@ function _tabell(b) {
     // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver (A9): Word räknar
     // annars om en procentbredd mot cellbredderna, och LibreOffice och Word kan rita tabellen olika.
     const look = b.rubrikrad ? 'w:val="04A0" w:firstRow="1"' : 'w:val="0480" w:firstRow="0"';
-    const mar = tat ? `<w:tblCellMar><w:left w:w="${TAT.cellmarginal}" w:type="dxa"/><w:right w:w="${TAT.cellmarginal}" w:type="dxa"/></w:tblCellMar>` : '';
+    // Det täta läget skriver alla fyra sidorna, topp och botten med stilens värden: Word nollar en sida som saknas.
+    const mar = tat ? _cellmarginaler(CELLMARGINAL_LODRAT, TAT.cellmarginal) : '';
     return `<w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="${TEXTBREDD}" w:type="dxa"/>${mar}`
         + `<w:tblLook ${look} w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
         + `<w:tblGrid>${bredder.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>`
@@ -181,7 +187,7 @@ function _stilar() {
         + '<w:style w:type="table" w:customStyle="1" w:styleId="Tabell"><w:name w:val="Tabell"/>'
         + '<w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:tblPr><w:tblBorders>'
         + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`).join('')
-        + '</w:tblBorders><w:tblCellMar><w:top w:w="57" w:type="dxa"/><w:left w:w="85" w:type="dxa"/><w:bottom w:w="57" w:type="dxa"/><w:right w:w="85" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>'
+        + '</w:tblBorders>' + _cellmarginaler(CELLMARGINAL_LODRAT, CELLMARGINAL) + '</w:tblPr></w:style>'
         + '</w:styles>';
 }
 
