@@ -37061,8 +37061,14 @@ function _lpGruppnamn(g) {
     const benamning = _lpBenamning(g);
     return benamning ? `${g.aid} ${benamning}` : String(g.aid);
 }
-/** Yrkets benämning utan AID-koden först. */
-function _lpBenamning(g) { return String(g.yrke || '').replace(/^\d+\s*/, ''); }
+/** Yrkets benämning utan AID-koden först. Bara koden tas bort, så att en benämning som börjar med en siffra
+ * («3D-tekniker») står kvar hel. */
+function _lpBenamning(g) {
+    const yrke = String(g.yrke || ''), aid = String(g.aid ?? '');
+    if (!aid || !yrke.startsWith(aid)) return yrke;
+    const rest = yrke.slice(aid.length);
+    return rest === '' || /^\s/.test(rest) ? rest.trim() : yrke;
+}
 
 function _lpTableHtml(model) {
     const kr = v => svKr(v);

@@ -68,6 +68,13 @@ describe('diagramRitat och diagramTillBild', () => {
 
 
 describe('Lönepolitik: chart-lp-gender och chart-lp-compliance', () => {
+    it('gruppens namn: AID-koden tas bort som prefix, men inte siffror som hör till benämningen («3D-tekniker»)', () => {
+        expect(w.eval(`_lpBenamning({ aid: '206017', yrke: '206017 Sjuksköterska' })`)).toBe('Sjuksköterska');
+        expect(w.eval(`_lpBenamning({ aid: '311099', yrke: '311099 3D-tekniker' })`)).toBe('3D-tekniker');
+        expect(w.eval(`_lpBenamning({ aid: '311099', yrke: '3D-tekniker' })`)).toBe('3D-tekniker');
+        expect(w.eval(`_lpBenamning({ aid: 311099, yrke: '311099' })`)).toBe('');
+        expect(w.eval(`_lpGruppnamn({ aid: '311099', yrke: '3D-tekniker' })`)).toBe('311099 3D-tekniker');
+    });
     it('chart-lp-gender: kvinnor och män som två punkter på spannet (0 = P10, 100 = P90), samma tal som modellen', () => {
         const f = w.eval(`_lpFigurKonHantel([{ bas: '5', genderGap: { kvPos: 0.412, maPos: 0.503 } }, { bas: '7', genderGap: { kvPos: 0.6, maPos: 0.55 } }])`);
         expect(f.lager.map(l => [l.marke, l.serie, l.farg])).toEqual([['intervall', 'Policyns spann', '#d5dae3'], ['intervall', 'Skillnad', '#64748b'], ['punkt', 'Kvinnor', '#833a8f'], ['punkt', 'Män', '#5f7f16']]);
