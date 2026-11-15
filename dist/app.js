@@ -26102,15 +26102,16 @@ function renderSektorer(d) {
     const visa = tabell.filter(r => r.kvot != null);
     const el = document.getElementById('chart-sektorer');
     if (!el) return;
-    if (visa.length) ritaFigur(el, _sektorFigur(visa, justText)); else rensaFigur(el);
+    if (visa.length) ritaFigur(el, _sektorFigur(visa, { medAlder: justText.medAlder })); else rensaFigur(el);
 }
 
 // Sektordiagrammets figur (diagramkärnan, ADR-39): rå och justerad kvot som punkter mot linjen 100 % — inte staplar
 // på en avkortad axel, där stapelns längd säger något annat än värdet.
 // `visa` är de sektorer vars kvot redovisas i tabellen; inga andra når figuren, och axeln räknas bara ur dem.
 // Filtren: sektor (lista) och antal personer i sektorn, samma namn och antal som tabellens kolumner Sektor och Antal.
-// `justText` är sektorJusteradText() för hela tabellen: rubriken och vad som justeras för.
-function _sektorFigur(visa, { medAlder, rubrik, justeradFor }) {
+// medAlder gäller hela tabellen (lönefilen har ålder); rubriken och bisatsen kommer ur sektorJusteradText (sektor.js).
+function _sektorFigur(visa, { medAlder = true } = {}) {
+    const { rubrik, justeradFor } = _skSektorJusteradText([{ justeratMedAlder: medAlder }]);
     const falt = r => ({ sektor: r.namn, n: r.n });
     const just = r => (r.justerat ? +(100 + r.justerat.pct).toFixed(1) : null);
     const varden = visa.flatMap(r => [r.kvot, just(r)]).filter(v => v != null);
