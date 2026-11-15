@@ -3966,7 +3966,8 @@ function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
     const rngOpt = opts.rng ?? null;
     const prngFor = (a, b) => rngOpt || rngFor(a, b);
     const bandPct = opts.bandPct ?? 5;
-    // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget.
+    // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget;
+    // fliken och exporterna visar dem inte när kravProxy är 'poäng'.
     const jämförelse = {
         gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
         internaPar: 0, externaPar: 0, basMedExternFallback: 0,
@@ -23586,9 +23587,14 @@ function _lvExternFallbackText() {
     return termText('{Enhet.fl:kvinnodominerad} (i {niva.en}) jämförda med jämförelsestatistiken');
 }
 
+/** Poängläget: kraven mäts med arbetsvärderingspoäng, och bara organisationens egna jämförs (ADR-76). */
+function _lvPoang(result) {
+    return result?.diagnostik?.jämförelse?.kravProxy === 'poäng';
+}
+
 /** Jämförelsestatistikens jämförelseetiketter som paren kan använda: inga i poängläget, där bara organisationens egna jämförs (ADR-76). */
 function _lvStatJamfor(result) {
-    return result.diagnostik?.jämförelse?.kravProxy === 'poäng' ? [] : result.statIckeKv;
+    return _lvPoang(result) ? [] : result.statIckeKv;
 }
 
 function likvardighetResultat() {
@@ -23796,14 +23802,17 @@ function renderLikvardighet() {
                     ${T.enhet.fl} i varje ${T.niva.en} (${esc(aidbasDefinitionText())}).
                     K-anonymitet tillämpas <strong>inte</strong> i denna analys eftersom
                     resultatet är aggregerat per ${T.enhet.en}.</li>
-                <li><strong>Steg 2</strong>: Välj ${T.jamforelse.fl} inom samma ${T.niva.en}
+                ${_lvPoang(result) ? `<li><strong>Steg 2</strong>: Välj ${T.jamforelse.fl} med lika eller lägre poäng
+                    (likvärdiga eller lägre krav), också i andra ${T.niva.fl}. Bara organisationens egna
+                    ${T.enhet.fl} som inte är kvinnodominerade (${jamforelseGransText()}) jämförs; jämförelsestatistiken
+                    har inga poäng och används inte.</li>` : `<li><strong>Steg 2</strong>: Välj ${T.jamforelse.fl} inom samma ${T.niva.en}
                     (likvärdiga krav). <strong>Primärt</strong> används organisationens egna
                     ${T.enhet.fl} som inte är kvinnodominerade (${jamforelseGransText()})
                     — en jämförelse inom organisationen. Saknas ${termArtikel(T.jamforelse)} ${T.jamforelse.en} i organisationen i
                     ${termArtikel(T.niva)} ${T.niva.en} används <em>jämförelsestatistiken</em> i stället
                     ${d.statistik.harLokalKonsdata
                         ? `<span class="farg-ok">(lokal könsfördelning).</span>`
-                        : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur den nationella statistiken: andel kvinnor per ${T.kod.en} i ${_skrDelText(_skrDel())}, ${esc(skrKallaKort())}).</span>`}</li>
+                        : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur den nationella statistiken: andel kvinnor per ${T.kod.en} i ${_skrDelText(_skrDel())}, ${esc(skrKallaKort())}).</span>`}</li>`}
                 <li><strong>Steg 3</strong>: Flagga par där ${termText('{jamforelse.bf.s}')} median är högre
                     än ${termText('{enhet.bf.s:kvinnodominerad}')}. Varje par får ett
                     <strong>bootstrap-95 %-konfidensintervall</strong> på medianskillnaden.
@@ -23854,7 +23863,7 @@ function renderLikvardighet() {
             ${jämförOK ? `
                 <div class="bak-accent-yta ram-v-3-accent rund-4 fs-sm marg-t-10 pad-10-12">
                     <strong>Jämförelse</strong>:
-                    ${d.jämförelse.gemensammaBas} gemensamma ${T.niva.fl},
+                    ${_lvPoang(result) ? '' : `${d.jämförelse.gemensammaBas} gemensamma ${T.niva.fl},`}
                     ${d.jämförelse.möjligaPar} möjliga par,
                     varav <strong>${d.jämförelse.statHögre} där ${termText('{jamforelse.bf.s}')} median är högre</strong> än ${termText('{enhet.bf.s:kvinnodominerad}')}
                     (${d.jämförelse.statLägreEllerLika} där ${T.jamforelse.bf} ≤ organisation — visas ej, inget problem med likvärdigt arbete).
@@ -24001,8 +24010,8 @@ function renderLikvardighet() {
                 <p class="fs-md marg-8-0">
                     Organisationen har ${result.orgKvDom.length} kvinnodominerade grupper och
                     ${result.orgIckeKv.length} interna och ${_lvStatJamfor(result).length} externa ${T.jamforelse.fl}.
-                    Inom de ${d.jämförelse.gemensammaBas} gemensamma ${T.niva.bfl} har ingen av
-                    ${T.jamforelse.bfl} högre lön än organisationens kvinnodominerade ${T.enhet.fl}.
+                    ${_lvPoang(result) ? `Ingen av ${T.jamforelse.bfl} med lika eller lägre poäng har` : `Inom de ${d.jämförelse.gemensammaBas} gemensamma ${T.niva.bfl} har ingen av
+                    ${T.jamforelse.bfl}`} högre lön än organisationens kvinnodominerade ${T.enhet.fl}.
                     ${cfg.minGapPct > 0 ? `(Bara par med minst ${cfg.minGapPct} % skillnad visas, efter valet i Inställningar.)` : ''}
                 </p>
             </div>`;
@@ -24133,7 +24142,7 @@ function renderLikvardighet() {
             <p id="lv-krav-not" class="text-dampad-xs marg-8-0-0"></p>
         </div>` +
         `<p class="avsnitt-rubrikrad">Fördjupning</p>` +
-        avsnitt('par', 'Par att titta närmare på', termText('{Enhet.fl:kvinnodominerad} mot {jamforelse.fl} med högre lön i samma {niva.en}'),
+        avsnitt('par', 'Par att titta närmare på', termText(_lvPoang(result) ? '{Enhet.fl:kvinnodominerad} mot {jamforelse.fl} med lika eller lägre poäng och högre lön' : '{Enhet.fl:kvinnodominerad} mot {jamforelse.fl} med högre lön i samma {niva.en}'),
             antal.totalt > result.pairs.length ? `${result.pairs.length} av ${antal.totalt} par` : `${result.pairs.length} par`,
         exportHtml +
         ((jämförOK && result.pairs.length) ? `
@@ -24463,11 +24472,15 @@ function _exportLikvardighetCSVExport() {
     rows.push(['Minsta skillnad (%)', result.opts.minGapPct]);
     rows.push(['Antal par', result.pairs.length]);
     rows.push(['•varav interna (organisation mot organisation)', result.diagnostik?.jämförelse?.internaPar ?? 0]);
-    rows.push(['•varav externa (mot jämförelsestatistiken)', result.diagnostik?.jämförelse?.externaPar ?? 0]);
-    rows.push([_lvExternFallbackText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
+    const poang = _lvPoang(result);
+    if (!poang) {   // i poängläget används jämförelsestatistiken inte (ADR-76)
+        rows.push(['•varav externa (mot jämförelsestatistiken)', result.diagnostik?.jämförelse?.externaPar ?? 0]);
+        rows.push([_lvExternFallbackText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
+    }
     rows.push(['Klassificeringskälla — jämförelsestatistiken', result.diagnostik?.statistik?.klassKalla?.lokal ?? 0]);
     rows.push(['Klassificeringskälla — SKR:s personalstatistik', result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
-    rows.push(['KI-metod', 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
+    rows.push(['KI-metod', poang ? 'Bootstrap B=1000 på bägge individurvalen'
+        : 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
     rows.push(['k-anonymitet', 'Tillämpas EJ i denna analys']);
     _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10), { undantag: 'Likvärdigt arbete' });
@@ -24500,6 +24513,7 @@ function _exportLikvardighetExport() {
         const { pairs } = result;
         const diagnostik = result.diagnostik || {};
         const opts = result.opts || {};
+        const poang = _lvPoang(result);   // i poängläget används jämförelsestatistiken inte (ADR-76)
 
         // Helper: säker numerisk-konvertering. Returnerar number om giltigt,
         // tom sträng om null/undefined/NaN. Excel hanterar tomma strängar.
@@ -24569,7 +24583,9 @@ function _exportLikvardighetExport() {
             ['Genererad', new Date().toLocaleString('sv-SE')],
             ['Verktyg', 'Öppen lönekartläggning (v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–') + ')'],
             ['Aktiv profil', safe(() => state.profile.name)],
-            ['Modell', termText('Organisationens kvinnodominerade {enhet.fl} jämförs inom samma {niva.en} med {enhet.fl} som inte är kvinnodominerade (mansdominerade och blandade; könsandelen i {jamforelse.bf} står i tabellen), i första hand organisationens egna (intern), annars jämförelsestatistiken (extern)')],
+            ['Modell', poang
+                ? termText('Organisationens kvinnodominerade {enhet.fl} jämförs med organisationens egna {enhet.fl} som inte är kvinnodominerade (mansdominerade och blandade; könsandelen i {jamforelse.bf} står i tabellen) och har lika eller lägre arbetsvärderingspoäng, också i andra {niva.fl}')
+                : termText('Organisationens kvinnodominerade {enhet.fl} jämförs inom samma {niva.en} med {enhet.fl} som inte är kvinnodominerade (mansdominerade och blandade; könsandelen i {jamforelse.bf} står i tabellen), i första hand organisationens egna (intern), annars jämförelsestatistiken (extern)')],
             ['', ''],
             ['— PARAMETRAR —', ''],
             ['Kvinnotröskel (%)', safe(() => opts.kvinnoTrosholdPct, '')],
@@ -24592,19 +24608,26 @@ function _exportLikvardighetExport() {
             ['Klassificering från jämförelsestatistikens könsfördelning', safe(() => diagnostik.statistik.klassKalla.lokal, 0)],
             ['Klassificering från SKR:s personalstatistik', safe(() => diagnostik.statistik.klassKalla.nationell, 0)],
             [`Interna ${T.jamforelse.fl} i organisationen`, safe(() => diagnostik.organisation.ickeKvFunna, 0)],
-            ['Gemensamma BAS', safe(() => diagnostik.jämförelse.gemensammaBas, 0)],
+            ...(poang ? [] : [['Gemensamma BAS', safe(() => diagnostik.jämförelse.gemensammaBas, 0)]]),
             ['Möjliga par', safe(() => diagnostik.jämförelse.möjligaPar, 0)],
             [`•varav ${T.jamforelse.en} > organisation`, safe(() => diagnostik.jämförelse.statHögre, 0)],
             ['Flaggade interna par', safe(() => diagnostik.jämförelse.internaPar, 0)],
-            ['Flaggade externa par (jämförelsestatistiken)', safe(() => diagnostik.jämförelse.externaPar, 0)],
-            [_lvExternFallbackText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)],
+            ...(poang ? [] : [   // i poängläget används jämförelsestatistiken inte (ADR-76)
+                ['Flaggade externa par (jämförelsestatistiken)', safe(() => diagnostik.jämförelse.externaPar, 0)],
+                [_lvExternFallbackText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]]),
             ['Par i utdata', pairs.length],
             ['', ''],
             ['— RÄTTSLIG GRUND —', ''],
             ['Diskrimineringslagen', 'Arbetsgivaren ska analysera om kvinnodominerat arbete har lägre lön än arbete som inte är kvinnodominerat och har likvärdiga eller lägre krav.'],
-            ['Mått på kraven', `Jämförelsen sker inom samma ${T.niva.en}; verktyget utgår från att kraven där är likvärdiga.`],
-            ['Jämförelsekälla', termText('I första hand organisationens egna {enhet.fl} som inte är kvinnodominerade. Saknas sådana i {niva.art} {niva.en} används jämförelsestatistiken i stället.')],
-            ['95 % KI', 'Bootstrap B=1000 på medianskillnaden. Intern: omdragning av bägge individurvalen. Extern: omdragning av org-löner mot jämförelsestatistikens median som konstant. Hela intervallet > 0 = säker skillnad.'],
+            ['Mått på kraven', poang
+                ? `Organisationens arbetsvärderingspoäng: lika krav inom ±${safe(() => opts.poangBandPct, 5)} %, också över ${T.niva.fl}.`
+                : `Jämförelsen sker inom samma ${T.niva.en}; verktyget utgår från att kraven där är likvärdiga.`],
+            ['Jämförelsekälla', poang
+                ? termText('Organisationens egna {enhet.fl} som inte är kvinnodominerade. Jämförelsestatistiken har inga poäng och används inte.')
+                : termText('I första hand organisationens egna {enhet.fl} som inte är kvinnodominerade. Saknas sådana i {niva.art} {niva.en} används jämförelsestatistiken i stället.')],
+            ['95 % KI', poang
+                ? 'Bootstrap B=1000 på medianskillnaden, med omdragning av bägge individurvalen. Hela intervallet > 0 = säker skillnad.'
+                : 'Bootstrap B=1000 på medianskillnaden. Intern: omdragning av bägge individurvalen. Extern: omdragning av org-löner mot jämförelsestatistikens median som konstant. Hela intervallet > 0 = säker skillnad.'],
             ['Justerad för ålder (%)', LV_JUSTERAD_METOD],
             ['Summa för gruppen (kr/mån)', termText('Skillnaden i kronor gånger antalet personer med {enhet.bf:kvinnodominerad}, per månad. Används bara för att rangordna paren.')]
         ];

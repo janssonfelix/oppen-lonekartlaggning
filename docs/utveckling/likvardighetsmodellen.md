@@ -8,7 +8,7 @@ inställningarna och vakterna. Koden är sanningen; där dokumentet och koden sk
 rättas.
 
 Dokumentet är inte beslutsloggen och inte en tolkning av lagen. Varför det är så här, vad som övervägdes och när det
-beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-25, 60, 61 och 72, och för reserven för
+beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-25, 60, 61, 72 och 76, och för reserven för
 kvinnoandel ADR-34. Lagrummen står i [`lagrum.md`](lagrum.md). Minsta gruppstorlek, undantaget för fliken och regeln
 för paren utanför fliken står i [`k-troskeln.md`](k-troskeln.md) (§4 och §2) och upprepas inte här. Hur BAS kodas i
 regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.

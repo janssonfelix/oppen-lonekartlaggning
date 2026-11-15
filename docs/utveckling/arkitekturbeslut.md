@@ -416,7 +416,7 @@ och `src/lib/docx.js`.
 **ADR-76 — Poängläget jämför bara med organisationens egna jämförelseetiketter.** Med arbetsvärderingspoäng i
 lönefilen används jämförelsestatistiken inte längre som reserv. Statistikens rader har inga egna poäng; en rad fick
 poäng bara när organisationen själv hade samma AID-kod och BAS-intervall, och jämförde då oftast den kvinnodominerade
-AID-etiketten med sig själv i statistiken, inte med ett likvärdigt arbete. I mätningen på demona användes reserven
-aldrig. *Avvisat:* att behålla reserven; att ge statistikens rader poäng efter AID-kod ensam, som jämför samma arbete i
-olika BAS-intervall. En extern jämförelse i poängläget kräver en egen poängtabell för statistiken. *Gäller i dag:*
-`likvardighetsmodellen.md` §4.
+AID-etiketten med sig själv i statistiken, inte med ett likvärdigt arbete. I mätningen på demona med den nationella
+andelen kvinnor användes reserven aldrig. *Avvisat:* att behålla reserven; att ge statistikens rader poäng efter
+AID-kod ensam, som jämför samma arbete i olika BAS-intervall. En extern jämförelse i poängläget kräver en egen
+poängtabell för statistiken. *Gäller i dag:* `likvardighetsmodellen.md` §4.

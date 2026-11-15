@@ -1482,7 +1482,8 @@ function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
     const rngOpt = opts.rng ?? null;
     const prngFor = (a, b) => rngOpt || rngFor(a, b);
     const bandPct = opts.bandPct ?? 5;
-    // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget.
+    // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget;
+    // fliken och exporterna visar dem inte när kravProxy är 'poäng'.
     const jämförelse = {
         gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
         internaPar: 0, externaPar: 0, basMedExternFallback: 0,
