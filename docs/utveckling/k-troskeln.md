@@ -182,7 +182,9 @@ läses (`likvardighetsmodellen.md` §1).
 per tröskel, så att ett lägesbyte inte räknar om något. Det som räknas på knapptryck i Löneöversyn räknas om när fliken
 ritas om, om det visas (`_fcRitaOmKnappresultat`). Att göras lista byggs en gång för Att göra och processöversikten
 (`renderProcessTracker({ punkter })`), och regressionen körs en gång i omritningen för underlagets kvalitet, Att göra
-och processöversikten (`{ reg }`) — ingen cache, bara värden som skickas vidare (ADR-17).
+och processöversikten (`{ reg }`) — ingen cache, bara värden som skickas vidare (ADR-17), och bara så länge underlaget,
+k och förklaringsmodellen är desamma som när de räknades. Rutan under omritningen i steg stoppar också `dragover` och
+`drop`, så att ingen fil kan släppas in mitt i den.
 
 ## 4. Undantagen och avstegen
 

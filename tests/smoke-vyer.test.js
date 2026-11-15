@@ -907,6 +907,39 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
         w.eval('renderUnderlagetsKvalitet(); renderProcessTracker({ punkter: renderActionChecklist() });');
         expect([...DELAR, 'action-checklist-container'].map(id => html(w, id))).toEqual(delad);
     });
+    // Omritningen i steg släpper fram tidtagare mellan stegen: en fil som läses klart (FileReader) eller en rensning vid
+    // inaktivitet kan byta underlaget där, och då får stegen efter inte rita med regressionen från det gamla.
+    it('byts underlaget mitt i omritningen räknar stegen efter en egen regression', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.eval('sattKTroskel(11, { fraga: false, rita: false })');
+        raknaRegressioner(w);
+        w.eval('const __ukOrig = renderUnderlagetsKvalitet; renderUnderlagetsKvalitet = function (v) { __ukOrig(v); '
+            + 'state.data = state.data.slice(0, 150); };');
+        w.eval('_renderaOmAllaFlikar()');
+        expect(w.__regKorningar).toBe(3);   // underlagets kvalitet, Att göra och processöversikten var för sig
+        const delad = ['action-checklist-container', 'process-tracker'].map(id => html(w, id));
+        w.eval('renderProcessTracker({ punkter: renderActionChecklist() });');
+        expect(['action-checklist-container', 'process-tracker'].map(id => html(w, id))).toEqual(delad);
+    });
+    it('en fil som släpps under en pågående omritning i steg når inte filinläsningen', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const r = w.eval('sattKTroskel(11, { fraga: false, stegvis: true })');
+        const omrade = w.document.getElementById('drop-area-data');
+        let last = false;
+        for (const typ of ['dragover', 'drop']) {
+            const ev = new w.Event(typ, { bubbles: true, cancelable: true });
+            Object.defineProperty(ev, 'dataTransfer', { get: () => { last = true; return { files: { length: 0 } }; } });
+            omrade.dispatchEvent(ev);
+        }
+        expect(omrade.classList.contains('drag-over')).toBe(false);
+        expect(last).toBe(false);
+        await r.klar;
+        const ev = new w.Event('dragover', { bubbles: true, cancelable: true });
+        omrade.dispatchEvent(ev);
+        expect(omrade.classList.contains('drag-over')).toBe(true);   // efter omritningen tar ytan emot filer igen
+    });
     it('Översikts delar (exportgrinden) kör regressionen en gång', () => {
         const w = createAppWindow();
         w.__loadDemoData();

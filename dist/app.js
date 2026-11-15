@@ -1779,17 +1779,32 @@ function _omritningssteg() {
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
     // Underlagets kvalitet, Att göra och processöversikten läser samma regression: den körs en gång i omritningen och
     // skickas vidare, som punkterna nedan (ADR-17: ett värde inom omritningen, ingen cache). Kastar den ritar varje del
-    // med en egen körning.
+    // med en egen körning. Mellan stegen kan en tidtagare byta underlaget (en fil som läses klart, rensningen vid
+    // inaktivitet) utan att gå genom händelserna som rutan stoppar; därför skickas regressionen bara vidare så länge det
+    // den läser (underlaget, k och förklaringsmodellen) är oförändrat, annars räknar steget en egen.
+    // Detsamma gäller punkterna.
+    const indata = () => ({ data: state.data, rest: `${kInstalld()}|${JSON.stringify(typeof forklaringsmodell === 'function' ? forklaringsmodell() : null)}` });
+    const oforandrat = f => { const nu = indata(); return !!f && f.data === nu.data && f.rest === nu.rest; };
     /** @type {any} */ let reg;
+    /** @type {any} */ let regFangst = null;
     steg.push(['underlagets kvalitet', () => {
         if (typeof renderUnderlagetsKvalitet !== 'function') return;
+        regFangst = indata();
         reg = typeof runOLSRegression === 'function' ? runOLSRegression() : undefined;
         renderUnderlagetsKvalitet({ reg });
     }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
     /** @type {any[]|undefined} */ let punkter;
-    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist({ reg }); }]);
-    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter, reg }); }]);
+    /** @type {any} */ let punktFangst = null;
+    steg.push(['Att göra', () => {
+        if (typeof renderActionChecklist !== 'function') return;
+        punktFangst = indata();
+        punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : undefined });
+    }]);
+    steg.push(['processöversikten', () => {
+        if (typeof renderProcessTracker !== 'function') return;
+        renderProcessTracker({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
+    }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {
@@ -1829,7 +1844,10 @@ function _renderaOmAllaFlikarStegvis() {
     ruta.appendChild(text);
     document.body.appendChild(ruta);
     const stoppa = e => { e.stopPropagation(); e.preventDefault(); };
-    const HANDELSER = ['keydown', 'keyup', 'keypress', 'click', 'pointerdown', 'mousedown', 'submit', 'change', 'input'];
+    // Också dragover och drop: filytorna läser in en släppt fil direkt (32-filinlasning.js), och en ny lönefil mitt i
+    // omritningen skulle låta stegen efter rita med det gamla underlagets värden.
+    const HANDELSER = ['keydown', 'keyup', 'keypress', 'click', 'pointerdown', 'mousedown', 'submit', 'change', 'input',
+        'dragover', 'drop'];
     for (const h of HANDELSER) document.addEventListener(h, stoppa, true);
     const klar = () => {
         for (const h of HANDELSER) document.removeEventListener(h, stoppa, true);
