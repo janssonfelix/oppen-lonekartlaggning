@@ -17,6 +17,7 @@ import { matchningEtikett } from './jamforelse.js';
 import { bedomSkillnad, statusKonstanter } from './status.js';
 import { lonebegreppReservation } from './struktur.js';
 import { personOrd } from './namn.js';
+import { sektorJusteradText } from './sektor.js';
 import { kvDefinitionText } from './aidbas.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
@@ -397,20 +398,22 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const alla = u.sektorer || [];
         const visas = alla.filter(r => !r.maskerad);
         // Justerat för ålder bara när lönefilen har ålder (ADR-64, ADR-78).
-        const medAlder = alla.every(r => r.justeratMedAlder !== false);
-        const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${medAlder ? 'ålder och ' : ''}${T.niva.en}.`];
+        const justText = sektorJusteradText(alla);
+        const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${justText.justeradFor}.`];
         const a = u.andel;
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
             ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
             : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
+        const ejBas = visas.filter(r => r.justeratSkal === 'ejBas').length;
+        if (ejBas) st.push(`I ${_st(ejBas, T.huvudomrade.en, T.huvudomrade.fl)} går kön och ${T.niva.en} inte att skilja åt, så skillnaden kan inte justeras för ${T.niva.en} där.`);
         const skr = visas.find(r => r.skrAndelKv != null);
         if (skr) st.push(`Andel kvinnor i samma ${T.huvudomrade.en} i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
-        return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', medAlder ? 'Justerad (ålder, BAS)' : 'Justerad (BAS)'],
+        return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', justText.rubrik],
             rader: visas.map(r => [r.namn, String(r.n), _pct(r.andelKv), r.skrAndelKv != null ? _pct(r.skrAndelKv) : '–',
                 !r.samladMedian && r.kvot != null ? _pct(r.kvot) : '–',
-                !r.samladMedian && r.justerat ? _pct(100 + r.justerat.pct) : '–']) });
+                !r.samladMedian && r.justerat ? _pct(100 + r.justerat.pct) : r.justeratSkal === 'ejBas' ? 'Kan inte justeras för BAS' : '–']) });
     }
     if (typ === 'handlingsplan') {
         const rader = u.rader || [];

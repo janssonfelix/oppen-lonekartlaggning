@@ -552,6 +552,16 @@ describe('rapportunderlag: sektorer', () => {
     });
 });
 
+describe('rapportunderlag: sektorer där kön och BAS inte går att skilja åt', () => {
+    it('cellen säger att skillnaden inte kan justeras för BAS, och en mening säger varför', () => {
+        const rad = { namn: 'Vård- och omsorgsarbete med mera', n: 32, nKv: 16, nMa: 16, andelKv: 50, maskerad: false, samladMedian: false,
+            medTot: 30000, medKv: 28000, medMa: 33000, kvot: 84.8, justerat: null, justeratSkal: 'ejBas', justeratMedAlder: false, antalAid: 1, punkter: 0 };
+        const b = avsnittBlock('sektorer', { sektorer: [rad], andel: null }, { k: 10 });
+        expect(b.tabell.rader[0].at(-1)).toBe('Kan inte justeras för BAS');
+        expect(b.stycken.join(' ')).toMatch(/I 1 huvudområde går kön och BAS-intervall inte att skilja åt/);
+    });
+});
+
 describe('rapportunderlag: sektorernas andel nära noll', () => {
     it('under 1 % sägs att skillnaden nästan inte alls beror på sektorerna', () => {
         const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6177, sektorKr: -2, andel: -0.0003 } }, { k: 10 });

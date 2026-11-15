@@ -164,12 +164,16 @@ ordning i tabellerna per AID-kod och BAS-intervall (`src/lib/aidbas.js`).
 skillnaden med samma kodning som huvudregressionens standardmodell (ADR-78): `justeradSkillnad(rows, { medAlder })` i
 `src/lib/regression.js` skattar ln(lön) = kön + [ålder centrerad] + en indikator per BAS-intervall utom det alfabetiskt
 första i huvudområdet, med HC3 och t-kvantil (avsnitt 7). Ålder är med när lönefilen har ålder (`harAlderIRader` på hela
-filen, inte per huvudområde; avsnitt 8). Kan modellen inte skattas, med färre rader än kolumnerna + 5 eller singulär
-design, räknas den utan BAS, som reservsteget i avsnitt 1. Raderna filtreras som i stegen (avsnitt 4). Ett tal ges när
+filen, inte per huvudområde; avsnitt 8). Kan modellen med BAS inte skattas, med färre rader än kolumnerna + 5 eller
+singulär design (varje BAS-intervall har bara ett kön, så kön och BAS går inte att skilja åt), ges inget tal när
+huvudområdet har minst två BAS-intervall: cellen säger *Kan inte justeras för BAS*, med förklaringen i verktygstipset,
+och rapportunderlaget säger det i en mening. Reservsteget utan BAS (avsnitt 1) skulle där ge den råa skillnaden, eller
+den bara åldersjusterade, under en rubrik som säger BAS. Raderna filtreras som i stegen (avsnitt 4). Ett tal ges när
 huvudområdet har minst 30 sådana rader och minst k av varje kön; annars står *För få*, och ett huvudområde under k
 maskeras som förut. Förklaringsmodellen (avsnitt 2) läses inte: översikten ändras inte när handläggaren väljer
 variabler i Lika arbete. Kolumnrubriken och diagrammets beskrivning säger *Justerad (BAS)* och *justerad för
-BAS-intervall* när lönefilen saknar ålder.
+BAS-intervall* när lönefilen saknar ålder; regeln står på ett ställe (`sektorJusteradText` i `src/lib/sektor.js`), som
+vyn och rapportunderlaget båda använder.
 
 ## 4. Den stegvisa uppdelningen och steget *+ AID-etikett inom BAS*
 
@@ -489,7 +493,7 @@ Filen ändras aldrig.
 |---|---|
 | `tests/stat.test.js` | OLS, HC3, `tDistCdf`, `tQuantile` mot t-tabellen, `pValue2Sided` och matrisalgebran: egenskaper; `bhJustera` mot handräknade fall |
 | `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell; `bhJustera` mot statsmodels `multipletests(method='fdr_bh')` |
-| `tests/sektor.test.js` | Översikten per huvudområde: könskoefficienten som huvudregressionens på samma urval, med och utan ålder, intervallet med HC3 och t-kvantil, och k-villkoren |
+| `tests/sektor.test.js` | Översikten per huvudområde: könskoefficienten som huvudregressionens på samma urval, med och utan ålder, intervallet med HC3 och t-kvantil, k-villkoren, inget tal när kön och BAS inte går att skilja åt, och rubrikregeln |
 | `tests/regression.test.js` | `src/lib/regression.js` direkt: förklaringsmodellen som värde, stegen på vald modell, vad varje variabel tillför, `kvantilDesign` och `quantileRegressionAtAllTau`, modellerna utan ålder och radfiltret |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |

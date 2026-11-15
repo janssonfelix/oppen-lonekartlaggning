@@ -2,7 +2,7 @@
  * Sektorsöversikten: src/lib/sektor.js.
  */
 import { describe, it, expect } from 'vitest';
-import { sektorsTabell, sektorernasAndel } from '../src/lib/sektor.js';
+import { sektorsTabell, sektorernasAndel, sektorJusteradText } from '../src/lib/sektor.js';
 import { computeSequentialGap } from '../src/lib/regression.js';
 import { fitOLS, tQuantile } from '../src/lib/stat.js';
 
@@ -113,6 +113,41 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
         expect([smal.justerat, smal.justeratSkal]).toEqual([null, 'fa']);
         const under = sektorsTabell(fa.slice(0, 6), { k: 10 })[0];
         expect([under.maskerad, under.justerat]).toEqual([true, null]);
+    });
+});
+
+describe('sektor: kön och BAS går inte att skilja åt', () => {
+    // Varje BAS-intervall har bara ett kön (16 kvinnor i B, 16 män i C): modellen med BAS är singulär, och utan BAS
+    // blir talet den råa skillnaden (utan ålder) eller bara åldersjusterat. Inget av dem är justerat för BAS.
+    const seg = (medAlder) => [
+        ...flera(16, i => rad('207011', 'kvinna', 28000 + i * 50, medAlder ? 25 + i : 0, 'B')),
+        ...flera(16, i => rad('207011', 'man', 33000 + i * 60, medAlder ? 27 + i : 0, 'C')),
+    ];
+    it('utan ålder: inget justerat tal, orsaken är att BAS inte går att justera för', () => {
+        const v = sektorsTabell(seg(false), { k: 10 })[0];
+        expect([v.justerat, v.justeratSkal]).toEqual([null, 'ejBas']);
+    });
+    it('med ålder: inget tal heller, det vore bara justerat för ålder', () => {
+        const v = sektorsTabell(seg(true), { k: 10 })[0];
+        expect([v.justerat, v.justeratSkal]).toEqual([null, 'ejBas']);
+    });
+    it('ett enda BAS-intervall: inget att justera för, talet visas som förut', () => {
+        const ett = seg(false).map(r => ({ ...r, bas: 'C' }));
+        const v = sektorsTabell(ett, { k: 10 })[0];
+        expect(v.justeratSkal).toBe('ok');
+        expect(v.justerat).not.toBeNull();
+    });
+});
+
+describe('sektor: rubriken och bisatsen för den justerade skillnaden (en regel för vyn och rapportunderlaget)', () => {
+    it('med ålder i lönefilen', () => {
+        expect(sektorJusteradText([{ justeratMedAlder: true }])).toEqual({ medAlder: true, rubrik: 'Justerad (ålder, BAS)', justeradFor: 'ålder och BAS-intervall' });
+    });
+    it('utan ålder', () => {
+        expect(sektorJusteradText([{ justeratMedAlder: false }])).toEqual({ medAlder: false, rubrik: 'Justerad (BAS)', justeradFor: 'BAS-intervall' });
+    });
+    it('en tom tabell räknas som med ålder, som förut', () => {
+        expect(sektorJusteradText([]).medAlder).toBe(true);
     });
 });
 

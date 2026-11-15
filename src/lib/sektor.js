@@ -8,7 +8,8 @@
  * skillnad med huvudregressionens kodning (kön + ålder när lönefilen har den + BAS som indikatorer, HC3 och
  * t-kvantil; justeradSkillnad i regression.js, ADR-78) när sektorn har ≥ 30 personer och ≥ k av varje
  * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel som del A i
- * gapuppdelning.js, med sektor i stället för BAS).
+ * gapuppdelning.js, med sektor i stället för BAS). Går modellen med BAS inte att skatta i ett huvudområde med minst två
+ * BAS-intervall (kön och BAS går inte att skilja åt) ges inget justerat tal: ett tal utan BAS vore inte justerat för BAS.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -17,6 +18,9 @@ import { justeradSkillnad, harAlderIRader } from './regression.js';
 import { sektorsnamn, jamforSektor } from './aid.js';
 import { konOf } from './falt.js';
 import { skrKvinnoandelSektor } from './skrreferens.js';
+import { skapaTermer } from './termer.js';
+
+const T = skapaTermer();
 
 const MIN_REGRESSION = 30;
 
@@ -24,8 +28,21 @@ const MIN_REGRESSION = 30;
 function _justerat(rader, k, medAlder) {
     const giltiga = rader.filter(r => r.lon > 0 && (!medAlder || r.alder > 0) && konOf(r) !== 'Övrig/okänd');
     const nKv = giltiga.filter(r => konOf(r) === 'Kvinna').length;
-    if (giltiga.length < MIN_REGRESSION || nKv < k || giltiga.length - nKv < k) return null;
-    return justeradSkillnad(giltiga, { medAlder });
+    if (giltiga.length < MIN_REGRESSION || nKv < k || giltiga.length - nKv < k) return { just: null, skal: 'fa' };
+    const just = justeradSkillnad(giltiga, { medAlder });
+    // Räknat utan BAS fast huvudområdet har flera BAS-intervall: talet är inte justerat för BAS och visas inte.
+    if (just && !just.medBas && just.antalBas >= 2) return { just: null, skal: 'ejBas' };
+    return { just, skal: just ? 'ok' : 'fa' };
+}
+
+/**
+ * Rubriken och bisatsen för den justerade skillnaden, för vyn och rapportunderlaget (ADR-78): med ålder bara när
+ * lönefilen har ålder.
+ * @param {{justeratMedAlder?:boolean}[]} tabell - sektorsTabell()
+ */
+export function sektorJusteradText(tabell) {
+    const medAlder = (tabell || []).every(r => r.justeratMedAlder !== false);
+    return { medAlder, rubrik: medAlder ? 'Justerad (ålder, BAS)' : 'Justerad (BAS)', justeradFor: `${medAlder ? 'ålder och ' : ''}${T.niva.en}` };
 }
 
 /**
@@ -50,7 +67,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
         const bada = kv.length >= k && ma.length >= k;
         const medKv = !maskerad && bada ? median(kv.map(r => r.lon)) : null;
         const medMa = !maskerad && bada ? median(ma.map(r => r.lon)) : null;
-        const just = maskerad ? null : _justerat(g, k, medAlder);
+        const just = maskerad ? { just: null, skal: null } : _justerat(g, k, medAlder);
         const andelLedning = grupp => (grupp.length ? grupp.filter(r => r.ansvarsgrupp === 'ledning').length / grupp.length * 100 : null);
         return {
             namn, n, nKv: kv.length, nMa: ma.length,
@@ -60,7 +77,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
             maskerad, samladMedian: !maskerad && !bada,
             medTot: maskerad ? null : median(g.map(r => r.lon)),
             medKv, medMa, kvot: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
-            justerat: just, justeratSkal: maskerad ? null : (just ? 'ok' : 'fa'),
+            justerat: just.just, justeratSkal: just.skal,   // 'ok' | 'fa' (för få) | 'ejBas' (kön och BAS går inte att skilja åt)
             justeratMedAlder: medAlder,   // rubriken och texterna säger vad som justeras för
             antalAid: new Set(g.map(r => r.aid)).size,
             punkter: punkter[namn] || 0,

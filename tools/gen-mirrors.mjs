@@ -211,7 +211,7 @@ export const MODULES = [
     },
     {
         file: 'sektor.js', ns: '__mirrorSektor',
-        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel' }
+        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel', sektorJusteradText: '_skSektorJusteradText' }
     },
     {
         file: 'ansvar.js', ns: '__mirrorAnsvar',
