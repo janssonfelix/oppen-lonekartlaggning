@@ -515,7 +515,7 @@ function _showExportSensitivityToast(bodyHtml) {
     const toast = document.createElement('div');
     toast.id = 'export-sensitivity-toast';
     toast.setAttribute('role', 'status');
-    toast.style.cssText = `position:fixed; bottom:24px; right:24px; max-width:380px; padding:14px 18px; background:${FARG.text}; color:${FARG.yta}; border-left:4px solid ${FARG.varning}; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.28); z-index:99998; font-size:0.88rem; line-height:1.55;`;
+    toast.style.cssText = `position:fixed; bottom:24px; right:24px; max-width:380px; padding:14px 18px; background:${FARG.text}; color:${FARG.yta}; border-left:3px solid ${FARG.varning}; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.28); z-index:99998; font-size:0.88rem; line-height:1.55;`;
     // Neutral text: notisen visas efter alla exporter, också de som innehåller en rad per person
     // eller grupper under tröskeln, och ska därför inte utlova aggregering.
     const body = bodyHtml || `<strong>Fil sparad</strong><br>

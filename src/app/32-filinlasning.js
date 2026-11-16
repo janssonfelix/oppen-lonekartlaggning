@@ -38,7 +38,7 @@ setupDrop("drop-area-stat", "file-input-stat");
  */
 function _renderSensitiveRejection(sensitive) {
     const list = sensitive.map(s => `<li><code>${esc(s.col)}</code> – ${esc(s.reason)}</li>`).join('');
-    dataStatus.innerHTML = `<div class="bak-varning-bg-gammal ram-v-4-danger rund-6 lh-1_55 marg-t-10 pad-14-16">
+    dataStatus.innerHTML = `<div class="bak-varning-bg-gammal ram-v-3-kritisk rund-6 lh-1_55 marg-t-10 pad-14-16">
         <strong class="f-kritisk">${ikon('stopp')} Filen avvisad – innehåller känsliga personuppgifter</strong><br>
         Följande kolumner verkar innehålla data som inte ska användas i lönekartläggning:
         <ul class="fs-sm marg-8-0-8-20">${list}</ul>
@@ -878,7 +878,7 @@ function maybeShowColumnMapping() {
            <p class="text-dampad-sm marg-6-0">Verktyget kände igen alla obligatoriska kolumner. Justera vid behov om någon matchats fel.</p>${profilRad}`;
 
     panel.innerHTML = `
-        <details class="card${missing.length ? ' bl4-kritisk' : ''}" open>
+        <details class="card${missing.length ? ' ram-v-3-kritisk' : ''}" open>
             <summary class="pekare fw-600 pad-6-0">Kolumnmappning (filens kolumner till verktygets fält)</summary>
             <div class="pad-t-10">
                 ${head}

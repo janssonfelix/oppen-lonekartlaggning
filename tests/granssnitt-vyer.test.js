@@ -495,6 +495,61 @@ describe('övergångarna', () => {
     });
 });
 
+describe('kantränderna', () => {
+    // En rand till vänster säger ett läge: den står i statusfärg och i en bredd. Undantagen är fyra lägesmarkörer för
+    // navigeringen, som inte är kortränder och står kvar i sin form. De två sista är inset-skuggor; de står här så att
+    // de inte görs om till ränder.
+    const LAGESMARKORER = [
+        '.sidindex-lista',      // sidindexet: avsnittet du står i
+        '.jmf-block',           // jämförelsetabellens avdelare mellan blocken
+        '.nav-item.active',     // den aktiva fliken i menyn
+        'tr.rad-markerad',      // den markerade tabellraden
+    ];
+    it('kantränder står bara i statusfärg och i en bredd', () => {
+        const css = las('src/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
+        const fel = [];
+        for (const [, sel, kropp] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+            const s = sel.trim();
+            if (s === ':root' || LAGESMARKORER.some(m => s.includes(m))) continue;
+            for (const [dekl, bredd, farg] of kropp.matchAll(/border-left:\s*(\d+)px\s+[a-z]+(?:\s+var\((--[\w-]+)\))?/g)) {
+                if (Number(bredd) <= 1) continue;   // en avdelare på 1 px (fältets enhet, väljarens kant) är ingen rand
+                if (Number(bredd) !== 3 || !(farg || '').startsWith('--status-')) fel.push(`${s} { ${dekl} }`);
+            }
+            for (const [dekl, farg] of kropp.matchAll(/border-left-color:\s*var\((--[\w-]+)\)/g))
+                if (!farg.startsWith('--status-')) fel.push(`${s} { ${dekl} }`);
+            for (const [dekl] of kropp.matchAll(/border-left-(?:width|style):[^;}]+/g)) fel.push(`${s} { ${dekl} }`);
+            // Ingen rand överst på ett kort heller (uppladdningsrutorna och organisationspaketet hade en).
+            for (const [dekl, bredd] of kropp.matchAll(/border-top:\s*(\d+)px[^;}]*/g)) if (Number(bredd) > 1) fel.push(`${s} { ${dekl} }`);
+        }
+        expect(fel).toEqual([]);
+    });
+    it('mallarna sätter randen med hjälpklasserna på 3 px', () => {
+        const filer = readdirSync(join(rot, 'src', 'app')).filter(f => /^\d\d-.*\.js$/.test(f) && f !== '09-lib-speglar.js');
+        const fel = [];
+        for (const f of [...filer.map(f => `src/app/${f}`), 'src/index.html']) {
+            const text = las(f);
+            for (const m of text.matchAll(/\b(ram-v-4-[\w-]+|bl4-[\w$-]+|ram-v-farg-[\w-]+)/g)) fel.push(`${f}: ${m[1]}`);
+            for (const m of text.matchAll(/border-left:\s*(\d+)px/g)) if (m[1] !== '3') fel.push(`${f}: ${m[0]}`);
+        }
+        expect(fel).toEqual([]);
+    });
+    it('där bara färgen visade läget står också en ikon och ett ord', () => {
+        const d = allaFlikar().document;
+        const ORD = /^(OK|Varning|Kritisk|Att känna till)$/;
+        const marken = [
+            ...d.querySelectorAll('#fardigcheck-body .fc-item'),
+            ...[...d.querySelectorAll('.ruta-ok, .ruta-varning')],
+            d.querySelector('#view-benchmark .lp-tackning'),
+        ];
+        expect(marken.length).toBeGreaterThan(3);
+        const fel = marken.filter(el => {
+            const m = el && el.querySelector('.uk-marke');
+            return !m || !ORD.test(m.textContent.trim()) || !m.querySelector('svg.ikon[aria-hidden="true"]');
+        });
+        expect(fel.map(el => (el ? el.className : 'saknas'))).toEqual([]);
+    });
+});
+
 describe('slutgranskningens fynd', () => {
     const lasIn = async (w, rader) => { papa(w); w.loadStructureFile(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
     it('en fil som saknar en obligatorisk kolumn men har läsbara rader läses in, och kolumnmappningen säger vad som saknas', async () => {

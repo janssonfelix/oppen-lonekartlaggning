@@ -148,9 +148,10 @@ function _lpCoverageHtml(model) {
     const tone = pct >= 90 ? 'ok' : pct >= 60 ? 'warn' : 'crit';
     const farg = tone === 'ok' ? 'ok' : tone === 'warn' ? 'varning' : 'kritisk';
     return `
-    <div class="card mb-16 bl4-${farg}">
+    <div class="card mb-16 lp-tackning ram-v-3-${farg}">
         <div class="rad-bryt baslinje gap-12">
             <div class="fs-2rem tabelltal fw-700 fg-${farg}">${svPct(pct, 0)}</div>
+            ${statusMarke(farg)}
             <div class="text-dampad-sm">
                 ${c.personsCovered} av ${c.personsTotal} personer · ${c.groupsCovered} av ${c.groupsTotal} ${termForAntal(c.groupsTotal, T.enhet)} i ${T.niva.en}
             </div>

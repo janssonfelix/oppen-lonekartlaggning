@@ -114,6 +114,16 @@ function bedomningUnderlag({ reg: given } = {}) {
 }
 
 const UK_ETIKETT = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' };
+const UK_IKON = { ok: 'bock', varning: 'statusVarning', kritisk: 'statusKritisk', info: 'info' };
+/**
+ * Statusmärket med ikon och ord, i samma form som märkena i Underlagets kvalitet. Ikonen är dold för hjälpmedel
+ * (ikon()); ordet bär läget, så att det inte bara syns i färgen. Bara på skärmen.
+ * @param {'ok'|'varning'|'kritisk'|'info'} status
+ * @param {string} [ord] ordet, om det inte är UK_ETIKETT:s (upplysningen har inget där)
+ */
+function statusMarke(status, ord = UK_ETIKETT[status]) {
+    return `<span class="uk-marke uk-${status}">${ikon(UK_IKON[status], 14)} ${esc(ord)}</span>`;
+}
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
 function renderUnderlagetsKvalitet({ reg } = {}) {
     const host = document.getElementById('underlagets-kvalitet');

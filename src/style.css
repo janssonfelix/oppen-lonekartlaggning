@@ -35,9 +35,9 @@
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
 }
-#reality-check.all-ok  { border-left: 4px solid var(--status-ok); }
-#reality-check.has-warn { border-left: 4px solid var(--status-varning); }
-#reality-check.has-err  { border-left: 4px solid var(--status-kritisk); background: var(--status-kritisk-yta); }
+#reality-check.all-ok  { border-left: 3px solid var(--status-ok); }
+#reality-check.has-warn { border-left: 3px solid var(--status-varning); }
+#reality-check.has-err  { border-left: 3px solid var(--status-kritisk); background: var(--status-kritisk-yta); }
 #reality-check h3 { font-size: var(--fs-lg); color: var(--text-main); }
 
 :root {
@@ -771,13 +771,12 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     padding: 16px;
     border-radius: 4px;
     background-color: var(--secondary);
-    border-left: 4px solid var(--primary);
     font-size: var(--fs-md);
 }
 
 .insight-box.warning {
     background-color: var(--warning-bg);
-    border-left-color: var(--danger);
+    border-left: 3px solid var(--status-kritisk);
 }
 
 /* Info tooltip icon */
@@ -847,14 +846,13 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     display: flex;
     align-items: center;
     gap: 16px;
-    border-left: 4px solid var(--border);
-    transition: border-left-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.compliance-card.ok    { border-left-color: var(--status-ok); }
-.compliance-card.warn  { border-left-color: var(--status-varning); }
-.compliance-card.crit  { border-left-color: var(--danger); }
+.compliance-card.ok    { border-left: 3px solid var(--status-ok); }
+.compliance-card.warn  { border-left: 3px solid var(--status-varning); }
+.compliance-card.crit  { border-left: 3px solid var(--status-kritisk); }
 /* Ett kort utan underlag är dämpat i färgerna, inte genomskinligt: genomskinlighet sänker textens kontrast under 4,5:1. */
-.compliance-card.na    { border-left-color: var(--border); background: var(--yta); }
+.compliance-card.na    { background: var(--yta); }
 .compliance-card.na .comp-value { color: var(--text-muted); }
 .comp-icon { font-size: var(--fs-nyckeltal); width: 32px; text-align: center; flex-shrink: 0; }
 .compliance-card.ok   .comp-icon { color: var(--status-ok); }
@@ -874,7 +872,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin-bottom: 20px;
 }
 @media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
-.paket-forst { margin: 0 0 14px; border-top: 3px solid var(--primary); }
+.paket-forst { margin: 0 0 14px; }
 .steg-nr { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 10px; background: var(--primary); color: #fff; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; }
 /* Organisationspaket (ADR-28) */
 .paket-innehall { padding: 12px 4px; line-height: 1.6; font-size: var(--fs-sm); }
@@ -891,15 +889,13 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     background: var(--bg-card);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
-    border-top: 3px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: border-top-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.upload-cell.required { border-top-color: var(--danger); }
-.upload-cell.optional { border-top-color: var(--text-blek); }
-.upload-cell.loaded   { border-top-color: var(--status-ok); box-shadow: 0 4px 6px -1px rgba(16,185,129,0.1), var(--shadow-sm); }
+/* Läget står i brickan (.upload-badge); rutan har ingen rand. */
+.upload-cell.loaded   { box-shadow: 0 4px 6px -1px rgba(16,185,129,0.1), var(--shadow-sm); }
 
 .upload-cell-header {
     display: flex;
@@ -990,7 +986,6 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     gap: 12px;
     padding: 10px 14px;
     background: linear-gradient(135deg, var(--status-ok-bg) 0%, var(--status-ok-yta) 100%);
-    border-left: 3px solid var(--status-ok);
     border-radius: 6px;
     font-size: var(--fs-sm);
     color: var(--status-ok);
@@ -1025,7 +1020,6 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin: 0 0 18px;
     background: var(--status-granska-bg);
     border: 1px solid var(--status-granska-kant);
-    border-left: 4px solid var(--status-granska-ljus);
     border-radius: 8px;
 }
 .bakgrund-panel summary {
@@ -1251,11 +1245,11 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin-top: 14px;
     padding: 12px 16px;
     background: var(--status-varning-yta);
-    border-left: 4px solid var(--status-varning);
+    border-left: 3px solid var(--status-varning);
     border-radius: 6px;
     font-size: var(--fs-sm);
 }
-.consistency-banner.ok { background: var(--status-ok-bg); border-left-color: var(--status-ok); }
+.consistency-banner.ok { background: var(--status-ok-bg); border-left: 3px solid var(--status-ok); }
 .consistency-banner strong { display: block; margin-bottom: 6px; }
 .consistency-banner ul { margin: 4px 0 0 20px; padding: 0; }
 .consistency-banner li { margin-bottom: 3px; line-height: 1.5; }
@@ -1265,7 +1259,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin-bottom: 12px;
     padding: 12px 16px;
     background: var(--status-varning-yta);
-    border-left: 4px solid var(--status-varning);
+    border-left: 3px solid var(--status-varning);
     border-radius: 6px;
 }
 .fk-vantar p { margin: 0 0 10px; line-height: 1.5; }
@@ -1320,12 +1314,11 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     gap: 14px;
     padding: 14px 18px;
     border-radius: 8px;
-    border-left: 4px solid;
     min-width: 230px;
 }
-.reg-verdict.ok   { background: var(--status-ok-bg); border-left-color: var(--status-ok); }
-.reg-verdict.warn { background: var(--status-varning-yta); border-left-color: var(--status-varning); }
-.reg-verdict.crit { background: var(--status-kritisk-yta); border-left-color: var(--status-kritisk); }
+.reg-verdict.ok   { background: var(--status-ok-bg); border-left: 3px solid var(--status-ok); }
+.reg-verdict.warn { background: var(--status-varning-yta); border-left: 3px solid var(--status-varning); }
+.reg-verdict.crit { background: var(--status-kritisk-yta); border-left: 3px solid var(--status-kritisk); }
 .verdict-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; }
 .verdict-title {
     font-size: var(--fs-lg);
@@ -1352,12 +1345,10 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     padding: 10px 14px;
     background: white;
     border-radius: 6px;
-    border-left: 3px solid var(--text-blek);
 }
-.reg-waterfall-step.step-final.ok   { background: var(--status-ok-bg); border-left-color: var(--status-ok); }
-.reg-waterfall-step.step-final.warn { background: var(--status-varning-yta); border-left-color: var(--status-varning); }
-.reg-waterfall-step.step-final.crit { background: var(--status-kritisk-yta); border-left-color: var(--status-kritisk); }
-.reg-waterfall-step.step-yrke { border-left-style: dashed; }
+.reg-waterfall-step.step-final.ok   { background: var(--status-ok-bg); border-left: 3px solid var(--status-ok); }
+.reg-waterfall-step.step-final.warn { background: var(--status-varning-yta); border-left: 3px solid var(--status-varning); }
+.reg-waterfall-step.step-final.crit { background: var(--status-kritisk-yta); border-left: 3px solid var(--status-kritisk); }
 .reg-waterfall-step .step-note { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.5; }
 .reg-waterfall-step .step-name {
     font-size: var(--fs-sm);
@@ -1782,8 +1773,7 @@ tr.row-highlighted td { animation: rowHighlight 3s ease-out; }
     line-height: 1.5;
     color: var(--text-muted);
     background: rgba(148, 163, 184, 0.08);
-    border-left: 3px solid var(--text-blek);
-    border-radius: 0 4px 4px 0;
+    border-radius: 4px;
 }
 /* Låset är linjeikonen «las» ritad med två pseudo-element i textens färg, utan bild: bygeln (en båge utan underkant)
    och kroppen (en kantad rektangel), 14 × 14 i notens vänsterkant. */
@@ -1827,7 +1817,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     background: var(--status-varning-yta);
     color: var(--status-varning);
     border: 1px solid var(--status-varning-kant);
-    border-left: 5px solid var(--status-varning);
+    border-left: 3px solid var(--status-varning);
     border-radius: 8px;
     font-size: var(--fs-sm);
     line-height: 1.45;
@@ -1884,7 +1874,6 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 /* #13 Motivation-suggestion-block i prio-tabellen */
 .motivation-suggestions {
     background: var(--yta);
-    border-left: 3px solid var(--text-blek);
     padding: 10px 14px;
     margin-top: 6px;
     border-radius: 4px;
@@ -1980,17 +1969,15 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     font-size: 0.88em;
 }
 .info-tab-content blockquote {
-    border-left: 3px solid var(--primary);
     background: var(--yta);
     padding: 10px 14px;
     margin: 12px 0;
-    border-radius: 0 6px 6px 0;
+    border-radius: 6px;
 }
 .info-build-card {
     background: var(--status-ok-yta);
-    border-left: 4px solid var(--status-ok);
     padding: 12px 16px;
-    border-radius: 0 6px 6px 0;
+    border-radius: 6px;
     margin: 12px 0;
     font-family: 'SF Mono', Consolas, monospace;
     font-size: var(--fs-sm);
@@ -2299,7 +2286,6 @@ summary:focus-visible {
     padding: 12px 16px;
     background: var(--accent-yta);
     border: 1px solid var(--accent-kant);
-    border-left: 4px solid var(--accent);
     border-radius: 8px;
     font-size: var(--fs-sm);
     line-height: 1.5;
@@ -2382,10 +2368,10 @@ summary:focus-visible {
 
 /* #UX Handlingsplansmall: förifyllda (read-only) rader vs fyllbara tomrader */
 #handlingsplan-tbody .handlingsplan-seeded > td { background: var(--accent-yta); }
-#handlingsplan-tbody .handlingsplan-seeded > td:first-child { border-left: 3px solid var(--accent); font-weight: 500; }
+#handlingsplan-tbody .handlingsplan-seeded > td:first-child { font-weight: 500; }
 /* De tomma raderna är till för att fylla i för hand: de finns på utskriften (och i Excel-filen), inte på skärmen,
    där de ser ut som ett formulär som inte går att skriva i. */
-#handlingsplan-tbody .handlingsplan-egen > td:first-child { border-left-color: var(--text-muted); font-weight: 400; }
+#handlingsplan-tbody .handlingsplan-egen > td:first-child { font-weight: 400; }
 #handlingsplan-tbody .hp-ta-bort { margin-left: 6px; }
 #handlingsplan-tbody .handlingsplan-empty { display: none; }
 #handlingsplan-tbody .handlingsplan-empty > td { height: 40px; }
@@ -2578,7 +2564,6 @@ summary:focus-visible {
     line-height: 1.55;
     color: var(--text-muted);
     background: var(--yta);
-    border-left: 3px solid var(--text-blek);
     border-radius: 4px;
 }
 .reg-kronor {
@@ -2643,7 +2628,6 @@ summary:focus-visible {
     font-size: var(--fs-sm);
     line-height: 1.5;
     background: var(--status-varning-yta);
-    border-left: 3px solid var(--status-varning);
     border-radius: 4px;
 }
 
@@ -2688,9 +2672,10 @@ summary:focus-visible {
 .rb-flip { color:var(--status-varning); font-weight:600; }
 .fc-clear { padding:14px 16px; background:var(--status-ok-yta); border:1px solid var(--status-ok-kant); border-radius:8px; font-size:var(--fs-md); line-height:1.6; }
 .fc-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
-.fc-item { padding:12px 14px; border-radius:6px; border-left:4px solid var(--border); background:var(--bg-main); }
-.fc-item.fc-warn { border-left-color:var(--status-varning); }
-.fc-item.fc-info { border-left-color:var(--text-blek); }
+.fc-item { padding:12px 14px; border-radius:6px; background:var(--bg-main); }
+.fc-item.fc-warn { border-left: 3px solid var(--status-varning); }
+.fc-item.fc-info { border-left: 3px solid var(--status-info); }
+.fc-item .uk-marke { margin-right: 6px; }
 .fc-title { font-weight:600; font-size:var(--fs-md); }
 .fc-detail { color:var(--text-muted); font-size:var(--fs-sm); line-height:1.55; margin-top:4px; }
 .fc-item .btn-table-tool { margin-top:8px; }
@@ -2807,6 +2792,7 @@ summary:focus-visible {
 .uk-ok { background: var(--status-ok-bg); color: var(--status-ok); }
 .uk-varning { background: var(--status-varning-bg); color: var(--status-varning); }
 .uk-kritisk { background: var(--status-kritisk-bg); color: var(--status-kritisk); }
+.uk-info { background: var(--status-info-bg); color: var(--status-info-mork); }
 .uk-text { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 2px; }
 .uk-detaljer { margin-top: 12px; }
 .uk-detaljer h4 { font-size: var(--fs-sm); margin: 0 0 6px; }
@@ -2916,7 +2902,7 @@ summary:focus-visible {
     margin: 0 0 12px;
     padding: 10px 14px;
     border-radius: 8px;
-    border-left: 4px solid var(--status-kritisk);
+    border-left: 3px solid var(--status-kritisk);
     background: var(--status-kritisk-yta);
     color: var(--status-kritisk);
     font-size: var(--fs-sm);
@@ -2958,7 +2944,7 @@ summary:focus-visible {
     padding: 10px 16px;
     background: var(--status-kritisk-yta);
     border: 1px solid var(--status-kritisk-kant);
-    border-left: 4px solid var(--status-kritisk);
+    border-left: 3px solid var(--status-kritisk);
     border-radius: 8px;
     color: var(--status-kritisk);
     font-size: var(--fs-md);
@@ -2975,7 +2961,7 @@ summary:focus-visible {
     padding: 10px 16px;
     background: var(--status-varning-yta);
     border: 1px solid var(--status-varning-kant);
-    border-left: 4px solid var(--status-varning);
+    border-left: 3px solid var(--status-varning);
     border-radius: 6px;
     color: var(--status-varning);
     font-size: var(--fs-sm);
@@ -3158,7 +3144,7 @@ body.lage-kompakt .slutsats-varde, body.lage-kompakt .summary-stats > .stat-box 
 
 /* ---- Sidans topp, tät ----
    Sidhuvud, demobanderoll, inledning och urvalsrad hålls låga, så att innehållet syns högt upp på sidan. */
-.demo-mode-banner { padding: 5px 12px; margin: 0 0 12px; font-size: var(--fs-xs); border-left-width: 3px; border-radius: 6px; }
+.demo-mode-banner { padding: 5px 12px; margin: 0 0 12px; font-size: var(--fs-xs); border-radius: 6px; }
 .demo-mode-banner .demo-mode-icon { font-size: var(--fs-md); }
 .demo-mode-mer, .gdpr-banner-mer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 .demo-mode-exit { min-height: 24px; padding: 3px 10px; font-size: var(--fs-xs); }
@@ -3321,7 +3307,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 /* Versaler med bokstavsavstånd (etikett) */
 .versal.versal.versal { text-transform: uppercase; letter-spacing: 0.05em; }
 /* Varningsruta med kant till vänster */
-.notis-varning.notis-varning.notis-varning { background: var(--status-varning-yta); border-left: 3px solid var(--status-varning); border-radius: 4px; }
+.notis-varning.notis-varning.notis-varning { background: var(--status-varning-yta); border-radius: 4px; }
 /* Färgprov i förklaringen */
 .provruta.provruta.provruta { display: inline-block; height: 14px; width: 32px; border-radius: 3px; }
 /* Rader och kolumner (flex, rutnät, justering) */
@@ -3550,24 +3536,9 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .ram-b-1-kant.ram-b-1-kant.ram-b-1-kant { border-bottom: 1px solid var(--border); }
 .ram-b-1-prickad-dampad.ram-b-1-prickad-dampad.ram-b-1-prickad-dampad { border-bottom: 1px dotted var(--text-muted); }
 .tabell-samman.tabell-samman.tabell-samman { border-collapse: collapse; }
-.ram-v-3-accent.ram-v-3-accent.ram-v-3-accent { border-left: 3px solid var(--accent); }
-.ram-v-3-danger.ram-v-3-danger.ram-v-3-danger { border-left: 3px solid var(--danger); }
-.ram-v-3-granska-ljus.ram-v-3-granska-ljus.ram-v-3-granska-ljus { border-left: 3px solid var(--status-granska-ljus); }
-.ram-v-3-info.ram-v-3-info.ram-v-3-info { border-left: 3px solid var(--status-info); }
+.ram-v-3-kritisk.ram-v-3-kritisk.ram-v-3-kritisk { border-left: 3px solid var(--status-kritisk); }
 .ram-v-3-ok.ram-v-3-ok.ram-v-3-ok { border-left: 3px solid var(--status-ok); }
 .ram-v-3-varning.ram-v-3-varning.ram-v-3-varning { border-left: 3px solid var(--status-varning); }
-.ram-v-4-7c3aed.ram-v-4-7c3aed.ram-v-4-7c3aed { border-left: 4px solid #7c3aed; }
-.ram-v-4-accent.ram-v-4-accent.ram-v-4-accent { border-left: 4px solid var(--accent); }
-.ram-v-4-dampad.ram-v-4-dampad.ram-v-4-dampad { border-left: 4px solid var(--text-muted); }
-.ram-v-4-danger.ram-v-4-danger.ram-v-4-danger { border-left: 4px solid var(--danger); }
-.ram-v-4-granska-ljus.ram-v-4-granska-ljus.ram-v-4-granska-ljus { border-left: 4px solid var(--status-granska-ljus); }
-.ram-v-4-info.ram-v-4-info.ram-v-4-info { border-left: 4px solid var(--status-info); }
-.ram-v-4-ok.ram-v-4-ok.ram-v-4-ok { border-left: 4px solid var(--status-ok); }
-.ram-v-4-varning.ram-v-4-varning.ram-v-4-varning { border-left: 4px solid var(--status-varning); }
-.ram-v-farg-info.ram-v-farg-info.ram-v-farg-info { border-left-color: var(--status-info); }
-.ram-v-farg-kritisk.ram-v-farg-kritisk.ram-v-farg-kritisk { border-left-color: var(--status-kritisk); }
-.ram-v-farg-ok.ram-v-farg-ok.ram-v-farg-ok { border-left-color: var(--status-ok); }
-.ram-v-farg-primary.ram-v-farg-primary.ram-v-farg-primary { border-left-color: var(--primary); }
 .rund-0-4-4-0.rund-0-4-4-0.rund-0-4-4-0 { border-radius: 0 4px 4px 0; }
 .rund-12.rund-12.rund-12 { border-radius: 12px; }
 .rund-4.rund-4.rund-4 { border-radius: 4px; }
@@ -3669,10 +3640,6 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .bg-dampad { background: var(--text-muted) !important; }
 .bg-ok-yta { background: var(--status-ok-yta) !important; }
 .bg-info-yta { background: var(--status-info-yta) !important; }
-.bl4-ok { border-left: 4px solid var(--status-ok) !important; }
-.bl4-varning { border-left: 4px solid var(--status-varning) !important; }
-.bl4-kritisk { border-left: 4px solid var(--status-kritisk) !important; }
-.bl4-accent { border-left: 4px solid var(--accent) !important; }
 .fet { font-weight: 700 !important; }
 .halvfet { font-weight: 600 !important; }
 /* Brickor och rutor: text på sin egen botten, respektive kant till vänster. */
@@ -3682,12 +3649,12 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .bricka-granska { color: var(--status-granska) !important; background: var(--status-granska-bg) !important; }
 .bricka-info { color: var(--status-info-mork) !important; background: var(--status-info-bg) !important; }
 .bricka-neutral { color: var(--text-muted) !important; background: var(--yta-stark) !important; }
-.ruta-ok { background: var(--status-ok-bg) !important; border-left: 4px solid var(--status-ok) !important; }
-.ruta-varning { background: var(--status-varning-bg) !important; border-left: 4px solid var(--status-varning) !important; }
+.ruta-ok { background: var(--status-ok-bg) !important; border-left: 3px solid var(--status-ok) !important; }
+.ruta-varning { background: var(--status-varning-bg) !important; border-left: 3px solid var(--status-varning) !important; }
 /* Inläsningskontrollens rader: ok, varning, fel. */
-.reality-list .rc-ok.rc-ok.rc-ok { border-left: 4px solid var(--status-ok); background: var(--status-ok-bg); }
-.reality-list .rc-warn.rc-warn.rc-warn { border-left: 4px solid var(--status-varning); background: var(--status-varning-bg); }
-.reality-list .rc-err.rc-err.rc-err { border-left: 4px solid var(--status-kritisk); background: var(--status-kritisk-bg); }
+.reality-list .rc-ok.rc-ok.rc-ok { border-left: 3px solid var(--status-ok); background: var(--status-ok-bg); }
+.reality-list .rc-warn.rc-warn.rc-warn { border-left: 3px solid var(--status-varning); background: var(--status-varning-bg); }
+.reality-list .rc-err.rc-err.rc-err { border-left: 3px solid var(--status-kritisk); background: var(--status-kritisk-bg); }
 /* Rader i Lika arbete-tabellen: tonad botten för «Värt att granska» respektive «Följ upp». */
 tr.rad-granska { background: rgba(67, 56, 202, 0.08); }
 tr.rad-folj { background: rgba(245, 158, 11, 0.1); }
