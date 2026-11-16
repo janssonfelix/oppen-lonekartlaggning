@@ -148,6 +148,8 @@ function flikbyte(target, { uppskjut = false, efter = null } = {}) {
     const val = ++_flikVal, flik = tabMal(target);
     document.querySelectorAll('.view-panel[aria-busy]').forEach(p => _flikRaknas(/** @type {HTMLElement} */ (p), false));
     if (!uppskjut) { renderTabContent(target); if (efter) efter(); return; }
+    // En färdigritad flik som ingenting har ändrat visas som den är (ADR-81).
+    if (_visasSomRitad(flik)) { _visaRitad(flik); if (efter) efter(); return; }
     const paneler = /** @type {HTMLElement[]} */ ((PANEL_GROUPS[flik] || [flik]).map(p => document.getElementById('view-' + p)).filter(Boolean));
     paneler.forEach(p => _flikRaknas(p, true));
     _efterMalning(() => {
@@ -258,9 +260,59 @@ function _ritaVantandeBlock(b) {
     if (--v.antal > 0) return;
     _vantandeBlock.delete(b.flik);
     _ritadVid.set(b.flik, ritGeneration());   // nu är hela fliken ritad med det som gäller (exportgrinden)
+    _visningRitad(b.flik);
     _efterRitning(b.flik);
     for (const f of v.efter) { try { f(); } catch (e) { rapporteraFel('flikbytet: efter ritningen', e); } }
 }
+// ---- En färdigritad flik visas igen (ADR-81) ----
+// När användaren byter tillbaka till en flik som är färdigritad och ingenting har hänt sedan dess som kan ändra det den
+// visar, visas den som den är, utan omritning. Det som återanvänds är flikens ritade innehåll i sidan, aldrig ett räknat
+// resultat (ADR-17): regressionen och allt annat räknas om varje gång fliken ritas. Villkoren, alla på en gång:
+//  - visningsversionen (23-exportgrind.js) är densamma som när fliken ritades klart: ingen inmatning utom ren
+//    navigering, ingen ny generation (tröskeln, förhandsvisningen, underlaget, modellvalen), ingen inläsning,
+//    rensning eller bakgrundsberäkning som blivit klar;
+//  - fliken har inte ritats om sedan dess (dess generation i exportgrinden är densamma), och inga block väntar;
+//  - läget (skärm eller export, förhandsvisningen) och dagen är desamma.
+// Bara användarens flikbyte (det uppskjutna, ADR-80) visar en flik igen. renderTabContent anropad direkt, exportläget,
+// exportgrinden och klick från koden ritar alltid. Exportgrinden ser fliken som förut: den räknas som aktuell bara när
+// den ritats i den generation som gäller.
+/** @type {Map<string, {v: number, g: number, lage: string}>} */
+const _visadSom = new Map();   // flik → visningsversion, generation och läge när fliken senast ritades klart
+function _visningsLage() {
+    return `${state.kLage}|${document.body.classList.contains('forhandsvisning')}|${new Date().toDateString()}`;
+}
+/** Fliken är färdigritad: den visas igen så länge ingenting har ändrats. */
+function _visningRitad(flik) { _visadSom.set(flik, { v: visningsversion(), g: ritGeneration(), lage: _visningsLage() }); }
+function _visasSomRitad(flik) {
+    const r = _visadSom.get(flik);
+    return !!r && r.v === visningsversion() && _ritadVid.get(flik) === r.g && r.lage === _visningsLage()
+        && !_vantandeBlock.has(flik) && !_ritasNu.has(flik);
+}
+/** Visar fliken som den är ritad och gör det som görs efter en ritning: navigeringen längst ned, sidindexet, markeringen i tabellerna. */
+function _visaRitad(flik) {
+    if (_aktivFlik() === flik) { renderFlowNav(flik); sidindexBygg(flik); }
+    _efterRitning(flik);
+}
+// Det som räknas som en ändring: varje click, change, input, keydown, drop, paste och pointerup i sidan (också i
+// sidhuvudet och i dialogerna, och också de som koden skickar), utom ren navigering: menyns knappar och pilar, knappen
+// och skuggan för menyn på smala skärmar, sidindexets länkar, sökfältet (ett val i träfflistan som gör något annat än
+// att byta flik räknas i sokValj) och tangenter som bara flyttar fokus eller rullar sidan.
+const _VISNING_HANDELSER = ['click', 'change', 'input', 'keydown', 'drop', 'paste', 'pointerup'];
+const _VISNING_NAVIGERING = '.nav-item, #btn-meny, #meny-skugga, #sidindex, #sok-ruta';
+const _TANGENT_FOKUS = new Set(['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'PageUp', 'PageDown']);
+const _TANGENT_RULLA = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', ' ']);
+/** @param {Event} e */
+function _visningAndras(e) {
+    const el = /** @type {any} */ (e.target);
+    if (el && typeof el.closest === 'function' && el.closest(_VISNING_NAVIGERING)) return false;
+    if (e.type !== 'keydown') return true;
+    const tangent = /** @type {KeyboardEvent} */ (e).key;
+    if (_TANGENT_FOKUS.has(tangent)) return false;
+    // Pilar, Home, End och mellanslag rullar sidan när ingenting i den har fokus; i ett fält eller en kontroll räknas de.
+    return !(_TANGENT_RULLA.has(tangent) && (!el || el === document || el === document.body || el === document.documentElement));
+}
+for (const typ of _VISNING_HANDELSER) document.addEventListener(typ, e => { if (_visningAndras(e)) visningNy(); }, true);
+
 /** Det som görs när en flik har ritats: markeringen i tabellerna och autocomplete på nya fält. */
 function _efterRitning(flik) {
     if (typeof _mkTabeller === 'function' && diagramMarkering()) _mkTabeller();
@@ -309,14 +361,15 @@ function renderTabContent(target) {
     _ritasNu.add(flik);
     // Varje yttersta ritning är en ny runda: block som väntar från en tidigare ritning av fliken ritar inget.
     const runda = yttre ? (_flikRunda.get(flik) || 0) + 1 : (_flikRunda.get(flik) || 0);
-    if (yttre) { _flikRunda.set(flik, runda); _vantandeBlock.delete(flik); _blockKo.filter(b => b.flik === flik).forEach(_slappBlock); }
+    if (yttre) { _flikRunda.set(flik, runda); _vantandeBlock.delete(flik); _blockKo.filter(b => b.flik === flik).forEach(_slappBlock); _visadSom.delete(flik); }
     const uppskjut = yttre && _uppskjutNasta === flik, forra = _ritasUppskjutet;
     if (uppskjut) { _uppskjutNasta = null; _ritasUppskjutet = flik; }
     try {
         const ut = _renderTabContent(target);
         // Exportgrinden (23-exportgrind.js): fliken är ritad med det som gäller nu, eller inte färdigritad när block väntar.
-        if (uppskjut && _vantandeBlock.get(flik)?.runda === runda) _ritadVid.delete(flik);
-        else _ritadVid.set(flik, ritGeneration());
+        // Visningsminnet (ADR-81): en färdigritad flik kan visas igen så länge ingenting ändras.
+        if (uppskjut && _vantandeBlock.get(flik)?.runda === runda) { _ritadVid.delete(flik); _visadSom.delete(flik); }
+        else { _ritadVid.set(flik, ritGeneration()); _visningRitad(flik); }
         return ut;
     }
     finally {

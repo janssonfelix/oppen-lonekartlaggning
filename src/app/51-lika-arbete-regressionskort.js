@@ -544,7 +544,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
                 const kort = document.getElementById('regression-card');
                 if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !(typeof iExportLage === 'function' && iExportLage())) renderRegressionCard();
             } catch (e) { rapporteraFel('kvantilregressionens intervall', e); }
-            finally { _regKvantilBakgrund = null; resolve(); }
+            finally { _regKvantilBakgrund = null; visningNy(); resolve(); }   // intervallet är klart: Lönestruktur ritas om nästa gång (ADR-81)
         }, 0));
     }
     return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };

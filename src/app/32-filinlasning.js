@@ -138,6 +138,7 @@ function _afterDataLoaded() {
                 renderActionChecklist();
             } finally {
                 if (dataStatus) dataStatus.textContent = dataStatus.textContent.replace(DEFER_NOTE, '');
+                visningNy();   // det som räknades i bakgrunden visas när fliken ritas om (ADR-81)
             }
         }, 50);
     }, 0);
@@ -342,9 +343,12 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
  * @param {Array<Array<string>>} synonymGroups - Kolumnroller för rubrikradssökning.
  * @param {(res: {ok:true, format:string, encoding:string, headers:string[],
  *                rows:Array<Object<string,string>>}
- *             | {ok:false, error:string}) => void} callback
+ *             | {ok:false, error:string}) => void} utfall
  */
-function readTabularFile(file, synonymGroups, callback) {
+function readTabularFile(file, synonymGroups, utfall) {
+    // En fil som blivit läst kan ändra det som visas, hur det än gick: ingen ritad flik visas igen som den är (ADR-81).
+    /** @type {typeof utfall} */
+    const callback = res => { try { utfall(res); } finally { visningNy(); } };
     if (!file) { callback({ ok: false, error: 'Ingen fil vald.' }); return; }
     const reader = new FileReader();
     reader.onerror = () => callback({ ok: false, error: 'Kunde inte läsa filen.' });
@@ -612,8 +616,10 @@ function loadStructureFile(file) {
     // Läs bytes → sniffa format (XLSX/legacy XLS/text) → parsa via rätt väg.
     let detectedEnc = 'UTF-8', detectedDelim = ';';
     const _csvReader = new FileReader();
-    _csvReader.onerror = () => failLoad('Kunde inte läsa filen.');
-    _csvReader.onload = () => {
+    _csvReader.onerror = () => { failLoad('Kunde inte läsa filen.'); visningNy(); };
+    // När filen är läst (inte bara när den valdes): ingen ritad flik visas igen som den är (ADR-81).
+    _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); } };
+    const _lasLonefil = () => {
       const buf = _csvReader.result;
       const fmt = _sniffTabularFormat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
       if (fmt === 'xls-legacy') {

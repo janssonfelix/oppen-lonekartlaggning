@@ -145,7 +145,7 @@ function runRobusthet() {
     if (!host || !getData().length) return;
     host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>';
     // Låt webbläsaren rita om innan det blockerande arbetet startar.
-    setTimeout(() => { _renderRobusthetResult(host); }, 30);
+    setTimeout(() => { try { _renderRobusthetResult(host); } finally { visningNy(); } }, 30);   // resultatet är nytt (ADR-81)
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.

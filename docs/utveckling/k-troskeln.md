@@ -183,6 +183,26 @@ anropad direkt (exportgrinden, exporterna, omritningen efter ändrad tröskel, t
 (`el.click()`); ett test som vill pröva det uppskjutna flikbytet anropar `klickaFlik(nav, { uppskjut: true })`
 (`tests/flikbyte.test.js`).
 
+**Visningsminnet** (`31-navigering.js`, ADR-81). En flik som användaren byter tillbaka till visas som den är, utan
+omritning, när den är färdigritad (inga block väntar) och ingenting har hänt sedan dess som kan ändra det den visar
+(`_visasSomRitad`). Det avgörs med en räknare, visningsversionen (`visningNy`, `23-exportgrind.js`), som ökar grovt
+hellre än fint: vid varje `click`, `change`, `input`, `keydown`, `drop`, `paste` och `pointerup` i sidan, också i
+sidhuvudet och i dialogerna och också de som koden skickar, utom ren navigering (menyns knappar och pilar, knappen och
+skuggan för menyn, sidindexet, sökfältet när ett val bara byter flik, och tangenter som bara flyttar fokus eller rullar
+sidan); vid varje ny generation (`ritGenerationNy`: tröskeln, förhandsvisningen, modellvalen, underlaget) utom en exports
+tur och retur (`medExportLage`); när en flik töms (`tomFlikarUtom`), vid omritningen efter ändrad tröskel, när en fil är
+läst (lönefilen, referenserna), vid demot, ett organisationspaket, en konfigurationsfil, rensningen (också den efter en
+tid utan aktivitet), en ändrad markering och när en bakgrundsberäkning är klar (skattningarna efter ett tröskelbyte,
+kvantilregressionens intervall, inläsningens efterarbete, robusthetsanalysen). Därtill måste fliken vara ritad i samma
+läge (skärm eller export, förhandsvisningen) och samma dag, och inte ha ritats om sedan dess. Det som görs efter en
+ritning och inte är räkning görs ändå: navigeringen längst ned, sidindexet, sidtiteln, rullningen överst, markeringen
+i tabellerna och `efter`-anropen. Inget resultat återanvänds: det som visas igen är flikens innehåll i sidan, och allt
+räknas om när fliken ritas (ADR-17). Bara användarens flikbyte visar en flik igen; `renderTabContent` anropad direkt,
+exportläget, exportgrinden och klick från koden ritar alltid. Exportgrinden ser fliken som förut: den räknas som
+aktuell bara när den ritats i den generation som gäller, så en flik som visas igen efter en exports tur och retur ritas
+om innan något exporteras ur den. Vakten är `tests/visningsminne*.test.js`: för varje sorts ändring öppnas varje flik
+igen och jämförs med samma flik ritad från början, och ett test visar att en saknad ökning fälls.
+
 **Förhandsvisningen.** Knappen *Som i exporten* i sidhuvudet (`sattForhandsvisning`) sätter skärmen i exportläget —
 banner, streckad ram och omritning av det som syns — tills den stängs av. Exporterna byter då inte läge, och ett byte
 medan en export pågår avvisas.
