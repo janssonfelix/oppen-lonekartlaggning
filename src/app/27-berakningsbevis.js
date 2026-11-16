@@ -41,7 +41,7 @@ function _openEvidenceModal(p) {
         <table class="tabell-samman fs-sm bredd-100p">
             <tbody>${rowsHtml}</tbody>
         </table>
-        ${p.formula ? `<div class="bak-yta ram-v-3-granska-ljus rund-4 typsnitt-mono-ui fs-sm lh-1_5 marg-t-14 pad-10-12">${p.formula}</div>` : ''}
+        ${p.formula ? `<div class="bak-yta rund-4 typsnitt-mono-ui fs-sm lh-1_5 marg-t-14 pad-10-12">${p.formula}</div>` : ''}
         ${p.footer ? `<p class="text-dampad-sm lh-1_55 marg-14-0-0">${p.footer}</p>` : ''}
     `;
     modal.style.display = 'flex';

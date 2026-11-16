@@ -462,9 +462,9 @@ describe('typografisk skala', () => {
     });
     it('de utskrivna storlekarna blir inte fler: nya regler tar ett steg ur skalan', () => {
         const utskrivna = new Set(varden.filter(v => !v.startsWith('var(')));
-        // Utanför skalan står bara det som ligger långt från ett steg: de minsta versala etiketterna, de stora talen,
-        // utskriftens punktstorlekar och storlekar i em.
-        expect(utskrivna.size).toBeLessThanOrEqual(26);   // 26: bilagans rubrik i PDF-rapporten (16pt) bar tidigare ett style-attribut
+        // Utanför skalan står bara det som ligger långt från ett steg: de stora talen, utskriftens punktstorlekar och
+        // storlekar i em.
+        expect(utskrivna.size).toBeLessThanOrEqual(21);   // 21: de minsta etiketterna (0.65, 0.66, 0.68 och 0.72rem) och koden i granskningspanelen (0.9em) tar skalans minsta steg
         expect(varden.filter(v => v.startsWith('var(--fs-')).length).toBeGreaterThanOrEqual(230);
         // Inget utskrivet värde ligger inom 0,05 rem från ett steg: det ska då vara steget.
         const steg = [0.78, 0.86, 0.95, 1.1, 1.4, 1.6];
@@ -474,6 +474,83 @@ describe('typografisk skala', () => {
         const iSidan = new Set([...las('src/index.html').matchAll(/font-size:\s*([^;"\s]+)/g)].map(m => m[1]).filter(v => !v.startsWith('var(')));
         expect(iSidan.size).toBeLessThanOrEqual(4);
         expect([...iSidan].filter(v => /rem$/.test(v) && steg.some(s => Math.abs(parseFloat(v) - s) <= 0.0501))).toEqual([]);
+    });
+    it('ingen utskriven storlek är mindre än skalans minsta steg', () => {
+        // Text under 0.78rem (12,5 punkter) blir svårläst, särskilt versala etiketter. Storlekar i em räknas mot sin
+        // förälder och kan inte prövas här; tabellrubrikerna, KI-suffixet och koden tar därför steget i rem.
+        const iSidan = [...las('src/index.html').matchAll(/font-size:\s*([^;"\s]+)/g)].map(m => m[1]);
+        expect([...varden, ...iSidan].filter(v => /rem$/.test(v) && parseFloat(v) < 0.78)).toEqual([]);
+        const regel = sel => { const i = css.indexOf(`\n${sel} {`); return i < 0 ? '' : css.slice(i, css.indexOf('}', i)); };
+        for (const sel of ['.data-table th', '.ci-bracket']) expect(regel(sel)).toContain('font-size: var(--fs-xs);');
+        // Undantaget: PDF-rapporten har en egen skala i punkter (cellerna 9pt), och dess tabellrubriker står strax under
+        // cellerna. Med skärmens steg blev rubrikerna större än cellerna och de breda tabellerna bredare än A4-sidan.
+        const rapportRubrik = css.indexOf('#print-report table:not(.meta):not(.kpi) th {');
+        expect(css.slice(rapportRubrik, css.indexOf('}', rapportRubrik))).toContain('font-size: 8.5pt;');
+    });
+});
+
+describe('övergångarna', () => {
+    it('ingen övergång gäller all', () => {
+        // En övergång på all tonar också det som inte ska tona, som fokusringen och layouten; varje regel anger de
+        // egenskaper som dess tillstånd ändrar.
+        const css = las('src/style.css');
+        expect(css.match(/transition(-property)?:\s*all\b/g)).toBeNull();
+        expect(css.match(/--transition:\s*all\b/g)).toBeNull();
+    });
+});
+
+describe('kantränderna', () => {
+    // En rand till vänster säger ett läge: den står i statusfärg och i en bredd. Undantagen är fyra lägesmarkörer för
+    // navigeringen, som inte är kortränder och står kvar i sin form. De två sista är inset-skuggor; de står här så att
+    // de inte görs om till ränder.
+    const LAGESMARKORER = [
+        '.sidindex-lista',      // sidindexet: avsnittet du står i
+        '.jmf-block',           // jämförelsetabellens avdelare mellan blocken
+        '.nav-item.active',     // den aktiva fliken i menyn
+        'tr.rad-markerad',      // den markerade tabellraden
+    ];
+    it('kantränder står bara i statusfärg och i en bredd', () => {
+        const css = las('src/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
+        const fel = [];
+        for (const [, sel, kropp] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+            const s = sel.trim();
+            if (s === ':root' || LAGESMARKORER.some(m => s.includes(m))) continue;
+            for (const [dekl, bredd, farg] of kropp.matchAll(/border-left:\s*(\d+)px\s+[a-z]+(?:\s+var\((--[\w-]+)\))?/g)) {
+                if (Number(bredd) <= 1) continue;   // en avdelare på 1 px (fältets enhet, väljarens kant) är ingen rand
+                if (Number(bredd) !== 3 || !(farg || '').startsWith('--status-')) fel.push(`${s} { ${dekl} }`);
+            }
+            for (const [dekl, farg] of kropp.matchAll(/border-left-color:\s*var\((--[\w-]+)\)/g))
+                if (!farg.startsWith('--status-')) fel.push(`${s} { ${dekl} }`);
+            for (const [dekl] of kropp.matchAll(/border-left-(?:width|style):[^;}]+/g)) fel.push(`${s} { ${dekl} }`);
+            // Ingen rand överst på ett kort heller (uppladdningsrutorna och organisationspaketet hade en).
+            for (const [dekl, bredd] of kropp.matchAll(/border-top:\s*(\d+)px[^;}]*/g)) if (Number(bredd) > 1) fel.push(`${s} { ${dekl} }`);
+        }
+        expect(fel).toEqual([]);
+    });
+    it('mallarna sätter randen med hjälpklasserna på 3 px', () => {
+        const filer = readdirSync(join(rot, 'src', 'app')).filter(f => /^\d\d-.*\.js$/.test(f) && f !== '09-lib-speglar.js');
+        const fel = [];
+        for (const f of [...filer.map(f => `src/app/${f}`), 'src/index.html']) {
+            const text = las(f);
+            for (const m of text.matchAll(/\b(ram-v-4-[\w-]+|bl4-[\w$-]+|ram-v-farg-[\w-]+)/g)) fel.push(`${f}: ${m[1]}`);
+            for (const m of text.matchAll(/border-left:\s*(\d+)px/g)) if (m[1] !== '3') fel.push(`${f}: ${m[0]}`);
+        }
+        expect(fel).toEqual([]);
+    });
+    it('där bara färgen visade läget står också en ikon och ett ord', () => {
+        const d = allaFlikar().document;
+        const ORD = /^(OK|Varning|Kritisk|Att känna till)$/;
+        const marken = [
+            ...d.querySelectorAll('#fardigcheck-body .fc-item'),
+            ...[...d.querySelectorAll('.ruta-ok, .ruta-varning')],
+            d.querySelector('#view-benchmark .lp-tackning'),
+        ];
+        expect(marken.length).toBeGreaterThan(3);
+        const fel = marken.filter(el => {
+            const m = el && el.querySelector('.uk-marke');
+            return !m || !ORD.test(m.textContent.trim()) || !m.querySelector('svg.ikon[aria-hidden="true"]');
+        });
+        expect(fel.map(el => (el ? el.className : 'saknas'))).toEqual([]);
     });
 });
 
@@ -655,4 +732,16 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         w.eval('bes8Stod()');
         expect(rader().map(l => l.textContent.trim())).toEqual(fast);
     }, 30000);
+});
+
+describe('fokusmarkeringen', () => {
+    const css = las('src/style.css');
+    it('*:focus-visible står en gång i stilmallen', () => {
+        expect(css.match(/^\*:focus-visible\s*\{/gm)).toHaveLength(1);
+    });
+    it('fältkomponentens fokusring har verktygets accent, inte den ljusa kanten', () => {
+        const regel = css.match(/^\.falt-rad:focus-within\s*\{[^}]*\}/m)[0];
+        expect(regel).toContain('box-shadow: 0 0 0 2px var(--primary)');
+        expect(regel).not.toContain('--accent-kant');
+    });
 });

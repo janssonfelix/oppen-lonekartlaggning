@@ -7,7 +7,7 @@
    som öppnar en modal med formel + ingångsdata för en specifik rad. */
 .btn-evidence {
     background: transparent;
-    border: 1px solid var(--border, #e2e8f0);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 2px 8px;
     cursor: pointer;
@@ -16,11 +16,11 @@
     transition: background 0.15s, border-color 0.15s;
 }
 .btn-evidence:hover {
-    background: var(--secondary, #e8ecfa);
-    border-color: var(--primary, #1d4ed8);
+    background: var(--secondary);
+    border-color: var(--primary);
 }
 .btn-evidence:focus-visible {
-    outline: 2px solid var(--primary, #1d4ed8);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 
@@ -30,15 +30,15 @@
 #reality-check {
     margin: 16px 0;
     padding: 16px 18px;
-    border-radius: var(--radius, 12px);
-    background: var(--bg-card, #fff);
-    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
-    border: 1px solid var(--border, #e2e8f0);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
 }
-#reality-check.all-ok  { border-left: 4px solid var(--status-ok); }
-#reality-check.has-warn { border-left: 4px solid var(--status-varning); }
-#reality-check.has-err  { border-left: 4px solid var(--status-kritisk); background: var(--status-kritisk-yta); }
-#reality-check h3 { font-size: var(--fs-lg); color: var(--text-main, #1e293b); }
+#reality-check.all-ok  { border-left: 3px solid var(--status-ok); }
+#reality-check.has-warn { border-left: 3px solid var(--status-varning); }
+#reality-check.has-err  { border-left: 3px solid var(--status-kritisk); background: var(--status-kritisk-yta); }
+#reality-check h3 { font-size: var(--fs-lg); color: var(--text-main); }
 
 :root {
     /* Typografisk skala: sex steg. Nya regler tar ett av dem; tests/granssnitt.test.js räknar de värden som står
@@ -59,7 +59,9 @@
     --status-varning: #b45309;
     --status-ok: #0f766e;
     /* Brickornas ljusa botten, och «titta här först» (lila) och upplysning (blå). Samma värden som FARG i
-       src/app/01-farger.js; tests/farger.test.js håller de två lika och hexkoderna borta från resten av stilmallen. */
+       src/app/01-farger.js; tests/farger.test.js håller de två lika och hexkoderna borta från resten av stilmallen.
+       Upplysningsfärgen --status-info når inte 4,5:1 och står bara som botten, kant och diagrammarkör; som text tar
+       den --status-info-mork (tests/farger.test.js håller --status-info borta från color). */
     --status-kritisk-bg: #fee2e2;
     --status-varning-bg: #fef3c7;
     --status-ok-bg: #ecfdf5;
@@ -89,6 +91,7 @@
     --accent-mork: #1e3a8a;
     --accent-yta: #eff6ff;
     --accent-kant: #bfdbfe;
+    --accent-ring: color-mix(in srgb, var(--accent) 20%, transparent);   /* fokusringens yttre skugga */
     --danger: #b91c1c; /* samma som --status-kritisk */
     --warning-bg: #fef2f2; /* samma som --status-kritisk-yta */
     --border: #e1e5ec; /* hårlinje */
@@ -96,10 +99,11 @@
     --shadow: 0 1px 2px 0 rgba(16, 24, 40, 0.05);   /* kort ligger på sidan, de svävar inte */
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --radius: 10px;
+    --sidindex-hojd: 58px;    /* sidindexradens höjd tills 89-sidindex.js har mätt den */
     --meny-bg: #141a2e;       /* menyn: mörk, så att sidans innehåll får vara det ljusa */
     --meny-text: #c9d0e0;
     --meny-dampad: #7d879e;
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --meny-aktiv: #3350c4;    /* den aktiva fliken i menyn */
 }
 
 * {
@@ -108,9 +112,12 @@
     box-sizing: border-box;
 }
 
+/* Tydlig keyboard-fokus utan att störa mus-användare */
+*:focus { outline: none; }
 *:focus-visible {
-    outline: 3px solid var(--primary);
+    outline: 3px solid var(--accent);
     outline-offset: 2px;
+    border-radius: 3px;
 }
 
 /* Accessibility: Skip Link */
@@ -191,7 +198,8 @@ body {
 
 .nav-group {
     padding: 8px 24px 2px;
-    font-size: 0.66rem;
+    font-size: var(--fs-xs);
+    line-height: 1.3;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.09em;
@@ -205,7 +213,11 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 6px 12px;   /* 16 flikar och sex grupper ryms i ett fönster 800 punkter högt */
+    /* 16 flikar och sex grupper ryms i ett fönster 800 punkter högt, med drygt 50 punkters luft för bredare och högre
+       typsnitt: raden är 30 punkter (ikonen och 5 + 5 punkter), och radhöjden står utskriven så att den inte följer
+       typsnittets egen (normal). */
+    padding: 5px 12px;
+    line-height: 1.3;
     margin: 0 10px;
     background: none;
     border: none;
@@ -225,7 +237,7 @@ body {
 }
 
 .nav-item.active, .nav-item.active:hover:not([aria-disabled="true"]) {
-    background-color: #3350c4;
+    background-color: var(--meny-aktiv);
     color: white;
     font-weight: 600;
     box-shadow: inset 3px 0 0 var(--status-granska-kant);
@@ -257,7 +269,7 @@ body {
    Överst urvalsraden, slutsatserna och ett huvuddiagram; därefter avsnitt som fälls ut. Ett hopfällt avsnitt är
    fortfarande ritat — exporterna läser tabellerna ur sidan — det visas bara inte. */
 .urvalsrad { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 0 0 14px; padding: 8px 14px;
-    font-size: var(--fs-sm); color: var(--text-muted, #475569); background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 8px; }
+    font-size: var(--fs-sm); color: var(--text-muted); background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
 .urvalsrad:empty, .slutsatser:empty { display: none; }
 /* Flikbytet: rita först, räkna sedan (ADR-80, 31-navigering.js). Medan fliken räknas står en rad överst, och det som
    stod i panelen sedan förra gången döljs, så att inget inaktuellt tal syns. Ett block som ritas efter fliken har en
@@ -266,24 +278,24 @@ body {
 .flik-raknas, .block-raknas { margin: 0 0 14px; padding: 8px 14px; font-size: var(--fs-sm); color: var(--text-muted);
     background: var(--yta); border: 1px dashed var(--border-stark); border-radius: 8px; }
 .block-raknas { display: block; margin: 8px 0; }
-.urvalsrad strong { color: var(--text-main, #0f172a); font-weight: 600; }
+.urvalsrad strong { color: var(--text-main); font-weight: 600; }
 .slutsatser { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 0 0 16px; }
-.slutsats { background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }
-.slutsats-etikett { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #475569); }
+.slutsats { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.slutsats-etikett { font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
 .slutsats-varde { font-size: 1.7rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin: 4px 0 2px; }
-.slutsats-under { font-size: var(--fs-xs); color: var(--text-muted, #475569); }
-.slutsats-under.ar-kritisk { color: var(--status-kritisk, #b91c1c); font-weight: 600; }
+.slutsats-under { font-size: var(--fs-xs); color: var(--text-muted); }
+.slutsats-under.ar-kritisk { color: var(--status-kritisk); font-weight: 600; }
 /* En skillnad över 5 % är statusen Värt att granska: samma lila som i tabellerna, inte rött. */
 .slutsats-under.ar-granska, .avsnitt-nyckel.ar-granska { color: var(--status-granska); font-weight: 600; }
-.avsnitt-rubrikrad { margin: 22px 0 8px 2px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted, #475569); }
+.avsnitt-rubrikrad { margin: 22px 0 8px 2px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
 details.avsnitt { margin: 0 0 10px; }
-details.avsnitt:not(.card) { background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: var(--radius); padding: 0 24px; box-shadow: var(--shadow-sm); }
+details.avsnitt:not(.card) { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0 24px; box-shadow: var(--shadow-sm); }
 details.avsnitt > summary { display: flex; align-items: center; gap: 12px; cursor: pointer; list-style: none; padding: 4px 0; }
 details.avsnitt:not(.card) > summary { padding: 16px 0; }
 details.avsnitt > summary::-webkit-details-marker { display: none; }
 details.avsnitt > summary::before { content: ''; flex: none; width: 8px; height: 8px; margin: 0 4px 0 2px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 0.15s; }
 details.avsnitt[open] > summary::before { transform: rotate(45deg); }
-details.avsnitt > summary:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 4px; border-radius: 4px; }
+details.avsnitt > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 4px; }
 details.avsnitt[open] > summary { margin-bottom: 14px; }
 .avsnitt-titel { flex: 1 1 auto; min-width: 0; }
 details.avsnitt .avsnitt-titel h2 { display: inline; margin: 0; font-size: var(--fs-lg); }   /* samma storlek i och utanför kort */
@@ -293,14 +305,14 @@ details.avsnitt .avsnitt-titel h3 { display: inline; margin: 0; font-size: var(-
 .avsnitt-nyckel .ikon { vertical-align: -3px; }
 .avsnitt-nyckel.ar-bedomd { color: var(--text-main); font-weight: 600; }
 .avsnitt-nyckel.ar-bedomd.ar-kritisk { color: var(--status-kritisk); }
-.avsnitt-under { display: block; font-size: var(--fs-sm); color: var(--text-muted, #475569); font-weight: 400; }
-.avsnitt-nyckel { flex: none; font-size: var(--fs-sm); color: var(--text-muted, #475569); text-align: right; }
-.avsnitt-nyckel.ar-kritisk { color: var(--status-kritisk, #b91c1c); font-weight: 600; }
+.avsnitt-under { display: block; font-size: var(--fs-sm); color: var(--text-muted); font-weight: 400; }
+.avsnitt-nyckel { flex: none; font-size: var(--fs-sm); color: var(--text-muted); text-align: right; }
+.avsnitt-nyckel.ar-kritisk { color: var(--status-kritisk); font-weight: 600; }
 /* Fältkomponenten: etikett ovanför, fält, och enheten som suffix i samma ruta (en text eller en väljare). */
 .falt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .falt-etikett { font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
 .falt-rad { display: inline-flex; align-items: stretch; border: 1px solid var(--border-stark); border-radius: 6px; background: var(--bg-card); overflow: hidden; width: fit-content; max-width: 100%; }
-.falt-rad:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent-kant); }
+.falt-rad:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
 .falt-rad > input.form-input { width: 6.5em; border: 0; border-radius: 0; background: none; padding: 8px 10px; font: inherit; font-size: var(--fs-md); text-align: right; font-variant-numeric: tabular-nums; outline: none; }
 .falt-rad > select.form-select { width: auto; border: 0; border-left: 1px solid var(--border); border-radius: 0; background-color: var(--yta); padding-top: 8px; padding-bottom: 8px; font-size: var(--fs-sm); outline: none; }
 .falt-enhet { display: flex; align-items: center; padding: 0 10px; border-left: 1px solid var(--border); background: var(--yta); color: var(--text-muted); font-size: var(--fs-sm); white-space: nowrap; }
@@ -322,7 +334,7 @@ fieldset.falt-grupp > legend { padding: 0 6px; font-size: var(--fs-sm); font-wei
 /* Löneöversyn: de två värden scenariot börjar med står bredvid varandra, före utfallet. */
 .lo-scenario { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0 16px; }
 .avsnitt-verktyg-rubrik { font-weight: 600; font-size: var(--fs-md); }
-.avsnitt-inledning { font-size: var(--fs-sm); color: var(--text-muted, #475569); line-height: 1.6; margin: 0 0 12px; }
+.avsnitt-inledning { font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.6; margin: 0 0 12px; }
 details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 @media (prefers-reduced-motion: reduce) { details.avsnitt > summary::before { transition: none; } }
 @media print { details.avsnitt > summary::before { display: none; } }
@@ -330,8 +342,8 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 /* Mallen för ett diagramkort: rubrik, en rad förklaring, diagrammet, en not. */
 .diagramkort { margin: 0 0 16px; }
 .diagramkort-rubrik { margin: 0 0 4px; font-size: var(--fs-lg); font-weight: 600; }
-.diagramkort-forklaring { margin: 0 0 10px; font-size: var(--fs-sm); color: var(--text-muted, #475569); line-height: 1.5; }
-.diagramkort-not { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--text-muted, #475569); }
+.diagramkort-forklaring { margin: 0 0 10px; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
+.diagramkort-not { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--text-muted); }
 /* Metodförbehåll under ett diagram (_setDiagramMetodNot): dämpad text, skild från k-noten och utan dess lås. */
 .metod-not { margin: 6px 0 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--text-muted); font-style: italic; }
 /* Lika arbetes huvudvy: tabell med inbyggd grafik (kvoten ritad i raden mot 100 %). */
@@ -363,10 +375,10 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 
 /* Linjeikoner (03-ikoner.js): i textens färg, på textens baslinje. Statusmärkena har egen färg och egen form. */
 .ikon { display: inline-block; vertical-align: -0.16em; flex: none; }
-.ikon-statusKritisk { color: var(--status-kritisk, #b91c1c); }
-.ikon-statusVarning { color: var(--status-varning, #b45309); }
-.ikon-statusOsaker  { color: var(--status-varning, #b45309); }
-.ikon-statusIngen   { color: var(--text-muted, #64748b); }
+.ikon-statusKritisk { color: var(--status-kritisk); }
+.ikon-statusVarning { color: var(--status-varning); }
+.ikon-statusOsaker  { color: var(--status-varning); }
+.ikon-statusIngen   { color: var(--text-muted); }
 
 /* Sidhuvudets knappar hålls ihop till höger och bryts som en enhet när fliknamnet är långt. */
 .header-knappar { display: flex; gap: 8px; flex-wrap: nowrap; margin-left: auto; }
@@ -454,7 +466,7 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 .sidindex { order: -1; font-size: var(--fs-sm); }
 @media (max-width: 1919px) {
     .sidindex { position: sticky; top: 0; z-index: 25; background: var(--bg-main); padding: 8px 0; margin: -8px 0 6px; }
-    .content-body.har-sidindex :is(details.avsnitt, .card) { scroll-margin-top: calc(var(--sidindex-hojd, 58px) + 8px); }
+    .content-body.har-sidindex :is(details.avsnitt, .card) { scroll-margin-top: calc(var(--sidindex-hojd) + 8px); }
     .sidindex-ram[open] .sidindex-lista { max-height: 50vh; overflow-y: auto; }
 }
 .sidindex-nu { font-weight: 500; color: var(--primary); }
@@ -523,7 +535,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     text-align: center;
     background-color: var(--bg-main);
     cursor: pointer;
-    transition: var(--transition);
+    transition: border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
 }
 
@@ -575,7 +587,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 }
 
 .stat-box h3, .stat-box .stat-etikett {
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-muted);
     margin-bottom: 6px;
@@ -616,7 +628,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 .data-table th {
     background-color: var(--yta);
     font-weight: 600;
-    font-size: 0.78em;
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--text-muted);
@@ -764,13 +776,12 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     padding: 16px;
     border-radius: 4px;
     background-color: var(--secondary);
-    border-left: 4px solid var(--primary);
     font-size: var(--fs-md);
 }
 
 .insight-box.warning {
     background-color: var(--warning-bg);
-    border-left-color: var(--danger);
+    border-left: 3px solid var(--status-kritisk);
 }
 
 /* Info tooltip icon */
@@ -783,7 +794,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     border-radius: 50%;
     background: var(--secondary);
     color: var(--primary);
-    font-size: 0.65rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     cursor: help;
     margin-left: 5px;
@@ -840,14 +851,13 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     display: flex;
     align-items: center;
     gap: 16px;
-    border-left: 4px solid var(--border);
-    transition: var(--transition);
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.compliance-card.ok    { border-left-color: var(--status-ok); }
-.compliance-card.warn  { border-left-color: var(--status-varning); }
-.compliance-card.crit  { border-left-color: var(--danger); }
+.compliance-card.ok    { border-left: 3px solid var(--status-ok); }
+.compliance-card.warn  { border-left: 3px solid var(--status-varning); }
+.compliance-card.crit  { border-left: 3px solid var(--status-kritisk); }
 /* Ett kort utan underlag är dämpat i färgerna, inte genomskinligt: genomskinlighet sänker textens kontrast under 4,5:1. */
-.compliance-card.na    { border-left-color: var(--border); background: var(--yta); }
+.compliance-card.na    { background: var(--yta); }
 .compliance-card.na .comp-value { color: var(--text-muted); }
 .comp-icon { font-size: var(--fs-nyckeltal); width: 32px; text-align: center; flex-shrink: 0; }
 .compliance-card.ok   .comp-icon { color: var(--status-ok); }
@@ -857,7 +867,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 .comp-body { flex: 1; min-width: 0; }
 .comp-label { font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .comp-value { font-size: var(--fs-md); font-weight: 700; color: var(--text-main); margin-top: 3px; }
-.comp-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+.comp-sub { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
 
 /* ----- Kompakt horisontell upload-rad ----- */
 .upload-row {
@@ -867,7 +877,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin-bottom: 20px;
 }
 @media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
-.paket-forst { margin: 0 0 14px; border-top: 3px solid var(--primary); }
+.paket-forst { margin: 0 0 14px; }
 .steg-nr { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 10px; background: var(--primary); color: #fff; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; }
 /* Organisationspaket (ADR-28) */
 .paket-innehall { padding: 12px 4px; line-height: 1.6; font-size: var(--fs-sm); }
@@ -884,15 +894,13 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     background: var(--bg-card);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
-    border-top: 3px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: var(--transition);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.upload-cell.required { border-top-color: var(--danger); }
-.upload-cell.optional { border-top-color: var(--text-blek); }
-.upload-cell.loaded   { border-top-color: var(--status-ok); box-shadow: 0 4px 6px -1px rgba(16,185,129,0.1), var(--shadow-sm); }
+/* Läget står i brickan (.upload-badge); rutan har ingen rand. */
+.upload-cell.loaded   { box-shadow: 0 4px 6px -1px rgba(16,185,129,0.1), var(--shadow-sm); }
 
 .upload-cell-header {
     display: flex;
@@ -909,7 +917,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     gap: 6px;
 }
 .upload-badge {
-    font-size: 0.65rem;
+    font-size: var(--fs-xs);
     padding: 3px 8px;
     border-radius: 12px;
     text-transform: uppercase;
@@ -973,7 +981,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     background: var(--bg-main);
     padding: 1px 4px;
     border-radius: 3px;
-    font-size: 0.92em;
+    font-size: var(--fs-xs);
 }
 
 /* GDPR-banner kompakt på dashboard */
@@ -983,7 +991,6 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     gap: 12px;
     padding: 10px 14px;
     background: linear-gradient(135deg, var(--status-ok-bg) 0%, var(--status-ok-yta) 100%);
-    border-left: 3px solid var(--status-ok);
     border-radius: 6px;
     font-size: var(--fs-sm);
     color: var(--status-ok);
@@ -1018,7 +1025,6 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin: 0 0 18px;
     background: var(--status-granska-bg);
     border: 1px solid var(--status-granska-kant);
-    border-left: 4px solid var(--status-granska-ljus);
     border-radius: 8px;
 }
 .bakgrund-panel summary {
@@ -1244,11 +1250,11 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin-top: 14px;
     padding: 12px 16px;
     background: var(--status-varning-yta);
-    border-left: 4px solid var(--status-varning);
+    border-left: 3px solid var(--status-varning);
     border-radius: 6px;
     font-size: var(--fs-sm);
 }
-.consistency-banner.ok { background: var(--status-ok-bg); border-left-color: var(--status-ok); }
+.consistency-banner.ok { background: var(--status-ok-bg); border-left: 3px solid var(--status-ok); }
 .consistency-banner strong { display: block; margin-bottom: 6px; }
 .consistency-banner ul { margin: 4px 0 0 20px; padding: 0; }
 .consistency-banner li { margin-bottom: 3px; line-height: 1.5; }
@@ -1258,7 +1264,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin-bottom: 12px;
     padding: 12px 16px;
     background: var(--status-varning-yta);
-    border-left: 4px solid var(--status-varning);
+    border-left: 3px solid var(--status-varning);
     border-radius: 6px;
 }
 .fk-vantar p { margin: 0 0 10px; line-height: 1.5; }
@@ -1313,12 +1319,11 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     gap: 14px;
     padding: 14px 18px;
     border-radius: 8px;
-    border-left: 4px solid;
     min-width: 230px;
 }
-.reg-verdict.ok   { background: var(--status-ok-bg); border-left-color: var(--status-ok); }
-.reg-verdict.warn { background: var(--status-varning-yta); border-left-color: var(--status-varning); }
-.reg-verdict.crit { background: var(--status-kritisk-yta); border-left-color: var(--status-kritisk); }
+.reg-verdict.ok   { background: var(--status-ok-bg); border-left: 3px solid var(--status-ok); }
+.reg-verdict.warn { background: var(--status-varning-yta); border-left: 3px solid var(--status-varning); }
+.reg-verdict.crit { background: var(--status-kritisk-yta); border-left: 3px solid var(--status-kritisk); }
 .verdict-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; }
 .verdict-title {
     font-size: var(--fs-lg);
@@ -1345,12 +1350,10 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     padding: 10px 14px;
     background: white;
     border-radius: 6px;
-    border-left: 3px solid var(--text-blek);
 }
-.reg-waterfall-step.step-final.ok   { background: var(--status-ok-bg); border-left-color: var(--status-ok); }
-.reg-waterfall-step.step-final.warn { background: var(--status-varning-yta); border-left-color: var(--status-varning); }
-.reg-waterfall-step.step-final.crit { background: var(--status-kritisk-yta); border-left-color: var(--status-kritisk); }
-.reg-waterfall-step.step-yrke { border-left-style: dashed; }
+.reg-waterfall-step.step-final.ok   { background: var(--status-ok-bg); border-left: 3px solid var(--status-ok); }
+.reg-waterfall-step.step-final.warn { background: var(--status-varning-yta); border-left: 3px solid var(--status-varning); }
+.reg-waterfall-step.step-final.crit { background: var(--status-kritisk-yta); border-left: 3px solid var(--status-kritisk); }
 .reg-waterfall-step .step-note { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.5; }
 .reg-waterfall-step .step-name {
     font-size: var(--fs-sm);
@@ -1608,7 +1611,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 .audit-content .audit-section { margin-bottom: 18px; }
 .audit-content .audit-section:last-child { margin-bottom: 0; }
 .audit-content .audit-section-header {
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -1630,7 +1633,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     background: var(--border);
     padding: 1px 5px;
     border-radius: 3px;
-    font-size: 0.9em;
+    font-size: var(--fs-xs);
 }
 
 /* ----- Sortbara kolumner ----- */
@@ -1709,7 +1712,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     border: 1px solid transparent;
     cursor: pointer;
     font-size: var(--fs-md);
-    transition: var(--transition);
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
 }
 .row-cross-link:hover {
@@ -1775,8 +1778,7 @@ tr.row-highlighted td { animation: rowHighlight 3s ease-out; }
     line-height: 1.5;
     color: var(--text-muted);
     background: rgba(148, 163, 184, 0.08);
-    border-left: 3px solid var(--text-blek);
-    border-radius: 0 4px 4px 0;
+    border-radius: 4px;
 }
 /* Låset är linjeikonen «las» ritad med två pseudo-element i textens färg, utan bild: bygeln (en båge utan underkant)
    och kroppen (en kantad rektangel), 14 × 14 i notens vänsterkant. */
@@ -1820,7 +1822,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     background: var(--status-varning-yta);
     color: var(--status-varning);
     border: 1px solid var(--status-varning-kant);
-    border-left: 5px solid #f97316;
+    border-left: 3px solid var(--status-varning);
     border-radius: 8px;
     font-size: var(--fs-sm);
     line-height: 1.45;
@@ -1866,7 +1868,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 
 /* #10 Bootstrap CI-suffix på lönegapssiffror */
 .ci-bracket {
-    font-size: 0.78em;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     font-weight: 400;
     margin-left: 4px;
@@ -1877,7 +1879,6 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 /* #13 Motivation-suggestion-block i prio-tabellen */
 .motivation-suggestions {
     background: var(--yta);
-    border-left: 3px solid var(--text-blek);
     padding: 10px 14px;
     margin-top: 6px;
     border-radius: 4px;
@@ -1909,7 +1910,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     font-size: var(--fs-sm);
     cursor: pointer;
     color: var(--text-main);
-    transition: all 120ms;
+    transition: background-color 120ms, border-color 120ms, color 120ms;
 }
 .info-section-btn:hover { background: var(--bg-main); }
 .info-section-btn.active {
@@ -1973,17 +1974,15 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     font-size: 0.88em;
 }
 .info-tab-content blockquote {
-    border-left: 3px solid var(--primary);
     background: var(--yta);
     padding: 10px 14px;
     margin: 12px 0;
-    border-radius: 0 6px 6px 0;
+    border-radius: 6px;
 }
 .info-build-card {
     background: var(--status-ok-yta);
-    border-left: 4px solid var(--status-ok);
     padding: 12px 16px;
-    border-radius: 0 6px 6px 0;
+    border-radius: 6px;
     margin: 12px 0;
     font-family: 'SF Mono', Consolas, monospace;
     font-size: var(--fs-sm);
@@ -2017,7 +2016,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 .ptrack-status { font-size: var(--fs-lg); line-height: 1.35; flex-shrink: 0; }
 .ptrack-body { flex: 1; min-width: 0; }
 .ptrack-detail { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
-.ptrack-goto { margin-top: 5px; background: transparent; border: 1px solid var(--border); color: var(--primary); padding: 2px 10px; border-radius: 4px; cursor: pointer; font-size: var(--fs-xs); }
+.ptrack-goto { display: inline-flex; align-items: center; min-height: 24px; margin-top: 5px; background: transparent; border: 1px solid var(--border); color: var(--primary); padding: 2px 10px; border-radius: 4px; cursor: pointer; font-size: var(--fs-xs); }
 .ptrack-goto:hover { background: var(--primary); color: #fff; }
 
 /* Löneöversyn — riktade pott-rader */
@@ -2078,14 +2077,14 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     background: rgba(248, 250, 252, 0.82); cursor: progress;
 }
 .omritning-ruta p {
-    margin: 0; padding: 16px 22px; font-size: var(--fs-md); color: var(--text-main, #0f172a);
-    background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 10px;
+    margin: 0; padding: 16px 22px; font-size: var(--fs-md); color: var(--text-main);
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
 }
 
 /* Tangentbord i diagrammen: ritytan när den har fokus, och märket man står på. */
 svg [data-del="rityta"]:focus { outline: none; }
-svg [data-del="rityta"]:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; }
+svg [data-del="rityta"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 svg [data-fokus] { stroke: var(--text-main); stroke-width: 2.5px; stroke-opacity: 1; }
 /* Punkten närmast pekaren (diagramkärnan): en tunn ring visar vilken punkt verktygstipset gäller. */
 svg [data-nara] { stroke: var(--text-main); stroke-width: 2px; stroke-opacity: 1; }
@@ -2100,12 +2099,12 @@ svg [data-nara] { stroke: var(--text-main); stroke-width: 2px; stroke-opacity: 1
     border: 1px solid var(--status-granska-kant); border-radius: var(--radius);
 }
 /* Under sidindexets rad (89-sidindex.js), som också följer med överst smalare än 1920 punkter. */
-@media (max-width: 1919px) { .content-body.har-sidindex > .markering-rad { top: calc(var(--sidindex-hojd, 58px) + 2px); } }
+@media (max-width: 1919px) { .content-body.har-sidindex > .markering-rad { top: calc(var(--sidindex-hojd) + 2px); } }
 .markering-rad > span { font-weight: 600; margin-right: auto; }
 @media print { .markering-rad { display: none !important; } }
 /* Tabellrader för en markerad grupp. */
 tr.rad-markerad td { background: var(--accent-yta); box-shadow: inset 0 1px 0 var(--accent-kant), inset 0 -1px 0 var(--accent-kant); }
-tr.rad-markerad td:first-child { box-shadow: inset 3px 0 0 var(--primary, #1d4ed8), inset 0 1px 0 var(--accent-kant), inset 0 -1px 0 var(--accent-kant); }
+tr.rad-markerad td:first-child { box-shadow: inset 3px 0 0 var(--primary), inset 0 1px 0 var(--accent-kant), inset 0 -1px 0 var(--accent-kant); }
 @media print { tr.rad-markerad td, tr.rad-markerad td:first-child { background: none; box-shadow: none; } }
 /* Penslat område i ett punktdiagram (dra över punkterna). */
 svg rect[data-del="pensel"] { pointer-events: none; }
@@ -2236,7 +2235,7 @@ textarea:focus-visible,
 summary:focus-visible {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
-    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 0 0 5px var(--accent-ring);
 }
 
 /* High-contrast mode-stöd (Windows High Contrast) */
@@ -2271,13 +2270,6 @@ summary:focus-visible {
     text-decoration: none;
 }
 
-/* Tydlig keyboard-fokus utan att störa mus-användare */
-*:focus { outline: none; }
-*:focus-visible {
-    outline: 3px solid var(--accent);
-    outline-offset: 2px;
-    border-radius: 3px;
-}
 .nav-item:focus-visible {
     outline: 3px solid var(--status-varning-kant);
     outline-offset: -3px;
@@ -2299,7 +2291,6 @@ summary:focus-visible {
     padding: 12px 16px;
     background: var(--accent-yta);
     border: 1px solid var(--accent-kant);
-    border-left: 4px solid var(--accent);
     border-radius: 8px;
     font-size: var(--fs-sm);
     line-height: 1.5;
@@ -2347,7 +2338,7 @@ summary:focus-visible {
     font-family: inherit;
     white-space: nowrap;
 }
-.flow-next-btn:hover { background: var(--primary-dark, #1e40af); }
+.flow-next-btn:hover { background: var(--primary-hover); }
 @media print { .flow-next-bar, .first-run-hint { display: none !important; } }
 
 .export-hub-row {
@@ -2366,7 +2357,7 @@ summary:focus-visible {
 /* Exporterna som en lista: en rad per underlag, med vad det innehåller och knappen till höger. */
 .export-lista { display: grid; gap: 8px; }
 .export-lista .export-hub-row .btn { min-width: 150px; justify-content: center; }
-.export-rad-primar { border-color: var(--primary, #1d4ed8); background: var(--yta); }
+.export-rad-primar { border-color: var(--primary); background: var(--yta); }
 /* PDF-raden: organisationens namn står under beskrivningen och förklaringen (S9 i punkt 26), så att texten har radens
    hela bredd som i Word-raden; knappen står kvar till höger. */
 .export-hub-row .export-org { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 360px; margin-top: 8px; }
@@ -2376,16 +2367,16 @@ summary:focus-visible {
 .export-hub-row .export-org-forklaring { margin-top: 4px; }
 /* Raden under exporterna: flikarna med egna underlag, som länkar. */
 .export-fler { margin: 12px 2px 0; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
-.export-fler a { color: var(--primary, #1d4ed8); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--border); }
+.export-fler a { color: var(--primary); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--border); }
 .export-fler a:hover { text-decoration-color: currentColor; }
 @media print { #export-hub { display: none !important; } }
 
 /* #UX Handlingsplansmall: förifyllda (read-only) rader vs fyllbara tomrader */
 #handlingsplan-tbody .handlingsplan-seeded > td { background: var(--accent-yta); }
-#handlingsplan-tbody .handlingsplan-seeded > td:first-child { border-left: 3px solid var(--accent); font-weight: 500; }
+#handlingsplan-tbody .handlingsplan-seeded > td:first-child { font-weight: 500; }
 /* De tomma raderna är till för att fylla i för hand: de finns på utskriften (och i Excel-filen), inte på skärmen,
    där de ser ut som ett formulär som inte går att skriva i. */
-#handlingsplan-tbody .handlingsplan-egen > td:first-child { border-left-color: var(--text-muted); font-weight: 400; }
+#handlingsplan-tbody .handlingsplan-egen > td:first-child { font-weight: 400; }
 #handlingsplan-tbody .hp-ta-bort { margin-left: 6px; }
 #handlingsplan-tbody .handlingsplan-empty { display: none; }
 #handlingsplan-tbody .handlingsplan-empty > td { height: 40px; }
@@ -2396,7 +2387,7 @@ summary:focus-visible {
 .handlingsplan-varning { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--status-varning); }
 /* Dialogen Sakliga skäl (57-sakliga-skal.js) */
 .hp-skal { margin-top: 4px; white-space: nowrap; }
-.hp-skal-sammanfattning { color: var(--text-muted, inherit); margin-left: 4px; }
+.hp-skal-sammanfattning { color: var(--text-muted); margin-left: 4px; }
 .skal-skillnad { margin: 6px 0 12px; }
 .skal-tabell .skal-falt { width: 100%; min-width: 6em; font: inherit; font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: inherit; }
 .skal-tabell .skal-belopp { max-width: 9em; text-align: right; }
@@ -2422,7 +2413,7 @@ summary:focus-visible {
         width: 100%;
         background: #fff;
         color: #000;
-        font-family: 'Inter', sans-serif;
+        font-family: inherit;   /* bodys typsnittsstack; Inter följer inte med i filen */
         font-size: 10pt;
         line-height: 1.45;
     }
@@ -2457,6 +2448,9 @@ summary:focus-visible {
         padding: 5pt 6pt;
         border-bottom: 1pt solid var(--text-muted);
         font-weight: 600;
+        /* Rapportens egen skala i punkter: rubrikerna strax under cellernas 9pt. Skärmens tabellrubrik (--fs-xs, 0.78rem)
+           vore större än cellerna och gör de breda tabellerna bredare än sidan. */
+        font-size: 8.5pt;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
@@ -2472,6 +2466,10 @@ summary:focus-visible {
     #print-report table:not(.meta):not(.kpi) th { text-transform: none; letter-spacing: normal; }
     #print-report table:not(.meta):not(.kpi) .la-status,
     #print-report table:not(.meta):not(.kpi) .la-stabilitet { white-space: normal; }
+    /* Underraderna i Lika arbete följer rapportens skala (skärmens --fs-sm vore större än tabellens text), och
+       kvotens lilla diagram står ovanför talet i stället för bredvid, så att kolumnen inte är bredare än diagrammet. */
+    #print-report .la-underrad td { font-size: 8.5pt; }
+    #print-report .la-kvotcell { flex-wrap: wrap; row-gap: 2pt; }
     /* Reserven när webbläsaren inte avstavar svenska (60-utskrift.js sätter klassen): rubriker och textceller får brytas var
        som helst, talen (belopp, procent, antal) står på en rad. Bara då, eftersom brytningen var som helst ger smalare
        textkolumner också där avstavningen hade räckt. */
@@ -2546,24 +2544,24 @@ summary:focus-visible {
     line-height: 1;
     padding: 5px 10px;
     cursor: pointer;
-    color: var(--text-muted, #475569);
-    background: var(--bg-card, #fff);
-    border: 1px solid var(--border, #e2e8f0);
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 6px;
     transition: border-color 0.15s, color 0.15s;
 }
 .btn-table-tool:hover {
-    color: var(--primary, #1d4ed8);
-    border-color: var(--primary, #1d4ed8);
+    color: var(--primary);
+    border-color: var(--primary);
 }
 .btn-table-tool:focus-visible {
-    outline: 2px solid var(--primary, #1d4ed8);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 /* Växeln Fler kolumner: intryckt när alla kolumner visas (aria-pressed bär läget, färgen följer det) */
 .btn-table-tool[aria-pressed="true"] {
-    color: var(--primary, #1d4ed8);
-    border-color: var(--primary, #1d4ed8);
+    color: var(--primary);
+    border-color: var(--primary);
     background: var(--accent-yta);
 }
 @media print {
@@ -2578,7 +2576,6 @@ summary:focus-visible {
     line-height: 1.55;
     color: var(--text-muted);
     background: var(--yta);
-    border-left: 3px solid var(--text-blek);
     border-radius: 4px;
 }
 .reg-kronor {
@@ -2599,13 +2596,13 @@ summary:focus-visible {
     flex: 1 1 150px;
     padding: 10px 12px;
     background: #fff;
-    border: 1px solid var(--border, #e2e8f0);
+    border: 1px solid var(--border);
     border-radius: 6px;
 }
 .rk-val { font-size: var(--fs-xl); font-weight: 700; font-variant-numeric: tabular-nums; }
-.rk-lbl { font-size: var(--fs-xs); color: var(--text-muted, #475569); margin-top: 2px; line-height: 1.4; }
+.rk-lbl { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
 .rk-example { margin: 8px 0 0; font-size: var(--fs-md); line-height: 1.6; }
-.rk-caveat { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--text-muted, #475569); line-height: 1.5; }
+.rk-caveat { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.5; }
 
 .reg-budget { margin: 10px 0 14px; }
 .reg-budget-title { font-size: var(--fs-sm); margin-bottom: 8px; }
@@ -2643,7 +2640,6 @@ summary:focus-visible {
     font-size: var(--fs-sm);
     line-height: 1.5;
     background: var(--status-varning-yta);
-    border-left: 3px solid var(--status-varning);
     border-radius: 4px;
 }
 
@@ -2653,7 +2649,7 @@ summary:focus-visible {
     gap: 7px;
     margin: 10px 0 0;
     font-size: var(--fs-sm);
-    color: var(--text-muted, #475569);
+    color: var(--text-muted);
     cursor: pointer;
 }
 #perbas-table.hide-stats .col-stat { display: none; }
@@ -2661,14 +2657,14 @@ summary:focus-visible {
 /* ---- Gruppdossier ---- */
 .gd-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
 .gd-head h2 { margin:0; font-size:1.3rem; }
-.gd-sub { color:var(--text-muted,#475569); font-size:var(--fs-sm); }
+.gd-sub { color:var(--text-muted); font-size:var(--fs-sm); }
 .gd-head .btn-table-tool { margin-left:auto; }
 .gd-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:14px; }
-.gd-card { background:var(--bg-card,#fff); border:1px solid var(--border,#e2e8f0); border-radius:8px; padding:14px 16px; }
+.gd-card { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
 .gd-card h3 { margin:0 0 8px; font-size:var(--fs-md); }
 .gd-card p { margin:6px 0; font-size:var(--fs-sm); line-height:1.55; }
-.gd-note { color:var(--text-muted,#475569); font-size:var(--fs-xs) !important; }
-.gd-missing { color:var(--text-muted,#475569); font-style:italic; font-size:var(--fs-sm) !important; }
+.gd-note { color:var(--text-muted); font-size:var(--fs-xs) !important; }
+.gd-missing { color:var(--text-muted); font-style:italic; font-size:var(--fs-sm) !important; }
 .gd-big { font-size:1.7rem; font-weight:700; font-variant-numeric:tabular-nums; margin:4px 0; }
 .gd-kpis { display:flex; flex-wrap:wrap; gap:12px; }
 .gd-kpi { flex:1 1 120px; }
@@ -2678,7 +2674,7 @@ summary:focus-visible {
 .bd-tabell th, .bd-tabell td { padding:6px 10px; }
 .bd-oppna { margin-left:8px; font-weight:400; }
 .gd-kpi span { display:block; font-size:var(--fs-lg); font-weight:700; font-variant-numeric:tabular-nums; }
-.gd-kpi small { color:var(--text-muted,#475569); font-size:var(--fs-xs); }
+.gd-kpi small { color:var(--text-muted); font-size:var(--fs-xs); }
 .gd-list { margin:6px 0 0 18px; padding:0; font-size:var(--fs-sm); line-height:1.65; }
 .gd-hyp { margin-bottom:6px; }
 .gd-hyp-warn { color:var(--status-varning); }
@@ -2688,11 +2684,12 @@ summary:focus-visible {
 .rb-flip { color:var(--status-varning); font-weight:600; }
 .fc-clear { padding:14px 16px; background:var(--status-ok-yta); border:1px solid var(--status-ok-kant); border-radius:8px; font-size:var(--fs-md); line-height:1.6; }
 .fc-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
-.fc-item { padding:12px 14px; border-radius:6px; border-left:4px solid var(--border,#e2e8f0); background:var(--bg-main,#f0f4f8); }
-.fc-item.fc-warn { border-left-color:var(--status-varning); }
-.fc-item.fc-info { border-left-color:var(--text-blek); }
+.fc-item { padding:12px 14px; border-radius:6px; background:var(--bg-main); }
+.fc-item.fc-warn { border-left: 3px solid var(--status-varning); }
+.fc-item.fc-info { border-left: 3px solid var(--status-info); }
+.fc-item .uk-marke { margin-right: 6px; }
 .fc-title { font-weight:600; font-size:var(--fs-md); }
-.fc-detail { color:var(--text-muted,#475569); font-size:var(--fs-sm); line-height:1.55; margin-top:4px; }
+.fc-detail { color:var(--text-muted); font-size:var(--fs-sm); line-height:1.55; margin-top:4px; }
 .fc-item .btn-table-tool { margin-top:8px; }
 
 /* Exportmeny på varje diagram (11-diagramexport.js) */
@@ -2710,24 +2707,24 @@ summary:focus-visible {
 .chart-export:has(.chart-export-meny:not([hidden])) { z-index: 30; }
 .chart-export-btn {
     font: inherit; font-size: var(--fs-xs); line-height: 1; padding: 5px 10px; cursor: pointer;
-    color: var(--text-muted, #475569); background: var(--bg-card, #fff);
-    border: 1px solid var(--border, #e2e8f0); border-radius: 6px;
+    color: var(--text-muted); background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 6px;
 }
-.chart-export-btn:hover, .chart-export-btn[aria-expanded="true"] { color: var(--primary, #1d4ed8); border-color: var(--primary, #1d4ed8); }
-.chart-export-btn:focus-visible, .chart-export-meny button:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; }
+.chart-export-btn:hover, .chart-export-btn[aria-expanded="true"] { color: var(--primary); border-color: var(--primary); }
+.chart-export-btn:focus-visible, .chart-export-meny button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .chart-export-meny {
     position: absolute; top: calc(100% + 4px); right: 0; min-width: 16rem;
     display: flex; flex-direction: column; padding: 4px;
-    background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 8px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 .chart-export-meny[hidden] { display: none; }
 .chart-export-meny button {
     font: inherit; font-size: var(--fs-sm); text-align: left; padding: 8px 10px; cursor: pointer;
-    background: none; border: 0; border-radius: 4px; color: var(--text-main, #0f172a);
+    background: none; border: 0; border-radius: 4px; color: var(--text-main);
 }
-.chart-export-meny button:hover { background: var(--bg-hover, #f1f5f9); }
-.chart-export-fel { margin: 4px 10px; font-size: var(--fs-xs); color: var(--danger, #b91c1c); }
+.chart-export-meny button:hover { background: var(--yta-stark); }
+.chart-export-fel { margin: 4px 10px; font-size: var(--fs-xs); color: var(--danger); }
 @media print { .chart-export { display: none !important; } }
 /* Diagrammets urval (10-diagramritare.js): en rad per dimension ovanför diagrammet. En kategori har knappar
    (intryckt = värdet visas; den sista valda kan inte väljas bort, aria-disabled), ett intervall fälten Minst och
@@ -2738,12 +2735,12 @@ summary:focus-visible {
 .diagram-urval-namn { font-size: var(--fs-sm); color: var(--text-muted); }
 .diagram-urval-grans { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-sm); }
 .diagram-urval-grans .form-select { width: 7em; max-width: 100%; padding: 4px 8px; }
-.diagram-urval-grans .form-select[aria-invalid="true"] { border-color: var(--danger, #b91c1c); box-shadow: 0 0 0 1px var(--danger, #b91c1c); }
+.diagram-urval-grans .form-select[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
 /* En kategori som lista (många värden): hopfälld, med sökfält och kryssrutor. Långa namn bryts; listan rullar
    lodrätt och aldrig vågrätt (375 px). */
 .diagram-urval-lista { flex: 1 1 100%; min-width: 0; }
 .diagram-urval-lista > summary { cursor: pointer; font-size: var(--fs-sm); padding: 4px 0; overflow-wrap: anywhere; }
-.diagram-urval-lista > summary:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; border-radius: 4px; }
+.diagram-urval-lista > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
 .diagram-urval-listverktyg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
 .diagram-urval-sok { flex: 1 1 12em; min-width: 0; max-width: 24em; padding: 4px 8px; }
 .diagram-urval-traffar { font-size: var(--fs-sm); color: var(--text-muted); }
@@ -2779,18 +2776,18 @@ summary:focus-visible {
 .explore-urval-rad { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .explore-urval-tal { width: 8rem; }
 .explore-urval-val { position: relative; }
-.explore-urval-val summary { cursor: pointer; font-size: var(--fs-sm); padding: 6px 10px; border: 1px solid var(--border, #e2e8f0); border-radius: 6px; }
+.explore-urval-val summary { cursor: pointer; font-size: var(--fs-sm); padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; }
 .explore-urval-val[open] > .form-select, .explore-urval-val[open] > .explore-filter-vals { margin-top: 6px; }
-.explore-urval-ofullst { font-size: var(--fs-xs); color: var(--warning, #b45309); font-style: italic; }
+.explore-urval-ofullst { font-size: var(--fs-xs); color: var(--status-varning); font-style: italic; }
 .explore-urval-bort { font: inherit; background: none; border: 0; cursor: pointer; color: var(--text-muted); padding: 4px 8px; }
-.explore-urval-bort:hover { color: var(--danger, #b91c1c); }
+.explore-urval-bort:hover { color: var(--danger); }
 .explore-urval-text { font-size: var(--fs-sm); }
 .explore-filter-val[hidden] { display: none; }
 
 /* Utforska: Visa helhet/per kön och urval som alltid syns */
 .explore-visa-not { flex-basis: 100%; margin: 0; font-size: var(--fs-xs); color: var(--text-muted); }
 .explore-visa-not:empty { display: none; }
-.explore-urval { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border, #e2e8f0); }
+.explore-urval { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
 .explore-urval-titel { margin: 0; font-size: var(--fs-md); }
 
 /* Referenskortet (ADR-28) */
@@ -2807,6 +2804,7 @@ summary:focus-visible {
 .uk-ok { background: var(--status-ok-bg); color: var(--status-ok); }
 .uk-varning { background: var(--status-varning-bg); color: var(--status-varning); }
 .uk-kritisk { background: var(--status-kritisk-bg); color: var(--status-kritisk); }
+.uk-info { background: var(--status-info-bg); color: var(--status-info-mork); }
 .uk-text { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 2px; }
 .uk-detaljer { margin-top: 12px; }
 .uk-detaljer h4 { font-size: var(--fs-sm); margin: 0 0 6px; }
@@ -2830,11 +2828,11 @@ summary:focus-visible {
 /* Var uppstår löneskillnaden? (ADR-22) */
 .gu-kort { margin-top: 24px; }
 .gu-inledning { margin: 0 0 12px; }
-.gu-rad { padding: 10px 0; border-top: 1px solid var(--border, #e2e8f0); }
+.gu-rad { padding: 10px 0; border-top: 1px solid var(--border); }
 .gu-rubrik { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
 .gu-belopp { font-variant-numeric: tabular-nums; font-weight: 600; }
 .gu-andel, .gu-not, .gu-ovriga { color: var(--text-muted); font-size: var(--fs-sm); }
-.gu-stapel { position: relative; height: 10px; margin: 6px 0; background: linear-gradient(to right, transparent calc(50% - 1px), var(--border, #e2e8f0) calc(50% - 1px), var(--border, #e2e8f0) calc(50% + 1px), transparent calc(50% + 1px)); }
+.gu-stapel { position: relative; height: 10px; margin: 6px 0; background: linear-gradient(to right, transparent calc(50% - 1px), var(--border) calc(50% - 1px), var(--border) calc(50% + 1px), transparent calc(50% + 1px)); }
 .gu-fyll { display: block; height: 100%; border-radius: 2px; }
 .gu-pos { background: var(--primary); }
 .gu-neg { background: var(--text-muted); }
@@ -2899,15 +2897,16 @@ summary:focus-visible {
 .att-gora-status .compliance-card { padding: 8px 10px; }
 .att-gora-status .comp-sub { display: none; }
 .att-gora-status .comp-value { font-size: var(--fs-sm); }
-.att-gora-status .comp-lank { font-size: var(--fs-xs); }
+/* Länkarna i statusraden ser ut som länkar men har 24 punkters klickyta (WCAG 2.2, 2.5.8). */
+.att-gora-status .comp-lank { display: inline-block; min-width: 24px; padding: 4px 0; font-size: var(--fs-xs); }
 .att-gora-borja-rubrik { font-size: var(--fs-md); margin: 6px 0; }
 .att-gora-borja-lista { margin: 0 0 12px; padding-left: 20px; }
 .att-gora-kat { color: var(--text-muted); font-size: var(--fs-xs); }
 
 /* Rapportunderlagets förteckning */
-.ru-toc { margin: 0 0 16px; padding: 10px 14px; font-size: var(--fs-sm); background: var(--bg-main, #f8fafc); border-radius: 6px; }
+.ru-toc { margin: 0 0 16px; padding: 10px 14px; font-size: var(--fs-sm); background: var(--bg-main); border-radius: 6px; }
 .ru-toc ul { margin: 0 0 8px; padding-left: 18px; line-height: 1.7; }
-.ru-alla-avsnitt { margin-top: 10px; padding: 10px; border: 1px dashed var(--border, #e2e8f0); background: #fff; }
+.ru-alla-avsnitt { margin-top: 10px; padding: 10px; border: 1px dashed var(--border); background: #fff; }
 @media print { .ru-toc { display: none !important; } }
 
 /* Interna fel (ADR-31): en del av analysen hoppades över. */
@@ -2915,7 +2914,7 @@ summary:focus-visible {
     margin: 0 0 12px;
     padding: 10px 14px;
     border-radius: 8px;
-    border-left: 4px solid var(--status-kritisk);
+    border-left: 3px solid var(--status-kritisk);
     background: var(--status-kritisk-yta);
     color: var(--status-kritisk);
     font-size: var(--fs-sm);
@@ -2926,7 +2925,7 @@ summary:focus-visible {
 .sektor-andel { margin-top: 10px; }
 
 /* Jämförelsestatistik (ADR-35): tabellens tre block, reglage och filter */
-.jmf-block { border-left: 2px solid var(--border, #cbd5e1); }
+.jmf-block { border-left: 2px solid var(--border); }
 .jmf-neg { color: var(--danger); }
 .jmf-pos { color: var(--status-ok); }
 .jmf-filter { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-sm); }
@@ -2957,7 +2956,7 @@ summary:focus-visible {
     padding: 10px 16px;
     background: var(--status-kritisk-yta);
     border: 1px solid var(--status-kritisk-kant);
-    border-left: 4px solid var(--status-kritisk);
+    border-left: 3px solid var(--status-kritisk);
     border-radius: 8px;
     color: var(--status-kritisk);
     font-size: var(--fs-md);
@@ -2974,7 +2973,7 @@ summary:focus-visible {
     padding: 10px 16px;
     background: var(--status-varning-yta);
     border: 1px solid var(--status-varning-kant);
-    border-left: 4px solid var(--status-varning);
+    border-left: 3px solid var(--status-varning);
     border-radius: 6px;
     color: var(--status-varning);
     font-size: var(--fs-sm);
@@ -3039,8 +3038,8 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
    nyckeltalen, Att göra och processen. Filerna står i Filer och kvalitet. */
 #view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-fordjupning { display: none; }
 .ov-filrad .btn { margin-left: auto; }
-.ov-filrad-lank { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #1d4ed8); text-decoration: underline; cursor: pointer; }
-.ov-filrad-lank:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; border-radius: 2px; }
+.ov-filrad-lank { display: inline-flex; align-items: center; min-height: 24px; background: none; border: 0; padding: 0; font: inherit; color: var(--primary); text-decoration: underline; cursor: pointer; }
+.ov-filrad-lank:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
 details.avsnitt .ptrack > h3 { display: none; }           /* rubriken står i avsnittets sammanfattning */
 details.avsnitt > section.card, details.avsnitt > div > .card.ptrack { box-shadow: none; padding: 0; margin-bottom: 0; }
 details.avsnitt .insight-feed-header h3 { display: none; }
@@ -3074,7 +3073,7 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .sok-lista { position: absolute; z-index: 1200; top: calc(100% + 4px); right: 0; width: max(100%, 340px); max-width: 92vw; margin: 0; padding: 4px; list-style: none;
     background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16); }
 .sok-lista [role="option"] { display: flex; flex-direction: column; gap: 1px; padding: 7px 10px; border-radius: 6px; cursor: pointer; }
-.sok-lista [role="option"][aria-selected="true"], .sok-lista [role="option"]:hover { background: var(--secondary, #eff6ff); }
+.sok-lista [role="option"][aria-selected="true"], .sok-lista [role="option"]:hover { background: var(--secondary); }
 .sok-namn { font-size: var(--fs-sm); font-weight: 600; }
 .sok-under { font-size: var(--fs-xs); color: var(--text-muted); }
 .sok-underval { padding-left: 22px !important; }
@@ -3090,7 +3089,7 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .export-hub-row .export-besked strong { display: inline; font-size: inherit; margin: 0; }
 #avsnitt-ex-urval { margin-bottom: 12px; }
 .urval-fasta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
-.urval-fasta .btn[aria-pressed="true"] { border-color: var(--primary, #1d4ed8); color: var(--primary, #1d4ed8); font-weight: 600; }
+.urval-fasta .btn[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); font-weight: 600; }
 .urval-lista { list-style: none; margin: 0; padding: 0; }
 .urval-rad { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
 .urval-rad:first-child { border-top: 0; }
@@ -3118,7 +3117,7 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .lage-val .btn { border-radius: 0; margin: 0; }
 .lage-val .btn:first-child { border-radius: 6px 0 0 6px; }
 .lage-val .btn:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
-.lage-val .btn[aria-pressed="true"] { background: var(--primary, #1d4ed8); border-color: var(--primary, #1d4ed8); color: #fff; }
+.lage-val .btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
 /* Flikens inledning: bara rubriken står kvar (texten efter den är en textnod, därför teckenstorleken). */
 body.lage-kompakt .flik-intro { font-size: 0; padding: 0; margin-bottom: 10px; line-height: 1.3; max-width: none; }
 body.lage-kompakt .flik-intro > strong:first-child { font-size: var(--fs-md); }
@@ -3143,29 +3142,29 @@ body.lage-kompakt .urvalsrad { margin-bottom: 10px; }
    .summary-stats) ritas så. Skiljelinjen mellan talen är en skugga åt vänster som klipps i radens kant, så att den
    första rutan på varje rad saknar linje också när raden bryts. */
 .slutsatser, .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0; margin: 0 0 16px; overflow: hidden;
-    background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
-.slutsats, .summary-stats > .stat-box { background: none; border: 0; border-radius: 0; padding: 10px 16px 11px; box-shadow: -1px 0 0 var(--border, #e2e8f0), 0 -1px 0 var(--border, #e2e8f0); min-width: 0; }
-.slutsats-etikett, .summary-stats > .stat-box h3, .summary-stats > .stat-box .stat-etikett { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #475569); margin: 0; line-height: 1.35; }
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+.slutsats, .summary-stats > .stat-box { background: none; border: 0; border-radius: 0; padding: 10px 16px 11px; box-shadow: -1px 0 0 var(--border), 0 -1px 0 var(--border); min-width: 0; }
+.slutsats-etikett, .summary-stats > .stat-box h3, .summary-stats > .stat-box .stat-etikett { font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0; line-height: 1.35; }
 .slutsats-varde, .summary-stats > .stat-box .stat-val { font-size: var(--fs-xl) !important; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; margin: 1px 0 0; color: var(--text-main); }
-.slutsats-under, .summary-stats > .stat-box .stat-under, .summary-stats > .stat-box .stat-tip { font-size: var(--fs-xs); font-style: normal; color: var(--text-muted, #475569); line-height: 1.35; margin: 0; padding: 0; border: 0;
+.slutsats-under, .summary-stats > .stat-box .stat-under, .summary-stats > .stat-box .stat-tip { font-size: var(--fs-xs); font-style: normal; color: var(--text-muted); line-height: 1.35; margin: 0; padding: 0; border: 0;
     /* Texten förklarar talet: den får två rader i stället för att klippas med «…». */
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-.summary-stats > .stat-box .stat-under.ar-kritisk, .summary-stats > .stat-box .stat-tip.crit { color: var(--status-kritisk, #b91c1c); font-weight: 600; }
+.summary-stats > .stat-box .stat-under.ar-kritisk, .summary-stats > .stat-box .stat-tip.crit { color: var(--status-kritisk); font-weight: 600; }
 body.lage-kompakt .slutsatser, body.lage-kompakt .summary-stats { margin-bottom: 10px; }
 body.lage-kompakt .slutsats, body.lage-kompakt .summary-stats > .stat-box { padding: 6px 12px 7px; }
 body.lage-kompakt .slutsats-varde, body.lage-kompakt .summary-stats > .stat-box .stat-val { font-size: var(--fs-lg) !important; }
 
 /* ---- Sidans topp, tät ----
    Sidhuvud, demobanderoll, inledning och urvalsrad hålls låga, så att innehållet syns högt upp på sidan. */
-.demo-mode-banner { padding: 5px 12px; margin: 0 0 12px; font-size: var(--fs-xs); border-left-width: 3px; border-radius: 6px; }
+.demo-mode-banner { padding: 5px 12px; margin: 0 0 12px; font-size: var(--fs-xs); border-radius: 6px; }
 .demo-mode-banner .demo-mode-icon { font-size: var(--fs-md); }
 .demo-mode-mer, .gdpr-banner-mer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
-.demo-mode-exit { padding: 3px 10px; font-size: var(--fs-xs); }
+.demo-mode-exit { min-height: 24px; padding: 3px 10px; font-size: var(--fs-xs); }
 /* Inledningen: en rad, och resten bakom «Visa mer». I kompakt läge visas bara frågan. */
 .flik-intro-rad { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; }
 .flik-intro-rad > .flik-intro { margin: 0; flex: 1 1 auto; min-width: 0; }
 .flik-intro-rad:not(.ar-utfalld) > .flik-intro { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.flik-intro-mer { flex: 0 0 auto; background: none; border: 0; padding: 0; font: inherit; font-size: var(--fs-sm); font-weight: 600; color: var(--primary); cursor: pointer; white-space: nowrap; }
+.flik-intro-mer { flex: 0 0 auto; min-height: 24px; background: none; border: 0; padding: 0; font: inherit; font-size: var(--fs-sm); font-weight: 600; color: var(--primary); cursor: pointer; white-space: nowrap; }
 .flik-intro-mer:hover { text-decoration: underline; }
 .flik-intro-mer:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 3px; }
 body.lage-kompakt .flik-intro-mer { display: none; }
@@ -3175,7 +3174,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 /* En rad med ett val som gäller hela fliken (Prioritering: vilken referens). Ser ut som urvalsraden, men är inte
    en: urvalsraderna töms när en flik blir inaktuell, och den här bär ett formulärfält. */
 .valrad { display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; margin: 0 0 14px; padding: 8px 14px; font-size: var(--fs-sm);
-    background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: var(--radius); }
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
 .valrad label { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
 /* Radrubriker i tabellkroppen är vanlig text: versalerna och den grå plattan hör till kolumnrubrikerna. */
 .data-table tbody th { position: static; background: none; text-transform: none; letter-spacing: 0; font-size: 1em; color: var(--text-main); border-bottom: 1px solid var(--border); }
@@ -3187,11 +3186,12 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .compliance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); }
 .compliance-card { border: 0; border-radius: 0; box-shadow: -1px 0 0 var(--border), 0 -1px 0 var(--border); padding: 8px 14px; align-items: center; gap: 10px; }
 .comp-icon { font-size: var(--fs-lg); width: 22px; }
-.comp-label { font-size: 0.68rem; }
+.comp-label { font-size: var(--fs-xs); }
 .comp-value { font-size: var(--fs-md); margin-top: 1px; }
-/* Raden om lokal bearbetning ryms bredvid rubriken i sidhuvudet (stod på egen rad och tog 35 punkter). */
-.gdpr-banner { padding: 3px 6px 3px 8px; gap: 4px; font-size: 0.72rem; }
-.gdpr-banner-link { padding: 1px 7px; font-size: 0.72rem; }
+/* Raden om lokal bearbetning ryms bredvid rubriken i sidhuvudet (stod på egen rad och tog 35 punkter). «Vad lagras?»
+   är 24 punkter hög (klickmålets minsta mått), så raden har 1 punkts luft upptill och nedtill. */
+.gdpr-banner { padding: 1px 6px 1px 8px; gap: 4px; font-size: var(--fs-xs); }
+.gdpr-banner-link { min-height: 24px; padding: 1px 7px; font-size: var(--fs-xs); }
 /* Raden om lokal bearbetning står alltid under rubriken, så att sidhuvudet är lika högt på alla flikar och innehållet
    inte hoppar vid flikbyte. Knapparna till höger står kvar på första raden (på smala skärmar bryts hela sidhuvudet). */
 .top-header .header-title { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: center; justify-items: start; }
@@ -3319,7 +3319,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 /* Versaler med bokstavsavstånd (etikett) */
 .versal.versal.versal { text-transform: uppercase; letter-spacing: 0.05em; }
 /* Varningsruta med kant till vänster */
-.notis-varning.notis-varning.notis-varning { background: var(--status-varning-yta); border-left: 3px solid var(--status-varning); border-radius: 4px; }
+.notis-varning.notis-varning.notis-varning { background: var(--status-varning-yta); border-radius: 4px; }
 /* Färgprov i förklaringen */
 .provruta.provruta.provruta { display: inline-block; height: 14px; width: 32px; border-radius: 3px; }
 /* Rader och kolumner (flex, rutnät, justering) */
@@ -3358,7 +3358,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .farg-dampad.farg-dampad.farg-dampad { color: var(--text-muted); }
 .farg-danger.farg-danger.farg-danger { color: var(--danger); }
 .farg-granska.farg-granska.farg-granska { color: var(--status-granska); }
-.farg-info.farg-info.farg-info { color: var(--status-info); }
+.farg-info.farg-info.farg-info { color: var(--status-info-mork); }
 .farg-kritisk.farg-kritisk.farg-kritisk { color: var(--status-kritisk); }
 .farg-ok.farg-ok.farg-ok { color: var(--status-ok); }
 .farg-primary.farg-primary.farg-primary { color: var(--primary); }
@@ -3371,7 +3371,6 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .typsnitt-mono.typsnitt-mono.typsnitt-mono { font-family: monospace; }
 .typsnitt-mono-ui.typsnitt-mono-ui.typsnitt-mono-ui { font-family: ui-monospace,'SF Mono',Consolas,monospace; }
 .typsnitt-system.typsnitt-system.typsnitt-system { font-family: system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
-.fs-0_72rem.fs-0_72rem.fs-0_72rem { font-size: 0.72rem; }
 .fs-0_92em.fs-0_92em.fs-0_92em { font-size: 0.92em; }
 .fs-1_25rem.fs-1_25rem.fs-1_25rem { font-size: 1.25rem; }
 .fs-1_2rem.fs-1_2rem.fs-1_2rem { font-size: 1.2rem; }
@@ -3532,7 +3531,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .bak-ok-yta.bak-ok-yta.bak-ok-yta { background: var(--status-ok-yta); }
 .bak-rgba0-0-0-0_45.bak-rgba0-0-0-0_45.bak-rgba0-0-0-0_45 { background: rgba(0,0,0,0.45); }
 .bak-transparent.bak-transparent.bak-transparent { background: transparent; }
-.bak-upphojd.bak-upphojd.bak-upphojd { background: var(--surface-elev,var(--yta)); }
+.bak-upphojd.bak-upphojd.bak-upphojd { background: var(--yta); }
 .bak-varning.bak-varning.bak-varning { background: var(--status-varning); }
 .bak-varning-bg.bak-varning-bg.bak-varning-bg { background: var(--status-varning-bg); }
 .bak-varning-bg-gammal.bak-varning-bg-gammal.bak-varning-bg-gammal { background: var(--warning-bg); }
@@ -3549,24 +3548,9 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .ram-b-1-kant.ram-b-1-kant.ram-b-1-kant { border-bottom: 1px solid var(--border); }
 .ram-b-1-prickad-dampad.ram-b-1-prickad-dampad.ram-b-1-prickad-dampad { border-bottom: 1px dotted var(--text-muted); }
 .tabell-samman.tabell-samman.tabell-samman { border-collapse: collapse; }
-.ram-v-3-accent.ram-v-3-accent.ram-v-3-accent { border-left: 3px solid var(--accent); }
-.ram-v-3-danger.ram-v-3-danger.ram-v-3-danger { border-left: 3px solid var(--danger); }
-.ram-v-3-granska-ljus.ram-v-3-granska-ljus.ram-v-3-granska-ljus { border-left: 3px solid var(--status-granska-ljus); }
-.ram-v-3-info.ram-v-3-info.ram-v-3-info { border-left: 3px solid var(--status-info); }
+.ram-v-3-kritisk.ram-v-3-kritisk.ram-v-3-kritisk { border-left: 3px solid var(--status-kritisk); }
 .ram-v-3-ok.ram-v-3-ok.ram-v-3-ok { border-left: 3px solid var(--status-ok); }
 .ram-v-3-varning.ram-v-3-varning.ram-v-3-varning { border-left: 3px solid var(--status-varning); }
-.ram-v-4-7c3aed.ram-v-4-7c3aed.ram-v-4-7c3aed { border-left: 4px solid #7c3aed; }
-.ram-v-4-accent.ram-v-4-accent.ram-v-4-accent { border-left: 4px solid var(--accent); }
-.ram-v-4-dampad.ram-v-4-dampad.ram-v-4-dampad { border-left: 4px solid var(--text-muted,var(--text-muted)); }
-.ram-v-4-danger.ram-v-4-danger.ram-v-4-danger { border-left: 4px solid var(--danger); }
-.ram-v-4-granska-ljus.ram-v-4-granska-ljus.ram-v-4-granska-ljus { border-left: 4px solid var(--status-granska-ljus); }
-.ram-v-4-info.ram-v-4-info.ram-v-4-info { border-left: 4px solid var(--status-info); }
-.ram-v-4-ok.ram-v-4-ok.ram-v-4-ok { border-left: 4px solid var(--status-ok); }
-.ram-v-4-varning.ram-v-4-varning.ram-v-4-varning { border-left: 4px solid var(--status-varning); }
-.ram-v-farg-info.ram-v-farg-info.ram-v-farg-info { border-left-color: var(--status-info); }
-.ram-v-farg-kritisk.ram-v-farg-kritisk.ram-v-farg-kritisk { border-left-color: var(--status-kritisk); }
-.ram-v-farg-ok.ram-v-farg-ok.ram-v-farg-ok { border-left-color: var(--status-ok); }
-.ram-v-farg-primary.ram-v-farg-primary.ram-v-farg-primary { border-left-color: var(--primary); }
 .rund-0-4-4-0.rund-0-4-4-0.rund-0-4-4-0 { border-radius: 0 4px 4px 0; }
 .rund-12.rund-12.rund-12 { border-radius: 12px; }
 .rund-4.rund-4.rund-4 { border-radius: 4px; }
@@ -3653,7 +3637,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .fg-ok { color: var(--status-ok) !important; }
 .fg-varning { color: var(--status-varning) !important; }
 .fg-kritisk { color: var(--status-kritisk) !important; }
-.fg-info { color: var(--status-info) !important; }
+.fg-info { color: var(--status-info-mork) !important; }
 .fg-info-mork { color: var(--status-info-mork) !important; }
 .fg-accent { color: var(--accent) !important; }
 .fg-granska { color: var(--status-granska) !important; }
@@ -3668,10 +3652,6 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .bg-dampad { background: var(--text-muted) !important; }
 .bg-ok-yta { background: var(--status-ok-yta) !important; }
 .bg-info-yta { background: var(--status-info-yta) !important; }
-.bl4-ok { border-left: 4px solid var(--status-ok) !important; }
-.bl4-varning { border-left: 4px solid var(--status-varning) !important; }
-.bl4-kritisk { border-left: 4px solid var(--status-kritisk) !important; }
-.bl4-accent { border-left: 4px solid var(--accent) !important; }
 .fet { font-weight: 700 !important; }
 .halvfet { font-weight: 600 !important; }
 /* Brickor och rutor: text på sin egen botten, respektive kant till vänster. */
@@ -3679,14 +3659,14 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .bricka-varning { color: var(--status-varning) !important; background: var(--status-varning-bg) !important; }
 .bricka-kritisk { color: var(--status-kritisk) !important; background: var(--status-kritisk-bg) !important; }
 .bricka-granska { color: var(--status-granska) !important; background: var(--status-granska-bg) !important; }
-.bricka-info { color: var(--status-info) !important; background: var(--status-info-bg) !important; }
+.bricka-info { color: var(--status-info-mork) !important; background: var(--status-info-bg) !important; }
 .bricka-neutral { color: var(--text-muted) !important; background: var(--yta-stark) !important; }
-.ruta-ok { background: var(--status-ok-bg) !important; border-left: 4px solid var(--status-ok) !important; }
-.ruta-varning { background: var(--status-varning-bg) !important; border-left: 4px solid var(--status-varning) !important; }
+.ruta-ok { background: var(--status-ok-bg) !important; border-left: 3px solid var(--status-ok) !important; }
+.ruta-varning { background: var(--status-varning-bg) !important; border-left: 3px solid var(--status-varning) !important; }
 /* Inläsningskontrollens rader: ok, varning, fel. */
-.reality-list .rc-ok.rc-ok.rc-ok { border-left: 4px solid var(--status-ok); background: var(--status-ok-bg); }
-.reality-list .rc-warn.rc-warn.rc-warn { border-left: 4px solid var(--status-varning); background: var(--status-varning-bg); }
-.reality-list .rc-err.rc-err.rc-err { border-left: 4px solid var(--status-kritisk); background: var(--status-kritisk-bg); }
+.reality-list .rc-ok.rc-ok.rc-ok { border-left: 3px solid var(--status-ok); background: var(--status-ok-bg); }
+.reality-list .rc-warn.rc-warn.rc-warn { border-left: 3px solid var(--status-varning); background: var(--status-varning-bg); }
+.reality-list .rc-err.rc-err.rc-err { border-left: 3px solid var(--status-kritisk); background: var(--status-kritisk-bg); }
 /* Rader i Lika arbete-tabellen: tonad botten för «Värt att granska» respektive «Följ upp». */
 tr.rad-granska { background: rgba(67, 56, 202, 0.08); }
 tr.rad-folj { background: rgba(245, 158, 11, 0.1); }
@@ -3703,7 +3683,7 @@ tr.rad-folj { background: rgba(245, 158, 11, 0.1); }
     #print-report table.pr-under { margin-bottom: 8pt; }
     #print-report .pr-dampad { font-size: 0.92em; color: var(--text-muted); }
     #print-report .k-stampel.pr-stampel { font-size: 0.78em; color: var(--text-muted); margin-top: 14pt; }
-    #print-report .draftbox.draftbox-demo { border-color: #f97316; background: var(--status-varning-yta); color: var(--status-varning); }
+    #print-report .draftbox.draftbox-demo { border-color: var(--status-varning); background: var(--status-varning-yta); color: var(--status-varning); }
 }
 
 /* ==== Slut på ersatta style-attribut ==== */

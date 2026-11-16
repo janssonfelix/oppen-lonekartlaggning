@@ -58,7 +58,7 @@ function openDataResidency() {
             <p><strong>Fälten som sparas per rad</strong></p>
             <p class="marg-0-0-6">Verktyget läser bara fem fält ur filen: ${T.niva.en}, ${T.enhet.en}, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Det noterar också radens nummer i filen. Allt annat (personnummer, namn, e-post, anställningsnummer, fri text utöver ${T.namn.bf}) tas bort vid inläsningen och sparas aldrig.</p>
             ${sampleRow}
-            <p class="bak-ok-yta ram-v-3-ok rund-4 fs-sm marg-t-18 pad-10-14">
+            <p class="bak-ok-yta rund-4 fs-sm marg-t-18 pad-10-14">
                 <strong>Inbyggt dataskydd enligt dataskyddsförordningen:</strong> uppgifterna minimeras innan de sparas i minnet, inte efter. Filen läses in i minnet, raderna minimeras en i taget, och filens övriga innehåll släpps när inläsningen är klar.
             </p>
 

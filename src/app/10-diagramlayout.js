@@ -32,6 +32,8 @@ const _RF = {
     fargB: 64, fargLuft: 12, fargStapel: 12, fargText: 16, fargH: 180, fargSteg: 3,
 };
 
+// Storleken för diagrammets minsta texter: två steg under grundstorleken, men aldrig under golvet CHART_FONT.minsta.
+const _rfLitenPx = px => Math.max(CHART_FONT.minsta, px - 2);
 const _rfBredd = (s, px) => String(s == null ? '' : s).length * px * _RF.tecken;
 function _rfKorta(s, maxTecken) {
     s = String(s == null ? '' : s);
@@ -479,7 +481,7 @@ function _rfLodratLayout(figurIn, val, B, H, px, syn) {
     const notRader = val.not ? _rfRadbryt(val.not, (B - 16) / ((px - 1) * _RF.tecken), 2) : [];
     const maxT = (B - 16) / ((px - 1) * _RF.tecken);
     const rubrik = val.rubrik ? _rfKorta(String(val.rubrik), (B - 16) / ((px + 2) * _RF.tecken)) : '';
-    const fot = val.fot ? _rfKorta(String(val.fot), maxT * (px - 1) / (px - 2)) : '';
+    const fot = val.fot ? _rfKorta(String(val.fot), maxT * (px - 1) / _rfLitenPx(px)) : '';
     const notH = (notRader.length ? notRader.length * px + 8 : 0) + (fot ? px + 2 : 0);
     const topp = 10 + (rubrik ? px + 14 : 0) + (syn.paneler.some(p => p != null) ? px + 10 : 0);
     const botten = rader => (rader ? axelNer + legBas + (rader - 1) * _RF.legendRad + 4 : axelNer) + 6 + notH;

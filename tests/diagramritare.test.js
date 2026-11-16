@@ -3691,3 +3691,28 @@ describe('etiketter som inte täcker varandra (etapp 1b, U7)', () => {
         expect(kontrolleraYta(svg, 'zon på två rader')).toEqual([]);
     });
 });
+
+describe('diagramtextens minsta storlek', () => {
+    // Varje text som kärnan ritar — också punkternas och referenslinjernas etiketter, ytans andra rad och exportens
+    // fotrad, de minsta rollerna — är minst 11 punkter, på skärmen och i den exporterade bilden.
+    const storlekar = svg => alla(svg, 'text').map(t => Number(t.getAttribute('font-size')));
+    const punkter = etikettLage => ({ beskrivning: 'P', x: { skala: 'linjar' }, y: { skala: 'linjar' }, referens: [{ y: 15, etikett: '80 %' }, { x: 2, etikett: 'Mitt' }],
+        lager: [{ marke: 'punkt', serie: 'P', ...(etikettLage ? { etikettLage } : {}), data: [{ x: 1, y: 10, etikett: 'Ett' }, { x: 3, y: 20, etikett: 'Tre' }] }] });
+    const ytor = { beskrivning: 'Y', legend: false, x: { skala: 'linjar', doman: [0, 2], dold: true }, y: { skala: 'linjar', doman: [0, 1], dold: true },
+        lager: [{ marke: 'yta', serie: 'S', data: [{ x0: 0, x1: 2, y0: 0, y1: 1, etikett: 'Stor', undertext: '10 personer' }] }] };
+    it('ingen text i figuren är mindre än 11 px', () => {
+        for (const [namn, figur] of [['punktetiketter', punkter()], ['etiketter som undviker', punkter('undvik')], ['ytor', ytor]]) {
+            const s = storlekar(rita(figur, 600));
+            expect(s.length, namn).toBeGreaterThan(0);
+            expect(Math.min(...s), namn).toBeGreaterThanOrEqual(11);
+        }
+        // Rollerna som prövas finns i ritningen (annars prövar testet ingenting).
+        const svg = rita(punkter(), 600);
+        for (const m of ['punktetikett', 'linjeetikett']) expect(alla(svg, `text[data-marke="${m}"]`).length, m).toBeGreaterThan(0);
+        expect(alla(rita(ytor, 600), 'text[data-marke="ytetikett"]')).toHaveLength(2);
+        // Exportens rubrik och fotrad.
+        const bild = svgDok(svgText(punkter(), { rubrik: 'Rubrik', fot: 'Lönekartläggning 2026-11-16' })).documentElement;
+        expect(bild.querySelector('[data-del="fot"]')).not.toBeNull();
+        expect(Math.min(...storlekar(bild))).toBeGreaterThanOrEqual(11);
+    });
+});

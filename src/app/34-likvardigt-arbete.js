@@ -251,7 +251,7 @@ function renderLikvardighet() {
     const jämförOK = orgOK && (internOK || statOK);
 
     const introHtml = `
-        <div class="insight-box info lv-hjalp ram-v-4-accent marg-b-14">
+        <div class="insight-box info lv-hjalp marg-b-14">
             <strong>${ikon('info')} Så här fungerar likvärdighetsanalysen</strong>
             <p class="fs-md lh-1_55 marg-8-0">
                 Lönekartläggningens regler omfattar en jämförelse mellan kvinnodominerat arbete och arbete som inte är kvinnodominerat
@@ -262,9 +262,9 @@ function renderLikvardighet() {
                     : `i första hand organisationens egna ${T.enhet.fl} med varandra.`}
             </p>
             ${d.jämförelse.kravProxy === 'poäng'
-                ? `<p class="bak-ok-bg ram-v-4-ok rund-4 fs-sm marg-8-0 pad-8-12">
+                ? `<p class="bak-ok-bg rund-4 fs-sm marg-8-0 pad-8-12">
                        <strong>Mått på kraven: arbetsvärdering (poäng)</strong> — ${T.enhet.fl} paras på likvärdiga eller lägre krav enligt organisationens poäng, lika krav inom ±${result.opts.poangBandPct ?? 5} %.${d.jämförelse.kvUtanPoang ? ` <span class="varning-pa-yta">${d.jämförelse.kvUtanPoang} ${termFras(T.enhet, d.jämförelse.kvUtanPoang === 1 ? 'en' : 'fl', { adjektiv: 'kvinnodominerad' })} saknar poäng och uteslöts.</span>` : ''}</p>`
-                : `<p class="bak-accent-yta ram-v-4-accent rund-4 fs-sm marg-8-0 pad-8-12">
+                : `<p class="bak-accent-yta rund-4 fs-sm marg-8-0 pad-8-12">
                        <strong>Mått på kraven: ${T.niva.bf}</strong> — ${T.enhet.fl} inom samma ${T.niva.en} antas ha likvärdiga krav. Har organisationen en egen arbetsvärdering kan du lägga till poängen i lönefilen; poäng mäter kraven i arbetet bättre.</p>`}
             <ul class="fs-sm lh-1_6 marg-8-0 pad-v-22">
                 <li><strong>Steg 1</strong>: Identifiera <em>organisationens kvinnodominerade</em>
@@ -298,7 +298,7 @@ function renderLikvardighet() {
             <h3 class="fs-lg marg-0-0-10">Diagnostik — vad verktyget ser</h3>
             <div class="rutnat fs-sm gap-14 kolumner-2-lika">
                 <div class="rund-6 pad-12 ${orgOK ? 'ruta-ok' : 'ruta-varning'}">
-                    <strong>Organisationens data</strong>
+                    <strong>Organisationens data</strong> ${statusMarke(orgOK ? 'ok' : 'varning')}
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.organisation.totalRader.toLocaleString('sv-SE')}</strong></li>
                         <li>Unika ${T.enhet.fl} i ${T.niva.fl}: <strong>${d.organisation.antalAidxBas}</strong></li>
@@ -313,7 +313,7 @@ function renderLikvardighet() {
                     </ul>
                 </div>
                 <div class="rund-6 pad-12 ${statOK ? 'ruta-ok' : 'ruta-varning'}">
-                    <strong>jämförelsestatistiken</strong>
+                    <strong>jämförelsestatistiken</strong> ${statusMarke(statOK ? 'ok' : 'varning')}
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.statistik.totalRader.toLocaleString('sv-SE')}</strong></li>
                         <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : `nej — nationell könsfördelning ur ${esc(skrKallaKort())} som reserv`}</strong></li>
@@ -330,7 +330,7 @@ function renderLikvardighet() {
                 </div>
             </div>
             ${jämförOK ? `
-                <div class="bak-accent-yta ram-v-3-accent rund-4 fs-sm marg-t-10 pad-10-12">
+                <div class="bak-accent-yta rund-4 fs-sm marg-t-10 pad-10-12">
                     <strong>Jämförelse</strong>:
                     ${_lvPoang(result) ? '' : `${d.jämförelse.gemensammaBas} gemensamma ${T.niva.fl},`}
                     ${d.jämförelse.möjligaPar} möjliga par,
@@ -429,9 +429,9 @@ function renderLikvardighet() {
 
     // ====== Sektion 4: § 3:10-kandidatpar (huvudtabellen) ======
     const källBadge = p => {
-        if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-0_72rem pad-1-6" title="Ur organisationens egna löner (jämförelse inom organisationen)">intern</span>`;
-        if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
-        return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
+        if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-xs pad-1-6" title="Ur organisationens egna löner (jämförelse inom organisationen)">intern</span>`;
+        if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-xs pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
+        return `<span class="bak-varning-bg rund-8 farg-varning fs-xs pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
     };
     const ciCell = p => {
         if (!p.gapCI || p.gapCI.lo == null) return '<span class="f-dampad" title="För få observationer för bootstrap">—</span>';

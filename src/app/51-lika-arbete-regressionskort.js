@@ -743,11 +743,11 @@ function renderRegressionCard() {
         }).join('');
         const diag = (r.diagnostics || []).map(d => `<li>${d}</li>`).join('');
         wrap.innerHTML = `
-            <div class="card ram-v-4-danger" role="region" aria-label="Regressionsanalys misslyckades">
+            <div class="card ram-v-3-kritisk" role="region" aria-label="Regressionsanalys misslyckades">
                 <h3 class="marg-0-0-8">Regressionen kunde inte genomföras</h3>
                 <p class="marg-0-0-12">${esc(r.error)}</p>
                 ${tried ? `<div class="mt-14"><div class="text-dampad-xs versal fw-600 marg-b-6">Försökta modellspecifikationer</div><ul class="lh-1_8 utan-punkter marg-0 pad-0">${tried}</ul></div>` : ''}
-                ${diag ? `<div class="bak-varning-bg-gammal ram-v-3-danger rund-4 marg-t-14 pad-12-14"><strong>Identifierade orsaker:</strong><ul class="lh-1_6 marg-6-0-0-18">${diag}</ul></div>` : ''}
+                ${diag ? `<div class="bak-varning-bg-gammal ram-v-3-kritisk rund-4 marg-t-14 pad-12-14"><strong>Identifierade orsaker:</strong><ul class="lh-1_6 marg-6-0-0-18">${diag}</ul></div>` : ''}
                 <p class="text-dampad-sm marg-t-14">Tips: komplettera med fler observationer per ${T.enhet.en}.</p>
             </div>
         `;
@@ -836,7 +836,7 @@ function renderRegressionCard() {
     const yrkesStegKvar = budget => budget && medYrkesSteg(budget)
         ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${svPct(budget.remainingShare, 0)} kvar (steget ${_rgStegEtikett(_RG_STEG_YRKE)}, som inte ingår i huvudtalet).` : '';
     const explainedRowHtml = budget => stegUt.explainedShare !== null
-        ? `<div class="bak-info-bg ram-v-3-info rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
+        ? `<div class="bak-info-bg rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
             <strong>Slutsats:</strong> ${esc(fmT.forklarasAv)} förklarar ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden; <strong>${svPct((100-stegUt.explainedShare), 0)}</strong> blir kvar som huvudtalets oförklarade skillnad.${yrkesStegKvar(budget)} Det oförklarade är det som <em>inte</em> kan tillskrivas ${fmT.variabler.length > 2 ? 'dessa faktorer' : 'den faktorn'} och som lönekartläggningen ska granska närmare.
            </div>`
         : '';
@@ -1036,7 +1036,7 @@ function renderRegressionCard() {
         </div>` : '';
 
     wrap.innerHTML = `
-        <div class="card bl4-${verdictFarg}" role="region" aria-label="Multivariat regressionsresultat">
+        <div class="card ram-v-3-${verdictFarg}" role="region" aria-label="Multivariat regressionsresultat">
             <div class="reg-intro">
                 <p><span class="info-tip" data-tooltip="En statistisk metod (OLS-regression) som &quot;rensar bort&quot; effekten av att kvinnor och män har olika ålder och arbetar i olika ${T.niva.fl}. Det som kvarstår är den OFÖRKLARADE löneskillnaden — det som inte kan tillskrivas dessa strukturella skillnader.">${ikon('info', 14)}</span> Den <strong>råa löneskillnaden</strong> mellan kvinnor och män kan delvis förklaras av att grupperna har olika åldersstruktur och är olika fördelade över ${T.niva.bfl}. Verktyget använder en statistisk metod som räknar bort de strukturella skillnaderna. Det som <strong>kvarstår</strong> är den <em>oförklarade</em> löneskillnaden — den del som inte beror på att kvinnor är yngre, jobbar i annat BAS osv.</p>
             </div>
@@ -1179,7 +1179,7 @@ function renderRegressionCard() {
                             </tbody>
                         </table>
                     </div>
-                    ${tolkning ? `<div class="bak-info-yta ram-v-3-info rund-4 fs-sm marg-t-10 pad-10-14">${tolkning}</div>` : ''}
+                    ${tolkning ? `<div class="bak-info-yta rund-4 fs-sm marg-t-10 pad-10-14">${tolkning}</div>` : ''}
                     <p class="text-dampad-xs lh-1_5 marg-t-8">
                         <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma variabler som huvudregressionen (utan ${T.enhet.en} inom BAS)${(() => { const f = _rgModellFras({ ...forklaringsmodell(), yrkesgrupp: false }); return f ? `: kön, ${f}` : ': bara kön'; })()} — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
                         ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>
@@ -1304,7 +1304,7 @@ function renderBlinderOaxacaCard(reg) {
     if (!modell.bas && !modell.alder) { wrap.innerHTML = ''; return; }   // endast kön: inget att dela upp (ADR-56)
     const r = runBlinderOaxaca();
     if (!r) {
-        wrap.innerHTML = `<div class="card ram-v-4-dampad">
+        wrap.innerHTML = `<div class="card">
             <h3 class="marg-0-0-8">Förklarad och oförklarad löneskillnad</h3>
             <p class="farg-dampad fs-md marg-0">
                 För få observationer (kräver minst 50 personer totalt och ${statGolv()} av varje kön).
@@ -1342,7 +1342,7 @@ function renderBlinderOaxacaCard(reg) {
         </tr>`).join('');
 
     wrap.innerHTML = `
-        <div class="card ram-v-4-granska-ljus">
+        <div class="card">
             <h3 class="marg-0-0-6">Förklarad och oförklarad löneskillnad
                 <span class="info-tip" data-tooltip="Uppdelningen enligt Blinder (1973) och Oaxaca (1973). Delar upp den råa skillnaden i tre delar: hur mycket beror på att kvinnor och män har olika karakteristika (förklarat), och hur mycket beror på att samma egenskaper betalas olika (oförklarat — det statistiken inte kan förklara, inte ett mått på diskriminering).">${ikon('info', 14)}</span>
             </h3>
@@ -1396,7 +1396,7 @@ function renderBlinderOaxacaCard(reg) {
                 </div>
             </details>
 
-            <div class="bak-varning-bg ram-v-3-varning rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
+            <div class="bak-varning-bg rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
                 <strong>Vad betyder detta i samverkan?</strong><br>
                 Den <em>förklarade</em> delen (${svTal(Math.abs(forklarat), 1)} procentenheter) beror på att kvinnor och män
                 i organisationen skiljer sig i ${esc(t.forklarasAv)}. Den hänsyn man rimligt

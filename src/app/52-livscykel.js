@@ -140,6 +140,8 @@ function renderLifecycleAnalysis() {
     }
 
     coachText += modellMening;
+    // Slutsatsens rand följer samma regel (ADR-71): rand i statusfärg bara när skillnaden växer eller krymper. Båda
+    // konstanta lägena står utan rand, som förändringen bredvid står i neutral färg: "densamma" är inte "balanserat".
 
     // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-71): varningsfärg när samspelet mellan kön
     // och ålder är säkerställt (interaktionSig, samma gräns som tolkningen och rutan bredvid), annars neutral. Inte
@@ -151,7 +153,7 @@ function renderLifecycleAnalysis() {
     // ====== UI ======
     wrap.innerHTML = `
         <!-- B2: Klarspråklig rubrik och intro -->
-        <div class="insight-box info ram-v-4-accent marg-b-14">
+        <div class="insight-box info marg-b-14">
             <strong>Vad analyserar livscykelmodellen?</strong>
             <p class="fs-md lh-1_55 marg-8-0">
                 Den här analysen svarar på frågan: <em>"Är löneskillnaden mellan kvinnor och män
@@ -187,7 +189,7 @@ function renderLifecycleAnalysis() {
         <p class="livscykel-kvot-not text-dampad-sm lh-1_5 marg-0-0-14">${kvotMening}</p>
 
         <!-- B7: HR-coach baserad på mönster -->
-        <div class="card mb-14 ${coachKategori === 'växande' ? 'bl4-kritisk' : coachKategori === 'krympande' ? 'bl4-varning' : coachKategori === 'konstant' ? 'bl4-accent' : 'bl4-ok'}">
+        <div class="card mb-14${coachKategori === 'växande' ? ' ram-v-3-kritisk' : coachKategori === 'krympande' ? ' ram-v-3-varning' : ''}">
             <h3 class="fs-lg marg-0-0-8">${coachRubrik}</h3>
             <p class="fs-md lh-1_6 marg-0">${coachText}</p>
         </div>

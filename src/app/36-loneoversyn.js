@@ -249,7 +249,7 @@ function updateForecast() {
     // att fyllas med "< 10"-celler, och BAS:et räknas upp i noten under.
     const bandVisade = bands.filter(b => !isKMasked(b.n));
     const bandUtelamnade = bands.filter(b => isKMasked(b.n)).map(b => b.bas);
-    const bandPanelHtml = bands.length ? `<div class="card ram-v-4-granska-ljus marg-0-0-14">
+    const bandPanelHtml = bands.length ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Lönespann per BAS (P25 / median / P75)</strong>
         ${bandVisade.length ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">P25</th><th class="t-hoger">Median</th><th class="t-hoger">P75</th></tr></thead>
         <tbody>${bandVisade.map(b => `<tr><td>${esc(b.bas)}</td><td class="t-hoger">${b.n}</td><td class="t-hoger">${kr(b.p25)}</td><td class="t-hoger">${kr(b.median)}</td><td class="t-hoger">${kr(b.p75)}</td></tr>`).join('')}</tbody></table>` : ''}
@@ -266,7 +266,7 @@ function updateForecast() {
         poolCost[p] = (poolCost[p] || 0) + c;
     });
     const poolRows = Object.keys(poolLabels).filter(p => poolCost[p] > 0.5);
-    const poolHtml = (poolRows.length || out.generellCost > 0.5) ? `<div class="card ram-v-4-7c3aed marg-0-0-14">
+    const poolHtml = (poolRows.length || out.generellCost > 0.5) ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Kostnad per pott (kr/mån)</strong>
         <table class="data-table st-085"><tbody>
             ${out.generellCost > 0.5 ? `<tr><td>Generellt påslag</td><td class="t-hoger">${kr(out.generellCost)}</td></tr>` : ''}
@@ -323,7 +323,7 @@ function updateForecast() {
     let stagedHtml = '';
     if (years > 1 && out.använt > 0.5) {
         const plan = _fcStagedPlan(d, out.alloc.perPerson, years, cost);
-        stagedHtml = `<div class="card ram-v-4-info marg-0-0-14">
+        stagedHtml = `<div class="card marg-0-0-14">
             <strong class="block-mb6">Stegvis plan över ${years} år (senast inom tre år)</strong>
             <table class="data-table fs-sm"><thead><tr><th>År</th><th class="t-hoger">Andel infört</th><th class="t-hoger">Ack. kostnad (inkl. PO)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead>
             <tbody>${plan.map(p => `<tr><td>${p.year}</td><td class="t-hoger">${svPct(p.andelPct, 0)}</td><td class="t-hoger">${kr(p.kumKostnad)}</td><td class="t-hoger">${!konOk || p.rawGap == null ? '–' : andelAvMan(p.rawGap)}</td></tr>`).join('')}</tbody></table>
@@ -335,7 +335,7 @@ function updateForecast() {
     const varavKvDom = _fcVaravKvDom(utfall, out.equityCost, K);
     const equityPctOfPott = out.pott > 0 && varavKvDom != null ? 100 * varavKvDom / out.pott : null;
     const splitHtml = out.använt > 0.5 ? `
-        <div class="card ram-v-4-7c3aed marg-0-0-14">
+        <div class="card marg-0-0-14">
             <strong class="block-mb6">Hur potten används</strong>
             <div class="fs-md lh-1_8">
                 Generellt påslag: <strong>${kr(out.generellCost)}</strong> &nbsp;·&nbsp; Riktade potter: <strong>${kr(out.riktadCost)}</strong><br>
@@ -348,7 +348,7 @@ function updateForecast() {
     // maskeras i utfallet för att dess kostnad står på den samlade raden (ADR-70).
     const leaps = _fcDetectLeapfrog(out.alloc.perGroup.filter(g => !isKMasked(g.n) && !utfall.invikta.includes(g)));
     const leapHtml = leaps.length ? `
-        <div class="card bak-varning-yta ram-v-4-varning marg-0-0-14">
+        <div class="card bak-varning-yta ram-v-3-varning marg-0-0-14">
             <strong class="block-mb6">${ikon('statusVarning')} Spillover: ${leaps.length} grupp${leaps.length > 1 ? 'er' : ''} går om en tidigare högre grupp</strong>
             <ul class="fs-sm lh-1_6 marg-4-0-0-18">
                 ${leaps.slice(0, 6).map(l => `<li><strong>${esc(l.bas)}·${esc(l.aid)}</strong> (median ${kr(l.gammalA)} till ${kr(l.nyA)}) passerar <strong>${esc(l.overBas)}·${esc(l.overAid)}</strong> (${kr(l.gammalB)} till ${kr(l.nyB)})</li>`).join('')}
@@ -357,7 +357,7 @@ function updateForecast() {
             <p class="text-dampad-xs marg-8-0-0">En grupp som passerar en tidigare högre betald grupp kan skapa ny skevhet — kontrollera att omkastningen är sakligt motiverad.</p>
         </div>` : '';
     if (outEl) outEl.innerHTML = `
-        <div class="card ram-v-4-accent marg-0-0-14">
+        <div class="card marg-0-0-14">
             <strong class="block-mb6">Löneskillnad före och efter</strong>
             <div class="fs-md lh-1_8">
                 Kvinnors medianlön i % av mäns: ${konOk ? andelCell(out.rawGapFore, out.rawGapEfter) : esc(_konUtelamnatNot()) + '<br>'}

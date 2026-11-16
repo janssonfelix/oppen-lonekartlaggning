@@ -305,7 +305,7 @@ function renderFardigcheck() {
         punkter öppna — listan finns för att inget ska glömmas bort av misstag.</p>
         <ul class="fc-list">${items.map(i => `
             <li class="fc-item fc-${esc(i.level)}">
-                <div class="fc-title">${esc(i.title)}</div>
+                <div class="fc-title">${i.level === 'warn' ? statusMarke('varning') : statusMarke('info', 'Att känna till')}${esc(i.title)}</div>
                 <div class="fc-detail">${esc(i.detail)}</div>
                 ${i.tab ? `<button type="button" class="btn-table-tool" data-goto-tab="${esc(i.tab)}">Gå dit</button>` : ''}
             </li>`).join('')}</ul>`;

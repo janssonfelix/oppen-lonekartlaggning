@@ -12421,6 +12421,8 @@ const _RF = {
     fargB: 64, fargLuft: 12, fargStapel: 12, fargText: 16, fargH: 180, fargSteg: 3,
 };
 
+// Storleken för diagrammets minsta texter: två steg under grundstorleken, men aldrig under golvet CHART_FONT.minsta.
+const _rfLitenPx = px => Math.max(CHART_FONT.minsta, px - 2);
 const _rfBredd = (s, px) => String(s == null ? '' : s).length * px * _RF.tecken;
 function _rfKorta(s, maxTecken) {
     s = String(s == null ? '' : s);
@@ -12868,7 +12870,7 @@ function _rfLodratLayout(figurIn, val, B, H, px, syn) {
     const notRader = val.not ? _rfRadbryt(val.not, (B - 16) / ((px - 1) * _RF.tecken), 2) : [];
     const maxT = (B - 16) / ((px - 1) * _RF.tecken);
     const rubrik = val.rubrik ? _rfKorta(String(val.rubrik), (B - 16) / ((px + 2) * _RF.tecken)) : '';
-    const fot = val.fot ? _rfKorta(String(val.fot), maxT * (px - 1) / (px - 2)) : '';
+    const fot = val.fot ? _rfKorta(String(val.fot), maxT * (px - 1) / _rfLitenPx(px)) : '';
     const notH = (notRader.length ? notRader.length * px + 8 : 0) + (fot ? px + 2 : 0);
     const topp = 10 + (rubrik ? px + 14 : 0) + (syn.paneler.some(p => p != null) ? px + 10 : 0);
     const botten = rader => (rader ? axelNer + legBas + (rader - 1) * _RF.legendRad + 4 : axelNer) + 6 + notH;
@@ -13227,10 +13229,10 @@ function _rfPunkt(g, l, li, c) {
         // ritas därför aldrig för en punkt som inte ritas.
         if (d.etikett != null && String(d.etikett) !== '' && l.etikettLage === 'undvik' && c.undvik) {
             // Läget räknas när panelens alla punkter är ritade (_rfUndvikEtiketter): de är hinder.
-            const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28);
+            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, 28);
             c.undvik.push({ x, y, r: (l.symbol === 'romb' || l.symbol === 'kvadrat' ? 1.3 * r : r) + 0.5, text, hel, fpx });
         } else if (d.etikett != null && String(d.etikett) !== '') {
-            const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
+            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
             // Lagrets etikettLage ställer texten till vänster eller höger om punkten (värdet bredvid en punkt i ett liggande diagram);
             // annars mitt över punkten — eller under, om den inte ryms ovanför (panelens överkant).
             // 'auto' är till höger om punkten, och till vänster när texten annars skulle gå utanför panelens högerkant.
@@ -13899,7 +13901,7 @@ function _rfReferenser(g, figur, c, bredd, hojd, del) {
         if (streck) linje.attr('stroke-dasharray', streck);
         // Linjens etikett (t.ex. "80 %"): vid linjens högra ände, strax ovanför — eller överst, till höger om en lodrät linje.
         if (r.etikett != null && String(r.etikett) !== '') {
-            const fpx = c.px - 2, text = _rfKorta(String(r.etikett), 24), tb = _rfBredd(text, fpx);
+            const fpx = _rfLitenPx(c.px), text = _rfKorta(String(r.etikett), 24), tb = _rfBredd(text, fpx);
             const x = lodrat ? Math.min(p + 4, Math.max(0, bredd - tb)) : Math.max(0, bredd - tb - 4);
             const y = lodrat ? fpx + 2 : Math.max(fpx, p - 4);
             _rfText(c.texter, x, y, text, { px: fpx, farg: r.textfarg || r.farg || FARG.dampad, fet: true, title: String(r.etikett),
@@ -13936,7 +13938,7 @@ function _rfYta(g, l, li, c) {
         const hel = String(d.etikett);
         _rfText(g, x + 4, y + fpx + 2, _rfKorta(hel, tecken), { px: fpx, farg: textfarg, fet: true, title: hel, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
         if (l.etikettLage !== 'topp' && d.undertext != null && h >= 2 * fpx + 10) {
-            _rfText(g, x + 4, y + 2 * fpx + 5, _rfKorta(String(d.undertext), tecken), { px: fpx - 1, farg: textfarg, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
+            _rfText(g, x + 4, y + 2 * fpx + 5, _rfKorta(String(d.undertext), tecken), { px: _rfLitenPx(c.px), farg: textfarg, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
         }
     });
 }
@@ -14089,7 +14091,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
     if (L.legend.fler) _rfText(lg, 8 + L.legend.fler.x, legendY + L.legend.fler.rad * _RF.legendRad, L.legend.fler.text, { px, attr: { 'data-legend': 'fler' } });
     notRader.forEach((rad, k) => _rfText(svg, 8, H - 8 - (notRader.length - 1 - k) * px, rad, { px: px - 1, farg: FARG.kritisk }));
     // Fotraden (exporten: verktyg, datum, urval) står överst i botten, i dämpad färg; rubriken överst i bilden.
-    if (L.fot) _rfText(svg, 8, H - 8 - notRader.length * px - (notRader.length ? 4 : 0), L.fot, { px: px - 2, farg: FARG.svag, attr: { 'data-del': 'fot' } });
+    if (L.fot) _rfText(svg, 8, H - 8 - notRader.length * px - (notRader.length ? 4 : 0), L.fot, { px: _rfLitenPx(px), farg: FARG.svag, attr: { 'data-del': 'fot' } });
     if (L.rubrik) _rfText(svg, 8, px + 8, L.rubrik, { px: px + 2, fet: true, farg: FARG.text, attr: { 'data-del': 'rubrik' } });
 }
 
@@ -16024,6 +16026,7 @@ function gapStatusKI(o) {
 const CHART_FONT = {
     family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     size: 12,
+    minsta: 11,            // golvet för de minsta rollerna (punkt- och linjeetiketter, ytans andra rad, fotraden): _rfLitenPx
     color: '#1f2430',
     dampad: '#5b6472'      // axlarnas siffror och rubriker: ett steg lugnare än diagrammets egna etiketter
 };
@@ -17252,6 +17255,16 @@ function bedomningUnderlag({ reg: given } = {}) {
 }
 
 const UK_ETIKETT = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' };
+const UK_IKON = { ok: 'bock', varning: 'statusVarning', kritisk: 'statusKritisk', info: 'info' };
+/**
+ * Statusmärket med ikon och ord, i samma form som märkena i Underlagets kvalitet. Ikonen är dold för hjälpmedel
+ * (ikon()); ordet bär läget, så att det inte bara syns i färgen. Bara på skärmen.
+ * @param {'ok'|'varning'|'kritisk'|'info'} status
+ * @param {string} [ord] ordet, om det inte är UK_ETIKETT:s (upplysningen har inget där)
+ */
+function statusMarke(status, ord = UK_ETIKETT[status]) {
+    return `<span class="uk-marke uk-${status}">${ikon(UK_IKON[status], 14)} ${esc(ord)}</span>`;
+}
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
 function renderUnderlagetsKvalitet({ reg } = {}) {
     const host = document.getElementById('underlagets-kvalitet');
@@ -20234,7 +20247,7 @@ function _showExportSensitivityToast(bodyHtml) {
     const toast = document.createElement('div');
     toast.id = 'export-sensitivity-toast';
     toast.setAttribute('role', 'status');
-    toast.style.cssText = `position:fixed; bottom:24px; right:24px; max-width:380px; padding:14px 18px; background:${FARG.text}; color:${FARG.yta}; border-left:4px solid ${FARG.varning}; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.28); z-index:99998; font-size:0.88rem; line-height:1.55;`;
+    toast.style.cssText = `position:fixed; bottom:24px; right:24px; max-width:380px; padding:14px 18px; background:${FARG.text}; color:${FARG.yta}; border-left:3px solid ${FARG.varning}; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.28); z-index:99998; font-size:0.88rem; line-height:1.55;`;
     // Neutral text: notisen visas efter alla exporter, också de som innehåller en rad per person
     // eller grupper under tröskeln, och ska därför inte utlova aggregering.
     const body = bodyHtml || `<strong>Fil sparad</strong><br>
@@ -21404,7 +21417,7 @@ function _openEvidenceModal(p) {
         <table class="tabell-samman fs-sm bredd-100p">
             <tbody>${rowsHtml}</tbody>
         </table>
-        ${p.formula ? `<div class="bak-yta ram-v-3-granska-ljus rund-4 typsnitt-mono-ui fs-sm lh-1_5 marg-t-14 pad-10-12">${p.formula}</div>` : ''}
+        ${p.formula ? `<div class="bak-yta rund-4 typsnitt-mono-ui fs-sm lh-1_5 marg-t-14 pad-10-12">${p.formula}</div>` : ''}
         ${p.footer ? `<p class="text-dampad-sm lh-1_55 marg-14-0-0">${p.footer}</p>` : ''}
     `;
     modal.style.display = 'flex';
@@ -21818,7 +21831,7 @@ function openDataResidency() {
             <p><strong>Fälten som sparas per rad</strong></p>
             <p class="marg-0-0-6">Verktyget läser bara fem fält ur filen: ${T.niva.en}, ${T.enhet.en}, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Det noterar också radens nummer i filen. Allt annat (personnummer, namn, e-post, anställningsnummer, fri text utöver ${T.namn.bf}) tas bort vid inläsningen och sparas aldrig.</p>
             ${sampleRow}
-            <p class="bak-ok-yta ram-v-3-ok rund-4 fs-sm marg-t-18 pad-10-14">
+            <p class="bak-ok-yta rund-4 fs-sm marg-t-18 pad-10-14">
                 <strong>Inbyggt dataskydd enligt dataskyddsförordningen:</strong> uppgifterna minimeras innan de sparas i minnet, inte efter. Filen läses in i minnet, raderna minimeras en i taget, och filens övriga innehåll släpps när inläsningen är klar.
             </p>
 
@@ -23198,7 +23211,7 @@ setupDrop("drop-area-stat", "file-input-stat");
  */
 function _renderSensitiveRejection(sensitive) {
     const list = sensitive.map(s => `<li><code>${esc(s.col)}</code> – ${esc(s.reason)}</li>`).join('');
-    dataStatus.innerHTML = `<div class="bak-varning-bg-gammal ram-v-4-danger rund-6 lh-1_55 marg-t-10 pad-14-16">
+    dataStatus.innerHTML = `<div class="bak-varning-bg-gammal ram-v-3-kritisk rund-6 lh-1_55 marg-t-10 pad-14-16">
         <strong class="f-kritisk">${ikon('stopp')} Filen avvisad – innehåller känsliga personuppgifter</strong><br>
         Följande kolumner verkar innehålla data som inte ska användas i lönekartläggning:
         <ul class="fs-sm marg-8-0-8-20">${list}</ul>
@@ -24044,7 +24057,7 @@ function maybeShowColumnMapping() {
            <p class="text-dampad-sm marg-6-0">Verktyget kände igen alla obligatoriska kolumner. Justera vid behov om någon matchats fel.</p>${profilRad}`;
 
     panel.innerHTML = `
-        <details class="card${missing.length ? ' bl4-kritisk' : ''}" open>
+        <details class="card${missing.length ? ' ram-v-3-kritisk' : ''}" open>
             <summary class="pekare fw-600 pad-6-0">Kolumnmappning (filens kolumner till verktygets fält)</summary>
             <div class="pad-t-10">
                 ${head}
@@ -24435,7 +24448,7 @@ function renderLikvardighet() {
     const jämförOK = orgOK && (internOK || statOK);
 
     const introHtml = `
-        <div class="insight-box info lv-hjalp ram-v-4-accent marg-b-14">
+        <div class="insight-box info lv-hjalp marg-b-14">
             <strong>${ikon('info')} Så här fungerar likvärdighetsanalysen</strong>
             <p class="fs-md lh-1_55 marg-8-0">
                 Lönekartläggningens regler omfattar en jämförelse mellan kvinnodominerat arbete och arbete som inte är kvinnodominerat
@@ -24446,9 +24459,9 @@ function renderLikvardighet() {
                     : `i första hand organisationens egna ${T.enhet.fl} med varandra.`}
             </p>
             ${d.jämförelse.kravProxy === 'poäng'
-                ? `<p class="bak-ok-bg ram-v-4-ok rund-4 fs-sm marg-8-0 pad-8-12">
+                ? `<p class="bak-ok-bg rund-4 fs-sm marg-8-0 pad-8-12">
                        <strong>Mått på kraven: arbetsvärdering (poäng)</strong> — ${T.enhet.fl} paras på likvärdiga eller lägre krav enligt organisationens poäng, lika krav inom ±${result.opts.poangBandPct ?? 5} %.${d.jämförelse.kvUtanPoang ? ` <span class="varning-pa-yta">${d.jämförelse.kvUtanPoang} ${termFras(T.enhet, d.jämförelse.kvUtanPoang === 1 ? 'en' : 'fl', { adjektiv: 'kvinnodominerad' })} saknar poäng och uteslöts.</span>` : ''}</p>`
-                : `<p class="bak-accent-yta ram-v-4-accent rund-4 fs-sm marg-8-0 pad-8-12">
+                : `<p class="bak-accent-yta rund-4 fs-sm marg-8-0 pad-8-12">
                        <strong>Mått på kraven: ${T.niva.bf}</strong> — ${T.enhet.fl} inom samma ${T.niva.en} antas ha likvärdiga krav. Har organisationen en egen arbetsvärdering kan du lägga till poängen i lönefilen; poäng mäter kraven i arbetet bättre.</p>`}
             <ul class="fs-sm lh-1_6 marg-8-0 pad-v-22">
                 <li><strong>Steg 1</strong>: Identifiera <em>organisationens kvinnodominerade</em>
@@ -24482,7 +24495,7 @@ function renderLikvardighet() {
             <h3 class="fs-lg marg-0-0-10">Diagnostik — vad verktyget ser</h3>
             <div class="rutnat fs-sm gap-14 kolumner-2-lika">
                 <div class="rund-6 pad-12 ${orgOK ? 'ruta-ok' : 'ruta-varning'}">
-                    <strong>Organisationens data</strong>
+                    <strong>Organisationens data</strong> ${statusMarke(orgOK ? 'ok' : 'varning')}
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.organisation.totalRader.toLocaleString('sv-SE')}</strong></li>
                         <li>Unika ${T.enhet.fl} i ${T.niva.fl}: <strong>${d.organisation.antalAidxBas}</strong></li>
@@ -24497,7 +24510,7 @@ function renderLikvardighet() {
                     </ul>
                 </div>
                 <div class="rund-6 pad-12 ${statOK ? 'ruta-ok' : 'ruta-varning'}">
-                    <strong>jämförelsestatistiken</strong>
+                    <strong>jämförelsestatistiken</strong> ${statusMarke(statOK ? 'ok' : 'varning')}
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.statistik.totalRader.toLocaleString('sv-SE')}</strong></li>
                         <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : `nej — nationell könsfördelning ur ${esc(skrKallaKort())} som reserv`}</strong></li>
@@ -24514,7 +24527,7 @@ function renderLikvardighet() {
                 </div>
             </div>
             ${jämförOK ? `
-                <div class="bak-accent-yta ram-v-3-accent rund-4 fs-sm marg-t-10 pad-10-12">
+                <div class="bak-accent-yta rund-4 fs-sm marg-t-10 pad-10-12">
                     <strong>Jämförelse</strong>:
                     ${_lvPoang(result) ? '' : `${d.jämförelse.gemensammaBas} gemensamma ${T.niva.fl},`}
                     ${d.jämförelse.möjligaPar} möjliga par,
@@ -24613,9 +24626,9 @@ function renderLikvardighet() {
 
     // ====== Sektion 4: § 3:10-kandidatpar (huvudtabellen) ======
     const källBadge = p => {
-        if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-0_72rem pad-1-6" title="Ur organisationens egna löner (jämförelse inom organisationen)">intern</span>`;
-        if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
-        return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
+        if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-xs pad-1-6" title="Ur organisationens egna löner (jämförelse inom organisationen)">intern</span>`;
+        if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-xs pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
+        return `<span class="bak-varning-bg rund-8 farg-varning fs-xs pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
     };
     const ciCell = p => {
         if (!p.gapCI || p.gapCI.lo == null) return '<span class="f-dampad" title="För få observationer för bootstrap">—</span>';
@@ -25570,7 +25583,7 @@ function updateForecast() {
     // att fyllas med "< 10"-celler, och BAS:et räknas upp i noten under.
     const bandVisade = bands.filter(b => !isKMasked(b.n));
     const bandUtelamnade = bands.filter(b => isKMasked(b.n)).map(b => b.bas);
-    const bandPanelHtml = bands.length ? `<div class="card ram-v-4-granska-ljus marg-0-0-14">
+    const bandPanelHtml = bands.length ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Lönespann per BAS (P25 / median / P75)</strong>
         ${bandVisade.length ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">P25</th><th class="t-hoger">Median</th><th class="t-hoger">P75</th></tr></thead>
         <tbody>${bandVisade.map(b => `<tr><td>${esc(b.bas)}</td><td class="t-hoger">${b.n}</td><td class="t-hoger">${kr(b.p25)}</td><td class="t-hoger">${kr(b.median)}</td><td class="t-hoger">${kr(b.p75)}</td></tr>`).join('')}</tbody></table>` : ''}
@@ -25587,7 +25600,7 @@ function updateForecast() {
         poolCost[p] = (poolCost[p] || 0) + c;
     });
     const poolRows = Object.keys(poolLabels).filter(p => poolCost[p] > 0.5);
-    const poolHtml = (poolRows.length || out.generellCost > 0.5) ? `<div class="card ram-v-4-7c3aed marg-0-0-14">
+    const poolHtml = (poolRows.length || out.generellCost > 0.5) ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Kostnad per pott (kr/mån)</strong>
         <table class="data-table st-085"><tbody>
             ${out.generellCost > 0.5 ? `<tr><td>Generellt påslag</td><td class="t-hoger">${kr(out.generellCost)}</td></tr>` : ''}
@@ -25644,7 +25657,7 @@ function updateForecast() {
     let stagedHtml = '';
     if (years > 1 && out.använt > 0.5) {
         const plan = _fcStagedPlan(d, out.alloc.perPerson, years, cost);
-        stagedHtml = `<div class="card ram-v-4-info marg-0-0-14">
+        stagedHtml = `<div class="card marg-0-0-14">
             <strong class="block-mb6">Stegvis plan över ${years} år (senast inom tre år)</strong>
             <table class="data-table fs-sm"><thead><tr><th>År</th><th class="t-hoger">Andel infört</th><th class="t-hoger">Ack. kostnad (inkl. PO)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead>
             <tbody>${plan.map(p => `<tr><td>${p.year}</td><td class="t-hoger">${svPct(p.andelPct, 0)}</td><td class="t-hoger">${kr(p.kumKostnad)}</td><td class="t-hoger">${!konOk || p.rawGap == null ? '–' : andelAvMan(p.rawGap)}</td></tr>`).join('')}</tbody></table>
@@ -25656,7 +25669,7 @@ function updateForecast() {
     const varavKvDom = _fcVaravKvDom(utfall, out.equityCost, K);
     const equityPctOfPott = out.pott > 0 && varavKvDom != null ? 100 * varavKvDom / out.pott : null;
     const splitHtml = out.använt > 0.5 ? `
-        <div class="card ram-v-4-7c3aed marg-0-0-14">
+        <div class="card marg-0-0-14">
             <strong class="block-mb6">Hur potten används</strong>
             <div class="fs-md lh-1_8">
                 Generellt påslag: <strong>${kr(out.generellCost)}</strong> &nbsp;·&nbsp; Riktade potter: <strong>${kr(out.riktadCost)}</strong><br>
@@ -25669,7 +25682,7 @@ function updateForecast() {
     // maskeras i utfallet för att dess kostnad står på den samlade raden (ADR-70).
     const leaps = _fcDetectLeapfrog(out.alloc.perGroup.filter(g => !isKMasked(g.n) && !utfall.invikta.includes(g)));
     const leapHtml = leaps.length ? `
-        <div class="card bak-varning-yta ram-v-4-varning marg-0-0-14">
+        <div class="card bak-varning-yta ram-v-3-varning marg-0-0-14">
             <strong class="block-mb6">${ikon('statusVarning')} Spillover: ${leaps.length} grupp${leaps.length > 1 ? 'er' : ''} går om en tidigare högre grupp</strong>
             <ul class="fs-sm lh-1_6 marg-4-0-0-18">
                 ${leaps.slice(0, 6).map(l => `<li><strong>${esc(l.bas)}·${esc(l.aid)}</strong> (median ${kr(l.gammalA)} till ${kr(l.nyA)}) passerar <strong>${esc(l.overBas)}·${esc(l.overAid)}</strong> (${kr(l.gammalB)} till ${kr(l.nyB)})</li>`).join('')}
@@ -25678,7 +25691,7 @@ function updateForecast() {
             <p class="text-dampad-xs marg-8-0-0">En grupp som passerar en tidigare högre betald grupp kan skapa ny skevhet — kontrollera att omkastningen är sakligt motiverad.</p>
         </div>` : '';
     if (outEl) outEl.innerHTML = `
-        <div class="card ram-v-4-accent marg-0-0-14">
+        <div class="card marg-0-0-14">
             <strong class="block-mb6">Löneskillnad före och efter</strong>
             <div class="fs-md lh-1_8">
                 Kvinnors medianlön i % av mäns: ${konOk ? andelCell(out.rawGapFore, out.rawGapEfter) : esc(_konUtelamnatNot()) + '<br>'}
@@ -30470,11 +30483,11 @@ function renderRegressionCard() {
         }).join('');
         const diag = (r.diagnostics || []).map(d => `<li>${d}</li>`).join('');
         wrap.innerHTML = `
-            <div class="card ram-v-4-danger" role="region" aria-label="Regressionsanalys misslyckades">
+            <div class="card ram-v-3-kritisk" role="region" aria-label="Regressionsanalys misslyckades">
                 <h3 class="marg-0-0-8">Regressionen kunde inte genomföras</h3>
                 <p class="marg-0-0-12">${esc(r.error)}</p>
                 ${tried ? `<div class="mt-14"><div class="text-dampad-xs versal fw-600 marg-b-6">Försökta modellspecifikationer</div><ul class="lh-1_8 utan-punkter marg-0 pad-0">${tried}</ul></div>` : ''}
-                ${diag ? `<div class="bak-varning-bg-gammal ram-v-3-danger rund-4 marg-t-14 pad-12-14"><strong>Identifierade orsaker:</strong><ul class="lh-1_6 marg-6-0-0-18">${diag}</ul></div>` : ''}
+                ${diag ? `<div class="bak-varning-bg-gammal ram-v-3-kritisk rund-4 marg-t-14 pad-12-14"><strong>Identifierade orsaker:</strong><ul class="lh-1_6 marg-6-0-0-18">${diag}</ul></div>` : ''}
                 <p class="text-dampad-sm marg-t-14">Tips: komplettera med fler observationer per ${T.enhet.en}.</p>
             </div>
         `;
@@ -30563,7 +30576,7 @@ function renderRegressionCard() {
     const yrkesStegKvar = budget => budget && medYrkesSteg(budget)
         ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${svPct(budget.remainingShare, 0)} kvar (steget ${_rgStegEtikett(_RG_STEG_YRKE)}, som inte ingår i huvudtalet).` : '';
     const explainedRowHtml = budget => stegUt.explainedShare !== null
-        ? `<div class="bak-info-bg ram-v-3-info rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
+        ? `<div class="bak-info-bg rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
             <strong>Slutsats:</strong> ${esc(fmT.forklarasAv)} förklarar ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden; <strong>${svPct((100-stegUt.explainedShare), 0)}</strong> blir kvar som huvudtalets oförklarade skillnad.${yrkesStegKvar(budget)} Det oförklarade är det som <em>inte</em> kan tillskrivas ${fmT.variabler.length > 2 ? 'dessa faktorer' : 'den faktorn'} och som lönekartläggningen ska granska närmare.
            </div>`
         : '';
@@ -30763,7 +30776,7 @@ function renderRegressionCard() {
         </div>` : '';
 
     wrap.innerHTML = `
-        <div class="card bl4-${verdictFarg}" role="region" aria-label="Multivariat regressionsresultat">
+        <div class="card ram-v-3-${verdictFarg}" role="region" aria-label="Multivariat regressionsresultat">
             <div class="reg-intro">
                 <p><span class="info-tip" data-tooltip="En statistisk metod (OLS-regression) som &quot;rensar bort&quot; effekten av att kvinnor och män har olika ålder och arbetar i olika ${T.niva.fl}. Det som kvarstår är den OFÖRKLARADE löneskillnaden — det som inte kan tillskrivas dessa strukturella skillnader.">${ikon('info', 14)}</span> Den <strong>råa löneskillnaden</strong> mellan kvinnor och män kan delvis förklaras av att grupperna har olika åldersstruktur och är olika fördelade över ${T.niva.bfl}. Verktyget använder en statistisk metod som räknar bort de strukturella skillnaderna. Det som <strong>kvarstår</strong> är den <em>oförklarade</em> löneskillnaden — den del som inte beror på att kvinnor är yngre, jobbar i annat BAS osv.</p>
             </div>
@@ -30906,7 +30919,7 @@ function renderRegressionCard() {
                             </tbody>
                         </table>
                     </div>
-                    ${tolkning ? `<div class="bak-info-yta ram-v-3-info rund-4 fs-sm marg-t-10 pad-10-14">${tolkning}</div>` : ''}
+                    ${tolkning ? `<div class="bak-info-yta rund-4 fs-sm marg-t-10 pad-10-14">${tolkning}</div>` : ''}
                     <p class="text-dampad-xs lh-1_5 marg-t-8">
                         <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma variabler som huvudregressionen (utan ${T.enhet.en} inom BAS)${(() => { const f = _rgModellFras({ ...forklaringsmodell(), yrkesgrupp: false }); return f ? `: kön, ${f}` : ': bara kön'; })()} — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
                         ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>
@@ -31031,7 +31044,7 @@ function renderBlinderOaxacaCard(reg) {
     if (!modell.bas && !modell.alder) { wrap.innerHTML = ''; return; }   // endast kön: inget att dela upp (ADR-56)
     const r = runBlinderOaxaca();
     if (!r) {
-        wrap.innerHTML = `<div class="card ram-v-4-dampad">
+        wrap.innerHTML = `<div class="card">
             <h3 class="marg-0-0-8">Förklarad och oförklarad löneskillnad</h3>
             <p class="farg-dampad fs-md marg-0">
                 För få observationer (kräver minst 50 personer totalt och ${statGolv()} av varje kön).
@@ -31069,7 +31082,7 @@ function renderBlinderOaxacaCard(reg) {
         </tr>`).join('');
 
     wrap.innerHTML = `
-        <div class="card ram-v-4-granska-ljus">
+        <div class="card">
             <h3 class="marg-0-0-6">Förklarad och oförklarad löneskillnad
                 <span class="info-tip" data-tooltip="Uppdelningen enligt Blinder (1973) och Oaxaca (1973). Delar upp den råa skillnaden i tre delar: hur mycket beror på att kvinnor och män har olika karakteristika (förklarat), och hur mycket beror på att samma egenskaper betalas olika (oförklarat — det statistiken inte kan förklara, inte ett mått på diskriminering).">${ikon('info', 14)}</span>
             </h3>
@@ -31123,7 +31136,7 @@ function renderBlinderOaxacaCard(reg) {
                 </div>
             </details>
 
-            <div class="bak-varning-bg ram-v-3-varning rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
+            <div class="bak-varning-bg rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
                 <strong>Vad betyder detta i samverkan?</strong><br>
                 Den <em>förklarade</em> delen (${svTal(Math.abs(forklarat), 1)} procentenheter) beror på att kvinnor och män
                 i organisationen skiljer sig i ${esc(t.forklarasAv)}. Den hänsyn man rimligt
@@ -31276,6 +31289,8 @@ function renderLifecycleAnalysis() {
     }
 
     coachText += modellMening;
+    // Slutsatsens rand följer samma regel (ADR-71): rand i statusfärg bara när skillnaden växer eller krymper. Båda
+    // konstanta lägena står utan rand, som förändringen bredvid står i neutral färg: "densamma" är inte "balanserat".
 
     // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-71): varningsfärg när samspelet mellan kön
     // och ålder är säkerställt (interaktionSig, samma gräns som tolkningen och rutan bredvid), annars neutral. Inte
@@ -31287,7 +31302,7 @@ function renderLifecycleAnalysis() {
     // ====== UI ======
     wrap.innerHTML = `
         <!-- B2: Klarspråklig rubrik och intro -->
-        <div class="insight-box info ram-v-4-accent marg-b-14">
+        <div class="insight-box info marg-b-14">
             <strong>Vad analyserar livscykelmodellen?</strong>
             <p class="fs-md lh-1_55 marg-8-0">
                 Den här analysen svarar på frågan: <em>"Är löneskillnaden mellan kvinnor och män
@@ -31323,7 +31338,7 @@ function renderLifecycleAnalysis() {
         <p class="livscykel-kvot-not text-dampad-sm lh-1_5 marg-0-0-14">${kvotMening}</p>
 
         <!-- B7: HR-coach baserad på mönster -->
-        <div class="card mb-14 ${coachKategori === 'växande' ? 'bl4-kritisk' : coachKategori === 'krympande' ? 'bl4-varning' : coachKategori === 'konstant' ? 'bl4-accent' : 'bl4-ok'}">
+        <div class="card mb-14${coachKategori === 'växande' ? ' ram-v-3-kritisk' : coachKategori === 'krympande' ? ' ram-v-3-varning' : ''}">
             <h3 class="fs-lg marg-0-0-8">${coachRubrik}</h3>
             <p class="fs-md lh-1_6 marg-0">${coachText}</p>
         </div>
@@ -37516,9 +37531,10 @@ function _lpCoverageHtml(model) {
     const tone = pct >= 90 ? 'ok' : pct >= 60 ? 'warn' : 'crit';
     const farg = tone === 'ok' ? 'ok' : tone === 'warn' ? 'varning' : 'kritisk';
     return `
-    <div class="card mb-16 bl4-${farg}">
+    <div class="card mb-16 lp-tackning ram-v-3-${farg}">
         <div class="rad-bryt baslinje gap-12">
             <div class="fs-2rem tabelltal fw-700 fg-${farg}">${svPct(pct, 0)}</div>
+            ${statusMarke(farg)}
             <div class="text-dampad-sm">
                 ${c.personsCovered} av ${c.personsTotal} personer · ${c.groupsCovered} av ${c.groupsTotal} ${termForAntal(c.groupsTotal, T.enhet)} i ${T.niva.en}
             </div>
@@ -39056,7 +39072,7 @@ function renderFardigcheck() {
         punkter öppna — listan finns för att inget ska glömmas bort av misstag.</p>
         <ul class="fc-list">${items.map(i => `
             <li class="fc-item fc-${esc(i.level)}">
-                <div class="fc-title">${esc(i.title)}</div>
+                <div class="fc-title">${i.level === 'warn' ? statusMarke('varning') : statusMarke('info', 'Att känna till')}${esc(i.title)}</div>
                 <div class="fc-detail">${esc(i.detail)}</div>
                 ${i.tab ? `<button type="button" class="btn-table-tool" data-goto-tab="${esc(i.tab)}">Gå dit</button>` : ''}
             </li>`).join('')}</ul>`;

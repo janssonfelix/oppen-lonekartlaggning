@@ -462,6 +462,11 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
   `linjepunkt`, `litenpunkt`, `intervall`, `individ`, `ruta` och `lada` (lådans `data-i` är den första ritade
   individen i kategorin). Banorna `linje` och `band` har bara `data-l`.
 - Ett `<text>` har ett `<title>` bara när den visade texten har kortats.
+- Texten har grundstorleken 12 px (`CHART_FONT.size`): axlarna, axeltitlarna och förklaringen. Stapel- och
+  rutetexter, noten och ytans etikett är ett steg mindre, rubriken och paneltiteln större. De minsta rollerna —
+  punktetiketter, referenslinjernas etiketter, ytans andra rad och exportens fotrad — har `_rfLitenPx`, som aldrig
+  går under golvet 11 px (`CHART_FONT.minsta`). Ingen text i en figur är alltså mindre än 11 px. Exporten ritar med
+  samma storlekar i den logiska bredden och skalas sedan (avsnitt 6).
 - Det finns två slags inre `<svg>`: panelen (`data-del="panel"`) och ränderna i en liten yta
   (`data-marke="rander"`). Diagrammets egen svg är `:scope > svg` i behållaren.
 - Egenskaper på behållaren (inget skrivs som attribut): `_figur` (originalet, med små punkter),
