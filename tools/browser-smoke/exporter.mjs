@@ -4,13 +4,13 @@
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { NAMN, BILDER, KAN_LASA_URKLIPP, ok, page } from './rigg.mjs';
+import { NAMN, BILDER, KAN_LASA_URKLIPP, ok, page, oppnaFlik } from './rigg.mjs';
 
 // Word-utkastet (.docx).
 export async function wordUtkast() {
     console.log('\n── Word-utkast (.docx) ──');
     /* global JSZip -- används i page.evaluate, där JSZip finns i sidan */
-    await page.click('.nav-item[data-tab="dokumentera"]');
+    await oppnaFlik(page, '.nav-item[data-tab="dokumentera"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(300);
     const [wordFil] = await Promise.all([
@@ -48,7 +48,7 @@ export async function wordUtkast() {
 // Rapportunderlaget (urklipp).
 export async function rapportunderlag() {
     console.log('\n── Rapportunderlag (urklipp) ──');
-    await page.click('.nav-item[data-tab="rapporttext"]');
+    await oppnaFlik(page, '.nav-item[data-tab="rapporttext"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => (document.getElementById('rapportunderlag-innehall')?.textContent || '').includes('Sammanfattning')),

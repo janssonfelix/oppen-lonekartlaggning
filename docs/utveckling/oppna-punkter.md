@@ -31,9 +31,14 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    3,4 → 2,4 s, Lönestruktur 3,3 → 2,2 s, Lika arbete 2,2 → 1,6 s, Ålder & karriär 2,1 → 1,5 s, Löneöversyn
    1,3 → 0,8 s, Översikt, Löneläget och Filer 0,7–0,8 → 0,4–0,5 s. Ett andra besök är inte snabbare, eftersom fliken
    räknas om.
-   Det som återstår är regressionen (omkring 0,3 s per körning, en till tre gånger per flik) och att flikarna räknar
-   fram det som inte syns direkt: rapportmodellen för förhandsbeskedet, rapportunderlaget med dossierer och
-   kvantilregressionen i Lönestruktur.
+   Sedan ADR-80 visas fliken och markeras som räknas inom en bildruta efter klicket, och förhandsbeskedet,
+   rapportunderlaget, regressionskorten i Lönestruktur och löneskillnaden per åldersgrupp ritas efter flikens övre
+   del. På samma underlag (äkta klick i menyn, 2026-11-16) är flikens övre del ritad efter Exportera 3,3 → 0,6 s,
+   Lönestruktur 3,0 → 1,2 s och Rapporttext 3,1 → 1,4 s, medan hela fliken tar lika lång tid som förut (2,5–3,0 s);
+   Ålder & karriär 1,8 → 1,3–1,9 s. Lika arbete (1,5–2,1 s), Löneöversyn (1,1 s) och Översikt (0,6 s) räknas som
+   förut i ett svep, eftersom det som tar tid där står överst.
+   Det som återstår är regressionen (omkring 0,3 s per körning, en till tre gånger per flik), som inte får sparas
+   mellan flikarna (ADR-17).
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.

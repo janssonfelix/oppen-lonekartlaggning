@@ -49,7 +49,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-38 | K-tröskeln är en inställning | Ändrad av ADR-51 och ADR-69 | – |
 | ADR-39 | Diagramkärna på D3 med eget figurformat | Gällande | – |
 | ADR-40 | Fyra exporter med var sin uppgift, ritade ur en rapportmodell | Gällande | – |
-| ADR-41 | Flikmallen: resultatet först | Ändrad av ADR-80 | – |
+| ADR-41 | Flikmallen: resultatet först | Ändrad av ADR-81 | – |
 | ADR-42 | Diagrammens form och färg väljs efter uppgiften; tabell med grafik i raden där ett diagram visar för lite | Gällande | – |
 | ADR-43 | Färgerna har en källa | Gällande | – |
 | ADR-44 | BAS som indikatorvariabler i huvudregressionen | Ändrad av ADR-53 och ADR-63 | – |
@@ -86,7 +86,8 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-77 | HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång | Gällande | 2026-11-15 |
 | ADR-78 | Översikten per huvudområde räknar med huvudregressionens kodning | Gällande | 2026-11-15 |
 | ADR-79 | Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och arbetsvärdering | Gällande | 2026-11-15 |
-| ADR-80 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
+| ADR-80 | Flikbytet ritar först och räknar sedan | Gällande | 2026-11-16 |
+| ADR-81 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 
 ## Besluten
 
@@ -455,7 +456,16 @@ löneökning efter föräldraledighet eller ledighet för vård av anhörig, fö
 gemensamma lönebedömning och för analysen av systemen för könsneutral arbetsvärdering och arbetsindelning. *Gäller i
 dag:* `lagrum.md`, avsnittet om protokollet för gemensam lönebedömning.
 
-**ADR-80 — Bara dator: verktyget anpassas inte för surfplatta eller telefon.** Ändrar ADR-41, som också nämnde
+**ADR-80 — Flikbytet ritar först och räknar sedan.** När användaren själv byter flik blir fliken synlig och sidan
+målas innan fliken räknas, med `aria-busy` och en rad om att fliken räknas medan det som stod i panelen döljs; block som
+tar över en halv sekund och inte syns överst ritas efteråt, vart och ett i en egen uppgift på huvudtråden med en
+platshållare. Ett nytt flikbyte under väntan går före, ett block ritar ingenting om underlaget, tröskeln,
+förhandsvisningen, ett val eller fliken har ändrats sedan fliken ritades, och inget resultat sparas mellan uppgifterna
+(ADR-17); direkta anrop av `renderTabContent`, exportläget och klick från koden ritar synkront som förut. *Avvisat:* en
+arbetstråd (ADR-1); att återanvända regressionen mellan flikarna, som kräver en ändrad ADR-17; att visa flikens gamla
+innehåll medan den räknas. *Gäller i dag:* `k-troskeln.md` §3.
+
+**ADR-81 — Bara dator: verktyget anpassas inte för surfplatta eller telefon.** Ändrar ADR-41, som också nämnde
 surfplatta. Verktyget utformas för datorskärm (användarens beslut). Ett smalt eller delat fönster på datorn ska fungera:
 menyn fälls ihop bakom en knapp och sidan går inte utanför fönstret. Tabeller och diagram utformas däremot inte för en
 liten skärm, och brister som bara syns på surfplatta eller telefon prioriteras inte. Användardokumenten sade redan att

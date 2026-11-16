@@ -127,6 +127,11 @@ Vilka tester som vaktar skydden står i [`skydd.md`](skydd.md), och vilka som va
 användaren gör, med ett klick på `.nav-item[data-tab="…"]`; `__renderTabContent` ritar bara innehållet och lämnar
 panelen dold.
 
+**Flikbytet är synkront i jsdom och uppskjutet i webbläsaren** (ADR-80). Ett klick från koden (`el.click()`) är inte
+användarens eget och ritar fliken direkt, så jsdom-testerna läser fliken genast efter klicket. I webbläsarröktestet är
+`page.click` ett äkta klick: fliken visas först och räknas sedan, och testet klickar i menyn med `oppnaFlik`
+(`tools/browser-smoke/rigg.mjs`), som väntar tills fliken är färdigritad.
+
 ### 5.2 De två projekten
 
 Sviten är delad i två Vitest-projekt i `vitest.config.js`: `enhet` (moduler, vakter och källtext, utan att verktyget

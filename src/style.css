@@ -259,6 +259,13 @@ body {
 .urvalsrad { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 0 0 14px; padding: 8px 14px;
     font-size: var(--fs-sm); color: var(--text-muted, #475569); background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 8px; }
 .urvalsrad:empty, .slutsatser:empty { display: none; }
+/* Flikbytet: rita först, räkna sedan (ADR-80, 31-navigering.js). Medan fliken räknas står en rad överst, och det som
+   stod i panelen sedan förra gången döljs, så att inget inaktuellt tal syns. Ett block som ritas efter fliken har en
+   platshållare. */
+.view-panel[aria-busy="true"] > :not(.flik-raknas) { visibility: hidden; }
+.flik-raknas, .block-raknas { margin: 0 0 14px; padding: 8px 14px; font-size: var(--fs-sm); color: var(--text-muted);
+    background: var(--yta); border: 1px dashed var(--border-stark); border-radius: 8px; }
+.block-raknas { display: block; margin: 8px 0; }
 .urvalsrad strong { color: var(--text-main, #0f172a); font-weight: 600; }
 .slutsatser { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 0 0 16px; }
 .slutsats { background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }

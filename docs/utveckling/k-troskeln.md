@@ -169,6 +169,20 @@ inte syns (`tomFlikarUtom`), och varje flik minns vid vilken generation den sena
 före ändringen ritas om innan något läses ur den (`exportSakra`, `exportElement`; ZIP-exporten `exportSakraAlla`). Går
 det inte att rita om fliken exporteras ingenting ur den — hellre en utebliven export än en med fel tröskel.
 
+**Flikbytet** (`31-navigering.js`, ADR-80). När användaren själv byter flik (ett klick i menyn, pilarna i menyn,
+sökfältet, en länk till en flik) visas fliken och sidan målas innan fliken räknas (`flikbyte`): panelen får
+`aria-busy` och en rad om att fliken räknas, och det som stod i den sedan förra gången döljs. Ett nytt flikbyte under
+väntan går före (`_flikVal`). De block som tar över en halv sekund och inte syns överst ritas efter flikens övre del,
+vart och ett i en egen uppgift med en platshållare (`_ritaTungtBlock`): förhandsbeskedet i Exportera och
+rapportunderlaget i Rapporttext (båda i exportläget), regressionskorten i Lönestruktur och löneskillnaden per
+åldersgrupp i Ålder & karriär. Ett block räknas i sin uppgift ur det som gäller då och ritar ingenting om fliken har
+ritats om eller lämnats, eller om underlaget, tröskeln, förhandsvisningen eller ett val har ändrats sedan fliken
+ritades; står platshållaren kvar ritas fliken då om från början. Medan block väntar räknas fliken som inte ritad,
+så att exportgrinden ritar om den innan något läses ur den. Allt annat ritar synkront som förut: `renderTabContent`
+anropad direkt (exportgrinden, exporterna, omritningen efter ändrad tröskel, testerna) och ett klick från koden
+(`el.click()`); ett test som vill pröva det uppskjutna flikbytet anropar `klickaFlik(nav, { uppskjut: true })`
+(`tests/flikbyte.test.js`).
+
 **Förhandsvisningen.** Knappen *Som i exporten* i sidhuvudet (`sattForhandsvisning`) sätter skärmen i exportläget —
 banner, streckad ram och omritning av det som syns — tills den stängs av. Exporterna byter då inte läge, och ett byte
 medan en export pågår avvisas.
