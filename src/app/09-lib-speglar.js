@@ -497,14 +497,24 @@ function invert(A) {
 function fitOLS(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 2) return null;
-    const Xt = transpose(X);
-    const XtX = matMul(Xt, X);
+    // Indikatorerna gör X glest: varje rad har få nollskilda kolumner. Summorna räknas bara över dem, i samma ordning
+    // över raderna som en full matrisprodukt, så att resultatet är detsamma (en term som är 0 ändrar inte summan).
+    const nz = X.map(row => { const ix = []; for (let a = 0; a < k; a++) if (row[a] !== 0) ix.push(a); return ix; });
+    const XtX = Array.from({ length: k }, () => new Array(k).fill(0));
+    const Xty = new Array(k).fill(0);
+    for (let i = 0; i < n; i++) {
+        const xi = X[i], ix = nz[i], yi = y[i];
+        for (let p = 0; p < ix.length; p++) {
+            const a = ix[p], va = xi[a], rad = XtX[a];
+            for (let q = 0; q < ix.length; q++) { const b = ix[q]; rad[b] += va * xi[b]; }
+            Xty[a] += va * yi;
+        }
+    }
     const XtXinv = invert(XtX);
     if (!XtXinv) return null;
-    const Xty = matMul(Xt, y.map(v => [v])).map(r => r[0]);
     const beta = matMul(XtXinv, Xty.map(v => [v])).map(r => r[0]);
 
-    const yhat = X.map(row => row.reduce((s, v, i) => s + v * beta[i], 0));
+    const yhat = X.map((row, i) => { let s = 0; for (const a of nz[i]) s += row[a] * beta[a]; return s; });
     const resid = y.map((yi, i) => yi - yhat[i]);
     const ymean = y.reduce((s, v) => s + v, 0) / n;
     let rss = 0, tss = 0;
@@ -520,9 +530,11 @@ function fitOLS(X, y, hTillagg = null) {
     // HC3: leverages h_i = x_i' (X'X)^-1 x_i (+ hTillagg_i)
     const h = X.map((xi, i) => {
         let s = hTillagg ? hTillagg[i] : 0;
-        for (let a = 0; a < k; a++) {
+        const ix = nz[i];
+        for (let p = 0; p < ix.length; p++) {
+            const a = ix[p], inv = XtXinv[a];
             let sa = 0;
-            for (let b = 0; b < k; b++) sa += XtXinv[a][b] * xi[b];
+            for (let q = 0; q < ix.length; q++) { const b = ix[q]; sa += inv[b] * xi[b]; }
             s += xi[a] * sa;
         }
         return s;
@@ -532,10 +544,10 @@ function fitOLS(X, y, hTillagg = null) {
     for (let i = 0; i < n; i++) {
         const denom = (1 - h[i]) ** 2;
         const w = denom > 1e-12 ? (resid[i] * resid[i]) / denom : 0;
-        for (let a = 0; a < k; a++) {
-            for (let b = 0; b < k; b++) {
-                meat[a][b] += w * X[i][a] * X[i][b];
-            }
+        const xi = X[i], ix = nz[i];
+        for (let p = 0; p < ix.length; p++) {
+            const a = ix[p], wa = w * xi[a], rad = meat[a];
+            for (let q = 0; q < ix.length; q++) { const b = ix[q]; rad[b] += wa * xi[b]; }
         }
     }
     const breadMeat = matMul(XtXinv, meat);

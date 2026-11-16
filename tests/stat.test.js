@@ -8,7 +8,7 @@
  *   - linearRegression (perfekt linje, brusig data)
  *   - normalCdf (Φ vid kända punkter ±1σ ±2σ)
  *   - matMul / transpose / invert (identitet, singulär)
- *   - fitOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2)
+ *   - fitOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2, exakt samma tal som fulla matrisprodukter)
  *   - bhJustera (Benjamini–Hochberg: ordning, m = 1, tom lista, lika p-värden, tak 1, monotonicitet)
  */
 
@@ -254,7 +254,83 @@ describe('fitOLS', () => {
         const utan = fitOLS(X.map(r => r.slice(0, 2)), y);
         expect(utan.hHoga).toBe(0);
     });
+
+    // fitOLS summerar bara över de nollskilda kolumnerna i varje rad, i samma ordning som en full matrisprodukt.
+    // Referensen är den tidigare algoritmen med fulla produkter; talen ska vara exakt desamma, inte bara nära.
+    it('ger exakt samma tal som de fulla matrisprodukterna (indikatorer, ålder, en ensam person i en grupp)', () => {
+        let seed = 7;
+        const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+        const X = [], y = [];
+        for (let i = 0; i < 400; i++) {
+            const bas = i === 17 ? 5 : i % 5;          // BAS-indikator 5 har bara en person
+            const aid = (i * 7) % 6, kvinna = (i * 11) % 7 < 3 ? 1 : 0, alder = 22 + ((i * 13) % 43);
+            const rad = [1, kvinna, alder, alder * alder / 100];
+            for (let b = 1; b <= 5; b++) rad.push(bas === b ? 1 : 0);
+            for (let a = 1; a < 6; a++) rad.push(aid === a ? 1 : 0);
+            X.push(rad);
+            y.push(Math.log(26000 + 900 * bas + 400 * aid + 60 * alder - 700 * kvinna + 3000 * rand()));
+        }
+        const hTillagg = X.map((_, i) => 1 / (2 + (i % 9)));
+        for (const h of [null, hTillagg]) {
+            const ny = fitOLS(X, y, h), ref = fitOLSFull(X, y, h);
+            expect(ny).not.toBeNull();
+            expect(ny.hHoga).toBe(ref.hHoga);
+            expect(ny.hHoga).toBeGreaterThanOrEqual(1);
+            for (const nyckel of Object.keys(ref)) {
+                const a = [ny[nyckel]].flat(2), b = [ref[nyckel]].flat(2);
+                expect(a.length, nyckel).toBe(b.length);
+                a.forEach((v, i) => expect(v, `${nyckel}[${i}]`).toBe(b[i]));
+            }
+        }
+    });
 });
+
+// Den tidigare fitOLS, med fulla matrisprodukter över alla kolumner: referensen för testet ovan.
+function fitOLSFull(X, y, hTillagg = null) {
+    const n = X.length, k = X[0].length;
+    if (n < k + 2) return null;
+    const Xt = transpose(X);
+    const XtX = matMul(Xt, X);
+    const XtXinv = invert(XtX);
+    if (!XtXinv) return null;
+    const Xty = matMul(Xt, y.map(v => [v])).map(r => r[0]);
+    const beta = matMul(XtXinv, Xty.map(v => [v])).map(r => r[0]);
+    const yhat = X.map(row => row.reduce((s, v, i) => s + v * beta[i], 0));
+    const resid = y.map((yi, i) => yi - yhat[i]);
+    const ymean = y.reduce((s, v) => s + v, 0) / n;
+    let rss = 0, tss = 0;
+    for (let i = 0; i < n; i++) {
+        rss += resid[i] * resid[i];
+        tss += (y[i] - ymean) ** 2;
+    }
+    const R2 = tss > 0 ? 1 - rss / tss : 0;
+    const sigma2 = n - k > 0 ? rss / (n - k) : 0;
+    const vcovClassic = XtXinv.map(row => row.map(v => v * sigma2));
+    const h = X.map((xi, i) => {
+        let s = hTillagg ? hTillagg[i] : 0;
+        for (let a = 0; a < k; a++) {
+            let sa = 0;
+            for (let b = 0; b < k; b++) sa += XtXinv[a][b] * xi[b];
+            s += xi[a] * sa;
+        }
+        return s;
+    });
+    const hHoga = h.filter(hi => hi > 0.99).length;
+    const meat = Array.from({ length: k }, () => new Array(k).fill(0));
+    for (let i = 0; i < n; i++) {
+        const denom = (1 - h[i]) ** 2;
+        const w = denom > 1e-12 ? (resid[i] * resid[i]) / denom : 0;
+        for (let a = 0; a < k; a++) {
+            for (let b = 0; b < k; b++) {
+                meat[a][b] += w * X[i][a] * X[i][b];
+            }
+        }
+    }
+    const breadMeat = matMul(XtXinv, meat);
+    const vcovHC3 = matMul(breadMeat, XtXinv);
+    const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
+    return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
+}
 
 describe('tDistCdf', () => {
     // Kända t-fördelningsvärden från standardtabeller (R: pt(q, df))
