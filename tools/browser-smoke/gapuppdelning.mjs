@@ -33,7 +33,7 @@ export async function uppdelningensVariabler() {
             staplar: document.getElementById('chart-gap-uppdelning')?.querySelectorAll('svg').length || 0 }; });
     ok(r.variabler.join() === 'bas,alder', `valet blir BAS, åldersgrupp (${r.variabler.join(', ')})`);
     ok(r.skyddad && r.rest !== null && Math.abs(r.rest) < 1e-6, `delarna summerar till hela skillnaden (rest ${r.rest})`);
-    ok((await delar()).join(' | ') === 'A. BAS-fördelning | B. Åldersgrupp inom BAS | C. Inom åldersgrupp och BAS', 'delarnas namn byggs ur variablerna');
+    ok((await delar()).join(' | ') === 'A. BAS-fördelning | B. Åldersgrupp inom BAS | C. Oförklarat: lön inom samma åldersgrupp och BAS', 'delarnas namn byggs ur variablerna');
     ok(r.staplar > 0, 'trappan ritas om');
     ok(await s.evaluate(() => document.querySelector('#gap-uppdelning .gu-andra').open), 'valet står kvar utfällt efter omritningen');
 
