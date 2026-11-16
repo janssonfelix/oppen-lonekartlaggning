@@ -41,8 +41,9 @@ datastrukturering kan verktyget leverera värde över flera år utan att uppdate
 - Kolumnen Ansvar läses inte in och inget enhetsmått beräknas.
 - **Analyserar inte** rörliga eller kompletterande lönedelar. Verktyget har en lönedefinition — heltidsomräknad
   månadslön — och EU-rapportens mått redovisas för den.
-- **Stödjer inte** mobilbredd: verktyget är ett skrivbordsverktyg, och vid smala fönster (under ungefär 768 px) fälls
-  sidomenyn inte ihop. *En mobilvy är inte aktuell* (ADR-41).
+- **Stödjer inte** surfplatta eller telefon: verktyget är ett skrivbordsverktyg (ADR-82). Ett smalt eller delat
+  fönster på datorn fungerar (menyn fälls ihop bakom en knapp och sidan går inte utanför fönstret), men tabeller och
+  diagram är utformade för datorskärm. *En vy för surfplatta eller mobil är inte aktuell.*
 
 ## Funktionsmål
 
