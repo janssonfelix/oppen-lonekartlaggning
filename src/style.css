@@ -2022,7 +2022,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 .ptrack-status { font-size: var(--fs-lg); line-height: 1.35; flex-shrink: 0; }
 .ptrack-body { flex: 1; min-width: 0; }
 .ptrack-detail { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
-.ptrack-goto { margin-top: 5px; background: transparent; border: 1px solid var(--border); color: var(--primary); padding: 2px 10px; border-radius: 4px; cursor: pointer; font-size: var(--fs-xs); }
+.ptrack-goto { display: inline-flex; align-items: center; min-height: 24px; margin-top: 5px; background: transparent; border: 1px solid var(--border); color: var(--primary); padding: 2px 10px; border-radius: 4px; cursor: pointer; font-size: var(--fs-xs); }
 .ptrack-goto:hover { background: var(--primary); color: #fff; }
 
 /* Löneöversyn — riktade pott-rader */
@@ -2897,7 +2897,8 @@ summary:focus-visible {
 .att-gora-status .compliance-card { padding: 8px 10px; }
 .att-gora-status .comp-sub { display: none; }
 .att-gora-status .comp-value { font-size: var(--fs-sm); }
-.att-gora-status .comp-lank { font-size: var(--fs-xs); }
+/* Länkarna i statusraden ser ut som länkar men har 24 punkters klickyta (WCAG 2.2, 2.5.8). */
+.att-gora-status .comp-lank { display: inline-block; min-width: 24px; padding: 4px 0; font-size: var(--fs-xs); }
 .att-gora-borja-rubrik { font-size: var(--fs-md); margin: 6px 0; }
 .att-gora-borja-lista { margin: 0 0 12px; padding-left: 20px; }
 .att-gora-kat { color: var(--text-muted); font-size: var(--fs-xs); }
@@ -3037,7 +3038,7 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
    nyckeltalen, Att göra och processen. Filerna står i Filer och kvalitet. */
 #view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-fordjupning { display: none; }
 .ov-filrad .btn { margin-left: auto; }
-.ov-filrad-lank { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #1d4ed8); text-decoration: underline; cursor: pointer; }
+.ov-filrad-lank { display: inline-flex; align-items: center; min-height: 24px; background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #1d4ed8); text-decoration: underline; cursor: pointer; }
 .ov-filrad-lank:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; border-radius: 2px; }
 details.avsnitt .ptrack > h3 { display: none; }           /* rubriken står i avsnittets sammanfattning */
 details.avsnitt > section.card, details.avsnitt > div > .card.ptrack { box-shadow: none; padding: 0; margin-bottom: 0; }
@@ -3158,12 +3159,12 @@ body.lage-kompakt .slutsats-varde, body.lage-kompakt .summary-stats > .stat-box 
 .demo-mode-banner { padding: 5px 12px; margin: 0 0 12px; font-size: var(--fs-xs); border-left-width: 3px; border-radius: 6px; }
 .demo-mode-banner .demo-mode-icon { font-size: var(--fs-md); }
 .demo-mode-mer, .gdpr-banner-mer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
-.demo-mode-exit { padding: 3px 10px; font-size: var(--fs-xs); }
+.demo-mode-exit { min-height: 24px; padding: 3px 10px; font-size: var(--fs-xs); }
 /* Inledningen: en rad, och resten bakom «Visa mer». I kompakt läge visas bara frågan. */
 .flik-intro-rad { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; }
 .flik-intro-rad > .flik-intro { margin: 0; flex: 1 1 auto; min-width: 0; }
 .flik-intro-rad:not(.ar-utfalld) > .flik-intro { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.flik-intro-mer { flex: 0 0 auto; background: none; border: 0; padding: 0; font: inherit; font-size: var(--fs-sm); font-weight: 600; color: var(--primary); cursor: pointer; white-space: nowrap; }
+.flik-intro-mer { flex: 0 0 auto; min-height: 24px; background: none; border: 0; padding: 0; font: inherit; font-size: var(--fs-sm); font-weight: 600; color: var(--primary); cursor: pointer; white-space: nowrap; }
 .flik-intro-mer:hover { text-decoration: underline; }
 .flik-intro-mer:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 3px; }
 body.lage-kompakt .flik-intro-mer { display: none; }
@@ -3187,9 +3188,10 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .comp-icon { font-size: var(--fs-lg); width: 22px; }
 .comp-label { font-size: 0.68rem; }
 .comp-value { font-size: var(--fs-md); margin-top: 1px; }
-/* Raden om lokal bearbetning ryms bredvid rubriken i sidhuvudet (stod på egen rad och tog 35 punkter). */
-.gdpr-banner { padding: 3px 6px 3px 8px; gap: 4px; font-size: 0.72rem; }
-.gdpr-banner-link { padding: 1px 7px; font-size: 0.72rem; }
+/* Raden om lokal bearbetning ryms bredvid rubriken i sidhuvudet (stod på egen rad och tog 35 punkter). «Vad lagras?»
+   är 24 punkter hög (klickmålets minsta mått), så raden har 1 punkts luft upptill och nedtill. */
+.gdpr-banner { padding: 1px 6px 1px 8px; gap: 4px; font-size: 0.72rem; }
+.gdpr-banner-link { min-height: 24px; padding: 1px 7px; font-size: 0.72rem; }
 /* Raden om lokal bearbetning står alltid under rubriken, så att sidhuvudet är lika högt på alla flikar och innehållet
    inte hoppar vid flikbyte. Knapparna till höger står kvar på första raden (på smala skärmar bryts hela sidhuvudet). */
 .top-header .header-title { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: center; justify-items: start; }

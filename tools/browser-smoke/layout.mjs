@@ -249,6 +249,32 @@ export async function utseende() {
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
 
+    console.log('\n── Klickmålen i Översikten är minst 24 punkter ──');
+    {
+        // WCAG 2.2, 2.5.8: en knapp eller fristående länk är minst 24 × 24 punkter. En länk i löptext (p, li, td) är
+        // undantagen. Lilla demot i Översikten vid 1 024 punkter: sidhuvud, demoraden, urvalsraden, Att göra och
+        // processkartan. Större mål får inte bryta sidhuvudet: knapparna står på en rad och raden om lokal bearbetning
+        // på en rad under rubriken.
+        const s = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+        await s.goto('file://' + FIL + '?demo=1');
+        await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex' && !!document.querySelector('#view-dashboard svg'), null, { timeout: 15000 });
+        await s.waitForTimeout(300);
+        const m = await s.evaluate(() => {
+            const syns = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+            const mal = [...document.querySelectorAll('button, a[href]')].filter(el => syns(el) && !el.closest('p, li, td'));
+            const sma = mal.map(el => ({ el, r: el.getBoundingClientRect() })).filter(x => x.r.width < 24 || x.r.height < 24)
+                .map(x => `«${x.el.textContent.replace(/\s+/g, ' ').trim()}» ${Math.round(x.r.width)}×${Math.round(x.r.height)}`);
+            const knappar = [...document.querySelectorAll('.header-knappar > *')].filter(syns).map(el => el.getBoundingClientRect());
+            const b = document.getElementById('gdpr-banner');
+            return { antal: mal.length, sma: [...new Set(sma)], bricka: Math.round(b.getBoundingClientRect().height),
+                enRad: knappar.length > 0 && Math.max(...knappar.map(r => r.top)) < Math.min(...knappar.map(r => r.bottom)),
+                under: b.getBoundingClientRect().top >= document.getElementById('page-title').getBoundingClientRect().bottom - 1 };
+        });
+        ok(m.antal > 0 && !m.sma.length, `1024 punkter: Översiktens ${m.antal} knappar och länkar är minst 24 × 24 punkter${m.sma.length ? ' — för små: ' + m.sma.join(', ') : ''}`);
+        ok(m.enRad && m.under && m.bricka < 34, `1024 punkter: sidhuvudets knappar står på en rad och statusbrickan på en rad under rubriken (${m.bricka} punkter hög)`);
+        await s.close();
+    }
+
     console.log('\n── Nyckeltalens förklaring klipps inte ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });
