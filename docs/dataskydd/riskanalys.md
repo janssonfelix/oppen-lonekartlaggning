@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.16` · **Artefakt-SHA-256:** `343d3de437aacd8c0cb8e647c7c4a006dd086275b3bac4bd91139bb4bc55593c` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-11-15.
+**Bygge:** `2026.11.16` · **Artefakt-SHA-256:** `9f951f3704e87d6ce29fcdadae976ea06177984f00f60280eea7d05c8c14036c` (se `dist/RELEASE.txt`).
+**Granskningsdatum:** 2026-11-16.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -998,17 +998,38 @@ säger detsamma. Releasen bär dessutom en programvaruförteckning (`sbom.cdx.js
 andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppgifter om användare. Testsviten är
 109 filer.
 
-**Granskningen 2026-11-15** (inför bygget 2026.11.16) prövade dokumentet mot koden som ändrats efter bygget
-2026.11.15: växeln *Fler kolumner* i tabellerna i Lika arbete och Likvärdigt arbete, tabellbredderna i utskriften och
-Word-utkastet (`60-utskrift.js`, `src/lib/docx.js`), det hårda mellanslaget i talformaten, diagrammens etiketter,
-poänglägets jämförelser (ADR-76), HC3 med AID-etikett inom BAS (ADR-77), översikten per huvudområde (ADR-78),
-protokollet för gemensam lönebedömning (ADR-79), och att paren i likvärdigt arbete och regressionen räknas en gång. Biblioteken i `vendor/` och `tools/bundle.mjs` är
+**Granskningen 2026-11-16** (inför bygget 2026.11.16) prövade dokumentet mot koden som ändrats efter bygget
+2026.11.15, i två omgångar. Den första (2026-11-15) gällde växeln *Fler kolumner* i tabellerna i Lika arbete och
+Likvärdigt arbete, tabellbredderna i utskriften och Word-utkastet (`60-utskrift.js`, `src/lib/docx.js`), det hårda
+mellanslaget i talformaten, diagrammens etiketter, poänglägets jämförelser (ADR-76), HC3 med AID-etikett inom BAS
+(ADR-77), översikten per huvudområde (ADR-78), protokollet för gemensam lönebedömning (ADR-79), och att paren i
+likvärdigt arbete och regressionen räknas en gång. Den andra (2026-11-16) gällde den glesa regressionen och
+bootstrapens rangordning, flikbytet som ritar först (ADR-80), visningsminnet (ADR-81) och gränssnittets kontrast,
+fokus, klickmål, typgolv, diagramtext, färgvariabler och kantränder. Biblioteken i `vendor/` och `tools/bundle.mjs` är
 oförändrade. Varje namngiven fil, funktion, konstant och testfil som berörs söktes upp i `src/`, `tools/`, `tests/`
 och bygget; alla finns. Kontrollerat:
-- CSP-raden i bygget (fem skript och fem hashar, två stilhashar), ordagrant som §6.1; sökningen i `dist/app.js` efter
-  nätverks- och lagringsanrop ger samma träffar som i bygget 2026.11.15 (lagringsspärren och verktygets egen text).
-  Ändringarna lägger inte till något nätverks- eller lagringsanrop, `window.open`, `location`, `style="…"` eller
-  `url(` i stilmallen.
+- CSP-raden i bygget (fem skript och fem hashar, två stilhashar), ordagrant som §6.1. Direktiven är desamma som i
+  bygget 2026.11.15; bara hasharna har ändrats, eftersom skripten och sidans `<style>` har ändrats. Sökningen i
+  `dist/app.js` efter nätverks- och lagringsanrop ger samma träffar som i bygget 2026.11.15 (lagringsspärren och
+  verktygets egen text). Ändringarna lägger inte till något nätverks- eller lagringsanrop, `window.open`, `location`,
+  `style="…"` eller `url(` i stilmallen; gränssnittsändringarna byter klasser och regler i stilmallen och tar bort
+  reservvärden i `var()`.
+- Visningsminnet (ADR-81, `31-navigering.js`) sparar ingenting mellan sessioner (S2). Det som återanvänds är flikens
+  ritade innehåll i sidan, som förut fanns kvar i sidan tills fliken ritades om; minnet bredvid (`_visadSom`) håller
+  bara visningsversion, generation och läge per flik, inga uppgifter ur lönefilen. Rensningen (också den vid
+  inaktivitet), inläsning, en konfigurationsfil, ett paket och varje ny generation ökar visningsversionen, och
+  rensningen tömmer flikarna som förut. En flik visas igen bara i samma läge (skärm eller export, förhandsvisningen)
+  och samma dag som den ritades. Exportgrinden ser fliken som förut: visningsminnet ändrar inte `_ritadVid`, så en
+  export ritar om varje flik i exportläget när generationen har ändrats (`tests/visningsminne*.test.js`, också med
+  en export och förhandsvisningen).
+- Flikbytet (ADR-80): ett block som ritas efter fliken ritar ingenting om fliken har ritats om eller lämnats, eller om
+  underlaget, tröskeln, förhandsvisningen eller ett val har ändrats under väntan (`_ritaVantandeBlock`,
+  `_sammaFangst`), och väntar medan en export pågår. Medan block väntar räknas fliken som inte ritad av
+  exportgrinden. Rapportunderlaget och förhandsbeskedet ritas också som block i exportläget (`medExportLage`).
+  Inget resultat sparas mellan uppgifterna (`tests/flikbyte.test.js`).
+- Den glesa regressionen (`fitOLS`, `src/lib/stat.js`) och bootstrapens rangordning (`bootstrapMedianer`,
+  `src/lib/likvardighet.js`) ger exakt samma tal som de tidigare algoritmerna (`tests/stat.test.js`,
+  `tests/bootstrapkvot.test.js`, `tests/status-trappa.test.js`); de håller inga löner mellan anropen.
 - *Fler kolumner* gömmer cellerna med `hidden` på skärmen. Exporterna och utskriftens bilagor tar fram dem i en kopia
   (`_flerKolumnerAlla`, via `_exportVisaAllaRader`). Cellernas värden räknas i exportläget som förut, oberoende av
   om kolumnen syns, så de gömda kolumnerna följer tröskeln som de andra (`tests/tabeller-fler-kolumner.test.js`:
@@ -1036,11 +1057,11 @@ och bygget; alla finns. Kontrollerat:
   är oförändrade.
 
 Ett påstående rättades: trattdiagrammet har en punkt per AID-etikett i BAS-intervall, inte per AID-etikett (§6.6 och
-dataskyddsbeskrivningen §3). Ingen avvikelse mot skydden hittades.
+dataskyddsbeskrivningen §3). Den andra omgången fann inget felaktigt påstående. Ingen avvikelse mot skydden hittades.
 
 Granskningen är avgränsad till det som ändrats; påståenden om oförändrad kod lästes inte om mot koden.
 
-Testsviten (109 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
+Testsviten (114 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
 granskningen: röktestet i Firefox och WebKit (det körs i CI), de påståenden märkta *Verifierat i webbläsare* som inte
 har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsare.
 

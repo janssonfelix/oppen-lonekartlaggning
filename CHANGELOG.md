@@ -8,6 +8,34 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Flikbytet visar fliken först och räknar den sedan (ADR-80).** När användaren byter flik i menyn, med sökfältet
+  eller med en länk blir fliken synlig direkt med raden *Räknar fram fliken …*, och det som stod i den förra gången
+  döljs medan den räknas. Förhandsbeskedet i Exportera, rapportunderlaget i Rapporttext, regressionskorten i
+  Lönestruktur och löneskillnaden per åldersgrupp i Ålder & karriär ritas efter flikens övre del, med *Räknar …* under
+  tiden. Ett nytt flikbyte under väntan går före; bara den sist valda fliken ritas. Ett block som väntar ritar
+  ingenting om underlaget, tröskeln, förhandsvisningen eller ett val har ändrats under tiden, och fliken ritas då om
+  från början. Medan block väntar räknas fliken som inte ritad av exportgrinden.
+- **En färdigritad flik visas igen utan omritning när ingenting har ändrats (ADR-81).** Byter användaren tillbaka
+  till en flik visas den som den var, om ingenting har hänt sedan den ritades som kan ändra det den visar. Varje
+  inmatning i sidan utom ren navigering (menyn, sidindexet, sökfältet, fokus och rullning), ett tröskelbyte,
+  förhandsvisningen, en inläsning, rensning, en konfigurationsfil, ett paket, en bakgrundsberäkning som blir klar och
+  en ny dag ritar om fliken som förut. Det som visas igen är flikens innehåll i sidan; regressionen och andra resultat
+  sparas inte (ADR-17).
+- **Kontrast, fokus och klickmål.** Upplysningsfärgen står som text i sin mörka nyans, som når 4,5:1 mot vitt.
+  Fokusringen har en regel i stilmallen, och fältkomponentens ring tar verktygets primärfärg (8,6:1) i stället för en
+  ljus nyans som inte nådde 3:1. Knapparna och de fristående länkarna i sidhuvudet, demoraden, urvalsraden, Att göra
+  och processkartan är minst 24 punkter höga. Övergångarna tonar bara de egenskaper som ändras, så att fokusringen
+  kommer direkt.
+- **Ingen text under typskalans minsta steg.** Menyrubrikerna, nyckeltalens och statusradens etiketter,
+  uppladdningsbrickan, infoikonen, granskningspanelens rubriker, raden om lokal bearbetning och tabellrubrikerna stod
+  i 0,65–0,72 rem och står nu i 0,78 rem. Diagrammens minsta texter (punktetiketter, referenslinjernas etiketter,
+  trädkartans andra rad och exportens fotrad) är minst 11 punkter i stället för 10, på skärmen och i de exporterade
+  bilderna. Menyns flikar och grupprubriker har en fast radhöjd, så att menyn ryms vid 800 punkters höjd.
+- **Kantränderna säger ett läge.** En rand till vänster står bara där den följer ett läge i datat eller en varning som
+  visas på villkor, i statusfärg och 3 px bred. Fasta texter och dekorationer har ingen rand, och uppladdningsrutornas
+  rand överst är borta. Där bara färgen visade läget står statusmärket med ikon och ord: täckningskortet i Löneläget,
+  diagnostikrutorna i Likvärdigt arbete och punkterna i Färdigcheck. Stilmallens färger står bara som variabler;
+  demobanderollens och utkastrutans rand tar varningsfärgen.
 - **De breda tabellerna i Lika arbete och Likvärdigt arbete har växeln *Fler kolumner*.** Tabellerna per AID-kod och
   BAS-intervall, kandidatparen och *Lägre krav, högre lön* var bredare än skärmen. Grundvyn gömmer nu, som i de andra
   breda tabellerna, *Nedre gräns*, *Övre gräns* och direktivmarkeringen i Lika arbete per AID-kod och BAS-intervall,
@@ -70,6 +98,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   mellan två sidor, och stycket eller tabellraden före en ruta att fylla i står på samma sida som rutan. Kolumnen
   med jämförelseetikettens högre median i Likvärdigt arbete heter *AID median högre (kr)* i Word-utkastet och
   PDF-rapporten.
+- **PDF-rapportens tabellrubriker står i 8,5 pt,** strax under cellerna, liksom underraderna i Lika arbete, och
+  kvotens lilla diagram står ovanför talet. Med skärmens minsta steg blev rubrikerna större än cellerna och tabellen
+  i Lika arbete bredare än A4:s textbredd. Utskriften ärver sidans typsnitt.
 - **Excel.** Metodbladets kolumn A är så bred som den längsta etiketten, högst 70 tecken; etiketterna klipptes vid
   32. Protokollets blad om lika arbete heter *2. Lika arbete (AID)*. Ett bladnamn som byggs av en term får ett fast
   reservnamn när det blir längre än 31 tecken eller får ett tecken som Excel inte godtar, i stället för att kortas
@@ -112,6 +143,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   underlaget, tröskeln och förklaringsmodellen är desamma.
 - På 55 000 syntetiska rader tar det nu 3,7 s till klart gränssnitt (budget 5 s; 12,1 s vid mätningen före
   ändringarna) och 1,9 s att byta minsta gruppstorlek. Likvärdigt arbete tar 0,09 s i stället för 16,2 s.
+- **Regressionen och bootstrapintervallen räknas snabbare, med samma tal.** Regressionen summerar bara över
+  designmatrisens nollskilda kolumner. Intervallen på mediankvoten i Lika arbete, Ålder & karriär, gruppdossiern,
+  rapportunderlaget och Översikten, och omkastningen, läser medianerna ur en rangordning i stället för att sortera
+  varje dragning. Talen är exakt desamma. På ett syntetiskt underlag med 50 000 rader går huvudregressionen från
+  omkring 570 till 320 ms, och flikbytena går till exempel från 4,5 till 2,3 s i Rapporttext och från 3,3 till 2,2 s
+  i Lönestruktur. Med ADR-80 är flikens övre del ritad efter 0,6 s i Exportera, 1,2 s i Lönestruktur och 1,4 s i
+  Rapporttext; med ADR-81 är en flik som visas igen klar efter 0,05–0,1 s.
 
 ### Utveckling
 
@@ -125,10 +163,19 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   jämför översikten per huvudområde med huvudregressionen på samma urval, och ett jämför bootstrapmedianen med den
   tidigare algoritmen och tar tid på den. Referensen för HC3 med AID-etikett inom BAS kommer ur statsmodels
   (`tests/fixtures/ref-hc3-inom.py`).
+- **Vakter för flikbytet och gränssnittet.** `tests/flikbyte.test.js` prövar ADR-80, och
+  `tests/visningsminne*.test.js` öppnar efter varje sorts ändring varje flik igen och jämför med samma flik ritad
+  från början (ADR-81). `tests/bootstrapkvot.test.js` och `tests/stat.test.js` kräver att rangordningen och den glesa
+  regressionen ger exakt samma tal som de tidigare algoritmerna. Nya vakter håller stilmallen fri från reservvärden i
+  `var()`, upplysningsfärgen borta som textfärg, övergångar borta från `all`, fokusregeln på ett ställe, utskrivna
+  storlekar över typskalans golv, diagramtext på minst 11 px och kantränderna till statuslägen. Röktestet prövar
+  klickmålen vid 1 024 punkter och väntar efter ett klick i menyn tills fliken är ritad.
 - **Prestandamätningens underlag** (`npm run perf`) har mansdominerade yrken, så att Likvärdigt arbete får par och
   bootstrapens kostnad syns.
 - **Dokumentationen.** Pilotchecklistan använder gränssnittets namn efter termbytet och har en rad om bandkartan.
-  `lagrum.md` kartlägger protokollet för gemensam lönebedömning mot direktivets art. 10.2 a–g.
+  `lagrum.md` kartlägger protokollet för gemensam lönebedömning mot direktivets art. 10.2 a–g. ADR-82 slår fast att
+  verktyget är för dator och ändrar ADR-41, som också nämnde surfplatta; användardokumenten sade redan att surfplatta
+  och mobil inte stöds.
 
 ## 2026.11.15
 
