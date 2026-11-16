@@ -5,19 +5,14 @@
 // Översiktens rader: kvinnors och mäns medianlön per BAS-intervall med kvoten och dess 95-procentiga bootstrap-KI.
 // EN beräkning för skärmens tabell, diagrammen och rapporten (Word, PDF) — de kan därför aldrig visa olika tal.
 // Bara BAS-intervall där BÅDA könen når tröskeln får en rad: varje tal i raden bygger på minst k personer.
-// Bootstrap med B = 1000, seedad ur datat så att intervallet blir detsamma varje gång; medianen räknas med
-// quickselect (O(n) — sortering tar några sekunder vid 20 000 rader).
+// Bootstrap med B = 1000, seedad ur datat så att intervallet blir detsamma varje gång; dragningarnas medianer tas
+// ur rangräkning (_lvBootstrapMedianer, O(n) per dragning utan allokeringar).
 function _laBootstrapGapCI(kvLons, maLons, B = 1000) {
     if (kvLons.length < 3 || maLons.length < 3) return null;
     const ratios = new Array(B);
-    const kvN = kvLons.length, maN = maLons.length;
-    const rnd = _rngFor(kvLons, maLons);   // seedad ur datat → reproducerbart KI
+    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
-        const sKv = new Array(kvN), sMa = new Array(maN);
-        for (let i = 0; i < kvN; i++) sKv[i] = kvLons[(rnd() * kvN) | 0];
-        for (let i = 0; i < maN; i++) sMa[i] = maLons[(rnd() * maN) | 0];
-        const mKv = _quickMedian(sKv);
-        const mMa = _quickMedian(sMa);
+        const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
     }
     ratios.sort((a, b) => a - b);

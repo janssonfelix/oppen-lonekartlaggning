@@ -25,6 +25,15 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    och Lönestruktur (2,7 s). Likvärdigt arbete tar 0,09 s; det tog 16,2 s på samma underlag innan bootstrapmedianen
    togs ur rangräkning i stället för sortering per dragning och paren räknades en gång per underlag.
    Förhandsbeskedet under *Rapportens innehåll* tar ~2,3 s.
+   Flikbyten med ett klick i menyn på ett syntetiskt underlag med 50 000 rader (299 kombinationer av AID-etikett och
+   BAS-intervall; Chromium, 2026-11-16), före och efter att regressionen summerar bara över nollskilda kolumner och
+   bootstrapintervallen och omkastningen tar medianerna ur rangordning (samma tal): Rapporttext 4,5 → 2,3 s, Exportera
+   3,4 → 2,4 s, Lönestruktur 3,3 → 2,2 s, Lika arbete 2,2 → 1,6 s, Ålder & karriär 2,1 → 1,5 s, Löneöversyn
+   1,3 → 0,8 s, Översikt, Löneläget och Filer 0,7–0,8 → 0,4–0,5 s. Ett andra besök är inte snabbare, eftersom fliken
+   räknas om.
+   Det som återstår är regressionen (omkring 0,3 s per körning, en till tre gånger per flik) och att flikarna räknar
+   fram det som inte syns direkt: rapportmodellen för förhandsbeskedet, rapportunderlaget med dossierer och
+   kvantilregressionen i Lönestruktur.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.

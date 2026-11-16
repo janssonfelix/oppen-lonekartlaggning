@@ -122,53 +122,6 @@ function _cleanYrkeField(raw) {
  * @returns {string}
  */
 /**
- * Median via iterativ quickselect — O(n) i snitt mot sorteringens O(n log n).
- * Ger EXAKT samma värde som sortera-och-ta-mitten (medianen är deterministisk
- * för en given multiset; bara sökvägen dit skiljer). Deterministisk pivot
- * (median-av-tre) — konsumerar inte Math.random, så seedade testkörningar
- * (golden-exporterna) påverkas inte.
- *
- * MUTERAR arrayen (partiell omordning) — använd på resample-buffertar i
- * bootstrap-loopar, inte på delade arrayer. Med den tar computeBootstrapCI på
- * 20 000 rader under 1 s (sortering per resample tar flera sekunder).
- *
- * @param {number[]} a - Talbuffert (muteras).
- * @returns {number} Medianen; 0 för tom array.
- */
-function _quickMedian(a) {
-    const n = a.length;
-    if (!n) return 0;
-    const select = k => {
-        let lo = 0, hi = n - 1;
-        while (hi > lo) {
-            // Median-av-tre-pivot: robust mot redan (delvis) ordnade buffertar
-            const mid = (lo + hi) >> 1;
-            if (a[mid] < a[lo]) { const t = a[lo]; a[lo] = a[mid]; a[mid] = t; }
-            if (a[hi]  < a[lo]) { const t = a[lo]; a[lo] = a[hi];  a[hi]  = t; }
-            if (a[hi]  < a[mid]) { const t = a[mid]; a[mid] = a[hi]; a[hi] = t; }
-            const pivot = a[mid];
-            let i = lo, j = hi;
-            while (i <= j) {
-                while (a[i] < pivot) i++;
-                while (a[j] > pivot) j--;
-                if (i <= j) { const t = a[i]; a[i] = a[j]; a[j] = t; i++; j--; }
-            }
-            if (k <= j) hi = j;
-            else if (k >= i) lo = i;
-            else return a[k];
-        }
-        return a[k];
-    };
-    const k = n >> 1;
-    const upper = select(k);
-    if (n & 1) return upper;
-    // Jämn längd: undre mittvärdet = max i vänsterhalvan (allt ≤ a[k] efter select)
-    let m = a[0];
-    for (let i = 1; i < k; i++) if (a[i] > m) m = a[i];
-    return (m + upper) / 2;
-}
-
-/**
  * Tar bort HTML-metatecken (< > " ' &) ur ett textfält vid inläsning. esc() vid
  * rendering är det egentliga skyddet; detta är ett extra lager ("defensive depth")
  * för korta koder (BAS, AID) som renderas i attribut- och option-kontext och som

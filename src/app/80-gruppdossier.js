@@ -12,23 +12,17 @@
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 
-// Bootstrap-KI på mediankvoten (kvinnors median som % av männens). Samma metod
-// som skevhetsöversikten, men den funktionen är lokal i generateSkevhet().
-// B = 2000 matchar computeBootstrapCI: B=600 gav ~±0,5 pp Monte Carlo-spridning
-// på KI-gränserna, vilket märktes för gränsfall.
+// Bootstrap-KI på mediankvoten (kvinnors median som % av männens). Samma dragningar
+// som översikten per BAS-intervall (_laBootstrapGapCI), med medianerna ur rangräkning
+// (_lvBootstrapMedianer). B = 2000 matchar computeBootstrapCI: B=600 gav ~±0,5 pp
+// Monte Carlo-spridning på KI-gränserna, vilket märktes för gränsfall.
 function _gdBootstrapGapCI(kvLons, maLons, B = 2000) {
     if (kvLons.length < 3 || maLons.length < 3) return null;
-    const med = arr => {
-        const s = arr.slice().sort((a, b) => a - b), m = s.length >> 1;
-        return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-    };
     const ratios = new Array(B);
-    const rnd = _rngFor(kvLons, maLons);   // seedad ur datat → reproducerbart KI
+    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
-        const sKv = kvLons.map(() => kvLons[(rnd() * kvLons.length) | 0]);
-        const sMa = maLons.map(() => maLons[(rnd() * maLons.length) | 0]);
-        const mMa = med(sMa);
-        ratios[b] = mMa > 0 ? (med(sKv) / mMa) * 100 : NaN;
+        const mMa = m.ma[b];
+        ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
     }
     const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
     if (ok.length < 20) return null;
