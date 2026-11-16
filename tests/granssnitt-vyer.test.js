@@ -482,6 +482,10 @@ describe('typografisk skala', () => {
         expect([...varden, ...iSidan].filter(v => /rem$/.test(v) && parseFloat(v) < 0.78)).toEqual([]);
         const regel = sel => { const i = css.indexOf(`\n${sel} {`); return i < 0 ? '' : css.slice(i, css.indexOf('}', i)); };
         for (const sel of ['.data-table th', '.ci-bracket']) expect(regel(sel)).toContain('font-size: var(--fs-xs);');
+        // Undantaget: PDF-rapporten har en egen skala i punkter (cellerna 9pt), och dess tabellrubriker står strax under
+        // cellerna. Med skärmens steg blev rubrikerna större än cellerna och de breda tabellerna bredare än A4-sidan.
+        const rapportRubrik = css.indexOf('#print-report table:not(.meta):not(.kpi) th {');
+        expect(css.slice(rapportRubrik, css.indexOf('}', rapportRubrik))).toContain('font-size: 8.5pt;');
     });
 });
 
