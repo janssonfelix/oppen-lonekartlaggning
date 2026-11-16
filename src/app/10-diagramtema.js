@@ -141,6 +141,7 @@ function gapStatusKI(o) {
 const CHART_FONT = {
     family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     size: 12,
+    minsta: 11,            // golvet för de minsta rollerna (punkt- och linjeetiketter, ytans andra rad, fotraden): _rfLitenPx
     color: '#1f2430',
     dampad: '#5b6472'      // axlarnas siffror och rubriker: ett steg lugnare än diagrammets egna etiketter
 };

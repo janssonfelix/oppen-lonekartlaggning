@@ -145,7 +145,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
     if (L.legend.fler) _rfText(lg, 8 + L.legend.fler.x, legendY + L.legend.fler.rad * _RF.legendRad, L.legend.fler.text, { px, attr: { 'data-legend': 'fler' } });
     notRader.forEach((rad, k) => _rfText(svg, 8, H - 8 - (notRader.length - 1 - k) * px, rad, { px: px - 1, farg: FARG.kritisk }));
     // Fotraden (exporten: verktyg, datum, urval) står överst i botten, i dämpad färg; rubriken överst i bilden.
-    if (L.fot) _rfText(svg, 8, H - 8 - notRader.length * px - (notRader.length ? 4 : 0), L.fot, { px: px - 2, farg: FARG.svag, attr: { 'data-del': 'fot' } });
+    if (L.fot) _rfText(svg, 8, H - 8 - notRader.length * px - (notRader.length ? 4 : 0), L.fot, { px: _rfLitenPx(px), farg: FARG.svag, attr: { 'data-del': 'fot' } });
     if (L.rubrik) _rfText(svg, 8, px + 8, L.rubrik, { px: px + 2, fet: true, farg: FARG.text, attr: { 'data-del': 'rubrik' } });
 }
 

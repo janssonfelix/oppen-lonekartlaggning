@@ -12414,6 +12414,8 @@ const _RF = {
     fargB: 64, fargLuft: 12, fargStapel: 12, fargText: 16, fargH: 180, fargSteg: 3,
 };
 
+// Storleken för diagrammets minsta texter: två steg under grundstorleken, men aldrig under golvet CHART_FONT.minsta.
+const _rfLitenPx = px => Math.max(CHART_FONT.minsta, px - 2);
 const _rfBredd = (s, px) => String(s == null ? '' : s).length * px * _RF.tecken;
 function _rfKorta(s, maxTecken) {
     s = String(s == null ? '' : s);
@@ -12861,7 +12863,7 @@ function _rfLodratLayout(figurIn, val, B, H, px, syn) {
     const notRader = val.not ? _rfRadbryt(val.not, (B - 16) / ((px - 1) * _RF.tecken), 2) : [];
     const maxT = (B - 16) / ((px - 1) * _RF.tecken);
     const rubrik = val.rubrik ? _rfKorta(String(val.rubrik), (B - 16) / ((px + 2) * _RF.tecken)) : '';
-    const fot = val.fot ? _rfKorta(String(val.fot), maxT * (px - 1) / (px - 2)) : '';
+    const fot = val.fot ? _rfKorta(String(val.fot), maxT * (px - 1) / _rfLitenPx(px)) : '';
     const notH = (notRader.length ? notRader.length * px + 8 : 0) + (fot ? px + 2 : 0);
     const topp = 10 + (rubrik ? px + 14 : 0) + (syn.paneler.some(p => p != null) ? px + 10 : 0);
     const botten = rader => (rader ? axelNer + legBas + (rader - 1) * _RF.legendRad + 4 : axelNer) + 6 + notH;
@@ -13220,10 +13222,10 @@ function _rfPunkt(g, l, li, c) {
         // ritas därför aldrig för en punkt som inte ritas.
         if (d.etikett != null && String(d.etikett) !== '' && l.etikettLage === 'undvik' && c.undvik) {
             // Läget räknas när panelens alla punkter är ritade (_rfUndvikEtiketter): de är hinder.
-            const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28);
+            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, 28);
             c.undvik.push({ x, y, r: (l.symbol === 'romb' || l.symbol === 'kvadrat' ? 1.3 * r : r) + 0.5, text, hel, fpx });
         } else if (d.etikett != null && String(d.etikett) !== '') {
-            const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
+            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
             // Lagrets etikettLage ställer texten till vänster eller höger om punkten (värdet bredvid en punkt i ett liggande diagram);
             // annars mitt över punkten — eller under, om den inte ryms ovanför (panelens överkant).
             // 'auto' är till höger om punkten, och till vänster när texten annars skulle gå utanför panelens högerkant.
@@ -13892,7 +13894,7 @@ function _rfReferenser(g, figur, c, bredd, hojd, del) {
         if (streck) linje.attr('stroke-dasharray', streck);
         // Linjens etikett (t.ex. "80 %"): vid linjens högra ände, strax ovanför — eller överst, till höger om en lodrät linje.
         if (r.etikett != null && String(r.etikett) !== '') {
-            const fpx = c.px - 2, text = _rfKorta(String(r.etikett), 24), tb = _rfBredd(text, fpx);
+            const fpx = _rfLitenPx(c.px), text = _rfKorta(String(r.etikett), 24), tb = _rfBredd(text, fpx);
             const x = lodrat ? Math.min(p + 4, Math.max(0, bredd - tb)) : Math.max(0, bredd - tb - 4);
             const y = lodrat ? fpx + 2 : Math.max(fpx, p - 4);
             _rfText(c.texter, x, y, text, { px: fpx, farg: r.textfarg || r.farg || FARG.dampad, fet: true, title: String(r.etikett),
@@ -13929,7 +13931,7 @@ function _rfYta(g, l, li, c) {
         const hel = String(d.etikett);
         _rfText(g, x + 4, y + fpx + 2, _rfKorta(hel, tecken), { px: fpx, farg: textfarg, fet: true, title: hel, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
         if (l.etikettLage !== 'topp' && d.undertext != null && h >= 2 * fpx + 10) {
-            _rfText(g, x + 4, y + 2 * fpx + 5, _rfKorta(String(d.undertext), tecken), { px: fpx - 1, farg: textfarg, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
+            _rfText(g, x + 4, y + 2 * fpx + 5, _rfKorta(String(d.undertext), tecken), { px: _rfLitenPx(c.px), farg: textfarg, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
         }
     });
 }
@@ -14082,7 +14084,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
     if (L.legend.fler) _rfText(lg, 8 + L.legend.fler.x, legendY + L.legend.fler.rad * _RF.legendRad, L.legend.fler.text, { px, attr: { 'data-legend': 'fler' } });
     notRader.forEach((rad, k) => _rfText(svg, 8, H - 8 - (notRader.length - 1 - k) * px, rad, { px: px - 1, farg: FARG.kritisk }));
     // Fotraden (exporten: verktyg, datum, urval) står överst i botten, i dämpad färg; rubriken överst i bilden.
-    if (L.fot) _rfText(svg, 8, H - 8 - notRader.length * px - (notRader.length ? 4 : 0), L.fot, { px: px - 2, farg: FARG.svag, attr: { 'data-del': 'fot' } });
+    if (L.fot) _rfText(svg, 8, H - 8 - notRader.length * px - (notRader.length ? 4 : 0), L.fot, { px: _rfLitenPx(px), farg: FARG.svag, attr: { 'data-del': 'fot' } });
     if (L.rubrik) _rfText(svg, 8, px + 8, L.rubrik, { px: px + 2, fet: true, farg: FARG.text, attr: { 'data-del': 'rubrik' } });
 }
 
@@ -16017,6 +16019,7 @@ function gapStatusKI(o) {
 const CHART_FONT = {
     family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     size: 12,
+    minsta: 11,            // golvet för de minsta rollerna (punkt- och linjeetiketter, ytans andra rad, fotraden): _rfLitenPx
     color: '#1f2430',
     dampad: '#5b6472'      // axlarnas siffror och rubriker: ett steg lugnare än diagrammets egna etiketter
 };

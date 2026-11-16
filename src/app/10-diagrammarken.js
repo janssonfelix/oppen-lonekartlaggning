@@ -233,10 +233,10 @@ function _rfPunkt(g, l, li, c) {
         // ritas därför aldrig för en punkt som inte ritas.
         if (d.etikett != null && String(d.etikett) !== '' && l.etikettLage === 'undvik' && c.undvik) {
             // Läget räknas när panelens alla punkter är ritade (_rfUndvikEtiketter): de är hinder.
-            const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28);
+            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, 28);
             c.undvik.push({ x, y, r: (l.symbol === 'romb' || l.symbol === 'kvadrat' ? 1.3 * r : r) + 0.5, text, hel, fpx });
         } else if (d.etikett != null && String(d.etikett) !== '') {
-            const fpx = c.px - 2, hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
+            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
             // Lagrets etikettLage ställer texten till vänster eller höger om punkten (värdet bredvid en punkt i ett liggande diagram);
             // annars mitt över punkten — eller under, om den inte ryms ovanför (panelens överkant).
             // 'auto' är till höger om punkten, och till vänster när texten annars skulle gå utanför panelens högerkant.
@@ -905,7 +905,7 @@ function _rfReferenser(g, figur, c, bredd, hojd, del) {
         if (streck) linje.attr('stroke-dasharray', streck);
         // Linjens etikett (t.ex. "80 %"): vid linjens högra ände, strax ovanför — eller överst, till höger om en lodrät linje.
         if (r.etikett != null && String(r.etikett) !== '') {
-            const fpx = c.px - 2, text = _rfKorta(String(r.etikett), 24), tb = _rfBredd(text, fpx);
+            const fpx = _rfLitenPx(c.px), text = _rfKorta(String(r.etikett), 24), tb = _rfBredd(text, fpx);
             const x = lodrat ? Math.min(p + 4, Math.max(0, bredd - tb)) : Math.max(0, bredd - tb - 4);
             const y = lodrat ? fpx + 2 : Math.max(fpx, p - 4);
             _rfText(c.texter, x, y, text, { px: fpx, farg: r.textfarg || r.farg || FARG.dampad, fet: true, title: String(r.etikett),
@@ -942,7 +942,7 @@ function _rfYta(g, l, li, c) {
         const hel = String(d.etikett);
         _rfText(g, x + 4, y + fpx + 2, _rfKorta(hel, tecken), { px: fpx, farg: textfarg, fet: true, title: hel, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
         if (l.etikettLage !== 'topp' && d.undertext != null && h >= 2 * fpx + 10) {
-            _rfText(g, x + 4, y + 2 * fpx + 5, _rfKorta(String(d.undertext), tecken), { px: fpx - 1, farg: textfarg, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
+            _rfText(g, x + 4, y + 2 * fpx + 5, _rfKorta(String(d.undertext), tecken), { px: _rfLitenPx(c.px), farg: textfarg, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });
         }
     });
 }
