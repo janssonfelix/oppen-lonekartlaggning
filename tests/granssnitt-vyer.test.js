@@ -485,6 +485,16 @@ describe('typografisk skala', () => {
     });
 });
 
+describe('övergångarna', () => {
+    it('ingen övergång gäller all', () => {
+        // En övergång på all tonar också det som inte ska tona, som fokusringen och layouten; varje regel anger de
+        // egenskaper som dess tillstånd ändrar.
+        const css = las('src/style.css');
+        expect(css.match(/transition(-property)?:\s*all\b/g)).toBeNull();
+        expect(css.match(/--transition:\s*all\b/g)).toBeNull();
+    });
+});
+
 describe('slutgranskningens fynd', () => {
     const lasIn = async (w, rader) => { papa(w); w.loadStructureFile(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
     it('en fil som saknar en obligatorisk kolumn men har läsbara rader läses in, och kolumnmappningen säger vad som saknas', async () => {

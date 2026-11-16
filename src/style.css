@@ -104,7 +104,6 @@
     --meny-text: #c9d0e0;
     --meny-dampad: #7d879e;
     --meny-aktiv: #3350c4;    /* den aktiva fliken i menyn */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -531,7 +530,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     text-align: center;
     background-color: var(--bg-main);
     cursor: pointer;
-    transition: var(--transition);
+    transition: border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
 }
 
@@ -849,7 +848,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     align-items: center;
     gap: 16px;
     border-left: 4px solid var(--border);
-    transition: var(--transition);
+    transition: border-left-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .compliance-card.ok    { border-left-color: var(--status-ok); }
 .compliance-card.warn  { border-left-color: var(--status-varning); }
@@ -896,7 +895,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: var(--transition);
+    transition: border-top-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .upload-cell.required { border-top-color: var(--danger); }
 .upload-cell.optional { border-top-color: var(--text-blek); }
@@ -1717,7 +1716,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     border: 1px solid transparent;
     cursor: pointer;
     font-size: var(--fs-md);
-    transition: var(--transition);
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
 }
 .row-cross-link:hover {
@@ -1917,7 +1916,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     font-size: var(--fs-sm);
     cursor: pointer;
     color: var(--text-main);
-    transition: all 120ms;
+    transition: background-color 120ms, border-color 120ms, color 120ms;
 }
 .info-section-btn:hover { background: var(--bg-main); }
 .info-section-btn.active {
