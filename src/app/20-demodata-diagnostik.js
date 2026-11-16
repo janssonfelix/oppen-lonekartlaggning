@@ -228,6 +228,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     markUploadLoaded('upload-cell-data', 'Testdata');
     // Exempel på sakliga skäl på tre rader i handlingsplanen, så att tabellerna i rapporten och Excel syns.
     if (typeof _hpDemoSkal === 'function') try { _hpDemoSkal(); } catch (e) { rapporteraFel('Demot: sakliga skäl', e); }
+    visningNy();   // ett nytt underlag: ingen ritad flik visas igen som den är (ADR-81)
     return true;
 }
 

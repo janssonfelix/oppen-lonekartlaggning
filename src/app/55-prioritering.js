@@ -631,7 +631,7 @@ document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
     _kostnadAndrad();
 });
 // Initiera period-sammanfattningen vid sidladdning
-setTimeout(_readCostSettings, 0);
+setTimeout(() => { _readCostSettings(); visningNy(); }, 0);   // kostnadsinställningarna läses: ingen ritad flik visas igen (ADR-81)
 
 document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
     const table = document.getElementById('prio-table');

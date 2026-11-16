@@ -140,6 +140,8 @@ function _sokStang({ tom = true } = {}) {
 function sokValj(i, { uppskjut = false } = {}) {
     const t = _sokTraffar[i];
     if (!t) return;
+    // Sökfältet är navigering (31-navigering.js): bara ett val som gör något annat än att byta flik ändrar det som visas (ADR-81).
+    if (t.typ !== 'funktion' || t.dialog) visningNy();
     if (t.typ === 'funktion') { _sokValjFunktion(t, { uppskjut }); return; }
     if (t.typ === 'basdossier') { _sokStang(); openBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
     const nu = diagramMarkering();

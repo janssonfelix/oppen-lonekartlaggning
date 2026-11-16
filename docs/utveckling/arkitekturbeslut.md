@@ -29,7 +29,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-14 | Tabeller och egna vyer visar små grupper; exporten utelämnar dem | Sammanförd i `k-troskeln.md` | – |
 | ADR-15 | Formler i CSV- och urklippsexport neutraliseras | Gällande | – |
 | ADR-16 | Inga paragrafhänvisningar i gränssnittet, och sedan 2026-10-19 inte heller i hjälptexter eller exporter | Gällande | 2026-10-19 |
-| ADR-17 | `runOLSRegression` får aldrig cachas | Gällande | – |
+| ADR-17 | `runOLSRegression` får aldrig cachas | Ändrad av ADR-81 | – |
 | ADR-19 | Underlagets kvalitet: svagaste länken avgör | Gällande | – |
 | ADR-20 | Rapportunderlag via urklipp; bedömningen skrivs utanför verktyget | Gällande | – |
 | ADR-21 | Alla BAS-intervall ingår (upphävd begränsning) | Sammanförd i `mal.md` | – |
@@ -87,6 +87,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-78 | Översikten per huvudområde räknar med huvudregressionens kodning | Gällande | 2026-11-15 |
 | ADR-79 | Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och arbetsvärdering | Gällande | 2026-11-15 |
 | ADR-80 | Flikbytet ritar först och räknar sedan | Gällande | 2026-11-16 |
+| ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Gällande | 2026-11-16 |
 
 ## Besluten
 
@@ -463,3 +464,12 @@ förhandsvisningen, ett val eller fliken har ändrats sedan fliken ritades, och 
 (ADR-17); direkta anrop av `renderTabContent`, exportläget och klick från koden ritar synkront som förut. *Avvisat:* en
 arbetstråd (ADR-1); att återanvända regressionen mellan flikarna, som kräver en ändrad ADR-17; att visa flikens gamla
 innehåll medan den räknas. *Gäller i dag:* `k-troskeln.md` §3.
+
+**ADR-81 — En färdigritad flik visas igen när ingenting har ändrats.** När användaren byter tillbaka till en flik som
+är färdigritad visas den som den är, utan omritning, om visningsversionen och flikens ritning är oförändrade sedan dess:
+visningsversionen ökar vid varje inmatning i sidan utom ren navigering, vid varje ny generation utom en exports tur och
+retur, och vid inläsning, rensning, en konfigurationsfil, ett paket och varje bakgrundsberäkning som blir klar. Det som
+återanvänds är flikens ritade innehåll i sidan; regressionen och andra resultat cachas fortfarande aldrig, och ADR-17
+gäller för dem. *Avvisat:* att spara regressionen eller andra resultat mellan flikarna; att avgöra per flik vad som
+påverkar den, som är finare men lättare att få fel än att rita om allt efter varje ändring. *Gäller i dag:*
+`k-troskeln.md` §3.

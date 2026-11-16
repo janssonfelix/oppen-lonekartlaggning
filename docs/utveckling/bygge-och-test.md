@@ -130,7 +130,10 @@ panelen dold.
 **Flikbytet är synkront i jsdom och uppskjutet i webbläsaren** (ADR-80). Ett klick från koden (`el.click()`) är inte
 användarens eget och ritar fliken direkt, så jsdom-testerna läser fliken genast efter klicket. I webbläsarröktestet är
 `page.click` ett äkta klick: fliken visas först och räknas sedan, och testet klickar i menyn med `oppnaFlik`
-(`tools/browser-smoke/rigg.mjs`), som väntar tills fliken är färdigritad.
+(`tools/browser-smoke/rigg.mjs`), som väntar tills fliken är färdigritad. Ett äkta klick visar också en färdigritad
+flik igen utan omritning när ingenting har ändrats (ADR-81); ett test som ändrar något med `page.evaluate` och sedan
+klickar sig tillbaka till en ritad flik får därför den ritade fliken, om inte ändringen går genom en händelse eller
+en väg som ökar visningsversionen (`k-troskeln.md` §3).
 
 ### 5.2 De två projekten
 

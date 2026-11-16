@@ -34,6 +34,7 @@ const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-valida
     'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
 
 function _rensaAllData({ inbakat = true } = {}) {
+    visningNy();   // också rensningen efter en tid utan aktivitet: ingen ritad flik visas igen (ADR-81)
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
     _rmMinne = null;   // förhandsbeskedets minne (58-rapportmodell.js)
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
@@ -192,4 +193,5 @@ function _rensaAllData({ inbakat = true } = {}) {
     announceToScreenReader('All data har raderats ur minnet.');
     // Organisationsfil: paketet är en del av filen och kommer tillbaka efter rensningen, som vid start.
     if (inbakat && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();
+    visningNy();   // och det som ritades under rensningen visas inte igen heller
 }
