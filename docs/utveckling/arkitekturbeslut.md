@@ -29,7 +29,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-14 | Tabeller och egna vyer visar små grupper; exporten utelämnar dem | Sammanförd i `k-troskeln.md` | – |
 | ADR-15 | Formler i CSV- och urklippsexport neutraliseras | Gällande | – |
 | ADR-16 | Inga paragrafhänvisningar i gränssnittet, och sedan 2026-10-19 inte heller i hjälptexter eller exporter | Gällande | 2026-10-19 |
-| ADR-17 | `runOLSRegression` får aldrig cachas | Gällande | – |
+| ADR-17 | `runOLSRegression` får aldrig cachas | Ändrad av ADR-81 | – |
 | ADR-19 | Underlagets kvalitet: svagaste länken avgör | Gällande | – |
 | ADR-20 | Rapportunderlag via urklipp; bedömningen skrivs utanför verktyget | Gällande | – |
 | ADR-21 | Alla BAS-intervall ingår (upphävd begränsning) | Sammanförd i `mal.md` | – |
@@ -49,7 +49,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-38 | K-tröskeln är en inställning | Ändrad av ADR-51 och ADR-69 | – |
 | ADR-39 | Diagramkärna på D3 med eget figurformat | Gällande | – |
 | ADR-40 | Fyra exporter med var sin uppgift, ritade ur en rapportmodell | Gällande | – |
-| ADR-41 | Flikmallen: resultatet först | Ändrad av ADR-81 | – |
+| ADR-41 | Flikmallen: resultatet först | Ändrad av ADR-82 | – |
 | ADR-42 | Diagrammens form och färg väljs efter uppgiften; tabell med grafik i raden där ett diagram visar för lite | Gällande | – |
 | ADR-43 | Färgerna har en källa | Gällande | – |
 | ADR-44 | BAS som indikatorvariabler i huvudregressionen | Ändrad av ADR-53 och ADR-63 | – |
@@ -87,7 +87,8 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-78 | Översikten per huvudområde räknar med huvudregressionens kodning | Gällande | 2026-11-15 |
 | ADR-79 | Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och arbetsvärdering | Gällande | 2026-11-15 |
 | ADR-80 | Flikbytet ritar först och räknar sedan | Gällande | 2026-11-16 |
-| ADR-81 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
+| ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Gällande | 2026-11-16 |
+| ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 
 ## Besluten
 
@@ -465,7 +466,16 @@ förhandsvisningen, ett val eller fliken har ändrats sedan fliken ritades, och 
 arbetstråd (ADR-1); att återanvända regressionen mellan flikarna, som kräver en ändrad ADR-17; att visa flikens gamla
 innehåll medan den räknas. *Gäller i dag:* `k-troskeln.md` §3.
 
-**ADR-81 — Bara dator: verktyget anpassas inte för surfplatta eller telefon.** Ändrar ADR-41, som också nämnde
+**ADR-81 — En färdigritad flik visas igen när ingenting har ändrats.** När användaren byter tillbaka till en flik som
+är färdigritad visas den som den är, utan omritning, om visningsversionen och flikens ritning är oförändrade sedan dess:
+visningsversionen ökar vid varje inmatning i sidan utom ren navigering, vid varje ny generation utom en exports tur och
+retur, och vid inläsning, rensning, en konfigurationsfil, ett paket och varje bakgrundsberäkning som blir klar. Det som
+återanvänds är flikens ritade innehåll i sidan; regressionen och andra resultat cachas fortfarande aldrig, och ADR-17
+gäller för dem. *Avvisat:* att spara regressionen eller andra resultat mellan flikarna; att avgöra per flik vad som
+påverkar den, som är finare men lättare att få fel än att rita om allt efter varje ändring. *Gäller i dag:*
+`k-troskeln.md` §3.
+
+**ADR-82 — Bara dator: verktyget anpassas inte för surfplatta eller telefon.** Ändrar ADR-41, som också nämnde
 surfplatta. Verktyget utformas för datorskärm (användarens beslut). Ett smalt eller delat fönster på datorn ska fungera:
 menyn fälls ihop bakom en knapp och sidan går inte utanför fönstret. Tabeller och diagram utformas däremot inte för en
 liten skärm, och brister som bara syns på surfplatta eller telefon prioriteras inte. Användardokumenten sade redan att

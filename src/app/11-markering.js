@@ -61,6 +61,7 @@ function _mkEtikett(nyckel) {
  * `null` tar bort allt.
  */
 function sattDiagramMarkering(nyckel, { lagg = false } = {}) {
+    if (typeof visningNy === 'function') visningNy();   // markeringen visas i alla flikar (ADR-81)
     if (!nyckel) _markering = [];
     else if (lagg) _markering = _markering.includes(nyckel) ? _markering.filter(k => k !== nyckel) : [..._markering, nyckel];
     else _markering = _markering.length === 1 && _markering[0] === nyckel ? [] : [nyckel];

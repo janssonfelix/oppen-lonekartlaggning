@@ -23,9 +23,11 @@
 // tabeller och diagram går genom (_cloneAndCleanTableForExport, _chartExportUnderlag) går själva in i
 // exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
 function iExportLage() { return state.kLage === 'export'; }
-function _bytKLage(lage) {
+function _bytKLage(lage, { tur = false } = {}) {
     state.kLage = lage;
-    ritGenerationNy();                                                      // allt som är ritat bär det andra läget
+    // Allt som är ritat bär det andra läget. En exports tur och retur (tur) ändrar inget som visas när den är klar:
+    // visningsversionen står kvar, och en flik som ritades om under exporten känns igen på sin generation (31-navigering.js).
+    ritGenerationNy({ tur });
     // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), och skattningarna
     // (statGolv, bootstrap, styrka, § 3:10-paren) är desamma i båda lägena. Livscykelns bevisunderlag hör till det
     // som är ritat.
@@ -64,10 +66,10 @@ let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i t
 function medExportLage(fn) {
     // Den yttersta exporten byter läge och ritar tillbaka; ett läge som satts utifrån (state.kLage = 'export') rörs inte.
     const yttre = _exportDjup === 0 && !iExportLage();
-    if (yttre) _bytKLage('export');
+    if (yttre) _bytKLage('export', { tur: true });
     _exportDjup++;
     let synk = true;
-    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm'); _ritaOmEfterExport(ritade); } };
+    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm', { tur: true }); _ritaOmEfterExport(ritade); } };
     try {
         const r = fn();
         if (r && typeof /** @type {any} */ (r).then === 'function') { synk = false; return /** @type {any} */ (r).finally(tillbaka); }
@@ -104,10 +106,22 @@ document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => 
 
 let _ritGeneration = 1;
 const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
+// Visningsversionen (ADR-81) ökar vid allt som kan ändra något som visas: varje inmatning i sidan utom ren navigering
+// (31-navigering.js), varje ny generation utom en exports tur och retur, inläsning, rensning, en konfigurationsfil, ett
+// paket och varje bakgrundsberäkning som blir klar. En färdigritad flik visas igen utan omritning bara när
+// visningsversionen är densamma som när den ritades. Hellre en ökning för mycket än en för lite.
+let _visningsversion = 0;
+/** Något som kan ändra det som visas har hänt: ingen ritad flik visas igen som den är. */
+function visningNy() { _visningsversion++; }
+function visningsversion() { return _visningsversion; }
 const _ritasNu = new Set();      // flikar som ritas just nu (ritningen får läsa sina egna diagram)
 
-/** Något som styr vad som får visas har ändrats: allt som är ritat hittills är inaktuellt. */
-function ritGenerationNy() { _ritGeneration++; }
+/**
+ * Något som styr vad som får visas har ändrats: allt som är ritat hittills är inaktuellt. Visningsversionen ökar
+ * också, utom när det är en exports tur och retur (`tur`, se _bytKLage).
+ * @param {{tur?: boolean}} [val]
+ */
+function ritGenerationNy({ tur = false } = {}) { _ritGeneration++; if (!tur) visningNy(); }
 function ritGeneration() { return _ritGeneration; }
 /** Ritades fliken före den senaste ändringen, utan att ha ritats om sedan dess? */
 function flikInaktuell(flik) { return _ritadVid.has(flik) && _ritadVid.get(flik) !== _ritGeneration; }
@@ -164,6 +178,7 @@ function exportSakraAlla() {
  * export behöver den. Samma behållare som "Rensa all data" tömmer (26-rensning.js); sidans fasta texter rörs inte.
  */
 function tomFlikarUtom(utom = new Set()) {
+    visningNy();   // det som töms visas inte igen som det var (31-navigering.js)
     const ska = el => { const flik = _egFlikFor(el); return !!flik && !utom.has(flik); };
     for (const id of [...RENSA_BEHALLARE, ...RENSA_OVRIGT]) { const el = document.getElementById(id); if (el && ska(el)) el.innerHTML = ''; }
     for (const id of RENSA_TABELLER) { const tb = document.querySelector(`#${id} tbody`); if (tb && ska(tb)) tb.innerHTML = ''; }
