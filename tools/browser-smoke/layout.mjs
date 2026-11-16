@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Webbläsar-röktestet, del: Utseendet: radbrytning, klippning, kontrast och smala skärmar.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
-import { FIL, ok, browser, page } from './rigg.mjs';
+import { FIL, ok, browser, page, oppnaFlik } from './rigg.mjs';
 
 // Tal på en rad, noter som inte klipps, sidhuvud, kontrast, tabellernas höjd och utskrift av fliken.
 export async function utseende() {
@@ -15,12 +15,12 @@ export async function utseende() {
         }), sel);
         for (const bredd of [1440, 1100]) {
             await page.setViewportSize({ width: bredd, height: 900 });
-            await page.click('.nav-item[data-tab="struktur"]');
+            await oppnaFlik(page, '.nav-item[data-tab="struktur"]');
             await page.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
             await page.waitForTimeout(300);
             const hero = await rader('.reg-hero .hero-number');
             ok(hero.length > 0 && hero.every(h => h.rader === 1), `${bredd} punkter: regressionskortets tal står på en rad (${hero.map(h => h.text).join(', ')})`);
-            await page.click('.nav-item[data-tab="prioritering"]');
+            await oppnaFlik(page, '.nav-item[data-tab="prioritering"]');
             await page.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
             await page.waitForTimeout(300);
             const celler = await rader('#prio-table .cell-bar-value');
@@ -40,8 +40,8 @@ export async function utseende() {
         await s.goto('file://' + FIL);
         await s.click('#first-run-stort-demo');
         await s.waitForFunction(() => /stort demo/.test(document.getElementById('data-status')?.textContent || '') && !!document.querySelector('#view-dashboard svg'), null, { timeout: 30000 });
-        const oppnaFlik = async flik => {
-            await s.click(`.nav-item[data-tab="${flik}"]`);
+        const oppnaStortFlik = async flik => {
+            await oppnaFlik(s, `.nav-item[data-tab="${flik}"]`);
             await s.waitForTimeout(400);
             await s.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
             await s.waitForTimeout(300);
@@ -64,7 +64,7 @@ export async function utseende() {
             ['benchmark', 'Löneläget mot statistiken', '#benchmark-table thead th'],
             ['likvardighet', 'Lägre krav, högre lön', '#likvardighet-lagre-krav-table thead th'],
             ['struktur', 'Per huvudområde', '#sektor-table thead th']]) {
-            await oppnaFlik(flik);
+            await oppnaStortFlik(flik);
             const r = await rubriker(sel), brutna = r.filter(x => x.rader > x.ord);
             ok(r.length > 0 && !brutna.length, `1100 punkter: ${namn}, ${r.length} kolumnrubriker bryts bara mellan ord${brutna.length ? ' — brutna: ' + brutna.slice(0, 3).map(x => `«${x.text}» (${x.ord} ord, ${x.rader} rader)`).join(', ') : ''}`);
             if (flik === 'struktur') {
@@ -72,7 +72,7 @@ export async function utseende() {
                 ok(kr.length > 0 && !isar.length, `1100 punkter: huvudområdenas ${kr.length} belopp står på en rad med «kr»${isar.length ? ' — brutna: ' + isar.slice(0, 3).map(c => c.text).join(', ') : ''}`);
             }
         }
-        await oppnaFlik('prioritering');
+        await oppnaStortFlik('prioritering');
         const kr = (await rader('#prio-table tbody td')).filter(c => /\d\s*kr$/.test(c.text)), isar = kr.filter(c => c.rader !== 1);
         ok(kr.length > 0 && !isar.length, `1100 punkter: Prioriteringens ${kr.length} belopp står på en rad med «kr»${isar.length ? ' — brutna: ' + isar.slice(0, 3).map(c => c.text).join(', ') : ''}`);
         // Prioriteringens tabellhuvud står över sina kolumner: de fasta kolumnerna (Prio, AID-etikett) förskjuts inte.
@@ -84,7 +84,7 @@ export async function utseende() {
         // Infoikonen i en kolumnrubrik står på samma rad som rubrikens sista ord.
         const ensam = [];
         for (const [flik, tabell] of [['prioritering', 'prio-table'], ['utforska', 'rapport-table']]) {
-            await oppnaFlik(flik);
+            await oppnaStortFlik(flik);
             ensam.push(...await s.evaluate(id => [...document.querySelectorAll(`#${id} thead th`)].filter(th => th.getBoundingClientRect().width > 0 && th.querySelector('.info-tip')).filter(th => {
                 const ikon = th.querySelector('.info-tip').getBoundingClientRect(), r = document.createRange();
                 r.selectNodeContents(th);
@@ -127,7 +127,7 @@ export async function utseende() {
         const ritade = new Set();
         for (const [underlag, sida] of [['demo', page], ['stort demo', s]]) {
             for (const [flik, valjare] of TABELLER) {
-                await sida.click(`.nav-item[data-tab="${flik}"]`);
+                await oppnaFlik(sida, `.nav-item[data-tab="${flik}"]`);
                 await sida.waitForTimeout(400);
                 await sida.evaluate(() => {
                     document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; });
@@ -158,7 +158,7 @@ export async function utseende() {
     console.log('\n── Noten om små grupper klipps inte i en bred tabell ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });
-        await page.click('.nav-item[data-tab="utforska"]');
+        await oppnaFlik(page, '.nav-item[data-tab="utforska"]');
         await page.waitForTimeout(400);
         const n = await page.evaluate(() => {
             const noter = [...document.querySelectorAll('#rapport-table td > .k-mask-note')].filter(p => p.getBoundingClientRect().height > 0);
@@ -173,7 +173,7 @@ export async function utseende() {
 
     console.log('\n── Handlingsplanen: inga tomma rader på skärmen ──');
     {
-        await page.click('.nav-item[data-tab="handlingsplan"]');
+        await oppnaFlik(page, '.nav-item[data-tab="handlingsplan"]');
         await page.waitForTimeout(200);
         const hojd = () => page.evaluate(() => [...document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty')].map(tr => tr.getBoundingClientRect().height));
         const skarm = await hojd();
@@ -189,7 +189,7 @@ export async function utseende() {
             await page.setViewportSize({ width: bredd, height: 900 });
             const hojder = {};
             for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
-                await page.click(`.nav-item[data-tab="${flik}"]`);
+                await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
                 hojder[flik] = await page.evaluate(() => Math.round(document.querySelector('.top-header').getBoundingClientRect().height));
             }
             const olika = [...new Set(Object.values(hojder))];
@@ -210,7 +210,7 @@ export async function utseende() {
             const over = [], utanfor = [];
             let antal = 0, sidomeny = 0;
             for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
-                await page.click(`.nav-item[data-tab="${flik}"]`);
+                await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
                 const m = await page.evaluate(() => {
                     const h1 = document.getElementById('page-title'), rng = document.createRange(); rng.selectNodeContents(h1);
                     const sok = document.getElementById('sok-ruta').getBoundingClientRect();
@@ -241,7 +241,7 @@ export async function utseende() {
     {
         // S7 i punkt 26: märket stod ibland på rubrikens rad och ibland ovanför, efter rubrikens längd.
         await page.setViewportSize({ width: 1280, height: 900 });
-        await page.click('.nav-item[data-tab="dashboard"]');
+        await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
         await page.waitForTimeout(200);
         const m = await page.evaluate(() => [...document.querySelectorAll('#action-checklist-container .ag-prio')].filter(p => p.getBoundingClientRect().height > 0)
             .map(p => { const t = p.parentElement.querySelector('strong'); return p.getBoundingClientRect().bottom <= t.getBoundingClientRect().top + 1; }));
@@ -255,7 +255,7 @@ export async function utseende() {
         const klippta = [];
         let antal = 0;
         for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'dokumentera', 'kon', 'benchmark']) {
-            await page.click(`.nav-item[data-tab="${flik}"]`);
+            await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
             await page.waitForTimeout(250);
             const r = await page.evaluate(() => [...document.querySelectorAll('.slutsats-under, .stat-under, .stat-tip')].filter(e => e.getBoundingClientRect().height > 0)
                 .map(e => ({ text: e.textContent.trim(), klippt: e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1, langd: e.textContent.trim().length })));
@@ -280,7 +280,7 @@ export async function utseende() {
         else {
             await s.addStyleTag({ content: "* { font-family: 'DejaVu Sans', sans-serif !important; }" });
             await s.waitForTimeout(1000);
-            await s.click('.nav-item[data-tab="struktur"]');
+            await oppnaFlik(s, '.nav-item[data-tab="struktur"]');
             await s.evaluate(() => { document.getElementById('avsnitt-ls-bas').open = true; });
             await s.waitForTimeout(700);
             const bas = await s.evaluate(() => { const c = document.querySelector('#la-huvuddiagram .table-container'); return { sw: c.scrollWidth, cw: c.clientWidth }; });
@@ -288,7 +288,7 @@ export async function utseende() {
             await s.setViewportSize({ width: 1440, height: 900 });
             const klippta = [];
             for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'dokumentera', 'kon', 'benchmark']) {
-                await s.click(`.nav-item[data-tab="${flik}"]`);
+                await oppnaFlik(s, `.nav-item[data-tab="${flik}"]`);
                 await s.waitForTimeout(250);
                 klippta.push(...await s.evaluate(f => [...document.querySelectorAll('.slutsats-under, .stat-under, .stat-tip')].filter(e => e.getBoundingClientRect().height > 0)
                     .filter(e => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1).map(e => `${f}: ${e.textContent.trim().slice(0, 50)}`), flik));
@@ -301,7 +301,7 @@ export async function utseende() {
     console.log('\n── Kontrast, modalens läge och nyckeltalsraden på surfplatta ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });
-        await page.click('.nav-item[data-tab="dashboard"]');
+        await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
         await page.waitForTimeout(300);
         // Kontrasten räknas ur de färger webbläsaren faktiskt ritar: textens färg mot närmaste ifyllda botten, med genomskinlighet inräknad.
         const kontrast = sel => page.evaluate(sel => {
@@ -319,10 +319,10 @@ export async function utseende() {
         const lagst = async (sel, namn) => { const k = await kontrast(sel); const m = k.sort((a, b) => a.k - b.k)[0]; ok(k.length > 0 && m.k >= 4.5, `${namn}: lägsta kontrast ${m ? m.k : '–'}:1 (${k.length} element)`); };
         await lagst('.comp-label, .comp-value', 'statusraden på Översikt');
         await lagst('#btn-exit-demo', 'knappen Avsluta demo');
-        await page.click('.nav-item[data-tab="utforska"]');
+        await oppnaFlik(page, '.nav-item[data-tab="utforska"]');
         await page.waitForTimeout(300);
         await lagst('#rapport-table thead th', 'Löneöversiktens tabellhuvud');
-        await page.click('.nav-item[data-tab="likvardighet"]');
+        await oppnaFlik(page, '.nav-item[data-tab="likvardighet"]');
         await page.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(300);
         await lagst('.lv-hjalp, .lv-hjalp p, .lv-hjalp li, .lv-hjalp span, .lv-hjalp strong', 'hjälprutan i Likvärdigt arbete');
@@ -334,7 +334,7 @@ export async function utseende() {
         await page.click('#data-residency-close');
         // 768 punkter: fyra nyckeltal bryts 2 + 2.
         await page.setViewportSize({ width: 768, height: 1024 });
-        await page.click('.nav-item[data-tab="matrix"]');
+        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
         await page.waitForTimeout(300);
         const rader = await page.evaluate(() => { const t = [...document.querySelectorAll('#la-slutsatser .slutsats')].map(k => Math.round(k.getBoundingClientRect().top)); return [...new Set(t)].map(y => t.filter(v => v === y).length); });
         ok(rader.join('+') === '2+2', `768 punkter: Lika arbetes fyra nyckeltal står ${rader.join(' + ')}`);
@@ -344,7 +344,7 @@ export async function utseende() {
     console.log('\n── Löneöversikten ryms i sitt kort ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });
-        await page.click('.nav-item[data-tab="utforska"]');
+        await oppnaFlik(page, '.nav-item[data-tab="utforska"]');
         await page.waitForTimeout(400);
         const u = await page.evaluate(() => { const t = document.getElementById('rapport-table'), k = t.closest('.table-container');
             return { tabell: t.scrollWidth, kort: k.clientWidth, kolumner: [...t.querySelectorAll('thead th')].filter(th => th.getBoundingClientRect().width > 0).length,
@@ -358,7 +358,7 @@ export async function utseende() {
     {
         for (const bredd of [1440, 1100]) {
             await page.setViewportSize({ width: bredd, height: 900 });
-            await page.click('.nav-item[data-tab="likvardighet"]');
+            await oppnaFlik(page, '.nav-item[data-tab="likvardighet"]');
             await page.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
             await page.waitForTimeout(300);
             const brutna = await page.evaluate(() => [...document.querySelectorAll('#likvardighet-table td.t-hoger, #likvardighet-table .lv-ki, #likvardighet-table .lv-ki-marke')].map(el => {
@@ -375,7 +375,7 @@ export async function utseende() {
     console.log('\n── Yrkesgruppstabellen i Lika arbete är låg ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });
-        await page.click('.nav-item[data-tab="matrix"]');
+        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
         await page.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(300);
         const t = await page.evaluate(() => {
@@ -391,7 +391,7 @@ export async function utseende() {
 
     console.log('\n── Utskrift av den aktiva fliken (Ctrl+P) ──');
     {
-        await page.click('.nav-item[data-tab="matrix"]');
+        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
         await page.waitForTimeout(300);
         const stangda = await page.evaluate(() => [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-regression details.avsnitt')].map(d => d.open));
         await page.evaluate(() => { document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = false; }); window.dispatchEvent(new Event('beforeprint')); });
@@ -499,7 +499,7 @@ export async function smalaSkarmar() {
         ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.activeElement.id === 'btn-meny'), '390 punkter: Escape stänger menyn och fokus går tillbaka till knappen');
         await s.click('#btn-meny');
         await s.waitForTimeout(300);
-        await s.click('.nav-item[data-tab="struktur"]');
+        await oppnaFlik(s, '.nav-item[data-tab="struktur"]');
         await s.waitForTimeout(900);
         ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-regression').style.display === 'block'), '390 punkter: ett val i menyn byter flik och stänger menyn');
         // Diagrammen ritar för den bredd de får: huvuddiagrammet ska fylla kortet och ha läsbar text.

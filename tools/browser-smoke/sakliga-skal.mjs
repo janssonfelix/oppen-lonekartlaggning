@@ -3,7 +3,7 @@
 // Webbläsar-röktestet, del: Sakliga skäl — på demodata öppnas dialogen från en rad i Handlingsplan, ett skäl läggs
 // till, sammanfattningen räknas om och radens knapp visar antalet, och tabellerna står i Rapporttext. Körs i en egen
 // sida, så att skälet inte följer med i de övriga kontrollerna. Körs av tools/browser-smoke.mjs.
-import { FIL, ok, browser } from './rigg.mjs';
+import { FIL, ok, browser, oppnaFlik } from './rigg.mjs';
 /* global state -- används i page.evaluate, där det finns i sidan */
 
 export async function sakligaSkal() {
@@ -11,7 +11,7 @@ export async function sakligaSkal() {
     const sida = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await sida.goto('file://' + FIL + '?demo=1');
     await sida.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 15000 });
-    await sida.click('.nav-item[data-tab="handlingsplan"]');
+    await oppnaFlik(sida, '.nav-item[data-tab="handlingsplan"]');
     await sida.waitForSelector('#handlingsplan-tbody [data-hp-skal]', { timeout: 15000 });
     // En rad med en medianskillnad där båda könen når minsta gruppstorlek, så att kommentaren följer med i rapporten.
     // För en rad där ett kön är under gränsen står bara kategorin i exporterna. Knappens data-hp-skillnad säger inte
@@ -46,7 +46,7 @@ export async function sakligaSkal() {
     ok(text.startsWith(`Sakliga skäl (${forut + 1})`), `radens knapp visar antalet («${text}»)`);
     ok(/: \d+ skäl/.test(await sida.getAttribute(knapp, 'aria-label') || ''), 'knappens tillgängliga namn har sammanfattningen');
     ok(await sida.evaluate(k => document.activeElement === document.querySelector(k), knapp), 'Escape stänger dialogen och fokus går tillbaka till knappen');
-    await sida.click('.nav-item[data-tab="rapporttext"]');
+    await oppnaFlik(sida, '.nav-item[data-tab="rapporttext"]');
     // Demot har redan skäl på tre rader, så rubriken kan stå kvar från en tidigare ritning innan Rapporttext har ritats
     // om med det nya skälet: vänta på kommentaren, inte bara på rubriken (Firefox hann ibland läsa den gamla texten).
     await sida.waitForFunction(() => /Svårrekryterat i regionen/.test(document.getElementById('view-rapporttext')?.textContent || ''), null, { timeout: 15000 }).catch(() => {});

@@ -33,7 +33,9 @@ function setupTabA11y() {
             if (next >= 0) {
                 e.preventDefault();
                 enabled[next].focus();
-                enabled[next].click();
+                // Pilarna i menyn är användarens flikbyte: fliken visas först och räknas sedan, och en flik som
+                // pilarna passerar hinner inte räknas (ADR-80).
+                klickaFlik(enabled[next], { uppskjut: e.isTrusted });
             }
         });
     });

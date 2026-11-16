@@ -25,9 +25,11 @@ document.addEventListener('click', e => {
     const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
     if (goto) {
         const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute('data-goto-tab')) + '"]');
-        if (nav) /** @type {HTMLElement} */ (nav).click();
         const avsnitt = goto.getAttribute('data-goto-avsnitt');
-        if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt);
+        const tillAvsnitt = () => { if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt); };
+        // Användarens klick visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
+        if (nav && !(/** @type {HTMLInputElement} */ (nav).disabled)) klickaFlik(nav, { uppskjut: e.isTrusted, efter: tillAvsnitt });
+        else { if (nav) /** @type {HTMLElement} */ (nav).click(); tillAvsnitt(); }
         return;
     }
     const dismiss = /** @type {HTMLElement} */ (e.target).closest('[data-dismiss-parent]');

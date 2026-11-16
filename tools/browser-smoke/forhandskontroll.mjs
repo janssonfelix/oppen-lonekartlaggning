@@ -4,14 +4,14 @@
 // skräp, en okänd kön-kod, födelseår i ålderskolumnen) läses in, och avsnittet i Filer och kvalitet visar
 // tolkningstabellen utfälld, med markerade celler, och varningarna. Därefter det blockerande läget: Läs in.
 // Körs av tools/browser-smoke.mjs.
-import { FIL, ok, browser } from './rigg.mjs';
+import { FIL, ok, browser, oppnaFlik } from './rigg.mjs';
 /* global state, oppnaInstallningar, stangInstallningar -- används i page.evaluate, där de finns i sidan */
 
 export async function forhandskontroll() {
     console.log('\n── Förhandskontroll av lönefilen: tolkningen med markerade celler ──');
     const sida = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await sida.goto('file://' + FIL);
-    await sida.click('.nav-item[data-tab="filer"]');   // lönefilen läses in i Filer och kvalitet, där avsnittet står
+    await oppnaFlik(sida, '.nav-item[data-tab="filer"]');   // lönefilen läses in i Filer och kvalitet, där avsnittet står
     const rader = ['BAS;AID;Månadslön;Ålder;Kön'];
     for (let i = 0; i < 30; i++) rader.push(`${i === 0 ? 'C (chef)' : 'C'};207011 Handläggare;${30000 + i * 10};${1970 + (i % 20)};${i === 1 ? '9' : i % 2 ? 'M' : 'K'}`);
     const fil = namn => ({ name: namn, mimeType: 'text/csv', buffer: Buffer.from(rader.join('\n'), 'utf8') });

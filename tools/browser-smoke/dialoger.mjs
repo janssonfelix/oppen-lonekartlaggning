@@ -2,13 +2,13 @@
 // Copyright 2026 Felix Jansson
 // Webbläsar-röktestet, del: Dialogerna: gruppdossiern, inställningarna, sök och BAS-dossiern.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
-import { ok, page, osynlig } from './rigg.mjs';
+import { ok, page, osynlig, oppnaFlik } from './rigg.mjs';
 /* global diagramMarkering, sattDiagramMarkering -- används i page.evaluate, där de finns i sidan */
 
 // Gruppdossiern (modal).
 export async function gruppdossier() {
     console.log('\n── Gruppdossier (modal) ──');
-    await page.click('.nav-item[data-tab="prioritering"]');
+    await oppnaFlik(page, '.nav-item[data-tab="prioritering"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(300);
     const harDossierKnapp = await page.evaluate(() => !!document.querySelector('[data-open-dossier]'));
@@ -29,7 +29,7 @@ export async function kTroskel() {
     console.log('\n── Minsta gruppstorlek för redovisning (ADR-38) ──');
     // Sänkning under 10 kräver bekräftelse; varningen ligger utanför flikarna och ska synas överallt;
     // att återställa tar bort den. Körs före lagringskontrollen: inget av detta får skrivas till lagring.
-    await page.click('.nav-item[data-tab="dashboard"]');
+    await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(300);
     // Fältet ligger i inställningspanelen: värdet i Översikts filrad öppnar den med fokus i fältet.
@@ -50,11 +50,11 @@ export async function kTroskel() {
     await page.keyboard.press('Escape');
     const stangd = await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', null, { timeout: 5000 }).then(() => true, () => false);
     ok(stangd, 'Escape stänger inställningarna');
-    await page.click('.nav-item[data-tab="prioritering"]');
+    await oppnaFlik(page, '.nav-item[data-tab="prioritering"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(300);
     ok(!(await osynlig('#k-troskel-varning')), 'varningen syns också på en annan flik');
-    await page.click('.nav-item[data-tab="dashboard"]');
+    await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.click('#k-troskel-varning-lank');
     await page.waitForTimeout(300);

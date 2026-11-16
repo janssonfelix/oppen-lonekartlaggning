@@ -5,12 +5,12 @@
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { NAMN, BILDER, KAN_LASA_URKLIPP, ok, browser, page } from './rigg.mjs';
+import { NAMN, BILDER, KAN_LASA_URKLIPP, ok, browser, page, oppnaFlik } from './rigg.mjs';
 
 // Exportmenyn, punktsvärm och övergångar, diagramkärnans ritning och export.
 export async function diagramkarnan() {
     console.log('\n── Exportmeny ──');
-    await page.click('.nav-item[data-tab="utforska"]');
+    await oppnaFlik(page, '.nav-item[data-tab="utforska"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);
     const exportHost = '#chart-explore';
@@ -76,7 +76,7 @@ export async function diagramkarnan() {
         await page.emulateMedia({ reducedMotion: null });
 
         // Före och efter i Löneöversyn.
-        await page.click('.nav-item[data-tab="loneoversyn"]');
+        await oppnaFlik(page, '.nav-item[data-tab="loneoversyn"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(600);
         await page.evaluate(() => { const v = document.getElementById('forecast-generell-value'); v.value = '2'; v.dispatchEvent(new Event('input', { bubbles: true })); v.dispatchEvent(new Event('change', { bubbles: true })); });
@@ -86,7 +86,7 @@ export async function diagramkarnan() {
         if (BILDER) await page.locator('#chart-forecast-lutning').screenshot({ path: `${BILDER}/lutning-${NAMN}.png` });
 
         // Andelsstaplar: staplade staplar i Utforska och efterlevnaden kring en mittlinje i Lönepolitik.
-        await page.click('.nav-item[data-tab="utforska"]');
+        await oppnaFlik(page, '.nav-item[data-tab="utforska"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         await page.evaluate(() => {
@@ -99,7 +99,7 @@ export async function diagramkarnan() {
         ok(stapl.segment > 2 && stapl.summor.every(v => v === 100), `Utforska ritar staplade staplar som andel (${stapl.segment} segment, varje rad 100 %)`);
         if (BILDER) await page.locator('#chart-explore').screenshot({ path: `${BILDER}/staplade-${NAMN}.png` });
         await page.evaluate(() => { for (const [id, v] of [['explore-typ', 'auto'], ['explore-kolumn', 'ingen']]) { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); } });
-        await page.click('.nav-item[data-tab="benchmark"]');
+        await oppnaFlik(page, '.nav-item[data-tab="benchmark"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(500);
         if (await page.evaluate(() => !!document.getElementById('lp-komplians-vy'))) {
@@ -112,7 +112,7 @@ export async function diagramkarnan() {
         } else console.log('  – Lönepolitik har ingen policy i demodatan: mittlinjen prövas inte här');
 
         // Könsfördelning per BAS, avvikelse från förväntad lön per kön (Lika arbete) och ålderspyramiden (Ålder & karriär).
-        await page.click('.nav-item[data-tab="matrix"]');
+        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(700);
         const andel = await page.evaluate(() => { const el = document.getElementById('chart-skevhet-andel'), f = el._figur;
@@ -124,7 +124,7 @@ export async function diagramkarnan() {
         ok(avv.synlig && avv.rader >= 2 && avv.rader % 2 === 0 && avv.grafik === avv.rader, `Personer att granska visar avvikelsen från förväntad lön per kön som tabell med grafik i varje rad (${avv.rader / 2} BAS-intervall)`);
         ok(avv.sma === 0 || /färre än 5 personer/.test(avv.not), `andelar med litet underlag är märkta och förklaras (${avv.sma} andelar)`);
         if (BILDER) await page.locator('#pag-diagram-ruta').screenshot({ path: `${BILDER}/avvikelse-${NAMN}.png` });
-        await page.click('.nav-item[data-tab="kon"]');
+        await oppnaFlik(page, '.nav-item[data-tab="kon"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(700);
         const pyr = await page.evaluate(() => { const el = document.getElementById('chart-demo-pyramid'); return { staplar: el.querySelectorAll('rect[data-marke="stapel"]').length, axel: [...el.querySelectorAll('[data-axel="x"]')].map(t => t.textContent).join(' ') }; });
@@ -165,7 +165,7 @@ export async function diagramkarnan() {
         ok(e2.band >= 2 && e2.minst >= 1, `Ålder & karriär ritar lönespridningen över ålder som percentilband (skärmen maskerar inget, ADR-51; minst ${e2.minst} personer i varje åldersgrupp)`);
         ok(e2.paneler >= 2, `Ålder & karriär ritar lön mot ålder i små multiplar (${e2.paneler} paneler)`);
         if (BILDER) for (const id of ['chart-kon-histogram', 'chart-demo-spread', 'chart-kon-multiplar']) { await page.locator('#' + id).scrollIntoViewIfNeeded(); await page.locator('#' + id).screenshot({ path: `${BILDER}/${id}-${NAMN}.png` }); }
-        await page.click('.nav-item[data-tab="struktur"]');
+        await oppnaFlik(page, '.nav-item[data-tab="struktur"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(600);
         const kvart = await page.evaluate(() => { const el = document.getElementById('chart-struktur-kvartiler'); return { staplar: el ? el.querySelectorAll('rect[data-marke="stapel"]').length : 0, linje: el ? el.querySelectorAll('[data-marke="referenslinje"]').length : 0 }; });
@@ -176,7 +176,7 @@ export async function diagramkarnan() {
             return { ytor: r.length, overlapp, etiketter: el.querySelectorAll('text[data-marke="ytetikett"]').length, axel: el.querySelectorAll('[data-axel]').length }; });
         ok(trad.ytor >= 4 && trad.overlapp === 0 && trad.etiketter > 0 && trad.axel === 0, `Struktur ritar organisationen som trädkarta (${trad.ytor} ytor, inga överlapp)`);
         if (BILDER) { await page.locator('#chart-struktur-tradkarta').scrollIntoViewIfNeeded(); await page.locator('#chart-struktur-tradkarta').screenshot({ path: `${BILDER}/tradkarta-${NAMN}.png` }); }
-        await page.click('.nav-item[data-tab="likvardighet"]');
+        await oppnaFlik(page, '.nav-item[data-tab="likvardighet"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(900);
         const krav = await page.evaluate(() => { const el = document.getElementById('chart-likvardighet-krav'); return { punkter: el ? el.querySelectorAll('[data-marke="punkt"]').length : 0, linje: el ? el.querySelectorAll('path[data-marke="linje"]').length : 0, not: (document.getElementById('lv-krav-not') || {}).textContent || '', k: window.kTroskel() }; });
@@ -411,7 +411,7 @@ export async function diagramkarnan() {
     /* global renderTabContent */
     {
         await page.evaluate(() => _rfUrvalGlom());
-        await page.click('.nav-item[data-tab="kon"]');
+        await oppnaFlik(page, '.nav-item[data-tab="kon"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         const scatter = () => page.evaluate(() => {
@@ -430,7 +430,7 @@ export async function diagramkarnan() {
         await page.waitForTimeout(400);
         ok((await scatter()).linjer.join('|') === fore.linjer.join('|'), 'Visa alla ger tillbaka samma trendlinjer');
 
-        await page.click('.nav-item[data-tab="matrix"]');
+        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         const rad = page.locator('#chart-la-tratt').locator('xpath=..').locator('.diagram-urval[data-urval-falt="yrke"]');

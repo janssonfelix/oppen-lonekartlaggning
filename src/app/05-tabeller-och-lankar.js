@@ -248,11 +248,23 @@ function toggleAllGroups(tableId, collapse) {
 }
 
 // ---- Cross-tab navigation ----
+/**
+ * Byter till fliken. `uppskjut`: fliken visas först och räknas sedan (ADR-80, 31-navigering.js), och det som ska göras
+ * i fliken (sökningen, markeringen, `efter`) görs när den är ritad. Svarar om fliken byttes.
+ * @param {string} tabName
+ * @param {{uppskjut?: boolean, efter?: (() => void)|null, search?: string, searchInputId?: string,
+ *   highlightMatch?: {tableId: string, contains: string[]}}} [opts]
+ */
 function navigateTo(tabName, opts = {}) {
     tabName = tabMal(tabName);
     const btn = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
-    if (!btn || /** @type {HTMLInputElement} */ (btn).disabled) return;
-    /** @type {HTMLElement} */ (btn).click();
+    if (!btn || /** @type {HTMLInputElement} */ (btn).disabled) return false;
+    klickaFlik(btn, { uppskjut: !!opts.uppskjut, efter: () => _navigeratTill(opts) });
+    return true;
+}
+/** Det som navigateTo gör i fliken när den är ritad. */
+function _navigeratTill(opts) {
+    if (opts.efter) opts.efter();
     if (opts.search && opts.searchInputId) {
         setTimeout(() => {
             const input = document.getElementById(opts.searchInputId);
