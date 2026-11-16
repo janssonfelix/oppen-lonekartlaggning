@@ -614,7 +614,7 @@ nytt diagram.
 | Två gruppers nivå i samma enhet (kvinnor och män i kronor, rå och justerad kvot, före och efter) | Hantel: två punkter och ett streck emellan (`intervall` + `punkt`) | Parvisa staplar; lutande linjer på en avkortad axel |
 | Storlek per kategori, rangordnad | Liggande sorterade staplar, högst ett femtontal | Staplar med en linje mot en andra axel (två skalor i en bild) |
 | Delar av en helhet | Staplat till 100 %, liggande när namnen är långa | — |
-| Uppdelning av en skillnad i delar | Trappa: delarna läggs på varandra och landar i helheten | — |
+| Uppdelning av en skillnad i delar | Trappa: helheten först, sedan delarna en i taget från helheten mot noll, med värdet där steget landar | Delar som landar i helheten sist, så att läsaren först ser vad som summeras |
 | Fördelning, två grupper | Kvantilpunkter (`form: 'kvantiler'`) för lekmän — läsaren kan räkna andelen under en lön; annars halvgenomskinliga lager på samma plats, eller lådor sida vid sida | Parvisa staplar per klass, täthetskurvor för den som inte vant sig vid dem |
 | Spridning över en ordnad variabel | Median med band (P25–P75, P10–P90) | Flera hackiga linjer |
 | Enheter av olika storlek mot slumpen | Trattdiagram: värdet mot storleken, med gränser som smalnar | Rangordning utan hänsyn till storlek |
@@ -629,6 +629,10 @@ ADR-39 gäller för allt som är ett diagram.
 - **Kön:** två färger, plommon för kvinnor och olivgrönt för män — inte rosa och blått, som knyter färgen till en stereotyp. Båda har minst 4,5:1 mot vitt, skiljer sig vid simulerad protanopi och deuteranopi och ligger ifrån status- och seriefärgerna (`tests/farger.test.js`). Används bara för kön, och kön står alltid också med ord i legenden.
 - **Serier:** en fast ordning av tydligt olika färger; en serie behåller sin färg när andra döljs.
 - **Storlek:** en nyans, ljus till mörk. **Avvikelse:** två nyanser kring neutralt grått.
+- **Uppdelning av en skillnad** (trapporna i *Var uppstår löneskillnaden?* och *Vad blir kvar av löneskillnaden?*):
+  `PALETTE.uppdelning`. Färgen säger vad delen betyder, inte åt vilket håll den går: helheten neutral och mörk, det som
+  förklaras av var kvinnor och män arbetar (struktur) blått, det som blir kvar inom samma grupp (lönesättningen)
+  orange. Förklaringen under diagrammet säger det i ord, och kortens färgrutor har samma färger.
 - **Status:** bara för status, och alltid tillsammans med form eller ord. En skillnad som bedöms mot 3- och
   5-procentsgränserna har ett ordförråd i hela verktyget, `GAP_STATUS` i `10-diagramtema.js`: *Balanserat* (grönt,
   cirkel), *Följ upp* (bärnsten, kvadrat) och *Värt att granska* (lila, romb) i diagrammen; samma ord, färg och

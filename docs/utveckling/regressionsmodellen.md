@@ -199,7 +199,9 @@ Varje OLS-steg ger gapet (exp(β1) − 1) · 100, R² och antalet kolumner; ett 
 den förklarade andelen och förklaringsbudgeten räknas till och med modellens sista steg; *+ AID-etikett inom BAS* ingår
 bara när den är vald.
 
-**Trappan och förklaringsbudgeten** visar stegen. Budgeten har en del per steg efter det första, |gap före| − |gap
+**Trappan och förklaringsbudgeten** visar stegen. Trappan läses som den i *Var uppstår löneskillnaden?*
+(avsnitt 10): den ojusterade skillnaden först (neutral), varje steg som ett spann från gapet före till gapet efter
+(strukturens färg) och den oförklarade skillnaden sist (lönesättningens färg), med nivåns värde vid stapelns ände. Budgeten har en del per steg efter det första, |gap före| − |gap
 efter|; ett steg som gör gapet större flaggas i stället för att ritas som en stapel, och en mening säger att det som
 tillskrivs varje steg beror på ordningen. Hur det ojusterade steget redovisas när ett kön är under tröskeln står i
 avsnitt 9.
@@ -420,7 +422,7 @@ x_män) / 2. Varje steg delas alltså symmetriskt med kvinnors och mäns genomsn
 Grupposterna mäts mot snittet (− W̄, − W̄_b); det ändrar inga summor, eftersom Σ Δs = 0, men gör varje post tolkbar. AID
 är AID-koden, eller fältet `yrke` när AID-koden saknas.
 
-**Valbara variabler.** Kortet *Förklara med:* låter handläggaren välja en till fyra variabler bland BAS, huvudområde
+**Valbara variabler.** Kortet *Förklara med:* (under trappan, bakom *Ändra uppdelning*) låter handläggaren välja en till fyra variabler bland BAS, huvudområde
 (nyckeln `sektor`), AID-mellannivå, AID och åldersgrupp (`GAP_VARIABLER`), och ordna dem med knappar. Huvudområde och
 AID-mellannivå kan väljas
 när lönefilen har AID-koder, åldersgrupp (`ageBucket`: under 20, femårsgrupper från 20–24 till 60–64, 65+) när den har
@@ -467,7 +469,10 @@ andelar, och en not säger att delarna då kan peka åt olika håll och vara st�
    tröskeln står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.
 
 Regeln gäller per del, för varje val av variabler. Trappan visar bara delsummorna och hela skillnaden, aldrig en enskild
-grupps bidrag, och ritas bara när delarna redovisas.
+grupps bidrag, och ritas bara när delarna redovisas. Hela skillnaden står först, sedan delarna en i taget
+från hela skillnaden mot noll, med *belopp · andel av skillnaden* vid varje stapel. En del som går åt andra hållet än
+helheten, eller är större än den, får bara sitt belopp, och verktygstipset säger varför; med `litetGap` står inga
+andelar, som i raderna. Avsnittet står först i Lönestruktur.
 
 **Hur valet sparas.** Valet lagras som `state.gapUppdelning = { variabler }`, null för standardvalet, och normaliseras
 av `normaliseraGapVariabler`: okända och dubbla variabler tas bort; fler än fyra blir de fyra första, med en varning;

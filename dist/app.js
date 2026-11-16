@@ -7702,8 +7702,9 @@ function gapDelar(variabler) {
             orsak: `på att kvinnor och män är olika fördelade över ${ORD[x].overKort}` }
         : { id: 'ABCDE'[i], namn: `${_versal(ORD[x].liten)} inom ${inom(i)}`, variabel: x,
             betyder: `Kvinnor och män har olika ${ORD[x].olika} inom samma ${inom(i)}.`, orsak: `på olika ${ORD[x].olika} inom samma ${inom(i)}` });
-    delar.push({ id: 'ABCDE'[v.length], namn: `Inom ${inom(v.length)}`, variabel: null,
-        betyder: `Kvinnor och män har olika lön i samma ${inom(v.length)}.`, orsak: `på löneskillnader inom samma ${inom(v.length)}` });
+    // Den sista delen är det fördelningen inte förklarar (motsvarar regressionens oförklarade skillnad).
+    delar.push({ id: 'ABCDE'[v.length], namn: `Oförklarat: lön inom samma ${inom(v.length)}`, variabel: null,
+        betyder: `Kvinnor och män har olika lön i samma ${inom(v.length)}. Det är den del av skillnaden som fördelningen inte förklarar; en grupp med bara kvinnor eller bara män går inte att jämföra och räknas i stället till delarna ovan.`, orsak: `på löneskillnader inom samma ${inom(v.length)}` });
     return delar;
 }
 
@@ -15940,7 +15941,14 @@ const PALETTE = {
     // Prioriteringens statusar. «Börja här» och «Värt att granska» är lila — samma färg som statusen «Värt att granska»
     // i Lika arbetes yrkesgruppstabell (lila överallt, inte rött). Lila säger «titta
     // här först» utan att påstå att något är fel; rött är förbehållet fel i underlaget.
-    prio: { akut: FARG.granska, atgard: FARG.granskaLjus, bevaka: '#d97706', ok: FARG.ok, analysera: FARG.info }
+    prio: { akut: FARG.granska, atgard: FARG.granskaLjus, bevaka: '#d97706', ok: FARG.ok, analysera: FARG.info },
+    // Trapporna som delar en löneskillnad (Var uppstår löneskillnaden?, Vad blir kvar av löneskillnaden?). Färgen säger
+    // vad delen betyder, inte åt vilket håll den går: hela skillnaden neutral, det som förklaras av var kvinnor och män
+    // arbetar (struktur) en färg, och det som blir kvar inom samma grupp (lönesättningen) en annan. Inga statusfärger:
+    // att något förklaras är ingen bedömning. Seriens två första färger, som skiljer sig också vid färgblindhet.
+    // strukturLjus är ett steg som inte ingår i huvudtalet (regressionens AID-etikett inom BAS): strukturens blå,
+    // ljusare, som en färg och inte som genomskinlighet, så att förklaringens ruta har samma färg som stapeln.
+    uppdelning: { helhet: FARG.dampad, struktur: '#2a78d6', strukturLjus: '#9fc2ed', lonesattning: '#eb6834' }
 };
 
 // Uppmärksamhetstrappan (ADR-59): statusordförrådet för en skillnad mellan kvinnors och mäns lön — ETT ställe för alla
@@ -30194,33 +30202,35 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
     const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const pp = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} procentenheter`;
     const kategorier = ['Ojusterad skillnad', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarad skillnad', ...(yrke ? [_REG_TRAPPSTEG[_RG_STEG_YRKE]] : [])];
-    // Varje förklaringssteg: från gapet före steget till gapet efter. Seriens blå när gapet krymper mot noll, orange när
-    // det växer — inte grönt och gult: att ett gap FÖRKLARAS av ålder eller nivå är ingen bedömning av att det är bra.
+    // Som trappan i Var uppstår löneskillnaden?: helheten först, sedan stegen, och färgen säger vad stapeln
+    // betyder (PALETTE.uppdelning), inte åt vilket håll den går. Den ojusterade skillnaden är neutral, stegen är struktur
+    // och den oförklarade skillnaden får lönesättningens färg — inte grönt och gult: att ett gap FÖRKLARAS av ålder
+    // eller nivå är ingen bedömning av att det är bra.
     const steg = seqOk.slice(1).map((s, i) => {
         const fore = seqOk[i].gapPct, efter = s.gapPct;
-        return { x: kategorier[i + 1], lag: Math.min(fore, efter), hog: Math.max(fore, efter), fore, efter, andring: efter - fore,
-                 farg: Math.abs(efter) <= Math.abs(fore) ? PALETTE.serie[0] : PALETTE.serie[1] };
+        return { x: kategorier[i + 1], lag: Math.min(fore, efter), hog: Math.max(fore, efter), fore, efter, andring: efter - fore };
     });
+    const helhet = (x, v) => ({ x, lag: Math.min(+v.toFixed(2), 0), hog: Math.max(+v.toFixed(2), 0), varde: +v.toFixed(2) });
     // Nivåns värde står utanför stapeln, vid den ände där strecket står: under strecket när stapeln (eller steget) går
     // uppåt från det, annars över. Så täcker värdet inte stapeln, också när den nästan inte syns.
     const niva = (x, v, fore = 0) => ({ x, y: +v.toFixed(2), etikett: pct(v), etikettLage: v < fore ? 'under' : 'over' });
     const efterHuvudtalet = yrke ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${pct(yrke.gapPct)} kvar; det steget ingår inte i huvudtalet.` : '';
-    return { beskrivning: `Hur löneskillnaden förklaras steg för steg: från den ojusterade skillnaden ${pct(forst.gapPct)} till det oförklarade ${pct(sist.gapPct)} när ${fras} räknas in.${efterHuvudtalet} Negativ skillnad betyder att kvinnor har lägre lön. Samma tal står i förklaringsbudgeten.`,
-        legend: false, hojd: 300,
+    const stegTips = d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], ['Skillnad efter', pct(d.efter)]];
+    return { beskrivning: `Hur löneskillnaden förklaras steg för steg: först den ojusterade skillnaden ${pct(forst.gapPct)}, sedan ett steg för varje variabel som räknas in, och sist det oförklarade ${pct(sist.gapPct)} när ${fras} räknas in.${efterHuvudtalet} Negativ skillnad betyder att kvinnor har lägre lön. Samma tal står i förklaringsbudgeten.`,
+        hojd: 320,
         x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Löneskillnad (%)', nollinje: true },
         lager: [
-            { marke: 'stapel', lage: 'overlagrad', serie: 'Skillnad', farg: PALETTE.semantic.neutral, opacitet: 0.4,   // ljus, så att nivåns etikett går att läsa
-              data: [{ x: 'Ojusterad skillnad', y: +forst.gapPct.toFixed(2) }, { x: 'Oförklarad skillnad', y: +sist.gapPct.toFixed(2) }],
-              tips: d => [[d.x], ['Löneskillnad', pct(d.y)]] },
-            { marke: 'intervall', serie: 'Förklaras av', tjocklek: 44, data: steg,
-              tips: d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], ['Skillnad efter', pct(d.efter)]] },
+            { marke: 'intervall', serie: 'Ojusterad skillnad', farg: PALETTE.uppdelning.helhet, tjocklek: 44,
+              data: [helhet('Ojusterad skillnad', forst.gapPct)], tips: d => [[d.x], ['Löneskillnad', pct(d.varde)]] },
+            { marke: 'intervall', serie: 'Förklaras av', farg: PALETTE.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
+            { marke: 'intervall', serie: 'Oförklarad skillnad', farg: PALETTE.uppdelning.lonesattning, tjocklek: 44,
+              data: [helhet('Oförklarad skillnad', sist.gapPct)], tips: d => [[d.x], ['Löneskillnad', pct(d.varde)]] },
             // Yrkesgruppssteget (ADR-46) efter huvudtalet, ljusare: det ingår inte i huvudtalet.
-            ...(yrke ? [{ marke: 'intervall', serie: `${_REG_TRAPPSTEG[_RG_STEG_YRKE]} (ingår inte i huvudtalet)`, tjocklek: 44, opacitet: 0.45,
-              data: [{ x: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct,
-                       farg: Math.abs(yrke.gapPct) <= Math.abs(sist.gapPct) ? PALETTE.serie[0] : PALETTE.serie[1] }],
+            ...(yrke ? [{ marke: 'intervall', serie: 'Utöver huvudtalet', farg: PALETTE.uppdelning.strukturLjus, tjocklek: 44,
+              data: [{ x: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct }],
               tips: d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ['Ingår inte i huvudtalet', '']] }] : []),
             // Nivån efter varje steg, med sitt värde: ett streck och en etikett.
-            { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', farg: PALETTE.semantic.mork, storlek: 11,
+            { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', legend: false, farg: PALETTE.semantic.mork, storlek: 11,
               data: [niva('Ojusterad skillnad', forst.gapPct), ...seqOk.slice(1).map((s, i) => niva(kategorier[i + 1], s.gapPct, seqOk[i].gapPct)), niva('Oförklarad skillnad', sist.gapPct),
                      ...(yrke ? [niva(_REG_TRAPPSTEG[_RG_STEG_YRKE], yrke.gapPct, sist.gapPct)] : [])] }
         ] };
@@ -35629,12 +35639,19 @@ function _guValHtml() {
             <button type="button" class="btn-table-tool" data-gu-flytta="1" aria-label="Flytta ned: ${namn}"${kanFlytta(i, 1) ? '' : ' disabled'}>${ikon('pilNed', 14)}</button></span></li>`;
     };
     const fler = val.length >= _GU_MAX;
-    return `<fieldset class="gu-val"><legend>Förklara med:</legend>
+    // Valet står under diagrammet, hopfällt bakom «Ändra uppdelning». Det står kvar utfällt när kortet ritas om
+    // (_guValOppen), så att fokus och skärmläsarens meddelande i _guAndra hamnar i en synlig lista.
+    return `<details class="gu-andra"${_guValOppen ? ' open' : ''}><summary>Ändra uppdelning</summary><fieldset class="gu-val"><legend>Förklara med:</legend>
         <p class="gu-not" id="gu-val-hjalp">Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare. Välj en till fyra; AID-nivåerna ordnas alltid från grov till fin.</p>
         <ol class="urval-lista gu-val-lista" aria-describedby="gu-val-hjalp">${val.map(rad).join('')}${ovriga.map(v => `<li class="urval-rad" data-gu-rad="${v}"><label><input type="checkbox" data-gu-var="${v}"${fler ? ' disabled title="Högst fyra variabler"' : ''}> ${esc(_guVariabelEtikett(v))}</label></li>`).join('')}</ol>
         ${_guVariablerArStandard(val) ? '' : '<button type="button" class="btn btn-secondary btn-sm" data-gu-standard>Återställ standard (BAS, AID)</button>'}
-    </fieldset>`;
+    </fieldset></details>`;
 }
+let _guValOppen = false;
+document.addEventListener('toggle', e => {
+    const d = /** @type {HTMLElement} */ (e.target);
+    if (d && d.classList && d.classList.contains('gu-andra') && d.closest('#gap-uppdelning')) _guValOppen = /** @type {HTMLDetailsElement} */ (d).open;
+}, true);
 // Ritar om kortet och lägger tillbaka fokus på samma kontroll (eller rutan för samma variabel, om knappen nu är avstängd).
 function _guAndra(ny, fokus, meddelande) {
     sattGapVariabler(ny);
@@ -35698,9 +35715,9 @@ function renderGapUppdelning() {
     const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
     if (!u.skyddad) {
-        body.innerHTML = demo + `<p class="gu-inledning">${inledning}${medianText}</p>` + _guValHtml()
+        body.innerHTML = demo + `<p class="gu-inledning">${inledning}${medianText}</p>`
             + `<p class="gu-not">Skillnaden delas inte upp här: en grupp med färre än ${kTroskel()} ${personOrd(kTroskel())} står för så stor del av `
-            + 'en av delarna att dess bidrag annars skulle kunna räknas fram.</p>';
+            + 'en av delarna att dess bidrag annars skulle kunna räknas fram.</p>' + _guValHtml();
         return;
     }
     const delar = _guDelarMedAtgard(u.variabler || variabler);
@@ -35708,13 +35725,15 @@ function renderGapUppdelning() {
     const rader = delar.map(del => {
         const v = u.delar[del.id];
         const bredd = Math.abs(v) / max * 50;
+        // Samma färg som delens stapel i trappan: struktur eller lönesättningen (PALETTE.uppdelning).
+        const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
         const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
             // Dolda grupper redovisas bara med antal — deras summa kunde röja en enskild grupp.
             + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${u.ovrigaAntal[del.id]} ${u.ovrigaAntal[del.id] === 1 ? 'grupp' : 'grupper'} med färre än ${kTroskel()} ${personOrd(kTroskel())} ingår i summan</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
-            <div class="gu-rubrik"><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
-            <div class="gu-stapel" aria-hidden="true"><span class="gu-fyll ${v < 0 ? 'gu-neg' : 'gu-pos'}" data-stil-mvanster="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" data-stil-bredd="${bredd.toFixed(1)}%"></span></div>
+            <div class="gu-rubrik"><svg class="gu-ruta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="2" fill="${farg}"/></svg><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
+            <div class="gu-stapel" aria-hidden="true"><svg width="100%" height="10" focusable="false"><rect x="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" width="${bredd.toFixed(1)}%" height="10" rx="2" fill="${farg}"/></svg></div>
             <p class="gu-text">${esc(del.betyder)} ${del.atgard} <a href="#" data-go-to-tab="${del.flik}">Till ${del.flikNamn}</a>${del.ankare ? ` <a href="#" data-go-to-tab="${del.flik}" data-go-to-anchor="${del.ankare}">${del.ankareNamn}</a>` : ''}</p>
             ${topp ? `<ul class="gu-topp">${topp}</ul>` : ''}
         </div>`;
@@ -35722,36 +35741,70 @@ function renderGapUppdelning() {
     body.innerHTML = demo
         + `<p class="gu-inledning">${inledning}${medianText} Uppdelningen räknar med medellön, eftersom delarna då summerar exakt. Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.</p>`
         + (u.litetGap ? '<p class="gu-not">Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.</p>' : '')
-        + _guValHtml()
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
+        + _guValHtml()
         + rader
         + `<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade ${T.enhet.bfl} i Lika arbete, som sorteras efter skillnadens storlek.`
         // Med tröskeln 1 (skärmen, ADR-51) namnges alla grupper, och meningen om små grupper har inget att säga.
-        + (kTroskel() > 1 ? ` Grupper där ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} namnges inte.` : '') + '</p>'; tillampaDataStil(body);
+        + (kTroskel() > 1 ? ` Grupper där ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} namnges inte.` : '') + '</p>';
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 
-// Uppdelningen som trappa: från noll läggs delarna (A, B, … en per vald variabel och sist "inom") på varandra och
-// landar i hela skillnaden i medellön. Bara delsummorna och totalen ritas — samma tal som raderna under, och aldrig en
-// enskild grupps bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas bara när `u.skyddad`).
+// Uppdelningen som trappa i omvänd ordning: hela skillnaden först, sedan delarna (A, B, … en per vald variabel
+// och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
+// under, och aldrig en enskild grupps bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas
+// bara när `u.skyddad`). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
+const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
+/** Delens andel av hela skillnaden i procent, eller null när den inte säger något: en liten skillnad (`litetGap`), en
+ * del som går åt andra hållet än helheten eller en del som är större än helheten. @param {any} u @param {number} v */
+function _guAndel(u, v) {
+    if (u.litetGap || !u.gap) return null;
+    const a = v / u.gap * 100;
+    return a >= 0 && a <= 100 ? a : null;
+}
 function _guTrappaFigur(u) {
     const variabler = u.variabler || _guStandardVariabler();
     const delar = _guDelar(variabler);
-    const kategorier = [...delar.map(d => `${d.id}. ${d.namn}`), 'Hela skillnaden'];
-    let niva = 0;
-    const steg = delar.map((d, i) => { const fore = niva; niva += u.delar[d.id];
-        return { x: kategorier[i], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: u.delar[d.id], efter: niva,
-                 farg: u.delar[d.id] >= 0 ? PALETTE.serie[0] : PALETTE.serie[1] }; });
-    // Värdet står utanför stapeln, vid den ände där strecket står: under strecket när stapeln går uppåt från det (en del
-    // som minskar summan, en negativ helhet), annars över. En etikett som är bredare än stapeln täcker den då inte.
-    const under = neg => ({ etikettLage: neg ? 'under' : 'over' });
-    const streck = [...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: _guKr(s.del), ...under(s.del < 0) })), { x: 'Hela skillnaden', y: Math.round(u.gap), etikett: _guKr(u.gap), ...under(u.gap < 0) }];
+    const kategorier = [_GU_SERIE.helhet, ...delar.map(d => `${d.id}. ${d.namn}`)];
+    const gap = Math.round(u.gap);
+    // Från hela skillnaden dras delarna av en i taget: nivån efter den sista är noll.
+    let niva = u.gap;
+    const steg = delar.map((d, i) => { const v = u.delar[d.id], fore = niva; niva -= v;
+        return { x: kategorier[i + 1], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: v, fore, efter: niva,
+                 skillnadKr: Math.round(v), inom: d.variabel === null }; });
+    const etikett = s => { const a = _guAndel(u, s.del); return a === null ? _guKr(s.del) : `${_guKr(s.del)} · ${_guPct(a, 0)}`; };
+    // Värdet står utanför stapeln, vid den ände som ligger längst från noll: under stapeln när den änden är den undre,
+    // annars över. Där korsar det aldrig nollinjen (som ritas över märkena), också när ett steg landar nära noll.
+    // Strecket står kvar där steget landar.
+    const ande = s => (Math.abs(s.fore) >= Math.abs(s.efter) ? s.fore : s.efter);
+    const lage = (y, lag) => (y <= lag ? 'under' : 'over');
+    const tips = d => {
+        const a = _guAndel(u, d.del);
+        const andel = a !== null ? [['Andel av skillnaden', _guPct(a, 0)]]
+            : u.litetGap ? []
+            : [['Andel av skillnaden', Math.sign(d.del) !== Math.sign(u.gap) ? 'anges inte: delen går åt andra hållet än hela skillnaden'
+                : 'anges inte: delen är större än hela skillnaden, eftersom en annan del går åt andra hållet']];
+        return [[d.x], ['Bidrag', _guKr(d.del)], ...andel, ['Kvar efter delen', _guKr(d.efter)]];
+    };
     const antal = ['', 'en', 'två', 'tre', 'fyra', 'fem'][delar.length];
-    return { beskrivning: `Skillnaden i medellön, kvinnor mot män, delad i ${antal} delar som läggs på varandra: ${_guDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
-        legend: false, hojd: 280, x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true },
-        lager: [{ marke: 'stapel', lage: 'overlagrad', serie: 'Hela skillnaden', farg: PALETTE.semantic.neutral, opacitet: 0.4, data: [{ x: 'Hela skillnaden', y: Math.round(u.gap) }], tips: d => [[d.x], ['Skillnad i medellön', _guKr(d.y)]] },
-                { marke: 'intervall', serie: 'Delens bidrag', tjocklek: 44, data: steg, tips: d => [[d.x], ['Bidrag', _guKr(d.del)], ['Summa hit', _guKr(d.efter)]] },
-                { marke: 'punkt', symbol: 'streck', serie: 'Summa efter delen', farg: PALETTE.semantic.mork, storlek: 11, data: streck }] };
+    // Luft över och under trappan, så att värdet vid den lägsta och högsta nivån ryms på sin sida om strecket (annars
+    // flyttas det i sidled, och med hela skillnaden först hamnar det då på nästa stapel). Bara delsummor och helheten.
+    const nivaer = [0, u.gap, ...steg.map(s => s.efter)], lag = Math.min(...nivaer), hog = Math.max(...nivaer), luft = (hog - lag || 1) * 0.12;
+    const delLager = (inom, serie, farg) => ({ marke: 'intervall', serie, farg, tjocklek: 44, data: steg.filter(s => s.inom === inom), tips });
+    return { beskrivning: `Skillnaden i medellön, kvinnor mot män: först hela skillnaden, ${_guKr(u.gap)}, och sedan ${antal} delar som tillsammans blir hela skillnaden, en i taget från hela skillnaden mot noll: ${_guDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
+        hojd: 320,
+        x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true, ...(hog > lag ? { doman: [lag - luft, hog + luft] } : {}) },
+        lager: [{ marke: 'intervall', serie: _GU_SERIE.helhet, farg: PALETTE.uppdelning.helhet, tjocklek: 44,
+                  data: [{ x: _GU_SERIE.helhet, lag: Math.min(gap, 0), hog: Math.max(gap, 0), skillnadKr: gap }], tips: d => [[d.x], ['Skillnad i medellön', _guKr(d.skillnadKr)]] },
+                delLager(false, _GU_SERIE.struktur, PALETTE.uppdelning.struktur),
+                delLager(true, _GU_SERIE.inom, PALETTE.uppdelning.lonesattning),
+                // Ett streck där steget landar, och beloppet vid stapelns ände längst från noll (ett osynligt streck bär
+                // etiketten). Bara markeringar: talen står redan i lagren ovan, och lagren får inga rader i diagramdatan.
+                { marke: 'punkt', symbol: 'streck', serie: 'Nivå', legend: false, utanData: true, farg: PALETTE.semantic.mork, storlek: 11,
+                  data: [{ x: _GU_SERIE.helhet, y: gap }, ...steg.map(s => ({ x: s.x, y: Math.round(s.efter) }))] },
+                { marke: 'punkt', symbol: 'streck', serie: 'Belopp', legend: false, utanData: true, farg: PALETTE.semantic.mork,
+                  data: [{ x: _GU_SERIE.helhet, y: gap, storlek: 0, etikett: _guKr(u.gap), etikettLage: lage(gap, Math.min(gap, 0)) },
+                         ...steg.map(s => { const y = Math.round(ande(s)); return { x: s.x, y, storlek: 0, etikett: etikett(s), etikettLage: lage(y, s.lag) }; })] }] };
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
