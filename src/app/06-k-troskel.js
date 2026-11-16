@@ -468,7 +468,12 @@ function _skattningarIBakgrunden() {
                 if ((flik === 'matrix' || flik === 'prioritering') && typeof renderTabContent === 'function') renderTabContent(flik);
             }
         } catch (e) { rapporteraFel('skattningar i bakgrunden', e); }
-        finally { if (status) status.textContent = status.textContent.replace(NOT, ''); _bakgrundsrakning = null; resolve(); }
+        finally {
+            if (status) status.textContent = status.textContent.replace(NOT, '');
+            _bakgrundsrakning = null;
+            visningNy();   // skattningarna är klara: det som ritades utan dem visas inte igen (ADR-81)
+            resolve();
+        }
     }, 0));
     return _bakgrundsrakning;
 }
@@ -476,11 +481,12 @@ function _skattningarIBakgrunden() {
 /**
  * Ritar om det som syns efter ändrad tröskel: Översikts delar (som inläsningen ritar men renderTabContent inte
  * gör, jämför 32-filinlasning.js) och den flik som är öppen. Övriga flikar ritas om när de öppnas — navigeringen
- * ritar alltid fliken — och exporterna går genom exportgrinden (23-exportgrind.js), som ritar om en flik som inte
+ * visar aldrig en flik som ritades före en ändring (ADR-81) — och exporterna går genom exportgrinden (23-exportgrind.js), som ritar om en flik som inte
  * är aktuell innan något läses ur den.
  */
 function _renderaOmAllaFlikar() {
     for (const [namn, fn] of _omritningssteg()) _omritningForsok(namn, fn);
+    visningNy();   // omritningen rör flera flikar: ingen visas igen som den var (ADR-81)
 }
 function _omritningForsok(namn, fn) { try { fn(); } catch (e) { rapporteraFel(`omritning efter ändrad k-tröskel (${namn})`, e); } }
 
@@ -580,6 +586,7 @@ function _renderaOmAllaFlikarStegvis() {
                 text.textContent = `Räknar om med minsta gruppstorlek ${kTroskel()} … ${i + 1} av ${steg.length}`;
                 await new Promise(r => setTimeout(r, 0));   // låt webbläsaren rita förloppet
                 _omritningForsok(steg[i][0], steg[i][1]);
+                visningNy();   // varje steg rör det som visas (ADR-81)
             }
         } finally { klar(); }
     })();

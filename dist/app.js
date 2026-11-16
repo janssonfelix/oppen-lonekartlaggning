@@ -1762,7 +1762,12 @@ function _skattningarIBakgrunden() {
                 if ((flik === 'matrix' || flik === 'prioritering') && typeof renderTabContent === 'function') renderTabContent(flik);
             }
         } catch (e) { rapporteraFel('skattningar i bakgrunden', e); }
-        finally { if (status) status.textContent = status.textContent.replace(NOT, ''); _bakgrundsrakning = null; resolve(); }
+        finally {
+            if (status) status.textContent = status.textContent.replace(NOT, '');
+            _bakgrundsrakning = null;
+            visningNy();   // skattningarna är klara: det som ritades utan dem visas inte igen (ADR-81)
+            resolve();
+        }
     }, 0));
     return _bakgrundsrakning;
 }
@@ -1770,11 +1775,12 @@ function _skattningarIBakgrunden() {
 /**
  * Ritar om det som syns efter ändrad tröskel: Översikts delar (som inläsningen ritar men renderTabContent inte
  * gör, jämför 32-filinlasning.js) och den flik som är öppen. Övriga flikar ritas om när de öppnas — navigeringen
- * ritar alltid fliken — och exporterna går genom exportgrinden (23-exportgrind.js), som ritar om en flik som inte
+ * visar aldrig en flik som ritades före en ändring (ADR-81) — och exporterna går genom exportgrinden (23-exportgrind.js), som ritar om en flik som inte
  * är aktuell innan något läses ur den.
  */
 function _renderaOmAllaFlikar() {
     for (const [namn, fn] of _omritningssteg()) _omritningForsok(namn, fn);
+    visningNy();   // omritningen rör flera flikar: ingen visas igen som den var (ADR-81)
 }
 function _omritningForsok(namn, fn) { try { fn(); } catch (e) { rapporteraFel(`omritning efter ändrad k-tröskel (${namn})`, e); } }
 
@@ -1874,6 +1880,7 @@ function _renderaOmAllaFlikarStegvis() {
                 text.textContent = `Räknar om med minsta gruppstorlek ${kTroskel()} … ${i + 1} av ${steg.length}`;
                 await new Promise(r => setTimeout(r, 0));   // låt webbläsaren rita förloppet
                 _omritningForsok(steg[i][0], steg[i][1]);
+                visningNy();   // varje steg rör det som visas (ADR-81)
             }
         } finally { klar(); }
     })();
@@ -16420,6 +16427,7 @@ function _mkEtikett(nyckel) {
  * `null` tar bort allt.
  */
 function sattDiagramMarkering(nyckel, { lagg = false } = {}) {
+    if (typeof visningNy === 'function') visningNy();   // markeringen visas i alla flikar (ADR-81)
     if (!nyckel) _markering = [];
     else if (lagg) _markering = _markering.includes(nyckel) ? _markering.filter(k => k !== nyckel) : [..._markering, nyckel];
     else _markering = _markering.length === 1 && _markering[0] === nyckel ? [] : [nyckel];
@@ -18807,7 +18815,13 @@ function buildConfigSnapshot() {
  *   organisationspaketets golv, ADR-47).
  * @throws {Error} Med beskrivande meddelande vid valideringsfel. State opåverkat.
  */
-function applyConfigSnapshot(cfg) {
+// En konfigurationsfil kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81).
+function applyConfigSnapshot(cfg) { try { return _applyConfigSnapshot(cfg); } finally { visningNy(); } }
+/**
+ * @param {Object} cfg
+ * @returns {{varningar: string[]}}
+ */
+function _applyConfigSnapshot(cfg) {
     // ---- FAS 1: Validera + bygg upp i isolerat temp-objekt ----
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');
@@ -19524,6 +19538,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     markUploadLoaded('upload-cell-data', 'Testdata');
     // Exempel på sakliga skäl på tre rader i handlingsplanen, så att tabellerna i rapporten och Excel syns.
     if (typeof _hpDemoSkal === 'function') try { _hpDemoSkal(); } catch (e) { rapporteraFel('Demot: sakliga skäl', e); }
+    visningNy();   // ett nytt underlag: ingen ritad flik visas igen som den är (ADR-81)
     return true;
 }
 
@@ -20258,9 +20273,11 @@ function _showExportSensitivityToast(bodyHtml) {
 // tabeller och diagram går genom (_cloneAndCleanTableForExport, _chartExportUnderlag) går själva in i
 // exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
 function iExportLage() { return state.kLage === 'export'; }
-function _bytKLage(lage) {
+function _bytKLage(lage, { tur = false } = {}) {
     state.kLage = lage;
-    ritGenerationNy();                                                      // allt som är ritat bär det andra läget
+    // Allt som är ritat bär det andra läget. En exports tur och retur (tur) ändrar inget som visas när den är klar:
+    // visningsversionen står kvar, och en flik som ritades om under exporten känns igen på sin generation (31-navigering.js).
+    ritGenerationNy({ tur });
     // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), och skattningarna
     // (statGolv, bootstrap, styrka, § 3:10-paren) är desamma i båda lägena. Livscykelns bevisunderlag hör till det
     // som är ritat.
@@ -20299,10 +20316,10 @@ let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i t
 function medExportLage(fn) {
     // Den yttersta exporten byter läge och ritar tillbaka; ett läge som satts utifrån (state.kLage = 'export') rörs inte.
     const yttre = _exportDjup === 0 && !iExportLage();
-    if (yttre) _bytKLage('export');
+    if (yttre) _bytKLage('export', { tur: true });
     _exportDjup++;
     let synk = true;
-    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm'); _ritaOmEfterExport(ritade); } };
+    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm', { tur: true }); _ritaOmEfterExport(ritade); } };
     try {
         const r = fn();
         if (r && typeof /** @type {any} */ (r).then === 'function') { synk = false; return /** @type {any} */ (r).finally(tillbaka); }
@@ -20339,10 +20356,22 @@ document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => 
 
 let _ritGeneration = 1;
 const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
+// Visningsversionen (ADR-81) ökar vid allt som kan ändra något som visas: varje inmatning i sidan utom ren navigering
+// (31-navigering.js), varje ny generation utom en exports tur och retur, inläsning, rensning, en konfigurationsfil, ett
+// paket och varje bakgrundsberäkning som blir klar. En färdigritad flik visas igen utan omritning bara när
+// visningsversionen är densamma som när den ritades. Hellre en ökning för mycket än en för lite.
+let _visningsversion = 0;
+/** Något som kan ändra det som visas har hänt: ingen ritad flik visas igen som den är. */
+function visningNy() { _visningsversion++; }
+function visningsversion() { return _visningsversion; }
 const _ritasNu = new Set();      // flikar som ritas just nu (ritningen får läsa sina egna diagram)
 
-/** Något som styr vad som får visas har ändrats: allt som är ritat hittills är inaktuellt. */
-function ritGenerationNy() { _ritGeneration++; }
+/**
+ * Något som styr vad som får visas har ändrats: allt som är ritat hittills är inaktuellt. Visningsversionen ökar
+ * också, utom när det är en exports tur och retur (`tur`, se _bytKLage).
+ * @param {{tur?: boolean}} [val]
+ */
+function ritGenerationNy({ tur = false } = {}) { _ritGeneration++; if (!tur) visningNy(); }
 function ritGeneration() { return _ritGeneration; }
 /** Ritades fliken före den senaste ändringen, utan att ha ritats om sedan dess? */
 function flikInaktuell(flik) { return _ritadVid.has(flik) && _ritadVid.get(flik) !== _ritGeneration; }
@@ -20399,6 +20428,7 @@ function exportSakraAlla() {
  * export behöver den. Samma behållare som "Rensa all data" tömmer (26-rensning.js); sidans fasta texter rörs inte.
  */
 function tomFlikarUtom(utom = new Set()) {
+    visningNy();   // det som töms visas inte igen som det var (31-navigering.js)
     const ska = el => { const flik = _egFlikFor(el); return !!flik && !utom.has(flik); };
     for (const id of [...RENSA_BEHALLARE, ...RENSA_OVRIGT]) { const el = document.getElementById(id); if (el && ska(el)) el.innerHTML = ''; }
     for (const id of RENSA_TABELLER) { const tb = document.querySelector(`#${id} tbody`); if (tb && ska(tb)) tb.innerHTML = ''; }
@@ -21170,6 +21200,7 @@ const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-valida
     'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
 
 function _rensaAllData({ inbakat = true } = {}) {
+    visningNy();   // också rensningen efter en tid utan aktivitet: ingen ritad flik visas igen (ADR-81)
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
     _rmMinne = null;   // förhandsbeskedets minne (58-rapportmodell.js)
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
@@ -21328,6 +21359,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     announceToScreenReader('All data har raderats ur minnet.');
     // Organisationsfil: paketet är en del av filen och kommer tillbaka efter rensningen, som vid start.
     if (inbakat && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();
+    visningNy();   // och det som ritades under rensningen visas inte igen heller
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -22036,7 +22068,15 @@ function renderPaketInfo() {
  * Läser in ett organisationspaket (filens text). Ett felaktigt paket ändrar ingenting.
  * @returns {{ok:boolean, meddelande:string}}
  */
-function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
+// Ett paket kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81), hur det än gick.
+function lasInPaket(...a) { try { return _lasInPaket.apply(null, /** @type {any} */ (a)); } finally { visningNy(); } }
+/**
+ * @param {string} text
+ * @param {string} [_filnamn]
+ * @param {{inbakat?: boolean}} [val]
+ * @returns {{ok:boolean, meddelande:string}}
+ */
+function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     const r = _opTolkaPaket(text);
     if (!r.ok) {
         _paketStatus('' + r.fel, false);
@@ -22697,6 +22737,8 @@ function flikbyte(target, { uppskjut = false, efter = null } = {}) {
     const val = ++_flikVal, flik = tabMal(target);
     document.querySelectorAll('.view-panel[aria-busy]').forEach(p => _flikRaknas(/** @type {HTMLElement} */ (p), false));
     if (!uppskjut) { renderTabContent(target); if (efter) efter(); return; }
+    // En färdigritad flik som ingenting har ändrat visas som den är (ADR-81).
+    if (_visasSomRitad(flik)) { _visaRitad(flik); if (efter) efter(); return; }
     const paneler = /** @type {HTMLElement[]} */ ((PANEL_GROUPS[flik] || [flik]).map(p => document.getElementById('view-' + p)).filter(Boolean));
     paneler.forEach(p => _flikRaknas(p, true));
     _efterMalning(() => {
@@ -22807,9 +22849,59 @@ function _ritaVantandeBlock(b) {
     if (--v.antal > 0) return;
     _vantandeBlock.delete(b.flik);
     _ritadVid.set(b.flik, ritGeneration());   // nu är hela fliken ritad med det som gäller (exportgrinden)
+    _visningRitad(b.flik);
     _efterRitning(b.flik);
     for (const f of v.efter) { try { f(); } catch (e) { rapporteraFel('flikbytet: efter ritningen', e); } }
 }
+// ---- En färdigritad flik visas igen (ADR-81) ----
+// När användaren byter tillbaka till en flik som är färdigritad och ingenting har hänt sedan dess som kan ändra det den
+// visar, visas den som den är, utan omritning. Det som återanvänds är flikens ritade innehåll i sidan, aldrig ett räknat
+// resultat (ADR-17): regressionen och allt annat räknas om varje gång fliken ritas. Villkoren, alla på en gång:
+//  - visningsversionen (23-exportgrind.js) är densamma som när fliken ritades klart: ingen inmatning utom ren
+//    navigering, ingen ny generation (tröskeln, förhandsvisningen, underlaget, modellvalen), ingen inläsning,
+//    rensning eller bakgrundsberäkning som blivit klar;
+//  - fliken har inte ritats om sedan dess (dess generation i exportgrinden är densamma), och inga block väntar;
+//  - läget (skärm eller export, förhandsvisningen) och dagen är desamma.
+// Bara användarens flikbyte (det uppskjutna, ADR-80) visar en flik igen. renderTabContent anropad direkt, exportläget,
+// exportgrinden och klick från koden ritar alltid. Exportgrinden ser fliken som förut: den räknas som aktuell bara när
+// den ritats i den generation som gäller.
+/** @type {Map<string, {v: number, g: number, lage: string}>} */
+const _visadSom = new Map();   // flik → visningsversion, generation och läge när fliken senast ritades klart
+function _visningsLage() {
+    return `${state.kLage}|${document.body.classList.contains('forhandsvisning')}|${new Date().toDateString()}`;
+}
+/** Fliken är färdigritad: den visas igen så länge ingenting har ändrats. */
+function _visningRitad(flik) { _visadSom.set(flik, { v: visningsversion(), g: ritGeneration(), lage: _visningsLage() }); }
+function _visasSomRitad(flik) {
+    const r = _visadSom.get(flik);
+    return !!r && r.v === visningsversion() && _ritadVid.get(flik) === r.g && r.lage === _visningsLage()
+        && !_vantandeBlock.has(flik) && !_ritasNu.has(flik);
+}
+/** Visar fliken som den är ritad och gör det som görs efter en ritning: navigeringen längst ned, sidindexet, markeringen i tabellerna. */
+function _visaRitad(flik) {
+    if (_aktivFlik() === flik) { renderFlowNav(flik); sidindexBygg(flik); }
+    _efterRitning(flik);
+}
+// Det som räknas som en ändring: varje click, change, input, keydown, drop, paste och pointerup i sidan (också i
+// sidhuvudet och i dialogerna, och också de som koden skickar), utom ren navigering: menyns knappar och pilar, knappen
+// och skuggan för menyn på smala skärmar, sidindexets länkar, sökfältet (ett val i träfflistan som gör något annat än
+// att byta flik räknas i sokValj) och tangenter som bara flyttar fokus eller rullar sidan.
+const _VISNING_HANDELSER = ['click', 'change', 'input', 'keydown', 'drop', 'paste', 'pointerup'];
+const _VISNING_NAVIGERING = '.nav-item, #btn-meny, #meny-skugga, #sidindex, #sok-ruta';
+const _TANGENT_FOKUS = new Set(['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'PageUp', 'PageDown']);
+const _TANGENT_RULLA = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', ' ']);
+/** @param {Event} e */
+function _visningAndras(e) {
+    const el = /** @type {any} */ (e.target);
+    if (el && typeof el.closest === 'function' && el.closest(_VISNING_NAVIGERING)) return false;
+    if (e.type !== 'keydown') return true;
+    const tangent = /** @type {KeyboardEvent} */ (e).key;
+    if (_TANGENT_FOKUS.has(tangent)) return false;
+    // Pilar, Home, End och mellanslag rullar sidan när ingenting i den har fokus; i ett fält eller en kontroll räknas de.
+    return !(_TANGENT_RULLA.has(tangent) && (!el || el === document || el === document.body || el === document.documentElement));
+}
+for (const typ of _VISNING_HANDELSER) document.addEventListener(typ, e => { if (_visningAndras(e)) visningNy(); }, true);
+
 /** Det som görs när en flik har ritats: markeringen i tabellerna och autocomplete på nya fält. */
 function _efterRitning(flik) {
     if (typeof _mkTabeller === 'function' && diagramMarkering()) _mkTabeller();
@@ -22858,14 +22950,15 @@ function renderTabContent(target) {
     _ritasNu.add(flik);
     // Varje yttersta ritning är en ny runda: block som väntar från en tidigare ritning av fliken ritar inget.
     const runda = yttre ? (_flikRunda.get(flik) || 0) + 1 : (_flikRunda.get(flik) || 0);
-    if (yttre) { _flikRunda.set(flik, runda); _vantandeBlock.delete(flik); _blockKo.filter(b => b.flik === flik).forEach(_slappBlock); }
+    if (yttre) { _flikRunda.set(flik, runda); _vantandeBlock.delete(flik); _blockKo.filter(b => b.flik === flik).forEach(_slappBlock); _visadSom.delete(flik); }
     const uppskjut = yttre && _uppskjutNasta === flik, forra = _ritasUppskjutet;
     if (uppskjut) { _uppskjutNasta = null; _ritasUppskjutet = flik; }
     try {
         const ut = _renderTabContent(target);
         // Exportgrinden (23-exportgrind.js): fliken är ritad med det som gäller nu, eller inte färdigritad när block väntar.
-        if (uppskjut && _vantandeBlock.get(flik)?.runda === runda) _ritadVid.delete(flik);
-        else _ritadVid.set(flik, ritGeneration());
+        // Visningsminnet (ADR-81): en färdigritad flik kan visas igen så länge ingenting ändras.
+        if (uppskjut && _vantandeBlock.get(flik)?.runda === runda) { _ritadVid.delete(flik); _visadSom.delete(flik); }
+        else { _ritadVid.set(flik, ritGeneration()); _visningRitad(flik); }
         return ut;
     }
     finally {
@@ -23205,6 +23298,7 @@ function _afterDataLoaded() {
                 renderActionChecklist();
             } finally {
                 if (dataStatus) dataStatus.textContent = dataStatus.textContent.replace(DEFER_NOTE, '');
+                visningNy();   // det som räknades i bakgrunden visas när fliken ritas om (ADR-81)
             }
         }, 50);
     }, 0);
@@ -23409,9 +23503,12 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
  * @param {Array<Array<string>>} synonymGroups - Kolumnroller för rubrikradssökning.
  * @param {(res: {ok:true, format:string, encoding:string, headers:string[],
  *                rows:Array<Object<string,string>>}
- *             | {ok:false, error:string}) => void} callback
+ *             | {ok:false, error:string}) => void} utfall
  */
-function readTabularFile(file, synonymGroups, callback) {
+function readTabularFile(file, synonymGroups, utfall) {
+    // En fil som blivit läst kan ändra det som visas, hur det än gick: ingen ritad flik visas igen som den är (ADR-81).
+    /** @type {typeof utfall} */
+    const callback = res => { try { utfall(res); } finally { visningNy(); } };
     if (!file) { callback({ ok: false, error: 'Ingen fil vald.' }); return; }
     const reader = new FileReader();
     reader.onerror = () => callback({ ok: false, error: 'Kunde inte läsa filen.' });
@@ -23679,8 +23776,10 @@ function loadStructureFile(file) {
     // Läs bytes → sniffa format (XLSX/legacy XLS/text) → parsa via rätt väg.
     let detectedEnc = 'UTF-8', detectedDelim = ';';
     const _csvReader = new FileReader();
-    _csvReader.onerror = () => failLoad('Kunde inte läsa filen.');
-    _csvReader.onload = () => {
+    _csvReader.onerror = () => { failLoad('Kunde inte läsa filen.'); visningNy(); };
+    // När filen är läst (inte bara när den valdes): ingen ritad flik visas igen som den är (ADR-81).
+    _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); } };
+    const _lasLonefil = () => {
       const buf = _csvReader.result;
       const fmt = _sniffTabularFormat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
       if (fmt === 'xls-legacy') {
@@ -30172,7 +30271,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
                 const kort = document.getElementById('regression-card');
                 if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !(typeof iExportLage === 'function' && iExportLage())) renderRegressionCard();
             } catch (e) { rapporteraFel('kvantilregressionens intervall', e); }
-            finally { _regKvantilBakgrund = null; resolve(); }
+            finally { _regKvantilBakgrund = null; visningNy(); resolve(); }   // intervallet är klart: Lönestruktur ritas om nästa gång (ADR-81)
         }, 0));
     }
     return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
@@ -32113,7 +32212,7 @@ document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
     _kostnadAndrad();
 });
 // Initiera period-sammanfattningen vid sidladdning
-setTimeout(_readCostSettings, 0);
+setTimeout(() => { _readCostSettings(); visningNy(); }, 0);   // kostnadsinställningarna läses: ingen ritad flik visas igen (ADR-81)
 
 document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
     const table = document.getElementById('prio-table');
@@ -38797,7 +38896,7 @@ function runRobusthet() {
     if (!host || !getData().length) return;
     host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>';
     // Låt webbläsaren rita om innan det blockerande arbetet startar.
-    setTimeout(() => { _renderRobusthetResult(host); }, 30);
+    setTimeout(() => { try { _renderRobusthetResult(host); } finally { visningNy(); } }, 30);   // resultatet är nytt (ADR-81)
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -39412,6 +39511,8 @@ function _sokStang({ tom = true } = {}) {
 function sokValj(i, { uppskjut = false } = {}) {
     const t = _sokTraffar[i];
     if (!t) return;
+    // Sökfältet är navigering (31-navigering.js): bara ett val som gör något annat än att byta flik ändrar det som visas (ADR-81).
+    if (t.typ !== 'funktion' || t.dialog) visningNy();
     if (t.typ === 'funktion') { _sokValjFunktion(t, { uppskjut }); return; }
     if (t.typ === 'basdossier') { _sokStang(); openBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
     const nu = diagramMarkering();

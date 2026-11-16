@@ -99,7 +99,13 @@ function buildConfigSnapshot() {
  *   organisationspaketets golv, ADR-47).
  * @throws {Error} Med beskrivande meddelande vid valideringsfel. State opåverkat.
  */
-function applyConfigSnapshot(cfg) {
+// En konfigurationsfil kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81).
+function applyConfigSnapshot(cfg) { try { return _applyConfigSnapshot(cfg); } finally { visningNy(); } }
+/**
+ * @param {Object} cfg
+ * @returns {{varningar: string[]}}
+ */
+function _applyConfigSnapshot(cfg) {
     // ---- FAS 1: Validera + bygg upp i isolerat temp-objekt ----
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');

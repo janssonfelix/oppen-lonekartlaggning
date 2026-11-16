@@ -9,7 +9,8 @@ siffrorna. Koden är sanningen; där dokumentet och koden skiljer sig är det do
 
 Dokumentet är inte beslutsloggen och inte en metodlära. Varför det är så här, vad som övervägdes och när det
 beslutades står i besluten i [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-22, 44, 45, 46, 53, 56, 63, 64, 65, 77 och 78.
-Att regressionen aldrig cachas står i ADR-17. Minsta gruppstorlek och golven står i [`k-troskeln.md`](k-troskeln.md)
+Att regressionen aldrig cachas står i ADR-17; att en färdigritad flik visas igen utan att något räknas, när ingenting
+har ändrats, står i ADR-81. Minsta gruppstorlek och golven står i [`k-troskeln.md`](k-troskeln.md)
 och upprepas inte här (avsnitt 9).
 
 | Del | Fil |
@@ -58,7 +59,9 @@ personer. Kan inget steg skattas blir resultatet felet `all_failed`.
 
 **Ingen cache.** Regressionen räknas om vid varje anrop och får aldrig cachas (ADR-17). Inom ett varv körs den en gång
 och skickas vidare som argument (`{ reg }`): vid inläsningen och i omritningen efter ett tröskelbyte läser underlagets
-kvalitet (`bedomningUnderlag`), Att göra (`buildActionChecklist`) och processöversikten samma körning.
+kvalitet (`bedomningUnderlag`), Att göra (`buildActionChecklist`) och processöversikten samma körning. En flik som
+visas igen utan omritning (ADR-81) räknar ingenting och läser inget sparat resultat: den visar det som ritades, och
+bara när ingenting har ändrats sedan dess.
 
 ## 2. Förklaringsmodellen
 

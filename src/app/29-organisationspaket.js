@@ -81,7 +81,15 @@ function renderPaketInfo() {
  * Läser in ett organisationspaket (filens text). Ett felaktigt paket ändrar ingenting.
  * @returns {{ok:boolean, meddelande:string}}
  */
-function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
+// Ett paket kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81), hur det än gick.
+function lasInPaket(...a) { try { return _lasInPaket.apply(null, /** @type {any} */ (a)); } finally { visningNy(); } }
+/**
+ * @param {string} text
+ * @param {string} [_filnamn]
+ * @param {{inbakat?: boolean}} [val]
+ * @returns {{ok:boolean, meddelande:string}}
+ */
+function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     const r = _opTolkaPaket(text);
     if (!r.ok) {
         _paketStatus('' + r.fel, false);
