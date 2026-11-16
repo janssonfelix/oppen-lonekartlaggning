@@ -124,9 +124,30 @@ function _dragningsmedian(u, rng) {
 }
 
 /**
+ * Medianerna i B bootstrapdragningar ur två grupper: per dragning dras först kvN löner ur kv och sedan maN ur ma,
+ * med återläggning, i samma ordning som `lons[(rng() * n) | 0]` per position. Medianerna tas ur rangräkning
+ * (`_dragningsmedian`) och är desamma som om varje dragning sorterades. Den gemensamma kärnan för
+ * bootstrapintervallen på medianskillnaden (här) och på mediankvoten (Lika arbete, Ålder & karriär, gruppdossiern).
+ * Lönerna ska vara ändliga tal; de ändras inte.
+ * @param {number[]} kvLons
+ * @param {number[]} maLons
+ * @param {number} B
+ * @param {() => number} rng
+ * @returns {{kv: Float64Array, ma: Float64Array}} medianen per dragning för vardera gruppen
+ */
+export function bootstrapMedianer(kvLons, maLons, B, rng) {
+    const kv = _rangUnderlag(kvLons), ma = _rangUnderlag(maLons);
+    const mKv = new Float64Array(B), mMa = new Float64Array(B);
+    for (let b = 0; b < B; b++) {
+        mKv[b] = _dragningsmedian(kv, rng);
+        mMa[b] = _dragningsmedian(ma, rng);
+    }
+    return { kv: mKv, ma: mMa };
+}
+
+/**
  * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), percentil [2.5,97.5].
- * Används för INTERNA par (bägge sidor har individdata). Per dragning dras först kvN löner ur kv och sedan maN
- * ur ma; medianerna tas ur rangräkning (`_dragningsmedian`).
+ * Används för INTERNA par (bägge sidor har individdata). Dragningarna och medianerna ur `bootstrapMedianer`.
  * @param {number[]} kvLons
  * @param {number[]} maLons
  * @param {number} [B=1000]
@@ -136,12 +157,9 @@ function _dragningsmedian(u, rng) {
 export function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
     if (!Array.isArray(kvLons) || !Array.isArray(maLons)) return null;
     if (kvLons.length < 3 || maLons.length < 3) return null;
-    const kv = _rangUnderlag(kvLons), ma = _rangUnderlag(maLons);
+    const m = bootstrapMedianer(kvLons, maLons, B, rng);
     const diffs = new Array(B);
-    for (let b = 0; b < B; b++) {
-        const mKv = _dragningsmedian(kv, rng);
-        diffs[b] = _dragningsmedian(ma, rng) - mKv;
-    }
+    for (let b = 0; b < B; b++) diffs[b] = m.ma[b] - m.kv[b];
     diffs.sort((a, b) => a - b);
     return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
 }

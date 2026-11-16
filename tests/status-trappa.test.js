@@ -14,9 +14,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { statusNiva, direktivMarkering, slumpensGranser, bedomSkillnad, perBasSignal, STORLEKSGRANS, DIREKTIVNIVA,
+import { statusNiva, direktivMarkering, slumpensGranser, omkastningsGranser, bedomSkillnad, perBasSignal, STORLEKSGRANS, DIREKTIVNIVA,
     STATUS_ORD, DIREKTIV_TIPS, DIREKTIV_KOLUMN } from '../src/lib/status.js';
 import { likaArbeteGrupper, stabilitetKort, avsnittBlock } from '../src/lib/rapportunderlag.js';
+import { rngFor } from '../src/lib/rng.js';
 
 const person = (yrke, kon, lon) => ({ yrke, kon, lon, alder: 40, bas: 'C' });
 /** n löner jämnt fördelade kring `mitt` med relativ halvbredd `spann` (deterministiskt). */
@@ -75,6 +76,51 @@ describe('bedomSkillnad: en grupp mot slumpens gränser', () => {
     it('gränserna är reproducerbara (seedade ur datat)', () => {
         const kv = loner(25, 97000, 0.1), ma = loner(25, 100000, 0.1);
         expect(slumpensGranser(kv, ma)).toEqual(slumpensGranser(kv, ma));
+    });
+});
+
+// Referensen: den tidigare omkastningen, som flyttade lönerna och tog medianen med quickselect på kopior. Den nya
+// flyttar rangerna och läser medianerna ur rangordningen; gränserna ska vara exakt desamma med samma slumpföljd.
+function refMedian(a) {
+    const n = a.length;
+    if (!n) return 0;
+    const s = a.slice().sort((x, y) => x - y), m = n >> 1;
+    return n & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function refOmkastningsGranser(kv, ma, B = 1000) {
+    const alla = kv.concat(ma), n = alla.length, nKv = kv.length, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    for (let b = 0; b < B; b++) {
+        for (let i = 0; i < nKv; i++) { const j = i + ((rnd() * (n - i)) | 0), t = alla[i]; alla[i] = alla[j]; alla[j] = t; }
+        const mKv = refMedian(alla.slice(0, nKv)), mMa = refMedian(alla.slice(nKv));
+        kvoter[b] = mMa > 0 ? mKv / mMa * 100 : 100;
+    }
+    kvoter.sort((x, y) => x - y);
+    return { lag: kvoter[Math.floor(B * 0.025)], hog: kvoter[Math.min(B - 1, Math.floor(B * 0.975))] };
+}
+
+describe('omkastningsGranser ur rangordning ger samma gränser som omkastade löner', () => {
+    const fall = [
+        ['2 mot 2', loner(2, 30000, 0.1), loner(2, 31000, 0.1)],
+        ['udda mot jämnt', loner(11, 97000, 0.1), loner(8, 100000, 0.1)],
+        ['jämnt mot udda', loner(30, 94000, 0.5), loner(25, 100000, 0.5)],
+        ['många lika löner', [30000, 30000, 30000, 31000, 31000, 29000, 30000, 30000], [33000, 33000, 34000, 33000, 33000, 33000, 30000]],
+        ['alla lika', Array(9).fill(30000), Array(6).fill(30000)],
+        ['decimaler', [30000.5, 29999.25, 30001.75, 30000.5, 30002], [33000.1, 32999.9, 33000.3, 33000.1]],
+        ['nära gränsen för stora grupper', loner(180, 96000, 0.3), loner(120, 100000, 0.2)]
+    ];
+    for (const [namn, kv, ma] of fall) {
+        it(namn, () => {
+            const ny = omkastningsGranser(kv, ma), ref = refOmkastningsGranser(kv, ma);
+            expect(ny.lag).toBe(ref.lag);
+            expect(ny.hog).toBe(ref.hog);
+            expect(omkastningsGranser(kv, ma, 200)).toEqual(refOmkastningsGranser(kv, ma, 200));
+        });
+    }
+    it('lönerna som skickas in ändras inte', () => {
+        const kv = loner(11, 97000, 0.1), ma = loner(8, 100000, 0.1), kvKopia = kv.slice(), maKopia = ma.slice();
+        omkastningsGranser(kv, ma);
+        expect(kv).toEqual(kvKopia);
+        expect(ma).toEqual(maKopia);
     });
 });
 

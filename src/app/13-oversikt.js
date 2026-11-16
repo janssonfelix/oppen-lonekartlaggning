@@ -169,19 +169,11 @@ function computeBootstrapCI() {
     // och räkningen tar i praktiken ~50-200 ms på alla typiska storlekar.
     const B = 2000;
     const ratios = new Array(B);
-    // Quickselect-median (O(n)) — sortering ger O(B·n log n), flera sekunder
+    // Dragningarnas medianer ur rangräkning (O(n) per dragning) — sortering ger O(B·n log n), flera sekunder
     // vid 20 000 rader. Identiskt resultat.
-    const sortedMedian = _quickMedian;
-
-    const kvN = kv.length, maN = ma.length;
-    const rnd = _rngFor(kv, ma);   // seedad ur datat → reproducerbart KI
+    const m = _lvBootstrapMedianer(kv, ma, B, _rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
-        const sKv = new Array(kvN);
-        const sMa = new Array(maN);
-        for (let i = 0; i < kvN; i++) sKv[i] = kv[(rnd() * kvN) | 0];
-        for (let i = 0; i < maN; i++) sMa[i] = ma[(rnd() * maN) | 0];
-        const mKv = sortedMedian(sKv);
-        const mMa = sortedMedian(sMa);
+        const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? mKv / mMa : 1;
     }
     ratios.sort((a, b) => a - b);

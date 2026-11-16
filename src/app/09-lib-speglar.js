@@ -497,14 +497,24 @@ function invert(A) {
 function fitOLS(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 2) return null;
-    const Xt = transpose(X);
-    const XtX = matMul(Xt, X);
+    // Indikatorerna gör X glest: varje rad har få nollskilda kolumner. Summorna räknas bara över dem, i samma ordning
+    // över raderna som en full matrisprodukt, så att resultatet är detsamma (en term som är 0 ändrar inte summan).
+    const nz = X.map(row => { const ix = []; for (let a = 0; a < k; a++) if (row[a] !== 0) ix.push(a); return ix; });
+    const XtX = Array.from({ length: k }, () => new Array(k).fill(0));
+    const Xty = new Array(k).fill(0);
+    for (let i = 0; i < n; i++) {
+        const xi = X[i], ix = nz[i], yi = y[i];
+        for (let p = 0; p < ix.length; p++) {
+            const a = ix[p], va = xi[a], rad = XtX[a];
+            for (let q = 0; q < ix.length; q++) { const b = ix[q]; rad[b] += va * xi[b]; }
+            Xty[a] += va * yi;
+        }
+    }
     const XtXinv = invert(XtX);
     if (!XtXinv) return null;
-    const Xty = matMul(Xt, y.map(v => [v])).map(r => r[0]);
     const beta = matMul(XtXinv, Xty.map(v => [v])).map(r => r[0]);
 
-    const yhat = X.map(row => row.reduce((s, v, i) => s + v * beta[i], 0));
+    const yhat = X.map((row, i) => { let s = 0; for (const a of nz[i]) s += row[a] * beta[a]; return s; });
     const resid = y.map((yi, i) => yi - yhat[i]);
     const ymean = y.reduce((s, v) => s + v, 0) / n;
     let rss = 0, tss = 0;
@@ -520,9 +530,11 @@ function fitOLS(X, y, hTillagg = null) {
     // HC3: leverages h_i = x_i' (X'X)^-1 x_i (+ hTillagg_i)
     const h = X.map((xi, i) => {
         let s = hTillagg ? hTillagg[i] : 0;
-        for (let a = 0; a < k; a++) {
+        const ix = nz[i];
+        for (let p = 0; p < ix.length; p++) {
+            const a = ix[p], inv = XtXinv[a];
             let sa = 0;
-            for (let b = 0; b < k; b++) sa += XtXinv[a][b] * xi[b];
+            for (let q = 0; q < ix.length; q++) { const b = ix[q]; sa += inv[b] * xi[b]; }
             s += xi[a] * sa;
         }
         return s;
@@ -532,10 +544,10 @@ function fitOLS(X, y, hTillagg = null) {
     for (let i = 0; i < n; i++) {
         const denom = (1 - h[i]) ** 2;
         const w = denom > 1e-12 ? (resid[i] * resid[i]) / denom : 0;
-        for (let a = 0; a < k; a++) {
-            for (let b = 0; b < k; b++) {
-                meat[a][b] += w * X[i][a] * X[i][b];
-            }
+        const xi = X[i], ix = nz[i];
+        for (let p = 0; p < ix.length; p++) {
+            const a = ix[p], wa = w * xi[a], rad = meat[a];
+            for (let q = 0; q < ix.length; q++) { const b = ix[q]; rad[b] += wa * xi[b]; }
         }
     }
     const breadMeat = matMul(XtXinv, meat);
@@ -923,52 +935,38 @@ function kiUtesluterLika(ci) {
     return ci.lo > 100 || ci.hi < 100;
 }
 
-// Median med quickselect (muterar bufferten). Samma räkning som appens _quickMedian, så att trattens gränser är
-// desamma som förut.
-function _snabbMedian(a) {
-    const n = a.length;
-    if (!n) return 0;
-    const select = k => {
-        let lo = 0, hi = n - 1;
-        while (hi > lo) {
-            const mid = (lo + hi) >> 1;
-            if (a[mid] < a[lo]) { const t = a[lo]; a[lo] = a[mid]; a[mid] = t; }
-            if (a[hi] < a[lo]) { const t = a[lo]; a[lo] = a[hi]; a[hi] = t; }
-            if (a[hi] < a[mid]) { const t = a[mid]; a[mid] = a[hi]; a[hi] = t; }
-            const pivot = a[mid];
-            let i = lo, j = hi;
-            while (i <= j) {
-                while (a[i] < pivot) i++;
-                while (a[j] > pivot) j--;
-                if (i <= j) { const t = a[i]; a[i] = a[j]; a[j] = t; i++; j--; }
-            }
-            if (k <= j) hi = j;
-            else if (k >= i) lo = i;
-            else return a[k];
-        }
-        return a[k];
-    };
-    const k = n >> 1;
-    const upper = select(k);
-    if (n & 1) return upper;
-    let m = a[0];
-    for (let i = 1; i < k; i++) if (a[i] > m) m = a[i];
-    return (m + upper) / 2;
-}
-
 /**
  * Omkastning av könen inom gruppen: de mittersta 95 % av de kvoter (kvinnors median i % av mäns) slumpen ger.
+ * Lönerna sorteras en gång; omkastningen flyttar rangerna i stället för lönerna, med samma byten och samma slumptal,
+ * och medianerna läses ur rangordningen. Det ger samma kvoter som att ta medianen av de omkastade lönerna (lika
+ * löner får olika rang men samma värde), i O(n) per omkastning utan allokeringar.
  * @param {number[]} kv
  * @param {number[]} ma
  * @param {number} [B]
  * @returns {{lag:number, hog:number}}
  */
 function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
-    const alla = kv.concat(ma), n = alla.length, nKv = kv.length, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = kv.concat(ma), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    // rang[i]: platsen i den sorterade listan för personen på plats i; sorterad[r]: lönen med rang r.
+    const ordning = Array.from({ length: n }, (_, i) => i).sort((x, y) => alla[x] - alla[y]);
+    const rang = new Int32Array(n), sorterad = new Float64Array(n), arKv = new Uint8Array(n);
+    for (let r = 0; r < n; r++) { rang[ordning[r]] = r; sorterad[r] = alla[ordning[r]]; }
+    // Medianens platser bland gruppens sorterade löner: udda antal ger samma plats två gånger.
+    const kvHog = nKv >> 1, kvLag = nKv & 1 ? kvHog : kvHog - 1, maHog = nMa >> 1, maLag = nMa & 1 ? maHog : maHog - 1;
     for (let b = 0; b < B; b++) {
         // Ofullständig Fisher–Yates: de första nKv platserna blir ett slumpvis urval utan återläggning.
-        for (let i = 0; i < nKv; i++) { const j = i + ((rnd() * (n - i)) | 0), t = alla[i]; alla[i] = alla[j]; alla[j] = t; }
-        const mKv = _snabbMedian(alla.slice(0, nKv)), mMa = _snabbMedian(alla.slice(nKv));
+        for (let i = 0; i < nKv; i++) { const j = i + ((rnd() * (n - i)) | 0), t = rang[i]; rang[i] = rang[j]; rang[j] = t; }
+        arKv.fill(0);
+        for (let i = 0; i < nKv; i++) arKv[rang[i]] = 1;
+        let cKv = 0, cMa = 0, kvL = 0, kvH = 0, maL = 0, maH = 0;
+        for (let r = 0; r < n; r++) {
+            const v = sorterad[r];
+            if (arKv[r]) { if (cKv === kvLag) kvL = v; if (cKv === kvHog) kvH = v; cKv++; }
+            else { if (cMa === maLag) maL = v; if (cMa === maHog) maH = v; cMa++; }
+        }
+        // Som en median ur sortering: udda antal ger det mittersta värdet, jämnt medel av de två mittersta; ingen
+        // person ger 0.
+        const mKv = nKv & 1 ? kvH : (kvL + kvH) / 2, mMa = nMa & 1 ? maH : (maL + maH) / 2;
         kvoter[b] = mMa > 0 ? mKv / mMa * 100 : 100;
     }
     kvoter.sort((x, y) => x - y);
@@ -1165,9 +1163,30 @@ function _dragningsmedian(u, rng) {
 }
 
 /**
+ * Medianerna i B bootstrapdragningar ur två grupper: per dragning dras först kvN löner ur kv och sedan maN ur ma,
+ * med återläggning, i samma ordning som `lons[(rng() * n) | 0]` per position. Medianerna tas ur rangräkning
+ * (`_dragningsmedian`) och är desamma som om varje dragning sorterades. Den gemensamma kärnan för
+ * bootstrapintervallen på medianskillnaden (här) och på mediankvoten (Lika arbete, Ålder & karriär, gruppdossiern).
+ * Lönerna ska vara ändliga tal; de ändras inte.
+ * @param {number[]} kvLons
+ * @param {number[]} maLons
+ * @param {number} B
+ * @param {() => number} rng
+ * @returns {{kv: Float64Array, ma: Float64Array}} medianen per dragning för vardera gruppen
+ */
+function bootstrapMedianer(kvLons, maLons, B, rng) {
+    const kv = _rangUnderlag(kvLons), ma = _rangUnderlag(maLons);
+    const mKv = new Float64Array(B), mMa = new Float64Array(B);
+    for (let b = 0; b < B; b++) {
+        mKv[b] = _dragningsmedian(kv, rng);
+        mMa[b] = _dragningsmedian(ma, rng);
+    }
+    return { kv: mKv, ma: mMa };
+}
+
+/**
  * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), percentil [2.5,97.5].
- * Används för INTERNA par (bägge sidor har individdata). Per dragning dras först kvN löner ur kv och sedan maN
- * ur ma; medianerna tas ur rangräkning (`_dragningsmedian`).
+ * Används för INTERNA par (bägge sidor har individdata). Dragningarna och medianerna ur `bootstrapMedianer`.
  * @param {number[]} kvLons
  * @param {number[]} maLons
  * @param {number} [B=1000]
@@ -1177,12 +1196,9 @@ function _dragningsmedian(u, rng) {
 function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
     if (!Array.isArray(kvLons) || !Array.isArray(maLons)) return null;
     if (kvLons.length < 3 || maLons.length < 3) return null;
-    const kv = _rangUnderlag(kvLons), ma = _rangUnderlag(maLons);
+    const m = bootstrapMedianer(kvLons, maLons, B, rng);
     const diffs = new Array(B);
-    for (let b = 0; b < B; b++) {
-        const mKv = _dragningsmedian(kv, rng);
-        diffs[b] = _dragningsmedian(ma, rng) - mKv;
-    }
+    for (let b = 0; b < B; b++) diffs[b] = m.ma[b] - m.kv[b];
     diffs.sort((a, b) => a - b);
     return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
 }
@@ -1712,10 +1728,11 @@ function computeLikvardighetPairs({ data = [], statistik = [], nationellKlass = 
     };
 }
 
-    return { computeLikvardighetPairs, basRangFn, arKvinnodominerad, konsklass };
+    return { computeLikvardighetPairs, basRangFn, bootstrapMedianer, arKvinnodominerad, konsklass };
 })();
 const _lvComputePairs = __mirrorLikvardighet.computeLikvardighetPairs;
 const _lvBasRangFn = __mirrorLikvardighet.basRangFn;
+const _lvBootstrapMedianer = __mirrorLikvardighet.bootstrapMedianer;
 const _arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
 const _konsklass = __mirrorLikvardighet.konsklass;
 
