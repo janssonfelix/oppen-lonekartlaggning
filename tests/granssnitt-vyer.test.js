@@ -656,3 +656,15 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         expect(rader().map(l => l.textContent.trim())).toEqual(fast);
     }, 30000);
 });
+
+describe('fokusmarkeringen', () => {
+    const css = las('src/style.css');
+    it('*:focus-visible står en gång i stilmallen', () => {
+        expect(css.match(/^\*:focus-visible\s*\{/gm)).toHaveLength(1);
+    });
+    it('fältkomponentens fokusring har verktygets accent, inte den ljusa kanten', () => {
+        const regel = css.match(/^\.falt-rad:focus-within\s*\{[^}]*\}/m)[0];
+        expect(regel).toContain('box-shadow: 0 0 0 2px var(--primary)');
+        expect(regel).not.toContain('--accent-kant');
+    });
+});
