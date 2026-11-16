@@ -63,6 +63,11 @@ describe('gränssnittets färger har en källa', () => {
         }
         expect(fynd).toEqual([]);
     });
+    it('upplysningsfärgen står inte som textfärg i stilmallen (texten tar den mörka nyansen)', () => {
+        const css = läs('src/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
+        const fynd = css.split('\n').filter(r => /(^|[;{\s])color:\s*var\(--status-info\)/.test(r)).map(r => r.trim().slice(0, 90));
+        expect(fynd).toEqual([]);
+    });
 });
 
 describe('hjälpklasserna', () => {

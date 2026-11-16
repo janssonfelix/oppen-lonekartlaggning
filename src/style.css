@@ -59,7 +59,9 @@
     --status-varning: #b45309;
     --status-ok: #0f766e;
     /* Brickornas ljusa botten, och «titta här först» (lila) och upplysning (blå). Samma värden som FARG i
-       src/app/01-farger.js; tests/farger.test.js håller de två lika och hexkoderna borta från resten av stilmallen. */
+       src/app/01-farger.js; tests/farger.test.js håller de två lika och hexkoderna borta från resten av stilmallen.
+       Upplysningsfärgen --status-info når inte 4,5:1 och står bara som botten, kant och diagrammarkör; som text tar
+       den --status-info-mork (tests/farger.test.js håller --status-info borta från color). */
     --status-kritisk-bg: #fee2e2;
     --status-varning-bg: #fef3c7;
     --status-ok-bg: #ecfdf5;
@@ -3358,7 +3360,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .farg-dampad.farg-dampad.farg-dampad { color: var(--text-muted); }
 .farg-danger.farg-danger.farg-danger { color: var(--danger); }
 .farg-granska.farg-granska.farg-granska { color: var(--status-granska); }
-.farg-info.farg-info.farg-info { color: var(--status-info); }
+.farg-info.farg-info.farg-info { color: var(--status-info-mork); }
 .farg-kritisk.farg-kritisk.farg-kritisk { color: var(--status-kritisk); }
 .farg-ok.farg-ok.farg-ok { color: var(--status-ok); }
 .farg-primary.farg-primary.farg-primary { color: var(--primary); }
@@ -3653,7 +3655,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .fg-ok { color: var(--status-ok) !important; }
 .fg-varning { color: var(--status-varning) !important; }
 .fg-kritisk { color: var(--status-kritisk) !important; }
-.fg-info { color: var(--status-info) !important; }
+.fg-info { color: var(--status-info-mork) !important; }
 .fg-info-mork { color: var(--status-info-mork) !important; }
 .fg-accent { color: var(--accent) !important; }
 .fg-granska { color: var(--status-granska) !important; }
@@ -3679,7 +3681,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .bricka-varning { color: var(--status-varning) !important; background: var(--status-varning-bg) !important; }
 .bricka-kritisk { color: var(--status-kritisk) !important; background: var(--status-kritisk-bg) !important; }
 .bricka-granska { color: var(--status-granska) !important; background: var(--status-granska-bg) !important; }
-.bricka-info { color: var(--status-info) !important; background: var(--status-info-bg) !important; }
+.bricka-info { color: var(--status-info-mork) !important; background: var(--status-info-bg) !important; }
 .bricka-neutral { color: var(--text-muted) !important; background: var(--yta-stark) !important; }
 .ruta-ok { background: var(--status-ok-bg) !important; border-left: 4px solid var(--status-ok) !important; }
 .ruta-varning { background: var(--status-varning-bg) !important; border-left: 4px solid var(--status-varning) !important; }
