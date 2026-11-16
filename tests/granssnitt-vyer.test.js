@@ -462,9 +462,9 @@ describe('typografisk skala', () => {
     });
     it('de utskrivna storlekarna blir inte fler: nya regler tar ett steg ur skalan', () => {
         const utskrivna = new Set(varden.filter(v => !v.startsWith('var(')));
-        // Utanför skalan står bara det som ligger långt från ett steg: de minsta versala etiketterna, de stora talen,
-        // utskriftens punktstorlekar och storlekar i em.
-        expect(utskrivna.size).toBeLessThanOrEqual(26);   // 26: bilagans rubrik i PDF-rapporten (16pt) bar tidigare ett style-attribut
+        // Utanför skalan står bara det som ligger långt från ett steg: de stora talen, utskriftens punktstorlekar och
+        // storlekar i em.
+        expect(utskrivna.size).toBeLessThanOrEqual(21);   // 21: de minsta etiketterna (0.65, 0.66, 0.68 och 0.72rem) och koden i granskningspanelen (0.9em) tar skalans minsta steg
         expect(varden.filter(v => v.startsWith('var(--fs-')).length).toBeGreaterThanOrEqual(230);
         // Inget utskrivet värde ligger inom 0,05 rem från ett steg: det ska då vara steget.
         const steg = [0.78, 0.86, 0.95, 1.1, 1.4, 1.6];
@@ -474,6 +474,14 @@ describe('typografisk skala', () => {
         const iSidan = new Set([...las('src/index.html').matchAll(/font-size:\s*([^;"\s]+)/g)].map(m => m[1]).filter(v => !v.startsWith('var(')));
         expect(iSidan.size).toBeLessThanOrEqual(4);
         expect([...iSidan].filter(v => /rem$/.test(v) && steg.some(s => Math.abs(parseFloat(v) - s) <= 0.0501))).toEqual([]);
+    });
+    it('ingen utskriven storlek är mindre än skalans minsta steg', () => {
+        // Text under 0.78rem (12,5 punkter) blir svårläst, särskilt versala etiketter. Storlekar i em räknas mot sin
+        // förälder och kan inte prövas här; tabellrubrikerna, KI-suffixet och koden tar därför steget i rem.
+        const iSidan = [...las('src/index.html').matchAll(/font-size:\s*([^;"\s]+)/g)].map(m => m[1]);
+        expect([...varden, ...iSidan].filter(v => /rem$/.test(v) && parseFloat(v) < 0.78)).toEqual([]);
+        const regel = sel => { const i = css.indexOf(`\n${sel} {`); return i < 0 ? '' : css.slice(i, css.indexOf('}', i)); };
+        for (const sel of ['.data-table th', '.ci-bracket']) expect(regel(sel)).toContain('font-size: var(--fs-xs);');
     });
 });
 
