@@ -898,7 +898,7 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         expect(kortText).toMatch(/Efter kontroll för BAS-intervall/);
         expect(kortText).toMatch(/när BAS-intervall räknats bort/);
         expect(figur).not.toBeNull();
-        expect(figur.y.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
         expect(oaxText).toMatch(/Förklarat av BAS-intervall/);
         expect([...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent)).not.toContain('Ålder');
         expect(oaxText).toMatch(/Ålder har kontrollerats/);
@@ -911,7 +911,7 @@ describe('avsnittet följer modellen (ADR-56)', () => {
     });
     it('yrkesgrupp vald: ordinarie steg i trappan, och Oaxaca har raden Yrkesgrupp inom BAS i stället för BAS-intervall', () => {
         const { kortText, oax, figur } = rita({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
-        expect(figur.y.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'AID-etikett inom BAS', 'Oförklarad skillnad']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'AID-etikett inom BAS', 'Oförklarad skillnad']);
         expect(figur.lager.some(l => /ingår inte i huvudtalet/.test(l.serie))).toBe(false);
         expect(kortText).not.toMatch(/ingår inte i huvudtalet/);
         expect(kortText).toMatch(/ålder, BAS-intervall och AID-etikett räknats bort/);
@@ -922,7 +922,7 @@ describe('avsnittet följer modellen (ADR-56)', () => {
     it('standardläget är som förut', () => {
         const { kortText, figur, oaxText } = rita(null);
         expect(kortText).toMatch(/när ålder och BAS-intervall räknats bort/);
-        expect(figur.y.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
         expect(oaxText).toMatch(/Förklarat av ålder och BAS-intervall/);
     });
 });

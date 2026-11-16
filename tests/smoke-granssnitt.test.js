@@ -1083,7 +1083,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         expect(Math.abs(r.delar.A + r.delar.B + r.delar.C - r.gap)).toBeLessThan(1e-6);
         // Trappan har lika många staplar som delar, och fokus står kvar på rutan.
         const f = w.document.getElementById('chart-gap-uppdelning')._figur;
-        expect(f.y.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Inom åldersgrupp och BAS']);
+        expect(f.x.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Inom åldersgrupp och BAS']);
         expect(f.beskrivning).toContain('sedan tre delar som tillsammans blir hela skillnaden, en i taget från hela skillnaden mot noll: BAS-fördelning, åldersgrupp inom BAS och lön inom samma åldersgrupp och BAS.');
         expect(w.document.activeElement.getAttribute('data-gu-var')).toBe('alder');
         // Länken för åldersgruppens del går till Ålder & karriär.

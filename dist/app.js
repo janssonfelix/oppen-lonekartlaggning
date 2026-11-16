@@ -12741,40 +12741,6 @@ function _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, tak) {
     return rum;
 }
 
-// Avståndet från punktens mitt till etiketten bredvid den (datapunktens etikettLage 'vanster' eller 'hoger' i ett
-// liggande diagram): ett lodrätt streck är smalt, en symbol har sin radie.
-const _rfVidAvstand = (l, r) => (l.symbol === 'streck' ? 2 : r) + 5;
-// Rummet på x för punktetiketter bredvid änden av en liggande stapel (datapunktens etikettLage 'vanster' eller
-// 'hoger', när lagret saknar eget etikettLage): etiketten ska stå inom panelen, och står punkten nära kanten
-// reserveras det som fattas. Punktens läge beror på rummet (omfånget krymper), så rummet räknas om några varv.
-// Bara ritade punkter räknas (S1), och resultatet beror bara på domänen, texterna och panelbredden `L`.
-function _rfPunktEtikettRum(rum, figurIn, syn, px, L) {
-    if (figurIn.x.skala === 'band' || figurIn.y.skala !== 'band' || !syn.doms.x) return rum;
-    const sk = _rfSkala(figurIn.x, syn.doms.x, [0, 1]), omv = !!figurIn.x.omvand, fpx = _rfLitenPx(px);
-    const krav = [];
-    for (const { l } of syn.synliga) {
-        if (l.marke !== 'punkt' || l.etikettLage) continue;
-        for (const d of l.data) {
-            if (!d || syn.dold(d) || d.etikett == null || String(d.etikett) === '' || (d.etikettLage !== 'vanster' && d.etikettLage !== 'hoger')) continue;
-            const f0 = sk(d.x);
-            if (!_rfTal(f0)) continue;
-            const r = _rfTal(d.storlek) ? d.storlek : (l.storlek || 4);
-            const w = _rfBredd(_rfKorta(String(d.etikett), 28), fpx) + _rfVidAvstand(l, r) + 2;
-            krav.push({ f: omv ? 1 - f0 : f0, w, vanster: d.etikettLage === 'vanster' });
-        }
-    }
-    if (!krav.length) return rum;
-    let lo = rum.x.lo, hi = rum.x.hi;
-    for (let varv = 0; varv < 4; varv++) {
-        for (const { f, w, vanster } of krav) {
-            // Läget i panelen är lo + f·(L − lo − hi). Till vänster ska det vara minst w, till höger högst L − w.
-            if (vanster && f < 1) lo = Math.max(lo, (w - f * (L - hi)) / (1 - f));
-            if (!vanster && f > 0) hi = Math.max(hi, (w - (1 - f) * (L - lo)) / f);
-        }
-    }
-    return { ...rum, x: { lo: Math.ceil(lo), hi: Math.ceil(hi) } };
-}
-
 const _rfNf = new Map();
 function _rfDecimaler(vard) {
     for (let dec = 0; dec < 8; dec++) {
@@ -13275,29 +13241,18 @@ function _rfPunkt(g, l, li, c) {
             // bredaste stapel bandet rymmer, till höger eller vid högerkanten till vänster — aldrig på andra sidan, där
             // stapeln är.
             const fast = !l.etikettLage && (d.etikettLage === 'under' || d.etikettLage === 'over') ? d.etikettLage : null;
-            // Datapunktens etikettLage 'vanster' eller 'hoger' i ett liggande diagram: värdet vid änden av en liggande
-            // stapel, utanför den. Rummet vid panelens kant är reserverat (_rfPunktEtikettRum).
-            const vid = !l.etikettLage && vagrat ? (d.etikettLage === 'vanster' ? -1 : d.etikettLage === 'hoger' ? 1 : 0) : 0;
             const fastRyms = fast === 'under' ? y + r + fpx * 1.25 <= c.inreH : y - r - 3 >= fpx;
             const ut = Math.max(l.symbol === 'streck' && !vagrat ? 2 * r : r, c.x.bandwidth ? Math.min(c.x.bandwidth(), _RF.stapelMax) / 2 : 0);
-            const sida = vid || (l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1)
-                : fast && !fastRyms ? (x + ut + 5 + tb > c.panelB ? -1 : 1) : 0);
-            let tx = x + sida * (vid ? _rfVidAvstand(l, r) : (fast ? ut : r) + 5);
-            let ty = sida ? y + fpx * 0.35
+            const sida = l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1)
+                : fast && !fastRyms ? (x + ut + 5 + tb > c.panelB ? -1 : 1) : 0;
+            const tx = x + sida * ((fast ? ut : r) + 5);
+            const ty = sida ? y + fpx * 0.35
                 : fast === 'under' ? y + r + fpx
                 : fast === 'over' ? y - r - 3
                 : (y - r - 3 < fpx ? y + r + fpx : y - r - 3);
-            let ankare = sida < 0 ? 'end' : sida > 0 ? 'start' : 'middle';
-            // Ryms etiketten bredvid änden av en liggande stapel inte i panelen (en smal bild, där rummet vid kanten är
-            // fullt) står den tätt under stapeln, vid änden och inom panelen.
-            if (vid && (vid < 0 ? tx - tb < 0 : tx + tb > c.panelB)) {
-                tx = Math.max(0, Math.min(vid < 0 ? x - tb : x, c.panelB - tb));
-                ty = y + (l.symbol === 'streck' ? 2 * r : r) + fpx * 0.85;
-                ankare = 'start';
-            }
-            const t = _rfText(c.texter, tx, ty, text, { px: fpx, ankare, title: hel,
+            const t = _rfText(c.texter, tx, ty, text, { px: fpx, ankare: sida < 0 ? 'end' : sida > 0 ? 'start' : 'middle', title: hel,
                 attr: { 'data-marke': 'punktetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
-            if (c.punktetiketter) c.punktetiketter.push({ t, y: ty, hojd: fpx + 3, over: !sida && ty < y, x0: ankare === 'end' ? tx - tb : ankare === 'start' ? tx : tx - tb / 2, x1: ankare === 'end' ? tx : ankare === 'start' ? tx + tb : tx + tb / 2 });
+            if (c.punktetiketter) c.punktetiketter.push({ t, y: ty, hojd: fpx + 3, over: !sida && ty < y, x0: sida < 0 ? tx - tb : sida > 0 ? tx : tx - tb / 2, x1: sida < 0 ? tx : sida > 0 ? tx + tb : tx + tb / 2 });
         }
         if (l.opacitet != null) m.attr('fill-opacity', l.opacitet);
         if (l.ofylld) _rfOfylld(m, farg);
@@ -14173,7 +14128,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     const fargskala = _rfFargskala(figurIn.fargskala);   // en gång per ritning: layouten, märkena och färgstapeln delar den
     const vag = _rfVagratLayout(figurIn, syn, yMarg, B, px, fargskala);
     const etiketter = _rfEtikettBeslut(figurIn, syn, px, lod.inreH, vag.panelB);
-    const rum = _rfPunktEtikettRum(_rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, vag.tak), figurIn, syn, px, vag.panelB);
+    const rum = _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, vag.tak);
     const yAx = _rfYAxlar(figurIn, syn, rum, B, px, lod.inreH, yMarg);
     const L = { ...lod, ...yAx, ...vag, rumX: rum.x, etiketter, fargskala };
 
@@ -30246,35 +30201,35 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
     const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const pp = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} procentenheter`;
     const kategorier = ['Ojusterad skillnad', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarad skillnad', ...(yrke ? [_REG_TRAPPSTEG[_RG_STEG_YRKE]] : [])];
-    // Liggande, som trappan i Var uppstår löneskillnaden?: helheten först, sedan stegen, och färgen säger vad stapeln
+    // Som trappan i Var uppstår löneskillnaden?: helheten först, sedan stegen, och färgen säger vad stapeln
     // betyder (PALETTE.uppdelning), inte åt vilket håll den går. Den ojusterade skillnaden är neutral, stegen är struktur
     // och den oförklarade skillnaden får lönesättningens färg — inte grönt och gult: att ett gap FÖRKLARAS av ålder
     // eller nivå är ingen bedömning av att det är bra.
     const steg = seqOk.slice(1).map((s, i) => {
         const fore = seqOk[i].gapPct, efter = s.gapPct;
-        return { y: kategorier[i + 1], lag: Math.min(fore, efter), hog: Math.max(fore, efter), fore, efter, andring: efter - fore };
+        return { x: kategorier[i + 1], lag: Math.min(fore, efter), hog: Math.max(fore, efter), fore, efter, andring: efter - fore };
     });
-    const helhet = (y, v) => ({ y, lag: Math.min(+v.toFixed(2), 0), hog: Math.max(+v.toFixed(2), 0), varde: +v.toFixed(2) });
-    // Nivåns värde står utanför stapeln, vid den ände där stapeln (eller steget) landar: vänster om den när den går åt
-    // vänster, annars höger. Så täcker värdet inte stapeln, också när den nästan inte syns.
-    const niva = (y, v, fore = 0) => ({ y, x: +v.toFixed(2), etikett: pct(v), etikettLage: v < fore ? 'vanster' : 'hoger' });
+    const helhet = (x, v) => ({ x, lag: Math.min(+v.toFixed(2), 0), hog: Math.max(+v.toFixed(2), 0), varde: +v.toFixed(2) });
+    // Nivåns värde står utanför stapeln, vid den ände där strecket står: under strecket när stapeln (eller steget) går
+    // uppåt från det, annars över. Så täcker värdet inte stapeln, också när den nästan inte syns.
+    const niva = (x, v, fore = 0) => ({ x, y: +v.toFixed(2), etikett: pct(v), etikettLage: v < fore ? 'under' : 'over' });
     const efterHuvudtalet = yrke ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${pct(yrke.gapPct)} kvar; det steget ingår inte i huvudtalet.` : '';
-    const stegTips = d => [[d.y], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], ['Skillnad efter', pct(d.efter)]];
+    const stegTips = d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], ['Skillnad efter', pct(d.efter)]];
     return { beskrivning: `Hur löneskillnaden förklaras steg för steg: först den ojusterade skillnaden ${pct(forst.gapPct)}, sedan ett steg för varje variabel som räknas in, och sist det oförklarade ${pct(sist.gapPct)} när ${fras} räknas in.${efterHuvudtalet} Negativ skillnad betyder att kvinnor har lägre lön. Samma tal står i förklaringsbudgeten.`,
-        hojd: 100 + 50 * kategorier.length,
-        y: { skala: 'band', ordning: kategorier, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Löneskillnad (%)', nollinje: true },
+        hojd: 320,
+        x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Löneskillnad (%)', nollinje: true },
         lager: [
-            { marke: 'intervall', riktning: 'liggande', serie: 'Ojusterad skillnad', farg: PALETTE.uppdelning.helhet, tjocklek: 26,
-              data: [helhet('Ojusterad skillnad', forst.gapPct)], tips: d => [[d.y], ['Löneskillnad', pct(d.varde)]] },
-            { marke: 'intervall', riktning: 'liggande', serie: 'Förklaras av', farg: PALETTE.uppdelning.struktur, tjocklek: 26, data: steg, tips: stegTips },
-            { marke: 'intervall', riktning: 'liggande', serie: 'Oförklarad skillnad', farg: PALETTE.uppdelning.lonesattning, tjocklek: 26,
-              data: [helhet('Oförklarad skillnad', sist.gapPct)], tips: d => [[d.y], ['Löneskillnad', pct(d.varde)]] },
+            { marke: 'intervall', serie: 'Ojusterad skillnad', farg: PALETTE.uppdelning.helhet, tjocklek: 44,
+              data: [helhet('Ojusterad skillnad', forst.gapPct)], tips: d => [[d.x], ['Löneskillnad', pct(d.varde)]] },
+            { marke: 'intervall', serie: 'Förklaras av', farg: PALETTE.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
+            { marke: 'intervall', serie: 'Oförklarad skillnad', farg: PALETTE.uppdelning.lonesattning, tjocklek: 44,
+              data: [helhet('Oförklarad skillnad', sist.gapPct)], tips: d => [[d.x], ['Löneskillnad', pct(d.varde)]] },
             // Yrkesgruppssteget (ADR-46) efter huvudtalet, ljusare: det ingår inte i huvudtalet.
-            ...(yrke ? [{ marke: 'intervall', riktning: 'liggande', serie: 'Utöver huvudtalet', farg: PALETTE.uppdelning.strukturLjus, tjocklek: 26,
-              data: [{ y: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct }],
-              tips: d => [[d.y], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ['Ingår inte i huvudtalet', '']] }] : []),
+            ...(yrke ? [{ marke: 'intervall', serie: 'Utöver huvudtalet', farg: PALETTE.uppdelning.strukturLjus, tjocklek: 44,
+              data: [{ x: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct }],
+              tips: d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ['Ingår inte i huvudtalet', '']] }] : []),
             // Nivån efter varje steg, med sitt värde: ett streck och en etikett.
-            { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', legend: false, farg: PALETTE.semantic.mork, storlek: 7,
+            { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', legend: false, farg: PALETTE.semantic.mork, storlek: 11,
               data: [niva('Ojusterad skillnad', forst.gapPct), ...seqOk.slice(1).map((s, i) => niva(kategorier[i + 1], s.gapPct, seqOk[i].gapPct)), niva('Oförklarad skillnad', sist.gapPct),
                      ...(yrke ? [niva(_REG_TRAPPSTEG[_RG_STEG_YRKE], yrke.gapPct, sist.gapPct)] : [])] }
         ] };
@@ -35794,7 +35749,7 @@ function renderGapUppdelning() {
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 
-// Uppdelningen som liggande trappa i omvänd ordning: hela skillnaden först, sedan delarna (A, B, … en per vald variabel
+// Uppdelningen som trappa i omvänd ordning: hela skillnaden först, sedan delarna (A, B, … en per vald variabel
 // och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
 // under, och aldrig en enskild grupps bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas
 // bara när `u.skyddad`). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
@@ -35814,33 +35769,37 @@ function _guTrappaFigur(u) {
     // Från hela skillnaden dras delarna av en i taget: nivån efter den sista är noll.
     let niva = u.gap;
     const steg = delar.map((d, i) => { const v = u.delar[d.id], fore = niva; niva -= v;
-        return { y: kategorier[i + 1], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: v, fore, efter: niva,
+        return { x: kategorier[i + 1], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: v, fore, efter: niva,
                  skillnadKr: Math.round(v), inom: d.variabel === null }; });
     const etikett = s => { const a = _guAndel(u, s.del); return a === null ? _guKr(s.del) : `${_guKr(s.del)} · ${_guPct(a, 0)}`; };
-    // Värdet står utanför stapeln, vid den ände där steget landar: vänster om stapeln när den går åt vänster, annars höger.
-    const lage = (fran, till) => (till < fran ? 'vanster' : 'hoger');
+    // Värdet står utanför stapeln, vid strecket där steget landar: under strecket när steget går nedåt till det (stapeln
+    // står ovanför), annars över. En etikett som är bredare än stapeln täcker den då inte.
+    const lage = (fran, till) => (till < fran ? 'under' : 'over');
     const tips = d => {
         const a = _guAndel(u, d.del);
         const andel = a !== null ? [['Andel av skillnaden', _guPct(a, 0)]]
             : u.litetGap ? []
             : [['Andel av skillnaden', Math.sign(d.del) !== Math.sign(u.gap) ? 'anges inte: delen går åt andra hållet än hela skillnaden'
                 : 'anges inte: delen är större än hela skillnaden, eftersom en annan del går åt andra hållet']];
-        return [[d.y], ['Bidrag', _guKr(d.del)], ...andel, ['Kvar efter delen', _guKr(d.efter)]];
+        return [[d.x], ['Bidrag', _guKr(d.del)], ...andel, ['Kvar efter delen', _guKr(d.efter)]];
     };
     const antal = ['', 'en', 'två', 'tre', 'fyra', 'fem'][delar.length];
-    const delLager = (inom, serie, farg) => ({ marke: 'intervall', riktning: 'liggande', serie, farg, tjocklek: 26, data: steg.filter(s => s.inom === inom), tips });
+    // Luft över och under trappan, så att värdet vid den lägsta och högsta nivån ryms på sin sida om strecket (annars
+    // flyttas det i sidled, och med hela skillnaden först hamnar det då på nästa stapel). Bara delsummor och helheten.
+    const nivaer = [0, u.gap, ...steg.map(s => s.efter)], lag = Math.min(...nivaer), hog = Math.max(...nivaer), luft = (hog - lag || 1) * 0.12;
+    const delLager = (inom, serie, farg) => ({ marke: 'intervall', serie, farg, tjocklek: 44, data: steg.filter(s => s.inom === inom), tips });
     return { beskrivning: `Skillnaden i medellön, kvinnor mot män: först hela skillnaden, ${_guKr(u.gap)}, och sedan ${antal} delar som tillsammans blir hela skillnaden, en i taget från hela skillnaden mot noll: ${_guDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
-        hojd: 100 + 50 * kategorier.length,
-        y: { skala: 'band', ordning: kategorier, etikettMax: 50 }, x: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true },
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: _GU_SERIE.helhet, farg: PALETTE.uppdelning.helhet, tjocklek: 26,
-                  data: [{ y: _GU_SERIE.helhet, lag: Math.min(gap, 0), hog: Math.max(gap, 0), skillnadKr: gap }], tips: d => [[d.y], ['Skillnad i medellön', _guKr(d.skillnadKr)]] },
+        hojd: 320,
+        x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true, ...(hog > lag ? { doman: [lag - luft, hog + luft] } : {}) },
+        lager: [{ marke: 'intervall', serie: _GU_SERIE.helhet, farg: PALETTE.uppdelning.helhet, tjocklek: 44,
+                  data: [{ x: _GU_SERIE.helhet, lag: Math.min(gap, 0), hog: Math.max(gap, 0), skillnadKr: gap }], tips: d => [[d.x], ['Skillnad i medellön', _guKr(d.skillnadKr)]] },
                 delLager(false, _GU_SERIE.struktur, PALETTE.uppdelning.struktur),
                 delLager(true, _GU_SERIE.inom, PALETTE.uppdelning.lonesattning),
                 // Värdena vid stapelns ände: ett streck där steget landar och beloppet bredvid. Bara etiketter: talen står
                 // redan i lagren ovan, och lagret får inga rader i diagramdatan.
-                { marke: 'punkt', symbol: 'streck', serie: 'Belopp', legend: false, utanData: true, farg: PALETTE.semantic.mork, storlek: 7,
-                  data: [{ y: _GU_SERIE.helhet, x: gap, etikett: _guKr(u.gap), etikettLage: lage(0, u.gap) },
-                         ...steg.map(s => ({ y: s.y, x: Math.round(s.efter), etikett: etikett(s), etikettLage: lage(s.fore, s.efter) }))] }] };
+                { marke: 'punkt', symbol: 'streck', serie: 'Belopp', legend: false, utanData: true, farg: PALETTE.semantic.mork, storlek: 11,
+                  data: [{ x: _GU_SERIE.helhet, y: gap, etikett: _guKr(u.gap), etikettLage: lage(0, u.gap) },
+                         ...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: etikett(s), etikettLage: lage(s.fore, s.efter) }))] }] };
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson

@@ -199,8 +199,8 @@ Varje OLS-steg ger gapet (exp(β1) − 1) · 100, R² och antalet kolumner; ett 
 den förklarade andelen och förklaringsbudgeten räknas till och med modellens sista steg; *+ AID-etikett inom BAS* ingår
 bara när den är vald.
 
-**Trappan och förklaringsbudgeten** visar stegen. Trappan är liggande, som den i *Var uppstår löneskillnaden?*
-(avsnitt 10): den ojusterade skillnaden överst (neutral), varje steg som ett spann från gapet före till gapet efter
+**Trappan och förklaringsbudgeten** visar stegen. Trappan läses som den i *Var uppstår löneskillnaden?*
+(avsnitt 10): den ojusterade skillnaden först (neutral), varje steg som ett spann från gapet före till gapet efter
 (strukturens färg) och den oförklarade skillnaden sist (lönesättningens färg), med nivåns värde vid stapelns ände. Budgeten har en del per steg efter det första, |gap före| − |gap
 efter|; ett steg som gör gapet större flaggas i stället för att ritas som en stapel, och en mening säger att det som
 tillskrivs varje steg beror på ordningen. Hur det ojusterade steget redovisas när ett kön är under tröskeln står i
@@ -469,7 +469,7 @@ andelar, och en not säger att delarna då kan peka åt olika håll och vara st�
    tröskeln står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.
 
 Regeln gäller per del, för varje val av variabler. Trappan visar bara delsummorna och hela skillnaden, aldrig en enskild
-grupps bidrag, och ritas bara när delarna redovisas. Den är liggande: hela skillnaden överst, sedan delarna en i taget
+grupps bidrag, och ritas bara när delarna redovisas. Hela skillnaden står först, sedan delarna en i taget
 från hela skillnaden mot noll, med *belopp · andel av skillnaden* vid varje stapel. En del som går åt andra hållet än
 helheten, eller är större än den, får bara sitt belopp, och verktygstipset säger varför; med `litetGap` står inga
 andelar, som i raderna. Avsnittet står först i Lönestruktur.

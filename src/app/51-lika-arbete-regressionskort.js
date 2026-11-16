@@ -454,35 +454,35 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
     const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
     const pp = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} procentenheter`;
     const kategorier = ['Ojusterad skillnad', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarad skillnad', ...(yrke ? [_REG_TRAPPSTEG[_RG_STEG_YRKE]] : [])];
-    // Liggande, som trappan i Var uppstår löneskillnaden?: helheten först, sedan stegen, och färgen säger vad stapeln
+    // Som trappan i Var uppstår löneskillnaden?: helheten först, sedan stegen, och färgen säger vad stapeln
     // betyder (PALETTE.uppdelning), inte åt vilket håll den går. Den ojusterade skillnaden är neutral, stegen är struktur
     // och den oförklarade skillnaden får lönesättningens färg — inte grönt och gult: att ett gap FÖRKLARAS av ålder
     // eller nivå är ingen bedömning av att det är bra.
     const steg = seqOk.slice(1).map((s, i) => {
         const fore = seqOk[i].gapPct, efter = s.gapPct;
-        return { y: kategorier[i + 1], lag: Math.min(fore, efter), hog: Math.max(fore, efter), fore, efter, andring: efter - fore };
+        return { x: kategorier[i + 1], lag: Math.min(fore, efter), hog: Math.max(fore, efter), fore, efter, andring: efter - fore };
     });
-    const helhet = (y, v) => ({ y, lag: Math.min(+v.toFixed(2), 0), hog: Math.max(+v.toFixed(2), 0), varde: +v.toFixed(2) });
-    // Nivåns värde står utanför stapeln, vid den ände där stapeln (eller steget) landar: vänster om den när den går åt
-    // vänster, annars höger. Så täcker värdet inte stapeln, också när den nästan inte syns.
-    const niva = (y, v, fore = 0) => ({ y, x: +v.toFixed(2), etikett: pct(v), etikettLage: v < fore ? 'vanster' : 'hoger' });
+    const helhet = (x, v) => ({ x, lag: Math.min(+v.toFixed(2), 0), hog: Math.max(+v.toFixed(2), 0), varde: +v.toFixed(2) });
+    // Nivåns värde står utanför stapeln, vid den ände där strecket står: under strecket när stapeln (eller steget) går
+    // uppåt från det, annars över. Så täcker värdet inte stapeln, också när den nästan inte syns.
+    const niva = (x, v, fore = 0) => ({ x, y: +v.toFixed(2), etikett: pct(v), etikettLage: v < fore ? 'under' : 'over' });
     const efterHuvudtalet = yrke ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${pct(yrke.gapPct)} kvar; det steget ingår inte i huvudtalet.` : '';
-    const stegTips = d => [[d.y], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], ['Skillnad efter', pct(d.efter)]];
+    const stegTips = d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], ['Skillnad efter', pct(d.efter)]];
     return { beskrivning: `Hur löneskillnaden förklaras steg för steg: först den ojusterade skillnaden ${pct(forst.gapPct)}, sedan ett steg för varje variabel som räknas in, och sist det oförklarade ${pct(sist.gapPct)} när ${fras} räknas in.${efterHuvudtalet} Negativ skillnad betyder att kvinnor har lägre lön. Samma tal står i förklaringsbudgeten.`,
-        hojd: 100 + 50 * kategorier.length,
-        y: { skala: 'band', ordning: kategorier, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Löneskillnad (%)', nollinje: true },
+        hojd: 320,
+        x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Löneskillnad (%)', nollinje: true },
         lager: [
-            { marke: 'intervall', riktning: 'liggande', serie: 'Ojusterad skillnad', farg: PALETTE.uppdelning.helhet, tjocklek: 26,
-              data: [helhet('Ojusterad skillnad', forst.gapPct)], tips: d => [[d.y], ['Löneskillnad', pct(d.varde)]] },
-            { marke: 'intervall', riktning: 'liggande', serie: 'Förklaras av', farg: PALETTE.uppdelning.struktur, tjocklek: 26, data: steg, tips: stegTips },
-            { marke: 'intervall', riktning: 'liggande', serie: 'Oförklarad skillnad', farg: PALETTE.uppdelning.lonesattning, tjocklek: 26,
-              data: [helhet('Oförklarad skillnad', sist.gapPct)], tips: d => [[d.y], ['Löneskillnad', pct(d.varde)]] },
+            { marke: 'intervall', serie: 'Ojusterad skillnad', farg: PALETTE.uppdelning.helhet, tjocklek: 44,
+              data: [helhet('Ojusterad skillnad', forst.gapPct)], tips: d => [[d.x], ['Löneskillnad', pct(d.varde)]] },
+            { marke: 'intervall', serie: 'Förklaras av', farg: PALETTE.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
+            { marke: 'intervall', serie: 'Oförklarad skillnad', farg: PALETTE.uppdelning.lonesattning, tjocklek: 44,
+              data: [helhet('Oförklarad skillnad', sist.gapPct)], tips: d => [[d.x], ['Löneskillnad', pct(d.varde)]] },
             // Yrkesgruppssteget (ADR-46) efter huvudtalet, ljusare: det ingår inte i huvudtalet.
-            ...(yrke ? [{ marke: 'intervall', riktning: 'liggande', serie: 'Utöver huvudtalet', farg: PALETTE.uppdelning.strukturLjus, tjocklek: 26,
-              data: [{ y: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct }],
-              tips: d => [[d.y], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ['Ingår inte i huvudtalet', '']] }] : []),
+            ...(yrke ? [{ marke: 'intervall', serie: 'Utöver huvudtalet', farg: PALETTE.uppdelning.strukturLjus, tjocklek: 44,
+              data: [{ x: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct }],
+              tips: d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ['Ingår inte i huvudtalet', '']] }] : []),
             // Nivån efter varje steg, med sitt värde: ett streck och en etikett.
-            { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', legend: false, farg: PALETTE.semantic.mork, storlek: 7,
+            { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', legend: false, farg: PALETTE.semantic.mork, storlek: 11,
               data: [niva('Ojusterad skillnad', forst.gapPct), ...seqOk.slice(1).map((s, i) => niva(kategorier[i + 1], s.gapPct, seqOk[i].gapPct)), niva('Oförklarad skillnad', sist.gapPct),
                      ...(yrke ? [niva(_REG_TRAPPSTEG[_RG_STEG_YRKE], yrke.gapPct, sist.gapPct)] : [])] }
         ] };

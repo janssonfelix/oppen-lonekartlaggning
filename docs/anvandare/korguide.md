@@ -346,7 +346,7 @@ rubrikraden, också när det är hopfällt.
    huvudområden. Pilen vid ett huvudområde öppnar dess AID-etiketter i Tabeller och egna vyer. Lika arbete, likvärdigt arbete
    och övriga analyser gäller alltid hela organisationen.
    **Var uppstår löneskillnaden?** delar skillnaden i medellön i delar som tillsammans blir hela
-   skillnaden. Diagrammet är en liggande trappa: hela skillnaden överst, sedan delarna en i taget från hela
+   skillnaden. Diagrammet är en trappa: hela skillnaden längst till vänster, sedan delarna en i taget från hela
    skillnaden mot noll, med beloppet och andelen av skillnaden vid varje stapel. Färgen säger vad delen är: blått
    för det som förklaras av var kvinnor och män arbetar, orange för lönen inom samma grupp och grått för hela
    skillnaden. En del som går åt andra hållet än hela skillnaden får bara sitt belopp; verktygstipset säger varför.

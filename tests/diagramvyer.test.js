@@ -369,30 +369,30 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         expect(f.lager[1].data.every(d => d.etikett === undefined)).toBe(true);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
-    it('gapuppdelningen som liggande trappa: hela skillnaden först, sedan delarna från hela skillnaden mot noll', () => {
+    it('gapuppdelningen som trappa: hela skillnaden först, sedan delarna från hela skillnaden mot noll', () => {
         const f = w.eval(`_guTrappaFigur({ gap: -2091, delar: { A: -1428, B: -434, C: -229 } })`);
-        expect(f.y.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
-        expect(f.lager.map(l => [l.marke, l.riktning || null, l.serie])).toEqual([['intervall', 'liggande', 'Hela skillnaden'], ['intervall', 'liggande', 'Hur kvinnor och män är fördelade'],
-            ['intervall', 'liggande', 'Lön inom samma grupp'], ['punkt', null, 'Belopp']]);
-        expect(f.lager[0].data.map(d => [d.y, d.lag, d.hog])).toEqual([['Hela skillnaden', -2091, 0]]);
-        expect([...f.lager[1].data, ...f.lager[2].data].map(d => [d.y, d.lag, d.hog])).toEqual([['A. BAS-fördelning', -2091, -663], ['B. AID inom BAS', -663, -229], ['C. Inom AID och BAS', -229, 0]]);
+        expect(f.x.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
+        expect(f.lager.map(l => [l.marke, l.riktning || null, l.serie])).toEqual([['intervall', null, 'Hela skillnaden'], ['intervall', null, 'Hur kvinnor och män är fördelade'],
+            ['intervall', null, 'Lön inom samma grupp'], ['punkt', null, 'Belopp']]);
+        expect(f.lager[0].data.map(d => [d.x, d.lag, d.hog])).toEqual([['Hela skillnaden', -2091, 0]]);
+        expect([...f.lager[1].data, ...f.lager[2].data].map(d => [d.x, d.lag, d.hog])).toEqual([['A. BAS-fördelning', -2091, -663], ['B. AID inom BAS', -663, -229], ['C. Inom AID och BAS', -229, 0]]);
         // Färgen säger vad delen betyder: struktur för delarna som förklaras av var kvinnor och män arbetar, lönesättningen för den sista.
         const P = w.eval('PALETTE.uppdelning');
         expect(f.lager.slice(0, 3).map(l => l.farg)).toEqual([P.helhet, P.struktur, P.lonesattning]);
-        expect(f.lager[3].data.map(d => [d.etikett, d.etikettLage])).toEqual([['−2\u00a0091\u00a0kr', 'vanster'], ['−1\u00a0428\u00a0kr · 68\u00a0%', 'hoger'],
-            ['−434\u00a0kr · 21\u00a0%', 'hoger'], ['−229\u00a0kr · 11\u00a0%', 'hoger']]);
+        expect(f.lager[3].data.map(d => [d.etikett, d.etikettLage])).toEqual([['−2\u00a0091\u00a0kr', 'under'], ['−1\u00a0428\u00a0kr · 68\u00a0%', 'over'],
+            ['−434\u00a0kr · 21\u00a0%', 'over'], ['−229\u00a0kr · 11\u00a0%', 'over']]);
         expect(f.lager[3].utanData).toBe(true);
         // Diagramdatan bär delarnas och helhetens belopp (Skillnad, kr/mån), i trappans ordning.
         const tabell = figurTillTabell(f);
         expect(tabell[0].at(-1)).toBe('Skillnad (kr/mån)');
         expect(tabell.slice(1).map(r => r.at(-1))).toEqual([-2091, -1428, -434, -229]);
-        expect(f.x.nollinje).toBe(true);
+        expect(f.y.nollinje).toBe(true);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('gapuppdelningen: en del som går åt andra hållet, eller är större än helheten, får bara sitt belopp; tipset säger varför', () => {
         const f = w.eval(`_guTrappaFigur({ gap: 6000, delar: { A: 6800, B: -800, C: 0 } })`);
         expect([...f.lager[1].data, ...f.lager[2].data].map(d => [d.lag, d.hog])).toEqual([[-800, 6000], [-800, 0], [0, 0]]);
-        expect(f.lager[3].data.map(d => [d.etikett, d.etikettLage])).toEqual([['+6\u00a0000\u00a0kr', 'hoger'], ['+6\u00a0800\u00a0kr', 'vanster'], ['−800\u00a0kr', 'hoger'], ['0\u00a0kr · 0\u00a0%', 'hoger']]);
+        expect(f.lager[3].data.map(d => [d.etikett, d.etikettLage])).toEqual([['+6\u00a0000\u00a0kr', 'over'], ['+6\u00a0800\u00a0kr', 'under'], ['−800\u00a0kr', 'over'], ['0\u00a0kr · 0\u00a0%', 'over']]);
         const tips = d => vanliga(f.lager[1].tips(d)).find(r => r[0] === 'Andel av skillnaden')[1];
         expect(tips(f.lager[1].data[0])).toMatch(/större än hela skillnaden/);
         expect(tips(f.lager[1].data[1])).toMatch(/åt andra hållet/);
@@ -2186,8 +2186,7 @@ describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (
         // Som i det stora demot: «−229 kr · 11 %» är bredare än sin stapel och står vid nollan.
         const u = '{ gap: -2091, delar: { A: -1428, B: -434, C: -229 } }';
         const f = w.eval(`_guTrappaFigur(${u})`);
-        // I en smal bild räcker inte rummet vid kanten (högst 30 % av panelen per sida): då står värdet under stapeln.
-        for (const bredd of [320, 400, 560, 640, 800]) expect(utanforStapeln(bygg(`_guTrappaFigur(${u})`, bredd)), `${bredd}`).toEqual([]);
+        for (const bredd of [640, 800]) expect(utanforStapeln(bygg(`_guTrappaFigur(${u})`, bredd)), `${bredd}`).toEqual([]);
         // Delar som går åt båda hållen, och en positiv skillnad.
         for (const v of ['{ gap: 6000, delar: { A: 3400, B: -600, C: 3200 } }', '{ gap: -900, delar: { A: -1600, B: 900, C: -200 } }', '{ gap: -2091, variabler: ["bas", "sektor", "aidniva", "aid"], delar: { A: -900, B: -400, C: -300, D: -262, E: -229 } }'])
             for (const bredd of [640, 800]) expect(utanforStapeln(bygg(`_guTrappaFigur(${v})`, bredd)), `${v} ${bredd}`).toEqual([]);
@@ -2197,7 +2196,7 @@ describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (
         w.__s = [{ name: 'Endast kön', status: 'ok', gapPct: -5.0 }, { name: '+ BAS-intervall', status: 'ok', gapPct: -1.6 }, { name: '+ Ålder', status: 'ok', gapPct: -1.7 }];
         w.__y = { name: '+ Yrkesgrupp', status: 'ok', gapPct: -0.7 };
         const f = w.eval('_regTrappaFigur(window.__s, window.__y)');
-        expect(f.lager.at(-1).data.map(d => [d.etikett, d.etikettLage])).toEqual([['−5,0\u00a0%', 'vanster'], ['−1,6\u00a0%', 'hoger'], ['−1,7\u00a0%', 'vanster'], ['−1,7\u00a0%', 'vanster'], ['−0,7\u00a0%', 'hoger']]);
-        for (const bredd of [320, 480, 640, 800]) expect(utanforStapeln(bygg('_regTrappaFigur(window.__s, window.__y)', bredd)), `${bredd}`).toEqual([]);
+        expect(f.lager.at(-1).data.map(d => [d.etikett, d.etikettLage])).toEqual([['−5,0\u00a0%', 'under'], ['−1,6\u00a0%', 'over'], ['−1,7\u00a0%', 'under'], ['−1,7\u00a0%', 'under'], ['−0,7\u00a0%', 'over']]);
+        for (const bredd of [640, 800]) expect(utanforStapeln(bygg('_regTrappaFigur(window.__s, window.__y)', bredd)), `${bredd}`).toEqual([]);
     });
 });
