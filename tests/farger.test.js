@@ -46,19 +46,24 @@ describe('gränssnittets färger har en källa', () => {
         const { rot } = cssRot();
         for (const [k, v] of Object.entries(FARG)) expect(rot, cssNamn(k)).toMatch(new RegExp(`${cssNamn(k)}:\\s*${v};`, 'i'));
     });
-    it('utanför :root står tabellens färger bara som variabler (hexkoden får stå som reservvärde i var())', () => {
-        const rest = cssRot().rest.replace(/\/\*[\s\S]*?\*\//g, '').replace(/var\(\s*--[\w-]+\s*,\s*#[0-9a-f]{6}\s*\)/gi, '');
+    it('utanför :root står tabellens färger bara som variabler', () => {
+        const rest = cssRot().rest.replace(/\/\*[\s\S]*?\*\//g, '');
         expect(rest.match(KODER) || []).toEqual([]);
     });
+    it('stilmallen och sidans skal har inga reservvärden i var() (variablerna står i :root, och stilmallen läses före sidan)', () => {
+        const css = läs('src/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
+        for (const [f, text] of [['src/style.css', css], ['src/index.html', läs('src/index.html')]])
+            expect(text.match(/var\(\s*--[\w-]+\s*,[^)]*\)/g) || [], f).toEqual([]);
+    });
     it('sidans skal: bara tabellhuvud som kopieras till urklipp bär en av tabellens färger som hexkod', () => {
-        const rader = läs('src/index.html').replace(/var\(\s*--[\w-]+\s*,\s*#[0-9a-f]{6}\s*\)/gi, '').split('\n').filter(r => { const t = KODER.test(r); KODER.lastIndex = 0; return t; });
+        const rader = läs('src/index.html').split('\n').filter(r => { const t = KODER.test(r); KODER.lastIndex = 0; return t; });
         for (const r of rader) expect(r, r.trim().slice(0, 80)).toMatch(/<th [^>]*data-export-label/);
     });
     it('nära dubbletter av tabellens färger står inte i vyerna, sidan eller stilmallen (ADR-43)', () => {
         const NARA_DUBBLETTER = /#(991b1b|7f1d1d|8f1616|fde8e8|92400e|9a3412|7c2d12|78350f|7a4a04|fdf0d8|fef9c3|fff7d6|fff7ed|047857|065f46|0a544e|166534|064e3b|d1fae5|dcfce7|dff3ef|4f46e5|3730a3|e0e7ff|0c4a6e|fefefe|1e293b|0f172a|334155|374151|e2e8f0|cfd5df|fafbfc|f6f7f9|eef2f6|eef2f7|3b82f6|1e40af|1e3a5f|fca5a5|f87171|fbbf24|fef08a|fdba74|bbf7d0|34d399|a9b9ff|fffbf9)\b/gi;
         const fynd = [];
         for (const f of [...readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js').map(f => `src/app/${f}`), 'src/style.css', 'src/index.html']) {
-            const text = f.endsWith('.css') ? läs(f).replace(/var\(\s*--[\w-]+\s*,\s*#[0-9a-f]{6}\s*\)/gi, '') : läs(f);
+            const text = läs(f);
             const n = (text.match(NARA_DUBBLETTER) || []).length; if (n) fynd.push(`${f}: ${n}`);
         }
         expect(fynd).toEqual([]);
