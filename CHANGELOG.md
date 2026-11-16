@@ -8,6 +8,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Var uppstår löneskillnaden? står först i Lönestruktur.** Avsnittet är det första under Fördjupning och är utfällt
+  från början. Trappan börjar med hela skillnaden och går sedan del för del mot noll, med delens belopp och andel av
+  hela skillnaden vid varje stapel (bara beloppet när en del går åt andra hållet än helheten). Färgen säger vad delen
+  betyder, inte åt vilket håll den går: hela skillnaden neutral, delarna som beror på hur kvinnor och män är fördelade
+  en färg och lönen inom samma grupp en annan, med en förklaring under diagrammet. Delarnas kort har samma färg som
+  sin stapel, och valet av variabler ligger under diagrammet bakom *Ändra uppdelning*. Den sista delen heter
+  *Oförklarat: lön inom samma …* och motsvarar regressionens oförklarade skillnad; kortet säger att en grupp med bara
+  kvinnor eller bara män inte kan jämföras och räknas till delarna ovan. Regressionstrappan i *Vad blir kvar av
+  löneskillnaden?* har samma färger och förklaring. Talen är oförändrade.
 - **Flikbytet visar fliken först och räknar den sedan (ADR-80).** När användaren byter flik i menyn, med sökfältet
   eller med en länk blir fliken synlig direkt med raden *Räknar fram fliken …*, och det som stod i den förra gången
   döljs medan den räknas. Förhandsbeskedet i Exportera, rapportunderlaget i Rapporttext, regressionskorten i

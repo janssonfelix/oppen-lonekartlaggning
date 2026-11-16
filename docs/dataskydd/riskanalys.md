@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.16` · **Artefakt-SHA-256:** `9f951f3704e87d6ce29fcdadae976ea06177984f00f60280eea7d05c8c14036c` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.16` · **Artefakt-SHA-256:** `868c43aad683465381e256de13d3d7c2f1eeb200b591242aab0fa7fc6b19dd60` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-16.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
@@ -999,13 +999,17 @@ andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppg
 109 filer.
 
 **Granskningen 2026-11-16** (inför bygget 2026.11.16) prövade dokumentet mot koden som ändrats efter bygget
-2026.11.15, i två omgångar. Den första (2026-11-15) gällde växeln *Fler kolumner* i tabellerna i Lika arbete och
+2026.11.15, i tre omgångar. Den första (2026-11-15) gällde växeln *Fler kolumner* i tabellerna i Lika arbete och
 Likvärdigt arbete, tabellbredderna i utskriften och Word-utkastet (`60-utskrift.js`, `src/lib/docx.js`), det hårda
 mellanslaget i talformaten, diagrammens etiketter, poänglägets jämförelser (ADR-76), HC3 med AID-etikett inom BAS
 (ADR-77), översikten per huvudområde (ADR-78), protokollet för gemensam lönebedömning (ADR-79), och att paren i
 likvärdigt arbete och regressionen räknas en gång. Den andra (2026-11-16) gällde den glesa regressionen och
 bootstrapens rangordning, flikbytet som ritar först (ADR-80), visningsminnet (ADR-81) och gränssnittets kontrast,
-fokus, klickmål, typgolv, diagramtext, färgvariabler och kantränder. Biblioteken i `vendor/` och `tools/bundle.mjs` är
+fokus, klickmål, typgolv, diagramtext, färgvariabler och kantränder. Den tredje (samma dag) gällde *Var uppstår
+löneskillnaden?* först i Lönestruktur, trappans ordning, färger och etiketter och den sista delens namn
+(`68-var-uppstar-gapet.js`, `51-lika-arbete-regressionskort.js`, `src/lib/gapuppdelning.js`): uppdelningens tal,
+skyddet för små grupper (`u.skyddad`) och k-tröskeln är oförändrade, diagramdatan har samma belopp, och ändringen
+lägger inte till något nätverks- eller lagringsanrop, `style="…"` eller `url(`. Biblioteken i `vendor/` och `tools/bundle.mjs` är
 oförändrade. Varje namngiven fil, funktion, konstant och testfil som berörs söktes upp i `src/`, `tools/`, `tests/`
 och bygget; alla finns. Kontrollerat:
 - CSP-raden i bygget (fem skript och fem hashar, två stilhashar), ordagrant som §6.1. Direktiven är desamma som i
