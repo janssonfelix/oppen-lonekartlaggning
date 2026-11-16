@@ -381,14 +381,14 @@ describe('ADR-65: valbara förklaringsvariabler', () => {
     });
     it('delarnas namn och texter byggs ur variablerna; standardvalet ger dagens', () => {
         const std = gapDelar(['bas', 'aid']);
-        expect(std.map(d => `${d.id}. ${d.namn}`)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
+        expect(std.map(d => `${d.id}. ${d.namn}`)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Oförklarat: lön inom samma AID och BAS']);
         expect(std.map(d => d.betyder)).toEqual(['Kvinnor och män är olika fördelade över BAS-intervallen.',
-            'Kvinnor och män har olika AID inom samma BAS.', 'Kvinnor och män har olika lön i samma AID och BAS.']);
+            'Kvinnor och män har olika AID inom samma BAS.', 'Kvinnor och män har olika lön i samma AID och BAS. Det är den del av skillnaden som fördelningen inte förklarar; en grupp med bara kvinnor eller bara män går inte att jämföra och räknas i stället till delarna ovan.']);
         expect(std.map(d => d.variabel)).toEqual(['bas', 'aid', null]);
         expect(gapDelar(['bas', 'alder', 'aid']).map(d => d.namn)).toEqual(['BAS-fördelning', 'Åldersgrupp inom BAS',
-            'AID inom åldersgrupp och BAS', 'Inom AID, åldersgrupp och BAS']);
-        expect(gapDelar(['alder']).map(d => d.namn)).toEqual(['Åldersfördelning', 'Inom åldersgrupp']);
-        expect(gapDelar(['sektor', 'aidniva']).map(d => d.namn)).toEqual(['Fördelning över huvudområden', 'AID-mellannivå inom huvudområde', 'Inom AID-mellannivå och huvudområde']);
+            'AID inom åldersgrupp och BAS', 'Oförklarat: lön inom samma AID, åldersgrupp och BAS']);
+        expect(gapDelar(['alder']).map(d => d.namn)).toEqual(['Åldersfördelning', 'Oförklarat: lön inom samma åldersgrupp']);
+        expect(gapDelar(['sektor', 'aidniva']).map(d => d.namn)).toEqual(['Fördelning över huvudområden', 'AID-mellannivå inom huvudområde', 'Oförklarat: lön inom samma AID-mellannivå och huvudområde']);
     });
 });
 

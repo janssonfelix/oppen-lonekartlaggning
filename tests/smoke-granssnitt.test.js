@@ -1060,11 +1060,11 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         expect(kort(w).querySelector('.gu-val legend').textContent).toBe('Förklara med:');
         expect(valda(w)).toEqual(['bas', 'aid']);
         expect(rutor(w).map(r => r.getAttribute('data-gu-var'))).toEqual(['bas', 'aid', 'sektor', 'aidniva', 'alder']);
-        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
+        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Oförklarat: lön inom samma AID och BAS']);
         const text = [...kort(w).querySelectorAll('.gu-text')].map(p => p.textContent);
         expect(text[0]).toContain('Kvinnor och män är olika fördelade över BAS-intervallen. Hör till karriärvägar och rekrytering');
         expect(text[1]).toContain('Kvinnor och män har olika AID inom samma BAS. Kan kräva en lönesatsning på AID-etiketten');
-        expect(text[2]).toContain('Kvinnor och män har olika lön i samma AID och BAS. Pröva lika arbete');
+        expect(text[2]).toContain('räknas i stället till delarna ovan. Pröva lika arbete');
         expect(kort(w).querySelector('[data-gu-standard]')).toBeNull();
         expect(kort(w).textContent).toContain('Ordningen påverkar delarna: den första variabeln får det den förklarar ensam');
         expect(w.__state.gapUppdelning).toBeNull();
@@ -1073,17 +1073,17 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         const w = bevaka(demo());
         kryssa(w, 'aid');
         expect(valda(w)).toEqual(['bas']);
-        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. Inom BAS']);
+        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. Oförklarat: lön inom samma BAS']);
         kryssa(w, 'alder');
         expect(valda(w)).toEqual(['bas', 'alder']);
         expect(JSON.parse(JSON.stringify(w.__state.gapUppdelning))).toEqual({ variabler: ['bas', 'alder'] });
-        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Inom åldersgrupp och BAS']);
+        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Oförklarat: lön inom samma åldersgrupp och BAS']);
         const r = u(w);
         expect(r.skyddad).toBe(true);
         expect(Math.abs(r.delar.A + r.delar.B + r.delar.C - r.gap)).toBeLessThan(1e-6);
         // Trappan har lika många staplar som delar, och fokus står kvar på rutan.
         const f = w.document.getElementById('chart-gap-uppdelning')._figur;
-        expect(f.x.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Inom åldersgrupp och BAS']);
+        expect(f.x.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Oförklarat: lön inom samma åldersgrupp och BAS']);
         expect(f.beskrivning).toContain('sedan tre delar som tillsammans blir hela skillnaden, en i taget från hela skillnaden mot noll: BAS-fördelning, åldersgrupp inom BAS och lön inom samma åldersgrupp och BAS.');
         expect(w.document.activeElement.getAttribute('data-gu-var')).toBe('alder');
         // Länken för åldersgruppens del går till Ålder & karriär.
@@ -1106,7 +1106,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         expect(valda(w)).toEqual(['alder', 'bas', 'aid']);
         // Knappen är nu avstängd: fokus går till rutan för samma variabel.
         expect(w.document.activeElement.getAttribute('data-gu-var')).toBe('alder');
-        expect(delnamn(w)).toEqual(['A. Åldersfördelning', 'B. BAS inom åldersgrupp', 'C. AID inom BAS och åldersgrupp', 'D. Inom AID, BAS och åldersgrupp']);
+        expect(delnamn(w)).toEqual(['A. Åldersfördelning', 'B. BAS inom åldersgrupp', 'C. AID inom BAS och åldersgrupp', 'D. Oförklarat: lön inom samma AID, BAS och åldersgrupp']);
         expect(kort(w).querySelector('.gu-val-lista').getAttribute('aria-describedby')).toBe('gu-val-hjalp');
         // Återställ standard.
         kort(w).querySelector('[data-gu-standard]').click();
@@ -1138,7 +1138,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         w.eval('invalidateStatCaches(); renderGapUppdelning()');
         expect(rutor(w).map(r => r.getAttribute('data-gu-var'))).not.toContain('alder');
         expect(valda(w)).toEqual(['bas', 'aid']);
-        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
+        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Oförklarat: lön inom samma AID och BAS']);
     });
     it('konfigurationsfilen fram och tillbaka; en äldre fil utan fältet ger standard; ogiltigt ger varning', () => {
         const w = demo();
@@ -1178,7 +1178,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         const b = block();
         expect(b.stycken.join(' ')).toContain('Uppdelningen förklarar med variablerna BAS och åldersgrupp, i den ordningen.');
         expect(b.stycken.join(' ')).toMatch(/på att kvinnor och män är olika fördelade över BAS, .* på olika ålder inom samma BAS och .* på löneskillnader inom samma åldersgrupp och BAS\./);
-        expect(b.tabell.rader.map(r => r[0])).toEqual(['BAS-fördelning', 'Åldersgrupp inom BAS', 'Inom åldersgrupp och BAS', 'Totalt']);
+        expect(b.tabell.rader.map(r => r[0])).toEqual(['BAS-fördelning', 'Åldersgrupp inom BAS', 'Oförklarat: lön inom samma åldersgrupp och BAS', 'Totalt']);
         expect(metod()).toContain('Var uppstår löneskillnaden (variabler): Skillnaden i medellön delas med BAS och åldersgrupp, i den ordningen');
         // Word-utkastet (rapportmodellen) bär metodbilagan.
         expect(w.__docDraftHtml()).toContain('Skillnaden i medellön delas med BAS och åldersgrupp');

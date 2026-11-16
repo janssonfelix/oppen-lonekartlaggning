@@ -7702,8 +7702,9 @@ function gapDelar(variabler) {
             orsak: `på att kvinnor och män är olika fördelade över ${ORD[x].overKort}` }
         : { id: 'ABCDE'[i], namn: `${_versal(ORD[x].liten)} inom ${inom(i)}`, variabel: x,
             betyder: `Kvinnor och män har olika ${ORD[x].olika} inom samma ${inom(i)}.`, orsak: `på olika ${ORD[x].olika} inom samma ${inom(i)}` });
-    delar.push({ id: 'ABCDE'[v.length], namn: `Inom ${inom(v.length)}`, variabel: null,
-        betyder: `Kvinnor och män har olika lön i samma ${inom(v.length)}.`, orsak: `på löneskillnader inom samma ${inom(v.length)}` });
+    // Den sista delen är det fördelningen inte förklarar (motsvarar regressionens oförklarade skillnad).
+    delar.push({ id: 'ABCDE'[v.length], namn: `Oförklarat: lön inom samma ${inom(v.length)}`, variabel: null,
+        betyder: `Kvinnor och män har olika lön i samma ${inom(v.length)}. Det är den del av skillnaden som fördelningen inte förklarar; en grupp med bara kvinnor eller bara män går inte att jämföra och räknas i stället till delarna ovan.`, orsak: `på löneskillnader inom samma ${inom(v.length)}` });
     return delar;
 }
 
@@ -35753,7 +35754,7 @@ function renderGapUppdelning() {
 // och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
 // under, och aldrig en enskild grupps bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas
 // bara när `u.skyddad`). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
-const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Lön inom samma grupp' };
+const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
 /** Delens andel av hela skillnaden i procent, eller null när den inte säger något: en liten skillnad (`litetGap`), en
  * del som går åt andra hållet än helheten eller en del som är större än helheten. @param {any} u @param {number} v */
 function _guAndel(u, v) {

@@ -22,7 +22,7 @@ export async function uppdelningensVariabler() {
     await s.click('#gap-uppdelning .gu-andra > summary');
     await s.waitForTimeout(300);
     const delar = () => s.evaluate(() => [...document.querySelectorAll('#gap-uppdelning [data-gu-del] .gu-rubrik strong')].map(e => e.textContent));
-    ok((await delar()).join(' | ') === 'A. BAS-fördelning | B. AID inom BAS | C. Inom AID och BAS', 'standardvalet ger dagens tre delar');
+    ok((await delar()).join(' | ') === 'A. BAS-fördelning | B. AID inom BAS | C. Oförklarat: lön inom samma AID och BAS', 'standardvalet ger dagens tre delar');
 
     // Välj bort AID och lägg till åldersgrupp, med riktiga klick.
     await s.click('#gap-uppdelning input[data-gu-var="aid"]');

@@ -353,7 +353,7 @@ rubrikraden, också när det är hopfällt.
    Standard är tre delar:
    - **BAS-fördelning:** kvinnor och män i olika BAS. Det är en fråga om karriärvägar och rekrytering.
    - **AID inom BAS:** olika AID-etiketter i samma BAS-intervall. Pröva likvärdigt arbete.
-   - **inom AID och BAS:** olika lön i samma arbete. Pröva lika arbete.
+   - **oförklarat, lön inom samma AID och BAS:** olika lön i samma arbete, det som fördelningen inte förklarar. En grupp med bara kvinnor eller bara män kan inte jämföras och räknas till delarna ovan. Pröva lika arbete.
 
    Under diagrammet fäller **Ändra uppdelning** ut rutan **Förklara med:**, där du väljer andra variabler: BAS, huvudområde, AID-mellannivå, AID och åldersgrupp
    (åldersgrupp bara när lönefilen har ålder). Välj en till fyra och ordna dem med pilknapparna. Ordningen spelar

@@ -115,8 +115,9 @@ export function gapDelar(variabler) {
             orsak: `på att kvinnor och män är olika fördelade över ${ORD[x].overKort}` }
         : { id: 'ABCDE'[i], namn: `${_versal(ORD[x].liten)} inom ${inom(i)}`, variabel: x,
             betyder: `Kvinnor och män har olika ${ORD[x].olika} inom samma ${inom(i)}.`, orsak: `på olika ${ORD[x].olika} inom samma ${inom(i)}` });
-    delar.push({ id: 'ABCDE'[v.length], namn: `Inom ${inom(v.length)}`, variabel: null,
-        betyder: `Kvinnor och män har olika lön i samma ${inom(v.length)}.`, orsak: `på löneskillnader inom samma ${inom(v.length)}` });
+    // Den sista delen är det fördelningen inte förklarar (motsvarar regressionens oförklarade skillnad).
+    delar.push({ id: 'ABCDE'[v.length], namn: `Oförklarat: lön inom samma ${inom(v.length)}`, variabel: null,
+        betyder: `Kvinnor och män har olika lön i samma ${inom(v.length)}. Det är den del av skillnaden som fördelningen inte förklarar; en grupp med bara kvinnor eller bara män går inte att jämföra och räknas i stället till delarna ovan.`, orsak: `på löneskillnader inom samma ${inom(v.length)}` });
     return delar;
 }
 

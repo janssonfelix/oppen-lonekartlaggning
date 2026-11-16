@@ -371,11 +371,11 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
     });
     it('gapuppdelningen som trappa: hela skillnaden först, sedan delarna från hela skillnaden mot noll', () => {
         const f = w.eval(`_guTrappaFigur({ gap: -2091, delar: { A: -1428, B: -434, C: -229 } })`);
-        expect(f.x.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
+        expect(f.x.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. AID inom BAS', 'C. Oförklarat: lön inom samma AID och BAS']);
         expect(f.lager.map(l => [l.marke, l.riktning || null, l.serie])).toEqual([['intervall', null, 'Hela skillnaden'], ['intervall', null, 'Hur kvinnor och män är fördelade'],
-            ['intervall', null, 'Lön inom samma grupp'], ['punkt', null, 'Nivå'], ['punkt', null, 'Belopp']]);
+            ['intervall', null, 'Oförklarat (lön inom samma grupp)'], ['punkt', null, 'Nivå'], ['punkt', null, 'Belopp']]);
         expect(f.lager[0].data.map(d => [d.x, d.lag, d.hog])).toEqual([['Hela skillnaden', -2091, 0]]);
-        expect([...f.lager[1].data, ...f.lager[2].data].map(d => [d.x, d.lag, d.hog])).toEqual([['A. BAS-fördelning', -2091, -663], ['B. AID inom BAS', -663, -229], ['C. Inom AID och BAS', -229, 0]]);
+        expect([...f.lager[1].data, ...f.lager[2].data].map(d => [d.x, d.lag, d.hog])).toEqual([['A. BAS-fördelning', -2091, -663], ['B. AID inom BAS', -663, -229], ['C. Oförklarat: lön inom samma AID och BAS', -229, 0]]);
         // Färgen säger vad delen betyder: struktur för delarna som förklaras av var kvinnor och män arbetar, lönesättningen för den sista.
         const P = w.eval('PALETTE.uppdelning');
         expect(f.lager.slice(0, 3).map(l => l.farg)).toEqual([P.helhet, P.struktur, P.lonesattning]);

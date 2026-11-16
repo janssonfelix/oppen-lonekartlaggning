@@ -312,7 +312,7 @@ describe('avsnittBlock uppdelning', () => {
         expect(text).toContain(`${formatTal(u.delar.A, 0)} kr på att kvinnor och män är olika fördelade över BAS`);
         expect(text).toContain('Urval: Hela organisationen.');
         expect(b.tabell.rubriker).toEqual(['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag']);
-        expect(b.tabell.rader.map(r => r[0])).toEqual(['BAS-fördelning', 'AID inom BAS', 'Inom AID och BAS', 'Totalt']);
+        expect(b.tabell.rader.map(r => r[0])).toEqual(['BAS-fördelning', 'AID inom BAS', 'Oförklarat: lön inom samma AID och BAS', 'Totalt']);
         expect(b.tabell.rader[3][2]).toBe('100 %');
         expect(b.tabell.rader[0][3]).toContain('BAS B');
     });
@@ -356,10 +356,10 @@ describe('avsnittBlock uppdelning', () => {
         const text = b.stycken.join(' ');
         expect(text).toContain('Uppdelningen förklarar med variablerna BAS, åldersgrupp och AID, i den ordningen. Ordningen påverkar delarna');
         expect(text).toMatch(/på olika ålder inom samma BAS, .* på olika AID inom samma åldersgrupp och BAS och .* på löneskillnader inom samma AID, åldersgrupp och BAS\./);
-        expect(b.tabell.rader.map(r => r[0])).toEqual(['BAS-fördelning', 'Åldersgrupp inom BAS', 'AID inom åldersgrupp och BAS', 'Inom AID, åldersgrupp och BAS', 'Totalt']);
+        expect(b.tabell.rader.map(r => r[0])).toEqual(['BAS-fördelning', 'Åldersgrupp inom BAS', 'AID inom åldersgrupp och BAS', 'Oförklarat: lön inom samma AID, åldersgrupp och BAS', 'Totalt']);
         const en = avsnittBlock('uppdelning', gapUppdelning(rik, { k: 10, variabler: ['alder'] }), { k: 10 });
         expect(en.stycken.join(' ')).toContain('Uppdelningen förklarar med variabeln åldersgrupp; resten är skillnaden inom samma grupp.');
-        expect(en.tabell.rader.map(r => r[0])).toEqual(['Åldersfördelning', 'Inom åldersgrupp', 'Totalt']);
+        expect(en.tabell.rader.map(r => r[0])).toEqual(['Åldersfördelning', 'Oförklarat: lön inom samma åldersgrupp', 'Totalt']);
     });
     it('null: "för få personer" utan tabell', () => {
         const b = avsnittBlock('uppdelning', null, { k: 10, demo: true });

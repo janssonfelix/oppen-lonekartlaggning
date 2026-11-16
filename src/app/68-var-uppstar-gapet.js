@@ -173,7 +173,7 @@ function renderGapUppdelning() {
 // och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
 // under, och aldrig en enskild grupps bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas
 // bara när `u.skyddad`). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
-const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Lön inom samma grupp' };
+const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
 /** Delens andel av hela skillnaden i procent, eller null när den inte säger något: en liten skillnad (`litetGap`), en
  * del som går åt andra hållet än helheten eller en del som är större än helheten. @param {any} u @param {number} v */
 function _guAndel(u, v) {
