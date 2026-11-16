@@ -17,31 +17,37 @@ const { w, behallare, utdata, medData } = skapaRigg();
 
 describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per BAS', () => {
     const steg = [{ name: 'Endast kön', status: 'ok', gapPct: -9.4 }, { name: '+ BAS-intervall', status: 'ok', gapPct: -4.1 }, { name: '+ Ålder', status: 'ok', gapPct: -4.6 }];
-    it('trappan: ojusterat och oförklarat gap som staplar, varje steg som ett spann från gapet före till gapet efter', () => {
+    it('trappan: liggande, den ojusterade skillnaden först, stegen som spann från gapet före till gapet efter och det oförklarade sist', () => {
         w.__s = steg;
         const f = w.eval('_regTrappaFigur(window.__s)');
-        expect(f.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad']);
-        expect(f.lager.map(l => l.marke)).toEqual(['stapel', 'intervall', 'punkt']);
-        expect(f.lager[0].data).toEqual([{ x: 'Ojusterad skillnad', y: -9.4 }, { x: 'Oförklarad skillnad', y: -4.6 }]);
-        expect(f.lager[1].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['BAS-intervall', -9.4, -4.1, '#2a78d6'], ['Ålder', -4.6, -4.1, '#eb6834']]);   // krymper: seriens blå; växer: orange — inga statusfärger
-        expect(f.lager[2].data.map(d => d.etikett)).toEqual(['−9,4\u00a0%', '−4,1\u00a0%', '−4,6\u00a0%', '−4,6\u00a0%']);
-        expect(f.y.nollinje).toBe(true);
+        expect(f.y.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad']);
+        expect(f.lager.map(l => [l.marke, l.riktning || null])).toEqual([['intervall', 'liggande'], ['intervall', 'liggande'], ['intervall', 'liggande'], ['punkt', null]]);
+        expect(f.lager[0].data.map(d => [d.y, d.lag, d.hog])).toEqual([['Ojusterad skillnad', -9.4, 0]]);
+        expect(f.lager[2].data.map(d => [d.y, d.lag, d.hog])).toEqual([['Oförklarad skillnad', -4.6, 0]]);
+        expect(f.lager[1].data.map(d => [d.y, d.lag, d.hog])).toEqual([['BAS-intervall', -9.4, -4.1], ['Ålder', -4.6, -4.1]]);
+        // Färgen säger vad stapeln betyder, inte riktningen: helheten neutral, stegen struktur, det oförklarade lönesättningen.
+        const P = w.eval('PALETTE.uppdelning');
+        expect(f.lager.slice(0, 3).map(l => l.farg)).toEqual([P.helhet, P.struktur, P.lonesattning]);
+        expect(f.lager[1].data.every(d => d.farg === undefined)).toBe(true);
+        expect(f.lager[3].data.map(d => [d.etikett, d.etikettLage])).toEqual([['−9,4\u00a0%', 'vanster'], ['−4,1\u00a0%', 'hoger'], ['−4,6\u00a0%', 'vanster'], ['−4,6\u00a0%', 'vanster']]);
+        expect(f.x.nollinje).toBe(true);
+        expect(f.legend).toBeUndefined();
         expect(vanliga([f.lager[1].tips(f.lager[1].data[0])[1]])[0]).toEqual(['Ändrar skillnaden med', '+5,3 procentenheter']);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('trappan med yrkesgruppssteget: ett ljusare spann efter huvudtalet, med egen nivå, och beskrivningen säger att det inte ingår i huvudtalet', () => {
         w.__s = steg; w.__y = { name: '+ Yrkesgrupp', status: 'ok', gapPct: -2.3 };
         const f = w.eval('_regTrappaFigur(window.__s, window.__y)');
-        expect(f.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
-        expect(f.lager.map(l => l.marke)).toEqual(['stapel', 'intervall', 'intervall', 'punkt']);
-        expect(f.lager[2]).toMatchObject({ opacitet: 0.45, serie: 'AID-etikett inom BAS (ingår inte i huvudtalet)' });
-        expect(f.lager[2].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['AID-etikett inom BAS', -4.6, -2.3, '#2a78d6']]);
-        expect(f.lager[3].data.map(d => d.etikett)).toEqual(['−9,4\u00a0%', '−4,1\u00a0%', '−4,6\u00a0%', '−4,6\u00a0%', '−2,3\u00a0%']);
+        expect(f.y.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
+        expect(f.lager.map(l => l.marke)).toEqual(['intervall', 'intervall', 'intervall', 'intervall', 'punkt']);
+        expect(f.lager[3]).toMatchObject({ farg: w.eval('PALETTE.uppdelning.strukturLjus'), serie: 'Utöver huvudtalet' });
+        expect(f.lager[3].data.map(d => [d.y, d.lag, d.hog])).toEqual([['AID-etikett inom BAS', -4.6, -2.3]]);
+        expect(f.lager[4].data.map(d => d.etikett)).toEqual(['−9,4\u00a0%', '−4,1\u00a0%', '−4,6\u00a0%', '−4,6\u00a0%', '−2,3\u00a0%']);
         expect(f.beskrivning).toMatch(/Räknas också AID-etikett inom BAS bort blir −2,3\s% kvar; det steget ingår inte i huvudtalet/);
         expect(() => valideraFigur(f, 't')).not.toThrow();
         // Ett utelämnat yrkesgruppssteg ger trappan utan det steget.
         w.__y = { name: '+ Yrkesgrupp', status: 'too_few' };
-        expect(w.eval('_regTrappaFigur(window.__s, window.__y)').x.ordning).toHaveLength(4);
+        expect(w.eval('_regTrappaFigur(window.__s, window.__y)').y.ordning).toHaveLength(4);
     });
     it('trappan visas bara när alla steg får visas — aldrig när det ojusterade steget är utelämnat', () => {
         w.__u = { steg, utelamnat: false };
@@ -67,7 +73,7 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         w3.__renderTabContent('struktur');
         const el = w3.document.getElementById('chart-reg-trappa');
         expect(el && el._figur).toBeTruthy();
-        expect(el._figur.x.ordning[0]).toBe('Ojusterad skillnad');
+        expect(el._figur.y.ordning[0]).toBe('Ojusterad skillnad');
         expect(el.querySelectorAll('[data-marke="intervall"]').length).toBe(el._figur.lager.filter(l => l.marke === 'intervall').reduce((n, l) => n + l.data.length, 0));   // med yrkesgruppssteget när det visas
     });
     it('gapet längs lönefördelningen: tre rader från nollinjen, med värdet utskrivet och noll inom axeln', () => {

@@ -579,7 +579,14 @@
                     <div id="st-urval" class="urvalsrad"></div>
                     <div id="st-slutsatser" class="slutsatser"></div>
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
-                    <details class="avsnitt" id="avsnitt-st-representation" open>
+                    <details class="avsnitt" id="avsnitt-ov-gap" open>
+                    <summary><span class="avsnitt-titel"><h2>Var uppstår löneskillnaden?</h2> <span class="info-tip" data-tooltip="Skillnaden i medellön delas i delar efter de variabler du väljer. Standard är tre delar: fördelningen över BAS-intervall, fördelningen över AID-etiketter inom samma intervall och lönen inom samma AID-etikett och intervall. Tillsammans blir de hela skillnaden." data-term-template="Skillnaden i medellön delas i delar efter de variabler du väljer. Standard är tre delar: fördelningen över {niva.fl}, fördelningen över {enhet.fl} inom samma intervall och lönen inom samma {enhet.en} och intervall. Tillsammans blir de hela skillnaden." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><span class="avsnitt-under" data-term-template="Fördelning över {niva.fl}, över {enhet.fl} eller lön inom samma arbete">Fördelning över BAS-intervall, över AID-etiketter eller lön inom samma arbete</span></span><span class="avsnitt-nyckel" id="nyckel-ov-gap"></span></summary>
+                    <section id="gap-uppdelning" class="card gu-kort" aria-labelledby="gap-uppdelning-rubrik" hidden>
+                        <h2 id="gap-uppdelning-rubrik" hidden>Var uppstår löneskillnaden?</h2>
+                        <div id="gap-uppdelning-innehall"></div>
+                    </section>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-st-representation">
                     <summary><span class="avsnitt-titel"><h2 data-term-template="Representation per {niva.en}">Representation per BAS-intervall</h2><span class="avsnitt-under" data-term-template="Sjunker andelen kvinnor mot högre {niva.fl}? (segregering)">Sjunker andelen kvinnor mot högre BAS-intervall? (segregering)</span></span><span class="avsnitt-nyckel" id="nyckel-st-representation"></span></summary>
                     <div class="card">
                         
@@ -608,13 +615,6 @@
                         <div id="struktur-sektorer"></div>
                         <div id="chart-sektorer"></div>
                     </div>
-                    </details>
-                    <details class="avsnitt" id="avsnitt-ov-gap">
-                    <summary><span class="avsnitt-titel"><h2>Var uppstår löneskillnaden?</h2> <span class="info-tip" data-tooltip="Skillnaden i medellön delas i delar efter de variabler du väljer. Standard är tre delar: fördelningen över BAS-intervall, fördelningen över AID-etiketter inom samma intervall och lönen inom samma AID-etikett och intervall. Tillsammans blir de hela skillnaden." data-term-template="Skillnaden i medellön delas i delar efter de variabler du väljer. Standard är tre delar: fördelningen över {niva.fl}, fördelningen över {enhet.fl} inom samma intervall och lönen inom samma {enhet.en} och intervall. Tillsammans blir de hela skillnaden." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><span class="avsnitt-under" data-term-template="Fördelning över {niva.fl}, över {enhet.fl} eller lön inom samma arbete">Fördelning över BAS-intervall, över AID-etiketter eller lön inom samma arbete</span></span><span class="avsnitt-nyckel" id="nyckel-ov-gap"></span></summary>
-                    <section id="gap-uppdelning" class="card gu-kort" aria-labelledby="gap-uppdelning-rubrik" hidden>
-                        <h2 id="gap-uppdelning-rubrik" hidden>Var uppstår löneskillnaden?</h2>
-                        <div id="gap-uppdelning-innehall"></div>
-                    </section>
                     </details>
                     <details class="avsnitt" id="avsnitt-st-eu">
                     <summary><span class="avsnitt-titel"><h2>Lönetransparensdirektivets mått</h2><span class="avsnitt-under">Det som större arbetsgivare ska rapportera när direktivet gäller</span></span><span class="avsnitt-nyckel" id="nyckel-st-eu"></span></summary>

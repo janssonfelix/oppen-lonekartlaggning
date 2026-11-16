@@ -66,14 +66,16 @@ describe('Uppgift 2: Lönestruktur', () => {
         for (const id of ['chart-skevhet-overview', 'chart-skevhet-andel', 'chart-perbas-gap'])
             expect(w.eval('RM_DIAGRAM').find(r => r.id === id).flik, id).toBe('struktur');
     });
-    it('bara representationen är utfälld i Lönestruktur efter inläsning', () => {
+    it('Var uppstår löneskillnaden? står först i Lönestruktur och är det enda utfällda avsnittet efter inläsning', () => {
         const w = createAppWindow(); w.__loadDemoData();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const oppna = ['view-struktur', 'view-skevhet', 'view-regression']
             .flatMap(id => [...d.getElementById(id).querySelectorAll('details.avsnitt')])
             .filter(a => a.open).map(a => a.id);
-        expect(oppna).toEqual(['avsnitt-st-representation']);
+        expect(oppna).toEqual(['avsnitt-ov-gap']);
+        expect(d.getElementById('view-struktur').querySelector('details.avsnitt').id).toBe('avsnitt-ov-gap');
+        expect(d.getElementById('avsnitt-ov-gap').nextElementSibling.id).toBe('avsnitt-st-representation');
     });
     it('Organisationen som karta är ett hopfällt avsnitt efter representationen, med antalet yrkesgrupper i rubriken', () => {
         const w = createAppWindow(); w.__loadDemoData();

@@ -245,18 +245,29 @@ function _rfPunkt(g, l, li, c) {
             // bredaste stapel bandet rymmer, till höger eller vid högerkanten till vänster — aldrig på andra sidan, där
             // stapeln är.
             const fast = !l.etikettLage && (d.etikettLage === 'under' || d.etikettLage === 'over') ? d.etikettLage : null;
+            // Datapunktens etikettLage 'vanster' eller 'hoger' i ett liggande diagram: värdet vid änden av en liggande
+            // stapel, utanför den. Rummet vid panelens kant är reserverat (_rfPunktEtikettRum).
+            const vid = !l.etikettLage && vagrat ? (d.etikettLage === 'vanster' ? -1 : d.etikettLage === 'hoger' ? 1 : 0) : 0;
             const fastRyms = fast === 'under' ? y + r + fpx * 1.25 <= c.inreH : y - r - 3 >= fpx;
             const ut = Math.max(l.symbol === 'streck' && !vagrat ? 2 * r : r, c.x.bandwidth ? Math.min(c.x.bandwidth(), _RF.stapelMax) / 2 : 0);
-            const sida = l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1)
-                : fast && !fastRyms ? (x + ut + 5 + tb > c.panelB ? -1 : 1) : 0;
-            const tx = x + sida * ((fast ? ut : r) + 5);
-            const ty = sida ? y + fpx * 0.35
+            const sida = vid || (l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1)
+                : fast && !fastRyms ? (x + ut + 5 + tb > c.panelB ? -1 : 1) : 0);
+            let tx = x + sida * (vid ? _rfVidAvstand(l, r) : (fast ? ut : r) + 5);
+            let ty = sida ? y + fpx * 0.35
                 : fast === 'under' ? y + r + fpx
                 : fast === 'over' ? y - r - 3
                 : (y - r - 3 < fpx ? y + r + fpx : y - r - 3);
-            const t = _rfText(c.texter, tx, ty, text, { px: fpx, ankare: sida < 0 ? 'end' : sida > 0 ? 'start' : 'middle', title: hel,
+            let ankare = sida < 0 ? 'end' : sida > 0 ? 'start' : 'middle';
+            // Ryms etiketten bredvid änden av en liggande stapel inte i panelen (en smal bild, där rummet vid kanten är
+            // fullt) står den tätt under stapeln, vid änden och inom panelen.
+            if (vid && (vid < 0 ? tx - tb < 0 : tx + tb > c.panelB)) {
+                tx = Math.max(0, Math.min(vid < 0 ? x - tb : x, c.panelB - tb));
+                ty = y + (l.symbol === 'streck' ? 2 * r : r) + fpx * 0.85;
+                ankare = 'start';
+            }
+            const t = _rfText(c.texter, tx, ty, text, { px: fpx, ankare, title: hel,
                 attr: { 'data-marke': 'punktetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
-            if (c.punktetiketter) c.punktetiketter.push({ t, y: ty, hojd: fpx + 3, over: !sida && ty < y, x0: sida < 0 ? tx - tb : sida > 0 ? tx : tx - tb / 2, x1: sida < 0 ? tx : sida > 0 ? tx + tb : tx + tb / 2 });
+            if (c.punktetiketter) c.punktetiketter.push({ t, y: ty, hojd: fpx + 3, over: !sida && ty < y, x0: ankare === 'end' ? tx - tb : ankare === 'start' ? tx : tx - tb / 2, x1: ankare === 'end' ? tx : ankare === 'start' ? tx + tb : tx + tb / 2 });
         }
         if (l.opacitet != null) m.attr('fill-opacity', l.opacitet);
         if (l.ofylld) _rfOfylld(m, farg);

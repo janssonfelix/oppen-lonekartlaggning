@@ -541,7 +541,8 @@ export async function flikarOchDiagram() {
 
         await ga('struktur');
         let l = await lage('avsnitt-st-');
-        ok(l.oppna === 'avsnitt-st-representation' && l.rutor === 5 && l.lank === 0 && l.skarmar < 2.5, `Struktur: fem slutsatser och representationen utfälld, kartan hopfälld (${l.skarmar.toFixed(1)} skärmar)`);
+        const gapForst = await page.evaluate(() => document.querySelector('#view-struktur details.avsnitt').id === 'avsnitt-ov-gap' && document.getElementById('avsnitt-ov-gap').open);
+        ok(gapForst && l.oppna === '' && l.rutor === 5 && l.lank === 0 && l.skarmar < 3.5, `Struktur: fem slutsatser och Var uppstår löneskillnaden? först och utfällt, övriga hopfällda (${l.skarmar.toFixed(1)} skärmar)`);
         console.log(`  Lönestruktur: ${l.skarmar.toFixed(2)} skärmhöjder`);
         ok(await page.evaluate(() => !!document.querySelector('#chart-struktur-tradkarta svg') && !document.getElementById('avsnitt-st-karta').open), 'Struktur: kartan är ritad i sitt hopfällda avsnitt');
         let b = await fyller('avsnitt-st-karta', 'chart-struktur-tradkarta');

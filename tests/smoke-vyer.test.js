@@ -451,8 +451,9 @@ describe('menystruktur', () => {
 
 describe('utfällt som standard', () => {
     // Hjälppaneler förblir infällda; explore-urval-val är Utforskas rullgardin för värdeval och diagram-urval-lista
-    // diagramkärnans lista med kryssrutor ("Räkna för sektor", "Yrkesgrupp") — kontroller, inte grupperingar.
-    const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista'];
+    // diagramkärnans lista med kryssrutor ("Räkna för sektor", "Yrkesgrupp") och gu-andra valet av förklaringsvariabler
+    // under trappan i Var uppstår löneskillnaden? ("Ändra uppdelning") — kontroller, inte grupperingar.
+    const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista', 'gu-andra'];
     // ADR-36: organisationspaketets rad är ihopfälld på Översikt, och Underlagets kvalitet är
     // ihopfälld när allt är OK (utfälld vid varning).
     const UNDANTAG_ID = ['organisationspaket', 'uk-fallbar'];
@@ -470,9 +471,10 @@ describe('utfällt som standard', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         // Per flik i den nya formen: det första avsnittet öppet, övriga hopfällda.
+        // Lönestruktur har ett avsnitt utan flikens prefix först (Var uppstår löneskillnaden?, avsnitt-ov-gap): där läses fliken.
         for (const [prefix, forsta] of [['avsnitt-la-', 'avsnitt-la-yrkesgrupper'], ['avsnitt-ak-', 'avsnitt-ak-karriar'], ['avsnitt-ar-', 'avsnitt-ar-konfiguration'],
-                ['avsnitt-st-', 'avsnitt-st-representation'], ['avsnitt-lo-', 'avsnitt-lo-riktade']]) {
-            const flikens = [...w.document.querySelectorAll(`details.avsnitt[id^="${prefix}"]`)];
+                ['#view-struktur', 'avsnitt-ov-gap'], ['avsnitt-lo-', 'avsnitt-lo-riktade']]) {
+            const flikens = [...w.document.querySelectorAll(prefix.startsWith('#') ? `${prefix} details.avsnitt` : `details.avsnitt[id^="${prefix}"]`)];
             // Prefixet säger fliken: inget av de här avsnitten står i Rapporttext (dess avsnitt bär prefixet rt-).
             expect(flikens.filter(a => a.closest('#view-rapporttext')).map(a => a.id), prefix).toEqual([]);
             expect(flikens.length, prefix).toBeGreaterThanOrEqual(4);

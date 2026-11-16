@@ -55,7 +55,14 @@ const PALETTE = {
     // Prioriteringens statusar. «Börja här» och «Värt att granska» är lila — samma färg som statusen «Värt att granska»
     // i Lika arbetes yrkesgruppstabell (lila överallt, inte rött). Lila säger «titta
     // här först» utan att påstå att något är fel; rött är förbehållet fel i underlaget.
-    prio: { akut: FARG.granska, atgard: FARG.granskaLjus, bevaka: '#d97706', ok: FARG.ok, analysera: FARG.info }
+    prio: { akut: FARG.granska, atgard: FARG.granskaLjus, bevaka: '#d97706', ok: FARG.ok, analysera: FARG.info },
+    // Trapporna som delar en löneskillnad (Var uppstår löneskillnaden?, Vad blir kvar av löneskillnaden?). Färgen säger
+    // vad delen betyder, inte åt vilket håll den går: hela skillnaden neutral, det som förklaras av var kvinnor och män
+    // arbetar (struktur) en färg, och det som blir kvar inom samma grupp (lönesättningen) en annan. Inga statusfärger:
+    // att något förklaras är ingen bedömning. Seriens två första färger, som skiljer sig också vid färgblindhet.
+    // strukturLjus är ett steg som inte ingår i huvudtalet (regressionens AID-etikett inom BAS): strukturens blå,
+    // ljusare, som en färg och inte som genomskinlighet, så att förklaringens ruta har samma färg som stapeln.
+    uppdelning: { helhet: FARG.dampad, struktur: '#2a78d6', strukturLjus: '#9fc2ed', lonesattning: '#eb6834' }
 };
 
 // Uppmärksamhetstrappan (ADR-59): statusordförrådet för en skillnad mellan kvinnors och mäns lön — ETT ställe för alla

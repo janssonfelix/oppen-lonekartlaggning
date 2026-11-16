@@ -3676,6 +3676,32 @@ describe('etiketter som inte täcker varandra (etapp 1b, U7)', () => {
         expect(ruta(u).y0).toBeGreaterThan(tal(cu, 'cy') + tal(cu, 'r'));
         expect(ruta(o).y1).toBeLessThan(tal(co, 'cy') - tal(co, 'r'));
     });
+    it("en datapunkt med etikettLage 'vanster' eller 'hoger' i ett liggande diagram: etiketten bredvid punkten, och rum vid panelens kant", () => {
+        // Som trapporna: värdet vid änden av en liggande stapel, med punkten i axelns ändar.
+        const f = { beskrivning: 'V', legend: false, y: { skala: 'band', ordning: ['A', 'B', 'C'] }, x: { skala: 'linjar', nollinje: true },
+            lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'I', data: [{ y: 'A', lag: -2000, hog: 0 }, { y: 'B', lag: -2000, hog: -300 }, { y: 'C', lag: -300, hog: 0 }] },
+                { marke: 'punkt', symbol: 'streck', serie: 'S', utanData: true, data: [{ y: 'A', x: -2000, etikett: '−2 000 kr', etikettLage: 'vanster' },
+                    { y: 'B', x: -300, etikett: '−1 700 kr · 85 %', etikettLage: 'hoger' }, { y: 'C', x: 0, etikett: '−300 kr · 15 %', etikettLage: 'hoger' }] }] };
+        for (const bredd of [600, 900]) {
+            const svg = rita(f, bredd);
+            const panel = svg.querySelector('svg[data-del="panel"]');
+            // Etikettens ruta i panelens koordinater (texterna och panelen har samma förälder).
+            const lokal = t => { const br = texten(t).length * tal(t, 'font-size') * NF, x = tal(t, 'x');
+                return t.getAttribute('text-anchor') === 'end' ? { x0: x - br, x1: x } : { x0: x, x1: x + br }; };
+            const [a, b, c] = alla(svg, 'text[data-marke="punktetikett"]');
+            const [pa, pb, pc] = alla(svg, 'path[data-marke="punkt"]').map(p => +/M([-\d.e]+)/.exec(p.getAttribute('d'))[1]);
+            expect(a.getAttribute('text-anchor')).toBe('end'); expect(tal(a, 'x')).toBeLessThan(pa);
+            expect(b.getAttribute('text-anchor')).toBe('start'); expect(tal(b, 'x')).toBeGreaterThan(pb);
+            expect(c.getAttribute('text-anchor')).toBe('start'); expect(tal(c, 'x')).toBeGreaterThan(pc);
+            // Inom panelen: rummet till vänster om −2 000 och till höger om noll är reserverat.
+            expect(lokal(a).x0, `${bredd}`).toBeGreaterThanOrEqual(0);
+            expect(lokal(c).x1, `${bredd}`).toBeLessThanOrEqual(tal(panel, 'width'));
+        }
+        // Utan etiketter reserveras inget: nollan står vid panelens högra kant.
+        const utan = rita({ ...f, lager: [f.lager[0], { ...f.lager[1], data: f.lager[1].data.map(({ etikett: _e, ...d }) => d) }] }, 600);
+        const noll = utan.querySelector('[data-marke="nollinje"]'), pan = utan.querySelector('svg[data-del="panel"]');
+        expect(tal(pan, 'width') - tal(noll, 'x1')).toBeLessThan(8);
+    });
     it('en zonetikett som inte ryms på en rad men på två bryts vid ordgränsen, utan …, och står inom zonen', () => {
         const f = () => ({ beskrivning: 'Z', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 10] },
             referens: [{ typ: 'zon', x0: 80, x1: 92, etikett: 'ÖVER REFERENS' }], lager: [{ marke: 'punkt', data: [{ x: 10, y: 1 }] }] });

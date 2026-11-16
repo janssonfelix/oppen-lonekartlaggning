@@ -15,7 +15,7 @@ describe('Sidindex', () => {
         const w = createAppWindow(); w.__loadDemoData();
         oppna(w, 'struktur');
         const lista = poster(w);
-        expect(lista.slice(0, 2)).toEqual(['Representation per BAS-intervall', 'Organisationen som karta']);
+        expect(lista.slice(0, 3)).toEqual(['Var uppstår löneskillnaden?', 'Representation per BAS-intervall', 'Organisationen som karta']);
         expect(lista).toContain('Lönetransparensdirektivets mått');
         // Alla tre panelerna i fliken, i sidans ordning.
         expect(lista.indexOf('Representation per BAS-intervall')).toBeLessThan(lista.indexOf('Löneskillnad per BAS-intervall'));
@@ -75,7 +75,7 @@ describe('Sidindex', () => {
         const w = createAppWindow(); w.__loadDemoData();
         oppna(w, 'struktur');
         const summary = () => w.document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim();
-        expect(summary()).toBe('På den här sidan: Representation per BAS-intervall');
+        expect(summary()).toBe('På den här sidan: Var uppstår löneskillnaden?');
         w.eval('_sidindexMarkera("avsnitt-st-eu")');
         expect(summary()).toBe('På den här sidan: Lönetransparensdirektivets mått');
         expect(w.document.querySelector('#sidindex a.ar-aktiv').dataset.sidindex).toBe('avsnitt-st-eu');

@@ -352,6 +352,40 @@ function _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, tak) {
     return rum;
 }
 
+// Avståndet från punktens mitt till etiketten bredvid den (datapunktens etikettLage 'vanster' eller 'hoger' i ett
+// liggande diagram): ett lodrätt streck är smalt, en symbol har sin radie.
+const _rfVidAvstand = (l, r) => (l.symbol === 'streck' ? 2 : r) + 5;
+// Rummet på x för punktetiketter bredvid änden av en liggande stapel (datapunktens etikettLage 'vanster' eller
+// 'hoger', när lagret saknar eget etikettLage): etiketten ska stå inom panelen, och står punkten nära kanten
+// reserveras det som fattas. Punktens läge beror på rummet (omfånget krymper), så rummet räknas om några varv.
+// Bara ritade punkter räknas (S1), och resultatet beror bara på domänen, texterna och panelbredden `L`.
+function _rfPunktEtikettRum(rum, figurIn, syn, px, L) {
+    if (figurIn.x.skala === 'band' || figurIn.y.skala !== 'band' || !syn.doms.x) return rum;
+    const sk = _rfSkala(figurIn.x, syn.doms.x, [0, 1]), omv = !!figurIn.x.omvand, fpx = _rfLitenPx(px);
+    const krav = [];
+    for (const { l } of syn.synliga) {
+        if (l.marke !== 'punkt' || l.etikettLage) continue;
+        for (const d of l.data) {
+            if (!d || syn.dold(d) || d.etikett == null || String(d.etikett) === '' || (d.etikettLage !== 'vanster' && d.etikettLage !== 'hoger')) continue;
+            const f0 = sk(d.x);
+            if (!_rfTal(f0)) continue;
+            const r = _rfTal(d.storlek) ? d.storlek : (l.storlek || 4);
+            const w = _rfBredd(_rfKorta(String(d.etikett), 28), fpx) + _rfVidAvstand(l, r) + 2;
+            krav.push({ f: omv ? 1 - f0 : f0, w, vanster: d.etikettLage === 'vanster' });
+        }
+    }
+    if (!krav.length) return rum;
+    let lo = rum.x.lo, hi = rum.x.hi;
+    for (let varv = 0; varv < 4; varv++) {
+        for (const { f, w, vanster } of krav) {
+            // Läget i panelen är lo + f·(L − lo − hi). Till vänster ska det vara minst w, till höger högst L − w.
+            if (vanster && f < 1) lo = Math.max(lo, (w - f * (L - hi)) / (1 - f));
+            if (!vanster && f > 0) hi = Math.max(hi, (w - (1 - f) * (L - lo)) / f);
+        }
+    }
+    return { ...rum, x: { lo: Math.ceil(lo), hi: Math.ceil(hi) } };
+}
+
 const _rfNf = new Map();
 function _rfDecimaler(vard) {
     for (let dec = 0; dec < 8; dec++) {

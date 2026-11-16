@@ -16,7 +16,10 @@ export async function uppdelningensVariabler() {
     await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 30000 });
     await s.evaluate(() => document.querySelector('.nav-item[data-tab="struktur"]').click());
     await s.waitForTimeout(600);
-    await s.evaluate(() => { document.getElementById('avsnitt-ov-gap').open = true; });
+    ok(await s.evaluate(() => document.getElementById('avsnitt-ov-gap').open && !document.querySelector('#gap-uppdelning .gu-andra').open),
+        'avsnittet är utfällt och valet hopfällt bakom «Ändra uppdelning»');
+    // Valet står under trappan: «Ändra uppdelning» fäller ut det, och det står kvar utfällt när kortet ritas om.
+    await s.click('#gap-uppdelning .gu-andra > summary');
     await s.waitForTimeout(300);
     const delar = () => s.evaluate(() => [...document.querySelectorAll('#gap-uppdelning [data-gu-del] .gu-rubrik strong')].map(e => e.textContent));
     ok((await delar()).join(' | ') === 'A. BAS-fördelning | B. AID inom BAS | C. Inom AID och BAS', 'standardvalet ger dagens tre delar');
@@ -32,6 +35,7 @@ export async function uppdelningensVariabler() {
     ok(r.skyddad && r.rest !== null && Math.abs(r.rest) < 1e-6, `delarna summerar till hela skillnaden (rest ${r.rest})`);
     ok((await delar()).join(' | ') === 'A. BAS-fördelning | B. Åldersgrupp inom BAS | C. Inom åldersgrupp och BAS', 'delarnas namn byggs ur variablerna');
     ok(r.staplar > 0, 'trappan ritas om');
+    ok(await s.evaluate(() => document.querySelector('#gap-uppdelning .gu-andra').open), 'valet står kvar utfällt efter omritningen');
 
     // Tangentbordet: fokus på Flytta upp för åldersgrupp, Enter flyttar.
     await s.focus('#gap-uppdelning [data-gu-rad="alder"] [data-gu-flytta="-1"]');

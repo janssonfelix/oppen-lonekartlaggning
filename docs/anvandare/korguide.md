@@ -328,7 +328,8 @@ rubrikraden, också när det är hopfällt.
    signalen om undervärdering, men BAS är ett grovt mått på krav — pröva paren mot
    befattningsbeskrivningarna.
 5. **Lönestruktur** — varför skillnaden finns där den finns. Fliken öppnar med slutsatserna. Under
-   Fördjupning är bara representationen utfälld, och resten fälls ut vid behov.
+   Fördjupning står **Var uppstår löneskillnaden?** först och är det enda utfällda avsnittet (se nedan); resten
+   fälls ut vid behov.
    - **Representation per BAS-intervall** visar segregeringen: sjunker andelen kvinnor mot högre BAS-intervall?
    - **Organisationen som karta** visar varje AID-etikett som en yta efter antal personer och andel kvinnor.
    - **Var i lönefördelningen är skillnaden störst?** visar lönen vid olika percentiler för kvinnor och män. Då
@@ -345,12 +346,16 @@ rubrikraden, också när det är hopfällt.
    huvudområden. Pilen vid ett huvudområde öppnar dess AID-etiketter i Tabeller och egna vyer. Lika arbete, likvärdigt arbete
    och övriga analyser gäller alltid hela organisationen.
    **Var uppstår löneskillnaden?** delar skillnaden i medellön i delar som tillsammans blir hela
-   skillnaden. Diagrammet visar dem som en trappa som landar i hela skillnaden. Standard är tre delar:
+   skillnaden. Diagrammet är en liggande trappa: hela skillnaden överst, sedan delarna en i taget från hela
+   skillnaden mot noll, med beloppet och andelen av skillnaden vid varje stapel. Färgen säger vad delen är: blått
+   för det som förklaras av var kvinnor och män arbetar, orange för lönen inom samma grupp och grått för hela
+   skillnaden. En del som går åt andra hållet än hela skillnaden får bara sitt belopp; verktygstipset säger varför.
+   Standard är tre delar:
    - **BAS-fördelning:** kvinnor och män i olika BAS. Det är en fråga om karriärvägar och rekrytering.
    - **AID inom BAS:** olika AID-etiketter i samma BAS-intervall. Pröva likvärdigt arbete.
    - **inom AID och BAS:** olika lön i samma arbete. Pröva lika arbete.
 
-   Under raden **Förklara med:** väljer du andra variabler: BAS, huvudområde, AID-mellannivå, AID och åldersgrupp
+   Under diagrammet fäller **Ändra uppdelning** ut rutan **Förklara med:**, där du väljer andra variabler: BAS, huvudområde, AID-mellannivå, AID och åldersgrupp
    (åldersgrupp bara när lönefilen har ålder). Välj en till fyra och ordna dem med pilknapparna. Ordningen spelar
    roll: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.
    AID-nivåerna står alltid från grov till fin. Med BAS och åldersgrupp blir delarna *BAS-fördelning*, *Åldersgrupp

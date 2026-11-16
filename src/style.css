@@ -2833,9 +2833,11 @@ summary:focus-visible {
 .gu-belopp { font-variant-numeric: tabular-nums; font-weight: 600; }
 .gu-andel, .gu-not, .gu-ovriga { color: var(--text-muted); font-size: var(--fs-sm); }
 .gu-stapel { position: relative; height: 10px; margin: 6px 0; background: linear-gradient(to right, transparent calc(50% - 1px), var(--border) calc(50% - 1px), var(--border) calc(50% + 1px), transparent calc(50% + 1px)); }
-.gu-fyll { display: block; height: 100%; border-radius: 2px; }
-.gu-pos { background: var(--primary); }
-.gu-neg { background: var(--text-muted); }
+.gu-stapel > svg { display: block; overflow: visible; }
+.gu-ruta { flex: none; align-self: center; }
+.gu-andra { margin: 0 0 12px; }
+.gu-andra > summary { cursor: pointer; width: max-content; max-width: 100%; padding: 4px 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-main); }
+.gu-andra[open] > summary { margin-bottom: 8px; }
 .gu-text { margin: 4px 0; font-size: var(--fs-sm); }
 .gu-val { margin: 0 0 12px; padding: 10px 14px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--yta); min-width: 0; }
 .gu-val > legend { padding: 0 6px; font-size: var(--fs-sm); font-weight: 600; }
