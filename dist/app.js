@@ -506,9 +506,11 @@ document.addEventListener('click', e => {
     const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
     if (goto) {
         const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute('data-goto-tab')) + '"]');
-        if (nav) /** @type {HTMLElement} */ (nav).click();
         const avsnitt = goto.getAttribute('data-goto-avsnitt');
-        if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt);
+        const tillAvsnitt = () => { if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt); };
+        // Användarens klick visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
+        if (nav && !(/** @type {HTMLInputElement} */ (nav).disabled)) klickaFlik(nav, { uppskjut: e.isTrusted, efter: tillAvsnitt });
+        else { if (nav) /** @type {HTMLElement} */ (nav).click(); tillAvsnitt(); }
         return;
     }
     const dismiss = /** @type {HTMLElement} */ (e.target).closest('[data-dismiss-parent]');
@@ -1200,11 +1202,23 @@ function toggleAllGroups(tableId, collapse) {
 }
 
 // ---- Cross-tab navigation ----
+/**
+ * Byter till fliken. `uppskjut`: fliken visas först och räknas sedan (ADR-80, 31-navigering.js), och det som ska göras
+ * i fliken (sökningen, markeringen, `efter`) görs när den är ritad. Svarar om fliken byttes.
+ * @param {string} tabName
+ * @param {{uppskjut?: boolean, efter?: (() => void)|null, search?: string, searchInputId?: string,
+ *   highlightMatch?: {tableId: string, contains: string[]}}} [opts]
+ */
 function navigateTo(tabName, opts = {}) {
     tabName = tabMal(tabName);
     const btn = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
-    if (!btn || /** @type {HTMLInputElement} */ (btn).disabled) return;
-    /** @type {HTMLElement} */ (btn).click();
+    if (!btn || /** @type {HTMLInputElement} */ (btn).disabled) return false;
+    klickaFlik(btn, { uppskjut: !!opts.uppskjut, efter: () => _navigeratTill(opts) });
+    return true;
+}
+/** Det som navigateTo gör i fliken när den är ritad. */
+function _navigeratTill(opts) {
+    if (opts.efter) opts.efter();
     if (opts.search && opts.searchInputId) {
         setTimeout(() => {
             const input = document.getElementById(opts.searchInputId);
@@ -22594,7 +22608,9 @@ function synkaAlderFlik() {
     }
 }
 document.querySelectorAll(".nav-item").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", e => {
+        const byte = _nastaFlikbyte;
+        _nastaFlikbyte = null;
         if (/** @type {HTMLInputElement} */ (btn).disabled) {
             if (/** @type {HTMLElement} */ (btn).dataset.kraver === 'alder' && state.data.length) visaAlderskravet(btn.textContent.trim());
             else visaLonefilskortet(btn.textContent.trim());
@@ -22625,11 +22641,182 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         };
         const titleEl = document.getElementById("page-title");
         if (titleEl) titleEl.textContent = titles[target] || target;
-        renderTabContent(target);
         // En ny flik börjar överst: annars står läsaren kvar där förra fliken slutade (granskning 2026-10-30).
+        // Före ritningen, så att det som görs efter den (efter: ett avsnitt att visa) får sista ordet.
         window.scrollTo(0, 0);
+        // Användarens eget klick (eller ett flikbyte som begär det) visar fliken först och räknar den sedan (ADR-80).
+        flikbyte(target || '', { uppskjut: e.isTrusted || !!byte?.uppskjut, efter: byte?.efter || null });
     });
 });
+
+// ---- Flikbytet: rita först, räkna sedan (ADR-80) ----
+// När användaren själv byter flik (ett klick i menyn, pilarna i menyn, sökfältet, en länk till en flik) blir fliken
+// synlig och sidan målas innan fliken räknas. Under tiden står en rad om att fliken räknas, och det som stod i panelen
+// sedan förra gången döljs (aria-busy, style.css), så att inget inaktuellt tal syns. Block som tar lång tid och inte
+// syns överst (_ritaTungtBlock) ritas efteråt, vart och ett i en egen uppgift, med en platshållare. Ett nytt flikbyte
+// under väntan går före: bara den sist valda fliken ritas.
+// Allt annat ritar som förut, synkront: renderTabContent anropad direkt (testerna, exportgrinden, exporterna och
+// medExportLage, omritningen efter ändrad tröskel) och ett klick från koden (el.click()), som inte är användarens
+// eget. Inget resultat sparas mellan uppgifterna (ADR-17): ett block räknas i sin egen uppgift ur det som gäller då,
+// och ritar ingenting om underlaget, tröskeln, förhandsvisningen, ett val eller fliken har ändrats sedan fliken ritades.
+/** @type {{uppskjut: boolean, efter: (() => void)|null}|null} */
+let _nastaFlikbyte = null;
+/**
+ * Byter till fliken med ett klick på dess knapp i menyn, så att allt som lyssnar på klicket följer med.
+ * @param {Element} nav knappen i menyn
+ * @param {{uppskjut?: boolean, efter?: (() => void)|null}} [val] uppskjut: visa fliken först och räkna den sedan;
+ *   efter: körs när fliken är färdigritad (direkt efter ritningen när den inte skjuts upp)
+ */
+function klickaFlik(nav, { uppskjut = false, efter = null } = {}) {
+    _nastaFlikbyte = { uppskjut, efter };
+    try { /** @type {HTMLElement} */ (nav).click(); } finally { _nastaFlikbyte = null; }
+}
+let _flikVal = 0;                   // ökar vid varje flikbyte: en väntande ritning av en tidigare vald flik ritar inget
+const _flikRunda = new Map();       // flik → numret på flikens senaste ritning (renderTabContent, yttersta anropet)
+/** @type {string|null} */
+let _uppskjutNasta = null;          // fliken vars nästa ritning kommer från ett uppskjutet flikbyte
+/** @type {string|null} */
+let _ritasUppskjutet = null;        // fliken som ritas från ett uppskjutet flikbyte just nu: dess tunga block väntar
+/** @type {Map<string, {runda: number, antal: number, efter: (() => void)[]}>} */
+const _vantandeBlock = new Map();   // flik → block som väntar från flikens senaste ritning
+/** @type {{flik: string, runda: number, hosts: HTMLElement[], fn: () => void, fangst: any}[]} */
+const _blockKo = [];
+/** @type {any} */
+let _blockTimer = 0;
+let _valRaknare = 0;                // användarens egna val (change), som kan ändra det ett väntande block skulle rita
+document.addEventListener('change', e => { if (e.isTrusted) _valRaknare++; }, true);
+const FLIK_RAKNAS_TEXT = 'Räknar fram fliken …';
+const BLOCK_RAKNAS_TEXT = 'Räknar …';
+
+/**
+ * Ritar fliken efter ett byte: utan `uppskjut` direkt, som renderTabContent; med `uppskjut` när sidan har målats.
+ * @param {string} target
+ * @param {{uppskjut?: boolean, efter?: (() => void)|null}} [val]
+ */
+function flikbyte(target, { uppskjut = false, efter = null } = {}) {
+    const val = ++_flikVal, flik = tabMal(target);
+    document.querySelectorAll('.view-panel[aria-busy]').forEach(p => _flikRaknas(/** @type {HTMLElement} */ (p), false));
+    if (!uppskjut) { renderTabContent(target); if (efter) efter(); return; }
+    const paneler = /** @type {HTMLElement[]} */ ((PANEL_GROUPS[flik] || [flik]).map(p => document.getElementById('view-' + p)).filter(Boolean));
+    paneler.forEach(p => _flikRaknas(p, true));
+    _efterMalning(() => {
+        if (val !== _flikVal) return;   // ett senare flikbyte går före
+        _uppskjutNasta = flik;
+        try { renderTabContent(target); }
+        catch (e) { rapporteraFel(`flikbytet (${flik})`, e); }
+        finally { _uppskjutNasta = null; paneler.forEach(p => _flikRaknas(p, false)); }
+        if (!efter) return;
+        const v = _vantandeBlock.get(flik);
+        if (v && v.runda === _flikRunda.get(flik)) v.efter.push(efter); else efter();
+    });
+}
+/** Panelen räknas (aria-busy och en rad överst) eller är klar. Det som stod i panelen döljs under tiden (style.css). */
+function _flikRaknas(panel, pa) {
+    let rad = panel.querySelector(':scope > .flik-raknas');
+    if (!pa) { panel.removeAttribute('aria-busy'); rad?.remove(); return; }
+    panel.setAttribute('aria-busy', 'true');
+    if (rad || panel.style.display === 'none') return;
+    rad = document.createElement('p');
+    rad.className = 'flik-raknas';
+    rad.setAttribute('role', 'status');
+    rad.textContent = FLIK_RAKNAS_TEXT;
+    panel.insertBefore(rad, panel.firstChild);
+}
+/** Kör fn när sidan har målats: efter nästa bildruta, eller efter en kort stund om sidan inte målas (en dold webbläsarflik). */
+function _efterMalning(fn) {
+    let gjort = false;
+    const kor = () => { if (!gjort) { gjort = true; fn(); } };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => setTimeout(kor, 0));
+    setTimeout(kor, 100);
+}
+/** Det som ett väntande block ritas ur. Ändras något av det under väntan ritar blocket ingenting. */
+function _blockFangst() {
+    return { data: state.data, k: kInstalld(), forhand: document.body.classList.contains('forhandsvisning'), val: _valRaknare };
+}
+function _sammaFangst(f) {
+    const nu = _blockFangst();
+    return f.data === nu.data && f.k === nu.k && f.forhand === nu.forhand && f.val === nu.val;
+}
+function _aktivFlik() {
+    const a = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
+    return a ? tabMal(a) : null;
+}
+/**
+ * Ett block i fliken som tar lång tid och inte syns överst. Ritas fliken från ett uppskjutet flikbyte får blocket en
+ * platshållare och ritas i en egen uppgift när fliken har målats; annars ritas det direkt, som förut.
+ * @param {string} flik fliken blocket hör till
+ * @param {string[]} hostIds behållarna som blocket ritar i (platshållaren står i dem under väntan)
+ * @param {() => void} fn ritar blocket
+ */
+function _ritaTungtBlock(flik, hostIds, fn) {
+    const hosts = _ritasUppskjutet === flik && getData().length   // utan underlag finns inget att räkna
+        ?/** @type {HTMLElement[]} */ (hostIds.map(id => document.getElementById(id)).filter(Boolean)) : [];
+    if (!hosts.length) { fn(); return; }
+    for (const h of hosts) {
+        if (typeof _rfBehallare !== 'undefined' && _rfBehallare.has(h)) rensaFigur(h);
+        h.innerHTML = `<span class="block-raknas">${BLOCK_RAKNAS_TEXT}</span>`;   // en span: några behållare är stycken
+        h.setAttribute('aria-busy', 'true');
+    }
+    const runda = _flikRunda.get(flik) || 0, v = _vantandeBlock.get(flik);
+    if (v && v.runda === runda) v.antal++; else _vantandeBlock.set(flik, { runda, antal: 1, efter: [] });
+    _blockKo.push({ flik, runda, hosts, fn, fangst: _blockFangst() });
+    _schemalaggBlock();
+}
+// Varje block väntar tills sidan har målats, så att det som redan är ritat syns innan nästa block räknas.
+function _schemalaggBlock(ms = 0) {
+    if (_blockTimer) return;
+    _blockTimer = 1;
+    if (ms) setTimeout(() => _efterMalning(_korNastaBlock), ms); else _efterMalning(_korNastaBlock);
+}
+function _korNastaBlock() {
+    _blockTimer = 0;
+    const b = _blockKo.shift();
+    try { if (b) _ritaVantandeBlock(b); }
+    catch (e) { rapporteraFel('flikbytet: ett block som ritas efter fliken', e); }
+    finally { if (_blockKo.length) _schemalaggBlock(); }
+}
+/** Blocket ritas inte: platshållaren och aria-busy tas bort ur behållarna. */
+function _slappBlock(b) {
+    for (const h of b.hosts) { h.removeAttribute('aria-busy'); h.querySelector(':scope > .block-raknas')?.remove(); }
+}
+function _ritaVantandeBlock(b) {
+    const v = _vantandeBlock.get(b.flik);
+    // Fliken har ritats om sedan blocket köades: den nya ritningen äger behållarna (renderTabContent har släppt dem).
+    if (!v || v.runda !== b.runda || _flikRunda.get(b.flik) !== b.runda) return;
+    // Användaren har gått vidare: fliken är inte färdigritad (exportgrinden ritar om den) och ritas på nytt när den öppnas.
+    if (_aktivFlik() !== b.flik) { _vantandeBlock.delete(b.flik); _blockKo.filter(x => x.flik === b.flik).concat(b).forEach(_slappBlock); return; }
+    // En export pågår (den ritar i exportläget): blocket väntar tills den är klar.
+    if (_exportDjup > 0) { _blockKo.unshift(b); _schemalaggBlock(50); return; }
+    // Underlaget, tröskeln, förhandsvisningen eller ett val har ändrats under väntan: ingenting ur den här ritningen
+    // ritas. Står platshållaren kvar (ingen annan har ritat om blocket) ritas fliken om från början.
+    if (!_sammaFangst(b.fangst)) {
+        _vantandeBlock.delete(b.flik);
+        const kvar = b.hosts.some(h => h.isConnected && h.querySelector(':scope > .block-raknas'));
+        _blockKo.filter(x => x.flik === b.flik).concat(b).forEach(_slappBlock);
+        if (kvar) flikbyte(b.flik, { uppskjut: true, efter: v.efter.length ? () => v.efter.forEach(f => f()) : null });
+        return;
+    }
+    const egen = !_ritasNu.has(b.flik);
+    _ritasNu.add(b.flik);   // blocket får läsa sin egen fliks diagram (exportgrinden)
+    try { b.fn(); }
+    catch (e) { rapporteraFel(`${b.flik}: ett block som ritas efter fliken`, e); }
+    finally {
+        if (egen) _ritasNu.delete(b.flik);
+        _slappBlock(b);
+    }
+    if (--v.antal > 0) return;
+    _vantandeBlock.delete(b.flik);
+    _ritadVid.set(b.flik, ritGeneration());   // nu är hela fliken ritad med det som gäller (exportgrinden)
+    _efterRitning(b.flik);
+    for (const f of v.efter) { try { f(); } catch (e) { rapporteraFel('flikbytet: efter ritningen', e); } }
+}
+/** Det som görs när en flik har ritats: markeringen i tabellerna och autocomplete på nya fält. */
+function _efterRitning(flik) {
+    if (typeof _mkTabeller === 'function' && diagramMarkering()) _mkTabeller();
+    // Fält som fliken skapade får autocomplete="off" redan nu (observatören i 01-html-och-tillganglighet.js
+    // gör det annars strax efter).
+    if (typeof stangAutofyll === 'function') stangAutofyll(document.getElementById('view-' + flik) || document);
+}
 
 // ---- Tabs ----
 // Sammanslagna flikar: en nav-knapp kan visa/rendera flera view-paneler.
@@ -22665,20 +22852,26 @@ function unlockTabs() {
 // Sammanslagna flikar renderar bägge sina paneler (matrix→skevhet+regression,
 // kon→kurvor+livscykel).
 // Länkade vyer (11-markering.js): när en flik har ritats om framhävs dess tabellrader för de markerade grupperna.
+// Ett uppskjutet flikbyte (flikbyte ovan) ritar här som alla andra; bara flikens tunga block väntar (_ritaTungtBlock).
 function renderTabContent(target) {
     const flik = tabMal(target), yttre = !_ritasNu.has(flik);
     _ritasNu.add(flik);
+    // Varje yttersta ritning är en ny runda: block som väntar från en tidigare ritning av fliken ritar inget.
+    const runda = yttre ? (_flikRunda.get(flik) || 0) + 1 : (_flikRunda.get(flik) || 0);
+    if (yttre) { _flikRunda.set(flik, runda); _vantandeBlock.delete(flik); _blockKo.filter(b => b.flik === flik).forEach(_slappBlock); }
+    const uppskjut = yttre && _uppskjutNasta === flik, forra = _ritasUppskjutet;
+    if (uppskjut) { _uppskjutNasta = null; _ritasUppskjutet = flik; }
     try {
         const ut = _renderTabContent(target);
-        _ritadVid.set(flik, ritGeneration());     // exportgrinden (23-exportgrind.js): fliken är ritad med det som gäller nu
+        // Exportgrinden (23-exportgrind.js): fliken är ritad med det som gäller nu, eller inte färdigritad när block väntar.
+        if (uppskjut && _vantandeBlock.get(flik)?.runda === runda) _ritadVid.delete(flik);
+        else _ritadVid.set(flik, ritGeneration());
         return ut;
     }
     finally {
+        if (uppskjut) _ritasUppskjutet = forra;
         if (yttre) _ritasNu.delete(flik);
-        if (typeof _mkTabeller === 'function' && diagramMarkering()) _mkTabeller();
-        // Fält som fliken skapade får autocomplete="off" redan nu (observatören i 01-html-och-tillganglighet.js
-        // gör det annars strax efter).
-        if (typeof stangAutofyll === 'function') stangAutofyll(document.getElementById('view-' + flik) || document);
+        _efterRitning(flik);
     }
 }
 // Flikar som bara har något att visa när lönefilen är inläst. Nås en sådan utan underlag (en direktlänk, en
@@ -22721,13 +22914,22 @@ function _renderTabContent(target) {
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); renderStatistikLage(); generateBenchmark(); }
     else if (target === "matrix"       && d.length) { generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
-    else if (target === "struktur"     && d.length) { renderStructure(); generateSkevhet(); renderBlinderOaxacaCard(renderRegressionCard()); renderGapUppdelning(); renderLonestrukturNycklar(); }
+    else if (target === "struktur"     && d.length) {
+        renderStructure(); generateSkevhet();
+        // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.
+        _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(renderRegressionCard()));
+        renderGapUppdelning(); renderLonestrukturNycklar();
+    }
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
-    else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); renderRapportunderlag(); });
-    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderExportBesked(); });
+    // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.
+    else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(renderRapportunderlag)); });
+    else if (target === "dokumentera") medExportLage(() => {
+        if (d.length) renderKvalitetssakring();
+        _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => renderExportBesked()));
+    });
     else if (target === "arbetet")     medExportLage(() => { if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "filer"     && d.length) renderFilerDelar();
@@ -22791,7 +22993,7 @@ document.addEventListener('click', e => {
     const nav = document.querySelector(`.nav-item[data-tab="${tabMal(btn.getAttribute('data-flow-tab'))}"]`);
     if (!nav) return;
     const last = /** @type {HTMLInputElement} */ (nav).disabled;
-    /** @type {HTMLElement} */ (nav).click();
+    klickaFlik(nav, { uppskjut: e.isTrusted });
     if (!last) window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
@@ -22812,11 +23014,14 @@ document.addEventListener('click', e => {
     if (!a) return;
     e.preventDefault();
     const target = /** @type {HTMLElement} */ (a).dataset.goToTab;
-    if (target && typeof navigateTo === 'function') navigateTo(target);
-    const ankare = /** @type {HTMLElement} */ (a).dataset.goToAnchor && document.getElementById(/** @type {HTMLElement} */ (a).dataset.goToAnchor || '');
-    if (!ankare) return;
-    oppnaHopfallda(ankare);
-    if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
+    // Avsnittet länken leder till visas när fliken är ritad (ADR-80: användarens klick ritar fliken efter att den målats).
+    const tillAnkare = () => {
+        const ankare = /** @type {HTMLElement} */ (a).dataset.goToAnchor && document.getElementById(/** @type {HTMLElement} */ (a).dataset.goToAnchor || '');
+        if (!ankare) return;
+        oppnaHopfallda(ankare);
+        if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
+    };
+    if (!(target && typeof navigateTo === 'function' && navigateTo(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
 });
 /** Fäller ut ett avsnitt som en länk leder till: elementet självt om det är ett hopfällt avsnitt, och varje hopfällt
  *  avsnitt det ligger i. Annars landar länken på en rubrik vars innehåll inte syns. */
@@ -27092,7 +27297,8 @@ function renderKon(bas) {
     _setDiagramKNot('chart-kon-boxplot', utan ? `Lådan visas inte för ${utan}: ${skal}.` : '');
     renderKonMultiplar();
     renderKonHistogram(dataKv, dataMa, scope2);
-    renderKonAlderGap(dataKv, dataMa, scope2);
+    // Löneskillnaden per åldersgrupp (bootstrapintervall per grupp) ritas efter flikens övre del vid ett flikbyte (ADR-80).
+    _ritaTungtBlock('kon', ['chart-kon-aldergap', 'kon-aldergap-not'], () => renderKonAlderGap(dataKv, dataMa, scope2));
 }
 
 // ---- Lönefördelningen per BAS-intervall (lådmärket: lådor, täthetskurvor eller kvantilpunkter) ----
@@ -34284,7 +34490,9 @@ function setupTabA11y() {
             if (next >= 0) {
                 e.preventDefault();
                 enabled[next].focus();
-                enabled[next].click();
+                // Pilarna i menyn är användarens flikbyte: fliken visas först och räknas sedan, och en flik som
+                // pilarna passerar hinner inte räknas (ADR-80).
+                klickaFlik(enabled[next], { uppskjut: e.isTrusted });
             }
         });
     });
@@ -39201,10 +39409,10 @@ function _sokStang({ tom = true } = {}) {
 }
 /** En grupp markeras i alla diagram och tabeller; en grupp som redan är den enda markerade står kvar markerad.
  *  En funktion leder dit (_sokValjFunktion). */
-function sokValj(i) {
+function sokValj(i, { uppskjut = false } = {}) {
     const t = _sokTraffar[i];
     if (!t) return;
-    if (t.typ === 'funktion') { _sokValjFunktion(t); return; }
+    if (t.typ === 'funktion') { _sokValjFunktion(t, { uppskjut }); return; }
     if (t.typ === 'basdossier') { _sokStang(); openBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
     const nu = diagramMarkering();
     if (!(nu && nu.length === 1 && nu[0] === t.nyckel)) sattDiagramMarkering(t.nyckel);
@@ -39214,7 +39422,7 @@ function sokValj(i) {
  *  som kräver lönefilen visar lönefilskortet i Filer och kvalitet, som ett klick på en låst flik i menyn; en som
  *  kräver en referens visar referenskortet. Är avsnittet dolt när fliken har ritats (det gäller inte underlaget)
  *  hamnar läsaren överst i fliken och får höra det, i stället för att fokus hamnar på något osynligt. */
-function _sokValjFunktion(p) {
+function _sokValjFunktion(p, { uppskjut = false } = {}) {
     _sokStang();
     const kraver = _sokKraver(p);
     if (kraver === 'lonefil') { visaLonefilskortet(p.namn); return; }
@@ -39226,14 +39434,17 @@ function _sokValjFunktion(p) {
     else if (p.dialog === 'basdossier') openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();
     else {
-        navigateTo(p.flik);
-        if (!p.avsnitt) return;
-        // Ett avsnitt i en underflik som inte visas (Tabeller och egna vyer: Egna vyer eller Alla diagram) visar den först.
-        if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(document.getElementById(p.avsnitt));
-        if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
-        window.scrollTo(0, 0);
-        /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
-        announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+        // Användarens val visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
+        const tillAvsnitt = () => {
+            if (!p.avsnitt) return;
+            // Ett avsnitt i en underflik som inte visas (Tabeller och egna vyer: Egna vyer eller Alla diagram) visar den först.
+            if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(document.getElementById(p.avsnitt));
+            if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
+            window.scrollTo(0, 0);
+            /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
+            announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+        };
+        if (!navigateTo(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
     }
 }
 /** @type {boolean|null} */
@@ -39256,7 +39467,7 @@ document.getElementById('sok-grupp')?.addEventListener('keydown', e => {
         _sokAktiv = (_sokAktiv + (e.key === 'ArrowDown' ? 1 : -1) + _sokTraffar.length) % _sokTraffar.length;
         _sokMarkeraAktiv();
     } else if (e.key === 'Enter') {
-        if (_sokAktiv >= 0) { e.preventDefault(); sokValj(_sokAktiv); }
+        if (_sokAktiv >= 0) { e.preventDefault(); sokValj(_sokAktiv, { uppskjut: e.isTrusted }); }
     } else if (e.key === 'Escape' && (oppen || /** @type {HTMLInputElement} */ (e.target).value)) {
         // Escape i fältet stänger listan; markeringen (som Escape annars tar bort) rörs inte.
         e.stopPropagation();
@@ -39266,7 +39477,7 @@ document.getElementById('sok-grupp')?.addEventListener('keydown', e => {
 document.getElementById('sok-grupp-lista')?.addEventListener('mousedown', e => e.preventDefault());   // fältet behåller fokus vid klick i listan
 document.getElementById('sok-grupp-lista')?.addEventListener('click', e => {
     const li = /** @type {HTMLElement} */ (e.target).closest('[data-sok-index]');
-    if (li) sokValj(Number(li.getAttribute('data-sok-index')));
+    if (li) sokValj(Number(li.getAttribute('data-sok-index')), { uppskjut: e.isTrusted });
 });
 document.getElementById('sok-grupp')?.addEventListener('blur', () => _sokStang({ tom: false }));
 // Kortkommandon: "/" (utanför textfält) och Ctrl/Cmd+K sätter fokus i sökfältet.

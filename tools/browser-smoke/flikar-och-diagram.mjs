@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { FIL, NAMN, BILDER, ok, page, FLIKAR, konsolfel, sidfel } from './rigg.mjs';
+import { FIL, NAMN, BILDER, ok, page, FLIKAR, konsolfel, sidfel, oppnaFlik } from './rigg.mjs';
 
 // Flikarna och deras diagram, länkade vyer och flikarnas form.
 export async function flikarOchDiagram() {
@@ -23,7 +23,7 @@ export async function flikarOchDiagram() {
     // Flikarna klickas vid 1440 punkter: där är sidindexet en rad överst (spalten bredvid innehållet börjar vid 1920).
     await page.setViewportSize({ width: 1440, height: 900 });
     for (const [flik, diagram] of FLIKAR) {
-        await page.click(`.nav-item[data-tab="${flik}"]`);
+        await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);           // låt fliken rita klart
         // Sidindexet (89-sidindex.js) har en post per synlig avsnittsrubrik i fliken, och inget alls under tre.
@@ -71,7 +71,7 @@ export async function flikarOchDiagram() {
     {
         // Smalare än 1920 punkter (här 1440) är sidindexet en rad överst som följer med och säger vilket avsnitt som står i
         // fönstret; raden med det markerade lägger sig under den, och båda syns.
-        await page.click('.nav-item[data-tab="struktur"]');
+        await oppnaFlik(page, '.nav-item[data-tab="struktur"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
@@ -136,7 +136,7 @@ export async function flikarOchDiagram() {
         // Från 1920 punkter är sidindexet en spalt bredvid innehållet som följer med när sidan rullas; ett klick fäller
         // ut avsnittet och ger summaryn fokus.
         await page.setViewportSize({ width: 1920, height: 900 });
-        await page.click('.nav-item[data-tab="struktur"]');
+        await oppnaFlik(page, '.nav-item[data-tab="struktur"]');
         await page.evaluate(() => { document.getElementById('avsnitt-st-eu').open = false; });
         await page.waitForTimeout(200);
         await page.click('#sidindex a[data-sidindex="avsnitt-st-eu"]');
@@ -168,7 +168,7 @@ export async function flikarOchDiagram() {
                       // Utforska
                       ['utforska', 'chart-explore']];
     for (const [flik, id] of DIAGRAMMEN) {
-        await page.click(`.nav-item[data-tab="${flik}"]`);
+        await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         const lage = await page.evaluate(i => {
@@ -201,7 +201,7 @@ export async function flikarOchDiagram() {
 
     console.log('\n── Diagrammens BAS-urval: knapparna ovanför bandkartan ──');
     {
-        await page.click('.nav-item[data-tab="benchmark"]');
+        await oppnaFlik(page, '.nav-item[data-tab="benchmark"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         const felFore = konsolfel.length + sidfel.length;
@@ -224,10 +224,10 @@ export async function flikarOchDiagram() {
     console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram ──');
     /* global diagramMarkering, sattDiagramMarkering, getData, explorerUrval, _chartExportRubrikFot -- funktionerna nedan körs i sidan, där de finns */
     {
-        await page.click('.nav-item[data-tab="benchmark"]');
+        await oppnaFlik(page, '.nav-item[data-tab="benchmark"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
-        await page.click('.nav-item[data-tab="struktur"]');
+        await oppnaFlik(page, '.nav-item[data-tab="struktur"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
@@ -248,7 +248,7 @@ export async function flikarOchDiagram() {
         ok(await page.evaluate(() => document.querySelectorAll('#la-oversikt tbody tr.rad-markerad').length === 1 && document.querySelectorAll('#chart-skevhet-andel [data-markerad]').length > 0),
             'ett klick på en tabellrad markerar gruppen, i tabellen och i diagrammet');
         await page.keyboard.press('Escape');
-        await page.click('.nav-item[data-tab="kon"]');
+        await oppnaFlik(page, '.nav-item[data-tab="kon"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(500);
         // Menyn följer med sidan, så ett klick i den rullar inte sidan: diagrammet rullas fram här.
@@ -293,7 +293,7 @@ export async function flikarOchDiagram() {
             '"Visa hela diagrammet" tar bort utsnittet');
 
         // Nedborrning: ett markerat BAS-intervall leder till yrkesgrupperna i Utforska, och raden där leder tillbaka.
-        await page.click('.nav-item[data-tab="matrix"]');
+        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         const borrBas = await page.evaluate(() => { const b = getData()[0].bas; sattDiagramMarkering(`bas:${b}`); return b; });
@@ -418,7 +418,7 @@ export async function flikarOchDiagram() {
     console.log('\n── Alla diagram: kopiorna i Tabeller och egna vyer ──');
     {
         const felFore = konsolfel.length + sidfel.length;
-        await page.click('.nav-item[data-tab="utforska"]');
+        await oppnaFlik(page, '.nav-item[data-tab="utforska"]');
         await page.waitForTimeout(300);
         await page.click('#ut-flik-alla');
         await page.waitForTimeout(200);

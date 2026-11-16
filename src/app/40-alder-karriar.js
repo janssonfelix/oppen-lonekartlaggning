@@ -122,7 +122,8 @@ function renderKon(bas) {
     _setDiagramKNot('chart-kon-boxplot', utan ? `Lådan visas inte för ${utan}: ${skal}.` : '');
     renderKonMultiplar();
     renderKonHistogram(dataKv, dataMa, scope2);
-    renderKonAlderGap(dataKv, dataMa, scope2);
+    // Löneskillnaden per åldersgrupp (bootstrapintervall per grupp) ritas efter flikens övre del vid ett flikbyte (ADR-80).
+    _ritaTungtBlock('kon', ['chart-kon-aldergap', 'kon-aldergap-not'], () => renderKonAlderGap(dataKv, dataMa, scope2));
 }
 
 // ---- Lönefördelningen per BAS-intervall (lådmärket: lådor, täthetskurvor eller kvantilpunkter) ----

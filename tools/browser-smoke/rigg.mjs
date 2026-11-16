@@ -88,6 +88,16 @@ page.on('console', m => { if (m.type() === 'warning' && /Internt fel i/.test(m.t
 // hidden-attributet måste faktiskt dölja elementet — författar-CSS (display:flex) vinner
 // annars över webbläsarens [hidden]-regel, vilket jsdom-testerna inte kan se.
 export const osynlig = sel => page.evaluate(s => { const el = document.querySelector(s); return !!el && getComputedStyle(el).display === 'none'; }, sel);
+// Användarens flikbyte visar fliken först och räknar den sedan (ADR-80): efter ett klick i menyn väntar testet tills
+// ingenting i sidan räknas (aria-busy) och inget block väntar.
+/* global _blockKo -- finns i sidan */
+export const vantaFardigritad = sida => sida.waitForFunction(() => !document.querySelector('[aria-busy="true"]')
+    && (typeof _blockKo === 'undefined' || _blockKo.length === 0), null, { timeout: 60000 });
+/** Klickar på en flik i menyn som användaren gör och väntar tills fliken är färdigritad. */
+export async function oppnaFlik(sida, sel) {
+    await sida.click(sel);
+    await vantaFardigritad(sida);
+}
 // Diagram som MÅSTE ha ritats på demodata: en <svg> i containern.
 export const FLIKAR = [
     ['matrix', ['#chart-la-tratt']],

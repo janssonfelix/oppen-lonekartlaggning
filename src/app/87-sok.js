@@ -137,10 +137,10 @@ function _sokStang({ tom = true } = {}) {
 }
 /** En grupp markeras i alla diagram och tabeller; en grupp som redan är den enda markerade står kvar markerad.
  *  En funktion leder dit (_sokValjFunktion). */
-function sokValj(i) {
+function sokValj(i, { uppskjut = false } = {}) {
     const t = _sokTraffar[i];
     if (!t) return;
-    if (t.typ === 'funktion') { _sokValjFunktion(t); return; }
+    if (t.typ === 'funktion') { _sokValjFunktion(t, { uppskjut }); return; }
     if (t.typ === 'basdossier') { _sokStang(); openBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
     const nu = diagramMarkering();
     if (!(nu && nu.length === 1 && nu[0] === t.nyckel)) sattDiagramMarkering(t.nyckel);
@@ -150,7 +150,7 @@ function sokValj(i) {
  *  som kräver lönefilen visar lönefilskortet i Filer och kvalitet, som ett klick på en låst flik i menyn; en som
  *  kräver en referens visar referenskortet. Är avsnittet dolt när fliken har ritats (det gäller inte underlaget)
  *  hamnar läsaren överst i fliken och får höra det, i stället för att fokus hamnar på något osynligt. */
-function _sokValjFunktion(p) {
+function _sokValjFunktion(p, { uppskjut = false } = {}) {
     _sokStang();
     const kraver = _sokKraver(p);
     if (kraver === 'lonefil') { visaLonefilskortet(p.namn); return; }
@@ -162,14 +162,17 @@ function _sokValjFunktion(p) {
     else if (p.dialog === 'basdossier') openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();
     else {
-        navigateTo(p.flik);
-        if (!p.avsnitt) return;
-        // Ett avsnitt i en underflik som inte visas (Tabeller och egna vyer: Egna vyer eller Alla diagram) visar den först.
-        if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(document.getElementById(p.avsnitt));
-        if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
-        window.scrollTo(0, 0);
-        /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
-        announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+        // Användarens val visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
+        const tillAvsnitt = () => {
+            if (!p.avsnitt) return;
+            // Ett avsnitt i en underflik som inte visas (Tabeller och egna vyer: Egna vyer eller Alla diagram) visar den först.
+            if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(document.getElementById(p.avsnitt));
+            if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
+            window.scrollTo(0, 0);
+            /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
+            announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+        };
+        if (!navigateTo(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
     }
 }
 /** @type {boolean|null} */
@@ -192,7 +195,7 @@ document.getElementById('sok-grupp')?.addEventListener('keydown', e => {
         _sokAktiv = (_sokAktiv + (e.key === 'ArrowDown' ? 1 : -1) + _sokTraffar.length) % _sokTraffar.length;
         _sokMarkeraAktiv();
     } else if (e.key === 'Enter') {
-        if (_sokAktiv >= 0) { e.preventDefault(); sokValj(_sokAktiv); }
+        if (_sokAktiv >= 0) { e.preventDefault(); sokValj(_sokAktiv, { uppskjut: e.isTrusted }); }
     } else if (e.key === 'Escape' && (oppen || /** @type {HTMLInputElement} */ (e.target).value)) {
         // Escape i fältet stänger listan; markeringen (som Escape annars tar bort) rörs inte.
         e.stopPropagation();
@@ -202,7 +205,7 @@ document.getElementById('sok-grupp')?.addEventListener('keydown', e => {
 document.getElementById('sok-grupp-lista')?.addEventListener('mousedown', e => e.preventDefault());   // fältet behåller fokus vid klick i listan
 document.getElementById('sok-grupp-lista')?.addEventListener('click', e => {
     const li = /** @type {HTMLElement} */ (e.target).closest('[data-sok-index]');
-    if (li) sokValj(Number(li.getAttribute('data-sok-index')));
+    if (li) sokValj(Number(li.getAttribute('data-sok-index')), { uppskjut: e.isTrusted });
 });
 document.getElementById('sok-grupp')?.addEventListener('blur', () => _sokStang({ tom: false }));
 // Kortkommandon: "/" (utanför textfält) och Ctrl/Cmd+K sätter fokus i sökfältet.

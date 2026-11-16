@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Webbläsar-röktestet, del: Säkerheten: ingen lagring, ingen utgående trafik och inga fel under körningen.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
-import { FIL, ok, browser, page, natverk, konsolfel, sidfel, internaFel } from './rigg.mjs';
+import { FIL, ok, browser, page, natverk, konsolfel, sidfel, internaFel, oppnaFlik } from './rigg.mjs';
 
 // GDPR: ingen lagring, och lagringsspärren.
 export async function ingenLagring() {
@@ -67,7 +67,7 @@ export async function ingenTrafik() {
             const e = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
             await e.goto('file://' + FIL + '?demo=1');
             await e.waitForTimeout(1500);
-            await e.click('.nav-item[data-tab="dashboard"]');
+            await oppnaFlik(e, '.nav-item[data-tab="dashboard"]');
             await e.evaluate(() => { const t = document.getElementById('outliers-threshold'); if (t) t.value = '2'; renderOutliers(); });
             const rader = await e.evaluate(() => document.querySelectorAll('#outliers-table-wrap tbody tr').length);
             await e.evaluate(() => window.dispatchEvent(new Event('beforeprint')));

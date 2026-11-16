@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { FIL, NAMN, ok, browser, page, osynlig } from './rigg.mjs';
+import { FIL, NAMN, ok, browser, page, osynlig, oppnaFlik } from './rigg.mjs';
 /* global state -- används i page.evaluate, där de finns i sidan */
 
 // Laddning och CSP, demolänken, en okänd lönefil, demodatan och policyuppladdningen.
@@ -67,14 +67,14 @@ export async function laddningOchDemo() {
     ok(await osynlig('#btn-referens-aterga'), '"Ta bort referensen" är dold i demoläget');
 
     console.log('\n── Demolägets referens (Exempelkommunen, ADR-28) ──');
-    await page.click('.nav-item[data-tab="prioritering"]');
+    await oppnaFlik(page, '.nav-item[data-tab="prioritering"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);
     ok(await page.evaluate(() => document.querySelectorAll('#prio-table tbody tr').length > 0),
         'Prioritering fungerar med demolägets referens');
     ok(await page.evaluate(() => (document.getElementById('prio-ref-policy-namn') || {}).textContent === 'Exempelkommunens lönepolitik'),
         'Prioritering namnger demolägets referens');
-    await page.click('.nav-item[data-tab="dashboard"]');
+    await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
 
     console.log('\n── Policyuppladdning (riktig file-input) ──');
