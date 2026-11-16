@@ -373,15 +373,17 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         const f = w.eval(`_guTrappaFigur({ gap: -2091, delar: { A: -1428, B: -434, C: -229 } })`);
         expect(f.x.ordning).toEqual(['Hela skillnaden', 'A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
         expect(f.lager.map(l => [l.marke, l.riktning || null, l.serie])).toEqual([['intervall', null, 'Hela skillnaden'], ['intervall', null, 'Hur kvinnor och män är fördelade'],
-            ['intervall', null, 'Lön inom samma grupp'], ['punkt', null, 'Belopp']]);
+            ['intervall', null, 'Lön inom samma grupp'], ['punkt', null, 'Nivå'], ['punkt', null, 'Belopp']]);
         expect(f.lager[0].data.map(d => [d.x, d.lag, d.hog])).toEqual([['Hela skillnaden', -2091, 0]]);
         expect([...f.lager[1].data, ...f.lager[2].data].map(d => [d.x, d.lag, d.hog])).toEqual([['A. BAS-fördelning', -2091, -663], ['B. AID inom BAS', -663, -229], ['C. Inom AID och BAS', -229, 0]]);
         // Färgen säger vad delen betyder: struktur för delarna som förklaras av var kvinnor och män arbetar, lönesättningen för den sista.
         const P = w.eval('PALETTE.uppdelning');
         expect(f.lager.slice(0, 3).map(l => l.farg)).toEqual([P.helhet, P.struktur, P.lonesattning]);
-        expect(f.lager[3].data.map(d => [d.etikett, d.etikettLage])).toEqual([['−2\u00a0091\u00a0kr', 'under'], ['−1\u00a0428\u00a0kr · 68\u00a0%', 'over'],
-            ['−434\u00a0kr · 21\u00a0%', 'over'], ['−229\u00a0kr · 11\u00a0%', 'over']]);
-        expect(f.lager[3].utanData).toBe(true);
+        // Strecket står där steget landar; beloppet vid stapelns ände längst från noll, så att det aldrig korsar nollinjen.
+        expect(f.lager[3].data.map(d => [d.y, d.etikett])).toEqual([[-2091, undefined], [-663, undefined], [-229, undefined], [0, undefined]]);
+        expect(f.lager[4].data.map(d => [d.y, d.etikett, d.etikettLage])).toEqual([[-2091, '−2\u00a0091\u00a0kr', 'under'], [-2091, '−1\u00a0428\u00a0kr · 68\u00a0%', 'under'],
+            [-663, '−434\u00a0kr · 21\u00a0%', 'under'], [-229, '−229\u00a0kr · 11\u00a0%', 'under']]);
+        expect(f.lager[3].utanData && f.lager[4].utanData).toBe(true);
         // Diagramdatan bär delarnas och helhetens belopp (Skillnad, kr/mån), i trappans ordning.
         const tabell = figurTillTabell(f);
         expect(tabell[0].at(-1)).toBe('Skillnad (kr/mån)');
@@ -392,13 +394,13 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
     it('gapuppdelningen: en del som går åt andra hållet, eller är större än helheten, får bara sitt belopp; tipset säger varför', () => {
         const f = w.eval(`_guTrappaFigur({ gap: 6000, delar: { A: 6800, B: -800, C: 0 } })`);
         expect([...f.lager[1].data, ...f.lager[2].data].map(d => [d.lag, d.hog])).toEqual([[-800, 6000], [-800, 0], [0, 0]]);
-        expect(f.lager[3].data.map(d => [d.etikett, d.etikettLage])).toEqual([['+6\u00a0000\u00a0kr', 'over'], ['+6\u00a0800\u00a0kr', 'under'], ['−800\u00a0kr', 'over'], ['0\u00a0kr · 0\u00a0%', 'over']]);
+        expect(f.lager[4].data.map(d => [d.etikett, d.etikettLage])).toEqual([['+6\u00a0000\u00a0kr', 'over'], ['+6\u00a0800\u00a0kr', 'over'], ['−800\u00a0kr', 'under'], ['0\u00a0kr · 0\u00a0%', 'under']]);
         const tips = d => vanliga(f.lager[1].tips(d)).find(r => r[0] === 'Andel av skillnaden')[1];
         expect(tips(f.lager[1].data[0])).toMatch(/större än hela skillnaden/);
         expect(tips(f.lager[1].data[1])).toMatch(/åt andra hållet/);
         // En liten skillnad (litetGap): inga andelar, som i raderna under.
         const g = w.eval(`_guTrappaFigur({ gap: -200, litetGap: true, delar: { A: -150, B: -30, C: -20 } })`);
-        expect(g.lager[3].data.map(d => d.etikett)).toEqual(['−200\u00a0kr', '−150\u00a0kr', '−30\u00a0kr', '−20\u00a0kr']);
+        expect(g.lager[4].data.map(d => d.etikett)).toEqual(['−200\u00a0kr', '−150\u00a0kr', '−30\u00a0kr', '−20\u00a0kr']);
         expect(vanliga(g.lager[1].tips(g.lager[1].data[0])).some(r => r[0] === 'Andel av skillnaden')).toBe(false);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });

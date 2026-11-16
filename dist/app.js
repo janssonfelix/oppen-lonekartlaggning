@@ -35772,9 +35772,11 @@ function _guTrappaFigur(u) {
         return { x: kategorier[i + 1], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: v, fore, efter: niva,
                  skillnadKr: Math.round(v), inom: d.variabel === null }; });
     const etikett = s => { const a = _guAndel(u, s.del); return a === null ? _guKr(s.del) : `${_guKr(s.del)} · ${_guPct(a, 0)}`; };
-    // Värdet står utanför stapeln, vid strecket där steget landar: under strecket när steget går nedåt till det (stapeln
-    // står ovanför), annars över. En etikett som är bredare än stapeln täcker den då inte.
-    const lage = (fran, till) => (till < fran ? 'under' : 'over');
+    // Värdet står utanför stapeln, vid den ände som ligger längst från noll: under stapeln när den änden är den undre,
+    // annars över. Där korsar det aldrig nollinjen (som ritas över märkena), också när ett steg landar nära noll.
+    // Strecket står kvar där steget landar.
+    const ande = s => (Math.abs(s.fore) >= Math.abs(s.efter) ? s.fore : s.efter);
+    const lage = (y, lag) => (y <= lag ? 'under' : 'over');
     const tips = d => {
         const a = _guAndel(u, d.del);
         const andel = a !== null ? [['Andel av skillnaden', _guPct(a, 0)]]
@@ -35795,11 +35797,13 @@ function _guTrappaFigur(u) {
                   data: [{ x: _GU_SERIE.helhet, lag: Math.min(gap, 0), hog: Math.max(gap, 0), skillnadKr: gap }], tips: d => [[d.x], ['Skillnad i medellön', _guKr(d.skillnadKr)]] },
                 delLager(false, _GU_SERIE.struktur, PALETTE.uppdelning.struktur),
                 delLager(true, _GU_SERIE.inom, PALETTE.uppdelning.lonesattning),
-                // Värdena vid stapelns ände: ett streck där steget landar och beloppet bredvid. Bara etiketter: talen står
-                // redan i lagren ovan, och lagret får inga rader i diagramdatan.
-                { marke: 'punkt', symbol: 'streck', serie: 'Belopp', legend: false, utanData: true, farg: PALETTE.semantic.mork, storlek: 11,
-                  data: [{ x: _GU_SERIE.helhet, y: gap, etikett: _guKr(u.gap), etikettLage: lage(0, u.gap) },
-                         ...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: etikett(s), etikettLage: lage(s.fore, s.efter) }))] }] };
+                // Ett streck där steget landar, och beloppet vid stapelns ände längst från noll (ett osynligt streck bär
+                // etiketten). Bara markeringar: talen står redan i lagren ovan, och lagren får inga rader i diagramdatan.
+                { marke: 'punkt', symbol: 'streck', serie: 'Nivå', legend: false, utanData: true, farg: PALETTE.semantic.mork, storlek: 11,
+                  data: [{ x: _GU_SERIE.helhet, y: gap }, ...steg.map(s => ({ x: s.x, y: Math.round(s.efter) }))] },
+                { marke: 'punkt', symbol: 'streck', serie: 'Belopp', legend: false, utanData: true, farg: PALETTE.semantic.mork,
+                  data: [{ x: _GU_SERIE.helhet, y: gap, storlek: 0, etikett: _guKr(u.gap), etikettLage: lage(gap, Math.min(gap, 0)) },
+                         ...steg.map(s => { const y = Math.round(ande(s)); return { x: s.x, y, storlek: 0, etikett: etikett(s), etikettLage: lage(y, s.lag) }; })] }] };
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
