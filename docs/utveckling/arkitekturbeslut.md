@@ -49,7 +49,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-38 | K-tröskeln är en inställning | Ändrad av ADR-51 och ADR-69 | – |
 | ADR-39 | Diagramkärna på D3 med eget figurformat | Gällande | – |
 | ADR-40 | Fyra exporter med var sin uppgift, ritade ur en rapportmodell | Gällande | – |
-| ADR-41 | Flikmallen: resultatet först | Gällande | – |
+| ADR-41 | Flikmallen: resultatet först | Ändrad av ADR-80 | – |
 | ADR-42 | Diagrammens form och färg väljs efter uppgiften; tabell med grafik i raden där ett diagram visar för lite | Gällande | – |
 | ADR-43 | Färgerna har en källa | Gällande | – |
 | ADR-44 | BAS som indikatorvariabler i huvudregressionen | Ändrad av ADR-53 och ADR-63 | – |
@@ -86,6 +86,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-77 | HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång | Gällande | 2026-11-15 |
 | ADR-78 | Översikten per huvudområde räknar med huvudregressionens kodning | Gällande | 2026-11-15 |
 | ADR-79 | Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och arbetsvärdering | Gällande | 2026-11-15 |
+| ADR-80 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 
 ## Besluten
 
@@ -453,3 +454,11 @@ medelvärdet står bara för en grupp där båda könen når tröskeln. Försät
 löneökning efter föräldraledighet eller ledighet för vård av anhörig, för utvärderingen av åtgärderna från föregående
 gemensamma lönebedömning och för analysen av systemen för könsneutral arbetsvärdering och arbetsindelning. *Gäller i
 dag:* `lagrum.md`, avsnittet om protokollet för gemensam lönebedömning.
+
+**ADR-80 — Bara dator: verktyget anpassas inte för surfplatta eller telefon.** Ändrar ADR-41, som också nämnde
+surfplatta. Verktyget utformas för datorskärm (användarens beslut). Ett smalt eller delat fönster på datorn ska fungera:
+menyn fälls ihop bakom en knapp och sidan går inte utanför fönstret. Tabeller och diagram utformas däremot inte för en
+liten skärm, och brister som bara syns på surfplatta eller telefon prioriteras inte. Användardokumenten sade redan att
+surfplatta och mobil inte stöds; ADR-41 var det enda som sade annat. *Avvisat:* att anpassa för surfplatta, som skulle
+kräva en egen form för tabellerna och diagrammen för en användning som inte efterfrågats. *Gäller i dag:* `mal.md`
+(*Avgränsning*).
