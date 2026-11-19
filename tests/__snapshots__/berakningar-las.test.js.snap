@@ -1,0 +1,348 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`beräkningar på demodatan (låsta tal) > extremvärdena (detectOutliers) ger samma tal > detectOutliers 1`] = `[]`;
+
+exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal > _laBootstrapGapCI 1`] = `
+{
+  "hi": 94.65317919,
+  "lo": 88.63636364,
+}
+`;
+
+exports[`beräkningar på demodatan (låsta tal) > power-analysen (computePowerAnalysis) ger samma tal > computePowerAnalysis 1`] = `
+{
+  "balanced": true,
+  "mdePct": 2.201268033,
+  "n": 260,
+  "nKv": 138,
+  "nMa": 122,
+  "sigma": 0.06253178978,
+  "sigmaGrupper": 3,
+  "sigmaHela": 0.1714284909,
+  "sigmaKalla": "inomGrupp",
+}
+`;
+
+exports[`beräkningar på demodatan (låsta tal) > regressionen (runOLSRegression) ger samma tal > runOLSRegression 1`] = `
+{
+  "R2": 0.9193716702,
+  "adjR2": 0.9174595359,
+  "ageEffect": 0.5443107266,
+  "ageMean": 41.84230769,
+  "ageP": 0,
+  "ansvarSteg": {
+    "R2": 0.9195495295,
+    "gapPct": -4.346809012,
+    "k": 8,
+    "name": "+ Ansvar",
+    "status": "ok",
+  },
+  "basEffekter": [
+    {
+      "bas": "B",
+      "high": 18.34717674,
+      "low": 12.11904288,
+      "p": 0,
+      "pct": 15.19102475,
+    },
+    {
+      "bas": "C",
+      "high": 32.69455527,
+      "low": 26.13628578,
+      "p": 0,
+      "pct": 29.37387041,
+    },
+    {
+      "bas": "D",
+      "high": 51.85457308,
+      "low": 44.07524437,
+      "p": 0,
+      "pct": 47.91377463,
+    },
+    {
+      "bas": "E",
+      "high": 68.23813159,
+      "low": 58.85391554,
+      "p": 0,
+      "pct": 63.47870181,
+    },
+  ],
+  "basList": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+  ],
+  "basN": {
+    "A": 33,
+    "B": 46,
+    "C": 105,
+    "D": 53,
+    "E": 23,
+  },
+  "basRef": "A",
+  "bortvalt": [],
+  "diagnostics": [],
+  "explainedShare": 70.35241727,
+  "fellBackFromFull": false,
+  "fras": "ålder och BAS-intervall",
+  "hHoga": 0,
+  "k": 7,
+  "konKvot": 95.70334849,
+  "konPct": -4.296651513,
+  "konPctHigh": -3.030139822,
+  "konPctHighClassical": -3.028856472,
+  "konPctLow": -5.546621447,
+  "konPctLowClassical": -5.547871476,
+  "medianKv": 36398.5,
+  "medianMa": 42725,
+  "modelDesc": "kön + ålder + BAS-intervall (indikatorer)",
+  "modelName": "full",
+  "modell": {
+    "alder": true,
+    "bas": true,
+    "skal": "",
+    "yrkesgrupp": false,
+  },
+  "modellVald": {
+    "alder": true,
+    "bas": true,
+    "skal": "",
+    "yrkesgrupp": false,
+  },
+  "modellVarning": null,
+  "n": 260,
+  "nBas": 5,
+  "nKvAnalysed": 138,
+  "nMaAnalysed": 122,
+  "pValue": 5.89244209e-11,
+  "perBas": [
+    {
+      "bas": "A",
+      "kvN": 26,
+      "maN": 7,
+      "n": 33,
+      "status": "too_few",
+    },
+    {
+      "R2": 0.6795158608,
+      "bas": "B",
+      "ciHigh": -0.5303545264,
+      "ciLow": -4.933114859,
+      "gapPct": -2.756648755,
+      "kvN": 28,
+      "maN": 18,
+      "medKv": 33931.5,
+      "medMa": 36261.5,
+      "medelKv": 34014.53571,
+      "medelMa": 36124.33333,
+      "n": 46,
+      "pValue": 0.01669957504,
+      "status": "ok",
+    },
+    {
+      "R2": 0.578160156,
+      "bas": "C",
+      "ciHigh": -4.748838532,
+      "ciLow": -8.384210441,
+      "gapPct": -6.584207094,
+      "kvN": 61,
+      "maN": 44,
+      "medKv": 37680,
+      "medMa": 41090,
+      "medelKv": 37654.39344,
+      "medelMa": 41048,
+      "n": 105,
+      "pValue": 6.880274128e-12,
+      "status": "ok",
+    },
+    {
+      "R2": 0.6026622837,
+      "bas": "D",
+      "ciHigh": -1.801327054,
+      "ciLow": -7.117386215,
+      "gapPct": -4.49633822,
+      "kvN": 15,
+      "maN": 38,
+      "medKv": 44461,
+      "medMa": 47423.5,
+      "medelKv": 43784.8,
+      "medelMa": 46961.89474,
+      "n": 53,
+      "pValue": 0.001683178672,
+      "status": "ok",
+    },
+    {
+      "bas": "E",
+      "kvN": 8,
+      "maN": 15,
+      "n": 23,
+      "status": "too_few",
+    },
+  ],
+  "rawGapPct": -14.80748976,
+  "seKonC": 0.006714493796,
+  "seKonR": 0.006707741404,
+  "sequential": [
+    {
+      "R2": 0.2085402527,
+      "gapPct": -14.49241765,
+      "k": 2,
+      "name": "Endast kön",
+      "status": "ok",
+    },
+    {
+      "R2": 0.8497973553,
+      "gapPct": -6.818531933,
+      "k": 6,
+      "name": "+ BAS-intervall",
+      "status": "ok",
+    },
+    {
+      "R2": 0.9193716702,
+      "gapPct": -4.296651513,
+      "k": 7,
+      "name": "+ Ålder",
+      "status": "ok",
+    },
+    {
+      "R2": 0.9430606225,
+      "gapPct": -2.113208683,
+      "k": 10,
+      "nEnkonade": 0,
+      "nGrupper": 8,
+      "nGrupperBada": 8,
+      "nPersoner": 260,
+      "name": "+ Yrkesgrupp",
+      "status": "ok",
+    },
+  ],
+  "tKvantil": 1.959962729,
+  "tStat": -6.547196155,
+  "tillfor": {
+    "forslag": {
+      "tabort": [],
+    },
+    "full": {
+      "R2": 0.9193716702,
+      "gapPct": -4.296651513,
+      "k": 7,
+      "name": "bas+alder",
+      "status": "ok",
+    },
+    "rader": [
+      {
+        "deltaR2pp": 59.48391523,
+        "gapMed": -4.296651513,
+        "gapUtan": -11.12508474,
+        "status": "ok",
+        "tillforLite": false,
+        "variabel": "bas",
+      },
+      {
+        "deltaR2pp": 6.957431491,
+        "gapMed": -4.296651513,
+        "gapUtan": -6.818531933,
+        "status": "ok",
+        "tillforLite": false,
+        "variabel": "alder",
+      },
+      {
+        "deltaR2pp": 2.368895225,
+        "gapMed": -2.113208683,
+        "gapUtan": -4.296651513,
+        "status": "ok",
+        "tillforLite": false,
+        "variabel": "yrkesgrupp",
+      },
+    ],
+  },
+  "triedSteps": [
+    {
+      "desc": "kön + ålder + BAS-intervall (indikatorer)",
+      "k": 7,
+      "name": "full",
+      "status": "ok",
+    },
+  ],
+  "yrkesSteg": {
+    "R2": 0.9430606225,
+    "gapPct": -2.113208683,
+    "k": 10,
+    "nEnkonade": 0,
+    "nGrupper": 8,
+    "nGrupperBada": 8,
+    "nPersoner": 260,
+    "name": "+ Yrkesgrupp",
+    "status": "ok",
+  },
+}
+`;
+
+exports[`beräkningar på demodatan (låsta tal) > regressionslinjens KI (linearRegressionCI) på en påhittad serie ger samma tal > linearRegressionCI 1`] = `
+[
+  {
+    "hi": 2.261276634,
+    "lo": 1.805390033,
+    "x": 1,
+    "y": 2.033333333,
+  },
+  {
+    "hi": 5.686265745,
+    "lo": 5.372067588,
+    "x": 2.75,
+    "y": 5.529166667,
+  },
+  {
+    "hi": 9.149849687,
+    "lo": 8.900150313,
+    "x": 4.5,
+    "y": 9.025,
+  },
+  {
+    "hi": 12.67793241,
+    "lo": 12.36373426,
+    "x": 6.25,
+    "y": 12.52083333,
+  },
+  {
+    "hi": 16.24460997,
+    "lo": 15.78872337,
+    "x": 8,
+    "y": 16.01666667,
+  },
+]
+`;
+
+exports[`beräkningar på demodatan (låsta tal) > översiktens bootstrap-KI (state.bootstrapCI utan elapsed) ger samma tal > bootstrapCI 1`] = `
+{
+  "B": 2000,
+  "gapPct": {
+    "hi": 18.00225734,
+    "lo": 11.76685325,
+    "point": 14.80748976,
+  },
+  "ratio": {
+    "hi": 0.8823314675,
+    "lo": 0.8199774266,
+    "point": 0.8519251024,
+  },
+}
+`;
+
+exports[`extremvärden med en påhittad avvikare > detectOutliers flaggar raden som multiplicerats med fem, och snapshoten låser listan > detectOutliers med avvikare 1`] = `
+[
+  {
+    "alder": 40,
+    "bas": "C",
+    "diffPct": 392.807965,
+    "groupMedian": 39071,
+    "kon": "Kvinna",
+    "lon": 192545,
+    "radnr": 2,
+    "yrke": "502010 Systemutvecklare",
+    "z": 9.230269372,
+  },
+]
+`;
