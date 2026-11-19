@@ -80,7 +80,7 @@ describe('yrkesgruppstabellen i Lika arbete', () => {
         expect(f('Stabil: minst 3 % även utan 1 person, fler kunde inte prövas')).toEqual(['Stabil även utan 1 person', 'Stabil: minst 3 % även utan 1 person, fler kunde inte prövas']);
         expect(f('Kan inte prövas: båda könen har exakt 10 personer')).toEqual(['Kan inte prövas', 'Kan inte prövas: båda könen har exakt 10 personer']);
     });
-    it('ansvarsraderna är hopfällda tills pilen på yrkesraden fäller ut dem; raden med ett tal står kvar', () => {
+    it('ansvarsraderna och raden Utan ledningsansvar är hopfällda tills pilen på yrkesraden fäller ut dem', () => {
         const w = rita();
         const d = w.document;
         const ansvar = [...d.querySelectorAll('#matrix-table tr.la-underrad-ansvar')];
@@ -88,13 +88,16 @@ describe('yrkesgruppstabellen i Lika arbete', () => {
         expect(ansvar.every(tr => tr.hidden)).toBe(true);
         const utan = [...d.querySelectorAll('#matrix-table tr.la-underrad:not(.la-underrad-ansvar)')];
         expect(utan.length).toBeGreaterThan(0);
-        expect(utan.every(tr => !tr.hidden && /Utan ledningsansvar/.test(tr.textContent))).toBe(true);
-        const pil = d.querySelector('#matrix-table .la-falla');
+        expect(utan.every(tr => tr.hidden && /Utan ledningsansvar/.test(tr.textContent))).toBe(true);
+        // Pilen på ett yrke med raden Utan ledningsansvar: den fälls ut och ihop med ansvarsgrupperna.
+        let yrkesrad = utan[0]; while (yrkesrad.classList.contains('la-underrad')) yrkesrad = yrkesrad.previousElementSibling;
+        const pil = yrkesrad.querySelector('.la-falla');
         expect(pil.getAttribute('aria-expanded')).toBe('false');
-        const egna = []; for (let tr = pil.closest('tr').nextElementSibling; tr && tr.classList.contains('la-underrad'); tr = tr.nextElementSibling) if (tr.classList.contains('la-underrad-ansvar')) egna.push(tr);
+        const egna = []; for (let tr = yrkesrad.nextElementSibling; tr && tr.classList.contains('la-underrad'); tr = tr.nextElementSibling) egna.push(tr);
+        expect(egna.some(tr => tr.classList.contains('la-underrad-ansvar'))).toBe(true);
+        expect(egna).toContain(utan[0]);
         pil.click();
         expect(pil.getAttribute('aria-expanded')).toBe('true');
-        expect(egna.length).toBeGreaterThan(0);
         expect(egna.every(tr => !tr.hidden)).toBe(true);
         expect(w.eval('diagramMarkering()')).toBeNull();   // pilen markerar inte raden
         pil.click();
@@ -598,9 +601,9 @@ describe('slutgranskningens fynd', () => {
         const fore = flikar.slice(0, flikar.indexOf(last)).filter(t => !t.disabled).pop();
         expect(d.querySelector('.nav-item.active')).toBe(fore || upplasta[upplasta.length - 1]);
     });
-    it('Löneöversyns individanalys säger jämförelsevärde, inte benchmark, och utskriften visar ansvarsraderna', () => {
+    it('Löneöversyns individanalys säger jämförelsevärde, inte benchmark, och utskriften visar ansvarsraderna och raden Utan ledningsansvar', () => {
         expect(las('src/app/36-loneoversyn.js').replace(/^\s*\/\/.*$/gm, '')).not.toMatch(/benchmark/i);
-        expect(las('src/style.css')).toContain('.la-underrad-ansvar[hidden] { display: table-row !important; }');
+        expect(las('src/style.css')).toContain('.la-underrad[hidden] { display: table-row !important; }');
     });
 });
 

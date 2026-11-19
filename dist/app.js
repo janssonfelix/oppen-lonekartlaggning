@@ -28240,7 +28240,8 @@ function generateSkevhet() {
 // Underrader per ansvarsgrupp (ledningsansvar, särskilt uppdrag, inget) under ett yrke i Lika arbete.
 // Samma k-regler som yrkesraden: grupp under k → inga lönemått; ett kön under k → samlad median.
 // Visas bara när yrket har minst två ansvarsgrupper. Raden "Utan ledningsansvar" visar kvoten för
-// de övriga när yrket har ledningsansvar och båda könen där är minst k.
+// de övriga när yrket har ledningsansvar och båda könen där är minst k. Alla underrader är hopfällda tills
+// yrkesradens pil fäller ut dem; de är ritade ändå (exporterna läser tabellen med alla rader utfällda).
 /**
  * Stabilitetens märkning på en kort rad under statusmärket («Stabil även utan 2 personer»). `hel` är hela meningen
  * (stabilitetKort i src/lib/rapportunderlag.js): de ord som inte behövs på skärmen står kvar som .bara-export, så att
@@ -28279,6 +28280,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
             const tr = document.createElement('tr');
             tr.className = 'la-underrad';
             tr.innerHTML = `<td colspan="10" class="la-underrad-namn">Utan ledningsansvar: kvinnors lön i % av mäns ${pct(Stat.median(kv) / Stat.median(ma) * 100)}</td>`;
+            tr.hidden = true;   // fälls ut med ansvarsgrupperna
             ut.push(tr);
         }
     }
@@ -28375,7 +28377,7 @@ function generateEUDirectiveMatrix() {
         const under = _ansvarsUnderraderFor(d.filter(x => x.yrke === r.yrke), fmt);
         under.forEach(u => tbody.appendChild(u));
         if (under.some(u => u.classList.contains('la-underrad-ansvar'))) {
-            // Pilen på yrkesraden fäller ut ansvarsgrupperna; raden «Utan ledningsansvar» bär ett tal och står alltid kvar.
+            // Pilen på yrkesraden fäller ut ansvarsgrupperna och raden «Utan ledningsansvar» under dem.
             const pil = document.createElement('button');
             pil.type = 'button';
             pil.className = 'la-falla';
@@ -28386,7 +28388,7 @@ function generateEUDirectiveMatrix() {
                 e.stopPropagation();
                 const oppna = pil.getAttribute('aria-expanded') !== 'true';
                 pil.setAttribute('aria-expanded', String(oppna));
-                under.forEach(u => { if (u.classList.contains('la-underrad-ansvar')) u.hidden = !oppna; });
+                under.forEach(u => { u.hidden = !oppna; });
             });
             /** @type {HTMLElement} */ (tr.firstElementChild).insertBefore(pil, /** @type {HTMLElement} */ (tr.firstElementChild).firstChild);
         }
@@ -32057,7 +32059,7 @@ function renderPrioritering() {
         (!filterBrist    || i.isBrist)
     );
     const top = filteredItems.slice(0, 30);
-    top.forEach(i => {
+    top.forEach((i, radIdx) => {
         const tr = document.createElement('tr');
         const statusInfo = PRIO_STATUS_INFO[i.status];
         const sgnKr  = i.diffKr  >= 0 ? '+' : '';
@@ -32078,8 +32080,19 @@ function renderPrioritering() {
         const rowKey = `${i.yrke}|${i.bas}`;
         // #13 Förslag-knapp: suggestionerna beräknas vid expand, inte i förväg
         const suggestionBtn = i._rows && i._rows.length
-            ? `<button class="btn-suggest bak-transparent ram-1-kant rund-4 pekare fs-xs marg-v-4 pad-2-6" data-row-key="${esc(rowKey)}" type="button" title="Visa förslag på sakliga skäl-hypoteser" aria-label="Visa motiveringsförslag för ${esc(i.yrke)}" aria-expanded="false">${ikon('lampa')}</button>`
+            ? `<button class="btn-suggest" data-row-key="${esc(rowKey)}" type="button" title="Visa förslag på sakliga skäl-hypoteser" aria-label="Visa motiveringsförslag för ${esc(i.yrke)}" aria-expanded="false">Motiveringsförslag</button>`
             : '';
+        // Radens knappar: Visa beräkningen står kvar som ikon (princip 3); de tre andra ligger i menyn Mer, som är
+        // exportmenyns mönster (11-diagramexport.js: Escape och Tab ut stänger, fokus tillbaka till knappen).
+        // Menyvalens text är en del av deras tillgängliga namn, som är desamma som när de var ikoner.
+        const merId = `prio-mer-${radIdx + 1}`;
+        const merMeny = `<div class="chart-export tabell-export prio-mer">`
+            + `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${merId}" aria-label="Mer om ${esc(i.yrke)}">Mer</button>`
+            + `<div class="chart-export-meny" id="${merId}" hidden>`
+            + `<button type="button" class="row-cross-link" data-target="rapport" data-yrke="${esc(i.yrke)}" data-bas="${esc(i.bas)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(i.yrke)} i Löneöversikten">Löneöversikten</button>`
+            + suggestionBtn
+            + `<button type="button" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">Gruppdossier</button>`
+            + '</div></div>';
         tr.innerHTML = `
             <td class="sticky-col-1" data-sort-value="${i.priorityIndex}"><div class="rund-12 inline-block fs-sm fw-700 min-bredd-36 pad-3-8 ta-mitt ${i.priorityIndex>60?'bricka-kritisk':i.priorityIndex>40?'bricka-varning':'bricka-neutral'}">${svTal(i.priorityIndex, 0)}</div></td>
             <th scope="row" class="sticky-col-2 ram-b-1-kant fs-md fw-normal ta-vanster">${esc(i.yrke)}${quickwinBadge}${bristBadge}${powerBadge}</th>
@@ -32098,9 +32111,7 @@ function renderPrioritering() {
                 <input type="checkbox" class="brist-toggle" data-aid="${esc(i.aid)}" ${i.isBrist ? 'checked' : ''} aria-label="Markera ${esc(i.yrke)} som bristyrke">
             </td>
             <td class="ta-mitt prio-detalj"><div class="prio-detalj-knappar">
-                <button class="row-cross-link" data-target="rapport" data-yrke="${esc(i.yrke)}" data-bas="${esc(i.bas)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(i.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button>${suggestionBtn}
-                <button class="btn-evidence" data-prio-row="1" type="button" title="Visa beräkningen bakom prioritetsindex" aria-label="Visa beräkningen för ${esc(i.yrke)}">${ikon('sok')}</button>
-                <button class="btn-evidence" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" type="button" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">${ikon('dokument')}</button></div>
+                <button class="btn-evidence" data-prio-row="1" type="button" title="Visa beräkningen bakom prioritetsindex" aria-label="Visa beräkningen för ${esc(i.yrke)}">${ikon('sok')}</button>${merMeny}</div>
             </td>
         `;
         // Cache item-referensen på TR så suggestion-handler kan plocka upp den
@@ -32134,7 +32145,7 @@ function renderPrioritering() {
             if (next && next.classList.contains('suggest-row')) {
                 next.remove();
                 btn.setAttribute('aria-expanded', 'false');
-                btn.textContent = 'Förslag';
+                btn.textContent = 'Motiveringsförslag';
                 return;
             }
             const suggestions = generateMotivationSuggestions(item);
@@ -32150,7 +32161,7 @@ function renderPrioritering() {
             /** @type {HTMLElement} */ (tr.parentNode).insertBefore(newTr, tr.nextSibling);
             tillampaFlerKolumner('prio-table');   // radens colspan följer kolumnerna som syns
             btn.setAttribute('aria-expanded', 'true');
-            btn.textContent = 'Stäng';
+            btn.textContent = 'Dölj motiveringsförslag';
         });
     });
     // Listeners för bristyrke-toggle och kommentarer
@@ -32163,6 +32174,32 @@ function renderPrioritering() {
         });
     });
 }
+
+// Menyn Mer på raderna. Ett val stänger menyn och ger fokus tillbaka till knappen Mer innan valet körs (fångstfasen,
+// före valens egna lyssnare): gruppdossiern lämnar då tillbaka fokus till Mer när den stängs, inte till ett dolt menyval.
+document.addEventListener('click', e => {
+    const val = /** @type {HTMLElement} */ (e.target).closest('.prio-mer .chart-export-meny button');
+    if (!val) return;
+    const wrap = /** @type {HTMLElement} */ (val.closest('.prio-mer'));
+    const knapp = /** @type {HTMLElement} */ (wrap.querySelector(':scope > .chart-export-btn'));
+    /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-meny')).hidden = true;
+    knapp.setAttribute('aria-expanded', 'false');
+    knapp.focus();
+}, true);
+// En öppnad meny som inte ryms under knappen i tabellens rullyta öppnas uppåt (tabellen rullar i sidled, så en meny
+// som går under rullytans kant skulle annars klippas). Körs efter 11-diagramexport.js, som har öppnat menyn.
+document.addEventListener('click', e => {
+    const knapp = /** @type {HTMLElement} */ (e.target).closest('.prio-mer > .chart-export-btn');
+    if (!knapp) return;
+    const wrap = /** @type {HTMLElement} */ (knapp.parentElement);
+    const meny = /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-meny'));
+    wrap.classList.remove('uppat');
+    if (meny.hidden) return;
+    const yta = wrap.closest('.table-container');
+    if (!yta) return;
+    const y = yta.getBoundingClientRect(), m = meny.getBoundingClientRect(), k = knapp.getBoundingClientRect();
+    if (m.bottom > y.bottom && k.top - y.top > m.height) wrap.classList.add('uppat');
+});
 
 // Lyssnare för referens-toggle och etikett-toggle
 document.querySelectorAll('input[name="prio-ref"]').forEach(el => {

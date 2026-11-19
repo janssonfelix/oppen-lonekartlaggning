@@ -505,11 +505,11 @@
                     <!-- Förhandskontroll av lönefilen (17-forhandskontroll.js): dold tills en lönefil är inläst. -->
                     <details class="avsnitt" id="avsnitt-fi-forhandskontroll" hidden>
                     <summary><span class="avsnitt-titel"><h2>Förhandskontroll av lönefilen</h2><span class="avsnitt-under">Hur verktyget tolkade filen, rad för rad och i sammandrag</span></span><span class="avsnitt-nyckel" id="nyckel-fi-forhandskontroll"></span></summary>
-                    <section id="forhandskontroll" class="card" aria-label="Förhandskontroll av lönefilen"></section>
+                    <section id="forhandskontroll" class="avsnitt-sektion" aria-label="Förhandskontroll av lönefilen"></section>
                     </details>
                     <details class="avsnitt" id="avsnitt-ov-kvalitet">
                     <summary><span class="avsnitt-titel"><h2>Underlagets kvalitet</h2><span class="avsnitt-under">Går underlaget att lita på, och vad saknas?</span></span><span class="avsnitt-nyckel" id="nyckel-ov-kvalitet"></span></summary>
-                    <section id="underlagets-kvalitet" class="card uk-panel" aria-labelledby="underlagets-kvalitet-rubrik" hidden>
+                    <section id="underlagets-kvalitet" class="avsnitt-sektion" aria-labelledby="underlagets-kvalitet-rubrik" hidden>
                         <h3 id="underlagets-kvalitet-rubrik" hidden>Underlagets kvalitet</h3>
                         <p id="underlagets-kvalitet-status" class="uk-helhet"></p>
                         <details id="uk-fallbar" class="uk-fallbar"><summary id="uk-sammanfattning"></summary>
@@ -581,7 +581,7 @@
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
                     <details class="avsnitt" id="avsnitt-ov-gap" open>
                     <summary><span class="avsnitt-titel"><h2>Var uppstår löneskillnaden?</h2> <span class="info-tip" data-tooltip="Skillnaden i medellön delas i delar efter de variabler du väljer. Standard är tre delar: fördelningen över BAS-intervall, fördelningen över AID-etiketter inom samma intervall och lönen inom samma AID-etikett och intervall. Tillsammans blir de hela skillnaden." data-term-template="Skillnaden i medellön delas i delar efter de variabler du väljer. Standard är tre delar: fördelningen över {niva.fl}, fördelningen över {enhet.fl} inom samma intervall och lönen inom samma {enhet.en} och intervall. Tillsammans blir de hela skillnaden." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><span class="avsnitt-under" data-term-template="Fördelning över {niva.fl}, över {enhet.fl} eller lön inom samma arbete">Fördelning över BAS-intervall, över AID-etiketter eller lön inom samma arbete</span></span><span class="avsnitt-nyckel" id="nyckel-ov-gap"></span></summary>
-                    <section id="gap-uppdelning" class="card gu-kort" aria-labelledby="gap-uppdelning-rubrik" hidden>
+                    <section id="gap-uppdelning" class="avsnitt-sektion" aria-labelledby="gap-uppdelning-rubrik" hidden>
                         <h2 id="gap-uppdelning-rubrik" hidden>Var uppstår löneskillnaden?</h2>
                         <div id="gap-uppdelning-innehall"></div>
                     </section>
@@ -2046,7 +2046,7 @@
                         <div id="rapport-urval"></div>
                         </details>
                         <div class="export-lista">
-                            <div class="export-hub-row export-rad-primar">
+                            <div class="export-hub-row">
                                 <div><strong>Word-utkast (dokumentation)</strong><span>Hela dokumentationen som en <em>redigerbar</em> .docx-fil: verktygets fynd är ifyllda och dina bedömningar står som gula fält <code>[HR fyller i …]</code>. Öppna filen i Word, fyll i och spara. Diagrammen följer med som bilder.</span><p class="export-besked" id="besked-word" aria-live="polite"></p></div>
                                 <button id="btn-export-docdraft" class="btn btn-primary" aria-label="Ladda ner redigerbart Word-utkast av lönekartläggningens dokumentation">Word-utkast (dokumentation)</button>
                             </div>
@@ -2086,7 +2086,7 @@
                     <div class="flik-intro"><strong>Vad ska stå i rapporten?</strong> Här finns utkastet till rapporttext och de färdiga avsnitten att klistra in.</div>
                     <details class="avsnitt" id="avsnitt-rt-utkast" open>
                     <summary><span class="avsnitt-titel"><h2>Utkast till rapporttext</h2><span class="avsnitt-under">Fynden att redigera och föra in i dokumentationen</span></span><span class="avsnitt-nyckel" id="nyckel-rt-utkast"></span></summary>
-                    <div class="card">
+                    <div class="rt-utkast">
                         <div class="rad-bryt-mitt gap-12 mellan marg-b-8">
                             <span class="avsnitt-verktyg-rubrik">Utkastet</span>
                             <div class="rad-bryt-mitt gap-8">

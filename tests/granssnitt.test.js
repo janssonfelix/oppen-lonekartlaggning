@@ -250,7 +250,8 @@ describe('en exportknapp per kort', () => {
             && /^Exportera (PNG|\(CSV\))$/.test(b.textContent.trim()));
         expect(aldre.map(b => b.id || b.textContent)).toEqual([]);
         // S11 i punkt 26: knappen säger vad den exporterar, så att två knappar över varandra inte båda heter Exportera.
-        const knappar = [...d.querySelectorAll('.view-panel .chart-export-btn')];
+        // Menyn Mer på Prioriteringens rader har exportmenyns form men är ingen export.
+        const knappar = [...d.querySelectorAll('.view-panel .chart-export-btn')].filter(b => !b.closest('.prio-mer'));
         expect(knappar.length).toBeGreaterThan(20);
         expect(knappar.filter(b => !['Exportera diagrammet', 'Exportera tabellen'].includes(b.textContent.trim())).map(b => b.textContent.trim())).toEqual([]);
     }, 30000);
@@ -271,6 +272,70 @@ describe('en exportknapp per kort', () => {
         csv = w.__csv;
         expect(csv).toBe(1);
         expect(meny.hidden).toBe(true);
+    });
+});
+
+describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
+    const prio = () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('prioritering');
+        w.document.querySelector('.nav-item[data-tab="prioritering"]').click();   // fokus når bara en flik som visas
+        return w;
+    };
+    it('varje rad har förstoringsglaset och en meny Mer med tre val i text; de tillgängliga namnen är som förut', () => {
+        const w = prio();
+        const rader = [...w.document.querySelectorAll('#prio-table tbody tr')].filter(tr => tr.querySelector('.prio-detalj'));
+        expect(rader.length).toBeGreaterThan(3);
+        for (const tr of rader) {
+            const yrke = tr.querySelector('th[scope="row"]').firstChild.textContent.trim();
+            const cell = tr.querySelector('.prio-detalj');
+            // Utanför menyn: bara Visa beräkningen och knappen Mer.
+            const synliga = [...cell.querySelectorAll('button')].filter(b => !b.closest('.chart-export-meny'));
+            expect(synliga.map(b => b.getAttribute('aria-label'))).toEqual([`Visa beräkningen för ${yrke}`, `Mer om ${yrke}`]);
+            const meny = cell.querySelector('.prio-mer .chart-export-meny');
+            expect(meny.hidden).toBe(true);
+            const val = [...meny.querySelectorAll('button')];
+            expect(val.map(b => b.getAttribute('aria-label'))).toEqual([
+                `Öppna ${yrke} i Löneöversikten`, `Visa motiveringsförslag för ${yrke}`, `Öppna gruppdossier för ${yrke}`]);
+            expect(val.map(b => b.textContent)).toEqual(['Löneöversikten', 'Motiveringsförslag', 'Gruppdossier']);
+            // Den synliga texten står i det tillgängliga namnet.
+            for (const b of [...val, synliga[1]]) expect(b.getAttribute('aria-label').toLowerCase()).toContain(b.textContent.toLowerCase());
+        }
+    });
+    it('Mer öppnas med fokus på första valet, Escape stänger med fokus tillbaka, och ett val stänger menyn', () => {
+        const w = prio();
+        const d = w.document;
+        const wrap = d.querySelector('#prio-table .prio-mer');
+        const knapp = wrap.querySelector(':scope > .chart-export-btn');
+        const meny = wrap.querySelector('.chart-export-meny');
+        knapp.click();
+        expect(meny.hidden).toBe(false);
+        expect(knapp.getAttribute('aria-expanded')).toBe('true');
+        expect(d.activeElement).toBe(meny.querySelector('button'));
+        d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(meny.hidden).toBe(true);
+        expect(knapp.getAttribute('aria-expanded')).toBe('false');
+        expect(d.activeElement).toBe(knapp);
+        // Motiveringsförslag: menyn stängs, förslagsraden kommer under raden och valet säger att det döljer den.
+        knapp.click();
+        const forslag = meny.querySelector('.btn-suggest');
+        forslag.click();
+        expect(meny.hidden).toBe(true);
+        expect(d.activeElement).toBe(knapp);
+        expect(wrap.closest('tr').nextElementSibling.classList.contains('suggest-row')).toBe(true);
+        expect(forslag.getAttribute('aria-expanded')).toBe('true');
+        expect(forslag.textContent).toBe('Dölj motiveringsförslag');
+        forslag.click();
+        expect(wrap.closest('tr').nextElementSibling?.classList.contains('suggest-row')).toBeFalsy();
+        expect(forslag.textContent).toBe('Motiveringsförslag');
+        // Gruppdossiern: menyn stängs, och när dossiern stängs får Mer fokus tillbaka.
+        knapp.click();
+        meny.querySelector('[data-open-dossier]').click();
+        expect(meny.hidden).toBe(true);
+        expect(d.getElementById('dossier-modal').style.display).toBe('flex');
+        w.eval('closeGruppdossier()');
+        expect(d.activeElement).toBe(knapp);
     });
 });
 

@@ -243,7 +243,8 @@ function generateSkevhet() {
 // Underrader per ansvarsgrupp (ledningsansvar, särskilt uppdrag, inget) under ett yrke i Lika arbete.
 // Samma k-regler som yrkesraden: grupp under k → inga lönemått; ett kön under k → samlad median.
 // Visas bara när yrket har minst två ansvarsgrupper. Raden "Utan ledningsansvar" visar kvoten för
-// de övriga när yrket har ledningsansvar och båda könen där är minst k.
+// de övriga när yrket har ledningsansvar och båda könen där är minst k. Alla underrader är hopfällda tills
+// yrkesradens pil fäller ut dem; de är ritade ändå (exporterna läser tabellen med alla rader utfällda).
 /**
  * Stabilitetens märkning på en kort rad under statusmärket («Stabil även utan 2 personer»). `hel` är hela meningen
  * (stabilitetKort i src/lib/rapportunderlag.js): de ord som inte behövs på skärmen står kvar som .bara-export, så att
@@ -282,6 +283,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
             const tr = document.createElement('tr');
             tr.className = 'la-underrad';
             tr.innerHTML = `<td colspan="10" class="la-underrad-namn">Utan ledningsansvar: kvinnors lön i % av mäns ${pct(Stat.median(kv) / Stat.median(ma) * 100)}</td>`;
+            tr.hidden = true;   // fälls ut med ansvarsgrupperna
             ut.push(tr);
         }
     }
@@ -378,7 +380,7 @@ function generateEUDirectiveMatrix() {
         const under = _ansvarsUnderraderFor(d.filter(x => x.yrke === r.yrke), fmt);
         under.forEach(u => tbody.appendChild(u));
         if (under.some(u => u.classList.contains('la-underrad-ansvar'))) {
-            // Pilen på yrkesraden fäller ut ansvarsgrupperna; raden «Utan ledningsansvar» bär ett tal och står alltid kvar.
+            // Pilen på yrkesraden fäller ut ansvarsgrupperna och raden «Utan ledningsansvar» under dem.
             const pil = document.createElement('button');
             pil.type = 'button';
             pil.className = 'la-falla';
@@ -389,7 +391,7 @@ function generateEUDirectiveMatrix() {
                 e.stopPropagation();
                 const oppna = pil.getAttribute('aria-expanded') !== 'true';
                 pil.setAttribute('aria-expanded', String(oppna));
-                under.forEach(u => { if (u.classList.contains('la-underrad-ansvar')) u.hidden = !oppna; });
+                under.forEach(u => { u.hidden = !oppna; });
             });
             /** @type {HTMLElement} */ (tr.firstElementChild).insertBefore(pil, /** @type {HTMLElement} */ (tr.firstElementChild).firstChild);
         }
