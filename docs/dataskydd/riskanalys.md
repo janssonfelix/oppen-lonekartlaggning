@@ -417,7 +417,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   BAS-intervall under tröskeln (`tests/ktroskel-livscykel.test.js`; kurvan är modellens tal, som invarianten inte känner igen), för Löneöversyns
   scenariojämförelse (`tests/ktroskel-loneoversyn-scenarier.test.js`), för noten vid egna riktade rader, för
   regressionens BAS-effekter och för Löneöversyns summor (`tests/ktroskel-loneoversyn-summor.test.js`). Invarianten söker efter lönevärden; den prövar inte antal och
-  andelar, och inte ett lönemått som bara går att räkna fram som en differens mellan andra tal.
+  andelar, och inte ett lönemått som bara går att räkna fram som en differens mellan andra tal. Det gör
+  differensprovet (`tests/ktroskel-differens.test.js`) för de utdata det täcker, bland dem tabellerna per
+  BAS-intervall.
 - **Värdet kan ändras av användaren (ADR-38).** Fältet *Minsta gruppstorlek för redovisning* under
   **Inställningar** i sidhuvudet tar heltal från 2 (högst 1 000). Klicka på värdet i flikarnas översta rad för att komma dit.
   Standardvärdet är 10, och inget lagras mellan sessioner.
@@ -516,7 +518,16 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   Excelfil) följer samma trappa och samma regel per kön. Vid tröskeln 5 eller lägre finns ingen
   mellannivå. Vaktas av `tests/ktroskel-kon.test.js` (bladet) och `tests/ktroskel-invarianter.test.js`.
 - **Lönestruktur per BAS-intervall och Prioritering:** *Lönestruktur per BAS-intervall* i Word-utkastet och PDF-rapporten utelämnar
-  BAS under tröskeln och namnger dem i en not. Prioritering visar skillnaden mellan könen i en grupp
+  BAS under tröskeln och namnger dem i en not. Raden *Alla* i tabellerna *Löneskillnader inom likvärdigt arbete* och
+  *Löneskillnader i åldersgrupper* räknas på hela underlaget. Omfattar de utelämnade intervallen tillsammans färre än
+  tröskeln undertrycks också medelvärdena (medellön, medellön per kön, kvoten, medelålder, medellönen per
+  åldersgrupp) för det minsta visade intervallet, ett i taget tills de undertryckta når tröskeln, i alla avsnittets
+  tabeller och i Excelbladet *Per BAS*; antal och andel kvinnor står kvar. Samma regel gäller per kön mot raden
+  *Alla*s medel per kön, och för AID-etiketterna mot organisationens rad när receptet har måttet *Medellön*. En not
+  namnger det som undertryckts (ADR-83; `kompletterandeUndertryckning` i `src/lib/perbas.js`). Vaktas av
+  differensprovet `tests/ktroskel-differens.test.js` och `tests/perbas.test.js`. Kvar, och inte prövat som differens:
+  medellönen per åldersgrupp mot raden *Alla* (antalet per åldersgrupp skrivs inte ut) och vägar som kräver
+  uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Prioritering visar skillnaden mellan könen i en grupp
   bara när båda könen når tröskeln. Annars räknas prioritetsindexet utan könsdel, så att
   poängen inte röjer den dolda skillnaden. Prioriteringens förslag om lägsta
   lönekvintilen kräver tröskeln för båda könen. Vaktas av `tests/ktroskel-utdata.test.js`, som läser

@@ -89,6 +89,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-80 | Flikbytet ritar först och räknar sedan | Gällande | 2026-11-16 |
 | ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Gällande | 2026-11-16 |
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
+| ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
 
 ## Besluten
 
@@ -482,3 +483,19 @@ liten skärm, och brister som bara syns på surfplatta eller telefon prioriteras
 surfplatta och mobil inte stöds; ADR-41 var det enda som sade annat. *Avvisat:* att anpassa för surfplatta, som skulle
 kräva en egen form för tabellerna och diagrammen för en användning som inte efterfrågats. *Gäller i dag:* `mal.md`
 (*Avgränsning*).
+
+**ADR-83 — Kompletterande undertryckning i tabellerna per BAS-intervall.** Beslutat av underhållaren 2026-11-19.
+Raden *Alla* i tabellerna inom likvärdigt arbete och i åldersgrupper, och organisationens rad i intervallets tabell,
+räknades på hela underlaget, också de utelämnade grupperna, så att totalen minus de visade raderna gav en utelämnad
+grupps medellön (S4: ett lönemått får inte gå att räkna fram ur summorna i samma export). Totalen räknas som förut
+och står kvar. Omfattar de utelämnade delarna tillsammans färre än tröskeln undertrycks också medelvärdena för den
+minsta visade delen, en i taget tills de undertryckta tillsammans når tröskeln; räcker inte det står bara totalen.
+Samma regel som Löneöversyns blad *Fördelning*. Den gäller intervallen (eller huvudområdena) mot raden *Alla*, varje
+kön för sig mot raden *Alla*s medel per kön, och AID-etiketterna mot organisationens rad när receptet har måttet
+*Medellön*. Ett undertryckt intervall förlorar sina medelvärden i alla avsnittets tabeller, och ett intervall vars
+könsmedel döljs förlorar båda könens, eftersom medellönen för alla och det ena könet ger det andra. Antal och andelar
+står kvar (ADR-70), medianer och percentiler berörs inte, och en not namnger det som undertryckts. Regeln bor i
+`src/lib/perbas.js` som en allmän funktion för delar med antal (`kompletterandeUndertryckning`), så att den kan
+användas i andra moduler; de utskrivande delarna skriver bara ut resultatet. *Avvisat:* att räkna raden *Alla* bara
+på de visade grupperna, som ändrar vad raden betyder; att utelämna raden *Alla*. *Gäller i dag:* `k-troskeln.md`
+avsnitt 2.
