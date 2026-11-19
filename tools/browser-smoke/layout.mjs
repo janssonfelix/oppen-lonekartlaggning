@@ -561,8 +561,11 @@ export async function smalaSkarmar() {
         await s.click('#btn-meny');
         await s.waitForTimeout(300);
         await oppnaFlik(s, '.nav-item[data-tab="struktur"]');
-        await s.waitForTimeout(900);
-        ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-regression').style.display === 'block'), '390 punkter: ett val i menyn byter flik och stänger menyn');
+        // Vänta på läget i stället för en fast tid: menyns övergång och flikbytet (ADR-80) tar längre tid på en långsam
+        // CI-maskin än lokalt.
+        const bytt = () => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-regression').style.display === 'block';
+        await s.waitForFunction(bytt, null, { timeout: 5000 }).catch(() => {});
+        ok(await s.evaluate(bytt), '390 punkter: ett val i menyn byter flik och stänger menyn');
         // Diagrammen ritar för den bredd de får: huvuddiagrammet ska fylla kortet och ha läsbar text.
         const dia = await s.evaluate(() => { const svg = document.querySelector('#view-regression svg[role="group"], #view-regression svg[role="img"]');
             if (!svg) return null; const r = svg.getBoundingClientRect(); const txt = [...svg.querySelectorAll('text')].map(t => t.getBoundingClientRect().height).filter(h => h > 0);
