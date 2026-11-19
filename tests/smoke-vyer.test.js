@@ -451,9 +451,10 @@ describe('menystruktur', () => {
 
 describe('utfällt som standard', () => {
     // Hjälppaneler förblir infällda; explore-urval-val är Utforskas rullgardin för värdeval och diagram-urval-lista
-    // diagramkärnans lista med kryssrutor ("Räkna för sektor", "Yrkesgrupp") och gu-andra valet av förklaringsvariabler
-    // under trappan i Var uppstår löneskillnaden? ("Ändra uppdelning") — kontroller, inte grupperingar.
-    const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista', 'gu-andra'];
+    // diagramkärnans lista med kryssrutor ("Räkna för sektor", "Yrkesgrupp"), diagram-filter diagramkärnans rad
+    // "Filter: …" med filterraderna och gu-andra valet av förklaringsvariabler under trappan i Var uppstår
+    // löneskillnaden? ("Ändra uppdelning") — kontroller, inte grupperingar.
+    const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista', 'diagram-filter', 'gu-andra'];
     // ADR-36: organisationspaketets rad är ihopfälld på Översikt, och Underlagets kvalitet är
     // ihopfälld när allt är OK (utfälld vid varning).
     const UNDANTAG_ID = ['organisationspaket', 'uk-fallbar'];

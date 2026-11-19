@@ -197,8 +197,8 @@ rubrikraden, också när det är hopfällt.
 
 ### Dossierer: en AID-etikett eller ett BAS-intervall på en sida
 
-- **Gruppdossiern** samlar allt verktyget vet om en AID-etikett i ett BAS-intervall. Den öppnas från tabellraderna,
-  från en grupp i Egna vyer och från raden om markeringen (*Öppna gruppdossier*).
+- **Gruppdossiern** samlar allt verktyget vet om en AID-etikett i ett BAS-intervall. Den öppnas från tabellraderna
+  (i Prioritering under *Mer*), från en grupp i Egna vyer och från raden om markeringen (*Öppna gruppdossier*).
 - **BAS-dossiern** samlar ett BAS-intervall i rapportens ordning. Då kan du skriva avsnittet om intervallet utan
   att hämta det ur fem flikar. Dossiern har:
   - nyckeltalen (antal, kvinnor och män, median, P10–P90) och läget mot ställningstagandets rad för intervallet
@@ -276,10 +276,10 @@ rubrikraden, också när det är hopfällt.
    SKR:s PO-påslag är standardvärde i kostnadsberäkningen; ordlistan förklarar begreppet SKR.
    AID grupperar arbetsuppgifter och är inte ett arbetsvärderingssystem — AID-etiketterna är en
    **utgångspunkt** för lika arbete som du bekräftar (se bakgrundspanelen i fliken).
-   Har lönefilen AID:s **ansvarskod** visas under AID-etiketten en rad per ansvarsgrupp
-   (ledningsansvar, särskilt uppdrag, inget särskilt ansvar). Raden **Utan ledningsansvar** visar
-   skillnaden bland dem som inte leder. I regressionen (Lönestruktur) står på en egen rad hur mycket
-   ansvaret förklarar. Huvudtalet räknar inte bort det: om ansvaret är ett sakligt skäl
+   Har lönefilen AID:s **ansvarskod** fäller pilen framför AID-etiketten ut en rad per ansvarsgrupp
+   (ledningsansvar, särskilt uppdrag, inget särskilt ansvar). Sist står raden **Utan ledningsansvar**, som visar
+   skillnaden bland dem som inte leder. Excel-filen har alla raderna. I regressionen (Lönestruktur) står på en
+   egen rad hur mycket ansvaret förklarar. Huvudtalet räknar inte bort det: om ansvaret är ett sakligt skäl
    avgör du.
    Grupper som är värda att granska märks **skör** om skillnaden kan hamna under 3 % när en
    eller två personer tas bort, annars **stabil**. Statusen gäller i båda fallen, men i en
@@ -378,7 +378,9 @@ rubrikraden, också när det är hopfällt.
    åldersstruktur och livscykel.
 7. **Prioritering · Löneöversyn · Handlingsplan** — tre flikar med var sin fråga.
    **Prioritering** visar löneläget mot er referens med kostnad att nå den. Matrisen visar varje grupps
-   avvikelse mot referensen och dess storlek, och åtgärdslistan rangordnar grupperna. Kostnadsdiagrammet
+   avvikelse mot referensen och dess storlek, och åtgärdslistan rangordnar grupperna. Varje rad i listan har
+   förstoringsglaset *Visa beräkningen* och menyn *Mer*: Löneöversikten, motiveringsförslag och gruppdossiern.
+   Kostnadsdiagrammet
    visar de grupper som kostar mest att lyfta, med den kumulativa andelen av totalkostnaden. Läget har egna
    ord — *Börja här*, *Under referens, liten grupp*, *Nära referens* (under och över uppföljningsgränsen, i två
    färger) och *Över referens* — eftersom det är något annat än skillnaden mellan kvinnor och män, som Lika arbete
@@ -481,8 +483,10 @@ SVG (skarp i Word) och diagramdatan som tabell.
 **Välj vad ett diagram visar.** I diagrammen där BAS-intervallet är en dimension (bland annat
 bandkartan och statistikens spann i Löneläget, översikten, könsfördelningen, lådorna och trattdiagrammet i Lika
 arbete, Krav mot lön i Likvärdigt arbete, Prioriteringens två diagram och hanteln per BAS-intervall i Spara och
-jämför år) står en knapp per intervall ovanför diagrammet. Klicka på ett intervall för att dölja det, till exempel
-BAS A, B, C och N inför en presentation. Det sista synliga intervallet kan inte döljas.
+jämför år) står en knapp per intervall ovanför diagrammet. Filtren ligger hopfällda i raden **Filter**, som säger hur
+många som är aktiva (*Filter: inga*, *Filter: 1 aktivt*, *Filter: 2 aktiva*); klicka på den för att fälla ut dem. Den
+står kvar utfälld när diagrammet ritas om. Klicka på ett intervall för att dölja det, till exempel BAS A, B, C och N
+inför en presentation. Det sista synliga intervallet kan inte döljas.
 
 Diagram där varje punkt är en AID-etikett har fler filter, en rad per filter:
 
@@ -534,7 +538,8 @@ stapel samlar flera BAS-intervall, till exempel lägena per kön i Lönepolitik,
 **Räkna ett diagram för en del av underlaget.** Några diagram som sammanfattar många personer kan räknas om för en
 del av dem: lådorna och histogrammet för kvinnors och mäns lön i Ålder & karriär (för ett huvudområde eller en åldersgrupp),
 löneskillnaden per åldersgrupp (för ett huvudområde eller en AID-etikett) och percentilerna och kvartilerna i
-Lönestruktur (för ett huvudområde eller ett BAS-intervall). Raden **Räkna för** står ovanför diagrammet. Välj till
+Lönestruktur (för ett huvudområde eller ett BAS-intervall). Raden **Räkna för** står först i raden **Filter** ovanför
+diagrammet, och ett val räknas där som ett aktivt filter. Välj till
 exempel ett huvudområde, så räknas diagrammet om för personerna där, och under diagrammet står "Diagrammet är räknat
 för: huvudområde Teknikarbete (60 personer)". **Räkna för alla** går tillbaka till hela underlaget. Diagrammet räknas för en sak i taget: väljer du en
 åldersgrupp tas valet av huvudområde bort.

@@ -25,6 +25,8 @@ const behallare = (id = 't-urval', bredd = 600) => {
 };
 const ritaI = (el, figur, val = {}) => { w.__f = figur; w.__val = val; w.__el = el; return w.eval('ritaFigur(window.__el, window.__f, window.__val)'); };
 const rad = el => el.parentElement.querySelector('.diagram-urval');
+// Raden "Filter: …" (<details data-urval-filter>) direkt före behållaren; filterraderna står i den.
+const filterEl = el => el.previousElementSibling && el.previousElementSibling.matches('details[data-urval-filter]') ? el.previousElementSibling : null;
 const knappar = el => [...rad(el).querySelectorAll('button[aria-pressed]')];
 const knapp = (el, text) => [...rad(el).querySelectorAll('button')].find(b => b.textContent === text);
 const visaAlla = el => el.parentElement.querySelector('.diagram-urval [data-urval-alla]');
@@ -43,7 +45,7 @@ describe('knappraden', () => {
         ritaI(el, f);
         const r = rad(el);
         expect(r).not.toBeNull();
-        expect(el.previousElementSibling).toBe(r);
+        expect(filterEl(el).lastElementChild).toBe(r);
         expect(r.tagName).toBe('DIV');
         expect(r.getAttribute('role')).toBe('group');
         expect(r.getAttribute('aria-label')).toBe('Visa BAS-intervall');
@@ -364,7 +366,7 @@ describe('intervall och flera dimensioner', () => {
         ritaI(el, gruppFigur());
         const r = rader(el);
         expect(r.map(x => x.getAttribute('data-urval-falt'))).toEqual(['bas', 'n']);
-        expect(el.previousElementSibling).toBe(r[1]);
+        expect(filterEl(el).lastElementChild).toBe(r[1]);
         expect(r[1].previousElementSibling).toBe(r[0]);
         const ir = intervallRad(el);
         expect(ir.getAttribute('role')).toBe('group');
@@ -605,7 +607,7 @@ describe('kategori som lista', () => {
         const el = behallare();
         ritaI(el, yrkesFigur());
         const r = lrad(el);
-        expect(el.previousElementSibling).toBe(r);
+        expect(filterEl(el).lastElementChild).toBe(r);
         expect(r.getAttribute('role')).toBe('group');
         expect(r.getAttribute('aria-label')).toBe('Visa AID-etikett');
         expect(r.getAttribute('data-urval-falt')).toBe('yrke');
@@ -957,7 +959,7 @@ describe('underlag: Räkna för', () => {
         expect(r.querySelector('[data-underlag-utelamnade]').textContent).toBe('1 till går inte att välja för sig: färre än 5 kvinnor eller män');
         expect(r.textContent).not.toContain('Liten');
         // Raderna i ordning: sektorn, åldersgruppen, sedan behållaren; Räkna för alla sist i den sista underlagsraden, dold.
-        expect(el.previousElementSibling).toBe(urad(el, 'aldersgrupp'));
+        expect(filterEl(el).lastElementChild).toBe(urad(el, 'aldersgrupp'));
         expect(urad(el, 'aldersgrupp').previousElementSibling).toBe(r);
         expect(raknaAlla(el).hidden).toBe(true);
         expect(urad(el, 'aldersgrupp').lastElementChild).toBe(raknaAlla(el));
@@ -1130,6 +1132,18 @@ describe('underlag: Räkna för', () => {
         expect(staplar(el)).toBe(0);
         rensa(el);
     });
+    it('raden Filter räknar ett val i underlaget som ett aktivt filter', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, underlagFigur());
+        const sum = () => filterEl(el).querySelector(':scope > summary').textContent;
+        expect(sum()).toBe('Filter: inga');
+        klicka(uknapp(el, 'Bara kv'));
+        expect(sum()).toBe('Filter: 1 aktivt');
+        klicka(raknaAlla(el));
+        expect(sum()).toBe('Filter: inga');
+        rensa(el);
+    });
     it('rensaFigur tar bort underlagets egenskaper; minnet står kvar', () => {
         w.eval('_rfUrvalGlom()');
         const el = behallare();
@@ -1140,6 +1154,128 @@ describe('underlag: Räkna för', () => {
         expect(Object.keys(el).some(k => k.startsWith('_rfUnderlag'))).toBe(false);
         ritaI(el, underlagFigur());
         expect(el._rfUnderlagText).toBe('sektor Mellan, Stor (52 personer)');
+        rensa(el);
+    });
+});
+
+// ---- Raden "Filter": filterraderna hopfällda i en <details> före behållaren ----
+describe('raden Filter', () => {
+    const ANTAL = { typ: 'intervall', falt: 'n', namn: 'Antal personer i gruppen', format: 'antal', etikett: '{v} personer i gruppen' };
+    const YRKE = { typ: 'kategori', falt: 'yrke', namn: 'AID-etikett', etikett: '{v}', visning: 'lista' };
+    // Sex grupper med BAS, antal (5–60) och AID-etikett.
+    const figur = () => ({
+        beskrivning: 'Grupper', urval: [URVAL, YRKE, ANTAL], x: { skala: 'linjar', titel: 'Antal' }, y: { skala: 'linjar', titel: 'Kr' },
+        lager: [{ marke: 'punkt', serie: 'Grupper', farg: '#2563eb', data: [['A', 5], ['A', 10], ['B', 20], ['B', 30], ['C', 40], ['C', 60]]
+            .map(([bas, n], i) => ({ x: n, y: 30000 + i * 100, bas, n, yrke: `10${i} Yrke ${i}` })) }],
+    });
+    const summering = el => filterEl(el).querySelector(':scope > summary');
+    const grans = (el, g, text) => {
+        const f = el.parentElement.querySelector(`.diagram-urval[data-urval-falt="n"] input[data-urval-grans="${g}"]`);
+        f.value = text; f.dispatchEvent(new w.Event('change', { bubbles: true }));
+    };
+    const fallUt = (el, oppen = true) => { const d = filterEl(el); d.open = oppen; d.dispatchEvent(new w.Event('toggle')); };
+
+    it('står hopfälld direkt före behållaren, med alla filterrader inuti och summeringen först', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, figur());
+        const d = filterEl(el);
+        expect(d).not.toBeNull();
+        expect(d.tagName).toBe('DETAILS');
+        expect(d.className).toBe('diagram-filter');
+        expect(d.open).toBe(false);
+        expect(d.firstElementChild).toBe(summering(el));
+        expect(summering(el).textContent).toBe('Filter: inga');
+        expect([...d.querySelectorAll(':scope > .diagram-urval')].map(r => r.getAttribute('data-urval-falt'))).toEqual(['bas', 'yrke', 'n']);
+        expect(el.parentElement.querySelectorAll(':scope > .diagram-urval')).toHaveLength(0);
+        expect(d.hasAttribute('style')).toBe(false);
+        rensa(el);
+        expect(filterEl(el)).toBeNull();
+        expect(el.parentElement.querySelector('[data-urval-filter]')).toBeNull();
+    });
+    it('ingen rad Filter utan filterrader', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, basFigur(['A']));
+        expect(el.parentElement.querySelector('[data-urval-filter]')).toBeNull();
+        rensa(el);
+    });
+    it('summeringen: inga, 1 aktivt, N aktiva — och den ändras direkt när ett filter ändras, också hopfälld', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, figur());
+        expect(filterEl(el).open).toBe(false);
+        klicka(knapp(el, 'BAS A'));
+        expect(summering(el).textContent).toBe('Filter: 1 aktivt');
+        klicka(knapp(el, 'BAS B'));   // samma dimension: fortfarande ett filter
+        expect(summering(el).textContent).toBe('Filter: 1 aktivt');
+        const ruta = el.parentElement.querySelector('.diagram-urval[data-urval-falt="yrke"] input[data-urval]');
+        ruta.checked = false; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(summering(el).textContent).toBe('Filter: 2 aktiva');
+        // Ett intervall är aktivt bara när det är snävare än figurens spann (5–60).
+        grans(el, 'min', '5');
+        grans(el, 'max', '60');
+        expect(summering(el).textContent).toBe('Filter: 2 aktiva');
+        grans(el, 'min', '1');
+        expect(summering(el).textContent).toBe('Filter: 2 aktiva');
+        grans(el, 'max', '50');
+        expect(summering(el).textContent).toBe('Filter: 3 aktiva');
+        // Ett fel i fältet ändrar inget filter.
+        grans(el, 'min', 'x');
+        expect(summering(el).textContent).toBe('Filter: 3 aktiva');
+        expect(filterEl(el).open).toBe(false);
+        klicka(visaAlla(el));
+        expect(summering(el).textContent).toBe('Filter: inga');
+        // Summeringen räknas ur minnet när diagrammet ritas igen.
+        klicka(knapp(el, 'BAS C'));
+        ritaI(el, figur());
+        expect(summering(el).textContent).toBe('Filter: 1 aktivt');
+        rensa(el);
+    });
+    it('utfällt läge minns per diagram när diagrammet ritas om och efter rensaFigur, och glöms med urvalet', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, figur());
+        fallUt(el);
+        ritaI(el, figur());
+        expect(filterEl(el).open).toBe(true);
+        rensa(el);
+        ritaI(el, figur());
+        expect(filterEl(el).open).toBe(true);
+        // Ett annat diagram är hopfällt.
+        const annat = behallare('t-urval-annat');
+        ritaI(annat, figur());
+        expect(filterEl(annat).open).toBe(false);
+        rensa(annat);
+        annat.parentElement.remove();
+        // Hopfällt igen minns också.
+        fallUt(el, false);
+        ritaI(el, figur());
+        expect(filterEl(el).open).toBe(false);
+        fallUt(el);
+        w.eval('_rfUrvalGlom()');   // ny lönefil, Rensa all data
+        ritaI(el, figur());
+        expect(filterEl(el).open).toBe(false);
+        fallUt(el);
+        w.eval('_rfRensaAlla()');
+        ritaI(el, figur());
+        expect(filterEl(el).open).toBe(false);
+        rensa(el);
+    });
+    it('fokus på summeringen eller en knapp i raderna står kvar när diagrammet ritas om', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, figur());
+        summering(el).focus();
+        expect(w.document.activeElement).toBe(summering(el));
+        ritaI(el, figur());
+        expect(w.document.activeElement).toBe(summering(el));
+        fallUt(el);
+        knapp(el, 'BAS B').focus();
+        klicka(knapp(el, 'BAS B'));
+        ritaI(el, figur());
+        expect(filterEl(el).open).toBe(true);
+        expect(w.document.activeElement).toBe(knapp(el, 'BAS B'));
         rensa(el);
     });
 });

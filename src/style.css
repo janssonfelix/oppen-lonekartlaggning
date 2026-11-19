@@ -334,6 +334,8 @@ fieldset.falt-grupp > legend { padding: 0 6px; font-size: var(--fs-sm); font-wei
 /* Löneöversyn: de två värden scenariot börjar med står bredvid varandra, före utfallet. */
 .lo-scenario { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0 16px; }
 .avsnitt-verktyg-rubrik { font-weight: 600; font-size: var(--fs-md); }
+/* Rapporttextens utkast står direkt i avsnittet: en linje under rubriken i stället för ett kort i kortet. */
+.rt-utkast { border-top: 1px solid var(--border); padding-top: 14px; }
 .avsnitt-inledning { font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.6; margin: 0 0 12px; }
 details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 @media (prefers-reduced-motion: reduce) { details.avsnitt > summary::before { transition: none; } }
@@ -2341,23 +2343,22 @@ summary:focus-visible {
 .flow-next-btn:hover { background: var(--primary-hover); }
 @media print { .flow-next-bar, .first-run-hint { display: none !important; } }
 
+/* Exportvalen står i kortet Exportera som en lista med avdelare, inte som kort i kortet. */
 .export-hub-row {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: #fff;
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
 }
+.export-hub-row:last-child { border-bottom: 1px solid var(--border); }
 .export-hub-row > div { flex: 1; min-width: 0; }
 .export-hub-row strong { display: block; font-size: var(--fs-sm); margin-bottom: 2px; }
 .export-hub-row span { font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.45; display: block; }
 .export-hub-row .btn { flex-shrink: 0; white-space: nowrap; }
 /* Exporterna som en lista: en rad per underlag, med vad det innehåller och knappen till höger. */
-.export-lista { display: grid; gap: 8px; }
+.export-lista { display: grid; }
 .export-lista .export-hub-row .btn { min-width: 150px; justify-content: center; }
-.export-rad-primar { border-color: var(--primary); background: var(--yta); }
 /* PDF-raden: organisationens namn står under beskrivningen och förklaringen (S9 i punkt 26), så att texten har radens
    hela bredd som i Word-raden; knappen står kvar till höger. */
 .export-hub-row .export-org { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 360px; margin-top: 8px; }
@@ -2742,7 +2743,12 @@ summary:focus-visible {
 @media print { .chart-export { display: none !important; } }
 /* Diagrammets urval (10-diagramritare.js): en rad per dimension ovanför diagrammet. En kategori har knappar
    (intryckt = värdet visas; den sista valda kan inte väljas bort, aria-disabled), ett intervall fälten Minst och
-   Högst (aria-invalid: talet gick inte att läsa eller Minst är större än Högst). Utskriften visar inte raderna. */
+   Högst (aria-invalid: talet gick inte att läsa eller Minst är större än Högst). Utskriften visar inte raderna.
+   Raderna står i en hopfälld rad "Filter: …" (.diagram-filter), i samma stil som en lista. */
+.diagram-filter { margin: 0 0 8px; }
+.diagram-filter > summary { cursor: pointer; font-size: var(--fs-sm); padding: 4px 0; overflow-wrap: anywhere; }
+.diagram-filter > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+.diagram-filter[open] > summary { margin-bottom: 6px; }
 .diagram-urval { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
 .diagram-urval .btn-table-tool[aria-disabled="true"] { cursor: not-allowed; opacity: 0.7; }
 .diagram-urval .btn-table-tool[hidden] { display: none; }
@@ -2763,7 +2769,7 @@ summary:focus-visible {
 .diagram-urval-poster > li[hidden] { display: none; }
 .diagram-urval-poster label { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-sm); min-width: 0; overflow-wrap: anywhere; padding: 2px 0; }
 .diagram-urval-poster input[type="checkbox"] { flex: none; margin-top: 2px; }
-@media print { .diagram-urval { display: none !important; } }
+@media print { .diagram-filter, .diagram-urval { display: none !important; } }
 
 /* Utforska 2.0 (70/71-explorer) */
 .explore-controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
@@ -2810,7 +2816,6 @@ summary:focus-visible {
 .ref-namn-rad { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; font-size: var(--fs-sm); }
 
 /* Underlagets kvalitet (ADR-19) */
-.uk-panel { margin-top: 24px; }
 .uk-helhet { margin: 4px 0 6px; font-size: var(--fs-md); }
 .uk-intro { font-size: var(--fs-sm); color: var(--text-muted); margin: 0 0 8px; }
 .uk-rad { display: grid; grid-template-columns: 5.5rem 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
@@ -2840,7 +2845,7 @@ summary:focus-visible {
 .ru-diagram h4 { margin: 0; font-size: var(--fs-md); }
 
 /* Var uppstår löneskillnaden? (ADR-22) */
-.gu-kort { margin-top: 24px; }
+/* Delarna skiljs av linjer (.gu-rad); sektionen har ingen egen ram (.avsnitt-sektion). */
 .gu-inledning { margin: 0 0 12px; }
 .gu-rad { padding: 10px 0; border-top: 1px solid var(--border); }
 .gu-rubrik { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
@@ -2900,7 +2905,7 @@ summary:focus-visible {
 .la-falla[aria-expanded="true"]::before { transform: rotate(45deg); }
 .la-falla:hover { color: var(--text-main); background: var(--yta-stark); }
 .la-falla:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
-@media print { .la-falla { display: none; } .la-underrad-ansvar[hidden] { display: table-row !important; } }
+@media print { .la-falla { display: none; } .la-underrad[hidden] { display: table-row !important; } }
 .la-underrad td { font-size: var(--fs-sm); color: var(--text-muted); border-top: none; }
 .la-underrad .la-underrad-namn { padding-left: 1.6rem; }
 .reg-ansvar { font-size: var(--fs-sm); margin: 0.6rem 0 0; }
@@ -3057,7 +3062,10 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 .ov-filrad-lank { display: inline-flex; align-items: center; min-height: 24px; background: none; border: 0; padding: 0; font: inherit; color: var(--primary); text-decoration: underline; cursor: pointer; }
 .ov-filrad-lank:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
 details.avsnitt .ptrack > h3 { display: none; }           /* rubriken står i avsnittets sammanfattning */
-details.avsnitt > section.card, details.avsnitt > div > .card.ptrack { box-shadow: none; padding: 0; margin-bottom: 0; }
+details.avsnitt > div > .card.ptrack { box-shadow: none; padding: 0; margin-bottom: 0; }
+/* En sektion direkt i ett avsnitt (förhandskontrollen, underlagets kvalitet, Var uppstår löneskillnaden?): avsnittet
+   är redan kortet, så sektionen har ingen egen ram och texten får avsnittets luft. Styckena har kortets färg och avstånd. */
+.avsnitt-sektion p { color: var(--text-muted); margin-bottom: 16px; }
 details.avsnitt .insight-feed-header h3 { display: none; }
 #action-checklist-container { margin-top: 14px; }
 
@@ -3103,7 +3111,10 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .export-besked { margin: 6px 0 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--text-main); }
 .export-besked:empty { display: none; }
 .export-hub-row .export-besked strong { display: inline; font-size: inherit; margin: 0; }
-#avsnitt-ex-urval { margin-bottom: 12px; }
+/* Rapportens innehåll är ett avsnitt i kortet Exportera: en rad i listan, utan egen ram. */
+#export-hub > details.avsnitt { margin: 0; padding: 0; border: none; border-top: 1px solid var(--border); border-radius: 0; background: none; box-shadow: none; }
+#export-hub > details.avsnitt > summary { padding: 14px 0; }
+#export-hub > details.avsnitt[open] { padding-bottom: 14px; }
 .urval-fasta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
 .urval-fasta .btn[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); font-weight: 600; }
 .urval-lista { list-style: none; margin: 0; padding: 0; }
@@ -3267,7 +3278,13 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 /* Smalare sorteringspil: grundvyn (Fler kolumner) ska rymmas vid 1280 px med menyn utfälld. */
 #prio-table thead th.sortable::after { right: 2px; width: 9px; height: 9px; margin-top: -4px; }
 #prio-table td[data-sort-value], #prio-table td .rund-12 { white-space: nowrap; }
-.prio-detalj-knappar { display: grid; grid-template-columns: repeat(2, auto); gap: 4px; justify-content: center; }
+.prio-detalj-knappar { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+/* Menyn Mer på Prioriteringens rader (55-prioritering.js): exportmenyns form, med valen som text. En meny som inte
+   ryms under knappen i tabellens rullyta öppnas uppåt (klassen uppat). */
+.prio-mer .chart-export-meny { min-width: 12rem; }
+.prio-mer.uppat .chart-export-meny { top: auto; bottom: calc(100% + 4px); }
+.prio-mer .chart-export-meny .row-cross-link { display: block; width: auto; height: auto; transition: none; }
+.prio-mer .chart-export-meny .row-cross-link:hover { color: var(--text-main); transform: none; }
 
 /* Att göra: en grupp av punkter har samma ram och pil som övriga hopfällbara rubriker, och prioriteten är ett märke. */
 .ag-grupp { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 6px; }
