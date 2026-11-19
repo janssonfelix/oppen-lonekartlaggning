@@ -1,0 +1,36 @@
+{
+  "id": "loneoversyn-tak-vid-medianen",
+  "titel": "Löneöversyn: samma pott lägst först, men med tak vid gruppens median",
+  "funktion": "src/lib/loneoversyn.js#allocate",
+  "indata": [
+    [
+      { "bas": "C", "aid": "X", "kon": "kvinna", "lon": 28000 },
+      { "bas": "C", "aid": "X", "kon": "man", "lon": 35000 },
+      { "bas": "C", "aid": "X", "kon": "kvinna", "lon": 25000 },
+      { "bas": "C", "aid": "X", "kon": "man", "lon": 31000 },
+      { "bas": "C", "aid": "X", "kon": "kvinna", "lon": 26000 }
+    ],
+    { "mode": "pct", "value": 0 },
+    [{ "bas": "C", "aid": "X", "mode": "kr", "value": 6000, "dist": "target", "targetLevel": "median" }],
+    0
+  ],
+  "forvantat": {
+    "perPerson": [
+      { "lon": 28000, "delta": 0, "nyLon": 28000 },
+      { "lon": 35000, "delta": 0, "nyLon": 35000 },
+      { "lon": 25000, "delta": 3000, "nyLon": 28000 },
+      { "lon": 31000, "delta": 0, "nyLon": 31000 },
+      { "lon": 26000, "delta": 2000, "nyLon": 28000 }
+    ],
+    "totals": { "generellCost": 0, "riktadCost": 5000, "totalRaise": 5000 }
+  },
+  "tolerans": 1e-9,
+  "harledning": [
+    "Samma rader och pott (6 000 kr) som i fallet loneoversyn-lagst-forst, men dist \"target\" med targetLevel \"median\": nivån L får inte gå över gruppens median (kommentaren till _waterLevelDeltas: pengar som inte får plats under taket lämnas oanvända).",
+    "Taket: lönerna sorterade 25 000, 26 000, 28 000, 31 000, 35 000; medianen är den tredje, 28 000.",
+    "Steg 1: lyft 25 000 till 26 000. Kostar 1 000. Använt 1 000.",
+    "Steg 2: lyft de två lägsta från 26 000 till 28 000. Kostar 2 × 2 000 = 4 000. Använt 5 000. Nu är L = 28 000, lika med taket, och fördelningen stannar.",
+    "Påslagen: 25 000 får 3 000, 26 000 får 2 000, övriga 0. Summa 5 000.",
+    "1 000 kr av potten blir över och används inte. Riktat 5 000, totalt 5 000."
+  ]
+}

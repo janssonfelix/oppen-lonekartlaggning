@@ -1,0 +1,15 @@
+{
+  "id": "kostnad-per-ar",
+  "titel": "Kostnad per år: 1 000 kr i månaden för tio personer, 12 månader, PO-påslag 39,15 %",
+  "funktion": "src/lib/prioritering.js#kostnadPerAr",
+  "indata": [1000, 10, { "months": 12, "poPct": 39.15 }],
+  "forvantat": 166980,
+  "tolerans": 1e-6,
+  "harledning": [
+    "Formeln (kommentaren till kostnadPerAr): |belopp| × månader × (1 + PO / 100) × antal.",
+    "1 + 39,15 / 100 = 1,3915.",
+    "1 000 × 12 = 12 000 kr per person och år före PO.",
+    "12 000 × 1,3915 = 16 698 kr per person och år med PO.",
+    "16 698 × 10 personer = 166 980 kr per år."
+  ]
+}

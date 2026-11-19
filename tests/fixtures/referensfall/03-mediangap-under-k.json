@@ -1,0 +1,25 @@
+{
+  "id": "mediangap-under-k",
+  "titel": "Mediangapet lämnas inte ut när ett kön har färre än k personer",
+  "funktion": "src/lib/struktur.js#medianGapPct",
+  "indata": [
+    [
+      { "kon": "kvinna", "lon": 36000 },
+      { "kon": "man", "lon": 45000 },
+      { "kon": "kvinna", "lon": 34000 },
+      { "kon": "man", "lon": 38000 },
+      { "kon": "kvinna", "lon": 38000 },
+      { "kon": "man", "lon": 41000 },
+      { "kon": "kvinna", "lon": 35000 },
+      { "kon": "man", "lon": 39000 },
+      { "kon": "kvinna", "lon": 37000 }
+    ],
+    { "k": 5 }
+  ],
+  "forvantat": null,
+  "harledning": [
+    "Regeln (kommentaren till medianGapPct): null om något kön har färre än k personer med lön över 0.",
+    "Kvinnor: 5 personer, minst k = 5. Män: 4 personer, färre än k = 5.",
+    "Alltså null: skillnaden räknas inte, fast den med k = 1 hade blivit −10 (fallet mediangap-verktygets-tecken)."
+  ]
+}

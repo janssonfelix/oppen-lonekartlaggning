@@ -1,0 +1,15 @@
+{
+  "id": "kostnad-per-ar-noll-manader",
+  "titel": "Kostnad per år: negativt belopp, 0 månader och 0 % PO",
+  "funktion": "src/lib/prioritering.js#kostnadPerAr",
+  "indata": [-500, 3, { "months": 0, "poPct": 0 }],
+  "forvantat": 18000,
+  "tolerans": 1e-9,
+  "harledning": [
+    "Formeln (kommentaren till kostnadPerAr): |belopp| × månader × (1 + PO / 100) × antal.",
+    "Beloppet räknas som absolutbelopp: |−500| = 500.",
+    "Månader 0 ersätts med 12 (koden skriver months || 12, så 0 räknas som ej angivet). Fallet visar det beteendet; det är inte en regel i kommentaren.",
+    "PO 0 % ger faktorn 1 + 0 / 100 = 1.",
+    "500 × 12 × 1 × 3 = 18 000 kr per år."
+  ]
+}

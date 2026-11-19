@@ -1,0 +1,38 @@
+{
+  "id": "granska-alder",
+  "titel": "Personer att granska: kollegornas åldersspridning minst 5 år, förväntad lön ur ln(lön) mot ålder",
+  "funktion": "src/lib/individflaggor.js#flaggaIndivider",
+  "indata": [
+    [
+      { "radnr": 1, "kon": "man", "alder": 30, "lon": 20000, "aid": "700003", "bas": "F" },
+      { "radnr": 2, "kon": "kvinna", "alder": 40, "lon": 22000, "aid": "700003", "bas": "F" },
+      { "radnr": 3, "kon": "man", "alder": 50, "lon": 24200, "aid": "700003", "bas": "F" },
+      { "radnr": 4, "kon": "kvinna", "alder": 40, "lon": 19000, "aid": "700003", "bas": "F" }
+    ],
+    { "minGrupp": 4, "grans": 10 }
+  ],
+  "forvantat": {
+    "provade": { "kv": 2, "ma": 2 },
+    "ejProvade": 0,
+    "flaggade": [
+      {
+        "radnr": 4, "kon": "Kvinna", "alder": 40, "aid": "700003", "bas": "F",
+        "lon": 19000, "forvantad": 22000, "avvikelsePct": -13.636363636363637,
+        "kollegor": 3, "metod": "alder", "ansvarsgrupp": null
+      }
+    ],
+    "andelKv": { "provade": 50, "flaggade": 100 }
+  },
+  "tolerans": 1e-6,
+  "harledning": [
+    "Regeln som i fallet granska-median, men minGrupp sätts till 4 så att fallet går att räkna för hand. Kollegornas åldersspridning är här minst 5 år, så förväntad lön = e^(a + b × ålder), där a och b är minsta kvadrat-anpassningen av ln(lön) mot ålder bland kollegorna.",
+    "Rad 1–3 ligger exakt på en rät linje i ln(lön): 20 000, 22 000 och 24 200 vid 30, 40 och 50 år, alltså 10 % högre lön per tio år. ln(22 000) − ln(20 000) = ln(24 200) − ln(22 000) = ln(1,1).",
+    "Rad 4 (40 år, 19 000): kollegorna är rad 1–3, spridning 50 − 30 = 20 år. Punkterna ligger exakt på linjen, så anpassningen går genom dem och den förväntade lönen vid 40 år är 22 000.",
+    "Avvikelse: (19 000 − 22 000) / 22 000 × 100 = −13,64 %, minst 10 % under: flaggas.",
+    "De andra tre har rad 4 bland sina kollegor. Rad 4 ligger d = ln(19 000 / 22 000) = ln(0,8636) = −0,1466 under linjen. Anpassningen flyttas vid ålder x med d × h, där h = 1/3 + (x − x̄)(40 − x̄) / Sxx räknas på de tre kollegornas åldrar (x̄ deras medelålder, Sxx summan av (ålder − x̄)²).",
+    "Rad 1 (30 år): kollegornas åldrar 40, 40, 50; x̄ = 43,33; Sxx = 3,33² + 3,33² + 6,67² = 66,67; h = 1/3 + (30 − 43,33)(40 − 43,33) / 66,67 = 1/3 + 44,44 / 66,67 = 1. Förväntad 20 000 × 0,8636 = 17 272,73; lönen 20 000 ligger 15,8 % över. Flaggas inte.",
+    "Rad 2 (40 år, 22 000): kollegornas åldrar 30, 40, 50; x̄ = 40; h = 1/3 + 0 = 1/3. Förväntad 22 000 × 0,8636^(1/3) = 22 000 × 0,9523 = 20 950,75; lönen ligger 5,0 % över. Flaggas inte.",
+    "Rad 3 (50 år): kollegornas åldrar 30, 40, 40; x̄ = 36,67; Sxx = 66,67; h = 1/3 + (50 − 36,67)(40 − 36,67) / 66,67 = 1. Förväntad 24 200 × 0,8636 = 20 900; lönen 24 200 ligger 15,8 % över. Flaggas inte.",
+    "Flaggade: bara rad 4, med metod ålder och 3 kollegor. Prövade 2 kvinnor och 2 män: andel kvinnor 50 %, bland de flaggade 100 %."
+  ]
+}

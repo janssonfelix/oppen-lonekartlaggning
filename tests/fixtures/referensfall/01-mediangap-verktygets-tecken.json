@@ -1,0 +1,31 @@
+{
+  "id": "mediangap-verktygets-tecken",
+  "titel": "Kvinnors medianlön i procent av mäns, och skillnaden med verktygets tecken",
+  "funktion": "src/lib/struktur.js#medianGapPct",
+  "indata": [
+    [
+      { "kon": "kvinna", "lon": 36000 },
+      { "kon": "man", "lon": 45000 },
+      { "kon": "kvinna", "lon": 34000 },
+      { "kon": "man", "lon": 38000 },
+      { "kon": "kvinna", "lon": 38000 },
+      { "kon": "man", "lon": 41000 },
+      { "kon": "kvinna", "lon": 35000 },
+      { "kon": "man", "lon": 39000 },
+      { "kon": "kvinna", "lon": 37000 },
+      { "kon": "kvinna", "lon": 0 },
+      { "kon": "okänd", "lon": 50000 }
+    ]
+  ],
+  "forvantat": -10,
+  "tolerans": 1e-9,
+  "harledning": [
+    "Formeln (filhuvudet i struktur.js): skillnaden = (kvinnors medianlön / mäns medianlön − 1) × 100. Rader med lön 0 och rader där könet varken är kvinna eller man räknas inte.",
+    "Raden med kvinna och lön 0 och raden med kön okänt (50 000) tas bort.",
+    "Kvinnor, sorterade: 34 000, 35 000, 36 000, 37 000, 38 000. Fem löner, medianen är den tredje: 36 000.",
+    "Män, sorterade: 38 000, 39 000, 41 000, 45 000. Fyra löner, medianen är medelvärdet av den andra och tredje: (39 000 + 41 000) / 2 = 40 000.",
+    "Kvinnors medianlön i procent av mäns: 36 000 / 40 000 = 0,90, alltså 90 %.",
+    "Skillnaden med verktygets tecken: (0,90 − 1) × 100 = −10. Negativt betyder att kvinnor ligger lägre.",
+    "Jämför fallet mediangap-direktivets-tecken: samma rader ger +10 med direktivets tecken."
+  ]
+}

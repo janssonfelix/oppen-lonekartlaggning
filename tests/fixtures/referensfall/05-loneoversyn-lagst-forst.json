@@ -1,0 +1,38 @@
+{
+  "id": "loneoversyn-lagst-forst",
+  "titel": "Löneöversyn: en riktad pott fördelas lägst först (vattenfyllnad), utan tak",
+  "funktion": "src/lib/loneoversyn.js#allocate",
+  "indata": [
+    [
+      { "bas": "C", "aid": "X", "kon": "kvinna", "lon": 28000 },
+      { "bas": "C", "aid": "X", "kon": "man", "lon": 35000 },
+      { "bas": "C", "aid": "X", "kon": "kvinna", "lon": 25000 },
+      { "bas": "C", "aid": "X", "kon": "man", "lon": 31000 },
+      { "bas": "C", "aid": "X", "kon": "kvinna", "lon": 26000 }
+    ],
+    { "mode": "pct", "value": 0 },
+    [{ "bas": "C", "aid": "X", "mode": "kr", "value": 6000, "dist": "lowest" }],
+    0
+  ],
+  "forvantat": {
+    "perPerson": [
+      { "lon": 28000, "delta": 333.3333333333, "nyLon": 28333.3333333333 },
+      { "lon": 35000, "delta": 0, "nyLon": 35000 },
+      { "lon": 25000, "delta": 3333.3333333333, "nyLon": 28333.3333333333 },
+      { "lon": 31000, "delta": 0, "nyLon": 31000 },
+      { "lon": 26000, "delta": 2333.3333333333, "nyLon": 28333.3333333333 }
+    ],
+    "totals": { "generellCost": 0, "riktadCost": 6000, "totalRaise": 6000 }
+  },
+  "tolerans": 1e-6,
+  "harledning": [
+    "Regeln (kommentaren till _waterLevelDeltas i loneoversyn.js): hitta en gemensam nivå L och lyft alla under L upp till L, så långt potten räcker. Inget tak här (dist \"lowest\"). Generellt påslag 0 %, ingen avrundning.",
+    "Potten är 6 000 kr per månad (mode \"kr\"). Gruppen är alla fem i BAS C, AID X.",
+    "Lönerna sorterade: 25 000, 26 000, 28 000, 31 000, 35 000.",
+    "Steg 1: lyft den lägsta från 25 000 till nästa lön 26 000. Kostar 1 × 1 000 = 1 000. Använt 1 000, kvar 5 000.",
+    "Steg 2: lyft de två lägsta från 26 000 till nästa lön 28 000. Kostar 2 × 2 000 = 4 000. Använt 5 000, kvar 1 000.",
+    "Steg 3: att lyfta de tre lägsta från 28 000 till 31 000 skulle kosta 3 × 3 000 = 9 000, mer än de 1 000 som är kvar. De 1 000 delas lika på tre: L = 28 000 + 1 000 / 3 = 28 333,33.",
+    "Påslagen: 25 000 får 3 333,33, 26 000 får 2 333,33, 28 000 får 333,33, 31 000 och 35 000 får 0. Summa 6 000.",
+    "Raderna kommer tillbaka i indatas ordning. Riktat 6 000, generellt 0, totalt 6 000."
+  ]
+}
