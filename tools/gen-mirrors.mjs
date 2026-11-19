@@ -281,7 +281,7 @@ export const MODULES = [
         expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser' }
     },
     {
-        // Gränserna för inställningarna och för inlästa filer (B-7, B-8): fältet, konfigurationsfilen och paketet läser dem.
+        // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.
         // Organisationspaketet importerar dem: före det.
         file: 'installningsgranser.js', ns: '__mirrorInstallningsgranser',
         expose: { installningsGrans: '_igGrans', arInomGrans: '_igInomGrans', filStorlekFel: '_igFilFel' }

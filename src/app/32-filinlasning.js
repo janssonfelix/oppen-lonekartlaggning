@@ -353,7 +353,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
     /** @type {typeof utfall} */
     const callback = res => { try { utfall(res); } finally { visningNy(); } };
     if (!file) { callback({ ok: false, error: 'Ingen fil vald.' }); return; }
-    // Storleken prövas innan filen läses eller tolkas (B-8).
+    // Storleken prövas innan filen läses eller tolkas.
     const storlekFel = _igFilFel(file.size, typ);
     if (storlekFel) { callback({ ok: false, error: storlekFel }); return; }
     const reader = new FileReader();
@@ -395,7 +395,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
 
 function loadStructureFile(file) {
     if (!file) return;
-    // Storleken prövas innan filen läses eller tolkas (B-8): en för stor fil lämnar det som var inläst orört.
+    // Storleken prövas innan filen läses eller tolkas: en för stor fil lämnar det som var inläst orört.
     const storlekFel = _igFilFel(file.size, 'lonefil');
     if (storlekFel) { dataStatus.textContent = storlekFel; dataStatus.className = 'status-msg'; return; }
     const franOversikt = _aktivFlik() === 'dashboard';

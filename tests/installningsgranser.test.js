@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Gränserna för inställningarna och för inlästa filer (src/lib/installningsgranser.js, B-7 och B-8): siffrorna,
+ * Gränserna för inställningarna och för inlästa filer (src/lib/installningsgranser.js): siffrorna,
  * den rena prövningen, och att appen prövar filstorleken innan filen läses eller tolkas. Filerna är påhittade, och
  * en stor fil görs med en storlek som bara låtsas vara stor (inga 50 MB data).
  */

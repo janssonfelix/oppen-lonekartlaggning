@@ -457,7 +457,7 @@ document.getElementById('btn-config-load')?.addEventListener('change', e => {
     const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
     if (!file) return;
     const status = document.getElementById('config-status');
-    // Storleken prövas innan filen läses (B-8): en för stor fil tolkas inte alls.
+    // Storleken prövas innan filen läses: en för stor fil tolkas inte alls.
     const storlekFel = _igFilFel(file.size, 'konfiguration');
     if (storlekFel) {
         if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
