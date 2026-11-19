@@ -1,0 +1,31 @@
+{
+  "id": "kvartiler-n7",
+  "titel": "Kvartilfördelning med sju personer: vem hamnar i vilken kvartil, och gränserna",
+  "funktion": "src/lib/struktur.js#quartileDistribution",
+  "indata": [
+    [
+      { "kon": "man", "lon": 33000 },
+      { "kon": "kvinna", "lon": 21000 },
+      { "kon": "man", "lon": 29000 },
+      { "kon": "kvinna", "lon": 23000 },
+      { "kon": "kvinna", "lon": 31000 },
+      { "kon": "man", "lon": 25000 },
+      { "kon": "kvinna", "lon": 27000 }
+    ]
+  ],
+  "forvantat": [
+    { "q": 1, "n": 2, "nKv": 2, "nMa": 0, "andelKv": 100, "undre": null, "ovre": 24000, "konDolt": false },
+    { "q": 2, "n": 2, "nKv": 1, "nMa": 1, "andelKv": 50, "undre": 24000, "ovre": 28000, "konDolt": false },
+    { "q": 3, "n": 2, "nKv": 1, "nMa": 1, "andelKv": 50, "undre": 28000, "ovre": 32000, "konDolt": false },
+    { "q": 4, "n": 1, "nKv": 0, "nMa": 1, "andelKv": 0, "undre": 32000, "ovre": null, "konDolt": false }
+  ],
+  "tolerans": 1e-9,
+  "harledning": [
+    "Samma regel som i fallet kvartiler-n5: person i (sorterat stigande, från 0) hamnar i kvartil floor(i × 4 / n) + 1; gränsen är mittpunkten mellan grannarna.",
+    "Sorterat: i = 0: 21 000 (kvinna), 1: 23 000 (kvinna), 2: 25 000 (man), 3: 27 000 (kvinna), 4: 29 000 (man), 5: 31 000 (kvinna), 6: 33 000 (man). n = 7.",
+    "i × 4 / 7: 0 → 0; 1 → 0,571 → 0; 2 → 1,143 → 1; 3 → 1,714 → 1; 4 → 2,286 → 2; 5 → 2,857 → 2; 6 → 3,429 → 3.",
+    "Q1: 21 000 och 23 000, två kvinnor, 100 %. Q2: 25 000 (man) och 27 000 (kvinna), 50 %. Q3: 29 000 (man) och 31 000 (kvinna), 50 %. Q4: 33 000 (man), 0 %.",
+    "Med n = 7 får Q1–Q3 två personer var och Q4 en.",
+    "Gränser: Q1/Q2 (23 000 + 25 000) / 2 = 24 000. Q2/Q3 (27 000 + 29 000) / 2 = 28 000. Q3/Q4 (31 000 + 33 000) / 2 = 32 000."
+  ]
+}

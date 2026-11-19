@@ -1,0 +1,44 @@
+{
+  "id": "granska-median",
+  "titel": "Personer att granska: kollegornas åldersspridning under 5 år, förväntad lön är kollegornas median",
+  "funktion": "src/lib/individflaggor.js#flaggaIndivider",
+  "indata": [
+    [
+      { "radnr": 1, "kon": "kvinna", "alder": 40, "lon": 26000, "aid": "700001", "bas": "E" },
+      { "radnr": 2, "kon": "man", "alder": 41, "lon": 30000, "aid": "700001", "bas": "E" },
+      { "radnr": 3, "kon": "kvinna", "alder": 42, "lon": 30000, "aid": "700001", "bas": "E" },
+      { "radnr": 4, "kon": "man", "alder": 43, "lon": 31000, "aid": "700001", "bas": "E" },
+      { "radnr": 5, "kon": "kvinna", "alder": 44, "lon": 31000, "aid": "700001", "bas": "E" },
+      { "radnr": 6, "kon": "man", "alder": 40, "lon": 32000, "aid": "700001", "bas": "E" },
+      { "radnr": 7, "kon": "kvinna", "alder": 41, "lon": 32000, "aid": "700001", "bas": "E" },
+      { "radnr": 8, "kon": "man", "alder": 42, "lon": 33000, "aid": "700001", "bas": "E" },
+      { "radnr": 9, "kon": "kvinna", "alder": 43, "lon": 33000, "aid": "700001", "bas": "E" },
+      { "radnr": 10, "kon": "man", "alder": 44, "lon": 34000, "aid": "700001", "bas": "E" },
+      { "radnr": 11, "kon": "kvinna", "alder": 50, "lon": 20000, "aid": "700002", "bas": "E" },
+      { "radnr": 12, "kon": "man", "alder": 30, "lon": 40000, "aid": "700002", "bas": "E" }
+    ]
+  ],
+  "forvantat": {
+    "provade": { "kv": 5, "ma": 5 },
+    "ejProvade": 2,
+    "flaggade": [
+      {
+        "radnr": 1, "kon": "Kvinna", "alder": 40, "aid": "700001", "bas": "E",
+        "lon": 26000, "forvantad": 32000, "avvikelsePct": -18.75,
+        "kollegor": 9, "metod": "median", "ansvarsgrupp": null
+      }
+    ],
+    "andelKv": { "provade": 50, "flaggade": 100 }
+  },
+  "tolerans": 1e-9,
+  "harledning": [
+    "Regeln (filhuvudet i individflaggor.js, ADR-23): grupper med samma AID och BAS och minst minGrupp = 10 personer prövas. Varje persons förväntade lön räknas ur kollegorna, utan personen själv: regression på ln(lön) mot ålder om kollegornas åldersspridning är minst 5 år, annars kollegornas medianlön. Personen flaggas när lönen ligger minst grans = 10 % under den förväntade.",
+    "AID 700002 har bara 2 personer, färre än 10: de prövas inte (ejProvade = 2).",
+    "AID 700001 har 10 personer, 5 kvinnor och 5 män. Åldrarna är 40–44, så kollegornas spridning är högst 4 år för alla: medianen används.",
+    "Lönerna i gruppen sorterade: 26 000, 30 000, 30 000, 31 000, 31 000, 32 000, 32 000, 33 000, 33 000, 34 000. Utan personen själv är kollegorna 9, och medianen är den femte av dem.",
+    "Rad 1 (26 000): kollegorna 30 000, 30 000, 31 000, 31 000, 32 000, 32 000, 33 000, 33 000, 34 000; den femte är 32 000. Avvikelse (26 000 − 32 000) / 32 000 × 100 = −18,75 %, minst 10 % under: flaggas.",
+    "Personer med 30 000 eller 31 000: den borttagna lönen ligger bland de fem lägsta, så kollegornas femte lön är 32 000. 30 000 ger (30 000 − 32 000) / 32 000 × 100 = −6,25 %; 31 000 ger −3,125 %. Ingen av dem når −10 %.",
+    "Personer med 32 000 eller mer: kollegornas femte lön är 31 000, och lönen ligger över den. Ingen flaggas.",
+    "Flaggade: bara rad 1. Andel kvinnor bland de prövade 5 / 10 = 50 %, bland de flaggade 1 / 1 = 100 %."
+  ]
+}

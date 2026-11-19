@@ -1,0 +1,58 @@
+{
+  "id": "prioritering-en-grupp",
+  "titel": "Prioritering: en grupp under referensen, med avvikelse, volym, könsskillnad, index och status",
+  "funktion": "adapter#prioriteraMedReferenstabell",
+  "indata": [
+    [
+      { "yrke": "900001", "bas": "D", "kon": "kvinna", "lon": 26000 },
+      { "yrke": "900001", "bas": "D", "kon": "kvinna", "lon": 26500 },
+      { "yrke": "900001", "bas": "D", "kon": "kvinna", "lon": 27000 },
+      { "yrke": "900001", "bas": "D", "kon": "kvinna", "lon": 27500 },
+      { "yrke": "900001", "bas": "D", "kon": "kvinna", "lon": 28000 },
+      { "yrke": "900001", "bas": "D", "kon": "kvinna", "lon": 28500 },
+      { "yrke": "900001", "bas": "D", "kon": "man", "lon": 28000 },
+      { "yrke": "900001", "bas": "D", "kon": "man", "lon": 28500 },
+      { "yrke": "900001", "bas": "D", "kon": "man", "lon": 29000 },
+      { "yrke": "900001", "bas": "D", "kon": "man", "lon": 29500 },
+      { "yrke": "900001", "bas": "D", "kon": "man", "lon": 30000 },
+      { "yrke": "900001", "bas": "D", "kon": "man", "lon": 30500 }
+    ],
+    {
+      "referenser": { "900001|D": { "median": 30000, "kalla": "påhittad referens" } },
+      "kTroskel": 5,
+      "prioConfig": { "atgardThreshold": -5, "akutMinN": 20, "bevakaThreshold": -2, "analyseraThreshold": 5 },
+      "prioWeights": { "avvikelse": 50, "volym": 30, "jamstalldhet": 20 },
+      "costSettings": { "months": 12, "poPct": 40 },
+      "bristAids": []
+    }
+  ],
+  "forvantat": [
+    {
+      "yrke": "900001", "aid": "900001", "bas": "D",
+      "n": 12, "kvN": 6, "maN": 6,
+      "median": 28250, "refMedian": 30000, "refSource": "påhittad referens",
+      "diffPct": -5.833333333333333, "diffKr": -1750,
+      "annualGapTotal": 352800, "annualOverTotal": 0,
+      "costPerPerson": 1750, "isQuickWin": false, "isBrist": false,
+      "medKv": 27250, "medMa": 29250, "gapPct": -6.837606837606837,
+      "priorityIndex": 26.03903133903134,
+      "status": "atgard"
+    }
+  ],
+  "tolerans": 1e-6,
+  "harledning": [
+    "Adaptern prioriteraMedReferenstabell i tests/referensfall.test.js gör om tabellen referenser (nyckel \"AID|BAS\") till funktionen referensFor och listan bristAids till en mängd, och anropar sedan prioritera.",
+    "Gruppen är AID 900001, BAS D: 12 personer, 6 kvinnor och 6 män. k-tröskeln 5 nås av gruppen och av båda könen.",
+    "Gruppens median: alla 12 löner sorterade 26 000, 26 500, 27 000, 27 500, 28 000, 28 000, 28 500, 28 500, 29 000, 29 500, 30 000, 30 500; medianen är medel av den sjätte och sjunde: (28 000 + 28 500) / 2 = 28 250.",
+    "Kvinnornas median: (27 000 + 27 500) / 2 = 27 250. Männens median: (29 000 + 29 500) / 2 = 29 250.",
+    "Könsskillnaden: (27 250 / 29 250 − 1) × 100 = −2 000 / 29 250 × 100 = −6,8376 %.",
+    "Avvikelse mot referensen 30 000: (28 250 / 30 000 − 1) × 100 = −5,8333 %, i kronor 28 250 − 30 000 = −1 750.",
+    "Kostnad att lyfta gruppen till referensen: 1 750 × 12 månader × 1,40 × 12 personer = 352 800 kr per år. Kostnad per person 1 750 kr per månad.",
+    "Snabb vinst kräver kostnad per person under 1 500 kr; 1 750 är inte under, så nej.",
+    "Delpoäng (prioritera i prioritering.js): avvikelse min(30, 5,8333) / 30 × 100 = 19,4444; volym min(50, 12) / 50 × 100 = 24; könsskillnad min(15, 6,8376) / 15 × 100 = 45,5840.",
+    "Riktningsvikt 1,0 eftersom gruppen ligger under referensen (0,5 om den låg över). Inget bristyrke, multiplikator 1,0.",
+    "Vikterna 50 + 30 + 20 = 100, alltså andelarna 0,5, 0,3 och 0,2 (prioIndex).",
+    "Index: 1,0 × 1,0 × (19,4444 × 0,5 + 24 × 0,3 + 45,5840 × 0,2) = 9,7222 + 7,2 + 9,1168 = 26,0390.",
+    "Status: −5,8333 är under åtgärdsgränsen −5. Gruppen har 12 personer, färre än akutMinN 20, så status är åtgärd (atgard), inte akut."
+  ]
+}

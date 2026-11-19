@@ -1,0 +1,51 @@
+{
+  "id": "gapuppdelning-2bas-2aid",
+  "titel": "Var uppstår löneskillnaden: två BAS-intervall med två AID var, delarna A, B och C",
+  "funktion": "src/lib/gapuppdelning.js#gapUppdelning",
+  "indata": [
+    [
+      { "kon": "kvinna", "lon": 30000, "bas": "A", "aid": "1" },
+      { "kon": "kvinna", "lon": 31000, "bas": "A", "aid": "1" },
+      { "kon": "kvinna", "lon": 32000, "bas": "A", "aid": "1" },
+      { "kon": "man", "lon": 33000, "bas": "A", "aid": "1" },
+      { "kon": "kvinna", "lon": 36000, "bas": "A", "aid": "2" },
+      { "kon": "man", "lon": 38000, "bas": "A", "aid": "2" },
+      { "kon": "kvinna", "lon": 40000, "bas": "B", "aid": "1" },
+      { "kon": "man", "lon": 41000, "bas": "B", "aid": "1" },
+      { "kon": "man", "lon": 42000, "bas": "B", "aid": "1" },
+      { "kon": "man", "lon": 43000, "bas": "B", "aid": "1" },
+      { "kon": "kvinna", "lon": 46000, "bas": "B", "aid": "2" },
+      { "kon": "man", "lon": 48000, "bas": "B", "aid": "2" }
+    ],
+    { "k": 1 }
+  ],
+  "forvantat": {
+    "n": { "kv": 6, "ma": 6 },
+    "medel": { "kv": 35833.333333333336, "ma": 40833.333333333336 },
+    "gap": -5000,
+    "gapPct": -12.244897959183673,
+    "litetGap": false,
+    "skyddad": true,
+    "delar": { "A": -3125, "B": 125, "C": -2000 },
+    "variabler": ["bas", "aid"]
+  },
+  "tolerans": 1e-6,
+  "harledning": [
+    "Formlerna (regressionsmodellen.md §10 och filhuvudet i gapuppdelning.js), med Δx = x för kvinnor − x för män och x̄ = (x för kvinnor + x för män) / 2: A = Σ_b Δs_b · (W̄_b − W̄); B = Σ_b s̄_b · Σ_a Δs_a|b · (W̄_ab − W̄_b); C = Σ_b s̄_b · Σ_a s̄_a|b · ΔW_ab. s är ett köns andel av sitt köns personer i den överordnade cellen, W en medellön.",
+    "k = 1, så alla celler är synliga och delarna redovisas.",
+    "Hela urvalet. Kvinnor: 30 000 + 31 000 + 32 000 + 36 000 + 40 000 + 46 000 = 215 000, 6 personer, medel 215 000 / 6 = 35 833,33. Män: 33 000 + 38 000 + 41 000 + 42 000 + 43 000 + 48 000 = 245 000, 6 personer, medel 245 000 / 6 = 40 833,33.",
+    "Skillnaden: 35 833,33 − 40 833,33 = −5 000 kr. I procent av männens medellön: −5 000 / 40 833,33 × 100 = −30 000 / 245 000 × 100 = −12,2449.",
+    "W̄ för hela urvalet: (35 833,33 + 40 833,33) / 2 = 38 333,33.",
+    "BAS A: 4 av 6 kvinnor (s = 2/3), 2 av 6 män (s = 1/3), Δs_A = 1/3, s̄_A = 1/2. Kvinnornas medel (30 000 + 31 000 + 32 000 + 36 000) / 4 = 32 250, männens (33 000 + 38 000) / 2 = 35 500, W̄_A = 33 875.",
+    "BAS B: 2 av 6 kvinnor (s = 1/3), 4 av 6 män (s = 2/3), Δs_B = −1/3, s̄_B = 1/2. Kvinnornas medel (40 000 + 46 000) / 2 = 43 000, männens (41 000 + 42 000 + 43 000 + 48 000) / 4 = 43 500, W̄_B = 43 250.",
+    "Del A: 1/3 · (33 875 − 38 333,33) + (−1/3) · (43 250 − 38 333,33) = −1 486,11 − 1 638,89 = −3 125 (eftersom ΣΔs = 0 tar W̄ ut sig: 1/3 · (33 875 − 43 250) = −3 125).",
+    "Inom BAS A: AID 1 har 3 av 4 kvinnor (3/4) och 1 av 2 män (1/2), Δs = 1/4, s̄ = 5/8; medel kvinnor 31 000, män 33 000, W̄ = 32 000, ΔW = −2 000. AID 2 har 1 av 4 kvinnor (1/4) och 1 av 2 män (1/2), Δs = −1/4, s̄ = 3/8; medel kvinnor 36 000, män 38 000, W̄ = 37 000, ΔW = −2 000.",
+    "Inom BAS B: AID 1 har 1 av 2 kvinnor (1/2) och 3 av 4 män (3/4), Δs = −1/4, s̄ = 5/8; medel kvinnor 40 000, män (41 000 + 42 000 + 43 000) / 3 = 42 000, W̄ = 41 000, ΔW = −2 000. AID 2 har 1 av 2 kvinnor (1/2) och 1 av 4 män (1/4), Δs = 1/4, s̄ = 3/8; medel kvinnor 46 000, män 48 000, W̄ = 47 000, ΔW = −2 000.",
+    "Del B, BAS A: s̄_A · [1/4 · (32 000 − 33 875) + (−1/4) · (37 000 − 33 875)] = 1/2 · (−468,75 − 781,25) = 1/2 · (−1 250) = −625.",
+    "Del B, BAS B: s̄_B · [(−1/4) · (41 000 − 43 250) + 1/4 · (47 000 − 43 250)] = 1/2 · (562,5 + 937,5) = 1/2 · 1 500 = 750.",
+    "Del B = −625 + 750 = 125.",
+    "Del C, BAS A: 1/2 · (5/8 · (−2 000) + 3/8 · (−2 000)) = 1/2 · (−2 000) = −1 000. BAS B: 1/2 · (5/8 · (−2 000) + 3/8 · (−2 000)) = −1 000. Del C = −2 000.",
+    "Kontroll: A + B + C = −3 125 + 125 − 2 000 = −5 000, samma som skillnaden i medellön.",
+    "Kontroll per BAS: ΔW_A = 32 250 − 35 500 = −3 250 = (−1 250) + (−2 000); ΔW_B = 43 000 − 43 500 = −500 = 1 500 + (−2 000)."
+  ]
+}

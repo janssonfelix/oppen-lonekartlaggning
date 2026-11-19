@@ -1,0 +1,24 @@
+{
+  "id": "prioindex-vikter",
+  "titel": "Prioriteringsindex: vikter som inte summerar till 100, riktningsvikt 0,5 och bristyrke",
+  "funktion": "src/lib/prioritering.js#prioIndex",
+  "indata": [
+    {
+      "sevScore": 40,
+      "volScore": 60,
+      "gapScore": 100,
+      "riktningsvikt": 0.5,
+      "bristMultiplier": 1.2,
+      "vikter": { "avvikelse": 2, "volym": 1, "jamstalldhet": 1 }
+    }
+  ],
+  "forvantat": 36,
+  "tolerans": 1e-9,
+  "harledning": [
+    "Formeln (kommentaren till prioIndex): bristmultiplikator × riktningsvikt × (avvikelse × vikt + volym × vikt + jämställdhet × vikt), där vikterna normaliseras till summan 1.",
+    "Viktsumman: 2 + 1 + 1 = 4. Andelarna: 2/4 = 0,5, 1/4 = 0,25 och 1/4 = 0,25.",
+    "Den vägda summan: 40 × 0,5 + 60 × 0,25 + 100 × 0,25 = 20 + 15 + 25 = 60.",
+    "Riktningsvikt 0,5 (gruppen ligger över referensen): 60 × 0,5 = 30.",
+    "Bristyrke, multiplikator 1,2: 30 × 1,2 = 36."
+  ]
+}
