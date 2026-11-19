@@ -207,16 +207,23 @@ export async function flikarOchDiagram() {
         const felFore = konsolfel.length + sidfel.length;
         const etiketter = () => page.evaluate(() => [...document.querySelectorAll('#chart-lp-bandmap > svg [data-axel="x"]')].map(t => t.textContent));
         const fore = await etiketter();
-        const forsta = page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::div[@data-urval-falt="bas"][1]').locator('button[aria-pressed]').first();
+        // Filterraderna står i den hopfällda raden "Filter: …" före diagrammet; den fälls ut först.
+        const filter = page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::details[@data-urval-filter][1]');
+        const filterSum = filter.locator(':scope > summary');
+        ok(await filter.evaluate(d => !d.open) && await filterSum.textContent() === 'Filter: inga', 'raden Filter är hopfälld och säger "Filter: inga"');
+        await filterSum.click();
+        const forsta = filter.locator('div[data-urval-falt="bas"] button[aria-pressed]').first();
         const namn = await forsta.textContent();
         await forsta.click();
         await page.waitForTimeout(300);
         const efter = await etiketter();
         ok(efter.length === fore.length - 1 && !efter.includes(namn), `bandkartan: ett klick på ${namn} döljer intervallet (${fore.length} → ${efter.length} x-etiketter)`);
         ok(await forsta.getAttribute('aria-pressed') === 'false', 'knappen är inte längre intryckt (aria-pressed="false")');
+        ok(await filterSum.textContent() === 'Filter: 1 aktivt', 'summeringen säger "Filter: 1 aktivt"');
+        ok(await forsta.evaluate(b => b === document.activeElement || b.contains(document.activeElement)) && await filter.evaluate(d => d.open), 'fokus står kvar på knappen och raden är utfälld');
         ok(konsolfel.length + sidfel.length === felFore, `inga konsolfel efter klicket${konsolfel.length + sidfel.length > felFore ? ': ' + [...konsolfel, ...sidfel].slice(felFore).join(' | ') : ''}`);
         // Tillbaka till alla, så att kontrollerna efter den här ser hela bandkartan.
-        await page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::div[contains(@class,"diagram-urval")][1]').locator('[data-urval-alla]').click();
+        await filter.locator('[data-urval-alla]').click();
         await page.waitForTimeout(300);
         ok((await etiketter()).length === fore.length, 'Visa alla ritar alla intervall igen');
     }
@@ -395,13 +402,14 @@ export async function flikarOchDiagram() {
         const punkter = () => page.evaluate(() => document.querySelectorAll('#chart-prio-matrix > svg [data-marke="punkt"]').length);
         const fore = await punkter();
         const felFore = konsolfel.length + sidfel.length;
-        const rader = await page.evaluate(() => { const ut = []; let r = document.getElementById('chart-prio-matrix').previousElementSibling;
-            while (r && r.classList.contains('diagram-urval')) { ut.unshift(r.getAttribute('data-urval-falt')); r = r.previousElementSibling; }
-            return ut; });
+        const rader = await page.evaluate(() => { const d = document.getElementById('chart-prio-matrix').previousElementSibling;
+            return d && d.matches('details[data-urval-filter]') ? [...d.querySelectorAll(':scope > .diagram-urval')].map(r => r.getAttribute('data-urval-falt')) : []; });
         ok(['bas', 'n', 'x'].every(f => rader.includes(f)), `matrisen har filterraderna BAS, antal och avvikelse (${rader.join(', ')})`);
         // Ett Minst mitt i spannet: grupperna under döljs.
         const minst = await page.evaluate(() => { const sp = _figUrvalSpann(document.getElementById('chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
-        const falt = page.locator('#chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-falt="n"][1]').locator('input[data-urval-grans="min"]');
+        const filter = page.locator('#chart-prio-matrix').locator('xpath=preceding-sibling::details[@data-urval-filter][1]');
+        if (!(await filter.evaluate(d => d.open))) await filter.locator(':scope > summary').click();
+        const falt = filter.locator('div[data-urval-falt="n"] input[data-urval-grans="min"]');
         await falt.fill(String(minst));
         await falt.press('Enter');
         await page.waitForTimeout(400);
@@ -410,7 +418,7 @@ export async function flikarOchDiagram() {
         ok(efter > 0 && efter < fore, `Minst ${minst} ritar färre punkter (${fore} → ${efter})`);
         ok(not.includes(`minst ${minst} personer i gruppen`) && not.includes('Talen i texten och tabellerna gäller hela underlaget'), `noten nämner intervallet (${not})`);
         ok(konsolfel.length + sidfel.length === felFore, 'inga konsolfel efter filtret');
-        await page.locator('#chart-prio-matrix').locator('xpath=preceding-sibling::div[contains(@class,"diagram-urval")][1]').locator('[data-urval-alla]').click();
+        await filter.locator('[data-urval-alla]').click();
         await page.waitForTimeout(400);
         ok(await punkter() === fore && await falt.inputValue() === '', 'Visa alla ritar alla punkter igen och tömmer fältet');
     }
@@ -443,7 +451,11 @@ export async function flikarOchDiagram() {
         ok(['bas', 'n', 'x'].every(f => info.rader.includes(f)) && info.meny, `kopian av prioriteringsmatrisen har filterraderna (${info.rader.join(', ')}) och en egen exportmeny`);
         ok(info.punkter > 0 && info.punkter === info.kalla && info.hojd > 50, `kopian ritar samma punkter som källan (${info.punkter} och ${info.kalla})`);
         // Kopians filter: ett Minst i kopian döljer punkter där, men inte i källan.
-        const falt = page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-falt="n"][1]').locator('input[data-urval-grans="min"]');
+        // Kopian har sitt eget id och därmed sin egen rad Filter, hopfälld tills den fälls ut.
+        const kopiansFilter = page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::details[@data-urval-filter][1]');
+        ok(await kopiansFilter.evaluate(d => !d.open), 'kopians rad Filter är hopfälld från början');
+        await kopiansFilter.locator(':scope > summary').click();
+        const falt = kopiansFilter.locator('div[data-urval-falt="n"] input[data-urval-grans="min"]');
         const minst = await page.evaluate(() => { const sp = _figUrvalSpann(document.getElementById('ut-diagram-chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
         await falt.fill(String(minst));
         await falt.press('Enter');
@@ -451,7 +463,7 @@ export async function flikarOchDiagram() {
         const efter = await page.evaluate(() => [document.querySelectorAll('#ut-diagram-chart-prio-matrix svg [data-marke="punkt"]').length,
             document.querySelectorAll('#chart-prio-matrix svg [data-marke="punkt"]').length]);
         ok(efter[0] < info.punkter && efter[1] === info.kalla, `kopians filter döljer punkter i kopian (${info.punkter} → ${efter[0]}) men inte i källan (${efter[1]})`);
-        await page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::div[contains(@class,"diagram-urval")][1]').locator('[data-urval-alla]').click();
+        await kopiansFilter.locator('[data-urval-alla]').click();
         // Mobilbredd: kopiorna och deras filterrader ger ingen vågrät rullning.
         await page.setViewportSize({ width: 375, height: 800 });
         await page.waitForTimeout(400);

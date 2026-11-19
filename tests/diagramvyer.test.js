@@ -1874,7 +1874,8 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     });
     // Figuren utan filter och härledning: bilden utan filter ska vara byte för byte densamma som den.
     const utanFilter = f => ({ ...f, urval: undefined, lager: f.lager.map(l => { const { harleddAv: _h, ...rest } = l; return rest; }) });
-    const rader = el => [...el.parentNode.children].filter(c => c.classList.contains('diagram-urval'));
+    // Filterraderna står i raden "Filter: …" (<details data-urval-filter>) före behållaren.
+    const rader = el => [...el.parentNode.querySelectorAll(':scope > [data-urval-filter] > .diagram-urval')];
     const rad = (el, falt) => rader(el).find(r => r.getAttribute('data-urval-falt') === falt);
     const not = el => (el.parentNode.querySelector('[data-rf="urval"]') || {}).textContent || '';
     const nollstall = (w2, ...flikar) => { w2.eval('_rfUrvalGlom()'); for (const t of flikar) w2.__renderTabContent(t); };
@@ -2056,6 +2057,26 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         expect(el.querySelectorAll('[data-marke="punkt"]').length).toBe(p.filter(d => d.yrke === yrken[0]).length);
         expect(rad(el, 'yrke').querySelector('summary').textContent).toBe(`AID-etikett: 1 av ${yrken.length}`);
         expect(not(el)).toMatch(new RegExp(`Diagrammet visar ett urval: (bara ${yrken[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|AID-etikett 1 av)`));
+        w2.close();
+    });
+    it('raden Filter i trattdiagrammet (Lika arbete): hopfälld, och summeringen visar ett aktivt filter direkt', () => {
+        const w2 = createAppWindow();
+        w2.__loadDemoData();
+        w2.__renderTabContent('matrix');
+        const el = w2.document.getElementById('chart-la-tratt');
+        const filter = el.previousElementSibling;
+        expect(filter.matches('details.diagram-filter[data-urval-filter]')).toBe(true);
+        expect(filter.open).toBe(false);
+        const sum = () => filter.querySelector(':scope > summary').textContent;
+        expect(sum()).toBe('Filter: inga');
+        rad(el, 'bas').querySelector('[data-urval]').click();
+        expect(sum()).toBe('Filter: 1 aktivt');
+        expect(filter.open).toBe(false);
+        expect(not(el)).toMatch(/^Diagrammet visar ett urval: /);   // noten under diagrammet som förut
+        // Fliken ritas om: urvalet och summeringen står kvar.
+        w2.__renderTabContent('matrix');
+        const el2 = w2.document.getElementById('chart-la-tratt');
+        expect(el2.previousElementSibling.querySelector(':scope > summary').textContent).toBe('Filter: 1 aktivt');
         w2.close();
     });
     it('kandidatparen: det kvinnodominerade yrkets BAS, löneskillnaden och dess antal; ett bortval döljer hela paret', () => {

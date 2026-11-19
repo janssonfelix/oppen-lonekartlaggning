@@ -247,9 +247,20 @@ eller visar serien; posten står kvar, nedtonad. Högst fyra rader, namn kortas 
 (`_setScatterSampleNote`). Antalen räknar inte dolda punkter.
 
 **Filterraderna för figurens `urval`.** Har figuren `urval` och behållaren ett id lägger `ritaFigur` en rad
-`<div class="diagram-urval" role="group" data-urval-falt="<falt>">` per dimension direkt före behållaren, i figurens
-ordning — för en kategori när `urvalVarden` har minst två värden, för ett intervall när `urvalSpann` inte är null.
-Utan rad gäller inget filter i den dimensionen. Sist i den sista raden står "Visa alla" (dold när inget filter är
+`<div class="diagram-urval" role="group" data-urval-falt="<falt>">` per dimension, i figurens ordning — för en
+kategori när `urvalVarden` har minst två värden, för ett intervall när `urvalSpann` inte är null. Utan rad gäller inget
+filter i den dimensionen.
+
+*Raden Filter.* Raderna (underlagets "Räkna för" först, sedan filtren) står i en `<details class="diagram-filter"
+data-urval-filter>` direkt före behållaren (efter exportmenyn); behållaren bär den i `_rfUrvalFilterEl`. Den är
+hopfälld från början. Dess `<summary data-urval-filtersummering>` säger "Filter: inga", "Filter: 1 aktivt" eller
+"Filter: N aktiva" (`_rfUrvalAntalAktiva`, `_rfUrvalFilterText`): en dimension är aktiv när något är bortvalt (också i
+underlaget) eller när ett intervall är snävare än figurens spann (Minst över spannets minsta eller Högst under dess
+största). `_rfUrvalUppdatera` skriver summeringen, så den följer varje ändring också när raden är hopfälld. Fälls raden
+ut minns det per diagram (`_rfUrvalUtfallda`, nyckeln är behållarens id) i samma livslängd som urvalet: det står kvar
+över omritningar och `rensaFigur`, och `_rfUrvalGlom` glömmer det. Fokus på summeringen följer med när raderna byggs om,
+som fokus i raderna. Noten under diagrammet och exportens fotrad påverkas inte, och utskriften visar inte raden.
+ Sist i den sista raden står "Visa alla" (dold när inget filter är
 aktivt och inget fält är fel); den nollställer alla dimensioner, tömmer fälten och glömmer minnet.
 - Kategori (`aria-label="Visa <namn>"`): en knapp per värde (`data-urval`, `aria-pressed="true"` när värdet visas).
   Ett klick växlar värdet och ritar om; den sista valda knappen har `aria-disabled="true"` och gör inget.
@@ -271,7 +282,7 @@ aktivt och inget fält är fel); den nollställer alla dimensioner, tömmer fäl
   i behållaren. Minnet och filtret fungerar som för knapparna. Listans öppna läge och sökningen följer med när
   raderna byggs om.
 - Fokus på en knapp, ett fält, en kryssruta, sökfältet, summeringen eller listans knappar följer med när raderna
-  byggs om.
+  byggs om (raden Filter är då utfälld, eftersom den minns det).
 
 När ett filter är aktivt står en not under diagrammet (`k-mask-note`, `data-rf="urval"`): "Diagrammet visar ett
 urval: utan BAS A, BAS N; 10–50 personer i gruppen. Talen i texten och tabellerna gäller hela underlaget." (delarna ur
@@ -344,7 +355,7 @@ skillnaden mot statistiken och överblickens bild (AID-etikett och huvudområde)
 **Underlaget: raden "Räkna för".** Ett filter (`urval`) döljer märken; ett underlag (`underlag`) räknar om hela
 diagrammet för en del av personerna. Det ges till sammanfattande diagram vars märken samlar många personer, där ett
 dolt märke inte vore något urval: lådor och histogram per kön, löneskillnaden per åldersgrupp, percentilerna och
-kvartilerna. `ritaFigur` lägger då en rad per dimension före filterraderna, `<div class="diagram-urval" role="group"
+kvartilerna. `ritaFigur` lägger då en rad per dimension före filterraderna (i raden Filter), `<div class="diagram-urval" role="group"
 data-underlag data-urval-falt="underlag:<falt>" aria-label="Räkna för <namn>">`, med texten "Räkna för huvudområde" först
 och knappar eller (med `visning: 'lista'`) en lista med kryssrutor som filterraderna (avsnittet ovan). Efter den sista
 raden står knappen "Räkna för alla" (`data-underlag-alla`), dold när hela underlaget visas. Bara värden vars egen grupp
@@ -531,7 +542,7 @@ fliken får "(undantag: valt i Tabeller och egna vyer)" bara när exporten fakti
 
 **Rensning.**
 - `rensaFigur(id)` kopplar loss lyssnare och storleksbevakning, döljer behållarens tips, tar bort figuren och
-  de andra egenskaperna, tar bort notisen om urval, filterraderna, underlagsraderna och noten för figurens `urval` (minnet står kvar)
+  de andra egenskaperna, tar bort notisen om urval, raden Filter med filterraderna och underlagsraderna och noten för figurens `urval` (minnet, också utfällt läge, står kvar)
   och tömmer behållaren. Exportmenyn står kvar. Idempotent.
 - `ritaFigur` för ett register över sina behållare. `_rfRensaAlla()` rensar dem alla — oavsett id, också i
   tomt läge och sedan de lämnat dokumentet — och nollställer verktygstipset. `_rensaAllData` anropar den

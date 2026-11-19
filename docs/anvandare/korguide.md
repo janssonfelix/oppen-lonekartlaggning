@@ -481,8 +481,10 @@ SVG (skarp i Word) och diagramdatan som tabell.
 **Välj vad ett diagram visar.** I diagrammen där BAS-intervallet är en dimension (bland annat
 bandkartan och statistikens spann i Löneläget, översikten, könsfördelningen, lådorna och trattdiagrammet i Lika
 arbete, Krav mot lön i Likvärdigt arbete, Prioriteringens två diagram och hanteln per BAS-intervall i Spara och
-jämför år) står en knapp per intervall ovanför diagrammet. Klicka på ett intervall för att dölja det, till exempel
-BAS A, B, C och N inför en presentation. Det sista synliga intervallet kan inte döljas.
+jämför år) står en knapp per intervall ovanför diagrammet. Filtren ligger hopfällda i raden **Filter**, som säger hur
+många som är aktiva (*Filter: inga*, *Filter: 1 aktivt*, *Filter: 2 aktiva*); klicka på den för att fälla ut dem. Den
+står kvar utfälld när diagrammet ritas om. Klicka på ett intervall för att dölja det, till exempel BAS A, B, C och N
+inför en presentation. Det sista synliga intervallet kan inte döljas.
 
 Diagram där varje punkt är en AID-etikett har fler filter, en rad per filter:
 
@@ -534,7 +536,8 @@ stapel samlar flera BAS-intervall, till exempel lägena per kön i Lönepolitik,
 **Räkna ett diagram för en del av underlaget.** Några diagram som sammanfattar många personer kan räknas om för en
 del av dem: lådorna och histogrammet för kvinnors och mäns lön i Ålder & karriär (för ett huvudområde eller en åldersgrupp),
 löneskillnaden per åldersgrupp (för ett huvudområde eller en AID-etikett) och percentilerna och kvartilerna i
-Lönestruktur (för ett huvudområde eller ett BAS-intervall). Raden **Räkna för** står ovanför diagrammet. Välj till
+Lönestruktur (för ett huvudområde eller ett BAS-intervall). Raden **Räkna för** står först i raden **Filter** ovanför
+diagrammet, och ett val räknas där som ett aktivt filter. Välj till
 exempel ett huvudområde, så räknas diagrammet om för personerna där, och under diagrammet står "Diagrammet är räknat
 för: huvudområde Teknikarbete (60 personer)". **Räkna för alla** går tillbaka till hela underlaget. Diagrammet räknas för en sak i taget: väljer du en
 åldersgrupp tas valet av huvudområde bort.

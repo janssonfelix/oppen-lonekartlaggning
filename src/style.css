@@ -2742,7 +2742,12 @@ summary:focus-visible {
 @media print { .chart-export { display: none !important; } }
 /* Diagrammets urval (10-diagramritare.js): en rad per dimension ovanför diagrammet. En kategori har knappar
    (intryckt = värdet visas; den sista valda kan inte väljas bort, aria-disabled), ett intervall fälten Minst och
-   Högst (aria-invalid: talet gick inte att läsa eller Minst är större än Högst). Utskriften visar inte raderna. */
+   Högst (aria-invalid: talet gick inte att läsa eller Minst är större än Högst). Utskriften visar inte raderna.
+   Raderna står i en hopfälld rad "Filter: …" (.diagram-filter), i samma stil som en lista. */
+.diagram-filter { margin: 0 0 8px; }
+.diagram-filter > summary { cursor: pointer; font-size: var(--fs-sm); padding: 4px 0; overflow-wrap: anywhere; }
+.diagram-filter > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+.diagram-filter[open] > summary { margin-bottom: 6px; }
 .diagram-urval { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
 .diagram-urval .btn-table-tool[aria-disabled="true"] { cursor: not-allowed; opacity: 0.7; }
 .diagram-urval .btn-table-tool[hidden] { display: none; }
@@ -2763,7 +2768,7 @@ summary:focus-visible {
 .diagram-urval-poster > li[hidden] { display: none; }
 .diagram-urval-poster label { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-sm); min-width: 0; overflow-wrap: anywhere; padding: 2px 0; }
 .diagram-urval-poster input[type="checkbox"] { flex: none; margin-top: 2px; }
-@media print { .diagram-urval { display: none !important; } }
+@media print { .diagram-filter, .diagram-urval { display: none !important; } }
 
 /* Utforska 2.0 (70/71-explorer) */
 .explore-controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
