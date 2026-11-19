@@ -16,6 +16,7 @@ import { valideraRecept } from './tabellrecept.js';
 import { valideraPerBasRecept, perBasReceptArStandard } from './perbas.js';
 import { valideraImportprofiler } from './importprofiler.js';
 import { skapaTermer } from './termer.js';
+import { installningsGrans } from './installningsgranser.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -113,7 +114,7 @@ export function byggPaket(u) {
             organisationstyp: _orgTyp(p.orgTyp),
         }),
         installningar: _utanTomma({
-            poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
+            poPct: _tal(inst.poPct, installningsGrans('poPct').min, installningsGrans('poPct').max), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
             // Låsningarna (ADR-47): bara giltiga värden följer med; en låsning av rensningstiden kräver ett värde över 0.
             kTroskelLagst: _kTroskel(inst.kTroskelLagst),
             inaktivitetMin: _inaktivitet(inst.inaktivitetMin),
@@ -270,7 +271,7 @@ export function tolkaPaket(text) {
             profil: _utanTomma({ name: organisation, benchmarkLabel: _text(p.jamforelseNamn),
                 benchmarkLabelGenitive: _text(p.jamforelseGenitiv), benchmarkShort: _text(p.jamforelseKort),
                 basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem), orgTyp: _orgTyp(p.organisationstyp) }),
-            installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
+            installningar: _utanTomma({ poPct: _tal(inst.poPct, installningsGrans('poPct').min, installningsGrans('poPct').max), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
                 jamforelse: _jamforelse(inst.jamforelse) }),
             referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
             statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,
