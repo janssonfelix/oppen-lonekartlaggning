@@ -466,3 +466,32 @@ describe('bhJustera', () => {
         expect(p).toEqual([0.04, 0.01]);
     });
 });
+
+describe('median och quantile: kanttillstånd (characterization)', () => {
+    it('median: ett värde är medianen', () => {
+        expect(median([7])).toBe(7);
+    });
+    it('median: två värden ger snittet, oavsett ordning', () => {
+        expect(median([9, 2])).toBe(5.5);
+        expect(median([2, 9])).toBe(5.5);
+    });
+    it('quantile: tom lista ger 0 även för q = 0 och q = 1', () => {
+        expect(quantile([], 0)).toBe(0);
+        expect(quantile([], 1)).toBe(0);
+    });
+    it('quantile: ett värde ger det värdet för alla q', () => {
+        expect(quantile([7], 0)).toBe(7);
+        expect(quantile([7], 0.5)).toBe(7);
+        expect(quantile([7], 1)).toBe(7);
+    });
+    it('quantile: två värden interpoleras linjärt (q = 0 → minst, q = 1 → störst, q = 0,25 → 3,5)', () => {
+        expect(quantile([8, 2], 0)).toBe(2);
+        expect(quantile([8, 2], 1)).toBe(8);
+        expect(quantile([8, 2], 0.5)).toBe(5);
+        expect(quantile([8, 2], 0.25)).toBe(3.5);
+    });
+    it('quantile vid q = 0 och q = 1 på osorterad lista ger min och max', () => {
+        expect(quantile([5, 1, 4], 0)).toBe(1);
+        expect(quantile([5, 1, 4], 1)).toBe(5);
+    });
+});
