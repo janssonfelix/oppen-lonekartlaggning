@@ -2381,8 +2381,22 @@ summary:focus-visible {
 #handlingsplan-tbody .handlingsplan-empty { display: none; }
 #handlingsplan-tbody .handlingsplan-empty > td { height: 40px; }
 @media print { #handlingsplan-tbody .handlingsplan-empty { display: table-row; } }
+/* På skärmen står grupp, antal berörda och underlag under åtgärden i första cellen, så att fälten man fyller i ryms utan
+   sidledsrullning. Utskriften (Ctrl+P och Skriv ut mallen) har kolumnerna som förut. */
+@media screen { #view-handlingsplan .hp-bara-utskrift { display: none; } }
+@media print { #view-handlingsplan .hp-bara-skarm { display: none !important; } }
+#handlingsplan-tbody .hp-under { display: block; margin-top: 4px; font-weight: 400; font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.45; }
+#handlingsplan-tbody .hp-under-rad { display: block; }
+#handlingsplan-tbody .hp-under .hp-falt { margin-bottom: 4px; }
+/* Sju kolumner i 1280 punkter: smalare luft mellan kolumnerna, rubriken över kostnaden och knappen Sakliga skäl får
+   brytas, och fälten är minst fem tecken breda (det ifyllda står i sin helhet i exporterna). */
+@media screen {
+    #view-handlingsplan .data-table th, #view-handlingsplan .data-table td { padding-left: 10px; padding-right: 10px; }
+    #view-handlingsplan .data-table th.tal { white-space: normal; }
+    #handlingsplan-tbody .hp-skal { white-space: normal; text-align: left; }
+}
 .handlingsplan-not { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--text-muted); }
-#handlingsplan-tbody .hp-falt { width: 100%; min-width: 7.5em; font: inherit; font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: inherit; }
+#handlingsplan-tbody .hp-falt { width: 100%; min-width: 5em; font: inherit; font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: inherit; }
 #handlingsplan-tbody .hp-falt.hp-falt-varning { border-color: var(--status-varning); }
 .handlingsplan-varning { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--status-varning); }
 /* Dialogen Sakliga skäl (57-sakliga-skal.js) */

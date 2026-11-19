@@ -357,16 +357,25 @@ function renderHandlingsplanSeed() {
         + ` maxlength="${HP_MAX_TEXT}" autocomplete="off" placeholder="${esc(platshallare)}" aria-label="${esc(etikett)}">`;
     const seededHtml = seed.rows.map((r, i) => {
         const n = seed.nycklar[i], egen = _hpArEgen(n), g = r[1] || (egen ? 'egen rad' : '');
-        // En egen rad har åtgärd och grupp som fält och en knapp som tar bort raden; knappen följer inte med i utskriften.
-        // Antal berörda står efter gruppen; en egen rad har inget antal.
-        const antal = `<td class="t-hoger">${r[8] != null ? esc(String(r[8])) : ''}</td>`;
+        // Skärmen samlar det som bara visas (åtgärd, grupp, antal berörda, underlag) i första cellen, så att fälten man fyller
+        // i ryms utan sidledsrullning. Kolumnerna Grupp, Antal berörda och Underlag finns kvar för utskriften
+        // (hp-bara-utskrift) och undertexten i första cellen följer inte med dit (hp-bara-skarm), så utskriften har samma
+        // kolumner som förut. En egen rad har åtgärd och grupp som fält och en knapp som tar bort raden; gruppfältet står i
+        // första cellen och speglas i utskriftens gruppkolumn (_hpSpegla). Antal berörda står efter gruppen; en egen rad
+        // har inget antal.
+        const antal = `<td class="t-hoger hp-bara-utskrift">${r[8] != null ? esc(String(r[8])) : ''}</td>`;
+        // BAS och bokstaven hålls ihop med ett hårt mellanslag på skärmen och i utskriften (S2 i punkt 26); exporterna
+        // och fältens etiketter har ett vanligt.
+        const gruppHtml = esc(g).replace(/ · BAS (\S+)$/, ' · BAS&nbsp;$1');
+        const under = innehall => `<span class="hp-under hp-bara-skarm" data-noprint>${innehall}</span>`;
         const forsta = egen
-            ? `<td>${text(`hp-${i}-atgard`, n, 'atgard', r[0], 'Vad ska göras?', 'Åtgärd, egen rad')}</td>`
-              + `<td>${text(`hp-${i}-grupp`, n, 'grupp', r[1], `Grupp eller ${T.enhet.en}, inga namn`, 'Berörd grupp, egen rad')}</td>${antal}`
-              + `<td>${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" data-noprint aria-label="Ta bort den egna raden">Ta bort</button></td>`
-            // BAS och bokstaven hålls ihop med ett hårt mellanslag på skärmen och i utskriften (S2 i punkt 26); exporterna
-            // och fältens etiketter har ett vanligt.
-            : `<td>${esc(r[0])}</td><td>${esc(g).replace(/ · BAS (\S+)$/, ' · BAS&nbsp;$1')}</td>${antal}<td>${esc(r[2])}</td>`;
+            ? `<td>${text(`hp-${i}-atgard`, n, 'atgard', r[0], 'Vad ska göras?', 'Åtgärd, egen rad')}`
+              + under(`${text(`hp-${i}-grupp`, n, 'grupp', r[1], `Grupp eller ${T.enhet.en}, inga namn`, 'Berörd grupp, egen rad')}`
+                + `<span class="hp-under-rad">${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" aria-label="Ta bort den egna raden">Ta bort</button></span>`) + '</td>'
+              + `<td class="hp-bara-utskrift"><span data-hp-spegel="${esc(n)}">${esc(r[1])}</span></td>${antal}<td class="hp-bara-utskrift">${esc(r[2])}</td>`
+            : `<td><span class="hp-atgard">${esc(r[0])}</span>`
+              + under(`<span class="hp-under-rad">${gruppHtml}${r[8] != null ? ` · ${esc(String(r[8]))}&nbsp;berörda` : ''}</span><span class="hp-under-rad">Underlag: ${esc(r[2])}</span>`) + '</td>'
+              + `<td class="hp-bara-utskrift">${gruppHtml}</td>${antal}<td class="hp-bara-utskrift">${esc(r[2])}</td>`;
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
             + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)} ${_hpSkalKnapp(n, g, seed.skillnader[i])}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td><td>${esc(_hpKostnadAvser(r[2]))}</td>`
@@ -390,11 +399,18 @@ function renderHandlingsplanSeed() {
     }
 }
 
+/** En egen rads grupp står i ett fält i första cellen på skärmen och som text i utskriftens gruppkolumn. */
+function _hpSpegla(nyckel, varde) {
+    const el = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-spegel]')].find(s => /** @type {HTMLElement} */ (s).dataset.hpSpegel === nyckel);
+    if (el) el.textContent = varde;
+}
+
 // Fälten skriver till state.handlingsplan medan man skriver; tabellen ritas inte om (fokus står kvar).
 ['input', 'change'].forEach(typ => document.getElementById('handlingsplan-tbody')?.addEventListener(typ, e => {
     const el = /** @type {HTMLInputElement} */ (e.target);
     if (!el || !el.classList || !el.classList.contains('hp-falt')) return;
     _hpSatt(el.dataset.hpNyckel, el.dataset.hpFalt, el.value);
+    if (el.dataset.hpFalt === 'grupp') _hpSpegla(el.dataset.hpNyckel, el.value);
     if (el.tagName === 'INPUT') _hpUppdateraVarning();
 }));
 document.getElementById('handlingsplan-tbody')?.addEventListener('click', e => {
