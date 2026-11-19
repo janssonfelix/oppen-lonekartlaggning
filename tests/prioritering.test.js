@@ -204,3 +204,66 @@ describe('prioritera: snabbvinst, bristyrke och sortering', () => {
         }
     });
 });
+
+describe('prioritera: statusgränser och tröskelvärden (characterization)', () => {
+    const REF = 40000;
+    const referens = () => ({ median: REF, kalla: 'testref' });
+    // Alla i gruppen har samma lön, så gruppmedianen är lönen och avvikelsen = (lön / 40 000 − 1) × 100.
+    const enGrupp = (lon, n = 12, kTroskel = 10) => {
+        const rader = grupp('5301 Undersköterska', 'B', lon, Math.ceil(n / 2), lon, Math.floor(n / 2));
+        return prioritera(rader, { referensFor: referens, kTroskel, prioConfig: CONFIG, prioWeights: VIKTER, costSettings: KOST, bristAids: new Set() });
+    };
+
+    it('−5,1 % (under atgard) med n = 12 blir akut', () => {
+        expect(enGrupp(37960)[0].status).toBe('akut');
+    });
+    it('−4,9 % (över atgard, under bevaka) blir bevaka', () => {
+        expect(enGrupp(38040)[0].status).toBe('bevaka');
+    });
+    it('−1,9 % (över bevaka) blir ok', () => {
+        expect(enGrupp(39240)[0].status).toBe('ok');
+    });
+    it('0 % blir ok', () => {
+        expect(enGrupp(REF)[0].status).toBe('ok');
+    });
+    it('+4,9 % (under analysera) blir ok', () => {
+        expect(enGrupp(41960)[0].status).toBe('ok');
+    });
+    it('+5,1 % (över analysera) blir analysera', () => {
+        expect(enGrupp(42040)[0].status).toBe('analysera');
+    });
+    it('akut kräver n ≥ akutMinN: −6 % med n = 9 blir atgard, med n = 10 blir akut', () => {
+        expect(enGrupp(37600, 9, 9)[0].status).toBe('atgard');
+        expect(enGrupp(37600, 10, 10)[0].status).toBe('akut');
+    });
+    it('TVEKSAMT: exakt −5 % i matematiken (38 000 mot 40 000) ger −5,000000000000004 i JavaScript och därmed akut', () => {
+        const [item] = enGrupp(38000);
+        expect(item.diffPct).toBeCloseTo(-5, 10);
+        expect(item.diffPct).toBeLessThan(-5);
+        expect(item.status).toBe('akut');
+    });
+    it('TVEKSAMT: exakt −2 % i matematiken (39 200 mot 40 000) ger −2,0000000000000018 och därmed bevaka', () => {
+        const [item] = enGrupp(39200);
+        expect(item.diffPct).toBeCloseTo(-2, 10);
+        expect(item.diffPct).toBeLessThan(-2);
+        expect(item.status).toBe('bevaka');
+    });
+    it('TVEKSAMT: exakt +5 % i matematiken (42 000 mot 40 000) ger 5,000000000000004 och därmed analysera', () => {
+        const [item] = enGrupp(42000);
+        expect(item.diffPct).toBeCloseTo(5, 10);
+        expect(item.diffPct).toBeGreaterThan(5);
+        expect(item.status).toBe('analysera');
+    });
+    it('gruppen med n = kTroskel tas med, n = kTroskel − 1 hoppas över', () => {
+        expect(enGrupp(37960, 10, 10)).toHaveLength(1);
+        expect(enGrupp(37960, 9, 10)).toHaveLength(0);
+    });
+});
+
+describe('prioIndex: viktsumma 0 (characterization)', () => {
+    it('alla vikter 0 ger index 0 (wTotal sätts till 1, så ingen division med noll och inget NaN)', () => {
+        const delar = { sevScore: 100, volScore: 100, gapScore: 100, riktningsvikt: 1, bristMultiplier: 1,
+            vikter: { avvikelse: 0, volym: 0, jamstalldhet: 0 } };
+        expect(prioIndex(delar)).toBe(0);
+    });
+});
