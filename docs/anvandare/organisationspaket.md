@@ -38,8 +38,8 @@ personnummer eller e-postadresser.
 1. Öppna verktyget och gå till **Filer och kvalitet**.
 2. Läs in **ställningstagandet** och **jämförelsestatistiken** i sina rutor, precis som vid en
    vanlig kartläggning. Kontrollera att antalet rader stämmer.
-3. Fäll ut **Skapa organisationspaket (för systemägaren)** längst ned i panelen *Organisationspaket*
-   (steg 1, överst i fliken).
+3. Klicka på länken **Skapa organisationspaket (för systemägaren)** längst ned i steg 1, *Organisationspaket*,
+   överst i fliken.
 4. Fyll i organisationens namn, utgivare och år, vad jämförelsestatistiken ska heta och vad
    ställningstagandet ska heta. Fyll också i PO-påslag och beräkningsperiod. Fältet för
    ställningstagandets namn är förifyllt med filens namn. Byt till ett namn som passar i rapporten,

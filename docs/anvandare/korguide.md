@@ -35,7 +35,8 @@ besluten gör och äger arbetsgivaren.
 
 ## 1. (Valfritt men rekommenderat) Lär dig verktyget med demodata
 
-1. Välj ett demo i välkomstraden på Översikt: "prova med demodata, **litet demo** eller **stort demo**".
+1. Välj ett demo i startytan **Kom igång** på Översikt, under *Ingen fil till hands?*: "prova med demodata,
+   **litet demo** eller **stort demo**".
    Samma två val, med samma ord, finns i lönefilskortet i **Filer och kvalitet**:
    - **litet demo**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
      Det är samma underlag som självdiagnostiken bygger på.
@@ -81,12 +82,15 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
 
 ## 3. Läs in och kvalitetssäkra underlaget
 
-1. Öppna fliken **Filer och kvalitet** (menyns första grupp, *1 · Underlag*; raden *läs in filerna* på Översikt
-   leder dit). Läs in **organisationspaketet** om organisationen har ett — det är **steg 1**, rutan överst
-   i fliken. Det innehåller organisationens ställningstagande,
+1. Öppna fliken **Filer och kvalitet** (menyns första grupp, *1 · Underlag*; raden om organisationspaketet i
+   startytan *Kom igång* på Översikt leder dit). Läs in **organisationspaketet** om organisationen har ett — det är
+   **steg 1**, överst i fliken; *Vad är ett organisationspaket?* under knappen förklarar det. Paketet innehåller
+   organisationens ställningstagande,
    jämförelsestatistik och benämningar (se `organisationspaket.md`), så rutorna *Referens* och
    *Jämförelsestatistik* fylls i av sig själva. Dra sedan in eller välj lönefilen i den
-   **obligatoriska** rutan (steg 2).
+   **obligatoriska** rutan (steg 2), det första och bredaste kortet. Har organisationen inget paket kan du läsa in
+   lönefilen direkt i startytan på Översikt: ytan *Läs in lönefilen* där använder samma inläsning som kortet, och
+   lästes filen inte in visas kortet med beskedet.
    **Minsta gruppstorlek för redovisning:** fältet ligger under **Inställningar** i sidhuvudet (värdet
    *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). På skärmen visas alla grupper. Gränsen gäller
    det som lämnar verktyget (Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
@@ -142,7 +146,9 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
 
 ## 4. Genomför kartläggningen — flik för flik
 
-Menyn följer rapportens ordning, och processkartan på Översikt har samma faser:
+Menyn följer rapportens ordning, och stegen på Översikt (*Kartläggningens steg* under *Fördjupning*) har samma
+faser. Listan har nio steg; verktyget kan se fem av dem och säger hur många som är klara (*Klara: 1 av 5 steg som
+verktyget kan se*). De övriga fyra är manuella steg.
 
 | Grupp | Flikar |
 |---|---|

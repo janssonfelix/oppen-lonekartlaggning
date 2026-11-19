@@ -280,11 +280,21 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     it('Översikt visar Kom igång före inläsning och läget efter; filerna står i Filer och kvalitet', () => {
         const w = createAppWindow();
         const d = w.document, vy = d.getElementById('view-dashboard');
-        // Före inläsning: ingen filrad, Kom igång pekar på Filer och kvalitet, och processöversikten är utfälld.
+        // Före inläsning: ingen filrad; startytan Kom igång har ytan för lönefilen, demona och raden om organisationspaketet
+        // som pekar på Filer och kvalitet; stegen står hopfällda under Fördjupning, som efter inläsning.
         expect(vy.classList.contains('har-data')).toBe(false);
         expect(d.getElementById('ov-filrad').textContent).toBe('');
-        expect(d.getElementById('avsnitt-ov-process').open).toBe(true);
-        expect(d.querySelector('#first-run-hint [data-go-to-tab="filer"]')).not.toBeNull();
+        expect(d.getElementById('avsnitt-ov-process').open).toBe(false);
+        expect(d.querySelector('#first-run-hint #drop-area-start')).not.toBeNull();
+        expect(d.querySelector('#first-run-hint .ov-start-paket [data-go-to-tab="filer"]')).not.toBeNull();
+        expect(d.querySelector('#first-run-hint .ov-start-paket').textContent).toMatch(/organisationspaket/);
+        expect(d.getElementById('ov-fordjupning').compareDocumentPosition(d.getElementById('avsnitt-ov-process')) & 4).toBeTruthy();
+        // Stegräkningen säger vad den räknar: listan har nio steg, verktyget kan se fem.
+        const intro = d.querySelector('#process-tracker .ptrack-intro').textContent.replace(/\s+/g, ' ');
+        expect(d.querySelectorAll('#process-tracker .ptrack-row')).toHaveLength(9);
+        expect(intro).toMatch(/Verktyget kan se 5 av de 9 stegen/);
+        expect(intro).toMatch(/Klara: 0 av de 5 steg som verktyget kan se\./);
+        expect(intro).not.toMatch(/\d\/\d/);
         const filer = d.getElementById('view-filer');
         expect(filer.contains(d.getElementById('upload-sektion')) && filer.contains(d.getElementById('file-input-data')) && filer.contains(d.getElementById('organisationspaket'))).toBe(true);
         expect(vy.contains(d.getElementById('upload-sektion'))).toBe(false);
@@ -301,7 +311,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.getElementById('view-dashboard').textContent).not.toContain('Organisationen som karta');
         // Avsnitten är hopfällda efter inläsning och bär sitt nyckeltal; kvalitetens nyckeltal står i Filer och kvalitet.
         expect([...d.querySelectorAll('#view-dashboard details.avsnitt')].filter(a => a.open)).toHaveLength(0);
-        expect(d.getElementById('nyckel-ov-process').textContent).toMatch(/^\d av \d steg klara$/);
+        expect(d.getElementById('nyckel-ov-process').textContent).toMatch(/^Klara: \d av 5 steg som verktyget kan se$/);
         expect(['OK', 'Varning', 'Kritisk']).toContain(d.getElementById('nyckel-ov-kvalitet').textContent);
         expect(d.getElementById('nyckel-ov-kvalitet').textContent).toBe(d.querySelector('#underlagets-kvalitet-status .uk-marke').textContent);
         expect(d.getElementById('stat-age').textContent).toMatch(/^\d+,\d$/);
@@ -314,11 +324,12 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.getElementById('installningar-modal').style.display).toBe('flex');
         expect(d.activeElement.id).toBe('k-troskel');
         w.eval('stangInstallningar()');
-        // Rensning: sidan är åter en uppladdningssida.
+        // Rensning: sidan visar åter startytan, med stegen hopfällda under Fördjupning.
         w.eval('_rensaAllData()');
         expect(vy.classList.contains('har-data')).toBe(false);
         expect(d.getElementById('ov-filrad').textContent).toBe('');
-        expect(d.getElementById('avsnitt-ov-process').open).toBe(true);
+        expect(d.getElementById('first-run-hint').style.display).toBe('');
+        expect(d.getElementById('avsnitt-ov-process').open).toBe(false);
     });
     it('Att göra — hela listan är ett avsnitt som står kvar utfällt när en punkt bockas av', () => {
         const w = createAppWindow();
@@ -606,8 +617,9 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     it('stilmallen döljer rätt saker före inläsning och i kompakt läge', async () => {
         const { readFileSync } = await import('node:fs');
         const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-        // Före inläsning är Översikts lägesdelar dolda, var och en med egen väljare.
-        for (const id of ['ov-filrad', 'ov-fordjupning']) expect(css).toContain(`#view-dashboard:not(.har-data) #${id}`);
+        // Före inläsning är Översikts lägesdelar dolda, var och en med egen väljare. Fördjupning (stegen) syns i båda lägena.
+        for (const id of ['ov-filrad', 'ov-intro']) expect(css).toContain(`#view-dashboard:not(.har-data) #${id}`);
+        expect(css).not.toContain('#view-dashboard:not(.har-data) #ov-fordjupning');
         // Kompakt läge döljer förklaringar, men aldrig noter om små grupper eller förbehåll.
         const kompakt = [...css.matchAll(/([^{}]*lage-kompakt[^{}]*)\{([^}]*)\}/g)].filter(m => /display:\s*none/.test(m[2])).map(m => m[1]).join(' ');
         expect(kompakt).toMatch(/\.avsnitt-under/);

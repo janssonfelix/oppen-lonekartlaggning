@@ -455,9 +455,9 @@ describe('utfällt som standard', () => {
     // "Filter: …" med filterraderna och gu-andra valet av förklaringsvariabler under trappan i Var uppstår
     // löneskillnaden? ("Ändra uppdelning") — kontroller, inte grupperingar.
     const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista', 'diagram-filter', 'gu-andra'];
-    // ADR-36: organisationspaketets rad är ihopfälld på Översikt, och Underlagets kvalitet är
-    // ihopfälld när allt är OK (utfälld vid varning).
-    const UNDANTAG_ID = ['organisationspaket', 'uk-fallbar'];
+    // Organisationspaketets förklaring (Vad är ett organisationspaket?) och formuläret för systemägaren är hopfällda i
+    // steg 1 i Filer och kvalitet, och Underlagets kvalitet är ihopfälld när allt är OK (utfälld vid varning).
+    const UNDANTAG_ID = ['paket-vad', 'paket-skapa', 'uk-fallbar'];
     it('varje <details> är utfälld utom hjälppanelerna — i markup och efter rendering av alla flikar', () => {
         const w = allaFlikar();
         const infallda = [...w.document.querySelectorAll('details:not([open])')]

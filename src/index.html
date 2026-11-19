@@ -207,11 +207,25 @@
                 <div id="view-dashboard" class="view-panel active">
                     <!-- Kompakt GDPR-info överst -->
 
-                    <!-- Första-intryck: visas tills data laddats (döljs av _renderDemoBanner när data finns) -->
-                    <div id="first-run-hint" class="first-run-hint">
-                        <span class="first-run-hint-icon" aria-hidden="true"></span>
-                        <div><strong>Kom igång:</strong> <button type="button" class="first-run-demo-link" data-go-to-tab="filer">läs in filerna</button>, först organisationspaketet om organisationen har ett och sedan lönefilen. Ingen fil till hands? Prova med demodata, <button type="button" id="first-run-demo-link" class="first-run-demo-link" title="Läs in det lilla demot: 260 påhittade personer">litet demo</button> eller <button type="button" id="first-run-stort-demo" class="first-run-demo-link" title="Läs in det stora demot: 7 000 påhittade personer">stort demo (7&nbsp;000 personer)</button>.</div>
-                    </div>
+                    <!-- Startytan: visas tills data laddats (döljs av _renderDemoBanner när data finns). Ytan för lönefilen
+                         öppnar samma filväljare som lönefilskortet i Filer och kvalitet (setupDrop i 32-filinlasning.js). -->
+                    <section id="first-run-hint" class="ov-start" aria-labelledby="ov-start-rubrik">
+                        <h2 id="ov-start-rubrik">Kom igång</h2>
+                        <p class="ov-start-ingress">Börja med lönefilen ur lönesystemet: en rad per anställd. Filen läses bara i webbläsaren och sparas inte.</p>
+                        <div class="ov-start-rad">
+                            <div class="file-drop-area ov-start-yta" id="drop-area-start">
+                                <svg class="ikon ov-start-ikon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>
+                                <button type="button" id="btn-start-lonefil" class="btn btn-primary">Läs in lönefilen</button>
+                                <p>eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
+                            </div>
+                            <div class="ov-start-demo">
+                                <h3>Ingen fil till hands?</h3>
+                                <p>Prova med demodata, <button type="button" id="first-run-demo-link" class="first-run-demo-link" title="Läs in det lilla demot: 260 påhittade personer">litet demo</button> eller <button type="button" id="first-run-stort-demo" class="first-run-demo-link" title="Läs in det stora demot: 7 000 påhittade personer">stort demo (7&nbsp;000 personer)</button>.</p>
+                                <p class="text-dampad-xs">Allt i demona är påhittat och märks som demodata.</p>
+                            </div>
+                        </div>
+                        <p class="ov-start-paket">Har organisationen ett organisationspaket? Läs in det först, i <button type="button" class="ov-filrad-lank" data-go-to-tab="filer">Filer och kvalitet</button>. Där står också vilka kolumner lönefilen behöver.</p>
+                    </section>
 
                     <div class="flik-intro" id="ov-intro"><strong>Hur ser organisationen ut, och vad är nästa steg?</strong> Diskrimineringslagen kräver att arbetsgivaren varje år kartlägger och analyserar lönerna (3 kap.). Här står underlaget, de viktigaste talen och vad som återstår att göra i kartläggningen. Resultaten finns i flikarna under Kartläggning; allt du läser in stannar i webbläsaren.</div>
                     <div id="ov-filrad" class="urvalsrad ov-filrad"></div>
@@ -293,9 +307,9 @@
 
                     <!-- #3 Guidad analysgång — centralt 5-stegs-nav, visas efter datauppladdning -->
 
-                    <!-- Process-tracker: statusoversikt for hela lagresan enligt diskrimineringslagen. Syns aven utan data. -->
+                    <!-- Kartläggningens steg: hela lönekartläggningen steg för steg. Står under Fördjupning, hopfälld, med och utan data. -->
                     <p class="avsnitt-rubrikrad" id="ov-fordjupning">Fördjupning</p>
-                    <details class="avsnitt" id="avsnitt-ov-process" open>
+                    <details class="avsnitt" id="avsnitt-ov-process">
                     <summary><span class="avsnitt-titel"><h2>Kartläggningens steg</h2><span class="avsnitt-under">Var står du, steg för steg?</span></span><span class="avsnitt-nyckel" id="nyckel-ov-process"></span></summary>
                     <div id="process-tracker"></div>
                     </details>
@@ -329,25 +343,32 @@
                     </p>
                     <!-- Organisationspaket (ADR-28): organisationens benämningar, grundinställningar,
                          ställningstagande och jämförelsestatistik i en fil. Systemägaren skapar det. -->
-                    <details id="organisationspaket" class="prio-config-panel paket-forst" open>
-                        <summary><span class="steg-nr">Steg 1</span> Organisationspaket <span class="text-dampad-sm fw-400">— läs in först, om organisationen har ett</span>
-                            <span class="info-tip" data-tooltip="Ett organisationspaket innehåller organisationens namn och benämningar, grundinställningar, lönepolitiska ställningstagande och jämförelsestatistik. Systemägaren skapar det; de som gör kartläggningen läser in det i ett steg. Paketet innehåller bara aggregat — inga personuppgifter."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                            <span class="text-dampad-sm marg-v-8">Organisation: <strong data-profile-label="name">Organisationen</strong></span>
-                            <span id="paket-orgtyp" class="text-dampad-sm marg-v-8"></span>
-                            <span id="k-troskel-sammanfattning" class="text-dampad-sm marg-v-8"></span>
-                        </summary>
-                        <div class="paket-innehall">
-                            <p>Har organisationen ett paket? Läs in det först. Då används paketets ställningstagande, jämförelsestatistik och benämningar i hela verktyget, och rutorna <em>Lönepolitiskt ställningstagande</em> och <em>Jämförelsestatistik</em> nedan fylls i av sig själva. Finns inget paket kan du läsa in ställningstagandet och statistiken var för sig i rutorna nedan.</p>
-                            <p class="text-dampad-sm">Organisationstyp och minsta gruppstorlek väljer du under <button type="button" class="ov-filrad-lank" data-oppna-installningar>Inställningar</button>.</p>
-                            <div class="paket-rad">
-                                <label class="btn btn-secondary btn-sm pekare">
-                                    Läs in organisationspaket
-                                    <input type="file" id="file-input-paket" accept=".json,application/json" class="dold">
-                                </label>
-                                <span id="paket-status" class="status-msg" role="status" aria-live="polite"></span>
+                    <section id="organisationspaket" class="paket-steg" aria-labelledby="paket-rubrik">
+                        <div class="paket-huvud">
+                            <h3 id="paket-rubrik"><span class="steg-nr">Steg 1</span> Organisationspaket <span class="text-dampad-sm fw-400">— läs in först, om organisationen har ett</span></h3>
+                            <span class="upload-badge optional">Valfritt</span>
+                        </div>
+                        <p class="paket-lage text-dampad-sm">Organisation: <strong data-profile-label="name">Organisationen</strong>
+                            <span id="paket-orgtyp"></span>
+                            <span id="k-troskel-sammanfattning"></span>
+                        </p>
+                        <div class="paket-rad">
+                            <label class="btn btn-secondary btn-sm pekare">
+                                Läs in organisationspaket
+                                <input type="file" id="file-input-paket" accept=".json,application/json" class="dold">
+                            </label>
+                            <span id="paket-status" class="status-msg" role="status" aria-live="polite"></span>
+                        </div>
+                        <div id="paket-info" class="paket-info" hidden></div>
+                        <details id="paket-vad" class="upload-help paket-vad">
+                            <summary>Vad är ett organisationspaket?</summary>
+                            <div class="upload-help-content">
+                                <p>Ett organisationspaket innehåller organisationens namn och benämningar, grundinställningar, lönepolitiska ställningstagande och jämförelsestatistik. Systemägaren skapar det; de som gör kartläggningen läser in det i ett steg. Paketet innehåller bara aggregat, inga personuppgifter.</p>
+                                <p>Har organisationen ett paket? Läs in det först. Då används paketets ställningstagande, jämförelsestatistik och benämningar i hela verktyget, och rutorna <em>Lönepolitiskt ställningstagande</em> och <em>Jämförelsestatistik</em> nedan fylls i av sig själva. Finns inget paket kan du läsa in ställningstagandet och statistiken var för sig i rutorna nedan.</p>
+                                <p>Organisationstyp och minsta gruppstorlek väljer du under <button type="button" class="ov-filrad-lank" data-oppna-installningar>Inställningar</button>.</p>
                             </div>
-                            <div id="paket-info" class="paket-info" hidden></div>
-                            <details id="paket-skapa" class="bakgrund-panel">
+                        </details>
+                            <details id="paket-skapa" class="paket-skapa">
                                 <summary>Skapa organisationspaket (för systemägaren)</summary>
                                 <p>Läs in ställningstagandet och jämförelsestatistiken med rutorna ovan, fyll i uppgifterna och spara. De som gör kartläggningen läser sedan in filen med knappen <em>Läs in organisationspaket</em>.</p>
                                 <div class="paket-formular">
@@ -399,8 +420,7 @@
                                     <button type="button" id="btn-organisationsfil-spara" class="btn btn-secondary btn-sm" disabled>Ladda ner organisationsfilen</button>
                                 </div>
                             </details>
-                        </div>
-                    </details>
+                    </section>
                     <!-- Horisontell upload-rad: alla uppladdningskaellor -->
                     <div class="upload-row" id="upload-row">
                         <div class="upload-cell required" id="upload-cell-data">
@@ -411,7 +431,9 @@
                             <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Öppnar <strong>alla flikar</strong></div>
                             <div class="file-drop-area" id="drop-area-data">
                                 <input type="file" id="file-input-data" accept=".csv,.xlsx" aria-label="Läs in lönefilen">
-                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
+                                <svg class="ikon file-drop-ikon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>
+                                <p><strong>Läs in lönefilen</strong></p>
+                                <p class="file-drop-hint">Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
                             </div>
                             <p class="upload-demo" id="upload-demo-val">Ingen fil till hands? Prova med demodata, <button type="button" id="upload-demo-litet" class="first-run-demo-link" title="Läs in det lilla demot: 260 påhittade personer">litet demo</button> eller <button type="button" id="upload-demo-stort" class="first-run-demo-link" title="Läs in det stora demot: 7 000 påhittade personer">stort demo (7&nbsp;000 personer)</button>.</p>
                             <div id="data-status" class="status-msg"></div>

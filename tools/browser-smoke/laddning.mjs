@@ -105,13 +105,43 @@ export async function laddningOchDemo() {
 export async function startsidan() {
     console.log('\n── Startsidan före inläsning, och de två lägena ──');
     {
+        // Startytans yta för lönefilen öppnar lönefilskortets filväljare, och en släppt fil läses in på samma väg.
+        const sida = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+        await sida.goto('file://' + FIL);
+        await sida.waitForTimeout(800);
+        const csv = ['BAS;Månadslön;Ålder;Kön;AID'];
+        for (let i = 0; i < 30; i++) csv.push(`C;${30000 + i * 10};${30 + i};${i % 2 ? 'Man' : 'Kvinna'};207011`);
+        const [valjare] = await Promise.all([sida.waitForEvent('filechooser'), sida.click('#btn-start-lonefil')]);
+        const samma = await valjare.element().evaluate(e => e.id);
+        ok(samma === 'file-input-data', `knappen på startytan öppnar lönefilskortets filväljare (${samma})`);
+        await valjare.setFiles({ name: 'start.csv', mimeType: 'text/csv', buffer: Buffer.from(csv.join('\n'), 'utf8') });
+        await sida.waitForFunction(() => document.getElementById('view-dashboard').classList.contains('har-data'), null, { timeout: 15000 });
+        const efter = await sida.evaluate(() => ({ flik: document.querySelector('.nav-item.active')?.getAttribute('data-tab'),
+            marke: document.querySelector('#upload-cell-data .upload-badge').textContent, start: document.getElementById('first-run-hint').offsetParent !== null }));
+        ok(efter.flik === 'dashboard' && /Inläst/.test(efter.marke) && !efter.start, `lönefilen från startytan läses in och Översikt visar läget (${JSON.stringify(efter)})`);
+        await sida.close();
+        const slapp = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+        await slapp.goto('file://' + FIL);
+        await slapp.waitForTimeout(800);
+        await slapp.evaluate(text => {
+            const dt = new DataTransfer();
+            dt.items.add(new File([text], 'slappt.csv', { type: 'text/csv' }));
+            document.getElementById('drop-area-start').dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+        }, csv.join('\n'));
+        await slapp.waitForFunction(() => state.data.length === 30, null, { timeout: 15000 });
+        ok(await slapp.evaluate(() => state.filnamn.data === 'slappt.csv' && document.getElementById('file-input-data').files[0]?.name === 'slappt.csv'),
+            'en fil som släpps på startytan hamnar i lönefilskortets filväljare och läses in');
+        await slapp.close();
+    }
+    {
         // En egen sida utan data: Översikt ska vara en uppladdningssida, utan lägesdelarna.
         const tom = await browser.newPage({ viewport: { width: 1440, height: 900 } });
         await tom.goto('file://' + FIL);
         await tom.waitForTimeout(1200);
         const start = await tom.evaluate(() => { const syn = id => { const e = document.getElementById(id); return !!e && e.offsetParent !== null; };
-            return { dolda: ['ov-filrad', 'ov-fordjupning'].filter(syn), komigang: syn('first-run-hint') && !!document.querySelector('#first-run-hint [data-go-to-tab="filer"]'), process: syn('avsnitt-ov-process'), sok: syn('sok-ruta') }; });
-        ok(start.dolda.length === 0 && start.komigang && start.process, `före inläsning visas Kom igång och processöversikten, inte lägesdelarna${start.dolda.length ? ' — syns: ' + start.dolda.join(', ') : ''}`);
+            return { dolda: ['ov-filrad', 'ov-intro'].filter(syn), komigang: syn('first-run-hint') && syn('drop-area-start') && !!document.querySelector('#first-run-hint .ov-start-paket [data-go-to-tab="filer"]'),
+                process: syn('ov-fordjupning') && syn('avsnitt-ov-process') && !document.getElementById('avsnitt-ov-process').open, sok: syn('sok-ruta') }; });
+        ok(start.dolda.length === 0 && start.komigang && start.process, `före inläsning visas startytan Kom igång och stegen hopfällda under Fördjupning, inte lägesdelarna${start.dolda.length ? ' — syns: ' + start.dolda.join(', ') : ''}`);
         // Funktionssöket syns före inläsning: ett avsnitt i en öppen flik går att nå, en låst flik säger kräver lönefil.
         ok(start.sok, 'sökfältet syns före inläsning');
         await tom.click('#sok-grupp');

@@ -70,6 +70,50 @@ describe('lönefil vars kolumner inte känns igen', () => {
     });
 });
 
+describe('startytan på Översikt (före inläsning)', () => {
+    // Ytan för lönefilen har ingen egen filväljare: den öppnar lönefilskortets, och en släppt fil går samma väg
+    // (change-händelsen på #file-input-data och loadStructureFile).
+    const slapp = (w, fil) => {
+        const inp = w.document.getElementById('file-input-data');
+        let filer = { length: 0 };
+        Object.defineProperty(inp, 'files', { configurable: true, get: () => filer, set: v => { filer = v; } });
+        const ev = new w.Event('drop', { bubbles: true, cancelable: true });
+        Object.defineProperty(ev, 'dataTransfer', { value: { files: { 0: fil, length: 1 } } });
+        w.document.getElementById('drop-area-start').dispatchEvent(ev);
+    };
+    it('har ingen egen filväljare: knappen och ytan öppnar lönefilskortets', () => {
+        const w = createAppWindow(), d = w.document;
+        expect(d.querySelectorAll('#first-run-hint input[type="file"]')).toHaveLength(0);
+        let klick = 0;
+        d.getElementById('file-input-data').click = () => { klick++; };
+        d.getElementById('btn-start-lonefil').click();
+        expect(klick).toBe(1);
+        d.getElementById('drop-area-start').click();
+        expect(klick).toBe(2);
+    });
+    it('en släppt lönefil läses in som i Filer och kvalitet, och Översikt visar läget', async () => {
+        const w = createAppWindow(), d = w.document;
+        papa(w);
+        slapp(w, csvFil(w, braRader(), 'start.csv'));
+        await vanta(() => w.__state.data.length);
+        expect(w.__state.data).toHaveLength(30);
+        expect(w.__state.filnamn.data).toBe('start.csv');
+        expect(d.querySelector('#upload-cell-data .upload-badge').textContent).toContain('Inläst');
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('dashboard');
+        expect(d.getElementById('view-dashboard').classList.contains('har-data')).toBe(true);
+        expect(d.getElementById('first-run-hint').style.display).toBe('none');
+    });
+    it('en fil som inte läses in leder till lönefilskortet i Filer och kvalitet, där beskedet står', async () => {
+        const w = createAppWindow(), d = w.document;
+        slapp(w, new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
+        await vanta(() => /äldre Excel-format/.test(d.getElementById('data-status').textContent));
+        expect(w.__state.data).toHaveLength(0);
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
+        expect(d.getElementById('upload-cell-data').classList.contains('visas-nu')).toBe(true);
+        expect(d.activeElement.id).toBe('file-input-data');
+    });
+});
+
 describe('länkar till ett avsnitt i en annan flik', () => {
     it('Att göra-länkarna till Lönestruktur byter flik och fäller ut avsnittet de leder till', () => {
         const w = createAppWindow();
