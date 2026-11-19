@@ -330,3 +330,19 @@ exports[`beräkningar på demodatan (låsta tal) > översiktens bootstrap-KI (st
   },
 }
 `;
+
+exports[`extremvärden med en påhittad avvikare > detectOutliers flaggar raden som multiplicerats med fem, och snapshoten låser listan > detectOutliers med avvikare 1`] = `
+[
+  {
+    "alder": 40,
+    "bas": "C",
+    "diffPct": 392.807965,
+    "groupMedian": 39071,
+    "kon": "Kvinna",
+    "lon": 192545,
+    "radnr": 2,
+    "yrke": "502010 Systemutvecklare",
+    "z": 9.230269372,
+  },
+]
+`;

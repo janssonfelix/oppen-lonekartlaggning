@@ -67,3 +67,26 @@ describe('beräkningar på demodatan (låsta tal)', () => {
         expect(stabil(w._laBootstrapGapCI(kvinnoLoner, mansLoner))).toMatchSnapshot('_laBootstrapGapCI');
     });
 });
+
+describe('extremvärden med en påhittad avvikare', () => {
+    it('detectOutliers flaggar raden som multiplicerats med fem, och snapshoten låser listan', () => {
+        // Eget fönster: testet ändrar data. detectOutliers läser state.data direkt (getData), så ingen cache behöver
+        // ogiltigförklaras.
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const rader = w.__state.data;
+        // Det största BAS-intervallet, och i det den första raden i datan (deterministiskt val).
+        const antal = {};
+        for (const r of rader) antal[r.bas] = (antal[r.bas] || 0) + 1;
+        const storst = Object.keys(antal).sort((a, b) => antal[b] - antal[a] || (a < b ? -1 : 1))[0];
+        const index = rader.findIndex(r => r.bas === storst);
+        const forre = rader[index].lon;
+        rader[index].lon = forre * 5;
+
+        const utfall = w.detectOutliers();
+        expect(utfall.length).toBeGreaterThanOrEqual(1);
+        const flaggad = utfall.find(o => o.bas === storst && o.lon === forre * 5);
+        expect(flaggad, 'den ändrade raden ska vara flaggad').toBeDefined();
+        expect(stabil(utfall)).toMatchSnapshot('detectOutliers med avvikare');
+    });
+});
