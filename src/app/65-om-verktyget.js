@@ -60,7 +60,7 @@ const INFO_SECTIONS = {
             <li>Bestäm i <strong>Prioritering</strong> och <strong>Handlingsplan</strong> vad som ska göras, av vem och när; pröva fördelningen av potten i <strong>Löneöversyn</strong></li>
             <li>Ta texten till rapporten ur <strong>Rapporttext</strong>, kör färdigchecken i <strong>Exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen. Spara konfigurationen i <strong>Spara och jämför år</strong>, så kan du jämföra med förra året nästa gång</li>
         </ol>
-        <p>Vill du prova först? Det finns två demon i <strong>Kom igång</strong> på Översikt och i lönefilskortet i Filer och kvalitet. Demot <em>litet</em> har 260 påhittade personer, och demot <em>stort</em> har 7 000 påhittade personer i BAS A–K. Allt i demona är påhittat och märks som demodata.</p>
+        <p>Vill du prova först? Det finns två demon i startytan <strong>Kom igång</strong> på Översikt, innan något är inläst, och i lönefilskortet i Filer och kvalitet. Demot <em>litet</em> har 260 påhittade personer, och demot <em>stort</em> har 7 000 påhittade personer i BAS A–K. Allt i demona är påhittat och märks som demodata.</p>
         <p>Raden <em>Klar här? Nästa steg</em> sist i flikarna leder vidare i den här ordningen. Sökrutan i sidhuvudet hittar ${T.enhet.fl}, ${T.niva.fl} och funktioner, och listan <em>På den här sidan</em> leder till flikens avsnitt. Körguiden som följer med verktyget beskriver varje steg närmare. Den står under Källor.</p>
     `,
 

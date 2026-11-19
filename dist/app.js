@@ -17521,7 +17521,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
     // 1. Underlag inläst
     rows.push(hasData
         ? { n: 1, status: 'klar', title: '1. Underlag inläst', tab: 'dashboard', detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` }
-        : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: läs in lönefilen i Filer och kvalitet (eller prova med demodata).' });
+        : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: läs in lönefilen i Kom igång överst på Översikt eller i Filer och kvalitet (eller prova med demodata).' });
 
     // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
     rows.push(safe(() => {
@@ -17615,20 +17615,21 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
         <div class="card ptrack" role="region" aria-label="Kartläggningens steg">
             <h3>Kartläggningens steg — var står du?</h3>
             <p class="ptrack-intro">
-                Översikt över hela lönekartläggningen, steg för steg.
-                Statusen härleds automatiskt ur ditt arbete och <em>föreslår</em> nästa steg —
-                den dömer inte. ${autoTotal ? `<strong>${autoDone}/${autoTotal}</strong> auto-härledda steg klara.` : ''}
+                Hela lönekartläggningen, steg för steg. Verktyget kan se ${autoTotal} av de ${rows.length} stegen och sätter
+                deras status ur ditt arbete; statusen <em>föreslår</em> nästa steg och dömer inte. De övriga
+                ${rows.length - autoTotal} är manuella steg. ${autoTotal ? `<strong>Klara: ${autoDone} av de ${autoTotal} steg som verktyget kan se.</strong>` : ''}
             </p>
             ${rowsHtml}
         </div>`;
-    _laNyckel('nyckel-ov-process', hasData && autoTotal ? `${autoDone} av ${autoTotal} steg klara` : '');
+    // Nyckeltalet säger vad det räknar: listan har fler steg än de verktyget kan se.
+    _laNyckel('nyckel-ov-process', hasData && autoTotal ? `Klara: ${autoDone} av ${autoTotal} steg som verktyget kan se` : '');
     // Processöversikten ritas vid start, vid varje inläsning och när en referens eller tröskeln ändras:
     // sidans läge följer med härifrån.
     ovRitaLage();
 }
 
 /**
- * Översikt efter inläsning. Före inläsning är sidan en uppladdningssida.
+ * Översikt efter inläsning. Före inläsning är sidan startytan Kom igång, med stegen under Fördjupning.
  * Efter inläsning visar sidan läget: filraden, nyckeltalen, Att göra och processen. Filerna, kvaliteten och
  * kvartilerna står i Filer och kvalitet respektive Lönestruktur. Klassen `har-data` på panelen styr vad som visas.
  */
@@ -17653,9 +17654,9 @@ function ovRitaLage() {
     if (kvalitet) kvalitet.hidden = !har;
     if (typeof sokUppdatera === 'function') sokUppdatera();   // sökfältet i sidhuvudet: en öppen träfflista stängs när lönefilen läses in eller rensas
     if (har !== _ovHadeData) {
-        // Läget byter: processen är utfälld före inläsning och hopfälld efter, och uppladdningen fälls ihop.
+        // Läget byter: stegen står hopfällda under Fördjupning, före inläsning (under startytan) som efter.
         const proc = document.getElementById('avsnitt-ov-process');
-        if (proc) /** @type {HTMLDetailsElement} */ (proc).open = !har;
+        if (proc) /** @type {HTMLDetailsElement} */ (proc).open = false;
         _ovHadeData = har;
     }
     _ovRitaFilrad(har, d.length);
@@ -23258,6 +23259,8 @@ function setupDrop(dropId, inputId) {
     });
 }
 setupDrop("drop-area-data", "file-input-data");
+// Startytan på Översikt (före inläsning) öppnar lönefilskortets filväljare: en fil därifrån läses in på samma väg.
+setupDrop("drop-area-start", "file-input-data");
 setupDrop("drop-area-policy", "file-input-policy");
 setupDrop("drop-area-stat", "file-input-stat");
 
@@ -23618,6 +23621,7 @@ function readTabularFile(file, synonymGroups, utfall) {
 
 function loadStructureFile(file) {
     if (!file) return;
+    const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
     // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
     // Kolumnmappningen läser om den senast inlästa filen, också en som inte gav några rader; den sätts i finishLoad.
@@ -23845,9 +23849,9 @@ function loadStructureFile(file) {
     // Läs bytes → sniffa format (XLSX/legacy XLS/text) → parsa via rätt väg.
     let detectedEnc = 'UTF-8', detectedDelim = ';';
     const _csvReader = new FileReader();
-    _csvReader.onerror = () => { failLoad('Kunde inte läsa filen.'); visningNy(); };
+    _csvReader.onerror = () => { failLoad('Kunde inte läsa filen.'); visningNy(); _beskedEfterOversikt(franOversikt); };
     // När filen är läst (inte bara när den valdes): ingen ritad flik visas igen som den är (ADR-81).
-    _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); } };
+    _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); _beskedEfterOversikt(franOversikt); } };
     const _lasLonefil = () => {
       const buf = _csvReader.result;
       const fmt = _sniffTabularFormat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
@@ -23919,6 +23923,19 @@ function loadStructureFile(file) {
       });
     };
     _csvReader.readAsArrayBuffer(file);
+}
+/**
+ * Lönefilen valdes på Översikts startyta. Beskeden om filen står i lönefilskortet i Filer och kvalitet: lästes filen inte
+ * in, visas kortet; saknar den en obligatorisk kolumn, visas kolumnmappningen. Har inläsningen redan visat Filer och
+ * kvalitet (kolumnmappningen, förhandskontrollen) görs inget mer.
+ */
+function _beskedEfterOversikt(franOversikt) {
+    if (!franOversikt || _aktivFlik() !== 'dashboard') return;
+    if (!state.data.length) {
+        _visaFilkortet('upload-cell-data', 'file-input-data', 'Lönefilen lästes inte in. Beskedet står i lönefilskortet under Filer och kvalitet.');
+        return;
+    }
+    if (document.querySelector('#column-map-panel select.colmap-saknas')) _visaKolumnmappning();
 }
 /** @type {HTMLElement} */ (dataInput).addEventListener("change", e => loadStructureFile(/** @type {HTMLInputElement} */ (e.target).files?.[0]));
 
@@ -35026,7 +35043,7 @@ const INFO_SECTIONS = {
             <li>Bestäm i <strong>Prioritering</strong> och <strong>Handlingsplan</strong> vad som ska göras, av vem och när; pröva fördelningen av potten i <strong>Löneöversyn</strong></li>
             <li>Ta texten till rapporten ur <strong>Rapporttext</strong>, kör färdigchecken i <strong>Exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen. Spara konfigurationen i <strong>Spara och jämför år</strong>, så kan du jämföra med förra året nästa gång</li>
         </ol>
-        <p>Vill du prova först? Det finns två demon i <strong>Kom igång</strong> på Översikt och i lönefilskortet i Filer och kvalitet. Demot <em>litet</em> har 260 påhittade personer, och demot <em>stort</em> har 7 000 påhittade personer i BAS A–K. Allt i demona är påhittat och märks som demodata.</p>
+        <p>Vill du prova först? Det finns två demon i startytan <strong>Kom igång</strong> på Översikt, innan något är inläst, och i lönefilskortet i Filer och kvalitet. Demot <em>litet</em> har 260 påhittade personer, och demot <em>stort</em> har 7 000 påhittade personer i BAS A–K. Allt i demona är påhittat och märks som demodata.</p>
         <p>Raden <em>Klar här? Nästa steg</em> sist i flikarna leder vidare i den här ordningen. Sökrutan i sidhuvudet hittar ${T.enhet.fl}, ${T.niva.fl} och funktioner, och listan <em>På den här sidan</em> leder till flikens avsnitt. Körguiden som följer med verktyget beskriver varje steg närmare. Den står under Källor.</p>
     `,
 

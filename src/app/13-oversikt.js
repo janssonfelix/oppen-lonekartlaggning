@@ -324,7 +324,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
     // 1. Underlag inläst
     rows.push(hasData
         ? { n: 1, status: 'klar', title: '1. Underlag inläst', tab: 'dashboard', detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` }
-        : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: läs in lönefilen i Filer och kvalitet (eller prova med demodata).' });
+        : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: läs in lönefilen i Kom igång överst på Översikt eller i Filer och kvalitet (eller prova med demodata).' });
 
     // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
     rows.push(safe(() => {
@@ -418,20 +418,21 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
         <div class="card ptrack" role="region" aria-label="Kartläggningens steg">
             <h3>Kartläggningens steg — var står du?</h3>
             <p class="ptrack-intro">
-                Översikt över hela lönekartläggningen, steg för steg.
-                Statusen härleds automatiskt ur ditt arbete och <em>föreslår</em> nästa steg —
-                den dömer inte. ${autoTotal ? `<strong>${autoDone}/${autoTotal}</strong> auto-härledda steg klara.` : ''}
+                Hela lönekartläggningen, steg för steg. Verktyget kan se ${autoTotal} av de ${rows.length} stegen och sätter
+                deras status ur ditt arbete; statusen <em>föreslår</em> nästa steg och dömer inte. De övriga
+                ${rows.length - autoTotal} är manuella steg. ${autoTotal ? `<strong>Klara: ${autoDone} av de ${autoTotal} steg som verktyget kan se.</strong>` : ''}
             </p>
             ${rowsHtml}
         </div>`;
-    _laNyckel('nyckel-ov-process', hasData && autoTotal ? `${autoDone} av ${autoTotal} steg klara` : '');
+    // Nyckeltalet säger vad det räknar: listan har fler steg än de verktyget kan se.
+    _laNyckel('nyckel-ov-process', hasData && autoTotal ? `Klara: ${autoDone} av ${autoTotal} steg som verktyget kan se` : '');
     // Processöversikten ritas vid start, vid varje inläsning och när en referens eller tröskeln ändras:
     // sidans läge följer med härifrån.
     ovRitaLage();
 }
 
 /**
- * Översikt efter inläsning. Före inläsning är sidan en uppladdningssida.
+ * Översikt efter inläsning. Före inläsning är sidan startytan Kom igång, med stegen under Fördjupning.
  * Efter inläsning visar sidan läget: filraden, nyckeltalen, Att göra och processen. Filerna, kvaliteten och
  * kvartilerna står i Filer och kvalitet respektive Lönestruktur. Klassen `har-data` på panelen styr vad som visas.
  */
@@ -456,9 +457,9 @@ function ovRitaLage() {
     if (kvalitet) kvalitet.hidden = !har;
     if (typeof sokUppdatera === 'function') sokUppdatera();   // sökfältet i sidhuvudet: en öppen träfflista stängs när lönefilen läses in eller rensas
     if (har !== _ovHadeData) {
-        // Läget byter: processen är utfälld före inläsning och hopfälld efter, och uppladdningen fälls ihop.
+        // Läget byter: stegen står hopfällda under Fördjupning, före inläsning (under startytan) som efter.
         const proc = document.getElementById('avsnitt-ov-process');
-        if (proc) /** @type {HTMLDetailsElement} */ (proc).open = !har;
+        if (proc) /** @type {HTMLDetailsElement} */ (proc).open = false;
         _ovHadeData = har;
     }
     _ovRitaFilrad(har, d.length);

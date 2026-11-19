@@ -879,10 +879,22 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin-bottom: 20px;
 }
 @media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
-.paket-forst { margin: 0 0 14px; }
-.steg-nr { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 10px; background: var(--primary); color: #fff; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; }
-/* Organisationspaket (ADR-28) */
-.paket-innehall { padding: 12px 4px; line-height: 1.6; font-size: var(--fs-sm); }
+.steg-nr { display: inline-block; white-space: nowrap; margin-right: 6px; padding: 1px 7px; border-radius: 10px; background: var(--primary); color: #fff; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; }
+/* Organisationspaket (ADR-28), steg 1 i Filer och kvalitet: knappen och läget synliga, förklaringen hopfälld bakom
+   Vad är ett organisationspaket?, och formuläret för systemägaren bakom en länk sist i steget. */
+.paket-steg { margin: 0 0 14px; padding: 14px 16px; background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+.paket-huvud { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.paket-huvud h3 { margin: 0; font-size: var(--fs-md); font-weight: 600; }
+.paket-lage { margin: 6px 0 0; }
+.paket-vad { margin-top: 12px; }
+.paket-vad .upload-help-content p { margin: 0 0 6px; }
+.paket-skapa { margin-top: 10px; font-size: var(--fs-sm); line-height: 1.6; }
+.paket-skapa > summary { display: inline-block; cursor: pointer; list-style: none; font-size: var(--fs-xs); color: var(--text-muted); text-decoration: underline; }
+.paket-skapa > summary::-webkit-details-marker { display: none; }
+.paket-skapa > summary:hover { color: var(--primary); }
+.paket-skapa > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
+.paket-skapa[open] { padding-top: 10px; border-top: 1px dashed var(--border); }
+.paket-skapa[open] > summary { color: var(--text-main); font-weight: 600; text-decoration: none; }
 .paket-rad { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
 .paket-info { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); }
 .paket-info dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; }
@@ -906,6 +918,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 
 .upload-cell-header {
     display: flex;
+    flex-wrap: wrap;            /* märket (Obligatorisk, Valfritt) bryter rad hellre än att gå utanför kortet */
     align-items: center;
     justify-content: space-between;
     gap: 8px;
@@ -949,6 +962,13 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     margin: 0;
 }
 .upload-cell .file-drop-area p { font-size: var(--fs-sm); }
+/* Lönefilen krävs: kortet står först, är bredast och har ram och en större yta tills filen är inläst
+   (markUploadLoaded byter klassen required mot loaded). */
+@media (min-width: 1400px) { .upload-row { grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 3fr); } }
+.upload-cell.required { border: 2px solid var(--primary); padding: 12px 14px; }
+.upload-cell.required .file-drop-area { padding: 26px 14px; border-color: var(--primary); }
+.file-drop-area .file-drop-ikon { display: block; margin: 0 auto 6px; color: var(--primary); }
+.file-drop-area p.file-drop-hint { margin-top: 2px; color: var(--text-muted); font-weight: 400; font-size: var(--fs-xs); }
 
 .upload-help {
     border-top: 1px dashed var(--border);
@@ -2312,6 +2332,30 @@ summary:focus-visible {
 }
 .first-run-demo-link:hover { color: var(--accent-mork); }
 
+/* Startytan Kom igång på Översikt före inläsning: lönefilen först, demona bredvid, organisationspaketet på en rad under.
+   Ytan för lönefilen är en .file-drop-area som öppnar lönefilskortets filväljare (32-filinlasning.js). */
+.ov-start {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 24px 28px;
+    margin: 4px 0 24px;
+}
+.ov-start h2 { font-size: 1.25rem; margin: 0 0 6px; }
+.ov-start-ingress { margin: 0 0 18px; color: var(--text-muted); font-size: var(--fs-sm); line-height: 1.5; }
+.ov-start-rad { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; align-items: stretch; }
+@media (max-width: 900px) { .ov-start-rad { grid-template-columns: 1fr; } }
+.ov-start-yta { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 32px 20px; border-color: var(--primary); }
+.ov-start-ikon { color: var(--primary); }
+.ov-start-yta p { font-size: var(--fs-sm); color: var(--text-muted); font-weight: 400; }
+.ov-start-demo { padding: 4px 0 4px 24px; border-left: 1px solid var(--border); font-size: var(--fs-sm); line-height: 1.5; }
+@media (max-width: 900px) { .ov-start-demo { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--border); } }
+.ov-start-demo h3 { font-size: var(--fs-md); margin: 0 0 6px; }
+.ov-start-demo p { margin: 0 0 8px; }
+.ov-start-demo .first-run-demo-link { color: var(--primary); }
+.ov-start-paket { margin: 20px 0 0; padding-top: 14px; border-top: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
+
 /* "Nästa steg"-fält längst ner i analysflikar (flödes-överlämning) */
 .flow-next-bar {
     display: flex;
@@ -2341,7 +2385,7 @@ summary:focus-visible {
     white-space: nowrap;
 }
 .flow-next-btn:hover { background: var(--primary-hover); }
-@media print { .flow-next-bar, .first-run-hint { display: none !important; } }
+@media print { .flow-next-bar, .first-run-hint, .ov-start { display: none !important; } }
 
 /* Exportvalen står i kortet Exportera som en lista med avdelare, inte som kort i kortet. */
 .export-hub-row {
@@ -3055,9 +3099,9 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 @media (max-width: 640px) { .view-panel select { min-width: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; } }
 
 /* ---- Översikt efter inläsning ----
-   Före inläsning visar sidan Kom igång och processen. Efter inläsning (klassen har-data) visas läget: filraden,
-   nyckeltalen, Att göra och processen. Filerna står i Filer och kvalitet. */
-#view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-fordjupning { display: none; }
+   Före inläsning visar sidan startytan Kom igång och, under Fördjupning, stegen. Efter inläsning (klassen har-data)
+   visas läget: filraden, nyckeltalen, Att göra och stegen under Fördjupning. Filerna står i Filer och kvalitet. */
+#view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad { display: none; }
 .ov-filrad .btn { margin-left: auto; }
 .ov-filrad-lank { display: inline-flex; align-items: center; min-height: 24px; background: none; border: 0; padding: 0; font: inherit; color: var(--primary); text-decoration: underline; cursor: pointer; }
 .ov-filrad-lank:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
@@ -3150,7 +3194,7 @@ body.lage-kompakt .flik-intro { font-size: 0; padding: 0; margin-bottom: 10px; l
 body.lage-kompakt .flik-intro > strong:first-child { font-size: var(--fs-md); }
 body.lage-kompakt .flik-intro > .info-tip { font-size: var(--fs-xs); }
 /* Diagrammens förklaringar står kvar — de säger hur diagrammet ska läsas. */
-body.lage-kompakt .first-run-hint, body.lage-kompakt .avsnitt-under, body.lage-kompakt .avsnitt-inledning, body.lage-kompakt .flow-next-bar,
+body.lage-kompakt .first-run-hint, body.lage-kompakt .ov-start-ingress, body.lage-kompakt .avsnitt-under, body.lage-kompakt .avsnitt-inledning, body.lage-kompakt .flow-next-bar,
 body.lage-kompakt .sektor-intro, body.lage-kompakt .ptrack-intro, body.lage-kompakt .export-hub > p { display: none; }
 body.lage-kompakt .content-body .card { padding: 16px; margin-bottom: 14px; }
 body.lage-kompakt .slutsatser { gap: 8px; margin-bottom: 10px; }

@@ -44,7 +44,7 @@ bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd
 
 ## 3. Hur det ser ut för användaren
 
-**Systemägaren** (panelen *Organisationspaket* i Filer och kvalitet, under *Skapa organisationspaket*):
+**Systemägaren** (steg 1, *Organisationspaket*, i Filer och kvalitet, under länken *Skapa organisationspaket*):
 1. Läser in paketet (eller bygger det i formuläret som i dag).
 2. Klickar **Skapa organisationsfil**. En rad fälls ut: en filväljare *Verktygsfilen du öppnade*
    (`.html`), ett fält *Filnamn* förifyllt med `oppen-lonekartlaggning-<organisation>.html`, och

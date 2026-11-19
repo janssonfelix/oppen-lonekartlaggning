@@ -29,6 +29,8 @@ function setupDrop(dropId, inputId) {
     });
 }
 setupDrop("drop-area-data", "file-input-data");
+// Startytan på Översikt (före inläsning) öppnar lönefilskortets filväljare: en fil därifrån läses in på samma väg.
+setupDrop("drop-area-start", "file-input-data");
 setupDrop("drop-area-policy", "file-input-policy");
 setupDrop("drop-area-stat", "file-input-stat");
 
@@ -389,6 +391,7 @@ function readTabularFile(file, synonymGroups, utfall) {
 
 function loadStructureFile(file) {
     if (!file) return;
+    const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
     // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
     // Kolumnmappningen läser om den senast inlästa filen, också en som inte gav några rader; den sätts i finishLoad.
@@ -616,9 +619,9 @@ function loadStructureFile(file) {
     // Läs bytes → sniffa format (XLSX/legacy XLS/text) → parsa via rätt väg.
     let detectedEnc = 'UTF-8', detectedDelim = ';';
     const _csvReader = new FileReader();
-    _csvReader.onerror = () => { failLoad('Kunde inte läsa filen.'); visningNy(); };
+    _csvReader.onerror = () => { failLoad('Kunde inte läsa filen.'); visningNy(); _beskedEfterOversikt(franOversikt); };
     // När filen är läst (inte bara när den valdes): ingen ritad flik visas igen som den är (ADR-81).
-    _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); } };
+    _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); _beskedEfterOversikt(franOversikt); } };
     const _lasLonefil = () => {
       const buf = _csvReader.result;
       const fmt = _sniffTabularFormat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
@@ -690,6 +693,19 @@ function loadStructureFile(file) {
       });
     };
     _csvReader.readAsArrayBuffer(file);
+}
+/**
+ * Lönefilen valdes på Översikts startyta. Beskeden om filen står i lönefilskortet i Filer och kvalitet: lästes filen inte
+ * in, visas kortet; saknar den en obligatorisk kolumn, visas kolumnmappningen. Har inläsningen redan visat Filer och
+ * kvalitet (kolumnmappningen, förhandskontrollen) görs inget mer.
+ */
+function _beskedEfterOversikt(franOversikt) {
+    if (!franOversikt || _aktivFlik() !== 'dashboard') return;
+    if (!state.data.length) {
+        _visaFilkortet('upload-cell-data', 'file-input-data', 'Lönefilen lästes inte in. Beskedet står i lönefilskortet under Filer och kvalitet.');
+        return;
+    }
+    if (document.querySelector('#column-map-panel select.colmap-saknas')) _visaKolumnmappning();
 }
 /** @type {HTMLElement} */ (dataInput).addEventListener("change", e => loadStructureFile(/** @type {HTMLInputElement} */ (e.target).files?.[0]));
 

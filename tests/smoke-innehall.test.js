@@ -222,28 +222,43 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         expect(w.eval('jmfNamn()')).toBe('Regionstatistiken');
         expect(stat.querySelector('.upload-namn-fel').hidden).toBe(true);
     });
-    it('demots ställningstagande visas kompakt; paketrutan står först, utfälld, och visar organisationstypen', () => {
+    it('demots ställningstagande visas kompakt; paketrutan står först, med förklaringen hopfälld, och visar organisationstypen', () => {
         const w = createAppWindow();
         const d = w.document;
-        expect(d.getElementById('organisationspaket').open).toBe(true);
-        expect(d.querySelector('#organisationspaket > summary').textContent).toMatch(/Steg 1/);
-        expect(d.getElementById('organisationspaket').compareDocumentPosition(d.getElementById('upload-row')) & 4).toBeTruthy();
+        const paket = d.getElementById('organisationspaket');
+        expect(paket.querySelector('.paket-huvud').textContent).toMatch(/Steg 1/);
+        expect(paket.compareDocumentPosition(d.getElementById('upload-row')) & 4).toBeTruthy();
+        // Knappen syns; förklaringen står bakom Vad är ett organisationspaket?, och formuläret för systemägaren bakom
+        // en länk sist i steget.
+        expect(paket.querySelector('label.btn #file-input-paket')).not.toBeNull();
+        const vad = d.getElementById('paket-vad');
+        expect(vad.open).toBe(false);
+        expect(vad.querySelector('summary').textContent.trim()).toBe('Vad är ett organisationspaket?');
+        expect(vad.textContent).toMatch(/Systemägaren skapar det/);
+        const skapa = d.getElementById('paket-skapa');
+        expect(skapa.open).toBe(false);
+        expect(skapa.classList.contains('bakgrund-panel')).toBe(false);
+        expect(skapa.querySelector('summary').textContent.trim()).toBe('Skapa organisationspaket (för systemägaren)');
+        expect([...paket.children].pop()).toBe(skapa);
         w.__loadDemoData();
         const pol = d.getElementById('upload-cell-policy');
         expect(pol.classList.contains('loaded')).toBe(true);
         expect(pol.querySelector('.upload-filnamn').textContent).toMatch(/Demots ställningstagande/);
-        expect(d.querySelector('#organisationspaket > summary').textContent).toMatch(/Organisationen är: en kommun/);
+        expect(d.querySelector('#organisationspaket .paket-lage').textContent).toMatch(/Organisationen är: en kommun/);
         w.__clearAllData();
         expect(pol.classList.contains('loaded')).toBe(false);
     });
-    it('välkomstrutan är en rad med de två demovalen (litet och stort demo)', () => {
+    it('startytan har de två demovalen bredvid ytan för lönefilen (litet och stort demo)', () => {
         const w = createAppWindow();
         const d = w.document;
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
-        const text = d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ').trim();
-        expect(text).toMatch(/^Kom igång: läs in filerna, först organisationspaketet om organisationen har ett och sedan lönefilen\. Ingen fil till hands\? Prova med demodata, litet demo eller stort demo \(7 000 personer\)\.$/i);
-        expect(text.match(/\beller\b/g)).toHaveLength(1);   // inte "eller … eller": samma mening som lönefilskortet
+        const text = d.querySelector('#first-run-hint .ov-start-demo p').textContent.replace(/\s+/g, ' ').trim();
+        expect(text).toBe('Prova med demodata, litet demo eller stort demo (7 000 personer).');
+        expect(d.querySelector('#first-run-hint .ov-start-demo h3').textContent).toBe('Ingen fil till hands?');
+        // Rubriken har sitt mellanslag (tidigare "Kom igång:läs").
+        expect(d.getElementById('ov-start-rubrik').textContent).toBe('Kom igång');
+        expect(d.getElementById('first-run-hint').textContent).not.toMatch(/:\S/);
         expect(d.getElementById('first-run-demo-link').textContent).toBe('litet demo');
         // Lönefilskortet i Filer och kvalitet har samma ord för samma val.
         const kort = d.getElementById('upload-demo-val').textContent.replace(/\s+/g, ' ').trim();
