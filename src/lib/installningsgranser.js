@@ -13,6 +13,17 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+const MB = 1024 * 1024;
+
+/** Högsta tillåtna filstorlek i byte, per filtyp. Organisationspaketet är samma gräns som förut (5 MB). */
+export const FIL_MAX = Object.freeze({
+    lonefil: 50 * MB,
+    stallningstagande: 20 * MB,
+    jamforelsestatistik: 20 * MB,
+    konfiguration: 5 * MB,
+    paket: 5 * MB
+});
+
 /** Påslaget för PO (arbetsgivaravgifter och pension) i procent: fältet i Inställningar och konfigurationen. */
 export const PO_PCT_GRANS = Object.freeze({ min: 0, max: 100 });
 
@@ -35,16 +46,18 @@ export const PRIO_VIKT_GRANS = Object.freeze({
 });
 
 /** @typedef {{min:number, max:number}} Grans */
-/** @type {Readonly<{poPct: Grans, manader: Grans, prioTroskel: Readonly<Record<string, Grans>>, prioVikt: Readonly<Record<string, Grans>>}>} */
+/** @type {Readonly<{poPct: Grans, manader: Grans, prioTroskel: Readonly<Record<string, Grans>>, prioVikt: Readonly<Record<string, Grans>>, fil: Readonly<Record<string, number>>}>} */
 const _GRANSER = Object.freeze({
     poPct: PO_PCT_GRANS,
     manader: MANADER_GRANS,
     prioTroskel: PRIO_TROSKEL_GRANS,
-    prioVikt: PRIO_VIKT_GRANS
+    prioVikt: PRIO_VIKT_GRANS,
+    fil: FIL_MAX
 });
 
 /**
- * Gränsen (eller gränserna per fältnamn) för en inställning: 'poPct', 'manader', 'prioTroskel' eller 'prioVikt'.
+ * Gränsen (eller gränserna per fältnamn) för en inställning: 'poPct', 'manader', 'prioTroskel', 'prioVikt' eller
+ * 'fil' (högsta filstorlek per filtyp, i byte).
  * @template {keyof typeof _GRANSER} K
  * @param {K} nyckel
  * @returns {(typeof _GRANSER)[K]}
@@ -62,4 +75,25 @@ export function installningsGrans(nyckel) {
  */
 export function arInomGrans(varde, grans) {
     return typeof varde === 'number' && Number.isFinite(varde) && varde >= grans.min && varde <= grans.max;
+}
+
+/** Hur filtypen heter i meddelandet om att den är för stor. */
+const _FIL_NAMN = Object.freeze({
+    lonefil: 'Lönefilen',
+    stallningstagande: 'Filen med ställningstagandet',
+    jamforelsestatistik: 'Filen med jämförelsestatistiken',
+    konfiguration: 'Konfigurationsfilen'
+});
+
+/**
+ * Felmeddelandet för en fil som är för stor, eller null när filen får läsas in. Prövas på filens storlek (byte) innan
+ * filen läses; en okänd storlek (NaN, undefined) räknas inte som för stor.
+ * @param {number} storlek - filens storlek i byte (File.size)
+ * @param {keyof typeof _FIL_NAMN} typ
+ * @returns {string | null}
+ */
+export function filStorlekFel(storlek, typ) {
+    const grans = FIL_MAX[typ];
+    if (!(storlek > grans)) return null;
+    return `${_FIL_NAMN[typ]} är för stor för att läsas in (högst ${grans / MB} MB).`;
 }

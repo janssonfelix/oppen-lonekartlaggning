@@ -11114,6 +11114,17 @@ const __mirrorInstallningsgranser = (() => {
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+const MB = 1024 * 1024;
+
+/** Högsta tillåtna filstorlek i byte, per filtyp. Organisationspaketet är samma gräns som förut (5 MB). */
+const FIL_MAX = Object.freeze({
+    lonefil: 50 * MB,
+    stallningstagande: 20 * MB,
+    jamforelsestatistik: 20 * MB,
+    konfiguration: 5 * MB,
+    paket: 5 * MB
+});
+
 /** Påslaget för PO (arbetsgivaravgifter och pension) i procent: fältet i Inställningar och konfigurationen. */
 const PO_PCT_GRANS = Object.freeze({ min: 0, max: 100 });
 
@@ -11136,16 +11147,18 @@ const PRIO_VIKT_GRANS = Object.freeze({
 });
 
 /** @typedef {{min:number, max:number}} Grans */
-/** @type {Readonly<{poPct: Grans, manader: Grans, prioTroskel: Readonly<Record<string, Grans>>, prioVikt: Readonly<Record<string, Grans>>}>} */
+/** @type {Readonly<{poPct: Grans, manader: Grans, prioTroskel: Readonly<Record<string, Grans>>, prioVikt: Readonly<Record<string, Grans>>, fil: Readonly<Record<string, number>>}>} */
 const _GRANSER = Object.freeze({
     poPct: PO_PCT_GRANS,
     manader: MANADER_GRANS,
     prioTroskel: PRIO_TROSKEL_GRANS,
-    prioVikt: PRIO_VIKT_GRANS
+    prioVikt: PRIO_VIKT_GRANS,
+    fil: FIL_MAX
 });
 
 /**
- * Gränsen (eller gränserna per fältnamn) för en inställning: 'poPct', 'manader', 'prioTroskel' eller 'prioVikt'.
+ * Gränsen (eller gränserna per fältnamn) för en inställning: 'poPct', 'manader', 'prioTroskel', 'prioVikt' eller
+ * 'fil' (högsta filstorlek per filtyp, i byte).
  * @template {keyof typeof _GRANSER} K
  * @param {K} nyckel
  * @returns {(typeof _GRANSER)[K]}
@@ -11165,10 +11178,32 @@ function arInomGrans(varde, grans) {
     return typeof varde === 'number' && Number.isFinite(varde) && varde >= grans.min && varde <= grans.max;
 }
 
-    return { installningsGrans, arInomGrans };
+/** Hur filtypen heter i meddelandet om att den är för stor. */
+const _FIL_NAMN = Object.freeze({
+    lonefil: 'Lönefilen',
+    stallningstagande: 'Filen med ställningstagandet',
+    jamforelsestatistik: 'Filen med jämförelsestatistiken',
+    konfiguration: 'Konfigurationsfilen'
+});
+
+/**
+ * Felmeddelandet för en fil som är för stor, eller null när filen får läsas in. Prövas på filens storlek (byte) innan
+ * filen läses; en okänd storlek (NaN, undefined) räknas inte som för stor.
+ * @param {number} storlek - filens storlek i byte (File.size)
+ * @param {keyof typeof _FIL_NAMN} typ
+ * @returns {string | null}
+ */
+function filStorlekFel(storlek, typ) {
+    const grans = FIL_MAX[typ];
+    if (!(storlek > grans)) return null;
+    return `${_FIL_NAMN[typ]} är för stor för att läsas in (högst ${grans / MB} MB).`;
+}
+
+    return { installningsGrans, arInomGrans, filStorlekFel };
 })();
 const _igGrans = __mirrorInstallningsgranser.installningsGrans;
 const _igInomGrans = __mirrorInstallningsgranser.arInomGrans;
+const _igFilFel = __mirrorInstallningsgranser.filStorlekFel;
 
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {
@@ -11205,7 +11240,7 @@ const T = skapaTermer();
 
 const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 const PAKET_VERSION = 1;
-const PAKET_MAX_BYTE = 5 * 1024 * 1024;
+const PAKET_MAX_BYTE = installningsGrans('fil').paket;   // gränsen bor i installningsgranser.js
 
 const MAX_TEXT = 200;
 const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
@@ -19317,6 +19352,14 @@ document.getElementById('btn-config-save')?.addEventListener('click', () => {
 document.getElementById('btn-config-load')?.addEventListener('change', e => {
     const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
     if (!file) return;
+    const status = document.getElementById('config-status');
+    // Storleken prövas innan filen läses (B-8): en för stor fil tolkas inte alls.
+    const storlekFel = _igFilFel(file.size, 'konfiguration');
+    if (storlekFel) {
+        if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
+        /** @type {HTMLInputElement} */ (e.target).value = '';
+        return;
+    }
     const reader = new FileReader();
     reader.onload = ev => {
         try {
@@ -22142,7 +22185,7 @@ document.getElementById('data-residency-modal')?.addEventListener('click', e => 
 // den i ett steg (lasInPaket). Tolkning och validering bor i src/lib/organisationspaket.js
 // (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
 
-const PAKET_MAX_FILSTORLEK = 5 * 1024 * 1024;   // samma gräns som i src/lib/organisationspaket.js
+const PAKET_MAX_FILSTORLEK = _igGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
 // Rensning vid inaktivitet i paketet: 0 (av) eller 5–120 minuter (samma gränser som i src/lib/organisationspaket.js).
 const PAKET_INAKTIVITET_MIN = 5;
 const PAKET_INAKTIVITET_MAX = 120;
@@ -23655,12 +23698,16 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
  * @param {(res: {ok:true, format:string, encoding:string, headers:string[],
  *                rows:Array<Object<string,string>>}
  *             | {ok:false, error:string}) => void} utfall
+ * @param {'stallningstagande'|'jamforelsestatistik'} typ - filtypen, som bestämmer storleksgränsen (FIL_MAX)
  */
-function readTabularFile(file, synonymGroups, utfall) {
+function readTabularFile(file, synonymGroups, utfall, typ) {
     // En fil som blivit läst kan ändra det som visas, hur det än gick: ingen ritad flik visas igen som den är (ADR-81).
     /** @type {typeof utfall} */
     const callback = res => { try { utfall(res); } finally { visningNy(); } };
     if (!file) { callback({ ok: false, error: 'Ingen fil vald.' }); return; }
+    // Storleken prövas innan filen läses eller tolkas (B-8).
+    const storlekFel = _igFilFel(file.size, typ);
+    if (storlekFel) { callback({ ok: false, error: storlekFel }); return; }
     const reader = new FileReader();
     reader.onerror = () => callback({ ok: false, error: 'Kunde inte läsa filen.' });
     reader.onload = () => {
@@ -23700,6 +23747,9 @@ function readTabularFile(file, synonymGroups, utfall) {
 
 function loadStructureFile(file) {
     if (!file) return;
+    // Storleken prövas innan filen läses eller tolkas (B-8): en för stor fil lämnar det som var inläst orört.
+    const storlekFel = _igFilFel(file.size, 'lonefil');
+    if (storlekFel) { dataStatus.textContent = storlekFel; dataStatus.className = 'status-msg'; return; }
     const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
     // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
@@ -27146,7 +27196,7 @@ policyInput.addEventListener("change", e => {
         renderActionChecklist();
         renderProcessTracker();
         if (getData().length > 0) generateRapport();
-    });
+    }, 'stallningstagande');
 });
 
 // Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
@@ -27273,7 +27323,7 @@ statInput.addEventListener("change", e => {
             statStatus.textContent = "Fel: " + err.message;
             statStatus.className = "status-msg error";
         }
-    });
+    }, 'jamforelsestatistik');
 });
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson

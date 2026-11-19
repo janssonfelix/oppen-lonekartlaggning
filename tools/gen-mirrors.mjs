@@ -284,7 +284,7 @@ export const MODULES = [
         // Gränserna för inställningarna och för inlästa filer (B-7, B-8): fältet, konfigurationsfilen och paketet läser dem.
         // Organisationspaketet importerar dem: före det.
         file: 'installningsgranser.js', ns: '__mirrorInstallningsgranser',
-        expose: { installningsGrans: '_igGrans', arInomGrans: '_igInomGrans' }
+        expose: { installningsGrans: '_igGrans', arInomGrans: '_igInomGrans', filStorlekFel: '_igFilFel' }
     },
     {
         // Organisationspaketet importerar tabellrecept.js, perbas.js och importprofiler.js (rapportens recept, ADR-52): efter dem.

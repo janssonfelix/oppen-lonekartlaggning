@@ -23,7 +23,7 @@ const T = skapaTermer();
 
 export const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 export const PAKET_VERSION = 1;
-export const PAKET_MAX_BYTE = 5 * 1024 * 1024;
+export const PAKET_MAX_BYTE = installningsGrans('fil').paket;   // gränsen bor i installningsgranser.js
 
 const MAX_TEXT = 200;
 const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
