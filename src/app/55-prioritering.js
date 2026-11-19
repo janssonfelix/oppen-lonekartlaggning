@@ -6,7 +6,7 @@
 // och rangordnar efter ett sammansatt prioriteringsindex.
 /**
  * Bygger prioriteringslistan: beräknar avvikelse mot referens, kostnad för utjämning
- * (inkl. PO-påslag och beräkningsperiod), läget mot referensen (Börja här/Under referens/Nära referens/Över referens),
+ * (inkl. PO-påslag och beräkningsperiod), läget mot referensen (Börja här/Under referens, liten grupp/Nära referens/Över referens),
  * jämställdhetsindex, och en sammanvägd prio-poäng (avvikelse·volym·jämställdhet).
  * Driver "Prioritering"-tabben + EU-kartläggningens åtgärdslista.
  * @param {string} reference - Referens-mätsticka: 'stallningstagande'|'statistik'
@@ -144,14 +144,31 @@ function generateMotivationSuggestions(item) {
 // Prioriteringens egna ord för läget mot referensen (A5, ADR-62). De delar inte namn med uppmärksamhetstrappan för
 // skillnaden mellan kvinnor och män (Värt att granska, Följ upp, Balanserat): Prioriteringen mäter löneläget mot er
 // referens, inte lönekartläggningens könsskillnader. Statusvärdena i src/lib/prioritering.js är oförändrade; «Nära
-// referens» har två färger, under uppföljningsgränsen och däröver.
+// referens» har två färger, under uppföljningsgränsen och däröver. «Under referens, liten grupp» säger att Börja här
+// är samma läge i en större grupp; nyckeltalen räknar statusarna och heter som dem.
 const PRIO_STATUS_INFO = {
     akut:      { label: 'Börja här',     icon: ikon('nal'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
-    atgard:    { label: 'Under referens', icon: ikon('sok'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
+    atgard:    { label: 'Under referens, liten grupp', icon: ikon('sok'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
     bevaka:    { label: 'Nära referens, under', icon: ikon('oga'), color: FARG.varning, bg: FARG.varningBg, klass: 'bricka-varning' },
     ok:        { label: 'Nära referens', icon: ikon('bock'),  color: FARG.ok, bg: FARG.okBg, klass: 'bricka-ok' },
     analysera: { label: 'Över referens', icon: ikon('info'), color: FARG.info, bg: FARG.infoBg, klass: 'bricka-info' }
 };
+/** En gräns ur state.prioConfig som text utan tecken, med decimaler bara när gränsen har några («5 %», «2,5 %»). */
+function _prioGrans(v) {
+    const a = Math.abs(v);
+    return svPct(a, Number.isInteger(a) ? 0 : Number.isInteger(a * 10) ? 1 : 2);
+}
+/**
+ * Vad statusen betyder, med gränserna ur inställningen: undertexten under nyckeltalen. Bara för de statusar som har
+ * ett nyckeltal (Börja här, Under referens, liten grupp och Över referens).
+ * @param {'akut'|'atgard'|'analysera'} status
+ * @param {{atgardThreshold:number, akutMinN:number, analyseraThreshold:number}} cfg
+ */
+function _prioStatusVillkor(status, cfg) {
+    if (status === 'akut') return `mer än ${_prioGrans(cfg.atgardThreshold)} under, minst ${cfg.akutMinN} personer`;
+    if (status === 'atgard') return `mer än ${_prioGrans(cfg.atgardThreshold)} under, färre än ${cfg.akutMinN} personer`;
+    return `mer än ${_prioGrans(cfg.analyseraThreshold)} över`;
+}
 /**
  * Uppmärksamhetstrappans bricka för kolumnen Skillnad kön (ADR-71). Prioriteringen prövar inte skillnaden mot
  * slumpen, så brickan sätts efter storleken som i Utforska (högst Följ upp); under statGolv() per kön, eller utan
@@ -251,8 +268,9 @@ function renderPrioritering() {
 
     // Sammanfattningsstatistik
     const akutCount  = items.filter(i => i.status === 'akut').length;
-    const underCount = items.filter(i => i.diffPct < -5).length;
-    const overCount  = items.filter(i => i.diffPct >  5).length;
+    // Nyckeltalen räknar statusarna, som tabellens kolumn Status (samma gränser ur inställningen).
+    const underCount = items.filter(i => i.status === 'atgard').length;
+    const overCount  = items.filter(i => i.status === 'analysera').length;
     const totalCost  = items.reduce((s, i) => s + i.annualGapTotal, 0);
     const fmt = new Intl.NumberFormat('sv-SE');
     const fmtMkr = _fmtCost(totalCost);
@@ -260,6 +278,10 @@ function renderPrioritering() {
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-under')).textContent = String(underCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-over')).textContent  = String(overCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-cost')).textContent  = String(fmtMkr);
+    for (const [id, status] of /** @type {const} */ ([['prio-stat-akut-not', 'akut'], ['prio-stat-under-not', 'atgard'], ['prio-stat-over-not', 'analysera']])) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = _prioStatusVillkor(status, state.prioConfig);
+    }
     // Avsnittens nyckeltal (ADR-41): samma tal som rutorna ovanför.
     _laNyckel('nyckel-pr-lista', `${items.length} ${items.length === 1 ? 'grupp' : 'grupper'}${akutCount ? ` · ${akutCount} att börja med` : ''}`, akutCount > 0);
     _laNyckel('nyckel-pr-kostnad', totalCost > 0 ? fmtMkr : '');
@@ -358,7 +380,7 @@ function renderPrioritering() {
             ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
-            ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens: under ${state.prioConfig.atgardThreshold} % i en mindre grupp <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
+            ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
         ],
         notes: [
             `Aktuell referens: <strong>${ref === 'stallningstagande' ? esc(referensNamn()) + ' (per BAS)' : 'jämförelsestatistiken (per AID)'}</strong>`,
@@ -675,10 +697,18 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
         lager: [lager('Når tillsammans 80 % av kostnaden', PALETTE.serie[0], 1, inom), lager('Övriga', PALETTE.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
 
-// Zonernas rubriker i matrisen: statusens namn med versaler, högst 14 tecken. «Nära referens, under» (20 tecken) blev
-// klippt i en smal zon; zonen heter «Nära, under».
-const PRIO_ZON_NAMN = { bevaka: 'Nära, under' };
-function _prioZonNamn(status) { return (PRIO_ZON_NAMN[status] || PRIO_STATUS_INFO[status].label).toUpperCase(); }
+// Zonernas rubriker i matrisen, med versaler: de två yttre zonerna säger gränsen ur inställningen («Mer än 5 % under»,
+// «Mer än 5 % över»), de två inre heter som statusarna. Den första zonen rymmer både Börja här och Under referens,
+// liten grupp; bubblornas färg visar vilken. En rubrik som inte ryms på en rad bryts på två (_rfZonEtiketter).
+/**
+ * @param {'atgard'|'bevaka'|'ok'|'analysera'} zon
+ * @param {{atgardThreshold:number, analyseraThreshold:number}} cfg
+ */
+function _prioZonNamn(zon, cfg) {
+    const namn = zon === 'atgard' ? `Mer än ${_prioGrans(cfg.atgardThreshold)} under`
+        : zon === 'analysera' ? `Mer än ${_prioGrans(cfg.analyseraThreshold)} över` : PRIO_STATUS_INFO[zon].label;
+    return namn.toUpperCase();
+}
 
 // Matrisen: en punktserie per status (förklaringen kan dölja en status), zoner för tröskelvärdena med namn, och
 // gruppens namn som text på punkten enligt valt etikettläge.
@@ -716,10 +746,8 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal, URVAL.avvikelse], x: { skala: 'linjar', titel: `Avvikelse mot ${refLabel} (%)`, doman: [xMin, xMax], nollinje: true },
         // Logskala bara när grupperna skiljer sig med mer än en tiopotens; annars är en vanlig axel lättare att läsa.
         y: stor ? { skala: 'log', titel: 'Antal personer i gruppen (log skala)' } : { skala: 'linjar', titel: 'Antal personer i gruppen' },
-        // Zonerna heter som statusarna i tabellen och förklaringen under den («Börja här» är de största grupperna i den första zonen),
-        // i en kortare form där statusens namn är längre än 14 tecken (PRIO_ZON_NAMN). En zonrubrik som inte ryms på en
-        // rad bryts på två.
-        referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard'), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka'), FARG.varning),
-                   zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok'), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera'), FARG.infoMork)].filter(z => z.x1 > z.x0),
+        // Zonerna: gränserna ur inställningen ytterst, statusarnas namn i mitten (_prioZonNamn).
+        referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard', cfg), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka', cfg), FARG.varning),
+                   zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok', cfg), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera', cfg), FARG.infoMork)].filter(z => z.x1 > z.x0),
         lager };
 }

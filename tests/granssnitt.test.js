@@ -472,7 +472,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
     it('Förklaringen nämner varje statusord en gång, med färgen bunden till ordet', () => {
         const d = demo().document;
         const ord = [...d.querySelectorAll('#symbols-modal strong')].map(e => [e.textContent.trim(), e.className]);
-        for (const [namn, klass] of [['Balanserat', 'farg-ok'], ['Följ upp', 'farg-varning'], ['Värt att granska', 'farg-granska'], ['Börja här', 'farg-granska'], ['Under referens', 'farg-granska'], ['Nära referens, under', 'farg-varning'], ['Nära referens', 'farg-ok'], ['Över referens', 'farg-info']]) {
+        for (const [namn, klass] of [['Balanserat', 'farg-ok'], ['Följ upp', 'farg-varning'], ['Värt att granska', 'farg-granska'], ['Börja här', 'farg-granska'], ['Under referens, liten grupp', 'farg-granska'], ['Nära referens, under', 'farg-varning'], ['Nära referens', 'farg-ok'], ['Över referens', 'farg-info']]) {
             expect(ord.filter(o => o[0] === namn), namn).toEqual([[namn, klass]]);
         }
         // Ingen separat färgtabell som upprepar orden.
@@ -495,7 +495,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         }
         const prio = w.eval('Object.values(PRIO_STATUS_INFO)');
         // Prioriteringen har egna ord för läget mot referensen (A5, ADR-62); färgerna följer trappans.
-        expect(prio.map(p => p.label)).toEqual(['Börja här', 'Under referens', 'Nära referens, under', 'Nära referens', 'Över referens']);
+        expect(prio.map(p => p.label)).toEqual(['Börja här', 'Under referens, liten grupp', 'Nära referens, under', 'Nära referens', 'Över referens']);
         expect(prio.map(p => p.klass)).toEqual(['bricka-granska', 'bricka-granska', 'bricka-varning', 'bricka-ok', 'bricka-info']);
     });
     it('livscykelns nyckeltal är kvinnors lön i % av mäns, och modellens skillnad står bredvid', () => {

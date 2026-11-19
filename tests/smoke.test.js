@@ -1745,7 +1745,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         expect([...vy.querySelectorAll('[data-tooltip], [data-k-tooltip], [data-export-label], [title]')]
             .map(e => ['data-tooltip', 'data-k-tooltip', 'data-export-label', 'title'].map(a => e.getAttribute(a) || '').join(' '))
             .filter(t => TRAPPAN.test(t))).toEqual([]);
-        expect(w.eval('Object.values(PRIO_STATUS_INFO).map(s => s.label)')).toEqual(['Börja här', 'Under referens', 'Nära referens, under', 'Nära referens', 'Över referens']);
+        expect(w.eval('Object.values(PRIO_STATUS_INFO).map(s => s.label)')).toEqual(['Börja här', 'Under referens, liten grupp', 'Nära referens, under', 'Nära referens', 'Över referens']);
         const ruta = d.getElementById('prio-stat-cost').closest('.stat-box');
         expect(ruta.querySelector('.stat-etikett').textContent.trim()).toBe('Kostnad att nå referensen');
         // Förklaringen står under nyckeltalsraden (i rutan skulle den klippas).
@@ -1754,6 +1754,53 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         expect(not).toContain('inkl. PO-påslag 39,15 % (SKR:s standardvärde för kommuner; ändras under Inställningar)');
         expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 39,15\u00a0%');
         expect(vy.textContent).not.toMatch(/åtgärdskostnad/i);
+    });
+    // Nyckeltalen heter som statusarna och räknar tabellens rader; Färdigcheck räknar samma grupper (uppgift 3, UX 2026-11-19).
+    it('nyckeltalen räknar tabellens statusar, och Färdigcheck säger samma tal med samma gräns', () => {
+        const w = oppna();
+        const d = w.document;
+        const rader = [...d.querySelectorAll('#prio-table tbody tr')].map(tr => tr._prioItem);
+        const items = w.eval('computePrioritization(_selectedPrioReference())');
+        expect(rader.length).toBe(items.length);
+        const antal = s => rader.filter(i => i.status === s).length;
+        const ruta = id => d.getElementById(id).closest('.stat-box');
+        const nyckel = [['prio-stat-akut', 'akut', 'Börja här'], ['prio-stat-under', 'atgard', 'Under referens, liten grupp'], ['prio-stat-over', 'analysera', 'Över referens']];
+        for (const [id, status, namn] of nyckel) {
+            expect(ruta(id).querySelector('.stat-etikett').textContent.trim()).toBe(namn);
+            expect(w.eval(`PRIO_STATUS_INFO.${status}.label`)).toBe(namn);
+            expect(d.getElementById(id).textContent, namn).toBe(String(antal(status)));
+        }
+        // Statuscellen i tabellen bär samma ord som nyckeltalet.
+        for (const tr of d.querySelectorAll('#prio-table tbody tr')) expect(tr.textContent).toContain(w.eval(`PRIO_STATUS_INFO.${tr._prioItem.status}.label`));
+        expect(d.getElementById('prio-stat-akut-not').textContent).toBe('mer än 5\u00a0% under, minst 10 personer');
+        expect(d.getElementById('prio-stat-under-not').textContent).toBe('mer än 5\u00a0% under, färre än 10 personer');
+        expect(d.getElementById('prio-stat-over-not').textContent).toBe('mer än 5\u00a0% över');
+        // Färdigcheck: alla under noll, varav Börja här och Under referens, liten grupp.
+        const under = items.filter(i => i.diffPct < 0).length, varav = antal('akut') + antal('atgard');
+        expect(under).toBeGreaterThan(varav); expect(varav).toBeGreaterThan(0);
+        const punkt = w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper');
+        expect(punkt.title).toBe(`${under} grupper ligger under referensen, varav ${varav} mer än 5\u00a0% under`);
+    });
+    it('nyckeltalens undertexter, matrisens zoner och Färdigcheck följer inställda gränser', () => {
+        const w = oppna();
+        const d = w.document;
+        w.eval('state.prioConfig = { atgardThreshold: -2.5, akutMinN: 30, bevakaThreshold: -1, analyseraThreshold: 3 }');
+        w.__renderTabContent('prioritering');
+        expect(d.getElementById('prio-stat-akut-not').textContent).toBe('mer än 2,5\u00a0% under, minst 30 personer');
+        expect(d.getElementById('prio-stat-under-not').textContent).toBe('mer än 2,5\u00a0% under, färre än 30 personer');
+        expect(d.getElementById('prio-stat-over-not').textContent).toBe('mer än 3\u00a0% över');
+        const items = w.eval('computePrioritization(_selectedPrioReference())');
+        for (const [id, status] of [['prio-stat-akut', 'akut'], ['prio-stat-under', 'atgard'], ['prio-stat-over', 'analysera']]) {
+            expect(d.getElementById(id).textContent).toBe(String(items.filter(i => i.status === status).length));
+        }
+        const f = w.eval("_prioMatrisFigur(computePrioritization(_selectedPrioReference()), 'topp10', 'referensen', state.prioConfig)");
+        expect(f.referens.map(z => z.etikett)).toEqual(['MER ÄN 2,5\u00a0% UNDER', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'MER ÄN 3\u00a0% ÖVER']);
+        const punkt = w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper');
+        const varav = items.filter(i => i.status === 'akut' || i.status === 'atgard').length;
+        expect(punkt.title).toBe(`${items.filter(i => i.diffPct < 0).length} grupper ligger under referensen, varav ${varav} mer än 2,5\u00a0% under`);
+        // Utan grupper bortom gränsen står bara den första delen.
+        w.eval('state.prioConfig = { atgardThreshold: -40, akutMinN: 10, bevakaThreshold: -2, analyseraThreshold: 5 }');
+        expect(w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper').title).toMatch(/^\d+ grupper ligger under referensen$/);
     });
     it('kolumnen Skillnad kön bär uppmärksamhetstrappans bricka efter storleken, utan prövning (ADR-71)', () => {
         const w = oppna();
@@ -1785,7 +1832,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         const txt = ['prio-cfg-atgard', 'prio-cfg-akutN', 'prio-cfg-bevaka', 'prio-cfg-analysera']
             .map(id => w.document.getElementById(id).closest('label').textContent).join(' ');
         expect(txt).not.toMatch(TRAPPAN);
-        expect(txt).toMatch(/Under referens/);
+        expect(txt).toMatch(/Under referens, liten grupp/);
         expect(txt).toMatch(/Nära referens, under/);
     });
     it('förslagen säger hur nära referensen gruppen ligger, utan att avfärda skillnaden', () => {

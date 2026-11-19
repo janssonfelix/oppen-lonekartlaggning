@@ -41,12 +41,13 @@ function _rfKorta(s, maxTecken) {
     return s.length <= max ? s : s.slice(0, max - 1) + '…';
 }
 const _rfTal = v => typeof v === 'number' && isFinite(v);
-// Texten på högst maxRader rader efter uppskattad bredd; sista raden slutar på … om något föll bort.
-function _rfRadbryt(text, maxTecken, maxRader) {
+// Texten på högst maxRader rader efter uppskattad bredd; sista raden slutar på … om något föll bort. Med
+// `hartHalls` bryts raden aldrig vid ett hårt mellanslag (U+00A0, som i «5 %»), bara vid vanligt blanktecken.
+function _rfRadbryt(text, maxTecken, maxRader, hartHalls = false) {
     maxTecken = Math.max(4, Math.floor(maxTecken));
     const rader = [];
     let rad = '';
-    for (let ord of String(text).split(/\s+/).filter(Boolean)) {
+    for (let ord of String(text).split(hartHalls ? /[ \t\r\n]+/ : /\s+/).filter(Boolean)) {
         if (ord.length > maxTecken) ord = ord.slice(0, maxTecken - 1) + '…';
         const ny = rad ? rad + ' ' + ord : ord;
         if (ny.length <= maxTecken) rad = ny;

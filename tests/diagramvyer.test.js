@@ -902,12 +902,12 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         w.__v = [grupp(1, 'akut'), grupp(2, 'atgard'), grupp(12, 'ok', { diffPct: 0.5, annualGapTotal: 0 })];
         w.__cfg = { atgardThreshold: -5, bevakaThreshold: -2, analyseraThreshold: 5 };
         const f = w.eval("_prioMatrisFigur(window.__v, 'topp10', 'referensen', window.__cfg)");
-        expect(f.lager.map(l => l.serie)).toEqual(['Börja här', 'Under referens', 'Nära referens']);   // Prioriteringens egna ord (A5)
+        expect(f.lager.map(l => l.serie)).toEqual(['Börja här', 'Under referens, liten grupp', 'Nära referens']);   // Prioriteringens egna ord (A5)
         expect(f.y.skala).toBe('linjar');                                        // grupperna skiljer sig mindre än en tiopotens
         w.__v2 = [grupp(1, 'akut'), { ...grupp(2, 'atgard'), n: 400 }];
         expect(w.eval("_prioMatrisFigur(window.__v2, 'topp10', 'referensen', window.__cfg)").y.skala).toBe('log');
         expect(f.lager.map(l => l.farg)).toEqual(['#4338ca', '#6366f1', '#0f766e']);     // lila för de två första, som i Lika arbetes tabell
-        expect(f.referens.map(z => z.etikett)).toEqual(['UNDER REFERENS', 'NÄRA, UNDER', 'NÄRA REFERENS', 'ÖVER REFERENS']);   // statusarnas ord, högst 14 tecken
+        expect(f.referens.map(z => z.etikett)).toEqual(['MER ÄN 5\u00a0% UNDER', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'MER ÄN 5\u00a0% ÖVER']);   // gränserna ytterst, statusarnas ord i mitten
         expect(f.lager[0].data[0]).toMatchObject({ x: -5.25, y: 13, etikett: expect.stringContaining('·C') });
         expect(f.lager[2].data[0].etikett).toBeUndefined();                    // rang 12 får ingen etikett i läget topp 10
         expect(f.lager[0].data[0].storlek).toBeGreaterThan(f.lager[1].data[0].storlek);   // större kostnad, större bubbla
@@ -2141,7 +2141,7 @@ describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (
         expect(etiketter).toEqual(['151010 Handläggare', '151011 Ekonom·C', '151011 Ekonom·D']);
     });
 
-    it('prioriteringsmatrisen: zonrubrikerna är högst 14 tecken, och inga två etikettrutor överlappar varandra eller en bubbla', () => {
+    it('prioriteringsmatrisen: zonrubrikerna klipps inte, och inga två etikettrutor överlappar varandra eller en bubbla', () => {
         const grupp = (rank, status, diffPct, n, kost) => ({ rank, status, yrke: `${351000 + rank} Personlig assistent nummer ${rank}`, bas: 'ABCDE'[rank % 5], n, kvN: Math.ceil(n / 2), maN: Math.floor(n / 2), median: 30000,
             refSource: 'referens', refMedian: 32000, diffPct, diffKr: diffPct * 300, gapPct: null, annualGapTotal: kost, annualOverTotal: 0, priorityIndex: 100 - rank });
         // Fyrtio grupper som ligger tätt, som i det stora demot: de tio första namnges (Topp 10).
@@ -2149,8 +2149,7 @@ describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (
             i < 30 ? -6 - (i % 10) * 0.9 : i < 35 ? -3.5 - (i % 3) * 0.4 : -1 + (i % 3), 150 + ((i * 37) % 9) * 50, 2000000 / (i + 1)));
         w.__cfg = { atgardThreshold: -5, bevakaThreshold: -2, analyseraThreshold: 5 };
         const f = w.eval("_prioMatrisFigur(window.__v, 'topp10', 'referensen', window.__cfg)");
-        expect(f.referens.map(z => z.etikett)).toEqual(['UNDER REFERENS', 'NÄRA, UNDER', 'NÄRA REFERENS', 'ÖVER REFERENS']);
-        for (const z of f.referens) expect(z.etikett.length, z.etikett).toBeLessThanOrEqual(14);
+        expect(f.referens.map(z => z.etikett)).toEqual(['MER ÄN 5\u00a0% UNDER', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'MER ÄN 5\u00a0% ÖVER']);
         expect(f.lager.every(l => l.etikettLage === 'undvik')).toBe(true);
         for (const bredd of [800, 1000]) {
             const svg = bygg("_prioMatrisFigur(window.__v, 'topp10', 'referensen', window.__cfg)", bredd, '{ hojd: 520 }');

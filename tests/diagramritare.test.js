@@ -2286,8 +2286,8 @@ describe('ritaFigur: små grupper når aldrig en hanterare', () => {
 describe('Uppgift 6: ritarens ändringar (G4, G5, smått)', () => {
     const xy = (referens, over = {}) => ({ beskrivning: 'b', x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 10] }, referens, lager: [{ marke: 'punkt', data: [{ x: 10, y: 1 }, { x: 90, y: 9 }] }], ...over });
     it('G4: en kortad zonetikett (med <title>) tar emot pekaren så att hela texten visas; en okortad gör det inte', () => {
-        // För lång också för två rader: en etikett som ryms hel på två rader bryts i stället (etapp 1b, U7).
-        const lang = 'En zonetikett som är alldeles för lång för sin smala zon, också på två rader';
+        // För lång också för tre rader: en etikett som ryms hel på högst tre rader bryts i stället (etapp 1b, U7).
+        const lang = 'En zonetikett som är alldeles för lång för sin smala zon, också på tre rader, hur den än bryts';
         const svg = rita(xy([{ typ: 'zon', x0: 60, x1: 100, etikett: lang }, { typ: 'zon', x0: 0, x1: 30, etikett: 'Nya' }]));
         const [kortad, hel] = alla(svg, 'text[data-marke="zonetikett"]');
         expect(texten(kortad)).toMatch(/…$/);
@@ -3689,6 +3689,15 @@ describe('etiketter som inte täcker varandra (etapp 1b, U7)', () => {
             expect(q.x0).toBeGreaterThanOrEqual(tal(z, 'x')); expect(q.x1).toBeLessThanOrEqual(tal(z, 'x') + tal(z, 'width'));
         }
         expect(kontrolleraYta(svg, 'zon på två rader')).toEqual([]);
+    });
+    it('en zonetikett bryts på högst tre rader, aldrig vid ett hårt mellanslag (som i «5 %»)', () => {
+        const f = (x1, etikett) => ({ beskrivning: 'Z', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 10] },
+            referens: [{ typ: 'zon', x0: 80, x1, etikett }], lager: [{ marke: 'punkt', data: [{ x: 10, y: 1 }] }] });
+        const tre = alla(rita(f(94, 'NÄRA REFERENS, UNDER'), 700), 'text[data-marke="zonetikett"]').map(texten);
+        expect(tre).toEqual(['NÄRA', 'REFERENS,', 'UNDER']);
+        const hart = alla(rita(f(90, 'MER ÄN 5 % UNDER'), 700), 'text[data-marke="zonetikett"]').map(texten);
+        expect(hart.join(' ')).toBe('MER ÄN 5 % UNDER');
+        expect(hart.some(t => t.includes('5 %'))).toBe(true);
     });
 });
 
