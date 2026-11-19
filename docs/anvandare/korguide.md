@@ -580,7 +580,7 @@ du ordna om och ta bort tabellerna.
    vilka rader och mått de ska ha, åldersgränserna och om summeringstabellerna ska med. *Återställ
    standard* ger utkastets form tillbaka.
 3. **Skriver du rapporten i en egen mall?** Öppna fliken **Rapporttext**. Avsnittet **Utkast till rapporttext** har
-   fynden i klarspråk att redigera och kopiera (*Återskapa* skriver över med ett färskt utkast).
+   fynden i klarspråk att redigera och kopiera (*Återskapa* skriver över med ett färskt utkast och frågar först om du har redigerat).
    Väljaren **Omfång** ovanför textrutan avgör om utkastet bara har helheten (*Hela organisationen*). Standard är
    att det också har ett stycke per BAS-intervall (*Hela organisationen + per BAS-intervall*). Varje intervall med
    minst k personer får då samma text som BAS-dossiern, med förra året när ett bokslut är inläst. Stycket slutar

@@ -379,8 +379,8 @@ function renderHandlingsplanSeed() {
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
             + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)} ${_hpSkalKnapp(n, g, seed.skillnader[i])}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td><td>${esc(_hpKostnadAvser(r[2]))}</td>`
-            + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll, t.ex. HR-chef', `Ansvarig: ${g}`)}</td>`
-            + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'T.ex. lönerevisionen nästa år', `Tidsplan: ${g}`)}</td>`
+            + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll', `Ansvarig: ${g}`)}</td>`
+            + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'Månad, år', `Tidsplan: ${g}`)}</td>`
             + `<td>${lista(`hp-${i}-status`, n, 'status', r[7], HP_STATUS, `Status: ${g}`)}</td></tr>`;
     }).join('');
     const emptyN = Math.max(5, 8 - seed.rows.length);

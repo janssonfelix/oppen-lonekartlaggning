@@ -26462,7 +26462,7 @@ function renderStructure() {
 
 /**
  * Auto-rapportutkastet i fliken Rapporttext: fynden i klarspråk, ur samma mått som Lönestruktur räknar. Ett utkast
- * som användaren har redigerat skrivs inte över; "Återskapa" tar bort markeringen och ritar om.
+ * som användaren har redigerat skrivs inte över; "Återskapa" frågar först, tar bort markeringen och ritar om.
  */
 function renderStrukturUtkast() {
     const nb = document.getElementById('struktur-narrative');
@@ -26879,7 +26879,10 @@ function _exportEuReportExport() {
     document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
     document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');
-        if (nb) { delete nb.dataset.dirty; medExportLage(renderStrukturUtkast); }
+        if (!nb) return;
+        // Ett redigerat utkast skrivs inte över utan fråga; avbryter användaren är texten och markeringen orörda.
+        if (nb.dataset.dirty && !confirm('Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?')) return;
+        delete nb.dataset.dirty; medExportLage(renderStrukturUtkast);
     });
     // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
     // över; Återskapa ritar om det med valet.
@@ -32710,8 +32713,8 @@ function renderHandlingsplanSeed() {
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
             + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)} ${_hpSkalKnapp(n, g, seed.skillnader[i])}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td><td>${esc(_hpKostnadAvser(r[2]))}</td>`
-            + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll, t.ex. HR-chef', `Ansvarig: ${g}`)}</td>`
-            + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'T.ex. lönerevisionen nästa år', `Tidsplan: ${g}`)}</td>`
+            + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll', `Ansvarig: ${g}`)}</td>`
+            + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'Månad, år', `Tidsplan: ${g}`)}</td>`
             + `<td>${lista(`hp-${i}-status`, n, 'status', r[7], HP_STATUS, `Status: ${g}`)}</td></tr>`;
     }).join('');
     const emptyN = Math.max(5, 8 - seed.rows.length);
