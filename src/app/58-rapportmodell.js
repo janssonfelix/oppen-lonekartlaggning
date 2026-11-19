@@ -222,6 +222,31 @@ function rmPerBasUnderlag(d, k) {
 }
 
 /**
+ * Noterna om kompletterande undertryckning (ADR-83) i avsnittet per BAS-intervall: vilka medelvärden som inte
+ * redovisas och varför. Samma text i Word, PDF och Excel; vilka grupper det gäller kommer ur src/lib/perbas.js.
+ * @param {any} pb resultatet från rmPerBasUnderlag
+ * @param {number} k
+ */
+function rmPerBasUndertryckNoter(pb, k) {
+    const kort = pb.dim === 'sektor' ? T.huvudomrade.en : 'BAS';
+    const medel = pb.harAlder !== false ? 'Medellön och medelålder' : 'Medellön';
+    const grupp = `Annars skulle medellönen för en grupp med färre än ${k} ${personOrd(k)} gå att räkna fram`;
+    const kon = `Annars skulle medellönen för färre än ${k} kvinnor eller män gå att räkna fram`;
+    const kg = pb.konsgap, ag = pb.aldersgrupper;
+    return {
+        konsgap: kg ? [
+            ...(kg.undertryckta.length ? [`${medel} redovisas inte för ${kort} ${kg.undertryckta.join(', ')}. ${grupp} ur raden Alla.`] : []),
+            ...(kg.konUndertryckta.length ? [`${medel} för kvinnor och män redovisas inte för ${kort} ${kg.konUndertryckta.join(', ')}. ${kon} ur raden Alla.`] : [])] : [],
+        aldersgrupper: ag && ag.undertryckta.length ? [`Medelålder och medellön redovisas inte för ${kort} ${ag.undertryckta.join(', ')}. ${grupp} ur raden Alla.`] : [],
+        /** @param {any} i ett intervall ur pb.intervall */
+        intervall: i => [
+            ...(i.medelUndertryckt ? [`Medellönen redovisas inte i tabellen. ${grupp} ur raden Alla längre ned.`] : []),
+            ...(i.undertryckta.length ? [`Medellönen redovisas inte för ${i.undertryckta.join(', ')}. ${grupp} ur organisationens rad.`] : []),
+            ...(i.konMedelUndertryckt ? [`Medellönen för kvinnor och män redovisas inte i tabellen. ${kon} ur raden Alla längre ned.`] : [])],
+    };
+}
+
+/**
  * Avsnittet Lönestruktur per BAS-intervall, i den form en skriven lönekartläggning brukar ha: en tabell per
  * BAS-intervall (referens, organisationen, yrkesgrupperna med jämförelsestatistikens rad under, kvinnor och män),
  * ett fält för bedömningen av intervallet, och sist två tabeller per BAS: löneskillnader inom likvärdigt arbete
@@ -244,6 +269,9 @@ function rmPerBasAvsnitt(d, k) {
     if (smaYrken) utelamnat.push(`${smaYrken} ${termForAntal(smaYrken, T.enhet)} med färre än ${k} ${personOrd(k)}`);
     const konDolda = pb.intervall.filter(i => !i.konVisas).map(i => i.bas);
     if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} ${personOrd(k)})`);
+    const undertryckNoter = rmPerBasUndertryckNoter(pb, k);
+    const medelDolda = [...new Set([...(pb.konsgap ? pb.konsgap.undertryckta : []), ...(pb.aldersgrupper ? pb.aldersgrupper.undertryckta : [])])];
+    if (medelDolda.length) utelamnat.push(`medellön för ${kort} ${medelDolda.join(', ')} (så att en grupp med färre än ${k} ${personOrd(k)} inte kan räknas fram)`);
     /** @type {any[]} */
     const delar = [
         stycke(pb.dim === 'sektor'
@@ -257,6 +285,7 @@ function rmPerBasAvsnitt(d, k) {
         const noter = [];
         if (i.utelamnade.length) noter.push(`${i.utelamnade.length} ${termForAntal(i.utelamnade.length, T.enhet)} med färre än ${k} ${personOrd(k)} redovisas inte: ${i.utelamnade.join(', ')}.`);
         if (!i.konVisas) noter.push(`Kvinnor och män redovisas inte var för sig eftersom ett kön har färre än ${k} ${personOrd(k)} i intervallet.`);
+        noter.push(...undertryckNoter.intervall(i));
         if (noter.length) delar.push(stycke(noter.join(' '), 'not'));
         delar.push({ typ: 'fyllIn', text: `Bedömning av ${kort} ${i.bas}: löneläget mot referensen och jämförelsestatistiken, de största ${T.enhet.bfl}, och om skillnaderna mellan kvinnor och män har sakliga skäl.` });
     }
@@ -269,6 +298,7 @@ function rmPerBasAvsnitt(d, k) {
         { rubrik: 'Kvinnors medellön i % av mäns', typ: 'pct1' }, { rubrik: 'Andel kvinnor', typ: 'pct1' },
         ...(medAlder ? [{ rubrik: 'Medelålder alla', typ: 'ar' }, { rubrik: 'Medelålder män', typ: 'ar' }, { rubrik: 'Medelålder kvinnor', typ: 'ar' }] : [])],
         rader: pb.konsgap.rader.map(r => [r.bas, r.n, r.medel, r.medelMa, r.medelKv, r.kvot, r.andelKv, ...(medAlder ? [r.alder, r.alderMa, r.alderKv] : [])]) });
+    if (undertryckNoter.konsgap.length) delar.push(stycke(undertryckNoter.konsgap.join(' '), 'not'));
     }
     if (pb.recept.aldersgrupper && pb.harAlder === false) {
         delar.push(stycke('Löneskillnader i åldersgrupper redovisas inte: lönefilen saknar ålder.', 'not'));
@@ -280,6 +310,7 @@ function rmPerBasAvsnitt(d, k) {
     delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medelålder', typ: 'ar' }, { rubrik: 'Medellön alla', typ: 'kr' },
         ...pb.aldersgrupper.grupper.map(g => ({ rubrik: `Medellön ${g} år`, typ: 'kr' }))],
         rader: pb.aldersgrupper.rader.map(r => [r.bas, r.n, r.alder, r.medel, ...r.perGrupp]) });
+    if (undertryckNoter.aldersgrupper.length) delar.push(stycke(undertryckNoter.aldersgrupper.join(' '), 'not'));
     delar.push({ typ: 'fyllIn', text: 'Bedömning: hur lönen utvecklas med åldern i organisationen, och om löneutvecklingen för äldre anställda avstannar.' });
     }
     return { id: 'perbas', numrerad: true, rubrik: `Lönestruktur per ${per}`, utelamnat, delar };
