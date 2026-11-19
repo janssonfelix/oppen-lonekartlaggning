@@ -380,9 +380,16 @@ rubrikraden, också när det är hopfällt.
    **Prioritering** visar löneläget mot er referens med kostnad att nå den. Matrisen visar varje grupps
    avvikelse mot referensen och dess storlek, och åtgärdslistan rangordnar grupperna. Kostnadsdiagrammet
    visar de grupper som kostar mest att lyfta, med den kumulativa andelen av totalkostnaden. Läget har egna
-   ord — *Börja här*, *Under referens*, *Nära referens* (under och över uppföljningsgränsen, i två färger) och
-   *Över referens* — eftersom det är något annat än skillnaden mellan kvinnor och män, som Lika arbete
-   bedömer med *Värt att granska*, *Följ upp* och *Balanserat*. Nyckeltalet *Kostnad att nå referensen* är vad
+   ord — *Börja här*, *Under referens, liten grupp*, *Nära referens* (under och över uppföljningsgränsen, i två
+   färger) och *Över referens* — eftersom det är något annat än skillnaden mellan kvinnor och män, som Lika arbete
+   bedömer med *Värt att granska*, *Följ upp* och *Balanserat*. *Börja här* och *Under referens, liten grupp* är
+   samma läge, mer än granskningsgränsen under referensen, i en större och en mindre grupp. Nyckeltalen överst heter
+   som statusarna och räknar samma rader som tabellens kolumn *Status*; under varje nyckeltal står vad statusen
+   betyder, med gränserna ur Inställningar (till exempel *mer än 5 % under, färre än 10 personer*). Matrisens zoner
+   heter *Mer än 5 % under*, *Nära referens, under*, *Nära referens* och *Mer än 5 % över*, med gränserna ur
+   Inställningar; i den första zonen visar färgen om gruppen är *Börja här* eller *Under referens, liten grupp*.
+   Färdigcheck i Exportera säger hur många grupper som ligger under referensen alls och hur många av dem som
+   ligger mer än granskningsgränsen under. Nyckeltalet *Kostnad att nå referensen* är vad
    det kostar att lyfta grupperna under referensen till dess median, inte lönekartläggningens könsskillnader;
    dem visar Lika arbete och Löneöversyn.
    **Löneöversyn** svarar på *hur* potten fördelas. Lägg in en budget, ett generellt påslag och riktade
@@ -394,13 +401,15 @@ rubrikraden, också när det är hopfällt.
    prioriteringsindexet in. Trösklarna är granskningsgränsen, *Börja här*-tröskeln och gränserna för uppföljning
    och över referensen. Raden *Trösklar och viktning* i fliken Prioritering säger om värdena är ändrade, och *Ändra*
    öppnar Inställningar där. **Handlingsplanen** förifylls ur de två; egna åtgärder läggs
-   till med *Lägg till rad* och följer med i exporterna som de förifyllda. Kolumnen *Kostnaden avser*, direkt
+   till med *Lägg till rad* och följer med i exporterna som de förifyllda. På skärmen står grupp, antal berörda och
+   underlag under åtgärden i första kolumnen, så att fälten man fyller i ryms utan att man rullar i sidled; utskriften
+   och exporterna har dem som egna kolumner. Kolumnen *Kostnaden avser*, direkt
    efter kostnaden, säger vilken kostnad raden har: *Nå referensens median* för rader ur Prioritering och *Nå
    jämförelseetikettens median* för kandidatpar i likvärdigt arbete. En egen rad har ingen beräknad kostnad, och cellen
    är tom. Kolumnen står också i Excel-underlaget, utskriften, Word-utkastet, PDF-rapporten och Rapporttext, där
    summan delas på de två slagen. Kortet **Samverkan & uppföljning** i
-   Handlingsplan har momenten att bocka av och knapparna för **protokollet för gemensam lönebedömning** och
-   **handlingsplanen** som Excel.
+   Handlingsplan har momenten, med kolumnen *Genomfört (datum / parter)* att fylla i för hand på den utskrivna mallen,
+   och knapparna för **protokollet för gemensam lönebedömning** och **handlingsplanen** som Excel.
    Knappen **Sakliga skäl** på varje rad öppnar en dialog där du dokumenterar skälen till gruppens löneskillnad: en
    kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång eller Annat sakligt skäl), ett belopp
    i kronor per månad och en kort kommentar per skäl, högst 8 skäl per grupp. Lagen räknar inte upp några skäl;
@@ -578,7 +587,7 @@ du ordna om och ta bort tabellerna.
    vilka rader och mått de ska ha, åldersgränserna och om summeringstabellerna ska med. *Återställ
    standard* ger utkastets form tillbaka.
 3. **Skriver du rapporten i en egen mall?** Öppna fliken **Rapporttext**. Avsnittet **Utkast till rapporttext** har
-   fynden i klarspråk att redigera och kopiera (*Återskapa* skriver över med ett färskt utkast).
+   fynden i klarspråk att redigera och kopiera (*Återskapa* skriver över med ett färskt utkast och frågar först om du har redigerat).
    Väljaren **Omfång** ovanför textrutan avgör om utkastet bara har helheten (*Hela organisationen*). Standard är
    att det också har ett stycke per BAS-intervall (*Hela organisationen + per BAS-intervall*). Varje intervall med
    minst k personer får då samma text som BAS-dossiern, med förra året när ett bokslut är inläst. Stycket slutar

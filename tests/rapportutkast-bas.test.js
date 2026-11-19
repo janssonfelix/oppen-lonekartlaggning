@@ -397,3 +397,41 @@ describe('inledningen nämner ställningstagandet bara när ett är inläst (fix
         expect(avsnitt()).not.toContain('ställningstagandet');
     });
 });
+
+describe('Återskapa frågar innan ett redigerat utkast skrivs över', () => {
+    const redigera = (w, text) => { utkast(w).value = text; utkast(w).dispatchEvent(new w.Event('input', { bubbles: true })); };
+    const aterskapa = w => w.document.getElementById('struktur-narrative-regen').click();
+    const medFragor = (w, svar) => { const fragor = []; w.confirm = t => { fragor.push(t); return svar; }; return fragor; };
+
+    it('redigerat och OK: frågar en gång och ritar om', () => {
+        const w = demo();
+        w.__renderTabContent('rapporttext');
+        redigera(w, 'Egen text');
+        const fragor = medFragor(w, true);
+        aterskapa(w);
+        expect(fragor).toHaveLength(1);
+        expect(fragor[0]).toContain('Utkastet är redigerat');
+        expect(utkast(w).value).toContain('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
+        expect(utkast(w).dataset.dirty).toBeUndefined();
+    });
+
+    it('redigerat och Avbryt: texten och markeringen är orörda', () => {
+        const w = demo();
+        w.__renderTabContent('rapporttext');
+        redigera(w, 'Egen text');
+        const fragor = medFragor(w, false);
+        aterskapa(w);
+        expect(fragor).toHaveLength(1);
+        expect(utkast(w).value).toBe('Egen text');
+        expect(utkast(w).dataset.dirty).toBe('1');
+    });
+
+    it('oredigerat: ingen fråga', () => {
+        const w = demo();
+        w.__renderTabContent('rapporttext');
+        const fragor = medFragor(w, false);
+        aterskapa(w);
+        expect(fragor).toHaveLength(0);
+        expect(utkast(w).value).toContain('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
+    });
+});

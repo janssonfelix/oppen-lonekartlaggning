@@ -105,7 +105,8 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(egen.cells[3].textContent).toContain('Egen rad');
         expect(w.document.activeElement).toBe(egen.cells[0].querySelector('input'));
         fyll(w, egen.cells[0].querySelector('input'), 'Se över lönekriterierna');
-        fyll(w, egen.cells[1].querySelector('input'), 'Alla chefer');
+        fyll(w, egen.cells[0].querySelector('[data-hp-falt="grupp"]'), 'Alla chefer');   // gruppfältet står under åtgärden på skärmen
+        expect(egen.cells[1].textContent).toBe('Alla chefer');   // och speglas i utskriftens gruppkolumn
         fyll(w, egen.cells[9].querySelector('select'), 'Planerad');
         const nyckel = egen.cells[0].querySelector('input').dataset.hpNyckel;
         expect(nyckel).toMatch(/^egen\|/);
@@ -120,7 +121,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const b = fonster();
         b.__cfg = cfg; b.eval('applyConfigSnapshot(window.__cfg)'); b.__renderTabContent('handlingsplan');
         expect(b.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-egen')).toHaveLength(1);
-        expect(b.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen').cells[1].querySelector('input').value).toBe('Alla chefer');
+        expect(b.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen').cells[0].querySelector('[data-hp-falt="grupp"]').value).toBe('Alla chefer');
         // Översikt-kortet räknar raderna efter status, inte åtgärdslistans bockar.
         b.eval('renderProcessTracker()');
         const kort = [...b.document.querySelectorAll('.ptrack-detail')].map(el => el.textContent).find(t => /rader genomförda/.test(t));
@@ -144,10 +145,65 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         w.__renderTabContent('handlingsplan');
         const par = rader(w).filter(tr => tr.cells[3].textContent === UNDERLAG[1]);
         expect(par.length).toBeGreaterThan(0);
-        for (const tr of par) expect(tr.cells[0].textContent.length, tr.cells[0].textContent).toBeLessThanOrEqual(45);
+        for (const tr of par) expect(tr.querySelector('.hp-atgard').textContent.length, tr.cells[0].textContent).toBeLessThanOrEqual(45);
         for (const tr of rader(w)) expect(tr.cells[1].textContent).toMatch(/ · BAS\u00a0\S+$/);
         // Exporterna och fältens etiketter har ett vanligt mellanslag.
         expect(w.eval('_handlingsplanSeedRows({})').rows.map(r => r[1]).join('')).not.toContain('\u00a0');
+    });
+});
+
+// UX-inventeringen 2026-11-19: mallen var 1 577 punkter bred i en ruta på 1 030, och fälten man fyller i låg utanför
+// bild. På skärmen står grupp, antal berörda och underlag under åtgärden; utskriften har kolumnerna som förut. Att
+// tabellen ryms i 1280 och 1440 punkter prövar webbläsarröktestet (tools/browser-smoke/layout.mjs).
+describe('Handlingsplan: skärmen samlar det som bara visas i första kolumnen', () => {
+    const ren = t => String(t ?? '').replace(/\s+/g, ' ').trim();
+    const RUBRIKER = ['Åtgärd', 'Grupp (AID-etikett och BAS-intervall)', 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?',
+        'Beräknad kostnad (kr/år)', 'Kostnaden avser', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status'];
+    const utskrift = w => {
+        let html = '';
+        w.open = () => ({ document: { write(s) { html += s; }, close() {}, adoptedStyleSheets: [], createElement: () => ({ sheet: { insertRule() {}, cssRules: [] } }), head: { appendChild() {} } }, focus() {}, print() {} });
+        w.eval("printScaffoldView('view-handlingsplan', 'Handlingsplan')");
+        const div = w.document.createElement('div');
+        div.innerHTML = html.replace(/^[\s\S]*<body>/, '').replace(/<\/body>[\s\S]*$/, '');
+        return { html, tabell: div.querySelector('table') };
+    };
+    it('grupp, antal och underlag står under åtgärden på skärmen och som egna kolumner bara på utskriften', () => {
+        const w = fonster();
+        w.__renderTabContent('handlingsplan');
+        const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
+        const th = [...tabell.querySelectorAll('thead th')];
+        expect(th.filter(t => t.classList.contains('hp-bara-utskrift')).map(t => ren(t.textContent))).toEqual(RUBRIKER.slice(1, 4));
+        for (const tr of rader(w)) {
+            expect([1, 2, 3].every(i => tr.cells[i].classList.contains('hp-bara-utskrift'))).toBe(true);
+            const under = tr.cells[0].querySelector('.hp-under');
+            expect(under.classList.contains('hp-bara-skarm') && under.hasAttribute('data-noprint')).toBe(true);
+            expect([...under.querySelectorAll('.hp-under-rad')].map(r => ren(r.textContent))).toEqual([ren(`${tr.cells[1].textContent} · ${tr.cells[2].textContent} berörda`), `Underlag: ${tr.cells[3].textContent}`]);
+        }
+    });
+    it('utskriften av mallen har samma kolumner som förut, utan skärmens undertext', () => {
+        const w = fonster();
+        w.__renderTabContent('handlingsplan');
+        w.eval('_hpLaggTillEgen()');
+        const egen = w.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen');
+        const fyll = (el, v) => { el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); };
+        fyll(egen.cells[0].querySelector('[data-hp-falt="atgard"]'), 'Se över lönekriterierna');
+        fyll(egen.cells[0].querySelector('[data-hp-falt="grupp"]'), 'Alla chefer');
+        const pr = utskrift(w);
+        expect([...pr.tabell.querySelectorAll('thead th')].map(t => ren(t.textContent))).toEqual(RUBRIKER);
+        expect(pr.html).not.toContain('hp-under');
+        const seed = w.eval('_handlingsplanSeedRows()').rows;
+        const prRader = [...pr.tabell.querySelectorAll('tbody tr.handlingsplan-seeded')];
+        expect(prRader.map(tr => ren(tr.cells[0].textContent))).toEqual(seed.map(r => r[0]));
+        expect(prRader.map(tr => ren(tr.cells[1].textContent))).toEqual(seed.map(r => r[1]));
+        expect(prRader.map(tr => ren(tr.cells[3].textContent))).toEqual(seed.map(r => r[2]));
+        for (const tr of pr.tabell.querySelectorAll('tbody tr')) expect(tr.cells.length).toBe(RUBRIKER.length);
+    });
+    it('samverkan säger att kolumnen Genomfört fylls i på den utskrivna mallen', () => {
+        const w = fonster();
+        const kort = w.document.getElementById('hp-samverkan');
+        expect(ren(kort.querySelector('p').textContent)).toContain('Kolumnen Genomfört fylls i för hand på den utskrivna mallen');
+        expect(kort.textContent).not.toMatch(/Bocka av/);
+        expect(kort.querySelectorAll('input, select, textarea')).toHaveLength(0);
     });
 });
 

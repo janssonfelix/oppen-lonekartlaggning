@@ -812,9 +812,9 @@ const GLOSSARY = [
     { cat:'Verktyget', term:'Prioriteringsindex', short:'Rangordningsmått 0-100 i Prioriteringen', long:'Kombinerar avvikelsens storlek (50%), gruppens volym (30%) och jämställdhetsläget (20%). Negativ avvikelse väger 2× tyngre än positiv, och bristyrken får en bonus på 1,2×. Används för att rangordna åtgärder i Prioriteringen.' },
     { cat:'Verktyget', term:'Nära pension', short:'Anställda som är 60 år eller äldre', long:'Personer i den här åldern kan gå i pension inom 0–7 år (riktåldersintervallet 60–67). Planera för att deras kunskap förs vidare. Verktyget markerar {niva.fl} där mer än 25 procent är 60 år eller äldre; över 15 procent: håll uppsikt.' },
     { cat:'Verktyget', term:'Brist på återväxt', short:'Låg andel anställda under 40 år', long:'När mindre än 15 % av gruppen är under 40 år. Det tyder på att få yngre anställs, alltså ett strukturellt problem i rekryteringen.' },
-    { cat:'Verktyget', term:'Uppmärksamhetstrappa', sok:'yrkesgrupp', short:'Coachande skala — var börjar jag titta?', long:'Verktyget rangordnar {enhet.fl} efter hur mycket de är värda att titta på — det är ett stöd för din bedömning, inte en dom. En skillnad mellan kvinnors och mäns lön bedöms med samma ord, färger och märken i alla flikar, och statusen bygger på statistisk signal: Värt att granska (skillnaden är statistiskt säkerställd och minst 3 %), Följ upp (minst 3 % men inte säkerställd, eller säkerställd men under 3 %), Balanserat (under 3 % och inte säkerställd) och Går ej att bedöma (för få av ett kön). 3 % är verktygets egen storleksgräns. Direktivets 5 % är ingen status utan en egen markering på den ojusterade skillnaden (se Direktivmarkering). Prioritering mäter något annat, löneläget mot er referens, och har egna ord (Börja här, Under referens, Nära referens, Över referens). En grupp som lyfts kan mycket väl ha sakliga skäl bakom skillnaden — det är det du väger.' },
+    { cat:'Verktyget', term:'Uppmärksamhetstrappa', sok:'yrkesgrupp', short:'Coachande skala — var börjar jag titta?', long:'Verktyget rangordnar {enhet.fl} efter hur mycket de är värda att titta på — det är ett stöd för din bedömning, inte en dom. En skillnad mellan kvinnors och mäns lön bedöms med samma ord, färger och märken i alla flikar, och statusen bygger på statistisk signal: Värt att granska (skillnaden är statistiskt säkerställd och minst 3 %), Följ upp (minst 3 % men inte säkerställd, eller säkerställd men under 3 %), Balanserat (under 3 % och inte säkerställd) och Går ej att bedöma (för få av ett kön). 3 % är verktygets egen storleksgräns. Direktivets 5 % är ingen status utan en egen markering på den ojusterade skillnaden (se Direktivmarkering). Prioritering mäter något annat, löneläget mot er referens, och har egna ord (Börja här, Under referens, liten grupp, Nära referens, Över referens). En grupp som lyfts kan mycket väl ha sakliga skäl bakom skillnaden — det är det du väger.' },
     { cat:'Verktyget', term:'Börja här', short:'Tydlig avvikelse i en större grupp (Prioritering)', long:'I Prioritering: gruppens median ligger mer än granskningsgränsen (standard 5 %) under referensen, och gruppen har minst [standard 10] personer. Många berörda och en tydlig kostnad att nå referensen, så ett bra ställe att börja. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män. Gränserna ändrar du under Inställningar.' },
-    { cat:'Verktyget', term:'Under referens', short:'Gruppens median under referensen (Prioritering)', long:'I Prioritering: gruppens median ligger mer än granskningsgränsen (standard 5 %) under referensen, i en grupp som är mindre än för Börja här. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män.' },
+    { cat:'Verktyget', term:'Under referens, liten grupp', short:'Tydlig avvikelse i en mindre grupp (Prioritering)', long:'I Prioritering: gruppens median ligger mer än granskningsgränsen (standard 5 %) under referensen, och gruppen har färre personer än för Börja här (standard 10). Samma läge som Börja här, i en mindre grupp; i matrisen ligger båda i zonen Mer än 5 % under, och färgen visar vilken. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män.' },
     { cat:'Verktyget', term:'Nära referens', short:'Gruppens median nära referensen (Prioritering)', long:'I Prioritering: gruppens median ligger nära referensen. Nära referens, under: mellan granskningsgränsen (standard −5 %) och uppföljningsgränsen (standard −2 %). Nära referens: från uppföljningsgränsen upp till gränsen för Över referens (standard +5 %). Två färger, samma ord. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män.' },
     { cat:'Verktyget', term:'Värt att granska', short:'Säkerställd skillnad på minst 3 %', long:'Skillnaden mellan kvinnors och mäns lön är statistiskt säkerställd — utanför slumpens gränser för gruppen, eller ett konfidensintervall som inte når 100 % — och minst 3 % (verktygets storleksgräns). Titta närmare och väg den mot sakliga skäl. Lämpar sig för en riktad titt på enskilda individer och deras sakliga skäl.' },
     { cat:'Verktyget', term:'Följ upp', short:'Minst 3 % men inte säkerställd, eller säkerställd under 3 %', long:'Skillnaden är minst 3 % men inte statistiskt säkerställd, eller säkerställd men under 3 %. Värt att hålla under uppsikt över tid för att se hur det utvecklas.' },
@@ -12431,12 +12431,13 @@ function _rfKorta(s, maxTecken) {
     return s.length <= max ? s : s.slice(0, max - 1) + '…';
 }
 const _rfTal = v => typeof v === 'number' && isFinite(v);
-// Texten på högst maxRader rader efter uppskattad bredd; sista raden slutar på … om något föll bort.
-function _rfRadbryt(text, maxTecken, maxRader) {
+// Texten på högst maxRader rader efter uppskattad bredd; sista raden slutar på … om något föll bort. Med
+// `hartHalls` bryts raden aldrig vid ett hårt mellanslag (U+00A0, som i «5 %»), bara vid vanligt blanktecken.
+function _rfRadbryt(text, maxTecken, maxRader, hartHalls = false) {
     maxTecken = Math.max(4, Math.floor(maxTecken));
     const rader = [];
     let rad = '';
-    for (let ord of String(text).split(/\s+/).filter(Boolean)) {
+    for (let ord of String(text).split(hartHalls ? /[ \t\r\n]+/ : /\s+/).filter(Boolean)) {
         if (ord.length > maxTecken) ord = ord.slice(0, maxTecken - 1) + '…';
         const ny = rad ? rad + ' ' + ord : ord;
         if (ny.length <= maxTecken) rad = ny;
@@ -13799,13 +13800,14 @@ function _rfZoner(figur, c, bredd, hojd) {
 
 // Zonernas etiketter: i panelens OKLIPPTA textgrupp, över märken och referenslinjer, med vit kant så att de går
 // att läsa mot vad som än ligger under. Överst i zonen: mitt över en lodrät zon, i övre vänstra hörnet av en vågrät.
-// En etikett som inte ryms i zonens bredd kortas (hela texten i <title>, och etiketten tar då emot pekaren); ryms
-// färre än tre tecken ritas den inte.
+// En etikett i en lodrät zon som inte ryms på en rad bryts vid ordgränsen på högst RF_ZON_ETIKETTRADER rader; ryms den
+// inte hel så kortas den (hela texten i <title>, och etiketten tar då emot pekaren); ryms färre än tre tecken ritas
+// den inte.
 // Etiketten läggs helst där den varken täcker en text, en ritad punkt eller en hänvisningslinje: rad för rad nedåt
 // från zonens överkant (högst RF_ZON_RADER rader) och i varje rad i sidled inom zonen. Finns ingen sådan plats gäller
 // den äldre regeln: ligger en text redan där (en stapeletikett eller en tidigare zonetikett) läggs etiketten en rad
 // längre ned, och ryms den inte på tre försök ritas den inte.
-const RF_ZON_RADER = 12;
+const RF_ZON_RADER = 12, RF_ZON_ETIKETTRADER = 3;
 function _rfZonEtiketter(zoner, c, bredd, hojd) {
     const fpx = c.px - 1;
     // Rutorna för de texter som redan ligger i textgruppen, uppskattade ur deras egna attribut (ingen DOM-mätning).
@@ -13827,9 +13829,10 @@ function _rfZonEtiketter(zoner, c, bredd, hojd) {
         const hel = String(r.etikett);
         const ryms = Math.floor(((lodrat ? till - fran : bredd) - 8) / (fpx * _RF.tecken));   // 4 px luft på var sida
         if (ryms < Math.min(3, hel.length)) continue;
-        // En etikett i en lodrät zon som inte ryms på en rad men hel på två bryts vid ordgränsen; annars kortas den.
-        const tva = lodrat && hel.length > ryms ? _rfRadbryt(hel, ryms, 2) : null;
-        const rader = tva && tva.length === 2 && tva.join(' ') === hel && tva.every(s => s.length <= ryms) ? tva : [_rfKorta(hel, ryms)];
+        // En etikett i en lodrät zon som inte ryms på en rad men hel på högst tre bryts vid ordgränsen (inte vid ett hårt
+        // mellanslag); annars kortas den.
+        const flera = lodrat && hel.length > ryms ? _rfRadbryt(hel, ryms, RF_ZON_ETIKETTRADER, true) : null;
+        const rader = flera && flera.length > 1 && flera.join(' ') === hel && flera.every(s => s.length <= ryms) ? flera : [_rfKorta(hel, ryms)];
         const radH = fpx + 3;
         const x0Av = (text, dx) => (lodrat ? (fran + till) / 2 - _rfBredd(text, fpx) / 2 : Math.min(4, Math.max(0, bredd - _rfBredd(text, fpx)))) + dx;
         // Förskjutningar i sidled inom zonen (4 px luft): först mitt i (lodrät zon) eller vid vänsterkanten (vågrät),
@@ -26462,7 +26465,7 @@ function renderStructure() {
 
 /**
  * Auto-rapportutkastet i fliken Rapporttext: fynden i klarspråk, ur samma mått som Lönestruktur räknar. Ett utkast
- * som användaren har redigerat skrivs inte över; "Återskapa" tar bort markeringen och ritar om.
+ * som användaren har redigerat skrivs inte över; "Återskapa" frågar först, tar bort markeringen och ritar om.
  */
 function renderStrukturUtkast() {
     const nb = document.getElementById('struktur-narrative');
@@ -26879,7 +26882,10 @@ function _exportEuReportExport() {
     document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
     document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');
-        if (nb) { delete nb.dataset.dirty; medExportLage(renderStrukturUtkast); }
+        if (!nb) return;
+        // Ett redigerat utkast skrivs inte över utan fråga; avbryter användaren är texten och markeringen orörda.
+        if (nb.dataset.dirty && !confirm('Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?')) return;
+        delete nb.dataset.dirty; medExportLage(renderStrukturUtkast);
     });
     // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
     // över; Återskapa ritar om det med valet.
@@ -31612,7 +31618,7 @@ function runLifecycleRegression(fixBas) {
 // och rangordnar efter ett sammansatt prioriteringsindex.
 /**
  * Bygger prioriteringslistan: beräknar avvikelse mot referens, kostnad för utjämning
- * (inkl. PO-påslag och beräkningsperiod), läget mot referensen (Börja här/Under referens/Nära referens/Över referens),
+ * (inkl. PO-påslag och beräkningsperiod), läget mot referensen (Börja här/Under referens, liten grupp/Nära referens/Över referens),
  * jämställdhetsindex, och en sammanvägd prio-poäng (avvikelse·volym·jämställdhet).
  * Driver "Prioritering"-tabben + EU-kartläggningens åtgärdslista.
  * @param {string} reference - Referens-mätsticka: 'stallningstagande'|'statistik'
@@ -31750,14 +31756,31 @@ function generateMotivationSuggestions(item) {
 // Prioriteringens egna ord för läget mot referensen (A5, ADR-62). De delar inte namn med uppmärksamhetstrappan för
 // skillnaden mellan kvinnor och män (Värt att granska, Följ upp, Balanserat): Prioriteringen mäter löneläget mot er
 // referens, inte lönekartläggningens könsskillnader. Statusvärdena i src/lib/prioritering.js är oförändrade; «Nära
-// referens» har två färger, under uppföljningsgränsen och däröver.
+// referens» har två färger, under uppföljningsgränsen och däröver. «Under referens, liten grupp» säger att Börja här
+// är samma läge i en större grupp; nyckeltalen räknar statusarna och heter som dem.
 const PRIO_STATUS_INFO = {
     akut:      { label: 'Börja här',     icon: ikon('nal'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
-    atgard:    { label: 'Under referens', icon: ikon('sok'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
+    atgard:    { label: 'Under referens, liten grupp', icon: ikon('sok'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
     bevaka:    { label: 'Nära referens, under', icon: ikon('oga'), color: FARG.varning, bg: FARG.varningBg, klass: 'bricka-varning' },
     ok:        { label: 'Nära referens', icon: ikon('bock'),  color: FARG.ok, bg: FARG.okBg, klass: 'bricka-ok' },
     analysera: { label: 'Över referens', icon: ikon('info'), color: FARG.info, bg: FARG.infoBg, klass: 'bricka-info' }
 };
+/** En gräns ur state.prioConfig som text utan tecken, med decimaler bara när gränsen har några («5 %», «2,5 %»). */
+function _prioGrans(v) {
+    const a = Math.abs(v);
+    return svPct(a, Number.isInteger(a) ? 0 : Number.isInteger(a * 10) ? 1 : 2);
+}
+/**
+ * Vad statusen betyder, med gränserna ur inställningen: undertexten under nyckeltalen. Bara för de statusar som har
+ * ett nyckeltal (Börja här, Under referens, liten grupp och Över referens).
+ * @param {'akut'|'atgard'|'analysera'} status
+ * @param {{atgardThreshold:number, akutMinN:number, analyseraThreshold:number}} cfg
+ */
+function _prioStatusVillkor(status, cfg) {
+    if (status === 'akut') return `mer än ${_prioGrans(cfg.atgardThreshold)} under, minst ${cfg.akutMinN} personer`;
+    if (status === 'atgard') return `mer än ${_prioGrans(cfg.atgardThreshold)} under, färre än ${cfg.akutMinN} personer`;
+    return `mer än ${_prioGrans(cfg.analyseraThreshold)} över`;
+}
 /**
  * Uppmärksamhetstrappans bricka för kolumnen Skillnad kön (ADR-71). Prioriteringen prövar inte skillnaden mot
  * slumpen, så brickan sätts efter storleken som i Utforska (högst Följ upp); under statGolv() per kön, eller utan
@@ -31857,8 +31880,9 @@ function renderPrioritering() {
 
     // Sammanfattningsstatistik
     const akutCount  = items.filter(i => i.status === 'akut').length;
-    const underCount = items.filter(i => i.diffPct < -5).length;
-    const overCount  = items.filter(i => i.diffPct >  5).length;
+    // Nyckeltalen räknar statusarna, som tabellens kolumn Status (samma gränser ur inställningen).
+    const underCount = items.filter(i => i.status === 'atgard').length;
+    const overCount  = items.filter(i => i.status === 'analysera').length;
     const totalCost  = items.reduce((s, i) => s + i.annualGapTotal, 0);
     const fmt = new Intl.NumberFormat('sv-SE');
     const fmtMkr = _fmtCost(totalCost);
@@ -31866,6 +31890,10 @@ function renderPrioritering() {
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-under')).textContent = String(underCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-over')).textContent  = String(overCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-cost')).textContent  = String(fmtMkr);
+    for (const [id, status] of /** @type {const} */ ([['prio-stat-akut-not', 'akut'], ['prio-stat-under-not', 'atgard'], ['prio-stat-over-not', 'analysera']])) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = _prioStatusVillkor(status, state.prioConfig);
+    }
     // Avsnittens nyckeltal (ADR-41): samma tal som rutorna ovanför.
     _laNyckel('nyckel-pr-lista', `${items.length} ${items.length === 1 ? 'grupp' : 'grupper'}${akutCount ? ` · ${akutCount} att börja med` : ''}`, akutCount > 0);
     _laNyckel('nyckel-pr-kostnad', totalCost > 0 ? fmtMkr : '');
@@ -31964,7 +31992,7 @@ function renderPrioritering() {
             ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
-            ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens: under ${state.prioConfig.atgardThreshold} % i en mindre grupp <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
+            ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
         ],
         notes: [
             `Aktuell referens: <strong>${ref === 'stallningstagande' ? esc(referensNamn()) + ' (per BAS)' : 'jämförelsestatistiken (per AID)'}</strong>`,
@@ -32281,10 +32309,18 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
         lager: [lager('Når tillsammans 80 % av kostnaden', PALETTE.serie[0], 1, inom), lager('Övriga', PALETTE.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
 
-// Zonernas rubriker i matrisen: statusens namn med versaler, högst 14 tecken. «Nära referens, under» (20 tecken) blev
-// klippt i en smal zon; zonen heter «Nära, under».
-const PRIO_ZON_NAMN = { bevaka: 'Nära, under' };
-function _prioZonNamn(status) { return (PRIO_ZON_NAMN[status] || PRIO_STATUS_INFO[status].label).toUpperCase(); }
+// Zonernas rubriker i matrisen, med versaler: de två yttre zonerna säger gränsen ur inställningen («Mer än 5 % under»,
+// «Mer än 5 % över»), de två inre heter som statusarna. Den första zonen rymmer både Börja här och Under referens,
+// liten grupp; bubblornas färg visar vilken. En rubrik som inte ryms på en rad bryts på två (_rfZonEtiketter).
+/**
+ * @param {'atgard'|'bevaka'|'ok'|'analysera'} zon
+ * @param {{atgardThreshold:number, analyseraThreshold:number}} cfg
+ */
+function _prioZonNamn(zon, cfg) {
+    const namn = zon === 'atgard' ? `Mer än ${_prioGrans(cfg.atgardThreshold)} under`
+        : zon === 'analysera' ? `Mer än ${_prioGrans(cfg.analyseraThreshold)} över` : PRIO_STATUS_INFO[zon].label;
+    return namn.toUpperCase();
+}
 
 // Matrisen: en punktserie per status (förklaringen kan dölja en status), zoner för tröskelvärdena med namn, och
 // gruppens namn som text på punkten enligt valt etikettläge.
@@ -32322,11 +32358,9 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal, URVAL.avvikelse], x: { skala: 'linjar', titel: `Avvikelse mot ${refLabel} (%)`, doman: [xMin, xMax], nollinje: true },
         // Logskala bara när grupperna skiljer sig med mer än en tiopotens; annars är en vanlig axel lättare att läsa.
         y: stor ? { skala: 'log', titel: 'Antal personer i gruppen (log skala)' } : { skala: 'linjar', titel: 'Antal personer i gruppen' },
-        // Zonerna heter som statusarna i tabellen och förklaringen under den («Börja här» är de största grupperna i den första zonen),
-        // i en kortare form där statusens namn är längre än 14 tecken (PRIO_ZON_NAMN). En zonrubrik som inte ryms på en
-        // rad bryts på två.
-        referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard'), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka'), FARG.varning),
-                   zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok'), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera'), FARG.infoMork)].filter(z => z.x1 > z.x0),
+        // Zonerna: gränserna ur inställningen ytterst, statusarnas namn i mitten (_prioZonNamn).
+        referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard', cfg), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka', cfg), FARG.varning),
+                   zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok', cfg), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera', cfg), FARG.infoMork)].filter(z => z.x1 > z.x0),
         lager };
 }
 // SPDX-License-Identifier: MIT
@@ -32688,21 +32722,30 @@ function renderHandlingsplanSeed() {
         + ` maxlength="${HP_MAX_TEXT}" autocomplete="off" placeholder="${esc(platshallare)}" aria-label="${esc(etikett)}">`;
     const seededHtml = seed.rows.map((r, i) => {
         const n = seed.nycklar[i], egen = _hpArEgen(n), g = r[1] || (egen ? 'egen rad' : '');
-        // En egen rad har åtgärd och grupp som fält och en knapp som tar bort raden; knappen följer inte med i utskriften.
-        // Antal berörda står efter gruppen; en egen rad har inget antal.
-        const antal = `<td class="t-hoger">${r[8] != null ? esc(String(r[8])) : ''}</td>`;
+        // Skärmen samlar det som bara visas (åtgärd, grupp, antal berörda, underlag) i första cellen, så att fälten man fyller
+        // i ryms utan sidledsrullning. Kolumnerna Grupp, Antal berörda och Underlag finns kvar för utskriften
+        // (hp-bara-utskrift) och undertexten i första cellen följer inte med dit (hp-bara-skarm), så utskriften har samma
+        // kolumner som förut. En egen rad har åtgärd och grupp som fält och en knapp som tar bort raden; gruppfältet står i
+        // första cellen och speglas i utskriftens gruppkolumn (_hpSpegla). Antal berörda står efter gruppen; en egen rad
+        // har inget antal.
+        const antal = `<td class="t-hoger hp-bara-utskrift">${r[8] != null ? esc(String(r[8])) : ''}</td>`;
+        // BAS och bokstaven hålls ihop med ett hårt mellanslag på skärmen och i utskriften (S2 i punkt 26); exporterna
+        // och fältens etiketter har ett vanligt.
+        const gruppHtml = esc(g).replace(/ · BAS (\S+)$/, ' · BAS&nbsp;$1');
+        const under = innehall => `<span class="hp-under hp-bara-skarm" data-noprint>${innehall}</span>`;
         const forsta = egen
-            ? `<td>${text(`hp-${i}-atgard`, n, 'atgard', r[0], 'Vad ska göras?', 'Åtgärd, egen rad')}</td>`
-              + `<td>${text(`hp-${i}-grupp`, n, 'grupp', r[1], `Grupp eller ${T.enhet.en}, inga namn`, 'Berörd grupp, egen rad')}</td>${antal}`
-              + `<td>${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" data-noprint aria-label="Ta bort den egna raden">Ta bort</button></td>`
-            // BAS och bokstaven hålls ihop med ett hårt mellanslag på skärmen och i utskriften (S2 i punkt 26); exporterna
-            // och fältens etiketter har ett vanligt.
-            : `<td>${esc(r[0])}</td><td>${esc(g).replace(/ · BAS (\S+)$/, ' · BAS&nbsp;$1')}</td>${antal}<td>${esc(r[2])}</td>`;
+            ? `<td>${text(`hp-${i}-atgard`, n, 'atgard', r[0], 'Vad ska göras?', 'Åtgärd, egen rad')}`
+              + under(`${text(`hp-${i}-grupp`, n, 'grupp', r[1], `Grupp eller ${T.enhet.en}, inga namn`, 'Berörd grupp, egen rad')}`
+                + `<span class="hp-under-rad">${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" aria-label="Ta bort den egna raden">Ta bort</button></span>`) + '</td>'
+              + `<td class="hp-bara-utskrift"><span data-hp-spegel="${esc(n)}">${esc(r[1])}</span></td>${antal}<td class="hp-bara-utskrift">${esc(r[2])}</td>`
+            : `<td><span class="hp-atgard">${esc(r[0])}</span>`
+              + under(`<span class="hp-under-rad">${gruppHtml}${r[8] != null ? ` · ${esc(String(r[8]))}&nbsp;berörda` : ''}</span><span class="hp-under-rad">Underlag: ${esc(r[2])}</span>`) + '</td>'
+              + `<td class="hp-bara-utskrift">${gruppHtml}</td>${antal}<td class="hp-bara-utskrift">${esc(r[2])}</td>`;
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
             + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)} ${_hpSkalKnapp(n, g, seed.skillnader[i])}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td><td>${esc(_hpKostnadAvser(r[2]))}</td>`
-            + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll, t.ex. HR-chef', `Ansvarig: ${g}`)}</td>`
-            + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'T.ex. lönerevisionen nästa år', `Tidsplan: ${g}`)}</td>`
+            + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll', `Ansvarig: ${g}`)}</td>`
+            + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'Månad, år', `Tidsplan: ${g}`)}</td>`
             + `<td>${lista(`hp-${i}-status`, n, 'status', r[7], HP_STATUS, `Status: ${g}`)}</td></tr>`;
     }).join('');
     const emptyN = Math.max(5, 8 - seed.rows.length);
@@ -32721,11 +32764,18 @@ function renderHandlingsplanSeed() {
     }
 }
 
+/** En egen rads grupp står i ett fält i första cellen på skärmen och som text i utskriftens gruppkolumn. */
+function _hpSpegla(nyckel, varde) {
+    const el = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-spegel]')].find(s => /** @type {HTMLElement} */ (s).dataset.hpSpegel === nyckel);
+    if (el) el.textContent = varde;
+}
+
 // Fälten skriver till state.handlingsplan medan man skriver; tabellen ritas inte om (fokus står kvar).
 ['input', 'change'].forEach(typ => document.getElementById('handlingsplan-tbody')?.addEventListener(typ, e => {
     const el = /** @type {HTMLInputElement} */ (e.target);
     if (!el || !el.classList || !el.classList.contains('hp-falt')) return;
     _hpSatt(el.dataset.hpNyckel, el.dataset.hpFalt, el.value);
+    if (el.dataset.hpFalt === 'grupp') _hpSpegla(el.dataset.hpNyckel, el.value);
     if (el.tagName === 'INPUT') _hpUppdateraVarning();
 }));
 document.getElementById('handlingsplan-tbody')?.addEventListener('click', e => {
@@ -39026,11 +39076,16 @@ function buildFardigcheck() {
     // 1. Flaggade grupper utan rad i handlingsplanen
     try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
-        const flagged = (computePrioritization(ref) || []).filter(i => i.diffPct < 0);
+        const items = computePrioritization(ref) || [];
+        const flagged = items.filter(i => i.diffPct < 0);
+        // Av dem: de som ligger mer än granskningsgränsen under, alltså Prioriteringens Börja här och Under referens,
+        // liten grupp (samma ord och samma gräns som nyckeltalen och matrisen där).
+        const overGransen = items.filter(i => i.status === 'akut' || i.status === 'atgard').length;
         if (flagged.length) {
             out.push({
                 id: 'flaggade-grupper', level: 'warn', tab: 'handlingsplan',
-                title: `${flagged.length} grupp${flagged.length === 1 ? '' : 'er'} ligger under referensen`,
+                title: `${flagged.length} grupp${flagged.length === 1 ? '' : 'er'} ligger under referensen`
+                    + (overGransen ? `, varav ${overGransen} mer än ${_prioGrans(state.prioConfig.atgardThreshold)} under` : ''),
                 detail: 'Varje sådan grupp behöver antingen en åtgärd i handlingsplanen eller en dokumenterad förklaring med sakliga skäl.'
             });
         }

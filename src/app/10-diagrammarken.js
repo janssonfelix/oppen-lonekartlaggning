@@ -802,13 +802,14 @@ function _rfZoner(figur, c, bredd, hojd) {
 
 // Zonernas etiketter: i panelens OKLIPPTA textgrupp, över märken och referenslinjer, med vit kant så att de går
 // att läsa mot vad som än ligger under. Överst i zonen: mitt över en lodrät zon, i övre vänstra hörnet av en vågrät.
-// En etikett som inte ryms i zonens bredd kortas (hela texten i <title>, och etiketten tar då emot pekaren); ryms
-// färre än tre tecken ritas den inte.
+// En etikett i en lodrät zon som inte ryms på en rad bryts vid ordgränsen på högst RF_ZON_ETIKETTRADER rader; ryms den
+// inte hel så kortas den (hela texten i <title>, och etiketten tar då emot pekaren); ryms färre än tre tecken ritas
+// den inte.
 // Etiketten läggs helst där den varken täcker en text, en ritad punkt eller en hänvisningslinje: rad för rad nedåt
 // från zonens överkant (högst RF_ZON_RADER rader) och i varje rad i sidled inom zonen. Finns ingen sådan plats gäller
 // den äldre regeln: ligger en text redan där (en stapeletikett eller en tidigare zonetikett) läggs etiketten en rad
 // längre ned, och ryms den inte på tre försök ritas den inte.
-const RF_ZON_RADER = 12;
+const RF_ZON_RADER = 12, RF_ZON_ETIKETTRADER = 3;
 function _rfZonEtiketter(zoner, c, bredd, hojd) {
     const fpx = c.px - 1;
     // Rutorna för de texter som redan ligger i textgruppen, uppskattade ur deras egna attribut (ingen DOM-mätning).
@@ -830,9 +831,10 @@ function _rfZonEtiketter(zoner, c, bredd, hojd) {
         const hel = String(r.etikett);
         const ryms = Math.floor(((lodrat ? till - fran : bredd) - 8) / (fpx * _RF.tecken));   // 4 px luft på var sida
         if (ryms < Math.min(3, hel.length)) continue;
-        // En etikett i en lodrät zon som inte ryms på en rad men hel på två bryts vid ordgränsen; annars kortas den.
-        const tva = lodrat && hel.length > ryms ? _rfRadbryt(hel, ryms, 2) : null;
-        const rader = tva && tva.length === 2 && tva.join(' ') === hel && tva.every(s => s.length <= ryms) ? tva : [_rfKorta(hel, ryms)];
+        // En etikett i en lodrät zon som inte ryms på en rad men hel på högst tre bryts vid ordgränsen (inte vid ett hårt
+        // mellanslag); annars kortas den.
+        const flera = lodrat && hel.length > ryms ? _rfRadbryt(hel, ryms, RF_ZON_ETIKETTRADER, true) : null;
+        const rader = flera && flera.length > 1 && flera.join(' ') === hel && flera.every(s => s.length <= ryms) ? flera : [_rfKorta(hel, ryms)];
         const radH = fpx + 3;
         const x0Av = (text, dx) => (lodrat ? (fran + till) / 2 - _rfBredd(text, fpx) / 2 : Math.min(4, Math.max(0, bredd - _rfBredd(text, fpx)))) + dx;
         // Förskjutningar i sidled inom zonen (4 px luft): först mitt i (lodrät zon) eller vid vänsterkanten (vågrät),

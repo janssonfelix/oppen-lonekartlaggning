@@ -183,6 +183,41 @@ export async function utseende() {
         await page.emulateMedia({ media: 'screen' });
     }
 
+    console.log('\n── Handlingsplanen ryms utan sidledsrullning ──');
+    {
+        // UX-inventeringen 2026-11-19: mallen var 1 577 punkter bred i en ruta på 1 030 vid 1440, och fälten man fyller i
+        // låg utanför bild. På skärmen står grupp, antal berörda och underlag under åtgärden; utskriften (Ctrl+P) har
+        // dem som egna kolumner. Lilla demot i en egen sida, så att tidigare delar av röktestet inte påverkar raderna.
+        const s = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+        await s.goto('file://' + FIL);
+        await s.waitForFunction(() => typeof window.loadDemoData === 'function', null, { timeout: 15000 });
+        await s.evaluate(() => loadDemoData());   /* global loadDemoData -- global i sidan */
+        await s.waitForFunction(() => !!document.querySelector('#view-dashboard svg'), null, { timeout: 30000 });
+        await oppnaFlik(s, '.nav-item[data-tab="handlingsplan"]');
+        await s.waitForSelector('#handlingsplan-tbody tr.handlingsplan-seeded', { timeout: 15000 });
+        const matt = () => s.evaluate(() => { const c = document.getElementById('handlingsplan-tbody').closest('.table-container');
+            return { scrollWidth: c.scrollWidth, clientWidth: c.clientWidth }; });
+        for (const bredd of [1280, 1440]) {
+            await s.setViewportSize({ width: bredd, height: 900 });
+            await s.waitForTimeout(200);
+            const m = await matt();
+            ok(m.scrollWidth <= m.clientWidth, `${bredd} punkter: handlingsplanens tabell ryms i sin ruta (scrollWidth ${m.scrollWidth}, clientWidth ${m.clientWidth})`);
+        }
+        // innerText, inte textContent: det som är dolt (skärmens «och grupp» på utskriften) räknas inte. Rubrikerna
+        // har versaler i stilmallen, och innerText följer den; jämförelsen görs med gemener.
+        const kolumner = () => s.evaluate(() => [...document.getElementById('handlingsplan-tbody').closest('table').querySelectorAll('thead th')]
+            .filter(th => th.getBoundingClientRect().width > 0).map(th => th.innerText.replace(/\s+/g, ' ').trim().toLowerCase()));
+        const skarm = await kolumner();
+        ok(skarm.length === 7 && skarm[0] === 'åtgärd och grupp', `på skärmen sju kolumner, den första «Åtgärd och grupp» (${skarm.join(' | ')})`);
+        await s.emulateMedia({ media: 'print' });
+        const utskrift = await kolumner();
+        ok(utskrift.length === 10 && utskrift[0] === 'åtgärd' && utskrift.slice(1, 4).join('|') === 'grupp (aid-etikett och bas-intervall)|antal berörda|underlag',
+            `på utskriften tio kolumner som förut (${utskrift.join(' | ')})`);
+        ok(await s.evaluate(() => [...document.querySelectorAll('#handlingsplan-tbody .hp-under')].every(el => el.getBoundingClientRect().height === 0)),
+            'på utskriften står inte skärmens undertext under åtgärden');
+        await s.close();
+    }
+
     console.log('\n── Sidhuvudet är lika högt på alla flikar ──');
     {
         for (const bredd of [1440, 1100, 1024]) {
@@ -526,8 +561,11 @@ export async function smalaSkarmar() {
         await s.click('#btn-meny');
         await s.waitForTimeout(300);
         await oppnaFlik(s, '.nav-item[data-tab="struktur"]');
-        await s.waitForTimeout(900);
-        ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-regression').style.display === 'block'), '390 punkter: ett val i menyn byter flik och stänger menyn');
+        // Vänta på läget i stället för en fast tid: menyns övergång och flikbytet (ADR-80) tar längre tid på en långsam
+        // CI-maskin än lokalt.
+        const bytt = () => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-regression').style.display === 'block';
+        await s.waitForFunction(bytt, null, { timeout: 5000 }).catch(() => {});
+        ok(await s.evaluate(bytt), '390 punkter: ett val i menyn byter flik och stänger menyn');
         // Diagrammen ritar för den bredd de får: huvuddiagrammet ska fylla kortet och ha läsbar text.
         const dia = await s.evaluate(() => { const svg = document.querySelector('#view-regression svg[role="group"], #view-regression svg[role="img"]');
             if (!svg) return null; const r = svg.getBoundingClientRect(); const txt = [...svg.querySelectorAll('text')].map(t => t.getBoundingClientRect().height).filter(h => h > 0);

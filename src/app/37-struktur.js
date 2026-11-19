@@ -121,7 +121,7 @@ function renderStructure() {
 
 /**
  * Auto-rapportutkastet i fliken Rapporttext: fynden i klarspråk, ur samma mått som Lönestruktur räknar. Ett utkast
- * som användaren har redigerat skrivs inte över; "Återskapa" tar bort markeringen och ritar om.
+ * som användaren har redigerat skrivs inte över; "Återskapa" frågar först, tar bort markeringen och ritar om.
  */
 function renderStrukturUtkast() {
     const nb = document.getElementById('struktur-narrative');
@@ -538,7 +538,10 @@ function _exportEuReportExport() {
     document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
     document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');
-        if (nb) { delete nb.dataset.dirty; medExportLage(renderStrukturUtkast); }
+        if (!nb) return;
+        // Ett redigerat utkast skrivs inte över utan fråga; avbryter användaren är texten och markeringen orörda.
+        if (nb.dataset.dirty && !confirm('Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?')) return;
+        delete nb.dataset.dirty; medExportLage(renderStrukturUtkast);
     });
     // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
     // över; Återskapa ritar om det med valet.

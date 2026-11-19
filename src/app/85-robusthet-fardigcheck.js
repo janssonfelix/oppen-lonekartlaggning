@@ -206,11 +206,16 @@ function buildFardigcheck() {
     // 1. Flaggade grupper utan rad i handlingsplanen
     try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
-        const flagged = (computePrioritization(ref) || []).filter(i => i.diffPct < 0);
+        const items = computePrioritization(ref) || [];
+        const flagged = items.filter(i => i.diffPct < 0);
+        // Av dem: de som ligger mer än granskningsgränsen under, alltså Prioriteringens Börja här och Under referens,
+        // liten grupp (samma ord och samma gräns som nyckeltalen och matrisen där).
+        const overGransen = items.filter(i => i.status === 'akut' || i.status === 'atgard').length;
         if (flagged.length) {
             out.push({
                 id: 'flaggade-grupper', level: 'warn', tab: 'handlingsplan',
-                title: `${flagged.length} grupp${flagged.length === 1 ? '' : 'er'} ligger under referensen`,
+                title: `${flagged.length} grupp${flagged.length === 1 ? '' : 'er'} ligger under referensen`
+                    + (overGransen ? `, varav ${overGransen} mer än ${_prioGrans(state.prioConfig.atgardThreshold)} under` : ''),
                 detail: 'Varje sådan grupp behöver antingen en åtgärd i handlingsplanen eller en dokumenterad förklaring med sakliga skäl.'
             });
         }

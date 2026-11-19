@@ -272,8 +272,8 @@ describe('informationsikonen har ett utförande', () => {
         const medTips = [...d.querySelectorAll('.stat-box[data-tooltip]')];
         expect(medTips.length).toBeGreaterThanOrEqual(11);
         expect(medTips.every(r => r.getAttribute('data-tooltip').length > 20)).toBe(true);
-        // Texten med tröskeln {k} är ifylld.
-        expect(d.getElementById('prio-stat-akut').closest('.stat-box').getAttribute('data-tooltip')).toMatch(/minst 10 personer/);
+        // Texten med termerna är ifylld (gränserna står i undertexten, ur inställningen).
+        expect(d.getElementById('prio-stat-akut').closest('.stat-box').getAttribute('data-tooltip')).toMatch(/^Antal AID-etiketter i BAS-intervall med statusen Börja här/);
     });
 });
 

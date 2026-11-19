@@ -161,7 +161,8 @@ data — och ritas som en färgstapel i högermarginalen med ändvärdena och ti
 
 - Zon: `{ typ: 'zon', x0?, x1? | y0?, y1?, axel?: 'y2', farg?, opacitet?, etikett?, textfarg? }`. Ritas under
   märkena. En gräns som saknas är panelens kant. Etiketten ritas överst i zonen, ovanpå märkena. En etikett i en
-  lodrät zon som inte ryms på en rad men hel på två bryts vid ordgränsen; annars kortas den (hela texten i `<title>`),
+  lodrät zon som inte ryms på en rad men hel på högst tre bryts vid ordgränsen (aldrig vid ett hårt mellanslag, som i
+  «5 %»); annars kortas den (hela texten i `<title>`),
   och ryms inte tre tecken ritas den inte. Etiketten läggs i zonens överkant där den varken täcker en ritad punkt,
   en hänvisningslinje eller en annan text: mitt i zonen om det går, annars förskjuten i sidled eller en rad i taget
   nedåt (högst tolv rader). Finns ingen sådan plats gäller den äldre regeln: mitt i zonen, under en text som redan
