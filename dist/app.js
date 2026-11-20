@@ -542,39 +542,46 @@ function tillampaDataStil(rot) {
 }
 
 function getField(row, possibleNames, role) {
-    // #11: manuell kolumnmappning vinner över auto-matchning om satt för rollen.
-    if (role && state.columnMap && state.columnMap[role]) {
-        const mapped = state.columnMap[role];
-        if (Object.prototype.hasOwnProperty.call(row, mapped)) return row[mapped];
-    }
-    // Därefter importprofilen som gäller för filen (roll → filens rubrik); roller den inte täcker matchas på delsträng.
+    const key = _rubrikForRoll(Object.keys(row), possibleNames, role);
+    return key == null ? "" : row[key];
+}
+
+/**
+ * Rubriken som bär rollen bland `headers`: #11 den manuella kolumnmappningen, därefter importprofilen som gäller för
+ * filen (roll → filens rubrik), och för roller ingen av dem täcker namnet (_hittaRubrik). En vald rubrik gäller bara om
+ * filen har den. undefined när ingen rubrik passar.
+ */
+function _rubrikForRoll(headers, possibleNames, role) {
+    const mapped = role && state.columnMap && state.columnMap[role];
+    if (mapped && headers.includes(mapped)) return mapped;
     const profil = role && state.importprofil && state.importprofil.mappning[role];
-    if (profil && Object.prototype.hasOwnProperty.call(row, profil)) return row[profil];
+    if (profil && headers.includes(profil)) return profil;
+    return _hittaRubrik(headers, possibleNames, role);
+}
+
+/**
+ * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med sökordet, annars en som innehåller det; sökorden
+ * prövas i tur och ordning. Exakt likhet först, så att "Lön" går före "Lönetillägg" för sökordet "ln".
+ */
+function _hittaRubrik(headers, possibleNames, role) {
     // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
     // får aldrig tas för yrke (ADR-33).
-    const hoppa = k => role === 'yrke' && typeof _anArRubrik === 'function' && _anArRubrik(k);
+    const hoppa = h => role === 'yrke' && typeof _anArRubrik === 'function' && _anArRubrik(h);
+    const rensade = (headers || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
     for (const name of possibleNames) {
-        const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const key = Object.keys(row).find(k => !hoppa(k) && k.toLowerCase().replace(/[^a-z0-9]/g, "").includes(searchStr));
-        if (key !== undefined) return row[key];
+        const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        let i = rensade.indexOf(searchStr);
+        if (i < 0) i = rensade.findIndex(r => r !== null && r.includes(searchStr));
+        if (i >= 0) return headers[i];
     }
-    return "";
+    return undefined;
 }
 
 // #11: vilken CSV-rubrik auto-matchar varje roll (samma logik som getField,
 // utan columnMap-override). Returnerar { roll: rubrik|null }.
 function autoDetectColumnMap(headers) {
     const map = {};
-    for (const role of Object.keys(ALLOWED_FIELDS)) {
-        let found = null;
-        const hoppa = h => role === 'yrke' && typeof _anArRubrik === 'function' && _anArRubrik(h);
-        for (const name of ALLOWED_FIELDS[role]) {
-            const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const key = (headers || []).find(h => !hoppa(h) && String(h).toLowerCase().replace(/[^a-z0-9]/g, '').includes(searchStr));
-            if (key !== undefined && key !== null) { found = key; break; }
-        }
-        map[role] = found;
-    }
+    for (const role of Object.keys(ALLOWED_FIELDS)) map[role] = _hittaRubrik(headers, ALLOWED_FIELDS[role], role) ?? null;
     return map;
 }
 
@@ -2093,23 +2100,39 @@ function _bedomAnsvarKolumn(namn, varden) {
 }
 
 /**
+ * Rubriken för varje fält i ALLOWED_FIELDS bland lönefilens rubriker (_rubrikForRoll: kolumnmappningen, importprofilen,
+ * namnet). Slås upp en gång per fil; en ändrad mappning läser in filen på nytt.
+ */
+function _lonefilensRubriker(headers) {
+    const rubriker = {};
+    for (const role of Object.keys(ALLOWED_FIELDS)) rubriker[role] = _rubrikForRoll(headers, ALLOWED_FIELDS[role], role);
+    return rubriker;
+}
+/** Radens värde för rollen, som getField: tom sträng när filen saknar kolumnen. */
+function _faltIRad(row, rubriker, roll) {
+    return rubriker[roll] == null ? '' : row[rubriker[roll]] ?? '';
+}
+
+/**
  * Extraherar ENBART vitlistade fält ur en CSV-rad — GDPR Art. 5(1)(c) uppgiftsminimering.
  * Säkerställer att verktyget aldrig laddar identifierande fält (PNR, namn, e-post)
  * även om användarens CSV innehåller dem. Ansvar läses inte in (se avgränsningen i docs/utveckling/mal.md).
- * Här slås råvärdena upp i raden (getField med ALLOWED_FIELDS, kolumnmappningen och importprofilen, och den godkända
- * ansvarskolumnen); tolkningen görs av tolkaLonerad i src/lib/inlasning.js, med innevarande år som referensår för
+ * Här slås råvärdena upp i raden (rubrikerna ur _lonefilensRubriker, och den godkända ansvarskolumnen); tolkningen
+ * görs av tolkaLonerad i src/lib/inlasning.js, med innevarande år som referensår för
  * födelseår i ålderskolumnen. Talen, normaliseringarna, _cleanYrkeField och detectSensitiveColumns ligger också där
  * och nås under samma namn genom spegeln.
  * @param {Object<string,*>} row - Rå CSV-rad (PapaParse-objekt).
+ * @param {Object<string,string|undefined>} [rubriker] - Uppslaget för filen; utan det slås det upp på radens nycklar.
  */
-function extractMinimalRecord(row) {
+function extractMinimalRecord(row, rubriker = _lonefilensRubriker(Object.keys(row))) {
+    const falt = roll => _faltIRad(row, rubriker, roll);
     return _ilTolkaLonerad({
-        bas:    getField(row, ALLOWED_FIELDS.bas, 'bas'),
-        kon:    getField(row, ALLOWED_FIELDS.kon, 'kon'),
-        lon:    getField(row, ALLOWED_FIELDS.lon, 'lon'),
-        alder:  getField(row, ALLOWED_FIELDS.alder, 'alder'),
-        poang:  getField(row, ALLOWED_FIELDS.poang, 'poang'),
-        yrke:   getField(row, ALLOWED_FIELDS.yrke, 'yrke'),
+        bas:    falt('bas'),
+        kon:    falt('kon'),
+        lon:    falt('lon'),
+        alder:  falt('alder'),
+        poang:  falt('poang'),
+        yrke:   falt('yrke'),
         ansvar: state.ansvarKolumn ? row[state.ansvarKolumn.namn] : undefined
     }, new Date().getFullYear(), !!state.ansvarKolumn);
 }
@@ -25165,7 +25188,16 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
         if (hits >= synonymGroups.length) break;   // full träff — sluta leta
     }
     if (bestHits < minHits) hdrIdx = 0;            // fallback: första raden
-    const headers = (grid[hdrIdx] || []).map(h => String(h ?? '').trim());
+    // En rubrik som återkommer döps om som PapaParse gör med CSV (Lön, Lön_1, …), så att den första kolumnen gäller i båda.
+    const rubrikrad = (grid[hdrIdx] || []).map(h => String(h ?? '').trim());
+    const antal = Object.create(null), anvanda = new Set(rubrikrad);
+    const headers = rubrikrad.map(h => {
+        if (!h || !antal[h]) { antal[h] = 1; return h; }
+        let ny, t = antal[h]++;
+        do { ny = h + '_' + t++; } while (anvanda.has(ny));
+        anvanda.add(ny);
+        return ny;
+    });
     const rows = [];
     for (let i = hdrIdx + 1; i < grid.length; i++) {
         const r = grid[i];
@@ -25316,11 +25348,16 @@ function loadStructureFile(file) {
     // Ansvarskolumnen sätts redan på första raden (extractMinimalRecord behöver den). Fallerar
     // inläsningen efteråt ska den data som redan finns behålla sin kolumn.
     const tidigareAnsvarKolumn = state.ansvarKolumn;
-    // Importprofilen (src/lib/importprofiler.js) väljs på filens rubriker innan första raden läses, så att getField
+    // Importprofilen (src/lib/importprofiler.js) väljs på filens rubriker innan första raden läses, så att kolumnuppslaget
     // och ansvarskolumnen använder den. Läses filen inte in gäller den förra filens profil igen.
     const tidigareImportprofil = state.importprofil;
     const valjImportprofil = headers => { state.importprofil = _importprofilFor(headers); };
+    // Kolumnen för varje fält slås upp på första raden, efter importprofilen; en ändrad mappning läser in filen på nytt.
+    /** @type {any} */
+    let rubriker = null;
     function processRow(row) {
+        if (!rubriker) rubriker = _lonefilensRubriker(capturedHeaders || Object.keys(row || {}));
+        const falt = roll => _faltIRad(row, rubriker, roll);
         if (!ansvarBedomd) {
             ansvarBedomd = true;
             const kol = _hittaAnsvarKolumn(Object.keys(row || {}));
@@ -25328,7 +25365,7 @@ function loadStructureFile(file) {
         }
         if (state.ansvarKolumn) ansvarVarden.push(row[state.ansvarKolumn.namn]);
         /** @type {any} */
-        const rec = extractMinimalRecord(row);
+        const rec = extractMinimalRecord(row, rubriker);
         // Trunkera exempel-värden för att undvika att en hel rad fastnar
         const truncEx = v => {
             if (v == null) return '(tom)';
@@ -25340,13 +25377,13 @@ function loadStructureFile(file) {
         if (rec._lonStatus === 'invalid') {
             parseStats.invalidLon++;
             if (parseStats.invalidLonExamples.length < 3) {
-                parseStats.invalidLonExamples.push(truncEx(getField(row, ALLOWED_FIELDS.lon, 'lon')));
+                parseStats.invalidLonExamples.push(truncEx(falt('lon')));
             }
         }
         if (rec._alderStatus === 'invalid') {
             parseStats.invalidAlder++;
             if (parseStats.invalidAlderExamples.length < 3) {
-                parseStats.invalidAlderExamples.push(truncEx(getField(row, ALLOWED_FIELDS.alder, 'alder')));
+                parseStats.invalidAlderExamples.push(truncEx(falt('alder')));
             }
         }
         // Transparens: ålderskolumnen innehöll födelseår som räknats om till ålder
@@ -25354,7 +25391,7 @@ function loadStructureFile(file) {
         // Personnamn i fältet för AID-etikett: råvärdet (före maskering och kortning) prövas på varje rad i filen, också
         // en rad som sedan faller bort. En text med namnmönster räknas i den tillfälliga räknaren; vilka som är sällsynta
         // nog att varna för avgörs när hela filen är läst (_namnTillStats).
-        const namnNyckel = _ilYrkeNamnNyckel(getField(row, ALLOWED_FIELDS.yrke, 'yrke'));
+        const namnNyckel = _ilYrkeNamnNyckel(falt('yrke'));
         if (namnNyckel) {
             const v = namnRaknare.get(namnNyckel) || { antal: 0, radnr: [] };
             v.antal++;
@@ -25365,7 +25402,7 @@ function loadStructureFile(file) {
         // (efter normalisering till lowercase utan icke-bokstäver).
         const konOk = typeof rec.kon === 'string' &&
                       (arKvinna(rec) || arMan(rec));
-        const rawKon = getField(row, ALLOWED_FIELDS.kon, 'kon');
+        const rawKon = falt('kon');
         if (!konOk && parseStats.missingKonExamples.length < 3) {
             parseStats.missingKonExamples.push(truncEx(rawKon));
         }
@@ -25373,12 +25410,11 @@ function loadStructureFile(file) {
         /** @type {any} */
         let fkRad = null;
         if (fkForsta.length < FK_RADER) {
-            const poangRa = getField(row, ALLOWED_FIELDS.poang, 'poang');
+            const poangRa = falt('poang');
             const ansvarRa = state.ansvarKolumn ? row[state.ansvarKolumn.namn] : undefined;
             fkRad = {
                 radnr: row[_RADNR] ?? null, anvands: false,
-                ra: { bas: getField(row, ALLOWED_FIELDS.bas, 'bas'), lon: getField(row, ALLOWED_FIELDS.lon, 'lon'),
-                      alder: getField(row, ALLOWED_FIELDS.alder, 'alder'), kon: rawKon, poang: poangRa, ansvar: ansvarRa },
+                ra: { bas: falt('bas'), lon: falt('lon'), alder: falt('alder'), kon: rawKon, poang: poangRa, ansvar: ansvarRa },
                 tolkat: { bas: rec.bas, yrke: rec.yrke, lon: rec.lon, alder: rec.alder, kon: rec.kon, poang: rec.poang, ansvar: rec.ansvarsgrupp },
                 status: { lon: rec._lonStatus, alder: rec._alderStatus,
                           poang: String(poangRa ?? '').trim() === '' ? 'empty' : rec.poang == null ? 'invalid' : 'ok',
