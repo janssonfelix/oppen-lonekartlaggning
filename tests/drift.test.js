@@ -3,12 +3,10 @@
  * forecast/structure) eftersom webbläsarbygget skeppar app.js, inte src/lib/.
  * src/app/09-lib-speglar.js GENERERAS verbatim ur src/lib/ av
  * tools/gen-mirrors.mjs (endast `export` strippas), så kropparna kan inte
- * glida isär. Detta test vaktar de två återstående riskerna:
- *
- *   1. STALENESS — att den incheckade 09-lib-speglar.js är i synk med src/lib/
- *      (någon ändrade lib men körde inte `npm run build:app`).
- *   2. ALIAS-WIRING — att varje app-globalt spegelnamn (_fitOLS, _fcComputePott …)
- *      faktiskt pekar på RÄTT lib-funktion (en felmappning i manifestet fångas).
+ * glida isär. Att den incheckade spegeln är i synk med src/lib/ prövar artefaktgrinden
+ * (tools/kontroll.mjs och .github/workflows/ci.yml). Detta test vaktar ALIAS-WIRING:
+ * att varje app-globalt spegelnamn (_fitOLS, _fcComputePott …) faktiskt pekar på
+ * RÄTT lib-funktion (en felmappning i manifestet fångas).
  *
  * Själva lib-logiken testas direkt i stat/loneoversyn/struktur.test.js m.fl., och
  * exports.golden.test.js vaktar att exporterna är oförändrade (facit byte för byte).
@@ -69,14 +67,13 @@ import * as libAb from '../src/lib/arsbokslut.js';
 import * as libSak from '../src/lib/sakligaskal.js';
 import * as libAidbas from '../src/lib/aidbas.js';
 import * as libKon from '../src/lib/kon.js';
-import { MODULES, generateMirrorsSource } from '../tools/gen-mirrors.mjs';
+import { MODULES } from '../tools/gen-mirrors.mjs';
 import { regexEscape } from './helpers/regex.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const appSrc = readFileSync(join(root, 'dist', 'app.js'), 'utf8');
-const mirrorsPath = join(root, 'src', 'app', '09-lib-speglar.js');
-const mirrorsSrc = readFileSync(mirrorsPath, 'utf8');
+const mirrorsSrc = readFileSync(join(root, 'src', 'app', '09-lib-speglar.js'), 'utf8');
 
 // Extrahera `function NAME(...) { ... }` via balanserad klammerräkning.
 function extractFn(src, name) {
@@ -105,15 +102,6 @@ const libByFile = { 'kon.js': libKon, 'stat.js': libStat, 'loneoversyn.js': libF
     'prioritering.js': libPr, 'kostnad.js': libKost, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts, 'osakerhet.js': libOs };
 
 describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
-    it('STALENESS: incheckad 09-lib-speglar.js är i synk med src/lib/ (kör gen-mirrors)', () => {
-        // Normalisera radslut så CRLF/LF-skillnader (git autocrlf) inte ger falskt larm.
-        const norm = s => s.replace(/\r\n/g, '\n');
-        expect(
-            norm(mirrorsSrc),
-            'src/app/09-lib-speglar.js är inte i synk med src/lib/. Kör `npm run build:app`.'
-        ).toBe(norm(generateMirrorsSource()));
-    });
-
     it('ALIAS-WIRING: varje spegelnamn pekar på exakt rätt lib-funktion', () => {
         // Normalisera radslut: `new Function`-källan (05) och ES-import-källan (lib)
         // kan ha olika radslut beroende på git autocrlf — jämför text, inte radslut.
@@ -315,8 +303,7 @@ describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', ()
 // ska delegera till spegeln med getData()/statGolv()/_lvBasRangFn.
 describe('regression: 50-regressionsmodeller.js är en tunn adapter', () => {
     const regSrc = readFileSync(join(root, 'src', 'app', '50-regressionsmodeller.js'), 'utf8');
-    const adaptrar = ['_diagnoseCollinearity', '_computePerBasGap', '_basIndikatorer', '_computeSequentialGap',
-        '_quantileRegression', 'runBlinderOaxaca', 'runQuantileRegressionAtAllTau'];
+    const adaptrar = ['_computePerBasGap', '_quantileRegression', 'runBlinderOaxaca', 'runQuantileRegressionAtAllTau'];
 
     it('innehåller inga egna beräkningar (ingen log eller OLS-anrop)', () => {
         expect(regSrc, 'log-lön räknas i src/lib/regression.js').not.toContain('Math.log(');

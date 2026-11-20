@@ -20,7 +20,7 @@
  *
  * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_rng*`
  * i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra här och kör
- * `npm run build:app`, rör ej spegeln (vaktas av tests/drift.test.js).
+ * `npm run build:app`, rör ej spegeln (vaktas av artefaktgrinden).
  */
 
 /**

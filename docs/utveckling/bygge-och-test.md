@@ -51,8 +51,7 @@ blockerar stilmallen och alla skriptfilerna (fem: fyra bibliotek och verktygets 
 **`npm run build:app`** (`tools/build-app.mjs`) regenererar `src/app/08-version.js` ur `VERSION`
 (`tools/gen-version.mjs`, ADR-13) och `src/app/09-lib-speglar.js` ur `src/lib/` (`tools/gen-mirrors.mjs`, ADR-8),
 och slår sedan ihop `src/app/NN-*.js` byte för byte (BOM och CRLF bevaras) till `dist/app.js` (ADR-6).
-`tests/appsource.test.js` vaktar att `dist/app.js` och `src/app/` inte glider isär, och `tests/drift.test.js` att
-speglarna är i synk med `src/lib/`.
+Artefaktgrinden (§8 och §9) vaktar att de tre genererade filerna motsvarar källan.
 
 **`npm run bundle`** (`tools/bundle.mjs`) gör samma regenerering och bygger sedan
 `dist/oppen-lonekartlaggning.html` (omkring 3,4 MB; en enda fil) och `dist/RELEASE.txt`:
@@ -79,9 +78,10 @@ speglarna är i synk med `src/lib/`.
 ## 3. Versionering
 
 CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är källan, och `package.json` sätts samtidigt (npm kräver fältet). `APP_VERSION` och
-`APP_BUILD_DATE` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att stämpeln
-och `package.json` följer den. Bygget för in den i `src/app/08-version.js`, `dist/` och programvaruförteckningen;
-`CHANGELOG.md` och riskanalysen anger den och prövas av release-grinden. Hur en version släpps står i §10.
+`APP_BUILD_DATE` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att
+`package.json` följer den; att `src/app/08-version.js` följer den prövar artefaktgrinden. Bygget för in den i
+`src/app/08-version.js`, `dist/` och programvaruförteckningen; `CHANGELOG.md` och riskanalysen anger den och prövas av
+release-grinden. Hur en version släpps står i §10.
 
 ## 4. Stilmallen
 
@@ -105,7 +105,9 @@ bibliotek av hjälpklasser som ersatte alla `style`-attribut (ADR-30).
 
 ### 5.1 Sviten
 
-Vitest, med omkring 3 400 tester i drygt 100 filer:
+Vitest. De genererade filerna (`dist/` och `src/app/08-version.js` och
+`09-lib-speglar.js`) prövas av artefaktgrinden, inte av sviten, så `npm test` efter en ändring i `src/lib/` kräver
+`npm run build:app` först; `npm run kontroll` gör det själv.
 
 - rena `src/lib/`-moduler och CSV-parsningen;
 - jsdom-röktest av varje vy (ADR-7): `tests/smoke.test.js` med det delade fönstret och ett dussintal
@@ -114,7 +116,7 @@ Vitest, med omkring 3 400 tester i drygt 100 filer:
   `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
   `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`);
 - axe-a11y (ADR-10, `tests/a11y.test.js`);
-- vakterna `appsource`, `drift`, `exports.golden`, `version`, `release` och `kanonymitet`;
+- vakterna `drift`, `exports.golden`, `version`, `release` och `kanonymitet`;
 - escaping-vakten `tests/escaping.test.js` (motorn i `tests/helpers/htmlmallar.js`) läser `src/app/` utan att ladda
   appen och kräver att varje värde i appens HTML (mallsträngar med HTML, `innerHTML`, `insertAdjacentHTML`,
   konkatenering och beräkningsbevisens HTML-fält) går genom `esc()` eller bevisas säkert; vad den inte täcker och
@@ -256,9 +258,10 @@ förbjuds därför inte.
 `npm run kontroll` (`tools/kontroll.mjs`) kör kedjan i *Definition of Done* i
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3: `build:app`, `lint`, `typecheck`, `test:full`,
 `bundle` och `test:browser`, i den ordningen, och stannar på första fel med stegets slutkod. Efter `bundle` prövas
-samma två grindar som CI-jobbet `grindar` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen spårad
-fil under `dist/`, alltså inte heller `RELEASE.txt`; kedjan jämför `dist/` som den låg när den började, CI jämför med
-det incheckade. En ändring betyder att `dist/` inte motsvarade källan, och de ombyggda filerna ska checkas in)
+samma två grindar som CI-jobbet `grindar` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen genererad
+fil: ingen spårad fil under `dist/`, alltså inte heller `RELEASE.txt`, och varken `src/app/08-version.js` eller
+`src/app/09-lib-speglar.js`; kedjan jämför filerna som de låg när den började, CI jämför med det incheckade. En
+ändring betyder att de inte motsvarade källan, och de ombyggda filerna ska checkas in)
 och **teckenkodningsgrinden** (ingen U+FFFD i `dist/app.js`, `src/index.html` och `src/style.css`). Sist skrivs
 stegens tider. `npm run kontroll -- --snabb` är körningen under arbetet: `test` i stället för `test:full`, och inget
 röktest i webbläsaren. `tests/dokumentation-struktur.test.js` kräver att kedjan har varje steg som CI-jobben
@@ -271,9 +274,9 @@ arbetsflödet fyra jobb: **`grindar`** kör lint, typkontroll, teckenkodningsgri
 kör hela testsviten (`npm run test:full`) delad på fyra parallella jobb med Vitests `--shard`, så att varje testfil
 körs i exakt ett av dem, **`quality`** är grön först när `grindar` och alla delar av `tester` är gröna (det är den
 kontroll som regeln för `main` kräver), och **`browser`** kör röktestet i Chromium, Firefox och WebKit mot en artefakt som
-byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, också `RELEASE.txt`, blir byte-identisk
-med det incheckade. Den är den enda kontrollen av artefakten och `RELEASE.txt`; `dist/app.js` vaktas också av
-`appsource`-testet.
+byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, också `RELEASE.txt`, och de genererade
+`src/app/08-version.js` och `src/app/09-lib-speglar.js` blir byte-identiska med det incheckade. Den är den enda
+kontrollen av de genererade filerna.
 
 **Sårbarhetsbevakningen** är ett eget arbetsflöde, `.github/workflows/sarbarheter.yml`, vars kommentarer är källan
 till stegen. Det bygger programvaruförteckningen (`tools/sbom.mjs`), frågar den öppna sårbarhetsdatabasen OSV direkt

@@ -12,9 +12,9 @@ rader är logiken uppdelad i hanterbara delar.
 npm run build:app        # eller: node tools/build-app.mjs
 ```
 
-`tests/appsource.test.js` vaktar att `dist/app.js` och `src/app/` aldrig glider isär
-(byte-identisk hopslagning). `npm run bundle` regenererar `dist/app.js` automatiskt före
-varje bygge.
+Artefaktgrinden (`tools/kontroll.mjs` och `.github/workflows/ci.yml`) vaktar att
+`dist/app.js` och `src/app/` aldrig glider isär (byte-identisk hopslagning).
+`npm run bundle` regenererar `dist/app.js` automatiskt före varje bygge.
 
 ## Delarna
 
@@ -115,13 +115,12 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 Delarna underhålls för hand: `tools/build-app.mjs` slår helt enkelt ihop alla
 `NN-*.js` i namnordning, så en ny del skapas genom att lägga en fil med rätt
 sifferprefix. Uppstartsanropen ligger i `90-uppstart.js`. Delas en fil måste bitarna
-behålla sorteringsordningen — `tests/appsource.test.js` bevisar att hopslagningen
-är byte-identisk med `dist/app.js`.
+behålla sorteringsordningen.
 
 `09-lib-speglar.js` är ett undantag: den **genereras** ur `src/lib/*.js` av
 `tools/gen-mirrors.mjs` (varje lib-modul inlinas verbatim i en IIFE, endast
 `export` strippas, och namnen `app.js` anropar exponeras som `const`-alias).
 `tools/build-app.mjs` regenererar den före varje hopslagning, så `src/lib/` är enda
 källa för den statistiska kärnan (se ADR-8 i `arkitekturbeslut.md`). **Redigera aldrig `09`
-för hand** — ändra `src/lib/`-modulen och kör `npm run build:app`. `tests/drift.test.js`
+för hand** — ändra `src/lib/`-modulen och kör `npm run build:app`. Artefaktgrinden
 vaktar att den är i synk med `src/lib/`.

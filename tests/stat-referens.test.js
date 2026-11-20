@@ -230,7 +230,7 @@ describe('sekventiell dekomponering (BAS som indikatorer, ADR-44)', () => {
         w.__rows = fx.rows.map(r => ({ ...r }));
         const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
         w.__basList = basList;
-        const steg = w.eval(`_computeSequentialGap(window.__rows, ${fx.ageMean}, window.__basList)`);
+        const steg = w.eval(`_rgComputeSequentialGap(window.__rows, ${fx.ageMean}, window.__basList, { golv: statGolv() })`);
         // Fixturen har ett yrke per BAS, så steget + Yrkesgrupp (inomtransformation på AID×BAS,
         // ADR-46) ska ge exakt samma könskoefficient som + Ålder med BAS-indikatorer
         // (Frisch–Waugh–Lovell) — en kontroll av inomskattaren mot indikatormodellen.
