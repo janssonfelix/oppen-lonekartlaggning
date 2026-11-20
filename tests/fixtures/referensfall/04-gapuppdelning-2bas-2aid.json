@@ -25,7 +25,6 @@
     "gap": -5000,
     "gapPct": -12.244897959183673,
     "litetGap": false,
-    "skyddad": true,
     "delar": { "A": -3125, "B": 125, "C": -2000 },
     "variabler": ["bas", "aid"]
   },

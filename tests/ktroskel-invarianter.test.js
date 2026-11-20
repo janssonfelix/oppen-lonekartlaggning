@@ -275,11 +275,11 @@ describe('I6: underlaget i exportläget, precis under och precis över skyddsreg
 // ===================================================================================
 // I7: Var uppstår löneskillnaden med andra val av förklaringsvariabler (ADR-65), vid 10 och 25.
 //
-// Skyddsregeln gäller per del: en grupp namnges bara när den själv och alla dess överceller har 0 eller minst k av
-// varje kön, och kan en del inte redovisas visas ingen del. Y1–Y3 och X har ett kön under tröskeln i BAS:en, så
-// inget under dem får namnges; vid 25 gäller det också MELLAN (10 kvinnor och 10 män).
-//  - BAS, åldersgrupp, AID (tre nivåer): den ensamma personen i Ensamyrke (BAS S1) står för nästan hela delen
-//    "AID inom åldersgrupp och BAS", så reserven slår till: ingen del och inget gruppnamn redovisas, bara hela skillnaden.
+// Sammanslagningen (ADR-84) gäller per nivå: en grupp där ett kön har färre än tröskeln räknas samman med andra grupper
+// under samma övergrupp, och den sammanslagna gruppen och allt under den namnges inte. Y1–Y3 och X har ett kön under
+// tröskeln i BAS:en, så inget under dem får namnges; vid 25 gäller det också MELLAN (10 kvinnor och 10 män).
+//  - BAS, åldersgrupp, AID (tre nivåer): delarna redovisas och summerar till hela skillnaden; den ensamma personen i
+//    Ensamyrke (BAS S1) räknas samman med andra, och inget små intervall namnges.
 //  - Åldersgrupp, BAS: delarna redovisas, och inga grupper under en övercell som inte klarar tröskeln namnges.
 // Rapportunderlagets block, kortet i exportläget och metodbilagan (Excel, Word) prövas mot de dolda värdena som i I4.
 // ===================================================================================
@@ -308,22 +308,21 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I7: uppdelningen med andra val av 
         }
         expect(lackor).toEqual([]);
     };
-    it('BAS, åldersgrupp, AID: reserven — ingen del och inget gruppnamn, och variablerna nämns', () => {
+    it('BAS, åldersgrupp, AID: delarna redovisas, små grupper räknas samman och namnges inte, och variablerna nämns', () => {
         const { u, utdata } = utdataFor(['bas', 'alder', 'aid']);
         expect(u.variabler).toEqual(['bas', 'alder', 'aid']);
-        expect(u.skyddad).toBe(false);
-        expect(u.delar).toBeNull();
-        expect(u.topp).toBeNull();
-        expect(utdata[0][1]).toMatch(/delas inte upp/);
-        expect(utdata[1][1]).toMatch(/delas inte upp/);
-        expect(utdata[1][1]).not.toMatch(/A\. BAS-fördelning/);
+        expect(Math.abs(Object.values(u.delar).reduce((s, v) => s + v, 0) - u.gap)).toBeLessThan(1e-6);
+        for (const n of Object.values(u.topp).flat().map(p => p.namn)) expect(smaBas.some(b => n.endsWith(`BAS ${b}`)), n).toBe(false);
+        expect(u.ovrigaAntal.A).toBeGreaterThan(0);
+        expect(utdata[0][1]).toContain('räknas samman med andra grupper innan delarna räknas');
+        expect(utdata[1][1]).toMatch(/A\. BAS-fördelning/);
+        expect(utdata[1][1]).toMatch(/namnges inte: ett kön har färre än \d+ personer/);
         expect(utdata[2][1]).toContain('delas med BAS, åldersgrupp och AID');
         ingaLackor(utdata);
     });
     it('åldersgrupp, BAS: delarna summerar till hela skillnaden, och inget under en för liten övercell namnges', () => {
         const { u, utdata } = utdataFor(['alder', 'bas']);
         expect(u.variabler).toEqual(['alder', 'bas']);
-        expect(u.skyddad).toBe(true);
         expect(Math.abs(Object.values(u.delar).reduce((s, v) => s + v, 0) - u.gap)).toBeLessThan(1e-6);
         const namn = Object.values(u.topp).flat().map(p => p.namn);
         expect(namn.length).toBeGreaterThan(0);

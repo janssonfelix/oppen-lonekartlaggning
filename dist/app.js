@@ -7957,7 +7957,7 @@ function gapOvrigaText(antal, k) {
         + `eller i ${en ? 'gruppen den' : 'grupperna de'} räknas samman med. ${en ? 'Den' : 'De'} ingår i summan.`;
 }
 
-    return { gapUppdelning, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, gapDelarIText, gapVariabelEtikett, gapVariablerIText, gapAllaVariabler, gapStandardVariabler };
+    return { gapUppdelning, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, gapDelarIText, gapVariabelEtikett, gapVariablerIText, gapAllaVariabler, gapStandardVariabler, gapOvrigaText };
 })();
 const _guGapUppdelning = __mirrorGapuppdelning.gapUppdelning;
 const _guNormaliseraVariabler = __mirrorGapuppdelning.normaliseraGapVariabler;
@@ -7968,6 +7968,7 @@ const _guVariabelEtikett = __mirrorGapuppdelning.gapVariabelEtikett;
 const _guVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
 const _guAllaVariabler = __mirrorGapuppdelning.gapAllaVariabler;
 const _guStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
+const _guOvrigaText = __mirrorGapuppdelning.gapOvrigaText;
 
 // ---- speglar src/lib/individflaggor.js ----
 const __mirrorIndivid = (() => {
@@ -8531,11 +8532,12 @@ function sektorAndelNot(a, k) {
     return `${stor(T.huvudomrade.bfl)} ${lista(a.sammanslagna)} räknas här samman, eftersom ${orsak}. ${varfor}`;
 }
 
-    return { sektorsTabell, sektorernasAndel, sektorJusteradText };
+    return { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot };
 })();
 const _skSektorsTabell = __mirrorSektor.sektorsTabell;
 const _skSektorernasAndel = __mirrorSektor.sektorernasAndel;
 const _skSektorJusteradText = __mirrorSektor.sektorJusteradText;
+const _skSektorAndelNot = __mirrorSektor.sektorAndelNot;
 
 // ---- speglar src/lib/ansvar.js ----
 const __mirrorAnsvar = (() => {
@@ -9087,6 +9089,7 @@ const __mirrorRapportunderlag = (() => {
     const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
     const personOrd = __mirrorNamn.personOrd;
     const sektorJusteradText = __mirrorSektor.sektorJusteradText;
+    const sektorAndelNot = __mirrorSektor.sektorAndelNot;
     const kvDefinitionText = __mirrorAidbas.kvDefinitionText;
     const gapDelar = __mirrorGapuppdelning.gapDelar;
     const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
@@ -9418,7 +9421,6 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const R = 'Var uppstår löneskillnaden?';
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} ${personOrd(k)} i urvalet.`], null);
         const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
-        if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} ${personOrd(k)} står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
         // Delarna och deras namn följer de valda variablerna (ADR-65); standardvalet BAS, AID ger texten från före.
         const variabler = u.variabler || gapStandardVariabler();
         const delar = gapDelar(variabler);
@@ -9431,10 +9433,13 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 : `Uppdelningen förklarar med variablerna ${gapVariablerIText(variabler)}, i den ordningen. Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.`);
         }
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
+        // Grupper där ett kön är under tröskeln räknas samman innan delarna räknas och namnges inte (ADR-84).
+        const ovriga = d => (u.ovrigaAntal && u.ovrigaAntal[d]) || 0;
+        if (delar.some(d => ovriga(d.id))) st.push(`Grupper där ett kön har färre än ${k} ${personOrd(k)} räknas samman med andra grupper innan delarna räknas, och de namnges inte. `
+            + `Annars skulle medellönen för färre än ${k} kvinnor eller män gå att räkna fram ur beloppen.`);
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
-        // Samma poster som kortet: listan är redan kortad efter skyddsregeln, och en kortare
-        // lista här kunde bryta den (gapuppdelning.js).
-        const storst = d => u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`).join('; ') || '—';
+        // Samma poster som kortet: gapuppdelning.js namnger bara grupper som inte räknats samman (ADR-84).
+        const storst = d => [...u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`), ...(ovriga(d) ? [`${_st(ovriga(d), 'grupp', 'grupper')} namnges inte`] : [])].join('; ') || '—';
         return blk(R, st, { rubriker: ['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag'], rader: [
             ...delar.map(d => [d.namn, _kr(u.delar[d.id]), andel(u.delar[d.id]), storst(d.id)]),
             ['Totalt', _kr(u.gap), u.litetGap ? '—' : '100 %', ''],
@@ -9503,9 +9508,11 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const justText = sektorJusteradText(alla);
         const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${justText.justeradFor}.`];
         const a = u.andel;
+        const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-84)
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
             ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
             : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
+        if (andelNot) st.push(andelNot);
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const ejBas = visas.filter(r => r.justeratSkal === 'ejBas').length;
@@ -27093,12 +27100,15 @@ function renderSektorer(d) {
             <td class="num" data-sort-value="${r.n}">${r.n}</td><td class="num" data-sort-value="${r.andelKv == null ? '' : r.andelKv.toFixed(1)}">${pc(r.andelKv)}</td><td class="num" data-sort-value="${r.skrAndelKv == null ? '' : r.skrAndelKv.toFixed(1)}">${pc(r.skrAndelKv)}</td>${loner}<td>${just}</td>
             <td class="num" data-sort-value="${r.antalAid}">${r.antalAid}</td><td class="num" data-sort-value="${r.punkter}">${r.punkter}</td>${ledning}</tr>`;
     }).join('');
-    const andelText = !andel || andel.andel == null ? ''
+    // Huvudområden där ett kön är under tröskeln räknas samman (ADR-84); noten säger vilka och varför.
+    const andelNot = _skSektorAndelNot(andel, kTroskel());
+    const andelText = (!andel || andel.andel == null ? ''
         : Math.abs(andel.andel) < 0.01
             ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror nästan inte alls
                på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).</p>`
             : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror
-               ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`;
+               ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`)
+        + (andelNot ? `<p class="sektor-andel">${esc(andelNot)}</p>` : '');
     host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${termStor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
         <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>${justText.rubrik}</th>
         <th>${termStor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
@@ -36212,12 +36222,6 @@ function renderGapUppdelning() {
     const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna') && r.lon > 0).map(r => r.lon));
     const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
-    if (!u.skyddad) {
-        body.innerHTML = demo + `<p class="gu-inledning">${inledning}${medianText}</p>`
-            + `<p class="gu-not">Skillnaden delas inte upp här: en grupp med färre än ${kTroskel()} ${personOrd(kTroskel())} står för så stor del av `
-            + 'en av delarna att dess bidrag annars skulle kunna räknas fram.</p>' + _guValHtml();
-        return;
-    }
     const delar = _guDelarMedAtgard(u.variabler || variabler);
     const max = Math.max(1, ...delar.map(x => Math.abs(u.delar[x.id])));
     const rader = delar.map(del => {
@@ -36227,8 +36231,8 @@ function renderGapUppdelning() {
         const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
         const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
-            // Dolda grupper redovisas bara med antal — deras summa kunde röja en enskild grupp.
-            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${u.ovrigaAntal[del.id]} ${u.ovrigaAntal[del.id] === 1 ? 'grupp' : 'grupper'} med färre än ${kTroskel()} ${personOrd(kTroskel())} ingår i summan</li>` : '');
+            // Grupper som räknats samman (ADR-84) redovisas bara med antal — deras belopp kunde röja en liten grupp.
+            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${esc(_guOvrigaText(u.ovrigaAntal[del.id], kTroskel()))}</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><svg class="gu-ruta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="2" fill="${farg}"/></svg><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
             <div class="gu-stapel" aria-hidden="true"><svg width="100%" height="10" focusable="false"><rect x="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" width="${bredd.toFixed(1)}%" height="10" rx="2" fill="${farg}"/></svg></div>
@@ -36244,14 +36248,14 @@ function renderGapUppdelning() {
         + rader
         + `<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade ${T.enhet.bfl} i Lika arbete, som sorteras efter skillnadens storlek.`
         // Med tröskeln 1 (skärmen, ADR-51) namnges alla grupper, och meningen om små grupper har inget att säga.
-        + (kTroskel() > 1 ? ` Grupper där ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} namnges inte.` : '') + '</p>';
+        + (kTroskel() > 1 ? ` Grupper där ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} räknas samman med andra grupper och namnges inte.` : '') + '</p>';
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 
 // Uppdelningen som trappa i omvänd ordning: hela skillnaden först, sedan delarna (A, B, … en per vald variabel
 // och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
-// under, och aldrig en enskild grupps bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas
-// bara när `u.skyddad`). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
+// under, och aldrig en enskild grupps bidrag (i exportläget räknas grupper där ett kön är under tröskeln samman först,
+// ADR-84). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
 const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
 /** Delens andel av hela skillnaden i procent, eller null när den inte säger något: en liten skillnad (`litetGap`), en
  * del som går åt andra hållet än helheten eller en del som är större än helheten. @param {any} u @param {number} v */

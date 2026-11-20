@@ -5472,7 +5472,7 @@ function gapOvrigaText(antal, k) {
         + `eller i ${en ? 'gruppen den' : 'grupperna de'} räknas samman med. ${en ? 'Den' : 'De'} ingår i summan.`;
 }
 
-    return { gapUppdelning, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, gapDelarIText, gapVariabelEtikett, gapVariablerIText, gapAllaVariabler, gapStandardVariabler };
+    return { gapUppdelning, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, gapDelarIText, gapVariabelEtikett, gapVariablerIText, gapAllaVariabler, gapStandardVariabler, gapOvrigaText };
 })();
 const _guGapUppdelning = __mirrorGapuppdelning.gapUppdelning;
 const _guNormaliseraVariabler = __mirrorGapuppdelning.normaliseraGapVariabler;
@@ -5483,6 +5483,7 @@ const _guVariabelEtikett = __mirrorGapuppdelning.gapVariabelEtikett;
 const _guVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
 const _guAllaVariabler = __mirrorGapuppdelning.gapAllaVariabler;
 const _guStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
+const _guOvrigaText = __mirrorGapuppdelning.gapOvrigaText;
 
 // ---- speglar src/lib/individflaggor.js ----
 const __mirrorIndivid = (() => {
@@ -6046,11 +6047,12 @@ function sektorAndelNot(a, k) {
     return `${stor(T.huvudomrade.bfl)} ${lista(a.sammanslagna)} räknas här samman, eftersom ${orsak}. ${varfor}`;
 }
 
-    return { sektorsTabell, sektorernasAndel, sektorJusteradText };
+    return { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot };
 })();
 const _skSektorsTabell = __mirrorSektor.sektorsTabell;
 const _skSektorernasAndel = __mirrorSektor.sektorernasAndel;
 const _skSektorJusteradText = __mirrorSektor.sektorJusteradText;
+const _skSektorAndelNot = __mirrorSektor.sektorAndelNot;
 
 // ---- speglar src/lib/ansvar.js ----
 const __mirrorAnsvar = (() => {
@@ -6602,6 +6604,7 @@ const __mirrorRapportunderlag = (() => {
     const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
     const personOrd = __mirrorNamn.personOrd;
     const sektorJusteradText = __mirrorSektor.sektorJusteradText;
+    const sektorAndelNot = __mirrorSektor.sektorAndelNot;
     const kvDefinitionText = __mirrorAidbas.kvDefinitionText;
     const gapDelar = __mirrorGapuppdelning.gapDelar;
     const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
@@ -6933,7 +6936,6 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const R = 'Var uppstår löneskillnaden?';
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} ${personOrd(k)} i urvalet.`], null);
         const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
-        if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} ${personOrd(k)} står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
         // Delarna och deras namn följer de valda variablerna (ADR-65); standardvalet BAS, AID ger texten från före.
         const variabler = u.variabler || gapStandardVariabler();
         const delar = gapDelar(variabler);
@@ -6946,10 +6948,13 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 : `Uppdelningen förklarar med variablerna ${gapVariablerIText(variabler)}, i den ordningen. Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.`);
         }
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
+        // Grupper där ett kön är under tröskeln räknas samman innan delarna räknas och namnges inte (ADR-84).
+        const ovriga = d => (u.ovrigaAntal && u.ovrigaAntal[d]) || 0;
+        if (delar.some(d => ovriga(d.id))) st.push(`Grupper där ett kön har färre än ${k} ${personOrd(k)} räknas samman med andra grupper innan delarna räknas, och de namnges inte. `
+            + `Annars skulle medellönen för färre än ${k} kvinnor eller män gå att räkna fram ur beloppen.`);
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
-        // Samma poster som kortet: listan är redan kortad efter skyddsregeln, och en kortare
-        // lista här kunde bryta den (gapuppdelning.js).
-        const storst = d => u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`).join('; ') || '—';
+        // Samma poster som kortet: gapuppdelning.js namnger bara grupper som inte räknats samman (ADR-84).
+        const storst = d => [...u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`), ...(ovriga(d) ? [`${_st(ovriga(d), 'grupp', 'grupper')} namnges inte`] : [])].join('; ') || '—';
         return blk(R, st, { rubriker: ['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag'], rader: [
             ...delar.map(d => [d.namn, _kr(u.delar[d.id]), andel(u.delar[d.id]), storst(d.id)]),
             ['Totalt', _kr(u.gap), u.litetGap ? '—' : '100 %', ''],
@@ -7018,9 +7023,11 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const justText = sektorJusteradText(alla);
         const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${justText.justeradFor}.`];
         const a = u.andel;
+        const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-84)
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
             ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
             : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
+        if (andelNot) st.push(andelNot);
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const ejBas = visas.filter(r => r.justeratSkal === 'ejBas').length;

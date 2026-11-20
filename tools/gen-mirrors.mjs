@@ -198,7 +198,7 @@ export const MODULES = [
         file: 'gapuppdelning.js', ns: '__mirrorGapuppdelning',
         expose: { gapUppdelning: '_guGapUppdelning', normaliseraGapVariabler: '_guNormaliseraVariabler', gapVariablerArStandard: '_guVariablerArStandard',
                   gapDelar: '_guDelar', gapDelarIText: '_guDelarIText', gapVariabelEtikett: '_guVariabelEtikett', gapVariablerIText: '_guVariablerIText', gapAllaVariabler: '_guAllaVariabler',
-                  gapStandardVariabler: '_guStandardVariabler' }
+                  gapStandardVariabler: '_guStandardVariabler', gapOvrigaText: '_guOvrigaText' }
     },
     {
         file: 'individflaggor.js', ns: '__mirrorIndivid',
@@ -217,7 +217,7 @@ export const MODULES = [
     },
     {
         file: 'sektor.js', ns: '__mirrorSektor',
-        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel', sektorJusteradText: '_skSektorJusteradText' }
+        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel', sektorJusteradText: '_skSektorJusteradText', sektorAndelNot: '_skSektorAndelNot' }
     },
     {
         file: 'ansvar.js', ns: '__mirrorAnsvar',
