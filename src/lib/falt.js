@@ -9,7 +9,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { sektorsnamn, mellannivaEtikett } from './aid.js';
+import { sektorsnamn, mellannivaEtikett, aidAvRad } from './aid.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
 import { arKvinna, arMan } from './kon.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
@@ -76,4 +76,26 @@ export function groupKey(row, dim) {
     if (dim === 'sektor') return sektorsnamn(row.aid);
     if (dim === 'aidniva') return mellannivaEtikett(row.aid) ?? OKAND_AID_KOD;
     return null;
+}
+
+/**
+ * Gruppnycklarna för ett underlag: som groupKey, men dimensionerna 'aid' och 'aidbas' grupperar på AID-koden
+ * (aidAvRad), inte på texten i fältet för AID-etikett. Kodens namn är groupKey(rad, 'aid') för den första raden i
+ * underlaget med koden, så att två stavningar av samma etikett blir en grupp med ett namn. För ett underlag där varje
+ * kod har en enda text är nycklarna desamma som groupKey ger.
+ * @param {any[]} rader
+ * @returns {(row: any, dim: string) => (string|null)}
+ */
+export function gruppnycklar(rader) {
+    const namn = new Map();
+    for (const r of rader || []) {
+        const kod = aidAvRad(r);
+        if (!namn.has(kod)) namn.set(kod, groupKey(r, 'aid'));
+    }
+    const aidNamn = row => namn.get(aidAvRad(row)) ?? groupKey(row, 'aid');
+    return (row, dim) => {
+        if (dim === 'aid') return aidNamn(row);
+        if (dim === 'aidbas') return `${aidNamn(row)} · BAS ${row.bas || '—'}`;
+        return groupKey(row, dim);
+    };
 }

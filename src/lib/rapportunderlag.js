@@ -22,6 +22,7 @@ import { kvDefinitionText } from './aidbas.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
 import { arKvinna } from './kon.js';
+import { aidAvRad } from './aid.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -45,25 +46,30 @@ export function bortvaltNotering(b) {
  * status (ADR-59, src/lib/status.js): `niva` är 'granska', 'folj', 'balanserat' eller 'ejbedomd' (ett kön under
  * `golv`); `flaggad` är detsamma som Värt att granska. `direktiv` är direktivmarkeringen på den ojusterade
  * medianskillnaden (minst 5 %), oberoende av statusen. Stabiliteten prövas mot statusens storleksgräns (3 %).
+ * En grupp är AID-koden (aidAvRad), inte texten i fältet för AID-etikett: två stavningar av samma etikett är en grupp.
+ * Gruppen samlar koden över alla BAS-intervall i raderna (tabellen per AID-etikett; anroparen skickar ett intervalls
+ * rader när gruppen ska vara koden i intervallet). `yrke` är gruppens namn, texten på dess första rad, och `aid` koden;
+ * `utelamnade` och `ejJamforbara` bär namnen.
  * @param {any[]} rader
  * @param {{k:number, golv?:number}} opts
  * @returns {{grupper: any[], utelamnade: string[], ejJamforbara: string[]}}
  */
 export function likaArbeteGrupper(rader, { k, golv = 10 }) {
-    const perYrke = new Map();
+    const perKod = new Map();
     for (const r of rader || []) {
-        if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, { kv: [], ma: [] });
-        if (arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
-        else if (_arMan(r)) perYrke.get(r.yrke).ma.push(r.lon);
+        const aid = aidAvRad(r);
+        if (!perKod.has(aid)) perKod.set(aid, { yrke: r.yrke, kv: [], ma: [] });
+        if (arKvinna(r)) perKod.get(aid).kv.push(r.lon);
+        else if (_arMan(r)) perKod.get(aid).ma.push(r.lon);
     }
     const grupper = [], utelamnade = [], ejJamforbara = [];
-    for (const [yrke, { kv, ma }] of perYrke) {
+    for (const [aid, { yrke, kv, ma }] of perKod) {
         if (kv.length < 2 || ma.length < 2) { ejJamforbara.push(yrke); continue; }
         const tot = kv.length + ma.length;
         const nagotLitet = kv.length < k || ma.length < k;
         if (nagotLitet && tot < k) { utelamnade.push(yrke); continue; }
         if (nagotLitet) {
-            grupper.push({ yrke, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
+            grupper.push({ yrke, aid, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
                 gapPct: 0, medTot: median(kv.concat(ma)) });
             continue;
         }
@@ -73,7 +79,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
         const kvot = medKv / medMa;
         const gapPct = Math.abs(kvot * 100 - 100);
         const b = bedomSkillnad(kv, ma, { golv });
-        const g = { yrke, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
+        const g = { yrke, aid, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
             medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för

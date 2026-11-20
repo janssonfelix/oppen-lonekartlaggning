@@ -63,6 +63,18 @@ export function aidAvYrke(yrke) {
     return sifferprefixAvYrke(yrke) ?? String(yrke ?? '');
 }
 
+/**
+ * AID-koden som en lönerad grupperas på: aidAvYrke(r.yrke), och för en rad utan text i fältet radens `aid` (inläsningen
+ * tar `aid` ur samma sifferprefix, så för en inläst rad är de samma). En grupp är AID-koden i BAS-intervallet i hela
+ * verktyget, aldrig texten i fältet: två stavningar av samma etikett är en grupp, och en rad utan kod grupperas på sin
+ * text.
+ * @param {{aid?:any, yrke?:any}|null|undefined} r
+ */
+export function aidAvRad(r) {
+    if (!r) return '';
+    return r.yrke != null && r.yrke !== '' ? aidAvYrke(r.yrke) : String(r.aid ?? '');
+}
+
 /** Huvudområdet för en AID-kod, eller null. */
 export function huvudomrade(aid) {
     const k = normaliseraAid(aid);

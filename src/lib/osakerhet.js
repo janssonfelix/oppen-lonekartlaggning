@@ -30,6 +30,7 @@ import { slumpensGranser } from './status.js';
 import { bootstrapMedianer } from './likvardighet.js';
 import { kvantilDesign, quantileRegression } from './regression.js';
 import { arKvinna, arMan } from './kon.js';
+import { aidAvRad } from './aid.js';
 
 /** Antalet dragningar i intervallet för hela organisationen (Översikt). */
 export const B_ORGANISATION = 2000;
@@ -247,8 +248,8 @@ export function styrkeanalys(rader, golv) {
 }
 
 /**
- * Poolad standardavvikelse av residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom
- * BAS med minst `golv` av varje kön. Frihetsgraderna är antalet residualer minus två medianer per grupp.
+ * Poolad standardavvikelse av residualerna log(lön) − log(gruppens median per kön) över alla grupper (AID-kod i
+ * BAS-intervallet, aidAvRad) med minst `golv` av varje kön. Frihetsgraderna är antalet residualer minus två medianer per grupp.
  * @param {Array<{lon:number, yrke?:any, bas?:any}>} d  rader med lön över noll
  * @param {(r: any) => boolean} arKv
  * @param {(r: any) => boolean} arMa
@@ -261,7 +262,7 @@ export function sigmaInomGrupp(d, arKv, arMa, golv) {
     for (const r of d) {
         const kv = arKv(r), ma = arMa(r);
         if (!kv && !ma) continue;
-        const nyckel = `${r.yrke}|${r.bas}`;
+        const nyckel = `${aidAvRad(r)}|${r.bas}`;   // AID-koden i BAS-intervallet, som trattUnderlag
         if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { kv: [], ma: [] });
         /** @type {{kv: number[], ma: number[]}} */ (perGrupp.get(nyckel))[kv ? 'kv' : 'ma'].push(r.lon);
     }

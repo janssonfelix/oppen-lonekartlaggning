@@ -21,7 +21,7 @@
  * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 import { median, quantile } from './stat.js';
-import { sektorsnamn } from './aid.js';
+import { sektorsnamn, aidAvRad } from './aid.js';
 import { statistikFor } from './jamforelse.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
 import { kompletterandeUndertryckning } from './undertryckning.js';
@@ -146,9 +146,10 @@ export function perBasTabeller(rader, opt = {}) {
         if (ref && (ref.p10 != null || ref.med != null || ref.p90 != null)) rad.push({ typ: 'referens', namn: referensNamn, n: null, p10: ref.p10 ?? null, med: ref.med ?? null, p90: ref.p90 ?? null });
         const org = visa.has('organisation') ? _matt(df) : null;
         if (org) rad.push({ typ: 'organisation', namn: 'Organisationen', ...(medelDold ? utanMedel(org) : org) });
-        // Yrkesgrupperna, största först; under varje yrke dess rad i jämförelsestatistiken.
+        // Yrkesgrupperna, största först; under varje yrke dess rad i jämförelsestatistiken. Gruppen är AID-koden
+        // (aidAvRad), och en rad utan kod grupperas på sin text.
         const perYrke = new Map();
-        df.forEach(r => { const key = String(r.aid ?? r.yrke ?? ''); if (!perYrke.has(key)) perYrke.set(key, []); perYrke.get(key).push(r); });
+        df.forEach(r => { const key = aidAvRad(r); if (!perYrke.has(key)) perYrke.set(key, []); perYrke.get(key).push(r); });
         const yrken = [...perYrke.entries()].sort((a, b) => b[1].length - a[1].length || yrkesnamn(a[1][0]).localeCompare(yrkesnamn(b[1][0]), 'sv'));
         // Organisationens rad minus yrkesgruppernas ger de utelämnade yrkesgruppernas medellön: samma regel inom intervallet.
         // En yrkesgrupp utan någon lön har inget medel och räknas varken som visad eller som dold.

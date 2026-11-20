@@ -50,7 +50,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |---|---|---|
 | Statistik | `stat` | – |
 |  | `rng` | – |
-|  | `osakerhet` | `kon`, `likvardighet`, `regression`, `rng`, `stat`, `status` |
+|  | `osakerhet` | `aid`, `kon`, `likvardighet`, `regression`, `rng`, `stat`, `status` |
 |  | `status` | `rng`, `stat` |
 | Regression | `regression` | `kon`, `namn`, `stat`, `termer` |
 |  | `gapuppdelning` | `falt`, `namn`, `termer`, `undertryckning` |
@@ -58,7 +58,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 | Lika och likvärdigt arbete | `likvardighet` | `kon`, `rng`, `stat`, `status` |
 |  | `aidbas` | `kon`, `likvardighet`, `stat` |
 |  | `perbas` | `aid`, `jamforelse`, `kon`, `stat`, `termer`, `undertryckning` |
-|  | `individflaggor` | `falt` |
+|  | `individflaggor` | `aid`, `falt` |
 | Struktur och rapportmått | `struktur` | `kon`, `stat` |
 |  | `sektor` | `aid`, `falt`, `namn`, `regression`, `skrreferens`, `stat`, `termer`, `undertryckning` |
 | Referenser och jämförelse | `referens` | – |
@@ -89,7 +89,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `htmltext` | – |
 | Diagram, rapport och utforskning | `figur` | `kon`, `stat` |
 |  | `docx` | `htmltext` |
-|  | `rapportunderlag` | `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `termer` |
+|  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `termer` |
 |  | `arsbokslut` | `sakligaskal`, `stat`, `termer` |
 |  | `tabellrecept` | `namn`, `termer`, `utforska` |
 |  | `utforska` | `aid`, `falt`, `stat`, `termer`, `urval` |

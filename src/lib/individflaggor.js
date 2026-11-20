@@ -17,6 +17,7 @@
  */
 
 import { groupKey, konOf } from './falt.js';
+import { aidAvRad } from './aid.js';
 
 // Median av en sorterad lista där ett exemplar av värdet v tas bort.
 function _medianUtan(sorterad, v) {
@@ -66,7 +67,9 @@ export function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
         if (!(r.lon > 0) || (harAlder && !(r.alder > 0))) continue;
         const kon = konOf(r);
         if (kon !== 'Kvinna' && kon !== 'Man') continue;
-        const nyckel = `${groupKey(r, 'aid')}\u0000${r.bas}`;
+        // Gruppen är AID-koden i BAS-intervallet (aidAvRad), inte texten i fältet: två stavningar av samma etikett
+        // är samma kollegor. Posten bär personens egen text i `aid`.
+        const nyckel = `${aidAvRad(r)}\u0000${r.bas}`;
         if (!grupper.has(nyckel)) grupper.set(nyckel, []);
         grupper.get(nyckel).push(r);
     }

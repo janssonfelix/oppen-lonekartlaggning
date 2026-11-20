@@ -14,7 +14,7 @@
  * (tools/gen-mirrors.mjs). Ändra här och kör `npm run build:app`.
  */
 import { median, quantile } from './stat.js';
-import { groupKey, konOf, jamforAldersgrupp, jamforLonespann } from './falt.js';
+import { gruppnycklar, konOf, jamforAldersgrupp, jamforLonespann } from './falt.js';
 import { jamforSektor, mellannivaEtikett, huvudomrade } from './aid.js';
 import { personFilter, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
 import { skapaTermer, ordForAntal } from './termer.js';
@@ -77,13 +77,16 @@ function _sortera(dim, etiketter, varden, matt) {
 /**
  * Hopslagning av små AID-grupper (bara i Utforska, ADR-33): grupper under k slås
  * ihop per AID-mellannivå; räcker inte summan, per sektor. Grupper som fortfarande är under k
- * behåller sin nyckel (och visas som små). Nyckel = groupKey(r, 'aid').
+ * behåller sin nyckel (och visas som små). Nyckel = AID-etiketten, grupperad på koden (gruppnycklar i falt.js).
+ * @param {any[]} rows
+ * @param {number} k
+ * @param {(row: any, dim: string) => (string|null)} [nyckel] gruppnycklarna för underlaget; standard gruppnycklar(rows)
  * @returns {Map<string, string>} aid-nyckel → ersättningsnyckel ("Övriga i AID 2070xx (2 yrken)")
  */
-export function slaIhopSmaAid(rows, k) {
+export function slaIhopSmaAid(rows, k, nyckel = gruppnycklar(rows)) {
     const n = new Map(), aidAv = new Map();
     for (const r of rows || []) {
-        const key = groupKey(r, 'aid');
+        const key = nyckel(r, 'aid');
         n.set(key, (n.get(key) || 0) + 1);
         aidAv.set(key, r.aid);
     }
@@ -123,23 +126,26 @@ export function computePivot(rows, spec, { k = 10 } = {}) {
     const urvalSpec = spec.urval || { lage: 'alla', villkor: [] };
     const gruppVillkor = spec.gruppVillkor || [];
     const aktivaGrupp = gruppVillkor.filter(g => gruppVillkorAktivt(g) && MATT.includes(g.matt));
-    const person = personFilter(urvalSpec);
+    // AID-etiketten grupperas på koden, med namnet från kodens första rad i hela underlaget (inte bara urvalet), så
+    // att pivoten, villkoren och värdelistorna i appen har samma namn på samma grupp.
+    const gruppnyckel = gruppnycklar(rows);
+    const person = personFilter(urvalSpec, gruppnyckel);
 
     const urvalRader = (rows || []).filter(r => r.lon > 0 && person(r));
     // Hopslagning av små AID-grupper, bara när raderna är AID (ADR-33).
-    const ersatt = spec.slaIhop && rad === 'aid' ? slaIhopSmaAid(urvalRader, k) : null;
+    const ersatt = spec.slaIhop && rad === 'aid' ? slaIhopSmaAid(urvalRader, k, gruppnyckel) : null;
     const urval = { n: urvalRader.length, nKv: 0, nMa: 0 };
     const cellHinkar = new Map(), radHinkar = new Map(), kolHinkar = new Map();
     for (const r of urvalRader) {
         const ko = konOf(r);
         if (ko === 'Kvinna') urval.nKv++;
         else if (ko === 'Man') urval.nMa++;
-        const rk0 = groupKey(r, rad);
+        const rk0 = gruppnyckel(r, rad);
         const rk = ersatt && ersatt.has(rk0) ? ersatt.get(rk0) : rk0;
         if (rk == null) continue;
         let kk = null;
         if (kol) {
-            kk = groupKey(r, kol);
+            kk = gruppnyckel(r, kol);
             if (kk == null) continue;
         }
         const nyckel = kol ? rk + '\u0000' + kk : rk;

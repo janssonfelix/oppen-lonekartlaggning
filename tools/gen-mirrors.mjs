@@ -58,7 +58,7 @@ export const MODULES = [
     {
         file: 'aid.js', ns: '__mirrorAid',
         expose: {
-            normaliseraAid: null, aidAvYrke: 'aidAvYrke', sifferprefixAvYrke: 'sifferprefixAvYrke', huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
+            normaliseraAid: null, aidAvYrke: 'aidAvYrke', aidAvRad: 'aidAvRad', sifferprefixAvYrke: 'sifferprefixAvYrke', huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
             arRestkod: null, arLedningsetikett: null,
             jamforSektor: '_aidJamforSektor', etikettlistaInfo: '_aidEtikettlistaInfo'
         }
@@ -202,7 +202,7 @@ export const MODULES = [
     },
     {
         file: 'falt.js', ns: '__mirrorFalt',
-        expose: { groupKey: '_utGroupKey', konOf: '_utKonOf', jamforAldersgrupp: '_faltJamforAlder', jamforLonespann: null }
+        expose: { groupKey: '_utGroupKey', gruppnycklar: '_utGruppnycklar', konOf: '_utKonOf', jamforAldersgrupp: '_faltJamforAlder', jamforLonespann: null }
     },
     {
         file: 'urval.js', ns: '__mirrorUrval',

@@ -72,25 +72,31 @@ export function villkorAktivt(v) {
     return TAL_OP.includes(v.op) && _grans(v.op, v.varde) !== null;
 }
 
-// Radens värde i fältet, eller null om det saknas.
-function _radVarde(rad, falt) {
+// Radens värde i fältet, eller null om det saknas. `nyckel` ger kategorins värde (groupKey, eller gruppnycklar(rader)
+// i falt.js, som grupperar AID-etiketten på koden).
+function _radVarde(rad, falt, nyckel) {
     const f = FALT[falt];
-    if (f.typ === 'kategori') return groupKey(rad, f.dim);
+    if (f.typ === 'kategori') return nyckel(rad, f.dim);
     const x = Number(rad[falt]);
     return (rad[falt] == null || !isFinite(x) || x <= 0) ? null : x;
 }
-function _uppfyller(rad, v) {
-    const x = _radVarde(rad, v.falt);
+function _uppfyller(rad, v, nyckel) {
+    const x = _radVarde(rad, v.falt, nyckel);
     if (x == null) return false;
     const traff = FALT[v.falt].typ === 'kategori' ? v.varde.includes(x) : _jamfor(x, v.op, _grans(v.op, v.varde));
     return v.inte ? !traff : traff;
 }
 
-export function personFilter(urval) {
+/**
+ * @param {any} urval
+ * @param {(row: any, dim: string) => (string|null)} [nyckel] kategorins värde för en rad; gruppnycklar(rader) så att
+ *        villkoren läser samma grupper som pivoten
+ */
+export function personFilter(urval, nyckel = groupKey) {
     const aktiva = ((urval && urval.villkor) || []).filter(villkorAktivt);
     if (!aktiva.length) return () => true;
-    if (urval.lage === 'nagot') return rad => aktiva.some(v => _uppfyller(rad, v));
-    return rad => aktiva.every(v => _uppfyller(rad, v));
+    if (urval.lage === 'nagot') return rad => aktiva.some(v => _uppfyller(rad, v, nyckel));
+    return rad => aktiva.every(v => _uppfyller(rad, v, nyckel));
 }
 
 export function gruppVillkorAktivt(g) {
