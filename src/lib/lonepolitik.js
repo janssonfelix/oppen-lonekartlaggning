@@ -8,7 +8,7 @@
  * Separat från app.js för att kunna testas via Vitest utan DOM/state; app.js
  * får en AUTO-GENERERAD spegel (`_lp*` i src/app/09-lib-speglar.js via
  * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej
- * spegeln (vaktas av tests/drift.test.js).
+ * spegeln (vaktas av artefaktgrinden).
  *
  * Själva uppslaget (vilken policyrad som gäller för en grupp) görs av
  * policyFor() i app.js, eftersom det läser state. Här hanteras bara matematiken

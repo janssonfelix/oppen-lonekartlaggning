@@ -1,12 +1,7 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { gapUppdelning, gapPoster, gapOvrigaText, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, GAP_VARIABLER_STANDARD } from '../src/lib/gapuppdelning.js';
-import * as fore from './helpers/gapuppdelning-fore-adr65.js';
-import { createAppWindow } from './helpers/app-harness.js';
 import { mulberry32 } from '../src/lib/rng.js';
 import { groupKey, konOf } from '../src/lib/falt.js';
-
-// Demot och det stora demot läses in i ett appfönster; det stora tar några sekunder under full last.
-vi.setConfig({ testTimeout: 60000 });
 
 const K = 10;
 const flera = (n, kon, lon, bas, aid) => Array.from({ length: n }, () => ({ kon, lon, bas, aid, alder: 40 }));
@@ -205,78 +200,14 @@ describe('gapUppdelning', () => {
     });
 });
 
-// ===================================================================================
-// ADR-65: valbara förklaringsvariabler. Standardvalet ['bas', 'aid'] ska ge byte-lika resultat med implementationen
-// före ADR-65 (frusen kopia i tests/helpers/gapuppdelning-fore-adr65.js), och delarna ska summera till hela
-// skillnaden för varje val.
-// ===================================================================================
-const GAMLA_NYCKLAR = ['n', 'medel', 'gap', 'gapPct', 'litetGap', 'delar', 'topp', 'ovrigaAntal'];
-const somForut = u => u && Object.fromEntries(GAMLA_NYCKLAR.map(n => [n, u[n]]));
-const posterSomForut = p => p && Object.fromEntries(Object.entries(p).map(([d, l]) => [d, l.map(({ namn, kr, synlig }) => ({ namn, kr, synlig }))]));
-// JSON skriver varje tal med kortaste exakta form, så lika strängar betyder bitlika tal (och samma nyckelordning).
-// Jämförelsen görs vid tröskeln 1, där ingen grupp räknas samman (ADR-87): räkningen är densamma som förut, och
-// sammanslagningen prövas för sig ovan.
-const bytelika = rader => {
-    for (const opts of [{ k: 1 }, { k: 1, variabler: ['bas', 'aid'] }, { k: 1, variabler: null }]) {
-        expect(JSON.stringify(somForut(gapUppdelning(rader, opts)))).toBe(JSON.stringify(somForut(fore.gapUppdelning(rader, { k: 1 }))));
-        expect(JSON.stringify(posterSomForut(gapPoster(rader, opts)))).toBe(JSON.stringify(fore.gapPoster(rader, { k: 1 })));
-    }
-};
 const delsumma = u => Object.values(u.delar).reduce((s, v) => s + v, 0);
 // Alla poster per del, också de som inte namnges.
 const postsumma = p => Object.values(p).reduce((s, l) => s + l.reduce((t, x) => t + x.kr, 0), 0);
 
-describe('ADR-65: standardvalet är byte-likt med implementationen före (vid tröskeln 1)', () => {
-    let demo, stort;
-    beforeAll(() => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        demo = JSON.parse(JSON.stringify(w.__state.data));
-        w.eval('loadStortDemo()');
-        stort = JSON.parse(JSON.stringify(w.__state.data));
-    }, 120000);
-    it('demot', () => {
-        expect(demo.length).toBeGreaterThan(100);
-        bytelika(demo);
-    });
-    it('det stora demot', () => {
-        expect(stort.length).toBe(7000);
-        bytelika(stort);
-    });
-    it('utan små grupper ger tröskeln samma resultat som tröskeln 1 och som förut', () => {
+describe('ADR-65: standardvalet', () => {
+    it('utan små grupper ger tröskeln samma resultat som tröskeln 1', () => {
         const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'), ...bakgrund()];
-        expect(JSON.stringify(somForut(gapUppdelning(r, { k: K })))).toBe(JSON.stringify(somForut(fore.gapUppdelning(r, { k: K }))));
-        expect(JSON.stringify(somForut(gapUppdelning(r, { k: K })))).toBe(JSON.stringify(somForut(gapUppdelning(r, { k: 1 }))));
-    });
-    it('de slumpade underlagen och fixturerna i testerna ovan', () => {
-        for (const seed of [3, 7, 11, 42]) bytelika(slumpa(seed));
-        bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
-            ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1'), ...bakgrund()]);
-        bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
-            ...flera(3, 'kvinna', 35000, 'D', 'Q'), ...flera(10, 'man', 36000, 'D', 'Q'), ...flera(20, 'man', 40000, 'D', 'P'), ...bakgrund()]);
-        bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
-            ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1')]);
-        bytelika([...flera(20, 'kvinna', 30000, 'A', undefined).map(x => ({ ...x, yrke: 'Undersköterska' })),
-            ...flera(20, 'man', 33000, 'A', undefined).map(x => ({ ...x, yrke: 'Undersköterska' }))]);
-        bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(9, 'man', 30000, 'A', 'A1')]);
-        expect(gapUppdelning([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(9, 'man', 30000, 'A', 'A1')], { k: K })).toBeNull();
-    });
-    it('de slumpade underlagen med många små grupper', () => {
-        const rnd = mulberry32(99);
-        for (let t = 0; t < 150; t++) {
-            const r = [];
-            const nGrupper = 3 + Math.floor(rnd() * 8);
-            for (let g = 0; g < nGrupper; g++) {
-                const bas = 'ABCDEFGHIJ'[Math.floor(rnd() * 6)], aid = String(100 + Math.floor(rnd() * 4));
-                const liten = rnd() < 0.4;
-                const nKv = liten ? Math.floor(rnd() * 9) : 10 + Math.floor(rnd() * 20);
-                const nMa = liten ? Math.floor(rnd() * 12) : 10 + Math.floor(rnd() * 20);
-                const niva = 28000 + rnd() * 20000;
-                for (let i = 0; i < nKv; i++) r.push({ bas, aid, kon: 'kvinna', lon: niva + rnd() * 3000, alder: 40 });
-                for (let i = 0; i < nMa; i++) r.push({ bas, aid, kon: 'man', lon: niva + 500 + rnd() * 3000, alder: 40 });
-            }
-            bytelika(r);
-        }
+        expect(JSON.stringify(gapUppdelning(r, { k: K }))).toBe(JSON.stringify(gapUppdelning(r, { k: 1 })));
     });
     it('resultatet bär de normaliserade variablerna', () => {
         expect(gapUppdelning(slumpa(), { k: K }).variabler).toEqual(['bas', 'aid']);

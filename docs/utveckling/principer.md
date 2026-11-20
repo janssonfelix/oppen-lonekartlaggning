@@ -18,12 +18,13 @@ för området, och varför det blev så i [`arkitekturbeslut.md`](arkitekturbesl
    jämförs med det incheckade, det skrivs inte av. Varje sak prövas av en kontroll, och säkerhetsgranskningen står
    samlad i `docs/dataskydd/riskanalys.md`.
    *Vakt:* `tests/drift.test.js`, `tests/version.test.js`, `tests/farger.test.js`, `tests/termer.test.js`,
-   `tests/appsource.test.js`, `tests/dokumentation-struktur.test.js` och artefaktgrinden i `.github/workflows/ci.yml`.
+   `tests/dokumentation-struktur.test.js` och artefaktgrinden (`tools/kontroll.mjs` och `.github/workflows/ci.yml`), som
+   prövar de genererade filerna i `dist/` och `src/app/`.
 5. **Bygget går att lita på.** En färsk build ger samma fil som den incheckade, biblioteken är låsta med
    kontrollsummor, och en release signeras av arbetsflödet ur taggen.
    *Vakt:* artefaktgrinden i `.github/workflows/ci.yml`, `tests/sakerhet.test.js`, release-grinden
    (`tools/release.mjs`, `tests/release.test.js`).
 6. **Tillgängligt och begripligt.** Gränssnittet följer WCAG 2.1 AA, och det användaren läser är skrivet på
    klarspråk.
-   *Vakt:* `tests/a11y.test.js`, statusfärgernas kontrast i `tests/sakerhet.test.js`,
+   *Vakt:* `tests/a11y.test.js`, statusfärgernas kontrast i `tests/farger.test.js`,
    `tests/dokumentation-sprak.test.js`. Övrig färgkontrast och om en text är begriplig prövas för hand.
