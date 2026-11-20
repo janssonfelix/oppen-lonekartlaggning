@@ -115,7 +115,8 @@ function _forecastOlsGap(origRows, simRows) {
 }
 // Kostnadsinställningarna som prognosen räknas med.
 function _fcKostnadsval() {
-    return { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
+    const { months, poPct } = _kostFaktor(state.costSettings);
+    return { months, poPct, roundStep: state.forecast.roundStep || 0,
              kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
 }
 /**
@@ -803,11 +804,9 @@ function _forecastThreshold() {
     if (!okFor(evalLift(hi))) { host.innerHTML = `<span class="f-kritisk">Mer än 40 % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
     for (let it = 0; it < 22; it++) { const mid = (lo + hi) / 2; if (okFor(evalLift(mid))) hi = mid; else lo = mid; }
     const res = evalLift(hi);
-    const months = (state.costSettings && state.costSettings.months) || 12;
-    const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
     host.innerHTML = `<div class="fs-sm lh-1_6">
         För att nå <strong>${useSig ? 'en oförklarad skillnad som inte är signifikant (p över 0,05)' : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
-        <br>Kostnad: <strong>≈ ${Math.round(res.cost).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(res.cost * months * poFactor).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${res.konPct == null ? '–' : svPct(res.konPct, 2)}.
+        <br>Kostnad: <strong>≈ ${Math.round(res.cost).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(_kostPeriod(res.cost, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${res.konPct == null ? '–' : svPct(res.konPct, 2)}.
         <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
     </div>`;
 }
@@ -839,8 +838,7 @@ function _forecastSensitivity() {
     _forecastReadControls();
     const cand = _fcKandidater();
     if (!cand.length) { host.innerHTML = '<span class="text-dampad-sm">Verktyget hittade inga skillnader i likvärdigt arbete att räkna på.</span>'; return; }
-    const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
-                   kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
+    const cost = _fcKostnadsval();   // samma kostnadsinställningar och definition av kvinnodominerat som prognosen
     const curve = _fcSensitivityCurve(d, cand, cost, 10);
     if (!_konFarRedovisasFor(d)) curve.forEach(c => { c.rawGap = null; });   // k: det råa gapet följer tröskeln
     const maxGap = Math.max(...curve.map(c => Math.abs(c.rawGap || 0)), 0.01);
@@ -861,8 +859,6 @@ function _forecastRemediation() {
     // hans lön minus hennes), och en grupp får egen rad först när tröskeln i antal kvinnor berörs.
     const rem = _fcIndividualRemediation(d, { gapPct: isFinite(gp) ? gp : 5, minMen: kTroskel() });
     state.forecast._remediation = rem;
-    const months = (state.costSettings && state.costSettings.months) || 12;
-    const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
     const kr = n => svKr(n);
     if (!rem.count) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Inga kvinnor ligger mer än tröskeln under sitt jämförelsevärde.</span>`; return; }
     const K = kTroskel();
@@ -871,7 +867,7 @@ function _forecastRemediation() {
     const rowsHtml = visade.slice(0, 12).map(g => `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.count}</td><td class="t-hoger">${kr(g.cost)}/mån</td></tr>`).join('');
     // Summan är ett lönemått över de berörda: den visas först när de är minst K.
     const summa = rem.count >= K
-        ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(rem.totalCost * months * poFactor)} inkl. PO/period).`
+        ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(_kostPeriod(rem.totalCost, state.costSettings))} inkl. PO/period).`
         : `Kostnaden visas inte, eftersom färre än ${K} ${personOrd(K)} berörs.`;
     const doldaNot = dolda
         ? `<p class="k-mask-note">${dolda} ${dolda === 1 ? 'grupp' : 'grupper'} där färre än ${K} kvinnor berörs ${rem.count >= K ? 'ingår i summan men ' : ''}redovisas inte per grupp och blir inga riktade rader.</p>`

@@ -19,6 +19,7 @@
  */
 
 import { arKvinnodominerad } from './likvardighet.js';
+import { periodkostnad } from './kostnad.js';
 
 function _median(arr) {
     if (!arr || !arr.length) return 0;
@@ -268,8 +269,6 @@ export function closureTargets(candidates, fraction, minN = 0) {
  */
 export function stagedPlan(rows, perPerson, years, costOpts) {
     const N = Math.max(1, Math.min(5, Math.round(years) || 1));
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const out = [];
     for (let k = 1; k <= N; k++) {
         const frac = k / N;
@@ -277,7 +276,7 @@ export function stagedPlan(rows, perPerson, years, costOpts) {
         const kumRaise = perPerson.reduce((s, p) => s + p.delta * frac, 0);
         out.push({
             year: k, andelPct: 100 * frac, kumRaise,
-            kumKostnad: kumRaise * months * poFactor,
+            kumKostnad: periodkostnad(kumRaise, costOpts),
             rawGap: rawGenderGap(simRows, r => r.lon)
         });
     }
@@ -341,8 +340,6 @@ export function forecastOutcome(rows, budget, generell, targets, costOpts) {
     const pott = computePott(rows, budget);
     const alloc = allocate(rows, generell, targets, costOpts && costOpts.roundStep);
     const totalRaise = alloc.totals.totalRaise;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
     const lonsummaFore = totalLonSum(rows);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
@@ -353,7 +350,7 @@ export function forecastOutcome(rows, budget, generell, targets, costOpts) {
         använt: totalRaise,
         kvar: pott - totalRaise,
         overBudget: totalRaise > pott + 1e-6,
-        totalKostnad: totalRaise * months * poFactor,
+        totalKostnad: periodkostnad(totalRaise, costOpts),
         lonsummaFore,
         lonsummaEfter: lonsummaFore + totalRaise,
         rawGapFore: rawGenderGap(rows, r => r.lon),
@@ -478,8 +475,6 @@ export function marketTargets(groups, marketByKey, factor, minN) {
  */
 export function sensitivityCurve(rows, candidates, costOpts, steps) {
     const S = steps || 10;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const out = [];
     for (let i = 0; i <= S; i++) {
         const frac = i / S;
@@ -487,7 +482,7 @@ export function sensitivityCurve(rows, candidates, costOpts, steps) {
         const alloc = allocate(rows, { mode: 'pct', value: 0 }, targets, costOpts && costOpts.roundStep);
         out.push({
             fraction: frac,
-            kostnad: alloc.totals.totalRaise * months * poFactor,
+            kostnad: periodkostnad(alloc.totals.totalRaise, costOpts),
             rawGap: rawGenderGap(alloc.perPerson, p => p.nyLon)
         });
     }

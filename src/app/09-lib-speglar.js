@@ -588,6 +588,62 @@ const _fitOLS = __mirrorStat.fitOLS;
 const _libQuantile = __mirrorStat.quantile;
 const _bhJustera = __mirrorStat.bhJustera;
 
+// ---- speglar src/lib/kostnad.js ----
+const __mirrorKostnad = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — Kostnad per år (ren modell)
+ *
+ * Kostnadsformeln på ett ställe: ett månadsbelopp × beräkningsperiodens månader × (1 + PO-påslaget). Prioriteringen,
+ * löneöversynen, handlingsplanen och beräkningsbeviset räknar med den.
+ *
+ * Kostnadsinställningarna tolkas likadant överallt: månader som saknas eller är 0 blir 12, PO som saknas blir 0 %.
+ * Fältet i Inställningar tillåter 1–60 månader, så 0 nås inte därifrån.
+ *
+ * Multiplikationen görs i samma ordning som innan formeln samlades här (belopp × månader × PO-faktor), så att inget
+ * tal ändras i sista decimalen. Därför ges PO-faktorn och månaderna var för sig och inte som en färdig produkt.
+ */
+
+/**
+ * Kostnadsinställningarna med standardvärdena ifyllda.
+ * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @returns {{months: number, poPct: number, poFaktor: number}}  poFaktor = 1 + poPct / 100
+ */
+function kostnadsfaktor(costSettings) {
+    const months = (costSettings && costSettings.months) || 12;
+    const poPct = (costSettings && costSettings.poPct) || 0;
+    return { months, poPct, poFaktor: 1 + poPct / 100 };
+}
+
+/**
+ * En redan summerad månadskostnad för hela perioden med PO-påslag: belopp × månader × (1 + PO). Beloppet behåller
+ * sitt tecken.
+ * @param {number} kronorPerManad
+ * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ */
+function periodkostnad(kronorPerManad, costSettings) {
+    const { months, poFaktor } = kostnadsfaktor(costSettings);
+    return kronorPerManad * months * poFaktor;
+}
+
+/**
+ * Ett månadsbelopp per person som belopp per år för `antal` personer, med beräkningsperiod och PO-påslag ur
+ * kostnadsinställningarna: |belopp| × månader × (1 + PO) × antal. Prioriteringens åtgärdskostnad och
+ * gruppdossierns räkneexempel räknar med samma formel.
+ * @param {number} kronorPerManad
+ * @param {number} antal
+ * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ */
+function kostnadPerAr(kronorPerManad, antal, costSettings) {
+    return periodkostnad(Math.abs(kronorPerManad), costSettings) * antal;
+}
+
+    return { kostnadsfaktor, periodkostnad, kostnadPerAr };
+})();
+const _kostFaktor = __mirrorKostnad.kostnadsfaktor;
+const _kostPeriod = __mirrorKostnad.periodkostnad;
+
 // ---- speglar src/lib/struktur.js ----
 const __mirrorStructure = (() => {
 // SPDX-License-Identifier: MIT
@@ -1740,6 +1796,7 @@ const _konsklass = __mirrorLikvardighet.konsklass;
 const __mirrorForecast = (() => {
     // importer ur tidigare speglade lib-moduler
     const arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
+    const periodkostnad = __mirrorKostnad.periodkostnad;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -1760,6 +1817,7 @@ const __mirrorForecast = (() => {
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
  */
+
 
 
 function _median(arr) {
@@ -2010,8 +2068,6 @@ function closureTargets(candidates, fraction, minN = 0) {
  */
 function stagedPlan(rows, perPerson, years, costOpts) {
     const N = Math.max(1, Math.min(5, Math.round(years) || 1));
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const out = [];
     for (let k = 1; k <= N; k++) {
         const frac = k / N;
@@ -2019,7 +2075,7 @@ function stagedPlan(rows, perPerson, years, costOpts) {
         const kumRaise = perPerson.reduce((s, p) => s + p.delta * frac, 0);
         out.push({
             year: k, andelPct: 100 * frac, kumRaise,
-            kumKostnad: kumRaise * months * poFactor,
+            kumKostnad: periodkostnad(kumRaise, costOpts),
             rawGap: rawGenderGap(simRows, r => r.lon)
         });
     }
@@ -2083,8 +2139,6 @@ function forecastOutcome(rows, budget, generell, targets, costOpts) {
     const pott = computePott(rows, budget);
     const alloc = allocate(rows, generell, targets, costOpts && costOpts.roundStep);
     const totalRaise = alloc.totals.totalRaise;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
     const lonsummaFore = totalLonSum(rows);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
@@ -2095,7 +2149,7 @@ function forecastOutcome(rows, budget, generell, targets, costOpts) {
         använt: totalRaise,
         kvar: pott - totalRaise,
         overBudget: totalRaise > pott + 1e-6,
-        totalKostnad: totalRaise * months * poFactor,
+        totalKostnad: periodkostnad(totalRaise, costOpts),
         lonsummaFore,
         lonsummaEfter: lonsummaFore + totalRaise,
         rawGapFore: rawGenderGap(rows, r => r.lon),
@@ -2220,8 +2274,6 @@ function marketTargets(groups, marketByKey, factor, minN) {
  */
 function sensitivityCurve(rows, candidates, costOpts, steps) {
     const S = steps || 10;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const out = [];
     for (let i = 0; i <= S; i++) {
         const frac = i / S;
@@ -2229,7 +2281,7 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
         const alloc = allocate(rows, { mode: 'pct', value: 0 }, targets, costOpts && costOpts.roundStep);
         out.push({
             fraction: frac,
-            kostnad: alloc.totals.totalRaise * months * poFactor,
+            kostnad: periodkostnad(alloc.totals.totalRaise, costOpts),
             rawGap: rawGenderGap(alloc.perPerson, p => p.nyLon)
         });
     }
@@ -3376,6 +3428,8 @@ const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const kostnadsfaktor = __mirrorKostnad.kostnadsfaktor;
+    const kostnadPerAr = __mirrorKostnad.kostnadPerAr;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3383,7 +3437,7 @@ const __mirrorPrioritering = (() => {
  * Öppen lönekartläggning — Prioriteringsanalys (ren modell)
  *
  * Grupperar raderna per yrke × BAS, beräknar median, könsmedianer (med k-regeln, ADR-12),
- * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod),
+ * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod, formeln i kostnad.js),
  * status mot trösklar, snabbvinst, bristyrke och det sammanvägda prioriteringsindexet.
  *
  * Modellen tar allt den behöver som parametrar och läser inget globalt tillstånd.
@@ -3394,19 +3448,6 @@ const __mirrorPrioritering = (() => {
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
 
-/**
- * Ett månadsbelopp per person som belopp per år för `antal` personer, med beräkningsperiod och PO-påslag ur
- * kostnadsinställningarna: |belopp| × månader × (1 + PO) × antal. Prioriteringens åtgärdskostnad och
- * gruppdossierns räkneexempel räknar med samma formel.
- * @param {number} kronorPerManad
- * @param {number} antal
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
- */
-function kostnadPerAr(kronorPerManad, antal, costSettings) {
-    const months = (costSettings && costSettings.months) || 12;
-    const poFactor = 1 + ((costSettings && costSettings.poPct) || 0) / 100;
-    return Math.abs(kronorPerManad) * months * poFactor * antal;
-}
 
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
@@ -3422,7 +3463,7 @@ function arsbeloppMening(g, costSettings, kr) {
     if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
     const diff = Math.round((g.medMa - g.medKv) / 100) * 100;
     if (diff < 100) return null;
-    const months = (costSettings && costSettings.months) || 12, po = (costSettings && costSettings.poPct) || 0;
+    const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${String(po).replace('.', ',')} %). Det är ett räkneexempel, `

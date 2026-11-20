@@ -4,7 +4,7 @@
  * Öppen lönekartläggning — Prioriteringsanalys (ren modell)
  *
  * Grupperar raderna per yrke × BAS, beräknar median, könsmedianer (med k-regeln, ADR-12),
- * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod),
+ * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod, formeln i kostnad.js),
  * status mot trösklar, snabbvinst, bristyrke och det sammanvägda prioriteringsindexet.
  *
  * Modellen tar allt den behöver som parametrar och läser inget globalt tillstånd.
@@ -15,20 +15,7 @@
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
 import { median } from './stat.js';
-
-/**
- * Ett månadsbelopp per person som belopp per år för `antal` personer, med beräkningsperiod och PO-påslag ur
- * kostnadsinställningarna: |belopp| × månader × (1 + PO) × antal. Prioriteringens åtgärdskostnad och
- * gruppdossierns räkneexempel räknar med samma formel.
- * @param {number} kronorPerManad
- * @param {number} antal
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
- */
-export function kostnadPerAr(kronorPerManad, antal, costSettings) {
-    const months = (costSettings && costSettings.months) || 12;
-    const poFactor = 1 + ((costSettings && costSettings.poPct) || 0) / 100;
-    return Math.abs(kronorPerManad) * months * poFactor * antal;
-}
+import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
@@ -44,7 +31,7 @@ export function arsbeloppMening(g, costSettings, kr) {
     if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
     const diff = Math.round((g.medMa - g.medKv) / 100) * 100;
     if (diff < 100) return null;
-    const months = (costSettings && costSettings.months) || 12, po = (costSettings && costSettings.poPct) || 0;
+    const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${String(po).replace('.', ',')} %). Det är ett räkneexempel, `

@@ -147,9 +147,7 @@ function _evidenceForPrioItem(it, _reference) {
     const gapScore  = it.gapPct !== null ? Math.min(15, Math.abs(it.gapPct)) / 15 * 100 : 0;
     const directionWeight = it.diffPct < 0 ? 1.0 : 0.5;
     const bristMultiplier = it.isBrist ? 1.2 : 1.0;
-    const months  = state.costSettings?.months || 12;
-    const poPct   = state.costSettings?.poPct  || 0;
-    const poFactor = 1 + poPct / 100;
+    const { months, poPct, poFaktor } = _kostFaktor(state.costSettings);
     const sgn = v => v >= 0 ? '+' : '';
 
     return {
@@ -175,7 +173,7 @@ function _evidenceForPrioItem(it, _reference) {
             = ${svTal(bristMultiplier, 2)} × ${svTal(directionWeight, 2)} × (${svTal(sevScore, 1)} × ${w.avvikelse}/${wTotal} + ${svTal(volScore, 1)} × ${w.volym}/${wTotal} + ${svTal(gapScore, 1)} × ${w.jamstalldhet}/${wTotal})<br>
             = <strong>${svTal(it.priorityIndex, 2)}</strong>
             ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att nå referensen:</strong><br>
-            |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFactor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
+            |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFaktor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
         footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPct(poPct, 2)}).`
     };
 }

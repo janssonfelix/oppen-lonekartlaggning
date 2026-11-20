@@ -57,6 +57,7 @@ import * as libDocx from '../src/lib/docx.js';
 import * as libFigur from '../src/lib/figur.js';
 import * as libReg from '../src/lib/regression.js';
 import * as libPr from '../src/lib/prioritering.js';
+import * as libKost from '../src/lib/kostnad.js';
 import * as libLc from '../src/lib/livscykel.js';
 import * as libOf from '../src/lib/organisationsfil.js';
 import * as libPb from '../src/lib/perbas.js';
@@ -97,7 +98,7 @@ const allEntries = MODULES.flatMap(m => Object.keys(m.expose));
 const M = new Function(`${mirrorsSrc}\n;return { ${[...allAliases, ...MODULES.map(m => m.ns)].join(', ')} };`)();
 const libByFile = { 'stat.js': libStat, 'loneoversyn.js': libFc, 'struktur.js': libSt,
     'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'installningsgranser.js': libIg, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'referenser.js': libRf, 'namn.js': libNamn, 'termer.js': libTermer, 'htmltext.js': libHtmlText, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
-    'prioritering.js': libPr, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts };
+    'prioritering.js': libPr, 'kostnad.js': libKost, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts };
 
 describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
     it('STALENESS: incheckad 09-lib-speglar.js är i synk med src/lib/ (kör gen-mirrors)', () => {
