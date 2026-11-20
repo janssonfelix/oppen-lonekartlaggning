@@ -454,10 +454,11 @@ export const DIFFERENS_DEKLARATIONER = [
     { namn: 'per BAS-intervall: Löneskillnader i åldersgrupper', vag: TABELLERNA_PER_BAS,
         rubrik: /^BAS \| Antal \| Medelålder \| Medellön alla \| Medellön –34 år/, antal: 'Antal', total: /^Alla$/,
         matt: [{ kolumn: 'Medellön alla' }, { kolumn: 'Medelålder' }] },
-    // JPA-protokollet: en rad per AID-etikett eller BAS-intervall som redovisas, utan totalrad; medelvärdet per kön har
-    // antalet per kön. Riggens underlag ger inga rader (ingen grupp når statusen), så en total prövas inte här.
+    // JPA-protokollet: en rad per grupp (AID-etikett i BAS-intervall, ADR-89) eller BAS-intervall som redovisas, utan
+    // totalrad; medelvärdet per kön har antalet per kön. Riggens underlag ger inga rader (ingen grupp når statusen), så en
+    // total prövas inte här.
     { namn: 'protokollet: Lika arbete (AID)', vag: /^protokollet/, blad: /^2\. Lika arbete/,
-        rubrik: /^Nr \| AID-etikett \| N totalt \| N kvinnor \| N män \|/, antal: 'N totalt', etikett: 'AID-etikett', total: 'delmängd', kanSaknaTotal: true,
+        rubrik: /^Nr \| AID-etikett \| BAS-intervall \| N totalt \| N kvinnor \| N män \|/, antal: 'N totalt', etikett: 'AID-etikett', total: 'delmängd', kanSaknaTotal: true,
         matt: [{ kolumn: 'Medelvärde kvinnor (kr)', antal: { kolumn: 'N kvinnor' } }, { kolumn: 'Medelvärde män (kr)', antal: { kolumn: 'N män' } }] },
     { namn: 'protokollet: Likvärdigt arbete (BAS)', vag: /^protokollet/, blad: /^3\. Likvärdigt arbete/,
         rubrik: /^Nr \| BAS-intervall \| N totalt \| N kvinnor \| N män \|/, antal: 'N totalt', etikett: 'BAS-intervall', total: 'delmängd', kanSaknaTotal: true,

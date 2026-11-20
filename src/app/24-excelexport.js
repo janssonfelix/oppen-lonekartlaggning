@@ -341,13 +341,13 @@ function _exportJPAProtocolExport() {
     const lvRedovisning = _parForRedovisning(lvResult?.pairs);
     const lvPairsCount = lvRedovisning.par.length;
 
-    // ---- A) Identifiera JPA-grupper (lika arbete = yrkesgrupp) ----
+    // ---- A) Identifiera JPA-grupper (lika arbete = AID-kod i BAS-intervall, ADR-89) ----
     // Samma grupper och samma status som Lika arbete (laLikaGrupper, ADR-59): Värt att granska = skillnaden mellan
     // medianerna är säkerställd mot slumpens gränser för gruppen och minst 3 %. k-anonymitet som i tabellen.
     const lika = laLikaGrupper(d);
     const jamforda = lika.grupper.filter(g => !g.samladMedian);
     const jpaYrken = jamforda.filter(g => g.niva === 'granska').map(g => ({
-        yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
+        yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
         medKv: Math.round(g.medKv), medMa: Math.round(g.medMa),
         gapPct: +((g.kvot - 1) * 100).toFixed(2),   // negativ = kvinnor lägre
         diffKr: Math.round(g.medKv - g.medMa), direktiv: g.direktiv,
@@ -443,7 +443,7 @@ function _exportJPAProtocolExport() {
 
     // === Sheet 2: Yrkesgrupper med statusen Värt att granska (lika arbete) ===
     const yrkenHeaderRow = [
-        'Nr', termStor(T.enhet.en), 'N totalt', 'N kvinnor', 'N män',
+        'Nr', termStor(T.enhet.en), termStor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
         ..._JPA_MEDIAN_KOLUMNER, _STS_DIR_KOLUMN, ..._JPA_MEDEL_KOLUMNER,
         // Tomma protokollfält
         'Sakliga skäl — arbetsgivarens analys',
@@ -459,7 +459,7 @@ function _exportJPAProtocolExport() {
     } else {
         jpaYrken.forEach((j, idx) => {
             yrkenRows.push([
-                idx + 1, j.yrke, j.tot, j.nKv, j.nMa,
+                idx + 1, j.yrke, j.bas ?? '', j.tot, j.nKv, j.nMa,
                 j.medKv, j.medMa, j.diffKr, typeof j.gapPct === 'number' ? +(100 + j.gapPct).toFixed(1) : j.gapPct, j.direktiv ? _STS_DIR_ETIKETT : '',
                 ...j.medel,
                 '', '', '', '', '', ''  // protokoll-celler tomma

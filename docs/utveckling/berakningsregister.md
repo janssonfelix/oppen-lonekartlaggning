@@ -76,7 +76,7 @@ avsnitt 11.
 
 | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|
-| Grupperna: AID-koden (de inledande siffrorna i fältet, annars hela texten) i BAS-intervallet, med namnet från gruppens första rad; Lika arbetes tabell per AID-etikett räknar koden över alla intervall | `aidAvRad`, `aid.js`; `gruppnycklar`, `falt.js`; `likaArbeteGrupper`, `rapportunderlag.js` | AID, BAS | ADR-89 | `tests/grupp-aid-kod.test.js`, `tests/grupp-aid-kod-app.test.js` | saknas |
+| Grupperna: AID-koden (de inledande siffrorna i fältet, annars hela texten) i BAS-intervallet, med namnet från gruppens första rad; också Lika arbetes tabell, med en rad per kod och intervall | `aidAvRad`, `aid.js`; `gruppnycklar`, `falt.js`; `likaArbeteGrupper`, `rapportunderlag.js` | AID, BAS | ADR-89 | `tests/grupp-aid-kod.test.js`, `tests/grupp-aid-kod-app.test.js` | saknas |
 | Kvinnodominerat: *Mer än* (`'do'`) eller *Minst* (`'scb'`) gränsen, standard 60 % | `arKvinnodominerad`, `konsklass`, `likvardighet.js` | andel kvinnor | `likvardighetsmodellen.md` §2; ADR-60, 72 | `tests/likvardighet.test.js` | saknas |
 | Paren i likvärdigt arbete och lägre krav, högre lön | `byggPar`, `byggParLagreKrav`, `computeLikvardighetPairs`, `likvardighet.js` | lön, kön, AID, BAS | `likvardighetsmodellen.md` §3–§6; ADR-25, 61 | `tests/likvardighet.test.js` | saknas |
 | Åldersjusterad skillnad i ett par | `aldersjusteradSkillnad`, `likvardighet.js` | lön, ålder | `likvardighetsmodellen.md` §5 | `tests/likvardighet.test.js` | saknas |

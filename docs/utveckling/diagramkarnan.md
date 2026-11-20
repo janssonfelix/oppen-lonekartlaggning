@@ -350,8 +350,8 @@ skillnaden mot statistiken och överblickens bild (AID-etikett och huvudområde)
 - Kandidatparen: den kvinnodominerade AID-etikettens BAS, löneskillnaden (`gap`, tipsets Skillnad) och antalet i den.
 - Löneöversynens före och efter: BAS-intervall eller AID-etikett efter nivån, och antal (`foreEfterFigur` för vidare
   `bas`, `yrke` och `n`).
-- Årsbokslutet per AID-etikett: BAS, AID-etikett och antal. Bokslutet sparar inte gruppens BAS; det läses ur årets
-  lönefil och sätts bara när AID-etiketten finns i ett enda BAS-intervall.
+- Årsbokslutet per AID-etikett: BAS, AID-etikett och antal. Bokslutet sparar gruppens BAS-intervall (ADR-89), och
+  hantelns rad bär det; ett bokslut från före ADR-89 jämförs inte rad för rad och ger ingen hantel.
 
 **Underlaget: raden "Räkna för".** Ett filter (`urval`) döljer märken; ett underlag (`underlag`) räknar om hela
 diagrammet för en del av personerna. Det ges till sammanfattande diagram vars märken samlar många personer, där ett

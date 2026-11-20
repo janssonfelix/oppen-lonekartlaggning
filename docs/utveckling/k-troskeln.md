@@ -203,6 +203,12 @@ BAS-intervall som protokollet redan redovisar: AID-etiketter där båda könen n
 könen når `statGolv()`, som aldrig är under den inställda tröskeln. Cellerna prövar tröskeln också själva
 (`_jpaNivaCeller`). Testet står i `tests/ktroskel-utdata.test.js` (vid 10 och 25).
 
+**Lika arbetes grupper.** En grupp i Lika arbete är AID-koden i BAS-intervallet (ADR-89), så en kod som finns i flera
+intervall blir flera mindre grupper, och varje grupp prövas mot tröskeln för sig. Ingen rad för koden över alla
+intervall redovisas, så en grupp under tröskeln går inte att räkna fram som skillnaden mellan en sådan rad och
+kodens rader i de andra intervallen. Det gäller tabellen, rapportunderlaget, Word-utkastet, PDF-rapporten,
+Excel-bladen, JPA-protokollet, BAS-dossiern och årsbokslutet, som läser samma grupper.
+
 ## 3. Vägen ut
 
 **Exportläget (ADR-51).** Allt som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder,

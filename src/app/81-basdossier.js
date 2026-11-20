@@ -57,21 +57,19 @@ function buildBasdossier(bas) {
     const referens = pol ? { namn: referensKortnamn(), p10: pol.p10 ?? null, med: pol.med ?? null, p90: pol.p90 ?? null,
         diffPct: { p10: pct(p10, pol.p10), med: pct(median, pol.med), p90: pct(p90, pol.p90) } } : null;
 
-    // 2. Yrkesgrupperna i intervallet: antal och medianer räknade på intervallets rader, statusen Lika arbetes för hela
-    //    yrket (Lika arbete grupperar per AID-kod över alla BAS-intervall, ADR-89), så att dossiern aldrig säger något annat.
-    const lika = _ruLikaArbeteGrupper(df, { k, golv: statGolv() });
+    // 2. Grupperna i intervallet: Lika arbetes grupper (AID-koden i BAS-intervallet, ADR-89) läses direkt, med antal,
+    //    medianer och status, så att dossiern aldrig säger något annat än Lika arbete.
     const alla = getData();
-    //    Grupperna paras på AID-koden: namnet (texten på gruppens första rad) kan skilja sig mellan intervallet och hela
-    //    underlaget när koden har flera texter.
-    const helaYrket = new Map(laLikaGrupper(alla, k).grupper.map(g => [g.aid, g]));
+    const lika = laLikaGrupper(alla, k);
+    const iBas = g => g.bas === String(bas);
     const basPerYrke = new Map();
     for (const r of alla) { if (!(r.lon > 0)) continue; const kod = aidAvRad(r); if (!basPerYrke.has(kod)) basPerYrke.set(kod, new Set()); basPerYrke.get(kod).add(r.bas); }
     const nycklar = new Set(gruppdossierCandidates().map(g => g.key));
-    const yrken = lika.grupper.map(g => {
+    const yrken = lika.grupper.filter(iBas).map(g => {
         const aid = g.aid;
-        const delade = !g.samladMedian, hela = helaYrket.get(aid) || g;
+        const delade = !g.samladMedian;
         const ocksaI = [...(basPerYrke.get(aid) || [])].filter(b => b !== bas).sort();
-        return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(hela), samlad: !!g.samladMedian, helaTot: hela.tot, ocksaI,
+        return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(g), samlad: !!g.samladMedian, ocksaI,
             medKv: delade ? g.medKv : null, medMa: delade ? g.medMa : null, kvotPct: delade ? g.kvot * 100 : null,
             medTot: g.samladMedian ? g.medTot : null, dossierKey: nycklar.has(`${aid}|${bas}`) ? `${aid}|${bas}` : null };
     }).sort((a, b) => b.tot - a.tot || String(a.yrke).localeCompare(String(b.yrke), 'sv'));
@@ -115,8 +113,8 @@ function buildBasdossier(bas) {
 
     return { bas, n: df.length, nKv: kv.length, nMa: ma.length, andelKv: df.length ? kv.length / df.length * 100 : null,
         median, p10, p90, konOk, medKv, medMa, kvotPct: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
-        referens, yrken, yrkenUtelamnade: lika.utelamnade.slice().sort((a, b) => String(a).localeCompare(String(b), 'sv')),
-        ejJamforbara: lika.ejJamforbara.slice(),
+        referens, yrken, yrkenUtelamnade: lika.utelamnadeGrupper.filter(iBas).map(g => g.yrke).sort((a, b) => String(a).localeCompare(String(b), 'sv')),
+        ejJamforbara: lika.ejJamforbaraGrupper.filter(iBas).map(g => g.yrke),
         par: { kandidat: kandidat.map(parRad), hierarkiska: hierarkiska.map(parRad), utelamnade: parUtelamnade },
         alder, forra, k };
 }
@@ -250,9 +248,9 @@ function _bdRenderBody(d) {
         </div>`;
 }
 
-/** Noten för ett yrke som också finns i andra BAS-intervall: statusen är Lika arbetes, för hela yrket. */
+/** Noten för en AID-etikett som också finns i andra BAS-intervall: där är den en egen grupp i Lika arbete (ADR-89). */
 function _bdHelaYrketNot(y) {
-    return `Status gäller hela ${T.enhet.bf} (${y.helaTot} personer), som i Lika arbete; ${T.enhet.bf} finns också i ${y.ocksaI.map(b => `BAS ${b}`).join(', ')}`;
+    return `${termStor(T.enhet.bf)} finns också i ${y.ocksaI.map(b => `BAS ${b}`).join(', ')}, som en egen grupp i Lika arbete`;
 }
 
 /** Raden i punkt 5 när det inte finns något att jämföra med. */

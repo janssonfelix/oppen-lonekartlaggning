@@ -188,10 +188,11 @@ function _evidenceForEUMatrixRow(r) {
         note: skr ? `${_skrDelText(skr.del)}, ${skrKallaKort()}` : `${termStor(T.kod.bf)} finns inte i ${skrKallaKort()}` };
     if (r.samladMedian) {
         return {
-            title: `Beräkningen — ${r.yrke}`,
+            title: `Beräkningen — ${_ruGruppMedBas(r)}`,
             intro: `Ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i gruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
             rows: [
                 { label: termStor(T.enhet.en),         value: r.yrke },
+                ...(r.bas ? [{ label: termStor(T.niva.en), value: String(r.bas) }] : []),
                 { label: 'Antal anställda totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
                 { label: 'Könsdominans',             value: r.dominans },
                 nationellt,
@@ -204,10 +205,11 @@ function _evidenceForEUMatrixRow(r) {
     const gapSgn = ratio - 1;
     const gapPct = gapSgn * 100;
     return {
-        title: `Beräkningen — ${r.yrke}`,
-        intro: `Jämförelse av medianlöner mellan kvinnor och män inom samma ${T.enhet.en} (lika arbete). Inga kontroller för ålder eller nivå görs här; det är en direkt jämförelse av medianerna. Statusen prövar skillnaden mot slumpens gränser för gruppen (omkastning av könen, 1 000 gånger).`,
+        title: `Beräkningen — ${_ruGruppMedBas(r)}`,
+        intro: `Jämförelse av medianlöner mellan kvinnor och män inom samma ${T.enhet.en} i samma ${T.niva.en} (lika arbete). Inga kontroller för ålder görs här; det är en direkt jämförelse av medianerna. Statusen prövar skillnaden mot slumpens gränser för gruppen (omkastning av könen, 1 000 gånger).`,
         rows: [
             { label: termStor(T.enhet.en),          value: r.yrke },
+            ...(r.bas ? [{ label: termStor(T.niva.en), value: String(r.bas) }] : []),
             { label: 'Antal anställda totalt',  value: r.tot.toLocaleString('sv-SE') },
             { label: 'Antal kvinnor',             value: r.nKv.toLocaleString('sv-SE'), note: r.kMaskedKv ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Antal män',                 value: r.nMa.toLocaleString('sv-SE'), note: r.kMaskedMa ? `Maskerad — under k=${kTroskel()}` : '' },

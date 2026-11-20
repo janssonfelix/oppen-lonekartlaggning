@@ -237,7 +237,7 @@ describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
         const w = createAppWindow(); w.__loadDemoData();
         const forra = JSON.parse(JSON.stringify(w.eval('byggArsbokslutNu()')));
         forra.ar -= 1;
-        forra.grupper.push({ yrke: 'Nedlagt yrke (BAS A)', nKv: 12, nMa: 11, medKv: 30000, medMa: 33000, gapPct: -9.1, flaggad: true });
+        forra.grupper.push({ yrke: 'Nedlagt yrke', bas: 'A', nKv: 12, nMa: 11, medKv: 30000, medMa: 33000, gapPct: -9.1, flaggad: true });
         w.__state.forraArsbokslut = forra;
         w.eval('renderArsjamforelse()');
         const rad = [...w.document.querySelectorAll('#arsjamforelse table tbody tr')].find(tr => ren(tr.cells[0].textContent) === 'Nedlagt yrke (BAS A)');

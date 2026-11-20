@@ -254,16 +254,17 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(cell('Könsskevhet', 'B2')).toMatchObject({ t: 'n', v: 34 });
     });
     it('EU-lönekartläggning: antalet med könsuppdelningen som text, den samlade medianen som text över båda mediankolumnerna, "–" i stället för 0', () => {
-        // Statusen står efter yrkesgruppen, som på skärmen (steg C); alla kolumner följer med oavsett Fler kolumner.
-        expect(rad('EU-lönekartläggning', 0)[7]).toBe('Kvinnors median i % av mäns');
-        expect(cell('EU-lönekartläggning', 'B2').v).toMatch(/^Könsuppdelningen är för liten/);
-        expect(cell('EU-lönekartläggning', 'C2')).toMatchObject({ t: 's', v: '17 (14/3)' });
-        expect(cell('EU-lönekartläggning', 'F2')).toMatchObject({ t: 's', v: 'Gruppens median 28 800 kr' });
-        expect(wb.Sheets['EU-lönekartläggning']['!merges']).toContainEqual({ s: { r: 1, c: 5 }, e: { r: 1, c: 6 } });
-        expect(wb.Sheets['EU-lönekartläggning'].G2).toBeUndefined();
-        expect(cell('EU-lönekartläggning', 'H2')).toMatchObject({ t: 's', v: '–' });   // data-sort-value="0" är ett sorteringsvärde, inte ett gap
-        expect(cell('EU-lönekartläggning', 'I1').v).toBe('Ojusterad löneskillnad ≥ 5 %');      // direktivmarkeringen som egen kolumn (ADR-59)
-        expect(wb.Sheets['EU-lönekartläggning']['!ref']).toBe('A1:I8');            // detaljkolumnen följer inte med; reservationen under tabellen
+        // BAS-intervallet och statusen står efter yrkesgruppen, som på skärmen (ADR-89); alla kolumner följer med oavsett Fler kolumner.
+        expect(rad('EU-lönekartläggning', 0)[1]).toBe('BAS-intervall');
+        expect(rad('EU-lönekartläggning', 0)[8]).toBe('Kvinnors median i % av mäns');
+        expect(cell('EU-lönekartläggning', 'C2').v).toMatch(/^Könsuppdelningen är för liten/);
+        expect(cell('EU-lönekartläggning', 'D2')).toMatchObject({ t: 's', v: '17 (14/3)' });
+        expect(cell('EU-lönekartläggning', 'G2')).toMatchObject({ t: 's', v: 'Gruppens median 28 800 kr' });
+        expect(wb.Sheets['EU-lönekartläggning']['!merges']).toContainEqual({ s: { r: 1, c: 6 }, e: { r: 1, c: 7 } });
+        expect(wb.Sheets['EU-lönekartläggning'].H2).toBeUndefined();
+        expect(cell('EU-lönekartläggning', 'I2')).toMatchObject({ t: 's', v: '–' });   // data-sort-value="0" är ett sorteringsvärde, inte ett gap
+        expect(cell('EU-lönekartläggning', 'J1').v).toBe('Ojusterad löneskillnad ≥ 5 %');      // direktivmarkeringen som egen kolumn (ADR-59)
+        expect(wb.Sheets['EU-lönekartläggning']['!ref']).toBe('A1:J8');            // detaljkolumnen följer inte med; reservationen under tabellen
     });
     it('Prioritering: avvikelsen i procent, kronor i kronor, antal kvinnor/män som text, statusen som text', () => {
         const r0 = rad('Prioritering', 0);
@@ -355,8 +356,8 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
         expect(blad(alla, 'Lika arbete per BAS')[2]).toContain('Kvinnors median i % av mäns');
         expect(blad(alla, 'Lika arbete per BAS').find(r => r[0] === 'B')[6]).toBe(92);
         // EU-lönekartläggning byggs ur fliktabellen: rubrik och värde hör ihop (kvoten 92, inte gapet 8 ur data-sort-value).
-        expect(blad(alla, 'EU-lönekartläggning')[0][7]).toBe('Kvinnors median i % av mäns');
-        expect(blad(alla, 'EU-lönekartläggning')[1][7]).toBe(92);
+        expect(blad(alla, 'EU-lönekartläggning')[0][8]).toBe('Kvinnors median i % av mäns');
+        expect(blad(alla, 'EU-lönekartläggning')[1][8]).toBe(92);
         expect(t).not.toMatch(/positivt tal = kvinnor lägre \|/);   // ingen kolumn med direktivets tecken
     });
 });
@@ -422,7 +423,7 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
 
     it('strukturell sanity: alla lagsteg, [HR fyller i]-block och manuellt innehåll', () => {
         const draft = win.__docDraftHtml();
-        ['Regler och praxis kring lön', 'Lika arbete — kvinnor och män i samma AID-etikett', 'Likvärdigt arbete — kvinnodominerade AID-etiketter', 'Åtgärder och tidsplan', 'Samverkan med arbetstagarna', 'Beslut och underskrift', 'Bilaga: Metod']
+        ['Regler och praxis kring lön', 'Lika arbete — kvinnor och män i samma AID-etikett och BAS-intervall', 'Likvärdigt arbete — kvinnodominerade AID-etiketter', 'Åtgärder och tidsplan', 'Samverkan med arbetstagarna', 'Beslut och underskrift', 'Bilaga: Metod']
             .forEach(h => expect(draft, `saknar rubrik "${h}"`).toContain(h));
         expect((draft.match(/class="fillin"/g) || []).length).toBeGreaterThanOrEqual(5);
         expect(draft).toContain('Åtgärd krävs');              // § 8-status flödar in

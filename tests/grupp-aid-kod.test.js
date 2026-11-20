@@ -54,16 +54,17 @@ describe('aidAvRad och gruppnycklarna', () => {
 
 describe('likaArbeteGrupper: en grupp är AID-koden', () => {
     it('före: per text två grupper under tröskeln 10 (8 och 7) och en grupp på en person', () => {
-        expect(likaArbeteGrupper(delA(), { k: 10 })).toEqual({ grupper: [], utelamnade: [TEXT_A], ejJamforbara: [] });
-        expect(likaArbeteGrupper(delB(), { k: 10 })).toEqual({ grupper: [], utelamnade: [TEXT_B], ejJamforbara: [] });
-        expect(likaArbeteGrupper(delNamn(), { k: 10 })).toEqual({ grupper: [], utelamnade: [], ejJamforbara: [TEXT_NAMN] });
+        expect(likaArbeteGrupper(delA(), { k: 10 })).toMatchObject({ grupper: [], utelamnade: [`${TEXT_A} (BAS C)`], ejJamforbara: [] });
+        expect(likaArbeteGrupper(delB(), { k: 10 })).toMatchObject({ grupper: [], utelamnade: [`${TEXT_B} (BAS C)`], ejJamforbara: [] });
+        expect(likaArbeteGrupper(delNamn(), { k: 10 })).toMatchObject({ grupper: [], utelamnade: [], ejJamforbara: [`${TEXT_NAMN} (BAS C)`],
+            ejJamforbaraGrupper: [{ yrke: TEXT_NAMN, aid: '207011', bas: 'C' }] });
     });
     it('efter: en grupp på 16 med 8 kvinnor och 8 män, som vid tröskeln 10 redovisas med sin samlade median', () => {
         const res = likaArbeteGrupper(underlag(), { k: 10 });
         expect(res.utelamnade).toEqual([]);
         expect(res.ejJamforbara).toEqual([]);
         expect(res.grupper).toHaveLength(1);
-        expect(res.grupper[0]).toMatchObject({ yrke: TEXT_A, aid: '207011', nKv: 8, nMa: 8, tot: 16, samladMedian: true, niva: 'ejbedomd', medTot: 31500 });
+        expect(res.grupper[0]).toMatchObject({ yrke: TEXT_A, aid: '207011', bas: 'C', nKv: 8, nMa: 8, tot: 16, samladMedian: true, niva: 'ejbedomd', medTot: 31500 });
     });
     it('efter, vid tröskeln och golvet 5: medianer per kön, kvoten och statusen för hela koden', () => {
         const [g] = likaArbeteGrupper(underlag(), { k: 5, golv: 5 }).grupper;
@@ -83,12 +84,14 @@ describe('likaArbeteGrupper: en grupp är AID-koden', () => {
         // Står raden med ett namn först blir namnet gruppens namn (känd lucka, likvardighetsmodellen.md).
         expect(likaArbeteGrupper([...delNamn(), ...delA(), ...delB()], { k: 10 }).grupper[0].yrke).toBe(TEXT_NAMN);
     });
-    it('koden samlas över BAS-intervallen; rader utan kod grupperas på sin text, som förut', () => {
-        const r = [...underlag(), ...flera(TEXT_B, 'D', 'kvinna', 2, 36000), ...flera(TEXT_B, 'D', 'man', 2, 36000),
+    it('samma kod i två BAS-intervall är två grupper, intill varandra i BAS-ordning; rader utan kod grupperas på sin text, som förut', () => {
+        const r = [...underlag(), ...flera(TEXT_B, 'D', 'kvinna', 3, 36000), ...flera(TEXT_B, 'D', 'man', 3, 36000),
             ...flera('Ingen kod', 'B', 'kvinna', 3, 30000), ...flera('Ingen kod', 'B', 'man', 3, 30000),
             ...flera('Ingen kod, natt', 'B', 'kvinna', 3, 30000), ...flera('Ingen kod, natt', 'B', 'man', 3, 30000)];
         const res = likaArbeteGrupper(r, { k: 5 });
-        expect(res.grupper.map(g => `${g.aid}|${g.tot}`).sort()).toEqual(['207011|20', 'Ingen kod, natt|6', 'Ingen kod|6']);
+        expect(res.grupper.map(g => `${g.aid}|${g.bas}|${g.tot}`).sort()).toEqual(['207011|C|16', '207011|D|6', 'Ingen kod, natt|B|6', 'Ingen kod|B|6']);
+        const i = res.grupper.findIndex(g => g.aid === '207011');
+        expect(res.grupper.slice(i, i + 2).map(g => g.bas)).toEqual(['C', 'D']);
     });
 });
 
@@ -138,14 +141,14 @@ describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och 
 });
 
 describe('årsbokslutet: grupperna paras på koden', () => {
-    const gruppPost = g => ({ yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad, spridning: null });
+    const gruppPost = g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad, spridning: null });
     const bokslut = (ar, grupper, k = 5) => byggArsbokslut({ ar, skapat: `${ar}-12-31`, k, verktyg: 'test', nyckeltal: { n: 16, nKv: 8, nMa: 8 }, grupper, punkter: [] });
     const arets = () => bokslut(2026, likaArbeteGrupper(underlag(), { k: 5, golv: 5 }).grupper.map(gruppPost));
-    it('årets bokslut har en grupp för koden, med namnet från gruppens första rad', () => {
-        expect(arets().grupper.map(g => [g.yrke, g.nKv, g.nMa, g.flaggad])).toEqual([[TEXT_A, 8, 8, true]]);
+    it('årets bokslut har en grupp för koden i intervallet, med namnet från gruppens första rad', () => {
+        expect(arets().grupper.map(g => [g.yrke, g.bas, g.nKv, g.nMa, g.flaggad])).toEqual([[TEXT_A, 'C', 8, 8, true]]);
     });
     it('ett bokslut sparat med en annan text för koden jämförs med årets grupp (kvar, inte ny och borta)', () => {
-        const forra = bokslut(2025, [{ yrke: TEXT_B, nKv: 6, nMa: 6, medKv: 30000, medMa: 32000, gapPct: -6.25, flaggad: true }]);
+        const forra = bokslut(2025, [{ yrke: TEXT_B, bas: 'C', nKv: 6, nMa: 6, medKv: 30000, medMa: 32000, gapPct: -6.25, flaggad: true }]);
         const j = jamforArsbokslut(forra, arets());
         expect(j.grupper.kvar.map(g => [g.yrke, g.gapForra, g.nKv])).toEqual([[TEXT_A, -6.25, 8]]);
         expect(j.grupper.nya).toEqual([]);
@@ -153,8 +156,8 @@ describe('årsbokslutet: grupperna paras på koden', () => {
         expect([j.grupper.antalForra, j.grupper.antalNu]).toEqual([1, 1]);
     });
     it('ett äldre bokslut med flera texter för samma kod: gruppen med årets namn, annars den största, och ingen dubbelrad', () => {
-        const a = { yrke: TEXT_A, nKv: 5, nMa: 5, medKv: 30000, medMa: 32000, gapPct: -6.25, flaggad: true };
-        const b = { yrke: TEXT_B, nKv: 6, nMa: 6, medKv: 31000, medMa: 33000, gapPct: -6.06, flaggad: true };
+        const a = { yrke: TEXT_A, bas: 'C', nKv: 5, nMa: 5, medKv: 30000, medMa: 32000, gapPct: -6.25, flaggad: true };
+        const b = { yrke: TEXT_B, bas: 'C', nKv: 6, nMa: 6, medKv: 31000, medMa: 33000, gapPct: -6.06, flaggad: true };
         const j1 = jamforArsbokslut(bokslut(2025, [b, a]), arets());
         expect(j1.grupper.kvar.map(g => g.gapForra)).toEqual([-6.25]);
         expect(j1.grupper.borta).toEqual([]);
@@ -187,9 +190,8 @@ describe('en och samma uppsättning grupper i hela verktyget', () => {
     const sortera = l => [...l].sort();
     const nycklar = (lista, n = g => g.n) => sortera(lista.map(g => `${g.aid}|${g.bas}|${n(g)}`));
     const r = blandat();
-    it('Lika arbete (koden i varje intervall, som BAS-dossiern), tabellerna per AID-kod och BAS-intervall och trattdiagrammet', () => {
-        const perBas = [...new Set(r.map(x => x.bas))].flatMap(bas => likaArbeteGrupper(r.filter(x => x.bas === bas), { k: 1 }).grupper.map(g => ({ ...g, bas })));
-        expect(nycklar(perBas, g => g.tot)).toEqual(VANTAT);
+    it('Lika arbetes tabell (och BAS-dossiern, som läser den), tabellerna per AID-kod och BAS-intervall och trattdiagrammet', () => {
+        expect(nycklar(likaArbeteGrupper(r, { k: 1 }).grupper, g => g.tot)).toEqual(VANTAT);
         expect(nycklar(grupperaAidBas(r))).toEqual(VANTAT);
         expect(nycklar(trattUnderlag(r, 1).punkter)).toEqual(VANTAT);
     });
@@ -203,9 +205,5 @@ describe('en och samma uppsättning grupper i hela verktyget', () => {
         const t = perBasTabeller(r, { k: 1 });
         const yrken = t.intervall.flatMap(i => i.rader.filter(x => x.typ === 'yrke').map(x => ({ aid: x.aid, bas: i.bas, n: x.n })));
         expect(nycklar(yrken)).toEqual(VANTAT);
-    });
-    it('Lika arbetes tabell per AID-etikett samlar koden över intervallen: samma koder, och antalen summerar', () => {
-        const helaKoden = likaArbeteGrupper(r, { k: 1 }).grupper;
-        expect(sortera(helaKoden.map(g => `${g.aid}|${g.tot}`))).toEqual(['207011|21', '503012|7', 'Ingen kod, natt|5', 'Ingen kod|4']);
     });
 });

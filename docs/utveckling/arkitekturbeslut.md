@@ -601,15 +601,21 @@ uppdelningen av löneskillnaden med variabeln AID-etikett, Utforska, BAS-dossier
 texten. Samma personer blev då en grupp i en vy och två grupper under tröskeln och en grupp på en person i en annan.
 Nu grupperar allt som räknar på samma arbete på koden: de inledande siffrorna i fältet, och hela texten när siffror
 saknas (`aidAvRad` i `src/lib/aid.js`, som läser `aidAvYrke`). Gruppens namn är texten på gruppens första rad i
-lönefilen, som i jämförelsestatistiken. Fälten `yrke`, `aid` och `bas` behåller sin betydelse. Lika arbetes tabell per
-AID-etikett räknar som förut koden över alla BAS-intervall (statusen gäller hela AID-etiketten), och BAS-dossierns
-yrkesrader är koden i intervallet. Vyer som visar texterna som de står i filen, Löneöversikten, sökningen och
-punktdiagrammets färger per AID-etikett, ändras inte. Årsbokslutets format och version ändras inte: grupperna paras
-med förra årets på koden ur namnet, så att ett äldre bokslut jämförs rätt, och har ett äldre bokslut flera grupper med
-samma kod används den med årets namn, annars den största. För ett underlag där varje kod har en enda text är alla
-resultat oförändrade. *Avvisat:* att fortsätta gruppera på texten och bara varna, som räknar samma personer olika i
-olika vyer och låter små delgrupper falla under tröskeln; att ersätta texten med etikettlistans namn (avvisat i
-ADR-85); att lägga BAS-intervallet i nyckeln också för Lika arbetes tabell per AID-etikett, som ändrar tabellen för
-underlag där en kod finns i flera intervall och är ett eget beslut; att höja bokslutets formatversion, som inte behövs
-när paret går att läsa ur namnet. *Gäller i dag:* `prioriteringsmodellen.md` §1 och §9, `likvardighetsmodellen.md` §3,
+lönefilen, som i jämförelsestatistiken. Fälten `yrke`, `aid` och `bas` behåller sin betydelse. Också Lika arbetes
+tabell är koden i BAS-intervallet (underhållarens beslut samma dag): en kod som finns i två intervall är två rader, med
+var sin status, intill varandra och med intervallet i en egen kolumn; allt som läser tabellens grupper (rapportunderlaget,
+rapporten, Excel-bladen, Att göra, BAS-dossiern, gruppdossiern och årsbokslutet) läser samma grupper, och BAS-dossiern
+läser gruppen i intervallet direkt. Grupperna blir mindre för en kod i flera intervall, och tröskeln gäller varje grupp.
+Vyer som visar texterna som de står i filen, Löneöversikten, sökningen och punktdiagrammets färger per AID-etikett,
+ändras inte. Årsbokslutet bär gruppens intervall i ett valfritt fält `bas`, utan ny formatversion: grupperna paras med
+förra årets på koden ur namnet och intervallet, och har ett äldre bokslut flera grupper med samma kod används den med
+årets namn, annars den största. Ett bokslut sparat innan tabellen delades per intervall (grupper utan `bas`) har en rad
+per kod över alla intervall; dess grupper jämförs inte rad för rad med årets, eftersom en median över alla intervall
+inte går att dela upp, och skillnaden i antalet flaggade grupper visas inte. Nyckeltalen, intervallen och Att göra
+jämförs som vanligt. För ett underlag där varje kod har en enda text och ligger i ett enda intervall är alla tal
+oförändrade. *Avvisat:* att fortsätta gruppera på texten och bara varna, som räknar samma personer olika i olika vyer
+och låter små delgrupper falla under tröskeln; att ersätta texten med etikettlistans namn (avvisat i ADR-85); att låta
+Lika arbetes tabell räkna koden över alla intervall, som ger en status för personer på olika nivåer och andra grupper
+än resten av verktyget; att para ett äldre boksluts rad för koden med årets största grupp för koden, som jämför olika
+grupper som om de vore samma; att höja bokslutets formatversion, som inte behövs när fältet är valfritt. *Gäller i dag:* `prioriteringsmodellen.md` §1 och §9, `likvardighetsmodellen.md` §3,
 `berakningsregister.md`.

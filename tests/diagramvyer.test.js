@@ -2107,10 +2107,14 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         const f = w2.eval("foreEfterFigur({ rader: window.__r, titel: 't', beskrivning: 'b' })");
         for (const l of f.lager) expect(l.data[0]).toMatchObject({ yrke: 'Usk', n: 24 });
     });
-    it('årsbokslutet per yrkesgrupp: BAS bara när yrket finns i ett enda BAS-intervall i årets lönefil', () => {
+    it('årsbokslutet per yrkesgrupp: hantelns rader bär gruppens BAS-intervall ur bokslutet, också när koden finns i två intervall', () => {
         const w2 = fonster();
-        w2.__d = [{ yrke: 'Usk', bas: 'C' }, { yrke: 'Usk', bas: 'C' }, { yrke: 'Sys', bas: 'C' }, { yrke: 'Sys', bas: 'D' }];
-        expect(w2.eval("(() => { const f = _abYrketsBas(window.__d); return [f('Usk'), f('Sys'), f('Okänd')]; })()")).toEqual(['C', null, null]);
+        const g = (bas, gapPct) => ({ yrke: '101 Usk', bas, nKv: 12, nMa: 12, medKv: 30000, medMa: 31000, gapPct, flaggad: true });
+        const b = (ar, grupper) => ({ version: 2, ar, skapat: `${ar}-11-01`, k: 10, verktyg: 't', nyckeltal: {}, grupper, punkter: [] });
+        w2.__j = w2.eval('_abJamfor')(w2.eval('_abValidera')(b(2025, [g('C', -6), g('D', -4)])), w2.eval('_abValidera')(b(2026, [g('C', -3), g('D', -5)])));
+        const f = w2.eval('_abHantelFigur(window.__j, 2025, 2026)');
+        const rader = f.lager.flatMap(l => l.data || []).map(d => d.r).filter(Boolean);
+        expect([...new Set(rader.map(r => `${r.namn}|${r.bas}`))].sort()).toEqual(['101 Usk (BAS C)|C', '101 Usk (BAS D)|D']);
     });
 });
 

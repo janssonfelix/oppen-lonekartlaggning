@@ -669,6 +669,12 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   ansvarsgrupp och kön, aldrig lön. Översiktens andel med ledningsansvar per huvudområde visas
   bara för kön med minst k personer. Vaktas av `tests/kanonymitet.test.js`.
 
+- **Lika arbetes grupper (ADR-89, 2026-11-20):** en grupp är AID-koden i BAS-intervallet också i Lika arbetes
+  tabell och allt som läser den (rapportunderlaget, Word, PDF, Excel, JPA-protokollet, BAS-dossiern, årsbokslutet).
+  En kod i flera intervall blir flera mindre grupper, och varje grupp prövas mot k för sig; ingen rad för koden över
+  alla intervall redovisas, så en liten grupp går inte att räkna fram som en skillnad mot en sådan rad
+  (`k-troskeln.md` avsnitt 2). Vaktas av k-riggen och differensprovet i `tests/ktroskel-invarianter.test.js`.
+
 ### 6.6 Lokala exporter & utskrift ✔
 - Excel/CSV/JSON-export via `Blob` + `<a download>` — lokal nedladdning, ingen
   uppladdning. PDF-rapporten skrivs ut ur sidan själv (`window.print()` på en dold utskriftsyta, `#print-report`,
@@ -829,8 +835,8 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 
 **Årsbokslutet** (ADR-54) och **importprofilerna:**
 - nyckeltal för hela organisationen
-- en rad per AID-etikett där båda könen når minsta gruppstorlek: antal per kön, medianer, löneskillnad och
-  lönespridningen (P90 − P10) / median
+- en rad per AID-etikett och BAS-intervall där båda könen når minsta gruppstorlek: antal per kön, medianer,
+  löneskillnad, intervallet och lönespridningen (P90 − P10) / median
 - en rad per BAS-intervall med minst så många personer: antal, P10, median, P90 och lönespridningen.
   Könsmedianerna står bara med när båda könen når gränsen.
 - Att göra-punkternas id, titel och läge.

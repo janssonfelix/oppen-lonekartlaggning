@@ -12,7 +12,7 @@ vi.setConfig({ testTimeout: 30000 });
 const TABELLER = [
     { flik: 'prioritering', id: 'prio-table', nyckel: 'prio', dolda: ['kvma', 'median', 'referens', 'avvikelsekr', 'kostnadpers', 'brist'],
         forst: ['prio', 'yrke', 'bas', 'status'] },
-    { flik: 'matrix', id: 'matrix-table', nyckel: 'likaYrke', dolda: ['dominans', 'nationellt'], forst: ['yrke', 'status'] },
+    { flik: 'matrix', id: 'matrix-table', nyckel: 'likaYrke', dolda: ['dominans', 'nationellt'], forst: ['yrke', 'bas'] },
     { flik: 'likvardighet', id: 'likvardighet-table', nyckel: 'likvardighet', dolda: ['median', 'antal', 'medianjamf', 'gapkr', 'justerad', 'paverkan'],
         forst: ['nr', 'yrke'] },
     { flik: 'struktur', id: 'la-oversikt', nyckel: 'laOversikt', dolda: ['direktiv'], forst: [] },

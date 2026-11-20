@@ -10414,6 +10414,7 @@ const __mirrorRapportunderlag = (() => {
     const sektorJusteradText = __mirrorSektor.sektorJusteradText;
     const sektorAndelNot = __mirrorSektor.sektorAndelNot;
     const kvDefinitionText = __mirrorAidbas.kvDefinitionText;
+    const basRangFn = __mirrorLikvardighet.basRangFn;
     const gapDelar = __mirrorGapuppdelning.gapDelar;
     const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
     const gapVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
@@ -10452,6 +10453,7 @@ const __mirrorRapportunderlag = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -10469,35 +10471,42 @@ function bortvaltNotering(b) {
     return `${b.etikett} har kontrollerats och ${tal}; den ingår inte i siffrorna.${b.skal ? ` Skäl: ${b.skal}` : ''}`;
 }
 
+/** Gruppens namn med BAS-intervallet, som noterna och listorna skriver det: "207011 Handläggare (BAS C)". */
+function gruppMedBas(g) {
+    return g.bas != null && g.bas !== '' ? `${g.yrke} (BAS ${g.bas})` : String(g.yrke);
+}
+
 /**
- * Yrkesgrupperna i Lika arbete (samma jämförelseenhet och k-regler som EU-tabellen) med uppmärksamhetstrappans
+ * Grupperna i Lika arbete (samma jämförelseenhet och k-regler som EU-tabellen) med uppmärksamhetstrappans
  * status (ADR-59, src/lib/status.js): `niva` är 'granska', 'folj', 'balanserat' eller 'ejbedomd' (ett kön under
  * `golv`); `flaggad` är detsamma som Värt att granska. `direktiv` är direktivmarkeringen på den ojusterade
  * medianskillnaden (minst 5 %), oberoende av statusen. Stabiliteten prövas mot statusens storleksgräns (3 %).
- * En grupp är AID-koden (aidAvRad), inte texten i fältet för AID-etikett: två stavningar av samma etikett är en grupp.
- * Gruppen samlar koden över alla BAS-intervall i raderna (tabellen per AID-etikett; anroparen skickar ett intervalls
- * rader när gruppen ska vara koden i intervallet). `yrke` är gruppens namn, texten på dess första rad, och `aid` koden;
- * `utelamnade` och `ejJamforbara` bär namnen.
+ * En grupp är AID-koden (aidAvRad) i BAS-intervallet (ADR-89), inte texten i fältet för AID-etikett: två stavningar av
+ * samma etikett i samma intervall är en grupp, och samma kod i två intervall är två grupper. `yrke` är gruppens namn,
+ * texten på dess första rad, `aid` koden och `bas` intervallet. Grupperna står med samma kod intill varandra: koderna
+ * ordnade efter den största skillnaden bland kodens grupper, och inom koden intervallen i BAS-ordning.
+ * `utelamnade` och `ejJamforbara` bär namnen med intervallet (gruppMedBas); `utelamnadeGrupper` och
+ * `ejJamforbaraGrupper` samma grupper som { yrke, aid, bas }.
  * @param {any[]} rader
  * @param {{k:number, golv?:number}} opts
- * @returns {{grupper: any[], utelamnade: string[], ejJamforbara: string[]}}
+ * @returns {{grupper: any[], utelamnade: string[], ejJamforbara: string[], utelamnadeGrupper: any[], ejJamforbaraGrupper: any[]}}
  */
 function likaArbeteGrupper(rader, { k, golv = 10 }) {
-    const perKod = new Map();
+    const perGrupp = new Map();
     for (const r of rader || []) {
-        const aid = aidAvRad(r);
-        if (!perKod.has(aid)) perKod.set(aid, { yrke: r.yrke, kv: [], ma: [] });
-        if (arKvinna(r)) perKod.get(aid).kv.push(r.lon);
-        else if (_arMan(r)) perKod.get(aid).ma.push(r.lon);
+        const aid = aidAvRad(r), bas = r.bas == null ? '' : String(r.bas), nyckel = `${aid}\u0000${bas}`;
+        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { yrke: r.yrke, aid, bas, kv: [], ma: [] });
+        if (arKvinna(r)) perGrupp.get(nyckel).kv.push(r.lon);
+        else if (_arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
     }
-    const grupper = [], utelamnade = [], ejJamforbara = [];
-    for (const [aid, { yrke, kv, ma }] of perKod) {
-        if (kv.length < 2 || ma.length < 2) { ejJamforbara.push(yrke); continue; }
+    const grupper = [], utelamnadeGrupper = [], ejJamforbaraGrupper = [];
+    for (const { yrke, aid, bas, kv, ma } of perGrupp.values()) {
+        if (kv.length < 2 || ma.length < 2) { ejJamforbaraGrupper.push({ yrke, aid, bas }); continue; }
         const tot = kv.length + ma.length;
         const nagotLitet = kv.length < k || ma.length < k;
-        if (nagotLitet && tot < k) { utelamnade.push(yrke); continue; }
+        if (nagotLitet && tot < k) { utelamnadeGrupper.push({ yrke, aid, bas }); continue; }
         if (nagotLitet) {
-            grupper.push({ yrke, aid, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
+            grupper.push({ yrke, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
                 gapPct: 0, medTot: median(kv.concat(ma)) });
             continue;
         }
@@ -10507,7 +10516,7 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
         const kvot = medKv / medMa;
         const gapPct = Math.abs(kvot * 100 - 100);
         const b = bedomSkillnad(kv, ma, { golv });
-        const g = { yrke, aid, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
+        const g = { yrke, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
             medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
@@ -10515,8 +10524,15 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
         if (gapPct >= STORLEKSGRANS) g.stabilitet = _stabilitet(kv, ma, { k, troskel: STORLEKSGRANS });
         grupper.push(g);
     }
-    grupper.sort((a, b) => b.gapPct - a.gapPct);
-    return { grupper, utelamnade, ejJamforbara };
+    // Koderna efter den största skillnaden bland kodens grupper (störst först), inom koden intervallen i BAS-ordning.
+    // Med en grupp per kod är ordningen densamma som förut: skillnaden, störst först.
+    const rang = basRangFn(grupper.map(g => g.bas));
+    const storst = new Map();
+    for (const g of grupper) storst.set(g.aid, Math.max(storst.get(g.aid) ?? -Infinity, g.gapPct));
+    const forsta = new Map();
+    grupper.forEach((g, i) => { if (!forsta.has(g.aid)) forsta.set(g.aid, i); });
+    grupper.sort((a, b) => (storst.get(b.aid) - storst.get(a.aid)) || (forsta.get(a.aid) - forsta.get(b.aid)) || (rang(a.bas) - rang(b.bas)));
+    return { grupper, utelamnade: utelamnadeGrupper.map(gruppMedBas), ejJamforbara: ejJamforbaraGrupper.map(gruppMedBas), utelamnadeGrupper, ejJamforbaraGrupper };
 }
 
 /**
@@ -10642,32 +10658,35 @@ function _kanslighet(st, k) {
  */
 function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNot, arsbelopp } = {}) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
-    let fakta = `Inom ${g.yrke} (n = ${g.tot}, varav ${g.nKv} kvinnor och ${g.nMa} män) är kvinnornas medianlön `
+    // Gruppen är AID-koden i BAS-intervallet (ADR-89): justeringen inom gruppen gäller då bara ålder. En grupp utan
+    // intervall (koden över flera intervall) justeras för ålder och BAS.
+    const vad = g.bas != null && g.bas !== '' ? 'ålder' : 'ålder och BAS', Vad = stor(vad);
+    let fakta = `Inom ${gruppMedBas(g)} (n = ${g.tot}, varav ${g.nKv} kvinnor och ${g.nMa} män) är kvinnornas medianlön `
         + `${_pct(g.kvot * 100)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : '') + '.'
         + (g.niva === 'granska' ? ' Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns).' : '')
         + (g.direktiv ? ' Den ojusterade löneskillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '');
     let provat;
     if (justerat && justerat.utanAlder) {
-        provat = ['Lönefilen saknar ålder, så skillnaden har inte justerats för ålder och BAS.'];
+        provat = [`Lönefilen saknar ålder, så skillnaden har inte justerats för ${vad}.`];
     } else if (justerat && justerat.ejSkattbar) {
-        provat = [`Ålder och BAS kunde inte prövas eftersom kön och BAS sammanfaller i ${T.enhet.bf} (kvinnor och män finns i olika BAS).`];
+        provat = [`${Vad} kunde inte prövas eftersom kön och BAS sammanfaller i ${T.enhet.bf} (kvinnor och män finns i olika BAS).`];
     } else if (justerat && !justerat.forFa) {
-        fakta += ` Efter hänsyn till ålder och BAS inom ${T.enhet.bf} återstår en skillnad på ${_pct(justerat.gapPct)}.`;
+        fakta += ` Efter hänsyn till ${vad} inom ${T.enhet.bf} återstår en skillnad på ${_pct(justerat.gapPct)}.`;
         const ra = (g.kvot - 1) * 100, ju = justerat.gapPct;
         const siffror = `(${_pct(ra)} före justering, ${_pct(ju)} efter)`;
         if (ra !== 0 && ju !== 0 && Math.sign(ra) !== Math.sign(ju)) {
-            provat = [`Efter hänsyn till ålder och BAS inom ${T.enhet.bf} byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
+            provat = [`Efter hänsyn till ${vad} inom ${T.enhet.bf} byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
         } else if (Math.abs(ju) < Math.abs(ra)) {
-            provat = [`Ålder och BAS inom ${T.enhet.bf} förklarar ${formatTal(Math.abs(ra) - Math.abs(ju), 1)} procentenheter av skillnaden ${siffror}.`];
+            provat = [`${Vad} inom ${T.enhet.bf} förklarar ${formatTal(Math.abs(ra) - Math.abs(ju), 1)} procentenheter av skillnaden ${siffror}.`];
         } else {
-            provat = [`Ålder och BAS inom ${T.enhet.bf} förklarar inte skillnaden ${siffror}.`];
+            provat = [`${Vad} inom ${T.enhet.bf} förklarar inte skillnaden ${siffror}.`];
         }
     } else {
-        provat = ['För få personer för att justera för ålder och BAS.'];
+        provat = [`För få personer för att justera för ${vad}.`];
     }
     if (g.stabilitet) provat = [...provat, _kanslighet(g.stabilitet, k)];
     return {
-        id, rubrik: g.yrke,
+        id, rubrik: gruppMedBas(g),
         // arsbelopp: räkneexemplet i kronor per år, byggt av anroparen.
         stycken: [...fore, fakta, ...(arsbelopp ? [arsbelopp] : []), ...efter],
         tabell: { rubriker: ['', 'Antal', 'P10', 'Median', 'P90'], rader: [
@@ -10780,12 +10799,12 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const g = u.grupper || [];
         const flagg = g.filter(x => x.flaggad), samlade = g.filter(x => x.samladMedian);
         const jamforda = g.length + (u.utelamnade || []).length;
-        const st = [`${_st(jamforda, T.enhet.en, T.enhet.fl)} jämfördes. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
+        const st = [`${_st(jamforda, T.enhet.en, T.enhet.fl)} jämfördes, var och en i sitt ${T.niva.en}. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
             + `${samlade.length} redovisas med samlad median eftersom ett kön har färre än ${k} ${personOrd(k)}, och ${(u.utelamnade || []).length} utelämnas helt.`];
         if (!flagg.length) return blk('Lika arbete', [...st, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${adjektiv({ utrum: 'värd', neutrum: 'värt', plural: 'värda' }, T.enhet)} att granska.`], null);
         return blk('Lika arbete', [...st, `Kolumnen ${DIREKTIV_KOLUMN} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS}`],
-            { rubriker: [stor(T.enhet.en), 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
-            rader: flagg.map(x => [x.yrke, String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvot * 100), x.direktiv ? DIREKTIV_ETIKETT : '']) });
+            { rubriker: [stor(T.enhet.en), stor(T.niva.en), 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
+            rader: flagg.map(x => [x.yrke, x.bas == null ? '' : String(x.bas), String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvot * 100), x.direktiv ? DIREKTIV_ETIKETT : '']) });
     }
     if (typ === 'likvardigt') {
         const par = u.par || [];
@@ -10954,9 +10973,11 @@ function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urval, dem
     const skriv = (v, typ) => (v == null ? '–' : typ === 'kr' ? _kr(v) : typ === 'pct' ? _pct(v, 1) : formatTal(v, 0));
     const diff = (v, typ) => (v == null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
     const g = j.grupper, p = j.punkter;
-    const namn = l => l.map(x => x.yrke).join(', ');
+    const namn = l => l.map(gruppMedBas).join(', ');
     const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för ${T.enhet.fl} där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns.`,
-        `Flaggade ${T.enhet.fl} i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
+        g.ejJamforbara
+            ? `Flaggade grupper i Lika arbete: förra årets bokslut har en rad per ${T.enhet.en} över alla ${T.niva.fl}, och i år är en grupp ${T.enhet.en} i ${T.niva.en}, så grupperna jämförs inte rad för rad.`
+            : `Flaggade ${T.enhet.fl} i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
         `Att göra: ${forraAr} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade, ${nuAr} ${p.klaraNu} av ${p.totaltNu}.`
             + (p.kvarFranForra.length ? ` Av ${forraAr} års ${p.kvarFranForra.length} öppna punkter är ${p.kvarFranForra.filter(q => q.klarNu).length} klara i år.` : '')];
     return { id, rubrik: 'Jämförelse med förra året', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
@@ -11034,9 +11055,10 @@ function tillText(b) {
     return delar.join('\n\n');
 }
 
-    return { likaArbeteGrupper, justeratGapInomYrke, bortvaltNotering, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock, referenserBlock, basintervallBlock, skalSammanstallningNot };
+    return { likaArbeteGrupper, gruppMedBas, justeratGapInomYrke, bortvaltNotering, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock, referenserBlock, basintervallBlock, skalSammanstallningNot };
 })();
 const _ruLikaArbeteGrupper = __mirrorRapportunderlag.likaArbeteGrupper;
+const _ruGruppMedBas = __mirrorRapportunderlag.gruppMedBas;
 const _ruJusteratGap = __mirrorRapportunderlag.justeratGapInomYrke;
 const _ruBortvaltNotering = __mirrorRapportunderlag.bortvaltNotering;
 const _ruGruppBlock = __mirrorRapportunderlag.gruppBlock;
@@ -11853,8 +11875,8 @@ const __mirrorArsbokslut = (() => {
 // Copyright 2026 Felix Jansson
 // ---- Årsbokslut (ADR-54): jämförelse mellan år ----
 // Ett k-skyddat sammandrag av årets kartläggning som konfigurationsfilen bär, så att nästa års kartläggning kan
-// jämföras mot det. Bara aggregat: nyckeltal för hela organisationen, en rad per jämförbar yrkesgrupp (båda könen
-// minst k), en rad per BAS-intervall med minst k personer (basIntervall; könsmedianerna bara när båda könen når k)
+// jämföras mot det. Bara aggregat: nyckeltal för hela organisationen, en rad per jämförbar grupp (AID-kod i
+// BAS-intervall, ADR-89; båda könen minst k), en rad per BAS-intervall med minst k personer (basIntervall; könsmedianerna bara när båda könen når k)
 // och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
 // Yrkesgruppernas och intervallens rader bär lönespridningen (P90 − P10) / median, räknad där n ≥ k (lonespridning).
 // Version 2: handlingsplanens sakliga skäl per grupp (bedomningar: kategori och belopp, aldrig kommentarerna), så att
@@ -11919,7 +11941,10 @@ function valideraArsbokslut(o) {
         if (!g || typeof g !== 'object') return null;
         const yrke = _text(g.yrke); const gKv = _heltal(g.nKv, 0, 10_000_000), gMa = _heltal(g.nMa, 0, 10_000_000);
         if (!yrke || gKv == null || gMa == null || gKv < k || gMa < k) return null;
-        return { yrke, nKv: gKv, nMa: gMa, medKv: _tal(g.medKv), medMa: _tal(g.medMa), gapPct: _tal(g.gapPct), flaggad: g.flaggad === true,
+        // BAS-intervallet: en grupp är AID-koden i intervallet (ADR-89). Ett bokslut sparat innan dess saknar fältet och har
+        // en rad per kod över alla intervall.
+        const bas = _text(g.bas);
+        return { yrke, ...(bas ? { bas } : {}), nKv: gKv, nMa: gMa, medKv: _tal(g.medKv), medMa: _tal(g.medMa), gapPct: _tal(g.gapPct), flaggad: g.flaggad === true,
             spridning: _spridning(g.spridning) };
     }).filter(Boolean);
     const punkter = (Array.isArray(o.punkter) ? o.punkter : []).map(p => {
@@ -12077,8 +12102,8 @@ function jamforBedomningar(forra, nu) {
 }
 
 /**
- * Jämför förra årets bokslut med årets: nyckeltal rad för rad, flaggade yrkesgrupper (kvar, nya, borta; paras på
- * AID-koden) och Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu). Båda
+ * Jämför förra årets bokslut med årets: nyckeltal rad för rad, flaggade grupper (kvar, nya, borta; paras på
+ * AID-koden och BAS-intervallet, och jämförs inte rad för rad mot ett bokslut från före ADR-89, ejJamforbara) och Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu). Båda
  * åren läses med den högre av årens trösklar (kGrans, bokslutMedGrans).
  * @param {ReturnType<typeof valideraArsbokslut>} forra
  * @param {ReturnType<typeof valideraArsbokslut>} nu
@@ -12087,35 +12112,42 @@ function jamforArsbokslut(forra, nu) {
     if (!forra || !nu) return null;
     const kGrans = Math.max(forra.k, nu.k), sammaK = forra.k === nu.k;
     forra = bokslutMedGrans(forra, kGrans); nu = bokslutMedGrans(nu, kGrans);
+    // Grupperna paras på AID-koden (aidAvYrke ur gruppens namn) och BAS-intervallet, inte på texten: en grupp är koden i
+    // intervallet (ADR-89), och namnet är texten på gruppens första rad, som kan skilja sig mellan åren. Ett bokslut sparat
+    // innan grupperna följde koden kan ha flera grupper med samma kod (en per text); då jämförs årets grupp med den som har
+    // samma namn, annars med den största, och de andra står inte som egna rader.
+    // Ett bokslut sparat innan grupperna delades per BAS-intervall har en rad per kod över alla intervall, utan fältet
+    // bas. En sådan rad är inte samma grupp som årets rad för koden i ett intervall, och en median går inte att räkna om
+    // från en nivå till en annan: grupperna jämförs då inte rad för rad (ejJamforbara), och resten av jämförelsen gäller.
+    const ejJamforbara = forra.grupper.some(g => !g.bas) && nu.grupper.some(g => g.bas);
+    // Antalet flaggade grupper räknades förut per kod över alla intervall: skillnaden mot ett sådant bokslut visas inte.
     const nyckeltal = ARSBOKSLUT_NYCKELTAL.map(([nyckel, etikett, typ]) => {
         const a = forra.nyckeltal[nyckel], b = nu.nyckeltal[nyckel];
-        return { nyckel, etikett, typ, forra: a, nu: b, diff: typeof a === 'number' && typeof b === 'number' ? b - a : null };
+        const jamforbar = !(ejJamforbara && nyckel === 'antalFlaggade');
+        return { nyckel, etikett, typ, forra: a, nu: b, diff: jamforbar && typeof a === 'number' && typeof b === 'number' ? b - a : null };
     });
-    // Grupperna paras på AID-koden (aidAvYrke ur gruppens namn), inte på texten: en grupp är koden, och namnet är texten
-    // på gruppens första rad, som kan skilja sig mellan åren. Ett bokslut sparat innan grupperna följde koden kan ha
-    // flera grupper med samma kod (en per text); då jämförs årets grupp med den som har samma namn, annars med den
-    // största, och de andra står inte som egna rader.
-    const kodAv = g => aidAvYrke(g.yrke);
-    const nG = new Map(nu.grupper.map(g => [kodAv(g), g]));
+    const nyckelAv = g => (g.bas ? `${aidAvYrke(g.yrke)}|${g.bas}` : aidAvYrke(g.yrke));
+    const nG = new Map(ejJamforbara ? [] : nu.grupper.map(g => [nyckelAv(g), g]));
     const fG = new Map();
-    for (const g of forra.grupper) {
-        const kod = kodAv(g), forr = fG.get(kod), namn = nG.has(kod) ? nG.get(kod).yrke : null;
+    for (const g of ejJamforbara ? [] : forra.grupper) {
+        const nyckel = nyckelAv(g), forr = fG.get(nyckel), namn = nG.has(nyckel) ? nG.get(nyckel).yrke : null;
         const foredras = forr && ((g.yrke === namn) !== (forr.yrke === namn) ? g.yrke === namn : g.nKv + g.nMa > forr.nKv + forr.nMa);
-        if (!forr || foredras) fG.set(kod, g);
+        if (!forr || foredras) fG.set(nyckel, g);
     }
     // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år antalet gäller. Namnet är årets
     // när gruppen finns i år.
-    const rad = (f, n) => ({ yrke: n ? n.yrke : f.yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
+    const rad = (f, n) => ({ yrke: n ? n.yrke : f.yrke, ...((n || f).bas ? { bas: (n || f).bas } : {}), gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
         antalAr: n ? nu.ar : forra.ar, spridningForra: f ? f.spridning ?? null : null, spridningNu: n ? n.spridning ?? null : null });
     const kvar = [], nya = [], borta = [];
-    for (const [kod, n] of nG) { if (!n.flaggad) continue; const f = fG.get(kod); (f && f.flaggad ? kvar : nya).push(rad(f, n)); }
-    for (const [kod, f] of fG) { if (!f.flaggad) continue; const n = nG.get(kod); if (!n || !n.flaggad) borta.push(rad(f, n)); }
+    for (const [nyckel, n] of nG) { if (!n.flaggad) continue; const f = fG.get(nyckel); (f && f.flaggad ? kvar : nya).push(rad(f, n)); }
+    for (const [nyckel, f] of fG) { if (!f.flaggad) continue; const n = nG.get(nyckel); if (!n || !n.flaggad) borta.push(rad(f, n)); }
     const sortera = l => l.sort((a, b) => Math.abs(b.gapNu ?? b.gapForra ?? 0) - Math.abs(a.gapNu ?? a.gapForra ?? 0));
     const nuKlar = new Map(nu.punkter.map(p => [p.id, p.klar]));
     const kvarFranForra = forra.punkter.filter(p => !p.klar).map(p => ({ ...p, finnsNu: nuKlar.has(p.id), klarNu: nuKlar.get(p.id) === true }));
     return {
         nyckeltal,
-        grupper: { kvar: sortera(kvar), nya: sortera(nya), borta: sortera(borta), antalForra: fG.size, antalNu: nG.size },
+        grupper: { kvar: sortera(kvar), nya: sortera(nya), borta: sortera(borta), antalForra: ejJamforbara ? forra.grupper.length : fG.size,
+            antalNu: ejJamforbara ? nu.grupper.length : nG.size, ejJamforbara },
         punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
                    totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
         samma_k: sammaK,
@@ -12140,7 +12172,7 @@ function hantelRader(j) {
         const fore = 100 + g.gapForra, efter = 100 + g.gapNu;
         const dFore = Math.abs(fore - 100), dEfter = Math.abs(efter - 100);
         const riktning = Math.abs(dEfter - dFore) < 0.05 ? 'lika' : dEfter < dFore ? 'mot' : 'fran';
-        return { namn: g.yrke, fore, efter, riktning, andring: efter - fore };
+        return { namn: g.bas ? `${g.yrke} (BAS ${g.bas})` : g.yrke, ...(g.bas ? { bas: g.bas } : {}), fore, efter, riktning, andring: efter - fore };
     }).sort((a, b) => Math.abs(b.andring) - Math.abs(a.andring));
     return { rader, utelamnade: alla.length - med.length };
 }
@@ -22337,13 +22369,13 @@ function _exportJPAProtocolExport() {
     const lvRedovisning = _parForRedovisning(lvResult?.pairs);
     const lvPairsCount = lvRedovisning.par.length;
 
-    // ---- A) Identifiera JPA-grupper (lika arbete = yrkesgrupp) ----
+    // ---- A) Identifiera JPA-grupper (lika arbete = AID-kod i BAS-intervall, ADR-89) ----
     // Samma grupper och samma status som Lika arbete (laLikaGrupper, ADR-59): Värt att granska = skillnaden mellan
     // medianerna är säkerställd mot slumpens gränser för gruppen och minst 3 %. k-anonymitet som i tabellen.
     const lika = laLikaGrupper(d);
     const jamforda = lika.grupper.filter(g => !g.samladMedian);
     const jpaYrken = jamforda.filter(g => g.niva === 'granska').map(g => ({
-        yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
+        yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
         medKv: Math.round(g.medKv), medMa: Math.round(g.medMa),
         gapPct: +((g.kvot - 1) * 100).toFixed(2),   // negativ = kvinnor lägre
         diffKr: Math.round(g.medKv - g.medMa), direktiv: g.direktiv,
@@ -22439,7 +22471,7 @@ function _exportJPAProtocolExport() {
 
     // === Sheet 2: Yrkesgrupper med statusen Värt att granska (lika arbete) ===
     const yrkenHeaderRow = [
-        'Nr', termStor(T.enhet.en), 'N totalt', 'N kvinnor', 'N män',
+        'Nr', termStor(T.enhet.en), termStor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
         ..._JPA_MEDIAN_KOLUMNER, _STS_DIR_KOLUMN, ..._JPA_MEDEL_KOLUMNER,
         // Tomma protokollfält
         'Sakliga skäl — arbetsgivarens analys',
@@ -22455,7 +22487,7 @@ function _exportJPAProtocolExport() {
     } else {
         jpaYrken.forEach((j, idx) => {
             yrkenRows.push([
-                idx + 1, j.yrke, j.tot, j.nKv, j.nMa,
+                idx + 1, j.yrke, j.bas ?? '', j.tot, j.nKv, j.nMa,
                 j.medKv, j.medMa, j.diffKr, typeof j.gapPct === 'number' ? +(100 + j.gapPct).toFixed(1) : j.gapPct, j.direktiv ? _STS_DIR_ETIKETT : '',
                 ...j.medel,
                 '', '', '', '', '', ''  // protokoll-celler tomma
@@ -23109,10 +23141,11 @@ function _evidenceForEUMatrixRow(r) {
         note: skr ? `${_skrDelText(skr.del)}, ${skrKallaKort()}` : `${termStor(T.kod.bf)} finns inte i ${skrKallaKort()}` };
     if (r.samladMedian) {
         return {
-            title: `Beräkningen — ${r.yrke}`,
+            title: `Beräkningen — ${_ruGruppMedBas(r)}`,
             intro: `Ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i gruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
             rows: [
                 { label: termStor(T.enhet.en),         value: r.yrke },
+                ...(r.bas ? [{ label: termStor(T.niva.en), value: String(r.bas) }] : []),
                 { label: 'Antal anställda totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
                 { label: 'Könsdominans',             value: r.dominans },
                 nationellt,
@@ -23125,10 +23158,11 @@ function _evidenceForEUMatrixRow(r) {
     const gapSgn = ratio - 1;
     const gapPct = gapSgn * 100;
     return {
-        title: `Beräkningen — ${r.yrke}`,
-        intro: `Jämförelse av medianlöner mellan kvinnor och män inom samma ${T.enhet.en} (lika arbete). Inga kontroller för ålder eller nivå görs här; det är en direkt jämförelse av medianerna. Statusen prövar skillnaden mot slumpens gränser för gruppen (omkastning av könen, 1 000 gånger).`,
+        title: `Beräkningen — ${_ruGruppMedBas(r)}`,
+        intro: `Jämförelse av medianlöner mellan kvinnor och män inom samma ${T.enhet.en} i samma ${T.niva.en} (lika arbete). Inga kontroller för ålder görs här; det är en direkt jämförelse av medianerna. Statusen prövar skillnaden mot slumpens gränser för gruppen (omkastning av könen, 1 000 gånger).`,
         rows: [
             { label: termStor(T.enhet.en),          value: r.yrke },
+            ...(r.bas ? [{ label: termStor(T.niva.en), value: String(r.bas) }] : []),
             { label: 'Antal anställda totalt',  value: r.tot.toLocaleString('sv-SE') },
             { label: 'Antal kvinnor',             value: r.nKv.toLocaleString('sv-SE'), note: r.kMaskedKv ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Antal män',                 value: r.nMa.toLocaleString('sv-SE'), note: r.kMaskedMa ? `Maskerad — under k=${kTroskel()}` : '' },
@@ -29816,7 +29850,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
         if (u.liten) celler = `<td class="t-mitt f-dampad" colspan="3">Färre än ${kTroskel()} ${personOrd(kTroskel())} — inga lönemått</td>`;
         else if (u.samladMedian) celler = `<td class="t-mitt" colspan="2">Gruppens median ${fmt.format(u.medTot)}</td><td>–</td>`;
         else celler = `<td>${fmt.format(u.medKv)}</td><td>${fmt.format(u.medMa)}</td><td>${svPct(u.kvot, 1)}</td>`;
-        tr.innerHTML = `<td class="la-underrad-namn">${esc(u.namn)}</td><td></td><td>${u.n} (${u.nKv}/${u.nMa})</td><td></td><td></td>${celler}<td></td><td></td>`;
+        tr.innerHTML = `<td class="la-underrad-namn">${esc(u.namn)}</td><td></td><td></td><td>${u.n} (${u.nKv}/${u.nMa})</td><td></td><td></td>${celler}<td></td><td></td>`;
         tr.classList.add('la-underrad-ansvar');   // hopfälld tills yrkesradens pil fäller ut den; raden är ritad ändå (exporterna läser tabellen)
         tr.hidden = true;
         return tr;
@@ -29828,7 +29862,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
         if (kv.length >= kTroskel() && ma.length >= kTroskel()) {
             const tr = document.createElement('tr');
             tr.className = 'la-underrad';
-            tr.innerHTML = `<td colspan="10" class="la-underrad-namn">Utan ledningsansvar: kvinnors lön i % av mäns ${pct(Stat.median(kv) / Stat.median(ma) * 100)}</td>`;
+            tr.innerHTML = `<td colspan="11" class="la-underrad-namn">Utan ledningsansvar: kvinnors lön i % av mäns ${pct(Stat.median(kv) / Stat.median(ma) * 100)}</td>`;
             tr.hidden = true;   // fälls ut med ansvarsgrupperna
             ut.push(tr);
         }
@@ -29866,7 +29900,7 @@ function generateEUDirectiveMatrix() {
     const utelamnadeYrken = lika.utelamnade;
     const samladMedianYrken = [];
     lika.grupper.forEach(g => {
-        const { yrke, aid, nKv, nMa, tot } = g;
+        const { yrke, aid, bas, nKv, nMa, tot } = g;
         const pctKv = nKv / tot;
         // Samma definition som Likvärdigt arbete (valet Mer än/eller mer och kvinnotröskeln; ADR-60, ADR-72).
         const dominans = _aidbasDominans(pctKv * 100, aidbasDefinition(), aidbasGrans());
@@ -29874,8 +29908,8 @@ function generateEUDirectiveMatrix() {
         // median (den bygger på n >= kTroskel() och röjer ingen enskild); yrken som
         // helt ligger under k utelämnas och räknas upp i noten under tabellen.
         if (g.samladMedian) {
-            samladMedianYrken.push(yrke);
-            rows.push({ yrke, aid, nKv, nMa, tot, dominans,
+            samladMedianYrken.push(_ruGruppMedBas(g));
+            rows.push({ yrke, aid, bas, nKv, nMa, tot, dominans,
                 medTot: g.medTot, gap: 0, samladMedian: true,
                 statusKlass: '', status: `<span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; ${kTroskel()}<span class="bara-export">)</span></span>` });
             return;
@@ -29898,10 +29932,11 @@ function generateEUDirectiveMatrix() {
         }
         // Kvinnors median i procent av mäns — som kolumnens exportrubrik säger.
         const displayGap = svPct(ratio * 100, 1);
-        rows.push({yrke, aid, nKv, nMa, tot, dominans, medKv, medMa, gap, displayGap, status, statusKlass, samladMedian: false,
+        rows.push({yrke, aid, bas, nKv, nMa, tot, dominans, medKv, medMa, gap, displayGap, status, statusKlass, samladMedian: false,
             niva: g.niva, direktiv: g.direktiv, kvot: ratio * 100 });
     });
-    rows.sort((a,b) => b.gap - a.gap);
+    // Ordningen är likaArbeteGrupper:s: samma kod intill varandra, koderna efter den största skillnaden och inom koden
+    // BAS-intervallen i ordning (ADR-89).
     // Kvoten ritas i raden mot 100 %, på samma sätt som i översiktstabellen överst (ett omfång för hela tabellen).
     const kvotDoman = _laOversiktDoman(rows.filter(r => !r.samladMedian && isFinite(r.kvot)).map(r => ({ gap: r.kvot })));
     rows.forEach(r => {
@@ -29919,12 +29954,12 @@ function generateEUDirectiveMatrix() {
         const powerBadge = lowPower && !r.samladMedian
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(grpMDE.mdePct, 1)}, ${grpMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
-        tr.innerHTML = `<td>${esc(r.yrke)}${powerBadge}</td><td class="text">${r.status}</td><td data-sort-value="${r.tot}">${r.tot} (${r.nKv}/${r.nMa})</td><td>${r.dominans}</td>${_skrReferensCell(r.yrke)}${cellKv}${cellMa}<td data-sort-value="${gapSort}">${r.samladMedian ? '–' : `<span class="la-kvotcell"${_kvotcellTitel(r)}>${_laOversiktGrafik({ gap: r.kvot, ci: null }, kvotDoman, gapStatusNiva(r.niva), 64)}<span>${r.displayGap}</span></span>`}</td>${r.samladMedian ? '<td class="t-mitt" data-sort-value="0"></td>' : _direktivCell(r.kvot)}<td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="${esc(r.yrke)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(r.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(r.yrke)}">${ikon('sok')}</button></td>`;
+        tr.innerHTML = `<td>${esc(r.yrke)}${powerBadge}</td><td>${esc(r.bas ?? '')}</td><td class="text">${r.status}</td><td data-sort-value="${r.tot}">${r.tot} (${r.nKv}/${r.nMa})</td><td>${r.dominans}</td>${_skrReferensCell(r.yrke)}${cellKv}${cellMa}<td data-sort-value="${gapSort}">${r.samladMedian ? '–' : `<span class="la-kvotcell"${_kvotcellTitel(r)}>${_laOversiktGrafik({ gap: r.kvot, ci: null }, kvotDoman, gapStatusNiva(r.niva), 64)}<span>${r.displayGap}</span></span>`}</td>${r.samladMedian ? '<td class="t-mitt" data-sort-value="0"></td>' : _direktivCell(r.kvot)}<td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="${esc(r.yrke)}" data-bas="${esc(r.bas ?? '')}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(r.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(r.yrke)}">${ikon('sok')}</button></td>`;
         // Cache rad-data så bevis-handler kan plocka upp objektet
         tr._euRow = r;
         tbody.appendChild(tr);
-        // Gruppens rader är koden, inte texten (likaArbeteGrupper): alla stavningar av etiketten.
-        const under = _ansvarsUnderraderFor(d.filter(x => aidAvRad(x) === r.aid), fmt);
+        // Gruppens rader är koden i BAS-intervallet, inte texten (likaArbeteGrupper): alla stavningar av etiketten.
+        const under = _ansvarsUnderraderFor(d.filter(x => aidAvRad(x) === r.aid && String(x.bas) === r.bas), fmt);
         under.forEach(u => tbody.appendChild(u));
         if (under.some(u => u.classList.contains('la-underrad-ansvar'))) {
             // Pilen på yrkesraden fäller ut ansvarsgrupperna och raden «Utan ledningsansvar» under dem.
@@ -29945,13 +29980,13 @@ function generateEUDirectiveMatrix() {
     });
     if (utelamnadeYrken.length || samladMedianYrken.length) {
         const trN = document.createElement("tr");
-        trN.innerHTML = `<td colspan="10">${kMaskNote(utelamnadeYrken, `${T.enhet.en}|${T.enhet.fl}`)}`
+        trN.innerHTML = `<td colspan="11">${kMaskNote(utelamnadeYrken, `${T.enhet.en}|${T.enhet.fl}`)}`
             + `${kSamladNote(samladMedianYrken, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
         tbody.appendChild(trN);
     }
     if (lika.grupper.some(g => g.flaggad)) {
         const trS = document.createElement("tr");
-        trS.innerHTML = `<td colspan="10" class="text-dampad-xs">Skör betyder att skillnaden kan hamna under 3 % (statusens storleksgräns) om en eller två personer tas bort ur gruppen. Statusen ligger kvar — märkningen visar var enskilda löner avgör utfallet. Kolumnen ${esc(_STS_DIR_ETIKETT)} är direktivmarkeringen på den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</td>`;
+        trS.innerHTML = `<td colspan="11" class="text-dampad-xs">Skör betyder att skillnaden kan hamna under 3 % (statusens storleksgräns) om en eller två personer tas bort ur gruppen. Statusen ligger kvar — märkningen visar var enskilda löner avgör utfallet. Kolumnen ${esc(_STS_DIR_ETIKETT)} är direktivmarkeringen på den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</td>`;
         tbody.appendChild(trS);
     }
 
@@ -30261,7 +30296,7 @@ function renderLikaArbeteTopp() {
         rader.length ? _laSlutsats(`${termStor(T.enhet.fl)} att granska`, `${granska.length} av ${rader.length}`, granska.length ? 'säkerställd skillnad, minst 3 %' : 'ingen säkerställd skillnad på 3 %', granska.length > 0 ? 'granska' : false,
             'Värt att granska: skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)')
                      : _laSlutsats(`${termStor(T.enhet.fl)} att granska`, '–', `${termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en} har minst ${kTroskel()} av varje kön`),
-        storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, `Kvinnors medianlön i procent av mäns för ${termArtikel(T.enhet, { bestamd: true })} ${T.enhet.en} där skillnaden är störst`) : '',
+        storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), _ruGruppMedBas(storst), false, `Kvinnors medianlön i procent av mäns för ${termArtikel(T.enhet, { bestamd: true })} ${T.enhet.en} där skillnaden är störst`) : '',
         regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? 'när dessa räknats bort' : 'utan att något räknats bort'}`, _laRegGranska(reg) ? 'granska' : false,
             `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.${_laRegFaNot(reg)} ${ALDER_METODVAL_TEXT}${harAlder() ? '' : ' ' + ALDER_SAKNAS_TEXT}`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
@@ -34826,13 +34861,16 @@ function rmArsjamforelseAvsnitt(diagram) {
         if (!lista.length) { delar.push(stycke(`${rubrik}: ${tom}`)); return; }
         delar.push(stycke(`${rubrik} (${lista.length}):`));
         delar.push({ typ: 'tabell', kolumner: [{ rubrik: termStor(T.enhet.en), typ: 'text' }, { rubrik: `Kvinnor / män ${nu.ar}`, typ: 'text' }, { rubrik: `Skillnad ${forra.ar}`, typ: 'pct1' }, { rubrik: `Skillnad ${nu.ar}`, typ: 'pct1' }],
-            rader: lista.map(g => [g.yrke, _abGruppAntal(g, nu.ar), g.gapForra, g.gapNu]) });
+            rader: lista.map(g => [_ruGruppMedBas(g), _abGruppAntal(g, nu.ar), g.gapForra, g.gapNu]) });
     };
     delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar, diagram('arsjamforelse', 'bas')));
     delar.push({ typ: 'rubrik', niva: 3, text: 'Lika arbete' });
-    grupptabell('Flaggade båda åren', j.grupper.kvar, `${termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en}.`);
-    grupptabell('Nya flaggade', j.grupper.nya, 'inga.');
-    grupptabell('Inte längre flaggade', j.grupper.borta, 'ingen.');
+    if (j.grupper.ejJamforbara) delar.push(stycke(abGrupperEjJamforbara()));
+    else {
+        grupptabell('Flaggade båda åren', j.grupper.kvar, `${termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en}.`);
+        grupptabell('Nya flaggade', j.grupper.nya, 'inga.');
+        grupptabell('Inte längre flaggade', j.grupper.borta, 'ingen.');
+    }
     delar.push(...diagram('arsjamforelse'));
     const p = j.punkter;
     delar.push({ typ: 'rubrik', niva: 3, text: 'Att göra' });
@@ -35089,7 +35127,7 @@ function _rmAvsnittenUtanUrval() {
 
     // ---- 3. Lika arbete ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
-    const lika = { id: 'lika', numrerad: true, rubrik: `Lika arbete — kvinnor och män i samma ${T.enhet.en}`, utelamnat: [], delar: [
+    const lika = { id: 'lika', numrerad: true, rubrik: `Lika arbete — kvinnor och män i samma ${T.enhet.en} och ${T.niva.en}`, utelamnat: [], delar: [
         dampad(`Den löneskillnad som står kvar ${reg && !reg.error ? (reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort') : `när ålder och ${T.niva.en} räknats bort`}, och de ${T.enhet.fl} där skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns), statusen Värt att granska. Lagen kräver att varje skillnad prövas; de här sticker ut. Kolumnen ${_STS_DIR_KOLUMN} visar var den ojusterade skillnaden når 5 %: ${_STS_DIR_TIPS}`),
         dampad(termText(AID_METODTEXT)),
     ] };
@@ -35112,9 +35150,9 @@ function _rmAvsnittenUtanUrval() {
     const likaGr = laLikaGrupper(d, k);   // uppmärksamhetstrappan (ADR-59)
     const attBedoma = likaGr.grupper.filter(g => g.flaggad);
     if (attBedoma.length) {
-        lika.delar.push({ typ: 'tabell', kolumner: [{ rubrik: termStor(T.enhet.en), typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: 'Median kvinnor', typ: 'kr' }, { rubrik: 'Median män', typ: 'kr' },
+        lika.delar.push({ typ: 'tabell', kolumner: [{ rubrik: termStor(T.enhet.en), typ: 'text' }, { rubrik: termStor(T.niva.en), typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: 'Median kvinnor', typ: 'kr' }, { rubrik: 'Median män', typ: 'kr' },
             { rubrik: 'Kvinnors median i % av mäns', typ: 'pct1' }, { rubrik: _STS_DIR_KOLUMN, typ: 'text' }, { rubrik: 'Saklig förklaring (fyll i)', typ: 'fyllIn' }, { rubrik: 'Åtgärd/beslut (fyll i)', typ: 'fyllIn' }],
-            rader: attBedoma.slice(0, 30).map(g => [g.yrke, `${g.nKv} / ${g.nMa}`, g.medKv, g.medMa, g.kvot * 100, g.direktiv ? _STS_DIR_ETIKETT : '', '', '']) });
+            rader: attBedoma.slice(0, 30).map(g => [g.yrke, String(g.bas ?? ''), `${g.nKv} / ${g.nMa}`, g.medKv, g.medMa, g.kvot * 100, g.direktiv ? _STS_DIR_ETIKETT : '', '', '']) });
         if (attBedoma.length > 30) lika.utelamnat.push(`${attBedoma.length - 30} ${T.enhet.fl} utöver de 30 första`);
     } else {
         lika.delar.push(dampad(`${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} har statusen Värt att granska: ingen skillnad mellan kvinnors och mäns medianlön är både statistiskt säkerställd och minst 3 %.`));
@@ -35598,7 +35636,7 @@ async function _buildPrintReportExport() {
                 klon.querySelectorAll('thead .ingen-radbrytning').forEach(s => s.replaceWith(...s.childNodes));
                 return klon.outerHTML;
             };
-        const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en}</h2><p>${termStor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
+        const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en} och ${T.niva.en}</h2><p>${termStor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
         const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
             const bildSektion = (rubrik, src, alt) => (src ? `<section class="page-break"><h2>${rubrik}</h2><img src="${src}" alt="${alt}"></section>` : '');
         const rapportSection  = `<section class="page-break"><h2>Löneöversikt (organisation · kön · ${T.enhet.en})</h2>${cloneTable('rapport-table')}</section>`;
@@ -36787,7 +36825,7 @@ function _rapportunderlagBlockExport() {
     // Kolumnen Matchning bara när statistik finns, som i detaljlistan.
     if (referenser) block.push(_ruReferenserBlock(referenser, { ...opt, harStatistik: state.statistik.length > 0 }));
     lika.grupper.filter(g => g.flaggad).forEach((g, i) => {
-        const rader = d.filter(r => aidAvRad(r) === g.aid);   // gruppens rader: koden, alla stavningar av etiketten
+        const rader = d.filter(r => aidAvRad(r) === g.aid && String(r.bas) === g.bas);   // gruppens rader: koden i BAS-intervallet, alla stavningar
         const ki = _gdBootstrapGapCI(rader.filter(arKv).map(r => r.lon), rader.filter(arMa).map(r => r.lon));
         const arsbelopp = _prArsbeloppMening(g, state.costSettings, v => _figTalformat(v, 'kr'));
         block.push(_ruGruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
@@ -38305,10 +38343,10 @@ function byggArsbokslutNu() {
         /** @type {any} */ let lv = null;
         try { lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null; } catch (_e) { lv = null; }
         const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
-        // Lönerna per yrkesgrupp (kvinnor och män, som Lika arbete räknar dem: AID-koden) för lönespridningen.
+        // Lönerna per grupp (kvinnor och män, som Lika arbete räknar dem: AID-koden i BAS-intervallet) för lönespridningen.
         /** @type {Map<string, number[]>} */ const lonPerYrke = new Map();
         for (const r of d) if (r.lon > 0 && r.kon && (arKvinna(r) || arMan(r))) {
-            const kod = aidAvRad(r);
+            const kod = `${aidAvRad(r)}|${r.bas}`;
             if (!lonPerYrke.has(kod)) lonPerYrke.set(kod, []);
             /** @type {number[]} */ (lonPerYrke.get(kod)).push(r.lon);
         }
@@ -38319,8 +38357,8 @@ function byggArsbokslutNu() {
             nyckeltal: { n: bild.n, nKv: bild.nKv, nMa: bild.nMa, medKv: bild.medianKv, medMa: bild.medianMa,
                 kvotPct: bild.rawGapPct == null ? null : 100 + bild.rawGapPct, oforklaratPct: bild.unexplainedGapPct,
                 antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },
-            grupper: lika.grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad,
-                spridning: _abSpridning(lonPerYrke.get(g.aid) || [], k) })),
+            grupper: lika.grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad,
+                spridning: _abSpridning(lonPerYrke.get(`${g.aid}|${g.bas}`) || [], k) })),
             punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
             basIntervall: getBasIntervals().map(b => _abBasRad(d, b, k)).filter(Boolean),
             bedomningar: _abBedomningarNu(),
@@ -38372,33 +38410,19 @@ function arsjamforelse() {
  * efter om kvoten närmat sig lika lön (ok-nyansen) eller fjärmat sig (varningsnyansen) — en riktning, inte en
  * bedömning. Diagramdatan bär båda årens värden.
  */
-// Filtren: BAS-intervall, yrkesgrupp och antal (kvinnor och män i tabellens kolumn). Bokslutet sparar inte gruppens BAS:
-// det läses ur årets lönefil och sätts bara när yrket (AID-koden) finns i ett enda BAS-intervall (`basFor`); en rad utan
-// BAS påverkas inte av det filtret.
-function _abHantelFigur(j, forraAr, nuAr, basFor = _abYrketsBas()) {
+// Filtren: BAS-intervall, yrkesgrupp och antal (kvinnor och män i tabellens kolumn). Gruppen är AID-koden i
+// BAS-intervallet (ADR-89), och bokslutet bär intervallet.
+function _abHantelFigur(j, forraAr, nuAr) {
     const { rader } = _abHantelRader(j);
     if (!rader.length) return null;
     const farg = { mot: PALETTE.semantic.ok, fran: PALETTE.semantic.varning, lika: PALETTE.semantic.neutral };
-    const antal = new Map([...j.grupper.kvar, ...j.grupper.nya, ...j.grupper.borta].map(g => [g.yrke, g.nKv != null && g.nMa != null ? g.nKv + g.nMa : null]));
-    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, yrke: r.namn, ...(basFor(r.namn) != null ? { bas: basFor(r.namn) } : {}),
+    const namnAv = g => (g.bas ? `${g.yrke} (BAS ${g.bas})` : g.yrke);
+    const antal = new Map([...j.grupper.kvar, ...j.grupper.nya, ...j.grupper.borta].map(g => [namnAv(g), g.nKv != null && g.nMa != null ? g.nKv + g.nMa : null]));
+    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, yrke: r.namn, ...(r.bas != null ? { bas: r.bas } : {}),
             ...(antal.get(r.namn) != null ? { n: antal.get(r.namn) } : {}), fore: +r.fore.toFixed(1), efter: +r.efter.toFixed(1), farg: farg[r.riktning] })),
         kolumner: [String(forraAr), String(nuAr)], titel: 'Kvinnors medianlön i procent av mäns', format: 'pct',
-        beskrivning: `Kvinnors medianlön i procent av mäns per ${T.enhet.en}, ${forraAr} (strecket) och ${nuAr} (punkten), sorterade efter förändringens storlek. Grön när kvoten närmat sig lika lön, orange när den fjärmat sig; linjen vid 100 % är lika lön.` });
+        beskrivning: `Kvinnors medianlön i procent av mäns per ${T.enhet.en} och ${T.niva.en}, ${forraAr} (strecket) och ${nuAr} (punkten), sorterade efter förändringens storlek. Grön när kvoten närmat sig lika lön, orange när den fjärmat sig; linjen vid 100 % är lika lön.` });
     return { ..._abEtiketterBortFranStrecket(fig), urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.antal] };
-}
-/**
- * Yrkets BAS-intervall i årets lönefil, eller null när yrket saknas eller finns i flera intervall. Yrket är AID-koden:
- * gruppens namn slås upp på sin kod (aidAvYrke), så att alla stavningar av etiketten räknas.
- */
-function _abYrketsBas(d = state.data || []) {
-    const perYrke = new Map();
-    for (const r of d) {
-        if (r.yrke == null || r.bas == null || r.bas === '') continue;
-        const kod = aidAvRad(r);
-        if (!perYrke.has(kod)) perYrke.set(kod, new Set());
-        perYrke.get(kod).add(String(r.bas));
-    }
-    return yrke => { const s = perYrke.get(aidAvYrke(yrke)); return s && s.size === 1 ? [...s][0] : null; };
 }
 
 /** Årets värde skrivs på den sida av punkten där strecket inte är: till höger när värdet stigit, till vänster när det sjunkit. */
@@ -38436,6 +38460,8 @@ function _abForandringText(f, { kr = true } = {}) {
 
 /** Lönespridningen ((P90 − P10) / median) i procent av medianen, eller streck när värdet saknas (en äldre fil). */
 function _abSpridningText(v) { return typeof v === 'number' ? svPct(v * 100, 0) : '–'; }
+/** Ett bokslut från före ADR-89 har en rad per AID-etikett över alla BAS-intervall; årets rader är per AID-etikett och intervall. */
+function abGrupperEjJamforbara() { return `Förra årets bokslut har en rad per ${T.enhet.en} över alla ${T.niva.fl}; i år är en grupp ${T.enhet.en} i ${T.niva.en}. Grupperna jämförs därför inte rad för rad, och skillnaden i antalet flaggade visas inte. Nyckeltalen, ${T.niva.fl} och Att göra jämförs som vanligt.`; }
 const AB_SPRIDNING_NOT = 'Lönespridning: (P90 − P10) / median, i procent av medianen; streck när förra årets fil saknar måttet (en äldre version av verktyget).';
 
 /** Tabellen Löneutveckling per BAS-intervall i panelen, eller raden om att förra årets bokslut saknar fältet. */
@@ -38545,14 +38571,16 @@ function renderArsjamforelse() {
         + j.nyckeltal.map(r => `<tr><td>${esc(r.etikett)}</td><td class="t-tal">${skriv(r.forra, r.typ)}</td><td class="t-tal">${skriv(r.nu, r.typ)}</td><td class="t-tal">${diff(r.diff, r.typ)}</td></tr>`).join('')
         + '</tbody></table>';
     const antal = g => _abGruppAntal(g, nu.ar) ?? '–';
-    const gruppRad = g => `<tr><td>${esc(g.yrke)}</td><td class="t-tal">${antal(g)}</td><td class="t-tal">${g.gapForra == null ? '–' : svPct(g.gapForra, 1)}</td><td class="t-tal">${g.gapNu == null ? '–' : svPct(g.gapNu, 1)}</td>`
+    const gruppRad = g => `<tr><td>${esc(_ruGruppMedBas(g))}</td><td class="t-tal">${antal(g)}</td><td class="t-tal">${g.gapForra == null ? '–' : svPct(g.gapForra, 1)}</td><td class="t-tal">${g.gapNu == null ? '–' : svPct(g.gapNu, 1)}</td>`
         + `<td class="t-tal">${_abSpridningText(g.spridningForra)}</td><td class="t-tal">${_abSpridningText(g.spridningNu)}</td></tr>`;
     const grupptabell = (rubrik, lista, tom) => `<h4 class="fs-sm marg-10-0-4">${esc(rubrik)} (${lista.length})</h4>` + (lista.length
         ? `<table class="data-table st-088"><thead><tr><th>${termStor(T.enhet.en)}</th><th class="t-hoger">Kvinnor / män ${nu.ar}</th><th class="t-hoger">Skillnad ${forra.ar}</th><th class="t-hoger">Skillnad ${nu.ar}</th><th class="t-hoger">Lönespridning ${forra.ar}</th><th class="t-hoger">Lönespridning ${nu.ar}</th></tr></thead><tbody>${lista.map(gruppRad).join('')}</tbody></table>`
         : `<p class="text-dampad-sm marg-0">${esc(tom)}</p>`);
     const g = j.grupper;
     const hantel = _abHantelRader(j);
-    const grupper = grupptabell('Flaggade båda åren', g.kvar, `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${termAdjektiv('flaggad', T.enhet)} båda åren.`)
+    const grupper = g.ejJamforbara
+        ? `<p class="text-dampad-sm marg-0" id="arsjamforelse-grupper-ej-jamforbara">${esc(abGrupperEjJamforbara())}</p>`
+        : grupptabell('Flaggade båda åren', g.kvar, `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${termAdjektiv('flaggad', T.enhet)} båda åren.`)
         + grupptabell('Nya flaggade', g.nya, `Inga nya flaggade ${T.enhet.fl}.`)
         + grupptabell('Inte längre flaggade', g.borta, `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} har slutat vara ${termAdjektiv('flaggad', T.enhet)}.`)
         + (hantel.rader.length ? `<h4 class="fs-sm marg-10-0-4">Förändring per ${T.enhet.en}</h4><div class="chart-container"><div id="chart-arsjamforelse"></div></div>` : '')
@@ -39862,21 +39890,19 @@ function buildBasdossier(bas) {
     const referens = pol ? { namn: referensKortnamn(), p10: pol.p10 ?? null, med: pol.med ?? null, p90: pol.p90 ?? null,
         diffPct: { p10: pct(p10, pol.p10), med: pct(median, pol.med), p90: pct(p90, pol.p90) } } : null;
 
-    // 2. Yrkesgrupperna i intervallet: antal och medianer räknade på intervallets rader, statusen Lika arbetes för hela
-    //    yrket (Lika arbete grupperar per AID-kod över alla BAS-intervall, ADR-89), så att dossiern aldrig säger något annat.
-    const lika = _ruLikaArbeteGrupper(df, { k, golv: statGolv() });
+    // 2. Grupperna i intervallet: Lika arbetes grupper (AID-koden i BAS-intervallet, ADR-89) läses direkt, med antal,
+    //    medianer och status, så att dossiern aldrig säger något annat än Lika arbete.
     const alla = getData();
-    //    Grupperna paras på AID-koden: namnet (texten på gruppens första rad) kan skilja sig mellan intervallet och hela
-    //    underlaget när koden har flera texter.
-    const helaYrket = new Map(laLikaGrupper(alla, k).grupper.map(g => [g.aid, g]));
+    const lika = laLikaGrupper(alla, k);
+    const iBas = g => g.bas === String(bas);
     const basPerYrke = new Map();
     for (const r of alla) { if (!(r.lon > 0)) continue; const kod = aidAvRad(r); if (!basPerYrke.has(kod)) basPerYrke.set(kod, new Set()); basPerYrke.get(kod).add(r.bas); }
     const nycklar = new Set(gruppdossierCandidates().map(g => g.key));
-    const yrken = lika.grupper.map(g => {
+    const yrken = lika.grupper.filter(iBas).map(g => {
         const aid = g.aid;
-        const delade = !g.samladMedian, hela = helaYrket.get(aid) || g;
+        const delade = !g.samladMedian;
         const ocksaI = [...(basPerYrke.get(aid) || [])].filter(b => b !== bas).sort();
-        return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(hela), samlad: !!g.samladMedian, helaTot: hela.tot, ocksaI,
+        return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(g), samlad: !!g.samladMedian, ocksaI,
             medKv: delade ? g.medKv : null, medMa: delade ? g.medMa : null, kvotPct: delade ? g.kvot * 100 : null,
             medTot: g.samladMedian ? g.medTot : null, dossierKey: nycklar.has(`${aid}|${bas}`) ? `${aid}|${bas}` : null };
     }).sort((a, b) => b.tot - a.tot || String(a.yrke).localeCompare(String(b.yrke), 'sv'));
@@ -39920,8 +39946,8 @@ function buildBasdossier(bas) {
 
     return { bas, n: df.length, nKv: kv.length, nMa: ma.length, andelKv: df.length ? kv.length / df.length * 100 : null,
         median, p10, p90, konOk, medKv, medMa, kvotPct: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
-        referens, yrken, yrkenUtelamnade: lika.utelamnade.slice().sort((a, b) => String(a).localeCompare(String(b), 'sv')),
-        ejJamforbara: lika.ejJamforbara.slice(),
+        referens, yrken, yrkenUtelamnade: lika.utelamnadeGrupper.filter(iBas).map(g => g.yrke).sort((a, b) => String(a).localeCompare(String(b), 'sv')),
+        ejJamforbara: lika.ejJamforbaraGrupper.filter(iBas).map(g => g.yrke),
         par: { kandidat: kandidat.map(parRad), hierarkiska: hierarkiska.map(parRad), utelamnade: parUtelamnade },
         alder, forra, k };
 }
@@ -40055,9 +40081,9 @@ function _bdRenderBody(d) {
         </div>`;
 }
 
-/** Noten för ett yrke som också finns i andra BAS-intervall: statusen är Lika arbetes, för hela yrket. */
+/** Noten för en AID-etikett som också finns i andra BAS-intervall: där är den en egen grupp i Lika arbete (ADR-89). */
 function _bdHelaYrketNot(y) {
-    return `Status gäller hela ${T.enhet.bf} (${y.helaTot} personer), som i Lika arbete; ${T.enhet.bf} finns också i ${y.ocksaI.map(b => `BAS ${b}`).join(', ')}`;
+    return `${termStor(T.enhet.bf)} finns också i ${y.ocksaI.map(b => `BAS ${b}`).join(', ')}, som en egen grupp i Lika arbete`;
 }
 
 /** Raden i punkt 5 när det inte finns något att jämföra med. */

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// En grupp är AID-koden i BAS-intervallet också i appen (ADR-89): Lika arbetes tabell per AID-etikett med underraderna
+// En grupp är AID-koden i BAS-intervallet också i appen (ADR-89): Lika arbetes tabell med underraderna
 // per ansvarsgrupp, BAS-dossiern och årsbokslutet räknar en kod med flera texter som en grupp. Underlaget är påhittat:
 // koden 207011 i BAS C med texten "Handläggare" (6 kvinnor och 6 män, uppdragsansvar), "Handläggare, natt" (5 kvinnor
 // och 4 män, inget ansvar) och ett påhittat personnamn (1 man), alltså 11 kvinnor och 11 män. Per text nådde ingen text
@@ -27,7 +27,7 @@ describe('Lika arbete i appen: en grupp per AID-kod', () => {
         const res = w.eval('laLikaGrupper(getData(), 10)');
         expect(res.utelamnade).toEqual([]);
         expect(res.ejJamforbara).toEqual([]);
-        expect(res.grupper.map(g => [g.yrke, g.aid, g.nKv, g.nMa, g.tot, g.samladMedian])).toEqual([[TEXT_A, '207011', 11, 11, 22, false]]);
+        expect(res.grupper.map(g => [g.yrke, g.aid, g.bas, g.nKv, g.nMa, g.tot, g.samladMedian])).toEqual([[TEXT_A, '207011', 'C', 11, 11, 22, false]]);
     });
     it('tabellen per AID-etikett har en rad för koden, och underraderna per ansvarsgrupp räknar alla kodens rader', () => {
         const w = fonster();
@@ -45,20 +45,34 @@ describe('Lika arbete i appen: en grupp per AID-kod', () => {
         expect(under.join('|')).toMatch(/12 \(6\/6\)/);
         expect(under.join('|')).toMatch(/10 \(5\/5\)/);
     });
-    it('BAS-dossiern: en yrkesrad för koden, med hela kodens antal', () => {
+    it('samma kod i två BAS-intervall: två rader intill varandra, med intervallet i kolumnen BAS-intervall och egna underrader', () => {
+        const w = createAppWindow();
+        const iD = underlag().map(r => ({ ...r, bas: 'D', lon: r.lon + 4000 }));
+        w.__state.data = [...underlag(), ...iD];
+        w.eval('generateEUDirectiveMatrix()');
+        const rubriker = [...w.document.querySelectorAll('#matrix-table thead th')].map(th => th.textContent.trim());
+        expect(rubriker[1]).toBe('BAS-intervall');
+        const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow);
+        expect(rader.map(tr => [tr._euRow.aid, tr._euRow.bas, tr.cells[1].textContent.trim()])).toEqual([['207011', 'C', 'C'], ['207011', 'D', 'D']]);
+        expect(rader.every(tr => tr.textContent.includes('22 (11/11)'))).toBe(true);
+        // Underraderna per ansvarsgrupp står under sin grupp och räknar bara gruppens intervall.
+        const alla = [...w.document.querySelectorAll('#matrix-table tbody tr')];
+        const underC = alla.slice(alla.indexOf(rader[0]) + 1, alla.indexOf(rader[1])).filter(tr => tr.classList.contains('la-underrad-ansvar'));
+        expect(underC.map(tr => tr.textContent).join('|')).toMatch(/12 \(6\/6\)/);
+        expect(underC).toHaveLength(2);
+    });
+    it('BAS-dossiern: en yrkesrad för koden, med gruppens antal ur Lika arbete', () => {
         const w = fonster();
         const d = w.eval("buildBasdossier('C')");
-        expect(d.yrken.map(y => [y.yrke, y.aid, y.tot, y.helaTot, y.nKv, y.nMa])).toEqual([[TEXT_A, '207011', 22, 22, 11, 11]]);
+        expect(d.yrken.map(y => [y.yrke, y.aid, y.tot, y.nKv, y.nMa])).toEqual([[TEXT_A, '207011', 22, 11, 11]]);
         expect(d.yrkenUtelamnade).toEqual([]);
         expect(d.ejJamforbara).toEqual([]);
     });
     it('årsbokslutet: en grupp för koden, med lönespridningen för alla kodens rader', () => {
         const w = fonster();
         const b = w.eval('byggArsbokslutNu()');
-        expect(b.grupper.map(g => [g.yrke, g.nKv, g.nMa])).toEqual([[TEXT_A, 11, 11]]);
+        expect(b.grupper.map(g => [g.yrke, g.bas, g.nKv, g.nMa])).toEqual([[TEXT_A, 'C', 11, 11]]);
         expect(b.grupper[0].spridning).not.toBeNull();
         expect(JSON.stringify(b)).not.toMatch(/Anna|Andersson|Handläggare, natt/);
-        // Yrkets BAS-intervall slås upp på koden, så också en annan text för koden hittar intervallet.
-        expect(w.eval(`_abYrketsBas()(${JSON.stringify(TEXT_B)})`)).toBe('C');
     });
 });
