@@ -236,23 +236,39 @@ describe('prioritera: statusgränser och tröskelvärden (characterization)', ()
         expect(enGrupp(37600, 9, 9)[0].status).toBe('atgard');
         expect(enGrupp(37600, 10, 10)[0].status).toBe('akut');
     });
-    it('TVEKSAMT: exakt −5 % i matematiken (38 000 mot 40 000) ger −5,000000000000004 i JavaScript och därmed akut', () => {
+    it('exakt −5 % (38 000 mot 40 000) är inte under gränsen −5 och blir bevaka', () => {
         const [item] = enGrupp(38000);
-        expect(item.diffPct).toBeCloseTo(-5, 10);
-        expect(item.diffPct).toBeLessThan(-5);
-        expect(item.status).toBe('akut');
-    });
-    it('TVEKSAMT: exakt −2 % i matematiken (39 200 mot 40 000) ger −2,0000000000000018 och därmed bevaka', () => {
-        const [item] = enGrupp(39200);
-        expect(item.diffPct).toBeCloseTo(-2, 10);
-        expect(item.diffPct).toBeLessThan(-2);
+        expect(item.diffPct).toBe(-5);
         expect(item.status).toBe('bevaka');
     });
-    it('TVEKSAMT: exakt +5 % i matematiken (42 000 mot 40 000) ger 5,000000000000004 och därmed analysera', () => {
+    it('exakt −2 % (39 200 mot 40 000) är inte under gränsen −2 och blir ok', () => {
+        const [item] = enGrupp(39200);
+        expect(item.diffPct).toBe(-2);
+        expect(item.status).toBe('ok');
+    });
+    it('exakt +5 % (42 000 mot 40 000) är inte över gränsen 5 och blir ok', () => {
         const [item] = enGrupp(42000);
-        expect(item.diffPct).toBeCloseTo(5, 10);
-        expect(item.diffPct).toBeGreaterThan(5);
-        expect(item.status).toBe('analysera');
+        expect(item.diffPct).toBe(5);
+        expect(item.status).toBe('ok');
+    });
+    it('en gruppmedian exakt på en gräns klassas aldrig bortom den (referens 20 000–80 000 i steg om 100)', () => {
+        // −7 och +7 är med för att (median / referens − 1) × 100 och (median − referens) / referens × 100 ger
+        // 7,000000000000001 där; formen med en enda division håller för alla gränser.
+        const forvantad = { '-5': 'bevaka', '-2': 'ok', '5': 'ok', '-7': 'akut', '7': 'analysera' };
+        const fel = [];
+        for (const t of [-5, -2, 5, -7, 7]) {
+            for (let refMedian = 20000; refMedian <= 80000; refMedian += 100) {
+                const lon = refMedian * (100 + t) / 100;
+                if (!Number.isInteger(lon)) continue;
+                const rader = grupp('5301 Undersköterska', 'B', lon, 6, lon, 6);
+                const [item] = prioritera(rader, { referensFor: () => ({ median: refMedian, kalla: 'testref' }), kTroskel: 10,
+                    prioConfig: CONFIG, prioWeights: VIKTER, costSettings: KOST, bristAids: new Set() });
+                if (item.diffPct !== t) fel.push(`${lon} mot ${refMedian}: ${item.diffPct}`);
+                // ±7 ligger bortom gränserna och visar bara att talet blir exakt; ±5 och −2 ligger på dem.
+                if (item.status !== forvantad[String(t)]) fel.push(`${lon} mot ${refMedian}: ${item.status}`);
+            }
+        }
+        expect(fel).toEqual([]);
     });
     it('gruppen med n = kTroskel tas med, n = kTroskel − 1 hoppas över', () => {
         expect(enGrupp(37960, 10, 10)).toHaveLength(1);

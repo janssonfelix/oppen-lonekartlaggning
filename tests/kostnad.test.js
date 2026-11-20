@@ -1,17 +1,40 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Characterization-tester för kostnadsräkningen i src/lib/prioritering.js: kostnadPerAr (åtgärdskostnad per år med
- * beräkningsperiod och PO-påslag) och arsbeloppMening (räkneexemplet om könsskillnaden i kronor per år).
+ * Characterization-tester för kostnadsräkningen: kostnadsformeln i src/lib/kostnad.js (kostnadsfaktor, periodkostnad och
+ * kostnadPerAr, åtgärdskostnad per år med beräkningsperiod och PO-påslag) och arsbeloppMening i src/lib/prioritering.js
+ * (räkneexemplet om könsskillnaden i kronor per år).
  *
  * Förväntade tal är handräknade ur formeln |belopp| × månader × (1 + PO) × antal. Lägen där dagens beteende ser
  * tveksamt ut är låsta som de är idag och märkta TVEKSAMT; de ska inte tolkas som avsedd specifikation.
  */
 import { describe, it, expect } from 'vitest';
-import { kostnadPerAr, arsbeloppMening } from '../src/lib/prioritering.js';
+import { kostnadsfaktor, periodkostnad, kostnadPerAr } from '../src/lib/kostnad.js';
+import { arsbeloppMening } from '../src/lib/prioritering.js';
 
 const KOST = { months: 12, poPct: 39.15 };
 const kr = v => `${v} kr`;
+
+describe('kostnadsfaktor och periodkostnad: inställningarna med standardvärden', () => {
+    it('månader och PO ur inställningarna, PO-faktorn 1 + PO / 100', () => {
+        expect(kostnadsfaktor({ months: 6, poPct: 10.5 })).toEqual({ months: 6, poPct: 10.5, poFaktor: 1.105 });
+    });
+    it('null, saknade fält och months 0 ger 12 månader och 0 % PO', () => {
+        const standard = { months: 12, poPct: 0, poFaktor: 1 };
+        expect(kostnadsfaktor(null)).toEqual(standard);
+        expect(kostnadsfaktor(undefined)).toEqual(standard);
+        expect(kostnadsfaktor({})).toEqual(standard);
+        expect(kostnadsfaktor({ months: 0, poPct: null })).toEqual(standard);
+    });
+    it('periodkostnad: en summerad månadskostnad × månader × PO-faktor, i den ordningen och med tecknet kvar', () => {
+        expect(periodkostnad(10000, KOST)).toBe(10000 * 12 * (1 + 39.15 / 100));
+        expect(periodkostnad(-1000, { months: 12, poPct: 0 })).toBe(-12000);
+        expect(periodkostnad(1000, null)).toBe(12000);
+    });
+    it('kostnadPerAr är periodkostnaden för absolutbeloppet gånger antalet', () => {
+        expect(kostnadPerAr(-1234, 7, KOST)).toBe(periodkostnad(1234, KOST) * 7);
+    });
+});
 
 describe('kostnadPerAr: formeln |belopp| × månader × (1 + PO) × antal', () => {
     it('1 000 kr × 12 mån × PO 39,15 % × 10 personer = 166 980', () => {

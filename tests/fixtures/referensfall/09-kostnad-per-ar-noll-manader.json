@@ -1,7 +1,7 @@
 {
   "id": "kostnad-per-ar-noll-manader",
   "titel": "Kostnad per år: negativt belopp, 0 månader och 0 % PO",
-  "funktion": "src/lib/prioritering.js#kostnadPerAr",
+  "funktion": "src/lib/kostnad.js#kostnadPerAr",
   "indata": [-500, 3, { "months": 0, "poPct": 0 }],
   "forvantat": 18000,
   "tolerans": 1e-9,

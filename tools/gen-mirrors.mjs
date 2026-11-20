@@ -50,6 +50,11 @@ export const MODULES = [
         }
     },
     {
+        // Kostnadsformeln (månadsbelopp × månader × PO-faktor): före löneöversynen och prioriteringen, som importerar den
+        file: 'kostnad.js', ns: '__mirrorKostnad',
+        expose: { kostnadsfaktor: '_kostFaktor', periodkostnad: '_kostPeriod', kostnadPerAr: null }
+    },
+    {
         file: 'struktur.js', ns: '__mirrorStructure',
         expose: {
             medianGapPct: '_stMedianGapPct', representationByBas: '_stRepresentationByBas',

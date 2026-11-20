@@ -4,7 +4,7 @@
  * Öppen lönekartläggning — Prioriteringsanalys (ren modell)
  *
  * Grupperar raderna per yrke × BAS, beräknar median, könsmedianer (med k-regeln, ADR-12),
- * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod),
+ * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod, formeln i kostnad.js),
  * status mot trösklar, snabbvinst, bristyrke och det sammanvägda prioriteringsindexet.
  *
  * Modellen tar allt den behöver som parametrar och läser inget globalt tillstånd.
@@ -15,20 +15,7 @@
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
 import { median } from './stat.js';
-
-/**
- * Ett månadsbelopp per person som belopp per år för `antal` personer, med beräkningsperiod och PO-påslag ur
- * kostnadsinställningarna: |belopp| × månader × (1 + PO) × antal. Prioriteringens åtgärdskostnad och
- * gruppdossierns räkneexempel räknar med samma formel.
- * @param {number} kronorPerManad
- * @param {number} antal
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
- */
-export function kostnadPerAr(kronorPerManad, antal, costSettings) {
-    const months = (costSettings && costSettings.months) || 12;
-    const poFactor = 1 + ((costSettings && costSettings.poPct) || 0) / 100;
-    return Math.abs(kronorPerManad) * months * poFactor * antal;
-}
+import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
@@ -44,7 +31,7 @@ export function arsbeloppMening(g, costSettings, kr) {
     if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
     const diff = Math.round((g.medMa - g.medKv) / 100) * 100;
     if (diff < 100) return null;
-    const months = (costSettings && costSettings.months) || 12, po = (costSettings && costSettings.poPct) || 0;
+    const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${String(po).replace('.', ',')} %). Det är ett räkneexempel, `
@@ -109,7 +96,8 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
         // ADR-12: könsjämförelsen kräver kTroskel personer av vartdera könet; annars bara gruppens samlade median.
         const medKv    = kvLons.length >= kTroskel ? median(kvLons) : null;
         const medMa    = maLons.length >= kTroskel ? median(maLons) : null;
-        const gapPct   = (medKv && medMa) ? (medKv/medMa - 1) * 100 : null;
+        // Skillnaden gånger 100 delat med jämförelsevärdet: en enda avrundning (se diffPct nedan).
+        const gapPct   = (medKv && medMa) ? (medKv - medMa) * 100 / medMa : null;
 
         // Referensvärde (levereras av anroparen)
         const ref = referensFor(g.aid, g.bas);
@@ -117,8 +105,12 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
         const refSource = ref ? ref.kalla : null;
         if (!refMedian) return; // ingen referens för denna grupp – hoppa över
 
-        const diffPct = ((med / refMedian) - 1) * 100;
         const diffKr  = med - refMedian;
+        // För löner i hela kronor (en median kan bli en halv krona) är kronskillnaden gånger 100 exakt, så divisionen
+        // är den enda avrundningen och en avvikelse som är exakt en procentsats blir exakt den: 38 000 mot 40 000 ger
+        // −5, inte −5,000000000000004 som (38 000 / 40 000 − 1) × 100. Då behövs ingen tolerans mot trösklarna
+        // nedan: en grupp exakt på gränsen hamnar aldrig bortom den (prövas i tests/prioritering.test.js).
+        const diffPct = diffKr * 100 / refMedian;
         // Beräkningsperiod + PO-påslag (sociala avgifter + pensioner)
         // Total kostnad för att lyfta gruppen TILL referensen (endast om under), inklusive PO
         const annualGapTotal = diffKr < 0 ? kostnadPerAr(diffKr, g.rows.length, costSettings) : 0;
