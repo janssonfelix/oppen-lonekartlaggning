@@ -39,12 +39,15 @@ describe('likaArbeteGrupper', () => {
     it('utelämnar yrket när ett kön är under k och hela gruppen under k', () => {
         const res = likaArbeteGrupper(grupp('D', 5, 30000, 4, 40000), { k: K });
         expect(res.grupper).toEqual([]);
-        expect(res.utelamnade).toEqual(['D']);
+        // Namnen bär BAS-intervallet: en grupp är AID-koden i intervallet (ADR-89).
+        expect(res.utelamnade).toEqual(['D (BAS C)']);
+        expect(res.utelamnadeGrupper).toEqual([{ yrke: 'D', aid: 'D', bas: 'C' }]);
     });
     it('yrken med färre än 2 av ett kön är inte jämförbara', () => {
         const res = likaArbeteGrupper(grupp('E', 30, 30000, 1, 40000), { k: K });
         expect(res.grupper).toEqual([]);
-        expect(res.ejJamforbara).toEqual(['E']);
+        expect(res.ejJamforbara).toEqual(['E (BAS C)']);
+        expect(res.ejJamforbaraGrupper).toEqual([{ yrke: 'E', aid: 'E', bas: 'C' }]);
     });
     it('sorterar fallande på gap och ger percentiler per kön', () => {
         const r = [...grupp('Liten', 10, 99000, 10, 100000), ...grupp('Stor', 10, 80000, 10, 100000)];

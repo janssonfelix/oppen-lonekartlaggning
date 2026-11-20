@@ -213,8 +213,8 @@ rubrikraden, också när det är hopfällt.
   att hämta det ur fem flikar. Dossiern har:
   - nyckeltalen (antal, kvinnor och män, median, P10–P90) och läget mot ställningstagandets rad för intervallet
   - AID-etiketterna i intervallet, med en knapp till varje grupps dossier. För varje grupp står antal, medianer
-    per kön, kvinnors median i procent av mäns och samma status som i Lika arbete. Statusen gäller hela AID-etiketten.
-    Finns AID-etiketten också i andra intervall säger en not det.
+    per kön, kvinnors median i procent av mäns och samma status som på gruppens rad i Lika arbete, för AID-etiketten
+    i intervallet. Finns AID-etiketten också i andra intervall säger en not det; där är den en egen grupp med egen status.
   - kandidatparen i Likvärdigt arbete där den kvinnodominerade AID-etiketten ligger i intervallet, och paren *Lägre krav,
     högre lön*
   - medianlönen per åldersgrupp (–34, 35–49, 50–) och kön, med en länk till Ålder & karriär med intervallet valt
@@ -260,7 +260,8 @@ rubrikraden, också när det är hopfällt.
    ställningstagandet. Ligger både löneläget och statistiken över ställningstagandet har det halkat efter
    marknaden. Ligger bara löneläget över har organisationen gått före. Förslaget är ett förslag, ingen regel.
 3. **Lika arbete** — fliken öppnar med **Kvinnor och män med samma AID-etikett**: kvinnors och mäns medianlön per
-   AID-etikett.
+   AID-etikett i varje BAS-intervall. En AID-etikett som finns i två BAS-intervall är två grupper, på två rader intill
+   varandra, och kolumnen BAS-intervall säger vilken som är vilken.
    Varje grupp får en status som bygger på statistisk signal: **Värt att granska** när skillnaden är
    statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets egen storleksgräns),
    **Följ upp** när den är minst 3 % men inte säkerställd, eller säkerställd men under 3 %, **Balanserat** när den
@@ -274,9 +275,10 @@ rubrikraden, också när det är hopfällt.
    skuggade fältet är de där skillnaden är svår att förklara med slumpen. Nyckeltalen överst tar med hur stor
    skillnaden är när ålder och BAS-intervall räknats bort (regressionen, som står i Lönestruktur).
    Under Fördjupning kommer Personer att granska och avsnitten **Lika arbete AID × BAS** och **Analys på
-   individnivå**. De har tabellerna i den form en skriven lönekartläggning brukar ha. Den första har en rad per
-   AID-kod och BAS-intervall med kvinnors median i procent av mäns, mot slumpens gränser, och en bedömning. Den
-   andra är en arbetslista över grupperna där något kön är för litet för lönemått, att fylla i efter den
+   individnivå**. De har tabellerna i den form en skriven lönekartläggning brukar ha. Den första har samma grupper
+   och samma status som tabellen ovan, ordnade efter BAS-intervall, med AID-koden och slumpens gränser i egna
+   kolumner. Den ger ingen egen bedömning, så de två tabellerna säger alltid samma sak om en grupp. Diagrammet visar
+   gränserna som bild; statusen står i tabellerna. Den andra är en arbetslista över grupperna där något kön är för litet för lönemått, att fylla i efter den
    individuella granskningen. Båda finns som blad i Excel-filen.
    Kolumnen **Kvinnor nationellt** visar andelen kvinnor med samma AID-etikett i landets kommuner och
    regioner. Talen kommer ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
@@ -533,8 +535,8 @@ Fler diagram har filter:
 - **Kandidatparen** i Likvärdigt arbete: den kvinnodominerade AID-etikettens BAS-intervall, löneskillnaden och antalet
   i den kvinnodominerade AID-etiketten. Ett filter döljer hela par.
 - **Före och efter** i Löneöversyn: BAS-intervall eller AID-etikett, efter vald nivå, och antal.
-- **Förändringen per AID-etikett** i Spara och jämför år: BAS-intervall, AID-etikett och antal. En AID-etikett som finns i
-  flera BAS-intervall i årets lönefil påverkas inte av BAS-filtret.
+- **Förändringen per AID-etikett** i Spara och jämför år: BAS-intervall, AID-etikett och antal. Varje rad är en
+  AID-etikett i ett BAS-intervall.
 
 Filtren verkar tillsammans. Döljer de alla punkter står "Inga grupper i urvalet" i diagrammet; ändra eller töm ett
 fält för att få tillbaka dem. **Visa alla** nollställer alla filter i diagrammet. Under diagrammet står vad som är
@@ -642,8 +644,8 @@ du ordna om och ta bort tabellerna.
 
 - **"Spara konfiguration"** (fliken **Spara och jämför år** under *Arbetet*, avsnittet *Spara/ladda konfiguration*)
   om du vill återuppta inställningarna senare. Datafilen laddas om, och själva lönedatan sparas aldrig.
-  Filen innehåller också **årets bokslut**: nyckeltal och en rad per AID-etikett där båda könen når minsta
-  gruppstorlek. Där finns också en rad per BAS-intervall med minst så många personer (antal, P10, median och P90)
+  Filen innehåller också **årets bokslut**: nyckeltal och en rad per AID-etikett och BAS-intervall där båda könen
+  når minsta gruppstorlek. Där finns också en rad per BAS-intervall med minst så många personer (antal, P10, median och P90)
   och Att göra-punkternas läge.
   Läs in filen nästa år, så visar **Jämförelse med förra året** (samma flik) vad som ändrats:
   - nyckeltalen sida vid sida

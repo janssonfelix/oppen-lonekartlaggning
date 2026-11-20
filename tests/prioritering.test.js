@@ -91,7 +91,7 @@ describe('prioritera: gruppen är AID-koden och BAS-intervallet', () => {
         expect(res).toHaveLength(1);
         const [g] = res;
         expect([g.aid, g.bas, g.n, g.kvN, g.maN]).toEqual(['207011', 'C', 15, 8, 7]);
-        expect(g.yrke).toBe('207011 Handläggare');   // texten på gruppens första rad
+        expect(g.yrke).toBe('207011 Handläggare');   // texten på flest av gruppens rader (8 mot 7)
         // De 15 lönerna sorterade: 30 000 ×4, 31 000 ×4, 32 000 ×4, 33 000 ×3; den åttonde är 31 000.
         expect(g.median).toBe(31000);
         expect(g.diffKr).toBe(-4000);
@@ -99,10 +99,10 @@ describe('prioritera: gruppen är AID-koden och BAS-intervallet', () => {
         expect([g.medKv, g.medMa, g.gapPct]).toEqual([null, null, null]);   // ett kön under tröskeln
         expect(g._rows).toHaveLength(15);
     });
-    it('med den andra texten först heter gruppen efter den; talen är desamma', () => {
+    it('med den andra texten först heter gruppen ändå efter texten på flest rader; talen är desamma', () => {
         const [a] = kör([...forsta, ...andra], opt), [b] = kör([...andra, ...forsta], opt);
-        expect(b.yrke).toBe('207011 Handläggare, natt');
-        expect({ ...b, yrke: null, _rows: null }).toEqual({ ...a, yrke: null, _rows: null });
+        expect(b.yrke).toBe('207011 Handläggare');
+        expect({ ...b, _rows: null }).toEqual({ ...a, _rows: null });
     });
     it('samma grupper och namn som jamforelseRader', () => {
         const rader = [...forsta, ...andra, ...grupp('207011 Handläggare', 'D', 36000, 6, 36000, 6)];

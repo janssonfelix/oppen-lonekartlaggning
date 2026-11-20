@@ -109,8 +109,19 @@ function _explorerVisaOnskad() {
     return /** @type {HTMLInputElement} */ (sel).value;
 }
 
+// AID-etiketten grupperas på koden i hela Utforska (gruppnycklar i src/lib/falt.js): pivoten, villkoren, värdelistorna
+// och fördelningsfiguren läser samma nycklar och samma namn. Räknas en gång per underlag; en WeakMap, så att inget
+// ligger kvar när datan släpps.
+const _utNycklarMinne = new WeakMap();
+/** @param {any[]} rows */
+function _utNycklar(rows) {
+    let m = _utNycklarMinne.get(rows);
+    if (!m || m.n !== rows.length) { m = { n: rows.length, f: _utGruppnycklar(rows) }; _utNycklarMinne.set(rows, m); }
+    return m.f;
+}
+
 function _explorerUrvalAntal(rows, urval) {
-    const person = _urPersonFilter(urval);
+    const person = _urPersonFilter(urval, _utNycklar(rows));
     const ut = { n: 0, nKv: 0, nMa: 0 };
     for (const r of rows) {
         if (!(r.lon > 0) || !person(r)) continue;

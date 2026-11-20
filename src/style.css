@@ -3301,6 +3301,10 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .pag-tabell-wrap { overflow-x: auto; max-width: 100%; }
 /* Yrkesgruppstabellen har nio kolumner: snävare sidmarginaler i cellerna, så att den ryms utan att rulla i sidled. */
 #matrix-table th, #matrix-table td { padding-left: 8px; padding-right: 8px; }
+/* Den snävare marginalen ovan vinner över .sortable:s plats för pilen (id före klass): ge pilen tillbaka sitt utrymme,
+   tätare som i tabellerna per AID-kod och BAS-intervall, så att rubriktext och pil inte överlappar i smala kolumner. */
+#matrix-table thead th.sortable { padding-right: 14px; }
+#matrix-table thead th.sortable::before, #matrix-table thead th.sortable::after { right: 3px; }
 /* Lika arbete per AID-kod och BAS-intervall har nio kolumner i grundvyn: snävare sidmarginaler i cellerna och en tätare
    sorteringspil, så att grundvyn (Fler kolumner) ryms vid 1 280 punkter också med långa etikettnamn. */
 #aidbas-lika-tabell td { padding-left: 6px; padding-right: 6px; }

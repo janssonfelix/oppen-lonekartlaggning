@@ -245,14 +245,16 @@ describe('samma bild på Översikt', () => {
         expect(t).not.toMatch(/:s\b/);
         if (w.eval('harReferens()')) expect(t).toBe(`Under P10 i ${w.eval('referensKortnamn()')}`);
     });
-    it('Lika arbete AID x BAS: nyckeltalet räknar som trattens not ("N av M bedömda grupper utanför gränserna")', () => {
-        w.__state.kLage = 'export';
-        w.__renderTabContent('matrix');
-        const nyckel = w.document.getElementById('nyckel-la-aidbas').textContent;
-        const not = w.document.getElementById('la-tratt-not').textContent;
-        const m = /^(\d+) av (\d+) bedömda grupper utanför gränserna$/.exec(nyckel);
-        expect(m, nyckel).not.toBeNull();
-        expect(not.startsWith(`${m[1]} av ${m[2]} bedömda grupper utanför gränserna`), not).toBe(true);
+    it('Lika arbete AID x BAS: nyckeltalet är detsamma som tabellen per AID-etikett, i båda lägena (ADR-90)', () => {
+        for (const lage of ['export', 'skarm']) {
+            w.__state.kLage = lage;
+            w.__renderTabContent('matrix');
+            const nyckel = w.document.getElementById('nyckel-la-aidbas').textContent;
+            expect(nyckel, lage).toMatch(/^\d+ att granska/);
+            expect(nyckel, lage).toBe(w.document.getElementById('nyckel-la-yrkesgrupper').textContent);
+            // Trattens not ger ingen egen status.
+            expect(w.document.getElementById('la-tratt-not').textContent).not.toMatch(/bedömda grupper/);
+        }
         w.__state.kLage = 'skarm';
     });
     it('en röd gap-ruta står aldrig bredvid en tom åtgärdslista', () => {

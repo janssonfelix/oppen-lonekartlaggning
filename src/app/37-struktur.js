@@ -238,11 +238,13 @@ function _tradkartaLagen(blad) {
 }
 function _strukturTradkartaFigur(rader, k = kTroskel()) {
     const perBas = new Map();
+    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const namnrad = namnrader(rader.filter(r => r.bas != null && r.bas !== ''), r => `${String(r.aid || r.yrke || 'okänd')}|${r.bas}`);
     for (const r of rader) {
         if (r.bas == null || r.bas === '') continue;
         if (!perBas.has(r.bas)) perBas.set(r.bas, new Map());
         const aid = String(r.aid || r.yrke || 'okänd'), g = perBas.get(r.bas);
-        if (!g.has(aid)) g.set(aid, { aid, bas: r.bas, namn: r.yrkeLabel || r.yrke || aid, n: 0, nKv: 0 });
+        if (!g.has(aid)) { const nr = namnrad.get(`${aid}|${r.bas}`); g.set(aid, { aid, bas: r.bas, namn: nr.yrkeLabel || nr.yrke || aid, n: 0, nKv: 0 }); }
         const o = g.get(aid);
         o.n++; if (arKvinna(r)) o.nKv++;
     }

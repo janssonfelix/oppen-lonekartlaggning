@@ -25,7 +25,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
-import { groupKey, konOf } from './falt.js';
+import { gruppnycklar, konOf } from './falt.js';
 import { skapaTermer, stor } from './termer.js';
 import { personOrd } from './namn.js';
 import { sammanslagning } from './undertryckning.js';
@@ -201,7 +201,9 @@ function _beraknaPoster(rader, k, variabler) {
     /** @type {Record<string, Post[]>} */
     const poster = {};
     for (let i = 0; i <= n; i++) poster['ABCDE'[i]] = [];
-    const nyckel = v => r => groupKey(r, v) ?? '—';   // åldersgrupp saknas (ålder 0) blir en egen grupp
+    // AID-etiketten grupperas på koden, med namnet från texten på flest av kodens rader (gruppnycklar i falt.js).
+    const gruppnyckel = gruppnycklar(rader);
+    const nyckel = v => r => gruppnyckel(r, v) ?? '—';   // åldersgrupp saknas (ålder 0) blir en egen grupp
     // Antalet grupper på nivån `djup` (1 = första variabeln) bland raderna, räknat före sammanslagningen.
     const antalGrupper = (g, djup) => new Set([...g.kv, ...g.ma].map(r => variabler.slice(0, djup).map(v => nyckel(v)(r)).join('\u0001'))).size;
 

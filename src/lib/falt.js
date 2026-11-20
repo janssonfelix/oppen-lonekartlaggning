@@ -9,7 +9,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { sektorsnamn, mellannivaEtikett } from './aid.js';
+import { sektorsnamn, mellannivaEtikett, aidAvRad, namnrader } from './aid.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
 import { arKvinna, arMan } from './kon.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
@@ -76,4 +76,24 @@ export function groupKey(row, dim) {
     if (dim === 'sektor') return sektorsnamn(row.aid);
     if (dim === 'aidniva') return mellannivaEtikett(row.aid) ?? OKAND_AID_KOD;
     return null;
+}
+
+/**
+ * Gruppnycklarna för ett underlag: som groupKey, men dimensionerna 'aid' och 'aidbas' grupperar på AID-koden
+ * (aidAvRad), inte på texten i fältet för AID-etikett. Namnet är groupKey(rad, 'aid') för texten som står på flest
+ * rader (namnrader i aid.js): för 'aid' bland kodens rader i underlaget, för 'aidbas' bland kodens rader i
+ * BAS-intervallet, så att 'aidbas' bär samma namn som gruppen i resten av verktyget. Två stavningar av samma etikett
+ * blir alltså en grupp med ett namn. För ett underlag där varje kod har en enda text är nycklarna desamma som groupKey ger.
+ * @param {any[]} rader
+ * @returns {(row: any, dim: string) => (string|null)}
+ */
+export function gruppnycklar(rader) {
+    const gruppAv = r => `${aidAvRad(r)}\u0000${r.bas || '—'}`;
+    const perKod = namnrader(rader, aidAvRad), perGrupp = namnrader(rader, gruppAv);
+    const namnAv = (karta, nyckel, row) => { const r = karta.get(nyckel); return groupKey(r ?? row, 'aid'); };
+    return (row, dim) => {
+        if (dim === 'aid') return namnAv(perKod, aidAvRad(row), row);
+        if (dim === 'aidbas') return `${namnAv(perGrupp, gruppAv(row), row)} · BAS ${row.bas || '—'}`;
+        return groupKey(row, dim);
+    };
 }

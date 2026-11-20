@@ -120,10 +120,11 @@ export function invariantSvit(k, extra) {
             expect(utdata.find(([n]) => n.startsWith('Excel alla flikar'))[1]).toMatch(/\[Jämförelsestatistik\][^]*Matchning mot jämförelsestatistiken/);
             expect(utdata.find(([n]) => n === 'rapportunderlag: referenser')?.[1]).toMatch(/<th>AID-etikett<\/th><th>Matchning<\/th>[^]*AID \+ BAS/);
         });
-        // Sammanfattningen räknar bara yrkesgrupper som når tröskeln: 14 vid 10 (de sex säkra, toppyrket, de fyra mellan och
-        // de tre med ett litet kön), 10 vid 25 (utan de fyra mellan). Fixturen har en statistikrad per AID×BAS.
+        // Sammanfattningen räknar bara yrkesgrupper som når tröskeln: 17 vid 10 (de sex säkra, toppyrket, de fyra mellan,
+        // de tre med ett litet kön, de två i J och 7600 i L), 13 vid 25 (utan de fyra mellan). Fixturen har en
+        // statistikrad per AID×BAS.
         it('statistikens matchning räknar bara grupper som når tröskeln', () => {
-            const n = k === 10 ? 14 : 10;
+            const n = k === 10 ? 17 : 13;
             const t = utdata.find(([namn]) => namn === 'Löneläget: statistikens matchning')[1];
             expect(t).toContain(`Statistiken: ${n} AID-etiketter i BAS-intervall matchade på AID och BAS, 0 på endast AID, 0 utan statistik.`);
             expect(t).toContain(`I urvalet: ${n} AID-etiketter i BAS-intervall på AID + BAS, 0 på endast AID, 0 utan statistik.`);
@@ -192,6 +193,28 @@ export function invariantSvit(k, extra) {
             // Flikarna i exportläget är också skärmen: förhandskontrollen står där, men följer inte med i någon export.
             for (const [namn, text] of exporter().filter(([n]) => n !== 'skärm i exportläget: alla flikar')) for (const v of harNagon(text, FK_RA)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
             expect(lackor).toEqual([]);
+        });
+        // JPA-protokollet (ADR-91): intervallet J har en rad i blad 3 och gruppen 7500 en rad i blad 2, och intervallets
+        // övriga 3 kvinnor står inte i blad 2. Intervallet L har ingen rad i blad 3, men dess medellön per kön står i
+        // tabellerna per BAS-intervall, och gruppen 7600 har en rad i blad 2. Gruppernas medelvärden undertrycks, med en
+        // not; medianerna och intervallets rad står kvar. Utan raderna prövar differensprovet nedan ingenting mellan bladen.
+        it('JPA-protokollet: blad 2 och 3 har rader, och gruppernas medelvärden undertrycks mot intervallens', () => {
+            const text = utdata.find(([n]) => n.startsWith('protokollet'))[1];
+            const blad = namn => text.split(/^\[/m).find(b => b.startsWith(namn)) ?? '';
+            const b2 = blad('2. Lika arbete'), b3 = blad('3. Likvärdigt arbete');
+            for (const re of [/^\d+ \| 7500 Jpayrke \| J \| 60 \| 30 \| 30 \|/, /^\d+ \| 7600 Lpayrke \| L \| 54 \| 27 \| 27 \|/]) {
+                const g = b2.split('\n').find(r => re.test(r));
+                expect(g, `${re} i ${b2}`).toBeDefined();
+                const celler = g.split(' | ');
+                expect(celler.slice(6, 10).every(c => /^-?\d+(\.\d+)?$/.test(c)), 'medianerna står kvar').toBe(true);
+                expect(celler.slice(11, 15)).toEqual(['—', '—', '—', '—']);
+            }
+            const not = b2.split('\n').find(r => r.includes('Medelvärdena för')) ?? '';
+            for (const namn of ['7500 Jpayrke (BAS J)', '7600 Lpayrke (BAS L)', 'tabellerna per BAS-intervall i rapporten och Excelfilen', `färre än ${k} personer i BAS-intervallet`]) expect(not).toContain(namn);
+            const j = b3.split('\n').find(r => /^\d+ \| J \| 93 \| 33 \| 60 \|/.test(r));
+            expect(j, b3).toBeDefined();
+            expect(j.split(' | ').slice(16, 20).every(c => /^-?\d+(\.\d+)?$/.test(c)), 'intervallets medelvärden står kvar').toBe(true);
+            expect(b3.split('\n').some(r => /^\d+ \| L \|/.test(r)), 'L står inte i blad 3').toBe(false);
         });
         // Differensprovet: ett lönemått för färre än tröskeln får inte heller gå att räkna fram som en total minus de
         // visade delarna i samma tabell (S4). Provet fäller också en tabell med medel, summa eller kostnad som inte är

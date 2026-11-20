@@ -6,13 +6,16 @@
 // lönekartläggning behöver på den nivån, med kolumnnamn som går att klistra in i rapporten utan att ändras. Logiken
 // ligger i src/lib/aidbas.js (speglad); här står reglerna som hör till verktyget:
 //
-//   - Könsuppdelade mått (ett köns median, kvoten, gränserna) och gruppens median och spridning kräver statGolv()
-//     personer — standard 10, följer med uppåt när minsta gruppstorlek höjs — i båda lägena, som övriga skattningar.
-//     En grupp där något kön är mindre står som "Analyseras på individnivå" och i arbetslistan.
-//   - En egen rad kräver minst LITET_UNDERLAG (5) personer i exportläget; mindre grupper räknas upp i en not under
-//     tabellen, med namn och antal men utan löner (ADR-12). På skärmen visas alla grupper (ADR-51).
-//   - Gränserna för slumpen är trattdiagrammets (41-lika-arbete.js): omkastning av könen inom gruppen, räknad per
-//     AID-kod och BAS-intervall, så att tabellen och fliken Slumpens gränser säger samma sak.
+//   - Lika arbete AID x BAS är Lika arbetes grupper och status (laLikaGrupper i 41-lika-arbete.js) i BAS-ordning,
+//     med samma k-regel som tabellen per AID-etikett: en grupp där ett kön är under kTroskel() står utan könsuppdelade
+//     mått, en grupp som helt ligger under den får ingen rad utan namnges i noten. Tabellen räknar ingen egen
+//     bedömning, så att de två tabellerna inte kan säga olika om samma grupp (ADR-90). Gränserna är de statusen
+//     prövades mot; trattdiagrammet visar samma gränser som bild.
+//   - I de andra tre tabellerna kräver könsuppdelade mått och gruppens median och spridning statGolv() personer —
+//     standard 10, följer med uppåt när minsta gruppstorlek höjs — i båda lägena, som övriga skattningar. En grupp där
+//     något kön är mindre står i arbetslistan Analys på individnivå.
+//   - I de tre tabellerna kräver en egen rad minst LITET_UNDERLAG (5) personer i exportläget; mindre grupper räknas upp
+//     i en not under tabellen, med namn och antal men utan löner (ADR-12, ADR-57). På skärmen visas alla grupper (ADR-51).
 //   - Kvinnodominerat vid *Mer än X %* (nyckeln 'do') eller *X % eller mer* (nyckeln 'scb'; ADR-72): valet i
 //     Likvärdigt arbetes inställningar, standard *Mer än*; X är kvinnotröskeln där (standard 60 %). Samma definition gäller i hela
 //     verktyget (ADR-60): kvDomNu() och konsklassNu() nedan, som anropar _arKvinnodominerad/_konsklass ur
@@ -77,18 +80,12 @@ function _aidbasNationell(aid) {
     const r = typeof _skrKvinnoandel === 'function' ? _skrKvinnoandel(aid, { del: _skrDel() }) : null;
     return r && typeof r.pct === 'number' ? r.pct : null;
 }
-/** Slumpens gränser per grupp ur trattens underlag, räknat med samma antal per kön som tabellen kräver. */
-function _aidbasGranser(d) {
-    const u = _laTrattUnderlag(d, aidbasK());
-    const per = new Map((u ? u.punkter : []).map(p => [p.nyckel, { lag: p.gransLag, hog: p.gransHog }]));
-    return g => per.get(`${g.aid}|${g.bas}`) || null;
-}
 /** De fyra tabellerna ur underlaget, med verktygets regler. */
 function aidbasTabeller(d = getData()) {
     const k = aidbasK(), golv = aidbasGolv(), definition = aidbasDefinition(), grans = aidbasGrans(), jamforelse = lvJamforelse();
     return {
         k, golv, definition, grans, jamforelse,
-        lika: _aidbasLika(d, { k, golv, granser: _aidbasGranser(d) }),
+        lika: _aidbasLika(laLikaGrupper(d)),
         likvardigt: _aidbasLikvardigt(d, { k, golv, definition, grans, jamforelse, nationell: _aidbasNationell }),
         par: _aidbasPar(d, { k, definition, grans, jamforelse }),
         individ: _aidbasIndivid(d, { k, golv })
@@ -104,7 +101,7 @@ const _AIDBAS_NIVA = termStor(T.niva.en), _AIDBAS_KOD = termStor(T.kod.en), _AID
 const AIDBAS_KOL = {
     lika: [[_AIDBAS_NIVA, 'text', r => r.bas], [_AIDBAS_KOD, 'text', r => r.aid], [_AIDBAS_NAMN, 'text', r => r.yrke], ['Antal kvinnor', 'antal', r => r.nKv], ['Antal män', 'antal', r => r.nMa],
            ['Medianlön kvinnor', 'kr', r => r.medKv], ['Medianlön män', 'kr', r => r.medMa], ['Kvinnors median i % av mäns', 'pct', r => r.kvot],
-           ['Nedre gräns', 'pct', r => r.lag, 'nedre'], ['Övre gräns', 'pct', r => r.hog, 'ovre'], ['Bedömning', 'text', r => r.bedomning],
+           ['Nedre gräns', 'pct', r => r.lag, 'nedre'], ['Övre gräns', 'pct', r => r.hog, 'ovre'], ['Status', 'text', r => _aidbasStatus(r)],
            // Direktivmarkeringen på den ojusterade löneskillnaden (ADR-59): ingen bedömning, bara var 5 % nås.
            [_STS_DIR_KOLUMN, 'text', r => (r.kvot != null && _stsDirektiv(r.kvot) ? _STS_DIR_ETIKETT : ''), 'direktiv']],
     likvardigt: [[_AIDBAS_NIVA, 'text', r => r.bas], [_AIDBAS_KOD, 'text', r => r.aid], [_AIDBAS_NAMN, 'text', r => r.yrke], ['Antal', 'antal', r => r.n],
@@ -120,13 +117,31 @@ const AIDBAS_KOL = {
               ['Analys genomförd', 'text', () => ''], ['Resultat', 'text', () => '']]
 };
 // Kolumnerna som grundvyn gömmer bakom Fler kolumner (F12, F14 i etapp 1b): gränserna och direktivmarkeringen i Lika
-// arbete, de nationella kolumnerna och spridningen i Likvärdigt arbete. Bedömningen och klassningen står kvar.
+// arbete, de nationella kolumnerna och spridningen i Likvärdigt arbete. Statusen och klassningen står kvar.
 const AIDBAS_LIKA_DOLDA_KOLUMNER = ['nedre', 'ovre', 'direktiv'];
 const AIDBAS_LV_DOLDA_KOLUMNER = ['nationellt', 'brukar', 'spridning'];
 /** Noten om grupperna under golvet: namn och antal, inga löner. '' när alla grupper har en rad. */
 function _aidbasSmaNot(sma, golv) {
     if (!sma.length) return '';
     return `Grupper med färre än ${golv} ${personOrd(golv)} redovisas inte som egen rad (${sma.length}): ${sma.map(s => `${s.aid} ${s.yrke} · BAS ${s.bas} (${s.nKv} kvinnor, ${s.nMa} män)`).join('; ')}.`;
+}
+/** Statusen för en rad i Lika arbete AID x BAS, med orden i tabellen per AID-etikett (ADR-90). */
+function _aidbasStatus(r) {
+    return r.samladMedian ? `Könsuppdelningen är för liten (ett kön n < ${kTroskel()})` : gapStatusNiva(r.niva).serie;
+}
+/** Texten om Lika arbete AID x BAS ovanför tabellen och i bladet: grupperna, k-regeln, statusen och gränserna. */
+function _aidbasLikaText() {
+    const k = kTroskel(), g = statGolv();
+    return `Samma grupper och samma status som Lika arbetes tabell per ${T.enhet.en}, ordnade efter ${T.niva.en}. `
+        + (k > K_SKARM ? `Ett köns median och kvoten står när varje kön har minst ${k} ${personOrd(k)}; annars "Könsuppdelningen är för liten". ` : '')
+        + `Statusen prövas när varje kön har minst ${g} ${personOrd(g)}, annars "Går ej att bedöma": Värt att granska = utanför slumpens gränser och minst 3 % (verktygets storleksgräns), Följ upp = det ena men inte det andra, Balanserat = inget av dem. `
+        + `Gränserna är de 95-procentiga för slumpen som statusen prövades mot (omkastning av könen inom gruppen, samma gränser som trattdiagrammet).`;
+}
+/** Noten under Lika arbete AID x BAS: grupperna under tröskeln med namn, och antalet grupper som inte går att jämföra. */
+function _aidbasLikaNot(lika) {
+    const k = kTroskel(), n = lika.utelamnade.length, m = lika.ejJamforbara;
+    return [n ? `${n} ${n === 1 ? 'grupp visas' : 'grupper visas'} inte: ${lika.utelamnade.join(', ')}. ${n === 1 ? 'Den har' : 'De har'} färre än ${k} ${personOrd(k)}, och ${n === 1 ? 'dess' : 'deras'} lönemått skulle kunna peka ut enskilda.` : '',
+            m ? `${m} ${m === 1 ? 'grupp har' : 'grupper har'} färre än två kvinnor eller två män och jämförs inte.` : ''].filter(Boolean).join(' ');
 }
 /** "Inget BAS-intervall", böjt efter intervallets genus. */
 function _aidbasIngetIntervall() { return `${termAdjektiv({ utrum: 'Ingen', neutrum: 'Inget', plural: 'Inga' }, T.niva)} ${T.niva.en}`; }
@@ -179,11 +194,13 @@ function renderAidBasLika() {
     const d = getData();
     if (!d.length) { lika.innerHTML = ''; individ.innerHTML = ''; _aidbasNyckel('nyckel-la-aidbas', ''); _aidbasNyckel('nyckel-la-individ', ''); return; }
     const t = aidbasTabeller(d);
-    lika.innerHTML = _aidbasTabellHtml('aidbas-lika-tabell', AIDBAS_KOL.lika, t.lika.rader, { not: _aidbasSmaNot(t.lika.sma, t.golv), fil: 'lika_arbete_aid_bas' })
-        + `<p class="text-dampad-xs marg-8-0-0">Medianer, kvot och gränser bara när varje kön har minst ${t.k} ${personOrd(t.k)}; annars <em>Analyseras på individnivå</em>. Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning, räknade med omkastning av könen inom gruppen som i trattdiagrammet. Kolumnen ${esc(_STS_DIR_KOLUMN)}: ${esc(_STS_DIR_TIPS)}</p>`;
+    lika.innerHTML = _aidbasTabellHtml('aidbas-lika-tabell', AIDBAS_KOL.lika, t.lika.rader, { not: _aidbasLikaNot(t.lika), fil: 'lika_arbete_aid_bas' })
+        + `<p class="text-dampad-xs marg-8-0-0">${esc(_aidbasLikaText())} Kolumnen ${esc(_STS_DIR_KOLUMN)}: ${esc(_STS_DIR_TIPS)}</p>`;
     _aidbasEfter('aidbas-lika-tabell', AIDBAS_LIKA_DOLDA_KOLUMNER, 'aidbasLika');
-    const ute = t.lika.rader.filter(r => r.bedomning === 'Utanför gränserna').length, bedomda = t.lika.rader.filter(r => r.bedomning !== 'Analyseras på individnivå').length;
-    _aidbasNyckel('nyckel-la-aidbas', t.lika.rader.length ? `${ute} av ${bedomda} bedömda grupper utanför gränserna` : '');
+    // Samma nyckeltal som tabellen per AID-etikett: grupperna Värt att granska och Följ upp.
+    const jamforda = t.lika.rader.filter(r => !r.samladMedian);
+    const granska = jamforda.filter(r => r.niva === 'granska').length, folj = jamforda.filter(r => r.niva === 'folj').length;
+    _aidbasNyckel('nyckel-la-aidbas', jamforda.length ? `${granska} att granska${folj ? ` · ${folj} att följa upp` : ''}` : '');
     individ.innerHTML = _aidbasTabellHtml('aidbas-individ-tabell', AIDBAS_KOL.individ, t.individ.rader, { not: _aidbasSmaNot(t.individ.sma, t.golv), tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.`, fil: 'analys_pa_individniva' });
     _aidbasEfter('aidbas-individ-tabell');
     _aidbasNyckel('nyckel-la-individ', t.individ.rader.length ? `${t.individ.rader.length} grupper` : '');
@@ -251,8 +268,8 @@ function _aidbasExcelBlad() {
     const t = aidbasTabeller(d);
     const def = `Kvinnodominerad vid ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
     const lika = _aidbasBlad(termText('Lika arbete: kvinnors medianlön i procent av mäns per {kod.en} och {niva.en}'), AIDBAS_KOL.lika, t.lika.rader,
-        { fore: [`Medianer, kvot och gränser bara när varje kön har minst ${t.k} ${personOrd(t.k)}; annars "Analyseras på individnivå". Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning (omkastning av könen inom gruppen, som trattdiagrammet).`, `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`],
-          efter: [_aidbasSmaNot(t.lika.sma, t.golv)], tom: 'Inga grupper att visa.' });
+        { fore: [_aidbasLikaText(), `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`],
+          efter: [_aidbasLikaNot(t.lika)], tom: 'Inga grupper att visa.' });
     const lv = _aidbasBlad(termText('Likvärdigt arbete: grupperna per {niva.en}'), AIDBAS_KOL.likvardigt, t.likvardigt.rader,
         { fore: [def, `"Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition. Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} ${personOrd(t.k)}.`],
           efter: [_aidbasSmaNot(t.likvardigt.sma, t.golv)], tom: 'Inga grupper att visa.' });
@@ -275,8 +292,8 @@ function _aidbasMetodRader() {
     const k = aidbasK(), golv = kTroskel() > K_SKARM ? LITET_UNDERLAG : 1;
     return [
         [termText('Tabellerna per {kod.en} och {niva.en}'), `Bladen ${AIDBAS_BLADNAMN.join(', ')} grupperar varje person på ${T.kod.en} och ${T.niva.en} ur personens egen rad: utgångspunkten för lika arbete är samma ${T.enhet.en} på samma nivå, och ${termArtikel(T.enhet)} ${T.enhet.en} i flera intervall får en rad per intervall. ${lonemanadText()}.`],
-        ['Små grupper i tabellerna per AID och BAS', `Grupper med färre än ${golv} ${personOrd(golv)} får ingen egen rad utan räknas upp i en not under tabellen med namn och antal. Ett köns median, kvoten och gränserna redovisas bara när varje kön har minst ${k} ${personOrd(k)}; gruppens median och lönespridning bara när gruppen har minst ${k} ${personOrd(k)}. Arbetslistan Analys på individnivå tar upp grupperna där något kön är mindre än ${k}, utan löner.`],
-        ['Gränser för slumpen (Lika arbete AID x BAS, Slumpens gränser)', 'Kvinnors median i procent av mäns jämförs med de mittersta 95 procenten av de kvoter slumpen ger när könen kastas om slumpvis mellan gruppens löner 1 000 gånger (för grupper över 300 personer en normalapproximation med gruppens egen spridning). Gränserna gäller gruppens egna löner, antal och könsfördelning. En kvot utanför gränserna är svår att förklara med slumpen; gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.'],
+        ['Små grupper i tabellerna per AID och BAS', `${AIDBAS_BLADNAMN[0]} har Lika arbetes grupper och regler: ett köns median och kvoten redovisas när varje kön har minst ${kTroskel()} ${personOrd(kTroskel())}, och en grupp med färre än så av ett kön och totalt får ingen rad utan namnges i en not. I de andra bladen får grupper med färre än ${golv} ${personOrd(golv)} ingen egen rad utan räknas upp i en not under tabellen med namn och antal; gruppens median och lönespridning redovisas bara när gruppen har minst ${k} ${personOrd(k)}. Arbetslistan Analys på individnivå tar upp grupperna där något kön är mindre än ${k}, utan löner.`],
+        ['Gränser för slumpen (statusen i Lika arbete, Slumpens gränser)', `Kvinnors median i procent av mäns jämförs med de mittersta 95 procenten av de kvoter slumpen ger när könen kastas om slumpvis mellan gruppens löner 1 000 gånger (för grupper över 300 personer en normalapproximation med gruppens egen spridning). Gränserna gäller gruppens egna löner, antal och könsfördelning. Statusen i Lika arbete, i tabellen per ${T.enhet.en} och i ${AIDBAS_BLADNAMN[0]}, väger samman gränserna med storleken 3 %; trattdiagrammet och bladet Slumpens gränser visar samma gränser utan status. En kvot utanför gränserna är svår att förklara med slumpen; gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`],
         ['Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)', `Kvinnodominerad vid ${aidbasDefinitionText()}. Mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt med ${T.enhet.bf} (${skrKallaKort()}) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre ${T.niva.en} och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.`]
     ];
 }

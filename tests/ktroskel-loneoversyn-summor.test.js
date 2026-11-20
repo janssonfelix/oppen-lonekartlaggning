@@ -21,7 +21,7 @@ const SAMLAD = 'Kostnad för grupper under tröskeln';
 const bladRader = (bok, namn) => bok.split(`[${namn}]`)[1].split(/\n\[/)[0].split('\n').filter(r => r.trim() !== '');
 const celler = r => r.split(' | ');
 const kostnadI = r => { const c = celler(r)[7]; return c === undefined || c.trim() === '' ? null : Number(c); };
-const SMA_GRUPPER = [['E', '5400'], ['F', '5401'], ['X', '7002'], ['S1', '7001'], ['S3', '7300']];
+const SMA_GRUPPER = [['E', '5400'], ['F', '5401'], ['L', '7601'], ['X', '7002'], ['S1', '7001'], ['S3', '7300']];
 
 const forbered = (w, pct = 2) => {
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: pct } });
@@ -80,8 +80,8 @@ describe('Löneöversyns blad Fördelning: de små grupperna har sina rader, och
         for (const g of sma) expect(r.rad(g.bas, g.aid), `${g.bas} ${g.aid}`).toBe(maskeradRad(g.bas, g.aid, g.n, Math.round(g.andelKv)));
         // En grupp över tröskeln har sin rad som förut, med medianer och kostnad.
         expect(r.rad('S2', '6001')).toMatch(/^S2 \| 6001 \| 150 \| 50 \| \d+ \| \d+ \| [\d.]+ \| \d+$/);
-        // De små gruppernas 19 personer når tröskeln: ingen visad grupp viks in.
-        expect(r.samlad).toBe(`${SAMLAD} | 5 grupper, 19 personer |  |  |  |  |  | ${Math.round(sma.reduce((s, g) => s + g.kostnad, 0))}`);
+        // De små gruppernas 22 personer når tröskeln: ingen visad grupp viks in.
+        expect(r.samlad).toBe(`${SAMLAD} | 6 grupper, 22 personer |  |  |  |  |  | ${Math.round(sma.reduce((s, g) => s + g.kostnad, 0))}`);
         expect(r.not).not.toMatch(/inte heller/);
         // Antalet i bladet är alla gruppers, och kostnaderna summerar till Använt.
         expect(r.grupprader.reduce((s, x) => s + Number(celler(x)[2]), 0)).toBe(alla.reduce((s, g) => s + g.n, 0));
@@ -89,7 +89,7 @@ describe('Löneöversyns blad Fördelning: de små grupperna har sina rader, och
         // De maskerade raderna står efter de visade, i BAS-ordning: deras plats säger ingenting om deras kostnad.
         const forsta = r.grupprader.findIndex(x => / \| n<10 \| /.test(x));
         expect(r.grupprader.slice(forsta).every(x => / \| n<10 \| /.test(x))).toBe(true);
-        expect(r.grupprader.slice(forsta).map(x => celler(x)[0])).toEqual(['E', 'F', 'S1', 'S3', 'X']);
+        expect(r.grupprader.slice(forsta).map(x => celler(x)[0])).toEqual(['E', 'F', 'L', 'S1', 'S3', 'X']);
         ingenDifferens(r, sma.map(g => g.kostnad));
         // Ingen pott är angiven (bara ett generellt påslag): Sammanfattning säger det, och Kvar är inget tal, inte
         // minus Använt.

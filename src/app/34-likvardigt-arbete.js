@@ -747,11 +747,14 @@ function _lvRitaTopp(result) {
  */
 function _lvKravGrupper(rader, { k = 10, poangByKey = null } = {}) {
     const map = new Map();
+    // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
+    const iGrupp = r => !!(r && String(r.aid || '').trim() && r.lon > 0 && r.bas);
+    const namnrad = namnrader((rader || []).filter(iGrupp), r => String(r.aid).trim() + '|' + r.bas);
     for (const r of rader || []) {
-        const aid = String(r && r.aid || '').trim();
-        if (!aid || !(r.lon > 0) || !r.bas) continue;
-        const key = aid + '|' + r.bas;
-        if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: r.yrkeLabel || r.yrke || aid, n: 0, nKv: 0, loner: [] });
+        if (!iGrupp(r)) continue;
+        const aid = String(r.aid).trim();
+        const key = aid + '|' + r.bas, nr = namnrad.get(key);
+        if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: nr.yrkeLabel || nr.yrke || aid, n: 0, nKv: 0, loner: [] });
         const g = map.get(key);
         g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
     }

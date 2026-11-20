@@ -204,6 +204,33 @@ describe('årsbokslut: förra årets fil kan ha sparats med en lägre tröskel',
     });
 });
 
+describe('årsbokslut: grupperna är AID-koden i BAS-intervallet (ADR-89)', () => {
+    const grupp = (yrke, bas, gapPct) => ({ yrke, ...(bas ? { bas } : {}), nKv: 12, nMa: 12, medKv: 30000, medMa: 31000, gapPct, flaggad: true });
+    it('samma kod i två intervall är två grupper, som paras med samma kod och intervall förra året och bär intervallet till hanteln', () => {
+        const forra = bokslut(2025, { grupper: [grupp('101 Handläggare', 'C', -6), grupp('101 Handläggare', 'D', -4)] });
+        const nu = bokslut(2026, { grupper: [grupp('101 Handläggare', 'C', -3), grupp('101 Handläggare', 'D', -5)] });
+        expect(forra.grupper.map(g => g.bas)).toEqual(['C', 'D']);
+        const j = jamforArsbokslut(forra, nu);
+        expect(j.grupper.ejJamforbara).toBe(false);
+        expect(j.grupper.kvar.map(g => [g.bas, g.gapForra, g.gapNu])).toEqual([['D', -4, -5], ['C', -6, -3]]);
+        expect(hantelRader(j).rader.map(r => [r.namn, r.bas])).toEqual([['101 Handläggare (BAS C)', 'C'], ['101 Handläggare (BAS D)', 'D']]);
+    });
+    it('ett bokslut från före delningen (grupper utan bas) jämförs inte rad för rad, och skillnaden i antalet flaggade visas inte', () => {
+        const forra = bokslut(2025, { grupper: [grupp('101 Handläggare', null, -6)] });
+        const nu = bokslut(2026, { grupper: [grupp('101 Handläggare', 'C', -3), grupp('101 Handläggare', 'D', -5)] });
+        expect(forra.grupper[0].bas).toBeUndefined();
+        const j = jamforArsbokslut(forra, nu);
+        expect(j.grupper).toMatchObject({ ejJamforbara: true, kvar: [], nya: [], borta: [], antalForra: 1, antalNu: 2 });
+        expect(j.nyckeltal.find(t => t.nyckel === 'antalFlaggade').diff).toBeNull();
+        expect(j.nyckeltal.find(t => t.nyckel === 'n').diff).toBe(0);
+        expect(hantelRader(j).rader).toEqual([]);
+        // Två bokslut från före delningen jämförs som förut, per kod.
+        const j2 = jamforArsbokslut(forra, bokslut(2026, { grupper: [grupp('101 Handläggare', null, -2)] }));
+        expect(j2.grupper.ejJamforbara).toBe(false);
+        expect(j2.grupper.kvar).toHaveLength(1);
+    });
+});
+
 describe('årsbokslut: lönespridningen (P90 − P10) / median', () => {
     it('räknas för en lönelista med minst k personer, avrundad till fyra decimaler; under k, tom eller median 0 ger null', () => {
         const lon = [20000, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000, 38000];

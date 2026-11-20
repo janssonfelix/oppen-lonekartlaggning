@@ -281,33 +281,29 @@ describe('BAS-dossiern: förra året och textversionen', () => {
 });
 
 describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
-    it('ett yrke som finns i två BAS-intervall får Lika arbetes status för hela yrket, med en not om det', () => {
+    it('ett yrke som finns i två BAS-intervall är två grupper: dossiern läser Lika arbetes grupp i intervallet, med en not om det andra', () => {
         const w = demo();
-        // Flytta systemutvecklarna med lön under 37 000 kr från BAS C till BAS D: yrket finns då i två intervall, och
-        // räknat på C:s rader blir statusen Balanserat medan Lika arbete säger Värt att granska för hela yrket (ADR-59:
-        // undersköterskorna har tre män, under statistikgolvet, och går inte att bedöma i någotdera fallet).
+        // Flytta systemutvecklarna med lön under 37 000 kr från BAS C till BAS D: AID-etiketten finns då i två intervall
+        // och är två grupper i Lika arbete (ADR-89). Dossiern för C läser gruppen i C direkt: antal, medianer och status.
         w.eval(`(() => { for (const r of state.data) if (r.aid === '502010' && r.bas === 'C' && r.lon < 37000) r.bas = 'D'; invalidateStatCaches(); populateSelects(); })()`);
-        const hela = w.eval("_ruLikaArbeteGrupper(getData(), { k: kTroskel(), golv: statGolv() }).grupper.find(g => g.yrke === '502010 Systemutvecklare')");
-        const helaStatus = hela.samladMedian ? 'liten' : hela.niva;
-        expect(helaStatus).toBe('granska');
-        const lokal = w.eval("_ruLikaArbeteGrupper(getData().filter(r => r.bas === 'C'), { k: kTroskel(), golv: statGolv() }).grupper.find(g => g.yrke === '502010 Systemutvecklare')");
+        const grupper = w.eval("laLikaGrupper(getData(), kTroskel()).grupper.filter(g => g.aid === '502010')");
+        expect(grupper.map(g => g.bas)).toEqual(['C', 'D']);
+        const iC = grupper[0];
         const d = w.eval("buildBasdossier('C')");
         const y = d.yrken.find(x => x.yrke === '502010 Systemutvecklare');
-        expect(y.status).toBe(helaStatus);
-        expect(w.eval('_bdStatus')(lokal)).not.toBe(helaStatus);   // räknat på intervallets rader hade statusen blivit en annan
-        expect(y.tot).toBe(lokal.tot);                       // antal och medianer är intervallets
-        expect(y.medKv).toBe(lokal.medKv);
-        expect(y.helaTot).toBe(hela.tot);
+        expect(y.status).toBe(iC.samladMedian ? 'liten' : iC.niva);
+        expect(y.tot).toBe(iC.tot);
+        expect(y.medKv).toBe(iC.medKv);
         expect(y.ocksaI).toEqual(['D']);
-        // Samma status som yrkesgruppstabellen i Lika arbete.
+        expect(y.helaTot).toBeUndefined();
+        // Samma status som raden för intervallet i Lika arbetes tabell.
         w.__renderTabContent('matrix');
-        const eu = [...w.document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).find(r => r && r.yrke === '502010 Systemutvecklare');
+        const eu = [...w.document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).find(r => r && r.aid === '502010' && r.bas === 'C');
         expect({ granska: 'granska', folj: 'folj', balanserat: 'balanserat', ejbedomd: 'ejbedomd' }[y.status]).toBe(eu.niva);
         w.eval("openBasdossier('C')");
-        expect(w.document.getElementById('basdossier-body').textContent).toContain(`Status gäller hela AID-etiketten (${hela.tot} personer), som i Lika arbete; AID-etiketten finns också i BAS D`);
+        expect(w.document.getElementById('basdossier-body').textContent).toContain('AID-etiketten finns också i BAS D, som en egen grupp i Lika arbete');
         w.eval('closeBasdossier()');
-        // Texten (exportläget, k = 10): intervallets antal och medianer, hela yrkets status och noten.
-        expect(w.eval("basdossierText('C')")).toMatch(/Systemutvecklare: 34 personer.*Värt att granska\. Status gäller hela AID-etiketten \(45 personer\), som i Lika arbete; AID-etiketten finns också i BAS D/);
+        expect(w.eval("basdossierText('C')")).toMatch(/Systemutvecklare: \d+ personer.*AID-etiketten finns också i BAS D, som en egen grupp i Lika arbete/);
     });
     it('sökrutans rad finns bara för intervall som går att öppna, och ett intervall som fallit bort sägs', () => {
         const w = demo();

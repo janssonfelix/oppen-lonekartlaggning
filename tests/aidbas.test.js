@@ -3,6 +3,8 @@
 // Tabellerna per AID-kod och BAS-intervall (src/lib/aidbas.js): lika arbete, likvärdigt arbete, hierarkisk
 // jämförelse och arbetslistan för analys på individnivå. Underlaget är helt påhittat: 58 personer.
 import { describe, it, expect } from 'vitest';
+import { likaArbeteGrupper } from '../src/lib/rapportunderlag.js';
+import { bedomSkillnad } from '../src/lib/status.js';
 import { grupperaAidBas, dominans, likaArbeteTabell, likvardigtTabell, hierarkiskaPar, individnivaTabell, arJamforelseKlass, KV_DEFINITIONER, kvDefinitionText, kvDefinitionNamn, klassNamn, ingaParText } from '../src/lib/aidbas.js';
 
 const rad = (bas, aid, kon, lon, yrkeLabel = `Yrke ${aid}`) => ({ bas, aid, yrke: `${aid} ${yrkeLabel}`, yrkeLabel, kon, lon, alder: 40 });
@@ -10,7 +12,7 @@ const grupp = (bas, aid, kon, n, lon0, steg = 100) => Array.from({ length: n }, 
 /**
  * 58 personer:
  *  - AID 1001 finns i två BAS-intervall: A (10 personer, mansdominerad, hög lön) och C (4 personer, under golvet)
- *  - AID 2002 i BAS E: 30 kvinnor och 9 män → Analyseras på individnivå; kvinnodominerad (76,9 %)
+ *  - AID 2002 i BAS E: 30 kvinnor och 9 män → ett kön under 10, arbetslistan; kvinnodominerad (76,9 %)
  *  - AID 3003 i BAS B: exakt 60 % kvinnor (3 av 5): olika klassning med *Mer än 60 %* och *60 % eller mer*
  *  - hierarkiskt par: 1001 i BAS A (ej kvinnodominerad, lägre BAS, högre median) mot 2002 i BAS E
  */
@@ -56,35 +58,43 @@ describe('aidbas: gruppering och dominans', () => {
     });
 });
 
-describe('aidbas: Tabell 1 — Lika arbete AID x BAS', () => {
-    const granser = () => ({ lag: 95, hog: 105 });
-    it('en rad per AID + BAS med minst 5 personer, sorterad BAS stigande och antal fallande; små grupper i noten', () => {
-        const t = likaArbeteTabell(underlag(), { ...INST, granser });
-        expect(t.rader.map(r => [r.bas, r.aid, r.n])).toEqual([['A', '1001', 10], ['B', '3003', 5], ['E', '2002', 39]]);
-        expect(t.sma).toEqual([{ bas: 'C', aid: '1001', yrke: 'Yrke 1001', n: 4, nKv: 2, nMa: 2 }]);
-        // Summan av kvinnor och män i raderna och noten är underlaget.
-        const summa = [...t.rader, ...t.sma].reduce((s, r) => s + r.nKv + r.nMa, 0);
-        expect(summa).toBe(58);
+describe('aidbas: Tabell 1 — Lika arbete AID x BAS (ADR-90)', () => {
+    // Tabellen får Lika arbetes grupper (likaArbeteGrupper) och räknar ingen egen bedömning.
+    const lika = (d, k = 10) => likaArbeteGrupper(d, { k, golv: 10 });
+    it('samma grupper som Lika arbete, i BAS-ordning: under tröskeln i noten med namn, färre än två av ett kön räknas', () => {
+        const t = likaArbeteTabell(lika(underlag()));
+        // 1001 i BAS C (4 personer) och 3003 i BAS B (5) ligger under tröskeln; 1001 i BAS A har en kvinna.
+        expect(t.rader.map(r => [r.bas, r.aid, r.n])).toEqual([['E', '2002', 39]]);
+        expect(t.utelamnade.sort()).toEqual(['1001 Yrke 1001 (BAS C)', '3003 Yrke 3003 (BAS B)']);
+        expect(t.ejJamforbara).toBe(1);
     });
-    it('ett kön under 10 ger inga medianer, ingen kvot, inga gränser och bedömningen Analyseras på individnivå', () => {
-        const t = likaArbeteTabell(underlag(), { ...INST, granser });
-        const e = t.rader.find(r => r.aid === '2002');
-        expect(e).toMatchObject({ nKv: 30, nMa: 9, medKv: null, medMa: null, kvot: null, lag: null, hog: null, bedomning: 'Analyseras på individnivå' });
-        expect(t.rader.every(r => r.bedomning === 'Analyseras på individnivå')).toBe(true);   // ingen grupp har 10 av varje kön
+    it('ett kön under tröskeln: inga könsuppdelade mått och ingen gräns, raden bär samladMedian', () => {
+        const e = likaArbeteTabell(lika(underlag())).rader[0];
+        expect(e).toMatchObject({ aid: '2002', yrke: 'Yrke 2002', nKv: 30, nMa: 9, medKv: null, medMa: null, kvot: null, lag: null, hog: null, niva: 'ejbedomd', samladMedian: true });
     });
-    it('med 10 av varje kön: medianer, kvot och bedömning mot gränserna', () => {
+    it('med 10 av varje kön: medianer, kvot, gränser och status är Lika arbetes, rad för rad', () => {
         const d = [...grupp('F', '5005', 'kvinna', 12, 30000), ...grupp('F', '5005', 'man', 12, 31000), ...grupp('F', '6006', 'kvinna', 10, 40000), ...grupp('F', '6006', 'man', 10, 30000)];
-        const t = likaArbeteTabell(d, { ...INST, granser: () => ({ lag: 95, hog: 105 }) });
-        const inom = t.rader.find(r => r.aid === '5005'), utanfor = t.rader.find(r => r.aid === '6006');
-        expect(inom.medKv).toBe(30550); expect(inom.medMa).toBe(31550);
-        expect(inom.kvot).toBeCloseTo(30550 / 31550 * 100, 6);
-        expect(inom).toMatchObject({ lag: 95, hog: 105, bedomning: 'Inom gränserna' });
-        expect(utanfor.kvot).toBeCloseTo(40450 / 30450 * 100, 6);
-        expect(utanfor.bedomning).toBe('Utanför gränserna');
+        const l = lika(d), t = likaArbeteTabell(l);
         expect(t.rader.map(r => r.aid)).toEqual(['5005', '6006']);   // samma BAS: störst först
+        for (const r of t.rader) {
+            const g = l.grupper.find(x => x.aid === r.aid && x.bas === r.bas);
+            const b = bedomSkillnad(d.filter(x => x.aid === r.aid && x.kon === 'kvinna').map(x => x.lon), d.filter(x => x.aid === r.aid && x.kon === 'man').map(x => x.lon), { golv: 10 });
+            expect(r).toMatchObject({ medKv: g.medKv, medMa: g.medMa, niva: g.niva, lag: b.granser.lag, hog: b.granser.hog });
+            expect(r.kvot).toBeCloseTo(g.kvot * 100, 9);
+            expect(r.niva).toBe(b.niva);
+        }
+        expect(t.rader[0].medKv).toBe(30550);
+        expect(t.rader[1].kvot).toBeCloseTo(40450 / 30450 * 100, 6);
+        expect(t.rader[1].niva).toBe('granska');
     });
-    it('golvet 1 visar alla grupper som rader (skärmen), golvet 5 flyttar små till noten', () => {
-        expect(likaArbeteTabell(underlag(), { ...INST, golv: 1, granser }).rader).toHaveLength(4);
+    it('på skärmen (tröskeln 1) har tabellen alla grupper med minst två av varje kön, som Lika arbete', () => {
+        const t = likaArbeteTabell(lika(underlag(), 1));
+        expect(t.rader.map(r => `${r.aid}|${r.bas}`)).toEqual(['3003|B', '1001|C', '2002|E']);
+        expect(t.utelamnade).toEqual([]);
+        expect(t.rader.find(r => r.aid === '3003')).toMatchObject({ niva: 'ejbedomd', samladMedian: false, lag: null, hog: null });
+    });
+    it('utan grupper: inga rader, ingen not', () => {
+        expect(likaArbeteTabell(null)).toEqual({ rader: [], utelamnade: [], ejJamforbara: 0 });
     });
 });
 

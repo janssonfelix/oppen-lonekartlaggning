@@ -25,11 +25,12 @@ function _forecastReadControls() {
 }
 // Distinkta AID (yrken) inom ett BAS, med visningsetikett + gruppstorlek.
 function _forecastAidsForBas(bas) {
-    const seen = new Map();
-    getData().forEach(r => {
-        if (r.bas !== bas) return;
+    const seen = new Map(), iBas = getData().filter(r => r.bas === bas);
+    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const namnrad = namnrader(iBas, r => r.aid);
+    iBas.forEach(r => {
         let g = seen.get(r.aid);
-        if (!g) { g = { aid: r.aid, label: (r.yrkeLabel || r.aid || '').toString(), n: 0 }; seen.set(r.aid, g); }
+        if (!g) { g = { aid: r.aid, label: (namnrad.get(r.aid).yrkeLabel || r.aid || '').toString(), n: 0 }; seen.set(r.aid, g); }
         g.n++;
     });
     return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label, 'sv'));
@@ -427,15 +428,19 @@ function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = 
 /** @returns {Array<{namn: string, fore: number|null, efter: number|null, [k: string]: any}>} */
 function _forecastLutningRader(d, sim, niva) {
     const k = kTroskel(), grupper = new Map();
+    const nyckelAv = r => (niva === 'bas' ? String(r.bas) : `${r.aid}|${r.bas}`);
+    // Yrkesgruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const namnrad = namnrader(d.filter((r, i) => (arKvinna(r) || arMan(r)) && sim[i]), nyckelAv);
     d.forEach((r, i) => {
         const kv = arKvinna(r), ma = arMan(r);
         if (!(kv || ma) || !sim[i]) return;
-        const nyckel = niva === 'bas' ? String(r.bas) : `${r.aid}|${r.bas}`;
+        const nyckel = nyckelAv(r);
         let g = grupper.get(nyckel);
         if (!g) {
-            g = { namn: niva === 'bas' ? `BAS ${r.bas}` : `${r.yrkeLabel || r.yrke || r.aid} · ${r.bas}`,
+            const nr = namnrad.get(nyckel);
+            g = { namn: niva === 'bas' ? `BAS ${r.bas}` : `${nr.yrkeLabel || nr.yrke || nr.aid} · ${r.bas}`,
                   // Filtrens fält: BAS-intervallet på den nivån, yrkesgruppen (som i namnet) på gruppnivån.
-                  ...(niva === 'bas' ? { bas: String(r.bas) } : { yrke: String(r.yrkeLabel || r.yrke || r.aid) }),
+                  ...(niva === 'bas' ? { bas: String(r.bas) } : { yrke: String(nr.yrkeLabel || nr.yrke || nr.aid) }),
                   markering: markeringFor(r.bas, niva === 'bas' ? null : r.aid), kv: [[], []], ma: [[], []] };
             grupper.set(nyckel, g);
         }

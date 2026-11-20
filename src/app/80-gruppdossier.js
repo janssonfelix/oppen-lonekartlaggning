@@ -21,12 +21,14 @@ function _gdBootstrapGapCI(kvLons, maLons, B) {
 
 /** Alla grupper som får öppnas i dossier (k-anonymitet som överallt annars). */
 function gruppdossierCandidates() {
-    const map = new Map();
-    getData().forEach(r => {
+    const map = new Map(), d = getData();
+    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const namnrad = namnrader(d.filter(r => r.lon > 0 && r.bas), r => aidAvYrke(r.yrke) + '|' + r.bas);
+    d.forEach(r => {
         if (!(r.lon > 0) || !r.bas) return;
         const aid = aidAvYrke(r.yrke);
         const key = aid + '|' + r.bas;
-        if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: r.yrke, rows: [] });
+        if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
         map.get(key).rows.push(r);
     });
     return [...map.values()]

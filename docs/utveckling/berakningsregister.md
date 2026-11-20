@@ -67,7 +67,7 @@ avsnitt 11.
 | Konfidensband kring en regressionslinje | `regressionslinjensBand`, `osakerhet.js` | x, y | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
 | Minsta upptäckbara skillnad vid 80 % styrka och α = 0,05 | `mdeProcent`, `styrkeanalys`, `gruppMde`, `osakerhet.js` | σ, antal per kön | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
 | Extremvärden: z på log-lön per BAS-intervall, \|z\| ≥ 3 | `extremvarden`, `osakerhet.js` | lön, BAS | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
-| Trattdiagrammets fält | `trattUnderlag`, `osakerhet.js` | lön, kön, AID, BAS | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
+| Trattdiagrammets fält | `trattUnderlag`, `osakerhet.js` | lön, kön, AID, BAS | verktygets eget val, ingen extern källa; grupperna ADR-89 | `tests/osakerhet.test.js`, `tests/grupp-aid-kod.test.js` | saknas |
 | Kvantilregressionens intervall | `kvantilBootstrap`, `osakerhet.js` | som kvantilregressionen | ADR-63, 86 | `tests/osakerhet.test.js` | saknas |
 | Slumpens gränser: omkastning (1 000 dragningar), över 300 personer normalformeln | `slumpensGranser`, `omkastningsGranser`, `status.js` | lön, kön | ADR-59, 86 | `tests/status-trappa.test.js`, `tests/slumpintervall-ordning.test.js` | saknas |
 | Trappan (Värt att granska, Följ upp, Balanserat, Går ej att bedöma) och direktivmarkeringen | `statusNiva`, `bedomSkillnad`, `direktivMarkering`, `perBasSignal`, `status.js` | skillnaden, gränser eller KI | ADR-59, 71 | `tests/status-trappa.test.js` | saknas |
@@ -76,11 +76,12 @@ avsnitt 11.
 
 | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|
+| Grupperna: AID-koden (de inledande siffrorna i fältet, annars hela texten) i BAS-intervallet, med namnet från texten på flest av gruppens rader (vid lika många den första i lönefilen); också Lika arbetes tabell, med en rad per kod och intervall | `aidAvRad` och `namnrader`, `aid.js`; `gruppnycklar`, `falt.js`; `likaArbeteGrupper`, `rapportunderlag.js` | AID, BAS | ADR-89 | `tests/grupp-aid-kod.test.js`, `tests/grupp-aid-kod-app.test.js` | saknas |
 | Kvinnodominerat: *Mer än* (`'do'`) eller *Minst* (`'scb'`) gränsen, standard 60 % | `arKvinnodominerad`, `konsklass`, `likvardighet.js` | andel kvinnor | `likvardighetsmodellen.md` §2; ADR-60, 72 | `tests/likvardighet.test.js` | saknas |
 | Paren i likvärdigt arbete och lägre krav, högre lön | `byggPar`, `byggParLagreKrav`, `computeLikvardighetPairs`, `likvardighet.js` | lön, kön, AID, BAS | `likvardighetsmodellen.md` §3–§6; ADR-25, 61 | `tests/likvardighet.test.js` | saknas |
 | Åldersjusterad skillnad i ett par | `aldersjusteradSkillnad`, `likvardighet.js` | lön, ålder | `likvardighetsmodellen.md` §5 | `tests/likvardighet.test.js` | saknas |
-| Tabellerna per AID-kod och BAS-intervall, hierarkiska par | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57 | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` | saknas |
-| Personer att granska: förväntad lön ur kollegorna (log-lön mot ålder när spridningen är minst 5 år, annars medianen), flagga vid minst `grans` % under | `flaggaIndivider`, `individflaggor.js` | lön, ålder, AID, BAS | ADR-23 | `tests/individflaggor.test.js` | `14-granska-median.json`, `15-granska-alder.json` |
+| Tabellerna per AID-kod och BAS-intervall, hierarkiska par; Lika arbete AID x BAS är Lika arbetes grupper och status (`likaArbeteGrupper`) i BAS-ordning, utan egen bedömning | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57, 90 | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js`, `tests/ktroskel-utdata.test.js` | saknas |
+| Personer att granska: förväntad lön ur kollegorna (log-lön mot ålder när spridningen är minst 5 år, annars medianen), flagga vid minst `grans` % under | `flaggaIndivider`, `individflaggor.js` | lön, ålder, AID, BAS | ADR-23, 89 | `tests/individflaggor.test.js`, `tests/grupp-aid-kod.test.js` | `14-granska-median.json`, `15-granska-alder.json` |
 
 ## 6. Löneläget mot referenserna
 

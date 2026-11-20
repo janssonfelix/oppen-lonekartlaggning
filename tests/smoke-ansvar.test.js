@@ -422,7 +422,7 @@ describe('AID: metodtext enligt handboken', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const html = w.__docDraftHtml();
-        const lika = html.slice(html.indexOf('Lika arbete — kvinnor och män i samma AID-etikett'), html.indexOf('Likvärdigt arbete — kvinnodominerade AID-etiketter'));
+        const lika = html.slice(html.indexOf('Lika arbete — kvinnor och män i samma AID-etikett och BAS-intervall'), html.indexOf('Likvärdigt arbete — kvinnodominerade AID-etiketter'));
         expect(lika).toMatch(/AID är inte ett arbetsvärderingssystem/);
     });
 });

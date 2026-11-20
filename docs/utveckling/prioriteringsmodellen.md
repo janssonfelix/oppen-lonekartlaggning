@@ -25,9 +25,12 @@ Varje beräkning har sin rad i [`berakningsregister.md`](berakningsregister.md).
 ## 1. Grupperna
 
 En grupp är alla rader med samma AID-kod och samma BAS-intervall (nyckeln `aid|bas`), som i jämförelsestatistiken
-(`jamforelseRader`) och gruppdossiern. AID-koden tas ur de inledande siffrorna i fältet för AID-etikett (`aidAvYrke`);
+(`jamforelseRader`), gruppdossiern och resten av verktyget (ADR-89). AID-koden tas ur de inledande siffrorna i fältet för AID-etikett (`aidAvYrke`);
 saknas siffror används hela texten. Två texter med samma kod ("207011 Handläggare" och "207011 Handläggare, natt") är
-alltså en grupp. Gruppens namn (`yrke`) är texten på dess första rad i lönefilen. En grupp med färre än k
+alltså en grupp. Gruppens namn (`yrke`) är texten som står på flest av gruppens rader; står två texter på lika många
+rader gäller den som kommer först i lönefilen (`namnrader` i `src/lib/aid.js`, ADR-89). Samma regel ger namnet i alla
+analyser, så samma grupp heter samma sak i prioriteringen, Lika arbete, jämförelsen och resten av verktyget. De andra
+texterna syns inte i prioriteringen. En grupp med färre än k
 personer tas inte med. Könens medianer räknas bara för ett kön med minst k personer; annars är könsmedianen och
 könsskillnaden null och gruppen finns kvar med sin samlade median.
 
@@ -151,8 +154,6 @@ gruppens samlade median, som redovisas när gruppen når tröskeln.
 
 ## 9. Kända luckor
 
-- **Gruppens namn är en av texterna.** Har en kod flera texter i samma BAS-intervall heter gruppen efter texten på
-  den första raden i lönefilen, som i jämförelsestatistiken; de andra texterna syns inte i prioriteringen.
 - **Exakt på referensen räknas som över.** Riktningsvikten 1,0 kräver diffPct < 0, så 0 % får 0,5.
 - **En dold könsskillnad ger noll i jämställdhetspoäng.** När ett kön har färre än k personer är gapPct null och
   delpoängen 0; gruppen rangordnas då som om könen hade samma median.

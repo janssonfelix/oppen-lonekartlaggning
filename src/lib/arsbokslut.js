@@ -2,8 +2,8 @@
 // Copyright 2026 Felix Jansson
 // ---- Årsbokslut (ADR-54): jämförelse mellan år ----
 // Ett k-skyddat sammandrag av årets kartläggning som konfigurationsfilen bär, så att nästa års kartläggning kan
-// jämföras mot det. Bara aggregat: nyckeltal för hela organisationen, en rad per jämförbar yrkesgrupp (båda könen
-// minst k), en rad per BAS-intervall med minst k personer (basIntervall; könsmedianerna bara när båda könen når k)
+// jämföras mot det. Bara aggregat: nyckeltal för hela organisationen, en rad per jämförbar grupp (AID-kod i
+// BAS-intervall, ADR-89; båda könen minst k), en rad per BAS-intervall med minst k personer (basIntervall; könsmedianerna bara när båda könen når k)
 // och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
 // Yrkesgruppernas och intervallens rader bär lönespridningen (P90 − P10) / median, räknad där n ≥ k (lonespridning).
 // Version 2: handlingsplanens sakliga skäl per grupp (bedomningar: kategori och belopp, aldrig kommentarerna), så att
@@ -12,6 +12,7 @@
 import { median, quantile } from './stat.js';
 import { skapaTermer } from './termer.js';
 import { valideraSkal, skalPerKategori, skalSammanstallning, skalKategorier } from './sakligaskal.js';
+import { aidAvYrke } from './aid.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -68,7 +69,10 @@ export function valideraArsbokslut(o) {
         if (!g || typeof g !== 'object') return null;
         const yrke = _text(g.yrke); const gKv = _heltal(g.nKv, 0, 10_000_000), gMa = _heltal(g.nMa, 0, 10_000_000);
         if (!yrke || gKv == null || gMa == null || gKv < k || gMa < k) return null;
-        return { yrke, nKv: gKv, nMa: gMa, medKv: _tal(g.medKv), medMa: _tal(g.medMa), gapPct: _tal(g.gapPct), flaggad: g.flaggad === true,
+        // BAS-intervallet: en grupp är AID-koden i intervallet (ADR-89). Ett bokslut sparat innan dess saknar fältet och har
+        // en rad per kod över alla intervall.
+        const bas = _text(g.bas);
+        return { yrke, ...(bas ? { bas } : {}), nKv: gKv, nMa: gMa, medKv: _tal(g.medKv), medMa: _tal(g.medMa), gapPct: _tal(g.gapPct), flaggad: g.flaggad === true,
             spridning: _spridning(g.spridning) };
     }).filter(Boolean);
     const punkter = (Array.isArray(o.punkter) ? o.punkter : []).map(p => {
@@ -226,9 +230,9 @@ export function jamforBedomningar(forra, nu) {
 }
 
 /**
- * Jämför förra årets bokslut med årets: nyckeltal rad för rad, flaggade yrkesgrupper (kvar, nya, borta) och
- * Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu). Båda åren läses
- * med den högre av årens trösklar (kGrans, bokslutMedGrans).
+ * Jämför förra årets bokslut med årets: nyckeltal rad för rad, flaggade grupper (kvar, nya, borta; paras på
+ * AID-koden och BAS-intervallet, och jämförs inte rad för rad mot ett bokslut från före ADR-89, ejJamforbara) och Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu). Båda
+ * åren läses med den högre av årens trösklar (kGrans, bokslutMedGrans).
  * @param {ReturnType<typeof valideraArsbokslut>} forra
  * @param {ReturnType<typeof valideraArsbokslut>} nu
  */
@@ -236,24 +240,42 @@ export function jamforArsbokslut(forra, nu) {
     if (!forra || !nu) return null;
     const kGrans = Math.max(forra.k, nu.k), sammaK = forra.k === nu.k;
     forra = bokslutMedGrans(forra, kGrans); nu = bokslutMedGrans(nu, kGrans);
+    // Grupperna paras på AID-koden (aidAvYrke ur gruppens namn) och BAS-intervallet, inte på texten: en grupp är koden i
+    // intervallet (ADR-89), och namnet är texten på flest av gruppens rader, som kan skilja sig mellan åren. Ett bokslut sparat
+    // innan grupperna följde koden kan ha flera grupper med samma kod (en per text); då jämförs årets grupp med den som har
+    // samma namn, annars med den största, och de andra står inte som egna rader.
+    // Ett bokslut sparat innan grupperna delades per BAS-intervall har en rad per kod över alla intervall, utan fältet
+    // bas. En sådan rad är inte samma grupp som årets rad för koden i ett intervall, och en median går inte att räkna om
+    // från en nivå till en annan: grupperna jämförs då inte rad för rad (ejJamforbara), och resten av jämförelsen gäller.
+    const ejJamforbara = forra.grupper.some(g => !g.bas) && nu.grupper.some(g => g.bas);
+    // Antalet flaggade grupper räknades förut per kod över alla intervall: skillnaden mot ett sådant bokslut visas inte.
     const nyckeltal = ARSBOKSLUT_NYCKELTAL.map(([nyckel, etikett, typ]) => {
         const a = forra.nyckeltal[nyckel], b = nu.nyckeltal[nyckel];
-        return { nyckel, etikett, typ, forra: a, nu: b, diff: typeof a === 'number' && typeof b === 'number' ? b - a : null };
+        const jamforbar = !(ejJamforbara && nyckel === 'antalFlaggade');
+        return { nyckel, etikett, typ, forra: a, nu: b, diff: jamforbar && typeof a === 'number' && typeof b === 'number' ? b - a : null };
     });
-    const perYrke = lista => new Map(lista.map(g => [g.yrke, g]));
-    const fG = perYrke(forra.grupper), nG = perYrke(nu.grupper);
-    // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år antalet gäller.
-    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
+    const nyckelAv = g => (g.bas ? `${aidAvYrke(g.yrke)}|${g.bas}` : aidAvYrke(g.yrke));
+    const nG = new Map(ejJamforbara ? [] : nu.grupper.map(g => [nyckelAv(g), g]));
+    const fG = new Map();
+    for (const g of ejJamforbara ? [] : forra.grupper) {
+        const nyckel = nyckelAv(g), forr = fG.get(nyckel), namn = nG.has(nyckel) ? nG.get(nyckel).yrke : null;
+        const foredras = forr && ((g.yrke === namn) !== (forr.yrke === namn) ? g.yrke === namn : g.nKv + g.nMa > forr.nKv + forr.nMa);
+        if (!forr || foredras) fG.set(nyckel, g);
+    }
+    // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år antalet gäller. Namnet är årets
+    // när gruppen finns i år.
+    const rad = (f, n) => ({ yrke: n ? n.yrke : f.yrke, ...((n || f).bas ? { bas: (n || f).bas } : {}), gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
         antalAr: n ? nu.ar : forra.ar, spridningForra: f ? f.spridning ?? null : null, spridningNu: n ? n.spridning ?? null : null });
     const kvar = [], nya = [], borta = [];
-    for (const [yrke, n] of nG) { if (!n.flaggad) continue; const f = fG.get(yrke); (f && f.flaggad ? kvar : nya).push(rad(yrke, f, n)); }
-    for (const [yrke, f] of fG) { if (!f.flaggad) continue; const n = nG.get(yrke); if (!n || !n.flaggad) borta.push(rad(yrke, f, n)); }
+    for (const [nyckel, n] of nG) { if (!n.flaggad) continue; const f = fG.get(nyckel); (f && f.flaggad ? kvar : nya).push(rad(f, n)); }
+    for (const [nyckel, f] of fG) { if (!f.flaggad) continue; const n = nG.get(nyckel); if (!n || !n.flaggad) borta.push(rad(f, n)); }
     const sortera = l => l.sort((a, b) => Math.abs(b.gapNu ?? b.gapForra ?? 0) - Math.abs(a.gapNu ?? a.gapForra ?? 0));
     const nuKlar = new Map(nu.punkter.map(p => [p.id, p.klar]));
     const kvarFranForra = forra.punkter.filter(p => !p.klar).map(p => ({ ...p, finnsNu: nuKlar.has(p.id), klarNu: nuKlar.get(p.id) === true }));
     return {
         nyckeltal,
-        grupper: { kvar: sortera(kvar), nya: sortera(nya), borta: sortera(borta), antalForra: forra.grupper.length, antalNu: nu.grupper.length },
+        grupper: { kvar: sortera(kvar), nya: sortera(nya), borta: sortera(borta), antalForra: ejJamforbara ? forra.grupper.length : fG.size,
+            antalNu: ejJamforbara ? nu.grupper.length : nG.size, ejJamforbara },
         punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
                    totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
         samma_k: sammaK,
@@ -278,7 +300,7 @@ export function hantelRader(j) {
         const fore = 100 + g.gapForra, efter = 100 + g.gapNu;
         const dFore = Math.abs(fore - 100), dEfter = Math.abs(efter - 100);
         const riktning = Math.abs(dEfter - dFore) < 0.05 ? 'lika' : dEfter < dFore ? 'mot' : 'fran';
-        return { namn: g.yrke, fore, efter, riktning, andring: efter - fore };
+        return { namn: g.bas ? `${g.yrke} (BAS ${g.bas})` : g.yrke, ...(g.bas ? { bas: g.bas } : {}), fore, efter, riktning, andring: efter - fore };
     }).sort((a, b) => Math.abs(b.andring) - Math.abs(a.andring));
     return { rader, utelamnade: alla.length - med.length };
 }

@@ -17,7 +17,7 @@
  * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 import { median, avrundaSymmetriskt } from './stat.js';
-import { aidAvYrke } from './aid.js';
+import { aidAvYrke, namnrader } from './aid.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 import { arKvinna, arMan } from './kon.js';
 
@@ -106,7 +106,7 @@ export function prioIndex(delar) {
  * @param {{avvikelse:number, volym:number, jamstalldhet:number}} opt.prioWeights
  * @param {{months?:number, poPct?:number}} [opt.costSettings]
  * @param {Set<string>} [opt.bristAids] - AID-koder som markerats som bristyrke
- * @returns {Array<Object>} en post per AID-kod och BAS-intervall: `yrke` är gruppens namn (texten på dess första rad),
+ * @returns {Array<Object>} en post per AID-kod och BAS-intervall: `yrke` är gruppens namn (texten på flest av dess rader),
  *          `aid` AID-koden och `bas` BAS-intervallet
  */
 export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, costSettings, bristAids }) {
@@ -114,13 +114,14 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
     if (!d.length) return [];
 
     // En grupp är AID-koden och BAS-intervallet, som i jamforelseRader (jamforelse.js) och gruppdossiern: koden ur
-    // aidAvYrke (rader utan kod grupperas på hela texten), och gruppens namn är texten på dess första rad. Två
-    // stavningar av samma etikett ("207011 Handläggare" och "207011 Handläggare, natt") är alltså en grupp.
+    // aidAvYrke (rader utan kod grupperas på hela texten), och gruppens namn är texten på flest av dess rader
+    // (namnrader). Två stavningar av samma etikett ("207011 Handläggare" och "207011 Handläggare, natt") är alltså en grupp.
     const groups = {};
+    const namn = namnrader(d, r => `${aidAvYrke(r.yrke)}|${r.bas}`);
     d.forEach(r => {
         const aid  = aidAvYrke(r.yrke);
         const key  = `${aid}|${r.bas}`;
-        if (!groups[key]) groups[key] = { yrke: r.yrke, aid, bas: r.bas, rows: [] };
+        if (!groups[key]) groups[key] = { yrke: namn.get(key).yrke, aid, bas: r.bas, rows: [] };
         groups[key].rows.push(r);
     });
 

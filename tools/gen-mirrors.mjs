@@ -58,16 +58,16 @@ export const MODULES = [
     {
         file: 'aid.js', ns: '__mirrorAid',
         expose: {
-            normaliseraAid: null, aidAvYrke: 'aidAvYrke', sifferprefixAvYrke: 'sifferprefixAvYrke', huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
+            normaliseraAid: null, aidAvYrke: 'aidAvYrke', aidAvRad: 'aidAvRad', namnrader: 'namnrader', sifferprefixAvYrke: 'sifferprefixAvYrke', huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
             arRestkod: null, arLedningsetikett: null,
             jamforSektor: '_aidJamforSektor', etikettlistaInfo: '_aidEtikettlistaInfo'
         }
     },
     {
         // Kompletterande undertryckning och sammanslagning (ADR-83, ADR-87): tidigt, så att perbas.js, gapuppdelning.js
-        // och sektor.js kan importera dem. Appen anropar dem inte direkt.
+        // och sektor.js kan importera dem. Appen anropar bara undertryckningen i JPA-protokollets blad för lika arbete (ADR-91).
         file: 'undertryckning.js', ns: '__mirrorUndertryckning',
-        expose: { kompletterandeUndertryckning: null, sammanslagning: null }
+        expose: { kompletterandeUndertryckning: null, sammanslagning: null, kompletterandeUndertryckningPerNyckel: '_kompletterandeUndertryckningPerNyckel' }
     },
     {
         file: 'stat.js', ns: '__mirrorStat',
@@ -202,7 +202,7 @@ export const MODULES = [
     },
     {
         file: 'falt.js', ns: '__mirrorFalt',
-        expose: { groupKey: '_utGroupKey', konOf: '_utKonOf', jamforAldersgrupp: '_faltJamforAlder', jamforLonespann: null }
+        expose: { groupKey: '_utGroupKey', gruppnycklar: '_utGruppnycklar', konOf: '_utKonOf', jamforAldersgrupp: '_faltJamforAlder', jamforLonespann: null }
     },
     {
         file: 'urval.js', ns: '__mirrorUrval',
@@ -280,7 +280,7 @@ export const MODULES = [
         // blocket Lönerna mot referenserna): efter dem. Ingen lib-modul importerar rapportunderlag.js.
         file: 'rapportunderlag.js', ns: '__mirrorRapportunderlag',
         expose: {
-            likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap', bortvaltNotering: '_ruBortvaltNotering',
+            likaArbeteGrupper: '_ruLikaArbeteGrupper', gruppMedBas: '_ruGruppMedBas', justeratGapInomYrke: '_ruJusteratGap', bortvaltNotering: '_ruBortvaltNotering',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
             tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
             egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock', basintervallBlock: '_ruBasintervallBlock',

@@ -312,7 +312,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   en påhittad referens.
 - **Fältet för AID-etikett saneras på tecken, inte på namn** (`_cleanYrkeField`): AID-koden behålls, tecknen
   `< > " ' &` tas bort ur etiketten och etiketten kortas till 40 tecken. Ingenting i texten maskeras (ADR-85): ett
-  namn som uttaget lagt i fältet visas i tabellerna och följer med i exporterna. `_normalizeBas` tar bort samma tecken
+  namn som uttaget lagt i fältet visas i tabellerna och följer med i exporterna. En grupp heter efter texten på flest
+  av dess rader (`namnrader`, ADR-89), så ett namn på en enstaka rad blir inte gruppens namn när etiketten står på
+  fler; det står ändå kvar på personens rad, och en grupp där namnet står på flest rader heter efter det. Prövat i
+  `tests/grupp-aid-kod.test.js`. `_normalizeBas` tar bort samma tecken
   ur BAS-värdet. Vad skydden gör och inte gör står samlat i [`dataskydd.md`](dataskydd.md) avsnitt 2.
 - **Varningen för personnamn i fältet för AID-etikett** (`yrkeNamnNyckel` och `sallsyntaNamnrader` i
   `src/lib/inlasning.js`): en rad räknas när texten efter koden har ett namnmönster (två eller fler versalinledda ord i
@@ -551,7 +554,14 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   namnger det som undertryckts (ADR-83; `kompletterandeUndertryckning` i `src/lib/undertryckning.js`). Vaktas av
   differensprovet `tests/ktroskel-differens.test.js` och `tests/perbas.test.js`. Kvar, och inte prövat som differens:
   medellönen per åldersgrupp mot raden *Alla* (antalet per åldersgrupp skrivs inte ut) och vägar som kräver
-  uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Prioritering visar skillnaden mellan könen i en grupp
+  uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Samma regel gäller i protokollet för gemensam
+  lönebedömning, för bladet för lika arbete mot intervallens medelvärden i bladet för BAS-intervall och i tabellerna
+  per BAS-intervall, och mot organisationens: lämnar ett intervall, eller organisationen, minus de visade
+  AID-etiketterna färre än tröskeln, för ett kön eller för alla, döljs medelvärdena för den minsta visade etiketten, med
+  en not, och intervallens rader och medianerna står kvar (ADR-91; differensprovet i I4 vid 10 och 25, med
+  deklarationer över två tabeller, också mellan rapporten eller Excelfilen och protokollet). Kvar, och inte prövat som
+  differens: Löneöversyns kostnad per grupp mot intervallens medellön, och Utforskas och de egna tabellernas
+  uppdelningar mot andra utdata. Prioritering visar skillnaden mellan könen i en grupp
   bara när båda könen når tröskeln. Annars räknas prioritetsindexet utan könsdel, så att
   poängen inte röjer den dolda skillnaden. Prioriteringens förslag om lägsta
   lönekvintilen kräver tröskeln för båda könen. Vaktas av `tests/ktroskel-utdata.test.js`, som läser
@@ -623,15 +633,18 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **Tabellerna per AID-kod och BAS-intervall (ADR-57, 2026-11-05):** det gäller avsnitten *Lika arbete AID x BAS*
   och *Analys på individnivå* i Lika arbete, *Likvärdigt arbete* per BAS-intervall och *Hierarkisk jämförelse* i
   Likvärdigt arbete. Det gäller också de fyra Excel-bladen med samma namn. De bygger en rad per AID-kod och
-  BAS-intervall ur varje persons egen rad (`src/lib/aidbas.js`). I exportläget får en grupp en egen rad från
-  5 personer (`LITET_UNDERLAG`), med antal per kön men utan lönemått. Mindre grupper räknas upp i en not under
-  tabellen med namn och antal, som i Lönelägets mellannivå ovan. Ett köns median, kvoten och slumpens gränser
-  kräver tröskeln för varje kön. Gruppens median och lönespridning kräver tröskeln för gruppen (`statGolv()`).
-  Annars står *Analyseras på individnivå*. Arbetslistan *Analys på individnivå* tar upp grupperna där något kön
-  är under tröskeln, med antal men utan löner. Golvet 5 är ett avsiktligt avsteg i antal, inte i lönemått.
+  BAS-intervall ur varje persons egen rad (`src/lib/aidbas.js`). *Lika arbete AID x BAS* har
+  Lika arbetes grupper och regler (ADR-90): ett köns median och kvoten när varje kön når tröskeln, annars
+  *Könsuppdelningen är för liten*, och en grupp som helt ligger under tröskeln får ingen rad utan namnges i noten,
+  utan antal, som i tabellen per AID-etikett; statusen är densamma som där. I de andra tabellerna får en grupp i
+  exportläget en egen rad från 5 personer (`LITET_UNDERLAG`), med antal per kön men utan lönemått. Mindre grupper
+  räknas upp i en not under tabellen med namn och antal, som i Lönelägets mellannivå ovan. Gruppens median och
+  lönespridning kräver tröskeln för gruppen (`statGolv()`). Arbetslistan *Analys på individnivå* tar upp grupperna
+  där något kön är under tröskeln, med antal men utan löner. Golvet 5 är ett avsiktligt avsteg i antal, inte i lönemått.
   Tabellerna är arbetsgivarens kartläggning av alla grupper, och lagen kräver att också små grupper analyseras.
   Därför står gruppen och dess antal i underlaget. På skärmen
-  visas alla grupper (ADR-51). Vaktas av `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`; den allmänna
+  visas alla grupper (ADR-51). Vaktas av `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` och, för att *Lika
+  arbete AID x BAS* har tabellens grupper vid tröskeln 10 och 25, `tests/ktroskel-utdata.test.js`; den allmänna
   invarianten (§11) prövar inte de fyra bladen.
 - **Könsfördelning per BAS-intervall i Lönestruktur (ADR-57, 2026-11-13):** tabellen (`#skevhet-table`), diagrammet
   ovanför den (`chart-skevhet-andel`) och det som följer av dem: Excel-bladet *Könsskevhet*, utskriften och PDF:en
@@ -668,6 +681,12 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   lönemått, ett kön under k ger samlad median. Gruppdossiern visar bara antal per
   ansvarsgrupp och kön, aldrig lön. Översiktens andel med ledningsansvar per huvudområde visas
   bara för kön med minst k personer. Vaktas av `tests/kanonymitet.test.js`.
+
+- **Lika arbetes grupper (ADR-89, 2026-11-20):** en grupp är AID-koden i BAS-intervallet också i Lika arbetes
+  tabell och allt som läser den (rapportunderlaget, Word, PDF, Excel, JPA-protokollet, BAS-dossiern, årsbokslutet).
+  En kod i flera intervall blir flera mindre grupper, och varje grupp prövas mot k för sig; ingen rad för koden över
+  alla intervall redovisas, så en liten grupp går inte att räkna fram som en skillnad mot en sådan rad
+  (`k-troskeln.md` avsnitt 2). Vaktas av k-riggen och differensprovet i `tests/ktroskel-invarianter.test.js`.
 
 ### 6.6 Lokala exporter & utskrift ✔
 - Excel/CSV/JSON-export via `Blob` + `<a download>` — lokal nedladdning, ingen
@@ -829,8 +848,8 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 
 **Årsbokslutet** (ADR-54) och **importprofilerna:**
 - nyckeltal för hela organisationen
-- en rad per AID-etikett där båda könen når minsta gruppstorlek: antal per kön, medianer, löneskillnad och
-  lönespridningen (P90 − P10) / median
+- en rad per AID-etikett och BAS-intervall där båda könen når minsta gruppstorlek: antal per kön, medianer,
+  löneskillnad, intervallet och lönespridningen (P90 − P10) / median
 - en rad per BAS-intervall med minst så många personer: antal, P10, median, P90 och lönespridningen.
   Könsmedianerna står bara med när båda könen når gränsen.
 - Att göra-punkternas id, titel och läge.

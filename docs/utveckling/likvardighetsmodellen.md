@@ -96,7 +96,9 @@ kvinnodominerad med *X % eller mer* vid gränsen 60. Ordlistan (*Jämn könsför
 `aid|bas`). Rader utan AID, utan BAS eller utan lön över 0 räknas inte. Varje grupp får antal, antal kvinnor
 (`kon` som innehåller `kvinna`), andel kvinnor, klass, medianlön, lönerna och åldrarna (parallellt med lönerna, `null`
 när åldern saknas; de används av åldersjusteringen i avsnitt 5). Namnet (etikettnamnet) är `yrkeLabel`, annars `yrke`, annars
-AID.
+AID, från den rad vars text står på flest av gruppens rader (vid lika många den första i lönefilen; `namnrader`,
+ADR-89). En grupp är AID-koden i BAS-intervallet, som i hela verktyget (ADR-89): två texter med
+samma kod är en grupp.
 
 Grupper med klassen `'kvinnodominerad'` blir **`orgKvDom`**, analysens subjekt; **alla övriga** blir `orgIckeKv`,
 organisationens jämförelseetiketter (avsnitt 4). Båda sorteras efter antal, störst först.

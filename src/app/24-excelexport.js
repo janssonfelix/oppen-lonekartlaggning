@@ -121,8 +121,9 @@ function _excelDiagramBlad() {
     if (tratt) ut.push(['Slumpens gränser', [
         [`${termStor(T.enhet.bfl)} mot slumpens gränser (trattdiagrammet på Lika arbete)`],
         [`En rad per ${T.enhet.en} och ${T.niva.en} där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
-        [termStor(T.enhet.en), termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Bedömning'],
-        ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna'])]]);
+        [termStor(T.enhet.en), termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Mot gränserna'],
+        ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna']),
+        [], ['Bladet visar gränserna, inte statusen: statusen per grupp står i bladen EU-lönekartläggning och Lika arbete AID x BAS och väger samman gränserna med storleken, minst 3 %.']]]);
     const arKv = arKvinna, arMa = arMan;
     const alder = _konAlderGapRader(d.filter(arKv), d.filter(arMa), k);
     if (alder.visade.length) ut.push(['Löneskillnad per ålder', [
@@ -321,6 +322,48 @@ function _jpaNivaCeller(kv, ma, nKv, nMa) {
  *
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
+/**
+ * Intervallens och organisationens medelvärden som står i det som lämnar verktyget (ADR-91), som totaler för den
+ * kompletterande undertryckningen i protokollets blad 2: bladet 3 (intervallen som protokollet redovisar), tabellerna
+ * per BAS-intervall i rapporten och Excelfilen (alla intervall vars medelvärde tabellerna visar, med deras tröskel och
+ * deras egen undertryckning, ADR-83), och organisationen. `yrken` är de grupper (AID-kod och intervall) vars medellön
+ * för alla står i tabellerna per BAS-intervall; den kan protokollet inte dölja.
+ * @param {any[]} d
+ * @param {number} k
+ * @param {any[]} jpaBas intervallen i bladet 3
+ */
+function _jpaMedelTotaler(d, k, jpaBas) {
+    const totaler = [], yrken = new Map();
+    // Bladet 3: medelvärdet per kön, och därmed för alla, för intervall där båda könen når tröskeln (_jpaNivaCeller).
+    for (const b of jpaBas) if (b.kvN >= k && b.maN >= k) totaler.push({ nyckel: String(b.bas), nKv: b.kvN, nMa: b.maN, n: b.kvN + b.maN });
+    // Organisationen: medelvärdet per kön står i flera utdata när könet når tröskeln; för alla alltid.
+    const nKv = d.filter(r => arKvinna(r)).length, nMa = d.filter(r => arMan(r)).length;
+    totaler.push({ nyckel: null, n: d.length, ...(nKv >= k ? { nKv } : {}), ...(nMa >= k ? { nMa } : {}) });
+    // Tabellerna per BAS-intervall: det som står i dem, med deras egen tröskel och undertryckning.
+    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(d, k) : null;
+    if (!pb || pb.dim !== 'bas') return { totaler, yrken };
+    const visas = v => v != null && isFinite(v);
+    for (const i of pb.intervall) {
+        const t = { nyckel: String(i.bas) };
+        for (const r of i.rader) {
+            if (!visas(r.medel)) continue;
+            if (r.typ === 'organisation') t.n = i.n;
+            else if (r.typ === 'kvinnor') t.nKv = i.nKv;
+            else if (r.typ === 'man') t.nMa = i.nMa;
+            else if (r.typ === 'yrke') yrken.set(`${r.aid}\u0000${t.nyckel}`, { n: r.n });
+        }
+        if (Object.keys(t).length > 1) totaler.push(t);
+    }
+    const intervall = new Map(pb.intervall.map(i => [String(i.bas), i]));
+    for (const r of pb.konsgap?.rader ?? []) {
+        const i = intervall.get(String(r.bas));
+        if (r.bas === 'Alla' || !i) continue;
+        const t = { nyckel: String(r.bas), ...(visas(r.medel) ? { n: i.n } : {}), ...(visas(r.medelKv) ? { nKv: i.nKv } : {}), ...(visas(r.medelMa) ? { nMa: i.nMa } : {}) };
+        if (Object.keys(t).length > 1) totaler.push(t);
+    }
+    for (const r of pb.aldersgrupper?.rader ?? []) if (r.bas !== 'Alla' && visas(r.medel)) totaler.push({ nyckel: String(r.bas), n: r.n });
+    return { totaler, yrken };
+}
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
 function _exportJPAProtocolExport() {
@@ -341,13 +384,13 @@ function _exportJPAProtocolExport() {
     const lvRedovisning = _parForRedovisning(lvResult?.pairs);
     const lvPairsCount = lvRedovisning.par.length;
 
-    // ---- A) Identifiera JPA-grupper (lika arbete = yrkesgrupp) ----
+    // ---- A) Identifiera JPA-grupper (lika arbete = AID-kod i BAS-intervall, ADR-89) ----
     // Samma grupper och samma status som Lika arbete (laLikaGrupper, ADR-59): Värt att granska = skillnaden mellan
     // medianerna är säkerställd mot slumpens gränser för gruppen och minst 3 %. k-anonymitet som i tabellen.
     const lika = laLikaGrupper(d);
     const jamforda = lika.grupper.filter(g => !g.samladMedian);
     const jpaYrken = jamforda.filter(g => g.niva === 'granska').map(g => ({
-        yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
+        yrke: g.yrke, aid: g.aid, bas: g.bas, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
         medKv: Math.round(g.medKv), medMa: Math.round(g.medMa),
         gapPct: +((g.kvot - 1) * 100).toFixed(2),   // negativ = kvinnor lägre
         diffKr: Math.round(g.medKv - g.medMa), direktiv: g.direktiv,
@@ -382,6 +425,18 @@ function _exportJPAProtocolExport() {
         jpaBas.push({ ...b, q });
     });
     jpaBas.sort((a, b) => a.gapPct - b.gapPct);
+
+    // Kompletterande undertryckning mot intervallens medelvärden (ADR-91): ett intervalls medelvärde, per kön eller för
+    // alla, minus gruppernas i samma intervall i blad 2 får inte ge medelvärdet för 1 till k − 1 personer. Annars döljs
+    // medelvärdena för den minsta gruppen i blad 2, och så vidare; intervallens rader står som förut, och medianerna står kvar.
+    const kJpa = kTroskel();
+    const jpaTotaler = _jpaMedelTotaler(d, kJpa, jpaBas);
+    const jpaUndertryckta = _kompletterandeUndertryckningPerNyckel(jpaTotaler.totaler,
+        jpaYrken.map(j => {
+            const nyckel = String(j.bas ?? ''), alla = jpaTotaler.yrken.get(`${j.aid}\u0000${nyckel}`);
+            return { nyckel, nKv: j.nKv, nMa: j.nMa, n: alla?.n, namn: j.yrke, dold: j.medel[0] === '—', allaSyns: !!alla };
+        }), kJpa)
+        .map(i => { jpaYrken[i].medel = ['—', '—', '—', '—']; return jpaYrken[i]; });
 
     // ---- C) Bygg arbetsbok ----
     const wb = XLSX.utils.book_new();
@@ -443,7 +498,7 @@ function _exportJPAProtocolExport() {
 
     // === Sheet 2: Yrkesgrupper med statusen Värt att granska (lika arbete) ===
     const yrkenHeaderRow = [
-        'Nr', termStor(T.enhet.en), 'N totalt', 'N kvinnor', 'N män',
+        'Nr', termStor(T.enhet.en), termStor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
         ..._JPA_MEDIAN_KOLUMNER, _STS_DIR_KOLUMN, ..._JPA_MEDEL_KOLUMNER,
         // Tomma protokollfält
         'Sakliga skäl — arbetsgivarens analys',
@@ -459,7 +514,7 @@ function _exportJPAProtocolExport() {
     } else {
         jpaYrken.forEach((j, idx) => {
             yrkenRows.push([
-                idx + 1, j.yrke, j.tot, j.nKv, j.nMa,
+                idx + 1, j.yrke, j.bas ?? '', j.tot, j.nKv, j.nMa,
                 j.medKv, j.medMa, j.diffKr, typeof j.gapPct === 'number' ? +(100 + j.gapPct).toFixed(1) : j.gapPct, j.direktiv ? _STS_DIR_ETIKETT : '',
                 ...j.medel,
                 '', '', '', '', '', ''  // protokoll-celler tomma
@@ -467,6 +522,10 @@ function _exportJPAProtocolExport() {
         });
     }
     if (jpaYrken.length) yrkenRows.push([], ['', `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`]);
+    if (jpaUndertryckta.length) yrkenRows.push([], ['', `Medelvärdena för ${jpaUndertryckta.map(j => _ruGruppMedBas(j)).join(', ')} står inte i bladet: `
+        + `tillsammans med medelvärdet för ${T.niva.bf}, som står i tabellerna per ${T.niva.en} i rapporten och Excelfilen `
+        + `eller i bladet 3. Likvärdigt arbete (BAS), skulle de ge medelvärdet för färre än ${kJpa} ${personOrd(kJpa)} i `
+        + `${T.niva.bf} (kompletterande undertryckning). Medianerna står kvar.`]);
     const yrkenSheet = XLSX.utils.aoa_to_sheet(yrkenRows);
     yrkenSheet['!cols'] = [
         { wch: 4 }, { wch: 42 }, { wch: 10 }, { wch: 10 }, { wch: 10 },

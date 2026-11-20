@@ -287,6 +287,93 @@ function _delmangdLamnar(tot, ovriga, g) {
     }
     return [...(lag.get(c) ?? [])].some(s => Math.abs(mal - s) <= tol);
 }
+/**
+ * Raderna under en rubrikrad som matchar `rubrik`, tills en rad saknar ett heltal i kolumnen `antal`. Null utan en sådan
+ * rubrikrad.
+ * @param {{rader:string[][]}} t
+ * @param {RegExp} rubrik
+ * @param {string} antal
+ */
+function _lasTabell(t, rubrik, antal) {
+    const h = t.rader.findIndex(r => arRubrikrad(r) && rubrik.test(r.join(' | ')));
+    if (h < 0) return null;
+    const iAntal = _kol(t.rader[h], antal), rader = [];
+    for (let r = h + 1; r < t.rader.length; r++) {
+        const n = tal(t.rader[r][iAntal]);
+        if (n === null || !Number.isInteger(n)) break;
+        rader.push(t.rader[r]);
+    }
+    return { rubrik: t.rader[h], rader };
+}
+/**
+ * Kolumnerna för ett mått på ena sidan av en deklaration med `korsblad`: { kolumn, antal }, där antal är en kolumn
+ * eller { andel, komplement? } (andel kvinnor av sidans `antal`), som i en vanlig deklaration. -1 där en kolumn saknas.
+ */
+function _sidansMatt(tab, sida, spec) {
+    const a = spec.antal;
+    const enKolumn = typeof a === 'string' || typeof a === 'number' || a instanceof RegExp;
+    return { kolumn: spec.kolumn, typ: 'medel', antal: enKolumn ? undefined : a, i: _kol(tab.rubrik, spec.kolumn),
+        iAntal: _kol(tab.rubrik, enKolumn ? a : a?.kolumn ?? sida.antal), iAndel: !enKolumn && a?.andel !== undefined ? _kol(tab.rubrik, a.andel) : -1 };
+}
+/** Tabellen på ena sidan av en deklaration med `korsblad` i en utdata, eller null. */
+function _sidansTabell(iUtdata, sida, antal) {
+    for (const t of iUtdata) {
+        if (sida.blad && !sida.blad.test(t.blad)) continue;
+        const tab = _lasTabell(t, sida.rubrik, antal);
+        if (tab) return { t, tab };
+    }
+    return null;
+}
+/** Differensprovet mellan två tabeller, i samma utdata eller i två (en deklaration med `korsblad`, se differensprov). */
+function _korsbladsprov(d, tabeller, k, kanda) {
+    const fynd = [], fel = [];
+    let traffar = 0, provade = 0;
+    const { total: T, delar: D } = d.korsblad;
+    const namnFor = vag => [...new Set(tabeller.filter(t => vag.test(t.namn)).map(t => t.namn))];
+    // Utan egna vägar paras varje utdata med sig själv; med egna vägar varje utdata med totalen med varje med delarna.
+    const par = T.vag || D.vag
+        ? namnFor(T.vag ?? d.vag).flatMap(a => namnFor(D.vag ?? d.vag).map(b => [a, b]))
+        : namnFor(d.vag).map(a => [a, a]);
+    const mattFor = m => ({ total: m.total ?? m, delar: m.delar ?? m });
+    const antalFor = (sida, del) => sida.antal ?? (typeof mattFor(d.matt[0])[del].antal === 'string' ? mattFor(d.matt[0])[del].antal : undefined);
+    for (const [namnT, namnD] of par) {
+        const st = _sidansTabell(tabeller.filter(t => t.namn === namnT), T, antalFor(T, 'total'));
+        const sd = _sidansTabell(tabeller.filter(t => t.namn === namnD), D, antalFor(D, 'delar'));
+        if (!st || !sd) continue;
+        const { t: tt, tab: tot } = st, { t: td, tab: del } = sd;
+        const plats = namnT === namnD ? namnT : `${namnT} mot ${namnD}`;
+        traffar++;
+        for (const m of d.matt) {
+            const mt = _sidansMatt(tot, T, mattFor(m).total), md = _sidansMatt(del, D, mattFor(m).delar);
+            const i = { tn: _kol(tot.rubrik, T.nyckel), tm: mt.i, ta: mt.iAntal, dn: _kol(del.rubrik, D.nyckel), dm: md.i, da: md.iAntal };
+            const saknas = Object.entries(i).filter(([, v]) => v < 0).map(([x]) => x);
+            if (saknas.length) { fel.push(`${d.namn}: kolumner saknas (${saknas.join(', ')}) i ${plats}`); continue; }
+            for (const r of tot.rader) {
+                const helhet = _del(mt, r);
+                if (helhet.n === null || helhet.medel === null) continue;
+                // `T.alla` är totalens rad för hela underlaget (organisationen): den paras med alla delarnas rader.
+                const allaRad = T.alla && T.alla.test(r[i.tn] ?? '');
+                // Raden räknas som prövad när delarnas tabell har rader med samma nyckel, också när ingen av dem visar ett
+                // värde (alla undertryckta): då går ingenting att dra ifrån.
+                const sammaNyckel = del.rader.filter(x => allaRad || x[i.dn] === r[i.tn]);
+                if (!sammaNyckel.length) continue;
+                provade++;
+                const visade = sammaNyckel.map(x => _del(md, x)).filter(x => x.n !== null && x.medel !== null);
+                if (!visade.length) continue;
+                const nVisade = visade.reduce((s, x) => s + x.n, 0);
+                if (nVisade > helhet.n) { fel.push(`${d.namn}: delarna har fler personer (${nVisade}) än totalen (${helhet.n}) för "${r[i.tn]}" i kolumnen ${mt.kolumn} (${plats})`); continue; }
+                const rst = rest(helhet, visade);
+                if (!rst || rst.n >= k) continue;
+                const motsvarar = kanda.filter(g => g.n === rst.n && harlett(rst.medel, g.medel)).map(g => g.namn);
+                fynd.push({ deklaration: d.namn, vag: plats, blad: tt.blad, kolumn: mt.kolumn, total: r[i.tn], n: rst.n, medel: Math.round(rst.medel), motsvarar,
+                    text: `${plats}, ${mt.kolumn}: raden "${r[i.tn]}" i [${tt.blad}] minus ${visade.length} visade rader i [${td.blad}] `
+                        + `lämnar ${rst.n} ${rst.n === 1 ? 'person' : 'personer'} med medel ${Math.round(rst.medel)}`
+                        + (motsvarar.length ? ` (${motsvarar.join(', ')})` : ' (ingen känd liten grupp i underlaget)') });
+            }
+        }
+    }
+    return { fynd, fel, traffar, provade };
+}
 const _passar = (d, t, rubrik) => d.vag.test(t.namn) && (!d.blad || d.blad.test(t.blad)) && d.rubrik.test(rubrik.join(' | '));
 const _galler = (d, k) => !d.trosklar || d.trosklar.includes(k);
 
@@ -318,6 +405,16 @@ const _galler = (d, k) => !d.trosklar || d.trosklar.includes(k);
  * vid den här tröskeln: en deklaration ska inte tyst sluta gälla. `fel` är deklarationer som inte stämmer med tabellen
  * (en kolumn saknas, delarna har fler personer än totalen).
  *
+ * En deklaration med `korsblad` gäller två tabeller i stället för en: `korsblad.total` och `korsblad.delar` är var sin
+ * { vag?, blad?, rubrik, nyckel, antal? }, där `nyckel` är kolumnen som parar en rad i totalens tabell med raderna i
+ * delarnas (till exempel BAS-intervallet). Utan egna `vag` står tabellerna i samma utdata; med dem paras varje utdata
+ * med totalen med varje utdata med delarna (två filer som lämnar verktyget till samma mottagare). `matt` är
+ * { kolumn, antal } med samma rubriker i båda, eller { total: {kolumn, antal}, delar: {kolumn, antal} }, där antal är
+ * en kolumn eller { andel, komplement? } av sidans `antal`. `total.alla` (valfri) är etiketten för totalens rad för hela
+ * underlaget, som paras med alla delarnas rader. För varje rad i totalens tabell och varje mått räknas resten: raden
+ * minus delarnas rader med samma nyckel som har ett värde. En rest med 1 till k − 1 personer är ett fynd, som ovan.
+ * Tabellerna läses också av sina vanliga deklarationer.
+ *
  * @param {Array<{namn:string, blad:string, rader:string[][]}>} tabeller
  * @param {any[]} deklarationer
  * @param {{k:number, kanda?:Array<{namn:string, n:number, medel:number}>}} opt
@@ -325,10 +422,11 @@ const _galler = (d, k) => !d.trosklar || d.trosklar.includes(k);
 export function differensprov(tabeller, deklarationer, { k, kanda = [] }) {
     const fynd = [], odeklarerade = new Set(), fel = [];
     const traffar = new Map(deklarationer.map(d => [d, 0])), provade = new Map(deklarationer.map(d => [d, 0]));
+    const enTabell = deklarationer.filter(d => !d.korsblad);
     for (const t of tabeller) {
         t.rader.forEach((rubrik, h) => {
             if (!arRubrikrad(rubrik)) return;
-            const d = deklarationer.find(x => _galler(x, k) && _passar(x, t, rubrik));
+            const d = enTabell.find(x => _galler(x, k) && _passar(x, t, rubrik));
             if (!d) {
                 if (rubrik.some(c => c.length <= 80 && KRAVER_DEKLARATION.test(c)))
                     odeklarerade.add(`${t.namn}${t.blad ? ` [${t.blad}]` : ''}: rubrikraden "${rubrik.join(' | ')}" måste deklareras i `
@@ -392,6 +490,11 @@ export function differensprov(tabeller, deklarationer, { k, kanda = [] }) {
                         + (motsvarar.length ? ` (${motsvarar.join(', ')})` : ' (ingen känd liten grupp i underlaget)') });
             }
         });
+    }
+    for (const d of deklarationer.filter(x => x.korsblad && _galler(x, k))) {
+        const r = _korsbladsprov(d, tabeller, k, kanda);
+        fynd.push(...r.fynd); fel.push(...r.fel);
+        traffar.set(d, r.traffar); provade.set(d, r.provade);
     }
     const oanvanda = deklarationer.filter(d => _galler(d, k) && (!traffar.get(d) || (!d.inget && !d.kanSaknaTotal && !provade.get(d))))
         .map(d => `${d.namn}: ${traffar.get(d) ? 'ingen total prövades' : 'känner inte igen någon tabell'}`);
