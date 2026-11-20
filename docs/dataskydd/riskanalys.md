@@ -257,6 +257,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - Vid fliksstängning försvinner allt minne (ingen persistens).
 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
+- **Var koden bor:** vitlistan och kolumnvalet (`ALLOWED_FIELDS`, `getField`, ansvarskolumnen) ligger i appen
+  (`src/app/06-uppgiftsminimering.js`, `src/app/03-hjalpfunktioner.js`). Tolkningen av värdena — talen, kön, BAS,
+  saneringen av AID-etiketten, kärnan i `extractMinimalRecord` (`tolkaLonerad`) och `detectSensitiveColumns` — är
+  rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan klocka (året som ett födelseår räknas mot skickas
+  in), och prövas fristående i `tests/inlasning.test.js` och genom appen i `tests/parsing.test.js`.
 - **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID-etikett, lön och kön, samt valfri ålder
   (ADR-64; saknas kolumnen blir åldern 0 på varje rad och betyder *saknas*), valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
   (ADR-33) läses in. Kolumnen *Ansvar* (ofta kostnadsställe) läses inte in (se avgränsningen i

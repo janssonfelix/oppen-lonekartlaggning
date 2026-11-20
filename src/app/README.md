@@ -29,14 +29,14 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `01-html-och-tillganglighet.js` | `esc`-hjälpare, fokusfällor, skärmläsarmeddelanden |
 | `01-farger.js` | `FARG`: gränssnittets färger på ett ställe — statusarna (text, botten, yta, kant), neutrala och blå accent. Mallar, palett och stilmallens `--status-*` läser härifrån; `tests/farger.test.js` håller hexkoderna borta från resten |
 | `02-verktygstips.js` | Diagrammens verktygstipsportal, gränsen för nedsampling av punktmoln, verktygstips |
-| `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator, fält- och kolumnigenkänning, svenska talformat (`svTal`, `svPct`, `svKr`) |
+| `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator, fält- och kolumnigenkänning (`getField`, `autoDetectColumnMap`: vilken kolumn som bär vilket fält, med kolumnmappningen och importprofilen), svenska talformat (`svTal`, `svPct`, `svKr`) |
 | `03-ikoner.js` | Linjeikonerna (`ikon`): ett bildspråk i stället för bildtecken; statusmärken med egen form |
 | `04-ordlista.js` | Ordlistan, symbolförklaringen och metodtexten om AID (`AID_METODTEXT`); texterna är mallar med termerna (`{enhet.en}`), fyllda med `termText` |
 | `05-tabeller-och-lankar.js` | Beräkningspaneler (audit), sorterbara (underrader följer sin rad) och hopfällbara tabeller, växeln *Fler kolumner* för breda tabeller (`flerKolumner`; grundvyn gömmer sekundära kolumner, exporterna tar alla), `navigateTo`, korslänkar, stapelceller |
 | `06-k-troskel.js` | Tröskeln för minsta gruppstorlek: `K_STANDARD`, `kTroskel()`, `statGolv()`, `sattKTroskel()` (ADR-38), könsuppdelade mått och par för redovisning, stämplarna, diagramnoterna och omritningen (se `docs/utveckling/k-troskeln.md`) |
 | `06-kvinnoandel-referens.js` | Den nationella kvinnoandelen per AID ur SKR:s personalstatistik (`nationellAidKlass`, `skrForklaring`), reserv i likvärdighetsanalysen |
 | `06-maskeringsnoter.js` | Maskeringsnoterna: `kMaskNote`, `kSamladNote` |
-| `06-uppgiftsminimering.js` | Uppgiftsminimeringen: vitlistade fält (`ALLOWED_FIELDS`), normalisering (`extractMinimalRecord`), detektorn för känsliga kolumner (`detectSensitiveColumns`) |
+| `06-uppgiftsminimering.js` | Uppgiftsminimeringen: vitlistade fält (`ALLOWED_FIELDS`), ansvarskolumnen (`_hittaAnsvarKolumn`, `_bedomAnsvarKolumn`) och `extractMinimalRecord`, som slår upp radens fält och skickar dem med innevarande år till `tolkaLonerad`. Själva tolkningen (talen, kön, BAS, `_cleanYrkeField`, `detectSensitiveColumns`) bor i `src/lib/inlasning.js` och nås under samma namn genom spegeln |
 | `07-standardinstallningar.js` | Standardvärden för prioritering och kostnad, BAS-gränsen (`BAS_MAX`, ADR-21), den neutrala standardprofilen (inga färdiga profiler, ADR-28), profiletiketter och termerna i `index.html` (`applyProfileLabels` fyller `data-profile-template` och `data-term-template`), namnen på organisationen och jämförelsestatistiken (`orgNamn`, `jmfNamn`, ADR-36) |
 | `08-version.js` | **AUTO-GENERERAD** ur `VERSION`: `APP_VERSION`, `APP_BUILD_DATE` |
 | `09-lib-speglar.js` | **AUTO-GENERERAD** spegel av `src/lib/` |
@@ -47,7 +47,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `10-diagramtema.js` | Diagrammens palett och typografi (`PALETTE`, `CHART_FONT`): färg efter uppgift — kön, serier i fast ordning, storlek i en nyans, avvikelse i två nyanser kring neutralt, status och prioriteringens statusar |
 | `11-diagramexport.js` | Exportmeny på alla diagram (PNG, SVG, diagramdata), tillagd av `ritaFigur`; diagrammen exporteras ur sin figur (ADR-39). Regeln för när ett diagram inte får lämna verktyget (`exportTillaten`, `markeraUtanExport`, skälen i `EXPORT_SKAL`) |
 | `11-markering.js` | Länkade vyer: en markerad grupp (BAS-intervall eller AID-etikett inom BAS) framhävs i alla diagram; raden som säger vad som är markerat står överst i innehållet och följer med när sidan rullas |
-| `12-tillstand.js` | `state`, dataåtkomst, referensens namn och källa (ingen inbyggd referens, ADR-28), `policyFor`, tal-tolkning, tabellverktyg (kopiera, exportera) |
+| `12-tillstand.js` | `state`, dataåtkomst, referensens namn och källa (ingen inbyggd referens, ADR-28), `policyFor`, tabellverktyg (kopiera, exportera); talen i indata (`parseNumber`, `parseNumberStrict`) tolkas i `src/lib/inlasning.js` |
 | `13-oversikt.js` | Översikt: filraden, nyckeltalen, status mot lagkraven, bootstrap-KI, styrka, processkarta (stegens regler i `src/lib/attgora.js`); och Filer och kvalitet (`renderFilerDelar`): underlagets kvalitet (sammanfattad, med kontrollen av AID-kodningen i `src/lib/aidkontroll.js`), extremvärdena och inläsningsrapporten |
 | `15-extremvarden-basrang.js` | Extremvärden (enskilda löner) i Underlagets kvalitet; BAS-ordningen är fast (se §6 i `docs/utveckling/likvardighetsmodellen.md`) |
 | `16-inlasningskontroll.js` | Rimlighetskontroll, inläsningsrapport, konsistens mellan filer |
