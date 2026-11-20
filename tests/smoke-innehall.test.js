@@ -717,6 +717,17 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
         expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.length).toBe(0);
         expect(w.__state.forklaringsmodell).toBeNull();
     });
+    it('konfigurationsfilen: PO-påslaget, månaderna och prioriteringens värden prövas mot fältens gränser', () => {
+        const w = fonster();
+        const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
+        const las = ändring => () => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, ...ändring }) + ')');
+        expect(las({ costSettings: { poPct: 100, months: 12 } })).not.toThrow();
+        expect(las({ costSettings: { poPct: 150, months: 12 } })).toThrow('costSettings.poPct måste vara ett tal mellan 0 och 100.');
+        expect(las({ costSettings: { poPct: 39.15, months: 61 } })).toThrow('costSettings.months måste vara ett tal mellan 1 och 60.');
+        expect(las({ prioConfig: { ...cfg.prioConfig, atgardThreshold: 5 } })).toThrow('prioConfig.atgardThreshold måste vara ett tal mellan -50 och 0.');
+        expect(las({ prioConfig: { ...cfg.prioConfig, akutMinN: 0 } })).toThrow('prioConfig.akutMinN måste vara ett tal mellan 1 och 500.');
+        expect(las({ prioWeights: { ...cfg.prioWeights, volym: 101 } })).toThrow('prioWeights.volym måste vara ett tal mellan 0 och 100.');
+    });
     it('en konfigurationsfil som läses in före lönefilen behåller yrkesgrupp (valet prövas mot datat när det finns)', () => {
         const w = createAppWindow();
         w.__cfg = { version: 2, forklaringsmodell: { bas: true, alder: true, yrkesgrupp: true, skal: '' } };

@@ -658,8 +658,8 @@ function _readCostSettings() {
     const months   = monthsEl ? parseInt(/** @type {HTMLInputElement} */ (monthsEl).value, 10) || COST_DEFAULTS.months : COST_DEFAULTS.months;
     const poPct    = poEl ? parseFloat(/** @type {HTMLInputElement} */ (poEl).value) : COST_DEFAULTS.poPct;
     state.costSettings = {
-        months: Math.max(1, Math.min(60, months)),
-        poPct:  Math.max(0, Math.min(100, isNaN(poPct) ? COST_DEFAULTS.poPct : poPct))
+        months: Math.max(_igGrans('manader').min, Math.min(_igGrans('manader').max, months)),
+        poPct:  Math.max(_igGrans('poPct').min, Math.min(_igGrans('poPct').max, isNaN(poPct) ? COST_DEFAULTS.poPct : poPct))
     };
     const sum = document.getElementById('prio-cost-summary');
     if (sum) {

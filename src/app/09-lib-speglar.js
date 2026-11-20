@@ -8688,6 +8688,114 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
 const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
 const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 
+// ---- speglar src/lib/installningsgranser.js ----
+const __mirrorInstallningsgranser = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — gränserna för inställningarna, på ett ställe.
+ *
+ * Samma gräns gäller på tre ställen: fältet i Inställningar (appen), konfigurationsfilen (appen, applyConfigSnapshot)
+ * och organisationspaketet (src/lib/organisationspaket.js). Här står siffrorna, och de tre läser dem härifrån. Gränserna
+ * är de som fälten redan använder (min/max i index.html och fältens tak i koden); en ny gräns hör inte hit utan till
+ * fältet först.
+ *
+ * Appen når gränserna genom installningsGrans(nyckel): spegelns alias måste vara funktioner (tests/drift.test.js).
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+const MB = 1024 * 1024;
+
+/** Högsta tillåtna filstorlek i byte, per filtyp. Organisationspaketet är samma gräns som förut (5 MB). */
+const FIL_MAX = Object.freeze({
+    lonefil: 50 * MB,
+    stallningstagande: 20 * MB,
+    jamforelsestatistik: 20 * MB,
+    konfiguration: 5 * MB,
+    paket: 5 * MB
+});
+
+/** Påslaget för PO (arbetsgivaravgifter och pension) i procent: fältet i Inställningar och konfigurationen. */
+const PO_PCT_GRANS = Object.freeze({ min: 0, max: 100 });
+
+/** Beräkningsperioden i månader (fältet i Inställningar tar värdena 3, 6, 9 och 12; gränsen gäller konfigurationen). */
+const MANADER_GRANS = Object.freeze({ min: 1, max: 60 });
+
+/** Prioriteringens trösklar, per fältnamn i prioConfig (fälten prio-cfg-* i Inställningar). */
+const PRIO_TROSKEL_GRANS = Object.freeze({
+    atgardThreshold:    Object.freeze({ min: -50, max: 0 }),
+    akutMinN:           Object.freeze({ min: 1, max: 500 }),
+    bevakaThreshold:    Object.freeze({ min: -50, max: 0 }),
+    analyseraThreshold: Object.freeze({ min: 0, max: 50 })
+});
+
+/** Prioriteringens viktning, per fältnamn i prioWeights (fälten prio-w-* i Inställningar). */
+const PRIO_VIKT_GRANS = Object.freeze({
+    avvikelse:    Object.freeze({ min: 0, max: 100 }),
+    volym:        Object.freeze({ min: 0, max: 100 }),
+    jamstalldhet: Object.freeze({ min: 0, max: 100 })
+});
+
+/** @typedef {{min:number, max:number}} Grans */
+/** @type {Readonly<{poPct: Grans, manader: Grans, prioTroskel: Readonly<Record<string, Grans>>, prioVikt: Readonly<Record<string, Grans>>, fil: Readonly<Record<string, number>>}>} */
+const _GRANSER = Object.freeze({
+    poPct: PO_PCT_GRANS,
+    manader: MANADER_GRANS,
+    prioTroskel: PRIO_TROSKEL_GRANS,
+    prioVikt: PRIO_VIKT_GRANS,
+    fil: FIL_MAX
+});
+
+/**
+ * Gränsen (eller gränserna per fältnamn) för en inställning: 'poPct', 'manader', 'prioTroskel', 'prioVikt' eller
+ * 'fil' (högsta filstorlek per filtyp, i byte).
+ * @template {keyof typeof _GRANSER} K
+ * @param {K} nyckel
+ * @returns {(typeof _GRANSER)[K]}
+ */
+function installningsGrans(nyckel) {
+    if (!Object.prototype.hasOwnProperty.call(_GRANSER, nyckel)) throw new Error(`Okänd inställning: ${nyckel}`);
+    return _GRANSER[nyckel];
+}
+
+/**
+ * Ligger ett värde inom sin gräns? Ett värde som inte är ett ändligt tal ligger utanför.
+ * @param {unknown} varde
+ * @param {{min:number, max:number}} grans
+ * @returns {boolean}
+ */
+function arInomGrans(varde, grans) {
+    return typeof varde === 'number' && Number.isFinite(varde) && varde >= grans.min && varde <= grans.max;
+}
+
+/** Hur filtypen heter i meddelandet om att den är för stor. */
+const _FIL_NAMN = Object.freeze({
+    lonefil: 'Lönefilen',
+    stallningstagande: 'Filen med ställningstagandet',
+    jamforelsestatistik: 'Filen med jämförelsestatistiken',
+    konfiguration: 'Konfigurationsfilen'
+});
+
+/**
+ * Felmeddelandet för en fil som är för stor, eller null när filen får läsas in. Prövas på filens storlek (byte) innan
+ * filen läses; en okänd storlek (NaN, undefined) räknas inte som för stor.
+ * @param {number} storlek - filens storlek i byte (File.size)
+ * @param {keyof typeof _FIL_NAMN} typ
+ * @returns {string | null}
+ */
+function filStorlekFel(storlek, typ) {
+    const grans = FIL_MAX[typ];
+    if (!(storlek > grans)) return null;
+    return `${_FIL_NAMN[typ]} är för stor för att läsas in (högst ${grans / MB} MB).`;
+}
+
+    return { installningsGrans, arInomGrans, filStorlekFel };
+})();
+const _igGrans = __mirrorInstallningsgranser.installningsGrans;
+const _igInomGrans = __mirrorInstallningsgranser.arInomGrans;
+const _igFilFel = __mirrorInstallningsgranser.filStorlekFel;
+
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -8696,6 +8804,7 @@ const __mirrorOrganisationspaket = (() => {
     const perBasReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
     const valideraImportprofiler = __mirrorImportprofiler.valideraImportprofiler;
     const skapaTermer = __mirrorTermer.skapaTermer;
+    const installningsGrans = __mirrorInstallningsgranser.installningsGrans;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8715,13 +8824,14 @@ const __mirrorOrganisationspaket = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 
 const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 const PAKET_VERSION = 1;
-const PAKET_MAX_BYTE = 5 * 1024 * 1024;
+const PAKET_MAX_BYTE = installningsGrans('fil').paket;   // gränsen bor i installningsgranser.js
 
 const MAX_TEXT = 200;
 const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
@@ -8812,7 +8922,7 @@ function byggPaket(u) {
             organisationstyp: _orgTyp(p.orgTyp),
         }),
         installningar: _utanTomma({
-            poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
+            poPct: _tal(inst.poPct, installningsGrans('poPct').min, installningsGrans('poPct').max), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
             // Låsningarna (ADR-47): bara giltiga värden följer med; en låsning av rensningstiden kräver ett värde över 0.
             kTroskelLagst: _kTroskel(inst.kTroskelLagst),
             inaktivitetMin: _inaktivitet(inst.inaktivitetMin),
@@ -8969,7 +9079,7 @@ function tolkaPaket(text) {
             profil: _utanTomma({ name: organisation, benchmarkLabel: _text(p.jamforelseNamn),
                 benchmarkLabelGenitive: _text(p.jamforelseGenitiv), benchmarkShort: _text(p.jamforelseKort),
                 basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem), orgTyp: _orgTyp(p.organisationstyp) }),
-            installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
+            installningar: _utanTomma({ poPct: _tal(inst.poPct, installningsGrans('poPct').min, installningsGrans('poPct').max), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
                 jamforelse: _jamforelse(inst.jamforelse) }),
             referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
             statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,

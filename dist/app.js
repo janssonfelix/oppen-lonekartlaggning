@@ -11173,6 +11173,114 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
 const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
 const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 
+// ---- speglar src/lib/installningsgranser.js ----
+const __mirrorInstallningsgranser = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — gränserna för inställningarna, på ett ställe.
+ *
+ * Samma gräns gäller på tre ställen: fältet i Inställningar (appen), konfigurationsfilen (appen, applyConfigSnapshot)
+ * och organisationspaketet (src/lib/organisationspaket.js). Här står siffrorna, och de tre läser dem härifrån. Gränserna
+ * är de som fälten redan använder (min/max i index.html och fältens tak i koden); en ny gräns hör inte hit utan till
+ * fältet först.
+ *
+ * Appen når gränserna genom installningsGrans(nyckel): spegelns alias måste vara funktioner (tests/drift.test.js).
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+const MB = 1024 * 1024;
+
+/** Högsta tillåtna filstorlek i byte, per filtyp. Organisationspaketet är samma gräns som förut (5 MB). */
+const FIL_MAX = Object.freeze({
+    lonefil: 50 * MB,
+    stallningstagande: 20 * MB,
+    jamforelsestatistik: 20 * MB,
+    konfiguration: 5 * MB,
+    paket: 5 * MB
+});
+
+/** Påslaget för PO (arbetsgivaravgifter och pension) i procent: fältet i Inställningar och konfigurationen. */
+const PO_PCT_GRANS = Object.freeze({ min: 0, max: 100 });
+
+/** Beräkningsperioden i månader (fältet i Inställningar tar värdena 3, 6, 9 och 12; gränsen gäller konfigurationen). */
+const MANADER_GRANS = Object.freeze({ min: 1, max: 60 });
+
+/** Prioriteringens trösklar, per fältnamn i prioConfig (fälten prio-cfg-* i Inställningar). */
+const PRIO_TROSKEL_GRANS = Object.freeze({
+    atgardThreshold:    Object.freeze({ min: -50, max: 0 }),
+    akutMinN:           Object.freeze({ min: 1, max: 500 }),
+    bevakaThreshold:    Object.freeze({ min: -50, max: 0 }),
+    analyseraThreshold: Object.freeze({ min: 0, max: 50 })
+});
+
+/** Prioriteringens viktning, per fältnamn i prioWeights (fälten prio-w-* i Inställningar). */
+const PRIO_VIKT_GRANS = Object.freeze({
+    avvikelse:    Object.freeze({ min: 0, max: 100 }),
+    volym:        Object.freeze({ min: 0, max: 100 }),
+    jamstalldhet: Object.freeze({ min: 0, max: 100 })
+});
+
+/** @typedef {{min:number, max:number}} Grans */
+/** @type {Readonly<{poPct: Grans, manader: Grans, prioTroskel: Readonly<Record<string, Grans>>, prioVikt: Readonly<Record<string, Grans>>, fil: Readonly<Record<string, number>>}>} */
+const _GRANSER = Object.freeze({
+    poPct: PO_PCT_GRANS,
+    manader: MANADER_GRANS,
+    prioTroskel: PRIO_TROSKEL_GRANS,
+    prioVikt: PRIO_VIKT_GRANS,
+    fil: FIL_MAX
+});
+
+/**
+ * Gränsen (eller gränserna per fältnamn) för en inställning: 'poPct', 'manader', 'prioTroskel', 'prioVikt' eller
+ * 'fil' (högsta filstorlek per filtyp, i byte).
+ * @template {keyof typeof _GRANSER} K
+ * @param {K} nyckel
+ * @returns {(typeof _GRANSER)[K]}
+ */
+function installningsGrans(nyckel) {
+    if (!Object.prototype.hasOwnProperty.call(_GRANSER, nyckel)) throw new Error(`Okänd inställning: ${nyckel}`);
+    return _GRANSER[nyckel];
+}
+
+/**
+ * Ligger ett värde inom sin gräns? Ett värde som inte är ett ändligt tal ligger utanför.
+ * @param {unknown} varde
+ * @param {{min:number, max:number}} grans
+ * @returns {boolean}
+ */
+function arInomGrans(varde, grans) {
+    return typeof varde === 'number' && Number.isFinite(varde) && varde >= grans.min && varde <= grans.max;
+}
+
+/** Hur filtypen heter i meddelandet om att den är för stor. */
+const _FIL_NAMN = Object.freeze({
+    lonefil: 'Lönefilen',
+    stallningstagande: 'Filen med ställningstagandet',
+    jamforelsestatistik: 'Filen med jämförelsestatistiken',
+    konfiguration: 'Konfigurationsfilen'
+});
+
+/**
+ * Felmeddelandet för en fil som är för stor, eller null när filen får läsas in. Prövas på filens storlek (byte) innan
+ * filen läses; en okänd storlek (NaN, undefined) räknas inte som för stor.
+ * @param {number} storlek - filens storlek i byte (File.size)
+ * @param {keyof typeof _FIL_NAMN} typ
+ * @returns {string | null}
+ */
+function filStorlekFel(storlek, typ) {
+    const grans = FIL_MAX[typ];
+    if (!(storlek > grans)) return null;
+    return `${_FIL_NAMN[typ]} är för stor för att läsas in (högst ${grans / MB} MB).`;
+}
+
+    return { installningsGrans, arInomGrans, filStorlekFel };
+})();
+const _igGrans = __mirrorInstallningsgranser.installningsGrans;
+const _igInomGrans = __mirrorInstallningsgranser.arInomGrans;
+const _igFilFel = __mirrorInstallningsgranser.filStorlekFel;
+
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -11181,6 +11289,7 @@ const __mirrorOrganisationspaket = (() => {
     const perBasReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
     const valideraImportprofiler = __mirrorImportprofiler.valideraImportprofiler;
     const skapaTermer = __mirrorTermer.skapaTermer;
+    const installningsGrans = __mirrorInstallningsgranser.installningsGrans;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -11200,13 +11309,14 @@ const __mirrorOrganisationspaket = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 
 const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 const PAKET_VERSION = 1;
-const PAKET_MAX_BYTE = 5 * 1024 * 1024;
+const PAKET_MAX_BYTE = installningsGrans('fil').paket;   // gränsen bor i installningsgranser.js
 
 const MAX_TEXT = 200;
 const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
@@ -11297,7 +11407,7 @@ function byggPaket(u) {
             organisationstyp: _orgTyp(p.orgTyp),
         }),
         installningar: _utanTomma({
-            poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
+            poPct: _tal(inst.poPct, installningsGrans('poPct').min, installningsGrans('poPct').max), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
             // Låsningarna (ADR-47): bara giltiga värden följer med; en låsning av rensningstiden kräver ett värde över 0.
             kTroskelLagst: _kTroskel(inst.kTroskelLagst),
             inaktivitetMin: _inaktivitet(inst.inaktivitetMin),
@@ -11454,7 +11564,7 @@ function tolkaPaket(text) {
             profil: _utanTomma({ name: organisation, benchmarkLabel: _text(p.jamforelseNamn),
                 benchmarkLabelGenitive: _text(p.jamforelseGenitiv), benchmarkShort: _text(p.jamforelseKort),
                 basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem), orgTyp: _orgTyp(p.organisationstyp) }),
-            installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
+            installningar: _utanTomma({ poPct: _tal(inst.poPct, installningsGrans('poPct').min, installningsGrans('poPct').max), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
                 jamforelse: _jamforelse(inst.jamforelse) }),
             referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
             statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,
@@ -18982,6 +19092,8 @@ function _applyConfigSnapshot(cfg) {
         ['atgardThreshold', 'akutMinN', 'bevakaThreshold', 'analyseraThreshold'].forEach(k => {
             if (cfg.prioConfig[k] != null && typeof cfg.prioConfig[k] !== 'number')
                 throw new Error(`prioConfig.${k} måste vara ett nummer, fick ${typeof cfg.prioConfig[k]}.`);
+            if (cfg.prioConfig[k] != null && !_igInomGrans(cfg.prioConfig[k], _igGrans('prioTroskel')[k]))
+                throw new Error(`prioConfig.${k} måste vara ett tal mellan ${_igGrans('prioTroskel')[k].min} och ${_igGrans('prioTroskel')[k].max}.`);
         });
         tmp.prioConfig = { ...PRIO_CONFIG_DEFAULTS, ...cfg.prioConfig };
     }
@@ -18991,16 +19103,18 @@ function _applyConfigSnapshot(cfg) {
         ['avvikelse', 'volym', 'jamstalldhet'].forEach(k => {
             if (cfg.prioWeights[k] != null && typeof cfg.prioWeights[k] !== 'number')
                 throw new Error(`prioWeights.${k} måste vara ett nummer.`);
+            if (cfg.prioWeights[k] != null && !_igInomGrans(cfg.prioWeights[k], _igGrans('prioVikt')[k]))
+                throw new Error(`prioWeights.${k} måste vara ett tal mellan ${_igGrans('prioVikt')[k].min} och ${_igGrans('prioVikt')[k].max}.`);
         });
         tmp.prioWeights = { ...PRIO_WEIGHTS_DEFAULTS, ...cfg.prioWeights };
     }
     // costSettings: numeriska + bounds
     if (cfg.costSettings != null) {
         if (typeof cfg.costSettings !== 'object') throw new Error('costSettings är inte ett objekt.');
-        if (cfg.costSettings.poPct != null && (typeof cfg.costSettings.poPct !== 'number' || cfg.costSettings.poPct < 0 || cfg.costSettings.poPct > 200))
-            throw new Error('costSettings.poPct måste vara ett tal mellan 0 och 200.');
-        if (cfg.costSettings.months != null && (typeof cfg.costSettings.months !== 'number' || cfg.costSettings.months < 1 || cfg.costSettings.months > 60))
-            throw new Error('costSettings.months måste vara ett tal mellan 1 och 60.');
+        if (cfg.costSettings.poPct != null && !_igInomGrans(cfg.costSettings.poPct, _igGrans('poPct')))
+            throw new Error(`costSettings.poPct måste vara ett tal mellan ${_igGrans('poPct').min} och ${_igGrans('poPct').max}.`);
+        if (cfg.costSettings.months != null && !_igInomGrans(cfg.costSettings.months, _igGrans('manader')))
+            throw new Error(`costSettings.months måste vara ett tal mellan ${_igGrans('manader').min} och ${_igGrans('manader').max}.`);
         tmp.costSettings = { ...COST_DEFAULTS, ...cfg.costSettings };
     }
     // bristAids: array av strängar
@@ -19314,6 +19428,14 @@ document.getElementById('btn-config-save')?.addEventListener('click', () => {
 document.getElementById('btn-config-load')?.addEventListener('change', e => {
     const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
     if (!file) return;
+    const status = document.getElementById('config-status');
+    // Storleken prövas innan filen läses: en för stor fil tolkas inte alls.
+    const storlekFel = _igFilFel(file.size, 'konfiguration');
+    if (storlekFel) {
+        if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
+        /** @type {HTMLInputElement} */ (e.target).value = '';
+        return;
+    }
     const reader = new FileReader();
     reader.onload = ev => {
         try {
@@ -22143,7 +22265,7 @@ document.getElementById('data-residency-modal')?.addEventListener('click', e => 
 // den i ett steg (lasInPaket). Tolkning och validering bor i src/lib/organisationspaket.js
 // (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
 
-const PAKET_MAX_FILSTORLEK = 5 * 1024 * 1024;   // samma gräns som i src/lib/organisationspaket.js
+const PAKET_MAX_FILSTORLEK = _igGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
 // Rensning vid inaktivitet i paketet: 0 (av) eller 5–120 minuter (samma gränser som i src/lib/organisationspaket.js).
 const PAKET_INAKTIVITET_MIN = 5;
 const PAKET_INAKTIVITET_MAX = 120;
@@ -23656,12 +23778,16 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
  * @param {(res: {ok:true, format:string, encoding:string, headers:string[],
  *                rows:Array<Object<string,string>>}
  *             | {ok:false, error:string}) => void} utfall
+ * @param {'stallningstagande'|'jamforelsestatistik'} typ - filtypen, som bestämmer storleksgränsen (FIL_MAX)
  */
-function readTabularFile(file, synonymGroups, utfall) {
+function readTabularFile(file, synonymGroups, utfall, typ) {
     // En fil som blivit läst kan ändra det som visas, hur det än gick: ingen ritad flik visas igen som den är (ADR-81).
     /** @type {typeof utfall} */
     const callback = res => { try { utfall(res); } finally { visningNy(); } };
     if (!file) { callback({ ok: false, error: 'Ingen fil vald.' }); return; }
+    // Storleken prövas innan filen läses eller tolkas.
+    const storlekFel = _igFilFel(file.size, typ);
+    if (storlekFel) { callback({ ok: false, error: storlekFel }); return; }
     const reader = new FileReader();
     reader.onerror = () => callback({ ok: false, error: 'Kunde inte läsa filen.' });
     reader.onload = () => {
@@ -23701,6 +23827,9 @@ function readTabularFile(file, synonymGroups, utfall) {
 
 function loadStructureFile(file) {
     if (!file) return;
+    // Storleken prövas innan filen läses eller tolkas: en för stor fil lämnar det som var inläst orört.
+    const storlekFel = _igFilFel(file.size, 'lonefil');
+    if (storlekFel) { dataStatus.textContent = storlekFel; dataStatus.className = 'status-msg'; return; }
     const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
     // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
@@ -27147,7 +27276,7 @@ policyInput.addEventListener("change", e => {
         renderActionChecklist();
         renderProcessTracker();
         if (getData().length > 0) generateRapport();
-    });
+    }, 'stallningstagande');
 });
 
 // Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
@@ -27274,7 +27403,7 @@ statInput.addEventListener("change", e => {
             statStatus.textContent = "Fel: " + err.message;
             statStatus.className = "status-msg error";
         }
-    });
+    }, 'jamforelsestatistik');
 });
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -32414,8 +32543,8 @@ function _readCostSettings() {
     const months   = monthsEl ? parseInt(/** @type {HTMLInputElement} */ (monthsEl).value, 10) || COST_DEFAULTS.months : COST_DEFAULTS.months;
     const poPct    = poEl ? parseFloat(/** @type {HTMLInputElement} */ (poEl).value) : COST_DEFAULTS.poPct;
     state.costSettings = {
-        months: Math.max(1, Math.min(60, months)),
-        poPct:  Math.max(0, Math.min(100, isNaN(poPct) ? COST_DEFAULTS.poPct : poPct))
+        months: Math.max(_igGrans('manader').min, Math.min(_igGrans('manader').max, months)),
+        poPct:  Math.max(_igGrans('poPct').min, Math.min(_igGrans('poPct').max, isNaN(poPct) ? COST_DEFAULTS.poPct : poPct))
     };
     const sum = document.getElementById('prio-cost-summary');
     if (sum) {

@@ -120,6 +120,8 @@ function _applyConfigSnapshot(cfg) {
         ['atgardThreshold', 'akutMinN', 'bevakaThreshold', 'analyseraThreshold'].forEach(k => {
             if (cfg.prioConfig[k] != null && typeof cfg.prioConfig[k] !== 'number')
                 throw new Error(`prioConfig.${k} måste vara ett nummer, fick ${typeof cfg.prioConfig[k]}.`);
+            if (cfg.prioConfig[k] != null && !_igInomGrans(cfg.prioConfig[k], _igGrans('prioTroskel')[k]))
+                throw new Error(`prioConfig.${k} måste vara ett tal mellan ${_igGrans('prioTroskel')[k].min} och ${_igGrans('prioTroskel')[k].max}.`);
         });
         tmp.prioConfig = { ...PRIO_CONFIG_DEFAULTS, ...cfg.prioConfig };
     }
@@ -129,16 +131,18 @@ function _applyConfigSnapshot(cfg) {
         ['avvikelse', 'volym', 'jamstalldhet'].forEach(k => {
             if (cfg.prioWeights[k] != null && typeof cfg.prioWeights[k] !== 'number')
                 throw new Error(`prioWeights.${k} måste vara ett nummer.`);
+            if (cfg.prioWeights[k] != null && !_igInomGrans(cfg.prioWeights[k], _igGrans('prioVikt')[k]))
+                throw new Error(`prioWeights.${k} måste vara ett tal mellan ${_igGrans('prioVikt')[k].min} och ${_igGrans('prioVikt')[k].max}.`);
         });
         tmp.prioWeights = { ...PRIO_WEIGHTS_DEFAULTS, ...cfg.prioWeights };
     }
     // costSettings: numeriska + bounds
     if (cfg.costSettings != null) {
         if (typeof cfg.costSettings !== 'object') throw new Error('costSettings är inte ett objekt.');
-        if (cfg.costSettings.poPct != null && (typeof cfg.costSettings.poPct !== 'number' || cfg.costSettings.poPct < 0 || cfg.costSettings.poPct > 200))
-            throw new Error('costSettings.poPct måste vara ett tal mellan 0 och 200.');
-        if (cfg.costSettings.months != null && (typeof cfg.costSettings.months !== 'number' || cfg.costSettings.months < 1 || cfg.costSettings.months > 60))
-            throw new Error('costSettings.months måste vara ett tal mellan 1 och 60.');
+        if (cfg.costSettings.poPct != null && !_igInomGrans(cfg.costSettings.poPct, _igGrans('poPct')))
+            throw new Error(`costSettings.poPct måste vara ett tal mellan ${_igGrans('poPct').min} och ${_igGrans('poPct').max}.`);
+        if (cfg.costSettings.months != null && !_igInomGrans(cfg.costSettings.months, _igGrans('manader')))
+            throw new Error(`costSettings.months måste vara ett tal mellan ${_igGrans('manader').min} och ${_igGrans('manader').max}.`);
         tmp.costSettings = { ...COST_DEFAULTS, ...cfg.costSettings };
     }
     // bristAids: array av strängar
@@ -452,6 +456,14 @@ document.getElementById('btn-config-save')?.addEventListener('click', () => {
 document.getElementById('btn-config-load')?.addEventListener('change', e => {
     const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
     if (!file) return;
+    const status = document.getElementById('config-status');
+    // Storleken prövas innan filen läses: en för stor fil tolkas inte alls.
+    const storlekFel = _igFilFel(file.size, 'konfiguration');
+    if (storlekFel) {
+        if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
+        /** @type {HTMLInputElement} */ (e.target).value = '';
+        return;
+    }
     const reader = new FileReader();
     reader.onload = ev => {
         try {
