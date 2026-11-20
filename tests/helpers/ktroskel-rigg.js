@@ -364,8 +364,8 @@ export async function samlaUtdata(w) {
         const undantagna = new Set(ritade.filter(e => e.undantag).map(e => e.id));
         for (const id of new Set(ritade.filter(e => !e.kopia && !undantagna.has(e.id)).map(e => e.id))) {
             diagram++;
-            // Ett diagram som finns på skärmen men inte i exportläget (t.ex. Var uppstår löneskillnaden, som skyddar
-            // sig genom att inte dela upp) ger ingen diagramdata: vägen noteras så att tystnaden inte ser ut som en läcka.
+            // Ett diagram som finns på skärmen men inte i exportläget (t.ex. lönehistogrammet per kön) ger ingen
+            // diagramdata: vägen noteras så att tystnaden inte ser ut som en läcka.
             const el = d.getElementById(id);
             const rader = el ? w.__chartExportRows(el) : [];
             lagg(`diagramdata: ${id}`, diagramText(rader, !!d.getElementById(id)?._figur));

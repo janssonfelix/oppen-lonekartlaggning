@@ -484,26 +484,41 @@ uppstår löneskillnaden (variabler)* i metodbilagan (`_methodAppendixData`).
 skillnaden och de grupper som bidrar mest. När skillnaden är under 1 % av männens medellön (`litetGap`) visas inga
 andelar, och en not säger att delarna då kan peka åt olika håll och vara större än själva skillnaden.
 
-**Skyddsregeln.** Tröskeln är `kTroskel()`, så skärmen och exporten följer `k-troskeln.md` §1.
+**Skyddsregeln.** Tröskeln är `kTroskel()`, så skärmen och exporten följer `k-troskeln.md` §1: på skärmen är den 1,
+och där räknas inget samman (ADR-51).
 
 1. Har ett kön färre än k personer i hela urvalet delas skillnaden inte upp (`gapUppdelning` ger null), och kortet
    säger varför.
-2. En cell är **synlig** bara om den själv och alla celler den ligger i har 0 eller minst k av varje kön. En AID-post
-   namnges alltså bara om dess BAS klarar samma krav, eftersom BAS:ens medellön ingår i posten.
-3. Dolda poster redovisas bara med antal: "N grupper med färre än k personer ingår i summan". Deras summa redovisas
-   aldrig.
-4. Poster som avrundas till 0 kr (|belopp| under 0,5 kr) visas inte; de ingår i delen.
-5. **Topplistan** i varje del är de synliga posterna med |belopp| minst 0,5 kr, fallande efter |belopp| (lika belopp
-   efter namn), högst tre. Den kortas sedan efter regeln: det som inte visas är delens summa minus de visade posterna,
-   och för varje dold post h med |h| minst 0,5 kr ska summan av |belopp| för **de andra** posterna som inte visas (dolda
-   och synliga) vara minst hälften av |h|. Håller det inte tas den minsta visade posten bort, en i taget, tills regeln
-   håller.
-6. Håller regeln inte ens med tom lista i någon del redovisas **inga delar**, bara hela skillnaden: delarna summerar
-   till hela skillnaden, så en enskild del kan inte döljas medan de andra visas. Kortet säger då att en grupp under
-   tröskeln står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.
+2. **Sammanslagning (ADR-87).** Inom varje cell, på varje nivå, räknas grupper där ett kön har 1 till k − 1 personer
+   samman till en grupp innan delarna räknas (`sammanslagning` i `src/lib/undertryckning.js`). Har de sammanslagna
+   tillsammans 1 till k − 1 av ett kön tas den grupp med som har färst av det könet (minst en; vid lika antal först
+   efter namn), en i taget; räcker inga räknas alla samman. Delarna räknas sedan med den sammanslagna gruppen som en
+   cell, så att varje cell som delarna och posterna bygger på har 0 eller minst k av varje kön. Delarna summerar
+   exakt till hela skillnaden som förut, men deras belopp kan skilja sig från skärmens.
+3. En post **namnges** bara när dess grupp inte är sammanslagen och den själv och alla grupper den ligger i har 0 eller
+   minst k av varje kön. En AID-post namnges alltså bara om dess BAS klarar samma krav, eftersom BAS:ens medellön ingår
+   i posten.
+4. Grupper som inte namnges redovisas bara med antal, räknat före sammanslagningen (`gapOvrigaText`): "N grupper
+   namnges inte: ett kön har färre än k personer i dem eller i grupperna de räknas samman med. De ingår i summan."
+   Deras summa redovisas aldrig för sig.
+5. Poster som avrundas till 0 kr (|belopp| under 0,5 kr) visas inte; de ingår i delen.
+6. **Topplistan** i varje del är de namngivna posterna med |belopp| minst 0,5 kr, fallande efter |belopp| (lika belopp
+   efter namn), högst tre.
+
+Varför regeln räcker: medellönerna för hela urvalet, delarna, posterna och trappan är alla linjära i cellernas
+medellöner per kön, med antalen som vikter. När varje cell har 0 eller minst k av varje kön är det mesta som går att
+räkna fram ur det som skrivs ut (med antalen) ett medel för minst k kvinnor eller k män, eller en vägd summa av sådana.
+Regeln före ADR-87 kortade topplistan tills det som inte visades var stort nog mot varje dold post, men posterna gav
+med medellönerna och antalen ett ekvationssystem som ibland gick att lösa för en liten grupp, och för vissa val av
+variabler räckte delarna. Vakten är differensprovet i `tests/ktroskel-differens.test.js` (avsnitt d).
+
+**Huvudområdenas andel** av skillnaden (`sektorernasAndel` i `src/lib/sektor.js`, meningen under översikten per
+huvudområde och i rapportunderlaget) är del A med huvudområde som enda variabel, och följer samma sammanslagning.
+Huvudområden som räknas samman namnges i en not (`sektorAndelNot`); räknas alla samman redovisas inget belopp, och
+noten säger varför.
 
 Regeln gäller per del, för varje val av variabler. Trappan visar bara delsummorna och hela skillnaden, aldrig en enskild
-grupps bidrag, och ritas bara när delarna redovisas. Hela skillnaden står först, sedan delarna en i taget
+grupps bidrag. Hela skillnaden står först, sedan delarna en i taget
 från hela skillnaden mot noll, med *belopp · andel av skillnaden* vid varje stapel. En del som går åt andra hållet än
 helheten, eller är större än den, får bara sitt belopp, och verktygstipset säger varför; med `litetGap` står inga
 andelar, som i raderna. Avsnittet står först i Lönestruktur.

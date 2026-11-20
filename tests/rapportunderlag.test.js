@@ -322,17 +322,23 @@ describe('avsnittBlock uppdelning', () => {
         expect(b.tabell.rader.every(r => r[2] === '—')).toBe(true);
         expect(b.stycken.join(' ')).toContain('mindre än 1 %');
     });
-    it('reserven: inga delar när en liten grupp annars kan räknas fram — bara hela skillnaden', () => {
+    it('sammanslagna grupper (ADR-87): delarna står, de sammanslagna namnges inte och en mening säger varför', () => {
         const u = gapUppdelning([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
             ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1')], { k: 10 });
-        expect(u.skyddad).toBe(false);
         const b = avsnittBlock('uppdelning', u, { k: 10 });
-        expect(b.tabell).toBeNull();
         const text = b.stycken.join(' ');
         expect(text).toContain(`en skillnad på ${formatTal(u.gap, 0)} kr`);
-        expect(text).toMatch(/delas inte upp/);
+        expect(text).toContain('Grupper där ett kön har färre än 10 personer räknas samman med andra grupper innan delarna räknas, och de namnges inte. '
+            + 'Annars skulle medellönen för färre än 10 kvinnor eller män gå att räkna fram ur beloppen.');
+        expect(b.tabell.rader[0][3]).toBe('2 grupper namnges inte');
+        expect(b.tabell.rader.map(r => r[3]).join(' ')).not.toMatch(/BAS B|B1/);
     });
-    it('Störst bidrag visar samma poster som kortet (hela den skyddade listan)', () => {
+    it('utan sammanslagna grupper ingen mening om dem', () => {
+        const b = avsnittBlock('uppdelning', gapUppdelning(data, { k: 10 }), { k: 10 });
+        expect(b.stycken.join(' ')).not.toContain('räknas samman');
+        expect(b.tabell.rader.map(r => r[3]).join(' ')).not.toContain('namnges inte');
+    });
+    it('Störst bidrag visar samma poster som kortet', () => {
         const u = gapUppdelning(data, { k: 10 });
         const b = avsnittBlock('uppdelning', u, { k: 10 });
         expect(b.tabell.rader[0][3].split('; ').length).toBe(u.topp.A.length || 1);
@@ -569,6 +575,22 @@ describe('rapportunderlag: sektorernas andel nära noll', () => {
         const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6177, sektorKr: -2, andel: -0.0003 } }, { k: 10 });
         expect(b.stycken.join(' ')).toMatch(/nästan inte alls på att kvinnor och män arbetar i olika huvudområden/);
         expect(b.stycken.join(' ')).not.toMatch(/−0,0|-0,0/);
+    });
+});
+
+describe('rapportunderlag: sammanräknade huvudområden (ADR-87)', () => {
+    const VARD = 'Vård- och omsorgsarbete med mera', STAD = 'Städ, tvätt och renhållningsarbete';
+    it('beloppet står med en not om vilka områden som räknats samman och varför', () => {
+        const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6000, sektorKr: 1500, andel: 0.25, sammanslagna: [VARD, STAD], sma: [STAD] } }, { k: 10 });
+        const text = b.stycken.join(' ');
+        expect(text).toMatch(/beror 1.500.kr \(25,0.%\) på att kvinnor och män arbetar i olika huvudområden\./);
+        expect(text).toContain(`Huvudområdena ${VARD} och ${STAD} räknas här samman, eftersom ett kön har färre än 10 personer i ${STAD}.`);
+    });
+    it('räknas alla samman står inget belopp, bara noten', () => {
+        const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6000, sektorKr: null, andel: null, sammanslagna: [VARD, STAD], sma: [STAD] } }, { k: 10 });
+        const text = b.stycken.join(' ');
+        expect(text).not.toMatch(/beror .* kr/);
+        expect(text).toContain('Hur mycket av skillnaden som beror på att kvinnor och män arbetar i olika huvudområden redovisas inte');
     });
 });
 

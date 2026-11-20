@@ -73,7 +73,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-62 | Prioriteringens egna ord för läget mot referensen | Gällande | 2026-11-08 |
 | ADR-63 | Kvantilregressionen på huvudmodellens design, villkorad tolkning | Gällande | 2026-11-08 |
 | ADR-64 | Ålder är valfri i lönefilen | Gällande | 2026-11-08 |
-| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Gällande | 2026-11-10 |
+| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Ändrad av ADR-87 | 2026-11-10 |
 | ADR-68 | Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna | Ändrad av ADR-73 | 2026-11-13 |
 | ADR-69 | Löneöversyns förslag följer den inställda tröskeln | Gällande | 2026-11-13 |
 | ADR-70 | Skyddet gäller lönemått; antal och andelar är handläggarens ansvar | Gällande | 2026-11-14 |
@@ -93,6 +93,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-84 | PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning | Gällande | 2026-11-19 |
 | ADR-85 | Yrkesfältet maskeras inte; inläsningen varnar för personnamn | Gällande | 2026-11-20 |
 | ADR-86 | Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska | Gällande | 2026-11-19 |
+| ADR-87 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
 
 ## Besluten
 
@@ -542,3 +543,21 @@ Nedsamplingen av punktmoln följer fortfarande filens ordning: den avgör vilka 
 redovisas. *Avvisat:* att bara seeda ur den sorterade listan och fortsätta dra ur filens ordning, som inte tar bort
 beroendet; att lämna indexen, vars fel är litet men alltid drar åt samma håll. *Gäller i dag:*
 `regressionsmodellen.md` avsnitt 6–7, `likvardighetsmodellen.md` avsnitt 5, `src/lib/rng.js`.
+
+**ADR-87 — Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel.** Beslutat av
+underhållaren 2026-11-20. Ändrar skyddsregeln i ADR-65 (och ADR-22). Följer principen i ADR-83: det som går att räkna
+fram ur det som skrivs ut ska vara ett medel för minst tröskeln personer, per kön där måttet är per kön. Uppdelningens delar och poster och
+huvudområdenas andel är vägda medellöner per kön, och med medellönerna för hela urvalet och antalen bildade de ett
+ekvationssystem: med två huvudområden där det ena hade färre än tröskeln av ett kön gav beloppet det könets
+medellön, och i uppdelningen gick en liten grupps medellön att lösa ut fast posten inte stod, för vissa val av
+variabler ur delarna själva. Regeln som kortade topplistan räckte därför inte. I exportläget räknas en grupp där ett
+kön har 1 till k − 1 personer samman med andra grupper inom samma övergrupp innan delarna räknas, med samma val av
+grupp som den kompletterande undertryckningen, för varje kön, tills varje grupp har inga eller minst k av varje kön
+(`sammanslagning` i `src/lib/undertryckning.js`, dit också `kompletterandeUndertryckning` flyttades). Den
+sammanslagna gruppen namnges inte; varje del säger hur många grupper som inte namnges, och en not säger varför.
+Delarna summerar till hela skillnaden som förut. Skärmen, med tröskeln 1, ändras inte (ADR-51). Antal och andelar
+står kvar (ADR-70). *Avvisat:* att undertrycka delar och poster i stället för att räkna samman, som för de flesta
+underlag med en liten grupp skulle ta bort hela uppdelningen ur exporten, eftersom delarna summerar till hela
+skillnaden och en dold del går att räkna fram ur de andra; att pröva numeriskt vad som går att lösa ut ur varje
+utskrift, som är svårare att granska och att lita på; att bara dölja fler poster, som inte stänger vägen genom
+delarna. *Gäller i dag:* `regressionsmodellen.md` §10 och `k-troskeln.md` avsnitt 2.

@@ -47,6 +47,12 @@ export const MODULES = [
         expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
     },
     {
+        // Kompletterande undertryckning och sammanslagning (ADR-83, ADR-87): tidigt, så att perbas.js, gapuppdelning.js
+        // och sektor.js kan importera dem. Appen anropar dem inte direkt.
+        file: 'undertryckning.js', ns: '__mirrorUndertryckning',
+        expose: { kompletterandeUndertryckning: null, sammanslagning: null }
+    },
+    {
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',
@@ -213,7 +219,7 @@ export const MODULES = [
         file: 'gapuppdelning.js', ns: '__mirrorGapuppdelning',
         expose: { gapUppdelning: '_guGapUppdelning', normaliseraGapVariabler: '_guNormaliseraVariabler', gapVariablerArStandard: '_guVariablerArStandard',
                   gapDelar: '_guDelar', gapDelarIText: '_guDelarIText', gapVariabelEtikett: '_guVariabelEtikett', gapVariablerIText: '_guVariablerIText', gapAllaVariabler: '_guAllaVariabler',
-                  gapStandardVariabler: '_guStandardVariabler' }
+                  gapStandardVariabler: '_guStandardVariabler', gapOvrigaText: '_guOvrigaText' }
     },
     {
         file: 'individflaggor.js', ns: '__mirrorIndivid',
@@ -232,7 +238,7 @@ export const MODULES = [
     },
     {
         file: 'sektor.js', ns: '__mirrorSektor',
-        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel', sektorJusteradText: '_skSektorJusteradText' }
+        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel', sektorJusteradText: '_skSektorJusteradText', sektorAndelNot: '_skSektorAndelNot' }
     },
     {
         file: 'ansvar.js', ns: '__mirrorAnsvar',

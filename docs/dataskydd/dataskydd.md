@@ -139,6 +139,13 @@ Exporterna byter då inte läge.
   och så vidare tills de tillsammans har minst 10. Samma regel gäller per kön och, när tabellen visar medellön, för
   AID-etiketterna i ett intervall. Antal och andel kvinnor står kvar, och en not säger vad som inte redovisas och
   varför (ADR-83).
+- **Var uppstår löneskillnaden?** och **huvudområdenas andel av skillnaden** (Lönestruktur och rapportunderlaget):
+  skillnaden delas upp i delar som är vägda medellöner, och tillsammans med medellönerna och antalen skulle de kunna
+  ge en liten grupps medellön. I exporten räknas därför grupper där ett kön har färre än 10 personer samman med andra
+  grupper innan delarna räknas, så att varje grupp har inga eller minst 10 av varje kön. De sammanslagna grupperna
+  namnges inte; varje del säger hur många de är, och en not säger varför. Delarna kan därför skilja sig något från
+  skärmens. Räknas alla huvudområden samman redovisas inte hur stor del av skillnaden som beror på att kvinnor och män
+  arbetar i olika huvudområden (ADR-87).
 - **Diagram som aldrig lämnar verktyget:** Personer att granskas diagram är märkt så i koden, med ett uppräknat
   skäl som står i behållarens verktygstips. Ingen exportväg (meny, bild, diagramdata, ZIP, utskrift) tar med det.
 

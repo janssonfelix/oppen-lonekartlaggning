@@ -683,7 +683,7 @@ describe('Var uppstår löneskillnaden?', () => {
         expect(not()).not.toMatch(/namnges inte/);
         w.__state.kLage = 'export';
         w.eval('renderGapUppdelning()');
-        expect(not()).toMatch(new RegExp(`Grupper där ett kön har färre än ${w.eval('kTroskel()')} personer namnges inte\\.`));
+        expect(not()).toMatch(new RegExp(`Grupper där ett kön har färre än ${w.eval('kTroskel()')} personer räknas samman med andra grupper och namnges inte\\.`));
     });
     it('AID-namn kodas', () => {
         const w = createAppWindow();
@@ -854,7 +854,7 @@ describe('Personer att granska', () => {
 describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     const rad = (bas, kon, lon, aid) => ({ bas, kon, lon, alder: 40, aid, yrke: aid, enhet: '' });
     const flera = (n, ...a) => Array.from({ length: n }, () => rad(...a));
-    it('dolda grupper (i exportläget) redovisas med antal, aldrig med belopp; reserven visar bara hela skillnaden', () => {
+    it('sammanslagna grupper (i exportläget) redovisas med antal, aldrig med belopp eller namn (ADR-87)', () => {
         const w = createAppWindow();
         w.__state.kLage = 'export';
         const bakgrund = [...flera(30, 'E', 'kvinna', 28000, 'E1'), ...flera(12, 'E', 'man', 29500, 'E1'),
@@ -865,13 +865,15 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
         w.eval('populateSelects(); unlockTabs(); renderGapUppdelning();');
         const ovriga = [...w.document.querySelectorAll('#gap-uppdelning .gu-ovriga')].map(li => li.textContent);
         expect(ovriga.length).toBeGreaterThan(0);
-        for (const t of ovriga) { expect(t).not.toMatch(/kr/); expect(t).toMatch(/färre än 10 personer ingår i summan/); }
+        for (const t of ovriga) { expect(t).not.toMatch(/kr/); expect(t).toMatch(/namnges inte: ett kön har färre än 10 personer/); }
         w.__state.data = [...flera(20, 'A', 'kvinna', 30000, 'A1'), ...flera(20, 'A', 'man', 31000, 'A1'),
             ...flera(5, 'C', 'kvinna', 50000, 'C1'), ...flera(3, 'C', 'man', 60000, 'C1')];
         w.eval('renderGapUppdelning();');
+        // Räcker inte de andra grupperna räknas alla samman: delarna står, men ingen grupp namnges.
         const kort = w.document.getElementById('gap-uppdelning-innehall');
-        expect(kort.querySelectorAll('.gu-rad')).toHaveLength(0);
-        expect(kort.textContent).toMatch(/delas inte upp/);
+        expect(kort.querySelectorAll('.gu-rad')).toHaveLength(3);
+        expect(kort.querySelectorAll('.gu-topp li:not(.gu-ovriga)')).toHaveLength(0);
+        expect(kort.textContent).not.toMatch(/BAS [AC]|C1/);
     });
     it('belopp som avrundas till noll visas utan tecken', () => {
         const w = createAppWindow();
@@ -1091,7 +1093,6 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         expect(JSON.parse(JSON.stringify(w.__state.gapUppdelning))).toEqual({ variabler: ['bas', 'alder'] });
         expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Oförklarat: lön inom samma åldersgrupp och BAS']);
         const r = u(w);
-        expect(r.skyddad).toBe(true);
         expect(Math.abs(r.delar.A + r.delar.B + r.delar.C - r.gap)).toBeLessThan(1e-6);
         // Trappan har lika många staplar som delar, och fokus står kvar på rutan.
         const f = w.document.getElementById('chart-gap-uppdelning')._figur;

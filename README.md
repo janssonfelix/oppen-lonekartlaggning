@@ -69,7 +69,7 @@ Verktyget tillhandahålls fritt, utan avgift, support eller drift, av en privatp
 Kräver Node 22.12 eller senare. `npm ci` installerar, `npm run kontroll` kör hela kedjan i CI:s ordning och
 `npm run bundle` bygger verktyget. När en ändring är klar står i *Definition of Done* i
 [`CONTRIBUTING.md`](.github/CONTRIBUTING.md). Övriga kommandon, testerna, CI och hur en version släpps står i
-[`bygge-och-test.md`](docs/utveckling/bygge-och-test.md).
+[`bygge-och-test.md`](docs/utveckling/bygge-och-test.md). Första timmen, för utvecklaren och för granskaren av beräkningarna, står i [`kom-igang.md`](docs/utveckling/kom-igang.md).
 
 ## Licens och bidrag
 
