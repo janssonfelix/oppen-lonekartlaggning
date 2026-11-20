@@ -60,14 +60,15 @@ incheckade, artefakten och `RELEASE.txt`.
 
 Inget som lämnar verktyget redovisar ett lönemått för en grupp, eller ett könsuppdelat lönemått för ett kön, med
 färre personer än den inställda tröskeln (standard 10). På skärmen visas alla grupper: den som arbetar i verktyget
-har redan lönefilen. Undantagen är uppräknade och beslutade. Ett lönemått får inte heller gå att räkna fram ur
-summorna i samma export (Löneöversyns blad *Fördelning*, tabellerna per BAS-intervall, uppdelningen av
-löneskillnaden och huvudområdenas andel). Antal och andelar, också per kön, omfattas inte av skyddet
+har redan lönefilen. Undantagen är uppräknade och beslutade. Ett lönemått får inte heller gå att räkna fram genom att
+dra ifrån inom samma fil (Löneöversyns blad *Fördelning*, tabellerna per BAS-intervall, uppdelningen av
+löneskillnaden, huvudområdenas andel och JPA-protokollets blad). Skyddet gäller en fil i taget: det som går att räkna
+fram genom att kombinera flera filer ur samma underlag skyddas inte, och ZIP-exporten räknas som sina delar (ADR-92). Antal och andelar, också per kön, omfattas inte av skyddet
 utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som lämnas ut (ADR-70).
 
 *Varför:* att förhindra återidentifiering i det som sprids.
 *Lydelse:* [`k-troskeln.md`](k-troskeln.md). *Beslut:* ADR-12, 14, 23, 38, 47, 48,
-51, 57, 69, 70, 83, 87, 88, 91.
+51, 57, 69, 70, 83, 87, 88, 91, 92.
 *Vakt:* invarianten I4, `tests/helpers/ktroskel-invariant.js`, ritar flikarna i exportläget och bygger exporterna
 vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`).
 Invarianten har också differensprovet (ADR-88, `differensprov` i `tests/helpers/differens.js`), på samma utdata: varje
@@ -75,25 +76,21 @@ tabell i den (HTML-tabellerna i exportläget och i rapporterna, Excel-bladen, ta
 rubrikrad har en kolumn med medel, summa eller kostnad ska vara deklarerad i riggen (`tests/helpers/ktroskel-rigg.js`),
 med kolumnerna för antal och mått och raden som är totalen, eller som inget att dela upp med skäl. För de deklarerade
 måtten får totalen minus de visade delarna, för alla och per kön, aldrig lämna 1 till tröskeln − 1 personer, och i en
-tabell utan totalrad får ingen rad minus andra rader lämna en av riggens små grupper. Deklarationer över två tabeller
-(`korsblad`), också i två filer, prövar JPA-protokollets blad för BAS-intervall och tabellerna per BAS-intervall
-(Word-utkastet, utskriften och Excel) minus protokollets blad för lika arbete, per intervall och kön och för
-organisationen (ADR-91). `tests/ktroskel-differens.test.js`
+tabell utan totalrad får ingen rad minus andra rader lämna en av riggens små grupper. En deklaration över två blad
+(`korsblad`) prövar JPA-protokollets blad för BAS-intervall minus bladet för lika arbete, per intervall och kön
+(ADR-91). `tests/ktroskel-differens.test.js`
 prövar samma sak på lib-nivå med fler underlag, och ekvationssystemen i uppdelningen av löneskillnaden;
 differentialtesterna i `tests/diagramritare.test.js` kräver att det som lämnar verktyget är identiskt med en figur
 där de små punkterna tagits bort; `tests/ktroskel-bas-effekter.test.js` (regressionens BAS-effekter),
 `tests/ktroskel-loneoversyn-summor.test.js` (Löneöversyns summor), `tests/ktroskel-livscykel.test.js` (livscykelns
 lönekurva) och `tests/ktroskel-loneoversyn-scenarier.test.js` (scenariojämförelsen A/B) prövar lönemått som I4 inte
 ser.
-*Vaktas inte:* invarianten letar efter de små gruppernas lönevärden, så antal, andelar och namn vaktas inte av den
-(de omfattas inte av skyddet, ADR-70); golven i antal (ADR-57) har egna tester. Differensprovet ser bara differenser
-inom en tabell och mellan de tabeller som har en deklaration över två tabeller: inte mellan andra tabeller, avsnitt eller
-exporter (Löneöversyns blad *Fördelning* mot *Sammanfattning* har ett eget test, ovan). Det gäller också där en
-grupps lönemått står på fler ställen än protokollets blad för lika arbete: Löneöversyns kostnad per grupp i
-*Fördelning*, som med ett känt påslag i procent ger gruppens lönesumma, mot intervallets medellön i tabellerna per
-BAS-intervall; Utforskas export och de egna tabellerna, där användaren kan dela upp på AID-etikett, BAS-intervall och
-kön, mot andra utdata; och medellönen för alla i protokollets blad för lika arbete, som regeln omfattar men provet
-inte läser. Provet ser inte heller mått på medianer och percentiler, inte härledningar som kräver
+*Vaktas inte:* kombinationer av flera filer, eftersom skyddet inte gäller dem (ADR-92): ingen vakt parar två utdata.
+Invarianten letar efter de små gruppernas lönevärden, så antal, andelar och namn vaktas inte av den (de omfattas inte
+av skyddet, ADR-70); golven i antal (ADR-57) har egna tester. Inom en fil ser differensprovet bara differenser inom en
+tabell och mellan de två blad som har en deklaration över två blad: inte mellan andra tabeller eller avsnitt
+(Löneöversyns blad *Fördelning* mot *Sammanfattning* har ett eget test, ovan), inte mått på medianer och percentiler,
+inte härledningar som kräver
 uppgifter utanför exporten (till exempel de anställdas åldrar eller könsfördelningen inom en AID-etikett), inte en
 tabell vars rubriker inte nämner medel, summa eller kostnad, och inte utdata som saknas i riggen. En tabell som
 riggens underlag lämnar utan rader eller utan total prövas inte med innehåll. Innehållet i bilder prövas inte. De

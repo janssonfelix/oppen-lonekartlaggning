@@ -97,7 +97,8 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-88 | Differensprovet är en del av invarianten för minsta gruppstorlek | Gällande | 2026-11-19 |
 | ADR-89 | En grupp är AID-koden i BAS-intervallet, i hela verktyget | Gällande | 2026-11-20 |
 | ADR-90 | Lika arbete AID x BAS visar Lika arbetes status, utan egen bedömning | Gällande | 2026-11-20 |
-| ADR-91 | Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden | Gällande | 2026-11-20 |
+| ADR-91 | Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden | Ändrad av ADR-92 | 2026-11-20 |
+| ADR-92 | S4 gäller en fil i taget | Gällande | 2026-11-20 |
 
 ## Besluten
 
@@ -676,3 +677,24 @@ raden betyder och skiljer den från intervallets rad i resten av verktyget; att 
 bort det mått tabellerna finns för; att låta differensprovet pröva varje par av tabeller, som ger falsklarm när två
 tabeller har olika underlag. *Gäller i dag:* `k-troskeln.md` avsnitt 2, 9 och 11, `skydd.md` S4,
 `docs/dataskydd/riskanalys.md` §6.5.
+
+**ADR-92 — S4 gäller en fil i taget.** Beslutat av underhållaren 2026-11-20. Ändrar ADR-91. Skyddet för minsta
+gruppstorlek (S4) gäller varje fil som lämnar verktyget för sig: en grupp under tröskeln får inte visas direkt i
+filen, och dess lönemått får inte gå att räkna fram genom att dra ifrån inom samma fil (en total minus de visade
+delarna, i en tabell eller mellan blad och avsnitt). Det som går att räkna fram genom att kombinera flera filer ur
+samma underlag skyddas inte. *Skäl:* användaren har redan hela underlaget, och skydden finns för att undvika
+omedvetna dataläckor, inte för att stänga ute användaren. Att räkna fram något ur två filer, till exempel med ett känt
+påslag, är inte omedvetet. Priset för att stänga det vore högt: en grupp på 150 personer skulle tappa sin kostnad för
+en enda persons skull, och en flaggad grupps medelvärde skulle döljas i protokollet, så att stödet vid prioritering
+och fördelning inte visar alla grupper. ADR-91 gäller därför bara inom protokollet: bladet för lika arbete prövas mot
+bladet för BAS-intervall i samma fil, med sitt prov och sin not, och inte längre mot tabellerna per BAS-intervall i
+rapporten och Excelfilen eller mot organisationens medelvärden. ZIP-exporten räknas som sina delar: varje fil i den
+prövas för sig, och delarna prövas inte mot varandra. Differensprovet (ADR-88) parar aldrig två filer, och
+riggens intervall L, som bara fanns för den prövningen, är borttaget. *Avvisat:* två saker som prövades, visade sig
+verkliga och medvetet inte stängs: (a) protokollets blad för lika arbete mot intervallets medellön i tabellerna per
+BAS-intervall i rapporten eller Excelfilen, som gav medelvärdet för intervallets övriga personer av ett kön; (b)
+Löneöversyns kostnad per grupp i bladet *Fördelning*, som med ett påslag i procent är gruppens lönesumma, mot
+intervallets medellön i tabellerna per BAS-intervall, som gav lönesumman för intervallets övriga personer. Båda kräver
+två filer och att den som räknar vet hur de hänger ihop. *Gäller i dag:* `skydd.md` S4, `k-troskeln.md` avsnitt 2, 9
+och 11, `docs/dataskydd/riskanalys.md` §6.5, `docs/dataskydd/dataskydd.md` *Vad skydden gör och inte gör*,
+`loneoversynsmodellen.md` §12.

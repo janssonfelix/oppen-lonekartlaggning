@@ -40,7 +40,8 @@ Verktyget
   personuppgifter; kontrollen ser på rubrikerna och på ett urval av raderna, så enstaka värden kan gå förbi
 - skickar ingenting över nätet och sparar ingenting mellan sessionerna
 - redovisar inte lönemått för grupper under minsta gruppstorlek i det som lämnar verktyget, med de undantag och den
-  inställning som står i avsnitt 3; på skärmen visas alla grupper
+  inställning som står i avsnitt 3; på skärmen visas alla grupper. Skyddet gäller en fil i taget: den som har flera
+  utdata ur samma underlag kan räkna fram mer än varje fil visar (ADR-92)
 - varnar när fältet för AID-etikett ser ut att innehålla personnamn.
 
 Verktyget maskerar inte och tar inte bort namn ur fältet för AID-etikett (ADR-85). Det som står där, högst 40
