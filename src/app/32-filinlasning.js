@@ -316,7 +316,16 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
         if (hits >= synonymGroups.length) break;   // full träff — sluta leta
     }
     if (bestHits < minHits) hdrIdx = 0;            // fallback: första raden
-    const headers = (grid[hdrIdx] || []).map(h => String(h ?? '').trim());
+    // En rubrik som återkommer döps om som PapaParse gör med CSV (Lön, Lön_1, …), så att den första kolumnen gäller i båda.
+    const rubrikrad = (grid[hdrIdx] || []).map(h => String(h ?? '').trim());
+    const antal = Object.create(null), anvanda = new Set(rubrikrad);
+    const headers = rubrikrad.map(h => {
+        if (!h || !antal[h]) { antal[h] = 1; return h; }
+        let ny, t = antal[h]++;
+        do { ny = h + '_' + t++; } while (anvanda.has(ny));
+        anvanda.add(ny);
+        return ny;
+    });
     const rows = [];
     for (let i = hdrIdx + 1; i < grid.length; i++) {
         const r = grid[i];

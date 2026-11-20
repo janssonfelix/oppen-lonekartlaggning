@@ -491,6 +491,32 @@ describe('inläsning: kolumnvalet', () => {
         expect(P.autoDetectColumnMap(['Lön', 'Månadslön']).lon).toBe('Månadslön');
     });
 
+    // Samma tabell med två kolumner som heter Lön: CSV-läsaren behåller den första och döper om den andra till Lön_1.
+    const tabell = () => {
+        const t = [['Kön', 'Lön', 'BAS', 'AID', 'Lön']];
+        for (let i = 0; i < 40; i++) t.push([i % 2 ? 'Man' : 'Kvinna', String(30000 + i * 10), 'C', '207011 Handläggare', '500']);
+        return t;
+    };
+    const lasIn = async (w, fil) => {
+        w.loadStructureFile(fil);
+        await vanta(() => w.__state.data.length > 0);
+        return w.__state.data.map(r => r.lon);
+    };
+    it('dubbla rubriker: CSV och Excel tar lönen ur samma kolumn', async () => {
+        const wCsv = createAppWindow();
+        papa(wCsv);
+        const csv = await lasIn(wCsv, csvFil(wCsv, tabell().map(r => r.join(';')), 'dubbla.csv'));
+        const wX = createAppWindow();
+        wX.eval(readFileSync(join(__dirname, '..', 'vendor', 'xlsx.mini.min.js'), 'utf8'));
+        const X = wX.XLSX, wb = X.utils.book_new();
+        X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(tabell()), 'Blad1');
+        const xlsx = await lasIn(wX, new wX.File([X.write(wb, { type: 'array', bookType: 'xlsx' })], 'dubbla.xlsx'));
+        expect(csv).toHaveLength(40);
+        expect(csv[0]).toBe(30000);
+        expect(xlsx).toEqual(csv);
+        expect(wX.__state._dataHeaders).toEqual(['Kön', 'Lön', 'BAS', 'AID', 'Lön_1']);
+    });
+
     it('kolumnerna slås upp en gång per fil, inte för varje rad', async () => {
         const w = createAppWindow();
         papa(w);
