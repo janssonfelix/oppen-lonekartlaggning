@@ -555,6 +555,9 @@ describe('tabell: yrke (_cleanYrkeField)', () => {
         // Efternamn, Förnamn i versaler eller Versal-gemener maskeras (båda orden i samma form)
         ['101010 ANDERSSON, ANNA', '101010 ***'],
         ['101010 Andersson, Anna', '101010 ***'],
+        // Följs förnamnet av fler versalinledda ord tas de med, så att inget halvt namn blir kvar
+        ['101010 Andersson, Anna Berg', '101010 ***'],
+        ['101010 ANDERSSON, ANNA BERG', '101010 ***'],
         // Känd gräns: gemener och blandad form maskeras inte (en gemen etikett kan se likadan ut)
         ['101010 anna andersson', '101010 anna andersson'],
         ['101010 ANDERSSON, Anna', '101010 ANDERSSON, Anna'],
