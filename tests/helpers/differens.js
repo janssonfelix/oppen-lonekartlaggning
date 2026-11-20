@@ -339,8 +339,8 @@ export function differensprov(tabeller, deklarationer, { k, kanda = [] }) {
             if (d.inget) return;
             const iAntal = _kol(rubrik, d.antal), iEtikett = _kol(rubrik, d.etikett ?? 0);
             const matt = d.matt.map(m => ({ ...m, i: _kol(rubrik, m.kolumn),
-                iAntal: m.antal?.kolumn != null ? _kol(rubrik, m.antal.kolumn) : iAntal,
-                iAndel: m.antal?.andel != null ? _kol(rubrik, m.antal.andel) : -1 }));
+                iAntal: m.antal?.kolumn !== undefined ? _kol(rubrik, m.antal.kolumn) : iAntal,
+                iAndel: m.antal?.andel !== undefined ? _kol(rubrik, m.antal.andel) : -1 }));
             const saknas = [[d.antal, iAntal], ...matt.map(m => [m.kolumn, m.i]), ...matt.map(m => [m.antal?.kolumn ?? m.antal?.andel, m.antal ? Math.max(m.iAntal, m.iAndel) : 0])]
                 .filter(([, i]) => i < 0).map(([c]) => c);
             if (saknas.length) { fel.push(`${d.namn}: kolumnen ${saknas.join(', ')} finns inte i "${rubrik.join(' | ')}" (${t.namn})`); return; }
