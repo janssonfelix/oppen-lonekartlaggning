@@ -880,6 +880,11 @@ const __mirrorRng = (() => {
  * samma intervall, varje gång, i varje webbläsare. Statistiskt likvärdigt —
  * bootstrap kräver bara att draget är pseudoslumpmässigt, inte oförutsägbart.
  *
+ * Löftet gäller också oavsett radordningen (ADR-86): seeden byggs ur antal och
+ * summa per serie, och de som drar ur en lista (bootstrapen och omkastningen i
+ * likvardighet.js och status.js, kvantilbootstrapen i osakerhet.js) sorterar
+ * den först. Samma löner i en annan ordning ger samma intervall.
+ *
  * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_rng*`
  * i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra här och kör
  * `npm run build:app`, rör ej spegeln (vaktas av tests/drift.test.js).
@@ -919,7 +924,9 @@ function mulberry32(seed) {
 /**
  * Härleder en stabil seed ur själva talserierna. Använder längd + summa per
  * serie, vilket är billigt och ändras så fort underlaget ändras (ny fil, annat
- * urval → nytt men reproducerbart intervall).
+ * urval → nytt men reproducerbart intervall). Summan tas över talen sorterade
+ * stigande: med decimaler (öre) kan en flyttalssumma annars skilja i sista
+ * siffran mellan två ordningar och, när den slutar på ,50, avrundas olika.
  * @param {...Array<number>} arrays
  * @returns {number}
  */
@@ -927,11 +934,14 @@ function seedFromNumbers(...arrays) {
     let s = '';
     for (const arr of arrays) {
         if (!Array.isArray(arr)) { s += 'x|'; continue; }
-        let sum = 0;
+        const tal = [];
         for (let i = 0; i < arr.length; i++) {
             const v = Number(arr[i]);
-            if (isFinite(v)) sum += v;
+            if (isFinite(v)) tal.push(v);
         }
+        tal.sort((x, y) => x - y);
+        let sum = 0;
+        for (let i = 0; i < tal.length; i++) sum += tal[i];
         s += arr.length + ':' + Math.round(sum) + '|';
     }
     return hashSeed(s);
@@ -1293,7 +1303,7 @@ function bootstrapMedianer(kvLons, maLons, B, rng) {
 }
 
 /**
- * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), percentil [2.5,97.5].
+ * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), 95 % (percentilintervall i stat.js).
  * Används för INTERNA par (bägge sidor har individdata). Dragningarna och medianerna ur `bootstrapMedianer`.
  * @param {number[]} kvLons
  * @param {number[]} maLons
@@ -3575,7 +3585,8 @@ const __mirrorOsakerhet = (() => {
  *   - kvantilBootstrap: intervallen kring kvantilregressionens skattningar (ADR-63).
  *
  * Rena funktioner: raderna, golvet och tröskeln kommer in som argument. Där slump används är generatorn ett val
- * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång. Percentilintervallet tas
+ * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
+ * sorterade listor, så att det inte beror på radordningen (ADR-86). Percentilintervallet tas
  * med percentilintervall i stat.js. Appens funktioner med de tidigare namnen (computeBootstrapCI,
  * computePowerAnalysis, computeGroupMDE, linearRegressionCI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
  * _laTrattUnderlagRakna, _regKvantilBootstrap) är tunna adaptrar som läser tillståndet och anropar funktionerna här.
@@ -3641,7 +3652,7 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
 /**
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen (Översikt).
  *
- * Metod: B dragningar med återläggning ur vardera könet, mediankvoten per dragning, percentilerna 2,5 och 97,5.
+ * Metod: B dragningar med återläggning ur vardera könet, mediankvoten per dragning, percentilintervallet (95 %).
  * B = 2000: med B = 600 blev Monte Carlo-variabiliteten på gränserna ~±0,5 pp, vilket märks för gränsfall; variationen
  * minskar med 1/√B, så B = 2000 ger ungefär hälften, på ~50–200 ms vid alla typiska storlekar. Dragningarnas medianer
  * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt

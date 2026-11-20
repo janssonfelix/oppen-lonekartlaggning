@@ -143,7 +143,7 @@ export function bootstrapMedianer(kvLons, maLons, B, rng) {
 }
 
 /**
- * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), percentil [2.5,97.5].
+ * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), 95 % (percentilintervall i stat.js).
  * Används för INTERNA par (bägge sidor har individdata). Dragningarna och medianerna ur `bootstrapMedianer`.
  * @param {number[]} kvLons
  * @param {number[]} maLons

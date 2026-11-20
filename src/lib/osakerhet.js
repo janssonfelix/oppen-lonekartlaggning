@@ -14,7 +14,8 @@
  *   - kvantilBootstrap: intervallen kring kvantilregressionens skattningar (ADR-63).
  *
  * Rena funktioner: raderna, golvet och tröskeln kommer in som argument. Där slump används är generatorn ett val
- * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång. Percentilintervallet tas
+ * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
+ * sorterade listor, så att det inte beror på radordningen (ADR-86). Percentilintervallet tas
  * med percentilintervall i stat.js. Appens funktioner med de tidigare namnen (computeBootstrapCI,
  * computePowerAnalysis, computeGroupMDE, linearRegressionCI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
  * _laTrattUnderlagRakna, _regKvantilBootstrap) är tunna adaptrar som läser tillståndet och anropar funktionerna här.
@@ -81,7 +82,7 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
 /**
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen (Översikt).
  *
- * Metod: B dragningar med återläggning ur vardera könet, mediankvoten per dragning, percentilerna 2,5 och 97,5.
+ * Metod: B dragningar med återläggning ur vardera könet, mediankvoten per dragning, percentilintervallet (95 %).
  * B = 2000: med B = 600 blev Monte Carlo-variabiliteten på gränserna ~±0,5 pp, vilket märks för gränsfall; variationen
  * minskar med 1/√B, så B = 2000 ger ungefär hälften, på ~50–200 ms vid alla typiska storlekar. Dragningarnas medianer
  * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt
