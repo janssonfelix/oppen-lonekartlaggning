@@ -484,16 +484,17 @@ describe('bootstrapmedianen ur rangräkning ger samma intervall som sortering', 
     });
 
     // Vakten för prestandan: 2 000 + 1 000 löner med B = 1 000 tog omkring 340 ms när varje dragning
-    // sorterades och tar omkring 20 ms med rangräkningen. Gränsen är generös (100 ms) så att en långsam
-    // CI-maskin under full last inte fäller testet, men den ser fortfarande en återgång till sortering.
-    it('2 000 + 1 000 löner med B = 1 000 tar under 100 ms', () => {
+    // sorterades och tar omkring 20 ms med rangräkningen. Gränsen är generös (200 ms) så att en maskin under
+    // full last inte fäller testet (det tog 107–110 ms när flera sviter kördes samtidigt), men den ser
+    // fortfarande en återgång till sortering.
+    it('2 000 + 1 000 löner med B = 1 000 tar under 200 ms', () => {
         const kv = loner(2000, 7), ma = loner(1000, 8);
         bootstrapMedianDiffKr(kv.slice(0, 50), ma.slice(0, 50), 50, makeRng());   // uppvärmning av JIT
         const t0 = performance.now();
         const ci = bootstrapMedianDiffKr(kv, ma, 1000, rngFor(kv, ma));
         const ms = performance.now() - t0;
         expect(ci).not.toBeNull();
-        expect(ms).toBeLessThan(100);
+        expect(ms).toBeLessThan(200);
     });
 });
 

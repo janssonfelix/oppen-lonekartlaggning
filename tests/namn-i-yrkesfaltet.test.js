@@ -13,7 +13,9 @@ import { yrkeLiknarNamn } from '../src/lib/inlasning.js';
 import { namnIYrkesfaltetText } from '../src/lib/forhandskontroll.js';
 
 const status = w => w.document.getElementById('data-status').textContent;
-const vantaPaInlasning = w => vanta(() => status(w) && !/läser|Läser/.test(status(w)));
+// Klart först när underlaget finns: statusraden kan bära en äldre text (till exempel efter Rensa all data) innan
+// inläsningen har hunnit börja, och då var väntan förut över för tidigt när maskinen var belastad.
+const vantaPaInlasning = w => vanta(() => status(w) && !/läser|Läser/.test(status(w)) && w.__state.dataAudit && w.__state.data.length > 0);
 const lasIn = async (w, rader, namn = 'lonefil.csv') => {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
