@@ -2,7 +2,7 @@
  * Tester för CSV-parsningslagret i app.js (teckenkodning, avgränsare,
  * kolumnmatchning, fältsanering). Funktionerna lever i app.js (classic script
  * för file://-bygget) och extraheras därför direkt ur källan och körs i Node —
- * samma mönster som drift.test.js. Skyddar bl.a. GDPR-namnmaskeringens regex
+ * samma mönster som drift.test.js. Skyddar bl.a. saneringen av fältet för AID-etikett
  * och #2-teckenkodningsdetekteringen.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -396,9 +396,11 @@ describe('_cleanYrkeField (GDPR-sanering)', () => {
     it('behåller AID + etikett', () => {
         expect(P._cleanYrkeField('203010 Förskollärare')).toBe('203010 Förskollärare');
     });
-    it('maskerar namn (inkl. Å/Ä/Ö-initialer)', () => {
-        expect(P._cleanYrkeField('5301 Anna Andersson')).toBe('5301 ***');
-        expect(P._cleanYrkeField('5301 Örjan Östberg')).toBe('5301 ***');   // regressionsskydd för [A-ZÅÄÖ]
+    it('maskerar inga namn (ADR-85): texten behålls, och inläsningen varnar i stället', () => {
+        expect(P._cleanYrkeField('5301 Anna Andersson')).toBe('5301 Anna Andersson');
+        expect(P._cleanYrkeField('5301 Örjan Östberg')).toBe('5301 Örjan Östberg');
+        expect(P._cleanYrkeField('101010 Sjuksköterska Natt')).toBe('101010 Sjuksköterska Natt');
+        expect(P._cleanYrkeField('101010 Lärare Grundskola')).toBe('101010 Lärare Grundskola');
     });
     it('strippar HTML-/XSS-tecken', () => {
         expect(P._cleanYrkeField('5301 <script>x</script>')).not.toMatch(/[<>"'&]/);
@@ -541,21 +543,21 @@ describe('tabell: yrke (_cleanYrkeField)', () => {
         ['101010', '101010'],
         ['Ledning', 'Ledning'],
         ['101010 Lärare grundskola', '101010 Lärare grundskola'],
-        ['101010 Anna Andersson', '101010 ***'],
-        // Efternamn, Förnamn i versaler eller Versal-gemener maskeras (båda orden i samma form)
-        ['101010 ANDERSSON, ANNA', '101010 ***'],
-        ['101010 Andersson, Anna', '101010 ***'],
-        // Känd gräns: gemener och blandad form maskeras inte (en gemen etikett kan se likadan ut)
+        // Ingenting maskeras (ADR-85): namn behålls som de står, och inläsningen varnar i stället
+        ['101010 Anna Andersson', '101010 Anna Andersson'],
+        ['101010 ANDERSSON, ANNA', '101010 ANDERSSON, ANNA'],
+        ['101010 Andersson, Anna', '101010 Andersson, Anna'],
         ['101010 anna andersson', '101010 anna andersson'],
         ['101010 ANDERSSON, Anna', '101010 ANDERSSON, Anna'],
-        // HTML-tecknen rensas före maskeringen, så de gömmer inte ett namn
-        ['101010 <Anna> <Andersson>', '101010 ***'],
-        // Maskeringen sker på den rensade texten: "<Ledning> & "Chef"" blir "Ledning  Chef", två ord i Versal-gemener (samma mönster som förut)
-        ['101010 <Ledning> & "Chef"', '101010 ***'],
+        ['101010 Sjuksköterska Natt', '101010 Sjuksköterska Natt'],
+        ['101010 Lärare Grundskola', '101010 Lärare Grundskola'],
+        // HTML-tecknen rensas
+        ['101010 <Anna> <Andersson>', '101010 Anna Andersson'],
+        ['101010 <Ledning> & "Chef"', '101010 Ledning  Chef'],
         ['101010 Lärare <b>&\'"', '101010 Lärare b'],
         ['101010 Ledarskapsutveckling och personalansvar i organisationen', '101010 Ledarskapsutveckling och personalansvar…'],
-        // Namnet ligger över 40-teckensgränsen: maskeras först, så inget halvt namn ("Anna A") blir kvar
-        ['101010 Ledarskapsutveckling och personal Anna Andersson', '101010 Ledarskapsutveckling och personal ***'],
+        // Kortningen klipper texten vid 40 tecken, också mitt i ett ord
+        ['101010 Ledarskapsutveckling och personal Anna Andersson', '101010 Ledarskapsutveckling och personal Anna A…'],
         // Riktiga etiketter som råkar ha komma, bindestreck eller versal i förkortning ändras inte
         ['101010 Chef, enhet', '101010 Chef, enhet'],
         ['101010 Sjuksköterska', '101010 Sjuksköterska'],
@@ -565,7 +567,7 @@ describe('tabell: yrke (_cleanYrkeField)', () => {
     ])('%o → %o', (raw, forvantat) => {
         expect(P._cleanYrkeField(raw)).toBe(forvantat);
     });
-    // Genomgång av hela etikettlistan: ingen riktig etikett ändras av maskeringen, bara av 40-teckensgränsen.
+    // Genomgång av hela etikettlistan: ingen riktig etikett ändras, utom av 40-teckensgränsen.
     it('ingen av de SKR-etiketter som verktyget känner till ändras, utom av 40-teckensgränsen', () => {
         const andrade = [];
         for (const [kod, namn] of aidEtikettlista().etiketter) {

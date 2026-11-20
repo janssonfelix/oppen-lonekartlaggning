@@ -8574,8 +8574,11 @@ const __mirrorInlasning = (() => {
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — tolkningen av indata: talen, könet, BAS-intervallet, AID-koden i ställningstagandet,
- * fältet för AID-etikett (yrket), kärnan i uppgiftsminimeringen (en lönerad → de vitlistade fälten) och detektorn
- * för känsliga kolumner.
+ * fältet för AID-etikett (yrket), kärnan i uppgiftsminimeringen (en lönerad → de vitlistade fälten), detektorn
+ * för känsliga kolumner och upptäckten av personnamn i fältet för AID-etikett.
+ *
+ * Fältet för AID-etikett maskeras inte (ADR-85): verktyget behåller koden och högst 40 tecken av etiketten, utan
+ * tecknen < > " ' &. Ser fältet ut att innehålla personnamn varnar inläsningen (yrkeNamnNyckel, sallsyntaNamnrader).
  *
  * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgör appen
  * (getField och ALLOWED_FIELDS i src/app/, med kolumnmappningen, importprofilen och ansvarskolumnen), och året som ett
@@ -8660,24 +8663,16 @@ function parseNumberStrict(v) {
 // ---- Textfälten: AID-etiketten, BAS, AID i ställningstagandet och kön ----
 
 /**
- * Strikt parser för yrke-fältet (GDPR Art. 25.1).
+ * Fältet för AID-etikett (yrket) vid inläsning (GDPR Art. 25.1: bara det analysen behöver).
  *
- * Källsystem exporterar ofta yrke som "12345 — Sjuksköterska — Anna Andersson 75%"
- * eller liknande. Vi vill bara behålla AID-koden + en kort rollbeskrivning.
- * Allt annat trunkeras eller maskeras:
- *   - AID:                ledande siffergrupp (\d+)
- *   - Etikett:            resten efter AID + separator, med HTML-tecknen < > " ' & borttagna
- *   - Namn-mönster:       "Förnamn Efternamn" och "Efternamn, Förnamn" (i versaler eller Versal-gemener) maskeras
- *                         till *** även inom etiketten
- *   - Längd:              etiketten kortas till 40 tecken sist, efter maskeringen, så att ett namn aldrig klipps
- *                         mitt itu och lämnar ett halvt namn kvar
- *   - Resten:             droppas
+ * Källsystem exporterar ofta yrket som "12345 — Sjuksköterska" eller liknande. Verktyget behåller:
+ *   - AID:      ledande siffergrupp (\d+)
+ *   - Etikett:  resten efter AID och separatorerna, med tecknen < > " ' & borttagna
+ *   - Längd:    etiketten kortas till 40 tecken (efter rensningen)
  *
- * Ordningen är avsiktlig: rensning av tecknen först (så att "<Anna> <Andersson>" blir ett namn som maskeras), maskering
- * sedan, trunkering sist. Känd gräns: ett namn i gemener ("anna andersson") och "ANDERSSON, Anna" (blandad form)
- * maskeras inte. En befattning består normalt av vanliga ord i gemener ("sjuksköterska", "lärare grundskola"), och
- * två ord i enbart versaler kan vara en etikett i vissa uttag, så de mönstren går inte att maskera utan att förstöra
- * riktiga etiketter. Mönstret med komma följer samma skäl: "Chef, enhet" (gemen efter kommat) maskeras inte.
+ * Funktionen maskerar INTE namn (ADR-85): text som står i fältet behålls inom 40 tecken, och visas i tabeller och följer
+ * med i exporter. Ser fältet ut att innehålla personnamn varnar inläsningen i stället (yrkeNamnNyckel,
+ * sallsyntaNamnrader); den som tar ut filen ansvarar för att fältet bara bär kod och etikett.
  *
  * @param {*} raw - Rått värde från CSV-cellen.
  * @returns {string} "AID Etikett" eller bara AID/etikett om endera saknas.
@@ -8694,27 +8689,18 @@ function _cleanYrkeField(raw) {
     // Strippar HTML-meta-tecken < > " ' & så de aldrig kan smitas in i en
     // innerHTML-template ens om en framtida renderingsplats glömmer esc().
     // Detta är "defensive depth" — CSP + esc() + cleanYrkeField; tre lager.
-    // Körs FÖRST: annars gömmer tecknen ett namn ("<Anna> <Andersson>") för maskeringen.
     label = label.replace(/[<>"'&]/g, '');
-    // Defensivt: maskera namn om något ändå smugit sig in
-    // OBS: \b fungerar inte före icke-ASCII-bokstäver (Å/Ä/Ö), så namn som
-    // "Örjan Östberg" skulle inte maskeras. Unicode-säker ordgräns via fångad
-    // föregående icke-bokstav ($1) — undviker lookbehind (stöds ej i Safari < 16.4).
-    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/g, '$1***');
-    // "Efternamn, Förnamn": två ord med komma emellan, båda i versaler eller båda i Versal-gemener.
-    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)(?![A-Za-zÅÄÖåäö])/g, '$1***');
-    // Aggressiv trunkering sist — yrkesetiketter sällan över 40 tecken
+    // Kortningen sist — yrkesetiketter är sällan över 40 tecken
     if (label.length > 40) label = label.substring(0, 40).trim() + '…';
     if (aid && label) return `${aid} ${label}`;
     return aid || label;
 }
 
 /**
- * Maskeringens två namnmönster i _cleanYrkeField, som yrkeLiknarNamn prövar med: "Förnamn Efternamn" (två ord i
- * Versal-gemener i rad) och "Efternamn, Förnamn" (båda i versaler eller båda i Versal-gemener). _cleanYrkeField har
- * mönstren som literaler, eftersom den körs fristående (tests/parsing.test.js plockar ut den ur bygget utan andra
- * namn); tests/inlasning.test.js kräver att literalerna där är exakt dessa, så att varningen och maskeringen inte
- * glider isär.
+ * Namnmönstren som upptäckten av personnamn i fältet för AID-etikett prövar med (yrkeNamnNyckel): "Förnamn
+ * Efternamn" (två ord i Versal-gemener i rad) och "Efternamn, Förnamn" (båda i versaler eller båda i Versal-gemener).
+ * Ordgränsen är en fångad föregående icke-bokstav, eftersom \b inte fungerar före Å/Ä/Ö ("Örjan Östberg") och
+ * lookbehind saknas i Safari före 16.4. Utan /g, så att test() inte bär tillstånd mellan anropen.
  */
 const YRKE_NAMNMONSTER = Object.freeze([
     /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/,
@@ -8722,11 +8708,10 @@ const YRKE_NAMNMONSTER = Object.freeze([
 ]);
 
 /**
- * Om fältet för AID-etikett har ett namnmönster: texten efter AID-koden har något av maskeringens mönster
- * (YRKE_NAMNMONSTER) — två eller fler ord i Versal-gemener i rad ("Anna Andersson", "Sjuksköterska Anna Andersson",
- * "Anna-Lisa Berg") eller "Efternamn, Förnamn" ("Andersson, Anna", "ANDERSSON, ANNA"). Prövas på råvärdet, som
- * _cleanYrkeField ser det före maskering och kortning (efter AID-koden och separatorerna, med tecknen < > " ' &
- * borttagna), så att ett namn som maskeringen bara tar delvis, eller som kortningen klipper, också räknas.
+ * Om fältet för AID-etikett har ett namnmönster: texten efter AID-koden har något av mönstren i YRKE_NAMNMONSTER —
+ * två eller fler ord i Versal-gemener i rad ("Anna Andersson", "Sjuksköterska Anna Andersson", "Anna-Lisa Berg")
+ * eller "Efternamn, Förnamn" ("Andersson, Anna", "ANDERSSON, ANNA"). Prövas på råvärdet före kortningen (efter
+ * AID-koden och separatorerna, med tecknen < > " ' & borttagna), så att ett namn som kortningen klipper också räknas.
  *
  * Mönstret ensamt träffar också etiketter med versal på två ord ("Sjuksköterska Natt"). Därför avgör mönstret bara
  * vilka texter som räknas; varningen gäller de som också är sällsynta i filen (sallsyntaNamnrader).
@@ -8853,7 +8838,7 @@ function _normalizeKon(raw) {
  * Kärnan i uppgiftsminimeringen (GDPR Art. 5(1)(c)): de vitlistade fälten ur en lönerad, tolkade och normaliserade.
  * Appen slår upp råvärdena i raden (extractMinimalRecord i src/app/06-uppgiftsminimering.js, med getField och
  * ALLOWED_FIELDS) och skickar in dem här; inga andra kolumner når hit.
- * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, namn-mönster maskeras).
+ * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, utan tecknen < > " ' &; ingen namnmaskering, ADR-85).
  * Ger { bas, yrke, aid, yrkeLabel, lon, alder, kon, poang, ansvarskoder, ansvarsgrupp, _lonStatus, _alderStatus }.
  * @param {{bas:*, kon:*, lon:*, alder:*, poang:*, yrke:*, ansvar?:*}} falt - Råvärdet per roll ur raden.
  * @param {number} referensar - Året som ett födelseår i ålderskolumnen räknas mot (appen skickar innevarande år).
@@ -11481,7 +11466,7 @@ const __mirrorForhandskontroll = (() => {
  * värdefördelningen och varningarna. Ingen tolkning görs om här — modulen beskriver bara den som redan gjorts.
  *
  * Dataskydd: tolkningen bär högst tio rader med fem till sju fält, och yrkets råvärde följer aldrig med (yrket
- * visas som verktyget sparar det, med namnmaskeringen). Varningen om namn i yrkesfältet bygger på inläsningens
+ * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
  * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
  * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
  *

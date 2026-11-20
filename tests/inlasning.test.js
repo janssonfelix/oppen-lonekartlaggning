@@ -63,14 +63,17 @@ describe('inlasning: yrke (_cleanYrkeField)', () => {
         ['101010 — Ledning', '101010 Ledning'],
         ['101010', '101010'],
         ['101010 Lärare grundskola', '101010 Lärare grundskola'],
-        ['101010 Anna Andersson', '101010 ***'],
-        ['101010 ANDERSSON, ANNA', '101010 ***'],
-        ['101010 Andersson, Anna', '101010 ***'],
+        ['101010 Anna Andersson', '101010 Anna Andersson'],
+        ['101010 ANDERSSON, ANNA', '101010 ANDERSSON, ANNA'],
+        ['101010 Andersson, Anna', '101010 Andersson, Anna'],
         ['101010 anna andersson', '101010 anna andersson'],
         ['101010 ANDERSSON, Anna', '101010 ANDERSSON, Anna'],
-        ['101010 <Anna> <Andersson>', '101010 ***'],
+        ['101010 <Anna> <Andersson>', '101010 Anna Andersson'],
         ['101010 Lärare <b>&\'"', '101010 Lärare b'],
-        ['101010 Ledarskapsutveckling och personal Anna Andersson', '101010 Ledarskapsutveckling och personal ***'],
+        ['101010 Ledarskapsutveckling och personal Anna Andersson', '101010 Ledarskapsutveckling och personal Anna A…'],
+        // Ingenting maskeras (ADR-85): etiketter med versal på två ord kommer ut oförändrade.
+        ['101010 Sjuksköterska Natt', '101010 Sjuksköterska Natt'],
+        ['101010 Lärare Grundskola', '101010 Lärare Grundskola'],
         ['101010 Chef, enhet', '101010 Chef, enhet'],
         ['101010 IT-tekniker', '101010 IT-tekniker'],
         ['', ''], [null, ''], ['   ', ''],
@@ -119,15 +122,12 @@ describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
         expect(etiketter.filter(([, namn]) => yrkeLiknarNamn(namn)).map(([, namn]) => namn)).toEqual([]);
     });
 
-    it('mönstren är maskeringens: literalerna i _cleanYrkeField är exakt YRKE_NAMNMONSTER, och etiketten skiljs ut likadant', () => {
-        const maskering = _cleanYrkeField.toString(), varning = yrkeNamnNyckel.toString();
+    it('mönstren bär inget tillstånd, och etiketten skiljs ut som i _cleanYrkeField', () => {
+        const sparad = _cleanYrkeField.toString(), varning = yrkeNamnNyckel.toString();
         expect(YRKE_NAMNMONSTER).toHaveLength(2);
-        for (const re of YRKE_NAMNMONSTER) {
-            expect(re.flags).toBe('');   // utan /g: test() bär inget tillstånd mellan anropen
-            expect(maskering).toContain(`/${re.source}/g`);
-        }
+        for (const re of YRKE_NAMNMONSTER) expect(re.flags).toBe('');   // utan /g: test() bär inget tillstånd mellan anropen
         for (const del of ["replace(/^\\d+\\s*[—\\-:.\\s]*/, '')", "replace(/[<>\"'&]/g, '')"]) {
-            expect(maskering).toContain(del);
+            expect(sparad).toContain(del);
             expect(varning).toContain(del);
         }
     });
@@ -140,12 +140,11 @@ describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
         expect(yrkeNamnNyckel(null)).toBe('');
     });
 
-    it('ett namn som maskeringen bara tar delvis räknas (prövat på råvärdet)', () => {
-        expect(_cleanYrkeField('101010 Sjuksköterska Anna Andersson')).toBe('101010 *** Andersson');
+    it('prövas på råvärdet: ett namn efter kortningsgränsen på 40 tecken räknas också', () => {
+        expect(_cleanYrkeField('101010 Sjuksköterska Anna Andersson')).toBe('101010 Sjuksköterska Anna Andersson');
         expect(yrkeLiknarNamn('101010 Sjuksköterska Anna Andersson')).toBe(true);
-        // Namnet efter kortningsgränsen på 40 tecken: borta ur det sparade värdet, men räknas.
         const lang = '101010 handläggare med särskilt ansvar för samordning Anna Andersson';
-        expect(_cleanYrkeField(lang)).not.toMatch(/Anna|Andersson|\*\*\*/);
+        expect(_cleanYrkeField(lang)).not.toMatch(/Anna|Andersson/);
         expect(yrkeLiknarNamn(lang)).toBe(true);
     });
 });

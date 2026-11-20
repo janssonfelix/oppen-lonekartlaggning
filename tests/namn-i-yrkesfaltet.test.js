@@ -20,8 +20,7 @@ const lasIn = async (w, rader, namn = 'lonefil.csv') => {
     w.loadStructureFile(csvFil(w, rader, namn));
     await vantaPaInlasning(w);
 };
-// 30 påhittade rader; rad 5 och 19 i filen (i = 3 och 17) har ett namn i fältet för AID-etikett. Namnen maskeras helt
-// av _cleanYrkeField, så att inget av dem finns kvar någonstans i tillståndet.
+// 30 påhittade rader; rad 5 och 19 i filen (i = 3 och 17) har ett namn i fältet för AID-etikett.
 const NAMNRADER = { 3: '207011 Anna Andersson', 17: '207011 Berg, Lisa' };
 const tabell = () => {
     const rader = [['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon']];
@@ -74,10 +73,10 @@ describe('namn i fältet för AID-etikett: inläsningen', () => {
         expect(w.__state.dataAudit.yrkeNamn).toBe(2);
         expect(w.__state.dataAudit.yrkeNamnRadnr).toEqual([5, 19]);
         expect(JSON.stringify(w.__state.dataAudit)).not.toMatch(UTAN_NAMN);
-        expect(JSON.stringify(w.__state.forhandskontroll)).not.toMatch(UTAN_NAMN);
-        expect(JSON.stringify(w.__state.data)).not.toMatch(UTAN_NAMN);
-        expect(w.__state.data.some(r => '_yrkeNamn' in r)).toBe(false);
-        expect(w.__state.data[3].yrke).toBe('207011 ***');
+        expect(JSON.stringify(w.__state.forhandskontroll.varningar)).not.toMatch(UTAN_NAMN);
+        expect(JSON.stringify(punkt(w))).not.toMatch(UTAN_NAMN);
+        // Fältet maskeras inte (ADR-85): texten står kvar i underlaget, och det är därför varningen finns.
+        expect(w.__state.data[3].yrke).toBe('207011 Anna Andersson');
     });
 
     it('Rensa all data nollar räknaren och tar bort varningen, och en ren fil efteråt ger ingen', async () => {

@@ -182,9 +182,10 @@ describe('byggForhandskontroll: kolumner', () => {
         expect(fk2.tolkning[0].celler.poang).toMatchObject({ text: '480', fel: null });
         expect(fk2.tolkning[0].celler.ansvar.fel).toMatch(/ogiltig/);
     });
-    it('yrkets råvärde visas inte (namnmaskeringen ska inte kringgås): cellen visar tolkningen', () => {
-        const fk = bygg(trettio(r => ({ ...r, ra: { ...r.ra, yrke: '207011 Handläggare Anna Berg' }, tolkat: { ...r.tolkat, yrke: '207011 Handläggare ***' } })));
-        expect(fk.tolkning[0].celler.yrke).toMatchObject({ 'rå': null, text: '207011 Handläggare ***', fel: null });
+    it('yrkets råvärde visas inte: cellen visar det verktyget sparar (kortat och rensat)', () => {
+        const ra = '207011 Handläggare med särskilt ansvar för samordning Anna Berg';
+        const fk = bygg(trettio(r => ({ ...r, ra: { ...r.ra, yrke: ra }, tolkat: { ...r.tolkat, yrke: '207011 Handläggare med särskilt ansvar för samor…' } })));
+        expect(fk.tolkning[0].celler.yrke).toMatchObject({ 'rå': null, text: '207011 Handläggare med särskilt ansvar för samor…', fel: null });
         expect(JSON.stringify(fk)).not.toContain('Anna');
     });
     it('långa råvärden kortas till 24 tecken', () => {
