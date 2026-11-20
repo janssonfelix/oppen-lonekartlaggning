@@ -3,9 +3,14 @@ name: Sårbarheter
 # Bevakar de fyra biblioteken i vendor/ mot kända sårbarheter. Dependabot ser bara package.json och
 # arbetsflödenas steg, inte vendor/, så utan det här jobbet får biblioteken i den byggda filen ingen avisering.
 #   1. programvaruförteckningen byggs ur vendor/ (tools/sbom.mjs → dist/sbom.cdx.json, CycloneDX med purl);
-#   2. OSV-Scanner slår varje bibliotek mot den öppna databasen OSV (osv.dev) och skriver resultatet som JSON;
-#   3. tools/sarbarheter.mjs faller om skanningen misslyckades, om ett bibliotek inte prövades eller om något har
-#      en känd sårbarhet (utom de åtgärdade som står i skriptet, med skäl).
+#   2. tools/sarbarheter-hamta.mjs frågar den öppna sårbarhetsdatabasen OSV (api.osv.dev) om varje bibliotek, med
+#      bara paketets namn, ekosystem och version, och skriver svaret som JSON; en fråga som misslyckas fäller steget
+#      med beskedet att databasen inte kunde frågas;
+#   3. tools/sarbarheter.mjs bedömer svaret och faller om ett bibliotek inte prövades eller om något har en känd
+#      sårbarhet (utom de åtgärdade som står i skriptet, med skäl).
+#
+# Inget tredjepartssteg: repot tillåter bara GitHubs egna actions (och cosign-installeraren i release.yml), så
+# frågan mot OSV görs av ett eget Node-skript utan beroenden i stället för en färdig skanner.
 #
 # Ett eget arbetsflöde, inte ett jobb i ci.yml: det körs på schema och på andra sökvägar än CI, och ett fynd i
 # databasen (som kan komma utan att koden ändrats) ska synas som ett eget fallet arbetsflöde utan att CI-kontrollen
@@ -21,6 +26,7 @@ on:
       - 'vendor/**'
       - 'tools/sbom.mjs'
       - 'tools/sarbarheter.mjs'
+      - 'tools/sarbarheter-hamta.mjs'
       - 'TREDJEPARTSLICENSER.md'
       - '.github/workflows/sarbarheter.yml'
   pull_request:
@@ -28,16 +34,17 @@ on:
       - 'vendor/**'
       - 'tools/sbom.mjs'
       - 'tools/sarbarheter.mjs'
+      - 'tools/sarbarheter-hamta.mjs'
       - 'TREDJEPARTSLICENSER.md'
       - '.github/workflows/sarbarheter.yml'
   workflow_dispatch:
 
-# Bara läsbehörighet och inga hemligheter: jobbet checkar ut, skannar och skriver ingenting till repot.
+# Bara läsbehörighet och inga hemligheter: jobbet checkar ut, frågar OSV och skriver ingenting till repot.
 permissions:
   contents: read
 
-# Stegen är låsta på commit-SHA (versionen står som kommentar), så att en flyttad tagg hos
-# tredjepartsåtgärden inte kan ändra vad som körs. Uppdatera SHA och kommentar tillsammans.
+# Stegen är låsta på commit-SHA (versionen står som kommentar), så att en flyttad tagg inte kan ändra vad som
+# körs. Uppdatera SHA och kommentar tillsammans.
 jobs:
   vendor:
     runs-on: ubuntu-latest
@@ -46,23 +53,12 @@ jobs:
         with:
           persist-credentials: false
 
-      # tools/sbom.mjs använder bara Node:s inbyggda moduler, så maskinens Node räcker och npm ci behövs inte.
+      # Skripten använder bara Node:s inbyggda moduler (och dess fetch), så maskinens Node räcker och npm ci behövs inte.
       - name: Programvaruförteckning (SBOM)
         run: node tools/sbom.mjs
 
-      # --all-packages tar med också bibliotek utan fynd, så att nästa steg ser att alla fyra prövades.
-      # --no-ignore: dist/sbom.cdx.json står i .gitignore. Skannern avslutar med 1 vid fynd; bedömningen görs i nästa
-      # steg, och ett misslyckat skanningssteg utan resultatfil faller där.
-      - name: Skanna förteckningen mot OSV
-        continue-on-error: true
-        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
-        with:
-          scan-args: |-
-            --format=json
-            --all-packages
-            --no-ignore
-            --output-file=dist/osv-resultat.json
-            --lockfile=dist/sbom.cdx.json
+      - name: Fråga OSV om biblioteken i förteckningen
+        run: node tools/sarbarheter-hamta.mjs dist/sbom.cdx.json dist/osv-svar.json
 
-      - name: Bedöm resultatet
-        run: node tools/sarbarheter.mjs dist/osv-resultat.json
+      - name: Bedöm svaret
+        run: node tools/sarbarheter.mjs dist/osv-svar.json

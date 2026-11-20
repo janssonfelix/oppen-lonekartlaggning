@@ -10,6 +10,7 @@ import { createAppWindow } from './helpers/app-harness.js';
 import { regexEscape } from './helpers/regex.js';
 import { utanHtmlKommentarer, utanSkript } from './helpers/htmlrens.js';
 import { bedöm, jämförVersion, ÅTGÄRDADE } from '../tools/sarbarheter.mjs';
+import { hämta, läsPurl } from '../tools/sarbarheter-hamta.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
 const läs = f => readFileSync(join(ROOT, f), 'utf8');
@@ -139,6 +140,17 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
             }
         });
     }
+    // Listan följer repots inställning för tillåtna actions (Settings → Actions → General): bara GitHubs egna och
+    // cosign-installeraren. Ett steg utanför den startar inte alls (startup_failure). Den som ändrar inställningen
+    // ändrar listan.
+    const TILLÅTNA = [/^actions\//, /^sigstore\/cosign-installer@/];
+    for (const fil of arbetsfloden) {
+        it(`${fil}: varje "uses:" är en action som repots inställning tillåter`, () => {
+            for (const [, u] of läs(`.github/workflows/${fil}`).matchAll(/uses:\s*(\S+)/g)) {
+                expect(TILLÅTNA.some(t => t.test(u)), u).toBe(true);
+            }
+        });
+    }
     it('release.yml: grinden körs före bygget, förteckningen efter, och signeringen är keyless med minsta behörighet', () => {
         const rel = läs('.github/workflows/release.yml');
         expect(rel).toMatch(/^permissions: \{\}$/m);
@@ -165,47 +177,52 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
 
 describe('säkerhet: sårbarhetsbevakningen av vendor/', () => {
     const wf = läs('.github/workflows/sarbarheter.yml');
+    const jobb = wf.slice(wf.indexOf('\njobs:'));   // kommentaren överst nämner stegen
     it('körs på schema, för hand och när biblioteken eller förteckningen ändras, med bara läsbehörighet', () => {
         expect(wf).toMatch(/^ {2}schedule:\n {4}- cron: '[^']+'/m);
         expect(wf).toMatch(/^ {2}workflow_dispatch:/m);
-        for (const p of ['vendor/**', 'tools/sbom.mjs', 'tools/sarbarheter.mjs', 'TREDJEPARTSLICENSER.md']) {
+        for (const p of ['vendor/**', 'tools/sbom.mjs', 'tools/sarbarheter.mjs', 'tools/sarbarheter-hamta.mjs', 'TREDJEPARTSLICENSER.md']) {
             expect(wf.split(`- '${p}'`).length - 1, p).toBe(2);   // både push och pull_request
         }
         expect(wf).toMatch(/^permissions:\n {2}contents: read$/m);
         expect(wf).not.toMatch(/secrets\.|write/);
     });
-    it('skannar förteckningen och bedömer resultatet i ett eget steg, så att ett fynd fäller jobbet', () => {
-        const jobb = wf.slice(wf.indexOf('\njobs:'));
-        const steg = ['node tools/sbom.mjs', '--lockfile=dist/sbom.cdx.json', 'node tools/sarbarheter.mjs dist/osv-resultat.json'];
+    it('bygger förteckningen, frågar OSV och bedömer svaret i egna steg, utan tredjepartssteg', () => {
+        const steg = ['node tools/sbom.mjs', 'node tools/sarbarheter-hamta.mjs dist/sbom.cdx.json dist/osv-svar.json',
+            'node tools/sarbarheter.mjs dist/osv-svar.json'];
         const plats = steg.map(s => jobb.indexOf(s));
         expect(plats.every(p => p > 0), steg.join(', ')).toBe(true);
         expect([...plats].sort((a, b) => a - b)).toEqual(plats);
-        expect(jobb).toMatch(/--output-file=dist\/osv-resultat\.json/);
-        expect(jobb).toMatch(/--all-packages/);
-        // Bara skanningen får fortsätta vid fel (den avslutar med 1 vid fynd); bedömningen är den som faller.
-        expect(jobb.match(/continue-on-error: true/g)).toHaveLength(1);
-        expect(jobb.slice(jobb.lastIndexOf('continue-on-error'))).toMatch(/^continue-on-error: true\n\s+uses: google\/osv-scanner-action\//);
+        const uses = [...jobb.matchAll(/uses:\s*(\S+)/g)].map(m => m[1]);
+        expect(uses.length).toBeGreaterThan(0);
+        for (const u of uses) expect(u, u).toMatch(/^actions\//);
+        // Inget steg får fortsätta vid fel: en fråga som misslyckas ska fälla jobbet.
+        expect(jobb).not.toMatch(/continue-on-error/);
     });
 });
 
-describe('säkerhet: bedömningen av OSV-resultatet (tools/sarbarheter.mjs)', () => {
+describe('säkerhet: bedömningen av OSV-svaret (tools/sarbarheter.mjs)', () => {
     const komponenter = [{ purl: 'pkg:npm/papaparse@5.7.0' }, { purl: 'pkg:npm/xlsx@0.20.3' }];
-    const paket = (name, version, vulnerabilities = []) => ({ package: { name, version, ecosystem: 'npm' }, vulnerabilities });
+    const ny = { id: 'GHSA-xxxx-xxxx-xxxx', summary: 'påhittad' };
+    const redos = { id: 'GHSA-5pgg-2g8v-p4x9', aliases: ['CVE-2024-22363'] };
     it('godkänner när alla bibliotek prövades utan fynd', () => {
-        const r = bedöm({ results: [{ packages: [paket('papaparse', '5.7.0'), paket('xlsx', '0.20.3')] }] }, komponenter);
+        const r = bedöm({ 'papaparse@5.7.0': { vulns: [] }, 'xlsx@0.20.3': { vulns: [] } }, komponenter);
         expect(r).toEqual({ saknas: [], fynd: [], bortraknade: [] });
     });
-    it('ett bibliotek som saknas i resultatet räknas, så att en förteckning som inte lästes inte passerar', () => {
-        expect(bedöm({ results: [{ packages: [paket('xlsx', '0.20.3')] }] }, komponenter).saknas).toEqual(['papaparse@5.7.0']);
+    it('ett bibliotek utan svar räknas, så att en förteckning som inte prövades inte passerar', () => {
+        expect(bedöm({ 'xlsx@0.20.3': { vulns: [] } }, komponenter).saknas).toEqual(['papaparse@5.7.0']);
+        expect(bedöm({ 'papaparse@5.7.0': {}, 'xlsx@0.20.3': { vulns: [] } }, komponenter).saknas).toEqual(['papaparse@5.7.0']);
         expect(bedöm({}, komponenter).saknas).toHaveLength(2);
     });
     it('ett okänt fynd fäller; ett åtgärdat räknas bort bara från den åtgärdade versionen', () => {
-        const ny = { id: 'GHSA-xxxx-xxxx-xxxx', summary: 'påhittad' };
-        const redos = { id: 'GHSA-5pgg-2g8v-p4x9', aliases: ['CVE-2024-22363'] };
-        const r = bedöm({ results: [{ packages: [paket('papaparse', '5.7.0', [ny]), paket('xlsx', '0.20.3', [redos])] }] }, komponenter);
+        const r = bedöm({ 'papaparse@5.7.0': { vulns: [ny] }, 'xlsx@0.20.3': { vulns: [redos] } }, komponenter);
         expect(r.fynd.map(f => f.id)).toEqual(['GHSA-xxxx-xxxx-xxxx']);
         expect(r.bortraknade.map(f => f.id)).toEqual(['GHSA-5pgg-2g8v-p4x9']);
-        const gammal = bedöm({ results: [{ packages: [paket('xlsx', '0.20.1', [redos])] }] }, [{ purl: 'pkg:npm/xlsx@0.20.1' }]);
+        // Fyndet känns igen också på aliaset.
+        const viaAlias = bedöm({ 'xlsx@0.20.3': { vulns: [{ id: 'PYSEC-påhittad', aliases: ['GHSA-4r6h-8v6p-xvw6'] }] } }, [{ purl: 'pkg:npm/xlsx@0.20.3' }]);
+        expect(viaAlias).toMatchObject({ fynd: [], bortraknade: [{ id: 'PYSEC-påhittad' }] });
+        // En nedgradering faller igen.
+        const gammal = bedöm({ 'xlsx@0.20.1': { vulns: [redos] } }, [{ purl: 'pkg:npm/xlsx@0.20.1' }]);
         expect(gammal.fynd.map(f => f.id)).toEqual(['GHSA-5pgg-2g8v-p4x9']);
     });
     it('jämför versioner numeriskt, och de åtgärdade gäller den SheetJS-version som ligger i vendor/', () => {
@@ -213,6 +230,40 @@ describe('säkerhet: bedömningen av OSV-resultatet (tools/sarbarheter.mjs)', ()
         expect(jämförVersion('0.19.3', '0.20.2')).toBeLessThan(0);
         const sheetjs = läs('vendor/xlsx.mini.min.js').slice(0, 3000).match(/version="(\d+\.\d+\.\d+)"/)[1];
         for (const a of ÅTGÄRDADE) expect(jämförVersion(sheetjs, a.atgardadI), a.id).toBeGreaterThanOrEqual(0);
+    });
+});
+
+describe('säkerhet: frågan mot OSV (tools/sarbarheter-hamta.mjs)', () => {
+    const komponenter = [{ purl: 'pkg:npm/papaparse@5.7.0' }, { purl: 'pkg:npm/xlsx@0.20.3' }];
+    // Ett påhittat API: svarar med de givna sidorna per paket och sparar frågorna.
+    const påhittat = (sidor, frågor = []) => async (_adress, init) => {
+        const f = JSON.parse(init.body);
+        frågor.push(f);
+        const lista = sidor[`${f.package.name}@${f.version}`] || [{}];
+        const i = f.page_token ? Number(f.page_token) : 0;
+        return { status: 200, json: async () => ({ ...lista[i], ...(i + 1 < lista.length ? { next_page_token: String(i + 1) } : {}) }) };
+    };
+    it('frågar med bara namn, ekosystem och version och samlar alla sidor', async () => {
+        const frågor = [];
+        const svar = await hämta(komponenter, { fetch: påhittat({ 'xlsx@0.20.3': [{ vulns: [{ id: 'A' }] }, { vulns: [{ id: 'B' }] }] }, frågor) });
+        expect(svar).toEqual({ 'papaparse@5.7.0': { vulns: [] }, 'xlsx@0.20.3': { vulns: [{ id: 'A' }, { id: 'B' }] } });
+        expect(frågor[0]).toEqual({ package: { name: 'papaparse', ecosystem: 'npm' }, version: '5.7.0' });
+        expect(frågor.at(-1)).toEqual({ package: { name: 'xlsx', ecosystem: 'npm' }, version: '0.20.3', page_token: '1' });
+    });
+    it('nätfel, annan status än 200, svar som inte är JSON eller har fel form fäller med beskedet att OSV inte kunde frågas', async () => {
+        const fall = [
+            async () => { throw new TypeError('fetch failed'); },
+            async () => ({ status: 503, json: async () => ({}) }),
+            async () => ({ status: 200, json: async () => { throw new SyntaxError('Unexpected token <'); } }),
+            async () => ({ status: 200, json: async () => ({ vulns: 'inte en lista' }) }),
+            async () => ({ status: 200, json: async () => null }),
+        ];
+        for (const f of fall) await expect(hämta(komponenter, { fetch: f })).rejects.toThrow(/^Kunde inte fråga OSV om papaparse@5\.7\.0/);
+    });
+    it('läser paketadressen och avvisar en okänd', () => {
+        expect(läsPurl('pkg:npm/xlsx@0.20.3')).toEqual({ ekosystem: 'npm', namn: 'xlsx', version: '0.20.3' });
+        expect(läsPurl('pkg:npm/%40skop/paket@1.0.0').namn).toBe('@skop/paket');
+        expect(() => läsPurl('pkg:pypi/x@1')).toThrow(/okänd paketadress/);
     });
 });
 
