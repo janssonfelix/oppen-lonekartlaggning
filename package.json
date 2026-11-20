@@ -26,7 +26,7 @@
     "test:browser": "node tools/browser-smoke.mjs",
     "test:browser:firefox": "node tools/browser-smoke.mjs --browser=firefox",
     "test:browser:webkit": "node tools/browser-smoke.mjs --browser=webkit",
-    "test:browser:webkit:behallare": "podman run --rm --security-opt label=disable --network=none -v \"$PWD\":/work:ro -w /work mcr.microsoft.com/playwright:v1.65.0-noble node tools/browser-smoke.mjs --browser=webkit",
+    "test:browser:webkit:behallare": "podman run --rm --security-opt label=disable --network=none -v \"$PWD\":/work:ro -w /work mcr.microsoft.com/playwright:v1.65.1-noble node tools/browser-smoke.mjs --browser=webkit",
     "perf": "node tools/perf-smoke.mjs",
     "site": "node tools/site.mjs",
     "release:kontroll": "node tools/release.mjs"
