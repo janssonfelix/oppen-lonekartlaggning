@@ -442,9 +442,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   (`tests/helpers/ktroskel-rigg.js`), med kolumner och totalrad eller som inget att dela upp med skäl, och en
   odeklarerad tabell fäller invarianten. För de deklarerade måtten får totalen minus de visade delarna, för alla och
   per kön, inte lämna färre än tröskeln personer, och i en tabell utan totalrad får ingen rad minus andra lämna en av
-  underlagets små grupper. I dag prövas tabellerna per BAS-intervall (Word-utkastet, utskriften och Excel) och
-  Löneöversyns fördelning och utfallstabell med innehåll. Provet ser inte differenser mellan två tabeller eller två
-  exporter, inte medianer och percentiler, och inte härledningar som kräver uppgifter utanför exporten.
+  underlagets små grupper. I dag prövas tabellerna per BAS-intervall (Word-utkastet, utskriften och Excel),
+  Löneöversyns fördelning och utfallstabell och JPA-protokollets blad med innehåll. Provet ser differenser mellan två
+  tabeller bara mellan protokollets blad för BAS-intervall och för lika arbete, och aldrig mellan två filer, som
+  skyddet inte gäller (ADR-92). Det ser inte medianer och percentiler, och inte härledningar som kräver uppgifter utanför exporten.
   `tests/ktroskel-differens.test.js` prövar samma sak på lib-nivå med fler underlag, och ekvationssystemen i
   uppdelningen av löneskillnaden.
 - **Värdet kan ändras av användaren (ADR-38).** Fältet *Minsta gruppstorlek för redovisning* under
@@ -555,13 +556,14 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   differensprovet `tests/ktroskel-differens.test.js` och `tests/perbas.test.js`. Kvar, och inte prövat som differens:
   medellönen per åldersgrupp mot raden *Alla* (antalet per åldersgrupp skrivs inte ut) och vägar som kräver
   uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Samma regel gäller i protokollet för gemensam
-  lönebedömning, för bladet för lika arbete mot intervallens medelvärden i bladet för BAS-intervall och i tabellerna
-  per BAS-intervall, och mot organisationens: lämnar ett intervall, eller organisationen, minus de visade
-  AID-etiketterna färre än tröskeln, för ett kön eller för alla, döljs medelvärdena för den minsta visade etiketten, med
-  en not, och intervallens rader och medianerna står kvar (ADR-91; differensprovet i I4 vid 10 och 25, med
-  deklarationer över två tabeller, också mellan rapporten eller Excelfilen och protokollet). Kvar, och inte prövat som
-  differens: Löneöversyns kostnad per grupp mot intervallens medellön, och Utforskas och de egna tabellernas
-  uppdelningar mot andra utdata. Prioritering visar skillnaden mellan könen i en grupp
+  lönebedömning mellan bladet för BAS-intervall och bladet för lika arbete: lämnar intervallet minus de visade
+  AID-etiketterna i intervallet färre än tröskeln av ett kön döljs medelvärdena för den minsta visade etiketten, med en
+  not, och intervallets rad och medianerna står kvar (ADR-91; differensprovet i I4 vid 10 och 25, med en deklaration
+  över två blad). Skyddet gäller en fil i taget (ADR-92): den som har flera utdata ur samma underlag kan räkna fram mer
+  än varje fil visar, till exempel bladet för lika arbete mot intervallets medellön i tabellerna per BAS-intervall i
+  rapporten eller Excelfilen, eller Löneöversyns kostnad per grupp, som med ett påslag i procent är gruppens
+  lönesumma, mot samma medellön. Det är ett beslut, inte en lucka: att kombinera filer är inte en omedveten läcka, och
+  att stänga det skulle dölja lönemått för stora grupper för en enda persons skull. Prioritering visar skillnaden mellan könen i en grupp
   bara när båda könen når tröskeln. Annars räknas prioritetsindexet utan könsdel, så att
   poängen inte röjer den dolda skillnaden. Prioriteringens förslag om lägsta
   lönekvintilen kräver tröskeln för båda könen. Vaktas av `tests/ktroskel-utdata.test.js`, som läser

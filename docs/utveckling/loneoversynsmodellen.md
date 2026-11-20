@@ -220,7 +220,9 @@ Fasta: tröskelmålets konstanter (avsnitt 9), varningsgränserna 50 % och 25 % 
 
 Hur k gäller utfallet, förslagen och exporten står i [`k-troskeln.md`](k-troskeln.md). I korthet: en grupp under k har
 sin rad, men medianerna och kostnaden står inte per grupp; deras kostnad står samlad på en rad, och räcker den inte till
-k personer viks de minsta visade grupperna in tills den gör det (`_fcUtfallsrader`). Lönespannet för ett BAS-intervall
+k personer viks de minsta visade grupperna in tills den gör det (`_fcUtfallsrader`). Regeln gäller filen för sig: att
+kostnaden per grupp med ett påslag i procent, tillsammans med intervallets medellön i rapporten, ger mer än filen visar
+skyddas inte (ADR-92). Lönespannet för ett BAS-intervall
 under k utelämnas. Den individuella rättelsen kräver k män bakom jämförelsevärdet och visar en grupp först när k
 kvinnor berörs. Tröskelmålet och den råa skillnaden i känsligheten visas bara när båda könen når k.
 

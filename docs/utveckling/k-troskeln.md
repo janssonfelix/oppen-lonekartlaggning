@@ -75,6 +75,12 @@ Redovisningsformen (ADR-12) gäller det som lämnar verktyget, alltså exportlä
    redovisas (`kSamladNote()`). Den bygger på n ≥ `kTroskel()` och röjer ingen enskild, men ger ändå ett lönemått att
    förhålla sig till. Könsjämförelsen utgår, med förklaring.
 
+**En fil i taget** (ADR-92). Redovisningsformen och reglerna nedan gäller varje fil som lämnar verktyget för sig: en
+grupp under tröskeln får inte stå i filen och inte gå att räkna fram genom att dra ifrån inom samma fil (en total minus
+de visade delarna, i samma tabell eller mellan blad och avsnitt i filen). Det som går att räkna fram genom att
+kombinera flera filer ur samma underlag skyddas inte. Den som gör det har redan hela underlaget, och skydden finns för
+att undvika omedvetna dataläckor, inte för att stänga ute användaren.
+
 Tabellerna per AID-kod och BAS-intervall och könsfördelningen per BAS-intervall har ett avsiktligt avsteg i antal
 (avsnitt 4).
 
@@ -201,13 +207,11 @@ sådana par; beslut). Löneöversyns förslag prövas mot den inställda tröske
 **Lönenivåerna i JPA-protokollet.** Median och medelvärde per kön (ADR-79) står bara för AID-etiketter och
 BAS-intervall som protokollet redan redovisar: AID-etiketter där båda könen når tröskeln och BAS-intervall där båda
 könen når `statGolv()`, som aldrig är under den inställda tröskeln. Cellerna prövar tröskeln också själva
-(`_jpaNivaCeller`). Testet står i `tests/ktroskel-utdata.test.js` (vid 10 och 25). Intervallets medelvärden, räknade
-på alla i intervallet, står i bladet för BAS-intervall och i tabellerna per BAS-intervall (för varje intervall där
-könen når tröskeln, oavsett status), och organisationens i flera utdata. Lämnar ett sådant medelvärde minus de
-AID-etiketter i intervallet som bladet för lika arbete visar 1 till k − 1 personer, för ett kön eller för alla,
-undertrycks medelvärdena för den minsta visade etiketten, en i taget, med samma regel som tabellerna per BAS-intervall
-(ADR-83, ADR-91). Ett intervall vars medelvärde tabellerna per BAS-intervall själva döljer är ingen total där.
-Intervallens rader och medianerna står kvar, och en not i bladet för lika arbete namnger etiketterna.
+(`_jpaNivaCeller`). Testet står i `tests/ktroskel-utdata.test.js` (vid 10 och 25). Bladet för BAS-intervall räknar
+intervallets medelvärden på alla i intervallet, så lämnar intervallet minus de AID-etiketter i intervallet som bladet
+för lika arbete visar 1 till k − 1 personer av ett kön, undertrycks medelvärdena för den minsta visade etiketten i
+intervallet, en i taget, med samma regel som tabellerna per BAS-intervall (ADR-83, ADR-91; inom protokollet, ADR-92). Intervallets rad och
+medianerna står kvar, och en not i bladet för lika arbete namnger etiketterna.
 
 **Lika arbetes grupper.** En grupp i Lika arbete är AID-koden i BAS-intervallet (ADR-89), så en kod som finns i flera
 intervall blir flera mindre grupper, och varje grupp prövas mot tröskeln för sig. Ingen rad för koden över alla
@@ -466,8 +470,8 @@ utdata och dess skydd, står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.
 | Konfigurationsfilen (hela, årsbokslutet, importprofilerna) och importprofilerna som JSON | Bara aggregat och rubriknamn; bokslutet i exportläget (ADR-54) | I4; I8 (sakliga skäl); `tests/ktroskel-utdata.test.js` (konfigurationsfilen) |
 | Förra årets bokslut: rapportunderlagets block, rapportens avsnitt och BAS-hantelns diagramdata | Den högre av årens trösklar (ADR-54) | I4 |
 | Förhandskontrollens råvärden | Bara på skärmen | I4 |
-| Varje tabell ovan med en kolumn med medel, summa eller kostnad: totalen minus de visade delarna | Avsnitt 2 (S4: inget lönemått får gå att räkna fram ur summorna i samma export; ADR-88) | Differensprovet i I4 (`differensprov` i `tests/helpers/differens.js`): varje sådan rubrikrad är deklarerad i riggen (`DIFFERENS_DEKLARATIONER`), med kolumner och totalrad eller som inget att dela upp med skäl, och en odeklarerad fäller invarianten; för de deklarerade måtten lämnar ingen total minus de visade delarna 1 till k − 1 personer, och ingen rad i en tabell utan totalrad lämnar en av riggens små grupper. Prövas i dag: tabellerna per BAS-intervall (Word-utkastet, utskriften, Excel), Löneöversyns fördelning och utfallstabell, JPA-protokollets tabeller; självtestet i `tests/ktroskel-differens.test.js` |
-| JPA-protokollet: bladet för BAS-intervall och tabellerna per BAS-intervall (Word-utkastet, utskriften, Excel) minus bladet för lika arbete, per intervall och kön och för organisationen | Avsnitt 2 (lönenivåerna i JPA-protokollet, ADR-91) | Differensprovet i I4, med deklarationer över två tabeller (`korsblad` i `DIFFERENS_DEKLARATIONER`), också mellan två filer, vid 10 och 25; I4 kräver att riggens intervall *J* har rader i båda bladen och *L* bara i bladet för lika arbete, att etiketternas medelvärden döljs med en not och att medianerna och intervallets rad står kvar; `tests/undertryckning.test.js` (regeln) |
+| Varje tabell ovan med en kolumn med medel, summa eller kostnad: totalen minus de visade delarna | Avsnitt 2 (S4: inget lönemått får gå att räkna fram genom att dra ifrån inom samma fil; ADR-88, ADR-92) | Differensprovet i I4 (`differensprov` i `tests/helpers/differens.js`): varje sådan rubrikrad är deklarerad i riggen (`DIFFERENS_DEKLARATIONER`), med kolumner och totalrad eller som inget att dela upp med skäl, och en odeklarerad fäller invarianten; för de deklarerade måtten lämnar ingen total minus de visade delarna 1 till k − 1 personer, och ingen rad i en tabell utan totalrad lämnar en av riggens små grupper. Prövas i dag: tabellerna per BAS-intervall (Word-utkastet, utskriften, Excel), Löneöversyns fördelning och utfallstabell, JPA-protokollets tabeller; självtestet i `tests/ktroskel-differens.test.js` |
+| JPA-protokollet: bladet för BAS-intervall minus bladet för lika arbete, per intervall och kön | Avsnitt 2 (lönenivåerna i JPA-protokollet, ADR-91) | Differensprovet i I4, med en deklaration över två blad (`korsblad` i `DIFFERENS_DEKLARATIONER`), vid 10 och 25; I4 kräver att riggens intervall *J* har rader i båda bladen, att etikettens medelvärden döljs med en not och att medianerna och intervallets rad står kvar; `tests/undertryckning.test.js` (regeln) |
 | Var uppstår löneskillnaden (kortet, rapportunderlagets block, trappans diagramdata), med standardvalet och andra val av variabler, och huvudområdenas andel (översikten per huvudområde och rapportunderlaget) | Avsnitt 2 (Var uppstår löneskillnaden, ADR-87) | `tests/ktroskel-differens.test.js` (två, tre och fyra huvudområden med ett eller flera små; standardvalet; huvudområde, AID-mellannivå och åldersgrupp som variabler; flera små grupper; 60, 300 och 2 000 personer); `tests/gapuppdelning.test.js`, `tests/sektor.test.js` och `tests/undertryckning.test.js` (regeln); I7 |
 | Underlaget (`figur.underlag`, *Räkna för*) | Avsnitt 1 | I6 |
 | Löneöversyn: kostnad per grupp, knappresultat, egna rader, tröskelmål | Regel R2, R4 och R5 | I1, I1b; R2 och R4 i `tests/ktroskel-regression.test.js`; R5 i `tests/troskelbeslut.test.js` |
@@ -569,17 +573,15 @@ inställningen (standardvärdet).
   i invarianten (avsnitt 9) ser en total minus de visade delarna i samma tabell, men bara i tabeller vars rubriker
   nämner medel, summa eller kostnad, bara för de mått som deklarerats (aldrig medianer och percentiler, som inte går
   att dela upp), och bara så långt riggens underlag ger rader; en tabell utan totalrad prövas bara mot riggens små
-  grupper. Differenser mellan två tabeller prövas bara där en deklaration över två tabeller finns (JPA-protokollets
-  blad för lika arbete mot bladet för BAS-intervall och mot tabellerna per BAS-intervall, ADR-91), inte till exempel
-  Löneöversyns blad *Fördelning* mot *Sammanfattning*, och inte härledningar som kräver uppgifter utanför exporten.
-  Medellönen för alla i protokollets blad för lika arbete (ur medelvärdena per kön och antalen) prövas inte av provet;
-  regeln omfattar den (`tests/undertryckning.test.js`). Löneöversyns kostnad per grupp i *Fördelning*, som med ett
-  känt påslag i procent ger gruppens lönesumma, prövas inte mot intervallens medellön i tabellerna per BAS-intervall,
-  och inte heller Utforskas export och de egna tabellerna (användarens egna uppdelningar) mot andra utdata.
+  grupper. Differenser mellan två tabeller prövas bara där en deklaration över två blad finns (JPA-protokollets blad
+  för BAS-intervall mot bladet för lika arbete, ADR-91), inte till exempel Löneöversyns blad *Fördelning* mot
+  *Sammanfattning*, och inte härledningar som kräver uppgifter utanför exporten.
   Löneöversyns summor, scenariojämförelsen A/B och regressionens BAS-effekter prövas därför för sig (avsnitt 9), och
   ekvationssystemen i uppdelningen av löneskillnaden med lösaren i `tests/ktroskel-differens.test.js`. Differenser
-  mellan olika exporter prövas inte: den invikta gruppens median före påslaget kan stå i en annan tabell (gruppen når tröskeln), och
-  med påslagets procentsats ger antal gånger median en uppskattning av dess kostnad. Differenser mellan olika
+  mellan olika filer omfattas inte av skyddet (avsnitt 2, ADR-92) och prövas inte. Exempel: Löneöversyns kostnad per
+  grupp, som med ett påslag i procent är gruppens lönesumma, mot intervallets medellön i tabellerna per BAS-intervall;
+  protokollets blad för lika arbete mot samma tabeller; den invikta gruppens median före påslaget, som kan stå i en
+  annan fil (gruppen når tröskeln) och med påslagets procentsats ger en uppskattning av dess kostnad. Differenser mellan olika
   uppdelningar i samma export prövas heller inte: uppdelningen av löneskillnaden räknar samman andra grupper än
   tabellerna per BAS-intervall utelämnar, och provet gäller varje utdata för sig.
 - **Innehållet i bilder prövas inte.** ZIP-filens bilder, utskriftens bilder och Word-utkastets bilder går inte att
