@@ -119,6 +119,19 @@ function _fcKostnadsval() {
     return { months, poPct, roundStep: state.forecast.roundStep || 0,
              kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
 }
+// Riktningen för ett mått före och efter, avgjord på talen som de visas (en decimal): när före och efter visas lika
+// står "oförändrat" i neutral färg, i stället för att ordet och färgen följer de oavrundade talen ("−4,3 % till
+// −4,3 % ökar"). Utfallets två rader, stapeln under dem, diagrammet och tabellen per grupp avgör alla här. `mal` är
+// värdet där skillnaden är borta: 0 för den oförklarade skillnaden, 100 för kvinnors median i procent av mäns.
+// −1: närmare målet; 1: längre ifrån; 0: oförändrat; null när ett tal saknas.
+/** @param {number|null|undefined} fore @param {number|null|undefined} efter @param {number} [mal] @returns {-1|0|1|null} */
+function _fcRiktning(fore, efter, mal = 0) {
+    if (typeof fore !== 'number' || typeof efter !== 'number' || !isFinite(fore) || !isFinite(efter)) return null;
+    const avstand = v => Math.abs(_avrundaSymmetriskt(v, 1) - mal);
+    const a = avstand(fore), b = avstand(efter);
+    return b < a ? -1 : b > a ? 1 : 0;
+}
+
 /**
  * Utfallets rader per grupp, för tabellen och bladet Fördelning (ADR-70). En grupp under tröskeln `K` har sin rad med
  * antal och andel kvinnor, men medianerna och kostnaden maskeras (`sma`). Kostnaden för de maskerade raderna står
@@ -303,15 +316,13 @@ function updateForecast() {
     }).join('') + (utfall.samlad && utfall.samlad.kostnad != null
         ? `<tr><td>Kostnad för grupper under tröskeln</td><td>${utfall.samlad.antalGrupper} ${utfall.samlad.antalGrupper === 1 ? 'grupp' : 'grupper'}, ${utfall.samlad.n} ${personOrd(utfall.samlad.n)}</td><td colspan="5"></td><td class="t-hoger">${kr(utfall.samlad.kostnad)}/mån</td><td></td></tr>`
         : '');
-    const gapCell = (before, after, _lowerBetterTowardZero) => {
-        const arrow = (before == null || after == null) ? '' : (Math.abs(after) < Math.abs(before) ? ` <span class="farg-ok">minskar</span>` : (Math.abs(after) > Math.abs(before) ? ' <span class="f-kritisk">ökar</span>' : ' <span class="f-dampad">oförändrat</span>'));
-        return `${pct(before)} till <strong>${pct(after)}</strong>${arrow}`;
-    };
+    // Ordet och färgen följer talen som de visas (_fcRiktning): lika på en decimal är oförändrat.
+    const riktningsord = (r, narmare, langre) => (r == null ? '' : r < 0 ? ` <span class="farg-ok">${narmare}</span>`
+        : r > 0 ? ` <span class="f-kritisk">${langre}</span>` : ' <span class="f-dampad">oförändrat</span>');
+    const gapCell = (before, after) => `${pct(before)} till <strong>${pct(after)}</strong>${riktningsord(_fcRiktning(before, after, 0), 'minskar', 'ökar')}`;
     // Det råa gapet visas som kvinnors medianlön i procent av mäns (andelAvMan); pilen säger om den närmar sig 100.
-    const andelCell = (before, after) => {
-        const arrow = (before == null || after == null) ? '' : (Math.abs(after) < Math.abs(before) ? ` <span class="farg-ok">närmar sig 100 %</span>` : (Math.abs(after) > Math.abs(before) ? ' <span class="f-kritisk">längre från 100 %</span>' : ' <span class="f-dampad">oförändrat</span>'));
-        return `${andelAvMan(before)} till <strong>${andelAvMan(after)}</strong>${arrow}`;
-    };
+    const andelRiktning = (before, after) => (before == null || after == null ? null : _fcRiktning(100 + before, 100 + after, 100));
+    const andelCell = (before, after) => `${andelAvMan(before)} till <strong>${andelAvMan(after)}</strong>${riktningsord(andelRiktning(before, after), 'närmar sig 100 %', 'längre från 100 %')}`;
     // #12 Enkel före/efter-stapel på |rågap| (mindre = bättre)
     const gapBar = (before, after) => {
         if (before == null || after == null) return '';
@@ -319,7 +330,7 @@ function updateForecast() {
         const w = v => (Math.abs(v) / scale * 100).toFixed(1);
         return `<div class="marg-t-6 max-bredd-360">
             <div class="rad-mitt gap-6 marg-b-3"><span class="text-dampad-xs bredd-42">Före</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p bg-blek" data-stil-bredd="${w(before)}%"></div></div></div>
-            <div class="rad-mitt gap-6"><span class="text-dampad-xs bredd-42">Efter</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p ${Math.abs(after) <= Math.abs(before) ? 'bg-ok' : 'bg-kritisk'}" data-stil-bredd="${w(after)}%"></div></div></div>
+            <div class="rad-mitt gap-6"><span class="text-dampad-xs bredd-42">Efter</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p ${{ '-1': 'bg-ok', 0: 'bg-dampad', 1: 'bg-kritisk' }[andelRiktning(before, after)]}" data-stil-bredd="${w(after)}%"></div></div></div>
         </div>`;
     };
     // #8 Stegvis plan över N år (DiskrL 3:11)
@@ -432,8 +443,8 @@ function _forecastLutningRader(d, sim, niva) {
         h[0].push(r.lon); h[1].push(sim[i].lon);
     });
     const gap = (kv, ma) => { const mm = Stat.median(ma); return mm > 0 ? Stat.median(kv) / mm * 100 : null; };   // kvinnors median i % av mäns
-    const fran100 = v => Math.abs(v - 100);
-    const farg = (fore, efter) => (fran100(efter) < fran100(fore) - 0.05 ? PALETTE.semantic.ok : fran100(efter) > fran100(fore) + 0.05 ? PALETTE.semantic.kritisk : PALETTE.semantic.neutral);
+    // Färgen följer talen som de visas med en decimal (_fcRiktning), som utfallets rad för hela urvalet.
+    const farg = (fore, efter) => ({ '-1': PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[_fcRiktning(fore, efter, 100)];
     return [...grupper.values()].filter(g => g.kv[0].length >= k && g.ma[0].length >= k)
         .map(g => ({ namn: g.namn, markering: g.markering, ...(g.bas != null ? { bas: g.bas } : { yrke: g.yrke }), nKv: g.kv[0].length, nMa: g.ma[0].length,
                      n: g.kv[0].length + g.ma[0].length, fore: gap(g.kv[0], g.ma[0]), efter: gap(g.kv[1], g.ma[1]) }))
@@ -449,7 +460,7 @@ function _forecastLutningTabell(rader, niva) {
     const p = v => _figTalformat(v, 'pct'), diff = v => (v > 0 ? '+' : '') + _figTalformat(v, undefined) + ' procentenheter';
     host.innerHTML = `<table id="forecast-lutning-table" class="data-table fs-sm marg-t-10">
         <thead><tr><th>${niva === 'bas' ? termStor(T.niva.en) : termStor(T.enhet.en)}</th><th class="t-hoger">Kvinnor / män</th><th class="t-hoger">Kvinnors median i % av mäns, före</th><th class="t-hoger">Efter</th><th class="t-hoger">Förändring</th></tr></thead>
-        <tbody>${rader.map(r => `<tr><td>${esc(r.namn)}</td><td class="t-hoger">${r.nKv}/${r.nMa}</td><td class="t-hoger">${p(r.fore)}</td><td class="fw-600 ta-hoger">${p(r.efter)}</td><td class="t-hoger">${diff(+(r.efter - r.fore).toFixed(1))}</td></tr>`).join('')}</tbody></table>`;
+        <tbody>${rader.map(r => `<tr><td>${esc(r.namn)}</td><td class="t-hoger">${r.nKv}/${r.nMa}</td><td class="t-hoger">${p(r.fore)}</td><td class="fw-600 ta-hoger">${p(r.efter)}</td><td class="t-hoger">${diff(_avrundaSymmetriskt(r.efter, 1) - _avrundaSymmetriskt(r.fore, 1))}</td></tr>`).join('')}</tbody></table>`;
     for (const [i, tr] of [...host.querySelectorAll('tbody tr')].entries()) if (rader[i].markering) tr._markering = rader[i].markering;
 }
 function _renderForecastLutning(d, sim) {
@@ -461,7 +472,7 @@ function _renderForecastLutning(d, sim) {
     let rader = d && sim ? _forecastLutningRader(d, sim, niva) : [], fler = 0;
     if (niva === 'grupp') {
         // Yrkesgrupperna är många: bara de där gapet ändras, störst ändring först.
-        const andrade = rader.filter(r => r.efter != null && r.fore != null && Math.abs(r.efter - r.fore) >= 0.05).sort((x, y) => Math.abs((y.efter ?? 0) - (y.fore ?? 0)) - Math.abs((x.efter ?? 0) - (x.fore ?? 0)));
+        const andrade = rader.filter(r => r.efter != null && r.fore != null && _avrundaSymmetriskt(r.efter, 1) !== _avrundaSymmetriskt(r.fore, 1)).sort((x, y) => Math.abs((y.efter ?? 0) - (y.fore ?? 0)) - Math.abs((x.efter ?? 0) - (x.fore ?? 0)));
         fler = Math.max(0, andrade.length - FORECAST_LUTNING_MAX);
         rader = andrade.slice(0, FORECAST_LUTNING_MAX);
         _forecastLutningTabell(andrade, niva);   // tabellen bär alla ändrade grupper, också dem diagrammet inte ryms
