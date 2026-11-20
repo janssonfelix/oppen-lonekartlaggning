@@ -5,13 +5,16 @@
  * så det hör till projektet «enhet». Tre saker hålls sanna: importgrafen är fri från cykler, en modul importerar
  * bara andra filer i src/lib/, och ingen modul använder webbläsarens eller appens globaler (document, window,
  * localStorage, sessionStorage, navigator och appens state). Kommentarer och strängar tas bort före sökningen, så
- * att ord i dokumentationen inte fäller testet.
+ * att ord i dokumentationen inte fäller testet. Därtill stämmer modultabellen i docs/utveckling/arkitektur.md med
+ * importgrafen: varje modul står där en gång, med just de moduler den importerar, och tabellen nämner ingen modul som
+ * inte finns.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const LIB = join(import.meta.dirname, '..', 'src', 'lib');
+const ARKITEKTUR = join(import.meta.dirname, '..', 'docs', 'utveckling', 'arkitektur.md');
 const filer = readdirSync(LIB).filter(f => f.endsWith('.js')).sort();
 const modulnamn = f => f.replace(/\.js$/, '');
 
@@ -25,14 +28,17 @@ function utanKommentarerOchStrangar(js) {
         });
 }
 
-/** Modulens importer av andra filer: statiska import/export-from och dynamiska import(). */
+/**
+ * Modulens importer av andra filer: statiska import/export-from och dynamiska import(). Sökvägen är en sträng och
+ * finns inte kvar efter utanKommentarerOchStrangar, så de statiska satserna läses ur källtexten: bara satser som
+ * börjar en rad, vilket utesluter exempel i kommentarer (de börjar med * eller //).
+ */
 function importer(js) {
     const kod = utanKommentarerOchStrangar(js);
     const sokvagar = [];
-    for (const m of kod.matchAll(/\bimport\s+[^;]*?\bfrom\s*['"]([^'"]+)['"]/g)) sokvagar.push(m[1]);
-    for (const m of kod.matchAll(/\bexport\s+[^;]*?\bfrom\s*['"]([^'"]+)['"]/g)) sokvagar.push(m[1]);
+    for (const m of js.matchAll(/^[ \t]*(?:import|export)\b[^;]*?\bfrom\s*['"]([^'"]+)['"]/gm)) sokvagar.push(m[1]);
+    for (const m of js.matchAll(/^[ \t]*import\s*['"]([^'"]+)['"]/gm)) sokvagar.push(m[1]);
     if (/\bimport\s*\(/.test(kod)) sokvagar.push('(dynamisk import)');
-    for (const m of kod.matchAll(/\bimport\s*['"]([^'"]+)['"]/g)) sokvagar.push(m[1]);
     return sokvagar;
 }
 
@@ -104,6 +110,15 @@ describe('src/lib/ har en ren importgraf', () => {
         expect(new Set(cykel)).toEqual(new Set(['a', 'b', 'c']));
     });
 
+    it('självtest: importläsningen hittar sökvägarna men inte exempel i kommentarer', () => {
+        const js = "import { a } from './b.js';\nexport { c } from './d.js';\nimport {\n    e,\n} from './f.js';\n/**\n * import { x } from './y.js';\n */\n// import z from './z.js';";
+        expect(importer(js)).toEqual(['./b.js', './d.js', './f.js']);
+    });
+
+    it('självtest: importgrafen har kanter (struktur importerar stat)', () => {
+        expect(importgraf(filer).get('struktur')).toContain('stat');
+    });
+
     it('självtest: cykelsökningen hittar ingen cykel i en cykelfri graf', () => {
         expect(hittaCykel(new Map([['a', ['b', 'c']], ['b', ['c']], ['c', []]]))).toBeNull();
     });
@@ -136,5 +151,43 @@ describe('src/lib/ använder inga webbläsar- eller appglobaler', () => {
             STATE.lastIndex = 0;
         }
         expect(fynd).toEqual([]);
+    });
+});
+
+describe('modultabellen i arkitektur.md stämmer med src/lib/', () => {
+    /** Tabellens rader som modulnamn → importerade modulnamn, ur raderna `| område | `modul` | `a`, `b` |`. */
+    function tabellen() {
+        const md = readFileSync(ARKITEKTUR, 'utf8');
+        const start = md.indexOf('| Område | Modul | Importerar från');
+        const rader = md.slice(start).split('\n').slice(2);
+        const tabell = new Map();
+        for (const rad of rader) {
+            if (!rad.startsWith('|')) break;
+            const celler = rad.split('|').map(c => c.trim());
+            const modul = /^`([\w-]+)`$/.exec(celler[2]);
+            if (!modul) continue;
+            const importer = [...celler[3].matchAll(/`([\w-]+)`/g)].map(m => m[1]).sort();
+            tabell.set(modul[1], [...(tabell.get(modul[1]) || []), ...importer]);
+        }
+        return tabell;
+    }
+
+    it('varje modul i src/lib/ står i tabellen, och tabellen nämner ingen modul som inte finns', () => {
+        const pa = new Set(filer.map(modulnamn));
+        const iTabell = new Set(tabellen().keys());
+        expect([...pa].filter(m => !iTabell.has(m)), 'moduler som saknas i tabellen').toEqual([]);
+        expect([...iTabell].filter(m => !pa.has(m)), 'moduler i tabellen som inte finns').toEqual([]);
+    });
+
+    it('tabellens importkolumn är modulens direkta importer i src/lib/', () => {
+        const graf = importgraf(filer);
+        const tabell = tabellen();
+        const fel = [];
+        for (const [modul, grannar] of graf) {
+            const vantat = [...new Set(grannar)].sort();
+            const iTabell = tabell.get(modul) || [];
+            if (vantat.join(',') !== iTabell.join(',')) fel.push(`${modul}: koden ${vantat.join(', ') || '–'}, tabellen ${iTabell.join(', ') || '–'}`);
+        }
+        expect(fel).toEqual([]);
     });
 });

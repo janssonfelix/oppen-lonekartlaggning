@@ -11,12 +11,12 @@ Dokumentet beskriver den byggda koden. Där det skiljer sig från koden är det 
 | Lager | Var det bor | Ansvar |
 |---|---|---|
 | Sidan | `src/index.html`, `src/style.css` | Skalet, stilmallen och innehållspolicyn (CSP) som bygget gör till en fil. Sidan kör inget från nätet (S1). |
-| Beräkningskärnan | `src/lib/` (46 moduler) | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
+| Beräkningskärnan | `src/lib/` (48 moduler) | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
 | Spegeln | `src/app/09-lib-speglar.js` | Genererad av `tools/gen-mirrors.mjs`. Varje lib-modul är inlinad, med de alias som appen anropar. Redigeras aldrig för hand. |
 | Appen | `src/app/NN-*.js` (86 delar) | Ett enda globalt skript i prefixordning: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
 | Biblioteken | `vendor/` | D3, JSZip, PapaParse och SheetJS, låsta med kontrollsummor i `SHA256SUMS`. Licenserna står i `TREDJEPARTSLICENSER.md`. |
 | Bygget | `tools/` | `build-app.mjs` slår ihop appen, `bundle.mjs` bygger filen och `RELEASE.txt`, `kontroll.mjs` kör hela kedjan. Se [`bygge-och-test.md`](bygge-och-test.md). |
-| Testerna | `tests/` (130 testfiler) | Vitest: enhetstester av `src/lib/`, röktest av appen i jsdom, invarianter för exporterna och vakter för dokument och skydd. Webbläsarröktestet ligger i `tools/browser-smoke/`. |
+| Testerna | `tests/` (131 testfiler) | Vitest: enhetstester av `src/lib/`, röktest av appen i jsdom, invarianter för exporterna och vakter för dokument och skydd. Webbläsarröktestet ligger i `tools/browser-smoke/`. |
 | Leveransen | `dist/`, `.github/workflows/` | `dist/` är det byggda verktyget, genererat och incheckat. CI kräver att ett nytt bygge blir byte-identiskt med det incheckade. |
 
 Appen och kärnan är separerade i två steg: appen läser och visar, kärnan räknar. Mellan dem finns bara de tunna
@@ -43,52 +43,53 @@ adaptrarna, som hämtar tillståndet, anropar en funktion i lib och ger tillbaka
 ## Beräkningskärnans moduler
 
 Tabellen är framtagen maskinellt ur de direkta importerna mellan filerna i `src/lib/`. Modulerna importerar inget
-annat än varandra. `tests/lib-beroenden.test.js` vaktar att grafen är fri från cykler. Ingen vakt jämför tabellen med
-grafen, så en ändrad import ska också ändra tabellen.
+annat än varandra. `tests/lib-beroenden.test.js` vaktar att grafen är fri från cykler och att tabellen stämmer med
+importerna: varje modul står i tabellen med just de moduler den importerar.
 
 | Område | Modul | Importerar från `src/lib/` |
 |---|---|---|
 | Statistik | `stat` | – |
 |  | `rng` | – |
-|  | `osakerhet` | `likvardighet`, `regression`, `rng`, `stat`, `status` |
+|  | `osakerhet` | `kon`, `likvardighet`, `regression`, `rng`, `stat`, `status` |
 |  | `status` | `rng`, `stat` |
-| Regression | `regression` | `namn`, `stat`, `termer` |
-|  | `gapuppdelning` | `falt`, `termer` |
-|  | `livscykel` | `stat`, `status`, `termer` |
-| Lika och likvärdigt arbete | `likvardighet` | `rng`, `stat`, `status` |
-|  | `aidbas` | `likvardighet`, `stat` |
-|  | `perbas` | `aid`, `jamforelse`, `stat`, `termer` |
+| Regression | `regression` | `kon`, `namn`, `stat`, `termer` |
+|  | `gapuppdelning` | `falt`, `namn`, `termer`, `undertryckning` |
+|  | `livscykel` | `kon`, `stat`, `status`, `termer` |
+| Lika och likvärdigt arbete | `likvardighet` | `kon`, `rng`, `stat`, `status` |
+|  | `aidbas` | `kon`, `likvardighet`, `stat` |
+|  | `perbas` | `aid`, `jamforelse`, `kon`, `stat`, `termer`, `undertryckning` |
 |  | `individflaggor` | `falt` |
-| Struktur och rapportmått | `struktur` | `stat` |
-|  | `sektor` | `aid`, `falt`, `regression`, `skrreferens`, `stat`, `termer` |
+| Struktur och rapportmått | `struktur` | `kon`, `stat` |
+|  | `sektor` | `aid`, `falt`, `namn`, `regression`, `skrreferens`, `stat`, `termer`, `undertryckning` |
 | Referenser och jämförelse | `referens` | – |
 |  | `referenser` | `lonepolitik` |
-|  | `lonepolitik` | `stat` |
-|  | `jamforelse` | `aid`, `stat`, `termer` |
+|  | `lonepolitik` | `kon`, `stat` |
+|  | `jamforelse` | `aid`, `kon`, `stat`, `termer` |
 |  | `skrreferens` | `aid`, `skr-personal` |
 |  | `skr-personal` | – |
-| Simulering och prioritering | `prioritering` | `kostnad`, `stat` |
+| Simulering och prioritering | `prioritering` | `aid`, `kon`, `kostnad`, `stat` |
 |  | `kostnad` | – |
-|  | `loneoversyn` | `kostnad`, `likvardighet`, `stat` |
+|  | `loneoversyn` | `kon`, `kostnad`, `likvardighet`, `stat` |
 | Klassificering | `aid` | `aid-etiketter`, `termer` |
 |  | `aid-etiketter` | – |
 |  | `aidkontroll` | `aid`, `stat`, `termer` |
 |  | `ansvar` | `falt`, `stat` |
 | Indata och format | `inlasning` | `ansvar` |
-|  | `falt` | `aid`, `termer` |
+|  | `falt` | `aid`, `kon`, `termer` |
+|  | `kon` | – |
 |  | `importprofiler` | – |
 |  | `forhandskontroll` | `termer` |
 |  | `datakvalitet` | `falt`, `namn`, `termer` |
 |  | `organisationsfil` | – |
 |  | `organisationspaket` | `importprofiler`, `installningsgranser`, `perbas`, `tabellrecept`, `termer` |
 |  | `installningsgranser` | – |
-| Skydd för små grupper | (ingen egen modul) | – |
+| Skydd för små grupper | `undertryckning` | – |
 | Språk | `termer` | – |
 |  | `namn` | `termer` |
 |  | `htmltext` | – |
-| Diagram, rapport och utforskning | `figur` | `stat` |
+| Diagram, rapport och utforskning | `figur` | `kon`, `stat` |
 |  | `docx` | `htmltext` |
-|  | `rapportunderlag` | `aidbas`, `gapuppdelning`, `jamforelse`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `termer` |
+|  | `rapportunderlag` | `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `termer` |
 |  | `arsbokslut` | `sakligaskal`, `stat`, `termer` |
 |  | `tabellrecept` | `namn`, `termer`, `utforska` |
 |  | `utforska` | `aid`, `falt`, `stat`, `termer`, `urval` |
@@ -96,10 +97,11 @@ grafen, så en ändrad import ska också ändra tabellen.
 |  | `sakligaskal` | – |
 |  | `attgora` | `namn`, `termer` |
 
-Skyddet för små grupper har ingen egen modul. Regeln bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot
-tröskeln som en parameter: `prioritera` (`kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och
-`computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`) och `loneoversyn` (den gällande tröskeln). Lägena och
-vad som räknas med vilken tröskel står i [`k-troskeln.md`](k-troskeln.md).
+Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter:
+`prioritera` (`kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`) och `loneoversyn` (den gällande tröskeln). Lägena och
+vad som räknas med vilken tröskel står i [`k-troskeln.md`](k-troskeln.md). Modulen `undertryckning` har de två
+reglerna för vad som döljs eller räknas samman utöver de små grupperna själva: kompletterande undertryckning (ADR-83) och
+sammanslagning av delar där ett kön är för litet (ADR-87).
 
 Termerna ligger i `termer`; `namn` formar namnen på organisationen och ordformerna, och `htmltext` gör HTML till vanlig
 text. Språket i det användaren läser prövas av de vakter som nämns i [`principer.md`](principer.md) (princip 6).
