@@ -262,8 +262,8 @@ function _evidenceForPerBasRow(p, bhCtx) {
     return {
         title: `Beräkningen — BAS ${p.bas} (per-BAS-regression)`,
         intro: harAlder()
-            ? `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
-            : `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
+            ? `Inom BAS ${esc(p.bas)} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
+            : `Inom BAS ${esc(p.bas)} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
         rows: [
             { label: termStor(T.niva.en),          value: p.bas },
             { label: 'Antal totalt',           value: p.n.toLocaleString('sv-SE') },

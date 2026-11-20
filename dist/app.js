@@ -9865,7 +9865,9 @@ const __mirrorPerBas = (() => {
  *
  * Minsta gruppstorlek (k) tillämpas här: en yrkesgrupp, ett BAS-intervall eller en åldersgrupp med färre än
  * k personer får ingen lönerad, och könsuppdelade mått visas bara när båda könen når k. De utelämnade
- * räknas upp så att rapporten säger vad den inte redovisar.
+ * räknas upp så att rapporten säger vad den inte redovisar. Raden Alla och organisationens rad räknas på hela
+ * underlaget, så att en utelämnad grupps medellön inte ska gå att räkna fram som en differens undertrycks vid behov
+ * också medelvärdena för en visad grupp (kompletterande undertryckning, ADR-83, `kompletterandeUndertryckning`).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -9909,6 +9911,38 @@ const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length 
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), p25: quantile(l, 0.25), med: median(l), p75: quantile(l, 0.75), p90: quantile(l, 0.9), medel: _medel(l) } : null; };
+
+/**
+ * Kompletterande undertryckning (ADR-83, `docs/utveckling/k-troskeln.md` avsnitt 2): vilka visade delar vars
+ * medelvärden också ska undertryckas, så att en total minus de visade delarna aldrig ger medelvärdet för färre än k
+ * personer.
+ *
+ * Delarna är en uppdelning av totalen; `dold` är en del som redan utelämnas eller undertrycks. Omfattar de dolda
+ * tillsammans 0 eller minst k personer ändras ingenting. Annars väljs den minsta visade delen (färst personer, vid lika
+ * antal först efter namn och sedan ordningen i listan), och så vidare tills de dolda tillsammans når k. Räcker inte
+ * alla delar väljs alla, och bara totalen har ett medelvärde. Delar utan personer (n ≤ 0) väljs aldrig.
+ *
+ * Funktionen är allmän: den vet inte vad delarna är (BAS-intervall, AID-etiketter, ett köns del av ett intervall).
+ * Antal och andelar berörs inte (ADR-70), och medianer och percentiler inte heller (de går inte att dela upp).
+ * @param {Array<{n:number, dold?:boolean, namn?:string}>} delar
+ * @param {number} k
+ * @returns {number[]} index i `delar` för de visade delar som ska undertryckas, i den ordning de valdes
+ */
+function kompletterandeUndertryckning(delar, k) {
+    let dolda = 0;
+    for (const d of delar) if (d.dold) dolda += d.n;
+    if (dolda <= 0 || dolda >= k) return [];
+    const kandidater = delar.map((d, i) => ({ n: d.n, namn: String(d.namn ?? ''), i }))
+        .filter(d => !delar[d.i].dold && d.n > 0)
+        .sort((a, b) => a.n - b.n || a.namn.localeCompare(b.namn, 'sv') || a.i - b.i);
+    const ut = [];
+    for (const d of kandidater) {
+        if (dolda >= k) break;
+        ut.push(d.i);
+        dolda += d.n;
+    }
+    return ut;
+}
 
 /** Yrkesgruppens namn: AID-koden och etiketten. */
 function yrkesnamn(r) {
@@ -9957,67 +9991,109 @@ function perBasTabeller(rader, opt = {}) {
     // Statistikens gemensamma uppslag (jamforelse.js): samma AID och BAS, annars samma AID utan BAS.
     const statFor = (aid, bas) => statistikFor(statistik, aid, bas)?.rad || null;
 
+    const perDim = new Map(basar.map(b => [b, d.filter(r => dimAv(r) === b)]));
+    const raderI = b => perDim.get(b) || [];
+    const basUtelamnade = basar.filter(b => raderI(b).length < k);
+    const visadeBas = basar.filter(b => raderI(b).length >= k);
+    const nKvI = b => raderI(b).filter(_arKv).length, nMaI = b => raderI(b).filter(_arMa).length;
+    const konVisasI = b => nKvI(b) >= k && nMaI(b) >= k;
+    const harMedel = recept.matt.includes('medel');
+
+    // Kompletterande undertryckning (ADR-83). Raden Alla i tabellerna inom likvärdigt arbete och i åldersgrupper räknas
+    // på hela underlaget; omfattar de utelämnade intervallen färre än k personer undertrycks medelvärdena för de minsta
+    // visade intervallen, i alla tabellerna (också organisationens rad, yrkesgrupperna och könsraderna i intervallets
+    // tabell, som annars ger intervallets medellön tillbaka). Raden Alla bär bara medelvärden i de två tabellerna.
+    const allaVisas = recept.konsgap || (recept.aldersgrupper && harAlder);
+    const medelDolda = new Set(allaVisas
+        ? kompletterandeUndertryckning(basar.map(b => ({ namn: b, n: raderI(b).length, dold: raderI(b).length < k })), k).map(i => basar[i])
+        : []);
+    // Samma regel per kön: medellön per kön på raden Alla minus de visade intervallens ger de dolda könscellernas
+    // gemensamma medellön, och den ska omfatta minst k personer av det könet. Ett intervall vars könsmedel döljs ger
+    // också via sin medellön för alla den andra könets dolda celler, så båda könens medel döljs tillsammans.
+    const konDolda = new Set();
+    if (recept.konsgap && d.filter(_arKv).length >= k && d.filter(_arMa).length >= k) {
+        for (const antal of [nKvI, nMaI]) {
+            const delar = basar.map(b => ({ namn: b, n: antal(b), dold: raderI(b).length < k || medelDolda.has(b) || !konVisasI(b) || konDolda.has(b) }));
+            kompletterandeUndertryckning(delar, k).forEach(i => konDolda.add(basar[i]));
+        }
+    }
+    const utanMedel = r => ({ ...r, medel: null });
+
     const intervall = [];
-    const basUtelamnade = [];
-    for (const bas of basar) {
-        const df = d.filter(r => dimAv(r) === bas);
-        if (df.length < k) { basUtelamnade.push(bas); continue; }
+    for (const bas of visadeBas) {
+        const df = raderI(bas);
+        const medelDold = medelDolda.has(bas), konMedelDold = konDolda.has(bas);
         const rad = [];
         const utelamnade = [];
         const ref = recept.dim === 'bas' && visa.has('referens') ? referens(null, bas) : null;
         if (ref && (ref.p10 != null || ref.med != null || ref.p90 != null)) rad.push({ typ: 'referens', namn: referensNamn, n: null, p10: ref.p10 ?? null, med: ref.med ?? null, p90: ref.p90 ?? null });
         const org = visa.has('organisation') ? _matt(df) : null;
-        if (org) rad.push({ typ: 'organisation', namn: 'Organisationen', ...org });
+        if (org) rad.push({ typ: 'organisation', namn: 'Organisationen', ...(medelDold ? utanMedel(org) : org) });
         // Yrkesgrupperna, största först; under varje yrke dess rad i jämförelsestatistiken.
         const perYrke = new Map();
         df.forEach(r => { const key = String(r.aid ?? r.yrke ?? ''); if (!perYrke.has(key)) perYrke.set(key, []); perYrke.get(key).push(r); });
         const yrken = [...perYrke.entries()].sort((a, b) => b[1].length - a[1].length || yrkesnamn(a[1][0]).localeCompare(yrkesnamn(b[1][0]), 'sv'));
-        for (const [key, rows] of yrken) {
-            if (!visa.has('yrken')) break;
+        // Organisationens rad minus yrkesgruppernas ger de utelämnade yrkesgruppernas medellön: samma regel inom intervallet.
+        // En yrkesgrupp utan någon lön har inget medel och räknas varken som visad eller som dold.
+        const yrkesMatt = visa.has('yrken') ? yrken.map(([, rows]) => (rows.length >= k ? _matt(rows) : null)) : [];
+        const yrkenDolda = new Set(visa.has('yrken') && !medelDold
+            ? kompletterandeUndertryckning(yrken.map(([, rows], i) => ({ namn: yrkesnamn(rows[0]), n: rows.length < k || yrkesMatt[i] ? rows.length : 0, dold: rows.length < k || !yrkesMatt[i] })), k)
+            : []);
+        const undertryckta = [];
+        yrken.forEach(([key, rows], i) => {
+            if (!visa.has('yrken')) return;
             const namn = yrkesnamn(rows[0]);
-            if (rows.length < k) { utelamnade.push(namn); continue; }
-            const m = _matt(rows);
-            if (!m) continue;
-            rad.push({ typ: 'yrke', namn, aid: key, ...m });
+            if (rows.length < k) { utelamnade.push(namn); return; }
+            const m = yrkesMatt[i];
+            if (!m) return;
+            const dold = medelDold || yrkenDolda.has(i);
+            if (yrkenDolda.has(i)) undertryckta.push(namn);
+            rad.push({ typ: 'yrke', namn, aid: key, ...(dold ? utanMedel(m) : m) });
             const s = visa.has('statistik') && rows[0].aid != null && recept.dim === 'bas' ? statFor(rows[0].aid, bas) : null;
             if (s && s.median > 0) rad.push({ typ: 'statistik', namn: `${statistikNamn}: ${namn}`, aid: key, n: null, p10: s.p10 ?? null, med: s.median, p90: s.p90 ?? null });
-        }
+        });
         const kv = df.filter(_arKv), ma = df.filter(_arMa);
         const konVisas = kv.length >= k && ma.length >= k;
         if (konVisas) {
             const mk = visa.has('kvinnor') ? _matt(kv) : null, mm = visa.has('man') ? _matt(ma) : null;
-            if (mk) rad.push({ typ: 'kvinnor', namn: 'Kvinnor', ...mk });
-            if (mm) rad.push({ typ: 'man', namn: 'Män', ...mm });
+            const konDold = medelDold || konMedelDold;
+            if (mk) rad.push({ typ: 'kvinnor', namn: 'Kvinnor', ...(konDold ? utanMedel(mk) : mk) });
+            if (mm) rad.push({ typ: 'man', namn: 'Män', ...(konDold ? utanMedel(mm) : mm) });
         }
-        intervall.push({ bas, n: df.length, nKv: kv.length, nMa: ma.length, rader: rad, utelamnade, konVisas, antalYrken: perYrke.size });
+        // Noterna gäller bara när tabellen visar måttet Medellön; medelvärdena är tomma oavsett.
+        intervall.push({ bas, n: df.length, nKv: kv.length, nMa: ma.length, rader: rad, utelamnade, konVisas, antalYrken: perYrke.size,
+            undertryckta: harMedel ? undertryckta : [], medelUndertryckt: harMedel && medelDold,
+            konMedelUndertryckt: harMedel && konVisas && !medelDold && konMedelDold && (visa.has('kvinnor') || visa.has('man')) });
     }
 
     // Könsgap och ålder per BAS, med raden Alla först.
-    const konsgapRad = (namn, rows) => {
+    const konsgapRad = (namn, rows, medelDold = false, konDold = false) => {
         const kv = rows.filter(_arKv), ma = rows.filter(_arMa);
         const konVisas = kv.length >= k && ma.length >= k;
-        const medel = _medel(_loner(rows)), medelKv = konVisas ? _medel(_loner(kv)) : null, medelMa = konVisas ? _medel(_loner(ma)) : null;
+        const konMedel = konVisas && !medelDold && !konDold;
+        const medel = medelDold ? null : _medel(_loner(rows)), medelKv = konMedel ? _medel(_loner(kv)) : null, medelMa = konMedel ? _medel(_loner(ma)) : null;
         return {
             bas: namn, n: rows.length, medel, medelMa, medelKv,
-            kvot: konVisas && medelMa != null && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
+            kvot: konMedel && medelMa != null && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
             andelKv: rows.length ? kv.length / rows.length * 100 : null,
-            alder: harAlder ? _medel(_aldrar(rows)) : null, alderMa: harAlder && konVisas ? _medel(_aldrar(ma)) : null,
-            alderKv: harAlder && konVisas ? _medel(_aldrar(kv)) : null,
+            alder: harAlder && !medelDold ? _medel(_aldrar(rows)) : null, alderMa: harAlder && konMedel ? _medel(_aldrar(ma)) : null,
+            alderKv: harAlder && konMedel ? _medel(_aldrar(kv)) : null,
             konVisas
         };
     };
-    const visadeBas = basar.filter(b => !basUtelamnade.includes(b));
-    const konsgap = { rader: [konsgapRad('Alla', d), ...visadeBas.map(b => konsgapRad(b, d.filter(r => dimAv(r) === b)))] };
+    const konsgap = { rader: [konsgapRad('Alla', d), ...visadeBas.map(b => konsgapRad(b, raderI(b), medelDolda.has(b), konDolda.has(b)))],
+        undertryckta: visadeBas.filter(b => medelDolda.has(b)), konUndertryckta: visadeBas.filter(b => konDolda.has(b) && !medelDolda.has(b) && konVisasI(b)) };
 
     const grupper = aldersgruppNamn(granser);
-    const aldersRad = (namn, rows) => {
+    const aldersRad = (namn, rows, medelDold = false) => {
         /** @type {any[][]} */
         const per = grupper.map(() => []);
         rows.forEach(r => { if (typeof r.alder === 'number' && isFinite(r.alder) && r.alder > 0) per[_aldersgrupp(r.alder, granser)].push(r); });
-        return { bas: namn, n: rows.length, alder: _medel(_aldrar(rows)), medel: _medel(_loner(rows)),
-            perGrupp: per.map(g => (g.length >= k ? _medel(_loner(g)) : null)), antalPerGrupp: per.map(g => g.length) };
+        return { bas: namn, n: rows.length, alder: medelDold ? null : _medel(_aldrar(rows)), medel: medelDold ? null : _medel(_loner(rows)),
+            perGrupp: per.map(g => (g.length >= k && !medelDold ? _medel(_loner(g)) : null)), antalPerGrupp: per.map(g => g.length) };
     };
-    const aldersgrupper = { grupper, rader: [aldersRad('Alla', d), ...visadeBas.map(b => aldersRad(b, d.filter(r => dimAv(r) === b)))] };
+    const aldersgrupper = { grupper, rader: [aldersRad('Alla', d), ...visadeBas.map(b => aldersRad(b, raderI(b), medelDolda.has(b)))],
+        undertryckta: visadeBas.filter(b => medelDolda.has(b)) };
 
     return { k, recept, dim: recept.dim, dimEtikett: stor(recept.dim === 'sektor' ? T.huvudomrade.en : T.niva.en), intervall, basUtelamnade, harAlder,
              konsgap: recept.konsgap ? konsgap : null, aldersgrupper: recept.aldersgrupper && harAlder ? aldersgrupper : null };
@@ -11097,6 +11173,114 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
 const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
 const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 
+// ---- speglar src/lib/installningsgranser.js ----
+const __mirrorInstallningsgranser = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — gränserna för inställningarna, på ett ställe.
+ *
+ * Samma gräns gäller på tre ställen: fältet i Inställningar (appen), konfigurationsfilen (appen, applyConfigSnapshot)
+ * och organisationspaketet (src/lib/organisationspaket.js). Här står siffrorna, och de tre läser dem härifrån. Gränserna
+ * är de som fälten redan använder (min/max i index.html och fältens tak i koden); en ny gräns hör inte hit utan till
+ * fältet först.
+ *
+ * Appen når gränserna genom installningsGrans(nyckel): spegelns alias måste vara funktioner (tests/drift.test.js).
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+const MB = 1024 * 1024;
+
+/** Högsta tillåtna filstorlek i byte, per filtyp. Organisationspaketet är samma gräns som förut (5 MB). */
+const FIL_MAX = Object.freeze({
+    lonefil: 50 * MB,
+    stallningstagande: 20 * MB,
+    jamforelsestatistik: 20 * MB,
+    konfiguration: 5 * MB,
+    paket: 5 * MB
+});
+
+/** Påslaget för PO (arbetsgivaravgifter och pension) i procent: fältet i Inställningar och konfigurationen. */
+const PO_PCT_GRANS = Object.freeze({ min: 0, max: 100 });
+
+/** Beräkningsperioden i månader (fältet i Inställningar tar värdena 3, 6, 9 och 12; gränsen gäller konfigurationen). */
+const MANADER_GRANS = Object.freeze({ min: 1, max: 60 });
+
+/** Prioriteringens trösklar, per fältnamn i prioConfig (fälten prio-cfg-* i Inställningar). */
+const PRIO_TROSKEL_GRANS = Object.freeze({
+    atgardThreshold:    Object.freeze({ min: -50, max: 0 }),
+    akutMinN:           Object.freeze({ min: 1, max: 500 }),
+    bevakaThreshold:    Object.freeze({ min: -50, max: 0 }),
+    analyseraThreshold: Object.freeze({ min: 0, max: 50 })
+});
+
+/** Prioriteringens viktning, per fältnamn i prioWeights (fälten prio-w-* i Inställningar). */
+const PRIO_VIKT_GRANS = Object.freeze({
+    avvikelse:    Object.freeze({ min: 0, max: 100 }),
+    volym:        Object.freeze({ min: 0, max: 100 }),
+    jamstalldhet: Object.freeze({ min: 0, max: 100 })
+});
+
+/** @typedef {{min:number, max:number}} Grans */
+/** @type {Readonly<{poPct: Grans, manader: Grans, prioTroskel: Readonly<Record<string, Grans>>, prioVikt: Readonly<Record<string, Grans>>, fil: Readonly<Record<string, number>>}>} */
+const _GRANSER = Object.freeze({
+    poPct: PO_PCT_GRANS,
+    manader: MANADER_GRANS,
+    prioTroskel: PRIO_TROSKEL_GRANS,
+    prioVikt: PRIO_VIKT_GRANS,
+    fil: FIL_MAX
+});
+
+/**
+ * Gränsen (eller gränserna per fältnamn) för en inställning: 'poPct', 'manader', 'prioTroskel', 'prioVikt' eller
+ * 'fil' (högsta filstorlek per filtyp, i byte).
+ * @template {keyof typeof _GRANSER} K
+ * @param {K} nyckel
+ * @returns {(typeof _GRANSER)[K]}
+ */
+function installningsGrans(nyckel) {
+    if (!Object.prototype.hasOwnProperty.call(_GRANSER, nyckel)) throw new Error(`Okänd inställning: ${nyckel}`);
+    return _GRANSER[nyckel];
+}
+
+/**
+ * Ligger ett värde inom sin gräns? Ett värde som inte är ett ändligt tal ligger utanför.
+ * @param {unknown} varde
+ * @param {{min:number, max:number}} grans
+ * @returns {boolean}
+ */
+function arInomGrans(varde, grans) {
+    return typeof varde === 'number' && Number.isFinite(varde) && varde >= grans.min && varde <= grans.max;
+}
+
+/** Hur filtypen heter i meddelandet om att den är för stor. */
+const _FIL_NAMN = Object.freeze({
+    lonefil: 'Lönefilen',
+    stallningstagande: 'Filen med ställningstagandet',
+    jamforelsestatistik: 'Filen med jämförelsestatistiken',
+    konfiguration: 'Konfigurationsfilen'
+});
+
+/**
+ * Felmeddelandet för en fil som är för stor, eller null när filen får läsas in. Prövas på filens storlek (byte) innan
+ * filen läses; en okänd storlek (NaN, undefined) räknas inte som för stor.
+ * @param {number} storlek - filens storlek i byte (File.size)
+ * @param {keyof typeof _FIL_NAMN} typ
+ * @returns {string | null}
+ */
+function filStorlekFel(storlek, typ) {
+    const grans = FIL_MAX[typ];
+    if (!(storlek > grans)) return null;
+    return `${_FIL_NAMN[typ]} är för stor för att läsas in (högst ${grans / MB} MB).`;
+}
+
+    return { installningsGrans, arInomGrans, filStorlekFel };
+})();
+const _igGrans = __mirrorInstallningsgranser.installningsGrans;
+const _igInomGrans = __mirrorInstallningsgranser.arInomGrans;
+const _igFilFel = __mirrorInstallningsgranser.filStorlekFel;
+
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -11105,6 +11289,7 @@ const __mirrorOrganisationspaket = (() => {
     const perBasReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
     const valideraImportprofiler = __mirrorImportprofiler.valideraImportprofiler;
     const skapaTermer = __mirrorTermer.skapaTermer;
+    const installningsGrans = __mirrorInstallningsgranser.installningsGrans;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -11124,13 +11309,14 @@ const __mirrorOrganisationspaket = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 
 const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 const PAKET_VERSION = 1;
-const PAKET_MAX_BYTE = 5 * 1024 * 1024;
+const PAKET_MAX_BYTE = installningsGrans('fil').paket;   // gränsen bor i installningsgranser.js
 
 const MAX_TEXT = 200;
 const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
@@ -11221,7 +11407,7 @@ function byggPaket(u) {
             organisationstyp: _orgTyp(p.orgTyp),
         }),
         installningar: _utanTomma({
-            poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
+            poPct: _tal(inst.poPct, installningsGrans('poPct').min, installningsGrans('poPct').max), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
             // Låsningarna (ADR-47): bara giltiga värden följer med; en låsning av rensningstiden kräver ett värde över 0.
             kTroskelLagst: _kTroskel(inst.kTroskelLagst),
             inaktivitetMin: _inaktivitet(inst.inaktivitetMin),
@@ -11378,7 +11564,7 @@ function tolkaPaket(text) {
             profil: _utanTomma({ name: organisation, benchmarkLabel: _text(p.jamforelseNamn),
                 benchmarkLabelGenitive: _text(p.jamforelseGenitiv), benchmarkShort: _text(p.jamforelseKort),
                 basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem), orgTyp: _orgTyp(p.organisationstyp) }),
-            installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
+            installningar: _utanTomma({ poPct: _tal(inst.poPct, installningsGrans('poPct').min, installningsGrans('poPct').max), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
                 jamforelse: _jamforelse(inst.jamforelse) }),
             referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
             statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,
@@ -18906,6 +19092,8 @@ function _applyConfigSnapshot(cfg) {
         ['atgardThreshold', 'akutMinN', 'bevakaThreshold', 'analyseraThreshold'].forEach(k => {
             if (cfg.prioConfig[k] != null && typeof cfg.prioConfig[k] !== 'number')
                 throw new Error(`prioConfig.${k} måste vara ett nummer, fick ${typeof cfg.prioConfig[k]}.`);
+            if (cfg.prioConfig[k] != null && !_igInomGrans(cfg.prioConfig[k], _igGrans('prioTroskel')[k]))
+                throw new Error(`prioConfig.${k} måste vara ett tal mellan ${_igGrans('prioTroskel')[k].min} och ${_igGrans('prioTroskel')[k].max}.`);
         });
         tmp.prioConfig = { ...PRIO_CONFIG_DEFAULTS, ...cfg.prioConfig };
     }
@@ -18915,16 +19103,18 @@ function _applyConfigSnapshot(cfg) {
         ['avvikelse', 'volym', 'jamstalldhet'].forEach(k => {
             if (cfg.prioWeights[k] != null && typeof cfg.prioWeights[k] !== 'number')
                 throw new Error(`prioWeights.${k} måste vara ett nummer.`);
+            if (cfg.prioWeights[k] != null && !_igInomGrans(cfg.prioWeights[k], _igGrans('prioVikt')[k]))
+                throw new Error(`prioWeights.${k} måste vara ett tal mellan ${_igGrans('prioVikt')[k].min} och ${_igGrans('prioVikt')[k].max}.`);
         });
         tmp.prioWeights = { ...PRIO_WEIGHTS_DEFAULTS, ...cfg.prioWeights };
     }
     // costSettings: numeriska + bounds
     if (cfg.costSettings != null) {
         if (typeof cfg.costSettings !== 'object') throw new Error('costSettings är inte ett objekt.');
-        if (cfg.costSettings.poPct != null && (typeof cfg.costSettings.poPct !== 'number' || cfg.costSettings.poPct < 0 || cfg.costSettings.poPct > 200))
-            throw new Error('costSettings.poPct måste vara ett tal mellan 0 och 200.');
-        if (cfg.costSettings.months != null && (typeof cfg.costSettings.months !== 'number' || cfg.costSettings.months < 1 || cfg.costSettings.months > 60))
-            throw new Error('costSettings.months måste vara ett tal mellan 1 och 60.');
+        if (cfg.costSettings.poPct != null && !_igInomGrans(cfg.costSettings.poPct, _igGrans('poPct')))
+            throw new Error(`costSettings.poPct måste vara ett tal mellan ${_igGrans('poPct').min} och ${_igGrans('poPct').max}.`);
+        if (cfg.costSettings.months != null && !_igInomGrans(cfg.costSettings.months, _igGrans('manader')))
+            throw new Error(`costSettings.months måste vara ett tal mellan ${_igGrans('manader').min} och ${_igGrans('manader').max}.`);
         tmp.costSettings = { ...COST_DEFAULTS, ...cfg.costSettings };
     }
     // bristAids: array av strängar
@@ -19238,6 +19428,14 @@ document.getElementById('btn-config-save')?.addEventListener('click', () => {
 document.getElementById('btn-config-load')?.addEventListener('change', e => {
     const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
     if (!file) return;
+    const status = document.getElementById('config-status');
+    // Storleken prövas innan filen läses: en för stor fil tolkas inte alls.
+    const storlekFel = _igFilFel(file.size, 'konfiguration');
+    if (storlekFel) {
+        if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
+        /** @type {HTMLInputElement} */ (e.target).value = '';
+        return;
+    }
     const reader = new FileReader();
     reader.onload = ev => {
         try {
@@ -20583,12 +20781,14 @@ function _excelPerBasRader() {
     const matt = pb.recept.matt;
     const per = pb.dim === 'sektor' ? T.huvudomrade.en : T.niva.en, kort = pb.dim === 'sektor' ? termStor(T.huvudomrade.en) : 'BAS';
     const rows = [[`Lönestruktur per ${per}`, `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
+    const undertryckNoter = rmPerBasUndertryckNoter(pb, pb.k);
     for (const i of pb.intervall) {
         rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} ${termForAntal(i.antalYrken, T.enhet)}`]);
         rows.push(['Grupp', 'Antal', ...matt.map(m => MATT[m])]);
         i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, ...matt.map(m => tal(r[m]))]));
         if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} ${personOrd(pb.k)}): ${i.utelamnade.join(', ')}`]);
         if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} ${personOrd(pb.k)}`]);
+        undertryckNoter.intervall(i).forEach(t => rows.push([t]));
         rows.push([]);
     }
     if (pb.basUtelamnade.length) rows.push([`${pb.dimEtikett} som inte redovisas (färre än ${pb.k} ${personOrd(pb.k)}): ${pb.basUtelamnade.join(', ')}`], []);
@@ -20598,6 +20798,7 @@ function _excelPerBasRader() {
     rows.push([`Löneskillnader inom likvärdigt arbete, per ${per}`]);
     rows.push(['BAS', 'Antal', 'Medellön alla', 'Medellön män', 'Medellön kvinnor', 'Kvinnors medellön i % av mäns', 'Andel kvinnor (%)', ...(medAlder ? ['Medelålder alla', 'Medelålder män', 'Medelålder kvinnor'] : [])]);
     pb.konsgap.rader.forEach(r => rows.push([r.bas, r.n, tal(r.medel), tal(r.medelMa), tal(r.medelKv), pct(r.kvot), pct(r.andelKv), ...(medAlder ? [tal(r.alder), tal(r.alderMa), tal(r.alderKv)] : [])]));
+    undertryckNoter.konsgap.forEach(t => rows.push([t]));
     rows.push([]);
     }
     if (pb.recept.aldersgrupper && pb.harAlder === false) rows.push(['Löneskillnader i åldersgrupper redovisas inte: lönefilen saknar ålder.']);
@@ -20605,6 +20806,7 @@ function _excelPerBasRader() {
     rows.push([`Löneskillnader i åldersgrupper, per ${per}`]);
     rows.push(['BAS', 'Antal', 'Medelålder', 'Medellön alla', ...pb.aldersgrupper.grupper.map(g => `Medellön ${g} år`)]);
     pb.aldersgrupper.rader.forEach(r => rows.push([r.bas, r.n, tal(r.alder), tal(r.medel), ...r.perGrupp.map(tal)]));
+    undertryckNoter.aldersgrupper.forEach(t => rows.push([t]));
     }
     return rows;
 }
@@ -21695,8 +21897,8 @@ function _evidenceForPerBasRow(p, bhCtx) {
     return {
         title: `Beräkningen — BAS ${p.bas} (per-BAS-regression)`,
         intro: harAlder()
-            ? `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
-            : `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
+            ? `Inom BAS ${esc(p.bas)} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
+            : `Inom BAS ${esc(p.bas)} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
         rows: [
             { label: termStor(T.niva.en),          value: p.bas },
             { label: 'Antal totalt',           value: p.n.toLocaleString('sv-SE') },
@@ -22063,7 +22265,7 @@ document.getElementById('data-residency-modal')?.addEventListener('click', e => 
 // den i ett steg (lasInPaket). Tolkning och validering bor i src/lib/organisationspaket.js
 // (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
 
-const PAKET_MAX_FILSTORLEK = 5 * 1024 * 1024;   // samma gräns som i src/lib/organisationspaket.js
+const PAKET_MAX_FILSTORLEK = _igGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
 // Rensning vid inaktivitet i paketet: 0 (av) eller 5–120 minuter (samma gränser som i src/lib/organisationspaket.js).
 const PAKET_INAKTIVITET_MIN = 5;
 const PAKET_INAKTIVITET_MAX = 120;
@@ -23576,12 +23778,16 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
  * @param {(res: {ok:true, format:string, encoding:string, headers:string[],
  *                rows:Array<Object<string,string>>}
  *             | {ok:false, error:string}) => void} utfall
+ * @param {'stallningstagande'|'jamforelsestatistik'} typ - filtypen, som bestämmer storleksgränsen (FIL_MAX)
  */
-function readTabularFile(file, synonymGroups, utfall) {
+function readTabularFile(file, synonymGroups, utfall, typ) {
     // En fil som blivit läst kan ändra det som visas, hur det än gick: ingen ritad flik visas igen som den är (ADR-81).
     /** @type {typeof utfall} */
     const callback = res => { try { utfall(res); } finally { visningNy(); } };
     if (!file) { callback({ ok: false, error: 'Ingen fil vald.' }); return; }
+    // Storleken prövas innan filen läses eller tolkas.
+    const storlekFel = _igFilFel(file.size, typ);
+    if (storlekFel) { callback({ ok: false, error: storlekFel }); return; }
     const reader = new FileReader();
     reader.onerror = () => callback({ ok: false, error: 'Kunde inte läsa filen.' });
     reader.onload = () => {
@@ -23621,6 +23827,9 @@ function readTabularFile(file, synonymGroups, utfall) {
 
 function loadStructureFile(file) {
     if (!file) return;
+    // Storleken prövas innan filen läses eller tolkas: en för stor fil lämnar det som var inläst orört.
+    const storlekFel = _igFilFel(file.size, 'lonefil');
+    if (storlekFel) { dataStatus.textContent = storlekFel; dataStatus.className = 'status-msg'; return; }
     const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
     // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
@@ -27067,7 +27276,7 @@ policyInput.addEventListener("change", e => {
         renderActionChecklist();
         renderProcessTracker();
         if (getData().length > 0) generateRapport();
-    });
+    }, 'stallningstagande');
 });
 
 // Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
@@ -27194,7 +27403,7 @@ statInput.addEventListener("change", e => {
             statStatus.textContent = "Fel: " + err.message;
             statStatus.className = "status-msg error";
         }
-    });
+    }, 'jamforelsestatistik');
 });
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -31609,10 +31818,10 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
             { label: 'Förändring 25–65 år',                     value: (result.gapDelta >= 0 ? '+' : '') + svTal(result.gapDelta, 2) + ' procentenheter', note: 'Kvinnors lön mot mäns; minus betyder att kvinnorna halkar efter.' }
         ],
         formula: `<strong>Beräkning av predikterad lön per BAS:</strong><br>
-            För referens-BAS "${result.fixBas}" beräknas direkt från modellen:<br>
+            För referens-BAS "${esc(result.fixBas)}" beräknas direkt från modellen:<br>
             ln(lön) = β₀ + β_kön·isKv + β_ålder·(ålder−medel) + β_ålder²·(ålder−medel)² + β_kön×ålder·... + Σβ_BAS·dummies<br><br>
             För andra BAS ger modellens BAS-koefficient nivån:<br>
-            lön(BAS) = lön(${result.fixBas}) × <em>exp(β_BAS − β_${result.fixBas})</em><br><br>
+            lön(BAS) = lön(${esc(result.fixBas)}) × <em>exp(β_BAS − β_${esc(result.fixBas)})</em><br><br>
             <em>Obs! Modellen är additiv: ${T.niva.bf} påverkar lönenivån men inte hur skillnaden utvecklas. Därför är skillnaden i procent densamma i alla ${T.niva.fl}, medan beloppet i kronor skiljer eftersom lönenivåerna skiljer.</em>`,
         footer: `Livscykelmodellen låter skillnaden variera med åldern (via samspelet mellan kön och ålder). Är samspelet inte signifikant (p minst 0,10) är skillnaden i praktiken densamma, och då räcker huvudregressionen. Är det signifikant behöver du överväga åtgärder som rör karriären.`
     };
@@ -32334,8 +32543,8 @@ function _readCostSettings() {
     const months   = monthsEl ? parseInt(/** @type {HTMLInputElement} */ (monthsEl).value, 10) || COST_DEFAULTS.months : COST_DEFAULTS.months;
     const poPct    = poEl ? parseFloat(/** @type {HTMLInputElement} */ (poEl).value) : COST_DEFAULTS.poPct;
     state.costSettings = {
-        months: Math.max(1, Math.min(60, months)),
-        poPct:  Math.max(0, Math.min(100, isNaN(poPct) ? COST_DEFAULTS.poPct : poPct))
+        months: Math.max(_igGrans('manader').min, Math.min(_igGrans('manader').max, months)),
+        poPct:  Math.max(_igGrans('poPct').min, Math.min(_igGrans('poPct').max, isNaN(poPct) ? COST_DEFAULTS.poPct : poPct))
     };
     const sum = document.getElementById('prio-cost-summary');
     if (sum) {
@@ -33427,6 +33636,31 @@ function rmPerBasUnderlag(d, k) {
 }
 
 /**
+ * Noterna om kompletterande undertryckning (ADR-83) i avsnittet per BAS-intervall: vilka medelvärden som inte
+ * redovisas och varför. Samma text i Word, PDF och Excel; vilka grupper det gäller kommer ur src/lib/perbas.js.
+ * @param {any} pb resultatet från rmPerBasUnderlag
+ * @param {number} k
+ */
+function rmPerBasUndertryckNoter(pb, k) {
+    const kort = pb.dim === 'sektor' ? T.huvudomrade.en : 'BAS';
+    const medel = pb.harAlder !== false ? 'Medellön och medelålder' : 'Medellön';
+    const grupp = `Annars skulle medellönen för en grupp med färre än ${k} ${personOrd(k)} gå att räkna fram`;
+    const kon = `Annars skulle medellönen för färre än ${k} kvinnor eller män gå att räkna fram`;
+    const kg = pb.konsgap, ag = pb.aldersgrupper;
+    return {
+        konsgap: kg ? [
+            ...(kg.undertryckta.length ? [`${medel} redovisas inte för ${kort} ${kg.undertryckta.join(', ')}. ${grupp} ur raden Alla.`] : []),
+            ...(kg.konUndertryckta.length ? [`${medel} för kvinnor och män redovisas inte för ${kort} ${kg.konUndertryckta.join(', ')}. ${kon} ur raden Alla.`] : [])] : [],
+        aldersgrupper: ag && ag.undertryckta.length ? [`Medelålder och medellön redovisas inte för ${kort} ${ag.undertryckta.join(', ')}. ${grupp} ur raden Alla.`] : [],
+        /** @param {any} i ett intervall ur pb.intervall */
+        intervall: i => [
+            ...(i.medelUndertryckt ? [`Medellönen redovisas inte i tabellen. ${grupp} ur raden Alla längre ned.`] : []),
+            ...(i.undertryckta.length ? [`Medellönen redovisas inte för ${i.undertryckta.join(', ')}. ${grupp} ur organisationens rad.`] : []),
+            ...(i.konMedelUndertryckt ? [`Medellönen för kvinnor och män redovisas inte i tabellen. ${kon} ur raden Alla längre ned.`] : [])],
+    };
+}
+
+/**
  * Avsnittet Lönestruktur per BAS-intervall, i den form en skriven lönekartläggning brukar ha: en tabell per
  * BAS-intervall (referens, organisationen, yrkesgrupperna med jämförelsestatistikens rad under, kvinnor och män),
  * ett fält för bedömningen av intervallet, och sist två tabeller per BAS: löneskillnader inom likvärdigt arbete
@@ -33449,6 +33683,9 @@ function rmPerBasAvsnitt(d, k) {
     if (smaYrken) utelamnat.push(`${smaYrken} ${termForAntal(smaYrken, T.enhet)} med färre än ${k} ${personOrd(k)}`);
     const konDolda = pb.intervall.filter(i => !i.konVisas).map(i => i.bas);
     if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} ${personOrd(k)})`);
+    const undertryckNoter = rmPerBasUndertryckNoter(pb, k);
+    const medelDolda = [...new Set([...(pb.konsgap ? pb.konsgap.undertryckta : []), ...(pb.aldersgrupper ? pb.aldersgrupper.undertryckta : [])])];
+    if (medelDolda.length) utelamnat.push(`medellön för ${kort} ${medelDolda.join(', ')} (så att en grupp med färre än ${k} ${personOrd(k)} inte kan räknas fram)`);
     /** @type {any[]} */
     const delar = [
         stycke(pb.dim === 'sektor'
@@ -33462,6 +33699,7 @@ function rmPerBasAvsnitt(d, k) {
         const noter = [];
         if (i.utelamnade.length) noter.push(`${i.utelamnade.length} ${termForAntal(i.utelamnade.length, T.enhet)} med färre än ${k} ${personOrd(k)} redovisas inte: ${i.utelamnade.join(', ')}.`);
         if (!i.konVisas) noter.push(`Kvinnor och män redovisas inte var för sig eftersom ett kön har färre än ${k} ${personOrd(k)} i intervallet.`);
+        noter.push(...undertryckNoter.intervall(i));
         if (noter.length) delar.push(stycke(noter.join(' '), 'not'));
         delar.push({ typ: 'fyllIn', text: `Bedömning av ${kort} ${i.bas}: löneläget mot referensen och jämförelsestatistiken, de största ${T.enhet.bfl}, och om skillnaderna mellan kvinnor och män har sakliga skäl.` });
     }
@@ -33474,6 +33712,7 @@ function rmPerBasAvsnitt(d, k) {
         { rubrik: 'Kvinnors medellön i % av mäns', typ: 'pct1' }, { rubrik: 'Andel kvinnor', typ: 'pct1' },
         ...(medAlder ? [{ rubrik: 'Medelålder alla', typ: 'ar' }, { rubrik: 'Medelålder män', typ: 'ar' }, { rubrik: 'Medelålder kvinnor', typ: 'ar' }] : [])],
         rader: pb.konsgap.rader.map(r => [r.bas, r.n, r.medel, r.medelMa, r.medelKv, r.kvot, r.andelKv, ...(medAlder ? [r.alder, r.alderMa, r.alderKv] : [])]) });
+    if (undertryckNoter.konsgap.length) delar.push(stycke(undertryckNoter.konsgap.join(' '), 'not'));
     }
     if (pb.recept.aldersgrupper && pb.harAlder === false) {
         delar.push(stycke('Löneskillnader i åldersgrupper redovisas inte: lönefilen saknar ålder.', 'not'));
@@ -33485,6 +33724,7 @@ function rmPerBasAvsnitt(d, k) {
     delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medelålder', typ: 'ar' }, { rubrik: 'Medellön alla', typ: 'kr' },
         ...pb.aldersgrupper.grupper.map(g => ({ rubrik: `Medellön ${g} år`, typ: 'kr' }))],
         rader: pb.aldersgrupper.rader.map(r => [r.bas, r.n, r.alder, r.medel, ...r.perGrupp]) });
+    if (undertryckNoter.aldersgrupper.length) delar.push(stycke(undertryckNoter.aldersgrupper.join(' '), 'not'));
     delar.push({ typ: 'fyllIn', text: 'Bedömning: hur lönen utvecklas med åldern i organisationen, och om löneutvecklingen för äldre anställda avstannar.' });
     }
     return { id: 'perbas', numrerad: true, rubrik: `Lönestruktur per ${per}`, utelamnat, delar };

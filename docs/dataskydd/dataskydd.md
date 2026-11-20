@@ -111,6 +111,13 @@ Exporterna byter då inte läge.
   inga eller minst 10 män, så att en liten grupp inte kan räknas fram som skillnaden mellan två exporter.
   Diagrammets egen export säger vad det är räknat för. Rapporten, utskriften, ZIP-filen och rapportunderlaget visar
   alltid hela underlaget (riskanalysen §6.6).
+- **Tabellerna per BAS-intervall** i rapportens avsnitt *Lönestruktur per BAS-intervall* (Word-utkastet,
+  PDF-rapporten och Excelbladet *Per BAS*): raden *Alla* räknas på hela underlaget, också de intervall som utelämnas.
+  Så att raden *Alla* minus de visade intervallen inte ger ett utelämnat intervalls medellön redovisas då inte heller
+  medellön och medelålder för det minsta visade intervallet, när de utelämnade tillsammans har färre än 10 personer,
+  och så vidare tills de tillsammans har minst 10. Samma regel gäller per kön och, när tabellen visar medellön, för
+  AID-etiketterna i ett intervall. Antal och andel kvinnor står kvar, och en not säger vad som inte redovisas och
+  varför (ADR-83).
 - **Diagram som aldrig lämnar verktyget:** Personer att granskas diagram är märkt så i koden, med ett uppräknat
   skäl som står i behållarens verktygstips. Ingen exportväg (meny, bild, diagramdata, ZIP, utskrift) tar med det.
 
@@ -123,7 +130,8 @@ eller för en enskild person finns i dem. Vid 5 prövas flikarna i exportläget,
 prövas för sig. Egna tester prövar regressionens ojusterade steg (med 7 män i underlaget). De prövar också
 Ålder & karriär, med 3 män i hela urvalet och med ett valt BAS med en man, livscykelns lönekurva för ett valt
 BAS-intervall under tröskeln, regressionens BAS-effekter och att Löneöversyns summor och scenariojämförelse inte ger
-en liten grupps kostnad som differens.
+en liten grupps kostnad som differens. Ett eget prov räknar som den som läser exporten och kontrollerar att
+tabellerna per BAS-intervall inte ger en liten grupps medellön som differens.
 Testerna prövar inte undantagen nedan eller bilder av diagram.
 
 Standardvärdet är 10. Användaren kan ändra det under *Inställningar* i sidhuvudet (*Minsta gruppstorlek för redovisning*),

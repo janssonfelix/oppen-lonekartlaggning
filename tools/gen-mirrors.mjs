@@ -281,6 +281,12 @@ export const MODULES = [
         expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser' }
     },
     {
+        // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.
+        // Organisationspaketet importerar dem: före det.
+        file: 'installningsgranser.js', ns: '__mirrorInstallningsgranser',
+        expose: { installningsGrans: '_igGrans', arInomGrans: '_igInomGrans', filStorlekFel: '_igFilFel' }
+    },
+    {
         // Organisationspaketet importerar tabellrecept.js, perbas.js och importprofiler.js (rapportens recept, ADR-52): efter dem.
         file: 'organisationspaket.js', ns: '__mirrorOrganisationspaket',
         expose: { byggPaket: '_opByggPaket', tolkaPaket: '_opTolkaPaket', liknarPersonuppgift: '_opLiknarPersonuppgift' }

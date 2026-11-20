@@ -116,6 +116,10 @@ describe('organisationspaket: vitlista och gränser', () => {
         expect(r.delar.installningar.months).toBeUndefined();
         expect(r.delar.installningar.poNot).toBe('x');
     });
+    it('PO-påslaget 100 godtas, och över 100 klipps bort som förut', () => {
+        expect(tolka(byggPaket({ ...underlag(), installningar: { poPct: 100, months: 12 } })).delar.installningar.poPct).toBe(100);
+        expect(tolka(byggPaket({ ...underlag(), installningar: { poPct: 100.5, months: 12 } })).delar.installningar.poPct).toBeUndefined();
+    });
 });
 
 describe('organisationspaket: bara paketformatet läses', () => {

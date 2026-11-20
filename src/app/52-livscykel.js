@@ -380,10 +380,10 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
             { label: 'Förändring 25–65 år',                     value: (result.gapDelta >= 0 ? '+' : '') + svTal(result.gapDelta, 2) + ' procentenheter', note: 'Kvinnors lön mot mäns; minus betyder att kvinnorna halkar efter.' }
         ],
         formula: `<strong>Beräkning av predikterad lön per BAS:</strong><br>
-            För referens-BAS "${result.fixBas}" beräknas direkt från modellen:<br>
+            För referens-BAS "${esc(result.fixBas)}" beräknas direkt från modellen:<br>
             ln(lön) = β₀ + β_kön·isKv + β_ålder·(ålder−medel) + β_ålder²·(ålder−medel)² + β_kön×ålder·... + Σβ_BAS·dummies<br><br>
             För andra BAS ger modellens BAS-koefficient nivån:<br>
-            lön(BAS) = lön(${result.fixBas}) × <em>exp(β_BAS − β_${result.fixBas})</em><br><br>
+            lön(BAS) = lön(${esc(result.fixBas)}) × <em>exp(β_BAS − β_${esc(result.fixBas)})</em><br><br>
             <em>Obs! Modellen är additiv: ${T.niva.bf} påverkar lönenivån men inte hur skillnaden utvecklas. Därför är skillnaden i procent densamma i alla ${T.niva.fl}, medan beloppet i kronor skiljer eftersom lönenivåerna skiljer.</em>`,
         footer: `Livscykelmodellen låter skillnaden variera med åldern (via samspelet mellan kön och ålder). Är samspelet inte signifikant (p minst 0,10) är skillnaden i praktiken densamma, och då räcker huvudregressionen. Är det signifikant behöver du överväga åtgärder som rör karriären.`
     };

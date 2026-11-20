@@ -417,7 +417,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   BAS-intervall under tröskeln (`tests/ktroskel-livscykel.test.js`; kurvan är modellens tal, som invarianten inte känner igen), för Löneöversyns
   scenariojämförelse (`tests/ktroskel-loneoversyn-scenarier.test.js`), för noten vid egna riktade rader, för
   regressionens BAS-effekter och för Löneöversyns summor (`tests/ktroskel-loneoversyn-summor.test.js`). Invarianten söker efter lönevärden; den prövar inte antal och
-  andelar, och inte ett lönemått som bara går att räkna fram som en differens mellan andra tal.
+  andelar, och inte ett lönemått som bara går att räkna fram som en differens mellan andra tal. Det gör
+  differensprovet (`tests/ktroskel-differens.test.js`) för de utdata det täcker, bland dem tabellerna per
+  BAS-intervall.
 - **Värdet kan ändras av användaren (ADR-38).** Fältet *Minsta gruppstorlek för redovisning* under
   **Inställningar** i sidhuvudet tar heltal från 2 (högst 1 000). Klicka på värdet i flikarnas översta rad för att komma dit.
   Standardvärdet är 10, och inget lagras mellan sessioner.
@@ -516,7 +518,16 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   Excelfil) följer samma trappa och samma regel per kön. Vid tröskeln 5 eller lägre finns ingen
   mellannivå. Vaktas av `tests/ktroskel-kon.test.js` (bladet) och `tests/ktroskel-invarianter.test.js`.
 - **Lönestruktur per BAS-intervall och Prioritering:** *Lönestruktur per BAS-intervall* i Word-utkastet och PDF-rapporten utelämnar
-  BAS under tröskeln och namnger dem i en not. Prioritering visar skillnaden mellan könen i en grupp
+  BAS under tröskeln och namnger dem i en not. Raden *Alla* i tabellerna *Löneskillnader inom likvärdigt arbete* och
+  *Löneskillnader i åldersgrupper* räknas på hela underlaget. Omfattar de utelämnade intervallen tillsammans färre än
+  tröskeln undertrycks också medelvärdena (medellön, medellön per kön, kvoten, medelålder, medellönen per
+  åldersgrupp) för det minsta visade intervallet, ett i taget tills de undertryckta når tröskeln, i alla avsnittets
+  tabeller och i Excelbladet *Per BAS*; antal och andel kvinnor står kvar. Samma regel gäller per kön mot raden
+  *Alla*s medel per kön, och för AID-etiketterna mot organisationens rad när receptet har måttet *Medellön*. En not
+  namnger det som undertryckts (ADR-83; `kompletterandeUndertryckning` i `src/lib/perbas.js`). Vaktas av
+  differensprovet `tests/ktroskel-differens.test.js` och `tests/perbas.test.js`. Kvar, och inte prövat som differens:
+  medellönen per åldersgrupp mot raden *Alla* (antalet per åldersgrupp skrivs inte ut) och vägar som kräver
+  uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Prioritering visar skillnaden mellan könen i en grupp
   bara när båda könen når tröskeln. Annars räknas prioritetsindexet utan könsdel, så att
   poängen inte röjer den dolda skillnaden. Prioriteringens förslag om lägsta
   lönekvintilen kräver tröskeln för båda könen. Vaktas av `tests/ktroskel-utdata.test.js`, som läser
@@ -847,8 +858,8 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 |---|---|---|---|---|---|
 | A1 | Exfiltrering av data via nätverk | Låg | Hög | CSP `connect-src 'none'` + 0 nätverksanrop + 0 externa resurser | **Låg** |
 | A2 | Spår kvar på disk (lagring) | Låg | Medel | Ingen kod eller inbyggt bibliotek skriver till lagringen (webbläsartestet kräver tom lagring); storage-tripwire som reserv, med kända luckor (§6.2); ingen IndexedDB/cache; rensningsknapp | **Låg** (OS-swap utanför kontroll; spärren hindrar inte en framtida kodändring som skriver utan `setItem`) |
-| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering (`_cleanYrkeField` + `_normalizeBas`); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
-| A4 | Sårbarhet i tredjepartsbibliotek | Medel | Medel | Lokalt buntade, fastställda versioner, SHA i bygget; CSP hindrar exfiltrering även vid kompromiss | **Låg–medel** |
+| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering (`_cleanYrkeField` + `_normalizeBas`); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Escaping-vakten (`tests/escaping.test.js`) läser källkoden och kräver att varje värde i appens HTML-mallar och HTML-sänkor går genom `esc()` eller bevisas säkert (tal, termer, konstanter, dataflöde); det den inte kan bevisa står i en granskad undantagslista. Den täcker inte HTML som byggs på annat sätt än med mallsträngar och `+`, attributkontexten (citering, `href`) eller ändringar genom alias, och antar säkert i en krets i dataflödet. Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
+| A4 | Sårbarhet i tredjepartsbibliotek | Medel | Medel | Lokalt buntade, fastställda versioner, SHA i bygget; CSP hindrar exfiltrering även vid kompromiss; veckovis sårbarhetsbevakning av biblioteken mot OSV i CI (`.github/workflows/sarbarheter.yml`), som bara täcker brister som förts in i databasen | **Låg–medel** |
 | A5 | Skadligt webbläsartillägg / komprometterad enhet läser DOM | Medel | Hög | Utanför verktygets kontroll | **Medel** (organisatorisk åtgärd, §8) |
 | A6 | Manipulerad/utbytt HTML-fil distribueras | Låg | Hög | Sigstore-signatur från release-arbetsflödet, verifieras med `cosign verify-blob` (`SECURITY.md`); SHA-256 i `RELEASE.txt` skyddar bara mot en skadad fil. En organisationsfil (§6.9) har en annan kontrollsumma än den publicerade versionen och kan inte verifieras mot den: systemägaren verifierar den nedladdade versionen och sprider organisationsfilen via en behörighetsstyrd intern yta; *Visa paketet* anger kontrollsumman för den verktygsfil den byggdes av, som en uppgift i filen, inte ett äkthetsbevis | **Låg** (kräver att signaturen verifieras och att organisationsfilen sprids internt) |
 | A7 | Formel i CSV-export körs i Excel (CSV-injektion via etikettnamn i lönefilen) | Låg | Medel | Textceller som börjar med `= + - @` neutraliseras i CSV och urklipp (ADR-15); regressionstest i `tests/smoke.test.js` | **Mycket låg** |

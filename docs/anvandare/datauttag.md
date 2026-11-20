@@ -79,6 +79,7 @@ Detta **stöds inte** och ger tydligt besked:
 - **Äldre `.xls`** (Excel 97–2003): avvisas med *"Filen är i äldre Excel-format (.xls).
   Spara om som .xlsx eller .csv och försök igen."* Öppna i Excel och spara om som `.xlsx`
   eller `.csv`.
+- **För stor fil:** en lönefil över 50 MB avvisas innan den läses in, och beskedet anger gränsen.
 
 ## 2b. Importprofiler: spara mappningen en gång
 

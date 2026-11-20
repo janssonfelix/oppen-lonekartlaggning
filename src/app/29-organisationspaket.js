@@ -6,7 +6,7 @@
 // den i ett steg (lasInPaket). Tolkning och validering bor i src/lib/organisationspaket.js
 // (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
 
-const PAKET_MAX_FILSTORLEK = 5 * 1024 * 1024;   // samma gräns som i src/lib/organisationspaket.js
+const PAKET_MAX_FILSTORLEK = _igGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
 // Rensning vid inaktivitet i paketet: 0 (av) eller 5–120 minuter (samma gränser som i src/lib/organisationspaket.js).
 const PAKET_INAKTIVITET_MIN = 5;
 const PAKET_INAKTIVITET_MAX = 120;

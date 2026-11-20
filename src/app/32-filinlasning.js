@@ -346,12 +346,16 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
  * @param {(res: {ok:true, format:string, encoding:string, headers:string[],
  *                rows:Array<Object<string,string>>}
  *             | {ok:false, error:string}) => void} utfall
+ * @param {'stallningstagande'|'jamforelsestatistik'} typ - filtypen, som bestämmer storleksgränsen (FIL_MAX)
  */
-function readTabularFile(file, synonymGroups, utfall) {
+function readTabularFile(file, synonymGroups, utfall, typ) {
     // En fil som blivit läst kan ändra det som visas, hur det än gick: ingen ritad flik visas igen som den är (ADR-81).
     /** @type {typeof utfall} */
     const callback = res => { try { utfall(res); } finally { visningNy(); } };
     if (!file) { callback({ ok: false, error: 'Ingen fil vald.' }); return; }
+    // Storleken prövas innan filen läses eller tolkas.
+    const storlekFel = _igFilFel(file.size, typ);
+    if (storlekFel) { callback({ ok: false, error: storlekFel }); return; }
     const reader = new FileReader();
     reader.onerror = () => callback({ ok: false, error: 'Kunde inte läsa filen.' });
     reader.onload = () => {
@@ -391,6 +395,9 @@ function readTabularFile(file, synonymGroups, utfall) {
 
 function loadStructureFile(file) {
     if (!file) return;
+    // Storleken prövas innan filen läses eller tolkas: en för stor fil lämnar det som var inläst orört.
+    const storlekFel = _igFilFel(file.size, 'lonefil');
+    if (storlekFel) { dataStatus.textContent = storlekFel; dataStatus.className = 'status-msg'; return; }
     const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
     // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.

@@ -93,7 +93,7 @@ policyInput.addEventListener("change", e => {
         renderActionChecklist();
         renderProcessTracker();
         if (getData().length > 0) generateRapport();
-    });
+    }, 'stallningstagande');
 });
 
 // Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
@@ -220,5 +220,5 @@ statInput.addEventListener("change", e => {
             statStatus.textContent = "Fel: " + err.message;
             statStatus.className = "status-msg error";
         }
-    });
+    }, 'jamforelsestatistik');
 });
