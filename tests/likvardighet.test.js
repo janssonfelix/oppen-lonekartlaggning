@@ -416,14 +416,18 @@ describe('bootstrapMedianVsConstantKr', () => {
     });
 });
 
-// Referensen: den tidigare algoritmen, där varje dragning sorteras för medianen. Den nya
-// funktionen tar medianen ur en rangräkning och ska ge exakt samma intervall med samma rng.
+// Referensen: den tidigare algoritmen, där varje dragning sorteras för medianen, med dragningarna ur de stigande
+// sorterade lönerna (ADR-86) och symmetriska percentilindex. Den nya funktionen tar medianen ur en rangräkning och ska
+// ge exakt samma intervall med samma rng.
 function refMedian(arr) {
     const s = arr.slice().sort((a, b) => a - b);
     const m = s.length >> 1;
     return s.length & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
-function refDiffKr(kvLons, maLons, B, rng) {
+const sorterad = a => [...a].sort((x, y) => x - y);
+const refIntervall = d => { const svans = Math.floor(d.length * 0.025); return { lo: d[svans], hi: d[d.length - 1 - svans] }; };
+function refDiffKr(kvLons0, maLons0, B, rng) {
+    const kvLons = sorterad(kvLons0), maLons = sorterad(maLons0);
     const diffs = new Array(B);
     const kvN = kvLons.length, maN = maLons.length;
     for (let b = 0; b < B; b++) {
@@ -433,10 +437,10 @@ function refDiffKr(kvLons, maLons, B, rng) {
         diffs[b] = refMedian(sMa) - refMedian(sKv);
     }
     diffs.sort((a, b) => a - b);
-    return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
+    return refIntervall(diffs);
 }
-function refVsConstantKr(orgLons, constMedian, B, rng) {
-    const n = orgLons.length;
+function refVsConstantKr(orgLons0, constMedian, B, rng) {
+    const orgLons = sorterad(orgLons0), n = orgLons.length;
     const diffs = new Array(B);
     for (let b = 0; b < B; b++) {
         const sample = new Array(n);
@@ -444,7 +448,7 @@ function refVsConstantKr(orgLons, constMedian, B, rng) {
         diffs[b] = constMedian - refMedian(sample);
     }
     diffs.sort((a, b) => a - b);
-    return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
+    return refIntervall(diffs);
 }
 // Syntetiska löner: deterministiska, osorterade, med en del lika värden.
 const loner = (n, s) => Array.from({ length: n }, (_, i) => 25000 + Math.round(((i * 7919 + s) % 1000) * 15 + (i % 13) * 3));

@@ -1,7 +1,8 @@
 /**
  * Bootstrapintervallen på mediankvoten (kvinnors median i % av mäns) tar dragningarnas medianer ur rangräkning
  * (`bootstrapMedianer` i src/lib/likvardighet.js). Referensen här är de tidigare algoritmerna, där varje dragning
- * sorterades eller gick genom quickselect: med samma slumpföljd ska intervallen vara exakt desamma.
+ * sorterades eller gick genom quickselect, med dragningarna ur de stigande sorterade lönerna (ADR-86) och symmetriska
+ * percentilindex: med samma slumpföljd ska intervallen vara exakt desamma.
  *
  * Täcker kärnan i lib och de tre anroparna i appen: översikten per BAS-intervall och lönegapet per åldersgrupp
  * (`_laBootstrapGapCI`), gruppdossiern och rapportunderlaget (`_gdBootstrapGapCI`) och Översiktens intervall
@@ -16,8 +17,9 @@ function refMedian(arr) {
     const s = arr.slice().sort((a, b) => a - b), m = s.length >> 1;
     return s.length & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
-/** Medianerna per dragning som förut: först kvN löner ur kv, sedan maN ur ma, varje dragning sorterad. */
-function refDragningar(kv, ma, B, rnd) {
+/** Medianerna per dragning: först kvN löner ur kv, sedan maN ur ma (båda stigande sorterade), varje dragning sorterad. */
+function refDragningar(kv0, ma0, B, rnd) {
+    const kv = [...kv0].sort((a, b) => a - b), ma = [...ma0].sort((a, b) => a - b);
     const ut = [];
     for (let b = 0; b < B; b++) {
         const sKv = kv.map(() => kv[(rnd() * kv.length) | 0]);
@@ -31,7 +33,8 @@ function refLa(kv, ma, B = 1000) {
     if (kv.length < 3 || ma.length < 3) return null;
     const ratios = refDragningar(kv, ma, B, rngFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : 100));
     ratios.sort((a, b) => a - b);
-    return { lo: ratios[Math.floor(B * 0.025)], hi: ratios[Math.floor(B * 0.975)] };
+    const svans = Math.floor(B * 0.025);
+    return { lo: ratios[svans], hi: ratios[B - 1 - svans] };
 }
 // Den tidigare _gdBootstrapGapCI (B = 2000, dragningar med männens median 0 räknas inte).
 function refGd(kv, ma, B = 2000) {
@@ -39,7 +42,8 @@ function refGd(kv, ma, B = 2000) {
     const ratios = refDragningar(kv, ma, B, rngFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : NaN));
     const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
     if (ok.length < 20) return null;
-    return { lo: ok[Math.floor(ok.length * 0.025)], hi: ok[Math.floor(ok.length * 0.975)] };
+    const svans = Math.floor(ok.length * 0.025);
+    return { lo: ok[svans], hi: ok[ok.length - 1 - svans] };
 }
 
 // Syntetiska löner: deterministiska, osorterade, med en del lika värden.
@@ -90,6 +94,6 @@ describe('appens intervall på mediankvoten är desamma som med sortering per dr
         const ci = w.__state.bootstrapCI;
         expect(ci.B).toBe(B);
         expect(ci.ratio.lo).toBe(ratios[Math.floor(B * 0.025)]);
-        expect(ci.ratio.hi).toBe(ratios[Math.floor(B * 0.975)]);
+        expect(ci.ratio.hi).toBe(ratios[B - 1 - Math.floor(B * 0.025)]);
     });
 });

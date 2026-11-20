@@ -79,7 +79,8 @@ describe('bedomSkillnad: en grupp mot slumpens gränser', () => {
     });
 });
 
-// Referensen: den tidigare omkastningen, som flyttade lönerna och tog medianen med quickselect på kopior. Den nya
+// Referensen: den tidigare omkastningen, som flyttade lönerna och tog medianen med quickselect på kopior, med
+// utgångsläget kvinnornas löner stigande följda av männens stigande (ADR-86) och symmetriska percentilindex. Den nya
 // flyttar rangerna och läser medianerna ur rangordningen; gränserna ska vara exakt desamma med samma slumpföljd.
 function refMedian(a) {
     const n = a.length;
@@ -88,14 +89,15 @@ function refMedian(a) {
     return n & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 function refOmkastningsGranser(kv, ma, B = 1000) {
-    const alla = kv.concat(ma), n = alla.length, nKv = kv.length, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, rnd = rngFor(kv, ma), kvoter = new Array(B);
     for (let b = 0; b < B; b++) {
         for (let i = 0; i < nKv; i++) { const j = i + ((rnd() * (n - i)) | 0), t = alla[i]; alla[i] = alla[j]; alla[j] = t; }
         const mKv = refMedian(alla.slice(0, nKv)), mMa = refMedian(alla.slice(nKv));
         kvoter[b] = mMa > 0 ? mKv / mMa * 100 : 100;
     }
     kvoter.sort((x, y) => x - y);
-    return { lag: kvoter[Math.floor(B * 0.025)], hog: kvoter[Math.min(B - 1, Math.floor(B * 0.975))] };
+    const svans = Math.floor(B * 0.025);
+    return { lag: kvoter[svans], hog: kvoter[B - 1 - svans] };
 }
 
 describe('omkastningsGranser ur rangordning ger samma gränser som omkastade löner', () => {
