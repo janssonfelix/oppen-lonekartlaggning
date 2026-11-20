@@ -23,7 +23,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Kartläggningens steg', synonymer: ['lönekartläggningsprocessen', 'steg', 'process', 'arbetsgång', 'kom igång'], flik: 'dashboard', avsnitt: 'avsnitt-ov-process' },
     { namn: 'Att göra: alla punkter', synonymer: ['att göra', 'alla punkter', 'checklista', 'avbockning', 'punkter', 'uppgifter'], flik: 'dashboard', avsnitt: 'avsnitt-ov-punkter' },
     // Filer och kvalitet
-    { namn: 'Demodata: litet eller stort demo (7 000 personer)', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '7000'], flik: 'filer', avsnitt: 'upload-demo-val' },
+    { namn: 'Demodata: stort demo (5 000 personer) eller litet demo', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '5000'], flik: 'filer', avsnitt: 'upload-demo-val' },
     { namn: 'Förhandskontroll av lönefilen', synonymer: ['förhandskontroll', 'tolkning', 'hur filen tolkades', 'årslön', 'timlön', 'födelseår', 'kön-kod', 'kontrollera filen'], flik: 'filer', avsnitt: 'avsnitt-fi-forhandskontroll' },
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
     // Lönestruktur

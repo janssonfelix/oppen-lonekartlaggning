@@ -321,7 +321,7 @@ och att jobbet har minsta behörighet.
 
 **Demosidan.** `npm run site` (`tools/site.mjs`, efter `npm run bundle`) bygger `site/dist/` (startsidan ur
 `site/index.html`, bygget och `RELEASE.txt`) för valfri statisk webbplats. Sidan har inga skript och länkar till
-verktyget med `?demo=1`, som startar demoläget (ingen annan adressparameter läses). Finns en översiktsbild eller en
+verktyget med `?demo=stor`, som startar det stora demot (bara parametern `demo` läses). Finns en översiktsbild eller en
 kort slinga i `dist/marknad/` tas den med på sidan. Arbetsflödet `.github/workflows/pages.yml` (på tagg `v*` eller
 för hand) kör `node tools/site.mjs` med guidelänkar till `docs/anvandare/` i repot och publicerar på GitHub Pages
 (`upload-pages-artifact`, `deploy-pages`); jobbet som publicerar har bara `pages: write` och `id-token: write`.

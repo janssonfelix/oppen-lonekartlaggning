@@ -5,9 +5,9 @@
 import { FIL, ok, browser } from './rigg.mjs';
 /* global state, _ritadVid, flikInaktuell -- används i page.evaluate, där de finns i sidan */
 
-// Stort demo (7 000 personer): tider.
+// Stort demo (5 000 personer): tider.
 export async function stortDemo() {
-    console.log('\n── Stort demo (7 000 personer): tider ──');
+    console.log('\n── Stort demo (5 000 personer): tider ──');
     // Från klick på "stort demo" i Kom igång tills Översikt är ritad, och sedan varje tung flik tills den är ritad och
     // sidindexet byggt, och sökningen tills träfflistan visas. Budget 5 s per steg (maskinberoende, som perf-smoke.mjs).
     {
@@ -27,8 +27,8 @@ export async function stortDemo() {
             await new Promise(r => requestAnimationFrame(() => r()));
             return Math.round(performance.now() - t0);
         }));
-        ok(await s.evaluate(() => state.data.length === 7000 && state.isDemo && document.getElementById('demo-mode-banner').style.display === 'flex'),
-            'stort demo: 7 000 personer inlästa, demobannern synlig');
+        ok(await s.evaluate(() => state.data.length === 5000 && state.isDemo && document.getElementById('demo-mode-banner').style.display === 'flex'),
+            'stort demo: 5 000 personer inlästa, demobannern synlig');
         for (const [flik, namn] of [['matrix', 'Lika arbete'], ['struktur', 'Lönestruktur'], ['prioritering', 'Prioritering'], ['utforska', 'Tabeller och egna vyer']]) {
             await mat(`${namn} ritad med sidindex`, () => s.evaluate(async f => {
                 const t0 = performance.now();

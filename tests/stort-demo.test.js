@@ -1,11 +1,11 @@
 /**
- * Stort demo (21-stort-demo.js): 7 000 påhittade personer bredvid det lilla demot, för att visa verktyget i verklig
+ * Stort demo (21-stort-demo.js): 5 000 påhittade personer med 100 AID-etiketter bredvid det lilla demot, för att visa verktyget i verklig
  * storlek utan riktig data.
  *
  * Vaktar generatorn (storlek, determinism, fälten, BAS A–K, yrkesgrupperna och de små grupperna), inläsningen
  * (demoläget, flikarna, Översikt utan internt fel och utan självdiagnostik, den påhittade jämförelsestatistiken och
  * ställningstagandet ur demots löner), att en riktig lönefil eller statistikfil ersätter demots statistik, ingångarna
- * (Kom igång, lönefilskortet, ?demo=stor), att det lilla demot är oförändrat, att Excel (alla flikar) inte röjer ett
+ * (Kom igång, lönefilskortet, ?demo=stor), nyckeltalen (rått gap, könskoefficienten, antalet små AID-grupper), att det lilla demot är oförändrat, att Excel (alla flikar) inte röjer ett
  * könsuppdelat lönemått för en grupp under tröskeln och att Rensa all data lämnar samma tillstånd som efter det lilla
  * demot.
  */
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { createAppWindow, tillstandsavtryck } from './helpers/app-harness.js';
 import { arKvinna, arMan } from '../src/lib/kon.js';
 
-// Inläsningen ritar Översikt och räknar alla analyser för 7 000 personer synkront; under full last tar det några sekunder.
+// Inläsningen ritar Översikt och räknar alla analyser för 5 000 personer synkront; under full last tar det några sekunder.
 vi.setConfig({ testTimeout: 60000 });
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -224,12 +224,13 @@ describe('stort demo: demots statistik byts ut', () => {
 });
 
 describe('stort demo: ingångarna', () => {
-    it('Kom igång har knappen bredvid det lilla demot ("prova med demodata, litet demo eller stort demo")', () => {
+    it('Kom igång har knappen före det lilla demot ("prova med demodata, stort demo eller litet demo")', () => {
         const w = bevaka(createAppWindow()), d = w.document;
         const knapp = d.getElementById('first-run-stort-demo');
         expect(knapp.closest('#first-run-hint')).not.toBeNull();
-        expect(utanMellanrum(knapp.textContent)).toBe('stort demo (7 000 personer)');
-        expect(knapp.title).toBe('Läs in det stora demot: 7 000 påhittade personer');
+        expect(utanMellanrum(knapp.textContent)).toBe('stort demo (5 000 personer)');
+        expect(knapp.title).toBe('Läs in det stora demot: 5 000 påhittade personer');
+        expect(knapp.compareDocumentPosition(d.getElementById('first-run-demo-link')) & w.Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         knapp.click();
         expect(w.__state.data).toHaveLength(5000);
         expect(w.__diagnostik).toBe(0);
@@ -240,6 +241,7 @@ describe('stort demo: ingångarna', () => {
         const litet = d.getElementById('upload-demo-litet'), stort = d.getElementById('upload-demo-stort');
         expect(litet.closest('#upload-cell-data')).not.toBeNull();
         expect(stort.closest('#upload-cell-data')).not.toBeNull();
+        expect(stort.compareDocumentPosition(litet) & w.Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         litet.click();
         expect(w.__state.data).toHaveLength(260);
         stort.click();
@@ -253,7 +255,7 @@ describe('stort demo: ingångarna', () => {
         expect(stor.__state.isDemo).toBe(true);
         const liten = createAppWindow({ url: 'http://localhost/?demo=1' });
         expect(liten.__state.data).toHaveLength(260);
-        const annat = createAppWindow({ url: 'http://localhost/?demo=7000' });
+        const annat = createAppWindow({ url: 'http://localhost/?demo=5000' });
         expect(annat.__state.data).toHaveLength(0);
     });
 
@@ -263,6 +265,37 @@ describe('stort demo: ingångarna', () => {
         f.value = 'stort demo';
         f.dispatchEvent(new w.Event('input', { bubbles: true }));
         expect(utanMellanrum(d.getElementById('sok-grupp-lista').textContent)).toMatch(/demo/i);
+    });
+});
+
+// Nyckeltalen lästa ur demot efter ombyggnaden till 5 000 personer. Talen ändras med avsikt när demot ändras: läs av
+// de nya värdena och skriv in dem här.
+const SD_RATT_GAP = -0.99;      // median kvinnor / median män − 1, i %
+const SD_KONPCT = -2.35;        // runOLSRegression().konPct, i %
+const SD_SMA_YRKEN = 71;        // AID-grupper med n < 10 eller ett kön < 10
+
+describe('stort demo: nyckeltalen', () => {
+    let w;
+    beforeAll(() => { w = createAppWindow(); w.eval('loadStortDemo()'); });
+
+    it('rått gap', () => {
+        const d = w.__state.data;
+        const gap = (median(d.filter(arKvinna).map(r => r.lon)) / median(d.filter(arMan).map(r => r.lon)) - 1) * 100;
+        expect(Math.abs(gap - SD_RATT_GAP)).toBeLessThanOrEqual(0.3);
+    });
+
+    it('könskoefficienten i regressionen', () => {
+        expect(Math.abs(w.eval('runOLSRegression()').konPct - SD_KONPCT)).toBeLessThanOrEqual(0.3);
+    });
+
+    it('antalet små AID-grupper', () => {
+        const per = new Map();
+        for (const r of w.__state.data) {
+            const g = per.get(r.aid) || { n: 0, kv: 0, ma: 0 };
+            g.n++; if (arKvinna(r)) g.kv++; if (arMan(r)) g.ma++;
+            per.set(r.aid, g);
+        }
+        expect([...per.values()].filter(g => g.n < 10 || g.kv < 10 || g.ma < 10)).toHaveLength(SD_SMA_YRKEN);
     });
 });
 

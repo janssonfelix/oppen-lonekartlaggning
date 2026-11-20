@@ -18535,7 +18535,7 @@ const state = {
     paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat', delar } (ADR-28); delar = paketets validerade delar
     paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
     isDemo: false,   // #9: true när syntetisk demodata är inläst (aldrig verklig analys)
-    demoStort: false,   // true i det stora demot (7 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
+    demoStort: false,   // true i det stora demot (5 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
     prioConfig: { ...PRIO_CONFIG_DEFAULTS },
     prioWeights: { ...PRIO_WEIGHTS_DEFAULTS },
     costSettings: { ...COST_DEFAULTS },
@@ -36637,7 +36637,7 @@ const INFO_SECTIONS = {
             <li>Bestäm i <strong>Prioritering</strong> och <strong>Handlingsplan</strong> vad som ska göras, av vem och när; pröva fördelningen av potten i <strong>Löneöversyn</strong></li>
             <li>Ta texten till rapporten ur <strong>Rapporttext</strong>, kör färdigchecken i <strong>Exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen. Spara konfigurationen i <strong>Spara och jämför år</strong>, så kan du jämföra med förra året nästa gång</li>
         </ol>
-        <p>Vill du prova först? Det finns två demon i startytan <strong>Kom igång</strong> på Översikt, innan något är inläst, och i lönefilskortet i Filer och kvalitet. Demot <em>litet</em> har 260 påhittade personer, och demot <em>stort</em> har 7 000 påhittade personer i BAS A–K. Allt i demona är påhittat och märks som demodata.</p>
+        <p>Vill du prova först? Det finns två demon i startytan <strong>Kom igång</strong> på Översikt, innan något är inläst, och i lönefilskortet i Filer och kvalitet. Demot <em>stort</em> har 5 000 påhittade personer med 100 ${T.enhet.fl} i BAS A–K, med påhittad jämförelsestatistik och ett påhittat lönepolitiskt ställningstagande; demot <em>litet</em> har 260 påhittade personer. Allt i demona är påhittat och märks som demodata.</p>
         <p>Raden <em>Klar här? Nästa steg</em> sist i flikarna leder vidare i den här ordningen. Sökrutan i sidhuvudet hittar ${T.enhet.fl}, ${T.niva.fl} och funktioner, och listan <em>På den här sidan</em> leder till flikens avsnitt. Körguiden som följer med verktyget beskriver varje steg närmare. Den står under Källor.</p>
     `,
 
@@ -41055,7 +41055,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Kartläggningens steg', synonymer: ['lönekartläggningsprocessen', 'steg', 'process', 'arbetsgång', 'kom igång'], flik: 'dashboard', avsnitt: 'avsnitt-ov-process' },
     { namn: 'Att göra: alla punkter', synonymer: ['att göra', 'alla punkter', 'checklista', 'avbockning', 'punkter', 'uppgifter'], flik: 'dashboard', avsnitt: 'avsnitt-ov-punkter' },
     // Filer och kvalitet
-    { namn: 'Demodata: litet eller stort demo (7 000 personer)', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '7000'], flik: 'filer', avsnitt: 'upload-demo-val' },
+    { namn: 'Demodata: stort demo (5 000 personer) eller litet demo', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '5000'], flik: 'filer', avsnitt: 'upload-demo-val' },
     { namn: 'Förhandskontroll av lönefilen', synonymer: ['förhandskontroll', 'tolkning', 'hur filen tolkades', 'årslön', 'timlön', 'födelseår', 'kön-kod', 'kontrollera filen'], flik: 'filer', avsnitt: 'avsnitt-fi-forhandskontroll' },
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
     // Lönestruktur
@@ -41621,7 +41621,7 @@ applyProfileLabels();  // Tillämpa default-profil vid uppstart
 _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
 renderReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
 
-// Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (7 000 personer), så att
+// Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (5 000 personer), så att
 // en länk från webbplatsen öppnar verktyget med påhittad data. Ingen annan parameter och
 // inget annat värde läses — adressen kan aldrig föra in data eller inställningar.
 try {
