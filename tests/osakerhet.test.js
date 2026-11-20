@@ -101,7 +101,7 @@ describe('bootstrapintervallen på mediankvoten', () => {
         expect(a.ratio.point).toBe(median(kv) / median(ma));
         expect(a.ratio.lo).toBeLessThanOrEqual(a.ratio.point);
         expect(a.ratio.hi).toBeGreaterThanOrEqual(a.ratio.point);
-        expect(a.gapPct).toEqual({ point: (1 - a.ratio.point) * 100, lo: (1 - a.ratio.hi) * 100, hi: (1 - a.ratio.lo) * 100 });
+        expect(a.gapPctDirektivtecken).toEqual({ point: (1 - a.ratio.point) * 100, lo: (1 - a.ratio.hi) * 100, hi: (1 - a.ratio.lo) * 100 });
     });
 });
 

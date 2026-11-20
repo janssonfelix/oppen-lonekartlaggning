@@ -248,11 +248,13 @@ function _kUndantagNot(undantag) {
 
 /**
  * Raden i diagramdata från ett diagram med en punkt per person (figurens `individer`, ADR-39): filen bär en rad
- * per person — lön, kön, ålder eller grupp, utan namn eller identifierare — och ska hanteras som personuppgifter
- * (beslut av produktägaren 2026-10-16). Punkterna följer tröskeln som på skärmen (individLitenFor).
+ * per person — lön, kön, ålder eller grupp — och ska hanteras som personuppgifter (beslut av produktägaren
+ * 2026-10-16). Text ur fältet för AID-etikett maskeras inte (ADR-85): som serienamn (färgläggning efter AID-etikett)
+ * och i raden om urvalet följer den med som den står i lönefilen. Punkterna följer tröskeln som på skärmen
+ * (individLitenFor).
  */
 function kIndividRad() {
-    return 'Filen innehåller en rad per person (lön, kön, ålder eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter.';
+    return `Filen innehåller en rad per person (lön, kön, ålder eller grupp) och ska hanteras som personuppgifter. Text ur fältet för ${T.enhet.en} kan följa med som den står i lönefilen.`;
 }
 
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */

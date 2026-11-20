@@ -158,12 +158,13 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
 /**
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
  * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
- * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv().
+ * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
+ * procent har direktivets tecken, positiv när kvinnor ligger lägre (gapPctDirektivtecken).
  */
 function computeBootstrapCI() {
     const t0 = performance.now();
     const ki = _osOrganisationensKvotKI(getData(), statGolv());
-    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
+    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPctDirektivtecken: ki.gapPctDirektivtecken, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
 /**

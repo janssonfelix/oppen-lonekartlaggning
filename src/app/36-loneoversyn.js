@@ -777,7 +777,8 @@ function _forecastOlsOn(rows) {
     } finally { state.data = sd; }
     return res;
 }
-// (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans.
+// (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans. Sökningen är
+// likalonslyftForMal i src/lib/loneoversyn.js (_fcLyftForMal); här läses fälten, k-spärren prövas och resultatet ritas.
 function _forecastThreshold() {
     const host = document.getElementById('forecast-threshold-result');
     const d = getData();
@@ -788,25 +789,19 @@ function _forecastThreshold() {
     // lönemått. Det visas bara när varje kön når tröskeln (regressionen jämför mot män); annars ett streck
     // med förklaring (beslut av produktägaren 2026-10-16).
     if (!_konFarRedovisasFor(d)) { host.innerHTML = `<span class="f-dampad">– ${esc(_konUtelamnatNot())}</span>`; return; }
-    const tgt = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-pct'))?.value) || 5;
+    const { STANDARD_PCT, MAX_LYFT_PCT, SIGNIFIKANS_P } = _fcTroskelmalKonstanter();
+    const tgt = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-pct'))?.value) || STANDARD_PCT;
     const useSig = !!/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-sig'))?.checked;
-    const women = d.filter(r => r.kon && r.kon.includes('kvinna'));
-    const base = _forecastOlsOn(d);
-    if (base.konPct == null) { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
-    const okFor = g => useSig ? (g.pValue == null || g.pValue > 0.05) : (g.konPct != null && g.konPct >= -tgt);
-    const evalLift = x => {
-        const sim = d.map(r => (r.kon && r.kon.includes('kvinna')) ? { ...r, lon: r.lon * (1 + x / 100) } : r);
-        const g = _forecastOlsOn(sim);
-        return { ...g, cost: women.reduce((s, r) => s + r.lon * x / 100, 0) };
-    };
-    if (okFor(base)) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
-    let lo = 0, hi = 40;
-    if (!okFor(evalLift(hi))) { host.innerHTML = `<span class="f-kritisk">Mer än 40 % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
-    for (let it = 0; it < 22; it++) { const mid = (lo + hi) / 2; if (okFor(evalLift(mid))) hi = mid; else lo = mid; }
-    const res = evalLift(hi);
+    const svar = _fcLyftForMal(d, { malPct: tgt, signifikans: useSig, skatta: _forecastOlsOn });
+    const base = svar.utgangslage;
+    if (svar.status === 'ingenSkattning') { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
+    if (svar.status === 'redan') { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
+    if (svar.status === 'utomRackhall') { host.innerHTML = `<span class="f-kritisk">Mer än ${MAX_LYFT_PCT} % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
+    const hi = /** @type {number} */ (svar.lyftPct), kostnad = /** @type {number} */ (svar.kostnadPerManad);
+    const efter = /** @type {{konPct: number|null}} */ (svar.resultat);
     host.innerHTML = `<div class="fs-sm lh-1_6">
-        För att nå <strong>${useSig ? 'en oförklarad skillnad som inte är signifikant (p över 0,05)' : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
-        <br>Kostnad: <strong>≈ ${Math.round(res.cost).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(_kostPeriod(res.cost, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${res.konPct == null ? '–' : svPct(res.konPct, 2)}.
+        För att nå <strong>${useSig ? `en oförklarad skillnad som inte är signifikant (p över ${svTal(SIGNIFIKANS_P, 2)})` : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
+        <br>Kostnad: <strong>≈ ${Math.round(kostnad).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(_kostPeriod(kostnad, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${efter.konPct == null ? '–' : svPct(efter.konPct, 2)}.
         <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
     </div>`;
 }

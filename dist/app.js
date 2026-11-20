@@ -1542,11 +1542,13 @@ function _kUndantagNot(undantag) {
 
 /**
  * Raden i diagramdata från ett diagram med en punkt per person (figurens `individer`, ADR-39): filen bär en rad
- * per person — lön, kön, ålder eller grupp, utan namn eller identifierare — och ska hanteras som personuppgifter
- * (beslut av produktägaren 2026-10-16). Punkterna följer tröskeln som på skärmen (individLitenFor).
+ * per person — lön, kön, ålder eller grupp — och ska hanteras som personuppgifter (beslut av produktägaren
+ * 2026-10-16). Text ur fältet för AID-etikett maskeras inte (ADR-85): som serienamn (färgläggning efter AID-etikett)
+ * och i raden om urvalet följer den med som den står i lönefilen. Punkterna följer tröskeln som på skärmen
+ * (individLitenFor).
  */
 function kIndividRad() {
-    return 'Filen innehåller en rad per person (lön, kön, ålder eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter.';
+    return `Filen innehåller en rad per person (lön, kön, ålder eller grupp) och ska hanteras som personuppgifter. Text ur fältet för ${T.enhet.en} kan följa med som den står i lönefilen.`;
 }
 
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */
@@ -4139,7 +4141,8 @@ const __mirrorForecast = (() => {
  * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
  * (vaktas av tests/drift.test.js). Det oförklarade gapet (OLS) beräknas INTE
  * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
- * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet.
+ * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
+ * sökning (likalonslyftForMal) får appens skattning som argument.
  *
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
@@ -4605,7 +4608,59 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
     return out;
 }
 
-    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+/** Tröskelmålets standardmål: en oförklarad skillnad på högst 5 %. */
+const TROSKELMAL_STANDARD_PCT = 5;
+/** Det största lyft i procent som tröskelmålet prövar; krävs mer redovisas det som utom räckhåll. */
+const TROSKELMAL_MAX_LYFT_PCT = 40;
+/** Antalet halveringar i sökningen: intervallet 0–40 % krymper till 40 / 2^22, under 0,00001 procentenheter. */
+const TROSKELMAL_VARV = 22;
+/** Signifikansgränsen i läget "inte signifikant": målet är nått när p-värdet är över den (eller saknas). */
+const TROSKELMAL_SIGNIFIKANS_P = 0.05;
+
+/** Tröskelmålets konstanter, för appen (spegeln exponerar bara funktioner). */
+function troskelmalKonstanter() {
+    return { STANDARD_PCT: TROSKELMAL_STANDARD_PCT, MAX_LYFT_PCT: TROSKELMAL_MAX_LYFT_PCT,
+             VARV: TROSKELMAL_VARV, SIGNIFIKANS_P: TROSKELMAL_SIGNIFIKANS_P };
+}
+
+/**
+ * (C) Tröskelmål: det minsta jämna lyftet i procent till alla kvinnor som behövs för att den oförklarade skillnaden
+ * ska nå målet, antingen högst `malPct` procent (skillnaden räknas som kvinnor mot män, negativ när kvinnor ligger
+ * lägre) eller inte signifikant (p över TROSKELMAL_SIGNIFIKANS_P). Söks med bisektion i 0–TROSKELMAL_MAX_LYFT_PCT %
+ * i TROSKELMAL_VARV varv; svaret är intervallets övre gräns, där målet är nått.
+ *
+ * Regressionen körs inte här: `skatta(rader)` är appens skattning (huvudregressionen på de givna raderna) och
+ * returnerar `{ konPct, pValue }`, med `konPct` null när den inte går att skatta. Kostnaden per månad är summan av
+ * kvinnornas lön gånger lyftet, utan påslag; kostnaden över perioden räknar appen.
+ * @param {any[]} rader lönefilens rader ({lon, kon, …})
+ * @param {{malPct?: number, signifikans?: boolean,
+ *   skatta: (rader: any[]) => {konPct: number|null, pValue: number|null}}} opts
+ * @returns {{status: 'ingenSkattning'|'redan'|'utomRackhall'|'hittat',
+ *   utgangslage: {konPct: number|null, pValue: number|null},
+ *   lyftPct?: number, kostnadPerManad?: number, resultat?: {konPct: number|null, pValue: number|null}}}
+ *   ingenSkattning: regressionen går inte att skatta på raderna; redan: målet är redan nått; utomRackhall: inte ens
+ *   TROSKELMAL_MAX_LYFT_PCT % räcker; hittat: lyftPct, kostnadPerManad och skattningen efter lyftet (resultat)
+ */
+function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifikans = false, skatta }) {
+    const arKvinna = r => r.kon && r.kon.includes('kvinna');
+    const kvinnor = rader.filter(arKvinna);
+    const utgangslage = skatta(rader);
+    if (utgangslage.konPct == null) return { status: 'ingenSkattning', utgangslage };
+    const okFor = g => signifikans ? (g.pValue == null || g.pValue > TROSKELMAL_SIGNIFIKANS_P) : (g.konPct != null && g.konPct >= -malPct);
+    const medLyft = x => {
+        const sim = rader.map(r => arKvinna(r) ? { ...r, lon: r.lon * (1 + x / 100) } : r);
+        const g = skatta(sim);
+        return { konPct: g.konPct, pValue: g.pValue, kostnad: kvinnor.reduce((s, r) => s + r.lon * x / 100, 0) };
+    };
+    if (okFor(utgangslage)) return { status: 'redan', utgangslage };
+    let lo = 0, hi = TROSKELMAL_MAX_LYFT_PCT;
+    if (!okFor(medLyft(hi))) return { status: 'utomRackhall', utgangslage };
+    for (let varv = 0; varv < TROSKELMAL_VARV; varv++) { const mitt = (lo + hi) / 2; if (okFor(medLyft(mitt))) hi = mitt; else lo = mitt; }
+    const { konPct, pValue, kostnad } = medLyft(hi);
+    return { status: 'hittat', utgangslage, lyftPct: hi, kostnadPerManad: kostnad, resultat: { konPct, pValue } };
+}
+
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, likalonslyftForMal, troskelmalKonstanter, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
@@ -4621,6 +4676,8 @@ const _fcBandStats = __mirrorForecast.bandStats;
 const _fcIndividualRemediation = __mirrorForecast.individualRemediation;
 const _fcMarketTargets = __mirrorForecast.marketTargets;
 const _fcSensitivityCurve = __mirrorForecast.sensitivityCurve;
+const _fcLyftForMal = __mirrorForecast.likalonslyftForMal;
+const _fcTroskelmalKonstanter = __mirrorForecast.troskelmalKonstanter;
 const _fcMedian = __mirrorForecast._median;
 
 // ---- speglar src/lib/aidbas.js ----
@@ -5918,10 +5975,13 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
  * minskar med 1/√B, så B = 2000 ger ungefär hälften, på ~50–200 ms vid alla typiska storlekar. Dragningarnas medianer
  * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt
  * resultat. En dragning där männens median inte är positiv ger kvoten 1.
+ *
+ * Skillnaden i procent har direktivets tecken, (1 − kvot) · 100, positiv när kvinnor ligger lägre; därav namnet
+ * `gapPctDirektivtecken`. Verktygets eget tecken, (kvot − 1) · 100, är dess motsats (se regressionsmodellen.md avsnitt 1, Tecknet).
  * @param {Array<{lon:number, kon:string}>} rader
  * @param {number} golv  minsta antal av vardera könet (statGolv() i appen)
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
- * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPct: {point:number, lo:number, hi:number}, B:number}}
+ * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPctDirektivtecken: {point:number, lo:number, hi:number}, B:number}}
  */
 function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
@@ -5939,7 +5999,7 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const point = median(kv) / median(ma);
     return {
         ratio:  { point, lo, hi },
-        gapPct: { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
+        gapPctDirektivtecken: { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
         B
     };
 }
@@ -18540,12 +18600,13 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
 /**
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
  * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
- * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv().
+ * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
+ * procent har direktivets tecken, positiv när kvinnor ligger lägre (gapPctDirektivtecken).
  */
 function computeBootstrapCI() {
     const t0 = performance.now();
     const ki = _osOrganisationensKvotKI(getData(), statGolv());
-    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
+    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPctDirektivtecken: ki.gapPctDirektivtecken, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
 /**
@@ -27281,7 +27342,8 @@ function _forecastOlsOn(rows) {
     } finally { state.data = sd; }
     return res;
 }
-// (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans.
+// (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans. Sökningen är
+// likalonslyftForMal i src/lib/loneoversyn.js (_fcLyftForMal); här läses fälten, k-spärren prövas och resultatet ritas.
 function _forecastThreshold() {
     const host = document.getElementById('forecast-threshold-result');
     const d = getData();
@@ -27292,25 +27354,19 @@ function _forecastThreshold() {
     // lönemått. Det visas bara när varje kön når tröskeln (regressionen jämför mot män); annars ett streck
     // med förklaring (beslut av produktägaren 2026-10-16).
     if (!_konFarRedovisasFor(d)) { host.innerHTML = `<span class="f-dampad">– ${esc(_konUtelamnatNot())}</span>`; return; }
-    const tgt = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-pct'))?.value) || 5;
+    const { STANDARD_PCT, MAX_LYFT_PCT, SIGNIFIKANS_P } = _fcTroskelmalKonstanter();
+    const tgt = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-pct'))?.value) || STANDARD_PCT;
     const useSig = !!/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-sig'))?.checked;
-    const women = d.filter(r => r.kon && r.kon.includes('kvinna'));
-    const base = _forecastOlsOn(d);
-    if (base.konPct == null) { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
-    const okFor = g => useSig ? (g.pValue == null || g.pValue > 0.05) : (g.konPct != null && g.konPct >= -tgt);
-    const evalLift = x => {
-        const sim = d.map(r => (r.kon && r.kon.includes('kvinna')) ? { ...r, lon: r.lon * (1 + x / 100) } : r);
-        const g = _forecastOlsOn(sim);
-        return { ...g, cost: women.reduce((s, r) => s + r.lon * x / 100, 0) };
-    };
-    if (okFor(base)) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
-    let lo = 0, hi = 40;
-    if (!okFor(evalLift(hi))) { host.innerHTML = `<span class="f-kritisk">Mer än 40 % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
-    for (let it = 0; it < 22; it++) { const mid = (lo + hi) / 2; if (okFor(evalLift(mid))) hi = mid; else lo = mid; }
-    const res = evalLift(hi);
+    const svar = _fcLyftForMal(d, { malPct: tgt, signifikans: useSig, skatta: _forecastOlsOn });
+    const base = svar.utgangslage;
+    if (svar.status === 'ingenSkattning') { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
+    if (svar.status === 'redan') { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
+    if (svar.status === 'utomRackhall') { host.innerHTML = `<span class="f-kritisk">Mer än ${MAX_LYFT_PCT} % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
+    const hi = /** @type {number} */ (svar.lyftPct), kostnad = /** @type {number} */ (svar.kostnadPerManad);
+    const efter = /** @type {{konPct: number|null}} */ (svar.resultat);
     host.innerHTML = `<div class="fs-sm lh-1_6">
-        För att nå <strong>${useSig ? 'en oförklarad skillnad som inte är signifikant (p över 0,05)' : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
-        <br>Kostnad: <strong>≈ ${Math.round(res.cost).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(_kostPeriod(res.cost, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${res.konPct == null ? '–' : svPct(res.konPct, 2)}.
+        För att nå <strong>${useSig ? `en oförklarad skillnad som inte är signifikant (p över ${svTal(SIGNIFIKANS_P, 2)})` : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
+        <br>Kostnad: <strong>≈ ${Math.round(kostnad).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(_kostPeriod(kostnad, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${efter.konPct == null ? '–' : svPct(efter.konPct, 2)}.
         <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
     </div>`;
 }
@@ -31619,8 +31675,9 @@ function renderRegressionCard() {
     }).join(' &nbsp;|&nbsp; ');
 
     // Tolkning – plain language sammanfattning
-    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns
-    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
+    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har direktivets tecken (positivt när
+    // kvinnor ligger lägre), det råa gapet framför det verktygets (rawGapPct, negativt när kvinnor ligger lägre).
+    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPctDirektivtecken) : '';
     const tolkning = isSig
         ? (Math.abs(r.konPct) >= _STS_STORLEK
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`
@@ -35927,7 +35984,7 @@ const INFO_SECTIONS = {
             <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} ${personOrd(kInstalld())}. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
             <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade arbeten prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats. Det gäller Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern.</li>
             <li><strong>Enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</li>
-            <li><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV eller urklipp). Vissa diagram visar enskilda personer, till exempel lön mot ålder och individpunkter. Då har diagramdatan en rad per person, utan namn eller identifierare. Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</li>
+            <li><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV eller urklipp). Vissa diagram visar enskilda personer, till exempel lön mot ålder och individpunkter. Då har diagramdatan en rad per person, och text ur fältet för ${T.enhet.en} kan följa med som den står i lönefilen. Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</li>
         </ul>
 
         <h3>Skydd i flera lager</h3>

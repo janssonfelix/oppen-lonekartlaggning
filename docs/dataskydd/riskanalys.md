@@ -590,8 +590,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   och `tests/smoke-docx.test.js`.
 - **Bilder med en punkt per person följer med (beslut 2026-10-16, ADR-48):** ZIP-exporten
   och utskriftens mall *Komplett rapport* bär bilder av Ålder & karriärs diagram med en punkt per person
-  (§6.6). Ålder & karriär visar punkterna på skärmen. Bilderna bär inga namn eller identifierare, och filerna
-  hanteras som personuppgifter (§8, punkt 1). Innehållet i en bild går inte att läsa i testet, så bilderna
+  (§6.6). Ålder & karriär visar punkterna på skärmen. Text ur fältet för AID-etikett maskeras inte (ADR-85): färglagt
+  efter AID-etikett står den i bildens förklaring som den står i lönefilen. Filerna hanteras som personuppgifter
+  (§8, punkt 1). Innehållet i en bild går inte att läsa i testet, så bilderna
   prövas inte av invarianten.
 - **Löneöversyns tröskelmål följer tröskeln (beslut 2026-10-16, ADR-38 R5):** lyftet i
   procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger procentsatsen) visas bara när varje kön i
@@ -689,10 +690,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   granskas diagram (ADR-23).
   Ingen exportväg — meny, bild, diagramdata, ZIP, rapportunderlag, utskrift — tar med ett märkt diagram.
   Vissa diagram har en punkt per person: spridningsdiagrammen lön mot ålder i Ålder & karriär, märkta
-  `individer` i figuren. För dem är diagramdatan **en rad per person** (lön, kön, ålder eller grupp; inga namn
-  eller identifierare). Filen säger det på rad 2: "Filen innehåller en rad per person (lön, kön, ålder
-  eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter." (beslut
-  2026-10-16). Lådorna i Tabeller och egna vyer (individpunkter, punktsvärm, regnmoln) exporteras som
+  `individer` i figuren. För dem är diagramdatan **en rad per person** (lön, kön, ålder eller grupp). Färglagt
+  efter AID-etikett är texten ur fältet serienamn, och ett urval på AID-etikett står i raden om urvalet, som texten
+  står i lönefilen (ADR-85). Filen säger det på rad 2: "Filen innehåller en rad per person (lön, kön, ålder
+  eller grupp) och ska hanteras som personuppgifter. Text ur fältet för AID-etikett kan följa med som den står i
+  lönefilen." (beslut 2026-10-16). Lådorna i Tabeller och egna vyer (individpunkter, punktsvärm, regnmoln) exporteras som
   statistik per grupp, aldrig som individer. Sådana filer ska hanteras som personuppgifter (§8, punkt 1).
 - **Diagrammens urval** (filterraderna ovanför diagrammen: knappar per BAS-intervall och andra kategorier, fälten
   Minst och Högst för ett tal som antal personer i gruppen, och hopfällda listor för AID-etikett och huvudområde) döljer
@@ -756,8 +758,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   flikarnas tabeller. Där finns också bilder av Ålder & karriärs spridningsdiagram, låddiagram och
   täthetsdiagram. De kortare urvalen (ledningsbrief, facklig dialog) gör det
   inte. **Beslut 2026-10-16 (ADR-48):** bilderna följer med i ZIP-exporten och i Komplett
-  rapport. De bär inga namn eller identifierare, punkterna följer tröskeln som ovan, och filerna hanteras som
-  personuppgifter (§8, punkt 1).
+  rapport. Punkterna följer tröskeln som ovan, text ur fältet för AID-etikett står i förklaringen som den står i
+  lönefilen när spridningsdiagrammet är färglagt efter den (ADR-85), och filerna hanteras som personuppgifter (§8, punkt 1).
 - **Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön** följer tröskeln för varje kön:
   - Översikten per BAS-intervall (skärm, Word, PDF) har bara rader där båda könen når den.
   - Trattdiagrammet har en punkt per AID-etikett i BAS-intervall, och bara där båda könen i gruppen når den.
