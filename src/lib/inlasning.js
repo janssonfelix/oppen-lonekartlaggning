@@ -35,7 +35,8 @@ import { tolkaAnsvarskod as _anTolka, ansvarsgrupp as _anGrupp } from './ansvar.
  *
  * Det som får stå runt talet: blanksteg (också hårt och smalt hårt mellanslag) och apostrof som tusentalsavgränsare,
  * ett tecken först (+, - eller minustecknet U+2212), valutan först eller sist (kr, SEK; sist också kronor, ":-" och
- * ",-", valfritt med punkt efter) och % sist. Allt annat gör värdet ogiltigt och funktionen ger "": en felskriven lön ska synas i
+ * ",-", valfritt med punkt efter), % sist och "år" sist (ålder skriven med enheten, "45 år"; suffixet är hela resten,
+ * så "45årig" avvisas). Allt annat gör värdet ogiltigt och funktionen ger "": en felskriven lön ska synas i
  * inläsningsrapporten, inte läsas som ett annat tal. Formen prövas därför när suffixet och tusentalsavgränsarna är borta:
  *   - bokstäver och andra tecken ("12abc", "abc12", "12 st", "3.25E+04") avvisas;
  *   - flera decimaltecken av samma slag som inte är tusentalsgrupper ("1.2.3", "1,2,3") avvisas;
@@ -51,7 +52,7 @@ export function _normalizeNumberString(raw) {
     if (typeof raw === 'number') return isFinite(raw) ? String(raw) : '';
     let s = raw.toString().trim()
         .replace(/[\s  ']/g, '')        // mellanslag, NBSP, smal NBSP, apostrof-tusental
-        .replace(/(kronor|kr|sek|:-|,-|%)\.?$/i, '')   // valutasuffix och procenttecken
+        .replace(/(kronor|kr|sek|år|:-|,-|%)\.?$/i, '')   // valutasuffix, procenttecken och år
         .replace(/^(kr|sek)\.?/i, '')                  // valutan före talet
         .replace(/−/g, '-')                   // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
         .replace(/^\+/, '');

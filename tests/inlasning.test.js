@@ -32,6 +32,11 @@ describe('inlasning: tal (parseNumber, parseNumberStrict)', () => {
         ['12abc', 0, 'invalid'],
         ['abc12', 0, 'invalid'],
         ['12 st', 0, 'invalid'],
+        ['45 år', 45, 'ok'],
+        ['45år', 45, 'ok'],
+        ['45 ÅR', 45, 'ok'],
+        ['45årig', 0, 'invalid'],
+        ['45 årsarbetare', 0, 'invalid'],
         ['1.2.3', 0, 'invalid'],
         ['1,2,3', 0, 'invalid'],
         ['12,34.56', 0, 'invalid'],
@@ -238,8 +243,12 @@ describe('inlasning: en lönerad (tolkaLonerad)', () => {
     });
 
     it('skräp efter siffrorna: lönen och åldern blir ogiltiga och poängen saknas', () => {
-        const rec = tolkaLonerad(falt('45år', { lon: '32500abc', poang: '342x' }), 2026);
+        const rec = tolkaLonerad(falt('45årig', { lon: '32500abc', poang: '342x' }), 2026);
         expect(rec).toMatchObject({ lon: 0, _lonStatus: 'invalid', alder: 0, _alderStatus: 'invalid', poang: null });
+    });
+    it('åldern med enheten "år" läses som ålder', () => {
+        expect(tolkaLonerad(falt('45år'), 2026)).toMatchObject({ alder: 45, _alderStatus: 'ok' });
+        expect(tolkaLonerad(falt('45 ÅR'), 2026)).toMatchObject({ alder: 45, _alderStatus: 'ok' });
     });
 
     it('ansvarskoden läses bara när en godkänd kolumn finns', () => {

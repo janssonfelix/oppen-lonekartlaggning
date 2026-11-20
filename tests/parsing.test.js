@@ -498,6 +498,11 @@ describe('tabell: tal (parseNumber + parseNumberStrict)', () => {
         ['12abc', 0, 'invalid'],         // skräp efter siffrorna: en felskriven lön syns i inläsningsrapporten
         ['abc12', 0, 'invalid'],
         ['12 st', 0, 'invalid'],         // "st" är inget godkänt suffix
+        ['45 år', 45, 'ok'],             // ålder med enheten
+        ['45år', 45, 'ok'],
+        ['45 ÅR', 45, 'ok'],
+        ['45årig', 0, 'invalid'],        // suffixet ska vara hela resten
+        ['45 årsarbetare', 0, 'invalid'],
         ['3.25E+04', 0, 'invalid'],      // exponentform i text läses inte (förr: 3,2504)
         ['-', 0, 'invalid'],
         ['.', 0, 'invalid'],
