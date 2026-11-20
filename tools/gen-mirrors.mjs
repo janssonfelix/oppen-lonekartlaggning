@@ -52,7 +52,7 @@ export const MODULES = [
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',
             bhJustera: '_bhJustera',
             // returneras för att andra lib-moduler importerar dem (se _parseImports); appen använder dem inte
-            matMul: null, invert: null, median: null
+            matMul: null, invert: null, median: null, linearRegression: null, percentilintervall: null
         }
     },
     {
@@ -126,6 +126,18 @@ export const MODULES = [
             justeradSkillnad: '_rgJusteradSkillnad',
             // Stegens nycklar och det som visas för dem (ADR-74)
             stegNamn: '_rgStegNamn', stegEtikett: '_rgStegEtikett'
+        }
+    },
+    {
+        // Osäkerheten kring skattningarna: bootstrapintervallen på mediankvoten, konfidensbandet kring en regressionslinje,
+        // styrkan, extremvärdena, trattens underlag och kvantilregressionens intervall. Importerar stat.js, rng.js,
+        // status.js, likvardighet.js och regression.js: efter dem. Appens adaptrar behåller sina tidigare namn.
+        file: 'osakerhet.js', ns: '__mirrorOsakerhet',
+        expose: {
+            organisationensKvotKI: '_osOrganisationensKvotKI', medianKvotKI: '_osMedianKvotKI', medianKvotKIGiltiga: '_osMedianKvotKIGiltiga',
+            regressionslinjensBand: '_osRegressionslinjensBand', styrkeanalys: '_osStyrkeanalys', gruppMde: '_osGruppMde',
+            extremvarden: '_osExtremvarden', trattUnderlag: '_osTrattUnderlag', kvantilBootstrap: '_osKvantilBootstrap',
+            osakerhetKonstanter: '_osKonstanter'
         }
     },
     {
