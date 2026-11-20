@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot } from '../src/lib/sektor.js';
 import { computeSequentialGap } from '../src/lib/regression.js';
 import { fitOLS, tQuantile } from '../src/lib/stat.js';
+import { gapUppdelning } from '../src/lib/gapuppdelning.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 const rad = (aid, kon, lon, alder = 40, bas = 'C', extra = {}) => ({ aid, kon, lon, alder, bas, ...extra });
@@ -181,20 +182,42 @@ describe('sektor: rubriken och bisatsen för den justerade skillnaden (en regel 
 });
 
 describe('sektor: sektorernas andel av gapet', () => {
+    // Verktygets tecken (regressionsmodellen §1, Tecknet): kvinnor − män, negativt när kvinnor ligger lägre.
     it('hela gapet beror på sektorsfördelningen när lönerna är lika inom sektorerna', () => {
         // Vård 30 000 för alla, teknik 40 000 för alla; kvinnor mest i vård, män mest i teknik.
         const rader = [...flera(8, () => rad('207011', 'kvinna', 30000)), ...flera(2, () => rad('502010', 'kvinna', 40000)),
                        ...flera(2, () => rad('207011', 'man', 30000)), ...flera(8, () => rad('502010', 'man', 40000))];
         const a = sektorernasAndel(rader, { k: 2 });
-        expect(a.gapKr).toBeCloseTo(6000, 6);
-        expect(a.sektorKr).toBeCloseTo(6000, 6);
+        expect(a.gapKr).toBeCloseTo(-6000, 6);
+        expect(a.sektorKr).toBeCloseTo(-6000, 6);
         expect(a.andel).toBeCloseTo(1, 6);
     });
     it('ingen del när fördelningen är lika', () => {
         const rader = [...flera(5, () => rad('207011', 'kvinna', 30000)), ...flera(5, () => rad('207011', 'man', 33000))];
         const a = sektorernasAndel(rader, { k: 5 });
-        expect(a.gapKr).toBeCloseTo(3000, 6);
+        expect(a.gapKr).toBeCloseTo(-3000, 6);
         expect(a.sektorKr).toBeCloseTo(0, 6);
+    });
+    // Filhuvudet: samma formel som del A i gapUppdelning, med huvudområde som enda variabel. Då är det samma tal,
+    // med samma tecken, också när delen går åt andra hållet än hela skillnaden.
+    it('beloppet och gapet är del A och hela skillnaden i gapUppdelning med huvudområde som enda variabel', () => {
+        const fall = [
+            [...flera(30, i => rad('207011', 'kvinna', 30000 + i * 40)), ...flera(12, i => rad('207011', 'man', 31500 + i * 30)),
+             ...flera(12, i => rad('502010', 'kvinna', 41000 + i * 50)), ...flera(28, i => rad('502010', 'man', 40000 + i * 60))],
+            // Kvinnorna mest i det högre avlönade området: delen är positiv fast hela skillnaden är negativ.
+            [...flera(12, i => rad('207011', 'kvinna', 30000 + i * 10)), ...flera(30, i => rad('207011', 'man', 34000 + i * 20)),
+             ...flera(30, i => rad('502010', 'kvinna', 38000 + i * 15)), ...flera(12, i => rad('502010', 'man', 45000 + i * 25)),
+             ...flera(11, i => rad('651010', 'kvinna', 26000 + i)), ...flera(10, i => rad('651010', 'man', 27000 + i))],
+        ];
+        for (const rader of fall) {
+            const a = sektorernasAndel(rader, { k: 10 });
+            const gu = gapUppdelning(rader, { k: 10, variabler: ['sektor'] });
+            expect(gu.variabler).toEqual(['sektor']);
+            expect(a.gapKr).toBeCloseTo(gu.gap, 6);
+            expect(a.sektorKr).toBeCloseTo(gu.delar.A, 6);
+            expect(a.gapKr).toBeLessThan(0);
+        }
+        expect(sektorernasAndel(fall[1], { k: 10 }).sektorKr).toBeGreaterThan(0);
     });
     it('null när ett kön har färre än k i hela underlaget (annars röjs medellönen via gapet i procent)', () => {
         const rader = [...flera(40, () => rad('207011', 'kvinna', 30000)), rad('502010', 'man', 47123)];
@@ -235,7 +258,7 @@ describe('sektor: sammanräknade huvudområden (ADR-87)', () => {
         const rader = [...flera(40, () => rad('207011', 'kvinna', 30000)), ...flera(30, () => rad('207011', 'man', 31000)), ...flera(2, () => rad('651010', 'man', 52000))];
         const a = sektorernasAndel(rader, { k: 10 });
         expect(a).toMatchObject({ sektorKr: null, andel: null });
-        expect(a.gapKr).toBeGreaterThan(0);
+        expect(a.gapKr).toBeLessThan(0);
         expect(sektorAndelNot(a, 10)).toMatch(/^Hur mycket av skillnaden som beror på att kvinnor och män arbetar i olika huvudområden redovisas inte, eftersom ett kön har färre än 10 personer i Städ, tvätt och renhållningsarbete\./);
     });
     it('på skärmen (tröskeln 1) räknas inget samman', () => {

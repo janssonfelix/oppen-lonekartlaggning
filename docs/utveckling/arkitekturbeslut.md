@@ -563,7 +563,10 @@ står kvar (ADR-70). *Avvisat:* att undertrycka delar och poster i stället för
 underlag med en liten grupp skulle ta bort hela uppdelningen ur exporten, eftersom delarna summerar till hela
 skillnaden och en dold del går att räkna fram ur de andra; att pröva numeriskt vad som går att lösa ut ur varje
 utskrift, som är svårare att granska och att lita på; att bara dölja fler poster, som inte stänger vägen genom
-delarna. *Gäller i dag:* `regressionsmodellen.md` §10 och `k-troskeln.md` avsnitt 2.
+delarna. *Gäller i dag:* `regressionsmodellen.md` §10 och `k-troskeln.md` avsnitt 2. *Not:* huvudområdenas andel
+räknade gapet och beloppet som män minus kvinnor, fast del A och resten av verktyget räknar kvinnor minus män
+(`regressionsmodellen.md` §1, *Tecknet*). Rättat 2026-11-20 som ett fel mot den regeln, inget nytt beslut: beloppen
+har bytt tecken, andelen är densamma, och ett test kräver att beloppet är del A med huvudområde som enda variabel.
 
 **ADR-88 — Differensprovet är en del av invarianten för minsta gruppstorlek.** Beslutat av underhållaren 2026-11-19.
 Ändrar vakten för S4, inte dess lydelse. Invarianten I4 letade efter de små gruppernas lönevärden som de står, och

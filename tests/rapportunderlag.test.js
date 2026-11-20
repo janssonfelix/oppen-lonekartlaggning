@@ -572,7 +572,7 @@ describe('rapportunderlag: sektorer där modellen med BAS inte går att skatta',
 
 describe('rapportunderlag: sektorernas andel nära noll', () => {
     it('under 1 % sägs att skillnaden nästan inte alls beror på sektorerna', () => {
-        const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6177, sektorKr: -2, andel: -0.0003 } }, { k: 10 });
+        const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: -6177, sektorKr: 2, andel: -0.0003 } }, { k: 10 });
         expect(b.stycken.join(' ')).toMatch(/nästan inte alls på att kvinnor och män arbetar i olika huvudområden/);
         expect(b.stycken.join(' ')).not.toMatch(/−0,0|-0,0/);
     });
@@ -581,13 +581,13 @@ describe('rapportunderlag: sektorernas andel nära noll', () => {
 describe('rapportunderlag: sammanräknade huvudområden (ADR-87)', () => {
     const VARD = 'Vård- och omsorgsarbete med mera', STAD = 'Städ, tvätt och renhållningsarbete';
     it('beloppet står med en not om vilka områden som räknats samman och varför', () => {
-        const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6000, sektorKr: 1500, andel: 0.25, sammanslagna: [VARD, STAD], sma: [STAD] } }, { k: 10 });
+        const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: -6000, sektorKr: -1500, andel: 0.25, sammanslagna: [VARD, STAD], sma: [STAD] } }, { k: 10 });
         const text = b.stycken.join(' ');
-        expect(text).toMatch(/beror 1.500.kr \(25,0.%\) på att kvinnor och män arbetar i olika huvudområden\./);
+        expect(text).toMatch(/kvinnor mot män \(−6.000.kr per månad\), beror −1.500.kr \(25,0.%\) på att kvinnor och män arbetar i olika huvudområden\./);
         expect(text).toContain(`Huvudområdena ${VARD} och ${STAD} räknas här samman, eftersom ett kön har färre än 10 personer i ${STAD}.`);
     });
     it('räknas alla samman står inget belopp, bara noten', () => {
-        const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6000, sektorKr: null, andel: null, sammanslagna: [VARD, STAD], sma: [STAD] } }, { k: 10 });
+        const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: -6000, sektorKr: null, andel: null, sammanslagna: [VARD, STAD], sma: [STAD] } }, { k: 10 });
         const text = b.stycken.join(' ');
         expect(text).not.toMatch(/beror .* kr/);
         expect(text).toContain('Hur mycket av skillnaden som beror på att kvinnor och män arbetar i olika huvudområden redovisas inte');

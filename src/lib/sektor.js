@@ -7,7 +7,7 @@
  * k-regler som Lika arbete (ett kön under k → samlad median; gruppen under k → maskerad), justerad
  * skillnad med huvudregressionens kodning (kön + ålder när lönefilen har den + BAS som indikatorer, HC3 och
  * t-kvantil; justeradSkillnad i regression.js, ADR-78) när sektorn har ≥ 30 personer och ≥ k av varje
- * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel som del A i
+ * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel och samma tecken som del A i
  * gapuppdelning.js, med sektor i stället för BAS). Går modellen med BAS inte att skatta i ett huvudområde med minst två
  * BAS-intervall (kön och BAS går inte att skilja åt) ges inget justerat tal: ett tal utan BAS vore inte justerat för BAS.
  *
@@ -92,7 +92,9 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
 }
 
 /**
- * Sektorernas andel av gapet i medellön (män − kvinnor): Σ_s Δs_s · (W̄_s − W̄).
+ * Sektorernas andel av gapet i medellön (kvinnor − män, negativt när kvinnor ligger lägre, som i gapuppdelning.js):
+ * Σ_s Δs_s · (W̄_s − W̄) med Δs = andelen av kvinnorna − andelen av männen. sektorKr är del A i gapUppdelning med
+ * huvudområde som enda variabel; andel = sektorKr / gapKr har inget tecken att byta.
  * Null när ett kön har färre än k personer: gapet i kronor tillsammans med gapet i procent
  * (Struktur) ger annars det lilla könets medellön — samma regel som gapuppdelning.js.
  *
@@ -107,7 +109,7 @@ export function sektorernasAndel(rader, { k = 10 } = {}) {
     const ma = (rader || []).filter(r => r.lon > 0 && konOf(r) === 'Man');
     if (!kv.length || !ma.length || kv.length < k || ma.length < k) return null;
     const medel = a => a.reduce((s, r) => s + r.lon, 0) / a.length;
-    const gapKr = medel(ma) - medel(kv);
+    const gapKr = medel(kv) - medel(ma);
     const namn = [...new Set([...kv, ...ma].map(r => sektorsnamn(r.aid)))];
     const grupper = namn.map(s => ({ s, k: kv.filter(r => sektorsnamn(r.aid) === s), m: ma.filter(r => sektorsnamn(r.aid) === s) }));
     const samman = sammanslagning(grupper.map(g => ({ namn: g.s, nKv: g.k.length, nMa: g.m.length })), k);
@@ -115,7 +117,7 @@ export function sektorernasAndel(rader, { k = 10 } = {}) {
     const delar = samman.length ? [...egna, { s: null, k: samman.flatMap(i => grupper[i].k), m: samman.flatMap(i => grupper[i].m) }] : egna;
     const cell = ({ k, m }) => {
         const wK = k.length ? medel(k) : medel(m), wM = m.length ? medel(m) : medel(k);
-        return { dS: m.length / ma.length - k.length / kv.length, w: (wK + wM) / 2, sBar: (m.length / ma.length + k.length / kv.length) / 2 };
+        return { dS: k.length / kv.length - m.length / ma.length, w: (wK + wM) / 2, sBar: (m.length / ma.length + k.length / kv.length) / 2 };
     };
     const ordnade = ix => ix.map(i => grupper[i].s).sort(jamforSektor);
     const liten = n => n > 0 && n < k;

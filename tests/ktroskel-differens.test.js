@@ -412,7 +412,8 @@ describe('Huvudområdena: sektorsTabell och sektorernasAndel', () => {
     // Lönestrukturs vy (src/app/37-struktur.js) och i rapportunderlaget (avsnittet Per huvudområde). I samma vy och i
     // samma "Kopiera alla avsnitt" står kvinnornas och männens medellön (Var uppstår löneskillnaden?,
     // src/app/68-var-uppstar-gapet.js och avsnittet uppdelning), antalet kvinnor och män (Sammanfattning) och varje
-    // visat huvudområdes antal och andel kvinnor. Med två huvudområden är sektorKr = Δs₁ · (w₁ − w₂), där wₛ är
+    // visat huvudområdes antal och andel kvinnor. Med två huvudområden är sektorKr = Δs₁ · (w₁ − w₂), med Δs₁ = andelen av
+    // kvinnorna − andelen av männen i område 1 (verktygets tecken, som gapuppdelning.js), där wₛ är
     // medelvärdet av områdets medellön för kvinnor och män. Har det lilla området bara ett kön (en person har alltid
     // det) är w₂ dess medellön, och med de två totalerna blir det en ekvation med en okänd. Hålet stängdes med
     // sammanslagning (ADR-87, `sammanslagning` i src/lib/undertryckning.js): ett huvudområde där ett kön har färre än
@@ -432,7 +433,7 @@ describe('Huvudområdena: sektorsTabell och sektorernasAndel', () => {
                 if (!skrivs(andel)) return null;
                 const v = x => (avrunda ? heltal(x) : x);
                 const mKv = v(gu.medel.kv), mMa = v(gu.medel.ma), skr = v(andel.sektorKr);
-                const D = skr / (nMa1 / nMa - nKv1 / nKv);   // w₁ − w₂
+                const D = skr / (nKv1 / nKv - nMa1 / nMa);   // w₁ − w₂ (sektorKr har verktygets tecken: Δs = kvinnor − män)
                 // w₁ = (mKv + ma₁) / 2 och ma₁ = (nMa · mMa − nMa₂ · w₂) / nMa₁, ger w₂:
                 return ((mKv + nMa * mMa / nMa1) / 2 - D) / (1 + nMa2 / (2 * nMa1));
             }, liten.medel);

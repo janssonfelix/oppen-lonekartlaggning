@@ -373,9 +373,9 @@ function renderSektorer(d) {
     const andelNot = _skSektorAndelNot(andel, kTroskel());
     const andelText = (!andel || andel.andel == null ? ''
         : Math.abs(andel.andel) < 0.01
-            ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror nästan inte alls
+            ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror nästan inte alls
                på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).</p>`
-            : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror
+            : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror
                ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`)
         + (andelNot ? `<p class="sektor-andel">${esc(andelNot)}</p>` : '');
     host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${termStor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>

@@ -55,7 +55,7 @@ avsnitt 11.
 | Vad varje variabel tillför | `computeVariabelTillfor`, `regression.js` | som ovan | `regressionsmodellen.md` §2 | `tests/regression.test.js` | saknas |
 | Var uppstår löneskillnaden: gapet i medellön (kvinnor − män) i delar som summerar exakt, med sammanslagning av små delar | `gapUppdelning`, `gapuppdelning.js` | lön, kön, valda variabler | `regressionsmodellen.md` §10; ADR-22, 65, 87 | `tests/gapuppdelning.test.js`, `tests/ktroskel-invarianter.test.js` | `04-gapuppdelning-2bas-2aid.json` |
 | Översikten per huvudområde: medianer, kvot och justerad skillnad (≥ 30 personer) | `sektorsTabell`, `sektor.js` (justerat via `justeradSkillnad`, `regression.js`) | lön, kön, ålder, BAS, AID | ADR-33, 78 | `tests/sektor.test.js` | saknas |
-| Huvudområdenas andel av gapet i medellön | `sektorernasAndel`, `sektor.js` | lön, kön, AID | samma formel som del A i `gapuppdelning.js`; ADR-87 | `tests/sektor.test.js` | saknas |
+| Huvudområdenas andel av gapet i medellön (kvinnor − män) | `sektorernasAndel`, `sektor.js` | lön, kön, AID | samma formel och tecken som del A i `gapuppdelning.js`; `regressionsmodellen.md` §10; ADR-87 | `tests/sektor.test.js` | saknas |
 | Livscykelmodellen: log(lön) med kön, ålder, ålder², samspelen och BAS | `livscykelRegression`, `livscykel.js` | lön, kön, ålder, BAS | verktygets eget val, ingen extern källa; ADR-71 | `tests/livscykel.test.js`, `tests/ktroskel-livscykel.test.js` | saknas |
 
 ## 4. Osäkerheten och uppmärksamhetstrappan
