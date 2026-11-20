@@ -41,6 +41,12 @@ export const MODULES = [
                   adjektiv: 'termAdjektiv', genitiv: 'termGenitiv', stor: 'termStor', ordForAntal: 'termForAntal' }
     },
     {
+        // Kompletterande undertryckning och sammanslagning (ADR-83, ADR-84): tidigt, så att perbas.js, gapuppdelning.js
+        // och sektor.js kan importera dem. Appen anropar dem inte direkt.
+        file: 'undertryckning.js', ns: '__mirrorUndertryckning',
+        expose: { kompletterandeUndertryckning: null, sammanslagning: null }
+    },
+    {
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',

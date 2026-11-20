@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Tabellerna per BAS-intervall (src/lib/perbas.js): formen ur arbetsgivarnas utkast och minsta gruppstorlek.
 import { describe, it, expect } from 'vitest';
-import { perBasTabeller, aldersgruppNamn, yrkesnamn, perBasStandard, valideraPerBasRecept, perBasReceptArStandard, kompletterandeUndertryckning } from '../src/lib/perbas.js';
+import { perBasTabeller, aldersgruppNamn, yrkesnamn, perBasStandard, valideraPerBasRecept, perBasReceptArStandard } from '../src/lib/perbas.js';
 
 const rad = (bas, aid, kon, lon, alder, yrkeLabel = `Yrke ${aid}`) => ({ bas, aid, yrke: `${aid} ${yrkeLabel}`, yrkeLabel, kon, lon, alder });
 const grupp = (bas, aid, kon, n, lon0, alder0 = 30) => Array.from({ length: n }, (_, i) => rad(bas, aid, kon, lon0 + i * 100, alder0 + (i % 25)));
@@ -129,34 +129,6 @@ describe('perbas: lönefil utan ålder (ADR-64)', () => {
 });
 
 describe('perbas: kompletterande undertryckning (ADR-83)', () => {
-    const del = (namn, n, dold = false) => ({ namn, n, dold });
-    it('inga dolda delar: ingenting undertrycks', () => {
-        expect(kompletterandeUndertryckning([del('A', 12), del('B', 30)], 10)).toEqual([]);
-        expect(kompletterandeUndertryckning([], 10)).toEqual([]);
-        expect(kompletterandeUndertryckning([del('A', 12), del('B', 0, true)], 10)).toEqual([]);
-    });
-    it('de dolda omfattar minst k personer: ingenting undertrycks', () => {
-        expect(kompletterandeUndertryckning([del('A', 12), del('B', 6, true), del('C', 4, true)], 10)).toEqual([]);
-        expect(kompletterandeUndertryckning([del('A', 12), del('B', 10, true)], 10)).toEqual([]);
-    });
-    it('en dold med en person: den minsta visade delen undertrycks', () => {
-        expect(kompletterandeUndertryckning([del('A', 30), del('B', 12), del('C', 1, true), del('D', 20)], 10)).toEqual([1]);
-    });
-    it('vid lika antal väljs delen först efter namn, sedan efter ordningen i listan', () => {
-        expect(kompletterandeUndertryckning([del('C', 12), del('A', 12), del('X', 1, true)], 10)).toEqual([1]);
-        expect(kompletterandeUndertryckning([del('', 12), del('', 12), del('', 1, true)], 10)).toEqual([0]);
-    });
-    it('flera steg: delar undertrycks tills de dolda tillsammans når k', () => {
-        // k = 25: 1 dold + 10 + 11 = 22 räcker inte, + 12 = 34.
-        expect(kompletterandeUndertryckning([del('A', 12), del('B', 10), del('C', 11), del('D', 40), del('E', 1, true)], 25)).toEqual([1, 2, 0]);
-    });
-    it('räcker inte alla delar undertrycks alla, och bara totalen har ett medelvärde', () => {
-        expect(kompletterandeUndertryckning([del('A', 3), del('B', 2), del('C', 1, true)], 10)).toEqual([1, 0]);
-    });
-    it('en visad del utan personer väljs aldrig', () => {
-        expect(kompletterandeUndertryckning([del('A', 0), del('B', 15), del('C', 2, true)], 10)).toEqual([1]);
-    });
-
     // Fem intervall: A–C med tolv personer (sex kvinnor, sex män), D med 30 (15 + 15), E med två kvinnor.
     const fem = () => [
         ...['A', 'B', 'C'].flatMap((bas, j) => [...grupp(bas, `10${j}`, 'kvinna', 6, 30000 + j * 1000), ...grupp(bas, `10${j}`, 'man', 6, 30500 + j * 1000)]),

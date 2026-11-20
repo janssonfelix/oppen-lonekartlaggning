@@ -14,7 +14,7 @@
  * k personer får ingen lönerad, och könsuppdelade mått visas bara när båda könen når k. De utelämnade
  * räknas upp så att rapporten säger vad den inte redovisar. Raden Alla och organisationens rad räknas på hela
  * underlaget, så att en utelämnad grupps medellön inte ska gå att räkna fram som en differens undertrycks vid behov
- * också medelvärdena för en visad grupp (kompletterande undertryckning, ADR-83, `kompletterandeUndertryckning`).
+ * också medelvärdena för en visad grupp (kompletterande undertryckning, ADR-83, `kompletterandeUndertryckning` i undertryckning.js).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -22,6 +22,7 @@ import { median, quantile } from './stat.js';
 import { sektorsnamn } from './aid.js';
 import { statistikFor } from './jamforelse.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
+import { kompletterandeUndertryckning } from './undertryckning.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -58,38 +59,6 @@ const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length 
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), p25: quantile(l, 0.25), med: median(l), p75: quantile(l, 0.75), p90: quantile(l, 0.9), medel: _medel(l) } : null; };
-
-/**
- * Kompletterande undertryckning (ADR-83, `docs/utveckling/k-troskeln.md` avsnitt 2): vilka visade delar vars
- * medelvärden också ska undertryckas, så att en total minus de visade delarna aldrig ger medelvärdet för färre än k
- * personer.
- *
- * Delarna är en uppdelning av totalen; `dold` är en del som redan utelämnas eller undertrycks. Omfattar de dolda
- * tillsammans 0 eller minst k personer ändras ingenting. Annars väljs den minsta visade delen (färst personer, vid lika
- * antal först efter namn och sedan ordningen i listan), och så vidare tills de dolda tillsammans når k. Räcker inte
- * alla delar väljs alla, och bara totalen har ett medelvärde. Delar utan personer (n ≤ 0) väljs aldrig.
- *
- * Funktionen är allmän: den vet inte vad delarna är (BAS-intervall, AID-etiketter, ett köns del av ett intervall).
- * Antal och andelar berörs inte (ADR-70), och medianer och percentiler inte heller (de går inte att dela upp).
- * @param {Array<{n:number, dold?:boolean, namn?:string}>} delar
- * @param {number} k
- * @returns {number[]} index i `delar` för de visade delar som ska undertryckas, i den ordning de valdes
- */
-export function kompletterandeUndertryckning(delar, k) {
-    let dolda = 0;
-    for (const d of delar) if (d.dold) dolda += d.n;
-    if (dolda <= 0 || dolda >= k) return [];
-    const kandidater = delar.map((d, i) => ({ n: d.n, namn: String(d.namn ?? ''), i }))
-        .filter(d => !delar[d.i].dold && d.n > 0)
-        .sort((a, b) => a.n - b.n || a.namn.localeCompare(b.namn, 'sv') || a.i - b.i);
-    const ut = [];
-    for (const d of kandidater) {
-        if (dolda >= k) break;
-        ut.push(d.i);
-        dolda += d.n;
-    }
-    return ut;
-}
 
 /** Yrkesgruppens namn: AID-koden och etiketten. */
 export function yrkesnamn(r) {
