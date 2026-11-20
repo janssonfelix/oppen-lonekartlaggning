@@ -672,7 +672,9 @@ describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () =>
         expect(gammal.level).toBe('poor');
     });
     it('reserv: når ingen grupp golvet för båda könen används hela urvalets σ', () => {
-        const w = createAppWindow(); w.__state.data = rader().map(d => ({ ...d, yrke: `${d.yrke}${d.kon === 'man' ? 'm' : 'k'}` }));
+        // Varje kön får en egen AID-kod (en grupp är koden, inte texten, ADR-89), så att ingen grupp har båda könen.
+        const egenKod = d => `${d.kon === 'man' ? '11' : '12'}${d.bas}`;
+        const w = createAppWindow(); w.__state.data = rader().map(d => ({ ...d, yrke: `${egenKod(d)} Y${d.bas}`, aid: egenKod(d) }));
         const p = w.eval('computePowerAnalysis()');
         expect(p.sigmaKalla).toBe('helaUrvalet');
         expect(p.sigma).toBe(p.sigmaHela);

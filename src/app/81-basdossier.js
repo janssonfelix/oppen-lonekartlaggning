@@ -58,17 +58,19 @@ function buildBasdossier(bas) {
         diffPct: { p10: pct(p10, pol.p10), med: pct(median, pol.med), p90: pct(p90, pol.p90) } } : null;
 
     // 2. Yrkesgrupperna i intervallet: antal och medianer räknade på intervallets rader, statusen Lika arbetes för hela
-    //    yrket (Lika arbete grupperar per yrke över alla BAS-intervall), så att dossiern aldrig säger något annat.
+    //    yrket (Lika arbete grupperar per AID-kod över alla BAS-intervall, ADR-89), så att dossiern aldrig säger något annat.
     const lika = _ruLikaArbeteGrupper(df, { k, golv: statGolv() });
     const alla = getData();
-    const helaYrket = new Map(laLikaGrupper(alla, k).grupper.map(g => [g.yrke, g]));
+    //    Grupperna paras på AID-koden: namnet (texten på gruppens första rad) kan skilja sig mellan intervallet och hela
+    //    underlaget när koden har flera texter.
+    const helaYrket = new Map(laLikaGrupper(alla, k).grupper.map(g => [g.aid, g]));
     const basPerYrke = new Map();
-    for (const r of alla) { if (!(r.lon > 0)) continue; if (!basPerYrke.has(r.yrke)) basPerYrke.set(r.yrke, new Set()); basPerYrke.get(r.yrke).add(r.bas); }
+    for (const r of alla) { if (!(r.lon > 0)) continue; const kod = aidAvRad(r); if (!basPerYrke.has(kod)) basPerYrke.set(kod, new Set()); basPerYrke.get(kod).add(r.bas); }
     const nycklar = new Set(gruppdossierCandidates().map(g => g.key));
     const yrken = lika.grupper.map(g => {
-        const aid = aidAvYrke(g.yrke);
-        const delade = !g.samladMedian, hela = helaYrket.get(g.yrke) || g;
-        const ocksaI = [...(basPerYrke.get(g.yrke) || [])].filter(b => b !== bas).sort();
+        const aid = g.aid;
+        const delade = !g.samladMedian, hela = helaYrket.get(aid) || g;
+        const ocksaI = [...(basPerYrke.get(aid) || [])].filter(b => b !== bas).sort();
         return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(hela), samlad: !!g.samladMedian, helaTot: hela.tot, ocksaI,
             medKv: delade ? g.medKv : null, medMa: delade ? g.medMa : null, kvotPct: delade ? g.kvot * 100 : null,
             medTot: g.samladMedian ? g.medTot : null, dossierKey: nycklar.has(`${aid}|${bas}`) ? `${aid}|${bas}` : null };

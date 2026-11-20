@@ -56,12 +56,12 @@ function explorerUrvalSlappMinne() {
     _urvalSignatur = null;
 }
 
-// Kategorivärden i aktuell data, sorterade som Utforska sorterar dimensionen.
+// Kategorivärden i aktuell data, sorterade som Utforska sorterar dimensionen. AID-etiketten är koden (_utNycklar).
 function _urvalVarden(rows, dim) {
-    const set = new Set();
+    const set = new Set(), nyckel = _utNycklar(rows);
     for (const r of rows) {
         if (!(r.lon > 0)) continue;
-        const k = _utGroupKey(r, dim);
+        const k = nyckel(r, dim);
         if (k != null) set.add(k);
     }
     const vals = [...set];

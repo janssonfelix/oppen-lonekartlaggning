@@ -312,7 +312,7 @@ function generateEUDirectiveMatrix() {
     const utelamnadeYrken = lika.utelamnade;
     const samladMedianYrken = [];
     lika.grupper.forEach(g => {
-        const { yrke, nKv, nMa, tot } = g;
+        const { yrke, aid, nKv, nMa, tot } = g;
         const pctKv = nKv / tot;
         // Samma definition som Likvärdigt arbete (valet Mer än/eller mer och kvinnotröskeln; ADR-60, ADR-72).
         const dominans = _aidbasDominans(pctKv * 100, aidbasDefinition(), aidbasGrans());
@@ -321,7 +321,7 @@ function generateEUDirectiveMatrix() {
         // helt ligger under k utelämnas och räknas upp i noten under tabellen.
         if (g.samladMedian) {
             samladMedianYrken.push(yrke);
-            rows.push({ yrke, nKv, nMa, tot, dominans,
+            rows.push({ yrke, aid, nKv, nMa, tot, dominans,
                 medTot: g.medTot, gap: 0, samladMedian: true,
                 statusKlass: '', status: `<span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; ${kTroskel()}<span class="bara-export">)</span></span>` });
             return;
@@ -344,7 +344,7 @@ function generateEUDirectiveMatrix() {
         }
         // Kvinnors median i procent av mäns — som kolumnens exportrubrik säger.
         const displayGap = svPct(ratio * 100, 1);
-        rows.push({yrke, nKv, nMa, tot, dominans, medKv, medMa, gap, displayGap, status, statusKlass, samladMedian: false,
+        rows.push({yrke, aid, nKv, nMa, tot, dominans, medKv, medMa, gap, displayGap, status, statusKlass, samladMedian: false,
             niva: g.niva, direktiv: g.direktiv, kvot: ratio * 100 });
     });
     rows.sort((a,b) => b.gap - a.gap);
@@ -369,7 +369,8 @@ function generateEUDirectiveMatrix() {
         // Cache rad-data så bevis-handler kan plocka upp objektet
         tr._euRow = r;
         tbody.appendChild(tr);
-        const under = _ansvarsUnderraderFor(d.filter(x => x.yrke === r.yrke), fmt);
+        // Gruppens rader är koden, inte texten (likaArbeteGrupper): alla stavningar av etiketten.
+        const under = _ansvarsUnderraderFor(d.filter(x => aidAvRad(x) === r.aid), fmt);
         under.forEach(u => tbody.appendChild(u));
         if (under.some(u => u.classList.contains('la-underrad-ansvar'))) {
             // Pilen på yrkesraden fäller ut ansvarsgrupperna och raden «Utan ledningsansvar» under dem.

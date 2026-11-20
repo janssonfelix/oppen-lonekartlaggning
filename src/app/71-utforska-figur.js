@@ -236,14 +236,14 @@ function _figBubbla(model) {
 // en låda över en handfull personer röjer deras löner (docs/utveckling/diagramkarnan.md, vyns skyldigheter).
 function _figFordelning(model, rows, allaPunkter) {
     const { rad, urval, delaKon } = model.spec, k = kTroskel();
-    const person = _urPersonFilter(urval);
+    const nyckel = _utNycklar(rows), person = _urPersonFilter(urval, nyckel);
     const gruppLiten = new Map(model.celler.map(c => [c.rad, !!c.liten]));
     const farg = { Alla: PALETTE.serie[0], Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, 'Övrig/okänd': PALETTE.semantic.neutral };
     const hinkar = new Map();   // kön → [{ g, lon }]
     const antal = new Map();    // `${g}|${kön}` → antal
     for (const r of rows) {
         if (!(r.lon > 0) || !person(r)) continue;
-        const g = _utGroupKey(r, rad);
+        const g = nyckel(r, rad);
         if (g == null || !gruppLiten.has(g)) continue;
         const kon = delaKon ? _utKonOf(r) : 'Alla';
         if (!hinkar.has(kon)) hinkar.set(kon, []);

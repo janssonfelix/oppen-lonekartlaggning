@@ -103,7 +103,7 @@ function _rapportunderlagBlockExport() {
     // Kolumnen Matchning bara när statistik finns, som i detaljlistan.
     if (referenser) block.push(_ruReferenserBlock(referenser, { ...opt, harStatistik: state.statistik.length > 0 }));
     lika.grupper.filter(g => g.flaggad).forEach((g, i) => {
-        const rader = d.filter(r => r.yrke === g.yrke);
+        const rader = d.filter(r => aidAvRad(r) === g.aid);   // gruppens rader: koden, alla stavningar av etiketten
         const ki = _gdBootstrapGapCI(rader.filter(arKv).map(r => r.lon), rader.filter(arMa).map(r => r.lon));
         const arsbelopp = _prArsbeloppMening(g, state.costSettings, v => _figTalformat(v, 'kr'));
         block.push(_ruGruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
