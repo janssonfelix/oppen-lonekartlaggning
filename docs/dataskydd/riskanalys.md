@@ -524,7 +524,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   åldersgrupp) för det minsta visade intervallet, ett i taget tills de undertryckta når tröskeln, i alla avsnittets
   tabeller och i Excelbladet *Per BAS*; antal och andel kvinnor står kvar. Samma regel gäller per kön mot raden
   *Alla*s medel per kön, och för AID-etiketterna mot organisationens rad när receptet har måttet *Medellön*. En not
-  namnger det som undertryckts (ADR-83; `kompletterandeUndertryckning` i `src/lib/perbas.js`). Vaktas av
+  namnger det som undertryckts (ADR-83; `kompletterandeUndertryckning` i `src/lib/undertryckning.js`). Vaktas av
   differensprovet `tests/ktroskel-differens.test.js` och `tests/perbas.test.js`. Kvar, och inte prövat som differens:
   medellönen per åldersgrupp mot raden *Alla* (antalet per åldersgrupp skrivs inte ut) och vägar som kräver
   uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Prioritering visar skillnaden mellan könen i en grupp
@@ -622,14 +622,19 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   exporten. Panelen säger varför. Vaktas av `tests/smoke-innehall.test.js`.
 
 - **Aggregerade analyser i Lönestruktur och Lika arbete (ADR-22, ADR-24, ADR-25):** *Var uppstår löneskillnaden?* (Lönestruktur)
-  namnger en grupp bara när varje kön i gruppen och dess BAS når tröskeln. Dolda grupper redovisas
-  bara med antal. Topplistan kortas tills summan av |belopp| för de andra poster som inte visas
-  är minst hälften av varje dold posts belopp. Då kan en dold grupps bidrag inte räknas fram ur
-  summorna. Går det inte redovisas inga delar, bara hela skillnaden. Med valbara förklaringsvariabler (ADR-65,
-  1–4 av BAS, huvudområde, AID-mellannivå, AID och åldersgrupp) gäller samma regler per del: en grupp namnges bara när
-  den själv och alla grupper den ligger i når tröskeln, och kan en del inte redovisas visas ingen. Vaktas av
-  `tests/gapuppdelning.test.js` och I7 i `tests/ktroskel-invarianter.test.js`. Kortet och rapportunderlaget
-  visar samma poster. Stabilitetsmärkningen av flaggor bygger bara på grupper där båda könen når
+  räknar i exportläget samman grupper där ett kön har färre än tröskeln med andra grupper inom samma övergrupp,
+  innan delarna räknas, så att varje grupp som delarna bygger på har inga eller minst tröskeln av varje kön
+  (ADR-84; `sammanslagning` i `src/lib/undertryckning.js`). Delarna och posterna är vägda medellöner, och med
+  medellönerna och antalen gav de tidigare ett ekvationssystem där en liten grupps medellön gick att räkna fram fast
+  posten inte stod. En grupp namnges bara när den inte är sammanslagen och den själv och alla grupper den ligger i når
+  tröskeln; övriga redovisas bara med antal, och en not säger varför. Samma regel gäller för varje val av
+  förklaringsvariabler (ADR-65, 1–4 av BAS, huvudområde, AID-mellannivå, AID och åldersgrupp), och för huvudområdenas
+  andel av skillnaden i översikten per huvudområde och rapportunderlaget, där huvudområden som räknas samman namnges i
+  en not och inget belopp står när alla räknas samman. På skärmen räknas inget samman (ADR-51). Vaktas av
+  differensprovet `tests/ktroskel-differens.test.js`, `tests/gapuppdelning.test.js`, `tests/sektor.test.js`,
+  `tests/undertryckning.test.js` och I7 i `tests/ktroskel-invarianter.test.js`. Kvar, och inte prövat som differens:
+  skillnader mellan olika uppdelningar i samma export, som uppdelningen mot tabellerna per BAS-intervall. Kortet och
+  rapportunderlaget visar samma poster. Stabilitetsmärkningen av flaggor bygger bara på grupper där båda könen når
   tröskeln. *Lägre krav, högre lön* tar i rapportunderlaget bara med par där båda grupperna når
   den. Analyserna har inga egna fält och inga egna exportvägar.
 

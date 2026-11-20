@@ -73,7 +73,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-62 | Prioriteringens egna ord för läget mot referensen | Gällande | 2026-11-08 |
 | ADR-63 | Kvantilregressionen på huvudmodellens design, villkorad tolkning | Gällande | 2026-11-08 |
 | ADR-64 | Ålder är valfri i lönefilen | Gällande | 2026-11-08 |
-| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Gällande | 2026-11-10 |
+| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Ändrad av ADR-84 | 2026-11-10 |
 | ADR-68 | Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna | Ändrad av ADR-73 | 2026-11-13 |
 | ADR-69 | Löneöversyns förslag följer den inställda tröskeln | Gällande | 2026-11-13 |
 | ADR-70 | Skyddet gäller lönemått; antal och andelar är handläggarens ansvar | Gällande | 2026-11-14 |
@@ -90,6 +90,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Gällande | 2026-11-16 |
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 | ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
+| ADR-84 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
 
 ## Besluten
 
@@ -499,3 +500,21 @@ står kvar (ADR-70), medianer och percentiler berörs inte, och en not namnger d
 användas i andra moduler; de utskrivande delarna skriver bara ut resultatet. *Avvisat:* att räkna raden *Alla* bara
 på de visade grupperna, som ändrar vad raden betyder; att utelämna raden *Alla*. *Gäller i dag:* `k-troskeln.md`
 avsnitt 2.
+
+**ADR-84 — Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel.** Ändrar
+skyddsregeln i ADR-65 (och ADR-22). Följer principen i ADR-83: det som går att räkna fram ur det som skrivs ut ska
+vara ett medel för minst tröskeln personer, per kön där måttet är per kön. Uppdelningens delar och poster och
+huvudområdenas andel är vägda medellöner per kön, och med medellönerna för hela urvalet och antalen bildade de ett
+ekvationssystem: med två huvudområden där det ena hade färre än tröskeln av ett kön gav beloppet det könets
+medellön, och i uppdelningen gick en liten grupps medellön att lösa ut fast posten inte stod, för vissa val av
+variabler ur delarna själva. Regeln som kortade topplistan räckte därför inte. I exportläget räknas en grupp där ett
+kön har 1 till k − 1 personer samman med andra grupper inom samma övergrupp innan delarna räknas, med samma val av
+grupp som den kompletterande undertryckningen, för varje kön, tills varje grupp har inga eller minst k av varje kön
+(`sammanslagning` i `src/lib/undertryckning.js`, dit också `kompletterandeUndertryckning` flyttades). Den
+sammanslagna gruppen namnges inte; varje del säger hur många grupper som inte namnges, och en not säger varför.
+Delarna summerar till hela skillnaden som förut. Skärmen, med tröskeln 1, ändras inte (ADR-51). Antal och andelar
+står kvar (ADR-70). *Avvisat:* att undertrycka delar och poster i stället för att räkna samman, som för de flesta
+underlag med en liten grupp skulle ta bort hela uppdelningen ur exporten, eftersom delarna summerar till hela
+skillnaden och en dold del går att räkna fram ur de andra; att pröva numeriskt vad som går att lösa ut ur varje
+utskrift, som är svårare att granska och att lita på; att bara dölja fler poster, som inte stänger vägen genom
+delarna. *Gäller i dag:* `regressionsmodellen.md` §10 och `k-troskeln.md` avsnitt 2.
