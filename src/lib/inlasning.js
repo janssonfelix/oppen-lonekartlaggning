@@ -139,6 +139,77 @@ export function _cleanYrkeField(raw) {
 }
 
 /**
+ * Maskeringens två namnmönster i _cleanYrkeField, som yrkeLiknarNamn prövar med: "Förnamn Efternamn" (två ord i
+ * Versal-gemener i rad) och "Efternamn, Förnamn" (båda i versaler eller båda i Versal-gemener). _cleanYrkeField har
+ * mönstren som literaler, eftersom den körs fristående (tests/parsing.test.js plockar ut den ur bygget utan andra
+ * namn); tests/inlasning.test.js kräver att literalerna där är exakt dessa, så att varningen och maskeringen inte
+ * glider isär.
+ */
+export const YRKE_NAMNMONSTER = Object.freeze([
+    /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/,
+    /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)(?![A-Za-zÅÄÖåäö])/,
+]);
+
+/**
+ * Om fältet för AID-etikett har ett namnmönster: texten efter AID-koden har något av maskeringens mönster
+ * (YRKE_NAMNMONSTER) — två eller fler ord i Versal-gemener i rad ("Anna Andersson", "Sjuksköterska Anna Andersson",
+ * "Anna-Lisa Berg") eller "Efternamn, Förnamn" ("Andersson, Anna", "ANDERSSON, ANNA"). Prövas på råvärdet, som
+ * _cleanYrkeField ser det före maskering och kortning (efter AID-koden och separatorerna, med tecknen < > " ' &
+ * borttagna), så att ett namn som maskeringen bara tar delvis, eller som kortningen klipper, också räknas.
+ *
+ * Mönstret ensamt träffar också etiketter med versal på två ord ("Sjuksköterska Natt"). Därför avgör mönstret bara
+ * vilka texter som räknas; varningen gäller de som också är sällsynta i filen (sallsyntaNamnrader).
+ * @param {*} raw - Fältets råvärde.
+ * @returns {boolean}
+ */
+export function yrkeLiknarNamn(raw) {
+    return yrkeNamnNyckel(raw) !== '';
+}
+
+/**
+ * Nyckeln som en text med namnmönster räknas under: etikettexten efter AID-koden i gemener, med blanksteg slagna
+ * samman till ett, så att skiftläge och extra blanksteg räknas som samma text. Tom sträng när texten saknar
+ * namnmönster (yrkeLiknarNamn). Nyckeln finns bara i inläsningens tillfälliga räknare och släpps när filen är läst.
+ * @param {*} raw - Fältets råvärde.
+ * @returns {string}
+ */
+export function yrkeNamnNyckel(raw) {
+    if (raw == null) return '';
+    const s = raw.toString().trim();
+    if (!s) return '';
+    const label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+    if (!YRKE_NAMNMONSTER.some(re => re.test(label))) return '';
+    return label.toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Så många rader får en text med namnmönster stå på för att räknas som ett misstänkt namn. Ett namn står på en rad
+ * (eller ett par, om personen har två anställningar); en etikett med versal på två ord ("Sjuksköterska Natt")
+ * återkommer på många. Känd gräns: ett namn som står på tre eller fler rader upptäcks inte.
+ */
+export const YRKE_NAMN_HOGST_RADER = 2;
+
+/**
+ * De misstänkta namnraderna ur inläsningens räknare: raderna vars text har namnmönster och står på högst
+ * YRKE_NAMN_HOGST_RADER rader i filen.
+ * @param {Map<string, {antal: number, radnr: Array<number|null>}>} raknare - Per yrkeNamnNyckel: antal rader och
+ *   de första radnumren (YRKE_NAMN_HOGST_RADER räcker).
+ * @param {number} [hogstRadnr] - Högst så många radnummer i svaret.
+ * @returns {{antal: number, radnr: number[]}} Antalet misstänkta rader och de första radnumren, i stigande ordning.
+ */
+export function sallsyntaNamnrader(raknare, hogstRadnr = 5) {
+    let antal = 0;
+    const radnr = [];
+    for (const v of (raknare ? raknare.values() : [])) {
+        if (!(v.antal > 0) || v.antal > YRKE_NAMN_HOGST_RADER) continue;
+        antal += v.antal;
+        for (const r of v.radnr || []) if (typeof r === 'number' && isFinite(r)) radnr.push(r);
+    }
+    radnr.sort((a, b) => a - b);
+    return { antal, radnr: radnr.slice(0, Math.max(0, hogstRadnr)) };
+}
+
+/**
  * Tar bort HTML-metatecken (< > " ' &) ur ett textfält vid inläsning. esc() vid
  * rendering är det egentliga skyddet; detta är ett extra lager ("defensive depth")
  * för korta koder (BAS, AID) som renderas i attribut- och option-kontext och som

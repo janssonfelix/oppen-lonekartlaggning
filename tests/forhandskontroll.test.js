@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     byggForhandskontroll, forhandskontrollGranser, FK_ANTAL_RADER, FK_ARSLON_MEDIAN, FK_TIMLON_MEDIAN,
-    FK_SPRIDNING_GANGER, FK_ALDER_MIN, FK_ALDER_MAX, FK_SMA_GRUPP,
+    FK_SPRIDNING_GANGER, FK_ALDER_MIN, FK_ALDER_MAX, FK_SMA_GRUPP, FK_NAMN_RADNR, namnIYrkesfaltetText,
 } from '../src/lib/forhandskontroll.js';
 
 const MAPPNING = { bas: 'BAS', yrke: 'AID', lon: 'Månadslön', alder: 'Ålder', kon: 'Kön' };
@@ -43,7 +43,7 @@ describe('gränsvärdena', () => {
         expect(FK_SPRIDNING_GANGER).toBe(10);
         expect([FK_ALDER_MIN, FK_ALDER_MAX]).toEqual([16, 75]);
         expect(FK_SMA_GRUPP).toBe(10);
-        expect(forhandskontrollGranser()).toEqual({ antalRader: 10, arslonMedian: 150000, timlonMedian: 5000, spridningGanger: 10, alderMin: 16, alderMax: 75, smaGrupp: 10 });
+        expect(forhandskontrollGranser()).toEqual({ antalRader: 10, arslonMedian: 150000, timlonMedian: 5000, spridningGanger: 10, alderMin: 16, alderMax: 75, smaGrupp: 10, namnRadnr: 5 });
     });
 });
 
@@ -208,4 +208,37 @@ describe('byggForhandskontroll: lönefil utan ålder (ADR-64)', () => {
         expect(koder(fk)).toEqual(['alder-saknas']);
     });
     it('med ålder ingen sådan varning', () => expect(koder(bygg(trettio()))).not.toContain('alder-saknas'));
+});
+
+describe('byggForhandskontroll: personnamn i fältet för AID-etikett', () => {
+    const med = (antal, radnr) => bygg(trettio(), { parseStats: stats({ yrkeNamn: antal, yrkeNamnRadnr: radnr }) });
+    it('ingen varning när antalet är 0 eller saknas', () => {
+        expect(koder(med(0, []))).toEqual([]);
+        expect(koder(bygg(trettio()))).toEqual([]);
+        expect(namnIYrkesfaltetText(0, [])).toBe('');
+    });
+    it('två rader: varningen med antal och radnummer, och texten är den enda källans', () => {
+        const fk = med(2, [12, 40]);
+        expect(koder(fk)).toEqual(['yrke-namn']);
+        expect(fk.varningar[0].niva).toBe('varning');
+        expect(fk.varningar[0].text).toBe('Fältet för AID-etikett ser ut att innehålla personnamn på 2 rader (rad 12 och 40). '
+            + 'Verktyget behöver inga namn. Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. '
+            + 'Namn som står kvar kan följa med i tabeller och exporter.');
+        expect(fk.varningar[0].text).toBe(namnIYrkesfaltetText(2, [12, 40]));
+    });
+    it('en rad i singular', () => {
+        expect(med(1, [7]).varningar[0].text).toMatch(/^Fältet för AID-etikett ser ut att innehålla personnamn på 1 rad \(rad 7\)\./);
+    });
+    it('fler rader än radnummer: "till exempel" och högst fem radnummer', () => {
+        expect(med(8, [3, 5, 9, 11, 14]).varningar[0].text).toMatch(/på 8 rader \(till exempel rad 3, 5, 9, 11 och 14\)\./);
+        expect(namnIYrkesfaltetText(9, [1, 2, 3, 4, 5, 6, 7])).toMatch(/\(till exempel rad 1, 2, 3, 4 och 5\)/);
+        expect(FK_NAMN_RADNR).toBe(5);
+    });
+    it('utan kända radnummer står bara antalet', () => {
+        expect(namnIYrkesfaltetText(3, [null, null])).toMatch(/på 3 rader\. Verktyget/);
+    });
+    it('varningen kommer före de andra', () => {
+        const fk = bygg(trettio(), { parseStats: stats({ yrkeNamn: 1, yrkeNamnRadnr: [2], alderFromBirthYear: 30 }) });
+        expect(koder(fk)).toEqual(['yrke-namn', 'alder-fodelsear']);
+    });
 });
