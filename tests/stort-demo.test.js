@@ -324,10 +324,11 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
     });
 
     it('ingen sentinellön för ett litet yrke eller ett kön under tio i någon cell', () => {
-        expect(sentinel.length, `${sentinel.length} av ${block} små grupper prövas`).toBeGreaterThanOrEqual(3);
-        // Också en grupp där båda könen är under tio men yrket i BAS-intervallet når tröskeln (som Rektor i H, 8 + 7).
+        expect(sentinel.length, `${sentinel.length} av ${block} små grupper prövas`).toBeGreaterThanOrEqual(0.85 * block);
+        // Också en grupp där båda könen är under tio men yrket i BAS-intervallet når tröskeln (som Trafikhandläggare i G, 7 + 8).
         expect(provade.filter(p => p.bada && p.kon).length, 'kön där båda är under tio').toBeGreaterThanOrEqual(1);
-        // BAS-nivåns könsgrupper i I, J och K: varje intervall har ett yrke, så könet i yrket är könet i intervallet.
+        // BAS-intervallen I, J och K är små (I och J har några få yrken, K bara Rektor): varje intervall har minst en
+        // prövad könsgrupp. I K är könet i yrket också könet i intervallet.
         for (const bas of ['I', 'J', 'K']) expect(provade.filter(p => p.bas === bas && p.kon).length, `BAS ${bas}`).toBeGreaterThanOrEqual(1);
         const lackor = [];
         for (const { namn, rader } of bok) for (const rad of rader) for (const c of rad) {
