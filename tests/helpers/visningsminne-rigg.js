@@ -45,10 +45,20 @@ export function skillnad(a, b) {
 /**
  * Öppnar varje flik som användaren och jämför den som visas igen med samma flik ritad från början. En flik som
  * ritades om när den öppnades är ritad från början och jämförs inte en gång till. Svarar med flikarna som skilde sig.
+ *
+ * En flik som flikbytet inte kan visa igen (_visasSomRitad är falsk, villkoret i flikbyte) skulle bara ritas om och
+ * aldrig jämföras, och den omritningen var nästan hela vakternas tid. Bara den första sådana fliken i varje runda
+ * öppnas, så att det prövas att flikbytet följer villkoret; de andra hoppas över. Villkoret blir sant igen bara när
+ * fliken själv ritas klart, så det som jämförs är detsamma.
  */
 export async function jamforAlla(w) {
     const fel = [];
+    let provadOmritning = false;
     for (const flik of flikar(w)) {
+        if (!w.eval(`_visasSomRitad(${JSON.stringify(flik)})`)) {
+            if (provadOmritning) continue;
+            provadOmritning = true;
+        }
         const r = runda(w, flik);
         await byt(w, flik);
         if (runda(w, flik) !== r) continue;
