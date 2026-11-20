@@ -18,7 +18,8 @@ för området, och varför det blev så i [`arkitekturbeslut.md`](arkitekturbesl
    jämförs med det incheckade, det skrivs inte av. Varje sak prövas av en kontroll, och säkerhetsgranskningen står
    samlad i `docs/dataskydd/riskanalys.md`.
    *Vakt:* `tests/drift.test.js`, `tests/version.test.js`, `tests/farger.test.js`, `tests/termer.test.js`,
-   `tests/appsource.test.js`, `tests/dokumentation-struktur.test.js` och artefaktgrinden i `.github/workflows/ci.yml`.
+   `tests/dokumentation-struktur.test.js` och artefaktgrinden (`tools/kontroll.mjs` och `.github/workflows/ci.yml`), som
+   prövar de genererade filerna i `dist/` och `src/app/`.
 5. **Bygget går att lita på.** En färsk build ger samma fil som den incheckade, biblioteken är låsta med
    kontrollsummor, och en release signeras av arbetsflödet ur taggen.
    *Vakt:* artefaktgrinden i `.github/workflows/ci.yml`, `tests/sakerhet.test.js`, release-grinden

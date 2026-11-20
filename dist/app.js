@@ -3156,7 +3156,7 @@ const __mirrorStat = (() => {
  * (app.js) får en AUTO-GENERERAD spegel av modulen i src/app/09-lib-speglar.js
  * (tools/gen-mirrors.mjs inlinar verbatim). Ändra därför ALDRIG spegeln — ändra
  * här och kör `npm run build:app`. tests/stat.test.js verifierar de numeriska
- * resultaten; tests/drift.test.js vaktar att spegeln är i synk med src/lib/.
+ * resultaten; artefaktgrinden vaktar att spegeln är i synk med src/lib/.
  *
  * Funktioner exporterade:
  *   - median, quantile, linearRegression  (Stat-objektet i app.js)
@@ -3763,7 +3763,7 @@ const __mirrorRng = (() => {
  *
  * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_rng*`
  * i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra här och kör
- * `npm run build:app`, rör ej spegeln (vaktas av tests/drift.test.js).
+ * `npm run build:app`, rör ej spegeln (vaktas av artefaktgrinden).
  */
 
 /**
@@ -4762,7 +4762,7 @@ const __mirrorForecast = (() => {
  * Separat från app.js för att kunna testas via Vitest utan DOM/state.
  * app.js får en AUTO-GENERERAD spegel (`_fc*` i src/app/09-lib-speglar.js via
  * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
- * (vaktas av tests/drift.test.js). Det oförklarade gapet (OLS) beräknas INTE
+ * (vaktas av artefaktgrinden). Det oförklarade gapet (OLS) beräknas INTE
  * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
  * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
  * sökning (likalonslyftForMal) får appens skattning som argument.
@@ -7042,7 +7042,7 @@ const __mirrorLonepolitik = (() => {
  * Separat från app.js för att kunna testas via Vitest utan DOM/state; app.js
  * får en AUTO-GENERERAD spegel (`_lp*` i src/app/09-lib-speglar.js via
  * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej
- * spegeln (vaktas av tests/drift.test.js).
+ * spegeln (vaktas av artefaktgrinden).
  *
  * Själva uppslaget (vilken policyrad som gäller för en grupp) görs av
  * policyFor() i app.js, eftersom det läser state. Här hanteras bara matematiken

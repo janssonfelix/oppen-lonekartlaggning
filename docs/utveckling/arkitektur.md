@@ -112,9 +112,8 @@ text. Språket i det användaren läser prövas av de vakter som nämns i [`prin
    tillstånd, och de får inte importera något utanför `src/lib/`. Vakt: `tests/lib-beroenden.test.js`. Det gör att
    samma funktion kan köras i Node och i appen, via spegeln (ADR-8).
 2. **Spegeln och `dist/` är genererade och redigeras aldrig för hand.** Ändra `src/lib/` eller `src/app/` och kör
-   `npm run build:app`. Vakter: `tests/drift.test.js` (spegeln är i synk med `src/lib/`) och
-   `tests/appsource.test.js` (`dist/app.js` är hopslagningen av `src/app/`). CI kräver dessutom att ett nytt bygge
-   blir byte-identiskt med det incheckade (`.github/workflows/ci.yml`).
+   `npm run build:app`. Vakt: artefaktgrinden, som kräver att ett nytt bygge ger byte-identiska `dist/`,
+   `src/app/08-version.js` och `src/app/09-lib-speglar.js` (`tools/kontroll.mjs` och `.github/workflows/ci.yml`).
 3. **Allt som lämnar verktyget prövas mot minsta gruppstorlek.** Det gäller text, tabeller, bilder och filer. Regeln
    och undantagen står i [`k-troskeln.md`](k-troskeln.md), skyddet i [`skydd.md`](skydd.md) (S4). Vakten är
    invarianten I4 i `tests/helpers/ktroskel-invariant.js`, som ritar flikarna i exportläget och bygger exporterna

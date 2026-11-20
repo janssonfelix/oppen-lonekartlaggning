@@ -10,7 +10,7 @@
  * Separat från app.js för att kunna testas via Vitest utan DOM/state.
  * app.js får en AUTO-GENERERAD spegel (`_fc*` i src/app/09-lib-speglar.js via
  * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
- * (vaktas av tests/drift.test.js). Det oförklarade gapet (OLS) beräknas INTE
+ * (vaktas av artefaktgrinden). Det oförklarade gapet (OLS) beräknas INTE
  * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
  * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
  * sökning (likalonslyftForMal) får appens skattning som argument.

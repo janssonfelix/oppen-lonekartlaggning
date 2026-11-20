@@ -4,10 +4,11 @@
 //
 // Stegen körs i ordning som `npm run <steg>` och kedjan stannar på första fel, med stegets slutkod. Efter `bundle`
 // prövas samma två grindar som CI-jobbet grindar kör utöver npm-skripten (.github/workflows/ci.yml):
-//   artefakten   — bygget ändrade inga spårade filer under dist/. CI bygger om och kräver att hela dist/, artefakten
-//                  och RELEASE.txt, blir byte-identisk med det incheckade; här jämförs dist/ som den låg när kedjan
-//                  började med dist/ efter bygget. En ändring betyder att dist/ inte motsvarade källan: de ombyggda
-//                  filerna ska checkas in.
+//   artefakten   — bygget ändrade inga genererade filer: de spårade filerna under dist/ och GENERERADE. CI bygger
+//                  om och kräver att de, artefakten och RELEASE.txt inräknade, blir byte-identiska med det
+//                  incheckade; här jämförs filerna som de låg när kedjan började med filerna efter bygget. En ändring
+//                  betyder att de inte motsvarade källan: de ombyggda filerna ska checkas in. Grinden är den enda
+//                  kontrollen av de genererade filerna; testsviten prövar dem inte en gång till.
 //   teckenkodningen — ingen U+FFFD (mojibake) i dist/app.js, src/index.html och src/style.css.
 //
 // `--snabb` är körningen under arbetet: `test` (enhetsprojektet) i stället för `test:full`, och inget röktest i
@@ -35,12 +36,16 @@ const BYGGSTEG = 'bundle';
 
 const TECKENKODNING = ['dist/app.js', 'src/index.html', 'src/style.css'];
 
+/** De genererade filerna i src/app/ (tools/build-app.mjs skriver dem ur VERSION och src/lib/). */
+const GENERERADE = ['src/app/08-version.js', 'src/app/09-lib-speglar.js'];
+
 /**
- * Kontrollsumman för varje spårad fil under dist/.
+ * Kontrollsumman för varje genererad fil: de spårade filerna under dist/ och GENERERADE.
  * @returns {Map<string, string>}
  */
 function distAvtryck() {
-    const filer = execFileSync('git', ['ls-files', 'dist'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
+    const filer = execFileSync('git', ['ls-files', 'dist'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
+        .concat(GENERERADE);
     return new Map(filer.map(f => [f, existsSync(join(root, f))
         ? createHash('sha256').update(readFileSync(join(root, f))).digest('hex')
         : '(saknas)']));
@@ -58,14 +63,14 @@ function andrade(fore, efter) {
 
 /**
  * Grindarna efter bygget. Returnerar felen som text; tom lista när allt stämmer.
- * @param {Map<string, string>} fore avtrycket av dist/ när kedjan började
+ * @param {Map<string, string>} fore avtrycket av de genererade filerna när kedjan började
  * @returns {string[]}
  */
 function grindar(fore) {
     const fel = [];
     const byggda = andrade(fore, distAvtryck());
     if (byggda.length) {
-        fel.push('Bygget ändrade spårade filer under dist/; de motsvarade inte källan:\n'
+        fel.push('Bygget ändrade genererade filer; de motsvarade inte källan:\n'
             + byggda.map(f => `    ${f}`).join('\n')
             + '\n  Checka in de ombyggda filerna (som CI:s artefaktgrind kräver) och kör kontrollen igen.');
     }
