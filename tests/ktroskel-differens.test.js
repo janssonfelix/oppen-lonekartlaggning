@@ -320,7 +320,7 @@ describe('Huvudområdena: sektorsTabell och sektorernasAndel', () => {
     // det) är w₂ dess medellön, och med de två totalerna blir det en ekvation med en okänd. Hålet stängdes med
     // sammanslagning (ADR-84, `sammanslagning` i src/lib/undertryckning.js): ett huvudområde där ett kön har färre än
     // tröskeln räknas samman med andra, och blir bara ett kvar skrivs beloppet inte.
-    const skrivs = a => !!a && a.sektorKr != null && a.andel != null && Math.abs(a.andel) >= 0.01;   // annars står inget belopp
+    const skrivs = a => !!a && a.sektorKr !== null && a.andel !== null && Math.abs(a.andel) >= 0.01;   // annars står inget belopp
     for (const fall of FALL) {
         it(`${fall.namn}: med två huvudområden går det lilla områdets medellön inte att härleda ur beloppet och medellönerna`, () => {
             const { rader, liten } = underlag(fall, { stora: [{ aid: '400101' }], liten: { aid: '650101', kon: 'man' } });
