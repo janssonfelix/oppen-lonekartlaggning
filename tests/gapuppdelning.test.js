@@ -240,7 +240,7 @@ describe('ADR-65: standardvalet är byte-likt med implementationen före (vid tr
         bytelika(demo);
     });
     it('det stora demot', () => {
-        expect(stort.length).toBe(7000);
+        expect(stort.length).toBe(5000);
         bytelika(stort);
     });
     it('utan små grupper ger tröskeln samma resultat som tröskeln 1 och som förut', () => {

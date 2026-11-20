@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createAppWindow, tillstandsavtryck } from './helpers/app-harness.js';
+import { arKvinna, arMan } from '../src/lib/kon.js';
 
 // Inläsningen ritar Översikt och räknar alla analyser för 7 000 personer synkront; under full last tar det några sekunder.
 vi.setConfig({ testTimeout: 60000 });
@@ -19,6 +20,7 @@ vi.setConfig({ testTimeout: 60000 });
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BAS_AK = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 const utanMellanrum = t => String(t || '').replace(/[\s  ]+/g, ' ');
+const median = l => { const s = [...l].sort((a, b) => a - b); return (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2; };
 
 // Räknar interna fel (rapporteraFel) och självdiagnostikens körningar i fönstret.
 function bevaka(w) {
@@ -32,8 +34,8 @@ describe('stort demo: generatorn', () => {
     let w, data;
     beforeAll(() => { w = createAppWindow(); data = w.eval('generateStortDemo()'); });
 
-    it('7 000 rader, och samma rader vid ett andra anrop', () => {
-        expect(data).toHaveLength(7000);
+    it('5 000 rader, och samma rader vid ett andra anrop', () => {
+        expect(data).toHaveLength(5000);
         const igen = w.eval('generateStortDemo()');
         expect(igen[0]).toEqual(data[0]);
         expect(JSON.stringify(igen)).toBe(JSON.stringify(data));
@@ -53,20 +55,19 @@ describe('stort demo: generatorn', () => {
         expect(Object.keys(data[0]).sort()).toEqual(falt);
     });
 
-    it('BAS A–K finns alla, flest i B–E och få i J–K', () => {
+    it('BAS A–K finns alla, flest i B–G', () => {
         const per = Object.fromEntries(BAS_AK.map(b => [b, data.filter(r => r.bas === b).length]));
         for (const b of BAS_AK) expect(per[b], b).toBeGreaterThan(0);
-        expect(per.B + per.C + per.D + per.E).toBeGreaterThan(0.6 * data.length);
-        expect(per.J + per.K).toBeLessThan(0.01 * data.length);
+        expect(per.B + per.C + per.D + per.E + per.F + per.G).toBeGreaterThan(0.7 * data.length);
+        expect(per.J + per.K).toBeLessThan(0.08 * data.length);
     });
 
-    it('minst 25 yrkesgrupper, några under tio personer och några där ett kön är färre än tio', () => {
+    it('100 yrkesgrupper, några under tio personer och några där ett kön är färre än tio', () => {
         const per = new Map();
-        for (const r of data) { const g = per.get(r.aid) || { n: 0, kv: 0 }; g.n++; if (r.kon === 'kvinna') g.kv++; per.set(r.aid, g); }
-        expect(per.size).toBeGreaterThanOrEqual(25);
-        expect(per.size).toBeLessThanOrEqual(30);
+        for (const r of data) { const g = per.get(r.aid) || { n: 0, kv: 0 }; g.n++; if (arKvinna(r)) g.kv++; per.set(r.aid, g); }
+        expect(per.size).toBe(100);
         const sma = [...per.values()].filter(g => g.n < 10);
-        expect(sma.length).toBeGreaterThanOrEqual(2);
+        expect(sma.length).toBeGreaterThanOrEqual(3);
         const ettKonFa = [...per.values()].filter(g => g.n >= 10 && (g.kv < 10 || g.n - g.kv < 10));
         expect(ettKonFa.length).toBeGreaterThanOrEqual(2);
         expect(Math.max(...[...per.values()].map(g => g.n))).toBeLessThanOrEqual(900);
@@ -77,13 +78,33 @@ describe('stort demo: generatorn', () => {
         expect(kriterier.filter(k => k.status !== 'ok').map(k => `${k.id}: ${k.text}`)).toEqual([]);
     });
 
-    it('likvärdigt arbete: ett mansdominerat tekniskt yrke i BAS C har högre lön än ett kvinnodominerat vårdyrke där', () => {
-        const median = l => { const s = [...l].sort((a, b) => a - b); return (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2; };
-        const grupp = aid => data.filter(r => r.bas === 'C' && r.aid === aid);
-        const tekniker = grupp('503012'), underskoterska = grupp('207011');
-        expect(tekniker.filter(r => r.kon === 'kvinna').length / tekniker.length).toBeLessThan(0.25);
-        expect(underskoterska.filter(r => r.kon === 'kvinna').length / underskoterska.length).toBeGreaterThan(0.8);
-        expect(median(tekniker.map(r => r.lon))).toBeGreaterThan(median(underskoterska.map(r => r.lon)) * 1.05);
+    it('likvärdigt arbete: ett mansdominerat tekniskt yrke har högre lön än ett kvinnodominerat vårdyrke i samma intervall', () => {
+        const { hog, lag, bas } = w.eval('_SD_LIKVARDIGT');
+        const grupp = aid => data.filter(r => r.bas === bas && r.aid === aid);
+        const tekniker = grupp(hog), vard = grupp(lag);
+        expect(tekniker.filter(arKvinna).length / tekniker.length).toBeLessThan(0.25);
+        expect(vard.filter(arKvinna).length / vard.length).toBeGreaterThan(0.8);
+        expect(median(tekniker.map(r => r.lon))).toBeGreaterThan(median(vard.map(r => r.lon)) * 1.05);
+    });
+
+    it('gapet för kvinnor finns i yrkena i _SD_GAP och inte i övriga', () => {
+        const gap = w.eval('_SD_GAP');
+        const grupper = new Map();   // yrke inom BAS-intervall
+        for (const r of data) {
+            const nyckel = `${r.aid} ${r.bas}`;
+            const g = grupper.get(nyckel) || { aid: r.aid, kv: [], ma: [] };
+            if (arKvinna(r)) g.kv.push(r.lon); else if (arMan(r)) g.ma.push(r.lon);
+            grupper.set(nyckel, g);
+        }
+        const alla = [...grupper.values()];
+        expect(Object.keys(gap)).toHaveLength(4);
+        for (const aid of Object.keys(gap)) {
+            const iYrket = alla.filter(g => g.aid === aid);
+            expect(iYrket.length, aid).toBeGreaterThan(0);
+            for (const g of iYrket) expect(median(g.kv), aid).toBeLessThan(median(g.ma));
+        }
+        const utanGap = alla.filter(g => !(g.aid in gap) && g.kv.length >= 10 && g.ma.length >= 10);
+        expect(utanGap.some(g => median(g.kv) >= 0.99 * median(g.ma))).toBe(true);
     });
 });
 
@@ -93,18 +114,18 @@ describe('stort demo: inläsningen', () => {
 
     it('sätter demoläget, låser upp flikarna och kör inte självdiagnostiken', () => {
         const d = w.document;
-        expect(w.__state.data).toHaveLength(7000);
+        expect(w.__state.data).toHaveLength(5000);
         expect(w.__state.isDemo).toBe(true);
         expect(d.getElementById('tab-matrix').disabled).toBe(false);
         expect(d.getElementById('tab-struktur').disabled).toBe(false);
         expect(w.__diagnostik).toBe(0);
         expect(d.getElementById('diagnostic-results').style.display).not.toBe('block');
-        expect(w.__state.dataAudit).toEqual({ totalRaw: 7000, excludedNoBas: 0, excludedZeroLon: 0 });
+        expect(w.__state.dataAudit).toEqual({ totalRaw: 5000, excludedNoBas: 0, excludedZeroLon: 0 });
     });
 
     it('statusraden och demobannern säger att det är det stora demot', () => {
         const d = w.document;
-        expect(utanMellanrum(d.getElementById('data-status').textContent)).toContain('Syntetisk testdata, stort demo: 7 000 personer');
+        expect(utanMellanrum(d.getElementById('data-status').textContent)).toContain('Syntetisk testdata, stort demo: 5 000 personer');
         expect(d.getElementById('demo-mode-banner').style.display).toBe('flex');
         expect(utanMellanrum(d.getElementById('demo-mode-banner').textContent)).toMatch(/stort demo/i);
         expect(d.getElementById('first-run-hint').style.display).toBe('none');
@@ -133,7 +154,7 @@ describe('stort demo: ingångarna', () => {
         expect(utanMellanrum(knapp.textContent)).toBe('stort demo (7 000 personer)');
         expect(knapp.title).toBe('Läs in det stora demot: 7 000 påhittade personer');
         knapp.click();
-        expect(w.__state.data).toHaveLength(7000);
+        expect(w.__state.data).toHaveLength(5000);
         expect(w.__diagnostik).toBe(0);
     });
 
@@ -145,13 +166,13 @@ describe('stort demo: ingångarna', () => {
         litet.click();
         expect(w.__state.data).toHaveLength(260);
         stort.click();
-        expect(w.__state.data).toHaveLength(7000);
+        expect(w.__state.data).toHaveLength(5000);
         expect(w.__state.isDemo).toBe(true);
     });
 
     it('adressen ?demo=stor startar det stora demot, ?demo=1 det lilla', () => {
         const stor = bevaka(createAppWindow({ url: 'http://localhost/?demo=stor' }));
-        expect(stor.__state.data).toHaveLength(7000);
+        expect(stor.__state.data).toHaveLength(5000);
         expect(stor.__state.isDemo).toBe(true);
         const liten = createAppWindow({ url: 'http://localhost/?demo=1' });
         expect(liten.__state.data).toHaveLength(260);
@@ -196,12 +217,14 @@ describe('det lilla demot är oförändrat', () => {
 // på dem. Med två löner per grupp hamnar den större gruppens kvantiler på c ± D, inte på c.
 // Lönen väljs så att ingen annan person har den och så att inget mått som får redovisas landar på den: P10, kvartilerna,
 // medianen, P90 och medel för varje grupp med minst tio personer, i indelningarna yrke inom BAS, yrke, BAS,
-// organisationen, sektor och åldersgrupp, var och en också per kön. En träff i en cell kan då bara komma från ett mått
+// organisationen, sektor, åldersgrupp och ansvarsgrupp inom yrket (och inom yrket i BAS-intervallet), var och en
+// också per kön. En träff i en cell kan då bara komma från ett mått
 // för en grupp under tröskeln.
 function sattSentinel(data, sektor) {
     const P = [0.1, 0.25, 0.5, 0.75, 0.9];
     const kvantil = (s, p) => { const h = (s.length - 1) * p, l = Math.floor(h), u = Math.ceil(h); return s[l] + (h - l) * (s[u] - s[l]); };
-    const nycklar = r => [`yb|${r.aid}|${r.bas}`, `y|${r.aid}`, `b|${r.bas}`, 'org', `s|${sektor[r.aid]}`, `a|${Math.min(6, Math.floor(r.alder / 10))}`]
+    const nycklar = r => [`yb|${r.aid}|${r.bas}`, `y|${r.aid}`, `b|${r.bas}`, 'org', `s|${sektor[r.aid]}`, `a|${Math.min(6, Math.floor(r.alder / 10))}`,
+        `yba|${r.aid}|${r.bas}|${r.ansvarsgrupp}`, `ya|${r.aid}|${r.ansvarsgrupp}`]
         .flatMap(g => [g, `${g}|${r.kon}`]);
     const medlemmar = new Map();
     for (const r of data) for (const g of nycklar(r)) { if (!medlemmar.has(g)) medlemmar.set(g, []); medlemmar.get(g).push(r); }
@@ -226,19 +249,27 @@ function sattSentinel(data, sektor) {
     // Gruppens löner kring c: median och medel blir c.
     const satt = (del, c) => { const h = del.length >> 1; del.forEach((r, i) => { r.lon = i < h ? c - D : (del.length % 2 && i === h) ? c : c + D; }); };
     const tilldelat = new Map();   // block → lön
-    const allaMatt = () => { const s = new Set(); for (const rader of medlemmar.values()) for (const m of matt(rader)) s.add(m); return s; };
+    // Måtten per grupp sparas tills en grupps löner ändras; egnaAv ger grupperna som en del ingår i.
+    const sparat = new Map();
+    const mattAv = rader => { if (!sparat.has(rader)) sparat.set(rader, matt(rader)); return sparat.get(rader); };
+    const egnaAv = del => [...new Set(del.flatMap(nycklar))].map(g => medlemmar.get(g));
+    const andrade = del => { for (const rader of egnaAv(del)) sparat.delete(rader); };
+    const aterstall = del => { del.forEach((r, i) => { r.lon = original.get(del)[i]; }); andrade(del); };
+    const allaMatt = () => { const s = new Set(); for (const rader of medlemmar.values()) for (const m of mattAv(rader)) s.add(m); return s; };
     // Varje placering flyttar rangerna i de större grupperna, så tilldelningen görs om tills alla är lediga på det slutliga
     // underlaget. Finns ingen ledig lön (gruppen är en stor del av en grupp som får redovisas, t.ex. sju av arton män i ett
     // BAS-intervall) prövas gruppen inte: där är det större måttet lagligt och går inte att skilja från en läcka.
+    const utanLedig = new Set();   // grupper utan ledig lön söks inte om i nästa varv
     for (let varv = 0; varv < 8; varv++) {
         let andrat = false;
+        const upptagna = allaMatt();   // en gång per varv; det som en senare placering i varvet flyttar fångas nästa varv
         for (const del of block) {
             const nu = tilldelat.get(del);
-            if (nu !== undefined && !allaMatt().has(nu)) continue;
-            const egna = [...new Set(del.flatMap(nycklar))].map(g => medlemmar.get(g));
-            del.forEach((r, i) => { r.lon = original.get(del)[i]; });
+            if (utanLedig.has(del) || (nu !== undefined && !upptagna.has(nu))) continue;
+            const egna = egnaAv(del);
+            aterstall(del);
             const ovriga = new Set();
-            for (const rader of medlemmar.values()) if (!egna.includes(rader)) for (const m of matt(rader)) ovriga.add(m);
+            for (const rader of medlemmar.values()) if (!egna.includes(rader)) for (const m of mattAv(rader)) ovriga.add(m);
             const loner = new Set(data.filter(r => !del.includes(r)).map(r => r.lon));
             const med = [...original.get(del)].sort((a, b) => a - b)[del.length >> 1];
             let v = null;
@@ -247,11 +278,21 @@ function sattSentinel(data, sektor) {
                 satt(del, c);
                 if (!egna.some(rader => matt(rader).includes(c))) v = c;
             }
-            if (v === null) { del.forEach((r, i) => { r.lon = original.get(del)[i]; }); if (nu !== undefined) { tilldelat.delete(del); andrat = true; } continue; }
+            if (v === null) { aterstall(del); utanLedig.add(del); if (nu !== undefined) { tilldelat.delete(del); andrat = true; } continue; }
+            andrade(del);
             tilldelat.set(del, v);
             andrat = true;
         }
         if (!andrat) break;
+    }
+    // Grupper som fortfarande krockar efter varven (två små grupper som tillsammans är nästan hela en grupp som får
+    // redovisas, t.ex. sex kvinnor och sju män i en ansvarsgrupp om tretton) prövas inte heller: där landar det
+    // större måttet på en av lönerna hur de än väljs.
+    for (;;) {
+        const upptagna = allaMatt(), krock = [...tilldelat.keys()].find(del => upptagna.has(tilldelat.get(del)));
+        if (!krock) break;
+        aterstall(krock);
+        tilldelat.delete(krock);
     }
     const slut = allaMatt(), varden = [...tilldelat.values()];
     expect(varden.filter(v => slut.has(v))).toEqual([]);
