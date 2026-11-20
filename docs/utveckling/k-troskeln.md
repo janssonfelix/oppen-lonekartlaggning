@@ -186,7 +186,7 @@ fram varje liten grupps medellön per kön ur det som skrivs ut, och enhetsteste
 `regressionsmodellen.md` §10.
 
 **En punkt per person.** Utanför Tabeller och egna vyer ritas och exporteras en persons punkt i ett spridningsdiagram
-bara när personens grupp (AID-etikett inom BAS-intervallet) och personens kön i gruppen når tröskeln (`individLitenFor`). Antalen räknas på
+bara när personens grupp (AID-koden inom BAS-intervallet, som i hela verktyget, ADR-89) och personens kön i gruppen når tröskeln (`individLitenFor`). Antalen räknas på
 hela underlaget, inte på det urval diagrammet visar. I Ålder & karriär följer lönegapen, lutningen, trendlinjerna och
 lådorna per kön regeln för könsuppdelade mått (regel R3 i avsnitt 8).
 

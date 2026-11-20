@@ -95,6 +95,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-86 | Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska | Gällande | 2026-11-19 |
 | ADR-87 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
 | ADR-88 | Differensprovet är en del av invarianten för minsta gruppstorlek | Gällande | 2026-11-19 |
+| ADR-89 | En grupp är AID-koden i BAS-intervallet, i hela verktyget | Gällande | 2026-11-20 |
 
 ## Besluten
 
@@ -532,7 +533,8 @@ etiketter; att ersätta filens text med etikettlistans namn, som tar bort organi
 `src/lib/inlasning.js`. *Not:* sedan texten inte maskeras kan en AID-kod ha flera texter i samma BAS-intervall.
 Prioriteringen grupperade på hela texten och fick då två grupper där jämförelsestatistiken och gruppdossiern har en,
 och små delgrupper föll under tröskeln. Rättat 2026-11-20 som ett fel, inget nytt beslut: prioriteringen grupperar på
-AID-koden och BAS-intervallet som de andra (`prioriteringsmodellen.md` §1).
+AID-koden och BAS-intervallet som de andra (`prioriteringsmodellen.md` §1). Samma dag beslutades att det gäller i
+hela verktyget (ADR-89).
 
 **ADR-86 — Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska.**
 Beslutat av underhållaren 2026-11-19. Bootstrapintervallen, omkastningens gränser (slumpens gränser i
@@ -589,3 +591,25 @@ som tyst kan sluta fungera när en rubrik ändras; att pröva varje delmängd av
 underlaget, som ger falsklarm när ett antal råkar gå jämnt upp; att lösa ett ekvationssystem över hela exporten, som
 lösaren i differensprovet gör för de utdata där det behövs men som är svårare att granska. *Gäller i dag:*
 `skydd.md` S4 och `k-troskeln.md` avsnitt 9 och 11.
+
+**ADR-89 — En grupp är AID-koden i BAS-intervallet, i hela verktyget.** Beslutat av underhållaren 2026-11-20. Sedan
+texten i fältet för AID-etikett inte maskeras (ADR-85) kan en kod ha flera texter: två stavningar av samma etikett, eller
+en rad där ett namn står i fältet. Prioriteringen, jämförelsen, tabellerna per AID-kod och BAS-intervall,
+trattdiagrammet, regressionens steg *+ AID-etikett inom BAS* och tabellerna per BAS-intervall grupperade redan på
+koden, medan Lika arbetes tabell per AID-etikett, Personer att granska, spridningen inom grupp i styrkeanalysen,
+uppdelningen av löneskillnaden med variabeln AID-etikett, Utforska, BAS-dossiern och årsbokslutet grupperade på
+texten. Samma personer blev då en grupp i en vy och två grupper under tröskeln och en grupp på en person i en annan.
+Nu grupperar allt som räknar på samma arbete på koden: de inledande siffrorna i fältet, och hela texten när siffror
+saknas (`aidAvRad` i `src/lib/aid.js`, som läser `aidAvYrke`). Gruppens namn är texten på gruppens första rad i
+lönefilen, som i jämförelsestatistiken. Fälten `yrke`, `aid` och `bas` behåller sin betydelse. Lika arbetes tabell per
+AID-etikett räknar som förut koden över alla BAS-intervall (statusen gäller hela AID-etiketten), och BAS-dossierns
+yrkesrader är koden i intervallet. Vyer som visar texterna som de står i filen, Löneöversikten, sökningen och
+punktdiagrammets färger per AID-etikett, ändras inte. Årsbokslutets format och version ändras inte: grupperna paras
+med förra årets på koden ur namnet, så att ett äldre bokslut jämförs rätt, och har ett äldre bokslut flera grupper med
+samma kod används den med årets namn, annars den största. För ett underlag där varje kod har en enda text är alla
+resultat oförändrade. *Avvisat:* att fortsätta gruppera på texten och bara varna, som räknar samma personer olika i
+olika vyer och låter små delgrupper falla under tröskeln; att ersätta texten med etikettlistans namn (avvisat i
+ADR-85); att lägga BAS-intervallet i nyckeln också för Lika arbetes tabell per AID-etikett, som ändrar tabellen för
+underlag där en kod finns i flera intervall och är ett eget beslut; att höja bokslutets formatversion, som inte behövs
+när paret går att läsa ur namnet. *Gäller i dag:* `prioriteringsmodellen.md` §1 och §9, `likvardighetsmodellen.md` §3,
+`berakningsregister.md`.
