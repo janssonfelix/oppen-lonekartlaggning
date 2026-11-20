@@ -15,7 +15,8 @@ MIT-licensierat verk och användas kommersiellt, utan avgifter.
 
 Filerna i `vendor/` är låsta med kontrollsummor i `vendor/SHA256SUMS`. Den som uppgraderar ett bibliotek
 uppdaterar kontrollsummorna (`cd vendor && sha256sum *.js *.txt > SHA256SUMS`) och versionen i tabellen ovan i
-samma ändring.
+samma ändring. Biblioteken bevakas mot kända sårbarheter i CI (`.github/workflows/sarbarheter.yml`), varje vecka och
+när `vendor/` ändras; vad bevakningen täcker står i `docs/utveckling/bygge-och-test.md`, avsnitt 9.
 
 De fullständiga licenstexterna, som licenserna kräver ska följa med varje kopia, står i `src/licenser.txt`.
 Bygget lägger in dem i `dist/oppen-lonekartlaggning.html`, där de visas under *Om verktyget → Referenser →

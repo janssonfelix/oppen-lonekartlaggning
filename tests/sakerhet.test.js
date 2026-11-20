@@ -1,6 +1,6 @@
 /**
  * Säkerhetshärdning: CSP för stilar, låsta tredjepartsbibliotek,
- * en enda escaping-funktion, utskriftsfönstret och låsta CI-steg.
+ * en enda escaping-funktion, utskriftsfönstret, låsta CI-steg och sårbarhetsbevakningen av vendor/.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { createAppWindow } from './helpers/app-harness.js';
 import { regexEscape } from './helpers/regex.js';
 import { utanHtmlKommentarer, utanSkript } from './helpers/htmlrens.js';
+import { bedöm, jämförVersion, ÅTGÄRDADE } from '../tools/sarbarheter.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
 const läs = f => readFileSync(join(ROOT, f), 'utf8');
@@ -126,7 +127,7 @@ describe('säkerhet: utskriftsfönstret', () => {
 describe('säkerhet: CI-stegen är låsta på commit', () => {
     const arbetsfloden = readdirSync(join(ROOT, '.github', 'workflows')).filter(f => /\.ya?ml$/.test(f));
     it('arbetsflödena för CI och release finns', () => {
-        expect(arbetsfloden).toEqual(expect.arrayContaining(['ci.yml', 'release.yml']));
+        expect(arbetsfloden).toEqual(expect.arrayContaining(['ci.yml', 'release.yml', 'sarbarheter.yml']));
     });
     for (const fil of arbetsfloden) {
         it(`${fil}: varje "uses:" pekar på en fullständig commit-SHA med versionen som kommentar`, () => {
@@ -159,6 +160,59 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
         const d = läs('.github/dependabot.yml');
         expect(d).toMatch(/package-ecosystem: npm/);
         expect(d).toMatch(/package-ecosystem: github-actions/);
+    });
+});
+
+describe('säkerhet: sårbarhetsbevakningen av vendor/', () => {
+    const wf = läs('.github/workflows/sarbarheter.yml');
+    it('körs på schema, för hand och när biblioteken eller förteckningen ändras, med bara läsbehörighet', () => {
+        expect(wf).toMatch(/^ {2}schedule:\n {4}- cron: '[^']+'/m);
+        expect(wf).toMatch(/^ {2}workflow_dispatch:/m);
+        for (const p of ['vendor/**', 'tools/sbom.mjs', 'tools/sarbarheter.mjs', 'TREDJEPARTSLICENSER.md']) {
+            expect(wf.split(`- '${p}'`).length - 1, p).toBe(2);   // både push och pull_request
+        }
+        expect(wf).toMatch(/^permissions:\n {2}contents: read$/m);
+        expect(wf).not.toMatch(/secrets\.|write/);
+    });
+    it('skannar förteckningen och bedömer resultatet i ett eget steg, så att ett fynd fäller jobbet', () => {
+        const jobb = wf.slice(wf.indexOf('\njobs:'));
+        const steg = ['node tools/sbom.mjs', '--lockfile=dist/sbom.cdx.json', 'node tools/sarbarheter.mjs dist/osv-resultat.json'];
+        const plats = steg.map(s => jobb.indexOf(s));
+        expect(plats.every(p => p > 0), steg.join(', ')).toBe(true);
+        expect([...plats].sort((a, b) => a - b)).toEqual(plats);
+        expect(jobb).toMatch(/--output-file=dist\/osv-resultat\.json/);
+        expect(jobb).toMatch(/--all-packages/);
+        // Bara skanningen får fortsätta vid fel (den avslutar med 1 vid fynd); bedömningen är den som faller.
+        expect(jobb.match(/continue-on-error: true/g)).toHaveLength(1);
+        expect(jobb.slice(jobb.lastIndexOf('continue-on-error'))).toMatch(/^continue-on-error: true\n\s+uses: google\/osv-scanner-action\//);
+    });
+});
+
+describe('säkerhet: bedömningen av OSV-resultatet (tools/sarbarheter.mjs)', () => {
+    const komponenter = [{ purl: 'pkg:npm/papaparse@5.7.0' }, { purl: 'pkg:npm/xlsx@0.20.3' }];
+    const paket = (name, version, vulnerabilities = []) => ({ package: { name, version, ecosystem: 'npm' }, vulnerabilities });
+    it('godkänner när alla bibliotek prövades utan fynd', () => {
+        const r = bedöm({ results: [{ packages: [paket('papaparse', '5.7.0'), paket('xlsx', '0.20.3')] }] }, komponenter);
+        expect(r).toEqual({ saknas: [], fynd: [], bortraknade: [] });
+    });
+    it('ett bibliotek som saknas i resultatet räknas, så att en förteckning som inte lästes inte passerar', () => {
+        expect(bedöm({ results: [{ packages: [paket('xlsx', '0.20.3')] }] }, komponenter).saknas).toEqual(['papaparse@5.7.0']);
+        expect(bedöm({}, komponenter).saknas).toHaveLength(2);
+    });
+    it('ett okänt fynd fäller; ett åtgärdat räknas bort bara från den åtgärdade versionen', () => {
+        const ny = { id: 'GHSA-xxxx-xxxx-xxxx', summary: 'påhittad' };
+        const redos = { id: 'GHSA-5pgg-2g8v-p4x9', aliases: ['CVE-2024-22363'] };
+        const r = bedöm({ results: [{ packages: [paket('papaparse', '5.7.0', [ny]), paket('xlsx', '0.20.3', [redos])] }] }, komponenter);
+        expect(r.fynd.map(f => f.id)).toEqual(['GHSA-xxxx-xxxx-xxxx']);
+        expect(r.bortraknade.map(f => f.id)).toEqual(['GHSA-5pgg-2g8v-p4x9']);
+        const gammal = bedöm({ results: [{ packages: [paket('xlsx', '0.20.1', [redos])] }] }, [{ purl: 'pkg:npm/xlsx@0.20.1' }]);
+        expect(gammal.fynd.map(f => f.id)).toEqual(['GHSA-5pgg-2g8v-p4x9']);
+    });
+    it('jämför versioner numeriskt, och de åtgärdade gäller den SheetJS-version som ligger i vendor/', () => {
+        expect(jämförVersion('0.20.10', '0.20.2')).toBeGreaterThan(0);
+        expect(jämförVersion('0.19.3', '0.20.2')).toBeLessThan(0);
+        const sheetjs = läs('vendor/xlsx.mini.min.js').slice(0, 3000).match(/version="(\d+\.\d+\.\d+)"/)[1];
+        for (const a of ÅTGÄRDADE) expect(jämförVersion(sheetjs, a.atgardadI), a.id).toBeGreaterThanOrEqual(0);
     });
 });
 

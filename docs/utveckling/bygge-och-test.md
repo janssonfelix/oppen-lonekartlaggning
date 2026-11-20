@@ -21,6 +21,7 @@ CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas
 | Typkontrollen och linten | `tsconfig.json`, `tsconfig.app.json`, `types/globals.d.ts`, `eslint.config.js` |
 | Kedjan lokalt | `tools/kontroll.mjs` |
 | CI, release och demosidan | `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.github/workflows/pages.yml`, `tools/release.mjs`, `tools/site.mjs` |
+| Sårbarhetsbevakningen av `vendor/` | `.github/workflows/sarbarheter.yml`, `tools/sarbarheter.mjs` |
 | Beroendeuppdateringar | `.github/dependabot.yml` |
 | Termerna | `src/lib/termer.js`, `src/app/09-termer.js`, `tests/termer.test.js` |
 
@@ -270,6 +271,23 @@ byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, ocks
 med det incheckade. Den är den enda kontrollen av artefakten och `RELEASE.txt`; `dist/app.js` vaktas också av
 `appsource`-testet.
 
+**Sårbarhetsbevakningen** är ett eget arbetsflöde, `.github/workflows/sarbarheter.yml`, vars kommentarer är källan
+till stegen. Det bygger programvaruförteckningen (`tools/sbom.mjs`), låter OSV-Scanner slå de fyra biblioteken i
+`vendor/` mot den öppna sårbarhetsdatabasen OSV och bedömer resultatet med `tools/sarbarheter.mjs`, som faller om
+skanningen misslyckades, om ett bibliotek inte prövades eller om något har en känd sårbarhet. Det körs varje måndag,
+när `vendor/`, `tools/sbom.mjs`, `tools/sarbarheter.mjs` eller `TREDJEPARTSLICENSER.md` ändras (pull request och
+`main`) och för hand. Det är skilt från `ci.yml`, så att ett nytt fynd i databasen syns som en egen fallen körning
+utan att CI-kontrollen för `main` blir röd; jobbet har bara läsbehörighet och inga hemligheter. Bara CI hämtar
+något från nätet: verktyget självt gör fortfarande inga nätverksanrop (S1).
+
+Bevakningen täcker de sårbarheter som finns i OSV under npm-paketens namn (`d3`, `papaparse`, `jszip`, `xlsx`), där
+också rådgivningarna från GitHub ligger. SheetJS ges i nyare versioner ut utanför npm-registret men identifieras i
+databasen som `xlsx`; rådgivningarna för SheetJS saknar därför åtgärdad version och träffar varje version, också den
+i `vendor/`. De som enligt rådgivningens text är åtgärdade i vår version står med skäl i `ÅTGÄRDADE` i
+`tools/sarbarheter.mjs` och räknas bort bara från den åtgärdade versionen. Bevakningen täcker inte brister som bara
+publiceras hos projekten själva utan att föras in i OSV, och inte de nedladdade filernas äkthet (det gör
+kontrollsummorna i `vendor/SHA256SUMS`). Utvecklingsberoendena bevakas av Dependabot (avsnitt 11).
+
 ## 10. Release och demosidan
 
 **Släppa en version.** Hur en mottagare verifierar filen står i `SECURITY.md` (*Kontrollera att filen är äkta*).
@@ -308,7 +326,8 @@ innehåller verklig lönedata; tomma ärenden är avstängda, och säkerhetsbris
 **Beroendeuppdateringar** (`.github/dependabot.yml`): npm veckovis med utvecklingsberoendena i en grupp, och
 arbetsflödenas steg veckovis. Varje `uses:` i arbetsflödena ska peka på en fullständig commit-SHA med versionen som
 kommentar (`tests/sakerhet.test.js`), och Dependabot uppdaterar båda tillsammans. Verktyget har inga
-körtidsberoenden från npm: biblioteken ligger låsta i `vendor/`.
+körtidsberoenden från npm: biblioteken ligger låsta i `vendor/`, och Dependabot ser dem inte; dem bevakar
+sårbarhetsbevakningen (avsnitt 9).
 
 ## 12. Dokumentationen
 
