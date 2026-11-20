@@ -1878,7 +1878,8 @@ const __mirrorForecast = (() => {
  * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
  * (vaktas av tests/drift.test.js). Det oförklarade gapet (OLS) beräknas INTE
  * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
- * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet.
+ * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
+ * sökning (likalonslyftForMal) får appens skattning som argument.
  *
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
@@ -2344,7 +2345,59 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
     return out;
 }
 
-    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+/** Tröskelmålets standardmål: en oförklarad skillnad på högst 5 %. */
+const TROSKELMAL_STANDARD_PCT = 5;
+/** Det största lyft i procent som tröskelmålet prövar; krävs mer redovisas det som utom räckhåll. */
+const TROSKELMAL_MAX_LYFT_PCT = 40;
+/** Antalet halveringar i sökningen: intervallet 0–40 % krymper till 40 / 2^22, under 0,00001 procentenheter. */
+const TROSKELMAL_VARV = 22;
+/** Signifikansgränsen i läget "inte signifikant": målet är nått när p-värdet är över den (eller saknas). */
+const TROSKELMAL_SIGNIFIKANS_P = 0.05;
+
+/** Tröskelmålets konstanter, för appen (spegeln exponerar bara funktioner). */
+function troskelmalKonstanter() {
+    return { STANDARD_PCT: TROSKELMAL_STANDARD_PCT, MAX_LYFT_PCT: TROSKELMAL_MAX_LYFT_PCT,
+             VARV: TROSKELMAL_VARV, SIGNIFIKANS_P: TROSKELMAL_SIGNIFIKANS_P };
+}
+
+/**
+ * (C) Tröskelmål: det minsta jämna lyftet i procent till alla kvinnor som behövs för att den oförklarade skillnaden
+ * ska nå målet, antingen högst `malPct` procent (skillnaden räknas som kvinnor mot män, negativ när kvinnor ligger
+ * lägre) eller inte signifikant (p över TROSKELMAL_SIGNIFIKANS_P). Söks med bisektion i 0–TROSKELMAL_MAX_LYFT_PCT %
+ * i TROSKELMAL_VARV varv; svaret är intervallets övre gräns, där målet är nått.
+ *
+ * Regressionen körs inte här: `skatta(rader)` är appens skattning (huvudregressionen på de givna raderna) och
+ * returnerar `{ konPct, pValue }`, med `konPct` null när den inte går att skatta. Kostnaden per månad är summan av
+ * kvinnornas lön gånger lyftet, utan påslag; kostnaden över perioden räknar appen.
+ * @param {any[]} rader lönefilens rader ({lon, kon, …})
+ * @param {{malPct?: number, signifikans?: boolean,
+ *   skatta: (rader: any[]) => {konPct: number|null, pValue: number|null}}} opts
+ * @returns {{status: 'ingenSkattning'|'redan'|'utomRackhall'|'hittat',
+ *   utgangslage: {konPct: number|null, pValue: number|null},
+ *   lyftPct?: number, kostnadPerManad?: number, resultat?: {konPct: number|null, pValue: number|null}}}
+ *   ingenSkattning: regressionen går inte att skatta på raderna; redan: målet är redan nått; utomRackhall: inte ens
+ *   TROSKELMAL_MAX_LYFT_PCT % räcker; hittat: lyftPct, kostnadPerManad och skattningen efter lyftet (resultat)
+ */
+function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifikans = false, skatta }) {
+    const arKvinna = r => r.kon && r.kon.includes('kvinna');
+    const kvinnor = rader.filter(arKvinna);
+    const utgangslage = skatta(rader);
+    if (utgangslage.konPct == null) return { status: 'ingenSkattning', utgangslage };
+    const okFor = g => signifikans ? (g.pValue == null || g.pValue > TROSKELMAL_SIGNIFIKANS_P) : (g.konPct != null && g.konPct >= -malPct);
+    const medLyft = x => {
+        const sim = rader.map(r => arKvinna(r) ? { ...r, lon: r.lon * (1 + x / 100) } : r);
+        const g = skatta(sim);
+        return { konPct: g.konPct, pValue: g.pValue, kostnad: kvinnor.reduce((s, r) => s + r.lon * x / 100, 0) };
+    };
+    if (okFor(utgangslage)) return { status: 'redan', utgangslage };
+    let lo = 0, hi = TROSKELMAL_MAX_LYFT_PCT;
+    if (!okFor(medLyft(hi))) return { status: 'utomRackhall', utgangslage };
+    for (let varv = 0; varv < TROSKELMAL_VARV; varv++) { const mitt = (lo + hi) / 2; if (okFor(medLyft(mitt))) hi = mitt; else lo = mitt; }
+    const { konPct, pValue, kostnad } = medLyft(hi);
+    return { status: 'hittat', utgangslage, lyftPct: hi, kostnadPerManad: kostnad, resultat: { konPct, pValue } };
+}
+
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, likalonslyftForMal, troskelmalKonstanter, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
@@ -2360,6 +2413,8 @@ const _fcBandStats = __mirrorForecast.bandStats;
 const _fcIndividualRemediation = __mirrorForecast.individualRemediation;
 const _fcMarketTargets = __mirrorForecast.marketTargets;
 const _fcSensitivityCurve = __mirrorForecast.sensitivityCurve;
+const _fcLyftForMal = __mirrorForecast.likalonslyftForMal;
+const _fcTroskelmalKonstanter = __mirrorForecast.troskelmalKonstanter;
 const _fcMedian = __mirrorForecast._median;
 
 // ---- speglar src/lib/aidbas.js ----

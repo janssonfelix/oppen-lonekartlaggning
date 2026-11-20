@@ -94,6 +94,7 @@ export const MODULES = [
             forecastOutcome: '_fcForecastOutcome', bandStats: '_fcBandStats',
             individualRemediation: '_fcIndividualRemediation', marketTargets: '_fcMarketTargets',
             sensitivityCurve: '_fcSensitivityCurve',
+            likalonslyftForMal: '_fcLyftForMal', troskelmalKonstanter: '_fcTroskelmalKonstanter',
             // privata hjälpare som app.js anropar direkt:
             _median: '_fcMedian'
         }
