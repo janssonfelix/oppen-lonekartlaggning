@@ -3500,7 +3500,7 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
         adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
-    return { huvudregression, diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
+    return { huvudregression, diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, normaliseraForklaringsmodell, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
 })();
 const _rgHuvudregression = __mirrorRegression.huvudregression;
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
@@ -3511,9 +3511,7 @@ const _rgQuantileRegression = __mirrorRegression.quantileRegression;
 const _rgBlinderOaxaca = __mirrorRegression.blinderOaxaca;
 const _rgQuantileRegressionAtAllTau = __mirrorRegression.quantileRegressionAtAllTau;
 const _rgKvantilDesign = __mirrorRegression.kvantilDesign;
-const _rgComputeVariabelTillfor = __mirrorRegression.computeVariabelTillfor;
 const _rgNormaliseraForklaringsmodell = __mirrorRegression.normaliseraForklaringsmodell;
-const _rgInomYrkesgrupp = __mirrorRegression.inomYrkesgrupp;
 const _rgForklaringsmodellArStandard = __mirrorRegression.forklaringsmodellArStandard;
 const _rgModellVariabler = __mirrorRegression.modellVariabler;
 const _rgModellFras = __mirrorRegression.modellFras;

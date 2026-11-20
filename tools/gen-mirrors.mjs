@@ -117,8 +117,7 @@ export const MODULES = [
             blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
             kvantilDesign: '_rgKvantilDesign',   // kvantilregressionens design, delad av punktskattningen och bootstrappen (ADR-63)
             // Förklaringsmodellen (ADR-56)
-            computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
-            inomYrkesgrupp: '_rgInomYrkesgrupp',
+            normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
             forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
             modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp',
             // Ålder valfri (ADR-64)
