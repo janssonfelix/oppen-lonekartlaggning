@@ -47,11 +47,13 @@ function extractLine(prefix) {
 }
 
 const P = new Function('_anArRubrik', '_anTolka', '_anGrupp', '_anAndelGiltiga', `
-    const state = { columnMap: null, ansvarKolumn: null };
+    const state = { columnMap: null, ansvarKolumn: null, importprofil: null };
     ${extractConst('ALLOWED_FIELDS')}
     ${extractLine('const esc =')}
     ${extractLine('const _RADSLUT =')}
     ${extractFn('getField')}
+    ${extractFn('_rubrikForRoll')}
+    ${extractFn('_hittaRubrik')}
     ${extractFn('autoDetectColumnMap')}
     ${extractFn('_detectDelimiter')}
     ${extractFn('_decodeCsvBuffer')}
@@ -66,6 +68,8 @@ const P = new Function('_anArRubrik', '_anTolka', '_anGrupp', '_anAndelGiltiga',
     ${extractFn('_normalizeBas')}
     ${extractFn('tolkaLonerad')}
     const _ilTolkaLonerad = tolkaLonerad;
+    ${extractFn('_lonefilensRubriker')}
+    ${extractFn('_faltIRad')}
     ${extractFn('extractMinimalRecord')}
     ${extractFn('_hittaAnsvarKolumn')}
     ${extractFn('_bedomAnsvarKolumn')}
@@ -468,6 +472,37 @@ describe('inläsning: lönefil utan ålderskolumn', () => {
         expect(w.document.getElementById('column-map-panel').textContent).not.toContain('Kolumnmappning behövs');
         expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toContain('alder-saknas');
         expect(w.document.getElementById('reality-check').textContent).toContain('Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
+    });
+});
+
+// ---- Vilken kolumn som bär fältet ----
+describe('inläsning: kolumnvalet', () => {
+    // "Lön" rensas till "ln", och "Lönetillägg" till "lnetillgg", som också innehåller "ln".
+    const rubriker = ['Lönetillägg', 'Kön', 'BAS', 'Lön'];
+    it('en rubrik som är exakt lika sökordet går före en som bara innehåller det', () => {
+        expect(P.autoDetectColumnMap(rubriker).lon).toBe('Lön');
+        const row = { 'Lönetillägg': '500', 'Kön': 'Kvinna', 'BAS': 'A', 'Lön': '30000' };
+        expect(P.getField(row, ['mnadsln', 'lon', 'ln'], 'lon')).toBe('30000');
+        P.state.ansvarKolumn = null;
+        expect(P.extractMinimalRecord(row).lon).toBe(30000);
+    });
+    it('delsträngen gäller när ingen rubrik är exakt lika, och sökordens ordning står sig', () => {
+        expect(P.autoDetectColumnMap(['Lönetillägg', 'Kön']).lon).toBe('Lönetillägg');
+        expect(P.autoDetectColumnMap(['Lön', 'Månadslön']).lon).toBe('Månadslön');
+    });
+
+    it('kolumnerna slås upp en gång per fil, inte för varje rad', async () => {
+        const w = createAppWindow();
+        papa(w);
+        const original = w.getField;
+        let anrop = 0;
+        w.getField = (...a) => { anrop++; return original(...a); };
+        const rader = ['BAS;AID;Månadslön;Ålder;Kön'];
+        for (let i = 0; i < 40; i++) rader.push(`C;207011 Handläggare;${30000 + i * 10};40;${i % 2 ? 'Man' : 'Kvinna'}`);
+        w.loadStructureFile(csvFil(w, rader, 'uppslag.csv'));
+        await vanta(() => w.__state.data.length > 0);
+        expect(w.__state.data).toHaveLength(40);
+        expect(anrop).toBe(0);
     });
 });
 

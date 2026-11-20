@@ -61,39 +61,46 @@ function tillampaDataStil(rot) {
 }
 
 function getField(row, possibleNames, role) {
-    // #11: manuell kolumnmappning vinner över auto-matchning om satt för rollen.
-    if (role && state.columnMap && state.columnMap[role]) {
-        const mapped = state.columnMap[role];
-        if (Object.prototype.hasOwnProperty.call(row, mapped)) return row[mapped];
-    }
-    // Därefter importprofilen som gäller för filen (roll → filens rubrik); roller den inte täcker matchas på delsträng.
+    const key = _rubrikForRoll(Object.keys(row), possibleNames, role);
+    return key == null ? "" : row[key];
+}
+
+/**
+ * Rubriken som bär rollen bland `headers`: #11 den manuella kolumnmappningen, därefter importprofilen som gäller för
+ * filen (roll → filens rubrik), och för roller ingen av dem täcker namnet (_hittaRubrik). En vald rubrik gäller bara om
+ * filen har den. undefined när ingen rubrik passar.
+ */
+function _rubrikForRoll(headers, possibleNames, role) {
+    const mapped = role && state.columnMap && state.columnMap[role];
+    if (mapped && headers.includes(mapped)) return mapped;
     const profil = role && state.importprofil && state.importprofil.mappning[role];
-    if (profil && Object.prototype.hasOwnProperty.call(row, profil)) return row[profil];
+    if (profil && headers.includes(profil)) return profil;
+    return _hittaRubrik(headers, possibleNames, role);
+}
+
+/**
+ * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med sökordet, annars en som innehåller det; sökorden
+ * prövas i tur och ordning. Exakt likhet först, så att "Lön" går före "Lönetillägg" för sökordet "ln".
+ */
+function _hittaRubrik(headers, possibleNames, role) {
     // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
     // får aldrig tas för yrke (ADR-33).
-    const hoppa = k => role === 'yrke' && typeof _anArRubrik === 'function' && _anArRubrik(k);
+    const hoppa = h => role === 'yrke' && typeof _anArRubrik === 'function' && _anArRubrik(h);
+    const rensade = (headers || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
     for (const name of possibleNames) {
-        const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const key = Object.keys(row).find(k => !hoppa(k) && k.toLowerCase().replace(/[^a-z0-9]/g, "").includes(searchStr));
-        if (key !== undefined) return row[key];
+        const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        let i = rensade.indexOf(searchStr);
+        if (i < 0) i = rensade.findIndex(r => r !== null && r.includes(searchStr));
+        if (i >= 0) return headers[i];
     }
-    return "";
+    return undefined;
 }
 
 // #11: vilken CSV-rubrik auto-matchar varje roll (samma logik som getField,
 // utan columnMap-override). Returnerar { roll: rubrik|null }.
 function autoDetectColumnMap(headers) {
     const map = {};
-    for (const role of Object.keys(ALLOWED_FIELDS)) {
-        let found = null;
-        const hoppa = h => role === 'yrke' && typeof _anArRubrik === 'function' && _anArRubrik(h);
-        for (const name of ALLOWED_FIELDS[role]) {
-            const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const key = (headers || []).find(h => !hoppa(h) && String(h).toLowerCase().replace(/[^a-z0-9]/g, '').includes(searchStr));
-            if (key !== undefined && key !== null) { found = key; break; }
-        }
-        map[role] = found;
-    }
+    for (const role of Object.keys(ALLOWED_FIELDS)) map[role] = _hittaRubrik(headers, ALLOWED_FIELDS[role], role) ?? null;
     return map;
 }
 
