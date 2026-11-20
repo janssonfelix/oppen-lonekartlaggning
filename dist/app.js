@@ -12385,16 +12385,31 @@ const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
 const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
 
 /**
+ * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
+ * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
+ * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
+ */
+function namnIYrkesfaltetRadnr(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
+}
+
+/**
  * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
- * varningar, i Att göra och i inläsningsrapporten. Texten bär antalet rader och radnumren, aldrig fältets innehåll.
+ * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
+ * rader och radnumren, aldrig fältets innehåll.
  * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
  * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
  * @returns {string} Tom när antalet är 0.
  */
 function namnIYrkesfaltetText(antal, radnr = []) {
     if (!(antal > 0)) return '';
-    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
-    const vilka = nr.length ? ` (${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)})` : '';
+    const nr = namnIYrkesfaltetRadnr(antal, radnr);
+    const vilka = nr ? ` (${nr})` : '';
     return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
         + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
 }
@@ -12558,11 +12573,12 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     return { tolkning, sammandrag, fordelning, varningar, kolumner };
 }
 
-    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText };
+    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText, namnIYrkesfaltetRadnr };
 })();
 const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
 const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
+const _fkNamnIYrkesfaltetRadnr = __mirrorForhandskontroll.namnIYrkesfaltetRadnr;
 
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
@@ -19361,8 +19377,10 @@ function renderDataValidationReport() {
     const invalidLonExamples = da.invalidLonExamples || [];
     const invalidAlderExamples = da.invalidAlderExamples || [];
     const missingKonExamples = da.missingKonExamples || [];
-    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren; texten är förhandskontrollens.
+    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren. Hela varningen står i
+    // förhandskontrollen och i Att göra; här står en kort rad, med radnumren i förhandskontrollens formulering.
     const yrkeNamn = da.yrkeNamn || 0;
+    const yrkeNamnRadnr = _fkNamnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
     const used = state.data.length;
 
     // Räkna varningar
@@ -19406,7 +19424,7 @@ function renderDataValidationReport() {
             <div class="dvr-section">
                 <h4>Från fil till analys</h4>
                 <div class="dvr-row ok"><span>Total rader i fil:</span><span class="dvr-value">${fmt(totalRaw)}</span></div>
-                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>${esc(_fkNamnIYrkesfaltetText(yrkeNamn, da.yrkeNamnRadnr))}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
+                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Personnamn i fältet för ${esc(T.enhet.en)}:${yrkeNamnRadnr ? ' <span class="text-dampad-xs">' + esc(yrkeNamnRadnr) + '</span>' : ''}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
                 ${excludedNoBas > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar BAS:</span><span class="dvr-value">${fmt(excludedNoBas)}</span></div>` : ''}
                 ${excludedZeroLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Lön ≤ 0:</span><span class="dvr-value">${fmt(excludedZeroLon)}</span></div>` : ''}
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}

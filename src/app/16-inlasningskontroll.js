@@ -150,8 +150,10 @@ function renderDataValidationReport() {
     const invalidLonExamples = da.invalidLonExamples || [];
     const invalidAlderExamples = da.invalidAlderExamples || [];
     const missingKonExamples = da.missingKonExamples || [];
-    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren; texten är förhandskontrollens.
+    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren. Hela varningen står i
+    // förhandskontrollen och i Att göra; här står en kort rad, med radnumren i förhandskontrollens formulering.
     const yrkeNamn = da.yrkeNamn || 0;
+    const yrkeNamnRadnr = _fkNamnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
     const used = state.data.length;
 
     // Räkna varningar
@@ -195,7 +197,7 @@ function renderDataValidationReport() {
             <div class="dvr-section">
                 <h4>Från fil till analys</h4>
                 <div class="dvr-row ok"><span>Total rader i fil:</span><span class="dvr-value">${fmt(totalRaw)}</span></div>
-                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>${esc(_fkNamnIYrkesfaltetText(yrkeNamn, da.yrkeNamnRadnr))}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
+                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Personnamn i fältet för ${esc(T.enhet.en)}:${yrkeNamnRadnr ? ' <span class="text-dampad-xs">' + esc(yrkeNamnRadnr) + '</span>' : ''}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
                 ${excludedNoBas > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar BAS:</span><span class="dvr-value">${fmt(excludedNoBas)}</span></div>` : ''}
                 ${excludedZeroLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Lön ≤ 0:</span><span class="dvr-value">${fmt(excludedZeroLon)}</span></div>` : ''}
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}

@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     byggForhandskontroll, forhandskontrollGranser, FK_ANTAL_RADER, FK_ARSLON_MEDIAN, FK_TIMLON_MEDIAN,
-    FK_SPRIDNING_GANGER, FK_ALDER_MIN, FK_ALDER_MAX, FK_SMA_GRUPP, FK_NAMN_RADNR, namnIYrkesfaltetText,
+    FK_SPRIDNING_GANGER, FK_ALDER_MIN, FK_ALDER_MAX, FK_SMA_GRUPP, FK_NAMN_RADNR, namnIYrkesfaltetText, namnIYrkesfaltetRadnr,
 } from '../src/lib/forhandskontroll.js';
 
 const MAPPNING = { bas: 'BAS', yrke: 'AID', lon: 'Månadslön', alder: 'Ålder', kon: 'Kön' };
@@ -237,6 +237,14 @@ describe('byggForhandskontroll: personnamn i fältet för AID-etikett', () => {
     });
     it('utan kända radnummer står bara antalet', () => {
         expect(namnIYrkesfaltetText(3, [null, null])).toMatch(/på 3 rader\. Verktyget/);
+        expect(namnIYrkesfaltetRadnr(3, [null, null])).toBe('');
+    });
+    it('radnumren har en källa: inläsningsrapportens exempel och parentesen i varningen', () => {
+        expect(namnIYrkesfaltetRadnr(2, [137, 138])).toBe('rad 137 och 138');
+        expect(namnIYrkesfaltetRadnr(1, [7])).toBe('rad 7');
+        expect(namnIYrkesfaltetRadnr(9, [1, 2, 3, 4, 5, 6, 7])).toBe('till exempel rad 1, 2, 3, 4 och 5');
+        expect(namnIYrkesfaltetRadnr(0, [1])).toBe('');
+        expect(namnIYrkesfaltetText(2, [137, 138])).toContain(`(${namnIYrkesfaltetRadnr(2, [137, 138])})`);
     });
     it('varningen kommer före de andra', () => {
         const fk = bygg(trettio(), { parseStats: stats({ yrkeNamn: 1, yrkeNamnRadnr: [2], alderFromBirthYear: 30 }) });

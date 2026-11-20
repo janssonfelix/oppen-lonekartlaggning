@@ -320,7 +320,7 @@ export const MODULES = [
     {
         // Förhandskontrollen av lönefilen: tolkningen av de tio första raderna, sammandraget och varningarna.
         file: 'forhandskontroll.js', ns: '__mirrorForhandskontroll',
-        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser', namnIYrkesfaltetText: '_fkNamnIYrkesfaltetText' }
+        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser', namnIYrkesfaltetText: '_fkNamnIYrkesfaltetText', namnIYrkesfaltetRadnr: '_fkNamnIYrkesfaltetRadnr' }
     },
     {
         // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.
