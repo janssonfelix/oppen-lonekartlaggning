@@ -29,3 +29,6 @@ site/dist/
 
 # Programvaruförteckningen byggs av release-arbetsflödet (npm run sbom) och läggs på releasen.
 dist/sbom.cdx.json
+
+# Svaret från sårbarhetsdatabasen OSV, skrivet av tools/sarbarheter-hamta.mjs i arbetsflödet för sårbarheter.
+dist/osv-svar.json

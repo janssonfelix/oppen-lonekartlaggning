@@ -21,7 +21,7 @@ CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas
 | Typkontrollen och linten | `tsconfig.json`, `tsconfig.app.json`, `types/globals.d.ts`, `eslint.config.js` |
 | Kedjan lokalt | `tools/kontroll.mjs` |
 | CI, release och demosidan | `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.github/workflows/pages.yml`, `tools/release.mjs`, `tools/site.mjs` |
-| Sårbarhetsbevakningen av `vendor/` | `.github/workflows/sarbarheter.yml`, `tools/sarbarheter.mjs` |
+| Sårbarhetsbevakningen av `vendor/` | `.github/workflows/sarbarheter.yml`, `tools/sarbarheter-hamta.mjs`, `tools/sarbarheter.mjs` |
 | Beroendeuppdateringar | `.github/dependabot.yml` |
 | Termerna | `src/lib/termer.js`, `src/app/09-termer.js`, `tests/termer.test.js` |
 
@@ -276,13 +276,17 @@ med det incheckade. Den är den enda kontrollen av artefakten och `RELEASE.txt`;
 `appsource`-testet.
 
 **Sårbarhetsbevakningen** är ett eget arbetsflöde, `.github/workflows/sarbarheter.yml`, vars kommentarer är källan
-till stegen. Det bygger programvaruförteckningen (`tools/sbom.mjs`), låter OSV-Scanner slå de fyra biblioteken i
-`vendor/` mot den öppna sårbarhetsdatabasen OSV och bedömer resultatet med `tools/sarbarheter.mjs`, som faller om
-skanningen misslyckades, om ett bibliotek inte prövades eller om något har en känd sårbarhet. Det körs varje måndag,
-när `vendor/`, `tools/sbom.mjs`, `tools/sarbarheter.mjs` eller `TREDJEPARTSLICENSER.md` ändras (pull request och
-`main`) och för hand. Det är skilt från `ci.yml`, så att ett nytt fynd i databasen syns som en egen fallen körning
-utan att CI-kontrollen för `main` blir röd; jobbet har bara läsbehörighet och inga hemligheter. Bara CI hämtar
-något från nätet: verktyget självt gör fortfarande inga nätverksanrop (S1).
+till stegen. Det bygger programvaruförteckningen (`tools/sbom.mjs`), frågar den öppna sårbarhetsdatabasen OSV direkt
+om vart och ett av de fyra biblioteken i `vendor/` (`tools/sarbarheter-hamta.mjs`, med bara paketets namn, ekosystem
+och version) och bedömer svaret med `tools/sarbarheter.mjs`. Hämtningen faller om databasen inte kunde frågas
+(nätfel, felstatus, ett svar som inte är JSON), med ett besked som skiljer det från ett fynd; bedömningen, som inte
+gör några nätverksanrop, faller om ett bibliotek inte prövades eller om något har en känd sårbarhet. Arbetsflödet
+använder bara GitHubs egna actions, eftersom repot inte tillåter andra; frågan görs därför av ett eget skript i
+stället för en färdig skanner. Det körs varje måndag, när `vendor/`, `tools/sbom.mjs`, `tools/sarbarheter-hamta.mjs`,
+`tools/sarbarheter.mjs` eller `TREDJEPARTSLICENSER.md` ändras (pull request och `main`) och för hand. Det är skilt
+från `ci.yml`, så att ett nytt fynd i databasen syns som en egen fallen körning utan att CI-kontrollen för `main` blir
+röd; jobbet har bara läsbehörighet och inga hemligheter. Bara CI hämtar något från nätet: verktyget självt gör
+fortfarande inga nätverksanrop (S1).
 
 Bevakningen täcker de sårbarheter som finns i OSV under npm-paketens namn (`d3`, `papaparse`, `jszip`, `xlsx`), där
 också rådgivningarna från GitHub ligger. SheetJS ges i nyare versioner ut utanför npm-registret men identifieras i
