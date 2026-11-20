@@ -304,9 +304,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   utelämnas med en varning (`_lasningar` i `src/lib/organisationspaket.js`). Referensens och statistikens
   namn och källa följer med i exporterna. Paketet lagras aldrig i verktyget, och demoläget har
   en påhittad referens.
-- **Fältet för AID-etikett saneras** (`_cleanYrkeField`): trunkeras och maskerar namn-mönster
-  (t.ex. "Förnamn Efternamn" → `***`; verifierat: "101 Anna Andersson" lästes in
-  som "101 ***"); tecknen `< > " ' &` tas bort. `_normalizeBas` tar bort samma tecken ur BAS-värdet.
+- **Fältet för AID-etikett saneras** (`_cleanYrkeField`): tecknen `< > " ' &` tas bort först, sedan maskeras
+  namn-mönster (t.ex. "Förnamn Efternamn" och "Efternamn, Förnamn" i versaler eller Versal-gemener → `***`;
+  verifierat: "101 Anna Andersson" lästes in som "101 ***"), och sist kortas etiketten till 40 tecken. Namn i
+  gemener maskeras inte; det är en känd gräns. `_normalizeBas` tar bort samma tecken ur BAS-värdet.
 - **Utdatakodning:** `esc()` escapear `& < > " '` och är därmed säker även i attributkontext
   (regressionstester i `tests/parsing.test.js`).
 - **Förhandskontrollen av lönefilen visar de tio första raderna bara på skärmen.** Varje rad har fem till sju

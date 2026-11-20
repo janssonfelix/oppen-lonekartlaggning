@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { arAnsvarskodRubrik, tolkaAnsvarskod, ansvarsgrupp, andelGiltiga } from '../src/lib/ansvar.js';
+import { aidEtikettlista } from '../src/lib/aid-etiketter.js';
 import { createAppWindow } from './helpers/app-harness.js';
 import { papa, vanta, csvFil } from './helpers/granssnitt-rigg.js';
 
@@ -539,17 +540,38 @@ describe('tabell: yrke (_cleanYrkeField)', () => {
         ['Ledning', 'Ledning'],
         ['101010 Lärare grundskola', '101010 Lärare grundskola'],
         ['101010 Anna Andersson', '101010 ***'],
-        // Överraskning: versaler/gemener i namnet maskeras inte (mönstret kräver "Förnamn Efternamn")
-        ['101010 ANDERSSON, ANNA', '101010 ANDERSSON, ANNA'],
+        // Efternamn, Förnamn i versaler eller Versal-gemener maskeras (båda orden i samma form)
+        ['101010 ANDERSSON, ANNA', '101010 ***'],
+        ['101010 Andersson, Anna', '101010 ***'],
+        // Känd gräns: gemener och blandad form maskeras inte (en gemen etikett kan se likadan ut)
         ['101010 anna andersson', '101010 anna andersson'],
-        // Överraskning: maskering sker före strippning, så HTML-tecken mellan två namn gömmer namnet
-        ['101010 <Anna> <Andersson>', '101010 Anna Andersson'],
-        ['101010 <Ledning> & "Chef"', '101010 Ledning  Chef'],   // överraskning: strippat & lämnar dubbelt mellanslag
+        ['101010 ANDERSSON, Anna', '101010 ANDERSSON, Anna'],
+        // HTML-tecknen rensas före maskeringen, så de gömmer inte ett namn
+        ['101010 <Anna> <Andersson>', '101010 ***'],
+        // Maskeringen sker på den rensade texten: "<Ledning> & "Chef"" blir "Ledning  Chef", två ord i Versal-gemener (samma mönster som förut)
+        ['101010 <Ledning> & "Chef"', '101010 ***'],
         ['101010 Lärare <b>&\'"', '101010 Lärare b'],
         ['101010 Ledarskapsutveckling och personalansvar i organisationen', '101010 Ledarskapsutveckling och personalansvar…'],
+        // Namnet ligger över 40-teckensgränsen: maskeras först, så inget halvt namn ("Anna A") blir kvar
+        ['101010 Ledarskapsutveckling och personal Anna Andersson', '101010 Ledarskapsutveckling och personal ***'],
+        // Riktiga etiketter som råkar ha komma, bindestreck eller versal i förkortning ändras inte
+        ['101010 Chef, enhet', '101010 Chef, enhet'],
+        ['101010 Sjuksköterska', '101010 Sjuksköterska'],
+        ['101010 IT-tekniker', '101010 IT-tekniker'],
+        ['101010 Ledning, övergripande', '101010 Ledning, övergripande'],
         ['', ''], [null, ''], [undefined, ''], ['   ', ''],
     ])('%o → %o', (raw, forvantat) => {
         expect(P._cleanYrkeField(raw)).toBe(forvantat);
+    });
+    // Genomgång av hela etikettlistan: ingen riktig etikett ändras av maskeringen, bara av 40-teckensgränsen.
+    it('ingen av de SKR-etiketter som verktyget känner till ändras, utom av 40-teckensgränsen', () => {
+        const andrade = [];
+        for (const [kod, namn] of aidEtikettlista().etiketter) {
+            const forvantat = namn.length > 40 ? namn.substring(0, 40).trim() + '…' : namn;
+            const ut = P._cleanYrkeField(kod + ' ' + namn);
+            if (ut !== kod + ' ' + forvantat) andrade.push(`${kod} ${namn} → ${ut}`);
+        }
+        expect(andrade).toEqual([]);
     });
 });
 

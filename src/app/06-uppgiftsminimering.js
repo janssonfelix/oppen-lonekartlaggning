@@ -60,9 +60,18 @@ function _bedomAnsvarKolumn(namn, varden) {
  * eller liknande. Vi vill bara behålla AID-koden + en kort rollbeskrivning.
  * Allt annat trunkeras eller maskeras:
  *   - AID:                ledande siffergrupp (\d+)
- *   - Etikett:            första 40 tecken efter AID + separator
- *   - Namn-mönster:       "Förnamn Efternamn" maskeras till *** även inom etiketten
+ *   - Etikett:            resten efter AID + separator, med HTML-tecknen < > " ' & borttagna
+ *   - Namn-mönster:       "Förnamn Efternamn" och "Efternamn, Förnamn" (i versaler eller Versal-gemener) maskeras
+ *                         till *** även inom etiketten
+ *   - Längd:              etiketten kortas till 40 tecken sist, efter maskeringen, så att ett namn aldrig klipps
+ *                         mitt itu och lämnar ett halvt namn kvar
  *   - Resten:             droppas
+ *
+ * Ordningen är avsiktlig: rensning av tecknen först (så att "<Anna> <Andersson>" blir ett namn som maskeras), maskering
+ * sedan, trunkering sist. Känd gräns: ett namn i gemener ("anna andersson") och "ANDERSSON, Anna" (blandad form)
+ * maskeras inte. En befattning består normalt av vanliga ord i gemener ("sjuksköterska", "lärare grundskola"), och
+ * två ord i enbart versaler kan vara en etikett i vissa uttag, så de mönstren går inte att maskera utan att förstöra
+ * riktiga etiketter. Mönstret med komma följer samma skäl: "Chef, enhet" (gemen efter kommat) maskeras inte.
  *
  * @param {*} raw - Rått värde från CSV-cellen.
  * @returns {string} "AID Etikett" eller bara AID/etikett om endera saknas.
@@ -75,18 +84,21 @@ function _cleanYrkeField(raw) {
     const aid = aidMatch ? aidMatch[1] : "";
     // Etikett = resten efter AID och vanliga separatorer (—, -, :, ., whitespace)
     let label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim();
-    // Aggressiv trunkering — yrkesetiketter sällan över 40 tecken
-    if (label.length > 40) label = label.substring(0, 40).trim() + '…';
-    // Defensivt: maskera "Förnamn Efternamn" om något ändå smugit sig in
-    // OBS: \b fungerar inte före icke-ASCII-bokstäver (Å/Ä/Ö), så namn som
-    // "Örjan Östberg" skulle inte maskeras. Unicode-säker ordgräns via fångad
-    // föregående icke-bokstav ($1) — undviker lookbehind (stöds ej i Safari < 16.4).
-    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/g, '$1***');
     // Härd mot XSS-tecken vid inläsning.
     // Strippar HTML-meta-tecken < > " ' & så de aldrig kan smitas in i en
     // innerHTML-template ens om en framtida renderingsplats glömmer esc().
     // Detta är "defensive depth" — CSP + esc() + cleanYrkeField; tre lager.
+    // Körs FÖRST: annars gömmer tecknen ett namn ("<Anna> <Andersson>") för maskeringen.
     label = label.replace(/[<>"'&]/g, '');
+    // Defensivt: maskera namn om något ändå smugit sig in
+    // OBS: \b fungerar inte före icke-ASCII-bokstäver (Å/Ä/Ö), så namn som
+    // "Örjan Östberg" skulle inte maskeras. Unicode-säker ordgräns via fångad
+    // föregående icke-bokstav ($1) — undviker lookbehind (stöds ej i Safari < 16.4).
+    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/g, '$1***');
+    // "Efternamn, Förnamn": två ord med komma emellan, båda i versaler eller båda i Versal-gemener.
+    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)(?![A-Za-zÅÄÖåäö])/g, '$1***');
+    // Aggressiv trunkering sist — yrkesetiketter sällan över 40 tecken
+    if (label.length > 40) label = label.substring(0, 40).trim() + '…';
     if (aid && label) return `${aid} ${label}`;
     return aid || label;
 }
