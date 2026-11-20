@@ -310,8 +310,8 @@ describe('lagringsspärren', () => {
     });
 });
 
-// Statusfärgerna i gränssnittet används som text mot vitt och ska nå kravet 4,5:1.
-describe('gränssnittets statusfärger har kontrast nog för text', () => {
+// Statusfärgernas kontrast prövas i tests/farger.test.js; här prövas att de för ljusa nyanserna inte används.
+describe('för ljusa statusnyanser används inte som text', () => {
     it('för ljusa statusnyanser (under 4,5:1 som text) står inte i vyerna, sidan eller stilmallen', async () => {
         const { readdirSync } = await import('node:fs');
         // Diagrammens palett (10-diagram*.js) har egna färger för serier, prövade för sig (3:1 för grafik).

@@ -105,7 +105,7 @@ bibliotek av hjälpklasser som ersatte alla `style`-attribut (ADR-30).
 
 ### 5.1 Sviten
 
-Vitest, med omkring 3 400 tester i drygt 100 filer. De genererade filerna (`dist/` och `src/app/08-version.js` och
+Vitest. De genererade filerna (`dist/` och `src/app/08-version.js` och
 `09-lib-speglar.js`) prövas av artefaktgrinden, inte av sviten, så `npm test` efter en ändring i `src/lib/` kräver
 `npm run build:app` först; `npm run kontroll` gör det själv.
 
