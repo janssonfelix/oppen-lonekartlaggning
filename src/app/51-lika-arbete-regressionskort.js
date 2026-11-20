@@ -261,7 +261,7 @@ let _regKvantilSenast = null;
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
 // tabellen säger det. IRLS-skattningen (_quantileRegression) är en approximation av kvantillösningen; intervallet
 // bootstrappar den approximationen, inte den exakta LP-lösningen.
-const REG_KVANTIL_KI_B = 200, REG_KVANTIL_KI_MAX_N = 2000;
+const REG_KVANTIL_KI_B = _osKonstanter().KVANTIL_KI_B, REG_KVANTIL_KI_MAX_N = _osKonstanter().KVANTIL_KI_MAX_N;
 // Minne för senaste beräkning: kortet ritas om vid varje flikbyte, och bootstrappen är det dyra (uppmätt ~0,5 s
 // på demodatat, ~11 s på 5 000 rader, därav gränsen 2 000 ≈ 4 s). Nyckeln är datats eget frö (antal och lönesummor per kön) plus ålderssumman.
 /** @type {{nyckel: string, ut: any}|null} */
@@ -315,37 +315,10 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     }
     return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
 }
+// Omsamplingarna och percentilintervallen är kvantilBootstrap i src/lib/osakerhet.js (B = REG_KVANTIL_KI_B, seedad ur
+// lönerna per kön).
 function _regKvantilBootstrap(raw, modell, results, arKv) {
-    const rnd = _rngFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
-    const n = raw.length, B = REG_KVANTIL_KI_B;
-    const prov = results.map(() => []);
-    const diffProv = [];
-    const i10 = results.findIndex(r => r.tau === 0.1), i90 = results.findIndex(r => r.tau === 0.9);
-    // Ålder centreras på hela urvalets medel (könskoefficienten beror inte på centreringen).
-    const ageMean = modell.alder ? raw.reduce((s, d) => s + d.alder, 0) / n : undefined;
-    // Varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
-    const hel = _rgKvantilDesign(raw, modell, { ageMean });
-    const helBeta = results.map(r => (r.error ? null : (_quantileRegression(hel.X, hel.y, r.tau) || {}).beta || null));
-    for (let b = 0; b < B; b++) {
-        const urval = new Array(n);
-        for (let i = 0; i < n; i++) urval[i] = raw[Math.floor(rnd() * n)];
-        const { X, y, kolumner } = _rgKvantilDesign(urval, modell, { ageMean });
-        const konPct = results.map((r, k) => {
-            if (r.error) return null;
-            const b0 = helBeta[k];
-            const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
-            const fit = _quantileRegression(X, y, r.tau, undefined, undefined, start);
-            return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
-        });
-        konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });
-        if (i10 >= 0 && i90 >= 0 && konPct[i10] != null && konPct[i90] != null) diffProv.push(konPct[i90] - konPct[i10]);
-    }
-    const intervall = v => {
-        v.sort((a, c) => a - c);
-        return v.length < B / 2 ? null : { lag: v[Math.floor(v.length * 0.025)], hog: v[Math.min(v.length - 1, Math.floor(v.length * 0.975))] };
-    };
-    results.forEach((r, k) => { if (!r.error) r.ki = intervall(prov[k]); });
-    return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
+    return _osKvantilBootstrap(raw, modell, results, arKv);
 }
 // Tre skattningar är ingen trend: en rad per del av lönefördelningen, med gapet som ett streck från
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.

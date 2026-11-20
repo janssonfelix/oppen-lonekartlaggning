@@ -20,7 +20,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
  */
-import { median } from './stat.js';
+import { median, percentilintervall } from './stat.js';
 import { rngFor } from './rng.js';
 
 /** Verktygets egen storleksgräns för statusen, i procent av mäns lön. */
@@ -114,7 +114,7 @@ export function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
         kvoter[b] = mMa > 0 ? mKv / mMa * 100 : 100;
     }
     kvoter.sort((x, y) => x - y);
-    return { lag: kvoter[Math.floor(B * 0.025)], hog: kvoter[Math.min(B - 1, Math.floor(B * 0.975))] };
+    return percentilintervall(kvoter);
 }
 
 /**

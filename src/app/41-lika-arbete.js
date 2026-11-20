@@ -5,18 +5,10 @@
 // Översiktens rader: kvinnors och mäns medianlön per BAS-intervall med kvoten och dess 95-procentiga bootstrap-KI.
 // EN beräkning för skärmens tabell, diagrammen och rapporten (Word, PDF) — de kan därför aldrig visa olika tal.
 // Bara BAS-intervall där BÅDA könen når tröskeln får en rad: varje tal i raden bygger på minst k personer.
-// Bootstrap med B = 1000, seedad ur datat så att intervallet blir detsamma varje gång; dragningarnas medianer tas
-// ur rangräkning (_lvBootstrapMedianer, O(n) per dragning utan allokeringar).
-function _laBootstrapGapCI(kvLons, maLons, B = 1000) {
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const ratios = new Array(B);
-    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mKv = m.kv[b], mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
-    }
-    ratios.sort((a, b) => a - b);
-    return { lo: ratios[Math.floor(B * 0.025)], hi: ratios[Math.floor(B * 0.975)] };
+// Intervallet är medianKvotKI i src/lib/osakerhet.js: bootstrap med B = 1000, seedad ur datat så att intervallet blir
+// detsamma varje gång; dragningarnas medianer tas ur rangräkning (_lvBootstrapMedianer, O(n) per dragning).
+function _laBootstrapGapCI(kvLons, maLons, B) {
+    return _osMedianKvotKI(kvLons, maLons, { B });
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
 // och 1,8 s) och behövs av flera vyer — fliken, rapportmodellen (som byggs flera gånger i Dokumentera) och
@@ -592,31 +584,10 @@ function _laTrattUnderlag(d, k = kTroskel()) {
 // Gruppen är AID-kod + BAS-intervall ur varje persons egen rad (lika arbete: samma yrkesgrupp på samma nivå), inte
 // yrkesgruppen över alla intervall. Tidigare grupperades per yrke och gruppen fick BAS från sin första rad, så en
 // yrkesgrupp i flera intervall redovisades i ett godtyckligt av dem med alla sina personer.
+// Räkningen är trattUnderlag i src/lib/osakerhet.js; minnet ovan (_laTrattUnderlag) räknar den en gång per underlag
+// och tröskel.
 function _laTrattUnderlagRakna(d, k) {
-    const perGrupp = new Map();
-    for (const r of d) {
-        if (!(r.lon > 0) || !r.bas) continue;
-        const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
-        if (!kv && !ma) continue;
-        const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
-        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
-    }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
-    if (!grupper.length) return null;
-    const rest = [];
-    for (const g of grupper) {
-        g.medKv = Stat.median(g.kv); g.medMa = Stat.median(g.ma);
-        for (const v of g.kv) rest.push(Math.log(v) - Math.log(g.medKv));
-        for (const v of g.ma) rest.push(Math.log(v) - Math.log(g.medMa));
-    }
-    const sigma = 1.4826 * Stat.median(rest.map(Math.abs));
-    if (!(sigma > 0)) return null;
-    const halv = (nKv, nMa) => 100 * 1.96 * 1.2533 * sigma * Math.sqrt(1 / nKv + 1 / nMa) * (1 + 0.6 / Math.min(nKv, nMa));
-    // En stor grupp (över 300 personer) bedöms med normalformeln och gruppens EGEN spridning (src/lib/status.js).
-    return { sigma, halv, punkter: grupper.map(g => { const kvot = g.medKv / g.medMa * 100, grans = _stsSlumpensGranser(g.kv, g.ma);
-        return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv: g.medKv, medMa: g.medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
-                 utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
+    return _osTrattUnderlag(d, k);
 }
 function _laTrattFigur(u, k = kTroskel()) {
     // Axeln börjar vid den minsta grupp som kan finnas med (tröskeln för varje kön), så att trattens form syns också

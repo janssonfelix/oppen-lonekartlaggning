@@ -37,7 +37,7 @@
  * @see 34-likvardigt-arbete.js computeLikvardighetPairs
  */
 
-import { median as _median } from './stat.js';
+import { median as _median, percentilintervall } from './stat.js';
 import { rngFor } from './rng.js';
 import { direktivMarkering } from './status.js';
 
@@ -161,7 +161,8 @@ export function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.rando
     const diffs = new Array(B);
     for (let b = 0; b < B; b++) diffs[b] = m.ma[b] - m.kv[b];
     diffs.sort((a, b) => a - b);
-    return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
+    const { lag, hog } = percentilintervall(diffs);
+    return { lo: lag, hi: hog };
 }
 
 /**
@@ -180,7 +181,8 @@ export function bootstrapMedianVsConstantKr(orgLons, constMedian, B = 1000, rng 
     const diffs = new Array(B);
     for (let b = 0; b < B; b++) diffs[b] = constMedian - _dragningsmedian(org, rng);
     diffs.sort((a, b) => a - b);
-    return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
+    const { lag, hog } = percentilintervall(diffs);
+    return { lo: lag, hi: hog };
 }
 
 export const ALDERS_GOLV_DEFAULT = 10;      // minsta antal personer i jämförelseyrket för åldersjustering
