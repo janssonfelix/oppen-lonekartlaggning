@@ -79,7 +79,8 @@ Redovisningsformen (ADR-12) gäller det som lämnar verktyget, alltså exportlä
 grupp under tröskeln får inte stå i filen och inte gå att räkna fram genom att dra ifrån inom samma fil (en total minus
 de visade delarna, i samma tabell eller mellan blad och avsnitt i filen). Det som går att räkna fram genom att
 kombinera flera filer ur samma underlag skyddas inte. Den som gör det har redan hela underlaget, och skydden finns för
-att undvika omedvetna dataläckor, inte för att stänga ute användaren.
+att undvika omedvetna dataläckor, inte för att stänga ute användaren. ZIP-exporten räknas som sina delar: varje fil i
+den prövas för sig, och delarna prövas inte mot varandra.
 
 Tabellerna per AID-kod och BAS-intervall och könsfördelningen per BAS-intervall har ett avsiktligt avsteg i antal
 (avsnitt 4).

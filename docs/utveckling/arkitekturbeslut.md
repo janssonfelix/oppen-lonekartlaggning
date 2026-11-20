@@ -688,7 +688,8 @@ påslag, är inte omedvetet. Priset för att stänga det vore högt: en grupp p�
 en enda persons skull, och en flaggad grupps medelvärde skulle döljas i protokollet, så att stödet vid prioritering
 och fördelning inte visar alla grupper. ADR-91 gäller därför bara inom protokollet: bladet för lika arbete prövas mot
 bladet för BAS-intervall i samma fil, med sitt prov och sin not, och inte längre mot tabellerna per BAS-intervall i
-rapporten och Excelfilen eller mot organisationens medelvärden. Differensprovet (ADR-88) parar aldrig två filer, och
+rapporten och Excelfilen eller mot organisationens medelvärden. ZIP-exporten räknas som sina delar: varje fil i den
+prövas för sig, och delarna prövas inte mot varandra. Differensprovet (ADR-88) parar aldrig två filer, och
 riggens intervall L, som bara fanns för den prövningen, är borttaget. *Avvisat:* två saker som prövades, visade sig
 verkliga och medvetet inte stängs: (a) protokollets blad för lika arbete mot intervallets medellön i tabellerna per
 BAS-intervall i rapporten eller Excelfilen, som gav medelvärdet för intervallets övriga personer av ett kön; (b)

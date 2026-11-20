@@ -63,7 +63,7 @@ färre personer än den inställda tröskeln (standard 10). På skärmen visas a
 har redan lönefilen. Undantagen är uppräknade och beslutade. Ett lönemått får inte heller gå att räkna fram genom att
 dra ifrån inom samma fil (Löneöversyns blad *Fördelning*, tabellerna per BAS-intervall, uppdelningen av
 löneskillnaden, huvudområdenas andel och JPA-protokollets blad). Skyddet gäller en fil i taget: det som går att räkna
-fram genom att kombinera flera filer ur samma underlag skyddas inte (ADR-92). Antal och andelar, också per kön, omfattas inte av skyddet
+fram genom att kombinera flera filer ur samma underlag skyddas inte, och ZIP-exporten räknas som sina delar (ADR-92). Antal och andelar, också per kön, omfattas inte av skyddet
 utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som lämnas ut (ADR-70).
 
 *Varför:* att förhindra återidentifiering i det som sprids.
