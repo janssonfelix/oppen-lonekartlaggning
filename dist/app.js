@@ -3143,6 +3143,10 @@ const _kostPeriod = __mirrorKostnad.periodkostnad;
 
 // ---- speglar src/lib/struktur.js ----
 const __mirrorStructure = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const _median = __mirrorStat.median;
+    const _quantile = __mirrorStat.quantile;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -3155,19 +3159,7 @@ const __mirrorStructure = (() => {
  * här och kör `npm run build:app`, rör ej spegeln. Inga DOM-/state-beroenden.
  */
 
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
+
 function _isKv(r) { return r.kon && r.kon.includes('kvinna'); }
 function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
 
@@ -4294,6 +4286,8 @@ const __mirrorForecast = (() => {
     // importer ur tidigare speglade lib-moduler
     const arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
     const periodkostnad = __mirrorKostnad.periodkostnad;
+    const _medianStat = __mirrorStat.median;
+    const _quantileStat = __mirrorStat.quantile;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4317,20 +4311,10 @@ const __mirrorForecast = (() => {
 
 
 
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
 
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
+// Omslag: tål null/undefined som indata (0 för tom), vilket stat.js inte gör. Algoritmen finns bara i stat.js.
+function _median(arr) { return arr && arr.length ? _medianStat(arr) : 0; }
+function _quantile(arr, q) { return arr && arr.length ? _quantileStat(arr, q) : 0; }
 
 /**
  * "Water-filling": höj de lägst betalda först. Hittar en gemensam nivå L (≤ cap)
@@ -5721,6 +5705,10 @@ const _rgStegEtikett = __mirrorRegression.stegEtikett;
 
 // ---- speglar src/lib/lonepolitik.js ----
 const __mirrorLonepolitik = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const _median = __mirrorStat.median;
+    const _quantile = __mirrorStat.quantile;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -5742,19 +5730,6 @@ const __mirrorLonepolitik = (() => {
  * maskera.
  */
 
-function _lpMedian(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = Math.floor(s.length / 2);
-    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-// Linjär interpolation mellan närmaste rangvärden (samma definition som stat.quantile).
-function _lpQuantile(sorted, q) {
-    const pos = (sorted.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
-}
 
 /**
  * Organisationens faktiska lönespann i en grupp (P10, median, P90) — jämförs med
@@ -5764,7 +5739,7 @@ function _lpQuantile(sorted, q) {
 function organisationsBand(rows, k) {
     const lons = (rows || []).map(r => r.lon).filter(v => v > 0).sort((a, b) => a - b);
     if (lons.length < k) return null;
-    return { n: lons.length, p10: _lpQuantile(lons, 0.1), med: _lpMedian(lons), p90: _lpQuantile(lons, 0.9) };
+    return { n: lons.length, p10: _quantile(lons, 0.1), med: _median(lons), p90: _quantile(lons, 0.9) };
 }
 
 function _lpIsKvinna(r) {
@@ -5806,7 +5781,7 @@ function groupBandStats(rows, pol) {
     if (!Array.isArray(rows) || !rows.length || !pol) return null;
     const lons = rows.map(r => r.lon).filter(v => v > 0);
     if (!lons.length) return null;
-    const median = _lpMedian(lons);
+    const median = _median(lons);
     return {
         n: lons.length,
         median,
