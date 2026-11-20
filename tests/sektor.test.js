@@ -2,7 +2,7 @@
  * Sektorsöversikten: src/lib/sektor.js.
  */
 import { describe, it, expect } from 'vitest';
-import { sektorsTabell, sektorernasAndel, sektorJusteradText } from '../src/lib/sektor.js';
+import { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot } from '../src/lib/sektor.js';
 import { computeSequentialGap } from '../src/lib/regression.js';
 import { fitOLS, tQuantile } from '../src/lib/stat.js';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -185,7 +185,7 @@ describe('sektor: sektorernas andel av gapet', () => {
         // Vård 30 000 för alla, teknik 40 000 för alla; kvinnor mest i vård, män mest i teknik.
         const rader = [...flera(8, () => rad('207011', 'kvinna', 30000)), ...flera(2, () => rad('502010', 'kvinna', 40000)),
                        ...flera(2, () => rad('207011', 'man', 30000)), ...flera(8, () => rad('502010', 'man', 40000))];
-        const a = sektorernasAndel(rader);
+        const a = sektorernasAndel(rader, { k: 2 });
         expect(a.gapKr).toBeCloseTo(6000, 6);
         expect(a.sektorKr).toBeCloseTo(6000, 6);
         expect(a.andel).toBeCloseTo(1, 6);
@@ -201,7 +201,49 @@ describe('sektor: sektorernas andel av gapet', () => {
         expect(sektorernasAndel(rader, { k: 10 })).toBeNull();
         expect(sektorernasAndel(rader)).toBeNull();   // k = 10 som standard
     });
-        it('null utan båda könen', () => {
+    it('null utan båda könen', () => {
         expect(sektorernasAndel([rad('207011', 'kvinna', 30000)])).toBeNull();
+    });
+});
+
+// ADR-84: ett huvudområde där ett kön har 1 till k − 1 personer räknas samman med andra, så att beloppet tillsammans
+// med medellönerna och antalen inte ger dess medellön (härledningarna står i tests/ktroskel-differens.test.js).
+describe('sektor: sammanräknade huvudområden (ADR-84)', () => {
+    // Vård: 30 kvinnor och 20 män; teknik: 12 kvinnor och 25 män; städ: 3 män.
+    const tre = () => [...flera(30, () => rad('207011', 'kvinna', 30000)), ...flera(20, () => rad('207011', 'man', 31000)),
+        ...flera(12, () => rad('502010', 'kvinna', 39000)), ...flera(25, () => rad('502010', 'man', 41000)),
+        ...flera(3, () => rad('651010', 'man', 52000))];
+    it('utan små grupper räknas inget samman, och beloppet är detsamma som förut', () => {
+        const a = sektorernasAndel(tre().filter(r => r.aid !== '651010'), { k: 10 });
+        expect(a.sammanslagna).toEqual([]);
+        expect(sektorAndelNot(a, 10)).toBe('');
+        expect(a.sektorKr).toBeCloseTo(sektorernasAndel(tre().filter(r => r.aid !== '651010'), { k: 1 }).sektorKr, 9);
+    });
+    it('ett litet område räknas samman med det område som har färst av samma kön, och båda namnges i noten', () => {
+        const a = sektorernasAndel(tre(), { k: 10 });
+        // Städ har tre män; vård har 20 och teknik 25, så städ och vård räknas samman.
+        expect(a.sammanslagna).toEqual(['Vård- och omsorgsarbete med mera', 'Städ, tvätt och renhållningsarbete']);
+        expect(a.sma).toEqual(['Städ, tvätt och renhållningsarbete']);
+        expect(a.sektorKr).not.toBeNull();
+        // Samma belopp som när städ och vård har samma huvudområde från början.
+        const somEtt = sektorernasAndel(tre().map(r => (r.aid === '651010' ? { ...r, aid: '207012' } : r)), { k: 10 });
+        expect(a.sektorKr).toBeCloseTo(somEtt.sektorKr, 9);
+        expect(sektorAndelNot(a, 10)).toBe('Huvudområdena Vård- och omsorgsarbete med mera och Städ, tvätt och renhållningsarbete räknas här samman, '
+            + 'eftersom ett kön har färre än 10 personer i Städ, tvätt och renhållningsarbete. Annars skulle medellönen för färre än 10 kvinnor eller män gå att räkna fram ur beloppet.');
+    });
+    it('blir bara ett område kvar redovisas inget belopp, och noten säger varför', () => {
+        const rader = [...flera(40, () => rad('207011', 'kvinna', 30000)), ...flera(30, () => rad('207011', 'man', 31000)), ...flera(2, () => rad('651010', 'man', 52000))];
+        const a = sektorernasAndel(rader, { k: 10 });
+        expect(a).toMatchObject({ sektorKr: null, andel: null });
+        expect(a.gapKr).toBeGreaterThan(0);
+        expect(sektorAndelNot(a, 10)).toMatch(/^Hur mycket av skillnaden som beror på att kvinnor och män arbetar i olika huvudområden redovisas inte, eftersom ett kön har färre än 10 personer i Städ, tvätt och renhållningsarbete\./);
+    });
+    it('på skärmen (tröskeln 1) räknas inget samman', () => {
+        expect(sektorernasAndel(tre(), { k: 1 }).sammanslagna).toEqual([]);
+    });
+    it('ett enda huvudområde: beloppet är noll, som förut', () => {
+        const a = sektorernasAndel([...flera(12, () => rad('207011', 'kvinna', 30000)), ...flera(12, () => rad('207011', 'man', 33000))], { k: 10 });
+        expect(a.sektorKr).toBeCloseTo(0, 9);
+        expect(a.sammanslagna).toEqual([]);
     });
 });

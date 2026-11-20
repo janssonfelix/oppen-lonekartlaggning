@@ -95,3 +95,58 @@ export function underlagMedEnLitenGrupp({ antal, stora, liten, nLiten, lonLiten 
     lonerLiten.forEach((lon, i) => rader.push(_rad(liten, liten.kon ?? 'kvinna', lon, alderLiten + i)));
     return { rader, liten: { n: nLiten, medel: lonerLiten.reduce((a, b) => a + b, 0) / nLiten } };
 }
+
+/**
+ * Den som läser exporten och räknar med allt som står där samtidigt: ett ekvationssystem i stället för en differens.
+ *
+ * Det som skrivs ut (medellöner, delar, poster) är linjärt i medellönerna i cellerna — en cell är personerna med samma
+ * värden på uppdelningens fält och samma kön — så länge antalen per cell är desamma. Antalen räknas som kända (ADR-70:
+ * de står i samma export eller går att få fram). Hjälparen tar fram sambandet utan att känna till metoden: den höjer
+ * lönen med samma belopp för alla i en cell i taget och läser hur varje utskrivet tal ändras. Det ger en matris J med en
+ * rad per utskrivet tal och en kolumn per cell, och utskrivet = J · medellönerna.
+ *
+ * Ett mål är ett vägt medel över celler (`mal`: cell → vikt, vikterna summerar till 1). Det går att räkna fram ur det
+ * som skrivs ut precis när målet är en linjärkombination av J:s rader, alltså när J^T · y = mål har en lösning; då är
+ * målets värde y · utskrivet. Hjälparen löser systemet (Gausselimination med pivotering) och ger värdet, räknat på de
+ * utskrivna talen avrundade som exporten avrundar eller oavrundade, eller null när målet inte är bestämt.
+ *
+ * @param {{rader:any[], cell:(r:any)=>string, utskrivet:(rader:any[])=>number[], mal:Record<string, number>}} opt
+ *   `cell` ger radens cell (med kön); `utskrivet` ger de utskrivna talen i en fast ordning; `mal` målet.
+ * @returns {(avrunda:boolean) => number|null}
+ */
+export function harledLinjart({ rader, cell, utskrivet, mal }) {
+    const DELTA = 10000;
+    const celler = [...new Set(rader.map(cell))].sort();
+    const bas = utskrivet(rader);
+    // Kolumn per cell: hur de utskrivna talen ändras när cellens medellön höjs med ett.
+    const kolumner = celler.map(c => {
+        const u = utskrivet(rader.map(r => (cell(r) === c ? { ...r, lon: r.lon + DELTA } : r)));
+        return u.map((v, i) => (v - bas[i]) / DELTA);
+    });
+    const m = bas.length, p = celler.length;
+    // Raderna skalas till största belopp 1, så att toleransen betyder samma sak för alla.
+    const skala = Array.from({ length: m }, (_, i) => Math.max(1e-300, ...kolumner.map(k => Math.abs(k[i]))));
+    // Systemet J^T · y = mål: p ekvationer (en per cell), m okända (en per utskrivet tal).
+    const A = celler.map((c, j) => [...kolumner[j].map((v, i) => v / skala[i]), mal[c] || 0]);
+    const TOL = 1e-7;
+    const pivot = [];
+    let rad = 0;
+    for (let kol = 0; kol < m && rad < p; kol++) {
+        let bast = rad;
+        for (let r = rad + 1; r < p; r++) if (Math.abs(A[r][kol]) > Math.abs(A[bast][kol])) bast = r;
+        if (Math.abs(A[bast][kol]) < TOL) continue;
+        [A[rad], A[bast]] = [A[bast], A[rad]];
+        for (let r = 0; r < p; r++) {
+            if (r === rad) continue;
+            const f = A[r][kol] / A[rad][kol];
+            if (f) for (let c = kol; c <= m; c++) A[r][c] -= f * A[rad][c];
+        }
+        pivot.push([rad, kol]);
+        rad++;
+    }
+    // Olöst: en ekvation 0 = mål ≠ 0 betyder att målet inte är en kombination av det som skrivs ut.
+    for (let r = rad; r < p; r++) if (Math.abs(A[r][m]) > 1e-6) return () => null;
+    const y = new Array(m).fill(0);
+    for (const [r, kol] of pivot) y[kol] = A[r][m] / A[r][kol] / skala[kol];
+    return avrunda => bas.reduce((s, v, i) => s + y[i] * (avrunda ? heltal(v) : v), 0);
+}

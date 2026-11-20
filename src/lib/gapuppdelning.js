@@ -17,6 +17,8 @@
  * Saknas ett kön i en cell sätts dess medellön lika med det andra könets; cellen bidrar då bara till sin
  * fördelningsdel, och inget under den räknas (ΔW = 0). Centreringen (− W̄_c) ändrar inga summor
  * eftersom Σ Δs = 0, men gör varje grupps post tolkbar.
+ * Grupper där ett kön har 1 till k − 1 personer räknas samman med andra grupper under samma cell innan delarna räknas
+ * (ADR-84, `sammanslagning` i undertryckning.js), och den sammanslagna gruppen namnges inte; se _beraknaPoster.
  * AID-nivåerna (sektor, aidniva, aid) ordnas alltid grovt till fint på sina platser: en finare nivå före en grövre
  * ger annars en tom del. Ålder (åldersgrupp, ageBucket) kan bara väljas när lönefilen har ålder (ADR-64).
  *
@@ -25,6 +27,8 @@
 
 import { groupKey, konOf } from './falt.js';
 import { skapaTermer, stor } from './termer.js';
+import { personOrd } from './namn.js';
+import { sammanslagning } from './undertryckning.js';
 
 /** Standardtermerna (ADR-74). */
 const T = skapaTermer();
@@ -145,24 +149,42 @@ function _grupper(kv, ma, nyckel) {
     return m;
 }
 
+// Grupperna under en cell, med sammanslagningen (ADR-84): en grupp där ett kön har 1 till k − 1 personer räknas samman
+// med andra grupper under samma cell (`sammanslagning` i undertryckning.js), så att varje grupp som delarna och posterna
+// bygger på har 0 eller minst k kvinnor och 0 eller minst k män. Den sammanslagna gruppen står sist och namnges inte.
+// Utan små grupper är ordningen densamma som i _grupper, så att talen blir bitlika med dem före regeln.
+function _grupperMedSammanslagning(kv, ma, nyckel, k) {
+    const grupper = [..._grupper(kv, ma, nyckel)];
+    const samman = sammanslagning(grupper.map(([key, g]) => ({ namn: String(key), nKv: g.kv.length, nMa: g.ma.length })), k);
+    const egna = (samman.length ? grupper.filter((_, i) => !samman.includes(i)) : grupper).map(([key, g]) => ({ key, g, namnges: true }));
+    if (!samman.length) return egna;
+    const ihop = { kv: samman.flatMap(i => grupper[i][1].kv), ma: samman.flatMap(i => grupper[i][1].ma) };
+    return [...egna, { key: null, g: ihop, namnges: false }];
+}
+
 // Andelar och medellöner för en grupp; saknat kön får det andra könets medellön.
-function _cell(g, totKv, totMa, k) {
+function _cell(g, totKv, totMa) {
     const wKv0 = g.kv.length ? _medel(g.kv) : null, wMa0 = g.ma.length ? _medel(g.ma) : null;
-    // Grupperna kommer ur _grupper och har alltid minst en person, så båda blir tal; ?? 0 för typkontrollen.
+    // Grupperna har alltid minst en person, så båda blir tal; ?? 0 för typkontrollen.
     const wKv = wKv0 ?? wMa0 ?? 0, wMa = wMa0 ?? wKv0 ?? 0;
     return {
         sKv: g.kv.length / totKv, sMa: g.ma.length / totMa, wKv, wMa, w: (wKv + wMa) / 2,
         bada: g.kv.length > 0 && g.ma.length > 0,
-        synlig: (g.kv.length === 0 || g.kv.length >= k) && (g.ma.length === 0 || g.ma.length >= k),
     };
 }
 
-/** @typedef {{namn:string, kr:number, synlig:boolean}} Post */
+/** @typedef {{namn:string, kr:number, synlig:boolean, grupper:number, nKv:number, nMa:number}} Post */
 
-// Alla poster per del (A, B, …), med synlig = båda könen i cellen och i alla dess överceller har 0 eller minst k
-// personer. null när ett kön har färre än k i hela urvalet. Posterna läggs i samma ordning och räknas med samma
-// operationer som före ADR-65 (djupet först, vikten ω multipliceras från vänster), så att standardvalet ger
-// bitlika tal.
+// Alla poster per del (A, B, …). En post är en grupp efter sammanslagningen; synlig = gruppen och alla dess
+// övergrupper är egna grupper, inte sammanslagna, och får namnges. grupper = hur många grupper på samma nivå före
+// sammanslagningen posten står för (1 för en synlig post), nKv och nMa gruppens antal. null när ett kön har färre än k i hela urvalet. Posterna
+// läggs i samma ordning och räknas med samma operationer som före ADR-65 (djupet först, vikten ω multipliceras från
+// vänster), så att standardvalet utan små grupper ger bitlika tal.
+//
+// Skyddet (ADR-84, `docs/utveckling/k-troskeln.md` avsnitt 2): allt som skrivs ut — medellönerna, delarna och posterna —
+// är en linjär funktion av medellönen per kön i grupperna efter sammanslagningen, med antalen som vikter. Varje sådan
+// grupp har 0 eller minst k av varje kön, och alla i en grupp har samma vikt. Det som går att räkna fram ur det som
+// skrivs ut, också med antalen, är därför ett medel för minst k personer av ett kön eller en vägd summa av sådana medel.
 function _beraknaPoster(rader, k, variabler) {
     const kv = [], ma = [];
     for (const r of rader || []) {
@@ -180,24 +202,28 @@ function _beraknaPoster(rader, k, variabler) {
     const poster = {};
     for (let i = 0; i <= n; i++) poster['ABCDE'[i]] = [];
     const nyckel = v => r => groupKey(r, v) ?? '—';   // åldersgrupp saknas (ålder 0) blir en egen grupp
+    // Antalet grupper på nivån `djup` (1 = första variabeln) bland raderna, räknat före sammanslagningen.
+    const antalGrupper = (g, djup) => new Set([...g.kv, ...g.ma].map(r => variabler.slice(0, djup).map(v => nyckel(v)(r)).join('\u0001'))).size;
 
     // Cellen på nivå `niva` (0 = roten) med vikten ω (null i roten), medellönen w, namnen uppåt och om alla
-    // överceller är synliga.
+    // överceller får namnges.
     const ner = (gkv, gma, niva, omega, w, namn, synligUppat) => {
         const v = variabler[niva];
-        for (const [key, g] of _grupper(gkv, gma, nyckel(v))) {
-            const c = _cell(g, gkv.length, gma.length, k);
-            const cNamn = [ORD[v].post(key), ...namn];
-            const synlig = c.synlig && synligUppat;
+        for (const { key, g, namnges } of _grupperMedSammanslagning(gkv, gma, nyckel(v), k)) {
+            const c = _cell(g, gkv.length, gma.length);
+            const cNamn = [namnges ? ORD[v].post(key) : `sammanslagna ${ORD[v].overKort}`, ...namn];
+            const synlig = namnges && synligUppat;
             const delta = c.sKv - c.sMa;
-            poster['ABCDE'[niva]].push({ namn: cNamn.join(', '), kr: omega === null ? delta * (c.w - w) : omega * delta * (c.w - w), synlig });
+            poster['ABCDE'[niva]].push({ namn: cNamn.join(', '), kr: omega === null ? delta * (c.w - w) : omega * delta * (c.w - w),
+                synlig, grupper: synlig ? 1 : antalGrupper(g, niva + 1), nKv: g.kv.length, nMa: g.ma.length });
             if (niva + 1 < n) {
                 if (!c.bada) continue;   // ΔW_c = 0 — cellen bidrar inte längre ner
                 const sc = (c.sKv + c.sMa) / 2;
                 ner(g.kv, g.ma, niva + 1, omega === null ? sc : omega * sc, c.w, cNamn, synlig);
             } else {
                 const sc = (c.sKv + c.sMa) / 2;
-                poster['ABCDE'[n]].push({ namn: cNamn.join(', '), kr: omega === null ? sc * (c.wKv - c.wMa) : omega * sc * (c.wKv - c.wMa), synlig });
+                poster['ABCDE'[n]].push({ namn: cNamn.join(', '), kr: omega === null ? sc * (c.wKv - c.wMa) : omega * sc * (c.wKv - c.wMa),
+                    synlig, grupper: synlig ? 1 : antalGrupper(g, n), nKv: g.kv.length, nMa: g.ma.length });
             }
         }
     };
@@ -205,7 +231,7 @@ function _beraknaPoster(rader, k, variabler) {
     return { kv, ma, medel, poster };
 }
 
-/** Samtliga poster, även dolda — bara för tester av skyddsregeln; redovisas aldrig. */
+/** Samtliga poster, även de som inte namnges — bara för tester av skyddet; redovisas aldrig. */
 /**
  * @param {any[]} rader
  * @param {{k?:number, variabler?:any}} [opts]
@@ -218,25 +244,10 @@ export function gapPoster(rader, { k, variabler } = {}) {
 // Valet normaliserat mot underlaget: åldersgrupp bara när lönefilen har ålder (ålder 0 = saknas, ADR-64).
 const _variablerFor = (rader, variabler) => normaliseraGapVariabler(variabler, { harAlder: (rader || []).some(r => r && r.alder > 0) }).variabler;
 
-// Skyddsregel för topplistan. Det som inte visas i en del är delens summa minus de visade
-// posterna. Den som läser vet inte beloppen eller tecknen på de enskilda posterna i resten,
-// så osäkerheten om en dold grupps bidrag h är summan av |belopp| för ALLA ANDRA poster i
-// resten (dolda och ej visade synliga). Den ska vara minst SKYDD · |h| för varje dold post med
-// |h| ≥ 0,5 kr. Håller det inte tas den minsta visade posten bort ur listan (den går in i
-// resten) tills regeln håller. De dolda gruppernas summa redovisas aldrig.
-// Håller regeln inte ens med tom lista består delen i praktiken av den dolda gruppen; då
-// redovisas inga delar alls (skyddad: false) — delarna summerar till hela skillnaden, så en enskild del
-// kan inte döljas medan de andra visas. Regeln gäller per del, för varje val av variabler (ADR-65).
-const SKYDD = 0.5;
-function _skyddad(poster, visade) {
-    const vis = new Set(visade);
-    const rest = poster.filter(p => !vis.has(p));
-    const brus = rest.reduce((s, p) => s + Math.abs(p.kr), 0);
-    return rest.filter(p => !p.synlig && Math.abs(p.kr) >= 0.5)
-        .every(h => brus - Math.abs(h.kr) >= SKYDD * Math.abs(h.kr));
-}
-
 /**
+ * Uppdelningen: delarna (summerar exakt till skillnaden), upp till tre namngivna poster per del, största belopp först,
+ * och per del hur många grupper som inte namnges (`ovrigaAntal`, räknat före sammanslagningen; ADR-84). Poster som
+ * avrundas till 0 kr namnges inte heller, men räknas inte in i `ovrigaAntal`.
  * @param {any[]} rader
  * @param {{k?:number, variabler?:any}} [opts] variabler: förklaringsvariablerna i ordning (null = standard, BAS och AID)
  */
@@ -248,20 +259,27 @@ export function gapUppdelning(rader, { k, variabler } = {}) {
     const gap = medel.kv - medel.ma;   // kvinnor mot män, som i resten av verktyget
 
     const delar = {}, topp = {}, ovrigaAntal = {};
-    let skyddad = true;
     for (const d of Object.keys(poster)) {
         delar[d] = poster[d].reduce((s, p) => s + p.kr, 0);
-        ovrigaAntal[d] = poster[d].filter(p => !p.synlig).length;
+        ovrigaAntal[d] = poster[d].reduce((s, p) => s + (p.synlig ? 0 : p.grupper), 0);
         // Poster som avrundas till 0 kr säger inget och visas inte (de ingår i delen).
-        const visade = poster[d].filter(p => p.synlig && Math.abs(p.kr) >= 0.5)
+        topp[d] = poster[d].filter(p => p.synlig && Math.abs(p.kr) >= 0.5)
             .sort((x, y) => Math.abs(y.kr) - Math.abs(x.kr) || x.namn.localeCompare(y.namn, 'sv'))
-            .slice(0, 3);
-        while (visade.length && !_skyddad(poster[d], visade)) visade.pop();
-        if (!_skyddad(poster[d], visade)) skyddad = false;
-        topp[d] = visade.map(({ namn, kr }) => ({ namn, kr }));
+            .slice(0, 3)
+            .map(({ namn, kr }) => ({ namn, kr }));
     }
     const gapPct = gap / medel.ma * 100;
-    const bas = { n: { kv: kv.length, ma: ma.length }, medel, gap, gapPct, litetGap: Math.abs(gapPct) < 1 };
-    if (!skyddad) return { ...bas, skyddad: false, delar: null, topp: null, ovrigaAntal: null, variabler: val };
-    return { ...bas, skyddad: true, delar, topp, ovrigaAntal, variabler: val };
+    return { n: { kv: kv.length, ma: ma.length }, medel, gap, gapPct, litetGap: Math.abs(gapPct) < 1, delar, topp, ovrigaAntal, variabler: val };
+}
+
+/**
+ * Meningen om grupperna som inte namnges i en del (kortet och rapportunderlaget, ADR-84), eller '' när alla namnges.
+ * @param {number} antal ovrigaAntal för delen
+ * @param {number} k
+ */
+export function gapOvrigaText(antal, k) {
+    if (!antal) return '';
+    const en = antal === 1;
+    return `${antal} ${en ? 'grupp namnges' : 'grupper namnges'} inte: ett kön har färre än ${k} ${personOrd(k)} i ${en ? 'den' : 'dem'} `
+        + `eller i ${en ? 'gruppen den' : 'grupperna de'} räknas samman med. ${en ? 'Den' : 'De'} ingår i summan.`;
 }
