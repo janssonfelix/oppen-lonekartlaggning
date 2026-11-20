@@ -9094,9 +9094,9 @@ function computePivot(rows, spec, { k = 10 } = {}) {
         if (ko === 'Kvinna') urval.nKv++;
         else if (ko === 'Man') urval.nMa++;
         const rk0 = gruppnyckel(r, rad);
-        const rk = ersatt && ersatt.has(rk0) ? ersatt.get(rk0) : rk0;
+        const rk = rk0 != null && ersatt && ersatt.has(rk0) ? /** @type {string} */ (ersatt.get(rk0)) : rk0;
         if (rk == null) continue;
-        let kk = null;
+        /** @type {string|null} */ let kk = null;
         if (kol) {
             kk = gruppnyckel(r, kol);
             if (kk == null) continue;
