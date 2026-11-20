@@ -67,8 +67,8 @@ function generateRapport() {
             tbody.appendChild(tr);
         };
         addRow("Organisationen", df);
-        addRow("Kvinna", df.filter(r => r.kon.includes("kvinna")));
-        addRow("Man", df.filter(r => r.kon === "man" || r.kon === "män"));
+        addRow("Kvinna", df.filter(r => arKvinna(r)));
+        addRow("Man", df.filter(r => arMan(r)));
         const yrkeMap = {};
         df.forEach(r => { if (!yrkeMap[r.yrke]) yrkeMap[r.yrke] = []; yrkeMap[r.yrke].push(r); });
         Object.keys(yrkeMap).sort().forEach(y => {

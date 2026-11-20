@@ -15,6 +15,7 @@
 import { median, quantile } from './stat.js';
 import { sektorsnamn } from './aid.js';
 import { skapaTermer, ordForAntal, adjektiv } from './termer.js';
+import { arKvinna } from './kon.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -122,7 +123,7 @@ export function jamforelseRader(rader, { statistik = [], policyFor = () => null,
         if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [], kvinnor: 0 });
         const g = perBas.get(r.bas);
         g.lons.push(r.lon);
-        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.kvinnor++;
+        if (arKvinna(r)) g.kvinnor++;
     }
     const ut = [], utelamnade = [];
     for (const [aid, perBas] of perAid) {

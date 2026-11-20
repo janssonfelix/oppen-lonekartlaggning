@@ -28,8 +28,8 @@ function updateCompliance() {
     const granskaBas = new Set(_laOversiktRader(d).filter(o => _laOversiktStatus(o).niva === 'granska').map(o => o.bas));
     jb.jamforbara.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-        const ma = df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+        const kv = df.filter(r => arKvinna(r)).map(r => r.lon);
+        const ma = df.filter(r => arMan(r)).map(r => r.lon);
         if (granskaBas.has(b)) gapCrit++;
         const tot = kv.length + ma.length;
         if (kv.length / tot < 0.4 || ma.length / tot < 0.4) skevCount++;
@@ -401,10 +401,10 @@ function updateDashboardStats() {
     const d   = getData();
     if (!d.length) return;
     const allAges = d.map(r => r.alder).filter(a => a && !isNaN(a));
-    const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna')).map(r => r.lon));
-    const medMa = Stat.median(d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon));
+    const medKv = Stat.median(d.filter(r => arKvinna(r)).map(r => r.lon));
+    const medMa = Stat.median(d.filter(r => arMan(r)).map(r => r.lon));
     /** @type {HTMLElement} */ (document.getElementById("stat-n")).textContent = String(d.length);
-    const nKv = d.filter(r => r.kon.includes('kvinna')).length, nMa = d.filter(r => r.kon === 'man' || r.kon === 'män').length;
+    const nKv = d.filter(r => arKvinna(r)).length, nMa = d.filter(r => arMan(r)).length;
     const konEl = document.getElementById('stat-kon');
     if (konEl) konEl.textContent = `${nKv.toLocaleString('sv-SE')} / ${nMa.toLocaleString('sv-SE')}`;
     /** @type {HTMLElement} */ (document.getElementById("stat-age")).textContent = allAges.length ? svTal(allAges.reduce((a,b)=>a+b,0)/allAges.length, 1) : "–";

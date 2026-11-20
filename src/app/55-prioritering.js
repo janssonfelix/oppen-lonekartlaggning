@@ -73,8 +73,8 @@ function generateMotivationSuggestions(item) {
     }
 
     // 3. Åldersskillnad mellan kön i samma grupp
-    const kvAges = rows.filter(r => r.kon.includes('kvinna')).map(r => r.alder).filter(a => a > 0);
-    const maAges = rows.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.alder).filter(a => a > 0);
+    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder).filter(a => a > 0);
+    const maAges = rows.filter(r => arMan(r)).map(r => r.alder).filter(a => a > 0);
     if (kvAges.length >= 3 && maAges.length >= 3) {
         const meanKvAge = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
         const meanMaAge = maAges.reduce((s, v) => s + v, 0) / maAges.length;
@@ -93,8 +93,8 @@ function generateMotivationSuggestions(item) {
     if (item.kvN >= kTroskel() && item.maN >= kTroskel()) {
         const allLons = rows.map(r => r.lon).sort((a, b) => a - b);
         const q1 = allLons[Math.floor(allLons.length * 0.2)];
-        const kvBelowQ1 = rows.filter(r => r.kon.includes('kvinna') && r.lon <= q1).length;
-        const maBelowQ1 = rows.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon <= q1).length;
+        const kvBelowQ1 = rows.filter(r => arKvinna(r) && r.lon <= q1).length;
+        const maBelowQ1 = rows.filter(r => arMan(r) && r.lon <= q1).length;
         const kvShareInQ1 = item.kvN > 0 ? kvBelowQ1 / item.kvN : 0;
         const maShareInQ1 = item.maN > 0 ? maBelowQ1 / item.maN : 0;
         if (kvShareInQ1 >= 0.4 && kvShareInQ1 - maShareInQ1 >= 0.2) {

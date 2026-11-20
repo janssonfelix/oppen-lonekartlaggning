@@ -490,8 +490,8 @@ function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysis
 function _buildAnalysisSnapshotExport() {
     const d = getData();
     if (!d.length) return null;
-    const kv = d.filter(r => r.kon.includes('kvinna'));
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män');
+    const kv = d.filter(r => arKvinna(r));
+    const ma = d.filter(r => arMan(r));
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
     // bilden visas i jämförelsetabellen och kan ligga kvar efter att urvalet ändrats.
     const konOk = _konFarRedovisas(kv.length, ma.length);

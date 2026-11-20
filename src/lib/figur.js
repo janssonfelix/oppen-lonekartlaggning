@@ -17,6 +17,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { quantile } from './stat.js';
+import { arKvinna, arMan } from './kon.js';
 
 export const MARKEN = ['stapel', 'intervall', 'punkt', 'linje', 'band', 'lada', 'ruta', 'yta'];
 const SKALOR = ['band', 'linjar', 'log'];
@@ -571,9 +572,8 @@ export function harlettNot(h) {
 // Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
 function _underlagKon(underlag, r) {
     if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
-    const k = r && r.kon;
-    if (typeof k === 'string' && k.includes('kvinna')) return 'kv';
-    return k === 'man' || k === 'män' ? 'ma' : null;
+    if (arKvinna(r)) return 'kv';
+    return arMan(r) ? 'ma' : null;
 }
 
 /**

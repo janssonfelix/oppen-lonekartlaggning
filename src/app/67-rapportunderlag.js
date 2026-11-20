@@ -44,7 +44,7 @@ function _rapportunderlagBlockExport() {
     if (!d.length) return [];
     const k = kTroskel();
     const opt = { k, urval: 'Hela organisationen', demo: !!state.isDemo, troskelNot: _kSanktNot() || undefined };
-    const arKv = r => r.kon.includes('kvinna');
+    const arKv = arKvinna;
     const arMa = r => !arKv(r) && (r.kon.includes('man') || r.kon.includes('män'));
 
     // Sammanfattning

@@ -37,7 +37,7 @@ function gruppdossierCandidates() {
 
 /** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
 function _gdKon(rows) {
-    return { kv: rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')), ma: rows.filter(r => r.kon === 'man' || r.kon === 'män') };
+    return { kv: rows.filter(r => arKvinna(r)), ma: rows.filter(r => arMan(r)) };
 }
 
 /**

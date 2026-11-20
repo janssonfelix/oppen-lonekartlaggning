@@ -71,8 +71,8 @@ function _konFarRedovisas(nKv, nMa) {
 function _konAntal(rader) {
     let nKv = 0, nMa = 0;
     for (const r of rader || []) {
-        if (r.kon && r.kon.includes('kvinna')) nKv++;
-        else if (r.kon === 'man' || r.kon === 'män') nMa++;
+        if (arKvinna(r)) nKv++;
+        else if (arMan(r)) nMa++;
     }
     return { nKv, nMa };
 }
@@ -310,7 +310,7 @@ function _kSanktStycke() {
 function individLitenFor(rader) {
     const k = kTroskel();
     const grupp = r => `${_gruppAid(r)}|${r.bas}`;
-    const konAv = r => (typeof r.kon === 'string' && r.kon.includes('kvinna') ? 'kv' : (r.kon === 'man' || r.kon === 'män' ? 'ma' : 'ovr'));
+    const konAv = r => (arKvinna(r) ? 'kv' : (arMan(r) ? 'ma' : 'ovr'));
     const n = new Map();
     for (const r of rader) {
         if (!(r.lon > 0) || !r.bas) continue;

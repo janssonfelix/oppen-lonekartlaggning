@@ -21,13 +21,13 @@ import { sektorJusteradText, sektorAndelNot } from './sektor.js';
 import { kvDefinitionText } from './aidbas.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
+import { arKvinna } from './kon.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
-const _arKvinna = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
 const _arMan = r => typeof r.kon === 'string' && !r.kon.includes('kvinna') && (r.kon.includes('man') || r.kon.includes('män'));
 
 /**
@@ -53,7 +53,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const perYrke = new Map();
     for (const r of rader || []) {
         if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, { kv: [], ma: [] });
-        if (_arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
+        if (arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
         else if (_arMan(r)) perYrke.get(r.yrke).ma.push(r.lon);
     }
     const grupper = [], utelamnade = [], ejJamforbara = [];
@@ -95,14 +95,14 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
  */
 export function justeratGapInomYrke(rader, { k }) {
     if ((rader || []).length && !(rader || []).some(r => r && r.alder > 0)) return { utanAlder: true };
-    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (_arKvinna(r) || _arMan(r)));
-    const nKv = d.filter(_arKvinna).length, nMa = d.length - nKv;
+    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (arKvinna(r) || _arMan(r)));
+    const nKv = d.filter(arKvinna).length, nMa = d.length - nKv;
     if (nKv < k || nMa < k) return { forFa: true };
     const basLista = [...new Set(d.map(r => r.bas))].sort();
     const dummies = basLista.slice(1);
     const p = 3 + dummies.length;
     if (d.length < p + 5) return { forFa: true };
-    const X = d.map(r => [1, _arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
+    const X = d.map(r => [1, arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
     const y = d.map(r => Math.log(r.lon));
     const fit = fitOLS(X, y);
     // Singulär modell: kön och BAS sammanfaller inom yrket (t.ex. alla kvinnor i ett BAS).

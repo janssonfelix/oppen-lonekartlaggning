@@ -18,7 +18,7 @@ function byggArsbokslutNu() {
         const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
         // Lönerna per yrkesgrupp (kvinnor och män, som Lika arbete räknar dem) för lönespridningen.
         /** @type {Map<string, number[]>} */ const lonPerYrke = new Map();
-        for (const r of d) if (r.lon > 0 && r.kon && (r.kon.includes('kvinna') || r.kon === 'man' || r.kon === 'män')) {
+        for (const r of d) if (r.lon > 0 && r.kon && (arKvinna(r) || arMan(r))) {
             if (!lonPerYrke.has(r.yrke)) lonPerYrke.set(r.yrke, []);
             /** @type {number[]} */ (lonPerYrke.get(r.yrke)).push(r.lon);
         }
@@ -62,7 +62,7 @@ function _abBedomningarNu() {
 function _abBasRad(d, bas, k) {
     const df = d.filter(r => r.bas === bas && r.lon > 0);
     if (df.length < k) return null;
-    const kv = df.filter(r => r.kon && r.kon.includes('kvinna')), ma = df.filter(r => r.kon === 'man' || r.kon === 'män');
+    const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
     const lon = df.map(r => r.lon), konOk = kv.length >= k && ma.length >= k;
     return { bas, n: df.length, nKv: kv.length, nMa: ma.length, p10: Stat.quantile(lon, 0.10), med: Stat.median(lon), p90: Stat.quantile(lon, 0.90),
         medKv: konOk ? Stat.median(kv.map(r => r.lon)) : null, medMa: konOk ? Stat.median(ma.map(r => r.lon)) : null,

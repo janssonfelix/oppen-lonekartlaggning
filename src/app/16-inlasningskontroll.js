@@ -24,7 +24,7 @@ function renderRealityCheck() {
     const n = d.length;
 
     // Check 1: könsfördelning
-    const nKv = d.filter(r => r.kon.includes('kvinna')).length;
+    const nKv = d.filter(r => arKvinna(r)).length;
     const pctKv = n > 0 ? nKv / n * 100 : 0;
     let konStatus, konMsg;
     if (pctKv >= 30 && pctKv <= 70) {
@@ -160,8 +160,8 @@ function renderDataValidationReport() {
     const singleSexBas = bas.filter(b => {
         const sub = state.data.filter(r => r.bas === b);
         if (sub.length < 3) return false;
-        const hasKv = sub.some(r => r.kon.includes('kvinna'));
-        const hasMa = sub.some(r => r.kon === 'man' || r.kon === 'män');
+        const hasKv = sub.some(r => arKvinna(r));
+        const hasMa = sub.some(r => arMan(r));
         return !hasKv || !hasMa;
     }).length;
     const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;

@@ -22,6 +22,7 @@
 import { arKvinnodominerad } from './likvardighet.js';
 import { periodkostnad } from './kostnad.js';
 import { median as _medianStat, quantile as _quantileStat } from './stat.js';
+import { arKvinna, arMan } from './kon.js';
 
 // Omslag: tål null/undefined som indata (0 för tom), vilket stat.js inte gör. Algoritmen finns bara i stat.js.
 function _median(arr) { return arr && arr.length ? _medianStat(arr) : 0; }
@@ -79,8 +80,8 @@ export function rawGenderGap(rows, getLon) {
     (rows || []).forEach(r => {
         const L = getLon(r);
         if (!(L > 0)) return;
-        if (r.kon && r.kon.includes('kvinna')) kv.push(L);
-        else if (r.kon === 'man' || r.kon === 'män') ma.push(L);
+        if (arKvinna(r)) kv.push(L);
+        else if (arMan(r)) ma.push(L);
     });
     if (!kv.length || !ma.length) return null;
     return (_median(kv) / _median(ma) - 1) * 100;
@@ -97,7 +98,7 @@ export function rawGenderGap(rows, getLon) {
 export function targetRows(rows, t) {
     const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
     const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
-    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
+    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? arKvinna(r) : arMan(r));
     const ut = [];
     (rows || []).forEach((r, i) => {
         if (r.bas !== t.bas) return;
@@ -175,7 +176,7 @@ export function allocate(rows, generell, targets, roundStep) {
         if (!gr) { gr = { bas: p.bas, aid: p.aid, oldL: [], newL: [], kvN: 0, n: 0, cost: 0 }; groups.set(k, gr); }
         gr.oldL.push(p.lon); gr.newL.push(p.nyLon);
         gr.cost += p.delta; gr.n++;
-        if (p.kon && p.kon.includes('kvinna')) gr.kvN++;
+        if (arKvinna(p)) gr.kvN++;
     });
     const perGroup = [...groups.values()].map(gr => ({
         bas: gr.bas, aid: gr.aid, n: gr.n, kvN: gr.kvN,
@@ -285,7 +286,7 @@ export function summarizeGroups(rows) {
         let g = m.get(k);
         if (!g) { g = { bas: r.bas, aid: r.aid, lons: [], kvN: 0, n: 0 }; m.set(k, g); }
         g.lons.push(r.lon); g.n++;
-        if (r.kon && r.kon.includes('kvinna')) g.kvN++;
+        if (arKvinna(r)) g.kvN++;
     });
     return [...m.values()].map(g => ({
         bas: g.bas, aid: g.aid, n: g.n, kvN: g.kvN,
@@ -397,7 +398,7 @@ export function individualRemediation(rows, opts) {
     const menByGroup = new Map(), menByBas = new Map();
     (rows || []).forEach(r => {
         if (!(r.lon > 0)) return;
-        if (!(r.kon === 'man' || r.kon === 'män')) return;
+        if (!arMan(r)) return;
         const gk = r.bas + '|' + r.aid;
         if (!menByGroup.has(gk)) menByGroup.set(gk, []);
         menByGroup.get(gk).push(r.lon);
@@ -414,7 +415,7 @@ export function individualRemediation(rows, opts) {
     const flagged = [];
     (rows || []).forEach(r => {
         if (!(r.lon > 0)) return;
-        if (!(r.kon && r.kon.includes('kvinna'))) return;
+        if (!arKvinna(r)) return;
         const bench = benchFor(r.bas, r.aid);
         if (!bench) return;
         if (r.lon < bench.v * (1 - trigger)) {
@@ -514,7 +515,6 @@ export function troskelmalKonstanter() {
  *   TROSKELMAL_MAX_LYFT_PCT % räcker; hittat: lyftPct, kostnadPerManad och skattningen efter lyftet (resultat)
  */
 export function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifikans = false, skatta }) {
-    const arKvinna = r => r.kon && r.kon.includes('kvinna');
     const kvinnor = rader.filter(arKvinna);
     const utgangslage = skatta(rader);
     if (utgangslage.konPct == null) return { status: 'ingenSkattning', utgangslage };

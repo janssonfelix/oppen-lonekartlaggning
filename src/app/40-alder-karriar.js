@@ -36,8 +36,8 @@ function renderKon(bas) {
     const isAll = bas === "__ALLA__";
     const df = getData().filter(d => (isAll || d.bas === bas) && d.alder && d.alder > 0 && d.kon);
     if (df.length < 2) return;
-    const dataKv = df.filter(d => d.kon.includes("kvinna"));
-    const dataMa = df.filter(d => d.kon === "man" || d.kon === "män");
+    const dataKv = df.filter(d => arKvinna(d));
+    const dataMa = df.filter(d => arMan(d));
     const regKv  = Stat.linearRegression(dataKv.map(d => [d.alder, d.lon]));
     const regMa  = Stat.linearRegression(dataMa.map(d => [d.alder, d.lon]));
     const allAges  = df.map(d => d.alder);
@@ -132,7 +132,7 @@ function renderKon(bas) {
 // formerna finns kvar för andra anropare. En figur är ett aggregat som lådan: en individ är `liten` när intervallet,
 // eller könet i intervallet, är under tröskeln, och ritas då inte.
 function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
-    const kon = r => (r.kon && r.kon.includes('kvinna') ? 'Kvinna' : (r.kon === 'man' || r.kon === 'män') ? 'Man' : null);
+    const kon = r => (arKvinna(r) ? 'Kvinna' : arMan(r) ? 'Man' : null);
     const giltiga = rader.filter(r => r.lon > 0 && r.bas != null && r.bas !== '' && (!perKon || kon(r)));
     const antal = new Map();
     const cell = r => (perKon ? `${r.bas}\u0000${kon(r)}` : String(r.bas));
@@ -253,7 +253,7 @@ function renderKonAlderGap(dataKv, dataMa, scope) {
     // Kan räknas för en sektor eller en yrkesgrupp (figur.underlag): samma beräkning och samma tröskel per åldersgrupp.
     // Resten är de övriga kvinnorna och männen i fliken urval.
     const rita = (rader, { beskrivning }) => {
-        const r = _konAlderGapRader(rader.filter(d => d.kon && d.kon.includes('kvinna')), rader.filter(d => d.kon === 'man' || d.kon === 'män'));
+        const r = _konAlderGapRader(rader.filter(d => arKvinna(d)), rader.filter(d => arMan(d)));
         return r.visade.length ? _konAlderGapFigur(r.visade, `${scope}, ${beskrivning}`) : `Ingen åldersgrupp har minst ${k} kvinnor och ${k} män i urvalet.`;
     };
     ritaFigur(el, { ..._konAlderGapFigur(visade, scope), underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.yrkesgrupp], rader: [...dataKv, ...dataMa], k, rita } });
@@ -274,7 +274,7 @@ function renderKonHistogram(dataKv, dataMa, scope) {
     // Kan räknas för en sektor eller en åldersgrupp (figur.underlag): samma klassindelning och samma tröskel per klass.
     const rita = (rader, { beskrivning }) => {
         const lon = ar => rader.filter(ar).map(d => d.lon).filter(v => v > 0);
-        const kv2 = lon(d => d.kon && d.kon.includes('kvinna')), ma2 = lon(d => d.kon === 'man' || d.kon === 'män');
+        const kv2 = lon(d => arKvinna(d)), ma2 = lon(d => arMan(d));
         const kl = _konHistogramKlasser(kv2, ma2, k);
         if (kl) return _konHistogramFigur(kl, kv2.length, ma2.length, `${scope}, ${beskrivning}`);
         return kv2.length < k || ma2.length < k ? _konUtelamnatNot() : `Lönerna i urvalet går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`;
@@ -310,7 +310,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
         const ritbara = g.filter(r => !liten(r)), steg = Math.max(1, Math.ceil(ritbara.length / KON_MULTIPLAR_PUNKTER));
         const urval = steg > 1 ? new Set(ritbara.filter((_, i) => i % steg === 0)) : null;
         if (urval) nedsamplade.push(panel);
-        for (const [namn, farg, ar] of [['Kvinna', PALETTE.kon.kvinna, r => r.kon.includes('kvinna')], ['Man', PALETTE.kon.man, r => r.kon === 'man' || r.kon === 'män']]) {
+        for (const [namn, farg, ar] of [['Kvinna', PALETTE.kon.kvinna, r => arKvinna(r)], ['Man', PALETTE.kon.man, r => arMan(r)]]) {
             const data = g.filter(ar).filter(r => !urval || liten(r) || urval.has(r)).map(r => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...(liten(r) ? { liten: true } : {}), markering: markeringFor(r.bas, r.yrke) }));
             if (data.length) lager.push({ marke: 'punkt', serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
         }
@@ -351,7 +351,7 @@ const _vagratLinje = (serie, farg, y, a0, a1, val = {}) => ({ marke: 'linje', se
 /** @param {{[k: string]: any, liten?: (rad: any) => boolean}} val */
 function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
     const punkt = (d, medKon) => ({ x: d.alder, y: d.lon, yrke: d.yrke, alder: d.alder, lon: d.lon, ...(isAll || medKon ? { bas: d.bas } : {}),
-                                    ...(medKon ? { kon: d.kon.includes('kvinna') ? 'Kvinna' : 'Man' } : {}), ...(liten(d) ? { liten: true } : {}),
+                                    ...(medKon ? { kon: arKvinna(d) ? 'Kvinna' : 'Man' } : {}), ...(liten(d) ? { liten: true } : {}),
                                     markering: markeringFor(d.bas, d.yrke) });
     const punktlager = (serie, farg, rader, medKon) => ({ marke: 'punkt', serie, farg, storlek: 4, opacitet: 0.7, data: rader.map(d => punkt(d, medKon)), tips: _punktTips });
     const lager = [];
@@ -425,8 +425,8 @@ function _konScatterTrend(punkter, medBand = false) {
 // Lådagrammet per kön för raderna (fliken urval, eller ett underlag i det): en låda för varje kön som når tröskeln,
 // eller texten om att inget kön gör det.
 function _konLadFigurFor(rader, scope) {
-    const lonKv = rader.filter(d => d.kon && d.kon.includes('kvinna')).map(d => d.lon);
-    const lonMa = rader.filter(d => d.kon === 'man' || d.kon === 'män').map(d => d.lon);
+    const lonKv = rader.filter(d => arKvinna(d)).map(d => d.lon);
+    const lonMa = rader.filter(d => arMan(d)).map(d => d.lon);
     const kvOk = !isKMasked(lonKv.length), maOk = !isKMasked(lonMa.length);
     if (!kvOk && !maOk) return _konUtelamnatNot();
     const utan = [kvOk ? null : 'kvinnor', maOk ? null : 'män'].filter(Boolean).join(' och ');
@@ -512,8 +512,8 @@ function renderDemografi(bas) {
         : getData().filter(d => d.bas === bas && d.alder > 0);
     if (df.length < 2) return;
     const scopeShort = isAll ? 'urvalet' : T.niva.bf;
-    const basKv = df.filter(d => d.kon.includes('kvinna'));
-    const basMa = df.filter(d => d.kon === 'man' || d.kon === 'män');
+    const basKv = df.filter(d => arKvinna(d));
+    const basMa = df.filter(d => arMan(d));
     const cntKv = countByBracket(basKv), cntMa = countByBracket(basMa);
     const n = df.length;
     // Referenslinjen visar Sveriges sysselsatta befolkning (SCB AKU)

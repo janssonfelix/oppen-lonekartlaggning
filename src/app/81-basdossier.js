@@ -44,7 +44,7 @@ function buildBasdossier(bas) {
     if (!basdossierKandidater().some(x => x.bas === bas)) return null;
     const k = kTroskel();
     const df = getData().filter(r => r.bas === bas && r.lon > 0);
-    const arKv = r => !!(r.kon && r.kon.includes('kvinna')), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const arKv = arKvinna, arMa = arMan;
     const kv = df.filter(arKv), ma = df.filter(arMa);
     const lon = df.map(r => r.lon);
     const konOk = _konFarRedovisas(kv.length, ma.length);

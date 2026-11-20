@@ -123,7 +123,7 @@ function _excelDiagramBlad() {
         [`En rad per ${T.enhet.en} och ${T.niva.en} där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
         [termStor(T.enhet.en), termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Bedömning'],
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna'])]]);
-    const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const arKv = arKvinna, arMa = arMan;
     const alder = _konAlderGapRader(d.filter(arKv), d.filter(arMa), k);
     if (alder.visade.length) ut.push(['Löneskillnad per ålder', [
         ['Löneskillnad per åldersgrupp (Ålder & karriär)'],

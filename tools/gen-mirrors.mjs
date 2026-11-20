@@ -34,6 +34,11 @@ const outFile = join(root, 'src', 'app', '09-lib-speglar.js');
 // inget alias.
 export const MODULES = [
     {
+        // Könspredikaten (arKvinna, arMan): importerar ingenting, så att varje lib-modul kan använda dem. Först av alla.
+        file: 'kon.js', ns: '__mirrorKon',
+        expose: { arKvinna: 'arKvinna', arMan: 'arMan' }
+    },
+    {
         // Termerna (ADR-74): först, så att varje senare lib-modul kan importera dem; namn.js importerar genitiv, och
         // modulerna som skriver text (regression.js m.fl.) hämtar standarduppsättningen med skapaTermer()
         file: 'termer.js', ns: '__mirrorTermer',

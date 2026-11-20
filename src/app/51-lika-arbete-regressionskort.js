@@ -297,7 +297,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     }
     const modell = forklaringsmodell();
     const raw = _rgKvantilDesign(getData(), modell).rader;
-    const arKv = d => d.kon.includes('kvinna');
+    const arKv = arKvinna;
     const nyckel = `${_rngSeedFrom(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
     const rakna = () => { const ut = _regKvantilBootstrap(raw, modell, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, diff: { varde: diff.varde, ki: ut.diffKi }, n: qr.n, nKv: qr.nKv, nMa: qr.nMa } }; return _regKvantilMinne.ut; };
@@ -587,7 +587,7 @@ function renderRegressionCard() {
     const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);
     const kr = konOk ? _regressionKronor(r) : null;
     // Summan per år som andel av kvinnornas samlade årslön i underlaget: det tal en ekonom frågar efter.
-    const lonesummaKvAr = konOk ? getData().filter(d => d.lon > 0 && (!harAlder() || d.alder > 0) && typeof d.kon === 'string' && d.kon.includes('kvinna')).reduce((s, d) => s + d.lon, 0) * 12 : 0;
+    const lonesummaKvAr = konOk ? getData().filter(d => d.lon > 0 && (!harAlder() || d.alder > 0) && arKvinna(d)).reduce((s, d) => s + d.lon, 0) * 12 : 0;
     const andelAvLonesumma = kr && lonesummaKvAr > 0 ? Math.abs(kr.krTotalYear) / lonesummaKvAr * 100 : null;
     // Budgeten utgår från första steget och visar skillnaderna mellan stegen: utelämnas med det.
     const budget = stegUt.utelamnat ? null : _explanationBudget(yrkeVisas ? stegIKortet : seqOk);

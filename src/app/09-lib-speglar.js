@@ -10,6 +10,36 @@
 // tests/drift.test.js.
 // ====================================================================
 /* eslint-disable */
+// ---- speglar src/lib/kon.js ----
+const __mirrorKon = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — Könet på en lönerad.
+ *
+ * Två predikat som prövar radens normaliserade kön: arKvinna och arMan. Inläsningen (inlasning.js) har redan satt
+ * fältet kon till 'kvinna' eller 'man', och rader med annat kön utesluts där; predikaten är det enda ställe i
+ * verktyget där villkoren skrivs. Modulen importerar ingenting, så att alla lib-moduler kan använda den (också
+ * falt.js, som står sent i speglingsordningen).
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** Sant när radens kön är 'kvinna' (ett kön som innehåller 'kvinna'). Saknas raden eller könet: falskt. */
+function arKvinna(r) {
+    return !!r && typeof r.kon === 'string' && r.kon.includes('kvinna');
+}
+
+/** Sant när radens kön är 'man' eller 'män'. Saknas raden eller könet: falskt. */
+function arMan(r) {
+    return !!r && (r.kon === 'man' || r.kon === 'män');
+}
+
+    return { arKvinna, arMan };
+})();
+const arKvinna = __mirrorKon.arKvinna;
+const arMan = __mirrorKon.arMan;
+
 // ---- speglar src/lib/termer.js ----
 const __mirrorTermer = (() => {
 // SPDX-License-Identifier: MIT
@@ -788,6 +818,8 @@ const __mirrorStructure = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
     const _quantile = __mirrorStat.quantile;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -802,8 +834,6 @@ const __mirrorStructure = (() => {
  */
 
 
-function _isKv(r) { return r.kon && r.kon.includes('kvinna'); }
-function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
 
 /**
  * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
@@ -812,7 +842,7 @@ function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
  */
 function medianGapPct(rows, { k = 1 } = {}) {
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (_isKv(r)) kv.push(r.lon); else if (_isMa(r)) ma.push(r.lon); });
+    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     if (kv.length < Math.max(1, k) || ma.length < Math.max(1, k)) return null;
     return (_median(kv) / _median(ma) - 1) * 100;
 }
@@ -834,8 +864,8 @@ function representationByBas(rows, { k = 1 } = {}) {
         let g = m.get(r.bas);
         if (!g) { g = { bas: r.bas, lons: [], kvLons: [], maLons: [], nKv: 0, nMa: 0, n: 0 }; m.set(r.bas, g); }
         g.lons.push(r.lon); g.n++;
-        if (_isKv(r)) { g.kvLons.push(r.lon); g.nKv++; }
-        else if (_isMa(r)) { g.maLons.push(r.lon); g.nMa++; }
+        if (arKvinna(r)) { g.kvLons.push(r.lon); g.nKv++; }
+        else if (arMan(r)) { g.maLons.push(r.lon); g.nMa++; }
     });
     return [...m.values()].map(g => {
         // Båda könen finns, men minst ett är för litet för en könsjämförelse.
@@ -877,7 +907,7 @@ function quartileDistribution(rows, { k = 1 } = {}) {
     all.forEach((r, i) => {
         const q = Math.min(3, Math.floor(i * 4 / n));
         const o = out[q];
-        o.n++; if (_isKv(r)) o.nKv++; else if (_isMa(r)) o.nMa++;
+        o.n++; if (arKvinna(r)) o.nKv++; else if (arMan(r)) o.nMa++;
         if (lo[q] == null) lo[q] = r.lon;
         hi[q] = r.lon;
     });
@@ -906,7 +936,7 @@ function quartileDistribution(rows, { k = 1 } = {}) {
 function distributionalGap(rows, percentiles, { k = 2 } = {}) {
     const ps = percentiles || [10, 25, 50, 75, 90];
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (_isKv(r)) kv.push(r.lon); else if (_isMa(r)) ma.push(r.lon); });
+    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     const minst = Math.max(2, k);
     if (kv.length < minst || ma.length < minst) return [];
     return ps.map(p => {
@@ -1242,6 +1272,7 @@ const __mirrorLikvardighet = (() => {
     const percentilintervall = __mirrorStat.percentilintervall;
     const rngFor = __mirrorRng.rngFor;
     const direktivMarkering = __mirrorStatus.direktivMarkering;
+    const arKvinna = __mirrorKon.arKvinna;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -1281,6 +1312,7 @@ const __mirrorLikvardighet = (() => {
  *
  * @see 34-likvardigt-arbete.js computeLikvardighetPairs
  */
+
 
 
 
@@ -1518,7 +1550,7 @@ function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, def
         }
         const g = map.get(key);
         g.n++;
-        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.nKv++;
+        if (arKvinna(r)) g.nKv++;
         g.lons.push(r.lon);
         // Åldern bärs parallellt med lönen (null när den saknas) för åldersjusteringen i steg 3.
         g.aldrar.push(typeof r.alder === 'number' && isFinite(r.alder) ? r.alder : null);
@@ -1947,6 +1979,8 @@ const __mirrorForecast = (() => {
     const periodkostnad = __mirrorKostnad.periodkostnad;
     const _medianStat = __mirrorStat.median;
     const _quantileStat = __mirrorStat.quantile;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -1968,6 +2002,7 @@ const __mirrorForecast = (() => {
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
  */
+
 
 
 
@@ -2028,8 +2063,8 @@ function rawGenderGap(rows, getLon) {
     (rows || []).forEach(r => {
         const L = getLon(r);
         if (!(L > 0)) return;
-        if (r.kon && r.kon.includes('kvinna')) kv.push(L);
-        else if (r.kon === 'man' || r.kon === 'män') ma.push(L);
+        if (arKvinna(r)) kv.push(L);
+        else if (arMan(r)) ma.push(L);
     });
     if (!kv.length || !ma.length) return null;
     return (_median(kv) / _median(ma) - 1) * 100;
@@ -2046,7 +2081,7 @@ function rawGenderGap(rows, getLon) {
 function targetRows(rows, t) {
     const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
     const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
-    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
+    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? arKvinna(r) : arMan(r));
     const ut = [];
     (rows || []).forEach((r, i) => {
         if (r.bas !== t.bas) return;
@@ -2124,7 +2159,7 @@ function allocate(rows, generell, targets, roundStep) {
         if (!gr) { gr = { bas: p.bas, aid: p.aid, oldL: [], newL: [], kvN: 0, n: 0, cost: 0 }; groups.set(k, gr); }
         gr.oldL.push(p.lon); gr.newL.push(p.nyLon);
         gr.cost += p.delta; gr.n++;
-        if (p.kon && p.kon.includes('kvinna')) gr.kvN++;
+        if (arKvinna(p)) gr.kvN++;
     });
     const perGroup = [...groups.values()].map(gr => ({
         bas: gr.bas, aid: gr.aid, n: gr.n, kvN: gr.kvN,
@@ -2234,7 +2269,7 @@ function summarizeGroups(rows) {
         let g = m.get(k);
         if (!g) { g = { bas: r.bas, aid: r.aid, lons: [], kvN: 0, n: 0 }; m.set(k, g); }
         g.lons.push(r.lon); g.n++;
-        if (r.kon && r.kon.includes('kvinna')) g.kvN++;
+        if (arKvinna(r)) g.kvN++;
     });
     return [...m.values()].map(g => ({
         bas: g.bas, aid: g.aid, n: g.n, kvN: g.kvN,
@@ -2346,7 +2381,7 @@ function individualRemediation(rows, opts) {
     const menByGroup = new Map(), menByBas = new Map();
     (rows || []).forEach(r => {
         if (!(r.lon > 0)) return;
-        if (!(r.kon === 'man' || r.kon === 'män')) return;
+        if (!arMan(r)) return;
         const gk = r.bas + '|' + r.aid;
         if (!menByGroup.has(gk)) menByGroup.set(gk, []);
         menByGroup.get(gk).push(r.lon);
@@ -2363,7 +2398,7 @@ function individualRemediation(rows, opts) {
     const flagged = [];
     (rows || []).forEach(r => {
         if (!(r.lon > 0)) return;
-        if (!(r.kon && r.kon.includes('kvinna'))) return;
+        if (!arKvinna(r)) return;
         const bench = benchFor(r.bas, r.aid);
         if (!bench) return;
         if (r.lon < bench.v * (1 - trigger)) {
@@ -2463,7 +2498,6 @@ function troskelmalKonstanter() {
  *   TROSKELMAL_MAX_LYFT_PCT % räcker; hittat: lyftPct, kostnadPerManad och skattningen efter lyftet (resultat)
  */
 function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifikans = false, skatta }) {
-    const arKvinna = r => r.kon && r.kon.includes('kvinna');
     const kvinnor = rader.filter(arKvinna);
     const utgangslage = skatta(rader);
     if (utgangslage.konPct == null) return { status: 'ingenSkattning', utgangslage };
@@ -2508,6 +2542,8 @@ const __mirrorAidbas = (() => {
     const quantile = __mirrorStat.quantile;
     const basRangFn = __mirrorLikvardighet.basRangFn;
     const konsklass = __mirrorLikvardighet.konsklass;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -2532,6 +2568,7 @@ const __mirrorAidbas = (() => {
  *
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 /**
@@ -2590,8 +2627,8 @@ function arJamforelseKlass(klass, jamforelse = 'alla') {
     return jamforelse === 'mansdominerade' ? klass === KLASS_MA : true;
 }
 
-const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
-const arMa = r => r.kon === 'man' || r.kon === 'män';
+const arKv = arKvinna;
+const arMa = arMan;
 
 /**
  * Grupperar raderna per AID-kod och BAS-intervall, hämtade ur varje persons egen rad. Rader utan lön, kön eller
@@ -2750,6 +2787,8 @@ const __mirrorRegression = (() => {
     const ordForAntal = __mirrorTermer.ordForAntal;
     const stor = __mirrorTermer.stor;
     const personOrd = __mirrorNamn.personOrd;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -2772,6 +2811,7 @@ const __mirrorRegression = (() => {
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
+
 
 
 
@@ -2818,7 +2858,7 @@ function harAlderIRader(rows) {
 }
 /** Raden har det som modellerna kräver: positiv lön, känt kön och, när lönefilen har ålder, en ålder över 0. */
 const _modellRad = (d, harAlder) => d && d.lon > 0 && (!harAlder || d.alder > 0) && typeof d.kon === 'string'
-    && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män');
+    && (arKvinna(d) || arMan(d));
 
 /**
  * Normaliserar ett värde från konfigurationsfilen eller gränssnittet till en giltig modell.
@@ -2893,8 +2933,8 @@ function diagnoseCollinearity(rows, basList) {
     basList.forEach(b => {
         const sub = rows.filter(d => d.bas === b);
         if (sub.length < 3) return;
-        const hasKv = sub.some(d => d.kon.includes('kvinna'));
-        const hasMa = sub.some(d => d.kon === 'man' || d.kon === 'män');
+        const hasKv = sub.some(d => arKvinna(d));
+        const hasMa = sub.some(d => arMan(d));
         if (!hasKv || !hasMa) singleSexBas++;
     });
     if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${T.niva.fl} är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
@@ -2917,14 +2957,14 @@ function computePerBasGap(rows, basList, { golv }) {
     const out = [];
     basList.forEach(b => {
         const sub = giltiga.filter(d => d.bas === b);
-        const kv  = sub.filter(d => d.kon.includes('kvinna'));
-        const ma  = sub.filter(d => d.kon === 'man' || d.kon === 'män');
+        const kv  = sub.filter(d => arKvinna(d));
+        const ma  = sub.filter(d => arMan(d));
         if (kv.length < golv || ma.length < golv) {
             out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'too_few' });
             return;
         }
         const aMean = harAlder ? sub.reduce((s,d)=>s+d.alder,0)/sub.length : 0;
-        const X = sub.map(d => [1, d.kon.includes('kvinna')?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
+        const X = sub.map(d => [1, arKvinna(d)?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
         const y = sub.map(d => Math.log(d.lon));
         const fit = fitOLS(X, y);
         if (!fit) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'singular' }); return; }
@@ -3048,7 +3088,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     const rows = (rows0 || []).filter(d => _modellRad(d, medAlder));
     const N = rows.length;
     const y    = rows.map(d => Math.log(d.lon));
-    const isKv = rows.map(d => d.kon.includes('kvinna') ? 1 : 0);
+    const isKv = rows.map(d => arKvinna(d) ? 1 : 0);
     const ageC = rows.map(d => d.alder - ageMean);
     const basInd = basIndikatorer(basList);
     const basD = rows.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
@@ -3257,8 +3297,8 @@ function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
     if (!m.bas && !m.alder) return null;   // endast kön: inget att dela upp
     const raw = rows.filter(d => _modellRad(d, harAlder));
     if (raw.length < 50) return null;
-    const kv = raw.filter(d => d.kon.includes('kvinna'));
-    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
+    const kv = raw.filter(d => arKvinna(d));
+    const ma = raw.filter(d => arMan(d));
     if (kv.length < golv || ma.length < golv) return null;
 
     const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
@@ -3396,7 +3436,7 @@ function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD,
     }
     const p10 = results[0], p90 = results[2];
     const diffP90P10 = p10.error || p90.error ? null : p90.konPct - p10.konPct;
-    const nKv = d.rader.filter(r => r.kon.includes('kvinna')).length;
+    const nKv = d.rader.filter(r => arKvinna(r)).length;
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
@@ -3434,11 +3474,11 @@ const HUVUDREGRESSION_MIN_PER_KON = 5;
  */
 function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIRader(rader), kInstalld, golv }) {
     // Utan ålder i lönefilen (ADR-64) används alla rader och modellen räknas utan ålder.
-    const raw = rader.filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const raw = rader.filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (arKvinna(d) || arMan(d)));
     if (raw.length < HUVUDREGRESSION_MIN_N) return { error: `För få observationer (n < ${HUVUDREGRESSION_MIN_N}) för meningsfull regressionsanalys.`, errorCode: 'low_n' };
 
-    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
-    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
+    const kvN = raw.filter(d => arKvinna(d)).length;
+    const maN = raw.filter(d => arMan(d)).length;
     if (kvN < HUVUDREGRESSION_MIN_PER_KON || maN < HUVUDREGRESSION_MIN_PER_KON)
         return { error: `Otillräcklig könsbalans i urvalet: ${kvN} kvinnor, ${maN} män. Minst ${HUVUDREGRESSION_MIN_PER_KON} av varje kön krävs.`, errorCode: 'imbalance' };
 
@@ -3450,7 +3490,7 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
     const ageMean = medAlder ? raw.reduce((s,d) => s + d.alder, 0) / raw.length : 0;
 
     const y    = raw.map(d => Math.log(d.lon));
-    const isKv = raw.map(d => d.kon.includes('kvinna') ? 1 : 0);
+    const isKv = raw.map(d => arKvinna(d) ? 1 : 0);
     const ageC = raw.map(d => d.alder - ageMean);
     const basD = raw.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
 
@@ -3602,8 +3642,8 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
     const diagnostics = fellBackFromFull ? diagnoseCollinearity(raw, basList) : [];
 
     // Rått gap (median)
-    const kv = raw.filter(d => d.kon.includes('kvinna'));
-    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
+    const kv = raw.filter(d => arKvinna(d));
+    const ma = raw.filter(d => arMan(d));
     const medianKv = median(kv.map(d=>d.lon));
     const medianMa = median(ma.map(d=>d.lon));
     const rawGapPct = (medianKv / medianMa - 1) * 100;
@@ -3707,6 +3747,8 @@ const __mirrorOsakerhet = (() => {
     const bootstrapMedianer = __mirrorLikvardighet.bootstrapMedianer;
     const kvantilDesign = __mirrorRegression.kvantilDesign;
     const quantileRegression = __mirrorRegression.quantileRegression;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3732,6 +3774,7 @@ const __mirrorOsakerhet = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
  */
+
 
 
 
@@ -3781,10 +3824,6 @@ function osakerhetKonstanter() {
         MAD_TILL_SIGMA, MEDIAN_SE_FAKTOR, SMA_GRUPPER_RATTNING, KVANTIL_KI_B, KVANTIL_KI_MAX_N });
 }
 
-/** @param {{kon:string}} r */
-const _arKvinna = r => r.kon.includes('kvinna');
-/** @param {{kon:string}} r */
-const _arMan = r => r.kon === 'man' || r.kon === 'män';
 
 // ---- Bootstrapintervallen på mediankvoten ----
 
@@ -3806,8 +3845,8 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
  */
 function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
-    const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
+    const ma = d.filter(r => arMan(r)).map(r => r.lon);
     if (kv.length < golv || ma.length < golv) return null;
     const ratios = new Array(B);
     const m = bootstrapMedianer(kv, ma, B, rng || rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
@@ -3936,7 +3975,7 @@ function mdeProcent(sigma, nKv, nMa) {
 function styrkeanalys(rader, golv) {
     const d = rader.filter(r => r.lon > 0);
     if (d.length < STYRKA_MIN_N) return null;
-    const arKv = _arKvinna, arMa = _arMan;
+    const arKv = arKvinna, arMa = arMan;
     const kv = d.filter(arKv).map(r => r.lon);
     const ma = d.filter(arMa).map(r => r.lon);
     if (kv.length < 2 || ma.length < 2) return null;
@@ -4045,7 +4084,7 @@ function extremvarden(rader, golv, troskel = EXTREMVARDE_Z) {
                     radnr: r.radnr ?? null,
                     bas: r.bas,
                     yrke: r.yrke,
-                    kon: r.kon.includes('kvinna') ? 'Kvinna' : 'Man',
+                    kon: arKvinna(r) ? 'Kvinna' : 'Man',
                     alder: r.alder,
                     lon: r.lon,
                     groupMedian,
@@ -4078,7 +4117,7 @@ function trattUnderlag(rader, k) {
     const perGrupp = new Map();
     for (const r of rader) {
         if (!(r.lon > 0) || !r.bas) continue;
-        const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
+        const kv = arKvinna(r), ma = arMan(r);
         if (!kv && !ma) continue;
         const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
         if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
@@ -4198,6 +4237,8 @@ const __mirrorLonepolitik = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
     const _quantile = __mirrorStat.quantile;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4221,6 +4262,7 @@ const __mirrorLonepolitik = (() => {
  */
 
 
+
 /**
  * Organisationens faktiska lönespann i en grupp (P10, median, P90) — jämförs med
  * referensens band i bandkartan. Percentiler kräver minst k personer; annars null.
@@ -4232,12 +4274,6 @@ function organisationsBand(rows, k) {
     return { n: lons.length, p10: _quantile(lons, 0.1), med: _median(lons), p90: _quantile(lons, 0.9) };
 }
 
-function _lpIsKvinna(r) {
-    return typeof r.kon === 'string' && r.kon.includes('kvinna');
-}
-function _lpIsMan(r) {
-    return r.kon === 'man' || r.kon === 'män';
-}
 
 /**
  * Var i sitt eget lönespann ligger en lön?
@@ -4324,8 +4360,8 @@ function complianceCounts(rows, pol) {
 function genderBandGap(rows, pol, minPerKon = 10) {
     if (!Array.isArray(rows) || !pol) return null;
     const posOf = r => bandPosition(r.lon, pol.p10, pol.p90);
-    const kv = rows.filter(_lpIsKvinna).map(posOf).filter(v => v != null);
-    const ma = rows.filter(_lpIsMan).map(posOf).filter(v => v != null);
+    const kv = rows.filter(arKvinna).map(posOf).filter(v => v != null);
+    const ma = rows.filter(arMan).map(posOf).filter(v => v != null);
     if (kv.length < minPerKon || ma.length < minPerKon) return null;
     const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
     const kvPos = mean(kv), maPos = mean(ma);
@@ -4392,6 +4428,8 @@ const __mirrorPrioritering = (() => {
     const median = __mirrorStat.median;
     const kostnadsfaktor = __mirrorKostnad.kostnadsfaktor;
     const kostnadPerAr = __mirrorKostnad.kostnadPerAr;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4409,6 +4447,7 @@ const __mirrorPrioritering = (() => {
  * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
+
 
 
 // Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
@@ -4518,8 +4557,8 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
 
         const lons     = g.rows.map(r => r.lon);
         const med      = median(lons);
-        const kvLons   = g.rows.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-        const maLons   = g.rows.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+        const kvLons   = g.rows.filter(r => arKvinna(r)).map(r => r.lon);
+        const maLons   = g.rows.filter(r => arMan(r)).map(r => r.lon);
         // ADR-12: könsjämförelsen kräver kTroskel personer av vartdera könet; annars bara gruppens samlade median.
         const medKv    = kvLons.length >= kTroskel ? median(kvLons) : null;
         const medMa    = maLons.length >= kTroskel ? median(maLons) : null;
@@ -4604,6 +4643,8 @@ const __mirrorLivscykel = (() => {
     const tQuantile = __mirrorStat.tQuantile;
     const statusNiva = __mirrorStatus.statusNiva;
     const skapaTermer = __mirrorTermer.skapaTermer;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4620,6 +4661,7 @@ const __mirrorLivscykel = (() => {
  * Appen får modellen genom lib-speglarna (ADR-8); runLifecycleRegression() i
  * src/app/52-livscykel.js är den tunna adaptern som läser getData() och statGolv().
  */
+
 
 
 
@@ -4664,11 +4706,11 @@ function livscykelRegression(rader, { fixBas, golv }) {
     // Ålderskolumnen är valfri (ADR-64): utan ålder finns ingen livscykel att skatta.
     if ((rader || []).length && !(rader || []).some(d => d && d.alder > 0))
         return { error: 'Lönefilen saknar ålder, så löneskillnaden över karriären kan inte skattas.', errorCode: 'no_age' };
-    const raw = (rader || []).filter(d => d.lon > 0 && d.alder > 0 && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const raw = (rader || []).filter(d => d.lon > 0 && d.alder > 0 && (arKvinna(d) || arMan(d)));
     if (raw.length < 50) return { error: 'För få observationer (n < 50) för meningsfull livscykelanalys.', errorCode: 'low_n' };
 
-    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
-    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
+    const kvN = raw.filter(d => arKvinna(d)).length;
+    const maN = raw.filter(d => arMan(d)).length;
     if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: 'imbalance' };
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
@@ -4699,7 +4741,7 @@ function livscykelRegression(rader, { fixBas, golv }) {
     const X = [];
     const y = [];
     raw.forEach((d, i) => {
-        const isKv = d.kon.includes('kvinna') ? 1 : 0;
+        const isKv = arKvinna(d) ? 1 : 0;
         const ac  = ageVals[i];
         const ac2 = ac * ac;
         const row = [1, isKv, ac, ac2, isKv * ac, isKv * ac2];
@@ -5711,6 +5753,8 @@ const __mirrorFalt = (() => {
     const skapaTermer = __mirrorTermer.skapaTermer;
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5723,6 +5767,7 @@ const __mirrorFalt = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
@@ -5764,8 +5809,8 @@ function jamforLonespann(a, b) {
 
 /** Normaliserat kön för gruppering och uppdelning. */
 function konOf(row) {
-    if (typeof row.kon === 'string' && row.kon.includes('kvinna')) return 'Kvinna';
-    if (row.kon === 'man' || row.kon === 'män') return 'Man';
+    if (arKvinna(row)) return 'Kvinna';
+    if (arMan(row)) return 'Man';
     return 'Övrig/okänd';
 }
 
@@ -7618,6 +7663,7 @@ const __mirrorJamforelse = (() => {
     const skapaTermer = __mirrorTermer.skapaTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
     const adjektiv = __mirrorTermer.adjektiv;
+    const arKvinna = __mirrorKon.arKvinna;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -7633,6 +7679,7 @@ const __mirrorJamforelse = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -7742,7 +7789,7 @@ function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
         if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [], kvinnor: 0 });
         const g = perBas.get(r.bas);
         g.lons.push(r.lon);
-        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.kvinnor++;
+        if (arKvinna(r)) g.kvinnor++;
     }
     const ut = [], utelamnade = [];
     for (const [aid, perBas] of perAid) {
@@ -7986,6 +8033,7 @@ const __mirrorRapportunderlag = (() => {
     const artikel = __mirrorTermer.artikel;
     const adjektiv = __mirrorTermer.adjektiv;
     const termFras = __mirrorTermer.termFras;
+    const arKvinna = __mirrorKon.arKvinna;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8010,12 +8058,12 @@ const __mirrorRapportunderlag = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
-const _arKvinna = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
 const _arMan = r => typeof r.kon === 'string' && !r.kon.includes('kvinna') && (r.kon.includes('man') || r.kon.includes('män'));
 
 /**
@@ -8041,7 +8089,7 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const perYrke = new Map();
     for (const r of rader || []) {
         if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, { kv: [], ma: [] });
-        if (_arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
+        if (arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
         else if (_arMan(r)) perYrke.get(r.yrke).ma.push(r.lon);
     }
     const grupper = [], utelamnade = [], ejJamforbara = [];
@@ -8083,14 +8131,14 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
  */
 function justeratGapInomYrke(rader, { k }) {
     if ((rader || []).length && !(rader || []).some(r => r && r.alder > 0)) return { utanAlder: true };
-    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (_arKvinna(r) || _arMan(r)));
-    const nKv = d.filter(_arKvinna).length, nMa = d.length - nKv;
+    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (arKvinna(r) || _arMan(r)));
+    const nKv = d.filter(arKvinna).length, nMa = d.length - nKv;
     if (nKv < k || nMa < k) return { forFa: true };
     const basLista = [...new Set(d.map(r => r.bas))].sort();
     const dummies = basLista.slice(1);
     const p = 3 + dummies.length;
     if (d.length < p + 5) return { forFa: true };
-    const X = d.map(r => [1, _arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
+    const X = d.map(r => [1, arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
     const y = d.map(r => Math.log(r.lon));
     const fit = fitOLS(X, y);
     // Singulär modell: kön och BAS sammanfaller inom yrket (t.ex. alla kvinnor i ett BAS).
@@ -8882,6 +8930,8 @@ const __mirrorPerBas = (() => {
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
     const kompletterandeUndertryckning = __mirrorUndertryckning.kompletterandeUndertryckning;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8903,6 +8953,7 @@ const __mirrorPerBas = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -8938,8 +8989,6 @@ function valideraPerBasRecept(r) {
 }
 function perBasReceptArStandard(r) { return JSON.stringify(valideraPerBasRecept(r)) === JSON.stringify(perBasStandard()); }
 
-const _arKv = r => String(r.kon || '').includes('kvinna');
-const _arMa = r => r.kon === 'man' || r.kon === 'män';
 const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
@@ -8996,7 +9045,7 @@ function perBasTabeller(rader, opt = {}) {
     const raderI = b => perDim.get(b) || [];
     const basUtelamnade = basar.filter(b => raderI(b).length < k);
     const visadeBas = basar.filter(b => raderI(b).length >= k);
-    const nKvI = b => raderI(b).filter(_arKv).length, nMaI = b => raderI(b).filter(_arMa).length;
+    const nKvI = b => raderI(b).filter(arKvinna).length, nMaI = b => raderI(b).filter(arMan).length;
     const konVisasI = b => nKvI(b) >= k && nMaI(b) >= k;
     const harMedel = recept.matt.includes('medel');
 
@@ -9012,7 +9061,7 @@ function perBasTabeller(rader, opt = {}) {
     // gemensamma medellön, och den ska omfatta minst k personer av det könet. Ett intervall vars könsmedel döljs ger
     // också via sin medellön för alla den andra könets dolda celler, så båda könens medel döljs tillsammans.
     const konDolda = new Set();
-    if (recept.konsgap && d.filter(_arKv).length >= k && d.filter(_arMa).length >= k) {
+    if (recept.konsgap && d.filter(arKvinna).length >= k && d.filter(arMan).length >= k) {
         for (const antal of [nKvI, nMaI]) {
             const delar = basar.map(b => ({ namn: b, n: antal(b), dold: raderI(b).length < k || medelDolda.has(b) || !konVisasI(b) || konDolda.has(b) }));
             kompletterandeUndertryckning(delar, k).forEach(i => konDolda.add(basar[i]));
@@ -9053,7 +9102,7 @@ function perBasTabeller(rader, opt = {}) {
             const s = visa.has('statistik') && rows[0].aid != null && recept.dim === 'bas' ? statFor(rows[0].aid, bas) : null;
             if (s && s.median > 0) rad.push({ typ: 'statistik', namn: `${statistikNamn}: ${namn}`, aid: key, n: null, p10: s.p10 ?? null, med: s.median, p90: s.p90 ?? null });
         });
-        const kv = df.filter(_arKv), ma = df.filter(_arMa);
+        const kv = df.filter(arKvinna), ma = df.filter(arMan);
         const konVisas = kv.length >= k && ma.length >= k;
         if (konVisas) {
             const mk = visa.has('kvinnor') ? _matt(kv) : null, mm = visa.has('man') ? _matt(ma) : null;
@@ -9069,7 +9118,7 @@ function perBasTabeller(rader, opt = {}) {
 
     // Könsgap och ålder per BAS, med raden Alla först.
     const konsgapRad = (namn, rows, medelDold = false, konDold = false) => {
-        const kv = rows.filter(_arKv), ma = rows.filter(_arMa);
+        const kv = rows.filter(arKvinna), ma = rows.filter(arMan);
         const konVisas = kv.length >= k && ma.length >= k;
         const konMedel = konVisas && !medelDold && !konDold;
         const medel = medelDold ? null : _medel(_loner(rows)), medelKv = konMedel ? _medel(_loner(kv)) : null, medelMa = konMedel ? _medel(_loner(ma)) : null;
@@ -10610,6 +10659,8 @@ const _opLiknarPersonuppgift = __mirrorOrganisationspaket.liknarPersonuppgift;
 const __mirrorFigur = (() => {
     // importer ur tidigare speglade lib-moduler
     const quantile = __mirrorStat.quantile;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -10629,6 +10680,7 @@ const __mirrorFigur = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 const MARKEN = ['stapel', 'intervall', 'punkt', 'linje', 'band', 'lada', 'ruta', 'yta'];
 const SKALOR = ['band', 'linjar', 'log'];
@@ -11183,9 +11235,8 @@ function harlettNot(h) {
 // Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
 function _underlagKon(underlag, r) {
     if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
-    const k = r && r.kon;
-    if (typeof k === 'string' && k.includes('kvinna')) return 'kv';
-    return k === 'man' || k === 'män' ? 'ma' : null;
+    if (arKvinna(r)) return 'kv';
+    return arMan(r) ? 'ma' : null;
 }
 
 /**

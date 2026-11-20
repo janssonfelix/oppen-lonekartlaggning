@@ -45,8 +45,8 @@ function runDiagnostics() {
     const tests = [];
 
     // Test 1: råa gapet ska vara märkbart negativt (kvinnor yngre + lägre BAS = lägre lön)
-    const kv = state.data.filter(r => r.kon.includes('kvinna'));
-    const ma = state.data.filter(r => r.kon === 'man' || r.kon === 'män');
+    const kv = state.data.filter(r => arKvinna(r));
+    const ma = state.data.filter(r => arMan(r));
     const rawGap = (Stat.median(kv.map(r=>r.lon)) / Stat.median(ma.map(r=>r.lon)) - 1) * 100;
     tests.push({
         name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',

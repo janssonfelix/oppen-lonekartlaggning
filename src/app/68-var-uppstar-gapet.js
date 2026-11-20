@@ -130,8 +130,8 @@ function renderGapUppdelning() {
     const inledning = u.gap <= 0
         ? `Kvinnors medellön är <strong>${_guKr(-u.gap, false)}</strong> lägre än mäns, det är ${_guPct(-u.gapPct)} av mäns medellön.`
         : `Kvinnors medellön är <strong>${_guKr(u.gap, false)}</strong> högre än mäns, det är ${_guPct(u.gapPct)} av mäns medellön.`;
-    const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna') && r.lon > 0).map(r => r.lon));
-    const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
+    const medKv = Stat.median(d.filter(r => arKvinna(r) && r.lon > 0).map(r => r.lon));
+    const medMa = Stat.median(d.filter(r => arMan(r) && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
     const delar = _guDelarMedAtgard(u.variabler || variabler);
     const max = Math.max(1, ...delar.map(x => Math.abs(u.delar[x.id])));

@@ -515,12 +515,12 @@ function loadStructureFile(file) {
         // Spåra rader utan användbart kön
         // (efter normalisering till lowercase utan icke-bokstäver).
         const konOk = typeof rec.kon === 'string' &&
-                      (rec.kon.includes('kvinna') || rec.kon === 'man' || rec.kon === 'män');
+                      (arKvinna(rec) || arMan(rec));
         const rawKon = getField(row, ALLOWED_FIELDS.kon, 'kon');
         if (!konOk && parseStats.missingKonExamples.length < 3) {
             parseStats.missingKonExamples.push(truncEx(rawKon));
         }
-        _fkRaknaKon(fkKon, rawKon, konOk ? (rec.kon.includes('kvinna') ? 'kvinna' : 'man') : null);
+        _fkRaknaKon(fkKon, rawKon, konOk ? (arKvinna(rec) ? 'kvinna' : 'man') : null);
         /** @type {any} */
         let fkRad = null;
         if (fkForsta.length < FK_RADER) {
