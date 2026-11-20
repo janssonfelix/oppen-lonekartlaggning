@@ -34,7 +34,8 @@ import { gapUppdelning, gapPoster } from '../src/lib/gapuppdelning.js';
 import { sektorsnamn } from '../src/lib/aid.js';
 import { groupKey, konOf } from '../src/lib/falt.js';
 import { byggArsbokslut, bokslutMedGrans, jamforBasIntervall, ARSBOKSLUT_NYCKELTAL, ARSBOKSLUT_BAS_MATT } from '../src/lib/arsbokslut.js';
-import { rest, heltal, avvikelse, GRANS, underlagMedEnLitenGrupp, harledLinjart } from './helpers/differens.js';
+import { kompletterandeUndertryckning } from '../src/lib/undertryckning.js';
+import { rest, heltal, avvikelse, GRANS, underlagMedEnLitenGrupp, harledLinjart, differensprov, tabellerUrText, tabellerUrHtml, tal } from './helpers/differens.js';
 
 const K = 10;
 // Storlekarna som prövas: antalet personer utöver den lilla gruppen.
@@ -80,6 +81,82 @@ describe('hjälparen', () => {
         expect(per('C').reduce((s, r) => s + r.lon, 0) / 4).toBe(95000);
         expect(underlagMedEnLitenGrupp(opt).rader).toEqual(rader);
         expect(() => underlagMedEnLitenGrupp({ ...opt, nLiten: 10 })).toThrow();
+    });
+});
+
+// Självtest för differensprovet i invarianten (differensprov i tests/helpers/differens.js): en påhittad tabell med en
+// total och delar, skriven som exporterna skriver den.
+describe('differensprovet i invarianten (självtest)', () => {
+    // A–C når tröskeln och visas; D (4 personer) utelämnas. Raden Alla räknas på alla 71.
+    const GRUPPER = [['A', 30, 30000], ['B', 25, 32000], ['C', 12, 28000], ['D', 4, 41000]];
+    const N = GRUPPER.reduce((s, g) => s + g[1], 0);
+    const MEDEL = GRUPPER.reduce((s, g) => s + g[1] * g[2], 0) / N;
+    const KANDA = [{ namn: 'grupp D', n: 4, medel: 41000 }];
+    const DEKL = [{ namn: 'påhittad tabell', vag: /^påhittad export$/, rubrik: /^Grupp \| Antal \| Medellön \| Median$/,
+        antal: 'Antal', total: /^Alla$/, matt: [{ kolumn: 'Medellön' }] }];
+    const tabell = (medel = g => String(g[2])) => ['Grupp | Antal | Medellön | Median', `Alla | ${N} | ${Math.round(MEDEL)} | 30500`,
+        ...GRUPPER.filter(g => g[1] >= K).map(g => `${g[0]} | ${g[1]} | ${medel(g)} | ${g[2]}`), 'Grupper under 10 personer redovisas inte.'].join('\n');
+    const prov = (text, dekl = DEKL, vag = 'påhittad export') => differensprov(tabellerUrText(vag, text), dekl, { k: K, kanda: KANDA });
+
+    it('en liten grupp som går att räkna fram ur totalen och delarna fäller provet', () => {
+        const { fynd, odeklarerade, fel, oanvanda } = prov(tabell());
+        expect([odeklarerade, fel, oanvanda]).toEqual([[], [], []]);
+        expect(fynd).toHaveLength(1);
+        expect(fynd[0]).toMatchObject({ n: 4, total: 'Alla', kolumn: 'Medellön', motsvarar: ['grupp D'] });
+        expect(Math.abs(fynd[0].medel - 41000)).toBeLessThan(41000 * GRANS);
+    });
+    it('samma tabell med kompletterande undertryckning godkänns', () => {
+        const delar = GRUPPER.map(([namn, n]) => ({ namn, n, dold: n < K }));
+        const undertryckta = kompletterandeUndertryckning(delar, K).map(i => GRUPPER[i][0]);
+        expect(undertryckta).toEqual(['C']);
+        const { fynd, fel, oanvanda } = prov(tabell(g => (undertryckta.includes(g[0]) ? '–' : String(g[2]))));
+        expect([fynd, fel, oanvanda]).toEqual([[], [], []]);
+    });
+    it('en summa och ett mått per kön prövas också, med antalet ur en egen kolumn eller ur andelen kvinnor', () => {
+        // Kvinnorna: 20 i A och 3 i B (B visar inte könens medel). Raden Alla bär kvinnornas medel och summan.
+        const text = ['Grupp | Antal | Andel kvinnor (%) | Medellön kvinnor | Lönesumma',
+            `Alla | 55 | ${(23 / 55 * 100).toFixed(1)} | ${Math.round((20 * 30000 + 3 * 39000) / 23)} | ${30 * 30000 + 25 * 32000}`,
+            'A | 30 | 66.7 | 30000 | 900000', 'B | 25 | 12.0 | – | 800000'].join('\n');
+        const dekl = [{ namn: 'per kön', vag: /^påhittad export$/, rubrik: /^Grupp \| Antal \| Andel kvinnor/, antal: 'Antal', total: /^Alla$/,
+            matt: [{ kolumn: 'Medellön kvinnor', antal: { andel: 'Andel kvinnor (%)' } }, { kolumn: 'Lönesumma', typ: 'summa' }] }];
+        const { fynd, fel } = prov(text, dekl);
+        expect(fel).toEqual([]);
+        // Summan går jämnt upp (inget blir över); kvinnornas medel lämnar de tre i B, med avrundningens fel.
+        expect(fynd.map(f => [f.kolumn, f.n])).toEqual([['Medellön kvinnor', 3]]);
+        expect(Math.abs(fynd[0].medel - 39000)).toBeLessThan(39000 * GRANS);
+    });
+    it('en tabell med bara medianer och percentiler prövas inte och kräver ingen deklaration', () => {
+        const text = ['Grupp | Antal | Median | P10 | P90', `Alla | ${N} | 30500 | 26000 | 39000`, 'A | 30 | 30000 | 29000 | 31000', 'B | 25 | 32000 | 31000 | 33000'].join('\n');
+        expect(prov(text, [])).toEqual({ fynd: [], odeklarerade: [], fel: [], oanvanda: [] });
+    });
+    it('en odeklarerad tabell med en medelkolumn fäller provet med meddelandet att den måste deklareras', () => {
+        const { odeklarerade, fynd } = prov(tabell(), DEKL, 'ny export');
+        expect(fynd).toEqual([]);
+        expect(odeklarerade).toHaveLength(1);
+        expect(odeklarerade[0]).toMatch(/^ny export: rubrikraden "Grupp \| Antal \| Medellön \| Median" måste deklareras i DIFFERENS_DEKLARATIONER/);
+        // Deklarerad som inget att dela upp: godkänd, men inte prövad.
+        const inget = [{ namn: 'ny', vag: /^ny export$/, rubrik: /^Grupp \| Antal \| Medellön/, inget: 'påhittat skäl' }];
+        expect(prov(tabell(), inget, 'ny export')).toEqual({ fynd: [], odeklarerade: [], fel: [], oanvanda: [] });
+    });
+    it('en deklaration som inte känner igen något, eller vars delar inte ryms i totalen, fäller provet', () => {
+        expect(prov(tabell(), DEKL, 'annan väg').oanvanda).toEqual(['påhittad tabell: känner inte igen någon tabell']);
+        const fel = prov(tabell().replace(`Alla | ${N}`, 'Alla | 50')).fel;
+        expect(fel[0]).toMatch(/delarna har fler personer \(67\) än totalen \(50\)/);
+    });
+    it('HTML-tabeller och Excel-blad läses med sina rubriker', () => {
+        const html = `<p>x</p><table><caption>Per grupp</caption><thead><tr><th>Grupp</th><th>Antal</th><th>Medellön</th><th>Median</th></tr></thead>`
+            + `<tbody><tr><td>Alla</td><td>${N}</td><td>${Math.round(MEDEL).toLocaleString('sv-SE')} kr</td><td colspan="1">30 500 kr</td></tr>`
+            + GRUPPER.filter(g => g[1] >= K).map(g => `<tr><td>${g[0]}</td><td>${g[1]}</td><td>${g[2].toLocaleString('sv-SE')} kr</td><td>x</td></tr>`).join('')
+            + '</tbody></table>';
+        const [t] = tabellerUrHtml('påhittad export', html);
+        expect(t.blad).toBe('Per grupp');
+        expect(differensprov([t], DEKL, { k: K, kanda: KANDA }).fynd.map(f => f.n)).toEqual([4]);
+        const blad = tabellerUrText('påhittad export', `[Översikt]\nText | x\n[Grupper]\n${tabell()}`);
+        expect(blad.map(b => b.blad)).toEqual(['Översikt', 'Grupper']);
+        expect(differensprov(blad, DEKL, { k: K, kanda: KANDA }).fynd.map(f => f.n)).toEqual([4]);
+    });
+    it('cellerna läses som exporterna skriver tal', () => {
+        expect([tal('31 417 kr'), tal('12,5 %'), tal('−3,2'), tal('–'), tal(''), tal('A1'), tal(42)]).toEqual([31417, 12.5, -3.2, null, null, null, 42]);
     });
 });
 

@@ -150,3 +150,201 @@ export function harledLinjart({ rader, cell, utskrivet, mal }) {
     for (const [r, kol] of pivot) y[kol] = A[r][m] / A[r][kol] / skala[kol];
     return avrunda => bas.reduce((s, v, i) => s + y[i] * (avrunda ? heltal(v) : v), 0);
 }
+
+// ===================================================================================
+// Differensprovet i invarianten (tests/helpers/ktroskel-invariant.js): samma rest, men på tabellerna som faktiskt
+// lämnar verktyget, så som riggen samlar in dem (samlaUtdata), inte på lib-resultaten.
+//
+// En tabell är ett namn (utdatans väg), ett blad (Excel-bladet eller tabellens caption, annars tomt) och rader med
+// celler. Vilka kolumner som är antal och medel, och vilken rad som är totalen, gissas inte ur rubrikerna: varje
+// rubrikrad med ett ord för medel, summa eller kostnad (KRAVER_DEKLARATION) ska ha en deklaration i riggen
+// (DIFFERENS_DEKLARATIONER i tests/helpers/ktroskel-rigg.js), antingen med sina kolumner eller som "inget att dela
+// upp" med skäl. En rubrikrad utan deklaration fäller provet. Medianer och percentiler deklareras aldrig som mått: de
+// går inte att dela upp linjärt.
+// ===================================================================================
+
+/** Rubrikord som kräver en deklaration: en kolumn med medel, summa eller kostnad kan vara en total med delar. */
+export const KRAVER_DEKLARATION = /medel|summa|kostnad|lönesumma/i;
+
+/**
+ * Ett tal ur en cell som exporten skriver det: tusentalsavgränsare och enhet bort, decimalkomma som punkt. Null för
+ * en tom cell, ett streck och allt som inte bara är ett tal (med enhet).
+ * @param {unknown} cell
+ */
+export function tal(cell) {
+    if (typeof cell === 'number') return isFinite(cell) ? cell : null;
+    const s = String(cell ?? '').replace(/[\s  ]/g, '').replace(/[−–]/g, '-')
+        .replace(/(kr\/mån|kr\/år|kr|%|år|st|personer)$/i, '').replace(',', '.');
+    return /^[-+]?\d+(\.\d+)?$/.test(s) ? Number(s) : null;
+}
+
+/** En rubrikrad: minst två ifyllda celler och inget tal bland dem. */
+export function arRubrikrad(rad) {
+    const ifyllda = rad.map(c => String(c ?? '').trim()).filter(Boolean);
+    return ifyllda.length >= 2 && ifyllda.every(c => tal(c) === null);
+}
+
+/**
+ * Tabellerna i en utdata skriven som text med celler åtskilda av " | " (Excel som riggen fångar den, CSV, diagramdata).
+ * En rad "[Blad]" börjar ett nytt Excel-blad. En text utan en enda rad med två celler har ingen tabell.
+ * @param {string} namn
+ * @param {string} text
+ */
+export function tabellerUrText(namn, text) {
+    const ut = [];
+    let akt = { namn, blad: '', rader: [] };
+    for (const rad of String(text).split('\n')) {
+        const blad = /^\[([^\]|]+)\]$/.exec(rad);
+        if (blad) { ut.push(akt); akt = { namn, blad: blad[1], rader: [] }; continue; }
+        akt.rader.push(rad.split(' | ').map(c => c.trim()));
+    }
+    ut.push(akt);
+    return ut.filter(t => t.rader.some(r => r.length >= 2));
+}
+
+const _avkoda = s => s.replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
+    .replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+
+/**
+ * Tabellerna i en HTML-text (Word-utkastet, rapportmodellen, rapportunderlaget, utskriften), med colspan utvidgad
+ * till tomma celler som verktygets egen CSV. Bladet är tabellens caption. Verktygets HTML har inga tabeller i tabeller.
+ * @param {string} namn
+ * @param {string} html
+ */
+export function tabellerUrHtml(namn, html) {
+    const ut = [];
+    for (const [tabell] of String(html).matchAll(/<table\b[\s\S]*?<\/table>/gi)) {
+        const caption = /<caption\b[^>]*>([\s\S]*?)<\/caption>/i.exec(tabell);
+        const rader = [];
+        for (const [tr] of tabell.matchAll(/<tr\b[\s\S]*?<\/tr>/gi)) {
+            const rad = [];
+            for (const m of tr.matchAll(/<t([hd])\b([^>]*)>([\s\S]*?)<\/t\1>/gi)) {
+                rad.push(_avkoda(m[3]).replace(/(\d)[\s  ](?=\d)/g, '$1'));
+                const span = Number(/colspan="?(\d+)/i.exec(m[2])?.[1] || 1);
+                for (let i = 1; i < span; i++) rad.push('');
+            }
+            if (rad.length) rader.push(rad);
+        }
+        ut.push({ namn, blad: caption ? _avkoda(caption[1]) : '', rader });
+    }
+    return ut;
+}
+
+/**
+ * Alla tabeller i riggens utdata: texterna med " | ", HTML-tabellerna och tabellerna som riggen läste ur flikarna i
+ * exportläget (`utdata.tabeller`). Skärmen utan exportläget hoppas över: den maskerar inget (ADR-51). Flikarna i
+ * exportläget som löptext hoppas också över; deras tabeller finns i `utdata.tabeller`.
+ * @param {any} utdata riggens [namn, text]-par, med `tabeller`
+ */
+export function tabellerIUtdata(utdata) {
+    const ut = [];
+    for (const [namn, text] of utdata) {
+        if (namn === 'skärm: alla flikar' || namn === 'skärm i exportläget: alla flikar') continue;
+        if (/<table\b/i.test(text)) ut.push(...tabellerUrHtml(namn, text));
+        ut.push(...tabellerUrText(namn, text.replace(/<table\b[\s\S]*?<\/table>/gi, '')));
+    }
+    ut.push(...(utdata.tabeller || []));
+    return ut;
+}
+
+const _kol = (rubrik, kolumn) => (typeof kolumn === 'number' ? kolumn : rubrik.indexOf(kolumn));
+const _passar = (d, t, rubrik) => d.vag.test(t.namn) && (!d.blad || d.blad.test(t.blad)) && d.rubrik.test(rubrik.join(' | '));
+const _galler = (d, k) => !d.trosklar || d.trosklar.includes(k);
+
+/**
+ * Differensprovet över tabeller med deklarationer.
+ *
+ * En deklaration: `namn`; `vag` (utdatans namn), `blad` (valfri) och `rubrik` (rubrikraden med cellerna åtskilda av
+ * " | "), som alla prövas som reguljära uttryck; sedan antingen `inget` (skälet till att tabellen inte har något att
+ * dela upp) eller `antal` (rubriken för antalet), `etikett` (radens etikett, standard första kolumnen), `total` (den
+ * etikett som är totalen), `delar` (valfri: de etiketter som är delar, annars alla övriga rader) och `matt`: en lista
+ * med { kolumn, typ: 'medel' | 'summa', antal?: { kolumn } | { andel, komplement? } } — ett mått per kön har sitt
+ * antal i en egen kolumn eller som andel kvinnor av antalet (komplement: männen). `trosklar` (valfri) begränsar
+ * deklarationen till vissa trösklar.
+ *
+ * För varje rubrikrad som en deklaration med mått känner igen läses raderna under den, tills en rad saknar ett
+ * heltal i antalet. Totalen är den rad vars etikett matchar `total`. För varje mått räknas resten: totalen minus de
+ * delar som har ett värde, i antal och medel (`rest`); en summa räknas först om till medel per person. En rest med 1
+ * till k − 1 personer är ett fynd: dess medel går att räkna fram. `kanda` är riggens små grupper ({namn, n, medel});
+ * ett fynd säger vilken av dem resten motsvarar (samma antal och medel inom GRANS), så att meddelandet går att följa.
+ *
+ * Provet fäller också (i `odeklarerade`) en rubrikrad med ett ord ur KRAVER_DEKLARATION som ingen deklaration känner
+ * igen, och (i `oanvanda`) en deklaration som inte känner igen någon tabell, eller med mått inte prövade någon total,
+ * vid den här tröskeln: en deklaration ska inte tyst sluta gälla. `fel` är deklarationer som inte stämmer med tabellen
+ * (en kolumn saknas, delarna har fler personer än totalen).
+ *
+ * @param {Array<{namn:string, blad:string, rader:string[][]}>} tabeller
+ * @param {any[]} deklarationer
+ * @param {{k:number, kanda?:Array<{namn:string, n:number, medel:number}>}} opt
+ */
+export function differensprov(tabeller, deklarationer, { k, kanda = [] }) {
+    const fynd = [], odeklarerade = new Set(), fel = [];
+    const traffar = new Map(deklarationer.map(d => [d, 0])), provade = new Map(deklarationer.map(d => [d, 0]));
+    for (const t of tabeller) {
+        t.rader.forEach((rubrik, h) => {
+            if (!arRubrikrad(rubrik)) return;
+            const d = deklarationer.find(x => _galler(x, k) && _passar(x, t, rubrik));
+            if (!d) {
+                if (rubrik.some(c => c.length <= 80 && KRAVER_DEKLARATION.test(c)))
+                    odeklarerade.add(`${t.namn}${t.blad ? ` [${t.blad}]` : ''}: rubrikraden "${rubrik.join(' | ')}" måste deklareras i `
+                        + 'DIFFERENS_DEKLARATIONER (tests/helpers/ktroskel-rigg.js), med sina kolumner eller som inget att dela upp, med skäl');
+                return;
+            }
+            traffar.set(d, traffar.get(d) + 1);
+            if (d.inget) return;
+            const iAntal = _kol(rubrik, d.antal), iEtikett = _kol(rubrik, d.etikett ?? 0);
+            const matt = d.matt.map(m => ({ ...m, i: _kol(rubrik, m.kolumn),
+                iAntal: m.antal?.kolumn != null ? _kol(rubrik, m.antal.kolumn) : iAntal,
+                iAndel: m.antal?.andel != null ? _kol(rubrik, m.antal.andel) : -1 }));
+            const saknas = [[d.antal, iAntal], ...matt.map(m => [m.kolumn, m.i]), ...matt.map(m => [m.antal?.kolumn ?? m.antal?.andel, m.antal ? Math.max(m.iAntal, m.iAndel) : 0])]
+                .filter(([, i]) => i < 0).map(([c]) => c);
+            if (saknas.length) { fel.push(`${d.namn}: kolumnen ${saknas.join(', ')} finns inte i "${rubrik.join(' | ')}" (${t.namn})`); return; }
+            const rader = [];
+            for (let r = h + 1; r < t.rader.length; r++) {
+                const n = tal(t.rader[r][iAntal]);
+                if (n === null || !Number.isInteger(n)) break;
+                rader.push(t.rader[r]);
+            }
+            const totaler = rader.filter(r => d.total.test(r[iEtikett] ?? ''));
+            if (totaler.length !== 1) return;   // ingen total i den här tabellen: inget att pröva
+            const total = totaler[0];
+            const delar = rader.filter(r => r !== total && (!d.delar || d.delar.test(r[iEtikett] ?? '')));
+            for (const m of matt) {
+                const antal = r => {
+                    const n = tal(r[m.iAntal]);
+                    if (m.iAndel < 0 || n === null) return n;
+                    const a = tal(r[m.iAndel]);
+                    if (a === null) return null;
+                    const kv = Math.round(n * a / 100);
+                    return m.antal.komplement ? n - kv : kv;
+                };
+                const del = r => {
+                    const v = tal(r[m.i]), n = antal(r);
+                    if (v === null || n === null) return { n, medel: null };
+                    return { n, medel: m.typ === 'summa' ? (n > 0 ? v / n : null) : v };
+                };
+                const tot = del(total);
+                if (tot.n === null || tot.medel === null) continue;
+                provade.set(d, provade.get(d) + 1);
+                const visade = delar.map(del).filter(x => x.n !== null && x.medel !== null);
+                const nVisade = visade.reduce((s, x) => s + x.n, 0);
+                if (nVisade > tot.n) {
+                    fel.push(`${d.namn}: delarna har fler personer (${nVisade}) än totalen (${tot.n}) i kolumnen ${m.kolumn} (${t.namn}${t.blad ? ` [${t.blad}]` : ''}): deklarationen stämmer inte`);
+                    continue;
+                }
+                const r = rest(tot, visade);
+                if (!r || r.n >= k) continue;
+                const motsvarar = kanda.filter(g => g.n === r.n && harlett(r.medel, g.medel)).map(g => g.namn);
+                fynd.push({ deklaration: d.namn, vag: t.namn, blad: t.blad, kolumn: m.kolumn, total: total[iEtikett], n: r.n,
+                    medel: Math.round(r.medel), motsvarar,
+                    text: `${t.namn}${t.blad ? ` [${t.blad}]` : ''}, ${m.kolumn}: raden "${total[iEtikett]}" minus ${visade.length} visade rader `
+                        + `lämnar ${r.n} ${r.n === 1 ? 'person' : 'personer'} med medel ${Math.round(r.medel)}`
+                        + (motsvarar.length ? ` (${motsvarar.join(', ')})` : ' (ingen känd liten grupp i underlaget)') });
+            }
+        });
+    }
+    const oanvanda = deklarationer.filter(d => _galler(d, k) && (!traffar.get(d) || (!d.inget && !d.kanSaknaTotal && !provade.get(d))))
+        .map(d => `${d.namn}: ${traffar.get(d) ? 'ingen total prövades' : 'känner inte igen någon tabell'}`);
+    return { fynd, odeklarerade: [...odeklarerade].sort(), fel, oanvanda };
+}
