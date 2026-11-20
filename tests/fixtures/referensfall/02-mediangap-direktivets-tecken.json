@@ -1,0 +1,28 @@
+{
+  "id": "mediangap-direktivets-tecken",
+  "titel": "Samma rader som mediangap-verktygets-tecken, med direktivets tecken",
+  "funktion": "adapter#direktivteckenForRader",
+  "indata": [
+    [
+      { "kon": "kvinna", "lon": 36000 },
+      { "kon": "man", "lon": 45000 },
+      { "kon": "kvinna", "lon": 34000 },
+      { "kon": "man", "lon": 38000 },
+      { "kon": "kvinna", "lon": 38000 },
+      { "kon": "man", "lon": 41000 },
+      { "kon": "kvinna", "lon": 35000 },
+      { "kon": "man", "lon": 39000 },
+      { "kon": "kvinna", "lon": 37000 },
+      { "kon": "kvinna", "lon": 0 },
+      { "kon": "okänd", "lon": 50000 }
+    ]
+  ],
+  "forvantat": 10,
+  "tolerans": 1e-9,
+  "harledning": [
+    "Adaptern direktivteckenForRader i tests/referensfall.test.js räknar tillDirektivtecken(medianGapPct(rader)) ur src/lib/struktur.js, så att samma rader kan prövas med båda tecknen.",
+    "Steg 1, som i fallet mediangap-verktygets-tecken: kvinnornas median 36 000, männens median 40 000, verktygets skillnad (36 000 / 40 000 − 1) × 100 = −10.",
+    "Steg 2, direktivets tecken (kommentaren till tillDirektivtecken): (män − kvinnor) / män × 100 = (40 000 − 36 000) / 40 000 × 100 = +10. Beloppet är detsamma, tecknet vänds.",
+    "Positivt betyder med direktivets tecken att kvinnor ligger lägre; med verktygets tecken är samma läge negativt."
+  ]
+}

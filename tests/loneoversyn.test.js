@@ -401,3 +401,88 @@ describe('forecast: individualRemediation — minsta antal män bakom ett benchm
         expect(individualRemediation(rows, { gapPct: 5, minMen: 11 }).count).toBe(0);
     });
 });
+
+describe('allocate: lägst först (water-filling) med fem löner (characterization)', () => {
+    // Löner 10 000, 12 000, 14 000, 16 000, 20 000. Vattenytan stiger från den lägsta lönen upp till nästa brytpunkt.
+    const femLoner = () => [10000, 12000, 14000, 16000, 20000].map(lon => ({ bas: 'A', aid: '1', kon: 'man', lon }));
+    const riktat = (value) => [{ bas: 'A', aid: '1', mode: 'kr', value, dist: 'lowest' }];
+
+    it('pott 5 000: vattenytan når 13 500; de två lägsta lyfts, resten rörs inte', () => {
+        // Brytpunkt 12 000 kostar 2 000 (en person); sedan 2 × (14 000 − 12 000) = 4 000 → totalt 6 000 > 5 000.
+        // Kvar 3 000 fördelas på två personer: 1 500 var → L = 12 000 + 1 500 = 13 500.
+        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, riktat(5000));
+        expect(a.perPerson.map(p => p.delta)).toEqual([3500, 1500, 0, 0, 0]);
+        expect(a.totals.riktadCost).toBeCloseTo(5000, 6);
+    });
+    it('pott 2 000 tar slut exakt på brytpunkten 12 000: bara den lägsta lyfts', () => {
+        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, riktat(2000));
+        expect(a.perPerson.map(p => p.delta)).toEqual([2000, 0, 0, 0, 0]);
+        expect(a.perPerson[0].nyLon).toBe(12000);
+    });
+    it('pott 6 000 tar slut exakt på brytpunkten 14 000: de två lägsta når 14 000', () => {
+        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, riktat(6000));
+        expect(a.perPerson.map(p => p.delta)).toEqual([4000, 2000, 0, 0, 0]);
+        expect(a.perPerson[1].nyLon).toBe(14000);
+    });
+});
+
+describe('allocate: tak vid median (dist target, characterization)', () => {
+    const femLoner = () => [10000, 12000, 14000, 16000, 20000].map(lon => ({ bas: 'A', aid: '1', kon: 'man', lon }));
+    const tak = value => [{ bas: 'A', aid: '1', mode: 'kr', value, dist: 'target', targetLevel: 'median' }];
+
+    it('pott 10 000 kapas vid medianen 14 000: de två lägsta lyfts dit (6 000), resten av potten används inte', () => {
+        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, tak(10000));
+        expect(a.perPerson.map(p => p.delta)).toEqual([4000, 2000, 0, 0, 0]);
+        expect(a.totals.riktadCost).toBeCloseTo(6000, 6);
+    });
+    it('pott 3 000 under taket: vattenytan 12 500 utan att nå medianen', () => {
+        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, tak(3000));
+        expect(a.perPerson.map(p => p.delta)).toEqual([2500, 500, 0, 0, 0]);
+    });
+});
+
+describe('allocate: avrundning till lönesteg (roundStep 100, characterization)', () => {
+    it('påslaget 40 kr på 30 000 rundas nedåt till 0: ingen höjning alls', () => {
+        const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30000 }];
+        const a = allocate(data, { mode: 'kr', value: 40 }, [], 100);
+        expect(a.perPerson[0].nyLon).toBe(30000);
+        expect(a.perPerson[0].delta).toBe(0);
+        expect(a.totals.totalRaise).toBe(0);
+        expect(a.totals.generellCost).toBe(40);
+    });
+    it('påslaget 50 kr på 30 000 rundas uppåt till 100 kr: summan (200) överstiger den generella potten (100)', () => {
+        const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30000 }, { bas: 'A', aid: '1', kon: 'kvinna', lon: 30000 }];
+        const a = allocate(data, { mode: 'kr', value: 50 }, [], 100);
+        expect(a.perPerson.map(p => p.nyLon)).toEqual([30100, 30100]);
+        expect(a.totals.generellCost).toBe(100);
+        expect(a.totals.totalRaise).toBe(200);
+    });
+    it('riktat påslag avrundas men riktadCost visar det oavrundade: 950 kr på 30 000 blir 1 000 kr', () => {
+        const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30000 }];
+        const a = allocate(data, { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 30950 }], 100);
+        expect(a.perPerson[0].nyLon).toBe(31000);
+        expect(a.totals.riktadCost).toBe(950);
+        expect(a.totals.totalRaise).toBe(1000);
+    });
+});
+
+describe('allocate: mode till (characterization)', () => {
+    const data = () => [
+        { bas: 'A', aid: '1', kon: 'man', lon: 30000 },
+        { bas: 'A', aid: '1', kon: 'kvinna', lon: 31000 },
+        { bas: 'A', aid: '1', kon: 'kvinna', lon: 32000 }
+    ];
+    it('lön exakt lika med målet får ingen höjning (jämförelsen är strikt <)', () => {
+        const a = allocate(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 31000 }]);
+        expect(a.perPerson.map(p => p.delta)).toEqual([1000, 0, 0]);
+    });
+    it('varje individ under målet lyfts till målet, ingen pott att fördela: kostnaden är summan av skillnaderna', () => {
+        const a = allocate(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 33000 }]);
+        expect(a.perPerson.map(p => p.nyLon)).toEqual([33000, 33000, 33000]);
+        expect(a.totals.riktadCost).toBe(3000 + 2000 + 1000);
+    });
+    it('mål 0 eller lägre lyfter ingen', () => {
+        const a = allocate(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 0 }]);
+        expect(a.totals.riktadCost).toBe(0);
+    });
+});

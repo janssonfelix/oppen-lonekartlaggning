@@ -1,0 +1,38 @@
+{
+  "id": "loneoversyn-generellt-avrundning",
+  "titel": "Löneöversyn: generellt påslag 2,5 % och avrundning av nya löner till lönesteg 100 kr",
+  "funktion": "src/lib/loneoversyn.js#allocate",
+  "indata": [
+    [
+      { "bas": "D", "aid": "Y", "kon": "kvinna", "lon": 25000 },
+      { "bas": "D", "aid": "Y", "kon": "man", "lon": 26000 },
+      { "bas": "D", "aid": "Y", "kon": "kvinna", "lon": 28000 },
+      { "bas": "D", "aid": "Y", "kon": "man", "lon": 31020 },
+      { "bas": "D", "aid": "Y", "kon": "kvinna", "lon": 34100 }
+    ],
+    { "mode": "pct", "value": 2.5 },
+    [],
+    100
+  ],
+  "forvantat": {
+    "perPerson": [
+      { "lon": 25000, "delta": 600, "nyLon": 25600 },
+      { "lon": 26000, "delta": 700, "nyLon": 26700 },
+      { "lon": 28000, "delta": 700, "nyLon": 28700 },
+      { "lon": 31020, "delta": 780, "nyLon": 31800 },
+      { "lon": 34100, "delta": 900, "nyLon": 35000 }
+    ],
+    "totals": { "generellCost": 3603, "riktadCost": 0, "totalRaise": 3680 }
+  },
+  "tolerans": 1e-6,
+  "harledning": [
+    "Regeln (allocate i loneoversyn.js): påslag = lön × 2,5 / 100. Med lönesteg 100 blir ny lön = avrundning((lön + påslag) / 100) × 100, och påslaget det som återstår: ny lön − lön (aldrig under 0). Avrundningen är Math.round: ,5 avrundas uppåt.",
+    "25 000: påslag 625, 25 625 / 100 = 256,25, avrundat 256, ny lön 25 600, påslag efter avrundning 600 (25 kr mindre än avsett).",
+    "26 000: påslag 650, 26 650 / 100 = 266,5, avrundat uppåt till 267, ny lön 26 700, påslag 700 (50 kr mer än avsett).",
+    "28 000: påslag 700, 28 700 / 100 = 287, ny lön 28 700, påslag 700.",
+    "31 020: påslag 775,50, 31 795,50 / 100 = 317,955, avrundat 318, ny lön 31 800, påslag 780.",
+    "34 100: påslag 852,50, 34 952,50 / 100 = 349,525, avrundat 350, ny lön 35 000, påslag 900.",
+    "Generellt (avsikten, före avrundning): 625 + 650 + 700 + 775,50 + 852,50 = 3 603.",
+    "Totalt (utfallet, efter avrundning): 600 + 700 + 700 + 780 + 900 = 3 680. Avrundningen kostar alltså 77 kr mer än avsikten."
+  ]
+}
