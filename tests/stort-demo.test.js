@@ -3,9 +3,11 @@
  * storlek utan riktig data.
  *
  * Vaktar generatorn (storlek, determinism, fälten, BAS A–K, yrkesgrupperna och de små grupperna), inläsningen
- * (demoläget, flikarna, Översikt utan internt fel och utan självdiagnostik), ingångarna (Kom igång, lönefilskortet,
- * ?demo=stor), att det lilla demot är oförändrat, att Excel (alla flikar) inte röjer ett könsuppdelat lönemått för en
- * grupp under tröskeln och att Rensa all data lämnar samma tillstånd som efter det lilla demot.
+ * (demoläget, flikarna, Översikt utan internt fel och utan självdiagnostik, den påhittade jämförelsestatistiken och
+ * ställningstagandet ur demots löner), att en riktig lönefil eller statistikfil ersätter demots statistik, ingångarna
+ * (Kom igång, lönefilskortet, ?demo=stor), att det lilla demot är oförändrat, att Excel (alla flikar) inte röjer ett
+ * könsuppdelat lönemått för en grupp under tröskeln och att Rensa all data lämnar samma tillstånd som efter det lilla
+ * demot.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -144,6 +146,72 @@ describe('stort demo: inläsningen', () => {
         expect(w.document.getElementById('internt-fel-banner').hidden).toBe(true);
         expect(w.document.querySelectorAll('#view-dashboard svg').length).toBeGreaterThan(0);
     });
+
+    it('jämförelsestatistiken har en rad per yrke och intervall, märkt som påhittad', () => {
+        const s = w.__state;
+        const grupper = [...new Set(s.data.map(r => `${r.aid}|${r.bas}`))];
+        const utan = grupper.filter(g => { const [aid, bas] = g.split('|'); return w.eval(`_jfStatistikFor(__state.statistik, ${JSON.stringify(aid)}, ${JSON.stringify(bas)})?.matchning`) !== 'aid-bas'; });
+        expect(utan).toEqual([]);
+        expect(s.statistik.filter(x => !grupper.includes(`${x.aid}|${x.bas}`))).toEqual([]);
+        expect(s.statistik).toHaveLength(grupper.length);
+        expect(s.statistikKalla).toBe('demo');
+        expect(s.statistikNamn).toBe('Påhittad jämförelsestatistik (demo)');
+        const beskrivning = w.eval('statistikBeskrivning()');
+        expect(beskrivning).toContain('påhittad');
+        expect(beskrivning).not.toContain('egen fil');
+        expect(utanMellanrum(w.document.querySelector('#upload-cell-stat .upload-filnamn').textContent)).toContain('Demots jämförelsestatistik');
+    });
+
+    it('statistiken ligger i snitt 10–20 % över demots löner, med några yrken kring eller under', () => {
+        const s = w.__state;
+        const kvoter = s.statistik.map(x => x.median / median(s.data.filter(r => r.aid === x.aid && r.bas === x.bas).map(r => r.lon)));
+        const snitt = kvoter.reduce((a, b) => a + b, 0) / kvoter.length;
+        expect(snitt).toBeGreaterThanOrEqual(1.10);
+        expect(snitt).toBeLessThanOrEqual(1.20);
+        const lagaYrken = new Set(s.statistik.filter((x, i) => kvoter[i] < 1.03).map(x => x.aid));
+        expect(lagaYrken.size).toBeGreaterThanOrEqual(3);
+    });
+
+    it('ställningstagandet följer demots löner och några intervall ligger över', () => {
+        const s = w.__state;
+        expect(s.policy.map(r => r.bas).sort()).toEqual(BAS_AK);
+        let over = 0;
+        for (const r of s.policy) {
+            const m = median(s.data.filter(d => d.bas === r.bas).map(d => d.lon));
+            expect(Math.abs(r.med / m - 1), r.bas).toBeLessThanOrEqual(0.10);
+            expect(r.p10, r.bas).toBeLessThan(r.med);
+            expect(r.p90, r.bas).toBeGreaterThan(r.med);
+            if (r.med > 1.025 * m) over++;
+        }
+        expect(over).toBeGreaterThanOrEqual(2);
+        expect(over).toBeLessThanOrEqual(3);
+    });
+});
+
+describe('stort demo: demots statistik byts ut', () => {
+    it('en riktig lönefil efter det stora demot tar bort demots statistik', () => {
+        const w = createAppWindow();
+        w.eval('loadStortDemo()');
+        w.eval('__state.data = generateTestData(); _afterDataLoaded();');
+        expect(w.__state.statistik).toHaveLength(0);
+        expect(w.__state.statistikKalla).toBe(null);
+        expect(w.document.getElementById('upload-cell-stat').classList.contains('loaded')).toBe(false);
+        expect(utanMellanrum(w.document.querySelector('#upload-cell-stat .upload-filnamn').textContent)).not.toContain('Demots');
+    });
+
+    it('en statistikfil efter det stora demot ersätter demots statistik', async () => {
+        const w = createAppWindow();
+        w.eval('loadStortDemo()');
+        w.eval(readFileSync(join(root, 'vendor', 'papaparse.min.js'), 'utf8'));
+        const input = w.document.getElementById('file-input-stat');
+        const fil = new w.File(['AID;BAS;Median\n401011;F;41000\n'], 'statistik.csv', { type: 'text/csv' });
+        Object.defineProperty(input, 'files', { configurable: true, value: [fil] });
+        input.dispatchEvent(new w.Event('change'));
+        for (let i = 0; i < 50 && !/inlästa|Fel/.test(w.document.getElementById('stat-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
+        expect(w.__state.statistikKalla).toBe('fil');
+        expect(w.__state.statistik).toHaveLength(1);
+        expect(w.eval('statistikBeskrivning()')).toContain('egen fil');
+    });
 });
 
 describe('stort demo: ingångarna', () => {
@@ -207,6 +275,14 @@ describe('det lilla demot är oförändrat', () => {
         expect(w.__state.data).toHaveLength(260);
         expect(w.__state.policy).toHaveLength(10);
         expect(utanMellanrum(w.document.getElementById('demo-mode-banner').textContent)).not.toMatch(/stort demo/i);
+    });
+    it('det lilla demot efter det stora: ingen statistik kvar', () => {
+        const w = createAppWindow();
+        w.eval('loadStortDemo()');
+        w.__loadDemoData();
+        expect(w.__state.statistik).toHaveLength(0);
+        expect(w.__state.statistikKalla).toBe(null);
+        expect(w.document.getElementById('upload-cell-stat').classList.contains('loaded')).toBe(false);
     });
 });
 
@@ -274,7 +350,9 @@ function sattSentinel(data, sektor) {
             const med = [...original.get(del)].sort((a, b) => a - b)[del.length >> 1];
             let v = null;
             for (let j = 0; j < 1500 && v === null; j++) for (const c of [med + 7 * j + 3, med - 7 * j - 4]) {
-                if (v !== null || loner.has(c) || ovriga.has(c)) continue;
+                // Inte på jämnt hundratal: demots jämförelsestatistik och ställningstagande är avrundade till 100 kr och
+                // står i Excel, så en sådan lön skulle träffa dem utan att något läckt.
+                if (v !== null || c % 100 === 0 || loner.has(c) || ovriga.has(c)) continue;
                 satt(del, c);
                 if (!egna.some(rader => matt(rader).includes(c))) v = c;
             }
@@ -379,6 +457,7 @@ describe('stort demo: Rensa all data', () => {
         expect(stort.__state.data).toHaveLength(0);
         expect(stort.__state.isDemo).toBe(false);
         expect(stort.__state.policy).toHaveLength(0);
+        expect(stort.__state.statistik).toHaveLength(0);
         expect(stort.document.getElementById('demo-mode-banner').style.display).toBe('none');
         expect(stort.document.getElementById('first-run-hint').style.display).toBe('');
         expect(tillstandsavtryck(stort)).toEqual(tillstandsavtryck(litet));

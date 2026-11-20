@@ -18493,7 +18493,7 @@ document.addEventListener('keydown', e => {
  * fältnamn på de fasta delarna och argument till src/lib.
  * @type {{
  *   data: any[], policy: any[], policyNamn: string|null, policyKortnamn: string|null, policyKalla: 'fil'|'paket'|'demo'|null,
- *   statistik: any[], statistikNamn: string|null, statistikKalla: 'fil'|'paket'|null,
+ *   statistik: any[], statistikNamn: string|null, statistikKalla: 'fil'|'paket'|'demo'|null,
  *   paket: any, paketInbakat: null|{skapad:string, organisation:string, verktygsversion:string, verktygssha:string, text:string}, isDemo: boolean, demoStort: boolean,
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
@@ -18531,7 +18531,7 @@ const state = {
     // Referensen (ADR-28): ingen inbyggd — ställningstagandet läses in som fil eller ur ett
     // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
     policy: [], policyNamn: null, policyKortnamn: null, policyKalla: null,
-    statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket'
+    statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket' | 'demo'
     paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat', delar } (ADR-28); delar = paketets validerade delar
     paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
     isDemo: false,   // #9: true när syntetisk demodata är inläst (aldrig verklig analys)
@@ -18685,6 +18685,7 @@ function referensKalla() {
 function statistikBeskrivning() {
     if (!state.statistik.length) return 'Ingen jämförelsestatistik inläst';
     const namn = state.statistikNamn || 'Jämförelsestatistik';
+    if (state.statistikKalla === 'demo') return `${namn} (påhittad, demoläge)`;
     if (state.statistikKalla === 'paket' && state.paket) return state.paket.kalla === 'inbakat'
         ? `${namn} (organisationspaket inbakat i den här filen: ${state.paket.organisation}, ${state.paket.skapat})`
         : `${namn} (organisationspaket från ${state.paket.organisation}, ${state.paket.skapat})`;
@@ -21154,15 +21155,10 @@ const DEMO_REFERENS = Object.freeze({
         const med = 31000 + i * 5000;
         return Object.freeze({ aid: null, bas, p10: Math.round(med * 0.9 / 100) * 100, med, p90: Math.round(med * 1.12 / 100) * 100 });
     })),
-    // Det stora demot (21-stort-demo.js) har också BAS K. Raden följer samma steg och läses bara in där, så att det
-    // lilla demots ställningstagande har kvar sina tio rader.
-    tillaggStort: Object.freeze(['K'].map((bas, i) => {
-        const med = 31000 + (10 + i) * 5000;
-        return Object.freeze({ aid: null, bas, p10: Math.round(med * 0.9 / 100) * 100, med, p90: Math.round(med * 1.12 / 100) * 100 });
-    })),
 });
+// Det stora demot (21-stort-demo.js) räknar sitt ställningstagande ur sina egna löner, BAS A–K.
 function _lasInDemoReferens({ stort = false } = {}) {
-    state.policy = (stort ? [...DEMO_REFERENS.rader, ...DEMO_REFERENS.tillaggStort] : DEMO_REFERENS.rader).map(r => ({ ...r }));
+    state.policy = (stort ? _sdStallningstagande(state.data) : DEMO_REFERENS.rader).map(r => ({ ...r }));
     state.policyNamn = DEMO_REFERENS.namn;
     state.policyKortnamn = DEMO_REFERENS.namn;
     state.policyKalla = 'demo';
@@ -21173,6 +21169,21 @@ function _lasInDemoReferens({ stort = false } = {}) {
     if (typeof renderReferensKort === 'function') renderReferensKort();
     if (typeof markUploadLoaded === 'function') markUploadLoaded('upload-cell-policy', 'Demo');
 }
+// Det stora demots påhittade jämförelsestatistik (21-stort-demo.js). Det lilla demot har ingen: en kvarvarande från
+// det stora tas bort.
+function _lasInDemoStatistik({ stort = false } = {}) {
+    if (stort) {
+        state.statistik = generateStortDemoStatistik();
+        state.statistikNamn = STORT_DEMO_STATISTIKNAMN;
+        state.statistikKalla = 'demo';
+        state.statistikHasP10 = state.statistikHasP90 = state.statistikHasKon = true;
+        markUploadLoaded('upload-cell-stat', 'Demo');
+    } else if (state.statistikKalla === 'demo') {
+        _tomStatistik();
+    }
+    if (state.likvardighet) state.likvardighet.result = null;   // likvärdighetsparen jämförs mot statistiken
+    if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
+}
 
 // Det som det lilla och det stora demot (21-stort-demo.js) gör lika: frågan om befintlig data, rensningen av verkliga
 // delar, underlaget, demoläget, referensen och ritningen av Översikt och Filer och kvalitet. Bannern ritar anroparen sist.
@@ -21180,7 +21191,8 @@ function _lasInDemoReferens({ stort = false } = {}) {
 function _lasInDemounderlag(skapa, { stort = false } = {}) {
     if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
-    if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
+    // Demots egen statistik (statistikKalla 'demo') är ingen verklig del: den ersätts eller tas bort nedan.
+    if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || (state.statistik.length && state.statistikKalla !== 'demo')) _rensaAllData({ inbakat: false });
     if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();   // urvalet i diagrammen hör till det förra underlaget, som vid en ny lönefil
     state.data = skapa();
     if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // Löneöversyns knappresultat gällde det förra underlaget
@@ -21192,6 +21204,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     state.isDemo = true;   // #9: markera som demoläge — syntetisk data, aldrig verklig analys
     state.demoStort = stort;   // bannern och filraden säger vilket demo det är
     _lasInDemoReferens({ stort });   // demot är självständigt; rensningen tar bort referensen igen
+    _lasInDemoStatistik({ stort });
     state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     unlockTabs();
@@ -21308,106 +21321,106 @@ const _SD_BAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 // Antalen summerar till STORT_DEMO_ANTAL.
 /** @type {ReadonlyArray<[string, string, number, number, string[], number, number, number|null, number, number, number]>} */
 const _SD_YRKEN = Object.freeze([
-    ['103510', 'Chef individ- och familjeomsorg', 17, 0.95, ['J'], 0.0, 58900, null, 0.20, 51, 0.20],
-    ['103511', 'Enhetschef äldreomsorg', 50, 0.90, ['J'], 0.0, 55200, null, 0.36, 49, 0.09],
-    ['103512', 'Enhetschef funktionsnedsättning', 25, 0.75, ['J'], 0.0, 51400, null, 0.36, 50, 0.11],
-    ['104011', 'Rektor', 45, 0.80, ['J', 'K'], 0.2, 61600, 72700, 0.34, 49, 0.21],
-    ['104012', 'Chef förskola och fritid', 25, 0.95, ['J'], 0.0, 59500, null, 0.29, 47, 0.11],
-    ['105010', 'Chef teknik och samhällsbyggnad', 25, 0.70, ['I', 'J'], 0.7, 60700, 64900, 0.16, 45, 0.22],
-    ['109090', 'Chef övrig verksamhet', 15, 0.70, ['J'], 0.0, 65900, null, 0.27, 47, 0.13],
-    ['151010', 'Handläggare övergripande', 25, 0.70, ['G', 'J'], 0.4, 47500, 63800, 0.15, 44, 0.10],
-    ['151011', 'Ekonom', 35, 0.65, ['F', 'G'], 0.7, 44900, 48200, 0.27, 44, 0.22],
+    ['103510', 'Chef individ- och familjeomsorg', 17, 0.95, ['J'], 0.0, 58900, null, 0.20, 51, 0.21],
+    ['103511', 'Enhetschef äldreomsorg', 50, 0.90, ['J'], 0.0, 55200, null, 0.36, 49, 0.10],
+    ['103512', 'Enhetschef funktionsnedsättning', 25, 0.75, ['J'], 0.0, 51400, null, 0.36, 50, 0.12],
+    ['104011', 'Rektor', 45, 0.80, ['J', 'K'], 0.2, 61600, 72700, 0.34, 49, 0.22],
+    ['104012', 'Chef förskola och fritid', 25, 0.95, ['J'], 0.0, 59500, null, 0.29, 47, 0.12],
+    ['105010', 'Chef teknik och samhällsbyggnad', 25, 0.70, ['I', 'J'], 0.7, 60700, 64900, 0.16, 45, 0.23],
+    ['109090', 'Chef övrig verksamhet', 15, 0.70, ['J'], 0.0, 65900, null, 0.27, 47, 0.14],
+    ['151010', 'Handläggare övergripande', 25, 0.70, ['G', 'J'], 0.4, 47500, 63800, 0.15, 44, 0.11],
+    ['151011', 'Ekonom', 35, 0.65, ['F', 'G'], 0.7, 44900, 48200, 0.27, 44, 0.23],
     ['151013', 'Kommunikatör', 30, 0.75, ['F', 'G'], 0.7, 44400, 46600, 0.27, 43, 0.02],
-    ['151014', 'IT-handläggare', 45, 0.25, ['G', 'H'], 0.4, 49100, 58600, 0.25, 46, 0.16],
-    ['151015', 'Upphandlare', 15, 0.45, ['G', 'H'], 0.5, 39400, 47500, 0.33, 39, 0.12],
+    ['151014', 'IT-handläggare', 45, 0.25, ['G', 'H'], 0.4, 49100, 58600, 0.25, 46, 0.17],
+    ['151015', 'Upphandlare', 15, 0.45, ['G', 'H'], 0.5, 39400, 47500, 0.33, 39, 0.13],
     ['151016', 'Handläggare medborgarservice', 11, 0.90, ['G'], 0.0, 43800, null, 0.40, 41, -0.01],
-    ['151017', 'Miljöhandläggare', 17, 0.80, ['H'], 0.0, 49200, null, 0.33, 43, 0.08],
-    ['151018', 'Jurist', 8, 1.00, ['J'], 0.0, 61400, null, 0.23, 51, 0.22],
-    ['151019', 'Arkivarie', 7, 0.70, ['F'], 0.0, 40200, null, 0.29, 44, 0.10],
-    ['151020', 'Nämndsekreterare', 8, 0.80, ['G'], 0.0, 52000, null, 0.29, 47, 0.19],
-    ['151023', 'Handläggare socialtjänst', 40, 0.85, ['F', 'G'], 0.7, 41600, 47500, 0.30, 47, 0.19],
-    ['151024', 'Handläggare skola', 40, 0.85, ['F', 'G'], 0.4, 41700, 46700, 0.41, 46, 0.21],
-    ['151025', 'Trafikhandläggare', 25, 0.55, ['G', 'H'], 0.4, 47500, 49900, 0.30, 47, 0.19],
-    ['151026', 'Handläggare fastighet', 15, 0.65, ['G'], 0.0, 51200, null, 0.30, 46, 0.16],
-    ['151090', 'Handläggare övrigt', 40, 0.75, ['G', 'H'], 0.4, 46200, 48500, 0.31, 43, 0.22],
-    ['152010', 'Administratör', 7, 0.85, ['C'], 0.0, 31200, null, 0.24, 41, 0.15],
-    ['152011', 'Ekonomiadministratör', 12, 0.90, ['D'], 0.0, 34300, null, 0.21, 47, 0.12],
-    ['152012', 'Löneadministratör', 30, 0.85, ['D', 'E'], 0.5, 32600, 35100, 0.28, 43, 0.14],
-    ['152013', 'Administratör kommunikation', 20, 0.90, ['D'], 0.0, 33100, null, 0.20, 45, 0.19],
-    ['152014', 'IT-administratör', 4, 0.75, ['C'], 0.0, 38300, null, 0.17, 48, 0.16],
-    ['152015', 'Administratör socialtjänst', 85, 0.90, ['D'], 0.0, 35600, null, 0.27, 43, 0.08],
-    ['152016', 'Administratör skola', 40, 0.90, ['C'], 0.0, 37800, null, 0.29, 43, 0.20],
-    ['152020', 'Administratör teknik och fastighet', 8, 0.85, ['C'], 0.0, 32500, null, 0.39, 39, 0.20],
-    ['152090', 'Administratör övrigt', 25, 0.75, ['C', 'D'], 0.5, 34200, 38400, 0.25, 42, 0.15],
-    ['204510', 'Psykolog', 14, 0.85, ['G'], 0.0, 48400, null, 0.34, 42, 0.15],
-    ['206011', 'Distriktssköterska', 9, 1.00, ['H'], 0.0, 43200, null, 0.39, 48, 0.10],
-    ['206014', 'Sjuksköterska äldreomsorg', 10, 1.00, ['H'], 0.0, 50000, null, 0.21, 51, 0.10],
-    ['206019', 'Skolsköterska', 25, 1.00, ['G'], 0.0, 46600, null, 0.22, 47, 0.20],
-    ['206090', 'Sjuksköterska', 80, 0.85, ['G'], 0.0, 40700, null, 0.37, 44, 0.09],
-    ['207008', 'Specialistundersköterska', 25, 1.00, ['E'], 0.0, 37900, null, 0.24, 45, 0.19],
-    ['207009', 'Undersköterska hemtjänst', 230, 0.75, ['D'], 0.0, 33700, null, 0.32, 42, 0.10],
-    ['207011', 'Undersköterska särskilt boende', 401, 0.85, ['D'], 0.0, 33200, null, 0.32, 44, 0.09],
-    ['207024', 'Vårdbiträde särskilt boende', 45, 0.80, ['B'], 0.0, 29000, null, 0.33, 39, 0.15],
-    ['207029', 'Vårdbiträde hemtjänst', 35, 0.70, ['B'], 0.0, 29600, null, 0.25, 37, 0.20],
-    ['207090', 'Biträdesarbete övrigt', 105, 0.65, ['B'], 0.0, 27300, null, 0.26, 37, 0.14],
-    ['301010', 'Arbetsterapeut', 25, 0.80, ['G'], 0.0, 40600, null, 0.20, 43, 0.06],
-    ['301011', 'Fysioterapeut', 20, 0.85, ['G'], 0.0, 44000, null, 0.33, 43, 0.12],
-    ['301012', 'Arbetsterapibiträde', 25, 0.80, ['D', 'E'], 0.4, 36000, 37800, 0.23, 43, 0.15],
-    ['301014', 'Logoped', 4, 1.00, ['F'], 0.0, 43300, null, 0.08, 46, 0.15],
-    ['351008', 'Socialsekreterare barn och unga', 65, 0.95, ['H'], 0.0, 39600, null, 0.39, 45, 0.15],
-    ['351009', 'Socialsekreterare ekonomiskt bistånd', 60, 0.90, ['G'], 0.0, 40500, null, 0.39, 43, 0.19],
-    ['351010', 'Socialsekreterare övrigt', 145, 0.80, ['G', 'H'], 0.3, 42600, 44900, 0.30, 45, 0.12],
-    ['351011', 'Fältsekreterare', 9, 0.70, ['F'], 0.0, 36200, null, 0.23, 46, 0.17],
-    ['351012', 'Socialsekreterare vuxna och LSS', 75, 0.85, ['G'], 0.0, 41700, null, 0.32, 46, 0.11],
-    ['351015', 'Behandlingsassistent', 30, 0.70, ['E'], 0.0, 35500, null, 0.36, 43, 0.10],
-    ['351016', 'Arbetsmarknadskonsulent', 14, 0.75, ['F'], 0.0, 41000, null, 0.21, 46, 0.06],
-    ['351031', 'Stödassistent gruppboende', 265, 0.75, ['D'], 0.0, 32300, null, 0.31, 43, 0.18],
-    ['351032', 'Stödassistent dagverksamhet', 60, 0.75, ['D'], 0.0, 33700, null, 0.24, 43, 0.13],
-    ['351033', 'Stödbiträde', 55, 0.65, ['B'], 0.0, 28100, null, 0.29, 37, 0.15],
+    ['151017', 'Miljöhandläggare', 17, 0.80, ['H'], 0.0, 49200, null, 0.33, 43, 0.09],
+    ['151018', 'Jurist', 8, 1.00, ['J'], 0.0, 61400, null, 0.23, 51, 0.23],
+    ['151019', 'Arkivarie', 7, 0.70, ['F'], 0.0, 40200, null, 0.29, 44, 0.11],
+    ['151020', 'Nämndsekreterare', 8, 0.80, ['G'], 0.0, 52000, null, 0.29, 47, 0.20],
+    ['151023', 'Handläggare socialtjänst', 40, 0.85, ['F', 'G'], 0.7, 41600, 47500, 0.30, 47, 0.20],
+    ['151024', 'Handläggare skola', 40, 0.85, ['F', 'G'], 0.4, 41700, 46700, 0.41, 46, 0.22],
+    ['151025', 'Trafikhandläggare', 25, 0.55, ['G', 'H'], 0.4, 47500, 49900, 0.30, 47, 0.20],
+    ['151026', 'Handläggare fastighet', 15, 0.65, ['G'], 0.0, 51200, null, 0.30, 46, 0.17],
+    ['151090', 'Handläggare övrigt', 40, 0.75, ['G', 'H'], 0.4, 46200, 48500, 0.31, 43, 0.23],
+    ['152010', 'Administratör', 7, 0.85, ['C'], 0.0, 31200, null, 0.24, 41, 0.16],
+    ['152011', 'Ekonomiadministratör', 12, 0.90, ['D'], 0.0, 34300, null, 0.21, 47, 0.13],
+    ['152012', 'Löneadministratör', 30, 0.85, ['D', 'E'], 0.5, 32600, 35100, 0.28, 43, 0.15],
+    ['152013', 'Administratör kommunikation', 20, 0.90, ['D'], 0.0, 33100, null, 0.20, 45, 0.20],
+    ['152014', 'IT-administratör', 4, 0.75, ['C'], 0.0, 38300, null, 0.17, 48, 0.17],
+    ['152015', 'Administratör socialtjänst', 85, 0.90, ['D'], 0.0, 35600, null, 0.27, 43, 0.09],
+    ['152016', 'Administratör skola', 40, 0.90, ['C'], 0.0, 37800, null, 0.29, 43, 0.21],
+    ['152020', 'Administratör teknik och fastighet', 8, 0.85, ['C'], 0.0, 32500, null, 0.39, 39, 0.21],
+    ['152090', 'Administratör övrigt', 25, 0.75, ['C', 'D'], 0.5, 34200, 38400, 0.25, 42, 0.16],
+    ['204510', 'Psykolog', 14, 0.85, ['G'], 0.0, 48400, null, 0.34, 42, 0.16],
+    ['206011', 'Distriktssköterska', 9, 1.00, ['H'], 0.0, 43200, null, 0.39, 48, 0.11],
+    ['206014', 'Sjuksköterska äldreomsorg', 10, 1.00, ['H'], 0.0, 50000, null, 0.21, 51, 0.11],
+    ['206019', 'Skolsköterska', 25, 1.00, ['G'], 0.0, 46600, null, 0.22, 47, 0.21],
+    ['206090', 'Sjuksköterska', 80, 0.85, ['G'], 0.0, 40700, null, 0.37, 44, 0.10],
+    ['207008', 'Specialistundersköterska', 25, 1.00, ['E'], 0.0, 37900, null, 0.24, 45, 0.20],
+    ['207009', 'Undersköterska hemtjänst', 230, 0.75, ['D'], 0.0, 33700, null, 0.32, 42, 0.11],
+    ['207011', 'Undersköterska särskilt boende', 401, 0.85, ['D'], 0.0, 33200, null, 0.32, 44, 0.10],
+    ['207024', 'Vårdbiträde särskilt boende', 45, 0.80, ['B'], 0.0, 29000, null, 0.33, 39, 0.16],
+    ['207029', 'Vårdbiträde hemtjänst', 35, 0.70, ['B'], 0.0, 29600, null, 0.25, 37, 0.21],
+    ['207090', 'Biträdesarbete övrigt', 105, 0.65, ['B'], 0.0, 27300, null, 0.26, 37, 0.15],
+    ['301010', 'Arbetsterapeut', 25, 0.80, ['G'], 0.0, 40600, null, 0.20, 43, 0.07],
+    ['301011', 'Fysioterapeut', 20, 0.85, ['G'], 0.0, 44000, null, 0.33, 43, 0.13],
+    ['301012', 'Arbetsterapibiträde', 25, 0.80, ['D', 'E'], 0.4, 36000, 37800, 0.23, 43, 0.16],
+    ['301014', 'Logoped', 4, 1.00, ['F'], 0.0, 43300, null, 0.08, 46, 0.16],
+    ['351008', 'Socialsekreterare barn och unga', 65, 0.95, ['H'], 0.0, 39600, null, 0.39, 45, 0.16],
+    ['351009', 'Socialsekreterare ekonomiskt bistånd', 60, 0.90, ['G'], 0.0, 40500, null, 0.39, 43, 0.20],
+    ['351010', 'Socialsekreterare övrigt', 145, 0.80, ['G', 'H'], 0.3, 42600, 44900, 0.30, 45, 0.13],
+    ['351011', 'Fältsekreterare', 9, 0.70, ['F'], 0.0, 36200, null, 0.23, 46, 0.18],
+    ['351012', 'Socialsekreterare vuxna och LSS', 75, 0.85, ['G'], 0.0, 41700, null, 0.32, 46, 0.12],
+    ['351015', 'Behandlingsassistent', 30, 0.70, ['E'], 0.0, 35500, null, 0.36, 43, 0.11],
+    ['351016', 'Arbetsmarknadskonsulent', 14, 0.75, ['F'], 0.0, 41000, null, 0.21, 46, 0.07],
+    ['351031', 'Stödassistent gruppboende', 265, 0.75, ['D'], 0.0, 32300, null, 0.31, 43, 0.19],
+    ['351032', 'Stödassistent dagverksamhet', 60, 0.75, ['D'], 0.0, 33700, null, 0.24, 43, 0.14],
+    ['351033', 'Stödbiträde', 55, 0.65, ['B'], 0.0, 28100, null, 0.29, 37, 0.16],
     ['351040', 'Personlig assistent', 30, 0.65, ['C'], 0.0, 30400, null, 0.29, 43, -0.01],
-    ['352010', 'Kurator', 25, 0.80, ['G'], 0.0, 46100, null, 0.27, 46, 0.13],
-    ['352090', 'Kurativt arbete övrigt', 4, 1.00, ['G'], 0.0, 39900, null, 0.24, 46, 0.14],
-    ['401009', 'Lärare grundskola F-3', 180, 0.95, ['F'], 0.0, 42100, null, 0.33, 43, 0.17],
-    ['401010', 'Lärare grundskola 4-6', 150, 0.70, ['F', 'G'], 0.2, 43500, 53700, 0.38, 45, 0.13],
-    ['401011', 'Lärare grundskola 7-9', 120, 0.65, ['F'], 0.0, 44500, null, 0.36, 45, 0.16],
-    ['401012', 'Lärare gymnasieskola', 100, 0.65, ['G'], 0.0, 47000, null, 0.32, 45, 0.22],
-    ['401013', 'Yrkeslärare gymnasieskola', 30, 0.55, ['G'], 0.0, 44600, null, 0.31, 45, 0.14],
+    ['352010', 'Kurator', 25, 0.80, ['G'], 0.0, 46100, null, 0.27, 46, 0.14],
+    ['352090', 'Kurativt arbete övrigt', 4, 1.00, ['G'], 0.0, 39900, null, 0.24, 46, 0.15],
+    ['401009', 'Lärare grundskola F-3', 180, 0.95, ['F'], 0.0, 42100, null, 0.33, 43, 0.18],
+    ['401010', 'Lärare grundskola 4-6', 150, 0.70, ['F', 'G'], 0.2, 43500, 53700, 0.38, 45, 0.14],
+    ['401011', 'Lärare grundskola 7-9', 120, 0.65, ['F'], 0.0, 44500, null, 0.36, 45, 0.17],
+    ['401012', 'Lärare gymnasieskola', 100, 0.65, ['G'], 0.0, 47000, null, 0.32, 45, 0.23],
+    ['401013', 'Yrkeslärare gymnasieskola', 30, 0.55, ['G'], 0.0, 44600, null, 0.31, 45, 0.15],
     ['401017', 'Specialpedagog', 45, 0.90, ['G'], 0.0, 50300, null, 0.27, 44, -0.01],
-    ['401018', 'SFI-lärare', 6, 0.85, ['G'], 0.0, 41800, null, 0.15, 49, 0.20],
-    ['402010', 'Förskollärare', 295, 0.95, ['F'], 0.0, 38600, null, 0.34, 44, 0.15],
-    ['402011', 'Lärare i fritidshem', 70, 0.60, ['F'], 0.0, 39300, null, 0.33, 45, 0.15],
-    ['402090', 'Lärararbete övrigt', 15, 0.80, ['E', 'F'], 0.4, 37700, 44500, 0.42, 43, 0.15],
-    ['403010', 'Barnskötare', 355, 0.95, ['C'], 0.0, 29600, null, 0.36, 41, 0.13],
-    ['403011', 'Dagbarnvårdare', 7, 1.00, ['D'], 0.0, 33600, null, 0.14, 44, 0.18],
-    ['403013', 'Instruktör', 13, 0.65, ['E'], 0.0, 36200, null, 0.55, 37, 0.17],
-    ['403014', 'Studie- och yrkesvägledare', 16, 0.75, ['F'], 0.0, 40000, null, 0.36, 44, 0.22],
-    ['403015', 'Lärarassistent', 20, 0.60, ['C'], 0.0, 33400, null, 0.31, 42, 0.18],
-    ['403016', 'Elevassistent', 195, 0.70, ['C', 'D'], 0.6, 30700, 32200, 0.30, 42, 0.21],
-    ['403090', 'Skolarbete övrigt', 12, 0.50, ['E'], 0.0, 34000, null, 0.26, 45, 0.22],
-    ['451011', 'Kulturskolelärare', 25, 0.75, ['E', 'F'], 0.3, 37600, 39500, 0.30, 44, 0.20],
-    ['451014', 'Museiarbete', 15, 0.70, ['C'], 0.0, 28000, null, 0.48, 35, 0.15],
-    ['451015', 'Bibliotekarie', 35, 0.75, ['F'], 0.0, 37000, null, 0.26, 42, 0.09],
+    ['401018', 'SFI-lärare', 6, 0.85, ['G'], 0.0, 41800, null, 0.15, 49, 0.21],
+    ['402010', 'Förskollärare', 295, 0.95, ['F'], 0.0, 38600, null, 0.34, 44, 0.16],
+    ['402011', 'Lärare i fritidshem', 70, 0.60, ['F'], 0.0, 39300, null, 0.33, 45, 0.16],
+    ['402090', 'Lärararbete övrigt', 15, 0.80, ['E', 'F'], 0.4, 37700, 44500, 0.42, 43, 0.16],
+    ['403010', 'Barnskötare', 355, 0.95, ['C'], 0.0, 29600, null, 0.36, 41, 0.14],
+    ['403011', 'Dagbarnvårdare', 7, 1.00, ['D'], 0.0, 33600, null, 0.14, 44, 0.19],
+    ['403013', 'Instruktör', 13, 0.65, ['E'], 0.0, 36200, null, 0.55, 37, 0.18],
+    ['403014', 'Studie- och yrkesvägledare', 16, 0.75, ['F'], 0.0, 40000, null, 0.36, 44, 0.23],
+    ['403015', 'Lärarassistent', 20, 0.60, ['C'], 0.0, 33400, null, 0.31, 42, 0.19],
+    ['403016', 'Elevassistent', 195, 0.70, ['C', 'D'], 0.6, 30700, 32200, 0.30, 42, 0.22],
+    ['403090', 'Skolarbete övrigt', 12, 0.50, ['E'], 0.0, 34000, null, 0.26, 45, 0.23],
+    ['451011', 'Kulturskolelärare', 25, 0.75, ['E', 'F'], 0.3, 37600, 39500, 0.30, 44, 0.21],
+    ['451014', 'Museiarbete', 15, 0.70, ['C'], 0.0, 28000, null, 0.48, 35, 0.16],
+    ['451015', 'Bibliotekarie', 35, 0.75, ['F'], 0.0, 37000, null, 0.26, 42, 0.10],
     ['451016', 'Biblioteksassistent', 4, 1.00, ['B'], 0.0, 30100, null, 0.28, 35, 0.00],
-    ['452010', 'Fritidskonsulent', 4, 0.50, ['E'], 0.0, 43500, null, 0.17, 45, 0.16],
-    ['452011', 'Fritidsledare', 75, 0.55, ['C', 'F'], 0.2, 32700, 36700, 0.35, 44, 0.16],
-    ['452014', 'Badpersonal', 13, 0.55, ['C'], 0.0, 32000, null, 0.26, 39, 0.11],
-    ['501010', 'Samhällsplanerare', 35, 0.70, ['H', 'I'], 0.3, 46100, 57400, 0.33, 47, 0.14],
-    ['501011', 'Bygglovshandläggare', 4, 1.00, ['H'], 0.0, 45200, null, 0.09, 45, 0.20],
-    ['501012', 'Byggnadsinspektör', 5, 0.00, ['H'], 0.0, 45800, null, 0.19, 35, 0.17],
-    ['501013', 'Miljöinspektör', 12, 0.65, ['H'], 0.0, 41400, null, 0.27, 45, 0.16],
-    ['502010', 'Systemutvecklare', 18, 0.55, ['G', 'H'], 0.6, 43700, 46100, 0.39, 45, 0.14],
-    ['502012', 'Trafikingenjör', 19, 0.40, ['I'], 0.0, 65600, null, 0.40, 50, 0.16],
-    ['502013', 'Fastighetsingenjör', 35, 0.40, ['G', 'H'], 0.4, 49700, 52200, 0.38, 44, 0.15],
-    ['502014', 'VA-ingenjör', 35, 0.45, ['G', 'H'], 0.6, 44400, 53700, 0.33, 45, 0.20],
-    ['503010', 'IT-tekniker', 16, 0.10, ['E'], 0.0, 34700, null, 0.30, 38, 0.17],
-    ['503012', 'Drifttekniker', 20, 0.00, ['E'], 0.0, 38400, null, 0.24, 48, 0.15],
-    ['503090', 'Tekniker övrigt', 14, 0.05, ['D'], 0.0, 37400, null, 0.21, 42, 0.08],
-    ['521012', 'Anläggningsarbetare', 13, 0.10, ['C'], 0.0, 34800, null, 0.37, 43, 0.19],
-    ['521013', 'Hantverkare', 6, 0.00, ['D'], 0.0, 34600, null, 0.26, 42, 0.11],
-    ['521015', 'Vaktmästare', 45, 0.20, ['B', 'C'], 0.3, 30700, 33200, 0.31, 37, 0.22],
-    ['521018', 'Trädgårdsarbetare', 19, 0.65, ['C', 'D'], 0.7, 31300, 33700, 0.27, 46, 0.10],
-    ['601010', 'Kock', 115, 0.70, ['C'], 0.0, 31500, null, 0.26, 40, 0.12],
-    ['651010', 'Lokalvårdare', 105, 0.85, ['A'], 0.0, 28300, null, 0.28, 38, 0.14],
+    ['452010', 'Fritidskonsulent', 4, 0.50, ['E'], 0.0, 43500, null, 0.17, 45, 0.17],
+    ['452011', 'Fritidsledare', 75, 0.55, ['C', 'F'], 0.2, 32700, 36700, 0.35, 44, 0.17],
+    ['452014', 'Badpersonal', 13, 0.55, ['C'], 0.0, 32000, null, 0.26, 39, 0.12],
+    ['501010', 'Samhällsplanerare', 35, 0.70, ['H', 'I'], 0.3, 46100, 57400, 0.33, 47, 0.15],
+    ['501011', 'Bygglovshandläggare', 4, 1.00, ['H'], 0.0, 45200, null, 0.09, 45, 0.21],
+    ['501012', 'Byggnadsinspektör', 5, 0.00, ['H'], 0.0, 45800, null, 0.19, 35, 0.18],
+    ['501013', 'Miljöinspektör', 12, 0.65, ['H'], 0.0, 41400, null, 0.27, 45, 0.17],
+    ['502010', 'Systemutvecklare', 18, 0.55, ['G', 'H'], 0.6, 43700, 46100, 0.39, 45, 0.15],
+    ['502012', 'Trafikingenjör', 19, 0.40, ['I'], 0.0, 65600, null, 0.40, 50, 0.17],
+    ['502013', 'Fastighetsingenjör', 35, 0.40, ['G', 'H'], 0.4, 49700, 52200, 0.38, 44, 0.16],
+    ['502014', 'VA-ingenjör', 35, 0.45, ['G', 'H'], 0.6, 44400, 53700, 0.33, 45, 0.21],
+    ['503010', 'IT-tekniker', 16, 0.10, ['E'], 0.0, 34700, null, 0.30, 38, 0.18],
+    ['503012', 'Drifttekniker', 20, 0.00, ['E'], 0.0, 38400, null, 0.24, 48, 0.16],
+    ['503090', 'Tekniker övrigt', 14, 0.05, ['D'], 0.0, 37400, null, 0.21, 42, 0.09],
+    ['521012', 'Anläggningsarbetare', 13, 0.10, ['C'], 0.0, 34800, null, 0.37, 43, 0.20],
+    ['521013', 'Hantverkare', 6, 0.00, ['D'], 0.0, 34600, null, 0.26, 42, 0.12],
+    ['521015', 'Vaktmästare', 45, 0.20, ['B', 'C'], 0.3, 30700, 33200, 0.31, 37, 0.23],
+    ['521018', 'Trädgårdsarbetare', 19, 0.65, ['C', 'D'], 0.7, 31300, 33700, 0.27, 46, 0.11],
+    ['601010', 'Kock', 115, 0.70, ['C'], 0.0, 31500, null, 0.26, 40, 0.13],
+    ['651010', 'Lokalvårdare', 105, 0.85, ['A'], 0.0, 28300, null, 0.28, 38, 0.15],
 ]);
 // Oförklarat gap för kvinnor (andel av lönen) per AID, i fyra blandade yrken med minst 40 personer.
 /** @type {Readonly<Record<string, number>>} */
@@ -21467,6 +21480,50 @@ function generateStortDemo() {
         r.radnr = i + 2;   // som en fil med rubrik på rad 1
     });
     return data;
+}
+
+// ---- Påhittad jämförelsestatistik och ett ställningstagande ur demots löner ----
+// Statistiken har en rad per yrke och BAS-intervall, eftersom statistiken bara matchar en rad i samma intervall (eller
+// en rad utan intervall). Medianen är yrkets nivå i intervallet gånger (1 + påslaget): i snitt ca 15 % över nivån,
+// några yrken kring eller strax under, så att inte alla grupper ser underbetalda ut. Ingen verklig källa efterliknas.
+const STORT_DEMO_STATISTIKNAMN = 'Påhittad jämförelsestatistik (demo)';
+const _sdAvrunda = (x, steg) => Math.round(x / steg) * steg;
+
+function generateStortDemoStatistik() {
+    // Eget frö: samma statistik vid varje anrop, oberoende av lönerna.
+    let seed = 126;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const rader = [];
+    for (const [aid, namn, , andelKv, basLista, , nivaL, nivaH, spridning, , paslag] of _SD_YRKEN) {
+        basLista.forEach((bas, i) => {
+            const niva = i === 0 ? nivaL : /** @type {number} */ (nivaH);
+            const median = _sdAvrunda(niva * (1 + paslag), 100);
+            const forskjutning = Math.floor(rnd() * 11) - 5;   // −5 … +5 procentenheter
+            rader.push({
+                aid: _normalizePolicyAid(aid), aidFull: `${aid} ${namn}`, bas,
+                median, p10: _sdAvrunda(median * (1 - 0.45 * spridning), 100), p90: _sdAvrunda(median * (1 + 0.55 * spridning), 100),
+                nKv: null, nMa: null, andelKv: Math.max(0, Math.min(100, Math.round(andelKv * 100) + forskjutning)),
+            });
+        });
+    }
+    return rader;
+}
+
+// Ställningstagandet per BAS-intervall A–K räknas ur demots löner: medianen avrundad till 500 kr, P10 och P90 avrundade
+// till 100 kr. I några stora intervall ligger ställningstagandet 4–5 % över demots median, så att grupper hamnar under
+// det och Prioritering och Lönepolitik har något att visa.
+/** @type {Readonly<Record<string, number>>} */
+const _SD_POLICYLYFT = Object.freeze({ C: 1.04, F: 1.05, H: 1.04 });
+function _sdStallningstagande(data) {
+    return _SD_BAS.map(bas => {
+        const loner = data.filter(r => r.bas === bas).map(r => r.lon);
+        return {
+            aid: null, bas,
+            p10: _sdAvrunda(Stat.quantile(loner, 0.1), 100),
+            med: _sdAvrunda(Stat.median(loner) * (_SD_POLICYLYFT[bas] || 1), 500),
+            p90: _sdAvrunda(Stat.quantile(loner, 0.9), 100),
+        };
+    });
 }
 
 // Som det lilla demot (_lasInDemounderlag), men utan självdiagnostik: den hör till det lilla demots kända egenskaper.
@@ -25009,7 +25066,7 @@ function _deriveArbetsvarderingFromData() {
 }
 
 function _afterDataLoaded() {
-    // En riktig lönefil efter demot: demots namn, organisationstyp och ställningstagande
+    // En riktig lönefil efter demot: demots namn, organisationstyp, ställningstagande och jämförelsestatistik
     // hör till den påhittade organisationen och tas bort (ADR-36).
     if (state.isDemo) {
         state.profile = { ...DEFAULT_PROFILE };
@@ -25019,6 +25076,7 @@ function _afterDataLoaded() {
             aterstallReferens();
             resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         }
+        if (state.statistikKalla === 'demo') _tomStatistik();   // tömmer också filrutan
         if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
         if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
         applyProfileLabels();
@@ -25973,7 +26031,7 @@ function renderFilrutor() {
     };
     rad('upload-cell-data', state.isDemo ? (state.demoStort ? 'Demodata, stort demo' : 'Demodata') : fn.data);
     rad('upload-cell-policy', state.policyKalla === 'paket' ? 'Ur organisationspaketet' : state.policyKalla === 'demo' ? 'Demots ställningstagande' : fn.policy);
-    rad('upload-cell-stat', state.statistikKalla === 'paket' ? 'Ur organisationspaketet' : fn.statistik);
+    rad('upload-cell-stat', state.statistikKalla === 'paket' ? 'Ur organisationspaketet' : state.statistikKalla === 'demo' ? 'Demots jämförelsestatistik' : fn.statistik);
     // Lönefilens importprofil: "Känd uppsättning: Namn (källa)". Demodatan läses inte ur en fil.
     const ip = /** @type {HTMLElement|null} */ (document.querySelector('#upload-cell-data .upload-importprofil'));
     if (ip) {
