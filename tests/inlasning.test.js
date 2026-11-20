@@ -29,11 +29,29 @@ describe('inlasning: tal (parseNumber, parseNumberStrict)', () => {
         ['', 0, 'empty'],
         [null, 0, 'empty'],
         ['saknas', 0, 'invalid'],
-        ['12abc', 12, 'ok'],
-        ['1.2.3', 1.2, 'ok'],
+        ['12abc', 0, 'invalid'],
+        ['abc12', 0, 'invalid'],
+        ['12 st', 0, 'invalid'],
+        ['1.2.3', 0, 'invalid'],
+        ['1,2,3', 0, 'invalid'],
+        ['12,34.56', 0, 'invalid'],
+        ['-', 0, 'invalid'],
+        ['.', 0, 'invalid'],
+        ['32\u00a0500', 32500, 'ok'],
+        ['32\u202f500', 32500, 'ok'],
+        ['32.500', 32500, 'ok'],
+        ['32.5', 32.5, 'ok'],
+        ['32 500 SEK', 32500, 'ok'],
+        ['3,25 %', 3.25, 'ok'],
+        [' 42 ', 42, 'ok'],
     ])('%o → %o, status %o', (raw, value, status) => {
         expect(parseNumber(raw)).toBe(value);
         expect(parseNumberStrict(raw)).toEqual({ status, value, raw });
+    });
+    it('ett värde som redan är ett tal (ur Excel) läses som det är, också i exponentform', () => {
+        expect(parseNumberStrict(1e-7)).toEqual({ status: 'ok', value: 1e-7, raw: '1e-7' });
+        expect(parseNumber(32500.5)).toBe(32500.5);
+        expect(parseNumberStrict(NaN).status).toBe('invalid');
     });
 });
 
@@ -217,6 +235,11 @@ describe('inlasning: en lönerad (tolkaLonerad)', () => {
             bas: 'B', yrke: '203010 Förskollärare', aid: '203010', yrkeLabel: 'Förskollärare', lon: 32500.5, alder: 38,
             kon: 'kvinna', poang: 342.5, ansvarskoder: null, ansvarsgrupp: null, _lonStatus: 'ok', _alderStatus: 'ok'
         });
+    });
+
+    it('skräp efter siffrorna: lönen och åldern blir ogiltiga och poängen saknas', () => {
+        const rec = tolkaLonerad(falt('45år', { lon: '32500abc', poang: '342x' }), 2026);
+        expect(rec).toMatchObject({ lon: 0, _lonStatus: 'invalid', alder: 0, _alderStatus: 'invalid', poang: null });
     });
 
     it('ansvarskoden läses bara när en godkänd kolumn finns', () => {

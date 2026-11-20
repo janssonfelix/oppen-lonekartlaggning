@@ -70,6 +70,9 @@ Verktyget läser in **`.csv`** och **`.xlsx`** (första bladet). Följande hante
   letar rubrikraden bland de första raderna och hoppar över preamblen.
 - **Svenska talformat:** `32 500`, `32 500,50`, `32.500,50` och valutasuffix (`32 500 kr`)
   tolkas korrekt. Mellanslag, hårt mellanslag och apostrof som tusentalsavgränsare stryks.
+  Ett värde med bokstäver eller andra tecken utöver valutan och procenttecknet (`32500abc`,
+  `12 st`) eller med flera decimaltecken (`1.2.3`) läses inte som ett tal: raden räknas som
+  ogiltig och visas med exempel i inläsningsrapporten.
 
 **BAS-spann:** alla BAS-intervall ingår i analysen, även K och uppåt. Filen ska alltså
 innehålla all tillsvidareanställd personal och behöver inte filtreras i förväg.

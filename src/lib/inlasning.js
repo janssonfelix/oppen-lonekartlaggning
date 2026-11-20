@@ -33,23 +33,39 @@ import { tolkaAnsvarskod as _anTolka, ansvarsgrupp as _anGrupp } from './ansvar.
  * decimaltecken; ensam separator följd av exakt 3-siffergrupper (och
  * heltalsdel ≠ "0") tolkas som tusental.
  *
+ * Det som får stå runt talet: blanksteg (också hårt och smalt hårt mellanslag) och apostrof som tusentalsavgränsare,
+ * ett tecken först (+, - eller minustecknet U+2212), valutan först eller sist (kr, SEK; sist också kronor, ":-" och
+ * ",-", valfritt med punkt efter) och % sist. Allt annat gör värdet ogiltigt och funktionen ger "": en felskriven lön ska synas i
+ * inläsningsrapporten, inte läsas som ett annat tal. Formen prövas därför när suffixet och tusentalsavgränsarna är borta:
+ *   - bokstäver och andra tecken ("12abc", "abc12", "12 st", "3.25E+04") avvisas;
+ *   - flera decimaltecken av samma slag som inte är tusentalsgrupper ("1.2.3", "1,2,3") avvisas;
+ *   - när både punkt och komma förekommer måste delen före det sista vara siffror i tregrupper ("1.234.567,89");
+ *     "12,34.56" och "1.2,3" avvisas;
+ *   - ett ensamt tecken eller decimaltecken ("-", ".") är inget tal.
+ * Ett värde som redan är ett tal (ur Excel) skrivs som det är, så att också 1e-7 läses rätt.
+ *
  * @param {*} raw - Råvärde från CSV-/Excel-cell.
- * @returns {string} parseFloat-bar sträng ("" om inget numeriskt innehåll).
+ * @returns {string} parseFloat-bar sträng ("" när värdet inte är ett tal i något av formaten).
  */
 export function _normalizeNumberString(raw) {
+    if (typeof raw === 'number') return isFinite(raw) ? String(raw) : '';
     let s = raw.toString().trim()
-        .replace(/[\s  ']/g, '')       // mellanslag, NBSP, smal NBSP, apostrof-tusental
-        .replace(/(kr|sek|:-)\.?$/i, '')          // valutasuffix
-        .replace(/\u2212/g, '-');                  // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
-    s = s.replace(/[^\d.,\-]/g, '');
+        .replace(/[\s  ']/g, '')        // mellanslag, NBSP, smal NBSP, apostrof-tusental
+        .replace(/(kronor|kr|sek|:-|,-|%)\.?$/i, '')   // valutasuffix och procenttecken
+        .replace(/^(kr|sek)\.?/i, '')                  // valutan före talet
+        .replace(/−/g, '-')                   // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
+        .replace(/^\+/, '');
+    if (!/^-?[\d.,]*\d[\d.,]*$/.test(s)) return '';   // bara siffror, punkt och komma efter ett ev. minustecken
     const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
     if (lastDot !== -1 && lastComma !== -1) {
-        // Båda förekommer: den sista är decimaltecknet, den andra tusental.
-        if (lastComma > lastDot) s = s.replace(/\./g, '').replace(/,/g, '.');
-        else                     s = s.replace(/,/g, '');
+        // Båda förekommer: den sista är decimaltecknet, den andra tusental i tregrupper.
+        const tusental = lastComma > lastDot ? /^-?\d{1,3}(\.\d{3})+$/ : /^-?\d{1,3}(,\d{3})+$/;
+        const decimal = Math.max(lastDot, lastComma);
+        if (!tusental.test(s.slice(0, decimal))) return '';
+        s = s.slice(0, decimal).replace(/[.,]/g, '') + '.' + s.slice(decimal + 1);
     } else if (lastComma !== -1) {
-        // Endast komma: flera kommatecken = tusental; ensamt komma med exakt
-        // 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental; annars decimal.
+        // Endast komma: kommatecken med exakt 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental;
+        // annars decimal (flera kommatecken utan tregrupper avvisas nedan).
         if (/^-?[1-9]\d{0,2}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
         else                                      s = s.replace(/,/g, '.');
     } else if (lastDot !== -1) {
@@ -57,7 +73,8 @@ export function _normalizeNumberString(raw) {
         if (/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
         // annars: punkt är redan decimaltecken
     }
-    return s;
+    // Ett tal: högst ett decimaltecken och minst en siffra.
+    return /^-?(\d+(\.\d*)?|\.\d+)$/.test(s) ? s : '';
 }
 
 export function parseNumber(v) {
@@ -84,7 +101,7 @@ export function parseNumberStrict(v) {
     if (v == null) return { status: 'empty', value: 0, raw: v };
     const raw = v.toString();
     if (raw.trim() === '') return { status: 'empty', value: 0, raw };
-    const n = parseFloat(_normalizeNumberString(raw));
+    const n = parseFloat(_normalizeNumberString(v));
     if (isNaN(n)) return { status: 'invalid', value: 0, raw };
     return { status: 'ok', value: n, raw };
 }
