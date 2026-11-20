@@ -20,21 +20,11 @@
 
 import { arKvinnodominerad } from './likvardighet.js';
 import { periodkostnad } from './kostnad.js';
+import { median as _medianStat, quantile as _quantileStat } from './stat.js';
 
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
+// Omslag: tål null/undefined som indata (0 för tom), vilket stat.js inte gör. Algoritmen finns bara i stat.js.
+function _median(arr) { return arr && arr.length ? _medianStat(arr) : 0; }
+function _quantile(arr, q) { return arr && arr.length ? _quantileStat(arr, q) : 0; }
 
 /**
  * "Water-filling": höj de lägst betalda först. Hittar en gemensam nivå L (≤ cap)
