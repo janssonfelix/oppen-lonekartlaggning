@@ -51,7 +51,7 @@ describe('Lika arbete i appen: en grupp per AID-kod', () => {
         w.__state.data = [...underlag(), ...iD];
         w.eval('generateEUDirectiveMatrix()');
         const rubriker = [...w.document.querySelectorAll('#matrix-table thead th')].map(th => th.textContent.trim());
-        expect(rubriker[1]).toBe('BAS-intervall');
+        expect(rubriker[1]).toBe('BAS');
         const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow);
         expect(rader.map(tr => [tr._euRow.aid, tr._euRow.bas, tr.cells[1].textContent.trim()])).toEqual([['207011', 'C', 'C'], ['207011', 'D', 'D']]);
         expect(rader.every(tr => tr.textContent.includes('22 (11/11)'))).toBe(true);
