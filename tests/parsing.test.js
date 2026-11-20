@@ -64,6 +64,8 @@ const P = new Function('_anArRubrik', '_anTolka', '_anGrupp', '_anAndelGiltiga',
     ${extractFn('_normalizeKon')}
     ${extractFn('_stripHtmlMeta')}
     ${extractFn('_normalizeBas')}
+    ${extractFn('tolkaLonerad')}
+    const _ilTolkaLonerad = tolkaLonerad;
     ${extractFn('extractMinimalRecord')}
     ${extractFn('_hittaAnsvarKolumn')}
     ${extractFn('_bedomAnsvarKolumn')}

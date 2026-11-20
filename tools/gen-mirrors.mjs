@@ -224,6 +224,15 @@ export const MODULES = [
                   ansvarsUnderrader: '_anUnderrader' }
     },
     {
+        // Tolkningen av indata: talen, normaliseringarna och kärnan i uppgiftsminimeringen. Funktionerna behåller i appen
+        // namnen de hade där. Importerar ansvar.js (ansvarskoden i en lönerad): efter den.
+        file: 'inlasning.js', ns: '__mirrorInlasning',
+        expose: { _normalizeNumberString: '_normalizeNumberString', parseNumber: 'parseNumber', parseNumberStrict: 'parseNumberStrict',
+                  _cleanYrkeField: '_cleanYrkeField', _stripHtmlMeta: '_stripHtmlMeta', _normalizeBas: '_normalizeBas',
+                  _normalizePolicyAid: '_normalizePolicyAid', _normalizeKon: '_normalizeKon', tolkaLonerad: '_ilTolkaLonerad',
+                  _pnrSampelSteg: '_pnrSampelSteg', detectSensitiveColumns: 'detectSensitiveColumns' }
+    },
+    {
         file: 'aidkontroll.js', ns: '__mirrorAidkontroll',
         expose: { aidKriterier: '_akAidKriterier' }
     },
