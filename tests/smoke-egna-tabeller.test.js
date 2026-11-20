@@ -142,6 +142,35 @@ describe('egna tabeller: receptet för avsnittet per BAS-intervall', () => {
         expect(perbas.delar.filter(p => p.typ === 'rubrik').map(p => p.text)[0]).toMatch(/^Huvudområde /);
         expect(perbas.delar.filter(p => p.typ === 'tabell').some(t => t.rader.some(r => /ställningstagande/i.test(String(r[0]))))).toBe(false);
     });
+    // Kompletterande undertryckning (ADR-83): regeln bor i src/lib/perbas.js; här prövas att Word/PDF (rapportmodellen)
+    // och Excel skriver ut det lib ger, tomma celler och noten. Demot vid k = 25: BAS E (23 personer) utelämnas, och
+    // det minsta visade intervallet, A (33), förlorar sina medelvärden.
+    it('k = 25: raden Alla står kvar, BAS A står utan medellön och medelålder, och noten säger varför, i rapporten och i Excel', () => {
+        const w = fonster();
+        w.eval('sattKTroskel(25, { fraga: false })');
+        const perbas = w.eval('rapportModell()').avsnitt.find(a => a.id === 'perbas');
+        const tabell = rubrik => perbas.delar[perbas.delar.findIndex(p => p.typ === 'rubrik' && p.text === rubrik) + 2];
+        const kg = tabell('Löneskillnader inom likvärdigt arbete, per BAS-intervall');
+        expect(kg.rader.map(r => r[0])).toEqual(['Alla', 'A', 'B', 'C', 'D']);
+        expect(kg.rader[0][2]).toBeGreaterThan(0);
+        const A = kg.rader.find(r => r[0] === 'A');
+        expect(A[1]).toBe(33);
+        expect([A[2], A[3], A[4], A[5], A[7], A[8], A[9]]).toEqual([null, null, null, null, null, null, null]);
+        expect(A[6]).toBeGreaterThan(0);   // andelen kvinnor står kvar
+        expect(kg.rader.find(r => r[0] === 'B')[2]).toBeGreaterThan(0);
+        const ag = tabell('Löneskillnader i åldersgrupper, per BAS-intervall');
+        expect(ag.rader.find(r => r[0] === 'A').slice(2).every(v => v === null)).toBe(true);
+        const noter = perbas.delar.filter(p => p.stil === 'not').map(p => p.text);
+        expect(noter).toContain('Medellön och medelålder redovisas inte för BAS A. Annars skulle medellönen för en grupp med färre än 25 personer gå att räkna fram ur raden Alla.');
+        expect(noter).toContain('Medelålder och medellön redovisas inte för BAS A. Annars skulle medellönen för en grupp med färre än 25 personer gå att räkna fram ur raden Alla.');
+        expect(perbas.utelamnat.join(' ')).toContain('medellön för BAS A');
+        const x = w.eval('medExportLage(() => _excelPerBasRader())');
+        const xA = x.filter(r => r[0] === 'A');
+        expect(xA).toHaveLength(2);
+        for (const r of xA) expect(r.slice(2).filter(v => v !== '' && v !== null && v !== undefined).length).toBeLessThanOrEqual(1);   // bara andelen kvinnor
+        expect(x.map(r => r[0])).toContain('Medellön och medelålder redovisas inte för BAS A. Annars skulle medellönen för en grupp med färre än 25 personer gå att räkna fram ur raden Alla.');
+        expect(x.find(r => r[0] === 'Alla')[2]).toBeGreaterThan(0);
+    });
 });
 
 describe('exportläget kostar inte mer än det måste (ADR-51)', () => {

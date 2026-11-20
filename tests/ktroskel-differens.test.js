@@ -82,11 +82,12 @@ describe('hjälparen', () => {
 // Excel, båda i hela kronor): intervalltabellen med antal och receptets mått per rad; Löneskillnader inom likvärdigt
 // arbete med antal, medellön för alla, män och kvinnor, kvot, andel kvinnor och medelålder; Löneskillnader i
 // åldersgrupper med antal, medelålder, medellön för alla och medellön per åldersgrupp. Antalet per åldersgrupp
-// (antalPerGrupp) skrivs inte ut.
+// (antalPerGrupp) skrivs inte ut. Hålen här (S-1) stängdes med kompletterande undertryckning (ADR-83,
+// `kompletterandeUndertryckning` i src/lib/perbas.js): proven var `it.fails` och är nu vanliga `it`.
 describe('per BAS-intervall: Löneskillnader inom likvärdigt arbete, raden Alla mot intervallen (S-1)', () => {
     const STORA = ['A', 'B', 'C', 'D', 'E'].map(bas => ({ bas, aid: '150101' }));
     for (const fall of FALL) {
-        it.fails(`${fall.namn}: ett utelämnat BAS-intervalls medellön går inte att härleda (S-1)`, () => {
+        it(`${fall.namn}: ett utelämnat BAS-intervalls medellön går inte att härleda`, () => {
             const { rader, liten } = underlag(fall, { stora: STORA, liten: { bas: 'F', aid: '150101' } });
             const t = perBasTabeller(rader, { k: K });
             expect(t.basUtelamnade).toEqual(['F']);
@@ -96,7 +97,7 @@ describe('per BAS-intervall: Löneskillnader inom likvärdigt arbete, raden Alla
     }
 
     for (const fall of FALL) {
-        it.fails(`${fall.namn}: med huvudområde som dimension går det utelämnade huvudområdets medellön inte att härleda (S-1)`, () => {
+        it(`${fall.namn}: med huvudområde som dimension går det utelämnade huvudområdets medellön inte att härleda`, () => {
             const { rader, liten } = underlag(fall, { stora: [{ aid: '150101' }, { aid: '200101' }, { aid: '400101' }], liten: { aid: '650101' } });
             const t = perBasTabeller(rader, { k: K, recept: { dim: 'sektor' } });
             expect(t.basUtelamnade).toHaveLength(1);
@@ -108,7 +109,7 @@ describe('per BAS-intervall: Löneskillnader inom likvärdigt arbete, raden Alla
     // Könsraderna: medellön för män och kvinnor står bara där båda könen når tröskeln, men raden Alla har båda könen
     // och antalet kvinnor per rad står som andel. Kvinnorna i ett intervall där de är under tröskeln blir resten.
     for (const fall of FALL) {
-        it.fails(`${fall.namn}: kvinnornas medellön i ett intervall där de är under tröskeln går inte att härleda (S-1)`, () => {
+        it(`${fall.namn}: kvinnornas medellön i ett intervall där de är under tröskeln går inte att härleda`, () => {
             const { rader, liten } = underlag(fall, { stora: [{ bas: 'A' }, { bas: 'B', kon: 'man' }, { bas: 'C' }], liten: { bas: 'B' } });
             const t = perBasTabeller(rader, { k: K });
             const [alla, ...bas] = t.konsgap.rader;
@@ -118,13 +119,82 @@ describe('per BAS-intervall: Löneskillnader inom likvärdigt arbete, raden Alla
                 medVarde(bas.map(kv)).map(r => skriven(r.n, r.medel, avrunda)))?.medel, liten.medel);
         });
     }
+
+    // Vägarna nedan stängdes tillsammans med de ovan (ADR-83): samma differenser ur andra kolumner och tabeller i samma
+    // avsnitt.
+    // Den lilla gruppens åldrar ligger långt från de övrigas (25–64 år, i medel omkring 45), så att en blandning inte
+    // råkar träffa.
+    const ALDER_LITEN = 62;
+    const aldrarna = (n, alder0 = ALDER_LITEN) => Array.from({ length: n }, (_, i) => alder0 + i).reduce((s, x) => s + x, 0) / n;
+
+    // Medelåldern står i samma tabell: raden Alla mot intervallen ger det utelämnade intervallets medelålder.
+    for (const fall of FALL) {
+        it(`${fall.namn}: ett utelämnat BAS-intervalls medelålder går inte att härleda`, () => {
+            const { rader } = underlag(fall, { stora: STORA, liten: { bas: 'F', aid: '150101' }, alderLiten: ALDER_LITEN });
+            const [alla, ...bas] = perBasTabeller(rader, { k: K }).konsgap.rader;
+            const alder = r => ({ n: r.n, medel: r.alder });
+            harledningenMissar(avrunda => rest(skriven(alla.n, alla.alder, avrunda), medVarde(bas.map(alder)).map(r => skriven(r.n, r.medel, avrunda)))?.medel, aldrarna(fall.nLiten));
+        });
+    }
+
+    // Intervallets tabell med måttet Medellön har organisationens rad, med samma medellön som tabellen inom likvärdigt
+    // arbete: raden Alla där mot organisationens rader i intervallens tabeller. De måste undertrycka samma intervall.
+    for (const fall of FALL) {
+        it(`${fall.namn}: med måttet Medellön går det utelämnade intervallets medellön inte att härleda ur organisationens rader`, () => {
+            const { rader, liten } = underlag(fall, { stora: STORA, liten: { bas: 'F', aid: '150101' } });
+            const t = perBasTabeller(rader, { k: K, recept: { matt: ['med', 'medel'] } });
+            const alla = t.konsgap.rader[0];
+            const org = t.intervall.map(i => i.rader.find(r => r.typ === 'organisation'));
+            harledningenMissar(avrunda => rest(skriven(alla.n, alla.medel, avrunda), medVarde(org).map(r => skriven(r.n, r.medel, avrunda)))?.medel, liten.medel);
+        });
+    }
+
+    // Kvinnornas medellön i B via männen: raden Alla för män minus de visade intervallens män ger männen i B, och B:s
+    // medellön för alla minus männen ger kvinnorna. Regeln per kön döljer därför båda könens medel i ytterligare ett
+    // intervall.
+    for (const fall of FALL) {
+        it(`${fall.namn}: kvinnornas medellön i ett intervall där de är under tröskeln går inte att härleda via männen`, () => {
+            const { rader, liten } = underlag(fall, { stora: [{ bas: 'A' }, { bas: 'B', kon: 'man' }, { bas: 'C' }], liten: { bas: 'B' } });
+            const [alla, ...bas] = perBasTabeller(rader, { k: K }).konsgap.rader;
+            const B = bas.find(r => r.bas === 'B');
+            const ma = r => ({ n: r.n - antalUrAndel(r.n, r.andelKv), medel: r.medelMa });
+            harledningenMissar(avrunda => {
+                const maB = rest(skriven(ma(alla).n, alla.medelMa, avrunda), medVarde(bas.map(ma)).map(r => skriven(r.n, r.medel, avrunda)));
+                const nKvB = antalUrAndel(B.n, B.andelKv), b = skriven(B.n, B.medel, avrunda);
+                return maB && typeof b.medel === 'number' ? (b.n * b.medel - maB.n * maB.medel) / nKvB : null;
+            }, liten.medel);
+        });
+    }
+
+    // Medelåldern per kön följer samma regel som medellönen per kön.
+    for (const fall of FALL) {
+        it(`${fall.namn}: kvinnornas medelålder i ett intervall där de är under tröskeln går inte att härleda`, () => {
+            const { rader } = underlag(fall, { stora: [{ bas: 'A' }, { bas: 'B', kon: 'man' }, { bas: 'C' }], liten: { bas: 'B' }, alderLiten: ALDER_LITEN });
+            const [alla, ...bas] = perBasTabeller(rader, { k: K }).konsgap.rader;
+            const kv = r => ({ n: antalUrAndel(r.n, r.andelKv), medel: r.alderKv });
+            harledningenMissar(avrunda => rest(skriven(kv(alla).n, alla.alderKv, avrunda),
+                medVarde(bas.map(kv)).map(r => skriven(r.n, r.medel, avrunda)))?.medel, aldrarna(fall.nLiten));
+        });
+    }
+
+    // Könsraderna i intervallets tabell med måttet Medellön har samma medellön per kön som tabellen inom likvärdigt arbete.
+    for (const fall of FALL) {
+        it(`${fall.namn}: med måttet Medellön går kvinnornas medellön inte att härleda ur könsraderna i intervallens tabeller`, () => {
+            const { rader, liten } = underlag(fall, { stora: [{ bas: 'A' }, { bas: 'B', kon: 'man' }, { bas: 'C' }], liten: { bas: 'B' } });
+            const t = perBasTabeller(rader, { k: K, recept: { matt: ['med', 'medel'] } });
+            const alla = t.konsgap.rader[0];
+            const kvRader = t.intervall.map(i => i.rader.find(r => r.typ === 'kvinnor')).filter(Boolean);
+            harledningenMissar(avrunda => rest(skriven(antalUrAndel(alla.n, alla.andelKv), alla.medelKv, avrunda),
+                medVarde(kvRader).map(r => skriven(r.n, r.medel, avrunda)))?.medel, liten.medel);
+        });
+    }
 });
 
 describe('per BAS-intervall: intervalltabellen med måttet Medellön, organisationens rad mot yrkesgrupperna (S-1)', () => {
     // Organisationens rad och yrkesgruppernas rader har antal i kolumnen Antal (intervallets antal står också i
     // rubrikraden, `n`). Med exakt en AID-etikett utelämnad är resten den etiketten.
     for (const fall of FALL) {
-        it.fails(`${fall.namn}: en utelämnad AID-etiketts medellön går inte att härleda (S-1)`, () => {
+        it(`${fall.namn}: en utelämnad AID-etiketts medellön går inte att härleda`, () => {
             const { rader, liten } = underlag(fall, { stora: ['150101', '150102', '150103'].map(aid => ({ bas: 'C', aid })), liten: { bas: 'C', aid: '150104' } });
             const t = perBasTabeller(rader, { k: K, recept: { matt: ['med', 'medel'] } });
             const C = t.intervall[0];
@@ -146,9 +216,9 @@ describe('per BAS-intervall: intervalltabellen med måttet Medellön, organisati
 
 describe('per BAS-intervall: Löneskillnader i åldersgrupper', () => {
     // Kolumnerna Antal och Medellön alla är desamma som i tabellen inom likvärdigt arbete, och raden Alla räknas på
-    // hela underlaget: samma differens som S-1.
+    // hela underlaget: samma differens som S-1, och samma intervall undertrycks (ADR-83).
     for (const fall of FALL) {
-        it.fails(`${fall.namn}: ett utelämnat BAS-intervalls medellön går inte att härleda ur kolumnerna Antal och Medellön alla (S-1)`, () => {
+        it(`${fall.namn}: ett utelämnat BAS-intervalls medellön går inte att härleda ur kolumnerna Antal och Medellön alla`, () => {
             const { rader, liten } = underlag(fall, { stora: ['A', 'B', 'C', 'D', 'E'].map(bas => ({ bas })), liten: { bas: 'F' } });
             const [alla, ...bas] = perBasTabeller(rader, { k: K }).aldersgrupper.rader;
             harledningenMissar(avrunda => rest(skriven(alla.n, alla.medel, avrunda), medVarde(bas).map(r => skriven(r.n, r.medel, avrunda)))?.medel, liten.medel);

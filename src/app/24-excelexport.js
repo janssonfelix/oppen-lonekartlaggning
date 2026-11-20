@@ -71,12 +71,14 @@ function _excelPerBasRader() {
     const matt = pb.recept.matt;
     const per = pb.dim === 'sektor' ? T.huvudomrade.en : T.niva.en, kort = pb.dim === 'sektor' ? termStor(T.huvudomrade.en) : 'BAS';
     const rows = [[`Lönestruktur per ${per}`, `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
+    const undertryckNoter = rmPerBasUndertryckNoter(pb, pb.k);
     for (const i of pb.intervall) {
         rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} ${termForAntal(i.antalYrken, T.enhet)}`]);
         rows.push(['Grupp', 'Antal', ...matt.map(m => MATT[m])]);
         i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, ...matt.map(m => tal(r[m]))]));
         if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} ${personOrd(pb.k)}): ${i.utelamnade.join(', ')}`]);
         if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} ${personOrd(pb.k)}`]);
+        undertryckNoter.intervall(i).forEach(t => rows.push([t]));
         rows.push([]);
     }
     if (pb.basUtelamnade.length) rows.push([`${pb.dimEtikett} som inte redovisas (färre än ${pb.k} ${personOrd(pb.k)}): ${pb.basUtelamnade.join(', ')}`], []);
@@ -86,6 +88,7 @@ function _excelPerBasRader() {
     rows.push([`Löneskillnader inom likvärdigt arbete, per ${per}`]);
     rows.push(['BAS', 'Antal', 'Medellön alla', 'Medellön män', 'Medellön kvinnor', 'Kvinnors medellön i % av mäns', 'Andel kvinnor (%)', ...(medAlder ? ['Medelålder alla', 'Medelålder män', 'Medelålder kvinnor'] : [])]);
     pb.konsgap.rader.forEach(r => rows.push([r.bas, r.n, tal(r.medel), tal(r.medelMa), tal(r.medelKv), pct(r.kvot), pct(r.andelKv), ...(medAlder ? [tal(r.alder), tal(r.alderMa), tal(r.alderKv)] : [])]));
+    undertryckNoter.konsgap.forEach(t => rows.push([t]));
     rows.push([]);
     }
     if (pb.recept.aldersgrupper && pb.harAlder === false) rows.push(['Löneskillnader i åldersgrupper redovisas inte: lönefilen saknar ålder.']);
@@ -93,6 +96,7 @@ function _excelPerBasRader() {
     rows.push([`Löneskillnader i åldersgrupper, per ${per}`]);
     rows.push(['BAS', 'Antal', 'Medelålder', 'Medellön alla', ...pb.aldersgrupper.grupper.map(g => `Medellön ${g} år`)]);
     pb.aldersgrupper.rader.forEach(r => rows.push([r.bas, r.n, tal(r.alder), tal(r.medel), ...r.perGrupp.map(tal)]));
+    undertryckNoter.aldersgrupper.forEach(t => rows.push([t]));
     }
     return rows;
 }
