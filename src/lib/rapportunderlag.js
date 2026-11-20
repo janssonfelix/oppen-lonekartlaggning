@@ -407,8 +407,8 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const a = u.andel;
         const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-87)
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
-            ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
-            : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
+            ? `Skillnaden i medellön för hela organisationen, kvinnor mot män (${_kr(a.gapKr)} per månad), beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
+            : `Av skillnaden i medellön för hela organisationen, kvinnor mot män (${_kr(a.gapKr)} per månad), beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
         if (andelNot) st.push(andelNot);
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);

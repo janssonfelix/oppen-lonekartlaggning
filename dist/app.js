@@ -4712,7 +4712,7 @@ function totalLonSum(rows) {
  * @param {{mode:string, value:number|null}} budget
  */
 function computePott(rows, budget) {
-    if (!budget || budget.value == null || !isFinite(budget.value)) return 0;
+    if (!budget || budget.value == null || !isFinite(budget.value)) return 0;   // samma villkor som pottArAngiven
     if (budget.mode === 'kr') return Math.max(0, budget.value);
     return Math.max(0, totalLonSum(rows) * budget.value / 100);  // % av lönesumman
 }
@@ -4967,8 +4967,18 @@ function detectLeapfrog(perGroup) {
 }
 
 /**
+ * Sant när budgeten har ett belopp eller en procentsats; ett tomt fält (value null) är ingen angiven pott.
+ * @param {{mode?:string, value:number|null}|null|undefined} budget
+ */
+function pottArAngiven(budget) {
+    return !!budget && budget.value != null && isFinite(budget.value);
+}
+
+/**
  * Hela prognosutfallet: pott, budgetutnyttjande, total kostnad (inkl. PO + period)
  * och råa lönegapet före/efter. Det OFÖRKLARADE gapet (OLS) beräknas i app.js.
+ * Utan angiven pott (pottAngiven false) är pott 0, kvar null och overBudget falskt: det finns ingen pott att
+ * överskrida. En angiven pott på 0 kr flaggas som vanligt när något fördelas.
  * @param {Array} rows
  * @param {{mode:string, value:number|null}} budget
  * @param {{mode:string, value:number|null}} generell
@@ -4980,16 +4990,20 @@ function forecastOutcome(rows, budget, generell, targets, costOpts) {
     const pott = computePott(rows, budget);
     const alloc = allocate(rows, generell, targets, costOpts && costOpts.roundStep);
     const totalRaise = alloc.totals.totalRaise;
-    const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
+    // Gränsen för kvinnodominerat: saknas den gäller arKvinnodominerads standard, KVINNO_TROSKEL_DEFAULT i
+    // likvardighet.js (spegeln exponerar bara funktioner, så konstanten importeras inte hit). 0 är en gräns, inte en som saknas.
+    const kvThreshold = costOpts?.kvThreshold ?? undefined;
     const lonsummaFore = totalLonSum(rows);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
     const kvDefinition = (costOpts && costOpts.kvDefinition) || 'do';
     const equityCost = alloc.perGroup.reduce((s, g) => s + (arKvinnodominerad(g.andelKv, kvDefinition, kvThreshold) ? g.kostnad : 0), 0);
+    const pottAngiven = pottArAngiven(budget);
     return {
         pott,
+        pottAngiven,
         använt: totalRaise,
-        kvar: pott - totalRaise,
-        overBudget: totalRaise > pott + 1e-6,
+        kvar: pottAngiven ? pott - totalRaise : null,
+        overBudget: pottAngiven && totalRaise > pott + 1e-6,
         totalKostnad: periodkostnad(totalRaise, costOpts),
         lonsummaFore,
         lonsummaEfter: lonsummaFore + totalRaise,
@@ -7106,7 +7120,7 @@ const __mirrorPrioritering = (() => {
 /**
  * Öppen lönekartläggning — Prioriteringsanalys (ren modell)
  *
- * Grupperar raderna per yrke × BAS, beräknar median, könsmedianer (med k-regeln, ADR-12),
+ * Grupperar raderna per AID-kod × BAS (samma grupper som jämförelsen och gruppdossiern), beräknar median, könsmedianer (med k-regeln, ADR-12),
  * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod, formeln i kostnad.js),
  * status mot trösklar, snabbvinst, bristyrke och det sammanvägda prioriteringsindexet.
  *
@@ -7208,16 +7222,20 @@ function prioIndex(delar) {
  * @param {{avvikelse:number, volym:number, jamstalldhet:number}} opt.prioWeights
  * @param {{months?:number, poPct?:number}} [opt.costSettings]
  * @param {Set<string>} [opt.bristAids] - AID-koder som markerats som bristyrke
- * @returns {Array<Object>}
+ * @returns {Array<Object>} en post per AID-kod och BAS-intervall: `yrke` är gruppens namn (texten på dess första rad),
+ *          `aid` AID-koden och `bas` BAS-intervallet
  */
 function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, costSettings, bristAids }) {
     const d = rader || [];
     if (!d.length) return [];
 
+    // En grupp är AID-koden och BAS-intervallet, som i jamforelseRader (jamforelse.js) och gruppdossiern: koden ur
+    // aidAvYrke (rader utan kod grupperas på hela texten), och gruppens namn är texten på dess första rad. Två
+    // stavningar av samma etikett ("207011 Handläggare" och "207011 Handläggare, natt") är alltså en grupp.
     const groups = {};
     d.forEach(r => {
         const aid  = aidAvYrke(r.yrke);
-        const key  = `${r.yrke}|${r.bas}`;
+        const key  = `${aid}|${r.bas}`;
         if (!groups[key]) groups[key] = { yrke: r.yrke, aid, bas: r.bas, rows: [] };
         groups[key].rows.push(r);
     });
@@ -9177,7 +9195,7 @@ const __mirrorSektor = (() => {
  * k-regler som Lika arbete (ett kön under k → samlad median; gruppen under k → maskerad), justerad
  * skillnad med huvudregressionens kodning (kön + ålder när lönefilen har den + BAS som indikatorer, HC3 och
  * t-kvantil; justeradSkillnad i regression.js, ADR-78) när sektorn har ≥ 30 personer och ≥ k av varje
- * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel som del A i
+ * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel och samma tecken som del A i
  * gapuppdelning.js, med sektor i stället för BAS). Går modellen med BAS inte att skatta i ett huvudområde med minst två
  * BAS-intervall (kön och BAS går inte att skilja åt) ges inget justerat tal: ett tal utan BAS vore inte justerat för BAS.
  *
@@ -9261,7 +9279,9 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
 }
 
 /**
- * Sektorernas andel av gapet i medellön (män − kvinnor): Σ_s Δs_s · (W̄_s − W̄).
+ * Sektorernas andel av gapet i medellön (kvinnor − män, negativt när kvinnor ligger lägre, som i gapuppdelning.js):
+ * Σ_s Δs_s · (W̄_s − W̄) med Δs = andelen av kvinnorna − andelen av männen. sektorKr är del A i gapUppdelning med
+ * huvudområde som enda variabel; andel = sektorKr / gapKr har inget tecken att byta.
  * Null när ett kön har färre än k personer: gapet i kronor tillsammans med gapet i procent
  * (Struktur) ger annars det lilla könets medellön — samma regel som gapuppdelning.js.
  *
@@ -9276,7 +9296,7 @@ function sektorernasAndel(rader, { k = 10 } = {}) {
     const ma = (rader || []).filter(r => r.lon > 0 && konOf(r) === 'Man');
     if (!kv.length || !ma.length || kv.length < k || ma.length < k) return null;
     const medel = a => a.reduce((s, r) => s + r.lon, 0) / a.length;
-    const gapKr = medel(ma) - medel(kv);
+    const gapKr = medel(kv) - medel(ma);
     const namn = [...new Set([...kv, ...ma].map(r => sektorsnamn(r.aid)))];
     const grupper = namn.map(s => ({ s, k: kv.filter(r => sektorsnamn(r.aid) === s), m: ma.filter(r => sektorsnamn(r.aid) === s) }));
     const samman = sammanslagning(grupper.map(g => ({ namn: g.s, nKv: g.k.length, nMa: g.m.length })), k);
@@ -9284,7 +9304,7 @@ function sektorernasAndel(rader, { k = 10 } = {}) {
     const delar = samman.length ? [...egna, { s: null, k: samman.flatMap(i => grupper[i].k), m: samman.flatMap(i => grupper[i].m) }] : egna;
     const cell = ({ k, m }) => {
         const wK = k.length ? medel(k) : medel(m), wM = m.length ? medel(m) : medel(k);
-        return { dS: m.length / ma.length - k.length / kv.length, w: (wK + wM) / 2, sBar: (m.length / ma.length + k.length / kv.length) / 2 };
+        return { dS: k.length / kv.length - m.length / ma.length, w: (wK + wM) / 2, sBar: (m.length / ma.length + k.length / kv.length) / 2 };
     };
     const ordnade = ix => ix.map(i => grupper[i].s).sort(jamforSektor);
     const liten = n => n > 0 && n < k;
@@ -10738,8 +10758,8 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const a = u.andel;
         const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-87)
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
-            ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
-            : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
+            ? `Skillnaden i medellön för hela organisationen, kvinnor mot män (${_kr(a.gapKr)} per månad), beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
+            : `Av skillnaden i medellön för hela organisationen, kvinnor mot män (${_kr(a.gapKr)} per månad), beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
         if (andelNot) st.push(andelNot);
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
@@ -27014,9 +27034,12 @@ function updateForecast() {
     // formuläret visar bara förloppet och varningarna.
     { const topp = document.getElementById('lo-slutsatser');
       if (topp) topp.innerHTML = [
-          _laSlutsats('Pott', out.pott > 0 ? kr(out.pott) : '–', out.pott > 0 ? 'kr per månad att fördela' : 'ingen budget angiven'),
+          _laSlutsats('Pott', out.pottAngiven ? kr(out.pott) : '–', out.pottAngiven ? 'kr per månad att fördela' : 'ingen pott angiven'),
           _laSlutsats('Använt', kr(out.använt), out.pott > 0 ? `${svTal(100 * out.använt / out.pott, 0)} % av potten` : 'av påslagen hittills'),
-          _laSlutsats('Kvar att fördela', kr(out.kvar), out.kvar < -0.5 ? 'fördelningen överskrider potten' : 'av potten', out.kvar < -0.5),
+          // Utan angiven pott finns inget kvar att räkna och ingen pott att överskrida (pottAngiven ur forecastOutcome).
+          out.kvar != null
+              ? _laSlutsats('Kvar att fördela', kr(out.kvar), out.kvar < -0.5 ? 'fördelningen överskrider potten' : 'av potten', out.kvar < -0.5)
+              : _laSlutsats('Kvar att fördela', '–', 'ingen pott angiven'),
           // "från …" bara när summan har ändrats; före första påslaget står utgångsläget
           _laSlutsats('Lönesumma per månad', kr(out.lonsummaEfter), Math.round(out.lonsummaEfter) !== Math.round(out.lonsummaFore) ? `från ${kr(out.lonsummaFore)}` : 'utgångsläget'),
           _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPoPct(cost.poPct)}`),
@@ -27511,7 +27534,7 @@ function _forecastSaveScenario(slot) {
     const { nKv, nMa } = _konAntal(d);
     const konOk = _konFarRedovisas(nKv, nMa);   // det råa gapet sparas bara när varje kön når tröskeln
     state.forecast.scenarios[slot] = {
-        budgetTxt: (state.forecast.budget.value || 0) + (state.forecast.budget.mode === 'kr' ? ' kr' : ' %'),
+        budgetTxt: o.pottAngiven ? state.forecast.budget.value + (state.forecast.budget.mode === 'kr' ? ' kr' : ' %') : 'ingen pott angiven',
         targetsCount: state.forecast.targets.length,
         // Antalen följer med, så att jämförelsen kan pröva rågapet mot den tröskel som gäller när den visas.
         nKv, nMa,
@@ -27564,6 +27587,17 @@ function _forecastOlsOn(rows) {
     } finally { state.data = sd; }
     return res;
 }
+// Målet i fältet för tröskelmålet: 0 är ett giltigt mål (ingen oförklarad skillnad), ett tomt fält eller text som inte
+// är ett tal ger standardmålet, och ett tal utanför fältets min och max avvisas (ok: false) i stället för att tyst ändras.
+/** @returns {{ok: boolean, pct: number, min: number, max: number}} */
+function _forecastLasMal(falt, standard) {
+    const min = parseFloat(falt?.min ?? ''), max = parseFloat(falt?.max ?? '');
+    const lo = isFinite(min) ? min : 0, hi = isFinite(max) ? max : Infinity;
+    const text = String(falt?.value ?? '').trim().replace(',', '.');
+    const v = text === '' ? NaN : Number(text);
+    if (!isFinite(v)) return { ok: true, pct: standard, min: lo, max: hi };
+    return { ok: v >= lo && v <= hi, pct: v, min: lo, max: hi };
+}
 // (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans. Sökningen är
 // likalonslyftForMal i src/lib/loneoversyn.js (_fcLyftForMal); här läses fälten, k-spärren prövas och resultatet ritas.
 function _forecastThreshold() {
@@ -27577,8 +27611,11 @@ function _forecastThreshold() {
     // med förklaring (beslut av produktägaren 2026-10-16).
     if (!_konFarRedovisasFor(d)) { host.innerHTML = `<span class="f-dampad">– ${esc(_konUtelamnatNot())}</span>`; return; }
     const { STANDARD_PCT, MAX_LYFT_PCT, SIGNIFIKANS_P } = _fcTroskelmalKonstanter();
-    const tgt = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-pct'))?.value) || STANDARD_PCT;
     const useSig = !!/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-sig'))?.checked;
+    const mal = _forecastLasMal(/** @type {HTMLInputElement|null} */ (document.getElementById('forecast-threshold-pct')), STANDARD_PCT);
+    // Målet räknas bara i läget högst X %; i läget inte signifikant spelar fältet ingen roll.
+    if (!useSig && !mal.ok) { host.innerHTML = `<span class="f-kritisk">Ange ett mål mellan ${svTal(mal.min)} och ${svPoPct(mal.max)}.</span>`; return; }
+    const tgt = mal.ok ? mal.pct : STANDARD_PCT;
     const svar = _fcLyftForMal(d, { malPct: tgt, signifikans: useSig, skatta: _forecastOlsOn });
     const base = svar.utgangslage;
     if (svar.status === 'ingenSkattning') { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
@@ -27587,7 +27624,7 @@ function _forecastThreshold() {
     const hi = /** @type {number} */ (svar.lyftPct), kostnad = /** @type {number} */ (svar.kostnadPerManad);
     const efter = /** @type {{konPct: number|null}} */ (svar.resultat);
     host.innerHTML = `<div class="fs-sm lh-1_6">
-        För att nå <strong>${useSig ? `en oförklarad skillnad som inte är signifikant (p över ${svTal(SIGNIFIKANS_P, 2)})` : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
+        För att nå <strong>${useSig ? `en oförklarad skillnad som inte är signifikant (p över ${svTal(SIGNIFIKANS_P, 2)})` : 'en oförklarad skillnad på högst ' + svPoPct(tgt)}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
         <br>Kostnad: <strong>≈ ${Math.round(kostnad).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(_kostPeriod(kostnad, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${efter.konPct == null ? '–' : svPct(efter.konPct, 2)}.
         <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
     </div>`;
@@ -27697,9 +27734,9 @@ function _exportForecastExport() {
         ['', ''],
         ['Budgetläge', state.forecast.budget.mode === 'kr' ? 'Krontal/mån' : '% av lönesumman'],
         ['Budgetvärde', state.forecast.budget.value],
-        ['Pott (kr/mån)', kr(out.pott)],
+        ['Pott (kr/mån)', out.pottAngiven ? kr(out.pott) : 'ingen pott angiven'],
         ['Använt (kr/mån)', kr(out.använt)],
-        ['Kvar att fördela (kr/mån)', kr(out.kvar)],
+        ['Kvar att fördela (kr/mån)', out.kvar != null ? kr(out.kvar) : '–'],
         ['Generellt påslag', (state.forecast.generell.value || 0) + (state.forecast.generell.mode === 'kr' ? ' kr/mån' : ' %')],
         ['Minsta antal personer i gruppen för riktning', state.forecast.minGroupN || 0],
         ...state.forecast.targets.map((t, i) => [`Riktad pott ${i + 1}`, `BAS ${t.bas}, ${t.aid === '*' ? `alla ${T.enhet.fl}` : 'AID ' + t.aid}${t.kon === 'kvinna' ? ', bara kvinnor' : t.kon === 'man' ? ', bara män' : ''}${t.lonCap > 0 ? `, löner under ${Math.round(t.lonCap)} kr` : ''}: ${t.mode === 'till' ? `höj till ${t.value} kr/mån` : t.mode === 'kr' ? `${t.value} kr/mån` : `${t.value} % av grupplön`}${t.mode === 'till' ? '' : ` (${{ flat: 'lika %', lowest: 'lägst först', target: 'mot målnivå' }[t.dist] || t.dist})`}`]),
@@ -28150,9 +28187,9 @@ function renderSektorer(d) {
     const andelNot = _skSektorAndelNot(andel, kTroskel());
     const andelText = (!andel || andel.andel == null ? ''
         : Math.abs(andel.andel) < 0.01
-            ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror nästan inte alls
+            ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror nästan inte alls
                på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).</p>`
-            : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror
+            : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror
                ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`)
         + (andelNot ? `<p class="sektor-andel">${esc(andelNot)}</p>` : '');
     host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${termStor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
@@ -33105,7 +33142,7 @@ function renderPrioritering() {
     const groupCheck = {};
     dForCount.forEach(r => {
         const aid = aidAvYrke(r.yrke);
-        const k = `${r.yrke}|${r.bas}`;
+        const k = `${aid}|${r.bas}`;   // samma grupper som prioritera (src/lib/prioritering.js)
         if (!groupCheck[k]) groupCheck[k] = { n: 0, aid, bas: r.bas };
         groupCheck[k].n++;
     });
@@ -33170,7 +33207,7 @@ function renderPrioritering() {
         const powerBadge = lowPower
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
-        const rowKey = `${i.yrke}|${i.bas}`;
+        const rowKey = `${i.aid}|${i.bas}`;
         // #13 Förslag-knapp: suggestionerna beräknas vid expand, inte i förväg
         const suggestionBtn = i._rows && i._rows.length
             ? `<button class="btn-suggest" data-row-key="${esc(rowKey)}" type="button" title="Visa förslag på sakliga skäl-hypoteser" aria-label="Visa motiveringsförslag för ${esc(i.yrke)}" aria-expanded="false">Motiveringsförslag</button>`
@@ -39387,29 +39424,11 @@ function buildGruppdossier(key, delat = null) {
     let prio = null, suggestions = [];
     try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
-        // computePrioritization grupperar på `yrke|bas` (hela strängen "AID Etikett")
-        // medan dossiern grupperar på `aid|bas`. Samma AID kan därför ge flera
-        // prio-poster; ta inte bara den första — slå ihop dem, annars visas
-        // kostnad och antal för en delmängd av gruppen.
+        // computePrioritization grupperar på AID-kod och BAS, som dossiern: högst en post per grupp.
         let alla;
         if (!delat) alla = computePrioritization(ref);
         else { if (!delat.prio.has(ref)) delat.prio.set(ref, computePrioritization(ref)); alla = delat.prio.get(ref); }
-        const traffar = (alla || []).filter(i => i.aid === g.aid && i.bas === g.bas);
-        if (traffar.length === 1) {
-            prio = traffar[0];
-        } else if (traffar.length > 1) {
-            const nTot = traffar.reduce((s, i) => s + (i.n || 0), 0);
-            prio = {
-                ...traffar[0],
-                yrke: `${g.aid} (${traffar.length} ${T.namn.fl})`,
-                n: nTot,
-                annualGapTotal: traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0),
-                // n-viktat medelvärde — ett rakt medel skulle ge små grupper lika tyngd
-                diffPct: nTot ? traffar.reduce((s, i) => s + (i.diffPct || 0) * (i.n || 0), 0) / nTot : traffar[0].diffPct,
-                costPerPerson: nTot ? traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0) / nTot : traffar[0].costPerPerson,
-                _rows: traffar.flatMap(i => i._rows || [])
-            };
-        }
+        prio = (alla || []).find(i => i.aid === g.aid && i.bas === g.bas) || null;
         if (prio && typeof generateMotivationSuggestions === 'function') {
             suggestions = generateMotivationSuggestions(prio) || [];
         }

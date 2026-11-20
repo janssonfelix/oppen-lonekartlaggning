@@ -513,7 +513,9 @@ med medellönerna och antalen ett ekvationssystem som ibland gick att lösa för
 variabler räckte delarna. Vakten är differensprovet i `tests/ktroskel-differens.test.js` (avsnitt d).
 
 **Huvudområdenas andel** av skillnaden (`sektorernasAndel` i `src/lib/sektor.js`, meningen under översikten per
-huvudområde och i rapportunderlaget) är del A med huvudområde som enda variabel, och följer samma sammanslagning.
+huvudområde och i rapportunderlaget) är del A med huvudområde som enda variabel, med samma tecken: gapet i medellön
+(`gapKr`) och huvudområdenas del (`sektorKr`) är kvinnor minus män, negativa när kvinnor ligger lägre, och andelen är
+kvoten mellan dem. Den följer samma sammanslagning.
 Huvudområden som räknas samman namnges i en not (`sektorAndelNot`); räknas alla samman redovisas inget belopp, och
 noten säger varför.
 

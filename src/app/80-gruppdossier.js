@@ -120,29 +120,11 @@ function buildGruppdossier(key, delat = null) {
     let prio = null, suggestions = [];
     try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
-        // computePrioritization grupperar på `yrke|bas` (hela strängen "AID Etikett")
-        // medan dossiern grupperar på `aid|bas`. Samma AID kan därför ge flera
-        // prio-poster; ta inte bara den första — slå ihop dem, annars visas
-        // kostnad och antal för en delmängd av gruppen.
+        // computePrioritization grupperar på AID-kod och BAS, som dossiern: högst en post per grupp.
         let alla;
         if (!delat) alla = computePrioritization(ref);
         else { if (!delat.prio.has(ref)) delat.prio.set(ref, computePrioritization(ref)); alla = delat.prio.get(ref); }
-        const traffar = (alla || []).filter(i => i.aid === g.aid && i.bas === g.bas);
-        if (traffar.length === 1) {
-            prio = traffar[0];
-        } else if (traffar.length > 1) {
-            const nTot = traffar.reduce((s, i) => s + (i.n || 0), 0);
-            prio = {
-                ...traffar[0],
-                yrke: `${g.aid} (${traffar.length} ${T.namn.fl})`,
-                n: nTot,
-                annualGapTotal: traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0),
-                // n-viktat medelvärde — ett rakt medel skulle ge små grupper lika tyngd
-                diffPct: nTot ? traffar.reduce((s, i) => s + (i.diffPct || 0) * (i.n || 0), 0) / nTot : traffar[0].diffPct,
-                costPerPerson: nTot ? traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0) / nTot : traffar[0].costPerPerson,
-                _rows: traffar.flatMap(i => i._rows || [])
-            };
-        }
+        prio = (alla || []).find(i => i.aid === g.aid && i.bas === g.bas) || null;
         if (prio && typeof generateMotivationSuggestions === 'function') {
             suggestions = generateMotivationSuggestions(prio) || [];
         }

@@ -35,8 +35,10 @@ Alla belopp är kronor per månad tills kostnaden räknas över perioden (avsnit
     pott = max(0, belopp)                         när budgeten är i kronor
     pott = max(0, lönesumman × procent / 100)     när budgeten är i procent
 
-Lönesumman är summan av alla löner över 0 (`totalLonSum`). En budget som saknas eller inte är ett tal ger potten 0.
-Potten styr ingenting i fördelningen; den är måttstocken som utfallet jämförs med.
+Lönesumman är summan av alla löner över 0 (`totalLonSum`). En budget som saknas eller inte är ett tal (ett tomt fält)
+är **ingen angiven pott** (`pottArAngiven` falskt): potten räknas då som 0, men utfallet jämförs inte med den
+(avsnitt 6). En angiven pott på 0 kr är en pott. Potten styr ingenting i fördelningen; den är måttstocken som utfallet
+jämförs med.
 
 ## 3. Generellt påslag
 
@@ -112,13 +114,19 @@ Det generella och det riktade påslaget redovisas före avrundning (`generellCos
 | Tal | Hur |
 |---|---|
 | Använt | summan av påslagen efter avrundning |
-| Kvar | potten − använt |
-| Över potten | använt > potten + 0,000001; fliken säger *Fördelningen överskrider potten* |
+| Angiven pott | `pottAngiven`: budgeten har ett tal (avsnitt 2) |
+| Kvar | potten − använt; null utan angiven pott |
+| Över potten | använt > potten + 0,000001 när en pott är angiven, annars falskt; fliken säger *Fördelningen överskrider potten* |
 | Lönesumman före och efter | före + använt |
 | Den råa skillnaden före och efter | kvinnornas median i procent av männens, minus 100 (`rawGenderGap`) |
-| Varav till kvinnodominerade grupper | kostnaden i grupper (BAS och AID) som är kvinnodominerade enligt inställningen i Likvärdigt arbete |
+| Varav till kvinnodominerade grupper | kostnaden i grupper (BAS och AID) som är kvinnodominerade enligt inställningen i Likvärdigt arbete; skickas ingen gräns gäller `KVINNO_TROSKEL_DEFAULT` (60 %) |
 | Grupper som går om varandra | en grupp vars median låg under en annans och efter påslaget ligger över den (`detectLeapfrog`) |
 | Total kostnad | se avsnitt 10 |
+
+**Utan angiven pott** visar fliken påslagen som vanligt, men *Pott* och *Kvar att fördela* står som ett streck med
+*ingen pott angiven*, och ingen varning om överskriden pott. Excel-exporten skriver *ingen pott angiven* på raden
+*Pott* och ett streck på raden *Kvar att fördela*, och ett sparat scenario heter *ingen pott angiven* i stället för
+*0 kr*. Utan pott och utan påslag visas inget utfall (fliken säger att en pott behövs).
 
 **Den oförklarade skillnaden före och efter** räknas i appen (`_forecastOlsGap`): huvudregressionen körs en gång på
 lönerna före och en gång på de nya lönerna, med samma förklaringsmodell ([`regressionsmodellen.md`](regressionsmodellen.md)).
@@ -166,11 +174,14 @@ det samlade påslaget, kostnaden över perioden och den råa skillnaden. Påslag
 `likalonslyftForMal` söker det minsta lika procentlyftet till **alla kvinnor** som gör att den oförklarade skillnaden
 (huvudregressionen) når målet:
 
-- antingen att skillnaden är minst −mål (standard 5 %),
+- antingen att skillnaden är minst −mål (standard 5 %; målet 0 % betyder att skillnaden är minst 0),
 - eller, när användaren väljer det, att skillnaden inte är signifikant: p över 0,05 eller inget p.
 
 Sökningen är en halvering i intervallet 0–40 % i 22 varv; svaret är intervallets övre gräns, där målet är nått.
-Är målet redan nått, går regressionen inte att skatta eller räcker inte 40 %, sägs det i stället. Kostnaden per månad
+Är målet redan nått, går regressionen inte att skatta eller räcker inte 40 %, sägs det i stället.
+Fältet för målet läses i `_forecastThreshold` (`_forecastLasMal`): 0 är ett mål, ett tomt fält eller något som inte är
+ett tal ger standardmålet, och ett tal utanför fältets gränser (0–20 %) avvisas med *Ange ett mål mellan 0 och 20 %*.
+I läget *inte signifikant* spelar fältet ingen roll. Kostnaden per månad
 är kvinnornas lönesumma gånger lyftet, utan PO. Lyftet visas bara när båda könen når tröskeln.
 
 | Konstant | Värde |
@@ -218,17 +229,11 @@ kvinnor berörs. Tröskelmålet och den råa skillnaden i känsligheten visas ba
 - **Riktade rader räknas på de ursprungliga lönerna.** Det generella påslaget påverkar inte vem som är lägst eller var
   taket ligger, och två rader som träffar samma person lägger ihop sina påslag utan hänsyn till varandra.
 - **Avrundningen kan gå över potten** (avsnitt 5). Det flaggas men korrigeras inte.
-- **Utan budget flaggas varje påslag som över potten.** Potten är då 0, och *Över potten* är sant så snart något
-  fördelas.
 - **Den stegvisa planen avrundar inte per år.** Ett lönesteg gäller slutläget; åren däremellan kan ge löner som inte
   ligger på steget.
 - **Tröskelmålet förutsätter att skillnaden ändras åt ett håll när lyftet ökar.** Halveringen hittar en gräns, inte
   nödvändigtvis den minsta, om skattningen inte gör det. Lyftet går till alla kvinnor, inte till grupperna med
   skillnad.
-- **Ett tröskelmål på 0 blir 5.** Fältet läses med `parseFloat(…) || STANDARD_PCT` i `_forecastThreshold`, så 0 tas
-  som saknat värde.
-- **Gränsen för kvinnodominerat har en reserv i koden.** `forecastOutcome` använder 60 när ingen gräns skickas, och
-  `|| 60` gör en gräns på 0 till 60. Appen skickar alltid inställningen.
 
 ## 14. Vakter och referensfall
 

@@ -77,6 +77,20 @@ describe('likalonslyftForMal: målet högst X %', () => {
         expect(svar.lyftPct).toBeUndefined();
         expect(svar.utgangslage.konPct).toBeCloseTo((108 / 110 - 1) * 100, 10);
     });
+    // Målet 0 % är ett mål: ingen oförklarad skillnad till kvinnornas nackdel (skillnaden minst 0), inte standardmålet.
+    it('målet 0 %: lyftet till lika lön (110 / 100 − 1 = 10 %), inte lyftet för standardmålet', () => {
+        const svar = likalonslyftForMal(underlag(100, 110), { malPct: 0, skatta: stubbe().skatta });
+        expect(svar.status).toBe('hittat');
+        expect(svar.lyftPct).toBeGreaterThanOrEqual(10 - 1e-9);
+        expect(svar.lyftPct - 10).toBeLessThanOrEqual(TOL + 1e-9);
+        expect(svar.resultat.konPct).toBeGreaterThanOrEqual(0);
+        expect(svar.lyftPct).toBeGreaterThan(likalonslyftForMal(underlag(100, 110), { skatta: stubbe().skatta }).lyftPct);
+    });
+    it('målet 0 %: en skillnad på −0,1 % når inte målet, en skillnad på 0 eller mer gör det', () => {
+        expect(likalonslyftForMal(underlag(99.9, 100), { malPct: 0, skatta: stubbe().skatta }).status).toBe('hittat');
+        expect(likalonslyftForMal(underlag(100, 100), { malPct: 0, skatta: stubbe().skatta }).status).toBe('redan');
+        expect(likalonslyftForMal(underlag(101, 100), { malPct: 0, skatta: stubbe().skatta }).status).toBe('redan');
+    });
     it('mer än 40 % krävs: status utomRackhall', () => {
         const svar = likalonslyftForMal(underlag(50, 110), { malPct: 5, skatta: stubbe().skatta });
         expect(svar.status).toBe('utomRackhall');
