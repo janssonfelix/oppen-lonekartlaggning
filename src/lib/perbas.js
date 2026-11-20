@@ -21,7 +21,7 @@
  * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 import { median, quantile } from './stat.js';
-import { sektorsnamn, aidAvRad } from './aid.js';
+import { sektorsnamn, aidAvRad, namnrader } from './aid.js';
 import { statistikFor } from './jamforelse.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
 import { kompletterandeUndertryckning } from './undertryckning.js';
@@ -150,17 +150,19 @@ export function perBasTabeller(rader, opt = {}) {
         // (aidAvRad), och en rad utan kod grupperas på sin text.
         const perYrke = new Map();
         df.forEach(r => { const key = aidAvRad(r); if (!perYrke.has(key)) perYrke.set(key, []); perYrke.get(key).push(r); });
-        const yrken = [...perYrke.entries()].sort((a, b) => b[1].length - a[1].length || yrkesnamn(a[1][0]).localeCompare(yrkesnamn(b[1][0]), 'sv'));
+        // Yrkesgruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+        const namnrad = namnrader(df, aidAvRad), namnAv = rows => yrkesnamn(namnrad.get(aidAvRad(rows[0])));
+        const yrken = [...perYrke.entries()].sort((a, b) => b[1].length - a[1].length || namnAv(a[1]).localeCompare(namnAv(b[1]), 'sv'));
         // Organisationens rad minus yrkesgruppernas ger de utelämnade yrkesgruppernas medellön: samma regel inom intervallet.
         // En yrkesgrupp utan någon lön har inget medel och räknas varken som visad eller som dold.
         const yrkesMatt = visa.has('yrken') ? yrken.map(([, rows]) => (rows.length >= k ? _matt(rows) : null)) : [];
         const yrkenDolda = new Set(visa.has('yrken') && !medelDold
-            ? kompletterandeUndertryckning(yrken.map(([, rows], i) => ({ namn: yrkesnamn(rows[0]), n: rows.length < k || yrkesMatt[i] ? rows.length : 0, dold: rows.length < k || !yrkesMatt[i] })), k)
+            ? kompletterandeUndertryckning(yrken.map(([, rows], i) => ({ namn: namnAv(rows), n: rows.length < k || yrkesMatt[i] ? rows.length : 0, dold: rows.length < k || !yrkesMatt[i] })), k)
             : []);
         const undertryckta = [];
         yrken.forEach(([key, rows], i) => {
             if (!visa.has('yrken')) return;
-            const namn = yrkesnamn(rows[0]);
+            const namn = namnAv(rows);
             if (rows.length < k) { utelamnade.push(namn); return; }
             const m = yrkesMatt[i];
             if (!m) return;

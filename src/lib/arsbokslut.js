@@ -241,7 +241,7 @@ export function jamforArsbokslut(forra, nu) {
     const kGrans = Math.max(forra.k, nu.k), sammaK = forra.k === nu.k;
     forra = bokslutMedGrans(forra, kGrans); nu = bokslutMedGrans(nu, kGrans);
     // Grupperna paras på AID-koden (aidAvYrke ur gruppens namn) och BAS-intervallet, inte på texten: en grupp är koden i
-    // intervallet (ADR-89), och namnet är texten på gruppens första rad, som kan skilja sig mellan åren. Ett bokslut sparat
+    // intervallet (ADR-89), och namnet är texten på flest av gruppens rader, som kan skilja sig mellan åren. Ett bokslut sparat
     // innan grupperna följde koden kan ha flera grupper med samma kod (en per text); då jämförs årets grupp med den som har
     // samma namn, annars med den största, och de andra står inte som egna rader.
     // Ett bokslut sparat innan grupperna delades per BAS-intervall har en rad per kod över alla intervall, utan fältet

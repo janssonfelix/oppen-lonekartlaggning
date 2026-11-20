@@ -16,12 +16,13 @@ import { gapPoster } from '../src/lib/gapuppdelning.js';
 import { groupKey, gruppnycklar } from '../src/lib/falt.js';
 import { computePivot } from '../src/lib/utforska.js';
 import { personFilter } from '../src/lib/urval.js';
-import { aidAvRad } from '../src/lib/aid.js';
+import { aidAvRad, namnrader } from '../src/lib/aid.js';
 import { byggArsbokslut, jamforArsbokslut } from '../src/lib/arsbokslut.js';
 import { prioritera } from '../src/lib/prioritering.js';
 import { jamforelseRader } from '../src/lib/jamforelse.js';
 import { perBasTabeller } from '../src/lib/perbas.js';
 import { grupperaAidBas } from '../src/lib/aidbas.js';
+import { aggregeraOrgKvDom } from '../src/lib/likvardighet.js';
 
 // En rad som inläsningen ger den (inlasning.js): aid är sifferprefixet, yrkeLabel texten efter koden.
 const rad = (text, bas, kon, lon, alder) => {
@@ -42,13 +43,38 @@ describe('aidAvRad och gruppnycklarna', () => {
         expect(aidAvRad({ aid: '1', bas: 'A' })).toBe('1');
         expect(aidAvRad({ yrke: 'Ingen kod', aid: '' })).toBe('Ingen kod');
     });
-    it('groupKey följer texten (tre grupper); gruppnycklar följer koden (en grupp, med den första radens namn)', () => {
+    it('groupKey följer texten (tre grupper); gruppnycklar följer koden (en grupp, med namnet på flest rader)', () => {
         const r = underlag();
         expect(new Set(r.map(x => groupKey(x, 'aid'))).size).toBe(3);
         const nyckel = gruppnycklar(r);
         expect([...new Set(r.map(x => nyckel(x, 'aid')))]).toEqual([TEXT_A]);
         expect([...new Set(r.map(x => nyckel(x, 'aidbas')))]).toEqual([`${TEXT_A} · BAS C`]);
         expect(nyckel(r[0], 'bas')).toBe('C');
+        // Namnet beror inte på ordningen: står raden med ett namn först heter gruppen ändå efter etiketten.
+        const omvand = [...delNamn(), ...delB(), ...delA()];
+        expect([...new Set(omvand.map(x => gruppnycklar(omvand)(x, 'aidbas')))]).toEqual([`${TEXT_A} · BAS C`]);
+    });
+});
+
+describe('namnrader: gruppens namn är texten på flest av dess rader', () => {
+    const t = (yrke, bas = 'C') => ({ yrke, bas });
+    const namn = rader => [...namnrader(rader, r => `${aidAvRad(r)}|${r.bas}`)].map(([k, r]) => [k, r.yrke]);
+    it('flest rader vinner, också när en annan text står först', () => {
+        expect(namn([t(TEXT_NAMN), t(TEXT_B), t(TEXT_A), t(TEXT_A)])).toEqual([['207011|C', TEXT_A]]);
+    });
+    it('lika många rader: texten som kommer först i lönefilen', () => {
+        expect(namn([t(TEXT_B), t(TEXT_A), t(TEXT_A), t(TEXT_B)])).toEqual([['207011|C', TEXT_B]]);
+        expect(namn([t(TEXT_A), t(TEXT_B), t(TEXT_B), t(TEXT_A)])).toEqual([['207011|C', TEXT_A]]);
+    });
+    it('ger raden, så att etiketten och hela fältet kommer ur samma rad; varje grupp för sig', () => {
+        const a = rad(TEXT_A, 'C', 'man', 1, 30), b = rad(TEXT_B, 'D', 'man', 1, 30);
+        const m = namnrader([b, a, rad(TEXT_A, 'C', 'kvinna', 2, 31)], r => `${aidAvRad(r)}|${r.bas}`);
+        expect(m.get('207011|C')).toBe(a);
+        expect(m.get('207011|D')).toBe(b);
+    });
+    it('rader utan kod grupperas på sin text och heter som förut', () => {
+        expect(namn([t('Ingen kod', 'B'), t('Ingen kod, natt', 'B'), t('Ingen kod', 'B')])).toEqual([['Ingen kod|B', 'Ingen kod'], ['Ingen kod, natt|B', 'Ingen kod, natt']]);
+        expect(namnrader([], aidAvRad).size).toBe(0);
     });
 });
 
@@ -76,13 +102,16 @@ describe('likaArbeteGrupper: en grupp är AID-koden', () => {
         // Per text var det inga könsmedianer alls: varje text har färre än 5 av något kön.
         for (const del of [delA(), delB()]) expect(likaArbeteGrupper(del, { k: 5, golv: 5 }).grupper.every(x => x.samladMedian)).toBe(true);
     });
-    it('gruppens namn är texten på dess första rad; talen beror inte på ordningen', () => {
+    it('gruppens namn är texten på flest av dess rader; varken namnet eller talen beror på ordningen', () => {
         const a = likaArbeteGrupper(underlag(), { k: 5, golv: 5 }).grupper[0];
         const b = likaArbeteGrupper([...delB(), ...delNamn(), ...delA()], { k: 5, golv: 5 }).grupper[0];
-        expect(b.yrke).toBe(TEXT_B);
-        expect({ ...b, yrke: null }).toEqual({ ...a, yrke: null });
-        // Står raden med ett namn först blir namnet gruppens namn (känd lucka, likvardighetsmodellen.md).
-        expect(likaArbeteGrupper([...delNamn(), ...delA(), ...delB()], { k: 10 }).grupper[0].yrke).toBe(TEXT_NAMN);
+        expect(a.yrke).toBe(TEXT_A);   // 8 rader, mot 7 och 1
+        expect(b).toEqual(a);
+        // En grupp vars första rad har ett personnamn i fältet heter efter etiketten.
+        expect(likaArbeteGrupper([...delNamn(), ...delA(), ...delB()], { k: 10 }).grupper[0].yrke).toBe(TEXT_A);
+        // Lika många rader med två texter: texten som kommer först i lönefilen.
+        const lika = [...flera(TEXT_B, 'C', 'kvinna', 2, 30000), ...flera(TEXT_A, 'C', 'man', 2, 32000), ...flera(TEXT_A, 'C', 'kvinna', 1, 30000), ...flera(TEXT_B, 'C', 'man', 1, 32000)];
+        expect(likaArbeteGrupper(lika, { k: 1 }).grupper[0].yrke).toBe(TEXT_B);
     });
     it('samma kod i två BAS-intervall är två grupper, intill varandra i BAS-ordning; rader utan kod grupperas på sin text, som förut', () => {
         const r = [...underlag(), ...flera(TEXT_B, 'D', 'kvinna', 3, 36000), ...flera(TEXT_B, 'D', 'man', 3, 36000),
@@ -144,7 +173,7 @@ describe('årsbokslutet: grupperna paras på koden', () => {
     const gruppPost = g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad, spridning: null });
     const bokslut = (ar, grupper, k = 5) => byggArsbokslut({ ar, skapat: `${ar}-12-31`, k, verktyg: 'test', nyckeltal: { n: 16, nKv: 8, nMa: 8 }, grupper, punkter: [] });
     const arets = () => bokslut(2026, likaArbeteGrupper(underlag(), { k: 5, golv: 5 }).grupper.map(gruppPost));
-    it('årets bokslut har en grupp för koden i intervallet, med namnet från gruppens första rad', () => {
+    it('årets bokslut har en grupp för koden i intervallet, med namnet från texten på flest av gruppens rader', () => {
         expect(arets().grupper.map(g => [g.yrke, g.bas, g.nKv, g.nMa, g.flaggad])).toEqual([[TEXT_A, 'C', 8, 8, true]]);
     });
     it('ett bokslut sparat med en annan text för koden jämförs med årets grupp (kvar, inte ny och borta)', () => {
@@ -190,6 +219,28 @@ describe('en och samma uppsättning grupper i hela verktyget', () => {
     const sortera = l => [...l].sort();
     const nycklar = (lista, n = g => g.n) => sortera(lista.map(g => `${g.aid}|${g.bas}|${n(g)}`));
     const r = blandat();
+    // Namnet: texten på flest av gruppens rader, vid lika många den första. I 503012 står "Drifttekniker" först men
+    // "Drifttekniker, jour" på fler rader; i 207011 i BAS D står "Handläggare, natt" på tre rader och "Handläggare" på två.
+    const NAMN = ['207011|C|Handläggare', '207011|D|Handläggare, natt', '503012|C|Drifttekniker, jour', 'Ingen kod, natt|B|Ingen kod, natt', 'Ingen kod|B|Ingen kod'];
+    const etikett = t => String(t).replace(/^\d+\s*/, '');
+    const namnen = (lista, namn) => sortera(lista.map(g => `${g.aid}|${g.bas}|${etikett(namn(g))}`));
+    it('samma namn på varje grupp i alla analyser', () => {
+        const prio = prioritera(r, { referensFor: () => ({ median: 40000, kalla: 'x' }), kTroskel: 1,
+            prioConfig: { atgardThreshold: -5, akutMinN: 10, bevakaThreshold: -2, analyseraThreshold: 5 }, prioWeights: { avvikelse: 50, volym: 30, jamstalldhet: 20 } });
+        expect(namnen(likaArbeteGrupper(r, { k: 1 }).grupper, g => g.yrke)).toEqual(NAMN);
+        expect(namnen(prio, g => g.yrke)).toEqual(NAMN);
+        expect(namnen(jamforelseRader(r, { k: 1 }).rader, g => g.yrke)).toEqual(NAMN);
+        expect(namnen(trattUnderlag(r, 1).punkter, g => g.yrke)).toEqual(NAMN);
+        expect(namnen(grupperaAidBas(r), g => g.yrke)).toEqual(NAMN);
+        const t = perBasTabeller(r, { k: 1 });
+        expect(namnen(t.intervall.flatMap(i => i.rader.filter(x => x.typ === 'yrke').map(x => ({ aid: x.aid, bas: i.bas, namn: x.namn }))), g => g.namn)).toEqual(NAMN);
+        const nyckel = gruppnycklar(r);
+        const utforska = [...new Map(r.map(x => [`${aidAvRad(x)}|${x.bas}`, { aid: aidAvRad(x), bas: x.bas, namn: nyckel(x, 'aidbas').split(' · BAS')[0] }])).values()];
+        expect(namnen(utforska, g => g.namn)).toEqual(NAMN);
+        // Likvärdigt arbete grupperar bara rader med kod (fältet aid).
+        const lv = aggregeraOrgKvDom(r, 60, 1);
+        expect(namnen([...lv.orgKvDom, ...lv.orgIckeKv], g => g.label)).toEqual(NAMN.filter(n => /^\d/.test(n)));
+    });
     it('Lika arbetes tabell (och BAS-dossiern, som läser den), tabellerna per AID-kod och BAS-intervall och trattdiagrammet', () => {
         expect(nycklar(likaArbeteGrupper(r, { k: 1 }).grupper, g => g.tot)).toEqual(VANTAT);
         expect(nycklar(grupperaAidBas(r))).toEqual(VANTAT);

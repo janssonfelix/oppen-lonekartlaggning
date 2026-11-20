@@ -45,8 +45,10 @@ Verktyget
 
 Verktyget maskerar inte och tar inte bort namn ur fältet för AID-etikett (ADR-85). Det som står där, högst 40
 tecken efter koden, visas i tabellerna och följer med i exporterna. Varningen hittar inte alla namn: inte namn i
-gemener, inte ett ensamt namn och inte ett namn som står på tre eller fler rader. Den som tar ut filen ansvarar för att
-fältet bara innehåller kod och etikett ([`datauttag.md`](../anvandare/datauttag.md)).
+gemener, inte ett ensamt namn och inte ett namn som står på tre eller fler rader. En grupp heter efter texten på flest
+av dess rader (ADR-89), så ett namn på en enstaka rad blir inte gruppens namn när etiketten står på fler, men det står
+kvar på personens egen rad. Den som tar ut filen ansvarar för att fältet bara innehåller kod och etikett
+([`datauttag.md`](../anvandare/datauttag.md)).
 
 Det som exporteras ligger sedan utanför verktyget. Vad filerna innehåller och hur de bör hanteras står i avsnitt 4.
 

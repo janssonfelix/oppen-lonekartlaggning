@@ -23,7 +23,7 @@ import { basRangFn } from './likvardighet.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
 import { arKvinna } from './kon.js';
-import { aidAvRad } from './aid.js';
+import { aidAvRad, namnrader } from './aid.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -54,7 +54,7 @@ export function gruppMedBas(g) {
  * medianskillnaden (minst 5 %), oberoende av statusen. Stabiliteten prövas mot statusens storleksgräns (3 %).
  * En grupp är AID-koden (aidAvRad) i BAS-intervallet (ADR-89), inte texten i fältet för AID-etikett: två stavningar av
  * samma etikett i samma intervall är en grupp, och samma kod i två intervall är två grupper. `yrke` är gruppens namn,
- * texten på dess första rad, `aid` koden och `bas` intervallet. Grupperna står med samma kod intill varandra: koderna
+ * texten som står på flest av gruppens rader (namnrader i aid.js), `aid` koden och `bas` intervallet. Grupperna står med samma kod intill varandra: koderna
  * ordnade efter den största skillnaden bland kodens grupper, och inom koden intervallen i BAS-ordning.
  * `utelamnade` och `ejJamforbara` bär namnen med intervallet (gruppMedBas); `utelamnadeGrupper` och
  * `ejJamforbaraGrupper` samma grupper som { yrke, aid, bas }.
@@ -64,9 +64,11 @@ export function gruppMedBas(g) {
  */
 export function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const perGrupp = new Map();
+    const nyckelAv = r => `${aidAvRad(r)}\u0000${r.bas == null ? '' : String(r.bas)}`;
+    const namn = namnrader((rader || []).filter(r => arKvinna(r) || _arMan(r)), nyckelAv);
     for (const r of rader || []) {
-        const aid = aidAvRad(r), bas = r.bas == null ? '' : String(r.bas), nyckel = `${aid}\u0000${bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { yrke: r.yrke, aid, bas, kv: [], ma: [] });
+        const aid = aidAvRad(r), bas = r.bas == null ? '' : String(r.bas), nyckel = nyckelAv(r);
+        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { yrke: (namn.get(nyckel) ?? r).yrke, aid, bas, kv: [], ma: [] });
         if (arKvinna(r)) perGrupp.get(nyckel).kv.push(r.lon);
         else if (_arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
     }

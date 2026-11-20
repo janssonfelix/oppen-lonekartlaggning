@@ -39,11 +39,13 @@ function buildLonepolitikModel() {
 
     // Gruppera AID×BAS
     const groups = new Map();
+    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const namnrad = namnrader(d.filter(r => r.lon > 0 && r.bas), r => _lpAidOf(r) + '|' + r.bas);
     d.forEach(r => {
         if (!(r.lon > 0) || !r.bas) return;
         const aid = _lpAidOf(r);
         const key = aid + '|' + r.bas;
-        if (!groups.has(key)) groups.set(key, { aid, bas: r.bas, yrke: r.yrke, rows: [] });
+        if (!groups.has(key)) groups.set(key, { aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
         groups.get(key).rows.push(r);
     });
 

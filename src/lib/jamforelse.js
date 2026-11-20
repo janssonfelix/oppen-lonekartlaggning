@@ -13,7 +13,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median, quantile } from './stat.js';
-import { sektorsnamn, aidAvYrke } from './aid.js';
+import { sektorsnamn, aidAvYrke, namnrader } from './aid.js';
 import { skapaTermer, ordForAntal, adjektiv } from './termer.js';
 import { arKvinna } from './kon.js';
 
@@ -113,11 +113,13 @@ export function statistikensMedianFor(statistik, grupper) {
  */
 export function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
     const perAid = new Map();   // aid → Map(bas → { yrke, lons })
+    // Gruppens namn är texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const namn = namnrader(rader, r => `${aidAvYrke(r.yrke)}|${r.bas}`);
     for (const r of rader || []) {
         const aid = aidAvYrke(r.yrke);
         if (!perAid.has(aid)) perAid.set(aid, new Map());
         const perBas = perAid.get(aid);
-        if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [], kvinnor: 0 });
+        if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: namn.get(`${aid}|${r.bas}`).yrke, lons: [], kvinnor: 0 });
         const g = perBas.get(r.bas);
         g.lons.push(r.lon);
         if (arKvinna(r)) g.kvinnor++;

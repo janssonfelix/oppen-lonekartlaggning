@@ -61,6 +61,18 @@ describe('Lika arbete i appen: en grupp per AID-kod', () => {
         expect(underC.map(tr => tr.textContent).join('|')).toMatch(/12 \(6\/6\)/);
         expect(underC).toHaveLength(2);
     });
+    it('gruppens namn är texten på flest av dess rader i appens egna grupperingar också, när raden med ett namn står först', () => {
+        const w = createAppWindow();
+        const d = underlag();
+        w.__state.data = [d[d.length - 1], ...d.slice(0, -1)];   // personnamnet på första raden
+        expect(w.eval('laLikaGrupper(getData(), 10)').grupper.map(g => g.yrke)).toEqual([TEXT_A]);
+        expect(w.eval('gruppdossierCandidates()').map(g => g.yrke)).toEqual([TEXT_A]);
+        expect(w.eval("buildBasdossier('C')").yrken.map(y => y.yrke)).toEqual([TEXT_A]);
+        expect(w.eval('byggArsbokslutNu()').grupper.map(g => g.yrke)).toEqual([TEXT_A]);
+        expect(w.eval("_forecastAidsForBas('C')").map(g => g.label)).toEqual(['Handläggare']);
+        expect(w.eval("_forecastLutningRader(getData(), getData().map(r => ({ lon: r.lon })), 'grupp')").map(g => g.yrke)).toEqual(['Handläggare']);
+        expect(w.eval('_lvKravGrupper(getData(), { k: 10 })').grupper.map(g => g.namn)).toEqual(['Handläggare']);
+    });
     it('BAS-dossiern: en yrkesrad för koden, med gruppens antal ur Lika arbete', () => {
         const w = fonster();
         const d = w.eval("buildBasdossier('C')");

@@ -24,6 +24,7 @@
 import { median, quantile } from './stat.js';
 import { basRangFn, konsklass } from './likvardighet.js';
 import { arKvinna, arMan } from './kon.js';
+import { namnrader } from './aid.js';
 
 /**
  * Definitionerna av kvinnodominerat arbete: nyckel → namn (valet i inställningarna) och text (tabellerna och
@@ -92,14 +93,16 @@ const arMa = arMan;
  */
 export function grupperaAidBas(rader) {
     const map = new Map();
+    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const iGrupp = r => !!(r && r.bas && r.lon > 0 && (arKv(r) || arMa(r)) && String(r.aid || r.yrke || '').trim());
+    const nyckelAv = r => `${String(r.aid || r.yrke || '').trim()}|${r.bas}`;
+    const namn = namnrader((rader || []).filter(iGrupp), nyckelAv);
     for (const r of rader || []) {
-        if (!r || !r.bas || !(r.lon > 0)) continue;
-        const kv = arKv(r), ma = arMa(r);
-        if (!kv && !ma) continue;
+        if (!iGrupp(r)) continue;
+        const kv = arKv(r);
         const aid = String(r.aid || r.yrke || '').trim();
-        if (!aid) continue;
-        const key = `${aid}|${r.bas}`;
-        if (!map.has(key)) map.set(key, { aid, bas: String(r.bas), yrke: String(r.yrkeLabel || r.yrke || aid), n: 0, nKv: 0, nMa: 0, kvLoner: [], maLoner: [], loner: [] });
+        const key = nyckelAv(r), nr = namn.get(key);
+        if (!map.has(key)) map.set(key, { aid, bas: String(r.bas), yrke: String(nr.yrkeLabel || nr.yrke || aid), n: 0, nKv: 0, nMa: 0, kvLoner: [], maLoner: [], loner: [] });
         const g = map.get(key);
         g.n++;
         if (kv) { g.nKv++; g.kvLoner.push(r.lon); } else { g.nMa++; g.maLoner.push(r.lon); }

@@ -55,8 +55,8 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 | Regression | `regression` | `kon`, `namn`, `stat`, `termer` |
 |  | `gapuppdelning` | `falt`, `namn`, `termer`, `undertryckning` |
 |  | `livscykel` | `kon`, `stat`, `status`, `termer` |
-| Lika och likvärdigt arbete | `likvardighet` | `kon`, `rng`, `stat`, `status` |
-|  | `aidbas` | `kon`, `likvardighet`, `stat` |
+| Lika och likvärdigt arbete | `likvardighet` | `aid`, `kon`, `rng`, `stat`, `status` |
+|  | `aidbas` | `aid`, `kon`, `likvardighet`, `stat` |
 |  | `perbas` | `aid`, `jamforelse`, `kon`, `stat`, `termer`, `undertryckning` |
 |  | `individflaggor` | `aid`, `falt` |
 | Struktur och rapportmått | `struktur` | `kon`, `stat` |

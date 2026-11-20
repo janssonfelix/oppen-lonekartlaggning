@@ -58,7 +58,7 @@ export const MODULES = [
     {
         file: 'aid.js', ns: '__mirrorAid',
         expose: {
-            normaliseraAid: null, aidAvYrke: 'aidAvYrke', aidAvRad: 'aidAvRad', sifferprefixAvYrke: 'sifferprefixAvYrke', huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
+            normaliseraAid: null, aidAvYrke: 'aidAvYrke', aidAvRad: 'aidAvRad', namnrader: 'namnrader', sifferprefixAvYrke: 'sifferprefixAvYrke', huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
             arRestkod: null, arLedningsetikett: null,
             jamforSektor: '_aidJamforSektor', etikettlistaInfo: '_aidEtikettlistaInfo'
         }

@@ -9,7 +9,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { sektorsnamn, mellannivaEtikett, aidAvRad } from './aid.js';
+import { sektorsnamn, mellannivaEtikett, aidAvRad, namnrader } from './aid.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
 import { arKvinna, arMan } from './kon.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
@@ -80,22 +80,20 @@ export function groupKey(row, dim) {
 
 /**
  * Gruppnycklarna för ett underlag: som groupKey, men dimensionerna 'aid' och 'aidbas' grupperar på AID-koden
- * (aidAvRad), inte på texten i fältet för AID-etikett. Kodens namn är groupKey(rad, 'aid') för den första raden i
- * underlaget med koden, så att två stavningar av samma etikett blir en grupp med ett namn. För ett underlag där varje
- * kod har en enda text är nycklarna desamma som groupKey ger.
+ * (aidAvRad), inte på texten i fältet för AID-etikett. Namnet är groupKey(rad, 'aid') för texten som står på flest
+ * rader (namnrader i aid.js): för 'aid' bland kodens rader i underlaget, för 'aidbas' bland kodens rader i
+ * BAS-intervallet, så att 'aidbas' bär samma namn som gruppen i resten av verktyget. Två stavningar av samma etikett
+ * blir alltså en grupp med ett namn. För ett underlag där varje kod har en enda text är nycklarna desamma som groupKey ger.
  * @param {any[]} rader
  * @returns {(row: any, dim: string) => (string|null)}
  */
 export function gruppnycklar(rader) {
-    const namn = new Map();
-    for (const r of rader || []) {
-        const kod = aidAvRad(r);
-        if (!namn.has(kod)) namn.set(kod, groupKey(r, 'aid'));
-    }
-    const aidNamn = row => namn.get(aidAvRad(row)) ?? groupKey(row, 'aid');
+    const gruppAv = r => `${aidAvRad(r)}\u0000${r.bas || '—'}`;
+    const perKod = namnrader(rader, aidAvRad), perGrupp = namnrader(rader, gruppAv);
+    const namnAv = (karta, nyckel, row) => { const r = karta.get(nyckel); return groupKey(r ?? row, 'aid'); };
     return (row, dim) => {
-        if (dim === 'aid') return aidNamn(row);
-        if (dim === 'aidbas') return `${aidNamn(row)} · BAS ${row.bas || '—'}`;
+        if (dim === 'aid') return namnAv(perKod, aidAvRad(row), row);
+        if (dim === 'aidbas') return `${namnAv(perGrupp, gruppAv(row), row)} · BAS ${row.bas || '—'}`;
         return groupKey(row, dim);
     };
 }

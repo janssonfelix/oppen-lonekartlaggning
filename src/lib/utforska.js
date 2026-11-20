@@ -126,7 +126,7 @@ export function computePivot(rows, spec, { k = 10 } = {}) {
     const urvalSpec = spec.urval || { lage: 'alla', villkor: [] };
     const gruppVillkor = spec.gruppVillkor || [];
     const aktivaGrupp = gruppVillkor.filter(g => gruppVillkorAktivt(g) && MATT.includes(g.matt));
-    // AID-etiketten grupperas på koden, med namnet från kodens första rad i hela underlaget (inte bara urvalet), så
+    // AID-etiketten grupperas på koden, med namnet från texten på flest av kodens rader i hela underlaget (inte bara urvalet), så
     // att pivoten, villkoren och värdelistorna i appen har samma namn på samma grupp.
     const gruppnyckel = gruppnycklar(rows);
     const person = personFilter(urvalSpec, gruppnyckel);

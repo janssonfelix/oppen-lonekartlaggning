@@ -312,7 +312,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   en påhittad referens.
 - **Fältet för AID-etikett saneras på tecken, inte på namn** (`_cleanYrkeField`): AID-koden behålls, tecknen
   `< > " ' &` tas bort ur etiketten och etiketten kortas till 40 tecken. Ingenting i texten maskeras (ADR-85): ett
-  namn som uttaget lagt i fältet visas i tabellerna och följer med i exporterna. `_normalizeBas` tar bort samma tecken
+  namn som uttaget lagt i fältet visas i tabellerna och följer med i exporterna. En grupp heter efter texten på flest
+  av dess rader (`namnrader`, ADR-89), så ett namn på en enstaka rad blir inte gruppens namn när etiketten står på
+  fler; det står ändå kvar på personens rad, och en grupp där namnet står på flest rader heter efter det. Prövat i
+  `tests/grupp-aid-kod.test.js`. `_normalizeBas` tar bort samma tecken
   ur BAS-värdet. Vad skydden gör och inte gör står samlat i [`dataskydd.md`](dataskydd.md) avsnitt 2.
 - **Varningen för personnamn i fältet för AID-etikett** (`yrkeNamnNyckel` och `sallsyntaNamnrader` i
   `src/lib/inlasning.js`): en rad räknas när texten efter koden har ett namnmönster (två eller fler versalinledda ord i

@@ -30,7 +30,7 @@ import { slumpensGranser } from './status.js';
 import { bootstrapMedianer } from './likvardighet.js';
 import { kvantilDesign, quantileRegression } from './regression.js';
 import { arKvinna, arMan } from './kon.js';
-import { aidAvRad } from './aid.js';
+import { aidAvRad, namnrader } from './aid.js';
 
 /** Antalet dragningar i intervallet för hela organisationen (Översikt). */
 export const B_ORGANISATION = 2000;
@@ -367,12 +367,15 @@ export function extremvarden(rader, golv, troskel = EXTREMVARDE_Z) {
 export function trattUnderlag(rader, k) {
     /** @type {Map<string, {nyckel:string, yrke:any, bas:any, aid:string, kv:number[], ma:number[], medKv?:number, medMa?:number}>} */
     const perGrupp = new Map();
+    // Gruppens namn är texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const iGrupp = r => r.lon > 0 && r.bas && (arKvinna(r) || arMan(r));
+    const nyckelAv = r => `${String(r.aid || r.yrke || '').trim()}|${r.bas}`;
+    const namn = namnrader(rader.filter(iGrupp), nyckelAv);
     for (const r of rader) {
-        if (!(r.lon > 0) || !r.bas) continue;
-        const kv = arKvinna(r), ma = arMan(r);
-        if (!kv && !ma) continue;
-        const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
+        if (!iGrupp(r)) continue;
+        const kv = arKvinna(r);
+        const aid = String(r.aid || r.yrke || '').trim(), nyckel = nyckelAv(r);
+        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: namn.get(nyckel).yrke, bas: r.bas, aid, kv: [], ma: [] });
         /** @type {{kv: number[], ma: number[]}} */ (perGrupp.get(nyckel))[kv ? 'kv' : 'ma'].push(r.lon);
     }
     const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);

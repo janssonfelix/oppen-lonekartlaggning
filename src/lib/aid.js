@@ -75,6 +75,37 @@ export function aidAvRad(r) {
     return r.yrke != null && r.yrke !== '' ? aidAvYrke(r.yrke) : String(r.aid ?? '');
 }
 
+/**
+ * Gruppernas namn (ADR-89): för varje grupp texten i fältet för AID-etikett (`yrke`) som står på flest av gruppens
+ * rader; står två texter på lika många rader gäller den som kommer först i lönefilen. En stavning som bara står på
+ * enstaka rader, eller ett namn som skrivits i fältet på en rad, blir alltså inte gruppens namn när en annan text står
+ * på fler rader. Ger för varje nyckel den första raden med den texten, så att den som skriver namnet tar etiketten
+ * (`yrkeLabel`) eller hela fältet ur samma rad. Har gruppen en enda text är raden gruppens första, som förut.
+ * @template K
+ * @param {Iterable<any>} rader - i lönefilens ordning
+ * @param {(r: any) => K} nyckelAv - gruppens nyckel för en rad
+ * @returns {Map<K, any>}
+ */
+export function namnrader(rader, nyckelAv) {
+    /** @type {Map<K, Map<string, {rad: any, n: number}>>} */
+    const perGrupp = new Map();
+    for (const r of rader || []) {
+        if (!r) continue;
+        const nyckel = nyckelAv(r), text = r.yrke == null ? '' : String(r.yrke);
+        let texter = perGrupp.get(nyckel);
+        if (!texter) { texter = new Map(); perGrupp.set(nyckel, texter); }
+        const t = texter.get(text);
+        if (t) t.n++; else texter.set(text, { rad: r, n: 1 });
+    }
+    const ut = new Map();
+    for (const [nyckel, texter] of perGrupp) {
+        /** @type {{rad: any, n: number}|null} */ let bast = null;
+        for (const t of texter.values()) if (!bast || t.n > bast.n) bast = t;
+        if (bast) ut.set(nyckel, bast.rad);
+    }
+    return ut;
+}
+
 /** Huvudområdet för en AID-kod, eller null. */
 export function huvudomrade(aid) {
     const k = normaliseraAid(aid);

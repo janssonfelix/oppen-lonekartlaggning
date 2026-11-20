@@ -600,8 +600,12 @@ koden, medan Lika arbetes tabell per AID-etikett, Personer att granska, spridnin
 uppdelningen av löneskillnaden med variabeln AID-etikett, Utforska, BAS-dossiern och årsbokslutet grupperade på
 texten. Samma personer blev då en grupp i en vy och två grupper under tröskeln och en grupp på en person i en annan.
 Nu grupperar allt som räknar på samma arbete på koden: de inledande siffrorna i fältet, och hela texten när siffror
-saknas (`aidAvRad` i `src/lib/aid.js`, som läser `aidAvYrke`). Gruppens namn är texten på gruppens första rad i
-lönefilen, som i jämförelsestatistiken. Fälten `yrke`, `aid` och `bas` behåller sin betydelse. Också Lika arbetes
+saknas (`aidAvRad` i `src/lib/aid.js`, som läser `aidAvYrke`). Gruppens namn är texten som står på flest av gruppens
+rader, och står två texter på lika många rader den som kommer först i lönefilen (`namnrader` i `src/lib/aid.js`,
+underhållarens beslut samma dag); alla analyser som namnger en grupp läser namnet därifrån, så att samma grupp heter
+samma sak överallt. En stavning eller ett namn som står på enstaka rader blir då inte gruppens namn när en annan text
+står på fler, men regeln ser bara till antalet: har gruppen ett namn på flest rader, eller lika många rader med namnet
+först, blir det gruppens namn. Har gruppen en enda text är namnet detsamma som förut. Fälten `yrke`, `aid` och `bas` behåller sin betydelse. Också Lika arbetes
 tabell är koden i BAS-intervallet (underhållarens beslut samma dag): en kod som finns i två intervall är två rader, med
 var sin status, intill varandra och med intervallet i en egen kolumn; allt som läser tabellens grupper (rapportunderlaget,
 rapporten, Excel-bladen, Att göra, BAS-dossiern, gruppdossiern och årsbokslutet) läser samma grupper, och BAS-dossiern
@@ -617,5 +621,7 @@ oförändrade. *Avvisat:* att fortsätta gruppera på texten och bara varna, som
 och låter små delgrupper falla under tröskeln; att ersätta texten med etikettlistans namn (avvisat i ADR-85); att låta
 Lika arbetes tabell räkna koden över alla intervall, som ger en status för personer på olika nivåer och andra grupper
 än resten av verktyget; att para ett äldre boksluts rad för koden med årets största grupp för koden, som jämför olika
-grupper som om de vore samma; att höja bokslutets formatversion, som inte behövs när fältet är valfritt. *Gäller i dag:* `prioriteringsmodellen.md` §1 och §9, `likvardighetsmodellen.md` §3,
+grupper som om de vore samma; att höja bokslutets formatversion, som inte behövs när fältet är valfritt; att låta gruppens namn vara texten på
+dess första rad, som gör namnet beroende av radernas ordning och kan ge ett personnamn åt en grupp där etiketten står
+på nästan alla rader. *Gäller i dag:* `prioriteringsmodellen.md` §1 och §9, `likvardighetsmodellen.md` §3,
 `berakningsregister.md`.

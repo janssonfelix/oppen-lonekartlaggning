@@ -201,7 +201,7 @@ function _beraknaPoster(rader, k, variabler) {
     /** @type {Record<string, Post[]>} */
     const poster = {};
     for (let i = 0; i <= n; i++) poster['ABCDE'[i]] = [];
-    // AID-etiketten grupperas på koden, med namnet från kodens första rad (gruppnycklar i falt.js).
+    // AID-etiketten grupperas på koden, med namnet från texten på flest av kodens rader (gruppnycklar i falt.js).
     const gruppnyckel = gruppnycklar(rader);
     const nyckel = v => r => gruppnyckel(r, v) ?? '—';   // åldersgrupp saknas (ålder 0) blir en egen grupp
     // Antalet grupper på nivån `djup` (1 = första variabeln) bland raderna, räknat före sammanslagningen.

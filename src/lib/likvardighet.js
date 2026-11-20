@@ -41,6 +41,7 @@ import { median as _median, percentilintervall } from './stat.js';
 import { rngFor } from './rng.js';
 import { direktivMarkering } from './status.js';
 import { arKvinna } from './kon.js';
+import { namnrader } from './aid.js';
 
 export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
 export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
@@ -266,12 +267,16 @@ function _aldersFalt(f, g, ärIntern, golv) {
  */
 export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
     const map = new Map();   // nyckel: aid|bas
+    // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
+    const iGrupp = r => !!(String(r?.aid || '').trim() && r.lon > 0 && r.bas);
+    const namn = namnrader((data || []).filter(iGrupp), r => String(r.aid).trim() + '|' + r.bas);
     for (const r of (data || [])) {
-        const aid = String(r?.aid || '').trim();
-        if (!aid || !(r.lon > 0) || !r.bas) continue;
+        if (!iGrupp(r)) continue;
+        const aid = String(r.aid).trim();
         const key = aid + '|' + r.bas;
         if (!map.has(key)) {
-            map.set(key, { aid, bas: r.bas, label: r.yrkeLabel || r.yrke || aid, n: 0, nKv: 0, lons: [], aldrar: [] });
+            const nr = namn.get(key);
+            map.set(key, { aid, bas: r.bas, label: nr.yrkeLabel || nr.yrke || aid, n: 0, nKv: 0, lons: [], aldrar: [] });
         }
         const g = map.get(key);
         g.n++;
