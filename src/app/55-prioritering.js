@@ -113,11 +113,12 @@ function generateMotivationSuggestions(item) {
         });
     }
 
-    // 6. Quick-win
+    // 6. Quick-win (villkoret i src/lib/prioritering.js; texten beskriver det)
     if (item.isQuickWin) {
+        const K = _prKonstanter();
         out.push({
             type: 'ok',
-            text: `<strong>Snabbvinst:</strong> få personer (${item.n}), hanterbar kostnad per person (~${Math.round(item.costPerPerson).toLocaleString('sv-SE')} kr/månad). Lämplig för pilotåtgärd för att visa förändringsvilja.`
+            text: `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${item.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`
         });
     }
 
@@ -379,7 +380,7 @@ function renderPrioritering() {
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
             ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
-            ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
+            ['Riktningsvikt', `${_prKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${_prKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
             ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
         ],
         notes: [
