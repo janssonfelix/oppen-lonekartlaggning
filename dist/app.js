@@ -2856,21 +2856,21 @@ function fitOLS(X, y, hTillagg = null) {
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }
 
-/** Percentilintervallets nedre gräns: andelen av de sorterade dragningarna som ligger under den. */
+/** Percentilintervallets svans: andelen av de sorterade dragningarna som ligger under den nedre gränsen, och lika
+ * många över den övre. */
 const KI_NEDRE = 0.025;
-/** Percentilintervallets övre gräns: andelen av de sorterade dragningarna som ligger under den. */
-const KI_OVRE = 0.975;
 
 /**
  * Det 95-procentiga percentilintervallet ur en STIGANDE sorterad lista med dragningar (bootstrap, omkastning). Indexen
- * är golvet av n · 0,025 och n · 0,975, och den övre platsen stannar inom listan. Indexräkningen finns bara här, så att
- * alla intervall i verktyget tas på samma sätt.
+ * är symmetriska (ADR-86): den nedre gränsen är värdet med index golvet av n · 0,025 (räknat från 0), den övre värdet
+ * med index n − 1 − golvet av n · 0,025, så att lika många dragningar ligger under den nedre som över den övre (med
+ * B = 1000: 25 på var sida). Indexräkningen finns bara här, så att alla intervall i verktyget tas på samma sätt.
  * @param {ArrayLike<number>} sorterad
  * @returns {{lag:number, hog:number}}
  */
 function percentilintervall(sorterad) {
-    const n = sorterad.length;
-    return { lag: sorterad[Math.floor(n * KI_NEDRE)], hog: sorterad[Math.min(n - 1, Math.floor(n * KI_OVRE))] };
+    const n = sorterad.length, svans = Math.floor(n * KI_NEDRE);
+    return { lag: sorterad[svans], hog: sorterad[n - 1 - svans] };
 }
 
 /**

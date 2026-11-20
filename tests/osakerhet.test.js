@@ -23,15 +23,28 @@ const loner = (n, s, bas = 30000) => Array.from({ length: n }, (_, i) => bas + M
 const rad = (kon, lon, ovrigt = {}) => ({ kon, lon, bas: 'B', yrke: '111111 Påhittat yrke', aid: '111111', alder: 40, ...ovrigt });
 
 describe('percentilintervall', () => {
-    it('tar golvet av n · 0,025 och n · 0,975 ur den sorterade listan', () => {
-        const s = Array.from({ length: 1000 }, (_, i) => i);
-        expect(percentilintervall(s)).toEqual({ lag: 25, hog: 975 });
-        const t = Array.from({ length: 40 }, (_, i) => i * 10);
-        expect(percentilintervall(t)).toEqual({ lag: 10, hog: 390 });
+    // Listan 0, 1, …, n − 1: värdet är indexet. Symmetriskt: lika många värden under den nedre gränsen som över den övre.
+    const lista = n => Array.from({ length: n }, (_, i) => i);
+    const symmetriskt = n => { const svans = Math.floor(n * 0.025); return { lag: svans, hog: n - 1 - svans }; };
+    it('tar index golvet av n · 0,025 och n − 1 − golvet av n · 0,025', () => {
+        expect(percentilintervall(lista(1000))).toEqual({ lag: 25, hog: 974 });
+        expect(percentilintervall(lista(2000))).toEqual({ lag: 50, hog: 1949 });
+        expect(percentilintervall(lista(200))).toEqual({ lag: 5, hog: 194 });
+        expect(percentilintervall(lista(40))).toEqual({ lag: 1, hog: 38 });
+        expect(percentilintervall(lista(39))).toEqual({ lag: 0, hog: 38 });
+        expect(percentilintervall(lista(2))).toEqual({ lag: 0, hog: 1 });
+        expect(percentilintervall(lista(1))).toEqual({ lag: 0, hog: 0 });
     });
-    it('den övre platsen stannar inom listan', () => {
-        expect(percentilintervall([7])).toEqual({ lag: 7, hog: 7 });
+    it('lika många dragningar ligger under den nedre gränsen som över den övre, för varje n upp till 2 500', () => {
+        for (let n = 1; n <= 2500; n++) {
+            const { lag, hog } = percentilintervall(lista(n));
+            expect(lag, `n = ${n}`).toBe(n - 1 - hog);
+            expect({ lag, hog }, `n = ${n}`).toEqual(symmetriskt(n));
+        }
+    });
+    it('fungerar på typade listor', () => {
         expect(percentilintervall(new Float64Array([1, 2, 3]))).toEqual({ lag: 1, hog: 3 });
+        expect(percentilintervall(new Float64Array(lista(40).map(i => i * 10)))).toEqual({ lag: 10, hog: 380 });
     });
 });
 
