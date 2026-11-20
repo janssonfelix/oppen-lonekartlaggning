@@ -61,12 +61,13 @@ incheckade, artefakten och `RELEASE.txt`.
 Inget som lämnar verktyget redovisar ett lönemått för en grupp, eller ett könsuppdelat lönemått för ett kön, med
 färre personer än den inställda tröskeln (standard 10). På skärmen visas alla grupper: den som arbetar i verktyget
 har redan lönefilen. Undantagen är uppräknade och beslutade. Ett lönemått får inte heller gå att räkna fram ur
-summorna i samma export (Löneöversyns blad *Fördelning*). Antal och andelar, också per kön, omfattas inte av skyddet
+summorna i samma export (Löneöversyns blad *Fördelning*, tabellerna per BAS-intervall, uppdelningen av
+löneskillnaden och huvudområdenas andel). Antal och andelar, också per kön, omfattas inte av skyddet
 utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som lämnas ut (ADR-70).
 
 *Varför:* att förhindra återidentifiering i det som sprids.
 *Lydelse:* [`k-troskeln.md`](k-troskeln.md). *Beslut:* ADR-12, 14, 23, 38, 47, 48,
-51, 57, 69, 70.
+51, 57, 69, 70, 83, 87, 88.
 *Vakt:* invarianten I4, `tests/helpers/ktroskel-invariant.js`, ritar flikarna i exportläget och bygger exporterna
 vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`).
 Invarianten har också differensprovet (ADR-88, `differensprov` i `tests/helpers/differens.js`), på samma utdata: varje
@@ -87,7 +88,8 @@ inom en tabell: inte mellan två olika tabeller, avsnitt eller exporter (Löneö
 *Sammanfattning* har ett eget test, ovan), inte mått på medianer och percentiler, inte härledningar som kräver
 uppgifter utanför exporten (till exempel de anställdas åldrar eller könsfördelningen inom en AID-etikett), inte en
 tabell vars rubriker inte nämner medel, summa eller kostnad, och inte utdata som saknas i riggen. En tabell som
-riggens underlag lämnar utan rader eller utan total prövas inte med innehåll. Innehållet i bilder prövas inte. De beslutade undantagen ligger utanför (`docs/dataskydd/dataskydd.md` §3). Vad mer
+riggens underlag lämnar utan rader eller utan total prövas inte med innehåll. Innehållet i bilder prövas inte. De
+beslutade undantagen ligger utanför (`docs/dataskydd/dataskydd.md` §3). Vad mer
 som inte prövas står i testfilerna och i `docs/dataskydd/riskanalys.md` §6.5.
 
 ## S5. Ingen inbyggd organisation

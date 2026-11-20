@@ -91,7 +91,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 | ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
 | ADR-84 | PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning | Gällande | 2026-11-19 |
-| ADR-85 | Yrkesfältet maskeras inte; inläsningen varnar för personnamn | Gällande | 2026-11-20 |
+| ADR-85 | Fältet för AID-etikett maskeras inte; inläsningen varnar för personnamn | Gällande | 2026-11-20 |
 | ADR-86 | Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska | Gällande | 2026-11-19 |
 | ADR-87 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
 | ADR-88 | Differensprovet är en del av invarianten för minsta gruppstorlek | Gällande | 2026-11-19 |
@@ -500,9 +500,10 @@ Samma regel som Löneöversyns blad *Fördelning*. Den gäller intervallen (elle
 kön för sig mot raden *Alla*s medel per kön, och AID-etiketterna mot organisationens rad när receptet har måttet
 *Medellön*. Ett undertryckt intervall förlorar sina medelvärden i alla avsnittets tabeller, och ett intervall vars
 könsmedel döljs förlorar båda könens, eftersom medellönen för alla och det ena könet ger det andra. Antal och andelar
-står kvar (ADR-70), medianer och percentiler berörs inte, och en not namnger det som undertryckts. Regeln bor i
-`src/lib/perbas.js` som en allmän funktion för delar med antal (`kompletterandeUndertryckning`), så att den kan
-användas i andra moduler; de utskrivande delarna skriver bara ut resultatet. *Avvisat:* att räkna raden *Alla* bara
+står kvar (ADR-70), medianer och percentiler berörs inte, och en not namnger det som undertryckts. Regeln är en
+allmän funktion för delar med antal (`kompletterandeUndertryckning`, sedan ADR-87 i `src/lib/undertryckning.js`),
+så att den kan användas i andra moduler; `src/lib/perbas.js` tillämpar den, och de utskrivande delarna skriver bara
+ut resultatet. *Avvisat:* att räkna raden *Alla* bara
 på de visade grupperna, som ändrar vad raden betyder; att utelämna raden *Alla*. *Gäller i dag:* `k-troskeln.md`
 avsnitt 2.
 
@@ -515,7 +516,7 @@ påslaget (`poNot`) finns kvar; verktygets standard har ingen not. *Avvisat:* at
 saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i dag:* `COST_DEFAULTS` i
 `src/app/07-standardinstallningar.js`.
 
-**ADR-85 — Yrkesfältet maskeras inte; inläsningen varnar för personnamn.** Beslutat av underhållaren 2026-11-20.
+**ADR-85 — Fältet för AID-etikett maskeras inte; inläsningen varnar för personnamn.** Beslutat av underhållaren 2026-11-20.
 Fältet för AID-etikett behåller AID-koden och högst 40 tecken av etiketten, utan tecknen `< > " ' &`; ingenting i
 texten maskeras. Förut ersattes två versalinledda ord i rad och formen "Efternamn, Förnamn" med `***`. Den maskeringen
 förstörde riktiga etiketter ("Sjuksköterska Natt" blev "***" på varje rad) och skyddade inte: "Sjuksköterska Anna
@@ -532,6 +533,7 @@ etiketter; att ersätta filens text med etikettlistans namn, som tar bort organi
 Prioriteringen grupperade på hela texten och fick då två grupper där jämförelsestatistiken och gruppdossiern har en,
 och små delgrupper föll under tröskeln. Rättat 2026-11-20 som ett fel, inget nytt beslut: prioriteringen grupperar på
 AID-koden och BAS-intervallet som de andra (`prioriteringsmodellen.md` §1).
+
 **ADR-86 — Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska.**
 Beslutat av underhållaren 2026-11-19. Bootstrapintervallen, omkastningens gränser (slumpens gränser i
 uppmärksamhetstrappan och trattdiagrammet) och kvantilregressionens intervall seedades redan ur antal och summa per
@@ -552,7 +554,8 @@ beroendet; att lämna indexen, vars fel är litet men alltid drar åt samma hål
 
 **ADR-87 — Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel.** Beslutat av
 underhållaren 2026-11-20. Ändrar skyddsregeln i ADR-65 (och ADR-22). Följer principen i ADR-83: det som går att räkna
-fram ur det som skrivs ut ska vara ett medel för minst tröskeln personer, per kön där måttet är per kön. Uppdelningens delar och poster och
+fram ur det som skrivs ut ska vara ett medel för minst tröskeln personer, per kön där måttet är per kön.
+Uppdelningens delar och poster och
 huvudområdenas andel är vägda medellöner per kön, och med medellönerna för hela urvalet och antalen bildade de ett
 ekvationssystem: med två huvudområden där det ena hade färre än tröskeln av ett kön gav beloppet det könets
 medellön, och i uppdelningen gick en liten grupps medellön att lösa ut fast posten inte stod, för vissa val av

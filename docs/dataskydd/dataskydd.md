@@ -39,13 +39,16 @@ Verktyget
 - avvisar en lönefil med kolumner som ser ut att innehålla personnummer, e-post, namn eller en särskild kategori av
   personuppgifter; kontrollen ser på rubrikerna och på ett urval av raderna, så enstaka värden kan gå förbi
 - skickar ingenting över nätet och sparar ingenting mellan sessionerna
-- redovisar inte lönemått för grupper under minsta gruppstorlek i det som lämnar verktyget
+- redovisar inte lönemått för grupper under minsta gruppstorlek i det som lämnar verktyget, med de undantag och den
+  inställning som står i avsnitt 3; på skärmen visas alla grupper
 - varnar när fältet för AID-etikett ser ut att innehålla personnamn.
 
 Verktyget maskerar inte och tar inte bort namn ur fältet för AID-etikett (ADR-85). Det som står där, högst 40
 tecken efter koden, visas i tabellerna och följer med i exporterna. Varningen hittar inte alla namn: inte namn i
 gemener, inte ett ensamt namn och inte ett namn som står på tre eller fler rader. Den som tar ut filen ansvarar för att
 fältet bara innehåller kod och etikett ([`datauttag.md`](../anvandare/datauttag.md)).
+
+Det som exporteras ligger sedan utanför verktyget. Vad filerna innehåller och hur de bör hanteras står i avsnitt 4.
 
 ### Skydden i detalj
 
