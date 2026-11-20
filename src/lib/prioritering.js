@@ -17,6 +17,33 @@
 import { median } from './stat.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 
+// Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
+// Bevisrutan i appen hämtar dem genom prioKonstanter(), så förklaringarna och poängen visar samma tal.
+/** Avvikelsen i procent som ger full avvikelsepoäng (sev): över detta tas poängen upp till 100. */
+export const AVVIKELSE_TAK = 30;
+/** Antalet personer i gruppen som ger full volympoäng (vol). */
+export const VOLYM_TAK = 50;
+/** Löneskillnaden mellan kvinnor och män i procent som ger full poäng för skillnaden (gap). */
+export const GAP_TAK = 15;
+/** Riktningsvikten för en grupp under referensen (full vikt). */
+export const RIKTNING_UNDER = 1.0;
+/** Riktningsvikten för en grupp över referensen (halv vikt). */
+export const RIKTNING_OVER = 0.5;
+/** Bonusmultiplikatorn för en grupp som markerats som bristyrke. */
+export const BRIST_MULTIPLIKATOR = 1.2;
+/** Snabb vinst: kostnaden per person och månad ska vara under detta belopp i kronor. */
+export const SNABB_VINST_KR = 1500;
+/** Snabb vinst: avvikelsen från referensen ska vara större än detta i procent. */
+export const SNABB_VINST_AVVIKELSE = 3;
+/** Snabb vinst: gruppen ska ha minst detta antal personer (en nedre gräns, ingen övre). */
+export const SNABB_VINST_MIN_N = 5;
+
+/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+export function prioKonstanter() {
+    return Object.freeze({ AVVIKELSE_TAK, VOLYM_TAK, GAP_TAK, RIKTNING_UNDER, RIKTNING_OVER, BRIST_MULTIPLIKATOR,
+        SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });
+}
+
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
  * för gruppens kvinnor, eller null när kvinnornas median inte ligger minst 100 kr lägre (skillnaden avrundas till
@@ -42,6 +69,8 @@ export function arsbeloppMening(g, costSettings, kr) {
  * Prioriteringsindexet för en grupp: riktningsvikt × (avvikelse·vikt + volym·vikt + jämställdhet·vikt),
  * multiplicerat med bristmultiplikatorn. Vikterna normaliseras till summan 100 %.
  * Skala 0–100 (före bristmultiplikatorn).
+ *
+ * Delpoängen (sev, vol, gap) och multiplikatorerna står på varje post som prioriteringen returnerar.
  *
  * @param {{sevScore:number, volScore:number, gapScore:number, riktningsvikt:number,
  *          bristMultiplier:number, vikter:{avvikelse:number, volym:number, jamstalldhet:number}}} delar
@@ -118,21 +147,22 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
         const annualOverTotal = diffKr > 0 ? kostnadPerAr(diffKr, g.rows.length, costSettings) : 0;
 
         // Prioriteringsindex med konfigurerbara viktningar
-        const sevScore  = Math.min(30, Math.abs(diffPct)) / 30 * 100;
-        const volScore  = Math.min(50, g.rows.length) / 50 * 100;
-        const gapScore  = gapPct !== null ? Math.min(15, Math.abs(gapPct)) / 15 * 100 : 0;
-        const directionWeight = diffPct < 0 ? 1.0 : 0.5;
-        // E: Bristyrke ger en bonus-multiplikator (1.2x) i prioriteringen
+        const sevScore  = Math.min(AVVIKELSE_TAK, Math.abs(diffPct)) / AVVIKELSE_TAK * 100;
+        const volScore  = Math.min(VOLYM_TAK, g.rows.length) / VOLYM_TAK * 100;
+        const gapScore  = gapPct !== null ? Math.min(GAP_TAK, Math.abs(gapPct)) / GAP_TAK * 100 : 0;
+        const riktningsvikt = diffPct < 0 ? RIKTNING_UNDER : RIKTNING_OVER;
+        // E: Bristyrke ger en bonus-multiplikator i prioriteringen
         const isBrist = bristAids && bristAids.has(g.aid);
-        const bristMultiplier = isBrist ? 1.2 : 1.0;
+        const bristMultiplier = isBrist ? BRIST_MULTIPLIKATOR : 1.0;
         const priorityIndex = prioIndex({
-            sevScore, volScore, gapScore, riktningsvikt: directionWeight,
+            sevScore, volScore, gapScore, riktningsvikt,
             bristMultiplier, vikter: prioWeights
         });
         // C: Genomsnittlig revision per anställd (kr/månad) — för snabbavläsning
         const costPerPerson = diffKr < 0 ? Math.abs(diffKr) : 0;
         // B: "Snabb vinst"-flagga — liten kostnad/person men signifikant procentuellt lyft
-        const isQuickWin = costPerPerson > 0 && costPerPerson < 1500 && Math.abs(diffPct) > 3 && g.rows.length >= 5;
+        const isQuickWin = costPerPerson > 0 && costPerPerson < SNABB_VINST_KR && Math.abs(diffPct) > SNABB_VINST_AVVIKELSE
+            && g.rows.length >= SNABB_VINST_MIN_N;
 
         // Status-kategori (med konfigurerbara tröskelvärden)
         const cfg = prioConfig;
@@ -149,6 +179,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
             diffPct, diffKr, annualGapTotal, annualOverTotal,
             costPerPerson, isQuickWin, isBrist,
             gapPct, medKv, medMa,
+            sevScore, volScore, gapScore, riktningsvikt, bristMultiplier,
             priorityIndex,
             status,
             // #13 Behåll referens till rader för motivation-suggestion-engine.

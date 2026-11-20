@@ -61,7 +61,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `24-excelexport.js` | Excel (alla flikar) och JPA-protokollet |
 | `25-dataskyddsinfo.js` | Dataskyddsrutan och GDPR-bannern |
 | `26-rensning.js` | "Rensa all data" (`_rensaAllData`) |
-| `27-berakningsbevis.js` | Bevisrutan: uträkningen bakom ett fynd |
+| `27-berakningsbevis.js` | Bevisrutan: uträkningen bakom ett fynd. Prioriteringens delpoäng läses ur posten och taken ur `prioKonstanter()` i `src/lib/prioritering.js`, så beviset och rangordningen visar samma tal |
 | `28-vad-lagras-inaktivitet.js` | "Vad lagras?" och automatisk rensning vid inaktivitet |
 | `29-organisationspaket.js` | Organisationspaket: läs in och skapa (profil, grundinställningar, ställningstagande, jämförelsestatistik; logiken i `src/lib/organisationspaket.js`, ADR-28) |
 | `30-statistikcacher.js` | Tömmer och räknar om statistiska cacher när datasetet ändras (`invalidateStatCaches`), bland dem Lika arbetes minne (`laMinneSlapp`) |

@@ -153,6 +153,18 @@ describe('Fler kolumner: de gömda talen finns i beviset', () => {
         expect(etiketter.some(e => /^Referens/.test(e))).toBe(true);
         expect(b.rows.find(r => r.label === 'Antal anställda i gruppen').note).toMatch(/kvinnor · \d+ män/);
     });
+    it('Prioritering: bevisrutans delpoäng är postens (ingen omräkning i appen) och taken står i förklaringen', () => {
+        const w = rita('prioritering');
+        const it0 = w.document.querySelector('#prio-table tbody tr')._prioItem;
+        expect(typeof it0.sevScore).toBe('number');
+        const b = w.eval('_evidenceForPrioItem')({ ...it0, sevScore: 12.5 }, 'stallningstagande');
+        const rad = namn => b.rows.find(r => r.label === namn);
+        expect(rad('Avvikelse-poäng (sev)').value).toBe('12,5');
+        expect(rad('Avvikelse-poäng (sev)').note).toMatch(/^min\(30, \|.+\|\) \/ 30 × 100 · vikt /);
+        expect(rad('Volym-poäng (vol)').note).toMatch(/^min\(50, \d+\) \/ 50 × 100 · vikt /);
+        expect(rad('Poäng för löneskillnaden').note).toMatch(/^min\(15, \|.+\|\) \/ 15 × 100 · vikt /);
+        expect(rad('Bristyrke-multiplikator').value).toBe(it0.isBrist ? '1,20' : '1,00');
+    });
     it('Lika arbete: beviset har dominansen och andelen kvinnor nationellt, också för yrken med samlad median', () => {
         const w = rita('matrix');
         const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow);

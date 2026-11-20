@@ -1844,6 +1844,13 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         w.__it = { ...w.__it, diffPct: 7.4 };
         expect(w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text)).toContain('Ligger 7,4\u00a0% över referensen. Dokumentera gärna varför.');
     });
+    it('snabb vinst säger villkoret i klarspråk, också för en stor grupp (inget "få personer")', () => {
+        const w = oppna();
+        w.__it = { diffPct: -4, n: 300, kvN: 150, maN: 150, costPerPerson: 1200, isQuickWin: true, _rows: [{ lon: 1, kon: 'kvinna', alder: 40 }] };
+        const txt = w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text).join(' ');
+        expect(txt).toMatch(/Snabb vinst:<\/strong> gruppen ligger mer än 3\s%\s+under referensen, och kostnaden per person är under 1\s500\s+kr per månad \(300 personer\)\./);
+        expect(txt).not.toMatch(/få personer|hanterbar/);
+    });
     it('Excel-bladet Prioritering, handlingsplanen och rapporten har samma ord', async () => {
         const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');
         const w = oppna();

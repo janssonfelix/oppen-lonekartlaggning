@@ -5,7 +5,7 @@
  * Att adaptern i 55-prioritering.js delegerar hit vaktas i drift.test.js.
  */
 import { describe, it, expect } from 'vitest';
-import { prioritera, prioIndex } from '../src/lib/prioritering.js';
+import { prioritera, prioIndex, prioKonstanter } from '../src/lib/prioritering.js';
 
 const VIKTER = { avvikelse: 50, volym: 30, jamstalldhet: 20 };
 const CONFIG = { atgardThreshold: -5, akutMinN: 10, bevakaThreshold: -2, analyseraThreshold: 5 };
@@ -281,5 +281,39 @@ describe('prioIndex: viktsumma 0 (characterization)', () => {
         const delar = { sevScore: 100, volScore: 100, gapScore: 100, riktningsvikt: 1, bristMultiplier: 1,
             vikter: { avvikelse: 0, volym: 0, jamstalldhet: 0 } };
         expect(prioIndex(delar)).toBe(0);
+    });
+});
+
+describe('prioritera: delpoängen ligger på posten och konstanterna har sina värden', () => {
+    it('prioKonstanter har modellens dagens värden och är frusen', () => {
+        expect(prioKonstanter()).toEqual({ AVVIKELSE_TAK: 30, VOLYM_TAK: 50, GAP_TAK: 15, RIKTNING_UNDER: 1, RIKTNING_OVER: 0.5,
+            BRIST_MULTIPLIKATOR: 1.2, SNABB_VINST_KR: 1500, SNABB_VINST_AVVIKELSE: 3, SNABB_VINST_MIN_N: 5 });
+        expect(Object.isFrozen(prioKonstanter())).toBe(true);
+    });
+
+    it('priorityIndex är prioIndex av postens egna delpoäng och vikterna', () => {
+        const rader = grupp('5301 Undersköterska', 'B', 30000, 12, 33000, 12);
+        const [item] = kör(rader, { bristAids: new Set(['5301']) });
+        expect(item.bristMultiplier).toBe(1.2);
+        expect(item.riktningsvikt).toBe(1.0);
+        const delar = { sevScore: item.sevScore, volScore: item.volScore, gapScore: item.gapScore,
+            riktningsvikt: item.riktningsvikt, bristMultiplier: item.bristMultiplier, vikter: VIKTER };
+        expect(item.priorityIndex).toBeCloseTo(prioIndex(delar), 10);
+    });
+
+    it('delpoängen tas upp till taken: avvikelse −50 % och 60 personer ger 100 på sev och vol', () => {
+        const rader = grupp('5301 Undersköterska', 'B', 30000, 30, 30000, 30);
+        const [item] = kör(rader, { referensFor: () => ({ median: 60000, kalla: 'x' }) });
+        expect(item.sevScore).toBe(100);
+        expect(item.volScore).toBe(100);
+        expect(item.gapScore).toBe(0);
+        expect(item.riktningsvikt).toBe(1.0);
+    });
+
+    it('över referens: riktningsvikten på posten är 0,5 och bristmultiplikatorn 1 utan bristmarkering', () => {
+        const rader = grupp('5301 Undersköterska', 'B', 30000, 12, 30000, 12);
+        const [item] = kör(rader, { referensFor: () => ({ median: 20000, kalla: 'x' }) });
+        expect(item.riktningsvikt).toBe(0.5);
+        expect(item.bristMultiplier).toBe(1.0);
     });
 });
