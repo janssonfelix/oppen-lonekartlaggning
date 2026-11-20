@@ -13,6 +13,8 @@
  *
  * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
+ *
+ * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 import { median } from './stat.js';
 import { aidAvYrke } from './aid.js';

@@ -12,6 +12,8 @@
  * BAS-intervall (kön och BAS går inte att skilja åt) ges inget justerat tal: ett tal utan BAS vore inte justerat för BAS.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ *
+ * Bygger på: ADR-33, ADR-78 och ADR-87; docs/utveckling/regressionsmodellen.md avsnitt 10. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 import { median } from './stat.js';
 import { justeradSkillnad, harAlderIRader } from './regression.js';

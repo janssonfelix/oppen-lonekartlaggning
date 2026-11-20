@@ -1163,6 +1163,8 @@ const __mirrorKostnad = (() => {
  *
  * Multiplikationen görs i samma ordning som innan formeln samlades här (belopp × månader × PO-faktor), så att inget
  * tal ändras i sista decimalen. Därför ges PO-faktorn och månaderna var för sig och inte som en färdig produkt.
+ *
+ * Bygger på: verktygets egen modell; PO-påslagets standardvärde i ADR-84. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 /**
@@ -1222,6 +1224,8 @@ const __mirrorStructure = (() => {
  * mediangap och direktivets tecken på gapet (tillDirektivtecken). Separat från app.js för Vitest; app.js får en AUTO-GENERERAD
  * spegel (`_st*` i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra
  * här och kör `npm run build:app`, rör ej spegeln. Inga DOM-/state-beroenden.
+ *
+ * Bygger på: verktygets egen modell; tecknet i docs/utveckling/regressionsmodellen.md avsnitt 1. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 
@@ -2392,6 +2396,8 @@ const __mirrorForecast = (() => {
  *
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
+ *
+ * Bygger på: verktygets egen modell, docs/utveckling/loneoversynsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 
@@ -4164,6 +4170,8 @@ const __mirrorOsakerhet = (() => {
  * _laTrattUnderlagRakna, _regKvantilBootstrap) är tunna adaptrar som läser tillståndet och anropar funktionerna här.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
+ *
+ * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 
@@ -4650,6 +4658,8 @@ const __mirrorLonepolitik = (() => {
  * Maskeringstrappan (tre steg, se `src/app/75-lonepolitik.js`) tillämpas av anroparen; de här
  * funktionerna räknar på det de får och rapporterar n så att anroparen kan
  * maskera.
+ *
+ * Bygger på: verktygets egen modell. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 
@@ -4838,6 +4848,8 @@ const __mirrorPrioritering = (() => {
  *
  * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
+ *
+ * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 
@@ -6487,6 +6499,8 @@ const __mirrorIndivid = (() => {
  * personen dras bort.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ *
+ * Bygger på: ADR-23; i övrigt verktygets egen modell. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 
@@ -6900,6 +6914,8 @@ const __mirrorSektor = (() => {
  * BAS-intervall (kön och BAS går inte att skilja åt) ges inget justerat tal: ett tal utan BAS vore inte justerat för BAS.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ *
+ * Bygger på: ADR-33, ADR-78 och ADR-87; docs/utveckling/regressionsmodellen.md avsnitt 10. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 
@@ -8963,6 +8979,8 @@ const __mirrorPerBas = (() => {
  * också medelvärdena för en visad grupp (kompletterande undertryckning, ADR-83, `kompletterandeUndertryckning` i undertryckning.js).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ *
+ * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 

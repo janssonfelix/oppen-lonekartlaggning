@@ -56,7 +56,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-45 | t-kvantiler för konfidensintervallen; exakt t-fördelning | Gällande | – |
 | ADR-46 | Steget *+ AID-etikett inom BAS*: könsgapet med fasta effekter för AID-etikett inom BAS | Ändrad av ADR-56 | – |
 | ADR-47 | Organisationspaketet kan låsa tre skydd | Gällande | – |
-| ADR-48 | Bilder med en punkt per person följer med i ZIP och Komplett rapport | Gällande | 2026-10-16 |
+| ADR-48 | Bilder med en punkt per person följer med i ZIP och Komplett rapport | Ändrad av ADR-85 | 2026-10-16 |
 | ADR-49 | Organisationsfil: paketet inbakat i verktygsfilen, en fil att sprida | Gällande | – |
 | ADR-50 | Prioritering är vad, Löneöversyn är hur | Gällande | 2026-10-29 |
 | ADR-51 | Minsta gruppstorlek gäller det som lämnar verktyget, inte skärmen | Gällande | 2026-10-29 |
@@ -305,7 +305,8 @@ gäller alla senare paket utan fråga (en organisation måste kunna byta paket).
 **ADR-48 — Bilder med en punkt per person följer med i ZIP och Komplett rapport.** Bilderna bär inga namn eller
 identifierare, en punkt ritas bara när personens grupp och kön når tröskeln, och filerna hanteras som personuppgifter.
 *Avvisat:* att utelämna bilderna eller ersätta dem med aggregat. *Gäller i dag:* `k-troskeln.md` §4 och
-`docs/dataskydd/dataskydd.md` §3–§4.
+`docs/dataskydd/dataskydd.md` §3–§4. *Not:* ADR-85 ändrade en förutsättning. Texten i fältet för AID-etikett maskeras inte
+längre, så punktdiagrammet färgat efter AID-etikett bär filens text som serienamn, i förklaringen och i diagrammets data.
 
 **ADR-49 — Organisationsfil: paketet inbakat i verktygsfilen, en fil att sprida.** Paketet bakas in som ett inaktivt
 block efter sista skriptet, så att CSP:ns kontrollsummor är orörda; filen verifieras inte mot den publicerade versionen
@@ -525,6 +526,7 @@ och i Att göra, med antal rader och radnummer men aldrig texten. Den som tar ut
 kod och etikett; användaren ska hellre få veta att namn finns än tro att de är maskerade. *Avvisat:* att maskera alla
 versalinledda ord, som förstör riktiga etiketter; att behålla den gamla maskeringen, som inte skyddar och förstör
 etiketter; att ersätta filens text med etikettlistans namn, som tar bort organisationens lokala benämningar.
+Ändrar ADR-48: bilderna med en punkt per person kan bära filens text som serienamn.
 *Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.4; `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader` i
 `src/lib/inlasning.js`.
 **ADR-86 — Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska.**
