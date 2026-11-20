@@ -106,5 +106,33 @@ describe('kompletterandeUndertryckningPerNyckel (ADR-91: JPA-protokollets blad 2
             // En grupp vars medelvärden redan inte står räknas till resten men väljs inte igen.
             expect(kompletterandeUndertryckningPerNyckel([total('J', 32, 60)], [del('J', 30, 30, 'a'), del('J', 2, 30, 'redan', true)], k)).toEqual([0]);
         });
+        it(`k = ${k}: en total prövas bara för de mått den redovisar, och medelvärdet för alla räknas på alla`, () => {
+            // Bara männens medelvärde står: resten 3 kvinnor ger inget.
+            expect(kompletterandeUndertryckningPerNyckel([{ nyckel: 'J', nMa: 30 }], [del('J', 30, 30, 'a')], k)).toEqual([]);
+            // Bara medelvärdet för alla står: 33 kvinnor och 30 män (n 63) minus gruppens 60 lämnar 3.
+            expect(kompletterandeUndertryckningPerNyckel([{ nyckel: 'J', n: 63 }], [del('J', 30, 30, 'a')], k)).toEqual([0]);
+            // n på delen är antalet för alla, också personer utan angivet kön.
+            expect(kompletterandeUndertryckningPerNyckel([{ nyckel: 'J', n: 63 }], [{ ...del('J', 30, 30, 'a'), n: 63 }], k)).toEqual([]);
+        });
+        it(`k = ${k}: en total utan nyckel är hela underlaget och paras med alla delar`, () => {
+            expect(kompletterandeUndertryckningPerNyckel([{ nyckel: null, nKv: 63 }], [del('J', 30, 30, 'a'), del('L', 30, 30, 'b')], k)).toEqual([0]);
+            expect(kompletterandeUndertryckningPerNyckel([{ nyckel: null, nKv: 60 + k }], [del('J', 30, 30, 'a'), del('L', 30, 30, 'b')], k)).toEqual([]);
+        });
+        it(`k = ${k}: en del vars medelvärde för alla står i en annan tabell är visad för allas medelvärde och väljs inte för det`, () => {
+            // Allas medelvärde: resten 3; a står också i en annan tabell och kan inte döljas här, så b döljs.
+            expect(kompletterandeUndertryckningPerNyckel([{ nyckel: 'J', n: 3 + 60 + 70 }],
+                [{ ...del('J', 30, 30, 'a'), allaSyns: true }, del('J', 35, 35, 'b')], k)).toEqual([1]);
+            // Finns ingen annan del att dölja ändras ingenting här; den andra tabellen har sin egen regel.
+            expect(kompletterandeUndertryckningPerNyckel([{ nyckel: 'J', n: 63 }], [{ ...del('J', 30, 30, 'a'), allaSyns: true }], k)).toEqual([]);
+            // Per kön är den en vanlig del.
+            expect(kompletterandeUndertryckningPerNyckel([{ nyckel: 'J', nKv: 33 }], [{ ...del('J', 30, 30, 'a'), allaSyns: true }], k)).toEqual([0]);
+        });
     }
+});
+
+describe('kompletterandeUndertryckning: en fast del', () => {
+    it('väljs aldrig, men räknas inte till de dolda', () => {
+        expect(kompletterandeUndertryckning([{ namn: 'A', n: 12, fast: true }, { namn: 'B', n: 30 }, { namn: 'C', n: 1, dold: true }], 10)).toEqual([1]);
+        expect(kompletterandeUndertryckning([{ namn: 'A', n: 12, fast: true }, { namn: 'C', n: 1, dold: true }], 10)).toEqual([]);
+    });
 });

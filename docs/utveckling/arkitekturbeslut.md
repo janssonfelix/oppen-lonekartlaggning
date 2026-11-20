@@ -97,7 +97,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-88 | Differensprovet är en del av invarianten för minsta gruppstorlek | Gällande | 2026-11-19 |
 | ADR-89 | En grupp är AID-koden i BAS-intervallet, i hela verktyget | Gällande | 2026-11-20 |
 | ADR-90 | Lika arbete AID x BAS visar Lika arbetes status, utan egen bedömning | Gällande | 2026-11-20 |
-| ADR-91 | Kompletterande undertryckning mellan JPA-protokollets blad för lika arbete och BAS-intervall | Gällande | 2026-11-20 |
+| ADR-91 | Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden | Gällande | 2026-11-20 |
 
 ## Besluten
 
@@ -648,22 +648,31 @@ bedömningen mot gränserna bredvid statusen, som ger två svar på samma fråga
 som visar grupper under tröskeln som tabellen per AID-etikett utelämnar. *Gäller i dag:* `k-troskeln.md` avsnitt 4
 och 9, `docs/dataskydd/riskanalys.md`, `berakningsregister.md` och `docs/anvandare/korguide.md` §4.
 
-**ADR-91 — Kompletterande undertryckning mellan JPA-protokollets blad för lika arbete och BAS-intervall.** Beslutat
-av underhållaren 2026-11-20. Tillämpar regeln i ADR-83 mellan två blad i samma export. Protokollets blad *2. Lika
-arbete (AID)* har medelvärde per kön för AID-etiketter där båda könen når tröskeln, och bladet *3. Likvärdigt arbete
-(BAS)* har medelvärde per kön för hela BAS-intervallet, räknat på alla i intervallet. Intervallets antal och
-medelvärde för ett kön minus de visade AID-etiketterna i intervallet gav då medelvärdet för intervallets övriga
-personer av det könet, också när de var färre än tröskeln (S4). Differensprovet (ADR-88) prövade bara inom en tabell
-och såg inte detta, och riggens underlag gav inga rader i protokollets blad. Nu gäller ADR-83:s regel per intervall och
-kön, med bladet för BAS-intervall som total och bladet för lika arbete som delar: lämnar intervallet minus de visade
-etiketterna 1 till k − 1 personer av ett kön undertrycks medelvärdena för den minsta visade etiketten i intervallet,
-en i taget tills de dolda når tröskeln (`kompletterandeUndertryckningPerNyckel` i `src/lib/undertryckning.js`). En
-etikett vars medelvärden döljs förlorar båda könens och differensernas, och de döljs för båda könen i prövningen av
-nästa kön. Raden för BAS-intervallet räknas som förut och står kvar med sina medelvärden. Medianerna står kvar i båda
-bladen; de går inte att dela upp. En not i bladet för lika arbete namnger etiketterna. Riggen har ett intervall med en
-etikett över tröskeln och tre kvinnor utanför den, och differensprovet har en deklaration över två blad (`korsblad`),
-som prövar bladet för BAS-intervall minus bladet för lika arbete per intervall och kön vid tröskeln 10 och 25.
-*Avvisat:* att räkna intervallets rad bara på de visade etiketterna, som ändrar vad raden betyder och skiljer den från
-intervallets rad i resten av verktyget; att dölja intervallets medelvärden, som tar bort det mått bladet finns för;
-att låta differensprovet pröva varje par av tabeller, som ger falsklarm när två tabeller har olika underlag.
-*Gäller i dag:* `k-troskeln.md` avsnitt 2, 9 och 11, `skydd.md` S4, `docs/dataskydd/riskanalys.md` §6.5.
+**ADR-91 — Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden.**
+Beslutat av underhållaren 2026-11-20. Tillämpar regeln i ADR-83 mellan tabeller. Protokollets blad *2. Lika arbete
+(AID)* har medelvärde per kön för AID-etiketter där båda könen når tröskeln. Intervallets medelvärde, per kön och för
+alla och räknat på alla i intervallet, står i bladet *3. Likvärdigt arbete (BAS)* för intervall som protokollet
+redovisar, och i tabellerna per BAS-intervall (Word-utkastet, PDF-rapporten och Excelbladet *Per BAS*) för varje
+intervall där könen når tröskeln, oavsett status; organisationens medelvärde per kön står i flera utdata. Intervallets
+antal och medelvärde minus de visade AID-etiketterna i intervallet gav då medelvärdet för intervallets övriga personer,
+också när de var färre än tröskeln (S4). Differensprovet (ADR-88) prövade bara inom en tabell och såg inte detta, och
+riggens underlag gav inga rader i protokollets blad. Nu gäller ADR-83:s regel mot varje sådan total: lämnar intervallet,
+eller organisationen, minus de visade etiketterna 1 till k − 1 personer, för ett kön eller för alla, undertrycks
+medelvärdena för den minsta visade etiketten, en i taget tills de dolda når tröskeln
+(`kompletterandeUndertryckningPerNyckel` i `src/lib/undertryckning.js`, totalerna i `_jpaMedelTotaler` i
+`src/app/24-excelexport.js`). Totalerna är det som faktiskt står: bladet 3 med sin tröskel, och tabellerna per
+BAS-intervall med den inställda tröskeln och sin egen undertryckning (ett intervall vars medelvärde de döljer enligt
+ADR-83 är ingen total där). En etikett vars medelvärden döljs förlorar båda könens och differensernas, och de döljs för
+båda könen i prövningen av nästa mått. En etikett vars medellön för alla står i tabellerna per BAS-intervall (när
+receptet har måttet *Medellön*) kan protokollet inte dölja för det måttet; där gäller tabellernas egen regel, och visar
+protokollet en etikett som tabellerna har undertryckt döljs den i protokollet. Intervallens och organisationens rader
+räknas som förut och står kvar med sina medelvärden. Medianerna står kvar; de går inte att dela upp. En not i bladet för
+lika arbete namnger etiketterna. Riggen har ett intervall med rad i bladet 3 och ett utan, var och ett med en etikett
+över tröskeln och tre kvinnor utanför den, och differensprovet har deklarationer över två tabeller (`korsblad`): bladet
+3 minus bladet 2, och tabellerna per BAS-intervall minus bladet 2 (två filer), per intervall och kön och för
+organisationen, vid tröskeln 10 och 25. *Avvisat:* att bara ta intervallen i bladet 3 som totaler, som missar
+intervallen i tabellerna per BAS-intervall; att räkna intervallets rad bara på de visade etiketterna, som ändrar vad
+raden betyder och skiljer den från intervallets rad i resten av verktyget; att dölja intervallets medelvärden, som tar
+bort det mått tabellerna finns för; att låta differensprovet pröva varje par av tabeller, som ger falsklarm när två
+tabeller har olika underlag. *Gäller i dag:* `k-troskeln.md` avsnitt 2, 9 och 11, `skydd.md` S4,
+`docs/dataskydd/riskanalys.md` §6.5.
