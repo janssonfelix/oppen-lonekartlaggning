@@ -540,6 +540,18 @@ describe('tabell: yrke (_cleanYrkeField)', () => {
         ['Ledning', 'Ledning'],
         ['101010 Lärare grundskola', '101010 Lärare grundskola'],
         ['101010 Anna Andersson', '101010 ***'],
+        // En befattning före namnet maskeras tillsammans med namnet, så att inget halvt namn blir kvar
+        ['101010 Sjuksköterska Anna Andersson', '101010 ***'],
+        ['101010 Enhetschef Anna Andersson', '101010 ***'],
+        ['101010 Biträdande Rektor Anna Andersson', '101010 ***'],
+        // Gemen följd bryter den sammanhängande följden: bara namnet maskeras
+        ['101010 Lärare grundskola Anna Andersson', '101010 Lärare grundskola ***'],
+        ['101010 Anna-Lisa Berg Svensson', '101010 ***'],
+        // Ett enda versalinlett ord maskeras aldrig
+        ['101010 Sjuksköterska', '101010 Sjuksköterska'],
+        ['101010 Lärare grundskola', '101010 Lärare grundskola'],
+        // Känd gräns: en etikett med versal på varje ord maskeras helt (koden står kvar)
+        ['101010 Biträdande Rektor', '101010 ***'],
         // Efternamn, Förnamn i versaler eller Versal-gemener maskeras (båda orden i samma form)
         ['101010 ANDERSSON, ANNA', '101010 ***'],
         ['101010 Andersson, Anna', '101010 ***'],
