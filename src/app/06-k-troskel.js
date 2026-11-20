@@ -320,7 +320,7 @@ function individLitenFor(rader) {
     }
     return r => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv(r)}`) || 0) < k;
 }
-function _gruppAid(r) { const m = String(r.yrke || '').match(/^(\d+)/); return m ? m[1] : String(r.yrke || ''); }
+function _gruppAid(r) { return aidAvYrke(r.yrke); }
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 function _kSidfot(text) {

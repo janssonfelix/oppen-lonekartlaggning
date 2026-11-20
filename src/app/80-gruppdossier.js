@@ -24,8 +24,7 @@ function gruppdossierCandidates() {
     const map = new Map();
     getData().forEach(r => {
         if (!(r.lon > 0) || !r.bas) return;
-        const m = String(r.yrke || '').match(/^(\d+)/);
-        const aid = m ? m[1] : String(r.yrke || '');
+        const aid = aidAvYrke(r.yrke);
         const key = aid + '|' + r.bas;
         if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: r.yrke, rows: [] });
         map.get(key).rows.push(r);

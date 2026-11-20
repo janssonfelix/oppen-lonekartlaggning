@@ -91,8 +91,7 @@ function renderKon(bas) {
     if (state.statistik.length > 0) {
         // En uppslagning per AID×BAS-grupp i urvalet (samma regel som överallt: aldrig ett annat BAS), och medianen
         // av de matchade medianerna. I ett valt BAS är det en grupp per AID.
-        const m = d => d.yrke.match(/^(\d+)/);
-        statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: m(d) ? m(d)[1] : d.yrke, bas: d.bas })));
+        statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: aidAvYrke(d.yrke), bas: d.bas })));
     }
     const scope2 = isAll ? 'hela urvalet' : `${T.niva.en} ${bas}`;
     // Noter under diagrammen om det som utelämnats, och samma sak i diagrammens beskrivningar.

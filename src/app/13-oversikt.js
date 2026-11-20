@@ -73,15 +73,14 @@ function updateCompliance() {
         let bmLow = 0, bmTotal = 0;
         const seen = new Set();
         d.forEach(r => {
-            const m = r.yrke.match(/^(\d+)/);
-            const aid = m ? m[1] : r.yrke;
+            const aid = aidAvYrke(r.yrke);
             const key = `${aid}|${r.bas}`;
             if (seen.has(key)) return;
             seen.add(key);
             const statRow = _jfStatistikFor(state.statistik, aid, r.bas)?.rad;
             if (!statRow) return;
             bmTotal++;
-            const orgMed = Stat.median(d.filter(x => { const mm = x.yrke.match(/^(\d+)/); return (mm ? mm[1] : x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
+            const orgMed = Stat.median(d.filter(x => { return aidAvYrke(x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
             if (orgMed < statRow.median) bmLow++;
         });
         if (bmTotal === 0) setCompCard('comp-bm', 0, 0, 'Ingen matchning hittad', 'na');

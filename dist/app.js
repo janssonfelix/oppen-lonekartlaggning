@@ -1619,7 +1619,7 @@ function individLitenFor(rader) {
     }
     return r => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv(r)}`) || 0) < k;
 }
-function _gruppAid(r) { const m = String(r.yrke || '').match(/^(\d+)/); return m ? m[1] : String(r.yrke || ''); }
+function _gruppAid(r) { return aidAvYrke(r.yrke); }
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 function _kSidfot(text) {
@@ -2584,6 +2584,397 @@ function personOrd(n) {
 const _namnGenitiv = __mirrorNamn.namnGenitiv;
 const _namnNormalisera = __mirrorNamn.normaliseraNamn;
 const personOrd = __mirrorNamn.personOrd;
+
+// ---- speglar src/lib/aid-etiketter.js ----
+const __mirrorAidEtiketter = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// AUTO-GENERERAD av tools/gen-aid-etiketter.mjs ur SKR, Etikettlista AID 2018 (reviderad 2026-09-23). Ändra inte för hand.
+// Innehåller bara kod, etikettnamn och möjliga ansvarskoder per etikett.
+//
+// Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+
+const LISTA = Object.freeze({
+    version: '2026-09-23',
+    kalla: 'SKR, Etikettlista AID 2018 (reviderad 2026-09-23)',
+    etiketter: Object.freeze([
+        ["101010","Ledning, övergripande","A"],
+        ["101011","Ledning, ekonomi","A,B,C,L"],
+        ["101012","Ledning, personal/HR","A,B,C,L"],
+        ["101013","Ledning, information/kommunikation","A,B,C,L"],
+        ["101014","Ledning, IT","A,B,C,L"],
+        ["101015","Ledning, administration","A,B,C,L"],
+        ["102010","Ledning, hälso- och sjukvård","A,B,C,L"],
+        ["102510","Ledning, tandvård","A,B,C,L"],
+        ["103010","Ledning, rehabilitering och förebyggande arbete","A,B,C,L"],
+        ["103510","Ledning, individ- och familjeomsorg","A,B,C,L"],
+        ["103511","Ledning, äldreomsorg","A,B,C,L"],
+        ["103512","Ledning, omsorg om personer med funktionsnedsättning samt socialpsykiatriområdet","A,B,C,L"],
+        ["104010","Ledning, skola","A,B,C,L,1001,1002"],
+        ["104011","Rektor (skola)","B,C,L,1001,1002"],
+        ["104012","Ledning, förskola, pedagogisk omsorg och fritidsverksamhet","A,B,C,L,1001,1002"],
+        ["104510","Ledning, kultur, turism, rekreation och friluftsfrågor","A,B,C,L"],
+        ["105010","Ledning, teknik, hantverk, miljö och samhällsbyggnad","A,B,C,L"],
+        ["105510","Ledning, räddningstjänst och säkerhet","A,B,C,L"],
+        ["106010","Ledning, köks- och måltidsarbete","A,B,C,L"],
+        ["106510","Ledning, städ, tvätt och renhållning","A,B,C,L"],
+        ["109090","Ledning, annan","A,B,C,L"],
+        ["151010","Handläggare, övergripande verksamhet","B,C,L,F"],
+        ["151011","Handläggare, ekonomi","B,C,L,F"],
+        ["151012","Handläggare, personal/HR","B,C,L,F"],
+        ["151013","Handläggare, information/kommunikation","B,C,L,F"],
+        ["151014","Handläggare, IT","B,C,L,F"],
+        ["151015","Handläggare, upphandling/inköp","B,C,L,F"],
+        ["151016","Handläggare, konsument-, medborgar- och samhällsservice","B,C,L,F"],
+        ["151017","Handläggare, miljöfrågor","B,C,L,F"],
+        ["151018","Jurist","B,C,L,F"],
+        ["151019","Arkivarie","B,C,L,F"],
+        ["151020","Handläggare, nämnder","B,C,L,F"],
+        ["151021","Handläggare, samhällsutveckling och säkerhetsfrågor","B,C,L,F"],
+        ["151022","Handläggare, hälso- och sjukvård, tandvård, rehabilitering samt psykiatri","B,C,L,F"],
+        ["151023","Handläggare, individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integrationsarbete","B,C,L,F"],
+        ["151024","Handläggare, förskole-, skol-, fritids- och annan pedagogisk verksamhet","B,C,L,F"],
+        ["151025","Handläggare, infrastruktur, trafik och kollektivtrafikfrågor","B,C,L,F"],
+        ["151026","Handläggare, teknik och lokal/fastighetsfrågor","B,C,L,F"],
+        ["151090","Handläggare, annan","B,C,L,F"],
+        ["152010","Administratör, övergripande verksamhet","B,C,L,F"],
+        ["152011","Administratör, ekonomi","B,C,L,F"],
+        ["152012","Administratör, personal/HR/löner","B,C,L,F"],
+        ["152013","Administratör, information/kommunikation, medborgar- och samhällsservice","B,C,L,F"],
+        ["152014","Administratör, IT","B,C,L,F"],
+        ["152015","Administratör, individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integrationsarbete","B,C,L,F"],
+        ["152016","Administratör, förskole-, skol-, fritids-, och annan pedagogisk verksamhet","B,C,L,F"],
+        ["152017","Receptionist, telefonist","B,C,L,F"],
+        ["152018","Administratör, vård","B,C,L,F"],
+        ["152019","Administratör, kultur, turism och friluftsområdet","B,C,L,F"],
+        ["152020","Administratör, teknik- och fastighetsfrågor samt samhällsbyggnad","B,C,L,F"],
+        ["152021","Administratör, trafik- och kollektivtrafikfrågor","B,C,L,F"],
+        ["152090","Administratör, annan","B,C,L,F"],
+        ["201010","Överläkare","B,C,L,F,M"],
+        ["201011","Distriktsläkare/Specialist allmänmedicin","B,C,L,F,M"],
+        ["201012","Skolläkare","B,C,L,F"],
+        ["201013","Företagsläkare","B,C,L,F"],
+        ["202010","Specialistläkare","B,C,L,F,M"],
+        ["203010","Läkare legitimerad, specialiseringstjänstgöring","B,C,L,F,M"],
+        ["203020","Läkare legitimerad, bastjänstgöring","B,C,L,F"],
+        ["203090","Läkare legitimerad, annan","B,C,L,F,M"],
+        ["204010","Läkare ej legitimerad, allmäntjänstgöring","B,C,L,F"],
+        ["204090","Läkare ej legitimerad, annan","B,C,L,F"],
+        ["204510","Psykolog","B,C,L,F"],
+        ["204511","PTP-psykolog","B,C,L,F"],
+        ["204610","Psykoterapeut","B,C,L,F"],
+        ["205010","Barnmorska, vårdavdelning","B,C,L,F"],
+        ["205011","Barnmorska, mottagning/rådgivning","B,C,L,F"],
+        ["206010","Anestesisjuksköterska","B,C,L,F"],
+        ["206011","Distriktssköterska","B,C,L,F"],
+        ["206012","Psykiatrisjuksköterska","B,C,L,F"],
+        ["206013","Ambulanssjuksköterska","B,C,L,F"],
+        ["206014","Sjuksköterska, funktionsnedsättning och äldreomsorg/geriatrik","B,C,L,F"],
+        ["206015","Intensivvårdssjuksköterska","B,C,L,F"],
+        ["206016","Operationssjuksköterska","B,C,L,F"],
+        ["206017","Sjuksköterska, medicin/kirurgi","B,C,L,F"],
+        ["206018","Sjuksköterska, barn och ungdom","B,C,L,F"],
+        ["206019","Skolsköterska","B,C,L,F"],
+        ["206020","Företagssköterska","B,C,L,F"],
+        ["206021","Sjuksköterska, annan specialistinriktning","B,C,L,F"],
+        ["206022","Medicinskt ansvarig sjuksköterska (MAS)","B,C,L,F"],
+        ["206023","Sjuksköterska, specialfunktion","B,C,L,F"],
+        ["206090","Sjuksköterska, allmän","B,C,L,F"],
+        ["206510","Röntgensjuksköterska","B,C,L,F"],
+        ["207008","Undersköterska med specialistinriktning","B,C,L,F"],
+        ["207009","Undersköterska, hemtjänst","B,C,L,F"],
+        ["207010","Undersköterska, hemvård/hemsjukvård","B,C,L,F"],
+        ["207011","Undersköterska, särskilt boende","B,C,L,F"],
+        ["207013","Undersköterska, vård-/specialavdelning hälso- och sjukvård","B,C,L,F"],
+        ["207014","Undersköterska, mottagning hälso- och sjukvård","B,C,L,F"],
+        ["207015","Barnsköterska, hälso- och sjukvård","B,C,L,F"],
+        ["207016","Ambulanssjukvårdare","B,C,L,F"],
+        ["207017","Medicinsk fotterapeut","B,C,L,F"],
+        ["207018","Skötare, mottagning psykiatri","B,C,L,F"],
+        ["207019","Skötare, vårdavdelning psykiatri","B,C,L,F"],
+        ["207023","Vårdbiträde, hemvård/hemsjukvård","B,C,L,F"],
+        ["207024","Vårdbiträde, särskilt boende","B,C,L,F"],
+        ["207026","Röntgenbiträde","B,C,L,F"],
+        ["207029","Vårdbiträde, hemtjänst","B,C,L,F"],
+        ["207090","Biträdesarbete, annat","B,C,L,F"],
+        ["208010","Sjukhusfysiker","B,C,L,F"],
+        ["208011","Sjukhuskemist","B,C,L,F"],
+        ["208012","Obduktionstekniker","B,C,L,F"],
+        ["208013","Biomedicinsk analytiker","B,C,L,F"],
+        ["208014","Cytodiagnostiker","B,C,L,F"],
+        ["208015","Andra specialiteter inom hälso- och sjukvård","B,C,L,F"],
+        ["208016","Laboratoriebiträde","B,C,L,F"],
+        ["208017","Farmaceut","B,C,L,F"],
+        ["208018","Sjukhusbiolog","B,C,L,F"],
+        ["208090","Laboratoriearbete, annat","B,C,L,F"],
+        ["251010","Tandläkare, allmäntandvård","B,C,L,F"],
+        ["251011","Specialisttandläkare","B,C,L,F"],
+        ["251013","Tandläkare under specialiseringstjänstgöring","B,C,L,F"],
+        ["252009","Tandsköterska med specialistinriktning","B,C,L,F"],
+        ["252010","Tandsköterska","B,C,L,F"],
+        ["252011","Tandhygienist","B,C,L,F"],
+        ["252012","Tandtekniker","B,C,L,F"],
+        ["252090","Tandvårdsarbete, annat","B,C,L,F"],
+        ["301009","Medicinskt ansvarig för rehabilitering (MAR)","B,C,L,F"],
+        ["301010","Arbetsterapeut","B,C,L,F"],
+        ["301011","Fysioterapeut","B,C,L,F"],
+        ["301012","Arbetsterapibiträde","B,C,L,F"],
+        ["301013","Fysioterapiassistent","B,C,L,F"],
+        ["301014","Logoped","B,C,L,F"],
+        ["301015","Audionom","B,C,L,F"],
+        ["301016","Syn-, hörsel- och talpedagog","B,C,L,F"],
+        ["301017","Dövtolk/Teckenspråkstolk","B,C,L,F"],
+        ["301018","Dietist","B,C,L,F"],
+        ["301020","Hjälpmedelskonsulent","B,C,L,F"],
+        ["301021","Hälsovetare","B,C,L,F"],
+        ["301090","Rehabiliterings- och förebyggande arbete, annat","B,C,L,F"],
+        ["351008","Socialsekreterare, barn och unga, myndighetsutövning","B,C,L,F"],
+        ["351009","Socialsekreterare, ekonomiskt bistånd","B,C,L,F"],
+        ["351010","Socialsekreterare, utan myndighetsutövning","B,C,L,F"],
+        ["351011","Fältsekreterare","B,C,L,F"],
+        ["351012","Socialsekreterare, vuxna och LSS, myndighetsutövning","B,C,L,F"],
+        ["351013","Familjerådgivare","B,C,L,F"],
+        ["351014","Integrationshandläggare","B,C,L,F"],
+        ["351015","Behandlingsassistent/Socialpedagog","B,C,L,F"],
+        ["351016","Arbetsmarknadskonsulent","B,C,L,F"],
+        ["351030","Stödpedagog, funktionsnedsättning","B,C,L,F"],
+        ["351031","Stödassistent/Vårdare, gruppboende, funktionsnedsättning","B,C,L,F"],
+        ["351032","Stödassistent/Vårdare, dagverksamhet, funktionsnedsättning","B,C,L,F"],
+        ["351033","Vårdbiträde/Stödbiträde, funktionsnedsättning","B,C,L,F"],
+        ["351034","Boendestödjare, i hemmiljö, inom funktionsnedsättning","B,C,L,F"],
+        ["351035","Skötare/Boendestödjare, behandlingsarbete i hemmiljö, inom socialpsykiatri","B,C,L,F"],
+        ["351040","Personlig assistent","B,C,L,F"],
+        ["351041","Anhörigvårdare","B,C,L,F"],
+        ["351090","Socialt arbete, annat","B,C,L,F"],
+        ["352010","Kurator","B,C,L,F"],
+        ["352090","Kurativt arbete, annat","B,C,L,F"],
+        ["401009","Lärare grundskola, årskurs F-3","B,C,L,F,1001,1002"],
+        ["401010","Lärare grundskola, årskurs 4-6","B,C,L,F,1001,1002"],
+        ["401011","Lärare grundskola, årskurs 7-9","B,C,L,F,1001,1002"],
+        ["401012","Lärare gymnasieskola, allmänna ämnen","B,C,L,F,1001,1002"],
+        ["401013","Lärare gymnasieskola, yrkesämnen","B,C,L,F,1001,1002"],
+        ["401015","Lärare, folkhögskola","B,C,L,F"],
+        ["401016","Speciallärare","B,C,L,F,1001,1002"],
+        ["401017","Specialpedagog","B,C,L,F,1001,1002"],
+        ["401018","SFI-lärare","B,C,L,F,1001,1002"],
+        ["401019","Lärare, modersmål","B,C,L,F,1001,1002"],
+        ["401020","Lärare, praktiska/estetiska ämnen, grundskola","B,C,L,F,1001,1002"],
+        ["401021","Lärare, praktiska/estetiska ämnen, gymnasieskola","B,C,L,F,1001,1002"],
+        ["401022","Lärare, vuxenutbildning, allmänna ämnen","B,C,L,F,1001,1002"],
+        ["401023","Lärare, vuxenutbildning, yrkesämnen","B,C,L,F,1001,1002"],
+        ["402010","Förskollärare","B,C,L,F,1001,1002"],
+        ["402011","Lärare i fritidshem","B,C,L,F,1001,1002"],
+        ["402090","Lärar-, förskollärararbete, annat","B,C,L,F,1001,1002"],
+        ["403010","Barnskötare","B,C,L,F"],
+        ["403011","Dagbarnvårdare","B,C,L,F"],
+        ["403012","Modersmålstränare, förskola","B,C,L,F,1001,1002"],
+        ["403013","Instruktör/Handledare","B,C,L,F,1001,1002"],
+        ["403014","Studie- och yrkesvägledare","B,C,L,F"],
+        ["403015","Lärarassistent","B,C,L,F"],
+        ["403016","Elevassistent","B,C,L,F"],
+        ["403090","Skolarbete, annat","B,C,L,F"],
+        ["451010","Kultursekreterare/kulturhandläggare","B,C,L,F"],
+        ["451011","Lärare, kulturskola","B,C,L,F"],
+        ["451012","Kulturarbete","B,C,L,F"],
+        ["451013","Antikvarie","B,C,L,F"],
+        ["451014","Museiarbete","B,C,L,F"],
+        ["451015","Bibliotekarie","B,C,L,F"],
+        ["451016","Biblioteksassistent","B,C,L,F"],
+        ["451090","Kulturarbete, annat","B,C,L,F"],
+        ["452010","Turism, rekreation och friluftskonsulent","B,C,L,F"],
+        ["452011","Fritidsledare","B,C,L,F"],
+        ["452012","Turismarbete","B,C,L,F"],
+        ["452013","Badmästare","B,C,L,F"],
+        ["452014","Friskvårdsarbete, badpersonal","B,C,L,F"],
+        ["452090","Turism, rekreation och friluftsarbete, annat","B,C,L,F"],
+        ["501010","Fysisk samhällsplanerare","B,C,L,F"],
+        ["501011","Bygglovshandläggare","B,C,L,F"],
+        ["501012","Byggnadsinspektör","B,C,L,F"],
+        ["501013","Miljö- och hälsoskyddsinspektör","B,C,L,F"],
+        ["502010","Systemutvecklare","B,C,L,F"],
+        ["502011","Ingenjör, mätning, kartering, GIS","B,C,L,F"],
+        ["502012","Ingenjör, park/gator, trafik","B,C,L,F"],
+        ["502013","Ingenjör, mark, fastigheter","B,C,L,F"],
+        ["502014","Ingenjör, drift, VA-ingenjör","B,C,L,F"],
+        ["502016","Ingenjör, hälso- och sjukvård","B,C,L,F"],
+        ["502090","Ingenjör, annan","B,C,L,F"],
+        ["503010","Tekniker, IT","B,C,L,F"],
+        ["503011","Tekniker, lantmäteri","B,C,L,F"],
+        ["503012","Tekniker, drift","B,C,L,F"],
+        ["503013","Tekniker, allmänteknisk","B,C,L,F"],
+        ["503014","Tekniker, hälso- och sjukvård","B,C,L,F"],
+        ["503015","Steriltekniker","B,C,L,F"],
+        ["503090","Tekniker, annan","B,C,L,F"],
+        ["509090","Teknikarbete, annat","B,C,L,F"],
+        ["521010","Elektriker/elmontör","B,C,L,F"],
+        ["521011","Fastighetsskötare","B,C,L,F"],
+        ["521012","Anläggningsarbete","B,C,L,F"],
+        ["521013","Hantverkare","B,C,L,F"],
+        ["521014","Fordonsförare","B,C,L,F"],
+        ["521015","Vaktmästare","B,C,L,F"],
+        ["521016","Kontorsvaktmästare","B,C,L,F"],
+        ["521017","Parkeringsvakt/trafikövervakare","B,C,L,F"],
+        ["521018","Park-/trädgårdsarbete","B,C,L,F"],
+        ["521019","Lantbruksarbete","B,C,L,F"],
+        ["529090","Hantverkararbete, annat","B,C,L,F"],
+        ["551010","Brandingenjör","B,C,L,F"],
+        ["551011","Brandinspektör","B,C,L,F"],
+        ["551012","Brandmästare","B,C,L,F"],
+        ["551013","Brandman","B,C,L,F"],
+        ["601010","Kock","B,C,L,F"],
+        ["601011","Kostekonom","B,C,L,F"],
+        ["601012","Måltidspersonal","B,C,L,F"],
+        ["609090","Köks- och måltidsarbete, annat","B,C,L,F"],
+        ["651010","Lokalvårdare/städare","B,C,L,F"],
+        ["651011","Tvätteriarbete","B,C,L,F"],
+        ["651012","Renhållningsarbete","B,C,L,F"],
+        ["651013","Förrådsarbete","B,C,L,F"],
+        ["659090","Städ-, tvätt- och renhållningsarbete, annat","B,C,L,F"]
+    ])
+});
+
+/** Etikettlistan: { version, kalla, etiketter: [kod, namn, 'A,B,…'][] }. */
+function aidEtikettlista() {
+    return LISTA;
+}
+
+    return { aidEtikettlista };
+})();
+
+// ---- speglar src/lib/aid.js ----
+const __mirrorAid = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const aidEtikettlista = __mirrorAidEtiketter.aidEtikettlista;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
+    const adjektiv = __mirrorTermer.adjektiv;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — AID-hierarkin (ADR-33).
+ *
+ * AID (SKR:s arbetsidentifikation) har en sexsiffrig etikett; de två första siffrorna anger ett
+ * av 13 huvudområden ("sektorer"), de fyra första en mellannivå utan namn. Restkoder ("annan")
+ * har 090 som de tre sista siffrorna. Etikettnamn och möjliga ansvarskoder kommer ur SKR:s
+ * etikettlista (aid-etiketter.js, genererad).
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+
+const HUVUDOMRADEN = Object.freeze([
+    { prefix: '10', namn: 'Ledningsarbete' },
+    { prefix: '15', namn: 'Handläggar- och administratörsarbete' },
+    { prefix: '20', namn: 'Vård- och omsorgsarbete med mera' },
+    { prefix: '25', namn: 'Tandvårdsarbete' },
+    { prefix: '30', namn: 'Rehabilitering och förebyggande arbete' },
+    { prefix: '35', namn: 'Individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integration' },
+    { prefix: '40', namn: 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet' },
+    { prefix: '45', namn: 'Kultur-, turism- och friluftsarbete' },
+    { prefix: '50', namn: 'Teknikarbete' },
+    { prefix: '52', namn: 'Vaktmästeri, trädgård, anläggning med mera' },
+    { prefix: '55', namn: 'Räddningstjänstarbete' },
+    { prefix: '60', namn: 'Köks- och måltidsarbete' },
+    { prefix: '65', namn: 'Städ, tvätt och renhållningsarbete' },
+]);
+const OKANT_HUVUDOMRADE = `${stor(adjektiv('okänd', T.huvudomrade))} ${T.huvudomrade.en}`;
+
+const _PER_PREFIX = new Map(HUVUDOMRADEN.map(h => [h.prefix, h]));
+const _ORDNING = new Map(HUVUDOMRADEN.map((h, i) => [h.namn, i]));
+/** @type {Map<string, {kod:string, namn:string, ansvarskoder:string[]}>|null} */
+let _index = null;
+
+function _etiketter() {
+    if (!_index) {
+        _index = new Map(aidEtikettlista().etiketter.map(([kod, namn, a]) =>
+            [kod, { kod, namn, ansvarskoder: a ? a.split(',') : [] }]));
+    }
+    return _index;
+}
+
+/** Sex siffror först i fältet (som AID-koden läses i dag), annars null. */
+function normaliseraAid(aid) {
+    const m = String(aid ?? '').trim().match(/^(\d{6})(?!\d)/);
+    return m ? m[1] : null;
+}
+
+/** Sifferprefixet ur ett yrkesfält (de inledande siffrorna), eller null när fältet saknar ett. */
+function sifferprefixAvYrke(yrke) {
+    const m = String(yrke ?? '').match(/^(\d+)/);
+    return m ? m[1] : null;
+}
+
+/** AID-koden ur ett yrkesfält: de inledande siffrorna, annars hela yrkesfältet som text. */
+function aidAvYrke(yrke) {
+    return sifferprefixAvYrke(yrke) ?? String(yrke ?? '');
+}
+
+/** Huvudområdet för en AID-kod, eller null. */
+function huvudomrade(aid) {
+    const k = normaliseraAid(aid);
+    return k ? (_PER_PREFIX.get(k.slice(0, 2)) || null) : null;
+}
+
+/** Sektorns namn — huvudområdet, eller "Okänt huvudområde". */
+function sektorsnamn(aid) {
+    const h = huvudomrade(aid);
+    return h ? h.namn : OKANT_HUVUDOMRADE;
+}
+
+/** De fyra första siffrorna, eller null. */
+function mellanniva(aid) {
+    const k = normaliseraAid(aid);
+    return k ? k.slice(0, 4) : null;
+}
+
+/** "AID 2070xx", eller null. */
+function mellannivaEtikett(aid) {
+    const m = mellanniva(aid);
+    return m ? `AID ${m}xx` : null;
+}
+
+/** Etiketten ur SKR:s lista: { kod, namn, ansvarskoder }, eller null. */
+function etikett(aid) {
+    const k = normaliseraAid(aid);
+    return k ? (_etiketter().get(k) || null) : null;
+}
+
+/** Restkod ("annan"/"annat"): de tre sista siffrorna är 090. */
+function arRestkod(aid) {
+    const k = normaliseraAid(aid);
+    return !!k && k.endsWith('090');
+}
+
+/** Etikett under huvudområdet Ledningsarbete (10xxxx). */
+function arLedningsetikett(aid) {
+    const k = normaliseraAid(aid);
+    return !!k && k.startsWith('10');
+}
+
+/** Sorterar sektorsnamn i prefixordning; okänt huvudområde sist. */
+function jamforSektor(a, b) {
+    const i = n => _ORDNING.get(n) ?? HUVUDOMRADEN.length;
+    return i(a) - i(b);
+}
+
+/** Version, källa och antal etiketter i den inbyggda etikettlistan. */
+function etikettlistaInfo() {
+    const l = aidEtikettlista();
+    return { version: l.version, kalla: l.kalla, antal: l.etiketter.length };
+}
+
+    return { normaliseraAid, aidAvYrke, sifferprefixAvYrke, huvudomrade, sektorsnamn, mellannivaEtikett, etikett, arRestkod, arLedningsetikett, jamforSektor, etikettlistaInfo };
+})();
+const aidAvYrke = __mirrorAid.aidAvYrke;
+const sifferprefixAvYrke = __mirrorAid.sifferprefixAvYrke;
+const _aidSektorsnamn = __mirrorAid.sektorsnamn;
+const _aidJamforSektor = __mirrorAid.jamforSektor;
+const _aidEtikettlistaInfo = __mirrorAid.etikettlistaInfo;
 
 // ---- speglar src/lib/undertryckning.js ----
 const __mirrorUndertryckning = (() => {
@@ -6694,6 +7085,7 @@ const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const aidAvYrke = __mirrorAid.aidAvYrke;
     const kostnadsfaktor = __mirrorKostnad.kostnadsfaktor;
     const kostnadPerAr = __mirrorKostnad.kostnadPerAr;
     const arKvinna = __mirrorKon.arKvinna;
@@ -6715,6 +7107,7 @@ const __mirrorPrioritering = (() => {
  * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
+
 
 
 
@@ -6811,8 +7204,7 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
 
     const groups = {};
     d.forEach(r => {
-        const aidM = r.yrke.match(/^(\d+)/);
-        const aid  = aidM ? aidM[1] : r.yrke;
+        const aid  = aidAvYrke(r.yrke);
         const key  = `${r.yrke}|${r.bas}`;
         if (!groups[key]) groups[key] = { yrke: r.yrke, aid, bas: r.bas, rows: [] };
         groups[key].rows.push(r);
@@ -7249,384 +7641,6 @@ function skriptBlock(html) {
 const _ofBakaIn = __mirrorOrganisationsfil.bakaIn;
 const _ofFilnamnForslag = __mirrorOrganisationsfil.filnamnForslag;
 const _ofNormaliseraFilnamn = __mirrorOrganisationsfil.normaliseraFilnamn;
-
-// ---- speglar src/lib/aid-etiketter.js ----
-const __mirrorAidEtiketter = (() => {
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-// AUTO-GENERERAD av tools/gen-aid-etiketter.mjs ur SKR, Etikettlista AID 2018 (reviderad 2026-09-23). Ändra inte för hand.
-// Innehåller bara kod, etikettnamn och möjliga ansvarskoder per etikett.
-//
-// Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
-
-const LISTA = Object.freeze({
-    version: '2026-09-23',
-    kalla: 'SKR, Etikettlista AID 2018 (reviderad 2026-09-23)',
-    etiketter: Object.freeze([
-        ["101010","Ledning, övergripande","A"],
-        ["101011","Ledning, ekonomi","A,B,C,L"],
-        ["101012","Ledning, personal/HR","A,B,C,L"],
-        ["101013","Ledning, information/kommunikation","A,B,C,L"],
-        ["101014","Ledning, IT","A,B,C,L"],
-        ["101015","Ledning, administration","A,B,C,L"],
-        ["102010","Ledning, hälso- och sjukvård","A,B,C,L"],
-        ["102510","Ledning, tandvård","A,B,C,L"],
-        ["103010","Ledning, rehabilitering och förebyggande arbete","A,B,C,L"],
-        ["103510","Ledning, individ- och familjeomsorg","A,B,C,L"],
-        ["103511","Ledning, äldreomsorg","A,B,C,L"],
-        ["103512","Ledning, omsorg om personer med funktionsnedsättning samt socialpsykiatriområdet","A,B,C,L"],
-        ["104010","Ledning, skola","A,B,C,L,1001,1002"],
-        ["104011","Rektor (skola)","B,C,L,1001,1002"],
-        ["104012","Ledning, förskola, pedagogisk omsorg och fritidsverksamhet","A,B,C,L,1001,1002"],
-        ["104510","Ledning, kultur, turism, rekreation och friluftsfrågor","A,B,C,L"],
-        ["105010","Ledning, teknik, hantverk, miljö och samhällsbyggnad","A,B,C,L"],
-        ["105510","Ledning, räddningstjänst och säkerhet","A,B,C,L"],
-        ["106010","Ledning, köks- och måltidsarbete","A,B,C,L"],
-        ["106510","Ledning, städ, tvätt och renhållning","A,B,C,L"],
-        ["109090","Ledning, annan","A,B,C,L"],
-        ["151010","Handläggare, övergripande verksamhet","B,C,L,F"],
-        ["151011","Handläggare, ekonomi","B,C,L,F"],
-        ["151012","Handläggare, personal/HR","B,C,L,F"],
-        ["151013","Handläggare, information/kommunikation","B,C,L,F"],
-        ["151014","Handläggare, IT","B,C,L,F"],
-        ["151015","Handläggare, upphandling/inköp","B,C,L,F"],
-        ["151016","Handläggare, konsument-, medborgar- och samhällsservice","B,C,L,F"],
-        ["151017","Handläggare, miljöfrågor","B,C,L,F"],
-        ["151018","Jurist","B,C,L,F"],
-        ["151019","Arkivarie","B,C,L,F"],
-        ["151020","Handläggare, nämnder","B,C,L,F"],
-        ["151021","Handläggare, samhällsutveckling och säkerhetsfrågor","B,C,L,F"],
-        ["151022","Handläggare, hälso- och sjukvård, tandvård, rehabilitering samt psykiatri","B,C,L,F"],
-        ["151023","Handläggare, individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integrationsarbete","B,C,L,F"],
-        ["151024","Handläggare, förskole-, skol-, fritids- och annan pedagogisk verksamhet","B,C,L,F"],
-        ["151025","Handläggare, infrastruktur, trafik och kollektivtrafikfrågor","B,C,L,F"],
-        ["151026","Handläggare, teknik och lokal/fastighetsfrågor","B,C,L,F"],
-        ["151090","Handläggare, annan","B,C,L,F"],
-        ["152010","Administratör, övergripande verksamhet","B,C,L,F"],
-        ["152011","Administratör, ekonomi","B,C,L,F"],
-        ["152012","Administratör, personal/HR/löner","B,C,L,F"],
-        ["152013","Administratör, information/kommunikation, medborgar- och samhällsservice","B,C,L,F"],
-        ["152014","Administratör, IT","B,C,L,F"],
-        ["152015","Administratör, individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integrationsarbete","B,C,L,F"],
-        ["152016","Administratör, förskole-, skol-, fritids-, och annan pedagogisk verksamhet","B,C,L,F"],
-        ["152017","Receptionist, telefonist","B,C,L,F"],
-        ["152018","Administratör, vård","B,C,L,F"],
-        ["152019","Administratör, kultur, turism och friluftsområdet","B,C,L,F"],
-        ["152020","Administratör, teknik- och fastighetsfrågor samt samhällsbyggnad","B,C,L,F"],
-        ["152021","Administratör, trafik- och kollektivtrafikfrågor","B,C,L,F"],
-        ["152090","Administratör, annan","B,C,L,F"],
-        ["201010","Överläkare","B,C,L,F,M"],
-        ["201011","Distriktsläkare/Specialist allmänmedicin","B,C,L,F,M"],
-        ["201012","Skolläkare","B,C,L,F"],
-        ["201013","Företagsläkare","B,C,L,F"],
-        ["202010","Specialistläkare","B,C,L,F,M"],
-        ["203010","Läkare legitimerad, specialiseringstjänstgöring","B,C,L,F,M"],
-        ["203020","Läkare legitimerad, bastjänstgöring","B,C,L,F"],
-        ["203090","Läkare legitimerad, annan","B,C,L,F,M"],
-        ["204010","Läkare ej legitimerad, allmäntjänstgöring","B,C,L,F"],
-        ["204090","Läkare ej legitimerad, annan","B,C,L,F"],
-        ["204510","Psykolog","B,C,L,F"],
-        ["204511","PTP-psykolog","B,C,L,F"],
-        ["204610","Psykoterapeut","B,C,L,F"],
-        ["205010","Barnmorska, vårdavdelning","B,C,L,F"],
-        ["205011","Barnmorska, mottagning/rådgivning","B,C,L,F"],
-        ["206010","Anestesisjuksköterska","B,C,L,F"],
-        ["206011","Distriktssköterska","B,C,L,F"],
-        ["206012","Psykiatrisjuksköterska","B,C,L,F"],
-        ["206013","Ambulanssjuksköterska","B,C,L,F"],
-        ["206014","Sjuksköterska, funktionsnedsättning och äldreomsorg/geriatrik","B,C,L,F"],
-        ["206015","Intensivvårdssjuksköterska","B,C,L,F"],
-        ["206016","Operationssjuksköterska","B,C,L,F"],
-        ["206017","Sjuksköterska, medicin/kirurgi","B,C,L,F"],
-        ["206018","Sjuksköterska, barn och ungdom","B,C,L,F"],
-        ["206019","Skolsköterska","B,C,L,F"],
-        ["206020","Företagssköterska","B,C,L,F"],
-        ["206021","Sjuksköterska, annan specialistinriktning","B,C,L,F"],
-        ["206022","Medicinskt ansvarig sjuksköterska (MAS)","B,C,L,F"],
-        ["206023","Sjuksköterska, specialfunktion","B,C,L,F"],
-        ["206090","Sjuksköterska, allmän","B,C,L,F"],
-        ["206510","Röntgensjuksköterska","B,C,L,F"],
-        ["207008","Undersköterska med specialistinriktning","B,C,L,F"],
-        ["207009","Undersköterska, hemtjänst","B,C,L,F"],
-        ["207010","Undersköterska, hemvård/hemsjukvård","B,C,L,F"],
-        ["207011","Undersköterska, särskilt boende","B,C,L,F"],
-        ["207013","Undersköterska, vård-/specialavdelning hälso- och sjukvård","B,C,L,F"],
-        ["207014","Undersköterska, mottagning hälso- och sjukvård","B,C,L,F"],
-        ["207015","Barnsköterska, hälso- och sjukvård","B,C,L,F"],
-        ["207016","Ambulanssjukvårdare","B,C,L,F"],
-        ["207017","Medicinsk fotterapeut","B,C,L,F"],
-        ["207018","Skötare, mottagning psykiatri","B,C,L,F"],
-        ["207019","Skötare, vårdavdelning psykiatri","B,C,L,F"],
-        ["207023","Vårdbiträde, hemvård/hemsjukvård","B,C,L,F"],
-        ["207024","Vårdbiträde, särskilt boende","B,C,L,F"],
-        ["207026","Röntgenbiträde","B,C,L,F"],
-        ["207029","Vårdbiträde, hemtjänst","B,C,L,F"],
-        ["207090","Biträdesarbete, annat","B,C,L,F"],
-        ["208010","Sjukhusfysiker","B,C,L,F"],
-        ["208011","Sjukhuskemist","B,C,L,F"],
-        ["208012","Obduktionstekniker","B,C,L,F"],
-        ["208013","Biomedicinsk analytiker","B,C,L,F"],
-        ["208014","Cytodiagnostiker","B,C,L,F"],
-        ["208015","Andra specialiteter inom hälso- och sjukvård","B,C,L,F"],
-        ["208016","Laboratoriebiträde","B,C,L,F"],
-        ["208017","Farmaceut","B,C,L,F"],
-        ["208018","Sjukhusbiolog","B,C,L,F"],
-        ["208090","Laboratoriearbete, annat","B,C,L,F"],
-        ["251010","Tandläkare, allmäntandvård","B,C,L,F"],
-        ["251011","Specialisttandläkare","B,C,L,F"],
-        ["251013","Tandläkare under specialiseringstjänstgöring","B,C,L,F"],
-        ["252009","Tandsköterska med specialistinriktning","B,C,L,F"],
-        ["252010","Tandsköterska","B,C,L,F"],
-        ["252011","Tandhygienist","B,C,L,F"],
-        ["252012","Tandtekniker","B,C,L,F"],
-        ["252090","Tandvårdsarbete, annat","B,C,L,F"],
-        ["301009","Medicinskt ansvarig för rehabilitering (MAR)","B,C,L,F"],
-        ["301010","Arbetsterapeut","B,C,L,F"],
-        ["301011","Fysioterapeut","B,C,L,F"],
-        ["301012","Arbetsterapibiträde","B,C,L,F"],
-        ["301013","Fysioterapiassistent","B,C,L,F"],
-        ["301014","Logoped","B,C,L,F"],
-        ["301015","Audionom","B,C,L,F"],
-        ["301016","Syn-, hörsel- och talpedagog","B,C,L,F"],
-        ["301017","Dövtolk/Teckenspråkstolk","B,C,L,F"],
-        ["301018","Dietist","B,C,L,F"],
-        ["301020","Hjälpmedelskonsulent","B,C,L,F"],
-        ["301021","Hälsovetare","B,C,L,F"],
-        ["301090","Rehabiliterings- och förebyggande arbete, annat","B,C,L,F"],
-        ["351008","Socialsekreterare, barn och unga, myndighetsutövning","B,C,L,F"],
-        ["351009","Socialsekreterare, ekonomiskt bistånd","B,C,L,F"],
-        ["351010","Socialsekreterare, utan myndighetsutövning","B,C,L,F"],
-        ["351011","Fältsekreterare","B,C,L,F"],
-        ["351012","Socialsekreterare, vuxna och LSS, myndighetsutövning","B,C,L,F"],
-        ["351013","Familjerådgivare","B,C,L,F"],
-        ["351014","Integrationshandläggare","B,C,L,F"],
-        ["351015","Behandlingsassistent/Socialpedagog","B,C,L,F"],
-        ["351016","Arbetsmarknadskonsulent","B,C,L,F"],
-        ["351030","Stödpedagog, funktionsnedsättning","B,C,L,F"],
-        ["351031","Stödassistent/Vårdare, gruppboende, funktionsnedsättning","B,C,L,F"],
-        ["351032","Stödassistent/Vårdare, dagverksamhet, funktionsnedsättning","B,C,L,F"],
-        ["351033","Vårdbiträde/Stödbiträde, funktionsnedsättning","B,C,L,F"],
-        ["351034","Boendestödjare, i hemmiljö, inom funktionsnedsättning","B,C,L,F"],
-        ["351035","Skötare/Boendestödjare, behandlingsarbete i hemmiljö, inom socialpsykiatri","B,C,L,F"],
-        ["351040","Personlig assistent","B,C,L,F"],
-        ["351041","Anhörigvårdare","B,C,L,F"],
-        ["351090","Socialt arbete, annat","B,C,L,F"],
-        ["352010","Kurator","B,C,L,F"],
-        ["352090","Kurativt arbete, annat","B,C,L,F"],
-        ["401009","Lärare grundskola, årskurs F-3","B,C,L,F,1001,1002"],
-        ["401010","Lärare grundskola, årskurs 4-6","B,C,L,F,1001,1002"],
-        ["401011","Lärare grundskola, årskurs 7-9","B,C,L,F,1001,1002"],
-        ["401012","Lärare gymnasieskola, allmänna ämnen","B,C,L,F,1001,1002"],
-        ["401013","Lärare gymnasieskola, yrkesämnen","B,C,L,F,1001,1002"],
-        ["401015","Lärare, folkhögskola","B,C,L,F"],
-        ["401016","Speciallärare","B,C,L,F,1001,1002"],
-        ["401017","Specialpedagog","B,C,L,F,1001,1002"],
-        ["401018","SFI-lärare","B,C,L,F,1001,1002"],
-        ["401019","Lärare, modersmål","B,C,L,F,1001,1002"],
-        ["401020","Lärare, praktiska/estetiska ämnen, grundskola","B,C,L,F,1001,1002"],
-        ["401021","Lärare, praktiska/estetiska ämnen, gymnasieskola","B,C,L,F,1001,1002"],
-        ["401022","Lärare, vuxenutbildning, allmänna ämnen","B,C,L,F,1001,1002"],
-        ["401023","Lärare, vuxenutbildning, yrkesämnen","B,C,L,F,1001,1002"],
-        ["402010","Förskollärare","B,C,L,F,1001,1002"],
-        ["402011","Lärare i fritidshem","B,C,L,F,1001,1002"],
-        ["402090","Lärar-, förskollärararbete, annat","B,C,L,F,1001,1002"],
-        ["403010","Barnskötare","B,C,L,F"],
-        ["403011","Dagbarnvårdare","B,C,L,F"],
-        ["403012","Modersmålstränare, förskola","B,C,L,F,1001,1002"],
-        ["403013","Instruktör/Handledare","B,C,L,F,1001,1002"],
-        ["403014","Studie- och yrkesvägledare","B,C,L,F"],
-        ["403015","Lärarassistent","B,C,L,F"],
-        ["403016","Elevassistent","B,C,L,F"],
-        ["403090","Skolarbete, annat","B,C,L,F"],
-        ["451010","Kultursekreterare/kulturhandläggare","B,C,L,F"],
-        ["451011","Lärare, kulturskola","B,C,L,F"],
-        ["451012","Kulturarbete","B,C,L,F"],
-        ["451013","Antikvarie","B,C,L,F"],
-        ["451014","Museiarbete","B,C,L,F"],
-        ["451015","Bibliotekarie","B,C,L,F"],
-        ["451016","Biblioteksassistent","B,C,L,F"],
-        ["451090","Kulturarbete, annat","B,C,L,F"],
-        ["452010","Turism, rekreation och friluftskonsulent","B,C,L,F"],
-        ["452011","Fritidsledare","B,C,L,F"],
-        ["452012","Turismarbete","B,C,L,F"],
-        ["452013","Badmästare","B,C,L,F"],
-        ["452014","Friskvårdsarbete, badpersonal","B,C,L,F"],
-        ["452090","Turism, rekreation och friluftsarbete, annat","B,C,L,F"],
-        ["501010","Fysisk samhällsplanerare","B,C,L,F"],
-        ["501011","Bygglovshandläggare","B,C,L,F"],
-        ["501012","Byggnadsinspektör","B,C,L,F"],
-        ["501013","Miljö- och hälsoskyddsinspektör","B,C,L,F"],
-        ["502010","Systemutvecklare","B,C,L,F"],
-        ["502011","Ingenjör, mätning, kartering, GIS","B,C,L,F"],
-        ["502012","Ingenjör, park/gator, trafik","B,C,L,F"],
-        ["502013","Ingenjör, mark, fastigheter","B,C,L,F"],
-        ["502014","Ingenjör, drift, VA-ingenjör","B,C,L,F"],
-        ["502016","Ingenjör, hälso- och sjukvård","B,C,L,F"],
-        ["502090","Ingenjör, annan","B,C,L,F"],
-        ["503010","Tekniker, IT","B,C,L,F"],
-        ["503011","Tekniker, lantmäteri","B,C,L,F"],
-        ["503012","Tekniker, drift","B,C,L,F"],
-        ["503013","Tekniker, allmänteknisk","B,C,L,F"],
-        ["503014","Tekniker, hälso- och sjukvård","B,C,L,F"],
-        ["503015","Steriltekniker","B,C,L,F"],
-        ["503090","Tekniker, annan","B,C,L,F"],
-        ["509090","Teknikarbete, annat","B,C,L,F"],
-        ["521010","Elektriker/elmontör","B,C,L,F"],
-        ["521011","Fastighetsskötare","B,C,L,F"],
-        ["521012","Anläggningsarbete","B,C,L,F"],
-        ["521013","Hantverkare","B,C,L,F"],
-        ["521014","Fordonsförare","B,C,L,F"],
-        ["521015","Vaktmästare","B,C,L,F"],
-        ["521016","Kontorsvaktmästare","B,C,L,F"],
-        ["521017","Parkeringsvakt/trafikövervakare","B,C,L,F"],
-        ["521018","Park-/trädgårdsarbete","B,C,L,F"],
-        ["521019","Lantbruksarbete","B,C,L,F"],
-        ["529090","Hantverkararbete, annat","B,C,L,F"],
-        ["551010","Brandingenjör","B,C,L,F"],
-        ["551011","Brandinspektör","B,C,L,F"],
-        ["551012","Brandmästare","B,C,L,F"],
-        ["551013","Brandman","B,C,L,F"],
-        ["601010","Kock","B,C,L,F"],
-        ["601011","Kostekonom","B,C,L,F"],
-        ["601012","Måltidspersonal","B,C,L,F"],
-        ["609090","Köks- och måltidsarbete, annat","B,C,L,F"],
-        ["651010","Lokalvårdare/städare","B,C,L,F"],
-        ["651011","Tvätteriarbete","B,C,L,F"],
-        ["651012","Renhållningsarbete","B,C,L,F"],
-        ["651013","Förrådsarbete","B,C,L,F"],
-        ["659090","Städ-, tvätt- och renhållningsarbete, annat","B,C,L,F"]
-    ])
-});
-
-/** Etikettlistan: { version, kalla, etiketter: [kod, namn, 'A,B,…'][] }. */
-function aidEtikettlista() {
-    return LISTA;
-}
-
-    return { aidEtikettlista };
-})();
-
-// ---- speglar src/lib/aid.js ----
-const __mirrorAid = (() => {
-    // importer ur tidigare speglade lib-moduler
-    const aidEtikettlista = __mirrorAidEtiketter.aidEtikettlista;
-    const skapaTermer = __mirrorTermer.skapaTermer;
-    const stor = __mirrorTermer.stor;
-    const adjektiv = __mirrorTermer.adjektiv;
-
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — AID-hierarkin (ADR-33).
- *
- * AID (SKR:s arbetsidentifikation) har en sexsiffrig etikett; de två första siffrorna anger ett
- * av 13 huvudområden ("sektorer"), de fyra första en mellannivå utan namn. Restkoder ("annan")
- * har 090 som de tre sista siffrorna. Etikettnamn och möjliga ansvarskoder kommer ur SKR:s
- * etikettlista (aid-etiketter.js, genererad).
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- */
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
-
-
-const HUVUDOMRADEN = Object.freeze([
-    { prefix: '10', namn: 'Ledningsarbete' },
-    { prefix: '15', namn: 'Handläggar- och administratörsarbete' },
-    { prefix: '20', namn: 'Vård- och omsorgsarbete med mera' },
-    { prefix: '25', namn: 'Tandvårdsarbete' },
-    { prefix: '30', namn: 'Rehabilitering och förebyggande arbete' },
-    { prefix: '35', namn: 'Individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integration' },
-    { prefix: '40', namn: 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet' },
-    { prefix: '45', namn: 'Kultur-, turism- och friluftsarbete' },
-    { prefix: '50', namn: 'Teknikarbete' },
-    { prefix: '52', namn: 'Vaktmästeri, trädgård, anläggning med mera' },
-    { prefix: '55', namn: 'Räddningstjänstarbete' },
-    { prefix: '60', namn: 'Köks- och måltidsarbete' },
-    { prefix: '65', namn: 'Städ, tvätt och renhållningsarbete' },
-]);
-const OKANT_HUVUDOMRADE = `${stor(adjektiv('okänd', T.huvudomrade))} ${T.huvudomrade.en}`;
-
-const _PER_PREFIX = new Map(HUVUDOMRADEN.map(h => [h.prefix, h]));
-const _ORDNING = new Map(HUVUDOMRADEN.map((h, i) => [h.namn, i]));
-/** @type {Map<string, {kod:string, namn:string, ansvarskoder:string[]}>|null} */
-let _index = null;
-
-function _etiketter() {
-    if (!_index) {
-        _index = new Map(aidEtikettlista().etiketter.map(([kod, namn, a]) =>
-            [kod, { kod, namn, ansvarskoder: a ? a.split(',') : [] }]));
-    }
-    return _index;
-}
-
-/** Sex siffror först i fältet (som AID-koden läses i dag), annars null. */
-function normaliseraAid(aid) {
-    const m = String(aid ?? '').trim().match(/^(\d{6})(?!\d)/);
-    return m ? m[1] : null;
-}
-
-/** Huvudområdet för en AID-kod, eller null. */
-function huvudomrade(aid) {
-    const k = normaliseraAid(aid);
-    return k ? (_PER_PREFIX.get(k.slice(0, 2)) || null) : null;
-}
-
-/** Sektorns namn — huvudområdet, eller "Okänt huvudområde". */
-function sektorsnamn(aid) {
-    const h = huvudomrade(aid);
-    return h ? h.namn : OKANT_HUVUDOMRADE;
-}
-
-/** De fyra första siffrorna, eller null. */
-function mellanniva(aid) {
-    const k = normaliseraAid(aid);
-    return k ? k.slice(0, 4) : null;
-}
-
-/** "AID 2070xx", eller null. */
-function mellannivaEtikett(aid) {
-    const m = mellanniva(aid);
-    return m ? `AID ${m}xx` : null;
-}
-
-/** Etiketten ur SKR:s lista: { kod, namn, ansvarskoder }, eller null. */
-function etikett(aid) {
-    const k = normaliseraAid(aid);
-    return k ? (_etiketter().get(k) || null) : null;
-}
-
-/** Restkod ("annan"/"annat"): de tre sista siffrorna är 090. */
-function arRestkod(aid) {
-    const k = normaliseraAid(aid);
-    return !!k && k.endsWith('090');
-}
-
-/** Etikett under huvudområdet Ledningsarbete (10xxxx). */
-function arLedningsetikett(aid) {
-    const k = normaliseraAid(aid);
-    return !!k && k.startsWith('10');
-}
-
-/** Sorterar sektorsnamn i prefixordning; okänt huvudområde sist. */
-function jamforSektor(a, b) {
-    const i = n => _ORDNING.get(n) ?? HUVUDOMRADEN.length;
-    return i(a) - i(b);
-}
-
-/** Version, källa och antal etiketter i den inbyggda etikettlistan. */
-function etikettlistaInfo() {
-    const l = aidEtikettlista();
-    return { version: l.version, kalla: l.kalla, antal: l.etiketter.length };
-}
-
-    return { normaliseraAid, huvudomrade, sektorsnamn, mellannivaEtikett, etikett, arRestkod, arLedningsetikett, jamforSektor, etikettlistaInfo };
-})();
-const _aidSektorsnamn = __mirrorAid.sektorsnamn;
-const _aidJamforSektor = __mirrorAid.jamforSektor;
-const _aidEtikettlistaInfo = __mirrorAid.etikettlistaInfo;
 
 // ---- speglar src/lib/htmltext.js ----
 const __mirrorHtmlText = (() => {
@@ -9928,6 +9942,7 @@ const __mirrorJamforelse = (() => {
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
     const sektorsnamn = __mirrorAid.sektorsnamn;
+    const aidAvYrke = __mirrorAid.aidAvYrke;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
     const adjektiv = __mirrorTermer.adjektiv;
@@ -9959,11 +9974,7 @@ const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(
 const _diff = (org, ref) => (org != null && ref != null ? { kr: org - ref, pct: (org / ref - 1) * 100 } : null);
 const _diffar = (org, ref) => ({ p10: _diff(org.p10, ref.p10), median: _diff(org.median, ref.median), p90: _diff(org.p90, ref.p90) });
 
-/** AID-kodens inledande siffror, annars hela yrkessträngen. */
-function aidAvYrke(yrke) {
-    const m = String(yrke ?? '').match(/^(\d+)/);
-    return m ? m[1] : String(yrke ?? '');
-}
+/** AID-koden ur yrkesfältet: definitionen ligger i aid.js; återexporteras här för de importörer som når den härifrån. */
 
 /**
  * Statistikens rad för en organisationsgrupp AID×BAS: en rad med samma AID och samma BAS ('aid-bas'), annars en
@@ -17981,8 +17992,7 @@ function markeringFor(bas, aid) {
     if (bas == null || bas === '') return [];
     const b = String(bas);
     if (aid == null || aid === '') return [`bas:${b}`];
-    const m = String(aid).match(/^(\d+)/);
-    return [`bas:${b}`, `grupp:${m ? m[1] : String(aid)}|${b}`];
+    return [`bas:${b}`, `grupp:${aidAvYrke(aid)}|${b}`];
 }
 
 /** De markerade gruppernas nycklar, eller null när inget är markerat. */
@@ -18709,15 +18719,14 @@ function updateCompliance() {
         let bmLow = 0, bmTotal = 0;
         const seen = new Set();
         d.forEach(r => {
-            const m = r.yrke.match(/^(\d+)/);
-            const aid = m ? m[1] : r.yrke;
+            const aid = aidAvYrke(r.yrke);
             const key = `${aid}|${r.bas}`;
             if (seen.has(key)) return;
             seen.add(key);
             const statRow = _jfStatistikFor(state.statistik, aid, r.bas)?.rad;
             if (!statRow) return;
             bmTotal++;
-            const orgMed = Stat.median(d.filter(x => { const mm = x.yrke.match(/^(\d+)/); return (mm ? mm[1] : x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
+            const orgMed = Stat.median(d.filter(x => { return aidAvYrke(x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
             if (orgMed < statRow.median) bmLow++;
         });
         if (bmTotal === 0) setCompCard('comp-bm', 0, 0, 'Ingen matchning hittad', 'na');
@@ -19332,7 +19341,7 @@ function renderDataValidationReport() {
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
-    const dataAids = [...new Set(state.data.map(r => { const m = r.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(r => sifferprefixAvYrke(r.yrke)).filter(Boolean))];
     /** @type {any} */ let polStatus = null;
     /** @type {any} */ let statStatus = null;
     if (state.policy.length) {
@@ -19420,7 +19429,7 @@ function renderConsistencyBanner() {
 
     const issues = [];
     const dataBas = [...new Set(state.data.map(d => d.bas).filter(Boolean))].sort();
-    const dataAids = [...new Set(state.data.map(d => { const m = d.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(d => sifferprefixAvYrke(d.yrke)).filter(Boolean))];
 
     // Ställningstagande
     if (state.policy.length) {
@@ -19439,8 +19448,7 @@ function renderConsistencyBanner() {
         // Bygg AID → yrkesnamn-uppslagning från strukturdatan
         const aidToYrke = {};
         state.data.forEach(d => {
-            const m = d.yrke.match(/^(\d+)/);
-            const a = m ? m[1] : null;
+            const a = sifferprefixAvYrke(d.yrke);
             if (a && !aidToYrke[a]) aidToYrke[a] = d.yrke;
         });
         if (dataAidNotInStat.length) {
@@ -28588,8 +28596,7 @@ function generateRapport() {
             /** @type {number|null} */ let statRefMedian = null;
             /** @type {number|null} */ let statDiffRaw = null;
             if (state.statistik.length > 0) {
-                const aidM = kategori.match(/^(\d+)/);
-                const aidCode = aidM ? aidM[1] : kategori;
+                const aidCode = aidAvYrke(kategori);
                 const sr = _jfStatistikFor(state.statistik, aidCode, b)?.rad;
                 if (sr && sr.median > 0) {
                     statMed = fmt.format(sr.median);
@@ -28802,8 +28809,7 @@ function renderKon(bas) {
     if (state.statistik.length > 0) {
         // En uppslagning per AID×BAS-grupp i urvalet (samma regel som överallt: aldrig ett annat BAS), och medianen
         // av de matchade medianerna. I ett valt BAS är det en grupp per AID.
-        const m = d => d.yrke.match(/^(\d+)/);
-        statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: m(d) ? m(d)[1] : d.yrke, bas: d.bas })));
+        statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: aidAvYrke(d.yrke), bas: d.bas })));
     }
     const scope2 = isAll ? 'hela urvalet' : `${T.niva.en} ${bas}`;
     // Noter under diagrammen om det som utelämnats, och samma sak i diagrammens beskrivningar.
@@ -33080,8 +33086,7 @@ function renderPrioritering() {
     let smallCount = 0, noRefCount = 0;
     const groupCheck = {};
     dForCount.forEach(r => {
-        const m = r.yrke.match(/^(\d+)/);
-        const aid = m ? m[1] : r.yrke;
+        const aid = aidAvYrke(r.yrke);
         const k = `${r.yrke}|${r.bas}`;
         if (!groupCheck[k]) groupCheck[k] = { n: 0, aid, bas: r.bas };
         groupCheck[k].n++;
@@ -37460,7 +37465,7 @@ function explorerDossierTarget(spec, radEtikett, kolEtikett) {
     if (bas == null && aidEtikett == null) return null;
     if (aidEtikett != null && String(aidEtikett).startsWith('Övriga i ')) return { hopslagen: true };
     // Etiketten är "AID Yrkesnamn"; dossiern använder AID-sifferprefixet.
-    const aid = aidEtikett == null ? null : ((String(aidEtikett).match(/^(\d+)/) || [])[1] || String(aidEtikett));
+    const aid = aidEtikett == null ? null : aidAvYrke(aidEtikett);
     const traff = gruppdossierCandidates().find(c => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
     return traff ? { key: traff.key } : { saknas: true };
 }
@@ -38679,8 +38684,7 @@ document.getElementById('ut-alla-grupper')?.addEventListener('toggle', e => {
 const LP_COUNT_TIER_MIN = 5;   // undre gräns för antalsbaserad redovisning
 
 function _lpAidOf(r) {
-    const m = String(r.yrke || '').match(/^(\d+)/);
-    return m ? m[1] : String(r.yrke || '');
+    return aidAvYrke(r.yrke);
 }
 function _lpTier(n) {
     if (n >= kTroskel()) return 'full';
@@ -39269,8 +39273,7 @@ function gruppdossierCandidates() {
     const map = new Map();
     getData().forEach(r => {
         if (!(r.lon > 0) || !r.bas) return;
-        const m = String(r.yrke || '').match(/^(\d+)/);
-        const aid = m ? m[1] : String(r.yrke || '');
+        const aid = aidAvYrke(r.yrke);
         const key = aid + '|' + r.bas;
         if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: r.yrke, rows: [] });
         map.get(key).rows.push(r);
@@ -39683,7 +39686,7 @@ function buildBasdossier(bas) {
     for (const r of alla) { if (!(r.lon > 0)) continue; if (!basPerYrke.has(r.yrke)) basPerYrke.set(r.yrke, new Set()); basPerYrke.get(r.yrke).add(r.bas); }
     const nycklar = new Set(gruppdossierCandidates().map(g => g.key));
     const yrken = lika.grupper.map(g => {
-        const m = String(g.yrke || '').match(/^(\d+)/), aid = m ? m[1] : String(g.yrke || '');
+        const aid = aidAvYrke(g.yrke);
         const delade = !g.samladMedian, hela = helaYrket.get(g.yrke) || g;
         const ocksaI = [...(basPerYrke.get(g.yrke) || [])].filter(b => b !== bas).sort();
         return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(hela), samlad: !!g.samladMedian, helaTot: hela.tot, ocksaI,
@@ -40271,8 +40274,7 @@ function buildFardigcheck() {
     try {
         const groups = new Map();
         d.forEach(r => {
-            const m = String(r.yrke || '').match(/^(\d+)/);
-            const key = (m ? m[1] : r.yrke) + '|' + r.bas;
+            const key = (sifferprefixAvYrke(r.yrke) ?? r.yrke) + '|' + r.bas;
             groups.set(key, (groups.get(key) || 0) + 1);
         });
         let maskerade = 0, personer = 0;
@@ -40302,7 +40304,7 @@ function buildFardigcheck() {
 
     // 5. Yrkesgrupper utan motsvarighet i jämförelsestatistiken
     if ((state.statistik || []).length) {
-        const aids = new Set(d.map(r => { const m = String(r.yrke || '').match(/^(\d+)/); return m ? m[1] : r.yrke; }));
+        const aids = new Set(d.map(r => { return sifferprefixAvYrke(r.yrke) ?? r.yrke; }));
         const utan = [...aids].filter(a => !(state.statistik || []).some(s => s.aid === a));
         if (utan.length) {
             out.push({

@@ -52,6 +52,17 @@ export function normaliseraAid(aid) {
     return m ? m[1] : null;
 }
 
+/** Sifferprefixet ur ett yrkesfält (de inledande siffrorna), eller null när fältet saknar ett. */
+export function sifferprefixAvYrke(yrke) {
+    const m = String(yrke ?? '').match(/^(\d+)/);
+    return m ? m[1] : null;
+}
+
+/** AID-koden ur ett yrkesfält: de inledande siffrorna, annars hela yrkesfältet som text. */
+export function aidAvYrke(yrke) {
+    return sifferprefixAvYrke(yrke) ?? String(yrke ?? '');
+}
+
 /** Huvudområdet för en AID-kod, eller null. */
 export function huvudomrade(aid) {
     const k = normaliseraAid(aid);

@@ -352,8 +352,7 @@ function renderPrioritering() {
     let smallCount = 0, noRefCount = 0;
     const groupCheck = {};
     dForCount.forEach(r => {
-        const m = r.yrke.match(/^(\d+)/);
-        const aid = m ? m[1] : r.yrke;
+        const aid = aidAvYrke(r.yrke);
         const k = `${r.yrke}|${r.bas}`;
         if (!groupCheck[k]) groupCheck[k] = { n: 0, aid, bas: r.bas };
         groupCheck[k].n++;

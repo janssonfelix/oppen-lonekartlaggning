@@ -13,7 +13,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median, quantile } from './stat.js';
-import { sektorsnamn } from './aid.js';
+import { sektorsnamn, aidAvYrke } from './aid.js';
 import { skapaTermer, ordForAntal, adjektiv } from './termer.js';
 import { arKvinna } from './kon.js';
 
@@ -25,11 +25,8 @@ const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(
 const _diff = (org, ref) => (org != null && ref != null ? { kr: org - ref, pct: (org / ref - 1) * 100 } : null);
 const _diffar = (org, ref) => ({ p10: _diff(org.p10, ref.p10), median: _diff(org.median, ref.median), p90: _diff(org.p90, ref.p90) });
 
-/** AID-kodens inledande siffror, annars hela yrkessträngen. */
-export function aidAvYrke(yrke) {
-    const m = String(yrke ?? '').match(/^(\d+)/);
-    return m ? m[1] : String(yrke ?? '');
-}
+/** AID-koden ur yrkesfältet: definitionen ligger i aid.js; återexporteras här för de importörer som når den härifrån. */
+export { aidAvYrke };
 
 /**
  * Statistikens rad för en organisationsgrupp AID×BAS: en rad med samma AID och samma BAS ('aid-bas'), annars en

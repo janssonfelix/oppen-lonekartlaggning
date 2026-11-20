@@ -19,8 +19,7 @@
 const LP_COUNT_TIER_MIN = 5;   // undre gräns för antalsbaserad redovisning
 
 function _lpAidOf(r) {
-    const m = String(r.yrke || '').match(/^(\d+)/);
-    return m ? m[1] : String(r.yrke || '');
+    return aidAvYrke(r.yrke);
 }
 function _lpTier(n) {
     if (n >= kTroskel()) return 'full';

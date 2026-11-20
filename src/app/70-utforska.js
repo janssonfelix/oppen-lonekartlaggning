@@ -428,7 +428,7 @@ function explorerDossierTarget(spec, radEtikett, kolEtikett) {
     if (bas == null && aidEtikett == null) return null;
     if (aidEtikett != null && String(aidEtikett).startsWith('Övriga i ')) return { hopslagen: true };
     // Etiketten är "AID Yrkesnamn"; dossiern använder AID-sifferprefixet.
-    const aid = aidEtikett == null ? null : ((String(aidEtikett).match(/^(\d+)/) || [])[1] || String(aidEtikett));
+    const aid = aidEtikett == null ? null : aidAvYrke(aidEtikett);
     const traff = gruppdossierCandidates().find(c => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
     return traff ? { key: traff.key } : { saknas: true };
 }

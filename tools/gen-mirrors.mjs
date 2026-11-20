@@ -52,6 +52,18 @@ export const MODULES = [
         expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
     },
     {
+        file: 'aid-etiketter.js', ns: '__mirrorAidEtiketter',
+        expose: { aidEtikettlista: null }
+    },
+    {
+        file: 'aid.js', ns: '__mirrorAid',
+        expose: {
+            normaliseraAid: null, aidAvYrke: 'aidAvYrke', sifferprefixAvYrke: 'sifferprefixAvYrke', huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
+            arRestkod: null, arLedningsetikett: null,
+            jamforSektor: '_aidJamforSektor', etikettlistaInfo: '_aidEtikettlistaInfo'
+        }
+    },
+    {
         // Kompletterande undertryckning och sammanslagning (ADR-83, ADR-87): tidigt, så att perbas.js, gapuppdelning.js
         // och sektor.js kan importera dem. Appen anropar dem inte direkt.
         file: 'undertryckning.js', ns: '__mirrorUndertryckning',
@@ -174,18 +186,6 @@ export const MODULES = [
         // Organisationsfilen: verktyget med organisationspaketet inbakat (ren strängmodul)
         file: 'organisationsfil.js', ns: '__mirrorOrganisationsfil',
         expose: { bakaIn: '_ofBakaIn', filnamnForslag: '_ofFilnamnForslag', normaliseraFilnamn: '_ofNormaliseraFilnamn' }
-    },
-    {
-        file: 'aid-etiketter.js', ns: '__mirrorAidEtiketter',
-        expose: { aidEtikettlista: null }
-    },
-    {
-        file: 'aid.js', ns: '__mirrorAid',
-        expose: {
-            normaliseraAid: null, huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
-            arRestkod: null, arLedningsetikett: null,
-            jamforSektor: '_aidJamforSektor', etikettlistaInfo: '_aidEtikettlistaInfo'
-        }
     },
     {
         file: 'htmltext.js', ns: '__mirrorHtmlText',

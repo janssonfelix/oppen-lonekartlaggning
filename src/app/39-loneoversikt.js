@@ -42,8 +42,7 @@ function generateRapport() {
             /** @type {number|null} */ let statRefMedian = null;
             /** @type {number|null} */ let statDiffRaw = null;
             if (state.statistik.length > 0) {
-                const aidM = kategori.match(/^(\d+)/);
-                const aidCode = aidM ? aidM[1] : kategori;
+                const aidCode = aidAvYrke(kategori);
                 const sr = _jfStatistikFor(state.statistik, aidCode, b)?.rad;
                 if (sr && sr.median > 0) {
                     statMed = fmt.format(sr.median);

@@ -168,7 +168,7 @@ function renderDataValidationReport() {
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
-    const dataAids = [...new Set(state.data.map(r => { const m = r.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(r => sifferprefixAvYrke(r.yrke)).filter(Boolean))];
     /** @type {any} */ let polStatus = null;
     /** @type {any} */ let statStatus = null;
     if (state.policy.length) {
@@ -256,7 +256,7 @@ function renderConsistencyBanner() {
 
     const issues = [];
     const dataBas = [...new Set(state.data.map(d => d.bas).filter(Boolean))].sort();
-    const dataAids = [...new Set(state.data.map(d => { const m = d.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(d => sifferprefixAvYrke(d.yrke)).filter(Boolean))];
 
     // Ställningstagande
     if (state.policy.length) {
@@ -275,8 +275,7 @@ function renderConsistencyBanner() {
         // Bygg AID → yrkesnamn-uppslagning från strukturdatan
         const aidToYrke = {};
         state.data.forEach(d => {
-            const m = d.yrke.match(/^(\d+)/);
-            const a = m ? m[1] : null;
+            const a = sifferprefixAvYrke(d.yrke);
             if (a && !aidToYrke[a]) aidToYrke[a] = d.yrke;
         });
         if (dataAidNotInStat.length) {

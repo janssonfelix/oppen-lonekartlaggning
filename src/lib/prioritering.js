@@ -15,6 +15,7 @@
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
 import { median } from './stat.js';
+import { aidAvYrke } from './aid.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 import { arKvinna, arMan } from './kon.js';
 
@@ -111,8 +112,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
     const groups = {};
     d.forEach(r => {
-        const aidM = r.yrke.match(/^(\d+)/);
-        const aid  = aidM ? aidM[1] : r.yrke;
+        const aid  = aidAvYrke(r.yrke);
         const key  = `${r.yrke}|${r.bas}`;
         if (!groups[key]) groups[key] = { yrke: r.yrke, aid, bas: r.bas, rows: [] };
         groups[key].rows.push(r);
