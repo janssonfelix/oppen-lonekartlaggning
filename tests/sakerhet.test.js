@@ -312,16 +312,6 @@ describe('lagringsspärren', () => {
 
 // Statusfärgerna i gränssnittet används som text mot vitt och ska nå kravet 4,5:1.
 describe('gränssnittets statusfärger har kontrast nog för text', () => {
-    const lum = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
-    const kontrast = hex => 1.05 / (lum(hex) + 0.05);
-    it('de tre statusfärgerna har minst 4,5:1 mot vit bakgrund (WCAG 1.4.3)', () => {
-        const css = läs('src/style.css');
-        for (const namn of ['--status-kritisk', '--status-varning', '--status-ok', '--danger']) {
-            const hex = (new RegExp(`${namn}:\\s*(#[0-9a-f]{6})`).exec(css) || [])[1];
-            expect(hex, namn).toBeDefined();
-            expect(kontrast(hex), `${namn} ${hex}`).toBeGreaterThanOrEqual(4.5);
-        }
-    });
     it('för ljusa statusnyanser (under 4,5:1 som text) står inte i vyerna, sidan eller stilmallen', async () => {
         const { readdirSync } = await import('node:fs');
         // Diagrammens palett (10-diagram*.js) har egna färger för serier, prövade för sig (3:1 för grafik).

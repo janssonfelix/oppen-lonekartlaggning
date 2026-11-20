@@ -26,5 +26,5 @@ för området, och varför det blev så i [`arkitekturbeslut.md`](arkitekturbesl
    (`tools/release.mjs`, `tests/release.test.js`).
 6. **Tillgängligt och begripligt.** Gränssnittet följer WCAG 2.1 AA, och det användaren läser är skrivet på
    klarspråk.
-   *Vakt:* `tests/a11y.test.js`, statusfärgernas kontrast i `tests/sakerhet.test.js`,
+   *Vakt:* `tests/a11y.test.js`, statusfärgernas kontrast i `tests/farger.test.js`,
    `tests/dokumentation-sprak.test.js`. Övrig färgkontrast och om en text är begriplig prövas för hand.
