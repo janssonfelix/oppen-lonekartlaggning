@@ -7,8 +7,10 @@
 import { describe, it, expect } from 'vitest';
 import {
     parseNumber, parseNumberStrict, _normalizeKon, _normalizeBas, _normalizePolicyAid, _cleanYrkeField,
-    _pnrSampelSteg, detectSensitiveColumns, tolkaLonerad
+    _pnrSampelSteg, detectSensitiveColumns, tolkaLonerad, yrkeLiknarNamn, YRKE_NAMNMONSTER,
+    yrkeNamnNyckel, sallsyntaNamnrader, YRKE_NAMN_HOGST_RADER
 } from '../src/lib/inlasning.js';
+import { aidEtikettlista } from '../src/lib/aid-etiketter.js';
 
 describe('inlasning: tal (parseNumber, parseNumberStrict)', () => {
     // [råvärde, parseNumber, parseNumberStrict.status]
@@ -61,19 +63,130 @@ describe('inlasning: yrke (_cleanYrkeField)', () => {
         ['101010 — Ledning', '101010 Ledning'],
         ['101010', '101010'],
         ['101010 Lärare grundskola', '101010 Lärare grundskola'],
-        ['101010 Anna Andersson', '101010 ***'],
-        ['101010 ANDERSSON, ANNA', '101010 ***'],
-        ['101010 Andersson, Anna', '101010 ***'],
+        ['101010 Anna Andersson', '101010 Anna Andersson'],
+        ['101010 ANDERSSON, ANNA', '101010 ANDERSSON, ANNA'],
+        ['101010 Andersson, Anna', '101010 Andersson, Anna'],
         ['101010 anna andersson', '101010 anna andersson'],
         ['101010 ANDERSSON, Anna', '101010 ANDERSSON, Anna'],
-        ['101010 <Anna> <Andersson>', '101010 ***'],
+        ['101010 <Anna> <Andersson>', '101010 Anna Andersson'],
         ['101010 Lärare <b>&\'"', '101010 Lärare b'],
-        ['101010 Ledarskapsutveckling och personal Anna Andersson', '101010 Ledarskapsutveckling och personal ***'],
+        ['101010 Ledarskapsutveckling och personal Anna Andersson', '101010 Ledarskapsutveckling och personal Anna A…'],
+        // Ingenting maskeras (ADR-85): etiketter med versal på två ord kommer ut oförändrade.
+        ['101010 Sjuksköterska Natt', '101010 Sjuksköterska Natt'],
+        ['101010 Lärare Grundskola', '101010 Lärare Grundskola'],
         ['101010 Chef, enhet', '101010 Chef, enhet'],
         ['101010 IT-tekniker', '101010 IT-tekniker'],
         ['', ''], [null, ''], ['   ', ''],
     ])('%o → %o', (raw, forvantat) => {
         expect(_cleanYrkeField(raw)).toBe(forvantat);
+    });
+});
+
+describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
+    it.each([
+        '101010 Sjuksköterska Anna Andersson',
+        '101010 Anna Andersson',
+        '101010 Andersson, Anna',
+        '101010 ANDERSSON, ANNA',
+        '101010 Anna-Lisa Berg',
+        '101010 — Sjuksköterska — Örjan Östberg 75%',
+        '101010 <Anna> <Andersson>',
+        'Anna Andersson',
+    ])('%o ser ut att innehålla ett namn', raw => {
+        expect(yrkeLiknarNamn(raw)).toBe(true);
+    });
+
+    it.each([
+        '101010 Sjuksköterska',
+        '101010 Lärare grundskola',
+        '101010 IT-tekniker',
+        '101010 Ledning, övergripande',
+        '101010',
+        '',
+        '   ',
+        null,
+        undefined,
+        // De kända gränserna: namn i gemener, ett ensamt namn och blandad form hittas inte.
+        '101010 sjuksköterska anna andersson',
+        '101010 Andersson',
+        '101010 sjuksköterska Andersson',
+        '101010 ANDERSSON, Anna',
+    ])('%o ser inte ut att innehålla ett namn', raw => {
+        expect(yrkeLiknarNamn(raw)).toBe(false);
+    });
+
+    it('ingen etikett i den inbyggda etikettlistan träffas', () => {
+        const etiketter = aidEtikettlista().etiketter;
+        expect(etiketter.length).toBeGreaterThan(200);
+        expect(etiketter.filter(([kod, namn]) => yrkeLiknarNamn(`${kod} ${namn}`)).map(([kod, namn]) => `${kod} ${namn}`)).toEqual([]);
+        expect(etiketter.filter(([, namn]) => yrkeLiknarNamn(namn)).map(([, namn]) => namn)).toEqual([]);
+    });
+
+    it('mönstren bär inget tillstånd, och etiketten skiljs ut som i _cleanYrkeField', () => {
+        const sparad = _cleanYrkeField.toString(), varning = yrkeNamnNyckel.toString();
+        expect(YRKE_NAMNMONSTER).toHaveLength(2);
+        for (const re of YRKE_NAMNMONSTER) expect(re.flags).toBe('');   // utan /g: test() bär inget tillstånd mellan anropen
+        for (const del of ["replace(/^\\d+\\s*[—\\-:.\\s]*/, '')", "replace(/[<>\"'&]/g, '')"]) {
+            expect(sparad).toContain(del);
+            expect(varning).toContain(del);
+        }
+    });
+
+    it('nyckeln: etikettexten i gemener med blanksteg samman, tom utan namnmönster', () => {
+        expect(yrkeNamnNyckel('101010 Sjuksköterska  Anna   Andersson')).toBe('sjuksköterska anna andersson');
+        expect(yrkeNamnNyckel('101010 — ANDERSSON, ANNA')).toBe('andersson, anna');
+        expect(yrkeNamnNyckel('101010 Lärare grundskola')).toBe('');
+        expect(yrkeNamnNyckel('')).toBe('');
+        expect(yrkeNamnNyckel(null)).toBe('');
+    });
+
+    it('prövas på råvärdet: ett namn efter kortningsgränsen på 40 tecken räknas också', () => {
+        expect(_cleanYrkeField('101010 Sjuksköterska Anna Andersson')).toBe('101010 Sjuksköterska Anna Andersson');
+        expect(yrkeLiknarNamn('101010 Sjuksköterska Anna Andersson')).toBe(true);
+        const lang = '101010 handläggare med särskilt ansvar för samordning Anna Andersson';
+        expect(_cleanYrkeField(lang)).not.toMatch(/Anna|Andersson/);
+        expect(yrkeLiknarNamn(lang)).toBe(true);
+    });
+});
+
+describe('inlasning: sällsynta namnrader (sallsyntaNamnrader)', () => {
+    // Räknaren som inläsningen bygger: per nyckel antal och de första YRKE_NAMN_HOGST_RADER radnumren.
+    const rakna = varden => {
+        const m = new Map();
+        varden.forEach((raw, i) => {
+            const k = yrkeNamnNyckel(raw);
+            if (!k) return;
+            const v = m.get(k) || { antal: 0, radnr: [] };
+            v.antal++;
+            if (v.radnr.length < YRKE_NAMN_HOGST_RADER) v.radnr.push(i + 2);
+            m.set(k, v);
+        });
+        return m;
+    };
+    it('gränsen är två rader', () => expect(YRKE_NAMN_HOGST_RADER).toBe(2));
+    it('40 rader "Sjuksköterska Natt" och en rad med ett namn ger en misstänkt rad', () => {
+        const varden = [...Array(40).fill('101010 Sjuksköterska Natt'), '101010 Sjuksköterska Anna Andersson'];
+        expect(sallsyntaNamnrader(rakna(varden))).toEqual({ antal: 1, radnr: [42] });
+    });
+    it('samma namn på tre rader är över gränsen och ger 0 (känd gräns)', () => {
+        expect(sallsyntaNamnrader(rakna(Array(3).fill('101010 Anna Andersson')))).toEqual({ antal: 0, radnr: [] });
+    });
+    it('två rader med samma namn räknas båda', () => {
+        expect(sallsyntaNamnrader(rakna(['101010 Anna Andersson', '101010 Lärare', '101010 Anna Andersson']))).toEqual({ antal: 2, radnr: [2, 4] });
+    });
+    it('skiftläge och extra blanksteg räknas som samma text', () => {
+        // Samma text med olika blanksteg på tre rader: över gränsen. "SJUKSKÖTERSKA NATT" har inget namnmönster.
+        const varden = ['101010 Sjuksköterska Natt', '101010 SJUKSKÖTERSKA NATT', '101010  Sjuksköterska   Natt ', '101010 Sjuksköterska\tNatt'];
+        expect(sallsyntaNamnrader(rakna(varden))).toEqual({ antal: 0, radnr: [] });
+        const tre = ['101010 Andersson, Anna', '101010 ANDERSSON, ANNA', '101010   Anna   Andersson', '101010 Anna Andersson '];
+        expect([...rakna(tre).keys()]).toEqual(['andersson, anna', 'anna andersson']);
+        expect(sallsyntaNamnrader(rakna([...tre, '101010 ANDERSSON, ANNA']))).toEqual({ antal: 2, radnr: [4, 5] });
+    });
+    it('radnumren i stigande ordning och högst så många som begärs; en tom räknare ger 0', () => {
+        const varden = ['101010 Eva Ek', '101010 Bo Ek', '101010 Al Ek', '101010 Ulf Ek', '101010 Per Ek', '101010 Siv Ek', '101010 Eva Ek'];
+        expect(sallsyntaNamnrader(rakna(varden), 5)).toEqual({ antal: 7, radnr: [2, 3, 4, 5, 6] });
+        expect(sallsyntaNamnrader(new Map())).toEqual({ antal: 0, radnr: [] });
+        expect(sallsyntaNamnrader(null)).toEqual({ antal: 0, radnr: [] });
     });
 });
 

@@ -9067,8 +9067,11 @@ const __mirrorInlasning = (() => {
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — tolkningen av indata: talen, könet, BAS-intervallet, AID-koden i ställningstagandet,
- * fältet för AID-etikett (yrket), kärnan i uppgiftsminimeringen (en lönerad → de vitlistade fälten) och detektorn
- * för känsliga kolumner.
+ * fältet för AID-etikett (yrket), kärnan i uppgiftsminimeringen (en lönerad → de vitlistade fälten), detektorn
+ * för känsliga kolumner och upptäckten av personnamn i fältet för AID-etikett.
+ *
+ * Fältet för AID-etikett maskeras inte (ADR-85): verktyget behåller koden och högst 40 tecken av etiketten, utan
+ * tecknen < > " ' &. Ser fältet ut att innehålla personnamn varnar inläsningen (yrkeNamnNyckel, sallsyntaNamnrader).
  *
  * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgör appen
  * (getField och ALLOWED_FIELDS i src/app/, med kolumnmappningen, importprofilen och ansvarskolumnen), och året som ett
@@ -9153,24 +9156,16 @@ function parseNumberStrict(v) {
 // ---- Textfälten: AID-etiketten, BAS, AID i ställningstagandet och kön ----
 
 /**
- * Strikt parser för yrke-fältet (GDPR Art. 25.1).
+ * Fältet för AID-etikett (yrket) vid inläsning (GDPR Art. 25.1: bara det analysen behöver).
  *
- * Källsystem exporterar ofta yrke som "12345 — Sjuksköterska — Anna Andersson 75%"
- * eller liknande. Vi vill bara behålla AID-koden + en kort rollbeskrivning.
- * Allt annat trunkeras eller maskeras:
- *   - AID:                ledande siffergrupp (\d+)
- *   - Etikett:            resten efter AID + separator, med HTML-tecknen < > " ' & borttagna
- *   - Namn-mönster:       "Förnamn Efternamn" och "Efternamn, Förnamn" (i versaler eller Versal-gemener) maskeras
- *                         till *** även inom etiketten
- *   - Längd:              etiketten kortas till 40 tecken sist, efter maskeringen, så att ett namn aldrig klipps
- *                         mitt itu och lämnar ett halvt namn kvar
- *   - Resten:             droppas
+ * Källsystem exporterar ofta yrket som "12345 — Sjuksköterska" eller liknande. Verktyget behåller:
+ *   - AID:      ledande siffergrupp (\d+)
+ *   - Etikett:  resten efter AID och separatorerna, med tecknen < > " ' & borttagna
+ *   - Längd:    etiketten kortas till 40 tecken (efter rensningen)
  *
- * Ordningen är avsiktlig: rensning av tecknen först (så att "<Anna> <Andersson>" blir ett namn som maskeras), maskering
- * sedan, trunkering sist. Känd gräns: ett namn i gemener ("anna andersson") och "ANDERSSON, Anna" (blandad form)
- * maskeras inte. En befattning består normalt av vanliga ord i gemener ("sjuksköterska", "lärare grundskola"), och
- * två ord i enbart versaler kan vara en etikett i vissa uttag, så de mönstren går inte att maskera utan att förstöra
- * riktiga etiketter. Mönstret med komma följer samma skäl: "Chef, enhet" (gemen efter kommat) maskeras inte.
+ * Funktionen maskerar INTE namn (ADR-85): text som står i fältet behålls inom 40 tecken, och visas i tabeller och följer
+ * med i exporter. Ser fältet ut att innehålla personnamn varnar inläsningen i stället (yrkeNamnNyckel,
+ * sallsyntaNamnrader); den som tar ut filen ansvarar för att fältet bara bär kod och etikett.
  *
  * @param {*} raw - Rått värde från CSV-cellen.
  * @returns {string} "AID Etikett" eller bara AID/etikett om endera saknas.
@@ -9187,19 +9182,80 @@ function _cleanYrkeField(raw) {
     // Strippar HTML-meta-tecken < > " ' & så de aldrig kan smitas in i en
     // innerHTML-template ens om en framtida renderingsplats glömmer esc().
     // Detta är "defensive depth" — CSP + esc() + cleanYrkeField; tre lager.
-    // Körs FÖRST: annars gömmer tecknen ett namn ("<Anna> <Andersson>") för maskeringen.
     label = label.replace(/[<>"'&]/g, '');
-    // Defensivt: maskera namn om något ändå smugit sig in
-    // OBS: \b fungerar inte före icke-ASCII-bokstäver (Å/Ä/Ö), så namn som
-    // "Örjan Östberg" skulle inte maskeras. Unicode-säker ordgräns via fångad
-    // föregående icke-bokstav ($1) — undviker lookbehind (stöds ej i Safari < 16.4).
-    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/g, '$1***');
-    // "Efternamn, Förnamn": två ord med komma emellan, båda i versaler eller båda i Versal-gemener.
-    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)(?![A-Za-zÅÄÖåäö])/g, '$1***');
-    // Aggressiv trunkering sist — yrkesetiketter sällan över 40 tecken
+    // Kortningen sist — yrkesetiketter är sällan över 40 tecken
     if (label.length > 40) label = label.substring(0, 40).trim() + '…';
     if (aid && label) return `${aid} ${label}`;
     return aid || label;
+}
+
+/**
+ * Namnmönstren som upptäckten av personnamn i fältet för AID-etikett prövar med (yrkeNamnNyckel): "Förnamn
+ * Efternamn" (två ord i Versal-gemener i rad) och "Efternamn, Förnamn" (båda i versaler eller båda i Versal-gemener).
+ * Ordgränsen är en fångad föregående icke-bokstav, eftersom \b inte fungerar före Å/Ä/Ö ("Örjan Östberg") och
+ * lookbehind saknas i Safari före 16.4. Utan /g, så att test() inte bär tillstånd mellan anropen.
+ */
+const YRKE_NAMNMONSTER = Object.freeze([
+    /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/,
+    /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)(?![A-Za-zÅÄÖåäö])/,
+]);
+
+/**
+ * Om fältet för AID-etikett har ett namnmönster: texten efter AID-koden har något av mönstren i YRKE_NAMNMONSTER —
+ * två eller fler ord i Versal-gemener i rad ("Anna Andersson", "Sjuksköterska Anna Andersson", "Anna-Lisa Berg")
+ * eller "Efternamn, Förnamn" ("Andersson, Anna", "ANDERSSON, ANNA"). Prövas på råvärdet före kortningen (efter
+ * AID-koden och separatorerna, med tecknen < > " ' & borttagna), så att ett namn som kortningen klipper också räknas.
+ *
+ * Mönstret ensamt träffar också etiketter med versal på två ord ("Sjuksköterska Natt"). Därför avgör mönstret bara
+ * vilka texter som räknas; varningen gäller de som också är sällsynta i filen (sallsyntaNamnrader).
+ * @param {*} raw - Fältets råvärde.
+ * @returns {boolean}
+ */
+function yrkeLiknarNamn(raw) {
+    return yrkeNamnNyckel(raw) !== '';
+}
+
+/**
+ * Nyckeln som en text med namnmönster räknas under: etikettexten efter AID-koden i gemener, med blanksteg slagna
+ * samman till ett, så att skiftläge och extra blanksteg räknas som samma text. Tom sträng när texten saknar
+ * namnmönster (yrkeLiknarNamn). Nyckeln finns bara i inläsningens tillfälliga räknare och släpps när filen är läst.
+ * @param {*} raw - Fältets råvärde.
+ * @returns {string}
+ */
+function yrkeNamnNyckel(raw) {
+    if (raw == null) return '';
+    const s = raw.toString().trim();
+    if (!s) return '';
+    const label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+    if (!YRKE_NAMNMONSTER.some(re => re.test(label))) return '';
+    return label.toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Så många rader får en text med namnmönster stå på för att räknas som ett misstänkt namn. Ett namn står på en rad
+ * (eller ett par, om personen har två anställningar); en etikett med versal på två ord ("Sjuksköterska Natt")
+ * återkommer på många. Känd gräns: ett namn som står på tre eller fler rader upptäcks inte.
+ */
+const YRKE_NAMN_HOGST_RADER = 2;
+
+/**
+ * De misstänkta namnraderna ur inläsningens räknare: raderna vars text har namnmönster och står på högst
+ * YRKE_NAMN_HOGST_RADER rader i filen.
+ * @param {Map<string, {antal: number, radnr: Array<number|null>}>} raknare - Per yrkeNamnNyckel: antal rader och
+ *   de första radnumren (YRKE_NAMN_HOGST_RADER räcker).
+ * @param {number} [hogstRadnr] - Högst så många radnummer i svaret.
+ * @returns {{antal: number, radnr: number[]}} Antalet misstänkta rader och de första radnumren, i stigande ordning.
+ */
+function sallsyntaNamnrader(raknare, hogstRadnr = 5) {
+    let antal = 0;
+    const radnr = [];
+    for (const v of (raknare ? raknare.values() : [])) {
+        if (!(v.antal > 0) || v.antal > YRKE_NAMN_HOGST_RADER) continue;
+        antal += v.antal;
+        for (const r of v.radnr || []) if (typeof r === 'number' && isFinite(r)) radnr.push(r);
+    }
+    radnr.sort((a, b) => a - b);
+    return { antal, radnr: radnr.slice(0, Math.max(0, hogstRadnr)) };
 }
 
 /**
@@ -9275,7 +9331,7 @@ function _normalizeKon(raw) {
  * Kärnan i uppgiftsminimeringen (GDPR Art. 5(1)(c)): de vitlistade fälten ur en lönerad, tolkade och normaliserade.
  * Appen slår upp råvärdena i raden (extractMinimalRecord i src/app/06-uppgiftsminimering.js, med getField och
  * ALLOWED_FIELDS) och skickar in dem här; inga andra kolumner når hit.
- * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, namn-mönster maskeras).
+ * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, utan tecknen < > " ' &; ingen namnmaskering, ADR-85).
  * Ger { bas, yrke, aid, yrkeLabel, lon, alder, kon, poang, ansvarskoder, ansvarsgrupp, _lonStatus, _alderStatus }.
  * @param {{bas:*, kon:*, lon:*, alder:*, poang:*, yrke:*, ansvar?:*}} falt - Råvärdet per roll ur raden.
  * @param {number} referensar - Året som ett födelseår i ålderskolumnen räknas mot (appen skickar innevarande år).
@@ -9414,7 +9470,7 @@ function detectSensitiveColumns(rows) {
     return issues;
 }
 
-    return { _normalizeNumberString, parseNumber, parseNumberStrict, _cleanYrkeField, _stripHtmlMeta, _normalizeBas, _normalizePolicyAid, _normalizeKon, tolkaLonerad, _pnrSampelSteg, detectSensitiveColumns };
+    return { _normalizeNumberString, parseNumber, parseNumberStrict, _cleanYrkeField, _stripHtmlMeta, _normalizeBas, _normalizePolicyAid, _normalizeKon, tolkaLonerad, _pnrSampelSteg, detectSensitiveColumns, yrkeNamnNyckel, sallsyntaNamnrader };
 })();
 const _normalizeNumberString = __mirrorInlasning._normalizeNumberString;
 const parseNumber = __mirrorInlasning.parseNumber;
@@ -9427,6 +9483,8 @@ const _normalizeKon = __mirrorInlasning._normalizeKon;
 const _ilTolkaLonerad = __mirrorInlasning.tolkaLonerad;
 const _pnrSampelSteg = __mirrorInlasning._pnrSampelSteg;
 const detectSensitiveColumns = __mirrorInlasning.detectSensitiveColumns;
+const _ilYrkeNamnNyckel = __mirrorInlasning.yrkeNamnNyckel;
+const _ilSallsyntaNamnrader = __mirrorInlasning.sallsyntaNamnrader;
 
 // ---- speglar src/lib/aidkontroll.js ----
 const __mirrorAidkontroll = (() => {
@@ -11901,8 +11959,9 @@ const __mirrorForhandskontroll = (() => {
  * värdefördelningen och varningarna. Ingen tolkning görs om här — modulen beskriver bara den som redan gjorts.
  *
  * Dataskydd: tolkningen bär högst tio rader med fem till sju fält, och yrkets råvärde följer aldrig med (yrket
- * visas som verktyget sparar det, med namnmaskeringen). Varningarnas texter bär inga löner eller åldrar ur filen,
- * eftersom de också står i Att göra, vars punkter kan exporteras.
+ * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
+ * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
+ * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -11922,6 +11981,8 @@ const FK_ALDER_MIN = 16;
 const FK_ALDER_MAX = 75;
 /** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
 const FK_SMA_GRUPP = 10;
+/** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
+const FK_NAMN_RADNR = 5;
 /** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
 const MAX_RA = 24;
 const VANLIG_BAS = /^[A-N]$/;
@@ -11933,7 +11994,8 @@ const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', i
 /** Gränsvärdena, för gränssnittets texter. */
 function forhandskontrollGranser() {
     return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
-        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP };
+        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
+        namnRadnr: FK_NAMN_RADNR };
 }
 
 const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
@@ -11950,6 +12012,23 @@ function _fkMedian(sorterade) {
 }
 const _fkRader = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
 const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
+/** "12", "12 och 40", "12, 40 och 51". */
+const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
+
+/**
+ * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
+ * varningar, i Att göra och i inläsningsrapporten. Texten bär antalet rader och radnumren, aldrig fältets innehåll.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0.
+ */
+function namnIYrkesfaltetText(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    const vilka = nr.length ? ` (${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)})` : '';
+    return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
+        + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
+}
 
 /**
  * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
@@ -12058,6 +12137,8 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     // Varningarna. Texterna bär inga löner eller åldrar ur filen (de kan följa med Att göra ut ur verktyget).
     const varningar = [];
     const varna = (kod, niva, text) => varningar.push({ kod, niva, text });
+    // Först: namn i uttaget är en fråga om dataskydd, inte om tolkningen. Bara antal och radnummer (parseStats).
+    if ((ps.yrkeNamn || 0) > 0) varna('yrke-namn', 'varning', namnIYrkesfaltetText(ps.yrkeNamn, ps.yrkeNamnRadnr));
     if (lon && lon.median > FK_ARSLON_MEDIAN) {
         varna('lon-arslon', 'fel', `Medianlönen är över ${_fkTal(FK_ARSLON_MEDIAN)} kr och ser ut som en årslön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
     } else if (lon && lon.median < FK_TIMLON_MEDIAN) {
@@ -12108,10 +12189,11 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     return { tolkning, sammandrag, fordelning, varningar, kolumner };
 }
 
-    return { byggForhandskontroll, forhandskontrollGranser };
+    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText };
 })();
 const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
 const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
+const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
 
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
@@ -18907,6 +18989,8 @@ function renderDataValidationReport() {
     const invalidLonExamples = da.invalidLonExamples || [];
     const invalidAlderExamples = da.invalidAlderExamples || [];
     const missingKonExamples = da.missingKonExamples || [];
+    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren; texten är förhandskontrollens.
+    const yrkeNamn = da.yrkeNamn || 0;
     const used = state.data.length;
 
     // Räkna varningar
@@ -18950,6 +19034,7 @@ function renderDataValidationReport() {
             <div class="dvr-section">
                 <h4>Från fil till analys</h4>
                 <div class="dvr-row ok"><span>Total rader i fil:</span><span class="dvr-value">${fmt(totalRaw)}</span></div>
+                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>${esc(_fkNamnIYrkesfaltetText(yrkeNamn, da.yrkeNamnRadnr))}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
                 ${excludedNoBas > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar BAS:</span><span class="dvr-value">${fmt(excludedNoBas)}</span></div>` : ''}
                 ${excludedZeroLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Lön ≤ 0:</span><span class="dvr-value">${fmt(excludedZeroLon)}</span></div>` : ''}
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}
@@ -19156,14 +19241,16 @@ function _fkSlapp() {
 
 /** Titeln per varning i Att göra: olika titlar, så att länkarnas aria-label skiljer punkterna åt. */
 const FK_TITEL = {
+    'yrke-namn': 'personnamn i uttaget',
     'lon-arslon': 'lönen ser ut som årslön', 'lon-timlon': 'lönen ser ut som timlön', 'lon-spridning': 'stor spridning i lönen',
     'alder-saknas': 'ålder saknas', 'alder-fodelsear': 'ålder ur födelseår', 'alder-utanfor': 'ålder utanför det rimliga', 'alder-ogiltig': 'ålder som inte går att läsa',
     'bas-ovanlig': 'ovanliga BAS-värden', 'kon-okand': 'okända kön-värden', 'bortfall-bas': `rader utan ${T.niva.en}`, 'bortfall-lon': 'rader utan lön',
 };
 /** Varningar som en annan punkt i Att göra redan säger: punkten läggs inte till två gånger. */
 const FK_SAGS_AV = { 'kon-okand': ['dq-kon'], 'bortfall-lon': ['dq-lon', 'dq-fullstandighet'], 'bortfall-bas': ['dq-fullstandighet'] };
-/** Prioriteten: fel hög, födelseåret låg (en omräkning att bekräfta) och saknad ålder låg (valfri, ADR-64), annars medel. */
-const _fkPrioritet = v => (v.niva === 'fel' ? 'hög' : v.kod === 'alder-fodelsear' || v.kod === 'alder-saknas' ? 'låg' : 'medel');
+/** Prioriteten: fel och personnamn i uttaget hög, födelseåret låg (en omräkning att bekräfta) och saknad ålder låg
+ *  (valfri, ADR-64), annars medel. */
+const _fkPrioritet = v => (v.niva === 'fel' || v.kod === 'yrke-namn' ? 'hög' : v.kod === 'alder-fodelsear' || v.kod === 'alder-saknas' ? 'låg' : 'medel');
 
 /**
  * Varningarna som punkter i Att göra (kategorin Underlagets kvalitet). En varning som en punkt i `befintliga` redan
@@ -22742,7 +22829,7 @@ function _evidenceForPaygapRow(p) {
 // ---- Vad lagras i minnet just nu? (inbyggt dataskydd, art. 25) ----
 /**
  * Visar Data Residency-modal: schemat för state.data, antal rader, ungefärlig
- * minnesstorlek, och en maskerad sample av första posten. Ger användaren
+ * minnesstorlek, och den första posten som exempel (fältet för AID-etikett kortat). Ger användaren
  * konkret insyn i exakt vad verktyget håller i RAM.
  */
 
@@ -22768,12 +22855,12 @@ function openDataResidency() {
         const r = state.data[0];
         const maskedYrke = r.yrke && r.yrke.length > 30 ? r.yrke.substring(0, 30) + '…' : (r.yrke || '—');
         sampleRow = `
-            <h3 class="fs-md marg-t-18">Exempel — första posten (maskerad)</h3>
+            <h3 class="fs-md marg-t-18">Exempel — första posten (fältet för ${T.enhet.en} kortat)</h3>
             <table class="data-table st-085">
                 <thead><tr><th>Fält</th><th>Värde</th><th>Källa</th></tr></thead>
                 <tbody>
                     <tr><td><code>bas</code></td><td>${esc(r.bas) || '—'}</td><td>${T.niva.en} (1 bokstav)</td></tr>
-                    <tr><td><code>${FALT_YRKE}</code></td><td>${esc(maskedYrke)}</td><td>${T.kod.en} + 40 tecken ${T.namn.en}, namn-mönster maskeras</td></tr>
+                    <tr><td><code>${FALT_YRKE}</code></td><td>${esc(maskedYrke)}</td><td>${T.kod.en} + högst 40 tecken ${T.namn.en}; namn i fältet maskeras inte, inläsningen varnar för dem</td></tr>
                     <tr><td><code>lon</code></td><td>${r.lon ? Math.round(r.lon).toLocaleString('sv-SE') : '—'} kr</td><td>månadslön, heltal</td></tr>
                     <tr><td><code>alder</code></td><td>${r.alder || '—'}</td><td>år</td></tr>
                     <tr><td><code>kon</code></td><td>${esc(r.kon) || '—'}</td><td>"kvinna"/"man"</td></tr>
@@ -24572,7 +24659,12 @@ function loadStructureFile(file) {
         alderFromBirthYear: 0,    // ålder tolkad om från födelseår (transparens)
         invalidLonExamples: [],   // upp till 3 exempel för audit-panelen
         invalidAlderExamples: [], // upp till 3 exempel
-        missingKonExamples: []    // upp till 3 exempel på okända kön-värden
+        missingKonExamples: [],   // upp till 3 exempel på okända kön-värden
+        // Rader där fältet för AID-etikett ser ut att innehålla ett personnamn (namnmönster och sällsynt i filen,
+        // sallsyntaNamnrader): bara antalet och de första radnumren (_fkGranser().namnRadnr), aldrig fältets text.
+        // Sätts när filen är läst (_namnTillStats). Förhandskontrollen varnar på dem.
+        yrkeNamn: 0,
+        yrkeNamnRadnr: []
     };
     let aborted = false;
     // Förhandskontrollen (17-forhandskontroll.js): de tio första raderna med filens råvärde och verktygets tolkning
@@ -24580,6 +24672,17 @@ function loadStructureFile(file) {
     const fkForsta = [];
     const fkKon = new Map();
     const FK_RADER = _fkGranser().antalRader;
+    // Personnamn i fältet för AID-etikett: under inläsningen en räknare per text med namnmönster (yrkeNamnNyckel: texten
+    // efter AID-koden i gemener) med antal och de första radnumren. Den töms i _namnTillStats när filen är läst, och när
+    // filen avvisas eller inte går att läsa; kvar i parseStats blir bara antalet misstänkta rader och radnumren.
+    const namnRaknare = new Map();
+    const NAMN_RADNR = _fkGranser().namnRadnr;
+    const _namnTillStats = () => {
+        const s = _ilSallsyntaNamnrader(namnRaknare, NAMN_RADNR);
+        parseStats.yrkeNamn = s.antal;
+        parseStats.yrkeNamnRadnr = s.radnr;
+        namnRaknare.clear();
+    };
 
     // AID:s ansvarskod (ADR-33): kolumnen väljs på första raden och godkänns
     // i finishLoad när hela filen är läst (≥ 95 % giltiga värden). Bara kolumnens värden
@@ -24624,6 +24727,16 @@ function loadStructureFile(file) {
         }
         // Transparens: ålderskolumnen innehöll födelseår som räknats om till ålder
         if (rec._alderStatus === 'birthyear') parseStats.alderFromBirthYear++;
+        // Personnamn i fältet för AID-etikett: råvärdet (före maskering och kortning) prövas på varje rad i filen, också
+        // en rad som sedan faller bort. En text med namnmönster räknas i den tillfälliga räknaren; vilka som är sällsynta
+        // nog att varna för avgörs när hela filen är läst (_namnTillStats).
+        const namnNyckel = _ilYrkeNamnNyckel(getField(row, ALLOWED_FIELDS.yrke, 'yrke'));
+        if (namnNyckel) {
+            const v = namnRaknare.get(namnNyckel) || { antal: 0, radnr: [] };
+            v.antal++;
+            if (v.radnr.length < NAMN_RADNR) v.radnr.push(row[_RADNR] ?? null);
+            namnRaknare.set(namnNyckel, v);
+        }
         // Spåra rader utan användbart kön
         // (efter normalisering till lowercase utan icke-bokstäver).
         const konOk = typeof rec.kon === 'string' &&
@@ -24665,6 +24778,7 @@ function loadStructureFile(file) {
 
     function rejectFile(sensitive) {
         aborted = true;
+        namnRaknare.clear();
         state.ansvarKolumn = tidigareAnsvarKolumn;
         state.importprofil = tidigareImportprofil;
         // Nolla bufferten direkt så raw rows blir GC-bara
@@ -24676,6 +24790,7 @@ function loadStructureFile(file) {
     // Gemensam avslutning för CSV- och XLSX-vägen: committa state + UI.
     function finishLoad(metaText) {
         sampleBuffer = null;
+        _namnTillStats();   // före förhandskontrollen, som varnar på antalet
         let ansvarNot = '';
         if (state.ansvarKolumn) {
             const b = _bedomAnsvarKolumn(state.ansvarKolumn.namn, ansvarVarden);
@@ -24754,6 +24869,7 @@ function loadStructureFile(file) {
     }
     function failLoad(msg) {
         sampleBuffer = null;
+        namnRaknare.clear();
         state.ansvarKolumn = tidigareAnsvarKolumn;
         state.importprofil = tidigareImportprofil;
         hideLoading();
@@ -35701,7 +35817,7 @@ const INFO_SECTIONS = {
         <ul>
             <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
-            <li><code>_cleanYrkeField()</code> trunkerar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en}, maskerar namn-mönster</li>
+            <li><code>_cleanYrkeField()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
         <h4>Lager 3 — Allt ligger i arbetsminnet</h4>
@@ -35719,7 +35835,7 @@ const INFO_SECTIONS = {
         <h3>Radering och insyn</h3>
         <ul>
             <li><strong>Rensa all data:</strong> knappen under Inställningar tömmer minnet omedelbart utan att vänta på att fliken stängs: lagringsminimering och dataskydd som standard. De registrerades rätt till radering utövas mot källsystemet, inte i verktyget.</li>
-            <li><strong>Vad lagras?</strong> — panelen visar live schema, antal rader, ungefärlig minnesfootprint och en maskerad exempel-post.</li>
+            <li><strong>Vad lagras?</strong> — panelen visar live schema, antal rader, ungefärlig minnesfootprint och den första posten som exempel.</li>
             <li><strong>Lagringsminimering:</strong> Datan försvinner automatiskt när webbläsarfliken stängs. Ingen retention-policy behövs.</li>
         </ul>
 

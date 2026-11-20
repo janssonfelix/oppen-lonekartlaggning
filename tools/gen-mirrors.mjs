@@ -245,7 +245,8 @@ export const MODULES = [
         expose: { _normalizeNumberString: '_normalizeNumberString', parseNumber: 'parseNumber', parseNumberStrict: 'parseNumberStrict',
                   _cleanYrkeField: '_cleanYrkeField', _stripHtmlMeta: '_stripHtmlMeta', _normalizeBas: '_normalizeBas',
                   _normalizePolicyAid: '_normalizePolicyAid', _normalizeKon: '_normalizeKon', tolkaLonerad: '_ilTolkaLonerad',
-                  _pnrSampelSteg: '_pnrSampelSteg', detectSensitiveColumns: 'detectSensitiveColumns' }
+                  _pnrSampelSteg: '_pnrSampelSteg', detectSensitiveColumns: 'detectSensitiveColumns', yrkeNamnNyckel: '_ilYrkeNamnNyckel',
+                  sallsyntaNamnrader: '_ilSallsyntaNamnrader' }
     },
     {
         file: 'aidkontroll.js', ns: '__mirrorAidkontroll',
@@ -307,7 +308,7 @@ export const MODULES = [
     {
         // Förhandskontrollen av lönefilen: tolkningen av de tio första raderna, sammandraget och varningarna.
         file: 'forhandskontroll.js', ns: '__mirrorForhandskontroll',
-        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser' }
+        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser', namnIYrkesfaltetText: '_fkNamnIYrkesfaltetText' }
     },
     {
         // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.

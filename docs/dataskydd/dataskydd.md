@@ -29,6 +29,26 @@ Granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående
 
 ## 2. Tekniska skydd
 
+### Vad skydden gör och inte gör
+
+Den som arbetar i verktyget har normalt redan hela underlaget, med namn. Skydden är till för att undvika
+omedvetna dataläckor, inte för att stänga ute användaren.
+
+Verktyget
+- läser bara in de fält analysen behöver (listan över godkända fält)
+- avvisar en lönefil med kolumner som ser ut att innehålla personnummer, e-post, namn eller en särskild kategori av
+  personuppgifter; kontrollen ser på rubrikerna och på ett urval av raderna, så enstaka värden kan gå förbi
+- skickar ingenting över nätet och sparar ingenting mellan sessionerna
+- redovisar inte lönemått för grupper under minsta gruppstorlek i det som lämnar verktyget
+- varnar när fältet för AID-etikett ser ut att innehålla personnamn.
+
+Verktyget maskerar inte och tar inte bort namn ur fältet för AID-etikett (ADR-85). Det som står där, högst 40
+tecken efter koden, visas i tabellerna och följer med i exporterna. Varningen hittar inte alla namn: inte namn i
+gemener, inte ett ensamt namn och inte ett namn som står på tre eller fler rader. Den som tar ut filen ansvarar för att
+fältet bara innehåller kod och etikett ([`datauttag.md`](../anvandare/datauttag.md)).
+
+### Skydden i detalj
+
 - **Ingen nätverkstrafik:** innehållssäkerhetspolicyn (CSP) stoppar anrop från skript
   (`connect-src 'none'`), externa bilder, skriptfiler och formulär. Verktyget har inga
   externa resurser och inga länkar ut, och fungerar med nätverket avstängt. En CSP hindrar
@@ -49,7 +69,8 @@ Granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående
   lagringskod som är skyddet — spärren fångar misstag (riskanalysen §6.2).
 - **Uppgiftsminimering vid inläsningen:** filen läses in i webbläsarens minne och gås
   igenom rad för rad. Bara de godkända fälten sparas, och filens övriga innehåll släpps
-  när inläsningen är klar. Namn som hamnat i fältet för AID-etikett maskeras.
+  när inläsningen är klar. Namn som hamnat i fältet för AID-etikett maskeras inte; inläsningen varnar för dem
+  (se *Vad skydden gör och inte gör* ovan).
 - **Skydd mot skadlig indata:** bara verktygets egna skript får köras (hash-baserad CSP).
   All text från filen kodas innan den visas. Formler i CSV och urklipp neutraliseras, så
   att Excel inte kör dem (ADR-15).

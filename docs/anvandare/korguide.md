@@ -77,6 +77,8 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
   uppåt). Små intervall skyddas av minsta gruppstorlek vid export.
 - **Ta INTE med personnummer, namn eller e-post.** Verktyget avvisar filer som
   innehåller sådana kolumner (uppgiftsminimering enligt dataskyddsförordningen).
+  Fältet för AID-etikett ska bara bära kod och etikett: verktyget maskerar inte namn som står där, utan varnar
+  (se [`dataskydd.md`](../dataskydd/dataskydd.md#vad-skydden-gör-och-inte-gör)).
 - **Systemspecifika uttagssteg** (Personec P, Heroma, Visma m.fl.) samt fullständiga
   format- och felsökningsdetaljer: se `datauttag.md`.
 
@@ -119,7 +121,8 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
    de tio första raderna, med filens värde och tolkningen i samma cell (till exempel *1978 tolkat som 48 år*). Det
    visar också hur många rader som används och varför andra föll bort, värdena per kolumn och vilken importprofil
    som kände igen filen. Avsnittet är utfällt när något bör kontrolleras: en medianlön som ser ut som årslön eller
-   timlön, åldrar utanför 16–75 år eller okända BAS- eller kön-värden. Varningarna står också i Att göra.
+   timlön, åldrar utanför 16–75 år, okända BAS- eller kön-värden, eller ett fält för AID-etikett som ser ut att
+   innehålla personnamn (rensa då fältet i uttaget och läs in filen igen). Varningarna står också i Att göra.
    Vill du granska tolkningen innan filen används kryssar du i **Stoppa och visa förhandskontrollen innan
    inläsning** i Inställningar. Då väntar filen på *Läs in*, och *Avbryt* lämnar det tidigare underlaget orört.
    Kolumnmappningen visas när filen är inläst. Avsnittet namnger filen det beskriver, också en fil där ingen rad

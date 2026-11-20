@@ -4,7 +4,7 @@
 // ---- Vad lagras i minnet just nu? (inbyggt dataskydd, art. 25) ----
 /**
  * Visar Data Residency-modal: schemat för state.data, antal rader, ungefärlig
- * minnesstorlek, och en maskerad sample av första posten. Ger användaren
+ * minnesstorlek, och den första posten som exempel (fältet för AID-etikett kortat). Ger användaren
  * konkret insyn i exakt vad verktyget håller i RAM.
  */
 
@@ -30,12 +30,12 @@ function openDataResidency() {
         const r = state.data[0];
         const maskedYrke = r.yrke && r.yrke.length > 30 ? r.yrke.substring(0, 30) + '…' : (r.yrke || '—');
         sampleRow = `
-            <h3 class="fs-md marg-t-18">Exempel — första posten (maskerad)</h3>
+            <h3 class="fs-md marg-t-18">Exempel — första posten (fältet för ${T.enhet.en} kortat)</h3>
             <table class="data-table st-085">
                 <thead><tr><th>Fält</th><th>Värde</th><th>Källa</th></tr></thead>
                 <tbody>
                     <tr><td><code>bas</code></td><td>${esc(r.bas) || '—'}</td><td>${T.niva.en} (1 bokstav)</td></tr>
-                    <tr><td><code>${FALT_YRKE}</code></td><td>${esc(maskedYrke)}</td><td>${T.kod.en} + 40 tecken ${T.namn.en}, namn-mönster maskeras</td></tr>
+                    <tr><td><code>${FALT_YRKE}</code></td><td>${esc(maskedYrke)}</td><td>${T.kod.en} + högst 40 tecken ${T.namn.en}; namn i fältet maskeras inte, inläsningen varnar för dem</td></tr>
                     <tr><td><code>lon</code></td><td>${r.lon ? Math.round(r.lon).toLocaleString('sv-SE') : '—'} kr</td><td>månadslön, heltal</td></tr>
                     <tr><td><code>alder</code></td><td>${r.alder || '—'}</td><td>år</td></tr>
                     <tr><td><code>kon</code></td><td>${esc(r.kon) || '—'}</td><td>"kvinna"/"man"</td></tr>

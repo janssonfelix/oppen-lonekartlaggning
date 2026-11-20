@@ -18,7 +18,8 @@ bedöma enskilda personer.
 Från personal- och lönesystemet tas följande uppgifter om varje anställd: månadslön omräknad till heltid, kön,
 ålder, AID-etikett (den grupp av arbetsuppgifter man är klassificerad i) och befattningens nivå i arbetsvärderingen.[ Dessutom tas uppgift om chefs- eller
 specialistuppdrag med.]
-Namn, personnummer och kontaktuppgifter tas inte med.
+Namn, personnummer och kontaktuppgifter tas inte med. [HR-funktionen] kontrollerar att uppgiften om AID-etikett
+bara innehåller etiketten och inga namn.
 
 **Hur går analysen till?**
 Analysen görs av [HR-funktionen] i ett verktyg som körs lokalt på en arbetsdator. Uppgifterna skickas inte

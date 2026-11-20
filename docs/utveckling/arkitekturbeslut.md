@@ -91,6 +91,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 | ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
 | ADR-84 | PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning | Gällande | 2026-11-19 |
+| ADR-85 | Yrkesfältet maskeras inte; inläsningen varnar för personnamn | Gällande | 2026-11-20 |
 
 ## Besluten
 
@@ -509,3 +510,17 @@ ett avrundat antagande och gränssnittet säger det, utan att namnge någon käl
 påslaget (`poNot`) finns kvar; verktygets standard har ingen not. *Avvisat:* att behålla 39,15 % med hänvisningen, som
 saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i dag:* `COST_DEFAULTS` i
 `src/app/07-standardinstallningar.js`.
+
+**ADR-85 — Yrkesfältet maskeras inte; inläsningen varnar för personnamn.** Beslutat av underhållaren 2026-11-20.
+Fältet för AID-etikett behåller AID-koden och högst 40 tecken av etiketten, utan tecknen `< > " ' &`; ingenting i
+texten maskeras. Förut ersattes två versalinledda ord i rad och formen "Efternamn, Förnamn" med `***`. Den maskeringen
+förstörde riktiga etiketter ("Sjuksköterska Natt" blev "***" på varje rad) och skyddade inte: "Sjuksköterska Anna
+Andersson" blev "*** Andersson", och namn i gemener eller versaler rördes inte. I stället varnar inläsningen när
+fältet ser ut att innehålla personnamn: en text med namnmönster (två eller fler versalinledda ord i rad, eller
+"Efternamn, Förnamn") som står på högst två rader i filen. Varningen står i förhandskontrollen, i inläsningsrapporten
+och i Att göra, med antal rader och radnummer men aldrig texten. Den som tar ut filen ansvarar för att fältet bara bär
+kod och etikett; användaren ska hellre få veta att namn finns än tro att de är maskerade. *Avvisat:* att maskera alla
+versalinledda ord, som förstör riktiga etiketter; att behålla den gamla maskeringen, som inte skyddar och förstör
+etiketter; att ersätta filens text med etikettlistans namn, som tar bort organisationens lokala benämningar.
+*Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.4; `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader` i
+`src/lib/inlasning.js`.
