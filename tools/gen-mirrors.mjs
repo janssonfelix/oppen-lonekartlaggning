@@ -135,8 +135,7 @@ export const MODULES = [
         expose: {
             // Huvudregressionen, verktygets huvudtal (adaptern är runOLSRegression i 51-lika-arbete-regressionskort.js)
             huvudregression: '_rgHuvudregression',
-            diagnoseCollinearity: '_rgDiagnoseCollinearity', computePerBasGap: '_rgComputePerBasGap',
-            basIndikatorer: '_rgBasIndikatorer', computeSequentialGap: '_rgComputeSequentialGap',
+            computePerBasGap: '_rgComputePerBasGap', computeSequentialGap: '_rgComputeSequentialGap',
             quantileRegression: '_rgQuantileRegression',
             blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
             kvantilDesign: '_rgKvantilDesign',   // kvantilregressionens design, delad av punktskattningen och bootstrappen (ADR-63)

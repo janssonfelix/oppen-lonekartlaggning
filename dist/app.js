@@ -6498,12 +6498,10 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
         adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
-    return { huvudregression, diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, normaliseraForklaringsmodell, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
+    return { huvudregression, computePerBasGap, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, normaliseraForklaringsmodell, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
 })();
 const _rgHuvudregression = __mirrorRegression.huvudregression;
-const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
-const _rgBasIndikatorer = __mirrorRegression.basIndikatorer;
 const _rgComputeSequentialGap = __mirrorRegression.computeSequentialGap;
 const _rgQuantileRegression = __mirrorRegression.quantileRegression;
 const _rgBlinderOaxaca = __mirrorRegression.blinderOaxaca;
@@ -11480,10 +11478,7 @@ const T = skapaTermer();
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
 const PERBAS_DIMENSIONER = ['bas', 'sektor'];
 const PERBAS_MATT = ['p10', 'p25', 'med', 'p75', 'p90', 'medel'];
-const PERBAS_MATT_ETIKETT = Object.freeze({ p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' });
 const PERBAS_RADER = ['referens', 'organisation', 'yrken', 'statistik', 'kvinnor', 'man'];
-const PERBAS_RAD_ETIKETT = Object.freeze({ referens: 'Referensen (ställningstagandet)', organisation: 'Organisationen', yrken: stor(T.enhet.bfl),
-    statistik: `Jämförelsestatistikens rad under varje ${T.enhet.en}`, kvinnor: 'Kvinnor', man: 'Män' });
 function perBasStandard() {
     return { dim: 'bas', rader: [...PERBAS_RADER], matt: ['p10', 'med', 'p90'], konsgap: true, aldersgrupper: true, aldersgranser: [35, 50] };
 }
@@ -31409,24 +31404,9 @@ function _aidbasMetodRader() {
 const _RG_STEG_BAS = _rgStegNamn('bas');
 const _RG_STEG_YRKE = _rgStegNamn('yrkesgrupp');
 
-// Diagnostiserar varför modellen misslyckas
-function _diagnoseCollinearity(rows, basList) {
-    return _rgDiagnoseCollinearity(rows, basList);
-}
-
 // Per-BAS conditional regressions: gap inom varje BAS efter ålderskontroll
 function _computePerBasGap(rows, basList) {
     return _rgComputePerBasGap(rows, basList, { golv: statGolv() });
-}
-
-// BAS kodas som indikatorvariabler (en kolumn per BAS-intervall utom det första, som är referens)
-function _basIndikatorer(basList) {
-    return _rgBasIndikatorer(basList);
-}
-
-// Sekventiell dekomponering: visa hur gapet krymper när kontroller läggs till. modell = förklaringsmodellen (ADR-56).
-function _computeSequentialGap(rows, ageMean, basList, modell) {
-    return _rgComputeSequentialGap(rows, ageMean, basList, { golv: statGolv(), modell });
 }
 
 // Kvantilregression via IRLS; standardvärdena för maxIter och tol ligger i src/lib/regression.js.

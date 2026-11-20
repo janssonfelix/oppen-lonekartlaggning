@@ -4229,12 +4229,10 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
         adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
-    return { huvudregression, diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, normaliseraForklaringsmodell, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
+    return { huvudregression, computePerBasGap, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, normaliseraForklaringsmodell, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
 })();
 const _rgHuvudregression = __mirrorRegression.huvudregression;
-const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
-const _rgBasIndikatorer = __mirrorRegression.basIndikatorer;
 const _rgComputeSequentialGap = __mirrorRegression.computeSequentialGap;
 const _rgQuantileRegression = __mirrorRegression.quantileRegression;
 const _rgBlinderOaxaca = __mirrorRegression.blinderOaxaca;
@@ -9211,10 +9209,7 @@ const T = skapaTermer();
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
 const PERBAS_DIMENSIONER = ['bas', 'sektor'];
 const PERBAS_MATT = ['p10', 'p25', 'med', 'p75', 'p90', 'medel'];
-const PERBAS_MATT_ETIKETT = Object.freeze({ p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' });
 const PERBAS_RADER = ['referens', 'organisation', 'yrken', 'statistik', 'kvinnor', 'man'];
-const PERBAS_RAD_ETIKETT = Object.freeze({ referens: 'Referensen (ställningstagandet)', organisation: 'Organisationen', yrken: stor(T.enhet.bfl),
-    statistik: `Jämförelsestatistikens rad under varje ${T.enhet.en}`, kvinnor: 'Kvinnor', man: 'Män' });
 function perBasStandard() {
     return { dim: 'bas', rader: [...PERBAS_RADER], matt: ['p10', 'med', 'p90'], konsgap: true, aldersgrupper: true, aldersgranser: [35, 50] };
 }

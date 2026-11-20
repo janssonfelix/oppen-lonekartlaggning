@@ -311,9 +311,9 @@ describe('ansvarskod i Lika arbete', () => {
         expect(med.ansvarSteg).toMatchObject({ status: 'ok', name: '+ Ansvar' });
         expect(Math.abs(med.ansvarSteg.gapPct)).toBeLessThan(Math.abs(med.sequential.at(-1).gapPct));
     });
-    it('_computeSequentialGap får steget + Ansvar sist när raderna har ansvarsgrupp', () => {
+    it('den sekventiella dekomponeringen får steget + Ansvar sist när raderna har ansvarsgrupp', () => {
         const w = oppna(true);
-        const steg = w.eval(`(() => { const d = getData(); return _computeSequentialGap(d, 40, ['B', 'C']).map(s => s.name); })()`);
+        const steg = w.eval(`(() => { const d = getData(); return _rgComputeSequentialGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
         expect(steg).toEqual(['Endast kön', '+ BAS-intervall', '+ Ålder', '+ Yrkesgrupp', '+ Ansvar']);
     });
     it('kortet visar ansvaret på en egen rad under budgeten, inte i den', () => {

@@ -303,8 +303,7 @@ describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', ()
 // ska delegera till spegeln med getData()/statGolv()/_lvBasRangFn.
 describe('regression: 50-regressionsmodeller.js är en tunn adapter', () => {
     const regSrc = readFileSync(join(root, 'src', 'app', '50-regressionsmodeller.js'), 'utf8');
-    const adaptrar = ['_diagnoseCollinearity', '_computePerBasGap', '_basIndikatorer', '_computeSequentialGap',
-        '_quantileRegression', 'runBlinderOaxaca', 'runQuantileRegressionAtAllTau'];
+    const adaptrar = ['_computePerBasGap', '_quantileRegression', 'runBlinderOaxaca', 'runQuantileRegressionAtAllTau'];
 
     it('innehåller inga egna beräkningar (ingen log eller OLS-anrop)', () => {
         expect(regSrc, 'log-lön räknas i src/lib/regression.js').not.toContain('Math.log(');
