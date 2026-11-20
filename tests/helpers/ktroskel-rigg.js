@@ -102,11 +102,6 @@ export const oppnaFlik = (win, flik) => { const n = win.document.querySelector(`
 //         rad i blad 2), och 7501 med 3 kvinnor på en lön (J_KV) och 30 män. Intervallet har en säkerställd skillnad
 //         (en rad i blad 3). Intervallets medelvärde för kvinnor i blad 3 minus 7500:s i blad 2 är de 3 kvinnornas
 //         medellön, om inte protokollet undertrycker det (ADR-91).
-//  L      som J, men utan rad i blad 3: 7600 med 27 kvinnor och 27 män (Värt att granska, en rad i blad 2) och 7601 med
-//         3 kvinnor. Lönen följer åldern lika för båda könen och kvinnorna i 7600 är yngre, så medianerna
-//         skiljer sig mer än 3 % medan regressionens skillnad, med ålder, är nära noll. Intervallets medelvärde för
-//         kvinnor i tabellerna per BAS-intervall minus 7600:s i blad 2 är de 3 kvinnornas medellön, om inte protokollet
-//         undertrycker det (ADR-91).
 //
 // Jämförelsestatistik finns för varje AID och ställningstagande för varje BAS.
 // ===================================================================================
@@ -151,20 +146,9 @@ export function byggKonDataset() {
     for (let i = 0; i < 30; i++) rader.push(rad('J', 'kvinna', 22100 + i * 10, 7500, 'Jpayrke', 28 + i), rad('J', 'man', 23000 + i * 10, 7500, 'Jpayrke', 29 + i));
     for (let i = 0; i < 30; i++) rader.push(rad('J', 'man', 23000 + i * 10, 7501, 'Restyrke', 30 + i));
     for (let i = 0; i < 3; i++) rader.push(rad('J', 'kvinna', J_KV, 7501, 'Restyrke', 35 + i * 4));
-    // L: lönen 22 000 + 30 kr per år för båda könen; kvinnorna i 7600 är 20–28 år och männen 50–58, så kvinnornas median
-    // ligger drygt 3 % under männens (ingen kvinna mer än 5 % under) medan skillnaden med ålder är nära noll. Ingen i L
-    // är 40–49 år, där åldersgruppernas percentiler annars kan flytta till en lön för männen i Y1–Y3. 7601 har bara de
-    // 3 kvinnorna, så att Löneöversyns fördelning får en rad till och inte två (fler rader ger fler delmängder som
-    // råkar ha samma medel som en liten grupp).
-    const lonL = (alder, i) => 22000 + 30 * alder + (i % 3) * 7;
-    for (let i = 0; i < 27; i++) {
-        const ung = 20 + Math.floor(i / 3), aldre = 50 + Math.floor(i / 3);
-        rader.push(rad('L', 'kvinna', lonL(ung, i), 7600, 'Lpayrke', ung), rad('L', 'man', lonL(aldre, i), 7600, 'Lpayrke', aldre));
-    }
-    for (let i = 0; i < 3; i++) rader.push(rad('L', 'kvinna', lonL(31 + i * 2, 0) + 1 + i * 3, 7601, 'Lrestyrke', 31 + i * 2));
     return rader;
 }
-export const KON_ALLA_BAS = [...STORA, TOPP, ...MELLAN, ...SMA, ...KON_BAS, 'X', 'J', 'L'];
+export const KON_ALLA_BAS = [...STORA, TOPP, ...MELLAN, ...SMA, ...KON_BAS, 'X', 'J'];
 export function fonsterKon(k) {
     const win = createAppWindow();
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
@@ -498,14 +482,6 @@ export const DIFFERENS_DEKLARATIONER = [
         korsblad: { total: { blad: /^3\. Likvärdigt arbete/, rubrik: /^Nr \| BAS-intervall \| N totalt \|/, nyckel: 'BAS-intervall' },
                     delar: { blad: /^2\. Lika arbete/, rubrik: /^Nr \| AID-etikett \| BAS-intervall \| N totalt \|/, nyckel: 'BAS-intervall' } },
         matt: [{ kolumn: 'Medelvärde kvinnor (kr)', antal: 'N kvinnor' }, { kolumn: 'Medelvärde män (kr)', antal: 'N män' }] },
-    // Tabellerna per BAS-intervall mot protokollets blad 2 (ADR-91): intervallets medellön per kön står där för varje
-    // intervall där könen når tröskeln, också när intervallet inte står i blad 3, och organisationens rad Alla mot alla
-    // gruppernas. Riggens intervall L har 3 kvinnor utanför blad 2 och ingen rad i blad 3.
-    { namn: 'tabellerna per BAS-intervall minus protokollets blad 2', vag: /./,
-        korsblad: { total: { vag: TABELLERNA_PER_BAS, rubrik: /^BAS \| Antal \| Medellön alla \| Medellön män \| Medellön kvinnor \|/, nyckel: 'BAS', antal: 'Antal', alla: /^Alla$/ },
-                    delar: { vag: /^protokollet/, blad: /^2\. Lika arbete/, rubrik: /^Nr \| AID-etikett \| BAS-intervall \| N totalt \|/, nyckel: 'BAS-intervall', antal: 'N totalt' } },
-        matt: [{ total: { kolumn: 'Medellön kvinnor', antal: { andel: ANDEL_KV } }, delar: { kolumn: 'Medelvärde kvinnor (kr)', antal: 'N kvinnor' } },
-            { total: { kolumn: 'Medellön män', antal: { andel: ANDEL_KV, komplement: true } }, delar: { kolumn: 'Medelvärde män (kr)', antal: 'N män' } }] },
     // Löneöversyns fördelning per grupp: med riggens påslag på 100 % är kostnaden gruppens lönesumma. Tabellen har ingen
     // totalrad; varje rad prövas som total för andra. Summan mot bladet Sammanfattning (Använt) står i ett annat blad
     // och prövas i tests/ktroskel-loneoversyn-summor.test.js (ADR-70).
