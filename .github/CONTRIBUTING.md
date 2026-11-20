@@ -25,7 +25,8 @@ datorn** — det styr hur vi tar emot bidrag.
      webbläsaren, i CI:s ordning. Under arbetet räcker `npm run kontroll -- --snabb` (`npm test` i stället för hela
      sviten, inget röktest). En testkörning är grön först när alla testfiler har rapporterat.
    - Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) ligger i k-riggen
-     (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata.
+     (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata, och en tabell med total och delar
+     (medel, summa eller kostnad) deklareras i riggen för differensprovet.
    - Det som syns är sett i webbläsaren, och ett diagram också med ett underlag med många AID-etiketter —
      demodatan har bara åtta.
 4. Beskriv ändringen och varför den behövs.

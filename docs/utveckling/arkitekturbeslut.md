@@ -94,6 +94,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-85 | Yrkesfältet maskeras inte; inläsningen varnar för personnamn | Gällande | 2026-11-20 |
 | ADR-86 | Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska | Gällande | 2026-11-19 |
 | ADR-87 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
+| ADR-88 | Differensprovet är en del av invarianten för minsta gruppstorlek | Gällande | 2026-11-19 |
 
 ## Besluten
 
@@ -561,3 +562,19 @@ underlag med en liten grupp skulle ta bort hela uppdelningen ur exporten, efters
 skillnaden och en dold del går att räkna fram ur de andra; att pröva numeriskt vad som går att lösa ut ur varje
 utskrift, som är svårare att granska och att lita på; att bara dölja fler poster, som inte stänger vägen genom
 delarna. *Gäller i dag:* `regressionsmodellen.md` §10 och `k-troskeln.md` avsnitt 2.
+
+**ADR-88 — Differensprovet är en del av invarianten för minsta gruppstorlek.** Beslutat av underhållaren 2026-11-19.
+Ändrar vakten för S4, inte dess lydelse. Invarianten I4 letade efter de små gruppernas lönevärden som de står, och
+ett lönemått som bara gick att räkna fram som en total minus delar vaktades av prov som skrevs för hand, utdata för
+utdata, mot lib-modulerna; en ny utdata med total och delar fick inget prov om ingen skrev ett. Nu går ett
+differensprov i invarianten på samma utdata som riggen samlar in vid tröskeln 10 och 25, utan nya ritningar eller
+exporter. Varje tabell vars rubrikrad har en kolumn med medel, summa eller kostnad deklareras i riggen, med kolumnerna
+för antal och mått och raden som är totalen, eller som inget att dela upp med skäl; en odeklarerad tabell fäller
+invarianten, och det är så en ny utdata ärver provet. För de deklarerade måtten får totalen minus de visade delarna,
+för alla och per kön, inte lämna 1 till k − 1 personer, och i en tabell utan totalrad får ingen rad minus andra lämna
+en av riggens små grupper. Medianer och percentiler prövas inte: de går inte att dela upp. `tests/ktroskel-differens.test.js`
+står kvar för lib-nivån och för underlag som riggen inte har. *Avvisat:* att känna igen kolumnerna ur rubriktexterna,
+som tyst kan sluta fungera när en rubrik ändras; att pröva varje delmängd av rader utan riggens kunskap om
+underlaget, som ger falsklarm när ett antal råkar gå jämnt upp; att lösa ett ekvationssystem över hela exporten, som
+lösaren i differensprovet gör för de utdata där det behövs men som är svårare att granska. *Gäller i dag:*
+`skydd.md` S4 och `k-troskeln.md` avsnitt 9 och 11.
