@@ -176,13 +176,22 @@ describe('stort demo: inläsningen', () => {
         const s = w.__state;
         expect(s.policy.map(r => r.bas).sort()).toEqual(BAS_AK);
         let over = 0;
+        const k = w.eval('kInstalld()'), avrunda = (x, steg) => Math.round(x / steg) * steg;
         for (const r of s.policy) {
-            const m = median(s.data.filter(d => d.bas === r.bas).map(d => d.lon));
+            const loner = s.data.filter(d => d.bas === r.bas).map(d => d.lon);
+            if (loner.length < k) {
+                // Under tröskeln: närmaste lägre intervall gånger 1,10, inte gruppens egna löner.
+                const lagre = s.policy[s.policy.indexOf(r) - 1];
+                expect(r.med, r.bas).toBe(avrunda(lagre.med * 1.1, 500));
+                continue;
+            }
+            const m = median(loner);
             expect(Math.abs(r.med / m - 1), r.bas).toBeLessThanOrEqual(0.10);
             expect(r.p10, r.bas).toBeLessThan(r.med);
             expect(r.p90, r.bas).toBeGreaterThan(r.med);
             if (r.med > 1.025 * m) over++;
         }
+        expect(s.data.filter(d => d.bas === 'K').length).toBeLessThan(k);   // K är i dag det enda intervallet under tröskeln
         expect(over).toBeGreaterThanOrEqual(2);
         expect(over).toBeLessThanOrEqual(3);
     });

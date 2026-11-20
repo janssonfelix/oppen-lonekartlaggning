@@ -21510,19 +21510,28 @@ function generateStortDemoStatistik() {
 }
 
 // Ställningstagandet per BAS-intervall A–K räknas ur demots löner: medianen avrundad till 500 kr, P10 och P90 avrundade
-// till 100 kr. I några stora intervall ligger ställningstagandet 4–5 % över demots median, så att grupper hamnar under
-// det och Prioritering och Lönepolitik har något att visa.
+// till 100 kr; ett intervall under k-tröskeln (i dag K) får närmaste lägre intervalls rad gånger 1,10. I några stora
+// intervall ligger ställningstagandet 4–5 % över demots median, så att grupper hamnar under det och Prioritering och
+// Lönepolitik har något att visa.
 /** @type {Readonly<Record<string, number>>} */
 const _SD_POLICYLYFT = Object.freeze({ C: 1.04, F: 1.05, H: 1.04 });
 function _sdStallningstagande(data) {
-    return _SD_BAS.map(bas => {
+    // Den inställda tröskeln: raderna står i exporterna (kTroskel() är 1 på skärmen).
+    const k = typeof kInstalld === 'function' ? kInstalld() : 10;
+    /** @type {{aid: null, bas: string, p10: number, med: number, p90: number}|null} */
+    let senast = null;   // närmaste lägre intervall som räknats ur sina egna löner
+    return _SD_BAS.flatMap(bas => {
         const loner = data.filter(r => r.bas === bas).map(r => r.lon);
-        return {
+        // En rad ur färre än k personer skulle röja gruppens löner (S4): den stegas i stället från närmaste lägre rad.
+        if (loner.length < k) return senast ? [{ aid: null, bas, p10: _sdAvrunda(senast.p10 * 1.1, 100),
+            med: _sdAvrunda(senast.med * 1.1, 500), p90: _sdAvrunda(senast.p90 * 1.1, 100) }] : [];
+        senast = {
             aid: null, bas,
             p10: _sdAvrunda(Stat.quantile(loner, 0.1), 100),
             med: _sdAvrunda(Stat.median(loner) * (_SD_POLICYLYFT[bas] || 1), 500),
             p90: _sdAvrunda(Stat.quantile(loner, 0.9), 100),
         };
+        return [senast];
     });
 }
 
