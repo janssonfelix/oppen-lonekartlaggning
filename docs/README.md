@@ -34,6 +34,8 @@ av en statistiker, och texterna om lag och dataskydd är inte granskade av juris
 |---|---|
 | [`skydd.md`](utveckling/skydd.md) | De fem skydden som går före besluten: regeln, varför, beslut, vakt och vad som inte vaktas. |
 | [`principer.md`](utveckling/principer.md) | De sex principerna som binder tillsammans med skydden, med sina vakter. |
+| [`arkitektur.md`](utveckling/arkitektur.md) | Arkitekturen på en sida: lagren, dataflödet från fil till export och beräkningskärnans moduler. |
+| [`kom-igang.md`](utveckling/kom-igang.md) | Första timmen, på två vägar: för utvecklaren (ändra, bygga, prova) och för granskaren av beräkningarna (köra en beräkning i Node). |
 | [`mal.md`](utveckling/mal.md) | Syfte, avgränsning och funktionsmål. |
 | [`oppna-punkter.md`](utveckling/oppna-punkter.md) | Kända brister och obesvarade frågor, med numren som koden och dokumenten pekar på. |
 | [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Loggen över arkitekturbesluten (ADR): vad som valdes och varför, med status; numren som koden och testerna pekar på. |
