@@ -182,7 +182,7 @@ function _abSkalLista(skal) {
 /** Hur gruppens skillnad ändrades: " Skillnaden minskade från 1 800 till 1 200 kr/mån.", eller tomt när ett år saknar den. */
 function _abSkillnadText(f, n) {
     if (typeof f !== 'number' || typeof n !== 'number') return '';
-    const tal = v => svTal(Math.round(v), 0);
+    const tal = v => svTal(v, 0);
     if (f === n) return ` Skillnaden är oförändrad, ${tal(n)} kr/mån.`;
     return ` Skillnaden ${n < f ? 'minskade' : 'ökade'} från ${tal(f)} till ${tal(n)} kr/mån.`;
 }

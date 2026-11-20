@@ -35,7 +35,7 @@ function rmCell(v, typ) {
     if (typ === 'ar') return `${svTal(v, 0)} år`;
     if (typ === 'tal2') return svTal(v, 2);
     if (typ === 'kr') return svKr(v);
-    if (typ === 'krAr') return `${svTal(Math.round(v), 0)}\u00a0kr/år`;
+    if (typ === 'krAr') return `${svTal(v, 0)}\u00a0kr/år`;
     if (typ === 'pct0') return svPct(v, 0);
     if (typ === 'pct1') return svPct(v, 1);
     if (typ === 'pct2') return svPct(v, 2);
