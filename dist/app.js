@@ -802,7 +802,7 @@ const GLOSSARY = [
     // Struktur
     { cat:'Struktur', term:'{Niva.en}', short:'Kravnivå enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Verktyget antar att varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar de {niva.fl} som finns i lönefilen (vanligen A–K) och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
     { cat:'Struktur', term:'{Kod.en}', sok:'yrkeskod arbetsidentifikationskod', short:'Den sexsiffriga koden i {enhet.art} {enhet.en}', long:'{Kod.bf} är den sexsiffriga delen av {enhet.bf}, till exempel 402010. Tillsammans med {namn.bf}, till exempel Förskollärare, bildar {kod.bf} {enhet.bf}. Verktyget läser {kod.bf} ur lönefilen, där den vanligen står {kod.adj:följd} av {namn.bf}, till exempel "402010 Förskollärare", och matchar organisationens {enhet.fl} mot jämförelsestatistiken med {kod.bf}.' },
-    { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker från SKR: klassificeringen AID, personalstatistiken (nationell andel kvinnor per {kod.en}, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete) och PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen. Perioden för statistiken står i Om verktyget.' },
+    { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder två saker från SKR: klassificeringen AID och personalstatistiken (nationell andel kvinnor per {kod.en}, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete). Perioden för statistiken står i Om verktyget.' },
     { cat:'Struktur', term:'{Enhet.en}', sok:'yrke yrkesgrupp yrkesbenämning etikett', short:'{Kod.art} {kod.en} och {namn.art} {namn.en}, som tillsammans står för ett arbetsområde i AID', long:'{Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en}, till exempel "402010 Förskollärare", och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. Verktygets minsta jämförelsegrupp är {enhet.en} i {niva.en}: personer med samma {enhet.en} i samma {niva.en} jämförs mellan könen i Lika arbete. Att två personer har samma {enhet.en} avgör inte att de gör lika arbete; det bekräftar arbetsgivaren.' },
     { cat:'Struktur', term:'{Huvudomrade.en}', sok:'sektor sektorer', short:'En av AID:s 13 grupper av {enhet.fl}', long:'AID delar in {enhet.fl} i 13 {huvudomrade.fl}, till exempel Ledningsarbete och Teknikarbete. {Huvudomrade.bf} säger vilket arbete man gör, oavsett var i organisationen man arbetar. Verktyget grupperar på {huvudomrade.en} i Lönestruktur och i Tabeller och egna vyer.' },
     { cat:'Struktur', term:'Heltidsekvivalent (FTE) lön', short:'Lön omräknad till 100% tjänstgöring', long:'Den lön personen skulle ha haft vid heltidstjänst. Används för att rättvist jämföra deltids- och heltidsanställda. Verktyget förutsätter att månadslönerna i lönefilen redan är omräknade till heltid.' },
@@ -1542,11 +1542,13 @@ function _kUndantagNot(undantag) {
 
 /**
  * Raden i diagramdata från ett diagram med en punkt per person (figurens `individer`, ADR-39): filen bär en rad
- * per person — lön, kön, ålder eller grupp, utan namn eller identifierare — och ska hanteras som personuppgifter
- * (beslut av produktägaren 2026-10-16). Punkterna följer tröskeln som på skärmen (individLitenFor).
+ * per person — lön, kön, ålder eller grupp — och ska hanteras som personuppgifter (beslut av produktägaren
+ * 2026-10-16). Text ur fältet för AID-etikett maskeras inte (ADR-85): som serienamn (färgläggning efter AID-etikett)
+ * och i raden om urvalet följer den med som den står i lönefilen. Punkterna följer tröskeln som på skärmen
+ * (individLitenFor).
  */
 function kIndividRad() {
-    return 'Filen innehåller en rad per person (lön, kön, ålder eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter.';
+    return `Filen innehåller en rad per person (lön, kön, ålder eller grupp) och ska hanteras som personuppgifter. Text ur fältet för ${T.enhet.en} kan följa med som den står i lönefilen.`;
 }
 
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */
@@ -2085,249 +2087,25 @@ function _bedomAnsvarKolumn(namn, varden) {
 }
 
 /**
- * Strikt parser för yrke-fältet (GDPR Art. 25.1).
- *
- * Källsystem exporterar ofta yrke som "12345 — Sjuksköterska — Anna Andersson 75%"
- * eller liknande. Vi vill bara behålla AID-koden + en kort rollbeskrivning.
- * Allt annat trunkeras eller maskeras:
- *   - AID:                ledande siffergrupp (\d+)
- *   - Etikett:            första 40 tecken efter AID + separator
- *   - Namn-mönster:       "Förnamn Efternamn" maskeras till *** även inom etiketten
- *   - Resten:             droppas
- *
- * @param {*} raw - Rått värde från CSV-cellen.
- * @returns {string} "AID Etikett" eller bara AID/etikett om endera saknas.
- */
-function _cleanYrkeField(raw) {
-    if (!raw) return "";
-    const s = raw.toString().trim();
-    if (!s) return "";
-    const aidMatch = s.match(/^(\d+)/);
-    const aid = aidMatch ? aidMatch[1] : "";
-    // Etikett = resten efter AID och vanliga separatorer (—, -, :, ., whitespace)
-    let label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim();
-    // Aggressiv trunkering — yrkesetiketter sällan över 40 tecken
-    if (label.length > 40) label = label.substring(0, 40).trim() + '…';
-    // Defensivt: maskera "Förnamn Efternamn" om något ändå smugit sig in
-    // OBS: \b fungerar inte före icke-ASCII-bokstäver (Å/Ä/Ö), så namn som
-    // "Örjan Östberg" skulle inte maskeras. Unicode-säker ordgräns via fångad
-    // föregående icke-bokstav ($1) — undviker lookbehind (stöds ej i Safari < 16.4).
-    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/g, '$1***');
-    // Härd mot XSS-tecken vid inläsning.
-    // Strippar HTML-meta-tecken < > " ' & så de aldrig kan smitas in i en
-    // innerHTML-template ens om en framtida renderingsplats glömmer esc().
-    // Detta är "defensive depth" — CSP + esc() + cleanYrkeField; tre lager.
-    label = label.replace(/[<>"'&]/g, '');
-    if (aid && label) return `${aid} ${label}`;
-    return aid || label;
-}
-
-/**
  * Extraherar ENBART vitlistade fält ur en CSV-rad — GDPR Art. 5(1)(c) uppgiftsminimering.
  * Säkerställer att verktyget aldrig laddar identifierande fält (PNR, namn, e-post)
  * även om användarens CSV innehåller dem. Ansvar läses inte in (se avgränsningen i docs/utveckling/mal.md).
- * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, namn-mönster maskeras).
+ * Här slås råvärdena upp i raden (getField med ALLOWED_FIELDS, kolumnmappningen och importprofilen, och den godkända
+ * ansvarskolumnen); tolkningen görs av tolkaLonerad i src/lib/inlasning.js, med innevarande år som referensår för
+ * födelseår i ålderskolumnen. Talen, normaliseringarna, _cleanYrkeField och detectSensitiveColumns ligger också där
+ * och nås under samma namn genom spegeln.
  * @param {Object<string,*>} row - Rå CSV-rad (PapaParse-objekt).
- * @returns {{bas:string, yrke:string, lon:number, alder:number, kon:string}}
  */
-/**
- * Normaliserar kön-värden från olika personalsystem till verktygets kanoniska
- * 'kvinna'/'man'. Hanterar förkortningar (K/Kv/M), engelska exportvärden
- * (F/Female/M/Male, W/Woman) och plural ("Kvinnor"/"Män").
- *
- * Åäö bevaras innan värdet slås upp, så att "Män" mappas till 'man' (en
- * normalisering som stryker alla icke-[a-z]-tecken skulle göra det till "mn").
- *
- * Siffervärden (t.ex. "1"/"2") mappas medvetet INTE — kodningen är system-
- * specifik och en gissning vore farligare än att visa raderna som "okänt kön"
- * i inläsningsrapporten (exempelvärdena visas där).
- *
- * @param {*} raw - Råvärde från kön-kolumnen.
- * @returns {string} 'kvinna' | 'man' | normaliserad reststräng (okänd).
- */
-/**
- * Normaliserar BAS-värden: trimma, versalisera och strippa ev. "BAS"-prefix
- * ("BAS A" → "A", "bas-2" → "2") så samma intervall inte splittras i två
- * kategorier beroende på exportformat. Ett ensamt "BAS" lämnas orört.
- * @param {*} raw
- * @returns {string}
- */
-/**
- * Tar bort HTML-metatecken (< > " ' &) ur ett textfält vid inläsning. esc() vid
- * rendering är det egentliga skyddet; detta är ett extra lager ("defensive depth")
- * för korta koder (BAS, AID) som renderas i attribut- och option-kontext och som
- * aldrig legitimt innehåller tecknen. Delas av lönefilen (_normalizeBas),
- * ställningstagandet (_normalizePolicyAid) och jämförelsestatistiken.
- */
-function _stripHtmlMeta(s) {
-    return s.toString().replace(/[<>"'&]/g, '');
-}
-
-function _normalizeBas(raw) {
-    if (!raw) return "";
-    // Strippar HTML-meta-tecken (< > " ' &) vid inläsning som extra XSS-lager:
-    // BAS renderas i attributkontext (data-bas="…", <option value="…">). esc()
-    // escapear också citattecken, men detta är samma "defensive depth" som
-    // _cleanYrkeField — BAS är legitimt korta koder (A, B, 1…) så det är ofarligt.
-    const v = _stripHtmlMeta(raw).trim().toUpperCase();
-    return v.replace(/^BAS\b[\s\-_:]*/i, '').trim() || v;
-}
-
-/**
- * Normaliserar AID i det lönepolitiska ställningstagandet så att den matchar
- * den AID som härleds ur lönedatans yrkesfält (`r.yrke.match(/^(\d+)/)`).
- * Tar sifferprefixet när det finns ("207 Förskollärare" → "207"), annars den
- * rensade strängen. Tom sträng betyder "ingen AID" (= BAS-nivårad).
- */
-function _normalizePolicyAid(raw) {
-    if (!raw) return "";
-    const v = _stripHtmlMeta(raw).trim();
-    const m = v.match(/^(\d+)/);
-    return m ? m[1] : v;
-}
-
-function _normalizeKon(raw) {
-    if (!raw) return "";
-    const s = raw.toString().toLowerCase().replace(/[^a-zåäö]/g, '');
-    const MAP = {
-        k: 'kvinna', kv: 'kvinna', kvinna: 'kvinna', kvinnor: 'kvinna',
-        f: 'kvinna', female: 'kvinna', w: 'kvinna', woman: 'kvinna',
-        m: 'man', ma: 'man', man: 'man', 'män': 'man', male: 'man'
-    };
-    return MAP[s] || s;
-}
-
 function extractMinimalRecord(row) {
-    const basRaw    = getField(row, ALLOWED_FIELDS.bas, 'bas');
-    const konRaw    = getField(row, ALLOWED_FIELDS.kon, 'kon');
-    // Använd parseNumberStrict så vi kan särskilja
-    // legit-tomma fält från icke-tomma men ogiltiga värden.
-    const lonParsed   = parseNumberStrict(getField(row, ALLOWED_FIELDS.lon, 'lon'));
-    const alderParsed = parseNumberStrict(getField(row, ALLOWED_FIELDS.alder, 'alder'));
-    // Valfri arbetsvärderingspoäng (per befattning) — null när kolumn saknas/tom.
-    const poangParsed = parseNumberStrict(getField(row, ALLOWED_FIELDS.poang, 'poang'));
-    const yrkeFull    = _cleanYrkeField(getField(row, ALLOWED_FIELDS.yrke, 'yrke'));
-    // AID och etikett hålls isär. `r.yrke` är "AID Etikett"-strängen (den som vyerna visar);
-    // `r.aid` och `r.yrkeLabel` ger ren AID-kod respektive enbart etikett-delen
-    // för analyser som behöver något entydigt nyckel (t.ex. § 3:10-paret).
-    const aidMatch = yrkeFull.match(/^(\d+)/);
-    const aid      = aidMatch ? aidMatch[1] : "";
-    const yrkeLabel = aid ? yrkeFull.replace(/^\d+\s*/, '').trim() : yrkeFull;
-    // Ålderskolumnen innehåller ibland FÖDELSEÅR (1900–<år−15>) i stället för
-    // ålder — ett värde ≥ 1900 är omöjligt som ålder, så omtolkningen är säker.
-    // Statusen 'birthyear' räknas i inläsningsrapporten (transparens).
-    let alderVal = alderParsed.value;
-    /** @type {string} */ let alderStatus = alderParsed.status;
-    if (alderStatus === 'ok' && alderVal >= 1900 && alderVal <= new Date().getFullYear() - 15) {
-        alderVal = new Date().getFullYear() - alderVal;
-        alderStatus = 'birthyear';
-    }
-    return {
-        bas:       _normalizeBas(basRaw),
-        yrke:      yrkeFull,
-        aid,
-        yrkeLabel,
-        lon:       lonParsed.value,
-        alder:     alderVal,
-        kon:       _normalizeKon(konRaw),
-        poang:     poangParsed.status === 'ok' ? poangParsed.value : null,
-        // AID:s ansvarskod (valfri): koderna för kodkontrollen, ansvarsgruppen för analyserna.
-        // Ett ogiltigt enskilt värde i en godkänd kolumn räknas som "inget särskilt ansvar".
-        ansvarskoder: state.ansvarKolumn ? (_anTolka(row[state.ansvarKolumn.namn]) ?? []) : null,
-        ansvarsgrupp: state.ansvarKolumn ? _anGrupp(_anTolka(row[state.ansvarKolumn.namn]) ?? []) : null,
-        // Spårning av parse-status — används av uppladdarens
-        // räknare för att kunna visa "X icke-tomma fält var ogiltiga".
-        // Tas bort från record innan det landar i state.data (steg nedan).
-        _lonStatus:   lonParsed.status,
-        _alderStatus: alderStatus
-    };
-}
-
-/**
- * Steget mellan raderna som PII-kontrollen samplar i en fil med n rader: ⌈n/50⌉ (minst 1), så att högst 50 rader
- * sprids jämnt över filen (B4). Delas av detectSensitiveColumns och den strömmande CSV-inläsningen.
- * @param {number} n
- */
-function _pnrSampelSteg(n) {
-    return Math.max(1, Math.ceil(n / 50));
-}
-
-/**
- * PNR-detektor: identifierar kolumner som innehåller personnummer, e-post eller namn.
- * Kombinerar headerbaserad upptäckt (rubrikens namn) med värdebaserad upptäckt
- * (samplar 50 rader jämnt över filen, var ⌈n/50⌉:e rad, och matchar mot regex). Trösklar är konservativa för att
- * minimera falska positiv på godtyckliga sifferserier (t.ex. anställningsnummer). Den strömmande CSV-inläsningen
- * samlar själv var ⌈n/50⌉:e rad (_pnrSampelSteg) och lämnar högst 50 rader hit.
- * @param {Array<Object>} rows - Råa CSV-rader.
- * @returns {Array<{col:string, reason:string}>} Tom array om inga känsliga kolumner.
- */
-function detectSensitiveColumns(rows) {
-    if (!rows || !rows.length) return [];
-    // Jämnt över filen (B4): personnummer eller namn som bara finns längre ned ska också hittas.
-    const steg = _pnrSampelSteg(rows.length);
-    const sample = rows.filter((_, i) => i % steg === 0);
-    const cols = Object.keys(rows[0] || {});
-    // Strikt PNR-mönster: kräver giltig månad (01-12) och dag (01-31) för att undvika
-    // falska träffar på godtyckliga sifferserier som anställningsnummer.
-    const PNR  = /^(?:19|20)?\d{2}[-/]?[01]\d[-/]?[0-3]\d[-+]?\d{4}$/;
-    // Personnamn (B4): två till fyra ord, med eller utan efternamnet först följt av komma — "Anna Andersson",
-    // "Anna-Lisa Berg", "ANDERSSON, ANNA", "anna andersson". Alla ord har samma form (Versal-gemener, VERSALER eller
-    // gemener), så att befattningar som "Lärare grundskola" (stor bokstav bara först) inte räknas som namn.
-    const ORD = /^\p{L}{2,}(?:-\p{L}{2,})?$/u;
-    /** @param {string} w */
-    const form = w => (/^\p{Lu}\p{Ll}+(?:-\p{Lu}\p{Ll}+)?$/u.test(w) ? 'T' : w === w.toUpperCase() ? 'U' : w === w.toLowerCase() ? 'L' : '');
-    /** @param {string} v */
-    const liknarNamn = v => {
-        const delar = v.split(',');
-        if (delar.length > 2 || delar.some(d => !d.trim())) return false;
-        const ord = delar.flatMap(d => d.trim().split(/[ ]+/));
-        if (ord.length < 2 || ord.length > 4 || !ord.every(w => ORD.test(w))) return false;
-        const f = form(ord[0]);
-        return f !== '' && ord.every(w => form(w) === f);
-    };
-
-    const issues = [];
-    cols.forEach(col => {
-        // Rubriken normaliseras: gemener, å/ä→a och ö→o, övriga tecken bort — så att
-        // "Förnamn", "Fornamn" och "FÖRNAMN" alla matchar mönstren nedan.
-        const lcCol = col.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]/g, '');
-        // Header-baserad upptäckt
-        if (/personnummer|personnr|^pnr$|socialsecurity|ssn/.test(lcCol)) {
-            issues.push({ col, reason: 'Kolumnrubriken antyder personnummer' });
-            return;
-        }
-        if (/^epost$|^email$|^mail$|epostadress|emailaddress/.test(lcCol)) {
-            issues.push({ col, reason: 'Kolumnrubriken antyder e-postadress' });
-            return;
-        }
-        if (/^namn$|fornamn|efternamn|fullname|^name$/.test(lcCol)) {
-            issues.push({ col, reason: 'Kolumnrubriken antyder personnamn' });
-            return;
-        }
-        // Särskilda kategorier av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk
-        // åskådning, sexualliv, genetik, biometri): hör inte hemma i underlaget och ska inte ens passera
-        // minnet. Bara rubriken prövas; värdena saknar igenkännbart format. Mönstren är valda så att
-        // vanliga rubriker går fria: "sjuk" kräver frånvaro/skrivning/dom (inte Sjukhus), "politisk" inte
-        // Lönepolitik, "religion" som eget ord (inte Religionskunskap), "fack" följt av medlem/lig/forbund/foren
-        // (inte Fackområde).
-        if (/fack(medlem|lig|forbund|foren)|^medlemskap|halsa|halsotillstand|sjuk(franvaro|skriv|dom)|diagnos|etni(sk|citet)|^religion$|trosuppfattning|politisk|sexuel|funktionsned|genetisk|biometri/.test(lcCol)) {
-            issues.push({ col, reason: 'Kolumnrubriken antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet eller liknande)' });
-            return;
-        }
-        // Värdebaserad upptäckt (samplar 50 rader)
-        let pnrCount = 0, emailCount = 0, nameCount = 0;
-        sample.forEach(r => {
-            const v = (r[col] ?? '').toString().trim();
-            if (!v) return;
-            if (PNR.test(v)) pnrCount++;
-            else if (v.includes('@') && /\.[a-z]{2,}$/i.test(v)) emailCount++;
-            else if (liknarNamn(v)) nameCount++;
-        });
-        if (pnrCount >= 3)        issues.push({ col, reason: `Innehåller värden i personnummer-format (${pnrCount} av ${sample.length} sampelvärden matchar)` });
-        else if (emailCount >= 3) issues.push({ col, reason: `Innehåller e-postadresser (${emailCount} av ${sample.length} sampelvärden)` });
-        else if (nameCount >= 5)  issues.push({ col, reason: `Innehåller troligtvis personnamn (${nameCount} av ${sample.length} sampelvärden)` });
-    });
-    return issues;
+    return _ilTolkaLonerad({
+        bas:    getField(row, ALLOWED_FIELDS.bas, 'bas'),
+        kon:    getField(row, ALLOWED_FIELDS.kon, 'kon'),
+        lon:    getField(row, ALLOWED_FIELDS.lon, 'lon'),
+        alder:  getField(row, ALLOWED_FIELDS.alder, 'alder'),
+        poang:  getField(row, ALLOWED_FIELDS.poang, 'poang'),
+        yrke:   getField(row, ALLOWED_FIELDS.yrke, 'yrke'),
+        ansvar: state.ansvarKolumn ? row[state.ansvarKolumn.namn] : undefined
+    }, new Date().getFullYear(), !!state.ansvarKolumn);
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -2344,10 +2122,10 @@ const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
     volym:        30,   // viktning av gruppens volym
     jamstalldhet: 20    // viktning av jämställdhet (lönegap kön)
 });
-// Kostnadsberäknings-defaults — SKR 2025 PO-påslag som standard
+// Kostnadsberäknings-defaults — PO-påslaget 40 % är ett standardantagande; organisationen sätter sitt eget
 const COST_DEFAULTS = Object.freeze({
     months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
-    poPct:  39.15       // PO-påslag i % (SKR:s cirkulär 2025 — sociala avgifter + pensioner)
+    poPct:  40          // PO-påslag i % (arbetsgivaravgifter och pension ovanpå lönen)
 });
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
@@ -2368,8 +2146,8 @@ const DEFAULT_PROFILE = Object.freeze({
     // (ADR-74). T finns först efter 09-termer.js, så värdena läses när profilen kopieras (12-tillstand.js och framåt).
     get basSystem()          { return T.niva.en; },
     get aidSystem()          { return `${T.kod.en} (SKR)`; },
-    poPctDefault:            39.15,
-    poPctNote:               'SKR Cirkulär 2025',
+    poPctDefault:            40,
+    poPctNote:               '',       // ingen not till standardantagandet; tom not följer inte med i ett paket
     orgTyp:                  'alla',   // 'kommun' | 'region' | 'alla' — SKR-referensens del (ADR-34)
     locale:                  'sv-SE',
     notes:                   'Neutral standard. Läs in ett organisationspaket för organisationens benämningar.'
@@ -2735,12 +2513,49 @@ const termGenitiv = __mirrorTermer.genitiv;
 const termStor = __mirrorTermer.stor;
 const termForAntal = __mirrorTermer.ordForAntal;
 
+// ---- speglar src/lib/namn.js ----
+const __mirrorNamn = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const genitiv = __mirrorTermer.genitiv;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — namnformer för organisationen och jämförelsestatistiken
+ * (ADR-36), och ordformen för ett antal personer.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+const MAX = 100;
+
+/** Genitiv: namnet + "s", utom när det slutar på s, x eller z (regeln i termer.js). */
+function namnGenitiv(namn) {
+    return genitiv(String(namn ?? '').trim());
+}
+
+/** Trimmar, slår ihop blanksteg och kortar till högst 100 tecken. */
+function normaliseraNamn(text) {
+    return String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX);
+}
+
+/** "person" när antalet är 1, annars "personer": `${k} ${personOrd(k)}` ger "minst 1 person". */
+function personOrd(n) {
+    return Number(n) === 1 ? 'person' : 'personer';
+}
+
+    return { namnGenitiv, normaliseraNamn, personOrd };
+})();
+const _namnGenitiv = __mirrorNamn.namnGenitiv;
+const _namnNormalisera = __mirrorNamn.normaliseraNamn;
+const personOrd = __mirrorNamn.personOrd;
+
 // ---- speglar src/lib/undertryckning.js ----
 const __mirrorUndertryckning = (() => {
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Öppen lönekartläggning — kompletterande undertryckning och sammanslagning (ADR-83, ADR-84,
+ * Öppen lönekartläggning — kompletterande undertryckning och sammanslagning (ADR-83, ADR-87,
  * `docs/utveckling/k-troskeln.md` avsnitt 2).
  *
  * Två allmänna regler för delar av en total, där totalen skrivs ut och delarna har ett medelvärde var:
@@ -2788,7 +2603,7 @@ function kompletterandeUndertryckning(delar, k) {
 }
 
 /**
- * Sammanslagning (ADR-84): vilka delar som räknas samman till en, så att varje del, också den sammanslagna, har 0 eller
+ * Sammanslagning (ADR-87): vilka delar som räknas samman till en, så att varje del, också den sammanslagna, har 0 eller
  * minst k kvinnor och 0 eller minst k män.
  *
  * En del där ett kön har 1 till k − 1 personer slås samman. Har de sammanslagna tillsammans 1 till k − 1 kvinnor
@@ -2839,6 +2654,7 @@ const __mirrorStat = (() => {
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
+ *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
  */
 
 /**
@@ -3126,6 +2942,23 @@ function fitOLS(X, y, hTillagg = null) {
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }
 
+/** Percentilintervallets svans: andelen av de sorterade dragningarna som ligger under den nedre gränsen, och lika
+ * många över den övre. */
+const KI_NEDRE = 0.025;
+
+/**
+ * Det 95-procentiga percentilintervallet ur en STIGANDE sorterad lista med dragningar (bootstrap, omkastning). Indexen
+ * är symmetriska (ADR-86): den nedre gränsen är värdet med index golvet av n · 0,025 (räknat från 0), den övre värdet
+ * med index n − 1 − golvet av n · 0,025, så att lika många dragningar ligger under den nedre som över den övre (med
+ * B = 1000: 25 på var sida). Indexräkningen finns bara här, så att alla intervall i verktyget tas på samma sätt.
+ * @param {ArrayLike<number>} sorterad
+ * @returns {{lag:number, hog:number}}
+ */
+function percentilintervall(sorterad) {
+    const n = sorterad.length, svans = Math.floor(n * KI_NEDRE);
+    return { lag: sorterad[svans], hog: sorterad[n - 1 - svans] };
+}
+
 /**
  * Benjamini–Hochbergs korrigering för många samtidiga tester (FDR). Ger q-värdena i samma ordning som indata:
  * q = min(1, p·m/rang) med p-värdena sorterade stigande, gjorda monotona bakifrån så att q inte minskar med
@@ -3149,7 +2982,7 @@ function bhJustera(pVarden) {
     return q;
 }
 
-    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, matMul, invert, median };
+    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, matMul, invert, median, linearRegression, percentilintervall };
 })();
 const _tQuantile = __mirrorStat.tQuantile;
 const _pValue2Sided = __mirrorStat.pValue2Sided;
@@ -3157,8 +2990,68 @@ const _fitOLS = __mirrorStat.fitOLS;
 const _libQuantile = __mirrorStat.quantile;
 const _bhJustera = __mirrorStat.bhJustera;
 
+// ---- speglar src/lib/kostnad.js ----
+const __mirrorKostnad = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — Kostnad per år (ren modell)
+ *
+ * Kostnadsformeln på ett ställe: ett månadsbelopp × beräkningsperiodens månader × (1 + PO-påslaget). Prioriteringen,
+ * löneöversynen, handlingsplanen och beräkningsbeviset räknar med den.
+ *
+ * Kostnadsinställningarna tolkas likadant överallt: månader som saknas eller är 0 blir 12, PO som saknas blir 0 %.
+ * Fältet i Inställningar tillåter 1–60 månader, så 0 nås inte därifrån.
+ *
+ * Multiplikationen görs i samma ordning som innan formeln samlades här (belopp × månader × PO-faktor), så att inget
+ * tal ändras i sista decimalen. Därför ges PO-faktorn och månaderna var för sig och inte som en färdig produkt.
+ */
+
+/**
+ * Kostnadsinställningarna med standardvärdena ifyllda.
+ * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @returns {{months: number, poPct: number, poFaktor: number}}  poFaktor = 1 + poPct / 100
+ */
+function kostnadsfaktor(costSettings) {
+    const months = (costSettings && costSettings.months) || 12;
+    const poPct = (costSettings && costSettings.poPct) || 0;
+    return { months, poPct, poFaktor: 1 + poPct / 100 };
+}
+
+/**
+ * En redan summerad månadskostnad för hela perioden med PO-påslag: belopp × månader × (1 + PO). Beloppet behåller
+ * sitt tecken.
+ * @param {number} kronorPerManad
+ * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ */
+function periodkostnad(kronorPerManad, costSettings) {
+    const { months, poFaktor } = kostnadsfaktor(costSettings);
+    return kronorPerManad * months * poFaktor;
+}
+
+/**
+ * Ett månadsbelopp per person som belopp per år för `antal` personer, med beräkningsperiod och PO-påslag ur
+ * kostnadsinställningarna: |belopp| × månader × (1 + PO) × antal. Prioriteringens åtgärdskostnad och
+ * gruppdossierns räkneexempel räknar med samma formel.
+ * @param {number} kronorPerManad
+ * @param {number} antal
+ * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ */
+function kostnadPerAr(kronorPerManad, antal, costSettings) {
+    return periodkostnad(Math.abs(kronorPerManad), costSettings) * antal;
+}
+
+    return { kostnadsfaktor, periodkostnad, kostnadPerAr };
+})();
+const _kostFaktor = __mirrorKostnad.kostnadsfaktor;
+const _kostPeriod = __mirrorKostnad.periodkostnad;
+
 // ---- speglar src/lib/struktur.js ----
 const __mirrorStructure = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const _median = __mirrorStat.median;
+    const _quantile = __mirrorStat.quantile;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -3171,19 +3064,7 @@ const __mirrorStructure = (() => {
  * här och kör `npm run build:app`, rör ej spegeln. Inga DOM-/state-beroenden.
  */
 
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
+
 function _isKv(r) { return r.kon && r.kon.includes('kvinna'); }
 function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
 
@@ -3346,6 +3227,11 @@ const __mirrorRng = (() => {
  * samma intervall, varje gång, i varje webbläsare. Statistiskt likvärdigt —
  * bootstrap kräver bara att draget är pseudoslumpmässigt, inte oförutsägbart.
  *
+ * Löftet gäller också oavsett radordningen (ADR-86): seeden byggs ur antal och
+ * summa per serie, och de som drar ur en lista (bootstrapen och omkastningen i
+ * likvardighet.js och status.js, kvantilbootstrapen i osakerhet.js) sorterar
+ * den först. Samma löner i en annan ordning ger samma intervall.
+ *
  * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_rng*`
  * i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra här och kör
  * `npm run build:app`, rör ej spegeln (vaktas av tests/drift.test.js).
@@ -3385,7 +3271,9 @@ function mulberry32(seed) {
 /**
  * Härleder en stabil seed ur själva talserierna. Använder längd + summa per
  * serie, vilket är billigt och ändras så fort underlaget ändras (ny fil, annat
- * urval → nytt men reproducerbart intervall).
+ * urval → nytt men reproducerbart intervall). Summan tas över talen sorterade
+ * stigande: med decimaler (öre) kan en flyttalssumma annars skilja i sista
+ * siffran mellan två ordningar och, när den slutar på ,50, avrundas olika.
  * @param {...Array<number>} arrays
  * @returns {number}
  */
@@ -3393,11 +3281,14 @@ function seedFromNumbers(...arrays) {
     let s = '';
     for (const arr of arrays) {
         if (!Array.isArray(arr)) { s += 'x|'; continue; }
-        let sum = 0;
+        const tal = [];
         for (let i = 0; i < arr.length; i++) {
             const v = Number(arr[i]);
-            if (isFinite(v)) sum += v;
+            if (isFinite(v)) tal.push(v);
         }
+        tal.sort((x, y) => x - y);
+        let sum = 0;
+        for (let i = 0; i < tal.length; i++) sum += tal[i];
         s += arr.length + ':' + Math.round(sum) + '|';
     }
     return hashSeed(s);
@@ -3422,6 +3313,7 @@ const _rngFor = __mirrorRng.rngFor;
 const __mirrorStatus = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const percentilintervall = __mirrorStat.percentilintervall;
     const rngFor = __mirrorRng.rngFor;
 
 // SPDX-License-Identifier: MIT
@@ -3509,13 +3401,19 @@ function kiUtesluterLika(ci) {
  * Lönerna sorteras en gång; omkastningen flyttar rangerna i stället för lönerna, med samma byten och samma slumptal,
  * och medianerna läses ur rangordningen. Det ger samma kvoter som att ta medianen av de omkastade lönerna (lika
  * löner får olika rang men samma värde), i O(n) per omkastning utan allokeringar.
+ *
+ * Utgångsläget är kvinnornas löner stigande följda av männens stigande (kopior), inte lönerna i filens ordning: då
+ * beror omkastningen bara på lönerna och antalen, inte på radordningen (ADR-86). Kvinnorna är de första nKv platserna
+ * också efter sorteringen. Lika löner hos en kvinna och en man gör inget ordningsberoende: varje plats bär ett värde,
+ * och utgångsläget (värdet på varje plats) är detsamma i varje ordning; vilken av två lika löner som får den lägre
+ * rangen ändrar inget värde som medianen läser.
  * @param {number[]} kv
  * @param {number[]} ma
  * @param {number} [B]
  * @returns {{lag:number, hog:number}}
  */
 function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
-    const alla = kv.concat(ma), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
     // rang[i]: platsen i den sorterade listan för personen på plats i; sorterad[r]: lönen med rang r.
     const ordning = Array.from({ length: n }, (_, i) => i).sort((x, y) => alla[x] - alla[y]);
     const rang = new Int32Array(n), sorterad = new Float64Array(n), arKv = new Uint8Array(n);
@@ -3539,7 +3437,7 @@ function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
         kvoter[b] = mMa > 0 ? mKv / mMa * 100 : 100;
     }
     kvoter.sort((x, y) => x - y);
-    return { lag: kvoter[Math.floor(B * 0.025)], hog: kvoter[Math.min(B - 1, Math.floor(B * 0.975))] };
+    return percentilintervall(kvoter);
 }
 
 /**
@@ -3604,6 +3502,7 @@ const _stsKonstanter = __mirrorStatus.statusKonstanter;
 const __mirrorLikvardighet = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
+    const percentilintervall = __mirrorStat.percentilintervall;
     const rngFor = __mirrorRng.rngFor;
     const direktivMarkering = __mirrorStatus.direktivMarkering;
 
@@ -3681,37 +3580,33 @@ function konsklass(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
 }
 
 /**
- * Förbereder en grupps löner för bootstrapmedianen: lönerna sorteras en gång och varje position får sin rang.
- * En dragning räknar sedan hur många gånger varje rang dras, och medianen läses ur den kumulativa räkningen.
- * Det ger samma median som att sortera varje dragning, men i O(n) i stället för O(n log n) och utan
- * allokeringar per dragning. Lika löner får olika rang men samma värde, så medianen blir densamma.
+ * Förbereder en grupps löner för bootstrapmedianen: lönerna sorteras stigande en gång (en kopia), och dragningarna görs
+ * ur den sorterade listan. En dragning räknar sedan hur många gånger varje plats dras, och medianen läses ur den
+ * kumulativa räkningen. Det ger samma median som att sortera varje dragning, men i O(n) i stället för O(n log n) och
+ * utan allokeringar per dragning. Eftersom platserna är platser i den SORTERADE listan beror dragningarna bara på
+ * lönerna, inte på i vilken ordning de stod i filen (ADR-86): lika löner har samma värde, så det spelar ingen roll
+ * vilken av dem som står först.
  * @param {number[]} lons
- * @returns {{n:number, rang:Int32Array, sorterad:Float64Array, antal:Int32Array}}
+ * @returns {{n:number, sorterad:Float64Array, antal:Int32Array}}
  */
-function _rangUnderlag(lons) {
+function _sorteratUnderlag(lons) {
     const n = lons.length;
-    const ordning = Array.from({ length: n }, (_, i) => i).sort((a, b) => lons[a] - lons[b]);
-    const rang = new Int32Array(n);
-    const sorterad = new Float64Array(n);
-    for (let r = 0; r < n; r++) {
-        rang[ordning[r]] = r;
-        sorterad[r] = lons[ordning[r]];
-    }
-    return { n, rang, sorterad, antal: new Int32Array(n) };
+    const sorterad = Float64Array.from(lons).sort();
+    return { n, sorterad, antal: new Int32Array(n) };
 }
 
 /**
  * Medianen av en dragning med återläggning ur underlaget. Anropar `rng()` n gånger, i samma ordning som en
- * dragning `lons[(rng() * n) | 0]` per position. Udda n: det mittersta elementet; jämnt n: medel av de två
- * mittersta.
- * @param {{n:number, rang:Int32Array, sorterad:Float64Array, antal:Int32Array}} u
+ * dragning `sorterad[(rng() * n) | 0]` per position ur de stigande sorterade lönerna. Udda n: det mittersta
+ * elementet; jämnt n: medel av de två mittersta.
+ * @param {{n:number, sorterad:Float64Array, antal:Int32Array}} u
  * @param {() => number} rng
  * @returns {number}
  */
 function _dragningsmedian(u, rng) {
-    const { n, rang, sorterad, antal } = u;
+    const { n, sorterad, antal } = u;
     antal.fill(0);
-    for (let i = 0; i < n; i++) antal[rang[(rng() * n) | 0]]++;
+    for (let i = 0; i < n; i++) antal[(rng() * n) | 0]++;
     const m = n >> 1;
     let summa = 0, r = 0;
     if (n & 1) {
@@ -3733,7 +3628,8 @@ function _dragningsmedian(u, rng) {
 
 /**
  * Medianerna i B bootstrapdragningar ur två grupper: per dragning dras först kvN löner ur kv och sedan maN ur ma,
- * med återläggning, i samma ordning som `lons[(rng() * n) | 0]` per position. Medianerna tas ur rangräkning
+ * med återläggning, i samma ordning som `sorterad[(rng() * n) | 0]` per position ur gruppens stigande sorterade
+ * löner, så att dragningarna inte beror på radordningen (ADR-86). Medianerna tas ur rangräkning
  * (`_dragningsmedian`) och är desamma som om varje dragning sorterades. Den gemensamma kärnan för
  * bootstrapintervallen på medianskillnaden (här) och på mediankvoten (Lika arbete, Ålder & karriär, gruppdossiern).
  * Lönerna ska vara ändliga tal; de ändras inte.
@@ -3744,7 +3640,7 @@ function _dragningsmedian(u, rng) {
  * @returns {{kv: Float64Array, ma: Float64Array}} medianen per dragning för vardera gruppen
  */
 function bootstrapMedianer(kvLons, maLons, B, rng) {
-    const kv = _rangUnderlag(kvLons), ma = _rangUnderlag(maLons);
+    const kv = _sorteratUnderlag(kvLons), ma = _sorteratUnderlag(maLons);
     const mKv = new Float64Array(B), mMa = new Float64Array(B);
     for (let b = 0; b < B; b++) {
         mKv[b] = _dragningsmedian(kv, rng);
@@ -3754,7 +3650,7 @@ function bootstrapMedianer(kvLons, maLons, B, rng) {
 }
 
 /**
- * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), percentil [2.5,97.5].
+ * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), 95 % (percentilintervall i stat.js).
  * Används för INTERNA par (bägge sidor har individdata). Dragningarna och medianerna ur `bootstrapMedianer`.
  * @param {number[]} kvLons
  * @param {number[]} maLons
@@ -3769,7 +3665,8 @@ function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
     const diffs = new Array(B);
     for (let b = 0; b < B; b++) diffs[b] = m.ma[b] - m.kv[b];
     diffs.sort((a, b) => a - b);
-    return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
+    const { lag, hog } = percentilintervall(diffs);
+    return { lo: lag, hi: hog };
 }
 
 /**
@@ -3784,11 +3681,12 @@ function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
 function bootstrapMedianVsConstantKr(orgLons, constMedian, B = 1000, rng = Math.random) {
     if (!Array.isArray(orgLons) || orgLons.length < 3) return null;
     if (!(constMedian > 0)) return null;
-    const org = _rangUnderlag(orgLons);
+    const org = _sorteratUnderlag(orgLons);
     const diffs = new Array(B);
     for (let b = 0; b < B; b++) diffs[b] = constMedian - _dragningsmedian(org, rng);
     diffs.sort((a, b) => a - b);
-    return { lo: diffs[Math.floor(B * 0.025)], hi: diffs[Math.floor(B * 0.975)] };
+    const { lag, hog } = percentilintervall(diffs);
+    return { lo: lag, hi: hog };
 }
 
 const ALDERS_GOLV_DEFAULT = 10;      // minsta antal personer i jämförelseyrket för åldersjustering
@@ -4309,6 +4207,9 @@ const _konsklass = __mirrorLikvardighet.konsklass;
 const __mirrorForecast = (() => {
     // importer ur tidigare speglade lib-moduler
     const arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
+    const periodkostnad = __mirrorKostnad.periodkostnad;
+    const _medianStat = __mirrorStat.median;
+    const _quantileStat = __mirrorStat.quantile;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4324,27 +4225,19 @@ const __mirrorForecast = (() => {
  * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
  * (vaktas av tests/drift.test.js). Det oförklarade gapet (OLS) beräknas INTE
  * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
- * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet.
+ * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
+ * sökning (likalonslyftForMal) får appens skattning som argument.
  *
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
  */
 
 
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
 
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
+
+// Omslag: tål null/undefined som indata (0 för tom), vilket stat.js inte gör. Algoritmen finns bara i stat.js.
+function _median(arr) { return arr && arr.length ? _medianStat(arr) : 0; }
+function _quantile(arr, q) { return arr && arr.length ? _quantileStat(arr, q) : 0; }
 
 /**
  * "Water-filling": höj de lägst betalda först. Hittar en gemensam nivå L (≤ cap)
@@ -4579,8 +4472,6 @@ function closureTargets(candidates, fraction, minN = 0) {
  */
 function stagedPlan(rows, perPerson, years, costOpts) {
     const N = Math.max(1, Math.min(5, Math.round(years) || 1));
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const out = [];
     for (let k = 1; k <= N; k++) {
         const frac = k / N;
@@ -4588,7 +4479,7 @@ function stagedPlan(rows, perPerson, years, costOpts) {
         const kumRaise = perPerson.reduce((s, p) => s + p.delta * frac, 0);
         out.push({
             year: k, andelPct: 100 * frac, kumRaise,
-            kumKostnad: kumRaise * months * poFactor,
+            kumKostnad: periodkostnad(kumRaise, costOpts),
             rawGap: rawGenderGap(simRows, r => r.lon)
         });
     }
@@ -4652,8 +4543,6 @@ function forecastOutcome(rows, budget, generell, targets, costOpts) {
     const pott = computePott(rows, budget);
     const alloc = allocate(rows, generell, targets, costOpts && costOpts.roundStep);
     const totalRaise = alloc.totals.totalRaise;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
     const lonsummaFore = totalLonSum(rows);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
@@ -4664,7 +4553,7 @@ function forecastOutcome(rows, budget, generell, targets, costOpts) {
         använt: totalRaise,
         kvar: pott - totalRaise,
         overBudget: totalRaise > pott + 1e-6,
-        totalKostnad: totalRaise * months * poFactor,
+        totalKostnad: periodkostnad(totalRaise, costOpts),
         lonsummaFore,
         lonsummaEfter: lonsummaFore + totalRaise,
         rawGapFore: rawGenderGap(rows, r => r.lon),
@@ -4789,8 +4678,6 @@ function marketTargets(groups, marketByKey, factor, minN) {
  */
 function sensitivityCurve(rows, candidates, costOpts, steps) {
     const S = steps || 10;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const out = [];
     for (let i = 0; i <= S; i++) {
         const frac = i / S;
@@ -4798,14 +4685,66 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
         const alloc = allocate(rows, { mode: 'pct', value: 0 }, targets, costOpts && costOpts.roundStep);
         out.push({
             fraction: frac,
-            kostnad: alloc.totals.totalRaise * months * poFactor,
+            kostnad: periodkostnad(alloc.totals.totalRaise, costOpts),
             rawGap: rawGenderGap(alloc.perPerson, p => p.nyLon)
         });
     }
     return out;
 }
 
-    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+/** Tröskelmålets standardmål: en oförklarad skillnad på högst 5 %. */
+const TROSKELMAL_STANDARD_PCT = 5;
+/** Det största lyft i procent som tröskelmålet prövar; krävs mer redovisas det som utom räckhåll. */
+const TROSKELMAL_MAX_LYFT_PCT = 40;
+/** Antalet halveringar i sökningen: intervallet 0–40 % krymper till 40 / 2^22, under 0,00001 procentenheter. */
+const TROSKELMAL_VARV = 22;
+/** Signifikansgränsen i läget "inte signifikant": målet är nått när p-värdet är över den (eller saknas). */
+const TROSKELMAL_SIGNIFIKANS_P = 0.05;
+
+/** Tröskelmålets konstanter, för appen (spegeln exponerar bara funktioner). */
+function troskelmalKonstanter() {
+    return { STANDARD_PCT: TROSKELMAL_STANDARD_PCT, MAX_LYFT_PCT: TROSKELMAL_MAX_LYFT_PCT,
+             VARV: TROSKELMAL_VARV, SIGNIFIKANS_P: TROSKELMAL_SIGNIFIKANS_P };
+}
+
+/**
+ * (C) Tröskelmål: det minsta jämna lyftet i procent till alla kvinnor som behövs för att den oförklarade skillnaden
+ * ska nå målet, antingen högst `malPct` procent (skillnaden räknas som kvinnor mot män, negativ när kvinnor ligger
+ * lägre) eller inte signifikant (p över TROSKELMAL_SIGNIFIKANS_P). Söks med bisektion i 0–TROSKELMAL_MAX_LYFT_PCT %
+ * i TROSKELMAL_VARV varv; svaret är intervallets övre gräns, där målet är nått.
+ *
+ * Regressionen körs inte här: `skatta(rader)` är appens skattning (huvudregressionen på de givna raderna) och
+ * returnerar `{ konPct, pValue }`, med `konPct` null när den inte går att skatta. Kostnaden per månad är summan av
+ * kvinnornas lön gånger lyftet, utan påslag; kostnaden över perioden räknar appen.
+ * @param {any[]} rader lönefilens rader ({lon, kon, …})
+ * @param {{malPct?: number, signifikans?: boolean,
+ *   skatta: (rader: any[]) => {konPct: number|null, pValue: number|null}}} opts
+ * @returns {{status: 'ingenSkattning'|'redan'|'utomRackhall'|'hittat',
+ *   utgangslage: {konPct: number|null, pValue: number|null},
+ *   lyftPct?: number, kostnadPerManad?: number, resultat?: {konPct: number|null, pValue: number|null}}}
+ *   ingenSkattning: regressionen går inte att skatta på raderna; redan: målet är redan nått; utomRackhall: inte ens
+ *   TROSKELMAL_MAX_LYFT_PCT % räcker; hittat: lyftPct, kostnadPerManad och skattningen efter lyftet (resultat)
+ */
+function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifikans = false, skatta }) {
+    const arKvinna = r => r.kon && r.kon.includes('kvinna');
+    const kvinnor = rader.filter(arKvinna);
+    const utgangslage = skatta(rader);
+    if (utgangslage.konPct == null) return { status: 'ingenSkattning', utgangslage };
+    const okFor = g => signifikans ? (g.pValue == null || g.pValue > TROSKELMAL_SIGNIFIKANS_P) : (g.konPct != null && g.konPct >= -malPct);
+    const medLyft = x => {
+        const sim = rader.map(r => arKvinna(r) ? { ...r, lon: r.lon * (1 + x / 100) } : r);
+        const g = skatta(sim);
+        return { konPct: g.konPct, pValue: g.pValue, kostnad: kvinnor.reduce((s, r) => s + r.lon * x / 100, 0) };
+    };
+    if (okFor(utgangslage)) return { status: 'redan', utgangslage };
+    let lo = 0, hi = TROSKELMAL_MAX_LYFT_PCT;
+    if (!okFor(medLyft(hi))) return { status: 'utomRackhall', utgangslage };
+    for (let varv = 0; varv < TROSKELMAL_VARV; varv++) { const mitt = (lo + hi) / 2; if (okFor(medLyft(mitt))) hi = mitt; else lo = mitt; }
+    const { konPct, pValue, kostnad } = medLyft(hi);
+    return { status: 'hittat', utgangslage, lyftPct: hi, kostnadPerManad: kostnad, resultat: { konPct, pValue } };
+}
+
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, likalonslyftForMal, troskelmalKonstanter, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
@@ -4821,6 +4760,8 @@ const _fcBandStats = __mirrorForecast.bandStats;
 const _fcIndividualRemediation = __mirrorForecast.individualRemediation;
 const _fcMarketTargets = __mirrorForecast.marketTargets;
 const _fcSensitivityCurve = __mirrorForecast.sensitivityCurve;
+const _fcLyftForMal = __mirrorForecast.likalonslyftForMal;
+const _fcTroskelmalKonstanter = __mirrorForecast.troskelmalKonstanter;
 const _fcMedian = __mirrorForecast._median;
 
 // ---- speglar src/lib/aidbas.js ----
@@ -5070,25 +5011,31 @@ const __mirrorRegression = (() => {
     const skapaTermer = __mirrorTermer.skapaTermer;
     const fyllTermer = __mirrorTermer.fyllTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
+    const stor = __mirrorTermer.stor;
+    const personOrd = __mirrorNamn.personOrd;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — Regressionsmodeller för lika arbete
  *
- * Rena, testbara modeller: OLS-baserad kollinearitetsdiagnos, gap per BAS
+ * Rena, testbara modeller: huvudregressionen (verktygets huvudtal, den justerade
+ * löneskillnaden), OLS-baserad kollinearitetsdiagnos, gap per BAS
  * (betingade regressioner), sekventiell dekomponering med BAS-indikatorer och
  * yrkesgrupp inom BAS, kvantilregression (IRLS) samt Blinder-Oaxaca-
  * dekomposition. Modellerna tar allt de behöver som parametrar (rader, listor,
- * statGolv-värdet och förklaringsmodellen) och läser inget globalt tillstånd.
+ * statGolv-värdet, den inställda tröskeln och förklaringsmodellen) och läser inget
+ * globalt tillstånd.
  *
  * Appen får dem genom lib-speglarna (ADR-8); src/app/50-regressionsmodeller.js
- * är den tunna adaptern som läser getData() och statGolv(). OLS-kärnan
+ * och runOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
+ * som läser getData(), statGolv() och resten av tillståndet. OLS-kärnan
  * (fitOLS, invert, matMul, pValue2Sided, tQuantile) ligger i stat.js. Ingen modell här
  * räknar BAS som ett tal; BAS-rangen (basRangFn) finns kvar i likvardighet.js för Lägre krav.
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
+
 
 
 
@@ -5716,8 +5663,283 @@ function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD,
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
-    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
+// ---- Huvudregressionen: den justerade löneskillnaden ----
+
+/** Huvudregressionens fasta golv (ADR-38; regressionsmodellen.md §1 och §9): under så många rader skattas ingen modell. */
+const HUVUDREGRESSION_MIN_N = 30;
+/** Huvudregressionens fasta golv (ADR-38): under så många av något kön skattas ingen modell. */
+const HUVUDREGRESSION_MIN_PER_KON = 5;
+
+/**
+ * Huvudregression för "oförklarad löneskillnad" (EU 2023/970), verktygets huvudtal.
+ *
+ * Modell: log(lön) ~ kön + ålder (centrerad) + BAS-intervall (indikatorvariabler), med de variabler som
+ * förklaringsmodellen väljer (ADR-56). Returnerar koefficienter med HC3-robusta standardfel + p-värden, R², och
+ * en steg-för-steg dekomposition (gap utan kontroll → +BAS → +ålder) som vattenfallsdiagrammet bygger på.
+ * Konverterar log-koefficienten till approximativ kr-procentskillnad: gapPct = (exp(β) − 1) · 100.
+ *
+ * BAS kodas som en indikator per BAS-intervall utom det första (alfabetiskt lägsta) som är
+ * referens: varje intervall får sin egen lönenivå, utan antagandet att varje bokstavssteg
+ * är värt lika mycket. Ordningen A–Z är ändå fast (se likvardighetsmodellen.md §6) och styr
+ * vilket intervall som blir referens.
+ *
+ * Allt kommer in som argument; funktionen läser inget tillstånd och sparar ingenting (ADR-17). Appens adapter är
+ * runOLSRegression i 51-lika-arbete-regressionskort.js.
+ * @param {any[]} rader lönefilens rader ({lon, kon, alder, bas, aid?, yrke?, ansvarsgrupp?}); filtreras här
+ * @param {{modell?: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}|null, medAlder?: boolean,
+ *   kInstalld: number, golv: number}} opts
+ *   modell = förklaringsmodellen (normaliseras mot raderna som i appen; standardmodellen när den saknas);
+ *   medAlder = lönefilen har ålder (ADR-64; standard: någon rad har en ålder över 0); kInstalld = den inställda
+ *   tröskeln, som spärren för "Endast kön" följer; golv = statGolv() i appen, golvet för regressionerna per
+ *   BAS-intervall och ansvarssteget
+ * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
+ *   annars beta, se, p, R2, n, k, gapPct, decomposition m.fl. — se return-satsen.
+ */
+function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIRader(rader), kInstalld, golv }) {
+    // Utan ålder i lönefilen (ADR-64) används alla rader och modellen räknas utan ålder.
+    const raw = rader.filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    if (raw.length < HUVUDREGRESSION_MIN_N) return { error: `För få observationer (n < ${HUVUDREGRESSION_MIN_N}) för meningsfull regressionsanalys.`, errorCode: 'low_n' };
+
+    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
+    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
+    if (kvN < HUVUDREGRESSION_MIN_PER_KON || maN < HUVUDREGRESSION_MIN_PER_KON)
+        return { error: `Otillräcklig könsbalans i urvalet: ${kvN} kvinnor, ${maN} män. Minst ${HUVUDREGRESSION_MIN_PER_KON} av varje kön krävs.`, errorCode: 'imbalance' };
+
+    const basList = [...new Set(raw.map(d => d.bas))].sort();
+    // Indikatorvariabler: en kolumn per BAS-intervall utom det första, som är referens.
+    const basRef0 = basList[0];
+    const basInd = basIndikatorer(basList);
+
+    const ageMean = medAlder ? raw.reduce((s,d) => s + d.alder, 0) / raw.length : 0;
+
+    const y    = raw.map(d => Math.log(d.lon));
+    const isKv = raw.map(d => d.kon.includes('kvinna') ? 1 : 0);
+    const ageC = raw.map(d => d.alder - ageMean);
+    const basD = raw.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
+
+    // Förklaringsmodellen (ADR-56): vilka variabler som räknas bort. "Endast kön" är det ojusterade gapet, som inte får
+    // lämna verktyget när ett kön ligger under den inställda tröskeln (ADR-12); huvudtalet ska vara detsamma på skärmen
+    // och i exporten, så spärren följer den inställda tröskeln oavsett läge (som statGolv). Då gäller standardmodellen
+    // och panelen säger varför. Modellen normaliseras som appens forklaringsmodell(): yrkesgrupp bara när raderna har
+    // AID eller yrke, ålder bara när lönefilen har ålder.
+    /** @type {any} */
+    let modell = normaliseraForklaringsmodell(modellIn, { harYrke: rader.some(d => d.aid || d.yrke), harAlder: medAlder }).modell;
+    /** @type {string|null} */ let modellVarning = null;
+    if (!modell.bas && !modell.alder && !(kvN >= kInstalld && maN >= kInstalld)) {
+        modell = { ...modell, bas: true, alder: medAlder };
+        modellVarning = `Endast kön kan inte väljas: ett kön har färre än ${kInstalld} ${personOrd(kInstalld)} i modellen (minsta gruppstorlek), så den ojusterade skillnaden får inte vara huvudtalet. Modellen är kön + ${T.niva.en}${medAlder ? ' + ålder' : ''}.`;
+    }
+
+    // Kolumnordningen är fast: [1, kön, (ålder), (BAS-indikatorer)], så att index 2 är ålder när den är vald.
+    const buildX = (incAge, incBas) => raw.map((d,i) => {
+        const r = [1, isKv[i]];
+        if (incAge) r.push(ageC[i]);
+        if (incBas) r.push(...basD[i]);
+        return r;
+    });
+    const beskriv = m => modellBeskrivning(m);
+    // Reservstegen tar bort variabler i ordningen yrkesgrupp, BAS; inget bortvalt läggs tillbaka. 'full' = den valda modellen.
+    /** @type {any[]} */
+    const ladder = [];
+    if (modell.yrkesgrupp) ladder.push({ name: 'full', desc: beskriv(modell), yrke: true });
+    const utanYrke = { ...modell, yrkesgrupp: false };
+    ladder.push({ name: modell.yrkesgrupp ? 'utanYrke' : 'full', desc: beskriv(utanYrke), X: buildX(utanYrke.alder, utanYrke.bas) });
+    if (modell.bas) { const m2 = { ...utanYrke, bas: false }; ladder.push({ name: 'minimal', desc: beskriv(m2), X: buildX(m2.alder, false) }); }
+
+    /** @type {any[]} */
+    const triedSteps = [];
+    /** @type {any} */
+    let chosen = null;
+    for (const step of ladder) {
+        if (step.yrke) {
+            const fit = _regInomYrkesgrupp(raw, y, isKv, ageC, modell.alder);
+            if (!fit) { triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: null }); continue; }
+            triedSteps.push({ name: step.name, desc: step.desc, status: 'ok', k: fit.k });
+            chosen = { ...fit, modelName: step.name, modelDesc: step.desc };
+            break;
+        }
+        if (raw.length < step.X[0].length + 5) {
+            triedSteps.push({ name: step.name, desc: step.desc, status: 'too_few', k: step.X[0].length });
+            continue;
+        }
+        const fit = fitOLS(step.X, y);
+        if (!fit) {
+            triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: step.X[0].length });
+            continue;
+        }
+        triedSteps.push({ name: step.name, desc: step.desc, status: 'ok', k: step.X[0].length });
+        chosen = { ...fit, modelName: step.name, modelDesc: step.desc };
+        break;
+    }
+
+    if (!chosen)
+        return {
+            error: 'Modellen kunde inte estimeras.',
+            errorCode: 'all_failed',
+            triedSteps,
+            diagnostics: diagnoseCollinearity(raw, basList)
+        };
+    // Den modell som faktiskt skattades (reservsteget kan ha tagit bort variabler).
+    const skattad = chosen.modelName === 'full' ? modell : chosen.modelName === 'utanYrke' ? utanYrke : { ...utanYrke, bas: false };
+
+    // Kön-koefficient (index 1) – HC3 robusta standardfel
+    const betaKon  = chosen.beta[1];
+    const seKonR   = Math.sqrt(chosen.vcovHC3[1][1]);
+    const seKonC   = Math.sqrt(chosen.vcovClassic[1][1]);
+    const tStat    = betaKon / seKonR;
+    const pValue   = pValue2Sided(tStat, chosen.n, chosen.k);
+    const pct      = (Math.exp(betaKon) - 1) * 100;
+    // Halvbredden för 95 % KI: t-fördelningens kvantil vid df = n − k (1,96 först vid df ≥ 100)
+    const tq       = tQuantile(0.975, chosen.n - chosen.k);
+    const pctLow   = (Math.exp(betaKon - tq*seKonR) - 1) * 100;
+    const pctHigh  = (Math.exp(betaKon + tq*seKonR) - 1) * 100;
+    const pctLowC  = (Math.exp(betaKon - tq*seKonC) - 1) * 100;
+    const pctHighC = (Math.exp(betaKon + tq*seKonC) - 1) * 100;
+
+    // Ålders-koefficient (index 2): % per år. null när ålder inte är med i modellen.
+    /** @type {number|null} */ let ageEffect = null;
+    /** @type {number|null} */ let ageP = null;
+    if (skattad.alder) {
+        const betaAge   = chosen.beta[2];
+        const seAge     = Math.sqrt(chosen.vcovHC3[2][2]);
+        ageEffect = (Math.exp(betaAge) - 1) * 100;
+        ageP      = pValue2Sided(betaAge/seAge, chosen.n, chosen.k);
+    }
+
+    // BAS-koefficienter: lönenivå per BAS-intervall i procent mot referensintervallet, när BAS-indikatorerna är med
+    // (null i reservmodellen och när yrkesgrupp inom BAS är vald, där BAS ingår i gruppnivåerna).
+    /** @type {Array<{bas:string, pct:number, low:number, high:number, p:number}>|null} */
+    let basEffekter = null;
+    if (skattad.bas && !skattad.yrkesgrupp) {
+        const forsta = skattad.alder ? 3 : 2;
+        basEffekter = basInd.map((b, j) => {
+            const idx = forsta + j;
+            const beta = chosen.beta[idx];
+            const se   = Math.sqrt(chosen.vcovHC3[idx][idx]);
+            return {
+                bas: b,
+                pct: (Math.exp(beta) - 1) * 100,
+                low: (Math.exp(beta - tq*se) - 1) * 100,
+                high: (Math.exp(beta + tq*se) - 1) * 100,
+                p: pValue2Sided(beta/se, chosen.n, chosen.k)
+            };
+        });
+    }
+    const basRef = skattad.bas ? basRef0 : null;
+    // Antal personer per BAS-intervall i modellen: redovisningen av effekterna följer tröskeln (_basEffekterForRedovisning).
+    /** @type {Record<string, number>} */
+    const basN = {};
+    for (const d of raw) basN[d.bas] = (basN[d.bas] || 0) + 1;
+
+    // Sekventiell dekomponering på den skattade modellen.
+    // Ansvarssteget lyfts ut: det redovisas på en egen rad och påverkar inte huvudtalet.
+    const allaSteg = computeSequentialGap(raw, ageMean, basList, { golv, modell: skattad });
+    const ansvarSteg = allaSteg.find(s => s.name === '+ Ansvar') ?? null;
+    // Yrkesgruppssteget (ADR-46) står sist i sequential. Är yrkesgrupp vald (ADR-56) är det huvudtalet; annars visas
+    // det efter huvudtalet, och huvudtalet och den förklarade andelen räknas till och med modellens sista OLS-steg.
+    const yrkesSteg = allaSteg.find(s => s.name === STEG_YRKE) ?? null;
+    const sequential = allaSteg.filter(s => s.name !== '+ Ansvar');
+    const seqOk = sequential.filter(s => s.status === 'ok' && (skattad.yrkesgrupp || s.name !== STEG_YRKE));
+    /** @type {number|null} */ let explainedShare = null;
+    if (seqOk.length >= 2) {
+        const first = Number(seqOk[0].gapPct);
+        const last  = Number(seqOk[seqOk.length - 1].gapPct);
+        if (Math.abs(first) > 0.1) {
+            explainedShare = ((Math.abs(first) - Math.abs(last)) / Math.abs(first)) * 100;
+        }
+    }
+
+    // Vad varje variabel tillför (ADR-56), alltid mot fullmodellen, och det som valts bort med sina tal. Yrkesgrupp
+    // mäts bara när raderna har AID eller yrke.
+    const tillfor = computeVariabelTillfor(raw, ageMean, basList, { golv, harYrke: raw.some(d => d.aid || d.yrke) });
+    const etikett = { bas: stor(T.niva.en), alder: 'Ålder' };
+    const bortvalt = ['bas', 'alder'].filter(v => !modell[v]).map(v => {
+        const rad = tillfor.rader.find(r => r.variabel === v);
+        return { variabel: v, etikett: etikett[v], deltaR2pp: rad ? rad.deltaR2pp : null, gapUtan: rad ? rad.gapUtan : null, gapMed: rad ? rad.gapMed : null, skal: modell.skal };
+    });
+
+    // Per-BAS conditional gap (separata regressioner inom varje BAS)
+    const perBas = computePerBasGap(raw, basList, { golv });
+
+    const fellBackFromFull = chosen.modelName !== 'full';
+    const diagnostics = fellBackFromFull ? diagnoseCollinearity(raw, basList) : [];
+
+    // Rått gap (median)
+    const kv = raw.filter(d => d.kon.includes('kvinna'));
+    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
+    const medianKv = median(kv.map(d=>d.lon));
+    const medianMa = median(ma.map(d=>d.lon));
+    const rawGapPct = (medianKv / medianMa - 1) * 100;
+
+    return {
+        modelName: chosen.modelName,
+        modelDesc: chosen.modelDesc,
+        modell: skattad,                      // den skattade förklaringsmodellen (ADR-56)
+        modellVald: modell,                   // den valda (skiljer sig från modell bara i reservsteget)
+        modellVarning,
+        fras: modellFras(skattad),            // "ålder och BAS-intervall" m.fl.; tom för endast kön
+        tillfor,
+        bortvalt,
+        fellBackFromFull,
+        triedSteps,
+        diagnostics,
+        n: chosen.n, k: chosen.k, ageMean,
+        hHoga: chosen.hHoga ?? 0,             // observationer med hävstång > 0,99 (B4, teknisk specifikation)
+        konPct: pct, konPctLow: pctLow, konPctHigh: pctHigh,
+        // Samma skattning som kvinnors lön i % av mäns (log-modellen: exp(β) × 100 = 100 + konPct), måttet i
+        // flikarnas nyckeltalsrader.
+        konKvot: 100 + pct,
+        konPctLowClassical: pctLowC, konPctHighClassical: pctHighC,
+        seKonR, seKonC,
+        tStat, pValue, tKvantil: tq,          // halvbredden för 95 % KI i enheter av SE
+        ageEffect, ageP,
+        basEffekter,                          // per BAS-intervall utom referensen: nivå mot referensen (null vid reservmodell)
+        basRef,                               // referensintervallet (alfabetiskt första)
+        basN,                                 // antal personer per BAS-intervall i modellen
+        basList,                              // alfabetiskt sorterad lista, för referens i UI
+        R2: chosen.R2, adjR2: chosen.adjR2,
+        rawGapPct,
+        medianKv, medianMa,                   // underlag för kronor-omräkningen i UI
+        sequential,
+        ansvarSteg,
+        yrkesSteg,
+        explainedShare,
+        perBas,
+        nBas: basList.length,
+        nKvAnalysed: kvN, nMaAnalysed: maN
+    };
+}
+
+/**
+ * Huvudregressionen med yrkesgrupp inom BAS (ADR-56): fasta effekter för AID×BAS med inomtransformation (ADR-46),
+ * som steget + Yrkesgrupp, men här behövs också standardfel. Skattningen görs på de transformerade variablerna
+ * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Standardfelen är
+ * den fulla designens (ADR-77): HC3 räknas med hävstången h_i + 1/n_g, den fulla designens, och skalas inte; den
+ * klassiska kovariansen skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader. k räknas med gruppnivåerna,
+ * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
+ * tom konstant), så att resten av huvudregression läser kön på index 1 och ålder på index 2.
+ * hHoga räknas på samma fulla hävstång: en ensam person i en grupp har h = 1.
+ * @param {any[]} raw @param {number[]} y @param {number[]} isKv @param {number[]} ageC @param {boolean} medAlder
+ * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number}}
+ */
+function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
+    const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
+    const inom = inomYrkesgrupp(raw, y, kol);
+    if (!inom.ok) return null;
+    const fit = fitOLS(inom.X, inom.yW, inom.hGrupp);
+    if (!fit) return null;
+    const n = raw.length, p = kol[0].length, k = inom.k;
+    if (n - k <= 0) return null;
+    const skala = (n - p) / (n - k);
+    const vidga = (V, s) => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * s)]); return ut; };
+    const R2 = inom.R2Total(fit.rss);
+    return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3, 1), vcovClassic: vidga(fit.vcovClassic, skala), R2,
+        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
+}
+
+    return { huvudregression, diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, normaliseraForklaringsmodell, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, justeradSkillnad, stegNamn, stegEtikett };
 })();
+const _rgHuvudregression = __mirrorRegression.huvudregression;
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
 const _rgBasIndikatorer = __mirrorRegression.basIndikatorer;
@@ -5726,9 +5948,7 @@ const _rgQuantileRegression = __mirrorRegression.quantileRegression;
 const _rgBlinderOaxaca = __mirrorRegression.blinderOaxaca;
 const _rgQuantileRegressionAtAllTau = __mirrorRegression.quantileRegressionAtAllTau;
 const _rgKvantilDesign = __mirrorRegression.kvantilDesign;
-const _rgComputeVariabelTillfor = __mirrorRegression.computeVariabelTillfor;
 const _rgNormaliseraForklaringsmodell = __mirrorRegression.normaliseraForklaringsmodell;
-const _rgInomYrkesgrupp = __mirrorRegression.inomYrkesgrupp;
 const _rgForklaringsmodellArStandard = __mirrorRegression.forklaringsmodellArStandard;
 const _rgModellVariabler = __mirrorRegression.modellVariabler;
 const _rgModellFras = __mirrorRegression.modellFras;
@@ -5739,8 +5959,509 @@ const _rgJusteradSkillnad = __mirrorRegression.justeradSkillnad;
 const _rgStegNamn = __mirrorRegression.stegNamn;
 const _rgStegEtikett = __mirrorRegression.stegEtikett;
 
+// ---- speglar src/lib/osakerhet.js ----
+const __mirrorOsakerhet = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const median = __mirrorStat.median;
+    const linearRegression = __mirrorStat.linearRegression;
+    const percentilintervall = __mirrorStat.percentilintervall;
+    const rngFor = __mirrorRng.rngFor;
+    const slumpensGranser = __mirrorStatus.slumpensGranser;
+    const bootstrapMedianer = __mirrorLikvardighet.bootstrapMedianer;
+    const kvantilDesign = __mirrorRegression.kvantilDesign;
+    const quantileRegression = __mirrorRegression.quantileRegression;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — osäkerheten kring skattningarna.
+ *
+ *   - organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga: percentil-bootstrapintervallen (95 %) på mediankvoten
+ *     kvinnor/män, för hela organisationen (Översikt), per BAS-intervall och åldersgrupp (Lika arbete, Ålder &
+ *     karriär) och per grupp (gruppdossiern, rapportunderlaget). Dragningarnas medianer tas ur rangräkning
+ *     (bootstrapMedianer i likvardighet.js).
+ *   - regressionslinjensBand: 95-procentigt konfidensband kring en enkel regressionslinje (Ålder & karriär).
+ *   - styrkeanalys, sigmaInomGrupp, gruppMde: minsta upptäckbara skillnad vid 80 % styrka och α = 0,05.
+ *   - extremvarden: löner långt från sitt BAS-intervalls medel på log-skala.
+ *   - trattUnderlag: trattdiagrammets grupper, deras slumpens gränser och fältets halva bredd (Lika arbete).
+ *   - kvantilBootstrap: intervallen kring kvantilregressionens skattningar (ADR-63).
+ *
+ * Rena funktioner: raderna, golvet och tröskeln kommer in som argument. Där slump används är generatorn ett val
+ * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
+ * sorterade listor, så att det inte beror på radordningen (ADR-86). Percentilintervallet tas
+ * med percentilintervall i stat.js. Appens funktioner med de tidigare namnen (computeBootstrapCI,
+ * computePowerAnalysis, computeGroupMDE, linearRegressionCI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
+ * _laTrattUnderlagRakna, _regKvantilBootstrap) är tunna adaptrar som läser tillståndet och anropar funktionerna här.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
+ */
+
+
+
+
+
+/** Antalet dragningar i intervallet för hela organisationen (Översikt). */
+const B_ORGANISATION = 2000;
+/** Antalet dragningar i intervallet per BAS-intervall och per åldersgrupp. */
+const B_PER_GRUPP = 1000;
+/** Antalet dragningar i gruppdossierns och rapportunderlagets intervall. */
+const B_DOSSIER = 2000;
+/** Minsta antal av vardera könet för ett bootstrapintervall på mediankvoten per grupp. */
+const KVOT_MIN_N = 3;
+/** Minsta antal giltiga dragningar (männens median över noll) för att dossierns intervall ska ges. */
+const DOSSIER_MIN_GILTIGA = 20;
+/** z för 95 % tvåsidigt: konfidensbandet kring regressionslinjen och trattens fält. */
+const Z_95 = 1.96;
+/** Konfidensbandet: minsta antal punkter för en linje med spridning, och antalet punkter längs linjen. */
+const BAND_MIN_N = 3, BAND_STEG = 30;
+/** Faktorn i minsta upptäckbara skillnad: 1,96 (α = 0,05 tvåsidigt) + 0,842 (styrka 80 %). */
+const Z_STYRKA = 2.802;
+/** Jämn könsfördelning i styrkeanalysen: det mindre könet är minst 40 % av alla. */
+const BALANSGRANS = 0.4;
+/** Minsta antal personer för styrkeanalysen. */
+const STYRKA_MIN_N = 10;
+/** Minsta antal residualer för σ inom grupp; med färre används spridningen i hela urvalet. */
+const MDE_SIGMA_MIN_RESIDUALER = 20;
+/** Gruppens minsta upptäckbara skillnad: under 3 % god, under 7 % godtagbar, annars svag. */
+const MDE_GOD = 3, MDE_GODTAGBAR = 7;
+/** Under så många av något kön är gruppen för liten för styrkeuppskattningen. */
+const MDE_FOR_LITEN = 5;
+/** Extremvärdesgränsen: avståndet från BAS-intervallets medel på log-skala, i standardavvikelser. */
+const EXTREMVARDE_Z = 3;
+/** Trattens σ ur medianens absoluta avvikelse: 1,4826 × MAD är σ vid normalfördelning. */
+const MAD_TILL_SIGMA = 1.4826;
+/** Medianens standardfel i förhållande till medelvärdets vid normalfördelning (√(π/2)). */
+const MEDIAN_SE_FAKTOR = 1.2533;
+/** Rättningen av trattens normalformel för små grupper: 1 + 0,6 / (det mindre könets antal). */
+const SMA_GRUPPER_RATTNING = 0.6;
+/** Kvantilregressionens bootstrap: antalet omsamplingar och största antal personer som intervallet räknas för. */
+const KVANTIL_KI_B = 200, KVANTIL_KI_MAX_N = 2000;
+
+/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+function osakerhetKonstanter() {
+    return Object.freeze({ B_ORGANISATION, B_PER_GRUPP, B_DOSSIER, KVOT_MIN_N, DOSSIER_MIN_GILTIGA, Z_95, BAND_MIN_N, BAND_STEG,
+        Z_STYRKA, BALANSGRANS, STYRKA_MIN_N, MDE_SIGMA_MIN_RESIDUALER, MDE_GOD, MDE_GODTAGBAR, MDE_FOR_LITEN, EXTREMVARDE_Z,
+        MAD_TILL_SIGMA, MEDIAN_SE_FAKTOR, SMA_GRUPPER_RATTNING, KVANTIL_KI_B, KVANTIL_KI_MAX_N });
+}
+
+/** @param {{kon:string}} r */
+const _arKvinna = r => r.kon.includes('kvinna');
+/** @param {{kon:string}} r */
+const _arMan = r => r.kon === 'man' || r.kon === 'män';
+
+// ---- Bootstrapintervallen på mediankvoten ----
+
+/**
+ * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen (Översikt).
+ *
+ * Metod: B dragningar med återläggning ur vardera könet, mediankvoten per dragning, percentilintervallet (95 %).
+ * B = 2000: med B = 600 blev Monte Carlo-variabiliteten på gränserna ~±0,5 pp, vilket märks för gränsfall; variationen
+ * minskar med 1/√B, så B = 2000 ger ungefär hälften, på ~50–200 ms vid alla typiska storlekar. Dragningarnas medianer
+ * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt
+ * resultat. En dragning där männens median inte är positiv ger kvoten 1.
+ *
+ * Skillnaden i procent har direktivets tecken, (1 − kvot) · 100, positiv när kvinnor ligger lägre; därav namnet
+ * `gapPctDirektivtecken`. Verktygets eget tecken, (kvot − 1) · 100, är dess motsats (se regressionsmodellen.md avsnitt 1, Tecknet).
+ * @param {Array<{lon:number, kon:string}>} rader
+ * @param {number} golv  minsta antal av vardera könet (statGolv() i appen)
+ * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
+ * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPctDirektivtecken: {point:number, lo:number, hi:number}, B:number}}
+ */
+function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
+    const d = rader.filter(r => r.lon > 0);
+    const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
+    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    if (kv.length < golv || ma.length < golv) return null;
+    const ratios = new Array(B);
+    const m = bootstrapMedianer(kv, ma, B, rng || rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
+    for (let b = 0; b < B; b++) {
+        const mKv = m.kv[b], mMa = m.ma[b];
+        ratios[b] = mMa > 0 ? mKv / mMa : 1;
+    }
+    ratios.sort((a, b) => a - b);
+    const { lag: lo, hog: hi } = percentilintervall(ratios);
+    const point = median(kv) / median(ma);
+    return {
+        ratio:  { point, lo, hi },
+        gapPctDirektivtecken: { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
+        B
+    };
+}
+
+/**
+ * 95-procentigt percentil-bootstrapintervall för kvinnors median i procent av mäns, för en grupp (BAS-intervall,
+ * åldersgrupp). En dragning där männens median inte är positiv ger 100.
+ * @param {number[]} kvLons
+ * @param {number[]} maLons
+ * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
+ * @returns {null | {lo:number, hi:number}} null med färre än KVOT_MIN_N av något kön
+ */
+function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
+    if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
+    const ratios = new Array(B);
+    const m = bootstrapMedianer(kvLons, maLons, B, rng || rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    for (let b = 0; b < B; b++) {
+        const mKv = m.kv[b], mMa = m.ma[b];
+        ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
+    }
+    ratios.sort((a, b) => a - b);
+    const { lag, hog } = percentilintervall(ratios);
+    return { lo: lag, hi: hog };
+}
+
+/**
+ * Som medianKvotKI, men dragningar där männens median inte är positiv räknas inte, och intervallet ges bara när minst
+ * DOSSIER_MIN_GILTIGA dragningar återstår (gruppdossiern och rapportunderlaget).
+ * @param {number[]} kvLons
+ * @param {number[]} maLons
+ * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
+ * @returns {null | {lo:number, hi:number}}
+ */
+function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {}) {
+    if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
+    const ratios = new Array(B);
+    const m = bootstrapMedianer(kvLons, maLons, B, rng || rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    for (let b = 0; b < B; b++) {
+        const mMa = m.ma[b];
+        ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
+    }
+    const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
+    if (ok.length < DOSSIER_MIN_GILTIGA) return null;
+    const { lag, hog } = percentilintervall(ok);
+    return { lo: lag, hi: hog };
+}
+
+// ---- Konfidensbandet kring en regressionslinje ----
+
+/**
+ * 95-procentigt konfidensband för en enkel linjär regressionslinje.
+ * SE av MEDELPREDIKTIONEN vid x: σ × √(1/n + (x−x̄)²/Σ(xi−x̄)²), där σ² = RSS/(n−2). Ger punkter {x, y, lo, hi}
+ * jämnt spridda över [minX, maxX].
+ * @param {Array<[number, number]>} data  [x, y]-par
+ * @param {number} minX
+ * @param {number} maxX
+ * @param {number} [steps]  antal punkter (BAND_STEG)
+ * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>} null med färre än BAND_MIN_N punkter eller
+ *   utan spridning i x
+ */
+function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
+    const n = data.length;
+    if (n < BAND_MIN_N) return null;
+    const reg = linearRegression(data);
+    const meanX = data.reduce((s, p) => s + p[0], 0) / n;
+    let ssX = 0, rss = 0;
+    for (let i = 0; i < n; i++) {
+        ssX += (data[i][0] - meanX) ** 2;
+        const yhat = reg.m * data[i][0] + reg.b;
+        rss += (data[i][1] - yhat) ** 2;
+    }
+    if (ssX <= 0) return null;
+    const sigma2 = rss / Math.max(1, n - 2);
+    const out = [];
+    for (let i = 0; i < steps; i++) {
+        const x = minX + (maxX - minX) * (i / (steps - 1));
+        const y = reg.m * x + reg.b;
+        const se = Math.sqrt(Math.max(0, sigma2 * (1 / n + (x - meanX) ** 2 / ssX)));
+        out.push({ x, y, lo: y - Z_95 * se, hi: y + Z_95 * se });
+    }
+    return out;
+}
+
+// ---- Styrkan: minsta upptäckbara skillnad ----
+
+/**
+ * Minsta upptäckbara skillnad i procent vid 80 % styrka och α = 0,05:
+ * MDE_log ≈ 2,802 · σ_log · √(1/n_kv + 1/n_ma), i procent (e^MDE_log − 1) · 100.
+ * @param {number} sigma  σ för log(lön)
+ * @param {number} nKv
+ * @param {number} nMa
+ * @returns {number}
+ */
+function mdeProcent(sigma, nKv, nMa) {
+    const mdeLog = Z_STYRKA * sigma * Math.sqrt(1 / nKv + 1 / nMa);
+    return (Math.exp(mdeLog) - 1) * 100;
+}
+
+/**
+ * Minsta upptäckbara lönegap (procent) för regressionens könskoefficient vid 80 % styrka och α = 0,05, för hela
+ * organisationen (mdeProcent).
+ *
+ * σ_log är spridningen i log(lön) INOM grupp (sigmaInomGrupp): den poolade standardavvikelsen av residualerna
+ * log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom BAS med minst `golv` av varje kön (samma idé som
+ * trattdiagrammets σ, trattUnderlag). Spridningen över hela urvalet duger inte: den rymmer skillnaderna mellan
+ * BAS-intervallen och överskattar spridningen inom en grupp, så att MDE per grupp blev för stor. Är underlaget för
+ * litet (inga grupper når golvet, eller färre än MDE_SIGMA_MIN_RESIDUALER residualer) används hela urvalets σ.
+ * @param {Array<{lon:number, kon:string, yrke?:any, bas?:any}>} rader
+ * @param {number} golv  minsta antal av vardera könet i en grupp (statGolv() i appen)
+ * @returns {null | {n:number, nKv:number, nMa:number, mdePct:number, sigma:number, sigmaKalla:'inomGrupp'|'helaUrvalet',
+ *                   sigmaHela:number, sigmaGrupper:number, balanced:boolean}}
+ */
+function styrkeanalys(rader, golv) {
+    const d = rader.filter(r => r.lon > 0);
+    if (d.length < STYRKA_MIN_N) return null;
+    const arKv = _arKvinna, arMa = _arMan;
+    const kv = d.filter(arKv).map(r => r.lon);
+    const ma = d.filter(arMa).map(r => r.lon);
+    if (kv.length < 2 || ma.length < 2) return null;
+    // SD av log(lön) över hela urvalet — reserven när underlaget per grupp är för litet
+    const allLog = d.map(r => Math.log(r.lon));
+    const meanLog = allLog.reduce((s, v) => s + v, 0) / allLog.length;
+    const varLog  = allLog.reduce((s, v) => s + (v - meanLog) ** 2, 0) / (allLog.length - 1);
+    const sigmaHela = Math.sqrt(varLog);
+    const inom = sigmaInomGrupp(d, arKv, arMa, golv);
+    const sigma = inom ? inom.sigma : sigmaHela;
+    const mdePct = mdeProcent(sigma, kv.length, ma.length);
+    const minN = Math.min(kv.length, ma.length);
+    const maxN = Math.max(kv.length, ma.length);
+    // Jämn könsfördelning enligt verktygets definition: båda könen ≥ 40% av totalen.
+    const balanced = minN / (minN + maxN) >= BALANSGRANS;
+    return { n: d.length, nKv: kv.length, nMa: ma.length, mdePct, sigma, sigmaKalla: inom ? 'inomGrupp' : 'helaUrvalet',
+             sigmaHela, sigmaGrupper: inom ? inom.grupper : 0, balanced };
+}
+
+/**
+ * Poolad standardavvikelse av residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom
+ * BAS med minst `golv` av varje kön. Frihetsgraderna är antalet residualer minus två medianer per grupp.
+ * @param {Array<{lon:number, yrke?:any, bas?:any}>} d  rader med lön över noll
+ * @param {(r: any) => boolean} arKv
+ * @param {(r: any) => boolean} arMa
+ * @param {number} golv
+ * @returns {null | {sigma:number, grupper:number, residualer:number}} null när underlaget är för litet
+ */
+function sigmaInomGrupp(d, arKv, arMa, golv) {
+    /** @type {Map<string, {kv: number[], ma: number[]}>} */
+    const perGrupp = new Map();
+    for (const r of d) {
+        const kv = arKv(r), ma = arMa(r);
+        if (!kv && !ma) continue;
+        const nyckel = `${r.yrke}|${r.bas}`;
+        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { kv: [], ma: [] });
+        /** @type {{kv: number[], ma: number[]}} */ (perGrupp.get(nyckel))[kv ? 'kv' : 'ma'].push(r.lon);
+    }
+    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= golv && g.ma.length >= golv);
+    if (!grupper.length) return null;
+    let summa = 0, antal = 0;
+    for (const g of grupper) {
+        for (const [loner] of [[g.kv], [g.ma]]) {
+            const logMed = Math.log(median(loner));
+            for (const v of loner) { summa += (Math.log(v) - logMed) ** 2; antal++; }
+        }
+    }
+    const df = antal - 2 * grupper.length;
+    if (antal < MDE_SIGMA_MIN_RESIDUALER || df < 1) return null;
+    const sigma = Math.sqrt(summa / df);
+    return sigma > 0 ? { sigma, grupper: grupper.length, residualer: antal } : null;
+}
+
+/**
+ * Minsta upptäckbara skillnad för en undergrupp (yrkesgrupp, BAS-rad) med σ ur styrkeanalysen.
+ * @param {number} nKv  antal kvinnor i gruppen
+ * @param {number} nMa  antal män i gruppen
+ * @param {number|null|undefined} sigma  σ för log(lön)
+ * @returns {null | {mdePct:number, level:'good'|'fair'|'poor', tooSmall:boolean}}
+ */
+function gruppMde(nKv, nMa, sigma) {
+    if (!sigma || nKv < 2 || nMa < 2) return null;
+    const mdePct = mdeProcent(sigma, nKv, nMa);
+    const level = mdePct < MDE_GOD ? 'good' : mdePct < MDE_GODTAGBAR ? 'fair' : 'poor';
+    const tooSmall = nKv < MDE_FOR_LITEN || nMa < MDE_FOR_LITEN;
+    return { mdePct, level, tooSmall };
+}
+
+// ---- Extremvärden ----
+
+/**
+ * Löner som ligger ovanligt långt från sitt BAS-intervalls medel på log-skala (robust mot positivt skev fördelning):
+ * z = (log(lön) − μ)/σ inom BAS-intervallet, och |z| ≥ troskel flaggas för manuell granskning (kan vara felinmatning).
+ * BAS-intervall med färre än `golv` personer bedöms inte (för få för en spridningsskattning).
+ * Könet skrivs 'Kvinna' eller 'Man'; rader utan känt kön finns inte i underlaget (de utesluts vid inläsningen).
+ * @param {Array<{lon:number, bas:any, yrke?:any, kon:string, alder?:any, radnr?:any}>} rader
+ * @param {number} golv  minsta antal personer i BAS-intervallet (statGolv() i appen)
+ * @param {number} [troskel]  z-gränsen (EXTREMVARDE_Z)
+ * @returns {Array<{radnr:any, bas:any, yrke:any, kon:string, alder:any, lon:number, groupMedian:number, z:number, diffPct:number}>}
+ *   sorterade på |z|, störst först
+ */
+function extremvarden(rader, golv, troskel = EXTREMVARDE_Z) {
+    const d = rader;
+    if (!d.length) return [];
+    // Gruppera per BAS, beräkna log-mean + log-SD
+    /** @type {Record<string, any[]>} */
+    const byBas = {};
+    d.forEach((r, idx) => {
+        if (!byBas[r.bas]) byBas[r.bas] = [];
+        byBas[r.bas].push({ ...r, _idx: idx + 1 });
+    });
+    /** @type {Array<{radnr:any, bas:any, yrke:any, kon:string, alder:any, lon:number, groupMedian:number, z:number, diffPct:number}>} */
+    const results = [];
+    Object.entries(byBas).forEach(([_bas, rows]) => {
+        if (rows.length < golv) return; // för få för en spridningsskattning
+        const logs = rows.map(r => Math.log(r.lon));
+        const mean = logs.reduce((s, v) => s + v, 0) / logs.length;
+        const variance = logs.reduce((s, v) => s + (v - mean) ** 2, 0) / Math.max(1, logs.length - 1);
+        const sd = Math.sqrt(variance);
+        if (sd === 0) return;
+        const groupMedian = median(rows.map(r => r.lon));
+        rows.forEach(r => {
+            const z = (Math.log(r.lon) - mean) / sd;
+            if (Math.abs(z) >= troskel) {
+                results.push({
+                    radnr: r.radnr ?? null,
+                    bas: r.bas,
+                    yrke: r.yrke,
+                    kon: r.kon.includes('kvinna') ? 'Kvinna' : 'Man',
+                    alder: r.alder,
+                    lon: r.lon,
+                    groupMedian,
+                    z,
+                    diffPct: ((r.lon - groupMedian) / groupMedian) * 100
+                });
+            }
+        });
+    });
+    results.sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
+    return results;
+}
+
+// ---- Trattdiagrammets underlag ----
+
+/**
+ * Trattdiagrammets grupper (Lika arbete): AID-kod + BAS-intervall ur varje persons egen rad, bara grupper där båda
+ * könen når `k`. Varje grupp får kvoten (kvinnors median i % av mäns), slumpens gränser (slumpensGranser i status.js:
+ * omkastning, för grupper över 300 personer normalformeln med gruppens egen spridning) och om kvoten ligger utanför.
+ * Fältets halva bredd för en grupp med nKv och nMa är 1,96 × 1,2533 × σ × √(1/nKv + 1/nMa) × (1 + 0,6/min(nKv, nMa)),
+ * i procent, där σ = 1,4826 × MAD av ln(lön) − ln(könets median i gruppen) över alla grupperna.
+ * @param {Array<{lon:number, bas:any, kon:string, aid?:any, yrke?:any}>} rader
+ * @param {number} k  minsta antal av vardera könet i en grupp (tröskeln)
+ * @returns {null | {sigma:number, halv:(nKv:number, nMa:number) => number, punkter:Array<{nyckel:string, yrke:any, bas:any,
+ *   aid:string, n:number, nKv:number, nMa:number, medKv:number, medMa:number, kvot:number, gransLag:number,
+ *   gransHog:number, utanfor:boolean}>}} null utan grupper eller utan spridning
+ */
+function trattUnderlag(rader, k) {
+    /** @type {Map<string, {nyckel:string, yrke:any, bas:any, aid:string, kv:number[], ma:number[], medKv?:number, medMa?:number}>} */
+    const perGrupp = new Map();
+    for (const r of rader) {
+        if (!(r.lon > 0) || !r.bas) continue;
+        const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
+        if (!kv && !ma) continue;
+        const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
+        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
+        /** @type {{kv: number[], ma: number[]}} */ (perGrupp.get(nyckel))[kv ? 'kv' : 'ma'].push(r.lon);
+    }
+    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
+    if (!grupper.length) return null;
+    /** @type {number[]} */
+    const rest = [];
+    for (const g of grupper) {
+        const medKv = g.medKv = median(g.kv), medMa = g.medMa = median(g.ma);
+        for (const v of g.kv) rest.push(Math.log(v) - Math.log(medKv));
+        for (const v of g.ma) rest.push(Math.log(v) - Math.log(medMa));
+    }
+    const sigma = MAD_TILL_SIGMA * median(rest.map(Math.abs));
+    if (!(sigma > 0)) return null;
+    /** @param {number} nKv @param {number} nMa */
+    const halv = (nKv, nMa) => 100 * Z_95 * MEDIAN_SE_FAKTOR * sigma * Math.sqrt(1 / nKv + 1 / nMa) * (1 + SMA_GRUPPER_RATTNING / Math.min(nKv, nMa));
+    return { sigma, halv, punkter: grupper.map(g => {
+        const medKv = /** @type {number} */ (g.medKv), medMa = /** @type {number} */ (g.medMa);
+        const kvot = medKv / medMa * 100, grans = slumpensGranser(g.kv, g.ma);
+        return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv, medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
+                 utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
+}
+
+// ---- Kvantilregressionens intervall ----
+
+/** @param {any} v */
+const _nyckeldel = v => (v == null ? '' : typeof v === 'number' ? v : String(v));
+/**
+ * Den fasta ordningen för kvantilbootstrapens rader: lön, kön, BAS-intervall, ålder och sedan AID, yrke och
+ * ansvarsgrupp. Designmatrisen (kvantilDesign) bygger på lön, kön, BAS och ålder; övriga fält tas med så att
+ * ordningen är fullständig också för rader som skiljer sig bara där. Tal jämförs som tal, övrigt som text.
+ * @param {any} a
+ * @param {any} b
+ */
+function _kvantilRadordning(a, b) {
+    for (const f of ['lon', 'kon', 'bas', 'alder', 'aid', 'yrke', 'ansvarsgrupp']) {
+        const x = _nyckeldel(a[f]), y = _nyckeldel(b[f]);
+        if (x === y) continue;
+        if (typeof x === 'number' && typeof y === 'number') return x - y;
+        return String(x) < String(y) ? -1 : 1;
+    }
+    return 0;
+}
+
+/**
+ * Percentil-bootstrapintervall (95 %) på kvantilregressionens könskoefficient per τ och på skillnaden P90 − P10
+ * (ADR-63). Varje omsampling drar n rader med återläggning och bygger designen på nytt ur dem (kvantilDesign), så att
+ * referensintervallet är det första som finns i omsamplingen och ett intervall som inte kom med inte ger en
+ * nollkolumn; könskoefficienten beror inte på referensen eller centreringen. Ålder centreras på hela urvalets medel,
+ * och varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
+ * Ett intervall ges när minst hälften av omsamplingarna gav en skattning. IRLS-skattningen är en approximation av
+ * kvantillösningen; intervallet bootstrappar approximationen.
+ * @param {any[]} raw0  kvantilDesign(...).rader: raderna som punktskattningen räknades på (i vilken ordning som helst)
+ * @param {any} modell  förklaringsmodellen
+ * @param {Array<{tau:number, error?:boolean, ki?:any}>} results  punktskattningarna; `ki` skrivs in i dem
+ * @param {(d: any) => boolean} arKv
+ * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna per kön
+ * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number, kiUtelamnad:string}}
+ */
+function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
+    const rnd = rng || rngFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+    // Raderna sorteras på en fast, fullständig nyckel innan dragningen, så att omsamplingarna inte beror på
+    // radordningen (ADR-86). Två rader som är lika i nyckeln är utbytbara i designen.
+    const raw = [...raw0].sort(_kvantilRadordning);
+    const n = raw.length;
+    /** @type {number[][]} */
+    const prov = results.map(() => []);
+    /** @type {number[]} */
+    const diffProv = [];
+    const i10 = results.findIndex(r => r.tau === 0.1), i90 = results.findIndex(r => r.tau === 0.9);
+    // Ålder centreras på hela urvalets medel (könskoefficienten beror inte på centreringen).
+    const ageMean = modell.alder ? raw.reduce((s, d) => s + d.alder, 0) / n : undefined;
+    // Varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
+    const hel = kvantilDesign(raw, modell, { ageMean });
+    const helBeta = results.map(r => (r.error ? null : (quantileRegression(hel.X, hel.y, r.tau) || {}).beta || null));
+    for (let b = 0; b < B; b++) {
+        const urval = new Array(n);
+        for (let i = 0; i < n; i++) urval[i] = raw[Math.floor(rnd() * n)];
+        const { X, y, kolumner } = kvantilDesign(urval, modell, { ageMean });
+        const konPct = results.map((r, k) => {
+            if (r.error) return null;
+            const b0 = helBeta[k];
+            const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
+            const fit = quantileRegression(X, y, r.tau, undefined, undefined, start);
+            return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
+        });
+        konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });
+        const p10 = i10 >= 0 ? konPct[i10] : null, p90 = i90 >= 0 ? konPct[i90] : null;
+        if (p10 != null && p90 != null) diffProv.push(p90 - p10);
+    }
+    /** @param {number[]} v */
+    const intervall = v => {
+        v.sort((a, c) => a - c);
+        return v.length < B / 2 ? null : percentilintervall(v);
+    };
+    results.forEach((r, k) => { if (!r.error) r.ki = intervall(prov[k]); });
+    return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
+}
+
+    return { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, regressionslinjensBand, styrkeanalys, gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter };
+})();
+const _osOrganisationensKvotKI = __mirrorOsakerhet.organisationensKvotKI;
+const _osMedianKvotKI = __mirrorOsakerhet.medianKvotKI;
+const _osMedianKvotKIGiltiga = __mirrorOsakerhet.medianKvotKIGiltiga;
+const _osRegressionslinjensBand = __mirrorOsakerhet.regressionslinjensBand;
+const _osStyrkeanalys = __mirrorOsakerhet.styrkeanalys;
+const _osGruppMde = __mirrorOsakerhet.gruppMde;
+const _osExtremvarden = __mirrorOsakerhet.extremvarden;
+const _osTrattUnderlag = __mirrorOsakerhet.trattUnderlag;
+const _osKvantilBootstrap = __mirrorOsakerhet.kvantilBootstrap;
+const _osKonstanter = __mirrorOsakerhet.osakerhetKonstanter;
+
 // ---- speglar src/lib/lonepolitik.js ----
 const __mirrorLonepolitik = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const _median = __mirrorStat.median;
+    const _quantile = __mirrorStat.quantile;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -5762,19 +6483,6 @@ const __mirrorLonepolitik = (() => {
  * maskera.
  */
 
-function _lpMedian(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = Math.floor(s.length / 2);
-    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-// Linjär interpolation mellan närmaste rangvärden (samma definition som stat.quantile).
-function _lpQuantile(sorted, q) {
-    const pos = (sorted.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
-}
 
 /**
  * Organisationens faktiska lönespann i en grupp (P10, median, P90) — jämförs med
@@ -5784,7 +6492,7 @@ function _lpQuantile(sorted, q) {
 function organisationsBand(rows, k) {
     const lons = (rows || []).map(r => r.lon).filter(v => v > 0).sort((a, b) => a - b);
     if (lons.length < k) return null;
-    return { n: lons.length, p10: _lpQuantile(lons, 0.1), med: _lpMedian(lons), p90: _lpQuantile(lons, 0.9) };
+    return { n: lons.length, p10: _quantile(lons, 0.1), med: _median(lons), p90: _quantile(lons, 0.9) };
 }
 
 function _lpIsKvinna(r) {
@@ -5826,7 +6534,7 @@ function groupBandStats(rows, pol) {
     if (!Array.isArray(rows) || !rows.length || !pol) return null;
     const lons = rows.map(r => r.lon).filter(v => v > 0);
     if (!lons.length) return null;
-    const median = _lpMedian(lons);
+    const median = _median(lons);
     return {
         n: lons.length,
         median,
@@ -5945,6 +6653,8 @@ const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const kostnadsfaktor = __mirrorKostnad.kostnadsfaktor;
+    const kostnadPerAr = __mirrorKostnad.kostnadPerAr;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5952,7 +6662,7 @@ const __mirrorPrioritering = (() => {
  * Öppen lönekartläggning — Prioriteringsanalys (ren modell)
  *
  * Grupperar raderna per yrke × BAS, beräknar median, könsmedianer (med k-regeln, ADR-12),
- * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod),
+ * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod, formeln i kostnad.js),
  * status mot trösklar, snabbvinst, bristyrke och det sammanvägda prioriteringsindexet.
  *
  * Modellen tar allt den behöver som parametrar och läser inget globalt tillstånd.
@@ -5963,18 +6673,32 @@ const __mirrorPrioritering = (() => {
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
 
-/**
- * Ett månadsbelopp per person som belopp per år för `antal` personer, med beräkningsperiod och PO-påslag ur
- * kostnadsinställningarna: |belopp| × månader × (1 + PO) × antal. Prioriteringens åtgärdskostnad och
- * gruppdossierns räkneexempel räknar med samma formel.
- * @param {number} kronorPerManad
- * @param {number} antal
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
- */
-function kostnadPerAr(kronorPerManad, antal, costSettings) {
-    const months = (costSettings && costSettings.months) || 12;
-    const poFactor = 1 + ((costSettings && costSettings.poPct) || 0) / 100;
-    return Math.abs(kronorPerManad) * months * poFactor * antal;
+
+// Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
+// Bevisrutan i appen hämtar dem genom prioKonstanter(), så förklaringarna och poängen visar samma tal.
+/** Avvikelsen i procent som ger full avvikelsepoäng (sev): över detta tas poängen upp till 100. */
+const AVVIKELSE_TAK = 30;
+/** Antalet personer i gruppen som ger full volympoäng (vol). */
+const VOLYM_TAK = 50;
+/** Löneskillnaden mellan kvinnor och män i procent som ger full poäng för skillnaden (gap). */
+const GAP_TAK = 15;
+/** Riktningsvikten för en grupp under referensen (full vikt). */
+const RIKTNING_UNDER = 1.0;
+/** Riktningsvikten för en grupp över referensen (halv vikt). */
+const RIKTNING_OVER = 0.5;
+/** Bonusmultiplikatorn för en grupp som markerats som bristyrke. */
+const BRIST_MULTIPLIKATOR = 1.2;
+/** Snabb vinst: kostnaden per person och månad ska vara under detta belopp i kronor. */
+const SNABB_VINST_KR = 1500;
+/** Snabb vinst: avvikelsen från referensen ska vara större än detta i procent. */
+const SNABB_VINST_AVVIKELSE = 3;
+/** Snabb vinst: gruppen ska ha minst detta antal personer (en nedre gräns, ingen övre). */
+const SNABB_VINST_MIN_N = 5;
+
+/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+function prioKonstanter() {
+    return Object.freeze({ AVVIKELSE_TAK, VOLYM_TAK, GAP_TAK, RIKTNING_UNDER, RIKTNING_OVER, BRIST_MULTIPLIKATOR,
+        SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });
 }
 
 /**
@@ -5991,7 +6715,7 @@ function arsbeloppMening(g, costSettings, kr) {
     if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
     const diff = Math.round((g.medMa - g.medKv) / 100) * 100;
     if (diff < 100) return null;
-    const months = (costSettings && costSettings.months) || 12, po = (costSettings && costSettings.poPct) || 0;
+    const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${String(po).replace('.', ',')} %). Det är ett räkneexempel, `
@@ -6002,6 +6726,8 @@ function arsbeloppMening(g, costSettings, kr) {
  * Prioriteringsindexet för en grupp: riktningsvikt × (avvikelse·vikt + volym·vikt + jämställdhet·vikt),
  * multiplicerat med bristmultiplikatorn. Vikterna normaliseras till summan 100 %.
  * Skala 0–100 (före bristmultiplikatorn).
+ *
+ * Delpoängen (sev, vol, gap) och multiplikatorerna står på varje post som prioriteringen returnerar.
  *
  * @param {{sevScore:number, volScore:number, gapScore:number, riktningsvikt:number,
  *          bristMultiplier:number, vikter:{avvikelse:number, volym:number, jamstalldhet:number}}} delar
@@ -6056,7 +6782,8 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
         // ADR-12: könsjämförelsen kräver kTroskel personer av vartdera könet; annars bara gruppens samlade median.
         const medKv    = kvLons.length >= kTroskel ? median(kvLons) : null;
         const medMa    = maLons.length >= kTroskel ? median(maLons) : null;
-        const gapPct   = (medKv && medMa) ? (medKv/medMa - 1) * 100 : null;
+        // Skillnaden gånger 100 delat med jämförelsevärdet: en enda avrundning (se diffPct nedan).
+        const gapPct   = (medKv && medMa) ? (medKv - medMa) * 100 / medMa : null;
 
         // Referensvärde (levereras av anroparen)
         const ref = referensFor(g.aid, g.bas);
@@ -6064,8 +6791,12 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
         const refSource = ref ? ref.kalla : null;
         if (!refMedian) return; // ingen referens för denna grupp – hoppa över
 
-        const diffPct = ((med / refMedian) - 1) * 100;
         const diffKr  = med - refMedian;
+        // För löner i hela kronor (en median kan bli en halv krona) är kronskillnaden gånger 100 exakt, så divisionen
+        // är den enda avrundningen och en avvikelse som är exakt en procentsats blir exakt den: 38 000 mot 40 000 ger
+        // −5, inte −5,000000000000004 som (38 000 / 40 000 − 1) × 100. Då behövs ingen tolerans mot trösklarna
+        // nedan: en grupp exakt på gränsen hamnar aldrig bortom den (prövas i tests/prioritering.test.js).
+        const diffPct = diffKr * 100 / refMedian;
         // Beräkningsperiod + PO-påslag (sociala avgifter + pensioner)
         // Total kostnad för att lyfta gruppen TILL referensen (endast om under), inklusive PO
         const annualGapTotal = diffKr < 0 ? kostnadPerAr(diffKr, g.rows.length, costSettings) : 0;
@@ -6073,21 +6804,22 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
         const annualOverTotal = diffKr > 0 ? kostnadPerAr(diffKr, g.rows.length, costSettings) : 0;
 
         // Prioriteringsindex med konfigurerbara viktningar
-        const sevScore  = Math.min(30, Math.abs(diffPct)) / 30 * 100;
-        const volScore  = Math.min(50, g.rows.length) / 50 * 100;
-        const gapScore  = gapPct !== null ? Math.min(15, Math.abs(gapPct)) / 15 * 100 : 0;
-        const directionWeight = diffPct < 0 ? 1.0 : 0.5;
-        // E: Bristyrke ger en bonus-multiplikator (1.2x) i prioriteringen
+        const sevScore  = Math.min(AVVIKELSE_TAK, Math.abs(diffPct)) / AVVIKELSE_TAK * 100;
+        const volScore  = Math.min(VOLYM_TAK, g.rows.length) / VOLYM_TAK * 100;
+        const gapScore  = gapPct !== null ? Math.min(GAP_TAK, Math.abs(gapPct)) / GAP_TAK * 100 : 0;
+        const riktningsvikt = diffPct < 0 ? RIKTNING_UNDER : RIKTNING_OVER;
+        // E: Bristyrke ger en bonus-multiplikator i prioriteringen
         const isBrist = bristAids && bristAids.has(g.aid);
-        const bristMultiplier = isBrist ? 1.2 : 1.0;
+        const bristMultiplier = isBrist ? BRIST_MULTIPLIKATOR : 1.0;
         const priorityIndex = prioIndex({
-            sevScore, volScore, gapScore, riktningsvikt: directionWeight,
+            sevScore, volScore, gapScore, riktningsvikt,
             bristMultiplier, vikter: prioWeights
         });
         // C: Genomsnittlig revision per anställd (kr/månad) — för snabbavläsning
         const costPerPerson = diffKr < 0 ? Math.abs(diffKr) : 0;
         // B: "Snabb vinst"-flagga — liten kostnad/person men signifikant procentuellt lyft
-        const isQuickWin = costPerPerson > 0 && costPerPerson < 1500 && Math.abs(diffPct) > 3 && g.rows.length >= 5;
+        const isQuickWin = costPerPerson > 0 && costPerPerson < SNABB_VINST_KR && Math.abs(diffPct) > SNABB_VINST_AVVIKELSE
+            && g.rows.length >= SNABB_VINST_MIN_N;
 
         // Status-kategori (med konfigurerbara tröskelvärden)
         const cfg = prioConfig;
@@ -6104,6 +6836,7 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
             diffPct, diffKr, annualGapTotal, annualOverTotal,
             costPerPerson, isQuickWin, isBrist,
             gapPct, medKv, medMa,
+            sevScore, volScore, gapScore, riktningsvikt, bristMultiplier,
             priorityIndex,
             status,
             // #13 Behåll referens till rader för motivation-suggestion-engine.
@@ -6116,10 +6849,11 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
     return items;
 }
 
-    return { prioritera, arsbeloppMening };
+    return { prioritera, arsbeloppMening, prioKonstanter };
 })();
 const _prPrioritera = __mirrorPrioritering.prioritera;
 const _prArsbeloppMening = __mirrorPrioritering.arsbeloppMening;
+const _prKonstanter = __mirrorPrioritering.prioKonstanter;
 
 // ---- speglar src/lib/livscykel.js ----
 const __mirrorLivscykel = (() => {
@@ -6886,43 +7620,6 @@ function arTal(text) {
 const _utanTaggar = __mirrorHtmlText.utanTaggar;
 const _htmlTillText = __mirrorHtmlText.htmlTillText;
 const _cellArTal = __mirrorHtmlText.arTal;
-
-// ---- speglar src/lib/namn.js ----
-const __mirrorNamn = (() => {
-    // importer ur tidigare speglade lib-moduler
-    const genitiv = __mirrorTermer.genitiv;
-
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — namnformer för organisationen och jämförelsestatistiken
- * (ADR-36), och ordformen för ett antal personer.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- */
-
-const MAX = 100;
-
-/** Genitiv: namnet + "s", utom när det slutar på s, x eller z (regeln i termer.js). */
-function namnGenitiv(namn) {
-    return genitiv(String(namn ?? '').trim());
-}
-
-/** Trimmar, slår ihop blanksteg och kortar till högst 100 tecken. */
-function normaliseraNamn(text) {
-    return String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX);
-}
-
-/** "person" när antalet är 1, annars "personer": `${k} ${personOrd(k)}` ger "minst 1 person". */
-function personOrd(n) {
-    return Number(n) === 1 ? 'person' : 'personer';
-}
-
-    return { namnGenitiv, normaliseraNamn, personOrd };
-})();
-const _namnGenitiv = __mirrorNamn.namnGenitiv;
-const _namnNormalisera = __mirrorNamn.normaliseraNamn;
-const personOrd = __mirrorNamn.personOrd;
 
 // ---- speglar src/lib/skr-personal.js ----
 const __mirrorSkrPersonal = (() => {
@@ -7692,7 +8389,7 @@ const __mirrorGapuppdelning = (() => {
  * fördelningsdel, och inget under den räknas (ΔW = 0). Centreringen (− W̄_c) ändrar inga summor
  * eftersom Σ Δs = 0, men gör varje grupps post tolkbar.
  * Grupper där ett kön har 1 till k − 1 personer räknas samman med andra grupper under samma cell innan delarna räknas
- * (ADR-84, `sammanslagning` i undertryckning.js), och den sammanslagna gruppen namnges inte; se _beraknaPoster.
+ * (ADR-87, `sammanslagning` i undertryckning.js), och den sammanslagna gruppen namnges inte; se _beraknaPoster.
  * AID-nivåerna (sektor, aidniva, aid) ordnas alltid grovt till fint på sina platser: en finare nivå före en grövre
  * ger annars en tom del. Ålder (åldersgrupp, ageBucket) kan bara väljas när lönefilen har ålder (ADR-64).
  *
@@ -7822,7 +8519,7 @@ function _grupper(kv, ma, nyckel) {
     return m;
 }
 
-// Grupperna under en cell, med sammanslagningen (ADR-84): en grupp där ett kön har 1 till k − 1 personer räknas samman
+// Grupperna under en cell, med sammanslagningen (ADR-87): en grupp där ett kön har 1 till k − 1 personer räknas samman
 // med andra grupper under samma cell (`sammanslagning` i undertryckning.js), så att varje grupp som delarna och posterna
 // bygger på har 0 eller minst k kvinnor och 0 eller minst k män. Den sammanslagna gruppen står sist och namnges inte.
 // Utan små grupper är ordningen densamma som i _grupper, så att talen blir bitlika med dem före regeln.
@@ -7854,7 +8551,7 @@ function _cell(g, totKv, totMa) {
 // läggs i samma ordning och räknas med samma operationer som före ADR-65 (djupet först, vikten ω multipliceras från
 // vänster), så att standardvalet utan små grupper ger bitlika tal.
 //
-// Skyddet (ADR-84, `docs/utveckling/k-troskeln.md` avsnitt 2): allt som skrivs ut — medellönerna, delarna och posterna —
+// Skyddet (ADR-87, `docs/utveckling/k-troskeln.md` avsnitt 2): allt som skrivs ut — medellönerna, delarna och posterna —
 // är en linjär funktion av medellönen per kön i grupperna efter sammanslagningen, med antalen som vikter. Varje sådan
 // grupp har 0 eller minst k av varje kön, och alla i en grupp har samma vikt. Det som går att räkna fram ur det som
 // skrivs ut, också med antalen, är därför ett medel för minst k personer av ett kön eller en vägd summa av sådana medel.
@@ -7919,7 +8616,7 @@ const _variablerFor = (rader, variabler) => normaliseraGapVariabler(variabler, {
 
 /**
  * Uppdelningen: delarna (summerar exakt till skillnaden), upp till tre namngivna poster per del, största belopp först,
- * och per del hur många grupper som inte namnges (`ovrigaAntal`, räknat före sammanslagningen; ADR-84). Poster som
+ * och per del hur många grupper som inte namnges (`ovrigaAntal`, räknat före sammanslagningen; ADR-87). Poster som
  * avrundas till 0 kr namnges inte heller, men räknas inte in i `ovrigaAntal`.
  * @param {any[]} rader
  * @param {{k?:number, variabler?:any}} [opts] variabler: förklaringsvariablerna i ordning (null = standard, BAS och AID)
@@ -7946,7 +8643,7 @@ function gapUppdelning(rader, { k, variabler } = {}) {
 }
 
 /**
- * Meningen om grupperna som inte namnges i en del (kortet och rapportunderlaget, ADR-84), eller '' när alla namnges.
+ * Meningen om grupperna som inte namnges i en del (kortet och rapportunderlaget, ADR-87), eller '' när alla namnges.
  * @param {number} antal ovrigaAntal för delen
  * @param {number} k
  */
@@ -8484,7 +9181,7 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
  * Null när ett kön har färre än k personer: gapet i kronor tillsammans med gapet i procent
  * (Struktur) ger annars det lilla könets medellön — samma regel som gapuppdelning.js.
  *
- * Huvudområden där ett kön har 1 till k − 1 personer räknas samman med andra (ADR-84, `sammanslagning` i
+ * Huvudområden där ett kön har 1 till k − 1 personer räknas samman med andra (ADR-87, `sammanslagning` i
  * undertryckning.js), samma regel som del A i gapuppdelning.js: annars ger beloppet sektorKr tillsammans med kvinnornas
  * och männens medellön och antalen ett litet områdes medellön (med två huvudområden är det en ekvation med en okänd).
  * `sammanslagna` är de sammanräknade områdenas namn i tabellens ordning och `sma` de av dem där ett kön har för få.
@@ -8516,7 +9213,7 @@ function sektorernasAndel(rader, { k = 10 } = {}) {
 }
 
 /**
- * Meningen om sammanräknade huvudområden under beloppet (vyn och rapportunderlaget, ADR-84), eller '' när inget
+ * Meningen om sammanräknade huvudområden under beloppet (vyn och rapportunderlaget, ADR-87), eller '' när inget
  * räknats samman. Namnger områdena; antal och namn omfattas inte av skyddet (ADR-70).
  * @param {{sektorKr:number|null, sammanslagna?:string[], sma?:string[]}|null} a - sektorernasAndel()
  * @param {number} k
@@ -8628,6 +9325,435 @@ const _anGrupp = __mirrorAnsvar.ansvarsgrupp;
 const _anAndelGiltiga = __mirrorAnsvar.andelGiltiga;
 const _anArRubrik = __mirrorAnsvar.arAnsvarskodRubrik;
 const _anUnderrader = __mirrorAnsvar.ansvarsUnderrader;
+
+// ---- speglar src/lib/inlasning.js ----
+const __mirrorInlasning = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const _anTolka = __mirrorAnsvar.tolkaAnsvarskod;
+    const _anGrupp = __mirrorAnsvar.ansvarsgrupp;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — tolkningen av indata: talen, könet, BAS-intervallet, AID-koden i ställningstagandet,
+ * fältet för AID-etikett (yrket), kärnan i uppgiftsminimeringen (en lönerad → de vitlistade fälten), detektorn
+ * för känsliga kolumner och upptäckten av personnamn i fältet för AID-etikett.
+ *
+ * Fältet för AID-etikett maskeras inte (ADR-85): verktyget behåller koden och högst 40 tecken av etiketten, utan
+ * tecknen < > " ' &. Ser fältet ut att innehålla personnamn varnar inläsningen (yrkeNamnNyckel, sallsyntaNamnrader).
+ *
+ * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgör appen
+ * (getField och ALLOWED_FIELDS i src/app/, med kolumnmappningen, importprofilen och ansvarskolumnen), och året som ett
+ * födelseår i ålderskolumnen räknas mot skickas in. Funktionerna behåller namnen de hade i appen.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+// ---- Talen ----
+
+/**
+ * Normaliserar en talsträng med svensk/engelsk/tysk formatering till en
+ * parseFloat-bar sträng. Hanterar tusentalsavgränsare korrekt:
+ *   "32 500,50" → "32500.50"   (svensk: mellanslag-tusental, komma-decimal)
+ *   "32.500,50" → "32500.50"   (tysk/Excel: punkt-tusental, komma-decimal)
+ *   "1,234,567.89" → "1234567.89" (engelsk: komma-tusental, punkt-decimal)
+ *   "32,500" → "32500"          (ensam separator + exakt 3 siffror = tusental;
+ *                                 löner skrivs inte med tre decimaler)
+ *   "32,5" / "32.5" → "32.5"    (decimal)
+ *
+ * Att bara byta FÖRSTA kommat mot punkt och stryka övriga tecken skulle tyst
+ * göra "32.500,50" → 32.5 — tusenfalt fel som inte fångas eftersom 32,5 > 0. Regel: när både . och , förekommer är den SISTA
+ * decimaltecken; ensam separator följd av exakt 3-siffergrupper (och
+ * heltalsdel ≠ "0") tolkas som tusental.
+ *
+ * @param {*} raw - Råvärde från CSV-/Excel-cell.
+ * @returns {string} parseFloat-bar sträng ("" om inget numeriskt innehåll).
+ */
+function _normalizeNumberString(raw) {
+    let s = raw.toString().trim()
+        .replace(/[\s  ']/g, '')       // mellanslag, NBSP, smal NBSP, apostrof-tusental
+        .replace(/(kr|sek|:-)\.?$/i, '')          // valutasuffix
+        .replace(/\u2212/g, '-');                  // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
+    s = s.replace(/[^\d.,\-]/g, '');
+    const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
+    if (lastDot !== -1 && lastComma !== -1) {
+        // Båda förekommer: den sista är decimaltecknet, den andra tusental.
+        if (lastComma > lastDot) s = s.replace(/\./g, '').replace(/,/g, '.');
+        else                     s = s.replace(/,/g, '');
+    } else if (lastComma !== -1) {
+        // Endast komma: flera kommatecken = tusental; ensamt komma med exakt
+        // 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental; annars decimal.
+        if (/^-?[1-9]\d{0,2}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
+        else                                      s = s.replace(/,/g, '.');
+    } else if (lastDot !== -1) {
+        // Endast punkt: spegelvänd regel — "32.500" är tusental, "32.5" decimal.
+        if (/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+        // annars: punkt är redan decimaltecken
+    }
+    return s;
+}
+
+function parseNumber(v) {
+    if (v == null) return 0;
+    const n = parseFloat(_normalizeNumberString(v));
+    return isNaN(n) ? 0 : n;
+}
+
+/**
+ * Graderad version av parseNumber som spårar varför
+ * en parse misslyckas. Distinguerar tre fall:
+ *   - 'empty'   — null/undefined/tom sträng (legitim avsaknad)
+ *   - 'invalid' — icke-tomt värde som inte kan tolkas (t.ex. "saknas")
+ *   - 'ok'      — giltigt nummer returneras som number
+ *
+ * Anroparen kan räkna varje kategori separat och visa "icke-tom men ogiltig"-
+ * antalet i audit-panelen så användaren ser dataspecifika kvalitetsproblem
+ * som annars maskerats av tysta 0-konverteringar.
+ *
+ * @param {*} v
+ * @returns {{status:'ok'|'empty'|'invalid', value:number, raw:*}}
+ */
+function parseNumberStrict(v) {
+    if (v == null) return { status: 'empty', value: 0, raw: v };
+    const raw = v.toString();
+    if (raw.trim() === '') return { status: 'empty', value: 0, raw };
+    const n = parseFloat(_normalizeNumberString(raw));
+    if (isNaN(n)) return { status: 'invalid', value: 0, raw };
+    return { status: 'ok', value: n, raw };
+}
+
+// ---- Textfälten: AID-etiketten, BAS, AID i ställningstagandet och kön ----
+
+/**
+ * Fältet för AID-etikett (yrket) vid inläsning (GDPR Art. 25.1: bara det analysen behöver).
+ *
+ * Källsystem exporterar ofta yrket som "12345 — Sjuksköterska" eller liknande. Verktyget behåller:
+ *   - AID:      ledande siffergrupp (\d+)
+ *   - Etikett:  resten efter AID och separatorerna, med tecknen < > " ' & borttagna
+ *   - Längd:    etiketten kortas till 40 tecken (efter rensningen)
+ *
+ * Funktionen maskerar INTE namn (ADR-85): text som står i fältet behålls inom 40 tecken, och visas i tabeller och följer
+ * med i exporter. Ser fältet ut att innehålla personnamn varnar inläsningen i stället (yrkeNamnNyckel,
+ * sallsyntaNamnrader); den som tar ut filen ansvarar för att fältet bara bär kod och etikett.
+ *
+ * @param {*} raw - Rått värde från CSV-cellen.
+ * @returns {string} "AID Etikett" eller bara AID/etikett om endera saknas.
+ */
+function _cleanYrkeField(raw) {
+    if (!raw) return "";
+    const s = raw.toString().trim();
+    if (!s) return "";
+    const aidMatch = s.match(/^(\d+)/);
+    const aid = aidMatch ? aidMatch[1] : "";
+    // Etikett = resten efter AID och vanliga separatorer (—, -, :, ., whitespace)
+    let label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim();
+    // Härd mot XSS-tecken vid inläsning.
+    // Strippar HTML-meta-tecken < > " ' & så de aldrig kan smitas in i en
+    // innerHTML-template ens om en framtida renderingsplats glömmer esc().
+    // Detta är "defensive depth" — CSP + esc() + cleanYrkeField; tre lager.
+    label = label.replace(/[<>"'&]/g, '');
+    // Kortningen sist — yrkesetiketter är sällan över 40 tecken
+    if (label.length > 40) label = label.substring(0, 40).trim() + '…';
+    if (aid && label) return `${aid} ${label}`;
+    return aid || label;
+}
+
+/**
+ * Namnmönstren som upptäckten av personnamn i fältet för AID-etikett prövar med (yrkeNamnNyckel): "Förnamn
+ * Efternamn" (två ord i Versal-gemener i rad) och "Efternamn, Förnamn" (båda i versaler eller båda i Versal-gemener).
+ * Ordgränsen är en fångad föregående icke-bokstav, eftersom \b inte fungerar före Å/Ä/Ö ("Örjan Östberg") och
+ * lookbehind saknas i Safari före 16.4. Utan /g, så att test() inte bär tillstånd mellan anropen.
+ */
+const YRKE_NAMNMONSTER = Object.freeze([
+    /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/,
+    /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)(?![A-Za-zÅÄÖåäö])/,
+]);
+
+/**
+ * Om fältet för AID-etikett har ett namnmönster: texten efter AID-koden har något av mönstren i YRKE_NAMNMONSTER —
+ * två eller fler ord i Versal-gemener i rad ("Anna Andersson", "Sjuksköterska Anna Andersson", "Anna-Lisa Berg")
+ * eller "Efternamn, Förnamn" ("Andersson, Anna", "ANDERSSON, ANNA"). Prövas på råvärdet före kortningen (efter
+ * AID-koden och separatorerna, med tecknen < > " ' & borttagna), så att ett namn som kortningen klipper också räknas.
+ *
+ * Mönstret ensamt träffar också etiketter med versal på två ord ("Sjuksköterska Natt"). Därför avgör mönstret bara
+ * vilka texter som räknas; varningen gäller de som också är sällsynta i filen (sallsyntaNamnrader).
+ * @param {*} raw - Fältets råvärde.
+ * @returns {boolean}
+ */
+function yrkeLiknarNamn(raw) {
+    return yrkeNamnNyckel(raw) !== '';
+}
+
+/**
+ * Nyckeln som en text med namnmönster räknas under: etikettexten efter AID-koden i gemener, med blanksteg slagna
+ * samman till ett, så att skiftläge och extra blanksteg räknas som samma text. Tom sträng när texten saknar
+ * namnmönster (yrkeLiknarNamn). Nyckeln finns bara i inläsningens tillfälliga räknare och släpps när filen är läst.
+ * @param {*} raw - Fältets råvärde.
+ * @returns {string}
+ */
+function yrkeNamnNyckel(raw) {
+    if (raw == null) return '';
+    const s = raw.toString().trim();
+    if (!s) return '';
+    const label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+    if (!YRKE_NAMNMONSTER.some(re => re.test(label))) return '';
+    return label.toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Så många rader får en text med namnmönster stå på för att räknas som ett misstänkt namn. Ett namn står på en rad
+ * (eller ett par, om personen har två anställningar); en etikett med versal på två ord ("Sjuksköterska Natt")
+ * återkommer på många. Känd gräns: ett namn som står på tre eller fler rader upptäcks inte.
+ */
+const YRKE_NAMN_HOGST_RADER = 2;
+
+/**
+ * De misstänkta namnraderna ur inläsningens räknare: raderna vars text har namnmönster och står på högst
+ * YRKE_NAMN_HOGST_RADER rader i filen.
+ * @param {Map<string, {antal: number, radnr: Array<number|null>}>} raknare - Per yrkeNamnNyckel: antal rader och
+ *   de första radnumren (YRKE_NAMN_HOGST_RADER räcker).
+ * @param {number} [hogstRadnr] - Högst så många radnummer i svaret.
+ * @returns {{antal: number, radnr: number[]}} Antalet misstänkta rader och de första radnumren, i stigande ordning.
+ */
+function sallsyntaNamnrader(raknare, hogstRadnr = 5) {
+    let antal = 0;
+    const radnr = [];
+    for (const v of (raknare ? raknare.values() : [])) {
+        if (!(v.antal > 0) || v.antal > YRKE_NAMN_HOGST_RADER) continue;
+        antal += v.antal;
+        for (const r of v.radnr || []) if (typeof r === 'number' && isFinite(r)) radnr.push(r);
+    }
+    radnr.sort((a, b) => a - b);
+    return { antal, radnr: radnr.slice(0, Math.max(0, hogstRadnr)) };
+}
+
+/**
+ * Tar bort HTML-metatecken (< > " ' &) ur ett textfält vid inläsning. esc() vid
+ * rendering är det egentliga skyddet; detta är ett extra lager ("defensive depth")
+ * för korta koder (BAS, AID) som renderas i attribut- och option-kontext och som
+ * aldrig legitimt innehåller tecknen. Delas av lönefilen (_normalizeBas),
+ * ställningstagandet (_normalizePolicyAid) och jämförelsestatistiken.
+ */
+function _stripHtmlMeta(s) {
+    return s.toString().replace(/[<>"'&]/g, '');
+}
+
+/**
+ * Normaliserar BAS-värden: trimma, versalisera och strippa ev. "BAS"-prefix
+ * ("BAS A" → "A", "bas-2" → "2") så samma intervall inte splittras i två
+ * kategorier beroende på exportformat. Ett ensamt "BAS" lämnas orört.
+ * @param {*} raw
+ * @returns {string}
+ */
+function _normalizeBas(raw) {
+    if (!raw) return "";
+    // Strippar HTML-meta-tecken (< > " ' &) vid inläsning som extra XSS-lager:
+    // BAS renderas i attributkontext (data-bas="…", <option value="…">). esc()
+    // escapear också citattecken, men detta är samma "defensive depth" som
+    // _cleanYrkeField — BAS är legitimt korta koder (A, B, 1…) så det är ofarligt.
+    const v = _stripHtmlMeta(raw).trim().toUpperCase();
+    return v.replace(/^BAS\b[\s\-_:]*/i, '').trim() || v;
+}
+
+/**
+ * Normaliserar AID i det lönepolitiska ställningstagandet så att den matchar
+ * den AID som härleds ur lönedatans yrkesfält (`r.yrke.match(/^(\d+)/)`).
+ * Tar sifferprefixet när det finns ("207 Förskollärare" → "207"), annars den
+ * rensade strängen. Tom sträng betyder "ingen AID" (= BAS-nivårad).
+ */
+function _normalizePolicyAid(raw) {
+    if (!raw) return "";
+    const v = _stripHtmlMeta(raw).trim();
+    const m = v.match(/^(\d+)/);
+    return m ? m[1] : v;
+}
+
+/**
+ * Normaliserar kön-värden från olika personalsystem till verktygets kanoniska
+ * 'kvinna'/'man'. Hanterar förkortningar (K/Kv/M), engelska exportvärden
+ * (F/Female/M/Male, W/Woman) och plural ("Kvinnor"/"Män").
+ *
+ * Åäö bevaras innan värdet slås upp, så att "Män" mappas till 'man' (en
+ * normalisering som stryker alla icke-[a-z]-tecken skulle göra det till "mn").
+ *
+ * Siffervärden (t.ex. "1"/"2") mappas medvetet INTE — kodningen är system-
+ * specifik och en gissning vore farligare än att visa raderna som "okänt kön"
+ * i inläsningsrapporten (exempelvärdena visas där).
+ *
+ * @param {*} raw - Råvärde från kön-kolumnen.
+ * @returns {string} 'kvinna' | 'man' | normaliserad reststräng (okänd).
+ */
+function _normalizeKon(raw) {
+    if (!raw) return "";
+    const s = raw.toString().toLowerCase().replace(/[^a-zåäö]/g, '');
+    const MAP = {
+        k: 'kvinna', kv: 'kvinna', kvinna: 'kvinna', kvinnor: 'kvinna',
+        f: 'kvinna', female: 'kvinna', w: 'kvinna', woman: 'kvinna',
+        m: 'man', ma: 'man', man: 'man', 'män': 'man', male: 'man'
+    };
+    return MAP[s] || s;
+}
+
+// ---- En lönerad ----
+
+/**
+ * Kärnan i uppgiftsminimeringen (GDPR Art. 5(1)(c)): de vitlistade fälten ur en lönerad, tolkade och normaliserade.
+ * Appen slår upp råvärdena i raden (extractMinimalRecord i src/app/06-uppgiftsminimering.js, med getField och
+ * ALLOWED_FIELDS) och skickar in dem här; inga andra kolumner når hit.
+ * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, utan tecknen < > " ' &; ingen namnmaskering, ADR-85).
+ * Ger { bas, yrke, aid, yrkeLabel, lon, alder, kon, poang, ansvarskoder, ansvarsgrupp, _lonStatus, _alderStatus }.
+ * @param {{bas:*, kon:*, lon:*, alder:*, poang:*, yrke:*, ansvar?:*}} falt - Råvärdet per roll ur raden.
+ * @param {number} referensar - Året som ett födelseår i ålderskolumnen räknas mot (appen skickar innevarande år).
+ * @param {boolean} [medAnsvar] - Om en godkänd kolumn för AID:s ansvarskod finns; falt.ansvar är radens värde i den.
+ */
+function tolkaLonerad(falt, referensar, medAnsvar = false) {
+    const basRaw    = falt.bas;
+    const konRaw    = falt.kon;
+    // Använd parseNumberStrict så vi kan särskilja
+    // legit-tomma fält från icke-tomma men ogiltiga värden.
+    const lonParsed   = parseNumberStrict(falt.lon);
+    const alderParsed = parseNumberStrict(falt.alder);
+    // Valfri arbetsvärderingspoäng (per befattning) — null när kolumn saknas/tom.
+    const poangParsed = parseNumberStrict(falt.poang);
+    const yrkeFull    = _cleanYrkeField(falt.yrke);
+    // AID och etikett hålls isär. `r.yrke` är "AID Etikett"-strängen (den som vyerna visar);
+    // `r.aid` och `r.yrkeLabel` ger ren AID-kod respektive enbart etikett-delen
+    // för analyser som behöver något entydigt nyckel (t.ex. § 3:10-paret).
+    const aidMatch = yrkeFull.match(/^(\d+)/);
+    const aid      = aidMatch ? aidMatch[1] : "";
+    const yrkeLabel = aid ? yrkeFull.replace(/^\d+\s*/, '').trim() : yrkeFull;
+    // Ålderskolumnen innehåller ibland FÖDELSEÅR (1900–<referensår−15>) i stället för
+    // ålder — ett värde ≥ 1900 är omöjligt som ålder, så omtolkningen är säker.
+    // Statusen 'birthyear' räknas i inläsningsrapporten (transparens).
+    let alderVal = alderParsed.value;
+    /** @type {string} */ let alderStatus = alderParsed.status;
+    if (alderStatus === 'ok' && alderVal >= 1900 && alderVal <= referensar - 15) {
+        alderVal = referensar - alderVal;
+        alderStatus = 'birthyear';
+    }
+    return {
+        bas:       _normalizeBas(basRaw),
+        yrke:      yrkeFull,
+        aid,
+        yrkeLabel,
+        lon:       lonParsed.value,
+        alder:     alderVal,
+        kon:       _normalizeKon(konRaw),
+        poang:     poangParsed.status === 'ok' ? poangParsed.value : null,
+        // AID:s ansvarskod (valfri): koderna för kodkontrollen, ansvarsgruppen för analyserna.
+        // Ett ogiltigt enskilt värde i en godkänd kolumn räknas som "inget särskilt ansvar".
+        ansvarskoder: medAnsvar ? (_anTolka(falt.ansvar) ?? []) : null,
+        ansvarsgrupp: medAnsvar ? _anGrupp(_anTolka(falt.ansvar) ?? []) : null,
+        // Spårning av parse-status — används av uppladdarens
+        // räknare för att kunna visa "X icke-tomma fält var ogiltiga".
+        // Tas bort från record innan det landar i appens state.data (32-filinlasning.js).
+        _lonStatus:   lonParsed.status,
+        _alderStatus: alderStatus
+    };
+}
+
+/**
+ * Steget mellan raderna som PII-kontrollen samplar i en fil med n rader: ⌈n/50⌉ (minst 1), så att högst 50 rader
+ * sprids jämnt över filen (B4). Delas av detectSensitiveColumns och den strömmande CSV-inläsningen.
+ * @param {number} n
+ */
+function _pnrSampelSteg(n) {
+    return Math.max(1, Math.ceil(n / 50));
+}
+
+/**
+ * PNR-detektor: identifierar kolumner som innehåller personnummer, e-post eller namn.
+ * Kombinerar headerbaserad upptäckt (rubrikens namn) med värdebaserad upptäckt
+ * (samplar 50 rader jämnt över filen, var ⌈n/50⌉:e rad, och matchar mot regex). Trösklar är konservativa för att
+ * minimera falska positiv på godtyckliga sifferserier (t.ex. anställningsnummer). Den strömmande CSV-inläsningen
+ * samlar själv var ⌈n/50⌉:e rad (_pnrSampelSteg) och lämnar högst 50 rader hit.
+ * @param {Array<Object>} rows - Råa CSV-rader.
+ * @returns {Array<{col:string, reason:string}>} Tom array om inga känsliga kolumner.
+ */
+function detectSensitiveColumns(rows) {
+    if (!rows || !rows.length) return [];
+    // Jämnt över filen (B4): personnummer eller namn som bara finns längre ned ska också hittas.
+    const steg = _pnrSampelSteg(rows.length);
+    const sample = rows.filter((_, i) => i % steg === 0);
+    const cols = Object.keys(rows[0] || {});
+    // Strikt PNR-mönster: kräver giltig månad (01-12) och dag (01-31) för att undvika
+    // falska träffar på godtyckliga sifferserier som anställningsnummer.
+    const PNR  = /^(?:19|20)?\d{2}[-/]?[01]\d[-/]?[0-3]\d[-+]?\d{4}$/;
+    // Personnamn (B4): två till fyra ord, med eller utan efternamnet först följt av komma — "Anna Andersson",
+    // "Anna-Lisa Berg", "ANDERSSON, ANNA", "anna andersson". Alla ord har samma form (Versal-gemener, VERSALER eller
+    // gemener), så att befattningar som "Lärare grundskola" (stor bokstav bara först) inte räknas som namn.
+    const ORD = /^\p{L}{2,}(?:-\p{L}{2,})?$/u;
+    /** @param {string} w */
+    const form = w => (/^\p{Lu}\p{Ll}+(?:-\p{Lu}\p{Ll}+)?$/u.test(w) ? 'T' : w === w.toUpperCase() ? 'U' : w === w.toLowerCase() ? 'L' : '');
+    /** @param {string} v */
+    const liknarNamn = v => {
+        const delar = v.split(',');
+        if (delar.length > 2 || delar.some(d => !d.trim())) return false;
+        const ord = delar.flatMap(d => d.trim().split(/[ ]+/));
+        if (ord.length < 2 || ord.length > 4 || !ord.every(w => ORD.test(w))) return false;
+        const f = form(ord[0]);
+        return f !== '' && ord.every(w => form(w) === f);
+    };
+
+    const issues = [];
+    cols.forEach(col => {
+        // Rubriken normaliseras: gemener, å/ä→a och ö→o, övriga tecken bort — så att
+        // "Förnamn", "Fornamn" och "FÖRNAMN" alla matchar mönstren nedan.
+        const lcCol = col.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]/g, '');
+        // Header-baserad upptäckt
+        if (/personnummer|personnr|^pnr$|socialsecurity|ssn/.test(lcCol)) {
+            issues.push({ col, reason: 'Kolumnrubriken antyder personnummer' });
+            return;
+        }
+        if (/^epost$|^email$|^mail$|epostadress|emailaddress/.test(lcCol)) {
+            issues.push({ col, reason: 'Kolumnrubriken antyder e-postadress' });
+            return;
+        }
+        if (/^namn$|fornamn|efternamn|fullname|^name$/.test(lcCol)) {
+            issues.push({ col, reason: 'Kolumnrubriken antyder personnamn' });
+            return;
+        }
+        // Särskilda kategorier av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk
+        // åskådning, sexualliv, genetik, biometri): hör inte hemma i underlaget och ska inte ens passera
+        // minnet. Bara rubriken prövas; värdena saknar igenkännbart format. Mönstren är valda så att
+        // vanliga rubriker går fria: "sjuk" kräver frånvaro/skrivning/dom (inte Sjukhus), "politisk" inte
+        // Lönepolitik, "religion" som eget ord (inte Religionskunskap), "fack" följt av medlem/lig/forbund/foren
+        // (inte Fackområde).
+        if (/fack(medlem|lig|forbund|foren)|^medlemskap|halsa|halsotillstand|sjuk(franvaro|skriv|dom)|diagnos|etni(sk|citet)|^religion$|trosuppfattning|politisk|sexuel|funktionsned|genetisk|biometri/.test(lcCol)) {
+            issues.push({ col, reason: 'Kolumnrubriken antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet eller liknande)' });
+            return;
+        }
+        // Värdebaserad upptäckt (samplar 50 rader)
+        let pnrCount = 0, emailCount = 0, nameCount = 0;
+        sample.forEach(r => {
+            const v = (r[col] ?? '').toString().trim();
+            if (!v) return;
+            if (PNR.test(v)) pnrCount++;
+            else if (v.includes('@') && /\.[a-z]{2,}$/i.test(v)) emailCount++;
+            else if (liknarNamn(v)) nameCount++;
+        });
+        if (pnrCount >= 3)        issues.push({ col, reason: `Innehåller värden i personnummer-format (${pnrCount} av ${sample.length} sampelvärden matchar)` });
+        else if (emailCount >= 3) issues.push({ col, reason: `Innehåller e-postadresser (${emailCount} av ${sample.length} sampelvärden)` });
+        else if (nameCount >= 5)  issues.push({ col, reason: `Innehåller troligtvis personnamn (${nameCount} av ${sample.length} sampelvärden)` });
+    });
+    return issues;
+}
+
+    return { _normalizeNumberString, parseNumber, parseNumberStrict, _cleanYrkeField, _stripHtmlMeta, _normalizeBas, _normalizePolicyAid, _normalizeKon, tolkaLonerad, _pnrSampelSteg, detectSensitiveColumns, yrkeNamnNyckel, sallsyntaNamnrader };
+})();
+const _normalizeNumberString = __mirrorInlasning._normalizeNumberString;
+const parseNumber = __mirrorInlasning.parseNumber;
+const parseNumberStrict = __mirrorInlasning.parseNumberStrict;
+const _cleanYrkeField = __mirrorInlasning._cleanYrkeField;
+const _stripHtmlMeta = __mirrorInlasning._stripHtmlMeta;
+const _normalizeBas = __mirrorInlasning._normalizeBas;
+const _normalizePolicyAid = __mirrorInlasning._normalizePolicyAid;
+const _normalizeKon = __mirrorInlasning._normalizeKon;
+const _ilTolkaLonerad = __mirrorInlasning.tolkaLonerad;
+const _pnrSampelSteg = __mirrorInlasning._pnrSampelSteg;
+const detectSensitiveColumns = __mirrorInlasning.detectSensitiveColumns;
+const _ilYrkeNamnNyckel = __mirrorInlasning.yrkeNamnNyckel;
+const _ilSallsyntaNamnrader = __mirrorInlasning.sallsyntaNamnrader;
 
 // ---- speglar src/lib/aidkontroll.js ----
 const __mirrorAidkontroll = (() => {
@@ -9433,12 +10559,12 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 : `Uppdelningen förklarar med variablerna ${gapVariablerIText(variabler)}, i den ordningen. Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.`);
         }
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
-        // Grupper där ett kön är under tröskeln räknas samman innan delarna räknas och namnges inte (ADR-84).
+        // Grupper där ett kön är under tröskeln räknas samman innan delarna räknas och namnges inte (ADR-87).
         const ovriga = d => (u.ovrigaAntal && u.ovrigaAntal[d]) || 0;
         if (delar.some(d => ovriga(d.id))) st.push(`Grupper där ett kön har färre än ${k} ${personOrd(k)} räknas samman med andra grupper innan delarna räknas, och de namnges inte. `
             + `Annars skulle medellönen för färre än ${k} kvinnor eller män gå att räkna fram ur beloppen.`);
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
-        // Samma poster som kortet: gapuppdelning.js namnger bara grupper som inte räknats samman (ADR-84).
+        // Samma poster som kortet: gapuppdelning.js namnger bara grupper som inte räknats samman (ADR-87).
         const storst = d => [...u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`), ...(ovriga(d) ? [`${_st(ovriga(d), 'grupp', 'grupper')} namnges inte`] : [])].join('; ') || '—';
         return blk(R, st, { rubriker: ['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag'], rader: [
             ...delar.map(d => [d.namn, _kr(u.delar[d.id]), andel(u.delar[d.id]), storst(d.id)]),
@@ -9508,7 +10634,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const justText = sektorJusteradText(alla);
         const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${justText.justeradFor}.`];
         const a = u.andel;
-        const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-84)
+        const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-87)
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
             ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
             : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
@@ -11077,8 +12203,9 @@ const __mirrorForhandskontroll = (() => {
  * värdefördelningen och varningarna. Ingen tolkning görs om här — modulen beskriver bara den som redan gjorts.
  *
  * Dataskydd: tolkningen bär högst tio rader med fem till sju fält, och yrkets råvärde följer aldrig med (yrket
- * visas som verktyget sparar det, med namnmaskeringen). Varningarnas texter bär inga löner eller åldrar ur filen,
- * eftersom de också står i Att göra, vars punkter kan exporteras.
+ * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
+ * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
+ * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -11098,6 +12225,8 @@ const FK_ALDER_MIN = 16;
 const FK_ALDER_MAX = 75;
 /** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
 const FK_SMA_GRUPP = 10;
+/** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
+const FK_NAMN_RADNR = 5;
 /** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
 const MAX_RA = 24;
 const VANLIG_BAS = /^[A-N]$/;
@@ -11109,7 +12238,8 @@ const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', i
 /** Gränsvärdena, för gränssnittets texter. */
 function forhandskontrollGranser() {
     return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
-        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP };
+        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
+        namnRadnr: FK_NAMN_RADNR };
 }
 
 const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
@@ -11126,6 +12256,23 @@ function _fkMedian(sorterade) {
 }
 const _fkRader = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
 const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
+/** "12", "12 och 40", "12, 40 och 51". */
+const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
+
+/**
+ * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
+ * varningar, i Att göra och i inläsningsrapporten. Texten bär antalet rader och radnumren, aldrig fältets innehåll.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0.
+ */
+function namnIYrkesfaltetText(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    const vilka = nr.length ? ` (${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)})` : '';
+    return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
+        + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
+}
 
 /**
  * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
@@ -11234,6 +12381,8 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     // Varningarna. Texterna bär inga löner eller åldrar ur filen (de kan följa med Att göra ut ur verktyget).
     const varningar = [];
     const varna = (kod, niva, text) => varningar.push({ kod, niva, text });
+    // Först: namn i uttaget är en fråga om dataskydd, inte om tolkningen. Bara antal och radnummer (parseStats).
+    if ((ps.yrkeNamn || 0) > 0) varna('yrke-namn', 'varning', namnIYrkesfaltetText(ps.yrkeNamn, ps.yrkeNamnRadnr));
     if (lon && lon.median > FK_ARSLON_MEDIAN) {
         varna('lon-arslon', 'fel', `Medianlönen är över ${_fkTal(FK_ARSLON_MEDIAN)} kr och ser ut som en årslön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
     } else if (lon && lon.median < FK_TIMLON_MEDIAN) {
@@ -11284,10 +12433,11 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     return { tolkning, sammandrag, fordelning, varningar, kolumner };
 }
 
-    return { byggForhandskontroll, forhandskontrollGranser };
+    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText };
 })();
 const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
 const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
+const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
 
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
@@ -17259,111 +18409,20 @@ const Stat = {
     }
 };
 
-/**
- * Normaliserar en talsträng med svensk/engelsk/tysk formatering till en
- * parseFloat-bar sträng. Hanterar tusentalsavgränsare korrekt:
- *   "32 500,50" → "32500.50"   (svensk: mellanslag-tusental, komma-decimal)
- *   "32.500,50" → "32500.50"   (tysk/Excel: punkt-tusental, komma-decimal)
- *   "1,234,567.89" → "1234567.89" (engelsk: komma-tusental, punkt-decimal)
- *   "32,500" → "32500"          (ensam separator + exakt 3 siffror = tusental;
- *                                 löner skrivs inte med tre decimaler)
- *   "32,5" / "32.5" → "32.5"    (decimal)
- *
- * Att bara byta FÖRSTA kommat mot punkt och stryka övriga tecken skulle tyst
- * göra "32.500,50" → 32.5 — tusenfalt fel som inte fångas eftersom 32,5 > 0. Regel: när både . och , förekommer är den SISTA
- * decimaltecken; ensam separator följd av exakt 3-siffergrupper (och
- * heltalsdel ≠ "0") tolkas som tusental.
- *
- * @param {*} raw - Råvärde från CSV-/Excel-cell.
- * @returns {string} parseFloat-bar sträng ("" om inget numeriskt innehåll).
- */
-function _normalizeNumberString(raw) {
-    let s = raw.toString().trim()
-        .replace(/[\s  ']/g, '')       // mellanslag, NBSP, smal NBSP, apostrof-tusental
-        .replace(/(kr|sek|:-)\.?$/i, '')          // valutasuffix
-        .replace(/\u2212/g, '-');                  // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
-    s = s.replace(/[^\d.,\-]/g, '');
-    const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
-    if (lastDot !== -1 && lastComma !== -1) {
-        // Båda förekommer: den sista är decimaltecknet, den andra tusental.
-        if (lastComma > lastDot) s = s.replace(/\./g, '').replace(/,/g, '.');
-        else                     s = s.replace(/,/g, '');
-    } else if (lastComma !== -1) {
-        // Endast komma: flera kommatecken = tusental; ensamt komma med exakt
-        // 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental; annars decimal.
-        if (/^-?[1-9]\d{0,2}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
-        else                                      s = s.replace(/,/g, '.');
-    } else if (lastDot !== -1) {
-        // Endast punkt: spegelvänd regel — "32.500" är tusental, "32.5" decimal.
-        if (/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
-        // annars: punkt är redan decimaltecken
-    }
-    return s;
-}
-
-function parseNumber(v) {
-    if (v == null) return 0;
-    const n = parseFloat(_normalizeNumberString(v));
-    return isNaN(n) ? 0 : n;
-}
+// Talen i indata (_normalizeNumberString, parseNumber, parseNumberStrict) tolkas i src/lib/inlasning.js och nås här
+// genom spegeln under samma namn.
 
 /**
- * Graderad version av parseNumber som spårar varför
- * en parse misslyckas. Distinguerar tre fall:
- *   - 'empty'   — null/undefined/tom sträng (legitim avsaknad)
- *   - 'invalid' — icke-tomt värde som inte kan tolkas (t.ex. "saknas")
- *   - 'ok'      — giltigt nummer returneras som number
- *
- * Anroparen kan räkna varje kategori separat och visa "icke-tom men ogiltig"-
- * antalet i audit-panelen så användaren ser dataspecifika kvalitetsproblem
- * som annars maskerats av tysta 0-konverteringar.
- *
- * @param {*} v
- * @returns {{status:'ok'|'empty'|'invalid', value:number, raw:*}}
- */
-function parseNumberStrict(v) {
-    if (v == null) return { status: 'empty', value: 0, raw: v };
-    const raw = v.toString();
-    if (raw.trim() === '') return { status: 'empty', value: 0, raw };
-    const n = parseFloat(_normalizeNumberString(raw));
-    if (isNaN(n)) return { status: 'invalid', value: 0, raw };
-    return { status: 'ok', value: n, raw };
-}
-
-/**
- * Beräknar 95% konfidensband för en enkel linjär regressionslinje.
- * SE av MEDELPREDIKTION vid x: σ × √(1/n + (x−x̄)²/Σ(xi−x̄)²)
- * där σ² = RSS/(n−2). Returnerar punkter med {x, y, lo, hi} jämnt
- * spridda över [minX, maxX].
- *
+ * 95-procentigt konfidensband för en enkel linjär regressionslinje (regressionslinjensBand i src/lib/osakerhet.js):
+ * punkter {x, y, lo, hi} jämnt spridda över [minX, maxX].
  * @param {Array<[number,number]>} data - [x,y]-par
  * @param {number} minX
  * @param {number} maxX
  * @param {number} [steps=30] - antal punkter att returnera
  * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>}
  */
-function linearRegressionCI(data, minX, maxX, steps = 30) {
-    const n = data.length;
-    if (n < 3) return null;
-    const reg = Stat.linearRegression(data);
-    const meanX = data.reduce((s, p) => s + p[0], 0) / n;
-    let ssX = 0, rss = 0;
-    for (let i = 0; i < n; i++) {
-        ssX += (data[i][0] - meanX) ** 2;
-        const yhat = reg.m * data[i][0] + reg.b;
-        rss += (data[i][1] - yhat) ** 2;
-    }
-    if (ssX <= 0) return null;
-    const sigma2 = rss / Math.max(1, n - 2);
-    const Z = 1.96;
-    const out = [];
-    for (let i = 0; i < steps; i++) {
-        const x = minX + (maxX - minX) * (i / (steps - 1));
-        const y = reg.m * x + reg.b;
-        const se = Math.sqrt(Math.max(0, sigma2 * (1 / n + (x - meanX) ** 2 / ssX)));
-        out.push({ x, y, lo: y - Z * se, hi: y + Z * se });
-    }
-    return out;
+function linearRegressionCI(data, minX, maxX, steps) {
+    return _osRegressionslinjensBand(data, minX, maxX, steps);
 }
 
 // ---- Aktivera sortering, kollaps & export på alla huvudtabeller (en gång) ----
@@ -17655,47 +18714,15 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
 
 // ---- #10 Bootstrap-CI för mediankvoten kvinnor/män ----
 /**
- * Beräknar 95%-konfidensintervall för median-ratio (kvinnor / män)
- * via percentil-bootstrap. Cachas i state.bootstrapCI så det inte räknas om
- * vid varje rendering.
- *
- * Metod: dra B = 600 sampel med återläggning från vardera könsgrupp,
- * beräkna mediankvot per sampel, ta percentil [2.5, 97.5] för CI.
- *
- * För N > 5000: vi sampar enbart en delmängd om N kvar > 2000 per grupp
- * eftersom medianskattningen redan är extremt stabil — hindrar att
- * en stor organisation blockerar UI-tråden i hundratals ms.
+ * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
+ * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
+ * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
+ * procent har direktivets tecken, positiv när kvinnor ligger lägre (gapPctDirektivtecken).
  */
 function computeBootstrapCI() {
     const t0 = performance.now();
-    const d = getData().filter(r => r.lon > 0);
-    const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
-    if (kv.length < statGolv() || ma.length < statGolv()) { state.bootstrapCI = null; return; }
-
-    // B=2000: med B=600 blir Monte Carlo-variabiliteten på CI-gränserna
-    // ~±0,5 pp, vilket märks för gränsfalls-par. Variationen minskar med 1/√B, så B=2000 ger ungefär hälften,
-    // och räkningen tar i praktiken ~50-200 ms på alla typiska storlekar.
-    const B = 2000;
-    const ratios = new Array(B);
-    // Dragningarnas medianer ur rangräkning (O(n) per dragning) — sortering ger O(B·n log n), flera sekunder
-    // vid 20 000 rader. Identiskt resultat.
-    const m = _lvBootstrapMedianer(kv, ma, B, _rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mKv = m.kv[b], mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? mKv / mMa : 1;
-    }
-    ratios.sort((a, b) => a - b);
-    const lo = ratios[Math.floor(B * 0.025)];
-    const hi = ratios[Math.floor(B * 0.975)];
-    const point = Stat.median(kv) / Stat.median(ma);
-
-    state.bootstrapCI = {
-        ratio:    { point, lo, hi },
-        gapPct:   { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
-        elapsed:  performance.now() - t0,
-        B
-    };
+    const ki = _osOrganisationensKvotKI(getData(), statGolv());
+    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPctDirektivtecken: ki.gapPctDirektivtecken, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
 /**
@@ -17712,76 +18739,13 @@ function fmtCI(ci, decimals = 1) {
 
 // ---- #9 Power-analys: minsta detekterbara effektstorlek ----
 /**
- * Beräknar minsta detekterbara lönegap (kr-procent) för regression β_kön
- * vid 80% power, α=0.05. Använder klassisk formel:
- *
- *     MDE_logβ ≈ (z_{1-α/2} + z_{1-power}) · σ_log · √(1/n_kv + 1/n_ma)
- *              ≈ 2.802 · σ_log · √(1/n_kv + 1/n_ma)
- *
- * där σ_log är spridningen i log(lön) INOM grupp: den poolade standardavvikelsen av
- * residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom BAS
- * med minst statGolv() av varje kön (samma idé som trattdiagrammets σ i Lika arbete,
- * _laTrattUnderlagRakna). Spridningen över hela urvalet duger inte: den rymmer
- * skillnaderna mellan BAS-intervallen och överskattar därmed spridningen inom en grupp,
- * så att MDE per grupp blev för stor. Är underlaget för litet (inga grupper når golvet,
- * eller färre än MDE_SIGMA_MIN_RESIDUALER residualer) faller σ tillbaka på hela urvalet.
- *
+ * Minsta upptäckbara lönegap (procent) för regressionens könskoefficient vid 80 % styrka och α = 0,05, med σ för
+ * log(lön) inom grupp (styrkeanalys i src/lib/osakerhet.js; golvet för grupperna är statGolv()).
  * @returns {null | {n:number, nKv:number, nMa:number, mdePct:number, sigma:number, sigmaKalla:'inomGrupp'|'helaUrvalet',
  *                   sigmaHela:number, sigmaGrupper:number, balanced:boolean}}
  */
-const MDE_SIGMA_MIN_RESIDUALER = 20;
 function computePowerAnalysis() {
-    const d = getData().filter(r => r.lon > 0);
-    if (d.length < 10) return null;
-    const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
-    const kv = d.filter(arKv).map(r => r.lon);
-    const ma = d.filter(arMa).map(r => r.lon);
-    if (kv.length < 2 || ma.length < 2) return null;
-    // SD av log(lön) över hela urvalet — reserven när underlaget per grupp är för litet
-    const allLog = d.map(r => Math.log(r.lon));
-    const meanLog = allLog.reduce((s, v) => s + v, 0) / allLog.length;
-    const varLog  = allLog.reduce((s, v) => s + (v - meanLog) ** 2, 0) / (allLog.length - 1);
-    const sigmaHela = Math.sqrt(varLog);
-    const inom = _mdeSigmaInomGrupp(d, arKv, arMa, statGolv());
-    const sigma = inom ? inom.sigma : sigmaHela;
-    // Cohen-style MDE för diff-of-means på log-skala vid 80% power, α=0.05
-    const Z = 2.802; // 1.96 (α/2 tvåsidig) + 0.842 (power 80%)
-    const mdeLog = Z * sigma * Math.sqrt(1 / kv.length + 1 / ma.length);
-    const mdePct = (Math.exp(mdeLog) - 1) * 100;
-    const minN = Math.min(kv.length, ma.length);
-    const maxN = Math.max(kv.length, ma.length);
-    // Jämn könsfördelning enligt verktygets definition: båda könen ≥ 40% av totalen.
-    const balanced = minN / (minN + maxN) >= 0.4;
-    return { n: d.length, nKv: kv.length, nMa: ma.length, mdePct, sigma, sigmaKalla: inom ? 'inomGrupp' : 'helaUrvalet',
-             sigmaHela, sigmaGrupper: inom ? inom.grupper : 0, balanced };
-}
-/**
- * Poolad standardavvikelse av residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom
- * BAS med minst `golv` av varje kön. Frihetsgraderna är antalet residualer minus två medianer per grupp.
- * @returns {null | {sigma:number, grupper:number, residualer:number}} null när underlaget är för litet
- */
-function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
-    const perGrupp = new Map();
-    for (const r of d) {
-        const kv = arKv(r), ma = arMa(r);
-        if (!kv && !ma) continue;
-        const nyckel = `${r.yrke}|${r.bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { kv: [], ma: [] });
-        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
-    }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= golv && g.ma.length >= golv);
-    if (!grupper.length) return null;
-    let summa = 0, antal = 0;
-    for (const g of grupper) {
-        for (const [loner] of [[g.kv], [g.ma]]) {
-            const logMed = Math.log(Stat.median(loner));
-            for (const v of loner) { summa += (Math.log(v) - logMed) ** 2; antal++; }
-        }
-    }
-    const df = antal - 2 * grupper.length;
-    if (antal < MDE_SIGMA_MIN_RESIDUALER || df < 1) return null;
-    const sigma = Math.sqrt(summa / df);
-    return sigma > 0 ? { sigma, grupper: grupper.length, residualer: antal } : null;
+    return _osStyrkeanalys(getData(), statGolv());
 }
 
 // ---- Process-tracker: status för hela lagresan (kap. 3, §§ 8–14) ----
@@ -17977,24 +18941,15 @@ function _ovRitaFilrad(har, antal) {
 }
 
 /**
- * Beräknar MDE för en specifik undergrupp (t.ex. en yrkesgrupp eller BAS-rad).
- * Återanvänder σ ur computePowerAnalysis: spridningen i log-lön INOM grupp (poolad över
- * yrkesgrupperna inom BAS), inte över hela urvalet — den är stabil över grupper.
- *
+ * Minsta upptäckbara skillnad för en undergrupp (yrkesgrupp, BAS-rad) med σ ur computePowerAnalysis: spridningen i
+ * log-lön INOM grupp (gruppMde i src/lib/osakerhet.js).
  * @param {number} nKv - antal kvinnor i gruppen
  * @param {number} nMa - antal män i gruppen
  * @param {number} [sigmaLog] - σ för log(lön) (default: hämta från cache)
  * @returns {null | {mdePct:number, level:'good'|'fair'|'poor', tooSmall:boolean}}
  */
 function computeGroupMDE(nKv, nMa, sigmaLog) {
-    const sigma = sigmaLog || state.powerAnalysis?.sigma;
-    if (!sigma || nKv < 2 || nMa < 2) return null;
-    const Z = 2.802;
-    const mdeLog = Z * sigma * Math.sqrt(1 / nKv + 1 / nMa);
-    const mdePct = (Math.exp(mdeLog) - 1) * 100;
-    const level = mdePct < 3 ? 'good' : mdePct < 7 ? 'fair' : 'poor';
-    const tooSmall = nKv < 5 || nMa < 5;
-    return { mdePct, level, tooSmall };
+    return _osGruppMde(nKv, nMa, sigmaLog || state.powerAnalysis?.sigma);
 }
 
 // ---- Dashboard stats ----
@@ -18068,49 +19023,13 @@ function populateSelects() {
 
 // ---- Outliers-detektor (rad-nivå) ----
 /**
- * Identifierar individuella löner som ligger ovanligt långt från sin BAS-grupps median.
- * Använder log-skala (robust mot positivt skev fördelning) och Z-poäng = (log(lön) − μ)/σ.
- * Z ≥ threshold flaggas som outlier för manuell granskning (kan vara felinmatning).
+ * Löner som ligger ovanligt långt från sitt BAS-intervalls medel på log-skala (extremvarden i src/lib/osakerhet.js):
+ * |z| ≥ threshold flaggas för manuell granskning (kan vara felinmatning). BAS-intervall under statGolv() bedöms inte.
  * @param {number} [threshold=3] - Z-tröskel.
  * @returns {Array<Object>} Outlier-rader sorterade på |Z| desc.
  */
-function detectOutliers(threshold = 3) {
-    const d = getData();
-    if (!d.length) return [];
-    // Gruppera per BAS, beräkna log-mean + log-SD
-    const byBas = {};
-    d.forEach((r, idx) => {
-        if (!byBas[r.bas]) byBas[r.bas] = [];
-        byBas[r.bas].push({ ...r, _idx: idx + 1 });
-    });
-    const results = [];
-    Object.entries(byBas).forEach(([_bas, rows]) => {
-        if (rows.length < statGolv()) return; // för få för en spridningsskattning
-        const logs = rows.map(r => Math.log(r.lon));
-        const mean = logs.reduce((s, v) => s + v, 0) / logs.length;
-        const variance = logs.reduce((s, v) => s + (v - mean) ** 2, 0) / Math.max(1, logs.length - 1);
-        const sd = Math.sqrt(variance);
-        if (sd === 0) return;
-        const groupMedian = Stat.median(rows.map(r => r.lon));
-        rows.forEach(r => {
-            const z = (Math.log(r.lon) - mean) / sd;
-            if (Math.abs(z) >= threshold) {
-                results.push({
-                    radnr: r.radnr ?? null,
-                    bas: r.bas,
-                    yrke: r.yrke,
-                    kon: r.kon.includes('kvinna') ? 'Kvinna' : 'Man',
-                    alder: r.alder,
-                    lon: r.lon,
-                    groupMedian,
-                    z,
-                    diffPct: ((r.lon - groupMedian) / groupMedian) * 100
-                });
-            }
-        });
-    });
-    results.sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
-    return results;
+function detectOutliers(threshold) {
+    return _osExtremvarden(getData(), statGolv(), threshold);
 }
 
 function renderOutliers() {
@@ -18315,6 +19234,8 @@ function renderDataValidationReport() {
     const invalidLonExamples = da.invalidLonExamples || [];
     const invalidAlderExamples = da.invalidAlderExamples || [];
     const missingKonExamples = da.missingKonExamples || [];
+    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren; texten är förhandskontrollens.
+    const yrkeNamn = da.yrkeNamn || 0;
     const used = state.data.length;
 
     // Räkna varningar
@@ -18358,6 +19279,7 @@ function renderDataValidationReport() {
             <div class="dvr-section">
                 <h4>Från fil till analys</h4>
                 <div class="dvr-row ok"><span>Total rader i fil:</span><span class="dvr-value">${fmt(totalRaw)}</span></div>
+                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>${esc(_fkNamnIYrkesfaltetText(yrkeNamn, da.yrkeNamnRadnr))}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
                 ${excludedNoBas > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar BAS:</span><span class="dvr-value">${fmt(excludedNoBas)}</span></div>` : ''}
                 ${excludedZeroLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Lön ≤ 0:</span><span class="dvr-value">${fmt(excludedZeroLon)}</span></div>` : ''}
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}
@@ -18564,14 +19486,16 @@ function _fkSlapp() {
 
 /** Titeln per varning i Att göra: olika titlar, så att länkarnas aria-label skiljer punkterna åt. */
 const FK_TITEL = {
+    'yrke-namn': 'personnamn i uttaget',
     'lon-arslon': 'lönen ser ut som årslön', 'lon-timlon': 'lönen ser ut som timlön', 'lon-spridning': 'stor spridning i lönen',
     'alder-saknas': 'ålder saknas', 'alder-fodelsear': 'ålder ur födelseår', 'alder-utanfor': 'ålder utanför det rimliga', 'alder-ogiltig': 'ålder som inte går att läsa',
     'bas-ovanlig': 'ovanliga BAS-värden', 'kon-okand': 'okända kön-värden', 'bortfall-bas': `rader utan ${T.niva.en}`, 'bortfall-lon': 'rader utan lön',
 };
 /** Varningar som en annan punkt i Att göra redan säger: punkten läggs inte till två gånger. */
 const FK_SAGS_AV = { 'kon-okand': ['dq-kon'], 'bortfall-lon': ['dq-lon', 'dq-fullstandighet'], 'bortfall-bas': ['dq-fullstandighet'] };
-/** Prioriteten: fel hög, födelseåret låg (en omräkning att bekräfta) och saknad ålder låg (valfri, ADR-64), annars medel. */
-const _fkPrioritet = v => (v.niva === 'fel' ? 'hög' : v.kod === 'alder-fodelsear' || v.kod === 'alder-saknas' ? 'låg' : 'medel');
+/** Prioriteten: fel och personnamn i uttaget hög, födelseåret låg (en omräkning att bekräfta) och saknad ålder låg
+ *  (valfri, ADR-64), annars medel. */
+const _fkPrioritet = v => (v.niva === 'fel' || v.kod === 'yrke-namn' ? 'hög' : v.kod === 'alder-fodelsear' || v.kod === 'alder-saknas' ? 'låg' : 'medel');
 
 /**
  * Varningarna som punkter i Att göra (kategorin Underlagets kvalitet). En varning som en punkt i `befintliga` redan
@@ -21893,14 +22817,10 @@ function _evidenceForPrioItem(it, _reference) {
     const fmtN = v => v.toLocaleString('sv-SE');
     const w = state.prioWeights;
     const wTotal = Math.max(1, w.avvikelse + w.volym + w.jamstalldhet);
-    const sevScore  = Math.min(30, Math.abs(it.diffPct)) / 30 * 100;
-    const volScore  = Math.min(50, it.n) / 50 * 100;
-    const gapScore  = it.gapPct !== null ? Math.min(15, Math.abs(it.gapPct)) / 15 * 100 : 0;
-    const directionWeight = it.diffPct < 0 ? 1.0 : 0.5;
-    const bristMultiplier = it.isBrist ? 1.2 : 1.0;
-    const months  = state.costSettings?.months || 12;
-    const poPct   = state.costSettings?.poPct  || 0;
-    const poFactor = 1 + poPct / 100;
+    // Delpoängen och multiplikatorerna räknas i src/lib/prioritering.js och ligger på posten; taken ur samma modul.
+    const K = _prKonstanter();
+    const { sevScore, volScore, gapScore, riktningsvikt: directionWeight, bristMultiplier } = it;
+    const { months, poPct, poFaktor } = _kostFaktor(state.costSettings);
     const sgn = v => v >= 0 ? '+' : '';
 
     return {
@@ -21914,11 +22834,11 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Kostnad per person',          value: it.costPerPerson > 0 ? `${fmtKr(it.costPerPerson)}/mån` : '— (gruppen är ej under referens)', note: 'Genomsnittlig höjning per person och månad för att lyfta gruppen till referensens median' },
             { label: 'Löneskillnad mellan kvinnor och män i gruppen',   value: it.gapPct == null ? '— ej beräkningsbart' : `${sgn(it.gapPct)}${svPct(it.gapPct, 2)}`, note: it.gapPct == null ? `Kräver minst ${kTroskel()} av varje kön` : `Median kv ${fmtKr(it.medKv)} mot median man ${fmtKr(it.medMa)}` },
             { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Läge mot referensen: ${(PRIO_STATUS_INFO[it.status] || { label: it.status }).label}` },
-            { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(30, |${svPct(it.diffPct, 1)}|) / 30 × 100 · vikt ${w.avvikelse}/${wTotal}` },
-            { label: 'Volym-poäng (vol)',           value: svTal(volScore, 1), note: `min(50, ${it.n}) / 50 × 100 · vikt ${w.volym}/${wTotal}` },
-            { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(15, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / 15 × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
-            { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? 'Gruppen ligger UNDER referens — full vikt 1,0' : 'Gruppen ligger ÖVER referens — halv vikt 0,5' },
-            { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? 'Markerat som bristyrke — bonus 1,2x' : 'Ej bristyrke' },
+            { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(${K.AVVIKELSE_TAK}, |${svPct(it.diffPct, 1)}|) / ${K.AVVIKELSE_TAK} × 100 · vikt ${w.avvikelse}/${wTotal}` },
+            { label: 'Volym-poäng (vol)',           value: svTal(volScore, 1), note: `min(${K.VOLYM_TAK}, ${it.n}) / ${K.VOLYM_TAK} × 100 · vikt ${w.volym}/${wTotal}` },
+            { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(${K.GAP_TAK}, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / ${K.GAP_TAK} × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
+            { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? `Gruppen ligger UNDER referens — full vikt ${svTal(K.RIKTNING_UNDER, 1)}` : `Gruppen ligger ÖVER referens — halv vikt ${svTal(K.RIKTNING_OVER, 1)}` },
+            { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? `Markerat som bristyrke — bonus ${svTal(K.BRIST_MULTIPLIKATOR, 1)}x` : 'Ej bristyrke' },
             { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
         ],
         formula: `<strong>Prioritetsindex-formel:</strong><br>
@@ -21926,7 +22846,7 @@ function _evidenceForPrioItem(it, _reference) {
             = ${svTal(bristMultiplier, 2)} × ${svTal(directionWeight, 2)} × (${svTal(sevScore, 1)} × ${w.avvikelse}/${wTotal} + ${svTal(volScore, 1)} × ${w.volym}/${wTotal} + ${svTal(gapScore, 1)} × ${w.jamstalldhet}/${wTotal})<br>
             = <strong>${svTal(it.priorityIndex, 2)}</strong>
             ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att nå referensen:</strong><br>
-            |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFactor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
+            |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFaktor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
         footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPct(poPct, 2)}).`
     };
 }
@@ -22013,8 +22933,8 @@ function _evidenceForPerBasRow(p, bhCtx) {
     return {
         title: `Beräkningen — BAS ${p.bas} (per-BAS-regression)`,
         intro: harAlder()
-            ? `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
-            : `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
+            ? `Inom BAS ${esc(p.bas)} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
+            : `Inom BAS ${esc(p.bas)} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
         rows: [
             { label: termStor(T.niva.en),          value: p.bas },
             { label: 'Antal totalt',           value: p.n.toLocaleString('sv-SE') },
@@ -22152,7 +23072,7 @@ function _evidenceForPaygapRow(p) {
 // ---- Vad lagras i minnet just nu? (inbyggt dataskydd, art. 25) ----
 /**
  * Visar Data Residency-modal: schemat för state.data, antal rader, ungefärlig
- * minnesstorlek, och en maskerad sample av första posten. Ger användaren
+ * minnesstorlek, och den första posten som exempel (fältet för AID-etikett kortat). Ger användaren
  * konkret insyn i exakt vad verktyget håller i RAM.
  */
 
@@ -22178,12 +23098,12 @@ function openDataResidency() {
         const r = state.data[0];
         const maskedYrke = r.yrke && r.yrke.length > 30 ? r.yrke.substring(0, 30) + '…' : (r.yrke || '—');
         sampleRow = `
-            <h3 class="fs-md marg-t-18">Exempel — första posten (maskerad)</h3>
+            <h3 class="fs-md marg-t-18">Exempel — första posten (fältet för ${T.enhet.en} kortat)</h3>
             <table class="data-table st-085">
                 <thead><tr><th>Fält</th><th>Värde</th><th>Källa</th></tr></thead>
                 <tbody>
                     <tr><td><code>bas</code></td><td>${esc(r.bas) || '—'}</td><td>${T.niva.en} (1 bokstav)</td></tr>
-                    <tr><td><code>${FALT_YRKE}</code></td><td>${esc(maskedYrke)}</td><td>${T.kod.en} + 40 tecken ${T.namn.en}, namn-mönster maskeras</td></tr>
+                    <tr><td><code>${FALT_YRKE}</code></td><td>${esc(maskedYrke)}</td><td>${T.kod.en} + högst 40 tecken ${T.namn.en}; namn i fältet maskeras inte, inläsningen varnar för dem</td></tr>
                     <tr><td><code>lon</code></td><td>${r.lon ? Math.round(r.lon).toLocaleString('sv-SE') : '—'} kr</td><td>månadslön, heltal</td></tr>
                     <tr><td><code>alder</code></td><td>${r.alder || '—'}</td><td>år</td></tr>
                     <tr><td><code>kon</code></td><td>${esc(r.kon) || '—'}</td><td>"kvinna"/"man"</td></tr>
@@ -23982,7 +24902,12 @@ function loadStructureFile(file) {
         alderFromBirthYear: 0,    // ålder tolkad om från födelseår (transparens)
         invalidLonExamples: [],   // upp till 3 exempel för audit-panelen
         invalidAlderExamples: [], // upp till 3 exempel
-        missingKonExamples: []    // upp till 3 exempel på okända kön-värden
+        missingKonExamples: [],   // upp till 3 exempel på okända kön-värden
+        // Rader där fältet för AID-etikett ser ut att innehålla ett personnamn (namnmönster och sällsynt i filen,
+        // sallsyntaNamnrader): bara antalet och de första radnumren (_fkGranser().namnRadnr), aldrig fältets text.
+        // Sätts när filen är läst (_namnTillStats). Förhandskontrollen varnar på dem.
+        yrkeNamn: 0,
+        yrkeNamnRadnr: []
     };
     let aborted = false;
     // Förhandskontrollen (17-forhandskontroll.js): de tio första raderna med filens råvärde och verktygets tolkning
@@ -23990,6 +24915,17 @@ function loadStructureFile(file) {
     const fkForsta = [];
     const fkKon = new Map();
     const FK_RADER = _fkGranser().antalRader;
+    // Personnamn i fältet för AID-etikett: under inläsningen en räknare per text med namnmönster (yrkeNamnNyckel: texten
+    // efter AID-koden i gemener) med antal och de första radnumren. Den töms i _namnTillStats när filen är läst, och när
+    // filen avvisas eller inte går att läsa; kvar i parseStats blir bara antalet misstänkta rader och radnumren.
+    const namnRaknare = new Map();
+    const NAMN_RADNR = _fkGranser().namnRadnr;
+    const _namnTillStats = () => {
+        const s = _ilSallsyntaNamnrader(namnRaknare, NAMN_RADNR);
+        parseStats.yrkeNamn = s.antal;
+        parseStats.yrkeNamnRadnr = s.radnr;
+        namnRaknare.clear();
+    };
 
     // AID:s ansvarskod (ADR-33): kolumnen väljs på första raden och godkänns
     // i finishLoad när hela filen är läst (≥ 95 % giltiga värden). Bara kolumnens värden
@@ -24034,6 +24970,16 @@ function loadStructureFile(file) {
         }
         // Transparens: ålderskolumnen innehöll födelseår som räknats om till ålder
         if (rec._alderStatus === 'birthyear') parseStats.alderFromBirthYear++;
+        // Personnamn i fältet för AID-etikett: råvärdet (före maskering och kortning) prövas på varje rad i filen, också
+        // en rad som sedan faller bort. En text med namnmönster räknas i den tillfälliga räknaren; vilka som är sällsynta
+        // nog att varna för avgörs när hela filen är läst (_namnTillStats).
+        const namnNyckel = _ilYrkeNamnNyckel(getField(row, ALLOWED_FIELDS.yrke, 'yrke'));
+        if (namnNyckel) {
+            const v = namnRaknare.get(namnNyckel) || { antal: 0, radnr: [] };
+            v.antal++;
+            if (v.radnr.length < NAMN_RADNR) v.radnr.push(row[_RADNR] ?? null);
+            namnRaknare.set(namnNyckel, v);
+        }
         // Spåra rader utan användbart kön
         // (efter normalisering till lowercase utan icke-bokstäver).
         const konOk = typeof rec.kon === 'string' &&
@@ -24075,6 +25021,7 @@ function loadStructureFile(file) {
 
     function rejectFile(sensitive) {
         aborted = true;
+        namnRaknare.clear();
         state.ansvarKolumn = tidigareAnsvarKolumn;
         state.importprofil = tidigareImportprofil;
         // Nolla bufferten direkt så raw rows blir GC-bara
@@ -24086,6 +25033,7 @@ function loadStructureFile(file) {
     // Gemensam avslutning för CSV- och XLSX-vägen: committa state + UI.
     function finishLoad(metaText) {
         sampleBuffer = null;
+        _namnTillStats();   // före förhandskontrollen, som varnar på antalet
         let ansvarNot = '';
         if (state.ansvarKolumn) {
             const b = _bedomAnsvarKolumn(state.ansvarKolumn.namn, ansvarVarden);
@@ -24164,6 +25112,7 @@ function loadStructureFile(file) {
     }
     function failLoad(msg) {
         sampleBuffer = null;
+        namnRaknare.clear();
         state.ansvarKolumn = tidigareAnsvarKolumn;
         state.importprofil = tidigareImportprofil;
         hideLoading();
@@ -25847,7 +26796,8 @@ function _forecastOlsGap(origRows, simRows) {
 }
 // Kostnadsinställningarna som prognosen räknas med.
 function _fcKostnadsval() {
-    return { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
+    const { months, poPct } = _kostFaktor(state.costSettings);
+    return { months, poPct, roundStep: state.forecast.roundStep || 0,
              kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
 }
 /**
@@ -26508,7 +27458,8 @@ function _forecastOlsOn(rows) {
     } finally { state.data = sd; }
     return res;
 }
-// (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans.
+// (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans. Sökningen är
+// likalonslyftForMal i src/lib/loneoversyn.js (_fcLyftForMal); här läses fälten, k-spärren prövas och resultatet ritas.
 function _forecastThreshold() {
     const host = document.getElementById('forecast-threshold-result');
     const d = getData();
@@ -26519,27 +27470,19 @@ function _forecastThreshold() {
     // lönemått. Det visas bara när varje kön når tröskeln (regressionen jämför mot män); annars ett streck
     // med förklaring (beslut av produktägaren 2026-10-16).
     if (!_konFarRedovisasFor(d)) { host.innerHTML = `<span class="f-dampad">– ${esc(_konUtelamnatNot())}</span>`; return; }
-    const tgt = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-pct'))?.value) || 5;
+    const { STANDARD_PCT, MAX_LYFT_PCT, SIGNIFIKANS_P } = _fcTroskelmalKonstanter();
+    const tgt = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-pct'))?.value) || STANDARD_PCT;
     const useSig = !!/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-sig'))?.checked;
-    const women = d.filter(r => r.kon && r.kon.includes('kvinna'));
-    const base = _forecastOlsOn(d);
-    if (base.konPct == null) { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
-    const okFor = g => useSig ? (g.pValue == null || g.pValue > 0.05) : (g.konPct != null && g.konPct >= -tgt);
-    const evalLift = x => {
-        const sim = d.map(r => (r.kon && r.kon.includes('kvinna')) ? { ...r, lon: r.lon * (1 + x / 100) } : r);
-        const g = _forecastOlsOn(sim);
-        return { ...g, cost: women.reduce((s, r) => s + r.lon * x / 100, 0) };
-    };
-    if (okFor(base)) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
-    let lo = 0, hi = 40;
-    if (!okFor(evalLift(hi))) { host.innerHTML = `<span class="f-kritisk">Mer än 40 % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
-    for (let it = 0; it < 22; it++) { const mid = (lo + hi) / 2; if (okFor(evalLift(mid))) hi = mid; else lo = mid; }
-    const res = evalLift(hi);
-    const months = (state.costSettings && state.costSettings.months) || 12;
-    const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
+    const svar = _fcLyftForMal(d, { malPct: tgt, signifikans: useSig, skatta: _forecastOlsOn });
+    const base = svar.utgangslage;
+    if (svar.status === 'ingenSkattning') { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
+    if (svar.status === 'redan') { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
+    if (svar.status === 'utomRackhall') { host.innerHTML = `<span class="f-kritisk">Mer än ${MAX_LYFT_PCT} % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
+    const hi = /** @type {number} */ (svar.lyftPct), kostnad = /** @type {number} */ (svar.kostnadPerManad);
+    const efter = /** @type {{konPct: number|null}} */ (svar.resultat);
     host.innerHTML = `<div class="fs-sm lh-1_6">
-        För att nå <strong>${useSig ? 'en oförklarad skillnad som inte är signifikant (p över 0,05)' : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
-        <br>Kostnad: <strong>≈ ${Math.round(res.cost).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(res.cost * months * poFactor).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${res.konPct == null ? '–' : svPct(res.konPct, 2)}.
+        För att nå <strong>${useSig ? `en oförklarad skillnad som inte är signifikant (p över ${svTal(SIGNIFIKANS_P, 2)})` : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
+        <br>Kostnad: <strong>≈ ${Math.round(kostnad).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(_kostPeriod(kostnad, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${efter.konPct == null ? '–' : svPct(efter.konPct, 2)}.
         <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
     </div>`;
 }
@@ -26571,8 +27514,7 @@ function _forecastSensitivity() {
     _forecastReadControls();
     const cand = _fcKandidater();
     if (!cand.length) { host.innerHTML = '<span class="text-dampad-sm">Verktyget hittade inga skillnader i likvärdigt arbete att räkna på.</span>'; return; }
-    const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
-                   kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
+    const cost = _fcKostnadsval();   // samma kostnadsinställningar och definition av kvinnodominerat som prognosen
     const curve = _fcSensitivityCurve(d, cand, cost, 10);
     if (!_konFarRedovisasFor(d)) curve.forEach(c => { c.rawGap = null; });   // k: det råa gapet följer tröskeln
     const maxGap = Math.max(...curve.map(c => Math.abs(c.rawGap || 0)), 0.01);
@@ -26593,8 +27535,6 @@ function _forecastRemediation() {
     // hans lön minus hennes), och en grupp får egen rad först när tröskeln i antal kvinnor berörs.
     const rem = _fcIndividualRemediation(d, { gapPct: isFinite(gp) ? gp : 5, minMen: kTroskel() });
     state.forecast._remediation = rem;
-    const months = (state.costSettings && state.costSettings.months) || 12;
-    const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
     const kr = n => svKr(n);
     if (!rem.count) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Inga kvinnor ligger mer än tröskeln under sitt jämförelsevärde.</span>`; return; }
     const K = kTroskel();
@@ -26603,7 +27543,7 @@ function _forecastRemediation() {
     const rowsHtml = visade.slice(0, 12).map(g => `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.count}</td><td class="t-hoger">${kr(g.cost)}/mån</td></tr>`).join('');
     // Summan är ett lönemått över de berörda: den visas först när de är minst K.
     const summa = rem.count >= K
-        ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(rem.totalCost * months * poFactor)} inkl. PO/period).`
+        ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(_kostPeriod(rem.totalCost, state.costSettings))} inkl. PO/period).`
         : `Kostnaden visas inte, eftersom färre än ${K} ${personOrd(K)} berörs.`;
     const doldaNot = dolda
         ? `<p class="k-mask-note">${dolda} ${dolda === 1 ? 'grupp' : 'grupper'} där färre än ${K} kvinnor berörs ${rem.count >= K ? 'ingår i summan men ' : ''}redovisas inte per grupp och blir inga riktade rader.</p>`
@@ -27100,7 +28040,7 @@ function renderSektorer(d) {
             <td class="num" data-sort-value="${r.n}">${r.n}</td><td class="num" data-sort-value="${r.andelKv == null ? '' : r.andelKv.toFixed(1)}">${pc(r.andelKv)}</td><td class="num" data-sort-value="${r.skrAndelKv == null ? '' : r.skrAndelKv.toFixed(1)}">${pc(r.skrAndelKv)}</td>${loner}<td>${just}</td>
             <td class="num" data-sort-value="${r.antalAid}">${r.antalAid}</td><td class="num" data-sort-value="${r.punkter}">${r.punkter}</td>${ledning}</tr>`;
     }).join('');
-    // Huvudområden där ett kön är under tröskeln räknas samman (ADR-84); noten säger vilka och varför.
+    // Huvudområden där ett kön är under tröskeln räknas samman (ADR-87); noten säger vilka och varför.
     const andelNot = _skSektorAndelNot(andel, kTroskel());
     const andelText = (!andel || andel.andel == null ? ''
         : Math.abs(andel.andel) < 0.01
@@ -28347,18 +29287,10 @@ function _demoBandFigur(df, k, pol, aLo, aHi) {
 // Översiktens rader: kvinnors och mäns medianlön per BAS-intervall med kvoten och dess 95-procentiga bootstrap-KI.
 // EN beräkning för skärmens tabell, diagrammen och rapporten (Word, PDF) — de kan därför aldrig visa olika tal.
 // Bara BAS-intervall där BÅDA könen når tröskeln får en rad: varje tal i raden bygger på minst k personer.
-// Bootstrap med B = 1000, seedad ur datat så att intervallet blir detsamma varje gång; dragningarnas medianer tas
-// ur rangräkning (_lvBootstrapMedianer, O(n) per dragning utan allokeringar).
-function _laBootstrapGapCI(kvLons, maLons, B = 1000) {
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const ratios = new Array(B);
-    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mKv = m.kv[b], mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
-    }
-    ratios.sort((a, b) => a - b);
-    return { lo: ratios[Math.floor(B * 0.025)], hi: ratios[Math.floor(B * 0.975)] };
+// Intervallet är medianKvotKI i src/lib/osakerhet.js: bootstrap med B = 1000, seedad ur datat så att intervallet blir
+// detsamma varje gång; dragningarnas medianer tas ur rangräkning (_lvBootstrapMedianer, O(n) per dragning).
+function _laBootstrapGapCI(kvLons, maLons, B) {
+    return _osMedianKvotKI(kvLons, maLons, { B });
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
 // och 1,8 s) och behövs av flera vyer — fliken, rapportmodellen (som byggs flera gånger i Dokumentera) och
@@ -28934,31 +29866,10 @@ function _laTrattUnderlag(d, k = kTroskel()) {
 // Gruppen är AID-kod + BAS-intervall ur varje persons egen rad (lika arbete: samma yrkesgrupp på samma nivå), inte
 // yrkesgruppen över alla intervall. Tidigare grupperades per yrke och gruppen fick BAS från sin första rad, så en
 // yrkesgrupp i flera intervall redovisades i ett godtyckligt av dem med alla sina personer.
+// Räkningen är trattUnderlag i src/lib/osakerhet.js; minnet ovan (_laTrattUnderlag) räknar den en gång per underlag
+// och tröskel.
 function _laTrattUnderlagRakna(d, k) {
-    const perGrupp = new Map();
-    for (const r of d) {
-        if (!(r.lon > 0) || !r.bas) continue;
-        const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
-        if (!kv && !ma) continue;
-        const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
-        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
-    }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
-    if (!grupper.length) return null;
-    const rest = [];
-    for (const g of grupper) {
-        g.medKv = Stat.median(g.kv); g.medMa = Stat.median(g.ma);
-        for (const v of g.kv) rest.push(Math.log(v) - Math.log(g.medKv));
-        for (const v of g.ma) rest.push(Math.log(v) - Math.log(g.medMa));
-    }
-    const sigma = 1.4826 * Stat.median(rest.map(Math.abs));
-    if (!(sigma > 0)) return null;
-    const halv = (nKv, nMa) => 100 * 1.96 * 1.2533 * sigma * Math.sqrt(1 / nKv + 1 / nMa) * (1 + 0.6 / Math.min(nKv, nMa));
-    // En stor grupp (över 300 personer) bedöms med normalformeln och gruppens EGEN spridning (src/lib/status.js).
-    return { sigma, halv, punkter: grupper.map(g => { const kvot = g.medKv / g.medMa * 100, grans = _stsSlumpensGranser(g.kv, g.ma);
-        return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv: g.medKv, medMa: g.medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
-                 utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
+    return _osTrattUnderlag(d, k);
 }
 function _laTrattFigur(u, k = kTroskel()) {
     // Axeln börjar vid den minsta grupp som kan finnas med (tröskeln för varje kön), så att trattens form syns också
@@ -30044,13 +30955,13 @@ function _aidbasMetodRader() {
 // Copyright 2026 Felix Jansson
 // Regressionsmodeller för lika arbete — app-adaptern
 // ============================================================
-// De rena modellerna (kollinearitet, gap per BAS, sekventiell dekomponering med
+// De rena modellerna (huvudregressionen, kollinearitet, gap per BAS, sekventiell dekomponering med
 // yrkesgrupp, kvantilregression, Blinder-Oaxaca) ligger i src/lib/regression.js och
 // speglas in i 09-lib-speglar.js (ADR-8). Här finns bara de tunna adaptrarna som
 // läser appens tillstånd (getData(), statGolv()) och skickar det som parametrar.
 //
 // OLS-kärnan (_fitOLS m.fl.) är också speglad.
-// runOLSRegression ligger kvar i 51-lika-arbete-regressionskort.js och flyttas inte (ADR-17).
+// Huvudregressionens adapter, runOLSRegression, står i 51-lika-arbete-regressionskort.js; den cachas aldrig (ADR-17).
 
 // Stegens nycklar i den sekventiella dekomponeringen (ADR-74): kortet, rapporten och exporten slår upp stegen på dem.
 // Det som visas för ett steg kommer ur _rgStegEtikett.
@@ -30075,11 +30986,6 @@ function _basIndikatorer(basList) {
 // Sekventiell dekomponering: visa hur gapet krymper när kontroller läggs till. modell = förklaringsmodellen (ADR-56).
 function _computeSequentialGap(rows, ageMean, basList, modell) {
     return _rgComputeSequentialGap(rows, ageMean, basList, { golv: statGolv(), modell });
-}
-
-// Vad varje variabel tillför (ADR-56), alltid mot fullmodellen; yrkesgrupp bara när lönefilen har AID eller yrke.
-function _computeVariabelTillfor(rows, ageMean, basList) {
-    return _rgComputeVariabelTillfor(rows, ageMean, basList, { golv: statGolv(), harYrke: rows.some(d => d.aid || d.yrke) });
 }
 
 // Kvantilregression via IRLS; standardvärdena för maxIter och tol ligger i src/lib/regression.js.
@@ -30148,255 +31054,19 @@ function runQuantileRegressionAtAllTau() {
 // Copyright 2026 Felix Jansson
 
 /**
- * Huvudregression för "oförklarad löneskillnad" (EU 2023/970).
- *
- * Modell: log(lön) ~ kön + ålder (centrerad) + BAS-intervall (indikatorvariabler).
- * Returnerar koefficienter med HC3-robusta standardfel + p-värden, R², och
- * en steg-för-steg dekomposition (gap utan kontroll → +BAS → +ålder) som
- * vattenfallsdiagrammet bygger på. Konverterar log-koefficienten till
- * approximativ kr-procentskillnad: gapPct = (exp(β) − 1) · 100.
- *
- * BAS kodas som en indikator per BAS-intervall utom det första (alfabetiskt lägsta) som är
- * referens: varje intervall får sin egen lönenivå, utan antagandet att varje bokstavssteg
- * är värt lika mycket. Ordningen A–Z är ändå fast (se likvardighetsmodellen.md §6) och styr
- * vilket intervall som blir referens.
+ * Huvudregression för "oförklarad löneskillnad" (EU 2023/970), verktygets huvudtal: en tunn adapter som läser
+ * appens tillstånd och anropar huvudregression i src/lib/regression.js (via spegeln _rgHuvudregression). Modellen,
+ * golven och returvärdet beskrivs där och i regressionsmodellen.md §1. Räknas om vid varje anrop (ADR-17).
  * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
- *   annars beta, se, p, R2, n, k, gapPct, decomposition m.fl. — se return-satsen.
+ *   annars konPct, konPctLow, konPctHigh, sequential, perBas m.fl. — se huvudregression.
  */
 function runOLSRegression() {
-    // Utan ålder i lönefilen (ADR-64) används alla rader och modellen räknas utan ålder.
-    const medAlder = harAlder();
-    const raw = getData().filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
-    if (raw.length < 30) return { error: 'För få observationer (n < 30) för meningsfull regressionsanalys.', errorCode: 'low_n' };
-
-    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
-    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
-    if (kvN < 5 || maN < 5)
-        return { error: `Otillräcklig könsbalans i urvalet: ${kvN} kvinnor, ${maN} män. Minst 5 av varje kön krävs.`, errorCode: 'imbalance' };
-
-    const basList = [...new Set(raw.map(d => d.bas))].sort();
-    // Indikatorvariabler: en kolumn per BAS-intervall utom det första, som är referens.
-    const basRef0 = basList[0];
-    const basInd = _basIndikatorer(basList);
-
-    const ageMean = medAlder ? raw.reduce((s,d) => s + d.alder, 0) / raw.length : 0;
-
-    const y    = raw.map(d => Math.log(d.lon));
-    const isKv = raw.map(d => d.kon.includes('kvinna') ? 1 : 0);
-    const ageC = raw.map(d => d.alder - ageMean);
-    const basD = raw.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
-
-    // Förklaringsmodellen (ADR-56): vilka variabler som räknas bort. "Endast kön" är det ojusterade gapet, som inte får
-    // lämna verktyget när ett kön ligger under den inställda tröskeln (ADR-12); huvudtalet ska vara detsamma på skärmen
-    // och i exporten, så spärren följer den inställda tröskeln oavsett läge (som statGolv). Då gäller standardmodellen
-    // och panelen säger varför.
-    let modell = forklaringsmodell();
-    /** @type {string|null} */ let modellVarning = null;
-    if (!modell.bas && !modell.alder && !(kvN >= kInstalld() && maN >= kInstalld())) {
-        modell = { ...modell, bas: true, alder: medAlder };
-        modellVarning = `Endast kön kan inte väljas: ett kön har färre än ${kInstalld()} ${personOrd(kInstalld())} i modellen (minsta gruppstorlek), så den ojusterade skillnaden får inte vara huvudtalet. Modellen är kön + ${T.niva.en}${medAlder ? ' + ålder' : ''}.`;
-    }
-
-    // Kolumnordningen är fast: [1, kön, (ålder), (BAS-indikatorer)], så att index 2 är ålder när den är vald.
-    const buildX = (incAge, incBas) => raw.map((d,i) => {
-        const r = [1, isKv[i]];
-        if (incAge) r.push(ageC[i]);
-        if (incBas) r.push(...basD[i]);
-        return r;
+    return _rgHuvudregression(getData(), {
+        modell: forklaringsmodell(),   // normaliserad mot datat (ADR-56)
+        medAlder: harAlder(),          // ADR-64
+        kInstalld: kInstalld(),        // spärren för "Endast kön" följer den inställda tröskeln
+        golv: statGolv()               // regressionerna per BAS-intervall och ansvarssteget
     });
-    const beskriv = m => _rgModellBeskrivning(m);
-    // Reservstegen tar bort variabler i ordningen yrkesgrupp, BAS; inget bortvalt läggs tillbaka. 'full' = den valda modellen.
-    const ladder = [];
-    if (modell.yrkesgrupp) ladder.push({ name: 'full', desc: beskriv(modell), yrke: true });
-    const utanYrke = { ...modell, yrkesgrupp: false };
-    ladder.push({ name: modell.yrkesgrupp ? 'utanYrke' : 'full', desc: beskriv(utanYrke), X: buildX(utanYrke.alder, utanYrke.bas) });
-    if (modell.bas) { const m2 = { ...utanYrke, bas: false }; ladder.push({ name: 'minimal', desc: beskriv(m2), X: buildX(m2.alder, false) }); }
-
-    const triedSteps = [];
-    /** @type {any} */
-    let chosen = null;
-    for (const step of ladder) {
-        if (step.yrke) {
-            const fit = _regInomYrkesgrupp(raw, y, isKv, ageC, modell.alder);
-            if (!fit) { triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: null }); continue; }
-            triedSteps.push({ name: step.name, desc: step.desc, status: 'ok', k: fit.k });
-            chosen = { ...fit, modelName: step.name, modelDesc: step.desc };
-            break;
-        }
-        if (raw.length < step.X[0].length + 5) {
-            triedSteps.push({ name: step.name, desc: step.desc, status: 'too_few', k: step.X[0].length });
-            continue;
-        }
-        const fit = _fitOLS(step.X, y);
-        if (!fit) {
-            triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: step.X[0].length });
-            continue;
-        }
-        triedSteps.push({ name: step.name, desc: step.desc, status: 'ok', k: step.X[0].length });
-        chosen = { ...fit, modelName: step.name, modelDesc: step.desc };
-        break;
-    }
-
-    if (!chosen)
-        return {
-            error: 'Modellen kunde inte estimeras.',
-            errorCode: 'all_failed',
-            triedSteps,
-            diagnostics: _diagnoseCollinearity(raw, basList)
-        };
-    // Den modell som faktiskt skattades (reservsteget kan ha tagit bort variabler).
-    const skattad = chosen.modelName === 'full' ? modell : chosen.modelName === 'utanYrke' ? utanYrke : { ...utanYrke, bas: false };
-
-    // Kön-koefficient (index 1) – HC3 robusta standardfel
-    const betaKon  = chosen.beta[1];
-    const seKonR   = Math.sqrt(chosen.vcovHC3[1][1]);
-    const seKonC   = Math.sqrt(chosen.vcovClassic[1][1]);
-    const tStat    = betaKon / seKonR;
-    const pValue   = _pValue2Sided(tStat, chosen.n, chosen.k);
-    const pct      = (Math.exp(betaKon) - 1) * 100;
-    // Halvbredden för 95 % KI: t-fördelningens kvantil vid df = n − k (1,96 först vid df ≥ 100)
-    const tq       = _tQuantile(0.975, chosen.n - chosen.k);
-    const pctLow   = (Math.exp(betaKon - tq*seKonR) - 1) * 100;
-    const pctHigh  = (Math.exp(betaKon + tq*seKonR) - 1) * 100;
-    const pctLowC  = (Math.exp(betaKon - tq*seKonC) - 1) * 100;
-    const pctHighC = (Math.exp(betaKon + tq*seKonC) - 1) * 100;
-
-    // Ålders-koefficient (index 2): % per år. null när ålder inte är med i modellen.
-    /** @type {number|null} */ let ageEffect = null;
-    /** @type {number|null} */ let ageP = null;
-    if (skattad.alder) {
-        const betaAge   = chosen.beta[2];
-        const seAge     = Math.sqrt(chosen.vcovHC3[2][2]);
-        ageEffect = (Math.exp(betaAge) - 1) * 100;
-        ageP      = _pValue2Sided(betaAge/seAge, chosen.n, chosen.k);
-    }
-
-    // BAS-koefficienter: lönenivå per BAS-intervall i procent mot referensintervallet, när BAS-indikatorerna är med
-    // (null i reservmodellen och när yrkesgrupp inom BAS är vald, där BAS ingår i gruppnivåerna).
-    let basEffekter = null;
-    if (skattad.bas && !skattad.yrkesgrupp) {
-        const forsta = skattad.alder ? 3 : 2;
-        basEffekter = basInd.map((b, j) => {
-            const idx = forsta + j;
-            const beta = chosen.beta[idx];
-            const se   = Math.sqrt(chosen.vcovHC3[idx][idx]);
-            return {
-                bas: b,
-                pct: (Math.exp(beta) - 1) * 100,
-                low: (Math.exp(beta - tq*se) - 1) * 100,
-                high: (Math.exp(beta + tq*se) - 1) * 100,
-                p: _pValue2Sided(beta/se, chosen.n, chosen.k)
-            };
-        });
-    }
-    const basRef = skattad.bas ? basRef0 : null;
-    // Antal personer per BAS-intervall i modellen: redovisningen av effekterna följer tröskeln (_basEffekterForRedovisning).
-    /** @type {Record<string, number>} */
-    const basN = {};
-    for (const d of raw) basN[d.bas] = (basN[d.bas] || 0) + 1;
-
-    // Sekventiell dekomponering på den skattade modellen.
-    // Ansvarssteget lyfts ut: det redovisas på en egen rad och påverkar inte huvudtalet.
-    const allaSteg = _computeSequentialGap(raw, ageMean, basList, skattad);
-    const ansvarSteg = allaSteg.find(s => s.name === '+ Ansvar') ?? null;
-    // Yrkesgruppssteget (ADR-46) står sist i sequential. Är yrkesgrupp vald (ADR-56) är det huvudtalet; annars visas
-    // det efter huvudtalet, och huvudtalet och den förklarade andelen räknas till och med modellens sista OLS-steg.
-    const yrkesSteg = allaSteg.find(s => s.name === _RG_STEG_YRKE) ?? null;
-    const sequential = allaSteg.filter(s => s.name !== '+ Ansvar');
-    const seqOk = sequential.filter(s => s.status === 'ok' && (skattad.yrkesgrupp || s.name !== _RG_STEG_YRKE));
-    /** @type {number|null} */ let explainedShare = null;
-    if (seqOk.length >= 2) {
-        const first = Number(seqOk[0].gapPct);
-        const last  = Number(seqOk[seqOk.length - 1].gapPct);
-        if (Math.abs(first) > 0.1) {
-            explainedShare = ((Math.abs(first) - Math.abs(last)) / Math.abs(first)) * 100;
-        }
-    }
-
-    // Vad varje variabel tillför (ADR-56), alltid mot fullmodellen, och det som valts bort med sina tal.
-    const tillfor = _computeVariabelTillfor(raw, ageMean, basList);
-    const etikett = { bas: _FM_ETIKETT.bas, alder: _FM_ETIKETT.alder };
-    const bortvalt = ['bas', 'alder'].filter(v => !modell[v]).map(v => {
-        const rad = tillfor.rader.find(r => r.variabel === v);
-        return { variabel: v, etikett: etikett[v], deltaR2pp: rad ? rad.deltaR2pp : null, gapUtan: rad ? rad.gapUtan : null, gapMed: rad ? rad.gapMed : null, skal: modell.skal };
-    });
-
-    // Per-BAS conditional gap (separata regressioner inom varje BAS)
-    const perBas = _computePerBasGap(raw, basList);
-
-    const fellBackFromFull = chosen.modelName !== 'full';
-    const diagnostics = fellBackFromFull ? _diagnoseCollinearity(raw, basList) : [];
-
-    // Rått gap (median)
-    const kv = raw.filter(d => d.kon.includes('kvinna'));
-    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
-    const medianKv = Stat.median(kv.map(d=>d.lon));
-    const medianMa = Stat.median(ma.map(d=>d.lon));
-    const rawGapPct = (medianKv / medianMa - 1) * 100;
-
-    return {
-        modelName: chosen.modelName,
-        modelDesc: chosen.modelDesc,
-        modell: skattad,                      // den skattade förklaringsmodellen (ADR-56)
-        modellVald: modell,                   // den valda (skiljer sig från modell bara i reservsteget)
-        modellVarning,
-        fras: _rgModellFras(skattad),         // "ålder och BAS-intervall" m.fl.; tom för endast kön
-        tillfor,
-        bortvalt,
-        fellBackFromFull,
-        triedSteps,
-        diagnostics,
-        n: chosen.n, k: chosen.k, ageMean,
-        hHoga: chosen.hHoga ?? 0,             // observationer med hävstång > 0,99 (B4, teknisk specifikation)
-        konPct: pct, konPctLow: pctLow, konPctHigh: pctHigh,
-        // Samma skattning som kvinnors lön i % av mäns (log-modellen: exp(β) × 100 = 100 + konPct), måttet i
-        // flikarnas nyckeltalsrader.
-        konKvot: 100 + pct,
-        konPctLowClassical: pctLowC, konPctHighClassical: pctHighC,
-        seKonR, seKonC,
-        tStat, pValue, tKvantil: tq,          // halvbredden för 95 % KI i enheter av SE
-        ageEffect, ageP,
-        basEffekter,                          // per BAS-intervall utom referensen: nivå mot referensen (null vid reservmodell)
-        basRef,                               // referensintervallet (alfabetiskt första)
-        basN,                                 // antal personer per BAS-intervall i modellen
-        basList,                              // alfabetiskt sorterad lista, för referens i UI
-        R2: chosen.R2, adjR2: chosen.adjR2,
-        rawGapPct,
-        medianKv, medianMa,                   // underlag för kronor-omräkningen i UI
-        sequential,
-        ansvarSteg,
-        yrkesSteg,
-        explainedShare,
-        perBas,
-        nBas: basList.length,
-        nKvAnalysed: kvN, nMaAnalysed: maN
-    };
-}
-
-/**
- * Huvudregressionen med yrkesgrupp inom BAS (ADR-56): fasta effekter för AID×BAS med inomtransformation (ADR-46),
- * som steget + Yrkesgrupp, men här behövs också standardfel. Skattningen görs på de transformerade variablerna
- * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Standardfelen är
- * den fulla designens (ADR-77): HC3 räknas med hävstången h_i + 1/n_g, den fulla designens, och skalas inte; den
- * klassiska kovariansen skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader. k räknas med gruppnivåerna,
- * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
- * tom konstant), så att resten av runOLSRegression läser kön på index 1 och ålder på index 2.
- * hHoga räknas på samma fulla hävstång: en ensam person i en grupp har h = 1.
- * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number}}
- */
-function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
-    const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
-    const inom = _rgInomYrkesgrupp(raw, y, kol);
-    if (!inom.ok) return null;
-    const fit = _fitOLS(inom.X, inom.yW, inom.hGrupp);
-    if (!fit) return null;
-    const n = raw.length, p = kol[0].length, k = inom.k;
-    if (n - k <= 0) return null;
-    const skala = (n - p) / (n - k);
-    const vidga = (V, s) => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * s)]); return ut; };
-    const R2 = inom.R2Total(fit.rss);
-    return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3, 1), vcovClassic: vidga(fit.vcovClassic, skala), R2,
-        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
 // Hårda mellanslag (U+00A0): «p < 0,001» bryts inte mellan tecknet och talet i en smal kolumn.
@@ -30643,7 +31313,7 @@ let _regKvantilSenast = null;
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
 // tabellen säger det. IRLS-skattningen (_quantileRegression) är en approximation av kvantillösningen; intervallet
 // bootstrappar den approximationen, inte den exakta LP-lösningen.
-const REG_KVANTIL_KI_B = 200, REG_KVANTIL_KI_MAX_N = 2000;
+const REG_KVANTIL_KI_B = _osKonstanter().KVANTIL_KI_B, REG_KVANTIL_KI_MAX_N = _osKonstanter().KVANTIL_KI_MAX_N;
 // Minne för senaste beräkning: kortet ritas om vid varje flikbyte, och bootstrappen är det dyra (uppmätt ~0,5 s
 // på demodatat, ~11 s på 5 000 rader, därav gränsen 2 000 ≈ 4 s). Nyckeln är datats eget frö (antal och lönesummor per kön) plus ålderssumman.
 /** @type {{nyckel: string, ut: any}|null} */
@@ -30697,37 +31367,10 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     }
     return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
 }
+// Omsamplingarna och percentilintervallen är kvantilBootstrap i src/lib/osakerhet.js (B = REG_KVANTIL_KI_B, seedad ur
+// lönerna per kön).
 function _regKvantilBootstrap(raw, modell, results, arKv) {
-    const rnd = _rngFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
-    const n = raw.length, B = REG_KVANTIL_KI_B;
-    const prov = results.map(() => []);
-    const diffProv = [];
-    const i10 = results.findIndex(r => r.tau === 0.1), i90 = results.findIndex(r => r.tau === 0.9);
-    // Ålder centreras på hela urvalets medel (könskoefficienten beror inte på centreringen).
-    const ageMean = modell.alder ? raw.reduce((s, d) => s + d.alder, 0) / n : undefined;
-    // Varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
-    const hel = _rgKvantilDesign(raw, modell, { ageMean });
-    const helBeta = results.map(r => (r.error ? null : (_quantileRegression(hel.X, hel.y, r.tau) || {}).beta || null));
-    for (let b = 0; b < B; b++) {
-        const urval = new Array(n);
-        for (let i = 0; i < n; i++) urval[i] = raw[Math.floor(rnd() * n)];
-        const { X, y, kolumner } = _rgKvantilDesign(urval, modell, { ageMean });
-        const konPct = results.map((r, k) => {
-            if (r.error) return null;
-            const b0 = helBeta[k];
-            const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
-            const fit = _quantileRegression(X, y, r.tau, undefined, undefined, start);
-            return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
-        });
-        konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });
-        if (i10 >= 0 && i90 >= 0 && konPct[i10] != null && konPct[i90] != null) diffProv.push(konPct[i90] - konPct[i10]);
-    }
-    const intervall = v => {
-        v.sort((a, c) => a - c);
-        return v.length < B / 2 ? null : { lag: v[Math.floor(v.length * 0.025)], hog: v[Math.min(v.length - 1, Math.floor(v.length * 0.975))] };
-    };
-    results.forEach((r, k) => { if (!r.error) r.ki = intervall(prov[k]); });
-    return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
+    return _osKvantilBootstrap(raw, modell, results, arKv);
 }
 // Tre skattningar är ingen trend: en rad per del av lönefördelningen, med gapet som ett streck från
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.
@@ -31151,8 +31794,9 @@ function renderRegressionCard() {
     }).join(' &nbsp;|&nbsp; ');
 
     // Tolkning – plain language sammanfattning
-    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns
-    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
+    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har direktivets tecken (positivt när
+    // kvinnor ligger lägre), det råa gapet framför det verktygets (rawGapPct, negativt när kvinnor ligger lägre).
+    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPctDirektivtecken) : '';
     const tolkning = isSig
         ? (Math.abs(r.konPct) >= _STS_STORLEK
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`
@@ -31937,10 +32581,10 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
             { label: 'Förändring 25–65 år',                     value: (result.gapDelta >= 0 ? '+' : '') + svTal(result.gapDelta, 2) + ' procentenheter', note: 'Kvinnors lön mot mäns; minus betyder att kvinnorna halkar efter.' }
         ],
         formula: `<strong>Beräkning av predikterad lön per BAS:</strong><br>
-            För referens-BAS "${result.fixBas}" beräknas direkt från modellen:<br>
+            För referens-BAS "${esc(result.fixBas)}" beräknas direkt från modellen:<br>
             ln(lön) = β₀ + β_kön·isKv + β_ålder·(ålder−medel) + β_ålder²·(ålder−medel)² + β_kön×ålder·... + Σβ_BAS·dummies<br><br>
             För andra BAS ger modellens BAS-koefficient nivån:<br>
-            lön(BAS) = lön(${result.fixBas}) × <em>exp(β_BAS − β_${result.fixBas})</em><br><br>
+            lön(BAS) = lön(${esc(result.fixBas)}) × <em>exp(β_BAS − β_${esc(result.fixBas)})</em><br><br>
             <em>Obs! Modellen är additiv: ${T.niva.bf} påverkar lönenivån men inte hur skillnaden utvecklas. Därför är skillnaden i procent densamma i alla ${T.niva.fl}, medan beloppet i kronor skiljer eftersom lönenivåerna skiljer.</em>`,
         footer: `Livscykelmodellen låter skillnaden variera med åldern (via samspelet mellan kön och ålder). Är samspelet inte signifikant (p minst 0,10) är skillnaden i praktiken densamma, och då räcker huvudregressionen. Är det signifikant behöver du överväga åtgärder som rör karriären.`
     };
@@ -32117,11 +32761,12 @@ function generateMotivationSuggestions(item) {
         });
     }
 
-    // 6. Quick-win
+    // 6. Quick-win (villkoret i src/lib/prioritering.js; texten beskriver det)
     if (item.isQuickWin) {
+        const K = _prKonstanter();
         out.push({
             type: 'ok',
-            text: `<strong>Snabbvinst:</strong> få personer (${item.n}), hanterbar kostnad per person (~${Math.round(item.costPerPerson).toLocaleString('sv-SE')} kr/månad). Lämplig för pilotåtgärd för att visa förändringsvilja.`
+            text: `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${item.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`
         });
     }
 
@@ -32189,11 +32834,11 @@ function _prioKonStatus(i) {
         : 'Skillnaden är under 3 %. Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.';
     return `<span class="la-status ar-${st.farg} prio-konstatus" data-niva="${st.niva}" data-export-text="" title="${esc(tips)}">${ikon(st.ikon)}${esc(st.serie)}</span>`;
 }
-/** PO-raden under nyckeltalet: standardvärdet säger var det kommer ifrån, ett eget värde bara var det ändras. */
+/** PO-raden under nyckeltalet: standardvärdet säger att det är ett antagande, ett eget värde bara var det ändras. */
 function _prioPoText() {
     const po = state.costSettings.poPct;
     return po === COST_DEFAULTS.poPct
-        ? `inkl. PO-påslag ${svPct(po, 2)} (SKR:s standardvärde för kommuner; ändras under Inställningar)`
+        ? `inkl. PO-påslag ${svPct(po, 2)} (ett standardantagande; sätt organisationens eget under Inställningar)`
         : `inkl. PO-påslag ${svPct(po, 2)} (ändras under Inställningar)`;
 }
 
@@ -32383,7 +33028,7 @@ function renderPrioritering() {
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
             ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
-            ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
+            ['Riktningsvikt', `${_prKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${_prKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
             ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
         ],
         notes: [
@@ -32670,7 +33315,7 @@ function _readCostSettings() {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
             ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
+            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
     }
 }
 // Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som
@@ -32894,8 +33539,6 @@ function _hpTaBortEgen(nyckel) {
 /** Raderna i handlingsplanen: de förifyllda från Prioritering och Likvärdigt arbete, sedan de egna. `baraEgna` hoppar
  *  över förifyllningen (utan underlag). */
 function _handlingsplanSeedRows({ baraEgna = false } = {}) {
-    const months = (state.costSettings && state.costSettings.months) || 12;
-    const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
     const rows = [], nycklar = [], skillnader = [], minsta = [];
     let prioCount = 0, lvCount = 0, parUtelamnade = 0;
     // En rad: [åtgärd, grupp, underlag, sakligt skäl, kostnad, ansvarig, tidsplan, status, antal berörda] — med det som
@@ -32928,7 +33571,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
             const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
             parUtelamnade = utelamnade;
             par.forEach(p => {
-                const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
+                const arsKostnad = Math.round(_kostPeriod(Math.abs(p.gapKr) * (p.kvN || 1), state.costSettings));
                 lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerad)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
                 lvCount++;
             });
@@ -35417,7 +36060,7 @@ const INFO_SECTIONS = {
         <ul>
             <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
-            <li><code>_cleanYrkeField()</code> trunkerar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en}, maskerar namn-mönster</li>
+            <li><code>_cleanYrkeField()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
         <h4>Lager 3 — Allt ligger i arbetsminnet</h4>
@@ -35435,7 +36078,7 @@ const INFO_SECTIONS = {
         <h3>Radering och insyn</h3>
         <ul>
             <li><strong>Rensa all data:</strong> knappen under Inställningar tömmer minnet omedelbart utan att vänta på att fliken stängs: lagringsminimering och dataskydd som standard. De registrerades rätt till radering utövas mot källsystemet, inte i verktyget.</li>
-            <li><strong>Vad lagras?</strong> — panelen visar live schema, antal rader, ungefärlig minnesfootprint och en maskerad exempel-post.</li>
+            <li><strong>Vad lagras?</strong> — panelen visar live schema, antal rader, ungefärlig minnesfootprint och den första posten som exempel.</li>
             <li><strong>Lagringsminimering:</strong> Datan försvinner automatiskt när webbläsarfliken stängs. Ingen retention-policy behövs.</li>
         </ul>
 
@@ -35460,7 +36103,7 @@ const INFO_SECTIONS = {
             <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} ${personOrd(kInstalld())}. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
             <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade arbeten prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats. Det gäller Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern.</li>
             <li><strong>Enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</li>
-            <li><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV eller urklipp). Vissa diagram visar enskilda personer, till exempel lön mot ålder och individpunkter. Då har diagramdatan en rad per person, utan namn eller identifierare. Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</li>
+            <li><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV eller urklipp). Vissa diagram visar enskilda personer, till exempel lön mot ålder och individpunkter. Då har diagramdatan en rad per person, och text ur fältet för ${T.enhet.en} kan följa med som den står i lönefilen. Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</li>
         </ul>
 
         <h3>Skydd i flera lager</h3>
@@ -35642,10 +36285,9 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
 
         <h3>Externa datakällor</h3>
         <ul>
-            <li><strong>SKR</strong> är Sveriges Kommuner och Regioner, arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker därifrån:</li>
+            <li><strong>SKR</strong> är Sveriges Kommuner och Regioner, arbetsgivarorganisationen för kommuner och regioner. Verktyget använder två saker därifrån:</li>
             <li>AID — indelningen av arbetsuppgifter (Arbetsidentifikation kommuner och regioner), som ${T.kod.bfl} i lönefilen följer</li>
             <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per ${T.kod.en} i kommuner och regioner. I verktyget kallad <em>Kvinnor nationellt</em>: ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete</li>
-            <li>SKR:s cirkulär 2025 — PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen (andra arbetsgivare sätter sitt eget)</li>
             <li>SCB, Arbetskraftsundersökningarna (AKU), årsmedeltal 2023, avrundade — åldersfördelningen som referens i Ålder &amp; karriär</li>
         </ul>
 
@@ -36231,7 +36873,7 @@ function renderGapUppdelning() {
         const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
         const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
-            // Grupper som räknats samman (ADR-84) redovisas bara med antal — deras belopp kunde röja en liten grupp.
+            // Grupper som räknats samman (ADR-87) redovisas bara med antal — deras belopp kunde röja en liten grupp.
             + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${esc(_guOvrigaText(u.ovrigaAntal[del.id], kTroskel()))}</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><svg class="gu-ruta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="2" fill="${farg}"/></svg><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
@@ -36255,7 +36897,7 @@ function renderGapUppdelning() {
 // Uppdelningen som trappa i omvänd ordning: hela skillnaden först, sedan delarna (A, B, … en per vald variabel
 // och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
 // under, och aldrig en enskild grupps bidrag (i exportläget räknas grupper där ett kön är under tröskeln samman först,
-// ADR-84). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
+// ADR-87). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
 const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
 /** Delens andel av hela skillnaden i procent, eller null när den inte säger något: en liten skillnad (`litetGap`), en
  * del som går åt andra hållet än helheten eller en del som är större än helheten. @param {any} u @param {number} v */
@@ -38535,21 +39177,11 @@ function _lpExcelBlad() {
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 
-// Bootstrap-KI på mediankvoten (kvinnors median som % av männens). Samma dragningar
-// som översikten per BAS-intervall (_laBootstrapGapCI), med medianerna ur rangräkning
-// (_lvBootstrapMedianer). B = 2000 matchar computeBootstrapCI: B=600 gav ~±0,5 pp
-// Monte Carlo-spridning på KI-gränserna, vilket märktes för gränsfall.
-function _gdBootstrapGapCI(kvLons, maLons, B = 2000) {
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const ratios = new Array(B);
-    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
-    }
-    const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
-    if (ok.length < 20) return null;
-    return { lo: ok[Math.floor(ok.length * 0.025)], hi: ok[Math.floor(ok.length * 0.975)] };
+// Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
+// dragningar som översikten per BAS-intervall (_laBootstrapGapCI), med B = 2000 som computeBootstrapCI; dragningar
+// där männens median inte är positiv räknas inte.
+function _gdBootstrapGapCI(kvLons, maLons, B) {
+    return _osMedianKvotKIGiltiga(kvLons, maLons, { B });
 }
 
 /** Alla grupper som får öppnas i dossier (k-anonymitet som överallt annars). */

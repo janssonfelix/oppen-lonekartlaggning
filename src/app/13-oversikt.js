@@ -156,47 +156,15 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
 
 // ---- #10 Bootstrap-CI för mediankvoten kvinnor/män ----
 /**
- * Beräknar 95%-konfidensintervall för median-ratio (kvinnor / män)
- * via percentil-bootstrap. Cachas i state.bootstrapCI så det inte räknas om
- * vid varje rendering.
- *
- * Metod: dra B = 600 sampel med återläggning från vardera könsgrupp,
- * beräkna mediankvot per sampel, ta percentil [2.5, 97.5] för CI.
- *
- * För N > 5000: vi sampar enbart en delmängd om N kvar > 2000 per grupp
- * eftersom medianskattningen redan är extremt stabil — hindrar att
- * en stor organisation blockerar UI-tråden i hundratals ms.
+ * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
+ * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
+ * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
+ * procent har direktivets tecken, positiv när kvinnor ligger lägre (gapPctDirektivtecken).
  */
 function computeBootstrapCI() {
     const t0 = performance.now();
-    const d = getData().filter(r => r.lon > 0);
-    const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
-    if (kv.length < statGolv() || ma.length < statGolv()) { state.bootstrapCI = null; return; }
-
-    // B=2000: med B=600 blir Monte Carlo-variabiliteten på CI-gränserna
-    // ~±0,5 pp, vilket märks för gränsfalls-par. Variationen minskar med 1/√B, så B=2000 ger ungefär hälften,
-    // och räkningen tar i praktiken ~50-200 ms på alla typiska storlekar.
-    const B = 2000;
-    const ratios = new Array(B);
-    // Dragningarnas medianer ur rangräkning (O(n) per dragning) — sortering ger O(B·n log n), flera sekunder
-    // vid 20 000 rader. Identiskt resultat.
-    const m = _lvBootstrapMedianer(kv, ma, B, _rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mKv = m.kv[b], mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? mKv / mMa : 1;
-    }
-    ratios.sort((a, b) => a - b);
-    const lo = ratios[Math.floor(B * 0.025)];
-    const hi = ratios[Math.floor(B * 0.975)];
-    const point = Stat.median(kv) / Stat.median(ma);
-
-    state.bootstrapCI = {
-        ratio:    { point, lo, hi },
-        gapPct:   { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
-        elapsed:  performance.now() - t0,
-        B
-    };
+    const ki = _osOrganisationensKvotKI(getData(), statGolv());
+    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPctDirektivtecken: ki.gapPctDirektivtecken, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
 /**
@@ -213,76 +181,13 @@ function fmtCI(ci, decimals = 1) {
 
 // ---- #9 Power-analys: minsta detekterbara effektstorlek ----
 /**
- * Beräknar minsta detekterbara lönegap (kr-procent) för regression β_kön
- * vid 80% power, α=0.05. Använder klassisk formel:
- *
- *     MDE_logβ ≈ (z_{1-α/2} + z_{1-power}) · σ_log · √(1/n_kv + 1/n_ma)
- *              ≈ 2.802 · σ_log · √(1/n_kv + 1/n_ma)
- *
- * där σ_log är spridningen i log(lön) INOM grupp: den poolade standardavvikelsen av
- * residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom BAS
- * med minst statGolv() av varje kön (samma idé som trattdiagrammets σ i Lika arbete,
- * _laTrattUnderlagRakna). Spridningen över hela urvalet duger inte: den rymmer
- * skillnaderna mellan BAS-intervallen och överskattar därmed spridningen inom en grupp,
- * så att MDE per grupp blev för stor. Är underlaget för litet (inga grupper når golvet,
- * eller färre än MDE_SIGMA_MIN_RESIDUALER residualer) faller σ tillbaka på hela urvalet.
- *
+ * Minsta upptäckbara lönegap (procent) för regressionens könskoefficient vid 80 % styrka och α = 0,05, med σ för
+ * log(lön) inom grupp (styrkeanalys i src/lib/osakerhet.js; golvet för grupperna är statGolv()).
  * @returns {null | {n:number, nKv:number, nMa:number, mdePct:number, sigma:number, sigmaKalla:'inomGrupp'|'helaUrvalet',
  *                   sigmaHela:number, sigmaGrupper:number, balanced:boolean}}
  */
-const MDE_SIGMA_MIN_RESIDUALER = 20;
 function computePowerAnalysis() {
-    const d = getData().filter(r => r.lon > 0);
-    if (d.length < 10) return null;
-    const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
-    const kv = d.filter(arKv).map(r => r.lon);
-    const ma = d.filter(arMa).map(r => r.lon);
-    if (kv.length < 2 || ma.length < 2) return null;
-    // SD av log(lön) över hela urvalet — reserven när underlaget per grupp är för litet
-    const allLog = d.map(r => Math.log(r.lon));
-    const meanLog = allLog.reduce((s, v) => s + v, 0) / allLog.length;
-    const varLog  = allLog.reduce((s, v) => s + (v - meanLog) ** 2, 0) / (allLog.length - 1);
-    const sigmaHela = Math.sqrt(varLog);
-    const inom = _mdeSigmaInomGrupp(d, arKv, arMa, statGolv());
-    const sigma = inom ? inom.sigma : sigmaHela;
-    // Cohen-style MDE för diff-of-means på log-skala vid 80% power, α=0.05
-    const Z = 2.802; // 1.96 (α/2 tvåsidig) + 0.842 (power 80%)
-    const mdeLog = Z * sigma * Math.sqrt(1 / kv.length + 1 / ma.length);
-    const mdePct = (Math.exp(mdeLog) - 1) * 100;
-    const minN = Math.min(kv.length, ma.length);
-    const maxN = Math.max(kv.length, ma.length);
-    // Jämn könsfördelning enligt verktygets definition: båda könen ≥ 40% av totalen.
-    const balanced = minN / (minN + maxN) >= 0.4;
-    return { n: d.length, nKv: kv.length, nMa: ma.length, mdePct, sigma, sigmaKalla: inom ? 'inomGrupp' : 'helaUrvalet',
-             sigmaHela, sigmaGrupper: inom ? inom.grupper : 0, balanced };
-}
-/**
- * Poolad standardavvikelse av residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom
- * BAS med minst `golv` av varje kön. Frihetsgraderna är antalet residualer minus två medianer per grupp.
- * @returns {null | {sigma:number, grupper:number, residualer:number}} null när underlaget är för litet
- */
-function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
-    const perGrupp = new Map();
-    for (const r of d) {
-        const kv = arKv(r), ma = arMa(r);
-        if (!kv && !ma) continue;
-        const nyckel = `${r.yrke}|${r.bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { kv: [], ma: [] });
-        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
-    }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= golv && g.ma.length >= golv);
-    if (!grupper.length) return null;
-    let summa = 0, antal = 0;
-    for (const g of grupper) {
-        for (const [loner] of [[g.kv], [g.ma]]) {
-            const logMed = Math.log(Stat.median(loner));
-            for (const v of loner) { summa += (Math.log(v) - logMed) ** 2; antal++; }
-        }
-    }
-    const df = antal - 2 * grupper.length;
-    if (antal < MDE_SIGMA_MIN_RESIDUALER || df < 1) return null;
-    const sigma = Math.sqrt(summa / df);
-    return sigma > 0 ? { sigma, grupper: grupper.length, residualer: antal } : null;
+    return _osStyrkeanalys(getData(), statGolv());
 }
 
 // ---- Process-tracker: status för hela lagresan (kap. 3, §§ 8–14) ----
@@ -478,24 +383,15 @@ function _ovRitaFilrad(har, antal) {
 }
 
 /**
- * Beräknar MDE för en specifik undergrupp (t.ex. en yrkesgrupp eller BAS-rad).
- * Återanvänder σ ur computePowerAnalysis: spridningen i log-lön INOM grupp (poolad över
- * yrkesgrupperna inom BAS), inte över hela urvalet — den är stabil över grupper.
- *
+ * Minsta upptäckbara skillnad för en undergrupp (yrkesgrupp, BAS-rad) med σ ur computePowerAnalysis: spridningen i
+ * log-lön INOM grupp (gruppMde i src/lib/osakerhet.js).
  * @param {number} nKv - antal kvinnor i gruppen
  * @param {number} nMa - antal män i gruppen
  * @param {number} [sigmaLog] - σ för log(lön) (default: hämta från cache)
  * @returns {null | {mdePct:number, level:'good'|'fair'|'poor', tooSmall:boolean}}
  */
 function computeGroupMDE(nKv, nMa, sigmaLog) {
-    const sigma = sigmaLog || state.powerAnalysis?.sigma;
-    if (!sigma || nKv < 2 || nMa < 2) return null;
-    const Z = 2.802;
-    const mdeLog = Z * sigma * Math.sqrt(1 / nKv + 1 / nMa);
-    const mdePct = (Math.exp(mdeLog) - 1) * 100;
-    const level = mdePct < 3 ? 'good' : mdePct < 7 ? 'fair' : 'poor';
-    const tooSmall = nKv < 5 || nMa < 5;
-    return { mdePct, level, tooSmall };
+    return _osGruppMde(nKv, nMa, sigmaLog || state.powerAnalysis?.sigma);
 }
 
 // ---- Dashboard stats ----

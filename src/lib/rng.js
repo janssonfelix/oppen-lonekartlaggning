@@ -13,6 +13,11 @@
  * samma intervall, varje gång, i varje webbläsare. Statistiskt likvärdigt —
  * bootstrap kräver bara att draget är pseudoslumpmässigt, inte oförutsägbart.
  *
+ * Löftet gäller också oavsett radordningen (ADR-86): seeden byggs ur antal och
+ * summa per serie, och de som drar ur en lista (bootstrapen och omkastningen i
+ * likvardighet.js och status.js, kvantilbootstrapen i osakerhet.js) sorterar
+ * den först. Samma löner i en annan ordning ger samma intervall.
+ *
  * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_rng*`
  * i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra här och kör
  * `npm run build:app`, rör ej spegeln (vaktas av tests/drift.test.js).
@@ -52,7 +57,9 @@ export function mulberry32(seed) {
 /**
  * Härleder en stabil seed ur själva talserierna. Använder längd + summa per
  * serie, vilket är billigt och ändras så fort underlaget ändras (ny fil, annat
- * urval → nytt men reproducerbart intervall).
+ * urval → nytt men reproducerbart intervall). Summan tas över talen sorterade
+ * stigande: med decimaler (öre) kan en flyttalssumma annars skilja i sista
+ * siffran mellan två ordningar och, när den slutar på ,50, avrundas olika.
  * @param {...Array<number>} arrays
  * @returns {number}
  */
@@ -60,11 +67,14 @@ export function seedFromNumbers(...arrays) {
     let s = '';
     for (const arr of arrays) {
         if (!Array.isArray(arr)) { s += 'x|'; continue; }
-        let sum = 0;
+        const tal = [];
         for (let i = 0; i < arr.length; i++) {
             const v = Number(arr[i]);
-            if (isFinite(v)) sum += v;
+            if (isFinite(v)) tal.push(v);
         }
+        tal.sort((x, y) => x - y);
+        let sum = 0;
+        for (let i = 0; i < tal.length; i++) sum += tal[i];
         s += arr.length + ':' + Math.round(sum) + '|';
     }
     return hashSeed(s);

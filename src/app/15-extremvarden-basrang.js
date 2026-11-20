@@ -3,49 +3,13 @@
 
 // ---- Outliers-detektor (rad-nivå) ----
 /**
- * Identifierar individuella löner som ligger ovanligt långt från sin BAS-grupps median.
- * Använder log-skala (robust mot positivt skev fördelning) och Z-poäng = (log(lön) − μ)/σ.
- * Z ≥ threshold flaggas som outlier för manuell granskning (kan vara felinmatning).
+ * Löner som ligger ovanligt långt från sitt BAS-intervalls medel på log-skala (extremvarden i src/lib/osakerhet.js):
+ * |z| ≥ threshold flaggas för manuell granskning (kan vara felinmatning). BAS-intervall under statGolv() bedöms inte.
  * @param {number} [threshold=3] - Z-tröskel.
  * @returns {Array<Object>} Outlier-rader sorterade på |Z| desc.
  */
-function detectOutliers(threshold = 3) {
-    const d = getData();
-    if (!d.length) return [];
-    // Gruppera per BAS, beräkna log-mean + log-SD
-    const byBas = {};
-    d.forEach((r, idx) => {
-        if (!byBas[r.bas]) byBas[r.bas] = [];
-        byBas[r.bas].push({ ...r, _idx: idx + 1 });
-    });
-    const results = [];
-    Object.entries(byBas).forEach(([_bas, rows]) => {
-        if (rows.length < statGolv()) return; // för få för en spridningsskattning
-        const logs = rows.map(r => Math.log(r.lon));
-        const mean = logs.reduce((s, v) => s + v, 0) / logs.length;
-        const variance = logs.reduce((s, v) => s + (v - mean) ** 2, 0) / Math.max(1, logs.length - 1);
-        const sd = Math.sqrt(variance);
-        if (sd === 0) return;
-        const groupMedian = Stat.median(rows.map(r => r.lon));
-        rows.forEach(r => {
-            const z = (Math.log(r.lon) - mean) / sd;
-            if (Math.abs(z) >= threshold) {
-                results.push({
-                    radnr: r.radnr ?? null,
-                    bas: r.bas,
-                    yrke: r.yrke,
-                    kon: r.kon.includes('kvinna') ? 'Kvinna' : 'Man',
-                    alder: r.alder,
-                    lon: r.lon,
-                    groupMedian,
-                    z,
-                    diffPct: ((r.lon - groupMedian) / groupMedian) * 100
-                });
-            }
-        });
-    });
-    results.sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
-    return results;
+function detectOutliers(threshold) {
+    return _osExtremvarden(getData(), statGolv(), threshold);
 }
 
 function renderOutliers() {

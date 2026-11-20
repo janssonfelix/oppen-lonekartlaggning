@@ -42,10 +42,12 @@ import * as libIp from '../src/lib/importprofiler.js';
 import * as libFk from '../src/lib/forhandskontroll.js';
 import * as libAg from '../src/lib/attgora.js';
 import * as libSts from '../src/lib/status.js';
+import * as libOs from '../src/lib/osakerhet.js';
 import * as libAidEt from '../src/lib/aid-etiketter.js';
 import * as libAid from '../src/lib/aid.js';
 import * as libSk from '../src/lib/sektor.js';
 import * as libAn from '../src/lib/ansvar.js';
+import * as libIl from '../src/lib/inlasning.js';
 import * as libAk from '../src/lib/aidkontroll.js';
 import * as libSkrP from '../src/lib/skr-personal.js';
 import * as libSkrR from '../src/lib/skrreferens.js';
@@ -58,6 +60,7 @@ import * as libDocx from '../src/lib/docx.js';
 import * as libFigur from '../src/lib/figur.js';
 import * as libReg from '../src/lib/regression.js';
 import * as libPr from '../src/lib/prioritering.js';
+import * as libKost from '../src/lib/kostnad.js';
 import * as libLc from '../src/lib/livscykel.js';
 import * as libOf from '../src/lib/organisationsfil.js';
 import * as libPb from '../src/lib/perbas.js';
@@ -97,8 +100,8 @@ const allAliases = MODULES.flatMap(m => Object.values(m.expose)).filter(Boolean)
 const allEntries = MODULES.flatMap(m => Object.keys(m.expose));
 const M = new Function(`${mirrorsSrc}\n;return { ${[...allAliases, ...MODULES.map(m => m.ns)].join(', ')} };`)();
 const libByFile = { 'stat.js': libStat, 'loneoversyn.js': libFc, 'struktur.js': libSt,
-    'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'installningsgranser.js': libIg, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'referenser.js': libRf, 'namn.js': libNamn, 'termer.js': libTermer, 'htmltext.js': libHtmlText, 'undertryckning.js': libUndertryckning, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
-    'prioritering.js': libPr, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts };
+    'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'installningsgranser.js': libIg, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'inlasning.js': libIl, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'referenser.js': libRf, 'namn.js': libNamn, 'termer.js': libTermer, 'htmltext.js': libHtmlText, 'undertryckning.js': libUndertryckning, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
+    'prioritering.js': libPr, 'kostnad.js': libKost, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts, 'osakerhet.js': libOs };
 
 describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
     it('STALENESS: incheckad 09-lib-speglar.js är i synk med src/lib/ (kör gen-mirrors)', () => {
@@ -360,10 +363,11 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till sp
     it('spegelnamnen finns och pekar på rätt lib-funktioner', () => {
         const pr = MODULES.find(m => m.file === 'prioritering.js');
         const lc = MODULES.find(m => m.file === 'livscykel.js');
-        expect(pr.expose).toEqual({ prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening' });
+        expect(pr.expose).toEqual({ prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening', prioKonstanter: '_prKonstanter' });
         expect(lc.expose).toEqual({ livscykelRegression: '_lcLivscykelRegression', samspelSakerstallt: '_lcSamspelSakerstallt' });
         expect(typeof M._prPrioritera).toBe('function');
         expect(typeof M._prArsbeloppMening).toBe('function');
+        expect(typeof M._prKonstanter).toBe('function');
         expect(typeof M._lcLivscykelRegression).toBe('function');
         expect(typeof M._lcSamspelSakerstallt).toBe('function');
     });

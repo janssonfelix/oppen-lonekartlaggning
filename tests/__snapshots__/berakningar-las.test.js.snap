@@ -4,7 +4,7 @@ exports[`beräkningar på demodatan (låsta tal) > extremvärdena (detectOutlier
 
 exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal > _laBootstrapGapCI 1`] = `
 {
-  "hi": 94.65317919,
+  "hi": 94.59854015,
   "lo": 88.63636364,
 }
 `;
@@ -318,14 +318,14 @@ exports[`beräkningar på demodatan (låsta tal) > regressionslinjens KI (linear
 exports[`beräkningar på demodatan (låsta tal) > översiktens bootstrap-KI (state.bootstrapCI utan elapsed) ger samma tal > bootstrapCI 1`] = `
 {
   "B": 2000,
-  "gapPct": {
-    "hi": 18.00225734,
-    "lo": 11.76685325,
+  "gapPctDirektivtecken": {
+    "hi": 17.7996209,
+    "lo": 11.92593495,
     "point": 14.80748976,
   },
   "ratio": {
-    "hi": 0.8823314675,
-    "lo": 0.8199774266,
+    "hi": 0.8807406505,
+    "lo": 0.822003791,
     "point": 0.8519251024,
   },
 }

@@ -89,7 +89,7 @@ describe('hjälparen', () => {
 // arbete med antal, medellön för alla, män och kvinnor, kvot, andel kvinnor och medelålder; Löneskillnader i
 // åldersgrupper med antal, medelålder, medellön för alla och medellön per åldersgrupp. Antalet per åldersgrupp
 // (antalPerGrupp) skrivs inte ut. Hålen här stängdes med kompletterande undertryckning (ADR-83,
-// `kompletterandeUndertryckning` i src/lib/perbas.js): proven var `it.fails` och är nu vanliga `it`.
+// `kompletterandeUndertryckning` i src/lib/undertryckning.js): proven var `it.fails` och är nu vanliga `it`.
 describe('per BAS-intervall: Löneskillnader inom likvärdigt arbete, raden Alla mot intervallen', () => {
     const STORA = ['A', 'B', 'C', 'D', 'E'].map(bas => ({ bas, aid: '150101' }));
     for (const fall of FALL) {
@@ -318,7 +318,7 @@ describe('Huvudområdena: sektorsTabell och sektorernasAndel', () => {
     // visat huvudområdes antal och andel kvinnor. Med två huvudområden är sektorKr = Δs₁ · (w₁ − w₂), där wₛ är
     // medelvärdet av områdets medellön för kvinnor och män. Har det lilla området bara ett kön (en person har alltid
     // det) är w₂ dess medellön, och med de två totalerna blir det en ekvation med en okänd. Hålet stängdes med
-    // sammanslagning (ADR-84, `sammanslagning` i src/lib/undertryckning.js): ett huvudområde där ett kön har färre än
+    // sammanslagning (ADR-87, `sammanslagning` i src/lib/undertryckning.js): ett huvudområde där ett kön har färre än
     // tröskeln räknas samman med andra, och blir bara ett kvar skrivs beloppet inte.
     const skrivs = a => !!a && a.sektorKr !== null && a.andel !== null && Math.abs(a.andel) >= 0.01;   // annars står inget belopp
     for (const fall of FALL) {
@@ -395,7 +395,7 @@ describe('Var uppstår löneskillnaden: delarna och de största posterna', () =>
     // där W̄ är medelvärdet av de två medellönerna, och varje del är en ekvation till. Underlaget: BAS A med kvinnor och
     // män, BAS B med bara män, BAS C med en eller fyra kvinnor. Del C (lön inom samma AID och BAS) ger skillnaden mellan
     // kvinnor och män i A; en visad post i del A ger A:s eller B:s nivå; männens medellön ger det andra intervallet;
-    // kvinnornas medellön ger då kvinnorna i C. Hålet stängdes med sammanslagning (ADR-84): en grupp där ett kön har
+    // kvinnornas medellön ger då kvinnorna i C. Hålet stängdes med sammanslagning (ADR-87): en grupp där ett kön har
     // färre än tröskeln räknas samman med andra grupper inom samma övergrupp innan uppdelningen räknas, så att varje
     // grupp som delarna och posterna bygger på har 0 eller minst tröskeln av varje kön.
     const harled = (rader, gu, avrunda) => {

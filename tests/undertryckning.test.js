@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Kompletterande undertryckning (ADR-83) och sammanslagning (ADR-84) i src/lib/undertryckning.js. Hur reglerna
+ * Kompletterande undertryckning (ADR-83) och sammanslagning (ADR-87) i src/lib/undertryckning.js. Hur reglerna
  * tillämpas prövas i tests/perbas.test.js, tests/gapuppdelning.test.js och tests/sektor.test.js, och mot
  * härledningarna i tests/ktroskel-differens.test.js.
  */

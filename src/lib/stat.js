@@ -16,6 +16,7 @@
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
+ *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
  */
 
 /**
@@ -301,6 +302,23 @@ export function fitOLS(X, y, hTillagg = null) {
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
 
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
+}
+
+/** Percentilintervallets svans: andelen av de sorterade dragningarna som ligger under den nedre gränsen, och lika
+ * många över den övre. */
+export const KI_NEDRE = 0.025;
+
+/**
+ * Det 95-procentiga percentilintervallet ur en STIGANDE sorterad lista med dragningar (bootstrap, omkastning). Indexen
+ * är symmetriska (ADR-86): den nedre gränsen är värdet med index golvet av n · 0,025 (räknat från 0), den övre värdet
+ * med index n − 1 − golvet av n · 0,025, så att lika många dragningar ligger under den nedre som över den övre (med
+ * B = 1000: 25 på var sida). Indexräkningen finns bara här, så att alla intervall i verktyget tas på samma sätt.
+ * @param {ArrayLike<number>} sorterad
+ * @returns {{lag:number, hog:number}}
+ */
+export function percentilintervall(sorterad) {
+    const n = sorterad.length, svans = Math.floor(n * KI_NEDRE);
+    return { lag: sorterad[svans], hog: sorterad[n - 1 - svans] };
 }
 
 /**

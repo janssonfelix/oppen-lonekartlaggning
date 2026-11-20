@@ -73,7 +73,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-62 | Prioriteringens egna ord för läget mot referensen | Gällande | 2026-11-08 |
 | ADR-63 | Kvantilregressionen på huvudmodellens design, villkorad tolkning | Gällande | 2026-11-08 |
 | ADR-64 | Ålder är valfri i lönefilen | Gällande | 2026-11-08 |
-| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Ändrad av ADR-84 | 2026-11-10 |
+| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Ändrad av ADR-87 | 2026-11-10 |
 | ADR-68 | Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna | Ändrad av ADR-73 | 2026-11-13 |
 | ADR-69 | Löneöversyns förslag följer den inställda tröskeln | Gällande | 2026-11-13 |
 | ADR-70 | Skyddet gäller lönemått; antal och andelar är handläggarens ansvar | Gällande | 2026-11-14 |
@@ -90,7 +90,10 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Gällande | 2026-11-16 |
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 | ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
-| ADR-84 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
+| ADR-84 | PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning | Gällande | 2026-11-19 |
+| ADR-85 | Yrkesfältet maskeras inte; inläsningen varnar för personnamn | Gällande | 2026-11-20 |
+| ADR-86 | Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska | Gällande | 2026-11-19 |
+| ADR-87 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
 
 ## Besluten
 
@@ -501,9 +504,49 @@ användas i andra moduler; de utskrivande delarna skriver bara ut resultatet. *A
 på de visade grupperna, som ändrar vad raden betyder; att utelämna raden *Alla*. *Gäller i dag:* `k-troskeln.md`
 avsnitt 2.
 
-**ADR-84 — Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel.** Ändrar
-skyddsregeln i ADR-65 (och ADR-22). Följer principen i ADR-83: det som går att räkna fram ur det som skrivs ut ska
-vara ett medel för minst tröskeln personer, per kön där måttet är per kön. Uppdelningens delar och poster och
+**ADR-84 — PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning.** Beslutat av underhållaren
+2026-11-19. Kostnadsberäkningen räknar med PO-påslaget 40 % tills organisationen sätter sitt eget, i fältet under
+Inställningar eller i organisationspaketet. Förut räknade verktyget med 39,15 % och en hänvisning till ett cirkulär för
+kommuner och regioner, utan cirkulärets nummer. Påslaget skiljer sig mellan arbetsgivare och år, så standardvärdet är
+ett avrundat antagande och gränssnittet säger det, utan att namnge någon källa. Organisationspaketets egen not om
+påslaget (`poNot`) finns kvar; verktygets standard har ingen not. *Avvisat:* att behålla 39,15 % med hänvisningen, som
+saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i dag:* `COST_DEFAULTS` i
+`src/app/07-standardinstallningar.js`.
+
+**ADR-85 — Yrkesfältet maskeras inte; inläsningen varnar för personnamn.** Beslutat av underhållaren 2026-11-20.
+Fältet för AID-etikett behåller AID-koden och högst 40 tecken av etiketten, utan tecknen `< > " ' &`; ingenting i
+texten maskeras. Förut ersattes två versalinledda ord i rad och formen "Efternamn, Förnamn" med `***`. Den maskeringen
+förstörde riktiga etiketter ("Sjuksköterska Natt" blev "***" på varje rad) och skyddade inte: "Sjuksköterska Anna
+Andersson" blev "*** Andersson", och namn i gemener eller versaler rördes inte. I stället varnar inläsningen när
+fältet ser ut att innehålla personnamn: en text med namnmönster (två eller fler versalinledda ord i rad, eller
+"Efternamn, Förnamn") som står på högst två rader i filen. Varningen står i förhandskontrollen, i inläsningsrapporten
+och i Att göra, med antal rader och radnummer men aldrig texten. Den som tar ut filen ansvarar för att fältet bara bär
+kod och etikett; användaren ska hellre få veta att namn finns än tro att de är maskerade. *Avvisat:* att maskera alla
+versalinledda ord, som förstör riktiga etiketter; att behålla den gamla maskeringen, som inte skyddar och förstör
+etiketter; att ersätta filens text med etikettlistans namn, som tar bort organisationens lokala benämningar.
+*Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.4; `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader` i
+`src/lib/inlasning.js`.
+**ADR-86 — Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska.**
+Beslutat av underhållaren 2026-11-19. Bootstrapintervallen, omkastningens gränser (slumpens gränser i
+uppmärksamhetstrappan och trattdiagrammet) och kvantilregressionens intervall seedades redan ur antal och summa per
+serie, men dragningarna pekade på platser i listan som den stod i filen. Samma löner i en annan ordning gav därför
+andra gränser (i en mätning skilde sig bootstrapintervallet i 200 fall av 200, som mest 2,3 procentenheter vid 30 + 20
+personer, och slumpens gränser i 199 av 200), och en grupp nära gränsen kunde få olika status beroende på hur filen
+var sorterad. Nu dras bootstrapen ur gruppens löner sorterade stigande, omkastningen utgår från kvinnornas löner
+stigande följda av männens, kvantilbootstrapen sorterar raderna på en fast, fullständig nyckel (lön, kön,
+BAS-intervall, ålder, AID, yrke, ansvarsgrupp), och seeden summerar talen i stigande ordning, så att en summa av löner
+med öre inte avrundas olika i två ordningar. Sorteringen görs en gång, utanför dragningarna. Percentilintervallet tog
+den nedre gränsen med index golvet av n · 0,025 och den övre med golvet av n · 0,975, så att med 1 000 dragningar låg
+25 under den nedre och 24 över den övre; nu har den övre index n − 1 − golvet av n · 0,025, och lika många ligger på var
+sida. Intervallgränserna ändrades en gång, med några tiondels procentenheter; punktskattningarna berörs inte.
+Nedsamplingen av punktmoln följer fortfarande filens ordning: den avgör vilka punkter som ritas, inget tal som
+redovisas. *Avvisat:* att bara seeda ur den sorterade listan och fortsätta dra ur filens ordning, som inte tar bort
+beroendet; att lämna indexen, vars fel är litet men alltid drar åt samma håll. *Gäller i dag:*
+`regressionsmodellen.md` avsnitt 6–7, `likvardighetsmodellen.md` avsnitt 5, `src/lib/rng.js`.
+
+**ADR-87 — Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel.** Beslutat av
+underhållaren 2026-11-20. Ändrar skyddsregeln i ADR-65 (och ADR-22). Följer principen i ADR-83: det som går att räkna
+fram ur det som skrivs ut ska vara ett medel för minst tröskeln personer, per kön där måttet är per kön. Uppdelningens delar och poster och
 huvudområdenas andel är vägda medellöner per kön, och med medellönerna för hela urvalet och antalen bildade de ett
 ekvationssystem: med två huvudområden där det ena hade färre än tröskeln av ett kön gav beloppet det könets
 medellön, och i uppdelningen gick en liten grupps medellön att lösa ut fast posten inte stod, för vissa val av

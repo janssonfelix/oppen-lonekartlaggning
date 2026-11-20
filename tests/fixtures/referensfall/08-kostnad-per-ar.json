@@ -1,7 +1,7 @@
 {
   "id": "kostnad-per-ar",
   "titel": "Kostnad per år: 1 000 kr i månaden för tio personer, 12 månader, PO-påslag 39,15 %",
-  "funktion": "src/lib/prioritering.js#kostnadPerAr",
+  "funktion": "src/lib/kostnad.js#kostnadPerAr",
   "indata": [1000, 10, { "months": 12, "poPct": 39.15 }],
   "forvantat": 166980,
   "tolerans": 1e-6,

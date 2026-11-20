@@ -369,7 +369,7 @@ function renderSektorer(d) {
             <td class="num" data-sort-value="${r.n}">${r.n}</td><td class="num" data-sort-value="${r.andelKv == null ? '' : r.andelKv.toFixed(1)}">${pc(r.andelKv)}</td><td class="num" data-sort-value="${r.skrAndelKv == null ? '' : r.skrAndelKv.toFixed(1)}">${pc(r.skrAndelKv)}</td>${loner}<td>${just}</td>
             <td class="num" data-sort-value="${r.antalAid}">${r.antalAid}</td><td class="num" data-sort-value="${r.punkter}">${r.punkter}</td>${ledning}</tr>`;
     }).join('');
-    // Huvudområden där ett kön är under tröskeln räknas samman (ADR-84); noten säger vilka och varför.
+    // Huvudområden där ett kön är under tröskeln räknas samman (ADR-87); noten säger vilka och varför.
     const andelNot = _skSektorAndelNot(andel, kTroskel());
     const andelText = (!andel || andel.andel == null ? ''
         : Math.abs(andel.andel) < 0.01

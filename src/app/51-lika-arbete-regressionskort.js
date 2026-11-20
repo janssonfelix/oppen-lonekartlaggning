@@ -2,255 +2,19 @@
 // Copyright 2026 Felix Jansson
 
 /**
- * Huvudregression för "oförklarad löneskillnad" (EU 2023/970).
- *
- * Modell: log(lön) ~ kön + ålder (centrerad) + BAS-intervall (indikatorvariabler).
- * Returnerar koefficienter med HC3-robusta standardfel + p-värden, R², och
- * en steg-för-steg dekomposition (gap utan kontroll → +BAS → +ålder) som
- * vattenfallsdiagrammet bygger på. Konverterar log-koefficienten till
- * approximativ kr-procentskillnad: gapPct = (exp(β) − 1) · 100.
- *
- * BAS kodas som en indikator per BAS-intervall utom det första (alfabetiskt lägsta) som är
- * referens: varje intervall får sin egen lönenivå, utan antagandet att varje bokstavssteg
- * är värt lika mycket. Ordningen A–Z är ändå fast (se likvardighetsmodellen.md §6) och styr
- * vilket intervall som blir referens.
+ * Huvudregression för "oförklarad löneskillnad" (EU 2023/970), verktygets huvudtal: en tunn adapter som läser
+ * appens tillstånd och anropar huvudregression i src/lib/regression.js (via spegeln _rgHuvudregression). Modellen,
+ * golven och returvärdet beskrivs där och i regressionsmodellen.md §1. Räknas om vid varje anrop (ADR-17).
  * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
- *   annars beta, se, p, R2, n, k, gapPct, decomposition m.fl. — se return-satsen.
+ *   annars konPct, konPctLow, konPctHigh, sequential, perBas m.fl. — se huvudregression.
  */
 function runOLSRegression() {
-    // Utan ålder i lönefilen (ADR-64) används alla rader och modellen räknas utan ålder.
-    const medAlder = harAlder();
-    const raw = getData().filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
-    if (raw.length < 30) return { error: 'För få observationer (n < 30) för meningsfull regressionsanalys.', errorCode: 'low_n' };
-
-    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
-    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
-    if (kvN < 5 || maN < 5)
-        return { error: `Otillräcklig könsbalans i urvalet: ${kvN} kvinnor, ${maN} män. Minst 5 av varje kön krävs.`, errorCode: 'imbalance' };
-
-    const basList = [...new Set(raw.map(d => d.bas))].sort();
-    // Indikatorvariabler: en kolumn per BAS-intervall utom det första, som är referens.
-    const basRef0 = basList[0];
-    const basInd = _basIndikatorer(basList);
-
-    const ageMean = medAlder ? raw.reduce((s,d) => s + d.alder, 0) / raw.length : 0;
-
-    const y    = raw.map(d => Math.log(d.lon));
-    const isKv = raw.map(d => d.kon.includes('kvinna') ? 1 : 0);
-    const ageC = raw.map(d => d.alder - ageMean);
-    const basD = raw.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
-
-    // Förklaringsmodellen (ADR-56): vilka variabler som räknas bort. "Endast kön" är det ojusterade gapet, som inte får
-    // lämna verktyget när ett kön ligger under den inställda tröskeln (ADR-12); huvudtalet ska vara detsamma på skärmen
-    // och i exporten, så spärren följer den inställda tröskeln oavsett läge (som statGolv). Då gäller standardmodellen
-    // och panelen säger varför.
-    let modell = forklaringsmodell();
-    /** @type {string|null} */ let modellVarning = null;
-    if (!modell.bas && !modell.alder && !(kvN >= kInstalld() && maN >= kInstalld())) {
-        modell = { ...modell, bas: true, alder: medAlder };
-        modellVarning = `Endast kön kan inte väljas: ett kön har färre än ${kInstalld()} ${personOrd(kInstalld())} i modellen (minsta gruppstorlek), så den ojusterade skillnaden får inte vara huvudtalet. Modellen är kön + ${T.niva.en}${medAlder ? ' + ålder' : ''}.`;
-    }
-
-    // Kolumnordningen är fast: [1, kön, (ålder), (BAS-indikatorer)], så att index 2 är ålder när den är vald.
-    const buildX = (incAge, incBas) => raw.map((d,i) => {
-        const r = [1, isKv[i]];
-        if (incAge) r.push(ageC[i]);
-        if (incBas) r.push(...basD[i]);
-        return r;
+    return _rgHuvudregression(getData(), {
+        modell: forklaringsmodell(),   // normaliserad mot datat (ADR-56)
+        medAlder: harAlder(),          // ADR-64
+        kInstalld: kInstalld(),        // spärren för "Endast kön" följer den inställda tröskeln
+        golv: statGolv()               // regressionerna per BAS-intervall och ansvarssteget
     });
-    const beskriv = m => _rgModellBeskrivning(m);
-    // Reservstegen tar bort variabler i ordningen yrkesgrupp, BAS; inget bortvalt läggs tillbaka. 'full' = den valda modellen.
-    const ladder = [];
-    if (modell.yrkesgrupp) ladder.push({ name: 'full', desc: beskriv(modell), yrke: true });
-    const utanYrke = { ...modell, yrkesgrupp: false };
-    ladder.push({ name: modell.yrkesgrupp ? 'utanYrke' : 'full', desc: beskriv(utanYrke), X: buildX(utanYrke.alder, utanYrke.bas) });
-    if (modell.bas) { const m2 = { ...utanYrke, bas: false }; ladder.push({ name: 'minimal', desc: beskriv(m2), X: buildX(m2.alder, false) }); }
-
-    const triedSteps = [];
-    /** @type {any} */
-    let chosen = null;
-    for (const step of ladder) {
-        if (step.yrke) {
-            const fit = _regInomYrkesgrupp(raw, y, isKv, ageC, modell.alder);
-            if (!fit) { triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: null }); continue; }
-            triedSteps.push({ name: step.name, desc: step.desc, status: 'ok', k: fit.k });
-            chosen = { ...fit, modelName: step.name, modelDesc: step.desc };
-            break;
-        }
-        if (raw.length < step.X[0].length + 5) {
-            triedSteps.push({ name: step.name, desc: step.desc, status: 'too_few', k: step.X[0].length });
-            continue;
-        }
-        const fit = _fitOLS(step.X, y);
-        if (!fit) {
-            triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: step.X[0].length });
-            continue;
-        }
-        triedSteps.push({ name: step.name, desc: step.desc, status: 'ok', k: step.X[0].length });
-        chosen = { ...fit, modelName: step.name, modelDesc: step.desc };
-        break;
-    }
-
-    if (!chosen)
-        return {
-            error: 'Modellen kunde inte estimeras.',
-            errorCode: 'all_failed',
-            triedSteps,
-            diagnostics: _diagnoseCollinearity(raw, basList)
-        };
-    // Den modell som faktiskt skattades (reservsteget kan ha tagit bort variabler).
-    const skattad = chosen.modelName === 'full' ? modell : chosen.modelName === 'utanYrke' ? utanYrke : { ...utanYrke, bas: false };
-
-    // Kön-koefficient (index 1) – HC3 robusta standardfel
-    const betaKon  = chosen.beta[1];
-    const seKonR   = Math.sqrt(chosen.vcovHC3[1][1]);
-    const seKonC   = Math.sqrt(chosen.vcovClassic[1][1]);
-    const tStat    = betaKon / seKonR;
-    const pValue   = _pValue2Sided(tStat, chosen.n, chosen.k);
-    const pct      = (Math.exp(betaKon) - 1) * 100;
-    // Halvbredden för 95 % KI: t-fördelningens kvantil vid df = n − k (1,96 först vid df ≥ 100)
-    const tq       = _tQuantile(0.975, chosen.n - chosen.k);
-    const pctLow   = (Math.exp(betaKon - tq*seKonR) - 1) * 100;
-    const pctHigh  = (Math.exp(betaKon + tq*seKonR) - 1) * 100;
-    const pctLowC  = (Math.exp(betaKon - tq*seKonC) - 1) * 100;
-    const pctHighC = (Math.exp(betaKon + tq*seKonC) - 1) * 100;
-
-    // Ålders-koefficient (index 2): % per år. null när ålder inte är med i modellen.
-    /** @type {number|null} */ let ageEffect = null;
-    /** @type {number|null} */ let ageP = null;
-    if (skattad.alder) {
-        const betaAge   = chosen.beta[2];
-        const seAge     = Math.sqrt(chosen.vcovHC3[2][2]);
-        ageEffect = (Math.exp(betaAge) - 1) * 100;
-        ageP      = _pValue2Sided(betaAge/seAge, chosen.n, chosen.k);
-    }
-
-    // BAS-koefficienter: lönenivå per BAS-intervall i procent mot referensintervallet, när BAS-indikatorerna är med
-    // (null i reservmodellen och när yrkesgrupp inom BAS är vald, där BAS ingår i gruppnivåerna).
-    let basEffekter = null;
-    if (skattad.bas && !skattad.yrkesgrupp) {
-        const forsta = skattad.alder ? 3 : 2;
-        basEffekter = basInd.map((b, j) => {
-            const idx = forsta + j;
-            const beta = chosen.beta[idx];
-            const se   = Math.sqrt(chosen.vcovHC3[idx][idx]);
-            return {
-                bas: b,
-                pct: (Math.exp(beta) - 1) * 100,
-                low: (Math.exp(beta - tq*se) - 1) * 100,
-                high: (Math.exp(beta + tq*se) - 1) * 100,
-                p: _pValue2Sided(beta/se, chosen.n, chosen.k)
-            };
-        });
-    }
-    const basRef = skattad.bas ? basRef0 : null;
-    // Antal personer per BAS-intervall i modellen: redovisningen av effekterna följer tröskeln (_basEffekterForRedovisning).
-    /** @type {Record<string, number>} */
-    const basN = {};
-    for (const d of raw) basN[d.bas] = (basN[d.bas] || 0) + 1;
-
-    // Sekventiell dekomponering på den skattade modellen.
-    // Ansvarssteget lyfts ut: det redovisas på en egen rad och påverkar inte huvudtalet.
-    const allaSteg = _computeSequentialGap(raw, ageMean, basList, skattad);
-    const ansvarSteg = allaSteg.find(s => s.name === '+ Ansvar') ?? null;
-    // Yrkesgruppssteget (ADR-46) står sist i sequential. Är yrkesgrupp vald (ADR-56) är det huvudtalet; annars visas
-    // det efter huvudtalet, och huvudtalet och den förklarade andelen räknas till och med modellens sista OLS-steg.
-    const yrkesSteg = allaSteg.find(s => s.name === _RG_STEG_YRKE) ?? null;
-    const sequential = allaSteg.filter(s => s.name !== '+ Ansvar');
-    const seqOk = sequential.filter(s => s.status === 'ok' && (skattad.yrkesgrupp || s.name !== _RG_STEG_YRKE));
-    /** @type {number|null} */ let explainedShare = null;
-    if (seqOk.length >= 2) {
-        const first = Number(seqOk[0].gapPct);
-        const last  = Number(seqOk[seqOk.length - 1].gapPct);
-        if (Math.abs(first) > 0.1) {
-            explainedShare = ((Math.abs(first) - Math.abs(last)) / Math.abs(first)) * 100;
-        }
-    }
-
-    // Vad varje variabel tillför (ADR-56), alltid mot fullmodellen, och det som valts bort med sina tal.
-    const tillfor = _computeVariabelTillfor(raw, ageMean, basList);
-    const etikett = { bas: _FM_ETIKETT.bas, alder: _FM_ETIKETT.alder };
-    const bortvalt = ['bas', 'alder'].filter(v => !modell[v]).map(v => {
-        const rad = tillfor.rader.find(r => r.variabel === v);
-        return { variabel: v, etikett: etikett[v], deltaR2pp: rad ? rad.deltaR2pp : null, gapUtan: rad ? rad.gapUtan : null, gapMed: rad ? rad.gapMed : null, skal: modell.skal };
-    });
-
-    // Per-BAS conditional gap (separata regressioner inom varje BAS)
-    const perBas = _computePerBasGap(raw, basList);
-
-    const fellBackFromFull = chosen.modelName !== 'full';
-    const diagnostics = fellBackFromFull ? _diagnoseCollinearity(raw, basList) : [];
-
-    // Rått gap (median)
-    const kv = raw.filter(d => d.kon.includes('kvinna'));
-    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
-    const medianKv = Stat.median(kv.map(d=>d.lon));
-    const medianMa = Stat.median(ma.map(d=>d.lon));
-    const rawGapPct = (medianKv / medianMa - 1) * 100;
-
-    return {
-        modelName: chosen.modelName,
-        modelDesc: chosen.modelDesc,
-        modell: skattad,                      // den skattade förklaringsmodellen (ADR-56)
-        modellVald: modell,                   // den valda (skiljer sig från modell bara i reservsteget)
-        modellVarning,
-        fras: _rgModellFras(skattad),         // "ålder och BAS-intervall" m.fl.; tom för endast kön
-        tillfor,
-        bortvalt,
-        fellBackFromFull,
-        triedSteps,
-        diagnostics,
-        n: chosen.n, k: chosen.k, ageMean,
-        hHoga: chosen.hHoga ?? 0,             // observationer med hävstång > 0,99 (B4, teknisk specifikation)
-        konPct: pct, konPctLow: pctLow, konPctHigh: pctHigh,
-        // Samma skattning som kvinnors lön i % av mäns (log-modellen: exp(β) × 100 = 100 + konPct), måttet i
-        // flikarnas nyckeltalsrader.
-        konKvot: 100 + pct,
-        konPctLowClassical: pctLowC, konPctHighClassical: pctHighC,
-        seKonR, seKonC,
-        tStat, pValue, tKvantil: tq,          // halvbredden för 95 % KI i enheter av SE
-        ageEffect, ageP,
-        basEffekter,                          // per BAS-intervall utom referensen: nivå mot referensen (null vid reservmodell)
-        basRef,                               // referensintervallet (alfabetiskt första)
-        basN,                                 // antal personer per BAS-intervall i modellen
-        basList,                              // alfabetiskt sorterad lista, för referens i UI
-        R2: chosen.R2, adjR2: chosen.adjR2,
-        rawGapPct,
-        medianKv, medianMa,                   // underlag för kronor-omräkningen i UI
-        sequential,
-        ansvarSteg,
-        yrkesSteg,
-        explainedShare,
-        perBas,
-        nBas: basList.length,
-        nKvAnalysed: kvN, nMaAnalysed: maN
-    };
-}
-
-/**
- * Huvudregressionen med yrkesgrupp inom BAS (ADR-56): fasta effekter för AID×BAS med inomtransformation (ADR-46),
- * som steget + Yrkesgrupp, men här behövs också standardfel. Skattningen görs på de transformerade variablerna
- * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Standardfelen är
- * den fulla designens (ADR-77): HC3 räknas med hävstången h_i + 1/n_g, den fulla designens, och skalas inte; den
- * klassiska kovariansen skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader. k räknas med gruppnivåerna,
- * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
- * tom konstant), så att resten av runOLSRegression läser kön på index 1 och ålder på index 2.
- * hHoga räknas på samma fulla hävstång: en ensam person i en grupp har h = 1.
- * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number}}
- */
-function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
-    const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
-    const inom = _rgInomYrkesgrupp(raw, y, kol);
-    if (!inom.ok) return null;
-    const fit = _fitOLS(inom.X, inom.yW, inom.hGrupp);
-    if (!fit) return null;
-    const n = raw.length, p = kol[0].length, k = inom.k;
-    if (n - k <= 0) return null;
-    const skala = (n - p) / (n - k);
-    const vidga = (V, s) => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * s)]); return ut; };
-    const R2 = inom.R2Total(fit.rss);
-    return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3, 1), vcovClassic: vidga(fit.vcovClassic, skala), R2,
-        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
 // Hårda mellanslag (U+00A0): «p < 0,001» bryts inte mellan tecknet och talet i en smal kolumn.
@@ -497,7 +261,7 @@ let _regKvantilSenast = null;
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
 // tabellen säger det. IRLS-skattningen (_quantileRegression) är en approximation av kvantillösningen; intervallet
 // bootstrappar den approximationen, inte den exakta LP-lösningen.
-const REG_KVANTIL_KI_B = 200, REG_KVANTIL_KI_MAX_N = 2000;
+const REG_KVANTIL_KI_B = _osKonstanter().KVANTIL_KI_B, REG_KVANTIL_KI_MAX_N = _osKonstanter().KVANTIL_KI_MAX_N;
 // Minne för senaste beräkning: kortet ritas om vid varje flikbyte, och bootstrappen är det dyra (uppmätt ~0,5 s
 // på demodatat, ~11 s på 5 000 rader, därav gränsen 2 000 ≈ 4 s). Nyckeln är datats eget frö (antal och lönesummor per kön) plus ålderssumman.
 /** @type {{nyckel: string, ut: any}|null} */
@@ -551,37 +315,10 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     }
     return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
 }
+// Omsamplingarna och percentilintervallen är kvantilBootstrap i src/lib/osakerhet.js (B = REG_KVANTIL_KI_B, seedad ur
+// lönerna per kön).
 function _regKvantilBootstrap(raw, modell, results, arKv) {
-    const rnd = _rngFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
-    const n = raw.length, B = REG_KVANTIL_KI_B;
-    const prov = results.map(() => []);
-    const diffProv = [];
-    const i10 = results.findIndex(r => r.tau === 0.1), i90 = results.findIndex(r => r.tau === 0.9);
-    // Ålder centreras på hela urvalets medel (könskoefficienten beror inte på centreringen).
-    const ageMean = modell.alder ? raw.reduce((s, d) => s + d.alder, 0) / n : undefined;
-    // Varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
-    const hel = _rgKvantilDesign(raw, modell, { ageMean });
-    const helBeta = results.map(r => (r.error ? null : (_quantileRegression(hel.X, hel.y, r.tau) || {}).beta || null));
-    for (let b = 0; b < B; b++) {
-        const urval = new Array(n);
-        for (let i = 0; i < n; i++) urval[i] = raw[Math.floor(rnd() * n)];
-        const { X, y, kolumner } = _rgKvantilDesign(urval, modell, { ageMean });
-        const konPct = results.map((r, k) => {
-            if (r.error) return null;
-            const b0 = helBeta[k];
-            const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
-            const fit = _quantileRegression(X, y, r.tau, undefined, undefined, start);
-            return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
-        });
-        konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });
-        if (i10 >= 0 && i90 >= 0 && konPct[i10] != null && konPct[i90] != null) diffProv.push(konPct[i90] - konPct[i10]);
-    }
-    const intervall = v => {
-        v.sort((a, c) => a - c);
-        return v.length < B / 2 ? null : { lag: v[Math.floor(v.length * 0.025)], hog: v[Math.min(v.length - 1, Math.floor(v.length * 0.975))] };
-    };
-    results.forEach((r, k) => { if (!r.error) r.ki = intervall(prov[k]); });
-    return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
+    return _osKvantilBootstrap(raw, modell, results, arKv);
 }
 // Tre skattningar är ingen trend: en rad per del av lönefördelningen, med gapet som ett streck från
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.
@@ -1005,8 +742,9 @@ function renderRegressionCard() {
     }).join(' &nbsp;|&nbsp; ');
 
     // Tolkning – plain language sammanfattning
-    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns
-    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
+    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har direktivets tecken (positivt när
+    // kvinnor ligger lägre), det råa gapet framför det verktygets (rawGapPct, negativt när kvinnor ligger lägre).
+    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPctDirektivtecken) : '';
     const tolkning = isSig
         ? (Math.abs(r.konPct) >= _STS_STORLEK
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`

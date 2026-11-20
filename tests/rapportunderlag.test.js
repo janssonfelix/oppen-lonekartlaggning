@@ -322,7 +322,7 @@ describe('avsnittBlock uppdelning', () => {
         expect(b.tabell.rader.every(r => r[2] === '—')).toBe(true);
         expect(b.stycken.join(' ')).toContain('mindre än 1 %');
     });
-    it('sammanslagna grupper (ADR-84): delarna står, de sammanslagna namnges inte och en mening säger varför', () => {
+    it('sammanslagna grupper (ADR-87): delarna står, de sammanslagna namnges inte och en mening säger varför', () => {
         const u = gapUppdelning([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
             ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1')], { k: 10 });
         const b = avsnittBlock('uppdelning', u, { k: 10 });
@@ -578,7 +578,7 @@ describe('rapportunderlag: sektorernas andel nära noll', () => {
     });
 });
 
-describe('rapportunderlag: sammanräknade huvudområden (ADR-84)', () => {
+describe('rapportunderlag: sammanräknade huvudområden (ADR-87)', () => {
     const VARD = 'Vård- och omsorgsarbete med mera', STAD = 'Städ, tvätt och renhållningsarbete';
     it('beloppet står med en not om vilka områden som räknats samman och varför', () => {
         const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6000, sektorKr: 1500, andel: 0.25, sammanslagna: [VARD, STAD], sma: [STAD] } }, { k: 10 });

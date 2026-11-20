@@ -94,7 +94,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
  * Null när ett kön har färre än k personer: gapet i kronor tillsammans med gapet i procent
  * (Struktur) ger annars det lilla könets medellön — samma regel som gapuppdelning.js.
  *
- * Huvudområden där ett kön har 1 till k − 1 personer räknas samman med andra (ADR-84, `sammanslagning` i
+ * Huvudområden där ett kön har 1 till k − 1 personer räknas samman med andra (ADR-87, `sammanslagning` i
  * undertryckning.js), samma regel som del A i gapuppdelning.js: annars ger beloppet sektorKr tillsammans med kvinnornas
  * och männens medellön och antalen ett litet områdes medellön (med två huvudområden är det en ekvation med en okänd).
  * `sammanslagna` är de sammanräknade områdenas namn i tabellens ordning och `sma` de av dem där ett kön har för få.
@@ -126,7 +126,7 @@ export function sektorernasAndel(rader, { k = 10 } = {}) {
 }
 
 /**
- * Meningen om sammanräknade huvudområden under beloppet (vyn och rapportunderlaget, ADR-84), eller '' när inget
+ * Meningen om sammanräknade huvudområden under beloppet (vyn och rapportunderlaget, ADR-87), eller '' när inget
  * räknats samman. Namnger områdena; antal och namn omfattas inte av skyddet (ADR-70).
  * @param {{sektorKr:number|null, sammanslagna?:string[], sma?:string[]}|null} a - sektorernasAndel()
  * @param {number} k

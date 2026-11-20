@@ -206,9 +206,9 @@ describe('sektor: sektorernas andel av gapet', () => {
     });
 });
 
-// ADR-84: ett huvudområde där ett kön har 1 till k − 1 personer räknas samman med andra, så att beloppet tillsammans
+// ADR-87: ett huvudområde där ett kön har 1 till k − 1 personer räknas samman med andra, så att beloppet tillsammans
 // med medellönerna och antalen inte ger dess medellön (härledningarna står i tests/ktroskel-differens.test.js).
-describe('sektor: sammanräknade huvudområden (ADR-84)', () => {
+describe('sektor: sammanräknade huvudområden (ADR-87)', () => {
     // Vård: 30 kvinnor och 20 män; teknik: 12 kvinnor och 25 män; städ: 3 män.
     const tre = () => [...flera(30, () => rad('207011', 'kvinna', 30000)), ...flera(20, () => rad('207011', 'man', 31000)),
         ...flera(12, () => rad('502010', 'kvinna', 39000)), ...flera(25, () => rad('502010', 'man', 41000)),

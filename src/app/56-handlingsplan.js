@@ -102,8 +102,6 @@ function _hpTaBortEgen(nyckel) {
 /** Raderna i handlingsplanen: de förifyllda från Prioritering och Likvärdigt arbete, sedan de egna. `baraEgna` hoppar
  *  över förifyllningen (utan underlag). */
 function _handlingsplanSeedRows({ baraEgna = false } = {}) {
-    const months = (state.costSettings && state.costSettings.months) || 12;
-    const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
     const rows = [], nycklar = [], skillnader = [], minsta = [];
     let prioCount = 0, lvCount = 0, parUtelamnade = 0;
     // En rad: [åtgärd, grupp, underlag, sakligt skäl, kostnad, ansvarig, tidsplan, status, antal berörda] — med det som
@@ -136,7 +134,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
             const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
             parUtelamnade = utelamnade;
             par.forEach(p => {
-                const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
+                const arsKostnad = Math.round(_kostPeriod(Math.abs(p.gapKr) * (p.kvN || 1), state.costSettings));
                 lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerad)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
                 lvCount++;
             });

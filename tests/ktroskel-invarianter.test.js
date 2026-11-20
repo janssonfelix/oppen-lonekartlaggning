@@ -275,7 +275,7 @@ describe('I6: underlaget i exportläget, precis under och precis över skyddsreg
 // ===================================================================================
 // I7: Var uppstår löneskillnaden med andra val av förklaringsvariabler (ADR-65), vid 10 och 25.
 //
-// Sammanslagningen (ADR-84) gäller per nivå: en grupp där ett kön har färre än tröskeln räknas samman med andra grupper
+// Sammanslagningen (ADR-87) gäller per nivå: en grupp där ett kön har färre än tröskeln räknas samman med andra grupper
 // under samma övergrupp, och den sammanslagna gruppen och allt under den namnges inte. Y1–Y3 och X har ett kön under
 // tröskeln i BAS:en, så inget under dem får namnges; vid 25 gäller det också MELLAN (10 kvinnor och 10 män).
 //  - BAS, åldersgrupp, AID (tre nivåer): delarna redovisas och summerar till hela skillnaden; den ensamma personen i

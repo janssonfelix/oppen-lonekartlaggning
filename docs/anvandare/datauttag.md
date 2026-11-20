@@ -133,6 +133,13 @@ Detsamma gäller kolumner vars rubrik antyder en särskild kategori av personupp
 (`Fackmedlemskap`, `Hälsa`, `Sjukfrånvaro`, `Diagnos`, `Etnicitet` och liknande); där prövas bara rubriken.
 Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 
+**Fältet för AID-etikett ska bara innehålla koden och etiketten.** Vissa uttag lägger personens namn i samma fält
+("101010 Sjuksköterska Anna Andersson"). Verktyget tar inte bort eller maskerar text i fältet: de första 40 tecknen
+efter koden visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla
+personnamn på några enstaka rader och anger radnumren, men varningen hittar inte alla namn. Rensa fältet i uttaget
+och läs in filen igen. Vad skydden gör och inte gör står samlat i
+[`dataskydd.md`](../dataskydd/dataskydd.md#vad-skydden-gör-och-inte-gör).
+
 > Det är ett medvetet skydd: verktyget tar bara in de uppgifter det behöver (inbyggt dataskydd). Se
 > `riskanalys.md` för hela dataskyddsmodellen.
 
@@ -195,6 +202,7 @@ Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 ### Kontrollera uttaget innan det läses in
 - [ ] En rad per person, rubrikrad överst.
 - [ ] Inga kolumner med namn, personnummer, anställningsnummer eller e-post.
+- [ ] Fältet för AID-etikett innehåller bara kod och etikett, inga namn.
 - [ ] Lönen är heltidslön: en deltidsanställd har samma lönenivå som en heltidsanställd i
       samma befattning.
 - [ ] BAS-intervall finns på alla rader som ska analyseras.
@@ -202,8 +210,8 @@ Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 - [ ] Efter inläsningen: läs **Förhandskontroll av lönefilen** överst i Filer och kvalitet. Den visar hur de tio
       första raderna tolkades. Den varnar när lönen ser ut som årslön eller timlön och när åldern ligger utanför
       16–75 år eller tolkats ur födelseår. Den varnar också när BAS eller kön har värden som verktyget inte känner
-      igen. Vill du se tolkningen innan filen används, kryssa i *Stoppa och visa förhandskontrollen innan
-      inläsning* i Inställningar.
+      igen, och när fältet för AID-etikett ser ut att innehålla personnamn. Vill du se tolkningen innan filen
+      används, kryssa i *Stoppa och visa förhandskontrollen innan inläsning* i Inställningar.
 
 ## 5. Vanliga fel & verktygets besked
 
@@ -212,6 +220,7 @@ Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 | å/ä/ö blir konstiga tecken | Ovanlig teckenkodning | Alla vanliga kodningar hanteras automatiskt — kontrollera inläsningsrapporten; kvarstår felet, spara om filen som UTF-8 CSV |
 | "0 rader inlästa" / tomt resultat | Rubrikraden eller kolumnnamnen känns inte igen | Öppna **kolumnmappnings-guiden** och peka ut rätt kolumn, eller döp om rubrikerna enligt avsnitt 1. Spara mappningen som importprofil (avsnitt 2b) så känns filen igen nästa gång |
 | Filen avvisas direkt | En kolumn med personnummer, namn eller e-post upptäcktes | Ta bort den identifierande kolumnen ur uttaget och läs in igen (avsnitt 3) |
+| Varningen *Fältet för AID-etikett ser ut att innehålla personnamn* | Uttaget har lagt namn i samma fält som etiketten, på de rader som anges | Rensa fältet i uttaget så att det bara bär kod och etikett, och läs in filen igen (avsnitt 3) |
 | Åldern ser fel ut | Kolumnen innehöll födelseår | Verktyget räknar om födelseår till ålder automatiskt — förhandskontrollen visar tolkningen rad för rad och antalet rader |
 | Många rader uteslutna | Saknad BAS, lön = 0, eller tomt/okänt värde i könskolumnen | Läs inläsningsrapporten under Underlagets kvalitet i Filer och kvalitet — den visar hur många rader som föll bort och varför; rätta i källfilen och läs om |
 

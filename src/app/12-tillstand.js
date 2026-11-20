@@ -289,111 +289,20 @@ const Stat = {
     }
 };
 
-/**
- * Normaliserar en talsträng med svensk/engelsk/tysk formatering till en
- * parseFloat-bar sträng. Hanterar tusentalsavgränsare korrekt:
- *   "32 500,50" → "32500.50"   (svensk: mellanslag-tusental, komma-decimal)
- *   "32.500,50" → "32500.50"   (tysk/Excel: punkt-tusental, komma-decimal)
- *   "1,234,567.89" → "1234567.89" (engelsk: komma-tusental, punkt-decimal)
- *   "32,500" → "32500"          (ensam separator + exakt 3 siffror = tusental;
- *                                 löner skrivs inte med tre decimaler)
- *   "32,5" / "32.5" → "32.5"    (decimal)
- *
- * Att bara byta FÖRSTA kommat mot punkt och stryka övriga tecken skulle tyst
- * göra "32.500,50" → 32.5 — tusenfalt fel som inte fångas eftersom 32,5 > 0. Regel: när både . och , förekommer är den SISTA
- * decimaltecken; ensam separator följd av exakt 3-siffergrupper (och
- * heltalsdel ≠ "0") tolkas som tusental.
- *
- * @param {*} raw - Råvärde från CSV-/Excel-cell.
- * @returns {string} parseFloat-bar sträng ("" om inget numeriskt innehåll).
- */
-function _normalizeNumberString(raw) {
-    let s = raw.toString().trim()
-        .replace(/[\s  ']/g, '')       // mellanslag, NBSP, smal NBSP, apostrof-tusental
-        .replace(/(kr|sek|:-)\.?$/i, '')          // valutasuffix
-        .replace(/\u2212/g, '-');                  // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
-    s = s.replace(/[^\d.,\-]/g, '');
-    const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
-    if (lastDot !== -1 && lastComma !== -1) {
-        // Båda förekommer: den sista är decimaltecknet, den andra tusental.
-        if (lastComma > lastDot) s = s.replace(/\./g, '').replace(/,/g, '.');
-        else                     s = s.replace(/,/g, '');
-    } else if (lastComma !== -1) {
-        // Endast komma: flera kommatecken = tusental; ensamt komma med exakt
-        // 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental; annars decimal.
-        if (/^-?[1-9]\d{0,2}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
-        else                                      s = s.replace(/,/g, '.');
-    } else if (lastDot !== -1) {
-        // Endast punkt: spegelvänd regel — "32.500" är tusental, "32.5" decimal.
-        if (/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
-        // annars: punkt är redan decimaltecken
-    }
-    return s;
-}
-
-function parseNumber(v) {
-    if (v == null) return 0;
-    const n = parseFloat(_normalizeNumberString(v));
-    return isNaN(n) ? 0 : n;
-}
+// Talen i indata (_normalizeNumberString, parseNumber, parseNumberStrict) tolkas i src/lib/inlasning.js och nås här
+// genom spegeln under samma namn.
 
 /**
- * Graderad version av parseNumber som spårar varför
- * en parse misslyckas. Distinguerar tre fall:
- *   - 'empty'   — null/undefined/tom sträng (legitim avsaknad)
- *   - 'invalid' — icke-tomt värde som inte kan tolkas (t.ex. "saknas")
- *   - 'ok'      — giltigt nummer returneras som number
- *
- * Anroparen kan räkna varje kategori separat och visa "icke-tom men ogiltig"-
- * antalet i audit-panelen så användaren ser dataspecifika kvalitetsproblem
- * som annars maskerats av tysta 0-konverteringar.
- *
- * @param {*} v
- * @returns {{status:'ok'|'empty'|'invalid', value:number, raw:*}}
- */
-function parseNumberStrict(v) {
-    if (v == null) return { status: 'empty', value: 0, raw: v };
-    const raw = v.toString();
-    if (raw.trim() === '') return { status: 'empty', value: 0, raw };
-    const n = parseFloat(_normalizeNumberString(raw));
-    if (isNaN(n)) return { status: 'invalid', value: 0, raw };
-    return { status: 'ok', value: n, raw };
-}
-
-/**
- * Beräknar 95% konfidensband för en enkel linjär regressionslinje.
- * SE av MEDELPREDIKTION vid x: σ × √(1/n + (x−x̄)²/Σ(xi−x̄)²)
- * där σ² = RSS/(n−2). Returnerar punkter med {x, y, lo, hi} jämnt
- * spridda över [minX, maxX].
- *
+ * 95-procentigt konfidensband för en enkel linjär regressionslinje (regressionslinjensBand i src/lib/osakerhet.js):
+ * punkter {x, y, lo, hi} jämnt spridda över [minX, maxX].
  * @param {Array<[number,number]>} data - [x,y]-par
  * @param {number} minX
  * @param {number} maxX
  * @param {number} [steps=30] - antal punkter att returnera
  * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>}
  */
-function linearRegressionCI(data, minX, maxX, steps = 30) {
-    const n = data.length;
-    if (n < 3) return null;
-    const reg = Stat.linearRegression(data);
-    const meanX = data.reduce((s, p) => s + p[0], 0) / n;
-    let ssX = 0, rss = 0;
-    for (let i = 0; i < n; i++) {
-        ssX += (data[i][0] - meanX) ** 2;
-        const yhat = reg.m * data[i][0] + reg.b;
-        rss += (data[i][1] - yhat) ** 2;
-    }
-    if (ssX <= 0) return null;
-    const sigma2 = rss / Math.max(1, n - 2);
-    const Z = 1.96;
-    const out = [];
-    for (let i = 0; i < steps; i++) {
-        const x = minX + (maxX - minX) * (i / (steps - 1));
-        const y = reg.m * x + reg.b;
-        const se = Math.sqrt(Math.max(0, sigma2 * (1 / n + (x - meanX) ** 2 / ssX)));
-        out.push({ x, y, lo: y - Z * se, hi: y + Z * se });
-    }
-    return out;
+function linearRegressionCI(data, minX, maxX, steps) {
+    return _osRegressionslinjensBand(data, minX, maxX, steps);
 }
 
 // ---- Aktivera sortering, kollaps & export på alla huvudtabeller (en gång) ----

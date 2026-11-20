@@ -330,12 +330,12 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 : `Uppdelningen förklarar med variablerna ${gapVariablerIText(variabler)}, i den ordningen. Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.`);
         }
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
-        // Grupper där ett kön är under tröskeln räknas samman innan delarna räknas och namnges inte (ADR-84).
+        // Grupper där ett kön är under tröskeln räknas samman innan delarna räknas och namnges inte (ADR-87).
         const ovriga = d => (u.ovrigaAntal && u.ovrigaAntal[d]) || 0;
         if (delar.some(d => ovriga(d.id))) st.push(`Grupper där ett kön har färre än ${k} ${personOrd(k)} räknas samman med andra grupper innan delarna räknas, och de namnges inte. `
             + `Annars skulle medellönen för färre än ${k} kvinnor eller män gå att räkna fram ur beloppen.`);
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
-        // Samma poster som kortet: gapuppdelning.js namnger bara grupper som inte räknats samman (ADR-84).
+        // Samma poster som kortet: gapuppdelning.js namnger bara grupper som inte räknats samman (ADR-87).
         const storst = d => [...u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`), ...(ovriga(d) ? [`${_st(ovriga(d), 'grupp', 'grupper')} namnges inte`] : [])].join('; ') || '—';
         return blk(R, st, { rubriker: ['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag'], rader: [
             ...delar.map(d => [d.namn, _kr(u.delar[d.id]), andel(u.delar[d.id]), storst(d.id)]),
@@ -405,7 +405,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const justText = sektorJusteradText(alla);
         const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${justText.justeradFor}.`];
         const a = u.andel;
-        const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-84)
+        const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-87)
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
             ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
             : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);

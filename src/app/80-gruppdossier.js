@@ -12,21 +12,11 @@
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 
-// Bootstrap-KI på mediankvoten (kvinnors median som % av männens). Samma dragningar
-// som översikten per BAS-intervall (_laBootstrapGapCI), med medianerna ur rangräkning
-// (_lvBootstrapMedianer). B = 2000 matchar computeBootstrapCI: B=600 gav ~±0,5 pp
-// Monte Carlo-spridning på KI-gränserna, vilket märktes för gränsfall.
-function _gdBootstrapGapCI(kvLons, maLons, B = 2000) {
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const ratios = new Array(B);
-    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
-    }
-    const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
-    if (ok.length < 20) return null;
-    return { lo: ok[Math.floor(ok.length * 0.025)], hi: ok[Math.floor(ok.length * 0.975)] };
+// Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
+// dragningar som översikten per BAS-intervall (_laBootstrapGapCI), med B = 2000 som computeBootstrapCI; dragningar
+// där männens median inte är positiv räknas inte.
+function _gdBootstrapGapCI(kvLons, maLons, B) {
+    return _osMedianKvotKIGiltiga(kvLons, maLons, { B });
 }
 
 /** Alla grupper som får öppnas i dossier (k-anonymitet som överallt annars). */

@@ -18,7 +18,7 @@
  * fördelningsdel, och inget under den räknas (ΔW = 0). Centreringen (− W̄_c) ändrar inga summor
  * eftersom Σ Δs = 0, men gör varje grupps post tolkbar.
  * Grupper där ett kön har 1 till k − 1 personer räknas samman med andra grupper under samma cell innan delarna räknas
- * (ADR-84, `sammanslagning` i undertryckning.js), och den sammanslagna gruppen namnges inte; se _beraknaPoster.
+ * (ADR-87, `sammanslagning` i undertryckning.js), och den sammanslagna gruppen namnges inte; se _beraknaPoster.
  * AID-nivåerna (sektor, aidniva, aid) ordnas alltid grovt till fint på sina platser: en finare nivå före en grövre
  * ger annars en tom del. Ålder (åldersgrupp, ageBucket) kan bara väljas när lönefilen har ålder (ADR-64).
  *
@@ -149,7 +149,7 @@ function _grupper(kv, ma, nyckel) {
     return m;
 }
 
-// Grupperna under en cell, med sammanslagningen (ADR-84): en grupp där ett kön har 1 till k − 1 personer räknas samman
+// Grupperna under en cell, med sammanslagningen (ADR-87): en grupp där ett kön har 1 till k − 1 personer räknas samman
 // med andra grupper under samma cell (`sammanslagning` i undertryckning.js), så att varje grupp som delarna och posterna
 // bygger på har 0 eller minst k kvinnor och 0 eller minst k män. Den sammanslagna gruppen står sist och namnges inte.
 // Utan små grupper är ordningen densamma som i _grupper, så att talen blir bitlika med dem före regeln.
@@ -181,7 +181,7 @@ function _cell(g, totKv, totMa) {
 // läggs i samma ordning och räknas med samma operationer som före ADR-65 (djupet först, vikten ω multipliceras från
 // vänster), så att standardvalet utan små grupper ger bitlika tal.
 //
-// Skyddet (ADR-84, `docs/utveckling/k-troskeln.md` avsnitt 2): allt som skrivs ut — medellönerna, delarna och posterna —
+// Skyddet (ADR-87, `docs/utveckling/k-troskeln.md` avsnitt 2): allt som skrivs ut — medellönerna, delarna och posterna —
 // är en linjär funktion av medellönen per kön i grupperna efter sammanslagningen, med antalen som vikter. Varje sådan
 // grupp har 0 eller minst k av varje kön, och alla i en grupp har samma vikt. Det som går att räkna fram ur det som
 // skrivs ut, också med antalen, är därför ett medel för minst k personer av ett kön eller en vägd summa av sådana medel.
@@ -246,7 +246,7 @@ const _variablerFor = (rader, variabler) => normaliseraGapVariabler(variabler, {
 
 /**
  * Uppdelningen: delarna (summerar exakt till skillnaden), upp till tre namngivna poster per del, största belopp först,
- * och per del hur många grupper som inte namnges (`ovrigaAntal`, räknat före sammanslagningen; ADR-84). Poster som
+ * och per del hur många grupper som inte namnges (`ovrigaAntal`, räknat före sammanslagningen; ADR-87). Poster som
  * avrundas till 0 kr namnges inte heller, men räknas inte in i `ovrigaAntal`.
  * @param {any[]} rader
  * @param {{k?:number, variabler?:any}} [opts] variabler: förklaringsvariablerna i ordning (null = standard, BAS och AID)
@@ -273,7 +273,7 @@ export function gapUppdelning(rader, { k, variabler } = {}) {
 }
 
 /**
- * Meningen om grupperna som inte namnges i en del (kortet och rapportunderlaget, ADR-84), eller '' när alla namnges.
+ * Meningen om grupperna som inte namnges i en del (kortet och rapportunderlaget, ADR-87), eller '' när alla namnges.
  * @param {number} antal ovrigaAntal för delen
  * @param {number} k
  */

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Öppen lönekartläggning — kompletterande undertryckning och sammanslagning (ADR-83, ADR-84,
+ * Öppen lönekartläggning — kompletterande undertryckning och sammanslagning (ADR-83, ADR-87,
  * `docs/utveckling/k-troskeln.md` avsnitt 2).
  *
  * Två allmänna regler för delar av en total, där totalen skrivs ut och delarna har ett medelvärde var:
@@ -49,7 +49,7 @@ export function kompletterandeUndertryckning(delar, k) {
 }
 
 /**
- * Sammanslagning (ADR-84): vilka delar som räknas samman till en, så att varje del, också den sammanslagna, har 0 eller
+ * Sammanslagning (ADR-87): vilka delar som räknas samman till en, så att varje del, också den sammanslagna, har 0 eller
  * minst k kvinnor och 0 eller minst k män.
  *
  * En del där ett kön har 1 till k − 1 personer slås samman. Har de sammanslagna tillsammans 1 till k − 1 kvinnor

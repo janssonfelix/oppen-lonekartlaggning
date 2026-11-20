@@ -10,19 +10,8 @@
  * här och kör `npm run build:app`, rör ej spegeln. Inga DOM-/state-beroenden.
  */
 
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
+import { median as _median, quantile as _quantile } from './stat.js';
+
 function _isKv(r) { return r.kon && r.kon.includes('kvinna'); }
 function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
 

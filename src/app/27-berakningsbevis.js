@@ -142,14 +142,10 @@ function _evidenceForPrioItem(it, _reference) {
     const fmtN = v => v.toLocaleString('sv-SE');
     const w = state.prioWeights;
     const wTotal = Math.max(1, w.avvikelse + w.volym + w.jamstalldhet);
-    const sevScore  = Math.min(30, Math.abs(it.diffPct)) / 30 * 100;
-    const volScore  = Math.min(50, it.n) / 50 * 100;
-    const gapScore  = it.gapPct !== null ? Math.min(15, Math.abs(it.gapPct)) / 15 * 100 : 0;
-    const directionWeight = it.diffPct < 0 ? 1.0 : 0.5;
-    const bristMultiplier = it.isBrist ? 1.2 : 1.0;
-    const months  = state.costSettings?.months || 12;
-    const poPct   = state.costSettings?.poPct  || 0;
-    const poFactor = 1 + poPct / 100;
+    // Delpoängen och multiplikatorerna räknas i src/lib/prioritering.js och ligger på posten; taken ur samma modul.
+    const K = _prKonstanter();
+    const { sevScore, volScore, gapScore, riktningsvikt: directionWeight, bristMultiplier } = it;
+    const { months, poPct, poFaktor } = _kostFaktor(state.costSettings);
     const sgn = v => v >= 0 ? '+' : '';
 
     return {
@@ -163,11 +159,11 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Kostnad per person',          value: it.costPerPerson > 0 ? `${fmtKr(it.costPerPerson)}/mån` : '— (gruppen är ej under referens)', note: 'Genomsnittlig höjning per person och månad för att lyfta gruppen till referensens median' },
             { label: 'Löneskillnad mellan kvinnor och män i gruppen',   value: it.gapPct == null ? '— ej beräkningsbart' : `${sgn(it.gapPct)}${svPct(it.gapPct, 2)}`, note: it.gapPct == null ? `Kräver minst ${kTroskel()} av varje kön` : `Median kv ${fmtKr(it.medKv)} mot median man ${fmtKr(it.medMa)}` },
             { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Läge mot referensen: ${(PRIO_STATUS_INFO[it.status] || { label: it.status }).label}` },
-            { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(30, |${svPct(it.diffPct, 1)}|) / 30 × 100 · vikt ${w.avvikelse}/${wTotal}` },
-            { label: 'Volym-poäng (vol)',           value: svTal(volScore, 1), note: `min(50, ${it.n}) / 50 × 100 · vikt ${w.volym}/${wTotal}` },
-            { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(15, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / 15 × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
-            { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? 'Gruppen ligger UNDER referens — full vikt 1,0' : 'Gruppen ligger ÖVER referens — halv vikt 0,5' },
-            { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? 'Markerat som bristyrke — bonus 1,2x' : 'Ej bristyrke' },
+            { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(${K.AVVIKELSE_TAK}, |${svPct(it.diffPct, 1)}|) / ${K.AVVIKELSE_TAK} × 100 · vikt ${w.avvikelse}/${wTotal}` },
+            { label: 'Volym-poäng (vol)',           value: svTal(volScore, 1), note: `min(${K.VOLYM_TAK}, ${it.n}) / ${K.VOLYM_TAK} × 100 · vikt ${w.volym}/${wTotal}` },
+            { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(${K.GAP_TAK}, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / ${K.GAP_TAK} × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
+            { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? `Gruppen ligger UNDER referens — full vikt ${svTal(K.RIKTNING_UNDER, 1)}` : `Gruppen ligger ÖVER referens — halv vikt ${svTal(K.RIKTNING_OVER, 1)}` },
+            { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? `Markerat som bristyrke — bonus ${svTal(K.BRIST_MULTIPLIKATOR, 1)}x` : 'Ej bristyrke' },
             { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
         ],
         formula: `<strong>Prioritetsindex-formel:</strong><br>
@@ -175,7 +171,7 @@ function _evidenceForPrioItem(it, _reference) {
             = ${svTal(bristMultiplier, 2)} × ${svTal(directionWeight, 2)} × (${svTal(sevScore, 1)} × ${w.avvikelse}/${wTotal} + ${svTal(volScore, 1)} × ${w.volym}/${wTotal} + ${svTal(gapScore, 1)} × ${w.jamstalldhet}/${wTotal})<br>
             = <strong>${svTal(it.priorityIndex, 2)}</strong>
             ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att nå referensen:</strong><br>
-            |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFactor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
+            |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFaktor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
         footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPct(poPct, 2)}).`
     };
 }
@@ -262,8 +258,8 @@ function _evidenceForPerBasRow(p, bhCtx) {
     return {
         title: `Beräkningen — BAS ${p.bas} (per-BAS-regression)`,
         intro: harAlder()
-            ? `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
-            : `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
+            ? `Inom BAS ${esc(p.bas)} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
+            : `Inom BAS ${esc(p.bas)} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
         rows: [
             { label: termStor(T.niva.en),          value: p.bas },
             { label: 'Antal totalt',           value: p.n.toLocaleString('sv-SE') },

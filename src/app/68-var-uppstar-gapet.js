@@ -142,7 +142,7 @@ function renderGapUppdelning() {
         const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
         const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
-            // Grupper som räknats samman (ADR-84) redovisas bara med antal — deras belopp kunde röja en liten grupp.
+            // Grupper som räknats samman (ADR-87) redovisas bara med antal — deras belopp kunde röja en liten grupp.
             + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${esc(_guOvrigaText(u.ovrigaAntal[del.id], kTroskel()))}</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><svg class="gu-ruta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="2" fill="${farg}"/></svg><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
@@ -166,7 +166,7 @@ function renderGapUppdelning() {
 // Uppdelningen som trappa i omvänd ordning: hela skillnaden först, sedan delarna (A, B, … en per vald variabel
 // och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
 // under, och aldrig en enskild grupps bidrag (i exportläget räknas grupper där ett kön är under tröskeln samman först,
-// ADR-84). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
+// ADR-87). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
 const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
 /** Delens andel av hela skillnaden i procent, eller null när den inte säger något: en liten skillnad (`litetGap`), en
  * del som går åt andra hållet än helheten eller en del som är större än helheten. @param {any} u @param {number} v */

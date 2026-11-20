@@ -84,7 +84,7 @@ describe('gapUppdelning', () => {
         expect(u.topp.B).toEqual([]);
         expect(u.topp.C).toEqual([]);
     });
-    // Sammanslagningen (ADR-84): en grupp där ett kön har 1..k−1 personer räknas samman med andra grupper under samma
+    // Sammanslagningen (ADR-87): en grupp där ett kön har 1..k−1 personer räknas samman med andra grupper under samma
     // övergrupp, så att varje grupp som delarna och posterna bygger på har 0 eller minst k av varje kön. Den sammanslagna
     // gruppen och allt under den namnges inte. Härledningarna som regeln stänger står i tests/ktroskel-differens.test.js.
     it('en grupp där ett kön har 1..k−1 personer räknas samman med den grupp som har färst av det könet; ingen av dem namnges', () => {
@@ -214,7 +214,7 @@ const GAMLA_NYCKLAR = ['n', 'medel', 'gap', 'gapPct', 'litetGap', 'delar', 'topp
 const somForut = u => u && Object.fromEntries(GAMLA_NYCKLAR.map(n => [n, u[n]]));
 const posterSomForut = p => p && Object.fromEntries(Object.entries(p).map(([d, l]) => [d, l.map(({ namn, kr, synlig }) => ({ namn, kr, synlig }))]));
 // JSON skriver varje tal med kortaste exakta form, så lika strängar betyder bitlika tal (och samma nyckelordning).
-// Jämförelsen görs vid tröskeln 1, där ingen grupp räknas samman (ADR-84): räkningen är densamma som förut, och
+// Jämförelsen görs vid tröskeln 1, där ingen grupp räknas samman (ADR-87): räkningen är densamma som förut, och
 // sammanslagningen prövas för sig ovan.
 const bytelika = rader => {
     for (const opts of [{ k: 1 }, { k: 1, variabler: ['bas', 'aid'] }, { k: 1, variabler: null }]) {
@@ -417,7 +417,7 @@ function handrakning(rader, variabler) {
     return delar;
 }
 
-describe('ADR-65 och ADR-84: sammanslagningen per del, djupt ner', () => {
+describe('ADR-65 och ADR-87: sammanslagningen per del, djupt ner', () => {
     it('en liten cell på andra nivån räknas samman inom sin övergrupp, och varken den eller dess barn namnges', () => {
         // BAS A har gott om båda könen; i åldersgruppen 60–64 år finns bara 3 män. Med k = 10 räknas åldersgruppen
         // samman med den åldersgrupp i BAS A som har färst män (30–34 år), och ingen av dem eller AID-cellerna under
@@ -471,7 +471,7 @@ describe('ADR-65 och ADR-84: sammanslagningen per del, djupt ner', () => {
     });
 });
 
-describe('ADR-84: meningen om grupperna som inte namnges', () => {
+describe('ADR-87: meningen om grupperna som inte namnges', () => {
     it('ingen mening när alla namnges, annars antalet och skälet', () => {
         expect(gapOvrigaText(0, 10)).toBe('');
         expect(gapOvrigaText(1, 10)).toBe('1 grupp namnges inte: ett kön har färre än 10 personer i den eller i gruppen den räknas samman med. Den ingår i summan.');

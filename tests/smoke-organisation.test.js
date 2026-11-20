@@ -508,7 +508,7 @@ describe('organisationspaket: läs in och skapa', () => {
         const s = w.__state;
         expect(s.paket).toBeNull();
         expect(s.profile.name).toBe('Organisationen');
-        expect(s.costSettings.poPct).toBe(39.15);
+        expect(s.costSettings.poPct).toBe(40);
         expect(s.policy).toEqual([]);
         expect(s.statistik).toEqual([]);
         expect(s.statistikNamn).toBeNull();
@@ -599,7 +599,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         las(w, b);
         expect(w.__state.statistik).toEqual([]);
         expect(w.eval('statistikBeskrivning()')).toBe('Ingen jämförelsestatistik inläst');
-        expect(w.__state.costSettings.poPct).toBe(39.15);
+        expect(w.__state.costSettings.poPct).toBe(40);
         expect(w.document.getElementById('paket-info').textContent).not.toMatch(/jämförelsestatistik/);
     });
     it('en egen statistikfil står kvar när ett nytt paket saknar statistik', () => {
@@ -617,7 +617,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         expect(w.__state.paket).toBeNull();
         expect(w.__state.statistik).toEqual([]);
         expect(w.eval('referensNamn()')).toBe('Exempelkommunens lönepolitik');
-        expect(w.__state.costSettings.poPct).toBe(39.15);
+        expect(w.__state.costSettings.poPct).toBe(40);
     });
     it('faktarutan följer med när en egen fil ersätter paketets ställningstagande', () => {
         const w = createAppWindow();

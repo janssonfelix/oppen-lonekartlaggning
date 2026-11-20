@@ -34,6 +34,9 @@ snart som möjligt, och den som rapporterat nämns i versionsnyheterna om den vi
   rubrikerna och 50 rader spridda över filen), eller att en kolumnrubrik som antyder en särskild
   kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk åskådning,
   sexualliv, genetik, biometri) inte avvisas (kontrollen ser bara på rubriken).
+  Namn inne i fältet för AID-etikett avvisas och maskeras inte; inläsningen varnar för dem, och varningen
+  hittar inte alla namn (`docs/dataskydd/dataskydd.md`, *Vad skydden gör och inte gör*). Att ett sådant namn
+  inte ger varning är därför ingen sårbarhet, om det inte är ett av de mönster varningen ska hitta.
 
 ## Kontrollera att filen är äkta
 
