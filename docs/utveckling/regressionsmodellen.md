@@ -301,15 +301,15 @@ högst 60 varv, tolerans 1e-5 och residualgolvet 1e-6; den ger null när n < k +
 Kärnan hoppar över nollor i designen, vilket ger samma summor men går snabbare med indikatorer. IRLS är en
 approximation av kvantillösningen, inte den exakta minimeringen, och kortet säger det.
 
-**Intervallen.** `_regKvantilBerakna` och `_regKvantilBootstrap` (`51-lika-arbete-regressionskort.js`) ger ett
-percentil-bootstrap-intervall för `konPct` vid varje τ och för skillnaden P90 − P10: **B = 200** omsamplingar
-(`REG_KVANTIL_KI_B`) av raderna med återläggning, seedade ur datat så att intervallet blir detsamma varje gång. Varje
+**Intervallen.** `kvantilBootstrap` i `src/lib/osakerhet.js` (i appen adaptern `_regKvantilBootstrap`, anropad av
+`_regKvantilBerakna` i `51-lika-arbete-regressionskort.js`) ger ett percentil-bootstrap-intervall för `konPct` vid
+varje τ och för skillnaden P90 − P10: **B = 200** omsamplingar (`KVANTIL_KI_B`) av raderna med återläggning, seedade ur datat så att intervallet blir detsamma varje gång. Varje
 omsampling bygger designen på nytt ur de dragna raderna, så att referensintervallet är det första som finns i
 omsamplingen och ett intervall som inte kom med inte ger en nollkolumn; åldern centreras på hela urvalets medel, och
 IRLS startar i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare. Gränserna är 2,5- och
 97,5-percentilen av de lyckade omsamplingarna; lyckas färre än hälften ges inget intervall.
 
-**Gränsen.** Med fler än **2 000 personer** (`REG_KVANTIL_KI_MAX_N`) räknas inget intervall, på grund av tiden, och
+**Gränsen.** Med fler än **2 000 personer** (`KVANTIL_KI_MAX_N`, i appen `REG_KVANTIL_KI_MAX_N`) räknas inget intervall, på grund av tiden, och
 kortet säger det.
 
 **I bakgrunden.** Intervallet räknas efter att kortet ritats (`setTimeout`): kortet står med punktskattningarna och
@@ -347,9 +347,17 @@ normalfördelningen därifrån. Signifikansnivån är 0,05.
 normalfördelningen. Normalfördelningens fördelningsfunktion (`normalCdf`) är approximationen Abramowitz & Stegun
 26.2.17.
 
-**Utanför t-kvantilen** ligger bootstrap-intervallen (percentilmetoden; mediankvoten med B = 2 000 i
-`computeBootstrapCI`, de övriga med 1 000–2 000, kvantilregressionen med 200, avsnitt 6) och jämförelsens
-osäkerhetsband i Lika arbete (`41-lika-arbete.js`, fast 1,96). Översikten per huvudområde använder t-kvantilen (avsnitt 3).
+**Utanför t-kvantilen** ligger bootstrap-intervallen (percentilmetoden; mediankvoten med B = 2 000 för hela
+organisationen, 1 000 per BAS-intervall och 2 000 i gruppdossiern, kvantilregressionen med 200, avsnitt 6),
+konfidensbandet kring regressionslinjen i Ålder & karriär (fast 1,96) och trattens fält i Lika arbete (fast 1,96). De
+räknas i `src/lib/osakerhet.js` (`organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `kvantilBootstrap`,
+`regressionslinjensBand`, `trattUnderlag`), där antalen dragningar och faktorerna är namngivna konstanter; appens
+funktioner med de tidigare namnen (`computeBootstrapCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`,
+`_regKvantilBootstrap`, `linearRegressionCI`, `_laTrattUnderlagRakna`) är tunna adaptrar. Percentilgränserna tas på ett
+ställe, `percentilintervall` i `src/lib/stat.js`: golvet av n · 0,025 och n · 0,975 i de sorterade dragningarna, också
+för bootstrapintervallen i likvärdigt arbete och omkastningen i `src/lib/status.js`. Styrkan (minsta upptäckbara
+skillnad vid 80 % styrka och α = 0,05, faktorn 2,802) är `styrkeanalys` och `gruppMde` i samma modul. Översikten per
+huvudområde använder t-kvantilen (avsnitt 3).
 
 **Regressionerna per BAS-intervall** (`computePerBasGap`) skattar kön och, när lönefilen har ålder, ålder (centrerad
 inom intervallet) inom varje BAS-intervall med minst `statGolv()` av varje kön, med HC3 och t-kvantil. Intervall under
@@ -519,6 +527,8 @@ Filen ändras aldrig.
 | `tests/huvudregression.test.js` | `huvudregression` direkt i Node: könskoefficienten mot en egen designmatris på ett påhittat underlag, modellerna, reservsteget, golven 30 och 5, spärren för *Endast kön*, och fixturen med endast kön mot statsmodels |
 | `tests/huvudregression-adapter.test.js` | Att `runOLSRegression` ger exakt samma returvärde som `huvudregression` med samma argument (varje tal med `Object.is`), på demodatan, utan ålder och i reservsteget |
 | `tests/berakningar-las.test.js` | Ögonblicksbilden av hela returvärdet från `runOLSRegression` på demodatan |
+| `tests/osakerhet.test.js` | `src/lib/osakerhet.js` direkt: bootstrapintervallen med en injicerad, seedad generator, konfidensbandet kring en regressionslinje och styrkan räknade för hand, extremvärdena, trattens underlag och kvantilregressionens intervall; `percentilintervall` i `src/lib/stat.js` |
+| `tests/osakerhet-adapter.test.js` | Att appens adaptrar (`computeBootstrapCI`, `computePowerAnalysis`, `computeGroupMDE`, `detectOutliers`, `linearRegressionCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`, `_laTrattUnderlagRakna`, `_regKvantilBootstrap`) ger exakt samma tal som `src/lib/osakerhet.js` med samma argument, på demodatan och utan ålder vid tröskeln 3, 10 och 25 |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
 | `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan, de valbara variablerna och den frusna kopian |
