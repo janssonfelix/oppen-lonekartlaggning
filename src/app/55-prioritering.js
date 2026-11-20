@@ -185,11 +185,11 @@ function _prioKonStatus(i) {
         : 'Skillnaden är under 3 %. Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.';
     return `<span class="la-status ar-${st.farg} prio-konstatus" data-niva="${st.niva}" data-export-text="" title="${esc(tips)}">${ikon(st.ikon)}${esc(st.serie)}</span>`;
 }
-/** PO-raden under nyckeltalet: standardvärdet säger var det kommer ifrån, ett eget värde bara var det ändras. */
+/** PO-raden under nyckeltalet: standardvärdet säger att det är ett antagande, ett eget värde bara var det ändras. */
 function _prioPoText() {
     const po = state.costSettings.poPct;
     return po === COST_DEFAULTS.poPct
-        ? `inkl. PO-påslag ${svPct(po, 2)} (SKR:s standardvärde för kommuner; ändras under Inställningar)`
+        ? `inkl. PO-påslag ${svPct(po, 2)} (ett standardantagande; sätt organisationens eget under Inställningar)`
         : `inkl. PO-påslag ${svPct(po, 2)} (ändras under Inställningar)`;
 }
 
@@ -666,7 +666,7 @@ function _readCostSettings() {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
             ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
+            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
     }
 }
 // Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som

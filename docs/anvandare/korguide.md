@@ -170,7 +170,8 @@ rubriken **Fördjupning** ligger resten i avsnitt som fälls ut vid behov. Varje
 rubrikraden, också när det är hopfällt.
 
 - **Inställningar** (sidhuvudet) har minsta gruppstorlek, kommun eller region, **lönemånaden**, PO-påslag och
-  beräkningsperiod och **Prioriteringens trösklar och viktning** (se punkt 7 nedan). Lönemånaden skrivs ovanför
+  beräkningsperiod och **Prioriteringens trösklar och viktning** (se punkt 7 nedan). PO-påslaget är 40 % som
+  standardantagande; ange organisationens eget där eller i organisationspaketet. Lönemånaden skrivs ovanför
   tabellerna per AID-kod och BAS-intervall, och ett tomt fält skrivs ut som *inte angiven*. Där väljer du också
   mellan **vägledande läge** (förklaringarna syns) och **kompakt läge** (förklaringarna är undanfällda, för den
   som kan verktyget).
@@ -278,8 +279,8 @@ rubrikraden, också när det är hopfällt.
    regioner. Talen kommer ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
    verktyget). Det är ett referensvärde att jämföra din egen könsfördelning mot. Välj under
    **Inställningar** i sidhuvudet om organisationen är en kommun eller en region, så jämförs du med rätt
-   del av statistiken. Samma statistik är reserv för könsfördelningen i Likvärdigt arbete, och
-   SKR:s PO-påslag är standardvärde i kostnadsberäkningen; ordlistan förklarar begreppet SKR.
+   del av statistiken. Samma statistik är reserv för könsfördelningen i Likvärdigt arbete; ordlistan förklarar
+   begreppet SKR.
    AID grupperar arbetsuppgifter och är inte ett arbetsvärderingssystem — AID-etiketterna är en
    **utgångspunkt** för lika arbete som du bekräftar (se bakgrundspanelen i fliken).
    Har lönefilen AID:s **ansvarskod** fäller pilen framför AID-etiketten ut en rad per ansvarsgrupp

@@ -802,7 +802,7 @@ const GLOSSARY = [
     // Struktur
     { cat:'Struktur', term:'{Niva.en}', short:'Kravnivå enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Verktyget antar att varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar de {niva.fl} som finns i lönefilen (vanligen A–K) och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
     { cat:'Struktur', term:'{Kod.en}', sok:'yrkeskod arbetsidentifikationskod', short:'Den sexsiffriga koden i {enhet.art} {enhet.en}', long:'{Kod.bf} är den sexsiffriga delen av {enhet.bf}, till exempel 402010. Tillsammans med {namn.bf}, till exempel Förskollärare, bildar {kod.bf} {enhet.bf}. Verktyget läser {kod.bf} ur lönefilen, där den vanligen står {kod.adj:följd} av {namn.bf}, till exempel "402010 Förskollärare", och matchar organisationens {enhet.fl} mot jämförelsestatistiken med {kod.bf}.' },
-    { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker från SKR: klassificeringen AID, personalstatistiken (nationell andel kvinnor per {kod.en}, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete) och PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen. Perioden för statistiken står i Om verktyget.' },
+    { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder två saker från SKR: klassificeringen AID och personalstatistiken (nationell andel kvinnor per {kod.en}, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete). Perioden för statistiken står i Om verktyget.' },
     { cat:'Struktur', term:'{Enhet.en}', sok:'yrke yrkesgrupp yrkesbenämning etikett', short:'{Kod.art} {kod.en} och {namn.art} {namn.en}, som tillsammans står för ett arbetsområde i AID', long:'{Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en}, till exempel "402010 Förskollärare", och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. Verktygets minsta jämförelsegrupp är {enhet.en} i {niva.en}: personer med samma {enhet.en} i samma {niva.en} jämförs mellan könen i Lika arbete. Att två personer har samma {enhet.en} avgör inte att de gör lika arbete; det bekräftar arbetsgivaren.' },
     { cat:'Struktur', term:'{Huvudomrade.en}', sok:'sektor sektorer', short:'En av AID:s 13 grupper av {enhet.fl}', long:'AID delar in {enhet.fl} i 13 {huvudomrade.fl}, till exempel Ledningsarbete och Teknikarbete. {Huvudomrade.bf} säger vilket arbete man gör, oavsett var i organisationen man arbetar. Verktyget grupperar på {huvudomrade.en} i Lönestruktur och i Tabeller och egna vyer.' },
     { cat:'Struktur', term:'Heltidsekvivalent (FTE) lön', short:'Lön omräknad till 100% tjänstgöring', long:'Den lön personen skulle ha haft vid heltidstjänst. Används för att rättvist jämföra deltids- och heltidsanställda. Verktyget förutsätter att månadslönerna i lönefilen redan är omräknade till heltid.' },
@@ -2363,10 +2363,10 @@ const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
     volym:        30,   // viktning av gruppens volym
     jamstalldhet: 20    // viktning av jämställdhet (lönegap kön)
 });
-// Kostnadsberäknings-defaults — SKR 2025 PO-påslag som standard
+// Kostnadsberäknings-defaults — PO-påslaget 40 % är ett standardantagande; organisationen sätter sitt eget
 const COST_DEFAULTS = Object.freeze({
     months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
-    poPct:  39.15       // PO-påslag i % (SKR:s cirkulär 2025 — sociala avgifter + pensioner)
+    poPct:  40          // PO-påslag i % (arbetsgivaravgifter och pension ovanpå lönen)
 });
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
@@ -2387,8 +2387,8 @@ const DEFAULT_PROFILE = Object.freeze({
     // (ADR-74). T finns först efter 09-termer.js, så värdena läses när profilen kopieras (12-tillstand.js och framåt).
     get basSystem()          { return T.niva.en; },
     get aidSystem()          { return `${T.kod.en} (SKR)`; },
-    poPctDefault:            39.15,
-    poPctNote:               'SKR Cirkulär 2025',
+    poPctDefault:            40,
+    poPctNote:               '',       // ingen not till standardantagandet; tom not följer inte med i ett paket
     orgTyp:                  'alla',   // 'kommun' | 'region' | 'alla' — SKR-referensens del (ADR-34)
     locale:                  'sv-SE',
     notes:                   'Neutral standard. Läs in ett organisationspaket för organisationens benämningar.'
@@ -32104,11 +32104,11 @@ function _prioKonStatus(i) {
         : 'Skillnaden är under 3 %. Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.';
     return `<span class="la-status ar-${st.farg} prio-konstatus" data-niva="${st.niva}" data-export-text="" title="${esc(tips)}">${ikon(st.ikon)}${esc(st.serie)}</span>`;
 }
-/** PO-raden under nyckeltalet: standardvärdet säger var det kommer ifrån, ett eget värde bara var det ändras. */
+/** PO-raden under nyckeltalet: standardvärdet säger att det är ett antagande, ett eget värde bara var det ändras. */
 function _prioPoText() {
     const po = state.costSettings.poPct;
     return po === COST_DEFAULTS.poPct
-        ? `inkl. PO-påslag ${svPct(po, 2)} (SKR:s standardvärde för kommuner; ändras under Inställningar)`
+        ? `inkl. PO-påslag ${svPct(po, 2)} (ett standardantagande; sätt organisationens eget under Inställningar)`
         : `inkl. PO-påslag ${svPct(po, 2)} (ändras under Inställningar)`;
 }
 
@@ -32585,7 +32585,7 @@ function _readCostSettings() {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
             ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
+            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
     }
 }
 // Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som
@@ -35555,10 +35555,9 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
 
         <h3>Externa datakällor</h3>
         <ul>
-            <li><strong>SKR</strong> är Sveriges Kommuner och Regioner, arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker därifrån:</li>
+            <li><strong>SKR</strong> är Sveriges Kommuner och Regioner, arbetsgivarorganisationen för kommuner och regioner. Verktyget använder två saker därifrån:</li>
             <li>AID — indelningen av arbetsuppgifter (Arbetsidentifikation kommuner och regioner), som ${T.kod.bfl} i lönefilen följer</li>
             <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per ${T.kod.en} i kommuner och regioner. I verktyget kallad <em>Kvinnor nationellt</em>: ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete</li>
-            <li>SKR:s cirkulär 2025 — PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen (andra arbetsgivare sätter sitt eget)</li>
             <li>SCB, Arbetskraftsundersökningarna (AKU), årsmedeltal 2023, avrundade — åldersfördelningen som referens i Ålder &amp; karriär</li>
         </ul>
 

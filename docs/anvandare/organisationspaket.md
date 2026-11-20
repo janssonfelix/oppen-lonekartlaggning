@@ -41,8 +41,8 @@ personnummer eller e-postadresser.
 3. Klicka på länken **Skapa organisationspaket (för systemägaren)** längst ned i steg 1, *Organisationspaket*,
    överst i fliken.
 4. Fyll i organisationens namn, utgivare och år, vad jämförelsestatistiken ska heta och vad
-   ställningstagandet ska heta. Fyll också i PO-påslag och beräkningsperiod. Fältet för
-   ställningstagandets namn är förifyllt med filens namn. Byt till ett namn som passar i rapporten,
+   ställningstagandet ska heta. Fyll också i PO-påslag och beräkningsperiod (utan paket gäller 40 %, ett
+   standardantagande). Fältet för ställningstagandets namn är förifyllt med filens namn. Byt till ett namn som passar i rapporten,
    t.ex. *Lönepolitiskt ställningstagande 2026*, och en kort form som *ställningstagandet*. Fältet
    *Minsta gruppstorlek för redovisning* är ifyllt med det värde som gäller just nu. Lämna det tomt
    om paketet inte ska ange något. Ett ogiltigt

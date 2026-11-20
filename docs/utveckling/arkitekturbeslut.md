@@ -90,6 +90,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Gällande | 2026-11-16 |
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 | ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
+| ADR-84 | PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning | Gällande | 2026-11-19 |
 
 ## Besluten
 
@@ -499,3 +500,12 @@ står kvar (ADR-70), medianer och percentiler berörs inte, och en not namnger d
 användas i andra moduler; de utskrivande delarna skriver bara ut resultatet. *Avvisat:* att räkna raden *Alla* bara
 på de visade grupperna, som ändrar vad raden betyder; att utelämna raden *Alla*. *Gäller i dag:* `k-troskeln.md`
 avsnitt 2.
+
+**ADR-84 — PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning.** Beslutat av underhållaren
+2026-11-19. Kostnadsberäkningen räknar med PO-påslaget 40 % tills organisationen sätter sitt eget, i fältet under
+Inställningar eller i organisationspaketet. Förut räknade verktyget med 39,15 % och en hänvisning till ett cirkulär för
+kommuner och regioner, utan cirkulärets nummer. Påslaget skiljer sig mellan arbetsgivare och år, så standardvärdet är
+ett avrundat antagande och gränssnittet säger det, utan att namnge någon källa. Organisationspaketets egen not om
+påslaget (`poNot`) finns kvar; verktygets standard har ingen not. *Avvisat:* att behålla 39,15 % med hänvisningen, som
+saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i dag:* `COST_DEFAULTS` i
+`src/app/07-standardinstallningar.js`.

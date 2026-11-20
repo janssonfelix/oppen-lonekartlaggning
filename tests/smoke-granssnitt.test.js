@@ -401,7 +401,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(w.__state.costSettings.poPct).toBe(42);
         expect(d.getElementById('prio-cost-summary').textContent).toMatch(/Anpassad.*42,00\s%/);
         d.getElementById('prio-cost-reset').click();
-        expect(w.__state.costSettings.poPct).toBe(39.15);
+        expect(w.__state.costSettings.poPct).toBe(40);
         w.eval('stangInstallningar()');
     });
     it('utan lönefil är varje rad med en inställning i en flik inaktiv, också Tröskel för extremvärden (avsnittet är dolt)', () => {
