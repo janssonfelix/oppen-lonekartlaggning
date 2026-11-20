@@ -17,17 +17,17 @@ import { matchningEtikett } from './jamforelse.js';
 import { bedomSkillnad, statusKonstanter } from './status.js';
 import { lonebegreppReservation } from './struktur.js';
 import { personOrd } from './namn.js';
-import { sektorJusteradText } from './sektor.js';
+import { sektorJusteradText, sektorAndelNot } from './sektor.js';
 import { kvDefinitionText } from './aidbas.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
+import { arKvinna } from './kon.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
-const _arKvinna = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
 const _arMan = r => typeof r.kon === 'string' && !r.kon.includes('kvinna') && (r.kon.includes('man') || r.kon.includes('män'));
 
 /**
@@ -53,7 +53,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const perYrke = new Map();
     for (const r of rader || []) {
         if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, { kv: [], ma: [] });
-        if (_arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
+        if (arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
         else if (_arMan(r)) perYrke.get(r.yrke).ma.push(r.lon);
     }
     const grupper = [], utelamnade = [], ejJamforbara = [];
@@ -95,14 +95,14 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
  */
 export function justeratGapInomYrke(rader, { k }) {
     if ((rader || []).length && !(rader || []).some(r => r && r.alder > 0)) return { utanAlder: true };
-    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (_arKvinna(r) || _arMan(r)));
-    const nKv = d.filter(_arKvinna).length, nMa = d.length - nKv;
+    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (arKvinna(r) || _arMan(r)));
+    const nKv = d.filter(arKvinna).length, nMa = d.length - nKv;
     if (nKv < k || nMa < k) return { forFa: true };
     const basLista = [...new Set(d.map(r => r.bas))].sort();
     const dummies = basLista.slice(1);
     const p = 3 + dummies.length;
     if (d.length < p + 5) return { forFa: true };
-    const X = d.map(r => [1, _arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
+    const X = d.map(r => [1, arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
     const y = d.map(r => Math.log(r.lon));
     const fit = fitOLS(X, y);
     // Singulär modell: kön och BAS sammanfaller inom yrket (t.ex. alla kvinnor i ett BAS).
@@ -318,7 +318,6 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const R = 'Var uppstår löneskillnaden?';
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} ${personOrd(k)} i urvalet.`], null);
         const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
-        if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} ${personOrd(k)} står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
         // Delarna och deras namn följer de valda variablerna (ADR-65); standardvalet BAS, AID ger texten från före.
         const variabler = u.variabler || gapStandardVariabler();
         const delar = gapDelar(variabler);
@@ -331,10 +330,13 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 : `Uppdelningen förklarar med variablerna ${gapVariablerIText(variabler)}, i den ordningen. Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.`);
         }
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
+        // Grupper där ett kön är under tröskeln räknas samman innan delarna räknas och namnges inte (ADR-87).
+        const ovriga = d => (u.ovrigaAntal && u.ovrigaAntal[d]) || 0;
+        if (delar.some(d => ovriga(d.id))) st.push(`Grupper där ett kön har färre än ${k} ${personOrd(k)} räknas samman med andra grupper innan delarna räknas, och de namnges inte. `
+            + `Annars skulle medellönen för färre än ${k} kvinnor eller män gå att räkna fram ur beloppen.`);
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
-        // Samma poster som kortet: listan är redan kortad efter skyddsregeln, och en kortare
-        // lista här kunde bryta den (gapuppdelning.js).
-        const storst = d => u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`).join('; ') || '—';
+        // Samma poster som kortet: gapuppdelning.js namnger bara grupper som inte räknats samman (ADR-87).
+        const storst = d => [...u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`), ...(ovriga(d) ? [`${_st(ovriga(d), 'grupp', 'grupper')} namnges inte`] : [])].join('; ') || '—';
         return blk(R, st, { rubriker: ['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag'], rader: [
             ...delar.map(d => [d.namn, _kr(u.delar[d.id]), andel(u.delar[d.id]), storst(d.id)]),
             ['Totalt', _kr(u.gap), u.litetGap ? '—' : '100 %', ''],
@@ -403,9 +405,11 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const justText = sektorJusteradText(alla);
         const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${justText.justeradFor}.`];
         const a = u.andel;
+        const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-87)
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
-            ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
-            : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
+            ? `Skillnaden i medellön för hela organisationen, kvinnor mot män (${_kr(a.gapKr)} per månad), beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
+            : `Av skillnaden i medellön för hela organisationen, kvinnor mot män (${_kr(a.gapKr)} per månad), beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
+        if (andelNot) st.push(andelNot);
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const ejBas = visas.filter(r => r.justeratSkal === 'ejBas').length;

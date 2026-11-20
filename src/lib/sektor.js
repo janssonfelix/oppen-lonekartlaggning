@@ -7,18 +7,22 @@
  * k-regler som Lika arbete (ett kön under k → samlad median; gruppen under k → maskerad), justerad
  * skillnad med huvudregressionens kodning (kön + ålder när lönefilen har den + BAS som indikatorer, HC3 och
  * t-kvantil; justeradSkillnad i regression.js, ADR-78) när sektorn har ≥ 30 personer och ≥ k av varje
- * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel som del A i
+ * kön, och sektorernas andel av gapet i medellön (samma symmetriska formel och samma tecken som del A i
  * gapuppdelning.js, med sektor i stället för BAS). Går modellen med BAS inte att skatta i ett huvudområde med minst två
  * BAS-intervall (kön och BAS går inte att skilja åt) ges inget justerat tal: ett tal utan BAS vore inte justerat för BAS.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ *
+ * Bygger på: ADR-33, ADR-78 och ADR-87; docs/utveckling/regressionsmodellen.md avsnitt 10. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 import { median } from './stat.js';
 import { justeradSkillnad, harAlderIRader } from './regression.js';
 import { sektorsnamn, jamforSektor } from './aid.js';
 import { konOf } from './falt.js';
 import { skrKvinnoandelSektor } from './skrreferens.js';
-import { skapaTermer } from './termer.js';
+import { skapaTermer, stor } from './termer.js';
+import { personOrd } from './namn.js';
+import { sammanslagning } from './undertryckning.js';
 
 const T = skapaTermer();
 
@@ -88,24 +92,56 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
 }
 
 /**
- * Sektorernas andel av gapet i medellön (män − kvinnor): Σ_s Δs_s · (W̄_s − W̄).
+ * Sektorernas andel av gapet i medellön (kvinnor − män, negativt när kvinnor ligger lägre, som i gapuppdelning.js):
+ * Σ_s Δs_s · (W̄_s − W̄) med Δs = andelen av kvinnorna − andelen av männen. sektorKr är del A i gapUppdelning med
+ * huvudområde som enda variabel; andel = sektorKr / gapKr har inget tecken att byta.
  * Null när ett kön har färre än k personer: gapet i kronor tillsammans med gapet i procent
  * (Struktur) ger annars det lilla könets medellön — samma regel som gapuppdelning.js.
+ *
+ * Huvudområden där ett kön har 1 till k − 1 personer räknas samman med andra (ADR-87, `sammanslagning` i
+ * undertryckning.js), samma regel som del A i gapuppdelning.js: annars ger beloppet sektorKr tillsammans med kvinnornas
+ * och männens medellön och antalen ett litet områdes medellön (med två huvudområden är det en ekvation med en okänd).
+ * `sammanslagna` är de sammanräknade områdenas namn i tabellens ordning och `sma` de av dem där ett kön har för få.
+ * Räknas alla samman till ett är sektorKr och andel null: beloppet vore noll och säger ingenting om fördelningen.
  */
 export function sektorernasAndel(rader, { k = 10 } = {}) {
     const kv = (rader || []).filter(r => r.lon > 0 && konOf(r) === 'Kvinna');
     const ma = (rader || []).filter(r => r.lon > 0 && konOf(r) === 'Man');
     if (!kv.length || !ma.length || kv.length < k || ma.length < k) return null;
     const medel = a => a.reduce((s, r) => s + r.lon, 0) / a.length;
-    const gapKr = medel(ma) - medel(kv);
+    const gapKr = medel(kv) - medel(ma);
     const namn = [...new Set([...kv, ...ma].map(r => sektorsnamn(r.aid)))];
-    const cell = s => {
-        const k = kv.filter(r => sektorsnamn(r.aid) === s), m = ma.filter(r => sektorsnamn(r.aid) === s);
+    const grupper = namn.map(s => ({ s, k: kv.filter(r => sektorsnamn(r.aid) === s), m: ma.filter(r => sektorsnamn(r.aid) === s) }));
+    const samman = sammanslagning(grupper.map(g => ({ namn: g.s, nKv: g.k.length, nMa: g.m.length })), k);
+    const egna = grupper.filter((_, i) => !samman.includes(i));
+    const delar = samman.length ? [...egna, { s: null, k: samman.flatMap(i => grupper[i].k), m: samman.flatMap(i => grupper[i].m) }] : egna;
+    const cell = ({ k, m }) => {
         const wK = k.length ? medel(k) : medel(m), wM = m.length ? medel(m) : medel(k);
-        return { dS: m.length / ma.length - k.length / kv.length, w: (wK + wM) / 2, sBar: (m.length / ma.length + k.length / kv.length) / 2 };
+        return { dS: k.length / kv.length - m.length / ma.length, w: (wK + wM) / 2, sBar: (m.length / ma.length + k.length / kv.length) / 2 };
     };
-    const celler = namn.map(cell);
+    const ordnade = ix => ix.map(i => grupper[i].s).sort(jamforSektor);
+    const liten = n => n > 0 && n < k;
+    const sammanslagna = ordnade(samman), sma = ordnade(samman.filter(i => liten(grupper[i].k.length) || liten(grupper[i].m.length)));
+    if (samman.length && delar.length < 2) return { gapKr, sektorKr: null, andel: null, sammanslagna, sma };
+    const celler = delar.map(cell);
     const wBar = celler.reduce((s, c) => s + c.sBar * c.w, 0);
     const sektorKr = celler.reduce((s, c) => s + c.dS * (c.w - wBar), 0);
-    return { gapKr, sektorKr, andel: Math.abs(gapKr) > 1e-9 ? sektorKr / gapKr : null };
+    return { gapKr, sektorKr, andel: Math.abs(gapKr) > 1e-9 ? sektorKr / gapKr : null, sammanslagna, sma };
+}
+
+/**
+ * Meningen om sammanräknade huvudområden under beloppet (vyn och rapportunderlaget, ADR-87), eller '' när inget
+ * räknats samman. Namnger områdena; antal och namn omfattas inte av skyddet (ADR-70).
+ * @param {{sektorKr:number|null, sammanslagna?:string[], sma?:string[]}|null} a - sektorernasAndel()
+ * @param {number} k
+ */
+export function sektorAndelNot(a, k) {
+    if (!a || !a.sammanslagna || !a.sammanslagna.length) return '';
+    const lista = l => (l.length <= 1 ? (l[0] || '') : `${l.slice(0, -1).join(', ')} och ${l[l.length - 1]}`);
+    const orsak = `ett kön har färre än ${k} ${personOrd(k)} i ${lista(a.sma || [])}`;
+    const varfor = `Annars skulle medellönen för färre än ${k} kvinnor eller män gå att räkna fram ur beloppet.`;
+    if (a.sektorKr == null) {
+        return `Hur mycket av skillnaden som beror på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} redovisas inte, eftersom ${orsak}. ${varfor}`;
+    }
+    return `${stor(T.huvudomrade.bfl)} ${lista(a.sammanslagna)} räknas här samman, eftersom ${orsak}. ${varfor}`;
 }

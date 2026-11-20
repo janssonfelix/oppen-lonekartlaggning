@@ -10,8 +10,9 @@
  * värdefördelningen och varningarna. Ingen tolkning görs om här — modulen beskriver bara den som redan gjorts.
  *
  * Dataskydd: tolkningen bär högst tio rader med fem till sju fält, och yrkets råvärde följer aldrig med (yrket
- * visas som verktyget sparar det, med namnmaskeringen). Varningarnas texter bär inga löner eller åldrar ur filen,
- * eftersom de också står i Att göra, vars punkter kan exporteras.
+ * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
+ * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
+ * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -32,6 +33,8 @@ export const FK_ALDER_MIN = 16;
 export const FK_ALDER_MAX = 75;
 /** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
 export const FK_SMA_GRUPP = 10;
+/** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
+export const FK_NAMN_RADNR = 5;
 /** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
 const MAX_RA = 24;
 const VANLIG_BAS = /^[A-N]$/;
@@ -43,7 +46,8 @@ const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', i
 /** Gränsvärdena, för gränssnittets texter. */
 export function forhandskontrollGranser() {
     return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
-        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP };
+        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
+        namnRadnr: FK_NAMN_RADNR };
 }
 
 const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
@@ -60,6 +64,38 @@ function _fkMedian(sorterade) {
 }
 const _fkRader = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
 const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
+/** "12", "12 och 40", "12, 40 och 51". */
+const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
+
+/**
+ * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
+ * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
+ * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
+ */
+export function namnIYrkesfaltetRadnr(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
+}
+
+/**
+ * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
+ * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
+ * rader och radnumren, aldrig fältets innehåll.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0.
+ */
+export function namnIYrkesfaltetText(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = namnIYrkesfaltetRadnr(antal, radnr);
+    const vilka = nr ? ` (${nr})` : '';
+    return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
+        + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
+}
 
 /**
  * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
@@ -168,6 +204,8 @@ export function byggForhandskontroll({ rader = [], data = [], konVarden = [], pa
     // Varningarna. Texterna bär inga löner eller åldrar ur filen (de kan följa med Att göra ut ur verktyget).
     const varningar = [];
     const varna = (kod, niva, text) => varningar.push({ kod, niva, text });
+    // Först: namn i uttaget är en fråga om dataskydd, inte om tolkningen. Bara antal och radnummer (parseStats).
+    if ((ps.yrkeNamn || 0) > 0) varna('yrke-namn', 'varning', namnIYrkesfaltetText(ps.yrkeNamn, ps.yrkeNamnRadnr));
     if (lon && lon.median > FK_ARSLON_MEDIAN) {
         varna('lon-arslon', 'fel', `Medianlönen är över ${_fkTal(FK_ARSLON_MEDIAN)} kr och ser ut som en årslön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
     } else if (lon && lon.median < FK_TIMLON_MEDIAN) {

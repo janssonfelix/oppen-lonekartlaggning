@@ -16,7 +16,8 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { quantile } from './stat.js';
+import { quantile, avrundaSymmetriskt } from './stat.js';
+import { arKvinna, arMan } from './kon.js';
 
 export const MARKEN = ['stapel', 'intervall', 'punkt', 'linje', 'band', 'lada', 'ruta', 'yta'];
 const SKALOR = ['band', 'linjar', 'log'];
@@ -37,8 +38,9 @@ function _tal(dec) {
 export function talformat(v, namn, val) {
     const enhet = !val || val.enhet !== false;
     if (typeof v !== 'number' || !isFinite(v)) return '–';
-    // Avrunda först och normalisera sedan: ett värde som blir noll i formatet får inget minustecken.
-    const rund = (x, dec) => { const f = 10 ** dec, r = Math.round(x * f) / f; return r === 0 ? 0 : r; };
+    // Avrunda först (halvorna bort från noll, så att ett tal och dess motsatta tal får samma siffror) och normalisera
+    // sedan: ett värde som blir noll i formatet får inget minustecken.
+    const rund = avrundaSymmetriskt;
     if (namn === 'kr') return _tal(0).format(rund(v, 0)) + (enhet ? ' kr' : '');
     if (namn === 'pct') return _tal(1).format(rund(v, 1)) + (enhet ? ' %' : '');
     if (namn === 'pctAbs') { const a = Math.abs(rund(v, 1)); return _tal(Number.isInteger(a) ? 0 : 1).format(a) + (enhet ? ' %' : ''); }
@@ -74,7 +76,7 @@ export function kvantilpunkter(varden, antalMax = 20) {
  */
 export function kronorSkillnad(medKv, medMa) {
     if (typeof medKv !== 'number' || typeof medMa !== 'number' || !isFinite(medKv) || !isFinite(medMa) || !(medMa > 0) || !(medKv > 0)) return null;
-    const r = Math.round((medKv - medMa) / 100) * 100;
+    const r = avrundaSymmetriskt((medKv - medMa) / 100) * 100;
     return r === 0 ? 0 : r;
 }
 
@@ -571,9 +573,8 @@ export function harlettNot(h) {
 // Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
 function _underlagKon(underlag, r) {
     if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
-    const k = r && r.kon;
-    if (typeof k === 'string' && k.includes('kvinna')) return 'kv';
-    return k === 'man' || k === 'män' ? 'ma' : null;
+    if (arKvinna(r)) return 'kv';
+    return arMan(r) ? 'ma' : null;
 }
 
 /**

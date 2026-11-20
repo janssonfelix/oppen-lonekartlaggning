@@ -51,7 +51,7 @@ hos individen, och tillför därmed ingen ny integritetsrisk:
 | Månadslön | Subjekt för analysen | Hög (lön är integritetskänsligt) |
 | Kön | Grunddimension (kvinna/man) | Diskrimineringsgrund — ingen särskild kategori av personuppgifter |
 | Ålder (valfri, rekommenderad) | Kontrollvariabel; utan ålder körs analysen utan åldersjustering och Ålder & karriär visas inte (ADR-64) | Medel |
-| AID-etikett (AID-kod och etikettnamn) | Gruppering | Låg–medel |
+| AID-etikett (AID-kod och etikettnamn) | Gruppering. Högst 40 tecken efter koden behålls; texten maskeras inte (ADR-85), så ett namn som står i fältet följer med | Låg–medel — hög om uttaget har lagt namn i fältet; inläsningen varnar då (§6.4) |
 | BAS-intervall | Kravnivå-proxy | Låg |
 | Poäng (valfri) | Arbetsvärderingens krav-poäng per befattning (krav-proxy för likvärdigt arbete) | Ingen — befattningsattribut, ej individbundet |
 | Ansvarskod enligt AID (valfri) | Grupperas i tre ansvarsgrupper (ledningsansvar, särskilt uppdrag, inget); prövar ansvar som tänkbart sakligt skäl. Läses bara om minst 95 % av värdena är giltiga; kolumnen *Ansvar* (ofta kostnadsställe) läses aldrig | Låg–medel — chefsansvar kan i små grupper peka ut en person; samma k-regel som övriga grupper (§6.5) |
@@ -62,11 +62,12 @@ uppgifter.
 
 **Klassificering:** Detta är **ordinära personuppgifter**, inte särskild kategori.
 Dataskyddsförordningens särskilda kategorier är inte tillämpliga, eftersom underlaget inte innehåller några
-sådana uppgifter. Inläsningen avvisar namn, personnummer och e-post, och kolumner vars rubrik antyder en
-särskild kategori (se §6.4). *Men* — lön är integritetskänsligt, och uppgifterna är
+sådana uppgifter. Inläsningen avvisar kolumner med namn, personnummer och e-post, och kolumner vars rubrik antyder en
+särskild kategori (se §6.4). Namn inne i fältet för AID-etikett avvisas inte och maskeras inte; inläsningen varnar för
+dem (§6.4). *Men* — lön är integritetskänsligt, och uppgifterna är
 könsuppdelade och kan i **små grupper vara identifierande** (re-identifieringsrisk,
-se §7.B1). Namn, personnummer och e-post samlas medvetet **inte** in och avvisas
-aktivt vid uppladdning (se §6.4).
+se §7.B1). Kolumner med namn, personnummer och e-post samlas medvetet **inte** in och avvisas
+aktivt vid uppladdning (se §6.4); namn som uttaget lagt i fältet för AID-etikett läses däremot in som text (§7.B1c).
 
 **Användarförfattad text:** HR kan skriva egna bedömningar i verktyget:
 
@@ -257,6 +258,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - Vid fliksstängning försvinner allt minne (ingen persistens).
 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
+- **Var koden bor:** vitlistan och kolumnvalet (`ALLOWED_FIELDS`, `getField`, ansvarskolumnen) ligger i appen
+  (`src/app/06-uppgiftsminimering.js`, `src/app/03-hjalpfunktioner.js`). Tolkningen av värdena — talen, kön, BAS,
+  saneringen av AID-etiketten, kärnan i `extractMinimalRecord` (`tolkaLonerad`) och `detectSensitiveColumns` — är
+  rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan klocka (året som ett födelseår räknas mot skickas
+  in), och prövas fristående i `tests/inlasning.test.js` och genom appen i `tests/parsing.test.js`.
 - **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID-etikett, lön och kön, samt valfri ålder
   (ADR-64; saknas kolumnen blir åldern 0 på varje rad och betyder *saknas*), valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
   (ADR-33) läses in. Kolumnen *Ansvar* (ofta kostnadsställe) läses inte in (se avgränsningen i
@@ -304,9 +310,20 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   utelämnas med en varning (`_lasningar` i `src/lib/organisationspaket.js`). Referensens och statistikens
   namn och källa följer med i exporterna. Paketet lagras aldrig i verktyget, och demoläget har
   en påhittad referens.
-- **Fältet för AID-etikett saneras** (`_cleanYrkeField`): trunkeras och maskerar namn-mönster
-  (t.ex. "Förnamn Efternamn" → `***`; verifierat: "101 Anna Andersson" lästes in
-  som "101 ***"); tecknen `< > " ' &` tas bort. `_normalizeBas` tar bort samma tecken ur BAS-värdet.
+- **Fältet för AID-etikett saneras på tecken, inte på namn** (`_cleanYrkeField`): AID-koden behålls, tecknen
+  `< > " ' &` tas bort ur etiketten och etiketten kortas till 40 tecken. Ingenting i texten maskeras (ADR-85): ett
+  namn som uttaget lagt i fältet visas i tabellerna och följer med i exporterna. `_normalizeBas` tar bort samma tecken
+  ur BAS-värdet. Vad skydden gör och inte gör står samlat i [`dataskydd.md`](dataskydd.md) avsnitt 2.
+- **Varningen för personnamn i fältet för AID-etikett** (`yrkeNamnNyckel` och `sallsyntaNamnrader` i
+  `src/lib/inlasning.js`): en rad räknas när texten efter koden har ett namnmönster (två eller fler versalinledda ord i
+  rad, eller "Efternamn, Förnamn" i Versal-gemener eller versaler) och samma text, utan hänsyn till skiftläge och
+  blanksteg, står på högst två rader i filen. En etikett med versal på två ord ("Sjuksköterska Natt") återkommer på
+  många rader och varnar därför inte. Varningen står i förhandskontrollen, i inläsningsrapporten och i Att göra, med
+  antal rader och högst fem radnummer, aldrig texten; den stoppar inte inläsningen. Räknaren per text finns bara
+  under inläsningen och töms när filen är läst, avvisad eller inte gick att läsa; kvar i minnet blir antalet och
+  radnumren. **Upptäcks inte:** namn i gemener, ett ensamt namn ("Andersson"), blandad form ("ANDERSSON, Anna") och
+  ett namn som står på tre eller fler rader. Prövat i `tests/inlasning.test.js` och genom appen i
+  `tests/namn-i-yrkesfaltet.test.js` (CSV och Excel).
 - **Utdatakodning:** `esc()` escapear `& < > " '` och är därmed säker även i attributkontext
   (regressionstester i `tests/parsing.test.js`).
 - **Förhandskontrollen av lönefilen visar de tio första raderna bara på skärmen.** Varje rad har fem till sju
@@ -417,9 +434,16 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   BAS-intervall under tröskeln (`tests/ktroskel-livscykel.test.js`; kurvan är modellens tal, som invarianten inte känner igen), för Löneöversyns
   scenariojämförelse (`tests/ktroskel-loneoversyn-scenarier.test.js`), för noten vid egna riktade rader, för
   regressionens BAS-effekter och för Löneöversyns summor (`tests/ktroskel-loneoversyn-summor.test.js`). Invarianten söker efter lönevärden; den prövar inte antal och
-  andelar, och inte ett lönemått som bara går att räkna fram som en differens mellan andra tal. Det gör
-  differensprovet (`tests/ktroskel-differens.test.js`) för de utdata det täcker, bland dem tabellerna per
-  BAS-intervall.
+  andelar. Ett lönemått som bara går att räkna fram som en differens prövar invariantens differensprov (ADR-88) på
+  samma utdata: varje tabell vars rubrikrad har en kolumn med medel, summa eller kostnad ska vara deklarerad i riggen
+  (`tests/helpers/ktroskel-rigg.js`), med kolumner och totalrad eller som inget att dela upp med skäl, och en
+  odeklarerad tabell fäller invarianten. För de deklarerade måtten får totalen minus de visade delarna, för alla och
+  per kön, inte lämna färre än tröskeln personer, och i en tabell utan totalrad får ingen rad minus andra lämna en av
+  underlagets små grupper. I dag prövas tabellerna per BAS-intervall (Word-utkastet, utskriften och Excel) och
+  Löneöversyns fördelning och utfallstabell med innehåll. Provet ser inte differenser mellan två tabeller eller två
+  exporter, inte medianer och percentiler, och inte härledningar som kräver uppgifter utanför exporten.
+  `tests/ktroskel-differens.test.js` prövar samma sak på lib-nivå med fler underlag, och ekvationssystemen i
+  uppdelningen av löneskillnaden.
 - **Värdet kan ändras av användaren (ADR-38).** Fältet *Minsta gruppstorlek för redovisning* under
   **Inställningar** i sidhuvudet tar heltal från 2 (högst 1 000). Klicka på värdet i flikarnas översta rad för att komma dit.
   Standardvärdet är 10, och inget lagras mellan sessioner.
@@ -524,7 +548,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   åldersgrupp) för det minsta visade intervallet, ett i taget tills de undertryckta når tröskeln, i alla avsnittets
   tabeller och i Excelbladet *Per BAS*; antal och andel kvinnor står kvar. Samma regel gäller per kön mot raden
   *Alla*s medel per kön, och för AID-etiketterna mot organisationens rad när receptet har måttet *Medellön*. En not
-  namnger det som undertryckts (ADR-83; `kompletterandeUndertryckning` i `src/lib/perbas.js`). Vaktas av
+  namnger det som undertryckts (ADR-83; `kompletterandeUndertryckning` i `src/lib/undertryckning.js`). Vaktas av
   differensprovet `tests/ktroskel-differens.test.js` och `tests/perbas.test.js`. Kvar, och inte prövat som differens:
   medellönen per åldersgrupp mot raden *Alla* (antalet per åldersgrupp skrivs inte ut) och vägar som kräver
   uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Prioritering visar skillnaden mellan könen i en grupp
@@ -573,8 +597,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   och `tests/smoke-docx.test.js`.
 - **Bilder med en punkt per person följer med (beslut 2026-10-16, ADR-48):** ZIP-exporten
   och utskriftens mall *Komplett rapport* bär bilder av Ålder & karriärs diagram med en punkt per person
-  (§6.6). Ålder & karriär visar punkterna på skärmen. Bilderna bär inga namn eller identifierare, och filerna
-  hanteras som personuppgifter (§8, punkt 1). Innehållet i en bild går inte att läsa i testet, så bilderna
+  (§6.6). Ålder & karriär visar punkterna på skärmen. Text ur fältet för AID-etikett maskeras inte (ADR-85): färglagt
+  efter AID-etikett står den i bildens förklaring som den står i lönefilen. Filerna hanteras som personuppgifter
+  (§8, punkt 1). Innehållet i en bild går inte att läsa i testet, så bilderna
   prövas inte av invarianten.
 - **Löneöversyns tröskelmål följer tröskeln (beslut 2026-10-16, ADR-38 R5):** lyftet i
   procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger procentsatsen) visas bara när varje kön i
@@ -622,14 +647,19 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   exporten. Panelen säger varför. Vaktas av `tests/smoke-innehall.test.js`.
 
 - **Aggregerade analyser i Lönestruktur och Lika arbete (ADR-22, ADR-24, ADR-25):** *Var uppstår löneskillnaden?* (Lönestruktur)
-  namnger en grupp bara när varje kön i gruppen och dess BAS når tröskeln. Dolda grupper redovisas
-  bara med antal. Topplistan kortas tills summan av |belopp| för de andra poster som inte visas
-  är minst hälften av varje dold posts belopp. Då kan en dold grupps bidrag inte räknas fram ur
-  summorna. Går det inte redovisas inga delar, bara hela skillnaden. Med valbara förklaringsvariabler (ADR-65,
-  1–4 av BAS, huvudområde, AID-mellannivå, AID och åldersgrupp) gäller samma regler per del: en grupp namnges bara när
-  den själv och alla grupper den ligger i når tröskeln, och kan en del inte redovisas visas ingen. Vaktas av
-  `tests/gapuppdelning.test.js` och I7 i `tests/ktroskel-invarianter.test.js`. Kortet och rapportunderlaget
-  visar samma poster. Stabilitetsmärkningen av flaggor bygger bara på grupper där båda könen når
+  räknar i exportläget samman grupper där ett kön har färre än tröskeln med andra grupper inom samma övergrupp,
+  innan delarna räknas, så att varje grupp som delarna bygger på har inga eller minst tröskeln av varje kön
+  (ADR-87; `sammanslagning` i `src/lib/undertryckning.js`). Delarna och posterna är vägda medellöner, och med
+  medellönerna och antalen gav de tidigare ett ekvationssystem där en liten grupps medellön gick att räkna fram fast
+  posten inte stod. En grupp namnges bara när den inte är sammanslagen och den själv och alla grupper den ligger i når
+  tröskeln; övriga redovisas bara med antal, och en not säger varför. Samma regel gäller för varje val av
+  förklaringsvariabler (ADR-65, 1–4 av BAS, huvudområde, AID-mellannivå, AID och åldersgrupp), och för huvudområdenas
+  andel av skillnaden i översikten per huvudområde och rapportunderlaget, där huvudområden som räknas samman namnges i
+  en not och inget belopp står när alla räknas samman. På skärmen räknas inget samman (ADR-51). Vaktas av
+  differensprovet `tests/ktroskel-differens.test.js`, `tests/gapuppdelning.test.js`, `tests/sektor.test.js`,
+  `tests/undertryckning.test.js` och I7 i `tests/ktroskel-invarianter.test.js`. Kvar, och inte prövat som differens:
+  skillnader mellan olika uppdelningar i samma export, som uppdelningen mot tabellerna per BAS-intervall. Kortet och
+  rapportunderlaget visar samma poster. Stabilitetsmärkningen av flaggor bygger bara på grupper där båda könen når
   tröskeln. *Lägre krav, högre lön* tar i rapportunderlaget bara med par där båda grupperna når
   den. Analyserna har inga egna fält och inga egna exportvägar.
 
@@ -672,10 +702,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   granskas diagram (ADR-23).
   Ingen exportväg — meny, bild, diagramdata, ZIP, rapportunderlag, utskrift — tar med ett märkt diagram.
   Vissa diagram har en punkt per person: spridningsdiagrammen lön mot ålder i Ålder & karriär, märkta
-  `individer` i figuren. För dem är diagramdatan **en rad per person** (lön, kön, ålder eller grupp; inga namn
-  eller identifierare). Filen säger det på rad 2: "Filen innehåller en rad per person (lön, kön, ålder
-  eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter." (beslut
-  2026-10-16). Lådorna i Tabeller och egna vyer (individpunkter, punktsvärm, regnmoln) exporteras som
+  `individer` i figuren. För dem är diagramdatan **en rad per person** (lön, kön, ålder eller grupp). Färglagt
+  efter AID-etikett är texten ur fältet serienamn, och ett urval på AID-etikett står i raden om urvalet, som texten
+  står i lönefilen (ADR-85). Filen säger det på rad 2: "Filen innehåller en rad per person (lön, kön, ålder
+  eller grupp) och ska hanteras som personuppgifter. Text ur fältet för AID-etikett kan följa med som den står i
+  lönefilen." (beslut 2026-10-16). Lådorna i Tabeller och egna vyer (individpunkter, punktsvärm, regnmoln) exporteras som
   statistik per grupp, aldrig som individer. Sådana filer ska hanteras som personuppgifter (§8, punkt 1).
 - **Diagrammens urval** (filterraderna ovanför diagrammen: knappar per BAS-intervall och andra kategorier, fälten
   Minst och Högst för ett tal som antal personer i gruppen, och hopfällda listor för AID-etikett och huvudområde) döljer
@@ -739,8 +770,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   flikarnas tabeller. Där finns också bilder av Ålder & karriärs spridningsdiagram, låddiagram och
   täthetsdiagram. De kortare urvalen (ledningsbrief, facklig dialog) gör det
   inte. **Beslut 2026-10-16 (ADR-48):** bilderna följer med i ZIP-exporten och i Komplett
-  rapport. De bär inga namn eller identifierare, punkterna följer tröskeln som ovan, och filerna hanteras som
-  personuppgifter (§8, punkt 1).
+  rapport. Punkterna följer tröskeln som ovan, text ur fältet för AID-etikett står i förklaringen som den står i
+  lönefilen när spridningsdiagrammet är färglagt efter den (ADR-85), och filerna hanteras som personuppgifter (§8, punkt 1).
 - **Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön** följer tröskeln för varje kön:
   - Översikten per BAS-intervall (skärm, Word, PDF) har bara rader där båda könen når den.
   - Trattdiagrammet har en punkt per AID-etikett i BAS-intervall, och bara där båda könen i gruppen når den.
@@ -858,7 +889,7 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 |---|---|---|---|---|---|
 | A1 | Exfiltrering av data via nätverk | Låg | Hög | CSP `connect-src 'none'` + 0 nätverksanrop + 0 externa resurser | **Låg** |
 | A2 | Spår kvar på disk (lagring) | Låg | Medel | Ingen kod eller inbyggt bibliotek skriver till lagringen (webbläsartestet kräver tom lagring); storage-tripwire som reserv, med kända luckor (§6.2); ingen IndexedDB/cache; rensningsknapp | **Låg** (OS-swap utanför kontroll; spärren hindrar inte en framtida kodändring som skriver utan `setItem`) |
-| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering (`_cleanYrkeField` + `_normalizeBas`); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Escaping-vakten (`tests/escaping.test.js`) läser källkoden och kräver att varje värde i appens HTML-mallar och HTML-sänkor går genom `esc()` eller bevisas säkert (tal, termer, konstanter, dataflöde); det den inte kan bevisa står i en granskad undantagslista. Den täcker inte HTML som byggs på annat sätt än med mallsträngar och `+`, attributkontexten (citering, `href`) eller ändringar genom alias, och antar säkert i en krets i dataflödet. Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
+| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering av tecken (`_cleanYrkeField` och `_normalizeBas` tar bort `< > " ' &`; ingen namnmaskering, ADR-85); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Escaping-vakten (`tests/escaping.test.js`) läser källkoden och kräver att varje värde i appens HTML-mallar och HTML-sänkor går genom `esc()` eller bevisas säkert (tal, termer, konstanter, dataflöde); det den inte kan bevisa står i en granskad undantagslista. Den täcker inte HTML som byggs på annat sätt än med mallsträngar och `+`, attributkontexten (citering, `href`) eller ändringar genom alias, och antar säkert i en krets i dataflödet. Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
 | A4 | Sårbarhet i tredjepartsbibliotek | Medel | Medel | Lokalt buntade, fastställda versioner, SHA i bygget; CSP hindrar exfiltrering även vid kompromiss; veckovis sårbarhetsbevakning av biblioteken mot OSV i CI (`.github/workflows/sarbarheter.yml`), som bara täcker brister som förts in i databasen | **Låg–medel** |
 | A5 | Skadligt webbläsartillägg / komprometterad enhet läser DOM | Medel | Hög | Utanför verktygets kontroll | **Medel** (organisatorisk åtgärd, §8) |
 | A6 | Manipulerad/utbytt HTML-fil distribueras | Låg | Hög | Sigstore-signatur från release-arbetsflödet, verifieras med `cosign verify-blob` (`SECURITY.md`); SHA-256 i `RELEASE.txt` skyddar bara mot en skadad fil. En organisationsfil (§6.9) har en annan kontrollsumma än den publicerade versionen och kan inte verifieras mot den: systemägaren verifierar den nedladdade versionen och sprider organisationsfilen via en behörighetsstyrd intern yta; *Visa paketet* anger kontrollsumman för den verktygsfil den byggdes av, som en uppgift i filen, inte ett äkthetsbevis | **Låg** (kräver att signaturen verifieras och att organisationsfilen sprids internt) |
@@ -870,11 +901,12 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 |---|---|---|---|---|---|
 | B1 | **Exportfiler lämnar skyddad miljö** (e-post, delning, osäker disk) | Hög | Hög | Endast aggregat i merparten av exporter; varningstexter/känslighetsnotis. Gäller även Word-utkastet och konfigfilen, som därtill kan innehålla **användarförfattade bedömningar** (§2/§6.8), och **diagramdata från individdiagram**, som innehåller en rad per person (§6.6). Det som kopieras till urklipp (tabeller, diagramdata, rapportunderlag) kan synkas till molnet eller andra enheter av operativsystemet eller en urklippshanterare (Windows molnurklipp, Apples universella urklipp); organisationen bör stänga av sådan synkning på de datorer som används | **Medel–hög** → kräver organisatorisk hantering (§8) |
 | B1b | Användaren skriver personuppgifter i fritextfält (anteckningar i Regler & praxis, handlingsplanens fält inklusive egna raders åtgärd och grupp, m.m.) | Låg–medel | Medel | Riktlinje i gränssnitt + körguide: "gruppnivå — inga namn/personnummer"; handlingsplanens fält varnar när texten liknar ett personnummer eller en e-postadress; texten lämnar verktyget endast via användarinitierade utdata | **Låg–medel** (organisatorisk, §8) |
+| B1c | Uttaget lägger personnamn i fältet för AID-etikett, och namnen följer med i tabeller och exporter | Låg–medel | Medel | Fältet maskeras inte (ADR-85); inläsningen varnar när texten har ett namnmönster och står på högst två rader, med antal och radnummer i förhandskontrollen, inläsningsrapporten och Att göra (§6.4); uttagsguiden säger att fältet bara ska bära kod och etikett | **Låg–medel** (organisatorisk: varningen hittar inte alla namn, §6.4) |
 | B2 | Re-identifiering i små grupper | Medel | Medel | k-anon (standard 10, kan ändras — ADR-38; sänkning kräver bekräftelse, ger stående varning och står i metodbilagan, i exporterad data och — under 10 — på varje del som kan spridas för sig) i deskriptiva vyer; undantaget för likvärdigt arbete dokumenterat; Tabeller och egna vyer visar små grupper men utelämnar dem ur export som standard (ADR-14); kvartilerna redovisar inga enskilda löner | **Medel** |
 | B2b | Användaren sänker minsta gruppstorlek och sprider en export där små grupper redovisas | Låg–medel | Medel | Standard 10 gäller vid varje start (inget lagras); sänkning kräver bekräftelse, också ur konfigurationsfil och organisationspaket; varning som inte går att stänga på alla flikar, och en mening under rubriken i utskrift; värdet och meningen om sänkning står i exporterna (metodbilaga, diagramdata, tabell-CSV, rapportunderlag; under 10 även diagrambilder, urklipp och sidfötter), så att mottagaren ser det; en konfigurationsfil utan fältet sänker inte ett strängare värde; organisationen kan sätta egen standard i organisationspaketet och ett golv som fältet, konfigurationsfilen och ett senare paket inte kan gå under utan bekräftelse (ADR-47); paketet kan också stänga av att små grupper tas med i exporten från Tabeller och egna vyer | Kvarstår utan golv i paketet: verktyget kan inte hindra en behörig användare som bekräftar. Med golv kan tröskeln inte sänkas under det utan att ett nytt paket läses in och sänkningen bekräftas. Risken bärs av organisationens egna riktlinjer |
 | B3 | Avvikelse feltolkas som "diskriminering" utan saklig prövning | Medel | Medel | Coachande språk, bevis-popups, disclaimers ("verktyget dömer inte") | **Låg–medel** |
 | B4 | Beslut på tunt statistiskt underlag (litet n) | Medel | Medel | Tillförlitlighetsflaggor, k-anon, varningar vid n<30/50 | **Låg–medel** |
-| B5 | Individuell analys (lika arbete) pekar ut enskilda | Medel | Medel | Diagram med enskilda personer saknar namn och identifierare; *Personer att granska* (ADR-23) visar enskilda med radnummer men bara i verktyget — ingen export, dold vid utskrift; bedömning ska dokumenteras manuellt | **Medel** (hantera som personuppgift, även diagramdata-exporter) |
+| B5 | Individuell analys (lika arbete) pekar ut enskilda | Medel | Medel | Diagram med enskilda personer saknar namn och identifierare (utöver det som står i fältet för AID-etikett, B1c); *Personer att granska* (ADR-23) visar enskilda med radnummer men bara i verktyget — ingen export, dold vid utskrift; bedömning ska dokumenteras manuellt | **Medel** (hantera som personuppgift, även diagramdata-exporter) |
 | B6 | Felaktig indata (fel kön/lön) → fel slutsats | Medel | Medel | Datakvalitetsrapport, reality-check, parsningsspårning | **Låg–medel** |
 | B7 | Exponering via skärmdelning/skärmdump under möte | Medel | Medel | — | **Medel** (organisatorisk åtgärd) |
 
@@ -1091,11 +1123,11 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
 | Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/smoke-ansvar.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
 | PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ lönefilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/parsing.test.js` (§6.4) |
-| Namnmaskering | `_cleanYrkeField` + körning i Chromium | ✔ "101 Anna Andersson" → "101 ***" |
+| Namn i fältet för AID-etikett | `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader`; jsdom-prov med CSV och Excel | ✔ ingen maskering (ADR-85): "101010 Anna Andersson" behålls; ✔ två namnrader ger varningen med antal och radnummer på de tre ställena; ✔ "Sjuksköterska Natt" på 20 rader varnar inte; ✔ ingen etikett i etikettlistan och ingen AID-etikett i demona träffas |
 | k-anonymitet | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |
 | k-anonymitet i exporten från Tabeller och egna vyer (ADR-14) | Exporttester i `tests/kanonymitet.test.js` + genomsökning i Chromium av alla kombinationer rad × kolumn × diagramtyp × helhet/per kön × mått med rutan urkryssad | ✔ inga grupper eller kön under 10 i tabell- eller diagramexport |
 | Personer att granska och extremvärdeslistan stannar i verktyget (ADR-23) | Test i `tests/smoke-granssnitt.test.js` (en flaggad persons lön finns inte i rapportunderlag eller Word-utkast) + webbläsarröktestet (extremvärdeslistan med rader syns inte i utskrift) + kodläsning (inga exportverktyg; bilagorna hämtar bara namngivna tabeller) | ✔ lönen och radnumret finns inte i någon utdata; båda döljs vid utskrift |
-| k-invarianten över flikar och exporter | `tests/ktroskel-invarianter.test.js`: underlag med ett kön under tröskeln i en större grupp, en ensam person och ett 2-mot-2-BAS; flikar, Word, utskrift ×3, rapportunderlag (med blocken per BAS-intervall), Excel ×9, CSV, diagramdata för varje diagram i diagramkärnans register, gruppdossier, BAS-dossierns text (`basdossierText`), Rapporttextens utkast med delen per BAS-intervall, rapportens avsnitt Lönekartläggning per BAS-intervall och, med förra årets bokslut inläst, blocket och avsnittet om förra året (tabellen per BAS-intervall) och BAS-hantelns diagramdata, årsbokslutet i konfigurationsfilen med lönespridningen, rapportens bilaga med gruppdossierer och utskriften med bilagan vald, importprofilerna (JSON-exporten och konfigurationsfilen: inga lönemått) och diagramdatan ur kopiorna i Alla diagram (samma som källans, rad för rad) vid 10 och 25; handlingsplanens sakliga skäl vid 10 (I8: en rad under tröskeln för varken kommentarens tal eller beloppet ut i någon utdata utom skärmen och hela konfigurationsfilen, och en rad där ett kön är under tröskeln bara kategorin, också i konfigurationsfilens årsbokslut) | ✔ inget dolt värde i någon prövad utdata; undantagen och diagrambilder prövas inte; lönerevisionssimulatorn prövas med ett urval under och ett över tröskeln (simulatorn togs bort 2026-10-29, ADR-50; samma urval prövas nu som riktade rader i Löneöversyn, C3); Ålder & karriär per BAS och regressionens ojusterade steg prövas av egna tester i `tests/ktroskel-regression.test.js` (§6.5) |
+| k-invarianten över flikar och exporter | `tests/ktroskel-invarianter.test.js`: underlag med ett kön under tröskeln i en större grupp, en ensam person och ett 2-mot-2-BAS; flikar, Word, utskrift ×3, rapportunderlag (med blocken per BAS-intervall), Excel ×9, CSV, diagramdata för varje diagram i diagramkärnans register, gruppdossier, BAS-dossierns text (`basdossierText`), Rapporttextens utkast med delen per BAS-intervall, rapportens avsnitt Lönekartläggning per BAS-intervall och, med förra årets bokslut inläst, blocket och avsnittet om förra året (tabellen per BAS-intervall) och BAS-hantelns diagramdata, årsbokslutet i konfigurationsfilen med lönespridningen, rapportens bilaga med gruppdossierer och utskriften med bilagan vald, importprofilerna (JSON-exporten och konfigurationsfilen: inga lönemått) och diagramdatan ur kopiorna i Alla diagram (samma som källans, rad för rad) vid 10 och 25; differensprovet på samma utdata (ADR-88: varje tabell med en kolumn med medel, summa eller kostnad deklarerad i riggen, och ingen total minus de visade delarna med färre än tröskeln personer); handlingsplanens sakliga skäl vid 10 (I8: en rad under tröskeln för varken kommentarens tal eller beloppet ut i någon utdata utom skärmen och hela konfigurationsfilen, och en rad där ett kön är under tröskeln bara kategorin, också i konfigurationsfilens årsbokslut) | ✔ inget dolt värde i någon prövad utdata och inget som går att räkna fram som total minus delar i samma tabell; undantagen och diagrambilder prövas inte; lönerevisionssimulatorn prövas med ett urval under och ett över tröskeln (simulatorn togs bort 2026-10-29, ADR-50; samma urval prövas nu som riktade rader i Löneöversyn, C3); Ålder & karriär per BAS och regressionens ojusterade steg prövas av egna tester i `tests/ktroskel-regression.test.js` (§6.5) |
 | Löneöversyns förslag följer den inställda tröskeln (ADR-69) | `tests/loneoversyn-forslag-troskel.test.js`: ett kandidatpar där jämförelseetiketten (5 personer) eller den kvinnodominerade AID-etiketten (6) är under tröskeln 10, med en egen lön per grupp; *Föreslå fördelning mot skillnaderna i likvärdigt arbete*, mål-läget, känslighetskurvan, Löneöversyns Excel-export och konfigurationsfilen; tröskeln höjd på skärmen; en konfigurationsfil med ett förslag, inläst före och efter lönefilen; en AID-etikett med två jämförelseetiketter (en med 6 män), förslaget vid 5 och tröskeln höjd till 10, äldre filer med en rad per jämförelseetikett och en ensam rad ur det lilla paret, och en fil där ett litet par ligger utanför de visade paren (*Visa max*); tröskeln höjd medan en annan flik är öppen, en inläst fil och en ny lönefil, med sökning i hela arbetsboken, i *Excel (alla flikar)* och i konfigurationsfilen; ett sparat scenario A/B; `tests/loneoversyn.test.js` (ett par per AID-etikett) | ✔ inget förslag ur paret, och varken beloppet, skillnaden eller jämförelseetikettens median i Excel-exporten eller i konfigurationsfilens del för Löneöversyn; en AID-etikett med flera jämförelseetiketter får en rad; ett förslag tas bort när tröskeln höjs över en av parets grupper, och ett förslag ur en fil som inte säkert går att föra till ett par som når tröskeln läses inte in; inget utfall eller sparat scenario som räknades med ett borttaget förslag står kvar; egna rader står kvar med noten (regel R2). Invarianten I4 prövar inte förslagen: riggens underlag har inga kandidatpar |
 | Livscykelns lönekurva och Löneöversyns scenariojämförelse (ADR-70) | `tests/ktroskel-livscykel.test.js`: ett BAS-intervall med 4 personer valt i rullistan; diagramdatan, bilden före rastreringen, ZIP-filens urval, kopian i Alla diagram, fliken i exportläget, beräkningsbeviset och invariantens utdatavägar. `tests/ktroskel-loneoversyn-scenarier.test.js`: en ensam kvinna i den enda kvinnodominerade gruppen, scenariot sparat på skärmen och i exportläget | ✔ ingen kurva och inga av kurvans tal för det lilla intervallet i det som lämnar verktyget, en not i stället, och kurvan för ett intervall över tröskeln som förut; *Till kv-dom* är ett streck när *Varav* är det, och samma tal när *Varav* står |
 | Löneöversyns summor och regressionens BAS-effekter (ADR-70) | `tests/ktroskel-loneoversyn-summor.test.js`: bladet *Fördelning* och utfallstabellen i exportläget vid 10 med en ensam person under tröskeln, två små grupper som tillsammans är under tröskeln, små grupper som tillsammans når den, alla grupper under tröskeln och lika antal bland de minsta visade grupperna; *Varav till kvinnodominerade grupper*; en egen riktad rad. `tests/ktroskel-bas-effekter.test.js`: ett BAS-intervall med 4 personer och ett referensintervall med 4, i regressionskortet i exportläget och i invariantens utdatavägar | ✔ *Använt* minus bladets kostnader per grupp är aldrig en liten grupps kostnad eller lönesumma, och de små grupperna har sina rader med antal och andel; den invikta gruppens medianer står inte i bladet; effekten för ett intervall under tröskeln står inte i någon prövad utdata. Inte prövat: att den invikta gruppens median före påslaget står i andra exporter (den når tröskeln) |

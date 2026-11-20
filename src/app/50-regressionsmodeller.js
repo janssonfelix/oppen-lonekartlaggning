@@ -2,13 +2,13 @@
 // Copyright 2026 Felix Jansson
 // Regressionsmodeller för lika arbete — app-adaptern
 // ============================================================
-// De rena modellerna (kollinearitet, gap per BAS, sekventiell dekomponering med
+// De rena modellerna (huvudregressionen, kollinearitet, gap per BAS, sekventiell dekomponering med
 // yrkesgrupp, kvantilregression, Blinder-Oaxaca) ligger i src/lib/regression.js och
 // speglas in i 09-lib-speglar.js (ADR-8). Här finns bara de tunna adaptrarna som
 // läser appens tillstånd (getData(), statGolv()) och skickar det som parametrar.
 //
 // OLS-kärnan (_fitOLS m.fl.) är också speglad.
-// runOLSRegression ligger kvar i 51-lika-arbete-regressionskort.js och flyttas inte (ADR-17).
+// Huvudregressionens adapter, runOLSRegression, står i 51-lika-arbete-regressionskort.js; den cachas aldrig (ADR-17).
 
 // Stegens nycklar i den sekventiella dekomponeringen (ADR-74): kortet, rapporten och exporten slår upp stegen på dem.
 // Det som visas för ett steg kommer ur _rgStegEtikett.
@@ -33,11 +33,6 @@ function _basIndikatorer(basList) {
 // Sekventiell dekomponering: visa hur gapet krymper när kontroller läggs till. modell = förklaringsmodellen (ADR-56).
 function _computeSequentialGap(rows, ageMean, basList, modell) {
     return _rgComputeSequentialGap(rows, ageMean, basList, { golv: statGolv(), modell });
-}
-
-// Vad varje variabel tillför (ADR-56), alltid mot fullmodellen; yrkesgrupp bara när lönefilen har AID eller yrke.
-function _computeVariabelTillfor(rows, ageMean, basList) {
-    return _rgComputeVariabelTillfor(rows, ageMean, basList, { golv: statGolv(), harYrke: rows.some(d => d.aid || d.yrke) });
 }
 
 // Kvantilregression via IRLS; standardvärdena för maxIter och tol ligger i src/lib/regression.js.

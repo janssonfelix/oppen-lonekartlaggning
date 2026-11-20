@@ -139,8 +139,9 @@ const _svNf = new Map();
 function svTal(v, dec = 0) {
     if (typeof v !== 'number' || !isFinite(v)) return '–';
     if (!_svNf.has(dec)) _svNf.set(dec, new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }));
-    const f = 10 ** dec, r = Math.round(v * f) / f;
-    return _svNf.get(dec).format(r === 0 ? 0 : r);   // ingen "−0,0"
+    // Halvorna avrundas bort från noll (avrundaSymmetriskt i src/lib/stat.js): −1 600,5 och 1 600,5 visas båda med
+    // siffrorna 1 601. Noll visas utan minustecken (ingen "−0,0").
+    return _svNf.get(dec).format(_avrundaSymmetriskt(v, dec));
 }
 // Mellan talet och enheten står ett hårt mellanslag (U+00A0), som Intl redan skriver mellan tusentalen: då bryts
 // «36 262 kr» och «73 %» aldrig isär i en smal kolumn, på skärmen eller i utskriften. Excel-exporten gör det hårda
@@ -149,8 +150,13 @@ function svTal(v, dec = 0) {
 // hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så att talet ryms på en rad.
 /** Som svTal, med " %" efter (hårt mellanslag). */
 function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+// PO-påslaget i procent med högst två decimaler och utan avslutande nollor, som användaren skrev det: 40 → "40 %",
+// 39,15 → "39,15 %", 31,4 → "31,4 %". Räkneexemplet i src/lib/prioritering.js (arsbeloppMening) skriver likadant.
+const _svPoNf = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+/** @param {number} v */
+function svPoPct(v) { return typeof v === 'number' && isFinite(v) ? `${_svPoNf.format(v)} %` : '–'; }
 /** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal. */
-function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(Math.round(v), 0)} kr` : tom; }
+function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(v, 0)} kr` : tom; }
 
 // ---- Underlagets storlek i en tabell ----
 // En tabell med ett lönemått för en grupp visar gruppens antal (som egen kolumn); en modelltabell, där alla rader

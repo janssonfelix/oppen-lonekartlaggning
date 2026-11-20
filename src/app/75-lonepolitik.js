@@ -19,8 +19,7 @@
 const LP_COUNT_TIER_MIN = 5;   // undre gräns för antalsbaserad redovisning
 
 function _lpAidOf(r) {
-    const m = String(r.yrke || '').match(/^(\d+)/);
-    return m ? m[1] : String(r.yrke || '');
+    return aidAvYrke(r.yrke);
 }
 function _lpTier(n) {
     if (n >= kTroskel()) return 'full';
@@ -255,7 +254,7 @@ function _lpBandkartaFigur(bas) {
     const pts = [];
     bas.forEach(b => b.groups.forEach(g => {
         if (g.tier !== 'full' || !g.stats || !g.pol) return;
-        const kvAndel = g.rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')).length / g.n * 100;
+        const kvAndel = g.rows.filter(r => arKvinna(r)).length / g.n * 100;
         pts.push({ x: x(b), y: g.stats.median, forskjutning: _lpForskjutning(g.aid, g.bas),
                    storlek: Math.max(3.5, Math.min(9, Math.sqrt(g.n) * 1.1)), kvAndel, n: g.n, yrke: g.yrke, bas: b.bas, niva: g.level || '—', markering: markeringFor(b.bas, g.aid) });
     }));
@@ -305,7 +304,7 @@ function _lpLagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 
 function _lpKonLagen(rows, pol) {
     const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
     for (const r of rows) {
-        const kon = typeof r.kon === 'string' && r.kon.includes('kvinna') ? 'kv' : (r.kon === 'man' || r.kon === 'män') ? 'ma' : null;
+        const kon = arKvinna(r) ? 'kv' : arMan(r) ? 'ma' : null;
         const pos = kon ? _lpBandPosition(r.lon, pol.p10, pol.p90) : null;
         if (pos != null && isFinite(pos)) ut[kon][_lpLagesklass(pos)]++;
     }

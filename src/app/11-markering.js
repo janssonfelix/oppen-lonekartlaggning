@@ -26,8 +26,7 @@ function markeringFor(bas, aid) {
     if (bas == null || bas === '') return [];
     const b = String(bas);
     if (aid == null || aid === '') return [`bas:${b}`];
-    const m = String(aid).match(/^(\d+)/);
-    return [`bas:${b}`, `grupp:${m ? m[1] : String(aid)}|${b}`];
+    return [`bas:${b}`, `grupp:${aidAvYrke(aid)}|${b}`];
 }
 
 /** De markerade gruppernas nycklar, eller null när inget är markerat. */

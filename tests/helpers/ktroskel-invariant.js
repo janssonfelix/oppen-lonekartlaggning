@@ -8,7 +8,9 @@
  * tests/ktroskel-invarianter-25.test.js (25), som då körs parallellt.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtdata, sammanhang, fonsterKon, SENT_MELLAN, SENT_SMA, FK_RA } from './ktroskel-rigg.js';
+import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtdata, sammanhang, fonsterKon, SENT_MELLAN, SENT_SMA, FK_RA,
+    DIFFERENS_DEKLARATIONER, smaGrupper, byggKonDataset } from './ktroskel-rigg.js';
+import { differensprov, tabellerIUtdata } from './differens.js';
 
 // ===================================================================================
 // I4: invarianten över flikar OCH exporter, vid 10 och 25.
@@ -23,6 +25,13 @@ import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtd
 // per BAS-intervall), rapportens avsnitt Lönekartläggning per BAS-intervall, med förra årets bokslut inläst blocket
 // och avsnittet om förra året (tabellen per BAS-intervall, med lönespridningen) och BAS-hantelns diagramdata,
 // konfigurationsfilens årsbokslut, bilagan med gruppdossierer (rapportmodellen och utskriften), och Att göra-punkterna.
+//
+// Differensprovet går på samma utdata, utan nya ritningar eller exporter: varje tabell (HTML-tabell i exportläget och i
+// rapporterna, Excel-blad, CSV, diagramdata) vars rubrikrad har en kolumn med medel, summa eller kostnad ska vara
+// deklarerad i riggen (DIFFERENS_DEKLARATIONER), och för de deklarerade måtten får totalen minus de visade delarna
+// aldrig lämna färre än tröskeln personer (differensprov i tests/helpers/differens.js). Differenser mellan två
+// tabeller eller två exporter, medianer och percentiler, och härledningar som kräver uppgifter utanför exporten prövas
+// inte; lib-nivån och fler varianter av underlaget prövar tests/ktroskel-differens.test.js.
 //
 // Vad som INTE prövas, och varför:
 //  - #view-likvardighet och dess egen export: dokumenterat undantag (dataskydd.md § 3, undantag 1).
@@ -176,10 +185,23 @@ export function invariantSvit(k, extra) {
             for (const v of FK_RA) expect(skarm, v).toContain(v);
             expect(utdata.map(([n]) => n)).toContain('konfigurationsfilen (hela)');
             expect(utdata.find(([n]) => n === 'Att göra-punkter')[1]).toContain('fk-alder-fodelsear');
+            // Varningen om personnamn i fältet för AID-etikett följer med i Att göra och dess CSV: antal och radnummer.
+            expect(utdata.find(([n]) => n === 'Att göra-punkter')[1]).toContain('fk-yrke-namn');
+            expect(utdata.find(([n]) => n === 'Att göra-CSV')[1]).toMatch(/personnamn på 2 rader \(rad 3 och 7\)/);
             const lackor = [];
             // Flikarna i exportläget är också skärmen: förhandskontrollen står där, men följer inte med i någon export.
             for (const [namn, text] of exporter().filter(([n]) => n !== 'skärm i exportläget: alla flikar')) for (const v of harNagon(text, FK_RA)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
             expect(lackor).toEqual([]);
+        });
+        // Differensprovet: ett lönemått för färre än tröskeln får inte heller gå att räkna fram som en total minus de
+        // visade delarna i samma tabell (S4). Provet fäller också en tabell med medel, summa eller kostnad som inte är
+        // deklarerad i riggen, och en deklaration som inte längre prövar något, så att en ny utdata ärver provet.
+        it('differensprovet: ingen total minus de visade delarna lämnar färre än tröskeln personer, och varje tabell med medel, summa eller kostnad är deklarerad', () => {
+            const { fynd, odeklarerade, fel, oanvanda } = differensprov(tabellerIUtdata(utdata), DIFFERENS_DEKLARATIONER, { k, kanda: smaGrupper(byggKonDataset(), k) });
+            expect(odeklarerade, 'tabeller som måste deklareras').toEqual([]);
+            expect(fel, 'deklarationer som inte stämmer med tabellen').toEqual([]);
+            expect(oanvanda, 'deklarationer som inte prövade något').toEqual([]);
+            expect(fynd.map(f => f.text), 'lönemått som går att räkna fram').toEqual([]);
         });
         it('inget könsgap för en grupp där ett kön är under tröskeln i det som lämnar verktyget', () => {
             const lackor = [];

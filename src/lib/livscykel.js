@@ -17,6 +17,7 @@
 import { fitOLS, pValue2Sided, tQuantile } from './stat.js';
 import { statusNiva } from './status.js';
 import { skapaTermer } from './termer.js';
+import { arKvinna, arMan } from './kon.js';
 
 /** Standardtermerna (ADR-74). */
 const T = skapaTermer();
@@ -58,11 +59,11 @@ export function livscykelRegression(rader, { fixBas, golv }) {
     // Ålderskolumnen är valfri (ADR-64): utan ålder finns ingen livscykel att skatta.
     if ((rader || []).length && !(rader || []).some(d => d && d.alder > 0))
         return { error: 'Lönefilen saknar ålder, så löneskillnaden över karriären kan inte skattas.', errorCode: 'no_age' };
-    const raw = (rader || []).filter(d => d.lon > 0 && d.alder > 0 && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const raw = (rader || []).filter(d => d.lon > 0 && d.alder > 0 && (arKvinna(d) || arMan(d)));
     if (raw.length < 50) return { error: 'För få observationer (n < 50) för meningsfull livscykelanalys.', errorCode: 'low_n' };
 
-    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
-    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
+    const kvN = raw.filter(d => arKvinna(d)).length;
+    const maN = raw.filter(d => arMan(d)).length;
     if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: 'imbalance' };
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
@@ -93,7 +94,7 @@ export function livscykelRegression(rader, { fixBas, golv }) {
     const X = [];
     const y = [];
     raw.forEach((d, i) => {
-        const isKv = d.kon.includes('kvinna') ? 1 : 0;
+        const isKv = arKvinna(d) ? 1 : 0;
         const ac  = ageVals[i];
         const ac2 = ac * ac;
         const row = [1, isKv, ac, ac2, isKv * ac, isKv * ac2];

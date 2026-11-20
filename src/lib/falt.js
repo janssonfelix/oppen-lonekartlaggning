@@ -11,6 +11,7 @@
  */
 import { sektorsnamn, mellannivaEtikett } from './aid.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
+import { arKvinna, arMan } from './kon.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -50,8 +51,8 @@ export function jamforLonespann(a, b) {
 
 /** Normaliserat kön för gruppering och uppdelning. */
 export function konOf(row) {
-    if (typeof row.kon === 'string' && row.kon.includes('kvinna')) return 'Kvinna';
-    if (row.kon === 'man' || row.kon === 'män') return 'Man';
+    if (arKvinna(row)) return 'Kvinna';
+    if (arMan(row)) return 'Man';
     return 'Övrig/okänd';
 }
 

@@ -44,7 +44,7 @@ function buildBasdossier(bas) {
     if (!basdossierKandidater().some(x => x.bas === bas)) return null;
     const k = kTroskel();
     const df = getData().filter(r => r.bas === bas && r.lon > 0);
-    const arKv = r => !!(r.kon && r.kon.includes('kvinna')), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const arKv = arKvinna, arMa = arMan;
     const kv = df.filter(arKv), ma = df.filter(arMa);
     const lon = df.map(r => r.lon);
     const konOk = _konFarRedovisas(kv.length, ma.length);
@@ -66,7 +66,7 @@ function buildBasdossier(bas) {
     for (const r of alla) { if (!(r.lon > 0)) continue; if (!basPerYrke.has(r.yrke)) basPerYrke.set(r.yrke, new Set()); basPerYrke.get(r.yrke).add(r.bas); }
     const nycklar = new Set(gruppdossierCandidates().map(g => g.key));
     const yrken = lika.grupper.map(g => {
-        const m = String(g.yrke || '').match(/^(\d+)/), aid = m ? m[1] : String(g.yrke || '');
+        const aid = aidAvYrke(g.yrke);
         const delade = !g.samladMedian, hela = helaYrket.get(g.yrke) || g;
         const ocksaI = [...(basPerYrke.get(g.yrke) || [])].filter(b => b !== bas).sort();
         return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(hela), samlad: !!g.samladMedian, helaTot: hela.tot, ocksaI,

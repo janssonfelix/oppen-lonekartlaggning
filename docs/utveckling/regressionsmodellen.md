@@ -15,19 +15,28 @@ och upprepas inte här (avsnitt 9).
 
 | Del | Fil |
 |---|---|
-| Modellerna: förklaringsmodellen, stegen, AID-etikett inom BAS, Blinder-Oaxaca, kvantilregressionen, gap per BAS | `src/lib/regression.js` |
+| Modellerna: huvudregressionen (`huvudregression`) och dess golv, förklaringsmodellen, stegen, AID-etikett inom BAS, Blinder-Oaxaca, kvantilregressionen, gap per BAS | `src/lib/regression.js` |
 | OLS med HC3, t-fördelningen och normalfördelningen | `src/lib/stat.js` |
-| Adaptern som läser appens tillstånd (`getData()`, `statGolv()`, förklaringsmodellen, `harAlder()`) | `src/app/50-regressionsmodeller.js` |
-| Huvudregressionen, modellpanelen, regressionskortet, kvantilregressionens intervall, BH-korrigeringen | `src/app/51-lika-arbete-regressionskort.js` |
+| Adaptrarna som läser appens tillstånd (`getData()`, `statGolv()`, förklaringsmodellen, `harAlder()`) | `src/app/50-regressionsmodeller.js` |
+| Huvudregressionens adapter (`runOLSRegression`), modellpanelen, regressionskortet, kvantilregressionens intervall, BH-korrigeringen | `src/app/51-lika-arbete-regressionskort.js` |
 | Noteringen om en bortvald variabel | `src/lib/rapportunderlag.js` (`bortvaltNotering`) |
 | Var uppstår löneskillnaden? | `src/lib/gapuppdelning.js`, `src/app/68-var-uppstar-gapet.js` |
 | Vakterna | avsnitt 11 |
 
 ## 1. Huvudmodellen och huvudtalet
 
-**Raderna.** `runOLSRegression` (`51-lika-arbete-regressionskort.js`) räknar på `getData()` och tar med rader med lön
-över 0, kön kvinna eller man och, när lönefilen har ålder, en ålder över 0. Med färre än 30 sådana rader skattas
-ingen modell (`low_n`), och med färre än 5 av något kön inte heller (`imbalance`).
+**Var den räknas.** Huvudtalet räknas av `huvudregression(rader, { modell, medAlder, kInstalld, golv })` i
+`src/lib/regression.js`, en ren funktion som inte läser appens tillstånd och går att köra i Node utan webbläsare:
+`rader` är lönefilens rader, `modell` förklaringsmodellen (avsnitt 2; normaliseras mot raderna, standardmodellen när
+den saknas), `medAlder` om lönefilen har ålder (avsnitt 8; räknas ur raderna när den saknas), `kInstalld` den
+inställda tröskeln (spärren i avsnitt 2) och `golv` det som appen kallar `statGolv()` (avsnitt 9). I appen är
+`runOLSRegression` (`51-lika-arbete-regressionskort.js`) en tunn adapter som läser `getData()`, `forklaringsmodell()`,
+`harAlder()`, `kInstalld()` och `statGolv()` och anropar den genom spegeln (`_rgHuvudregression`).
+
+**Raderna.** Med rader menas lönefilens rader (`getData()` i appen) med lön över 0, kön kvinna eller man och, när
+lönefilen har ålder, en ålder över 0. Med färre än 30 sådana rader skattas ingen modell (`low_n`), och med färre än 5
+av något kön inte heller (`imbalance`); golven är konstanterna `HUVUDREGRESSION_MIN_N` och
+`HUVUDREGRESSION_MIN_PER_KON` i `regression.js`.
 
 **Modellen** är OLS på log-lön: ln(lön) = β0 + β1 · kvinna + [β2 · (ålder − medelålder)] + [en indikator per
 BAS-intervall utom referensen], där hakparenteserna är med enligt förklaringsmodellen (avsnitt 2) och BAS kodas som i
@@ -49,6 +58,13 @@ observationer med hävstång över 0,99; de bidrar inte till HC3 och antalet st�
 regression. **Den förklarade andelen** (`explainedShare`) är (|första steget| − |sista steget|) / |första steget| · 100
 över stegen till och med modellens sista (avsnitt 4), när minst två steg kunde skattas och det första är större än
 0,1 i absolutbelopp.
+
+**Tecknet.** Verktyget räknar varje löneskillnad som kvinnor mot män, (kvinnor − män) / män, negativ när kvinnor ligger
+lägre. Direktivets tecken, (män − kvinnor) / män, positivt när kvinnor ligger lägre, används bara i EU-lönerapporten
+och rapportens avsnitt om lönetransparens; tecknet vänds där, med `tillDirektivtecken` i `src/lib/struktur.js`. Också
+bootstrapintervallet för hela organisationen (`organisationensKvotKI` i `src/lib/osakerhet.js`, sparat i
+`state.bootstrapCI`) har verktygets tecken: skillnaden `gapPct` är (kvot − 1) · 100, så att intervallet bredvid den råa
+skillnaden har samma tecken som talet.
 
 **Reservstegen.** Kan den valda modellen inte skattas — för få rader (färre än kolumnerna + 5) eller singulär design
 (`fitOLS` ger null) — prövas nästa steg: först utan AID-etikett inom BAS, sedan utan BAS. Inget bortvalt läggs tillbaka, så med
@@ -292,15 +308,19 @@ högst 60 varv, tolerans 1e-5 och residualgolvet 1e-6; den ger null när n < k +
 Kärnan hoppar över nollor i designen, vilket ger samma summor men går snabbare med indikatorer. IRLS är en
 approximation av kvantillösningen, inte den exakta minimeringen, och kortet säger det.
 
-**Intervallen.** `_regKvantilBerakna` och `_regKvantilBootstrap` (`51-lika-arbete-regressionskort.js`) ger ett
-percentil-bootstrap-intervall för `konPct` vid varje τ och för skillnaden P90 − P10: **B = 200** omsamplingar
-(`REG_KVANTIL_KI_B`) av raderna med återläggning, seedade ur datat så att intervallet blir detsamma varje gång. Varje
+**Intervallen.** `kvantilBootstrap` i `src/lib/osakerhet.js` (i appen adaptern `_regKvantilBootstrap`, anropad av
+`_regKvantilBerakna` i `51-lika-arbete-regressionskort.js`) ger ett percentil-bootstrap-intervall för `konPct` vid
+varje τ och för skillnaden P90 − P10: **B = 200** omsamplingar (`KVANTIL_KI_B`) av raderna med återläggning, seedade ur datat så att intervallet blir detsamma varje gång. Raderna
+sorteras först på en fast, fullständig nyckel (lön, kön, BAS-intervall, ålder, AID, yrke, ansvarsgrupp), så att
+omsamplingarna beror på raderna och inte på deras ordning i filen (ADR-86); två rader som är lika i nyckeln är
+utbytbara i designen. Varje
 omsampling bygger designen på nytt ur de dragna raderna, så att referensintervallet är det första som finns i
 omsamplingen och ett intervall som inte kom med inte ger en nollkolumn; åldern centreras på hela urvalets medel, och
-IRLS startar i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare. Gränserna är 2,5- och
-97,5-percentilen av de lyckade omsamplingarna; lyckas färre än hälften ges inget intervall.
+IRLS startar i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare. Gränserna är
+percentilintervallet av de lyckade omsamplingarna (`percentilintervall`, avsnitt 7); lyckas färre än hälften ges inget
+intervall.
 
-**Gränsen.** Med fler än **2 000 personer** (`REG_KVANTIL_KI_MAX_N`) räknas inget intervall, på grund av tiden, och
+**Gränsen.** Med fler än **2 000 personer** (`KVANTIL_KI_MAX_N`, i appen `REG_KVANTIL_KI_MAX_N`) räknas inget intervall, på grund av tiden, och
 kortet säger det.
 
 **I bakgrunden.** Intervallet räknas efter att kortet ritats (`setTimeout`): kortet står med punktskattningarna och
@@ -338,9 +358,22 @@ normalfördelningen därifrån. Signifikansnivån är 0,05.
 normalfördelningen. Normalfördelningens fördelningsfunktion (`normalCdf`) är approximationen Abramowitz & Stegun
 26.2.17.
 
-**Utanför t-kvantilen** ligger bootstrap-intervallen (percentilmetoden; mediankvoten med B = 2 000 i
-`computeBootstrapCI`, de övriga med 1 000–2 000, kvantilregressionen med 200, avsnitt 6) och jämförelsens
-osäkerhetsband i Lika arbete (`41-lika-arbete.js`, fast 1,96). Översikten per huvudområde använder t-kvantilen (avsnitt 3).
+**Utanför t-kvantilen** ligger bootstrap-intervallen (percentilmetoden; mediankvoten med B = 2 000 för hela
+organisationen, 1 000 per BAS-intervall och 2 000 i gruppdossiern, kvantilregressionen med 200, avsnitt 6),
+konfidensbandet kring regressionslinjen i Ålder & karriär (fast 1,96) och trattens fält i Lika arbete (fast 1,96). De
+räknas i `src/lib/osakerhet.js` (`organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `kvantilBootstrap`,
+`regressionslinjensBand`, `trattUnderlag`), där antalen dragningar och faktorerna är namngivna konstanter; appens
+funktioner med de tidigare namnen (`computeBootstrapCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`,
+`_regKvantilBootstrap`, `linearRegressionCI`, `_laTrattUnderlagRakna`) är tunna adaptrar. Percentilgränserna tas på ett
+ställe, `percentilintervall` i `src/lib/stat.js`, också för bootstrapintervallen i likvärdigt arbete och omkastningen i
+`src/lib/status.js`. Indexen i de stigande sorterade dragningarna är symmetriska (ADR-86): den nedre gränsen har index
+golvet av n · 0,025 och den övre n − 1 − golvet av n · 0,025, räknat från 0, så att lika många dragningar ligger under
+den nedre som över den övre (med B = 1 000: 25 på var sida). **Radordningen** påverkar inga intervall (ADR-86):
+generatorn seedas ur antal och summa per serie (`rngFor` i `src/lib/rng.js`), och dragningarna görs ur gruppens
+stigande sorterade löner (bootstrapen), ur kvinnornas löner stigande följda av männens (omkastningen) och ur raderna
+sorterade på en fast nyckel (kvantilregressionen, avsnitt 6). Samma löner i en annan ordning ger samma gränser. Styrkan (minsta upptäckbara
+skillnad vid 80 % styrka och α = 0,05, faktorn 2,802) är `styrkeanalys` och `gruppMde` i samma modul. Översikten per
+huvudområde använder t-kvantilen (avsnitt 3).
 
 **Regressionerna per BAS-intervall** (`computePerBasGap`) skattar kön och, när lönefilen har ålder, ålder (centrerad
 inom intervallet) inom varje BAS-intervall med minst `statGolv()` av varje kön, med HC3 och t-kvantil. Intervall under
@@ -394,8 +427,9 @@ säger i raderna *Modell — oförklarad skillnad* och *Steg + AID-etikett inom 
 
 Golven och redovisningen står i `k-troskeln.md` och upprepas inte här. Regressionens egna tal:
 
-- **Huvudregressionens fasta golv** är 5 av varje kön (och minst 30 rader, avsnitt 1); det justerade gapet med
-  konfidensintervall visas därifrån (`k-troskeln.md` §5).
+- **Huvudregressionens fasta golv** är 5 av varje kön (och minst 30 rader, avsnitt 1; `HUVUDREGRESSION_MIN_PER_KON`
+  och `HUVUDREGRESSION_MIN_N` i `regression.js`); det justerade gapet med konfidensintervall visas därifrån
+  (`k-troskeln.md` §5).
 - **`statGolv()`** gäller regressionerna per BAS-intervall, Blinder-Oaxaca, ansvarssteget och bootstrap-intervallen
   (`k-troskeln.md` §5).
 - **Det ojusterade steget** *Endast kön* och den förklarade andelen redovisas bara när varje kön når tröskeln
@@ -450,26 +484,43 @@ uppstår löneskillnaden (variabler)* i metodbilagan (`_methodAppendixData`).
 skillnaden och de grupper som bidrar mest. När skillnaden är under 1 % av männens medellön (`litetGap`) visas inga
 andelar, och en not säger att delarna då kan peka åt olika håll och vara större än själva skillnaden.
 
-**Skyddsregeln.** Tröskeln är `kTroskel()`, så skärmen och exporten följer `k-troskeln.md` §1.
+**Skyddsregeln.** Tröskeln är `kTroskel()`, så skärmen och exporten följer `k-troskeln.md` §1: på skärmen är den 1,
+och där räknas inget samman (ADR-51).
 
 1. Har ett kön färre än k personer i hela urvalet delas skillnaden inte upp (`gapUppdelning` ger null), och kortet
    säger varför.
-2. En cell är **synlig** bara om den själv och alla celler den ligger i har 0 eller minst k av varje kön. En AID-post
-   namnges alltså bara om dess BAS klarar samma krav, eftersom BAS:ens medellön ingår i posten.
-3. Dolda poster redovisas bara med antal: "N grupper med färre än k personer ingår i summan". Deras summa redovisas
-   aldrig.
-4. Poster som avrundas till 0 kr (|belopp| under 0,5 kr) visas inte; de ingår i delen.
-5. **Topplistan** i varje del är de synliga posterna med |belopp| minst 0,5 kr, fallande efter |belopp| (lika belopp
-   efter namn), högst tre. Den kortas sedan efter regeln: det som inte visas är delens summa minus de visade posterna,
-   och för varje dold post h med |h| minst 0,5 kr ska summan av |belopp| för **de andra** posterna som inte visas (dolda
-   och synliga) vara minst hälften av |h|. Håller det inte tas den minsta visade posten bort, en i taget, tills regeln
-   håller.
-6. Håller regeln inte ens med tom lista i någon del redovisas **inga delar**, bara hela skillnaden: delarna summerar
-   till hela skillnaden, så en enskild del kan inte döljas medan de andra visas. Kortet säger då att en grupp under
-   tröskeln står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.
+2. **Sammanslagning (ADR-87).** Inom varje cell, på varje nivå, räknas grupper där ett kön har 1 till k − 1 personer
+   samman till en grupp innan delarna räknas (`sammanslagning` i `src/lib/undertryckning.js`). Har de sammanslagna
+   tillsammans 1 till k − 1 av ett kön tas den grupp med som har färst av det könet (minst en; vid lika antal först
+   efter namn), en i taget; räcker inga räknas alla samman. Delarna räknas sedan med den sammanslagna gruppen som en
+   cell, så att varje cell som delarna och posterna bygger på har 0 eller minst k av varje kön. Delarna summerar
+   exakt till hela skillnaden som förut, men deras belopp kan skilja sig från skärmens.
+3. En post **namnges** bara när dess grupp inte är sammanslagen och den själv och alla grupper den ligger i har 0 eller
+   minst k av varje kön. En AID-post namnges alltså bara om dess BAS klarar samma krav, eftersom BAS:ens medellön ingår
+   i posten.
+4. Grupper som inte namnges redovisas bara med antal, räknat före sammanslagningen (`gapOvrigaText`): "N grupper
+   namnges inte: ett kön har färre än k personer i dem eller i grupperna de räknas samman med. De ingår i summan."
+   Deras summa redovisas aldrig för sig.
+5. Poster som avrundas till 0 kr (|belopp| under 0,5 kr) visas inte; de ingår i delen.
+6. **Topplistan** i varje del är de namngivna posterna med |belopp| minst 0,5 kr, fallande efter |belopp| (lika belopp
+   efter namn), högst tre.
+
+Varför regeln räcker: medellönerna för hela urvalet, delarna, posterna och trappan är alla linjära i cellernas
+medellöner per kön, med antalen som vikter. När varje cell har 0 eller minst k av varje kön är det mesta som går att
+räkna fram ur det som skrivs ut (med antalen) ett medel för minst k kvinnor eller k män, eller en vägd summa av sådana.
+Regeln före ADR-87 kortade topplistan tills det som inte visades var stort nog mot varje dold post, men posterna gav
+med medellönerna och antalen ett ekvationssystem som ibland gick att lösa för en liten grupp, och för vissa val av
+variabler räckte delarna. Vakten är differensprovet i `tests/ktroskel-differens.test.js` (avsnitt d).
+
+**Huvudområdenas andel** av skillnaden (`sektorernasAndel` i `src/lib/sektor.js`, meningen under översikten per
+huvudområde och i rapportunderlaget) är del A med huvudområde som enda variabel, med samma tecken: gapet i medellön
+(`gapKr`) och huvudområdenas del (`sektorKr`) är kvinnor minus män, negativa när kvinnor ligger lägre, och andelen är
+kvoten mellan dem. Den följer samma sammanslagning.
+Huvudområden som räknas samman namnges i en not (`sektorAndelNot`); räknas alla samman redovisas inget belopp, och
+noten säger varför.
 
 Regeln gäller per del, för varje val av variabler. Trappan visar bara delsummorna och hela skillnaden, aldrig en enskild
-grupps bidrag, och ritas bara när delarna redovisas. Hela skillnaden står först, sedan delarna en i taget
+grupps bidrag. Hela skillnaden står först, sedan delarna en i taget
 från hela skillnaden mot noll, med *belopp · andel av skillnaden* vid varje stapel. En del som går åt andra hållet än
 helheten, eller är större än den, får bara sitt belopp, och verktygstipset säger varför; med `litetGap` står inga
 andelar, som i raderna. Avsnittet står först i Lönestruktur.
@@ -506,6 +557,11 @@ Filen ändras aldrig.
 | `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell; `bhJustera` mot statsmodels `multipletests(method='fdr_bh')` |
 | `tests/sektor.test.js` | Översikten per huvudområde: könskoefficienten som huvudregressionens på samma urval, med och utan ålder (mot stegen och mot `runOLSRegression`: koefficienten, gränserna, n och k), intervallet med HC3 och t-kvantil, k-villkoren, inget tal när kön och BAS inte går att skilja åt, och rubrikregeln |
 | `tests/regression.test.js` | `src/lib/regression.js` direkt: förklaringsmodellen som värde, stegen på vald modell, vad varje variabel tillför, `kvantilDesign` och `quantileRegressionAtAllTau`, modellerna utan ålder och radfiltret |
+| `tests/huvudregression.test.js` | `huvudregression` direkt i Node: könskoefficienten mot en egen designmatris på ett påhittat underlag, modellerna, reservsteget, golven 30 och 5, spärren för *Endast kön*, och fixturen med endast kön mot statsmodels |
+| `tests/huvudregression-adapter.test.js` | Att `runOLSRegression` ger exakt samma returvärde som `huvudregression` med samma argument (varje tal med `Object.is`), på demodatan, utan ålder och i reservsteget |
+| `tests/berakningar-las.test.js` | Ögonblicksbilden av hela returvärdet från `runOLSRegression` på demodatan |
+| `tests/osakerhet.test.js` | `src/lib/osakerhet.js` direkt: bootstrapintervallen med en injicerad, seedad generator, konfidensbandet kring en regressionslinje och styrkan räknade för hand, extremvärdena, trattens underlag och kvantilregressionens intervall; `percentilintervall` i `src/lib/stat.js` |
+| `tests/osakerhet-adapter.test.js` | Att appens adaptrar (`computeBootstrapCI`, `computePowerAnalysis`, `computeGroupMDE`, `detectOutliers`, `linearRegressionCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`, `_laTrattUnderlagRakna`, `_regKvantilBootstrap`) ger exakt samma tal som `src/lib/osakerhet.js` med samma argument, på demodatan och utan ålder vid tröskeln 3, 10 och 25 |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
 | `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan, de valbara variablerna och den frusna kopian |

@@ -16,7 +16,22 @@
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
+ *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
+ *   - avrundaSymmetriskt                    (avrundningen i talformaten: halvorna bort från noll)
  */
+
+/**
+ * Avrundar ett tal för visning till `dec` decimaler med halvorna bort från noll, så att ett tal och dess motsatta
+ * tal alltid visas med samma siffror (Math.round avrundar halvorna uppåt: −1 600,5 blev −1 600 men 1 600,5 blev
+ * 1 601). Noll blir 0, aldrig −0. Talformaten i appen och i lib använder den; beräkningar avrundar på sitt eget sätt.
+ * @param {number} x
+ * @param {number} [dec]
+ * @returns {number}
+ */
+export function avrundaSymmetriskt(x, dec = 0) {
+    const f = 10 ** dec, r = Math.sign(x) * Math.round(Math.abs(x) * f) / f;
+    return r === 0 ? 0 : r;
+}
 
 /**
  * Beräknar median (P50) av en talsekvens.
@@ -301,6 +316,23 @@ export function fitOLS(X, y, hTillagg = null) {
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
 
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
+}
+
+/** Percentilintervallets svans: andelen av de sorterade dragningarna som ligger under den nedre gränsen, och lika
+ * många över den övre. */
+export const KI_NEDRE = 0.025;
+
+/**
+ * Det 95-procentiga percentilintervallet ur en STIGANDE sorterad lista med dragningar (bootstrap, omkastning). Indexen
+ * är symmetriska (ADR-86): den nedre gränsen är värdet med index golvet av n · 0,025 (räknat från 0), den övre värdet
+ * med index n − 1 − golvet av n · 0,025, så att lika många dragningar ligger under den nedre som över den övre (med
+ * B = 1000: 25 på var sida). Indexräkningen finns bara här, så att alla intervall i verktyget tas på samma sätt.
+ * @param {ArrayLike<number>} sorterad
+ * @returns {{lag:number, hog:number}}
+ */
+export function percentilintervall(sorterad) {
+    const n = sorterad.length, svans = Math.floor(n * KI_NEDRE);
+    return { lag: sorterad[svans], hog: sorterad[n - 1 - svans] };
 }
 
 /**

@@ -34,6 +34,11 @@ const outFile = join(root, 'src', 'app', '09-lib-speglar.js');
 // inget alias.
 export const MODULES = [
     {
+        // Könspredikaten (arKvinna, arMan): importerar ingenting, så att varje lib-modul kan använda dem. Först av alla.
+        file: 'kon.js', ns: '__mirrorKon',
+        expose: { arKvinna: 'arKvinna', arMan: 'arMan' }
+    },
+    {
         // Termerna (ADR-74): först, så att varje senare lib-modul kan importera dem; namn.js importerar genitiv, och
         // modulerna som skriver text (regression.js m.fl.) hämtar standarduppsättningen med skapaTermer()
         file: 'termer.js', ns: '__mirrorTermer',
@@ -41,13 +46,42 @@ export const MODULES = [
                   adjektiv: 'termAdjektiv', genitiv: 'termGenitiv', stor: 'termStor', ordForAntal: 'termForAntal' }
     },
     {
+        // Namnformerna och personOrd: direkt efter termerna (som de importerar), före regression.js som skriver
+        // "personer" i huvudregressionens text
+        file: 'namn.js', ns: '__mirrorNamn',
+        expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
+    },
+    {
+        file: 'aid-etiketter.js', ns: '__mirrorAidEtiketter',
+        expose: { aidEtikettlista: null }
+    },
+    {
+        file: 'aid.js', ns: '__mirrorAid',
+        expose: {
+            normaliseraAid: null, aidAvYrke: 'aidAvYrke', sifferprefixAvYrke: 'sifferprefixAvYrke', huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
+            arRestkod: null, arLedningsetikett: null,
+            jamforSektor: '_aidJamforSektor', etikettlistaInfo: '_aidEtikettlistaInfo'
+        }
+    },
+    {
+        // Kompletterande undertryckning och sammanslagning (ADR-83, ADR-87): tidigt, så att perbas.js, gapuppdelning.js
+        // och sektor.js kan importera dem. Appen anropar dem inte direkt.
+        file: 'undertryckning.js', ns: '__mirrorUndertryckning',
+        expose: { kompletterandeUndertryckning: null, sammanslagning: null }
+    },
+    {
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',
-            bhJustera: '_bhJustera',
+            bhJustera: '_bhJustera', avrundaSymmetriskt: '_avrundaSymmetriskt',
             // returneras för att andra lib-moduler importerar dem (se _parseImports); appen använder dem inte
-            matMul: null, invert: null, median: null
+            matMul: null, invert: null, median: null, linearRegression: null, percentilintervall: null
         }
+    },
+    {
+        // Kostnadsformeln (månadsbelopp × månader × PO-faktor): före löneöversynen och prioriteringen, som importerar den
+        file: 'kostnad.js', ns: '__mirrorKostnad',
+        expose: { kostnadsfaktor: '_kostFaktor', periodkostnad: '_kostPeriod', kostnadPerAr: null }
     },
     {
         file: 'struktur.js', ns: '__mirrorStructure',
@@ -83,6 +117,7 @@ export const MODULES = [
             forecastOutcome: '_fcForecastOutcome', bandStats: '_fcBandStats',
             individualRemediation: '_fcIndividualRemediation', marketTargets: '_fcMarketTargets',
             sensitivityCurve: '_fcSensitivityCurve',
+            likalonslyftForMal: '_fcLyftForMal', troskelmalKonstanter: '_fcTroskelmalKonstanter',
             // privata hjälpare som app.js anropar direkt:
             _median: '_fcMedian'
         }
@@ -95,17 +130,18 @@ export const MODULES = [
                   dominans: '_aidbasDominans', ingaParText: '_aidbasIngaParText', klassNamn: '_aidbasKlassNamn' }
     },
     {
-        // Regressionsmodellerna (ADR-46-regressionen m.fl.) — importerar stat.js
+        // Regressionsmodellerna (huvudregressionen, ADR-46-regressionen m.fl.) — importerar stat.js, termer.js och namn.js
         file: 'regression.js', ns: '__mirrorRegression',
         expose: {
+            // Huvudregressionen, verktygets huvudtal (adaptern är runOLSRegression i 51-lika-arbete-regressionskort.js)
+            huvudregression: '_rgHuvudregression',
             diagnoseCollinearity: '_rgDiagnoseCollinearity', computePerBasGap: '_rgComputePerBasGap',
             basIndikatorer: '_rgBasIndikatorer', computeSequentialGap: '_rgComputeSequentialGap',
             quantileRegression: '_rgQuantileRegression',
             blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
             kvantilDesign: '_rgKvantilDesign',   // kvantilregressionens design, delad av punktskattningen och bootstrappen (ADR-63)
             // Förklaringsmodellen (ADR-56)
-            computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
-            inomYrkesgrupp: '_rgInomYrkesgrupp',
+            normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
             forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
             modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp',
             // Ålder valfri (ADR-64)
@@ -114,6 +150,18 @@ export const MODULES = [
             justeradSkillnad: '_rgJusteradSkillnad',
             // Stegens nycklar och det som visas för dem (ADR-74)
             stegNamn: '_rgStegNamn', stegEtikett: '_rgStegEtikett'
+        }
+    },
+    {
+        // Osäkerheten kring skattningarna: bootstrapintervallen på mediankvoten, konfidensbandet kring en regressionslinje,
+        // styrkan, extremvärdena, trattens underlag och kvantilregressionens intervall. Importerar stat.js, rng.js,
+        // status.js, likvardighet.js och regression.js: efter dem. Appens adaptrar behåller sina tidigare namn.
+        file: 'osakerhet.js', ns: '__mirrorOsakerhet',
+        expose: {
+            organisationensKvotKI: '_osOrganisationensKvotKI', medianKvotKI: '_osMedianKvotKI', medianKvotKIGiltiga: '_osMedianKvotKIGiltiga',
+            regressionslinjensBand: '_osRegressionslinjensBand', styrkeanalys: '_osStyrkeanalys', gruppMde: '_osGruppMde',
+            extremvarden: '_osExtremvarden', trattUnderlag: '_osTrattUnderlag', kvantilBootstrap: '_osKvantilBootstrap',
+            osakerhetKonstanter: '_osKonstanter'
         }
     },
     {
@@ -127,7 +175,7 @@ export const MODULES = [
     {
         // Prioriteringsanalysen (ren modell; referensen kommer in som funktion från adaptern)
         file: 'prioritering.js', ns: '__mirrorPrioritering',
-        expose: { prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening' }
+        expose: { prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening', prioKonstanter: '_prKonstanter' }
     },
     {
         // Livscykelmodellen (log-lön med kön×ålder och BAS-indikatorer); importerar stat.js
@@ -140,24 +188,8 @@ export const MODULES = [
         expose: { bakaIn: '_ofBakaIn', filnamnForslag: '_ofFilnamnForslag', normaliseraFilnamn: '_ofNormaliseraFilnamn' }
     },
     {
-        file: 'aid-etiketter.js', ns: '__mirrorAidEtiketter',
-        expose: { aidEtikettlista: null }
-    },
-    {
-        file: 'aid.js', ns: '__mirrorAid',
-        expose: {
-            normaliseraAid: null, huvudomrade: null, sektorsnamn: '_aidSektorsnamn', mellannivaEtikett: null, etikett: null,
-            arRestkod: null, arLedningsetikett: null,
-            jamforSektor: '_aidJamforSektor', etikettlistaInfo: '_aidEtikettlistaInfo'
-        }
-    },
-    {
         file: 'htmltext.js', ns: '__mirrorHtmlText',
         expose: { utanTaggar: '_utanTaggar', htmlTillText: '_htmlTillText', arTal: '_cellArTal' }
-    },
-    {
-        file: 'namn.js', ns: '__mirrorNamn',
-        expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
     },
     {
         file: 'skr-personal.js', ns: '__mirrorSkrPersonal',
@@ -192,7 +224,7 @@ export const MODULES = [
         file: 'gapuppdelning.js', ns: '__mirrorGapuppdelning',
         expose: { gapUppdelning: '_guGapUppdelning', normaliseraGapVariabler: '_guNormaliseraVariabler', gapVariablerArStandard: '_guVariablerArStandard',
                   gapDelar: '_guDelar', gapDelarIText: '_guDelarIText', gapVariabelEtikett: '_guVariabelEtikett', gapVariablerIText: '_guVariablerIText', gapAllaVariabler: '_guAllaVariabler',
-                  gapStandardVariabler: '_guStandardVariabler' }
+                  gapStandardVariabler: '_guStandardVariabler', gapOvrigaText: '_guOvrigaText' }
     },
     {
         file: 'individflaggor.js', ns: '__mirrorIndivid',
@@ -211,12 +243,22 @@ export const MODULES = [
     },
     {
         file: 'sektor.js', ns: '__mirrorSektor',
-        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel', sektorJusteradText: '_skSektorJusteradText' }
+        expose: { sektorsTabell: '_skSektorsTabell', sektorernasAndel: '_skSektorernasAndel', sektorJusteradText: '_skSektorJusteradText', sektorAndelNot: '_skSektorAndelNot' }
     },
     {
         file: 'ansvar.js', ns: '__mirrorAnsvar',
         expose: { tolkaAnsvarskod: '_anTolka', ansvarsgrupp: '_anGrupp', andelGiltiga: '_anAndelGiltiga', arAnsvarskodRubrik: '_anArRubrik',
                   ansvarsUnderrader: '_anUnderrader' }
+    },
+    {
+        // Tolkningen av indata: talen, normaliseringarna och kärnan i uppgiftsminimeringen. Funktionerna behåller i appen
+        // namnen de hade där. Importerar ansvar.js (ansvarskoden i en lönerad): efter den.
+        file: 'inlasning.js', ns: '__mirrorInlasning',
+        expose: { _normalizeNumberString: '_normalizeNumberString', parseNumber: 'parseNumber', parseNumberStrict: 'parseNumberStrict',
+                  _cleanYrkeField: '_cleanYrkeField', _stripHtmlMeta: '_stripHtmlMeta', _normalizeBas: '_normalizeBas',
+                  _normalizePolicyAid: '_normalizePolicyAid', _normalizeKon: '_normalizeKon', tolkaLonerad: '_ilTolkaLonerad',
+                  _pnrSampelSteg: '_pnrSampelSteg', detectSensitiveColumns: 'detectSensitiveColumns', yrkeNamnNyckel: '_ilYrkeNamnNyckel',
+                  sallsyntaNamnrader: '_ilSallsyntaNamnrader' }
     },
     {
         file: 'aidkontroll.js', ns: '__mirrorAidkontroll',
@@ -278,7 +320,7 @@ export const MODULES = [
     {
         // Förhandskontrollen av lönefilen: tolkningen av de tio första raderna, sammandraget och varningarna.
         file: 'forhandskontroll.js', ns: '__mirrorForhandskontroll',
-        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser' }
+        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser', namnIYrkesfaltetText: '_fkNamnIYrkesfaltetText', namnIYrkesfaltetRadnr: '_fkNamnIYrkesfaltetRadnr' }
     },
     {
         // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.

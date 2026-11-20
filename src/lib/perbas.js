@@ -14,14 +14,18 @@
  * k personer får ingen lönerad, och könsuppdelade mått visas bara när båda könen når k. De utelämnade
  * räknas upp så att rapporten säger vad den inte redovisar. Raden Alla och organisationens rad räknas på hela
  * underlaget, så att en utelämnad grupps medellön inte ska gå att räkna fram som en differens undertrycks vid behov
- * också medelvärdena för en visad grupp (kompletterande undertryckning, ADR-83, `kompletterandeUndertryckning`).
+ * också medelvärdena för en visad grupp (kompletterande undertryckning, ADR-83, `kompletterandeUndertryckning` i undertryckning.js).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ *
+ * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 import { median, quantile } from './stat.js';
 import { sektorsnamn } from './aid.js';
 import { statistikFor } from './jamforelse.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
+import { kompletterandeUndertryckning } from './undertryckning.js';
+import { arKvinna, arMan } from './kon.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -52,44 +56,10 @@ export function valideraPerBasRecept(r) {
 }
 export function perBasReceptArStandard(r) { return JSON.stringify(valideraPerBasRecept(r)) === JSON.stringify(perBasStandard()); }
 
-const _arKv = r => String(r.kon || '').includes('kvinna');
-const _arMa = r => r.kon === 'man' || r.kon === 'män';
 const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), p25: quantile(l, 0.25), med: median(l), p75: quantile(l, 0.75), p90: quantile(l, 0.9), medel: _medel(l) } : null; };
-
-/**
- * Kompletterande undertryckning (ADR-83, `docs/utveckling/k-troskeln.md` avsnitt 2): vilka visade delar vars
- * medelvärden också ska undertryckas, så att en total minus de visade delarna aldrig ger medelvärdet för färre än k
- * personer.
- *
- * Delarna är en uppdelning av totalen; `dold` är en del som redan utelämnas eller undertrycks. Omfattar de dolda
- * tillsammans 0 eller minst k personer ändras ingenting. Annars väljs den minsta visade delen (färst personer, vid lika
- * antal först efter namn och sedan ordningen i listan), och så vidare tills de dolda tillsammans når k. Räcker inte
- * alla delar väljs alla, och bara totalen har ett medelvärde. Delar utan personer (n ≤ 0) väljs aldrig.
- *
- * Funktionen är allmän: den vet inte vad delarna är (BAS-intervall, AID-etiketter, ett köns del av ett intervall).
- * Antal och andelar berörs inte (ADR-70), och medianer och percentiler inte heller (de går inte att dela upp).
- * @param {Array<{n:number, dold?:boolean, namn?:string}>} delar
- * @param {number} k
- * @returns {number[]} index i `delar` för de visade delar som ska undertryckas, i den ordning de valdes
- */
-export function kompletterandeUndertryckning(delar, k) {
-    let dolda = 0;
-    for (const d of delar) if (d.dold) dolda += d.n;
-    if (dolda <= 0 || dolda >= k) return [];
-    const kandidater = delar.map((d, i) => ({ n: d.n, namn: String(d.namn ?? ''), i }))
-        .filter(d => !delar[d.i].dold && d.n > 0)
-        .sort((a, b) => a.n - b.n || a.namn.localeCompare(b.namn, 'sv') || a.i - b.i);
-    const ut = [];
-    for (const d of kandidater) {
-        if (dolda >= k) break;
-        ut.push(d.i);
-        dolda += d.n;
-    }
-    return ut;
-}
 
 /** Yrkesgruppens namn: AID-koden och etiketten. */
 export function yrkesnamn(r) {
@@ -142,7 +112,7 @@ export function perBasTabeller(rader, opt = {}) {
     const raderI = b => perDim.get(b) || [];
     const basUtelamnade = basar.filter(b => raderI(b).length < k);
     const visadeBas = basar.filter(b => raderI(b).length >= k);
-    const nKvI = b => raderI(b).filter(_arKv).length, nMaI = b => raderI(b).filter(_arMa).length;
+    const nKvI = b => raderI(b).filter(arKvinna).length, nMaI = b => raderI(b).filter(arMan).length;
     const konVisasI = b => nKvI(b) >= k && nMaI(b) >= k;
     const harMedel = recept.matt.includes('medel');
 
@@ -158,7 +128,7 @@ export function perBasTabeller(rader, opt = {}) {
     // gemensamma medellön, och den ska omfatta minst k personer av det könet. Ett intervall vars könsmedel döljs ger
     // också via sin medellön för alla den andra könets dolda celler, så båda könens medel döljs tillsammans.
     const konDolda = new Set();
-    if (recept.konsgap && d.filter(_arKv).length >= k && d.filter(_arMa).length >= k) {
+    if (recept.konsgap && d.filter(arKvinna).length >= k && d.filter(arMan).length >= k) {
         for (const antal of [nKvI, nMaI]) {
             const delar = basar.map(b => ({ namn: b, n: antal(b), dold: raderI(b).length < k || medelDolda.has(b) || !konVisasI(b) || konDolda.has(b) }));
             kompletterandeUndertryckning(delar, k).forEach(i => konDolda.add(basar[i]));
@@ -199,7 +169,7 @@ export function perBasTabeller(rader, opt = {}) {
             const s = visa.has('statistik') && rows[0].aid != null && recept.dim === 'bas' ? statFor(rows[0].aid, bas) : null;
             if (s && s.median > 0) rad.push({ typ: 'statistik', namn: `${statistikNamn}: ${namn}`, aid: key, n: null, p10: s.p10 ?? null, med: s.median, p90: s.p90 ?? null });
         });
-        const kv = df.filter(_arKv), ma = df.filter(_arMa);
+        const kv = df.filter(arKvinna), ma = df.filter(arMan);
         const konVisas = kv.length >= k && ma.length >= k;
         if (konVisas) {
             const mk = visa.has('kvinnor') ? _matt(kv) : null, mm = visa.has('man') ? _matt(ma) : null;
@@ -215,7 +185,7 @@ export function perBasTabeller(rader, opt = {}) {
 
     // Könsgap och ålder per BAS, med raden Alla först.
     const konsgapRad = (namn, rows, medelDold = false, konDold = false) => {
-        const kv = rows.filter(_arKv), ma = rows.filter(_arMa);
+        const kv = rows.filter(arKvinna), ma = rows.filter(arMan);
         const konVisas = kv.length >= k && ma.length >= k;
         const konMedel = konVisas && !medelDold && !konDold;
         const medel = medelDold ? null : _medel(_loner(rows)), medelKv = konMedel ? _medel(_loner(kv)) : null, medelMa = konMedel ? _medel(_loner(ma)) : null;

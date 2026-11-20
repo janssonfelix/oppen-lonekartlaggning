@@ -8,23 +8,13 @@
  * mediangap och direktivets tecken på gapet (tillDirektivtecken). Separat från app.js för Vitest; app.js får en AUTO-GENERERAD
  * spegel (`_st*` i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra
  * här och kör `npm run build:app`, rör ej spegeln. Inga DOM-/state-beroenden.
+ *
+ * Bygger på: verktygets egen modell; tecknet i docs/utveckling/regressionsmodellen.md avsnitt 1. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
-function _isKv(r) { return r.kon && r.kon.includes('kvinna'); }
-function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
+import { median as _median, quantile as _quantile } from './stat.js';
+import { arKvinna, arMan } from './kon.js';
+
 
 /**
  * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
@@ -33,7 +23,7 @@ function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
  */
 export function medianGapPct(rows, { k = 1 } = {}) {
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (_isKv(r)) kv.push(r.lon); else if (_isMa(r)) ma.push(r.lon); });
+    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     if (kv.length < Math.max(1, k) || ma.length < Math.max(1, k)) return null;
     return (_median(kv) / _median(ma) - 1) * 100;
 }
@@ -55,8 +45,8 @@ export function representationByBas(rows, { k = 1 } = {}) {
         let g = m.get(r.bas);
         if (!g) { g = { bas: r.bas, lons: [], kvLons: [], maLons: [], nKv: 0, nMa: 0, n: 0 }; m.set(r.bas, g); }
         g.lons.push(r.lon); g.n++;
-        if (_isKv(r)) { g.kvLons.push(r.lon); g.nKv++; }
-        else if (_isMa(r)) { g.maLons.push(r.lon); g.nMa++; }
+        if (arKvinna(r)) { g.kvLons.push(r.lon); g.nKv++; }
+        else if (arMan(r)) { g.maLons.push(r.lon); g.nMa++; }
     });
     return [...m.values()].map(g => {
         // Båda könen finns, men minst ett är för litet för en könsjämförelse.
@@ -98,7 +88,7 @@ export function quartileDistribution(rows, { k = 1 } = {}) {
     all.forEach((r, i) => {
         const q = Math.min(3, Math.floor(i * 4 / n));
         const o = out[q];
-        o.n++; if (_isKv(r)) o.nKv++; else if (_isMa(r)) o.nMa++;
+        o.n++; if (arKvinna(r)) o.nKv++; else if (arMan(r)) o.nMa++;
         if (lo[q] == null) lo[q] = r.lon;
         hi[q] = r.lon;
     });
@@ -127,7 +117,7 @@ export function quartileDistribution(rows, { k = 1 } = {}) {
 export function distributionalGap(rows, percentiles, { k = 2 } = {}) {
     const ps = percentiles || [10, 25, 50, 75, 90];
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (_isKv(r)) kv.push(r.lon); else if (_isMa(r)) ma.push(r.lon); });
+    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     const minst = Math.max(2, k);
     if (kv.length < minst || ma.length < minst) return [];
     return ps.map(p => {

@@ -50,6 +50,14 @@ describe('seedFromNumbers', () => {
     it('tål icke-arrayer och icke-tal utan att kasta', () => {
         expect(() => seedFromNumbers(null, [NaN, 1], undefined)).not.toThrow();
     });
+    it('beror inte på ordningen, också när summan av löner med öre slutar på ,50 (ADR-86)', () => {
+        // Påhittade löner med öre vars exakta summa är 364 305,50: summerade i omvänd ordning blir flyttalssumman
+        // 364 305,49999999994 och avrundas nedåt.
+        const loner = [54738.29, 48833.95, 32464.73, 62051.86, 71235.33, 64980.43, 30000.91];
+        expect(Math.round([...loner].reverse().reduce((s, v) => s + v, 0))).not.toBe(Math.round(loner.reduce((s, v) => s + v, 0)));
+        expect(seedFromNumbers([...loner].reverse())).toBe(seedFromNumbers(loner));
+        expect(seedFromNumbers([...loner].sort((a, b) => b - a), [3, 1, 2])).toBe(seedFromNumbers(loner, [1, 2, 3]));
+    });
 });
 
 describe('rngFor — reproducerbar bootstrap', () => {

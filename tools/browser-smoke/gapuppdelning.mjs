@@ -29,10 +29,10 @@ export async function uppdelningensVariabler() {
     await s.click('#gap-uppdelning input[data-gu-var="alder"]');
     await s.waitForTimeout(300);
     const r = await s.evaluate(() => { const u = _guGapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() });
-        return { variabler: u.variabler, skyddad: u.skyddad, rest: u.delar ? Object.values(u.delar).reduce((a, v) => a + v, 0) - u.gap : null,
+        return { variabler: u.variabler, rest: u.delar ? Object.values(u.delar).reduce((a, v) => a + v, 0) - u.gap : null,
             staplar: document.getElementById('chart-gap-uppdelning')?.querySelectorAll('svg').length || 0 }; });
     ok(r.variabler.join() === 'bas,alder', `valet blir BAS, åldersgrupp (${r.variabler.join(', ')})`);
-    ok(r.skyddad && r.rest !== null && Math.abs(r.rest) < 1e-6, `delarna summerar till hela skillnaden (rest ${r.rest})`);
+    ok(r.rest !== null && Math.abs(r.rest) < 1e-6, `delarna summerar till hela skillnaden (rest ${r.rest})`);
     ok((await delar()).join(' | ') === 'A. BAS-fördelning | B. Åldersgrupp inom BAS | C. Oförklarat: lön inom samma åldersgrupp och BAS', 'delarnas namn byggs ur variablerna');
     ok(r.staplar > 0, 'trappan ritas om');
     ok(await s.evaluate(() => document.querySelector('#gap-uppdelning .gu-andra').open), 'valet står kvar utfällt efter omritningen');

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { gapUppdelning, gapPoster, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, GAP_VARIABLER_STANDARD } from '../src/lib/gapuppdelning.js';
+import { gapUppdelning, gapPoster, gapOvrigaText, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, GAP_VARIABLER_STANDARD } from '../src/lib/gapuppdelning.js';
 import * as fore from './helpers/gapuppdelning-fore-adr65.js';
 import { createAppWindow } from './helpers/app-harness.js';
 import { mulberry32 } from '../src/lib/rng.js';
@@ -84,77 +84,58 @@ describe('gapUppdelning', () => {
         expect(u.topp.B).toEqual([]);
         expect(u.topp.C).toEqual([]);
     });
-    it('grupp där ett kön har 1..k−1 personer räknas som dold, inte i topp, och får inget eget belopp', () => {
+    // Sammanslagningen (ADR-87): en grupp där ett kön har 1..k−1 personer räknas samman med andra grupper under samma
+    // övergrupp, så att varje grupp som delarna och posterna bygger på har 0 eller minst k av varje kön. Den sammanslagna
+    // gruppen och allt under den namnges inte. Härledningarna som regeln stänger står i tests/ktroskel-differens.test.js.
+    it('en grupp där ett kön har 1..k−1 personer räknas samman med den grupp som har färst av det könet; ingen av dem namnges', () => {
         const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
                    ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1'), ...bakgrund()];
         const u = gapUppdelning(r, { k: K });
-        expect(u.skyddad).toBe(true);
+        // B har fem kvinnor och tre män. Bland de andra har F färst kvinnor (12); med F:s 30 män når också männen k.
         const alla = ['A', 'B', 'C'].flatMap(d => u.topp[d].map(p => p.namn));
-        expect(alla.some(n => n.includes('BAS B'))).toBe(false);
-        expect(u.ovrigaAntal.A).toBe(1);
-        expect(u.ovrigaAntal.C).toBe(1);
-        expect(u.ovriga).toBeUndefined();   // de dolda gruppernas summa redovisas aldrig
+        expect(alla.some(n => /BAS [BF]/.test(n))).toBe(false);
+        expect(u.ovrigaAntal).toEqual({ A: 2, B: 2, C: 2 });
+        expect(u.ovriga).toBeUndefined();   // de sammanslagna gruppernas summa redovisas aldrig för sig
+        expect(Math.abs(summa(u) - u.gap)).toBeLessThan(1e-6);
+        // Samma delar som när B och F är ett intervall från början.
+        const somEtt = gapUppdelning(r.map(x => (x.bas === 'B' || x.bas === 'F' ? { ...x, bas: 'BF' } : x)), { k: K });
+        for (const d of ['A', 'B', 'C']) expect(u.delar[d]).toBeCloseTo(somEtt.delar[d], 6);
     });
     it('AID-poster namnges inte när ett kön i deras BAS har 1..k−1 personer (BAS-medellönen ingår i posten)', () => {
         const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
                    ...flera(3, 'kvinna', 35000, 'D', 'Q'), ...flera(10, 'man', 36000, 'D', 'Q'),
                    ...flera(20, 'man', 40000, 'D', 'P'), ...bakgrund()];
         const u = gapUppdelning(r, { k: K });
-        expect(u.skyddad).toBe(true);
-        const alla = ['B', 'C'].flatMap(d => u.topp[d].map(p => p.namn));
+        const alla = ['A', 'B', 'C'].flatMap(d => u.topp[d].map(p => p.namn));
         expect(alla.filter(n => n.endsWith('BAS D'))).toEqual([]);
-        expect(u.ovrigaAntal.B).toBe(2);
+        // D räknas samman med F; under dem står AID Q och P i D och F1 i F.
+        expect(u.ovrigaAntal.B).toBe(3);
     });
-    // Skyddsregeln: det som inte visas är delens summa minus de visade posterna. Läsaren vet inte
-    // beloppen eller tecknen på posterna i den resten, så osäkerheten om en dold post h är summan
-    // av |belopp| för de ANDRA posterna i resten. Den ska vara minst hälften av |h| (|h| ≥ 0,5 kr).
-    // Resten får aldrig vara h själv, och de dolda posternas summa redovisas inte.
-    const skyddad = (rader) => {
-        const u = gapUppdelning(rader, { k: K }), p = gapPoster(rader, { k: K });
-        if (!u.skyddad) {                        // reserven: inga delar, inga poster redovisas
-            expect(u.delar).toBeNull();
-            expect(u.topp).toBeNull();
-            return 'reserv';
-        }
-        expect(u.ovriga).toBeUndefined();
-        for (const d of ['A', 'B', 'C']) {
-            const visade = new Set(u.topp[d].map(x => x.namn));
-            const rest = p[d].filter(x => !visade.has(x.namn));
-            const brus = rest.reduce((s, x) => s + Math.abs(x.kr), 0);
-            for (const h of rest.filter(x => !x.synlig && Math.abs(x.kr) >= 0.5)) {
-                expect(brus - Math.abs(h.kr), `${d}: ${h.namn}`).toBeGreaterThanOrEqual(0.5 * Math.abs(h.kr) - 1e-9);
-            }
-        }
-    };
-    it('en ensam dold grupp kan inte räknas fram, även när en annan dold grupp bidrar med 0 kr', () => {
-        const r = [];
-        const lägg = (bas, aid, kon, n, lon) => { for (let i = 0; i < n; i++) r.push({ bas, aid, kon, lon: lon + i * 10, alder: 40 }); };
-        lägg('C', '100', 'kvinna', 1, 30000); lägg('C', '100', 'man', 12, 45000);
-        lägg('C', '200', 'man', 3, 40000);                                           // ett kön, C-post 0
-        lägg('C', '300', 'kvinna', 25, 38000); lägg('C', '300', 'man', 15, 39000);
-        lägg('C', '400', 'kvinna', 15, 41000); lägg('C', '400', 'man', 25, 43000);
-        lägg('C', '500', 'kvinna', 12, 36000); lägg('C', '500', 'man', 12, 36500);
-        lägg('C', '600', 'kvinna', 20, 37000); lägg('C', '600', 'man', 10, 37200);
-        skyddad(r);
+    it('två små grupper som tillsammans når k räknas samman med varandra, och de andra namnges som förut', () => {
+        const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
+                   ...flera(6, 'kvinna', 50000, 'B', 'B1'), ...flera(5, 'kvinna', 52000, 'C', 'C1'), ...bakgrund()];
+        const u = gapUppdelning(r, { k: K });
+        expect(u.ovrigaAntal.A).toBe(2);
+        const namnA = gapPoster(r, { k: K }).A.filter(p => p.synlig).map(p => p.namn).sort();
+        expect(namnA).toEqual(['BAS A', 'BAS E', 'BAS F', 'BAS G']);
     });
-    it('reserven: en del som i praktiken är en enda dold grupp redovisas inte, och då inga delar alls', () => {
+    it('räcker inte de andra grupperna räknas alla samman; delen blir 0 och summan håller', () => {
         const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
                    ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1')];
-        const u = gapUppdelning(r, { k: K });
-        expect(u.skyddad).toBe(false);
-        expect(u.delar).toBeNull();
-        expect(u.gap).toBeCloseTo(u.medel.kv - u.medel.ma, 9);   // hela skillnaden redovisas ändå
+        for (const variabler of [['bas'], ['bas', 'alder', 'aid'], ['aid', 'bas']]) {
+            const u = gapUppdelning(r, { k: K, variabler });
+            expect(u.delar.A, variabler.join()).toBeCloseTo(0, 6);
+            expect(Object.values(u.topp).flat().some(p => /BAS B|B1/.test(p.namn)), variabler.join()).toBe(false);
+            expect(Math.abs(delsumma(u) - u.gap), variabler.join()).toBeLessThan(1e-6);
+            expect(u.gap).toBeCloseTo(u.medel.kv - u.medel.ma, 9);   // hela skillnaden redovisas som förut
+        }
     });
-    it('en liten synlig post räcker inte som skydd för en stor dold', () => {
-        const r = [];
-        const lägg = (bas, aid, kon, n, lon) => { for (let i = 0; i < n; i++) r.push({ bas, aid, kon, lon: lon + i * 10, alder: 40 }); };
-        ['A', 'B', 'C', 'D', 'E'].forEach((b, i) => { lägg(b, 'X' + b, 'kvinna', 20 + i * 3, 30000 + i * 2000); lägg(b, 'X' + b, 'man', 20 - i * 2, 30200 + i * 2000); });
-        lägg('H', 'XH', 'kvinna', 1, 40000); lägg('H', 'XH', 'man', 15, 52000);
-        skyddad(r);
-    });
-    it('skyddsregeln håller på slumpade underlag med många små grupper', () => {
+    // Egenskapen som skyddet vilar på, på slumpade underlag med många små grupper och flera val av variabler: varje
+    // post bygger på en grupp med 0 eller minst k av varje kön, en namngiven post aldrig på en sammanslagen grupp, och
+    // delarna summerar till skillnaden.
+    it('på slumpade underlag med många små grupper har varje grupp 0 eller minst k av varje kön', () => {
         const rnd = mulberry32(99);
-        let provade = 0, reserv = 0;
+        let provade = 0, sammanslagna = 0;
         for (let t = 0; t < 150; t++) {
             const r = [];
             const nGrupper = 3 + Math.floor(rnd() * 8);
@@ -164,15 +145,28 @@ describe('gapUppdelning', () => {
                 const nKv = liten ? Math.floor(rnd() * 9) : 10 + Math.floor(rnd() * 20);
                 const nMa = liten ? Math.floor(rnd() * 12) : 10 + Math.floor(rnd() * 20);
                 const niva = 28000 + rnd() * 20000;
-                for (let i = 0; i < nKv; i++) r.push({ bas, aid, kon: 'kvinna', lon: niva + rnd() * 3000, alder: 40 });
-                for (let i = 0; i < nMa; i++) r.push({ bas, aid, kon: 'man', lon: niva + 500 + rnd() * 3000, alder: 40 });
+                const alder = 25 + Math.floor(rnd() * 40);
+                for (let i = 0; i < nKv; i++) r.push({ bas, aid, kon: 'kvinna', lon: niva + rnd() * 3000, alder });
+                for (let i = 0; i < nMa; i++) r.push({ bas, aid, kon: 'man', lon: niva + 500 + rnd() * 3000, alder });
             }
-            if (!gapUppdelning(r, { k: K })) continue;
-            provade++;
-            if (skyddad(r) === 'reserv') reserv++;
+            for (const [k, variabler] of [[K, ['bas', 'aid']], [K, ['bas', 'alder', 'aid']], [25, ['aid', 'bas']], [5, ['alder']]]) {
+                const u = gapUppdelning(r, { k, variabler });
+                if (!u) continue;
+                provade++;
+                const p = gapPoster(r, { k, variabler });
+                for (const post of Object.values(p).flat()) {
+                    expect(post.nKv === 0 || post.nKv >= k, post.namn).toBe(true);
+                    expect(post.nMa === 0 || post.nMa >= k, post.namn).toBe(true);
+                    if (post.synlig) expect(post.namn).not.toMatch(/sammanslagna/);
+                }
+                const namngivna = new Set(Object.values(p).flat().filter(x => x.synlig).map(x => x.namn));
+                for (const x of Object.values(u.topp).flat()) expect(namngivna.has(x.namn)).toBe(true);
+                if (Object.values(u.ovrigaAntal).some(Boolean)) sammanslagna++;
+                expect(Math.abs(delsumma(u) - u.gap)).toBeLessThan(1e-6);
+            }
         }
-        expect(provade).toBeGreaterThan(100);
-        expect(reserv).toBeLessThan(provade);   // reserven är undantaget, inte regeln
+        expect(provade).toBeGreaterThan(300);
+        expect(sammanslagna).toBeGreaterThan(100);   // regeln prövas, inte bara underlag utan små grupper
     });
     it('topplistan har högst tre poster, fallande på |kr|', () => {
         const u = gapUppdelning(slumpa(3), { k: K });
@@ -216,20 +210,23 @@ describe('gapUppdelning', () => {
 // före ADR-65 (frusen kopia i tests/helpers/gapuppdelning-fore-adr65.js), och delarna ska summera till hela
 // skillnaden för varje val.
 // ===================================================================================
-const GAMLA_NYCKLAR = ['n', 'medel', 'gap', 'gapPct', 'litetGap', 'skyddad', 'delar', 'topp', 'ovrigaAntal'];
+const GAMLA_NYCKLAR = ['n', 'medel', 'gap', 'gapPct', 'litetGap', 'delar', 'topp', 'ovrigaAntal'];
 const somForut = u => u && Object.fromEntries(GAMLA_NYCKLAR.map(n => [n, u[n]]));
+const posterSomForut = p => p && Object.fromEntries(Object.entries(p).map(([d, l]) => [d, l.map(({ namn, kr, synlig }) => ({ namn, kr, synlig }))]));
 // JSON skriver varje tal med kortaste exakta form, så lika strängar betyder bitlika tal (och samma nyckelordning).
-const bytelika = (rader, k) => {
-    for (const opts of [{ k }, { k, variabler: ['bas', 'aid'] }, { k, variabler: null }]) {
-        expect(JSON.stringify(somForut(gapUppdelning(rader, opts)))).toBe(JSON.stringify(fore.gapUppdelning(rader, { k })));
-        expect(JSON.stringify(gapPoster(rader, opts))).toBe(JSON.stringify(fore.gapPoster(rader, { k })));
+// Jämförelsen görs vid tröskeln 1, där ingen grupp räknas samman (ADR-87): räkningen är densamma som förut, och
+// sammanslagningen prövas för sig ovan.
+const bytelika = rader => {
+    for (const opts of [{ k: 1 }, { k: 1, variabler: ['bas', 'aid'] }, { k: 1, variabler: null }]) {
+        expect(JSON.stringify(somForut(gapUppdelning(rader, opts)))).toBe(JSON.stringify(somForut(fore.gapUppdelning(rader, { k: 1 }))));
+        expect(JSON.stringify(posterSomForut(gapPoster(rader, opts)))).toBe(JSON.stringify(fore.gapPoster(rader, { k: 1 })));
     }
 };
 const delsumma = u => Object.values(u.delar).reduce((s, v) => s + v, 0);
-// Alla poster per del, för att pröva summan också när delarna inte redovisas (skyddad: false).
+// Alla poster per del, också de som inte namnges.
 const postsumma = p => Object.values(p).reduce((s, l) => s + l.reduce((t, x) => t + x.kr, 0), 0);
 
-describe('ADR-65: standardvalet är byte-likt med implementationen före', () => {
+describe('ADR-65: standardvalet är byte-likt med implementationen före (vid tröskeln 1)', () => {
     let demo, stort;
     beforeAll(() => {
         const w = createAppWindow();
@@ -238,27 +235,33 @@ describe('ADR-65: standardvalet är byte-likt med implementationen före', () =>
         w.eval('loadStortDemo()');
         stort = JSON.parse(JSON.stringify(w.__state.data));
     }, 120000);
-    it('demot vid k 5, 10 och 25', () => {
+    it('demot', () => {
         expect(demo.length).toBeGreaterThan(100);
-        for (const k of [5, 10, 25]) bytelika(demo, k);
+        bytelika(demo);
     });
-    it('det stora demot vid k 10 och 25', () => {
+    it('det stora demot', () => {
         expect(stort.length).toBe(7000);
-        for (const k of [10, 25]) bytelika(stort, k);
+        bytelika(stort);
+    });
+    it('utan små grupper ger tröskeln samma resultat som tröskeln 1 och som förut', () => {
+        const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'), ...bakgrund()];
+        expect(JSON.stringify(somForut(gapUppdelning(r, { k: K })))).toBe(JSON.stringify(somForut(fore.gapUppdelning(r, { k: K }))));
+        expect(JSON.stringify(somForut(gapUppdelning(r, { k: K })))).toBe(JSON.stringify(somForut(gapUppdelning(r, { k: 1 }))));
     });
     it('de slumpade underlagen och fixturerna i testerna ovan', () => {
-        for (const seed of [3, 7, 11, 42]) bytelika(slumpa(seed), K);
+        for (const seed of [3, 7, 11, 42]) bytelika(slumpa(seed));
         bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
-            ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1'), ...bakgrund()], K);
+            ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1'), ...bakgrund()]);
         bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
-            ...flera(3, 'kvinna', 35000, 'D', 'Q'), ...flera(10, 'man', 36000, 'D', 'Q'), ...flera(20, 'man', 40000, 'D', 'P'), ...bakgrund()], K);
+            ...flera(3, 'kvinna', 35000, 'D', 'Q'), ...flera(10, 'man', 36000, 'D', 'Q'), ...flera(20, 'man', 40000, 'D', 'P'), ...bakgrund()]);
         bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
-            ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1')], K);
+            ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1')]);
         bytelika([...flera(20, 'kvinna', 30000, 'A', undefined).map(x => ({ ...x, yrke: 'Undersköterska' })),
-            ...flera(20, 'man', 33000, 'A', undefined).map(x => ({ ...x, yrke: 'Undersköterska' }))], K);
-        bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(9, 'man', 30000, 'A', 'A1')], K);   // null
+            ...flera(20, 'man', 33000, 'A', undefined).map(x => ({ ...x, yrke: 'Undersköterska' }))]);
+        bytelika([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(9, 'man', 30000, 'A', 'A1')]);
+        expect(gapUppdelning([...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(9, 'man', 30000, 'A', 'A1')], { k: K })).toBeNull();
     });
-    it('de slumpade underlagen med många små grupper (skyddsregelns test)', () => {
+    it('de slumpade underlagen med många små grupper', () => {
         const rnd = mulberry32(99);
         for (let t = 0; t < 150; t++) {
             const r = [];
@@ -272,7 +275,7 @@ describe('ADR-65: standardvalet är byte-likt med implementationen före', () =>
                 for (let i = 0; i < nKv; i++) r.push({ bas, aid, kon: 'kvinna', lon: niva + rnd() * 3000, alder: 40 });
                 for (let i = 0; i < nMa; i++) r.push({ bas, aid, kon: 'man', lon: niva + 500 + rnd() * 3000, alder: 40 });
             }
-            bytelika(r, K);
+            bytelika(r);
         }
     });
     it('resultatet bär de normaliserade variablerna', () => {
@@ -301,7 +304,6 @@ describe('ADR-65: valbara förklaringsvariabler', () => {
             const r = slumpaRik(seed);
             for (const variabler of VAL) {
                 const u = gapUppdelning(r, { k: 1, variabler });   // k = 1: inget döljs, delarna redovisas alltid
-                expect(u.skyddad, variabler.join()).toBe(true);
                 expect(Object.keys(u.delar)).toEqual(['A', 'B', 'C', 'D', 'E'].slice(0, variabler.length + 1));
                 expect(Math.abs(delsumma(u) - u.gap), variabler.join()).toBeLessThan(1e-6);
                 // Också postsumman vid k = 10, där delarna kan vara dolda.
@@ -349,7 +351,7 @@ describe('ADR-65: valbara förklaringsvariabler', () => {
             varningar: ['Åldersgrupp kan inte väljas: lönefilen saknar ålder.'] });
         expect(gapUppdelning(r, { k: K, variabler: ['bas', 'alder', 'aid'] }).variabler).toEqual(['bas', 'aid']);
         expect(gapUppdelning(r, { k: K, variabler: ['alder'] }).variabler).toEqual(['bas', 'aid']);
-        expect(JSON.stringify(somForut(gapUppdelning(r, { k: K, variabler: ['bas', 'alder', 'aid'] })))).toBe(JSON.stringify(fore.gapUppdelning(r, { k: K })));
+        expect(JSON.stringify(gapUppdelning(r, { k: K, variabler: ['bas', 'alder', 'aid'] }))).toBe(JSON.stringify(gapUppdelning(r, { k: K })));
     });
     it('AID-nivåerna ordnas grovt till fint, på sina platser', () => {
         const n = v => normaliseraGapVariabler(v).variabler;
@@ -415,10 +417,11 @@ function handrakning(rader, variabler) {
     return delar;
 }
 
-describe('ADR-65: skyddsregeln per del, djupt ner', () => {
-    it('en liten cell på tredje nivån namnges inte, och inte heller dess barn', () => {
-        // BAS A har gott om båda könen; i åldersgruppen 60–64 år finns bara 3 män. Med k = 10 får varken
-        // åldersgruppen eller AID-cellerna under den namnges, men summan håller.
+describe('ADR-65 och ADR-87: sammanslagningen per del, djupt ner', () => {
+    it('en liten cell på andra nivån räknas samman inom sin övergrupp, och varken den eller dess barn namnges', () => {
+        // BAS A har gott om båda könen; i åldersgruppen 60–64 år finns bara 3 män. Med k = 10 räknas åldersgruppen
+        // samman med den åldersgrupp i BAS A som har färst män (30–34 år), och ingen av dem eller AID-cellerna under
+        // dem namnges, men summan håller.
         const r = [];
         const lagg = (n, kon, alder, aid, lon) => { for (let i = 0; i < n; i++) r.push({ kon, bas: 'A', aid, alder, lon: lon + i * 7 }); };
         lagg(40, 'kvinna', 30, '1', 30000); lagg(30, 'man', 30, '1', 31000);
@@ -427,44 +430,51 @@ describe('ADR-65: skyddsregeln per del, djupt ner', () => {
         r.push(...bakgrund());
         const variabler = ['bas', 'alder', 'aid'];
         const p = gapPoster(r, { k: K, variabler });
-        const dolda = [...p.B, ...p.C, ...p.D].filter(x => x.namn.includes('60–64 år'));
-        expect(dolda.length).toBeGreaterThan(0);
-        expect(dolda.every(x => !x.synlig)).toBe(true);
+        expect([...p.B, ...p.C, ...p.D].filter(x => /60–64 år|30–34 år/.test(x.namn))).toEqual([]);
+        const sammanslagna = [...p.B, ...p.C, ...p.D].filter(x => x.namn.includes('sammanslagna åldersgrupper, BAS A'));
+        expect(sammanslagna.length).toBeGreaterThan(0);
+        expect(sammanslagna.every(x => !x.synlig)).toBe(true);
         const u = gapUppdelning(r, { k: K, variabler });
-        if (u.skyddad) {
-            const namn = Object.values(u.topp).flat().map(x => x.namn);
-            expect(namn.some(n => n.includes('60–64 år'))).toBe(false);
-            expect(Math.abs(delsumma(u) - u.gap)).toBeLessThan(1e-6);
-        } else expect(u.delar).toBeNull();
+        expect(Object.values(u.topp).flat().some(x => /60–64 år|30–34 år|sammanslagna/.test(x.namn))).toBe(false);
+        expect(u.topp.B.map(x => x.namn)).toContain('40–44 år, BAS A');
+        expect(Math.abs(delsumma(u) - u.gap)).toBeLessThan(1e-6);
     });
-    it('en cell är synlig bara om den själv och alla överceller klarar k', () => {
+    it('en post namnges bara när varje nivå i dess namn klarar k (och aldrig när den räknats samman)', () => {
         const r = slumpaRik(8, 500);
         const variabler = ['bas', 'alder', 'aid'];
         const p = gapPoster(r, { k: K, variabler });
-        // Räkna om synligheten ur rådata: varje nivå i namnet (finast först) ska ha 0 eller ≥ k av varje kön.
+        // Räkna om ur rådata: varje nivå i namnet (finast först) ska ha 0 eller ≥ k av varje kön.
         const nyckel = (x, v) => v === 'alder' ? `${groupKey(x, 'alder')} år` : v === 'bas' ? `BAS ${groupKey(x, 'bas')}` : String(groupKey(x, v));
+        let namngivna = 0;
         for (const [i, lista] of Object.values(p).entries()) {
             const djup = Math.min(i + 1, variabler.length);
-            for (const post of lista) {
-                let ok = true;
+            for (const post of lista.filter(x => x.synlig)) {
+                namngivna++;
                 for (let d = 1; d <= djup; d++) {
                     const sokt = post.namn.split(', ').slice(-d).reverse();
                     const cell = r.filter(x => variabler.slice(0, d).every((v, j) => nyckel(x, v) === sokt[j]));
                     const nKv = cell.filter(x => x.kon === 'kvinna').length, nMa = cell.filter(x => x.kon === 'man').length;
-                    if ((nKv > 0 && nKv < K) || (nMa > 0 && nMa < K)) ok = false;
+                    expect((nKv === 0 || nKv >= K) && (nMa === 0 || nMa >= K), post.namn).toBe(true);
                 }
-                expect(post.synlig, post.namn).toBe(ok);
             }
         }
+        expect(namngivna).toBeGreaterThan(0);
     });
-    it('reserven gäller hela uppdelningen: kan en del inte redovisas visas ingen del', () => {
+    it('på skärmen (tröskeln 1) räknas inget samman och alla poster namnges', () => {
         const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
             ...flera(5, 'kvinna', 50000, 'B', 'B1'), ...flera(3, 'man', 60000, 'B', 'B1')];
         for (const variabler of [['bas'], ['bas', 'alder', 'aid'], ['aid', 'bas']]) {
-            const u = gapUppdelning(r, { k: K, variabler });
-            expect(u.skyddad, variabler.join()).toBe(false);
-            expect(u.delar).toBeNull();
-            expect(u.topp).toBeNull();
+            const p = gapPoster(r, { k: 1, variabler });
+            expect(Object.values(p).flat().every(x => x.synlig), variabler.join()).toBe(true);
+            expect(Object.values(gapUppdelning(r, { k: 1, variabler }).ovrigaAntal).every(n => n === 0)).toBe(true);
         }
+    });
+});
+
+describe('ADR-87: meningen om grupperna som inte namnges', () => {
+    it('ingen mening när alla namnges, annars antalet och skälet', () => {
+        expect(gapOvrigaText(0, 10)).toBe('');
+        expect(gapOvrigaText(1, 10)).toBe('1 grupp namnges inte: ett kön har färre än 10 personer i den eller i gruppen den räknas samman med. Den ingår i summan.');
+        expect(gapOvrigaText(3, 5)).toBe('3 grupper namnges inte: ett kön har färre än 5 personer i dem eller i grupperna de räknas samman med. De ingår i summan.');
     });
 });

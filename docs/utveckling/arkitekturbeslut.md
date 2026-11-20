@@ -56,7 +56,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-45 | t-kvantiler för konfidensintervallen; exakt t-fördelning | Gällande | – |
 | ADR-46 | Steget *+ AID-etikett inom BAS*: könsgapet med fasta effekter för AID-etikett inom BAS | Ändrad av ADR-56 | – |
 | ADR-47 | Organisationspaketet kan låsa tre skydd | Gällande | – |
-| ADR-48 | Bilder med en punkt per person följer med i ZIP och Komplett rapport | Gällande | 2026-10-16 |
+| ADR-48 | Bilder med en punkt per person följer med i ZIP och Komplett rapport | Ändrad av ADR-85 | 2026-10-16 |
 | ADR-49 | Organisationsfil: paketet inbakat i verktygsfilen, en fil att sprida | Gällande | – |
 | ADR-50 | Prioritering är vad, Löneöversyn är hur | Gällande | 2026-10-29 |
 | ADR-51 | Minsta gruppstorlek gäller det som lämnar verktyget, inte skärmen | Gällande | 2026-10-29 |
@@ -73,7 +73,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-62 | Prioriteringens egna ord för läget mot referensen | Gällande | 2026-11-08 |
 | ADR-63 | Kvantilregressionen på huvudmodellens design, villkorad tolkning | Gällande | 2026-11-08 |
 | ADR-64 | Ålder är valfri i lönefilen | Gällande | 2026-11-08 |
-| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Gällande | 2026-11-10 |
+| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Ändrad av ADR-87 | 2026-11-10 |
 | ADR-68 | Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna | Ändrad av ADR-73 | 2026-11-13 |
 | ADR-69 | Löneöversyns förslag följer den inställda tröskeln | Gällande | 2026-11-13 |
 | ADR-70 | Skyddet gäller lönemått; antal och andelar är handläggarens ansvar | Gällande | 2026-11-14 |
@@ -90,6 +90,11 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Gällande | 2026-11-16 |
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 | ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
+| ADR-84 | PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning | Gällande | 2026-11-19 |
+| ADR-85 | Fältet för AID-etikett maskeras inte; inläsningen varnar för personnamn | Gällande | 2026-11-20 |
+| ADR-86 | Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska | Gällande | 2026-11-19 |
+| ADR-87 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
+| ADR-88 | Differensprovet är en del av invarianten för minsta gruppstorlek | Gällande | 2026-11-19 |
 
 ## Besluten
 
@@ -300,7 +305,8 @@ gäller alla senare paket utan fråga (en organisation måste kunna byta paket).
 **ADR-48 — Bilder med en punkt per person följer med i ZIP och Komplett rapport.** Bilderna bär inga namn eller
 identifierare, en punkt ritas bara när personens grupp och kön når tröskeln, och filerna hanteras som personuppgifter.
 *Avvisat:* att utelämna bilderna eller ersätta dem med aggregat. *Gäller i dag:* `k-troskeln.md` §4 och
-`docs/dataskydd/dataskydd.md` §3–§4.
+`docs/dataskydd/dataskydd.md` §3–§4. *Not:* ADR-85 ändrade en förutsättning. Texten i fältet för AID-etikett maskeras inte
+längre, så punktdiagrammet färgat efter AID-etikett bär filens text som serienamn, i förklaringen och i diagrammets data.
 
 **ADR-49 — Organisationsfil: paketet inbakat i verktygsfilen, en fil att sprida.** Paketet bakas in som ett inaktivt
 block efter sista skriptet, så att CSP:ns kontrollsummor är orörda; filen verifieras inte mot den publicerade versionen
@@ -494,8 +500,92 @@ Samma regel som Löneöversyns blad *Fördelning*. Den gäller intervallen (elle
 kön för sig mot raden *Alla*s medel per kön, och AID-etiketterna mot organisationens rad när receptet har måttet
 *Medellön*. Ett undertryckt intervall förlorar sina medelvärden i alla avsnittets tabeller, och ett intervall vars
 könsmedel döljs förlorar båda könens, eftersom medellönen för alla och det ena könet ger det andra. Antal och andelar
-står kvar (ADR-70), medianer och percentiler berörs inte, och en not namnger det som undertryckts. Regeln bor i
-`src/lib/perbas.js` som en allmän funktion för delar med antal (`kompletterandeUndertryckning`), så att den kan
-användas i andra moduler; de utskrivande delarna skriver bara ut resultatet. *Avvisat:* att räkna raden *Alla* bara
+står kvar (ADR-70), medianer och percentiler berörs inte, och en not namnger det som undertryckts. Regeln är en
+allmän funktion för delar med antal (`kompletterandeUndertryckning`, sedan ADR-87 i `src/lib/undertryckning.js`),
+så att den kan användas i andra moduler; `src/lib/perbas.js` tillämpar den, och de utskrivande delarna skriver bara
+ut resultatet. *Avvisat:* att räkna raden *Alla* bara
 på de visade grupperna, som ändrar vad raden betyder; att utelämna raden *Alla*. *Gäller i dag:* `k-troskeln.md`
 avsnitt 2.
+
+**ADR-84 — PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning.** Beslutat av underhållaren
+2026-11-19. Kostnadsberäkningen räknar med PO-påslaget 40 % tills organisationen sätter sitt eget, i fältet under
+Inställningar eller i organisationspaketet. Förut räknade verktyget med 39,15 % och en hänvisning till ett cirkulär för
+kommuner och regioner, utan cirkulärets nummer. Påslaget skiljer sig mellan arbetsgivare och år, så standardvärdet är
+ett avrundat antagande och gränssnittet säger det, utan att namnge någon källa. Organisationspaketets egen not om
+påslaget (`poNot`) finns kvar; verktygets standard har ingen not. *Avvisat:* att behålla 39,15 % med hänvisningen, som
+saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i dag:* `COST_DEFAULTS` i
+`src/app/07-standardinstallningar.js`.
+
+**ADR-85 — Fältet för AID-etikett maskeras inte; inläsningen varnar för personnamn.** Beslutat av underhållaren 2026-11-20.
+Fältet för AID-etikett behåller AID-koden och högst 40 tecken av etiketten, utan tecknen `< > " ' &`; ingenting i
+texten maskeras. Förut ersattes två versalinledda ord i rad och formen "Efternamn, Förnamn" med `***`. Den maskeringen
+förstörde riktiga etiketter ("Sjuksköterska Natt" blev "***" på varje rad) och skyddade inte: "Sjuksköterska Anna
+Andersson" blev "*** Andersson", och namn i gemener eller versaler rördes inte. I stället varnar inläsningen när
+fältet ser ut att innehålla personnamn: en text med namnmönster (två eller fler versalinledda ord i rad, eller
+"Efternamn, Förnamn") som står på högst två rader i filen. Varningen står i förhandskontrollen, i inläsningsrapporten
+och i Att göra, med antal rader och radnummer men aldrig texten. Den som tar ut filen ansvarar för att fältet bara bär
+kod och etikett; användaren ska hellre få veta att namn finns än tro att de är maskerade. *Avvisat:* att maskera alla
+versalinledda ord, som förstör riktiga etiketter; att behålla den gamla maskeringen, som inte skyddar och förstör
+etiketter; att ersätta filens text med etikettlistans namn, som tar bort organisationens lokala benämningar.
+Ändrar ADR-48: bilderna med en punkt per person kan bära filens text som serienamn.
+*Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.4; `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader` i
+`src/lib/inlasning.js`. *Not:* sedan texten inte maskeras kan en AID-kod ha flera texter i samma BAS-intervall.
+Prioriteringen grupperade på hela texten och fick då två grupper där jämförelsestatistiken och gruppdossiern har en,
+och små delgrupper föll under tröskeln. Rättat 2026-11-20 som ett fel, inget nytt beslut: prioriteringen grupperar på
+AID-koden och BAS-intervallet som de andra (`prioriteringsmodellen.md` §1).
+
+**ADR-86 — Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska.**
+Beslutat av underhållaren 2026-11-19. Bootstrapintervallen, omkastningens gränser (slumpens gränser i
+uppmärksamhetstrappan och trattdiagrammet) och kvantilregressionens intervall seedades redan ur antal och summa per
+serie, men dragningarna pekade på platser i listan som den stod i filen. Samma löner i en annan ordning gav därför
+andra gränser (i en mätning skilde sig bootstrapintervallet i 200 fall av 200, som mest 2,3 procentenheter vid 30 + 20
+personer, och slumpens gränser i 199 av 200), och en grupp nära gränsen kunde få olika status beroende på hur filen
+var sorterad. Nu dras bootstrapen ur gruppens löner sorterade stigande, omkastningen utgår från kvinnornas löner
+stigande följda av männens, kvantilbootstrapen sorterar raderna på en fast, fullständig nyckel (lön, kön,
+BAS-intervall, ålder, AID, yrke, ansvarsgrupp), och seeden summerar talen i stigande ordning, så att en summa av löner
+med öre inte avrundas olika i två ordningar. Sorteringen görs en gång, utanför dragningarna. Percentilintervallet tog
+den nedre gränsen med index golvet av n · 0,025 och den övre med golvet av n · 0,975, så att med 1 000 dragningar låg
+25 under den nedre och 24 över den övre; nu har den övre index n − 1 − golvet av n · 0,025, och lika många ligger på var
+sida. Intervallgränserna ändrades en gång, med några tiondels procentenheter; punktskattningarna berörs inte.
+Nedsamplingen av punktmoln följer fortfarande filens ordning: den avgör vilka punkter som ritas, inget tal som
+redovisas. *Avvisat:* att bara seeda ur den sorterade listan och fortsätta dra ur filens ordning, som inte tar bort
+beroendet; att lämna indexen, vars fel är litet men alltid drar åt samma håll. *Gäller i dag:*
+`regressionsmodellen.md` avsnitt 6–7, `likvardighetsmodellen.md` avsnitt 5, `src/lib/rng.js`.
+
+**ADR-87 — Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel.** Beslutat av
+underhållaren 2026-11-20. Ändrar skyddsregeln i ADR-65 (och ADR-22). Följer principen i ADR-83: det som går att räkna
+fram ur det som skrivs ut ska vara ett medel för minst tröskeln personer, per kön där måttet är per kön.
+Uppdelningens delar och poster och
+huvudområdenas andel är vägda medellöner per kön, och med medellönerna för hela urvalet och antalen bildade de ett
+ekvationssystem: med två huvudområden där det ena hade färre än tröskeln av ett kön gav beloppet det könets
+medellön, och i uppdelningen gick en liten grupps medellön att lösa ut fast posten inte stod, för vissa val av
+variabler ur delarna själva. Regeln som kortade topplistan räckte därför inte. I exportläget räknas en grupp där ett
+kön har 1 till k − 1 personer samman med andra grupper inom samma övergrupp innan delarna räknas, med samma val av
+grupp som den kompletterande undertryckningen, för varje kön, tills varje grupp har inga eller minst k av varje kön
+(`sammanslagning` i `src/lib/undertryckning.js`, dit också `kompletterandeUndertryckning` flyttades). Den
+sammanslagna gruppen namnges inte; varje del säger hur många grupper som inte namnges, och en not säger varför.
+Delarna summerar till hela skillnaden som förut. Skärmen, med tröskeln 1, ändras inte (ADR-51). Antal och andelar
+står kvar (ADR-70). *Avvisat:* att undertrycka delar och poster i stället för att räkna samman, som för de flesta
+underlag med en liten grupp skulle ta bort hela uppdelningen ur exporten, eftersom delarna summerar till hela
+skillnaden och en dold del går att räkna fram ur de andra; att pröva numeriskt vad som går att lösa ut ur varje
+utskrift, som är svårare att granska och att lita på; att bara dölja fler poster, som inte stänger vägen genom
+delarna. *Gäller i dag:* `regressionsmodellen.md` §10 och `k-troskeln.md` avsnitt 2. *Not:* huvudområdenas andel
+räknade gapet och beloppet som män minus kvinnor, fast del A och resten av verktyget räknar kvinnor minus män
+(`regressionsmodellen.md` §1, *Tecknet*). Rättat 2026-11-20 som ett fel mot den regeln, inget nytt beslut: beloppen
+har bytt tecken, andelen är densamma, och ett test kräver att beloppet är del A med huvudområde som enda variabel.
+
+**ADR-88 — Differensprovet är en del av invarianten för minsta gruppstorlek.** Beslutat av underhållaren 2026-11-19.
+Ändrar vakten för S4, inte dess lydelse. Invarianten I4 letade efter de små gruppernas lönevärden som de står, och
+ett lönemått som bara gick att räkna fram som en total minus delar vaktades av prov som skrevs för hand, utdata för
+utdata, mot lib-modulerna; en ny utdata med total och delar fick inget prov om ingen skrev ett. Nu går ett
+differensprov i invarianten på samma utdata som riggen samlar in vid tröskeln 10 och 25, utan nya ritningar eller
+exporter. Varje tabell vars rubrikrad har en kolumn med medel, summa eller kostnad deklareras i riggen, med kolumnerna
+för antal och mått och raden som är totalen, eller som inget att dela upp med skäl; en odeklarerad tabell fäller
+invarianten, och det är så en ny utdata ärver provet. För de deklarerade måtten får totalen minus de visade delarna,
+för alla och per kön, inte lämna 1 till k − 1 personer, och i en tabell utan totalrad får ingen rad minus andra lämna
+en av riggens små grupper. Medianer och percentiler prövas inte: de går inte att dela upp. `tests/ktroskel-differens.test.js`
+står kvar för lib-nivån och för underlag som riggen inte har. *Avvisat:* att känna igen kolumnerna ur rubriktexterna,
+som tyst kan sluta fungera när en rubrik ändras; att pröva varje delmängd av rader utan riggens kunskap om
+underlaget, som ger falsklarm när ett antal råkar gå jämnt upp; att lösa ett ekvationssystem över hela exporten, som
+lösaren i differensprovet gör för de utdata där det behövs men som är svårare att granska. *Gäller i dag:*
+`skydd.md` S4 och `k-troskeln.md` avsnitt 9 och 11.

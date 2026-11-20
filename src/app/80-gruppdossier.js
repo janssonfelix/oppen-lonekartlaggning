@@ -12,21 +12,11 @@
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 
-// Bootstrap-KI på mediankvoten (kvinnors median som % av männens). Samma dragningar
-// som översikten per BAS-intervall (_laBootstrapGapCI), med medianerna ur rangräkning
-// (_lvBootstrapMedianer). B = 2000 matchar computeBootstrapCI: B=600 gav ~±0,5 pp
-// Monte Carlo-spridning på KI-gränserna, vilket märktes för gränsfall.
-function _gdBootstrapGapCI(kvLons, maLons, B = 2000) {
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const ratios = new Array(B);
-    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
-    }
-    const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
-    if (ok.length < 20) return null;
-    return { lo: ok[Math.floor(ok.length * 0.025)], hi: ok[Math.floor(ok.length * 0.975)] };
+// Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
+// dragningar som översikten per BAS-intervall (_laBootstrapGapCI), med B = 2000 som computeBootstrapCI; dragningar
+// där männens median inte är positiv räknas inte.
+function _gdBootstrapGapCI(kvLons, maLons, B) {
+    return _osMedianKvotKIGiltiga(kvLons, maLons, { B });
 }
 
 /** Alla grupper som får öppnas i dossier (k-anonymitet som överallt annars). */
@@ -34,8 +24,7 @@ function gruppdossierCandidates() {
     const map = new Map();
     getData().forEach(r => {
         if (!(r.lon > 0) || !r.bas) return;
-        const m = String(r.yrke || '').match(/^(\d+)/);
-        const aid = m ? m[1] : String(r.yrke || '');
+        const aid = aidAvYrke(r.yrke);
         const key = aid + '|' + r.bas;
         if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: r.yrke, rows: [] });
         map.get(key).rows.push(r);
@@ -47,7 +36,7 @@ function gruppdossierCandidates() {
 
 /** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
 function _gdKon(rows) {
-    return { kv: rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')), ma: rows.filter(r => r.kon === 'man' || r.kon === 'män') };
+    return { kv: rows.filter(r => arKvinna(r)), ma: rows.filter(r => arMan(r)) };
 }
 
 /**
@@ -83,7 +72,7 @@ function buildGruppdossier(key, delat = null) {
             medKv: mKv, medMa: mMa,
             ci: delat && delat.text ? null : _gdBootstrapGapCI(kvLons, maLons),
             // Räkneexemplet i kronor per år, med prioriteringens kostnadsinställningar.
-            arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(Math.round(v), 'kr'))
+            arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(v, 'kr'))
         };
     }
 
@@ -131,29 +120,11 @@ function buildGruppdossier(key, delat = null) {
     let prio = null, suggestions = [];
     try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
-        // computePrioritization grupperar på `yrke|bas` (hela strängen "AID Etikett")
-        // medan dossiern grupperar på `aid|bas`. Samma AID kan därför ge flera
-        // prio-poster; ta inte bara den första — slå ihop dem, annars visas
-        // kostnad och antal för en delmängd av gruppen.
+        // computePrioritization grupperar på AID-kod och BAS, som dossiern: högst en post per grupp.
         let alla;
         if (!delat) alla = computePrioritization(ref);
         else { if (!delat.prio.has(ref)) delat.prio.set(ref, computePrioritization(ref)); alla = delat.prio.get(ref); }
-        const traffar = (alla || []).filter(i => i.aid === g.aid && i.bas === g.bas);
-        if (traffar.length === 1) {
-            prio = traffar[0];
-        } else if (traffar.length > 1) {
-            const nTot = traffar.reduce((s, i) => s + (i.n || 0), 0);
-            prio = {
-                ...traffar[0],
-                yrke: `${g.aid} (${traffar.length} ${T.namn.fl})`,
-                n: nTot,
-                annualGapTotal: traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0),
-                // n-viktat medelvärde — ett rakt medel skulle ge små grupper lika tyngd
-                diffPct: nTot ? traffar.reduce((s, i) => s + (i.diffPct || 0) * (i.n || 0), 0) / nTot : traffar[0].diffPct,
-                costPerPerson: nTot ? traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0) / nTot : traffar[0].costPerPerson,
-                _rows: traffar.flatMap(i => i._rows || [])
-            };
-        }
+        prio = (alla || []).find(i => i.aid === g.aid && i.bas === g.bas) || null;
         if (prio && typeof generateMotivationSuggestions === 'function') {
             suggestions = generateMotivationSuggestions(prio) || [];
         }

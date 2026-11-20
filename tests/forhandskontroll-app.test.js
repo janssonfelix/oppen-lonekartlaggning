@@ -73,6 +73,11 @@ describe('förhandskontrollen efter inläsningen', () => {
         const rapport = w.document.getElementById('data-validation-report');
         expect(rapport.textContent).toMatch(/Förhandskontroll: 1 varning/);
         expect(rapport.querySelector('a[data-go-to-anchor="avsnitt-fi-forhandskontroll"]')).toBeTruthy();
+        // Antalet är radens värde, och länken står på en egen rad under, inte i raden bredvid texten.
+        const fkRad = rapport.querySelector('[data-dvr="forhandskontroll"]');
+        expect(fkRad.querySelector('.dvr-value').textContent).toBe('1 varning');
+        expect(fkRad.querySelector('a')).toBeNull();
+        expect(fkRad.nextElementSibling.querySelector('a[data-go-to-anchor="avsnitt-fi-forhandskontroll"]')).toBeTruthy();
 
         await lasIn(w, fil(), 'ren.csv');
         expect(punkter(w)).toEqual([]);
@@ -325,5 +330,18 @@ describe('förhandskontrollens punkter i Att göra', () => {
         expect(ids).not.toContain('dq-fullstandighet');
         expect(punkter(w).map(p => p.id)).toEqual(['fk-bortfall-bas']);
         expect(punkter(w)[0].titel).toBe('Förhandskontrollen: rader utan BAS-intervall');
+    });
+});
+
+describe('en lön med skräp efter siffrorna', () => {
+    it('läses inte som ett annat tal: raden utesluts, räknas som ogiltig lön och visas bland exemplen', async () => {
+        const w = createAppWindow();
+        await lasIn(w, fil({ lon: i => (i === 3 ? '32500abc' : String(30000 + i * 10)) }));
+        expect(w.__state.data).toHaveLength(29);
+        expect(w.__state.data.some(r => r.lon === 32500)).toBe(false);
+        const rad = [...w.document.querySelectorAll('#data-validation-report .dvr-row')].find(e => /Ogiltig lön \(text\)/.test(e.textContent));
+        expect(rad).toBeTruthy();
+        expect(rad.textContent).toContain('"32500abc"');
+        expect(rad.querySelector('.dvr-value').textContent).toBe('1');
     });
 });

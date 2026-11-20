@@ -61,22 +61,35 @@ incheckade, artefakten och `RELEASE.txt`.
 Inget som lämnar verktyget redovisar ett lönemått för en grupp, eller ett könsuppdelat lönemått för ett kön, med
 färre personer än den inställda tröskeln (standard 10). På skärmen visas alla grupper: den som arbetar i verktyget
 har redan lönefilen. Undantagen är uppräknade och beslutade. Ett lönemått får inte heller gå att räkna fram ur
-summorna i samma export (Löneöversyns blad *Fördelning*). Antal och andelar, också per kön, omfattas inte av skyddet
+summorna i samma export (Löneöversyns blad *Fördelning*, tabellerna per BAS-intervall, uppdelningen av
+löneskillnaden och huvudområdenas andel). Antal och andelar, också per kön, omfattas inte av skyddet
 utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som lämnas ut (ADR-70).
 
 *Varför:* att förhindra återidentifiering i det som sprids.
 *Lydelse:* [`k-troskeln.md`](k-troskeln.md). *Beslut:* ADR-12, 14, 23, 38, 47, 48,
-51, 57, 69, 70.
+51, 57, 69, 70, 83, 87, 88.
 *Vakt:* invarianten I4, `tests/helpers/ktroskel-invariant.js`, ritar flikarna i exportläget och bygger exporterna
-vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`);
+vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`).
+Invarianten har också differensprovet (ADR-88, `differensprov` i `tests/helpers/differens.js`), på samma utdata: varje
+tabell i den (HTML-tabellerna i exportläget och i rapporterna, Excel-bladen, tabellernas CSV och diagramdatan) vars
+rubrikrad har en kolumn med medel, summa eller kostnad ska vara deklarerad i riggen (`tests/helpers/ktroskel-rigg.js`),
+med kolumnerna för antal och mått och raden som är totalen, eller som inget att dela upp med skäl. För de deklarerade
+måtten får totalen minus de visade delarna, för alla och per kön, aldrig lämna 1 till tröskeln − 1 personer, och i en
+tabell utan totalrad får ingen rad minus andra rader lämna en av riggens små grupper. `tests/ktroskel-differens.test.js`
+prövar samma sak på lib-nivå med fler underlag, och ekvationssystemen i uppdelningen av löneskillnaden;
 differentialtesterna i `tests/diagramritare.test.js` kräver att det som lämnar verktyget är identiskt med en figur
 där de små punkterna tagits bort; `tests/ktroskel-bas-effekter.test.js` (regressionens BAS-effekter),
 `tests/ktroskel-loneoversyn-summor.test.js` (Löneöversyns summor), `tests/ktroskel-livscykel.test.js` (livscykelns
 lönekurva) och `tests/ktroskel-loneoversyn-scenarier.test.js` (scenariojämförelsen A/B) prövar lönemått som I4 inte
 ser.
 *Vaktas inte:* invarianten letar efter de små gruppernas lönevärden, så antal, andelar och namn vaktas inte av den
-(de omfattas inte av skyddet, ADR-70), och inte heller ett lönemått som bara går att räkna fram som en differens;
-golven i antal (ADR-57) har egna tester. Innehållet i bilder prövas inte. De beslutade undantagen ligger utanför (`docs/dataskydd/dataskydd.md` §3). Vad mer
+(de omfattas inte av skyddet, ADR-70); golven i antal (ADR-57) har egna tester. Differensprovet ser bara differenser
+inom en tabell: inte mellan två olika tabeller, avsnitt eller exporter (Löneöversyns blad *Fördelning* mot
+*Sammanfattning* har ett eget test, ovan), inte mått på medianer och percentiler, inte härledningar som kräver
+uppgifter utanför exporten (till exempel de anställdas åldrar eller könsfördelningen inom en AID-etikett), inte en
+tabell vars rubriker inte nämner medel, summa eller kostnad, och inte utdata som saknas i riggen. En tabell som
+riggens underlag lämnar utan rader eller utan total prövas inte med innehåll. Innehållet i bilder prövas inte. De
+beslutade undantagen ligger utanför (`docs/dataskydd/dataskydd.md` §3). Vad mer
 som inte prövas står i testfilerna och i `docs/dataskydd/riskanalys.md` §6.5.
 
 ## S5. Ingen inbyggd organisation

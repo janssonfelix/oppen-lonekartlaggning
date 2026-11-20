@@ -339,3 +339,36 @@ describe('Löneöversyn: förslaget nås från potten', () => {
         expect(lonesumma()).toMatch(/från \d/);
     });
 });
+
+// Prioriteringen grupperar på AID-koden och BAS-intervallet (src/lib/prioritering.js): en kod med två texter i samma
+// BAS-intervall är en grupp, och handlingsplanens förifyllda rad och gruppdossiern hittar den.
+describe('Handlingsplan och gruppdossier: en AID-kod med två texter är en grupp', () => {
+    const fonsterTvaTexter = () => {
+        const w = createAppWindow();
+        const data = [];
+        const lagg = (n, kon, lon, etikett) => { for (let i = 0; i < n; i++) data.push({ bas: 'C', kon, lon, alder: 30 + i,
+            yrke: `207011 ${etikett}`, aid: '207011', yrkeLabel: etikett, enhet: '' }); };
+        lagg(4, 'kvinna', 30000, 'Handläggare'); lagg(4, 'man', 32000, 'Handläggare');
+        lagg(4, 'kvinna', 31000, 'Handläggare, natt'); lagg(3, 'man', 33000, 'Handläggare, natt');
+        w.__state.data = data;
+        w.__state.policy = [{ bas: 'C', p10: 30000, med: 35000, p90: 40000 }];
+        w.__state.handlingsplan = {};
+        w.eval('populateSelects(); unlockTabs(); sattKTroskel(10, { fraga: false });');
+        return w;
+    };
+    it('prioriteringen har en post på 15 personer, och handlingsplanen en förifylld rad för den', () => {
+        const w = fonsterTvaTexter();
+        const prio = w.eval("computePrioritization('stallningstagande')");
+        expect(prio.map(i => [i.aid, i.bas, i.n, i.median])).toEqual([['207011', 'C', 15, 31000]]);
+        const seed = w.eval('_handlingsplanSeedRows()');
+        expect(seed.nycklar.filter(n => n.startsWith('prio|'))).toEqual(['prio|207011|C']);
+        expect(seed.rows[0][1]).toBe('207011 Handläggare · BAS C');
+        expect(seed.rows[0][8]).toBe(15);
+    });
+    it('gruppdossiern för 207011 i BAS C hittar prioriteringens post', () => {
+        const w = fonsterTvaTexter();
+        const d = w.eval("buildGruppdossier('207011|C')");
+        expect(d.n).toBe(15);
+        expect(d.prio).toMatchObject({ aid: '207011', bas: 'C', n: 15, median: 31000 });
+    });
+});

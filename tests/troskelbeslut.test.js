@@ -198,7 +198,7 @@ describe('Processöversiktens steg 4: inget att hantera när alla kandidatpar ha
 });
 
 describe('Diagramdata från diagram med en punkt per person säger att filen innehåller en rad per person', () => {
-    const RAD = 'Filen innehåller en rad per person (lön, kön, ålder eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter.';
+    const RAD = 'Filen innehåller en rad per person (lön, kön, ålder eller grupp) och ska hanteras som personuppgifter. Text ur fältet för AID-etikett kan följa med som den står i lönefilen.';
     const rader = (w, id) => { w.__id = id; return w.eval('chartExportRows(document.getElementById(window.__id))'); };
     it('spridningsdiagrammen i Ålder & karriär bär raden på rad 2, efter stämpeln; aggregerade diagram bär den inte', () => {
         const w = fonster();
@@ -215,6 +215,14 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
             expect(r.length, id).toBeGreaterThan(1);
             expect(JSON.stringify(r), id).not.toContain('rad per person');
         }
+    });
+    it('färglagt efter AID-etikett blir texten ur fältet serienamn, som den står i lönefilen (ADR-85)', () => {
+        const w = fonster();
+        w.eval("renderTabContent('kon')");
+        w.document.getElementById('kon-color-by').value = 'aid';
+        w.eval("renderKon('__ALLA__')");
+        const serier = new Set(rader(w, 'chart-kon-scatter').slice(2).map(r => r[0]));
+        expect(serier.has('6000 Säkeryrke 0')).toBe(true);
     });
     it('raden följer med till urklipp och CSV', async () => {
         const w = fonster();

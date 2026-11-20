@@ -753,7 +753,7 @@ function _lvKravGrupper(rader, { k = 10, poangByKey = null } = {}) {
         const key = aid + '|' + r.bas;
         if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: r.yrkeLabel || r.yrke || aid, n: 0, nKv: 0, loner: [] });
         const g = map.get(key);
-        g.n++; if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.nKv++; g.loner.push(r.lon);
+        g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
     }
     const medPoang = !!(poangByKey && poangByKey.size);
     const alla = [...map.values()].filter(g => g.n >= k).map(g => {
@@ -869,7 +869,7 @@ function _lvParFigur(pairs, max = 14) {
     const namn = p => `${_rfKorta(String(p.kvLabel), 22)} mot ${_rfKorta(String(p.maLabel), 22)}`;
     const rader = [], sedda = new Set();
     for (const p of top) { const y = namn(p); if (!sedda.has(y) && isFinite(p.kvMedian) && isFinite(p.maMedian)) { sedda.add(y); rader.push({ p, y }); } }
-    const kr = v => _figTalformat(Math.round(v), 'kr');
+    const kr = v => _figTalformat(v, 'kr');
     const parFalt = p => ({ ...(p.kvBas != null && p.kvBas !== '' ? { bas: String(p.kvBas) } : {}), ...(isFinite(p.gapPct) ? { gap: +p.gapPct.toFixed(1) } : {}), ...(p.kvN > 0 ? { n: p.kvN } : {}) });
     const tips = ({ p }) => [[`${p.kvLabel} (BAS ${p.kvBas})`], ['Median', kr(p.kvMedian)], [`${p.maLabel} (BAS ${p.maBas})`], ['Median', kr(p.maMedian)], ['Skillnad', `${svPct(p.gapPct, 1)} (${kr(p.gapKr)})`]];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,

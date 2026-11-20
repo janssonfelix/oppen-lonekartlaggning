@@ -24,7 +24,7 @@ function renderRealityCheck() {
     const n = d.length;
 
     // Check 1: könsfördelning
-    const nKv = d.filter(r => r.kon.includes('kvinna')).length;
+    const nKv = d.filter(r => arKvinna(r)).length;
     const pctKv = n > 0 ? nKv / n * 100 : 0;
     let konStatus, konMsg;
     if (pctKv >= 30 && pctKv <= 70) {
@@ -150,6 +150,10 @@ function renderDataValidationReport() {
     const invalidLonExamples = da.invalidLonExamples || [];
     const invalidAlderExamples = da.invalidAlderExamples || [];
     const missingKonExamples = da.missingKonExamples || [];
+    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren. Hela varningen står i
+    // förhandskontrollen och i Att göra; här står en kort rad, med radnumren i förhandskontrollens formulering.
+    const yrkeNamn = da.yrkeNamn || 0;
+    const yrkeNamnRadnr = _fkNamnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
     const used = state.data.length;
 
     // Räkna varningar
@@ -158,15 +162,15 @@ function renderDataValidationReport() {
     const singleSexBas = bas.filter(b => {
         const sub = state.data.filter(r => r.bas === b);
         if (sub.length < 3) return false;
-        const hasKv = sub.some(r => r.kon.includes('kvinna'));
-        const hasMa = sub.some(r => r.kon === 'man' || r.kon === 'män');
+        const hasKv = sub.some(r => arKvinna(r));
+        const hasMa = sub.some(r => arMan(r));
         return !hasKv || !hasMa;
     }).length;
     const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
-    const dataAids = [...new Set(state.data.map(r => { const m = r.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(r => sifferprefixAvYrke(r.yrke)).filter(Boolean))];
     /** @type {any} */ let polStatus = null;
     /** @type {any} */ let statStatus = null;
     if (state.policy.length) {
@@ -193,6 +197,7 @@ function renderDataValidationReport() {
             <div class="dvr-section">
                 <h4>Från fil till analys</h4>
                 <div class="dvr-row ok"><span>Total rader i fil:</span><span class="dvr-value">${fmt(totalRaw)}</span></div>
+                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Personnamn i fältet för ${esc(T.enhet.en)}:${yrkeNamnRadnr ? ' <span class="text-dampad-xs">' + esc(yrkeNamnRadnr) + '</span>' : ''}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
                 ${excludedNoBas > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar BAS:</span><span class="dvr-value">${fmt(excludedNoBas)}</span></div>` : ''}
                 ${excludedZeroLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Lön ≤ 0:</span><span class="dvr-value">${fmt(excludedZeroLon)}</span></div>` : ''}
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}
@@ -253,7 +258,7 @@ function renderConsistencyBanner() {
 
     const issues = [];
     const dataBas = [...new Set(state.data.map(d => d.bas).filter(Boolean))].sort();
-    const dataAids = [...new Set(state.data.map(d => { const m = d.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(d => sifferprefixAvYrke(d.yrke)).filter(Boolean))];
 
     // Ställningstagande
     if (state.policy.length) {
@@ -272,8 +277,7 @@ function renderConsistencyBanner() {
         // Bygg AID → yrkesnamn-uppslagning från strukturdatan
         const aidToYrke = {};
         state.data.forEach(d => {
-            const m = d.yrke.match(/^(\d+)/);
-            const a = m ? m[1] : null;
+            const a = sifferprefixAvYrke(d.yrke);
             if (a && !aidToYrke[a]) aidToYrke[a] = d.yrke;
         });
         if (dataAidNotInStat.length) {

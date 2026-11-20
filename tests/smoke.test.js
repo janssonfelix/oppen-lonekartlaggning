@@ -1751,8 +1751,8 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         // Förklaringen står under nyckeltalsraden (i rutan skulle den klippas).
         const not = d.getElementById('prio-stat-cost-not').textContent.replace(/\s+/g, ' ');
         expect(not).toContain('Vad det kostar att lyfta grupper under referensen till dess median. Detta är löneläget mot er referens, inte lönekartläggningens könsskillnader — dem visar Lika arbete och Löneöversyn.');
-        expect(not).toContain('inkl. PO-påslag 39,15 % (SKR:s standardvärde för kommuner; ändras under Inställningar)');
-        expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 39,15\u00a0%');
+        expect(not).toContain('inkl. PO-påslag 40 % (ett standardantagande; sätt organisationens eget under Inställningar)');
+        expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 40\u00a0%');
         expect(vy.textContent).not.toMatch(/åtgärdskostnad/i);
     });
     // Nyckeltalen heter som statusarna och räknar tabellens rader; Färdigcheck räknar samma grupper (uppgift 3, UX 2026-11-19).
@@ -1843,6 +1843,13 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         expect(nara).not.toMatch(/normal variation|kräver ytterligare utredning/);
         w.__it = { ...w.__it, diffPct: 7.4 };
         expect(w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text)).toContain('Ligger 7,4\u00a0% över referensen. Dokumentera gärna varför.');
+    });
+    it('snabb vinst säger villkoret i klarspråk, också för en stor grupp (inget "få personer")', () => {
+        const w = oppna();
+        w.__it = { diffPct: -4, n: 300, kvN: 150, maN: 150, costPerPerson: 1200, isQuickWin: true, _rows: [{ lon: 1, kon: 'kvinna', alder: 40 }] };
+        const txt = w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text).join(' ');
+        expect(txt).toMatch(/Snabb vinst:<\/strong> gruppen ligger mer än 3\s%\s+under referensen, och kostnaden per person är under 1\s500\s+kr per månad \(300 personer\)\./);
+        expect(txt).not.toMatch(/få personer|hanterbar/);
     });
     it('Excel-bladet Prioritering, handlingsplanen och rapporten har samma ord', async () => {
         const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');

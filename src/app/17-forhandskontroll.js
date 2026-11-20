@@ -102,14 +102,16 @@ function _fkSlapp() {
 
 /** Titeln per varning i Att göra: olika titlar, så att länkarnas aria-label skiljer punkterna åt. */
 const FK_TITEL = {
+    'yrke-namn': 'personnamn i uttaget',
     'lon-arslon': 'lönen ser ut som årslön', 'lon-timlon': 'lönen ser ut som timlön', 'lon-spridning': 'stor spridning i lönen',
     'alder-saknas': 'ålder saknas', 'alder-fodelsear': 'ålder ur födelseår', 'alder-utanfor': 'ålder utanför det rimliga', 'alder-ogiltig': 'ålder som inte går att läsa',
     'bas-ovanlig': 'ovanliga BAS-värden', 'kon-okand': 'okända kön-värden', 'bortfall-bas': `rader utan ${T.niva.en}`, 'bortfall-lon': 'rader utan lön',
 };
 /** Varningar som en annan punkt i Att göra redan säger: punkten läggs inte till två gånger. */
 const FK_SAGS_AV = { 'kon-okand': ['dq-kon'], 'bortfall-lon': ['dq-lon', 'dq-fullstandighet'], 'bortfall-bas': ['dq-fullstandighet'] };
-/** Prioriteten: fel hög, födelseåret låg (en omräkning att bekräfta) och saknad ålder låg (valfri, ADR-64), annars medel. */
-const _fkPrioritet = v => (v.niva === 'fel' ? 'hög' : v.kod === 'alder-fodelsear' || v.kod === 'alder-saknas' ? 'låg' : 'medel');
+/** Prioriteten: fel och personnamn i uttaget hög, födelseåret låg (en omräkning att bekräfta) och saknad ålder låg
+ *  (valfri, ADR-64), annars medel. */
+const _fkPrioritet = v => (v.niva === 'fel' || v.kod === 'yrke-namn' ? 'hög' : v.kod === 'alder-fodelsear' || v.kod === 'alder-saknas' ? 'låg' : 'medel');
 
 /**
  * Varningarna som punkter i Att göra (kategorin Underlagets kvalitet). En varning som en punkt i `befintliga` redan
@@ -136,8 +138,10 @@ function _fkRapportrad() {
     const fk = state.forhandskontroll;
     if (!fk || fk.vantar || fk.ejInlast) return '';
     const n = fk.varningar.length;
-    return `<div class="dvr-row ${n ? 'warn' : 'ok'}"><span><span class="dvr-icon">${ikon(n ? 'statusVarning' : 'bock')}</span>Förhandskontroll: ${esc(_fkNyckeltext(fk))}</span>`
-        + `<a href="#" class="dvr-value" data-go-to-tab="filer" data-go-to-anchor="avsnitt-fi-forhandskontroll">Visa förhandskontrollen</a></div>`;
+    // Antalet som värde och länken på en egen rad under, så att texten och länken inte trängs i kortets smala kolumn.
+    return `<div class="dvr-row ${n ? 'warn' : 'ok'}" data-dvr="forhandskontroll"><span><span class="dvr-icon">${ikon(n ? 'statusVarning' : 'bock')}</span>Förhandskontroll:</span> `
+        + `<span class="dvr-value">${esc(_fkNyckeltext(fk))}</span></div>`
+        + `<div class="fs-xs marg-b-4"><a href="#" data-go-to-tab="filer" data-go-to-anchor="avsnitt-fi-forhandskontroll">Visa förhandskontrollen</a></div>`;
 }
 
 function _fkCellHtml(cell) {

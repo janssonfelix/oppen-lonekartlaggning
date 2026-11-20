@@ -10,6 +10,7 @@
  *   - matMul / transpose / invert (identitet, singulär)
  *   - fitOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2, exakt samma tal som fulla matrisprodukter)
  *   - bhJustera (Benjamini–Hochberg: ordning, m = 1, tom lista, lika p-värden, tak 1, monotonicitet)
+ *   - avrundaSymmetriskt (visningens avrundning: halvorna bort från noll, ingen −0)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -21,6 +22,7 @@ import {
     tDistCdf,
     tQuantile,
     pValue2Sided,
+    avrundaSymmetriskt,
     matMul,
     transpose,
     invert,
@@ -493,5 +495,21 @@ describe('median och quantile: kanttillstånd (characterization)', () => {
     it('quantile vid q = 0 och q = 1 på osorterad lista ger min och max', () => {
         expect(quantile([5, 1, 4], 0)).toBe(1);
         expect(quantile([5, 1, 4], 1)).toBe(5);
+    });
+});
+
+describe('avrundaSymmetriskt', () => {
+    it('halvorna avrundas bort från noll, så att ett tal och dess motsatta tal får samma siffror', () => {
+        expect(avrundaSymmetriskt(1600.5)).toBe(1601);
+        expect(avrundaSymmetriskt(-1600.5)).toBe(-1601);
+        expect(avrundaSymmetriskt(-4.25, 1)).toBe(-4.3);
+        expect(avrundaSymmetriskt(4.25, 1)).toBe(4.3);
+        for (const [x, dec] of [[0.5, 0], [2.5, 0], [0.25, 1], [12.75, 1], [0.125, 2]]) expect(avrundaSymmetriskt(-x, dec)).toBe(-avrundaSymmetriskt(x, dec));
+    });
+    it('utanför halvorna som Math.round, och noll blir 0, aldrig −0', () => {
+        for (const x of [1600.49, 1600.51, -1600.49, -1600.51, 7, -7]) expect(avrundaSymmetriskt(x)).toBe(Math.round(x));
+        expect(Object.is(avrundaSymmetriskt(-0.4), 0)).toBe(true);
+        expect(Object.is(avrundaSymmetriskt(-0.04, 1), 0)).toBe(true);
+        expect(Object.is(avrundaSymmetriskt(-0), 0)).toBe(true);
     });
 });

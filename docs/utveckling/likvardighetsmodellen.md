@@ -186,16 +186,18 @@ och `sakra` (par vars hela konfidensintervall ligger över 0). Nyckeltalet *Par 
 döljs. Rutan *Största skillnaden* visar den kvinnodominerade AID-etikettens median i procent av
 jämförelseetikettens.
 
-**Konfidensintervallet** är ett bootstrap-intervall på medianskillnaden i kronor, 1 000 omdragningar, percentilerna
-2,5 och 97,5 (95 %).
+**Konfidensintervallet** är ett bootstrap-intervall på medianskillnaden i kronor, 1 000 omdragningar, 95 %:
+`percentilintervall` i `src/lib/stat.js`, med lika många dragningar under den nedre gränsen som över den övre (25 på
+var sida, ADR-86).
 
 - Interna par (`bootstrapMedianDiffKr`): båda gruppernas löner dras om. Kräver minst 3 löner på varje sida, annars
   `null`.
 - Externa par (`bootstrapMedianVsConstantKr`): den kvinnodominerade AID-etikettens löner dras om mot statistikens median som
   konstant, eftersom statistiken saknar individdata. Kräver minst 3 löner och en median över 0.
 - **Reproducerbart:** utan en injicerad slumpgenerator seedas bootstrappen per par ur parets egna löner (`rngFor` ur
-  `src/lib/rng.js`; för externa par lönerna och statistikens median). Två körningar på samma underlag ger samma
-  intervall, så att ett exporterat underlag går att återskapa. Orkestratorn skickar `opts.rng` vidare orört; bara
+  `src/lib/rng.js`; för externa par lönerna och statistikens median). Dragningarna görs ur lönerna sorterade stigande,
+  så att intervallet inte beror på radordningen i filen (ADR-86). Två körningar på samma underlag ger samma
+  intervall, också med raderna i en annan ordning, så att ett exporterat underlag går att återskapa. Orkestratorn skickar `opts.rng` vidare orört; bara
   testerna injicerar en egen.
 - Fliken visar intervallet med märket *säker skillnad* (hela intervallet över 0) eller *inom slumpfel*, och ett streck
   när intervallet saknas.

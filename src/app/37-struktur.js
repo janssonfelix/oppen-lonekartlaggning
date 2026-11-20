@@ -14,8 +14,8 @@
  */
 function _stMatt(d, k) {
     const konOk = _konFarRedovisasFor(d);
-    const kv = d.filter(r => r.kon && r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
+    const ma = d.filter(r => arMan(r)).map(r => r.lon);
     const totKv = kv.length;
     const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
     return {
@@ -244,7 +244,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
         const aid = String(r.aid || r.yrke || 'okänd'), g = perBas.get(r.bas);
         if (!g.has(aid)) g.set(aid, { aid, bas: r.bas, namn: r.yrkeLabel || r.yrke || aid, n: 0, nKv: 0 });
         const o = g.get(aid);
-        o.n++; if (r.kon && r.kon.includes('kvinna')) o.nKv++;
+        o.n++; if (arKvinna(r)) o.nKv++;
     }
     const barn = [...perBas].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv')).map(([bas, g]) => {
         const stora = [...g.values()].filter(o => o.n >= k).sort((a, b) => b.n - a.n);
@@ -298,12 +298,12 @@ function _strukturPercentilFor(rader, { beskrivning }) {
 function _strukturKvartilFor(rader, { beskrivning }) {
     const q = _stQuartileDistribution(rader, { k: kTroskel() });
     if (!(q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0))) return _konUtelamnatNot();
-    const nKv = rader.filter(r => r.kon && r.kon.includes('kvinna')).length;
+    const nKv = rader.filter(r => arKvinna(r)).length;
     return _strukturKvartilFigur(q, rader.length ? 100 * nKv / rader.length : 0, beskrivning);
 }
 // `omfang` (ett underlag, t.ex. 'sektor Skola'): beskrivningen säger att figuren är räknad för det.
 function _strukturPercentilFigur(dist, omfang) {
-    const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(Math.round(v), 'kr');
+    const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(v, 'kr');
     const tips = d => [[d.y], ['Kvinnor', kr(d.r.kv)], ['Män', kr(d.r.ma)], ['Kvinnors lön i % av mäns', _figTalformat(100 + d.r.gapPct, 'pct')], ..._figKronorTipsRad(_figKronorSkillnad(d.r.kv, d.r.ma))];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
         data: dist.map(x => ({ y: namn(x), x: Math.round(x[falt]), r: x, ...(extra.etikettLage ? { etikett: _figTalformat(100 + x.gapPct, 'pct') } : {}) })), tips });
@@ -369,12 +369,15 @@ function renderSektorer(d) {
             <td class="num" data-sort-value="${r.n}">${r.n}</td><td class="num" data-sort-value="${r.andelKv == null ? '' : r.andelKv.toFixed(1)}">${pc(r.andelKv)}</td><td class="num" data-sort-value="${r.skrAndelKv == null ? '' : r.skrAndelKv.toFixed(1)}">${pc(r.skrAndelKv)}</td>${loner}<td>${just}</td>
             <td class="num" data-sort-value="${r.antalAid}">${r.antalAid}</td><td class="num" data-sort-value="${r.punkter}">${r.punkter}</td>${ledning}</tr>`;
     }).join('');
-    const andelText = !andel || andel.andel == null ? ''
+    // Huvudområden där ett kön är under tröskeln räknas samman (ADR-87); noten säger vilka och varför.
+    const andelNot = _skSektorAndelNot(andel, kTroskel());
+    const andelText = (!andel || andel.andel == null ? ''
         : Math.abs(andel.andel) < 0.01
-            ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror nästan inte alls
+            ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror nästan inte alls
                på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).</p>`
-            : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror
-               ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`;
+            : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror
+               ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`)
+        + (andelNot ? `<p class="sektor-andel">${esc(andelNot)}</p>` : '');
     host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${termStor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
         <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>${justText.rubrik}</th>
         <th>${termStor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>

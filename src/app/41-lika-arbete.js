@@ -5,18 +5,10 @@
 // Översiktens rader: kvinnors och mäns medianlön per BAS-intervall med kvoten och dess 95-procentiga bootstrap-KI.
 // EN beräkning för skärmens tabell, diagrammen och rapporten (Word, PDF) — de kan därför aldrig visa olika tal.
 // Bara BAS-intervall där BÅDA könen når tröskeln får en rad: varje tal i raden bygger på minst k personer.
-// Bootstrap med B = 1000, seedad ur datat så att intervallet blir detsamma varje gång; dragningarnas medianer tas
-// ur rangräkning (_lvBootstrapMedianer, O(n) per dragning utan allokeringar).
-function _laBootstrapGapCI(kvLons, maLons, B = 1000) {
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const ratios = new Array(B);
-    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mKv = m.kv[b], mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
-    }
-    ratios.sort((a, b) => a - b);
-    return { lo: ratios[Math.floor(B * 0.025)], hi: ratios[Math.floor(B * 0.975)] };
+// Intervallet är medianKvotKI i src/lib/osakerhet.js: bootstrap med B = 1000, seedad ur datat så att intervallet blir
+// detsamma varje gång; dragningarnas medianer tas ur rangräkning (_lvBootstrapMedianer, O(n) per dragning).
+function _laBootstrapGapCI(kvLons, maLons, B) {
+    return _osMedianKvotKI(kvLons, maLons, { B });
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
 // och 1,8 s) och behövs av flera vyer — fliken, rapportmodellen (som byggs flera gånger i Dokumentera) och
@@ -71,7 +63,7 @@ function _laOversiktRaderRakna(d, bas, k) {
     const ut = [];
     for (const b of bas) {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes('kvinna')), ma = df.filter(r => r.kon === 'man' || r.kon === 'män');
+        const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
         if (kv.length < k || ma.length < k) continue;
         const medKv = Stat.median(kv.map(r => r.lon)), medMa = Stat.median(ma.map(r => r.lon));
         ut.push({ bas: b, gap: medKv / medMa * 100, n: df.length, ci: _laBootstrapGapCI(kv.map(r => r.lon), ma.map(r => r.lon)), medKv, medMa, nKv: kv.length, nMa: ma.length });
@@ -121,8 +113,8 @@ function generateSkevhet() {
     const pgSamlad = [];
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes("kvinna"));
-        const ma = df.filter(r => r.kon === "man" || r.kon === "män");
+        const kv = df.filter(r => arKvinna(r));
+        const ma = df.filter(r => arMan(r));
         if (kv.length < 2 || ma.length < 2) return;
         // (a) N-kolumn: antal per kön bakom mediansiffrorna
         const nCell = `<td class="t-hoger">${kv.length}/${ma.length}</td>`;
@@ -177,8 +169,8 @@ function generateSkevhet() {
     const skRader = [];   // samma BAS-intervall och andelar som tabellens rader — underlaget till diagrammet ovanför
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const nKv = df.filter(r => r.kon.includes("kvinna")).length;
-        const nMa = df.filter(r => r.kon === "man" || r.kon === "män").length;
+        const nKv = df.filter(r => arKvinna(r)).length;
+        const nMa = df.filter(r => arMan(r)).length;
         const tot = nKv + nMa;
         if (tot < LITET_UNDERLAG) { if (tot > 0) skUtelamnade.push(b); return; }
         const pctKv = (nKv/tot*100).toFixed(1), pctMa = (nMa/tot*100).toFixed(1);
@@ -205,8 +197,8 @@ function generateSkevhet() {
     let pgKMasked = 0;
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes("kvinna"));
-        const ma = df.filter(r => r.kon === "man" || r.kon === "män");
+        const kv = df.filter(r => arKvinna(r));
+        const ma = df.filter(r => arMan(r));
         if (kv.length < 2 || ma.length < 2) return;
         if (isKMasked(kv.length) || isKMasked(ma.length)) pgKMasked++;
     });
@@ -548,7 +540,7 @@ function _laOversiktTabell(bars, d = getData()) {
         // Bevisknappen står i radens rubrik: uträkningen bakom raden (formel och ingångsdata), som förut i tabellen per
         // BAS-intervall. Knappen har ingen text, så radens text och exporten är desamma som utan den.
         // Knapparna står under etiketten, inte efter: två ikoner bredvid "BAS X" gjorde tabellen för bred vid 1400 px.
-        tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<span class="la-oversikt-verktyg"><button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon('sok')}</button>${basdossierKnapp(o.bas, { ikonEndast: true })}</span></th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${_figTalformat(Math.round(o.medKv), 'kr')}</td><td class="tal">${_figTalformat(Math.round(o.medMa), 'kr')}</td>`
+        tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<span class="la-oversikt-verktyg"><button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon('sok')}</button>${basdossierKnapp(o.bas, { ikonEndast: true })}</span></th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${_figTalformat(o.medKv, 'kr')}</td><td class="tal">${_figTalformat(o.medMa, 'kr')}</td>`
             + `<td class="tal">${skillnad < 0 ? '−' : skillnad > 0 ? '+' : ''}${_figTalformat(Math.abs(skillnad), 'kr')}</td>`
             + `<td class="la-oversikt-cell" data-export-utelamna>${_laOversiktGrafik(o, dom, status)}</td>`
             + `<td class="tal la-oversikt-kvot" data-sort-value="${o.gap.toFixed(3)}">${svPct(o.gap, 1)}${o.ci ? `<span class="la-oversikt-ki">${svTal(o.ci.lo, 1)}–${svPct(o.ci.hi, 1)}</span>` : ''}</td>`
@@ -556,7 +548,7 @@ function _laOversiktTabell(bars, d = getData()) {
             + _direktivCell(o.gap);
         tb.appendChild(tr);
         const df = d.filter(r => r.bas === o.bas);
-        const payload = { bas: o.bas, kvLons: df.filter(r => r.kon.includes('kvinna')).map(r => r.lon), maLons: df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon), masked: false };
+        const payload = { bas: o.bas, kvLons: df.filter(r => arKvinna(r)).map(r => r.lon), maLons: df.filter(r => arMan(r)).map(r => r.lon), masked: false };
         tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _openEvidenceModal(_evidenceForPaygapRow(payload)); });
     }    flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
 }
@@ -592,31 +584,10 @@ function _laTrattUnderlag(d, k = kTroskel()) {
 // Gruppen är AID-kod + BAS-intervall ur varje persons egen rad (lika arbete: samma yrkesgrupp på samma nivå), inte
 // yrkesgruppen över alla intervall. Tidigare grupperades per yrke och gruppen fick BAS från sin första rad, så en
 // yrkesgrupp i flera intervall redovisades i ett godtyckligt av dem med alla sina personer.
+// Räkningen är trattUnderlag i src/lib/osakerhet.js; minnet ovan (_laTrattUnderlag) räknar den en gång per underlag
+// och tröskel.
 function _laTrattUnderlagRakna(d, k) {
-    const perGrupp = new Map();
-    for (const r of d) {
-        if (!(r.lon > 0) || !r.bas) continue;
-        const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
-        if (!kv && !ma) continue;
-        const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
-        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
-    }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
-    if (!grupper.length) return null;
-    const rest = [];
-    for (const g of grupper) {
-        g.medKv = Stat.median(g.kv); g.medMa = Stat.median(g.ma);
-        for (const v of g.kv) rest.push(Math.log(v) - Math.log(g.medKv));
-        for (const v of g.ma) rest.push(Math.log(v) - Math.log(g.medMa));
-    }
-    const sigma = 1.4826 * Stat.median(rest.map(Math.abs));
-    if (!(sigma > 0)) return null;
-    const halv = (nKv, nMa) => 100 * 1.96 * 1.2533 * sigma * Math.sqrt(1 / nKv + 1 / nMa) * (1 + 0.6 / Math.min(nKv, nMa));
-    // En stor grupp (över 300 personer) bedöms med normalformeln och gruppens EGEN spridning (src/lib/status.js).
-    return { sigma, halv, punkter: grupper.map(g => { const kvot = g.medKv / g.medMa * 100, grans = _stsSlumpensGranser(g.kv, g.ma);
-        return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv: g.medKv, medMa: g.medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
-                 utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
+    return _osTrattUnderlag(d, k);
 }
 function _laTrattFigur(u, k = kTroskel()) {
     // Axeln börjar vid den minsta grupp som kan finnas med (tröskeln för varje kön), så att trattens form syns också

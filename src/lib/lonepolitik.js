@@ -17,21 +17,12 @@
  * Maskeringstrappan (tre steg, se `src/app/75-lonepolitik.js`) tillämpas av anroparen; de här
  * funktionerna räknar på det de får och rapporterar n så att anroparen kan
  * maskera.
+ *
+ * Bygger på: verktygets egen modell. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
-function _lpMedian(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = Math.floor(s.length / 2);
-    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-// Linjär interpolation mellan närmaste rangvärden (samma definition som stat.quantile).
-function _lpQuantile(sorted, q) {
-    const pos = (sorted.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
-}
+import { median as _median, quantile as _quantile } from './stat.js';
+import { arKvinna, arMan } from './kon.js';
 
 /**
  * Organisationens faktiska lönespann i en grupp (P10, median, P90) — jämförs med
@@ -41,15 +32,9 @@ function _lpQuantile(sorted, q) {
 export function organisationsBand(rows, k) {
     const lons = (rows || []).map(r => r.lon).filter(v => v > 0).sort((a, b) => a - b);
     if (lons.length < k) return null;
-    return { n: lons.length, p10: _lpQuantile(lons, 0.1), med: _lpMedian(lons), p90: _lpQuantile(lons, 0.9) };
+    return { n: lons.length, p10: _quantile(lons, 0.1), med: _median(lons), p90: _quantile(lons, 0.9) };
 }
 
-function _lpIsKvinna(r) {
-    return typeof r.kon === 'string' && r.kon.includes('kvinna');
-}
-function _lpIsMan(r) {
-    return r.kon === 'man' || r.kon === 'män';
-}
 
 /**
  * Var i sitt eget lönespann ligger en lön?
@@ -83,7 +68,7 @@ export function groupBandStats(rows, pol) {
     if (!Array.isArray(rows) || !rows.length || !pol) return null;
     const lons = rows.map(r => r.lon).filter(v => v > 0);
     if (!lons.length) return null;
-    const median = _lpMedian(lons);
+    const median = _median(lons);
     return {
         n: lons.length,
         median,
@@ -136,8 +121,8 @@ export function complianceCounts(rows, pol) {
 export function genderBandGap(rows, pol, minPerKon = 10) {
     if (!Array.isArray(rows) || !pol) return null;
     const posOf = r => bandPosition(r.lon, pol.p10, pol.p90);
-    const kv = rows.filter(_lpIsKvinna).map(posOf).filter(v => v != null);
-    const ma = rows.filter(_lpIsMan).map(posOf).filter(v => v != null);
+    const kv = rows.filter(arKvinna).map(posOf).filter(v => v != null);
+    const ma = rows.filter(arMan).map(posOf).filter(v => v != null);
     if (kv.length < minPerKon || ma.length < minPerKon) return null;
     const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
     const kvPos = mean(kv), maPos = mean(ma);

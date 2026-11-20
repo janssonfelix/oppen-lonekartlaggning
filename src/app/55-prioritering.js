@@ -73,8 +73,8 @@ function generateMotivationSuggestions(item) {
     }
 
     // 3. Åldersskillnad mellan kön i samma grupp
-    const kvAges = rows.filter(r => r.kon.includes('kvinna')).map(r => r.alder).filter(a => a > 0);
-    const maAges = rows.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.alder).filter(a => a > 0);
+    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder).filter(a => a > 0);
+    const maAges = rows.filter(r => arMan(r)).map(r => r.alder).filter(a => a > 0);
     if (kvAges.length >= 3 && maAges.length >= 3) {
         const meanKvAge = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
         const meanMaAge = maAges.reduce((s, v) => s + v, 0) / maAges.length;
@@ -93,8 +93,8 @@ function generateMotivationSuggestions(item) {
     if (item.kvN >= kTroskel() && item.maN >= kTroskel()) {
         const allLons = rows.map(r => r.lon).sort((a, b) => a - b);
         const q1 = allLons[Math.floor(allLons.length * 0.2)];
-        const kvBelowQ1 = rows.filter(r => r.kon.includes('kvinna') && r.lon <= q1).length;
-        const maBelowQ1 = rows.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon <= q1).length;
+        const kvBelowQ1 = rows.filter(r => arKvinna(r) && r.lon <= q1).length;
+        const maBelowQ1 = rows.filter(r => arMan(r) && r.lon <= q1).length;
         const kvShareInQ1 = item.kvN > 0 ? kvBelowQ1 / item.kvN : 0;
         const maShareInQ1 = item.maN > 0 ? maBelowQ1 / item.maN : 0;
         if (kvShareInQ1 >= 0.4 && kvShareInQ1 - maShareInQ1 >= 0.2) {
@@ -113,11 +113,12 @@ function generateMotivationSuggestions(item) {
         });
     }
 
-    // 6. Quick-win
+    // 6. Quick-win (villkoret i src/lib/prioritering.js; texten beskriver det)
     if (item.isQuickWin) {
+        const K = _prKonstanter();
         out.push({
             type: 'ok',
-            text: `<strong>Snabbvinst:</strong> få personer (${item.n}), hanterbar kostnad per person (~${Math.round(item.costPerPerson).toLocaleString('sv-SE')} kr/månad). Lämplig för pilotåtgärd för att visa förändringsvilja.`
+            text: `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${item.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`
         });
     }
 
@@ -185,12 +186,12 @@ function _prioKonStatus(i) {
         : 'Skillnaden är under 3 %. Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.';
     return `<span class="la-status ar-${st.farg} prio-konstatus" data-niva="${st.niva}" data-export-text="" title="${esc(tips)}">${ikon(st.ikon)}${esc(st.serie)}</span>`;
 }
-/** PO-raden under nyckeltalet: standardvärdet säger var det kommer ifrån, ett eget värde bara var det ändras. */
+/** PO-raden under nyckeltalet: standardvärdet säger att det är ett antagande, ett eget värde bara var det ändras. */
 function _prioPoText() {
     const po = state.costSettings.poPct;
     return po === COST_DEFAULTS.poPct
-        ? `inkl. PO-påslag ${svPct(po, 2)} (SKR:s standardvärde för kommuner; ändras under Inställningar)`
-        : `inkl. PO-påslag ${svPct(po, 2)} (ändras under Inställningar)`;
+        ? `inkl. PO-påslag ${svPoPct(po)} (ett standardantagande; sätt organisationens eget under Inställningar)`
+        : `inkl. PO-påslag ${svPoPct(po)} (ändras under Inställningar)`;
 }
 
 function _selectedPrioReference() {
@@ -230,7 +231,7 @@ function _niceCostLevels(maxCost) {
 // Kostnaden i kort form, i nyckeltalen, rutan Total och staplarnas etiketter: "386 Mkr", "4,2 Mkr", "950 tkr".
 function _fmtCost(kr) {
     if (kr >= 1e6) return svTal(kr/1e6, kr >= 1e7 ? 0 : 1) + '\u00a0Mkr';
-    if (kr >= 1e3) return svTal(Math.round(kr/1e3), 0) + '\u00a0tkr';
+    if (kr >= 1e3) return svTal(kr/1e3, 0) + '\u00a0tkr';
     return svKr(kr);
 }
 
@@ -292,7 +293,7 @@ function renderPrioritering() {
         installningarRad.innerHTML = `Trösklar och viktning: ${anpassad ? 'anpassade värden' : 'standardvärden'} <button type="button" class="ov-filrad-lank" data-oppna-installningar="prio-cfg-atgard">Ändra</button>`;
     }
     const costPerEl = document.getElementById('prio-stat-cost-period');
-    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPct(state.costSettings.poPct, 2)}`;
+    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPoPct(state.costSettings.poPct)}`;
     const costPoEl = document.getElementById('prio-stat-cost-po');
     if (costPoEl) costPoEl.textContent = `Räknat på ${state.costSettings.months} månader, ${_prioPoText()}.`;
 
@@ -318,7 +319,7 @@ function renderPrioritering() {
         if (paretoSummary) {
             paretoSummary.innerHTML = `
                 <div class="farg-primary fw-700 marg-b-4">Total: ${_fmtCost(totalParetoCost)}</div>
-                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPct(state.costSettings.poPct, 2)}</div>
+                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPoPct(state.costSettings.poPct)}</div>
                 <div>Topp <strong>${n50}</strong> grupper = 50%</div>
                 <div>Topp <strong>${n80}</strong> grupper = 80%</div>
                 <div class="finstilt">Alla under-betalda grupper sammanställda. Fokus på topp 80%-gränsen ger maximal kostnadseffekt.</div>
@@ -351,9 +352,8 @@ function renderPrioritering() {
     let smallCount = 0, noRefCount = 0;
     const groupCheck = {};
     dForCount.forEach(r => {
-        const m = r.yrke.match(/^(\d+)/);
-        const aid = m ? m[1] : r.yrke;
-        const k = `${r.yrke}|${r.bas}`;
+        const aid = aidAvYrke(r.yrke);
+        const k = `${aid}|${r.bas}`;   // samma grupper som prioritera (src/lib/prioritering.js)
         if (!groupCheck[k]) groupCheck[k] = { n: 0, aid, bas: r.bas };
         groupCheck[k].n++;
     });
@@ -377,9 +377,9 @@ function renderPrioritering() {
         ],
         formler: [
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
-            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
+            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPoPct(state.costSettings.poPct)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
-            ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
+            ['Riktningsvikt', `${_prKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${_prKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
             ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
         ],
         notes: [
@@ -418,7 +418,7 @@ function renderPrioritering() {
         const powerBadge = lowPower
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
-        const rowKey = `${i.yrke}|${i.bas}`;
+        const rowKey = `${i.aid}|${i.bas}`;
         // #13 Förslag-knapp: suggestionerna beräknas vid expand, inte i förväg
         const suggestionBtn = i._rows && i._rows.length
             ? `<button class="btn-suggest" data-row-key="${esc(rowKey)}" type="button" title="Visa förslag på sakliga skäl-hypoteser" aria-label="Visa motiveringsförslag för ${esc(i.yrke)}" aria-expanded="false">Motiveringsförslag</button>`
@@ -444,7 +444,7 @@ function renderPrioritering() {
             <td class="t-hoger" data-sort-value="${i.median}">${fmt.format(Math.round(i.median))}</td>
             <td class="farg-dampad ta-hoger" data-sort-value="${i.refMedian}">${fmt.format(Math.round(i.refMedian))}</td>
             <td class="t-hoger">${diffBar}</td>
-            <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(Math.round(i.diffKr))}</td>
+            <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(_avrundaSymmetriskt(i.diffKr))}</td>
             <td class="t-hoger">${gapBar}${_prioKonStatus(i)}</td>
             <td class="t-hoger${i.costPerPerson > 0 ? ' f-kritisk' : ''}" data-sort-value="${i.costPerPerson}">${costPerPersonTxt}</td>
             <td class="fw-600 ta-hoger" data-sort-value="${costSort}">${costTxt}</td>
@@ -665,8 +665,8 @@ function _readCostSettings() {
     if (sum) {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
-            ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
+            ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPoPct(state.costSettings.poPct)} PO`
+            : `Standard: ${state.costSettings.months} mån × ${svPoPct(state.costSettings.poPct)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
     }
 }
 // Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som
@@ -712,7 +712,7 @@ function _prioKostnadNot(alla, totalt) {
     const rest = alla.slice(PRIO_KOSTNAD_MAX);
     if (!rest.length || !(totalt > 0)) return '';
     const summa = rest.reduce((s, i) => s + i.annualGapTotal, 0);
-    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${_figTalformat(Math.round(summa), 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
+    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${_figTalformat(summa, 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
 }
 function _prioKostnadFigur(allaVisade, allCumPct) {
     // Högst PRIO_KOSTNAD_MAX grupper ritas; resten redovisas som en mening under diagrammet (_prioKostnadNot) — en
@@ -748,7 +748,7 @@ function _prioZonNamn(zon, cfg) {
 // Matrisen: en punktserie per status (förklaringen kan dölja en status), zoner för tröskelvärdena med namn, och
 // gruppens namn som text på punkten enligt valt etikettläge.
 function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
-    const kr = v => _figTalformat(Math.round(v), 'kr');
+    const kr = v => _figTalformat(v, 'kr');
     const pm = (v, dec) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(dec).replace('.', ',')}`;
     const kostnad = i => Math.max(i.annualGapTotal, i.annualOverTotal);
     const storst = Math.max(1, ...items.map(kostnad));

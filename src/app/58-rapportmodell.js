@@ -35,7 +35,7 @@ function rmCell(v, typ) {
     if (typ === 'ar') return `${svTal(v, 0)} år`;
     if (typ === 'tal2') return svTal(v, 2);
     if (typ === 'kr') return svKr(v);
-    if (typ === 'krAr') return `${svTal(Math.round(v), 0)}\u00a0kr/år`;
+    if (typ === 'krAr') return `${svTal(v, 0)}\u00a0kr/år`;
     if (typ === 'pct0') return svPct(v, 0);
     if (typ === 'pct1') return svPct(v, 1);
     if (typ === 'pct2') return svPct(v, 2);
@@ -587,7 +587,7 @@ function _rmAvsnittenUtanUrval() {
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
     const urval = 'Hela organisationen';
-    const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const arKv = arKvinna, arMa = arMan;
     const kvN = d.filter(arKv).length, maN = d.filter(arMa).length;
     const konOk = _konFarRedovisas(kvN, maN);
     const medKv = Stat.median(d.filter(arKv).map(r => r.lon)), medMa = Stat.median(d.filter(arMa).map(r => r.lon));

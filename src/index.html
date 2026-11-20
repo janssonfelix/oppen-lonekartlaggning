@@ -328,7 +328,7 @@
                         <span class="gdpr-icon"><svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
                         <div>
                             <strong>Bearbetas bara i din webbläsare.</strong>
-                            All data stannar i webbläsaren — inga nätverksanrop, ingen lagring, ingen synkning. En fil med personnummer, namn eller e-post läses inte in.
+                            All data stannar i webbläsaren — inga nätverksanrop, ingen lagring, ingen synkning. En fil med kolumner för personnummer, namn eller e-post läses inte in.
                         </div>
                         <button id="gdpr-info-readmore" type="button" class="bak-none ram-ingen farg-ok pekare typsnitt-arv fs-sm fw-600 marg-v-auto pad-0 understruken">Läs mer</button>
                     </div>
@@ -575,7 +575,7 @@
                             </header>
                             <div class="yrke-modal-content">
                                 <h3 class="marg-0-0-8">Uppgiftsminimering</h3>
-                                <p class="fs-md lh-1_6">Verktyget läser <strong>inte</strong> in anställningsnummer, personnummer, namn eller e-post även om de finns i lönefilen. En fil med sådana kolumner läses inte in, och du får veta varför.</p>
+                                <p class="fs-md lh-1_6">Verktyget läser <strong>inte</strong> in anställningsnummer, personnummer, namn eller e-post även om de finns i lönefilen. En fil med sådana kolumner läses inte in, och du får veta varför. <span data-term-template="Namn som står inne i fältet för {enhet.en} tas däremot inte bort: de visas och följer med i exporterna. Verktyget varnar när fältet ser ut att innehålla personnamn, men hittar inte alla.">Namn som står inne i fältet för AID-etikett tas däremot inte bort: de visas och följer med i exporterna. Verktyget varnar när fältet ser ut att innehålla personnamn, men hittar inte alla.</span></p>
                                 <h3 class="marg-14-0-8">Små grupper</h3>
                                 <p class="fs-md lh-1_6">På skärmen visas alla grupper. I det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder och rapportunderlaget — redovisas inte lönemått för grupper med färre än <span data-k-troskel>10</span> personer. Gruppen visas inte som en tom rad, utan räknas upp med namn i en not vid tabellen (<svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>) — så att du ser vad som saknas och varför. Är gruppen stor nog men ett av könen för litet visas gruppens samlade median, utan könsjämförelse. <span data-term-template="Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, {niva.en} och ålder.">Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, BAS-intervall och ålder.</span></p>
                                 <ul class="fs-md lh-1_6">
@@ -2501,9 +2501,9 @@
                                     <option value="12" selected>12 månader (helår)</option>
                                 </select>
                                 <label for="prio-po-pct">PO-påslag (%)</label>
-                                <input type="number" id="prio-po-pct" class="form-select bredd-6em" value="39.15" step="0.05" min="0" max="100">
+                                <input type="number" id="prio-po-pct" class="form-select bredd-6em" value="40" step="0.05" min="0" max="100">
                                 <button id="prio-cost-reset" class="btn btn-secondary btn-sm" type="button">Återställ standardvärdena</button>
-                                <span class="info-tip" data-tooltip="Total kostnad = avvikelse (kr/månad) × antal månader × (1 + PO-påslag) × antal personer. Beräkningsperioden är antalet månader som kostnaden räknas för. Välj en kortare period om revisionen bara gäller en del av året. PO-påslaget är arbetsgivaravgifter och pension ovanpå lönen. Standardvärdet 39,15 procent är påslaget som SKR (Sveriges Kommuner och Regioner) anger för kommuner och regioner 2025. Andra organisationer anger sitt eget värde."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                <span class="info-tip" data-tooltip="Total kostnad = avvikelse (kr/månad) × antal månader × (1 + PO-påslag) × antal personer. Beräkningsperioden är antalet månader som kostnaden räknas för. Välj en kortare period om revisionen bara gäller en del av året. PO-påslaget är arbetsgivaravgifter och pension ovanpå lönen. Standardvärdet 40 procent är ett antagande. Ange organisationens eget påslag här eller i organisationspaketet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
                             <p id="prio-cost-summary" class="k-troskel-hjalp"></p>
                         <p class="inst-paverkar">Påverkar: all kostnadsredovisning — Prioritering, Löneöversyn, gruppdossiern, handlingsplanen och rapporterna.</p>

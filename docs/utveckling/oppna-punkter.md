@@ -44,7 +44,7 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
-8. **Ett gemensamt globalt scope** på omkring 20 000 rader. Logik flyttas till `src/lib/` när en del ändå ändras.
+8. **Ett gemensamt globalt scope** på omkring 30 000 rader, utan den genererade spegeln. Logik flyttas till `src/lib/` när en del ändå ändras.
 28. **Testsviten tar knappt tre minuter lokalt och två till tre per jobb i CI** (delad på fyra jobb, mätt
     2026-11-15). Väntetiden för en pull request sätts av röktestet i webbläsarna (4,5–5,5 min), inte av sviten. Två
     testfamiljer står för två tredjedelar av svitens tid: k-tröskeln och röktesterna av flikarna. En kortare svit
@@ -109,7 +109,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     bygger på det gemensamma statistikuttaget och har rader som varje organisations systemförvaltare fyller i
     och bekräftar för sin installation.
 29. **Beslutsloggen bär lydelsen för gränssnittet och exporterna.** De områdena har ingen referens, så ett tiotal
-    beslut (bland dem ADR-10, 15, 23, 29, 33, 35, 39, 50, 62) är längre än loggens tre meningar. Några detaljer i
+    beslut (bland dem ADR-10, 15, 23, 29, 33, 35, 39, 50, 62) är längre än loggens tre meningar. Prioriteringen och
+    Löneöversynen, som ADR-50 och 62 gäller, har sedan 2026-11-20 var sin referens för beräkningarna
+    (`prioriteringsmodellen.md`, `loneoversynsmodellen.md`); besluten är inte kortade. Några detaljer i
     ADR-16, 20, 28, 30, 33, 54 och 62 ströks när loggen kortades (ADR-73) och finns bara i git-historiken.
 19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett
     beslut om att lägga en bildfil i källkoden.

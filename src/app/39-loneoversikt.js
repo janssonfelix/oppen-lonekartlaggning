@@ -42,8 +42,7 @@ function generateRapport() {
             /** @type {number|null} */ let statRefMedian = null;
             /** @type {number|null} */ let statDiffRaw = null;
             if (state.statistik.length > 0) {
-                const aidM = kategori.match(/^(\d+)/);
-                const aidCode = aidM ? aidM[1] : kategori;
+                const aidCode = aidAvYrke(kategori);
                 const sr = _jfStatistikFor(state.statistik, aidCode, b)?.rad;
                 if (sr && sr.median > 0) {
                     statMed = fmt.format(sr.median);
@@ -67,8 +66,8 @@ function generateRapport() {
             tbody.appendChild(tr);
         };
         addRow("Organisationen", df);
-        addRow("Kvinna", df.filter(r => r.kon.includes("kvinna")));
-        addRow("Man", df.filter(r => r.kon === "man" || r.kon === "män"));
+        addRow("Kvinna", df.filter(r => arKvinna(r)));
+        addRow("Man", df.filter(r => arMan(r)));
         const yrkeMap = {};
         df.forEach(r => { if (!yrkeMap[r.yrke]) yrkeMap[r.yrke] = []; yrkeMap[r.yrke].push(r); });
         Object.keys(yrkeMap).sort().forEach(y => {

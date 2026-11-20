@@ -12,28 +12,23 @@
  * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
  * (vaktas av tests/drift.test.js). Det oförklarade gapet (OLS) beräknas INTE
  * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
- * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet.
+ * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
+ * sökning (likalonslyftForMal) får appens skattning som argument.
  *
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
+ *
+ * Bygger på: verktygets egen modell, docs/utveckling/loneoversynsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 import { arKvinnodominerad } from './likvardighet.js';
+import { periodkostnad } from './kostnad.js';
+import { median as _medianStat, quantile as _quantileStat } from './stat.js';
+import { arKvinna, arMan } from './kon.js';
 
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
+// Omslag: tål null/undefined som indata (0 för tom), vilket stat.js inte gör. Algoritmen finns bara i stat.js.
+function _median(arr) { return arr && arr.length ? _medianStat(arr) : 0; }
+function _quantile(arr, q) { return arr && arr.length ? _quantileStat(arr, q) : 0; }
 
 /**
  * "Water-filling": höj de lägst betalda först. Hittar en gemensam nivå L (≤ cap)
@@ -71,7 +66,7 @@ export function totalLonSum(rows) {
  * @param {{mode:string, value:number|null}} budget
  */
 export function computePott(rows, budget) {
-    if (!budget || budget.value == null || !isFinite(budget.value)) return 0;
+    if (!budget || budget.value == null || !isFinite(budget.value)) return 0;   // samma villkor som pottArAngiven
     if (budget.mode === 'kr') return Math.max(0, budget.value);
     return Math.max(0, totalLonSum(rows) * budget.value / 100);  // % av lönesumman
 }
@@ -87,8 +82,8 @@ export function rawGenderGap(rows, getLon) {
     (rows || []).forEach(r => {
         const L = getLon(r);
         if (!(L > 0)) return;
-        if (r.kon && r.kon.includes('kvinna')) kv.push(L);
-        else if (r.kon === 'man' || r.kon === 'män') ma.push(L);
+        if (arKvinna(r)) kv.push(L);
+        else if (arMan(r)) ma.push(L);
     });
     if (!kv.length || !ma.length) return null;
     return (_median(kv) / _median(ma) - 1) * 100;
@@ -105,7 +100,7 @@ export function rawGenderGap(rows, getLon) {
 export function targetRows(rows, t) {
     const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
     const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
-    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
+    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? arKvinna(r) : arMan(r));
     const ut = [];
     (rows || []).forEach((r, i) => {
         if (r.bas !== t.bas) return;
@@ -183,7 +178,7 @@ export function allocate(rows, generell, targets, roundStep) {
         if (!gr) { gr = { bas: p.bas, aid: p.aid, oldL: [], newL: [], kvN: 0, n: 0, cost: 0 }; groups.set(k, gr); }
         gr.oldL.push(p.lon); gr.newL.push(p.nyLon);
         gr.cost += p.delta; gr.n++;
-        if (p.kon && p.kon.includes('kvinna')) gr.kvN++;
+        if (arKvinna(p)) gr.kvN++;
     });
     const perGroup = [...groups.values()].map(gr => ({
         bas: gr.bas, aid: gr.aid, n: gr.n, kvN: gr.kvN,
@@ -268,8 +263,6 @@ export function closureTargets(candidates, fraction, minN = 0) {
  */
 export function stagedPlan(rows, perPerson, years, costOpts) {
     const N = Math.max(1, Math.min(5, Math.round(years) || 1));
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const out = [];
     for (let k = 1; k <= N; k++) {
         const frac = k / N;
@@ -277,7 +270,7 @@ export function stagedPlan(rows, perPerson, years, costOpts) {
         const kumRaise = perPerson.reduce((s, p) => s + p.delta * frac, 0);
         out.push({
             year: k, andelPct: 100 * frac, kumRaise,
-            kumKostnad: kumRaise * months * poFactor,
+            kumKostnad: periodkostnad(kumRaise, costOpts),
             rawGap: rawGenderGap(simRows, r => r.lon)
         });
     }
@@ -295,7 +288,7 @@ export function summarizeGroups(rows) {
         let g = m.get(k);
         if (!g) { g = { bas: r.bas, aid: r.aid, lons: [], kvN: 0, n: 0 }; m.set(k, g); }
         g.lons.push(r.lon); g.n++;
-        if (r.kon && r.kon.includes('kvinna')) g.kvN++;
+        if (arKvinna(r)) g.kvN++;
     });
     return [...m.values()].map(g => ({
         bas: g.bas, aid: g.aid, n: g.n, kvN: g.kvN,
@@ -328,8 +321,18 @@ export function detectLeapfrog(perGroup) {
 }
 
 /**
+ * Sant när budgeten har ett belopp eller en procentsats; ett tomt fält (value null) är ingen angiven pott.
+ * @param {{mode?:string, value:number|null}|null|undefined} budget
+ */
+export function pottArAngiven(budget) {
+    return !!budget && budget.value != null && isFinite(budget.value);
+}
+
+/**
  * Hela prognosutfallet: pott, budgetutnyttjande, total kostnad (inkl. PO + period)
  * och råa lönegapet före/efter. Det OFÖRKLARADE gapet (OLS) beräknas i app.js.
+ * Utan angiven pott (pottAngiven false) är pott 0, kvar null och overBudget falskt: det finns ingen pott att
+ * överskrida. En angiven pott på 0 kr flaggas som vanligt när något fördelas.
  * @param {Array} rows
  * @param {{mode:string, value:number|null}} budget
  * @param {{mode:string, value:number|null}} generell
@@ -341,19 +344,21 @@ export function forecastOutcome(rows, budget, generell, targets, costOpts) {
     const pott = computePott(rows, budget);
     const alloc = allocate(rows, generell, targets, costOpts && costOpts.roundStep);
     const totalRaise = alloc.totals.totalRaise;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
-    const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
+    // Gränsen för kvinnodominerat: saknas den gäller arKvinnodominerads standard, KVINNO_TROSKEL_DEFAULT i
+    // likvardighet.js (spegeln exponerar bara funktioner, så konstanten importeras inte hit). 0 är en gräns, inte en som saknas.
+    const kvThreshold = costOpts?.kvThreshold ?? undefined;
     const lonsummaFore = totalLonSum(rows);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
     const kvDefinition = (costOpts && costOpts.kvDefinition) || 'do';
     const equityCost = alloc.perGroup.reduce((s, g) => s + (arKvinnodominerad(g.andelKv, kvDefinition, kvThreshold) ? g.kostnad : 0), 0);
+    const pottAngiven = pottArAngiven(budget);
     return {
         pott,
+        pottAngiven,
         använt: totalRaise,
-        kvar: pott - totalRaise,
-        overBudget: totalRaise > pott + 1e-6,
-        totalKostnad: totalRaise * months * poFactor,
+        kvar: pottAngiven ? pott - totalRaise : null,
+        overBudget: pottAngiven && totalRaise > pott + 1e-6,
+        totalKostnad: periodkostnad(totalRaise, costOpts),
         lonsummaFore,
         lonsummaEfter: lonsummaFore + totalRaise,
         rawGapFore: rawGenderGap(rows, r => r.lon),
@@ -409,7 +414,7 @@ export function individualRemediation(rows, opts) {
     const menByGroup = new Map(), menByBas = new Map();
     (rows || []).forEach(r => {
         if (!(r.lon > 0)) return;
-        if (!(r.kon === 'man' || r.kon === 'män')) return;
+        if (!arMan(r)) return;
         const gk = r.bas + '|' + r.aid;
         if (!menByGroup.has(gk)) menByGroup.set(gk, []);
         menByGroup.get(gk).push(r.lon);
@@ -426,7 +431,7 @@ export function individualRemediation(rows, opts) {
     const flagged = [];
     (rows || []).forEach(r => {
         if (!(r.lon > 0)) return;
-        if (!(r.kon && r.kon.includes('kvinna'))) return;
+        if (!arKvinna(r)) return;
         const bench = benchFor(r.bas, r.aid);
         if (!bench) return;
         if (r.lon < bench.v * (1 - trigger)) {
@@ -478,8 +483,6 @@ export function marketTargets(groups, marketByKey, factor, minN) {
  */
 export function sensitivityCurve(rows, candidates, costOpts, steps) {
     const S = steps || 10;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
     const out = [];
     for (let i = 0; i <= S; i++) {
         const frac = i / S;
@@ -487,9 +490,60 @@ export function sensitivityCurve(rows, candidates, costOpts, steps) {
         const alloc = allocate(rows, { mode: 'pct', value: 0 }, targets, costOpts && costOpts.roundStep);
         out.push({
             fraction: frac,
-            kostnad: alloc.totals.totalRaise * months * poFactor,
+            kostnad: periodkostnad(alloc.totals.totalRaise, costOpts),
             rawGap: rawGenderGap(alloc.perPerson, p => p.nyLon)
         });
     }
     return out;
+}
+
+/** Tröskelmålets standardmål: en oförklarad skillnad på högst 5 %. */
+export const TROSKELMAL_STANDARD_PCT = 5;
+/** Det största lyft i procent som tröskelmålet prövar; krävs mer redovisas det som utom räckhåll. */
+export const TROSKELMAL_MAX_LYFT_PCT = 40;
+/** Antalet halveringar i sökningen: intervallet 0–40 % krymper till 40 / 2^22, under 0,00001 procentenheter. */
+export const TROSKELMAL_VARV = 22;
+/** Signifikansgränsen i läget "inte signifikant": målet är nått när p-värdet är över den (eller saknas). */
+export const TROSKELMAL_SIGNIFIKANS_P = 0.05;
+
+/** Tröskelmålets konstanter, för appen (spegeln exponerar bara funktioner). */
+export function troskelmalKonstanter() {
+    return { STANDARD_PCT: TROSKELMAL_STANDARD_PCT, MAX_LYFT_PCT: TROSKELMAL_MAX_LYFT_PCT,
+             VARV: TROSKELMAL_VARV, SIGNIFIKANS_P: TROSKELMAL_SIGNIFIKANS_P };
+}
+
+/**
+ * (C) Tröskelmål: det minsta jämna lyftet i procent till alla kvinnor som behövs för att den oförklarade skillnaden
+ * ska nå målet, antingen högst `malPct` procent (skillnaden räknas som kvinnor mot män, negativ när kvinnor ligger
+ * lägre) eller inte signifikant (p över TROSKELMAL_SIGNIFIKANS_P). Söks med bisektion i 0–TROSKELMAL_MAX_LYFT_PCT %
+ * i TROSKELMAL_VARV varv; svaret är intervallets övre gräns, där målet är nått.
+ *
+ * Regressionen körs inte här: `skatta(rader)` är appens skattning (huvudregressionen på de givna raderna) och
+ * returnerar `{ konPct, pValue }`, med `konPct` null när den inte går att skatta. Kostnaden per månad är summan av
+ * kvinnornas lön gånger lyftet, utan påslag; kostnaden över perioden räknar appen.
+ * @param {any[]} rader lönefilens rader ({lon, kon, …})
+ * @param {{malPct?: number, signifikans?: boolean,
+ *   skatta: (rader: any[]) => {konPct: number|null, pValue: number|null}}} opts
+ * @returns {{status: 'ingenSkattning'|'redan'|'utomRackhall'|'hittat',
+ *   utgangslage: {konPct: number|null, pValue: number|null},
+ *   lyftPct?: number, kostnadPerManad?: number, resultat?: {konPct: number|null, pValue: number|null}}}
+ *   ingenSkattning: regressionen går inte att skatta på raderna; redan: målet är redan nått; utomRackhall: inte ens
+ *   TROSKELMAL_MAX_LYFT_PCT % räcker; hittat: lyftPct, kostnadPerManad och skattningen efter lyftet (resultat)
+ */
+export function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifikans = false, skatta }) {
+    const kvinnor = rader.filter(arKvinna);
+    const utgangslage = skatta(rader);
+    if (utgangslage.konPct == null) return { status: 'ingenSkattning', utgangslage };
+    const okFor = g => signifikans ? (g.pValue == null || g.pValue > TROSKELMAL_SIGNIFIKANS_P) : (g.konPct != null && g.konPct >= -malPct);
+    const medLyft = x => {
+        const sim = rader.map(r => arKvinna(r) ? { ...r, lon: r.lon * (1 + x / 100) } : r);
+        const g = skatta(sim);
+        return { konPct: g.konPct, pValue: g.pValue, kostnad: kvinnor.reduce((s, r) => s + r.lon * x / 100, 0) };
+    };
+    if (okFor(utgangslage)) return { status: 'redan', utgangslage };
+    let lo = 0, hi = TROSKELMAL_MAX_LYFT_PCT;
+    if (!okFor(medLyft(hi))) return { status: 'utomRackhall', utgangslage };
+    for (let varv = 0; varv < TROSKELMAL_VARV; varv++) { const mitt = (lo + hi) / 2; if (okFor(medLyft(mitt))) hi = mitt; else lo = mitt; }
+    const { konPct, pValue, kostnad } = medLyft(hi);
+    return { status: 'hittat', utgangslage, lyftPct: hi, kostnadPerManad: kostnad, resultat: { konPct, pValue } };
 }

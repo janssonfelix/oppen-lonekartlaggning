@@ -25,24 +25,39 @@
  * kan avrundningen ensam föra resultatet utanför gränsen, men det skyddar inte: ± några procent är fortfarande lönen.
  *
  * Det som inte går att pröva som differens har en motivering i sitt describe-block.
+ *
+ * Förhållandet till invarianten (ADR-88): invarianten I4 (tests/helpers/ktroskel-invariant.js) kör ett differensprov
+ * på det som faktiskt lämnar verktyget vid tröskeln 10 och 25, med riggens enda underlag: varje tabell med medel,
+ * summa eller kostnad är deklarerad i riggen, och en total minus de visade delarna i samma tabell får inte lämna färre
+ * än tröskeln personer. Den här filen står kvar för det invarianten inte når: lib-modulerna med påhittade underlag i
+ * flera storlekar och med en eller fyra personer i den lilla gruppen, varianter som riggens underlag inte har
+ * (recepten, andra variabler i uppdelningen), och ekvationssystemen som bara lösaren (harledLinjart) ser. Självtestet
+ * för invariantens prov står i blocket nedan.
  */
 import { describe, it, expect } from 'vitest';
 import { perBasTabeller } from '../src/lib/perbas.js';
 import { computePivot } from '../src/lib/utforska.js';
 import { sektorernasAndel, sektorsTabell } from '../src/lib/sektor.js';
-import { gapUppdelning } from '../src/lib/gapuppdelning.js';
+import { gapUppdelning, gapPoster } from '../src/lib/gapuppdelning.js';
+import { sektorsnamn } from '../src/lib/aid.js';
+import { groupKey, konOf } from '../src/lib/falt.js';
 import { byggArsbokslut, bokslutMedGrans, jamforBasIntervall, ARSBOKSLUT_NYCKELTAL, ARSBOKSLUT_BAS_MATT } from '../src/lib/arsbokslut.js';
-import { rest, heltal, avvikelse, GRANS, underlagMedEnLitenGrupp } from './helpers/differens.js';
+import { kompletterandeUndertryckning } from '../src/lib/undertryckning.js';
+import { rest, heltal, avvikelse, GRANS, underlagMedEnLitenGrupp, harledLinjart, differensprov, tabellerUrText, tabellerUrHtml, tal } from './helpers/differens.js';
 
 const K = 10;
 // Storlekarna som prövas: antalet personer utöver den lilla gruppen.
 const STORLEKAR = [['liten organisation', 60], ['stor organisation', 2000]];
 const FALL = STORLEKAR.flatMap(([namn, ovriga]) => [1, 4].map(nLiten => ({ namn: `${namn}, ${nLiten} ${nLiten === 1 ? 'person' : 'personer'}`, ovriga, nLiten })));
+// De nyare proven för huvudområdena och uppdelningen prövar också en organisation mitt emellan.
+const FALL_MED_MELLAN = [['liten organisation', 60], ['mellanstor organisation', 300], ['stor organisation', 2000]]
+    .flatMap(([namn, ovriga]) => [1, 4].map(nLiten => ({ namn: `${namn}, ${nLiten} ${nLiten === 1 ? 'person' : 'personer'}`, ovriga, nLiten })));
 const underlag = (fall, opt) => underlagMedEnLitenGrupp({ antal: fall.ovriga + fall.nLiten, nLiten: fall.nLiten, k: K, ...opt });
 
 // En rad som exporten skriver den: antal och medellön i hela kronor (eller oavrundad, för jämförelse).
 const skriven = (n, medel, avrunda) => ({ n, medel: avrunda ? heltal(medel) : medel });
 const medVarde = rader => rader.filter(r => typeof r.medel === 'number' && isFinite(r.medel));
+const medelAv = rader => rader.reduce((s, r) => s + r.lon, 0) / rader.length;
 /** Andelen kvinnor som den skrivs (en decimal) tillbaka till ett antal: exakt så länge gruppen har under 1 000 personer. */
 const antalUrAndel = (n, andelKv) => Math.round(n * (Math.round(andelKv * 10) / 10) / 100);
 
@@ -77,14 +92,102 @@ describe('hjälparen', () => {
     });
 });
 
+// Självtest för differensprovet i invarianten (differensprov i tests/helpers/differens.js): en påhittad tabell med en
+// total och delar, skriven som exporterna skriver den.
+describe('differensprovet i invarianten (självtest)', () => {
+    // A–C når tröskeln och visas; D (4 personer) utelämnas. Raden Alla räknas på alla 71.
+    const GRUPPER = [['A', 30, 30000], ['B', 25, 32000], ['C', 12, 28000], ['D', 4, 41000]];
+    const N = GRUPPER.reduce((s, g) => s + g[1], 0);
+    const MEDEL = GRUPPER.reduce((s, g) => s + g[1] * g[2], 0) / N;
+    const KANDA = [{ namn: 'grupp D', n: 4, medel: 41000 }];
+    const DEKL = [{ namn: 'påhittad tabell', vag: /^påhittad export$/, rubrik: /^Grupp \| Antal \| Medellön \| Median$/,
+        antal: 'Antal', total: /^Alla$/, matt: [{ kolumn: 'Medellön' }] }];
+    const tabell = (medel = g => String(g[2])) => ['Grupp | Antal | Medellön | Median', `Alla | ${N} | ${Math.round(MEDEL)} | 30500`,
+        ...GRUPPER.filter(g => g[1] >= K).map(g => `${g[0]} | ${g[1]} | ${medel(g)} | ${g[2]}`), 'Grupper under 10 personer redovisas inte.'].join('\n');
+    const prov = (text, dekl = DEKL, vag = 'påhittad export') => differensprov(tabellerUrText(vag, text), dekl, { k: K, kanda: KANDA });
+
+    it('en liten grupp som går att räkna fram ur totalen och delarna fäller provet', () => {
+        const { fynd, odeklarerade, fel, oanvanda } = prov(tabell());
+        expect([odeklarerade, fel, oanvanda]).toEqual([[], [], []]);
+        expect(fynd).toHaveLength(1);
+        expect(fynd[0]).toMatchObject({ n: 4, total: 'Alla', kolumn: 'Medellön', motsvarar: ['grupp D'] });
+        expect(Math.abs(fynd[0].medel - 41000)).toBeLessThan(41000 * GRANS);
+    });
+    it('samma tabell med kompletterande undertryckning godkänns', () => {
+        const delar = GRUPPER.map(([namn, n]) => ({ namn, n, dold: n < K }));
+        const undertryckta = kompletterandeUndertryckning(delar, K).map(i => GRUPPER[i][0]);
+        expect(undertryckta).toEqual(['C']);
+        const { fynd, fel, oanvanda } = prov(tabell(g => (undertryckta.includes(g[0]) ? '–' : String(g[2]))));
+        expect([fynd, fel, oanvanda]).toEqual([[], [], []]);
+    });
+    it('en summa och ett mått per kön prövas också, med antalet ur en egen kolumn eller ur andelen kvinnor', () => {
+        // Kvinnorna: 20 i A och 3 i B (B visar inte könens medel). Raden Alla bär kvinnornas medel och summan.
+        const text = ['Grupp | Antal | Andel kvinnor (%) | Medellön kvinnor | Lönesumma',
+            `Alla | 55 | ${(23 / 55 * 100).toFixed(1)} | ${Math.round((20 * 30000 + 3 * 39000) / 23)} | ${30 * 30000 + 25 * 32000}`,
+            'A | 30 | 66.7 | 30000 | 900000', 'B | 25 | 12.0 | – | 800000'].join('\n');
+        const dekl = [{ namn: 'per kön', vag: /^påhittad export$/, rubrik: /^Grupp \| Antal \| Andel kvinnor/, antal: 'Antal', total: /^Alla$/,
+            matt: [{ kolumn: 'Medellön kvinnor', antal: { andel: 'Andel kvinnor (%)' } }, { kolumn: 'Lönesumma', typ: 'summa' }] }];
+        const { fynd, fel } = prov(text, dekl);
+        expect(fel).toEqual([]);
+        // Summan går jämnt upp (inget blir över); kvinnornas medel lämnar de tre i B, med avrundningens fel.
+        expect(fynd.map(f => [f.kolumn, f.n])).toEqual([['Medellön kvinnor', 3]]);
+        expect(Math.abs(fynd[0].medel - 39000)).toBeLessThan(39000 * GRANS);
+    });
+    it('utan uttalad totalrad: en rad som minus en delmängd av de övriga lämnar en känd liten grupp fäller provet', () => {
+        // Raden för hela intervallet S (A, C och D) står bland grupperna; D (4 personer) utelämnas. Med en annan summa för S
+        // går antalet fortfarande jämnt upp, men resten motsvarar ingen känd liten grupp: inget fynd.
+        const nS = 46, medelS = (30 * 30000 + 12 * 28000 + 4 * 41000) / nS;
+        const text = ['Grupp | Antal | Lönesumma', `S | ${nS} | ${Math.round(nS * medelS)}`, 'A | 30 | 900000', 'B | 25 | 800000', 'C | 12 | 336000'].join('\n');
+        const dekl = [{ namn: 'delmängd', vag: /^påhittad export$/, rubrik: /^Grupp \| Antal \| Lönesumma$/, antal: 'Antal', total: 'delmängd',
+            matt: [{ kolumn: 'Lönesumma', typ: 'summa' }] }];
+        const { fynd, fel, oanvanda } = prov(text, dekl);
+        expect([fel, oanvanda]).toEqual([[], []]);
+        expect(fynd.map(f => [f.total, f.n, f.motsvarar])).toEqual([['S', 4, ['grupp D']]]);
+        expect(prov(text.replace(`S | ${nS} | ${Math.round(nS * medelS)}`, 'S | 46 | 1350000'), dekl).fynd).toEqual([]);
+    });
+    it('en tabell med bara medianer och percentiler prövas inte och kräver ingen deklaration', () => {
+        const text = ['Grupp | Antal | Median | P10 | P90', `Alla | ${N} | 30500 | 26000 | 39000`, 'A | 30 | 30000 | 29000 | 31000', 'B | 25 | 32000 | 31000 | 33000'].join('\n');
+        expect(prov(text, [])).toEqual({ fynd: [], odeklarerade: [], fel: [], oanvanda: [] });
+    });
+    it('en odeklarerad tabell med en medelkolumn fäller provet med meddelandet att den måste deklareras', () => {
+        const { odeklarerade, fynd } = prov(tabell(), DEKL, 'ny export');
+        expect(fynd).toEqual([]);
+        expect(odeklarerade).toHaveLength(1);
+        expect(odeklarerade[0]).toMatch(/^ny export: rubrikraden "Grupp \| Antal \| Medellön \| Median" måste deklareras i DIFFERENS_DEKLARATIONER/);
+        // Deklarerad som inget att dela upp: godkänd, men inte prövad.
+        const inget = [{ namn: 'ny', vag: /^ny export$/, rubrik: /^Grupp \| Antal \| Medellön/, inget: 'påhittat skäl' }];
+        expect(prov(tabell(), inget, 'ny export')).toEqual({ fynd: [], odeklarerade: [], fel: [], oanvanda: [] });
+    });
+    it('en deklaration som inte känner igen något, eller vars delar inte ryms i totalen, fäller provet', () => {
+        expect(prov(tabell(), DEKL, 'annan väg').oanvanda).toEqual(['påhittad tabell: känner inte igen någon tabell']);
+        const fel = prov(tabell().replace(`Alla | ${N}`, 'Alla | 50')).fel;
+        expect(fel[0]).toMatch(/delarna har fler personer \(67\) än totalen \(50\)/);
+    });
+    it('HTML-tabeller och Excel-blad läses med sina rubriker', () => {
+        const html = `<p>x</p><table><caption>Per grupp</caption><thead><tr><th>Grupp</th><th>Antal</th><th>Medellön</th><th>Median</th></tr></thead>`
+            + `<tbody><tr><td>Alla</td><td>${N}</td><td>${Math.round(MEDEL).toLocaleString('sv-SE')} kr</td><td colspan="1">30 500 kr</td></tr>`
+            + GRUPPER.filter(g => g[1] >= K).map(g => `<tr><td>${g[0]}</td><td>${g[1]}</td><td>${g[2].toLocaleString('sv-SE')} kr</td><td>x</td></tr>`).join('')
+            + '</tbody></table>';
+        const [t] = tabellerUrHtml('påhittad export', html);
+        expect(t.blad).toBe('Per grupp');
+        expect(differensprov([t], DEKL, { k: K, kanda: KANDA }).fynd.map(f => f.n)).toEqual([4]);
+        const blad = tabellerUrText('påhittad export', `[Översikt]\nText | x\n[Grupper]\n${tabell()}`);
+        expect(blad.map(b => b.blad)).toEqual(['Översikt', 'Grupper']);
+        expect(differensprov(blad, DEKL, { k: K, kanda: KANDA }).fynd.map(f => f.n)).toEqual([4]);
+    });
+    it('cellerna läses som exporterna skriver tal', () => {
+        expect([tal('31 417 kr'), tal('12,5 %'), tal('−3,2'), tal('–'), tal(''), tal('A1'), tal(42)]).toEqual([31417, 12.5, -3.2, null, null, null, 42]);
+    });
+});
+
 // ---- a. Tabellerna per BAS-intervall (src/lib/perbas.js) ----
 // Exporterna skriver tabellerna så här (src/app/58-rapportmodell.js för Word och PDF, src/app/24-excelexport.js för
 // Excel, båda i hela kronor): intervalltabellen med antal och receptets mått per rad; Löneskillnader inom likvärdigt
 // arbete med antal, medellön för alla, män och kvinnor, kvot, andel kvinnor och medelålder; Löneskillnader i
 // åldersgrupper med antal, medelålder, medellön för alla och medellön per åldersgrupp. Antalet per åldersgrupp
-// (antalPerGrupp) skrivs inte ut. Hålen här (S-1) stängdes med kompletterande undertryckning (ADR-83,
-// `kompletterandeUndertryckning` i src/lib/perbas.js): proven var `it.fails` och är nu vanliga `it`.
-describe('per BAS-intervall: Löneskillnader inom likvärdigt arbete, raden Alla mot intervallen (S-1)', () => {
+// (antalPerGrupp) skrivs inte ut. Hålen här stängdes med kompletterande undertryckning (ADR-83,
+// `kompletterandeUndertryckning` i src/lib/undertryckning.js): proven var `it.fails` och är nu vanliga `it`.
+describe('per BAS-intervall: Löneskillnader inom likvärdigt arbete, raden Alla mot intervallen', () => {
     const STORA = ['A', 'B', 'C', 'D', 'E'].map(bas => ({ bas, aid: '150101' }));
     for (const fall of FALL) {
         it(`${fall.namn}: ett utelämnat BAS-intervalls medellön går inte att härleda`, () => {
@@ -190,7 +293,7 @@ describe('per BAS-intervall: Löneskillnader inom likvärdigt arbete, raden Alla
     }
 });
 
-describe('per BAS-intervall: intervalltabellen med måttet Medellön, organisationens rad mot yrkesgrupperna (S-1)', () => {
+describe('per BAS-intervall: intervalltabellen med måttet Medellön, organisationens rad mot yrkesgrupperna', () => {
     // Organisationens rad och yrkesgruppernas rader har antal i kolumnen Antal (intervallets antal står också i
     // rubrikraden, `n`). Med exakt en AID-etikett utelämnad är resten den etiketten.
     for (const fall of FALL) {
@@ -216,7 +319,7 @@ describe('per BAS-intervall: intervalltabellen med måttet Medellön, organisati
 
 describe('per BAS-intervall: Löneskillnader i åldersgrupper', () => {
     // Kolumnerna Antal och Medellön alla är desamma som i tabellen inom likvärdigt arbete, och raden Alla räknas på
-    // hela underlaget: samma differens som S-1, och samma intervall undertrycks (ADR-83).
+    // hela underlaget: samma differens som ovan, och samma intervall undertrycks (ADR-83).
     for (const fall of FALL) {
         it(`${fall.namn}: ett utelämnat BAS-intervalls medellön går inte att härleda ur kolumnerna Antal och Medellön alla`, () => {
             const { rader, liten } = underlag(fall, { stora: ['A', 'B', 'C', 'D', 'E'].map(bas => ({ bas })), liten: { bas: 'F' } });
@@ -282,7 +385,7 @@ describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () =
         });
     }
 
-    // Utanför S4 men värt att veta: två vyer exporterade var för sig ger samma differens som S-1 (Hela urvalet i en
+    // Utanför S4 men värt att veta: två vyer exporterade var för sig ger samma differens som raden Alla mot intervallen (Hela urvalet i en
     // vy, BAS i en annan). Skyddet gäller summorna i samma export; differenser mellan två exporter står som ovaktade.
     it('två exporter: vyn Hela urvalet och vyn BAS ger tillsammans ett utelämnat intervalls medellön (utanför S4)', () => {
         const { rader, liten } = underlag(FALL[0], { stora: [{ bas: 'A' }, { bas: 'B' }], liten: { bas: 'C' } });
@@ -309,45 +412,90 @@ describe('Huvudområdena: sektorsTabell och sektorernasAndel', () => {
     // Lönestrukturs vy (src/app/37-struktur.js) och i rapportunderlaget (avsnittet Per huvudområde). I samma vy och i
     // samma "Kopiera alla avsnitt" står kvinnornas och männens medellön (Var uppstår löneskillnaden?,
     // src/app/68-var-uppstar-gapet.js och avsnittet uppdelning), antalet kvinnor och män (Sammanfattning) och varje
-    // visat huvudområdes antal och andel kvinnor. Med två huvudområden är sektorKr = Δs₁ · (w₁ − w₂), där wₛ är
+    // visat huvudområdes antal och andel kvinnor. Med två huvudområden är sektorKr = Δs₁ · (w₁ − w₂), med Δs₁ = andelen av
+    // kvinnorna − andelen av männen i område 1 (verktygets tecken, som gapuppdelning.js), där wₛ är
     // medelvärdet av områdets medellön för kvinnor och män. Har det lilla området bara ett kön (en person har alltid
-    // det) är w₂ dess medellön, och med de två totalerna blir det en ekvation med en okänd.
+    // det) är w₂ dess medellön, och med de två totalerna blir det en ekvation med en okänd. Hålet stängdes med
+    // sammanslagning (ADR-87, `sammanslagning` i src/lib/undertryckning.js): ett huvudområde där ett kön har färre än
+    // tröskeln räknas samman med andra, och blir bara ett kvar skrivs beloppet inte.
+    const skrivs = a => !!a && a.sektorKr !== null && a.andel !== null && Math.abs(a.andel) >= 0.01;   // annars står inget belopp
     for (const fall of FALL) {
-        it.fails(`${fall.namn}: med två huvudområden går det lilla områdets medellön inte att härleda ur sektorKr och medellönerna (S-4)`, () => {
+        it(`${fall.namn}: med två huvudområden går det lilla områdets medellön inte att härleda ur beloppet och medellönerna`, () => {
             const { rader, liten } = underlag(fall, { stora: [{ aid: '400101' }], liten: { aid: '650101', kon: 'man' } });
             const andel = sektorernasAndel(rader, { k: K });
             const gu = gapUppdelning(rader, { k: K });
             const [stort] = sektorsTabell(rader, { k: K }).filter(r => !r.maskerad);
-            expect(Math.abs(andel.andel)).toBeGreaterThanOrEqual(0.01);   // annars skrivs inte sektorKr ut
             // Antalen: hela underlaget (Sammanfattning) och det stora området (antal och andel kvinnor).
             const nKv = gu.n.kv, nMa = gu.n.ma;
             const nKv1 = antalUrAndel(stort.n, stort.andelKv), nMa1 = stort.n - nKv1, nMa2 = nMa - nMa1;
             expect([nKv1, nKv - nKv1]).toEqual([nKv, 0]);   // det lilla området har inga kvinnor
             harledningenMissar(avrunda => {
+                if (!skrivs(andel)) return null;
                 const v = x => (avrunda ? heltal(x) : x);
                 const mKv = v(gu.medel.kv), mMa = v(gu.medel.ma), skr = v(andel.sektorKr);
-                const D = skr / (nMa1 / nMa - nKv1 / nKv);   // w₁ − w₂
+                const D = skr / (nKv1 / nKv - nMa1 / nMa);   // w₁ − w₂ (sektorKr har verktygets tecken: Δs = kvinnor − män)
                 // w₁ = (mKv + ma₁) / 2 och ma₁ = (nMa · mMa − nMa₂ · w₂) / nMa₁, ger w₂:
                 return ((mKv + nMa * mMa / nMa1) / 2 - D) / (1 + nMa2 / (2 * nMa1));
             }, liten.medel);
         });
     }
-    // Med tre eller fler huvudområden är sektorKr en ekvation i flera okända medellöner och räcker inte ensam; det
-    // prövas inte här.
+
+    // Samma sak som ett ekvationssystem (harledLinjart i hjälparen), utan någon formel för huvudområdena: allt som
+    // står i samma export samtidigt — de två medellönerna och beloppet — mot medellönen i varje huvudområde och kön.
+    const cellSektor = r => `${sektorsnamn(r.aid)}|${r.kon}`;
+    const ekvationer = rader => {
+        const ut = skrivs(sektorernasAndel(rader, { k: K }));
+        return rad => {
+            const gu = gapUppdelning(rad, { k: K }), a = sektorernasAndel(rad, { k: K });
+            return [gu.medel.kv, gu.medel.ma, ...(ut ? [a.sektorKr] : [])];
+        };
+    };
+    const harledSektor = (rader, valj) => {
+        const val = rader.filter(valj), mal = {};
+        for (const r of val) mal[cellSektor(r)] = (mal[cellSektor(r)] || 0) + 1 / val.length;
+        return harledLinjart({ rader, cell: cellSektor, utskrivet: ekvationer(rader), mal });
+    };
+    for (const fall of FALL_MED_MELLAN) {
+        it(`${fall.namn}: två huvudområden, ekvationssystemet ger inte det lilla områdets medellön`, () => {
+            const { rader, liten } = underlag(fall, { stora: [{ aid: '400101' }], liten: { aid: '650101', kon: 'man' } });
+            harledningenMissar(harledSektor(rader, r => r.aid === '650101'), liten.medel);
+        });
+    }
+    // Tre huvudområden: ett stort med båda könen och två små med bara män. Var för sig går de små inte att räkna fram,
+    // men tillsammans är de en okänd: männens medellön i de två små områdena tillsammans, färre än tröskeln.
+    for (const fall of FALL_MED_MELLAN) {
+        it(`${fall.namn}: tre huvudområden med två små, ekvationssystemet ger inte de smås gemensamma medellön`, () => {
+            const { rader } = underlag(fall, { stora: [{ aid: '400101' }], liten: { aid: '650101', kon: 'man' } });
+            const forlaga = rader[rader.length - 1];
+            const andra = Array.from({ length: fall.nLiten }, (_, i) => ({ ...forlaga, aid: '600101', yrke: '600101 Yrke 600101', yrkeLabel: 'Yrke 600101', lon: 70000 + i * 300 }));
+            const alla = [...rader, ...andra];
+            const sma = r => r.aid === '650101' || r.aid === '600101';
+            expect(alla.filter(sma).length).toBeLessThan(K);
+            harledningenMissar(harledSektor(alla, sma), medelAv(alla.filter(sma)));
+        });
+    }
+    // Fyra huvudområden: två stora med båda könen, ett med bara män och ett litet med kvinnor.
+    for (const fall of FALL_MED_MELLAN) {
+        it(`${fall.namn}: fyra huvudområden med ett litet, ekvationssystemet ger inte det lilla områdets medellön`, () => {
+            const { rader, liten } = underlag(fall, { stora: [{ aid: '400101' }, { aid: '200101' }, { aid: '150101', kon: 'man' }], liten: { aid: '650101' } });
+            harledningenMissar(harledSektor(rader, r => r.aid === '650101'), liten.medel);
+        });
+    }
 });
 
 // ---- d. Var uppstår löneskillnaden? (src/lib/gapuppdelning.js) ----
 describe('Var uppstår löneskillnaden: delarna och de största posterna', () => {
     // Exporten (kortet i src/app/68-var-uppstar-gapet.js och avsnittet uppdelning i rapportunderlaget) skriver
-    // kvinnornas och männens medellön, varje del i kronor och upp till tre poster per del med namn och belopp. Posterna
-    // för en grupp där ett kön är under tröskeln står aldrig, och skyddsregeln (_skyddad) tar bort visade poster tills
-    // resten av delen har minst hälften av den dolda postens belopp som brus; räcker det inte står inga delar.
+    // kvinnornas och männens medellön, varje del i kronor och upp till tre poster per del med namn och belopp.
     //
-    // Regeln räknar resten som okänd. Men med antalen per BAS och kön (Struktur och Sammanfattning i samma underlag)
-    // och de två medellönerna är en visad post i del A en ekvation: Pᵦ = Δsᵦ · (wᵦ − W̄), där W̄ är medelvärdet av de två
-    // medellönerna. Underlaget: BAS A med kvinnor och män, BAS B med bara män, BAS C med en eller fyra kvinnor. Del C
-    // (lön inom samma AID och BAS) ger skillnaden mellan kvinnor och män i A; en visad post i del A ger A:s eller B:s
-    // nivå; männens medellön ger det andra intervallet; kvinnornas medellön ger då kvinnorna i C.
+    // Den tidigare skyddsregeln räknade resten av en del som okänd. Men med antalen per BAS och kön (Struktur och
+    // Sammanfattning i samma underlag) och de två medellönerna är en visad post i del A en ekvation: Pᵦ = Δsᵦ · (wᵦ − W̄),
+    // där W̄ är medelvärdet av de två medellönerna, och varje del är en ekvation till. Underlaget: BAS A med kvinnor och
+    // män, BAS B med bara män, BAS C med en eller fyra kvinnor. Del C (lön inom samma AID och BAS) ger skillnaden mellan
+    // kvinnor och män i A; en visad post i del A ger A:s eller B:s nivå; männens medellön ger det andra intervallet;
+    // kvinnornas medellön ger då kvinnorna i C. Hålet stängdes med sammanslagning (ADR-87): en grupp där ett kön har
+    // färre än tröskeln räknas samman med andra grupper inom samma övergrupp innan uppdelningen räknas, så att varje
+    // grupp som delarna och posterna bygger på har 0 eller minst tröskeln av varje kön.
     const harled = (rader, gu, avrunda) => {
         const v = x => (avrunda ? heltal(x) : x);
         const kvi = r => r.kon === 'kvinna';
@@ -366,25 +514,84 @@ describe('Var uppstår löneskillnaden: delarna och de största posterna', () =>
     };
     const fallet = fall => underlag(fall, { stora: [{ bas: 'A' }, { bas: 'B', kon: 'man' }], liten: { bas: 'C' } });
 
-    // Liten organisation: den lilla gruppens post i del A är stor mot de andra, regeln tar bort alla visade poster i
-    // del A, och det som behövs står inte.
-    for (const fall of FALL.filter(f => f.ovriga < 100)) {
-        it(`${fall.namn}: skyddsregeln tömmer del A, och kvinnornas medellön i det lilla intervallet går inte att härleda`, () => {
-            const { rader, liten } = fallet(fall);
-            const gu = gapUppdelning(rader, { k: K });
-            expect(gu.skyddad).toBe(true);
-            expect(gu.topp.A).toEqual([]);
-            harledningenMissar(avrunda => harled(rader, gu, avrunda), liten.medel);
-        });
-    }
-    // Stor organisation: den lilla gruppens post är liten mot B:s, regeln släpper fram B:s post, och ekvationerna ger
-    // kvinnornas medellön i C.
-    for (const fall of FALL.filter(f => f.ovriga > 100)) {
-        it.fails(`${fall.namn}: kvinnornas medellön i det lilla intervallet går inte att härleda ur en visad post och medellönerna (S-4)`, () => {
+    // BAS C har bara kvinnor, för få; det enda andra intervallet med kvinnor är A, så C och A räknas samman. B står kvar
+    // och kan namnges, men A:s poster står inte, och det som behövs för härledningen saknas.
+    for (const fall of FALL) {
+        it(`${fall.namn}: BAS A och C räknas samman, och kvinnornas medellön i det lilla intervallet går inte att härleda ur posterna och medellönerna`, () => {
             const { rader, liten } = fallet(fall);
             const gu = gapUppdelning(rader, { k: K });
             expect(gu.topp.A.map(p => p.namn)).toEqual(['BAS B']);
+            expect(Object.values(gu.topp).flat().some(p => /BAS [AC]/.test(p.namn))).toBe(false);
             harledningenMissar(avrunda => harled(rader, gu, avrunda), liten.medel);
+        });
+    }
+
+    // Samma underlag som ett ekvationssystem: allt som står samtidigt (medellönerna, varje del och de namngivna
+    // posterna) mot medellönen i varje cell. Det prövar också delarna, som ensamma kan ge en liten grupps medellön (se
+    // valet med en variabel nedan).
+    const cellFor = variabler => r => [...variabler.map(v => String(groupKey(r, v) ?? '—')), konOf(r)].join('|');
+    const ekvationer = (rader, variabler) => {
+        const gu = gapUppdelning(rader, { k: K, variabler });
+        const namn = gu.delar ? Object.entries(gu.topp).flatMap(([d, l]) => l.map(p => [d, p.namn])) : [];
+        return rad => {
+            const u = gapUppdelning(rad, { k: K, variabler });
+            const poster = gapPoster(rad, { k: K, variabler });
+            return [u.medel.kv, u.medel.ma, ...(gu.delar ? Object.keys(gu.delar).map(d => u.delar[d]) : []),
+                ...namn.map(([d, n]) => poster[d].find(p => p.namn === n).kr)];
+        };
+    };
+    const harledGrupp = (rader, variabler, valj) => {
+        const cell = cellFor(variabler), val = rader.filter(valj), mal = {};
+        for (const r of val) mal[cell(r)] = (mal[cell(r)] || 0) + 1 / val.length;
+        return harledLinjart({ rader, cell, utskrivet: ekvationer(rader, variabler), mal });
+    };
+
+    for (const fall of FALL_MED_MELLAN) {
+        it(`${fall.namn}: standardvalet, ekvationssystemet ger inte kvinnornas medellön i det lilla intervallet`, () => {
+            const { rader, liten } = fallet(fall);
+            harledningenMissar(harledGrupp(rader, ['bas', 'aid'], r => r.bas === 'C'), liten.medel);
+        });
+    }
+    // En variabel: delen är huvudområdenas andel ovan (samma formel), och den räcker ensam med medellönerna.
+    for (const fall of FALL_MED_MELLAN) {
+        it(`${fall.namn}: med huvudområde som enda variabel ger delen och medellönerna inte det lilla områdets medellön`, () => {
+            const { rader, liten } = underlag(fall, { stora: [{ aid: '400101' }], liten: { aid: '650101', kon: 'man' } });
+            harledningenMissar(harledGrupp(rader, ['sektor'], r => r.aid === '650101'), liten.medel);
+        });
+    }
+    // AID-mellannivån: samma sak inom ett huvudområde (de fyra första siffrorna), med den lilla gruppen i en egen
+    // mellannivå; ensam, följd av AID och efter huvudområdet.
+    for (const fall of FALL_MED_MELLAN) {
+        it(`${fall.namn}: med AID-mellannivå ger ekvationssystemet inte den lilla gruppens medellön`, () => {
+            const { rader, liten } = underlag(fall, { stora: [{ aid: '150101' }, { aid: '150201', kon: 'man' }], liten: { aid: '150301' } });
+            for (const variabler of [['aidniva'], ['aidniva', 'aid'], ['sektor', 'aidniva']]) {
+                harledningenMissar(harledGrupp(rader, variabler, r => r.aid === '150301'), liten.medel);
+            }
+        });
+    }
+    // Åldersgrupper: samma struktur som BAS-fallet, med åldern i stället för BAS (A = 30 år, B = 40 år, C = 62 år).
+    for (const fall of FALL_MED_MELLAN) {
+        it(`${fall.namn}: med åldersgrupp ger ekvationssystemet inte den lilla åldersgruppens medellön`, () => {
+            const { rader, liten } = fallet(fall);
+            const alder = { A: 30, B: 40, C: 62 };
+            const medAlder = rader.map(r => ({ ...r, alder: alder[r.bas] }));
+            for (const variabler of [['alder'], ['alder', 'aid'], ['bas', 'alder']]) {
+                harledningenMissar(harledGrupp(medAlder, variabler, r => r.alder === 62), liten.medel);
+            }
+        });
+    }
+    // Flera små celler: utöver BAS C (kvinnor) har BAS D två män och BAS E en kvinna och en man. Varken en liten cell
+    // för sig eller de små tillsammans per kön går att räkna fram.
+    for (const fall of FALL_MED_MELLAN) {
+        it(`${fall.namn}: flera små celler, ekvationssystemet ger ingen av dem och inte heller de små tillsammans`, () => {
+            const { rader } = fallet(fall);
+            const p = (bas, kon, lon) => ({ ...rader[0], bas, kon, lon });
+            const alla = [...rader, p('D', 'man', 61000), p('D', 'man', 61800), p('E', 'kvinna', 52000), p('E', 'man', 49000)];
+            const val = [r => r.bas === 'C', r => r.bas === 'D', r => r.bas === 'E' && r.kon === 'kvinna', r => r.bas === 'E' && r.kon === 'man',
+                r => r.kon === 'kvinna' && (r.bas === 'C' || r.bas === 'E'), r => r.kon === 'man' && (r.bas === 'D' || r.bas === 'E')];
+            for (const variabler of [['bas', 'aid'], ['bas'], ['bas', 'alder', 'aid']]) {
+                for (const valj of val) harledningenMissar(harledGrupp(alla, variabler, valj), medelAv(alla.filter(valj)));
+            }
         });
     }
 });

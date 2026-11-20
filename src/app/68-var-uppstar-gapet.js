@@ -130,15 +130,9 @@ function renderGapUppdelning() {
     const inledning = u.gap <= 0
         ? `Kvinnors medellön är <strong>${_guKr(-u.gap, false)}</strong> lägre än mäns, det är ${_guPct(-u.gapPct)} av mäns medellön.`
         : `Kvinnors medellön är <strong>${_guKr(u.gap, false)}</strong> högre än mäns, det är ${_guPct(u.gapPct)} av mäns medellön.`;
-    const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna') && r.lon > 0).map(r => r.lon));
-    const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
+    const medKv = Stat.median(d.filter(r => arKvinna(r) && r.lon > 0).map(r => r.lon));
+    const medMa = Stat.median(d.filter(r => arMan(r) && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
-    if (!u.skyddad) {
-        body.innerHTML = demo + `<p class="gu-inledning">${inledning}${medianText}</p>`
-            + `<p class="gu-not">Skillnaden delas inte upp här: en grupp med färre än ${kTroskel()} ${personOrd(kTroskel())} står för så stor del av `
-            + 'en av delarna att dess bidrag annars skulle kunna räknas fram.</p>' + _guValHtml();
-        return;
-    }
     const delar = _guDelarMedAtgard(u.variabler || variabler);
     const max = Math.max(1, ...delar.map(x => Math.abs(u.delar[x.id])));
     const rader = delar.map(del => {
@@ -148,8 +142,8 @@ function renderGapUppdelning() {
         const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
         const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
-            // Dolda grupper redovisas bara med antal — deras summa kunde röja en enskild grupp.
-            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${u.ovrigaAntal[del.id]} ${u.ovrigaAntal[del.id] === 1 ? 'grupp' : 'grupper'} med färre än ${kTroskel()} ${personOrd(kTroskel())} ingår i summan</li>` : '');
+            // Grupper som räknats samman (ADR-87) redovisas bara med antal — deras belopp kunde röja en liten grupp.
+            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${esc(_guOvrigaText(u.ovrigaAntal[del.id], kTroskel()))}</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><svg class="gu-ruta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="2" fill="${farg}"/></svg><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
             <div class="gu-stapel" aria-hidden="true"><svg width="100%" height="10" focusable="false"><rect x="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" width="${bredd.toFixed(1)}%" height="10" rx="2" fill="${farg}"/></svg></div>
@@ -165,14 +159,14 @@ function renderGapUppdelning() {
         + rader
         + `<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade ${T.enhet.bfl} i Lika arbete, som sorteras efter skillnadens storlek.`
         // Med tröskeln 1 (skärmen, ADR-51) namnges alla grupper, och meningen om små grupper har inget att säga.
-        + (kTroskel() > 1 ? ` Grupper där ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} namnges inte.` : '') + '</p>';
+        + (kTroskel() > 1 ? ` Grupper där ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} räknas samman med andra grupper och namnges inte.` : '') + '</p>';
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 
 // Uppdelningen som trappa i omvänd ordning: hela skillnaden först, sedan delarna (A, B, … en per vald variabel
 // och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
-// under, och aldrig en enskild grupps bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas
-// bara när `u.skyddad`). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
+// under, och aldrig en enskild grupps bidrag (i exportläget räknas grupper där ett kön är under tröskeln samman först,
+// ADR-87). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
 const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
 /** Delens andel av hela skillnaden i procent, eller null när den inte säger något: en liten skillnad (`litetGap`), en
  * del som går åt andra hållet än helheten eller en del som är större än helheten. @param {any} u @param {number} v */

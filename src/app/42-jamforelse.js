@@ -105,7 +105,7 @@ function generateBenchmark() {
     const kr = v => (v == null ? '–' : fmt.format(Math.round(v)));
     const diffCell = dd => (dd == null
         ? '<td class="num muted" data-sort-value="">–</td>'
-        : `<td class="num ${dd.pct < 0 ? 'jmf-neg' : 'jmf-pos'}" data-sort-value="${dd.pct.toFixed(2)}" title="${dd.kr >= 0 ? '+' : '−'}${fmt.format(Math.abs(Math.round(dd.kr)))}">${dd.pct >= 0 ? '+' : '−'}${Math.abs(dd.pct).toFixed(1).replace('.', ',')} %</td>`);
+        : `<td class="num ${dd.pct < 0 ? 'jmf-neg' : 'jmf-pos'}" data-sort-value="${dd.pct.toFixed(2)}" title="${dd.kr >= 0 ? '+' : '−'}${fmt.format(Math.abs(dd.kr))}">${dd.pct >= 0 ? '+' : '−'}${Math.abs(dd.pct).toFixed(1).replace('.', ',')} %</td>`);
     const block = (r, p) => `<td class="num jmf-block" data-sort-value="${r.org[p] ?? ''}">${kr(r.org[p])}</td>`
         + `<td class="num muted" data-sort-value="${r[kalla][p] ?? ''}">${kr(r[kalla][p])}</td>${diffCell(r.diff[kalla][p])}`;
 

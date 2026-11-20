@@ -237,8 +237,7 @@ function buildFardigcheck() {
     try {
         const groups = new Map();
         d.forEach(r => {
-            const m = String(r.yrke || '').match(/^(\d+)/);
-            const key = (m ? m[1] : r.yrke) + '|' + r.bas;
+            const key = (sifferprefixAvYrke(r.yrke) ?? r.yrke) + '|' + r.bas;
             groups.set(key, (groups.get(key) || 0) + 1);
         });
         let maskerade = 0, personer = 0;
@@ -268,7 +267,7 @@ function buildFardigcheck() {
 
     // 5. Yrkesgrupper utan motsvarighet i jämförelsestatistiken
     if ((state.statistik || []).length) {
-        const aids = new Set(d.map(r => { const m = String(r.yrke || '').match(/^(\d+)/); return m ? m[1] : r.yrke; }));
+        const aids = new Set(d.map(r => { return sifferprefixAvYrke(r.yrke) ?? r.yrke; }));
         const utan = [...aids].filter(a => !(state.statistik || []).some(s => s.aid === a));
         if (utan.length) {
             out.push({

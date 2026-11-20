@@ -5,7 +5,8 @@
  * Att adaptern i 55-prioritering.js delegerar hit vaktas i drift.test.js.
  */
 import { describe, it, expect } from 'vitest';
-import { prioritera, prioIndex } from '../src/lib/prioritering.js';
+import { prioritera, prioIndex, prioKonstanter } from '../src/lib/prioritering.js';
+import { jamforelseRader } from '../src/lib/jamforelse.js';
 
 const VIKTER = { avvikelse: 50, volym: 30, jamstalldhet: 20 };
 const CONFIG = { atgardThreshold: -5, akutMinN: 10, bevakaThreshold: -2, analyseraThreshold: 5 };
@@ -71,6 +72,49 @@ describe('prioritera: gruppering och k-regel', () => {
         const rader = grupp('Ingen kod', 'B', 30000, 12, 31000, 12);
         const res = kör(rader, { referensFor: () => ({ median: 35000, kalla: 'x' }) });
         expect(res[0].aid).toBe('Ingen kod');
+    });
+});
+
+// Gruppen är AID-koden och BAS-intervallet, som i jämförelsen och gruppdossiern, inte hela texten i fältet för
+// AID-etikett: två stavningar av samma etikett är en grupp.
+describe('prioritera: gruppen är AID-koden och BAS-intervallet', () => {
+    // 207011 i BAS C med två texter: 4 kvinnor och 4 män (30 000 och 32 000), och 4 kvinnor och 3 män (31 000 och 33 000).
+    const forsta = grupp('207011 Handläggare', 'C', 30000, 4, 32000, 4);
+    const andra = grupp('207011 Handläggare, natt', 'C', 31000, 4, 33000, 3);
+    const opt = { referensFor: ref({ '207011': 35000 }) };
+    it('var för sig är delgrupperna under tröskeln (8 och 7 personer) och ger ingen post', () => {
+        expect(kör(forsta, opt)).toEqual([]);
+        expect(kör(andra, opt)).toEqual([]);
+    });
+    it('tillsammans en grupp på 15 med medianen, namnet och avvikelsen för hela koden', () => {
+        const res = kör([...forsta, ...andra], opt);
+        expect(res).toHaveLength(1);
+        const [g] = res;
+        expect([g.aid, g.bas, g.n, g.kvN, g.maN]).toEqual(['207011', 'C', 15, 8, 7]);
+        expect(g.yrke).toBe('207011 Handläggare');   // texten på gruppens första rad
+        // De 15 lönerna sorterade: 30 000 ×4, 31 000 ×4, 32 000 ×4, 33 000 ×3; den åttonde är 31 000.
+        expect(g.median).toBe(31000);
+        expect(g.diffKr).toBe(-4000);
+        expect(g.diffPct).toBe(-4000 * 100 / 35000);
+        expect([g.medKv, g.medMa, g.gapPct]).toEqual([null, null, null]);   // ett kön under tröskeln
+        expect(g._rows).toHaveLength(15);
+    });
+    it('med den andra texten först heter gruppen efter den; talen är desamma', () => {
+        const [a] = kör([...forsta, ...andra], opt), [b] = kör([...andra, ...forsta], opt);
+        expect(b.yrke).toBe('207011 Handläggare, natt');
+        expect({ ...b, yrke: null, _rows: null }).toEqual({ ...a, yrke: null, _rows: null });
+    });
+    it('samma grupper och namn som jamforelseRader', () => {
+        const rader = [...forsta, ...andra, ...grupp('207011 Handläggare', 'D', 36000, 6, 36000, 6)];
+        const prio = kör(rader, { referensFor: () => ({ median: 35000, kalla: 'x' }) });
+        const jmf = jamforelseRader(rader, { k: 10 }).rader;
+        const nycklar = l => l.map(g => `${g.aid}|${g.bas}|${g.yrke}|${g.n}`).sort();
+        expect(nycklar(prio)).toEqual(nycklar(jmf));
+    });
+    it('rader utan kod grupperas på hela texten, som förut', () => {
+        const rader = [...grupp('Ingen kod', 'B', 30000, 6, 31000, 6), ...grupp('Ingen kod, natt', 'B', 30000, 6, 31000, 6)];
+        const res = kör(rader, { referensFor: () => ({ median: 35000, kalla: 'x' }) });
+        expect(res.map(g => g.aid).sort()).toEqual(['Ingen kod', 'Ingen kod, natt']);
     });
 });
 
@@ -236,23 +280,39 @@ describe('prioritera: statusgränser och tröskelvärden (characterization)', ()
         expect(enGrupp(37600, 9, 9)[0].status).toBe('atgard');
         expect(enGrupp(37600, 10, 10)[0].status).toBe('akut');
     });
-    it('TVEKSAMT: exakt −5 % i matematiken (38 000 mot 40 000) ger −5,000000000000004 i JavaScript och därmed akut', () => {
+    it('exakt −5 % (38 000 mot 40 000) är inte under gränsen −5 och blir bevaka', () => {
         const [item] = enGrupp(38000);
-        expect(item.diffPct).toBeCloseTo(-5, 10);
-        expect(item.diffPct).toBeLessThan(-5);
-        expect(item.status).toBe('akut');
-    });
-    it('TVEKSAMT: exakt −2 % i matematiken (39 200 mot 40 000) ger −2,0000000000000018 och därmed bevaka', () => {
-        const [item] = enGrupp(39200);
-        expect(item.diffPct).toBeCloseTo(-2, 10);
-        expect(item.diffPct).toBeLessThan(-2);
+        expect(item.diffPct).toBe(-5);
         expect(item.status).toBe('bevaka');
     });
-    it('TVEKSAMT: exakt +5 % i matematiken (42 000 mot 40 000) ger 5,000000000000004 och därmed analysera', () => {
+    it('exakt −2 % (39 200 mot 40 000) är inte under gränsen −2 och blir ok', () => {
+        const [item] = enGrupp(39200);
+        expect(item.diffPct).toBe(-2);
+        expect(item.status).toBe('ok');
+    });
+    it('exakt +5 % (42 000 mot 40 000) är inte över gränsen 5 och blir ok', () => {
         const [item] = enGrupp(42000);
-        expect(item.diffPct).toBeCloseTo(5, 10);
-        expect(item.diffPct).toBeGreaterThan(5);
-        expect(item.status).toBe('analysera');
+        expect(item.diffPct).toBe(5);
+        expect(item.status).toBe('ok');
+    });
+    it('en gruppmedian exakt på en gräns klassas aldrig bortom den (referens 20 000–80 000 i steg om 100)', () => {
+        // −7 och +7 är med för att (median / referens − 1) × 100 och (median − referens) / referens × 100 ger
+        // 7,000000000000001 där; formen med en enda division håller för alla gränser.
+        const forvantad = { '-5': 'bevaka', '-2': 'ok', '5': 'ok', '-7': 'akut', '7': 'analysera' };
+        const fel = [];
+        for (const t of [-5, -2, 5, -7, 7]) {
+            for (let refMedian = 20000; refMedian <= 80000; refMedian += 100) {
+                const lon = refMedian * (100 + t) / 100;
+                if (!Number.isInteger(lon)) continue;
+                const rader = grupp('5301 Undersköterska', 'B', lon, 6, lon, 6);
+                const [item] = prioritera(rader, { referensFor: () => ({ median: refMedian, kalla: 'testref' }), kTroskel: 10,
+                    prioConfig: CONFIG, prioWeights: VIKTER, costSettings: KOST, bristAids: new Set() });
+                if (item.diffPct !== t) fel.push(`${lon} mot ${refMedian}: ${item.diffPct}`);
+                // ±7 ligger bortom gränserna och visar bara att talet blir exakt; ±5 och −2 ligger på dem.
+                if (item.status !== forvantad[String(t)]) fel.push(`${lon} mot ${refMedian}: ${item.status}`);
+            }
+        }
+        expect(fel).toEqual([]);
     });
     it('gruppen med n = kTroskel tas med, n = kTroskel − 1 hoppas över', () => {
         expect(enGrupp(37960, 10, 10)).toHaveLength(1);
@@ -265,5 +325,39 @@ describe('prioIndex: viktsumma 0 (characterization)', () => {
         const delar = { sevScore: 100, volScore: 100, gapScore: 100, riktningsvikt: 1, bristMultiplier: 1,
             vikter: { avvikelse: 0, volym: 0, jamstalldhet: 0 } };
         expect(prioIndex(delar)).toBe(0);
+    });
+});
+
+describe('prioritera: delpoängen ligger på posten och konstanterna har sina värden', () => {
+    it('prioKonstanter har modellens dagens värden och är frusen', () => {
+        expect(prioKonstanter()).toEqual({ AVVIKELSE_TAK: 30, VOLYM_TAK: 50, GAP_TAK: 15, RIKTNING_UNDER: 1, RIKTNING_OVER: 0.5,
+            BRIST_MULTIPLIKATOR: 1.2, SNABB_VINST_KR: 1500, SNABB_VINST_AVVIKELSE: 3, SNABB_VINST_MIN_N: 5 });
+        expect(Object.isFrozen(prioKonstanter())).toBe(true);
+    });
+
+    it('priorityIndex är prioIndex av postens egna delpoäng och vikterna', () => {
+        const rader = grupp('5301 Undersköterska', 'B', 30000, 12, 33000, 12);
+        const [item] = kör(rader, { bristAids: new Set(['5301']) });
+        expect(item.bristMultiplier).toBe(1.2);
+        expect(item.riktningsvikt).toBe(1.0);
+        const delar = { sevScore: item.sevScore, volScore: item.volScore, gapScore: item.gapScore,
+            riktningsvikt: item.riktningsvikt, bristMultiplier: item.bristMultiplier, vikter: VIKTER };
+        expect(item.priorityIndex).toBeCloseTo(prioIndex(delar), 10);
+    });
+
+    it('delpoängen tas upp till taken: avvikelse −50 % och 60 personer ger 100 på sev och vol', () => {
+        const rader = grupp('5301 Undersköterska', 'B', 30000, 30, 30000, 30);
+        const [item] = kör(rader, { referensFor: () => ({ median: 60000, kalla: 'x' }) });
+        expect(item.sevScore).toBe(100);
+        expect(item.volScore).toBe(100);
+        expect(item.gapScore).toBe(0);
+        expect(item.riktningsvikt).toBe(1.0);
+    });
+
+    it('över referens: riktningsvikten på posten är 0,5 och bristmultiplikatorn 1 utan bristmarkering', () => {
+        const rader = grupp('5301 Undersköterska', 'B', 30000, 12, 30000, 12);
+        const [item] = kör(rader, { referensFor: () => ({ median: 20000, kalla: 'x' }) });
+        expect(item.riktningsvikt).toBe(0.5);
+        expect(item.bristMultiplier).toBe(1.0);
     });
 });
