@@ -626,15 +626,18 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **Tabellerna per AID-kod och BAS-intervall (ADR-57, 2026-11-05):** det gäller avsnitten *Lika arbete AID x BAS*
   och *Analys på individnivå* i Lika arbete, *Likvärdigt arbete* per BAS-intervall och *Hierarkisk jämförelse* i
   Likvärdigt arbete. Det gäller också de fyra Excel-bladen med samma namn. De bygger en rad per AID-kod och
-  BAS-intervall ur varje persons egen rad (`src/lib/aidbas.js`). I exportläget får en grupp en egen rad från
-  5 personer (`LITET_UNDERLAG`), med antal per kön men utan lönemått. Mindre grupper räknas upp i en not under
-  tabellen med namn och antal, som i Lönelägets mellannivå ovan. Ett köns median, kvoten och slumpens gränser
-  kräver tröskeln för varje kön. Gruppens median och lönespridning kräver tröskeln för gruppen (`statGolv()`).
-  Annars står *Analyseras på individnivå*. Arbetslistan *Analys på individnivå* tar upp grupperna där något kön
-  är under tröskeln, med antal men utan löner. Golvet 5 är ett avsiktligt avsteg i antal, inte i lönemått.
+  BAS-intervall ur varje persons egen rad (`src/lib/aidbas.js`). *Lika arbete AID x BAS* har
+  Lika arbetes grupper och regler (ADR-90): ett köns median och kvoten när varje kön når tröskeln, annars
+  *Könsuppdelningen är för liten*, och en grupp som helt ligger under tröskeln får ingen rad utan namnges i noten,
+  utan antal, som i tabellen per AID-etikett; statusen är densamma som där. I de andra tabellerna får en grupp i
+  exportläget en egen rad från 5 personer (`LITET_UNDERLAG`), med antal per kön men utan lönemått. Mindre grupper
+  räknas upp i en not under tabellen med namn och antal, som i Lönelägets mellannivå ovan. Gruppens median och
+  lönespridning kräver tröskeln för gruppen (`statGolv()`). Arbetslistan *Analys på individnivå* tar upp grupperna
+  där något kön är under tröskeln, med antal men utan löner. Golvet 5 är ett avsiktligt avsteg i antal, inte i lönemått.
   Tabellerna är arbetsgivarens kartläggning av alla grupper, och lagen kräver att också små grupper analyseras.
   Därför står gruppen och dess antal i underlaget. På skärmen
-  visas alla grupper (ADR-51). Vaktas av `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`; den allmänna
+  visas alla grupper (ADR-51). Vaktas av `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` och, för att *Lika
+  arbete AID x BAS* har tabellens grupper vid tröskeln 10 och 25, `tests/ktroskel-utdata.test.js`; den allmänna
   invarianten (§11) prövar inte de fyra bladen.
 - **Könsfördelning per BAS-intervall i Lönestruktur (ADR-57, 2026-11-13):** tabellen (`#skevhet-table`), diagrammet
   ovanför den (`chart-skevhet-andel`) och det som följer av dem: Excel-bladet *Könsskevhet*, utskriften och PDF:en

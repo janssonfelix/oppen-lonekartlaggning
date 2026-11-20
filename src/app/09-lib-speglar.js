@@ -3031,14 +3031,15 @@ const __mirrorAidbas = (() => {
  * Lika arbete är samma yrkesgrupp (AID-kod) på samma nivå (BAS-intervall). Här byggs de fyra tabeller som en
  * skriven lönekartläggning behöver på den nivån, ur varje persons egen rad:
  *
- *   1. Lika arbete AID x BAS — kvinnors median i procent av mäns per grupp, mot slumpens gränser
+ *   1. Lika arbete AID x BAS — Lika arbetes grupper med status, i BAS-ordning (ADR-90)
  *   2. Likvärdigt arbete — grupperna per BAS-intervall med könsfördelning, klassning, median och lönespridning
  *   3. Hierarkisk jämförelse — ett arbete i lägre BAS som inte är kvinnodominerat men har högre median än ett
  *      kvinnodominerat arbete i högre BAS
  *   4. Analys på individnivå — grupperna där något kön är för litet för en könsuppdelad jämförelse
  *
- * Reglerna för små grupper följer med som parametrar: `k` är antalet per kön (och per grupp i tabell 2 och 3) som
- * krävs för ett lönemått, `golv` är antalet i gruppen som krävs för en egen rad; mindre grupper räknas upp i `sma`.
+ * I tabell 2–4 följer reglerna för små grupper med som parametrar: `k` är antalet per kön (och per grupp i tabell 2 och
+ * 3) som krävs för ett lönemått, `golv` är antalet i gruppen som krävs för en egen rad; mindre grupper räknas upp i
+ * `sma`. Tabell 1 har Lika arbetes grupper och regler (likaArbeteTabell).
  *
  * Klassningen av kvinnodominerat arbete har två definitioner, som heter efter lydelsen (ADR-72): *Mer än X %*
  * (nyckeln 'do') och *X % eller mer* (nyckeln 'scb'). Gränsen X är 60 % om inget annat anges. Mansdominerat
@@ -3062,7 +3063,6 @@ const KV_DEFINITIONER = Object.freeze({
 const KV_GRANS_STANDARD = 60;
 
 const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 'Könsblandad';
-const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
 const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
 /** Definitionens namn, med gränsen insatt: "Mer än 60 %" eller "60 % eller mer". */
@@ -3149,29 +3149,25 @@ function _delaPaGolv(grupper, golv) {
 }
 
 /**
- * Tabell 1 — Lika arbete AID x BAS.
- * @param {Array} rader - personraderna
- * @param {{k?:number, golv?:number, granser?: ((g:any) => ({lag:number, hog:number}|null))|null}} val
- *   `granser` ger slumpens 95-procentiga gränser för gruppen (kvinnors median i % av mäns), räknade av anroparen med
- *   samma metod som trattdiagrammet; anropas bara för grupper där båda könen når k.
+ * Tabell 1 — Lika arbete AID x BAS: Lika arbetes grupper och status i BAS-ordning. Tabellen räknar ingenting eget:
+ * den får resultatet av likaArbeteGrupper (src/lib/rapportunderlag.js), som anroparen räknar med verktygets tröskel,
+ * så att den har samma grupper, samma k-regel och samma status som tabellen per AID-etikett och inte kan säga något
+ * annat om samma grupp. En grupp där ett kön är under tröskeln står utan könsuppdelade mått (`samladMedian`); en grupp
+ * som helt ligger under tröskeln får ingen rad utan står med namn i `utelamnade`; `ejJamforbara` är antalet grupper
+ * med färre än två av något kön, som inte jämförs.
+ * @param {{grupper?: any[], utelamnade?: string[], ejJamforbara?: string[]}|null} lika
+ * @returns {{rader: Array<{bas:string, aid:string, yrke:string, n:number, nKv:number, nMa:number, medKv:number|null,
+ *   medMa:number|null, kvot:number|null, lag:number|null, hog:number|null, niva:string, samladMedian:boolean}>,
+ *   utelamnade: string[], ejJamforbara: number}}
  */
-function likaArbeteTabell(rader, { k = 10, golv = 5, granser } = {}) {
-    const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader), golv);
-    const ut = grupper.map(g => {
-        const bada = g.nKv >= k && g.nMa >= k;
-        /** @type {{bas:string, aid:string, yrke:string, n:number, nKv:number, nMa:number, medKv:number|null, medMa:number|null, kvot:number|null, lag:number|null, hog:number|null, bedomning:string}} */
-        const rad = { bas: g.bas, aid: g.aid, yrke: g.yrke, n: g.n, nKv: g.nKv, nMa: g.nMa, medKv: null, medMa: null, kvot: null, lag: null, hog: null, bedomning: BEDOMNING_INDIVID };
-        if (!bada) return rad;
-        rad.medKv = median(g.kvLoner); rad.medMa = median(g.maLoner);
-        rad.kvot = rad.medMa > 0 ? rad.medKv / rad.medMa * 100 : null;
-        const gr = typeof granser === 'function' ? granser(g) : null;
-        if (gr && isFinite(gr.lag) && isFinite(gr.hog) && rad.kvot != null) {
-            rad.lag = gr.lag; rad.hog = gr.hog;
-            rad.bedomning = rad.kvot < gr.lag || rad.kvot > gr.hog ? BEDOMNING_UTANFOR : BEDOMNING_INOM;
-        } else rad.bedomning = '';   // gränserna kunde inte räknas (t.ex. ingen spridning i underlaget)
-        return rad;
-    });
-    return { rader: ut, sma };
+function likaArbeteTabell(lika) {
+    const rader = sorteraGrupper(((lika && lika.grupper) || []).map(g => {
+        const samlad = !!g.samladMedian;
+        return { bas: String(g.bas ?? ''), aid: String(g.aid ?? ''), yrke: String(g.etikett ?? g.yrke ?? ''), n: g.tot, nKv: g.nKv, nMa: g.nMa,
+            medKv: samlad ? null : g.medKv, medMa: samlad ? null : g.medMa, kvot: samlad || !(g.kvot > 0) ? null : g.kvot * 100,
+            lag: samlad ? null : (g.lag ?? null), hog: samlad ? null : (g.hog ?? null), niva: String(g.niva), samladMedian: samlad };
+    }));
+    return { rader, utelamnade: [...((lika && lika.utelamnade) || [])], ejJamforbara: ((lika && lika.ejJamforbara) || []).length };
 }
 
 /**
@@ -8265,7 +8261,9 @@ function gruppMedBas(g) {
  * medianskillnaden (minst 5 %), oberoende av statusen. Stabiliteten prövas mot statusens storleksgräns (3 %).
  * En grupp är AID-koden (aidAvRad) i BAS-intervallet (ADR-89), inte texten i fältet för AID-etikett: två stavningar av
  * samma etikett i samma intervall är en grupp, och samma kod i två intervall är två grupper. `yrke` är gruppens namn,
- * texten som står på flest av gruppens rader (namnrader i aid.js), `aid` koden och `bas` intervallet. Grupperna står med samma kod intill varandra: koderna
+ * texten som står på flest av gruppens rader (namnrader i aid.js), `aid` koden och `bas` intervallet; `etikett` är samma
+ * rads etikett (yrkeLabel när den finns, annars texten), som tabellerna per AID-kod och BAS-intervall visar bredvid koden. `lag` och `hog`
+ * är slumpens gränser som prövningen använde (null när gruppen inte prövades). Grupperna står med samma kod intill varandra: koderna
  * ordnade efter den största skillnaden bland kodens grupper, och inom koden intervallen i BAS-ordning.
  * `utelamnade` och `ejJamforbara` bär namnen med intervallet (gruppMedBas); `utelamnadeGrupper` och
  * `ejJamforbaraGrupper` samma grupper som { yrke, aid, bas }.
@@ -8279,19 +8277,19 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const namn = namnrader((rader || []).filter(r => arKvinna(r) || _arMan(r)), nyckelAv);
     for (const r of rader || []) {
         const aid = aidAvRad(r), bas = r.bas == null ? '' : String(r.bas), nyckel = nyckelAv(r);
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { yrke: (namn.get(nyckel) ?? r).yrke, aid, bas, kv: [], ma: [] });
+        if (!perGrupp.has(nyckel)) { const nr = namn.get(nyckel) ?? r; perGrupp.set(nyckel, { yrke: nr.yrke, etikett: String(nr.yrkeLabel || nr.yrke || aid), aid, bas, kv: [], ma: [] }); }
         if (arKvinna(r)) perGrupp.get(nyckel).kv.push(r.lon);
         else if (_arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
     }
     const grupper = [], utelamnadeGrupper = [], ejJamforbaraGrupper = [];
-    for (const { yrke, aid, bas, kv, ma } of perGrupp.values()) {
+    for (const { yrke, etikett, aid, bas, kv, ma } of perGrupp.values()) {
         if (kv.length < 2 || ma.length < 2) { ejJamforbaraGrupper.push({ yrke, aid, bas }); continue; }
         const tot = kv.length + ma.length;
         const nagotLitet = kv.length < k || ma.length < k;
         if (nagotLitet && tot < k) { utelamnadeGrupper.push({ yrke, aid, bas }); continue; }
         if (nagotLitet) {
-            grupper.push({ yrke, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
-                gapPct: 0, medTot: median(kv.concat(ma)) });
+            grupper.push({ yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
+                gapPct: 0, medTot: median(kv.concat(ma)), lag: null, hog: null });
             continue;
         }
         const medKv = median(kv), medMa = median(ma);
@@ -8300,8 +8298,9 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
         const kvot = medKv / medMa;
         const gapPct = Math.abs(kvot * 100 - 100);
         const b = bedomSkillnad(kv, ma, { golv });
-        const g = { yrke, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
+        const g = { yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
             medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
+            lag: b.granser ? b.granser.lag : null, hog: b.granser ? b.granser.hog : null,
             p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
         // varje grupp på minst 3 % och visas för grupperna Värt att granska.

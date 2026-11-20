@@ -65,7 +65,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-54 | Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen | Gällande | 2026-10-30 |
 | ADR-55 | Löneläget mot båda referenserna, Lönepolitik som avsnitt | Gällande | 2026-10-30 |
 | ADR-56 | Valbar förklaringsmodell | Gällande | 2026-11-05 |
-| ADR-57 | Tabellerna per AID-kod och BAS-intervall | Gällande | 2026-11-05 |
+| ADR-57 | Tabellerna per AID-kod och BAS-intervall | Ändrad av ADR-90 | 2026-11-05 |
 | ADR-58 | BAS-dossiern: ett BAS-intervall på en sida | Gällande | 2026-11-06 |
 | ADR-59 | Uppmärksamhetstrappan på statistisk signal, direktivmarkeringen åtskild | Ändrad av ADR-71 | 2026-11-08 |
 | ADR-60 | Jämförelseetiketterna i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av kvinnodominerat | Ändrad av ADR-72 | 2026-11-08 |
@@ -96,6 +96,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-87 | Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel | Gällande | 2026-11-20 |
 | ADR-88 | Differensprovet är en del av invarianten för minsta gruppstorlek | Gällande | 2026-11-19 |
 | ADR-89 | En grupp är AID-koden i BAS-intervallet, i hela verktyget | Gällande | 2026-11-20 |
+| ADR-90 | Lika arbete AID x BAS visar Lika arbetes status, utan egen bedömning | Gällande | 2026-11-20 |
 
 ## Besluten
 
@@ -625,3 +626,23 @@ grupper som om de vore samma; att höja bokslutets formatversion, som inte behö
 dess första rad, som gör namnet beroende av radernas ordning och kan ge ett personnamn åt en grupp där etiketten står
 på nästan alla rader. *Gäller i dag:* `prioriteringsmodellen.md` §1 och §9, `likvardighetsmodellen.md` §3,
 `berakningsregister.md`.
+
+**ADR-90 — Lika arbete AID x BAS visar Lika arbetes status, utan egen bedömning.** Beslutat av underhållaren
+2026-11-20. Ändrar ADR-57 för tabellen *Lika arbete AID x BAS*. Sedan ADR-89 har den och Lika arbetes tabell per
+AID-etikett samma grupper, men den gav en egen bedömning, *Inom* eller *Utanför gränserna*, medan tabellen per
+AID-etikett ger statusen i uppmärksamhetstrappan (ADR-59). Samma grupp kunde då vara *Utanför gränserna* i den ena och
+*Följ upp* i den andra, eller *Analyseras på individnivå* i den ena och *Går ej att bedöma* i den andra. Tabellen hade
+dessutom ett eget golv: i exportläget fick en grupp en rad från fem personer, med antal per kön, också när tabellen per
+AID-etikett utelämnade den under tröskeln. Nu räknar tabellen ingenting eget: raderna är Lika arbetes grupper
+(`likaArbeteGrupper` i `src/lib/rapportunderlag.js`), i BAS-ordning, med samma k-regel och samma status. En grupp
+där ett kön är under tröskeln står utan könsuppdelade mått (*Könsuppdelningen är för liten*), en grupp som helt ligger
+under tröskeln namnges i noten utan antal, och antalet grupper med färre än två av något kön står där också.
+Gränserna i tabellen är de statusen prövades mot (`bedomSkillnad` i `src/lib/status.js`). Nyckeltalet är detsamma
+som för tabellen per AID-etikett. Trattdiagrammet och bladet *Slumpens gränser* visar gränserna som bild och data
+men ger ingen egen status i text: diagrammets not hänvisar till tabellernas status, verktygstipset säger *Mot
+slumpens gränser* och bladets kolumn *Mot gränserna*. Vyn och Excel-bladet står kvar, med kolumnen *Status* i
+stället för *Bedömning*. Arbetslistan *Analys på individnivå* och tabellerna i Likvärdigt arbete behåller ADR-57:s
+regler. *Avvisat:* att ta bort tabellen, som är den form en skriven lönekartläggning brukar ha; att behålla
+bedömningen mot gränserna bredvid statusen, som ger två svar på samma fråga; att behålla golvet fem för tabellen,
+som visar grupper under tröskeln som tabellen per AID-etikett utelämnar. *Gäller i dag:* `k-troskeln.md` avsnitt 4
+och 9, `docs/dataskydd/riskanalys.md`, `berakningsregister.md` och `docs/anvandare/korguide.md` §4.

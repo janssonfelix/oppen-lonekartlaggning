@@ -275,9 +275,10 @@ rubrikraden, också när det är hopfällt.
    skuggade fältet är de där skillnaden är svår att förklara med slumpen. Nyckeltalen överst tar med hur stor
    skillnaden är när ålder och BAS-intervall räknats bort (regressionen, som står i Lönestruktur).
    Under Fördjupning kommer Personer att granska och avsnitten **Lika arbete AID × BAS** och **Analys på
-   individnivå**. De har tabellerna i den form en skriven lönekartläggning brukar ha. Den första har en rad per
-   AID-kod och BAS-intervall med kvinnors median i procent av mäns, mot slumpens gränser, och en bedömning. Den
-   andra är en arbetslista över grupperna där något kön är för litet för lönemått, att fylla i efter den
+   individnivå**. De har tabellerna i den form en skriven lönekartläggning brukar ha. Den första har samma grupper
+   och samma status som tabellen ovan, ordnade efter BAS-intervall, med AID-koden och slumpens gränser i egna
+   kolumner. Den ger ingen egen bedömning, så de två tabellerna säger alltid samma sak om en grupp. Diagrammet visar
+   gränserna som bild; statusen står i tabellerna. Den andra är en arbetslista över grupperna där något kön är för litet för lönemått, att fylla i efter den
    individuella granskningen. Båda finns som blad i Excel-filen.
    Kolumnen **Kvinnor nationellt** visar andelen kvinnor med samma AID-etikett i landets kommuner och
    regioner. Talen kommer ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om

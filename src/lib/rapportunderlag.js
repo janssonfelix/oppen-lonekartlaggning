@@ -54,7 +54,9 @@ export function gruppMedBas(g) {
  * medianskillnaden (minst 5 %), oberoende av statusen. Stabiliteten prövas mot statusens storleksgräns (3 %).
  * En grupp är AID-koden (aidAvRad) i BAS-intervallet (ADR-89), inte texten i fältet för AID-etikett: två stavningar av
  * samma etikett i samma intervall är en grupp, och samma kod i två intervall är två grupper. `yrke` är gruppens namn,
- * texten som står på flest av gruppens rader (namnrader i aid.js), `aid` koden och `bas` intervallet. Grupperna står med samma kod intill varandra: koderna
+ * texten som står på flest av gruppens rader (namnrader i aid.js), `aid` koden och `bas` intervallet; `etikett` är samma
+ * rads etikett (yrkeLabel när den finns, annars texten), som tabellerna per AID-kod och BAS-intervall visar bredvid koden. `lag` och `hog`
+ * är slumpens gränser som prövningen använde (null när gruppen inte prövades). Grupperna står med samma kod intill varandra: koderna
  * ordnade efter den största skillnaden bland kodens grupper, och inom koden intervallen i BAS-ordning.
  * `utelamnade` och `ejJamforbara` bär namnen med intervallet (gruppMedBas); `utelamnadeGrupper` och
  * `ejJamforbaraGrupper` samma grupper som { yrke, aid, bas }.
@@ -68,19 +70,19 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const namn = namnrader((rader || []).filter(r => arKvinna(r) || _arMan(r)), nyckelAv);
     for (const r of rader || []) {
         const aid = aidAvRad(r), bas = r.bas == null ? '' : String(r.bas), nyckel = nyckelAv(r);
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { yrke: (namn.get(nyckel) ?? r).yrke, aid, bas, kv: [], ma: [] });
+        if (!perGrupp.has(nyckel)) { const nr = namn.get(nyckel) ?? r; perGrupp.set(nyckel, { yrke: nr.yrke, etikett: String(nr.yrkeLabel || nr.yrke || aid), aid, bas, kv: [], ma: [] }); }
         if (arKvinna(r)) perGrupp.get(nyckel).kv.push(r.lon);
         else if (_arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
     }
     const grupper = [], utelamnadeGrupper = [], ejJamforbaraGrupper = [];
-    for (const { yrke, aid, bas, kv, ma } of perGrupp.values()) {
+    for (const { yrke, etikett, aid, bas, kv, ma } of perGrupp.values()) {
         if (kv.length < 2 || ma.length < 2) { ejJamforbaraGrupper.push({ yrke, aid, bas }); continue; }
         const tot = kv.length + ma.length;
         const nagotLitet = kv.length < k || ma.length < k;
         if (nagotLitet && tot < k) { utelamnadeGrupper.push({ yrke, aid, bas }); continue; }
         if (nagotLitet) {
-            grupper.push({ yrke, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
-                gapPct: 0, medTot: median(kv.concat(ma)) });
+            grupper.push({ yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
+                gapPct: 0, medTot: median(kv.concat(ma)), lag: null, hog: null });
             continue;
         }
         const medKv = median(kv), medMa = median(ma);
@@ -89,8 +91,9 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
         const kvot = medKv / medMa;
         const gapPct = Math.abs(kvot * 100 - 100);
         const b = bedomSkillnad(kv, ma, { golv });
-        const g = { yrke, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
+        const g = { yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
             medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
+            lag: b.granser ? b.granser.lag : null, hog: b.granser ? b.granser.hog : null,
             p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
         // varje grupp på minst 3 % och visas för grupperna Värt att granska.

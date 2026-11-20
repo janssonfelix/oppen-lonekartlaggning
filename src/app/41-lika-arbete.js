@@ -597,7 +597,7 @@ function _laTrattFigur(u, k = kTroskel()) {
     const nMax = Math.max(...u.punkter.map(p => p.n)), x0 = Math.max(2, 2 * k), x1 = Math.max(nMax * 1.06, x0 + 10), steg = 40;
     const falt = Array.from({ length: steg + 1 }, (_, i) => { const n = x0 + (x1 - x0) * i / steg, h = u.halv(n / 2, n / 2); return { x: +n.toFixed(1), lag: +(100 - h).toFixed(2), hog: +(100 + h).toFixed(2) }; });
     const tips = d => [[`${d.p.yrke} · BAS ${d.p.bas}`], ['Kvinnors median', `${_figTalformat(d.y, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr), ['Antal kvinnor / män', `${d.p.nKv} / ${d.p.nMa}`],
-        ['Slumpens gränser för gruppen', `${_figTalformat(d.p.gransLag, 'pct', { enhet: false })}–${_figTalformat(d.p.gransHog, 'pct')}`], ['Bedömning', d.p.utanfor ? 'utanför slumpens gränser' : 'inom slumpens gränser']];
+        ['Slumpens gränser för gruppen', `${_figTalformat(d.p.gransLag, 'pct', { enhet: false })}–${_figTalformat(d.p.gransHog, 'pct')}`], ['Mot slumpens gränser', d.p.utanfor ? 'utanför' : 'inom']];
     // Bara de sex grupper utanför gränserna som avviker mest namnges i bilden: med fler krockar namnen med varandra.
     // Alla grupper har sitt namn i verktygstipset och i tabellen under. Namnen undviker punkterna och varandra
     // (etikettLage 'undvik'); ett namn som står en bit från sin punkt får en hänvisningslinje.
@@ -626,8 +626,8 @@ function _laRitaTratt(d) {
     if (!u || u.punkter.length < 2) { rensaFigur(el); if (not) not.textContent = ''; _setDiagramMetodNot('chart-la-tratt', null); return; }
     ritaFigur(el, _laTrattFigur(u));
     _setDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
-    const ute = u.punkter.filter(p => p.utanfor).length;
-    if (not) not.textContent = `${ute} av ${u.punkter.length} bedömda grupper utanför gränserna (${T.enhet.en} i ${termArtikel(T.niva)} ${T.niva.en} där både kvinnor och män når minsta gruppstorlek). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
+    // Diagrammet ger ingen egen status (ADR-90): statusen står i tabellerna, och gränserna är en av dess två delar.
+    if (not) not.textContent = `En punkt per ${T.enhet.en} i ${termArtikel(T.niva)} ${T.niva.en} där både kvinnor och män når minsta gruppstorlek. Statusen per grupp står i tabellen nedan och i Lika arbete AID × BAS; en punkt utanför gränserna är en av statusens två delar, den andra är storleken (minst 3 %). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
 
 // Könsfördelningen per BAS-intervall som staplade staplar till 100 %, med gränserna för jämn könsfördelning

@@ -573,7 +573,9 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(d.getElementById('chart-kon-aldergap')._figur.y.ordning.length).toBeGreaterThan(0);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(false);
         expect(d.getElementById('chart-la-tratt')._figur.lager[0].marke).toBe('band');
-        expect(d.getElementById('la-tratt-not').textContent).toMatch(/^\d+ av \d+ bedömda grupper utanför gränserna \(AID-etikett i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek\)/);
+        // Tratten ger ingen egen status (ADR-90): noten hänvisar till tabellernas status.
+        expect(d.getElementById('la-tratt-not').textContent).toMatch(/^En punkt per AID-etikett i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek\. Statusen per grupp står i tabellen nedan/);
+        expect(d.getElementById('la-tratt-not').textContent).not.toMatch(/bedömda grupper/);
         w2.eval('sattKTroskel(200, { fraga: false })');
         for (const t of ['matrix', 'kon']) w2.__renderTabContent(t);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(true);

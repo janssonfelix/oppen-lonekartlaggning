@@ -121,8 +121,9 @@ function _excelDiagramBlad() {
     if (tratt) ut.push(['Slumpens gränser', [
         [`${termStor(T.enhet.bfl)} mot slumpens gränser (trattdiagrammet på Lika arbete)`],
         [`En rad per ${T.enhet.en} och ${T.niva.en} där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
-        [termStor(T.enhet.en), termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Bedömning'],
-        ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna'])]]);
+        [termStor(T.enhet.en), termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Mot gränserna'],
+        ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna']),
+        [], ['Bladet visar gränserna, inte statusen: statusen per grupp står i bladen EU-lönekartläggning och Lika arbete AID x BAS och väger samman gränserna med storleken, minst 3 %.']]]);
     const arKv = arKvinna, arMa = arMan;
     const alder = _konAlderGapRader(d.filter(arKv), d.filter(arMa), k);
     if (alder.visade.length) ut.push(['Löneskillnad per ålder', [

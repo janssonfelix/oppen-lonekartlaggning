@@ -895,3 +895,26 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
         expect(bok['3. Likvärdigt arbete (BAS)'].some(r => r[1] === 'Q' || r[1] === 'R')).toBe(false);
     });
 });
+
+describe('k-tröskeln: Lika arbete AID x BAS har samma grupper som tabellen per AID-etikett (ADR-90)', () => {
+    // Förut hade tabellen ett eget golv (fem personer) och visade grupper under tröskeln med antal per kön, som tabellen
+    // per AID-etikett utelämnar. Nu är raderna Lika arbetes grupper: ingen grupp under tröskeln står i den ena men inte
+    // i den andra, i exportläget vid 10 och 25.
+    const rader = (w, id, cell) => [...w.document.querySelectorAll(`#${id} tbody tr`)].filter(tr => tr.cells.length > 4).map(cell).sort();
+    for (const k of [10, 25]) {
+        it(`tröskeln ${k}`, () => {
+            const w = iExport(fonster(k));
+            w.__renderTabContent('matrix');
+            const aidbas = rader(w, 'aidbas-lika-tabell', tr => `${tr.cells[1].textContent.trim()}|${tr.cells[0].textContent.trim()}`);
+            const huvud = rader(w, 'matrix-table', tr => `${tr.cells[0].textContent.trim().split(' ')[0]}|${tr.cells[1].textContent.trim()}`);
+            expect(aidbas.length).toBeGreaterThan(0);
+            expect(aidbas).toEqual(huvud);
+            // Grupperna under tröskeln (SMA vid 10, också MELLAN vid 25) har ingen rad och inga antal, bara namnet i noten.
+            const under = k === 25 ? ['5300', '5301', '5302', '5303', '5400', '5401'] : ['5400', '5401'];
+            for (const aid of under) expect(aidbas.some(r => r.startsWith(`${aid}|`)), aid).toBe(false);
+            const not = w.document.getElementById('aidbas-lika').textContent;
+            expect(not).toContain(`${under.length} grupper visas inte`);
+            expect(not).not.toMatch(/\(\d+ kvinnor, \d+ män\)/);
+        });
+    }
+});
