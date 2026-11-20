@@ -630,6 +630,11 @@ function svTal(v, dec = 0) {
 // hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så att talet ryms på en rad.
 /** Som svTal, med " %" efter (hårt mellanslag). */
 function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+// PO-påslaget i procent med högst två decimaler och utan avslutande nollor, som användaren skrev det: 40 → "40 %",
+// 39,15 → "39,15 %", 31,4 → "31,4 %". Räkneexemplet i src/lib/prioritering.js (arsbeloppMening) skriver likadant.
+const _svPoNf = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+/** @param {number} v */
+function svPoPct(v) { return typeof v === 'number' && isFinite(v) ? `${_svPoNf.format(v)} %` : '–'; }
 /** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal. */
 function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(Math.round(v), 0)} kr` : tom; }
 
@@ -6060,12 +6065,12 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
  * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt
  * resultat. En dragning där männens median inte är positiv ger kvoten 1.
  *
- * Skillnaden i procent har direktivets tecken, (1 − kvot) · 100, positiv när kvinnor ligger lägre; därav namnet
- * `gapPctDirektivtecken`. Verktygets eget tecken, (kvot − 1) · 100, är dess motsats (se regressionsmodellen.md avsnitt 1, Tecknet).
+ * Skillnaden i procent (`gapPct`) har verktygets tecken, (kvot − 1) · 100, negativ när kvinnor ligger lägre, som den råa
+ * skillnaden den står bredvid (se regressionsmodellen.md avsnitt 1, Tecknet). Gränserna följer kvotens: lo ur kvotens lo.
  * @param {Array<{lon:number, kon:string}>} rader
  * @param {number} golv  minsta antal av vardera könet (statGolv() i appen)
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
- * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPctDirektivtecken: {point:number, lo:number, hi:number}, B:number}}
+ * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPct: {point:number, lo:number, hi:number}, B:number}}
  */
 function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
@@ -6083,7 +6088,7 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const point = median(kv) / median(ma);
     return {
         ratio:  { point, lo, hi },
-        gapPctDirektivtecken: { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
+        gapPct: { point: (point - 1) * 100, lo: (lo - 1) * 100, hi: (hi - 1) * 100 },
         B
     };
 }
@@ -6701,6 +6706,10 @@ function prioKonstanter() {
         SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });
 }
 
+// PO-påslaget med högst två decimaler och utan avslutande nollor (40 → "40", 39,15 → "39,15"), som svPoPct i appen
+// (src/app/03-hjalpfunktioner.js).
+const _PO_FORMAT = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
  * för gruppens kvinnor, eller null när kvinnornas median inte ligger minst 100 kr lägre (skillnaden avrundas till
@@ -6718,7 +6727,7 @@ function arsbeloppMening(g, costSettings, kr) {
     const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
-        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${String(po).replace('.', ',')} %). Det är ett räkneexempel, `
+        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${_PO_FORMAT.format(po)} %). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
 }
 
@@ -9366,23 +9375,40 @@ const __mirrorInlasning = (() => {
  * decimaltecken; ensam separator följd av exakt 3-siffergrupper (och
  * heltalsdel ≠ "0") tolkas som tusental.
  *
+ * Det som får stå runt talet: blanksteg (också hårt och smalt hårt mellanslag) och apostrof som tusentalsavgränsare,
+ * ett tecken först (+, - eller minustecknet U+2212), valutan först eller sist (kr, SEK; sist också kronor, ":-" och
+ * ",-", valfritt med punkt efter), % sist och "år" sist (ålder skriven med enheten, "45 år"; suffixet är hela resten,
+ * så "45årig" avvisas). Allt annat gör värdet ogiltigt och funktionen ger "": en felskriven lön ska synas i
+ * inläsningsrapporten, inte läsas som ett annat tal. Formen prövas därför när suffixet och tusentalsavgränsarna är borta:
+ *   - bokstäver och andra tecken ("12abc", "abc12", "12 st", "3.25E+04") avvisas;
+ *   - flera decimaltecken av samma slag som inte är tusentalsgrupper ("1.2.3", "1,2,3") avvisas;
+ *   - när både punkt och komma förekommer måste delen före det sista vara siffror i tregrupper ("1.234.567,89");
+ *     "12,34.56" och "1.2,3" avvisas;
+ *   - ett ensamt tecken eller decimaltecken ("-", ".") är inget tal.
+ * Ett värde som redan är ett tal (ur Excel) skrivs som det är, så att också 1e-7 läses rätt.
+ *
  * @param {*} raw - Råvärde från CSV-/Excel-cell.
- * @returns {string} parseFloat-bar sträng ("" om inget numeriskt innehåll).
+ * @returns {string} parseFloat-bar sträng ("" när värdet inte är ett tal i något av formaten).
  */
 function _normalizeNumberString(raw) {
+    if (typeof raw === 'number') return isFinite(raw) ? String(raw) : '';
     let s = raw.toString().trim()
-        .replace(/[\s  ']/g, '')       // mellanslag, NBSP, smal NBSP, apostrof-tusental
-        .replace(/(kr|sek|:-)\.?$/i, '')          // valutasuffix
-        .replace(/\u2212/g, '-');                  // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
-    s = s.replace(/[^\d.,\-]/g, '');
+        .replace(/[\s  ']/g, '')        // mellanslag, NBSP, smal NBSP, apostrof-tusental
+        .replace(/(kronor|kr|sek|år|:-|,-|%)\.?$/i, '')   // valutasuffix, procenttecken och år
+        .replace(/^(kr|sek)\.?/i, '')                  // valutan före talet
+        .replace(/−/g, '-')                   // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
+        .replace(/^\+/, '');
+    if (!/^-?[\d.,]*\d[\d.,]*$/.test(s)) return '';   // bara siffror, punkt och komma efter ett ev. minustecken
     const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
     if (lastDot !== -1 && lastComma !== -1) {
-        // Båda förekommer: den sista är decimaltecknet, den andra tusental.
-        if (lastComma > lastDot) s = s.replace(/\./g, '').replace(/,/g, '.');
-        else                     s = s.replace(/,/g, '');
+        // Båda förekommer: den sista är decimaltecknet, den andra tusental i tregrupper.
+        const tusental = lastComma > lastDot ? /^-?\d{1,3}(\.\d{3})+$/ : /^-?\d{1,3}(,\d{3})+$/;
+        const decimal = Math.max(lastDot, lastComma);
+        if (!tusental.test(s.slice(0, decimal))) return '';
+        s = s.slice(0, decimal).replace(/[.,]/g, '') + '.' + s.slice(decimal + 1);
     } else if (lastComma !== -1) {
-        // Endast komma: flera kommatecken = tusental; ensamt komma med exakt
-        // 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental; annars decimal.
+        // Endast komma: kommatecken med exakt 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental;
+        // annars decimal (flera kommatecken utan tregrupper avvisas nedan).
         if (/^-?[1-9]\d{0,2}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
         else                                      s = s.replace(/,/g, '.');
     } else if (lastDot !== -1) {
@@ -9390,7 +9416,8 @@ function _normalizeNumberString(raw) {
         if (/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
         // annars: punkt är redan decimaltecken
     }
-    return s;
+    // Ett tal: högst ett decimaltecken och minst en siffra.
+    return /^-?(\d+(\.\d*)?|\.\d+)$/.test(s) ? s : '';
 }
 
 function parseNumber(v) {
@@ -9417,7 +9444,7 @@ function parseNumberStrict(v) {
     if (v == null) return { status: 'empty', value: 0, raw: v };
     const raw = v.toString();
     if (raw.trim() === '') return { status: 'empty', value: 0, raw };
-    const n = parseFloat(_normalizeNumberString(raw));
+    const n = parseFloat(_normalizeNumberString(v));
     if (isNaN(n)) return { status: 'invalid', value: 0, raw };
     return { status: 'ok', value: n, raw };
 }
@@ -18717,24 +18744,26 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
  * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
  * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
- * procent har direktivets tecken, positiv när kvinnor ligger lägre (gapPctDirektivtecken).
+ * procent (gapPct) har verktygets tecken, negativ när kvinnor ligger lägre.
  */
 function computeBootstrapCI() {
     const t0 = performance.now();
     const ki = _osOrganisationensKvotKI(getData(), statGolv());
-    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPctDirektivtecken: ki.gapPctDirektivtecken, elapsed: performance.now() - t0, B: ki.B } : null;
+    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
 /**
- * Formaterar bootstrap-CI som textsuffix för punktestimat.
- * Returnerar t.ex. " [95 % KI: 3,1%–6,4%]" eller tom sträng om CI saknas.
+ * Formaterar bootstrap-CI som textsuffix för punktestimat, med samma tecken som talet framför.
+ * Returnerar t.ex. " [95 % KI: −17,8 % till −11,9 %]" (ordet "till" när en gräns är negativ, så att strecket inte
+ * läses som minustecken), " [95 % KI: 3,1–6,4 %]" annars, eller tom sträng om CI saknas.
  * @param {{lo:number, hi:number}} ci
  * @param {number} [decimals=1]
  */
 function fmtCI(ci, decimals = 1) {
     if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return '';
-    const f = n => n.toFixed(decimals).replace('.', ',');
-    return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${state.bootstrapCI?.B || 2000})">[95 % KI: ${f(ci.lo)}%–${f(ci.hi)}%]</span>`;
+    const intervall = ci.lo < 0 || ci.hi < 0 ? `${svPct(ci.lo, decimals)} till ${svPct(ci.hi, decimals)}` : `${svTal(ci.lo, decimals)}–${svPct(ci.hi, decimals)}`;
+    const B = Number(state.bootstrapCI?.B || _osKonstanter().B_ORGANISATION);
+    return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${B})">[95 % KI: ${intervall}]</span>`;
 }
 
 // ---- #9 Power-analys: minsta detekterbara effektstorlek ----
@@ -22839,7 +22868,7 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(${K.GAP_TAK}, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / ${K.GAP_TAK} × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
             { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? `Gruppen ligger UNDER referens — full vikt ${svTal(K.RIKTNING_UNDER, 1)}` : `Gruppen ligger ÖVER referens — halv vikt ${svTal(K.RIKTNING_OVER, 1)}` },
             { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? `Markerat som bristyrke — bonus ${svTal(K.BRIST_MULTIPLIKATOR, 1)}x` : 'Ej bristyrke' },
-            { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
+            { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPoPct(poPct)} × ${it.n} pers` }
         ],
         formula: `<strong>Prioritetsindex-formel:</strong><br>
             index = bristMult × riktningMult × (sev × w_avv + vol × w_vol + skillnad × w_jäm) / Σw<br>
@@ -22847,7 +22876,7 @@ function _evidenceForPrioItem(it, _reference) {
             = <strong>${svTal(it.priorityIndex, 2)}</strong>
             ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att nå referensen:</strong><br>
             |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFaktor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
-        footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPct(poPct, 2)}).`
+        footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPoPct(poPct)}).`
     };
 }
 
@@ -26913,7 +26942,7 @@ function updateForecast() {
           _laSlutsats('Kvar att fördela', kr(out.kvar), out.kvar < -0.5 ? 'fördelningen överskrider potten' : 'av potten', out.kvar < -0.5),
           // "från …" bara när summan har ändrats; före första påslaget står utgångsläget
           _laSlutsats('Lönesumma per månad', kr(out.lonsummaEfter), Math.round(out.lonsummaEfter) !== Math.round(out.lonsummaFore) ? `från ${kr(out.lonsummaFore)}` : 'utgångsläget'),
-          _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPct(cost.poPct, 2)}`),
+          _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPoPct(cost.poPct)}`),
       ].join(''); }
     if (meterEl) meterEl.innerHTML = `
         <div class="bak-kant rund-6 hojd-12 marg-t-10 klipp" role="img" aria-label="Budgetutnyttjande ${svTal(anvPct, 0)} procent">
@@ -31794,9 +31823,9 @@ function renderRegressionCard() {
     }).join(' &nbsp;|&nbsp; ');
 
     // Tolkning – plain language sammanfattning
-    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har direktivets tecken (positivt när
-    // kvinnor ligger lägre), det råa gapet framför det verktygets (rawGapPct, negativt när kvinnor ligger lägre).
-    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPctDirektivtecken) : '';
+    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har, som det råa gapet framför det
+    // (rawGapPct), verktygets tecken: negativt när kvinnor ligger lägre.
+    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
     const tolkning = isSig
         ? (Math.abs(r.konPct) >= _STS_STORLEK
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`
@@ -32838,8 +32867,8 @@ function _prioKonStatus(i) {
 function _prioPoText() {
     const po = state.costSettings.poPct;
     return po === COST_DEFAULTS.poPct
-        ? `inkl. PO-påslag ${svPct(po, 2)} (ett standardantagande; sätt organisationens eget under Inställningar)`
-        : `inkl. PO-påslag ${svPct(po, 2)} (ändras under Inställningar)`;
+        ? `inkl. PO-påslag ${svPoPct(po)} (ett standardantagande; sätt organisationens eget under Inställningar)`
+        : `inkl. PO-påslag ${svPoPct(po)} (ändras under Inställningar)`;
 }
 
 function _selectedPrioReference() {
@@ -32941,7 +32970,7 @@ function renderPrioritering() {
         installningarRad.innerHTML = `Trösklar och viktning: ${anpassad ? 'anpassade värden' : 'standardvärden'} <button type="button" class="ov-filrad-lank" data-oppna-installningar="prio-cfg-atgard">Ändra</button>`;
     }
     const costPerEl = document.getElementById('prio-stat-cost-period');
-    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPct(state.costSettings.poPct, 2)}`;
+    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPoPct(state.costSettings.poPct)}`;
     const costPoEl = document.getElementById('prio-stat-cost-po');
     if (costPoEl) costPoEl.textContent = `Räknat på ${state.costSettings.months} månader, ${_prioPoText()}.`;
 
@@ -32967,7 +32996,7 @@ function renderPrioritering() {
         if (paretoSummary) {
             paretoSummary.innerHTML = `
                 <div class="farg-primary fw-700 marg-b-4">Total: ${_fmtCost(totalParetoCost)}</div>
-                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPct(state.costSettings.poPct, 2)}</div>
+                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPoPct(state.costSettings.poPct)}</div>
                 <div>Topp <strong>${n50}</strong> grupper = 50%</div>
                 <div>Topp <strong>${n80}</strong> grupper = 80%</div>
                 <div class="finstilt">Alla under-betalda grupper sammanställda. Fokus på topp 80%-gränsen ger maximal kostnadseffekt.</div>
@@ -33026,7 +33055,7 @@ function renderPrioritering() {
         ],
         formler: [
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
-            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
+            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPoPct(state.costSettings.poPct)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', `${_prKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${_prKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
             ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
@@ -33314,8 +33343,8 @@ function _readCostSettings() {
     if (sum) {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
-            ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
+            ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPoPct(state.costSettings.poPct)} PO`
+            : `Standard: ${state.costSettings.months} mån × ${svPoPct(state.costSettings.poPct)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
     }
 }
 // Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som

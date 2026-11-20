@@ -1751,8 +1751,8 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         // Förklaringen står under nyckeltalsraden (i rutan skulle den klippas).
         const not = d.getElementById('prio-stat-cost-not').textContent.replace(/\s+/g, ' ');
         expect(not).toContain('Vad det kostar att lyfta grupper under referensen till dess median. Detta är löneläget mot er referens, inte lönekartläggningens könsskillnader — dem visar Lika arbete och Löneöversyn.');
-        expect(not).toContain('inkl. PO-påslag 40,00 % (ett standardantagande; sätt organisationens eget under Inställningar)');
-        expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 40,00\u00a0%');
+        expect(not).toContain('inkl. PO-påslag 40 % (ett standardantagande; sätt organisationens eget under Inställningar)');
+        expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 40\u00a0%');
         expect(vy.textContent).not.toMatch(/åtgärdskostnad/i);
     });
     // Nyckeltalen heter som statusarna och räknar tabellens rader; Färdigcheck räknar samma grupper (uppgift 3, UX 2026-11-19).

@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell, utanSmaGrupper } from '../src/lib/figur.js';
+import { arsbeloppMening } from '../src/lib/prioritering.js';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 import { vanliga, KALLA, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
@@ -1123,6 +1124,14 @@ describe('tal som text har decimalkomma, och texten är svensk', () => {
         expect(t(w.eval('svTal(-3.26, 1)'))).toBe('-3,3');
         expect(w.eval('svTal(NaN, 1)')).toBe('–');
         expect(w.eval('svPct(null)')).toBe('–');
+    });
+    it('svPoPct: PO-påslaget med högst två decimaler, utan avslutande nollor, och som räkneexemplet i lib skriver det', () => {
+        for (const [v, text] of [[40, '40'], [39.15, '39,15'], [31.4, '31,4'], [0, '0'], [33.333, '33,33']]) {
+            expect(w.eval(`svPoPct(${v})`)).toBe(`${text} %`);
+            const mening = arsbeloppMening({ medKv: 30000, medMa: 36000, nKv: 10 }, { months: 12, poPct: v }, String);
+            expect(mening).toContain(`PO-påslag ${text} %)`);
+        }
+        expect(w.eval('svPoPct(null)')).toBe('–');
     });
     it('Ålder & karriär: nyckeltal och insikter har ingen decimalpunkt', () => {
         const w2 = demo();

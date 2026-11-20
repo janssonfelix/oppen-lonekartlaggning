@@ -164,7 +164,7 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(${K.GAP_TAK}, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / ${K.GAP_TAK} × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
             { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? `Gruppen ligger UNDER referens — full vikt ${svTal(K.RIKTNING_UNDER, 1)}` : `Gruppen ligger ÖVER referens — halv vikt ${svTal(K.RIKTNING_OVER, 1)}` },
             { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? `Markerat som bristyrke — bonus ${svTal(K.BRIST_MULTIPLIKATOR, 1)}x` : 'Ej bristyrke' },
-            { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
+            { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPoPct(poPct)} × ${it.n} pers` }
         ],
         formula: `<strong>Prioritetsindex-formel:</strong><br>
             index = bristMult × riktningMult × (sev × w_avv + vol × w_vol + skillnad × w_jäm) / Σw<br>
@@ -172,7 +172,7 @@ function _evidenceForPrioItem(it, _reference) {
             = <strong>${svTal(it.priorityIndex, 2)}</strong>
             ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att nå referensen:</strong><br>
             |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFaktor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
-        footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPct(poPct, 2)}).`
+        footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPoPct(poPct)}).`
     };
 }
 

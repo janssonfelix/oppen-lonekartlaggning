@@ -318,10 +318,10 @@ exports[`beräkningar på demodatan (låsta tal) > regressionslinjens KI (linear
 exports[`beräkningar på demodatan (låsta tal) > översiktens bootstrap-KI (state.bootstrapCI utan elapsed) ger samma tal > bootstrapCI 1`] = `
 {
   "B": 2000,
-  "gapPctDirektivtecken": {
-    "hi": 17.7996209,
-    "lo": 11.92593495,
-    "point": 14.80748976,
+  "gapPct": {
+    "hi": -11.92593495,
+    "lo": -17.7996209,
+    "point": -14.80748976,
   },
   "ratio": {
     "hi": 0.8807406505,

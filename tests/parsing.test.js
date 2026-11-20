@@ -472,8 +472,8 @@ describe('inläsning: lönefil utan ålderskolumn', () => {
 });
 
 // ---- Tabellstyrda tester som låser dagens tolkning av indata (inför flytt av koden) ----
-// Förväntade värden är vad koden gör i dag. Där resultatet ser fel eller överraskande ut
-// står det med en kommentar; det låses ändå och ska ändras medvetet, inte av en omstrukturering.
+// Förväntade värden är vad koden gör i dag. Där resultatet kan överraska står det med en kommentar; det låses ändå
+// och ska ändras medvetet, inte av en omstrukturering.
 describe('tabell: tal (parseNumber + parseNumberStrict)', () => {
     // [råvärde, parseNumber, parseNumberStrict.status]
     it.each([
@@ -495,11 +495,35 @@ describe('tabell: tal (parseNumber + parseNumberStrict)', () => {
         [null, 0, 'empty'],
         [undefined, 0, 'empty'],
         [' 42 ', 42, 'ok'],
-        ['12abc', 12, 'ok'],             // överraskning: skräptecken efter siffror tolkas, inte avvisas
+        ['12abc', 0, 'invalid'],         // skräp efter siffrorna: en felskriven lön syns i inläsningsrapporten
+        ['abc12', 0, 'invalid'],
+        ['12 st', 0, 'invalid'],         // "st" är inget godkänt suffix
+        ['45 år', 45, 'ok'],             // ålder med enheten
+        ['45år', 45, 'ok'],
+        ['45 ÅR', 45, 'ok'],
+        ['45årig', 0, 'invalid'],        // suffixet ska vara hela resten
+        ['45 årsarbetare', 0, 'invalid'],
+        ['3.25E+04', 0, 'invalid'],      // exponentform i text läses inte (förr: 3,2504)
         ['-', 0, 'invalid'],
         ['.', 0, 'invalid'],
-        ['1.2.3', 1.2, 'ok'],            // överraskning: flera punkter utan decimaltecken, sista delen kastas
-        ['1,2,3', 1.2, 'ok'],            // överraskning: samma sak för kommatecken
+        ['1.2.3', 0, 'invalid'],         // flera decimalpunkter som inte är tusentalsgrupper
+        ['1,2,3', 0, 'invalid'],         // samma sak för kommatecken
+        ['12,34.56', 0, 'invalid'],      // både punkt och komma, men delen före decimaltecknet är inga tregrupper
+        ['1.2,3', 0, 'invalid'],
+        ['1.234.567,89', 1234567.89, 'ok'],
+        ['32\u00a0500 kr', 32500, 'ok'],  // hårt mellanslag
+        ['32\u202f500', 32500, 'ok'],     // smalt hårt mellanslag
+        ['32,500', 32500, 'ok'],
+        ['32.5', 32.5, 'ok'],
+        ['32 500 kr.', 32500, 'ok'],
+        ['32500:-', 32500, 'ok'],
+        ['32 500,-', 32500, 'ok'],
+        ['32500 kronor', 32500, 'ok'],
+        ['SEK 32500', 32500, 'ok'],
+        ['5%', 5, 'ok'],
+        ['+5', 5, 'ok'],
+        ['\u22123,25 %', -3.25, 'ok'],
+        ['\u2212', 0, 'invalid'],
     ])('%o → parseNumber %o, status %o', (raw, value, status) => {
         expect(P.parseNumber(raw)).toBe(value);
         const strikt = P.parseNumberStrict(raw);

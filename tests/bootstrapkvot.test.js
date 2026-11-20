@@ -97,3 +97,45 @@ describe('appens intervall på mediankvoten är desamma som med sortering per dr
         expect(ci.ratio.hi).toBe(ratios[B - 1 - Math.floor(B * 0.025)]);
     });
 });
+
+describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken', () => {
+    /** "−14,8" → −14.8 */
+    const tal = t => Number(t.replace('−', '-').replace(',', '.'));
+    it('på demodatan: intervallet är "−17,8 % till −11,9 %" och den råa skillnaden ligger inom det', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.computeBootstrapCI();
+        const r = w.runOLSRegression();
+        const text = w.fmtCI(w.__state.bootstrapCI.gapPct).replace(/<[^>]*>/g, '').replace(/ /g, ' ');
+        expect(text).toBe(' [95 % KI: −17,8 % till −11,9 %]');
+        const { lo, hi } = w.__state.bootstrapCI.gapPct;
+        expect(r.rawGapPct).toBeLessThan(0);
+        expect(lo).toBeLessThan(r.rawGapPct);
+        expect(hi).toBeGreaterThan(r.rawGapPct);
+    });
+    it('i regressionskortet när skillnaden inte är säkerställd: talet och intervallet har samma tecken', () => {
+        // Påhittad organisation där kvinnor oftare finns i det lägre BAS-intervallet men lönerna inom intervallen inte
+        // skiljer sig: den råa skillnaden är negativ, den som står kvar efter BAS och ålder är inte säkerställd.
+        const w = createAppWindow();
+        const rad = (bas, kon, lon, alder) => ({ bas, kon, lon, alder, yrke: '6000 Yrke', aid: '6000', yrkeLabel: 'Yrke', enhet: '' });
+        const rader = [];
+        for (let i = 0; i < 50; i++) {
+            rader.push(rad('S1', i < 40 ? 'kvinna' : 'man', 25000 + ((i * 37) % 23) * 100, 25 + (i * 7) % 35));
+            rader.push(rad('S2', i < 10 ? 'kvinna' : 'man', 34000 + ((i * 53) % 29) * 100, 25 + (i * 11) % 35));
+        }
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        w.computeBootstrapCI();
+        w.__renderTabContent('struktur');
+        expect(w.runOLSRegression().pValue).toBeGreaterThanOrEqual(0.05);
+        const text = w.document.getElementById('regression-card').textContent.replace(/ /g, ' ');
+        const m = text.match(/Den råa löneskillnaden \((−?\d+,\d) % \[95 % KI: (−?\d+,\d) % till (−?\d+,\d) %\]\)/);
+        expect(m).not.toBeNull();
+        const [x, lo, hi] = m.slice(1).map(tal);
+        expect(x).toBeLessThan(0);
+        expect(lo).toBeLessThan(0);
+        expect(hi).toBeLessThan(0);
+        expect(lo).toBeLessThanOrEqual(x);
+        expect(hi).toBeGreaterThanOrEqual(x);
+    });
+});

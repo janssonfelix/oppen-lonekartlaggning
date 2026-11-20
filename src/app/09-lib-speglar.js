@@ -3797,12 +3797,12 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
  * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt
  * resultat. En dragning där männens median inte är positiv ger kvoten 1.
  *
- * Skillnaden i procent har direktivets tecken, (1 − kvot) · 100, positiv när kvinnor ligger lägre; därav namnet
- * `gapPctDirektivtecken`. Verktygets eget tecken, (kvot − 1) · 100, är dess motsats (se regressionsmodellen.md avsnitt 1, Tecknet).
+ * Skillnaden i procent (`gapPct`) har verktygets tecken, (kvot − 1) · 100, negativ när kvinnor ligger lägre, som den råa
+ * skillnaden den står bredvid (se regressionsmodellen.md avsnitt 1, Tecknet). Gränserna följer kvotens: lo ur kvotens lo.
  * @param {Array<{lon:number, kon:string}>} rader
  * @param {number} golv  minsta antal av vardera könet (statGolv() i appen)
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
- * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPctDirektivtecken: {point:number, lo:number, hi:number}, B:number}}
+ * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPct: {point:number, lo:number, hi:number}, B:number}}
  */
 function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
@@ -3820,7 +3820,7 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const point = median(kv) / median(ma);
     return {
         ratio:  { point, lo, hi },
-        gapPctDirektivtecken: { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
+        gapPct: { point: (point - 1) * 100, lo: (lo - 1) * 100, hi: (hi - 1) * 100 },
         B
     };
 }
@@ -4438,6 +4438,10 @@ function prioKonstanter() {
         SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });
 }
 
+// PO-påslaget med högst två decimaler och utan avslutande nollor (40 → "40", 39,15 → "39,15"), som svPoPct i appen
+// (src/app/03-hjalpfunktioner.js).
+const _PO_FORMAT = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
  * för gruppens kvinnor, eller null när kvinnornas median inte ligger minst 100 kr lägre (skillnaden avrundas till
@@ -4455,7 +4459,7 @@ function arsbeloppMening(g, costSettings, kr) {
     const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
-        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${String(po).replace('.', ',')} %). Det är ett räkneexempel, `
+        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${_PO_FORMAT.format(po)} %). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
 }
 
@@ -7103,23 +7107,40 @@ const __mirrorInlasning = (() => {
  * decimaltecken; ensam separator följd av exakt 3-siffergrupper (och
  * heltalsdel ≠ "0") tolkas som tusental.
  *
+ * Det som får stå runt talet: blanksteg (också hårt och smalt hårt mellanslag) och apostrof som tusentalsavgränsare,
+ * ett tecken först (+, - eller minustecknet U+2212), valutan först eller sist (kr, SEK; sist också kronor, ":-" och
+ * ",-", valfritt med punkt efter), % sist och "år" sist (ålder skriven med enheten, "45 år"; suffixet är hela resten,
+ * så "45årig" avvisas). Allt annat gör värdet ogiltigt och funktionen ger "": en felskriven lön ska synas i
+ * inläsningsrapporten, inte läsas som ett annat tal. Formen prövas därför när suffixet och tusentalsavgränsarna är borta:
+ *   - bokstäver och andra tecken ("12abc", "abc12", "12 st", "3.25E+04") avvisas;
+ *   - flera decimaltecken av samma slag som inte är tusentalsgrupper ("1.2.3", "1,2,3") avvisas;
+ *   - när både punkt och komma förekommer måste delen före det sista vara siffror i tregrupper ("1.234.567,89");
+ *     "12,34.56" och "1.2,3" avvisas;
+ *   - ett ensamt tecken eller decimaltecken ("-", ".") är inget tal.
+ * Ett värde som redan är ett tal (ur Excel) skrivs som det är, så att också 1e-7 läses rätt.
+ *
  * @param {*} raw - Råvärde från CSV-/Excel-cell.
- * @returns {string} parseFloat-bar sträng ("" om inget numeriskt innehåll).
+ * @returns {string} parseFloat-bar sträng ("" när värdet inte är ett tal i något av formaten).
  */
 function _normalizeNumberString(raw) {
+    if (typeof raw === 'number') return isFinite(raw) ? String(raw) : '';
     let s = raw.toString().trim()
-        .replace(/[\s  ']/g, '')       // mellanslag, NBSP, smal NBSP, apostrof-tusental
-        .replace(/(kr|sek|:-)\.?$/i, '')          // valutasuffix
-        .replace(/\u2212/g, '-');                  // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
-    s = s.replace(/[^\d.,\-]/g, '');
+        .replace(/[\s  ']/g, '')        // mellanslag, NBSP, smal NBSP, apostrof-tusental
+        .replace(/(kronor|kr|sek|år|:-|,-|%)\.?$/i, '')   // valutasuffix, procenttecken och år
+        .replace(/^(kr|sek)\.?/i, '')                  // valutan före talet
+        .replace(/−/g, '-')                   // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
+        .replace(/^\+/, '');
+    if (!/^-?[\d.,]*\d[\d.,]*$/.test(s)) return '';   // bara siffror, punkt och komma efter ett ev. minustecken
     const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
     if (lastDot !== -1 && lastComma !== -1) {
-        // Båda förekommer: den sista är decimaltecknet, den andra tusental.
-        if (lastComma > lastDot) s = s.replace(/\./g, '').replace(/,/g, '.');
-        else                     s = s.replace(/,/g, '');
+        // Båda förekommer: den sista är decimaltecknet, den andra tusental i tregrupper.
+        const tusental = lastComma > lastDot ? /^-?\d{1,3}(\.\d{3})+$/ : /^-?\d{1,3}(,\d{3})+$/;
+        const decimal = Math.max(lastDot, lastComma);
+        if (!tusental.test(s.slice(0, decimal))) return '';
+        s = s.slice(0, decimal).replace(/[.,]/g, '') + '.' + s.slice(decimal + 1);
     } else if (lastComma !== -1) {
-        // Endast komma: flera kommatecken = tusental; ensamt komma med exakt
-        // 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental; annars decimal.
+        // Endast komma: kommatecken med exakt 3-siffergrupper (t.ex. "32,500" / "1,234,567") = tusental;
+        // annars decimal (flera kommatecken utan tregrupper avvisas nedan).
         if (/^-?[1-9]\d{0,2}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
         else                                      s = s.replace(/,/g, '.');
     } else if (lastDot !== -1) {
@@ -7127,7 +7148,8 @@ function _normalizeNumberString(raw) {
         if (/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
         // annars: punkt är redan decimaltecken
     }
-    return s;
+    // Ett tal: högst ett decimaltecken och minst en siffra.
+    return /^-?(\d+(\.\d*)?|\.\d+)$/.test(s) ? s : '';
 }
 
 function parseNumber(v) {
@@ -7154,7 +7176,7 @@ function parseNumberStrict(v) {
     if (v == null) return { status: 'empty', value: 0, raw: v };
     const raw = v.toString();
     if (raw.trim() === '') return { status: 'empty', value: 0, raw };
-    const n = parseFloat(_normalizeNumberString(raw));
+    const n = parseFloat(_normalizeNumberString(v));
     if (isNaN(n)) return { status: 'invalid', value: 0, raw };
     return { status: 'ok', value: n, raw };
 }

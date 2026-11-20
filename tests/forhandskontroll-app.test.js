@@ -327,3 +327,16 @@ describe('förhandskontrollens punkter i Att göra', () => {
         expect(punkter(w)[0].titel).toBe('Förhandskontrollen: rader utan BAS-intervall');
     });
 });
+
+describe('en lön med skräp efter siffrorna', () => {
+    it('läses inte som ett annat tal: raden utesluts, räknas som ogiltig lön och visas bland exemplen', async () => {
+        const w = createAppWindow();
+        await lasIn(w, fil({ lon: i => (i === 3 ? '32500abc' : String(30000 + i * 10)) }));
+        expect(w.__state.data).toHaveLength(29);
+        expect(w.__state.data.some(r => r.lon === 32500)).toBe(false);
+        const rad = [...w.document.querySelectorAll('#data-validation-report .dvr-row')].find(e => /Ogiltig lön \(text\)/.test(e.textContent));
+        expect(rad).toBeTruthy();
+        expect(rad.textContent).toContain('"32500abc"');
+        expect(rad.querySelector('.dvr-value').textContent).toBe('1');
+    });
+});

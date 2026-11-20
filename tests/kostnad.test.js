@@ -77,7 +77,7 @@ describe('arsbeloppMening: räkneexemplet om könsskillnaden', () => {
         const g = { medKv: 30000, medMa: 36000, nKv: 10 };
         expect(arsbeloppMening(g, KOST, kr)).toBe(
             'Räkneexempel: kvinnornas medianlön ligger 6000 kr per månad under männens. För gruppens 10 kvinnor motsvarar '
-            + 'det omkring 1002000 kr per år (12 månader, PO-påslag 39,15 %). Det är ett räkneexempel, '
+            + 'det omkring 1002000 kr per år (12 månader, PO-påslag 39,15\u00a0%). Det är ett räkneexempel, '
             + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.'
         );
     });
@@ -90,7 +90,7 @@ describe('arsbeloppMening: räkneexemplet om könsskillnaden', () => {
     it('PO 0 %: texten visar 0 och beloppet räknas utan påslag', () => {
         const g = { medKv: 30000, medMa: 31000, nKv: 1 };
         const text = arsbeloppMening(g, { months: 12, poPct: 0 }, kr);
-        expect(text).toContain('PO-påslag 0 %');
+        expect(text).toContain('PO-påslag 0\u00a0%');
         expect(text).toContain('omkring 12000 kr per år');
     });
     it('skillnaden avrundas till hundratal: 550 kr blir 600 kr (Math.round, halvtal uppåt)', () => {

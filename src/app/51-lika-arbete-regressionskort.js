@@ -742,9 +742,9 @@ function renderRegressionCard() {
     }).join(' &nbsp;|&nbsp; ');
 
     // Tolkning – plain language sammanfattning
-    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har direktivets tecken (positivt när
-    // kvinnor ligger lägre), det råa gapet framför det verktygets (rawGapPct, negativt när kvinnor ligger lägre).
-    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPctDirektivtecken) : '';
+    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har, som det råa gapet framför det
+    // (rawGapPct), verktygets tecken: negativt när kvinnor ligger lägre.
+    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
     const tolkning = isSig
         ? (Math.abs(r.konPct) >= _STS_STORLEK
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`
