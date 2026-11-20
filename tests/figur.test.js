@@ -532,6 +532,10 @@ describe('kronorSkillnad och kronorTipsRad', () => {
         expect(kronorSkillnad(42000, 40000)).toBe(2000);
         expect(Object.is(kronorSkillnad(41990, 42000), -0)).toBe(false);
     });
+    it('en halv hundring avrundas bort från noll åt båda håll, så att skillnaden och dess motsatta tal får samma belopp', () => {
+        expect(kronorSkillnad(41850, 42000)).toBe(-200);
+        expect(kronorSkillnad(42000, 41850)).toBe(200);
+    });
     it('null när en median saknas eller inte är ett positivt tal', () => {
         for (const [a, b] of [[null, 30000], [30000, undefined], [NaN, 30000], [30000, 0], [0, 30000]]) expect(kronorSkillnad(a, b)).toBeNull();
     });

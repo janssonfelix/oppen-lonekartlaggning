@@ -68,16 +68,31 @@ const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
 const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
 
 /**
+ * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
+ * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
+ * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
+ */
+export function namnIYrkesfaltetRadnr(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
+}
+
+/**
  * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
- * varningar, i Att göra och i inläsningsrapporten. Texten bär antalet rader och radnumren, aldrig fältets innehåll.
+ * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
+ * rader och radnumren, aldrig fältets innehåll.
  * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
  * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
  * @returns {string} Tom när antalet är 0.
  */
 export function namnIYrkesfaltetText(antal, radnr = []) {
     if (!(antal > 0)) return '';
-    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
-    const vilka = nr.length ? ` (${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)})` : '';
+    const nr = namnIYrkesfaltetRadnr(antal, radnr);
+    const vilka = nr ? ` (${nr})` : '';
     return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
         + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
 }

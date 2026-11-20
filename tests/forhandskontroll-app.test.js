@@ -73,6 +73,11 @@ describe('förhandskontrollen efter inläsningen', () => {
         const rapport = w.document.getElementById('data-validation-report');
         expect(rapport.textContent).toMatch(/Förhandskontroll: 1 varning/);
         expect(rapport.querySelector('a[data-go-to-anchor="avsnitt-fi-forhandskontroll"]')).toBeTruthy();
+        // Antalet är radens värde, och länken står på en egen rad under, inte i raden bredvid texten.
+        const fkRad = rapport.querySelector('[data-dvr="forhandskontroll"]');
+        expect(fkRad.querySelector('.dvr-value').textContent).toBe('1 varning');
+        expect(fkRad.querySelector('a')).toBeNull();
+        expect(fkRad.nextElementSibling.querySelector('a[data-go-to-anchor="avsnitt-fi-forhandskontroll"]')).toBeTruthy();
 
         await lasIn(w, fil(), 'ren.csv');
         expect(punkter(w)).toEqual([]);

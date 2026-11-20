@@ -277,6 +277,62 @@ describe('Löneöversyn utan påslag', () => {
     });
 });
 
+// Ordet och f\u00E4rgen p\u00E5 utfallets rader f\u00F6ljer talen som de visas med en decimal (_fcRiktning i 36-loneoversyn.js), inte
+// de oavrundade talen: efter ett generellt p\u00E5slag stod "\u22124,3 % till \u22124,3 % \u00F6kar" i r\u00F6tt.
+describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => {
+    const utfall = w => {
+        w.__renderTabContent('loneoversyn');
+        const el = w.document.getElementById('forecast-outcome');
+        return { el, text: el.textContent.replace(/\s+/g, ' ') };
+    };
+    const rad = (text, etikett) => text.match(new RegExp(`${etikett}: (\\S+ %) till (\\S+ %)(?: (minskar|\u00F6kar|of\u00F6r\u00E4ndrat|n\u00E4rmar sig 100 %|l\u00E4ngre fr\u00E5n 100 %))?`));
+    const OFORKL = 'Of\u00F6rklarad skillnad \\(regressionen\\)', ANDEL = 'Kvinnors medianl\u00F6n i % av m\u00E4ns';
+    it('generellt p\u00E5slag 2 % p\u00E5 demodatan: lika tal f\u00F6re och efter \u00E4r of\u00F6r\u00E4ndrat, utan r\u00F6d markering', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__state.forecast.generell = { mode: 'pct', value: 2 };
+        const { el, text } = utfall(w);
+        for (const etikett of [OFORKL, ANDEL]) {
+            const m = rad(text, etikett);
+            expect(m, etikett).toBeTruthy();
+            expect(m[1], etikett).toBe(m[2]);
+            expect(m[3], etikett).toBe('of\u00F6r\u00E4ndrat');
+        }
+        const card = el.querySelector('.card');
+        expect(card.querySelectorAll('.f-kritisk')).toHaveLength(0);
+        expect(card.querySelectorAll('.f-dampad')).toHaveLength(2);
+        expect(card.querySelector('.bg-kritisk')).toBeNull();
+    });
+    it('riktade p\u00E5slag till kvinnorna \u00E4ndrar den of\u00F6rklarade skillnaden, och ordet st\u00E4mmer med de visade talen', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const bas = [...new Set(w.__state.data.map(r => r.bas))];
+        w.__state.forecast.targets = bas.map(b => ({ bas: b, aid: '*', mode: 'pct', value: 6, dist: 'flat', kon: 'kvinna', pool: 'equity' }));
+        const { el, text } = utfall(w);
+        const tal = s => Number(s.replace(/\s%$/, '').replace('\u2212', '-').replace('+', '').replace(',', '.'));
+        const m = rad(text, OFORKL);
+        expect(m).toBeTruthy();
+        const [fore, efter] = [tal(m[1]), tal(m[2])];
+        expect(fore).toBeLessThan(0);
+        expect(efter).not.toBe(fore);
+        expect(m[3]).toBe(Math.abs(efter) < Math.abs(fore) ? 'minskar' : '\u00F6kar');
+        expect(m[3]).toBe('minskar');
+        const a = rad(text, ANDEL);
+        expect(a[3]).toBe(Math.abs(tal(a[2]) - 100) < Math.abs(tal(a[1]) - 100) ? 'n\u00E4rmar sig 100 %' : Math.abs(tal(a[2]) - 100) > Math.abs(tal(a[1]) - 100) ? 'l\u00E4ngre fr\u00E5n 100 %' : 'of\u00F6r\u00E4ndrat');
+        const ord = [...el.querySelector('.card').querySelectorAll('span')].find(s => s.textContent === 'minskar');
+        expect(ord.className).toBe('farg-ok');
+    });
+    it('_fcRiktning avg\u00F6r p\u00E5 en decimal: lika visade tal \u00E4r 0, och avst\u00E5ndet m\u00E4ts fr\u00E5n m\u00E5let', () => {
+        const w = demo();
+        expect(w.eval('_fcRiktning(-4.26, -4.34, 0)')).toBe(0);          // b\u00E5da visas som \u22124,3 %
+        expect(w.eval('_fcRiktning(-4.3, -4.0, 0)')).toBe(-1);
+        expect(w.eval('_fcRiktning(-4.0, -4.3, 0)')).toBe(1);
+        expect(w.eval('_fcRiktning(95.66, 95.74, 100)')).toBe(0);       // b\u00E5da visas som 95,7 %
+        expect(w.eval('_fcRiktning(95.7, 96.1, 100)')).toBe(-1);
+        expect(w.eval('_fcRiktning(null, 1, 0)')).toBeNull();
+    });
+});
+
 describe('en exportknapp per kort', () => {
     const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska'];
     it('varje diagram har en exportmeny, ingen behållare har två, och ingen fristående exportknapp står bredvid', () => {

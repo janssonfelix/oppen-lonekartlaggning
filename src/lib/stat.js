@@ -17,7 +17,21 @@
  *   - normalCdf                             (Φ för p-värden)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
+ *   - avrundaSymmetriskt                    (avrundningen i talformaten: halvorna bort från noll)
  */
+
+/**
+ * Avrundar ett tal för visning till `dec` decimaler med halvorna bort från noll, så att ett tal och dess motsatta
+ * tal alltid visas med samma siffror (Math.round avrundar halvorna uppåt: −1 600,5 blev −1 600 men 1 600,5 blev
+ * 1 601). Noll blir 0, aldrig −0. Talformaten i appen och i lib använder den; beräkningar avrundar på sitt eget sätt.
+ * @param {number} x
+ * @param {number} [dec]
+ * @returns {number}
+ */
+export function avrundaSymmetriskt(x, dec = 0) {
+    const f = 10 ** dec, r = Math.sign(x) * Math.round(Math.abs(x) * f) / f;
+    return r === 0 ? 0 : r;
+}
 
 /**
  * Beräknar median (P50) av en talsekvens.

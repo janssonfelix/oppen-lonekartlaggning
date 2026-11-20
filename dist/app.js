@@ -620,8 +620,9 @@ const _svNf = new Map();
 function svTal(v, dec = 0) {
     if (typeof v !== 'number' || !isFinite(v)) return '–';
     if (!_svNf.has(dec)) _svNf.set(dec, new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }));
-    const f = 10 ** dec, r = Math.round(v * f) / f;
-    return _svNf.get(dec).format(r === 0 ? 0 : r);   // ingen "−0,0"
+    // Halvorna avrundas bort från noll (avrundaSymmetriskt i src/lib/stat.js): −1 600,5 och 1 600,5 visas båda med
+    // siffrorna 1 601. Noll visas utan minustecken (ingen "−0,0").
+    return _svNf.get(dec).format(_avrundaSymmetriskt(v, dec));
 }
 // Mellan talet och enheten står ett hårt mellanslag (U+00A0), som Intl redan skriver mellan tusentalen: då bryts
 // «36 262 kr» och «73 %» aldrig isär i en smal kolumn, på skärmen eller i utskriften. Excel-exporten gör det hårda
@@ -636,7 +637,7 @@ const _svPoNf = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
 /** @param {number} v */
 function svPoPct(v) { return typeof v === 'number' && isFinite(v) ? `${_svPoNf.format(v)} %` : '–'; }
 /** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal. */
-function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(Math.round(v), 0)} kr` : tom; }
+function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(v, 0)} kr` : tom; }
 
 // ---- Underlagets storlek i en tabell ----
 // En tabell med ett lönemått för en grupp visar gruppens antal (som egen kolumn); en modelltabell, där alla rader
@@ -3081,7 +3082,21 @@ const __mirrorStat = (() => {
  *   - normalCdf                             (Φ för p-värden)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
+ *   - avrundaSymmetriskt                    (avrundningen i talformaten: halvorna bort från noll)
  */
+
+/**
+ * Avrundar ett tal för visning till `dec` decimaler med halvorna bort från noll, så att ett tal och dess motsatta
+ * tal alltid visas med samma siffror (Math.round avrundar halvorna uppåt: −1 600,5 blev −1 600 men 1 600,5 blev
+ * 1 601). Noll blir 0, aldrig −0. Talformaten i appen och i lib använder den; beräkningar avrundar på sitt eget sätt.
+ * @param {number} x
+ * @param {number} [dec]
+ * @returns {number}
+ */
+function avrundaSymmetriskt(x, dec = 0) {
+    const f = 10 ** dec, r = Math.sign(x) * Math.round(Math.abs(x) * f) / f;
+    return r === 0 ? 0 : r;
+}
 
 /**
  * Beräknar median (P50) av en talsekvens.
@@ -3408,13 +3423,14 @@ function bhJustera(pVarden) {
     return q;
 }
 
-    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, matMul, invert, median, linearRegression, percentilintervall };
+    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, avrundaSymmetriskt, matMul, invert, median, linearRegression, percentilintervall };
 })();
 const _tQuantile = __mirrorStat.tQuantile;
 const _pValue2Sided = __mirrorStat.pValue2Sided;
 const _fitOLS = __mirrorStat.fitOLS;
 const _libQuantile = __mirrorStat.quantile;
 const _bhJustera = __mirrorStat.bhJustera;
+const _avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
 
 // ---- speglar src/lib/kostnad.js ----
 const __mirrorKostnad = (() => {
@@ -7109,6 +7125,7 @@ const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const aidAvYrke = __mirrorAid.aidAvYrke;
     const kostnadsfaktor = __mirrorKostnad.kostnadsfaktor;
     const kostnadPerAr = __mirrorKostnad.kostnadPerAr;
@@ -7180,7 +7197,7 @@ const _PO_FORMAT = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
  */
 function arsbeloppMening(g, costSettings, kr) {
     if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
-    const diff = Math.round((g.medMa - g.medKv) / 100) * 100;
+    const diff = avrundaSymmetriskt((g.medMa - g.medKv) / 100) * 100;   // som kronorSkillnad i src/lib/figur.js
     if (diff < 100) return null;
     const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
@@ -8331,6 +8348,7 @@ const _refNamnFranFil = __mirrorReferens.namnFranFil;
 const __mirrorDatakvalitet = (() => {
     // importer ur tidigare speglade lib-moduler
     const konOf = __mirrorFalt.konOf;
+    const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const personOrd = __mirrorNamn.personOrd;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
@@ -8348,6 +8366,7 @@ const __mirrorDatakvalitet = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -8360,7 +8379,7 @@ function _stat(v, okGrans, varnGrans, hogreArBattre) {
     if (hogreArBattre) return v >= okGrans ? 'ok' : v >= varnGrans ? 'varning' : 'kritisk';
     return v <= okGrans ? 'ok' : v <= varnGrans ? 'varning' : 'kritisk';
 }
-const _pct = v => (v == null || !isFinite(v)) ? '–' : `${(Math.round(v * 10) / 10).toLocaleString('sv-SE')} %`;
+const _pct = v => (v == null || !isFinite(v)) ? '–' : `${avrundaSymmetriskt(v, 1).toLocaleString('sv-SE')} %`;
 
 /** BAS där båda könen har minst k personer (samma regel som maskeringen). */
 function jamforbaraBas(rader, k) {
@@ -12385,16 +12404,31 @@ const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
 const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
 
 /**
+ * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
+ * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
+ * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
+ */
+function namnIYrkesfaltetRadnr(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
+}
+
+/**
  * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
- * varningar, i Att göra och i inläsningsrapporten. Texten bär antalet rader och radnumren, aldrig fältets innehåll.
+ * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
+ * rader och radnumren, aldrig fältets innehåll.
  * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
  * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
  * @returns {string} Tom när antalet är 0.
  */
 function namnIYrkesfaltetText(antal, radnr = []) {
     if (!(antal > 0)) return '';
-    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
-    const vilka = nr.length ? ` (${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)})` : '';
+    const nr = namnIYrkesfaltetRadnr(antal, radnr);
+    const vilka = nr ? ` (${nr})` : '';
     return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
         + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
 }
@@ -12558,11 +12592,12 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     return { tolkning, sammandrag, fordelning, varningar, kolumner };
 }
 
-    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText };
+    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText, namnIYrkesfaltetRadnr };
 })();
 const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
 const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
+const _fkNamnIYrkesfaltetRadnr = __mirrorForhandskontroll.namnIYrkesfaltetRadnr;
 
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
@@ -12976,6 +13011,7 @@ const _opLiknarPersonuppgift = __mirrorOrganisationspaket.liknarPersonuppgift;
 const __mirrorFigur = (() => {
     // importer ur tidigare speglade lib-moduler
     const quantile = __mirrorStat.quantile;
+    const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
 
@@ -13018,8 +13054,9 @@ function _tal(dec) {
 function talformat(v, namn, val) {
     const enhet = !val || val.enhet !== false;
     if (typeof v !== 'number' || !isFinite(v)) return '–';
-    // Avrunda först och normalisera sedan: ett värde som blir noll i formatet får inget minustecken.
-    const rund = (x, dec) => { const f = 10 ** dec, r = Math.round(x * f) / f; return r === 0 ? 0 : r; };
+    // Avrunda först (halvorna bort från noll, så att ett tal och dess motsatta tal får samma siffror) och normalisera
+    // sedan: ett värde som blir noll i formatet får inget minustecken.
+    const rund = avrundaSymmetriskt;
     if (namn === 'kr') return _tal(0).format(rund(v, 0)) + (enhet ? ' kr' : '');
     if (namn === 'pct') return _tal(1).format(rund(v, 1)) + (enhet ? ' %' : '');
     if (namn === 'pctAbs') { const a = Math.abs(rund(v, 1)); return _tal(Number.isInteger(a) ? 0 : 1).format(a) + (enhet ? ' %' : ''); }
@@ -13055,7 +13092,7 @@ function kvantilpunkter(varden, antalMax = 20) {
  */
 function kronorSkillnad(medKv, medMa) {
     if (typeof medKv !== 'number' || typeof medMa !== 'number' || !isFinite(medKv) || !isFinite(medMa) || !(medMa > 0) || !(medKv > 0)) return null;
-    const r = Math.round((medKv - medMa) / 100) * 100;
+    const r = avrundaSymmetriskt((medKv - medMa) / 100) * 100;
     return r === 0 ? 0 : r;
 }
 
@@ -19361,8 +19398,10 @@ function renderDataValidationReport() {
     const invalidLonExamples = da.invalidLonExamples || [];
     const invalidAlderExamples = da.invalidAlderExamples || [];
     const missingKonExamples = da.missingKonExamples || [];
-    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren; texten är förhandskontrollens.
+    // Personnamn i fältet för AID-etikett: antal rader och de första radnumren. Hela varningen står i
+    // förhandskontrollen och i Att göra; här står en kort rad, med radnumren i förhandskontrollens formulering.
     const yrkeNamn = da.yrkeNamn || 0;
+    const yrkeNamnRadnr = _fkNamnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
     const used = state.data.length;
 
     // Räkna varningar
@@ -19406,7 +19445,7 @@ function renderDataValidationReport() {
             <div class="dvr-section">
                 <h4>Från fil till analys</h4>
                 <div class="dvr-row ok"><span>Total rader i fil:</span><span class="dvr-value">${fmt(totalRaw)}</span></div>
-                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>${esc(_fkNamnIYrkesfaltetText(yrkeNamn, da.yrkeNamnRadnr))}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
+                ${yrkeNamn > 0 ? `<div class="dvr-row warn" data-dvr="yrke-namn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Personnamn i fältet för ${esc(T.enhet.en)}:${yrkeNamnRadnr ? ' <span class="text-dampad-xs">' + esc(yrkeNamnRadnr) + '</span>' : ''}</span><span class="dvr-value">${fmt(yrkeNamn)}</span></div>` : ''}
                 ${excludedNoBas > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar BAS:</span><span class="dvr-value">${fmt(excludedNoBas)}</span></div>` : ''}
                 ${excludedZeroLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Lön ≤ 0:</span><span class="dvr-value">${fmt(excludedZeroLon)}</span></div>` : ''}
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}
@@ -19648,8 +19687,10 @@ function _fkRapportrad() {
     const fk = state.forhandskontroll;
     if (!fk || fk.vantar || fk.ejInlast) return '';
     const n = fk.varningar.length;
-    return `<div class="dvr-row ${n ? 'warn' : 'ok'}"><span><span class="dvr-icon">${ikon(n ? 'statusVarning' : 'bock')}</span>Förhandskontroll: ${esc(_fkNyckeltext(fk))}</span>`
-        + `<a href="#" class="dvr-value" data-go-to-tab="filer" data-go-to-anchor="avsnitt-fi-forhandskontroll">Visa förhandskontrollen</a></div>`;
+    // Antalet som värde och länken på en egen rad under, så att texten och länken inte trängs i kortets smala kolumn.
+    return `<div class="dvr-row ${n ? 'warn' : 'ok'}" data-dvr="forhandskontroll"><span><span class="dvr-icon">${ikon(n ? 'statusVarning' : 'bock')}</span>Förhandskontroll:</span> `
+        + `<span class="dvr-value">${esc(_fkNyckeltext(fk))}</span></div>`
+        + `<div class="fs-xs marg-b-4"><a href="#" data-go-to-tab="filer" data-go-to-anchor="avsnitt-fi-forhandskontroll">Visa förhandskontrollen</a></div>`;
 }
 
 function _fkCellHtml(cell) {
@@ -26539,7 +26580,7 @@ function _lvParFigur(pairs, max = 14) {
     const namn = p => `${_rfKorta(String(p.kvLabel), 22)} mot ${_rfKorta(String(p.maLabel), 22)}`;
     const rader = [], sedda = new Set();
     for (const p of top) { const y = namn(p); if (!sedda.has(y) && isFinite(p.kvMedian) && isFinite(p.maMedian)) { sedda.add(y); rader.push({ p, y }); } }
-    const kr = v => _figTalformat(Math.round(v), 'kr');
+    const kr = v => _figTalformat(v, 'kr');
     const parFalt = p => ({ ...(p.kvBas != null && p.kvBas !== '' ? { bas: String(p.kvBas) } : {}), ...(isFinite(p.gapPct) ? { gap: +p.gapPct.toFixed(1) } : {}), ...(p.kvN > 0 ? { n: p.kvN } : {}) });
     const tips = ({ p }) => [[`${p.kvLabel} (BAS ${p.kvBas})`], ['Median', kr(p.kvMedian)], [`${p.maLabel} (BAS ${p.maBas})`], ['Median', kr(p.maMedian)], ['Skillnad', `${svPct(p.gapPct, 1)} (${kr(p.gapKr)})`]];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
@@ -26926,6 +26967,19 @@ function _fcKostnadsval() {
     return { months, poPct, roundStep: state.forecast.roundStep || 0,
              kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
 }
+// Riktningen för ett mått före och efter, avgjord på talen som de visas (en decimal): när före och efter visas lika
+// står "oförändrat" i neutral färg, i stället för att ordet och färgen följer de oavrundade talen ("−4,3 % till
+// −4,3 % ökar"). Utfallets två rader, stapeln under dem, diagrammet och tabellen per grupp avgör alla här. `mal` är
+// värdet där skillnaden är borta: 0 för den oförklarade skillnaden, 100 för kvinnors median i procent av mäns.
+// −1: närmare målet; 1: längre ifrån; 0: oförändrat; null när ett tal saknas.
+/** @param {number|null|undefined} fore @param {number|null|undefined} efter @param {number} [mal] @returns {-1|0|1|null} */
+function _fcRiktning(fore, efter, mal = 0) {
+    if (typeof fore !== 'number' || typeof efter !== 'number' || !isFinite(fore) || !isFinite(efter)) return null;
+    const avstand = v => Math.abs(_avrundaSymmetriskt(v, 1) - mal);
+    const a = avstand(fore), b = avstand(efter);
+    return b < a ? -1 : b > a ? 1 : 0;
+}
+
 /**
  * Utfallets rader per grupp, för tabellen och bladet Fördelning (ADR-70). En grupp under tröskeln `K` har sin rad med
  * antal och andel kvinnor, men medianerna och kostnaden maskeras (`sma`). Kostnaden för de maskerade raderna står
@@ -27110,15 +27164,13 @@ function updateForecast() {
     }).join('') + (utfall.samlad && utfall.samlad.kostnad != null
         ? `<tr><td>Kostnad för grupper under tröskeln</td><td>${utfall.samlad.antalGrupper} ${utfall.samlad.antalGrupper === 1 ? 'grupp' : 'grupper'}, ${utfall.samlad.n} ${personOrd(utfall.samlad.n)}</td><td colspan="5"></td><td class="t-hoger">${kr(utfall.samlad.kostnad)}/mån</td><td></td></tr>`
         : '');
-    const gapCell = (before, after, _lowerBetterTowardZero) => {
-        const arrow = (before == null || after == null) ? '' : (Math.abs(after) < Math.abs(before) ? ` <span class="farg-ok">minskar</span>` : (Math.abs(after) > Math.abs(before) ? ' <span class="f-kritisk">ökar</span>' : ' <span class="f-dampad">oförändrat</span>'));
-        return `${pct(before)} till <strong>${pct(after)}</strong>${arrow}`;
-    };
+    // Ordet och färgen följer talen som de visas (_fcRiktning): lika på en decimal är oförändrat.
+    const riktningsord = (r, narmare, langre) => (r == null ? '' : r < 0 ? ` <span class="farg-ok">${narmare}</span>`
+        : r > 0 ? ` <span class="f-kritisk">${langre}</span>` : ' <span class="f-dampad">oförändrat</span>');
+    const gapCell = (before, after) => `${pct(before)} till <strong>${pct(after)}</strong>${riktningsord(_fcRiktning(before, after, 0), 'minskar', 'ökar')}`;
     // Det råa gapet visas som kvinnors medianlön i procent av mäns (andelAvMan); pilen säger om den närmar sig 100.
-    const andelCell = (before, after) => {
-        const arrow = (before == null || after == null) ? '' : (Math.abs(after) < Math.abs(before) ? ` <span class="farg-ok">närmar sig 100 %</span>` : (Math.abs(after) > Math.abs(before) ? ' <span class="f-kritisk">längre från 100 %</span>' : ' <span class="f-dampad">oförändrat</span>'));
-        return `${andelAvMan(before)} till <strong>${andelAvMan(after)}</strong>${arrow}`;
-    };
+    const andelRiktning = (before, after) => (before == null || after == null ? null : _fcRiktning(100 + before, 100 + after, 100));
+    const andelCell = (before, after) => `${andelAvMan(before)} till <strong>${andelAvMan(after)}</strong>${riktningsord(andelRiktning(before, after), 'närmar sig 100 %', 'längre från 100 %')}`;
     // #12 Enkel före/efter-stapel på |rågap| (mindre = bättre)
     const gapBar = (before, after) => {
         if (before == null || after == null) return '';
@@ -27126,7 +27178,7 @@ function updateForecast() {
         const w = v => (Math.abs(v) / scale * 100).toFixed(1);
         return `<div class="marg-t-6 max-bredd-360">
             <div class="rad-mitt gap-6 marg-b-3"><span class="text-dampad-xs bredd-42">Före</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p bg-blek" data-stil-bredd="${w(before)}%"></div></div></div>
-            <div class="rad-mitt gap-6"><span class="text-dampad-xs bredd-42">Efter</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p ${Math.abs(after) <= Math.abs(before) ? 'bg-ok' : 'bg-kritisk'}" data-stil-bredd="${w(after)}%"></div></div></div>
+            <div class="rad-mitt gap-6"><span class="text-dampad-xs bredd-42">Efter</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p ${{ '-1': 'bg-ok', 0: 'bg-dampad', 1: 'bg-kritisk' }[andelRiktning(before, after)]}" data-stil-bredd="${w(after)}%"></div></div></div>
         </div>`;
     };
     // #8 Stegvis plan över N år (DiskrL 3:11)
@@ -27239,8 +27291,8 @@ function _forecastLutningRader(d, sim, niva) {
         h[0].push(r.lon); h[1].push(sim[i].lon);
     });
     const gap = (kv, ma) => { const mm = Stat.median(ma); return mm > 0 ? Stat.median(kv) / mm * 100 : null; };   // kvinnors median i % av mäns
-    const fran100 = v => Math.abs(v - 100);
-    const farg = (fore, efter) => (fran100(efter) < fran100(fore) - 0.05 ? PALETTE.semantic.ok : fran100(efter) > fran100(fore) + 0.05 ? PALETTE.semantic.kritisk : PALETTE.semantic.neutral);
+    // Färgen följer talen som de visas med en decimal (_fcRiktning), som utfallets rad för hela urvalet.
+    const farg = (fore, efter) => ({ '-1': PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[_fcRiktning(fore, efter, 100)];
     return [...grupper.values()].filter(g => g.kv[0].length >= k && g.ma[0].length >= k)
         .map(g => ({ namn: g.namn, markering: g.markering, ...(g.bas != null ? { bas: g.bas } : { yrke: g.yrke }), nKv: g.kv[0].length, nMa: g.ma[0].length,
                      n: g.kv[0].length + g.ma[0].length, fore: gap(g.kv[0], g.ma[0]), efter: gap(g.kv[1], g.ma[1]) }))
@@ -27256,7 +27308,7 @@ function _forecastLutningTabell(rader, niva) {
     const p = v => _figTalformat(v, 'pct'), diff = v => (v > 0 ? '+' : '') + _figTalformat(v, undefined) + ' procentenheter';
     host.innerHTML = `<table id="forecast-lutning-table" class="data-table fs-sm marg-t-10">
         <thead><tr><th>${niva === 'bas' ? termStor(T.niva.en) : termStor(T.enhet.en)}</th><th class="t-hoger">Kvinnor / män</th><th class="t-hoger">Kvinnors median i % av mäns, före</th><th class="t-hoger">Efter</th><th class="t-hoger">Förändring</th></tr></thead>
-        <tbody>${rader.map(r => `<tr><td>${esc(r.namn)}</td><td class="t-hoger">${r.nKv}/${r.nMa}</td><td class="t-hoger">${p(r.fore)}</td><td class="fw-600 ta-hoger">${p(r.efter)}</td><td class="t-hoger">${diff(+(r.efter - r.fore).toFixed(1))}</td></tr>`).join('')}</tbody></table>`;
+        <tbody>${rader.map(r => `<tr><td>${esc(r.namn)}</td><td class="t-hoger">${r.nKv}/${r.nMa}</td><td class="t-hoger">${p(r.fore)}</td><td class="fw-600 ta-hoger">${p(r.efter)}</td><td class="t-hoger">${diff(_avrundaSymmetriskt(r.efter, 1) - _avrundaSymmetriskt(r.fore, 1))}</td></tr>`).join('')}</tbody></table>`;
     for (const [i, tr] of [...host.querySelectorAll('tbody tr')].entries()) if (rader[i].markering) tr._markering = rader[i].markering;
 }
 function _renderForecastLutning(d, sim) {
@@ -27268,7 +27320,7 @@ function _renderForecastLutning(d, sim) {
     let rader = d && sim ? _forecastLutningRader(d, sim, niva) : [], fler = 0;
     if (niva === 'grupp') {
         // Yrkesgrupperna är många: bara de där gapet ändras, störst ändring först.
-        const andrade = rader.filter(r => r.efter != null && r.fore != null && Math.abs(r.efter - r.fore) >= 0.05).sort((x, y) => Math.abs((y.efter ?? 0) - (y.fore ?? 0)) - Math.abs((x.efter ?? 0) - (x.fore ?? 0)));
+        const andrade = rader.filter(r => r.efter != null && r.fore != null && _avrundaSymmetriskt(r.efter, 1) !== _avrundaSymmetriskt(r.fore, 1)).sort((x, y) => Math.abs((y.efter ?? 0) - (y.fore ?? 0)) - Math.abs((x.efter ?? 0) - (x.fore ?? 0)));
         fler = Math.max(0, andrade.length - FORECAST_LUTNING_MAX);
         rader = andrade.slice(0, FORECAST_LUTNING_MAX);
         _forecastLutningTabell(andrade, niva);   // tabellen bär alla ändrade grupper, också dem diagrammet inte ryms
@@ -28117,7 +28169,7 @@ function _strukturKvartilFor(rader, { beskrivning }) {
 }
 // `omfang` (ett underlag, t.ex. 'sektor Skola'): beskrivningen säger att figuren är räknad för det.
 function _strukturPercentilFigur(dist, omfang) {
-    const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(Math.round(v), 'kr');
+    const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(v, 'kr');
     const tips = d => [[d.y], ['Kvinnor', kr(d.r.kv)], ['Män', kr(d.r.ma)], ['Kvinnors lön i % av mäns', _figTalformat(100 + d.r.gapPct, 'pct')], ..._figKronorTipsRad(_figKronorSkillnad(d.r.kv, d.r.ma))];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
         data: dist.map(x => ({ y: namn(x), x: Math.round(x[falt]), r: x, ...(extra.etikettLage ? { etikett: _figTalformat(100 + x.gapPct, 'pct') } : {}) })), tips });
@@ -28841,7 +28893,7 @@ function renderKon(bas) {
     // sätts i Lika arbete, där skillnaden prövas mot slumpen.
     { const u = document.getElementById("kon-kpi-agegap-under");
       if (u) { u.textContent = "kvinnors lön i % av mäns"; u.classList.remove("ar-granska"); } }
-    const lutning = (ok, reg) => (ok ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(reg.m)), 0)}` : '–');
+    const lutning = (ok, reg) => (ok ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(reg.m), 0)}` : '–');
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
     if (insightEl) {
@@ -28880,7 +28932,7 @@ function renderKon(bas) {
             (konOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år, mäns med ${Math.round(regMa.m)} kr per år. `
                    : `${kvOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ''}${maOk ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ''}Trendlinje visas inte för ${utan}: ${skal}. `) +
             `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` +
-            (trendAlla ? ` Trend för hela urvalet: ${trendAlla.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(trendAlla.m)), 0)} kr per år.` : '') }), { hojd: 420 });
+            (trendAlla ? ` Trend för hela urvalet: ${trendAlla.m >= 0 ? '+' : '−'}${svTal(Math.abs(trendAlla.m), 0)} kr per år.` : '') }), { hojd: 420 });
     // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln. Lådorna kan räknas för en sektor eller
     // en åldersgrupp (figur.underlag): resten är de övriga i fliken urval, det valda BAS-intervallet eller hela urvalet.
     const boxEl = document.getElementById('chart-kon-boxplot');
@@ -28997,7 +29049,7 @@ function _konAlderGapFigur(rader, scope) {
     const status = o => gapStatusKI(o);   // uppmärksamhetstrappan (ADR-59): KI:t mot 100 % och golvet statGolv()
     const pkt = o => ({ y: o.namn, x: +o.gap.toFixed(1), etikett: _figTalformat(o.gap, 'pct'), o, aldersgrupp: o.namn, nMin: Math.min(o.nKv, o.nMa),
         ...(o.ci ? { fel: { lag: o.ci.lo, hog: o.ci.hi } } : {}), ..._kronorFalt(o.medKv, o.medMa) });
-    const kr = v => _figTalformat(Math.round(v), 'kr');
+    const kr = v => _figTalformat(v, 'kr');
     const tips = d => [[d.y], ['Kvinnors median', `${_figTalformat(d.x, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr),
         ['95 % KI', d.fel ? `${_figTalformat(d.fel.lag, 'pct', { enhet: false })}–${_figTalformat(d.fel.hog, 'pct')}` : '–'],
         ['Median kvinnor / män', `${kr(d.o.medKv)} / ${kr(d.o.medMa)}`], ['Antal kvinnor / män', `${d.o.nKv} / ${d.o.nMa}`]];
@@ -29963,7 +30015,7 @@ function _laOversiktTabell(bars, d = getData()) {
         // Bevisknappen står i radens rubrik: uträkningen bakom raden (formel och ingångsdata), som förut i tabellen per
         // BAS-intervall. Knappen har ingen text, så radens text och exporten är desamma som utan den.
         // Knapparna står under etiketten, inte efter: två ikoner bredvid "BAS X" gjorde tabellen för bred vid 1400 px.
-        tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<span class="la-oversikt-verktyg"><button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon('sok')}</button>${basdossierKnapp(o.bas, { ikonEndast: true })}</span></th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${_figTalformat(Math.round(o.medKv), 'kr')}</td><td class="tal">${_figTalformat(Math.round(o.medMa), 'kr')}</td>`
+        tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<span class="la-oversikt-verktyg"><button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon('sok')}</button>${basdossierKnapp(o.bas, { ikonEndast: true })}</span></th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${_figTalformat(o.medKv, 'kr')}</td><td class="tal">${_figTalformat(o.medMa, 'kr')}</td>`
             + `<td class="tal">${skillnad < 0 ? '−' : skillnad > 0 ? '+' : ''}${_figTalformat(Math.abs(skillnad), 'kr')}</td>`
             + `<td class="la-oversikt-cell" data-export-utelamna>${_laOversiktGrafik(o, dom, status)}</td>`
             + `<td class="tal la-oversikt-kvot" data-sort-value="${o.gap.toFixed(3)}">${svPct(o.gap, 1)}${o.ci ? `<span class="la-oversikt-ki">${svTal(o.ci.lo, 1)}–${svPct(o.ci.hi, 1)}</span>` : ''}</td>`
@@ -30275,7 +30327,7 @@ function generateBenchmark() {
     const kr = v => (v == null ? '–' : fmt.format(Math.round(v)));
     const diffCell = dd => (dd == null
         ? '<td class="num muted" data-sort-value="">–</td>'
-        : `<td class="num ${dd.pct < 0 ? 'jmf-neg' : 'jmf-pos'}" data-sort-value="${dd.pct.toFixed(2)}" title="${dd.kr >= 0 ? '+' : '−'}${fmt.format(Math.abs(Math.round(dd.kr)))}">${dd.pct >= 0 ? '+' : '−'}${Math.abs(dd.pct).toFixed(1).replace('.', ',')} %</td>`);
+        : `<td class="num ${dd.pct < 0 ? 'jmf-neg' : 'jmf-pos'}" data-sort-value="${dd.pct.toFixed(2)}" title="${dd.kr >= 0 ? '+' : '−'}${fmt.format(Math.abs(dd.kr))}">${dd.pct >= 0 ? '+' : '−'}${Math.abs(dd.pct).toFixed(1).replace('.', ',')} %</td>`);
     const block = (r, p) => `<td class="num jmf-block" data-sort-value="${r.org[p] ?? ''}">${kr(r.org[p])}</td>`
         + `<td class="num muted" data-sort-value="${r[kalla][p] ?? ''}">${kr(r[kalla][p])}</td>${diffCell(r.diff[kalla][p])}`;
 
@@ -33020,7 +33072,7 @@ function _niceCostLevels(maxCost) {
 // Kostnaden i kort form, i nyckeltalen, rutan Total och staplarnas etiketter: "386 Mkr", "4,2 Mkr", "950 tkr".
 function _fmtCost(kr) {
     if (kr >= 1e6) return svTal(kr/1e6, kr >= 1e7 ? 0 : 1) + '\u00a0Mkr';
-    if (kr >= 1e3) return svTal(Math.round(kr/1e3), 0) + '\u00a0tkr';
+    if (kr >= 1e3) return svTal(kr/1e3, 0) + '\u00a0tkr';
     return svKr(kr);
 }
 
@@ -33233,7 +33285,7 @@ function renderPrioritering() {
             <td class="t-hoger" data-sort-value="${i.median}">${fmt.format(Math.round(i.median))}</td>
             <td class="farg-dampad ta-hoger" data-sort-value="${i.refMedian}">${fmt.format(Math.round(i.refMedian))}</td>
             <td class="t-hoger">${diffBar}</td>
-            <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(Math.round(i.diffKr))}</td>
+            <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(_avrundaSymmetriskt(i.diffKr))}</td>
             <td class="t-hoger">${gapBar}${_prioKonStatus(i)}</td>
             <td class="t-hoger${i.costPerPerson > 0 ? ' f-kritisk' : ''}" data-sort-value="${i.costPerPerson}">${costPerPersonTxt}</td>
             <td class="fw-600 ta-hoger" data-sort-value="${costSort}">${costTxt}</td>
@@ -33501,7 +33553,7 @@ function _prioKostnadNot(alla, totalt) {
     const rest = alla.slice(PRIO_KOSTNAD_MAX);
     if (!rest.length || !(totalt > 0)) return '';
     const summa = rest.reduce((s, i) => s + i.annualGapTotal, 0);
-    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${_figTalformat(Math.round(summa), 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
+    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${_figTalformat(summa, 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
 }
 function _prioKostnadFigur(allaVisade, allCumPct) {
     // Högst PRIO_KOSTNAD_MAX grupper ritas; resten redovisas som en mening under diagrammet (_prioKostnadNot) — en
@@ -33537,7 +33589,7 @@ function _prioZonNamn(zon, cfg) {
 // Matrisen: en punktserie per status (förklaringen kan dölja en status), zoner för tröskelvärdena med namn, och
 // gruppens namn som text på punkten enligt valt etikettläge.
 function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
-    const kr = v => _figTalformat(Math.round(v), 'kr');
+    const kr = v => _figTalformat(v, 'kr');
     const pm = (v, dec) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(dec).replace('.', ',')}`;
     const kostnad = i => Math.max(i.annualGapTotal, i.annualOverTotal);
     const storst = Math.max(1, ...items.map(kostnad));
@@ -34351,7 +34403,7 @@ function rmCell(v, typ) {
     if (typ === 'ar') return `${svTal(v, 0)} år`;
     if (typ === 'tal2') return svTal(v, 2);
     if (typ === 'kr') return svKr(v);
-    if (typ === 'krAr') return `${svTal(Math.round(v), 0)}\u00a0kr/år`;
+    if (typ === 'krAr') return `${svTal(v, 0)}\u00a0kr/år`;
     if (typ === 'pct0') return svPct(v, 0);
     if (typ === 'pct1') return svPct(v, 1);
     if (typ === 'pct2') return svPct(v, 2);
@@ -36657,7 +36709,7 @@ function _rapportunderlagBlockExport() {
     lika.grupper.filter(g => g.flaggad).forEach((g, i) => {
         const rader = d.filter(r => r.yrke === g.yrke);
         const ki = _gdBootstrapGapCI(rader.filter(arKv).map(r => r.lon), rader.filter(arMa).map(r => r.lon));
-        const arsbelopp = _prArsbeloppMening(g, state.costSettings, v => _figTalformat(Math.round(v), 'kr'));
+        const arsbelopp = _prArsbeloppMening(g, state.costSettings, v => _figTalformat(v, 'kr'));
         block.push(_ruGruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
     });
     par.forEach((p, i) => block.push(_ruParBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
@@ -38328,7 +38380,7 @@ function _abSkalLista(skal) {
 /** Hur gruppens skillnad ändrades: " Skillnaden minskade från 1 800 till 1 200 kr/mån.", eller tomt när ett år saknar den. */
 function _abSkillnadText(f, n) {
     if (typeof f !== 'number' || typeof n !== 'number') return '';
-    const tal = v => svTal(Math.round(v), 0);
+    const tal = v => svTal(v, 0);
     if (f === n) return ` Skillnaden är oförändrad, ${tal(n)} kr/mån.`;
     return ` Skillnaden ${n < f ? 'minskade' : 'ökade'} från ${tal(f)} till ${tal(n)} kr/mån.`;
 }
@@ -39376,7 +39428,7 @@ function buildGruppdossier(key, delat = null) {
             medKv: mKv, medMa: mMa,
             ci: delat && delat.text ? null : _gdBootstrapGapCI(kvLons, maLons),
             // Räkneexemplet i kronor per år, med prioriteringens kostnadsinställningar.
-            arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(Math.round(v), 'kr'))
+            arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(v, 'kr'))
         };
     }
 

@@ -2,15 +2,16 @@
 // Copyright 2026 Felix Jansson
 // Varningen om personnamn i fältet för AID-etikett: inläsningen räknar raderna vars text har ett namnmönster och står
 // på högst två rader i filen (yrkeNamnNyckel och sallsyntaNamnrader i src/lib/inlasning.js) och sparar bara antalet och
-// de första radnumren; varningen står i förhandskontrollen, i inläsningsrapporten och i
-// Att göra, med samma text (namnIYrkesfaltetText i src/lib/forhandskontroll.js). Demona ska inte ge någon varning.
+// de första radnumren; varningen står i förhandskontrollen och i Att göra, med samma text (namnIYrkesfaltetText i
+// src/lib/forhandskontroll.js), och inläsningsrapporten har en kort rad med antalet och radnumren
+// (namnIYrkesfaltetRadnr, samma formulering som i varningen). Demona ska inte ge någon varning.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createAppWindow } from './helpers/app-harness.js';
 import { papa, vanta, csvFil, rot } from './helpers/granssnitt-rigg.js';
 import { yrkeLiknarNamn } from '../src/lib/inlasning.js';
-import { namnIYrkesfaltetText } from '../src/lib/forhandskontroll.js';
+import { namnIYrkesfaltetText, namnIYrkesfaltetRadnr } from '../src/lib/forhandskontroll.js';
 
 const status = w => w.document.getElementById('data-status').textContent;
 // Klart först när underlaget finns: statusraden kan bära en äldre text (till exempel efter Rensa all data) innan
@@ -31,6 +32,14 @@ const tabell = () => {
 };
 const csv = () => tabell().map(r => r.join(';'));
 const TEXT = namnIYrkesfaltetText(2, [5, 19]);
+// Inläsningsrapportens rad: kort etikett, radnumren som dämpat exempel och antalet som värde.
+const vantadRapportrad = rad => {
+    expect(rad).toBeTruthy();
+    expect(rad.textContent).not.toContain(TEXT);
+    expect(rad.querySelector('.dvr-value').textContent).toBe('2');
+    expect(rad.querySelector('.text-dampad-xs').textContent).toBe('rad 5 och 19');
+    expect(rad.textContent.replace(/\s+/g, ' ')).toMatch(/Personnamn i fältet för AID-etikett: rad 5 och 19/);
+};
 const avsnitt = w => w.document.getElementById('avsnitt-fi-forhandskontroll');
 const punkt = w => w.eval('buildActionChecklist()').find(p => p.id === 'fk-yrke-namn');
 const rapport = w => w.document.getElementById('data-validation-report');
@@ -61,13 +70,12 @@ describe('namn i fältet för AID-etikett: inläsningen', () => {
         await lasIn(w, csv());
         expect(w.__state.data).toHaveLength(30);   // varningen stoppar inte inläsningen
         expect(TEXT).toMatch(/på 2 rader \(rad 5 och 19\)/);
+        expect(TEXT).toContain(`(${namnIYrkesfaltetRadnr(2, [5, 19])})`);
         // Förhandskontrollen.
         expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toContain('yrke-namn');
         expect(avsnitt(w).querySelector('.fk-varningar').textContent).toContain(TEXT);
         // Inläsningsrapporten.
-        const rad = rapport(w).querySelector('[data-dvr="yrke-namn"]');
-        expect(rad).toBeTruthy();
-        expect(rad.textContent).toContain(TEXT);
+        vantadRapportrad(rapport(w).querySelector('[data-dvr="yrke-namn"]'));
         // Att göra.
         expect(punkt(w)).toMatchObject({ kategori: 'Underlagets kvalitet', prioritet: 'hög', tab: 'filer', detalj: TEXT,
             titel: 'Förhandskontrollen: personnamn i uttaget' });
@@ -144,6 +152,6 @@ describe('namn i fältet för AID-etikett: inläsningen', () => {
         w.document.getElementById('fk-las-in').click();
         expect(w.__state.data).toHaveLength(30);
         expect(punkt(w).detalj).toBe(TEXT);
-        expect(rapport(w).querySelector('[data-dvr="yrke-namn"]').textContent).toContain(TEXT);
+        vantadRapportrad(rapport(w).querySelector('[data-dvr="yrke-namn"]'));
     });
 });

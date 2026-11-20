@@ -9,6 +9,7 @@
  * kvalitetskriterium — den är ett fynd (könsskevhet).
  */
 import { konOf } from './falt.js';
+import { avrundaSymmetriskt } from './stat.js';
 import { personOrd } from './namn.js';
 import { skapaTermer, ordForAntal } from './termer.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
@@ -23,7 +24,7 @@ function _stat(v, okGrans, varnGrans, hogreArBattre) {
     if (hogreArBattre) return v >= okGrans ? 'ok' : v >= varnGrans ? 'varning' : 'kritisk';
     return v <= okGrans ? 'ok' : v <= varnGrans ? 'varning' : 'kritisk';
 }
-const _pct = v => (v == null || !isFinite(v)) ? '–' : `${(Math.round(v * 10) / 10).toLocaleString('sv-SE')} %`;
+const _pct = v => (v == null || !isFinite(v)) ? '–' : `${avrundaSymmetriskt(v, 1).toLocaleString('sv-SE')} %`;
 
 /** BAS där båda könen har minst k personer (samma regel som maskeringen). */
 export function jamforbaraBas(rader, k) {

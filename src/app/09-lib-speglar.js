@@ -813,7 +813,21 @@ const __mirrorStat = (() => {
  *   - normalCdf                             (Φ för p-värden)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
+ *   - avrundaSymmetriskt                    (avrundningen i talformaten: halvorna bort från noll)
  */
+
+/**
+ * Avrundar ett tal för visning till `dec` decimaler med halvorna bort från noll, så att ett tal och dess motsatta
+ * tal alltid visas med samma siffror (Math.round avrundar halvorna uppåt: −1 600,5 blev −1 600 men 1 600,5 blev
+ * 1 601). Noll blir 0, aldrig −0. Talformaten i appen och i lib använder den; beräkningar avrundar på sitt eget sätt.
+ * @param {number} x
+ * @param {number} [dec]
+ * @returns {number}
+ */
+function avrundaSymmetriskt(x, dec = 0) {
+    const f = 10 ** dec, r = Math.sign(x) * Math.round(Math.abs(x) * f) / f;
+    return r === 0 ? 0 : r;
+}
 
 /**
  * Beräknar median (P50) av en talsekvens.
@@ -1140,13 +1154,14 @@ function bhJustera(pVarden) {
     return q;
 }
 
-    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, matMul, invert, median, linearRegression, percentilintervall };
+    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, avrundaSymmetriskt, matMul, invert, median, linearRegression, percentilintervall };
 })();
 const _tQuantile = __mirrorStat.tQuantile;
 const _pValue2Sided = __mirrorStat.pValue2Sided;
 const _fitOLS = __mirrorStat.fitOLS;
 const _libQuantile = __mirrorStat.quantile;
 const _bhJustera = __mirrorStat.bhJustera;
+const _avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
 
 // ---- speglar src/lib/kostnad.js ----
 const __mirrorKostnad = (() => {
@@ -4841,6 +4856,7 @@ const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const aidAvYrke = __mirrorAid.aidAvYrke;
     const kostnadsfaktor = __mirrorKostnad.kostnadsfaktor;
     const kostnadPerAr = __mirrorKostnad.kostnadPerAr;
@@ -4912,7 +4928,7 @@ const _PO_FORMAT = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
  */
 function arsbeloppMening(g, costSettings, kr) {
     if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
-    const diff = Math.round((g.medMa - g.medKv) / 100) * 100;
+    const diff = avrundaSymmetriskt((g.medMa - g.medKv) / 100) * 100;   // som kronorSkillnad i src/lib/figur.js
     if (diff < 100) return null;
     const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
@@ -6063,6 +6079,7 @@ const _refNamnFranFil = __mirrorReferens.namnFranFil;
 const __mirrorDatakvalitet = (() => {
     // importer ur tidigare speglade lib-moduler
     const konOf = __mirrorFalt.konOf;
+    const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const personOrd = __mirrorNamn.personOrd;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
@@ -6080,6 +6097,7 @@ const __mirrorDatakvalitet = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -6092,7 +6110,7 @@ function _stat(v, okGrans, varnGrans, hogreArBattre) {
     if (hogreArBattre) return v >= okGrans ? 'ok' : v >= varnGrans ? 'varning' : 'kritisk';
     return v <= okGrans ? 'ok' : v <= varnGrans ? 'varning' : 'kritisk';
 }
-const _pct = v => (v == null || !isFinite(v)) ? '–' : `${(Math.round(v * 10) / 10).toLocaleString('sv-SE')} %`;
+const _pct = v => (v == null || !isFinite(v)) ? '–' : `${avrundaSymmetriskt(v, 1).toLocaleString('sv-SE')} %`;
 
 /** BAS där båda könen har minst k personer (samma regel som maskeringen). */
 function jamforbaraBas(rader, k) {
@@ -10117,16 +10135,31 @@ const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
 const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
 
 /**
+ * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
+ * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
+ * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
+ */
+function namnIYrkesfaltetRadnr(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
+}
+
+/**
  * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
- * varningar, i Att göra och i inläsningsrapporten. Texten bär antalet rader och radnumren, aldrig fältets innehåll.
+ * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
+ * rader och radnumren, aldrig fältets innehåll.
  * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
  * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
  * @returns {string} Tom när antalet är 0.
  */
 function namnIYrkesfaltetText(antal, radnr = []) {
     if (!(antal > 0)) return '';
-    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
-    const vilka = nr.length ? ` (${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)})` : '';
+    const nr = namnIYrkesfaltetRadnr(antal, radnr);
+    const vilka = nr ? ` (${nr})` : '';
     return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
         + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
 }
@@ -10290,11 +10323,12 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     return { tolkning, sammandrag, fordelning, varningar, kolumner };
 }
 
-    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText };
+    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText, namnIYrkesfaltetRadnr };
 })();
 const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
 const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
+const _fkNamnIYrkesfaltetRadnr = __mirrorForhandskontroll.namnIYrkesfaltetRadnr;
 
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
@@ -10708,6 +10742,7 @@ const _opLiknarPersonuppgift = __mirrorOrganisationspaket.liknarPersonuppgift;
 const __mirrorFigur = (() => {
     // importer ur tidigare speglade lib-moduler
     const quantile = __mirrorStat.quantile;
+    const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
 
@@ -10750,8 +10785,9 @@ function _tal(dec) {
 function talformat(v, namn, val) {
     const enhet = !val || val.enhet !== false;
     if (typeof v !== 'number' || !isFinite(v)) return '–';
-    // Avrunda först och normalisera sedan: ett värde som blir noll i formatet får inget minustecken.
-    const rund = (x, dec) => { const f = 10 ** dec, r = Math.round(x * f) / f; return r === 0 ? 0 : r; };
+    // Avrunda först (halvorna bort från noll, så att ett tal och dess motsatta tal får samma siffror) och normalisera
+    // sedan: ett värde som blir noll i formatet får inget minustecken.
+    const rund = avrundaSymmetriskt;
     if (namn === 'kr') return _tal(0).format(rund(v, 0)) + (enhet ? ' kr' : '');
     if (namn === 'pct') return _tal(1).format(rund(v, 1)) + (enhet ? ' %' : '');
     if (namn === 'pctAbs') { const a = Math.abs(rund(v, 1)); return _tal(Number.isInteger(a) ? 0 : 1).format(a) + (enhet ? ' %' : ''); }
@@ -10787,7 +10823,7 @@ function kvantilpunkter(varden, antalMax = 20) {
  */
 function kronorSkillnad(medKv, medMa) {
     if (typeof medKv !== 'number' || typeof medMa !== 'number' || !isFinite(medKv) || !isFinite(medMa) || !(medMa > 0) || !(medKv > 0)) return null;
-    const r = Math.round((medKv - medMa) / 100) * 100;
+    const r = avrundaSymmetriskt((medKv - medMa) / 100) * 100;
     return r === 0 ? 0 : r;
 }
 

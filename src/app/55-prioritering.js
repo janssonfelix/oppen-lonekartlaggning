@@ -231,7 +231,7 @@ function _niceCostLevels(maxCost) {
 // Kostnaden i kort form, i nyckeltalen, rutan Total och staplarnas etiketter: "386 Mkr", "4,2 Mkr", "950 tkr".
 function _fmtCost(kr) {
     if (kr >= 1e6) return svTal(kr/1e6, kr >= 1e7 ? 0 : 1) + '\u00a0Mkr';
-    if (kr >= 1e3) return svTal(Math.round(kr/1e3), 0) + '\u00a0tkr';
+    if (kr >= 1e3) return svTal(kr/1e3, 0) + '\u00a0tkr';
     return svKr(kr);
 }
 
@@ -444,7 +444,7 @@ function renderPrioritering() {
             <td class="t-hoger" data-sort-value="${i.median}">${fmt.format(Math.round(i.median))}</td>
             <td class="farg-dampad ta-hoger" data-sort-value="${i.refMedian}">${fmt.format(Math.round(i.refMedian))}</td>
             <td class="t-hoger">${diffBar}</td>
-            <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(Math.round(i.diffKr))}</td>
+            <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(_avrundaSymmetriskt(i.diffKr))}</td>
             <td class="t-hoger">${gapBar}${_prioKonStatus(i)}</td>
             <td class="t-hoger${i.costPerPerson > 0 ? ' f-kritisk' : ''}" data-sort-value="${i.costPerPerson}">${costPerPersonTxt}</td>
             <td class="fw-600 ta-hoger" data-sort-value="${costSort}">${costTxt}</td>
@@ -712,7 +712,7 @@ function _prioKostnadNot(alla, totalt) {
     const rest = alla.slice(PRIO_KOSTNAD_MAX);
     if (!rest.length || !(totalt > 0)) return '';
     const summa = rest.reduce((s, i) => s + i.annualGapTotal, 0);
-    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${_figTalformat(Math.round(summa), 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
+    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${_figTalformat(summa, 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
 }
 function _prioKostnadFigur(allaVisade, allCumPct) {
     // Högst PRIO_KOSTNAD_MAX grupper ritas; resten redovisas som en mening under diagrammet (_prioKostnadNot) — en
@@ -748,7 +748,7 @@ function _prioZonNamn(zon, cfg) {
 // Matrisen: en punktserie per status (förklaringen kan dölja en status), zoner för tröskelvärdena med namn, och
 // gruppens namn som text på punkten enligt valt etikettläge.
 function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
-    const kr = v => _figTalformat(Math.round(v), 'kr');
+    const kr = v => _figTalformat(v, 'kr');
     const pm = (v, dec) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(dec).replace('.', ',')}`;
     const kostnad = i => Math.max(i.annualGapTotal, i.annualOverTotal);
     const storst = Math.max(1, ...items.map(kostnad));

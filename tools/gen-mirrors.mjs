@@ -73,7 +73,7 @@ export const MODULES = [
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',
-            bhJustera: '_bhJustera',
+            bhJustera: '_bhJustera', avrundaSymmetriskt: '_avrundaSymmetriskt',
             // returneras för att andra lib-moduler importerar dem (se _parseImports); appen använder dem inte
             matMul: null, invert: null, median: null, linearRegression: null, percentilintervall: null
         }
@@ -320,7 +320,7 @@ export const MODULES = [
     {
         // Förhandskontrollen av lönefilen: tolkningen av de tio första raderna, sammandraget och varningarna.
         file: 'forhandskontroll.js', ns: '__mirrorForhandskontroll',
-        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser', namnIYrkesfaltetText: '_fkNamnIYrkesfaltetText' }
+        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser', namnIYrkesfaltetText: '_fkNamnIYrkesfaltetText', namnIYrkesfaltetRadnr: '_fkNamnIYrkesfaltetRadnr' }
     },
     {
         // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.

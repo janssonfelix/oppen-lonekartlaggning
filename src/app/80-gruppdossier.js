@@ -72,7 +72,7 @@ function buildGruppdossier(key, delat = null) {
             medKv: mKv, medMa: mMa,
             ci: delat && delat.text ? null : _gdBootstrapGapCI(kvLons, maLons),
             // Räkneexemplet i kronor per år, med prioriteringens kostnadsinställningar.
-            arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(Math.round(v), 'kr'))
+            arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(v, 'kr'))
         };
     }
 

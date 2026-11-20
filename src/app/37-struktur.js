@@ -303,7 +303,7 @@ function _strukturKvartilFor(rader, { beskrivning }) {
 }
 // `omfang` (ett underlag, t.ex. 'sektor Skola'): beskrivningen säger att figuren är räknad för det.
 function _strukturPercentilFigur(dist, omfang) {
-    const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(Math.round(v), 'kr');
+    const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(v, 'kr');
     const tips = d => [[d.y], ['Kvinnor', kr(d.r.kv)], ['Män', kr(d.r.ma)], ['Kvinnors lön i % av mäns', _figTalformat(100 + d.r.gapPct, 'pct')], ..._figKronorTipsRad(_figKronorSkillnad(d.r.kv, d.r.ma))];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
         data: dist.map(x => ({ y: namn(x), x: Math.round(x[falt]), r: x, ...(extra.etikettLage ? { etikett: _figTalformat(100 + x.gapPct, 'pct') } : {}) })), tips });
