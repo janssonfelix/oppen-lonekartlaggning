@@ -210,14 +210,16 @@ Fyra medvetna undantag:
    trendlinjen bygger på alla. Demografidelens trendlinje och lutning för hela urvalet exporteras bara när
    urvalet (alla BAS eller det valda) når tröskeln. Annars säger en not under diagrammet det. Lådornas
    avvikare i låddiagrammet per kön är enskilda löner, utan AID-etikett. De får exporteras som bild och som
-   diagramdata (en rad per person, utan identifierare). Diagramdatan säger på rad 2 att filen
-   innehåller en rad per person och ska hanteras som personuppgifter.
+   diagramdata (en rad per person). Diagramdatan säger på rad 2 att filen innehåller en rad per person och ska
+   hanteras som personuppgifter, och att text ur fältet för AID-etikett kan följa med som den står i lönefilen.
    **Word-utkastet och rapportens avsnitt innehåller inga sådana diagram.** Båda ritas ur samma
    rapportmodell, som bara bär diagram över grupper. **Utskriften av hela dokumentationen (mallen *Komplett
    rapport*) har bilagor med bilder av Ålder & karriärs spridningsdiagram, låddiagram och täthetsdiagram.**
    **ZIP-exporten innehåller bilder av alla ritade diagram från alla flikar**, också dessa. Det är ett beslut
-   (beslut 2026-10-16, ADR-48). Bilderna bär inga namn eller identifierare, och filerna hanteras som
-   personuppgifter (§4).
+   (beslut 2026-10-16, ADR-48). Text ur fältet för AID-etikett maskeras inte (ADR-85): när spridningsdiagrammet
+   färgläggs efter AID-etikett är texten serienamn i bildens förklaring och i diagramdatans kolumn Serie, och ett
+   urval på AID-etikett står i diagramdatan och i exportmenyns fotrad, som texten står i lönefilen. Står ett namn i
+   fältet följer det med. Filerna hanteras som personuppgifter (§4).
 
 **Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön.** Översikten per BAS-intervall
 (*Löneskillnad per BAS-intervall* i Lönestruktur) har bara rader för BAS-intervall där både kvinnor och män når
@@ -278,7 +280,7 @@ eller via urklipp — aldrig över nätverket:
 | Utdata | Innehåll | Hantering |
 |---|---|---|
 | Excel- och CSV-exporter | Aggregat per grupp. Bladet *Referenser* bär organisationens lönemått per AID-etikett som når tröskeln, och referensernas egna tal. Kandidatpar med små grupper ingår bara i likvärdighetsexporten (§3, undantag 1); övriga exporter utelämnar dem och anger antalet. Likvärdighetsexporten, och exporten från Tabeller och egna vyer när rutan för små grupper är ikryssad, anger i filen att den kan innehålla grupper under tröskeln. Handlingsplanens Excel-fil bär också det som fyllts i på fliken Handlingsplan (sakligt skäl, ansvarig, tidsplan och status per rad, och för egna rader åtgärd och berörd grupp), som Word-utkastets åtgärdstabell och utskriften av mallen. De fyra bladen per AID-kod och BAS-intervall (*Lika arbete AID x BAS*, *Likvärdigt arbete*, *Hierarkisk jämförelse*, *Analys på individnivå*) ger en grupp en egen rad från 5 personer med antal per kön men utan lönemått, räknar upp mindre grupper i en not med namn och antal, och redovisar lönemått bara för grupper och kön som når tröskeln (riskanalysen §6.5); lönemånaden ovanför tabellerna är användarens egen text | Som personuppgifter |
-| Diagramdata från diagram med enskilda personer | En rad per person: lön, kön och ålder eller grupp — utan identifierare | Som personuppgifter |
+| Diagramdata från diagram med enskilda personer | En rad per person: lön, kön och ålder eller grupp. Text ur fältet för AID-etikett kan följa med som den står i lönefilen (ADR-85) | Som personuppgifter |
 | Word-utkast, PDF och utskrift | Verktygets fynd och HR:s egna bedömningar. Tabeller, text och diagrambilder redovisar lönemått för grupper över tröskeln; antal och andelar kan stå också för mindre grupper (§3), bland annat i tabellerna per AID-kod och BAS-intervall och könsfördelningen per BAS-intervall, som har en rad från fem personer med antal och andelar men inga lönemått (ADR-57); kandidatpar med en grupp under tröskeln utelämnas. PDF-rapporten är en låst kopia av Word-utkastet med samma innehåll. Rapportens avsnitt har inga diagram med enskilda personers löner; utskriften av hela dokumentationen (*Komplett rapport*) har bilagor med bilder av Ålder & karriärs spridnings-, låd- och täthetsdiagram (§3, undantag 4) | Som personuppgifter |
 | ZIP-export | Word-utkastet, Excelfilen med alla flikar (aggregat) och bilder av alla ritade diagram från alla flikar. ZIP-filen är alltså inte enbart aggregat: spridningsdiagrammen i Ålder & karriär har en punkt per anställd (bara personer vars grupp och kön i gruppen når tröskeln), och låddiagrammet visar enskilda avvikande löner | Som personuppgifter |
 | Rapportunderlag via urklipp | Aggregat, med lönemått bara för grupper som når minsta gruppstorlek (standard 10); kandidatpar med en grupp under tröskeln utelämnas | Som rapportmaterial |
