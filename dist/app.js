@@ -7120,7 +7120,7 @@ const __mirrorPrioritering = (() => {
 /**
  * Öppen lönekartläggning — Prioriteringsanalys (ren modell)
  *
- * Grupperar raderna per yrke × BAS, beräknar median, könsmedianer (med k-regeln, ADR-12),
+ * Grupperar raderna per AID-kod × BAS (samma grupper som jämförelsen och gruppdossiern), beräknar median, könsmedianer (med k-regeln, ADR-12),
  * avvikelse mot en referens, åtgärdskostnad (inkl. PO-påslag och beräkningsperiod, formeln i kostnad.js),
  * status mot trösklar, snabbvinst, bristyrke och det sammanvägda prioriteringsindexet.
  *
@@ -7222,16 +7222,20 @@ function prioIndex(delar) {
  * @param {{avvikelse:number, volym:number, jamstalldhet:number}} opt.prioWeights
  * @param {{months?:number, poPct?:number}} [opt.costSettings]
  * @param {Set<string>} [opt.bristAids] - AID-koder som markerats som bristyrke
- * @returns {Array<Object>}
+ * @returns {Array<Object>} en post per AID-kod och BAS-intervall: `yrke` är gruppens namn (texten på dess första rad),
+ *          `aid` AID-koden och `bas` BAS-intervallet
  */
 function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, costSettings, bristAids }) {
     const d = rader || [];
     if (!d.length) return [];
 
+    // En grupp är AID-koden och BAS-intervallet, som i jamforelseRader (jamforelse.js) och gruppdossiern: koden ur
+    // aidAvYrke (rader utan kod grupperas på hela texten), och gruppens namn är texten på dess första rad. Två
+    // stavningar av samma etikett ("207011 Handläggare" och "207011 Handläggare, natt") är alltså en grupp.
     const groups = {};
     d.forEach(r => {
         const aid  = aidAvYrke(r.yrke);
-        const key  = `${r.yrke}|${r.bas}`;
+        const key  = `${aid}|${r.bas}`;
         if (!groups[key]) groups[key] = { yrke: r.yrke, aid, bas: r.bas, rows: [] };
         groups[key].rows.push(r);
     });
@@ -33138,7 +33142,7 @@ function renderPrioritering() {
     const groupCheck = {};
     dForCount.forEach(r => {
         const aid = aidAvYrke(r.yrke);
-        const k = `${r.yrke}|${r.bas}`;
+        const k = `${aid}|${r.bas}`;   // samma grupper som prioritera (src/lib/prioritering.js)
         if (!groupCheck[k]) groupCheck[k] = { n: 0, aid, bas: r.bas };
         groupCheck[k].n++;
     });
@@ -33203,7 +33207,7 @@ function renderPrioritering() {
         const powerBadge = lowPower
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
-        const rowKey = `${i.yrke}|${i.bas}`;
+        const rowKey = `${i.aid}|${i.bas}`;
         // #13 Förslag-knapp: suggestionerna beräknas vid expand, inte i förväg
         const suggestionBtn = i._rows && i._rows.length
             ? `<button class="btn-suggest" data-row-key="${esc(rowKey)}" type="button" title="Visa förslag på sakliga skäl-hypoteser" aria-label="Visa motiveringsförslag för ${esc(i.yrke)}" aria-expanded="false">Motiveringsförslag</button>`
@@ -39420,29 +39424,11 @@ function buildGruppdossier(key, delat = null) {
     let prio = null, suggestions = [];
     try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
-        // computePrioritization grupperar på `yrke|bas` (hela strängen "AID Etikett")
-        // medan dossiern grupperar på `aid|bas`. Samma AID kan därför ge flera
-        // prio-poster; ta inte bara den första — slå ihop dem, annars visas
-        // kostnad och antal för en delmängd av gruppen.
+        // computePrioritization grupperar på AID-kod och BAS, som dossiern: högst en post per grupp.
         let alla;
         if (!delat) alla = computePrioritization(ref);
         else { if (!delat.prio.has(ref)) delat.prio.set(ref, computePrioritization(ref)); alla = delat.prio.get(ref); }
-        const traffar = (alla || []).filter(i => i.aid === g.aid && i.bas === g.bas);
-        if (traffar.length === 1) {
-            prio = traffar[0];
-        } else if (traffar.length > 1) {
-            const nTot = traffar.reduce((s, i) => s + (i.n || 0), 0);
-            prio = {
-                ...traffar[0],
-                yrke: `${g.aid} (${traffar.length} ${T.namn.fl})`,
-                n: nTot,
-                annualGapTotal: traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0),
-                // n-viktat medelvärde — ett rakt medel skulle ge små grupper lika tyngd
-                diffPct: nTot ? traffar.reduce((s, i) => s + (i.diffPct || 0) * (i.n || 0), 0) / nTot : traffar[0].diffPct,
-                costPerPerson: nTot ? traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0) / nTot : traffar[0].costPerPerson,
-                _rows: traffar.flatMap(i => i._rows || [])
-            };
-        }
+        prio = (alla || []).find(i => i.aid === g.aid && i.bas === g.bas) || null;
         if (prio && typeof generateMotivationSuggestions === 'function') {
             suggestions = generateMotivationSuggestions(prio) || [];
         }

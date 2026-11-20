@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { prioritera, prioIndex, prioKonstanter } from '../src/lib/prioritering.js';
+import { jamforelseRader } from '../src/lib/jamforelse.js';
 
 const VIKTER = { avvikelse: 50, volym: 30, jamstalldhet: 20 };
 const CONFIG = { atgardThreshold: -5, akutMinN: 10, bevakaThreshold: -2, analyseraThreshold: 5 };
@@ -71,6 +72,49 @@ describe('prioritera: gruppering och k-regel', () => {
         const rader = grupp('Ingen kod', 'B', 30000, 12, 31000, 12);
         const res = kör(rader, { referensFor: () => ({ median: 35000, kalla: 'x' }) });
         expect(res[0].aid).toBe('Ingen kod');
+    });
+});
+
+// Gruppen är AID-koden och BAS-intervallet, som i jämförelsen och gruppdossiern, inte hela texten i fältet för
+// AID-etikett: två stavningar av samma etikett är en grupp.
+describe('prioritera: gruppen är AID-koden och BAS-intervallet', () => {
+    // 207011 i BAS C med två texter: 4 kvinnor och 4 män (30 000 och 32 000), och 4 kvinnor och 3 män (31 000 och 33 000).
+    const forsta = grupp('207011 Handläggare', 'C', 30000, 4, 32000, 4);
+    const andra = grupp('207011 Handläggare, natt', 'C', 31000, 4, 33000, 3);
+    const opt = { referensFor: ref({ '207011': 35000 }) };
+    it('var för sig är delgrupperna under tröskeln (8 och 7 personer) och ger ingen post', () => {
+        expect(kör(forsta, opt)).toEqual([]);
+        expect(kör(andra, opt)).toEqual([]);
+    });
+    it('tillsammans en grupp på 15 med medianen, namnet och avvikelsen för hela koden', () => {
+        const res = kör([...forsta, ...andra], opt);
+        expect(res).toHaveLength(1);
+        const [g] = res;
+        expect([g.aid, g.bas, g.n, g.kvN, g.maN]).toEqual(['207011', 'C', 15, 8, 7]);
+        expect(g.yrke).toBe('207011 Handläggare');   // texten på gruppens första rad
+        // De 15 lönerna sorterade: 30 000 ×4, 31 000 ×4, 32 000 ×4, 33 000 ×3; den åttonde är 31 000.
+        expect(g.median).toBe(31000);
+        expect(g.diffKr).toBe(-4000);
+        expect(g.diffPct).toBe(-4000 * 100 / 35000);
+        expect([g.medKv, g.medMa, g.gapPct]).toEqual([null, null, null]);   // ett kön under tröskeln
+        expect(g._rows).toHaveLength(15);
+    });
+    it('med den andra texten först heter gruppen efter den; talen är desamma', () => {
+        const [a] = kör([...forsta, ...andra], opt), [b] = kör([...andra, ...forsta], opt);
+        expect(b.yrke).toBe('207011 Handläggare, natt');
+        expect({ ...b, yrke: null, _rows: null }).toEqual({ ...a, yrke: null, _rows: null });
+    });
+    it('samma grupper och namn som jamforelseRader', () => {
+        const rader = [...forsta, ...andra, ...grupp('207011 Handläggare', 'D', 36000, 6, 36000, 6)];
+        const prio = kör(rader, { referensFor: () => ({ median: 35000, kalla: 'x' }) });
+        const jmf = jamforelseRader(rader, { k: 10 }).rader;
+        const nycklar = l => l.map(g => `${g.aid}|${g.bas}|${g.yrke}|${g.n}`).sort();
+        expect(nycklar(prio)).toEqual(nycklar(jmf));
+    });
+    it('rader utan kod grupperas på hela texten, som förut', () => {
+        const rader = [...grupp('Ingen kod', 'B', 30000, 6, 31000, 6), ...grupp('Ingen kod, natt', 'B', 30000, 6, 31000, 6)];
+        const res = kör(rader, { referensFor: () => ({ median: 35000, kalla: 'x' }) });
+        expect(res.map(g => g.aid).sort()).toEqual(['Ingen kod', 'Ingen kod, natt']);
     });
 });
 

@@ -528,7 +528,10 @@ versalinledda ord, som förstör riktiga etiketter; att behålla den gamla maske
 etiketter; att ersätta filens text med etikettlistans namn, som tar bort organisationens lokala benämningar.
 Ändrar ADR-48: bilderna med en punkt per person kan bära filens text som serienamn.
 *Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.4; `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader` i
-`src/lib/inlasning.js`.
+`src/lib/inlasning.js`. *Not:* sedan texten inte maskeras kan en AID-kod ha flera texter i samma BAS-intervall.
+Prioriteringen grupperade på hela texten och fick då två grupper där jämförelsestatistiken och gruppdossiern har en,
+och små delgrupper föll under tröskeln. Rättat 2026-11-20 som ett fel, inget nytt beslut: prioriteringen grupperar på
+AID-koden och BAS-intervallet som de andra (`prioriteringsmodellen.md` §1).
 **ADR-86 — Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska.**
 Beslutat av underhållaren 2026-11-19. Bootstrapintervallen, omkastningens gränser (slumpens gränser i
 uppmärksamhetstrappan och trattdiagrammet) och kvantilregressionens intervall seedades redan ur antal och summa per

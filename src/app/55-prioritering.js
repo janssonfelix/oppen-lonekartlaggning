@@ -353,7 +353,7 @@ function renderPrioritering() {
     const groupCheck = {};
     dForCount.forEach(r => {
         const aid = aidAvYrke(r.yrke);
-        const k = `${r.yrke}|${r.bas}`;
+        const k = `${aid}|${r.bas}`;   // samma grupper som prioritera (src/lib/prioritering.js)
         if (!groupCheck[k]) groupCheck[k] = { n: 0, aid, bas: r.bas };
         groupCheck[k].n++;
     });
@@ -418,7 +418,7 @@ function renderPrioritering() {
         const powerBadge = lowPower
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
-        const rowKey = `${i.yrke}|${i.bas}`;
+        const rowKey = `${i.aid}|${i.bas}`;
         // #13 Förslag-knapp: suggestionerna beräknas vid expand, inte i förväg
         const suggestionBtn = i._rows && i._rows.length
             ? `<button class="btn-suggest" data-row-key="${esc(rowKey)}" type="button" title="Visa förslag på sakliga skäl-hypoteser" aria-label="Visa motiveringsförslag för ${esc(i.yrke)}" aria-expanded="false">Motiveringsförslag</button>`

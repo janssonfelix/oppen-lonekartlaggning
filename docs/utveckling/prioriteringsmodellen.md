@@ -24,8 +24,10 @@ Varje beräkning har sin rad i [`berakningsregister.md`](berakningsregister.md).
 
 ## 1. Grupperna
 
-En grupp är alla rader med samma text i fältet för AID-etikett och samma BAS-intervall (nyckeln `yrke|bas`).
-AID-koden tas ur textens inledande siffror (`aidAvYrke`); saknas siffror används hela texten. En grupp med färre än k
+En grupp är alla rader med samma AID-kod och samma BAS-intervall (nyckeln `aid|bas`), som i jämförelsestatistiken
+(`jamforelseRader`) och gruppdossiern. AID-koden tas ur de inledande siffrorna i fältet för AID-etikett (`aidAvYrke`);
+saknas siffror används hela texten. Två texter med samma kod ("207011 Handläggare" och "207011 Handläggare, natt") är
+alltså en grupp. Gruppens namn (`yrke`) är texten på dess första rad i lönefilen. En grupp med färre än k
 personer tas inte med. Könens medianer räknas bara för ett kön med minst k personer; annars är könsmedianen och
 könsskillnaden null och gruppen finns kvar med sin samlade median.
 
@@ -149,9 +151,8 @@ gruppens samlade median, som redovisas när gruppen når tröskeln.
 
 ## 9. Kända luckor
 
-- **Grupperna följer texten, inte koden.** Prioriteringen grupperar på hela texten i fältet för AID-etikett, medan
-  jämförelsestatistiken, tabellerna per BAS-intervall och trattdiagrammet grupperar på AID-koden. Två texter med
-  samma kod i samma BAS-intervall blir två grupper här och en grupp där, och kan var för sig hamna under k.
+- **Gruppens namn är en av texterna.** Har en kod flera texter i samma BAS-intervall heter gruppen efter texten på
+  den första raden i lönefilen, som i jämförelsestatistiken; de andra texterna syns inte i prioriteringen.
 - **Exakt på referensen räknas som över.** Riktningsvikten 1,0 kräver diffPct < 0, så 0 % får 0,5.
 - **En dold könsskillnad ger noll i jämställdhetspoäng.** När ett kön har färre än k personer är gapPct null och
   delpoängen 0; gruppen rangordnas då som om könen hade samma median.
@@ -166,7 +167,7 @@ gruppens samlade median, som redovisas när gruppen når tröskeln.
 
 | Fil | Prövar |
 |---|---|
-| `tests/prioritering.test.js` | Indexet med normaliserade vikter och viktsumman 0; grupperna, k-regeln och grupper utan referens; avvikelsen, kostnaden och lägena, också exakt på varje gräns och med en referens från 20 000 till 80 000 i steg om 100; könsmedianerna; snabb vinst, bristyrke och sorteringen |
+| `tests/prioritering.test.js` | Indexet med normaliserade vikter och viktsumman 0; grupperna (en AID-kod med två texter är en grupp, samma grupper som `jamforelseRader`), k-regeln och grupper utan referens; avvikelsen, kostnaden och lägena, också exakt på varje gräns och med en referens från 20 000 till 80 000 i steg om 100; könsmedianerna; snabb vinst, bristyrke och sorteringen |
 | `tests/kostnad.test.js` | Kostnadsformeln |
 | `tests/referensfall.test.js` | Referensfallen nedan |
 

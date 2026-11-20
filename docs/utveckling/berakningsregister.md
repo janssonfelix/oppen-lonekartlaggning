@@ -110,7 +110,7 @@ Modellerna beskrivs i [`loneoversynsmodellen.md`](loneoversynsmodellen.md) och
 | Den stegvisa planen | `stagedPlan`, `loneoversyn.js` | fördelningen, antal år | `loneoversynsmodellen.md` §8 | `tests/loneoversyn.test.js` | saknas |
 | Individuell rättelse mot männens median | `individualRemediation`, `loneoversyn.js` | lön, kön, AID, BAS | `loneoversynsmodellen.md` §7 | `tests/loneoversyn.test.js` | saknas |
 | Tröskelmålet: minsta lika procentlyft för kvinnorna som når målet (bisektion) | `likalonslyftForMal`, `loneoversyn.js` | rader, mål, skattningen | `loneoversynsmodellen.md` §9 | `tests/loneoversyn-troskelmal.test.js`, `tests/granssnitt-vyer.test.js` | saknas |
-| Prioriteringen: avvikelse mot referensen, status, delpoäng, index, snabb vinst | `prioritera`, `prioIndex`, `prioritering.js`; adaptern `computePrioritization` i `src/app/55-prioritering.js` väljer referensen | lön, kön, AID, BAS, referensen | `prioriteringsmodellen.md`; ADR-50, 62 | `tests/prioritering.test.js` | `10-prioritering-en-grupp.json`, `11-prioindex-vikter.json` |
+| Prioriteringen: grupper per AID-kod och BAS-intervall, avvikelse mot referensen, status, delpoäng, index, snabb vinst | `prioritera`, `prioIndex`, `prioritering.js`; adaptern `computePrioritization` i `src/app/55-prioritering.js` väljer referensen | lön, kön, AID, BAS, referensen | `prioriteringsmodellen.md`; ADR-50, 62 | `tests/prioritering.test.js`, `tests/smoke-handlingsplan.test.js` | `10-prioritering-en-grupp.json`, `11-prioindex-vikter.json` |
 | Meningen om årsbeloppet för ett par | `arsbeloppMening`, `prioritering.js` | medianer, antal | `prioriteringsmodellen.md` §6 | `tests/prioritering.test.js` | saknas |
 
 ## 8. Årsbokslutet och de sakliga skälen
