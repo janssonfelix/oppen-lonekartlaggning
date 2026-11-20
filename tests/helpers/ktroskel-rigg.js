@@ -224,15 +224,16 @@ export async function samlaUtdata(w) {
     const lagg = (namn, text) => ut.push([namn, utanTid(String(text ?? '')).split('\n').map(normalisera).join('\n')]);
     await laddaXlsx(w);
     w.URL.createObjectURL = () => 'blob:x';
-    // Förhandskontrollen som efter en inläsning: tio rader med märkorden som råvärden, en oanvänd kolumn och en varning
-    // (ålder ur födelseår), så att den syns i Filer och kvalitet och i Att göra.
+    // Förhandskontrollen som efter en inläsning: tio rader med märkorden som råvärden, en oanvänd kolumn och två
+    // varningar (personnamn i fältet för AID-etikett, med antal och radnummer, och ålder ur födelseår), så att de syns i
+    // Filer och kvalitet och i Att göra.
     w.eval(`state.forhandskontroll = _fkBygg({
         rader: Array.from({ length: 10 }, (_, i) => ({ radnr: i + 2, anvands: true,
             ra: { bas: 'FKBAS', lon: 'FKLON', alder: 'FKALDER', kon: 'FKKON' },
             tolkat: { bas: 'S1', yrke: '6000 Säkeryrke 0', lon: 24000, alder: 40, kon: 'kvinna' },
             status: { lon: 'ok', alder: 'birthyear' } })),
         data: state.data, konVarden: [{ 'rå': 'FKKON', tolkat: 'kvinna', antal: state.data.length }],
-        parseStats: { totalRaw: state.data.length, alderFromBirthYear: 10 },
+        parseStats: { totalRaw: state.data.length, alderFromBirthYear: 10, yrkeNamn: 2, yrkeNamnRadnr: [3, 7] },
         headers: ['BAS', 'AID', 'Lön', 'Ålder', 'Kön', 'FKKOLUMN'],
         mappning: { bas: 'BAS', yrke: 'AID', lon: 'Lön', alder: 'Ålder', kon: 'Kön' }, k: kInstalld() })`);
     // Översikt som efter en inläsning, och en prognos i Löneöversyn så att utfallstabellen finns.

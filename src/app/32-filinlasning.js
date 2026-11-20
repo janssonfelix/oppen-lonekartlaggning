@@ -434,7 +434,12 @@ function loadStructureFile(file) {
         alderFromBirthYear: 0,    // ålder tolkad om från födelseår (transparens)
         invalidLonExamples: [],   // upp till 3 exempel för audit-panelen
         invalidAlderExamples: [], // upp till 3 exempel
-        missingKonExamples: []    // upp till 3 exempel på okända kön-värden
+        missingKonExamples: [],   // upp till 3 exempel på okända kön-värden
+        // Rader där fältet för AID-etikett ser ut att innehålla ett personnamn (namnmönster och sällsynt i filen,
+        // sallsyntaNamnrader): bara antalet och de första radnumren (_fkGranser().namnRadnr), aldrig fältets text.
+        // Sätts när filen är läst (_namnTillStats). Förhandskontrollen varnar på dem.
+        yrkeNamn: 0,
+        yrkeNamnRadnr: []
     };
     let aborted = false;
     // Förhandskontrollen (17-forhandskontroll.js): de tio första raderna med filens råvärde och verktygets tolkning
@@ -442,6 +447,17 @@ function loadStructureFile(file) {
     const fkForsta = [];
     const fkKon = new Map();
     const FK_RADER = _fkGranser().antalRader;
+    // Personnamn i fältet för AID-etikett: under inläsningen en räknare per text med namnmönster (yrkeNamnNyckel: texten
+    // efter AID-koden i gemener) med antal och de första radnumren. Den töms i _namnTillStats när filen är läst, och när
+    // filen avvisas eller inte går att läsa; kvar i parseStats blir bara antalet misstänkta rader och radnumren.
+    const namnRaknare = new Map();
+    const NAMN_RADNR = _fkGranser().namnRadnr;
+    const _namnTillStats = () => {
+        const s = _ilSallsyntaNamnrader(namnRaknare, NAMN_RADNR);
+        parseStats.yrkeNamn = s.antal;
+        parseStats.yrkeNamnRadnr = s.radnr;
+        namnRaknare.clear();
+    };
 
     // AID:s ansvarskod (ADR-33): kolumnen väljs på första raden och godkänns
     // i finishLoad när hela filen är läst (≥ 95 % giltiga värden). Bara kolumnens värden
@@ -486,6 +502,16 @@ function loadStructureFile(file) {
         }
         // Transparens: ålderskolumnen innehöll födelseår som räknats om till ålder
         if (rec._alderStatus === 'birthyear') parseStats.alderFromBirthYear++;
+        // Personnamn i fältet för AID-etikett: råvärdet (före maskering och kortning) prövas på varje rad i filen, också
+        // en rad som sedan faller bort. En text med namnmönster räknas i den tillfälliga räknaren; vilka som är sällsynta
+        // nog att varna för avgörs när hela filen är läst (_namnTillStats).
+        const namnNyckel = _ilYrkeNamnNyckel(getField(row, ALLOWED_FIELDS.yrke, 'yrke'));
+        if (namnNyckel) {
+            const v = namnRaknare.get(namnNyckel) || { antal: 0, radnr: [] };
+            v.antal++;
+            if (v.radnr.length < NAMN_RADNR) v.radnr.push(row[_RADNR] ?? null);
+            namnRaknare.set(namnNyckel, v);
+        }
         // Spåra rader utan användbart kön
         // (efter normalisering till lowercase utan icke-bokstäver).
         const konOk = typeof rec.kon === 'string' &&
@@ -527,6 +553,7 @@ function loadStructureFile(file) {
 
     function rejectFile(sensitive) {
         aborted = true;
+        namnRaknare.clear();
         state.ansvarKolumn = tidigareAnsvarKolumn;
         state.importprofil = tidigareImportprofil;
         // Nolla bufferten direkt så raw rows blir GC-bara
@@ -538,6 +565,7 @@ function loadStructureFile(file) {
     // Gemensam avslutning för CSV- och XLSX-vägen: committa state + UI.
     function finishLoad(metaText) {
         sampleBuffer = null;
+        _namnTillStats();   // före förhandskontrollen, som varnar på antalet
         let ansvarNot = '';
         if (state.ansvarKolumn) {
             const b = _bedomAnsvarKolumn(state.ansvarKolumn.namn, ansvarVarden);
@@ -616,6 +644,7 @@ function loadStructureFile(file) {
     }
     function failLoad(msg) {
         sampleBuffer = null;
+        namnRaknare.clear();
         state.ansvarKolumn = tidigareAnsvarKolumn;
         state.importprofil = tidigareImportprofil;
         hideLoading();

@@ -176,6 +176,9 @@ export function invariantSvit(k, extra) {
             for (const v of FK_RA) expect(skarm, v).toContain(v);
             expect(utdata.map(([n]) => n)).toContain('konfigurationsfilen (hela)');
             expect(utdata.find(([n]) => n === 'Att göra-punkter')[1]).toContain('fk-alder-fodelsear');
+            // Varningen om personnamn i fältet för AID-etikett följer med i Att göra och dess CSV: antal och radnummer.
+            expect(utdata.find(([n]) => n === 'Att göra-punkter')[1]).toContain('fk-yrke-namn');
+            expect(utdata.find(([n]) => n === 'Att göra-CSV')[1]).toMatch(/personnamn på 2 rader \(rad 3 och 7\)/);
             const lackor = [];
             // Flikarna i exportläget är också skärmen: förhandskontrollen står där, men följer inte med i någon export.
             for (const [namn, text] of exporter().filter(([n]) => n !== 'skärm i exportläget: alla flikar')) for (const v of harNagon(text, FK_RA)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
