@@ -90,7 +90,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 | Diagram, rapport och utforskning | `figur` | `kon`, `stat` |
 |  | `docx` | `htmltext` |
 |  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `termer` |
-|  | `arsbokslut` | `sakligaskal`, `stat`, `termer` |
+|  | `arsbokslut` | `aid`, `sakligaskal`, `stat`, `termer` |
 |  | `tabellrecept` | `namn`, `termer`, `utforska` |
 |  | `utforska` | `aid`, `falt`, `stat`, `termer`, `urval` |
 |  | `urval` | `falt`, `termer` |

@@ -16,11 +16,12 @@ function byggArsbokslutNu() {
         /** @type {any} */ let lv = null;
         try { lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null; } catch (_e) { lv = null; }
         const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
-        // Lönerna per yrkesgrupp (kvinnor och män, som Lika arbete räknar dem) för lönespridningen.
+        // Lönerna per yrkesgrupp (kvinnor och män, som Lika arbete räknar dem: AID-koden) för lönespridningen.
         /** @type {Map<string, number[]>} */ const lonPerYrke = new Map();
         for (const r of d) if (r.lon > 0 && r.kon && (arKvinna(r) || arMan(r))) {
-            if (!lonPerYrke.has(r.yrke)) lonPerYrke.set(r.yrke, []);
-            /** @type {number[]} */ (lonPerYrke.get(r.yrke)).push(r.lon);
+            const kod = aidAvRad(r);
+            if (!lonPerYrke.has(kod)) lonPerYrke.set(kod, []);
+            /** @type {number[]} */ (lonPerYrke.get(kod)).push(r.lon);
         }
         const klara = state._actionChecklistDone || new Set();
         const punkter = typeof buildActionChecklist === 'function' ? buildActionChecklist() : [];
@@ -30,7 +31,7 @@ function byggArsbokslutNu() {
                 kvotPct: bild.rawGapPct == null ? null : 100 + bild.rawGapPct, oforklaratPct: bild.unexplainedGapPct,
                 antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },
             grupper: lika.grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad,
-                spridning: _abSpridning(lonPerYrke.get(g.yrke) || [], k) })),
+                spridning: _abSpridning(lonPerYrke.get(g.aid) || [], k) })),
             punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
             basIntervall: getBasIntervals().map(b => _abBasRad(d, b, k)).filter(Boolean),
             bedomningar: _abBedomningarNu(),
@@ -83,8 +84,8 @@ function arsjamforelse() {
  * bedömning. Diagramdatan bär båda årens värden.
  */
 // Filtren: BAS-intervall, yrkesgrupp och antal (kvinnor och män i tabellens kolumn). Bokslutet sparar inte gruppens BAS:
-// det läses ur årets lönefil och sätts bara när yrket finns i ett enda BAS-intervall (`basFor`); en rad utan BAS påverkas
-// inte av det filtret.
+// det läses ur årets lönefil och sätts bara när yrket (AID-koden) finns i ett enda BAS-intervall (`basFor`); en rad utan
+// BAS påverkas inte av det filtret.
 function _abHantelFigur(j, forraAr, nuAr, basFor = _abYrketsBas()) {
     const { rader } = _abHantelRader(j);
     if (!rader.length) return null;
@@ -96,15 +97,19 @@ function _abHantelFigur(j, forraAr, nuAr, basFor = _abYrketsBas()) {
         beskrivning: `Kvinnors medianlön i procent av mäns per ${T.enhet.en}, ${forraAr} (strecket) och ${nuAr} (punkten), sorterade efter förändringens storlek. Grön när kvoten närmat sig lika lön, orange när den fjärmat sig; linjen vid 100 % är lika lön.` });
     return { ..._abEtiketterBortFranStrecket(fig), urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.antal] };
 }
-/** Yrkets BAS-intervall i årets lönefil, eller null när yrket saknas eller finns i flera intervall. */
+/**
+ * Yrkets BAS-intervall i årets lönefil, eller null när yrket saknas eller finns i flera intervall. Yrket är AID-koden:
+ * gruppens namn slås upp på sin kod (aidAvYrke), så att alla stavningar av etiketten räknas.
+ */
 function _abYrketsBas(d = state.data || []) {
     const perYrke = new Map();
     for (const r of d) {
         if (r.yrke == null || r.bas == null || r.bas === '') continue;
-        if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, new Set());
-        perYrke.get(r.yrke).add(String(r.bas));
+        const kod = aidAvRad(r);
+        if (!perYrke.has(kod)) perYrke.set(kod, new Set());
+        perYrke.get(kod).add(String(r.bas));
     }
-    return yrke => { const s = perYrke.get(yrke); return s && s.size === 1 ? [...s][0] : null; };
+    return yrke => { const s = perYrke.get(aidAvYrke(yrke)); return s && s.size === 1 ? [...s][0] : null; };
 }
 
 /** Årets värde skrivs på den sida av punkten där strecket inte är: till höger när värdet stigit, till vänster när det sjunkit. */

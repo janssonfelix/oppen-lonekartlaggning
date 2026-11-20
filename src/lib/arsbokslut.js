@@ -12,6 +12,7 @@
 import { median, quantile } from './stat.js';
 import { skapaTermer } from './termer.js';
 import { valideraSkal, skalPerKategori, skalSammanstallning, skalKategorier } from './sakligaskal.js';
+import { aidAvYrke } from './aid.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -226,9 +227,9 @@ export function jamforBedomningar(forra, nu) {
 }
 
 /**
- * Jämför förra årets bokslut med årets: nyckeltal rad för rad, flaggade yrkesgrupper (kvar, nya, borta) och
- * Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu). Båda åren läses
- * med den högre av årens trösklar (kGrans, bokslutMedGrans).
+ * Jämför förra årets bokslut med årets: nyckeltal rad för rad, flaggade yrkesgrupper (kvar, nya, borta; paras på
+ * AID-koden) och Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu). Båda
+ * åren läses med den högre av årens trösklar (kGrans, bokslutMedGrans).
  * @param {ReturnType<typeof valideraArsbokslut>} forra
  * @param {ReturnType<typeof valideraArsbokslut>} nu
  */
@@ -240,20 +241,31 @@ export function jamforArsbokslut(forra, nu) {
         const a = forra.nyckeltal[nyckel], b = nu.nyckeltal[nyckel];
         return { nyckel, etikett, typ, forra: a, nu: b, diff: typeof a === 'number' && typeof b === 'number' ? b - a : null };
     });
-    const perYrke = lista => new Map(lista.map(g => [g.yrke, g]));
-    const fG = perYrke(forra.grupper), nG = perYrke(nu.grupper);
-    // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år antalet gäller.
-    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
+    // Grupperna paras på AID-koden (aidAvYrke ur gruppens namn), inte på texten: en grupp är koden, och namnet är texten
+    // på gruppens första rad, som kan skilja sig mellan åren. Ett bokslut sparat innan grupperna följde koden kan ha
+    // flera grupper med samma kod (en per text); då jämförs årets grupp med den som har samma namn, annars med den
+    // största, och de andra står inte som egna rader.
+    const kodAv = g => aidAvYrke(g.yrke);
+    const nG = new Map(nu.grupper.map(g => [kodAv(g), g]));
+    const fG = new Map();
+    for (const g of forra.grupper) {
+        const kod = kodAv(g), forr = fG.get(kod), namn = nG.has(kod) ? nG.get(kod).yrke : null;
+        const foredras = forr && ((g.yrke === namn) !== (forr.yrke === namn) ? g.yrke === namn : g.nKv + g.nMa > forr.nKv + forr.nMa);
+        if (!forr || foredras) fG.set(kod, g);
+    }
+    // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år antalet gäller. Namnet är årets
+    // när gruppen finns i år.
+    const rad = (f, n) => ({ yrke: n ? n.yrke : f.yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
         antalAr: n ? nu.ar : forra.ar, spridningForra: f ? f.spridning ?? null : null, spridningNu: n ? n.spridning ?? null : null });
     const kvar = [], nya = [], borta = [];
-    for (const [yrke, n] of nG) { if (!n.flaggad) continue; const f = fG.get(yrke); (f && f.flaggad ? kvar : nya).push(rad(yrke, f, n)); }
-    for (const [yrke, f] of fG) { if (!f.flaggad) continue; const n = nG.get(yrke); if (!n || !n.flaggad) borta.push(rad(yrke, f, n)); }
+    for (const [kod, n] of nG) { if (!n.flaggad) continue; const f = fG.get(kod); (f && f.flaggad ? kvar : nya).push(rad(f, n)); }
+    for (const [kod, f] of fG) { if (!f.flaggad) continue; const n = nG.get(kod); if (!n || !n.flaggad) borta.push(rad(f, n)); }
     const sortera = l => l.sort((a, b) => Math.abs(b.gapNu ?? b.gapForra ?? 0) - Math.abs(a.gapNu ?? a.gapForra ?? 0));
     const nuKlar = new Map(nu.punkter.map(p => [p.id, p.klar]));
     const kvarFranForra = forra.punkter.filter(p => !p.klar).map(p => ({ ...p, finnsNu: nuKlar.has(p.id), klarNu: nuKlar.get(p.id) === true }));
     return {
         nyckeltal,
-        grupper: { kvar: sortera(kvar), nya: sortera(nya), borta: sortera(borta), antalForra: forra.grupper.length, antalNu: nu.grupper.length },
+        grupper: { kvar: sortera(kvar), nya: sortera(nya), borta: sortera(borta), antalForra: fG.size, antalNu: nG.size },
         punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
                    totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
         samma_k: sammaK,

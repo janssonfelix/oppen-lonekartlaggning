@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // En grupp är AID-koden i BAS-intervallet också i appen (ADR-89): Lika arbetes tabell per AID-etikett med underraderna
-// per ansvarsgrupp, och BAS-dossiern räknar en kod med flera texter som en grupp. Underlaget är påhittat:
+// per ansvarsgrupp, BAS-dossiern och årsbokslutet räknar en kod med flera texter som en grupp. Underlaget är påhittat:
 // koden 207011 i BAS C med texten "Handläggare" (6 kvinnor och 6 män, uppdragsansvar), "Handläggare, natt" (5 kvinnor
 // och 4 män, inget ansvar) och ett påhittat personnamn (1 man), alltså 11 kvinnor och 11 män. Per text nådde ingen text
 // tio av varje kön; per kod gör gruppen det.
@@ -51,5 +51,14 @@ describe('Lika arbete i appen: en grupp per AID-kod', () => {
         expect(d.yrken.map(y => [y.yrke, y.aid, y.tot, y.helaTot, y.nKv, y.nMa])).toEqual([[TEXT_A, '207011', 22, 22, 11, 11]]);
         expect(d.yrkenUtelamnade).toEqual([]);
         expect(d.ejJamforbara).toEqual([]);
+    });
+    it('årsbokslutet: en grupp för koden, med lönespridningen för alla kodens rader', () => {
+        const w = fonster();
+        const b = w.eval('byggArsbokslutNu()');
+        expect(b.grupper.map(g => [g.yrke, g.nKv, g.nMa])).toEqual([[TEXT_A, 11, 11]]);
+        expect(b.grupper[0].spridning).not.toBeNull();
+        expect(JSON.stringify(b)).not.toMatch(/Anna|Andersson|Handläggare, natt/);
+        // Yrkets BAS-intervall slås upp på koden, så också en annan text för koden hittar intervallet.
+        expect(w.eval(`_abYrketsBas()(${JSON.stringify(TEXT_B)})`)).toBe('C');
     });
 });

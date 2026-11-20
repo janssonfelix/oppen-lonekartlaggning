@@ -17,6 +17,7 @@ import { groupKey, gruppnycklar } from '../src/lib/falt.js';
 import { computePivot } from '../src/lib/utforska.js';
 import { personFilter } from '../src/lib/urval.js';
 import { aidAvRad } from '../src/lib/aid.js';
+import { byggArsbokslut, jamforArsbokslut } from '../src/lib/arsbokslut.js';
 import { prioritera } from '../src/lib/prioritering.js';
 import { jamforelseRader } from '../src/lib/jamforelse.js';
 import { perBasTabeller } from '../src/lib/perbas.js';
@@ -133,6 +134,41 @@ describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och 
         const villkor = { lage: 'alla', villkor: [{ falt: 'aid', op: 'enAv', varde: [TEXT_A] }] };
         expect(r.filter(personFilter(villkor, gruppnycklar(r)))).toHaveLength(16);
         expect(r.filter(personFilter(villkor))).toHaveLength(8);   // groupKey utan underlag: bara texten
+    });
+});
+
+describe('årsbokslutet: grupperna paras på koden', () => {
+    const gruppPost = (g, k) => ({ yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad, spridning: null });
+    const bokslut = (ar, grupper, k = 5) => byggArsbokslut({ ar, skapat: `${ar}-12-31`, k, verktyg: 'test', nyckeltal: { n: 16, nKv: 8, nMa: 8 }, grupper, punkter: [] });
+    const arets = () => bokslut(2026, likaArbeteGrupper(underlag(), { k: 5, golv: 5 }).grupper.map(g => gruppPost(g, 5)));
+    it('årets bokslut har en grupp för koden, med namnet från gruppens första rad', () => {
+        expect(arets().grupper.map(g => [g.yrke, g.nKv, g.nMa, g.flaggad])).toEqual([[TEXT_A, 8, 8, true]]);
+    });
+    it('ett bokslut sparat med en annan text för koden jämförs med årets grupp (kvar, inte ny och borta)', () => {
+        const forra = bokslut(2025, [{ yrke: TEXT_B, nKv: 6, nMa: 6, medKv: 30000, medMa: 32000, gapPct: -6.25, flaggad: true }]);
+        const j = jamforArsbokslut(forra, arets());
+        expect(j.grupper.kvar.map(g => [g.yrke, g.gapForra, g.nKv])).toEqual([[TEXT_A, -6.25, 8]]);
+        expect(j.grupper.nya).toEqual([]);
+        expect(j.grupper.borta).toEqual([]);
+        expect([j.grupper.antalForra, j.grupper.antalNu]).toEqual([1, 1]);
+    });
+    it('ett äldre bokslut med flera texter för samma kod: gruppen med årets namn, annars den största, och ingen dubbelrad', () => {
+        const a = { yrke: TEXT_A, nKv: 5, nMa: 5, medKv: 30000, medMa: 32000, gapPct: -6.25, flaggad: true };
+        const b = { yrke: TEXT_B, nKv: 6, nMa: 6, medKv: 31000, medMa: 33000, gapPct: -6.06, flaggad: true };
+        const j1 = jamforArsbokslut(bokslut(2025, [b, a]), arets());
+        expect(j1.grupper.kvar.map(g => g.gapForra)).toEqual([-6.25]);
+        expect(j1.grupper.borta).toEqual([]);
+        expect(j1.grupper.antalForra).toBe(1);
+        const c = { ...a, yrke: '207011 Handläggare dag' };
+        const j2 = jamforArsbokslut(bokslut(2025, [c, b]), arets());
+        expect(j2.grupper.kvar.map(g => g.gapForra)).toEqual([-6.06]);
+    });
+    it('för ett underlag med en text per kod är jämförelsen densamma som på texten', () => {
+        const g = { yrke: '301010 Fritidsledare', nKv: 6, nMa: 6, medKv: 30000, medMa: 31000, gapPct: -3.2, flaggad: true };
+        const h = { yrke: '503012 Drifttekniker', nKv: 6, nMa: 6, medKv: 40000, medMa: 41000, gapPct: -2.4, flaggad: true };
+        const j = jamforArsbokslut(bokslut(2025, [g]), bokslut(2026, [{ ...g, gapPct: -2 }, h]));
+        expect(j.grupper.kvar.map(x => [x.yrke, x.gapForra, x.gapNu])).toEqual([[g.yrke, -3.2, -2]]);
+        expect(j.grupper.nya.map(x => x.yrke)).toEqual([h.yrke]);
     });
 });
 
