@@ -115,6 +115,10 @@ Vitest, med omkring 3 400 tester i drygt 100 filer:
   `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`);
 - axe-a11y (ADR-10, `tests/a11y.test.js`);
 - vakterna `appsource`, `drift`, `exports.golden`, `version`, `release` och `kanonymitet`;
+- escaping-vakten `tests/escaping.test.js` (motorn i `tests/helpers/htmlmallar.js`) läser `src/app/` utan att ladda
+  appen och kräver att varje värde i appens HTML (mallsträngar med HTML, `innerHTML`, `insertAdjacentHTML`,
+  konkatenering och beräkningsbevisens HTML-fält) går genom `esc()` eller bevisas säkert; vad den inte täcker och
+  undantagen med skäl står i filen;
 - de rena modulerna bakom Tabeller och egna vyer och exportmenyn (`utforska`, `urval`, `falt`);
 - `tests/figur.test.js` prövar figurformatet och `tests/diagramritare.test.js` diagramkärnan (ADR-39). Den ritar med
   **äkta D3** i jsdom, så SVG:n som prövas är den riktiga, och två differentialtester vaktar att små grupper inte
