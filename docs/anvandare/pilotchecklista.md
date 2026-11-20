@@ -42,6 +42,8 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
       en förklaring till den.
 - [ ] En fil som (medvetet) innehåller **personnummer/namn/e-post avvisas** med tydligt
       meddelande.
+- [ ] En fil med ett namn i fältet för AID-etikett på en enstaka rad ("101010 Sjuksköterska Anna Andersson") ger
+      **varningen om personnamn** i förhandskontrollen, med radnumret. Namnet maskeras inte (ADR-85).
 - [ ] Både **CSV och XLSX** fungerar för struktur- och statistikfilerna.
 
 ## C. Analys
