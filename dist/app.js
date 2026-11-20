@@ -19666,8 +19666,10 @@ function _fkRapportrad() {
     const fk = state.forhandskontroll;
     if (!fk || fk.vantar || fk.ejInlast) return '';
     const n = fk.varningar.length;
-    return `<div class="dvr-row ${n ? 'warn' : 'ok'}"><span><span class="dvr-icon">${ikon(n ? 'statusVarning' : 'bock')}</span>Förhandskontroll: ${esc(_fkNyckeltext(fk))}</span>`
-        + `<a href="#" class="dvr-value" data-go-to-tab="filer" data-go-to-anchor="avsnitt-fi-forhandskontroll">Visa förhandskontrollen</a></div>`;
+    // Antalet som värde och länken på en egen rad under, så att texten och länken inte trängs i kortets smala kolumn.
+    return `<div class="dvr-row ${n ? 'warn' : 'ok'}" data-dvr="forhandskontroll"><span><span class="dvr-icon">${ikon(n ? 'statusVarning' : 'bock')}</span>Förhandskontroll:</span> `
+        + `<span class="dvr-value">${esc(_fkNyckeltext(fk))}</span></div>`
+        + `<div class="fs-xs marg-b-4"><a href="#" data-go-to-tab="filer" data-go-to-anchor="avsnitt-fi-forhandskontroll">Visa förhandskontrollen</a></div>`;
 }
 
 function _fkCellHtml(cell) {
