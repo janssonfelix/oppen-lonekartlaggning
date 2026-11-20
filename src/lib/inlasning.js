@@ -96,20 +96,17 @@ export function parseNumberStrict(v) {
  * Allt annat trunkeras eller maskeras:
  *   - AID:                ledande siffergrupp (\d+)
  *   - Etikett:            resten efter AID + separator, med HTML-tecknen < > " ' & borttagna
- *   - Namn-mönster:       en maximal följd av två eller fler versalinledda ord i rad (varje ord med gemener efter
- *                         första bokstaven; "Anna-Lisa" räknas som ett ord) maskeras till ETT *** även inom etiketten.
- *                         "Efternamn, Förnamn" (i versaler eller Versal-gemener) maskeras också, med de versalinledda
- *                         ord som följer direkt efter förnamnet ("Andersson, Anna Berg" → ***).
+ *   - Namn-mönster:       "Förnamn Efternamn" och "Efternamn, Förnamn" (i versaler eller Versal-gemener) maskeras
+ *                         till *** även inom etiketten
  *   - Längd:              etiketten kortas till 40 tecken sist, efter maskeringen, så att ett namn aldrig klipps
  *                         mitt itu och lämnar ett halvt namn kvar
  *   - Resten:             droppas
  *
  * Ordningen är avsiktlig: rensning av tecknen först (så att "<Anna> <Andersson>" blir ett namn som maskeras), maskering
- * sedan, trunkering sist. Känd gräns: en etikett med versal på varje ord ("Biträdande Rektor") maskeras helt, så att
- * inget halvt namn blir kvar. Priset är att sådan etikett försvinner, medan AID-koden står kvar och analysen bygger på
- * den. Namn i enbart gemener ("anna andersson") och enbart VERSALER utan komma ("ANNA ANDERSSON") maskeras inte, och
- * "ANDERSSON, Anna" (blandad form) maskeras inte heller. Ett enda versalinlett ord maskeras aldrig, så "Sjuksköterska"
- * och "IT-tekniker" står kvar. "Chef, enhet" (gemen efter kommat) maskeras inte.
+ * sedan, trunkering sist. Känd gräns: ett namn i gemener ("anna andersson") och "ANDERSSON, Anna" (blandad form)
+ * maskeras inte. En befattning består normalt av vanliga ord i gemener ("sjuksköterska", "lärare grundskola"), och
+ * två ord i enbart versaler kan vara en etikett i vissa uttag, så de mönstren går inte att maskera utan att förstöra
+ * riktiga etiketter. Mönstret med komma följer samma skäl: "Chef, enhet" (gemen efter kommat) maskeras inte.
  *
  * @param {*} raw - Rått värde från CSV-cellen.
  * @returns {string} "AID Etikett" eller bara AID/etikett om endera saknas.
@@ -132,13 +129,9 @@ export function _cleanYrkeField(raw) {
     // OBS: \b fungerar inte före icke-ASCII-bokstäver (Å/Ä/Ö), så namn som
     // "Örjan Östberg" skulle inte maskeras. Unicode-säker ordgräns via fångad
     // föregående icke-bokstav ($1) — undviker lookbehind (stöds ej i Safari < 16.4).
-    // "Efternamn, Förnamn": två ord med komma emellan, båda i versaler eller båda i Versal-gemener. Följs förnamnet
-    // direkt av fler versalinledda ord tas de med, så att inget halvt namn blir kvar ("Andersson, Anna Berg").
-    // Körs FÖRE följdregeln, som då inte hinner dela upp namnet.
-    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?(?:\s+[A-ZÅÄÖ][A-Za-zÅÄÖåäö]*)*|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?(?:\s+[A-ZÅÄÖ][A-Za-zÅÄÖåäö]*)*)(?![A-Za-zÅÄÖåäö])/g, '$1***');
-    // Hela följden av versalinledda ord i rad maskeras till ETT ***, så att inget halvt namn blir kvar efter en befattning.
-    // Ett ord räcker inte ("Sjuksköterska"), och ett ord med gemen efter första bokstaven bryter följden ("Lärare grundskola").
-    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?(?:\s+[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)+)(?![A-Za-zÅÄÖåäö])/g, '$1***');
+    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/g, '$1***');
+    // "Efternamn, Förnamn": två ord med komma emellan, båda i versaler eller båda i Versal-gemener.
+    label = label.replace(/(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)(?![A-Za-zÅÄÖåäö])/g, '$1***');
     // Aggressiv trunkering sist — yrkesetiketter sällan över 40 tecken
     if (label.length > 40) label = label.substring(0, 40).trim() + '…';
     if (aid && label) return `${aid} ${label}`;
