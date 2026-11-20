@@ -6,7 +6,7 @@
  * fältnamn på de fasta delarna och argument till src/lib.
  * @type {{
  *   data: any[], policy: any[], policyNamn: string|null, policyKortnamn: string|null, policyKalla: 'fil'|'paket'|'demo'|null,
- *   statistik: any[], statistikNamn: string|null, statistikKalla: 'fil'|'paket'|null,
+ *   statistik: any[], statistikNamn: string|null, statistikKalla: 'fil'|'paket'|'demo'|null,
  *   paket: any, paketInbakat: null|{skapad:string, organisation:string, verktygsversion:string, verktygssha:string, text:string}, isDemo: boolean, demoStort: boolean,
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
@@ -44,11 +44,11 @@ const state = {
     // Referensen (ADR-28): ingen inbyggd — ställningstagandet läses in som fil eller ur ett
     // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
     policy: [], policyNamn: null, policyKortnamn: null, policyKalla: null,
-    statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket'
+    statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket' | 'demo'
     paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat', delar } (ADR-28); delar = paketets validerade delar
     paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
     isDemo: false,   // #9: true när syntetisk demodata är inläst (aldrig verklig analys)
-    demoStort: false,   // true i det stora demot (7 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
+    demoStort: false,   // true i det stora demot (5 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
     prioConfig: { ...PRIO_CONFIG_DEFAULTS },
     prioWeights: { ...PRIO_WEIGHTS_DEFAULTS },
     costSettings: { ...COST_DEFAULTS },
@@ -198,6 +198,7 @@ function referensKalla() {
 function statistikBeskrivning() {
     if (!state.statistik.length) return 'Ingen jämförelsestatistik inläst';
     const namn = state.statistikNamn || 'Jämförelsestatistik';
+    if (state.statistikKalla === 'demo') return `${namn} (påhittad, demoläge)`;
     if (state.statistikKalla === 'paket' && state.paket) return state.paket.kalla === 'inbakat'
         ? `${namn} (organisationspaket inbakat i den här filen: ${state.paket.organisation}, ${state.paket.skapat})`
         : `${namn} (organisationspaket från ${state.paket.organisation}, ${state.paket.skapat})`;

@@ -73,7 +73,7 @@ function _deriveArbetsvarderingFromData() {
 }
 
 function _afterDataLoaded() {
-    // En riktig lönefil efter demot: demots namn, organisationstyp och ställningstagande
+    // En riktig lönefil efter demot: demots namn, organisationstyp, ställningstagande och jämförelsestatistik
     // hör till den påhittade organisationen och tas bort (ADR-36).
     if (state.isDemo) {
         state.profile = { ...DEFAULT_PROFILE };
@@ -83,6 +83,7 @@ function _afterDataLoaded() {
             aterstallReferens();
             resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         }
+        if (state.statistikKalla === 'demo') _tomStatistik();   // tömmer också filrutan
         if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
         if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
         applyProfileLabels();
@@ -1050,7 +1051,7 @@ function renderFilrutor() {
     };
     rad('upload-cell-data', state.isDemo ? (state.demoStort ? 'Demodata, stort demo' : 'Demodata') : fn.data);
     rad('upload-cell-policy', state.policyKalla === 'paket' ? 'Ur organisationspaketet' : state.policyKalla === 'demo' ? 'Demots ställningstagande' : fn.policy);
-    rad('upload-cell-stat', state.statistikKalla === 'paket' ? 'Ur organisationspaketet' : fn.statistik);
+    rad('upload-cell-stat', state.statistikKalla === 'paket' ? 'Ur organisationspaketet' : state.statistikKalla === 'demo' ? 'Demots jämförelsestatistik' : fn.statistik);
     // Lönefilens importprofil: "Känd uppsättning: Namn (källa)". Demodatan läses inte ur en fil.
     const ip = /** @type {HTMLElement|null} */ (document.querySelector('#upload-cell-data .upload-importprofil'));
     if (ip) {

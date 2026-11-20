@@ -21,7 +21,7 @@ describe('demosidan: mallen fylls', () => {
     });
     it('demoknappen öppnar verktyget i demoläge och nedladdningen är en nedladdning', () => {
         const html = bygg();
-        expect(html).toContain('href="oppen-lonekartlaggning.html?demo=1"');
+        expect(html).toContain('href="oppen-lonekartlaggning.html?demo=stor"');
         expect(html).toMatch(/href="oppen-lonekartlaggning.html" download/);
         expect(html).toMatch(/För skarp data: ladda ner filen/);
     });

@@ -55,7 +55,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `18-atgardslista.js` | Kortet Att göra på Översikt: åtgärdslistan, Börja här (ordningen i `src/lib/attgora.js`) och CSV-export |
 | `19-konfiguration.js` | Spara/ladda konfiguration, jämförelse med ögonblicksbild (fliken Spara och jämför år) |
 | `20-demodata-diagnostik.js` | Demodata (med riktiga AID-koder och ansvarskoder), testdata, självdiagnostik, demobanner; inläsningen som det lilla och det stora demot delar (`_lasInDemounderlag`) |
-| `21-stort-demo.js` | Stort demo: `generateStortDemo` (7 000 påhittade personer i BAS A–K och 30 AID-etiketter, med inlagda gap, ett par för likvärdigt arbete och små grupper) och `loadStortDemo` (som det lilla demot, utan självdiagnostik); ingångarna i Kom igång, lönefilskortet och `?demo=stor` |
+| `21-stort-demo.js` | Stort demo: `generateStortDemo` (5 000 påhittade personer med 100 AID-etiketter i BAS A–K, med inlagda gap, ett par för likvärdigt arbete och små grupper; påhittad jämförelsestatistik och ett ställningstagande ur demots löner) och `loadStortDemo` (som det lilla demot, utan självdiagnostik); ingångarna i Kom igång, lönefilskortet och `?demo=stor` |
 | `22-exporthjalpare.js` | Exportnavets knappar, metodbilagans data, Excel-/CSV-hjälpare, formelskydd |
 | `23-exportgrind.js` | Exportgrinden: ingen export läser en tabell eller ett diagram ur en flik som inte är ritad med gällande tröskel |
 | `24-excelexport.js` | Excel (alla flikar) och JPA-protokollet |

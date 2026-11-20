@@ -14,7 +14,7 @@ applyProfileLabels();  // Tillämpa default-profil vid uppstart
 _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
 renderReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
 
-// Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (7 000 personer), så att
+// Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (5 000 personer), så att
 // en länk från webbplatsen öppnar verktyget med påhittad data. Ingen annan parameter och
 // inget annat värde läses — adressen kan aldrig föra in data eller inställningar.
 try {

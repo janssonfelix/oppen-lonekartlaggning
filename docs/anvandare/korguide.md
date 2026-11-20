@@ -36,16 +36,16 @@ besluten gör och äger arbetsgivaren.
 ## 1. (Valfritt men rekommenderat) Lär dig verktyget med demodata
 
 1. Välj ett demo i startytan **Kom igång** på Översikt, under *Ingen fil till hands?*: "prova med demodata,
-   **litet demo** eller **stort demo**".
+   **stort demo** eller **litet demo**".
    Samma två val, med samma ord, finns i lönefilskortet i **Filer och kvalitet**:
+   - **stort demo (5 000 personer)**: en påhittad stor organisation med 100 AID-etiketter och BAS-intervall A–K,
+     med påhittad jämförelsestatistik och ett lönepolitiskt ställningstagande räknat ur demots löner. Här syns
+     verktyget i verklig storlek: inlagda löneskillnader i några AID-etiketter, ett par för likvärdigt arbete, och små
+     grupper som maskeras i exporterna. Inläsningen tar några sekunder.
    - **litet demo**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
      Det är samma underlag som självdiagnostiken bygger på.
-   - **stort demo (7 000 personer)**: en påhittad stor organisation med BAS-intervall A–K och
-     30 AID-etiketter. Här syns verktyget i verklig
-     storlek: inlagda löneskillnader i några AID-etiketter, ett par för likvärdigt arbete, och små grupper
-     som maskeras i exporterna. Inläsningen tar några sekunder.
 
-   Adressen kan också starta demot direkt: `?demo=1` för det lilla och `?demo=stor` för det stora.
+   Adressen kan också starta demot direkt: `?demo=stor` för det stora och `?demo=1` för det lilla.
 2. Bläddra igenom flikarna och exporterna med syntetisk exempeldata — ingen verklig
    lönedata behövs för att utvärdera. Allt märks tydligt **DEMODATA**, och bannern överst säger
    när det är det stora demot.

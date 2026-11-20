@@ -165,15 +165,10 @@ const DEMO_REFERENS = Object.freeze({
         const med = 31000 + i * 5000;
         return Object.freeze({ aid: null, bas, p10: Math.round(med * 0.9 / 100) * 100, med, p90: Math.round(med * 1.12 / 100) * 100 });
     })),
-    // Det stora demot (21-stort-demo.js) har också BAS K. Raden följer samma steg och läses bara in där, så att det
-    // lilla demots ställningstagande har kvar sina tio rader.
-    tillaggStort: Object.freeze(['K'].map((bas, i) => {
-        const med = 31000 + (10 + i) * 5000;
-        return Object.freeze({ aid: null, bas, p10: Math.round(med * 0.9 / 100) * 100, med, p90: Math.round(med * 1.12 / 100) * 100 });
-    })),
 });
+// Det stora demot (21-stort-demo.js) räknar sitt ställningstagande ur sina egna löner, BAS A–K.
 function _lasInDemoReferens({ stort = false } = {}) {
-    state.policy = (stort ? [...DEMO_REFERENS.rader, ...DEMO_REFERENS.tillaggStort] : DEMO_REFERENS.rader).map(r => ({ ...r }));
+    state.policy = (stort ? _sdStallningstagande(state.data) : DEMO_REFERENS.rader).map(r => ({ ...r }));
     state.policyNamn = DEMO_REFERENS.namn;
     state.policyKortnamn = DEMO_REFERENS.namn;
     state.policyKalla = 'demo';
@@ -184,6 +179,21 @@ function _lasInDemoReferens({ stort = false } = {}) {
     if (typeof renderReferensKort === 'function') renderReferensKort();
     if (typeof markUploadLoaded === 'function') markUploadLoaded('upload-cell-policy', 'Demo');
 }
+// Det stora demots påhittade jämförelsestatistik (21-stort-demo.js). Det lilla demot har ingen: en kvarvarande från
+// det stora tas bort.
+function _lasInDemoStatistik({ stort = false } = {}) {
+    if (stort) {
+        state.statistik = generateStortDemoStatistik();
+        state.statistikNamn = STORT_DEMO_STATISTIKNAMN;
+        state.statistikKalla = 'demo';
+        state.statistikHasP10 = state.statistikHasP90 = state.statistikHasKon = true;
+        markUploadLoaded('upload-cell-stat', 'Demo');
+    } else if (state.statistikKalla === 'demo') {
+        _tomStatistik();
+    }
+    if (state.likvardighet) state.likvardighet.result = null;   // likvärdighetsparen jämförs mot statistiken
+    if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
+}
 
 // Det som det lilla och det stora demot (21-stort-demo.js) gör lika: frågan om befintlig data, rensningen av verkliga
 // delar, underlaget, demoläget, referensen och ritningen av Översikt och Filer och kvalitet. Bannern ritar anroparen sist.
@@ -191,7 +201,8 @@ function _lasInDemoReferens({ stort = false } = {}) {
 function _lasInDemounderlag(skapa, { stort = false } = {}) {
     if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
-    if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
+    // Demots egen statistik (statistikKalla 'demo') är ingen verklig del: den ersätts eller tas bort nedan.
+    if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || (state.statistik.length && state.statistikKalla !== 'demo')) _rensaAllData({ inbakat: false });
     if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();   // urvalet i diagrammen hör till det förra underlaget, som vid en ny lönefil
     state.data = skapa();
     if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // Löneöversyns knappresultat gällde det förra underlaget
@@ -203,6 +214,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     state.isDemo = true;   // #9: markera som demoläge — syntetisk data, aldrig verklig analys
     state.demoStort = stort;   // bannern och filraden säger vilket demo det är
     _lasInDemoReferens({ stort });   // demot är självständigt; rensningen tar bort referensen igen
+    _lasInDemoStatistik({ stort });
     state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     unlockTabs();

@@ -248,13 +248,13 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         w.__clearAllData();
         expect(pol.classList.contains('loaded')).toBe(false);
     });
-    it('startytan har de två demovalen bredvid ytan för lönefilen (litet och stort demo)', () => {
+    it('startytan har de två demovalen bredvid ytan för lönefilen (stort och litet demo)', () => {
         const w = createAppWindow();
         const d = w.document;
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
         const text = d.querySelector('#first-run-hint .ov-start-demo p').textContent.replace(/\s+/g, ' ').trim();
-        expect(text).toBe('Prova med demodata, litet demo eller stort demo (7 000 personer).');
+        expect(text).toBe('Prova med demodata, stort demo (5 000 personer) eller litet demo.');
         expect(d.querySelector('#first-run-hint .ov-start-demo h3').textContent).toBe('Ingen fil till hands?');
         // Rubriken har sitt mellanslag (tidigare "Kom igång:läs").
         expect(d.getElementById('ov-start-rubrik').textContent).toBe('Kom igång');
@@ -262,7 +262,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         expect(d.getElementById('first-run-demo-link').textContent).toBe('litet demo');
         // Lönefilskortet i Filer och kvalitet har samma ord för samma val.
         const kort = d.getElementById('upload-demo-val').textContent.replace(/\s+/g, ' ').trim();
-        expect(kort).toBe('Ingen fil till hands? Prova med demodata, litet demo eller stort demo (7 000 personer).');
+        expect(kort).toBe('Ingen fil till hands? Prova med demodata, stort demo (5 000 personer) eller litet demo.');
         expect(d.getElementById('upload-demo-litet').textContent).toBe(d.getElementById('first-run-demo-link').textContent);
         expect(d.getElementById('upload-demo-stort').textContent).toBe(d.getElementById('first-run-stort-demo').textContent);
         d.getElementById('first-run-demo-link').click();
