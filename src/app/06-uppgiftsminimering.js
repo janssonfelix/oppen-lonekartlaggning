@@ -54,23 +54,39 @@ function _bedomAnsvarKolumn(namn, varden) {
 }
 
 /**
+ * Rubriken för varje fält i ALLOWED_FIELDS bland lönefilens rubriker (_rubrikForRoll: kolumnmappningen, importprofilen,
+ * namnet). Slås upp en gång per fil; en ändrad mappning läser in filen på nytt.
+ */
+function _lonefilensRubriker(headers) {
+    const rubriker = {};
+    for (const role of Object.keys(ALLOWED_FIELDS)) rubriker[role] = _rubrikForRoll(headers, ALLOWED_FIELDS[role], role);
+    return rubriker;
+}
+/** Radens värde för rollen, som getField: tom sträng när filen saknar kolumnen. */
+function _faltIRad(row, rubriker, roll) {
+    return rubriker[roll] == null ? '' : row[rubriker[roll]] ?? '';
+}
+
+/**
  * Extraherar ENBART vitlistade fält ur en CSV-rad — GDPR Art. 5(1)(c) uppgiftsminimering.
  * Säkerställer att verktyget aldrig laddar identifierande fält (PNR, namn, e-post)
  * även om användarens CSV innehåller dem. Ansvar läses inte in (se avgränsningen i docs/utveckling/mal.md).
- * Här slås råvärdena upp i raden (getField med ALLOWED_FIELDS, kolumnmappningen och importprofilen, och den godkända
- * ansvarskolumnen); tolkningen görs av tolkaLonerad i src/lib/inlasning.js, med innevarande år som referensår för
+ * Här slås råvärdena upp i raden (rubrikerna ur _lonefilensRubriker, och den godkända ansvarskolumnen); tolkningen
+ * görs av tolkaLonerad i src/lib/inlasning.js, med innevarande år som referensår för
  * födelseår i ålderskolumnen. Talen, normaliseringarna, _cleanYrkeField och detectSensitiveColumns ligger också där
  * och nås under samma namn genom spegeln.
  * @param {Object<string,*>} row - Rå CSV-rad (PapaParse-objekt).
+ * @param {Object<string,string|undefined>} [rubriker] - Uppslaget för filen; utan det slås det upp på radens nycklar.
  */
-function extractMinimalRecord(row) {
+function extractMinimalRecord(row, rubriker = _lonefilensRubriker(Object.keys(row))) {
+    const falt = roll => _faltIRad(row, rubriker, roll);
     return _ilTolkaLonerad({
-        bas:    getField(row, ALLOWED_FIELDS.bas, 'bas'),
-        kon:    getField(row, ALLOWED_FIELDS.kon, 'kon'),
-        lon:    getField(row, ALLOWED_FIELDS.lon, 'lon'),
-        alder:  getField(row, ALLOWED_FIELDS.alder, 'alder'),
-        poang:  getField(row, ALLOWED_FIELDS.poang, 'poang'),
-        yrke:   getField(row, ALLOWED_FIELDS.yrke, 'yrke'),
+        bas:    falt('bas'),
+        kon:    falt('kon'),
+        lon:    falt('lon'),
+        alder:  falt('alder'),
+        poang:  falt('poang'),
+        yrke:   falt('yrke'),
         ansvar: state.ansvarKolumn ? row[state.ansvarKolumn.namn] : undefined
     }, new Date().getFullYear(), !!state.ansvarKolumn);
 }
