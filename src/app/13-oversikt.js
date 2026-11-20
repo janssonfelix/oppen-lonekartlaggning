@@ -159,24 +159,26 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
  * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
  * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
- * procent har direktivets tecken, positiv när kvinnor ligger lägre (gapPctDirektivtecken).
+ * procent (gapPct) har verktygets tecken, negativ när kvinnor ligger lägre.
  */
 function computeBootstrapCI() {
     const t0 = performance.now();
     const ki = _osOrganisationensKvotKI(getData(), statGolv());
-    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPctDirektivtecken: ki.gapPctDirektivtecken, elapsed: performance.now() - t0, B: ki.B } : null;
+    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
 /**
- * Formaterar bootstrap-CI som textsuffix för punktestimat.
- * Returnerar t.ex. " [95 % KI: 3,1%–6,4%]" eller tom sträng om CI saknas.
+ * Formaterar bootstrap-CI som textsuffix för punktestimat, med samma tecken som talet framför.
+ * Returnerar t.ex. " [95 % KI: −17,8 % till −11,9 %]" (ordet "till" när en gräns är negativ, så att strecket inte
+ * läses som minustecken), " [95 % KI: 3,1–6,4 %]" annars, eller tom sträng om CI saknas.
  * @param {{lo:number, hi:number}} ci
  * @param {number} [decimals=1]
  */
 function fmtCI(ci, decimals = 1) {
     if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return '';
-    const f = n => n.toFixed(decimals).replace('.', ',');
-    return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${state.bootstrapCI?.B || 2000})">[95 % KI: ${f(ci.lo)}%–${f(ci.hi)}%]</span>`;
+    const intervall = ci.lo < 0 || ci.hi < 0 ? `${svPct(ci.lo, decimals)} till ${svPct(ci.hi, decimals)}` : `${svTal(ci.lo, decimals)}–${svPct(ci.hi, decimals)}`;
+    const B = Number(state.bootstrapCI?.B || _osKonstanter().B_ORGANISATION);
+    return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${B})">[95 % KI: ${intervall}]</span>`;
 }
 
 // ---- #9 Power-analys: minsta detekterbara effektstorlek ----

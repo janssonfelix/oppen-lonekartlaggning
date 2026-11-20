@@ -88,12 +88,12 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
  * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt
  * resultat. En dragning där männens median inte är positiv ger kvoten 1.
  *
- * Skillnaden i procent har direktivets tecken, (1 − kvot) · 100, positiv när kvinnor ligger lägre; därav namnet
- * `gapPctDirektivtecken`. Verktygets eget tecken, (kvot − 1) · 100, är dess motsats (se regressionsmodellen.md avsnitt 1, Tecknet).
+ * Skillnaden i procent (`gapPct`) har verktygets tecken, (kvot − 1) · 100, negativ när kvinnor ligger lägre, som den råa
+ * skillnaden den står bredvid (se regressionsmodellen.md avsnitt 1, Tecknet). Gränserna följer kvotens: lo ur kvotens lo.
  * @param {Array<{lon:number, kon:string}>} rader
  * @param {number} golv  minsta antal av vardera könet (statGolv() i appen)
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
- * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPctDirektivtecken: {point:number, lo:number, hi:number}, B:number}}
+ * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPct: {point:number, lo:number, hi:number}, B:number}}
  */
 export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
@@ -111,7 +111,7 @@ export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } =
     const point = median(kv) / median(ma);
     return {
         ratio:  { point, lo, hi },
-        gapPctDirektivtecken: { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
+        gapPct: { point: (point - 1) * 100, lo: (lo - 1) * 100, hi: (hi - 1) * 100 },
         B
     };
 }

@@ -61,9 +61,10 @@ regression. **Den förklarade andelen** (`explainedShare`) är (|första steget|
 
 **Tecknet.** Verktyget räknar varje löneskillnad som kvinnor mot män, (kvinnor − män) / män, negativ när kvinnor ligger
 lägre. Direktivets tecken, (män − kvinnor) / män, positivt när kvinnor ligger lägre, används bara i EU-lönerapporten
-och rapportens avsnitt om lönetransparens; tecknet vänds där, med `tillDirektivtecken` i `src/lib/struktur.js`. Ett
-fält med direktivets tecken säger det i namnet: bootstrapintervallet för hela organisationen (`organisationensKvotKI`
-i `src/lib/osakerhet.js`, sparat i `state.bootstrapCI`) ger skillnaden som `gapPctDirektivtecken`, (1 − kvot) · 100.
+och rapportens avsnitt om lönetransparens; tecknet vänds där, med `tillDirektivtecken` i `src/lib/struktur.js`. Också
+bootstrapintervallet för hela organisationen (`organisationensKvotKI` i `src/lib/osakerhet.js`, sparat i
+`state.bootstrapCI`) har verktygets tecken: skillnaden `gapPct` är (kvot − 1) · 100, så att intervallet bredvid den råa
+skillnaden har samma tecken som talet.
 
 **Reservstegen.** Kan den valda modellen inte skattas — för få rader (färre än kolumnerna + 5) eller singulär design
 (`fitOLS` ger null) — prövas nästa steg: först utan AID-etikett inom BAS, sedan utan BAS. Inget bortvalt läggs tillbaka, så med

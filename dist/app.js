@@ -5976,12 +5976,12 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
  * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt
  * resultat. En dragning där männens median inte är positiv ger kvoten 1.
  *
- * Skillnaden i procent har direktivets tecken, (1 − kvot) · 100, positiv när kvinnor ligger lägre; därav namnet
- * `gapPctDirektivtecken`. Verktygets eget tecken, (kvot − 1) · 100, är dess motsats (se regressionsmodellen.md avsnitt 1, Tecknet).
+ * Skillnaden i procent (`gapPct`) har verktygets tecken, (kvot − 1) · 100, negativ när kvinnor ligger lägre, som den råa
+ * skillnaden den står bredvid (se regressionsmodellen.md avsnitt 1, Tecknet). Gränserna följer kvotens: lo ur kvotens lo.
  * @param {Array<{lon:number, kon:string}>} rader
  * @param {number} golv  minsta antal av vardera könet (statGolv() i appen)
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
- * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPctDirektivtecken: {point:number, lo:number, hi:number}, B:number}}
+ * @returns {null | {ratio: {point:number, lo:number, hi:number}, gapPct: {point:number, lo:number, hi:number}, B:number}}
  */
 function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
@@ -5999,7 +5999,7 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const point = median(kv) / median(ma);
     return {
         ratio:  { point, lo, hi },
-        gapPctDirektivtecken: { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
+        gapPct: { point: (point - 1) * 100, lo: (lo - 1) * 100, hi: (hi - 1) * 100 },
         B
     };
 }
@@ -18601,24 +18601,26 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
  * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
  * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
- * procent har direktivets tecken, positiv när kvinnor ligger lägre (gapPctDirektivtecken).
+ * procent (gapPct) har verktygets tecken, negativ när kvinnor ligger lägre.
  */
 function computeBootstrapCI() {
     const t0 = performance.now();
     const ki = _osOrganisationensKvotKI(getData(), statGolv());
-    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPctDirektivtecken: ki.gapPctDirektivtecken, elapsed: performance.now() - t0, B: ki.B } : null;
+    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
 /**
- * Formaterar bootstrap-CI som textsuffix för punktestimat.
- * Returnerar t.ex. " [95 % KI: 3,1%–6,4%]" eller tom sträng om CI saknas.
+ * Formaterar bootstrap-CI som textsuffix för punktestimat, med samma tecken som talet framför.
+ * Returnerar t.ex. " [95 % KI: −17,8 % till −11,9 %]" (ordet "till" när en gräns är negativ, så att strecket inte
+ * läses som minustecken), " [95 % KI: 3,1–6,4 %]" annars, eller tom sträng om CI saknas.
  * @param {{lo:number, hi:number}} ci
  * @param {number} [decimals=1]
  */
 function fmtCI(ci, decimals = 1) {
     if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return '';
-    const f = n => n.toFixed(decimals).replace('.', ',');
-    return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${state.bootstrapCI?.B || 2000})">[95 % KI: ${f(ci.lo)}%–${f(ci.hi)}%]</span>`;
+    const intervall = ci.lo < 0 || ci.hi < 0 ? `${svPct(ci.lo, decimals)} till ${svPct(ci.hi, decimals)}` : `${svTal(ci.lo, decimals)}–${svPct(ci.hi, decimals)}`;
+    const B = Number(state.bootstrapCI?.B || _osKonstanter().B_ORGANISATION);
+    return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${B})">[95 % KI: ${intervall}]</span>`;
 }
 
 // ---- #9 Power-analys: minsta detekterbara effektstorlek ----
@@ -31675,9 +31677,9 @@ function renderRegressionCard() {
     }).join(' &nbsp;|&nbsp; ');
 
     // Tolkning – plain language sammanfattning
-    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har direktivets tecken (positivt när
-    // kvinnor ligger lägre), det råa gapet framför det verktygets (rawGapPct, negativt när kvinnor ligger lägre).
-    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPctDirektivtecken) : '';
+    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har, som det råa gapet framför det
+    // (rawGapPct), verktygets tecken: negativt när kvinnor ligger lägre.
+    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
     const tolkning = isSig
         ? (Math.abs(r.konPct) >= _STS_STORLEK
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`
