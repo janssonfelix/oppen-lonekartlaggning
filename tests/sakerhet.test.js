@@ -322,3 +322,18 @@ describe('säkerhet: inga style-attribut i markeringen (ADR-30, ADR-43)', () => 
         expect(traffar).toEqual([]);
     });
 });
+
+describe('beräkningsbevisen: värden ur lönefilen escapas i bevisrutans HTML', () => {
+    // intro, formula och footer skrivs som HTML i bevisrutan (_openEvidenceModal). Ett BAS-värde ur filen med
+    // HTML-tecken ska komma ut som text, med och utan ålder i lönefilen.
+    it('per-BAS-regressionens intro bär BAS escapat', () => {
+        const w = createAppWindow();
+        const bas = '<b>x</b>';
+        for (const alder of [true, false]) {
+            w.eval(`harAlder = () => ${alder};`);
+            const p = w.eval(`_evidenceForPerBasRow({ bas: ${JSON.stringify(bas)}, status: 'ok', n: 40, kvN: 20, maN: 20, gapPct: -2, ciLow: -4, ciHigh: 0, pValue: 0.2, R2: 0.1 }, null)`);
+            expect(p.intro).toContain('&lt;b&gt;x&lt;/b&gt;');
+            expect(p.intro).not.toContain(bas);
+        }
+    });
+});
