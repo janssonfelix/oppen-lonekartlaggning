@@ -11,6 +11,8 @@
  *
  * Multiplikationen görs i samma ordning som innan formeln samlades här (belopp × månader × PO-faktor), så att inget
  * tal ändras i sista decimalen. Därför ges PO-faktorn och månaderna var för sig och inte som en färdig produkt.
+ *
+ * Bygger på: verktygets egen modell; PO-påslagets standardvärde i ADR-84. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
 
 /**
