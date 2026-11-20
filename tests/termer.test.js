@@ -276,7 +276,7 @@ const UNDANTAG_FRASER = [
     { fil: 'src/index.html', fras: 'i lönefilen ofta Yrke eller Befattning', skal: 'lönefilens kolumnrubriker, som verktyget känner igen (ALLOWED_FIELDS)' },
     { fil: 'src/app/32-filinlasning.js', fras: 'i lönefilen ofta Yrke eller Befattning', skal: 'lönefilens kolumnrubriker i kolumnmappningen, som verktyget känner igen (ALLOWED_FIELDS)' },
     { fil: 'src/app/65-om-verktyget.js', fras: 'utbildning, yrkesval och anställningstid', skal: 'vardagligt ord om personers val, inte AID' },
-    { fil: 'src/app/21-stort-demo.js', fras: 'Yrkeslärare gymnasieskola', skal: 'yrkesbenämning i det stora demots påhittade etikettlista, inte verktygets ord för AID' },
+    { fil: 'src/app/21-stort-demo.js', fras: 'Yrkeslärare gymnasieskola', skal: 'AID:s egen etikett i det stora demot (som i aid-etiketter.js)' },
     { fil: 'src/app/21-stort-demo.js', fras: 'Studie- och yrkesvägledare', skal: 'AID:s egen etikett i det stora demot (som i aid-etiketter.js)' },
 ];
 // Kolumnigenkänningen jämför med lönefilens rubriker, som är filens ord och inte verktygets: lönefiler med rubriken

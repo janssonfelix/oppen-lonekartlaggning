@@ -5,7 +5,7 @@
  * Vaktar generatorn (storlek, determinism, fälten, BAS A–K, yrkesgrupperna och de små grupperna), inläsningen
  * (demoläget, flikarna, Översikt utan internt fel och utan självdiagnostik, den påhittade jämförelsestatistiken och
  * ställningstagandet ur demots löner), att en riktig lönefil eller statistikfil ersätter demots statistik, ingångarna
- * (Kom igång, lönefilskortet, ?demo=stor), nyckeltalen (rått gap, könskoefficienten, antalet små AID-grupper), att det lilla demot är oförändrat, att Excel (alla flikar) inte röjer ett
+ * (Kom igång, lönefilskortet, ?demo=stor), nyckeltalen (rått gap, könskoefficienten, antalet små grupper), att det lilla demot är oförändrat, att Excel (alla flikar) inte röjer ett
  * könsuppdelat lönemått för en grupp under tröskeln och att Rensa all data lämnar samma tillstånd som efter det lilla
  * demot.
  */
@@ -272,7 +272,7 @@ describe('stort demo: ingångarna', () => {
 // de nya värdena och skriv in dem här.
 const SD_RATT_GAP = -0.99;      // median kvinnor / median män − 1, i %
 const SD_KONPCT = -2.35;        // runOLSRegression().konPct, i %
-const SD_SMA_YRKEN = 71;        // AID-grupper med n < 10 eller ett kön < 10
+const SD_SMA_GRUPPER = 101;     // grupper (AID-kod i BAS-intervallet, ADR-89) med n < 10 eller ett kön < 10
 
 describe('stort demo: nyckeltalen', () => {
     let w;
@@ -288,14 +288,15 @@ describe('stort demo: nyckeltalen', () => {
         expect(Math.abs(w.eval('runOLSRegression()').konPct - SD_KONPCT)).toBeLessThanOrEqual(0.3);
     });
 
-    it('antalet små AID-grupper', () => {
+    it('antalet små grupper', () => {
         const per = new Map();
         for (const r of w.__state.data) {
-            const g = per.get(r.aid) || { n: 0, kv: 0, ma: 0 };
+            const nyckel = `${r.aid}|${r.bas}`;
+            const g = per.get(nyckel) || { n: 0, kv: 0, ma: 0 };
             g.n++; if (arKvinna(r)) g.kv++; if (arMan(r)) g.ma++;
-            per.set(r.aid, g);
+            per.set(nyckel, g);
         }
-        expect([...per.values()].filter(g => g.n < 10 || g.kv < 10 || g.ma < 10)).toHaveLength(SD_SMA_YRKEN);
+        expect([...per.values()].filter(g => g.n < 10 || g.kv < 10 || g.ma < 10)).toHaveLength(SD_SMA_GRUPPER);
     });
 });
 
