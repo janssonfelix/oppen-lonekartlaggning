@@ -630,6 +630,11 @@ function svTal(v, dec = 0) {
 // hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så att talet ryms på en rad.
 /** Som svTal, med " %" efter (hårt mellanslag). */
 function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+// PO-påslaget i procent med högst två decimaler och utan avslutande nollor, som användaren skrev det: 40 → "40 %",
+// 39,15 → "39,15 %", 31,4 → "31,4 %". Räkneexemplet i src/lib/prioritering.js (arsbeloppMening) skriver likadant.
+const _svPoNf = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+/** @param {number} v */
+function svPoPct(v) { return typeof v === 'number' && isFinite(v) ? `${_svPoNf.format(v)} %` : '–'; }
 /** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal. */
 function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(Math.round(v), 0)} kr` : tom; }
 
@@ -6617,6 +6622,10 @@ function prioKonstanter() {
         SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });
 }
 
+// PO-påslaget med högst två decimaler och utan avslutande nollor (40 → "40", 39,15 → "39,15"), som svPoPct i appen
+// (src/app/03-hjalpfunktioner.js).
+const _PO_FORMAT = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
  * för gruppens kvinnor, eller null när kvinnornas median inte ligger minst 100 kr lägre (skillnaden avrundas till
@@ -6634,7 +6643,7 @@ function arsbeloppMening(g, costSettings, kr) {
     const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
-        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${String(po).replace('.', ',')} %). Det är ett räkneexempel, `
+        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${_PO_FORMAT.format(po)} %). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
 }
 
@@ -22742,7 +22751,7 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(${K.GAP_TAK}, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / ${K.GAP_TAK} × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
             { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? `Gruppen ligger UNDER referens — full vikt ${svTal(K.RIKTNING_UNDER, 1)}` : `Gruppen ligger ÖVER referens — halv vikt ${svTal(K.RIKTNING_OVER, 1)}` },
             { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? `Markerat som bristyrke — bonus ${svTal(K.BRIST_MULTIPLIKATOR, 1)}x` : 'Ej bristyrke' },
-            { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
+            { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPoPct(poPct)} × ${it.n} pers` }
         ],
         formula: `<strong>Prioritetsindex-formel:</strong><br>
             index = bristMult × riktningMult × (sev × w_avv + vol × w_vol + skillnad × w_jäm) / Σw<br>
@@ -22750,7 +22759,7 @@ function _evidenceForPrioItem(it, _reference) {
             = <strong>${svTal(it.priorityIndex, 2)}</strong>
             ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att nå referensen:</strong><br>
             |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFaktor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
-        footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPct(poPct, 2)}).`
+        footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPoPct(poPct)}).`
     };
 }
 
@@ -26816,7 +26825,7 @@ function updateForecast() {
           _laSlutsats('Kvar att fördela', kr(out.kvar), out.kvar < -0.5 ? 'fördelningen överskrider potten' : 'av potten', out.kvar < -0.5),
           // "från …" bara när summan har ändrats; före första påslaget står utgångsläget
           _laSlutsats('Lönesumma per månad', kr(out.lonsummaEfter), Math.round(out.lonsummaEfter) !== Math.round(out.lonsummaFore) ? `från ${kr(out.lonsummaFore)}` : 'utgångsläget'),
-          _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPct(cost.poPct, 2)}`),
+          _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPoPct(cost.poPct)}`),
       ].join(''); }
     if (meterEl) meterEl.innerHTML = `
         <div class="bak-kant rund-6 hojd-12 marg-t-10 klipp" role="img" aria-label="Budgetutnyttjande ${svTal(anvPct, 0)} procent">
@@ -32738,8 +32747,8 @@ function _prioKonStatus(i) {
 function _prioPoText() {
     const po = state.costSettings.poPct;
     return po === COST_DEFAULTS.poPct
-        ? `inkl. PO-påslag ${svPct(po, 2)} (ett standardantagande; sätt organisationens eget under Inställningar)`
-        : `inkl. PO-påslag ${svPct(po, 2)} (ändras under Inställningar)`;
+        ? `inkl. PO-påslag ${svPoPct(po)} (ett standardantagande; sätt organisationens eget under Inställningar)`
+        : `inkl. PO-påslag ${svPoPct(po)} (ändras under Inställningar)`;
 }
 
 function _selectedPrioReference() {
@@ -32841,7 +32850,7 @@ function renderPrioritering() {
         installningarRad.innerHTML = `Trösklar och viktning: ${anpassad ? 'anpassade värden' : 'standardvärden'} <button type="button" class="ov-filrad-lank" data-oppna-installningar="prio-cfg-atgard">Ändra</button>`;
     }
     const costPerEl = document.getElementById('prio-stat-cost-period');
-    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPct(state.costSettings.poPct, 2)}`;
+    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPoPct(state.costSettings.poPct)}`;
     const costPoEl = document.getElementById('prio-stat-cost-po');
     if (costPoEl) costPoEl.textContent = `Räknat på ${state.costSettings.months} månader, ${_prioPoText()}.`;
 
@@ -32867,7 +32876,7 @@ function renderPrioritering() {
         if (paretoSummary) {
             paretoSummary.innerHTML = `
                 <div class="farg-primary fw-700 marg-b-4">Total: ${_fmtCost(totalParetoCost)}</div>
-                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPct(state.costSettings.poPct, 2)}</div>
+                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPoPct(state.costSettings.poPct)}</div>
                 <div>Topp <strong>${n50}</strong> grupper = 50%</div>
                 <div>Topp <strong>${n80}</strong> grupper = 80%</div>
                 <div class="finstilt">Alla under-betalda grupper sammanställda. Fokus på topp 80%-gränsen ger maximal kostnadseffekt.</div>
@@ -32926,7 +32935,7 @@ function renderPrioritering() {
         ],
         formler: [
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
-            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
+            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPoPct(state.costSettings.poPct)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', `${_prKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${_prKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
             ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
@@ -33214,8 +33223,8 @@ function _readCostSettings() {
     if (sum) {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
-            ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
+            ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPoPct(state.costSettings.poPct)} PO`
+            : `Standard: ${state.costSettings.months} mån × ${svPoPct(state.costSettings.poPct)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
     }
 }
 // Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som

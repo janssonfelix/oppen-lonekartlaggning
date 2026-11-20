@@ -232,7 +232,7 @@ function updateForecast() {
           _laSlutsats('Kvar att fördela', kr(out.kvar), out.kvar < -0.5 ? 'fördelningen överskrider potten' : 'av potten', out.kvar < -0.5),
           // "från …" bara när summan har ändrats; före första påslaget står utgångsläget
           _laSlutsats('Lönesumma per månad', kr(out.lonsummaEfter), Math.round(out.lonsummaEfter) !== Math.round(out.lonsummaFore) ? `från ${kr(out.lonsummaFore)}` : 'utgångsläget'),
-          _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPct(cost.poPct, 2)}`),
+          _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPoPct(cost.poPct)}`),
       ].join(''); }
     if (meterEl) meterEl.innerHTML = `
         <div class="bak-kant rund-6 hojd-12 marg-t-10 klipp" role="img" aria-label="Budgetutnyttjande ${svTal(anvPct, 0)} procent">

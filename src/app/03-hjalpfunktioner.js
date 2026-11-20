@@ -149,6 +149,11 @@ function svTal(v, dec = 0) {
 // hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så att talet ryms på en rad.
 /** Som svTal, med " %" efter (hårt mellanslag). */
 function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+// PO-påslaget i procent med högst två decimaler och utan avslutande nollor, som användaren skrev det: 40 → "40 %",
+// 39,15 → "39,15 %", 31,4 → "31,4 %". Räkneexemplet i src/lib/prioritering.js (arsbeloppMening) skriver likadant.
+const _svPoNf = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+/** @param {number} v */
+function svPoPct(v) { return typeof v === 'number' && isFinite(v) ? `${_svPoNf.format(v)} %` : '–'; }
 /** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal. */
 function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(Math.round(v), 0)} kr` : tom; }
 

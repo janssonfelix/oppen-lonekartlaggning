@@ -190,8 +190,8 @@ function _prioKonStatus(i) {
 function _prioPoText() {
     const po = state.costSettings.poPct;
     return po === COST_DEFAULTS.poPct
-        ? `inkl. PO-påslag ${svPct(po, 2)} (ett standardantagande; sätt organisationens eget under Inställningar)`
-        : `inkl. PO-påslag ${svPct(po, 2)} (ändras under Inställningar)`;
+        ? `inkl. PO-påslag ${svPoPct(po)} (ett standardantagande; sätt organisationens eget under Inställningar)`
+        : `inkl. PO-påslag ${svPoPct(po)} (ändras under Inställningar)`;
 }
 
 function _selectedPrioReference() {
@@ -293,7 +293,7 @@ function renderPrioritering() {
         installningarRad.innerHTML = `Trösklar och viktning: ${anpassad ? 'anpassade värden' : 'standardvärden'} <button type="button" class="ov-filrad-lank" data-oppna-installningar="prio-cfg-atgard">Ändra</button>`;
     }
     const costPerEl = document.getElementById('prio-stat-cost-period');
-    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPct(state.costSettings.poPct, 2)}`;
+    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPoPct(state.costSettings.poPct)}`;
     const costPoEl = document.getElementById('prio-stat-cost-po');
     if (costPoEl) costPoEl.textContent = `Räknat på ${state.costSettings.months} månader, ${_prioPoText()}.`;
 
@@ -319,7 +319,7 @@ function renderPrioritering() {
         if (paretoSummary) {
             paretoSummary.innerHTML = `
                 <div class="farg-primary fw-700 marg-b-4">Total: ${_fmtCost(totalParetoCost)}</div>
-                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPct(state.costSettings.poPct, 2)}</div>
+                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPoPct(state.costSettings.poPct)}</div>
                 <div>Topp <strong>${n50}</strong> grupper = 50%</div>
                 <div>Topp <strong>${n80}</strong> grupper = 80%</div>
                 <div class="finstilt">Alla under-betalda grupper sammanställda. Fokus på topp 80%-gränsen ger maximal kostnadseffekt.</div>
@@ -378,7 +378,7 @@ function renderPrioritering() {
         ],
         formler: [
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
-            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
+            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPoPct(state.costSettings.poPct)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', `${_prKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${_prKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
             ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
@@ -666,8 +666,8 @@ function _readCostSettings() {
     if (sum) {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
-            ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
+            ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPoPct(state.costSettings.poPct)} PO`
+            : `Standard: ${state.costSettings.months} mån × ${svPoPct(state.costSettings.poPct)} PO (ett standardantagande; organisationen sätter sitt eget värde)`;
     }
 }
 // Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som

@@ -399,7 +399,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(po.closest('#installningar-modal')).not.toBeNull();
         po.value = '42'; po.dispatchEvent(new w.Event('input', { bubbles: true })); po.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(w.__state.costSettings.poPct).toBe(42);
-        expect(d.getElementById('prio-cost-summary').textContent).toMatch(/Anpassad.*42,00\s%/);
+        expect(d.getElementById('prio-cost-summary').textContent).toMatch(/Anpassad.*42\s%/);
         d.getElementById('prio-cost-reset').click();
         expect(w.__state.costSettings.poPct).toBe(40);
         w.eval('stangInstallningar()');
