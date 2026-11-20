@@ -79,7 +79,8 @@ Vad som krävs för att en ändring är klar står i *Definition of Done* i [`CO
 ## b. För granskaren av beräkningarna
 
 Varje beräkning är en ren funktion i `src/lib/`, utan DOM och utan tillstånd. Den går att köra i Node på egen data;
-appen använder samma funktion via spegeln.
+appen använder samma funktion via spegeln. Börja i [`berakningsregister.md`](berakningsregister.md): där står varje
+beräkning med funktion, vad den bygger på, tester och referensfall, och modellparametrarna.
 
 ### Huvudtalet på ett påhittat underlag
 
