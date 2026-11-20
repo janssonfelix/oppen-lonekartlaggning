@@ -414,7 +414,7 @@ function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = 
 function _forecastLutningRader(d, sim, niva) {
     const k = kTroskel(), grupper = new Map();
     d.forEach((r, i) => {
-        const kv = !!(r.kon && r.kon.includes('kvinna')), ma = r.kon === 'man' || r.kon === 'män';
+        const kv = arKvinna(r), ma = arMan(r);
         if (!(kv || ma) || !sim[i]) return;
         const nyckel = niva === 'bas' ? String(r.bas) : `${r.aid}|${r.bas}`;
         let g = grupper.get(nyckel);

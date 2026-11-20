@@ -23,6 +23,7 @@ import { sektorsnamn } from './aid.js';
 import { statistikFor } from './jamforelse.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
 import { kompletterandeUndertryckning } from './undertryckning.js';
+import { arKvinna, arMan } from './kon.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -53,8 +54,6 @@ export function valideraPerBasRecept(r) {
 }
 export function perBasReceptArStandard(r) { return JSON.stringify(valideraPerBasRecept(r)) === JSON.stringify(perBasStandard()); }
 
-const _arKv = r => String(r.kon || '').includes('kvinna');
-const _arMa = r => r.kon === 'man' || r.kon === 'män';
 const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
@@ -111,7 +110,7 @@ export function perBasTabeller(rader, opt = {}) {
     const raderI = b => perDim.get(b) || [];
     const basUtelamnade = basar.filter(b => raderI(b).length < k);
     const visadeBas = basar.filter(b => raderI(b).length >= k);
-    const nKvI = b => raderI(b).filter(_arKv).length, nMaI = b => raderI(b).filter(_arMa).length;
+    const nKvI = b => raderI(b).filter(arKvinna).length, nMaI = b => raderI(b).filter(arMan).length;
     const konVisasI = b => nKvI(b) >= k && nMaI(b) >= k;
     const harMedel = recept.matt.includes('medel');
 
@@ -127,7 +126,7 @@ export function perBasTabeller(rader, opt = {}) {
     // gemensamma medellön, och den ska omfatta minst k personer av det könet. Ett intervall vars könsmedel döljs ger
     // också via sin medellön för alla den andra könets dolda celler, så båda könens medel döljs tillsammans.
     const konDolda = new Set();
-    if (recept.konsgap && d.filter(_arKv).length >= k && d.filter(_arMa).length >= k) {
+    if (recept.konsgap && d.filter(arKvinna).length >= k && d.filter(arMan).length >= k) {
         for (const antal of [nKvI, nMaI]) {
             const delar = basar.map(b => ({ namn: b, n: antal(b), dold: raderI(b).length < k || medelDolda.has(b) || !konVisasI(b) || konDolda.has(b) }));
             kompletterandeUndertryckning(delar, k).forEach(i => konDolda.add(basar[i]));
@@ -168,7 +167,7 @@ export function perBasTabeller(rader, opt = {}) {
             const s = visa.has('statistik') && rows[0].aid != null && recept.dim === 'bas' ? statFor(rows[0].aid, bas) : null;
             if (s && s.median > 0) rad.push({ typ: 'statistik', namn: `${statistikNamn}: ${namn}`, aid: key, n: null, p10: s.p10 ?? null, med: s.median, p90: s.p90 ?? null });
         });
-        const kv = df.filter(_arKv), ma = df.filter(_arMa);
+        const kv = df.filter(arKvinna), ma = df.filter(arMan);
         const konVisas = kv.length >= k && ma.length >= k;
         if (konVisas) {
             const mk = visa.has('kvinnor') ? _matt(kv) : null, mm = visa.has('man') ? _matt(ma) : null;
@@ -184,7 +183,7 @@ export function perBasTabeller(rader, opt = {}) {
 
     // Könsgap och ålder per BAS, med raden Alla först.
     const konsgapRad = (namn, rows, medelDold = false, konDold = false) => {
-        const kv = rows.filter(_arKv), ma = rows.filter(_arMa);
+        const kv = rows.filter(arKvinna), ma = rows.filter(arMan);
         const konVisas = kv.length >= k && ma.length >= k;
         const konMedel = konVisas && !medelDold && !konDold;
         const medel = medelDold ? null : _medel(_loner(rows)), medelKv = konMedel ? _medel(_loner(kv)) : null, medelMa = konMedel ? _medel(_loner(ma)) : null;

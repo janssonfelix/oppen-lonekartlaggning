@@ -1370,8 +1370,8 @@ function _konFarRedovisas(nKv, nMa) {
 function _konAntal(rader) {
     let nKv = 0, nMa = 0;
     for (const r of rader || []) {
-        if (r.kon && r.kon.includes('kvinna')) nKv++;
-        else if (r.kon === 'man' || r.kon === 'män') nMa++;
+        if (arKvinna(r)) nKv++;
+        else if (arMan(r)) nMa++;
     }
     return { nKv, nMa };
 }
@@ -1609,7 +1609,7 @@ function _kSanktStycke() {
 function individLitenFor(rader) {
     const k = kTroskel();
     const grupp = r => `${_gruppAid(r)}|${r.bas}`;
-    const konAv = r => (typeof r.kon === 'string' && r.kon.includes('kvinna') ? 'kv' : (r.kon === 'man' || r.kon === 'män' ? 'ma' : 'ovr'));
+    const konAv = r => (arKvinna(r) ? 'kv' : (arMan(r) ? 'ma' : 'ovr'));
     const n = new Map();
     for (const r of rader) {
         if (!(r.lon > 0) || !r.bas) continue;
@@ -1619,7 +1619,7 @@ function individLitenFor(rader) {
     }
     return r => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv(r)}`) || 0) < k;
 }
-function _gruppAid(r) { const m = String(r.yrke || '').match(/^(\d+)/); return m ? m[1] : String(r.yrke || ''); }
+function _gruppAid(r) { return aidAvYrke(r.yrke); }
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 function _kSidfot(text) {
@@ -2278,6 +2278,36 @@ const APP_BUILD_DATE = '2026-11-16';
 // tests/drift.test.js.
 // ====================================================================
 /* eslint-disable */
+// ---- speglar src/lib/kon.js ----
+const __mirrorKon = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — Könet på en lönerad.
+ *
+ * Två predikat som prövar radens normaliserade kön: arKvinna och arMan. Inläsningen (inlasning.js) har redan satt
+ * fältet kon till 'kvinna' eller 'man', och rader med annat kön utesluts där; predikaten är det enda ställe i
+ * verktyget där villkoren skrivs. Modulen importerar ingenting, så att alla lib-moduler kan använda den (också
+ * falt.js, som står sent i speglingsordningen).
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** Sant när radens kön är 'kvinna' (ett kön som innehåller 'kvinna'). Saknas raden eller könet: falskt. */
+function arKvinna(r) {
+    return !!r && typeof r.kon === 'string' && r.kon.includes('kvinna');
+}
+
+/** Sant när radens kön är 'man' eller 'män'. Saknas raden eller könet: falskt. */
+function arMan(r) {
+    return !!r && (r.kon === 'man' || r.kon === 'män');
+}
+
+    return { arKvinna, arMan };
+})();
+const arKvinna = __mirrorKon.arKvinna;
+const arMan = __mirrorKon.arMan;
+
 // ---- speglar src/lib/termer.js ----
 const __mirrorTermer = (() => {
 // SPDX-License-Identifier: MIT
@@ -2554,6 +2584,397 @@ function personOrd(n) {
 const _namnGenitiv = __mirrorNamn.namnGenitiv;
 const _namnNormalisera = __mirrorNamn.normaliseraNamn;
 const personOrd = __mirrorNamn.personOrd;
+
+// ---- speglar src/lib/aid-etiketter.js ----
+const __mirrorAidEtiketter = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// AUTO-GENERERAD av tools/gen-aid-etiketter.mjs ur SKR, Etikettlista AID 2018 (reviderad 2026-09-23). Ändra inte för hand.
+// Innehåller bara kod, etikettnamn och möjliga ansvarskoder per etikett.
+//
+// Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+
+const LISTA = Object.freeze({
+    version: '2026-09-23',
+    kalla: 'SKR, Etikettlista AID 2018 (reviderad 2026-09-23)',
+    etiketter: Object.freeze([
+        ["101010","Ledning, övergripande","A"],
+        ["101011","Ledning, ekonomi","A,B,C,L"],
+        ["101012","Ledning, personal/HR","A,B,C,L"],
+        ["101013","Ledning, information/kommunikation","A,B,C,L"],
+        ["101014","Ledning, IT","A,B,C,L"],
+        ["101015","Ledning, administration","A,B,C,L"],
+        ["102010","Ledning, hälso- och sjukvård","A,B,C,L"],
+        ["102510","Ledning, tandvård","A,B,C,L"],
+        ["103010","Ledning, rehabilitering och förebyggande arbete","A,B,C,L"],
+        ["103510","Ledning, individ- och familjeomsorg","A,B,C,L"],
+        ["103511","Ledning, äldreomsorg","A,B,C,L"],
+        ["103512","Ledning, omsorg om personer med funktionsnedsättning samt socialpsykiatriområdet","A,B,C,L"],
+        ["104010","Ledning, skola","A,B,C,L,1001,1002"],
+        ["104011","Rektor (skola)","B,C,L,1001,1002"],
+        ["104012","Ledning, förskola, pedagogisk omsorg och fritidsverksamhet","A,B,C,L,1001,1002"],
+        ["104510","Ledning, kultur, turism, rekreation och friluftsfrågor","A,B,C,L"],
+        ["105010","Ledning, teknik, hantverk, miljö och samhällsbyggnad","A,B,C,L"],
+        ["105510","Ledning, räddningstjänst och säkerhet","A,B,C,L"],
+        ["106010","Ledning, köks- och måltidsarbete","A,B,C,L"],
+        ["106510","Ledning, städ, tvätt och renhållning","A,B,C,L"],
+        ["109090","Ledning, annan","A,B,C,L"],
+        ["151010","Handläggare, övergripande verksamhet","B,C,L,F"],
+        ["151011","Handläggare, ekonomi","B,C,L,F"],
+        ["151012","Handläggare, personal/HR","B,C,L,F"],
+        ["151013","Handläggare, information/kommunikation","B,C,L,F"],
+        ["151014","Handläggare, IT","B,C,L,F"],
+        ["151015","Handläggare, upphandling/inköp","B,C,L,F"],
+        ["151016","Handläggare, konsument-, medborgar- och samhällsservice","B,C,L,F"],
+        ["151017","Handläggare, miljöfrågor","B,C,L,F"],
+        ["151018","Jurist","B,C,L,F"],
+        ["151019","Arkivarie","B,C,L,F"],
+        ["151020","Handläggare, nämnder","B,C,L,F"],
+        ["151021","Handläggare, samhällsutveckling och säkerhetsfrågor","B,C,L,F"],
+        ["151022","Handläggare, hälso- och sjukvård, tandvård, rehabilitering samt psykiatri","B,C,L,F"],
+        ["151023","Handläggare, individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integrationsarbete","B,C,L,F"],
+        ["151024","Handläggare, förskole-, skol-, fritids- och annan pedagogisk verksamhet","B,C,L,F"],
+        ["151025","Handläggare, infrastruktur, trafik och kollektivtrafikfrågor","B,C,L,F"],
+        ["151026","Handläggare, teknik och lokal/fastighetsfrågor","B,C,L,F"],
+        ["151090","Handläggare, annan","B,C,L,F"],
+        ["152010","Administratör, övergripande verksamhet","B,C,L,F"],
+        ["152011","Administratör, ekonomi","B,C,L,F"],
+        ["152012","Administratör, personal/HR/löner","B,C,L,F"],
+        ["152013","Administratör, information/kommunikation, medborgar- och samhällsservice","B,C,L,F"],
+        ["152014","Administratör, IT","B,C,L,F"],
+        ["152015","Administratör, individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integrationsarbete","B,C,L,F"],
+        ["152016","Administratör, förskole-, skol-, fritids-, och annan pedagogisk verksamhet","B,C,L,F"],
+        ["152017","Receptionist, telefonist","B,C,L,F"],
+        ["152018","Administratör, vård","B,C,L,F"],
+        ["152019","Administratör, kultur, turism och friluftsområdet","B,C,L,F"],
+        ["152020","Administratör, teknik- och fastighetsfrågor samt samhällsbyggnad","B,C,L,F"],
+        ["152021","Administratör, trafik- och kollektivtrafikfrågor","B,C,L,F"],
+        ["152090","Administratör, annan","B,C,L,F"],
+        ["201010","Överläkare","B,C,L,F,M"],
+        ["201011","Distriktsläkare/Specialist allmänmedicin","B,C,L,F,M"],
+        ["201012","Skolläkare","B,C,L,F"],
+        ["201013","Företagsläkare","B,C,L,F"],
+        ["202010","Specialistläkare","B,C,L,F,M"],
+        ["203010","Läkare legitimerad, specialiseringstjänstgöring","B,C,L,F,M"],
+        ["203020","Läkare legitimerad, bastjänstgöring","B,C,L,F"],
+        ["203090","Läkare legitimerad, annan","B,C,L,F,M"],
+        ["204010","Läkare ej legitimerad, allmäntjänstgöring","B,C,L,F"],
+        ["204090","Läkare ej legitimerad, annan","B,C,L,F"],
+        ["204510","Psykolog","B,C,L,F"],
+        ["204511","PTP-psykolog","B,C,L,F"],
+        ["204610","Psykoterapeut","B,C,L,F"],
+        ["205010","Barnmorska, vårdavdelning","B,C,L,F"],
+        ["205011","Barnmorska, mottagning/rådgivning","B,C,L,F"],
+        ["206010","Anestesisjuksköterska","B,C,L,F"],
+        ["206011","Distriktssköterska","B,C,L,F"],
+        ["206012","Psykiatrisjuksköterska","B,C,L,F"],
+        ["206013","Ambulanssjuksköterska","B,C,L,F"],
+        ["206014","Sjuksköterska, funktionsnedsättning och äldreomsorg/geriatrik","B,C,L,F"],
+        ["206015","Intensivvårdssjuksköterska","B,C,L,F"],
+        ["206016","Operationssjuksköterska","B,C,L,F"],
+        ["206017","Sjuksköterska, medicin/kirurgi","B,C,L,F"],
+        ["206018","Sjuksköterska, barn och ungdom","B,C,L,F"],
+        ["206019","Skolsköterska","B,C,L,F"],
+        ["206020","Företagssköterska","B,C,L,F"],
+        ["206021","Sjuksköterska, annan specialistinriktning","B,C,L,F"],
+        ["206022","Medicinskt ansvarig sjuksköterska (MAS)","B,C,L,F"],
+        ["206023","Sjuksköterska, specialfunktion","B,C,L,F"],
+        ["206090","Sjuksköterska, allmän","B,C,L,F"],
+        ["206510","Röntgensjuksköterska","B,C,L,F"],
+        ["207008","Undersköterska med specialistinriktning","B,C,L,F"],
+        ["207009","Undersköterska, hemtjänst","B,C,L,F"],
+        ["207010","Undersköterska, hemvård/hemsjukvård","B,C,L,F"],
+        ["207011","Undersköterska, särskilt boende","B,C,L,F"],
+        ["207013","Undersköterska, vård-/specialavdelning hälso- och sjukvård","B,C,L,F"],
+        ["207014","Undersköterska, mottagning hälso- och sjukvård","B,C,L,F"],
+        ["207015","Barnsköterska, hälso- och sjukvård","B,C,L,F"],
+        ["207016","Ambulanssjukvårdare","B,C,L,F"],
+        ["207017","Medicinsk fotterapeut","B,C,L,F"],
+        ["207018","Skötare, mottagning psykiatri","B,C,L,F"],
+        ["207019","Skötare, vårdavdelning psykiatri","B,C,L,F"],
+        ["207023","Vårdbiträde, hemvård/hemsjukvård","B,C,L,F"],
+        ["207024","Vårdbiträde, särskilt boende","B,C,L,F"],
+        ["207026","Röntgenbiträde","B,C,L,F"],
+        ["207029","Vårdbiträde, hemtjänst","B,C,L,F"],
+        ["207090","Biträdesarbete, annat","B,C,L,F"],
+        ["208010","Sjukhusfysiker","B,C,L,F"],
+        ["208011","Sjukhuskemist","B,C,L,F"],
+        ["208012","Obduktionstekniker","B,C,L,F"],
+        ["208013","Biomedicinsk analytiker","B,C,L,F"],
+        ["208014","Cytodiagnostiker","B,C,L,F"],
+        ["208015","Andra specialiteter inom hälso- och sjukvård","B,C,L,F"],
+        ["208016","Laboratoriebiträde","B,C,L,F"],
+        ["208017","Farmaceut","B,C,L,F"],
+        ["208018","Sjukhusbiolog","B,C,L,F"],
+        ["208090","Laboratoriearbete, annat","B,C,L,F"],
+        ["251010","Tandläkare, allmäntandvård","B,C,L,F"],
+        ["251011","Specialisttandläkare","B,C,L,F"],
+        ["251013","Tandläkare under specialiseringstjänstgöring","B,C,L,F"],
+        ["252009","Tandsköterska med specialistinriktning","B,C,L,F"],
+        ["252010","Tandsköterska","B,C,L,F"],
+        ["252011","Tandhygienist","B,C,L,F"],
+        ["252012","Tandtekniker","B,C,L,F"],
+        ["252090","Tandvårdsarbete, annat","B,C,L,F"],
+        ["301009","Medicinskt ansvarig för rehabilitering (MAR)","B,C,L,F"],
+        ["301010","Arbetsterapeut","B,C,L,F"],
+        ["301011","Fysioterapeut","B,C,L,F"],
+        ["301012","Arbetsterapibiträde","B,C,L,F"],
+        ["301013","Fysioterapiassistent","B,C,L,F"],
+        ["301014","Logoped","B,C,L,F"],
+        ["301015","Audionom","B,C,L,F"],
+        ["301016","Syn-, hörsel- och talpedagog","B,C,L,F"],
+        ["301017","Dövtolk/Teckenspråkstolk","B,C,L,F"],
+        ["301018","Dietist","B,C,L,F"],
+        ["301020","Hjälpmedelskonsulent","B,C,L,F"],
+        ["301021","Hälsovetare","B,C,L,F"],
+        ["301090","Rehabiliterings- och förebyggande arbete, annat","B,C,L,F"],
+        ["351008","Socialsekreterare, barn och unga, myndighetsutövning","B,C,L,F"],
+        ["351009","Socialsekreterare, ekonomiskt bistånd","B,C,L,F"],
+        ["351010","Socialsekreterare, utan myndighetsutövning","B,C,L,F"],
+        ["351011","Fältsekreterare","B,C,L,F"],
+        ["351012","Socialsekreterare, vuxna och LSS, myndighetsutövning","B,C,L,F"],
+        ["351013","Familjerådgivare","B,C,L,F"],
+        ["351014","Integrationshandläggare","B,C,L,F"],
+        ["351015","Behandlingsassistent/Socialpedagog","B,C,L,F"],
+        ["351016","Arbetsmarknadskonsulent","B,C,L,F"],
+        ["351030","Stödpedagog, funktionsnedsättning","B,C,L,F"],
+        ["351031","Stödassistent/Vårdare, gruppboende, funktionsnedsättning","B,C,L,F"],
+        ["351032","Stödassistent/Vårdare, dagverksamhet, funktionsnedsättning","B,C,L,F"],
+        ["351033","Vårdbiträde/Stödbiträde, funktionsnedsättning","B,C,L,F"],
+        ["351034","Boendestödjare, i hemmiljö, inom funktionsnedsättning","B,C,L,F"],
+        ["351035","Skötare/Boendestödjare, behandlingsarbete i hemmiljö, inom socialpsykiatri","B,C,L,F"],
+        ["351040","Personlig assistent","B,C,L,F"],
+        ["351041","Anhörigvårdare","B,C,L,F"],
+        ["351090","Socialt arbete, annat","B,C,L,F"],
+        ["352010","Kurator","B,C,L,F"],
+        ["352090","Kurativt arbete, annat","B,C,L,F"],
+        ["401009","Lärare grundskola, årskurs F-3","B,C,L,F,1001,1002"],
+        ["401010","Lärare grundskola, årskurs 4-6","B,C,L,F,1001,1002"],
+        ["401011","Lärare grundskola, årskurs 7-9","B,C,L,F,1001,1002"],
+        ["401012","Lärare gymnasieskola, allmänna ämnen","B,C,L,F,1001,1002"],
+        ["401013","Lärare gymnasieskola, yrkesämnen","B,C,L,F,1001,1002"],
+        ["401015","Lärare, folkhögskola","B,C,L,F"],
+        ["401016","Speciallärare","B,C,L,F,1001,1002"],
+        ["401017","Specialpedagog","B,C,L,F,1001,1002"],
+        ["401018","SFI-lärare","B,C,L,F,1001,1002"],
+        ["401019","Lärare, modersmål","B,C,L,F,1001,1002"],
+        ["401020","Lärare, praktiska/estetiska ämnen, grundskola","B,C,L,F,1001,1002"],
+        ["401021","Lärare, praktiska/estetiska ämnen, gymnasieskola","B,C,L,F,1001,1002"],
+        ["401022","Lärare, vuxenutbildning, allmänna ämnen","B,C,L,F,1001,1002"],
+        ["401023","Lärare, vuxenutbildning, yrkesämnen","B,C,L,F,1001,1002"],
+        ["402010","Förskollärare","B,C,L,F,1001,1002"],
+        ["402011","Lärare i fritidshem","B,C,L,F,1001,1002"],
+        ["402090","Lärar-, förskollärararbete, annat","B,C,L,F,1001,1002"],
+        ["403010","Barnskötare","B,C,L,F"],
+        ["403011","Dagbarnvårdare","B,C,L,F"],
+        ["403012","Modersmålstränare, förskola","B,C,L,F,1001,1002"],
+        ["403013","Instruktör/Handledare","B,C,L,F,1001,1002"],
+        ["403014","Studie- och yrkesvägledare","B,C,L,F"],
+        ["403015","Lärarassistent","B,C,L,F"],
+        ["403016","Elevassistent","B,C,L,F"],
+        ["403090","Skolarbete, annat","B,C,L,F"],
+        ["451010","Kultursekreterare/kulturhandläggare","B,C,L,F"],
+        ["451011","Lärare, kulturskola","B,C,L,F"],
+        ["451012","Kulturarbete","B,C,L,F"],
+        ["451013","Antikvarie","B,C,L,F"],
+        ["451014","Museiarbete","B,C,L,F"],
+        ["451015","Bibliotekarie","B,C,L,F"],
+        ["451016","Biblioteksassistent","B,C,L,F"],
+        ["451090","Kulturarbete, annat","B,C,L,F"],
+        ["452010","Turism, rekreation och friluftskonsulent","B,C,L,F"],
+        ["452011","Fritidsledare","B,C,L,F"],
+        ["452012","Turismarbete","B,C,L,F"],
+        ["452013","Badmästare","B,C,L,F"],
+        ["452014","Friskvårdsarbete, badpersonal","B,C,L,F"],
+        ["452090","Turism, rekreation och friluftsarbete, annat","B,C,L,F"],
+        ["501010","Fysisk samhällsplanerare","B,C,L,F"],
+        ["501011","Bygglovshandläggare","B,C,L,F"],
+        ["501012","Byggnadsinspektör","B,C,L,F"],
+        ["501013","Miljö- och hälsoskyddsinspektör","B,C,L,F"],
+        ["502010","Systemutvecklare","B,C,L,F"],
+        ["502011","Ingenjör, mätning, kartering, GIS","B,C,L,F"],
+        ["502012","Ingenjör, park/gator, trafik","B,C,L,F"],
+        ["502013","Ingenjör, mark, fastigheter","B,C,L,F"],
+        ["502014","Ingenjör, drift, VA-ingenjör","B,C,L,F"],
+        ["502016","Ingenjör, hälso- och sjukvård","B,C,L,F"],
+        ["502090","Ingenjör, annan","B,C,L,F"],
+        ["503010","Tekniker, IT","B,C,L,F"],
+        ["503011","Tekniker, lantmäteri","B,C,L,F"],
+        ["503012","Tekniker, drift","B,C,L,F"],
+        ["503013","Tekniker, allmänteknisk","B,C,L,F"],
+        ["503014","Tekniker, hälso- och sjukvård","B,C,L,F"],
+        ["503015","Steriltekniker","B,C,L,F"],
+        ["503090","Tekniker, annan","B,C,L,F"],
+        ["509090","Teknikarbete, annat","B,C,L,F"],
+        ["521010","Elektriker/elmontör","B,C,L,F"],
+        ["521011","Fastighetsskötare","B,C,L,F"],
+        ["521012","Anläggningsarbete","B,C,L,F"],
+        ["521013","Hantverkare","B,C,L,F"],
+        ["521014","Fordonsförare","B,C,L,F"],
+        ["521015","Vaktmästare","B,C,L,F"],
+        ["521016","Kontorsvaktmästare","B,C,L,F"],
+        ["521017","Parkeringsvakt/trafikövervakare","B,C,L,F"],
+        ["521018","Park-/trädgårdsarbete","B,C,L,F"],
+        ["521019","Lantbruksarbete","B,C,L,F"],
+        ["529090","Hantverkararbete, annat","B,C,L,F"],
+        ["551010","Brandingenjör","B,C,L,F"],
+        ["551011","Brandinspektör","B,C,L,F"],
+        ["551012","Brandmästare","B,C,L,F"],
+        ["551013","Brandman","B,C,L,F"],
+        ["601010","Kock","B,C,L,F"],
+        ["601011","Kostekonom","B,C,L,F"],
+        ["601012","Måltidspersonal","B,C,L,F"],
+        ["609090","Köks- och måltidsarbete, annat","B,C,L,F"],
+        ["651010","Lokalvårdare/städare","B,C,L,F"],
+        ["651011","Tvätteriarbete","B,C,L,F"],
+        ["651012","Renhållningsarbete","B,C,L,F"],
+        ["651013","Förrådsarbete","B,C,L,F"],
+        ["659090","Städ-, tvätt- och renhållningsarbete, annat","B,C,L,F"]
+    ])
+});
+
+/** Etikettlistan: { version, kalla, etiketter: [kod, namn, 'A,B,…'][] }. */
+function aidEtikettlista() {
+    return LISTA;
+}
+
+    return { aidEtikettlista };
+})();
+
+// ---- speglar src/lib/aid.js ----
+const __mirrorAid = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const aidEtikettlista = __mirrorAidEtiketter.aidEtikettlista;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
+    const adjektiv = __mirrorTermer.adjektiv;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — AID-hierarkin (ADR-33).
+ *
+ * AID (SKR:s arbetsidentifikation) har en sexsiffrig etikett; de två första siffrorna anger ett
+ * av 13 huvudområden ("sektorer"), de fyra första en mellannivå utan namn. Restkoder ("annan")
+ * har 090 som de tre sista siffrorna. Etikettnamn och möjliga ansvarskoder kommer ur SKR:s
+ * etikettlista (aid-etiketter.js, genererad).
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+
+const HUVUDOMRADEN = Object.freeze([
+    { prefix: '10', namn: 'Ledningsarbete' },
+    { prefix: '15', namn: 'Handläggar- och administratörsarbete' },
+    { prefix: '20', namn: 'Vård- och omsorgsarbete med mera' },
+    { prefix: '25', namn: 'Tandvårdsarbete' },
+    { prefix: '30', namn: 'Rehabilitering och förebyggande arbete' },
+    { prefix: '35', namn: 'Individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integration' },
+    { prefix: '40', namn: 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet' },
+    { prefix: '45', namn: 'Kultur-, turism- och friluftsarbete' },
+    { prefix: '50', namn: 'Teknikarbete' },
+    { prefix: '52', namn: 'Vaktmästeri, trädgård, anläggning med mera' },
+    { prefix: '55', namn: 'Räddningstjänstarbete' },
+    { prefix: '60', namn: 'Köks- och måltidsarbete' },
+    { prefix: '65', namn: 'Städ, tvätt och renhållningsarbete' },
+]);
+const OKANT_HUVUDOMRADE = `${stor(adjektiv('okänd', T.huvudomrade))} ${T.huvudomrade.en}`;
+
+const _PER_PREFIX = new Map(HUVUDOMRADEN.map(h => [h.prefix, h]));
+const _ORDNING = new Map(HUVUDOMRADEN.map((h, i) => [h.namn, i]));
+/** @type {Map<string, {kod:string, namn:string, ansvarskoder:string[]}>|null} */
+let _index = null;
+
+function _etiketter() {
+    if (!_index) {
+        _index = new Map(aidEtikettlista().etiketter.map(([kod, namn, a]) =>
+            [kod, { kod, namn, ansvarskoder: a ? a.split(',') : [] }]));
+    }
+    return _index;
+}
+
+/** Sex siffror först i fältet (som AID-koden läses i dag), annars null. */
+function normaliseraAid(aid) {
+    const m = String(aid ?? '').trim().match(/^(\d{6})(?!\d)/);
+    return m ? m[1] : null;
+}
+
+/** Sifferprefixet ur ett yrkesfält (de inledande siffrorna), eller null när fältet saknar ett. */
+function sifferprefixAvYrke(yrke) {
+    const m = String(yrke ?? '').match(/^(\d+)/);
+    return m ? m[1] : null;
+}
+
+/** AID-koden ur ett yrkesfält: de inledande siffrorna, annars hela yrkesfältet som text. */
+function aidAvYrke(yrke) {
+    return sifferprefixAvYrke(yrke) ?? String(yrke ?? '');
+}
+
+/** Huvudområdet för en AID-kod, eller null. */
+function huvudomrade(aid) {
+    const k = normaliseraAid(aid);
+    return k ? (_PER_PREFIX.get(k.slice(0, 2)) || null) : null;
+}
+
+/** Sektorns namn — huvudområdet, eller "Okänt huvudområde". */
+function sektorsnamn(aid) {
+    const h = huvudomrade(aid);
+    return h ? h.namn : OKANT_HUVUDOMRADE;
+}
+
+/** De fyra första siffrorna, eller null. */
+function mellanniva(aid) {
+    const k = normaliseraAid(aid);
+    return k ? k.slice(0, 4) : null;
+}
+
+/** "AID 2070xx", eller null. */
+function mellannivaEtikett(aid) {
+    const m = mellanniva(aid);
+    return m ? `AID ${m}xx` : null;
+}
+
+/** Etiketten ur SKR:s lista: { kod, namn, ansvarskoder }, eller null. */
+function etikett(aid) {
+    const k = normaliseraAid(aid);
+    return k ? (_etiketter().get(k) || null) : null;
+}
+
+/** Restkod ("annan"/"annat"): de tre sista siffrorna är 090. */
+function arRestkod(aid) {
+    const k = normaliseraAid(aid);
+    return !!k && k.endsWith('090');
+}
+
+/** Etikett under huvudområdet Ledningsarbete (10xxxx). */
+function arLedningsetikett(aid) {
+    const k = normaliseraAid(aid);
+    return !!k && k.startsWith('10');
+}
+
+/** Sorterar sektorsnamn i prefixordning; okänt huvudområde sist. */
+function jamforSektor(a, b) {
+    const i = n => _ORDNING.get(n) ?? HUVUDOMRADEN.length;
+    return i(a) - i(b);
+}
+
+/** Version, källa och antal etiketter i den inbyggda etikettlistan. */
+function etikettlistaInfo() {
+    const l = aidEtikettlista();
+    return { version: l.version, kalla: l.kalla, antal: l.etiketter.length };
+}
+
+    return { normaliseraAid, aidAvYrke, sifferprefixAvYrke, huvudomrade, sektorsnamn, mellannivaEtikett, etikett, arRestkod, arLedningsetikett, jamforSektor, etikettlistaInfo };
+})();
+const aidAvYrke = __mirrorAid.aidAvYrke;
+const sifferprefixAvYrke = __mirrorAid.sifferprefixAvYrke;
+const _aidSektorsnamn = __mirrorAid.sektorsnamn;
+const _aidJamforSektor = __mirrorAid.jamforSektor;
+const _aidEtikettlistaInfo = __mirrorAid.etikettlistaInfo;
 
 // ---- speglar src/lib/undertryckning.js ----
 const __mirrorUndertryckning = (() => {
@@ -3056,6 +3477,8 @@ const __mirrorStructure = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
     const _quantile = __mirrorStat.quantile;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3070,8 +3493,6 @@ const __mirrorStructure = (() => {
  */
 
 
-function _isKv(r) { return r.kon && r.kon.includes('kvinna'); }
-function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
 
 /**
  * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
@@ -3080,7 +3501,7 @@ function _isMa(r) { return r.kon === 'man' || r.kon === 'män'; }
  */
 function medianGapPct(rows, { k = 1 } = {}) {
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (_isKv(r)) kv.push(r.lon); else if (_isMa(r)) ma.push(r.lon); });
+    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     if (kv.length < Math.max(1, k) || ma.length < Math.max(1, k)) return null;
     return (_median(kv) / _median(ma) - 1) * 100;
 }
@@ -3102,8 +3523,8 @@ function representationByBas(rows, { k = 1 } = {}) {
         let g = m.get(r.bas);
         if (!g) { g = { bas: r.bas, lons: [], kvLons: [], maLons: [], nKv: 0, nMa: 0, n: 0 }; m.set(r.bas, g); }
         g.lons.push(r.lon); g.n++;
-        if (_isKv(r)) { g.kvLons.push(r.lon); g.nKv++; }
-        else if (_isMa(r)) { g.maLons.push(r.lon); g.nMa++; }
+        if (arKvinna(r)) { g.kvLons.push(r.lon); g.nKv++; }
+        else if (arMan(r)) { g.maLons.push(r.lon); g.nMa++; }
     });
     return [...m.values()].map(g => {
         // Båda könen finns, men minst ett är för litet för en könsjämförelse.
@@ -3145,7 +3566,7 @@ function quartileDistribution(rows, { k = 1 } = {}) {
     all.forEach((r, i) => {
         const q = Math.min(3, Math.floor(i * 4 / n));
         const o = out[q];
-        o.n++; if (_isKv(r)) o.nKv++; else if (_isMa(r)) o.nMa++;
+        o.n++; if (arKvinna(r)) o.nKv++; else if (arMan(r)) o.nMa++;
         if (lo[q] == null) lo[q] = r.lon;
         hi[q] = r.lon;
     });
@@ -3174,7 +3595,7 @@ function quartileDistribution(rows, { k = 1 } = {}) {
 function distributionalGap(rows, percentiles, { k = 2 } = {}) {
     const ps = percentiles || [10, 25, 50, 75, 90];
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (_isKv(r)) kv.push(r.lon); else if (_isMa(r)) ma.push(r.lon); });
+    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     const minst = Math.max(2, k);
     if (kv.length < minst || ma.length < minst) return [];
     return ps.map(p => {
@@ -3510,6 +3931,7 @@ const __mirrorLikvardighet = (() => {
     const percentilintervall = __mirrorStat.percentilintervall;
     const rngFor = __mirrorRng.rngFor;
     const direktivMarkering = __mirrorStatus.direktivMarkering;
+    const arKvinna = __mirrorKon.arKvinna;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3549,6 +3971,7 @@ const __mirrorLikvardighet = (() => {
  *
  * @see 34-likvardigt-arbete.js computeLikvardighetPairs
  */
+
 
 
 
@@ -3786,7 +4209,7 @@ function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, def
         }
         const g = map.get(key);
         g.n++;
-        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.nKv++;
+        if (arKvinna(r)) g.nKv++;
         g.lons.push(r.lon);
         // Åldern bärs parallellt med lönen (null när den saknas) för åldersjusteringen i steg 3.
         g.aldrar.push(typeof r.alder === 'number' && isFinite(r.alder) ? r.alder : null);
@@ -4215,6 +4638,8 @@ const __mirrorForecast = (() => {
     const periodkostnad = __mirrorKostnad.periodkostnad;
     const _medianStat = __mirrorStat.median;
     const _quantileStat = __mirrorStat.quantile;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4236,6 +4661,7 @@ const __mirrorForecast = (() => {
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
  */
+
 
 
 
@@ -4296,8 +4722,8 @@ function rawGenderGap(rows, getLon) {
     (rows || []).forEach(r => {
         const L = getLon(r);
         if (!(L > 0)) return;
-        if (r.kon && r.kon.includes('kvinna')) kv.push(L);
-        else if (r.kon === 'man' || r.kon === 'män') ma.push(L);
+        if (arKvinna(r)) kv.push(L);
+        else if (arMan(r)) ma.push(L);
     });
     if (!kv.length || !ma.length) return null;
     return (_median(kv) / _median(ma) - 1) * 100;
@@ -4314,7 +4740,7 @@ function rawGenderGap(rows, getLon) {
 function targetRows(rows, t) {
     const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
     const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
-    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
+    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? arKvinna(r) : arMan(r));
     const ut = [];
     (rows || []).forEach((r, i) => {
         if (r.bas !== t.bas) return;
@@ -4392,7 +4818,7 @@ function allocate(rows, generell, targets, roundStep) {
         if (!gr) { gr = { bas: p.bas, aid: p.aid, oldL: [], newL: [], kvN: 0, n: 0, cost: 0 }; groups.set(k, gr); }
         gr.oldL.push(p.lon); gr.newL.push(p.nyLon);
         gr.cost += p.delta; gr.n++;
-        if (p.kon && p.kon.includes('kvinna')) gr.kvN++;
+        if (arKvinna(p)) gr.kvN++;
     });
     const perGroup = [...groups.values()].map(gr => ({
         bas: gr.bas, aid: gr.aid, n: gr.n, kvN: gr.kvN,
@@ -4502,7 +4928,7 @@ function summarizeGroups(rows) {
         let g = m.get(k);
         if (!g) { g = { bas: r.bas, aid: r.aid, lons: [], kvN: 0, n: 0 }; m.set(k, g); }
         g.lons.push(r.lon); g.n++;
-        if (r.kon && r.kon.includes('kvinna')) g.kvN++;
+        if (arKvinna(r)) g.kvN++;
     });
     return [...m.values()].map(g => ({
         bas: g.bas, aid: g.aid, n: g.n, kvN: g.kvN,
@@ -4614,7 +5040,7 @@ function individualRemediation(rows, opts) {
     const menByGroup = new Map(), menByBas = new Map();
     (rows || []).forEach(r => {
         if (!(r.lon > 0)) return;
-        if (!(r.kon === 'man' || r.kon === 'män')) return;
+        if (!arMan(r)) return;
         const gk = r.bas + '|' + r.aid;
         if (!menByGroup.has(gk)) menByGroup.set(gk, []);
         menByGroup.get(gk).push(r.lon);
@@ -4631,7 +5057,7 @@ function individualRemediation(rows, opts) {
     const flagged = [];
     (rows || []).forEach(r => {
         if (!(r.lon > 0)) return;
-        if (!(r.kon && r.kon.includes('kvinna'))) return;
+        if (!arKvinna(r)) return;
         const bench = benchFor(r.bas, r.aid);
         if (!bench) return;
         if (r.lon < bench.v * (1 - trigger)) {
@@ -4731,7 +5157,6 @@ function troskelmalKonstanter() {
  *   TROSKELMAL_MAX_LYFT_PCT % räcker; hittat: lyftPct, kostnadPerManad och skattningen efter lyftet (resultat)
  */
 function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifikans = false, skatta }) {
-    const arKvinna = r => r.kon && r.kon.includes('kvinna');
     const kvinnor = rader.filter(arKvinna);
     const utgangslage = skatta(rader);
     if (utgangslage.konPct == null) return { status: 'ingenSkattning', utgangslage };
@@ -4776,6 +5201,8 @@ const __mirrorAidbas = (() => {
     const quantile = __mirrorStat.quantile;
     const basRangFn = __mirrorLikvardighet.basRangFn;
     const konsklass = __mirrorLikvardighet.konsklass;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4800,6 +5227,7 @@ const __mirrorAidbas = (() => {
  *
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 /**
@@ -4858,8 +5286,8 @@ function arJamforelseKlass(klass, jamforelse = 'alla') {
     return jamforelse === 'mansdominerade' ? klass === KLASS_MA : true;
 }
 
-const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
-const arMa = r => r.kon === 'man' || r.kon === 'män';
+const arKv = arKvinna;
+const arMa = arMan;
 
 /**
  * Grupperar raderna per AID-kod och BAS-intervall, hämtade ur varje persons egen rad. Rader utan lön, kön eller
@@ -5018,6 +5446,8 @@ const __mirrorRegression = (() => {
     const ordForAntal = __mirrorTermer.ordForAntal;
     const stor = __mirrorTermer.stor;
     const personOrd = __mirrorNamn.personOrd;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5040,6 +5470,7 @@ const __mirrorRegression = (() => {
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
+
 
 
 
@@ -5086,7 +5517,7 @@ function harAlderIRader(rows) {
 }
 /** Raden har det som modellerna kräver: positiv lön, känt kön och, när lönefilen har ålder, en ålder över 0. */
 const _modellRad = (d, harAlder) => d && d.lon > 0 && (!harAlder || d.alder > 0) && typeof d.kon === 'string'
-    && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män');
+    && (arKvinna(d) || arMan(d));
 
 /**
  * Normaliserar ett värde från konfigurationsfilen eller gränssnittet till en giltig modell.
@@ -5161,8 +5592,8 @@ function diagnoseCollinearity(rows, basList) {
     basList.forEach(b => {
         const sub = rows.filter(d => d.bas === b);
         if (sub.length < 3) return;
-        const hasKv = sub.some(d => d.kon.includes('kvinna'));
-        const hasMa = sub.some(d => d.kon === 'man' || d.kon === 'män');
+        const hasKv = sub.some(d => arKvinna(d));
+        const hasMa = sub.some(d => arMan(d));
         if (!hasKv || !hasMa) singleSexBas++;
     });
     if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${T.niva.fl} är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
@@ -5185,14 +5616,14 @@ function computePerBasGap(rows, basList, { golv }) {
     const out = [];
     basList.forEach(b => {
         const sub = giltiga.filter(d => d.bas === b);
-        const kv  = sub.filter(d => d.kon.includes('kvinna'));
-        const ma  = sub.filter(d => d.kon === 'man' || d.kon === 'män');
+        const kv  = sub.filter(d => arKvinna(d));
+        const ma  = sub.filter(d => arMan(d));
         if (kv.length < golv || ma.length < golv) {
             out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'too_few' });
             return;
         }
         const aMean = harAlder ? sub.reduce((s,d)=>s+d.alder,0)/sub.length : 0;
-        const X = sub.map(d => [1, d.kon.includes('kvinna')?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
+        const X = sub.map(d => [1, arKvinna(d)?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
         const y = sub.map(d => Math.log(d.lon));
         const fit = fitOLS(X, y);
         if (!fit) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'singular' }); return; }
@@ -5316,7 +5747,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     const rows = (rows0 || []).filter(d => _modellRad(d, medAlder));
     const N = rows.length;
     const y    = rows.map(d => Math.log(d.lon));
-    const isKv = rows.map(d => d.kon.includes('kvinna') ? 1 : 0);
+    const isKv = rows.map(d => arKvinna(d) ? 1 : 0);
     const ageC = rows.map(d => d.alder - ageMean);
     const basInd = basIndikatorer(basList);
     const basD = rows.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
@@ -5525,8 +5956,8 @@ function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
     if (!m.bas && !m.alder) return null;   // endast kön: inget att dela upp
     const raw = rows.filter(d => _modellRad(d, harAlder));
     if (raw.length < 50) return null;
-    const kv = raw.filter(d => d.kon.includes('kvinna'));
-    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
+    const kv = raw.filter(d => arKvinna(d));
+    const ma = raw.filter(d => arMan(d));
     if (kv.length < golv || ma.length < golv) return null;
 
     const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
@@ -5664,7 +6095,7 @@ function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD,
     }
     const p10 = results[0], p90 = results[2];
     const diffP90P10 = p10.error || p90.error ? null : p90.konPct - p10.konPct;
-    const nKv = d.rader.filter(r => r.kon.includes('kvinna')).length;
+    const nKv = d.rader.filter(r => arKvinna(r)).length;
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
@@ -5702,11 +6133,11 @@ const HUVUDREGRESSION_MIN_PER_KON = 5;
  */
 function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIRader(rader), kInstalld, golv }) {
     // Utan ålder i lönefilen (ADR-64) används alla rader och modellen räknas utan ålder.
-    const raw = rader.filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const raw = rader.filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (arKvinna(d) || arMan(d)));
     if (raw.length < HUVUDREGRESSION_MIN_N) return { error: `För få observationer (n < ${HUVUDREGRESSION_MIN_N}) för meningsfull regressionsanalys.`, errorCode: 'low_n' };
 
-    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
-    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
+    const kvN = raw.filter(d => arKvinna(d)).length;
+    const maN = raw.filter(d => arMan(d)).length;
     if (kvN < HUVUDREGRESSION_MIN_PER_KON || maN < HUVUDREGRESSION_MIN_PER_KON)
         return { error: `Otillräcklig könsbalans i urvalet: ${kvN} kvinnor, ${maN} män. Minst ${HUVUDREGRESSION_MIN_PER_KON} av varje kön krävs.`, errorCode: 'imbalance' };
 
@@ -5718,7 +6149,7 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
     const ageMean = medAlder ? raw.reduce((s,d) => s + d.alder, 0) / raw.length : 0;
 
     const y    = raw.map(d => Math.log(d.lon));
-    const isKv = raw.map(d => d.kon.includes('kvinna') ? 1 : 0);
+    const isKv = raw.map(d => arKvinna(d) ? 1 : 0);
     const ageC = raw.map(d => d.alder - ageMean);
     const basD = raw.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
 
@@ -5870,8 +6301,8 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
     const diagnostics = fellBackFromFull ? diagnoseCollinearity(raw, basList) : [];
 
     // Rått gap (median)
-    const kv = raw.filter(d => d.kon.includes('kvinna'));
-    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
+    const kv = raw.filter(d => arKvinna(d));
+    const ma = raw.filter(d => arMan(d));
     const medianKv = median(kv.map(d=>d.lon));
     const medianMa = median(ma.map(d=>d.lon));
     const rawGapPct = (medianKv / medianMa - 1) * 100;
@@ -5975,6 +6406,8 @@ const __mirrorOsakerhet = (() => {
     const bootstrapMedianer = __mirrorLikvardighet.bootstrapMedianer;
     const kvantilDesign = __mirrorRegression.kvantilDesign;
     const quantileRegression = __mirrorRegression.quantileRegression;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6000,6 +6433,7 @@ const __mirrorOsakerhet = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
  */
+
 
 
 
@@ -6049,10 +6483,6 @@ function osakerhetKonstanter() {
         MAD_TILL_SIGMA, MEDIAN_SE_FAKTOR, SMA_GRUPPER_RATTNING, KVANTIL_KI_B, KVANTIL_KI_MAX_N });
 }
 
-/** @param {{kon:string}} r */
-const _arKvinna = r => r.kon.includes('kvinna');
-/** @param {{kon:string}} r */
-const _arMan = r => r.kon === 'man' || r.kon === 'män';
 
 // ---- Bootstrapintervallen på mediankvoten ----
 
@@ -6074,8 +6504,8 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
  */
 function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
-    const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
+    const ma = d.filter(r => arMan(r)).map(r => r.lon);
     if (kv.length < golv || ma.length < golv) return null;
     const ratios = new Array(B);
     const m = bootstrapMedianer(kv, ma, B, rng || rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
@@ -6204,7 +6634,7 @@ function mdeProcent(sigma, nKv, nMa) {
 function styrkeanalys(rader, golv) {
     const d = rader.filter(r => r.lon > 0);
     if (d.length < STYRKA_MIN_N) return null;
-    const arKv = _arKvinna, arMa = _arMan;
+    const arKv = arKvinna, arMa = arMan;
     const kv = d.filter(arKv).map(r => r.lon);
     const ma = d.filter(arMa).map(r => r.lon);
     if (kv.length < 2 || ma.length < 2) return null;
@@ -6313,7 +6743,7 @@ function extremvarden(rader, golv, troskel = EXTREMVARDE_Z) {
                     radnr: r.radnr ?? null,
                     bas: r.bas,
                     yrke: r.yrke,
-                    kon: r.kon.includes('kvinna') ? 'Kvinna' : 'Man',
+                    kon: arKvinna(r) ? 'Kvinna' : 'Man',
                     alder: r.alder,
                     lon: r.lon,
                     groupMedian,
@@ -6346,7 +6776,7 @@ function trattUnderlag(rader, k) {
     const perGrupp = new Map();
     for (const r of rader) {
         if (!(r.lon > 0) || !r.bas) continue;
-        const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
+        const kv = arKvinna(r), ma = arMan(r);
         if (!kv && !ma) continue;
         const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
         if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
@@ -6466,6 +6896,8 @@ const __mirrorLonepolitik = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
     const _quantile = __mirrorStat.quantile;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6489,6 +6921,7 @@ const __mirrorLonepolitik = (() => {
  */
 
 
+
 /**
  * Organisationens faktiska lönespann i en grupp (P10, median, P90) — jämförs med
  * referensens band i bandkartan. Percentiler kräver minst k personer; annars null.
@@ -6500,12 +6933,6 @@ function organisationsBand(rows, k) {
     return { n: lons.length, p10: _quantile(lons, 0.1), med: _median(lons), p90: _quantile(lons, 0.9) };
 }
 
-function _lpIsKvinna(r) {
-    return typeof r.kon === 'string' && r.kon.includes('kvinna');
-}
-function _lpIsMan(r) {
-    return r.kon === 'man' || r.kon === 'män';
-}
 
 /**
  * Var i sitt eget lönespann ligger en lön?
@@ -6592,8 +7019,8 @@ function complianceCounts(rows, pol) {
 function genderBandGap(rows, pol, minPerKon = 10) {
     if (!Array.isArray(rows) || !pol) return null;
     const posOf = r => bandPosition(r.lon, pol.p10, pol.p90);
-    const kv = rows.filter(_lpIsKvinna).map(posOf).filter(v => v != null);
-    const ma = rows.filter(_lpIsMan).map(posOf).filter(v => v != null);
+    const kv = rows.filter(arKvinna).map(posOf).filter(v => v != null);
+    const ma = rows.filter(arMan).map(posOf).filter(v => v != null);
     if (kv.length < minPerKon || ma.length < minPerKon) return null;
     const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
     const kvPos = mean(kv), maPos = mean(ma);
@@ -6658,8 +7085,11 @@ const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const aidAvYrke = __mirrorAid.aidAvYrke;
     const kostnadsfaktor = __mirrorKostnad.kostnadsfaktor;
     const kostnadPerAr = __mirrorKostnad.kostnadPerAr;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6677,6 +7107,8 @@ const __mirrorPrioritering = (() => {
  * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
+
+
 
 
 // Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
@@ -6772,8 +7204,7 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
 
     const groups = {};
     d.forEach(r => {
-        const aidM = r.yrke.match(/^(\d+)/);
-        const aid  = aidM ? aidM[1] : r.yrke;
+        const aid  = aidAvYrke(r.yrke);
         const key  = `${r.yrke}|${r.bas}`;
         if (!groups[key]) groups[key] = { yrke: r.yrke, aid, bas: r.bas, rows: [] };
         groups[key].rows.push(r);
@@ -6786,8 +7217,8 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
 
         const lons     = g.rows.map(r => r.lon);
         const med      = median(lons);
-        const kvLons   = g.rows.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-        const maLons   = g.rows.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+        const kvLons   = g.rows.filter(r => arKvinna(r)).map(r => r.lon);
+        const maLons   = g.rows.filter(r => arMan(r)).map(r => r.lon);
         // ADR-12: könsjämförelsen kräver kTroskel personer av vartdera könet; annars bara gruppens samlade median.
         const medKv    = kvLons.length >= kTroskel ? median(kvLons) : null;
         const medMa    = maLons.length >= kTroskel ? median(maLons) : null;
@@ -6872,6 +7303,8 @@ const __mirrorLivscykel = (() => {
     const tQuantile = __mirrorStat.tQuantile;
     const statusNiva = __mirrorStatus.statusNiva;
     const skapaTermer = __mirrorTermer.skapaTermer;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6888,6 +7321,7 @@ const __mirrorLivscykel = (() => {
  * Appen får modellen genom lib-speglarna (ADR-8); runLifecycleRegression() i
  * src/app/52-livscykel.js är den tunna adaptern som läser getData() och statGolv().
  */
+
 
 
 
@@ -6932,11 +7366,11 @@ function livscykelRegression(rader, { fixBas, golv }) {
     // Ålderskolumnen är valfri (ADR-64): utan ålder finns ingen livscykel att skatta.
     if ((rader || []).length && !(rader || []).some(d => d && d.alder > 0))
         return { error: 'Lönefilen saknar ålder, så löneskillnaden över karriären kan inte skattas.', errorCode: 'no_age' };
-    const raw = (rader || []).filter(d => d.lon > 0 && d.alder > 0 && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const raw = (rader || []).filter(d => d.lon > 0 && d.alder > 0 && (arKvinna(d) || arMan(d)));
     if (raw.length < 50) return { error: 'För få observationer (n < 50) för meningsfull livscykelanalys.', errorCode: 'low_n' };
 
-    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
-    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
+    const kvN = raw.filter(d => arKvinna(d)).length;
+    const maN = raw.filter(d => arMan(d)).length;
     if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: 'imbalance' };
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
@@ -6967,7 +7401,7 @@ function livscykelRegression(rader, { fixBas, golv }) {
     const X = [];
     const y = [];
     raw.forEach((d, i) => {
-        const isKv = d.kon.includes('kvinna') ? 1 : 0;
+        const isKv = arKvinna(d) ? 1 : 0;
         const ac  = ageVals[i];
         const ac2 = ac * ac;
         const row = [1, isKv, ac, ac2, isKv * ac, isKv * ac2];
@@ -7207,384 +7641,6 @@ function skriptBlock(html) {
 const _ofBakaIn = __mirrorOrganisationsfil.bakaIn;
 const _ofFilnamnForslag = __mirrorOrganisationsfil.filnamnForslag;
 const _ofNormaliseraFilnamn = __mirrorOrganisationsfil.normaliseraFilnamn;
-
-// ---- speglar src/lib/aid-etiketter.js ----
-const __mirrorAidEtiketter = (() => {
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-// AUTO-GENERERAD av tools/gen-aid-etiketter.mjs ur SKR, Etikettlista AID 2018 (reviderad 2026-09-23). Ändra inte för hand.
-// Innehåller bara kod, etikettnamn och möjliga ansvarskoder per etikett.
-//
-// Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
-
-const LISTA = Object.freeze({
-    version: '2026-09-23',
-    kalla: 'SKR, Etikettlista AID 2018 (reviderad 2026-09-23)',
-    etiketter: Object.freeze([
-        ["101010","Ledning, övergripande","A"],
-        ["101011","Ledning, ekonomi","A,B,C,L"],
-        ["101012","Ledning, personal/HR","A,B,C,L"],
-        ["101013","Ledning, information/kommunikation","A,B,C,L"],
-        ["101014","Ledning, IT","A,B,C,L"],
-        ["101015","Ledning, administration","A,B,C,L"],
-        ["102010","Ledning, hälso- och sjukvård","A,B,C,L"],
-        ["102510","Ledning, tandvård","A,B,C,L"],
-        ["103010","Ledning, rehabilitering och förebyggande arbete","A,B,C,L"],
-        ["103510","Ledning, individ- och familjeomsorg","A,B,C,L"],
-        ["103511","Ledning, äldreomsorg","A,B,C,L"],
-        ["103512","Ledning, omsorg om personer med funktionsnedsättning samt socialpsykiatriområdet","A,B,C,L"],
-        ["104010","Ledning, skola","A,B,C,L,1001,1002"],
-        ["104011","Rektor (skola)","B,C,L,1001,1002"],
-        ["104012","Ledning, förskola, pedagogisk omsorg och fritidsverksamhet","A,B,C,L,1001,1002"],
-        ["104510","Ledning, kultur, turism, rekreation och friluftsfrågor","A,B,C,L"],
-        ["105010","Ledning, teknik, hantverk, miljö och samhällsbyggnad","A,B,C,L"],
-        ["105510","Ledning, räddningstjänst och säkerhet","A,B,C,L"],
-        ["106010","Ledning, köks- och måltidsarbete","A,B,C,L"],
-        ["106510","Ledning, städ, tvätt och renhållning","A,B,C,L"],
-        ["109090","Ledning, annan","A,B,C,L"],
-        ["151010","Handläggare, övergripande verksamhet","B,C,L,F"],
-        ["151011","Handläggare, ekonomi","B,C,L,F"],
-        ["151012","Handläggare, personal/HR","B,C,L,F"],
-        ["151013","Handläggare, information/kommunikation","B,C,L,F"],
-        ["151014","Handläggare, IT","B,C,L,F"],
-        ["151015","Handläggare, upphandling/inköp","B,C,L,F"],
-        ["151016","Handläggare, konsument-, medborgar- och samhällsservice","B,C,L,F"],
-        ["151017","Handläggare, miljöfrågor","B,C,L,F"],
-        ["151018","Jurist","B,C,L,F"],
-        ["151019","Arkivarie","B,C,L,F"],
-        ["151020","Handläggare, nämnder","B,C,L,F"],
-        ["151021","Handläggare, samhällsutveckling och säkerhetsfrågor","B,C,L,F"],
-        ["151022","Handläggare, hälso- och sjukvård, tandvård, rehabilitering samt psykiatri","B,C,L,F"],
-        ["151023","Handläggare, individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integrationsarbete","B,C,L,F"],
-        ["151024","Handläggare, förskole-, skol-, fritids- och annan pedagogisk verksamhet","B,C,L,F"],
-        ["151025","Handläggare, infrastruktur, trafik och kollektivtrafikfrågor","B,C,L,F"],
-        ["151026","Handläggare, teknik och lokal/fastighetsfrågor","B,C,L,F"],
-        ["151090","Handläggare, annan","B,C,L,F"],
-        ["152010","Administratör, övergripande verksamhet","B,C,L,F"],
-        ["152011","Administratör, ekonomi","B,C,L,F"],
-        ["152012","Administratör, personal/HR/löner","B,C,L,F"],
-        ["152013","Administratör, information/kommunikation, medborgar- och samhällsservice","B,C,L,F"],
-        ["152014","Administratör, IT","B,C,L,F"],
-        ["152015","Administratör, individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integrationsarbete","B,C,L,F"],
-        ["152016","Administratör, förskole-, skol-, fritids-, och annan pedagogisk verksamhet","B,C,L,F"],
-        ["152017","Receptionist, telefonist","B,C,L,F"],
-        ["152018","Administratör, vård","B,C,L,F"],
-        ["152019","Administratör, kultur, turism och friluftsområdet","B,C,L,F"],
-        ["152020","Administratör, teknik- och fastighetsfrågor samt samhällsbyggnad","B,C,L,F"],
-        ["152021","Administratör, trafik- och kollektivtrafikfrågor","B,C,L,F"],
-        ["152090","Administratör, annan","B,C,L,F"],
-        ["201010","Överläkare","B,C,L,F,M"],
-        ["201011","Distriktsläkare/Specialist allmänmedicin","B,C,L,F,M"],
-        ["201012","Skolläkare","B,C,L,F"],
-        ["201013","Företagsläkare","B,C,L,F"],
-        ["202010","Specialistläkare","B,C,L,F,M"],
-        ["203010","Läkare legitimerad, specialiseringstjänstgöring","B,C,L,F,M"],
-        ["203020","Läkare legitimerad, bastjänstgöring","B,C,L,F"],
-        ["203090","Läkare legitimerad, annan","B,C,L,F,M"],
-        ["204010","Läkare ej legitimerad, allmäntjänstgöring","B,C,L,F"],
-        ["204090","Läkare ej legitimerad, annan","B,C,L,F"],
-        ["204510","Psykolog","B,C,L,F"],
-        ["204511","PTP-psykolog","B,C,L,F"],
-        ["204610","Psykoterapeut","B,C,L,F"],
-        ["205010","Barnmorska, vårdavdelning","B,C,L,F"],
-        ["205011","Barnmorska, mottagning/rådgivning","B,C,L,F"],
-        ["206010","Anestesisjuksköterska","B,C,L,F"],
-        ["206011","Distriktssköterska","B,C,L,F"],
-        ["206012","Psykiatrisjuksköterska","B,C,L,F"],
-        ["206013","Ambulanssjuksköterska","B,C,L,F"],
-        ["206014","Sjuksköterska, funktionsnedsättning och äldreomsorg/geriatrik","B,C,L,F"],
-        ["206015","Intensivvårdssjuksköterska","B,C,L,F"],
-        ["206016","Operationssjuksköterska","B,C,L,F"],
-        ["206017","Sjuksköterska, medicin/kirurgi","B,C,L,F"],
-        ["206018","Sjuksköterska, barn och ungdom","B,C,L,F"],
-        ["206019","Skolsköterska","B,C,L,F"],
-        ["206020","Företagssköterska","B,C,L,F"],
-        ["206021","Sjuksköterska, annan specialistinriktning","B,C,L,F"],
-        ["206022","Medicinskt ansvarig sjuksköterska (MAS)","B,C,L,F"],
-        ["206023","Sjuksköterska, specialfunktion","B,C,L,F"],
-        ["206090","Sjuksköterska, allmän","B,C,L,F"],
-        ["206510","Röntgensjuksköterska","B,C,L,F"],
-        ["207008","Undersköterska med specialistinriktning","B,C,L,F"],
-        ["207009","Undersköterska, hemtjänst","B,C,L,F"],
-        ["207010","Undersköterska, hemvård/hemsjukvård","B,C,L,F"],
-        ["207011","Undersköterska, särskilt boende","B,C,L,F"],
-        ["207013","Undersköterska, vård-/specialavdelning hälso- och sjukvård","B,C,L,F"],
-        ["207014","Undersköterska, mottagning hälso- och sjukvård","B,C,L,F"],
-        ["207015","Barnsköterska, hälso- och sjukvård","B,C,L,F"],
-        ["207016","Ambulanssjukvårdare","B,C,L,F"],
-        ["207017","Medicinsk fotterapeut","B,C,L,F"],
-        ["207018","Skötare, mottagning psykiatri","B,C,L,F"],
-        ["207019","Skötare, vårdavdelning psykiatri","B,C,L,F"],
-        ["207023","Vårdbiträde, hemvård/hemsjukvård","B,C,L,F"],
-        ["207024","Vårdbiträde, särskilt boende","B,C,L,F"],
-        ["207026","Röntgenbiträde","B,C,L,F"],
-        ["207029","Vårdbiträde, hemtjänst","B,C,L,F"],
-        ["207090","Biträdesarbete, annat","B,C,L,F"],
-        ["208010","Sjukhusfysiker","B,C,L,F"],
-        ["208011","Sjukhuskemist","B,C,L,F"],
-        ["208012","Obduktionstekniker","B,C,L,F"],
-        ["208013","Biomedicinsk analytiker","B,C,L,F"],
-        ["208014","Cytodiagnostiker","B,C,L,F"],
-        ["208015","Andra specialiteter inom hälso- och sjukvård","B,C,L,F"],
-        ["208016","Laboratoriebiträde","B,C,L,F"],
-        ["208017","Farmaceut","B,C,L,F"],
-        ["208018","Sjukhusbiolog","B,C,L,F"],
-        ["208090","Laboratoriearbete, annat","B,C,L,F"],
-        ["251010","Tandläkare, allmäntandvård","B,C,L,F"],
-        ["251011","Specialisttandläkare","B,C,L,F"],
-        ["251013","Tandläkare under specialiseringstjänstgöring","B,C,L,F"],
-        ["252009","Tandsköterska med specialistinriktning","B,C,L,F"],
-        ["252010","Tandsköterska","B,C,L,F"],
-        ["252011","Tandhygienist","B,C,L,F"],
-        ["252012","Tandtekniker","B,C,L,F"],
-        ["252090","Tandvårdsarbete, annat","B,C,L,F"],
-        ["301009","Medicinskt ansvarig för rehabilitering (MAR)","B,C,L,F"],
-        ["301010","Arbetsterapeut","B,C,L,F"],
-        ["301011","Fysioterapeut","B,C,L,F"],
-        ["301012","Arbetsterapibiträde","B,C,L,F"],
-        ["301013","Fysioterapiassistent","B,C,L,F"],
-        ["301014","Logoped","B,C,L,F"],
-        ["301015","Audionom","B,C,L,F"],
-        ["301016","Syn-, hörsel- och talpedagog","B,C,L,F"],
-        ["301017","Dövtolk/Teckenspråkstolk","B,C,L,F"],
-        ["301018","Dietist","B,C,L,F"],
-        ["301020","Hjälpmedelskonsulent","B,C,L,F"],
-        ["301021","Hälsovetare","B,C,L,F"],
-        ["301090","Rehabiliterings- och förebyggande arbete, annat","B,C,L,F"],
-        ["351008","Socialsekreterare, barn och unga, myndighetsutövning","B,C,L,F"],
-        ["351009","Socialsekreterare, ekonomiskt bistånd","B,C,L,F"],
-        ["351010","Socialsekreterare, utan myndighetsutövning","B,C,L,F"],
-        ["351011","Fältsekreterare","B,C,L,F"],
-        ["351012","Socialsekreterare, vuxna och LSS, myndighetsutövning","B,C,L,F"],
-        ["351013","Familjerådgivare","B,C,L,F"],
-        ["351014","Integrationshandläggare","B,C,L,F"],
-        ["351015","Behandlingsassistent/Socialpedagog","B,C,L,F"],
-        ["351016","Arbetsmarknadskonsulent","B,C,L,F"],
-        ["351030","Stödpedagog, funktionsnedsättning","B,C,L,F"],
-        ["351031","Stödassistent/Vårdare, gruppboende, funktionsnedsättning","B,C,L,F"],
-        ["351032","Stödassistent/Vårdare, dagverksamhet, funktionsnedsättning","B,C,L,F"],
-        ["351033","Vårdbiträde/Stödbiträde, funktionsnedsättning","B,C,L,F"],
-        ["351034","Boendestödjare, i hemmiljö, inom funktionsnedsättning","B,C,L,F"],
-        ["351035","Skötare/Boendestödjare, behandlingsarbete i hemmiljö, inom socialpsykiatri","B,C,L,F"],
-        ["351040","Personlig assistent","B,C,L,F"],
-        ["351041","Anhörigvårdare","B,C,L,F"],
-        ["351090","Socialt arbete, annat","B,C,L,F"],
-        ["352010","Kurator","B,C,L,F"],
-        ["352090","Kurativt arbete, annat","B,C,L,F"],
-        ["401009","Lärare grundskola, årskurs F-3","B,C,L,F,1001,1002"],
-        ["401010","Lärare grundskola, årskurs 4-6","B,C,L,F,1001,1002"],
-        ["401011","Lärare grundskola, årskurs 7-9","B,C,L,F,1001,1002"],
-        ["401012","Lärare gymnasieskola, allmänna ämnen","B,C,L,F,1001,1002"],
-        ["401013","Lärare gymnasieskola, yrkesämnen","B,C,L,F,1001,1002"],
-        ["401015","Lärare, folkhögskola","B,C,L,F"],
-        ["401016","Speciallärare","B,C,L,F,1001,1002"],
-        ["401017","Specialpedagog","B,C,L,F,1001,1002"],
-        ["401018","SFI-lärare","B,C,L,F,1001,1002"],
-        ["401019","Lärare, modersmål","B,C,L,F,1001,1002"],
-        ["401020","Lärare, praktiska/estetiska ämnen, grundskola","B,C,L,F,1001,1002"],
-        ["401021","Lärare, praktiska/estetiska ämnen, gymnasieskola","B,C,L,F,1001,1002"],
-        ["401022","Lärare, vuxenutbildning, allmänna ämnen","B,C,L,F,1001,1002"],
-        ["401023","Lärare, vuxenutbildning, yrkesämnen","B,C,L,F,1001,1002"],
-        ["402010","Förskollärare","B,C,L,F,1001,1002"],
-        ["402011","Lärare i fritidshem","B,C,L,F,1001,1002"],
-        ["402090","Lärar-, förskollärararbete, annat","B,C,L,F,1001,1002"],
-        ["403010","Barnskötare","B,C,L,F"],
-        ["403011","Dagbarnvårdare","B,C,L,F"],
-        ["403012","Modersmålstränare, förskola","B,C,L,F,1001,1002"],
-        ["403013","Instruktör/Handledare","B,C,L,F,1001,1002"],
-        ["403014","Studie- och yrkesvägledare","B,C,L,F"],
-        ["403015","Lärarassistent","B,C,L,F"],
-        ["403016","Elevassistent","B,C,L,F"],
-        ["403090","Skolarbete, annat","B,C,L,F"],
-        ["451010","Kultursekreterare/kulturhandläggare","B,C,L,F"],
-        ["451011","Lärare, kulturskola","B,C,L,F"],
-        ["451012","Kulturarbete","B,C,L,F"],
-        ["451013","Antikvarie","B,C,L,F"],
-        ["451014","Museiarbete","B,C,L,F"],
-        ["451015","Bibliotekarie","B,C,L,F"],
-        ["451016","Biblioteksassistent","B,C,L,F"],
-        ["451090","Kulturarbete, annat","B,C,L,F"],
-        ["452010","Turism, rekreation och friluftskonsulent","B,C,L,F"],
-        ["452011","Fritidsledare","B,C,L,F"],
-        ["452012","Turismarbete","B,C,L,F"],
-        ["452013","Badmästare","B,C,L,F"],
-        ["452014","Friskvårdsarbete, badpersonal","B,C,L,F"],
-        ["452090","Turism, rekreation och friluftsarbete, annat","B,C,L,F"],
-        ["501010","Fysisk samhällsplanerare","B,C,L,F"],
-        ["501011","Bygglovshandläggare","B,C,L,F"],
-        ["501012","Byggnadsinspektör","B,C,L,F"],
-        ["501013","Miljö- och hälsoskyddsinspektör","B,C,L,F"],
-        ["502010","Systemutvecklare","B,C,L,F"],
-        ["502011","Ingenjör, mätning, kartering, GIS","B,C,L,F"],
-        ["502012","Ingenjör, park/gator, trafik","B,C,L,F"],
-        ["502013","Ingenjör, mark, fastigheter","B,C,L,F"],
-        ["502014","Ingenjör, drift, VA-ingenjör","B,C,L,F"],
-        ["502016","Ingenjör, hälso- och sjukvård","B,C,L,F"],
-        ["502090","Ingenjör, annan","B,C,L,F"],
-        ["503010","Tekniker, IT","B,C,L,F"],
-        ["503011","Tekniker, lantmäteri","B,C,L,F"],
-        ["503012","Tekniker, drift","B,C,L,F"],
-        ["503013","Tekniker, allmänteknisk","B,C,L,F"],
-        ["503014","Tekniker, hälso- och sjukvård","B,C,L,F"],
-        ["503015","Steriltekniker","B,C,L,F"],
-        ["503090","Tekniker, annan","B,C,L,F"],
-        ["509090","Teknikarbete, annat","B,C,L,F"],
-        ["521010","Elektriker/elmontör","B,C,L,F"],
-        ["521011","Fastighetsskötare","B,C,L,F"],
-        ["521012","Anläggningsarbete","B,C,L,F"],
-        ["521013","Hantverkare","B,C,L,F"],
-        ["521014","Fordonsförare","B,C,L,F"],
-        ["521015","Vaktmästare","B,C,L,F"],
-        ["521016","Kontorsvaktmästare","B,C,L,F"],
-        ["521017","Parkeringsvakt/trafikövervakare","B,C,L,F"],
-        ["521018","Park-/trädgårdsarbete","B,C,L,F"],
-        ["521019","Lantbruksarbete","B,C,L,F"],
-        ["529090","Hantverkararbete, annat","B,C,L,F"],
-        ["551010","Brandingenjör","B,C,L,F"],
-        ["551011","Brandinspektör","B,C,L,F"],
-        ["551012","Brandmästare","B,C,L,F"],
-        ["551013","Brandman","B,C,L,F"],
-        ["601010","Kock","B,C,L,F"],
-        ["601011","Kostekonom","B,C,L,F"],
-        ["601012","Måltidspersonal","B,C,L,F"],
-        ["609090","Köks- och måltidsarbete, annat","B,C,L,F"],
-        ["651010","Lokalvårdare/städare","B,C,L,F"],
-        ["651011","Tvätteriarbete","B,C,L,F"],
-        ["651012","Renhållningsarbete","B,C,L,F"],
-        ["651013","Förrådsarbete","B,C,L,F"],
-        ["659090","Städ-, tvätt- och renhållningsarbete, annat","B,C,L,F"]
-    ])
-});
-
-/** Etikettlistan: { version, kalla, etiketter: [kod, namn, 'A,B,…'][] }. */
-function aidEtikettlista() {
-    return LISTA;
-}
-
-    return { aidEtikettlista };
-})();
-
-// ---- speglar src/lib/aid.js ----
-const __mirrorAid = (() => {
-    // importer ur tidigare speglade lib-moduler
-    const aidEtikettlista = __mirrorAidEtiketter.aidEtikettlista;
-    const skapaTermer = __mirrorTermer.skapaTermer;
-    const stor = __mirrorTermer.stor;
-    const adjektiv = __mirrorTermer.adjektiv;
-
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — AID-hierarkin (ADR-33).
- *
- * AID (SKR:s arbetsidentifikation) har en sexsiffrig etikett; de två första siffrorna anger ett
- * av 13 huvudområden ("sektorer"), de fyra första en mellannivå utan namn. Restkoder ("annan")
- * har 090 som de tre sista siffrorna. Etikettnamn och möjliga ansvarskoder kommer ur SKR:s
- * etikettlista (aid-etiketter.js, genererad).
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- */
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
-
-
-const HUVUDOMRADEN = Object.freeze([
-    { prefix: '10', namn: 'Ledningsarbete' },
-    { prefix: '15', namn: 'Handläggar- och administratörsarbete' },
-    { prefix: '20', namn: 'Vård- och omsorgsarbete med mera' },
-    { prefix: '25', namn: 'Tandvårdsarbete' },
-    { prefix: '30', namn: 'Rehabilitering och förebyggande arbete' },
-    { prefix: '35', namn: 'Individ- och familjeomsorg, äldreomsorg, funktionsnedsättning, socialpsykiatri och integration' },
-    { prefix: '40', namn: 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet' },
-    { prefix: '45', namn: 'Kultur-, turism- och friluftsarbete' },
-    { prefix: '50', namn: 'Teknikarbete' },
-    { prefix: '52', namn: 'Vaktmästeri, trädgård, anläggning med mera' },
-    { prefix: '55', namn: 'Räddningstjänstarbete' },
-    { prefix: '60', namn: 'Köks- och måltidsarbete' },
-    { prefix: '65', namn: 'Städ, tvätt och renhållningsarbete' },
-]);
-const OKANT_HUVUDOMRADE = `${stor(adjektiv('okänd', T.huvudomrade))} ${T.huvudomrade.en}`;
-
-const _PER_PREFIX = new Map(HUVUDOMRADEN.map(h => [h.prefix, h]));
-const _ORDNING = new Map(HUVUDOMRADEN.map((h, i) => [h.namn, i]));
-/** @type {Map<string, {kod:string, namn:string, ansvarskoder:string[]}>|null} */
-let _index = null;
-
-function _etiketter() {
-    if (!_index) {
-        _index = new Map(aidEtikettlista().etiketter.map(([kod, namn, a]) =>
-            [kod, { kod, namn, ansvarskoder: a ? a.split(',') : [] }]));
-    }
-    return _index;
-}
-
-/** Sex siffror först i fältet (som AID-koden läses i dag), annars null. */
-function normaliseraAid(aid) {
-    const m = String(aid ?? '').trim().match(/^(\d{6})(?!\d)/);
-    return m ? m[1] : null;
-}
-
-/** Huvudområdet för en AID-kod, eller null. */
-function huvudomrade(aid) {
-    const k = normaliseraAid(aid);
-    return k ? (_PER_PREFIX.get(k.slice(0, 2)) || null) : null;
-}
-
-/** Sektorns namn — huvudområdet, eller "Okänt huvudområde". */
-function sektorsnamn(aid) {
-    const h = huvudomrade(aid);
-    return h ? h.namn : OKANT_HUVUDOMRADE;
-}
-
-/** De fyra första siffrorna, eller null. */
-function mellanniva(aid) {
-    const k = normaliseraAid(aid);
-    return k ? k.slice(0, 4) : null;
-}
-
-/** "AID 2070xx", eller null. */
-function mellannivaEtikett(aid) {
-    const m = mellanniva(aid);
-    return m ? `AID ${m}xx` : null;
-}
-
-/** Etiketten ur SKR:s lista: { kod, namn, ansvarskoder }, eller null. */
-function etikett(aid) {
-    const k = normaliseraAid(aid);
-    return k ? (_etiketter().get(k) || null) : null;
-}
-
-/** Restkod ("annan"/"annat"): de tre sista siffrorna är 090. */
-function arRestkod(aid) {
-    const k = normaliseraAid(aid);
-    return !!k && k.endsWith('090');
-}
-
-/** Etikett under huvudområdet Ledningsarbete (10xxxx). */
-function arLedningsetikett(aid) {
-    const k = normaliseraAid(aid);
-    return !!k && k.startsWith('10');
-}
-
-/** Sorterar sektorsnamn i prefixordning; okänt huvudområde sist. */
-function jamforSektor(a, b) {
-    const i = n => _ORDNING.get(n) ?? HUVUDOMRADEN.length;
-    return i(a) - i(b);
-}
-
-/** Version, källa och antal etiketter i den inbyggda etikettlistan. */
-function etikettlistaInfo() {
-    const l = aidEtikettlista();
-    return { version: l.version, kalla: l.kalla, antal: l.etiketter.length };
-}
-
-    return { normaliseraAid, huvudomrade, sektorsnamn, mellannivaEtikett, etikett, arRestkod, arLedningsetikett, jamforSektor, etikettlistaInfo };
-})();
-const _aidSektorsnamn = __mirrorAid.sektorsnamn;
-const _aidJamforSektor = __mirrorAid.jamforSektor;
-const _aidEtikettlistaInfo = __mirrorAid.etikettlistaInfo;
 
 // ---- speglar src/lib/htmltext.js ----
 const __mirrorHtmlText = (() => {
@@ -7979,6 +8035,8 @@ const __mirrorFalt = (() => {
     const skapaTermer = __mirrorTermer.skapaTermer;
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -7991,6 +8049,7 @@ const __mirrorFalt = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
@@ -8032,8 +8091,8 @@ function jamforLonespann(a, b) {
 
 /** Normaliserat kön för gruppering och uppdelning. */
 function konOf(row) {
-    if (typeof row.kon === 'string' && row.kon.includes('kvinna')) return 'Kvinna';
-    if (row.kon === 'man' || row.kon === 'män') return 'Man';
+    if (arKvinna(row)) return 'Kvinna';
+    if (arMan(row)) return 'Man';
     return 'Övrig/okänd';
 }
 
@@ -9883,9 +9942,11 @@ const __mirrorJamforelse = (() => {
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
     const sektorsnamn = __mirrorAid.sektorsnamn;
+    const aidAvYrke = __mirrorAid.aidAvYrke;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
     const adjektiv = __mirrorTermer.adjektiv;
+    const arKvinna = __mirrorKon.arKvinna;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -9904,6 +9965,7 @@ const __mirrorJamforelse = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
@@ -9912,11 +9974,7 @@ const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(
 const _diff = (org, ref) => (org != null && ref != null ? { kr: org - ref, pct: (org / ref - 1) * 100 } : null);
 const _diffar = (org, ref) => ({ p10: _diff(org.p10, ref.p10), median: _diff(org.median, ref.median), p90: _diff(org.p90, ref.p90) });
 
-/** AID-kodens inledande siffror, annars hela yrkessträngen. */
-function aidAvYrke(yrke) {
-    const m = String(yrke ?? '').match(/^(\d+)/);
-    return m ? m[1] : String(yrke ?? '');
-}
+/** AID-koden ur yrkesfältet: definitionen ligger i aid.js; återexporteras här för de importörer som når den härifrån. */
 
 /**
  * Statistikens rad för en organisationsgrupp AID×BAS: en rad med samma AID och samma BAS ('aid-bas'), annars en
@@ -10010,7 +10068,7 @@ function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
         if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [], kvinnor: 0 });
         const g = perBas.get(r.bas);
         g.lons.push(r.lon);
-        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.kvinnor++;
+        if (arKvinna(r)) g.kvinnor++;
     }
     const ut = [], utelamnade = [];
     for (const [aid, perBas] of perAid) {
@@ -10254,6 +10312,7 @@ const __mirrorRapportunderlag = (() => {
     const artikel = __mirrorTermer.artikel;
     const adjektiv = __mirrorTermer.adjektiv;
     const termFras = __mirrorTermer.termFras;
+    const arKvinna = __mirrorKon.arKvinna;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -10278,12 +10337,12 @@ const __mirrorRapportunderlag = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
-const _arKvinna = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
 const _arMan = r => typeof r.kon === 'string' && !r.kon.includes('kvinna') && (r.kon.includes('man') || r.kon.includes('män'));
 
 /**
@@ -10309,7 +10368,7 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const perYrke = new Map();
     for (const r of rader || []) {
         if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, { kv: [], ma: [] });
-        if (_arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
+        if (arKvinna(r)) perYrke.get(r.yrke).kv.push(r.lon);
         else if (_arMan(r)) perYrke.get(r.yrke).ma.push(r.lon);
     }
     const grupper = [], utelamnade = [], ejJamforbara = [];
@@ -10351,14 +10410,14 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
  */
 function justeratGapInomYrke(rader, { k }) {
     if ((rader || []).length && !(rader || []).some(r => r && r.alder > 0)) return { utanAlder: true };
-    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (_arKvinna(r) || _arMan(r)));
-    const nKv = d.filter(_arKvinna).length, nMa = d.length - nKv;
+    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (arKvinna(r) || _arMan(r)));
+    const nKv = d.filter(arKvinna).length, nMa = d.length - nKv;
     if (nKv < k || nMa < k) return { forFa: true };
     const basLista = [...new Set(d.map(r => r.bas))].sort();
     const dummies = basLista.slice(1);
     const p = 3 + dummies.length;
     if (d.length < p + 5) return { forFa: true };
-    const X = d.map(r => [1, _arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
+    const X = d.map(r => [1, arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
     const y = d.map(r => Math.log(r.lon));
     const fit = fitOLS(X, y);
     // Singulär modell: kön och BAS sammanfaller inom yrket (t.ex. alla kvinnor i ett BAS).
@@ -11150,6 +11209,8 @@ const __mirrorPerBas = (() => {
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
     const kompletterandeUndertryckning = __mirrorUndertryckning.kompletterandeUndertryckning;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -11171,6 +11232,7 @@ const __mirrorPerBas = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -11206,8 +11268,6 @@ function valideraPerBasRecept(r) {
 }
 function perBasReceptArStandard(r) { return JSON.stringify(valideraPerBasRecept(r)) === JSON.stringify(perBasStandard()); }
 
-const _arKv = r => String(r.kon || '').includes('kvinna');
-const _arMa = r => r.kon === 'man' || r.kon === 'män';
 const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
@@ -11264,7 +11324,7 @@ function perBasTabeller(rader, opt = {}) {
     const raderI = b => perDim.get(b) || [];
     const basUtelamnade = basar.filter(b => raderI(b).length < k);
     const visadeBas = basar.filter(b => raderI(b).length >= k);
-    const nKvI = b => raderI(b).filter(_arKv).length, nMaI = b => raderI(b).filter(_arMa).length;
+    const nKvI = b => raderI(b).filter(arKvinna).length, nMaI = b => raderI(b).filter(arMan).length;
     const konVisasI = b => nKvI(b) >= k && nMaI(b) >= k;
     const harMedel = recept.matt.includes('medel');
 
@@ -11280,7 +11340,7 @@ function perBasTabeller(rader, opt = {}) {
     // gemensamma medellön, och den ska omfatta minst k personer av det könet. Ett intervall vars könsmedel döljs ger
     // också via sin medellön för alla den andra könets dolda celler, så båda könens medel döljs tillsammans.
     const konDolda = new Set();
-    if (recept.konsgap && d.filter(_arKv).length >= k && d.filter(_arMa).length >= k) {
+    if (recept.konsgap && d.filter(arKvinna).length >= k && d.filter(arMan).length >= k) {
         for (const antal of [nKvI, nMaI]) {
             const delar = basar.map(b => ({ namn: b, n: antal(b), dold: raderI(b).length < k || medelDolda.has(b) || !konVisasI(b) || konDolda.has(b) }));
             kompletterandeUndertryckning(delar, k).forEach(i => konDolda.add(basar[i]));
@@ -11321,7 +11381,7 @@ function perBasTabeller(rader, opt = {}) {
             const s = visa.has('statistik') && rows[0].aid != null && recept.dim === 'bas' ? statFor(rows[0].aid, bas) : null;
             if (s && s.median > 0) rad.push({ typ: 'statistik', namn: `${statistikNamn}: ${namn}`, aid: key, n: null, p10: s.p10 ?? null, med: s.median, p90: s.p90 ?? null });
         });
-        const kv = df.filter(_arKv), ma = df.filter(_arMa);
+        const kv = df.filter(arKvinna), ma = df.filter(arMan);
         const konVisas = kv.length >= k && ma.length >= k;
         if (konVisas) {
             const mk = visa.has('kvinnor') ? _matt(kv) : null, mm = visa.has('man') ? _matt(ma) : null;
@@ -11337,7 +11397,7 @@ function perBasTabeller(rader, opt = {}) {
 
     // Könsgap och ålder per BAS, med raden Alla först.
     const konsgapRad = (namn, rows, medelDold = false, konDold = false) => {
-        const kv = rows.filter(_arKv), ma = rows.filter(_arMa);
+        const kv = rows.filter(arKvinna), ma = rows.filter(arMan);
         const konVisas = kv.length >= k && ma.length >= k;
         const konMedel = konVisas && !medelDold && !konDold;
         const medel = medelDold ? null : _medel(_loner(rows)), medelKv = konMedel ? _medel(_loner(kv)) : null, medelMa = konMedel ? _medel(_loner(ma)) : null;
@@ -12878,6 +12938,8 @@ const _opLiknarPersonuppgift = __mirrorOrganisationspaket.liknarPersonuppgift;
 const __mirrorFigur = (() => {
     // importer ur tidigare speglade lib-moduler
     const quantile = __mirrorStat.quantile;
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -12897,6 +12959,7 @@ const __mirrorFigur = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 const MARKEN = ['stapel', 'intervall', 'punkt', 'linje', 'band', 'lada', 'ruta', 'yta'];
 const SKALOR = ['band', 'linjar', 'log'];
@@ -13451,9 +13514,8 @@ function harlettNot(h) {
 // Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
 function _underlagKon(underlag, r) {
     if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
-    const k = r && r.kon;
-    if (typeof k === 'string' && k.includes('kvinna')) return 'kv';
-    return k === 'man' || k === 'män' ? 'ma' : null;
+    if (arKvinna(r)) return 'kv';
+    return arMan(r) ? 'ma' : null;
 }
 
 /**
@@ -17930,8 +17992,7 @@ function markeringFor(bas, aid) {
     if (bas == null || bas === '') return [];
     const b = String(bas);
     if (aid == null || aid === '') return [`bas:${b}`];
-    const m = String(aid).match(/^(\d+)/);
-    return [`bas:${b}`, `grupp:${m ? m[1] : String(aid)}|${b}`];
+    return [`bas:${b}`, `grupp:${aidAvYrke(aid)}|${b}`];
 }
 
 /** De markerade gruppernas nycklar, eller null när inget är markerat. */
@@ -18613,8 +18674,8 @@ function updateCompliance() {
     const granskaBas = new Set(_laOversiktRader(d).filter(o => _laOversiktStatus(o).niva === 'granska').map(o => o.bas));
     jb.jamforbara.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-        const ma = df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+        const kv = df.filter(r => arKvinna(r)).map(r => r.lon);
+        const ma = df.filter(r => arMan(r)).map(r => r.lon);
         if (granskaBas.has(b)) gapCrit++;
         const tot = kv.length + ma.length;
         if (kv.length / tot < 0.4 || ma.length / tot < 0.4) skevCount++;
@@ -18658,15 +18719,14 @@ function updateCompliance() {
         let bmLow = 0, bmTotal = 0;
         const seen = new Set();
         d.forEach(r => {
-            const m = r.yrke.match(/^(\d+)/);
-            const aid = m ? m[1] : r.yrke;
+            const aid = aidAvYrke(r.yrke);
             const key = `${aid}|${r.bas}`;
             if (seen.has(key)) return;
             seen.add(key);
             const statRow = _jfStatistikFor(state.statistik, aid, r.bas)?.rad;
             if (!statRow) return;
             bmTotal++;
-            const orgMed = Stat.median(d.filter(x => { const mm = x.yrke.match(/^(\d+)/); return (mm ? mm[1] : x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
+            const orgMed = Stat.median(d.filter(x => { return aidAvYrke(x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
             if (orgMed < statRow.median) bmLow++;
         });
         if (bmTotal === 0) setCompCard('comp-bm', 0, 0, 'Ingen matchning hittad', 'na');
@@ -18986,10 +19046,10 @@ function updateDashboardStats() {
     const d   = getData();
     if (!d.length) return;
     const allAges = d.map(r => r.alder).filter(a => a && !isNaN(a));
-    const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna')).map(r => r.lon));
-    const medMa = Stat.median(d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon));
+    const medKv = Stat.median(d.filter(r => arKvinna(r)).map(r => r.lon));
+    const medMa = Stat.median(d.filter(r => arMan(r)).map(r => r.lon));
     /** @type {HTMLElement} */ (document.getElementById("stat-n")).textContent = String(d.length);
-    const nKv = d.filter(r => r.kon.includes('kvinna')).length, nMa = d.filter(r => r.kon === 'man' || r.kon === 'män').length;
+    const nKv = d.filter(r => arKvinna(r)).length, nMa = d.filter(r => arMan(r)).length;
     const konEl = document.getElementById('stat-kon');
     if (konEl) konEl.textContent = `${nKv.toLocaleString('sv-SE')} / ${nMa.toLocaleString('sv-SE')}`;
     /** @type {HTMLElement} */ (document.getElementById("stat-age")).textContent = allAges.length ? svTal(allAges.reduce((a,b)=>a+b,0)/allAges.length, 1) : "–";
@@ -19137,7 +19197,7 @@ function renderRealityCheck() {
     const n = d.length;
 
     // Check 1: könsfördelning
-    const nKv = d.filter(r => r.kon.includes('kvinna')).length;
+    const nKv = d.filter(r => arKvinna(r)).length;
     const pctKv = n > 0 ? nKv / n * 100 : 0;
     let konStatus, konMsg;
     if (pctKv >= 30 && pctKv <= 70) {
@@ -19273,15 +19333,15 @@ function renderDataValidationReport() {
     const singleSexBas = bas.filter(b => {
         const sub = state.data.filter(r => r.bas === b);
         if (sub.length < 3) return false;
-        const hasKv = sub.some(r => r.kon.includes('kvinna'));
-        const hasMa = sub.some(r => r.kon === 'man' || r.kon === 'män');
+        const hasKv = sub.some(r => arKvinna(r));
+        const hasMa = sub.some(r => arMan(r));
         return !hasKv || !hasMa;
     }).length;
     const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
-    const dataAids = [...new Set(state.data.map(r => { const m = r.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(r => sifferprefixAvYrke(r.yrke)).filter(Boolean))];
     /** @type {any} */ let polStatus = null;
     /** @type {any} */ let statStatus = null;
     if (state.policy.length) {
@@ -19369,7 +19429,7 @@ function renderConsistencyBanner() {
 
     const issues = [];
     const dataBas = [...new Set(state.data.map(d => d.bas).filter(Boolean))].sort();
-    const dataAids = [...new Set(state.data.map(d => { const m = d.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(d => sifferprefixAvYrke(d.yrke)).filter(Boolean))];
 
     // Ställningstagande
     if (state.policy.length) {
@@ -19388,8 +19448,7 @@ function renderConsistencyBanner() {
         // Bygg AID → yrkesnamn-uppslagning från strukturdatan
         const aidToYrke = {};
         state.data.forEach(d => {
-            const m = d.yrke.match(/^(\d+)/);
-            const a = m ? m[1] : null;
+            const a = sifferprefixAvYrke(d.yrke);
             if (a && !aidToYrke[a]) aidToYrke[a] = d.yrke;
         });
         if (dataAidNotInStat.length) {
@@ -20531,8 +20590,8 @@ function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysis
 function _buildAnalysisSnapshotExport() {
     const d = getData();
     if (!d.length) return null;
-    const kv = d.filter(r => r.kon.includes('kvinna'));
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män');
+    const kv = d.filter(r => arKvinna(r));
+    const ma = d.filter(r => arMan(r));
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
     // bilden visas i jämförelsetabellen och kan ligga kvar efter att urvalet ändrats.
     const konOk = _konFarRedovisas(kv.length, ma.length);
@@ -20692,8 +20751,8 @@ function runDiagnostics() {
     const tests = [];
 
     // Test 1: råa gapet ska vara märkbart negativt (kvinnor yngre + lägre BAS = lägre lön)
-    const kv = state.data.filter(r => r.kon.includes('kvinna'));
-    const ma = state.data.filter(r => r.kon === 'man' || r.kon === 'män');
+    const kv = state.data.filter(r => arKvinna(r));
+    const ma = state.data.filter(r => arMan(r));
     const rawGap = (Stat.median(kv.map(r=>r.lon)) / Stat.median(ma.map(r=>r.lon)) - 1) * 100;
     tests.push({
         name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',
@@ -21902,7 +21961,7 @@ function _excelDiagramBlad() {
         [`En rad per ${T.enhet.en} och ${T.niva.en} där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
         [termStor(T.enhet.en), termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Bedömning'],
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna'])]]);
-    const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const arKv = arKvinna, arMa = arMan;
     const alder = _konAlderGapRader(d.filter(arKv), d.filter(arMa), k);
     if (alder.visade.length) ut.push(['Löneskillnad per ålder', [
         ['Löneskillnad per åldersgrupp (Ålder & karriär)'],
@@ -25012,12 +25071,12 @@ function loadStructureFile(file) {
         // Spåra rader utan användbart kön
         // (efter normalisering till lowercase utan icke-bokstäver).
         const konOk = typeof rec.kon === 'string' &&
-                      (rec.kon.includes('kvinna') || rec.kon === 'man' || rec.kon === 'män');
+                      (arKvinna(rec) || arMan(rec));
         const rawKon = getField(row, ALLOWED_FIELDS.kon, 'kon');
         if (!konOk && parseStats.missingKonExamples.length < 3) {
             parseStats.missingKonExamples.push(truncEx(rawKon));
         }
-        _fkRaknaKon(fkKon, rawKon, konOk ? (rec.kon.includes('kvinna') ? 'kvinna' : 'man') : null);
+        _fkRaknaKon(fkKon, rawKon, konOk ? (arKvinna(rec) ? 'kvinna' : 'man') : null);
         /** @type {any} */
         let fkRad = null;
         if (fkForsta.length < FK_RADER) {
@@ -26326,7 +26385,7 @@ function _lvKravGrupper(rader, { k = 10, poangByKey = null } = {}) {
         const key = aid + '|' + r.bas;
         if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: r.yrkeLabel || r.yrke || aid, n: 0, nKv: 0, loner: [] });
         const g = map.get(key);
-        g.n++; if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.nKv++; g.loner.push(r.lon);
+        g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
     }
     const medPoang = !!(poangByKey && poangByKey.size);
     const alla = [...map.values()].filter(g => g.n >= k).map(g => {
@@ -27124,7 +27183,7 @@ function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = 
 function _forecastLutningRader(d, sim, niva) {
     const k = kTroskel(), grupper = new Map();
     d.forEach((r, i) => {
-        const kv = !!(r.kon && r.kon.includes('kvinna')), ma = r.kon === 'man' || r.kon === 'män';
+        const kv = arKvinna(r), ma = arMan(r);
         if (!(kv || ma) || !sim[i]) return;
         const nyckel = niva === 'bas' ? String(r.bas) : `${r.aid}|${r.bas}`;
         let g = grupper.get(nyckel);
@@ -27714,8 +27773,8 @@ function _exportForecastExport() {
  */
 function _stMatt(d, k) {
     const konOk = _konFarRedovisasFor(d);
-    const kv = d.filter(r => r.kon && r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
+    const ma = d.filter(r => arMan(r)).map(r => r.lon);
     const totKv = kv.length;
     const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
     return {
@@ -27944,7 +28003,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
         const aid = String(r.aid || r.yrke || 'okänd'), g = perBas.get(r.bas);
         if (!g.has(aid)) g.set(aid, { aid, bas: r.bas, namn: r.yrkeLabel || r.yrke || aid, n: 0, nKv: 0 });
         const o = g.get(aid);
-        o.n++; if (r.kon && r.kon.includes('kvinna')) o.nKv++;
+        o.n++; if (arKvinna(r)) o.nKv++;
     }
     const barn = [...perBas].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv')).map(([bas, g]) => {
         const stora = [...g.values()].filter(o => o.n >= k).sort((a, b) => b.n - a.n);
@@ -27998,7 +28057,7 @@ function _strukturPercentilFor(rader, { beskrivning }) {
 function _strukturKvartilFor(rader, { beskrivning }) {
     const q = _stQuartileDistribution(rader, { k: kTroskel() });
     if (!(q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0))) return _konUtelamnatNot();
-    const nKv = rader.filter(r => r.kon && r.kon.includes('kvinna')).length;
+    const nKv = rader.filter(r => arKvinna(r)).length;
     return _strukturKvartilFigur(q, rader.length ? 100 * nKv / rader.length : 0, beskrivning);
 }
 // `omfang` (ett underlag, t.ex. 'sektor Skola'): beskrivningen säger att figuren är räknad för det.
@@ -28537,8 +28596,7 @@ function generateRapport() {
             /** @type {number|null} */ let statRefMedian = null;
             /** @type {number|null} */ let statDiffRaw = null;
             if (state.statistik.length > 0) {
-                const aidM = kategori.match(/^(\d+)/);
-                const aidCode = aidM ? aidM[1] : kategori;
+                const aidCode = aidAvYrke(kategori);
                 const sr = _jfStatistikFor(state.statistik, aidCode, b)?.rad;
                 if (sr && sr.median > 0) {
                     statMed = fmt.format(sr.median);
@@ -28562,8 +28620,8 @@ function generateRapport() {
             tbody.appendChild(tr);
         };
         addRow("Organisationen", df);
-        addRow("Kvinna", df.filter(r => r.kon.includes("kvinna")));
-        addRow("Man", df.filter(r => r.kon === "man" || r.kon === "män"));
+        addRow("Kvinna", df.filter(r => arKvinna(r)));
+        addRow("Man", df.filter(r => arMan(r)));
         const yrkeMap = {};
         df.forEach(r => { if (!yrkeMap[r.yrke]) yrkeMap[r.yrke] = []; yrkeMap[r.yrke].push(r); });
         Object.keys(yrkeMap).sort().forEach(y => {
@@ -28696,8 +28754,8 @@ function renderKon(bas) {
     const isAll = bas === "__ALLA__";
     const df = getData().filter(d => (isAll || d.bas === bas) && d.alder && d.alder > 0 && d.kon);
     if (df.length < 2) return;
-    const dataKv = df.filter(d => d.kon.includes("kvinna"));
-    const dataMa = df.filter(d => d.kon === "man" || d.kon === "män");
+    const dataKv = df.filter(d => arKvinna(d));
+    const dataMa = df.filter(d => arMan(d));
     const regKv  = Stat.linearRegression(dataKv.map(d => [d.alder, d.lon]));
     const regMa  = Stat.linearRegression(dataMa.map(d => [d.alder, d.lon]));
     const allAges  = df.map(d => d.alder);
@@ -28751,8 +28809,7 @@ function renderKon(bas) {
     if (state.statistik.length > 0) {
         // En uppslagning per AID×BAS-grupp i urvalet (samma regel som överallt: aldrig ett annat BAS), och medianen
         // av de matchade medianerna. I ett valt BAS är det en grupp per AID.
-        const m = d => d.yrke.match(/^(\d+)/);
-        statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: m(d) ? m(d)[1] : d.yrke, bas: d.bas })));
+        statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: aidAvYrke(d.yrke), bas: d.bas })));
     }
     const scope2 = isAll ? 'hela urvalet' : `${T.niva.en} ${bas}`;
     // Noter under diagrammen om det som utelämnats, och samma sak i diagrammens beskrivningar.
@@ -28792,7 +28849,7 @@ function renderKon(bas) {
 // formerna finns kvar för andra anropare. En figur är ett aggregat som lådan: en individ är `liten` när intervallet,
 // eller könet i intervallet, är under tröskeln, och ritas då inte.
 function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
-    const kon = r => (r.kon && r.kon.includes('kvinna') ? 'Kvinna' : (r.kon === 'man' || r.kon === 'män') ? 'Man' : null);
+    const kon = r => (arKvinna(r) ? 'Kvinna' : arMan(r) ? 'Man' : null);
     const giltiga = rader.filter(r => r.lon > 0 && r.bas != null && r.bas !== '' && (!perKon || kon(r)));
     const antal = new Map();
     const cell = r => (perKon ? `${r.bas}\u0000${kon(r)}` : String(r.bas));
@@ -28913,7 +28970,7 @@ function renderKonAlderGap(dataKv, dataMa, scope) {
     // Kan räknas för en sektor eller en yrkesgrupp (figur.underlag): samma beräkning och samma tröskel per åldersgrupp.
     // Resten är de övriga kvinnorna och männen i fliken urval.
     const rita = (rader, { beskrivning }) => {
-        const r = _konAlderGapRader(rader.filter(d => d.kon && d.kon.includes('kvinna')), rader.filter(d => d.kon === 'man' || d.kon === 'män'));
+        const r = _konAlderGapRader(rader.filter(d => arKvinna(d)), rader.filter(d => arMan(d)));
         return r.visade.length ? _konAlderGapFigur(r.visade, `${scope}, ${beskrivning}`) : `Ingen åldersgrupp har minst ${k} kvinnor och ${k} män i urvalet.`;
     };
     ritaFigur(el, { ..._konAlderGapFigur(visade, scope), underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.yrkesgrupp], rader: [...dataKv, ...dataMa], k, rita } });
@@ -28934,7 +28991,7 @@ function renderKonHistogram(dataKv, dataMa, scope) {
     // Kan räknas för en sektor eller en åldersgrupp (figur.underlag): samma klassindelning och samma tröskel per klass.
     const rita = (rader, { beskrivning }) => {
         const lon = ar => rader.filter(ar).map(d => d.lon).filter(v => v > 0);
-        const kv2 = lon(d => d.kon && d.kon.includes('kvinna')), ma2 = lon(d => d.kon === 'man' || d.kon === 'män');
+        const kv2 = lon(d => arKvinna(d)), ma2 = lon(d => arMan(d));
         const kl = _konHistogramKlasser(kv2, ma2, k);
         if (kl) return _konHistogramFigur(kl, kv2.length, ma2.length, `${scope}, ${beskrivning}`);
         return kv2.length < k || ma2.length < k ? _konUtelamnatNot() : `Lönerna i urvalet går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`;
@@ -28970,7 +29027,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
         const ritbara = g.filter(r => !liten(r)), steg = Math.max(1, Math.ceil(ritbara.length / KON_MULTIPLAR_PUNKTER));
         const urval = steg > 1 ? new Set(ritbara.filter((_, i) => i % steg === 0)) : null;
         if (urval) nedsamplade.push(panel);
-        for (const [namn, farg, ar] of [['Kvinna', PALETTE.kon.kvinna, r => r.kon.includes('kvinna')], ['Man', PALETTE.kon.man, r => r.kon === 'man' || r.kon === 'män']]) {
+        for (const [namn, farg, ar] of [['Kvinna', PALETTE.kon.kvinna, r => arKvinna(r)], ['Man', PALETTE.kon.man, r => arMan(r)]]) {
             const data = g.filter(ar).filter(r => !urval || liten(r) || urval.has(r)).map(r => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...(liten(r) ? { liten: true } : {}), markering: markeringFor(r.bas, r.yrke) }));
             if (data.length) lager.push({ marke: 'punkt', serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
         }
@@ -29011,7 +29068,7 @@ const _vagratLinje = (serie, farg, y, a0, a1, val = {}) => ({ marke: 'linje', se
 /** @param {{[k: string]: any, liten?: (rad: any) => boolean}} val */
 function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
     const punkt = (d, medKon) => ({ x: d.alder, y: d.lon, yrke: d.yrke, alder: d.alder, lon: d.lon, ...(isAll || medKon ? { bas: d.bas } : {}),
-                                    ...(medKon ? { kon: d.kon.includes('kvinna') ? 'Kvinna' : 'Man' } : {}), ...(liten(d) ? { liten: true } : {}),
+                                    ...(medKon ? { kon: arKvinna(d) ? 'Kvinna' : 'Man' } : {}), ...(liten(d) ? { liten: true } : {}),
                                     markering: markeringFor(d.bas, d.yrke) });
     const punktlager = (serie, farg, rader, medKon) => ({ marke: 'punkt', serie, farg, storlek: 4, opacitet: 0.7, data: rader.map(d => punkt(d, medKon)), tips: _punktTips });
     const lager = [];
@@ -29085,8 +29142,8 @@ function _konScatterTrend(punkter, medBand = false) {
 // Lådagrammet per kön för raderna (fliken urval, eller ett underlag i det): en låda för varje kön som når tröskeln,
 // eller texten om att inget kön gör det.
 function _konLadFigurFor(rader, scope) {
-    const lonKv = rader.filter(d => d.kon && d.kon.includes('kvinna')).map(d => d.lon);
-    const lonMa = rader.filter(d => d.kon === 'man' || d.kon === 'män').map(d => d.lon);
+    const lonKv = rader.filter(d => arKvinna(d)).map(d => d.lon);
+    const lonMa = rader.filter(d => arMan(d)).map(d => d.lon);
     const kvOk = !isKMasked(lonKv.length), maOk = !isKMasked(lonMa.length);
     if (!kvOk && !maOk) return _konUtelamnatNot();
     const utan = [kvOk ? null : 'kvinnor', maOk ? null : 'män'].filter(Boolean).join(' och ');
@@ -29172,8 +29229,8 @@ function renderDemografi(bas) {
         : getData().filter(d => d.bas === bas && d.alder > 0);
     if (df.length < 2) return;
     const scopeShort = isAll ? 'urvalet' : T.niva.bf;
-    const basKv = df.filter(d => d.kon.includes('kvinna'));
-    const basMa = df.filter(d => d.kon === 'man' || d.kon === 'män');
+    const basKv = df.filter(d => arKvinna(d));
+    const basMa = df.filter(d => arMan(d));
     const cntKv = countByBracket(basKv), cntMa = countByBracket(basMa);
     const n = df.length;
     // Referenslinjen visar Sveriges sysselsatta befolkning (SCB AKU)
@@ -29374,7 +29431,7 @@ function _laOversiktRaderRakna(d, bas, k) {
     const ut = [];
     for (const b of bas) {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes('kvinna')), ma = df.filter(r => r.kon === 'man' || r.kon === 'män');
+        const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
         if (kv.length < k || ma.length < k) continue;
         const medKv = Stat.median(kv.map(r => r.lon)), medMa = Stat.median(ma.map(r => r.lon));
         ut.push({ bas: b, gap: medKv / medMa * 100, n: df.length, ci: _laBootstrapGapCI(kv.map(r => r.lon), ma.map(r => r.lon)), medKv, medMa, nKv: kv.length, nMa: ma.length });
@@ -29424,8 +29481,8 @@ function generateSkevhet() {
     const pgSamlad = [];
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes("kvinna"));
-        const ma = df.filter(r => r.kon === "man" || r.kon === "män");
+        const kv = df.filter(r => arKvinna(r));
+        const ma = df.filter(r => arMan(r));
         if (kv.length < 2 || ma.length < 2) return;
         // (a) N-kolumn: antal per kön bakom mediansiffrorna
         const nCell = `<td class="t-hoger">${kv.length}/${ma.length}</td>`;
@@ -29480,8 +29537,8 @@ function generateSkevhet() {
     const skRader = [];   // samma BAS-intervall och andelar som tabellens rader — underlaget till diagrammet ovanför
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const nKv = df.filter(r => r.kon.includes("kvinna")).length;
-        const nMa = df.filter(r => r.kon === "man" || r.kon === "män").length;
+        const nKv = df.filter(r => arKvinna(r)).length;
+        const nMa = df.filter(r => arMan(r)).length;
         const tot = nKv + nMa;
         if (tot < LITET_UNDERLAG) { if (tot > 0) skUtelamnade.push(b); return; }
         const pctKv = (nKv/tot*100).toFixed(1), pctMa = (nMa/tot*100).toFixed(1);
@@ -29508,8 +29565,8 @@ function generateSkevhet() {
     let pgKMasked = 0;
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes("kvinna"));
-        const ma = df.filter(r => r.kon === "man" || r.kon === "män");
+        const kv = df.filter(r => arKvinna(r));
+        const ma = df.filter(r => arMan(r));
         if (kv.length < 2 || ma.length < 2) return;
         if (isKMasked(kv.length) || isKMasked(ma.length)) pgKMasked++;
     });
@@ -29859,7 +29916,7 @@ function _laOversiktTabell(bars, d = getData()) {
             + _direktivCell(o.gap);
         tb.appendChild(tr);
         const df = d.filter(r => r.bas === o.bas);
-        const payload = { bas: o.bas, kvLons: df.filter(r => r.kon.includes('kvinna')).map(r => r.lon), maLons: df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon), masked: false };
+        const payload = { bas: o.bas, kvLons: df.filter(r => arKvinna(r)).map(r => r.lon), maLons: df.filter(r => arMan(r)).map(r => r.lon), masked: false };
         tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _openEvidenceModal(_evidenceForPaygapRow(payload)); });
     }    flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
 }
@@ -31378,7 +31435,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     }
     const modell = forklaringsmodell();
     const raw = _rgKvantilDesign(getData(), modell).rader;
-    const arKv = d => d.kon.includes('kvinna');
+    const arKv = arKvinna;
     const nyckel = `${_rngSeedFrom(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
     const rakna = () => { const ut = _regKvantilBootstrap(raw, modell, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, diff: { varde: diff.varde, ki: ut.diffKi }, n: qr.n, nKv: qr.nKv, nMa: qr.nMa } }; return _regKvantilMinne.ut; };
@@ -31668,7 +31725,7 @@ function renderRegressionCard() {
     const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);
     const kr = konOk ? _regressionKronor(r) : null;
     // Summan per år som andel av kvinnornas samlade årslön i underlaget: det tal en ekonom frågar efter.
-    const lonesummaKvAr = konOk ? getData().filter(d => d.lon > 0 && (!harAlder() || d.alder > 0) && typeof d.kon === 'string' && d.kon.includes('kvinna')).reduce((s, d) => s + d.lon, 0) * 12 : 0;
+    const lonesummaKvAr = konOk ? getData().filter(d => d.lon > 0 && (!harAlder() || d.alder > 0) && arKvinna(d)).reduce((s, d) => s + d.lon, 0) * 12 : 0;
     const andelAvLonesumma = kr && lonesummaKvAr > 0 ? Math.abs(kr.krTotalYear) / lonesummaKvAr * 100 : null;
     // Budgeten utgår från första steget och visar skillnaderna mellan stegen: utelämnas med det.
     const budget = stegUt.utelamnat ? null : _explanationBudget(yrkeVisas ? stegIKortet : seqOk);
@@ -32750,8 +32807,8 @@ function generateMotivationSuggestions(item) {
     }
 
     // 3. Åldersskillnad mellan kön i samma grupp
-    const kvAges = rows.filter(r => r.kon.includes('kvinna')).map(r => r.alder).filter(a => a > 0);
-    const maAges = rows.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.alder).filter(a => a > 0);
+    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder).filter(a => a > 0);
+    const maAges = rows.filter(r => arMan(r)).map(r => r.alder).filter(a => a > 0);
     if (kvAges.length >= 3 && maAges.length >= 3) {
         const meanKvAge = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
         const meanMaAge = maAges.reduce((s, v) => s + v, 0) / maAges.length;
@@ -32770,8 +32827,8 @@ function generateMotivationSuggestions(item) {
     if (item.kvN >= kTroskel() && item.maN >= kTroskel()) {
         const allLons = rows.map(r => r.lon).sort((a, b) => a - b);
         const q1 = allLons[Math.floor(allLons.length * 0.2)];
-        const kvBelowQ1 = rows.filter(r => r.kon.includes('kvinna') && r.lon <= q1).length;
-        const maBelowQ1 = rows.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon <= q1).length;
+        const kvBelowQ1 = rows.filter(r => arKvinna(r) && r.lon <= q1).length;
+        const maBelowQ1 = rows.filter(r => arMan(r) && r.lon <= q1).length;
         const kvShareInQ1 = item.kvN > 0 ? kvBelowQ1 / item.kvN : 0;
         const maShareInQ1 = item.maN > 0 ? maBelowQ1 / item.maN : 0;
         if (kvShareInQ1 >= 0.4 && kvShareInQ1 - maShareInQ1 >= 0.2) {
@@ -33029,8 +33086,7 @@ function renderPrioritering() {
     let smallCount = 0, noRefCount = 0;
     const groupCheck = {};
     dForCount.forEach(r => {
-        const m = r.yrke.match(/^(\d+)/);
-        const aid = m ? m[1] : r.yrke;
+        const aid = aidAvYrke(r.yrke);
         const k = `${r.yrke}|${r.bas}`;
         if (!groupCheck[k]) groupCheck[k] = { n: 0, aid, bas: r.bas };
         groupCheck[k].n++;
@@ -34792,7 +34848,7 @@ function _rmAvsnittenUtanUrval() {
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
     const urval = 'Hela organisationen';
-    const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const arKv = arKvinna, arMa = arMan;
     const kvN = d.filter(arKv).length, maN = d.filter(arMa).length;
     const konOk = _konFarRedovisas(kvN, maN);
     const medKv = Stat.median(d.filter(arKv).map(r => r.lon)), medMa = Stat.median(d.filter(arMa).map(r => r.lon));
@@ -36485,7 +36541,7 @@ function _rapportunderlagBlockExport() {
     if (!d.length) return [];
     const k = kTroskel();
     const opt = { k, urval: 'Hela organisationen', demo: !!state.isDemo, troskelNot: _kSanktNot() || undefined };
-    const arKv = r => r.kon.includes('kvinna');
+    const arKv = arKvinna;
     const arMa = r => !arKv(r) && (r.kon.includes('man') || r.kon.includes('män'));
 
     // Sammanfattning
@@ -36890,8 +36946,8 @@ function renderGapUppdelning() {
     const inledning = u.gap <= 0
         ? `Kvinnors medellön är <strong>${_guKr(-u.gap, false)}</strong> lägre än mäns, det är ${_guPct(-u.gapPct)} av mäns medellön.`
         : `Kvinnors medellön är <strong>${_guKr(u.gap, false)}</strong> högre än mäns, det är ${_guPct(u.gapPct)} av mäns medellön.`;
-    const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna') && r.lon > 0).map(r => r.lon));
-    const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
+    const medKv = Stat.median(d.filter(r => arKvinna(r) && r.lon > 0).map(r => r.lon));
+    const medMa = Stat.median(d.filter(r => arMan(r) && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
     const delar = _guDelarMedAtgard(u.variabler || variabler);
     const max = Math.max(1, ...delar.map(x => Math.abs(u.delar[x.id])));
@@ -37409,7 +37465,7 @@ function explorerDossierTarget(spec, radEtikett, kolEtikett) {
     if (bas == null && aidEtikett == null) return null;
     if (aidEtikett != null && String(aidEtikett).startsWith('Övriga i ')) return { hopslagen: true };
     // Etiketten är "AID Yrkesnamn"; dossiern använder AID-sifferprefixet.
-    const aid = aidEtikett == null ? null : ((String(aidEtikett).match(/^(\d+)/) || [])[1] || String(aidEtikett));
+    const aid = aidEtikett == null ? null : aidAvYrke(aidEtikett);
     const traff = gruppdossierCandidates().find(c => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
     return traff ? { key: traff.key } : { saknas: true };
 }
@@ -38053,7 +38109,7 @@ function byggArsbokslutNu() {
         const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
         // Lönerna per yrkesgrupp (kvinnor och män, som Lika arbete räknar dem) för lönespridningen.
         /** @type {Map<string, number[]>} */ const lonPerYrke = new Map();
-        for (const r of d) if (r.lon > 0 && r.kon && (r.kon.includes('kvinna') || r.kon === 'man' || r.kon === 'män')) {
+        for (const r of d) if (r.lon > 0 && r.kon && (arKvinna(r) || arMan(r))) {
             if (!lonPerYrke.has(r.yrke)) lonPerYrke.set(r.yrke, []);
             /** @type {number[]} */ (lonPerYrke.get(r.yrke)).push(r.lon);
         }
@@ -38097,7 +38153,7 @@ function _abBedomningarNu() {
 function _abBasRad(d, bas, k) {
     const df = d.filter(r => r.bas === bas && r.lon > 0);
     if (df.length < k) return null;
-    const kv = df.filter(r => r.kon && r.kon.includes('kvinna')), ma = df.filter(r => r.kon === 'man' || r.kon === 'män');
+    const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
     const lon = df.map(r => r.lon), konOk = kv.length >= k && ma.length >= k;
     return { bas, n: df.length, nKv: kv.length, nMa: ma.length, p10: Stat.quantile(lon, 0.10), med: Stat.median(lon), p90: Stat.quantile(lon, 0.90),
         medKv: konOk ? Stat.median(kv.map(r => r.lon)) : null, medMa: konOk ? Stat.median(ma.map(r => r.lon)) : null,
@@ -38628,8 +38684,7 @@ document.getElementById('ut-alla-grupper')?.addEventListener('toggle', e => {
 const LP_COUNT_TIER_MIN = 5;   // undre gräns för antalsbaserad redovisning
 
 function _lpAidOf(r) {
-    const m = String(r.yrke || '').match(/^(\d+)/);
-    return m ? m[1] : String(r.yrke || '');
+    return aidAvYrke(r.yrke);
 }
 function _lpTier(n) {
     if (n >= kTroskel()) return 'full';
@@ -38864,7 +38919,7 @@ function _lpBandkartaFigur(bas) {
     const pts = [];
     bas.forEach(b => b.groups.forEach(g => {
         if (g.tier !== 'full' || !g.stats || !g.pol) return;
-        const kvAndel = g.rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')).length / g.n * 100;
+        const kvAndel = g.rows.filter(r => arKvinna(r)).length / g.n * 100;
         pts.push({ x: x(b), y: g.stats.median, forskjutning: _lpForskjutning(g.aid, g.bas),
                    storlek: Math.max(3.5, Math.min(9, Math.sqrt(g.n) * 1.1)), kvAndel, n: g.n, yrke: g.yrke, bas: b.bas, niva: g.level || '—', markering: markeringFor(b.bas, g.aid) });
     }));
@@ -38914,7 +38969,7 @@ function _lpLagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 
 function _lpKonLagen(rows, pol) {
     const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
     for (const r of rows) {
-        const kon = typeof r.kon === 'string' && r.kon.includes('kvinna') ? 'kv' : (r.kon === 'man' || r.kon === 'män') ? 'ma' : null;
+        const kon = arKvinna(r) ? 'kv' : arMan(r) ? 'ma' : null;
         const pos = kon ? _lpBandPosition(r.lon, pol.p10, pol.p90) : null;
         if (pos != null && isFinite(pos)) ut[kon][_lpLagesklass(pos)]++;
     }
@@ -39218,8 +39273,7 @@ function gruppdossierCandidates() {
     const map = new Map();
     getData().forEach(r => {
         if (!(r.lon > 0) || !r.bas) return;
-        const m = String(r.yrke || '').match(/^(\d+)/);
-        const aid = m ? m[1] : String(r.yrke || '');
+        const aid = aidAvYrke(r.yrke);
         const key = aid + '|' + r.bas;
         if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: r.yrke, rows: [] });
         map.get(key).rows.push(r);
@@ -39231,7 +39285,7 @@ function gruppdossierCandidates() {
 
 /** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
 function _gdKon(rows) {
-    return { kv: rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')), ma: rows.filter(r => r.kon === 'man' || r.kon === 'män') };
+    return { kv: rows.filter(r => arKvinna(r)), ma: rows.filter(r => arMan(r)) };
 }
 
 /**
@@ -39610,7 +39664,7 @@ function buildBasdossier(bas) {
     if (!basdossierKandidater().some(x => x.bas === bas)) return null;
     const k = kTroskel();
     const df = getData().filter(r => r.bas === bas && r.lon > 0);
-    const arKv = r => !!(r.kon && r.kon.includes('kvinna')), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const arKv = arKvinna, arMa = arMan;
     const kv = df.filter(arKv), ma = df.filter(arMa);
     const lon = df.map(r => r.lon);
     const konOk = _konFarRedovisas(kv.length, ma.length);
@@ -39632,7 +39686,7 @@ function buildBasdossier(bas) {
     for (const r of alla) { if (!(r.lon > 0)) continue; if (!basPerYrke.has(r.yrke)) basPerYrke.set(r.yrke, new Set()); basPerYrke.get(r.yrke).add(r.bas); }
     const nycklar = new Set(gruppdossierCandidates().map(g => g.key));
     const yrken = lika.grupper.map(g => {
-        const m = String(g.yrke || '').match(/^(\d+)/), aid = m ? m[1] : String(g.yrke || '');
+        const aid = aidAvYrke(g.yrke);
         const delade = !g.samladMedian, hela = helaYrket.get(g.yrke) || g;
         const ocksaI = [...(basPerYrke.get(g.yrke) || [])].filter(b => b !== bas).sort();
         return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(hela), samlad: !!g.samladMedian, helaTot: hela.tot, ocksaI,
@@ -40220,8 +40274,7 @@ function buildFardigcheck() {
     try {
         const groups = new Map();
         d.forEach(r => {
-            const m = String(r.yrke || '').match(/^(\d+)/);
-            const key = (m ? m[1] : r.yrke) + '|' + r.bas;
+            const key = (sifferprefixAvYrke(r.yrke) ?? r.yrke) + '|' + r.bas;
             groups.set(key, (groups.get(key) || 0) + 1);
         });
         let maskerade = 0, personer = 0;
@@ -40251,7 +40304,7 @@ function buildFardigcheck() {
 
     // 5. Yrkesgrupper utan motsvarighet i jämförelsestatistiken
     if ((state.statistik || []).length) {
-        const aids = new Set(d.map(r => { const m = String(r.yrke || '').match(/^(\d+)/); return m ? m[1] : r.yrke; }));
+        const aids = new Set(d.map(r => { return sifferprefixAvYrke(r.yrke) ?? r.yrke; }));
         const utan = [...aids].filter(a => !(state.statistik || []).some(s => s.aid === a));
         if (utan.length) {
             out.push({

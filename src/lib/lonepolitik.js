@@ -20,6 +20,7 @@
  */
 
 import { median as _median, quantile as _quantile } from './stat.js';
+import { arKvinna, arMan } from './kon.js';
 
 /**
  * Organisationens faktiska lönespann i en grupp (P10, median, P90) — jämförs med
@@ -32,12 +33,6 @@ export function organisationsBand(rows, k) {
     return { n: lons.length, p10: _quantile(lons, 0.1), med: _median(lons), p90: _quantile(lons, 0.9) };
 }
 
-function _lpIsKvinna(r) {
-    return typeof r.kon === 'string' && r.kon.includes('kvinna');
-}
-function _lpIsMan(r) {
-    return r.kon === 'man' || r.kon === 'män';
-}
 
 /**
  * Var i sitt eget lönespann ligger en lön?
@@ -124,8 +119,8 @@ export function complianceCounts(rows, pol) {
 export function genderBandGap(rows, pol, minPerKon = 10) {
     if (!Array.isArray(rows) || !pol) return null;
     const posOf = r => bandPosition(r.lon, pol.p10, pol.p90);
-    const kv = rows.filter(_lpIsKvinna).map(posOf).filter(v => v != null);
-    const ma = rows.filter(_lpIsMan).map(posOf).filter(v => v != null);
+    const kv = rows.filter(arKvinna).map(posOf).filter(v => v != null);
+    const ma = rows.filter(arMan).map(posOf).filter(v => v != null);
     if (kv.length < minPerKon || ma.length < minPerKon) return null;
     const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
     const kvPos = mean(kv), maPos = mean(ma);

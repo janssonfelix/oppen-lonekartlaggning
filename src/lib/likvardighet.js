@@ -40,6 +40,7 @@
 import { median as _median, percentilintervall } from './stat.js';
 import { rngFor } from './rng.js';
 import { direktivMarkering } from './status.js';
+import { arKvinna } from './kon.js';
 
 export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
 export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
@@ -274,7 +275,7 @@ export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 
         }
         const g = map.get(key);
         g.n++;
-        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.nKv++;
+        if (arKvinna(r)) g.nKv++;
         g.lons.push(r.lon);
         // Åldern bärs parallellt med lönen (null när den saknas) för åldersjusteringen i steg 3.
         g.aldrar.push(typeof r.alder === 'number' && isFinite(r.alder) ? r.alder : null);

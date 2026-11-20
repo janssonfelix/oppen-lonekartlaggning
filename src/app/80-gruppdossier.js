@@ -24,8 +24,7 @@ function gruppdossierCandidates() {
     const map = new Map();
     getData().forEach(r => {
         if (!(r.lon > 0) || !r.bas) return;
-        const m = String(r.yrke || '').match(/^(\d+)/);
-        const aid = m ? m[1] : String(r.yrke || '');
+        const aid = aidAvYrke(r.yrke);
         const key = aid + '|' + r.bas;
         if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: r.yrke, rows: [] });
         map.get(key).rows.push(r);
@@ -37,7 +36,7 @@ function gruppdossierCandidates() {
 
 /** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
 function _gdKon(rows) {
-    return { kv: rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')), ma: rows.filter(r => r.kon === 'man' || r.kon === 'män') };
+    return { kv: rows.filter(r => arKvinna(r)), ma: rows.filter(r => arMan(r)) };
 }
 
 /**

@@ -63,7 +63,7 @@ function _laOversiktRaderRakna(d, bas, k) {
     const ut = [];
     for (const b of bas) {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes('kvinna')), ma = df.filter(r => r.kon === 'man' || r.kon === 'män');
+        const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
         if (kv.length < k || ma.length < k) continue;
         const medKv = Stat.median(kv.map(r => r.lon)), medMa = Stat.median(ma.map(r => r.lon));
         ut.push({ bas: b, gap: medKv / medMa * 100, n: df.length, ci: _laBootstrapGapCI(kv.map(r => r.lon), ma.map(r => r.lon)), medKv, medMa, nKv: kv.length, nMa: ma.length });
@@ -113,8 +113,8 @@ function generateSkevhet() {
     const pgSamlad = [];
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes("kvinna"));
-        const ma = df.filter(r => r.kon === "man" || r.kon === "män");
+        const kv = df.filter(r => arKvinna(r));
+        const ma = df.filter(r => arMan(r));
         if (kv.length < 2 || ma.length < 2) return;
         // (a) N-kolumn: antal per kön bakom mediansiffrorna
         const nCell = `<td class="t-hoger">${kv.length}/${ma.length}</td>`;
@@ -169,8 +169,8 @@ function generateSkevhet() {
     const skRader = [];   // samma BAS-intervall och andelar som tabellens rader — underlaget till diagrammet ovanför
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const nKv = df.filter(r => r.kon.includes("kvinna")).length;
-        const nMa = df.filter(r => r.kon === "man" || r.kon === "män").length;
+        const nKv = df.filter(r => arKvinna(r)).length;
+        const nMa = df.filter(r => arMan(r)).length;
         const tot = nKv + nMa;
         if (tot < LITET_UNDERLAG) { if (tot > 0) skUtelamnade.push(b); return; }
         const pctKv = (nKv/tot*100).toFixed(1), pctMa = (nMa/tot*100).toFixed(1);
@@ -197,8 +197,8 @@ function generateSkevhet() {
     let pgKMasked = 0;
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes("kvinna"));
-        const ma = df.filter(r => r.kon === "man" || r.kon === "män");
+        const kv = df.filter(r => arKvinna(r));
+        const ma = df.filter(r => arMan(r));
         if (kv.length < 2 || ma.length < 2) return;
         if (isKMasked(kv.length) || isKMasked(ma.length)) pgKMasked++;
     });
@@ -548,7 +548,7 @@ function _laOversiktTabell(bars, d = getData()) {
             + _direktivCell(o.gap);
         tb.appendChild(tr);
         const df = d.filter(r => r.bas === o.bas);
-        const payload = { bas: o.bas, kvLons: df.filter(r => r.kon.includes('kvinna')).map(r => r.lon), maLons: df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon), masked: false };
+        const payload = { bas: o.bas, kvLons: df.filter(r => arKvinna(r)).map(r => r.lon), maLons: df.filter(r => arMan(r)).map(r => r.lon), masked: false };
         tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _openEvidenceModal(_evidenceForPaygapRow(payload)); });
     }    flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
 }

@@ -23,6 +23,7 @@
 import { fitOLS, invert, matMul, median, pValue2Sided, tQuantile } from './stat.js';
 import { skapaTermer, fyllTermer, ordForAntal, stor } from './termer.js';
 import { personOrd } from './namn.js';
+import { arKvinna, arMan } from './kon.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -66,7 +67,7 @@ export function harAlderIRader(rows) {
 }
 /** Raden har det som modellerna kräver: positiv lön, känt kön och, när lönefilen har ålder, en ålder över 0. */
 const _modellRad = (d, harAlder) => d && d.lon > 0 && (!harAlder || d.alder > 0) && typeof d.kon === 'string'
-    && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män');
+    && (arKvinna(d) || arMan(d));
 
 /**
  * Normaliserar ett värde från konfigurationsfilen eller gränssnittet till en giltig modell.
@@ -141,8 +142,8 @@ export function diagnoseCollinearity(rows, basList) {
     basList.forEach(b => {
         const sub = rows.filter(d => d.bas === b);
         if (sub.length < 3) return;
-        const hasKv = sub.some(d => d.kon.includes('kvinna'));
-        const hasMa = sub.some(d => d.kon === 'man' || d.kon === 'män');
+        const hasKv = sub.some(d => arKvinna(d));
+        const hasMa = sub.some(d => arMan(d));
         if (!hasKv || !hasMa) singleSexBas++;
     });
     if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${T.niva.fl} är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
@@ -165,14 +166,14 @@ export function computePerBasGap(rows, basList, { golv }) {
     const out = [];
     basList.forEach(b => {
         const sub = giltiga.filter(d => d.bas === b);
-        const kv  = sub.filter(d => d.kon.includes('kvinna'));
-        const ma  = sub.filter(d => d.kon === 'man' || d.kon === 'män');
+        const kv  = sub.filter(d => arKvinna(d));
+        const ma  = sub.filter(d => arMan(d));
         if (kv.length < golv || ma.length < golv) {
             out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'too_few' });
             return;
         }
         const aMean = harAlder ? sub.reduce((s,d)=>s+d.alder,0)/sub.length : 0;
-        const X = sub.map(d => [1, d.kon.includes('kvinna')?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
+        const X = sub.map(d => [1, arKvinna(d)?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
         const y = sub.map(d => Math.log(d.lon));
         const fit = fitOLS(X, y);
         if (!fit) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'singular' }); return; }
@@ -296,7 +297,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     const rows = (rows0 || []).filter(d => _modellRad(d, medAlder));
     const N = rows.length;
     const y    = rows.map(d => Math.log(d.lon));
-    const isKv = rows.map(d => d.kon.includes('kvinna') ? 1 : 0);
+    const isKv = rows.map(d => arKvinna(d) ? 1 : 0);
     const ageC = rows.map(d => d.alder - ageMean);
     const basInd = basIndikatorer(basList);
     const basD = rows.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
@@ -505,8 +506,8 @@ export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD 
     if (!m.bas && !m.alder) return null;   // endast kön: inget att dela upp
     const raw = rows.filter(d => _modellRad(d, harAlder));
     if (raw.length < 50) return null;
-    const kv = raw.filter(d => d.kon.includes('kvinna'));
-    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
+    const kv = raw.filter(d => arKvinna(d));
+    const ma = raw.filter(d => arMan(d));
     if (kv.length < golv || ma.length < golv) return null;
 
     const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
@@ -644,7 +645,7 @@ export function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_ST
     }
     const p10 = results[0], p90 = results[2];
     const diffP90P10 = p10.error || p90.error ? null : p90.konPct - p10.konPct;
-    const nKv = d.rader.filter(r => r.kon.includes('kvinna')).length;
+    const nKv = d.rader.filter(r => arKvinna(r)).length;
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
@@ -682,11 +683,11 @@ export const HUVUDREGRESSION_MIN_PER_KON = 5;
  */
 export function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIRader(rader), kInstalld, golv }) {
     // Utan ålder i lönefilen (ADR-64) används alla rader och modellen räknas utan ålder.
-    const raw = rader.filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const raw = rader.filter(d => d.lon > 0 && (!medAlder || d.alder > 0) && (arKvinna(d) || arMan(d)));
     if (raw.length < HUVUDREGRESSION_MIN_N) return { error: `För få observationer (n < ${HUVUDREGRESSION_MIN_N}) för meningsfull regressionsanalys.`, errorCode: 'low_n' };
 
-    const kvN = raw.filter(d => d.kon.includes('kvinna')).length;
-    const maN = raw.filter(d => d.kon === 'man' || d.kon === 'män').length;
+    const kvN = raw.filter(d => arKvinna(d)).length;
+    const maN = raw.filter(d => arMan(d)).length;
     if (kvN < HUVUDREGRESSION_MIN_PER_KON || maN < HUVUDREGRESSION_MIN_PER_KON)
         return { error: `Otillräcklig könsbalans i urvalet: ${kvN} kvinnor, ${maN} män. Minst ${HUVUDREGRESSION_MIN_PER_KON} av varje kön krävs.`, errorCode: 'imbalance' };
 
@@ -698,7 +699,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
     const ageMean = medAlder ? raw.reduce((s,d) => s + d.alder, 0) / raw.length : 0;
 
     const y    = raw.map(d => Math.log(d.lon));
-    const isKv = raw.map(d => d.kon.includes('kvinna') ? 1 : 0);
+    const isKv = raw.map(d => arKvinna(d) ? 1 : 0);
     const ageC = raw.map(d => d.alder - ageMean);
     const basD = raw.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
 
@@ -850,8 +851,8 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
     const diagnostics = fellBackFromFull ? diagnoseCollinearity(raw, basList) : [];
 
     // Rått gap (median)
-    const kv = raw.filter(d => d.kon.includes('kvinna'));
-    const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
+    const kv = raw.filter(d => arKvinna(d));
+    const ma = raw.filter(d => arMan(d));
     const medianKv = median(kv.map(d=>d.lon));
     const medianMa = median(ma.map(d=>d.lon));
     const rawGapPct = (medianKv / medianMa - 1) * 100;

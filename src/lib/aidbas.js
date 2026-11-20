@@ -23,6 +23,7 @@
  */
 import { median, quantile } from './stat.js';
 import { basRangFn, konsklass } from './likvardighet.js';
+import { arKvinna, arMan } from './kon.js';
 
 /**
  * Definitionerna av kvinnodominerat arbete: nyckel → namn (valet i inställningarna) och text (tabellerna och
@@ -80,8 +81,8 @@ export function arJamforelseKlass(klass, jamforelse = 'alla') {
     return jamforelse === 'mansdominerade' ? klass === KLASS_MA : true;
 }
 
-const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
-const arMa = r => r.kon === 'man' || r.kon === 'män';
+const arKv = arKvinna;
+const arMa = arMan;
 
 /**
  * Grupperar raderna per AID-kod och BAS-intervall, hämtade ur varje persons egen rad. Rader utan lön, kön eller

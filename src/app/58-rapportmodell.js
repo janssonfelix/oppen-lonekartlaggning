@@ -587,7 +587,7 @@ function _rmAvsnittenUtanUrval() {
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
     const urval = 'Hela organisationen';
-    const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const arKv = arKvinna, arMa = arMan;
     const kvN = d.filter(arKv).length, maN = d.filter(arMa).length;
     const konOk = _konFarRedovisas(kvN, maN);
     const medKv = Stat.median(d.filter(arKv).map(r => r.lon)), medMa = Stat.median(d.filter(arMa).map(r => r.lon));

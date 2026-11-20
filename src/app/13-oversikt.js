@@ -28,8 +28,8 @@ function updateCompliance() {
     const granskaBas = new Set(_laOversiktRader(d).filter(o => _laOversiktStatus(o).niva === 'granska').map(o => o.bas));
     jb.jamforbara.forEach(b => {
         const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-        const ma = df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+        const kv = df.filter(r => arKvinna(r)).map(r => r.lon);
+        const ma = df.filter(r => arMan(r)).map(r => r.lon);
         if (granskaBas.has(b)) gapCrit++;
         const tot = kv.length + ma.length;
         if (kv.length / tot < 0.4 || ma.length / tot < 0.4) skevCount++;
@@ -73,15 +73,14 @@ function updateCompliance() {
         let bmLow = 0, bmTotal = 0;
         const seen = new Set();
         d.forEach(r => {
-            const m = r.yrke.match(/^(\d+)/);
-            const aid = m ? m[1] : r.yrke;
+            const aid = aidAvYrke(r.yrke);
             const key = `${aid}|${r.bas}`;
             if (seen.has(key)) return;
             seen.add(key);
             const statRow = _jfStatistikFor(state.statistik, aid, r.bas)?.rad;
             if (!statRow) return;
             bmTotal++;
-            const orgMed = Stat.median(d.filter(x => { const mm = x.yrke.match(/^(\d+)/); return (mm ? mm[1] : x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
+            const orgMed = Stat.median(d.filter(x => { return aidAvYrke(x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
             if (orgMed < statRow.median) bmLow++;
         });
         if (bmTotal === 0) setCompCard('comp-bm', 0, 0, 'Ingen matchning hittad', 'na');
@@ -401,10 +400,10 @@ function updateDashboardStats() {
     const d   = getData();
     if (!d.length) return;
     const allAges = d.map(r => r.alder).filter(a => a && !isNaN(a));
-    const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna')).map(r => r.lon));
-    const medMa = Stat.median(d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon));
+    const medKv = Stat.median(d.filter(r => arKvinna(r)).map(r => r.lon));
+    const medMa = Stat.median(d.filter(r => arMan(r)).map(r => r.lon));
     /** @type {HTMLElement} */ (document.getElementById("stat-n")).textContent = String(d.length);
-    const nKv = d.filter(r => r.kon.includes('kvinna')).length, nMa = d.filter(r => r.kon === 'man' || r.kon === 'män').length;
+    const nKv = d.filter(r => arKvinna(r)).length, nMa = d.filter(r => arMan(r)).length;
     const konEl = document.getElementById('stat-kon');
     if (konEl) konEl.textContent = `${nKv.toLocaleString('sv-SE')} / ${nMa.toLocaleString('sv-SE')}`;
     /** @type {HTMLElement} */ (document.getElementById("stat-age")).textContent = allAges.length ? svTal(allAges.reduce((a,b)=>a+b,0)/allAges.length, 1) : "–";

@@ -753,7 +753,7 @@ function _lvKravGrupper(rader, { k = 10, poangByKey = null } = {}) {
         const key = aid + '|' + r.bas;
         if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: r.yrkeLabel || r.yrke || aid, n: 0, nKv: 0, loner: [] });
         const g = map.get(key);
-        g.n++; if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.nKv++; g.loner.push(r.lon);
+        g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
     }
     const medPoang = !!(poangByKey && poangByKey.size);
     const alla = [...map.values()].filter(g => g.n >= k).map(g => {

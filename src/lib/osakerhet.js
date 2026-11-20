@@ -27,6 +27,7 @@ import { rngFor } from './rng.js';
 import { slumpensGranser } from './status.js';
 import { bootstrapMedianer } from './likvardighet.js';
 import { kvantilDesign, quantileRegression } from './regression.js';
+import { arKvinna, arMan } from './kon.js';
 
 /** Antalet dragningar i intervallet för hela organisationen (Översikt). */
 export const B_ORGANISATION = 2000;
@@ -72,10 +73,6 @@ export function osakerhetKonstanter() {
         MAD_TILL_SIGMA, MEDIAN_SE_FAKTOR, SMA_GRUPPER_RATTNING, KVANTIL_KI_B, KVANTIL_KI_MAX_N });
 }
 
-/** @param {{kon:string}} r */
-const _arKvinna = r => r.kon.includes('kvinna');
-/** @param {{kon:string}} r */
-const _arMan = r => r.kon === 'man' || r.kon === 'män';
 
 // ---- Bootstrapintervallen på mediankvoten ----
 
@@ -97,8 +94,8 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
  */
 export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
-    const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
+    const ma = d.filter(r => arMan(r)).map(r => r.lon);
     if (kv.length < golv || ma.length < golv) return null;
     const ratios = new Array(B);
     const m = bootstrapMedianer(kv, ma, B, rng || rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
@@ -227,7 +224,7 @@ export function mdeProcent(sigma, nKv, nMa) {
 export function styrkeanalys(rader, golv) {
     const d = rader.filter(r => r.lon > 0);
     if (d.length < STYRKA_MIN_N) return null;
-    const arKv = _arKvinna, arMa = _arMan;
+    const arKv = arKvinna, arMa = arMan;
     const kv = d.filter(arKv).map(r => r.lon);
     const ma = d.filter(arMa).map(r => r.lon);
     if (kv.length < 2 || ma.length < 2) return null;
@@ -336,7 +333,7 @@ export function extremvarden(rader, golv, troskel = EXTREMVARDE_Z) {
                     radnr: r.radnr ?? null,
                     bas: r.bas,
                     yrke: r.yrke,
-                    kon: r.kon.includes('kvinna') ? 'Kvinna' : 'Man',
+                    kon: arKvinna(r) ? 'Kvinna' : 'Man',
                     alder: r.alder,
                     lon: r.lon,
                     groupMedian,
@@ -369,7 +366,7 @@ export function trattUnderlag(rader, k) {
     const perGrupp = new Map();
     for (const r of rader) {
         if (!(r.lon > 0) || !r.bas) continue;
-        const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
+        const kv = arKvinna(r), ma = arMan(r);
         if (!kv && !ma) continue;
         const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
         if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });

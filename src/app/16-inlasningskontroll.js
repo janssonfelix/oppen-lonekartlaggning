@@ -24,7 +24,7 @@ function renderRealityCheck() {
     const n = d.length;
 
     // Check 1: könsfördelning
-    const nKv = d.filter(r => r.kon.includes('kvinna')).length;
+    const nKv = d.filter(r => arKvinna(r)).length;
     const pctKv = n > 0 ? nKv / n * 100 : 0;
     let konStatus, konMsg;
     if (pctKv >= 30 && pctKv <= 70) {
@@ -160,15 +160,15 @@ function renderDataValidationReport() {
     const singleSexBas = bas.filter(b => {
         const sub = state.data.filter(r => r.bas === b);
         if (sub.length < 3) return false;
-        const hasKv = sub.some(r => r.kon.includes('kvinna'));
-        const hasMa = sub.some(r => r.kon === 'man' || r.kon === 'män');
+        const hasKv = sub.some(r => arKvinna(r));
+        const hasMa = sub.some(r => arMan(r));
         return !hasKv || !hasMa;
     }).length;
     const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
-    const dataAids = [...new Set(state.data.map(r => { const m = r.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(r => sifferprefixAvYrke(r.yrke)).filter(Boolean))];
     /** @type {any} */ let polStatus = null;
     /** @type {any} */ let statStatus = null;
     if (state.policy.length) {
@@ -256,7 +256,7 @@ function renderConsistencyBanner() {
 
     const issues = [];
     const dataBas = [...new Set(state.data.map(d => d.bas).filter(Boolean))].sort();
-    const dataAids = [...new Set(state.data.map(d => { const m = d.yrke.match(/^(\d+)/); return m ? m[1] : null; }).filter(Boolean))];
+    const dataAids = [...new Set(state.data.map(d => sifferprefixAvYrke(d.yrke)).filter(Boolean))];
 
     // Ställningstagande
     if (state.policy.length) {
@@ -275,8 +275,7 @@ function renderConsistencyBanner() {
         // Bygg AID → yrkesnamn-uppslagning från strukturdatan
         const aidToYrke = {};
         state.data.forEach(d => {
-            const m = d.yrke.match(/^(\d+)/);
-            const a = m ? m[1] : null;
+            const a = sifferprefixAvYrke(d.yrke);
             if (a && !aidToYrke[a]) aidToYrke[a] = d.yrke;
         });
         if (dataAidNotInStat.length) {

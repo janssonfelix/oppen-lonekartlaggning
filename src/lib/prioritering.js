@@ -15,7 +15,9 @@
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  */
 import { median } from './stat.js';
+import { aidAvYrke } from './aid.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
+import { arKvinna, arMan } from './kon.js';
 
 // Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
 // Bevisrutan i appen hämtar dem genom prioKonstanter(), så förklaringarna och poängen visar samma tal.
@@ -110,8 +112,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
     const groups = {};
     d.forEach(r => {
-        const aidM = r.yrke.match(/^(\d+)/);
-        const aid  = aidM ? aidM[1] : r.yrke;
+        const aid  = aidAvYrke(r.yrke);
         const key  = `${r.yrke}|${r.bas}`;
         if (!groups[key]) groups[key] = { yrke: r.yrke, aid, bas: r.bas, rows: [] };
         groups[key].rows.push(r);
@@ -124,8 +125,8 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
         const lons     = g.rows.map(r => r.lon);
         const med      = median(lons);
-        const kvLons   = g.rows.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-        const maLons   = g.rows.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+        const kvLons   = g.rows.filter(r => arKvinna(r)).map(r => r.lon);
+        const maLons   = g.rows.filter(r => arMan(r)).map(r => r.lon);
         // ADR-12: könsjämförelsen kräver kTroskel personer av vartdera könet; annars bara gruppens samlade median.
         const medKv    = kvLons.length >= kTroskel ? median(kvLons) : null;
         const medMa    = maLons.length >= kTroskel ? median(maLons) : null;
