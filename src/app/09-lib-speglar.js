@@ -1044,13 +1044,19 @@ function kiUtesluterLika(ci) {
  * Lönerna sorteras en gång; omkastningen flyttar rangerna i stället för lönerna, med samma byten och samma slumptal,
  * och medianerna läses ur rangordningen. Det ger samma kvoter som att ta medianen av de omkastade lönerna (lika
  * löner får olika rang men samma värde), i O(n) per omkastning utan allokeringar.
+ *
+ * Utgångsläget är kvinnornas löner stigande följda av männens stigande (kopior), inte lönerna i filens ordning: då
+ * beror omkastningen bara på lönerna och antalen, inte på radordningen (ADR-86). Kvinnorna är de första nKv platserna
+ * också efter sorteringen. Lika löner hos en kvinna och en man gör inget ordningsberoende: varje plats bär ett värde,
+ * och utgångsläget (värdet på varje plats) är detsamma i varje ordning; vilken av två lika löner som får den lägre
+ * rangen ändrar inget värde som medianen läser.
  * @param {number[]} kv
  * @param {number[]} ma
  * @param {number} [B]
  * @returns {{lag:number, hog:number}}
  */
 function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
-    const alla = kv.concat(ma), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
     // rang[i]: platsen i den sorterade listan för personen på plats i; sorterad[r]: lönen med rang r.
     const ordning = Array.from({ length: n }, (_, i) => i).sort((x, y) => alla[x] - alla[y]);
     const rang = new Int32Array(n), sorterad = new Float64Array(n), arKv = new Uint8Array(n);
@@ -1217,37 +1223,33 @@ function konsklass(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
 }
 
 /**
- * Förbereder en grupps löner för bootstrapmedianen: lönerna sorteras en gång och varje position får sin rang.
- * En dragning räknar sedan hur många gånger varje rang dras, och medianen läses ur den kumulativa räkningen.
- * Det ger samma median som att sortera varje dragning, men i O(n) i stället för O(n log n) och utan
- * allokeringar per dragning. Lika löner får olika rang men samma värde, så medianen blir densamma.
+ * Förbereder en grupps löner för bootstrapmedianen: lönerna sorteras stigande en gång (en kopia), och dragningarna görs
+ * ur den sorterade listan. En dragning räknar sedan hur många gånger varje plats dras, och medianen läses ur den
+ * kumulativa räkningen. Det ger samma median som att sortera varje dragning, men i O(n) i stället för O(n log n) och
+ * utan allokeringar per dragning. Eftersom platserna är platser i den SORTERADE listan beror dragningarna bara på
+ * lönerna, inte på i vilken ordning de stod i filen (ADR-86): lika löner har samma värde, så det spelar ingen roll
+ * vilken av dem som står först.
  * @param {number[]} lons
- * @returns {{n:number, rang:Int32Array, sorterad:Float64Array, antal:Int32Array}}
+ * @returns {{n:number, sorterad:Float64Array, antal:Int32Array}}
  */
-function _rangUnderlag(lons) {
+function _sorteratUnderlag(lons) {
     const n = lons.length;
-    const ordning = Array.from({ length: n }, (_, i) => i).sort((a, b) => lons[a] - lons[b]);
-    const rang = new Int32Array(n);
-    const sorterad = new Float64Array(n);
-    for (let r = 0; r < n; r++) {
-        rang[ordning[r]] = r;
-        sorterad[r] = lons[ordning[r]];
-    }
-    return { n, rang, sorterad, antal: new Int32Array(n) };
+    const sorterad = Float64Array.from(lons).sort();
+    return { n, sorterad, antal: new Int32Array(n) };
 }
 
 /**
  * Medianen av en dragning med återläggning ur underlaget. Anropar `rng()` n gånger, i samma ordning som en
- * dragning `lons[(rng() * n) | 0]` per position. Udda n: det mittersta elementet; jämnt n: medel av de två
- * mittersta.
- * @param {{n:number, rang:Int32Array, sorterad:Float64Array, antal:Int32Array}} u
+ * dragning `sorterad[(rng() * n) | 0]` per position ur de stigande sorterade lönerna. Udda n: det mittersta
+ * elementet; jämnt n: medel av de två mittersta.
+ * @param {{n:number, sorterad:Float64Array, antal:Int32Array}} u
  * @param {() => number} rng
  * @returns {number}
  */
 function _dragningsmedian(u, rng) {
-    const { n, rang, sorterad, antal } = u;
+    const { n, sorterad, antal } = u;
     antal.fill(0);
-    for (let i = 0; i < n; i++) antal[rang[(rng() * n) | 0]]++;
+    for (let i = 0; i < n; i++) antal[(rng() * n) | 0]++;
     const m = n >> 1;
     let summa = 0, r = 0;
     if (n & 1) {
@@ -1269,7 +1271,8 @@ function _dragningsmedian(u, rng) {
 
 /**
  * Medianerna i B bootstrapdragningar ur två grupper: per dragning dras först kvN löner ur kv och sedan maN ur ma,
- * med återläggning, i samma ordning som `lons[(rng() * n) | 0]` per position. Medianerna tas ur rangräkning
+ * med återläggning, i samma ordning som `sorterad[(rng() * n) | 0]` per position ur gruppens stigande sorterade
+ * löner, så att dragningarna inte beror på radordningen (ADR-86). Medianerna tas ur rangräkning
  * (`_dragningsmedian`) och är desamma som om varje dragning sorterades. Den gemensamma kärnan för
  * bootstrapintervallen på medianskillnaden (här) och på mediankvoten (Lika arbete, Ålder & karriär, gruppdossiern).
  * Lönerna ska vara ändliga tal; de ändras inte.
@@ -1280,7 +1283,7 @@ function _dragningsmedian(u, rng) {
  * @returns {{kv: Float64Array, ma: Float64Array}} medianen per dragning för vardera gruppen
  */
 function bootstrapMedianer(kvLons, maLons, B, rng) {
-    const kv = _rangUnderlag(kvLons), ma = _rangUnderlag(maLons);
+    const kv = _sorteratUnderlag(kvLons), ma = _sorteratUnderlag(maLons);
     const mKv = new Float64Array(B), mMa = new Float64Array(B);
     for (let b = 0; b < B; b++) {
         mKv[b] = _dragningsmedian(kv, rng);
@@ -1321,7 +1324,7 @@ function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
 function bootstrapMedianVsConstantKr(orgLons, constMedian, B = 1000, rng = Math.random) {
     if (!Array.isArray(orgLons) || orgLons.length < 3) return null;
     if (!(constMedian > 0)) return null;
-    const org = _rangUnderlag(orgLons);
+    const org = _sorteratUnderlag(orgLons);
     const diffs = new Array(B);
     for (let b = 0; b < B; b++) diffs[b] = constMedian - _dragningsmedian(org, rng);
     diffs.sort((a, b) => a - b);
@@ -3950,6 +3953,25 @@ function trattUnderlag(rader, k) {
 
 // ---- Kvantilregressionens intervall ----
 
+/** @param {any} v */
+const _nyckeldel = v => (v == null ? '' : typeof v === 'number' ? v : String(v));
+/**
+ * Den fasta ordningen för kvantilbootstrapens rader: lön, kön, BAS-intervall, ålder och sedan AID, yrke och
+ * ansvarsgrupp. Designmatrisen (kvantilDesign) bygger på lön, kön, BAS och ålder; övriga fält tas med så att
+ * ordningen är fullständig också för rader som skiljer sig bara där. Tal jämförs som tal, övrigt som text.
+ * @param {any} a
+ * @param {any} b
+ */
+function _kvantilRadordning(a, b) {
+    for (const f of ['lon', 'kon', 'bas', 'alder', 'aid', 'yrke', 'ansvarsgrupp']) {
+        const x = _nyckeldel(a[f]), y = _nyckeldel(b[f]);
+        if (x === y) continue;
+        if (typeof x === 'number' && typeof y === 'number') return x - y;
+        return String(x) < String(y) ? -1 : 1;
+    }
+    return 0;
+}
+
 /**
  * Percentil-bootstrapintervall (95 %) på kvantilregressionens könskoefficient per τ och på skillnaden P90 − P10
  * (ADR-63). Varje omsampling drar n rader med återläggning och bygger designen på nytt ur dem (kvantilDesign), så att
@@ -3958,15 +3980,18 @@ function trattUnderlag(rader, k) {
  * och varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
  * Ett intervall ges när minst hälften av omsamplingarna gav en skattning. IRLS-skattningen är en approximation av
  * kvantillösningen; intervallet bootstrappar approximationen.
- * @param {any[]} raw  kvantilDesign(...).rader: raderna som punktskattningen räknades på
+ * @param {any[]} raw0  kvantilDesign(...).rader: raderna som punktskattningen räknades på (i vilken ordning som helst)
  * @param {any} modell  förklaringsmodellen
  * @param {Array<{tau:number, error?:boolean, ki?:any}>} results  punktskattningarna; `ki` skrivs in i dem
  * @param {(d: any) => boolean} arKv
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna per kön
  * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number, kiUtelamnad:string}}
  */
-function kvantilBootstrap(raw, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
-    const rnd = rng || rngFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
+    const rnd = rng || rngFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+    // Raderna sorteras på en fast, fullständig nyckel innan dragningen, så att omsamplingarna inte beror på
+    // radordningen (ADR-86). Två rader som är lika i nyckeln är utbytbara i designen.
+    const raw = [...raw0].sort(_kvantilRadordning);
     const n = raw.length;
     /** @type {number[][]} */
     const prov = results.map(() => []);
