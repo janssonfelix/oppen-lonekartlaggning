@@ -15,24 +15,9 @@
 const _RG_STEG_BAS = _rgStegNamn('bas');
 const _RG_STEG_YRKE = _rgStegNamn('yrkesgrupp');
 
-// Diagnostiserar varför modellen misslyckas
-function _diagnoseCollinearity(rows, basList) {
-    return _rgDiagnoseCollinearity(rows, basList);
-}
-
 // Per-BAS conditional regressions: gap inom varje BAS efter ålderskontroll
 function _computePerBasGap(rows, basList) {
     return _rgComputePerBasGap(rows, basList, { golv: statGolv() });
-}
-
-// BAS kodas som indikatorvariabler (en kolumn per BAS-intervall utom det första, som är referens)
-function _basIndikatorer(basList) {
-    return _rgBasIndikatorer(basList);
-}
-
-// Sekventiell dekomponering: visa hur gapet krymper när kontroller läggs till. modell = förklaringsmodellen (ADR-56).
-function _computeSequentialGap(rows, ageMean, basList, modell) {
-    return _rgComputeSequentialGap(rows, ageMean, basList, { golv: statGolv(), modell });
 }
 
 // Kvantilregression via IRLS; standardvärdena för maxIter och tol ligger i src/lib/regression.js.

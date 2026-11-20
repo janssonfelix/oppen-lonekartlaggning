@@ -8,13 +8,14 @@
  * felaktig stämpel pekar tillbaka på fel beräkningsversion i ett underlag
  * som ska vara spårbart.
  *
- * VERSION är nu enda källa; src/app/08-version.js genereras ur den.
+ * VERSION är nu enda källa; src/app/08-version.js genereras ur den, och att den incheckade filen är i synk
+ * prövar artefaktgrinden (tools/kontroll.mjs och .github/workflows/ci.yml).
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { generateVersionSource, readVersion, buildDateFor } from '../tools/gen-version.mjs';
+import { readVersion, buildDateFor } from '../tools/gen-version.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -27,14 +28,6 @@ const semverish = v => v.split('.').map(p => String(Number(p))).join('.');
 describe('versionsstämpel', () => {
     it('VERSION följer CalVer ÅÅÅÅ.MM.DD', () => {
         expect(readVersion()).toMatch(/^\d{4}\.\d{2}\.\d{2}$/);
-    });
-
-    it('src/app/08-version.js är i synk med VERSION', () => {
-        const current = readFileSync(join(srcDir, '08-version.js'), 'utf8');
-        expect(
-            current === generateVersionSource(),
-            'src/app/08-version.js är i osynk med VERSION. Kör `npm run build:app`.'
-        ).toBe(true);
     });
 
     it('APP_BUILD_DATE härleds ur versionen (inte systemklockan)', () => {

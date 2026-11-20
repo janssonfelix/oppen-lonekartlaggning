@@ -92,8 +92,8 @@
     --accent-yta: #eff6ff;
     --accent-kant: #bfdbfe;
     --accent-ring: color-mix(in srgb, var(--accent) 20%, transparent);   /* fokusringens yttre skugga */
-    --danger: #b91c1c; /* samma som --status-kritisk */
-    --warning-bg: #fef2f2; /* samma som --status-kritisk-yta */
+    --danger: var(--status-kritisk);
+    --warning-bg: var(--status-kritisk-yta);
     --border: #e1e5ec; /* hårlinje */
     --shadow-sm: 0 1px 2px 0 rgba(16, 24, 40, 0.04);
     --shadow: 0 1px 2px 0 rgba(16, 24, 40, 0.05);   /* kort ligger på sidan, de svävar inte */

@@ -199,7 +199,7 @@ vyn och rapportunderlaget båda använder.
 ## 4. Den stegvisa uppdelningen och steget *+ AID-etikett inom BAS*
 
 **Stegen.** `computeSequentialGap(rows, ageMean, basList, { golv, modell })` i `src/lib/regression.js` (i appen genom
-adaptern `_computeSequentialGap`) skattar könsgapet steg för steg. Raderna filtreras i `_sekvensRigg` som i avsnitt 1.
+`huvudregression`) skattar könsgapet steg för steg. Raderna filtreras i `_sekvensRigg` som i avsnitt 1.
 Stegen är:
 
 1. *Endast kön*;
@@ -545,10 +545,6 @@ nollställer valet, och organisationspaketet bär det inte.
 Filhuvudet i `tests/stat-referens.test.js` beskriver framtagningen och den uppmätta avvikelsen, och toleranserna i
 testerna speglar den.
 
-**Den frusna kopian.** `tests/helpers/gapuppdelning-fore-adr65.js` är `src/lib/gapuppdelning.js` före ADR-65,
-oförändrad. Standardvalet BAS och AID prövas mot den på demot, det stora demot och testfallen: talen ska vara bitlika.
-Filen ändras aldrig.
-
 **Testfilerna:**
 
 | Fil | Prövar |
@@ -564,7 +560,7 @@ Filen ändras aldrig.
 | `tests/osakerhet-adapter.test.js` | Att appens adaptrar (`computeBootstrapCI`, `computePowerAnalysis`, `computeGroupMDE`, `detectOutliers`, `linearRegressionCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`, `_laTrattUnderlagRakna`, `_regKvantilBootstrap`) ger exakt samma tal som `src/lib/osakerhet.js` med samma argument, på demodatan och utan ålder vid tröskeln 3, 10 och 25 |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
-| `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan, de valbara variablerna och den frusna kopian |
+| `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan och de valbara variablerna |
 | `tests/smoke-granssnitt.test.js` | Kortet *Förklara med:*: valet, tangentbordet och texterna |
 | `tests/ktroskel-invarianter.test.js` | I7: uppdelningen med andra val av variabler, vid 10 och 25 (`k-troskeln.md` §10) |
 | `tests/ktroskel-regression.test.js` | Regel R1 och BH-texten i regressionskortet |

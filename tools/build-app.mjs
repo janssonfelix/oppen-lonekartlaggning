@@ -6,8 +6,8 @@
 // Redigera ALDRIG app.js direkt — ändra rätt src/app/NN-*.js och kör:
 //     node tools/build-app.mjs      (eller: npm run build:app)
 //
-// Delarna slås ihop byte för byte (BOM + CRLF bevaras). tests/appsource.test.js
-// vaktar att src/app/ och app.js aldrig glider isär.
+// Delarna slås ihop byte för byte (BOM + CRLF bevaras). Artefaktgrinden (tools/kontroll.mjs
+// och .github/workflows/ci.yml) vaktar att src/app/ och app.js aldrig glider isär.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';

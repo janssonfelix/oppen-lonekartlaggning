@@ -95,7 +95,7 @@ uppgifter utanför exporten (till exempel de anställdas åldrar eller könsför
 tabell vars rubriker inte nämner medel, summa eller kostnad, och inte utdata som saknas i riggen. En tabell som
 riggens underlag lämnar utan rader eller utan total prövas inte med innehåll. Innehållet i bilder prövas inte. De
 beslutade undantagen ligger utanför (`docs/dataskydd/dataskydd.md` §3). Vad mer
-som inte prövas står i testfilerna och i `docs/dataskydd/riskanalys.md` §6.5.
+som inte prövas står i testfilerna och i [`k-troskeln.md`](k-troskeln.md) avsnitt 11.
 
 ## S5. Ingen inbyggd organisation
 
