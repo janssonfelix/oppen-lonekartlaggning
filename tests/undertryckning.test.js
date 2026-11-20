@@ -6,7 +6,7 @@
  * härledningarna i tests/ktroskel-differens.test.js.
  */
 import { describe, it, expect } from 'vitest';
-import { kompletterandeUndertryckning, sammanslagning } from '../src/lib/undertryckning.js';
+import { kompletterandeUndertryckning, sammanslagning, kompletterandeUndertryckningPerNyckel } from '../src/lib/undertryckning.js';
 import { mulberry32 } from '../src/lib/rng.js';
 
 describe('kompletterandeUndertryckning', () => {
@@ -81,4 +81,30 @@ describe('sammanslagning', () => {
             expect(s.size === 0 || s.size >= 2, JSON.stringify(delar)).toBe(true);
         }
     });
+});
+
+describe('kompletterandeUndertryckningPerNyckel (ADR-91: JPA-protokollets blad 2 mot blad 3)', () => {
+    const total = (nyckel, nKv, nMa) => ({ nyckel, nKv, nMa });
+    const del = (nyckel, nKv, nMa, namn, dold = false) => ({ nyckel, nKv, nMa, namn, dold });
+    for (const k of [10, 25]) {
+        it(`k = ${k}: en rest på 1 till k − 1 av ett kön döljer den minsta visade gruppen, och resten blir minst k`, () => {
+            // Intervallet J har 30 + 3 kvinnor och 60 män; blad 2 visar gruppen med 30 kvinnor och 30 män.
+            expect(kompletterandeUndertryckningPerNyckel([total('J', 33, 60)], [del('J', 30, 30, 'a')], k)).toEqual([0]);
+            // Två visade grupper: den minsta (färst kvinnor) döljs, och det räcker.
+            expect(kompletterandeUndertryckningPerNyckel([total('J', 3 + 30 + 40, 120)], [del('J', 40, 60, 'stor'), del('J', 30, 60, 'liten')], k)).toEqual([1]);
+        });
+        it(`k = ${k}: en rest på 0 eller minst k ändrar ingenting; delar med en annan nyckel räknas inte`, () => {
+            expect(kompletterandeUndertryckningPerNyckel([total('J', 30, 30)], [del('J', 30, 30, 'a')], k)).toEqual([]);
+            expect(kompletterandeUndertryckningPerNyckel([total('J', 30 + k, 30)], [del('J', 30, 30, 'a')], k)).toEqual([]);
+            expect(kompletterandeUndertryckningPerNyckel([total('J', 33, 60)], [del('K', 30, 30, 'a')], k)).toEqual([]);
+            expect(kompletterandeUndertryckningPerNyckel([], [del('J', 30, 30, 'a')], k)).toEqual([]);
+        });
+        it(`k = ${k}: en dold grupp räknas till resten för båda könen, så att döljandet för det ena könet kan kräva mer för det andra`, () => {
+            // Kvinnorna: resten 2 döljer b (30 kvinnor). Männen: b:s 2 män blir då rest, och a (k + 5 män) döljs också.
+            const ut = kompletterandeUndertryckningPerNyckel([total('J', 2 + 30 + 40, k + 5 + 2)], [del('J', 40, k + 5, 'a'), del('J', 30, 2, 'b')], k);
+            expect(ut).toEqual([0, 1]);
+            // En grupp vars medelvärden redan inte står räknas till resten men väljs inte igen.
+            expect(kompletterandeUndertryckningPerNyckel([total('J', 32, 60)], [del('J', 30, 30, 'a'), del('J', 2, 30, 'redan', true)], k)).toEqual([0]);
+        });
+    }
 });

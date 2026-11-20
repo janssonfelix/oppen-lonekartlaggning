@@ -98,6 +98,10 @@ export const oppnaFlik = (win, flik) => { const n = win.document.querySelector(`
 //  X      2 kvinnor och 2 män med var sin lön (ett 2-mot-2-gap).
 //  7001   en ensam person i ett stort BAS, med rad i jämförelsestatistiken.
 //  7300   en kvinna och en man i ett stort BAS (kostnaden att lyfta henne = hans lön minus hennes).
+//  J      JPA-protokollets båda blad: 7500 med 30 kvinnor och 30 män, kvinnorna omkring 4 % lägre (Värt att granska, en
+//         rad i blad 2), och 7501 med 3 kvinnor på en lön (J_KV) och 30 män. Intervallet har en säkerställd skillnad
+//         (en rad i blad 3). Intervallets medelvärde för kvinnor i blad 3 minus 7500:s i blad 2 är de 3 kvinnornas
+//         medellön, om inte protokollet undertrycker det (ADR-91).
 //
 // Jämförelsestatistik finns för varje AID och ställningstagande för varje BAS.
 // ===================================================================================
@@ -105,6 +109,7 @@ export const KON_BAS = ['Y1', 'Y2', 'Y3'];
 export const KON_KV = [22157, 22391, 22613];
 export const KON_MA = [44519, 45613, 46817];
 export const ENSAM = 31973, X_KV = 33211, X_MA = 41077, PAR_KV = 29417, PAR_MA = 38963;
+export const J_KV = 22043;
 export const KON_GAP = KON_BAS.flatMap((_, i) => {
     const pct = (KON_KV[i] / KON_MA[i] - 1) * 100, kvot = KON_KV[i] / KON_MA[i] * 100;
     return [pct.toFixed(2), kvot.toFixed(2)].flatMap(s => [s.replace('-', ''), s.replace('-', '').replace('.', ',')]);
@@ -134,9 +139,16 @@ export function byggKonDataset() {
     rader.push(rad('X', 'kvinna', X_KV, 7002, 'Litet'), rad('X', 'kvinna', X_KV, 7002, 'Litet'), rad('X', 'man', X_MA, 7002, 'Litet'), rad('X', 'man', X_MA, 7002, 'Litet'));
     rader.push(rad('S1', 'kvinna', ENSAM, 7001, 'Ensamyrke'));
     rader.push(rad('S3', 'kvinna', PAR_KV, 7300, 'Parjobb'), rad('S3', 'man', PAR_MA, 7300, 'Parjobb'));
+    // J: rader i JPA-protokollets blad 2 (7500) och blad 3 (intervallet), och 3 kvinnor i 7501 utanför blad 2.
+    // Kvinnorna ligger omkring 4 % under männen: säkerställt och minst 3 %, men ingen kvinna mer än 5 % under männens
+    // median (Löneöversyns individnivå), och de 3 kvinnorna i 7501 inte heller. Lönerna ligger under den säkra
+    // befolkningen, som i Y1–Y3, så att organisationens percentiler inte flyttas till ett dolt värde.
+    for (let i = 0; i < 30; i++) rader.push(rad('J', 'kvinna', 22100 + i * 10, 7500, 'Jpayrke', 28 + i), rad('J', 'man', 23000 + i * 10, 7500, 'Jpayrke', 29 + i));
+    for (let i = 0; i < 30; i++) rader.push(rad('J', 'man', 23000 + i * 10, 7501, 'Restyrke', 30 + i));
+    for (let i = 0; i < 3; i++) rader.push(rad('J', 'kvinna', J_KV, 7501, 'Restyrke', 35 + i * 4));
     return rader;
 }
-export const KON_ALLA_BAS = [...STORA, TOPP, ...MELLAN, ...SMA, ...KON_BAS, 'X'];
+export const KON_ALLA_BAS = [...STORA, TOPP, ...MELLAN, ...SMA, ...KON_BAS, 'X', 'J'];
 export function fonsterKon(k) {
     const win = createAppWindow();
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
@@ -455,14 +467,21 @@ export const DIFFERENS_DEKLARATIONER = [
         rubrik: /^BAS \| Antal \| Medelålder \| Medellön alla \| Medellön –34 år/, antal: 'Antal', total: /^Alla$/,
         matt: [{ kolumn: 'Medellön alla' }, { kolumn: 'Medelålder' }] },
     // JPA-protokollet: en rad per grupp (AID-etikett i BAS-intervall, ADR-89) eller BAS-intervall som redovisas, utan
-    // totalrad; medelvärdet per kön har antalet per kön. Riggens underlag ger inga rader (ingen grupp når statusen), så en
-    // total prövas inte här.
+    // totalrad; medelvärdet per kön har antalet per kön. Riggens intervall J ger en rad i varje blad, så att varje blad
+    // för sig har för få rader för en delmängd; bladen mot varandra prövas av deklarationen efter dem.
     { namn: 'protokollet: Lika arbete (AID)', vag: /^protokollet/, blad: /^2\. Lika arbete/,
         rubrik: /^Nr \| AID-etikett \| BAS-intervall \| N totalt \| N kvinnor \| N män \|/, antal: 'N totalt', etikett: 'AID-etikett', total: 'delmängd', kanSaknaTotal: true,
         matt: [{ kolumn: 'Medelvärde kvinnor (kr)', antal: { kolumn: 'N kvinnor' } }, { kolumn: 'Medelvärde män (kr)', antal: { kolumn: 'N män' } }] },
     { namn: 'protokollet: Likvärdigt arbete (BAS)', vag: /^protokollet/, blad: /^3\. Likvärdigt arbete/,
         rubrik: /^Nr \| BAS-intervall \| N totalt \| N kvinnor \| N män \|/, antal: 'N totalt', etikett: 'BAS-intervall', total: 'delmängd', kanSaknaTotal: true,
         matt: [{ kolumn: 'Medelvärde kvinnor (kr)', antal: { kolumn: 'N kvinnor' } }, { kolumn: 'Medelvärde män (kr)', antal: { kolumn: 'N män' } }] },
+    // Bladen mot varandra (ADR-91): intervallets medelvärde per kön i blad 3 minus gruppernas i samma intervall i blad 2
+    // lämnar intervallets övriga personer av det könet, som inte får vara 1 till k − 1. Riggens intervall J har 3 kvinnor
+    // utanför blad 2.
+    { namn: 'protokollet: blad 3 minus blad 2 per BAS-intervall', vag: /^protokollet/,
+        korsblad: { total: { blad: /^3\. Likvärdigt arbete/, rubrik: /^Nr \| BAS-intervall \| N totalt \|/, nyckel: 'BAS-intervall' },
+                    delar: { blad: /^2\. Lika arbete/, rubrik: /^Nr \| AID-etikett \| BAS-intervall \| N totalt \|/, nyckel: 'BAS-intervall' } },
+        matt: [{ kolumn: 'Medelvärde kvinnor (kr)', antal: 'N kvinnor' }, { kolumn: 'Medelvärde män (kr)', antal: 'N män' }] },
     // Löneöversyns fördelning per grupp: med riggens påslag på 100 % är kostnaden gruppens lönesumma. Tabellen har ingen
     // totalrad; varje rad prövas som total för andra. Summan mot bladet Sammanfattning (Använt) står i ett annat blad
     // och prövas i tests/ktroskel-loneoversyn-summor.test.js (ADR-70).

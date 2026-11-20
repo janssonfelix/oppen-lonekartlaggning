@@ -65,9 +65,9 @@ export const MODULES = [
     },
     {
         // Kompletterande undertryckning och sammanslagning (ADR-83, ADR-87): tidigt, så att perbas.js, gapuppdelning.js
-        // och sektor.js kan importera dem. Appen anropar dem inte direkt.
+        // och sektor.js kan importera dem. Appen anropar bara undertryckningen mellan JPA-protokollets blad (ADR-91).
         file: 'undertryckning.js', ns: '__mirrorUndertryckning',
-        expose: { kompletterandeUndertryckning: null, sammanslagning: null }
+        expose: { kompletterandeUndertryckning: null, sammanslagning: null, kompletterandeUndertryckningPerNyckel: '_kompletterandeUndertryckningPerNyckel' }
     },
     {
         file: 'stat.js', ns: '__mirrorStat',

@@ -3030,13 +3030,15 @@ const __mirrorUndertryckning = (() => {
  * Öppen lönekartläggning — kompletterande undertryckning och sammanslagning (ADR-83, ADR-87,
  * `docs/utveckling/k-troskeln.md` avsnitt 2).
  *
- * Två allmänna regler för delar av en total, där totalen skrivs ut och delarna har ett medelvärde var:
+ * Tre allmänna regler för delar av en total, där totalen skrivs ut och delarna har ett medelvärde var:
  *  - `kompletterandeUndertryckning`: vilka visade delar vars medelvärden också ska undertryckas, så att totalen minus
  *    de visade delarna aldrig ger medelvärdet för färre än k personer. Används av tabellerna per BAS-intervall.
  *  - `sammanslagning`: vilka delar som ska räknas samman till en, så att varje del har 0 eller minst k personer av
  *    varje kön. Används där delarnas medelvärden inte står var för sig men går att räkna fram ur ett ekvationssystem
  *    (uppdelningen av löneskillnaden och huvudområdenas andel av den): när varje del har 0 eller minst k av varje kön
  *    är allt som går att räkna fram ett medel för minst k personer av ett kön, eller en vägd summa av sådana.
+ *  - `kompletterandeUndertryckningPerNyckel`: samma regel som den första mellan två tabeller, där totalerna står i den
+ *    ena och delarna, med samma nyckel, i den andra (JPA-protokollets blad 2 och 3, ADR-91).
  *
  * Funktionerna vet inte vad delarna är (BAS-intervall, AID-etiketter, huvudområden, åldersgrupper). Antal och andelar
  * berörs inte (ADR-70).
@@ -3103,8 +3105,44 @@ function sammanslagning(delar, k) {
     return samman.flatMap((s, i) => (s ? [i] : []));
 }
 
-    return { kompletterandeUndertryckning, sammanslagning };
+/**
+ * Kompletterande undertryckning mellan två tabeller (ADR-91): totaler per nyckel (till exempel BAS-intervall) i den ena
+ * och delar med samma nyckel i den andra, med antal och medelvärde per kön i båda. Delarna behöver inte täcka totalen:
+ * resten är totalens personer av ett kön som ingen del med synliga medelvärden har. För varje nyckel och kön får resten
+ * inte vara 1 till k − 1 personer, eftersom totalen minus de visade delarna då ger restens medelvärde. Annars
+ * undertrycks medelvärdena för den minsta visade delen, och så vidare (`kompletterandeUndertryckning`). En undertryckt
+ * del förlorar båda könens medelvärden, eftersom en tabell som har det ena könets medelvärde och skillnaden ger det
+ * andra; den räknas därför till resten för båda könen, och reglerna prövas om tills inget ändras. Totalerna berörs
+ * inte: de betyder det de betydde.
+ *
+ * Antal och andelar berörs inte (ADR-70), och medianer och percentiler inte heller.
+ * @param {Array<{nyckel:string, nKv:number, nMa:number}>} totaler  totalerna vars medelvärden står
+ * @param {Array<{nyckel:string, nKv:number, nMa:number, namn?:string, dold?:boolean}>} delar  `dold`: delens
+ *   medelvärden står redan inte
+ * @param {number} k
+ * @returns {number[]} index i `delar` för de delar vars medelvärden också ska undertryckas, stigande
+ */
+function kompletterandeUndertryckningPerNyckel(totaler, delar, k) {
+    const dold = delar.map(d => !!d.dold), ut = new Set();
+    for (let andrad = true; andrad;) {
+        andrad = false;
+        for (const t of totaler) {
+            for (const kon of /** @type {const} */ (['nKv', 'nMa'])) {
+                const visade = delar.flatMap((d, i) => (d.nyckel === t.nyckel && !dold[i] ? [i] : []));
+                if (!visade.length) continue;
+                const rest = t[kon] - visade.reduce((s, i) => s + delar[i][kon], 0);
+                if (rest <= 0 || rest >= k) continue;
+                const val = kompletterandeUndertryckning([...visade.map(i => ({ n: delar[i][kon], namn: delar[i].namn })), { n: rest, dold: true }], k);
+                for (const j of val) { dold[visade[j]] = true; ut.add(visade[j]); andrad = true; }
+            }
+        }
+    }
+    return [...ut].sort((a, b) => a - b);
+}
+
+    return { kompletterandeUndertryckning, sammanslagning, kompletterandeUndertryckningPerNyckel };
 })();
+const _kompletterandeUndertryckningPerNyckel = __mirrorUndertryckning.kompletterandeUndertryckningPerNyckel;
 
 // ---- speglar src/lib/stat.js ----
 const __mirrorStat = (() => {
@@ -22467,6 +22505,15 @@ function _exportJPAProtocolExport() {
     });
     jpaBas.sort((a, b) => a.gapPct - b.gapPct);
 
+    // Kompletterande undertryckning mellan bladen (ADR-91): intervallets medelvärde per kön i blad 3 minus gruppernas i
+    // samma intervall i blad 2 får inte ge medelvärdet för 1 till k − 1 personer av ett kön. Annars döljs medelvärdena
+    // för den minsta gruppen i blad 2, och så vidare; intervallets rad i blad 3 står som förut, och medianerna står kvar.
+    const kJpa = kTroskel();
+    const jpaUndertryckta = _kompletterandeUndertryckningPerNyckel(
+        jpaBas.filter(b => b.kvN >= kJpa && b.maN >= kJpa).map(b => ({ nyckel: String(b.bas), nKv: b.kvN, nMa: b.maN })),
+        jpaYrken.map(j => ({ nyckel: String(j.bas ?? ''), nKv: j.nKv, nMa: j.nMa, namn: j.yrke, dold: j.medel[0] === '—' })), kJpa)
+        .map(i => { jpaYrken[i].medel = ['—', '—', '—', '—']; return jpaYrken[i]; });
+
     // ---- C) Bygg arbetsbok ----
     const wb = XLSX.utils.book_new();
 
@@ -22551,6 +22598,9 @@ function _exportJPAProtocolExport() {
         });
     }
     if (jpaYrken.length) yrkenRows.push([], ['', `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`]);
+    if (jpaUndertryckta.length) yrkenRows.push([], ['', `Medelvärdena för ${jpaUndertryckta.map(j => _ruGruppMedBas(j)).join(', ')} står inte i bladet: `
+        + `tillsammans med medelvärdet för ${T.niva.bf} i bladet 3. Likvärdigt arbete (BAS) skulle de ge medelvärdet för `
+        + `färre än ${kJpa} ${personOrd(kJpa)} av ett kön i ${T.niva.bf} (kompletterande undertryckning). Medianerna står kvar.`]);
     const yrkenSheet = XLSX.utils.aoa_to_sheet(yrkenRows);
     yrkenSheet['!cols'] = [
         { wch: 4 }, { wch: 42 }, { wch: 10 }, { wch: 10 }, { wch: 10 },

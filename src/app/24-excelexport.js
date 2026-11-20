@@ -384,6 +384,15 @@ function _exportJPAProtocolExport() {
     });
     jpaBas.sort((a, b) => a.gapPct - b.gapPct);
 
+    // Kompletterande undertryckning mellan bladen (ADR-91): intervallets medelvärde per kön i blad 3 minus gruppernas i
+    // samma intervall i blad 2 får inte ge medelvärdet för 1 till k − 1 personer av ett kön. Annars döljs medelvärdena
+    // för den minsta gruppen i blad 2, och så vidare; intervallets rad i blad 3 står som förut, och medianerna står kvar.
+    const kJpa = kTroskel();
+    const jpaUndertryckta = _kompletterandeUndertryckningPerNyckel(
+        jpaBas.filter(b => b.kvN >= kJpa && b.maN >= kJpa).map(b => ({ nyckel: String(b.bas), nKv: b.kvN, nMa: b.maN })),
+        jpaYrken.map(j => ({ nyckel: String(j.bas ?? ''), nKv: j.nKv, nMa: j.nMa, namn: j.yrke, dold: j.medel[0] === '—' })), kJpa)
+        .map(i => { jpaYrken[i].medel = ['—', '—', '—', '—']; return jpaYrken[i]; });
+
     // ---- C) Bygg arbetsbok ----
     const wb = XLSX.utils.book_new();
 
@@ -468,6 +477,9 @@ function _exportJPAProtocolExport() {
         });
     }
     if (jpaYrken.length) yrkenRows.push([], ['', `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`]);
+    if (jpaUndertryckta.length) yrkenRows.push([], ['', `Medelvärdena för ${jpaUndertryckta.map(j => _ruGruppMedBas(j)).join(', ')} står inte i bladet: `
+        + `tillsammans med medelvärdet för ${T.niva.bf} i bladet 3. Likvärdigt arbete (BAS) skulle de ge medelvärdet för `
+        + `färre än ${kJpa} ${personOrd(kJpa)} av ett kön i ${T.niva.bf} (kompletterande undertryckning). Medianerna står kvar.`]);
     const yrkenSheet = XLSX.utils.aoa_to_sheet(yrkenRows);
     yrkenSheet['!cols'] = [
         { wch: 4 }, { wch: 42 }, { wch: 10 }, { wch: 10 }, { wch: 10 },

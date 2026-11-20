@@ -554,7 +554,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   namnger det som undertryckts (ADR-83; `kompletterandeUndertryckning` i `src/lib/undertryckning.js`). Vaktas av
   differensprovet `tests/ktroskel-differens.test.js` och `tests/perbas.test.js`. Kvar, och inte prövat som differens:
   medellönen per åldersgrupp mot raden *Alla* (antalet per åldersgrupp skrivs inte ut) och vägar som kräver
-  uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Prioritering visar skillnaden mellan könen i en grupp
+  uppgifter utanför exporten, som könsfördelningen inom en AID-etikett. Samma regel gäller i protokollet för gemensam
+  lönebedömning mellan bladet för BAS-intervall och bladet för lika arbete: lämnar intervallet minus de visade
+  AID-etiketterna i intervallet färre än tröskeln av ett kön döljs medelvärdena för den minsta visade etiketten, med en
+  not, och intervallets rad och medianerna står kvar (ADR-91; differensprovet i I4 vid 10 och 25, med en deklaration
+  över två blad). Prioritering visar skillnaden mellan könen i en grupp
   bara när båda könen når tröskeln. Annars räknas prioritetsindexet utan könsdel, så att
   poängen inte röjer den dolda skillnaden. Prioriteringens förslag om lägsta
   lönekvintilen kräver tröskeln för båda könen. Vaktas av `tests/ktroskel-utdata.test.js`, som läser
