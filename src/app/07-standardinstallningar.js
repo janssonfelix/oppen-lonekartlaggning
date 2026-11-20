@@ -13,10 +13,10 @@ const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
     volym:        30,   // viktning av gruppens volym
     jamstalldhet: 20    // viktning av jämställdhet (lönegap kön)
 });
-// Kostnadsberäknings-defaults — SKR 2025 PO-påslag som standard
+// Kostnadsberäknings-defaults — PO-påslaget 40 % är ett standardantagande; organisationen sätter sitt eget
 const COST_DEFAULTS = Object.freeze({
     months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
-    poPct:  39.15       // PO-påslag i % (SKR:s cirkulär 2025 — sociala avgifter + pensioner)
+    poPct:  40          // PO-påslag i % (arbetsgivaravgifter och pension ovanpå lönen)
 });
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
@@ -37,8 +37,8 @@ const DEFAULT_PROFILE = Object.freeze({
     // (ADR-74). T finns först efter 09-termer.js, så värdena läses när profilen kopieras (12-tillstand.js och framåt).
     get basSystem()          { return T.niva.en; },
     get aidSystem()          { return `${T.kod.en} (SKR)`; },
-    poPctDefault:            39.15,
-    poPctNote:               'SKR Cirkulär 2025',
+    poPctDefault:            40,
+    poPctNote:               '',       // ingen not till standardantagandet; tom not följer inte med i ett paket
     orgTyp:                  'alla',   // 'kommun' | 'region' | 'alla' — SKR-referensens del (ADR-34)
     locale:                  'sv-SE',
     notes:                   'Neutral standard. Läs in ett organisationspaket för organisationens benämningar.'
