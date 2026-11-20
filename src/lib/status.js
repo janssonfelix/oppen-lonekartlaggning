@@ -84,13 +84,19 @@ export function kiUtesluterLika(ci) {
  * Lönerna sorteras en gång; omkastningen flyttar rangerna i stället för lönerna, med samma byten och samma slumptal,
  * och medianerna läses ur rangordningen. Det ger samma kvoter som att ta medianen av de omkastade lönerna (lika
  * löner får olika rang men samma värde), i O(n) per omkastning utan allokeringar.
+ *
+ * Utgångsläget är kvinnornas löner stigande följda av männens stigande (kopior), inte lönerna i filens ordning: då
+ * beror omkastningen bara på lönerna och antalen, inte på radordningen (ADR-86). Kvinnorna är de första nKv platserna
+ * också efter sorteringen. Lika löner hos en kvinna och en man gör inget ordningsberoende: varje plats bär ett värde,
+ * och utgångsläget (värdet på varje plats) är detsamma i varje ordning; vilken av två lika löner som får den lägre
+ * rangen ändrar inget värde som medianen läser.
  * @param {number[]} kv
  * @param {number[]} ma
  * @param {number} [B]
  * @returns {{lag:number, hog:number}}
  */
 export function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
-    const alla = kv.concat(ma), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
     // rang[i]: platsen i den sorterade listan för personen på plats i; sorterad[r]: lönen med rang r.
     const ordning = Array.from({ length: n }, (_, i) => i).sort((x, y) => alla[x] - alla[y]);
     const rang = new Int32Array(n), sorterad = new Float64Array(n), arKv = new Uint8Array(n);

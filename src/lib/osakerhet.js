@@ -14,7 +14,8 @@
  *   - kvantilBootstrap: intervallen kring kvantilregressionens skattningar (ADR-63).
  *
  * Rena funktioner: raderna, golvet och tröskeln kommer in som argument. Där slump används är generatorn ett val
- * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång. Percentilintervallet tas
+ * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
+ * sorterade listor, så att det inte beror på radordningen (ADR-86). Percentilintervallet tas
  * med percentilintervall i stat.js. Appens funktioner med de tidigare namnen (computeBootstrapCI,
  * computePowerAnalysis, computeGroupMDE, linearRegressionCI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
  * _laTrattUnderlagRakna, _regKvantilBootstrap) är tunna adaptrar som läser tillståndet och anropar funktionerna här.
@@ -81,7 +82,7 @@ const _arMan = r => r.kon === 'man' || r.kon === 'män';
 /**
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen (Översikt).
  *
- * Metod: B dragningar med återläggning ur vardera könet, mediankvoten per dragning, percentilerna 2,5 och 97,5.
+ * Metod: B dragningar med återläggning ur vardera könet, mediankvoten per dragning, percentilintervallet (95 %).
  * B = 2000: med B = 600 blev Monte Carlo-variabiliteten på gränserna ~±0,5 pp, vilket märks för gränsfall; variationen
  * minskar med 1/√B, så B = 2000 ger ungefär hälften, på ~50–200 ms vid alla typiska storlekar. Dragningarnas medianer
  * tas ur rangräkning (O(n) per dragning; sortering gav O(B·n log n), flera sekunder vid 20 000 rader), med identiskt
@@ -393,6 +394,25 @@ export function trattUnderlag(rader, k) {
 
 // ---- Kvantilregressionens intervall ----
 
+/** @param {any} v */
+const _nyckeldel = v => (v == null ? '' : typeof v === 'number' ? v : String(v));
+/**
+ * Den fasta ordningen för kvantilbootstrapens rader: lön, kön, BAS-intervall, ålder och sedan AID, yrke och
+ * ansvarsgrupp. Designmatrisen (kvantilDesign) bygger på lön, kön, BAS och ålder; övriga fält tas med så att
+ * ordningen är fullständig också för rader som skiljer sig bara där. Tal jämförs som tal, övrigt som text.
+ * @param {any} a
+ * @param {any} b
+ */
+function _kvantilRadordning(a, b) {
+    for (const f of ['lon', 'kon', 'bas', 'alder', 'aid', 'yrke', 'ansvarsgrupp']) {
+        const x = _nyckeldel(a[f]), y = _nyckeldel(b[f]);
+        if (x === y) continue;
+        if (typeof x === 'number' && typeof y === 'number') return x - y;
+        return String(x) < String(y) ? -1 : 1;
+    }
+    return 0;
+}
+
 /**
  * Percentil-bootstrapintervall (95 %) på kvantilregressionens könskoefficient per τ och på skillnaden P90 − P10
  * (ADR-63). Varje omsampling drar n rader med återläggning och bygger designen på nytt ur dem (kvantilDesign), så att
@@ -401,15 +421,18 @@ export function trattUnderlag(rader, k) {
  * och varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
  * Ett intervall ges när minst hälften av omsamplingarna gav en skattning. IRLS-skattningen är en approximation av
  * kvantillösningen; intervallet bootstrappar approximationen.
- * @param {any[]} raw  kvantilDesign(...).rader: raderna som punktskattningen räknades på
+ * @param {any[]} raw0  kvantilDesign(...).rader: raderna som punktskattningen räknades på (i vilken ordning som helst)
  * @param {any} modell  förklaringsmodellen
  * @param {Array<{tau:number, error?:boolean, ki?:any}>} results  punktskattningarna; `ki` skrivs in i dem
  * @param {(d: any) => boolean} arKv
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna per kön
  * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number, kiUtelamnad:string}}
  */
-export function kvantilBootstrap(raw, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
-    const rnd = rng || rngFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+export function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
+    const rnd = rng || rngFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+    // Raderna sorteras på en fast, fullständig nyckel innan dragningen, så att omsamplingarna inte beror på
+    // radordningen (ADR-86). Två rader som är lika i nyckeln är utbytbara i designen.
+    const raw = [...raw0].sort(_kvantilRadordning);
     const n = raw.length;
     /** @type {number[][]} */
     const prov = results.map(() => []);
