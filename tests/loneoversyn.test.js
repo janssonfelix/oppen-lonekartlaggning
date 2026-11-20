@@ -7,8 +7,9 @@ import { describe, it, expect } from 'vitest';
 import {
     totalLonSum, computePott, allocate, targetRows, rawGenderGap, suggestTargets, forecastOutcome,
     summarizeGroups, detectLeapfrog, closureTargets, stagedPlan,
-    bandStats, individualRemediation, marketTargets, sensitivityCurve, ettParPerYrke
+    bandStats, individualRemediation, marketTargets, sensitivityCurve, ettParPerYrke, pottArAngiven
 } from '../src/lib/loneoversyn.js';
+import { KVINNO_TROSKEL_DEFAULT } from '../src/lib/likvardighet.js';
 
 const rows = () => [
     { bas: 'A', aid: '5301', kon: 'kvinna', lon: 30000 },
@@ -371,6 +372,42 @@ describe('forecast: forecastOutcome', () => {
         expect(out.använt).toBe(5000);     // 5 individer × 1000
         expect(out.kvar).toBe(-4000);
         expect(out.overBudget).toBe(true);
+        expect(out.pottAngiven).toBe(true);
+    });
+    // Ingen budget angiven är ett eget läge: ingen pott att överskrida och inget kvar att räkna.
+    it('utan angiven pott: pottAngiven falskt, kvar null och ingen överskridning, fast något fördelas', () => {
+        for (const budget of [{ mode: 'kr', value: null }, { mode: 'pct', value: null }, null]) {
+            const out = forecastOutcome(rows(), budget, { mode: 'kr', value: 1000 }, [], { months: 12, poPct: 0 });
+            expect(out.pottAngiven).toBe(false);
+            expect(out.pott).toBe(0);
+            expect(out.använt).toBe(5000);
+            expect(out.kvar).toBeNull();
+            expect(out.overBudget).toBe(false);
+        }
+    });
+    it('en angiven pott på 0 kr flaggas när något fördelas, men inte när inget fördelas', () => {
+        const med = forecastOutcome(rows(), { mode: 'kr', value: 0 }, { mode: 'kr', value: 1000 }, [], { months: 12, poPct: 0 });
+        expect(med).toMatchObject({ pottAngiven: true, pott: 0, kvar: -5000, overBudget: true });
+        const utan = forecastOutcome(rows(), { mode: 'pct', value: 0 }, { mode: 'kr', value: 0 }, [], { months: 12, poPct: 0 });
+        expect(utan).toMatchObject({ pottAngiven: true, pott: 0, kvar: 0, overBudget: false });
+    });
+    it('pottArAngiven: ett tal, också 0, är en angiven pott; null, NaN och ingen budget är det inte', () => {
+        expect(pottArAngiven({ mode: 'kr', value: 0 })).toBe(true);
+        expect(pottArAngiven({ mode: 'pct', value: 2.5 })).toBe(true);
+        expect(pottArAngiven({ mode: 'kr', value: null })).toBe(false);
+        expect(pottArAngiven({ mode: 'kr', value: NaN })).toBe(false);
+        expect(pottArAngiven(null)).toBe(false);
+    });
+    // Gränsen för kvinnodominerat: saknas den gäller standardgränsen ur likvardighet.js; 0 är en gräns som alla
+    // grupper med någon kvinna går över.
+    it('kvThreshold: saknad gräns ger standardgränsen, gränsen 0 är 0', () => {
+        const gen = { mode: 'kr', value: 1000 };
+        const utan = forecastOutcome(rows(), null, gen, [], { months: 12, poPct: 0 });
+        const standard = forecastOutcome(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: KVINNO_TROSKEL_DEFAULT });
+        expect(utan.equityCost).toBe(standard.equityCost);
+        expect(utan.equityCost).toBe(3000);   // 5301 (2 av 3 kvinnor, 67 %); 2000 har 50 %
+        const noll = forecastOutcome(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: 0 });
+        expect(noll.equityCost).toBe(5000);   // båda grupperna har mer än 0 % kvinnor
     });
 });
 

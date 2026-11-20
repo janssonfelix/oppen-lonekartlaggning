@@ -260,6 +260,73 @@ describe('formulären i Löneöversyn', () => {
     });
 });
 
+// Ingen budget angiven är ett eget läge (pottAngiven ur forecastOutcome): ett påslag utan pott överskrider ingen pott.
+// En angiven pott på 0 kr flaggas som förut.
+describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
+    const rita = budget => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__state.forecast.budget = budget;
+        w.__state.forecast.generell = { mode: 'pct', value: 1 };
+        w.__renderTabContent('loneoversyn');
+        const d = w.document, ruta = namn => [...d.querySelectorAll('#lo-slutsatser .slutsats')].find(e => e.querySelector('.slutsats-etikett').textContent === namn);
+        return { w, d, ruta, meter: d.getElementById('forecast-meter').textContent };
+    };
+    it('utan pott: påslaget visas, men ingen varning om överskriden pott och inget negativt Kvar', () => {
+        const { d, ruta, meter } = rita({ mode: 'kr', value: null });
+        expect(d.getElementById('view-loneoversyn').classList.contains('lo-tomt')).toBe(false);
+        expect(meter).not.toMatch(/överskrider potten/);
+        const kvar = ruta('Kvar att fördela');
+        expect(kvar.querySelector('.slutsats-varde').textContent).toBe('–');
+        expect(kvar.querySelector('.slutsats-under').textContent).toBe('ingen pott angiven');
+        expect(kvar.querySelector('.slutsats-under').classList.contains('ar-kritisk')).toBe(false);
+        expect(ruta('Pott').querySelector('.slutsats-under').textContent).toBe('ingen pott angiven');
+        expect(ruta('Använt').querySelector('.slutsats-varde').textContent).not.toBe('0\u00a0kr');
+    });
+    it('en angiven pott på 0 kr: varningen och ett negativt Kvar står kvar', () => {
+        const { ruta, meter } = rita({ mode: 'kr', value: 0 });
+        expect(meter).toMatch(/Fördelningen överskrider potten\./);
+        const kvar = ruta('Kvar att fördela');
+        expect(kvar.querySelector('.slutsats-varde').textContent).toMatch(/^−/);
+        expect(kvar.querySelector('.slutsats-under').textContent).toBe('fördelningen överskrider potten');
+        expect(ruta('Pott').querySelector('.slutsats-varde').textContent).toBe('0\u00a0kr');
+    });
+    it('scenariot utan pott säger att ingen pott är angiven, inte 0 kr', () => {
+        const { w, d } = rita({ mode: 'kr', value: null });
+        w.eval("_forecastSaveScenario('A')");
+        expect(d.getElementById('forecast-scenarios').textContent).toContain('(ingen pott angiven, 0 riktade)');
+    });
+});
+
+// Tröskelmålet: 0 % är ett mål (ingen oförklarad skillnad), ett tomt fält ger standardmålet 5 %, och ett tal utanför
+// fältets min och max avvisas med en mening i stället för att tyst bli något annat.
+describe('Löneöversyn: målet i tröskelmålet', () => {
+    const w = createAppWindow();
+    w.__loadDemoData();
+    w.__renderTabContent('loneoversyn');
+    const falt = w.document.getElementById('forecast-threshold-pct'), sig = w.document.getElementById('forecast-threshold-sig');
+    const resultat = (varde, signifikans = false) => {
+        falt.value = varde; sig.checked = signifikans;
+        w.eval('_forecastThreshold()');
+        return w.document.getElementById('forecast-threshold-result').textContent.replace(/\s+/g, ' ').trim();
+    };
+    it('målet 0 % räknas som 0 %, inte som standardmålet', () => {
+        const noll = resultat('0'), fem = resultat('5');
+        expect(noll).not.toBe(fem);
+        expect(noll).toMatch(/högst 0 %|redan uppfyllt/);   // blanktecknen är samlade till ett mellanslag
+    });
+    it('ett tomt fält ger standardmålet 5 %', () => {
+        expect(resultat('')).toBe(resultat('5'));
+    });
+    it('ett mål under 0 eller över 20 % avvisas med en mening', () => {
+        expect(resultat('-1')).toBe('Ange ett mål mellan 0 och 20 %.');
+        expect(resultat('25')).toBe('Ange ett mål mellan 0 och 20 %.');
+    });
+    it('i läget inte signifikant spelar målet ingen roll', () => {
+        expect(resultat('-1', true)).toBe(resultat('5', true));
+    });
+});
+
 describe('informationsikonen har ett utförande', () => {
     it('varje .info-tip bär linjeikonen «info» och ingen text, också de som ritas av flikarna', () => {
         const w = allaFlikar();

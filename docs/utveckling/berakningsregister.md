@@ -104,12 +104,12 @@ Modellerna beskrivs i [`loneoversynsmodellen.md`](loneoversynsmodellen.md) och
 | Kostnaden: belopp × månader × (1 + PO/100), gånger antal | `periodkostnad`, `kostnadPerAr`, `kostnadsfaktor`, `kostnad.js` | belopp, månader, PO, antal | ADR-84 | `tests/kostnad.test.js` | `08-kostnad-per-ar.json`, `09-kostnad-per-ar-noll-manader.json` |
 | Potten: kronor, eller procent av lönesumman | `computePott`, `totalLonSum`, `loneoversyn.js` | lön, potten | `loneoversynsmodellen.md` §2 | `tests/loneoversyn.test.js` | saknas |
 | Fördelningen: generellt påslag, riktade rader, lägst först, avrundning | `allocate`, `targetRows`, `loneoversyn.js` | lön, kön, AID, BAS, raderna | `loneoversynsmodellen.md` §3–§5 | `tests/loneoversyn.test.js`, `tests/ktroskel-loneoversyn-summor.test.js` | `05-loneoversyn-lagst-forst.json`, `06-loneoversyn-tak-vid-medianen.json`, `07-loneoversyn-generellt-avrundning.json` |
-| Utfallet: över potten, kvar, råa gapet före och efter, kostnad för kvinnodominerade grupper | `forecastOutcome`, `rawGenderGap`, `summarizeGroups`, `bandStats`, `detectLeapfrog`, `loneoversyn.js` | fördelningen | `loneoversynsmodellen.md` §6 | `tests/loneoversyn.test.js`, `tests/ktroskel-loneoversyn-scenarier.test.js` | saknas |
+| Utfallet: angiven pott eller inte, över potten, kvar, råa gapet före och efter, kostnad för kvinnodominerade grupper | `forecastOutcome`, `pottArAngiven`, `rawGenderGap`, `summarizeGroups`, `bandStats`, `detectLeapfrog`, `loneoversyn.js` | fördelningen | `loneoversynsmodellen.md` §6 | `tests/loneoversyn.test.js`, `tests/ktroskel-loneoversyn-scenarier.test.js` | saknas |
 | Det oförklarade gapet före och efter, genom att byta data och köra huvudregressionen | `_forecastOlsGap`, `src/app/36-loneoversyn.js` | före och efter | `loneoversynsmodellen.md` §6 | `tests/ktroskel-loneoversyn-scenarier.test.js` | saknas |
 | Förslag ur kandidatparen, stängning med en andel, marknadsmål, känslighet | `suggestTargets`, `closureTargets`, `marketTargets`, `sensitivityCurve`, `ettParPerYrke`, `loneoversyn.js` | paren, potten | `loneoversynsmodellen.md` §7; ADR-69 | `tests/loneoversyn.test.js`, `tests/loneoversyn-forslag-troskel.test.js` | saknas |
 | Den stegvisa planen | `stagedPlan`, `loneoversyn.js` | fördelningen, antal år | `loneoversynsmodellen.md` §8 | `tests/loneoversyn.test.js` | saknas |
 | Individuell rättelse mot männens median | `individualRemediation`, `loneoversyn.js` | lön, kön, AID, BAS | `loneoversynsmodellen.md` §7 | `tests/loneoversyn.test.js` | saknas |
-| Tröskelmålet: minsta lika procentlyft för kvinnorna som når målet (bisektion) | `likalonslyftForMal`, `loneoversyn.js` | rader, mål, skattningen | `loneoversynsmodellen.md` §9 | `tests/loneoversyn-troskelmal.test.js` | saknas |
+| Tröskelmålet: minsta lika procentlyft för kvinnorna som når målet (bisektion) | `likalonslyftForMal`, `loneoversyn.js` | rader, mål, skattningen | `loneoversynsmodellen.md` §9 | `tests/loneoversyn-troskelmal.test.js`, `tests/granssnitt-vyer.test.js` | saknas |
 | Prioriteringen: avvikelse mot referensen, status, delpoäng, index, snabb vinst | `prioritera`, `prioIndex`, `prioritering.js`; adaptern `computePrioritization` i `src/app/55-prioritering.js` väljer referensen | lön, kön, AID, BAS, referensen | `prioriteringsmodellen.md`; ADR-50, 62 | `tests/prioritering.test.js` | `10-prioritering-en-grupp.json`, `11-prioindex-vikter.json` |
 | Meningen om årsbeloppet för ett par | `arsbeloppMening`, `prioritering.js` | medianer, antal | `prioriteringsmodellen.md` §6 | `tests/prioritering.test.js` | saknas |
 
@@ -166,7 +166,7 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `MAD_TILL_SIGMA`, `MEDIAN_SE_FAKTOR` | 1,4826, 1,2533 | `src/lib/osakerhet.js` | MAD till σ vid normalfördelning; medianens standardfel √(π/2)·σ/√n | Fast |
 | `SMA_GRUPPER_RATTNING` | 0,6 | `src/lib/osakerhet.js` | trattens breddning för små grupper | Fast |
 | `KVANTIL_KI_B`, `KVANTIL_KI_MAX_N` | 200, 2000 | `src/lib/osakerhet.js` | kvantilregressionens intervall | Fast |
-| `KVINNO_TROSKEL_DEFAULT`, `KV_DOM_STAT`, `KV_GRANS_STANDARD` | 60 % | `src/lib/likvardighet.js`, `src/lib/aidbas.js` | gränsen för kvinnodominerat | Inställning (gränsen och definitionen) |
+| `KVINNO_TROSKEL_DEFAULT`, `KV_DOM_STAT`, `KV_GRANS_STANDARD` | 60 % | `src/lib/likvardighet.js`, `src/lib/aidbas.js` | gränsen för kvinnodominerat, också i `forecastOutcome` när ingen gräns skickas | Inställning (gränsen och definitionen) |
 | `ALDERS_GOLV_DEFAULT`, `ALDERS_SPRIDNING_MIN` | 10, 5 år | `src/lib/likvardighet.js` | åldersjusteringen i paren | Fast |
 | `ARSBOKSLUT_K_MIN` | 2 | `src/lib/arsbokslut.js` | lägsta tröskel ett bokslut bär; ett lägre k i filen höjs hit | Fast |
 | `SKAL_GRANSER` | 200 000 kr, 200 tecken, 8 skäl | `src/lib/sakligaskal.js` | gränserna för de sakliga skälen | Fast |
@@ -180,7 +180,7 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `TROSKELMAL_STANDARD_PCT`, `TROSKELMAL_MAX_LYFT_PCT`, `TROSKELMAL_VARV`, `TROSKELMAL_SIGNIFIKANS_P` | 5 %, 40 %, 22, 0,05 | `src/lib/loneoversyn.js` | tröskelmålet; målet går att ändra i fliken | Fast (målet: värde i fliken) |
 
 Värden som står direkt i koden i stället för som namngivna konstanter, och som därför inte går att hitta på namn:
-gränsen 60 i `forecastOutcome` (`loneoversyn.js`), gapgränsen 5 % i `individualRemediation` (`loneoversyn.js`),
+gapgränsen 5 % i `individualRemediation` (`loneoversyn.js`),
 kvoterna 1,10 och 0,90 för över och under BAS-medianen i `src/app/36-loneoversyn.js`, minst 10 av varje kön i
 `genderBandGap` (`lonepolitik.js`), åldersspridningen 5 år i `flaggaIndivider` (`individflaggor.js`), gränsen för
 personer att granska (standard 10 %, 5–30) i `src/app/43-personer-att-granska.js` och talen 1,96, 1,2533 och 1,4826 i

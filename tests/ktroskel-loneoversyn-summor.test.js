@@ -91,6 +91,10 @@ describe('Löneöversyns blad Fördelning: de små grupperna har sina rader, och
         expect(r.grupprader.slice(forsta).every(x => / \| n<10 \| /.test(x))).toBe(true);
         expect(r.grupprader.slice(forsta).map(x => celler(x)[0])).toEqual(['E', 'F', 'S1', 'S3', 'X']);
         ingenDifferens(r, sma.map(g => g.kostnad));
+        // Ingen pott är angiven (bara ett generellt påslag): Sammanfattning säger det, och Kvar är inget tal, inte
+        // minus Använt.
+        expect(r.varde('Pott (kr/mån)')).toBe('ingen pott angiven');
+        expect(r.varde('Kvar att fördela (kr/mån)')).toBe('–');
     });
 
     it('(a) en ensam person under tröskeln: den minsta visade gruppens kostnad och medianer viks in', async () => {

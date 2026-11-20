@@ -2444,7 +2444,7 @@ function totalLonSum(rows) {
  * @param {{mode:string, value:number|null}} budget
  */
 function computePott(rows, budget) {
-    if (!budget || budget.value == null || !isFinite(budget.value)) return 0;
+    if (!budget || budget.value == null || !isFinite(budget.value)) return 0;   // samma villkor som pottArAngiven
     if (budget.mode === 'kr') return Math.max(0, budget.value);
     return Math.max(0, totalLonSum(rows) * budget.value / 100);  // % av lönesumman
 }
@@ -2699,8 +2699,18 @@ function detectLeapfrog(perGroup) {
 }
 
 /**
+ * Sant när budgeten har ett belopp eller en procentsats; ett tomt fält (value null) är ingen angiven pott.
+ * @param {{mode?:string, value:number|null}|null|undefined} budget
+ */
+function pottArAngiven(budget) {
+    return !!budget && budget.value != null && isFinite(budget.value);
+}
+
+/**
  * Hela prognosutfallet: pott, budgetutnyttjande, total kostnad (inkl. PO + period)
  * och råa lönegapet före/efter. Det OFÖRKLARADE gapet (OLS) beräknas i app.js.
+ * Utan angiven pott (pottAngiven false) är pott 0, kvar null och overBudget falskt: det finns ingen pott att
+ * överskrida. En angiven pott på 0 kr flaggas som vanligt när något fördelas.
  * @param {Array} rows
  * @param {{mode:string, value:number|null}} budget
  * @param {{mode:string, value:number|null}} generell
@@ -2712,16 +2722,20 @@ function forecastOutcome(rows, budget, generell, targets, costOpts) {
     const pott = computePott(rows, budget);
     const alloc = allocate(rows, generell, targets, costOpts && costOpts.roundStep);
     const totalRaise = alloc.totals.totalRaise;
-    const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
+    // Gränsen för kvinnodominerat: saknas den gäller arKvinnodominerads standard, KVINNO_TROSKEL_DEFAULT i
+    // likvardighet.js (spegeln exponerar bara funktioner, så konstanten importeras inte hit). 0 är en gräns, inte en som saknas.
+    const kvThreshold = costOpts?.kvThreshold ?? undefined;
     const lonsummaFore = totalLonSum(rows);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
     const kvDefinition = (costOpts && costOpts.kvDefinition) || 'do';
     const equityCost = alloc.perGroup.reduce((s, g) => s + (arKvinnodominerad(g.andelKv, kvDefinition, kvThreshold) ? g.kostnad : 0), 0);
+    const pottAngiven = pottArAngiven(budget);
     return {
         pott,
+        pottAngiven,
         använt: totalRaise,
-        kvar: pott - totalRaise,
-        overBudget: totalRaise > pott + 1e-6,
+        kvar: pottAngiven ? pott - totalRaise : null,
+        overBudget: pottAngiven && totalRaise > pott + 1e-6,
         totalKostnad: periodkostnad(totalRaise, costOpts),
         lonsummaFore,
         lonsummaEfter: lonsummaFore + totalRaise,
