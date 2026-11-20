@@ -27,7 +27,7 @@ function underlag(n = 80, { kvinnor = null } = {}) {
     const rader = [];
     for (let i = 0; i < n; i++) {
         // Varannan fyrtal kvinnor, så att varje BAS-intervall och varje yrkesgrupp har båda könen.
-        const kvinna = kvinnor == null ? i % 8 < 4 : i < kvinnor;
+        const kvinna = kvinnor === null ? i % 8 < 4 : i < kvinnor;
         const bas = 'ABCD'[i % 4];
         const alder = 25 + Math.floor(slump() * 40);
         const lon = Math.round(28000 + 4000 * 'ABCD'.indexOf(bas) + 120 * (alder - 25) - (kvinna ? 900 : 0) + 2500 * (slump() - 0.5));
