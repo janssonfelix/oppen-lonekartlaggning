@@ -41,6 +41,12 @@ export const MODULES = [
                   adjektiv: 'termAdjektiv', genitiv: 'termGenitiv', stor: 'termStor', ordForAntal: 'termForAntal' }
     },
     {
+        // Namnformerna och personOrd: direkt efter termerna (som de importerar), före regression.js som skriver
+        // "personer" i huvudregressionens text
+        file: 'namn.js', ns: '__mirrorNamn',
+        expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
+    },
+    {
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',
@@ -100,17 +106,18 @@ export const MODULES = [
                   dominans: '_aidbasDominans', ingaParText: '_aidbasIngaParText', klassNamn: '_aidbasKlassNamn' }
     },
     {
-        // Regressionsmodellerna (ADR-46-regressionen m.fl.) — importerar stat.js
+        // Regressionsmodellerna (huvudregressionen, ADR-46-regressionen m.fl.) — importerar stat.js, termer.js och namn.js
         file: 'regression.js', ns: '__mirrorRegression',
         expose: {
+            // Huvudregressionen, verktygets huvudtal (adaptern är runOLSRegression i 51-lika-arbete-regressionskort.js)
+            huvudregression: '_rgHuvudregression',
             diagnoseCollinearity: '_rgDiagnoseCollinearity', computePerBasGap: '_rgComputePerBasGap',
             basIndikatorer: '_rgBasIndikatorer', computeSequentialGap: '_rgComputeSequentialGap',
             quantileRegression: '_rgQuantileRegression',
             blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
             kvantilDesign: '_rgKvantilDesign',   // kvantilregressionens design, delad av punktskattningen och bootstrappen (ADR-63)
             // Förklaringsmodellen (ADR-56)
-            computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
-            inomYrkesgrupp: '_rgInomYrkesgrupp',
+            normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
             forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
             modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp',
             // Ålder valfri (ADR-64)
@@ -159,10 +166,6 @@ export const MODULES = [
     {
         file: 'htmltext.js', ns: '__mirrorHtmlText',
         expose: { utanTaggar: '_utanTaggar', htmlTillText: '_htmlTillText', arTal: '_cellArTal' }
-    },
-    {
-        file: 'namn.js', ns: '__mirrorNamn',
-        expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
     },
     {
         file: 'skr-personal.js', ns: '__mirrorSkrPersonal',

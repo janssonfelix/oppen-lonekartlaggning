@@ -15,19 +15,28 @@ och upprepas inte här (avsnitt 9).
 
 | Del | Fil |
 |---|---|
-| Modellerna: förklaringsmodellen, stegen, AID-etikett inom BAS, Blinder-Oaxaca, kvantilregressionen, gap per BAS | `src/lib/regression.js` |
+| Modellerna: huvudregressionen (`huvudregression`) och dess golv, förklaringsmodellen, stegen, AID-etikett inom BAS, Blinder-Oaxaca, kvantilregressionen, gap per BAS | `src/lib/regression.js` |
 | OLS med HC3, t-fördelningen och normalfördelningen | `src/lib/stat.js` |
-| Adaptern som läser appens tillstånd (`getData()`, `statGolv()`, förklaringsmodellen, `harAlder()`) | `src/app/50-regressionsmodeller.js` |
-| Huvudregressionen, modellpanelen, regressionskortet, kvantilregressionens intervall, BH-korrigeringen | `src/app/51-lika-arbete-regressionskort.js` |
+| Adaptrarna som läser appens tillstånd (`getData()`, `statGolv()`, förklaringsmodellen, `harAlder()`) | `src/app/50-regressionsmodeller.js` |
+| Huvudregressionens adapter (`runOLSRegression`), modellpanelen, regressionskortet, kvantilregressionens intervall, BH-korrigeringen | `src/app/51-lika-arbete-regressionskort.js` |
 | Noteringen om en bortvald variabel | `src/lib/rapportunderlag.js` (`bortvaltNotering`) |
 | Var uppstår löneskillnaden? | `src/lib/gapuppdelning.js`, `src/app/68-var-uppstar-gapet.js` |
 | Vakterna | avsnitt 11 |
 
 ## 1. Huvudmodellen och huvudtalet
 
-**Raderna.** `runOLSRegression` (`51-lika-arbete-regressionskort.js`) räknar på `getData()` och tar med rader med lön
-över 0, kön kvinna eller man och, när lönefilen har ålder, en ålder över 0. Med färre än 30 sådana rader skattas
-ingen modell (`low_n`), och med färre än 5 av något kön inte heller (`imbalance`).
+**Var den räknas.** Huvudtalet räknas av `huvudregression(rader, { modell, medAlder, kInstalld, golv })` i
+`src/lib/regression.js`, en ren funktion som inte läser appens tillstånd och går att köra i Node utan webbläsare:
+`rader` är lönefilens rader, `modell` förklaringsmodellen (avsnitt 2; normaliseras mot raderna, standardmodellen när
+den saknas), `medAlder` om lönefilen har ålder (avsnitt 8; räknas ur raderna när den saknas), `kInstalld` den
+inställda tröskeln (spärren i avsnitt 2) och `golv` det som appen kallar `statGolv()` (avsnitt 9). I appen är
+`runOLSRegression` (`51-lika-arbete-regressionskort.js`) en tunn adapter som läser `getData()`, `forklaringsmodell()`,
+`harAlder()`, `kInstalld()` och `statGolv()` och anropar den genom spegeln (`_rgHuvudregression`).
+
+**Raderna.** Med rader menas lönefilens rader (`getData()` i appen) med lön över 0, kön kvinna eller man och, när
+lönefilen har ålder, en ålder över 0. Med färre än 30 sådana rader skattas ingen modell (`low_n`), och med färre än 5
+av något kön inte heller (`imbalance`); golven är konstanterna `HUVUDREGRESSION_MIN_N` och
+`HUVUDREGRESSION_MIN_PER_KON` i `regression.js`.
 
 **Modellen** är OLS på log-lön: ln(lön) = β0 + β1 · kvinna + [β2 · (ålder − medelålder)] + [en indikator per
 BAS-intervall utom referensen], där hakparenteserna är med enligt förklaringsmodellen (avsnitt 2) och BAS kodas som i
@@ -394,8 +403,9 @@ säger i raderna *Modell — oförklarad skillnad* och *Steg + AID-etikett inom 
 
 Golven och redovisningen står i `k-troskeln.md` och upprepas inte här. Regressionens egna tal:
 
-- **Huvudregressionens fasta golv** är 5 av varje kön (och minst 30 rader, avsnitt 1); det justerade gapet med
-  konfidensintervall visas därifrån (`k-troskeln.md` §5).
+- **Huvudregressionens fasta golv** är 5 av varje kön (och minst 30 rader, avsnitt 1; `HUVUDREGRESSION_MIN_PER_KON`
+  och `HUVUDREGRESSION_MIN_N` i `regression.js`); det justerade gapet med konfidensintervall visas därifrån
+  (`k-troskeln.md` §5).
 - **`statGolv()`** gäller regressionerna per BAS-intervall, Blinder-Oaxaca, ansvarssteget och bootstrap-intervallen
   (`k-troskeln.md` §5).
 - **Det ojusterade steget** *Endast kön* och den förklarade andelen redovisas bara när varje kön når tröskeln
@@ -506,6 +516,9 @@ Filen ändras aldrig.
 | `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell; `bhJustera` mot statsmodels `multipletests(method='fdr_bh')` |
 | `tests/sektor.test.js` | Översikten per huvudområde: könskoefficienten som huvudregressionens på samma urval, med och utan ålder (mot stegen och mot `runOLSRegression`: koefficienten, gränserna, n och k), intervallet med HC3 och t-kvantil, k-villkoren, inget tal när kön och BAS inte går att skilja åt, och rubrikregeln |
 | `tests/regression.test.js` | `src/lib/regression.js` direkt: förklaringsmodellen som värde, stegen på vald modell, vad varje variabel tillför, `kvantilDesign` och `quantileRegressionAtAllTau`, modellerna utan ålder och radfiltret |
+| `tests/huvudregression.test.js` | `huvudregression` direkt i Node: könskoefficienten mot en egen designmatris på ett påhittat underlag, modellerna, reservsteget, golven 30 och 5, spärren för *Endast kön*, och fixturen med endast kön mot statsmodels |
+| `tests/huvudregression-adapter.test.js` | Att `runOLSRegression` ger exakt samma returvärde som `huvudregression` med samma argument (varje tal med `Object.is`), på demodatan, utan ålder och i reservsteget |
+| `tests/berakningar-las.test.js` | Ögonblicksbilden av hela returvärdet från `runOLSRegression` på demodatan |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
 | `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan, de valbara variablerna och den frusna kopian |
