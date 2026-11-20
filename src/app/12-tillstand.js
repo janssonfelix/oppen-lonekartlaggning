@@ -293,39 +293,16 @@ const Stat = {
 // genom spegeln under samma namn.
 
 /**
- * Beräknar 95% konfidensband för en enkel linjär regressionslinje.
- * SE av MEDELPREDIKTION vid x: σ × √(1/n + (x−x̄)²/Σ(xi−x̄)²)
- * där σ² = RSS/(n−2). Returnerar punkter med {x, y, lo, hi} jämnt
- * spridda över [minX, maxX].
- *
+ * 95-procentigt konfidensband för en enkel linjär regressionslinje (regressionslinjensBand i src/lib/osakerhet.js):
+ * punkter {x, y, lo, hi} jämnt spridda över [minX, maxX].
  * @param {Array<[number,number]>} data - [x,y]-par
  * @param {number} minX
  * @param {number} maxX
  * @param {number} [steps=30] - antal punkter att returnera
  * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>}
  */
-function linearRegressionCI(data, minX, maxX, steps = 30) {
-    const n = data.length;
-    if (n < 3) return null;
-    const reg = Stat.linearRegression(data);
-    const meanX = data.reduce((s, p) => s + p[0], 0) / n;
-    let ssX = 0, rss = 0;
-    for (let i = 0; i < n; i++) {
-        ssX += (data[i][0] - meanX) ** 2;
-        const yhat = reg.m * data[i][0] + reg.b;
-        rss += (data[i][1] - yhat) ** 2;
-    }
-    if (ssX <= 0) return null;
-    const sigma2 = rss / Math.max(1, n - 2);
-    const Z = 1.96;
-    const out = [];
-    for (let i = 0; i < steps; i++) {
-        const x = minX + (maxX - minX) * (i / (steps - 1));
-        const y = reg.m * x + reg.b;
-        const se = Math.sqrt(Math.max(0, sigma2 * (1 / n + (x - meanX) ** 2 / ssX)));
-        out.push({ x, y, lo: y - Z * se, hi: y + Z * se });
-    }
-    return out;
+function linearRegressionCI(data, minX, maxX, steps) {
+    return _osRegressionslinjensBand(data, minX, maxX, steps);
 }
 
 // ---- Aktivera sortering, kollaps & export på alla huvudtabeller (en gång) ----

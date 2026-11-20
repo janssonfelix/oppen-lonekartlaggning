@@ -18087,39 +18087,16 @@ const Stat = {
 // genom spegeln under samma namn.
 
 /**
- * Beräknar 95% konfidensband för en enkel linjär regressionslinje.
- * SE av MEDELPREDIKTION vid x: σ × √(1/n + (x−x̄)²/Σ(xi−x̄)²)
- * där σ² = RSS/(n−2). Returnerar punkter med {x, y, lo, hi} jämnt
- * spridda över [minX, maxX].
- *
+ * 95-procentigt konfidensband för en enkel linjär regressionslinje (regressionslinjensBand i src/lib/osakerhet.js):
+ * punkter {x, y, lo, hi} jämnt spridda över [minX, maxX].
  * @param {Array<[number,number]>} data - [x,y]-par
  * @param {number} minX
  * @param {number} maxX
  * @param {number} [steps=30] - antal punkter att returnera
  * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>}
  */
-function linearRegressionCI(data, minX, maxX, steps = 30) {
-    const n = data.length;
-    if (n < 3) return null;
-    const reg = Stat.linearRegression(data);
-    const meanX = data.reduce((s, p) => s + p[0], 0) / n;
-    let ssX = 0, rss = 0;
-    for (let i = 0; i < n; i++) {
-        ssX += (data[i][0] - meanX) ** 2;
-        const yhat = reg.m * data[i][0] + reg.b;
-        rss += (data[i][1] - yhat) ** 2;
-    }
-    if (ssX <= 0) return null;
-    const sigma2 = rss / Math.max(1, n - 2);
-    const Z = 1.96;
-    const out = [];
-    for (let i = 0; i < steps; i++) {
-        const x = minX + (maxX - minX) * (i / (steps - 1));
-        const y = reg.m * x + reg.b;
-        const se = Math.sqrt(Math.max(0, sigma2 * (1 / n + (x - meanX) ** 2 / ssX)));
-        out.push({ x, y, lo: y - Z * se, hi: y + Z * se });
-    }
-    return out;
+function linearRegressionCI(data, minX, maxX, steps) {
+    return _osRegressionslinjensBand(data, minX, maxX, steps);
 }
 
 // ---- Aktivera sortering, kollaps & export på alla huvudtabeller (en gång) ----
@@ -18411,47 +18388,14 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
 
 // ---- #10 Bootstrap-CI för mediankvoten kvinnor/män ----
 /**
- * Beräknar 95%-konfidensintervall för median-ratio (kvinnor / män)
- * via percentil-bootstrap. Cachas i state.bootstrapCI så det inte räknas om
- * vid varje rendering.
- *
- * Metod: dra B = 600 sampel med återläggning från vardera könsgrupp,
- * beräkna mediankvot per sampel, ta percentil [2.5, 97.5] för CI.
- *
- * För N > 5000: vi sampar enbart en delmängd om N kvar > 2000 per grupp
- * eftersom medianskattningen redan är extremt stabil — hindrar att
- * en stor organisation blockerar UI-tråden i hundratals ms.
+ * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
+ * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
+ * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv().
  */
 function computeBootstrapCI() {
     const t0 = performance.now();
-    const d = getData().filter(r => r.lon > 0);
-    const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
-    if (kv.length < statGolv() || ma.length < statGolv()) { state.bootstrapCI = null; return; }
-
-    // B=2000: med B=600 blir Monte Carlo-variabiliteten på CI-gränserna
-    // ~±0,5 pp, vilket märks för gränsfalls-par. Variationen minskar med 1/√B, så B=2000 ger ungefär hälften,
-    // och räkningen tar i praktiken ~50-200 ms på alla typiska storlekar.
-    const B = 2000;
-    const ratios = new Array(B);
-    // Dragningarnas medianer ur rangräkning (O(n) per dragning) — sortering ger O(B·n log n), flera sekunder
-    // vid 20 000 rader. Identiskt resultat.
-    const m = _lvBootstrapMedianer(kv, ma, B, _rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mKv = m.kv[b], mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? mKv / mMa : 1;
-    }
-    ratios.sort((a, b) => a - b);
-    const lo = ratios[Math.floor(B * 0.025)];
-    const hi = ratios[Math.floor(B * 0.975)];
-    const point = Stat.median(kv) / Stat.median(ma);
-
-    state.bootstrapCI = {
-        ratio:    { point, lo, hi },
-        gapPct:   { point: (1 - point) * 100, lo: (1 - hi) * 100, hi: (1 - lo) * 100 },
-        elapsed:  performance.now() - t0,
-        B
-    };
+    const ki = _osOrganisationensKvotKI(getData(), statGolv());
+    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
 /**
@@ -18468,76 +18412,13 @@ function fmtCI(ci, decimals = 1) {
 
 // ---- #9 Power-analys: minsta detekterbara effektstorlek ----
 /**
- * Beräknar minsta detekterbara lönegap (kr-procent) för regression β_kön
- * vid 80% power, α=0.05. Använder klassisk formel:
- *
- *     MDE_logβ ≈ (z_{1-α/2} + z_{1-power}) · σ_log · √(1/n_kv + 1/n_ma)
- *              ≈ 2.802 · σ_log · √(1/n_kv + 1/n_ma)
- *
- * där σ_log är spridningen i log(lön) INOM grupp: den poolade standardavvikelsen av
- * residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom BAS
- * med minst statGolv() av varje kön (samma idé som trattdiagrammets σ i Lika arbete,
- * _laTrattUnderlagRakna). Spridningen över hela urvalet duger inte: den rymmer
- * skillnaderna mellan BAS-intervallen och överskattar därmed spridningen inom en grupp,
- * så att MDE per grupp blev för stor. Är underlaget för litet (inga grupper når golvet,
- * eller färre än MDE_SIGMA_MIN_RESIDUALER residualer) faller σ tillbaka på hela urvalet.
- *
+ * Minsta upptäckbara lönegap (procent) för regressionens könskoefficient vid 80 % styrka och α = 0,05, med σ för
+ * log(lön) inom grupp (styrkeanalys i src/lib/osakerhet.js; golvet för grupperna är statGolv()).
  * @returns {null | {n:number, nKv:number, nMa:number, mdePct:number, sigma:number, sigmaKalla:'inomGrupp'|'helaUrvalet',
  *                   sigmaHela:number, sigmaGrupper:number, balanced:boolean}}
  */
-const MDE_SIGMA_MIN_RESIDUALER = 20;
 function computePowerAnalysis() {
-    const d = getData().filter(r => r.lon > 0);
-    if (d.length < 10) return null;
-    const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
-    const kv = d.filter(arKv).map(r => r.lon);
-    const ma = d.filter(arMa).map(r => r.lon);
-    if (kv.length < 2 || ma.length < 2) return null;
-    // SD av log(lön) över hela urvalet — reserven när underlaget per grupp är för litet
-    const allLog = d.map(r => Math.log(r.lon));
-    const meanLog = allLog.reduce((s, v) => s + v, 0) / allLog.length;
-    const varLog  = allLog.reduce((s, v) => s + (v - meanLog) ** 2, 0) / (allLog.length - 1);
-    const sigmaHela = Math.sqrt(varLog);
-    const inom = _mdeSigmaInomGrupp(d, arKv, arMa, statGolv());
-    const sigma = inom ? inom.sigma : sigmaHela;
-    // Cohen-style MDE för diff-of-means på log-skala vid 80% power, α=0.05
-    const Z = 2.802; // 1.96 (α/2 tvåsidig) + 0.842 (power 80%)
-    const mdeLog = Z * sigma * Math.sqrt(1 / kv.length + 1 / ma.length);
-    const mdePct = (Math.exp(mdeLog) - 1) * 100;
-    const minN = Math.min(kv.length, ma.length);
-    const maxN = Math.max(kv.length, ma.length);
-    // Jämn könsfördelning enligt verktygets definition: båda könen ≥ 40% av totalen.
-    const balanced = minN / (minN + maxN) >= 0.4;
-    return { n: d.length, nKv: kv.length, nMa: ma.length, mdePct, sigma, sigmaKalla: inom ? 'inomGrupp' : 'helaUrvalet',
-             sigmaHela, sigmaGrupper: inom ? inom.grupper : 0, balanced };
-}
-/**
- * Poolad standardavvikelse av residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom
- * BAS med minst `golv` av varje kön. Frihetsgraderna är antalet residualer minus två medianer per grupp.
- * @returns {null | {sigma:number, grupper:number, residualer:number}} null när underlaget är för litet
- */
-function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
-    const perGrupp = new Map();
-    for (const r of d) {
-        const kv = arKv(r), ma = arMa(r);
-        if (!kv && !ma) continue;
-        const nyckel = `${r.yrke}|${r.bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { kv: [], ma: [] });
-        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
-    }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= golv && g.ma.length >= golv);
-    if (!grupper.length) return null;
-    let summa = 0, antal = 0;
-    for (const g of grupper) {
-        for (const [loner] of [[g.kv], [g.ma]]) {
-            const logMed = Math.log(Stat.median(loner));
-            for (const v of loner) { summa += (Math.log(v) - logMed) ** 2; antal++; }
-        }
-    }
-    const df = antal - 2 * grupper.length;
-    if (antal < MDE_SIGMA_MIN_RESIDUALER || df < 1) return null;
-    const sigma = Math.sqrt(summa / df);
-    return sigma > 0 ? { sigma, grupper: grupper.length, residualer: antal } : null;
+    return _osStyrkeanalys(getData(), statGolv());
 }
 
 // ---- Process-tracker: status för hela lagresan (kap. 3, §§ 8–14) ----
@@ -18733,24 +18614,15 @@ function _ovRitaFilrad(har, antal) {
 }
 
 /**
- * Beräknar MDE för en specifik undergrupp (t.ex. en yrkesgrupp eller BAS-rad).
- * Återanvänder σ ur computePowerAnalysis: spridningen i log-lön INOM grupp (poolad över
- * yrkesgrupperna inom BAS), inte över hela urvalet — den är stabil över grupper.
- *
+ * Minsta upptäckbara skillnad för en undergrupp (yrkesgrupp, BAS-rad) med σ ur computePowerAnalysis: spridningen i
+ * log-lön INOM grupp (gruppMde i src/lib/osakerhet.js).
  * @param {number} nKv - antal kvinnor i gruppen
  * @param {number} nMa - antal män i gruppen
  * @param {number} [sigmaLog] - σ för log(lön) (default: hämta från cache)
  * @returns {null | {mdePct:number, level:'good'|'fair'|'poor', tooSmall:boolean}}
  */
 function computeGroupMDE(nKv, nMa, sigmaLog) {
-    const sigma = sigmaLog || state.powerAnalysis?.sigma;
-    if (!sigma || nKv < 2 || nMa < 2) return null;
-    const Z = 2.802;
-    const mdeLog = Z * sigma * Math.sqrt(1 / nKv + 1 / nMa);
-    const mdePct = (Math.exp(mdeLog) - 1) * 100;
-    const level = mdePct < 3 ? 'good' : mdePct < 7 ? 'fair' : 'poor';
-    const tooSmall = nKv < 5 || nMa < 5;
-    return { mdePct, level, tooSmall };
+    return _osGruppMde(nKv, nMa, sigmaLog || state.powerAnalysis?.sigma);
 }
 
 // ---- Dashboard stats ----
@@ -18824,49 +18696,13 @@ function populateSelects() {
 
 // ---- Outliers-detektor (rad-nivå) ----
 /**
- * Identifierar individuella löner som ligger ovanligt långt från sin BAS-grupps median.
- * Använder log-skala (robust mot positivt skev fördelning) och Z-poäng = (log(lön) − μ)/σ.
- * Z ≥ threshold flaggas som outlier för manuell granskning (kan vara felinmatning).
+ * Löner som ligger ovanligt långt från sitt BAS-intervalls medel på log-skala (extremvarden i src/lib/osakerhet.js):
+ * |z| ≥ threshold flaggas för manuell granskning (kan vara felinmatning). BAS-intervall under statGolv() bedöms inte.
  * @param {number} [threshold=3] - Z-tröskel.
  * @returns {Array<Object>} Outlier-rader sorterade på |Z| desc.
  */
-function detectOutliers(threshold = 3) {
-    const d = getData();
-    if (!d.length) return [];
-    // Gruppera per BAS, beräkna log-mean + log-SD
-    const byBas = {};
-    d.forEach((r, idx) => {
-        if (!byBas[r.bas]) byBas[r.bas] = [];
-        byBas[r.bas].push({ ...r, _idx: idx + 1 });
-    });
-    const results = [];
-    Object.entries(byBas).forEach(([_bas, rows]) => {
-        if (rows.length < statGolv()) return; // för få för en spridningsskattning
-        const logs = rows.map(r => Math.log(r.lon));
-        const mean = logs.reduce((s, v) => s + v, 0) / logs.length;
-        const variance = logs.reduce((s, v) => s + (v - mean) ** 2, 0) / Math.max(1, logs.length - 1);
-        const sd = Math.sqrt(variance);
-        if (sd === 0) return;
-        const groupMedian = Stat.median(rows.map(r => r.lon));
-        rows.forEach(r => {
-            const z = (Math.log(r.lon) - mean) / sd;
-            if (Math.abs(z) >= threshold) {
-                results.push({
-                    radnr: r.radnr ?? null,
-                    bas: r.bas,
-                    yrke: r.yrke,
-                    kon: r.kon.includes('kvinna') ? 'Kvinna' : 'Man',
-                    alder: r.alder,
-                    lon: r.lon,
-                    groupMedian,
-                    z,
-                    diffPct: ((r.lon - groupMedian) / groupMedian) * 100
-                });
-            }
-        });
-    });
-    results.sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
-    return results;
+function detectOutliers(threshold) {
+    return _osExtremvarden(getData(), statGolv(), threshold);
 }
 
 function renderOutliers() {
@@ -29094,18 +28930,10 @@ function _demoBandFigur(df, k, pol, aLo, aHi) {
 // Översiktens rader: kvinnors och mäns medianlön per BAS-intervall med kvoten och dess 95-procentiga bootstrap-KI.
 // EN beräkning för skärmens tabell, diagrammen och rapporten (Word, PDF) — de kan därför aldrig visa olika tal.
 // Bara BAS-intervall där BÅDA könen når tröskeln får en rad: varje tal i raden bygger på minst k personer.
-// Bootstrap med B = 1000, seedad ur datat så att intervallet blir detsamma varje gång; dragningarnas medianer tas
-// ur rangräkning (_lvBootstrapMedianer, O(n) per dragning utan allokeringar).
-function _laBootstrapGapCI(kvLons, maLons, B = 1000) {
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const ratios = new Array(B);
-    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mKv = m.kv[b], mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
-    }
-    ratios.sort((a, b) => a - b);
-    return { lo: ratios[Math.floor(B * 0.025)], hi: ratios[Math.floor(B * 0.975)] };
+// Intervallet är medianKvotKI i src/lib/osakerhet.js: bootstrap med B = 1000, seedad ur datat så att intervallet blir
+// detsamma varje gång; dragningarnas medianer tas ur rangräkning (_lvBootstrapMedianer, O(n) per dragning).
+function _laBootstrapGapCI(kvLons, maLons, B) {
+    return _osMedianKvotKI(kvLons, maLons, { B });
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
 // och 1,8 s) och behövs av flera vyer — fliken, rapportmodellen (som byggs flera gånger i Dokumentera) och
@@ -29681,31 +29509,10 @@ function _laTrattUnderlag(d, k = kTroskel()) {
 // Gruppen är AID-kod + BAS-intervall ur varje persons egen rad (lika arbete: samma yrkesgrupp på samma nivå), inte
 // yrkesgruppen över alla intervall. Tidigare grupperades per yrke och gruppen fick BAS från sin första rad, så en
 // yrkesgrupp i flera intervall redovisades i ett godtyckligt av dem med alla sina personer.
+// Räkningen är trattUnderlag i src/lib/osakerhet.js; minnet ovan (_laTrattUnderlag) räknar den en gång per underlag
+// och tröskel.
 function _laTrattUnderlagRakna(d, k) {
-    const perGrupp = new Map();
-    for (const r of d) {
-        if (!(r.lon > 0) || !r.bas) continue;
-        const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
-        if (!kv && !ma) continue;
-        const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
-        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
-        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
-    }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
-    if (!grupper.length) return null;
-    const rest = [];
-    for (const g of grupper) {
-        g.medKv = Stat.median(g.kv); g.medMa = Stat.median(g.ma);
-        for (const v of g.kv) rest.push(Math.log(v) - Math.log(g.medKv));
-        for (const v of g.ma) rest.push(Math.log(v) - Math.log(g.medMa));
-    }
-    const sigma = 1.4826 * Stat.median(rest.map(Math.abs));
-    if (!(sigma > 0)) return null;
-    const halv = (nKv, nMa) => 100 * 1.96 * 1.2533 * sigma * Math.sqrt(1 / nKv + 1 / nMa) * (1 + 0.6 / Math.min(nKv, nMa));
-    // En stor grupp (över 300 personer) bedöms med normalformeln och gruppens EGEN spridning (src/lib/status.js).
-    return { sigma, halv, punkter: grupper.map(g => { const kvot = g.medKv / g.medMa * 100, grans = _stsSlumpensGranser(g.kv, g.ma);
-        return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv: g.medKv, medMa: g.medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
-                 utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
+    return _osTrattUnderlag(d, k);
 }
 function _laTrattFigur(u, k = kTroskel()) {
     // Axeln börjar vid den minsta grupp som kan finnas med (tröskeln för varje kön), så att trattens form syns också
@@ -31149,7 +30956,7 @@ let _regKvantilSenast = null;
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
 // tabellen säger det. IRLS-skattningen (_quantileRegression) är en approximation av kvantillösningen; intervallet
 // bootstrappar den approximationen, inte den exakta LP-lösningen.
-const REG_KVANTIL_KI_B = 200, REG_KVANTIL_KI_MAX_N = 2000;
+const REG_KVANTIL_KI_B = _osKonstanter().KVANTIL_KI_B, REG_KVANTIL_KI_MAX_N = _osKonstanter().KVANTIL_KI_MAX_N;
 // Minne för senaste beräkning: kortet ritas om vid varje flikbyte, och bootstrappen är det dyra (uppmätt ~0,5 s
 // på demodatat, ~11 s på 5 000 rader, därav gränsen 2 000 ≈ 4 s). Nyckeln är datats eget frö (antal och lönesummor per kön) plus ålderssumman.
 /** @type {{nyckel: string, ut: any}|null} */
@@ -31203,37 +31010,10 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     }
     return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
 }
+// Omsamplingarna och percentilintervallen är kvantilBootstrap i src/lib/osakerhet.js (B = REG_KVANTIL_KI_B, seedad ur
+// lönerna per kön).
 function _regKvantilBootstrap(raw, modell, results, arKv) {
-    const rnd = _rngFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
-    const n = raw.length, B = REG_KVANTIL_KI_B;
-    const prov = results.map(() => []);
-    const diffProv = [];
-    const i10 = results.findIndex(r => r.tau === 0.1), i90 = results.findIndex(r => r.tau === 0.9);
-    // Ålder centreras på hela urvalets medel (könskoefficienten beror inte på centreringen).
-    const ageMean = modell.alder ? raw.reduce((s, d) => s + d.alder, 0) / n : undefined;
-    // Varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
-    const hel = _rgKvantilDesign(raw, modell, { ageMean });
-    const helBeta = results.map(r => (r.error ? null : (_quantileRegression(hel.X, hel.y, r.tau) || {}).beta || null));
-    for (let b = 0; b < B; b++) {
-        const urval = new Array(n);
-        for (let i = 0; i < n; i++) urval[i] = raw[Math.floor(rnd() * n)];
-        const { X, y, kolumner } = _rgKvantilDesign(urval, modell, { ageMean });
-        const konPct = results.map((r, k) => {
-            if (r.error) return null;
-            const b0 = helBeta[k];
-            const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
-            const fit = _quantileRegression(X, y, r.tau, undefined, undefined, start);
-            return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
-        });
-        konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });
-        if (i10 >= 0 && i90 >= 0 && konPct[i10] != null && konPct[i90] != null) diffProv.push(konPct[i90] - konPct[i10]);
-    }
-    const intervall = v => {
-        v.sort((a, c) => a - c);
-        return v.length < B / 2 ? null : { lag: v[Math.floor(v.length * 0.025)], hog: v[Math.min(v.length - 1, Math.floor(v.length * 0.975))] };
-    };
-    results.forEach((r, k) => { if (!r.error) r.ki = intervall(prov[k]); });
-    return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
+    return _osKvantilBootstrap(raw, modell, results, arKv);
 }
 // Tre skattningar är ingen trend: en rad per del av lönefördelningen, med gapet som ett streck från
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.
@@ -39044,21 +38824,11 @@ function _lpExcelBlad() {
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 
-// Bootstrap-KI på mediankvoten (kvinnors median som % av männens). Samma dragningar
-// som översikten per BAS-intervall (_laBootstrapGapCI), med medianerna ur rangräkning
-// (_lvBootstrapMedianer). B = 2000 matchar computeBootstrapCI: B=600 gav ~±0,5 pp
-// Monte Carlo-spridning på KI-gränserna, vilket märktes för gränsfall.
-function _gdBootstrapGapCI(kvLons, maLons, B = 2000) {
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const ratios = new Array(B);
-    const m = _lvBootstrapMedianer(kvLons, maLons, B, _rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
-    }
-    const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
-    if (ok.length < 20) return null;
-    return { lo: ok[Math.floor(ok.length * 0.025)], hi: ok[Math.floor(ok.length * 0.975)] };
+// Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
+// dragningar som översikten per BAS-intervall (_laBootstrapGapCI), med B = 2000 som computeBootstrapCI; dragningar
+// där männens median inte är positiv räknas inte.
+function _gdBootstrapGapCI(kvLons, maLons, B) {
+    return _osMedianKvotKIGiltiga(kvLons, maLons, { B });
 }
 
 /** Alla grupper som får öppnas i dossier (k-anonymitet som överallt annars). */
