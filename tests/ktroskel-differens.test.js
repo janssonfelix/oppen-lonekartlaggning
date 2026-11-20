@@ -25,6 +25,14 @@
  * kan avrundningen ensam föra resultatet utanför gränsen, men det skyddar inte: ± några procent är fortfarande lönen.
  *
  * Det som inte går att pröva som differens har en motivering i sitt describe-block.
+ *
+ * Förhållandet till invarianten (ADR-88): invarianten I4 (tests/helpers/ktroskel-invariant.js) kör ett differensprov
+ * på det som faktiskt lämnar verktyget vid tröskeln 10 och 25, med riggens enda underlag: varje tabell med medel,
+ * summa eller kostnad är deklarerad i riggen, och en total minus de visade delarna i samma tabell får inte lämna färre
+ * än tröskeln personer. Den här filen står kvar för det invarianten inte når: lib-modulerna med påhittade underlag i
+ * flera storlekar och med en eller fyra personer i den lilla gruppen, varianter som riggens underlag inte har
+ * (recepten, andra variabler i uppdelningen), och ekvationssystemen som bara lösaren (harledLinjart) ser. Självtestet
+ * för invariantens prov står i blocket nedan.
  */
 import { describe, it, expect } from 'vitest';
 import { perBasTabeller } from '../src/lib/perbas.js';
@@ -124,6 +132,18 @@ describe('differensprovet i invarianten (självtest)', () => {
         // Summan går jämnt upp (inget blir över); kvinnornas medel lämnar de tre i B, med avrundningens fel.
         expect(fynd.map(f => [f.kolumn, f.n])).toEqual([['Medellön kvinnor', 3]]);
         expect(Math.abs(fynd[0].medel - 39000)).toBeLessThan(39000 * GRANS);
+    });
+    it('utan uttalad totalrad: en rad som minus en delmängd av de övriga lämnar en känd liten grupp fäller provet', () => {
+        // Raden för hela intervallet S (A, C och D) står bland grupperna; D (4 personer) utelämnas. Med en annan summa för S
+        // går antalet fortfarande jämnt upp, men resten motsvarar ingen känd liten grupp: inget fynd.
+        const nS = 46, medelS = (30 * 30000 + 12 * 28000 + 4 * 41000) / nS;
+        const text = ['Grupp | Antal | Lönesumma', `S | ${nS} | ${Math.round(nS * medelS)}`, 'A | 30 | 900000', 'B | 25 | 800000', 'C | 12 | 336000'].join('\n');
+        const dekl = [{ namn: 'delmängd', vag: /^påhittad export$/, rubrik: /^Grupp \| Antal \| Lönesumma$/, antal: 'Antal', total: 'delmängd',
+            matt: [{ kolumn: 'Lönesumma', typ: 'summa' }] }];
+        const { fynd, fel, oanvanda } = prov(text, dekl);
+        expect([fel, oanvanda]).toEqual([[], []]);
+        expect(fynd.map(f => [f.total, f.n, f.motsvarar])).toEqual([['S', 4, ['grupp D']]]);
+        expect(prov(text.replace(`S | ${nS} | ${Math.round(nS * medelS)}`, 'S | 46 | 1350000'), dekl).fynd).toEqual([]);
     });
     it('en tabell med bara medianer och percentiler prövas inte och kräver ingen deklaration', () => {
         const text = ['Grupp | Antal | Median | P10 | P90', `Alla | ${N} | 30500 | 26000 | 39000`, 'A | 30 | 30000 | 29000 | 31000', 'B | 25 | 32000 | 31000 | 33000'].join('\n');

@@ -163,8 +163,11 @@ export function harledLinjart({ rader, cell, utskrivet, mal }) {
 // går inte att dela upp linjärt.
 // ===================================================================================
 
-/** Rubrikord som kräver en deklaration: en kolumn med medel, summa eller kostnad kan vara en total med delar. */
-export const KRAVER_DEKLARATION = /medel|summa|kostnad|lönesumma/i;
+/**
+ * Rubrikord som kräver en deklaration: en kolumn med medel, summa eller kostnad kan vara en total med delar. Med liten
+ * eller stor begynnelsebokstav, inte versaler: Att göra-listans prioritet MEDEL är ingen kolumn.
+ */
+export const KRAVER_DEKLARATION = /[Mm]edel|[Ss]umma|[Kk]ostnad|[Ll]önesumma/;
 
 /**
  * Ett tal ur en cell som exporten skriver det: tusentalsavgränsare och enhet bort, decimalkomma som punkt. Null för
@@ -248,7 +251,42 @@ export function tabellerIUtdata(utdata) {
     return ut;
 }
 
-const _kol = (rubrik, kolumn) => (typeof kolumn === 'number' ? kolumn : rubrik.indexOf(kolumn));
+const _kol = (rubrik, kolumn) => (typeof kolumn === 'number' ? kolumn
+    : kolumn instanceof RegExp ? rubrik.findIndex(c => kolumn.test(c)) : rubrik.indexOf(kolumn));
+/** En rads antal och medel för ett mått (en summa som medel per person); null där cellen inte har ett tal. */
+function _del(m, r) {
+    let n = tal(r[m.iAntal]);
+    if (m.iAndel >= 0 && n !== null) {
+        const a = tal(r[m.iAndel]);
+        const kv = a === null ? null : Math.round(n * a / 100);
+        n = kv === null ? null : m.antal.komplement ? n - kv : kv;
+    }
+    const v = tal(r[m.i]);
+    if (v === null || n === null) return { n, medel: null };
+    return { n, medel: m.typ === 'summa' ? (n > 0 ? v / n : null) : v };
+}
+/**
+ * Lämnar totalen minus någon delmängd av de övriga raderna precis gruppen g: antalet g.n och medlet inom GRANS?
+ * Delmängderna räknas upp per antal (dynamisk programmering över antalet, med lönesummorna för varje antal).
+ */
+function _delmangdLamnar(tot, ovriga, g) {
+    const c = tot.n - g.n;
+    if (c <= 0) return false;
+    const mal = tot.n * tot.medel - g.n * g.medel, tol = GRANS * g.n * g.medel;
+    let lag = new Map([[0, new Set([0])]]);
+    for (const x of ovriga) {
+        if (x.n <= 0 || x.n > c) continue;
+        const ny = new Map([...lag].map(([n, s]) => [n, new Set(s)]));
+        for (const [n, summor] of lag) {
+            if (n + x.n > c) continue;
+            const mot = ny.get(n + x.n) ?? new Set();
+            for (const s of summor) if (mot.size < 5000) mot.add(Math.round(s + x.n * x.medel));
+            ny.set(n + x.n, mot);
+        }
+        lag = ny;
+    }
+    return [...(lag.get(c) ?? [])].some(s => Math.abs(mal - s) <= tol);
+}
 const _passar = (d, t, rubrik) => d.vag.test(t.namn) && (!d.blad || d.blad.test(t.blad)) && d.rubrik.test(rubrik.join(' | '));
 const _galler = (d, k) => !d.trosklar || d.trosklar.includes(k);
 
@@ -260,14 +298,20 @@ const _galler = (d, k) => !d.trosklar || d.trosklar.includes(k);
  * dela upp) eller `antal` (rubriken för antalet), `etikett` (radens etikett, standard första kolumnen), `total` (den
  * etikett som är totalen), `delar` (valfri: de etiketter som är delar, annars alla övriga rader) och `matt`: en lista
  * med { kolumn, typ: 'medel' | 'summa', antal?: { kolumn } | { andel, komplement? } } — ett mått per kön har sitt
- * antal i en egen kolumn eller som andel kvinnor av antalet (komplement: männen). `trosklar` (valfri) begränsar
- * deklarationen till vissa trösklar.
+ * antal i en egen kolumn eller som andel kvinnor av antalet (komplement: männen). En kolumn anges med sin rubrik,
+ * ett reguljärt uttryck eller ett index. `trosklar` (valfri) begränsar deklarationen till vissa trösklar;
+ * `kanSaknaTotal` säger att tabellen vid den här tröskeln kan sakna en total att pröva.
  *
  * För varje rubrikrad som en deklaration med mått känner igen läses raderna under den, tills en rad saknar ett
  * heltal i antalet. Totalen är den rad vars etikett matchar `total`. För varje mått räknas resten: totalen minus de
  * delar som har ett värde, i antal och medel (`rest`); en summa räknas först om till medel per person. En rest med 1
  * till k − 1 personer är ett fynd: dess medel går att räkna fram. `kanda` är riggens små grupper ({namn, n, medel});
  * ett fynd säger vilken av dem resten motsvarar (samma antal och medel inom GRANS), så att meddelandet går att följa.
+ *
+ * `total: 'delmängd'` är för en tabell utan uttalad totalrad: varje rad prövas som total för en delmängd av de övriga
+ * (en rad vars antal är summan av andras), och ett fynd är en rad som minus någon delmängd lämnar precis en av riggens
+ * små grupper, i antal och medel inom GRANS. Riggens kunskap om underlaget avgör alltså här om en rest är en liten
+ * grupp: ett antal som råkar gå jämnt upp ger annars ett medel som inte motsvarar något.
  *
  * Provet fäller också (i `odeklarerade`) en rubrikrad med ett ord ur KRAVER_DEKLARATION som ingen deklaration känner
  * igen, och (i `oanvanda`) en deklaration som inte känner igen någon tabell, eller med mått inte prövade någon total,
@@ -306,31 +350,36 @@ export function differensprov(tabeller, deklarationer, { k, kanda = [] }) {
                 if (n === null || !Number.isInteger(n)) break;
                 rader.push(t.rader[r]);
             }
+            const plats = `${t.namn}${t.blad ? ` [${t.blad}]` : ''}`;
+            if (d.total === 'delmängd') {
+                // Ingen uttalad total: varje rad prövas som total för en delmängd av de övriga, mot riggens små grupper.
+                for (const m of matt) {
+                    const varden = rader.map(r => ({ r, ..._del(m, r) })).filter(x => x.n !== null && x.medel !== null);
+                    if (varden.length < 2) continue;
+                    provade.set(d, provade.get(d) + 1);
+                    for (const tot of varden) for (const g of kanda) {
+                        if (!(g.n < k) || !_delmangdLamnar(tot, varden.filter(x => x !== tot), g)) continue;
+                        fynd.push({ deklaration: d.namn, vag: t.namn, blad: t.blad, kolumn: m.kolumn, total: tot.r[iEtikett], n: g.n,
+                            medel: Math.round(g.medel), motsvarar: [g.namn],
+                            text: `${plats}, ${m.kolumn}: raden "${tot.r[iEtikett]}" minus en delmängd av de övriga raderna lämnar `
+                                + `${g.n} ${g.n === 1 ? 'person' : 'personer'} med medel ${Math.round(g.medel)} (${g.namn})` });
+                    }
+                }
+                return;
+            }
             const totaler = rader.filter(r => d.total.test(r[iEtikett] ?? ''));
             if (totaler.length !== 1) return;   // ingen total i den här tabellen: inget att pröva
             const total = totaler[0];
             const delar = rader.filter(r => r !== total && (!d.delar || d.delar.test(r[iEtikett] ?? '')));
             for (const m of matt) {
-                const antal = r => {
-                    const n = tal(r[m.iAntal]);
-                    if (m.iAndel < 0 || n === null) return n;
-                    const a = tal(r[m.iAndel]);
-                    if (a === null) return null;
-                    const kv = Math.round(n * a / 100);
-                    return m.antal.komplement ? n - kv : kv;
-                };
-                const del = r => {
-                    const v = tal(r[m.i]), n = antal(r);
-                    if (v === null || n === null) return { n, medel: null };
-                    return { n, medel: m.typ === 'summa' ? (n > 0 ? v / n : null) : v };
-                };
+                const del = r => _del(m, r);
                 const tot = del(total);
                 if (tot.n === null || tot.medel === null) continue;
                 provade.set(d, provade.get(d) + 1);
                 const visade = delar.map(del).filter(x => x.n !== null && x.medel !== null);
                 const nVisade = visade.reduce((s, x) => s + x.n, 0);
                 if (nVisade > tot.n) {
-                    fel.push(`${d.namn}: delarna har fler personer (${nVisade}) än totalen (${tot.n}) i kolumnen ${m.kolumn} (${t.namn}${t.blad ? ` [${t.blad}]` : ''}): deklarationen stämmer inte`);
+                    fel.push(`${d.namn}: delarna har fler personer (${nVisade}) än totalen (${tot.n}) i kolumnen ${m.kolumn} (${plats}): deklarationen stämmer inte`);
                     continue;
                 }
                 const r = rest(tot, visade);
@@ -338,7 +387,7 @@ export function differensprov(tabeller, deklarationer, { k, kanda = [] }) {
                 const motsvarar = kanda.filter(g => g.n === r.n && harlett(r.medel, g.medel)).map(g => g.namn);
                 fynd.push({ deklaration: d.namn, vag: t.namn, blad: t.blad, kolumn: m.kolumn, total: total[iEtikett], n: r.n,
                     medel: Math.round(r.medel), motsvarar,
-                    text: `${t.namn}${t.blad ? ` [${t.blad}]` : ''}, ${m.kolumn}: raden "${total[iEtikett]}" minus ${visade.length} visade rader `
+                    text: `${plats}, ${m.kolumn}: raden "${total[iEtikett]}" minus ${visade.length} visade rader `
                         + `lämnar ${r.n} ${r.n === 1 ? 'person' : 'personer'} med medel ${Math.round(r.medel)}`
                         + (motsvarar.length ? ` (${motsvarar.join(', ')})` : ' (ingen känd liten grupp i underlaget)') });
             }

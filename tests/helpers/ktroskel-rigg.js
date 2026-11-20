@@ -274,6 +274,16 @@ export async function samlaUtdata(w) {
             if (el.closest(EXPORTLAGE_UNDANTAG) || el.closest('#outliers-container, #print-report') || el.children.length) continue;
             rader.push(normalisera(`${el.textContent} ${attributtext(el)}`));
         }
+        // Tabellerna i samma ritning, rad för rad, för differensprovet (tests/helpers/differens.js): löptexten ovan
+        // har inga kolumner. Inga nya ritningar.
+        ut.tabeller = [];
+        for (const t of d.body.querySelectorAll('table')) {
+            if (t.closest(EXPORTLAGE_UNDANTAG) || t.closest('#outliers-container, #print-report')) continue;
+            const flik = t.closest('[id^="view-"]')?.id?.slice(5) ?? '';
+            ut.tabeller.push({ namn: `skärm i exportläget: ${flik}${t.id ? ` #${t.id}` : ''}`, blad: normalisera(t.querySelector('caption')?.textContent ?? '').trim(),
+                rader: [...t.querySelectorAll('tr')].map(tr => [...tr.children].flatMap(c => [normalisera(c.textContent).replace(/\s+/g, ' ').trim(),
+                    ...Array(Math.max(0, (Number(c.getAttribute('colspan')) || 1) - 1)).fill('')])) });
+        }
         return rader.join('\n');
     }));
     // Statistikens matchning i Löneläget: sammanfattningen ovanför tabellen och Beräkning & urval, ritade i exportläget
@@ -418,6 +428,99 @@ export async function samlaUtdata(w) {
             lagg(`diagramdata: ${id} (med bokslut)`, diagramText(el ? w.__chartExportRows(el) : [], !!d.getElementById(id)?._figur));
         }
     });
+    return ut;
+}
+
+// ===================================================================================
+// Differensprovet i invarianten (differensprov i tests/helpers/differens.js).
+//
+// Varje tabell i riggens utdata vars rubrikrad har en kolumn med medel, summa eller kostnad deklareras här: med
+// kolumnerna för antal och mått och raden som är totalen, eller som inget att dela upp, med skälet. En rubrikrad utan
+// deklaration fäller invarianten, och det är så en ny utdata får provet: Definition of Done kräver att den deklareras
+// (.github/CONTRIBUTING.md punkt 3). Medianer och percentiler är aldrig mått här: de går inte att dela upp linjärt.
+// En deklaration som inte längre känner igen någon tabell fäller också, så att den inte tyst slutar gälla.
+// ===================================================================================
+const TABELLERNA_PER_BAS = /^(Word-utkastet|utskrift: |Excel alla flikar|ZIP Excel-filen)/;
+const ANDEL_KV = /^Andel kvinnor/;
+export const DIFFERENS_DEKLARATIONER = [
+    // Tabellerna per BAS-intervall (ADR-83): raden Alla räknas på hela underlaget, också de utelämnade intervallen.
+    // Medellön och medelålder per kön har sitt antal som andel kvinnor av antalet.
+    { namn: 'per BAS-intervall: Löneskillnader inom likvärdigt arbete', vag: TABELLERNA_PER_BAS,
+        rubrik: /^BAS \| Antal \| Medellön alla \| Medellön män \| Medellön kvinnor \|/, antal: 'Antal', total: /^Alla$/,
+        matt: [{ kolumn: 'Medellön alla' }, { kolumn: 'Medellön män', antal: { andel: ANDEL_KV, komplement: true } },
+            { kolumn: 'Medellön kvinnor', antal: { andel: ANDEL_KV } }, { kolumn: 'Medelålder alla' },
+            { kolumn: 'Medelålder män', antal: { andel: ANDEL_KV, komplement: true } }, { kolumn: 'Medelålder kvinnor', antal: { andel: ANDEL_KV } }] },
+    // Medellönen per åldersgrupp prövas inte: antalet per åldersgrupp skrivs inte ut (k-troskeln.md avsnitt 2).
+    { namn: 'per BAS-intervall: Löneskillnader i åldersgrupper', vag: TABELLERNA_PER_BAS,
+        rubrik: /^BAS \| Antal \| Medelålder \| Medellön alla \| Medellön –34 år/, antal: 'Antal', total: /^Alla$/,
+        matt: [{ kolumn: 'Medellön alla' }, { kolumn: 'Medelålder' }] },
+    // JPA-protokollet: en rad per AID-etikett eller BAS-intervall som redovisas, utan totalrad; medelvärdet per kön har
+    // antalet per kön. Riggens underlag ger inga rader (ingen grupp når statusen), så en total prövas inte här.
+    { namn: 'protokollet: Lika arbete (AID)', vag: /^protokollet/, blad: /^2\. Lika arbete/,
+        rubrik: /^Nr \| AID-etikett \| N totalt \| N kvinnor \| N män \|/, antal: 'N totalt', etikett: 'AID-etikett', total: 'delmängd', kanSaknaTotal: true,
+        matt: [{ kolumn: 'Medelvärde kvinnor (kr)', antal: { kolumn: 'N kvinnor' } }, { kolumn: 'Medelvärde män (kr)', antal: { kolumn: 'N män' } }] },
+    { namn: 'protokollet: Likvärdigt arbete (BAS)', vag: /^protokollet/, blad: /^3\. Likvärdigt arbete/,
+        rubrik: /^Nr \| BAS-intervall \| N totalt \| N kvinnor \| N män \|/, antal: 'N totalt', etikett: 'BAS-intervall', total: 'delmängd', kanSaknaTotal: true,
+        matt: [{ kolumn: 'Medelvärde kvinnor (kr)', antal: { kolumn: 'N kvinnor' } }, { kolumn: 'Medelvärde män (kr)', antal: { kolumn: 'N män' } }] },
+    // Löneöversyns fördelning per grupp: med riggens påslag på 100 % är kostnaden gruppens lönesumma. Tabellen har ingen
+    // totalrad; varje rad prövas som total för andra. Summan mot bladet Sammanfattning (Använt) står i ett annat blad
+    // och prövas i tests/ktroskel-loneoversyn-summor.test.js (ADR-70).
+    { namn: 'Löneöversyn: Fördelning', vag: /^Löneöversyn/, blad: /^Fördelning$/,
+        rubrik: /^BAS \| AID-kod \| n \| Andel kvinnor \(%\) \| Gammal median \| Ny median \| Förändring \(%\) \| Kostnad \(kr\/mån\)$/,
+        antal: 'n', etikett: 'AID-kod', total: 'delmängd', matt: [{ kolumn: 'Kostnad (kr/mån)', typ: 'summa' }] },
+    { namn: 'Löneöversyn: utfallstabellen i exportläget', vag: /^skärm i exportläget: loneoversyn/,
+        rubrik: /^BAS \| AID-kod \| n \| Andel kv \| Gammal median \| Ny median \| Δ \| Kostnad \|/,
+        antal: 'n', etikett: 'AID-kod', total: 'delmängd', matt: [{ kolumn: 'Kostnad', typ: 'summa' }] },
+    { namn: 'Löneöversyn: Sammanfattning', vag: /^Löneöversyn/, blad: /^Sammanfattning$/, rubrik: /^Budgetläge \| % av lönesumman$/,
+        inget: 'nyckel och värde för hela löneöversynen, inga grupper; summan mot bladet Fördelning prövas i tests/ktroskel-loneoversyn-summor.test.js' },
+    { namn: 'Löneöversyn: kostnaden per år', vag: /^skärm i exportläget: loneoversyn/, rubrik: /^År \| Andel infört \| Ack\. kostnad/,
+        inget: 'en rad per år för hela organisationen, inga grupper' },
+    // Handlingsplanen och Prioritering: kostnaden att nå referensen per grupp som når tröskeln, en rad per grupp och
+    // ingen totalrad. Kostnaden är (referens − median) × antal × 12 × påslaget, alltså en median och inget medel.
+    { namn: 'handlingsplanen i rapporten', vag: /^(Word-utkastet|utskrift: )/, rubrik: /^Grupp \| Antal berörda \| Underlag \| Uppskattad kostnad \|/,
+        inget: 'kostnaden att nå referensen per grupp som når tröskeln (en median), ingen totalrad' },
+    { namn: 'handlingsplanen i rapportunderlaget och Rapporttext', vag: /^(rapportunderlag: |skärm i exportläget: rapporttext)/,
+        rubrik: /^Åtgärd \| Grupp \| Antal berörda \| Underlag \| Uppskattad kostnad per år/,
+        inget: 'kostnaden att nå referensen per grupp som når tröskeln (en median), ingen totalrad' },
+    { namn: 'handlingsplanen i Excel', vag: /^handlingsplanen/, blad: /^Handlingsplan$/,
+        rubrik: /^Åtgärd \| Grupp \(AID-etikett och BAS-intervall\) \| Antal berörda \|.*Beräknad kostnad \(kr\/år, inkl\. PO\)/,
+        inget: 'kostnaden att nå referensen per grupp som når tröskeln (en median), ingen totalrad' },
+    { namn: 'handlingsplanen i exportläget', vag: /^skärm i exportläget: handlingsplan/,
+        rubrik: /^Åtgärd och grupp \| Grupp \(AID-etikett och BAS-intervall\) \| Antal berörda \|.*Beräknad kostnad \(kr\/år\)/,
+        inget: 'kostnaden att nå referensen per grupp som når tröskeln (en median), ingen totalrad' },
+    { namn: 'Prioritering i Excel', vag: /^(Excel alla flikar|prioriteringslistan|ZIP Excel-filen)/, blad: /^Prioritering$/,
+        rubrik: /^Prioriteringsindex \(0–100, högt = först\) \| AID-etikett/,
+        inget: 'medianer och kostnaden att nå referensen (en median) per grupp som når tröskeln, ingen totalrad' },
+    { namn: 'Prioritering: tabellen', vag: /^(tabell-CSV: prio-table|skärm i exportläget: prioritering)/, rubrik: /^Prio \| AID-etikett \| BAS \| Status \| Antal \|/,
+        inget: 'medianer och kostnaden att nå referensen (en median) per grupp som når tröskeln, ingen totalrad' },
+    { namn: 'Prioritering: kostnadsdiagrammet', vag: /^diagramdata( \(Alla diagram\))?: (chart-prio-pareto|ut-diagram-chart-prio-pareto)/,
+        rubrik: /^Serie \| Årskostnad \(kr\)/, inget: 'kostnaden att nå referensen per grupp som når tröskeln, ingen total' },
+    // Var uppstår löneskillnaden (trappan): delar av skillnaden mellan könens medellöner, inte medel per grupp. Små
+    // grupper räknas samman innan delarna räknas (ADR-87); ekvationssystemet prövas med lösaren i
+    // tests/ktroskel-differens.test.js.
+    { namn: 'Var uppstår löneskillnaden: trappans diagramdata', vag: /^diagramdata( \(Alla diagram\))?: /,
+        rubrik: /^Serie \| x \| Skillnad i medellön \(kr\/månad\) \| Undre \| Övre \| Skillnad \(kr\/mån\)$/,
+        inget: 'delar av löneskillnaden mellan könen, inga medel per grupp; prövas med lösaren i tests/ktroskel-differens.test.js (ADR-87)' },
+    // Förklaringstext med nyckel och text.
+    { namn: 'metodbladen', vag: /^(Excel alla flikar|ZIP Excel-filen|prioriteringslistan|handlingsplanen|protokollet)/,
+        blad: /^(Metodik|Vägledning|5\. Metodik & rättslig grund)$/, rubrik: /./, inget: 'förklaringstext, inga tal' },
+];
+
+/**
+ * Riggens små grupper, för differensprovets meddelanden och för tabeller utan totalrad: varje BAS-intervall,
+ * AID-etikett och AID-etikett inom BAS-intervall med 1 till k − 1 personer, i hela gruppen och per kön.
+ * @param {any[]} rader
+ * @param {number} k
+ */
+export function smaGrupper(rader, k) {
+    const ut = [];
+    for (const [falt, nyckel] of [['BAS', r => r.bas], ['AID', r => r.aid], ['AID och BAS', r => `${r.aid} ${r.bas}`]]) {
+        for (const [kon, urval] of [['', () => true], [', kvinnor', r => r.kon === 'kvinna'], [', män', r => r.kon === 'man']]) {
+            const grupper = new Map();
+            for (const r of rader.filter(urval)) { const g = grupper.get(nyckel(r)) ?? []; g.push(r.lon); grupper.set(nyckel(r), g); }
+            for (const [namn, l] of grupper) if (l.length < k) ut.push({ namn: `${falt} ${namn}${kon}`, n: l.length, medel: l.reduce((s, v) => s + v, 0) / l.length });
+        }
+    }
     return ut;
 }
 
