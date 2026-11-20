@@ -91,6 +91,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 | ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
 | ADR-84 | PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning | Gällande | 2026-11-19 |
+| ADR-86 | Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska | Gällande | 2026-11-19 |
 
 ## Besluten
 
@@ -509,3 +510,21 @@ ett avrundat antagande och gränssnittet säger det, utan att namnge någon käl
 påslaget (`poNot`) finns kvar; verktygets standard har ingen not. *Avvisat:* att behålla 39,15 % med hänvisningen, som
 saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i dag:* `COST_DEFAULTS` i
 `src/app/07-standardinstallningar.js`.
+
+**ADR-86 — Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska.**
+Beslutat av underhållaren 2026-11-19. Bootstrapintervallen, omkastningens gränser (slumpens gränser i
+uppmärksamhetstrappan och trattdiagrammet) och kvantilregressionens intervall seedades redan ur antal och summa per
+serie, men dragningarna pekade på platser i listan som den stod i filen. Samma löner i en annan ordning gav därför
+andra gränser (i en mätning skilde sig bootstrapintervallet i 200 fall av 200, som mest 2,3 procentenheter vid 30 + 20
+personer, och slumpens gränser i 199 av 200), och en grupp nära gränsen kunde få olika status beroende på hur filen
+var sorterad. Nu dras bootstrapen ur gruppens löner sorterade stigande, omkastningen utgår från kvinnornas löner
+stigande följda av männens, kvantilbootstrapen sorterar raderna på en fast, fullständig nyckel (lön, kön,
+BAS-intervall, ålder, AID, yrke, ansvarsgrupp), och seeden summerar talen i stigande ordning, så att en summa av löner
+med öre inte avrundas olika i två ordningar. Sorteringen görs en gång, utanför dragningarna. Percentilintervallet tog
+den nedre gränsen med index golvet av n · 0,025 och den övre med golvet av n · 0,975, så att med 1 000 dragningar låg
+25 under den nedre och 24 över den övre; nu har den övre index n − 1 − golvet av n · 0,025, och lika många ligger på var
+sida. Intervallgränserna ändrades en gång, med några tiondels procentenheter; punktskattningarna berörs inte.
+Nedsamplingen av punktmoln följer fortfarande filens ordning: den avgör vilka punkter som ritas, inget tal som
+redovisas. *Avvisat:* att bara seeda ur den sorterade listan och fortsätta dra ur filens ordning, som inte tar bort
+beroendet; att lämna indexen, vars fel är litet men alltid drar åt samma håll. *Gäller i dag:*
+`regressionsmodellen.md` avsnitt 6–7, `likvardighetsmodellen.md` avsnitt 5, `src/lib/rng.js`.

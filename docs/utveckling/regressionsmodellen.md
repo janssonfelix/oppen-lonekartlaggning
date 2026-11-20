@@ -303,11 +303,15 @@ approximation av kvantillösningen, inte den exakta minimeringen, och kortet sä
 
 **Intervallen.** `kvantilBootstrap` i `src/lib/osakerhet.js` (i appen adaptern `_regKvantilBootstrap`, anropad av
 `_regKvantilBerakna` i `51-lika-arbete-regressionskort.js`) ger ett percentil-bootstrap-intervall för `konPct` vid
-varje τ och för skillnaden P90 − P10: **B = 200** omsamplingar (`KVANTIL_KI_B`) av raderna med återläggning, seedade ur datat så att intervallet blir detsamma varje gång. Varje
+varje τ och för skillnaden P90 − P10: **B = 200** omsamplingar (`KVANTIL_KI_B`) av raderna med återläggning, seedade ur datat så att intervallet blir detsamma varje gång. Raderna
+sorteras först på en fast, fullständig nyckel (lön, kön, BAS-intervall, ålder, AID, yrke, ansvarsgrupp), så att
+omsamplingarna beror på raderna och inte på deras ordning i filen (ADR-86); två rader som är lika i nyckeln är
+utbytbara i designen. Varje
 omsampling bygger designen på nytt ur de dragna raderna, så att referensintervallet är det första som finns i
 omsamplingen och ett intervall som inte kom med inte ger en nollkolumn; åldern centreras på hela urvalets medel, och
-IRLS startar i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare. Gränserna är 2,5- och
-97,5-percentilen av de lyckade omsamplingarna; lyckas färre än hälften ges inget intervall.
+IRLS startar i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare. Gränserna är
+percentilintervallet av de lyckade omsamplingarna (`percentilintervall`, avsnitt 7); lyckas färre än hälften ges inget
+intervall.
 
 **Gränsen.** Med fler än **2 000 personer** (`KVANTIL_KI_MAX_N`, i appen `REG_KVANTIL_KI_MAX_N`) räknas inget intervall, på grund av tiden, och
 kortet säger det.
@@ -354,8 +358,13 @@ räknas i `src/lib/osakerhet.js` (`organisationensKvotKI`, `medianKvotKI`, `medi
 `regressionslinjensBand`, `trattUnderlag`), där antalen dragningar och faktorerna är namngivna konstanter; appens
 funktioner med de tidigare namnen (`computeBootstrapCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`,
 `_regKvantilBootstrap`, `linearRegressionCI`, `_laTrattUnderlagRakna`) är tunna adaptrar. Percentilgränserna tas på ett
-ställe, `percentilintervall` i `src/lib/stat.js`: golvet av n · 0,025 och n · 0,975 i de sorterade dragningarna, också
-för bootstrapintervallen i likvärdigt arbete och omkastningen i `src/lib/status.js`. Styrkan (minsta upptäckbara
+ställe, `percentilintervall` i `src/lib/stat.js`, också för bootstrapintervallen i likvärdigt arbete och omkastningen i
+`src/lib/status.js`. Indexen i de stigande sorterade dragningarna är symmetriska (ADR-86): den nedre gränsen har index
+golvet av n · 0,025 och den övre n − 1 − golvet av n · 0,025, räknat från 0, så att lika många dragningar ligger under
+den nedre som över den övre (med B = 1 000: 25 på var sida). **Radordningen** påverkar inga intervall (ADR-86):
+generatorn seedas ur antal och summa per serie (`rngFor` i `src/lib/rng.js`), och dragningarna görs ur gruppens
+stigande sorterade löner (bootstrapen), ur kvinnornas löner stigande följda av männens (omkastningen) och ur raderna
+sorterade på en fast nyckel (kvantilregressionen, avsnitt 6). Samma löner i en annan ordning ger samma gränser. Styrkan (minsta upptäckbara
 skillnad vid 80 % styrka och α = 0,05, faktorn 2,802) är `styrkeanalys` och `gruppMde` i samma modul. Översikten per
 huvudområde använder t-kvantilen (avsnitt 3).
 
