@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.16` · **Artefakt-SHA-256:** `ee54aa7a8556dce3bc91761ee5fc37bc43d5eced37e12589f820ed4abb3b74de` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.21` · **Artefakt-SHA-256:** `287bd75a5194a4c2dbc4baecc2437b07dd39bae085be30403f19ec0e1b4811a6` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-21.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
@@ -276,6 +276,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   PII-detektorn eller läses som kolumn (ADR-23). Verifierat: fälten i
   minnet är exakt `aid, alder, ansvarsgrupp, ansvarskoder, bas, kon, lon, poang, radnr, yrke,
   yrkeLabel` (`ansvarskoder` och `ansvarsgrupp` är tomma när kolumnen saknas).
+- **Storleksgräns för inlästa filer** (`FIL_MAX` i `src/lib/installningsgranser.js`): lönefilen högst 50 MB,
+  ställningstagandet och jämförelsestatistiken 20 MB, konfigurationsfilen och organisationspaketet 5 MB. Storleken
+  prövas innan filen läses, och en större fil avvisas med ett besked om gränsen; det som redan var inläst står kvar.
 - **Alla BAS-intervall ingår (ADR-21, upphävd 2026-10):** även chefsnivåerna K och uppåt läses in
   och analyseras. Små intervall skyddas som alla andra grupper av minsta gruppstorlek vid export.
 - **PII-detektor** (`detectSensitiveColumns`): känner igen och **avvisar** lönefiler vars kolumner
@@ -308,8 +311,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   och avsnittet per BAS-intervall, utan tal, ADR-52) och importprofiler (bara rubriknamn). Valideringen tar bort tecknen `< > " ' &` ur textfälten och kortar dem till 200
   tecken. Den avvisar filer över 5 MB, och hela paketet om ett textfält liknar personnummer eller e-post. Ett ogiltigt värde i en låsning
   utelämnas med en varning (`_lasningar` i `src/lib/organisationspaket.js`). Referensens och statistikens
-  namn och källa följer med i exporterna. Paketet lagras aldrig i verktyget, och demoläget har
-  en påhittad referens.
+  namn och källa följer med i exporterna. Paketet lagras aldrig i verktyget. Demoläget har
+  en påhittad referens, och det stora demot också påhittad jämförelsestatistik (`statistikKalla` `'demo'`); båda
+  tas bort när en lönefil läses in.
 - **Fältet för AID-etikett saneras på tecken, inte på namn** (`_cleanYrkeField`): AID-koden behålls, tecknen
   `< > " ' &` tas bort ur etiketten och etiketten kortas till 40 tecken. Ingenting i texten maskeras (ADR-85): ett
   namn som uttaget lagt i fältet visas i tabellerna och följer med i exporterna. En grupp heter efter texten på flest
@@ -383,8 +387,9 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   Personer att granska, kräver det högre av tröskeln och 10 och följer alltså inte med nedåt. Fasta golv står kvar
   enligt beslut: huvudregressionen i Lönestruktur kräver 5 kvinnor och 5 män, Prioriteringens motivering om medelålder
   3 av varje kön (en ålder, inget lönemått) och Löneöversiktens rader per AID-etikett 5 personer. Tabellerna per
-  AID-kod och BAS-intervall och könsfördelningen per BAS-intervall ger en grupp en rad med antal från 5 personer, utan
-  lönemått, och mindre grupper namnges i en not: tabellerna är arbetsgivarens kartläggning av alla grupper, och lagen
+  AID-kod och BAS-intervall utom *Lika arbete AID x BAS* (som har Lika arbetes grupper och regler, ADR-90) och
+  könsfördelningen per BAS-intervall ger en grupp en rad med antal från 5 personer, utan lönemått, och mindre grupper
+  namnges i en not: tabellerna är arbetsgivarens kartläggning av alla grupper, och lagen
   kräver att också små grupper analyseras. Lönelägets avsnitt mot ställningstagandet redovisar en grupp från 5
   personer upp till tröskeln med bara antal (`docs/utveckling/k-troskeln.md` avsnitt 4–5).
 - **Vad som inte vaktas.** Skyddet vaktas av en invariant som letar efter de små gruppernas lönevärden i flikarna och
@@ -450,9 +455,10 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   löneskillnaden per åldersgrupp, och percentilerna och kvartilerna i Lönestruktur) räknar om hela diagrammet för
   en del av underlaget: ett huvudområde, en åldersgrupp, en AID-etikett eller ett BAS-intervall, en sak i taget. Det är ny
   utdata, eftersom diagrammets egen exportmeny bär det omräknade diagrammet (bilden med "Räknat för: …" i fotraden
-  och diagramdatan med samma rad). Här finns ett differensskydd: ett val görs bara när både urvalet och resten av
+  och diagramdatan med samma rad). Här finns en spärr: ett val görs bara när både urvalet och resten av
   underlaget har inga eller minst tröskelns antal kvinnor och inga eller minst tröskelns antal män, så att hela
-  underlaget minus urvalet inte ger en liten grupp. En grupp som själv är för liten går inte att välja. På skärmen
+  underlaget minus urvalet inte så lätt ger en liten grupp. Spärren är ingen garanti mellan filer, eftersom skyddet
+  gäller en fil i taget (ADR-92); den som gör kartläggningen ansvarar för vad som exporteras. En grupp som själv är för liten går inte att välja. På skärmen
   är tröskeln 1 (ADR-51); i exportläget prövas valet mot den inställda tröskeln, och ett val som då bryter regeln
   släpps så att diagrammet visar hela underlaget. Rapporten, utskriften, ZIP-filen och rapportunderlaget ritar
   alltid hela underlaget. Valet minns per diagram under sessionen och sparas inte i konfigurationsfilen. Vaktas av
@@ -839,6 +845,43 @@ Granskningen är avgränsad till det som ändrats; påståenden om oförändrad 
 
 Testsviten (114 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
 granskningen: röktestet i Firefox och WebKit (det körs i CI), de påståenden märkta *Verifierat i webbläsare* som inte
+har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsare.
+
+**Granskningen 2026-11-21** (inför bygget 2026.11.21) prövade dokumentet och dataskyddsbeskrivningen mot koden som
+ändrats efter bygget 2026.11.16 (#89–#102). De flesta ändringarna förde in sina påståenden här när de gjordes:
+den kompletterande undertryckningen i tabellerna per BAS-intervall (ADR-83) och sammanslagningen i uppdelningen av
+löneskillnaden (ADR-84, ADR-87), att fältet för AID-etikett inte maskeras och varningen för personnamn (ADR-85, B1c),
+escaping-vakten (A3), sårbarhetsbevakningen av `vendor/` (A4), differensprovet (ADR-88), grupperna som AID-kod i
+BAS-intervallet (ADR-89, ADR-90), protokollets blad (ADR-91) och att S4 gäller en fil i taget (ADR-92). De lästes om
+mot koden. Biblioteken i `vendor/` och `tools/bundle.mjs` är oförändrade. Kontrollerat:
+- CSP-raden i bygget (fem skript och fem hashar, två stilhashar) har samma direktiv som i bygget 2026.11.16; bara
+  hasharna har ändrats. Sökningen i `dist/app.js` efter nätverks- och lagringsanrop ger samma träffar som i bygget
+  2026.11.16 (lagringsspärren och verktygets egen text). Bygget har inget `<script src>` och stilmallen inget `url(`.
+- Det stora demot (#101): 5 000 påhittade personer, påhittad jämförelsestatistik (`generateStortDemoStatistik`,
+  `statistikKalla` `'demo'`) och ett ställningstagande räknat ur demots egna löner (`_sdStallningstagande`). Inget av
+  det läses ur en fil eller lagras. Ett BAS-intervall med färre personer än den inställda tröskeln får ingen rad ur
+  sina egna löner, utan stegas från närmaste lägre intervall. Statistiken och ställningstagandet tas bort när en
+  lönefil läses in (`_afterDataLoaded`), statistiken också när det lilla demot läses in, och *Rensa all data* tömmer
+  båda. Demosidan länkar till `?demo=stor`; `90-uppstart.js` läser fortfarande bara parametern `demo`.
+- Storleksgränserna för inlästa filer (`FIL_MAX`) prövas innan filen läses (§6.4).
+- Inläsningen (#100): kolumnvalet tar en exakt lika rubrik före en delsträng och slås upp en gång per fil, och en
+  rubrik som återkommer i en Excel-fil döps om som PapaParse gör med CSV. Fälten i minnet och PII-kontrollen är
+  oförändrade; en omdöpt rubrik prövas av rubrikkontrollen som de andra. Talparsern avvisar skräp efter siffrorna och
+  godtar enheten *år*; inget nytt fält läses in.
+- Beräkningarna som flyttats till `src/lib/` (huvudregressionen, osäkerheten, tolkningen av indata, kostnaden) är rena
+  funktioner utan tillstånd; vakten i `tests/lib-beroenden.test.js` kräver att de inte läser webbläsarglobaler.
+- Visningsminnets vakt (#102) ändrar bara testriggen.
+
+Tre påståenden rättades. *Lika arbete AID x BAS* har sedan ADR-90 Lika arbetes grupper och regler: en grupp under
+tröskeln får ingen rad och namnges i noten utan antal. Dataskyddsbeskrivningen §4 (Excel och Word) och §6.5 här sade
+att alla fyra tabellerna per AID-kod och BAS-intervall har en rad från 5 personer. §6.4 sade att demoläget har en
+påhittad referens; det stora demot har också påhittad jämförelsestatistik. Storleksgränserna i §6.4 är nya. Ingen
+avvikelse mot skydden hittades.
+
+Granskningen är avgränsad till det som ändrats; påståenden om oförändrad kod lästes inte om mot koden.
+
+Testsviten (132 filer) kördes mot bygget (`npm run test:full`). Inte prövat i den här granskningen: röktestet i
+Chromium, Firefox och WebKit (det körs i CI), de påståenden märkta *Verifierat i webbläsare* som inte
 har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsare.
 
 | Kontroll | Metod | Resultat |
