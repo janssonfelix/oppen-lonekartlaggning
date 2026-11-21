@@ -1255,7 +1255,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         const rader = [...d.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(r => r && !r.samladMedian);
         const granska = rader.filter(r => r.niva === 'granska').length;
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].map(k => [t(k.querySelector('.slutsats-etikett').textContent), t(k.querySelector('.slutsats-varde').textContent)]);
-        expect(kort.map(k => k[0])).toEqual(['AID-etiketter att granska', 'Största skillnaden', 'Efter ålder och BAS-intervall', 'Personer att granska']);
+        expect(kort.map(k => k[0])).toEqual(['AID-etiketter att granska', 'Lägst kvinnolön i % av mäns', 'Efter ålder och BAS-intervall', 'Personer att granska']);
         expect(kort[0][1]).toBe(`${granska} av ${rader.length}`);
         const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
         expect(kort[1][1]).toBe(storst.kvot.toFixed(1).replace('.', ',') + ' %');
@@ -1302,7 +1302,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         w2.__renderTabContent('matrix');
         const topp = t(w2.document.getElementById('la-topp').textContent);
         expect(topp).toMatch(/AID-etiketter att granska\s*1 av 1/);
-        expect(topp).toMatch(/Största skillnaden\s*\d+,\d %\s*207011 Usk/);
+        expect(topp).toMatch(/Lägst kvinnolön i % av mäns\s*\d+,\d %\s*207011 Usk/);
         expect(topp).not.toMatch(/Hemlig|7266\d/);
     });
 });
