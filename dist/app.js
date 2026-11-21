@@ -9724,6 +9724,13 @@ function parseNumberStrict(v) {
 
 // ---- Textfälten: AID-etiketten, BAS, AID i ställningstagandet och kön ----
 
+// Etiketten i fältet för AID-etikett: resten efter AID-koden och vanliga separatorer (—, -, :, ., whitespace), utan
+// HTML-meta-tecknen < > " ' &. De strippas vid inläsningen så att de aldrig kan smitas in i en innerHTML-template ens
+// om en framtida renderingsplats glömmer esc() — CSP + esc() + inläsningen; tre lager. `s` är redan trimmad.
+function _yrkeEtikett(s) {
+    return s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+}
+
 /**
  * Fältet för AID-etikett (yrket) vid inläsning (GDPR Art. 25.1: bara det analysen behöver).
  *
@@ -9745,13 +9752,7 @@ function _cleanYrkeField(raw) {
     if (!s) return "";
     const aidMatch = s.match(/^(\d+)/);
     const aid = aidMatch ? aidMatch[1] : "";
-    // Etikett = resten efter AID och vanliga separatorer (—, -, :, ., whitespace)
-    let label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim();
-    // Härd mot XSS-tecken vid inläsning.
-    // Strippar HTML-meta-tecken < > " ' & så de aldrig kan smitas in i en
-    // innerHTML-template ens om en framtida renderingsplats glömmer esc().
-    // Detta är "defensive depth" — CSP + esc() + cleanYrkeField; tre lager.
-    label = label.replace(/[<>"'&]/g, '');
+    let label = _yrkeEtikett(s);
     // Kortningen sist — yrkesetiketter är sällan över 40 tecken
     if (label.length > 40) label = label.substring(0, 40).trim() + '…';
     if (aid && label) return `${aid} ${label}`;
@@ -9795,7 +9796,7 @@ function yrkeNamnNyckel(raw) {
     if (raw == null) return '';
     const s = raw.toString().trim();
     if (!s) return '';
-    const label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+    const label = _yrkeEtikett(s);
     if (!YRKE_NAMNMONSTER.some(re => re.test(label))) return '';
     return label.toLowerCase().replace(/\s+/g, ' ');
 }
@@ -19493,8 +19494,10 @@ function renderRealityCheck() {
     // Check 2: medianålder
     const ages = d.map(r => r.alder).filter(a => a > 0);
     const medAge = ages.length ? Stat.median(ages) : 0;
-    const minAge = ages.length ? Math.min(...ages) : 0;
-    const maxAge = ages.length ? Math.max(...ages) : 0;
+    // d3.min/max, inte Math.min(...ages): spridning över en lista per person når webbläsarens tak för antal argument.
+    // Number() visar escaping-vakten att värdet är ett tal.
+    const minAge = ages.length ? Number(d3.min(ages)) : 0;
+    const maxAge = ages.length ? Number(d3.max(ages)) : 0;
     let alderStatus, alderMsg;
     if (!ages.length) {
         // Ålderskolumnen är valfri (ADR-64).
@@ -29236,7 +29239,7 @@ function renderKon(bas) {
     const regKv  = Stat.linearRegression(dataKv.map(d => [d.alder, d.lon]));
     const regMa  = Stat.linearRegression(dataMa.map(d => [d.alder, d.lon]));
     const allAges  = df.map(d => d.alder);
-    const minAlder = Math.min(...allAges), maxAlder = Math.max(...allAges);
+    const minAlder = d3.min(allAges), maxAlder = d3.max(allAges);
     const avgAlder = allAges.reduce((a,b)=>a+b,0) / allAges.length;
     const rawLonKv = dataKv.map(d => d.lon);
     const rawLonMa = dataMa.map(d => d.lon);
@@ -29370,7 +29373,7 @@ function _konHistogramKlasser(kv, ma, k) {
     if (kv.length < k || ma.length < k) return null;
     let steg = _konLonesteg(alla);
     for (let varv = 0; varv < 6; varv++, steg *= 2) {
-        const golv = Math.floor(Math.min(...alla) / steg) * steg, antal = Math.floor((Math.max(...alla) - golv) / steg) + 1;
+        const golv = Math.floor(d3.min(alla) / steg) * steg, antal = Math.floor((d3.max(alla) - golv) / steg) + 1;
         /** @type {Array<{fran: number, till: number, nKv: number, nMa: number, oppenNed?: boolean, oppenUpp?: boolean}>} */
         let klasser = Array.from({ length: antal }, (_, i) => ({ fran: golv + i * steg, till: golv + (i + 1) * steg, nKv: 0, nMa: 0 }));
         const plats = v => Math.min(antal - 1, Math.floor((v - golv) / steg));
@@ -29508,7 +29511,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
             const data = g.filter(ar).filter(r => !urval || liten(r) || urval.has(r)).map(r => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...(liten(r) ? { liten: true } : {}), markering: markeringFor(r.bas, r.yrke) }));
             if (data.length) lager.push({ marke: 'punkt', serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
         }
-        const reg = Stat.linearRegression(g.map(r => [r.alder, r.lon])), aldrar = g.map(r => r.alder), a0 = Math.min(...aldrar), a1 = Math.max(...aldrar);
+        const reg = Stat.linearRegression(g.map(r => [r.alder, r.lon])), aldrar = g.map(r => r.alder), a0 = d3.min(aldrar), a1 = d3.max(aldrar);
         if (a1 > a0) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
     }
     return { utanfor, nedsamplade, figur: { beskrivning: `Lön mot ålder i ${valda.length} ${termForAntal(valda.length, T.niva)}, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
@@ -29607,7 +29610,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
 // åldrarna inte spänner över något eller regressionen inte går att räkna.
 function _konScatterTrend(punkter, medBand = false) {
     const par = punkter.map(d => [d.x, d.y]), aldrar = par.map(p => p[0]);
-    const a0 = Math.min(...aldrar), a1 = Math.max(...aldrar);
+    const a0 = d3.min(aldrar), a1 = d3.max(aldrar);
     if (!(a1 > a0)) return null;
     const reg = Stat.linearRegression(par);
     if (!reg || !isFinite(reg.m) || !isFinite(reg.b)) return null;
@@ -29762,7 +29765,7 @@ function renderDemografi(bas) {
     if (document.getElementById('chart-demo-pyramid')) ritaFigur('chart-demo-pyramid', _demoPyramidFigur({ pctKv, pctMa, isAll }));
     // Åldersfördelning per kön och lönespridning över ålder. (Spridningsdiagrammet lön mot ålder ligger överst
     // i fliken; hela urvalets trend är ett valbart lager där.)
-    const minA = Math.min(...ages), maxA = Math.max(...ages);
+    const minA = d3.min(ages), maxA = d3.max(ages);
     const pol = isAll ? null : policyFor(null, bas);
     // Andel av eget kön per ålder, 5-årigt glidande medel (win=2)
     const aLo = Math.max(18, Math.floor(minA)), aHi = Math.min(67, Math.ceil(maxA));

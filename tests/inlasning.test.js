@@ -146,13 +146,10 @@ describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
     });
 
     it('mönstren bär inget tillstånd, och etiketten skiljs ut som i _cleanYrkeField', () => {
-        const sparad = _cleanYrkeField.toString(), varning = yrkeNamnNyckel.toString();
         expect(YRKE_NAMNMONSTER).toHaveLength(2);
         for (const re of YRKE_NAMNMONSTER) expect(re.flags).toBe('');   // utan /g: test() bär inget tillstånd mellan anropen
-        for (const del of ["replace(/^\\d+\\s*[—\\-:.\\s]*/, '')", "replace(/[<>\"'&]/g, '')"]) {
-            expect(sparad).toContain(del);
-            expect(varning).toContain(del);
-        }
+        // Båda tar etiketten ur samma hjälpfunktion.
+        for (const f of [_cleanYrkeField, yrkeNamnNyckel]) expect(f.toString()).toContain('_yrkeEtikett(s)');
     });
 
     it('nyckeln: etikettexten i gemener med blanksteg samman, tom utan namnmönster', () => {

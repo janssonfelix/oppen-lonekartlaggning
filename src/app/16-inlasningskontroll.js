@@ -41,8 +41,10 @@ function renderRealityCheck() {
     // Check 2: medianålder
     const ages = d.map(r => r.alder).filter(a => a > 0);
     const medAge = ages.length ? Stat.median(ages) : 0;
-    const minAge = ages.length ? Math.min(...ages) : 0;
-    const maxAge = ages.length ? Math.max(...ages) : 0;
+    // d3.min/max, inte Math.min(...ages): spridning över en lista per person når webbläsarens tak för antal argument.
+    // Number() visar escaping-vakten att värdet är ett tal.
+    const minAge = ages.length ? Number(d3.min(ages)) : 0;
+    const maxAge = ages.length ? Number(d3.max(ages)) : 0;
     let alderStatus, alderMsg;
     if (!ages.length) {
         // Ålderskolumnen är valfri (ADR-64).

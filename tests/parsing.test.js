@@ -57,6 +57,7 @@ const P = new Function('_anArRubrik', '_anTolka', '_anGrupp', '_anAndelGiltiga',
     ${extractFn('autoDetectColumnMap')}
     ${extractFn('_detectDelimiter')}
     ${extractFn('_decodeCsvBuffer')}
+    ${extractFn('_yrkeEtikett')}
     ${extractFn('_cleanYrkeField')}
     ${extractFn('_normalizeNumberString')}
     ${extractFn('parseNumber')}
