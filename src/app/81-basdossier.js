@@ -371,7 +371,7 @@ function basdossierText(bas) {
  * gruppdossiern. `ikonEndast`: bara en ikon, som bevisknappen bredvid, så att radens rubrik har samma text som förut.
  */
 function basdossierKnapp(bas, { text = 'BAS-dossier', ikonEndast = false } = {}) {
-    const attr = `type="button" data-open-basdossier="${esc(bas)}" aria-label="Öppna BAS-dossiern för BAS ${esc(bas)}" title="BAS-dossier: allt om BAS ${esc(bas)} på en sida"`;
+    const attr = `type="button" data-open-basdossier="${esc(bas)}" aria-label="BAS-dossier för BAS ${esc(bas)}" title="BAS-dossier: allt om BAS ${esc(bas)} på en sida"`;
     return ikonEndast ? `<button ${attr} class="btn-evidence bd-oppna-ikon">${ikon('dokument')}</button>`
         : `<button ${attr} class="btn-table-tool bd-oppna">${esc(text)}</button>`;
 }

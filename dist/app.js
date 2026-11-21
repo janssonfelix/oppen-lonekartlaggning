@@ -15952,7 +15952,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
     L.legend.poster.forEach(p => {
         const dold_ = syn.dolda.has(p.serie);
         const g = lg.append('g').attr('data-serie', p.serie).attr('role', 'button').attr('tabindex', 0)
-            .attr('aria-pressed', dold_ ? 'false' : 'true').attr('aria-label', `Visa eller dölj serien ${p.serie}`)
+            .attr('aria-pressed', dold_ ? 'false' : 'true').attr('aria-label', `${p.serie}, visa eller dölj serien`)
             .attr('transform', `translate(${8 + p.x},${legendY + p.rad * _RF.legendRad})`).attr('cursor', 'pointer')
             .attr('opacity', dold_ ? 0.4 : 1);
         const f = p.l.farg || PALETTE.serie[p.li % PALETTE.serie.length];
@@ -26664,7 +26664,7 @@ function renderLikvardighet() {
     const exportHtml = (jämförOK && result.pairs.length) ? `
         <div class="tabell-export-rad">
             <div class="chart-export tabell-export">
-                <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera kandidatparens tabell">Exportera tabellen</button>
+                <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera tabellen med kandidatparen">Exportera tabellen</button>
                 <div class="chart-export-meny" id="lv-export-meny" hidden>
                     <button type="button" id="btn-export-likvardighet-csv">CSV (öppnas direkt i Excel)</button>
                     <button type="button" id="btn-export-likvardighet">Excel (.xlsx) med metodblad</button>
@@ -31114,7 +31114,7 @@ function _rrTabellHtml(kolumner, grupper) {
         if (k.typ === 'pct') return `<td class="num" data-sort-value="${v.toFixed(2)}">${_rrPct(v)}</td>`;
         return `<td class="num" data-sort-value="${v}">${svTal(v, 0)}</td>`;
     };
-    return `<div class="table-container"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>`
+    return `<div class="table-container" tabindex="0" role="region" aria-label="Löneläget och statistiken mot ställningstagandet per ${T.enhet.en}"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>`
         + kolumner.map(k => `<th scope="col"${k.tips ? ` title="${esc(k.tips)}"` : ''}>${esc(k.rubrik)}</th>`).join('')
         + `</tr></thead><tbody>${grupper.map(g => `<tr>${kolumner.map(k => cell(k, g)).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
@@ -31167,7 +31167,7 @@ function _rrHantelFigur(rader, { harStatistik }) {
 function _rrStatTabellHtml(rader) {
     return `<h3 class="jmf-diagram-rubrik">Statistiken mot ställningstagandet</h3>
         <p class="muted">Positivt: statistiken ligger över ställningstagandet. Negativt: statistiken ligger under det. Organisationens löner ingår inte.</p>
-        <div class="table-container"><table id="ref-stat-mot-stallning" class="data-table" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>
+        <div class="table-container" tabindex="0" role="region" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><table id="ref-stat-mot-stallning" class="data-table" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>
         <th scope="col">${termStor(T.enhet.en)}</th><th scope="col">BAS</th><th scope="col">P10 (%)</th><th scope="col">Median (%)</th><th scope="col">P90 (%)</th></tr></thead><tbody>`
         + rader.map(r => `<tr><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>${['p10', 'median', 'p90'].map(p => (r[p] == null
             ? '<td class="num muted" data-sort-value="">–</td>' : `<td class="num" data-sort-value="${r[p].toFixed(2)}">${_rrPct(r[p])}</td>`)).join('')}</tr>`).join('')
@@ -34195,10 +34195,9 @@ function _hpSkalSammanfattning(nyckel, skillnadKr) {
     if (!k) return 'Sakliga skäl: inga';
     return `Sakliga skäl (${k.antal})${k.andel ? ` · ${k.andel} förklarat` : ''}`;
 }
-/** Knappens tillgängliga namn med gruppen och sammanfattningen: "Sakliga skäl, {grupp}: 2 skäl, 65 % förklarat". */
+/** Knappens tillgängliga namn: den synliga sammanfattningen först (WCAG 2.5.3), sedan gruppen. */
 function _hpSkalEtikett(nyckel, grupp, skillnadKr) {
-    const k = _hpSkalKort(nyckel, skillnadKr);
-    return `Sakliga skäl, ${grupp}: ${k ? `${k.antal} skäl${k.andel ? `, ${k.andel} förklarat` : ''}` : 'inga'}`;
+    return `${_hpSkalSammanfattning(nyckel, skillnadKr)}, ${grupp}`;
 }
 /** Knappen som öppnar dialogen med radens sakliga skäl (57-sakliga-skal.js). Syns inte på utskriften. */
 function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
@@ -36159,7 +36158,7 @@ function bes8Stod() {
         /** @type {string|null} */ let text = null;
         try { text = d.length && BES8_STOD[flik] ? BES8_STOD[flik](d) : null; } catch (e) { rapporteraFel('Regler & praxis: stöd i verktyget', e); }
         li.classList.toggle('bes8-stod-tal', !!text);
-        li.innerHTML = text ? `${esc(text)} <a href="#" data-go-to-tab="${esc(flik)}" aria-label="Gå till ${esc(BES8_STOD_FLIK[flik] || flik)}">Gå dit</a>` : li.dataset.fast;
+        li.innerHTML = text ? `${esc(text)} <a href="#" data-go-to-tab="${esc(flik)}" aria-label="Gå dit: ${esc(BES8_STOD_FLIK[flik] || flik)}">Gå dit</a>` : li.dataset.fast;
     });
 }
 bes8Stod();
@@ -40459,7 +40458,7 @@ function basdossierText(bas) {
  * gruppdossiern. `ikonEndast`: bara en ikon, som bevisknappen bredvid, så att radens rubrik har samma text som förut.
  */
 function basdossierKnapp(bas, { text = 'BAS-dossier', ikonEndast = false } = {}) {
-    const attr = `type="button" data-open-basdossier="${esc(bas)}" aria-label="Öppna BAS-dossiern för BAS ${esc(bas)}" title="BAS-dossier: allt om BAS ${esc(bas)} på en sida"`;
+    const attr = `type="button" data-open-basdossier="${esc(bas)}" aria-label="BAS-dossier för BAS ${esc(bas)}" title="BAS-dossier: allt om BAS ${esc(bas)} på en sida"`;
     return ikonEndast ? `<button ${attr} class="btn-evidence bd-oppna-ikon">${ikon('dokument')}</button>`
         : `<button ${attr} class="btn-table-tool bd-oppna">${esc(text)}</button>`;
 }

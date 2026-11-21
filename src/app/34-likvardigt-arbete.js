@@ -573,7 +573,7 @@ function renderLikvardighet() {
     const exportHtml = (jämförOK && result.pairs.length) ? `
         <div class="tabell-export-rad">
             <div class="chart-export tabell-export">
-                <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera kandidatparens tabell">Exportera tabellen</button>
+                <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera tabellen med kandidatparen">Exportera tabellen</button>
                 <div class="chart-export-meny" id="lv-export-meny" hidden>
                     <button type="button" id="btn-export-likvardighet-csv">CSV (öppnas direkt i Excel)</button>
                     <button type="button" id="btn-export-likvardighet">Excel (.xlsx) med metodblad</button>
