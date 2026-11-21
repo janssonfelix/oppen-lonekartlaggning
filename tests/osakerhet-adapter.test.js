@@ -9,25 +9,13 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { forstaSkillnad } from './helpers/forsta-skillnad.js';
 import { kvantilDesign, quantileRegressionAtAllTau } from '../src/lib/regression.js';
 import {
     organisationensKvotKI, styrkeanalys, gruppMde, regressionslinjensBand, extremvarden, medianKvotKI, medianKvotKIGiltiga,
     trattUnderlag, kvantilBootstrap
 } from '../src/lib/osakerhet.js';
 
-/** Första skillnaden mellan två värden som sökväg, eller null när de är lika (tal med Object.is, nycklar i ordning). */
-function forstaSkillnad(a, b, vag = '') {
-    if (typeof a === 'number' || typeof b === 'number') return Object.is(a, b) ? null : `${vag}: ${a} ≠ ${b}`;
-    if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return a === b ? null : `${vag}: ${a} ≠ ${b}`;
-    if (Array.isArray(a) !== Array.isArray(b)) return `${vag}: lista mot objekt`;
-    const ka = Object.keys(a), kb = Object.keys(b);
-    if (ka.join('|') !== kb.join('|')) return `${vag}: nycklarna ${ka.join(',')} ≠ ${kb.join(',')}`;
-    for (const k of ka) {
-        const s = forstaSkillnad(a[k], b[k], `${vag}.${k}`);
-        if (s) return s;
-    }
-    return null;
-}
 const lika = (app, lib) => expect(forstaSkillnad(app, lib)).toBeNull();
 
 /** Trattens underlag utan funktionen för fältets bredd, som i stället prövas i några punkter. */

@@ -8,23 +8,10 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { STORA, TOPP, MELLAN, SMA, byggDataset } from './helpers/ktroskel-rigg.js';
 
 vi.setConfig({ testTimeout: 30000 });
 
-const STORA = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'], TOPP = 'S7';
-const MELLAN = ['A', 'B', 'C', 'D'], SENT_MELLAN = [31417, 32719, 33827, 34513];
-const SMA = ['E', 'F'], SENT_SMA = [35291, 36107];
-
-function byggDataset() {
-    const rader = [];
-    const rad = (bas, i, lon, aid, namn) => ({ bas, kon: i % 2 === 0 ? 'kvinna' : 'man', lon,
-        alder: 25 + ((i * 7) % 40), yrke: `${aid} ${namn}`, aid: String(aid), yrkeLabel: namn, enhet: '' });
-    STORA.forEach((bas, b) => { for (let i = 0; i < 150; i++) rader.push(rad(bas, i, 24000 + b * 800 + ((i * 37) % 900), 6000 + b, `Säkeryrke ${b}`)); });
-    for (let i = 0; i < 150; i++) rader.push(rad(TOPP, i, 50000 + ((i * 37) % 900), 6900, 'Toppyrke'));
-    MELLAN.forEach((bas, g) => { for (let i = 0; i < 20; i++) rader.push(rad(bas, i, SENT_MELLAN[g], 5300 + g, `Mellanyrke ${g}`)); });
-    SMA.forEach((bas, g) => { for (let i = 0; i < 6; i++) rader.push(rad(bas, i, SENT_SMA[g], 5400 + g, `Småyrke ${g}`)); });
-    return rader;
-}
 const iExport = w => { w.__state.kLage = 'export'; return w; };   // vyerna så som de lämnar verktyget (ADR-51)
 function fonster(k = null, rader = byggDataset()) {
     const win = createAppWindow();

@@ -3182,7 +3182,7 @@ const __mirrorStat = (() => {
  * resultaten; artefaktgrinden vaktar att spegeln är i synk med src/lib/.
  *
  * Funktioner exporterade:
- *   - median, quantile, linearRegression  (Stat-objektet i app.js)
+ *   - median, quantile, linearRegression  (Stat-objektet i appen pekar hit)
  *   - matMul, transpose, invert            (matrisalgebra)
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
@@ -18736,64 +18736,8 @@ function ritaOmReferens() {
 // Härleds ur PALETTE (10-diagramtema.js) så könsfärgerna har EN källa.
 const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
 
-/**
- * Statistiska helpers: median, kvantiler, linjär regression (OLS).
- *
- * MIRROR: dessa implementationer dubbleras i `src/lib/stat.js` för enhetstest
- * via Vitest (tests/stat.test.js). Vid ändring av en funktion här ska
- * motsvarande funktion i src/lib/stat.js uppdateras — annars går testerna
- * sönder, vilket är en avsiktlig "tripwire" mot tysta regressioner.
- * Used for descriptive statistics throughout the tool.
- */
-const Stat = {
-    /**
-     * Beräknar median (P50) av en talsekvens.
-     * @param {number[]} arr - Talvärden (ej tomt).
-     * @returns {number} Mittersta värdet i sorterad lista (0 om tom).
-     */
-    median: arr => {
-        if (!arr.length) return 0;
-        const s = [...arr].sort((a,b) => a - b);
-        const m = Math.floor(s.length / 2);
-        return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2;
-    },
-    /**
-     * Beräknar kvantil via linjär interpolation.
-     * @param {number[]} arr - Talvärden.
-     * @param {number} q - Kvantil 0..1 (t.ex. 0.1 = P10, 0.5 = median, 0.9 = P90).
-     * @returns {number} Kvantilvärdet.
-     */
-    quantile: (arr, q) => {
-        if (!arr.length) return 0;
-        const s = [...arr].sort((a,b) => a - b);
-        const pos = (s.length - 1) * q;
-        const lo = Math.floor(pos), hi = Math.ceil(pos);
-        return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-    },
-    /**
-     * Enkel linjär regression y = m·x + b via minsta kvadrat.
-     * @param {Array<[number, number]>} data - Lista av [x, y]-par.
-     * @returns {{m: number, b: number, r2: number}} Lutning, intercept, R².
-     */
-    linearRegression: data => {
-        const n = data.length;
-        if (n === 0) return { m: 0, b: 0, r2: 0 };
-        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-        for (let i = 0; i < n; i++) {
-            sumX += data[i][0]; sumY += data[i][1];
-            sumXY += data[i][0] * data[i][1]; sumXX += data[i][0] * data[i][0];
-        }
-        const m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        const b = (sumY - m * sumX) / n;
-        const meanY = sumY / n;
-        let ssTot = 0, ssRes = 0;
-        for (let i = 0; i < n; i++) {
-            ssTot += (data[i][1] - meanY) ** 2;
-            ssRes += (data[i][1] - (m * data[i][0] + b)) ** 2;
-        }
-        return { m, b, r2: ssTot > 0 ? 1 - ssRes / ssTot : 0 };
-    }
-};
+// Statistiska helpers för vyerna; en källa: src/lib/stat.js via spegeln (tests/stat.test.js prövar den).
+const Stat = { median: __mirrorStat.median, quantile: __mirrorStat.quantile, linearRegression: __mirrorStat.linearRegression };
 
 // Talen i indata (_normalizeNumberString, parseNumber, parseNumberStrict) tolkas i src/lib/inlasning.js och nås här
 // genom spegeln under samma namn.
@@ -27007,20 +26951,8 @@ function _lvParFigur(pairs, max = 14) {
 // Metodraden om åldersjusteringen (CSV:ns metadata och Excel-arbetsbokens metadatablad).
 const LV_JUSTERAD_METOD = termText('{Jamforelse.bf.s} lön omräknad till {enhet.bf.s:kvinnodominerad} åldersfördelning: log(lön) = a + b·ålder skattas i {jamforelse.bf} (minst ') + ALDERS_GOLV + ' personer, minst ' + ALDERS_SPRIDNING + termText(' års åldersspridning), lönen prediceras vid varje person med {enhet.bf:kvinnodominerad} och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.');
 
-// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
-function _exportLikvardighetCSVExport() {
-    const result = likvardighetResultat();
-    if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
-        alert(termText('Det finns inga kandidatpar att exportera. Sänk minsta skillnad i fliken, eller kontrollera att lönefilen har kvinnodominerade {enhet.fl}.'));
-        return;
-    }
-    const num = (v, dec) => {
-        if (v == null) return '';
-        const n = Number(v);
-        if (!isFinite(n)) return '';
-        return (dec != null && dec > 0) ? n.toFixed(dec).replace('.', ',') : Math.round(n);
-    };
+// Kandidatparens rubrik och rader, gemensamma för CSV- och Excel-exporten; `num` formaterar talen för respektive format.
+function _lvParRader(pairs, num) {
     const källNamn = p => p.jamforKalla === 'intern' ? 'Intern (organisation)'
         : (p.maKlassKort === 'lokal' ? 'jämförelsestatistiken' : 'SKR:s personalstatistik');
     const rows = [[
@@ -27030,7 +26962,7 @@ function _exportLikvardighetCSVExport() {
         'Skillnad (kr)', 'Skillnad (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
         'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
     ]];
-    result.pairs.forEach((p, i) => {
+    pairs.forEach((p, i) => {
         const ci = p.gapCI && p.gapCI.lo != null;
         rows.push([
             i + 1,
@@ -27046,6 +26978,24 @@ function _exportLikvardighetCSVExport() {
             '', ''   // tomma protokollfält: sakligt skäl + status/åtgärd
         ]);
     });
+    return rows;
+}
+
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetCSVExport() {
+    const result = likvardighetResultat();
+    if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
+        alert(termText('Det finns inga kandidatpar att exportera. Sänk minsta skillnad i fliken, eller kontrollera att lönefilen har kvinnodominerade {enhet.fl}.'));
+        return;
+    }
+    const num = (v, dec) => {
+        if (v == null) return '';
+        const n = Number(v);
+        if (!isFinite(n)) return '';
+        return (dec != null && dec > 0) ? n.toFixed(dec).replace('.', ',') : Math.round(n);
+    };
+    const rows = _lvParRader(result.pairs, num);
     // Lägg till metadata-rader sist (åtskilda från data med tom rad)
     rows.push([]);
     rows.push(['# METADATA']);
@@ -27113,33 +27063,7 @@ function _exportLikvardighetExport() {
         const wb = XLSX.utils.book_new();
 
         stegnamn = 'bygg datablad';
-        const källNamn = p => p.jamforKalla === 'intern' ? 'Intern (organisation)'
-            : (p.maKlassKort === 'lokal' ? 'jämförelsestatistiken' : 'SKR:s personalstatistik');
-        const header = [
-            'Nr',
-            'Org. AID', `Org. ${T.namn.en}`, 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
-            'Jämf. AID', `Jämf. ${T.namn.en}`, 'Jämf. % kvinnor', 'Jämf. klass', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-            'Skillnad (kr)', 'Skillnad (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
-            'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
-        ];
-        const rows = [header];
-        for (let i = 0; i < pairs.length; i++) {
-            const p = pairs[i] || {};
-            const ci = p.gapCI && p.gapCI.lo != null;
-            rows.push([
-                i + 1,
-                p.kvAid || '', p.kvLabel || '', p.kvBas || '', num(p.kvN), num(p.kvKvinnoPct, 1), num(p.kvMedian),
-                p.maAid || '', p.maLabel || '', num(p.maKvAndel, 1), konsklassOrd(p.maKlass), num(p.maN),
-                källNamn(p),
-                num(p.maMedian),
-                num(p.gapKr), num(p.gapPct, 2),
-                p.aldersJusterad ? num(p.aldersJusterad.gapPct, 2) : '',
-                ci ? num(p.gapCI.lo) : '', ci ? num(p.gapCI.hi) : '',
-                ci ? (p.gapCI.lo > 0 ? 'Säker skillnad' : 'Inom slumpfel') : 'Ej beräkningsbar',
-                num(p.allvarsindex),
-                '', ''   // tomma protokollfält: sakligt skäl + status/åtgärd
-            ]);
-        }
+        const rows = _lvParRader(pairs, num);
         const sheet = XLSX.utils.aoa_to_sheet(rows);
         // Kolumnbredder — säkert standardattribut
         sheet['!cols'] = [

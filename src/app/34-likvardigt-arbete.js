@@ -897,20 +897,8 @@ function _lvParFigur(pairs, max = 14) {
 // Metodraden om åldersjusteringen (CSV:ns metadata och Excel-arbetsbokens metadatablad).
 const LV_JUSTERAD_METOD = termText('{Jamforelse.bf.s} lön omräknad till {enhet.bf.s:kvinnodominerad} åldersfördelning: log(lön) = a + b·ålder skattas i {jamforelse.bf} (minst ') + ALDERS_GOLV + ' personer, minst ' + ALDERS_SPRIDNING + termText(' års åldersspridning), lönen prediceras vid varje person med {enhet.bf:kvinnodominerad} och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.');
 
-// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
-function _exportLikvardighetCSVExport() {
-    const result = likvardighetResultat();
-    if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
-        alert(termText('Det finns inga kandidatpar att exportera. Sänk minsta skillnad i fliken, eller kontrollera att lönefilen har kvinnodominerade {enhet.fl}.'));
-        return;
-    }
-    const num = (v, dec) => {
-        if (v == null) return '';
-        const n = Number(v);
-        if (!isFinite(n)) return '';
-        return (dec != null && dec > 0) ? n.toFixed(dec).replace('.', ',') : Math.round(n);
-    };
+// Kandidatparens rubrik och rader, gemensamma för CSV- och Excel-exporten; `num` formaterar talen för respektive format.
+function _lvParRader(pairs, num) {
     const källNamn = p => p.jamforKalla === 'intern' ? 'Intern (organisation)'
         : (p.maKlassKort === 'lokal' ? 'jämförelsestatistiken' : 'SKR:s personalstatistik');
     const rows = [[
@@ -920,7 +908,7 @@ function _exportLikvardighetCSVExport() {
         'Skillnad (kr)', 'Skillnad (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
         'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
     ]];
-    result.pairs.forEach((p, i) => {
+    pairs.forEach((p, i) => {
         const ci = p.gapCI && p.gapCI.lo != null;
         rows.push([
             i + 1,
@@ -936,6 +924,24 @@ function _exportLikvardighetCSVExport() {
             '', ''   // tomma protokollfält: sakligt skäl + status/åtgärd
         ]);
     });
+    return rows;
+}
+
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetCSVExport() {
+    const result = likvardighetResultat();
+    if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
+        alert(termText('Det finns inga kandidatpar att exportera. Sänk minsta skillnad i fliken, eller kontrollera att lönefilen har kvinnodominerade {enhet.fl}.'));
+        return;
+    }
+    const num = (v, dec) => {
+        if (v == null) return '';
+        const n = Number(v);
+        if (!isFinite(n)) return '';
+        return (dec != null && dec > 0) ? n.toFixed(dec).replace('.', ',') : Math.round(n);
+    };
+    const rows = _lvParRader(result.pairs, num);
     // Lägg till metadata-rader sist (åtskilda från data med tom rad)
     rows.push([]);
     rows.push(['# METADATA']);
@@ -1003,33 +1009,7 @@ function _exportLikvardighetExport() {
         const wb = XLSX.utils.book_new();
 
         stegnamn = 'bygg datablad';
-        const källNamn = p => p.jamforKalla === 'intern' ? 'Intern (organisation)'
-            : (p.maKlassKort === 'lokal' ? 'jämförelsestatistiken' : 'SKR:s personalstatistik');
-        const header = [
-            'Nr',
-            'Org. AID', `Org. ${T.namn.en}`, 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
-            'Jämf. AID', `Jämf. ${T.namn.en}`, 'Jämf. % kvinnor', 'Jämf. klass', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-            'Skillnad (kr)', 'Skillnad (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
-            'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
-        ];
-        const rows = [header];
-        for (let i = 0; i < pairs.length; i++) {
-            const p = pairs[i] || {};
-            const ci = p.gapCI && p.gapCI.lo != null;
-            rows.push([
-                i + 1,
-                p.kvAid || '', p.kvLabel || '', p.kvBas || '', num(p.kvN), num(p.kvKvinnoPct, 1), num(p.kvMedian),
-                p.maAid || '', p.maLabel || '', num(p.maKvAndel, 1), konsklassOrd(p.maKlass), num(p.maN),
-                källNamn(p),
-                num(p.maMedian),
-                num(p.gapKr), num(p.gapPct, 2),
-                p.aldersJusterad ? num(p.aldersJusterad.gapPct, 2) : '',
-                ci ? num(p.gapCI.lo) : '', ci ? num(p.gapCI.hi) : '',
-                ci ? (p.gapCI.lo > 0 ? 'Säker skillnad' : 'Inom slumpfel') : 'Ej beräkningsbar',
-                num(p.allvarsindex),
-                '', ''   // tomma protokollfält: sakligt skäl + status/åtgärd
-            ]);
-        }
+        const rows = _lvParRader(pairs, num);
         const sheet = XLSX.utils.aoa_to_sheet(rows);
         // Kolumnbredder — säkert standardattribut
         sheet['!cols'] = [
