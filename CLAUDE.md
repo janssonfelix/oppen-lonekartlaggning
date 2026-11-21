@@ -8,6 +8,9 @@
 - Läs principerna (`docs/utveckling/principer.md`) och referensen för området innan du ändrar beteende; varför
   något blev som det är står i beslutsloggen (`docs/utveckling/arkitekturbeslut.md`).
 - Skriv på svenska, i samma stil som omgivande kod och dokument.
+- **Bara dator (ADR-82).** Verktyget utvecklas inte för telefon eller surfplatta. Föreslå, granska eller rätta
+  aldrig något som bara syns på en liten skärm. Det enda kravet är att ett smalt fönster på datorn fungerar: menyn
+  fälls ihop och sidan går inte utanför fönstret.
 
 **Skydden** går före, se `docs/utveckling/skydd.md` (regel, vakt och undantag). En ändring som rör ett skydd tas upp
 med underhållaren innan den görs.
