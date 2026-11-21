@@ -18,7 +18,7 @@ datorn** — det styr hur vi tar emot bidrag.
 
 1. Läs `README.md` (för dig som utvecklar), skydden i `docs/utveckling/skydd.md` och principerna i
    `docs/utveckling/principer.md`, och referensen för det område du ändrar (`docs/README.md` listar dem). Skydden
-   går före allt annat och ändras bara genom ett eget beslut (`GOVERNANCE.md`).
+   går före, se `docs/utveckling/skydd.md` och `GOVERNANCE.md`.
 2. Gör ändringen i `src/` (aldrig direkt i `dist/`), med test. Oanvänd kod tas bort, inte utkommenteras.
 3. **Definition of Done.** En ändring är klar när:
    - `npm run kontroll` är grönt: bygget, linten, typkontrollen, hela testsviten, artefakten och röktestet i

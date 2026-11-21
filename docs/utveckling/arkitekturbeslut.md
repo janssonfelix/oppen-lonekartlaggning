@@ -1,10 +1,10 @@
 # arkitekturbeslut.md — Öppen lönekartläggning: Arkitekturbeslut (ADR)
 
 > Loggen över arkitekturbesluten: vad som valdes och varför, så att ett beslut inte återupptas utan ny kontext. Besluten
-> binder inte i sig. Det som binder är skydden i [`skydd.md`](skydd.md), som går före, och principerna i
-> [`principer.md`](principer.md). Hur något fungerar i dag står i referensen för området, som beslutet pekar på under
-> *Gäller i dag*; där ingen referens finns står lydelsen kvar i beslutet. Syfte, avgränsning och funktionsmål står i
-> [`mal.md`](mal.md), de öppna punkterna i [`oppna-punkter.md`](oppna-punkter.md).
+> binder inte i sig. Det som binder är skydden och principerna: skydden går före, se [`skydd.md`](skydd.md), och
+> principerna står i [`principer.md`](principer.md). Hur något fungerar i dag står i referensen för området, som
+> beslutet pekar på under *Gäller i dag*; där ingen referens finns står lydelsen kvar i beslutet. Syfte, avgränsning och
+> funktionsmål står i [`mal.md`](mal.md), de öppna punkterna i [`oppna-punkter.md`](oppna-punkter.md).
 
 **Numren** byts aldrig och tas aldrig bort, eftersom koden, testerna och dokumenten pekar på dem; ett nummer som saknas
 används inte, och 66 och 67 är reserverade för beslut under arbete. **Status:** *Gällande*; *Ändrad av ADR-x* (det

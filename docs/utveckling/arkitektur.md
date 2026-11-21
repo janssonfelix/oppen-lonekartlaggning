@@ -1,8 +1,8 @@
 # Arkitekturen på en sida
 
 Hur verktyget är uppbyggt, från filen till exporten, på en sida. Den som vill förstå helheten börjar här; detaljerna
-står i de dokument som hänvisas till. Skydden S1–S5 i [`skydd.md`](skydd.md) går före allt i det här dokumentet, och
-principerna i [`principer.md`](principer.md) binder hur lagren får användas.
+står i de dokument som hänvisas till. Skydden går före, se [`skydd.md`](skydd.md), och principerna i
+[`principer.md`](principer.md) binder hur lagren får användas.
 
 Dokumentet beskriver den byggda koden. Där det skiljer sig från koden är det dokumentet som ska rättas.
 

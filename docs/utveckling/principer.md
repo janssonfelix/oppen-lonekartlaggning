@@ -1,8 +1,8 @@
 # Principerna
 
 Sex principer som, tillsammans med skydden S1–S5 i [`skydd.md`](skydd.md), är det som binder i projektet. Skydden
-går före: en princip får aldrig läsas så att den strider mot ett skydd. Hur något fungerar i dag står i referensen
-för området, och varför det blev så i [`arkitekturbeslut.md`](arkitekturbeslut.md).
+går före. Hur något fungerar i dag står i referensen för området, och varför det blev så i
+[`arkitekturbeslut.md`](arkitekturbeslut.md).
 
 1. **Underlag, inte bedömning.** Verktyget visar underlag för arbetsgivarens egen analys och avgör inte vad lagen
    kräver. Gränssnitt, hjälptexter och exporter hänvisar inte till paragrafer; lagrummen står bara i
