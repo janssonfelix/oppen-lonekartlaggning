@@ -32975,7 +32975,7 @@ function renderLifecycleAnalysis() {
         </div>
 
         <!-- B4: Översiktstabell — gap-utveckling per BAS -->
-        <details class="mb-14" open>
+        <details class="mb-14" id="livscykel-bas-tabell">
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
                 Modellens lönenivåer per ${T.niva.en} vid 25 och 65 år
             </summary>
@@ -33017,7 +33017,7 @@ function renderLifecycleAnalysis() {
         </details>
 
         <!-- B6: Detaljerad modelljämförelse -->
-        <details class="mb-14" open>
+        <details class="mb-14" id="livscykel-modelljamforelse">
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
                 Modelljämförelse: huvudmodell mot livscykelmodell
             </summary>
