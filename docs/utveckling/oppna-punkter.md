@@ -11,36 +11,15 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 3. **Punkter som täcker varandra i bandkartan** när många AID-etiketter i samma BAS-intervall har nästan samma
    median. *Krav mot lön* flyttar isär sådana grupper i sidled, och prioriteringsmatrisens etiketter flyttas isär
    uppåt; bandkartan är inte prövad med många AID-etiketter. Bör bedömas med verklig data.
-4. **Trattdiagrammets ritade fält är en normalapproximation** (med korrektion för små grupper); bedömningen av
-   varje grupp görs med omkastning, utom för grupper över 300 personer.
+4. *Avslutad 2026-11-21:* trattdiagrammets ritade fält är en normalapproximation (med korrektion för små grupper),
+   och det är ett beslut: bedömningen av varje grupp görs med omkastning, utom för grupper över 300 personer.
 
 **Prestanda:**
-5. **Ändrad minsta gruppstorlek tar 1,9 s på 55 000 rader** (10 → 11): bootstrap-KI och styrkan räknas om i
-   bakgrunden efteråt (`_skattningarIBakgrunden`), och Att göra, processöversikten och den öppna fliken räknas om. Det
-   som återstår är regressionen, som räknas en gång per omritning och inte får cachas (ADR-17).
-   Kvantilregressionens bootstrap-intervall räknas i bakgrunden efter att kortet ritats, också i exportläget
-   (`_regKvantilBerakna`): en bild eller utskrift som görs innan intervallet är klart bär kortet utan det.
-   Mätvärden (`npm run perf`, Chromium, 55 000 syntetiska rader med mansdominerade yrken, 2026-11-15): uppladdning
-   till klart gränssnitt ~3,7 s (budget 5 s) och till klara bakgrundsanalyser ~7,5 s; tyngst är Exportera (3,1 s)
-   och Lönestruktur (2,7 s). Likvärdigt arbete tar 0,09 s; det tog 16,2 s på samma underlag innan bootstrapmedianen
-   togs ur rangräkning i stället för sortering per dragning och paren räknades en gång per underlag.
-   Förhandsbeskedet under *Rapportens innehåll* tar ~2,3 s.
-   Flikbyten med ett klick i menyn på ett syntetiskt underlag med 50 000 rader (299 kombinationer av AID-etikett och
-   BAS-intervall; Chromium, 2026-11-16), före och efter att regressionen summerar bara över nollskilda kolumner och
-   bootstrapintervallen och omkastningen tar medianerna ur rangordning (samma tal): Rapporttext 4,5 → 2,3 s, Exportera
-   3,4 → 2,4 s, Lönestruktur 3,3 → 2,2 s, Lika arbete 2,2 → 1,6 s, Ålder & karriär 2,1 → 1,5 s, Löneöversyn
-   1,3 → 0,8 s, Översikt, Löneläget och Filer 0,7–0,8 → 0,4–0,5 s.
-   Sedan ADR-80 visas fliken och markeras som räknas inom en bildruta efter klicket, och förhandsbeskedet,
-   rapportunderlaget, regressionskorten i Lönestruktur och löneskillnaden per åldersgrupp ritas efter flikens övre
-   del. På samma underlag (äkta klick i menyn, 2026-11-16) är flikens övre del ritad efter Exportera 3,3 → 0,6 s,
-   Lönestruktur 3,0 → 1,2 s och Rapporttext 3,1 → 1,4 s, medan hela fliken tar lika lång tid som förut (2,5–3,0 s);
-   Ålder & karriär 1,8 → 1,3–1,9 s. Lika arbete (1,5–2,1 s), Löneöversyn (1,1 s) och Översikt (0,6 s) räknas som
-   förut i ett svep, eftersom det som tar tid där står överst.
-   Sedan ADR-81 visas en färdigritad flik igen utan omritning när ingenting har ändrats: på samma underlag (äkta
-   klick i menyn, 2026-11-16) är varje flik färdig 0,05–0,1 s efter klicket vid ett andra besök, mot 0,5–2,6 s när
-   den räknas. Efter en ändring (ett val, en fil, tröskeln) ritas varje flik om när den öppnas, som förut. Det som
-   återstår är alltså första besöket och besöket efter en ändring: regressionen (omkring 0,3 s per körning, en till
-   tre gånger per flik) får inte sparas mellan flikarna (ADR-17).
+5. **Regressionen räknas om vid varje omritning** och får inte sparas mellan flikarna (ADR-17), omkring 0,3 s per
+   körning och en till tre gånger per flik. Det märks vid första besöket på en flik och efter en ändring; ett andra
+   besök utan ändring visar den färdigritade fliken (ADR-81). Senaste mätningen (`npm run perf`, Chromium, 55 000
+   syntetiska rader, 2026-11-15): uppladdning till klart gränssnitt ~3,7 s (budget 5 s) och till klara
+   bakgrundsanalyser ~7,5 s; en ändrad minsta gruppstorlek tar 1,9 s. Äldre mätningar står i git-historiken.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
@@ -53,25 +32,8 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     blir det som sätter väntetiden i CI.
 
 **Gränssnitt och analys (översynen 2026-10-29):**
-9b. **Ett tecken i hela verktyget:** löneskillnader anges kvinnor mot män, negativt när kvinnor ligger lägre
-    (huvudtalet, livscykeln, Blinder-Oaxaca-kortets rågap, *Var uppstår löneskillnaden?*); kvoten *kvinnors lön i
-    procent av mäns* används där den är standard (Översikt, Ålder & karriär, direktivets tabeller). Enda
-    undantaget är EU-lönerapportens blad med direktivets tecken (art. 9), utskrivet i rubriken.
-9c. **Ålder & karriär ordnad efter tre frågor** (vid samma ålder; över karriären; åldersstruktur), med ett
-    spridningsdiagram där hela urvalets trend är ett valbart lager. Täthetskurvorna per BAS är borta ur fliken
-    (lönespridningen per BAS och kön finns som lådor i Lönestruktur, och utskriften använder den bilden).
-9d. **Dekomponeringen visas som en bild:** trappan med steget för AID-etikett inom BAS efter huvudtalet, förklaringsbudgeten
-    under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
-    BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
-9e. **Storlek utan prövning, som beslut (ADR-59, ADR-62, ADR-71):** Utforska och kolumnen *Skillnad kön* i Prioriteringens
-    åtgärdslista visar storleken utan att pröva den mot slumpen och når därför högst *Följ upp*. Det är ett beslut,
-    inte en rest: Utforskas celler är fria urval, där en prövning per cell vore många tester utan korrigering, och
-    Prioriteringens grupper prövas i Lika arbete, dit brickans verktygstips hänvisar. På skärmen (k = 1) står många
-    små grupper som *Går ej att bedöma*, eftersom prövningen kräver `statGolv()` per kön (ADR-38). Övriga rester
-    efter trappan är lösta (2026-11-14, ADR-71): livscykelns nyckeltal följer trappan med modellens konfidensintervall och
-    förändringen 25–65 år färgas på prövningen av samspelet mellan kön och ålder, protokollet för gemensam
-    lönebedömning väljer BAS-intervall efter BH-korrigeringen, och handlingsplanen säger i kolumnen *Kostnaden
-    avser* vilken kostnad raden har.
+9e. *Avslutad 2026-11-21:* att Utforska och kolumnen *Skillnad kön* i Prioriteringen visar storleken utan prövning
+    mot slumpen är ett beslut (ADR-59, ADR-62, ADR-71). Punkterna 9b–9d beskrev genomförda ändringar och är strukna.
 
 **Metodval att ta ställning till (noterade 2026-11-14, inte fel):**
 23. *Avslutad 2026-11-15:* översikten per huvudområde räknar den justerade skillnaden med huvudregressionens kodning
@@ -93,12 +55,13 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     Excel-filen är renderade i LibreOffice.
     Inte prövat: exporterna öppnade i Word och Excel, skärmen i Firefox och Safari för hand, och bredder under 1 100
     punkter (till exempel Windows med skalning 125 %).
-27. **Termerna byts i koden, inte i en fil.** En annan uppsättning (till exempel för en annan bransch) kräver ett
-    eget bygge. Organisationspaketet kan inte bära en uppsättning, och dokumenten är skrivna med standardorden.
+27. *Avslutad 2026-11-21:* termerna står i koden, inte i en fil, och det är ett beslut. En annan uppsättning (till
+    exempel för en annan bransch) kräver ett eget bygge; organisationspaketet bär ingen uppsättning.
 30. *Avslutad 2026-11-15:* utseendebesluten är fattade i ADR-75 (kort ordform *AID* i kolumnrubriker, *AID median
     högre (kr)* i rapporten, 9 pt i Word-utkastet när en tabell inte ryms i 10 pt).
-31. **Excel kan inte radbryta en etikett som är bredare än kolumnens tak** (70 tecken): den inbäddade SheetJS
-    community skriver inte cellstilar. En längre etikett syns hel bara i cellen eller formelfältet.
+31. *Avslutad 2026-11-21, känd gräns:* Excel radbryter inte en etikett som är bredare än kolumnens tak (70 tecken),
+    eftersom den inbäddade SheetJS community inte skriver cellstilar. En längre etikett syns hel i cellen eller
+    formelfältet.
 
 **Dokumentation och lansering:**
 17b. **Före varje release: riskanalysen granskas mot koden.** `riskanalys.md` och `dataskydd.md` läses påstående
@@ -108,14 +71,13 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 18. **Uttagsstegen per lönesystem i `datauttag.md` är inte verifierade mot systemen**; de
     bygger på det gemensamma statistikuttaget och har rader som varje organisations systemförvaltare fyller i
     och bekräftar för sin installation.
-29. **Beslutsloggen bär lydelsen för gränssnittet och exporterna.** De områdena har ingen referens, så ett tiotal
-    beslut (bland dem ADR-10, 15, 23, 29, 33, 35, 39, 50, 62) är längre än loggens tre meningar. Prioriteringen och
-    Löneöversynen, som ADR-50 och 62 gäller, har sedan 2026-11-20 var sin referens för beräkningarna
-    (`prioriteringsmodellen.md`, `loneoversynsmodellen.md`); ADR-50 och 62 är inte kortade. De långa besluten bland
-    ADR-77–92 är kortade 2026-11-21, och deras lydelse står i referenserna som de pekar på. Några detaljer i
-    ADR-16, 20, 28, 30, 33, 54 och 62 ströks när loggen kortades (ADR-73) och finns bara i git-historiken.
-19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett
-    beslut om att lägga en bildfil i källkoden.
+29. **Beslutsloggen bär lydelsen för gränssnittet och exporterna.** De områdena har ingen referens, så några beslut
+    (bland dem ADR-10, 15, 23, 29, 33, 35 och 39) är längre än loggens tre meningar. ADR-50 och 62 pekar sedan
+    2026-11-21 på `prioriteringsmodellen.md` och `loneoversynsmodellen.md`, och de långa besluten bland ADR-77–92 på
+    sina referenser. Några detaljer i ADR-16, 20, 28, 30, 33, 54 och 62 ströks när loggen kortades (ADR-73) och
+    finns bara i git-historiken.
+19. *Avslutad 2026-11-21:* README i roten har ingen bild, och det är ett beslut: skärmbilder och bildfiler checkas
+    inte in i källkoden.
 21. **Inför användning hos fler arbetsgivare:** licens- eller användaravtal, prismodell och support; en beskriven
     väg in för andra arbetsvärderingssystem än BAS; för offentlig sektor offentlighetsprincipen och
     arkivering av utdata, mall för konsekvensbedömning; en jurist-granskad metodbeskrivning och en handledning

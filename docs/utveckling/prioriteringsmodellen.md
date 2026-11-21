@@ -163,8 +163,6 @@ gruppens samlade median, som redovisas när gruppen når tröskeln.
   under bevakningsgränsen. Står den över blir *Nära referens, under* aldrig utfallet.
 - **Kostnaden gäller beräkningsperioden.** `kostnadPerAr` multiplicerar med periodens månader, så namnet och ordet
   *per år* stämmer bara när perioden är 12 månader.
-- **Ordet i beslutet och i koden skiljer sig.** ADR-62 räknar upp *Under referens*; `PRIO_STATUS_INFO` säger *Under
-  referens, liten grupp*.
 
 ## 10. Vakter och referensfall
 
