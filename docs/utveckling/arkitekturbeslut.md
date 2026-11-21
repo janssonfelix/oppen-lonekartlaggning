@@ -318,9 +318,8 @@ block efter sista skriptet, så att CSP:ns kontrollsummor är orörda; filen ver
 webbläsaren gör omöjlig. *Gäller i dag:* `organisationsfil.md`.
 
 **ADR-50 — Prioritering är vad, Löneöversyn är hur.** Prioritering svarar på vad som bör åtgärdas och vad det kostar;
-Löneöversyn på hur potten fördelas. Lönerevisionssimulatorn i Prioritering är borttagen: en riktad rad i Löneöversyn kan
-i stället begränsas till ett kön och till löner under en gräns och lyfta till en nivå (`targetRows` i
-`src/lib/loneoversyn.js`). PO-påslag och beräkningsperiod står under Inställningar.
+Löneöversyn på hur potten fördelas, och lönerevisionssimulatorn i Prioritering är borttagen. *Gäller i dag:*
+`prioriteringsmodellen.md` och `loneoversynsmodellen.md` §4.
 
 **ADR-51 — Minsta gruppstorlek gäller det som lämnar verktyget, inte skärmen.** Tröskeln är 1 i skärmläget och den
 inställda i exportläget, som allt som lämnar verktyget körs i; den som arbetar i verktyget har redan lönefilen.
@@ -369,9 +368,8 @@ kvinnodominerat.** Förut föll blandade AID-etiketter (40–60 % kvinnor) bort;
 eftersom ett par med 2 % skillnad annars aldrig syntes. *Gäller i dag:* `likvardighetsmodellen.md` §5 och §8.
 
 **ADR-62 — Prioriteringens egna ord för läget mot referensen.** Prioriteringens statusar hette som trappan för
-skillnaden mellan kvinnor och män, fast de mäter löneläget mot referensen. Orden är nu *Börja här*, *Under referens*,
-*Nära referens, under*, *Nära referens* och *Över referens* (`PRIO_STATUS_INFO`), med oförändrade gränser, och
-nyckeltalet heter *Kostnad att nå referensen*. *Gäller i dag:* `docs/anvandare/korguide.md` §4.
+skillnaden mellan kvinnor och män, fast de mäter löneläget mot referensen; de har nu egna ord, med oförändrade gränser.
+*Gäller i dag:* `prioriteringsmodellen.md` §3.
 
 **ADR-63 — Kvantilregressionen på huvudmodellens design, villkorad tolkning.** Kvantilregressionen räknar på samma
 design som huvudtalet, och glastak eller klibbigt golv sägs bara när intervallet för P90 − P10 utesluter noll.
@@ -402,8 +400,7 @@ och §11.
 **ADR-71 — Trappan i livscykeln, protokollet och Prioriteringen; ingen färg på storleken ensam.** Livscykelns nyckeltal
 och protokollets BAS-intervall följer trappan, och en skillnad mellan kvinnors och mäns lön färgas inte på storleken
 ensam. *Avvisat:* en fast gräns för tabellcellernas färg; att pröva *Skillnad kön* i Prioriteringen (två utslag för
-samma fråga); att välja på det råa p-värdet. *Gäller i dag:* `regressionsmodellen.md` §7 och punkt 9e i
-`oppna-punkter.md`.
+samma fråga); att välja på det råa p-värdet. *Gäller i dag:* `regressionsmodellen.md` §7 och punkt 9e i `oppna-punkter.md`.
 
 **ADR-72 — Definitionerna av kvinnodominerat heter efter lydelsen.** Valen heter *Mer än X %* och *X % eller mer*;
 nycklarna `'do'` och `'scb'` står kvar för sparade filer. Etiketten SCB hade inget stöd. *Avvisat:* att döpa valen efter
