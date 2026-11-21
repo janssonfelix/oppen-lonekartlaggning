@@ -230,7 +230,6 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     renderConsistencyBanner();
     renderActionChecklist({ reg });
     renderOutliers();
-    renderRealityCheck();
     renderDataValidationReport();
     syncDatakvalitetPanel({ reg });
     renderProcessTracker({ reg });

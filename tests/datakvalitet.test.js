@@ -69,12 +69,16 @@ describe('bedomUnderlag', () => {
         expect(c.varde).toBeCloseTo(4, 10);
         expect(c.status).toBe('varning');
     });
-    it('rimlighet: lön under 20 000 eller över 250 000, ålder utanför 18–70, BAS som inte är en bokstav', () => {
+    it('rimlighet: lön under 20 000 eller över 250 000, ålder utanför 16–75, BAS som inte är en bokstav', () => {
         const r = [...grupp('A', 50, 49), rad('A', 'man', 19999)];         // 1/100 = 1 %
         expect(status(bedomUnderlag(r, ok), 'rimlighet')).toBe('ok');
-        const r2 = [...grupp('A', 48, 47), rad('A', 'man', 250001), rad('A', 'man', 30000, 17),
-            rad('A', 'man', 30000, 71), rad('7', 'man'), rad('A', 'kvinna', 30000, 70)];  // 4/100
-        expect(status(bedomUnderlag(r2, ok), 'rimlighet')).toBe('varning');
+        // 15 och 76 ligger precis utanför förhandskontrollens åldersgräns, 16 och 75 precis innanför.
+        const r2 = [...grupp('A', 48, 46), rad('A', 'man', 250001), rad('A', 'man', 30000, 15),
+            rad('A', 'man', 30000, 76), rad('7', 'man'), rad('A', 'kvinna', 30000, 16), rad('A', 'kvinna', 30000, 75)];  // 4/100
+        const rim = bedomUnderlag(r2, ok).kriterier.find(c => c.id === 'rimlighet');
+        expect(rim.status).toBe('varning');
+        expect(rim.varde).toBeCloseTo(4, 10);
+        expect(rim.text).toContain('ålder utanför 16–75');
         const r3 = [...grupp('A', 47, 47), ...Array.from({ length: 6 }, () => rad('A', 'man', 12000))];
         expect(status(bedomUnderlag(r3, ok), 'rimlighet')).toBe('kritisk');
     });

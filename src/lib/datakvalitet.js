@@ -12,12 +12,15 @@ import { konOf } from './falt.js';
 import { avrundaSymmetriskt } from './stat.js';
 import { personOrd } from './namn.js';
 import { skapaTermer, ordForAntal } from './termer.js';
+import { forhandskontrollGranser } from './forhandskontroll.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
 const FTE_GOLV = 20000;
+/** Samma åldersgräns som förhandskontrollen: en uppgift på ett ställe. */
+const { alderMin: ALDER_MIN, alderMax: ALDER_MAX } = forhandskontrollGranser();
 
 function _stat(v, okGrans, varnGrans, hogreArBattre) {
     if (v == null || !isFinite(v)) return 'kritisk';
@@ -94,12 +97,12 @@ export function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {})
     // Ålderskolumnen är valfri (ADR-64): utan ålder i lönefilen prövas bara lön och BAS.
     const harAlder = d.some(r => r && r.alder > 0);
     const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || (harAlder && !(r.alder >= 18 && r.alder <= 70)) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
+        || (harAlder && !(r.alder >= ALDER_MIN && r.alder <= ALDER_MAX)) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ${harAlder ? 'ålder utanför 18–70 ' : ''}eller BAS som inte är en bokstav.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ${harAlder ? `ålder utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';

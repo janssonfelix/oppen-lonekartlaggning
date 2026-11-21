@@ -642,7 +642,7 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 | B3 | Avvikelse feltolkas som "diskriminering" utan saklig prövning | Medel | Medel | Coachande språk, bevis-popups, disclaimers ("verktyget dömer inte") | **Låg–medel** |
 | B4 | Beslut på tunt statistiskt underlag (litet n) | Medel | Medel | Tillförlitlighetsflaggor, k-anon, varningar vid n<30/50 | **Låg–medel** |
 | B5 | Individuell analys (lika arbete) pekar ut enskilda | Medel | Medel | Diagram med enskilda personer saknar namn och identifierare (utöver det som står i fältet för AID-etikett, B1c); *Personer att granska* (ADR-23) visar enskilda med radnummer men bara i verktyget — ingen export, dold vid utskrift; bedömning ska dokumenteras manuellt | **Medel** (hantera som personuppgift, även diagramdata-exporter) |
-| B6 | Felaktig indata (fel kön/lön) → fel slutsats | Medel | Medel | Datakvalitetsrapport, reality-check, parsningsspårning | **Låg–medel** |
+| B6 | Felaktig indata (fel kön/lön) → fel slutsats | Medel | Medel | Förhandskontrollen, Underlagets kvalitet (ADR-19), inläsningsrapporten | **Låg–medel** |
 | B7 | Exponering via skärmdelning/skärmdump under möte | Medel | Medel | — | **Medel** (organisatorisk åtgärd) |
 
 ---

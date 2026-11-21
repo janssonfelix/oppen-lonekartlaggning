@@ -8491,6 +8491,275 @@ function namnFranFil(filnamn) {
 })();
 const _refNamnFranFil = __mirrorReferens.namnFranFil;
 
+// ---- speglar src/lib/forhandskontroll.js ----
+const __mirrorForhandskontroll = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const skapaTermer = __mirrorTermer.skapaTermer;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — förhandskontrollen av lönefilen: hur filen tolkades, rad för rad och i sammandrag, med
+ * varningar, direkt efter inläsningen.
+ *
+ * Ren logik utan DOM och state. Appen (32-filinlasning.js) samlar under inläsningen de tio första raderna med
+ * filens råvärde och verktygets tolkning, räknar kön-värdena och skickar in de använda raderna och inläsningens
+ * räknare (parseStats). Här byggs det som visas (17-forhandskontroll.js): tolkningen per cell, sammandraget,
+ * värdefördelningen och varningarna. Ingen tolkning görs om här — modulen beskriver bara den som redan gjorts.
+ *
+ * Dataskydd: tolkningen bär högst tio rader med fem till sju fält, och yrkets råvärde följer aldrig med (yrket
+ * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
+ * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
+ * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+/** Antal rader i tolkningen. */
+const FK_ANTAL_RADER = 10;
+/** En medianlön över detta ser ut som en årslön. */
+const FK_ARSLON_MEDIAN = 150000;
+/** En medianlön under detta ser ut som en timlön. */
+const FK_TIMLON_MEDIAN = 5000;
+/** Den högsta lönen över så många gånger medianen är en orimlig spridning. */
+const FK_SPRIDNING_GANGER = 10;
+const FK_ALDER_MIN = 16;
+const FK_ALDER_MAX = 75;
+/** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
+const FK_SMA_GRUPP = 10;
+/** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
+const FK_NAMN_RADNR = 5;
+/** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
+const MAX_RA = 24;
+const VANLIG_BAS = /^[A-N]$/;
+const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
+// Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
+const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
+const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', inget: 'inget särskilt ansvar' };
+
+/** Gränsvärdena, för gränssnittets texter. */
+function forhandskontrollGranser() {
+    return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
+        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
+        namnRadnr: FK_NAMN_RADNR };
+}
+
+const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+function _fkTal(v) { return typeof v === 'number' && isFinite(v) ? _tal.format(v) : ''; }
+function _fkKorta(v) {
+    if (v == null) return '';
+    const s = String(v).trim();
+    return s.length > MAX_RA ? s.slice(0, MAX_RA) + '…' : s;
+}
+function _fkMedian(sorterade) {
+    const n = sorterade.length;
+    if (!n) return null;
+    return n % 2 ? sorterade[(n - 1) / 2] : (sorterade[n / 2 - 1] + sorterade[n / 2]) / 2;
+}
+const _fkRader = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
+const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
+/** "12", "12 och 40", "12, 40 och 51". */
+const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
+
+/**
+ * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
+ * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
+ * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
+ */
+function namnIYrkesfaltetRadnr(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
+}
+
+/**
+ * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
+ * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
+ * rader och radnumren, aldrig fältets innehåll.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0.
+ */
+function namnIYrkesfaltetText(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = namnIYrkesfaltetRadnr(antal, radnr);
+    const vilka = nr ? ` (${nr})` : '';
+    return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
+        + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
+}
+
+/**
+ * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
+ * "rå tolkat som …" när tolkningen skiljer sig från råvärdet (med ord: gränssnittet har inga pilar).
+ */
+function _fkCell(roll, rad) {
+    const ra = _fkKorta(rad.ra?.[roll]);
+    const tolkat = rad.tolkat?.[roll];
+    const status = (rad.status && rad.status[roll]) || 'ok';
+    const tom = ra === '';
+    const visa = (tolkatText, lika) => (tom ? '(tom)' : lika ? ra : `${ra} tolkat som ${tolkatText}`);
+    if (roll === 'yrke') {
+        const t = String(tolkat ?? '');
+        return { 'rå': null, tolkat: t, fel: t ? null : 'saknas', text: t || '(tom)' };
+    }
+    if (roll === 'bas') {
+        const t = String(tolkat ?? '');
+        const fel = !t ? 'saknas: raden faller bort' : VANLIG_BAS.test(t) ? null : 'inte en bokstav A–N';
+        return { 'rå': ra, tolkat: t, fel, text: visa(t, ra === t) };
+    }
+    if (roll === 'kon') {
+        const t = String(tolkat ?? '');
+        const kand = t === 'kvinna' || t === 'man';
+        const fel = tom ? 'saknas: raden faller bort' : kand ? null : 'okänd kod: raden faller bort';
+        return { 'rå': ra, tolkat: kand ? t : null, fel, text: kand ? visa(t, ra.toLowerCase() === t) : (tom ? '(tom)' : ra) };
+    }
+    if (roll === 'ansvar') {
+        const t = ANSVAR_TEXT[tolkat] || '';
+        const fel = status === 'invalid' ? 'ogiltig kod: räknas som inget särskilt ansvar' : null;
+        return { 'rå': ra, tolkat: tolkat ?? null, fel, text: tom ? '(tom)' : `${ra} tolkat som ${t || ANSVAR_TEXT.inget}` };
+    }
+    // Tal: lön, ålder och poäng.
+    const n = typeof tolkat === 'number' && isFinite(tolkat) ? tolkat : null;
+    const lika = n != null && ra === String(n);
+    if (roll === 'lon') {
+        const fel = status === 'invalid' ? 'kan inte läsas som tal: raden faller bort'
+            : tom ? 'saknas: raden faller bort' : n == null || n <= 0 ? 'noll eller negativ: raden faller bort' : null;
+        return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
+    }
+    if (roll === 'alder') {
+        if (status === 'birthyear') return { 'rå': ra, tolkat: n, fel: null, text: `${ra} tolkat som ${_fkTal(n)} år` };
+        const fel = status === 'invalid' ? 'kan inte läsas som tal' : tom ? 'saknas'
+            : n != null && (n < FK_ALDER_MIN || n > FK_ALDER_MAX) ? `utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år` : null;
+        return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(`${_fkTal(n)} år`, lika) };
+    }
+    const fel = status === 'invalid' ? 'kan inte läsas som tal' : null;
+    return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
+}
+
+/**
+ * Bygger förhandskontrollen.
+ * @param {{
+ *   rader?: Array<{radnr?: number|null, anvands: boolean, ra: Object<string, any>, tolkat: Object<string, any>, status?: Object<string, string>}>,
+ *   data?: Array<{bas: string, lon: number, alder: number, kon: string}>,
+ *   konVarden?: Array<{'rå': string, tolkat: string|null, antal: number}>,
+ *   parseStats?: Object<string, any>,
+ *   headers?: string[],
+ *   mappning?: Object<string, string|null>,
+ *   k?: number,
+ *   profil?: {namn: string, kalla: string}|null
+ * }} indata - `rader`: filens första rader (råvärde, tolkning, status för lön/ålder/poäng/ansvar, om raden
+ *   används); `data`: de använda raderna; `konVarden`: kön-kolumnens värden i hela filen; `mappning`: roll till rubrik
+ *   som lästes; `k`: minsta gruppstorlek; `profil`: importprofilen som kände igen filen.
+ */
+function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStats = {}, headers = [], mappning = {}, k = FK_SMA_GRUPP, profil = null } = {}) {
+    const ps = parseStats || {};
+    const roller = ROLLER.filter(r => OBLIGATORISKA.includes(r) || (mappning && mappning[r]));
+    const tolkning = rader.slice(0, FK_ANTAL_RADER).map(rad => ({
+        radnr: rad.radnr ?? null, anvands: !!rad.anvands,
+        celler: Object.fromEntries(roller.map(r => [r, _fkCell(r, rad)])),
+    }));
+
+    // Sammandrag ur inläsningens räknare.
+    const bortfall = [];
+    const lagg = (kod, antal, text, exempel = []) => { if (antal > 0) bortfall.push({ kod, antal, text, exempel: [...exempel] }); };
+    lagg('bas', ps.excludedNoBas || 0, `utan ${T.niva.en}`);
+    lagg('lon', ps.excludedZeroLon || 0, 'utan lön (tom, noll eller som inte går att läsa)', ps.invalidLonExamples || []);
+    lagg('kon', ps.excludedMissingKon || 0, 'utan känt kön', ps.missingKonExamples || []);
+    const sammandrag = {
+        totalt: ps.totalRaw || 0, anvands: data.length, bortfall,
+        ogiltigLon: { antal: ps.invalidLon || 0, exempel: [...(ps.invalidLonExamples || [])] },
+        ogiltigAlder: { antal: ps.invalidAlder || 0, exempel: [...(ps.invalidAlderExamples || [])] },
+        fodelsear: ps.alderFromBirthYear || 0,
+    };
+
+    // Värdefördelningen i de använda raderna.
+    const perBas = new Map();
+    for (const r of data) perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
+    const basVarden = [...perBas.entries()].map(([bas, antal]) => ({ bas, antal })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
+    const ovanliga = basVarden.map(b => b.bas).filter(b => !VANLIG_BAS.test(b));
+    const loner = data.map(r => r.lon).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
+    const lon = loner.length ? { min: loner[0], median: _fkMedian(loner), max: loner[loner.length - 1] } : null;
+    const aldrar = data.map(r => r.alder).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
+    const utanfor = aldrar.filter(a => a < FK_ALDER_MIN || a > FK_ALDER_MAX).length;
+    const alder = aldrar.length ? { min: aldrar[0], max: aldrar[aldrar.length - 1], utanfor } : null;
+    const grans = typeof k === 'number' && k > 0 ? k : FK_SMA_GRUPP;
+    const sma = basVarden.filter(b => b.antal < grans);
+    const smaRader = sma.reduce((s, b) => s + b.antal, 0);
+    const fordelning = {
+        bas: { varden: basVarden, ovanliga },
+        kon: konVarden.map(v => ({ 'rå': _fkKorta(v['rå']), tolkat: v.tolkat ?? null, antal: v.antal })),
+        lon, alder,
+        smaBas: { k: grans, bas: sma.map(b => b.bas), rader: smaRader, andel: data.length ? smaRader / data.length : 0 },
+    };
+
+    // Varningarna. Texterna bär inga löner eller åldrar ur filen (de kan följa med Att göra ut ur verktyget).
+    const varningar = [];
+    const varna = (kod, niva, text) => varningar.push({ kod, niva, text });
+    // Först: namn i uttaget är en fråga om dataskydd, inte om tolkningen. Bara antal och radnummer (parseStats).
+    if ((ps.yrkeNamn || 0) > 0) varna('yrke-namn', 'varning', namnIYrkesfaltetText(ps.yrkeNamn, ps.yrkeNamnRadnr));
+    if (lon && lon.median > FK_ARSLON_MEDIAN) {
+        varna('lon-arslon', 'fel', `Medianlönen är över ${_fkTal(FK_ARSLON_MEDIAN)} kr och ser ut som en årslön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
+    } else if (lon && lon.median < FK_TIMLON_MEDIAN) {
+        varna('lon-timlon', 'fel', `Medianlönen är under ${_fkTal(FK_TIMLON_MEDIAN)} kr och ser ut som en timlön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
+    } else if (lon && lon.max > FK_SPRIDNING_GANGER * lon.median) {
+        varna('lon-spridning', 'varning', `Den högsta lönen är mer än ${FK_SPRIDNING_GANGER} gånger medianlönen: kontrollera om några löner är årslöner eller har fel enhet.`);
+    }
+    if (data.length && !data.some(r => typeof r.alder === 'number' && r.alder > 0)) {
+        varna('alder-saknas', 'varning', 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
+    }
+    if (sammandrag.fodelsear > 0) {
+        varna('alder-fodelsear', 'varning', `Åldern har räknats ut ur födelseår för ${_fkRader(sammandrag.fodelsear)}: kontrollera att ålderskolumnen verkligen är födelseår.`);
+    }
+    if (utanfor > 0) {
+        varna('alder-utanfor', 'varning', `${_fkPersoner(utanfor)} har en ålder utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år: kontrollera ålderskolumnen.`);
+    }
+    if (sammandrag.ogiltigAlder.antal > 0) {
+        varna('alder-ogiltig', 'varning', `${_fkRader(sammandrag.ogiltigAlder.antal)} har en ålder som inte går att läsa som tal.`);
+    }
+    if (ovanliga.length) {
+        const visa = ovanliga.slice(0, 5).map(b => _fkKorta(b)).join(', ') + (ovanliga.length > 5 ? ' …' : '');
+        varna('bas-ovanlig', 'varning', `${ovanliga.length} ${ovanliga.length === 1 ? 'BAS-värde är' : 'BAS-värden är'} inte en bokstav A–N (${visa}): kontrollera BAS-kolumnen.`);
+    }
+    if ((ps.excludedMissingKon || 0) > 0) {
+        varna('kon-okand', 'varning', `${_fkRader(ps.excludedMissingKon)} har ett kön som verktyget inte känner igen och faller bort.`);
+    }
+    if ((ps.excludedNoBas || 0) > 0) {
+        varna('bortfall-bas', 'varning', `${_fkRader(ps.excludedNoBas)} saknar ${T.niva.en} och faller bort.`);
+    }
+    if ((ps.excludedZeroLon || 0) > 0) {
+        const ogiltig = ps.invalidLon || 0;
+        varna('bortfall-lon', 'varning', `${_fkRader(ps.excludedZeroLon)} saknar lön och faller bort${ogiltig ? `, varav ${ogiltig} med en lön som inte går att läsa som tal` : ''}.`);
+    }
+
+    const anvandaRubriker = new Set();
+    const anvanda = [];
+    for (const r of ROLLER) {
+        const rubrik = mappning && mappning[r];
+        if (!rubrik) continue;
+        anvanda.push({ roll: r, rubrik });
+        anvandaRubriker.add(rubrik);
+    }
+    const kolumner = {
+        anvanda,
+        oanvanda: (headers || []).filter(h => h && !anvandaRubriker.has(h)),
+        profil: profil ? { namn: profil.namn, kalla: profil.kalla } : null,
+    };
+    return { tolkning, sammandrag, fordelning, varningar, kolumner };
+}
+
+    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText, namnIYrkesfaltetRadnr };
+})();
+const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
+const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
+const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
+const _fkNamnIYrkesfaltetRadnr = __mirrorForhandskontroll.namnIYrkesfaltetRadnr;
+
 // ---- speglar src/lib/datakvalitet.js ----
 const __mirrorDatakvalitet = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -8499,6 +8768,7 @@ const __mirrorDatakvalitet = (() => {
     const personOrd = __mirrorNamn.personOrd;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
+    const forhandskontrollGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8514,12 +8784,15 @@ const __mirrorDatakvalitet = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
 const FTE_GOLV = 20000;
+/** Samma åldersgräns som förhandskontrollen: en uppgift på ett ställe. */
+const { alderMin: ALDER_MIN, alderMax: ALDER_MAX } = forhandskontrollGranser();
 
 function _stat(v, okGrans, varnGrans, hogreArBattre) {
     if (v == null || !isFinite(v)) return 'kritisk';
@@ -8596,12 +8869,12 @@ function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {}) {
     // Ålderskolumnen är valfri (ADR-64): utan ålder i lönefilen prövas bara lön och BAS.
     const harAlder = d.some(r => r && r.alder > 0);
     const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || (harAlder && !(r.alder >= 18 && r.alder <= 70)) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
+        || (harAlder && !(r.alder >= ALDER_MIN && r.alder <= ALDER_MAX)) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ${harAlder ? 'ålder utanför 18–70 ' : ''}eller BAS som inte är en bokstav.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ${harAlder ? `ålder utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';
@@ -12552,275 +12825,6 @@ const _ipMatcha = __mirrorImportprofiler.matchaImportprofil;
 const _ipFranMappning = __mirrorImportprofiler.profilFranMappning;
 const _ipTillJson = __mirrorImportprofiler.importprofilerTillJson;
 const _ipInbyggda = __mirrorImportprofiler.inbyggdaProfiler;
-
-// ---- speglar src/lib/forhandskontroll.js ----
-const __mirrorForhandskontroll = (() => {
-    // importer ur tidigare speglade lib-moduler
-    const skapaTermer = __mirrorTermer.skapaTermer;
-
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — förhandskontrollen av lönefilen: hur filen tolkades, rad för rad och i sammandrag, med
- * varningar, direkt efter inläsningen.
- *
- * Ren logik utan DOM och state. Appen (32-filinlasning.js) samlar under inläsningen de tio första raderna med
- * filens råvärde och verktygets tolkning, räknar kön-värdena och skickar in de använda raderna och inläsningens
- * räknare (parseStats). Här byggs det som visas (17-forhandskontroll.js): tolkningen per cell, sammandraget,
- * värdefördelningen och varningarna. Ingen tolkning görs om här — modulen beskriver bara den som redan gjorts.
- *
- * Dataskydd: tolkningen bär högst tio rader med fem till sju fält, och yrkets råvärde följer aldrig med (yrket
- * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
- * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
- * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- */
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
-
-/** Antal rader i tolkningen. */
-const FK_ANTAL_RADER = 10;
-/** En medianlön över detta ser ut som en årslön. */
-const FK_ARSLON_MEDIAN = 150000;
-/** En medianlön under detta ser ut som en timlön. */
-const FK_TIMLON_MEDIAN = 5000;
-/** Den högsta lönen över så många gånger medianen är en orimlig spridning. */
-const FK_SPRIDNING_GANGER = 10;
-const FK_ALDER_MIN = 16;
-const FK_ALDER_MAX = 75;
-/** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
-const FK_SMA_GRUPP = 10;
-/** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
-const FK_NAMN_RADNR = 5;
-/** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
-const MAX_RA = 24;
-const VANLIG_BAS = /^[A-N]$/;
-const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-// Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
-const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
-const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', inget: 'inget särskilt ansvar' };
-
-/** Gränsvärdena, för gränssnittets texter. */
-function forhandskontrollGranser() {
-    return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
-        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
-        namnRadnr: FK_NAMN_RADNR };
-}
-
-const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
-function _fkTal(v) { return typeof v === 'number' && isFinite(v) ? _tal.format(v) : ''; }
-function _fkKorta(v) {
-    if (v == null) return '';
-    const s = String(v).trim();
-    return s.length > MAX_RA ? s.slice(0, MAX_RA) + '…' : s;
-}
-function _fkMedian(sorterade) {
-    const n = sorterade.length;
-    if (!n) return null;
-    return n % 2 ? sorterade[(n - 1) / 2] : (sorterade[n / 2 - 1] + sorterade[n / 2]) / 2;
-}
-const _fkRader = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
-const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
-/** "12", "12 och 40", "12, 40 och 51". */
-const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
-
-/**
- * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
- * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
- * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
- * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
- * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
- * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
- */
-function namnIYrkesfaltetRadnr(antal, radnr = []) {
-    if (!(antal > 0)) return '';
-    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
-    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
-}
-
-/**
- * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
- * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
- * rader och radnumren, aldrig fältets innehåll.
- * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
- * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
- * @returns {string} Tom när antalet är 0.
- */
-function namnIYrkesfaltetText(antal, radnr = []) {
-    if (!(antal > 0)) return '';
-    const nr = namnIYrkesfaltetRadnr(antal, radnr);
-    const vilka = nr ? ` (${nr})` : '';
-    return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
-        + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
-}
-
-/**
- * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
- * "rå tolkat som …" när tolkningen skiljer sig från råvärdet (med ord: gränssnittet har inga pilar).
- */
-function _fkCell(roll, rad) {
-    const ra = _fkKorta(rad.ra?.[roll]);
-    const tolkat = rad.tolkat?.[roll];
-    const status = (rad.status && rad.status[roll]) || 'ok';
-    const tom = ra === '';
-    const visa = (tolkatText, lika) => (tom ? '(tom)' : lika ? ra : `${ra} tolkat som ${tolkatText}`);
-    if (roll === 'yrke') {
-        const t = String(tolkat ?? '');
-        return { 'rå': null, tolkat: t, fel: t ? null : 'saknas', text: t || '(tom)' };
-    }
-    if (roll === 'bas') {
-        const t = String(tolkat ?? '');
-        const fel = !t ? 'saknas: raden faller bort' : VANLIG_BAS.test(t) ? null : 'inte en bokstav A–N';
-        return { 'rå': ra, tolkat: t, fel, text: visa(t, ra === t) };
-    }
-    if (roll === 'kon') {
-        const t = String(tolkat ?? '');
-        const kand = t === 'kvinna' || t === 'man';
-        const fel = tom ? 'saknas: raden faller bort' : kand ? null : 'okänd kod: raden faller bort';
-        return { 'rå': ra, tolkat: kand ? t : null, fel, text: kand ? visa(t, ra.toLowerCase() === t) : (tom ? '(tom)' : ra) };
-    }
-    if (roll === 'ansvar') {
-        const t = ANSVAR_TEXT[tolkat] || '';
-        const fel = status === 'invalid' ? 'ogiltig kod: räknas som inget särskilt ansvar' : null;
-        return { 'rå': ra, tolkat: tolkat ?? null, fel, text: tom ? '(tom)' : `${ra} tolkat som ${t || ANSVAR_TEXT.inget}` };
-    }
-    // Tal: lön, ålder och poäng.
-    const n = typeof tolkat === 'number' && isFinite(tolkat) ? tolkat : null;
-    const lika = n != null && ra === String(n);
-    if (roll === 'lon') {
-        const fel = status === 'invalid' ? 'kan inte läsas som tal: raden faller bort'
-            : tom ? 'saknas: raden faller bort' : n == null || n <= 0 ? 'noll eller negativ: raden faller bort' : null;
-        return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
-    }
-    if (roll === 'alder') {
-        if (status === 'birthyear') return { 'rå': ra, tolkat: n, fel: null, text: `${ra} tolkat som ${_fkTal(n)} år` };
-        const fel = status === 'invalid' ? 'kan inte läsas som tal' : tom ? 'saknas'
-            : n != null && (n < FK_ALDER_MIN || n > FK_ALDER_MAX) ? `utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år` : null;
-        return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(`${_fkTal(n)} år`, lika) };
-    }
-    const fel = status === 'invalid' ? 'kan inte läsas som tal' : null;
-    return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
-}
-
-/**
- * Bygger förhandskontrollen.
- * @param {{
- *   rader?: Array<{radnr?: number|null, anvands: boolean, ra: Object<string, any>, tolkat: Object<string, any>, status?: Object<string, string>}>,
- *   data?: Array<{bas: string, lon: number, alder: number, kon: string}>,
- *   konVarden?: Array<{'rå': string, tolkat: string|null, antal: number}>,
- *   parseStats?: Object<string, any>,
- *   headers?: string[],
- *   mappning?: Object<string, string|null>,
- *   k?: number,
- *   profil?: {namn: string, kalla: string}|null
- * }} indata - `rader`: filens första rader (råvärde, tolkning, status för lön/ålder/poäng/ansvar, om raden
- *   används); `data`: de använda raderna; `konVarden`: kön-kolumnens värden i hela filen; `mappning`: roll till rubrik
- *   som lästes; `k`: minsta gruppstorlek; `profil`: importprofilen som kände igen filen.
- */
-function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStats = {}, headers = [], mappning = {}, k = FK_SMA_GRUPP, profil = null } = {}) {
-    const ps = parseStats || {};
-    const roller = ROLLER.filter(r => OBLIGATORISKA.includes(r) || (mappning && mappning[r]));
-    const tolkning = rader.slice(0, FK_ANTAL_RADER).map(rad => ({
-        radnr: rad.radnr ?? null, anvands: !!rad.anvands,
-        celler: Object.fromEntries(roller.map(r => [r, _fkCell(r, rad)])),
-    }));
-
-    // Sammandrag ur inläsningens räknare.
-    const bortfall = [];
-    const lagg = (kod, antal, text, exempel = []) => { if (antal > 0) bortfall.push({ kod, antal, text, exempel: [...exempel] }); };
-    lagg('bas', ps.excludedNoBas || 0, `utan ${T.niva.en}`);
-    lagg('lon', ps.excludedZeroLon || 0, 'utan lön (tom, noll eller som inte går att läsa)', ps.invalidLonExamples || []);
-    lagg('kon', ps.excludedMissingKon || 0, 'utan känt kön', ps.missingKonExamples || []);
-    const sammandrag = {
-        totalt: ps.totalRaw || 0, anvands: data.length, bortfall,
-        ogiltigLon: { antal: ps.invalidLon || 0, exempel: [...(ps.invalidLonExamples || [])] },
-        ogiltigAlder: { antal: ps.invalidAlder || 0, exempel: [...(ps.invalidAlderExamples || [])] },
-        fodelsear: ps.alderFromBirthYear || 0,
-    };
-
-    // Värdefördelningen i de använda raderna.
-    const perBas = new Map();
-    for (const r of data) perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
-    const basVarden = [...perBas.entries()].map(([bas, antal]) => ({ bas, antal })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
-    const ovanliga = basVarden.map(b => b.bas).filter(b => !VANLIG_BAS.test(b));
-    const loner = data.map(r => r.lon).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
-    const lon = loner.length ? { min: loner[0], median: _fkMedian(loner), max: loner[loner.length - 1] } : null;
-    const aldrar = data.map(r => r.alder).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
-    const utanfor = aldrar.filter(a => a < FK_ALDER_MIN || a > FK_ALDER_MAX).length;
-    const alder = aldrar.length ? { min: aldrar[0], max: aldrar[aldrar.length - 1], utanfor } : null;
-    const grans = typeof k === 'number' && k > 0 ? k : FK_SMA_GRUPP;
-    const sma = basVarden.filter(b => b.antal < grans);
-    const smaRader = sma.reduce((s, b) => s + b.antal, 0);
-    const fordelning = {
-        bas: { varden: basVarden, ovanliga },
-        kon: konVarden.map(v => ({ 'rå': _fkKorta(v['rå']), tolkat: v.tolkat ?? null, antal: v.antal })),
-        lon, alder,
-        smaBas: { k: grans, bas: sma.map(b => b.bas), rader: smaRader, andel: data.length ? smaRader / data.length : 0 },
-    };
-
-    // Varningarna. Texterna bär inga löner eller åldrar ur filen (de kan följa med Att göra ut ur verktyget).
-    const varningar = [];
-    const varna = (kod, niva, text) => varningar.push({ kod, niva, text });
-    // Först: namn i uttaget är en fråga om dataskydd, inte om tolkningen. Bara antal och radnummer (parseStats).
-    if ((ps.yrkeNamn || 0) > 0) varna('yrke-namn', 'varning', namnIYrkesfaltetText(ps.yrkeNamn, ps.yrkeNamnRadnr));
-    if (lon && lon.median > FK_ARSLON_MEDIAN) {
-        varna('lon-arslon', 'fel', `Medianlönen är över ${_fkTal(FK_ARSLON_MEDIAN)} kr och ser ut som en årslön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
-    } else if (lon && lon.median < FK_TIMLON_MEDIAN) {
-        varna('lon-timlon', 'fel', `Medianlönen är under ${_fkTal(FK_TIMLON_MEDIAN)} kr och ser ut som en timlön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
-    } else if (lon && lon.max > FK_SPRIDNING_GANGER * lon.median) {
-        varna('lon-spridning', 'varning', `Den högsta lönen är mer än ${FK_SPRIDNING_GANGER} gånger medianlönen: kontrollera om några löner är årslöner eller har fel enhet.`);
-    }
-    if (data.length && !data.some(r => typeof r.alder === 'number' && r.alder > 0)) {
-        varna('alder-saknas', 'varning', 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
-    }
-    if (sammandrag.fodelsear > 0) {
-        varna('alder-fodelsear', 'varning', `Åldern har räknats ut ur födelseår för ${_fkRader(sammandrag.fodelsear)}: kontrollera att ålderskolumnen verkligen är födelseår.`);
-    }
-    if (utanfor > 0) {
-        varna('alder-utanfor', 'varning', `${_fkPersoner(utanfor)} har en ålder utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år: kontrollera ålderskolumnen.`);
-    }
-    if (sammandrag.ogiltigAlder.antal > 0) {
-        varna('alder-ogiltig', 'varning', `${_fkRader(sammandrag.ogiltigAlder.antal)} har en ålder som inte går att läsa som tal.`);
-    }
-    if (ovanliga.length) {
-        const visa = ovanliga.slice(0, 5).map(b => _fkKorta(b)).join(', ') + (ovanliga.length > 5 ? ' …' : '');
-        varna('bas-ovanlig', 'varning', `${ovanliga.length} ${ovanliga.length === 1 ? 'BAS-värde är' : 'BAS-värden är'} inte en bokstav A–N (${visa}): kontrollera BAS-kolumnen.`);
-    }
-    if ((ps.excludedMissingKon || 0) > 0) {
-        varna('kon-okand', 'varning', `${_fkRader(ps.excludedMissingKon)} har ett kön som verktyget inte känner igen och faller bort.`);
-    }
-    if ((ps.excludedNoBas || 0) > 0) {
-        varna('bortfall-bas', 'varning', `${_fkRader(ps.excludedNoBas)} saknar ${T.niva.en} och faller bort.`);
-    }
-    if ((ps.excludedZeroLon || 0) > 0) {
-        const ogiltig = ps.invalidLon || 0;
-        varna('bortfall-lon', 'varning', `${_fkRader(ps.excludedZeroLon)} saknar lön och faller bort${ogiltig ? `, varav ${ogiltig} med en lön som inte går att läsa som tal` : ''}.`);
-    }
-
-    const anvandaRubriker = new Set();
-    const anvanda = [];
-    for (const r of ROLLER) {
-        const rubrik = mappning && mappning[r];
-        if (!rubrik) continue;
-        anvanda.push({ roll: r, rubrik });
-        anvandaRubriker.add(rubrik);
-    }
-    const kolumner = {
-        anvanda,
-        oanvanda: (headers || []).filter(h => h && !anvandaRubriker.has(h)),
-        profil: profil ? { namn: profil.namn, kalla: profil.kalla } : null,
-    };
-    return { tolkning, sammandrag, fordelning, varningar, kolumner };
-}
-
-    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText, namnIYrkesfaltetRadnr };
-})();
-const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
-const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
-const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
-const _fkNamnIYrkesfaltetRadnr = __mirrorForhandskontroll.namnIYrkesfaltetRadnr;
 
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
@@ -19455,141 +19459,6 @@ document.getElementById('outliers-threshold')?.addEventListener('input', renderO
 // Copyright 2026 Felix Jansson
 
 // ---- Datavalideringsrapport (efter CSV-parse) ----
-/**
- * Reality-check-panel.
- *
- * Före HR börjar tolka analyserna, kör en sanity-check av att underlaget
- * är rimligt. Fångar t.ex. fel kolumnmappning (95 % män), orealistiska
- * åldrar (medianålder 19 år) eller löner som lämnats i ören istället för
- * kronor. Skyddar mot tysta tolkningsfel.
- *
- * Klassificering av varje check:
- *   ✅ grönt   — inom rimligt intervall
- *   ⚠ gult    — utanför typiskt intervall men inte omöjligt
- *   🔴 rött   — extremt avvikande, kontrollera mappningen
- */
-function renderRealityCheck() {
-    const wrap = document.getElementById('reality-check');
-    if (!wrap) return;
-    if (!state.data.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-
-    const d = state.data;
-    const n = d.length;
-
-    // Check 1: könsfördelning
-    const nKv = d.filter(r => arKvinna(r)).length;
-    const pctKv = n > 0 ? nKv / n * 100 : 0;
-    let konStatus, konMsg;
-    if (pctKv >= 30 && pctKv <= 70) {
-        konStatus = 'ok';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Inom typiskt kommunalt intervall (30–70 %).`;
-    } else if (pctKv >= 15 && pctKv <= 85) {
-        konStatus = 'warn';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Skev men inte omöjlig — vanligt i specialiserade organisationer (t.ex. teknisk eller socialtjänst).`;
-    } else {
-        konStatus = 'err';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Extremt avvikande — <strong>kontrollera att kön-kolumnen är korrekt mappad</strong>. En vanlig felkälla är att kolumnen innehåller ett ID istället för "Kvinna"/"Man".`;
-    }
-
-    // Check 2: medianålder
-    const ages = d.map(r => r.alder).filter(a => a > 0);
-    const medAge = ages.length ? Stat.median(ages) : 0;
-    // d3.min/max, inte Math.min(...ages): spridning över en lista per person når webbläsarens tak för antal argument.
-    // Number() visar escaping-vakten att värdet är ett tal.
-    const minAge = ages.length ? Number(d3.min(ages)) : 0;
-    const maxAge = ages.length ? Number(d3.max(ages)) : 0;
-    let alderStatus, alderMsg;
-    if (!ages.length) {
-        // Ålderskolumnen är valfri (ADR-64).
-        alderStatus = 'warn';
-        alderMsg = 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.';
-    } else if (medAge >= 38 && medAge <= 55) {
-        alderStatus = 'ok';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Inom typiskt kommunalt intervall (38–55 år).`;
-    } else if (medAge >= 30 && medAge <= 60) {
-        alderStatus = 'warn';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Något utanför typiskt intervall — kontrollera om datan kommer från en specifik organisation med ovanlig demografi.`;
-    } else {
-        alderStatus = 'err';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Extremt avvikande — <strong>kontrollera ålders-kolumnen</strong>. Vanlig felkälla är att ett anställningsdatum lästs in som ålder, eller att kolumnen visar år för anställning istället.`;
-    }
-
-    // Check 3: lönespridning (P10, median, P90)
-    const lons = d.map(r => r.lon).filter(l => l > 0);
-    const p10 = Stat.quantile(lons, 0.10);
-    const p50 = Stat.median(lons);
-    const p90 = Stat.quantile(lons, 0.90);
-    const fmtK = v => svKr(v);
-    let lonStatus, lonMsg;
-    if (p50 >= 25000 && p50 <= 60000) {
-        lonStatus = 'ok';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Inom typiskt svenskt kommunintervall.`;
-    } else if (p50 >= 15000 && p50 < 25000) {
-        lonStatus = 'warn';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Låg medianlön — finns deltidsanställda räknade som heltid i underlaget? Lönen bör vara heltidsekvivalent.`;
-    } else if (p50 > 60000 && p50 <= 90000) {
-        lonStatus = 'warn';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Hög medianlön — typisk för specialistorganisationer eller äldre data har lönerevisionerats.`;
-    } else {
-        lonStatus = 'err';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Extremt avvikande — <strong>kontrollera lön-kolumnen</strong>. Vanlig felkälla: lönen är angiven i ören (multiplicera med 1/100), årslön istället för månadslön (dela med 12), eller deltidsproportionerad istället för heltidsekvivalent.`;
-    }
-
-    // (BAS-maskeringen bedöms nu av kriteriet Jämförbarhet i Underlagets kvalitet, ADR-19.)
-
-    // Check 5: FTE-heuristik — andel löner under heltidsgolvet.
-    // Check 3 fångar bara när MEDIANEN är låg; den vanliga felmoden är blandade
-    // heltids- och ej omräknade deltidslöner (normal median, fet låg svans).
-    // Heltidslöner i kommunal sektor understiger i praktiken inte ~20 000 kr/mån;
-    // deltid på 50–75 % hamnar ofta på 12–18 000 kr.
-    const FTE_GOLV = 20000;
-    const nLow = lons.filter(l => l < FTE_GOLV).length;
-    const pctLow = lons.length ? (nLow / lons.length) * 100 : 0;
-    let fteStatus, fteMsg;
-    if (nLow === 0) {
-        fteStatus = 'ok';
-        fteMsg = `Inga löner under ${fmtK(FTE_GOLV)}/mån — förenligt med heltidsomräknade (FTE) löner, som verktyget förutsätter.`;
-    } else if (pctLow <= 2) {
-        fteStatus = 'ok';
-        fteMsg = `${nLow} lön${nLow === 1 ? '' : 'er'} (${svPct(pctLow, 1)}) under ${fmtK(FTE_GOLV)}/mån — enstaka undantag (t.ex. ungdomsanställningar) är normalt. Verktyget förutsätter heltidsomräknade (FTE) löner.`;
-    } else if (pctLow <= 15) {
-        fteStatus = 'warn';
-        fteMsg = `<strong>${nLow}</strong> löner (<strong>${svPct(pctLow, 1)}</strong>) ligger under ${fmtK(FTE_GOLV)}/mån — kontrollera att månadslönerna är <strong>heltidsomräknade (FTE)</strong>. Ej omräknade deltidslöner snedvrider hela könsanalysen, eftersom deltid oftast är kvinnodominerad.`;
-    } else {
-        fteStatus = 'err';
-        fteMsg = `<strong>${nLow}</strong> löner (<strong>${svPct(pctLow, 1)}</strong>) ligger under ${fmtK(FTE_GOLV)}/mån — underlaget ser <strong>inte</strong> heltidsomräknat ut. Exportera lönerna som heltidsekvivalenter (FTE) ur lönesystemet innan analysen används; ej omräknade deltidslöner gör könsjämförelserna missvisande.`;
-    }
-
-    const icon = s => s === 'ok' ? ikon('bock') : s === 'warn' ? ikon('statusVarning') : ikon('statusKritisk');
-    const allStatuses = [konStatus, alderStatus, lonStatus, fteStatus];
-    const hasErr = allStatuses.includes('err');
-    const hasWarn = allStatuses.includes('warn');
-    const headerClass = hasErr ? 'has-err' : hasWarn ? 'has-warn' : 'all-ok';
-    wrap.style.display = 'block';
-    wrap.className = 'reality-check ' + headerClass;
-    wrap.innerHTML = `
-        <h4 class="text-dampad-xs versal marg-0-0-6">Rimlighet i detalj</h4>
-        <p class="text-dampad-sm marg-0-0-12">
-            Fångar typiska mappningsfel (fel kolumn, fel enhet, fel kön-kodning). Verktyget kan inte
-            avgöra om värdena är "rätt" — bara att de är inom rimliga intervall.
-        </p>
-        <ul class="reality-list utan-punkter marg-0 pad-0">
-            <li class="rc-${konStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(konStatus)}</span>${konMsg}
-            </li>
-            <li class="rc-${alderStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(alderStatus)}</span>${alderMsg}
-            </li>
-            <li class="rc-${lonStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(lonStatus)}</span>${lonMsg}
-            </li>
-            <li class="rc-${fteStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(fteStatus)}</span>${fteMsg}
-            </li>
-        </ul>
-    `;
-}
-
 function renderDataValidationReport() {
     const wrap = document.getElementById('data-validation-report');
     if (!wrap) return;
@@ -19697,9 +19566,9 @@ function renderDataValidationReport() {
     `;
 }
 
-// Underlagets kvalitet (ADR-19): rimlighetskontrollen och inläsningsrapporten är
-// underlag i panelen; statusen kommer från bedomningUnderlag().
-// Anropas efter renderRealityCheck() + renderDataValidationReport().
+// Underlagets kvalitet (ADR-19): inläsningsrapporten är underlag i panelen;
+// statusen kommer från bedomningUnderlag().
+// Anropas efter renderDataValidationReport().
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
 function syncDatakvalitetPanel(val) {
     renderUnderlagetsKvalitet(val);
@@ -21222,7 +21091,6 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     renderConsistencyBanner();
     renderActionChecklist({ reg });
     renderOutliers();
-    renderRealityCheck();
     renderDataValidationReport();
     syncDatakvalitetPanel({ reg });
     renderProcessTracker({ reg });
@@ -23042,7 +22910,7 @@ function clearAllData() {
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
     'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
 
 function _rensaAllData({ inbakat = true } = {}) {
@@ -25123,7 +24991,6 @@ function _afterDataLoaded() {
     if (typeof _resetInactivityTimer === 'function') _resetInactivityTimer();
     renderConsistencyBanner();
     renderOutliers();
-    renderRealityCheck();
     renderDataValidationReport();
     renderForhandskontroll();
     syncDatakvalitetPanel({ reg });
