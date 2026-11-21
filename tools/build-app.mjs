@@ -21,7 +21,8 @@ const srcDir = join(root, 'src', 'app');
 export function buildAppBuffer() {
     const files = readdirSync(srcDir).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
     if (!files.length) throw new Error('Inga src/app/NN-*.js-delar hittades.');
-    return { files, buffer: Buffer.concat(files.map(f => readFileSync(join(srcDir, f)))) };
+    const delar = files.map(f => readFileSync(join(srcDir, f)));
+    return { files, delar, buffer: Buffer.concat(delar) };
 }
 
 // Kör direkt (inte importerad): regenerera lib-speglarna, slå ihop app.js

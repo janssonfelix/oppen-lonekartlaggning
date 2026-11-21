@@ -243,8 +243,10 @@ JavaScript-källan med JSDoc som typspråk — inget skrivs om till TypeScript o
 
 ## 7. Lint
 
-`npm run lint` kör ESLint på `dist/app.js`, `src/lib`, `tests` och `tools` (`npm run lint:fix` rättar det som går);
-biblioteken i `vendor/` och `types/` lintas inte. Röktestet och prestandasvepet lintas med webbläsarens och appens
+`npm run lint` (`tools/lint.mjs`) kör ESLint på appen, `src/lib`, `tests` och `tools`; biblioteken i `vendor/` och
+`types/` lintas inte. Appen lintas hopslagen, som `build:app` bygger den, så att linten ser globaler som ingen fil
+använder och namn som ingen fil deklarerar, men felen anges med källfil och rad i `src/app/`, och `npm run lint:fix`
+skriver sina rättningar i källfilerna (kör `build:app` efteråt). Röktestet och prestandasvepet lintas med webbläsarens och appens
 globaler, eftersom deras callbacks körs i sidan.
 
 Linten förbjuder nät-API och lagring utanför lagringsspärren i appens kod och i lib-modulerna (skydden S1 och S2 i
