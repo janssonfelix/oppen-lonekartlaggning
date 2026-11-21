@@ -439,25 +439,19 @@ AID-kod ensam, som jämför samma arbete i olika BAS-intervall. En extern jämf�
 poängtabell för statistiken. *Gäller i dag:* `likvardighetsmodellen.md` §4.
 
 **ADR-77 — HC3 med AID-etikett inom BAS räknas med den fulla designens hävstång.** Med AID-etikett inom BAS vald in i
-huvudtalet räknas HC3 med hävstången h_i + 1/n_g, den som designen med en indikator per grupp har, och utan
-skalningen med (n − p) / (n − p − G); skalningen gäller bara den klassiska kovariansen. `hHoga` räknas på samma
-hävstång. Standardfelen blir då de som statsmodels och R ger med en indikator per grupp (principen 2). En person
-ensam i en grupp har h = 1 och får vikten 0, vilket ger samma tal som statsmodels och R när de personerna tas bort;
-med dem kvar ger statsmodels och R NaN eller ett tal som avrundningen avgör. Med hävstången
-på de transformerade kolumnerna ensam var standardfelet för kön i det lilla demot 1,0–1,6 % för litet, och i urval med
-små grupper upp till 9 %; ingen status i trappan ändrades i mätningen. *Avvisat:* att behålla beräkningen och stänga
-punkten som mätt; att behålla skalningen ovanpå den fulla hävstången. *Gäller i dag:* `regressionsmodellen.md` §4.
+huvudtalet räknas HC3 med den fulla designens hävstång och utan skalning, så att standardfelen blir de som statsmodels
+och R ger med en indikator per grupp (principen 2). Med hävstången på de transformerade kolumnerna ensam var
+standardfelet för kön 1,0–1,6 % för litet i det lilla demot och upp till 9 % i urval med små grupper, utan att någon
+status i trappan ändrades. *Avvisat:* att behålla beräkningen och stänga punkten som mätt; att behålla skalningen
+ovanpå den fulla hävstången. *Gäller i dag:* `regressionsmodellen.md` §4.
 
 **ADR-78 — Översikten per huvudområde räknar med huvudregressionens kodning.** Den justerade skillnaden per huvudområde
-räknas som huvudregressionens standardmodell: kön, ålder när lönefilen har ålder och BAS-intervall som indikatorer,
-HC3 och t-kvantil. Går modellen med BAS inte att skatta i ett huvudområde med minst två BAS-intervall (kön och BAS går
-inte att skilja åt, eller raderna är för få för så många BAS-intervall) står *Kan inte justeras för BAS* i stället för
-ett tal; har huvudområdet färre än 30 rader eller färre än k av ett kön står *För få*. Med BAS som rang lades en del av BAS-skillnaden på kön där lönestegen
-mellan intervallen är olika stora (upp till 2,1 procentenheter i det lilla demot), och utan ålder i lönefilen gav
-översikten inget tal alls. Användarens val av förklaringsvariabler i Lika arbete påverkar inte översikten.
-*Avvisat:* att behålla BAS som rang och kravet på ålder; att också följa förklaringsmodellen, som skulle ändra
-översikten när någon väljer variabler i en annan flik; huvudregressionens reservsteg utan BAS, som i det läget visar den
-råa skillnaden (eller den bara åldersjusterade) under en rubrik som säger BAS. *Gäller i dag:* `regressionsmodellen.md` §3.
+räknas som huvudregressionens standardmodell, med BAS-intervallen som indikatorer, och ger inget tal när BAS inte går
+att justera för. Med BAS som rang lades en del av BAS-skillnaden på kön (upp till 2,1 procentenheter i det lilla
+demot), och utan ålder i lönefilen gav översikten inget tal alls. *Avvisat:* att behålla BAS som rang och kravet på
+ålder; att också följa förklaringsmodellen, som skulle ändra översikten när någon väljer variabler i en annan flik;
+huvudregressionens reservsteg utan BAS, som i det läget visar den råa skillnaden (eller den bara åldersjusterade)
+under en rubrik som säger BAS. *Gäller i dag:* `regressionsmodellen.md` §3.
 
 **ADR-79 — Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och
 arbetsvärdering.** Protokollet för gemensam lönebedömning redovisar både median och medelvärde per kön, med skillnaden i
@@ -495,21 +489,10 @@ kräva en egen form för tabellerna och diagrammen för en användning som inte 
 (*Avgränsning*).
 
 **ADR-83 — Kompletterande undertryckning i tabellerna per BAS-intervall.** Beslutat av underhållaren 2026-11-19.
-Raden *Alla* i tabellerna inom likvärdigt arbete och i åldersgrupper, och organisationens rad i intervallets tabell,
-räknades på hela underlaget, också de utelämnade grupperna, så att totalen minus de visade raderna gav en utelämnad
-grupps medellön (S4: ett lönemått får inte gå att räkna fram ur summorna i samma export). Totalen räknas som förut
-och står kvar. Omfattar de utelämnade delarna tillsammans färre än tröskeln undertrycks också medelvärdena för den
-minsta visade delen, en i taget tills de undertryckta tillsammans når tröskeln; räcker inte det står bara totalen.
-Samma regel som Löneöversyns blad *Fördelning*. Den gäller intervallen (eller huvudområdena) mot raden *Alla*, varje
-kön för sig mot raden *Alla*s medel per kön, och AID-etiketterna mot organisationens rad när receptet har måttet
-*Medellön*. Ett undertryckt intervall förlorar sina medelvärden i alla avsnittets tabeller, och ett intervall vars
-könsmedel döljs förlorar båda könens, eftersom medellönen för alla och det ena könet ger det andra. Antal och andelar
-står kvar (ADR-70), medianer och percentiler berörs inte, och en not namnger det som undertryckts. Regeln är en
-allmän funktion för delar med antal (`kompletterandeUndertryckning`, sedan ADR-87 i `src/lib/undertryckning.js`),
-så att den kan användas i andra moduler; `src/lib/perbas.js` tillämpar den, och de utskrivande delarna skriver bara
-ut resultatet. *Avvisat:* att räkna raden *Alla* bara
-på de visade grupperna, som ändrar vad raden betyder; att utelämna raden *Alla*. *Gäller i dag:* `k-troskeln.md`
-avsnitt 2.
+Tabellerna per BAS-intervall undertrycker också medelvärdena för de minsta visade delarna när de utelämnade delarna
+tillsammans är färre än tröskeln, och raden *Alla* står kvar räknad på hela underlaget. Förut gav totalen minus de
+visade raderna en utelämnad grupps medellön (S4). *Avvisat:* att räkna raden *Alla* bara på de visade grupperna, som
+ändrar vad raden betyder; att utelämna raden *Alla*. *Gäller i dag:* `k-troskeln.md` avsnitt 2.
 
 **ADR-84 — PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning.** Beslutat av underhållaren
 2026-11-19. Kostnadsberäkningen räknar med PO-påslaget 40 % tills organisationen sätter sitt eget, i fältet under
@@ -521,180 +504,78 @@ saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i da
 `src/app/07-standardinstallningar.js`.
 
 **ADR-85 — Fältet för AID-etikett maskeras inte; inläsningen varnar för personnamn.** Beslutat av underhållaren 2026-11-20.
-Fältet för AID-etikett behåller AID-koden och högst 40 tecken av etiketten, utan tecknen `< > " ' &`; ingenting i
-texten maskeras. Förut ersattes två versalinledda ord i rad och formen "Efternamn, Förnamn" med `***`. Den maskeringen
-förstörde riktiga etiketter ("Sjuksköterska Natt" blev "***" på varje rad) och skyddade inte: "Sjuksköterska Anna
-Andersson" blev "*** Andersson", och namn i gemener eller versaler rördes inte. I stället varnar inläsningen när
-fältet ser ut att innehålla personnamn: en text med namnmönster (två eller fler versalinledda ord i rad, eller
-"Efternamn, Förnamn") som står på högst två rader i filen. Varningen står i förhandskontrollen, i inläsningsrapporten
-och i Att göra, med antal rader och radnummer men aldrig texten. Den som tar ut filen ansvarar för att fältet bara bär
-kod och etikett; användaren ska hellre få veta att namn finns än tro att de är maskerade. *Avvisat:* att maskera alla
-versalinledda ord, som förstör riktiga etiketter; att behålla den gamla maskeringen, som inte skyddar och förstör
-etiketter; att ersätta filens text med etikettlistans namn, som tar bort organisationens lokala benämningar.
-Ändrar ADR-48: bilderna med en punkt per person kan bära filens text som serienamn.
-*Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.4; `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader` i
-`src/lib/inlasning.js`. *Not:* sedan texten inte maskeras kan en AID-kod ha flera texter i samma BAS-intervall.
-Prioriteringen grupperade på hela texten och fick då två grupper där jämförelsestatistiken och gruppdossiern har en,
-och små delgrupper föll under tröskeln. Rättat 2026-11-20 som ett fel, inget nytt beslut: prioriteringen grupperar på
-AID-koden och BAS-intervallet som de andra (`prioriteringsmodellen.md` §1). Samma dag beslutades att det gäller i
-hela verktyget (ADR-89).
+Ingenting i texten i fältet för AID-etikett maskeras, och inläsningen varnar i stället när fältet ser ut att innehålla
+personnamn; det ändrar ADR-48, eftersom bilderna med en punkt per person kan bära filens text. Den gamla maskeringen
+förstörde riktiga etiketter ("Sjuksköterska Natt" blev "***") och skyddade inte ("Sjuksköterska Anna Andersson" blev
+"*** Andersson"), och användaren ska hellre få veta att namn finns än tro att de är maskerade. *Avvisat:* att maskera
+alla versalinledda ord, som förstör riktiga etiketter; att behålla den gamla maskeringen; att ersätta filens text med
+etikettlistans namn, som tar bort organisationens lokala benämningar. *Gäller i dag:* `docs/dataskydd/riskanalys.md`
+§6.4.
 
 **ADR-86 — Slumpintervallen är en funktion av lönerna, inte av radordningen, och percentilindexen är symmetriska.**
-Beslutat av underhållaren 2026-11-19. Bootstrapintervallen, omkastningens gränser (slumpens gränser i
-uppmärksamhetstrappan och trattdiagrammet) och kvantilregressionens intervall seedades redan ur antal och summa per
-serie, men dragningarna pekade på platser i listan som den stod i filen. Samma löner i en annan ordning gav därför
-andra gränser (i en mätning skilde sig bootstrapintervallet i 200 fall av 200, som mest 2,3 procentenheter vid 30 + 20
-personer, och slumpens gränser i 199 av 200), och en grupp nära gränsen kunde få olika status beroende på hur filen
-var sorterad. Nu dras bootstrapen ur gruppens löner sorterade stigande, omkastningen utgår från kvinnornas löner
-stigande följda av männens, kvantilbootstrapen sorterar raderna på en fast, fullständig nyckel (lön, kön,
-BAS-intervall, ålder, AID, yrke, ansvarsgrupp), och seeden summerar talen i stigande ordning, så att en summa av löner
-med öre inte avrundas olika i två ordningar. Sorteringen görs en gång, utanför dragningarna. Percentilintervallet tog
-den nedre gränsen med index golvet av n · 0,025 och den övre med golvet av n · 0,975, så att med 1 000 dragningar låg
-25 under den nedre och 24 över den övre; nu har den övre index n − 1 − golvet av n · 0,025, och lika många ligger på var
-sida. Intervallgränserna ändrades en gång, med några tiondels procentenheter; punktskattningarna berörs inte.
-Nedsamplingen av punktmoln följer fortfarande filens ordning: den avgör vilka punkter som ritas, inget tal som
-redovisas. *Avvisat:* att bara seeda ur den sorterade listan och fortsätta dra ur filens ordning, som inte tar bort
-beroendet; att lämna indexen, vars fel är litet men alltid drar åt samma håll. *Gäller i dag:*
+Beslutat av underhållaren 2026-11-19. Bootstrapen, omkastningen och kvantilbootstrapen drar ur listor sorterade på en
+fast nyckel, och percentilintervallet har lika många dragningar på var sida. Samma löner i en annan ordning gav förut
+andra gränser (bootstrapintervallet i 200 fall av 200), så en grupp nära gränsen kunde få
+olika status beroende på hur filen var sorterad, och den gamla indexregeln lade 25 dragningar under den nedre gränsen
+men 24 över den övre. *Avvisat:* att bara seeda ur den sorterade listan och fortsätta dra ur filens ordning, som inte
+tar bort beroendet; att lämna indexen, vars fel är litet men alltid drar åt samma håll. *Gäller i dag:*
 `regressionsmodellen.md` avsnitt 6–7, `likvardighetsmodellen.md` avsnitt 5, `src/lib/rng.js`.
 
 **ADR-87 — Sammanslagning av små grupper i uppdelningen av löneskillnaden och huvudområdenas andel.** Beslutat av
-underhållaren 2026-11-20. Ändrar skyddsregeln i ADR-65 (och ADR-22). Följer principen i ADR-83: det som går att räkna
-fram ur det som skrivs ut ska vara ett medel för minst tröskeln personer, per kön där måttet är per kön.
-Uppdelningens delar och poster och
-huvudområdenas andel är vägda medellöner per kön, och med medellönerna för hela urvalet och antalen bildade de ett
-ekvationssystem: med två huvudområden där det ena hade färre än tröskeln av ett kön gav beloppet det könets
-medellön, och i uppdelningen gick en liten grupps medellön att lösa ut fast posten inte stod, för vissa val av
-variabler ur delarna själva. Regeln som kortade topplistan räckte därför inte. I exportläget räknas en grupp där ett
-kön har 1 till k − 1 personer samman med andra grupper inom samma övergrupp innan delarna räknas, med samma val av
-grupp som den kompletterande undertryckningen, för varje kön, tills varje grupp har inga eller minst k av varje kön
-(`sammanslagning` i `src/lib/undertryckning.js`, dit också `kompletterandeUndertryckning` flyttades). Den
-sammanslagna gruppen namnges inte; varje del säger hur många grupper som inte namnges, och en not säger varför.
-Delarna summerar till hela skillnaden som förut. Skärmen, med tröskeln 1, ändras inte (ADR-51). Antal och andelar
-står kvar (ADR-70). *Avvisat:* att undertrycka delar och poster i stället för att räkna samman, som för de flesta
-underlag med en liten grupp skulle ta bort hela uppdelningen ur exporten, eftersom delarna summerar till hela
-skillnaden och en dold del går att räkna fram ur de andra; att pröva numeriskt vad som går att lösa ut ur varje
-utskrift, som är svårare att granska och att lita på; att bara dölja fler poster, som inte stänger vägen genom
-delarna. *Gäller i dag:* `regressionsmodellen.md` §10 och `k-troskeln.md` avsnitt 2. *Not:* huvudområdenas andel
-räknade gapet och beloppet som män minus kvinnor, fast del A och resten av verktyget räknar kvinnor minus män
-(`regressionsmodellen.md` §1, *Tecknet*). Rättat 2026-11-20 som ett fel mot den regeln, inget nytt beslut: beloppen
-har bytt tecken, andelen är densamma, och ett test kräver att beloppet är del A med huvudområde som enda variabel.
+underhållaren 2026-11-20. Ändrar skyddsregeln i ADR-65 (och ADR-22): i exportläget räknas grupper där ett kön har 1
+till k − 1 personer samman med andra innan delarna räknas, efter principen i ADR-83. Delarna och posterna bildade med
+medellönerna och antalen ett ekvationssystem, så att en liten grupps medellön gick att räkna fram (med två
+huvudområden gav beloppet direkt det lilla könets medellön), och att korta topplistan räckte inte. *Avvisat:* att
+undertrycka delar och poster, som oftast skulle ta bort hela uppdelningen ur exporten, eftersom en dold del går att
+räkna fram ur de andra; att pröva numeriskt vad som går att lösa ut ur varje utskrift, som är svårare att granska;
+att bara dölja fler poster, som inte stänger vägen genom delarna.
+*Gäller i dag:* `regressionsmodellen.md` §10 och `k-troskeln.md` avsnitt 2.
 
 **ADR-88 — Differensprovet är en del av invarianten för minsta gruppstorlek.** Beslutat av underhållaren 2026-11-19.
-Ändrar vakten för S4, inte dess lydelse. Invarianten I4 letade efter de små gruppernas lönevärden som de står, och
-ett lönemått som bara gick att räkna fram som en total minus delar vaktades av prov som skrevs för hand, utdata för
-utdata, mot lib-modulerna; en ny utdata med total och delar fick inget prov om ingen skrev ett. Nu går ett
-differensprov i invarianten på samma utdata som riggen samlar in vid tröskeln 10 och 25, utan nya ritningar eller
-exporter. Varje tabell vars rubrikrad har en kolumn med medel, summa eller kostnad deklareras i riggen, med kolumnerna
-för antal och mått och raden som är totalen, eller som inget att dela upp med skäl; en odeklarerad tabell fäller
-invarianten, och det är så en ny utdata ärver provet. För de deklarerade måtten får totalen minus de visade delarna,
-för alla och per kön, inte lämna 1 till k − 1 personer, och i en tabell utan totalrad får ingen rad minus andra lämna
-en av riggens små grupper. Medianer och percentiler prövas inte: de går inte att dela upp. `tests/ktroskel-differens.test.js`
-står kvar för lib-nivån och för underlag som riggen inte har. *Avvisat:* att känna igen kolumnerna ur rubriktexterna,
-som tyst kan sluta fungera när en rubrik ändras; att pröva varje delmängd av rader utan riggens kunskap om
-underlaget, som ger falsklarm när ett antal råkar gå jämnt upp; att lösa ett ekvationssystem över hela exporten, som
-lösaren i differensprovet gör för de utdata där det behövs men som är svårare att granska. *Gäller i dag:*
-`skydd.md` S4 och `k-troskeln.md` avsnitt 9 och 11.
+Ändrar vakten för S4, inte dess lydelse: invarianten prövar också att ingen total minus de visade delarna lämnar en
+grupp under tröskeln, och varje tabell med medel, summa eller kostnad ska vara deklarerad i riggen. Förut vaktades
+sådana differenser av prov som skrevs för hand, så en ny utdata fick inget prov om ingen skrev ett; nu ärver den
+provet. *Avvisat:* att känna igen kolumnerna ur rubriktexterna, som tyst kan sluta fungera när en rubrik ändras; att
+pröva varje delmängd av rader utan riggens kunskap om underlaget, som ger falsklarm när ett antal råkar gå jämnt upp;
+att lösa ett ekvationssystem över hela exporten, som är svårare att granska. *Gäller i dag:* `skydd.md` S4 och
+`k-troskeln.md` avsnitt 9 och 11.
 
-**ADR-89 — En grupp är AID-koden i BAS-intervallet, i hela verktyget.** Beslutat av underhållaren 2026-11-20. Sedan
-texten i fältet för AID-etikett inte maskeras (ADR-85) kan en kod ha flera texter: två stavningar av samma etikett, eller
-en rad där ett namn står i fältet. Prioriteringen, jämförelsen, tabellerna per AID-kod och BAS-intervall,
-trattdiagrammet, regressionens steg *+ AID-etikett inom BAS* och tabellerna per BAS-intervall grupperade redan på
-koden, medan Lika arbetes tabell per AID-etikett, Personer att granska, spridningen inom grupp i styrkeanalysen,
-uppdelningen av löneskillnaden med variabeln AID-etikett, Utforska, BAS-dossiern och årsbokslutet grupperade på
-texten. Samma personer blev då en grupp i en vy och två grupper under tröskeln och en grupp på en person i en annan.
-Nu grupperar allt som räknar på samma arbete på koden: de inledande siffrorna i fältet, och hela texten när siffror
-saknas (`aidAvRad` i `src/lib/aid.js`, som läser `aidAvYrke`). Gruppens namn är texten som står på flest av gruppens
-rader, och står två texter på lika många rader den som kommer först i lönefilen (`namnrader` i `src/lib/aid.js`,
-underhållarens beslut samma dag); alla analyser som namnger en grupp läser namnet därifrån, så att samma grupp heter
-samma sak överallt. En stavning eller ett namn som står på enstaka rader blir då inte gruppens namn när en annan text
-står på fler, men regeln ser bara till antalet: har gruppen ett namn på flest rader, eller lika många rader med namnet
-först, blir det gruppens namn. Har gruppen en enda text är namnet detsamma som förut. Fälten `yrke`, `aid` och `bas` behåller sin betydelse. Också Lika arbetes
-tabell är koden i BAS-intervallet (underhållarens beslut samma dag): en kod som finns i två intervall är två rader, med
-var sin status, intill varandra och med intervallet i en egen kolumn; allt som läser tabellens grupper (rapportunderlaget,
-rapporten, Excel-bladen, Att göra, BAS-dossiern, gruppdossiern och årsbokslutet) läser samma grupper, och BAS-dossiern
-läser gruppen i intervallet direkt. Grupperna blir mindre för en kod i flera intervall, och tröskeln gäller varje grupp.
-Vyer som visar texterna som de står i filen, Löneöversikten, sökningen och punktdiagrammets färger per AID-etikett,
-ändras inte. Årsbokslutet bär gruppens intervall i ett valfritt fält `bas`, utan ny formatversion: grupperna paras med
-förra årets på koden ur namnet och intervallet, och har ett äldre bokslut flera grupper med samma kod används den med
-årets namn, annars den största. Ett bokslut sparat innan tabellen delades per intervall (grupper utan `bas`) har en rad
-per kod över alla intervall; dess grupper jämförs inte rad för rad med årets, eftersom en median över alla intervall
-inte går att dela upp, och skillnaden i antalet flaggade grupper visas inte. Nyckeltalen, intervallen och Att göra
-jämförs som vanligt. För ett underlag där varje kod har en enda text och ligger i ett enda intervall är alla tal
-oförändrade. *Avvisat:* att fortsätta gruppera på texten och bara varna, som räknar samma personer olika i olika vyer
-och låter små delgrupper falla under tröskeln; att ersätta texten med etikettlistans namn (avvisat i ADR-85); att låta
-Lika arbetes tabell räkna koden över alla intervall, som ger en status för personer på olika nivåer och andra grupper
-än resten av verktyget; att para ett äldre boksluts rad för koden med årets största grupp för koden, som jämför olika
-grupper som om de vore samma; att höja bokslutets formatversion, som inte behövs när fältet är valfritt; att låta gruppens namn vara texten på
-dess första rad, som gör namnet beroende av radernas ordning och kan ge ett personnamn åt en grupp där etiketten står
-på nästan alla rader. *Gäller i dag:* `prioriteringsmodellen.md` §1 och §9, `likvardighetsmodellen.md` §3,
-`berakningsregister.md`.
+**ADR-89 — En grupp är AID-koden i BAS-intervallet, i hela verktyget.** Beslutat av underhållaren 2026-11-20. Allt som
+räknar på samma arbete grupperar på AID-koden i BAS-intervallet, också Lika arbetes tabell, och gruppens namn är
+texten som står på flest av gruppens rader. Sedan texten inte maskeras (ADR-85) kan en kod ha flera texter, och samma
+personer blev då en grupp i en vy och två grupper under tröskeln i en annan. *Avvisat:* att fortsätta gruppera på
+texten och bara varna; att ersätta texten med etikettlistans namn (avvisat i ADR-85); att låta Lika arbetes tabell
+räkna koden över alla intervall, som ger en status för personer på olika nivåer; att para ett äldre boksluts rad för
+koden med årets största grupp, som jämför olika grupper; att höja bokslutets formatversion, som inte behövs när
+fältet är valfritt; att låta gruppens namn vara texten på dess första rad, som beror på radordningen. *Gäller i dag:* `prioriteringsmodellen.md` §1,
+`likvardighetsmodellen.md` §3, `k-troskeln.md` avsnitt 2, `berakningsregister.md` (grupperna och §8).
 
 **ADR-90 — Lika arbete AID x BAS visar Lika arbetes status, utan egen bedömning.** Beslutat av underhållaren
-2026-11-20. Ändrar ADR-57 för tabellen *Lika arbete AID x BAS*. Sedan ADR-89 har den och Lika arbetes tabell per
-AID-etikett samma grupper, men den gav en egen bedömning, *Inom* eller *Utanför gränserna*, medan tabellen per
-AID-etikett ger statusen i uppmärksamhetstrappan (ADR-59). Samma grupp kunde då vara *Utanför gränserna* i den ena och
-*Följ upp* i den andra, eller *Analyseras på individnivå* i den ena och *Går ej att bedöma* i den andra. Tabellen hade
-dessutom ett eget golv: i exportläget fick en grupp en rad från fem personer, med antal per kön, också när tabellen per
-AID-etikett utelämnade den under tröskeln. Nu räknar tabellen ingenting eget: raderna är Lika arbetes grupper
-(`likaArbeteGrupper` i `src/lib/rapportunderlag.js`), i BAS-ordning, med samma k-regel och samma status. En grupp
-där ett kön är under tröskeln står utan könsuppdelade mått (*Könsuppdelningen är för liten*), en grupp som helt ligger
-under tröskeln namnges i noten utan antal, och antalet grupper med färre än två av något kön står där också.
-Gränserna i tabellen är de statusen prövades mot (`bedomSkillnad` i `src/lib/status.js`). Nyckeltalet är detsamma
-som för tabellen per AID-etikett. Trattdiagrammet och bladet *Slumpens gränser* visar gränserna som bild och data
-men ger ingen egen status i text: diagrammets not hänvisar till tabellernas status, verktygstipset säger *Mot
-slumpens gränser* och bladets kolumn *Mot gränserna*. Vyn och Excel-bladet står kvar, med kolumnen *Status* i
-stället för *Bedömning*. Arbetslistan *Analys på individnivå* och tabellerna i Likvärdigt arbete behåller ADR-57:s
-regler. *Avvisat:* att ta bort tabellen, som är den form en skriven lönekartläggning brukar ha; att behålla
-bedömningen mot gränserna bredvid statusen, som ger två svar på samma fråga; att behålla golvet fem för tabellen,
-som visar grupper under tröskeln som tabellen per AID-etikett utelämnar. *Gäller i dag:* `k-troskeln.md` avsnitt 4
-och 9, `docs/dataskydd/riskanalys.md`, `berakningsregister.md` och `docs/anvandare/korguide.md` §4.
+2026-11-20. Ändrar ADR-57 för tabellen *Lika arbete AID x BAS*: den räknar ingenting eget, utan visar Lika arbetes
+grupper med samma k-regel och samma status. Med en egen bedömning mot gränserna och ett eget golv på fem personer
+kunde samma grupp få olika svar i de två tabellerna och stå i den ena fast den andra utelämnade den under tröskeln.
+*Avvisat:* att ta bort tabellen, som är den form en skriven lönekartläggning brukar ha; att behålla bedömningen mot
+gränserna bredvid statusen, som ger två svar på samma fråga; att behålla golvet fem för tabellen. *Gäller i dag:*
+`k-troskeln.md` avsnitt 4 och 9, `docs/dataskydd/riskanalys.md`, `berakningsregister.md` och
+`docs/anvandare/korguide.md` §4.
 
 **ADR-91 — Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden.**
-Beslutat av underhållaren 2026-11-20. Tillämpar regeln i ADR-83 mellan tabeller. Protokollets blad *2. Lika arbete
-(AID)* har medelvärde per kön för AID-etiketter där båda könen når tröskeln. Intervallets medelvärde, per kön och för
-alla och räknat på alla i intervallet, står i bladet *3. Likvärdigt arbete (BAS)* för intervall som protokollet
-redovisar, och i tabellerna per BAS-intervall (Word-utkastet, PDF-rapporten och Excelbladet *Per BAS*) för varje
-intervall där könen når tröskeln, oavsett status; organisationens medelvärde per kön står i flera utdata. Intervallets
-antal och medelvärde minus de visade AID-etiketterna i intervallet gav då medelvärdet för intervallets övriga personer,
-också när de var färre än tröskeln (S4). Differensprovet (ADR-88) prövade bara inom en tabell och såg inte detta, och
-riggens underlag gav inga rader i protokollets blad. Nu gäller ADR-83:s regel mot varje sådan total: lämnar intervallet,
-eller organisationen, minus de visade etiketterna 1 till k − 1 personer, för ett kön eller för alla, undertrycks
-medelvärdena för den minsta visade etiketten, en i taget tills de dolda når tröskeln
-(`kompletterandeUndertryckningPerNyckel` i `src/lib/undertryckning.js`, totalerna i `_jpaMedelTotaler` i
-`src/app/24-excelexport.js`). Totalerna är det som faktiskt står: bladet 3 med sin tröskel, och tabellerna per
-BAS-intervall med den inställda tröskeln och sin egen undertryckning (ett intervall vars medelvärde de döljer enligt
-ADR-83 är ingen total där). En etikett vars medelvärden döljs förlorar båda könens och differensernas, och de döljs för
-båda könen i prövningen av nästa mått. En etikett vars medellön för alla står i tabellerna per BAS-intervall (när
-receptet har måttet *Medellön*) kan protokollet inte dölja för det måttet; där gäller tabellernas egen regel, och visar
-protokollet en etikett som tabellerna har undertryckt döljs den i protokollet. Intervallens och organisationens rader
-räknas som förut och står kvar med sina medelvärden. Medianerna står kvar; de går inte att dela upp. En not i bladet för
-lika arbete namnger etiketterna. Riggen har ett intervall med rad i bladet 3 och ett utan, var och ett med en etikett
-över tröskeln och tre kvinnor utanför den, och differensprovet har deklarationer över två tabeller (`korsblad`): bladet
-3 minus bladet 2, och tabellerna per BAS-intervall minus bladet 2 (två filer), per intervall och kön och för
-organisationen, vid tröskeln 10 och 25. *Avvisat:* att bara ta intervallen i bladet 3 som totaler, som missar
-intervallen i tabellerna per BAS-intervall; att räkna intervallets rad bara på de visade etiketterna, som ändrar vad
-raden betyder och skiljer den från intervallets rad i resten av verktyget; att dölja intervallets medelvärden, som tar
-bort det mått tabellerna finns för; att låta differensprovet pröva varje par av tabeller, som ger falsklarm när två
-tabeller har olika underlag. *Gäller i dag:* `k-troskeln.md` avsnitt 2, 9 och 11, `skydd.md` S4,
-`docs/dataskydd/riskanalys.md` §6.5.
+Beslutat av underhållaren 2026-11-20. Tillämpar regeln i ADR-83 mellan tabeller: lämnar ett intervalls medelvärde
+minus de visade AID-etiketterna i protokollets blad för lika arbete färre än tröskeln, döljs medelvärdena för den
+minsta visade etiketten; beslutet prövade också mot tabellerna per BAS-intervall och mot organisationens medelvärden,
+vilket ADR-92 tog tillbaka. Intervallets antal och medelvärde minus de visade etiketterna gav medelvärdet för
+intervallets övriga personer också när de var färre än tröskeln, och differensprovet prövade bara inom en tabell.
+*Avvisat:* att räkna intervallets rad bara på de visade etiketterna, som ändrar vad raden betyder; att dölja
+intervallets medelvärden, som tar bort det mått tabellerna finns för; att låta differensprovet pröva varje par av
+tabeller, som ger falsklarm när två tabeller har olika underlag. *Gäller i dag:* `k-troskeln.md` avsnitt 2, 9 och 11,
+`skydd.md` S4, `docs/dataskydd/riskanalys.md` §6.5.
 
-**ADR-92 — S4 gäller en fil i taget.** Beslutat av underhållaren 2026-11-20. Ändrar ADR-91. Skyddet för minsta
-gruppstorlek (S4) gäller varje fil som lämnar verktyget för sig: en grupp under tröskeln får inte visas direkt i
-filen, och dess lönemått får inte gå att räkna fram genom att dra ifrån inom samma fil (en total minus de visade
-delarna, i en tabell eller mellan blad och avsnitt). Det som går att räkna fram genom att kombinera flera filer ur
-samma underlag skyddas inte. *Skäl:* användaren har redan hela underlaget, och skydden finns för att undvika
-omedvetna dataläckor, inte för att stänga ute användaren. Att räkna fram något ur två filer, till exempel med ett känt
-påslag, är inte omedvetet. Priset för att stänga det vore högt: en grupp på 150 personer skulle tappa sin kostnad för
-en enda persons skull, och en flaggad grupps medelvärde skulle döljas i protokollet, så att stödet vid prioritering
-och fördelning inte visar alla grupper. ADR-91 gäller därför bara inom protokollet: bladet för lika arbete prövas mot
-bladet för BAS-intervall i samma fil, med sitt prov och sin not, och inte längre mot tabellerna per BAS-intervall i
-rapporten och Excelfilen eller mot organisationens medelvärden. ZIP-exporten räknas som sina delar: varje fil i den
-prövas för sig, och delarna prövas inte mot varandra. Differensprovet (ADR-88) parar aldrig två filer, och
-riggens intervall L, som bara fanns för den prövningen, är borttaget. *Avvisat:* två saker som prövades, visade sig
-verkliga och medvetet inte stängs: (a) protokollets blad för lika arbete mot intervallets medellön i tabellerna per
-BAS-intervall i rapporten eller Excelfilen, som gav medelvärdet för intervallets övriga personer av ett kön; (b)
-Löneöversyns kostnad per grupp i bladet *Fördelning*, som med ett påslag i procent är gruppens lönesumma, mot
-intervallets medellön i tabellerna per BAS-intervall, som gav lönesumman för intervallets övriga personer. Båda kräver
-två filer och att den som räknar vet hur de hänger ihop. *Gäller i dag:* `skydd.md` S4, `k-troskeln.md` avsnitt 2, 9
-och 11, `docs/dataskydd/riskanalys.md` §6.5, `docs/dataskydd/dataskydd.md` *Vad skydden gör och inte gör*,
-`loneoversynsmodellen.md` §12.
+**ADR-92 — S4 gäller en fil i taget.** Beslutat av underhållaren 2026-11-20. Ändrar ADR-91: skyddet för minsta
+gruppstorlek gäller varje fil som lämnar verktyget för sig, och det som går att räkna fram genom att kombinera flera
+filer ur samma underlag skyddas inte. *Skäl:* användaren har redan hela underlaget, och skydden finns mot omedvetna
+dataläckor; att stänga vägen mellan filer skulle låta en grupp på 150 personer tappa sin kostnad för en enda persons
+skull och dölja en flaggad grupps medelvärde i protokollet. *Avvisat:* att stänga två vägar som prövades och visade
+sig verkliga: protokollets blad för lika arbete mot tabellerna per BAS-intervall, och Löneöversyns kostnad per grupp
+mot intervallets medellön. Båda kräver två filer och att den som räknar vet hur de hänger ihop. *Gäller i dag:*
+`skydd.md` S4, `k-troskeln.md` avsnitt 2, 9 och 11, `docs/dataskydd/riskanalys.md` §6.5,
+`docs/dataskydd/dataskydd.md` *Vad skydden gör och inte gör*, `loneoversynsmodellen.md` §12.

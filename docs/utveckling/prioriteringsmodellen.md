@@ -30,7 +30,9 @@ saknas siffror används hela texten. Två texter med samma kod ("207011 Handläg
 alltså en grupp. Gruppens namn (`yrke`) är texten som står på flest av gruppens rader; står två texter på lika många
 rader gäller den som kommer först i lönefilen (`namnrader` i `src/lib/aid.js`, ADR-89). Samma regel ger namnet i alla
 analyser, så samma grupp heter samma sak i prioriteringen, Lika arbete, jämförelsen och resten av verktyget. De andra
-texterna syns inte i prioriteringen. En grupp med färre än k
+texterna syns inte i prioriteringen. Radernas fält `yrke`, `aid` och `bas` behåller sin betydelse (texten i fältet,
+koden och intervallet), och vyer som visar texterna som de står i filen, Löneöversikten, sökningen och
+punktdiagrammets färger per AID-etikett, grupperar inte på koden. En grupp med färre än k
 personer tas inte med. Könens medianer räknas bara för ett kön med minst k personer; annars är könsmedianen och
 könsskillnaden null och gruppen finns kvar med sin samlade median.
 

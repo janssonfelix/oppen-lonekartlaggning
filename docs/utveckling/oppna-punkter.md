@@ -111,7 +111,8 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 29. **Beslutsloggen bär lydelsen för gränssnittet och exporterna.** De områdena har ingen referens, så ett tiotal
     beslut (bland dem ADR-10, 15, 23, 29, 33, 35, 39, 50, 62) är längre än loggens tre meningar. Prioriteringen och
     Löneöversynen, som ADR-50 och 62 gäller, har sedan 2026-11-20 var sin referens för beräkningarna
-    (`prioriteringsmodellen.md`, `loneoversynsmodellen.md`); besluten är inte kortade. Några detaljer i
+    (`prioriteringsmodellen.md`, `loneoversynsmodellen.md`); ADR-50 och 62 är inte kortade. De långa besluten bland
+    ADR-77–92 är kortade 2026-11-21, och deras lydelse står i referenserna som de pekar på. Några detaljer i
     ADR-16, 20, 28, 30, 33, 54 och 62 ströks när loggen kortades (ADR-73) och finns bara i git-historiken.
 19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett
     beslut om att lägga en bildfil i källkoden.
