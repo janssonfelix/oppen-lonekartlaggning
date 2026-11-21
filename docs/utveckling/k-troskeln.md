@@ -104,7 +104,7 @@ har fasta eller statistiska golv (avsnitt 5). Fem regler till står i avsnitt 8.
 **Prioritering.** En grupp under tröskeln får ingen rad, och könsjämförelsen i en grupp står bara när båda könen når
 tröskeln (`prioritera` i `src/lib/prioritering.js`). Annars räknas prioritetsindexet utan könsdelen (`gapScore` är 0),
 så att poängen inte röjer den dolda skillnaden. Motiveringsförslaget om kvinnor i den lägsta lönekvintilen kräver
-tröskeln för båda könen (`generateMotivationSuggestions` i `55-prioritering.js`).
+tröskeln för båda könen (`motiveringsgrunder` i `src/lib/prioritering.js`).
 
 **Vad skyddet omfattar (ADR-70).** Skyddet gäller lönemått: medianer, medelvärden, percentiler, lönespann,
 lönesummor, kostnader räknade ur löner, löneskillnader och regressionens effekter. Antal och andelar, också per kön,

@@ -165,8 +165,7 @@ document.getElementById('kon-trend-alla')?.addEventListener('change', () => { co
 // Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
 // percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
 function _konLonesteg(loner, mal = 12) {
-    const v = loner.slice().sort((a, b) => a - b), vid = p => v[Math.min(v.length - 1, Math.max(0, Math.round(p * (v.length - 1))))];
-    const spann = vid(0.95) - vid(0.05);
+    const spann = Stat.quantile(loner, 0.95) - Stat.quantile(loner, 0.05);
     return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
 }
 const _konTkr = v => _figTalformat(v / 1000, Number.isInteger(v / 1000) ? 'antal' : undefined);

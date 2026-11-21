@@ -174,7 +174,7 @@ export const MODULES = [
     {
         // Prioriteringsanalysen (ren modell; referensen kommer in som funktion från adaptern)
         file: 'prioritering.js', ns: '__mirrorPrioritering',
-        expose: { prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening', prioKonstanter: '_prKonstanter' }
+        expose: { prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening', prioKonstanter: '_prKonstanter', motiveringsgrunder: '_prMotiveringsgrunder' }
     },
     {
         // Livscykelmodellen (log-lön med kön×ålder och BAS-indikatorer); importerar stat.js

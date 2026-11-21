@@ -351,7 +351,7 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till sp
     it('spegelnamnen finns och pekar på rätt lib-funktioner', () => {
         const pr = MODULES.find(m => m.file === 'prioritering.js');
         const lc = MODULES.find(m => m.file === 'livscykel.js');
-        expect(pr.expose).toEqual({ prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening', prioKonstanter: '_prKonstanter' });
+        expect(pr.expose).toEqual({ prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening', prioKonstanter: '_prKonstanter', motiveringsgrunder: '_prMotiveringsgrunder' });
         expect(lc.expose).toEqual({ livscykelRegression: '_lcLivscykelRegression', samspelSakerstallt: '_lcSamspelSakerstallt' });
         expect(typeof M._prPrioritera).toBe('function');
         expect(typeof M._prArsbeloppMening).toBe('function');

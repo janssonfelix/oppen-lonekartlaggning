@@ -114,6 +114,7 @@ Modellerna beskrivs i [`loneoversynsmodellen.md`](loneoversynsmodellen.md) och
 | Tröskelmålet: minsta lika procentlyft för kvinnorna som når målet (bisektion) | `likalonslyftForMal`, `loneoversyn.js` | rader, mål, skattningen | `loneoversynsmodellen.md` §9 | `tests/loneoversyn-troskelmal.test.js`, `tests/granssnitt-vyer.test.js` | saknas |
 | Prioriteringen: grupper per AID-kod och BAS-intervall, avvikelse mot referensen, status, delpoäng, index, snabb vinst | `prioritera`, `prioIndex`, `prioritering.js`; adaptern `computePrioritization` i `src/app/55-prioritering.js` väljer referensen | lön, kön, AID, BAS, referensen | `prioriteringsmodellen.md`; ADR-50, 62 | `tests/prioritering.test.js`, `tests/smoke-handlingsplan.test.js` | `10-prioritering-en-grupp.json`, `11-prioindex-vikter.json` |
 | Meningen om årsbeloppet för ett par | `arsbeloppMening`, `prioritering.js` | medianer, antal | `prioriteringsmodellen.md` §6 | `tests/prioritering.test.js` | saknas |
+| Motiveringsförslagen till en grupp: litet underlag, under detektionströskeln, åldersskillnad, lägsta lönekvintilen, bristyrke, snabb vinst, över och nära referensen | `motiveringsgrunder`, `prioritering.js`; texterna i `generateMotivationSuggestions` i `src/app/55-prioritering.js` | lön, kön, ålder, gruppens avvikelse, tröskeln | verktygets eget val, ingen extern källa; ADR-12 för kvintilen | `tests/prioritering.test.js` | saknas |
 
 ## 8. Årsbokslutet och de sakliga skälen
 

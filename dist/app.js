@@ -7241,6 +7241,7 @@ const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const quantile = __mirrorStat.quantile;
     const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const aidAvYrke = __mirrorAid.aidAvYrke;
     const namnrader = __mirrorAid.namnrader;
@@ -7321,6 +7322,58 @@ function arsbeloppMening(g, costSettings, kr) {
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${_PO_FORMAT.format(po)} %). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
+}
+
+/**
+ * Grunderna för motiveringsförslagen till en prioriteringspost: deterministiska regler över gruppens rader, i den
+ * ordning förslagen visas. Texterna skriver appen (generateMotivationSuggestions i src/app/55-prioritering.js).
+ *
+ * Koderna: `underlag` (ett kön under minsta gruppstorlek), `styrka` (skillnaden under detektionströskeln), `alder`
+ * (könens medelålder skiljer minst 3 år), `kvintil` (kvinnor överrepresenterade i lägsta lönekvintilen; kräver
+ * kTroskel för båda könen, ADR-12), `brist`, `snabbVinst`, `over` (mer än 5 % över referensen) och `nara`
+ * (inom ±naraGrans % av referensen, minst 10 personer).
+ *
+ * @param {{_rows?: Array<{kon:string, lon:number, alder?:number}>, kvN:number, maN:number, n:number, diffPct:number,
+ *          isBrist?:boolean, isQuickWin?:boolean}} item
+ * @param {{kInstalld:number, kTroskel:number, mdePct?:number|null, naraGrans:number}} opt
+ *        kInstalld: den inställda minsta gruppstorleken; kTroskel: den gällande tröskeln; mdePct: detektionströskeln
+ *        i procent (saknas den prövas inte regeln); naraGrans: uppföljningsgränsen i procent (tecknet spelar ingen roll)
+ * @returns {Array<{kod:string, type:'warn'|'info'|'ok'|'flag'} & Object>}
+ */
+function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGrans }) {
+    const out = [];
+    const rows = item._rows || [];
+    if (!rows.length) return out;
+
+    // Varningen gäller skattningens säkerhet, inte läget (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
+    if (item.kvN < kInstalld || item.maN < kInstalld) out.push({ kod: 'underlag', type: 'warn', kvN: item.kvN, maN: item.maN, k: kInstalld });
+
+    if (mdePct != null && Math.abs(item.diffPct) < mdePct && item.n < 30) out.push({ kod: 'styrka', type: 'info', diffPct: item.diffPct, mdePct });
+
+    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder || 0).filter(a => a > 0);
+    const maAges = rows.filter(r => arMan(r)).map(r => r.alder || 0).filter(a => a > 0);
+    if (kvAges.length >= 3 && maAges.length >= 3) {
+        const medelKv = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
+        const medelMa = maAges.reduce((s, v) => s + v, 0) / maAges.length;
+        if (Math.abs(medelMa - medelKv) >= 3) out.push({ kod: 'alder', type: 'info', medelKv, medelMa });
+    }
+
+    // Lönepositionsmått per kön: kräver tröskeln för båda könen (ADR-12)
+    if (item.kvN >= kTroskel && item.maN >= kTroskel) {
+        const q1 = quantile(rows.map(r => r.lon), 0.2);
+        const andelKv = item.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / item.kvN : 0;
+        const andelMa = item.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / item.maN : 0;
+        if (andelKv >= 0.4 && andelKv - andelMa >= 0.2) out.push({ kod: 'kvintil', type: 'flag', andelKv, andelMa });
+    }
+
+    if (item.isBrist) out.push({ kod: 'brist', type: 'info' });
+    if (item.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: item.n });
+    if (item.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: item.diffPct });
+
+    // Ett läge mot referensen, ingen bedömning (A5)
+    const nara = Math.abs(naraGrans);
+    if (Math.abs(item.diffPct) < nara && item.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
+    return out;
 }
 
 /**
@@ -7454,11 +7507,12 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
     return items;
 }
 
-    return { prioritera, arsbeloppMening, prioKonstanter };
+    return { prioritera, arsbeloppMening, prioKonstanter, motiveringsgrunder };
 })();
 const _prPrioritera = __mirrorPrioritering.prioritera;
 const _prArsbeloppMening = __mirrorPrioritering.arsbeloppMening;
 const _prKonstanter = __mirrorPrioritering.prioKonstanter;
+const _prMotiveringsgrunder = __mirrorPrioritering.motiveringsgrunder;
 
 // ---- speglar src/lib/livscykel.js ----
 const __mirrorLivscykel = (() => {
@@ -29230,8 +29284,7 @@ document.getElementById('kon-trend-alla')?.addEventListener('change', () => { co
 // Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
 // percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
 function _konLonesteg(loner, mal = 12) {
-    const v = loner.slice().sort((a, b) => a - b), vid = p => v[Math.min(v.length - 1, Math.max(0, Math.round(p * (v.length - 1))))];
-    const spann = vid(0.95) - vid(0.05);
+    const spann = Stat.quantile(loner, 0.95) - Stat.quantile(loner, 0.05);
     return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
 }
 const _konTkr = v => _figTalformat(v / 1000, Number.isInteger(v / 1000) ? 'antal' : undefined);
@@ -33122,107 +33175,30 @@ function computePrioritization(reference) {
  * en prio-rad. INGEN AI/LLM — bara deterministiska regler över datan.
  * Förslagen är frågor HR själv borde ställa, inte färdiga motiveringar.
  *
- * Regelpaket:
- *   1. Underlag — för få personer av endera kön
- *   2. Statistisk styrka — under MDE-tröskeln
- *   3. Ålderskillnad mellan kön i samma grupp
- *   4. Glasstaks/golvs-mönster — kvinnor överrepresenterade i lägsta lönekvintilen
- *   5. Bristyrke flagga — marknadsläge som potentiellt sakligt skäl
- *   6. Quick-win — hanterbar kostnad, lämplig för pilotåtgärd
- *   7. Positiv differens — över referens, andra slags motivering
+ * Reglerna och deras ordning: motiveringsgrunder i src/lib/prioritering.js.
  *
  * @param {Object} item - Prio-item med _rows.
  * @returns {Array<{type:'warn'|'info'|'ok'|'flag', text:string}>}
  */
 function generateMotivationSuggestions(item) {
-    const out = [];
-    const rows = item._rows || [];
-    if (!rows.length) return out;
+    return _prMotiveringsgrunder(item, {
+        kInstalld: kInstalld(), kTroskel: kTroskel(),
+        mdePct: state.powerAnalysis?.mdePct, naraGrans: state.prioConfig.bevakaThreshold
+    }).map(g => ({ type: g.type, text: _motiveringText(g) }));
+}
 
-    // 1. Underlag: ett kön under minsta gruppstorlek (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kInstalld() || item.maN < kInstalld()) {   // varningen gäller skattningens säkerhet, inte läget
-        out.push({
-            type: 'warn',
-            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kInstalld()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
-        });
+// Texten till en grund ur motiveringsgrunder; talen kommer ur lib och formateras här.
+function _motiveringText(g) {
+    switch (g.kod) {
+        case 'underlag': return `Underlaget är litet (${g.kvN} kvinnor / ${g.maN} män; minsta gruppstorlek ${g.k}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`;
+        case 'styrka': return `Skillnaden (${svPct(g.diffPct, 1)}) ligger under detektionströskeln (~${svPct(g.mdePct, 1)}). Det innebär att skillnaden är så liten att den inte med säkerhet kan skiljas från slumpmässiga variationer.`;
+        case 'alder': return `${g.medelMa > g.medelKv ? 'Männen' : 'Kvinnorna'} är i snitt <strong>${svTal(Math.abs(g.medelMa - g.medelKv), 1)} år äldre</strong> än motparten i denna grupp (${svTal(g.medelMa, 0)} mot ${svTal(g.medelKv, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`;
+        case 'kvintil': return `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((g.andelKv*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((g.andelMa*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`;
+        case 'brist': return 'Markerat som <strong>bristyrke</strong>. Marknadsläge (rekryteringssvårighet) kan vara ett sakligt skäl — dokumentera gärna marknadsläget med stöd av extern statistik (t.ex. från SCB lönestrukturstatistik).';
+        case 'snabbVinst': { const K = _prKonstanter(); return `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${g.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`; }
+        case 'over': return `Ligger ${svPct(g.diffPct, 1)} över referensen. Dokumentera gärna varför.`;
+        default: return `Gruppens median ligger inom ±${svTal(g.nara, g.nara % 1 ? 1 : 0)} % av referensen.`;   // 'nara'
     }
-
-    // 2. Power-tröskel
-    if (state.powerAnalysis && Math.abs(item.diffPct) < state.powerAnalysis.mdePct && item.n < 30) {
-        out.push({
-            type: 'info',
-            text: `Skillnaden (${svPct(item.diffPct, 1)}) ligger under detektionströskeln (~${svPct(state.powerAnalysis.mdePct, 1)}). Det innebär att skillnaden är så liten att den inte med säkerhet kan skiljas från slumpmässiga variationer.`
-        });
-    }
-
-    // 3. Åldersskillnad mellan kön i samma grupp
-    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder).filter(a => a > 0);
-    const maAges = rows.filter(r => arMan(r)).map(r => r.alder).filter(a => a > 0);
-    if (kvAges.length >= 3 && maAges.length >= 3) {
-        const meanKvAge = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
-        const meanMaAge = maAges.reduce((s, v) => s + v, 0) / maAges.length;
-        const ageDiff = meanMaAge - meanKvAge;
-        if (Math.abs(ageDiff) >= 3) {
-            const who = ageDiff > 0 ? 'Männen' : 'Kvinnorna';
-            out.push({
-                type: 'info',
-                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`
-            });
-        }
-    }
-
-    // 4. Glasstak/-golv-mönster: kvinnor överrepresenterade i lägsta lönekvintil
-    //    (lönepositionsmått per kön: kräver k-tröskeln för båda könen, ADR-12)
-    if (item.kvN >= kTroskel() && item.maN >= kTroskel()) {
-        const allLons = rows.map(r => r.lon).sort((a, b) => a - b);
-        const q1 = allLons[Math.floor(allLons.length * 0.2)];
-        const kvBelowQ1 = rows.filter(r => arKvinna(r) && r.lon <= q1).length;
-        const maBelowQ1 = rows.filter(r => arMan(r) && r.lon <= q1).length;
-        const kvShareInQ1 = item.kvN > 0 ? kvBelowQ1 / item.kvN : 0;
-        const maShareInQ1 = item.maN > 0 ? maBelowQ1 / item.maN : 0;
-        if (kvShareInQ1 >= 0.4 && kvShareInQ1 - maShareInQ1 >= 0.2) {
-            out.push({
-                type: 'flag',
-                text: `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((kvShareInQ1*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((maShareInQ1*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`
-            });
-        }
-    }
-
-    // 5. Bristyrke
-    if (item.isBrist) {
-        out.push({
-            type: 'info',
-            text: 'Markerat som <strong>bristyrke</strong>. Marknadsläge (rekryteringssvårighet) kan vara ett sakligt skäl — dokumentera gärna marknadsläget med stöd av extern statistik (t.ex. från SCB lönestrukturstatistik).'
-        });
-    }
-
-    // 6. Quick-win (villkoret i src/lib/prioritering.js; texten beskriver det)
-    if (item.isQuickWin) {
-        const K = _prKonstanter();
-        out.push({
-            type: 'ok',
-            text: `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${item.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`
-        });
-    }
-
-    // 7. Positiv diff (över referens)
-    if (item.diffPct > 5) {
-        out.push({
-            type: 'info',
-            text: `Ligger ${svPct(item.diffPct, 1)} över referensen. Dokumentera gärna varför.`
-        });
-    }
-
-    // 8. Nära referensen: inom uppföljningsgränsen åt båda hållen (A5). Ett läge mot referensen, ingen bedömning.
-    const nara = Math.abs(state.prioConfig.bevakaThreshold);
-    if (Math.abs(item.diffPct) < nara && item.n >= 10) {
-        out.push({
-            type: 'ok',
-            text: `Gruppens median ligger inom ±${svTal(nara, nara % 1 ? 1 : 0)} % av referensen.`
-        });
-    }
-
-    return out;
 }
 
 // Prioriteringens egna ord för läget mot referensen (A5, ADR-62). De delar inte namn med uppmärksamhetstrappan för
