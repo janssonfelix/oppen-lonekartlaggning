@@ -151,6 +151,30 @@ describe('byggForhandskontroll: felläsningar', () => {
         expect(fk.varningar[0].text).toMatch(/2 personer/);
         expect(fk.varningar[0].text).not.toMatch(/14|81/);
     });
+    describe('ålder utanför 16–75: radnumren och följden', () => {
+        // Poster med radnummer, som inläsningen ger dem: åldern 12 eller 88 på de angivna raderna, 40 på de andra.
+        const poster = utanfor => Array.from({ length: 30 }, (_, i) => ({ bas: 'C', lon: 30000, kon: i % 2 ? 'man' : 'kvinna',
+            radnr: 2 + i * 7, alder: utanfor.includes(2 + i * 7) ? (i % 2 ? 88 : 12) : 40 }));
+        const text = (utanfor, over = d => d) => bygg(trettio(), { data: over(poster(utanfor)) }).varningar.find(v => v.kod === 'alder-utanfor').text;
+        it('radnumren i stigande ordning, och följden för analysen', () => {
+            expect(text([2, 72, 163])).toBe('3 personer har en ålder utanför 16–75 år (rad 2, 72 och 163). '
+                + 'Raderna räknas med i åldersjusteringen tills filen är rättad: kontrollera ålderskolumnen och läs in filen igen.');
+            expect(text([163, 2], d => [...d].reverse())).toMatch(/\(rad 2 och 163\)/);
+        });
+        it('en person i singular', () => {
+            expect(text([9])).toBe('1 person har en ålder utanför 16–75 år (rad 9). '
+                + 'Raden räknas med i åldersjusteringen tills filen är rättad: kontrollera ålderskolumnen och läs in filen igen.');
+        });
+        it('fler än fem: "till exempel" och de fem första', () => {
+            expect(text([2, 9, 16, 23, 30, 37, 44])).toMatch(/^7 personer har en ålder utanför 16–75 år \(till exempel rad 2, 9, 16, 23 och 30\)\. /);
+        });
+        it('utan radnummer (som demodata) bara antalet', () => {
+            expect(text([2, 9], d => d.map(r => ({ ...r, radnr: null })))).toMatch(/^2 personer har en ålder utanför 16–75 år\. Raderna räknas med/);
+        });
+        it('ingen ålder ur filen i texten', () => {
+            expect(text([2, 9, 16])).not.toMatch(/\b(12|88)\b/);
+        });
+    });
     it('en lön som inte går att läsa och en saknad BAS: cellerna markeras och bortfallet redovisas', () => {
         const rader = trettio((r, i) => (i === 0 ? { ...r, anvands: false, ra: { ...r.ra, lon: 'saknas' }, tolkat: { ...r.tolkat, lon: 0 }, status: { ...r.status, lon: 'invalid' } }
             : i === 1 ? { ...r, anvands: false, ra: { ...r.ra, bas: '' }, tolkat: { ...r.tolkat, bas: '' } } : r));

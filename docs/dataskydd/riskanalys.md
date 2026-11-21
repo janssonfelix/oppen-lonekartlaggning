@@ -340,7 +340,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   rapportunderlaget eller i konfigurationsfilen (k-invariantsviten, `tests/ktroskel-invarianter.test.js`).
   Rensa all data tömmer dem. En fil som väntar på *Läs in* (inställningen *Stoppa och visa förhandskontrollen
   innan inläsning*) räknas som data i minnet. Rensa all data släpper den även när inget underlag är inläst, och
-  rensningen vid inaktivitet är igång under väntan. *Vad lagras i minnet* säger att en fil väntar.
+  rensningen vid inaktivitet är igång under väntan. *Vad lagras i minnet* säger att en fil väntar. Förhandskontrollens
+  varningar står i Att göra och följer med dess CSV. De bär antal och aldrig löner eller åldrar ur filen; två av dem
+  bär också högst fem radnummer, så att raderna går att hitta i filen: personnamn i fältet för AID-etikett (ovan) och
+  ålder utanför 16–75 år (`src/lib/forhandskontroll.js`, prövat i `tests/forhandskontroll.test.js`).
 
 ### 6.5 k-anonymitet ✔
 Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydelsen, med varje utdata och dess vakt, står i
