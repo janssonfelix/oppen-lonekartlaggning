@@ -371,7 +371,8 @@ golvet av n · 0,025 och den övre n − 1 − golvet av n · 0,025, räknat fr�
 den nedre som över den övre (med B = 1 000: 25 på var sida). **Radordningen** påverkar inga intervall (ADR-86):
 generatorn seedas ur antal och summa per serie (`rngFor` i `src/lib/rng.js`), och dragningarna görs ur gruppens
 stigande sorterade löner (bootstrapen), ur kvinnornas löner stigande följda av männens (omkastningen) och ur raderna
-sorterade på en fast nyckel (kvantilregressionen, avsnitt 6). Samma löner i en annan ordning ger samma gränser. Styrkan (minsta upptäckbara
+sorterade på en fast nyckel (kvantilregressionen, avsnitt 6). Samma löner i en annan ordning ger samma gränser. Nedsamplingen
+av punktmoln följer filens ordning: den avgör vilka punkter som ritas, inget tal som redovisas. Styrkan (minsta upptäckbara
 skillnad vid 80 % styrka och α = 0,05, faktorn 2,802) är `styrkeanalys` och `gruppMde` i samma modul. Översikten per
 huvudområde använder t-kvantilen (avsnitt 3).
 

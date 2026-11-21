@@ -80,7 +80,7 @@ avsnitt 11.
 | Kvinnodominerat: *Mer än* (`'do'`) eller *Minst* (`'scb'`) gränsen, standard 60 % | `arKvinnodominerad`, `konsklass`, `likvardighet.js` | andel kvinnor | `likvardighetsmodellen.md` §2; ADR-60, 72 | `tests/likvardighet.test.js` | saknas |
 | Paren i likvärdigt arbete och lägre krav, högre lön | `byggPar`, `byggParLagreKrav`, `computeLikvardighetPairs`, `likvardighet.js` | lön, kön, AID, BAS | `likvardighetsmodellen.md` §3–§6; ADR-25, 61 | `tests/likvardighet.test.js` | saknas |
 | Åldersjusterad skillnad i ett par | `aldersjusteradSkillnad`, `likvardighet.js` | lön, ålder | `likvardighetsmodellen.md` §5 | `tests/likvardighet.test.js` | saknas |
-| Tabellerna per AID-kod och BAS-intervall, hierarkiska par; Lika arbete AID x BAS är Lika arbetes grupper och status (`likaArbeteGrupper`) i BAS-ordning, utan egen bedömning | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57, 90 | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js`, `tests/ktroskel-utdata.test.js` | saknas |
+| Tabellerna per AID-kod och BAS-intervall, hierarkiska par; Lika arbete AID x BAS är Lika arbetes grupper och status (`likaArbeteGrupper`) i BAS-ordning, utan egen bedömning; gränserna i tabellen är de statusen prövades mot (`bedomSkillnad`, `status.js`) | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57, 90 | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js`, `tests/ktroskel-utdata.test.js` | saknas |
 | Personer att granska: förväntad lön ur kollegorna (log-lön mot ålder när spridningen är minst 5 år, annars medianen), flagga vid minst `grans` % under | `flaggaIndivider`, `individflaggor.js` | lön, ålder, AID, BAS | ADR-23, 89 | `tests/individflaggor.test.js`, `tests/grupp-aid-kod.test.js` | `14-granska-median.json`, `15-granska-alder.json` |
 
 ## 6. Löneläget mot referenserna
@@ -93,6 +93,7 @@ avsnitt 11.
 | Jämförelseraderna: P10, median, P90 per AID-kod och BAS, skillnad (org/ref − 1)·100 | `jamforelseRader`, `avvikelseRangordning`, `statistikMarknad`, `jamforelse.js` | lön, AID, BAS, referenserna | ADR-35, 55 | `tests/jamforelse.test.js`, `tests/smoke-jamforelse.test.js` | saknas |
 | Läget i spannet (0–100, ord med gränserna 33 och 67), mönstret och förslaget på referens | `lageISpann`, `monster`, `forslag`, `lageOchForslag`, `referensOverblick`, `referenser.js` | jämförelseraderna | ADR-55 | `tests/referenser.test.js`, `tests/smoke-referenser.test.js` | saknas |
 | Tabellerna per BAS-intervall med kompletterande undertryckning | `perBasTabeller`, `perbas.js`; regeln i `kompletterandeUndertryckning`, `undertryckning.js` | lön, kön, ålder, AID, BAS | ADR-52, 83; `k-troskeln.md` §2 | `tests/perbas.test.js`, `tests/undertryckning.test.js` | saknas |
+| Kompletterande undertryckning mellan JPA-protokollets blad för BAS-intervall och för lika arbete | `kompletterandeUndertryckningPerNyckel`, `undertryckning.js`; anropet i `src/app/24-excelexport.js` | antal per kön och intervall | ADR-91, 92; `k-troskeln.md` §2 | `tests/undertryckning.test.js`, `tests/ktroskel-invarianter.test.js` | saknas |
 | Sammanslagning av delar där ett kön har 1 till k − 1 personer | `sammanslagning`, `undertryckning.js` | antal per kön och del | ADR-87; `k-troskeln.md` §2 | `tests/undertryckning.test.js`, `tests/gapuppdelning.test.js`, `tests/sektor.test.js` | saknas |
 
 ## 7. Löneöversynen, prioriteringen och kostnaden
@@ -121,6 +122,13 @@ Modellerna beskrivs i [`loneoversynsmodellen.md`](loneoversynsmodellen.md) och
 | Lönespridningen (P90 − P10)/median, fyra decimaler | `lonespridning`, `arsbokslut.js` | lön | verktygets eget val, ingen extern källa | `tests/arsbokslut.test.js` | saknas |
 | Bokslutet och jämförelsen mellan år | `byggArsbokslut`, `jamforArsbokslut`, `jamforBasIntervall`, `jamforBedomningar`, `bokslutMedGrans`, `arsbokslut.js` | årets aggregat, förra årets bokslut | ADR-54 | `tests/arsbokslut.test.js`, `tests/arsbokslut-skal.test.js` | saknas |
 | De sakliga skälen: andel av skillnaden, vad som återstår, om summan överstiger skillnaden | `skalSammanstallning`, `skalPerKategori`, `valideraSkal`, `sakligaskal.js` | belopp per kategori, skillnaden | verktygets eget val, ingen extern källa | `tests/sakligaskal.test.js`, `tests/handlingsplan-skal.test.js` | saknas |
+
+**Bokslutets grupper** (ADR-89). En grupp i bokslutet är AID-koden i BAS-intervallet, och intervallet står i ett
+valfritt fält `bas`, utan ny formatversion. Grupperna paras med förra årets på koden ur gruppens namn och intervallet;
+har ett äldre bokslut flera grupper med samma kod används den med årets namn, annars den största. Ett bokslut sparat
+innan grupperna delades per intervall (grupper utan `bas`) har en rad per kod över alla intervall: dess grupper jämförs
+inte rad för rad med årets, eftersom en median över alla intervall inte går att dela upp, och skillnaden i antalet
+flaggade grupper visas inte. Nyckeltalen, intervallen och Att göra jämförs som vanligt (`jamforArsbokslut`).
 
 ## 9. Inläsningen
 
