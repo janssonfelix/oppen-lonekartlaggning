@@ -455,9 +455,10 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   löneskillnaden per åldersgrupp, och percentilerna och kvartilerna i Lönestruktur) räknar om hela diagrammet för
   en del av underlaget: ett huvudområde, en åldersgrupp, en AID-etikett eller ett BAS-intervall, en sak i taget. Det är ny
   utdata, eftersom diagrammets egen exportmeny bär det omräknade diagrammet (bilden med "Räknat för: …" i fotraden
-  och diagramdatan med samma rad). Här finns ett differensskydd: ett val görs bara när både urvalet och resten av
+  och diagramdatan med samma rad). Här finns en spärr: ett val görs bara när både urvalet och resten av
   underlaget har inga eller minst tröskelns antal kvinnor och inga eller minst tröskelns antal män, så att hela
-  underlaget minus urvalet inte ger en liten grupp. En grupp som själv är för liten går inte att välja. På skärmen
+  underlaget minus urvalet inte så lätt ger en liten grupp. Spärren är ingen garanti mellan filer, eftersom skyddet
+  gäller en fil i taget (ADR-92); den som gör kartläggningen ansvarar för vad som exporteras. En grupp som själv är för liten går inte att välja. På skärmen
   är tröskeln 1 (ADR-51); i exportläget prövas valet mot den inställda tröskeln, och ett val som då bryter regeln
   släpps så att diagrammet visar hela underlaget. Rapporten, utskriften, ZIP-filen och rapportunderlaget ritar
   alltid hela underlaget. Valet minns per diagram under sessionen och sparas inte i konfigurationsfilen. Vaktas av

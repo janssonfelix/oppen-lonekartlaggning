@@ -41,7 +41,8 @@ Verktyget
 - skickar ingenting över nätet och sparar ingenting mellan sessionerna
 - redovisar inte lönemått för grupper under minsta gruppstorlek i det som lämnar verktyget, med de undantag och den
   inställning som står i avsnitt 3; på skärmen visas alla grupper. Skyddet gäller en fil i taget: den som har flera
-  utdata ur samma underlag kan räkna fram mer än varje fil visar (ADR-92)
+  utdata ur samma underlag kan räkna fram mer än varje fil visar (ADR-92). Verktyget sätter en korrekt analys
+  först; den som gör kartläggningen ansvarar för vad som exporteras och till vem
 - varnar när fältet för AID-etikett ser ut att innehålla personnamn.
 
 Verktyget maskerar inte och tar inte bort namn ur fältet för AID-etikett (ADR-85). Det som står där, högst 40
@@ -135,7 +136,8 @@ Exporterna byter då inte läge.
   tabeller. I *Lön mot ålder* räknas trendlinjerna om ur de punkter som syns, och en linje ritas bara ur minst 10
   synliga punkter. Raden *Räkna för* räknar om fem sammanfattande diagram för en del av underlaget, till exempel ett
   huvudområde. Ett sådant val görs bara när både urvalet och resten av underlaget har inga eller minst 10 kvinnor och
-  inga eller minst 10 män, så att en liten grupp inte kan räknas fram som skillnaden mellan två exporter.
+  inga eller minst 10 män. Spärren gör det svårare att få fram en liten grupp som skillnaden mellan två exporter,
+  men den är ingen garanti: skyddet gäller en fil i taget (ADR-92), och den som gör kartläggningen ansvarar för vad som exporteras.
   Diagrammets egen export säger vad det är räknat för. Rapporten, utskriften, ZIP-filen och rapportunderlaget visar
   alltid hela underlaget (riskanalysen §6.6).
 - **Tabellerna per BAS-intervall** i rapportens avsnitt *Lönestruktur per BAS-intervall* (Word-utkastet,
