@@ -185,7 +185,7 @@ minsta skillnaden), `overDirektiv` (par där den kvinnodominerade AID-etikettens
 direktivmarkeringen, `direktivMarkering` ur `src/lib/status.js`, det vill säga en ojusterad löneskillnad på minst 5 %)
 och `sakra` (par vars hela konfidensintervall ligger över 0). Nyckeltalet *Par att titta närmare på* visar `totalt` med
 *varav M med ojusterad löneskillnad ≥ 5 %, S med säker skillnad*, så att direktivnivån syns utan att paren under den
-döljs. Rutan *Största skillnaden* visar den kvinnodominerade AID-etikettens median i procent av
+döljs. Rutan *Lägst lön i % av jämförelsen* visar den kvinnodominerade AID-etikettens median i procent av
 jämförelseetikettens.
 
 **Konfidensintervallet** är ett bootstrap-intervall på medianskillnaden i kronor, 1 000 omdragningar, 95 %:

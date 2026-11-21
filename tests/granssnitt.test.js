@@ -718,10 +718,10 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         expect(lop).not.toMatch(/log\(lön\)|HC3|C\(BAS\)|referensintervall/);
         const saker = [...d.querySelectorAll('#livscykel-content .stat-box')].find(b => /säkerställd\?/.test(b.textContent));
         const ord = p => p < 0.10 ? 'säkerställd' : 'inte säkerställd';
-        expect(saker.querySelector('.fs-md').textContent.replace(/\s+/g, ' ')).toContain(`Linjär: p = ${r.kvAgePVal < 0.001 ? '< 0,001' : r.kvAgePVal.toFixed(3).replace('.', ',')}, ${ord(r.kvAgePVal)}`);
+        expect(saker.querySelector('.livscykel-provning').textContent.replace(/\s+/g, ' ')).toContain(`Linjär: p = ${r.kvAgePVal < 0.001 ? '< 0,001' : r.kvAgePVal.toFixed(3).replace('.', ',')}, ${ord(r.kvAgePVal)}`);
         expect(d.querySelector('#livscykel-content .livscykel-stjarnor').textContent).toContain('*** p < 0,001');
         expect(d.querySelector('#livscykel-content .livscykel-modell-not').textContent)
-            .toMatch(/kön, ålder, åldern i kvadrat.*samspelet mellan kön och ålder.*BAS-intervall.*Så räknas det.*Beräkning & urval/s);
+            .toMatch(/bygger på [\d\s\u00a0]+ personer och tar hänsyn till kön, ålder, åldern i kvadrat.*samspelet mellan kön och ålder.*BAS-intervall.*Så räknas det.*Beräkning & urval/s);
         // Beräkningspanelen i flikens Så räknas det har formeln, standardfelen och referensintervallet.
         const panel = d.querySelector('details.audit-panel[data-audit-id="livscykel"]');
         expect(panel.closest('details.avsnitt').querySelector('summary h2').textContent).toBe('Så räknas det');

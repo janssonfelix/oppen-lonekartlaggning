@@ -346,7 +346,7 @@ function renderActionChecklist({ reg } = {}) {
 
     const oppna = _agBorjaHar(items, done);   // ordningen: src/lib/attgora.js (ADR-29)
     if (borja) borja.innerHTML = `<h3 class="att-gora-borja-rubrik">Börja här</h3>` + (oppna.length
-        ? `<ol class="att-gora-borja-lista">${oppna.map(it => `<li data-borja-id="${esc(it.id)}"><strong>${esc(it.titel)}</strong> <span class="att-gora-kat">${esc(it.kategori)}</span>${it.tab ? ' ' + _attGoraLank(it, 'Gå dit') : ''}</li>`).join('')}</ol>`
+        ? `<ol class="att-gora-borja-lista">${oppna.map(it => `<li data-borja-id="${esc(it.id)}">${esc(it.titel)} <span class="att-gora-kat">${esc(it.kategori)}</span>${it.tab ? ' ' + _attGoraLank(it, 'Gå dit') : ''}</li>`).join('')}</ol>`
         : '<p>Alla punkter är hanterade.</p>');
 
     // Checkbox-handlers

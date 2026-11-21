@@ -14291,17 +14291,23 @@ function _rfRadbryt(text, maxTecken, maxRader, hartHalls = false) {
 
 // Punktetiketter som undviker (lagrets `etikettLage: 'undvik'`). Etiketterna läggs en i taget, i den ordning de
 // kommer. Var och en prövas på åtta platser runt sin punkt — höger, vänster, över, under och de fyra hörnen — först
-// intill punkten och sedan längre ut (där i sexton riktningar), en textrad i taget (högst RF_UNDVIK_VARV varv). En etikett som står längre ut
-// än intill punkten får en hänvisningslinje från punktens kant till texten. Den första platsen tas där rutan varken
-// täcker en ritad punkt, en redan lagd etikett eller en redan dragen linje, där den egna linjen inte skär en redan
-// lagd etikett, och där rutan står inom panelen. Finns ingen fri plats står etiketten på den plats där den krockar
-// minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka punkter som namnges.
-// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd); `hinder`: [{ x, y, r }],
-// de ritade punkterna i panelen. Bara ritade punkter är hinder, så en dold liten punkt påverkar inte lägena.
+// intill punkten och sedan längre ut (där i 32 riktningar), en textrad i taget (högst RF_UNDVIK_VARV varv). En
+// etikett som står längre ut än intill punkten får en hänvisningslinje från punktens kant till texten. Den första
+// platsen tas där rutan varken täcker ett hinder, en redan lagd etikett eller en redan dragen linje, där den egna
+// linjen varken skär en lagd etikett, ett texthinder eller en redan dragen linje, och där rutan står inom panelen.
+// Två linjer i kors kostar som en linje genom en text: båda gör bilden svår att följa. RF_UNDVIK_VARV är 10 och
+// inte fler: med en fri plats längre ut tar etiketten den och drar en lång linje tvärs över molnet (sett i
+// prioriteringsmatrisen med 5 000 personer), medan den utan fri plats inom tio rader går till lagningen nedan, som
+// flyttar en granne och ger korta, okorsade linjer. Finns ingen fri plats står etiketten på den plats där den
+// krockar minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka punkter som namnges.
+// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd). `hinder`: de ritade
+// punkterna i panelen, [{ x, y, r }], och rutor, [{ x0, y0, x1, y1, tunn? }]: en text (referenslinjens etikett) eller,
+// med `tunn`, en referenslinje, som rutan helst inte täcker men som en hänvisningslinje får korsa. Bara ritade punkter
+// är hinder, så en dold liten punkt påverkar inte lägena.
 // `bt` och `ht` är textens egen bredd och höjd när rutan har luft runt texten (texten står mitt i rutan; linjen når
 // texten, inte luften). Ren beräkning: ingen DOM, samma svar varje gång. Ger [{ x0, y0, x1, y1, linje: { x1, y1, x2,
 // y2 } | null }].
-const RF_UNDVIK_VARV = 20, RF_UNDVIK_RIKTNINGAR = 32, RF_UNDVIK_LAGNING = 3;
+const RF_UNDVIK_VARV = 10, RF_UNDVIK_RIKTNINGAR = 32, RF_UNDVIK_LAGNING = 3;
 /**
  * Skär sträckan (x1, y1)–(x2, y2) rutan? (Liang–Barsky.)
  * @param {{x1:number, y1:number, x2:number, y2:number}} l @param {{x0:number, y0:number, x1:number, y1:number}} q
@@ -14317,8 +14323,16 @@ function _rfLinjeSkarRuta(l, q) {
     return t0 <= t1;
 }
 /**
+ * Korsar sträckorna a och b varandra? (Ändpunkter som bara nuddar räknas inte.)
+ * @param {{x1:number, y1:number, x2:number, y2:number}} a @param {{x1:number, y1:number, x2:number, y2:number}} b
+ */
+function _rfLinjerKorsas(a, b) {
+    const sida = (/** @type {number} */ x, /** @type {number} */ y, /** @type {{x1:number, y1:number, x2:number, y2:number}} */ l) => Math.sign((l.x2 - l.x1) * (y - l.y1) - (l.y2 - l.y1) * (x - l.x1));
+    return sida(a.x1, a.y1, b) * sida(a.x2, a.y2, b) < 0 && sida(b.x1, b.y1, a) * sida(b.x2, b.y2, a) < 0;
+}
+/**
  * @param {Array<{x:number, y:number, r:number, b:number, h:number, bt?:number, ht?:number}>} etiketter
- * @param {Array<{x:number, y:number, r:number}>} hinder
+ * @param {Array<{x:number, y:number, r:number}|{x0:number, y0:number, x1:number, y1:number, tunn?:boolean}>} hinder
  * @param {number} B @param {number} H
  * @returns {Array<{x0:number, y0:number, x1:number, y1:number, linje:{x1:number, y1:number, x2:number, y2:number}|null}>}
  */
@@ -14334,6 +14348,11 @@ function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
     const fast = (/** @type {Plats} */ q) => {
         let n = q.x0 < 0 || q.y0 < 0 || q.x1 > B || q.y1 > H ? 100 : 0;
         for (const p of hinder) {
+            if ('x0' in p) {   // en ruta: en text (som en lagd etikett) eller, `tunn`, en referenslinje
+                if (q.x0 < p.x1 + luft && p.x0 < q.x1 + luft && q.y0 < p.y1 + luft && p.y0 < q.y1 + luft) n += p.tunn ? 3 : 10;
+                else if (!p.tunn && q.linje && _rfLinjeSkarRuta(q.linje, vidgad(p))) n += 3;
+                continue;
+            }
             const dx = Math.max(q.x0 - p.x, 0, p.x - q.x1), dy = Math.max(q.y0 - p.y, 0, p.y - q.y1);
             if (dx * dx + dy * dy < (p.r + 2) * (p.r + 2)) n += 5;
         }
@@ -14345,6 +14364,7 @@ function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
         if (q.x0 < p.x1 + luft && p.x0 < q.x1 + luft && q.y0 < p.y1 + luft && p.y0 < q.y1 + luft) n += 10;
         if (q.linje && _rfLinjeSkarRuta(q.linje, vidgad(p))) n += 3;   // den egna linjen genom en lagd etikett
         if (p.linje && _rfLinjeSkarRuta(p.linje, vidgad(q))) n += 3;   // en dragen linje genom rutan
+        if (q.linje && p.linje && _rfLinjerKorsas(q.linje, p.linje)) n += 3;   // två linjer som korsar varandra
         return n;
     };
     const kostnad = (/** @type {Plats} */ q, /** @type {number} */ i) => {
@@ -15152,7 +15172,12 @@ function _rfUndvikEtiketter(c) {
     // (texten mitt i): teckensnittet i webbläsaren kan vara bredare och högre än uppskattningen (_RF.tecken), och en
     // etikett som står tätt intill en annan ska inte nå in i den.
     const matt = c.undvik.map(e => { const bt = _rfBredd(e.text, e.fpx); return { x: e.x, y: e.y, r: e.r, b: bt * 1.1 + 2, h: e.fpx * 1.3, bt, ht: e.fpx * 1.05 }; });
-    const lagen = _rfPlaceraEtiketter(matt, c.punkthinder || [], c.panelB, c.inreH);
+    // Referenslinjerna ritas efter etiketterna (över märkena) men är hinder redan här: linjen som en tunn ruta och dess
+    // etikett som en text. Zonernas etiketter läggs sist och går själva fria från dessa etiketter (_rfZonEtiketter).
+    const ref = _rfReferensLinjer(c.figur, c, c.panelB, c.inreH).flatMap(({ lodrat, p, et }) => [
+        lodrat ? { x0: p - 1, x1: p + 1, y0: 0, y1: c.inreH, tunn: true } : { x0: 0, x1: c.panelB, y0: p - 1, y1: p + 1, tunn: true },
+        ...(et ? [{ x0: et.x, x1: et.x + et.tb, y0: et.y - et.fpx * 0.8, y1: et.y + et.fpx * 0.25 }] : [])]);
+    const lagen = _rfPlaceraEtiketter(matt, [...(c.punkthinder || []), ...ref], c.panelB, c.inreH);
     c.undvik.forEach((e, n) => {
         const q = lagen[n];
         if (q.linje) c.texter.append('line').attr('data-marke', 'hanvisning').attr('pointer-events', 'none')
@@ -15729,6 +15754,22 @@ function _rfReferenser(g, figur, c, bredd, hojd, del) {
         }
         return;
     }
+    for (const { r, lodrat, p, et } of _rfReferensLinjer(figur, c, bredd, hojd)) {
+        const linje = g.append('line').attr('data-marke', 'referenslinje').attr('pointer-events', 'none')
+            .attr('x1', lodrat ? p : 0).attr('x2', lodrat ? p : bredd).attr('y1', lodrat ? 0 : p).attr('y2', lodrat ? hojd : p)
+            .attr('stroke', r.farg || FARG.blek).attr('stroke-width', r.tjocklek || 1.5);
+        const streck = _RF.streck[r.streck || 'hel'];
+        if (streck) linje.attr('stroke-dasharray', streck);
+        if (et) _rfText(c.texter, et.x, et.y, et.text, { px: et.fpx, farg: r.textfarg || r.farg || FARG.dampad, fet: true, title: String(r.etikett),
+            attr: { 'data-marke': 'linjeetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+    }
+    _rfZonEtiketter(zoner, c, bredd, hojd);
+}
+// Referenslinjerna ur figurens `referens` med sina lägen i panelen: [{ r, lodrat, p, et }], där `et` är linjens
+// etikett ({ x, y, text, fpx, tb }: textens start och baslinje) eller null. Används både när linjerna ritas och när
+// etiketterna som undviker läggs (_rfUndvikEtiketter), som läggs före linjerna men ska gå fria från dem.
+function _rfReferensLinjer(figur, c, bredd, hojd) {
+    const ut = [];
     for (const r of Array.isArray(figur.referens) ? figur.referens : []) {
         if (!r || (r.typ || 'linje') !== 'linje') continue;
         const lodrat = r.x != null;
@@ -15736,21 +15777,15 @@ function _rfReferenser(g, figur, c, bredd, hojd, del) {
         const s = lodrat ? c.x : (r.axel === 'y2' && c.y2 ? c.y2 : c.y);
         const p = _rfPos(s, lodrat ? r.x : r.y);
         if (p == null || p < -0.5 || p > (lodrat ? bredd : hojd) + 0.5) continue;
-        const linje = g.append('line').attr('data-marke', 'referenslinje').attr('pointer-events', 'none')
-            .attr('x1', lodrat ? p : 0).attr('x2', lodrat ? p : bredd).attr('y1', lodrat ? 0 : p).attr('y2', lodrat ? hojd : p)
-            .attr('stroke', r.farg || FARG.blek).attr('stroke-width', r.tjocklek || 1.5);
-        const streck = _RF.streck[r.streck || 'hel'];
-        if (streck) linje.attr('stroke-dasharray', streck);
         // Linjens etikett (t.ex. "80 %"): vid linjens högra ände, strax ovanför — eller överst, till höger om en lodrät linje.
+        /** @type {{x:number, y:number, text:string, fpx:number, tb:number}|null} */ let et = null;
         if (r.etikett != null && String(r.etikett) !== '') {
             const fpx = _rfLitenPx(c.px), text = _rfKorta(String(r.etikett), 24), tb = _rfBredd(text, fpx);
-            const x = lodrat ? Math.min(p + 4, Math.max(0, bredd - tb)) : Math.max(0, bredd - tb - 4);
-            const y = lodrat ? fpx + 2 : Math.max(fpx, p - 4);
-            _rfText(c.texter, x, y, text, { px: fpx, farg: r.textfarg || r.farg || FARG.dampad, fet: true, title: String(r.etikett),
-                attr: { 'data-marke': 'linjeetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+            et = { x: lodrat ? Math.min(p + 4, Math.max(0, bredd - tb)) : Math.max(0, bredd - tb - 4), y: lodrat ? fpx + 2 : Math.max(fpx, p - 4), text, fpx, tb };
         }
+        ut.push({ r, lodrat, p, et });
     }
-    _rfZonEtiketter(zoner, c, bredd, hojd);
+    return ut;
 }
 
 // Märke → ritfunktion (g, lager, lagrets index i inskickade figuren, kontext).
@@ -18894,7 +18929,9 @@ function setCompCard(id, count, total, valueText, cardState) {
     const icon = document.getElementById(`${id}-icon`);
     const val  = document.getElementById(`${id}-val`);
     if (!card || !icon || !val) return;
-    val.textContent = valueText;
+    // Bara talet är fett; resten av raden (vad som räknats, noten om exporten) står i normal vikt.
+    const tal = total ? `${count} av ${total}` : '';
+    val.innerHTML = tal && valueText.startsWith(tal) ? `<strong>${tal}</strong>${esc(valueText.slice(tal.length))}` : esc(valueText);
     icon.innerHTML = { ok: ikon('bock'), warn: ikon('statusVarning'), crit: ikon('stopp'), na: '—' }[cardState] || '—';
     card.className = `compliance-card ${cardState}`;
 }
@@ -20288,7 +20325,7 @@ function renderActionChecklist({ reg } = {}) {
 
     const oppna = _agBorjaHar(items, done);   // ordningen: src/lib/attgora.js (ADR-29)
     if (borja) borja.innerHTML = `<h3 class="att-gora-borja-rubrik">Börja här</h3>` + (oppna.length
-        ? `<ol class="att-gora-borja-lista">${oppna.map(it => `<li data-borja-id="${esc(it.id)}"><strong>${esc(it.titel)}</strong> <span class="att-gora-kat">${esc(it.kategori)}</span>${it.tab ? ' ' + _attGoraLank(it, 'Gå dit') : ''}</li>`).join('')}</ol>`
+        ? `<ol class="att-gora-borja-lista">${oppna.map(it => `<li data-borja-id="${esc(it.id)}">${esc(it.titel)} <span class="att-gora-kat">${esc(it.kategori)}</span>${it.tab ? ' ' + _attGoraLank(it, 'Gå dit') : ''}</li>`).join('')}</ol>`
         : '<p>Alla punkter är hanterade.</p>');
 
     // Checkbox-handlers
@@ -26785,7 +26822,7 @@ function _lvRitaTopp(result) {
             antal.totalt ? `${_STS_DIR_KOLUMN}: ${termText('{enhet.bf.s:kvinnodominerad} medianlön är minst 5 % under {jamforelse.bf.s}')}. ${_STS_DIR_TIPS}` : '')
         // Nyckeltalen visar kvinnors lön i % av mäns (här: det kvinnodominerade yrkets median i % av jämförelseyrkets);
         // partabellen behåller sin skillnad, hur mycket mer jämförelseyrket tjänar, och verktygstipset säger hur de hänger ihop.
-        + (storst ? _laSlutsats('Största skillnaden', svPct(storst.kvMedian / storst.maMedian * 100, 1), `${storst.kvLabel || storst.kvAid} i % av ${storst.maLabel || storst.maAid}`, false,
+        + (storst ? _laSlutsats('Lägst lön i % av jämförelsen', svPct(storst.kvMedian / storst.maMedian * 100, 1), `${storst.kvLabel || storst.kvAid} i % av ${storst.maLabel || storst.maAid}`, false,
             `${termText('{Enhet.bf.s:kvinnodominerad} medianlön i % av {jamforelse.bf.s}. I tabellen över paren står samma skillnad som hur mycket högre {jamforelse.bf.s} medianlön är')}: ${svPct(storst.gapPct, 1)}.`) : '');
 }
 
@@ -30516,7 +30553,8 @@ function renderLikaArbeteTopp() {
         rader.length ? _laSlutsats(`${termStor(T.enhet.fl)} att granska`, `${granska.length} av ${rader.length}`, granska.length ? 'säkerställd skillnad, minst 3 %' : 'ingen säkerställd skillnad på 3 %', granska.length > 0 ? 'granska' : false,
             'Värt att granska: skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)')
                      : _laSlutsats(`${termStor(T.enhet.fl)} att granska`, '–', `${termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en} har minst ${kTroskel()} av varje kön`),
-        storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), _ruGruppMedBas(storst), false, `Kvinnors medianlön i procent av mäns för ${termArtikel(T.enhet, { bestamd: true })} ${T.enhet.en} där skillnaden är störst`) : '',
+        // Raden längst från lika lön: under 100 % är den lägst, över 100 % högst, så rubriken stämmer med värdet.
+        storst ? _laSlutsats(`${storst.kvot < 100 ? 'Lägst' : 'Högst'} kvinnolön i % av mäns`, svPct(storst.kvot, 1), _ruGruppMedBas(storst), false, `Kvinnors medianlön i procent av mäns för ${termArtikel(T.enhet, { bestamd: true })} ${T.enhet.en} där skillnaden är störst`) : '',
         regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? 'när dessa räknats bort' : 'utan att något räknats bort'}`, _laRegGranska(reg) ? 'granska' : false,
             `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.${_laRegFaNot(reg)} ${ALDER_METODVAL_TEXT}${harAlder() ? '' : ' ' + ALDER_SAKNAS_TEXT}`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
@@ -32883,17 +32921,8 @@ function renderLifecycleAnalysis() {
 
     // ====== UI ======
     wrap.innerHTML = `
-        <!-- B2: Klarspråklig rubrik och intro -->
-        <div class="insight-box info marg-b-14">
-            <strong>Vad analyserar livscykelmodellen?</strong>
-            <p class="fs-md lh-1_55 marg-8-0">
-                Den här analysen svarar på frågan: <em>"Är löneskillnaden mellan kvinnor och män
-                densamma över karriären, eller växer eller krymper den med åldern?"</em> Svaret, och vad det kan bero på, står i tolkningen under kurvan. Bygger på ${svTal(result.n, 0)} personer.
-            </p>
-        </div>
-
         <!-- B5: KPI:er + signifikanstest -->
-        <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
+        <div class="summary-stats">
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 25 år</div>
                 ${nyckeltal(result.niva25, kvot25)}
@@ -32904,14 +32933,14 @@ function renderLifecycleAnalysis() {
                 ${nyckeltal(result.niva65, kvot65)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
-            <div class="stat-box">
+            <div class="stat-box" title="Förändringen i kvinnors lön i % av mäns mellan 25 och 65 år, enligt modellen">
                 <div class="stat-etikett fs-xs marg-0-0-4">Förändring 25–65 år, procentenheter</div>
                 ${forandring}
-                <div class="stat-under">i kvinnors lön i % av mäns; minus: kvinnorna halkar efter</div>
+                <div class="stat-under">minus: kvinnorna halkar efter</div>
             </div>
             <div class="stat-box" title="Test av om skillnaden förändras med åldern (kön×ålder). Vid p ≥ 0,10 är förändringen inte säkerställd.">
                 <div class="stat-etikett fs-xs marg-0-0-4">Är förändringen säkerställd?</div>
-                <div class="fs-md fw-600">
+                <div class="livscykel-provning fs-sm lh-1_5">
                     Linjär: p = ${pText(result.kvAgePVal)}, ${sakerOrd(result.kvAgePVal)}<br>
                     Kvadratisk: p = ${pText(result.kvAge2PVal)}, ${sakerOrd(result.kvAge2PVal)}
                 </div>
@@ -32937,7 +32966,7 @@ function renderLifecycleAnalysis() {
         </div>
 
         <!-- B4: Översiktstabell — gap-utveckling per BAS -->
-        <details class="mb-14" open>
+        <details class="mb-14" id="livscykel-bas-tabell">
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
                 Modellens lönenivåer per ${T.niva.en} vid 25 och 65 år
             </summary>
@@ -32979,7 +33008,7 @@ function renderLifecycleAnalysis() {
         </details>
 
         <!-- B6: Detaljerad modelljämförelse -->
-        <details class="mb-14" open>
+        <details class="mb-14" id="livscykel-modelljamforelse">
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
                 Modelljämförelse: huvudmodell mot livscykelmodell
             </summary>
@@ -33011,7 +33040,7 @@ function renderLifecycleAnalysis() {
         </details>
 
         <p class="livscykel-modell-not text-dampad-xs lh-1_5 marg-t-10">
-            Modellen tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
+            Modellen bygger på ${svTal(result.n, 0)} personer och tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
     `;
 

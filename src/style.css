@@ -2961,12 +2961,15 @@ summary:focus-visible {
 .att-gora-status .compliance-grid { gap: 8px; }
 .att-gora-status .compliance-card { padding: 8px 10px; }
 .att-gora-status .comp-sub { display: none; }
-.att-gora-status .comp-value { font-size: var(--fs-sm); }
+.att-gora-status .comp-value { font-size: var(--fs-sm); font-weight: 400; }
+/* Rubrikerna i den täta statusraden står i gemener: versaler med spärrning bröts på tre rader i smala kort. */
+.att-gora-status .comp-label { text-transform: none; letter-spacing: 0; }
 /* Länkarna i statusraden ser ut som länkar men har 24 punkters klickyta (WCAG 2.2, 2.5.8). */
 .att-gora-status .comp-lank { display: inline-block; min-width: 24px; padding: 4px 0; font-size: var(--fs-xs); }
 .att-gora-borja-rubrik { font-size: var(--fs-md); margin: 6px 0; }
-.att-gora-borja-lista { margin: 0 0 12px; padding-left: 20px; }
-.att-gora-kat { color: var(--text-muted); font-size: var(--fs-xs); }
+/* Punkterna, fliken och «Gå dit» står i löptextens storlek och vikt. */
+.att-gora-borja-lista { margin: 0 0 12px; padding-left: 20px; font-size: var(--fs-sm); }
+.att-gora-kat { color: var(--text-muted); }
 
 /* Rapportunderlagets förteckning */
 .ru-toc { margin: 0 0 16px; padding: 10px 14px; font-size: var(--fs-sm); background: var(--bg-main); border-radius: 6px; }

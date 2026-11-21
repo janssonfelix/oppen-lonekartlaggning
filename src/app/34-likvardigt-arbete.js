@@ -731,7 +731,7 @@ function _lvRitaTopp(result) {
             antal.totalt ? `${_STS_DIR_KOLUMN}: ${termText('{enhet.bf.s:kvinnodominerad} medianlön är minst 5 % under {jamforelse.bf.s}')}. ${_STS_DIR_TIPS}` : '')
         // Nyckeltalen visar kvinnors lön i % av mäns (här: det kvinnodominerade yrkets median i % av jämförelseyrkets);
         // partabellen behåller sin skillnad, hur mycket mer jämförelseyrket tjänar, och verktygstipset säger hur de hänger ihop.
-        + (storst ? _laSlutsats('Största skillnaden', svPct(storst.kvMedian / storst.maMedian * 100, 1), `${storst.kvLabel || storst.kvAid} i % av ${storst.maLabel || storst.maAid}`, false,
+        + (storst ? _laSlutsats('Lägst lön i % av jämförelsen', svPct(storst.kvMedian / storst.maMedian * 100, 1), `${storst.kvLabel || storst.kvAid} i % av ${storst.maLabel || storst.maAid}`, false,
             `${termText('{Enhet.bf.s:kvinnodominerad} medianlön i % av {jamforelse.bf.s}. I tabellen över paren står samma skillnad som hur mycket högre {jamforelse.bf.s} medianlön är')}: ${svPct(storst.gapPct, 1)}.`) : '');
 }
 

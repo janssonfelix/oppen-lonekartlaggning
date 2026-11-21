@@ -6,7 +6,9 @@ function setCompCard(id, count, total, valueText, cardState) {
     const icon = document.getElementById(`${id}-icon`);
     const val  = document.getElementById(`${id}-val`);
     if (!card || !icon || !val) return;
-    val.textContent = valueText;
+    // Bara talet är fett; resten av raden (vad som räknats, noten om exporten) står i normal vikt.
+    const tal = total ? `${count} av ${total}` : '';
+    val.innerHTML = tal && valueText.startsWith(tal) ? `<strong>${tal}</strong>${esc(valueText.slice(tal.length))}` : esc(valueText);
     icon.innerHTML = { ok: ikon('bock'), warn: ikon('statusVarning'), crit: ikon('stopp'), na: '—' }[cardState] || '—';
     card.className = `compliance-card ${cardState}`;
 }

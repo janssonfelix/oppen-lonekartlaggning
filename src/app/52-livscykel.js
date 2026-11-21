@@ -152,17 +152,8 @@ function renderLifecycleAnalysis() {
 
     // ====== UI ======
     wrap.innerHTML = `
-        <!-- B2: Klarspråklig rubrik och intro -->
-        <div class="insight-box info marg-b-14">
-            <strong>Vad analyserar livscykelmodellen?</strong>
-            <p class="fs-md lh-1_55 marg-8-0">
-                Den här analysen svarar på frågan: <em>"Är löneskillnaden mellan kvinnor och män
-                densamma över karriären, eller växer eller krymper den med åldern?"</em> Svaret, och vad det kan bero på, står i tolkningen under kurvan. Bygger på ${svTal(result.n, 0)} personer.
-            </p>
-        </div>
-
         <!-- B5: KPI:er + signifikanstest -->
-        <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
+        <div class="summary-stats">
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 25 år</div>
                 ${nyckeltal(result.niva25, kvot25)}
@@ -173,14 +164,14 @@ function renderLifecycleAnalysis() {
                 ${nyckeltal(result.niva65, kvot65)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
-            <div class="stat-box">
+            <div class="stat-box" title="Förändringen i kvinnors lön i % av mäns mellan 25 och 65 år, enligt modellen">
                 <div class="stat-etikett fs-xs marg-0-0-4">Förändring 25–65 år, procentenheter</div>
                 ${forandring}
-                <div class="stat-under">i kvinnors lön i % av mäns; minus: kvinnorna halkar efter</div>
+                <div class="stat-under">minus: kvinnorna halkar efter</div>
             </div>
             <div class="stat-box" title="Test av om skillnaden förändras med åldern (kön×ålder). Vid p ≥ 0,10 är förändringen inte säkerställd.">
                 <div class="stat-etikett fs-xs marg-0-0-4">Är förändringen säkerställd?</div>
-                <div class="fs-md fw-600">
+                <div class="livscykel-provning fs-sm lh-1_5">
                     Linjär: p = ${pText(result.kvAgePVal)}, ${sakerOrd(result.kvAgePVal)}<br>
                     Kvadratisk: p = ${pText(result.kvAge2PVal)}, ${sakerOrd(result.kvAge2PVal)}
                 </div>
@@ -206,7 +197,7 @@ function renderLifecycleAnalysis() {
         </div>
 
         <!-- B4: Översiktstabell — gap-utveckling per BAS -->
-        <details class="mb-14" open>
+        <details class="mb-14" id="livscykel-bas-tabell">
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
                 Modellens lönenivåer per ${T.niva.en} vid 25 och 65 år
             </summary>
@@ -248,7 +239,7 @@ function renderLifecycleAnalysis() {
         </details>
 
         <!-- B6: Detaljerad modelljämförelse -->
-        <details class="mb-14" open>
+        <details class="mb-14" id="livscykel-modelljamforelse">
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
                 Modelljämförelse: huvudmodell mot livscykelmodell
             </summary>
@@ -280,7 +271,7 @@ function renderLifecycleAnalysis() {
         </details>
 
         <p class="livscykel-modell-not text-dampad-xs lh-1_5 marg-t-10">
-            Modellen tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
+            Modellen bygger på ${svTal(result.n, 0)} personer och tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
     `;
 
