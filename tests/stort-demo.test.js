@@ -162,14 +162,15 @@ describe('stort demo: inläsningen', () => {
         expect(utanMellanrum(w.document.querySelector('#upload-cell-stat .upload-filnamn').textContent)).toContain('Demots jämförelsestatistik');
     });
 
-    it('statistiken ligger i snitt 10–20 % över demots löner, med några yrken kring eller under', () => {
+    it('statistiken ligger i snitt ca 10 % över demots löner, och ungefär en fjärdedel av grupperna ligger över den', () => {
         const s = w.__state;
         const kvoter = s.statistik.map(x => x.median / median(s.data.filter(r => r.aid === x.aid && r.bas === x.bas).map(r => r.lon)));
         const snitt = kvoter.reduce((a, b) => a + b, 0) / kvoter.length;
-        expect(snitt).toBeGreaterThanOrEqual(1.10);
-        expect(snitt).toBeLessThanOrEqual(1.20);
-        const lagaYrken = new Set(s.statistik.filter((x, i) => kvoter[i] < 1.03).map(x => x.aid));
-        expect(lagaYrken.size).toBeGreaterThanOrEqual(3);
+        expect(snitt).toBeGreaterThanOrEqual(1.05);
+        expect(snitt).toBeLessThanOrEqual(1.15);
+        const over = kvoter.filter(k => k < 1).length / kvoter.length;   // gruppens median över statistikens
+        expect(over).toBeGreaterThanOrEqual(0.15);
+        expect(over).toBeLessThanOrEqual(0.35);
     });
 
     it('ställningstagandet följer demots löner och några intervall ligger över', () => {
