@@ -129,7 +129,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
     L.legend.poster.forEach(p => {
         const dold_ = syn.dolda.has(p.serie);
         const g = lg.append('g').attr('data-serie', p.serie).attr('role', 'button').attr('tabindex', 0)
-            .attr('aria-pressed', dold_ ? 'false' : 'true').attr('aria-label', `Visa eller dölj serien ${p.serie}`)
+            .attr('aria-pressed', dold_ ? 'false' : 'true').attr('aria-label', `${p.serie}, visa eller dölj serien`)
             .attr('transform', `translate(${8 + p.x},${legendY + p.rad * _RF.legendRad})`).attr('cursor', 'pointer')
             .attr('opacity', dold_ ? 0.4 : 1);
         const f = p.l.farg || PALETTE.serie[p.li % PALETTE.serie.length];

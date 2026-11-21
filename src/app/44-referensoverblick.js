@@ -49,7 +49,7 @@ function _rrTabellHtml(kolumner, grupper) {
         if (k.typ === 'pct') return `<td class="num" data-sort-value="${v.toFixed(2)}">${_rrPct(v)}</td>`;
         return `<td class="num" data-sort-value="${v}">${svTal(v, 0)}</td>`;
     };
-    return `<div class="table-container"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>`
+    return `<div class="table-container" tabindex="0" role="region" aria-label="Löneläget och statistiken mot ställningstagandet per ${T.enhet.en}"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>`
         + kolumner.map(k => `<th scope="col"${k.tips ? ` title="${esc(k.tips)}"` : ''}>${esc(k.rubrik)}</th>`).join('')
         + `</tr></thead><tbody>${grupper.map(g => `<tr>${kolumner.map(k => cell(k, g)).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
@@ -102,7 +102,7 @@ function _rrHantelFigur(rader, { harStatistik }) {
 function _rrStatTabellHtml(rader) {
     return `<h3 class="jmf-diagram-rubrik">Statistiken mot ställningstagandet</h3>
         <p class="muted">Positivt: statistiken ligger över ställningstagandet. Negativt: statistiken ligger under det. Organisationens löner ingår inte.</p>
-        <div class="table-container"><table id="ref-stat-mot-stallning" class="data-table" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>
+        <div class="table-container" tabindex="0" role="region" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><table id="ref-stat-mot-stallning" class="data-table" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>
         <th scope="col">${termStor(T.enhet.en)}</th><th scope="col">BAS</th><th scope="col">P10 (%)</th><th scope="col">Median (%)</th><th scope="col">P90 (%)</th></tr></thead><tbody>`
         + rader.map(r => `<tr><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>${['p10', 'median', 'p90'].map(p => (r[p] == null
             ? '<td class="num muted" data-sort-value="">–</td>' : `<td class="num" data-sort-value="${r[p].toFixed(2)}">${_rrPct(r[p])}</td>`)).join('')}</tr>`).join('')

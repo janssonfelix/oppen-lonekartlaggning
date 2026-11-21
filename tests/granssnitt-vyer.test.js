@@ -780,7 +780,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
             const a = l.querySelector('a[data-go-to-tab]');
             expect(a?.dataset.goToTab, l.dataset.stod).toBe(l.dataset.stod);
             expect(a.textContent).toBe('Gå dit');
-            expect(a.getAttribute('aria-label')).toMatch(/^Gå till /);
+            expect(a.getAttribute('aria-label')).toMatch(/^Gå dit: /);
             expect(l.textContent, l.dataset.stod).toMatch(/\d/);
             expect(l.textContent.trim(), l.dataset.stod).not.toBe(fast[rader().indexOf(l)]);
         }

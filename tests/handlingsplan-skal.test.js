@@ -87,7 +87,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
             expect(b, 'knappen saknas').toBeTruthy();
             expect(tr.cells[4].contains(b)).toBe(true);
             expect(ren(b.textContent)).toBe('Sakliga skäl: inga');
-            expect(b.getAttribute('aria-label')).toBe(`Sakliga skäl, ${ren(tr.cells[1].textContent)}: inga`);
+            expect(b.getAttribute('aria-label')).toBe(`Sakliga skäl: inga, ${ren(tr.cells[1].textContent)}`);
             expect(b.hasAttribute('data-noprint')).toBe(true);
         }
     });
@@ -132,11 +132,11 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         expect(summa).toBe(`Förklarat av skälen: ${kr(belopp)} kr (${pct(belopp / skillnad * 100)}) · Återstår att förklara: ${kr(skillnad - belopp)} kr (${pct((skillnad - belopp) / skillnad * 100)})`);
         expect(ren(knapp(tr).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);
         // Sammanfattningen står också i knappens tillgängliga namn, och följer med när den räknas om.
-        expect(ren(knapp(tr).getAttribute('aria-label'))).toBe(`Sakliga skäl, ${ren(tr.cells[1].textContent)}: 1 skäl, ${pct(belopp / skillnad * 100)} förklarat`);
+        expect(ren(knapp(tr).getAttribute('aria-label'))).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat, ${ren(tr.cells[1].textContent)}`);
         // Står kvar efter flikbyte
         w.__renderTabContent('dashboard'); w.__renderTabContent('handlingsplan');
         expect(ren(knapp(radMedSkillnad(w)).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);
-        expect(knapp(radMedSkillnad(w)).getAttribute('aria-label')).toMatch(/: 1 skäl, .* förklarat$/);
+        expect(knapp(radMedSkillnad(w)).getAttribute('aria-label')).toMatch(/^Sakliga skäl \(1\) · .* förklarat, /);
     });
     it('Lägg till skäl och Ta bort flyttar inte fokus i efterhand: en kommentar som skrivs direkt hamnar i fältet och sparas', async () => {
         // Fokusfällan läggs om när dialogens innehåll byggs om. Den satte tidigare fokus på stängknappen en kort stund

@@ -200,10 +200,9 @@ function _hpSkalSammanfattning(nyckel, skillnadKr) {
     if (!k) return 'Sakliga skäl: inga';
     return `Sakliga skäl (${k.antal})${k.andel ? ` · ${k.andel} förklarat` : ''}`;
 }
-/** Knappens tillgängliga namn med gruppen och sammanfattningen: "Sakliga skäl, {grupp}: 2 skäl, 65 % förklarat". */
+/** Knappens tillgängliga namn: den synliga sammanfattningen först (WCAG 2.5.3), sedan gruppen. */
 function _hpSkalEtikett(nyckel, grupp, skillnadKr) {
-    const k = _hpSkalKort(nyckel, skillnadKr);
-    return `Sakliga skäl, ${grupp}: ${k ? `${k.antal} skäl${k.andel ? `, ${k.andel} förklarat` : ''}` : 'inga'}`;
+    return `${_hpSkalSammanfattning(nyckel, skillnadKr)}, ${grupp}`;
 }
 /** Knappen som öppnar dialogen med radens sakliga skäl (57-sakliga-skal.js). Syns inte på utskriften. */
 function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
