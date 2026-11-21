@@ -859,8 +859,8 @@ mot koden. Biblioteken i `vendor/` och `tools/bundle.mjs` är oförändrade. Kon
   2026.11.16 (lagringsspärren och verktygets egen text). Bygget har inget `<script src>` och stilmallen inget `url(`.
 - Det stora demot (#101): 5 000 påhittade personer, påhittad jämförelsestatistik (`generateStortDemoStatistik`,
   `statistikKalla` `'demo'`) och ett ställningstagande räknat ur demots egna löner (`_sdStallningstagande`). Inget av
-  det läses ur en fil eller lagras. Ett BAS-intervall med färre personer än den inställda tröskeln får ingen rad ur
-  sina egna löner, utan stegas från närmaste lägre intervall. Statistiken och ställningstagandet tas bort när en
+  det läses ur en fil eller lagras. Ett BAS-intervall med färre personer än tröskeln när demot läses in får ingen rad
+  ur sina egna löner, utan stegas från närmaste lägre intervall; en tröskel som höjs efteråt räknar inte om raderna. Statistiken och ställningstagandet tas bort när en
   lönefil läses in (`_afterDataLoaded`), statistiken också när det lilla demot läses in, och *Rensa all data* tömmer
   båda. Demosidan länkar till `?demo=stor`; `90-uppstart.js` läser fortfarande bara parametern `demo`.
 - Storleksgränserna för inlästa filer (`FIL_MAX`) prövas innan filen läses (§6.4).
