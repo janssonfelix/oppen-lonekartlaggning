@@ -12,5 +12,5 @@
 // Genererad av tools/gen-version.mjs; vaktas av tests/version.test.js.
 // ====================================================================
 
-const APP_VERSION = '2026.11.16';
-const APP_BUILD_DATE = '2026-11-16';
+const APP_VERSION = '2026.11.21';
+const APP_BUILD_DATE = '2026-11-21';

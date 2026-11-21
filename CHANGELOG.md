@@ -4,6 +4,141 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`. Varje versions avsnitt skrivs när versionen släpps, ur incheckningarna.
 
+## 2026.11.21
+
+### Gränssnitt
+
+- **Översikt börjar med startytan *Kom igång*.** Innan något är inläst har Översikt en yta för lönefilen, demona
+  bredvid och en rad om organisationspaketet med länk till Filer och kvalitet. Ytan öppnar lönefilskortets filväljare,
+  så en fil därifrån går samma väg; läses den inte in visas lönefilskortet med beskedet. Stegen står hopfällda under
+  Fördjupning också utan data, och räkningen säger vad den räknar: *Klara: 1 av 5 steg som verktyget kan se*. I Filer
+  och kvalitet har lönefilskortet ram, en större yta och den bredaste kolumnen; förklaringen om organisationspaketet
+  står bakom *Vad är ett organisationspaket?*, och *Skapa organisationspaket (för systemägaren)* är en länk sist i
+  steg 1.
+- **Det stora demot har 5 000 personer i 100 yrken, med påhittad jämförelsestatistik och ett påhittat
+  ställningstagande.** Yrkena har egna storlekar, könsfördelningar, lönenivåer, spridningar och medelåldrar, många i
+  B–G och få chefer i J–K, med inlagda skillnader, ett par för likvärdigt arbete och små grupper. Ställningstagandet
+  räknas ur demots egna löner; ett BAS-intervall med färre personer än minsta gruppstorlek får sin rad från närmaste
+  lägre intervall. Statistiken och ställningstagandet tas bort när en lönefil läses in. Det stora demot står först
+  bland demona, och demosidan öppnar det.
+- **Lika arbete: en grupp är AID-koden i BAS-intervallet (ADR-89).** En AID-etikett som finns i två BAS-intervall är
+  två grupper, med var sin status, på rader intill varandra och med intervallet i kolumnen *BAS* till vänster
+  (*BAS-intervall* i exporten). Allt som läser grupperna följer: rapportunderlaget, Word- och PDF-rapporten,
+  Excel-bladen, protokollet för gemensam lönebedömning, beviset, BAS-dossiern och årsbokslutet. Lika arbete,
+  prioriteringen, tabellerna per BAS-intervall, uppdelningen av löneskillnaden, Utforska och individflaggorna
+  grupperar på koden, inte på texten i fältet, så att en kod med flera texter är en grupp. En grupp heter efter texten
+  på flest av dess rader; vid lika många gäller den som kommer först i lönefilen. För en lönefil med en text per kod
+  är resultaten desamma.
+- **Lika arbete AID x BAS visar Lika arbetes status (ADR-90).** Tabellen gav en egen bedömning med ett eget golv på
+  fem personer, så att samma grupp kunde få olika svar i två tabeller. Nu är raderna Lika arbetes grupper i
+  BAS-ordning, med samma tröskel, status och nyckeltal. Trattdiagrammet och bladet *Slumpens gränser* visar gränserna
+  men ger ingen egen status.
+- **Prioriteringens nyckeltal och Färdigcheck använder samma ord.** Statusen för små grupper under referensen heter
+  *Under referens, liten grupp*. Nyckeltalen heter som statusarna och räknar dem, med villkoret och gränserna under
+  varje tal; förut räknade *Under referens* alla under −5 %. Matrisens zoner heter *Mer än X % under*, *Nära
+  referens, under*, *Nära referens* och *Mer än Y % över*. Färdigcheck säger hur många grupper som ligger under
+  referensen, varav hur många mer än granskningsgränsen. En lodrät zonetikett bryts på högst tre rader. Statusvärdena
+  och trösklarna är oförändrade.
+- **Tätare vyer.** Filterraderna ovanför ett diagram står i en hopfälld rad *Filter* som säger hur många filter som
+  är aktiva. Prioriteringens rader har *Visa beräkningen* som ikon och Löneöversikten, motiveringsförslagen och
+  gruppdossiern i en meny *Mer*. I Lika arbete fälls raden *Utan ledningsansvar* ut med ansvarsgrupperna. Exportvalen
+  är en lista med avdelare, och avsnitten har inga kort i kort. Utskriften och exporterna har alla rader som förut.
+- **Handlingsplanens tabell ryms vid 1 280 och 1 440 punkter.** Grupp, antal berörda och underlag står under
+  åtgärden i första kolumnen, så att fälten att fylla i syns utan sidledsrullning. Utskriften och exporterna har samma
+  kolumner som förut. Platshållarna i *Ansvarig* och *Tidsplan* är *Roll* och *Månad, år*. Samverkanskortet säger att
+  kolumnen *Genomfört* fylls i för hand på den utskrivna mallen.
+- **Återskapa i Rapporttext frågar innan ett redigerat utkast skrivs över.** Avbryt lämnar texten orörd; ett
+  oredigerat utkast ritas om utan fråga.
+- **Talen visas lika oavsett tecken.** Talformaten avrundar halvorna bort från noll, så att en avvikelse och samma
+  belopp utan tecken inte längre visas som *−1 600 kr* och *1 601 kr/mån*. Beräkningarna avrundar som förut.
+- **Löneöversyn.** Tröskelmålet 0 % är 0 % (det blev 5 %), ett tomt fält ger standardmålet och ett mål utanför 0–20 %
+  avvisas. Utan angiven pott säger utfallet *ingen pott angiven*, och inget överskrider potten. Ordet och färgen för en
+  förändring följer de visade talen: lika före och efter är *oförändrat*. PO-påslaget visas utan avslutande nollor
+  (40 %).
+- **Regressionskortets intervall har samma tecken som den råa skillnaden** bredvid; förut stod intervallet med
+  direktivets tecken.
+- **Inläsningsrapporten** har en kort rad om personnamn i fältet för AID-etikett och förhandskontrollens antal som
+  värde, med länken på en egen rad.
+
+### Analys
+
+- **PO-påslagets standardvärde är 40 %, ett antagande.** Det var 39,15 % med en hänvisning utan källa. Kostnaderna
+  räknas med 40 % tills organisationen sätter sitt eget, och texterna i Prioritering, Inställningar, ordlistan och Om
+  verktyget säger att det är ett antagande. Kostnaderna blir 0,6 % högre (1,40 / 1,3915).
+- **Slumpintervallen beror på lönerna, inte på radordningen, och percentilindexen är symmetriska (ADR-86).**
+  Bootstrapen drar ur gruppens löner sorterade stigande, omkastningen och kvantilbootstrapen sorterar på en fast
+  nyckel, och seeden summerar lönerna i stigande ordning; samma underlag i två radordningar ger samma intervall. Den
+  övre gränsen tas lika långt från toppen som den nedre från botten; förut låg den ett steg för högt. I det lilla
+  demot ändras 55 av 60 intervallgränser, med median 0,13 och högst 1,09 procentenheter; översiktens intervall blir
+  11,93–17,80 % i stället för 11,77–18,00 %. Ingen grupp byter nivå, markering eller status. Medianer, kvoter,
+  regressionens koefficienter och p-värden är oförändrade.
+- **Prioriteringens avvikelse räknas med en division**, kronskillnaden × 100 / referensen, så att en grupp exakt på
+  en gräns (till exempel −5 %) inte hamnar bortom den. Prioriteringen grupperar på AID-koden och BAS-intervallet, som
+  jämförelsen.
+- **Huvudområdenas andel av skillnaden räknas kvinnor mot män**, som resten av verktyget. Beloppet är samma tal som
+  den första delen i *Var uppstår löneskillnaden?* med huvudområde som enda variabel; andelen är densamma.
+- **Talparsern avvisar skräp efter siffrorna.** *12abc* och *1.2.3* lästes som 12 och 1,2; nu blir de ogiltiga och
+  räknas som ogiltig lön eller ålder. Enheten *år* godtas (*45 år*). Alla format som lästes rätt läses rätt också nu.
+- **Lönefilens kolumner.** För varje sökord prövas först en rubrik som är exakt lika och delsträngen bara när ingen
+  är det, så att *Lönetillägg* inte tas för *Lön*. En rubrik som återkommer i en Excel-fil döps om som i CSV (*Lön*,
+  *Lön_1*), så att den första kolumnen gäller i båda; förut gällde den sista i Excel. Kolumnerna slås upp en gång per
+  fil.
+
+### Dataskydd
+
+- **Fältet för AID-etikett maskeras inte, och inläsningen varnar för personnamn (ADR-85).** Maskeringen förstörde
+  riktiga etiketter och tog bara delar av namn. Kvar är AID-koden, etiketten utan tecknen `< > " ' &` och gränsen på
+  40 tecken. Inläsningen varnar när texten ser ut som ett personnamn och står på högst två rader, med antal och
+  radnummer i förhandskontrollen, inläsningsrapporten och Att göra. Dataskyddsrutan, Om verktyget, *Vad lagras?* och
+  diagramdatans rad 2 säger att text ur fältet följer med som den står i lönefilen.
+- **Tabellerna per BAS-intervall röjer inte en liten grupps medellön som differens (ADR-83).** Omfattar de utelämnade
+  intervallen tillsammans färre än tröskeln döljs medellön och medelålder för det minsta visade intervallet, ett i
+  taget, med samma regel per kön och för AID-etiketterna i ett intervall. Antal och andelar står kvar, och en not
+  säger varför.
+- **Var uppstår löneskillnaden? och huvudområdenas andel räknar samman grupper där ett kön är under tröskeln
+  (ADR-84, ADR-87)** i exporten, så att delarna inte ger en liten grupps medellön. Kortet och rapportunderlaget säger
+  hur många grupper som inte namnges och varför. Skärmen är oförändrad.
+- **Protokollet för gemensam lönebedömning (ADR-91).** Bladet för BAS-intervall minus de AID-etiketter som bladet för
+  lika arbete visar kunde ge medelvärdet för färre än tröskeln av ett kön. Nu döljs medelvärdena för den minsta visade
+  etiketten i intervallet, en i taget, och en not namnger etiketterna.
+- **Skyddet för små grupper gäller en fil i taget (ADR-92).** En grupp under tröskeln får inte visas eller gå att räkna
+  fram genom att dra ifrån inom samma fil; kombinationer av flera filer ur samma underlag skyddas inte, och ZIP-filen
+  räknas som sina delar. Skydden, k-tröskelns referens och dataskyddsdokumenten säger det.
+- **Gränser för inlästa filer och inställningar.** Lönefilen får vara högst 50 MB, ställningstagandet och
+  statistiken 20 MB, konfigurationsfilen och organisationspaketet 5 MB; storleken prövas innan filen läses. PO-påslag,
+  månader och prioriteringens värden har samma gränser i Inställningar, konfigurationsfilen och organisationspaketet:
+  ett PO-påslag över 100 % avvisas med ett besked.
+- **Kodning av BAS-värdet i två beräkningsbevis.** Beviset per BAS-intervall och livscykelbeviset skrev ett BAS-värde
+  ur lönefilen okodat; nu går det genom `esc()`.
+
+### Utveckling
+
+- **Beräkningarna i `src/lib/`.** Huvudregressionen (`regression.js`), osäkerheten (`osakerhet.js`: bootstrap,
+  konfidensband, styrka, extremvärden, trattens underlag och kvantilregressionen), tolkningen av indata
+  (`inlasning.js`), kostnaden (`kostnad.js`), den kompletterande undertryckningen (`undertryckning.js`), könsvillkoret
+  (`kon.js`) och vägen från yrke till AID-kod (`aid.js`) är rena funktioner; appens funktioner är tunna adaptrar med
+  bit för bit samma tal. Median, kvantil och percentilintervall finns på ett ställe i `stat.js`, och prioriteringens
+  och tröskelmålets tal är namngivna konstanter.
+- **Låsande tester och referensfall.** Talen från regressionen, bootstrapen, styrkan, extremvärdena och intervallen
+  på demodatan, tolkningen av tal, kön, BAS, yrke och födelseår, kostnaden, statusgränserna och lönestegen är låsta.
+  Femton handräknade referensfall har facit och härledning i klartext.
+- **Vakter.** Escaping-vakten (`tests/escaping.test.js`) kräver att varje värde i appens HTML går genom `esc()` eller
+  bevisas säkert. Differensprovet räknar total minus visade delar i varje tabell i exporterna vid tröskeln 10 och 25
+  (ADR-88). `tests/lib-beroenden.test.js` kräver att `src/lib/` är fri från cykler, främmande importer och
+  webbläsarglobaler, och att modultabellen i `arkitektur.md` stämmer med importerna. Statusfärgernas kontrast prövas
+  i `tests/farger.test.js`.
+- **Sårbarhetsbevakning av `vendor/`.** Arbetsflödet `sarbarheter.yml` frågar OSV om varje bibliotek i
+  programvaruförteckningen varje vecka och när `vendor/` ändras, med ett eget skript (`tools/sarbarheter-hamta.mjs`),
+  och faller vid fynd eller misslyckad skanning. Ett test kräver att arbetsflödena bara använder tillåtna actions.
+- **Översyn.** Bygggrinden prövar de genererade filerna, och testsvitens kopior av den är borta; oanvända exporter,
+  adaptrar och en fryst kopia av den tidigare uppdelningen är borttagna; stilmallens statusfärger läser källan.
+  Visningsminnets vakt hoppar över flikar som ändå ritas om (från 37 till 17 s).
+- **Utvecklingsverktygen:** eslint 10.15.0, jsdom 31.0.1 och Playwright 1.65.1, med WebKits behållaravbild.
+- **Dokumentationen.** Nya dokument för utvecklare och granskare: arkitekturen på en sida, första timmen
+  (`kom-igang.md`), beräkningsregistret med en rad per beräkning och modellparametrarna, och referenser för
+  prioriteringsmodellen och löneöversynsmodellen. Riskanalysens avsnitt om små grupper hänvisar till k-tröskelns
+  referens.
+
 ## 2026.11.16
 
 ### Gränssnitt
