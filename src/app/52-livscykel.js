@@ -153,7 +153,7 @@ function renderLifecycleAnalysis() {
     // ====== UI ======
     wrap.innerHTML = `
         <!-- B5: KPI:er + signifikanstest -->
-        <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
+        <div class="summary-stats">
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 25 år</div>
                 ${nyckeltal(result.niva25, kvot25)}
@@ -164,14 +164,14 @@ function renderLifecycleAnalysis() {
                 ${nyckeltal(result.niva65, kvot65)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
-            <div class="stat-box">
+            <div class="stat-box" title="Förändringen i kvinnors lön i % av mäns mellan 25 och 65 år, enligt modellen">
                 <div class="stat-etikett fs-xs marg-0-0-4">Förändring 25–65 år, procentenheter</div>
                 ${forandring}
-                <div class="stat-under">i kvinnors lön i % av mäns; minus: kvinnorna halkar efter</div>
+                <div class="stat-under">minus: kvinnorna halkar efter</div>
             </div>
             <div class="stat-box" title="Test av om skillnaden förändras med åldern (kön×ålder). Vid p ≥ 0,10 är förändringen inte säkerställd.">
                 <div class="stat-etikett fs-xs marg-0-0-4">Är förändringen säkerställd?</div>
-                <div class="fs-md fw-600">
+                <div class="livscykel-provning fs-sm lh-1_5">
                     Linjär: p = ${pText(result.kvAgePVal)}, ${sakerOrd(result.kvAgePVal)}<br>
                     Kvadratisk: p = ${pText(result.kvAge2PVal)}, ${sakerOrd(result.kvAge2PVal)}
                 </div>
