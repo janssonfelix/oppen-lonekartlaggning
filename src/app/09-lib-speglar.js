@@ -890,7 +890,7 @@ const __mirrorStat = (() => {
  * resultaten; artefaktgrinden vaktar att spegeln är i synk med src/lib/.
  *
  * Funktioner exporterade:
- *   - median, quantile, linearRegression  (Stat-objektet i app.js)
+ *   - median, quantile, linearRegression  (Stat-objektet i appen pekar hit)
  *   - matMul, transpose, invert            (matrisalgebra)
  *   - fitOLS                                (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)

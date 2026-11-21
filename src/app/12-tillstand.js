@@ -231,64 +231,8 @@ function ritaOmReferens() {
 // Härleds ur PALETTE (10-diagramtema.js) så könsfärgerna har EN källa.
 const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
 
-/**
- * Statistiska helpers: median, kvantiler, linjär regression (OLS).
- *
- * MIRROR: dessa implementationer dubbleras i `src/lib/stat.js` för enhetstest
- * via Vitest (tests/stat.test.js). Vid ändring av en funktion här ska
- * motsvarande funktion i src/lib/stat.js uppdateras — annars går testerna
- * sönder, vilket är en avsiktlig "tripwire" mot tysta regressioner.
- * Used for descriptive statistics throughout the tool.
- */
-const Stat = {
-    /**
-     * Beräknar median (P50) av en talsekvens.
-     * @param {number[]} arr - Talvärden (ej tomt).
-     * @returns {number} Mittersta värdet i sorterad lista (0 om tom).
-     */
-    median: arr => {
-        if (!arr.length) return 0;
-        const s = [...arr].sort((a,b) => a - b);
-        const m = Math.floor(s.length / 2);
-        return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2;
-    },
-    /**
-     * Beräknar kvantil via linjär interpolation.
-     * @param {number[]} arr - Talvärden.
-     * @param {number} q - Kvantil 0..1 (t.ex. 0.1 = P10, 0.5 = median, 0.9 = P90).
-     * @returns {number} Kvantilvärdet.
-     */
-    quantile: (arr, q) => {
-        if (!arr.length) return 0;
-        const s = [...arr].sort((a,b) => a - b);
-        const pos = (s.length - 1) * q;
-        const lo = Math.floor(pos), hi = Math.ceil(pos);
-        return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-    },
-    /**
-     * Enkel linjär regression y = m·x + b via minsta kvadrat.
-     * @param {Array<[number, number]>} data - Lista av [x, y]-par.
-     * @returns {{m: number, b: number, r2: number}} Lutning, intercept, R².
-     */
-    linearRegression: data => {
-        const n = data.length;
-        if (n === 0) return { m: 0, b: 0, r2: 0 };
-        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-        for (let i = 0; i < n; i++) {
-            sumX += data[i][0]; sumY += data[i][1];
-            sumXY += data[i][0] * data[i][1]; sumXX += data[i][0] * data[i][0];
-        }
-        const m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        const b = (sumY - m * sumX) / n;
-        const meanY = sumY / n;
-        let ssTot = 0, ssRes = 0;
-        for (let i = 0; i < n; i++) {
-            ssTot += (data[i][1] - meanY) ** 2;
-            ssRes += (data[i][1] - (m * data[i][0] + b)) ** 2;
-        }
-        return { m, b, r2: ssTot > 0 ? 1 - ssRes / ssTot : 0 };
-    }
-};
+// Statistiska helpers för vyerna; en källa: src/lib/stat.js via spegeln (tests/stat.test.js prövar den).
+const Stat = { median: __mirrorStat.median, quantile: __mirrorStat.quantile, linearRegression: __mirrorStat.linearRegression };
 
 // Talen i indata (_normalizeNumberString, parseNumber, parseNumberStrict) tolkas i src/lib/inlasning.js och nås här
 // genom spegeln under samma namn.
