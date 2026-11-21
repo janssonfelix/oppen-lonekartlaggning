@@ -63,17 +63,23 @@ function _rfRadbryt(text, maxTecken, maxRader, hartHalls = false) {
 
 // Punktetiketter som undviker (lagrets `etikettLage: 'undvik'`). Etiketterna läggs en i taget, i den ordning de
 // kommer. Var och en prövas på åtta platser runt sin punkt — höger, vänster, över, under och de fyra hörnen — först
-// intill punkten och sedan längre ut (där i sexton riktningar), en textrad i taget (högst RF_UNDVIK_VARV varv). En etikett som står längre ut
-// än intill punkten får en hänvisningslinje från punktens kant till texten. Den första platsen tas där rutan varken
-// täcker en ritad punkt, en redan lagd etikett eller en redan dragen linje, där den egna linjen inte skär en redan
-// lagd etikett, och där rutan står inom panelen. Finns ingen fri plats står etiketten på den plats där den krockar
-// minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka punkter som namnges.
-// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd); `hinder`: [{ x, y, r }],
-// de ritade punkterna i panelen. Bara ritade punkter är hinder, så en dold liten punkt påverkar inte lägena.
+// intill punkten och sedan längre ut (där i 32 riktningar), en textrad i taget (högst RF_UNDVIK_VARV varv). En
+// etikett som står längre ut än intill punkten får en hänvisningslinje från punktens kant till texten. Den första
+// platsen tas där rutan varken täcker ett hinder, en redan lagd etikett eller en redan dragen linje, där den egna
+// linjen varken skär en lagd etikett, ett texthinder eller en redan dragen linje, och där rutan står inom panelen.
+// Två linjer i kors kostar som en linje genom en text: båda gör bilden svår att följa. RF_UNDVIK_VARV är 10 och
+// inte fler: med en fri plats längre ut tar etiketten den och drar en lång linje tvärs över molnet (sett i
+// prioriteringsmatrisen med 5 000 personer), medan den utan fri plats inom tio rader går till lagningen nedan, som
+// flyttar en granne och ger korta, okorsade linjer. Finns ingen fri plats står etiketten på den plats där den
+// krockar minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka punkter som namnges.
+// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd). `hinder`: de ritade
+// punkterna i panelen, [{ x, y, r }], och rutor, [{ x0, y0, x1, y1, tunn? }]: en text (referenslinjens etikett) eller,
+// med `tunn`, en referenslinje, som rutan helst inte täcker men som en hänvisningslinje får korsa. Bara ritade punkter
+// är hinder, så en dold liten punkt påverkar inte lägena.
 // `bt` och `ht` är textens egen bredd och höjd när rutan har luft runt texten (texten står mitt i rutan; linjen når
 // texten, inte luften). Ren beräkning: ingen DOM, samma svar varje gång. Ger [{ x0, y0, x1, y1, linje: { x1, y1, x2,
 // y2 } | null }].
-const RF_UNDVIK_VARV = 20, RF_UNDVIK_RIKTNINGAR = 32, RF_UNDVIK_LAGNING = 3;
+const RF_UNDVIK_VARV = 10, RF_UNDVIK_RIKTNINGAR = 32, RF_UNDVIK_LAGNING = 3;
 /**
  * Skär sträckan (x1, y1)–(x2, y2) rutan? (Liang–Barsky.)
  * @param {{x1:number, y1:number, x2:number, y2:number}} l @param {{x0:number, y0:number, x1:number, y1:number}} q
@@ -89,8 +95,16 @@ function _rfLinjeSkarRuta(l, q) {
     return t0 <= t1;
 }
 /**
+ * Korsar sträckorna a och b varandra? (Ändpunkter som bara nuddar räknas inte.)
+ * @param {{x1:number, y1:number, x2:number, y2:number}} a @param {{x1:number, y1:number, x2:number, y2:number}} b
+ */
+function _rfLinjerKorsas(a, b) {
+    const sida = (/** @type {number} */ x, /** @type {number} */ y, /** @type {{x1:number, y1:number, x2:number, y2:number}} */ l) => Math.sign((l.x2 - l.x1) * (y - l.y1) - (l.y2 - l.y1) * (x - l.x1));
+    return sida(a.x1, a.y1, b) * sida(a.x2, a.y2, b) < 0 && sida(b.x1, b.y1, a) * sida(b.x2, b.y2, a) < 0;
+}
+/**
  * @param {Array<{x:number, y:number, r:number, b:number, h:number, bt?:number, ht?:number}>} etiketter
- * @param {Array<{x:number, y:number, r:number}>} hinder
+ * @param {Array<{x:number, y:number, r:number}|{x0:number, y0:number, x1:number, y1:number, tunn?:boolean}>} hinder
  * @param {number} B @param {number} H
  * @returns {Array<{x0:number, y0:number, x1:number, y1:number, linje:{x1:number, y1:number, x2:number, y2:number}|null}>}
  */
@@ -106,6 +120,11 @@ function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
     const fast = (/** @type {Plats} */ q) => {
         let n = q.x0 < 0 || q.y0 < 0 || q.x1 > B || q.y1 > H ? 100 : 0;
         for (const p of hinder) {
+            if ('x0' in p) {   // en ruta: en text (som en lagd etikett) eller, `tunn`, en referenslinje
+                if (q.x0 < p.x1 + luft && p.x0 < q.x1 + luft && q.y0 < p.y1 + luft && p.y0 < q.y1 + luft) n += p.tunn ? 3 : 10;
+                else if (!p.tunn && q.linje && _rfLinjeSkarRuta(q.linje, vidgad(p))) n += 3;
+                continue;
+            }
             const dx = Math.max(q.x0 - p.x, 0, p.x - q.x1), dy = Math.max(q.y0 - p.y, 0, p.y - q.y1);
             if (dx * dx + dy * dy < (p.r + 2) * (p.r + 2)) n += 5;
         }
@@ -117,6 +136,7 @@ function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
         if (q.x0 < p.x1 + luft && p.x0 < q.x1 + luft && q.y0 < p.y1 + luft && p.y0 < q.y1 + luft) n += 10;
         if (q.linje && _rfLinjeSkarRuta(q.linje, vidgad(p))) n += 3;   // den egna linjen genom en lagd etikett
         if (p.linje && _rfLinjeSkarRuta(p.linje, vidgad(q))) n += 3;   // en dragen linje genom rutan
+        if (q.linje && p.linje && _rfLinjerKorsas(q.linje, p.linje)) n += 3;   // två linjer som korsar varandra
         return n;
     };
     const kostnad = (/** @type {Plats} */ q, /** @type {number} */ i) => {

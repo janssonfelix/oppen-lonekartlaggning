@@ -14291,17 +14291,23 @@ function _rfRadbryt(text, maxTecken, maxRader, hartHalls = false) {
 
 // Punktetiketter som undviker (lagrets `etikettLage: 'undvik'`). Etiketterna läggs en i taget, i den ordning de
 // kommer. Var och en prövas på åtta platser runt sin punkt — höger, vänster, över, under och de fyra hörnen — först
-// intill punkten och sedan längre ut (där i sexton riktningar), en textrad i taget (högst RF_UNDVIK_VARV varv). En etikett som står längre ut
-// än intill punkten får en hänvisningslinje från punktens kant till texten. Den första platsen tas där rutan varken
-// täcker en ritad punkt, en redan lagd etikett eller en redan dragen linje, där den egna linjen inte skär en redan
-// lagd etikett, och där rutan står inom panelen. Finns ingen fri plats står etiketten på den plats där den krockar
-// minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka punkter som namnges.
-// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd); `hinder`: [{ x, y, r }],
-// de ritade punkterna i panelen. Bara ritade punkter är hinder, så en dold liten punkt påverkar inte lägena.
+// intill punkten och sedan längre ut (där i 32 riktningar), en textrad i taget (högst RF_UNDVIK_VARV varv). En
+// etikett som står längre ut än intill punkten får en hänvisningslinje från punktens kant till texten. Den första
+// platsen tas där rutan varken täcker ett hinder, en redan lagd etikett eller en redan dragen linje, där den egna
+// linjen varken skär en lagd etikett, ett texthinder eller en redan dragen linje, och där rutan står inom panelen.
+// Två linjer i kors kostar som en linje genom en text: båda gör bilden svår att följa. RF_UNDVIK_VARV är 10 och
+// inte fler: med en fri plats längre ut tar etiketten den och drar en lång linje tvärs över molnet (sett i
+// prioriteringsmatrisen med 5 000 personer), medan den utan fri plats inom tio rader går till lagningen nedan, som
+// flyttar en granne och ger korta, okorsade linjer. Finns ingen fri plats står etiketten på den plats där den
+// krockar minst (den närmaste vid lika): den ritas alltid, eftersom det är vyn som har valt vilka punkter som namnges.
+// `etiketter`: [{ x, y, r, b, h }] (punktens mitt och yttre radie, rutans bredd och höjd). `hinder`: de ritade
+// punkterna i panelen, [{ x, y, r }], och rutor, [{ x0, y0, x1, y1, tunn? }]: en text (referenslinjens etikett) eller,
+// med `tunn`, en referenslinje, som rutan helst inte täcker men som en hänvisningslinje får korsa. Bara ritade punkter
+// är hinder, så en dold liten punkt påverkar inte lägena.
 // `bt` och `ht` är textens egen bredd och höjd när rutan har luft runt texten (texten står mitt i rutan; linjen når
 // texten, inte luften). Ren beräkning: ingen DOM, samma svar varje gång. Ger [{ x0, y0, x1, y1, linje: { x1, y1, x2,
 // y2 } | null }].
-const RF_UNDVIK_VARV = 20, RF_UNDVIK_RIKTNINGAR = 32, RF_UNDVIK_LAGNING = 3;
+const RF_UNDVIK_VARV = 10, RF_UNDVIK_RIKTNINGAR = 32, RF_UNDVIK_LAGNING = 3;
 /**
  * Skär sträckan (x1, y1)–(x2, y2) rutan? (Liang–Barsky.)
  * @param {{x1:number, y1:number, x2:number, y2:number}} l @param {{x0:number, y0:number, x1:number, y1:number}} q
@@ -14317,8 +14323,16 @@ function _rfLinjeSkarRuta(l, q) {
     return t0 <= t1;
 }
 /**
+ * Korsar sträckorna a och b varandra? (Ändpunkter som bara nuddar räknas inte.)
+ * @param {{x1:number, y1:number, x2:number, y2:number}} a @param {{x1:number, y1:number, x2:number, y2:number}} b
+ */
+function _rfLinjerKorsas(a, b) {
+    const sida = (/** @type {number} */ x, /** @type {number} */ y, /** @type {{x1:number, y1:number, x2:number, y2:number}} */ l) => Math.sign((l.x2 - l.x1) * (y - l.y1) - (l.y2 - l.y1) * (x - l.x1));
+    return sida(a.x1, a.y1, b) * sida(a.x2, a.y2, b) < 0 && sida(b.x1, b.y1, a) * sida(b.x2, b.y2, a) < 0;
+}
+/**
  * @param {Array<{x:number, y:number, r:number, b:number, h:number, bt?:number, ht?:number}>} etiketter
- * @param {Array<{x:number, y:number, r:number}>} hinder
+ * @param {Array<{x:number, y:number, r:number}|{x0:number, y0:number, x1:number, y1:number, tunn?:boolean}>} hinder
  * @param {number} B @param {number} H
  * @returns {Array<{x0:number, y0:number, x1:number, y1:number, linje:{x1:number, y1:number, x2:number, y2:number}|null}>}
  */
@@ -14334,6 +14348,11 @@ function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
     const fast = (/** @type {Plats} */ q) => {
         let n = q.x0 < 0 || q.y0 < 0 || q.x1 > B || q.y1 > H ? 100 : 0;
         for (const p of hinder) {
+            if ('x0' in p) {   // en ruta: en text (som en lagd etikett) eller, `tunn`, en referenslinje
+                if (q.x0 < p.x1 + luft && p.x0 < q.x1 + luft && q.y0 < p.y1 + luft && p.y0 < q.y1 + luft) n += p.tunn ? 3 : 10;
+                else if (!p.tunn && q.linje && _rfLinjeSkarRuta(q.linje, vidgad(p))) n += 3;
+                continue;
+            }
             const dx = Math.max(q.x0 - p.x, 0, p.x - q.x1), dy = Math.max(q.y0 - p.y, 0, p.y - q.y1);
             if (dx * dx + dy * dy < (p.r + 2) * (p.r + 2)) n += 5;
         }
@@ -14345,6 +14364,7 @@ function _rfPlaceraEtiketter(etiketter, hinder, B, H) {
         if (q.x0 < p.x1 + luft && p.x0 < q.x1 + luft && q.y0 < p.y1 + luft && p.y0 < q.y1 + luft) n += 10;
         if (q.linje && _rfLinjeSkarRuta(q.linje, vidgad(p))) n += 3;   // den egna linjen genom en lagd etikett
         if (p.linje && _rfLinjeSkarRuta(p.linje, vidgad(q))) n += 3;   // en dragen linje genom rutan
+        if (q.linje && p.linje && _rfLinjerKorsas(q.linje, p.linje)) n += 3;   // två linjer som korsar varandra
         return n;
     };
     const kostnad = (/** @type {Plats} */ q, /** @type {number} */ i) => {
@@ -15152,7 +15172,12 @@ function _rfUndvikEtiketter(c) {
     // (texten mitt i): teckensnittet i webbläsaren kan vara bredare och högre än uppskattningen (_RF.tecken), och en
     // etikett som står tätt intill en annan ska inte nå in i den.
     const matt = c.undvik.map(e => { const bt = _rfBredd(e.text, e.fpx); return { x: e.x, y: e.y, r: e.r, b: bt * 1.1 + 2, h: e.fpx * 1.3, bt, ht: e.fpx * 1.05 }; });
-    const lagen = _rfPlaceraEtiketter(matt, c.punkthinder || [], c.panelB, c.inreH);
+    // Referenslinjerna ritas efter etiketterna (över märkena) men är hinder redan här: linjen som en tunn ruta och dess
+    // etikett som en text. Zonernas etiketter läggs sist och går själva fria från dessa etiketter (_rfZonEtiketter).
+    const ref = _rfReferensLinjer(c.figur, c, c.panelB, c.inreH).flatMap(({ lodrat, p, et }) => [
+        lodrat ? { x0: p - 1, x1: p + 1, y0: 0, y1: c.inreH, tunn: true } : { x0: 0, x1: c.panelB, y0: p - 1, y1: p + 1, tunn: true },
+        ...(et ? [{ x0: et.x, x1: et.x + et.tb, y0: et.y - et.fpx * 0.8, y1: et.y + et.fpx * 0.25 }] : [])]);
+    const lagen = _rfPlaceraEtiketter(matt, [...(c.punkthinder || []), ...ref], c.panelB, c.inreH);
     c.undvik.forEach((e, n) => {
         const q = lagen[n];
         if (q.linje) c.texter.append('line').attr('data-marke', 'hanvisning').attr('pointer-events', 'none')
@@ -15729,6 +15754,22 @@ function _rfReferenser(g, figur, c, bredd, hojd, del) {
         }
         return;
     }
+    for (const { r, lodrat, p, et } of _rfReferensLinjer(figur, c, bredd, hojd)) {
+        const linje = g.append('line').attr('data-marke', 'referenslinje').attr('pointer-events', 'none')
+            .attr('x1', lodrat ? p : 0).attr('x2', lodrat ? p : bredd).attr('y1', lodrat ? 0 : p).attr('y2', lodrat ? hojd : p)
+            .attr('stroke', r.farg || FARG.blek).attr('stroke-width', r.tjocklek || 1.5);
+        const streck = _RF.streck[r.streck || 'hel'];
+        if (streck) linje.attr('stroke-dasharray', streck);
+        if (et) _rfText(c.texter, et.x, et.y, et.text, { px: et.fpx, farg: r.textfarg || r.farg || FARG.dampad, fet: true, title: String(r.etikett),
+            attr: { 'data-marke': 'linjeetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+    }
+    _rfZonEtiketter(zoner, c, bredd, hojd);
+}
+// Referenslinjerna ur figurens `referens` med sina lägen i panelen: [{ r, lodrat, p, et }], där `et` är linjens
+// etikett ({ x, y, text, fpx, tb }: textens start och baslinje) eller null. Används både när linjerna ritas och när
+// etiketterna som undviker läggs (_rfUndvikEtiketter), som läggs före linjerna men ska gå fria från dem.
+function _rfReferensLinjer(figur, c, bredd, hojd) {
+    const ut = [];
     for (const r of Array.isArray(figur.referens) ? figur.referens : []) {
         if (!r || (r.typ || 'linje') !== 'linje') continue;
         const lodrat = r.x != null;
@@ -15736,21 +15777,15 @@ function _rfReferenser(g, figur, c, bredd, hojd, del) {
         const s = lodrat ? c.x : (r.axel === 'y2' && c.y2 ? c.y2 : c.y);
         const p = _rfPos(s, lodrat ? r.x : r.y);
         if (p == null || p < -0.5 || p > (lodrat ? bredd : hojd) + 0.5) continue;
-        const linje = g.append('line').attr('data-marke', 'referenslinje').attr('pointer-events', 'none')
-            .attr('x1', lodrat ? p : 0).attr('x2', lodrat ? p : bredd).attr('y1', lodrat ? 0 : p).attr('y2', lodrat ? hojd : p)
-            .attr('stroke', r.farg || FARG.blek).attr('stroke-width', r.tjocklek || 1.5);
-        const streck = _RF.streck[r.streck || 'hel'];
-        if (streck) linje.attr('stroke-dasharray', streck);
         // Linjens etikett (t.ex. "80 %"): vid linjens högra ände, strax ovanför — eller överst, till höger om en lodrät linje.
+        /** @type {{x:number, y:number, text:string, fpx:number, tb:number}|null} */ let et = null;
         if (r.etikett != null && String(r.etikett) !== '') {
             const fpx = _rfLitenPx(c.px), text = _rfKorta(String(r.etikett), 24), tb = _rfBredd(text, fpx);
-            const x = lodrat ? Math.min(p + 4, Math.max(0, bredd - tb)) : Math.max(0, bredd - tb - 4);
-            const y = lodrat ? fpx + 2 : Math.max(fpx, p - 4);
-            _rfText(c.texter, x, y, text, { px: fpx, farg: r.textfarg || r.farg || FARG.dampad, fet: true, title: String(r.etikett),
-                attr: { 'data-marke': 'linjeetikett', 'pointer-events': 'none', stroke: FARG.vit, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } });
+            et = { x: lodrat ? Math.min(p + 4, Math.max(0, bredd - tb)) : Math.max(0, bredd - tb - 4), y: lodrat ? fpx + 2 : Math.max(fpx, p - 4), text, fpx, tb };
         }
+        ut.push({ r, lodrat, p, et });
     }
-    _rfZonEtiketter(zoner, c, bredd, hojd);
+    return ut;
 }
 
 // Märke → ritfunktion (g, lager, lagrets index i inskickade figuren, kontext).

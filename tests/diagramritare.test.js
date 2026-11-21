@@ -3647,6 +3647,32 @@ describe('etiketter som inte täcker varandra (etapp 1b, U7)', () => {
         expect(skar({ x1: 0, y1: 0, x2: 10, y2: 0 }, { x0: 4, y0: 4, x1: 6, y1: 6 })).toBe(false);
         expect(skar({ x1: 0, y1: 0, x2: 3, y2: 3 }, { x0: 4, y0: 4, x1: 6, y1: 6 })).toBe(false);
     });
+    it("etikettLage 'undvik': en etikett står varken på en referenslinje eller på linjens etikett", () => {
+        // Punkten strax under linjen vid dess högra ände, där linjens etikett står: intill punkten (till vänster, eftersom
+        // höger når utanför panelen) skulle texten ligga på linjen och tätt intill "Lika lön".
+        const svg = rita({ beskrivning: 'R', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 200] },
+            referens: [{ y: 100, etikett: 'Lika lön' }],
+            lager: [{ marke: 'punkt', serie: 'S', storlek: 6, etikettLage: 'undvik', data: [{ x: 97, y: 99, etikett: 'Lärare grundskola' }] }] }, 600);
+        const q = ruta(svg.querySelector('text[data-marke="punktetikett"]')), et = ruta(svg.querySelector('text[data-marke="linjeetikett"]'));
+        const ly = tal(svg.querySelector('line[data-marke="referenslinje"]'), 'y1');
+        expect(tom(q, et)).toBe(false);
+        expect(q.y0 > ly || q.y1 < ly, `${q.y0}–${q.y1} mot ${ly}`).toBe(true);
+    });
+    it('_rfPlaceraEtiketter: två hänvisningslinjer korsar inte varandra', () => {
+        // Två punkter tätt intill varandra bland fyra andra: utan kostnad för korsningen går den andras linje åt höger,
+        // tvärs över den förstas linje uppåt.
+        w.__h = [[209, 185], [199, 176], [145, 196], [122, 175], [262, 160], [239, 191]].map(([x, y]) => ({ x, y, r: 5 }));
+        w.__e = w.__h.slice(0, 2).map(p => ({ ...p, b: 70, h: 12 }));
+        const ut = w.eval('_rfPlaceraEtiketter(window.__e, window.__h, 400, 300)');
+        const korsas = w.eval('_rfLinjerKorsas');
+        expect(ut.every(q => q.linje)).toBe(true);
+        expect(korsas(ut[0].linje, ut[1].linje)).toBe(false);
+        for (const c of w.__h) for (const q of ut) expect(motCirkel(q, c)).toBe(false);
+        // Sträckorna: i kors, parallella, och två som bara nuddar i en ände.
+        expect(korsas({ x1: 0, y1: 0, x2: 10, y2: 10 }, { x1: 0, y1: 10, x2: 10, y2: 0 })).toBe(true);
+        expect(korsas({ x1: 0, y1: 0, x2: 10, y2: 0 }, { x1: 0, y1: 5, x2: 10, y2: 5 })).toBe(false);
+        expect(korsas({ x1: 0, y1: 0, x2: 10, y2: 10 }, { x1: 10, y1: 10, x2: 20, y2: 0 })).toBe(false);
+    });
     it('en zonetikett läggs där den inte täcker en ritad punkt, överst i zonen och fortfarande hel (fixrunda 1)', () => {
         // En stor punkt mitt i zonens överkant, där rubriken annars står.
         const f = { beskrivning: 'Z', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 100] },
