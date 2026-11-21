@@ -18894,7 +18894,9 @@ function setCompCard(id, count, total, valueText, cardState) {
     const icon = document.getElementById(`${id}-icon`);
     const val  = document.getElementById(`${id}-val`);
     if (!card || !icon || !val) return;
-    val.textContent = valueText;
+    // Bara talet är fett; resten av raden (vad som räknats, noten om exporten) står i normal vikt.
+    const tal = total ? `${count} av ${total}` : '';
+    val.innerHTML = tal && valueText.startsWith(tal) ? `<strong>${tal}</strong>${esc(valueText.slice(tal.length))}` : esc(valueText);
     icon.innerHTML = { ok: ikon('bock'), warn: ikon('statusVarning'), crit: ikon('stopp'), na: '—' }[cardState] || '—';
     card.className = `compliance-card ${cardState}`;
 }
@@ -20288,7 +20290,7 @@ function renderActionChecklist({ reg } = {}) {
 
     const oppna = _agBorjaHar(items, done);   // ordningen: src/lib/attgora.js (ADR-29)
     if (borja) borja.innerHTML = `<h3 class="att-gora-borja-rubrik">Börja här</h3>` + (oppna.length
-        ? `<ol class="att-gora-borja-lista">${oppna.map(it => `<li data-borja-id="${esc(it.id)}"><strong>${esc(it.titel)}</strong> <span class="att-gora-kat">${esc(it.kategori)}</span>${it.tab ? ' ' + _attGoraLank(it, 'Gå dit') : ''}</li>`).join('')}</ol>`
+        ? `<ol class="att-gora-borja-lista">${oppna.map(it => `<li data-borja-id="${esc(it.id)}">${esc(it.titel)} <span class="att-gora-kat">${esc(it.kategori)}</span>${it.tab ? ' ' + _attGoraLank(it, 'Gå dit') : ''}</li>`).join('')}</ol>`
         : '<p>Alla punkter är hanterade.</p>');
 
     // Checkbox-handlers
