@@ -32921,15 +32921,6 @@ function renderLifecycleAnalysis() {
 
     // ====== UI ======
     wrap.innerHTML = `
-        <!-- B2: Klarspråklig rubrik och intro -->
-        <div class="insight-box info marg-b-14">
-            <strong>Vad analyserar livscykelmodellen?</strong>
-            <p class="fs-md lh-1_55 marg-8-0">
-                Den här analysen svarar på frågan: <em>"Är löneskillnaden mellan kvinnor och män
-                densamma över karriären, eller växer eller krymper den med åldern?"</em> Svaret, och vad det kan bero på, står i tolkningen under kurvan. Bygger på ${svTal(result.n, 0)} personer.
-            </p>
-        </div>
-
         <!-- B5: KPI:er + signifikanstest -->
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="stat-box">
@@ -33049,7 +33040,7 @@ function renderLifecycleAnalysis() {
         </details>
 
         <p class="livscykel-modell-not text-dampad-xs lh-1_5 marg-t-10">
-            Modellen tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
+            Modellen bygger på ${svTal(result.n, 0)} personer och tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
     `;
 
