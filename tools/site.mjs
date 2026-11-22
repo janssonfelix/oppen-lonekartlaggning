@@ -7,6 +7,7 @@
 // Valfritt: GUIDE_URL=https://…/docs/anvandare/ npm run site
 //           — adressen där guiderna (Markdown) visas på den plattform som väljs.
 // Output:   site/dist/index.html, oppen-lonekartlaggning.html, RELEASE.txt
+//           genomgang.html (bildspelet, incheckat i site/; byggs av marknadsverktygen)
 //           (+ oversikt.png om dist/marknad/skarmbilder/01-oversikt.png finns,
 //            + fran-fil-till-analys.gif om dist/marknad/gif/ finns)
 
@@ -84,6 +85,7 @@ function main() {
     mkdirSync(ut, { recursive: true });
     copyFileSync(bygge, join(ut, FIL));
     writeFileSync(join(ut, 'RELEASE.txt'), release);
+    copyFileSync(join(ROOT, 'site', 'genomgang.html'), join(ut, 'genomgang.html'));
     const bild = existsSync(BILD_KALLA) ? 'oversikt.png' : undefined;
     if (bild) copyFileSync(BILD_KALLA, join(ut, bild));
     const slinga = bild && existsSync(SLINGA_KALLA) ? 'fran-fil-till-analys.gif' : undefined;
