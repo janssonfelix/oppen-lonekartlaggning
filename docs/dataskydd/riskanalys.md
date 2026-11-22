@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.21` · **Artefakt-SHA-256:** `287bd75a5194a4c2dbc4baecc2437b07dd39bae085be30403f19ec0e1b4811a6` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-11-21.
+**Bygge:** `2026.11.22` · **Artefakt-SHA-256:** `7963dc3380d95ecf83d9eca0fd592f606dd588e6e22629f66d0f95f0e148eddb` (se `dist/RELEASE.txt`).
+**Granskningsdatum:** 2026-11-22.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -714,44 +714,30 @@ Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare
 - invarianterna prövar inte undantagen och diagrambilderna (§6.5).
 
 Här står bara den senaste granskningen; varje ny granskning ersätter stycket om den förra. De tidigare
-(2026-10-19 av hela dokumentet, och 2026-11-02, 11-05, 11-06 och 11-16 av det som ändrats) står i git-historiken
+(2026-10-19 av hela dokumentet, och 2026-11-02, 11-05, 11-06, 11-16 och 11-21 av det som ändrats) står i git-historiken
 för den här filen.
 
-**Granskningen 2026-11-21** (inför bygget 2026.11.21) prövade dokumentet och dataskyddsbeskrivningen mot koden som
-ändrats efter bygget 2026.11.16 (#89–#102). De flesta ändringarna förde in sina påståenden här när de gjordes:
-den kompletterande undertryckningen i tabellerna per BAS-intervall (ADR-83) och sammanslagningen i uppdelningen av
-löneskillnaden (ADR-84, ADR-87), att fältet för AID-etikett inte maskeras och varningen för personnamn (ADR-85, B1c),
-escaping-vakten (A3), sårbarhetsbevakningen av `vendor/` (A4), differensprovet (ADR-88), grupperna som AID-kod i
-BAS-intervallet (ADR-89, ADR-90), protokollets blad (ADR-91) och att S4 gäller en fil i taget (ADR-92). De lästes om
-mot koden. Biblioteken i `vendor/` och `tools/bundle.mjs` är oförändrade. Kontrollerat:
-- CSP-raden i bygget (fem skript och fem hashar, två stilhashar) har samma direktiv som i bygget 2026.11.16; bara
-  hasharna har ändrats. Sökningen i `dist/app.js` efter nätverks- och lagringsanrop ger samma träffar som i bygget
-  2026.11.16 (lagringsspärren och verktygets egen text). Bygget har inget `<script src>` och stilmallen inget `url(`.
-- Det stora demot (#101): 5 000 påhittade personer, påhittad jämförelsestatistik (`generateStortDemoStatistik`,
-  `statistikKalla` `'demo'`) och ett ställningstagande räknat ur demots egna löner (`_sdStallningstagande`). Inget av
-  det läses ur en fil eller lagras. Ett BAS-intervall med färre personer än tröskeln när demot läses in får ingen rad
-  ur sina egna löner, utan stegas från närmaste lägre intervall; en tröskel som höjs efteråt räknar inte om raderna. Statistiken och ställningstagandet tas bort när en
-  lönefil läses in (`_afterDataLoaded`), statistiken också när det lilla demot läses in, och *Rensa all data* tömmer
-  båda. Demosidan länkar till `?demo=stor`; `90-uppstart.js` läser fortfarande bara parametern `demo`.
-- Storleksgränserna för inlästa filer (`FIL_MAX`) prövas innan filen läses (§6.4).
-- Inläsningen (#100): kolumnvalet tar en exakt lika rubrik före en delsträng och slås upp en gång per fil, och en
-  rubrik som återkommer i en Excel-fil döps om som PapaParse gör med CSV. Fälten i minnet och PII-kontrollen är
-  oförändrade; en omdöpt rubrik prövas av rubrikkontrollen som de andra. Talparsern avvisar skräp efter siffrorna och
-  godtar enheten *år*; inget nytt fält läses in.
-- Beräkningarna som flyttats till `src/lib/` (huvudregressionen, osäkerheten, tolkningen av indata, kostnaden) är rena
-  funktioner utan tillstånd; vakten i `tests/lib-beroenden.test.js` kräver att de inte läser webbläsarglobaler.
-- Visningsminnets vakt (#102) ändrar bara testriggen.
+**Granskningen 2026-11-22** (inför bygget 2026.11.22) prövade dokumentet och dataskyddsbeskrivningen mot koden som
+ändrats efter bygget 2026.11.21 (#104–#114). Biblioteken i `vendor/` och `tools/bundle.mjs` är oförändrade. Kontrollerat:
+- CSP-raden i bygget har samma direktiv som i bygget 2026.11.21; bara hasharna har ändrats. Sökningen i `dist/app.js`
+  efter nätverks- och lagringsanrop ger samma träffar som i bygget 2026.11.21 (lagringsspärren och verktygets egen
+  text). Bygget har inget `<script src>` och stilmallen inget `url(`. `src/index.html` har bara ändrade rubriker,
+  tillgängliga namn och den borttagna rimlighetspanelen.
+- Protokollet för gemensam lönebedömning har bladet 2a, samma blad som *Lika arbete AID x BAS* (ADR-93, §6.6). Det har
+  antal och medianer men inga medelvärden, så det ger ingen ny skillnad mot blad 3; k-invarianten läser alla
+  protokollets blad.
+- Inaktivitetsrensningen räknar minuten före rensningen mot en sluttid i stället för i tick, så att den inte dras ut i
+  en flik som inte syns (§6.3). Tiderna och rensningsvägen är oförändrade.
+- Förhandskontrollens varning om ålder utanför 16–75 år anger högst fem radnummer (§6.4), som varningen om personnamn.
+- Datum i filnamn och i konfigurationsfilens fält `skapat` tas i lokal tid; inget nytt fält skrivs.
+- Rimlighetspanelen i Underlagets kvalitet är borttagen; dess kontroller fanns redan i förhandskontrollen.
 
-Tre påståenden rättades. *Lika arbete AID x BAS* har sedan ADR-90 Lika arbetes grupper och regler: en grupp under
-tröskeln får ingen rad och namnges i noten utan antal. Dataskyddsbeskrivningen §4 (Excel och Word) och §6.5 här sade
-att alla fyra tabellerna per AID-kod och BAS-intervall har en rad från 5 personer. §6.4 sade att demoläget har en
-påhittad referens; det stora demot har också påhittad jämförelsestatistik. Storleksgränserna i §6.4 är nya. Ingen
-avvikelse mot skydden hittades.
+Ingen avvikelse mot skydden hittades, och inget påstående behövde rättas utöver §6.6.
 
 Granskningen är avgränsad till det som ändrats; påståenden om oförändrad kod lästes inte om mot koden.
 
-Testsviten (132 filer) kördes mot bygget (`npm run test:full`). Inte prövat i den här granskningen: röktestet i
-Chromium, Firefox och WebKit (det körs i CI), de påståenden märkta *Verifierat i webbläsare* som inte
+Testsviten (141 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
+granskningen: röktestet i Firefox och WebKit (det körs i CI), de påståenden märkta *Verifierat i webbläsare* som inte
 har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsare.
 
 | Kontroll | Metod | Resultat |

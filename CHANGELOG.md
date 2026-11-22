@@ -7,6 +7,28 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 Från och med nästa version har varje version en rad per ändring som en användare märker. Detaljerna står i
 referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
+## 2026.11.22
+
+- **Protokollet för gemensam lönebedömning redovisar alla grupper i lika arbete** i det nya bladet *2a. Lika arbete,
+  alla grupper*: antal per kön och medianerna för varje grupp, samma blad som *Lika arbete AID x BAS* i Excel (ADR-93).
+- **Stora lönefiler kraschar inte.** Inläsningen och Ålder & karriär slog i webbläsarens gräns vid omkring 125 000
+  personer.
+- **En åldersgräns och en regel för rimlig BAS och lön.** Förhandskontrollen och Underlagets kvalitet prövar samma
+  gränser: ålder 16–75 år, varje bokstav som BAS-värde och lön från 15 000 till 250 000 kr. Varningen om ålder anger
+  radnumren. Rimlighetspanelen i Underlagets kvalitet är borttagen; dess kontroller fanns redan i förhandskontrollen.
+- **Ålder & karriär påstår inget som inte går att räkna.** När ett kön har en enda ålder i urvalet visas ingen lutning
+  och ingen mening om hur fort lönen stiger. Livscykelns nyckeltal står i en rad, och tabellen per BAS-intervall och
+  modelljämförelsen är hopfällda.
+- **Rensningen vid inaktivitet** räknar sista minuten mot klockan, också i en flik som inte syns, och tidsväljaren
+  fungerar hur dialogen än öppnas.
+- **Datum i filnamn** tas i lokal tid, så att en export strax efter midnatt får rätt datum.
+- **Lägsta lönekvintilen i Prioriteringen** räknas med verktygets percentil; gränsen blir lika eller något lägre.
+- **Tabeller och diagram:** tabellhuvudena i Prioritering och Lika arbete bryts inte mitt i en rubrik, etiketter går
+  fria från referenslinjerna, och nyckeltalen i Lika och Likvärdigt arbete heter som värdet de visar.
+- **Tillgänglighet:** tillgängliga namn börjar med den synliga texten, och referensöverblickens tabeller går att rulla
+  med tangentbordet.
+- **Det stora demot:** var fjärde yrke har ett påslag kring noll i den påhittade statistiken.
+
 ## 2026.11.21
 
 Den första posten i den nya formen: vad verktyget gör i den här versionen. Syfte, avgränsning och funktionsmål står

@@ -7,7 +7,7 @@ dataflöde, tekniska skydd, riskregister och verifieringslogg — finns i
 konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
 [`lagrum.md`](../utveckling/lagrum.md).
 
-**Granskad mot koden:** 2026-11-21.
+**Granskad mot koden:** 2026-11-22.
 Granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 
 ---
