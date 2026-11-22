@@ -371,7 +371,6 @@ export async function diagramkarnan() {
             ritaFigur('chart-rok-lista', window.__rokLista);
         });
         const rad = page.locator('#rok-lista-kort .diagram-urval');
-        await page.locator('#rok-lista-kort [data-urval-filter] > summary').click();   // raden "Filter: …" först
         await rad.locator('summary').click();
         await page.waitForTimeout(200);
         const matt = await page.evaluate(() => {
@@ -411,11 +410,6 @@ export async function diagramkarnan() {
     console.log('\n── Filter i riktiga diagram: lön mot ålder och yrkesgrupper i trattdiagrammet ──');
     /* global renderTabContent */
     {
-        // Filterraderna står i den hopfällda raden "Filter: …" före diagrammet: den fälls ut med ett klick om den är hopfälld.
-        const fallUtFilter = async valjare => {
-            const filter = page.locator(valjare).locator('xpath=preceding-sibling::details[@data-urval-filter][1]');
-            if (!(await filter.evaluate(d => d.open))) await filter.locator(':scope > summary').click();
-        };
         await page.evaluate(() => _rfUrvalGlom());
         await oppnaFlik(page, '.nav-item[data-tab="kon"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
@@ -427,7 +421,6 @@ export async function diagramkarnan() {
         });
         const fore = await scatter();
         const bas = page.locator('#chart-kon-scatter').locator('xpath=..').locator('.diagram-urval[data-urval-falt="bas"] [data-urval]').first();
-        await fallUtFilter('#chart-kon-scatter');
         await bas.click();
         await page.waitForTimeout(400);
         const efter = await scatter();
@@ -441,7 +434,6 @@ export async function diagramkarnan() {
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         const rad = page.locator('#chart-la-tratt').locator('xpath=..').locator('.diagram-urval[data-urval-falt="yrke"]');
-        await fallUtFilter('#chart-la-tratt');
         await rad.locator('summary').click();
         await rad.locator('[data-urval-markera="inga"]').click();
         await rad.locator('input[type="checkbox"]').first().check();
