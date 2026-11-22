@@ -23,6 +23,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
+   Provat 2026-11-22: `tests/ktroskel-invarianter.test.js` 40 gånger på Node 22 och 40 gånger på Node 24, sex åt
+   gången, gav ingen krasch i någon, och hela sviten är grön på Node 24. Kraschen gick inte att framkalla, så ett
+   byte av Node-version har inget mätbart att vinna; omkörningen står kvar.
 8. **Ett gemensamt globalt scope** på omkring 30 000 rader, utan den genererade spegeln. Logik flyttas till `src/lib/` när en del ändå ändras.
 28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
     2026-11-22: omkring 2 050 s sammanlagt på tolv arbetare). Väntetiden för en pull request sätts av röktestet i
