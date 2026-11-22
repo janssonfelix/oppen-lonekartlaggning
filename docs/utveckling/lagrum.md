@@ -63,14 +63,15 @@ arbeten som är lika eller likvärdiga är arbetsgivarens.
 ### Protokollet för gemensam lönebedömning mot art. 10.2
 
 Kartlagt 2026-11-15 mot den svenska lydelsen av direktivet på EUR-Lex (CELEX 32023L0970). Protokollet är
-Excel-filen *Protokoll för gemensam lönebedömning* (`exportJPAProtocol`, `src/app/24-excelexport.js`). Status
+Excel-filen *Protokoll för gemensam lönebedömning* (`exportJPAProtocol`, `src/app/24-excelexport.js`). Blad 2a är
+samma blad som *Lika arbete AID x BAS* i Excel (alla flikar), byggt på ett ställe (`_aidbasLikaBlad`). Status
 *Förslag*: inte juridiskt granskat.
 
 | Led | Innehållet enligt art. 10.2 | Protokollet | Täckning |
 |---|---|---|---|
-| a | andelen kvinnor och män i varje arbetstagarkategori | antal kvinnor och män, men bara för grupper med statusen *Värt att granska* (blad 2) och intervall med säkerställd skillnad (blad 3) | delvis: inte alla kategorier |
-| b | kvinnors och mäns genomsnittliga lönenivåer, och tillägg eller rörliga ersättningar, per kategori | median och medelvärde per kön i blad 2 och 3 (ADR-79), för de redovisade grupperna och intervallen; lönefilen har en lönekolumn, så tillägg och rörliga delar redovisas inte för sig | delvis |
-| c | alla skillnader i genomsnittlig lönenivå per kategori | skillnaden i median och i medelvärde, i kronor och som kvinnors i procent av mäns, för de flaggade grupperna och intervallen; övriga räknas bara i blad 4 | delvis: inte alla kategorier |
+| a | andelen kvinnor och män i varje arbetstagarkategori | antal kvinnor och män för varje grupp, AID-koden i BAS-intervallet, i blad 2a (ADR-93); en grupp under tröskeln namnges i bladets not utan antal | ja, för grupperna i lika arbete |
+| b | kvinnors och mäns genomsnittliga lönenivåer, och tillägg eller rörliga ersättningar, per kategori | median och medelvärde per kön i blad 2 och 3 (ADR-79), för de redovisade grupperna och intervallen; blad 2a har medianen per kön för varje grupp där båda könen når tröskeln, men inget medelvärde (ADR-93); lönefilen har en lönekolumn, så tillägg och rörliga delar redovisas inte för sig | delvis |
+| c | alla skillnader i genomsnittlig lönenivå per kategori | skillnaden i median och i medelvärde, i kronor och som kvinnors i procent av mäns, för de flaggade grupperna och intervallen (blad 2 och 3); kvinnors median i procent av mäns för varje grupp där båda könen når tröskeln (blad 2a, ADR-93) | ja för medianen, för grupperna i lika arbete; medelvärdet bara för de flaggade |
 | d | skälen till skillnaderna, med objektiva och könsneutrala kriterier som parterna fastställt | fält att fylla i: *Sakliga skäl*, *Fackliga partens kommentar*, *Status efter samråd* | ja, som fält att fylla i |
 | e | andelen kvinnor och män som fått löneökning efter föräldraledighet eller ledighet för vård av anhörig | fält att fylla i på försättssidan; underlaget har inga uppgifter om ledighet, så verktyget räknar inget | ja, som fält att fylla i |
 | f | åtgärder mot löneskillnader som inte motiveras av objektiva, könsneutrala kriterier | *Överenskommen åtgärd*, *Tidplan*, *Ansvarig* per rad; *Övergripande åtgärdsplan* på försättssidan | ja, som fält att fylla i |

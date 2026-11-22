@@ -99,6 +99,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-90 | Lika arbete AID x BAS visar Lika arbetes status, utan egen bedömning | Gällande | 2026-11-20 |
 | ADR-91 | Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden | Ändrad av ADR-92 | 2026-11-20 |
 | ADR-92 | S4 gäller en fil i taget | Gällande | 2026-11-20 |
+| ADR-93 | JPA-protokollet redovisar alla grupper i lika arbete | Gällande | 2026-11-22 |
 
 ## Besluten
 
@@ -576,3 +577,11 @@ sig verkliga: protokollets blad för lika arbete mot tabellerna per BAS-interval
 mot intervallets medellön. Båda kräver två filer och att den som räknar vet hur de hänger ihop. *Gäller i dag:*
 `skydd.md` S4, `k-troskeln.md` avsnitt 2, 9 och 11, `docs/dataskydd/riskanalys.md` §6.5,
 `docs/dataskydd/dataskydd.md` *Vad skydden gör och inte gör*, `loneoversynsmodellen.md` §12.
+
+**ADR-93 — JPA-protokollet redovisar alla grupper i lika arbete.** Beslutat av underhållaren 2026-11-22. Protokollet
+för gemensam lönebedömning får bladet *2a. Lika arbete, alla grupper*: samma blad som *Lika arbete AID x BAS* i Excel
+(alla flikar), byggt av samma funktion, så att art. 10.2 a och c täcks för alla grupper och inte bara för de
+flaggade. Bladet har antal och medianer men inga medelvärden, så det ger ingen ny skillnad mot blad 3:s medelvärden
+(medianer går inte att dela upp). *Avvisat:* en ny tabell för protokollet, som kunde säga något annat än Lika arbete
+om samma grupp; att lägga till medelvärdet per grupp, som öppnar nya skillnader mot blad 3. *Gäller i dag:*
+`lagrum.md`, avsnittet om protokollet för gemensam lönebedömning, och `k-troskeln.md` avsnitt 2.

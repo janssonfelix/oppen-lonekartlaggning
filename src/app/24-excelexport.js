@@ -305,6 +305,8 @@ function _jpaNivaCeller(kv, ma, nKv, nMa) {
     if (!(nKv >= k && nMa >= k) || !isFinite(kv) || !isFinite(ma) || !(ma > 0)) return ['—', '—', '—', '—'];
     return [Math.round(kv), Math.round(ma), Math.round(kv - ma), +(kv / ma * 100).toFixed(1)];
 }
+/** Protokollets blad med alla grupper i lika arbete (ADR-93). */
+const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
 /**
  * Genererar en samrådsprotokoll-Excel speciellt utformad för facklig samverkan.
  *
@@ -313,7 +315,10 @@ function _jpaNivaCeller(kv, ma, nKv, nMa) {
  *     Ojusterad löneskillnad ≥ 5 % (direktivmarkeringen), och BAS-intervall där regressionens skillnad är
  *     säkerställd också efter korrigering för många tester (Benjamini–Hochberg, q < 0,05) och minst 3 %, som
  *     regressionskortet och Att göra (ADR-71)
- *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas helt
+ *   - Blad 2a: alla grupper i lika arbete med antal per kön och medianerna, samma blad som Lika arbete AID x BAS i
+ *     Excel (alla flikar), så att art. 10.2 a och c täcks för alla kategorier (ADR-93)
+ *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas ur blad 2 och 3,
+ *     och blad 2a visar dem med antal men utan median
  *   - Median och medelvärde per kön för varje redovisad grupp och intervall; statusen följer medianen (ADR-79)
  *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder, och på försättssidan för löneökning efter
  *     ledighet, utvärderingen av föregående lönebedömnings åtgärder och systemen för arbetsvärdering (ADR-79)
@@ -491,6 +496,11 @@ function _exportJPAProtocolExport() {
     _applyColumnNumFormats(yrkenSheet, SV_NUM_FORMATS);
     XLSX.utils.book_append_sheet(wb, yrkenSheet, _excelBladnamn(`2. Lika arbete (${T.system})`, '2. Lika arbete'));
 
+    // === Sheet 2a: Alla grupper i lika arbete (art. 10.2 a och c för alla kategorier) ===
+    // Samma blad som Lika arbete AID x BAS i Excel (alla flikar), ur samma grupper som blad 2: antal och medianer,
+    // inga medelvärden, så det ger ingen ny skillnad mot blad 3 (medianer går inte att dela upp, k-troskeln.md avsnitt 11).
+    XLSX.utils.book_append_sheet(wb, _aidbasLikaBlad(_aidbasLika(lika)), JPA_BLAD_ALLA_GRUPPER);
+
     // === Sheet 3: BAS-intervall med säkerställd oförklarad skillnad på minst 3 % (likvärdigt arbete) ===
     const basHeaderRow = [
         'Nr', termStor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
@@ -636,7 +646,7 @@ function _exportJPAProtocolExport() {
         ['— k-anonymitet —', ''],
         ['Tröskel', `n ≥ ${kTroskel()} per kön krävs för att en grupp ska redovisas individuellt.`],
         ['Bakgrund', `Skydd mot återidentifiering av enskilda anställda via deduktion (kön + ålder + ${T.enhet.en} + BAS).`],
-        ['Konsekvens', 'Små grupper exkluderas helt från detta protokoll. Antal exkluderade redovisas i flik 4.'],
+        ['Konsekvens', 'Små grupper har inga lönemått i protokollet: blad 2a visar dem med antal men utan median, och antal exkluderade redovisas i flik 4.'],
         ['', ''],
         ['— Begränsningar att vara medvetna om —', ''],
         ['Sakliga skäl', 'Verktyget identifierar löneskillnader men avgör inte vad som är saklig grund. Den bedömningen är gemensamma parters ansvar.'],

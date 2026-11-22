@@ -831,7 +831,7 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
         w.eval('populateSelects(); unlockTabs();');
         return w;
     };
-    const protokollet = async w => {
+    const protokollet = async (w, fn = 'exportJPAProtocol') => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');
         const { fileURLToPath } = await import('node:url');
@@ -839,7 +839,7 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
         w.alert = () => {};
         let wb = null;
         w.XLSX.writeFile = b => { wb = b; };
-        w.eval('exportJPAProtocol()');
+        w.eval(`${fn}()`);
         return Object.fromEntries(wb.SheetNames.map(n => [n, w.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' })]));
     };
     const MEDIAN = ['Median kvinnor (kr)', 'Median män (kr)', 'Differens (kr)', 'Kvinnors median i % av mäns'];
@@ -894,6 +894,25 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
         expect(bok['2. Lika arbete (AID)'].some(r => String(r[1]).includes('Mellangrupp'))).toBe(false);
         expect(bok['3. Likvärdigt arbete (BAS)'].some(r => r[1] === 'Q' || r[1] === 'R')).toBe(false);
     });
+    // Blad 2a är bladet Lika arbete AID x BAS ur Excel (alla flikar), så att protokollet har antal och medianer för alla
+    // grupper (ADR-93). En grupp där ett kön är under tröskeln står med antal men utan median: R vid 10, Q och R vid 25.
+    for (const [k, utan] of [[null, ['7200']], [25, ['7100', '7200']]]) {
+        it(`vid ${k ?? 10}: blad 2a har samma rader som bladet Lika arbete AID x BAS, och ${utan.join(' och ')} utan median`, async () => {
+            const w = fonsterNiva(k);
+            const bok = await protokollet(w), alla = await protokollet(w, 'exportAllToExcel');
+            const blad = bok['2a. Lika arbete, alla grupper'];
+            expect(blad).toEqual(alla['Lika arbete AID x BAS']);
+            const rubrik = blad.findIndex(r => r.includes('Medianlön kvinnor'));
+            const [mk, mm] = ['Medianlön kvinnor', 'Medianlön män'].map(n => blad[rubrik].indexOf(n));
+            const kod = blad[rubrik].indexOf('AID-kod');
+            for (const aid of utan) {
+                const rad = blad.find(r => String(r[kod]) === aid);
+                expect(rad, aid).toBeTruthy();
+                expect([rad[mk], rad[mm]], aid).toEqual(['', '']);
+            }
+            if (k === null) expect(blad.find(r => String(r[kod]) === '7100')[mk]).toBe(median(Q_KV));
+        });
+    }
 });
 
 describe('k-tröskeln: Lika arbete AID x BAS har samma grupper som tabellen per AID-etikett (ADR-90)', () => {

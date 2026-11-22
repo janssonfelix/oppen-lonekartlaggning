@@ -261,15 +261,22 @@ function _aidbasBlad(rubrik, kolumner, rader, { fore = [], efter = [], tom = '' 
 }
 /** Bladens namn i ordning, som förhandsbeskedet och arbetsboken delar. */
 const AIDBAS_BLADNAMN = ['Lika arbete AID x BAS', 'Likvärdigt arbete', 'Hierarkisk jämförelse', 'Analys på individnivå'];
+/**
+ * Bladet Lika arbete AID x BAS, som Excel (alla flikar) och protokollet för gemensam lönebedömning delar.
+ * @param {any} lika tabellen ur `_aidbasLika` (`aidbasTabeller(d).lika`)
+ */
+function _aidbasLikaBlad(lika) {
+    return _aidbasBlad(termText('Lika arbete: kvinnors medianlön i procent av mäns per {kod.en} och {niva.en}'), AIDBAS_KOL.lika, lika.rader,
+        { fore: [_aidbasLikaText(), `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`],
+          efter: [_aidbasLikaNot(lika)], tom: 'Inga grupper att visa.' });
+}
 /** @returns {[string, any][]} bladets namn och kalkylblad */
 function _aidbasExcelBlad() {
     const d = getData();
     if (!d.length) return [];
     const t = aidbasTabeller(d);
     const def = `Kvinnodominerad vid ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
-    const lika = _aidbasBlad(termText('Lika arbete: kvinnors medianlön i procent av mäns per {kod.en} och {niva.en}'), AIDBAS_KOL.lika, t.lika.rader,
-        { fore: [_aidbasLikaText(), `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`],
-          efter: [_aidbasLikaNot(t.lika)], tom: 'Inga grupper att visa.' });
+    const lika = _aidbasLikaBlad(t.lika);
     const lv = _aidbasBlad(termText('Likvärdigt arbete: grupperna per {niva.en}'), AIDBAS_KOL.likvardigt, t.likvardigt.rader,
         { fore: [def, `"Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition. Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} ${personOrd(t.k)}.`],
           efter: [_aidbasSmaNot(t.likvardigt.sma, t.golv)], tom: 'Inga grupper att visa.' });
