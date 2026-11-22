@@ -16,8 +16,10 @@ let _lifecycleFixBas = null;
  *
  * Anropas när fliken "Lön över karriären" (data-tab="kon") öppnas — livscykel-
  * panelen visas tillsammans med kön/ålder-kurvorna (sammanslagen flik).
+ *
+ * @param {any} [given] huvudregressionen från regressionskortet i samma varv (ADR-17)
  */
-function renderLifecycleAnalysis() {
+function renderLifecycleAnalysis(given) {
     // Flikens container är #livscykel-content (#lifecycle-content som reserv)
     const wrap = document.getElementById('livscykel-content') || document.getElementById('lifecycle-content');
     if (!wrap) return;
@@ -33,8 +35,8 @@ function renderLifecycleAnalysis() {
     }
     _lifecycleFixBas = result.fixBas;
 
-    // Jämför vs primäranalysen (cachas inte — vi anropar den direkt)
-    const primary = runOLSRegression();
+    // Jämför med primäranalysen: given från regressionskortet i samma varv, annars räknad här (ADR-17)
+    const primary = given || runOLSRegression();
     const primaryAdjR2 = (primary && !primary.error) ? primary.adjR2 : null;
     const primaryGap = (primary && !primary.error) ? primary.konPct : null;
     const primaryP   = (primary && !primary.error) ? primary.pValue : null;

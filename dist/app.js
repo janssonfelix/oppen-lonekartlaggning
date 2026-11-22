@@ -14679,6 +14679,25 @@ function _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, tak) {
     return rum;
 }
 
+// Punktetiketter bredvid punkten (lagrets `etikettLage: 'hoger'` eller `'vanster'`) som skulle gå utanför panelen får
+// rum på x: så mycket som texten sticker ut förbi panelens kant med omfånget utan rummet. Rummet krymper omfånget, så
+// punkten flyttas inåt och etiketten ryms. Samma tak som stapeletiketterna; 'auto' och 'undvik' byter själva sida.
+function _rfPunktEtikettRum(rum, figurIn, syn, px, panelB, tak) {
+    if (figurIn.x.skala === 'band') return rum;
+    const x = _rfSkala(figurIn.x, syn.doms.x, _rfXOmfang(figurIn, panelB, rum.x)), fpx = _rfLitenPx(px);
+    let { lo, hi } = rum.x;
+    for (const { l } of syn.synliga) {
+        if (l.marke !== 'punkt' || (l.etikettLage !== 'hoger' && l.etikettLage !== 'vanster')) continue;
+        for (const d of l.data) {
+            if (!d || syn.dold(d) || d.etikett == null || String(d.etikett) === '' || !_rfTal(d.x) || !_rfTal(x(d.x))) continue;
+            const ut = (_rfTal(d.storlek) ? d.storlek : (l.storlek || 4)) + 5 + _rfBredd(_rfKorta(String(d.etikett), 28), fpx);
+            if (l.etikettLage === 'hoger') hi = Math.max(hi, rum.x.hi + x(d.x) + ut - panelB);
+            else lo = Math.max(lo, rum.x.lo + ut - x(d.x));
+        }
+    }
+    return { ...rum, x: { lo: Math.min(lo, tak), hi: Math.min(hi, tak) } };
+}
+
 const _rfNf = new Map();
 function _rfDecimaler(vard) {
     for (let dec = 0; dec < 8; dec++) {
@@ -16083,7 +16102,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     const fargskala = _rfFargskala(figurIn.fargskala);   // en gång per ritning: layouten, märkena och färgstapeln delar den
     const vag = _rfVagratLayout(figurIn, syn, yMarg, B, px, fargskala);
     const etiketter = _rfEtikettBeslut(figurIn, syn, px, lod.inreH, vag.panelB);
-    const rum = _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, vag.tak);
+    const rum = _rfPunktEtikettRum(_rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, vag.tak), figurIn, syn, px, vag.panelB, vag.tak);
     const yAx = _rfYAxlar(figurIn, syn, rum, B, px, lod.inreH, yMarg);
     const L = { ...lod, ...yAx, ...vag, rumX: rum.x, etiketter, fargskala };
 
@@ -24794,7 +24813,10 @@ function _renderTabContent(target) {
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); renderStatistikLage(); generateBenchmark(); }
-    else if (target === "matrix"       && d.length) { generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
+    else if (target === "matrix"       && d.length) {
+        const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
+        generateEUDirectiveMatrix({ reg }); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp({ reg });
+    }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) {
         renderStructure(); generateSkevhet();
@@ -26861,7 +26883,7 @@ function _lvKravFigur({ medPoang, grupper }) {
     const under = grupper.filter(g => g.dominans === 'kvinnodominerad' && g.median < niva(g)).sort((p, q) => (p.median - niva(p)) - (q.median - niva(q))).slice(0, 10);
     const storlek = n => Math.max(4, Math.min(12, 2 + Math.sqrt(n)));
     /** @type {any[]} */
-    const lager = _LV_KRAV_SERIER.map(s => ({ marke: 'punkt', serie: s.serie, farg: s.farg(), symbol: s.symbol, opacitet: 0.8, etikettLage: 'hoger',
+    const lager = _LV_KRAV_SERIER.map(s => ({ marke: 'punkt', serie: s.serie, farg: s.farg(), symbol: s.symbol, opacitet: 0.8, etikettLage: 'undvik',
         data: grupper.filter(g => g.dominans === s.dominans).map(g => ({ x: x(g), y: Math.round(g.median), ...(sidled.has(g) ? { forskjutning: sidled.get(g) } : {}), storlek: storlek(g.n), namn: g.namn, bas: g.bas, sektor: _aidSektorsnamn(g.aid), n: g.n, andelKv: g.andelKv,
             avstand: Math.round(g.median - niva(g)), uppskattad: !!g.uppskattad, krav: g.krav, markering: markeringFor(g.bas, g.aid),
             ...(under.includes(g) ? { etikett: g.namn } : {}) })),
@@ -30096,7 +30118,8 @@ const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 // BAS-tabellen i Lönestruktur gömmer markeringen ≥ 5 % bakom Fler kolumner: med den kolumnen blev tabellen bredare än
 // sitt kort vid 1400 punkter med bredare teckensnitt (DejaVu Sans). Kopiera, CSV och exporterna tar med den.
 const LA_OVERSIKT_DOLDA_KOLUMNER = ['direktiv'];
-function generateEUDirectiveMatrix() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den, i samma varv (ADR-17) */
+function generateEUDirectiveMatrix({ reg: given } = {}) {
     const tbody = document.querySelector("#matrix-table tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -30219,7 +30242,7 @@ function generateEUDirectiveMatrix() {
     const baseM = buildBaseAudit();
     const skippedTooFewKvOrMa = lika.ejJamforbara.length;
     const maskedYrken = utelamnadeYrken.length;
-    const reg = runOLSRegression();
+    const reg = given || runOLSRegression();
     const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct((reg.R2*100), 1)}`;
     setAudit('matrix', {
         title: 'Lika arbete — multivariat regression',
@@ -30481,7 +30504,8 @@ function _laRegFaNot(reg) {
     const fa = [reg.nKvAnalysed < 10 ? `kvinnor (${reg.nKvAnalysed} i modellen)` : '', reg.nMaAnalysed < 10 ? `män (${reg.nMaAnalysed} i modellen)` : ''].filter(Boolean);
     return fa.length ? ` Bygger på få ${fa.join(' och ')}; talet är osäkert.` : '';
 }
-function renderLikaArbeteTopp() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den, i samma varv (ADR-17) */
+function renderLikaArbeteTopp({ reg: given } = {}) {
     const urval = document.getElementById('la-urval'), ut = document.getElementById('la-slutsatser');
     if (!urval || !ut) return;
     const d = getData();
@@ -30497,7 +30521,7 @@ function renderLikaArbeteTopp() {
     const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
     // Regressionen och personerna.
     /** @type {any} */ let reg = null;
-    try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
+    try { reg = given || runOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
     const regOk = reg && !reg.error && typeof reg.konPct === 'number';
     /** @type {number|null} */ let personer = null;
     try { const r = _ifFlaggaIndivider(d, { minGrupp: statGolv(), grans: _pagGrans() }); personer = r.provade.kv + r.provade.ma ? r.flaggade.length : null; }
@@ -32579,7 +32603,7 @@ function renderRegressionCard() {
     `; tillampaDataStil(wrap);
 
     // #lifecycle: rendera sekundäranalys efter att placeholder finns i DOM
-    renderLifecycleAnalysis();
+    renderLifecycleAnalysis(r);
 
     // Per-BAS-diagram + växel för statistiska detaljer (pedagogik-omgången).
     // Diagrammet ritas efter innerHTML så containern finns; tabellen är kvar
@@ -32746,8 +32770,10 @@ let _lifecycleFixBas = null;
  *
  * Anropas när fliken "Lön över karriären" (data-tab="kon") öppnas — livscykel-
  * panelen visas tillsammans med kön/ålder-kurvorna (sammanslagen flik).
+ *
+ * @param {any} [given] huvudregressionen från regressionskortet i samma varv (ADR-17)
  */
-function renderLifecycleAnalysis() {
+function renderLifecycleAnalysis(given) {
     // Flikens container är #livscykel-content (#lifecycle-content som reserv)
     const wrap = document.getElementById('livscykel-content') || document.getElementById('lifecycle-content');
     if (!wrap) return;
@@ -32763,8 +32789,8 @@ function renderLifecycleAnalysis() {
     }
     _lifecycleFixBas = result.fixBas;
 
-    // Jämför vs primäranalysen (cachas inte — vi anropar den direkt)
-    const primary = runOLSRegression();
+    // Jämför med primäranalysen: given från regressionskortet i samma varv, annars räknad här (ADR-17)
+    const primary = given || runOLSRegression();
     const primaryAdjR2 = (primary && !primary.error) ? primary.adjR2 : null;
     const primaryGap = (primary && !primary.error) ? primary.konPct : null;
     const primaryP   = (primary && !primary.error) ? primary.pValue : null;

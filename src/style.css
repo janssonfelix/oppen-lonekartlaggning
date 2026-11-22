@@ -2984,7 +2984,9 @@ summary:focus-visible {
 .jmf-block { border-left: 2px solid var(--border); }
 .jmf-neg { color: var(--danger); }
 .jmf-pos { color: var(--status-ok); }
-.jmf-filter { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-sm); }
+.jmf-filter { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-sm); max-width: 100%; }
+/* Listrutan är annars lika bred som sitt längsta alternativ och gör sidan bredare än ett smalt fönster. */
+.jmf-filter > .form-select { min-width: 0; }
 .jmf-diagram-rubrik { font-size: var(--fs-md); margin: 16px 0 4px; }
 #ref-tabell td.num { white-space: nowrap; }
 #ref-tabell td:not(.num) { min-width: 170px; text-align: left; }

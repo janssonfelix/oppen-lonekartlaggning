@@ -297,7 +297,8 @@ const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 // BAS-tabellen i Lönestruktur gömmer markeringen ≥ 5 % bakom Fler kolumner: med den kolumnen blev tabellen bredare än
 // sitt kort vid 1400 punkter med bredare teckensnitt (DejaVu Sans). Kopiera, CSV och exporterna tar med den.
 const LA_OVERSIKT_DOLDA_KOLUMNER = ['direktiv'];
-function generateEUDirectiveMatrix() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den, i samma varv (ADR-17) */
+function generateEUDirectiveMatrix({ reg: given } = {}) {
     const tbody = document.querySelector("#matrix-table tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -420,7 +421,7 @@ function generateEUDirectiveMatrix() {
     const baseM = buildBaseAudit();
     const skippedTooFewKvOrMa = lika.ejJamforbara.length;
     const maskedYrken = utelamnadeYrken.length;
-    const reg = runOLSRegression();
+    const reg = given || runOLSRegression();
     const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct((reg.R2*100), 1)}`;
     setAudit('matrix', {
         title: 'Lika arbete — multivariat regression',
@@ -682,7 +683,8 @@ function _laRegFaNot(reg) {
     const fa = [reg.nKvAnalysed < 10 ? `kvinnor (${reg.nKvAnalysed} i modellen)` : '', reg.nMaAnalysed < 10 ? `män (${reg.nMaAnalysed} i modellen)` : ''].filter(Boolean);
     return fa.length ? ` Bygger på få ${fa.join(' och ')}; talet är osäkert.` : '';
 }
-function renderLikaArbeteTopp() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den, i samma varv (ADR-17) */
+function renderLikaArbeteTopp({ reg: given } = {}) {
     const urval = document.getElementById('la-urval'), ut = document.getElementById('la-slutsatser');
     if (!urval || !ut) return;
     const d = getData();
@@ -698,7 +700,7 @@ function renderLikaArbeteTopp() {
     const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
     // Regressionen och personerna.
     /** @type {any} */ let reg = null;
-    try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
+    try { reg = given || runOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
     const regOk = reg && !reg.error && typeof reg.konPct === 'number';
     /** @type {number|null} */ let personer = null;
     try { const r = _ifFlaggaIndivider(d, { minGrupp: statGolv(), grans: _pagGrans() }); personer = r.provade.kv + r.provade.ma ? r.flaggade.length : null; }
