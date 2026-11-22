@@ -227,55 +227,6 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
     });
 });
 
-describe('organisationsneutralt standardläge', () => {
-    const rader = () => {
-        const r = [];
-        for (let i = 0; i < 60; i++) r.push({ bas: 'ABC'[i % 3], kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 150, alder: 30 + (i % 30),
-            yrke: `${100 + (i % 4)} Yrke`, aid: String(100 + (i % 4)), yrkeLabel: 'Yrke', radnr: i + 2 });
-        return r;
-    };
-    const utanReferens = () => {
-        const w = createAppWindow();
-        w.__state.data = rader();
-        w.eval('populateSelects(); unlockTabs(); updateCompliance();');
-        return w;
-    };
-    it('ingen inbyggd referens och neutral profil', () => {
-        const w = createAppWindow();
-        expect(w.__state.policy).toEqual([]);
-        expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
-        expect(w.document.getElementById('referens-status').textContent).toContain('Ingen referens inläst');
-        expect(w.__state.profile.name).toBe('Organisationen');
-        expect(w.__state.profile.benchmarkLabel).toBe('jämförelsestatistiken');
-        expect(w.document.getElementById('profile-preset-select')).toBeNull();
-    });
-    it('Prioritering och Lönepolitik visar vad som behöver läsas in', () => {
-        const w = utanReferens();
-        w.document.querySelector('.nav-item[data-tab="prioritering"]').click();
-        expect(w.document.getElementById('view-prioritering').textContent).toMatch(/Läs in organisationens lönepolitiska ställningstagande/);
-        w.__renderTabContent('benchmark');
-        expect(w.document.getElementById('avsnitt-jmf-stallningstagande').textContent).toMatch(/Läs in organisationens lönepolitiska ställningstagande/);
-        expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/Kräver lönepolitiskt ställningstagande/);
-    });
-    it('Word-utkastet och rapportunderlaget skriver inte null eller undefined utan referens', () => {
-        const w = utanReferens();
-        const texter = [w.__docDraftHtml(), ...w.__rapportunderlagBlock().map(b => w.__ruTillText(b))].join('\n');
-        expect(texter).not.toMatch(/\bnull\b|\bundefined\b/);
-    });
-    it('demoläget använder Exempelkommunen och försvinner med rensningen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        expect(w.eval('referensNamn()')).toBe('Exempelkommunens lönepolitik');
-        expect(w.__state.policy.length).toBeGreaterThan(0);
-        expect(w.__state.profile.name).toBe('Exempelkommunen');
-        w.__clearAllData();
-        expect(w.__state.policy).toEqual([]);
-        expect(w.__state.profile.name).toBe('Organisationen');
-        expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
-    });
-});
-
-
 describe('organisationspaket: läs in och skapa', () => {
     const paket = (over = {}) => ({
         format: 'lonekartlaggning-organisationspaket', version: 1,
@@ -636,57 +587,5 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         d.getElementById('btn-paket-spara').click();
         expect(nedladdad).toBe(false);
         expect(d.getElementById('paket-status').textContent).toMatch(/personnummer/);
-    });
-});
-
-describe('Om verktyget: licens', () => {
-    it('avsnittet Referenser anger MIT-licensen och upphovspersonen', () => {
-        const w = createAppWindow();
-        w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
-        const t = w.document.getElementById('view-info').textContent;
-        expect(t).toMatch(/MIT-licensen/);
-        expect(t).toContain('Felix Jansson');
-    });
-    it('Om verktyget berättar om nuläget, inte om tidigare versioner', () => {
-        const w = createAppWindow();
-        w.document.querySelector('.nav-item[data-tab="info"]').click();
-        const sektioner = [...w.document.querySelectorAll('.info-section-btn')].map(b => b.dataset.section);
-        expect(sektioner.length).toBeGreaterThan(0);
-        let text = '';
-        for (const s of sektioner) {
-            w.eval(`renderInfoTab(${JSON.stringify(s)})`);
-            text += w.document.getElementById('info-tab-content').textContent + '\n';
-        }
-        expect(text).not.toMatch(/Versionshistorik/);
-        expect(text).not.toMatch(/Tidigare visades/);
-        expect(text).not.toMatch(/äldre profile\.json/);
-        expect(text).not.toMatch(/SKL/);
-    });
-});
-
-
-describe('demosidan: adressparametern ?demo=1', () => {
-    it('?demo=1 startar demoläget direkt vid laddning', () => {
-        const w = createAppWindow({ url: 'http://localhost/oppen-lonekartlaggning.html?demo=1' });
-        expect(w.__bootErr).toBeUndefined();
-        expect(w.__state.isDemo).toBe(true);
-        expect(w.__state.data.length).toBe(260);
-    });
-    it('utan parametern, eller med ett annat värde, laddas ingen data', () => {
-        for (const url of ['http://localhost/', 'http://localhost/?demo=0', 'http://localhost/?demo=ja', 'http://localhost/?data=1']) {
-            const w = createAppWindow({ url });
-            expect(w.__state.data.length, url).toBe(0);
-            expect(w.__state.isDemo, url).toBeFalsy();
-        }
-    });
-});
-
-describe('demot: ställningstagandet följer demolönerna', () => {
-    it('några grupper ligger under ställningstagandet, så att Prioritering har något att visa', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('prioritering');
-        expect(w.document.getElementById('view-prioritering').textContent).not.toMatch(/Inga grupper under referensen/);
     });
 });

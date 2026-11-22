@@ -17,7 +17,7 @@ varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
   då 14 flikarna med demodata, i Chromium 1400 punkter brett. Resultatet: **inga överträdelser**. Menyn har sedan
   dess delats om till 16 flikar (2026-11-06), och den nya indelningen är inte prövad på det sättet. Axe prövar inte kontrasten i
   diagrammens SVG-text, och det som axe markerar som "behöver granskas" är inte genomgånget för hand.
-- **Tangentbordet:** jsdom-testerna prövar pilarna och Home mellan flikarna (`tests/smoke.test.js`). Röktestet
+- **Tangentbordet:** jsdom-testerna prövar pilarna och Home mellan flikarna (`tests/start-och-meny-app.test.js`). Röktestet
   i Chromium, Firefox och WebKit prövar tre saker. Avsnittens rubriker nås med Tab och fälls ut med Enter.
   Menyn i smalt fönster öppnas, fokus flyttas dit, och Escape stänger den och lämnar tillbaka fokus. Ingen
   flik är bredare än fönstret vid 390 punkter.

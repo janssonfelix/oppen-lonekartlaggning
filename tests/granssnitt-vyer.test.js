@@ -439,16 +439,6 @@ describe('rubriknivåerna hoppar inte', () => {
     }, 30000);
 });
 
-describe('«Vad lagras?»', () => {
-    it('öppnas som övriga modaler (centrerad) och säger minne, inte RAM', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('openDataResidency()');
-        expect(w.document.getElementById('data-residency-modal').style.display).toBe('flex');
-        expect(w.document.getElementById('data-residency-modal').textContent).not.toMatch(/\bRAM\b/);
-    });
-});
-
 describe('Om verktyget följer flikmallen', () => {
     it('inledningen är en .flik-intro som på övriga flikar, och fliklisten har bara text', () => {
         const w = createAppWindow();

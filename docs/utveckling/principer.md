@@ -7,7 +7,7 @@ går före. Hur något fungerar i dag står i referensen för området, och varf
 1. **Underlag, inte bedömning.** Verktyget visar underlag för arbetsgivarens egen analys och avgör inte vad lagen
    kräver. Gränssnitt, hjälptexter och exporter hänvisar inte till paragrafer; lagrummen står bara i
    [`lagrum.md`](lagrum.md).
-   *Vakt:* `tests/smoke-vyer.test.js`, `tests/dokumentation-sprak.test.js`, `tests/juridiksprak.test.js`.
+   *Vakt:* `tests/start-och-meny-app.test.js`, `tests/dokumentation-sprak.test.js`, `tests/juridiksprak.test.js`.
 2. **Statistik som går att kontrollera.** Formlerna är dokumenterade i referenserna och prövas mot etablerade
    implementationer, och kärnalgoritmerna har enhetstester som följer den gällande modellen.
    *Vakt:* `tests/stat-referens.test.js`, `tests/stat.test.js`, `tests/regression.test.js`.

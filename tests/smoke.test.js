@@ -13,155 +13,13 @@
  * att kasta + förväntade element finns", inte exakta värden (det täcks av kärn-testerna).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createAppWindow, tillstandsavtryck, utgangslage } from './helpers/app-harness.js';
+import { createAppWindow } from './helpers/app-harness.js';
 
 let win;
 
 beforeAll(() => {
     win = createAppWindow();
-});
-
-describe('#1 röktest: boot', () => {
-    it('det delade fönstret står i utgångsläget', () => {
-        expect(utgangslage(win)).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
-    });
-
-    it('vakten ser en ändrad tröskel, en öppen dialog och ett ändrat tillstånd, men inte en ritad flik', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const fore = JSON.stringify(tillstandsavtryck(w));
-        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
-        expect(JSON.stringify(tillstandsavtryck(w))).toBe(fore);
-        w.eval('openGlossary()');
-        w.eval('sattKTroskel(25, { fraga: false })');
-        expect(utgangslage(w)).toEqual({ troskel: 25, dialoger: 1, flik: 'struktur' });
-        const andrat = tillstandsavtryck(w), bas = JSON.parse(fore);
-        expect(Object.keys(andrat).filter(k => andrat[k] !== bas[k])).toEqual(['dialoger', 'kTroskel']);
-        w.__state.data[0].lon = 1;
-        expect(tillstandsavtryck(w).data).not.toBe(bas.data);
-    });
-
-    it('app.js bootar utan kast och exponerar nyckel-API', () => {
-        expect(win.__bootErr).toBeUndefined();
-        expect(typeof win.__renderTabContent).toBe('function');
-        expect(typeof win.__state).toBe('object');
-        expect(typeof win.__loadDemoData).toBe('function');
-        expect(typeof win.__methodAppendixData).toBe('function');
-    });
-
-    it('storage-tripwire är aktiv (kastar vid icke-tillåten skrivning)', () => {
-        expect(() => win.eval("localStorage.setItem('x','y')")).toThrow();
-    });
-
-    it('process-tracker renderas redan vid boot (utan data) med steg 1 ej klart', () => {
-        // Boot-koden i 61-regler-och-praxis.js kör renderProcessTracker() — kortet ska
-        // finnas ÄVEN innan data laddats (demo laddas i ett senare describe-block).
-        const host = win.document.getElementById('process-tracker');
-        expect(host).toBeTruthy();
-        expect(host.innerHTML).toContain('Kartläggningens steg');
-        const rows = host.querySelectorAll('.ptrack-row');
-        expect(rows.length).toBe(9);                       // nio steg (Rapporttext är steg 7)
-        expect(rows[0].querySelector('.ptrack-status').dataset.status).toBe('ej'); // steg 1 ej klart utan data
-        expect(host.innerHTML).toContain('data-goto-tab');  // klickbara länkar (CSP-säkra)
-        expect(host.innerHTML).not.toContain('onclick');    // inga inline-handlers (hash-CSP)
-    });
-});
-
-describe('#1 röktest: demodata + full pipeline', () => {
-    it('loadDemoData kör hela pipelinen utan kast', () => {
-        expect(() => win.__loadDemoData()).not.toThrow();
-        expect(win.__state.data.length).toBe(260);   // självdiagnostikens 200 + tre yrken i BAS C (kandidatpar)
-        expect(win.__state.isDemo).toBe(true);
-    });
-
-    it('#9 demo-banner blir synlig', () => {
-        expect(win.document.getElementById('demo-mode-banner').style.display).toBe('flex');
-    });
-});
-
-describe('process-tracker: statusar härleds ur inläst data', () => {
-    it('steg 1 blir klart (✅) och likvärdighetsraden visar kandidatpar-antal efter demodata', () => {
-        win.__renderProcessTracker();
-        const host = win.document.getElementById('process-tracker');
-        const rows = host.querySelectorAll('.ptrack-row');
-        expect(rows.length).toBe(9);
-        expect(rows[0].querySelector('.ptrack-status').dataset.status).toBe('klar');   // underlag inläst
-        expect(rows[0].textContent).toContain('260');                              // 260 demo-rader
-        // Steg 4 (likvärdigt arbete) visar antal kandidatpar. Rubriken är på
-        // klarspråk sedan copy-översynen — lagrum ligger i tooltip/detaljtext.
-        expect(rows[3].textContent).toMatch(/Likvärdigt arbete/);
-        expect(rows[3].textContent).toMatch(/kandidatpar/);
-    });
-
-    it('regler & praxis-raden speglar antal ifyllda bedömningar (0/6 → 1/6)', () => {
-        // nollställ, rendera → 0/6
-        for (let i = 1; i <= 6; i++) { const s = win.document.getElementById('bes8-status-' + i); if (s) s.value = ''; }
-        win.__renderProcessTracker();
-        let bes8Row = [...win.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Regler & praxis/.test(r.textContent));
-        expect(bes8Row.textContent).toContain('0/6');
-
-        // fyll ett område → 1/6
-        win.document.getElementById('bes8-status-1').value = 'Åtgärd krävs';
-        win.__renderProcessTracker();
-        bes8Row = [...win.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Regler & praxis/.test(r.textContent));
-        expect(bes8Row.textContent).toContain('1/6');
-        expect(bes8Row.querySelector('.ptrack-status').dataset.status).toBe('delvis');   // delvis
-        win.document.getElementById('bes8-status-1').value = '';                    // städa
-    });
-
-    it('steg 6 (samverkan), 7 (rapporttext) och 8 (dokumentation) är manuella (➖)', () => {
-        win.__renderProcessTracker();
-        const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
-        const samverkan = rows.find(r => /Samverkan/.test(r.textContent));
-        const dok = rows.find(r => /Dokumentation/.test(r.textContent));
-        const text = rows.find(r => /Rapporttext/.test(r.textContent));
-        expect(text.querySelector('.ptrack-status').dataset.status).toBe('manuell');
-        expect(samverkan.querySelector('.ptrack-status').dataset.status).toBe('manuell');
-        expect(dok.querySelector('.ptrack-status').dataset.status).toBe('manuell');
-    });
-});
-
-describe('#1 röktest: varje flik renderar utan kast', () => {
-    const tabs = ['rapport', 'kon', 'demografi', 'benchmark', 'matrix',
-        'prioritering', 'struktur', 'loneoversyn', 'likvardighet', 'utforska', 'benchmark', 'kvalitet', 'info'];
-    it.each(tabs)('renderTabContent("%s")', (t) => {
-        expect(() => win.__renderTabContent(t)).not.toThrow();
-    });
-
-    // CSP:n har style-src-attr 'none' (ADR-30): ett element får bara bära de stilar som skript sätter via CSSOM —
-    // synlighet, läge och uträknade mått — aldrig en layoutstil ur en mall. (Den statiska vakten, tests/sakerhet.test.js,
-    // håller mallarna rena; här kontrolleras det som faktiskt ritats på demodata i alla flikar.)
-    it('inget element i dokumentet bär en stil som en mall skrivit (bara display, bredd, läge, synlighet, färg som skript sätter)', () => {
-        const TILLATNA = new Set(['display', 'width', 'left', 'top', 'bottom', 'margin-left', 'margin-top', 'visibility', 'opacity', 'position', 'color', 'transition']);
-        const d = win.document;
-        const fynd = [];
-        for (const t of tabs) {
-            win.__renderTabContent(t);
-            for (const el of d.querySelectorAll('[style]')) {
-                if (el.closest('svg')) continue;
-                for (let i = 0; i < el.style.length; i++) {
-                    const egenskap = el.style[i];
-                    if (!TILLATNA.has(egenskap)) fynd.push(`${t}: <${el.tagName.toLowerCase()} class="${el.className}"> ${egenskap}`);
-                }
-            }
-        }
-        expect([...new Set(fynd)]).toEqual([]);
-    });
-    it('staplar med data-stil-* har fått sitt mått via CSSOM efter ritning', () => {
-        const d = win.document;
-        const saknas = [];
-        // CSSOM läser tillbaka ett tal med sex värdesiffror, som Chromium och Firefox: "4.166666666666667%" blir
-        // "4.16667%". Måttet jämförs därför med vad samma värde blir när det sätts i en tom stil.
-        const tom = d.createElement('span').style;
-        const somSatt = (egenskap, varde) => { tom[egenskap] = ''; tom[egenskap] = varde; return tom[egenskap] || 'saknas'; };
-        for (const t of tabs) {
-            win.__renderTabContent(t);
-            for (const el of d.querySelectorAll('[data-stil-bredd]')) if (el.style.width !== somSatt('width', el.getAttribute('data-stil-bredd'))) saknas.push(`${t}: ${el.className}`);
-            for (const el of d.querySelectorAll('[data-stil-vanster]')) if (el.style.left !== somSatt('left', el.getAttribute('data-stil-vanster'))) saknas.push(`${t}: ${el.className}`);
-            for (const el of d.querySelectorAll('[data-stil-mvanster]')) if (el.style.marginLeft !== somSatt('marginLeft', el.getAttribute('data-stil-mvanster'))) saknas.push(`${t}: ${el.className}`);
-        }
-        expect(saknas).toEqual([]);
-    });
+    win.__loadDemoData();   // blocken nedan läser demodatan
 });
 
 describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
@@ -286,100 +144,6 @@ describe('§ 8-ställning: bedömning per område + flöde till Word-utkastet', 
         // städa upp så andra tester inte påverkas
         win.document.getElementById('bes8-status-1').value = '';
         win.document.getElementById('bes8-note-1').value = '';
-    });
-});
-
-describe('konfig-snapshot v2: HR:s manuella arbete round-trips', () => {
-    // Testdata på gruppnivå — ALDRIG personnamn/personnummer (repot är publikt).
-    const NOTE = 'Fast testanteckning på gruppnivå.';
-    const STATUS = 'Åtgärd krävs';
-
-    // Nollställ de fält testerna rör, så ordningsberoende undviks.
-    const resetFields = () => {
-        for (let i = 1; i <= 6; i++) {
-            const s = win.document.getElementById('bes8-status-' + i);
-            const t = win.document.getElementById('bes8-note-' + i);
-            if (s) s.value = '';
-            if (t) t.value = '';
-        }
-        win.__state._actionChecklistDone = new Set();
-        const org = win.document.getElementById('kl-org-name');
-        if (org) org.value = '';
-    };
-
-    it('snapshoten är version 2 och bär bes8/actionChecklistDone/orgName', () => {
-        resetFields();
-        const snap = win.__buildConfigSnapshot();
-        expect(snap.version).toBe(2);
-        expect(Array.isArray(snap.bes8)).toBe(true);
-        expect(snap.bes8.length).toBe(6);
-        expect(snap.bes8[0]).toHaveProperty('n');
-        expect(snap.bes8[0]).toHaveProperty('status');
-        expect(snap.bes8[0]).toHaveProperty('note');
-        expect(snap.bes8[0]).not.toHaveProperty('title');   // UI-text sparas ej
-        expect(Array.isArray(snap.actionChecklistDone)).toBe(true);
-        expect(typeof snap.orgName).toBe('string');
-    });
-
-    it('round-trip återställer § 8-bedömning, avbockningar och org-namn', () => {
-        resetFields();
-        win.document.getElementById('bes8-status-2').value = STATUS;
-        win.document.getElementById('bes8-note-2').value = NOTE;
-        win.__state._actionChecklistDone = new Set(['prio-row-x', 'jpa-signed']);
-        const orgFalt = win.document.getElementById('kl-org-name');
-        orgFalt.value = 'Exempelorganisationen';
-        orgFalt.dispatchEvent(new win.Event('change'));   // fältet är kopplat till profilen (ADR-36)
-
-        const snap = win.__buildConfigSnapshot();
-        expect(snap.actionChecklistDone).toContain('prio-row-x');
-
-        resetFields();   // simulera "rensa all data" + omladdning
-        expect(win.document.getElementById('bes8-note-2').value).toBe('');
-
-        win.__applyConfigSnapshot(snap);
-        expect(win.document.getElementById('bes8-status-2').value).toBe(STATUS);
-        expect(win.document.getElementById('bes8-note-2').value).toBe(NOTE);
-        expect(win.__state._actionChecklistDone.has('prio-row-x')).toBe(true);
-        expect(win.__state._actionChecklistDone.has('jpa-signed')).toBe(true);
-        expect(win.document.getElementById('kl-org-name').value).toBe('Exempelorganisationen');
-        resetFields();
-    });
-
-    it('en konfigurationsfil med annat formatnummer än 2 avvisas', () => {
-        const snap = win.__buildConfigSnapshot();
-        expect(() => win.__applyConfigSnapshot({ ...snap, version: 1 })).toThrow(/version 2/);
-        expect(() => win.__applyConfigSnapshot({ ...snap, version: 3 })).toThrow(/version 2/);
-    });
-    it('ui.prioRef i en konfigurationsfil väljer motsvarande referens; värden utanför vitlistan lämnar valet orört', () => {
-        const snap = win.__buildConfigSnapshot();
-        const vald = () => win.document.querySelector('input[name="prio-ref"]:checked')?.value;
-        win.__applyConfigSnapshot({ ...snap, ui: { ...snap.ui, prioRef: 'statistik' } });
-        expect(vald()).toBe('statistik');
-        win.__applyConfigSnapshot({ ...snap, ui: { ...snap.ui, prioRef: 'stallningstagande' } });
-        expect(vald()).toBe('stallningstagande');
-        expect(() => win.__applyConfigSnapshot({ ...snap, ui: { ...snap.ui, prioRef: 'x"]' } })).not.toThrow();
-        expect(vald()).toBe('stallningstagande');
-        resetFields();
-    });
-    it('okända fält i en konfigurationsfil ignoreras utan att kasta och hamnar inte i tillståndet', () => {
-        const snap = win.__buildConfigSnapshot();
-        win.__applyConfigSnapshot({ ...snap, okantFalt: [1, 2, 3] });
-        expect('okantFalt' in win.__state).toBe(false);
-        resetFields();
-    });
-
-    it('ogiltigt bes8-fält (n utanför 1–6) kastar och muterar inte state', () => {
-        const snap = win.__buildConfigSnapshot();
-        snap.bes8 = [{ n: 9, status: '', note: '' }];
-        expect(() => win.__applyConfigSnapshot(snap)).toThrow(/bes8/);
-        resetFields();
-    });
-
-    it('odirtyat struktur-narrativ sparas som null (auto-genereras vid inläsning)', () => {
-        const nb = win.document.getElementById('struktur-narrative');
-        if (nb) { nb.value = 'auto text'; delete nb.dataset.dirty; }
-        const snap = win.__buildConfigSnapshot();
-        expect(snap.strukturNarrative).toBeNull();
     });
 });
 
@@ -763,24 +527,6 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
     });
 });
 
-describe('process-trackern och § 3:10', () => {
-    it('process-trackern har nio steg och steg 9 är manuellt (➖)', () => {
-        win.__renderProcessTracker();
-        const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
-        expect(rows.length).toBe(9);
-        const step9 = rows[8];
-        expect(step9.querySelector('.ptrack-status').dataset.status).toBe('manuell');
-        expect(step9.textContent).toMatch(/Uppföljning/);
-    });
-
-    it('§ 3:10 och A/B-scenariojämförelsen ritas utan fel', () => {
-        win.__loadDemoData();
-        expect(() => win.__renderTabContent('likvardighet')).not.toThrow();
-        expect(typeof win.__computeLikvardighetPairs).toBe('function');
-        expect(typeof win.eval('_lvParFigur')).toBe('function');
-    });
-});
-
 describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
     it('dossier-kandidater respekterar k-anonymiteten', () => {
         win.__loadDemoData();
@@ -884,39 +630,7 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
     });
 });
 
-describe('k-anonymitet, sortering, efterlevnad och dossiern', () => {
-    const rad = (bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: '5301 Test', aid: '5301', yrkeLabel: 'Test', enhet: '' });
-
-    it('k-anonymitet: efterlevnadsdiagrammet redovisar inte BAS under tröskeln', () => {
-        const sparad = win.__state.data, sparadPolicy = win.__state.policy;
-        try {
-            // 6 personer i BAS A — under K_STANDARD (10)
-            win.__state.data = Array.from({ length: 6 }, (_, i) => rad('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500));
-            win.__state.policy = [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }];
-            win.__state.kLage = 'export';   // så som diagrammet lämnar verktyget (ADR-51)
-            win.__renderLonepolitik();
-            const el = win.document.getElementById('chart-lp-compliance');
-            expect(el).not.toBeNull();
-            // Inget aggregat får ritas — i stället en förklaring om tröskeln
-            expect(el.textContent).toMatch(/färre än 10 personer/);
-        } finally {
-            win.__state.data = sparad; win.__state.policy = sparadPolicy; win.__state.kLage = 'skarm';
-        }
-    });
-
-    it('k-anonymitet: BAS över tröskeln redovisas fortfarande', () => {
-        const sparad = win.__state.data, sparadPolicy = win.__state.policy;
-        try {
-            win.__state.data = Array.from({ length: 14 }, (_, i) => rad('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500));
-            win.__state.policy = [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }];
-            win.__renderLonepolitik();
-            const el = win.document.getElementById('chart-lp-compliance');
-            expect(el.textContent).not.toMatch(/färre än 10 personer/);
-        } finally {
-            win.__state.data = sparad; win.__state.policy = sparadPolicy;
-        }
-    });
-
+describe('k-anonymitet, sortering, efterlevnad och dossiern — sortering', () => {
     it('utforskartabellen går att sortera även efter omritning', () => {
         win.__loadDemoData();
         win.__renderExplorer();
@@ -927,7 +641,9 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern', () => {
         // har lyssnarna inte registrerats om.
         expect(th[0].classList.contains('sortable')).toBe(true);
     });
+});
 
+describe('k-anonymitet, sortering, efterlevnad och dossiern — efterlevnad', () => {
     it('efterlevnadskortet blir inte grönt när policyn saknar BAS-nivårader', () => {
         const sparadPolicy = win.__state.policy;
         try {
@@ -941,7 +657,9 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern', () => {
             win.__state.policy = sparadPolicy;
         }
     });
+});
 
+describe('k-anonymitet, sortering, efterlevnad och dossiern — dossiern', () => {
     it('hypotesrutan i dossiern renderar markup i stället för att visa taggar', () => {
         win.__loadDemoData();
         const key = win.__gruppdossierCandidates()[0].key;
@@ -954,64 +672,6 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern', () => {
             expect(win.__gruppdossierAsText(d)).not.toMatch(/<\/?strong>/);
         }
         win.__closeGruppdossier();
-    });
-});
-
-describe('a11y: ARIA APG-tangentbord i den in-page-tablisten', () => {
-    // Sidopanelen är navigation (ADR-10) och omfattas INTE — den har alla knappar
-    // i Tab-ordningen med flit. Det här gäller info-sektionerna och underflikarna i Tabeller och egna vyer (samma
-    // klasser, 74-alla-diagram.js), som är äkta tablists.
-    const listor = [
-        ['info-sektionerna', '#view-info .info-section-btn', () => win, 'info'],
-        ['underflikarna i Tabeller och egna vyer', '[data-ut-underflik]', () => win, 'utforska']
-    ];
-
-    for (const [namn, sel, fonster, flik] of listor) {
-        it(`${namn}: exakt en knapp ligger i Tab-ordningen (roving tabindex)`, () => {
-            const btns = [...fonster().document.querySelectorAll(sel)];
-            expect(btns.length).toBeGreaterThan(1);
-            expect(btns.filter(b => b.tabIndex === 0).length).toBe(1);
-            expect(btns.every(b => b.tabIndex === 0 || b.tabIndex === -1)).toBe(true);
-        });
-
-        it(`${namn}: högerpil flyttar aktiv flik, fokus och tabindex`, () => {
-            fonster().document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-            const btns = [...fonster().document.querySelectorAll(sel)];
-            const från = btns.findIndex(b => b.tabIndex === 0);
-            const till = (från + 1) % btns.length;
-            btns[från].dispatchEvent(new (fonster().KeyboardEvent)('keydown', { key: 'ArrowRight', bubbles: true }));
-            expect(btns[till].classList.contains('active'), 'nästa flik ska bli aktiv').toBe(true);
-            expect(btns[till].getAttribute('aria-selected')).toBe('true');
-            expect(btns[från].getAttribute('aria-selected')).toBe('false');
-            expect(btns[till].tabIndex).toBe(0);
-            expect(btns[från].tabIndex).toBe(-1);
-            expect(fonster().document.activeElement).toBe(btns[till]);
-        });
-
-        it(`${namn}: vänsterpil wrappar runt till sista fliken`, () => {
-            const btns = [...fonster().document.querySelectorAll(sel)];
-            const första = btns[0];
-            första.click();
-            expect(första.tabIndex).toBe(0);
-            första.dispatchEvent(new (fonster().KeyboardEvent)('keydown', { key: 'ArrowLeft', bubbles: true }));
-            expect(btns[btns.length - 1].classList.contains('active')).toBe(true);
-        });
-
-        it(`${namn}: End går till sista, Home till första`, () => {
-            const btns = [...fonster().document.querySelectorAll(sel)];
-            const aktiv = () => btns.findIndex(b => b.tabIndex === 0);
-            btns[aktiv()].dispatchEvent(new (fonster().KeyboardEvent)('keydown', { key: 'End', bubbles: true }));
-            expect(aktiv()).toBe(btns.length - 1);
-            btns[aktiv()].dispatchEvent(new (fonster().KeyboardEvent)('keydown', { key: 'Home', bubbles: true }));
-            expect(aktiv()).toBe(0);
-        });
-    }
-
-    it('sidopanelens navigationsknappar är kvar i Tab-ordningen (ADR-10)', () => {
-        // Regressionsskydd: roving tabindex togs BORT ur sidopanelen med flit.
-        const nav = [...win.document.querySelectorAll('.nav-item')];
-        expect(nav.length).toBeGreaterThan(1);
-        expect(nav.some(b => b.tabIndex === -1), 'ingen nav-knapp ska tas ur Tab-ordningen').toBe(false);
     });
 });
 
@@ -1621,27 +1281,6 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         const sma = lager.reduce((n, l) => n + l.data.filter(d => d.liten).length, 0);
         expect(sma).toBe(3);   // tre kvinnor i A·Y, och hela B·X för båda könen   // tre kvinnor i A·Y, och hela B·X för båda könen
         expect(svg.querySelectorAll('rect[data-marke="stapel"][stroke-dasharray]').length).toBe(sma);
-    });
-});
-
-// CSV- och urklippsexport: en cell som börjar med = + - @ (eller tabb/radbrytning)
-// tolkas som formel när filen öppnas eller klistras in i Excel. Yrkes- och
-// enhetsnamn kommer ur lönefilen, så en fientlig fil kunde annars smyga in en
-// formel i HR:s export ("CSV-injektion", OWASP).
-describe('export: formler i celler neutraliseras', () => {
-    const rad = celler => win.__toCsv([celler]);
-    it('formelstart får ett inledande apostrof-tecken', () => {
-        expect(rad(['=HYPERLINK("http://x","klick")'])).toBe(`"'=HYPERLINK(""http://x"",""klick"")"`);
-        expect(rad(['+1+1'])).toBe("'+1+1");
-        expect(rad(['@SUM(A1)'])).toBe("'@SUM(A1)");
-        expect(rad(['-2+3'])).toBe("'-2+3");
-        expect(rad(['\t=1'])).toBe("'\t=1");
-    });
-    it('vanliga tal och formaterade värden lämnas orörda', () => {
-        expect(rad([-5, 3.25, '-3,2 %', '+12', '−', '31 417 kr', '-1 250 kr', 'Förskollärare'])).toBe("-5;3.25;-3,2 %;+12;−;31 417 kr;-1 250 kr;Förskollärare");
-    });
-    it('urklippet neutraliseras på samma sätt', () => {
-        expect(win.__tillTsv([['=1+1', 'a'], ['-7', '@x']])).toBe("'=1+1\ta\n-7\t'@x");
     });
 });
 

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // Vakttester för gränssnittets beteende: det som ser lyckat ut ska vara lyckat, tal skrivs på ett sätt, och
-// bildspråket är linjeikoner. Varje test faller om felet det vaktar kommer tillbaka. Delen här: inläsning, flikar utan underlag, utskrift,
-// dossiern, talen och exportknapparna; resten i granssnitt-vyer.test.js (riggen i helpers/granssnitt-rigg.js).
+// bildspråket är linjeikoner. Varje test faller om felet det vaktar kommer tillbaka. Delen här: dossiern, talen och
+// exportknapparna; resten i granssnitt-vyer.test.js (riggen i helpers/granssnitt-rigg.js).
 import { describe, it, expect } from 'vitest';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
-import { las, papa, vanta, csvFil, braRader, okandaRader, medDecimalpunkt } from './helpers/granssnitt-rigg.js';
+import { las, medDecimalpunkt } from './helpers/granssnitt-rigg.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -13,175 +13,6 @@ const demo = delatFonster(w => w.__loadDemoData());
 it('det delade fönstret står i utgångsläget', () => {
     expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
 });
-
-describe('lönefil vars kolumner inte känns igen', () => {
-    const lasIn = async rader => {
-        const w = createAppWindow();
-        papa(w);
-        w.loadStructureFile(csvFil(w, rader));
-        await vanta(() => w.document.getElementById('column-map-panel')?.innerHTML);
-        return w;
-    };
-    it('märks inte som inläst, och flikarna förblir låsta', async () => {
-        const w = await lasIn(okandaRader());
-        const d = w.document;
-        expect(w.__state.data.length).toBe(0);
-        expect(d.getElementById('tab-matrix').disabled).toBe(true);
-        const marke = d.querySelector('#upload-cell-data .upload-badge');
-        expect(marke.textContent).toContain('Kolumnmappning');
-        expect(marke.textContent).not.toContain('Inläst');
-        expect(marke.classList.contains('loaded')).toBe(false);
-        expect(d.getElementById('upload-cell-data').classList.contains('loaded')).toBe(false);
-        expect(d.getElementById('data-status').className).toBe('status-msg warning');
-        expect(d.getElementById('dashboard-summary').style.display).not.toBe('grid');
-    });
-    it('panelen säger vilka rubriker filen hade, och fokus hamnar i första fältet som saknar kolumn', async () => {
-        const w = await lasIn(okandaRader());
-        const panel = w.document.getElementById('column-map-panel');
-        expect(panel.textContent).toContain('Kolumnmappning behövs');
-        for (const r of ['Avd', 'Befattning', 'Grundlon', 'Fodd', 'Sex']) expect(panel.querySelector('.colmap-rubriker').textContent).toContain(r);
-        expect(w.document.activeElement.getAttribute('data-colmap-role')).toBe('bas');
-    });
-    it('efter mappningen läses filen in och flikarna låses upp', async () => {
-        const w = await lasIn(okandaRader().map((r, i) => i ? r.replace(/^X;/, 'C;').replace(/;K$/, ';Kvinna').replace(/;M$/, ';Man').replace('Handläggare', '207011') : r));
-        const satt = (roll, v) => { w.document.querySelector(`[data-colmap-role="${roll}"]`).value = v; };
-        satt('bas', 'Avd'); satt('yrke', 'Befattning'); satt('lon', 'Grundlon'); satt('alder', 'Fodd'); satt('kon', 'Sex');
-        w.document.getElementById('colmap-apply').click();
-        await vanta(() => w.__state.data.length);
-        expect(w.__state.data.length).toBe(30);
-        expect(w.document.getElementById('tab-matrix').disabled).toBe(false);
-        expect(w.document.querySelector('#upload-cell-data .upload-badge').textContent).toContain('Inläst');
-    });
-    it('ett tidigare inläst underlag ligger kvar när nästa fil inte går att läsa', async () => {
-        const w = await lasIn(braRader());
-        await vanta(() => w.__state.data.length);
-        w.loadStructureFile(csvFil(w, okandaRader(), 'okand.csv'));
-        await vanta(() => /Kolumnmappning behövs/.test(w.document.getElementById('column-map-panel').textContent));
-        expect(w.__state.data.length).toBe(30);
-        expect(w.document.getElementById('tab-matrix').disabled).toBe(false);
-        expect(w.document.getElementById('data-status').textContent).toContain('ligger kvar');
-    });
-    it('en fil med igenkända kolumner men utan användbara rader märks inte som inläst', async () => {
-        const w = await lasIn(['BAS;Månadslön;Ålder;Kön;AID', 'C;0;40;Kvinna;207011', 'C;0;41;Man;207011']);
-        await vanta(() => w.document.getElementById('data-status').textContent);
-        expect(w.document.getElementById('tab-matrix').disabled).toBe(true);
-        expect(w.document.querySelector('#upload-cell-data .upload-badge').textContent).toContain('Inga rader');
-        expect(w.document.getElementById('data-status').textContent).toContain('2 rader utan lön');
-    });
-});
-
-describe('startytan på Översikt (före inläsning)', () => {
-    // Ytan för lönefilen har ingen egen filväljare: den öppnar lönefilskortets, och en släppt fil går samma väg
-    // (change-händelsen på #file-input-data och loadStructureFile).
-    const slapp = (w, fil) => {
-        const inp = w.document.getElementById('file-input-data');
-        let filer = { length: 0 };
-        Object.defineProperty(inp, 'files', { configurable: true, get: () => filer, set: v => { filer = v; } });
-        const ev = new w.Event('drop', { bubbles: true, cancelable: true });
-        Object.defineProperty(ev, 'dataTransfer', { value: { files: { 0: fil, length: 1 } } });
-        w.document.getElementById('drop-area-start').dispatchEvent(ev);
-    };
-    it('har ingen egen filväljare: knappen och ytan öppnar lönefilskortets', () => {
-        const w = createAppWindow(), d = w.document;
-        expect(d.querySelectorAll('#first-run-hint input[type="file"]')).toHaveLength(0);
-        let klick = 0;
-        d.getElementById('file-input-data').click = () => { klick++; };
-        d.getElementById('btn-start-lonefil').click();
-        expect(klick).toBe(1);
-        d.getElementById('drop-area-start').click();
-        expect(klick).toBe(2);
-    });
-    it('en släppt lönefil läses in som i Filer och kvalitet, och Översikt visar läget', async () => {
-        const w = createAppWindow(), d = w.document;
-        papa(w);
-        slapp(w, csvFil(w, braRader(), 'start.csv'));
-        await vanta(() => w.__state.data.length);
-        expect(w.__state.data).toHaveLength(30);
-        expect(w.__state.filnamn.data).toBe('start.csv');
-        expect(d.querySelector('#upload-cell-data .upload-badge').textContent).toContain('Inläst');
-        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('dashboard');
-        expect(d.getElementById('view-dashboard').classList.contains('har-data')).toBe(true);
-        expect(d.getElementById('first-run-hint').style.display).toBe('none');
-    });
-    it('en fil som inte läses in leder till lönefilskortet i Filer och kvalitet, där beskedet står', async () => {
-        const w = createAppWindow(), d = w.document;
-        slapp(w, new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
-        await vanta(() => /äldre Excel-format/.test(d.getElementById('data-status').textContent));
-        expect(w.__state.data).toHaveLength(0);
-        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
-        expect(d.getElementById('upload-cell-data').classList.contains('visas-nu')).toBe(true);
-        expect(d.activeElement.id).toBe('file-input-data');
-    });
-});
-
-describe('länkar till ett avsnitt i en annan flik', () => {
-    it('Att göra-länkarna till Lönestruktur byter flik och fäller ut avsnittet de leder till', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const d = w.document;
-        for (const id of ['avsnitt-ls-bas', 'avsnitt-ls-kon']) d.getElementById(id).open = false;
-        d.querySelector('#comp-gap .comp-lank').click();
-        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('struktur');
-        expect(d.getElementById('avsnitt-ls-bas').open).toBe(true);
-        expect(d.getElementById('avsnitt-ls-kon').open).toBe(false);
-        d.querySelector('#comp-skev .comp-lank').click();
-        expect(d.getElementById('avsnitt-ls-kon').open).toBe(true);
-    });
-});
-
-describe('flik utan underlag', () => {
-    it('säger att inget underlag är inläst och länkar till Filer och kvalitet; raden försvinner när underlaget finns', () => {
-        const w = createAppWindow();
-        w.eval("renderTabContent('matrix')");
-        const rad = () => w.document.querySelector('#view-lika-yrken > .inget-underlag');
-        expect(rad().textContent).toContain('Inget underlag inläst');
-        expect(rad().querySelector('[data-go-to-tab="filer"]')).toBeTruthy();
-        expect(rad().textContent).toContain('under Filer och kvalitet');
-        w.eval("renderTabContent('matrix')");
-        expect(w.document.querySelectorAll('#view-lika-yrken > .inget-underlag').length).toBe(1);
-        w.__loadDemoData();
-        w.eval("renderTabContent('matrix')");
-        expect(rad()).toBeNull();
-    });
-    it('flikar som inte kräver lönefilen får ingen sådan rad', () => {
-        const w = createAppWindow();
-        w.eval("renderTabContent('handlingsplan'); renderTabContent('info')");
-        expect(w.document.querySelector('.inget-underlag')).toBeNull();
-    });
-});
-
-describe('utskrift av den aktiva fliken (Ctrl+P)', () => {
-    it('regeln som döljer allt utom PDF-rapporten gäller bara när PDF-knappen satt body.print-mode', () => {
-        const css = las('src/style.css');
-        expect(css).not.toMatch(/^\s*body \* \{ visibility: hidden; \}/m);
-        expect(css).toContain('body.print-mode * { visibility: hidden; }');
-    });
-    it('hopfällda avsnitt i den synliga fliken fälls ut före utskriften och tillbaka efteråt', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
-        const avsnitt = [...w.document.querySelectorAll('#view-lika-yrken details.avsnitt')];
-        expect(avsnitt.length).toBeGreaterThan(0);
-        avsnitt.forEach((d, i) => { d.open = i === 0; });
-        w.dispatchEvent(new w.Event('beforeprint'));
-        expect(avsnitt.every(d => d.open)).toBe(true);
-        w.dispatchEvent(new w.Event('afterprint'));
-        expect(avsnitt.map(d => d.open)).toEqual(avsnitt.map((_, i) => i === 0));
-    });
-    it('PDF-rapportens utskrift rör inte avsnitten', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
-        const avsnitt = [...w.document.querySelectorAll('#view-lika-yrken details.avsnitt')];
-        avsnitt.forEach(d => { d.open = false; });
-        w.document.body.classList.add('print-mode');
-        w.dispatchEvent(new w.Event('beforeprint'));
-        expect(avsnitt.some(d => d.open)).toBe(false);
-        w.dispatchEvent(new w.Event('afterprint'));
-        expect(w.document.body.classList.contains('print-mode')).toBe(false);
-    });
-});
-
 
 describe('gruppdossiern', () => {
     it('gruppNamn skriver koden en gång', () => {
@@ -439,42 +270,6 @@ describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
     });
 });
 
-describe('Personer att granska', () => {
-    it('tabellens rullande ruta nås med tangentbordet och har ett namn', () => {
-        const w = demo();
-        w.eval('renderPersonerAttGranska(true)');
-        const ruta = w.document.querySelector('.pag-tabell-wrap');
-        expect(ruta.getAttribute('tabindex')).toBe('0');
-        expect(ruta.getAttribute('aria-label')).toBe('Personer att granska, rullar i sidled');
-    });
-    it('metoden står i en not under tabellen, och ansvarsetiketten är kort med hela namnet i verktygstipset', () => {
-        const w = demo();
-        w.eval('renderPersonerAttGranska(true)');
-        const d = w.document;
-        const rubriker = [...d.querySelectorAll('#pag-tabell thead th')].map(th => th.textContent);
-        expect(rubriker).not.toContain('Metod');
-        expect(rubriker[rubriker.length - 1]).toBe('Ansvar');
-        expect([...d.querySelectorAll('#pag-tabell tbody tr')].every(tr => tr.children.length === rubriker.length)).toBe(true);
-        expect(d.querySelector('.pag-metod').textContent).toContain('Förväntad lön är räknad ur åldern');
-        const ansvar = [...d.querySelectorAll('#pag-tabell tbody tr')].map(tr => tr.lastElementChild);
-        const utan = ansvar.filter(td => td.textContent === 'Inget särskilt');
-        expect(utan.length).toBeGreaterThan(0);
-        expect(utan.every(td => td.title === 'Inget särskilt ansvar')).toBe(true);
-        expect(ansvar.some(td => td.textContent === 'Inget särskilt ansvar')).toBe(false);
-    });
-    it('en förväntad lön som är gruppens median märks med en asterisk som noten förklarar', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        // Alla lika gamla: ingen åldersspridning att räkna med, så den förväntade lönen blir gruppens median.
-        w.__state.data.forEach(r => { r.alder = 40; });
-        w.eval('renderPersonerAttGranska(true)');
-        const rader = w.document.querySelectorAll('#pag-tabell tbody tr').length;
-        expect(rader).toBeGreaterThan(0);
-        expect(w.document.querySelectorAll('#pag-tabell .pag-median').length).toBe(rader);
-        expect(w.document.querySelector('.pag-metod').textContent).toContain('Gruppens median');
-    });
-});
-
 describe('Handlingsplanens tabell', () => {
     it('de tomma raderna visas bara på utskriften, och en rad säger vart det ifyllda tar vägen', () => {
         const css = las('src/style.css');
@@ -484,38 +279,6 @@ describe('Handlingsplanens tabell', () => {
         w.__renderTabContent('handlingsplan');
         expect(w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty').length).toBeGreaterThanOrEqual(5);   // finns kvar för utskriften
         expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte');
-    });
-});
-
-describe('Rensa all data står i Inställningar', () => {
-    it('sidhuvudet har bara «Vad lagras?»; knappen ligger under rubriken Rensa i panelen', () => {
-        const w = createAppWindow();
-        const d = w.document;
-        expect([...d.querySelectorAll('.top-header .gdpr-banner button')].map(b => b.textContent.trim())).toEqual(['Vad lagras?']);
-        const knapp = d.getElementById('btn-clear-all-data');
-        expect(knapp.closest('#installningar-modal')).toBeTruthy();
-        expect(knapp.closest('section').querySelector('h3').textContent).toBe('Rensa');
-        expect(knapp.classList.contains('btn-fara')).toBe(true);
-    });
-    it('knappen frågar först, rensar och stänger panelen; ett nej lämnar allt orört', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('oppnaInstallningar()');
-        w.confirm = () => false;
-        w.document.getElementById('btn-clear-all-data').click();
-        expect(w.__state.data.length).toBeGreaterThan(0);
-        expect(w.eval('installningarOppna()')).toBe(true);
-        let fragor = 0;
-        w.confirm = () => { fragor++; return true; };
-        w.document.getElementById('btn-clear-all-data').click();
-        expect(fragor).toBe(1);
-        expect(w.__state.data.length).toBe(0);
-        expect(w.eval('installningarOppna()')).toBe(false);
-    });
-    it('demoknappen har vit text på den mörka varningsfärgen', () => {
-        const regel = /\.demo-mode-exit \{[^}]*\}/.exec(las('src/style.css'))[0];
-        expect(regel).toContain('background: var(--status-varning);');
-        expect(regel).toContain('color: var(--vit);');
     });
 });
 
