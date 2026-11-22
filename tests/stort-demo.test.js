@@ -1,5 +1,5 @@
 /**
- * Stort demo (21-stort-demo.js): 5 000 påhittade personer med 100 AID-etiketter bredvid det lilla demot, för att visa verktyget i verklig
+ * Stort demo (src/lib/demodata.js och 21-stort-demo.js): 5 000 påhittade personer med 100 AID-etiketter bredvid det lilla demot, för att visa verktyget i verklig
  * storlek utan riktig data.
  *
  * Generatorn (storlek, determinism, fälten, BAS A–K, yrkesgrupperna och de små grupperna) prövas utan webbläsare i
