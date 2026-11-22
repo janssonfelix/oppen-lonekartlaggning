@@ -1,11 +1,55 @@
-/**
- * Röktest (jsdom): Flikarnas form, inläsning, Personer att granska och Lika arbete.
- *
- * Utbrutet ur smoke.test.js så att Vitest fördelar röktesterna över flera arbetare; varje describe-block
- * skapar sina egna fönster via createAppWindow (tests/helpers/app-harness.js).
- */
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// Lika arbete i appen: flikens ordning, Var uppstår löneskillnaden, stabiliteten, kvartilerna, ansvarskoden och
+// yrkesgruppstabellen.
 import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+
+describe('Lika arbete och filrutorna: ordning och kompakta rutor — Lika arbete', () => {
+    const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b ligger efter a
+    it('Lika arbete visar slutsatser och yrkesgrupperna först, sedan personer att granska, per BAS, könsfördelningen och sist regressionen', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        const d = w.document;
+        // Slutsatserna och yrkesgrupperna (trattdiagrammet och sedan tabellen) står överst; personer att granska och metoden sist.
+        const [slut, tratt, yrken, pag, metod] = ['la-slutsatser', 'chart-la-tratt', 'matrix-table', 'personer-att-granska', 'avsnitt-la-metod'].map(id => d.getElementById(id));
+        expect(efter(slut, tratt)).toBe(true);
+        expect(efter(tratt, yrken)).toBe(true);
+        expect(efter(yrken, pag)).toBe(true);
+        expect(efter(pag, metod)).toBe(true);
+        expect(d.getElementById('la-topp').nextElementSibling.id).toBe('avsnitt-la-yrkesgrupper');   // huvudbilden direkt under nyckeltalen
+        for (const el of [yrken, metod]) expect(el.closest('.view-panel').style.display).toBe('block');
+        expect(pag.hidden).toBe(false);
+        // BAS-skevheten, könsfördelningen och regressionen står i Lönestruktur, i den ordningen efter strukturavsnitten.
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
+        const [perBas, kon, reg] = ['la-oversikt', 'avsnitt-ls-kon', 'regression-card'].map(id => d.getElementById(id));
+        expect(efter(perBas, kon) && efter(kon, reg)).toBe(true);
+        expect(d.getElementById('avsnitt-ls-bas').contains(perBas)).toBe(true);
+        for (const el of [perBas, reg]) expect(el.closest('.view-panel').style.display).toBe('block');
+        // Skillnaden per BAS-intervall visas en gång: tabellen och bilden i exporten är dolda på skärmen.
+        expect(d.getElementById('la-bas-exportkopia').hidden).toBe(true);
+        expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('paygap-table'))).toBe(true);
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        expect(d.querySelector('.view-panel[style*="block"] .flik-intro').textContent).toContain('Samma jobb, olika lön');
+    });
+    it('Lika arbete, yrkesgrupperna: förklaringen, sedan överblicksdiagrammet och sist tabellen', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        const d = w.document, avsnitt = d.getElementById('avsnitt-la-yrkesgrupper');
+        const kort = d.getElementById('la-tratt-kort'), tabell = d.getElementById('matrix-table');
+        // Diagramkortet står direkt efter förklaringstexten och direkt före tabellens verktygsrad och behållare, i samma avsnitt.
+        expect(avsnitt.contains(kort) && avsnitt.contains(tabell)).toBe(true);
+        expect(kort.previousElementSibling.classList.contains('card-header')).toBe(true);
+        expect(kort.nextElementSibling).toBe(tabell._verktygsrad);
+        expect(tabell._verktygsrad.nextElementSibling).toBe(tabell.closest('.table-container'));
+        // Diagrammet och tabellen är ritade: ordningen påverkar inte vad som visas.
+        expect(kort.hidden).toBe(false);
+        expect(d.getElementById('chart-la-tratt')._figur).toBeTruthy();
+        expect(tabell.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+    });
+});
 
 describe('Var uppstår löneskillnaden?', () => {
     it('ritas med demodata: tre delar, demomärkning, noten om rangordning', () => {
@@ -74,115 +118,6 @@ describe('stabilitet i Lika arbete', () => {
         for (const tr of flaggade) expect(w._tableCellText ? w._tableCellText(tr.cells[tr.cells.length - 1]) : tr.textContent).not.toMatch(/\)(Skör|Stabil|Kan)/);
         expect(JSON.stringify(w.__tableToMatrix('matrix-table'))).not.toMatch(/%\)(Skör|Stabil|Kan)/);
         expect(tabell.textContent).not.toMatch(/§|3 kap\./);
-    });
-});
-
-describe('Lägre krav, högre lön', () => {
-    const grupp = (aid, bas, kv, ma, lon) => [
-        ...Array.from({ length: kv }, (_, i) => ({ aid, bas, lon: lon + i * 10, alder: 40, kon: 'kvinna', yrke: `${aid} Yrke`, yrkeLabel: `Yrke ${aid}`, enhet: '' })),
-        ...Array.from({ length: ma }, (_, i) => ({ aid, bas, lon: lon + i * 10, alder: 40, kon: 'man', yrke: `${aid} Yrke`, yrkeLabel: `Yrke ${aid}`, enhet: '' })),
-    ];
-    const oppna = (w, data) => {
-        w.__state.data = data;
-        if (w.__state.likvardighet) w.__state.likvardighet.result = null;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
-    };
-    it('avsnittet ritas med paret, utan §; blocket kommer efter Likvärdigt arbete', () => {
-        const w = createAppWindow();
-        oppna(w, [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000), ...grupp('300', 'C', 10, 10, 31000)]);
-        const sek = w.document.getElementById('likvardighet-lagre-krav');
-        expect(sek).not.toBeNull();
-        expect(sek.textContent).toContain('Lägre krav, högre lön');
-        // Med minsta gap 0 % som standard (ADR-61) står också det blandade yrket 300 (ca 3 % högre) med.
-        expect(w.document.querySelectorAll('#likvardighet-lagre-krav-table tbody tr')).toHaveLength(2);
-        expect(sek.textContent).not.toMatch(/§|3 kap\./);
-        const ids = w.__rapportunderlagBlock().map(b => b.id);
-        expect(ids.indexOf('lagreKrav')).toBe(ids.indexOf('likvardigt') + 1);
-    });
-    it('grundvyn: BAS står under etiketterna och BAS-steg bakom Fler kolumner; exporten har alla tio kolumner (F14)', () => {
-        const w = createAppWindow();
-        oppna(w, [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000), ...grupp('300', 'C', 10, 10, 31000)]);
-        const id = 'likvardighet-lagre-krav-table';
-        const synliga = () => [...w.document.querySelectorAll(`#${id} thead th`)].filter(th => !th.hidden && !th.classList.contains('bara-export')).map(th => th.textContent.trim());
-        expect(synliga()).toEqual(['Kvinnodominerad AID-etikett', 'Median', 'Jämförelseetikett', 'Median', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
-        const rad = w.document.querySelector(`#${id} tbody tr`);
-        const celler = [...rad.children].filter(td => !td.hidden && !td.classList.contains('bara-export'));
-        expect(celler[0].querySelector('small.lv-under').textContent).toBe('BAS E');
-        expect(celler[2].querySelector('small.lv-under').textContent).toBe('BAS C');
-        // Växeln visar BAS-steg; BAS står kvar under etiketterna och aldrig som egen kolumn på skärmen.
-        w.document.querySelector(`[data-fler-kolumner="${id}"]`).click();
-        expect(synliga()).toEqual(['Kvinnodominerad AID-etikett', 'Median', 'Jämförelseetikett', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
-        // Exporten: samma tio kolumner som före, och etikettcellen utan BAS-texten.
-        const m = w.__tableToMatrix(id);
-        expect(m[0]).toEqual(['Kvinnodominerad AID-etikett', 'BAS', 'Median', 'Jämförelseetikett', 'BAS', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
-        expect(m[1].slice(0, 2)).toEqual(['Yrke 100', 'E']);
-        expect(m[1][4]).toBe('C');
-        // Sorteringen på jämförelsens median läser cellens data-sort-value, som förut.
-        const kol = [...w.document.querySelectorAll(`#${id} thead th`)].map(th => th.textContent.trim()).lastIndexOf('Median');
-        w.document.querySelectorAll(`#${id} thead th`)[kol].click();
-        const medianer = [...w.document.querySelectorAll(`#${id} tbody tr`)].map(tr => +tr.children[kol].getAttribute('data-sort-value'));
-        expect(medianer).toEqual([...medianer].sort((a, b) => a - b));
-    });
-    it('utan par: förklarande rad', () => {
-        const w = createAppWindow();
-        oppna(w, [...grupp('100', 'C', 18, 2, 30000), ...grupp('200', 'E', 2, 18, 34000)]);
-        expect(w.document.getElementById('likvardighet-lagre-krav').textContent).toContain('Ingen av de kvinnodominerade AID-etiketterna har lägre medianlön än en AID-etikett i lägre BAS.');
-    });
-    it('demodatan: kandidatparen finns kvar och lagreKrav är en lista', () => {
-        // Att dagens par är oförändrade vaktas av lib-testet och golden-facit.
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const r = w.__computeLikvardighetPairs();
-        expect(r.pairs.length).toBeGreaterThan(0);
-        expect(Array.isArray(r.lagreKrav)).toBe(true);
-    });
-});
-
-describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall', () => {
-    const grupp = (aid, bas, kv, ma, lon) => [
-        ...Array.from({ length: kv }, (_, i) => ({ aid, bas, lon: lon + i * 10, alder: 40, kon: 'kvinna', yrke: `${aid} Yrke`, yrkeLabel: `Yrke ${aid}`, enhet: '' })),
-        ...Array.from({ length: ma }, (_, i) => ({ aid, bas, lon: lon + i * 10, alder: 40, kon: 'man', yrke: `${aid} Yrke`, yrkeLabel: `Yrke ${aid}`, enhet: '' })),
-    ];
-    // Den kvinnodominerade 100 i BAS E och den mansdominerade 200 i BAS C: ett par över BAS-gränsen bara med poäng.
-    const oppna = (poang) => {
-        const w = createAppWindow();
-        w.__state.data = [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000)];
-        w.__state.arbetsvardering = poang ? { byKey: new Map([['100', 500], ['200', 480]]), count: 2, hasBas: false } : null;
-        if (w.__state.likvardighet) w.__state.likvardighet.result = null;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
-        return w;
-    };
-    const text = el => el.textContent.replace(/\s+/g, ' ');
-    const flikIntro = w => [...w.document.querySelectorAll('.flik-intro')].find(e => e.textContent.includes('Lika lön för jobb som är lika mycket värda'));
-
-    it('inledningen gäller båda måtten på kraven', () => {
-        const w = oppna(false);
-        expect(text(flikIntro(w))).toContain('Här jämför verktyget kvinnodominerade AID-etiketter med AID-etiketter som inte är kvinnodominerade och har likvärdiga krav. Kraven mäts med BAS-intervallet, eller med poängen om organisationen har en arbetsvärdering.');
-    });
-    it('med poäng: bakgrunden, Lägre krav, märket och beräkningsbeviset nämner inte BAS som mått', () => {
-        const w = oppna(true);
-        const r = w.eval('likvardighetResultat()');
-        expect(r.pairs).toHaveLength(1);
-        const innehall = text(w.document.getElementById('likvardighet-content'));
-        expect(innehall).toContain('därför jämförs organisationens egna AID-etiketter med varandra; jämförelsestatistiken har inga poäng och används inte.');
-        expect(innehall).not.toContain('i första hand organisationens egna');
-        const lagre = text(w.document.getElementById('likvardighet-lagre-krav'));
-        expect(lagre).not.toContain('BAS används som mått på krav');
-        expect(lagre).toContain('Med arbetsvärderingspoäng jämförs AID-etiketter redan över BAS-gränserna');
-        const under = [...w.document.querySelectorAll('#likvardighet-table .lv-under')].map(e => e.textContent);
-        expect(under.length).toBeGreaterThan(0);
-        expect(under.some(t => /intern/.test(t))).toBe(false);
-        const intro = w.eval('_evidenceForLikvardighetPair')(r.pairs[0]).intro;
-        expect(intro).toContain('som enligt arbetsvärderingen har <em>lika eller lägre krav</em> (480 poäng mot 500)');
-        expect(intro).not.toContain('samma BAS-intervall');
-    });
-    it('utan poäng: BAS-texterna står kvar', () => {
-        const w = oppna(false);
-        const innehall = text(w.document.getElementById('likvardighet-content'));
-        expect(innehall).toContain('därför jämförs i första hand organisationens egna AID-etiketter med varandra.');
-        expect(text(w.document.getElementById('likvardighet-lagre-krav'))).toContain('BAS används som mått på krav');
     });
 });
 
@@ -351,5 +286,147 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
         expect(css).toMatch(/\.gu-val-lista \.urval-rad\s*\{[^}]*flex-wrap:\s*wrap/);
         expect(css).toMatch(/\.gu-val\s*\{[^}]*min-width:\s*0/);
+    });
+});
+
+describe('ansvarskod i Lika arbete', () => {
+    // Ett yrke där männen oftare har ledningsansvar och högre lön, och ett yrke utan ansvarskoder.
+    const bygg = (medAnsvar = true) => {
+        const rader = [];
+        const rad = (aid, kon, lon, alder, grupp, koder) => ({ aid, yrke: aid + ' Förskollärare', yrkeLabel: 'Förskollärare', bas: alder % 2 ? 'B' : 'C',
+            kon, lon, alder, ...(medAnsvar ? { ansvarskoder: koder, ansvarsgrupp: grupp } : {}) });
+        for (let i = 0; i < 14; i++) rader.push(rad('402010', 'kvinna', 30000 + i * 40, 30 + i, 'inget', []));
+        for (let i = 0; i < 12; i++) rader.push(rad('402010', 'man', 30400 + i * 40, 31 + i, 'inget', []));
+        for (let i = 0; i < 11; i++) rader.push(rad('402010', 'man', 36000 + i * 40, 35 + i, 'ledning', ['C']));
+        for (let i = 0; i < 20; i++) rader.push(rad('207011', i % 2 ? 'man' : 'kvinna', 28000 + i * 30, 25 + i, 'inget', []));
+        return rader;
+    };
+    const oppna = (medAnsvar = true) => {
+        const w = createAppWindow();
+        w.__state.data = bygg(medAnsvar);
+        w.eval('populateSelects(); unlockTabs();');
+        w.__renderTabContent('matrix'); w.__renderTabContent('struktur');
+        return w;
+    };
+    it('yrket får en underrad per ansvarsgrupp och raden Utan ledningsansvar', () => {
+        const w = oppna();
+        const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')];
+        const i = rader.findIndex(tr => /402010/.test(tr.textContent) && !tr.classList.contains('la-underrad'));
+        const under = rader.slice(i + 1).filter((tr, j, a) => a.slice(0, j + 1).every(t => t.classList.contains('la-underrad')));
+        expect(under.map(tr => tr.textContent)).toEqual([expect.stringMatching(/Ledningsansvar/), expect.stringMatching(/Inget särskilt ansvar|Utan ansvar/),
+            expect.stringMatching(/Utan ledningsansvar/)]);
+        expect(under[0].textContent).toMatch(/Gruppens median/);
+        expect(under[2].textContent).toMatch(/9[89],\d\s%/);
+        // yrket utan ledningsansvar hos någon får inga underrader
+        const j = rader.findIndex(tr => /207011/.test(tr.textContent));
+        expect(rader[j + 1]?.classList.contains('la-underrad') ?? false).toBe(false);
+    });
+    it('underraderna följer sitt yrke när tabellen sorteras', () => {
+        const w = oppna();
+        const th = w.document.querySelectorAll('#matrix-table thead th');
+        for (const klick of [0, 0, 1]) {
+            th[klick].click();
+            const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')];
+            rader.forEach((tr, i) => {
+                if (tr.classList.contains('la-underrad')) expect(rader[i - 1].classList.contains('la-underrad') || /402010/.test(rader[i - 1].textContent)).toBe(true);
+            });
+        }
+    });
+    it('utan ansvarskolumn syns inga underrader', () => {
+        const w = oppna(false);
+        expect(w.document.querySelectorAll('#matrix-table .la-underrad').length).toBe(0);
+    });
+    it('regressionen: ansvarssteget redovisas separat och huvudtalet är oförändrat', () => {
+        const med = oppna(true).eval('runOLSRegression()');
+        const utan = oppna(false).eval('runOLSRegression()');
+        expect(med.konPct).toBeCloseTo(utan.konPct, 10);
+        expect(med.explainedShare).toBeCloseTo(utan.explainedShare, 10);
+        expect(med.sequential.map(s => s.name)).toEqual(utan.sequential.map(s => s.name));
+        expect(utan.ansvarSteg).toBeNull();
+        expect(med.ansvarSteg).toMatchObject({ status: 'ok', name: '+ Ansvar' });
+        expect(Math.abs(med.ansvarSteg.gapPct)).toBeLessThan(Math.abs(med.sequential.at(-1).gapPct));
+    });
+    it('den sekventiella dekomponeringen får steget + Ansvar sist när raderna har ansvarsgrupp', () => {
+        const w = oppna(true);
+        const steg = w.eval(`(() => { const d = getData(); return _rgComputeSequentialGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
+        expect(steg).toEqual(['Endast kön', '+ BAS-intervall', '+ Ålder', '+ Yrkesgrupp', '+ Ansvar']);
+    });
+    it('kortet visar ansvaret på en egen rad under budgeten, inte i den', () => {
+        const w = oppna(true);
+        const kort = w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
+        expect(kort).toMatch(/Ansvar \(ledningsansvar, särskilt uppdrag\) förklarar ytterligare [\d,]+ procentenheter/);
+        expect(kort).toMatch(/Huvudtalet ovan räknar inte bort ansvaret/);
+        expect(w.document.querySelector('#regression-card .reg-budget-legend').textContent).not.toMatch(/ansvar/i);
+        const utan = oppna(false).document.getElementById('regression-card').textContent;
+        expect(utan).not.toMatch(/förklarar ytterligare/);
+    });
+});
+
+describe('Lika arbete och rapportunderlaget flaggar samma yrken', () => {
+    it('EU-tabellens "Värt att granska" är exakt likaArbeteGrupper(...).flaggad vid k = 1 (skärmen maskerar inget, ADR-51)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        const iTabell = [...w.document.querySelectorAll('#matrix-table tbody tr')]
+            .filter(tr => tr.textContent.includes('Värt att granska'))
+            .map(tr => tr._euRow.yrke).sort();
+        const iLib = w.__ruLikaArbeteGrupper(w.__getData(), { k: 1 }).grupper
+            .filter(g => g.flaggad).map(g => g.yrke).sort();
+        expect(iLib.length).toBeGreaterThan(0);
+        expect(iTabell).toEqual(iLib);
+    });
+});
+
+describe('yrkesgruppstabellen i Lika arbete', () => {
+    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('matrix'); return w; };
+    const synlig = el => { const k = el.cloneNode(true); k.querySelectorAll('.bara-export').forEach(e => e.remove()); return k.textContent.replace(/\s+/g, ' ').trim(); };
+    it('statusmärket står på en rad utan tröskeln, som finns i verktygstipset; cellens text för exporten är oförändrad', () => {
+        const w = rita();
+        const marken = [...w.document.querySelectorAll('#matrix-table .la-status')];
+        expect(marken.length).toBeGreaterThan(3);
+        for (const m of marken) {
+            expect(synlig(m)).toMatch(/^(Värt att granska|Följ upp|Balanserat|Går ej att bedöma|ett kön n < \d+)$/);
+            expect(m.title).toMatch(/Skillnaden är|Könsuppdelningen|Går ej att bedöma: ett kön har färre än/);
+        }
+        const granska = marken.find(m => synlig(m) === 'Värt att granska');
+        expect(granska.textContent.replace(/\s+/g, ' ').trim()).toBe('Värt att granska (säkerställd skillnad på minst 3 %)');
+        expect(granska.title).toMatch(/statistiskt säkerställd.*minst 3 %/);
+    });
+    it('raden om stabilitet är kort på skärmen, och hela meningen står i verktygstipset och i cellens text', () => {
+        const w = rita();
+        const rader = [...w.document.querySelectorAll('#matrix-table .la-stabilitet')];
+        expect(rader.length).toBeGreaterThan(0);
+        for (const r of rader) {
+            expect(synlig(r).length).toBeLessThanOrEqual(36);
+            expect(r.textContent).toBe(r.title);
+        }
+        const f = t => { const el = w.document.createElement('span'); el.innerHTML = w.eval(`_laStabilitetRad(${JSON.stringify(t)})`); return [synlig(el), el.textContent]; };
+        expect(f('Stabil: minst 3 % även utan 2 personer')).toEqual(['Stabil även utan 2 personer', 'Stabil: minst 3 % även utan 2 personer']);
+        expect(f('Skör: kan bli 4,6 % om 1 person tas bort (prövat bara på män)')).toEqual(['Skör: 4,6 % om 1 person tas bort', 'Skör: kan bli 4,6 % om 1 person tas bort (prövat bara på män)']);
+        expect(f('Stabil: minst 3 % även utan 1 person, fler kunde inte prövas')).toEqual(['Stabil även utan 1 person', 'Stabil: minst 3 % även utan 1 person, fler kunde inte prövas']);
+        expect(f('Kan inte prövas: båda könen har exakt 10 personer')).toEqual(['Kan inte prövas', 'Kan inte prövas: båda könen har exakt 10 personer']);
+    });
+    it('ansvarsraderna och raden Utan ledningsansvar är hopfällda tills pilen på yrkesraden fäller ut dem', () => {
+        const w = rita();
+        const d = w.document;
+        const ansvar = [...d.querySelectorAll('#matrix-table tr.la-underrad-ansvar')];
+        expect(ansvar.length).toBeGreaterThan(2);
+        expect(ansvar.every(tr => tr.hidden)).toBe(true);
+        const utan = [...d.querySelectorAll('#matrix-table tr.la-underrad:not(.la-underrad-ansvar)')];
+        expect(utan.length).toBeGreaterThan(0);
+        expect(utan.every(tr => tr.hidden && /Utan ledningsansvar/.test(tr.textContent))).toBe(true);
+        // Pilen på ett yrke med raden Utan ledningsansvar: den fälls ut och ihop med ansvarsgrupperna.
+        let yrkesrad = utan[0]; while (yrkesrad.classList.contains('la-underrad')) yrkesrad = yrkesrad.previousElementSibling;
+        const pil = yrkesrad.querySelector('.la-falla');
+        expect(pil.getAttribute('aria-expanded')).toBe('false');
+        const egna = []; for (let tr = yrkesrad.nextElementSibling; tr && tr.classList.contains('la-underrad'); tr = tr.nextElementSibling) egna.push(tr);
+        expect(egna.some(tr => tr.classList.contains('la-underrad-ansvar'))).toBe(true);
+        expect(egna).toContain(utan[0]);
+        pil.click();
+        expect(pil.getAttribute('aria-expanded')).toBe('true');
+        expect(egna.every(tr => !tr.hidden)).toBe(true);
+        expect(w.eval('diagramMarkering()')).toBeNull();   // pilen markerar inte raden
+        pil.click();
+        expect(egna.every(tr => tr.hidden)).toBe(true);
     });
 });

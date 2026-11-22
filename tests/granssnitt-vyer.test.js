@@ -51,96 +51,6 @@ describe('tomma lägen som inte låter som fel', () => {
     });
 });
 
-describe('yrkesgruppstabellen i Lika arbete', () => {
-    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('matrix'); return w; };
-    const synlig = el => { const k = el.cloneNode(true); k.querySelectorAll('.bara-export').forEach(e => e.remove()); return k.textContent.replace(/\s+/g, ' ').trim(); };
-    it('statusmärket står på en rad utan tröskeln, som finns i verktygstipset; cellens text för exporten är oförändrad', () => {
-        const w = rita();
-        const marken = [...w.document.querySelectorAll('#matrix-table .la-status')];
-        expect(marken.length).toBeGreaterThan(3);
-        for (const m of marken) {
-            expect(synlig(m)).toMatch(/^(Värt att granska|Följ upp|Balanserat|Går ej att bedöma|ett kön n < \d+)$/);
-            expect(m.title).toMatch(/Skillnaden är|Könsuppdelningen|Går ej att bedöma: ett kön har färre än/);
-        }
-        const granska = marken.find(m => synlig(m) === 'Värt att granska');
-        expect(granska.textContent.replace(/\s+/g, ' ').trim()).toBe('Värt att granska (säkerställd skillnad på minst 3 %)');
-        expect(granska.title).toMatch(/statistiskt säkerställd.*minst 3 %/);
-    });
-    it('raden om stabilitet är kort på skärmen, och hela meningen står i verktygstipset och i cellens text', () => {
-        const w = rita();
-        const rader = [...w.document.querySelectorAll('#matrix-table .la-stabilitet')];
-        expect(rader.length).toBeGreaterThan(0);
-        for (const r of rader) {
-            expect(synlig(r).length).toBeLessThanOrEqual(36);
-            expect(r.textContent).toBe(r.title);
-        }
-        const f = t => { const el = w.document.createElement('span'); el.innerHTML = w.eval(`_laStabilitetRad(${JSON.stringify(t)})`); return [synlig(el), el.textContent]; };
-        expect(f('Stabil: minst 3 % även utan 2 personer')).toEqual(['Stabil även utan 2 personer', 'Stabil: minst 3 % även utan 2 personer']);
-        expect(f('Skör: kan bli 4,6 % om 1 person tas bort (prövat bara på män)')).toEqual(['Skör: 4,6 % om 1 person tas bort', 'Skör: kan bli 4,6 % om 1 person tas bort (prövat bara på män)']);
-        expect(f('Stabil: minst 3 % även utan 1 person, fler kunde inte prövas')).toEqual(['Stabil även utan 1 person', 'Stabil: minst 3 % även utan 1 person, fler kunde inte prövas']);
-        expect(f('Kan inte prövas: båda könen har exakt 10 personer')).toEqual(['Kan inte prövas', 'Kan inte prövas: båda könen har exakt 10 personer']);
-    });
-    it('ansvarsraderna och raden Utan ledningsansvar är hopfällda tills pilen på yrkesraden fäller ut dem', () => {
-        const w = rita();
-        const d = w.document;
-        const ansvar = [...d.querySelectorAll('#matrix-table tr.la-underrad-ansvar')];
-        expect(ansvar.length).toBeGreaterThan(2);
-        expect(ansvar.every(tr => tr.hidden)).toBe(true);
-        const utan = [...d.querySelectorAll('#matrix-table tr.la-underrad:not(.la-underrad-ansvar)')];
-        expect(utan.length).toBeGreaterThan(0);
-        expect(utan.every(tr => tr.hidden && /Utan ledningsansvar/.test(tr.textContent))).toBe(true);
-        // Pilen på ett yrke med raden Utan ledningsansvar: den fälls ut och ihop med ansvarsgrupperna.
-        let yrkesrad = utan[0]; while (yrkesrad.classList.contains('la-underrad')) yrkesrad = yrkesrad.previousElementSibling;
-        const pil = yrkesrad.querySelector('.la-falla');
-        expect(pil.getAttribute('aria-expanded')).toBe('false');
-        const egna = []; for (let tr = yrkesrad.nextElementSibling; tr && tr.classList.contains('la-underrad'); tr = tr.nextElementSibling) egna.push(tr);
-        expect(egna.some(tr => tr.classList.contains('la-underrad-ansvar'))).toBe(true);
-        expect(egna).toContain(utan[0]);
-        pil.click();
-        expect(pil.getAttribute('aria-expanded')).toBe('true');
-        expect(egna.every(tr => !tr.hidden)).toBe(true);
-        expect(w.eval('diagramMarkering()')).toBeNull();   // pilen markerar inte raden
-        pil.click();
-        expect(egna.every(tr => tr.hidden)).toBe(true);
-    });
-});
-
-describe('kandidatparens tabell', () => {
-    it('intervallet står som ett spann på en rad med omdömet som märke, och exporten bär formen med klamrar', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
-        const d = w.document;
-        const ki = [...d.querySelectorAll('#likvardighet-table .lv-ki')];
-        expect(ki.length).toBeGreaterThan(0);
-        for (const k of ki) {
-            expect(k.textContent).toMatch(/^[\d\s\u00a0\u2212-]+–[\d\s\u00a0\u2212-]+ kr$/);
-            expect(k.closest('td').querySelector('.lv-ki-marke').textContent).toMatch(/^(säker skillnad|inom slumpfel)$/);
-            expect(w.eval('_tableCellText')(k.closest('td'))).toMatch(/^\[[^\]]+ kr, [^\]]+ kr\]\s?(säker skillnad|inom slumpfel)$/);
-        }
-        const rubriker = [...d.querySelectorAll('#likvardighet-table thead th')].map(th => th.textContent);
-        expect(rubriker).toContain('Summa för gruppen (kr/mån)');
-        // Den nationella andelen står i verktygstipset, med källa och period, inte i raden (men följer med i cellens text för exporten).
-        const under = d.querySelector('#likvardighet-table .lv-under');
-        const synlig = under.cloneNode(true); synlig.querySelectorAll('.bara-export').forEach(e => e.remove());
-        expect(synlig.textContent).not.toContain('nationellt');
-        expect(under.title).toMatch(/nationellt \(SKR:s personalstatistik, [a-z]+ \d{4}\)/);
-        expect(las('src/style.css')).toMatch(/#likvardighet-table td\.t-hoger[^{]*\{ white-space: nowrap; \}/);
-    });
-    it('ett par under 5 % syns utan att något ändrats, och fältet säger att 0 betyder alla (ADR-61)', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
-        const d = w.document;
-        expect(w.__state.likvardighet.minGapPct).toBe(0);
-        const lv = w.__state.likvardighet.result;
-        const smatt = lv.pairs.filter(p => p.gapPct > 0 && p.gapPct < 5);
-        expect(smatt.length).toBeGreaterThan(0);
-        expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(lv.pairs.length);
-        expect(d.getElementById('lv-min-gap').closest('div').textContent.replace(/\s+/g, ' ').trim()).toBe('Visa bara par med minst % skillnad (0 = alla)');
-    });
-});
-
 describe('Löneöversikten i Utforska', () => {
     const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('utforska'); return w; };
     it('heter Löneöversikt, och sökfältet säger vad man söker på', () => {
@@ -675,23 +585,6 @@ describe('procenttal i flikarna har en decimal', () => {
         }
         expect([...fynd]).toEqual([]);
     }, 30000);
-});
-
-describe('Krav mot lön med många yrkesgrupper', () => {
-    it('grupper i samma BAS-intervall med nästan samma median flyttas isär i sidled; ensamma grupper står i mitten', () => {
-        const w = createAppWindow();
-        const rader = [];
-        const grupp = (aid, bas, median, kvAndel) => { for (let i = 0; i < 30; i++) rader.push({ bas, yrke: `${aid} Yrke ${aid}`, aid: String(aid), kon: i < 30 * kvAndel ? 'kvinna' : 'man', lon: median + (i % 5 - 2) * 100, alder: 30 + i }); };
-        grupp(100001, 'B', 30000, 0.8); grupp(100002, 'B', 30050, 0.5); grupp(100003, 'B', 30100, 0.2); grupp(100004, 'B', 36000, 0.5);
-        grupp(100005, 'C', 34000, 0.5); grupp(100006, 'D', 42000, 0.5);
-        w.__d = rader;
-        const f = w.eval('_lvKravFigur(_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10 }))');
-        const punkter = f.lager.filter(l => l.marke === 'punkt').flatMap(l => l.data);
-        const iB = punkter.filter(p => p.bas === 'B' && p.y < 31000).map(p => p.forskjutning || 0).sort((a, b) => a - b);
-        expect(new Set(iB).size).toBe(3);                                   // tre nära varandra: tre filer
-        expect(iB.every(v => Math.abs(v) <= 0.36)).toBe(true);              // inom intervallets bredd
-        for (const p of punkter.filter(q => q.bas !== 'B' || q.y > 31000)) expect(p.forskjutning).toBeUndefined();
-    });
 });
 
 describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () => {

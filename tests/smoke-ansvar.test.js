@@ -84,79 +84,6 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
     });
 });
 
-describe('ansvarskod i Lika arbete', () => {
-    // Ett yrke där männen oftare har ledningsansvar och högre lön, och ett yrke utan ansvarskoder.
-    const bygg = (medAnsvar = true) => {
-        const rader = [];
-        const rad = (aid, kon, lon, alder, grupp, koder) => ({ aid, yrke: aid + ' Förskollärare', yrkeLabel: 'Förskollärare', bas: alder % 2 ? 'B' : 'C',
-            kon, lon, alder, ...(medAnsvar ? { ansvarskoder: koder, ansvarsgrupp: grupp } : {}) });
-        for (let i = 0; i < 14; i++) rader.push(rad('402010', 'kvinna', 30000 + i * 40, 30 + i, 'inget', []));
-        for (let i = 0; i < 12; i++) rader.push(rad('402010', 'man', 30400 + i * 40, 31 + i, 'inget', []));
-        for (let i = 0; i < 11; i++) rader.push(rad('402010', 'man', 36000 + i * 40, 35 + i, 'ledning', ['C']));
-        for (let i = 0; i < 20; i++) rader.push(rad('207011', i % 2 ? 'man' : 'kvinna', 28000 + i * 30, 25 + i, 'inget', []));
-        return rader;
-    };
-    const oppna = (medAnsvar = true) => {
-        const w = createAppWindow();
-        w.__state.data = bygg(medAnsvar);
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('matrix'); w.__renderTabContent('struktur');
-        return w;
-    };
-    it('yrket får en underrad per ansvarsgrupp och raden Utan ledningsansvar', () => {
-        const w = oppna();
-        const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')];
-        const i = rader.findIndex(tr => /402010/.test(tr.textContent) && !tr.classList.contains('la-underrad'));
-        const under = rader.slice(i + 1).filter((tr, j, a) => a.slice(0, j + 1).every(t => t.classList.contains('la-underrad')));
-        expect(under.map(tr => tr.textContent)).toEqual([expect.stringMatching(/Ledningsansvar/), expect.stringMatching(/Inget särskilt ansvar|Utan ansvar/),
-            expect.stringMatching(/Utan ledningsansvar/)]);
-        expect(under[0].textContent).toMatch(/Gruppens median/);
-        expect(under[2].textContent).toMatch(/9[89],\d\s%/);
-        // yrket utan ledningsansvar hos någon får inga underrader
-        const j = rader.findIndex(tr => /207011/.test(tr.textContent));
-        expect(rader[j + 1]?.classList.contains('la-underrad') ?? false).toBe(false);
-    });
-    it('underraderna följer sitt yrke när tabellen sorteras', () => {
-        const w = oppna();
-        const th = w.document.querySelectorAll('#matrix-table thead th');
-        for (const klick of [0, 0, 1]) {
-            th[klick].click();
-            const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')];
-            rader.forEach((tr, i) => {
-                if (tr.classList.contains('la-underrad')) expect(rader[i - 1].classList.contains('la-underrad') || /402010/.test(rader[i - 1].textContent)).toBe(true);
-            });
-        }
-    });
-    it('utan ansvarskolumn syns inga underrader', () => {
-        const w = oppna(false);
-        expect(w.document.querySelectorAll('#matrix-table .la-underrad').length).toBe(0);
-    });
-    it('regressionen: ansvarssteget redovisas separat och huvudtalet är oförändrat', () => {
-        const med = oppna(true).eval('runOLSRegression()');
-        const utan = oppna(false).eval('runOLSRegression()');
-        expect(med.konPct).toBeCloseTo(utan.konPct, 10);
-        expect(med.explainedShare).toBeCloseTo(utan.explainedShare, 10);
-        expect(med.sequential.map(s => s.name)).toEqual(utan.sequential.map(s => s.name));
-        expect(utan.ansvarSteg).toBeNull();
-        expect(med.ansvarSteg).toMatchObject({ status: 'ok', name: '+ Ansvar' });
-        expect(Math.abs(med.ansvarSteg.gapPct)).toBeLessThan(Math.abs(med.sequential.at(-1).gapPct));
-    });
-    it('den sekventiella dekomponeringen får steget + Ansvar sist när raderna har ansvarsgrupp', () => {
-        const w = oppna(true);
-        const steg = w.eval(`(() => { const d = getData(); return _rgComputeSequentialGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
-        expect(steg).toEqual(['Endast kön', '+ BAS-intervall', '+ Ålder', '+ Yrkesgrupp', '+ Ansvar']);
-    });
-    it('kortet visar ansvaret på en egen rad under budgeten, inte i den', () => {
-        const w = oppna(true);
-        const kort = w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
-        expect(kort).toMatch(/Ansvar \(ledningsansvar, särskilt uppdrag\) förklarar ytterligare [\d,]+ procentenheter/);
-        expect(kort).toMatch(/Huvudtalet ovan räknar inte bort ansvaret/);
-        expect(w.document.querySelector('#regression-card .reg-budget-legend').textContent).not.toMatch(/ansvar/i);
-        const utan = oppna(false).document.getElementById('regression-card').textContent;
-        expect(utan).not.toMatch(/förklarar ytterligare/);
-    });
-});
-
 describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     it('demot har ansvarskoder och en ansvarskolumn', () => {
         const w = createAppWindow();
@@ -270,17 +197,6 @@ describe('sektorsöversiktens punkter i Att göra', () => {
         const vantat = {};
         for (const it of medAid) { const s = sektorsnamn(it.aid); vantat[s] = (vantat[s] || 0) + 1; }
         expect(w.eval('_sektorPunkter()')).toEqual(vantat);
-    });
-});
-
-describe('SKR:s personalstatistik som nationell reserv i Likvärdigt arbete', () => {
-    it('klassar per AID-etikett med SKR som källa', () => {
-        const w = createAppWindow();
-        const k = kod => w.eval(`nationellAidKlass(${JSON.stringify(kod)})`);
-        expect(k('521020')).toMatchObject({ klass: 'icke-kvinnodominerat', kalla: expect.stringMatching(/^SKR, personalstatistik november 2025/) });
-        expect(k('205010')).toMatchObject({ klass: 'kvinnodominerat' });
-        expect(k('101010').kvAndel).toBeCloseTo(48.3, 0);   // etikettens egen andel, inte prefixets
-        expect(k('751010')).toBeNull();
     });
 });
 
@@ -400,17 +316,5 @@ describe('samlad jämförelseexport: ställningstagandet per AID och BAS som i t
         const wb = Object.values(fangat)[0];
         const rad = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true })[2];
         expect(rad[20]).toBe(32222);   // ställningstagandets median (efter kolumnen Matchning)
-    });
-});
-
-describe('regressionskortets tekniska specifikation (B4)', () => {
-    it('visar antalet observationer med hävstång > 0,99, som fitOLS räknar', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const r = w.eval('runOLSRegression()');
-        expect(Number.isInteger(r.hHoga)).toBe(true);
-        w.__renderTabContent('struktur');
-        const t = w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
-        expect(t).toMatch(new RegExp(`Observationer med hävstång > 0,99 \\(bidrar inte till HC3\\) ?${r.hHoga} Antal observationer`));
     });
 });

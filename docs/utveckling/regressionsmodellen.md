@@ -559,10 +559,10 @@ testerna speglar den.
 | `tests/berakningar-las.test.js` | Ögonblicksbilden av hela returvärdet från `runOLSRegression` på demodatan |
 | `tests/osakerhet.test.js` | `src/lib/osakerhet.js` direkt: bootstrapintervallen med en injicerad, seedad generator, konfidensbandet kring en regressionslinje och styrkan räknade för hand, extremvärdena, trattens underlag och kvantilregressionens intervall; `percentilintervall` i `src/lib/stat.js` |
 | `tests/osakerhet-adapter.test.js` | Att appens adaptrar (`computeBootstrapCI`, `computePowerAnalysis`, `computeGroupMDE`, `detectOutliers`, `linearRegressionCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`, `_laTrattUnderlagRakna`, `_regKvantilBootstrap`) ger exakt samma tal som `src/lib/osakerhet.js` med samma argument, på demodatan och utan ålder vid tröskeln 3, 10 och 25 |
-| `tests/smoke-innehall.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
+| `tests/regression-app.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
 | `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan och de valbara variablerna |
-| `tests/smoke-granssnitt.test.js` | Kortet *Förklara med:*: valet, tangentbordet och texterna |
+| `tests/lika-arbete-app.test.js` | Kortet *Förklara med:*: valet, tangentbordet och texterna |
 | `tests/ktroskel-invarianter.test.js` | I7: uppdelningen med andra val av variabler, vid 10 och 25 (`k-troskeln.md` §10) |
 | `tests/ktroskel-regression.test.js` | Regel R1 och BH-texten i regressionskortet |
 | `tests/ktroskel-utdata.test.js` | Protokollets blad per BAS-intervall: ett intervall som bara är säkerställt på rått p utelämnas, ett som är säkerställt efter korrigering står med sitt q-värde |

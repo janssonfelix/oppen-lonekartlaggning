@@ -147,41 +147,6 @@ describe('§ 8-ställning: bedömning per område + flöde till Word-utkastet', 
     });
 });
 
-describe('visualisering: § 3:10 — kandidatparen som bild + tabellexport', () => {
-    it('kandidatparen ritas som ett par per rad med båda medianerna', () => {
-        win.__loadDemoData();
-        const pairs = (win.__computeLikvardighetPairs() || {}).pairs || [];
-        if (!pairs.length) return;
-        win.__pairs = pairs;
-        const f = win.eval('_lvParFigur(window.__pairs)');
-        expect(f.lager.map(l => l.marke)).toEqual(['intervall', 'punkt', 'punkt']);
-        expect(f.y.ordning.length).toBeGreaterThan(0);
-        expect(f.y.ordning.length).toBeLessThanOrEqual(Math.min(14, pairs.length));
-        for (const d of f.lager[0].data) { expect(Number.isFinite(d.lag) && Number.isFinite(d.hog) && d.hog >= d.lag).toBe(true); }
-        expect(f.lager[2].data.every(d => /%$/.test(d.etikett))).toBe(true);      // gapet står vid jämförelseyrket
-    });
-
-    it('likvärdighetsfliken ritar kandidatparen i sin behållare', () => {
-        win.__loadDemoData();
-        win.__renderTabContent('likvardighet');
-        const pairs = (win.__computeLikvardighetPairs() || {}).pairs || [];
-        const el = win.document.getElementById('chart-likvardighet-heatmap');
-        if (pairs.length) expect(el).not.toBeNull();
-    });
-
-    it('tableToMatrix läser rubrik + rader och rensar knappar/ikoner', () => {
-        win.__renderTabContent('matrix');   // fyller matrix-table
-        const m = win.__tableToMatrix('matrix-table');
-        expect(Array.isArray(m)).toBe(true);
-        if (m.length) {
-            const cols = m[0].length;
-            m.forEach(row => expect(row.length).toBe(cols));   // rektangulär
-            // ingen cell innehåller kvarvarande knapptext/emoji-lupp
-            expect(m.flat().some(c => c.includes('🔍'))).toBe(false);
-        }
-    });
-});
-
 describe('Utforska 2.0', () => {
     const $ = id => win.document.getElementById(id);
     const satt = (id, v) => { const el = $(id); if (el.type === 'checkbox') el.checked = v; else el.value = v; };
@@ -395,68 +360,6 @@ describe('Utforska 2.0', () => {
         const gd = rita();
         expect(gd._figur.lager.every(l => l.marke === 'lada' && l.punkter === 'alla')).toBe(true);
         expect(new Set(gd._figur.lager.flatMap(l => l.data.map(d => d.x)))).toEqual(new Set([forsta]));
-    });
-});
-
-describe('multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () => {
-    it('_regressionKronor översätter kön-effekten till kronor konsekvent', () => {
-        // Modellen är multiplikativ: kvinna = man × (1 + konPct/100).
-        const kr = win.__regressionKronor({ konPct: -5, medianMa: 40000, nKvAnalysed: 10 });
-        expect(kr.refMan).toBe(40000);
-        expect(kr.refKvinna).toBeCloseTo(38000, 6);      // 40000 × 0,95
-        expect(kr.krMonth).toBeCloseTo(2000, 6);
-        expect(kr.krYear).toBeCloseTo(24000, 6);
-        expect(kr.krTotalYear).toBeCloseTo(240000, 6);   // × 10 kvinnor
-    });
-
-    it('_regressionKronor returnerar null utan användbart underlag', () => {
-        expect(win.__regressionKronor(null)).toBeNull();
-        expect(win.__regressionKronor({ konPct: -5, medianMa: 0 })).toBeNull();
-        expect(win.__regressionKronor({ konPct: NaN, medianMa: 40000 })).toBeNull();
-    });
-
-    it('_explanationBudget delar upp gapet i förklarat + kvarstående', () => {
-        const b = win.__explanationBudget([
-            { name: 'Endast kön', gapPct: -10, status: 'ok' },
-            { name: '+ BAS-intervall', gapPct: -6, status: 'ok' },
-            { name: '+ Ålder', gapPct: -4, status: 'ok' }
-        ]);
-        expect(b.g0).toBe(10);
-        expect(b.remaining).toBe(4);
-        expect(b.parts.map(p => p.key)).toEqual(['bas', 'alder']);
-        expect(b.parts[0].val).toBeCloseTo(4, 6);   // 10 → 6
-        expect(b.parts[1].val).toBeCloseTo(2, 6);   // 6 → 4
-        expect(b.anyNegative).toBe(false);
-        // andelarna summerar till 100 % av det ursprungliga gapet
-        const sum = b.parts.reduce((s, p) => s + p.share, 0) + b.remainingShare;
-        expect(sum).toBeCloseTo(100, 6);
-    });
-
-    it('_explanationBudget flaggar när en kontroll ÖKAR gapet', () => {
-        const b = win.__explanationBudget([
-            { name: 'Endast kön', gapPct: -4, status: 'ok' },
-            { name: '+ BAS-intervall', gapPct: -7, status: 'ok' },
-            { name: '+ Ålder', gapPct: -6, status: 'ok' }
-        ]);
-        expect(b.anyNegative).toBe(true);
-        expect(b.parts[0].val).toBeLessThan(0);   // BAS dolde en del av gapet
-        expect(b.parts[0].share).toBe(0);         // negativa bidrag ritas inte som stapel
-    });
-
-    it('regressionskortet renderar kronor, signalkolumn och per-BAS-container', () => {
-        win.__loadDemoData();
-        expect(() => win.__renderRegressionCard()).not.toThrow();
-        const card = win.document.getElementById('regression-card');
-        const r = win.__runOLS();
-        if (r.error) return;                       // demodata gav ingen modell — hoppa
-        expect(card.querySelector('#chart-perbas-gap')).not.toBeNull();
-        expect(card.querySelector('#perbas-table')).not.toBeNull();
-        // p/q är dolda som standard (klarspråk först)
-        expect(card.querySelector('#perbas-table').classList.contains('hide-stats')).toBe(true);
-        expect(card.querySelectorAll('#perbas-table th.col-stat').length).toBe(2);
-        // stående reservation mot övertolkning finns intill siffrorna
-        expect(card.querySelectorAll('.reg-caveat-inline').length).toBeGreaterThanOrEqual(2);
-        expect(card.textContent).toContain('inte att den beror på kön eller är osaklig');
     });
 });
 

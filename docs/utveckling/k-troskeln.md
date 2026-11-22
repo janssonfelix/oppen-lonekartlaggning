@@ -542,7 +542,7 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 | Könsuppdelade mått för hela organisationen och per BAS | Avsnitt 2 | C2, C3, C4, C6 |
 | Prioritering: könsjämförelsen, prioritetsindexet, motiveringen om lägsta lönekvintilen | Avsnitt 2 (Prioritering) | `tests/ktroskel-utdata.test.js` (fliken i exportläget: ingen könsskillnad för en grupp med 2 män); `tests/prioritering.test.js` (grupper och könsmedianer under tröskeln); I4 (prioriteringslistan). Motiveringen om lägsta lönekvintilen har inget eget test |
 | Ansvarsgrupperna i Lika arbete | Avsnitt 2 (Ansvarsgrupperna) | `tests/kanonymitet.test.js` |
-| Huvudtalets spärr (*Endast kön*) | Avsnitt 1 (ADR-56) | `tests/smoke-innehall.test.js` |
+| Huvudtalets spärr (*Endast kön*) | Avsnitt 1 (ADR-56) | `tests/regression-app.test.js` |
 | Stämplarna för undantagen | Avsnitt 4 och 7 | I2 |
 | Omritning efter konfigurationsfil och organisationspaket | Avsnitt 3 | I5 i `tests/ktroskel-exporter.test.js` |
 | Låsningarna ur organisationspaketet | Avsnitt 6 (ADR-47) | `tests/organisationspaket.test.js`, `tests/ktroskel-regression.test.js`, `tests/smoke-organisation.test.js`, `tests/kanonymitet.test.js` |
