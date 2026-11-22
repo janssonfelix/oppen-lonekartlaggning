@@ -99,7 +99,7 @@ function _pagAvvikelseRader(d, grans) {
 // prövade och andelen långt under respektive över förväntad lön, och de två andelarna ritade i raden kring en
 // mittlinje (under åt vänster, över åt höger). Ett diagram med en stapel per rad stod till hälften tomt; tabellen
 // visar också nollorna och antalet bakom. `rader` kommer från _pagAvvikelseRader: bara BAS där båda könen når tröskeln.
-const _PAG_FARG = { under: '#c2552d', over: FARG.svag };
+const _PAG_FARG = { under: PALETTE.lage.under, over: FARG.svag };
 function _pagAvvikelseGrafik(o, kant) {
     const b = 200, h = 20, m = b / 2, w = v => +(Math.min(v, kant) / kant * (m - 2)).toFixed(1);
     return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">`

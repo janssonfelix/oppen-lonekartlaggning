@@ -56,10 +56,8 @@ function renderStructure() {
         <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per ${T.niva.en}, i ordning A–Ö. Sjunker andelen kvinnor mot högre ${T.niva.fl} (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak). Det är en strukturell orsak till löneskillnaden.</p>
         ${repVisade.length ? `<table class="data-table st-088"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">Median</th><th class="t-hoger">Andel kvinnor</th><th class="bredd-34p">Andel kvinnor (mot ${svPct(totAndel, 0)} totalt)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead><tbody>
         ${repVisade.map(g => {
-            const over = g.andelKv > totAndel + 10, under = g.andelKv < totAndel - 10;
-            const col = over ? 'bg-rosa' : under ? 'bg-accent' : 'bg-ok';
             return `<tr><td><strong>${esc(g.bas)}</strong></td><td class="t-hoger">${g.n}</td><td class="t-hoger">${kr(g.median)}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>
-            <td><div class="bak-yta-stark rund-7 hojd-14 pos-relativ"><div class="pos-botten-2 pos-absolut pos-topp-2 bredd-2 bg-dampad" data-stil-vanster="${totAndel.toFixed(1)}%" title="Snitt ${svPct(totAndel, 0)}"></div><div class="rund-7 hojd-100p ${col}" data-stil-bredd="${g.andelKv.toFixed(1)}%"></div></div></td>
+            <td><div class="bak-yta-stark rund-7 hojd-14 pos-relativ"><div class="pos-botten-2 pos-absolut pos-topp-2 bredd-2 bg-dampad" data-stil-vanster="${totAndel.toFixed(1)}%" title="Snitt ${svPct(totAndel, 0)}"></div><div class="rund-7 hojd-100p bg-accent" data-stil-bredd="${g.andelKv.toFixed(1)}%"></div></div></td>
             <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ''}</td></tr>`;
         }).join('')}
         </tbody></table>` : ''}
@@ -81,7 +79,7 @@ function renderStructure() {
             distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
             <div class="mb-10" id="chart-struktur-percentiler"></div>
             <table class="data-table st-088">${antalCaption(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
-            ${dist.map(x => `<tr><td>P${x.p}</td><td class="t-hoger">${kr(x.kv)}</td><td class="t-hoger">${kr(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 ${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join('')}
+            ${dist.map(x => `<tr><td>P${x.p}</td><td class="t-hoger">${kr(x.kv)}</td><td class="t-hoger">${kr(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 bg-accent" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join('')}
             </tbody></table>${tolk ? `<p class="fs-sm marg-8-0-0">${tolk}</p>` : ''}`; tillampaDataStil(distEl);
         }
     }

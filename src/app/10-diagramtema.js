@@ -62,7 +62,10 @@ const PALETTE = {
     // att något förklaras är ingen bedömning. Seriens två första färger, som skiljer sig också vid färgblindhet.
     // strukturLjus är ett steg som inte ingår i huvudtalet (regressionens AID-etikett inom BAS): strukturens blå,
     // ljusare, som en färg och inte som genomskinlighet, så att förklaringens ruta har samma färg som stapeln.
-    uppdelning: { helhet: FARG.dampad, struktur: '#2a78d6', strukturLjus: '#9fc2ed', lonesattning: '#eb6834' }
+    uppdelning: { helhet: FARG.dampad, struktur: '#2a78d6', strukturLjus: '#9fc2ed', lonesattning: '#eb6834' },
+    // Läget mot ett spann (lönepolitikens spann, personernas avstånd till gruppens median): varmt under, neutralt
+    // inom, kallt över, med den divergerande skalans mellansteg för tredjedelarna.
+    lage: { under: '#c2552d', nedre: '#e59a7b', inom: '#d5dae3', ovre: '#86b6ef', over: '#2a78d6' }
 };
 
 // Uppmärksamhetstrappan (ADR-59): statusordförrådet för en skillnad mellan kvinnors och mäns lön — ETT ställe för alla
