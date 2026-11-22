@@ -215,7 +215,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         const antal = () => w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         expect(antal()).toBe(1);
         const par = w.eval('likvardighetResultat().pairs');
-        w.eval('window.__lvBerakningar = 0; const __lvOrig = computeLikvardighetPairs; computeLikvardighetPairs = function () { window.__lvBerakningar++; return __lvOrig(); };');
+        w.eval('window.__lvBerakningar = 0; const __lvOrig = computeLikvardighetPairs; computeLikvardighetPairs = function (o) { window.__lvBerakningar++; return __lvOrig(o); };');
         // Golvet för skattningarna står kvar (5 < 10) och flyttas (25): i inget av fallen räknas paren om.
         for (const [k, vantat] of [[5, 0], [25, 2], [10, 1]]) {
             w.eval(`sattKTroskel(${k}, { fraga: false })`);

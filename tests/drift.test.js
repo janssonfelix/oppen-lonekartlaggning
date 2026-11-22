@@ -170,9 +170,9 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
 // OBS: app.js innehåller TVÅ funktioner med det här namnet — lib-spegelns
 // (`function computeLikvardighetPairs({ data = [], … })`) och app:ens adapter.
 // extractFn() skulle fastna på spegelns destrukturerade parameterlista, så vi
-// söker adapterns exakta, parameterlösa signatur.
+// söker adapterns exakta signatur.
 const appLVSrc = (() => {
-    const sig = 'function computeLikvardighetPairs() {';
+    const sig = 'function computeLikvardighetPairs(over) {';
     const i = appSrc.indexOf(sig);
     if (i < 0) throw new Error('hittade ej app-adaptern computeLikvardighetPairs()');
     return extractFn(appSrc.slice(i), 'computeLikvardighetPairs');

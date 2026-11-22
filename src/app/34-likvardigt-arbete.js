@@ -85,11 +85,12 @@ function likvardighetResultat() {
  *     parets egna löner så att KI:t går att återskapa
  *   - Arbetsvärderingspoäng som krav-proxy när tabell finns, annars BAS-rank
  *
+ * @param {{kvinnoTrosholdPct?: number}} [over] - kvinnotröskel som går före inställningen (robusthetspanelen)
  * @returns {any} alltid ett objekt — aldrig null
  */
-function computeLikvardighetPairs() {
+function computeLikvardighetPairs(over) {
     const cfg = state.likvardighet || {};
-    const kvinnoThr = cfg.kvinnoTrosholdPct ?? 60;
+    const kvinnoThr = over?.kvinnoTrosholdPct ?? cfg.kvinnoTrosholdPct ?? 60;
     const av = state.arbetsvardering;
     const usePoang = !!(av && av.byKey && av.byKey.size > 0);
 
