@@ -497,9 +497,8 @@ SVG (skarp i Word) och diagramdatan som tabell.
 **Välj vad ett diagram visar.** I diagrammen där BAS-intervallet är en dimension (bland annat
 bandkartan och statistikens spann i Löneläget, översikten, könsfördelningen, lådorna och trattdiagrammet i Lika
 arbete, Krav mot lön i Likvärdigt arbete, Prioriteringens två diagram och hanteln per BAS-intervall i Spara och
-jämför år) står en knapp per intervall ovanför diagrammet. Filtren ligger hopfällda i raden **Filter**, som säger hur
-många som är aktiva (*Filter: inga*, *Filter: 1 aktivt*, *Filter: 2 aktiva*); klicka på den för att fälla ut dem. Den
-står kvar utfälld när diagrammet ritas om. Klicka på ett intervall för att dölja det, till exempel BAS A, B, C och N
+jämför år) står en knapp per intervall ovanför diagrammet. Filtren står i rutan **Filter**, som säger hur många som
+är aktiva (*Filter: inga*, *Filter: 1 aktivt*, *Filter: 2 aktiva*); med ett aktivt filter blir rutan blå. Klicka på ett intervall för att dölja det, till exempel BAS A, B, C och N
 inför en presentation. Det sista synliga intervallet kan inte döljas.
 
 Diagram där varje punkt är en AID-etikett har fler filter, en rad per filter:

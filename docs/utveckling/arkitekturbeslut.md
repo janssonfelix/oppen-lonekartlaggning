@@ -100,6 +100,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-91 | Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden | Ändrad av ADR-92 | 2026-11-20 |
 | ADR-92 | S4 gäller en fil i taget | Gällande | 2026-11-20 |
 | ADR-93 | JPA-protokollet redovisar alla grupper i lika arbete | Gällande | 2026-11-22 |
+| ADR-94 | Diagrammens filter står alltid utfällda | Gällande | 2026-11-22 |
 
 ## Besluten
 
@@ -585,3 +586,9 @@ flaggade. Bladet har antal och medianer men inga medelvärden, så det ger ingen
 (medianer går inte att dela upp). *Avvisat:* en ny tabell för protokollet, som kunde säga något annat än Lika arbete
 om samma grupp; att lägga till medelvärdet per grupp, som öppnar nya skillnader mot blad 3. *Gäller i dag:*
 `lagrum.md`, avsnittet om protokollet för gemensam lönebedömning, och `k-troskeln.md` avsnitt 2.
+
+**ADR-94 — Diagrammens filter står alltid utfällda.** Beslutat av underhållaren 2026-11-22. Filterraderna ovanför ett
+diagram står i en inramad ruta med rubriken *Filter* och antalet aktiva filter; rutan fälls inte ihop, och med ett
+aktivt filter får den accentfärgen. Hopfällda bakom en rad *Filter: …* missades filtren. *Avvisat:* att behålla den
+hopfällda raden men fälla ut den från början, som fortfarande låter filtren gömmas och kräver ett minne per diagram.
+*Gäller i dag:* `diagramkarnan.md`, *Rutan Filter*.

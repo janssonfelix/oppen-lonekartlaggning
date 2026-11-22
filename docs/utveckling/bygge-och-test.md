@@ -323,8 +323,10 @@ kontrollsummorna i `vendor/SHA256SUMS`). Utvecklingsberoendena bevakas av Depend
    granskningsdatumet (punkt 17b i [`oppna-punkter.md`](oppna-punkter.md)).
 2. Sätt versionen i `VERSION` och `package.json`, och byt rubriken *Oförlöst* i `CHANGELOG.md` mot versionen.
 3. `npm run build:app && npm run bundle`; för in byggets kontrollsumma och version på rad 3 i riskanalysen.
-4. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden skriver ut taggkommandot.
-5. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om, signerar och
+4. Har funktionalitet tillkommit eller ändrats sedan förra versionen: uppdatera och bygg om bildspelet
+   `site/genomgang.html` (Definition of Done i `.github/CONTRIBUTING.md`).
+5. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden skriver ut taggkommandot.
+6. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om, signerar och
    publicerar en GitHub Release. Samma tagg publicerar demosidan (`.github/workflows/pages.yml`; går också att köra
    för hand).
 
@@ -339,7 +341,7 @@ dess kommentarer; `tests/sakerhet.test.js` prövar ordningen, den fullständiga 
 och att jobbet har minsta behörighet.
 
 **Demosidan.** `npm run site` (`tools/site.mjs`, efter `npm run bundle`) bygger `site/dist/` (startsidan ur
-`site/index.html`, bygget och `RELEASE.txt`) för valfri statisk webbplats. Sidan har inga skript och länkar till
+`site/index.html`, bygget, `RELEASE.txt` och bildspelet `site/genomgang.html`) för valfri statisk webbplats. Sidan har inga skript och länkar till
 verktyget med `?demo=stor`, som startar det stora demot (bara parametern `demo` läses). Finns en översiktsbild eller en
 kort slinga i `dist/marknad/` tas den med på sidan. Arbetsflödet `.github/workflows/pages.yml` (på tagg `v*` eller
 för hand) kör `node tools/site.mjs` med guidelänkar till `docs/anvandare/` i repot och publicerar på GitHub Pages
