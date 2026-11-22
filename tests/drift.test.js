@@ -42,6 +42,7 @@ import * as libAg from '../src/lib/attgora.js';
 import * as libSts from '../src/lib/status.js';
 import * as libOs from '../src/lib/osakerhet.js';
 import * as libCsv from '../src/lib/csv.js';
+import * as libTalformat from '../src/lib/talformat.js';
 import * as libAidEt from '../src/lib/aid-etiketter.js';
 import * as libAid from '../src/lib/aid.js';
 import * as libSk from '../src/lib/sektor.js';
@@ -100,7 +101,7 @@ const allEntries = MODULES.flatMap(m => Object.keys(m.expose));
 const M = new Function(`${mirrorsSrc}\n;return { ${[...allAliases, ...MODULES.map(m => m.ns)].join(', ')} };`)();
 const libByFile = { 'kon.js': libKon, 'stat.js': libStat, 'loneoversyn.js': libFc, 'struktur.js': libSt,
     'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'installningsgranser.js': libIg, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'inlasning.js': libIl, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'referenser.js': libRf, 'namn.js': libNamn, 'termer.js': libTermer, 'htmltext.js': libHtmlText, 'undertryckning.js': libUndertryckning, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
-    'prioritering.js': libPr, 'kostnad.js': libKost, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts, 'osakerhet.js': libOs, 'csv.js': libCsv };
+    'prioritering.js': libPr, 'kostnad.js': libKost, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts, 'osakerhet.js': libOs, 'csv.js': libCsv, 'talformat.js': libTalformat };
 
 describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
     it('ALIAS-WIRING: varje spegelnamn pekar på exakt rätt lib-funktion', () => {

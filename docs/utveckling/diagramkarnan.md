@@ -80,8 +80,8 @@ omvand?: boolean, nollinje?: boolean, etikettMax?: number, dold?: boolean }`.
 - `ordning` gäller bandaxlar. Domänen är `ordning` följd av övriga kategorier i den ordning de först
   förekommer, begränsad till kategorier som har en ritad punkt. En etikett utan datapunkt ritas aldrig.
 - `format` är ett namn i `talformat`: `'kr'`, `'pct'`, `'pctAbs'` (procent utan tecken, för axeln i en divergerande stapel), `'antal'`, `'tal2'`, `'ar'`. Axelmarkeringar skrivs utan
-  enhet. Halvorna avrundas bort från noll (`avrundaSymmetriskt` i `src/lib/stat.js`, som också appens `svTal` och
-  `svKr` använder), så att ett tal och dess motsatta tal visas med samma siffror.
+  enhet. Talen formateras med `svTal` i `src/lib/talformat.js`, som appens tabeller: halvorna avrundas bort från
+  noll, så att ett tal och dess motsatta tal visas med samma siffror.
 - `nollinje` ritar en linje vid noll på en talaxel (`x` eller `y`). På en log-axel ritas ingen.
 - Kategorinamn på en stående bandaxel (`x`) som inte ryms på en rad bryts på två, vid ordgräns; det som inte ryms på
   andra raden kortas. En rad extra reserveras under axeln när något namn behöver det.

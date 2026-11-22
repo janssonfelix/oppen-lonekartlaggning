@@ -1,7 +1,7 @@
 /**
  * Svenskt talformat i exporterna.
  *
- * Tre vägar prövas:
+ * Talformatet självt (src/lib/talformat.js) prövas utan DOM längst ned. Tre vägar ut ur verktyget prövas:
  *   1. CSV- och urklippsexporten av en tabell: talen som de står på skärmen (`tableToMatrix` och src/lib/csv.js).
  *      Cellernas formelskydd och talformat prövas utan DOM i tests/csv.test.js.
  *   2. Jämförelseexporten (`exportBenchmarkExcel`, src/app/64-jamforelse-export.js): kronor och procent är talceller
@@ -15,6 +15,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
+import { svTal, svPct, svKr, svPoPct } from '../src/lib/talformat.js';
+import { talformat } from '../src/lib/figur.js';
 
 const NBSP = ' ', NNBSP = ' ', MINUS = '−';
 
@@ -38,14 +40,6 @@ describe('CSV-exporten av en tabell: talen som de står på skärmen', () => {
 describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)', () => {
     let w;
     beforeAll(() => { w = createAppWindow(); });
-    it('procent och kronor skrivs med U+00A0 före enheten, så att en smal kolumn inte bryter isär dem', () => {
-        expect(w.eval('svPct(12.5, 1)')).toBe(`12,5${NBSP}%`);
-        expect(w.eval('svKr(36262)')).toBe(`36${NBSP}262${NBSP}kr`);
-        expect(w.eval('svKr(-1250.4)')).toBe(`${MINUS}1${NBSP}250${NBSP}kr`);
-        expect(w.eval('svKr(null)')).toBe('–');
-        expect(w.eval(`svKr(undefined, '—')`)).toBe('—');
-        expect(w.eval('svKr(NaN)')).toBe('–');
-    });
     it('Excel läser cellen som ett tal med enhet, och CSV och urklipp skriver vanliga mellanslag som förut', () => {
         expect(w.eval('_exportTalMedEnhet(svKr(36262))')).toEqual({ tal: 36262, enhet: 'kr', dec: 0 });
         expect(w.eval('_exportTalMedEnhet(svPct(-3.25, 2))')).toEqual({ tal: -3.25, enhet: '%', dec: 2 });
@@ -216,44 +210,66 @@ describe('Jämförelseexporten: talceller med svenskt talformat, koder som text'
     });
 });
 
-// Visningens avrundning: halvorna avrundas bort från noll (avrundaSymmetriskt i src/lib/stat.js), så att ett tal och
-// dess motsatta tal visas med samma siffror. Math.round avrundar halvorna uppåt, och då stod samma avvikelse som
-// "−1 600 kr" och kostnaden, samma tal utan tecken, som "1 601 kr".
-describe('avrundningen i talformaten är symmetrisk kring noll', () => {
-    let w;
-    beforeAll(() => { w = createAppWindow(); });
+// Talformatet (src/lib/talformat.js) prövas utan DOM: appen får samma funktioner genom spegeln. Halvorna avrundas
+// bort från noll (avrundaSymmetriskt i src/lib/stat.js), så att ett tal och dess motsatta tal visas med samma siffror.
+// Math.round avrundar halvorna uppåt, och då stod samma avvikelse som "−1 600 kr" och kostnaden, samma tal utan
+// tecken, som "1 601 kr".
+describe('talformatet: svTal, svPct, svKr och svPoPct', () => {
     const utanTecken = s => s.replace(MINUS, '');
+    it('procent och kronor skrivs med U+00A0 före enheten, så att en smal kolumn inte bryter isär dem', () => {
+        expect(svPct(12.5, 1)).toBe(`12,5${NBSP}%`);
+        expect(svKr(36262)).toBe(`36${NBSP}262${NBSP}kr`);
+        expect(svKr(-1250.4)).toBe(`${MINUS}1${NBSP}250${NBSP}kr`);
+        expect(svPoPct(31.4)).toBe(`31,4${NBSP}%`);
+    });
+    it('det som inte är ett ändligt tal blir «–»', () => {
+        for (const v of [NaN, Infinity, null, undefined, '12']) {
+            expect(svTal(v), String(v)).toBe('–');
+            expect(svPct(v), String(v)).toBe('–');
+            expect(svKr(v), String(v)).toBe('–');
+            expect(svPoPct(v), String(v)).toBe('–');
+        }
+        expect(svKr(undefined, '—')).toBe('—');
+    });
     it('svKr: −1 600,5 och 1 600,5 visas med samma siffror', () => {
-        expect(w.eval('svKr(1600.5)')).toBe(`1${NBSP}601${NBSP}kr`);
-        expect(w.eval('svKr(-1600.5)')).toBe(`${MINUS}1${NBSP}601${NBSP}kr`);
-        for (const v of [0.5, 2.5, 1600.5, 12345.5, 1600.4, 1600.6]) expect(utanTecken(w.eval(`svKr(${-v})`)), String(v)).toBe(w.eval(`svKr(${v})`));
+        expect(svKr(1600.5)).toBe(`1${NBSP}601${NBSP}kr`);
+        expect(svKr(-1600.5)).toBe(`${MINUS}1${NBSP}601${NBSP}kr`);
+        for (const v of [0.5, 2.5, 1600.5, 12345.5, 1600.4, 1600.6]) expect(utanTecken(svKr(-v)), String(v)).toBe(svKr(v));
     });
     it('svTal och svPct med en och två decimaler', () => {
-        expect(w.eval('svPct(-4.25, 1)')).toBe(`${MINUS}4,3${NBSP}%`);
-        expect(w.eval('svPct(4.25, 1)')).toBe(`4,3${NBSP}%`);
+        expect(svPct(-4.25, 1)).toBe(`${MINUS}4,3${NBSP}%`);
+        expect(svPct(4.25, 1)).toBe(`4,3${NBSP}%`);
         for (const [v, dec] of [[0.25, 1], [4.25, 1], [12.75, 1], [0.125, 2], [1.5, 0], [2.5, 0]]) {
-            expect(utanTecken(w.eval(`svTal(${-v}, ${dec})`)), `${v} ${dec}`).toBe(w.eval(`svTal(${v}, ${dec})`));
-            expect(utanTecken(w.eval(`svPct(${-v}, ${dec})`)), `${v} ${dec}`).toBe(w.eval(`svPct(${v}, ${dec})`));
+            expect(utanTecken(svTal(-v, dec)), `${v} ${dec}`).toBe(svTal(v, dec));
+            expect(utanTecken(svPct(-v, dec)), `${v} ${dec}`).toBe(svPct(v, dec));
         }
     });
-    it('diagramkärnans talformat', () => {
+    it('diagramkärnans talformat avrundar likadant', () => {
         for (const v of [0.5, 1600.5, 2.25, 4.25, 0.125]) {
-            for (const namn of ['kr', 'pct', 'antal', 'tal2']) expect(utanTecken(w.eval(`_figTalformat(${-v}, '${namn}')`)), `${v} ${namn}`).toBe(w.eval(`_figTalformat(${v}, '${namn}')`));
+            for (const namn of ['kr', 'pct', 'antal', 'tal2']) expect(utanTecken(talformat(-v, namn)), `${v} ${namn}`).toBe(talformat(v, namn));
         }
+        // 1,005 lagras som 1,00499…: alla format visar 1,00, också rapportunderlaget, som förut avrundade med Intl till 1,01.
+        expect(talformat(1.005, 'tal2')).toBe(svTal(1.005, 2));
+        expect(svTal(1.005, 2)).toBe('1,00');
     });
-    it('noll och tal som avrundas till noll visas utan minustecken, som förut', () => {
-        expect(w.eval('svKr(0)')).toBe(`0${NBSP}kr`);
-        expect(w.eval('svKr(-0.4)')).toBe(`0${NBSP}kr`);
-        expect(w.eval('svKr(-0)')).toBe(`0${NBSP}kr`);
-        expect(w.eval('svPct(-0.04, 1)')).toBe(`0,0${NBSP}%`);
-        expect(w.eval('svTal(-0.004, 2)')).toBe('0,00');
-        expect(w.eval("_figTalformat(-0.04, 'pct')")).toMatch(/^0,0\s%$/);
+    it('noll och tal som avrundas till noll visas utan minustecken', () => {
+        expect(svKr(0)).toBe(`0${NBSP}kr`);
+        expect(svKr(-0.4)).toBe(`0${NBSP}kr`);
+        expect(svKr(-0)).toBe(`0${NBSP}kr`);
+        expect(svPct(-0.04, 1)).toBe(`0,0${NBSP}%`);
+        expect(svTal(-0.004, 2)).toBe('0,00');
+        expect(talformat(-0.04, 'pct')).toMatch(/^0,0\s%$/);
     });
     it('tal som inte ligger på en halva avrundas som förut', () => {
-        expect(w.eval('svKr(1600.49)')).toBe(`1${NBSP}600${NBSP}kr`);
-        expect(w.eval('svKr(-1600.51)')).toBe(`${MINUS}1${NBSP}601${NBSP}kr`);
-        expect(w.eval('svKr(-1600.49)')).toBe(`${MINUS}1${NBSP}600${NBSP}kr`);
-        expect(w.eval('svPct(12.34, 1)')).toBe(`12,3${NBSP}%`);
+        expect(svKr(1600.49)).toBe(`1${NBSP}600${NBSP}kr`);
+        expect(svKr(-1600.51)).toBe(`${MINUS}1${NBSP}601${NBSP}kr`);
+        expect(svKr(-1600.49)).toBe(`${MINUS}1${NBSP}600${NBSP}kr`);
+        expect(svPct(12.34, 1)).toBe(`12,3${NBSP}%`);
+    });
+    it('svPoPct: högst två decimaler och inga avslutande nollor', () => {
+        expect(svPoPct(40)).toBe(`40${NBSP}%`);
+        expect(svPoPct(39.15)).toBe(`39,15${NBSP}%`);
+        expect(svPoPct(31.40)).toBe(`31,4${NBSP}%`);
     });
 });
 

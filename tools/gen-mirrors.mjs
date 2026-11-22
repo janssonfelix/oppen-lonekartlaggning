@@ -84,6 +84,12 @@ export const MODULES = [
         }
     },
     {
+        // Talformatet (svTal, svPct, svKr, svPoPct): appen får funktionerna under samma namn; importerar stat.js
+        // (avrundaSymmetriskt), och rapportunderlaget, prioriteringen och diagramkärnan importerar det: efter stat.js
+        file: 'talformat.js', ns: '__mirrorTalformat',
+        expose: { svTal: 'svTal', svPct: 'svPct', svKr: 'svKr', svPoPct: 'svPoPct' }
+    },
+    {
         // Kostnadsformeln (månadsbelopp × månader × PO-faktor): före löneöversynen och prioriteringen, som importerar den
         file: 'kostnad.js', ns: '__mirrorKostnad',
         expose: { kostnadsfaktor: '_kostFaktor', periodkostnad: '_kostPeriod', kostnadPerAr: null }

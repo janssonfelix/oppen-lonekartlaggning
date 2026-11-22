@@ -11,7 +11,7 @@ Dokumentet beskriver den byggda koden. Där det skiljer sig från koden är det 
 | Lager | Var det bor | Ansvar |
 |---|---|---|
 | Sidan | `src/index.html`, `src/style.css` | Skalet, stilmallen och innehållspolicyn (CSP) som bygget gör till en fil. Sidan kör inget från nätet (S1). |
-| Beräkningskärnan | `src/lib/` (48 moduler) | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
+| Beräkningskärnan | `src/lib/` (50 moduler) | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
 | Spegeln | `src/app/09-lib-speglar.js` | Genererad av `tools/gen-mirrors.mjs`. Varje lib-modul är inlinad, med de alias som appen anropar. Redigeras aldrig för hand. |
 | Appen | `src/app/NN-*.js` (86 delar) | Ett enda globalt skript i prefixordning: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
 | Biblioteken | `vendor/` | D3, JSZip, PapaParse och SheetJS, låsta med kontrollsummor i `SHA256SUMS`. Licenserna står i `TREDJEPARTSLICENSER.md`. |
@@ -67,7 +67,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `jamforelse` | `aid`, `kon`, `stat`, `termer` |
 |  | `skrreferens` | `aid`, `skr-personal` |
 |  | `skr-personal` | – |
-| Simulering och prioritering | `prioritering` | `aid`, `kon`, `kostnad`, `stat` |
+| Simulering och prioritering | `prioritering` | `aid`, `kon`, `kostnad`, `stat`, `talformat` |
 |  | `kostnad` | – |
 |  | `loneoversyn` | `kon`, `kostnad`, `likvardighet`, `stat` |
 | Klassificering | `aid` | `aid-etiketter`, `termer` |
@@ -79,6 +79,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `kon` | – |
 |  | `importprofiler` | – |
 |  | `csv` | – |
+|  | `talformat` | `stat` |
 |  | `forhandskontroll` | `termer` |
 |  | `datakvalitet` | `falt`, `forhandskontroll`, `namn`, `stat`, `termer` |
 |  | `organisationsfil` | – |
@@ -88,9 +89,9 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 | Språk | `termer` | – |
 |  | `namn` | `termer` |
 |  | `htmltext` | – |
-| Diagram, rapport och utforskning | `figur` | `kon`, `stat` |
+| Diagram, rapport och utforskning | `figur` | `kon`, `stat`, `talformat` |
 |  | `docx` | `htmltext` |
-|  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `likvardighet`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `termer` |
+|  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `likvardighet`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `talformat`, `termer` |
 |  | `arsbokslut` | `aid`, `sakligaskal`, `stat`, `termer` |
 |  | `tabellrecept` | `namn`, `termer`, `utforska` |
 |  | `utforska` | `aid`, `falt`, `stat`, `termer`, `urval` |

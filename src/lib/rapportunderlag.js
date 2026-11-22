@@ -23,6 +23,7 @@ import { basRangFn } from './likvardighet.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
 import { arKvinna } from './kon.js';
+import { svTal as formatTal } from './talformat.js';
 import { aidAvRad, namnrader } from './aid.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
@@ -153,13 +154,8 @@ export const FRAGOR_PAR = Object.freeze([
     'Finns skillnader i arbetstid, arbetsmiljö eller ansvar som inte syns i BAS?',
 ]);
 
-/** Svenskt talformat (decimalkomma, hårt mellanslag som tusentalsavgränsare). */
-export function formatTal(v, dec = 0) {
-    if (v == null || !isFinite(v)) return '–';
-    const t = new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v);
-    // Ett negativt tal som avrundas till noll ska inte bli "−0" (samma avrundning som övriga tabeller).
-    return /^[-−]0(,0+)?$/.test(t) ? t.slice(1) : t;
-}
+// Talen avrundas som i appens tabeller (formatTal är svTal ur talformat.js). Före enheten står här ett vanligt
+// mellanslag, som i blockens text förut.
 const _st = (n, en, flera) => `${formatTal(n)} ${n === 1 ? en : flera}`;
 const _kr = v => (v == null || !isFinite(v)) ? '–' : `${formatTal(v, 0)} kr`;
 const _pct = (v, dec = 1) => (v == null || !isFinite(v)) ? '–' : `${formatTal(v, dec)} %`;
