@@ -384,8 +384,9 @@ export async function flikarOchDiagram() {
                 oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-pr-"]')].filter(a => a.open).map(a => a.id).join(','), rad: g('pr-installningar-rad').textContent }; });
         ok(pr.matrisForst && pr.sist && pr.oppna === 'avsnitt-pr-lista' && pr.rad.startsWith('Trösklar och viktning: standardvärden'), 'matrisen står före listan, och raden om trösklarna efter den säger standardvärden');
         await page.click('#pr-installningar-rad [data-oppna-installningar="prio-cfg-atgard"]');
-        await page.waitForTimeout(300);
-        ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'flex' && document.activeElement.id === 'prio-cfg-atgard'), 'Ändra öppnar Inställningar med fokus i granskningsgränsen');
+        // Väntar på fokus i stället för en fast tid: webkit flyttar det ibland senare än 300 ms.
+        const fokus = await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'flex' && document.activeElement.id === 'prio-cfg-atgard', null, { timeout: 5000 }).then(() => true, () => false);
+        ok(fokus, 'Ändra öppnar Inställningar med fokus i granskningsgränsen');
         await page.fill('#prio-cfg-atgard', '-8');
         await page.waitForTimeout(500);
         ok(await page.evaluate(() => document.getElementById('pr-installningar-rad').textContent.startsWith('Trösklar och viktning: anpassade värden')), 'en ändrad tröskel i dialogen syns i flikens rad');
