@@ -463,7 +463,7 @@ describe('allocate: lägst först (water-filling) med fem löner (characterizati
     });
 });
 
-describe('allocate: tak vid median (dist target, characterization)', () => {
+describe('allocate: tak vid median eller P25 (dist target, characterization)', () => {
     const femLoner = () => [10000, 12000, 14000, 16000, 20000].map(lon => ({ bas: 'A', aid: '1', kon: 'man', lon }));
     const tak = value => [{ bas: 'A', aid: '1', mode: 'kr', value, dist: 'target', targetLevel: 'median' }];
 
@@ -475,6 +475,11 @@ describe('allocate: tak vid median (dist target, characterization)', () => {
     it('pott 3 000 under taket: vattenytan 12 500 utan att nå medianen', () => {
         const a = allocate(femLoner(), { mode: 'pct', value: 0 }, tak(3000));
         expect(a.perPerson.map(p => p.delta)).toEqual([2500, 500, 0, 0, 0]);
+    });
+    it('tak vid BAS P25 (12 000): bara den lägsta lyfts dit (2 000), resten av potten används inte', () => {
+        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, [{ ...tak(10000)[0], targetLevel: 'p25' }]);
+        expect(a.perPerson.map(p => p.delta)).toEqual([2000, 0, 0, 0, 0]);
+        expect(a.totals.riktadCost).toBeCloseTo(2000, 6);
     });
 });
 

@@ -127,6 +127,16 @@ Vitest. De genererade filerna (`dist/` och `src/app/08-version.js` och
   **äkta D3** i jsdom, så SVG:n som prövas är den riktiga, och två differentialtester vaktar att små grupper inte
   lämnar spår på skärmen eller i exporten.
 
+**Ett nytt test prövar en sak på ett ställe.** En regel (en beräkning, en tolkning, en gräns) prövas i en enhetsfil
+mot modulen i `src/lib/`: den körs på millisekunder och pekar ut felet. Ett apptest i jsdom skrivs för det som bara
+syns när verktyget är ihopkopplat: vad en flik visar, vad som lämnar verktyget och att ett val når rätt väg. Har
+regeln redan ett enhetstest prövar apptestet att regeln används, inte alla fall en gång till. Befintliga tester
+flyttas när de ändå ändras, inte i ett svep.
+
+**Ett dokumenttest låser inte ordalydelsen.** Dokumenttesterna prövar att det dokumenten pekar på finns (filer,
+skript, ADR-nummer), att tal ur koden står rätt och att avförda ord och påståenden inte står kvar. En formulering
+låses bara när den bär ett skydd: vad dataskyddsdokumenten säger om skyddet, förbehållen och lagrummen.
+
 Vilka tester som vaktar skydden står i [`skydd.md`](skydd.md), och vilka som vaktar principerna i
 [`principer.md`](principer.md).
 
