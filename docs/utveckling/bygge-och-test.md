@@ -109,12 +109,13 @@ Vitest. De genererade filerna (`dist/` och `src/app/08-version.js` och
 `09-lib-speglar.js`) prövas av artefaktgrinden, inte av sviten, så `npm test` efter en ändring i `src/lib/` kräver
 `npm run build:app` först; `npm run kontroll` gör det själv.
 
-- rena `src/lib/`-moduler och CSV-parsningen;
-- jsdom-röktest av varje vy (ADR-7): `tests/smoke.test.js` med det delade fönstret och ett dussintal
-  `tests/smoke-*.test.js` per område;
-- k-tröskeln i fjorton `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`; gränssnittet i
-  `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
-  `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`);
+- rena `src/lib/`-moduler och CSV-parsningen, en fil per modul eller område (`tests/<område>.test.js`);
+- jsdom-röktest av appen (ADR-7), en fil per funktion (`tests/<område>-app.test.js`, till exempel `inlasning-app` och
+  `rapport-app`);
+- det som går tvärs över funktionerna: k-tröskeln i `tests/ktroskel*.test.js` med riggen i
+  `tests/helpers/ktroskel-rigg.js`; gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`);
+  diagrammen i `tests/diagram*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`); visningsminnet i
+  `tests/visningsminne*.test.js` (riggen `tests/helpers/visningsminne-rigg.js`);
 - axe-a11y (ADR-10, `tests/a11y.test.js`);
 - vakterna `drift`, `exports.golden`, `version`, `release` och `kanonymitet`;
 - escaping-vakten `tests/escaping.test.js` (motorn i `tests/helpers/htmlmallar.js`) läser `src/app/` utan att ladda
@@ -125,6 +126,16 @@ Vitest. De genererade filerna (`dist/` och `src/app/08-version.js` och
 - `tests/figur.test.js` prövar figurformatet och `tests/diagramritare.test.js` diagramkärnan (ADR-39). Den ritar med
   **äkta D3** i jsdom, så SVG:n som prövas är den riktiga, och två differentialtester vaktar att små grupper inte
   lämnar spår på skärmen eller i exporten.
+
+**Ett nytt test prövar en sak på ett ställe.** En regel (en beräkning, en tolkning, en gräns) prövas i en enhetsfil
+mot modulen i `src/lib/`: den körs på millisekunder och pekar ut felet. Ett apptest i jsdom skrivs för det som bara
+syns när verktyget är ihopkopplat: vad en flik visar, vad som lämnar verktyget och att ett val når rätt väg. Har
+regeln redan ett enhetstest prövar apptestet att regeln används, inte alla fall en gång till. Befintliga tester
+flyttas när de ändå ändras, inte i ett svep.
+
+**Ett dokumenttest låser inte ordalydelsen.** Dokumenttesterna prövar att det dokumenten pekar på finns (filer,
+skript, ADR-nummer), att tal ur koden står rätt och att avförda ord och påståenden inte står kvar. En formulering
+låses bara när den bär ett skydd: vad dataskyddsdokumenten säger om skyddet, förbehållen och lagrummen.
 
 Vilka tester som vaktar skydden står i [`skydd.md`](skydd.md), och vilka som vaktar principerna i
 [`principer.md`](principer.md).
@@ -147,7 +158,8 @@ en väg som ökar visningsversionen (`k-troskeln.md` §3).
 Sviten är delad i två Vitest-projekt i `vitest.config.js`: `enhet` (moduler, vakter och källtext, utan att verktyget
 laddas) och `app` (filerna som ritar verktyget i jsdom). Klassningen görs när konfigurationen laddas, så en ny
 testfil hamnar rätt utan att listas: en fil hör till `app` om källan nämner `app-harness`, en `-rigg.js` eller
-`createAppWindow`, eller importerar jsdom.
+`createAppWindow`, eller kör skript i jsdom (`runScripts`). En fil som bara använder jsdom som tolk, som
+`docx.test.js` för XML, hör till `enhet`.
 
 - `npm test` är den snabba körningen, bara `enhet` (sekunder).
 - `npm run test:full` kör båda projekten (minuter) och är den som körs i CI och i `npm run kontroll`.
@@ -164,10 +176,12 @@ behövs, så att varje arbetares minne håller sig under Nodes tak (den tyngsta 
 billigt efter det första (som bär kompileringen); det dyra är ritningen av alla flikar (omkring 2 s på demodatan), så
 tiden styrs av hur många flikritningar en fil gör.
 
-Vitest kör en fil per arbetare, så **den längsta filen sätter golvet för hela körningen**. Därför är röktestet,
-k-tröskeltestet, gränssnittstestet och diagramvyerna delade i filer per område (`tests/smoke*.test.js`,
-`tests/ktroskel*.test.js`, `tests/granssnitt*.test.js`, `tests/diagramvyer*.test.js`) med gemensamma riggar i
-`tests/helpers/`. Den längsta förberedelsen, invarianten över flikar och exporter (I4), är av samma skäl delad per
+Vitest kör en fil per arbetare. **Körtiden styrs av den sammanlagda tiden delad på antalet arbetare** (2026-11-22:
+omkring 2 050 s på tolv arbetare gav 198 s), och den längsta filen (omkring 100 s) är bara ett golv. Att dela en fil
+gör därför sviten snabbare först när filen är längre än den sammanlagda tiden per arbetare. Apptesterna är delade
+per funktion (`tests/*-app.test.js`), och k-tröskeltestet, gränssnittstestet och diagramvyerna per område
+(`tests/ktroskel*.test.js`, `tests/granssnitt*.test.js`, `tests/diagramvyer*.test.js`) med gemensamma riggar i
+`tests/helpers/`. Den längsta förberedelsen, invarianten över flikar och exporter (I4), är delad per
 tröskel (`tests/ktroskel-invarianter.test.js` och `tests/ktroskel-invarianter-25.test.js`, sviten i
 `tests/helpers/ktroskel-invariant.js`). Under full last tar varje fil omkring dubbelt så lång tid som ensam, och de
 tyngsta ett par minuter.
@@ -187,8 +201,8 @@ Avtrycket ser inte allt, till exempel stubbar på fönstret och värden i fält,
 behåller ett eget fönster.
 
 **En fil delar bara om den blir minst 20 % snabbare.** Under gränsen är vinsten mindre än variationen mellan
-körningar, och i de flesta sådana filer ändrar testerna något. `smoke`, `kanonymitet` och `diagramritare` delade
-redan eller har sin tid i ritningen.
+körningar, och i de flesta sådana filer ändrar testerna något. Apptesterna med ett fönster i `beforeAll`,
+`kanonymitet` och `diagramritare` delade redan eller har sin tid i ritningen.
 
 ### 5.5 Webbläsarröktestet
 
@@ -243,8 +257,10 @@ JavaScript-källan med JSDoc som typspråk — inget skrivs om till TypeScript o
 
 ## 7. Lint
 
-`npm run lint` kör ESLint på `dist/app.js`, `src/lib`, `tests` och `tools` (`npm run lint:fix` rättar det som går);
-biblioteken i `vendor/` och `types/` lintas inte. Röktestet och prestandasvepet lintas med webbläsarens och appens
+`npm run lint` (`tools/lint.mjs`) kör ESLint på appen, `src/lib`, `tests` och `tools`; biblioteken i `vendor/` och
+`types/` lintas inte. Appen lintas hopslagen, som `build:app` bygger den, så att linten ser globaler som ingen fil
+använder och namn som ingen fil deklarerar, men felen anges med källfil och rad i `src/app/`, och `npm run lint:fix`
+skriver sina rättningar i källfilerna (kör `build:app` efteråt). Röktestet och prestandasvepet lintas med webbläsarens och appens
 globaler, eftersom deras callbacks körs i sidan.
 
 Linten förbjuder nät-API och lagring utanför lagringsspärren i appens kod och i lib-modulerna (skydden S1 och S2 i

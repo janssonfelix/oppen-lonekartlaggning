@@ -1,6 +1,7 @@
 // ESLint flat config (ESLint 10) för Öppen lönekartläggning.
 // dist/app.js körs som klassisk browser-script (inga ES-moduler); src/lib/ är rena
 // ES-moduler; tester körs som ESM under Node/Vitest.
+// Kör linten med npm run lint (tools/lint.mjs): den lintar appen hopslagen men anger felen i src/app/NN-*.js.
 import globals from 'globals';
 
 const browserLibs = {

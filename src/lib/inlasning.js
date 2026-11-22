@@ -109,6 +109,13 @@ export function parseNumberStrict(v) {
 
 // ---- Textfälten: AID-etiketten, BAS, AID i ställningstagandet och kön ----
 
+// Etiketten i fältet för AID-etikett: resten efter AID-koden och vanliga separatorer (—, -, :, ., whitespace), utan
+// HTML-meta-tecknen < > " ' &. De strippas vid inläsningen så att de aldrig kan smitas in i en innerHTML-template ens
+// om en framtida renderingsplats glömmer esc() — CSP + esc() + inläsningen; tre lager. `s` är redan trimmad.
+function _yrkeEtikett(s) {
+    return s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+}
+
 /**
  * Fältet för AID-etikett (yrket) vid inläsning (GDPR Art. 25.1: bara det analysen behöver).
  *
@@ -130,13 +137,7 @@ export function _cleanYrkeField(raw) {
     if (!s) return "";
     const aidMatch = s.match(/^(\d+)/);
     const aid = aidMatch ? aidMatch[1] : "";
-    // Etikett = resten efter AID och vanliga separatorer (—, -, :, ., whitespace)
-    let label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim();
-    // Härd mot XSS-tecken vid inläsning.
-    // Strippar HTML-meta-tecken < > " ' & så de aldrig kan smitas in i en
-    // innerHTML-template ens om en framtida renderingsplats glömmer esc().
-    // Detta är "defensive depth" — CSP + esc() + cleanYrkeField; tre lager.
-    label = label.replace(/[<>"'&]/g, '');
+    let label = _yrkeEtikett(s);
     // Kortningen sist — yrkesetiketter är sällan över 40 tecken
     if (label.length > 40) label = label.substring(0, 40).trim() + '…';
     if (aid && label) return `${aid} ${label}`;
@@ -180,7 +181,7 @@ export function yrkeNamnNyckel(raw) {
     if (raw == null) return '';
     const s = raw.toString().trim();
     if (!s) return '';
-    const label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+    const label = _yrkeEtikett(s);
     if (!YRKE_NAMNMONSTER.some(re => re.test(label))) return '';
     return label.toLowerCase().replace(/\s+/g, ' ');
 }

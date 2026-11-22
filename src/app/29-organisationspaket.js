@@ -319,7 +319,7 @@ function skapaPaket() {
     return _opByggPaket({
         organisation: _paketText('paket-org'),
         utgivare: _paketText('paket-utgivare'),
-        skapat: new Date().toISOString().slice(0, 10),
+        skapat: idagDatum(),
         avserAr: _paketTal('paket-ar'),
         profil: {
             benchmarkLabel: jamfNamn || undefined,
@@ -369,7 +369,7 @@ function skapaPaketMedImportprofil(profil) {
     // Paketets profiler som de står i sessionen (en som tagits bort i Inställningar följer inte med).
     const ovriga = (state.importprofiler || []).filter(x => x.kalla === 'organisationspaket' && x.id !== profil.id);
     return _opByggPaket({
-        organisation: p.organisation, utgivare: p.utgivare, skapat: new Date().toISOString().slice(0, 10), avserAr: p.avserAr,
+        organisation: p.organisation, utgivare: p.utgivare, skapat: idagDatum(), avserAr: p.avserAr,
         profil: d.profil, installningar: d.installningar, referens: d.referens, statistik: d.statistik, rapport: d.rapport,
         importprofiler: [...ovriga, profil],
     });
@@ -434,7 +434,7 @@ async function skapaOrganisationsfil() {
     if (!kontroll.ok) { const m = 'Paketet kan inte bakas in: ' + kontroll.fel; _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
     const buf = await _verktygsfil.arrayBuffer();
     const html = new TextDecoder('utf-8').decode(buf);
-    const skapad = new Date().toISOString().slice(0, 10);
+    const skapad = idagDatum();
     const r = _ofBakaIn(html, JSON.stringify(paket), { skapad, organisation: paket.organisation.namn, verktygssha: await _sha256Hex(buf) });
     if (!r.ok) { _organisationsfilStatus(r.fel, false); return { ok: false, meddelande: r.fel }; }
     const filnamn = _ofNormaliseraFilnamn(_paketText('organisationsfil-namn'), paket.organisation.namn);

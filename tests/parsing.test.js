@@ -57,6 +57,7 @@ const P = new Function('_anArRubrik', '_anTolka', '_anGrupp', '_anAndelGiltiga',
     ${extractFn('autoDetectColumnMap')}
     ${extractFn('_detectDelimiter')}
     ${extractFn('_decodeCsvBuffer')}
+    ${extractFn('_yrkeEtikett')}
     ${extractFn('_cleanYrkeField')}
     ${extractFn('_normalizeNumberString')}
     ${extractFn('parseNumber')}
@@ -471,7 +472,7 @@ describe('inläsning: lönefil utan ålderskolumn', () => {
         expect(w.eval('_kolumnerSomSaknas(state._dataHeaders)')).toEqual([]);
         expect(w.document.getElementById('column-map-panel').textContent).not.toContain('Kolumnmappning behövs');
         expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toContain('alder-saknas');
-        expect(w.document.getElementById('reality-check').textContent).toContain('Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
+        expect(w.document.getElementById('forhandskontroll').textContent).toContain('Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
     });
 });
 

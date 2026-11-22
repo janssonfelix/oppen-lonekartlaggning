@@ -107,5 +107,5 @@ dokumenten. Repot har inga namn på organisationer, arbetsgivare eller lönesyst
 *Varför:* verktyget ska kunna användas av vilken arbetsgivare som helst.
 *Beslut:* ADR-28.
 *Vakt:* *namnen: inga hårdkodade etiketter* i `tests/sakerhet.test.js` (etiketterna läser `orgNamn` och `jmfNamn`);
-*organisationsneutralt standardläge* i `tests/smoke-organisation.test.js` (ingen inbyggd referens, neutral profil).
+*organisationsneutralt standardläge* i `tests/start-och-meny-app.test.js` (ingen inbyggd referens, neutral profil).
 *Vaktas inte:* att inga namn står i repot prövas inte av något test; det granskas.

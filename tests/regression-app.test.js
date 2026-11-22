@@ -1,470 +1,15 @@
-/**
- * Röktest (jsdom): Organisatorisk enhet, filrutor, språk, Att göra, BAS-ordning och regressionens steg.
- *
- * Utbrutet ur smoke.test.js så att Vitest fördelar röktesterna över flera arbetare; varje describe-block
- * skapar sina egna fönster via createAppWindow (tests/helpers/app-harness.js).
- */
-import { describe, it, expect } from 'vitest';
-import { createAppWindow, delatFonster } from './helpers/app-harness.js';
-import { borjaHar } from '../src/lib/attgora.js';
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// Förklaringsmodellen och regressionen i appen: stegen, BAS i bokstäver, MDE per grupp, modellpanelen, att huvudtalet
+// och metodbilagan följer modellen, regressionskortet och att regressionen körs en gång per varv.
+import { describe, it, expect, beforeAll } from 'vitest';
+import { createAppWindow } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 
-// Testerna som söker igenom flikarna ritar dem inte var för sig: ett delat fönster med demodatan klickar fram varje flik
-// en gång och sparar en kopia av det som då syns (flikens paneler och sidhuvudet), och testerna läser kopiorna.
-// Vakten i delatFonster fäller det test som ändrar fönstret.
-const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska'];
-/** @type {Map<string, {paneler: any[], titel: string}>} flik → kopior av panelerna som syns (eller är aktiva) och sidhuvudet */
-const ritade = new Map();
-const flikfonster = delatFonster(w => {
-    w.__loadDemoData();
-    for (const flik of FLIKAR) {
-        w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-        ritade.set(flik, {
-            paneler: [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active')).map(p => p.cloneNode(true)),
-            titel: w.document.getElementById('page-title').textContent,
-        });
-    }
-});
+let win;
 
-describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i mal.md)', () => {
-    it('ordlistan, Vad lagras? och riskanalysen beskriver fem fält, utan enhet', async () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('openDataResidency()');
-        expect(w.document.getElementById('data-residency-content').textContent).not.toMatch(/\bsex fält\b/);
-        expect(w.document.body.innerHTML).not.toMatch(/hur en enhet skiljer sig/);
-        const { readFileSync } = await import('node:fs');
-        const { join, dirname } = await import('node:path');
-        const { fileURLToPath } = await import('node:url');
-        const rot = join(dirname(fileURLToPath(import.meta.url)), '..');
-        const risk = readFileSync(join(rot, 'docs', 'dataskydd', 'riskanalys.md'), 'utf8');
-        // GLOSSARY är en const och nås inte i testfönstret — läs ordlistans källa.
-        const ord = readFileSync(join(rot, 'src', 'app', '04-ordlista.js'), 'utf8').split('\n').find(l => l.includes("term:'Uppgiftsminimering'"));
-        expect(ord).not.toMatch(/ansvar/i);
-        expect(risk).not.toMatch(/sex minimerade|sex obligatoriska/);
-    });
-    it('rapportunderlaget visar ingen lön från ett kön under k i hela organisationen', () => {
-        const w = createAppWindow();
-        const rad = (kon, lon, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon, lon, alder: 25 + (i % 30), yrke: `${100 + (i % 2)} Yrke`, aid: String(100 + (i % 2)), yrkeLabel: 'Yrke' });
-        const rader = [];
-        for (let i = 0; i < 12; i++) rader.push(rad('kvinna', 31000 + i * 50, i));
-        for (let i = 0; i < 3; i++) rader.push(rad('man', 77777, i));
-        w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        const text = w.__rapportunderlagBlock().map(b => w.__ruTillText(b)).join('\n').replace(/(\d)[\s\u00a0\u202f](?=\d)/g, '$1');
-        expect(text).not.toContain('77777');
-        expect(text).toContain('Urval: Hela organisationen');
-    });
-    it('CSV-mallen har ingen Ansvar-kolumn', async () => {
-        const w = createAppWindow();
-        let blob = null;
-        w.URL.createObjectURL = b => { blob = b; return 'blob:x'; };
-        w.document.getElementById('btn-download-csv-template').click();
-        const text = await blob.text();
-        expect(text.split(/\r?\n/)[0]).not.toMatch(/Ansvar/);
-        expect(text).not.toMatch(/12345678|12349999/);
-    });
-    it('exporterna och hjälptexterna nämner ingen enhet', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const html = w.__docDraftHtml();
-        expect(html).not.toMatch(/Enhet \d|enhetsfilter/i);
-        w.eval('openDataResidency()');
-        expect(w.document.getElementById('data-residency-content').textContent).not.toMatch(/\benhet\b/);
-    });
-    it('ingen vy erbjuder enhet som val, och rapportunderlaget har inga enhetsblock', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        expect(w.document.querySelectorAll('option[value="enhet"]')).toHaveLength(0);
-        expect(w.document.getElementById('prio-per-enhet-card')).toBeNull();
-        const ids = w.__rapportunderlagBlock();
-        expect(ids.every(b => !b.stycken.join(' ').includes('Enhet '))).toBe(true);
-    });
-    const vendor = async w => {
-        const { readFileSync } = await import('node:fs');
-        const { join, dirname } = await import('node:path');
-        const { fileURLToPath } = await import('node:url');
-        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-    };
-    it('en lönefil med kolumnen Ansvar läses in utan enhetsfält', async () => {
-        const w = createAppWindow();
-        await vendor(w);
-        const rader = ['BAS;Månadslön;Ålder;Kön;AID;Ansvar'];
-        for (let i = 0; i < 12; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301;110045`);
-        w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
-        for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
-        expect(w.__state.data).toHaveLength(12);
-        expect(w.__state.data.every(r => !('enhet' in r))).toBe(true);
-        const rec = w.eval(`extractMinimalRecord({ BAS: 'A', 'Månadslön': '30000', 'Ålder': '40', 'Kön': 'Kvinna', AID: '5301', Ansvar: '110045' })`);
-        expect('enhet' in rec).toBe(false);
-    });
-    it('getData är hela datan, och tillståndet har inget enhetsfilter', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        expect(w.document.getElementById('enhet-select')).toBeNull();
-        expect(w.__getData()).toBe(w.__state.data);
-        expect('activeEnhet' in w.__state).toBe(false);
-        expect(w.__state.data.every(r => !('enhet' in r))).toBe(true);
-    });
-});
-
-describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
-    const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b ligger efter a
-    it('Lika arbete visar slutsatser och yrkesgrupperna först, sedan personer att granska, per BAS, könsfördelningen och sist regressionen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
-        const d = w.document;
-        // Slutsatserna och yrkesgrupperna (trattdiagrammet och sedan tabellen) står överst; personer att granska och metoden sist.
-        const [slut, tratt, yrken, pag, metod] = ['la-slutsatser', 'chart-la-tratt', 'matrix-table', 'personer-att-granska', 'avsnitt-la-metod'].map(id => d.getElementById(id));
-        expect(efter(slut, tratt)).toBe(true);
-        expect(efter(tratt, yrken)).toBe(true);
-        expect(efter(yrken, pag)).toBe(true);
-        expect(efter(pag, metod)).toBe(true);
-        expect(d.getElementById('la-topp').nextElementSibling.id).toBe('avsnitt-la-yrkesgrupper');   // huvudbilden direkt under nyckeltalen
-        for (const el of [yrken, metod]) expect(el.closest('.view-panel').style.display).toBe('block');
-        expect(pag.hidden).toBe(false);
-        // BAS-skevheten, könsfördelningen och regressionen står i Lönestruktur, i den ordningen efter strukturavsnitten.
-        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
-        const [perBas, kon, reg] = ['la-oversikt', 'avsnitt-ls-kon', 'regression-card'].map(id => d.getElementById(id));
-        expect(efter(perBas, kon) && efter(kon, reg)).toBe(true);
-        expect(d.getElementById('avsnitt-ls-bas').contains(perBas)).toBe(true);
-        for (const el of [perBas, reg]) expect(el.closest('.view-panel').style.display).toBe('block');
-        // Skillnaden per BAS-intervall visas en gång: tabellen och bilden i exporten är dolda på skärmen.
-        expect(d.getElementById('la-bas-exportkopia').hidden).toBe(true);
-        expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('paygap-table'))).toBe(true);
-        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
-        expect(d.querySelector('.view-panel[style*="block"] .flik-intro').textContent).toContain('Samma jobb, olika lön');
-    });
-    it('Lika arbete, yrkesgrupperna: förklaringen, sedan överblicksdiagrammet och sist tabellen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
-        const d = w.document, avsnitt = d.getElementById('avsnitt-la-yrkesgrupper');
-        const kort = d.getElementById('la-tratt-kort'), tabell = d.getElementById('matrix-table');
-        // Diagramkortet står direkt efter förklaringstexten och direkt före tabellens verktygsrad och behållare, i samma avsnitt.
-        expect(avsnitt.contains(kort) && avsnitt.contains(tabell)).toBe(true);
-        expect(kort.previousElementSibling.classList.contains('card-header')).toBe(true);
-        expect(kort.nextElementSibling).toBe(tabell._verktygsrad);
-        expect(tabell._verktygsrad.nextElementSibling).toBe(tabell.closest('.table-container'));
-        // Diagrammet och tabellen är ritade: ordningen påverkar inte vad som visas.
-        expect(kort.hidden).toBe(false);
-        expect(d.getElementById('chart-la-tratt')._figur).toBeTruthy();
-        expect(tabell.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
-    });
-    it('efter inläsning syns alla tre filrutorna, lönefilens kompakt, och bara ett dataskyddsbesked', () => {
-        const w = createAppWindow();
-        const d = w.document;
-        expect(d.querySelector('.gdpr-info-compact').hidden).toBe(false);
-        w.__loadDemoData();
-        expect(d.getElementById('upload-row').style.display).toBe('');
-        expect(d.getElementById('upload-collapsed-bar')).toBeNull();
-        expect(d.getElementById('btn-toggle-upload')).toBeNull();
-        const data = d.getElementById('upload-cell-data');
-        expect(data.classList.contains('loaded')).toBe(true);
-        const inlast = data.querySelector('.upload-inlast');
-        expect(inlast.hidden).toBe(false);
-        expect(inlast.textContent).toMatch(/Demodata/);
-        expect(d.getElementById('org-namn').value).toBe('Exempelkommunen');
-        expect([...inlast.querySelectorAll('button')].map(b => b.textContent.trim())).toEqual(['Byt fil', 'Kolumnmappning']);
-        for (const id of ['upload-cell-policy', 'upload-cell-stat']) {
-            const c = d.getElementById(id);
-            expect(c.hidden).toBe(false);
-            expect(c.closest('#upload-row')).not.toBeNull();
-        }
-        expect(d.querySelector('.gdpr-info-compact').hidden).toBe(true);
-        expect(d.getElementById('gdpr-banner').style.display).toBe('inline-flex');
-        w.__clearAllData();
-        expect(data.classList.contains('loaded')).toBe(false);
-        expect(data.querySelector('.upload-inlast').hidden).toBe(true);
-        expect(d.querySelector('.gdpr-info-compact').hidden).toBe(false);
-    });
-    it('en inläst lönefil visar filnamnet; Byt fil öppnar filväljaren; misslyckat byte behåller statusen', async () => {
-        const { readFileSync } = await import('node:fs');
-        const { join, dirname } = await import('node:path');
-        const { fileURLToPath } = await import('node:url');
-        const w = createAppWindow();
-        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-        const rader = ['BAS;Månadslön;Ålder;Kön;AID'];
-        for (let i = 0; i < 20; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301`);
-        w.loadStructureFile(new w.File([rader.join('\n')], 'lonefil_2026.csv', { type: 'text/csv' }));
-        for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
-        await new Promise(r => setTimeout(r, 50));
-        const cell = w.document.getElementById('upload-cell-data');
-        expect(cell.querySelector('.upload-filnamn').textContent).toMatch(/lonefil_2026\.csv/);
-        let klickad = false;
-        w.document.getElementById('file-input-data').click = () => { klickad = true; };
-        cell.querySelector('[data-byt-fil]').click();
-        expect(klickad).toBe(true);
-        w.loadStructureFile(new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
-        await new Promise(r => setTimeout(r, 100));
-        expect(cell.classList.contains('loaded')).toBe(true);
-        expect(cell.querySelector('.upload-filnamn').textContent).toMatch(/lonefil_2026\.csv/);
-    });
-    it('ställningstagande och statistik: kompakta med namnfält; Ta bort referensen återställer rutan', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval("_lasInReferens([{ bas: 'C', p10: 30000, med: 34000, p90: 39000 }], 'lonepolitik_2026.csv'); markUploadLoaded('upload-cell-policy', 'Inläst');");
-        w.__state.filnamn.policy = 'lonepolitik_2026.csv';
-        w.eval('renderFilrutor()');
-        const pol = w.document.getElementById('upload-cell-policy');
-        expect(pol.classList.contains('loaded')).toBe(true);
-        expect(pol.querySelector('.upload-filnamn').textContent).toMatch(/lonepolitik_2026\.csv/);
-        expect(w.document.getElementById('referens-namn-rad').hidden).toBe(false);
-        w.document.getElementById('btn-referens-aterga').click();
-        expect(pol.classList.contains('loaded')).toBe(false);
-        expect(pol.querySelector('.upload-inlast').hidden).toBe(true);
-        const stat = w.document.getElementById('upload-cell-stat');
-        const jmf = w.document.getElementById('jmf-namn');
-        expect(jmf).not.toBeNull();
-        jmf.value = 'Regionstatistiken'; jmf.dispatchEvent(new w.Event('change'));
-        expect(w.eval('jmfNamn()')).toBe('Regionstatistiken');
-        expect(stat.querySelector('.upload-namn-fel').hidden).toBe(true);
-    });
-    it('demots ställningstagande visas kompakt; paketrutan står först, med förklaringen hopfälld, och visar organisationstypen', () => {
-        const w = createAppWindow();
-        const d = w.document;
-        const paket = d.getElementById('organisationspaket');
-        expect(paket.querySelector('.paket-huvud').textContent).toMatch(/Steg 1/);
-        expect(paket.compareDocumentPosition(d.getElementById('upload-row')) & 4).toBeTruthy();
-        // Knappen syns; förklaringen står bakom Vad är ett organisationspaket?, och formuläret för systemägaren bakom
-        // en länk sist i steget.
-        expect(paket.querySelector('label.btn #file-input-paket')).not.toBeNull();
-        const vad = d.getElementById('paket-vad');
-        expect(vad.open).toBe(false);
-        expect(vad.querySelector('summary').textContent.trim()).toBe('Vad är ett organisationspaket?');
-        expect(vad.textContent).toMatch(/Systemägaren skapar det/);
-        const skapa = d.getElementById('paket-skapa');
-        expect(skapa.open).toBe(false);
-        expect(skapa.classList.contains('bakgrund-panel')).toBe(false);
-        expect(skapa.querySelector('summary').textContent.trim()).toBe('Skapa organisationspaket (för systemägaren)');
-        expect([...paket.children].pop()).toBe(skapa);
-        w.__loadDemoData();
-        const pol = d.getElementById('upload-cell-policy');
-        expect(pol.classList.contains('loaded')).toBe(true);
-        expect(pol.querySelector('.upload-filnamn').textContent).toMatch(/Demots ställningstagande/);
-        expect(d.querySelector('#organisationspaket .paket-lage').textContent).toMatch(/Organisationen är: en kommun/);
-        w.__clearAllData();
-        expect(pol.classList.contains('loaded')).toBe(false);
-    });
-    it('startytan har de två demovalen bredvid ytan för lönefilen (stort och litet demo)', () => {
-        const w = createAppWindow();
-        const d = w.document;
-        expect(d.getElementById('btn-try-demo')).toBeNull();
-        expect(d.getElementById('btn-minimize-upload')).toBeNull();
-        const text = d.querySelector('#first-run-hint .ov-start-demo p').textContent.replace(/\s+/g, ' ').trim();
-        expect(text).toBe('Prova med demodata, stort demo (5 000 personer) eller litet demo.');
-        expect(d.querySelector('#first-run-hint .ov-start-demo h3').textContent).toBe('Ingen fil till hands?');
-        // Rubriken har sitt mellanslag (tidigare "Kom igång:läs").
-        expect(d.getElementById('ov-start-rubrik').textContent).toBe('Kom igång');
-        expect(d.getElementById('first-run-hint').textContent).not.toMatch(/:\S/);
-        expect(d.getElementById('first-run-demo-link').textContent).toBe('litet demo');
-        // Lönefilskortet i Filer och kvalitet har samma ord för samma val.
-        const kort = d.getElementById('upload-demo-val').textContent.replace(/\s+/g, ' ').trim();
-        expect(kort).toBe('Ingen fil till hands? Prova med demodata, stort demo (5 000 personer) eller litet demo.');
-        expect(d.getElementById('upload-demo-litet').textContent).toBe(d.getElementById('first-run-demo-link').textContent);
-        expect(d.getElementById('upload-demo-stort').textContent).toBe(d.getElementById('first-run-stort-demo').textContent);
-        d.getElementById('first-run-demo-link').click();
-        expect(w.__state.data.length).toBeGreaterThan(0);
-    });
-});
-
-// Klarspråk, samma namn överallt, rubriker utan emoji och ett hjälpblock av varje slag
-// per flik. Fackuttrycken får stå i hjälptexten.
-describe('gränssnittets språk, rubriker och hjälpblock', () => {
-    const HJALP = '#view-info, .flik-usage, .bakgrund-panel, .lv-hjalp, .audit-panel, #gdpr-info-modal, #glossary-modal, '
-        + '#symbols-modal, #data-residency-modal, #evidence-modal, script, style, noscript, [data-hjalptext]';
-    const synligText = (w, rot) => {
-        const ut = [];
-        const walker = w.document.createTreeWalker(rot, 4);
-        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-            if (n.parentElement && n.parentElement.closest(HJALP)) continue;
-            if (n.textContent.trim()) ut.push({ id: (n.parentElement.closest('[id]') || {}).id, text: n.textContent.trim().slice(0, 80) });
-        }
-        return ut;
-    };
-    it('inga fackuttryck, engelska eller motsägelser i gränssnittet utanför hjälptexten', () => {
-        const w = flikfonster();
-        const traffar = [];
-        const FORBJUDET = /Outlier|Pareto|[Qq]uantile|Boxplot|[Ss]napshot|Kompliansöversikt|Blinder-Oaxaca|[Mm]ultivariat|\bMetric\b|Z-score|Struktur-data|Datauppladdning|A–K\b/;
-        for (const flik of FLIKAR) {
-            const { paneler: ritat, titel } = ritade.get(flik);
-            const paneler = ritat.filter(v => v.style.display === 'block');
-            for (const rad of paneler.flatMap(v => synligText(w, v))) {
-                if (FORBJUDET.test(rad.text)) traffar.push(`${flik} › ${rad.id}: ${rad.text}`);
-            }
-            traffar.push(...(FORBJUDET.test(titel) ? [`${flik} › rubrik`] : []));
-        }
-        expect([...new Set(traffar)]).toEqual([]);
-    });
-    it('inga rubriker börjar med emoji', () => {
-        const traffar = [];
-        for (const flik of FLIKAR) {
-            for (const h of ritade.get(flik).paneler.flatMap(p => [...p.querySelectorAll('.view-panel h1, .view-panel h2, .view-panel h3, .view-panel h4, .view-panel summary')])) {
-                if (h.closest('.view-panel').style.display !== 'block') continue;
-                const t = h.textContent.trim();
-                if (/^\p{Extended_Pictographic}/u.test(t)) traffar.push(`${flik} › ${t.slice(0, 50)}`);
-            }
-        }
-        expect([...new Set(traffar)]).toEqual([]);
-    });
-    it('högst ett hjälpblock av varje slag per flik', () => {
-        const traffar = [];
-        for (const flik of FLIKAR) {
-            const synliga = sel => ritade.get(flik).paneler.flatMap(p => [...p.querySelectorAll(sel)]).filter(el => el.closest('.view-panel')?.style.display === 'block');
-            // "Beräkning & urval" hör till varje enskild analys och får finnas en per analys.
-            for (const [namn, sel] of [['Hur används', '.flik-usage'], ['Bakgrund', '.bakgrund-panel']]) {
-                const n = synliga(sel).filter(el => namn !== 'Hur används' || /Hur används/.test(el.querySelector('summary')?.textContent || '')).length;
-                if (n > 1) traffar.push(`${flik} › ${namn}: ${n}`);
-            }
-        }
-        expect(traffar).toEqual([]);
-    });
-});
-
-describe('Att göra', () => {
-    it('Om verktyget beskriver Översikt med Att göra', async () => {
-        const { readFileSync } = await import('node:fs');
-        const { join, dirname } = await import('node:path');
-        const { fileURLToPath } = await import('node:url');
-        const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'app', '65-om-verktyget.js'), 'utf8');
-        expect(src).toMatch(/Att göra/);
-    });
-    const rader = (kvLon, maLon) => {
-        const r = [];
-        for (let i = 0; i < 60; i++) r.push({ bas: 'ABC'[i % 3], kon: i % 2 ? 'man' : 'kvinna', alder: 25 + (i % 30),
-            lon: (i % 2 ? maLon : kvLon) + (i % 7) * 50 + 'ABC'.indexOf('ABC'[i % 3]) * 2000, yrke: '100 Y', aid: '100', yrkeLabel: 'Y' });
-        return r;
-    };
-    const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('populateSelects(); unlockTabs();'); return w; };
-    it('punkten om oförklarat gap: hög vid signifikant gap på minst 3 %, ingen när gapet inte är signifikant', () => {
-        const hog = med(rader(30000, 33000)).eval('buildActionChecklist()').find(i => i.id === 'reg-oforklarat');
-        expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'struktur' });
-        expect(hog.titel).toMatch(/Oförklarad löneskillnad i hela organisationen/);
-        expect(med(rader(30000, 30000)).eval('buildActionChecklist()').some(i => i.id === 'reg-oforklarat')).toBe(false);
-    });
-    it('ett kort: statusrad, Börja här och hela listan; inget iakttagelseblock', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const d = w.document;
-        const kort = d.getElementById('att-gora');
-        expect(kort.hidden).toBe(false);
-        for (const id of ['compliance-overview', 'att-gora-borja', 'action-checklist-container']) expect(kort.querySelector('#' + id)).not.toBeNull();
-        expect(d.getElementById('insight-feed-container')).toBeNull();
-        expect(d.getElementById('comp-gap-val').textContent).toMatch(/av \d+ jämförbara BAS-intervall|Inga jämförbara/);
-        expect(kort.querySelector('#compliance-overview h2')).toBeNull();
-        expect(kort.querySelector('#comp-gap a[data-go-to-tab="struktur"]')).not.toBeNull();
-    });
-    it('Börja här: högst tre ej avbockade punkter, hög prioritet först, därefter underlag och könsrelaterade fynd; avbockning byter punkt', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const d = w.document;
-        const titlar = () => [...d.querySelectorAll('#att-gora-borja [data-borja-id]')].map(li => li.dataset.borjaId);
-        const items = w.eval('buildActionChecklist()');
-        const vantat = borjaHar(items, new Set()).map(it => it.id);   // regeln: src/lib/attgora.js
-        expect(titlar()).toEqual(vantat);
-        const cb = d.querySelector(`.act-cb[data-id="${vantat[0]}"]`);
-        cb.checked = true; cb.dispatchEvent(new w.Event('change'));
-        expect(titlar()).not.toContain(vantat[0]);
-        expect(titlar().length).toBe(Math.min(3, items.length - 1));
-    });
-    it('allt avbockat: "Alla punkter är hanterade."; Rensa döljer kortet', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state._actionChecklistDone = new Set(w.eval('buildActionChecklist()').map(i => i.id));
-        w.eval('renderActionChecklist()');
-        expect(w.document.getElementById('att-gora-borja').textContent).toContain('Alla punkter är hanterade.');
-        w.__clearAllData();
-        expect(w.document.getElementById('att-gora').hidden).toBe(true);
-        expect(w.document.getElementById('att-gora-borja').textContent.trim()).toBe('');
-    });
-
-});
-
-describe('innehåll på sidan och i rapportunderlaget', () => {
-    const oppna = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-    it('de långa flikarna har avsnitt, och deras rubriker är innehållsförteckningen', () => {
-        // Flikarna klickas fram i samma ordning som här, med fler flikar emellan (prövat: samma paneler).
-        const w = flikfonster();
-        for (const [flik, minst] of [['dashboard', 2], ['matrix', 4], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 2], ['rapporttext', 2], ['arbetet', 4], ['kon', 5], ['benchmark', 4]]) {
-            const synliga = ritade.get(flik).paneler;
-            const rubriker = synliga.flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2')]);
-            expect(rubriker.length, flik).toBeGreaterThanOrEqual(minst);
-            for (const h of rubriker) expect(h.textContent.trim().length, flik).toBeGreaterThan(3);
-        }
-        expect(w.eval('typeof renderSidansInnehall')).toBe('undefined');
-    });
-    it('rapportunderlaget: förteckning med en länk per block', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        oppna(w, 'rapporttext');
-        const block = w.document.querySelectorAll('#rapportunderlag-innehall .ru-block[data-block-id]');
-        expect(block.length).toBeGreaterThan(0);
-        const lankar = w.document.querySelectorAll('#rapportunderlag-innehall .ru-toc [data-hoppa-till]');
-        expect(lankar.length).toBe(block.length);
-        for (const a of lankar) expect(w.document.getElementById(a.dataset.hoppaTill)?.classList.contains('ru-block')).toBe(true);
-    });
-    it('Kopiera alla avsnitt lägger avsnittens rubriker i ordning på urklipp; reserv utan urklipp', async () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        oppna(w, 'rapporttext');
-        const fångat = [];
-        w.ClipboardItem = class { constructor(o) { this.o = o; } };
-        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
-        expect(await w.kopieraRapportAvsnitt()).toBe('urklipp');
-        const html = await fångat[0].o['text/html'].text();
-        const rubriker = [...html.matchAll(/<h3>([^<]+)<\/h3>/g)].map(m => m[1]);
-        const avsnitt = w.__rapportunderlagBlock().filter(b => !b.id.includes(':')).map(b => b.rubrik);
-        expect(rubriker).toEqual(avsnitt);
-        expect(await fångat[0].o['text/plain'].text()).toContain(avsnitt[1]);
-        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
-        w.document.execCommand = () => false;
-        expect(await w.kopieraRapportAvsnitt()).toBe('markerat');
-        expect(w.getSelection().toString()).toContain(avsnitt[0]);
-    });
-});
-
-describe('BAS-ordningen är fast (se §6 i likvardighetsmodellen.md)', () => {
-    it('BAS-ordningen har ingen panel, inget tillstånd och inget fält i konfigurationsfilen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        expect(w.document.getElementById('bas-rank-config-container')).toBeNull();
-        expect('basRankOverride' in w.__state).toBe(false);
-        const cfg = w.__buildConfigSnapshot();
-        expect('basRankOverride' in cfg).toBe(false);
-    });
-    it('robusthetspanelen prövar Likvärdigt arbete och Prioritering, inte BAS-ordningen', async () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderKvalitetssakring();
-        w.__runRobusthet();
-        await new Promise(r => setTimeout(r, 120));
-        const txt = w.document.getElementById('robusthet-body').textContent;
-        expect(txt).toMatch(/Likvärdigt arbete|Prioritering/);
-        expect(txt).not.toMatch(/Nivåordningen|rangordning/i);
-    });
-    it('extremvärden i Underlagets kvalitet, organisationspaketet i uppladdningsytan, Spara och jämför år har fyra avsnitt', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const d = w.document;
-        expect(d.getElementById('outliers-container').closest('#underlagets-kvalitet')).not.toBeNull();
-        expect(d.getElementById('file-input-paket').closest('#upload-sektion')).not.toBeNull();
-        for (const id of ['outliers-container', 'file-input-paket']) expect(d.getElementById(id).closest('#view-dokumentera')).toBeNull();
-        expect([...d.querySelectorAll('#view-arbetet details.avsnitt > summary h2')].map(h => h.textContent))
-            .toEqual(['Spara/ladda konfiguration', 'Jämför med en ögonblicksbild', 'Jämförelse med förra året', 'Kontrollera verktyget med testdata']);
-        expect(d.getElementById('outliers-container').style.display).toBe('block');
-        expect(d.getElementById('outliers-table-wrap').textContent).toMatch(/extremvärden|Rad/i);
-    });
-    it('Dokumentera lovar inte inställningar som påverkar analysen; metodtexten beskriver BAS-stegen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        expect(w.document.getElementById('view-dokumentera').textContent).not.toMatch(/inställningarna som påverkar analysen/);
-        const src = require('fs').readFileSync(require('path').join(__dirname, '../src/app/41-lika-arbete.js'), 'utf8');
-        const rad = src.split('\n').find(l => l.includes("['BAS-rangordning'"));
-        expect(rad).toMatch(/bokstavens plats/);
-        expect(rad).toMatch(/även när en bokstav saknas/);
-    });
+beforeAll(() => {
+    win = createAppWindow();
 });
 
 describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformation (ADR-46)', () => {
@@ -1082,17 +627,147 @@ describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-5
     });
 });
 
-// A5: Prioriteringens förslag avfärdar inte en skillnad ("normal variation") och talar inte om utredning.
-describe('förbjudna fraser i det byggda verktyget', () => {
-    it('"normal variation" och "kräver ytterligare utredning" står inte i appen eller sidan', async () => {
-        const { readFileSync } = await import('node:fs');
-        const { join, dirname } = await import('node:path');
-        const { fileURLToPath } = await import('node:url');
-        const rot = join(dirname(fileURLToPath(import.meta.url)), '..');
-        for (const fil of ['dist/app.js', 'src/index.html']) {
-            const text = readFileSync(join(rot, fil), 'utf8');
-            expect(text, fil).not.toMatch(/normal variation/i);
-            expect(text, fil).not.toMatch(/kräver ytterligare utredning/i);
+describe('regressionskortets tekniska specifikation (B4)', () => {
+    it('visar antalet observationer med hävstång > 0,99, som fitOLS räknar', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const r = w.eval('runOLSRegression()');
+        expect(Number.isInteger(r.hHoga)).toBe(true);
+        w.__renderTabContent('struktur');
+        const t = w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
+        expect(t).toMatch(new RegExp(`Observationer med hävstång > 0,99 \\(bidrar inte till HC3\\) ?${r.hHoga} Antal observationer`));
+    });
+});
+
+describe('multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () => {
+    it('_regressionKronor översätter kön-effekten till kronor konsekvent', () => {
+        // Modellen är multiplikativ: kvinna = man × (1 + konPct/100).
+        const kr = win.__regressionKronor({ konPct: -5, medianMa: 40000, nKvAnalysed: 10 });
+        expect(kr.refMan).toBe(40000);
+        expect(kr.refKvinna).toBeCloseTo(38000, 6);      // 40000 × 0,95
+        expect(kr.krMonth).toBeCloseTo(2000, 6);
+        expect(kr.krYear).toBeCloseTo(24000, 6);
+        expect(kr.krTotalYear).toBeCloseTo(240000, 6);   // × 10 kvinnor
+    });
+
+    it('_regressionKronor returnerar null utan användbart underlag', () => {
+        expect(win.__regressionKronor(null)).toBeNull();
+        expect(win.__regressionKronor({ konPct: -5, medianMa: 0 })).toBeNull();
+        expect(win.__regressionKronor({ konPct: NaN, medianMa: 40000 })).toBeNull();
+    });
+
+    it('_explanationBudget delar upp gapet i förklarat + kvarstående', () => {
+        const b = win.__explanationBudget([
+            { name: 'Endast kön', gapPct: -10, status: 'ok' },
+            { name: '+ BAS-intervall', gapPct: -6, status: 'ok' },
+            { name: '+ Ålder', gapPct: -4, status: 'ok' }
+        ]);
+        expect(b.g0).toBe(10);
+        expect(b.remaining).toBe(4);
+        expect(b.parts.map(p => p.key)).toEqual(['bas', 'alder']);
+        expect(b.parts[0].val).toBeCloseTo(4, 6);   // 10 → 6
+        expect(b.parts[1].val).toBeCloseTo(2, 6);   // 6 → 4
+        expect(b.anyNegative).toBe(false);
+        // andelarna summerar till 100 % av det ursprungliga gapet
+        const sum = b.parts.reduce((s, p) => s + p.share, 0) + b.remainingShare;
+        expect(sum).toBeCloseTo(100, 6);
+    });
+
+    it('_explanationBudget flaggar när en kontroll ÖKAR gapet', () => {
+        const b = win.__explanationBudget([
+            { name: 'Endast kön', gapPct: -4, status: 'ok' },
+            { name: '+ BAS-intervall', gapPct: -7, status: 'ok' },
+            { name: '+ Ålder', gapPct: -6, status: 'ok' }
+        ]);
+        expect(b.anyNegative).toBe(true);
+        expect(b.parts[0].val).toBeLessThan(0);   // BAS dolde en del av gapet
+        expect(b.parts[0].share).toBe(0);         // negativa bidrag ritas inte som stapel
+    });
+
+    it('regressionskortet renderar kronor, signalkolumn och per-BAS-container', () => {
+        win.__loadDemoData();
+        expect(() => win.__renderRegressionCard()).not.toThrow();
+        const card = win.document.getElementById('regression-card');
+        const r = win.__runOLS();
+        if (r.error) return;                       // demodata gav ingen modell — hoppa
+        expect(card.querySelector('#chart-perbas-gap')).not.toBeNull();
+        expect(card.querySelector('#perbas-table')).not.toBeNull();
+        // p/q är dolda som standard (klarspråk först)
+        expect(card.querySelector('#perbas-table').classList.contains('hide-stats')).toBe(true);
+        expect(card.querySelectorAll('#perbas-table th.col-stat').length).toBe(2);
+        // stående reservation mot övertolkning finns intill siffrorna
+        expect(card.querySelectorAll('.reg-caveat-inline').length).toBeGreaterThanOrEqual(2);
+        expect(card.textContent).toContain('inte att den beror på kön eller är osaklig');
+    });
+});
+
+// Regressionen cachas aldrig (ADR-17), men inom ett varv körs den en gång och skickas vidare som argument: underlagets
+// kvalitet, Att göra och processöversikten läser samma underlag och samma val. På 55 000 rader är en körning ~0,4 s.
+describe('regressionen körs en gång per varv vid inläsning och tröskelbyte', () => {
+    const raknaRegressioner = w => w.eval('window.__regKorningar = 0; const __regOrig = runOLSRegression; '
+        + 'runOLSRegression = function () { window.__regKorningar++; return __regOrig(); };');
+    const html = (w, id) => w.document.getElementById(id).innerHTML;
+    const DELAR = ['underlagets-kvalitet', 'process-tracker'];
+    it('inläsningen (lönefil och demo) kör regressionen en gång och ritar samma sak som en egen körning per del', () => {
+        const w = createAppWindow();
+        raknaRegressioner(w);
+        w.eval('_lasInDemounderlag(generateDemoData)');   // demots inläsning; diagnostiken efteråt kör en egen
+        expect(w.__regKorningar).toBe(1);
+        w.__regKorningar = 0;
+        w.eval('_afterDataLoaded()');
+        expect(w.__regKorningar).toBe(1);
+        const delad = DELAR.map(id => html(w, id));
+        w.eval('renderUnderlagetsKvalitet(); renderProcessTracker();');
+        expect(DELAR.map(id => html(w, id))).toEqual(delad);
+    });
+    it('omritningen efter ett tröskelbyte kör regressionen en gång och ritar samma sak', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        raknaRegressioner(w);
+        w.eval('sattKTroskel(11, { fraga: false })');
+        expect(w.__regKorningar).toBe(1);
+        const delad = [...DELAR, 'action-checklist-container'].map(id => html(w, id));
+        w.eval('renderUnderlagetsKvalitet(); renderProcessTracker({ punkter: renderActionChecklist() });');
+        expect([...DELAR, 'action-checklist-container'].map(id => html(w, id))).toEqual(delad);
+    });
+    // Omritningen i steg släpper fram tidtagare mellan stegen: en fil som läses klart (FileReader) eller en rensning vid
+    // inaktivitet kan byta underlaget där, och då får stegen efter inte rita med regressionen från det gamla.
+    it('byts underlaget mitt i omritningen räknar stegen efter en egen regression', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.eval('sattKTroskel(11, { fraga: false, rita: false })');
+        raknaRegressioner(w);
+        w.eval('const __ukOrig = renderUnderlagetsKvalitet; renderUnderlagetsKvalitet = function (v) { __ukOrig(v); '
+            + 'state.data = state.data.slice(0, 150); };');
+        w.eval('_renderaOmAllaFlikar()');
+        expect(w.__regKorningar).toBe(3);   // underlagets kvalitet, Att göra och processöversikten var för sig
+        const delad = ['action-checklist-container', 'process-tracker'].map(id => html(w, id));
+        w.eval('renderProcessTracker({ punkter: renderActionChecklist() });');
+        expect(['action-checklist-container', 'process-tracker'].map(id => html(w, id))).toEqual(delad);
+    });
+    it('en fil som släpps under en pågående omritning i steg når inte filinläsningen', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const r = w.eval('sattKTroskel(11, { fraga: false, stegvis: true })');
+        const omrade = w.document.getElementById('drop-area-data');
+        let last = false;
+        for (const typ of ['dragover', 'drop']) {
+            const ev = new w.Event(typ, { bubbles: true, cancelable: true });
+            Object.defineProperty(ev, 'dataTransfer', { get: () => { last = true; return { files: { length: 0 } }; } });
+            omrade.dispatchEvent(ev);
         }
+        expect(omrade.classList.contains('drag-over')).toBe(false);
+        expect(last).toBe(false);
+        await r.klar;
+        const ev = new w.Event('dragover', { bubbles: true, cancelable: true });
+        omrade.dispatchEvent(ev);
+        expect(omrade.classList.contains('drag-over')).toBe(true);   // efter omritningen tar ytan emot filer igen
+    });
+    it('Översikts delar (exportgrinden) kör regressionen en gång', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        raknaRegressioner(w);
+        w.eval('renderOversiktDelar()');
+        expect(w.__regKorningar).toBe(1);
     });
 });

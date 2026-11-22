@@ -20,12 +20,11 @@
 // Ansvarskoderna följer det lilla demots regel (ledningsansvar, särskilt uppdrag, förstelärare); cheferna (AID som
 // börjar med 10) har ledningsansvar. Ansvarskoderna påverkar inte lönerna.
 
-const STORT_DEMO_ANTAL = 5000;
 const _SD_BAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 // [AID, namn, antal, andel kvinnor, BAS-intervall (det lägre, ev. det högre), andel i det högre intervallet,
 //  nivå i det lägre (kr), nivå i det högre (kr) eller null, spridning ((P90 − P10) / median), medelålder,
 //  påslag i den påhittade jämförelsestatistiken]
-// Antalen summerar till STORT_DEMO_ANTAL.
+// Antalen summerar till 5 000.
 /** @type {ReadonlyArray<[string, string, number, number, string[], number, number, number|null, number, number, number]>} */
 const _SD_YRKEN = Object.freeze([
     ['103510', 'Chef individ- och familjeomsorg', 17, 0.95, ['J'], 0.0, 58900, null, 0.20, 51, 0.25],

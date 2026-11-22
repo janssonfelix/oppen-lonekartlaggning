@@ -144,7 +144,7 @@ function _exportBenchmarkExcelExport() {
     XLSX.utils.book_append_sheet(wb, sheet, 'Jämförelse_alla_percentiler');
     XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
-    const filename = `lonekartlaggning_jamforelse_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const filename = `lonekartlaggning_jamforelse_${idagDatum()}.xlsx`;
     _appendMethodSheet(wb);
     XLSX.writeFile(wb, filename);
     _showExportSensitivityToast();

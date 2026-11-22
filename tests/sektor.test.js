@@ -270,3 +270,52 @@ describe('sektor: sammanräknade huvudområden (ADR-87)', () => {
         expect(a.sammanslagna).toEqual([]);
     });
 });
+
+describe('sektorsöversikten', () => {
+    it('kortet visar en rad per sektor med demot, i prefixordning', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('struktur');
+        const rader = [...w.document.querySelectorAll('#sektor-table tbody tr')].map(tr => tr.querySelector('.sektor-namn').textContent.trim());
+        expect(rader).toEqual(['Vård- och omsorgsarbete med mera', 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet', 'Teknikarbete']);
+        expect(w.document.getElementById('struktur-sektorer').textContent).toMatch(/på att kvinnor och män arbetar i olika huvudområden/);
+        expect(w.document.getElementById('chart-sektorer')._figur.lager.map(l => l.serie)).toEqual(['Förklaras av ålder och BAS', 'Rå', 'Justerad (ålder, BAS)']);
+    });
+    it('lönefil utan ålder: ett justerat tal per huvudområde, rubriken säger BAS (ADR-78)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
+        w.eval('invalidateStatCaches(); populateSelects(); unlockTabs();');
+        w.__renderTabContent('struktur');
+        const rubriker = [...w.document.querySelectorAll('#sektor-table thead th')].map(th => th.textContent.trim());
+        expect(rubriker).toContain('Justerad (BAS)');
+        expect(rubriker).not.toContain('Justerad (ålder, BAS)');
+        expect(w.document.getElementById('sektor-table').textContent).not.toMatch(/För få/);
+        expect(w.document.getElementById('chart-sektorer')._figur.lager.map(l => l.serie)).toEqual(['Förklaras av BAS', 'Rå', 'Justerad (BAS)']);
+    });
+    it('klick på en sektor öppnar Utforska med sektorn som villkor', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('struktur');
+        w.document.querySelector('#sektor-table [data-sektor="Teknikarbete"]').click();
+        const u = w.eval('explorerUrval()').urval;
+        expect(u.villkor).toEqual([expect.objectContaining({ falt: 'sektor', op: 'enAv', varde: ['Teknikarbete'] })]);
+        expect(w.document.getElementById('explore-rad').value).toBe('aid');
+    });
+});
+
+describe('sektorsöversiktens punkter i Att göra', () => {
+    it('räknas ur samma punkter som hela listan, också likvärdighetsparen, utan att bygga hela listan', async () => {
+        const { sektorsnamn } = await import('../src/lib/aid.js');
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const alla = w.eval('buildActionChecklist()');
+        const grupp = w.eval('buildActionChecklist({ endastGrupper: true })');
+        const medAid = alla.filter(it => it.aid);
+        expect(medAid.some(it => it.id.startsWith('lv-'))).toBe(true);
+        expect(grupp.map(it => it.id).sort()).toEqual(medAid.map(it => it.id).sort());
+        const vantat = {};
+        for (const it of medAid) { const s = sektorsnamn(it.aid); vantat[s] = (vantat[s] || 0) + 1; }
+        expect(w.eval('_sektorPunkter()')).toEqual(vantat);
+    });
+});

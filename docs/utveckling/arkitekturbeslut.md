@@ -227,7 +227,7 @@ av klasser, och CSP:n har `style-src-elem` med kontrollsummor och `style-src-att
 **ADR-31 — Interna fel rapporteras i stället för att sväljas.** Analysdelar som ska tåla fel hoppar över sin del om
 något kastar, men anropar `rapporteraFel(plats, e)` (`03-hjalpfunktioner.js`): en banner säger att resultatet kan vara
 ofullständigt, och konsolen får en varning där siffrorna är maskerade, eftersom konsolen aldrig ska bära lönedata.
-Avsiktliga `catch`, som nekad urklippsbehörighet, rapporterar inte. Vakten är `tests/smoke-ansvar.test.js`.
+Avsiktliga `catch`, som nekad urklippsbehörighet, rapporterar inte. Vakten är `tests/start-och-meny-app.test.js`.
 
 **ADR-33 — AID-hierarki, översikt per huvudområde, ansvarskod och kodkvalitet.** Huvudområdet i AID är en översikt
 och en dimension i Tabeller och egna vyer, inte ett globalt filter, som skulle ändra alla flikars resultat och k-skydd

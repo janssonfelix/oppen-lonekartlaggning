@@ -619,6 +619,13 @@ function importprofilText(p, headers = state._dataHeaders) {
     return `Känd uppsättning${andrad ? ', ändrad' : ''}: ${p.namn} (${_importprofilKalla(p.kalla)})`;
 }
 
+/** Dagens datum som 'ÅÅÅÅ-MM-DD' i lokal tid, för filnamn och fältet skapat. Inte toISOString(): den ger UTC, och
+ *  mellan midnatt och 01 (02 sommartid) blir det gårdagens datum. @param {Date} [datum] */
+function idagDatum(datum = new Date()) {
+    const p = n => String(n).padStart(2, '0');
+    return `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
+}
+
 // ---- Tal som text, svenskt format ----
 // All text som visas ska ha decimalkomma och mellanslag före procenttecknet ("85,2 %"). toFixed ger decimalpunkt
 // och används bara där ett tal ska läsas av kod (CSS-mått, sorteringsvärden, tal till Excel).
@@ -3234,17 +3241,20 @@ function quantile(arr, q) {
 /**
  * Enkel linjär regression y = m·x + b via OLS minsta kvadrat.
  * @param {Array<[number, number]>} data
- * @returns {{m:number, b:number, r2:number}}
+ * @returns {{m:number, b:number, r2:number} | null} null med färre än två punkter eller utan spridning i x
+ *   (alla x lika): då finns ingen lutning att räkna
  */
 function linearRegression(data) {
     const n = data.length;
-    if (n === 0) return { m: 0, b: 0, r2: 0 };
+    if (n < 2) return null;
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
     for (let i = 0; i < n; i++) {
         sumX += data[i][0]; sumY += data[i][1];
         sumXY += data[i][0] * data[i][1]; sumXX += data[i][0] * data[i][0];
     }
-    const m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const namnare = n * sumXX - sumX * sumX;
+    if (!(namnare > 1e-12 * n * sumXX)) return null;   // avrundningsfel: lika x med decimaler ger inte exakt 0
+    const m = (n * sumXY - sumX * sumY) / namnare;
     const b = (sumY - m * sumX) / n;
     const meanY = sumY / n;
     let ssTot = 0, ssRes = 0;
@@ -6734,6 +6744,7 @@ function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
     const n = data.length;
     if (n < BAND_MIN_N) return null;
     const reg = linearRegression(data);
+    if (!reg) return null;
     const meanX = data.reduce((s, p) => s + p[0], 0) / n;
     let ssX = 0, rss = 0;
     for (let i = 0; i < n; i++) {
@@ -7241,6 +7252,7 @@ const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
+    const quantile = __mirrorStat.quantile;
     const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const aidAvYrke = __mirrorAid.aidAvYrke;
     const namnrader = __mirrorAid.namnrader;
@@ -7321,6 +7333,58 @@ function arsbeloppMening(g, costSettings, kr) {
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${_PO_FORMAT.format(po)} %). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
+}
+
+/**
+ * Grunderna för motiveringsförslagen till en prioriteringspost: deterministiska regler över gruppens rader, i den
+ * ordning förslagen visas. Texterna skriver appen (generateMotivationSuggestions i src/app/55-prioritering.js).
+ *
+ * Koderna: `underlag` (ett kön under minsta gruppstorlek), `styrka` (skillnaden under detektionströskeln), `alder`
+ * (könens medelålder skiljer minst 3 år), `kvintil` (kvinnor överrepresenterade i lägsta lönekvintilen; kräver
+ * kTroskel för båda könen, ADR-12), `brist`, `snabbVinst`, `over` (mer än 5 % över referensen) och `nara`
+ * (inom ±naraGrans % av referensen, minst 10 personer).
+ *
+ * @param {{_rows?: Array<{kon:string, lon:number, alder?:number}>, kvN:number, maN:number, n:number, diffPct:number,
+ *          isBrist?:boolean, isQuickWin?:boolean}} item
+ * @param {{kInstalld:number, kTroskel:number, mdePct?:number|null, naraGrans:number}} opt
+ *        kInstalld: den inställda minsta gruppstorleken; kTroskel: den gällande tröskeln; mdePct: detektionströskeln
+ *        i procent (saknas den prövas inte regeln); naraGrans: uppföljningsgränsen i procent (tecknet spelar ingen roll)
+ * @returns {Array<{kod:string, type:'warn'|'info'|'ok'|'flag'} & Object>}
+ */
+function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGrans }) {
+    const out = [];
+    const rows = item._rows || [];
+    if (!rows.length) return out;
+
+    // Varningen gäller skattningens säkerhet, inte läget (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
+    if (item.kvN < kInstalld || item.maN < kInstalld) out.push({ kod: 'underlag', type: 'warn', kvN: item.kvN, maN: item.maN, k: kInstalld });
+
+    if (mdePct != null && Math.abs(item.diffPct) < mdePct && item.n < 30) out.push({ kod: 'styrka', type: 'info', diffPct: item.diffPct, mdePct });
+
+    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder || 0).filter(a => a > 0);
+    const maAges = rows.filter(r => arMan(r)).map(r => r.alder || 0).filter(a => a > 0);
+    if (kvAges.length >= 3 && maAges.length >= 3) {
+        const medelKv = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
+        const medelMa = maAges.reduce((s, v) => s + v, 0) / maAges.length;
+        if (Math.abs(medelMa - medelKv) >= 3) out.push({ kod: 'alder', type: 'info', medelKv, medelMa });
+    }
+
+    // Lönepositionsmått per kön: kräver tröskeln för båda könen (ADR-12)
+    if (item.kvN >= kTroskel && item.maN >= kTroskel) {
+        const q1 = quantile(rows.map(r => r.lon), 0.2);
+        const andelKv = item.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / item.kvN : 0;
+        const andelMa = item.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / item.maN : 0;
+        if (andelKv >= 0.4 && andelKv - andelMa >= 0.2) out.push({ kod: 'kvintil', type: 'flag', andelKv, andelMa });
+    }
+
+    if (item.isBrist) out.push({ kod: 'brist', type: 'info' });
+    if (item.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: item.n });
+    if (item.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: item.diffPct });
+
+    // Ett läge mot referensen, ingen bedömning (A5)
+    const nara = Math.abs(naraGrans);
+    if (Math.abs(item.diffPct) < nara && item.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
+    return out;
 }
 
 /**
@@ -7454,11 +7518,12 @@ function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, cos
     return items;
 }
 
-    return { prioritera, arsbeloppMening, prioKonstanter };
+    return { prioritera, arsbeloppMening, prioKonstanter, motiveringsgrunder };
 })();
 const _prPrioritera = __mirrorPrioritering.prioritera;
 const _prArsbeloppMening = __mirrorPrioritering.arsbeloppMening;
 const _prKonstanter = __mirrorPrioritering.prioKonstanter;
+const _prMotiveringsgrunder = __mirrorPrioritering.motiveringsgrunder;
 
 // ---- speglar src/lib/livscykel.js ----
 const __mirrorLivscykel = (() => {
@@ -8491,6 +8556,284 @@ function namnFranFil(filnamn) {
 })();
 const _refNamnFranFil = __mirrorReferens.namnFranFil;
 
+// ---- speglar src/lib/forhandskontroll.js ----
+const __mirrorForhandskontroll = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const skapaTermer = __mirrorTermer.skapaTermer;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — förhandskontrollen av lönefilen: hur filen tolkades, rad för rad och i sammandrag, med
+ * varningar, direkt efter inläsningen.
+ *
+ * Ren logik utan DOM och state. Appen (32-filinlasning.js) samlar under inläsningen de tio första raderna med
+ * filens råvärde och verktygets tolkning, räknar kön-värdena och skickar in de använda raderna och inläsningens
+ * räknare (parseStats). Här byggs det som visas (17-forhandskontroll.js): tolkningen per cell, sammandraget,
+ * värdefördelningen och varningarna. Ingen tolkning görs om här — modulen beskriver bara den som redan gjorts.
+ *
+ * Dataskydd: tolkningen bär högst tio rader med fem till sju fält, och yrkets råvärde följer aldrig med (yrket
+ * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
+ * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
+ * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+/** Antal rader i tolkningen. */
+const FK_ANTAL_RADER = 10;
+/** En medianlön över detta ser ut som en årslön. */
+const FK_ARSLON_MEDIAN = 150000;
+/** En medianlön under detta ser ut som en timlön. */
+const FK_TIMLON_MEDIAN = 5000;
+/** Den högsta lönen över så många gånger medianen är en orimlig spridning. */
+const FK_SPRIDNING_GANGER = 10;
+const FK_ALDER_MIN = 16;
+const FK_ALDER_MAX = 75;
+/** Rimlig månadslön (heltid) i tabellen Underlagets kvalitet. */
+const FK_LON_MIN = 15000;
+const FK_LON_MAX = 250000;
+/** Ett rimligt BAS-värde är en enda bokstav (inläsningen versaliserar). */
+const FK_BAS = /^[A-ZÅÄÖ]$/;
+/** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
+const FK_SMA_GRUPP = 10;
+/** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
+const FK_NAMN_RADNR = 5;
+/** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
+const MAX_RA = 24;
+const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
+// Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
+const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
+const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', inget: 'inget särskilt ansvar' };
+
+/** Gränsvärdena, för gränssnittets texter. */
+function forhandskontrollGranser() {
+    return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
+        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
+        namnRadnr: FK_NAMN_RADNR, lonMin: FK_LON_MIN, lonMax: FK_LON_MAX, bas: FK_BAS };
+}
+
+const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+function _fkTal(v) { return typeof v === 'number' && isFinite(v) ? _tal.format(v) : ''; }
+function _fkKorta(v) {
+    if (v == null) return '';
+    const s = String(v).trim();
+    return s.length > MAX_RA ? s.slice(0, MAX_RA) + '…' : s;
+}
+function _fkMedian(sorterade) {
+    const n = sorterade.length;
+    if (!n) return null;
+    return n % 2 ? sorterade[(n - 1) / 2] : (sorterade[n / 2 - 1] + sorterade[n / 2]) / 2;
+}
+const _fkRader = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
+const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
+/** "12", "12 och 40", "12, 40 och 51". */
+const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
+
+/**
+ * Radnumren i en varning: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4 och 5" när fler rader träffats än som
+ * visas. Den enda källan till formuleringen, som står i varningen om personnamn i fältet för AID-etikett
+ * (namnIYrkesfaltetText och inläsningsrapportens rad) och i varningen om ålder utanför 16–75 år.
+ * @param {number} antal - Rader som varningen gäller.
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem, i stigande ordning.
+ * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
+ */
+function namnIYrkesfaltetRadnr(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
+    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
+}
+
+/**
+ * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
+ * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
+ * rader och radnumren, aldrig fältets innehåll.
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * @returns {string} Tom när antalet är 0.
+ */
+function namnIYrkesfaltetText(antal, radnr = []) {
+    if (!(antal > 0)) return '';
+    const nr = namnIYrkesfaltetRadnr(antal, radnr);
+    const vilka = nr ? ` (${nr})` : '';
+    return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
+        + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
+}
+
+/**
+ * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
+ * "rå tolkat som …" när tolkningen skiljer sig från råvärdet (med ord: gränssnittet har inga pilar).
+ */
+function _fkCell(roll, rad) {
+    const ra = _fkKorta(rad.ra?.[roll]);
+    const tolkat = rad.tolkat?.[roll];
+    const status = (rad.status && rad.status[roll]) || 'ok';
+    const tom = ra === '';
+    const visa = (tolkatText, lika) => (tom ? '(tom)' : lika ? ra : `${ra} tolkat som ${tolkatText}`);
+    if (roll === 'yrke') {
+        const t = String(tolkat ?? '');
+        return { 'rå': null, tolkat: t, fel: t ? null : 'saknas', text: t || '(tom)' };
+    }
+    if (roll === 'bas') {
+        const t = String(tolkat ?? '');
+        const fel = !t ? 'saknas: raden faller bort' : FK_BAS.test(t) ? null : 'inte en bokstav';
+        return { 'rå': ra, tolkat: t, fel, text: visa(t, ra === t) };
+    }
+    if (roll === 'kon') {
+        const t = String(tolkat ?? '');
+        const kand = t === 'kvinna' || t === 'man';
+        const fel = tom ? 'saknas: raden faller bort' : kand ? null : 'okänd kod: raden faller bort';
+        return { 'rå': ra, tolkat: kand ? t : null, fel, text: kand ? visa(t, ra.toLowerCase() === t) : (tom ? '(tom)' : ra) };
+    }
+    if (roll === 'ansvar') {
+        const t = ANSVAR_TEXT[tolkat] || '';
+        const fel = status === 'invalid' ? 'ogiltig kod: räknas som inget särskilt ansvar' : null;
+        return { 'rå': ra, tolkat: tolkat ?? null, fel, text: tom ? '(tom)' : `${ra} tolkat som ${t || ANSVAR_TEXT.inget}` };
+    }
+    // Tal: lön, ålder och poäng.
+    const n = typeof tolkat === 'number' && isFinite(tolkat) ? tolkat : null;
+    const lika = n != null && ra === String(n);
+    if (roll === 'lon') {
+        const fel = status === 'invalid' ? 'kan inte läsas som tal: raden faller bort'
+            : tom ? 'saknas: raden faller bort' : n == null || n <= 0 ? 'noll eller negativ: raden faller bort' : null;
+        return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
+    }
+    if (roll === 'alder') {
+        if (status === 'birthyear') return { 'rå': ra, tolkat: n, fel: null, text: `${ra} tolkat som ${_fkTal(n)} år` };
+        const fel = status === 'invalid' ? 'kan inte läsas som tal' : tom ? 'saknas'
+            : n != null && (n < FK_ALDER_MIN || n > FK_ALDER_MAX) ? `utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år` : null;
+        return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(`${_fkTal(n)} år`, lika) };
+    }
+    const fel = status === 'invalid' ? 'kan inte läsas som tal' : null;
+    return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
+}
+
+/**
+ * Bygger förhandskontrollen.
+ * @param {{
+ *   rader?: Array<{radnr?: number|null, anvands: boolean, ra: Object<string, any>, tolkat: Object<string, any>, status?: Object<string, string>}>,
+ *   data?: Array<{bas: string, lon: number, alder: number, kon: string, radnr?: number|null}>,
+ *   konVarden?: Array<{'rå': string, tolkat: string|null, antal: number}>,
+ *   parseStats?: Object<string, any>,
+ *   headers?: string[],
+ *   mappning?: Object<string, string|null>,
+ *   k?: number,
+ *   profil?: {namn: string, kalla: string}|null
+ * }} indata - `rader`: filens första rader (råvärde, tolkning, status för lön/ålder/poäng/ansvar, om raden
+ *   används); `data`: de använda raderna; `konVarden`: kön-kolumnens värden i hela filen; `mappning`: roll till rubrik
+ *   som lästes; `k`: minsta gruppstorlek; `profil`: importprofilen som kände igen filen.
+ */
+function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStats = {}, headers = [], mappning = {}, k = FK_SMA_GRUPP, profil = null } = {}) {
+    const ps = parseStats || {};
+    const roller = ROLLER.filter(r => OBLIGATORISKA.includes(r) || (mappning && mappning[r]));
+    const tolkning = rader.slice(0, FK_ANTAL_RADER).map(rad => ({
+        radnr: rad.radnr ?? null, anvands: !!rad.anvands,
+        celler: Object.fromEntries(roller.map(r => [r, _fkCell(r, rad)])),
+    }));
+
+    // Sammandrag ur inläsningens räknare.
+    const bortfall = [];
+    const lagg = (kod, antal, text, exempel = []) => { if (antal > 0) bortfall.push({ kod, antal, text, exempel: [...exempel] }); };
+    lagg('bas', ps.excludedNoBas || 0, `utan ${T.niva.en}`);
+    lagg('lon', ps.excludedZeroLon || 0, 'utan lön (tom, noll eller som inte går att läsa)', ps.invalidLonExamples || []);
+    lagg('kon', ps.excludedMissingKon || 0, 'utan känt kön', ps.missingKonExamples || []);
+    const sammandrag = {
+        totalt: ps.totalRaw || 0, anvands: data.length, bortfall,
+        ogiltigLon: { antal: ps.invalidLon || 0, exempel: [...(ps.invalidLonExamples || [])] },
+        ogiltigAlder: { antal: ps.invalidAlder || 0, exempel: [...(ps.invalidAlderExamples || [])] },
+        fodelsear: ps.alderFromBirthYear || 0,
+    };
+
+    // Värdefördelningen i de använda raderna.
+    const perBas = new Map();
+    for (const r of data) perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
+    const basVarden = [...perBas.entries()].map(([bas, antal]) => ({ bas, antal })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
+    const ovanliga = basVarden.map(b => b.bas).filter(b => !FK_BAS.test(b));
+    const loner = data.map(r => r.lon).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
+    const lon = loner.length ? { min: loner[0], median: _fkMedian(loner), max: loner[loner.length - 1] } : null;
+    const aldrar = data.map(r => r.alder).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
+    const utanforAlder = a => typeof a === 'number' && a > 0 && (a < FK_ALDER_MIN || a > FK_ALDER_MAX);
+    const utanfor = aldrar.filter(utanforAlder).length;
+    const alder = aldrar.length ? { min: aldrar[0], max: aldrar[aldrar.length - 1], utanfor } : null;
+    const grans = typeof k === 'number' && k > 0 ? k : FK_SMA_GRUPP;
+    const sma = basVarden.filter(b => b.antal < grans);
+    const smaRader = sma.reduce((s, b) => s + b.antal, 0);
+    const fordelning = {
+        bas: { varden: basVarden, ovanliga },
+        kon: konVarden.map(v => ({ 'rå': _fkKorta(v['rå']), tolkat: v.tolkat ?? null, antal: v.antal })),
+        lon, alder,
+        smaBas: { k: grans, bas: sma.map(b => b.bas), rader: smaRader, andel: data.length ? smaRader / data.length : 0 },
+    };
+
+    // Varningarna. Texterna bär inga löner eller åldrar ur filen (de kan följa med Att göra ut ur verktyget).
+    const varningar = [];
+    const varna = (kod, niva, text) => varningar.push({ kod, niva, text });
+    // Först: namn i uttaget är en fråga om dataskydd, inte om tolkningen. Bara antal och radnummer (parseStats).
+    if ((ps.yrkeNamn || 0) > 0) varna('yrke-namn', 'varning', namnIYrkesfaltetText(ps.yrkeNamn, ps.yrkeNamnRadnr));
+    if (lon && lon.median > FK_ARSLON_MEDIAN) {
+        varna('lon-arslon', 'fel', `Medianlönen är över ${_fkTal(FK_ARSLON_MEDIAN)} kr och ser ut som en årslön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
+    } else if (lon && lon.median < FK_TIMLON_MEDIAN) {
+        varna('lon-timlon', 'fel', `Medianlönen är under ${_fkTal(FK_TIMLON_MEDIAN)} kr och ser ut som en timlön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
+    } else if (lon && lon.max > FK_SPRIDNING_GANGER * lon.median) {
+        varna('lon-spridning', 'varning', `Den högsta lönen är mer än ${FK_SPRIDNING_GANGER} gånger medianlönen: kontrollera om några löner är årslöner eller har fel enhet.`);
+    }
+    if (data.length && !data.some(r => typeof r.alder === 'number' && r.alder > 0)) {
+        varna('alder-saknas', 'varning', 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
+    }
+    if (sammandrag.fodelsear > 0) {
+        varna('alder-fodelsear', 'varning', `Åldern har räknats ut ur födelseår för ${_fkRader(sammandrag.fodelsear)}: kontrollera att ålderskolumnen verkligen är födelseår.`);
+    }
+    if (utanfor > 0) {
+        // Bara antal och radnummer, så att raderna går att hitta i filen. Regressionen och Ålder & karriär räknar varje ålder över 0.
+        const radnr = data.filter(r => utanforAlder(r.alder)).map(r => r.radnr ?? NaN).filter(Number.isFinite).sort((a, b) => a - b);
+        const vilka = namnIYrkesfaltetRadnr(utanfor, radnr);
+        varna('alder-utanfor', 'varning', `${_fkPersoner(utanfor)} har en ålder utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år${vilka ? ` (${vilka})` : ''}. `
+            + `${utanfor === 1 ? 'Raden räknas' : 'Raderna räknas'} med i åldersjusteringen tills filen är rättad: kontrollera ålderskolumnen och läs in filen igen.`);
+    }
+    if (sammandrag.ogiltigAlder.antal > 0) {
+        varna('alder-ogiltig', 'varning', `${_fkRader(sammandrag.ogiltigAlder.antal)} har en ålder som inte går att läsa som tal.`);
+    }
+    if (ovanliga.length) {
+        const visa = ovanliga.slice(0, 5).map(b => _fkKorta(b)).join(', ') + (ovanliga.length > 5 ? ' …' : '');
+        varna('bas-ovanlig', 'varning', `${ovanliga.length} ${ovanliga.length === 1 ? 'BAS-värde är' : 'BAS-värden är'} inte en bokstav (${visa}): kontrollera BAS-kolumnen.`);
+    }
+    if ((ps.excludedMissingKon || 0) > 0) {
+        varna('kon-okand', 'varning', `${_fkRader(ps.excludedMissingKon)} har ett kön som verktyget inte känner igen och faller bort.`);
+    }
+    if ((ps.excludedNoBas || 0) > 0) {
+        varna('bortfall-bas', 'varning', `${_fkRader(ps.excludedNoBas)} saknar ${T.niva.en} och faller bort.`);
+    }
+    if ((ps.excludedZeroLon || 0) > 0) {
+        const ogiltig = ps.invalidLon || 0;
+        varna('bortfall-lon', 'varning', `${_fkRader(ps.excludedZeroLon)} saknar lön och faller bort${ogiltig ? `, varav ${ogiltig} med en lön som inte går att läsa som tal` : ''}.`);
+    }
+
+    const anvandaRubriker = new Set();
+    const anvanda = [];
+    for (const r of ROLLER) {
+        const rubrik = mappning && mappning[r];
+        if (!rubrik) continue;
+        anvanda.push({ roll: r, rubrik });
+        anvandaRubriker.add(rubrik);
+    }
+    const kolumner = {
+        anvanda,
+        oanvanda: (headers || []).filter(h => h && !anvandaRubriker.has(h)),
+        profil: profil ? { namn: profil.namn, kalla: profil.kalla } : null,
+    };
+    return { tolkning, sammandrag, fordelning, varningar, kolumner };
+}
+
+    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText, namnIYrkesfaltetRadnr };
+})();
+const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
+const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
+const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
+const _fkNamnIYrkesfaltetRadnr = __mirrorForhandskontroll.namnIYrkesfaltetRadnr;
+
 // ---- speglar src/lib/datakvalitet.js ----
 const __mirrorDatakvalitet = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -8499,6 +8842,7 @@ const __mirrorDatakvalitet = (() => {
     const personOrd = __mirrorNamn.personOrd;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
+    const forhandskontrollGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8514,12 +8858,14 @@ const __mirrorDatakvalitet = (() => {
 
 
 
+
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
-const FTE_GOLV = 20000;
+/** Samma gränser för ålder, lön och BAS som förhandskontrollen: en uppgift på ett ställe. */
+const { alderMin: ALDER_MIN, alderMax: ALDER_MAX, lonMin: LON_MIN, lonMax: LON_MAX, bas: BAS } = forhandskontrollGranser();
 
 function _stat(v, okGrans, varnGrans, hogreArBattre) {
     if (v == null || !isFinite(v)) return 'kritisk';
@@ -8595,13 +8941,13 @@ function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {}) {
 
     // Ålderskolumnen är valfri (ADR-64): utan ålder i lönefilen prövas bara lön och BAS.
     const harAlder = d.some(r => r && r.alder > 0);
-    const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || (harAlder && !(r.alder >= 18 && r.alder <= 70)) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
+    const orimliga = d.filter(r => !(r.lon >= LON_MIN && r.lon <= LON_MAX)
+        || (harAlder && !(r.alder >= ALDER_MIN && r.alder <= ALDER_MAX)) || !BAS.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ${harAlder ? 'ålder utanför 18–70 ' : ''}eller BAS som inte är en bokstav.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${LON_MIN.toLocaleString('sv-SE')} eller över ${LON_MAX.toLocaleString('sv-SE')} kr, ${harAlder ? `ålder utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';
@@ -9724,6 +10070,13 @@ function parseNumberStrict(v) {
 
 // ---- Textfälten: AID-etiketten, BAS, AID i ställningstagandet och kön ----
 
+// Etiketten i fältet för AID-etikett: resten efter AID-koden och vanliga separatorer (—, -, :, ., whitespace), utan
+// HTML-meta-tecknen < > " ' &. De strippas vid inläsningen så att de aldrig kan smitas in i en innerHTML-template ens
+// om en framtida renderingsplats glömmer esc() — CSP + esc() + inläsningen; tre lager. `s` är redan trimmad.
+function _yrkeEtikett(s) {
+    return s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+}
+
 /**
  * Fältet för AID-etikett (yrket) vid inläsning (GDPR Art. 25.1: bara det analysen behöver).
  *
@@ -9745,13 +10098,7 @@ function _cleanYrkeField(raw) {
     if (!s) return "";
     const aidMatch = s.match(/^(\d+)/);
     const aid = aidMatch ? aidMatch[1] : "";
-    // Etikett = resten efter AID och vanliga separatorer (—, -, :, ., whitespace)
-    let label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim();
-    // Härd mot XSS-tecken vid inläsning.
-    // Strippar HTML-meta-tecken < > " ' & så de aldrig kan smitas in i en
-    // innerHTML-template ens om en framtida renderingsplats glömmer esc().
-    // Detta är "defensive depth" — CSP + esc() + cleanYrkeField; tre lager.
-    label = label.replace(/[<>"'&]/g, '');
+    let label = _yrkeEtikett(s);
     // Kortningen sist — yrkesetiketter är sällan över 40 tecken
     if (label.length > 40) label = label.substring(0, 40).trim() + '…';
     if (aid && label) return `${aid} ${label}`;
@@ -9795,7 +10142,7 @@ function yrkeNamnNyckel(raw) {
     if (raw == null) return '';
     const s = raw.toString().trim();
     if (!s) return '';
-    const label = s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+    const label = _yrkeEtikett(s);
     if (!YRKE_NAMNMONSTER.some(re => re.test(label))) return '';
     return label.toLowerCase().replace(/\s+/g, ' ');
 }
@@ -12551,275 +12898,6 @@ const _ipMatcha = __mirrorImportprofiler.matchaImportprofil;
 const _ipFranMappning = __mirrorImportprofiler.profilFranMappning;
 const _ipTillJson = __mirrorImportprofiler.importprofilerTillJson;
 const _ipInbyggda = __mirrorImportprofiler.inbyggdaProfiler;
-
-// ---- speglar src/lib/forhandskontroll.js ----
-const __mirrorForhandskontroll = (() => {
-    // importer ur tidigare speglade lib-moduler
-    const skapaTermer = __mirrorTermer.skapaTermer;
-
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — förhandskontrollen av lönefilen: hur filen tolkades, rad för rad och i sammandrag, med
- * varningar, direkt efter inläsningen.
- *
- * Ren logik utan DOM och state. Appen (32-filinlasning.js) samlar under inläsningen de tio första raderna med
- * filens råvärde och verktygets tolkning, räknar kön-värdena och skickar in de använda raderna och inläsningens
- * räknare (parseStats). Här byggs det som visas (17-forhandskontroll.js): tolkningen per cell, sammandraget,
- * värdefördelningen och varningarna. Ingen tolkning görs om här — modulen beskriver bara den som redan gjorts.
- *
- * Dataskydd: tolkningen bär högst tio rader med fem till sju fält, och yrkets råvärde följer aldrig med (yrket
- * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
- * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
- * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- */
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
-
-/** Antal rader i tolkningen. */
-const FK_ANTAL_RADER = 10;
-/** En medianlön över detta ser ut som en årslön. */
-const FK_ARSLON_MEDIAN = 150000;
-/** En medianlön under detta ser ut som en timlön. */
-const FK_TIMLON_MEDIAN = 5000;
-/** Den högsta lönen över så många gånger medianen är en orimlig spridning. */
-const FK_SPRIDNING_GANGER = 10;
-const FK_ALDER_MIN = 16;
-const FK_ALDER_MAX = 75;
-/** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
-const FK_SMA_GRUPP = 10;
-/** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
-const FK_NAMN_RADNR = 5;
-/** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
-const MAX_RA = 24;
-const VANLIG_BAS = /^[A-N]$/;
-const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-// Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
-const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
-const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', inget: 'inget särskilt ansvar' };
-
-/** Gränsvärdena, för gränssnittets texter. */
-function forhandskontrollGranser() {
-    return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
-        spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
-        namnRadnr: FK_NAMN_RADNR };
-}
-
-const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
-function _fkTal(v) { return typeof v === 'number' && isFinite(v) ? _tal.format(v) : ''; }
-function _fkKorta(v) {
-    if (v == null) return '';
-    const s = String(v).trim();
-    return s.length > MAX_RA ? s.slice(0, MAX_RA) + '…' : s;
-}
-function _fkMedian(sorterade) {
-    const n = sorterade.length;
-    if (!n) return null;
-    return n % 2 ? sorterade[(n - 1) / 2] : (sorterade[n / 2 - 1] + sorterade[n / 2]) / 2;
-}
-const _fkRader = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
-const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
-/** "12", "12 och 40", "12, 40 och 51". */
-const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
-
-/**
- * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
- * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
- * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
- * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
- * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
- * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
- */
-function namnIYrkesfaltetRadnr(antal, radnr = []) {
-    if (!(antal > 0)) return '';
-    const nr = (radnr || []).filter(r => typeof r === 'number' && isFinite(r)).slice(0, FK_NAMN_RADNR);
-    return nr.length ? `${nr.length < antal ? 'till exempel ' : ''}rad ${_fkOchLista(nr)}` : '';
-}
-
-/**
- * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
- * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
- * rader och radnumren, aldrig fältets innehåll.
- * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
- * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
- * @returns {string} Tom när antalet är 0.
- */
-function namnIYrkesfaltetText(antal, radnr = []) {
-    if (!(antal > 0)) return '';
-    const nr = namnIYrkesfaltetRadnr(antal, radnr);
-    const vilka = nr ? ` (${nr})` : '';
-    return `Fältet för ${T.enhet.en} ser ut att innehålla personnamn på ${_fkRader(antal)}${vilka}. Verktyget behöver inga namn. `
-        + 'Ta bort namnen ur kolumnen i uttaget ur lönesystemet och läs in filen igen. Namn som står kvar kan följa med i tabeller och exporter.';
-}
-
-/**
- * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
- * "rå tolkat som …" när tolkningen skiljer sig från råvärdet (med ord: gränssnittet har inga pilar).
- */
-function _fkCell(roll, rad) {
-    const ra = _fkKorta(rad.ra?.[roll]);
-    const tolkat = rad.tolkat?.[roll];
-    const status = (rad.status && rad.status[roll]) || 'ok';
-    const tom = ra === '';
-    const visa = (tolkatText, lika) => (tom ? '(tom)' : lika ? ra : `${ra} tolkat som ${tolkatText}`);
-    if (roll === 'yrke') {
-        const t = String(tolkat ?? '');
-        return { 'rå': null, tolkat: t, fel: t ? null : 'saknas', text: t || '(tom)' };
-    }
-    if (roll === 'bas') {
-        const t = String(tolkat ?? '');
-        const fel = !t ? 'saknas: raden faller bort' : VANLIG_BAS.test(t) ? null : 'inte en bokstav A–N';
-        return { 'rå': ra, tolkat: t, fel, text: visa(t, ra === t) };
-    }
-    if (roll === 'kon') {
-        const t = String(tolkat ?? '');
-        const kand = t === 'kvinna' || t === 'man';
-        const fel = tom ? 'saknas: raden faller bort' : kand ? null : 'okänd kod: raden faller bort';
-        return { 'rå': ra, tolkat: kand ? t : null, fel, text: kand ? visa(t, ra.toLowerCase() === t) : (tom ? '(tom)' : ra) };
-    }
-    if (roll === 'ansvar') {
-        const t = ANSVAR_TEXT[tolkat] || '';
-        const fel = status === 'invalid' ? 'ogiltig kod: räknas som inget särskilt ansvar' : null;
-        return { 'rå': ra, tolkat: tolkat ?? null, fel, text: tom ? '(tom)' : `${ra} tolkat som ${t || ANSVAR_TEXT.inget}` };
-    }
-    // Tal: lön, ålder och poäng.
-    const n = typeof tolkat === 'number' && isFinite(tolkat) ? tolkat : null;
-    const lika = n != null && ra === String(n);
-    if (roll === 'lon') {
-        const fel = status === 'invalid' ? 'kan inte läsas som tal: raden faller bort'
-            : tom ? 'saknas: raden faller bort' : n == null || n <= 0 ? 'noll eller negativ: raden faller bort' : null;
-        return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
-    }
-    if (roll === 'alder') {
-        if (status === 'birthyear') return { 'rå': ra, tolkat: n, fel: null, text: `${ra} tolkat som ${_fkTal(n)} år` };
-        const fel = status === 'invalid' ? 'kan inte läsas som tal' : tom ? 'saknas'
-            : n != null && (n < FK_ALDER_MIN || n > FK_ALDER_MAX) ? `utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år` : null;
-        return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(`${_fkTal(n)} år`, lika) };
-    }
-    const fel = status === 'invalid' ? 'kan inte läsas som tal' : null;
-    return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
-}
-
-/**
- * Bygger förhandskontrollen.
- * @param {{
- *   rader?: Array<{radnr?: number|null, anvands: boolean, ra: Object<string, any>, tolkat: Object<string, any>, status?: Object<string, string>}>,
- *   data?: Array<{bas: string, lon: number, alder: number, kon: string}>,
- *   konVarden?: Array<{'rå': string, tolkat: string|null, antal: number}>,
- *   parseStats?: Object<string, any>,
- *   headers?: string[],
- *   mappning?: Object<string, string|null>,
- *   k?: number,
- *   profil?: {namn: string, kalla: string}|null
- * }} indata - `rader`: filens första rader (råvärde, tolkning, status för lön/ålder/poäng/ansvar, om raden
- *   används); `data`: de använda raderna; `konVarden`: kön-kolumnens värden i hela filen; `mappning`: roll till rubrik
- *   som lästes; `k`: minsta gruppstorlek; `profil`: importprofilen som kände igen filen.
- */
-function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStats = {}, headers = [], mappning = {}, k = FK_SMA_GRUPP, profil = null } = {}) {
-    const ps = parseStats || {};
-    const roller = ROLLER.filter(r => OBLIGATORISKA.includes(r) || (mappning && mappning[r]));
-    const tolkning = rader.slice(0, FK_ANTAL_RADER).map(rad => ({
-        radnr: rad.radnr ?? null, anvands: !!rad.anvands,
-        celler: Object.fromEntries(roller.map(r => [r, _fkCell(r, rad)])),
-    }));
-
-    // Sammandrag ur inläsningens räknare.
-    const bortfall = [];
-    const lagg = (kod, antal, text, exempel = []) => { if (antal > 0) bortfall.push({ kod, antal, text, exempel: [...exempel] }); };
-    lagg('bas', ps.excludedNoBas || 0, `utan ${T.niva.en}`);
-    lagg('lon', ps.excludedZeroLon || 0, 'utan lön (tom, noll eller som inte går att läsa)', ps.invalidLonExamples || []);
-    lagg('kon', ps.excludedMissingKon || 0, 'utan känt kön', ps.missingKonExamples || []);
-    const sammandrag = {
-        totalt: ps.totalRaw || 0, anvands: data.length, bortfall,
-        ogiltigLon: { antal: ps.invalidLon || 0, exempel: [...(ps.invalidLonExamples || [])] },
-        ogiltigAlder: { antal: ps.invalidAlder || 0, exempel: [...(ps.invalidAlderExamples || [])] },
-        fodelsear: ps.alderFromBirthYear || 0,
-    };
-
-    // Värdefördelningen i de använda raderna.
-    const perBas = new Map();
-    for (const r of data) perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
-    const basVarden = [...perBas.entries()].map(([bas, antal]) => ({ bas, antal })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
-    const ovanliga = basVarden.map(b => b.bas).filter(b => !VANLIG_BAS.test(b));
-    const loner = data.map(r => r.lon).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
-    const lon = loner.length ? { min: loner[0], median: _fkMedian(loner), max: loner[loner.length - 1] } : null;
-    const aldrar = data.map(r => r.alder).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
-    const utanfor = aldrar.filter(a => a < FK_ALDER_MIN || a > FK_ALDER_MAX).length;
-    const alder = aldrar.length ? { min: aldrar[0], max: aldrar[aldrar.length - 1], utanfor } : null;
-    const grans = typeof k === 'number' && k > 0 ? k : FK_SMA_GRUPP;
-    const sma = basVarden.filter(b => b.antal < grans);
-    const smaRader = sma.reduce((s, b) => s + b.antal, 0);
-    const fordelning = {
-        bas: { varden: basVarden, ovanliga },
-        kon: konVarden.map(v => ({ 'rå': _fkKorta(v['rå']), tolkat: v.tolkat ?? null, antal: v.antal })),
-        lon, alder,
-        smaBas: { k: grans, bas: sma.map(b => b.bas), rader: smaRader, andel: data.length ? smaRader / data.length : 0 },
-    };
-
-    // Varningarna. Texterna bär inga löner eller åldrar ur filen (de kan följa med Att göra ut ur verktyget).
-    const varningar = [];
-    const varna = (kod, niva, text) => varningar.push({ kod, niva, text });
-    // Först: namn i uttaget är en fråga om dataskydd, inte om tolkningen. Bara antal och radnummer (parseStats).
-    if ((ps.yrkeNamn || 0) > 0) varna('yrke-namn', 'varning', namnIYrkesfaltetText(ps.yrkeNamn, ps.yrkeNamnRadnr));
-    if (lon && lon.median > FK_ARSLON_MEDIAN) {
-        varna('lon-arslon', 'fel', `Medianlönen är över ${_fkTal(FK_ARSLON_MEDIAN)} kr och ser ut som en årslön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
-    } else if (lon && lon.median < FK_TIMLON_MEDIAN) {
-        varna('lon-timlon', 'fel', `Medianlönen är under ${_fkTal(FK_TIMLON_MEDIAN)} kr och ser ut som en timlön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
-    } else if (lon && lon.max > FK_SPRIDNING_GANGER * lon.median) {
-        varna('lon-spridning', 'varning', `Den högsta lönen är mer än ${FK_SPRIDNING_GANGER} gånger medianlönen: kontrollera om några löner är årslöner eller har fel enhet.`);
-    }
-    if (data.length && !data.some(r => typeof r.alder === 'number' && r.alder > 0)) {
-        varna('alder-saknas', 'varning', 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
-    }
-    if (sammandrag.fodelsear > 0) {
-        varna('alder-fodelsear', 'varning', `Åldern har räknats ut ur födelseår för ${_fkRader(sammandrag.fodelsear)}: kontrollera att ålderskolumnen verkligen är födelseår.`);
-    }
-    if (utanfor > 0) {
-        varna('alder-utanfor', 'varning', `${_fkPersoner(utanfor)} har en ålder utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år: kontrollera ålderskolumnen.`);
-    }
-    if (sammandrag.ogiltigAlder.antal > 0) {
-        varna('alder-ogiltig', 'varning', `${_fkRader(sammandrag.ogiltigAlder.antal)} har en ålder som inte går att läsa som tal.`);
-    }
-    if (ovanliga.length) {
-        const visa = ovanliga.slice(0, 5).map(b => _fkKorta(b)).join(', ') + (ovanliga.length > 5 ? ' …' : '');
-        varna('bas-ovanlig', 'varning', `${ovanliga.length} ${ovanliga.length === 1 ? 'BAS-värde är' : 'BAS-värden är'} inte en bokstav A–N (${visa}): kontrollera BAS-kolumnen.`);
-    }
-    if ((ps.excludedMissingKon || 0) > 0) {
-        varna('kon-okand', 'varning', `${_fkRader(ps.excludedMissingKon)} har ett kön som verktyget inte känner igen och faller bort.`);
-    }
-    if ((ps.excludedNoBas || 0) > 0) {
-        varna('bortfall-bas', 'varning', `${_fkRader(ps.excludedNoBas)} saknar ${T.niva.en} och faller bort.`);
-    }
-    if ((ps.excludedZeroLon || 0) > 0) {
-        const ogiltig = ps.invalidLon || 0;
-        varna('bortfall-lon', 'varning', `${_fkRader(ps.excludedZeroLon)} saknar lön och faller bort${ogiltig ? `, varav ${ogiltig} med en lön som inte går att läsa som tal` : ''}.`);
-    }
-
-    const anvandaRubriker = new Set();
-    const anvanda = [];
-    for (const r of ROLLER) {
-        const rubrik = mappning && mappning[r];
-        if (!rubrik) continue;
-        anvanda.push({ roll: r, rubrik });
-        anvandaRubriker.add(rubrik);
-    }
-    const kolumner = {
-        anvanda,
-        oanvanda: (headers || []).filter(h => h && !anvandaRubriker.has(h)),
-        profil: profil ? { namn: profil.namn, kalla: profil.kalla } : null,
-    };
-    return { tolkning, sammandrag, fordelning, varningar, kolumner };
-}
-
-    return { byggForhandskontroll, forhandskontrollGranser, namnIYrkesfaltetText, namnIYrkesfaltetRadnr };
-})();
-const _fkBygg = __mirrorForhandskontroll.byggForhandskontroll;
-const _fkGranser = __mirrorForhandskontroll.forhandskontrollGranser;
-const _fkNamnIYrkesfaltetText = __mirrorForhandskontroll.namnIYrkesfaltetText;
-const _fkNamnIYrkesfaltetRadnr = __mirrorForhandskontroll.namnIYrkesfaltetRadnr;
 
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
@@ -18049,8 +18127,7 @@ function chartExportFilename(gd, ext, datum = new Date()) {
     const panel = (kalla || gd).closest ? (kalla || gd).closest('.view-panel') : null;
     const flik = panel && panel.id ? panel.id.replace(/^view-/, '') : 'diagram';
     const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
-    const pad = n => String(n).padStart(2, '0');
-    const dag = `${datum.getFullYear()}-${pad(datum.getMonth() + 1)}-${pad(datum.getDate())}`;
+    const dag = idagDatum(datum);
     const titel = _chartExportSlug(chartExportTitle(gd)) || 'Diagram';
     return `${state.isDemo ? 'DEMO_' : ''}${_chartExportSlug(Flik)}_${titel}_${dag}.${ext}`;
 }
@@ -18136,8 +18213,7 @@ function chartExportRows(gd, underlag) {
  *  (exportAnteckning) gäller hela underlaget och står då inte med.
  *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] @param {string} [underlag] */
 function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
-    const p = n => String(n).padStart(2, '0');
-    const dag = `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
+    const dag = idagDatum(datum);
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
     // Ett zoomat diagram exporteras som det visas: fotraden säger att bilden är ett utsnitt.
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn
@@ -19454,139 +19530,6 @@ document.getElementById('outliers-threshold')?.addEventListener('input', renderO
 // Copyright 2026 Felix Jansson
 
 // ---- Datavalideringsrapport (efter CSV-parse) ----
-/**
- * Reality-check-panel.
- *
- * Före HR börjar tolka analyserna, kör en sanity-check av att underlaget
- * är rimligt. Fångar t.ex. fel kolumnmappning (95 % män), orealistiska
- * åldrar (medianålder 19 år) eller löner som lämnats i ören istället för
- * kronor. Skyddar mot tysta tolkningsfel.
- *
- * Klassificering av varje check:
- *   ✅ grönt   — inom rimligt intervall
- *   ⚠ gult    — utanför typiskt intervall men inte omöjligt
- *   🔴 rött   — extremt avvikande, kontrollera mappningen
- */
-function renderRealityCheck() {
-    const wrap = document.getElementById('reality-check');
-    if (!wrap) return;
-    if (!state.data.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-
-    const d = state.data;
-    const n = d.length;
-
-    // Check 1: könsfördelning
-    const nKv = d.filter(r => arKvinna(r)).length;
-    const pctKv = n > 0 ? nKv / n * 100 : 0;
-    let konStatus, konMsg;
-    if (pctKv >= 30 && pctKv <= 70) {
-        konStatus = 'ok';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Inom typiskt kommunalt intervall (30–70 %).`;
-    } else if (pctKv >= 15 && pctKv <= 85) {
-        konStatus = 'warn';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Skev men inte omöjlig — vanligt i specialiserade organisationer (t.ex. teknisk eller socialtjänst).`;
-    } else {
-        konStatus = 'err';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Extremt avvikande — <strong>kontrollera att kön-kolumnen är korrekt mappad</strong>. En vanlig felkälla är att kolumnen innehåller ett ID istället för "Kvinna"/"Man".`;
-    }
-
-    // Check 2: medianålder
-    const ages = d.map(r => r.alder).filter(a => a > 0);
-    const medAge = ages.length ? Stat.median(ages) : 0;
-    const minAge = ages.length ? Math.min(...ages) : 0;
-    const maxAge = ages.length ? Math.max(...ages) : 0;
-    let alderStatus, alderMsg;
-    if (!ages.length) {
-        // Ålderskolumnen är valfri (ADR-64).
-        alderStatus = 'warn';
-        alderMsg = 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.';
-    } else if (medAge >= 38 && medAge <= 55) {
-        alderStatus = 'ok';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Inom typiskt kommunalt intervall (38–55 år).`;
-    } else if (medAge >= 30 && medAge <= 60) {
-        alderStatus = 'warn';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Något utanför typiskt intervall — kontrollera om datan kommer från en specifik organisation med ovanlig demografi.`;
-    } else {
-        alderStatus = 'err';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Extremt avvikande — <strong>kontrollera ålders-kolumnen</strong>. Vanlig felkälla är att ett anställningsdatum lästs in som ålder, eller att kolumnen visar år för anställning istället.`;
-    }
-
-    // Check 3: lönespridning (P10, median, P90)
-    const lons = d.map(r => r.lon).filter(l => l > 0);
-    const p10 = Stat.quantile(lons, 0.10);
-    const p50 = Stat.median(lons);
-    const p90 = Stat.quantile(lons, 0.90);
-    const fmtK = v => svKr(v);
-    let lonStatus, lonMsg;
-    if (p50 >= 25000 && p50 <= 60000) {
-        lonStatus = 'ok';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Inom typiskt svenskt kommunintervall.`;
-    } else if (p50 >= 15000 && p50 < 25000) {
-        lonStatus = 'warn';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Låg medianlön — finns deltidsanställda räknade som heltid i underlaget? Lönen bör vara heltidsekvivalent.`;
-    } else if (p50 > 60000 && p50 <= 90000) {
-        lonStatus = 'warn';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Hög medianlön — typisk för specialistorganisationer eller äldre data har lönerevisionerats.`;
-    } else {
-        lonStatus = 'err';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Extremt avvikande — <strong>kontrollera lön-kolumnen</strong>. Vanlig felkälla: lönen är angiven i ören (multiplicera med 1/100), årslön istället för månadslön (dela med 12), eller deltidsproportionerad istället för heltidsekvivalent.`;
-    }
-
-    // (BAS-maskeringen bedöms nu av kriteriet Jämförbarhet i Underlagets kvalitet, ADR-19.)
-
-    // Check 5: FTE-heuristik — andel löner under heltidsgolvet.
-    // Check 3 fångar bara när MEDIANEN är låg; den vanliga felmoden är blandade
-    // heltids- och ej omräknade deltidslöner (normal median, fet låg svans).
-    // Heltidslöner i kommunal sektor understiger i praktiken inte ~20 000 kr/mån;
-    // deltid på 50–75 % hamnar ofta på 12–18 000 kr.
-    const FTE_GOLV = 20000;
-    const nLow = lons.filter(l => l < FTE_GOLV).length;
-    const pctLow = lons.length ? (nLow / lons.length) * 100 : 0;
-    let fteStatus, fteMsg;
-    if (nLow === 0) {
-        fteStatus = 'ok';
-        fteMsg = `Inga löner under ${fmtK(FTE_GOLV)}/mån — förenligt med heltidsomräknade (FTE) löner, som verktyget förutsätter.`;
-    } else if (pctLow <= 2) {
-        fteStatus = 'ok';
-        fteMsg = `${nLow} lön${nLow === 1 ? '' : 'er'} (${svPct(pctLow, 1)}) under ${fmtK(FTE_GOLV)}/mån — enstaka undantag (t.ex. ungdomsanställningar) är normalt. Verktyget förutsätter heltidsomräknade (FTE) löner.`;
-    } else if (pctLow <= 15) {
-        fteStatus = 'warn';
-        fteMsg = `<strong>${nLow}</strong> löner (<strong>${svPct(pctLow, 1)}</strong>) ligger under ${fmtK(FTE_GOLV)}/mån — kontrollera att månadslönerna är <strong>heltidsomräknade (FTE)</strong>. Ej omräknade deltidslöner snedvrider hela könsanalysen, eftersom deltid oftast är kvinnodominerad.`;
-    } else {
-        fteStatus = 'err';
-        fteMsg = `<strong>${nLow}</strong> löner (<strong>${svPct(pctLow, 1)}</strong>) ligger under ${fmtK(FTE_GOLV)}/mån — underlaget ser <strong>inte</strong> heltidsomräknat ut. Exportera lönerna som heltidsekvivalenter (FTE) ur lönesystemet innan analysen används; ej omräknade deltidslöner gör könsjämförelserna missvisande.`;
-    }
-
-    const icon = s => s === 'ok' ? ikon('bock') : s === 'warn' ? ikon('statusVarning') : ikon('statusKritisk');
-    const allStatuses = [konStatus, alderStatus, lonStatus, fteStatus];
-    const hasErr = allStatuses.includes('err');
-    const hasWarn = allStatuses.includes('warn');
-    const headerClass = hasErr ? 'has-err' : hasWarn ? 'has-warn' : 'all-ok';
-    wrap.style.display = 'block';
-    wrap.className = 'reality-check ' + headerClass;
-    wrap.innerHTML = `
-        <h4 class="text-dampad-xs versal marg-0-0-6">Rimlighet i detalj</h4>
-        <p class="text-dampad-sm marg-0-0-12">
-            Fångar typiska mappningsfel (fel kolumn, fel enhet, fel kön-kodning). Verktyget kan inte
-            avgöra om värdena är "rätt" — bara att de är inom rimliga intervall.
-        </p>
-        <ul class="reality-list utan-punkter marg-0 pad-0">
-            <li class="rc-${konStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(konStatus)}</span>${konMsg}
-            </li>
-            <li class="rc-${alderStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(alderStatus)}</span>${alderMsg}
-            </li>
-            <li class="rc-${lonStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(lonStatus)}</span>${lonMsg}
-            </li>
-            <li class="rc-${fteStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(fteStatus)}</span>${fteMsg}
-            </li>
-        </ul>
-    `;
-}
-
 function renderDataValidationReport() {
     const wrap = document.getElementById('data-validation-report');
     if (!wrap) return;
@@ -19694,9 +19637,9 @@ function renderDataValidationReport() {
     `;
 }
 
-// Underlagets kvalitet (ADR-19): rimlighetskontrollen och inläsningsrapporten är
-// underlag i panelen; statusen kommer från bedomningUnderlag().
-// Anropas efter renderRealityCheck() + renderDataValidationReport().
+// Underlagets kvalitet (ADR-19): inläsningsrapporten är underlag i panelen;
+// statusen kommer från bedomningUnderlag().
+// Anropas efter renderDataValidationReport().
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
 function syncDatakvalitetPanel(val) {
     renderUnderlagetsKvalitet(val);
@@ -19948,7 +19891,7 @@ function renderForhandskontroll() {
     const f = fk.fordelning;
     const kon = f.kon.map(v => `${v['rå'] ? `"${esc(v['rå'])}"` : '(tom)'} ${v.tolkat ? `tolkat som ${esc(v.tolkat)}` : 'tolkas inte'} (${esc(svTal(v.antal, 0))})`).join(', ');
     const fordelning = _fkLista([
-        `BAS-värden: ${f.bas.varden.map(b => `${esc(b.bas)} (${esc(svTal(b.antal, 0))})`).join(', ') || '–'}${f.bas.ovanliga.length ? `; inte en bokstav A–N: ${f.bas.ovanliga.map(esc).join(', ')}` : ''}`,
+        `BAS-värden: ${f.bas.varden.map(b => `${esc(b.bas)} (${esc(svTal(b.antal, 0))})`).join(', ') || '–'}${f.bas.ovanliga.length ? `; inte en bokstav: ${f.bas.ovanliga.map(esc).join(', ')}` : ''}`,
         `Kön-värden: ${kon || '–'}`,
         `Lön: lägst ${_fkKr(f.lon?.min)}, median ${_fkKr(f.lon?.median)}, högst ${_fkKr(f.lon?.max)} (en median över ${esc(svTal(g.arslonMedian, 0))} kr ser ut som årslön, under ${esc(svTal(g.timlonMedian, 0))} kr som timlön)`,
         `Ålder: ${f.alder ? `lägst ${esc(svTal(f.alder.min, 0))}, högst ${esc(svTal(f.alder.max, 0))} år; utanför ${g.alderMin}–${g.alderMax} år: ${esc(svTal(f.alder.utanfor, 0))}` : 'saknas i filen (valfri)'}`,
@@ -20379,7 +20322,7 @@ function _exportActionChecklistCSVExport(items, done) {
     rows.push(['Hanterade', items.filter(it => done.has(it.id)).length]);
     const parNot = _attGoraParNot();
     if (parNot) rows.push(['Utelämnade par', parNot]);
-    _downloadCSV(rows, 'atgardslista_' + new Date().toISOString().slice(0, 10));
+    _downloadCSV(rows, 'atgardslista_' + idagDatum());
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -20824,7 +20767,7 @@ document.getElementById('btn-config-save')?.addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `lonekartlaggning_config_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `lonekartlaggning_config_${idagDatum()}.json`;
     a.click();
     const status = document.getElementById('config-status');
     if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
@@ -21219,7 +21162,6 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     renderConsistencyBanner();
     renderActionChecklist({ reg });
     renderOutliers();
-    renderRealityCheck();
     renderDataValidationReport();
     syncDatakvalitetPanel({ reg });
     renderProcessTracker({ reg });
@@ -21312,12 +21254,11 @@ function _renderDemoBanner() {
 // Ansvarskoderna följer det lilla demots regel (ledningsansvar, särskilt uppdrag, förstelärare); cheferna (AID som
 // börjar med 10) har ledningsansvar. Ansvarskoderna påverkar inte lönerna.
 
-const STORT_DEMO_ANTAL = 5000;
 const _SD_BAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 // [AID, namn, antal, andel kvinnor, BAS-intervall (det lägre, ev. det högre), andel i det högre intervallet,
 //  nivå i det lägre (kr), nivå i det högre (kr) eller null, spridning ((P90 − P10) / median), medelålder,
 //  påslag i den påhittade jämförelsestatistiken]
-// Antalen summerar till STORT_DEMO_ANTAL.
+// Antalen summerar till 5 000.
 /** @type {ReadonlyArray<[string, string, number, number, string[], number, number, number|null, number, number, number]>} */
 const _SD_YRKEN = Object.freeze([
     ['103510', 'Chef individ- och familjeomsorg', 17, 0.95, ['J'], 0.0, 58900, null, 0.20, 51, 0.25],
@@ -22419,7 +22360,7 @@ function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
-    XLSX.writeFile(wb, `lonekartlaggning_komplett_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
     _showExportSensitivityToast();
 }
 
@@ -22598,7 +22539,7 @@ function _exportJPAProtocolExport() {
 
     const d = getData();
     const now = new Date();
-    const isoDate = now.toISOString().slice(0, 10);
+    const isoDate = idagDatum(now);
     const localDate = now.toLocaleDateString('sv-SE');
     const profileLabel = state.profile.benchmarkLabel;
 
@@ -23032,14 +22973,14 @@ function clearAllData() {
  * Själva rensningen, utan bekräftelsefråga. Enda rensningsvägen: används av
  * knappen "Rensa all data" och av den automatiska rensningen vid inaktivitet,
  * så att de aldrig kan glida isär. Vaktas av invarianten "Rensa all data: ingen
- * lönedata kvar" i tests/smoke.test.js, för båda vägarna.
+ * lönedata kvar" i tests/dataskydd-app.test.js, för båda vägarna.
  */
 // Behållare som fylls av JavaScript med innehåll som kan bära lönedata. Listorna används av "Rensa all data" och av
 // exportgrinden (23-exportgrind.js), som tömmer flikar som inte längre är ritade med gällande tröskel.
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
     'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
 
 function _rensaAllData({ inbakat = true } = {}) {
@@ -23121,7 +23062,7 @@ function _rensaAllData({ inbakat = true } = {}) {
 
     // 2. Tear down renderad DOM som kan innehålla data
     // Behållare som fylls helt av JavaScript (Struktur, Löneöversyn, Utforska).
-    // Vaktas av invarianten "Rensa all data: ingen lönedata kvar" i tests/smoke.test.js —
+    // Vaktas av invarianten "Rensa all data: ingen lönedata kvar" i tests/dataskydd-app.test.js —
     // en ny vy som ritar lönedata utanför de rensade behållarna fångas där.
     // Hit hör också outliers-table-wrap (extremvärdesdetektorn) och print-report (utskriften med
     // kopior av tabellerna).
@@ -23689,18 +23630,15 @@ document.getElementById('btn-clear-all-data')?.addEventListener('click', () => {
     clearAllData();
     if (!state.data.length && typeof stangInstallningar === 'function') stangInstallningar();
 });
-document.getElementById('btn-data-residency')?.addEventListener('click', () => {
-    openDataResidency();
-    // Bind dropdown efter att modalen renderats
-    setTimeout(() => {
-        const sel = document.getElementById('inactivity-timeout-select');
-        if (sel) sel.addEventListener('change', e => {
-            const min = parseInt(/** @type {HTMLInputElement} */ (e.target).value, 10) || 0;
-            setInactivityTimeout(min);
-            const status = document.getElementById('inactivity-status');
-            if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : 'Av';
-        });
-    }, 50);
+document.getElementById('btn-data-residency')?.addEventListener('click', openDataResidency);
+// Tidsväljaren ritas om vid varje öppning; lyssnaren sitter på innehållet en gång och gäller hur dialogen än öppnas (även från sökningen).
+document.getElementById('data-residency-content')?.addEventListener('change', e => {
+    const sel = /** @type {HTMLSelectElement} */ (e.target);
+    if (sel.id !== 'inactivity-timeout-select') return;
+    const min = parseInt(sel.value, 10) || 0;
+    setInactivityTimeout(min);
+    const status = document.getElementById('inactivity-status');
+    if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : 'Av';
 });
 
 // ---- Inaktivitetstimer med tvåfas-varning ----
@@ -23726,7 +23664,7 @@ function _hideInactivityWarning() {
         _inactivityWarnEl = null;
     }
     if (_inactivityWarningTimer) {
-        clearTimeout(_inactivityWarningTimer);
+        clearInterval(_inactivityWarningTimer);
         _inactivityWarningTimer = null;
     }
 }
@@ -23754,11 +23692,12 @@ function _showInactivityWarning() {
     document.body.appendChild(warn);
     _inactivityWarnEl = warn;
 
-    // 60 s nedräkning
-    let secondsLeft = 60;
+    // 60 s nedräkning mot en sluttid: en flik som inte syns får sina intervall strypta (upp till ett tick per minut),
+    // så tick räknas inte, utan tiden som gått.
+    const slut = Date.now() + 60 * 1000;
     const countdownEl = warn.querySelector('#inactivity-countdown');
     _inactivityWarningTimer = setInterval(() => {
-        secondsLeft--;
+        const secondsLeft = Math.max(0, Math.ceil((slut - Date.now()) / 1000));
         if (countdownEl) countdownEl.textContent = String(secondsLeft);
         if (secondsLeft <= 0) {
             _autoClearOnInactivity();
@@ -24147,7 +24086,7 @@ function skapaPaket() {
     return _opByggPaket({
         organisation: _paketText('paket-org'),
         utgivare: _paketText('paket-utgivare'),
-        skapat: new Date().toISOString().slice(0, 10),
+        skapat: idagDatum(),
         avserAr: _paketTal('paket-ar'),
         profil: {
             benchmarkLabel: jamfNamn || undefined,
@@ -24197,7 +24136,7 @@ function skapaPaketMedImportprofil(profil) {
     // Paketets profiler som de står i sessionen (en som tagits bort i Inställningar följer inte med).
     const ovriga = (state.importprofiler || []).filter(x => x.kalla === 'organisationspaket' && x.id !== profil.id);
     return _opByggPaket({
-        organisation: p.organisation, utgivare: p.utgivare, skapat: new Date().toISOString().slice(0, 10), avserAr: p.avserAr,
+        organisation: p.organisation, utgivare: p.utgivare, skapat: idagDatum(), avserAr: p.avserAr,
         profil: d.profil, installningar: d.installningar, referens: d.referens, statistik: d.statistik, rapport: d.rapport,
         importprofiler: [...ovriga, profil],
     });
@@ -24262,7 +24201,7 @@ async function skapaOrganisationsfil() {
     if (!kontroll.ok) { const m = 'Paketet kan inte bakas in: ' + kontroll.fel; _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
     const buf = await _verktygsfil.arrayBuffer();
     const html = new TextDecoder('utf-8').decode(buf);
-    const skapad = new Date().toISOString().slice(0, 10);
+    const skapad = idagDatum();
     const r = _ofBakaIn(html, JSON.stringify(paket), { skapad, organisation: paket.organisation.namn, verktygssha: await _sha256Hex(buf) });
     if (!r.ok) { _organisationsfilStatus(r.fel, false); return { ok: false, meddelande: r.fel }; }
     const filnamn = _ofNormaliseraFilnamn(_paketText('organisationsfil-namn'), paket.organisation.namn);
@@ -25120,7 +25059,6 @@ function _afterDataLoaded() {
     if (typeof _resetInactivityTimer === 'function') _resetInactivityTimer();
     renderConsistencyBanner();
     renderOutliers();
-    renderRealityCheck();
     renderDataValidationReport();
     renderForhandskontroll();
     syncDatakvalitetPanel({ reg });
@@ -26883,9 +26821,11 @@ function _lvKravFigur({ medPoang, grupper }) {
     let niva, linje;
     if (medPoang) {
         const reg = Stat.linearRegression(grupper.map(g => [g.krav, g.median]));
-        niva = g => reg.m * g.krav + reg.b;
+        // Utan spridning i poäng (null) är minsta kvadrat-nivån medelvärdet av gruppmedianerna, och ingen linje ritas.
+        const medel = grupper.reduce((s, g) => s + g.median, 0) / grupper.length;
+        niva = g => (reg ? reg.m * g.krav + reg.b : medel);
         const xs = grupper.map(g => g.krav), a = Math.min(...xs), b = Math.max(...xs);
-        linje = a < b ? [{ x: a, y: reg.m * a + reg.b }, { x: b, y: reg.m * b + reg.b }] : [];
+        linje = reg ? [{ x: a, y: reg.m * a + reg.b }, { x: b, y: reg.m * b + reg.b }] : [];
     } else {
         const perBas = new Map();
         for (const g of grupper) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.median); }
@@ -27055,7 +26995,7 @@ function _exportLikvardighetCSVExport() {
         : 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
     rows.push(['k-anonymitet', 'Tillämpas EJ i denna analys']);
-    _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10), { undantag: 'Likvärdigt arbete' });
+    _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -27182,7 +27122,7 @@ function _exportLikvardighetExport() {
         XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
         stegnamn = 'skriv fil';
-        const filename = 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+        const filename = 'lonekartlaggning_likvardighet_' + idagDatum() + '.xlsx';
         _appendMethodSheet(wb, { undantag: 'Likvärdigt arbete' });
         XLSX.writeFile(wb, filename);
 
@@ -28193,7 +28133,7 @@ function _exportForecastExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), 'Sammanfattning');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), 'Fördelning');
     _appendMethodSheet(wb);
-    XLSX.writeFile(wb, `loneoversyn_prognos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Löneöversynens prognosunderlag exporterat.');
 }
 (function wireForecast() {
@@ -28770,7 +28710,7 @@ function _exportEuReportExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(repArr), 'Representation');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), 'Skillnad i lönefördelningen');
     _appendMethodSheet(wb, { extra: [['Löneskillnadens tecken i den här filen', DIREKTIV_METOD]] });
-    XLSX.writeFile(wb, `eu_lonerapport_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('EU-lönerapport exporterad.');
 }
 (function wireStructure() {
@@ -29201,6 +29141,12 @@ document.getElementById("btn-export-excel")?.addEventListener("click", () => med
 // skillnader mellan åldersgrupper nu, inte hur en persons lön utvecklas — åldersgrupperna skiljer sig också i
 // utbildning, yrkesval och anställningstid (kohorteffekter). Står under kurvorna, i Om verktyget och i metodbilagan.
 const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.';
+// Minsta och största värdet i en lista: en slinga, eftersom Math.min(...v) slår i taket för antal argument vid stora filer.
+function _omfang(v) {
+    let min = Infinity, max = -Infinity;
+    for (const x of v) { if (x < min) min = x; if (x > max) max = x; }
+    return [min, max];
+}
 // Raden under nyckeltalen, i klartext: stiger lönen lika mycket per levnadsår för kvinnor och män, och hur mycket av
 // skillnaden förklarar åldersfördelningen? Ren funktion. lutKv/lutMa är trendlinjernas lutning i kronor per år;
 // ra och vidSammaAlder är kvinnors lön i procent av mäns, utan justering respektive avläst vid medelåldern.
@@ -29236,7 +29182,7 @@ function renderKon(bas) {
     const regKv  = Stat.linearRegression(dataKv.map(d => [d.alder, d.lon]));
     const regMa  = Stat.linearRegression(dataMa.map(d => [d.alder, d.lon]));
     const allAges  = df.map(d => d.alder);
-    const minAlder = Math.min(...allAges), maxAlder = Math.max(...allAges);
+    const [minAlder, maxAlder] = _omfang(allAges);
     const avgAlder = allAges.reduce((a,b)=>a+b,0) / allAges.length;
     const rawLonKv = dataKv.map(d => d.lon);
     const rawLonMa = dataMa.map(d => d.lon);
@@ -29247,8 +29193,10 @@ function renderKon(bas) {
     const konOk = kvOk && maOk;
     const medKv = Stat.median(rawLonKv) || 0, medMa = Stat.median(rawLonMa) || 0;
     const unadjGap = !konOk ? "–" : medMa > 0 ? svPct((medKv/medMa)*100, 1) : "–";
-    const expKv = regKv.m * avgAlder + regKv.b, expMa = regMa.m * avgAlder + regMa.b;
-    const ageAdjGap = !konOk ? "–" : expMa > 0 ? svPct((expKv/expMa)*100, 1) : "–";
+    // Ett köns regression är null när könet bara har en ålder i urvalet: då finns ingen lutning och ingen justering.
+    const medAlder = !!(regKv && regMa);
+    const expKv = medAlder ? regKv.m * avgAlder + regKv.b : NaN, expMa = medAlder ? regMa.m * avgAlder + regMa.b : NaN;
+    const ageAdjGap = !konOk || !medAlder ? "–" : expMa > 0 ? svPct((expKv/expMa)*100, 1) : "–";
     // Urvalsraden och avsnittens nyckeltal (ADR-41).
     const urvalText = document.getElementById('ak-urval-text');
     if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
@@ -29263,14 +29211,14 @@ function renderKon(bas) {
     // sätts i Lika arbete, där skillnaden prövas mot slumpen.
     { const u = document.getElementById("kon-kpi-agegap-under");
       if (u) { u.textContent = "kvinnors lön i % av mäns"; u.classList.remove("ar-granska"); } }
-    const lutning = (ok, reg) => (ok ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(reg.m), 0)}` : '–');
+    const lutning = (ok, reg) => (ok && reg ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(reg.m), 0)}` : '–');
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
     if (insightEl) {
         const scope = isAll ? "Hela urvalet" : `BAS ${bas}`;
-        insightEl.innerHTML = konOk && medMa > 0 && expMa > 0
+        insightEl.innerHTML = regKv && regMa && konOk && medMa > 0 && expMa > 0
             ? `<strong>${esc(scope)}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
-            : `<strong>${esc(scope)}:</strong> ${esc(_konUtelamnatNot())}`;
+            : `<strong>${esc(scope)}:</strong> ${esc(konOk && !medAlder ? 'Lönens samband med åldern kan inte räknas eftersom ett av könen bara har en ålder i urvalet.' : _konUtelamnatNot())}`;
     }
     { const not = document.getElementById('kon-kohort-not'); if (not) not.textContent = KOHORT_FORBEHALL; }
     const colorBy = /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || 'kon';
@@ -29299,8 +29247,8 @@ function renderKon(bas) {
         df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, liten, trendAlla,
         trendKv: kvOk ? regKv : null, trendMa: maOk ? regMa : null, ciKv, ciMa, pol: isAll ? null : policyFor(null, bas),
         beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` +
-            (konOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år, mäns med ${Math.round(regMa.m)} kr per år. `
-                   : `${kvOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ''}${maOk ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ''}Trendlinje visas inte för ${utan}: ${skal}. `) +
+            (konOk && medAlder ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år, mäns med ${Math.round(regMa.m)} kr per år. `
+                   : `${kvOk && regKv ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ''}${maOk && regMa ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ''}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ''}`) +
             `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` +
             (trendAlla ? ` Trend för hela urvalet: ${trendAlla.m >= 0 ? '+' : '−'}${svTal(Math.abs(trendAlla.m), 0)} kr per år.` : '') }), { hojd: 420 });
     // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln. Lådorna kan räknas för en sektor eller
@@ -29354,8 +29302,7 @@ document.getElementById('kon-trend-alla')?.addEventListener('change', () => { co
 // Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
 // percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
 function _konLonesteg(loner, mal = 12) {
-    const v = loner.slice().sort((a, b) => a - b), vid = p => v[Math.min(v.length - 1, Math.max(0, Math.round(p * (v.length - 1))))];
-    const spann = vid(0.95) - vid(0.05);
+    const spann = Stat.quantile(loner, 0.95) - Stat.quantile(loner, 0.05);
     return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
 }
 const _konTkr = v => _figTalformat(v / 1000, Number.isInteger(v / 1000) ? 'antal' : undefined);
@@ -29370,7 +29317,7 @@ function _konHistogramKlasser(kv, ma, k) {
     if (kv.length < k || ma.length < k) return null;
     let steg = _konLonesteg(alla);
     for (let varv = 0; varv < 6; varv++, steg *= 2) {
-        const golv = Math.floor(Math.min(...alla) / steg) * steg, antal = Math.floor((Math.max(...alla) - golv) / steg) + 1;
+        const [lagst, hogst] = _omfang(alla), golv = Math.floor(lagst / steg) * steg, antal = Math.floor((hogst - golv) / steg) + 1;
         /** @type {Array<{fran: number, till: number, nKv: number, nMa: number, oppenNed?: boolean, oppenUpp?: boolean}>} */
         let klasser = Array.from({ length: antal }, (_, i) => ({ fran: golv + i * steg, till: golv + (i + 1) * steg, nKv: 0, nMa: 0 }));
         const plats = v => Math.min(antal - 1, Math.floor((v - golv) / steg));
@@ -29508,8 +29455,8 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
             const data = g.filter(ar).filter(r => !urval || liten(r) || urval.has(r)).map(r => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...(liten(r) ? { liten: true } : {}), markering: markeringFor(r.bas, r.yrke) }));
             if (data.length) lager.push({ marke: 'punkt', serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
         }
-        const reg = Stat.linearRegression(g.map(r => [r.alder, r.lon])), aldrar = g.map(r => r.alder), a0 = Math.min(...aldrar), a1 = Math.max(...aldrar);
-        if (a1 > a0) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
+        const reg = Stat.linearRegression(g.map(r => [r.alder, r.lon])), [a0, a1] = _omfang(g.map(r => r.alder));
+        if (reg) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
     }
     return { utanfor, nedsamplade, figur: { beskrivning: `Lön mot ålder i ${valda.length} ${termForAntal(valda.length, T.niva)}, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
         individer: true, urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.alder, URVAL.lon], paneler: valda.map(b => 'BAS ' + b), x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 340, lager } };
@@ -29607,7 +29554,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
 // åldrarna inte spänner över något eller regressionen inte går att räkna.
 function _konScatterTrend(punkter, medBand = false) {
     const par = punkter.map(d => [d.x, d.y]), aldrar = par.map(p => p[0]);
-    const a0 = Math.min(...aldrar), a1 = Math.max(...aldrar);
+    const [a0, a1] = _omfang(aldrar);
     if (!(a1 > a0)) return null;
     const reg = Stat.linearRegression(par);
     if (!reg || !isFinite(reg.m) || !isFinite(reg.b)) return null;
@@ -29762,7 +29709,7 @@ function renderDemografi(bas) {
     if (document.getElementById('chart-demo-pyramid')) ritaFigur('chart-demo-pyramid', _demoPyramidFigur({ pctKv, pctMa, isAll }));
     // Åldersfördelning per kön och lönespridning över ålder. (Spridningsdiagrammet lön mot ålder ligger överst
     // i fliken; hela urvalets trend är ett valbart lager där.)
-    const minA = Math.min(...ages), maxA = Math.max(...ages);
+    const [minA, maxA] = _omfang(ages);
     const pol = isAll ? null : policyFor(null, bas);
     // Andel av eget kön per ålder, 5-årigt glidande medel (win=2)
     const aLo = Math.max(18, Math.floor(minA)), aHi = Math.min(67, Math.ceil(maxA));
@@ -33246,107 +33193,30 @@ function computePrioritization(reference) {
  * en prio-rad. INGEN AI/LLM — bara deterministiska regler över datan.
  * Förslagen är frågor HR själv borde ställa, inte färdiga motiveringar.
  *
- * Regelpaket:
- *   1. Underlag — för få personer av endera kön
- *   2. Statistisk styrka — under MDE-tröskeln
- *   3. Ålderskillnad mellan kön i samma grupp
- *   4. Glasstaks/golvs-mönster — kvinnor överrepresenterade i lägsta lönekvintilen
- *   5. Bristyrke flagga — marknadsläge som potentiellt sakligt skäl
- *   6. Quick-win — hanterbar kostnad, lämplig för pilotåtgärd
- *   7. Positiv differens — över referens, andra slags motivering
+ * Reglerna och deras ordning: motiveringsgrunder i src/lib/prioritering.js.
  *
  * @param {Object} item - Prio-item med _rows.
  * @returns {Array<{type:'warn'|'info'|'ok'|'flag', text:string}>}
  */
 function generateMotivationSuggestions(item) {
-    const out = [];
-    const rows = item._rows || [];
-    if (!rows.length) return out;
+    return _prMotiveringsgrunder(item, {
+        kInstalld: kInstalld(), kTroskel: kTroskel(),
+        mdePct: state.powerAnalysis?.mdePct, naraGrans: state.prioConfig.bevakaThreshold
+    }).map(g => ({ type: g.type, text: _motiveringText(g) }));
+}
 
-    // 1. Underlag: ett kön under minsta gruppstorlek (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kInstalld() || item.maN < kInstalld()) {   // varningen gäller skattningens säkerhet, inte läget
-        out.push({
-            type: 'warn',
-            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kInstalld()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
-        });
+// Texten till en grund ur motiveringsgrunder; talen kommer ur lib och formateras här.
+function _motiveringText(g) {
+    switch (g.kod) {
+        case 'underlag': return `Underlaget är litet (${g.kvN} kvinnor / ${g.maN} män; minsta gruppstorlek ${g.k}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`;
+        case 'styrka': return `Skillnaden (${svPct(g.diffPct, 1)}) ligger under detektionströskeln (~${svPct(g.mdePct, 1)}). Det innebär att skillnaden är så liten att den inte med säkerhet kan skiljas från slumpmässiga variationer.`;
+        case 'alder': return `${g.medelMa > g.medelKv ? 'Männen' : 'Kvinnorna'} är i snitt <strong>${svTal(Math.abs(g.medelMa - g.medelKv), 1)} år äldre</strong> än motparten i denna grupp (${svTal(g.medelMa, 0)} mot ${svTal(g.medelKv, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`;
+        case 'kvintil': return `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((g.andelKv*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((g.andelMa*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`;
+        case 'brist': return 'Markerat som <strong>bristyrke</strong>. Marknadsläge (rekryteringssvårighet) kan vara ett sakligt skäl — dokumentera gärna marknadsläget med stöd av extern statistik (t.ex. från SCB lönestrukturstatistik).';
+        case 'snabbVinst': { const K = _prKonstanter(); return `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${g.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`; }
+        case 'over': return `Ligger ${svPct(g.diffPct, 1)} över referensen. Dokumentera gärna varför.`;
+        default: return `Gruppens median ligger inom ±${svTal(g.nara, g.nara % 1 ? 1 : 0)} % av referensen.`;   // 'nara'
     }
-
-    // 2. Power-tröskel
-    if (state.powerAnalysis && Math.abs(item.diffPct) < state.powerAnalysis.mdePct && item.n < 30) {
-        out.push({
-            type: 'info',
-            text: `Skillnaden (${svPct(item.diffPct, 1)}) ligger under detektionströskeln (~${svPct(state.powerAnalysis.mdePct, 1)}). Det innebär att skillnaden är så liten att den inte med säkerhet kan skiljas från slumpmässiga variationer.`
-        });
-    }
-
-    // 3. Åldersskillnad mellan kön i samma grupp
-    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder).filter(a => a > 0);
-    const maAges = rows.filter(r => arMan(r)).map(r => r.alder).filter(a => a > 0);
-    if (kvAges.length >= 3 && maAges.length >= 3) {
-        const meanKvAge = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
-        const meanMaAge = maAges.reduce((s, v) => s + v, 0) / maAges.length;
-        const ageDiff = meanMaAge - meanKvAge;
-        if (Math.abs(ageDiff) >= 3) {
-            const who = ageDiff > 0 ? 'Männen' : 'Kvinnorna';
-            out.push({
-                type: 'info',
-                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`
-            });
-        }
-    }
-
-    // 4. Glasstak/-golv-mönster: kvinnor överrepresenterade i lägsta lönekvintil
-    //    (lönepositionsmått per kön: kräver k-tröskeln för båda könen, ADR-12)
-    if (item.kvN >= kTroskel() && item.maN >= kTroskel()) {
-        const allLons = rows.map(r => r.lon).sort((a, b) => a - b);
-        const q1 = allLons[Math.floor(allLons.length * 0.2)];
-        const kvBelowQ1 = rows.filter(r => arKvinna(r) && r.lon <= q1).length;
-        const maBelowQ1 = rows.filter(r => arMan(r) && r.lon <= q1).length;
-        const kvShareInQ1 = item.kvN > 0 ? kvBelowQ1 / item.kvN : 0;
-        const maShareInQ1 = item.maN > 0 ? maBelowQ1 / item.maN : 0;
-        if (kvShareInQ1 >= 0.4 && kvShareInQ1 - maShareInQ1 >= 0.2) {
-            out.push({
-                type: 'flag',
-                text: `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((kvShareInQ1*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((maShareInQ1*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`
-            });
-        }
-    }
-
-    // 5. Bristyrke
-    if (item.isBrist) {
-        out.push({
-            type: 'info',
-            text: 'Markerat som <strong>bristyrke</strong>. Marknadsläge (rekryteringssvårighet) kan vara ett sakligt skäl — dokumentera gärna marknadsläget med stöd av extern statistik (t.ex. från SCB lönestrukturstatistik).'
-        });
-    }
-
-    // 6. Quick-win (villkoret i src/lib/prioritering.js; texten beskriver det)
-    if (item.isQuickWin) {
-        const K = _prKonstanter();
-        out.push({
-            type: 'ok',
-            text: `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${item.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`
-        });
-    }
-
-    // 7. Positiv diff (över referens)
-    if (item.diffPct > 5) {
-        out.push({
-            type: 'info',
-            text: `Ligger ${svPct(item.diffPct, 1)} över referensen. Dokumentera gärna varför.`
-        });
-    }
-
-    // 8. Nära referensen: inom uppföljningsgränsen åt båda hållen (A5). Ett läge mot referensen, ingen bedömning.
-    const nara = Math.abs(state.prioConfig.bevakaThreshold);
-    if (Math.abs(item.diffPct) < nara && item.n >= 10) {
-        out.push({
-            type: 'ok',
-            text: `Gruppens median ligger inom ±${svTal(nara, nara % 1 ? 1 : 0)} % av referensen.`
-        });
-    }
-
-    return out;
 }
 
 // Prioriteringens egna ord för läget mot referensen (A5, ADR-62). De delar inte namn med uppmärksamhetstrappan för
@@ -34480,7 +34350,7 @@ function _exportHandlingsplanExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), 'Handlingsplan');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), 'Vägledning');
     _appendMethodSheet(wb);
-    XLSX.writeFile(wb, `handlingsplan_underlag_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Handlingsplansunderlag exporterat.');
 }
 document.getElementById('btn-export-handlingsplan')?.addEventListener('click', exportHandlingsplan);
@@ -36258,7 +36128,7 @@ async function _utkastFyllBilder(block) {
 async function byggWordUtkast() {
     if (typeof JSZip === 'undefined') throw new Error('zip-biblioteket saknas');
     const year = new Date().getFullYear();
-    const stamp = new Date().toISOString().slice(0, 10);
+    const stamp = idagDatum();
     const demo = state.isDemo;
     const { block } = await _utkastFyllBilder(_utkastTillBlock(_buildDocumentationDraftHtml()));
     const delar = _docxDelar(block, {
@@ -36535,7 +36405,7 @@ function _exportBenchmarkExcelExport() {
     XLSX.utils.book_append_sheet(wb, sheet, 'Jämförelse_alla_percentiler');
     XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
-    const filename = `lonekartlaggning_jamforelse_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const filename = `lonekartlaggning_jamforelse_${idagDatum()}.xlsx`;
     _appendMethodSheet(wb);
     XLSX.writeFile(wb, filename);
     _showExportSensitivityToast();
@@ -38603,7 +38473,7 @@ function byggArsbokslutNu() {
         const klara = state._actionChecklistDone || new Set();
         const punkter = typeof buildActionChecklist === 'function' ? buildActionChecklist() : [];
         return _abBygg({
-            ar: new Date().getFullYear(), skapat: new Date().toISOString().slice(0, 10), k, verktyg: `v${APP_VERSION}`,
+            ar: new Date().getFullYear(), skapat: idagDatum(), k, verktyg: `v${APP_VERSION}`,
             nyckeltal: { n: bild.n, nKv: bild.nKv, nMa: bild.nMa, medKv: bild.medianKv, medMa: bild.medianMa,
                 kvotPct: bild.rawGapPct == null ? null : 100 + bild.rawGapPct, oforklaratPct: bild.unexplainedGapPct,
                 antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },

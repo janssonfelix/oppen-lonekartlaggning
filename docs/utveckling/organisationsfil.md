@@ -126,7 +126,7 @@ avsluta elementet.
 - `arkitekturbeslut.md`: ADR-49; `organisationspaket.md` beskriver hur filen skapas, sprids och uppdateras.
 - Tester: `tests/organisationsfil.test.js` (ren kärna: inbakning, borttagning av tidigare block,
   oförändrade skript, avvisning av fel fil, versionsläsning, `<`-escapning); röktest
-  (`tests/smoke-organisation.test.js`): baka in i jsdom ur `dist/oppen-lonekartlaggning.html`, öppna
+  (`tests/organisationspaket-app.test.js`): baka in i jsdom ur `dist/oppen-lonekartlaggning.html`, öppna
   resultatet i ett nytt appfönster via harnessen och hävda att paketet lästs in, att *Visa paketet*
   och nedladdningen fungerar, att en annan fil ersätter det, att *Rensa all data* återställer det, och
   att `?demo=1` går före; k-tröskeltest att ett inbakat paket med `kTroskel` under 10 ställer

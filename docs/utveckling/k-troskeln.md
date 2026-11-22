@@ -104,7 +104,7 @@ har fasta eller statistiska golv (avsnitt 5). Fem regler till står i avsnitt 8.
 **Prioritering.** En grupp under tröskeln får ingen rad, och könsjämförelsen i en grupp står bara när båda könen når
 tröskeln (`prioritera` i `src/lib/prioritering.js`). Annars räknas prioritetsindexet utan könsdelen (`gapScore` är 0),
 så att poängen inte röjer den dolda skillnaden. Motiveringsförslaget om kvinnor i den lägsta lönekvintilen kräver
-tröskeln för båda könen (`generateMotivationSuggestions` i `55-prioritering.js`).
+tröskeln för båda könen (`motiveringsgrunder` i `src/lib/prioritering.js`).
 
 **Vad skyddet omfattar (ADR-70).** Skyddet gäller lönemått: medianer, medelvärden, percentiler, lönespann,
 lönesummor, kostnader räknade ur löner, löneskillnader och regressionens effekter. Antal och andelar, också per kön,
@@ -521,8 +521,8 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 | Tabeller och egna vyer: tabellens CSV och urklipp, diagrammets bild och diagramdata | Avsnitt 4 (ADR-14) | I4 med rutan urkryssad; `tests/kanonymitet.test.js` (Utforskas export; rutan låst av paketet); `tests/utforska.test.js` |
 | Gruppdossierns textkopia, för varje valbar grupp | Avsnitt 2 och 7 | I4; `tests/ktroskel-utdata.test.js` (par) |
 | BAS-dossierns textkopia, för varje valbart intervall | Avsnitt 2 | I4; `tests/basdossier.test.js` |
-| Robusthetspanelen i Exportera | Avsnitt 2, kandidatparen | I4; `tests/ktroskel-utdata.test.js`; `tests/smoke-docx.test.js` |
-| Löneläget: tabellen, överblicken, bladet *Referenser*, statistikens matchning och överblickens diagram | Avsnitt 2 (Löneläget, ADR-55) | I4; `tests/smoke-referenser.test.js`; `tests/smoke-jamforelse.test.js` |
+| Robusthetspanelen i Exportera | Avsnitt 2, kandidatparen | I4; `tests/ktroskel-utdata.test.js`; `tests/gruppdossier-app.test.js` |
+| Löneläget: tabellen, överblicken, bladet *Referenser*, statistikens matchning och överblickens diagram | Avsnitt 2 (Löneläget, ADR-55) | I4; `tests/lonelaget-app.test.js`; `tests/jamforelsestatistik-app.test.js` |
 | Konfigurationsfilen (hela, årsbokslutet, importprofilerna) och importprofilerna som JSON | Bara aggregat och rubriknamn; bokslutet i exportläget (ADR-54) | I4; I8 (sakliga skäl); `tests/ktroskel-utdata.test.js` (konfigurationsfilen) |
 | Förra årets bokslut: rapportunderlagets block, rapportens avsnitt och BAS-hantelns diagramdata | Den högre av årens trösklar (ADR-54) | I4 |
 | Förhandskontrollens råvärden | Bara på skärmen | I4 |
@@ -534,7 +534,7 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 | Löneöversyns summor: bladen *Fördelning* och *Sammanfattning*, utfallstabellen i exportläget | Avsnitt 2 (Löneöversyns summor, ADR-70) | `tests/ktroskel-loneoversyn-summor.test.js` (en ensam person, två små grupper under tröskeln tillsammans, små grupper som når den, alla grupper under den, lika antal; *Varav*; egna riktade rader; skärmen) |
 | Regressionens BAS-effekter: rapportens bilaga (Word-utkastet, PDF-rapporten, utskriften) och regressionskortet i exportläget | Avsnitt 2 (BAS-effekterna, ADR-70) | `tests/ktroskel-bas-effekter.test.js` (ett intervall och ett referensintervall med 4 personer, i invariantens utdatavägar) |
 | Livscykelns lönekurva: diagramdatan, bilden, ZIP-filen, kopian i Alla diagram, fliken i exportläget och beräkningsbeviset | Avsnitt 2 (livscykelns lönekurva, ADR-70) | `tests/ktroskel-livscykel.test.js` (ett valt intervall med 4 personer: kurvans egna vägar och invariantens utdatavägar; ett valt intervall över tröskeln; skärmen) |
-| Tabellerna per BAS-intervall: raden *Alla* och organisationens rad mot de visade raderna (Word-utkastet, PDF-rapporten, Excel-bladet *Per BAS*) | Avsnitt 2 (tabellerna per BAS-intervall, ADR-83) | `tests/ktroskel-differens.test.js` (ett utelämnat intervall eller huvudområde, kvinnorna i ett intervall, direkt och via männen, medelåldern, organisationens rader och könsraderna med måttet *Medellön*, en utelämnad AID-etikett, åldersgrupperna); `tests/undertryckning.test.js` (regeln); `tests/perbas.test.js` (tabellerna); `tests/smoke-egna-tabeller.test.js` (rapporten och Excel vid 25); differensprovet i I4 (Word-utkastet, utskriften och Excel vid 10 och 25) |
+| Tabellerna per BAS-intervall: raden *Alla* och organisationens rad mot de visade raderna (Word-utkastet, PDF-rapporten, Excel-bladet *Per BAS*) | Avsnitt 2 (tabellerna per BAS-intervall, ADR-83) | `tests/ktroskel-differens.test.js` (ett utelämnat intervall eller huvudområde, kvinnorna i ett intervall, direkt och via männen, medelåldern, organisationens rader och könsraderna med måttet *Medellön*, en utelämnad AID-etikett, åldersgrupperna); `tests/undertryckning.test.js` (regeln); `tests/perbas.test.js` (tabellerna); `tests/egna-tabeller-app.test.js` (rapporten och Excel vid 25); differensprovet i I4 (Word-utkastet, utskriften och Excel vid 10 och 25) |
 | Löneöversyns scenariojämförelse A/B i exportläget | Avsnitt 2 (Löneöversyns summor, ADR-70) | `tests/ktroskel-loneoversyn-scenarier.test.js` (*Varav* som streck: differensen mot utfallet; scenariot sparat på skärmen och i exportläget; *Varav* som står; övriga kolumner; att scenarierna inte följer med i konfigurationsfilen) |
 | Löneöversyns förslag ur kandidatparen (*Föreslå riktade potter*, mål-läget, känslighetskurvan), deras rader i Excel-exporten och konfigurationsfilen | Avsnitt 1 och regel R2 (ADR-69): den inställda tröskeln, också på skärmen | `tests/loneoversyn-forslag-troskel.test.js` (jämförelseetiketten eller den kvinnodominerade AID-etiketten under tröskeln, höjd tröskel på skärmen, inläst konfigurationsfil; en AID-etikett med två jämförelseetiketter: en rad, och förslag ur det lilla paret, äldre filer med en rad per jämförelseetikett och en ensam rad ur det lilla paret tas bort); `tests/loneoversyn.test.js` (ett par per AID-etikett); I1 i `tests/ktroskel-invarianter.test.js`; `tests/ktroskel-utdata.test.js`; `tests/troskelbeslut.test.js`. Inte I4: riggens underlag har inga kandidatpar (avsnitt 11) |
 | Regressionskortet (ojusterat steg, förklarad andel) | Regel R1 | R1 i `tests/ktroskel-regression.test.js` (samma vägar som I4, med 7 män i underlaget) |
@@ -542,13 +542,13 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 | Könsuppdelade mått för hela organisationen och per BAS | Avsnitt 2 | C2, C3, C4, C6 |
 | Prioritering: könsjämförelsen, prioritetsindexet, motiveringen om lägsta lönekvintilen | Avsnitt 2 (Prioritering) | `tests/ktroskel-utdata.test.js` (fliken i exportläget: ingen könsskillnad för en grupp med 2 män); `tests/prioritering.test.js` (grupper och könsmedianer under tröskeln); I4 (prioriteringslistan). Motiveringen om lägsta lönekvintilen har inget eget test |
 | Ansvarsgrupperna i Lika arbete | Avsnitt 2 (Ansvarsgrupperna) | `tests/kanonymitet.test.js` |
-| Huvudtalets spärr (*Endast kön*) | Avsnitt 1 (ADR-56) | `tests/smoke-innehall.test.js` |
+| Huvudtalets spärr (*Endast kön*) | Avsnitt 1 (ADR-56) | `tests/regression-app.test.js` |
 | Stämplarna för undantagen | Avsnitt 4 och 7 | I2 |
 | Omritning efter konfigurationsfil och organisationspaket | Avsnitt 3 | I5 i `tests/ktroskel-exporter.test.js` |
-| Låsningarna ur organisationspaketet | Avsnitt 6 (ADR-47) | `tests/organisationspaket.test.js`, `tests/ktroskel-regression.test.js`, `tests/smoke-organisation.test.js`, `tests/kanonymitet.test.js` |
-| Personer att granska och extremvärdeslistan | Avsnitt 4 (ADR-23) | Undantagna i I4; `tests/smoke-granssnitt.test.js` (listan lämnar inte verktyget); `tests/smoke.test.js` (`markeraUtanExport`) |
+| Låsningarna ur organisationspaketet | Avsnitt 6 (ADR-47) | `tests/organisationspaket.test.js`, `tests/ktroskel-regression.test.js`, `tests/organisationspaket-app.test.js`, `tests/kanonymitet.test.js` |
+| Personer att granska och extremvärdeslistan | Avsnitt 4 (ADR-23) | Undantagna i I4; `tests/personer-att-granska-app.test.js` (listan lämnar inte verktyget); `tests/alla-diagram.test.js` (`markeraUtanExport`) |
 | Likvärdigt arbete i fliken och dess egen export | Avsnitt 4 | Undantagna i I4; I2 (stämpeln) |
-| Tabellerna per AID-kod och BAS-intervall | Avsnitt 4 (ADR-57, ADR-90) | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js`; I4 i exportläget; `tests/ktroskel-utdata.test.js` (vid 10 och 25 har *Lika arbete AID x BAS* exakt tabellens grupper per AID-etikett, och grupperna under tröskeln bara sina namn i noten) |
+| Tabellerna per AID-kod och BAS-intervall | Avsnitt 4 (ADR-57, ADR-90) | `tests/aidbas.test.js`, `tests/aidbas-app.test.js`; I4 i exportläget; `tests/ktroskel-utdata.test.js` (vid 10 och 25 har *Lika arbete AID x BAS* exakt tabellens grupper per AID-etikett, och grupperna under tröskeln bara sina namn i noten) |
 | Könsfördelningen per BAS-intervall: tabellen, diagrammet och dess diagramdata, Excel-bladet *Könsskevhet* och utskriften | Avsnitt 4 (ADR-57) | `tests/diagramvyer-marken.test.js` (i exportläget vid tröskeln 10 får ett intervall med 7 personer en rad och ett med 4 bara sitt namn i noten, utan andelar, i tabellen, diagrammets data och bild, diagramdatan, Excel-bladet och utskriften; ett annat test kräver att diagrammet har tabellens intervall och andelar) |
 
 ## 10. Testernas märkning
@@ -579,7 +579,7 @@ reglernas i avsnitt 8:
 | R5 | Löneöversyns tröskelmål (lyft i procent och kostnad) kräver tröskeln för varje kön | `tests/troskelbeslut.test.js` |
 
 Det finns ingen C1. Regel R4 vaktas också av C3 och röktest. Två andra serier med samma bokstäver hör inte hit:
-ritarens regler R1–R11 i `tests/diagramritare.test.js` och I2, I4 och I5 i `tests/smoke-vyer.test.js`. De övriga
+ritarens regler R1–R11 i `tests/diagramritare.test.js` och I2, I4 och I5 i `tests/rapport-app.test.js`. De övriga
 testerna i `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js` och `tests/troskelbeslut.test.js` heter efter det de
 prövar. `tests/ktroskel-utan-alder.test.js` hör till regeln om ålder (ADR-64), inte till tröskeln.
 
@@ -626,7 +626,7 @@ inställningen (standardvärdet).
 
 - **Invarianten letar efter lönevärden.** Den söker sentinelvärdena, männens löner i Y1–Y3, kostnader och könsgap. Antal,
   andelar och namn för en grupp under tröskeln vaktas inte av den; de omfattas inte av skyddet (avsnitt 2, ADR-70).
-  Golven i antal (avsnitt 4, ADR-57) vaktas av egna tester, `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` och
+  Golven i antal (avsnitt 4, ADR-57) vaktas av egna tester, `tests/aidbas.test.js`, `tests/aidbas-app.test.js` och
   `tests/diagramvyer-marken.test.js`, inte av I4.
 - **Differenser.** I4:s sökning ser tal som står i utdatan, inte tal som går att räkna fram ur andra. Differensprovet
   i invarianten (avsnitt 9) ser en total minus de visade delarna i samma tabell, men bara i tabeller vars rubriker

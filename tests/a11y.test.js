@@ -1,7 +1,7 @@
 /**
  * Tillgänglighets-röktest (axe-core i jsdom).
  *
- * Bootar index.html + app.js i jsdom (samma stubbar som smoke.test.js), laddar
+ * Bootar index.html + app.js i jsdom (samma rigg som de andra apptesterna, helpers/app-harness.js), laddar
  * demodata, renderar varje flik och kör axe-core mot DOM:en. Detta automatiserar
  * den strukturella WCAG-granskningen (etiketter, roller, ARIA-giltighet, namn på
  * knappar/länkar, dubbletter av id, tabellrelationer) i CI.

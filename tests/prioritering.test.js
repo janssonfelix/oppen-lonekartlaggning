@@ -5,7 +5,7 @@
  * Att adaptern i 55-prioritering.js delegerar hit vaktas i drift.test.js.
  */
 import { describe, it, expect } from 'vitest';
-import { prioritera, prioIndex, prioKonstanter } from '../src/lib/prioritering.js';
+import { prioritera, prioIndex, prioKonstanter, motiveringsgrunder } from '../src/lib/prioritering.js';
 import { jamforelseRader } from '../src/lib/jamforelse.js';
 
 const VIKTER = { avvikelse: 50, volym: 30, jamstalldhet: 20 };
@@ -359,5 +359,76 @@ describe('prioritera: delpoängen ligger på posten och konstanterna har sina v�
         const [item] = kör(rader, { referensFor: () => ({ median: 20000, kalla: 'x' }) });
         expect(item.riktningsvikt).toBe(0.5);
         expect(item.bristMultiplier).toBe(1.0);
+    });
+});
+
+describe('motiveringsgrunder: reglerna bakom motiveringsförslagen', () => {
+    // En post med kvinnor och män (lön, ålder per person); diffPct −20 slår inte till på någon regel om läget.
+    const rad = (kon, lon, alder = 0) => ({ kon, lon, alder });
+    const post = (kv, ma, falt = {}) => ({ _rows: [...kv.map(([l, a]) => rad('kvinna', l, a)), ...ma.map(([l, a]) => rad('man', l, a))],
+        kvN: kv.length, maN: ma.length, n: kv.length + ma.length, diffPct: -20, ...falt });
+    const lika = (n, lon = 30000, alder = 0) => Array.from({ length: n }, () => [lon, alder]);
+    const OPT = { kInstalld: 10, kTroskel: 10, mdePct: null, naraGrans: -2 };
+    const koder = (item, opt = {}) => motiveringsgrunder(item, { ...OPT, ...opt }).map(g => g.kod);
+    // a kvinnor och b män av tio vardera på 20 000 kr, resten på 30 000 kr
+    const kvintil = (a, b, nKv = 10) => post([...lika(a, 20000), ...lika(nKv - a)], [...lika(b, 20000), ...lika(10 - b)]);
+
+    it('utan rader blir det inga grunder', () => {
+        expect(motiveringsgrunder({ kvN: 0, maN: 0, n: 0, diffPct: 0 }, OPT)).toEqual([]);
+    });
+
+    it('underlag: ett kön under den inställda minsta gruppstorleken, men inte vid den', () => {
+        expect(motiveringsgrunder(post(lika(9), lika(10)), OPT)[0]).toEqual({ kod: 'underlag', type: 'warn', kvN: 9, maN: 10, k: 10 });
+        expect(koder(post(lika(10), lika(10)))).not.toContain('underlag');
+    });
+
+    it('styrka: skillnaden under detektionströskeln i en grupp under 30, inte vid tröskeln, vid 30 eller utan tröskel', () => {
+        const p = post(lika(10), lika(19), { diffPct: -1.9 });
+        expect(motiveringsgrunder(p, { ...OPT, mdePct: 2 })).toContainEqual({ kod: 'styrka', type: 'info', diffPct: -1.9, mdePct: 2 });
+        expect(koder({ ...p, diffPct: 2 }, { mdePct: 2 })).not.toContain('styrka');
+        expect(koder(post(lika(10), lika(20), { diffPct: -1.9 }), { mdePct: 2 })).not.toContain('styrka');
+        expect(koder(p)).not.toContain('styrka');
+    });
+
+    it('alder: könens medelålder skiljer minst 3 år, med minst tre åldrar per kön', () => {
+        expect(motiveringsgrunder(post(lika(10, 30000, 40), lika(10, 30000, 43)), OPT))
+            .toContainEqual({ kod: 'alder', type: 'info', medelKv: 40, medelMa: 43 });
+        expect(koder(post(lika(10, 30000, 40), lika(10, 30000, 42)))).not.toContain('alder');
+        expect(koder(post(lika(10, 30000, 40), [...lika(2, 30000, 50), ...lika(8)]))).not.toContain('alder');
+    });
+
+    it('kvintil: 40 % av kvinnorna i lägsta kvintilen och 20 procentenheter fler än männen slår till, precis vid gränserna', () => {
+        expect(motiveringsgrunder(kvintil(4, 2), OPT)).toContainEqual({ kod: 'kvintil', type: 'flag', andelKv: 0.4, andelMa: 0.2 });
+        expect(koder(kvintil(3, 1))).not.toContain('kvintil');   // 30 % av kvinnorna
+        expect(koder(kvintil(4, 3))).not.toContain('kvintil');   // 10 procentenheter
+    });
+
+    it('kvintil: prövas inte när ett kön är under tröskeln (ADR-12)', () => {
+        expect(koder(kvintil(4, 0, 9), { kInstalld: 9, kTroskel: 9 })).toContain('kvintil');
+        expect(koder(kvintil(4, 0, 9))).not.toContain('kvintil');
+    });
+
+    it('brist och snabbVinst följer postens markeringar', () => {
+        const g = motiveringsgrunder(post(lika(10), lika(10), { isBrist: true, isQuickWin: true }), OPT);
+        expect(g).toContainEqual({ kod: 'brist', type: 'info' });
+        expect(g).toContainEqual({ kod: 'snabbVinst', type: 'ok', n: 20 });
+    });
+
+    it('over: mer än 5 % över referensen, inte vid 5', () => {
+        expect(motiveringsgrunder(post(lika(10), lika(10), { diffPct: 5.1 }), OPT)).toContainEqual({ kod: 'over', type: 'info', diffPct: 5.1 });
+        expect(koder(post(lika(10), lika(10), { diffPct: 5 }))).not.toContain('over');
+    });
+
+    it('nara: inom uppföljningsgränsen åt båda hållen med minst 10 personer, inte vid gränsen', () => {
+        expect(motiveringsgrunder(post(lika(5), lika(5), { diffPct: 1.9 }), OPT)).toContainEqual({ kod: 'nara', type: 'ok', nara: 2 });
+        expect(koder(post(lika(5), lika(5), { diffPct: -1.9 }))).toContain('nara');
+        expect(koder(post(lika(5), lika(5), { diffPct: 2 }))).not.toContain('nara');
+        expect(koder(post(lika(4), lika(5), { diffPct: 1.9 }))).not.toContain('nara');
+    });
+
+    it('grunderna kommer i reglernas ordning', () => {
+        const p = { ...kvintil(4, 2, 9), isBrist: true, isQuickWin: true, diffPct: 1.5 };
+        p._rows.forEach(r => { r.alder = r.kon === 'man' ? 50 : 40; });
+        expect(koder(p, { kTroskel: 9, mdePct: 2 })).toEqual(['underlag', 'styrka', 'alder', 'kvintil', 'brist', 'snabbVinst', 'nara']);
     });
 });

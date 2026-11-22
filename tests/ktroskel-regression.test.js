@@ -224,6 +224,17 @@ describe('R3: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         expect(d.getElementById('chart-kon-boxplot-k-not')).toBeNull();
         expect(namn(w, 'chart-kon-boxplot')).toEqual(['Kvinna', 'Man']);
     });
+    it('på skärmen, ett valt BAS med en man: ingen lutning, ingen åldersjustering och ingen insikt för män', () => {
+        const w = fonsterKon(null);
+        w.__renderTabContent('kon');
+        w.eval("renderKon('Y1')");
+        const d = w.document;
+        expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−][\d ]+ \/ – kr$/);
+        expect(d.getElementById('kon-kpi-agegap').textContent.trim()).toBe('–');
+        expect(d.getElementById('p-value-insight').textContent).toMatch(/bara har en ålder/);
+        expect(d.getElementById('view-kon').textContent).not.toMatch(/NaN/);
+        expect(namn(w, 'chart-kon-scatter')).not.toContain('Man (trend)');
+    });
     it('färgläggning efter BAS: könens trendlinjer följer samma regel (exportläget)', () => {
         const w = iExport(fonsterMan(null, TRE_MAN));
         w.__renderTabContent('kon');

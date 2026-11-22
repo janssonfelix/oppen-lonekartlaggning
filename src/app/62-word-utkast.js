@@ -94,7 +94,7 @@ async function _utkastFyllBilder(block) {
 async function byggWordUtkast() {
     if (typeof JSZip === 'undefined') throw new Error('zip-biblioteket saknas');
     const year = new Date().getFullYear();
-    const stamp = new Date().toISOString().slice(0, 10);
+    const stamp = idagDatum();
     const demo = state.isDemo;
     const { block } = await _utkastFyllBilder(_utkastTillBlock(_buildDocumentationDraftHtml()));
     const delar = _docxDelar(block, {

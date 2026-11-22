@@ -1,11 +1,112 @@
-/**
- * Röktest (jsdom): Word-utkastet som .docx och minsta gruppstorlek (ADR-38).
- *
- * Utbrutet ur smoke.test.js så att Vitest fördelar röktesterna över flera arbetare; varje describe-block
- * skapar sina egna fönster via createAppWindow (tests/helpers/app-harness.js).
- */
-import { describe, it, expect } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// Rapporten i appen: metodbilagan, Word-utkastet och .docx-filen, bilagan med gruppdossierer, rapportunderlaget med
+// diagrammen och kopieringen, och innehållsförteckningen på sidan.
+import { describe, it, expect, beforeAll } from 'vitest';
+import { createAppWindow, delatFlikfonster } from './helpers/app-harness.js';
+
+// Testerna som söker igenom flikarna läser kopior av varje flik ur ett delat fönster (delatFlikfonster).
+const { flikfonster, ritade } = delatFlikfonster();
+
+let win;
+
+beforeAll(() => {
+    win = createAppWindow();
+    win.__loadDemoData();   // blocken nedan läser demodatan
+});
+
+describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
+    it('metod-appendix byggs och innehåller demo-flagga + modellspec', () => {
+        const data = JSON.stringify(win.__methodAppendixData());
+        expect(data).toContain('DEMODATA');          // #9 demoläge syns
+        expect(data).toContain('HC3');                // modellspec finns
+    });
+
+    it('§3:10- och strukturmåtten kan beräknas på demodata', () => {
+        expect(() => win.__computeLikvardighetPairs()).not.toThrow();
+        expect(() => win.__stRepresentationByBas(win.__getData())).not.toThrow();
+    });
+});
+
+describe('#export röktest: BAS-grupperade tabeller blir Word-block', () => {
+    it('rapport-tabellen exporteras som block: titel + upprepade rubriker + tomrad per BAS', () => {
+        // generateRapport har körts av demodata-pipelinen → rapport-table har group-headers
+        const clone = win.__cloneTable('rapport-table');
+        expect(clone).toBeTruthy();
+        const g = win.__groupedAoa(clone);
+        const headers = g.aoa[g.firstHeaderRowIdx];
+        expect(headers.length).toBeGreaterThan(3);
+        // Varje BAS-block: titelrad ("BAS X") direkt följd av kolumnrubriksrad
+        const titleRows = g.aoa.map((r, i) => ({ r, i })).filter(x => x.r.length === 1 && /^BAS /.test(String(x.r[0])));
+        expect(titleRows.length).toBeGreaterThan(1);                  // flera BAS-block
+        titleRows.forEach(({ i }) => expect(g.aoa[i + 1]).toEqual(headers));   // rubriker upprepas
+        // Tomrad mellan blocken (Word-markering): raden före varje titel utom första är tom
+        titleRows.slice(1).forEach(({ i }) => expect(g.aoa[i - 1]).toEqual([]));
+        // Merge-info för titelraderna finns (snygg titel över hela bredden i Excel)
+        expect(g.merges.length).toBe(titleRows.length);
+    });
+});
+
+describe('Word-utkast: dokumentationsskelett (§§ 8–14) på demodata', () => {
+    const draft = () => win.__docDraftHtml();
+
+    it('innehåller alla lagstegens rubriker i ordning', () => {
+        const html = draft();
+        // Rubrikerna är klarspråk utan paragraf (lagrummen står i docs/utveckling/lagrum.md) — men varje
+        // lagsteg måste fortfarande finnas, i rätt ordning.
+        const idxs = ['Regler och praxis kring lön', 'Lika arbete — kvinnor och män i samma AID-etikett och BAS-intervall', 'Likvärdigt arbete — kvinnodominerade AID-etiketter',
+            'Åtgärder och tidsplan', 'Samverkan med arbetstagarna', 'Beslut och underskrift', 'Bilaga: Metod']
+            .map(h => html.indexOf(h));
+        idxs.forEach(i => expect(i).toBeGreaterThan(-1));        // alla finns
+        const sorted = [...idxs].sort((a, b) => a - b);
+        expect(idxs).toEqual(sorted);                            // i rätt ordning
+    });
+
+    it('har gula [HR fyller i]-block för de kvalitativa bedömningarna', () => {
+        const html = draft();
+        const count = (html.match(/\[HR fyller i\]/g) || []).length;
+        expect(count).toBeGreaterThanOrEqual(6);                 // regler, lika, likvärdigt, åtgärder, samverkan, beslut, summering
+        expect(html).toContain('class="fillin"');
+    });
+
+    it('fyller i verktygets fynd (antal anställda + metodbilaga)', () => {
+        const html = draft();
+        expect(html).toContain(String(win.__state.data.length));  // 200 demo-rader
+        expect(html).toContain('HC3');                            // metodbilagan med
+        expect(html).toContain('UTKAST');                         // tydlig utkast-märkning
+    });
+
+    it('märker demodata tydligt (exporten får aldrig förväxlas med verklig analys)', () => {
+        expect(win.__state.isDemo).toBe(true);
+        expect(draft()).toContain('DEMODATA');
+    });
+});
+
+describe('§ 8-ställning: bedömning per område + flöde till Word-utkastet', () => {
+    it('injicerar status + anteckning i alla 6 granskningsområden vid boot', () => {
+        expect(win.document.querySelectorAll('[id^="bes8-status-"]').length).toBe(6);
+        expect(win.document.querySelectorAll('[id^="bes8-note-"]').length).toBe(6);
+        expect(win.document.querySelectorAll('.bes8-field').length).toBe(12);
+    });
+
+    it('Word-utkastets § 8-sektion listar områdena och får [HR fyller i] när tomt', () => {
+        const html = win.__docDraftHtml();
+        expect(html).toContain('Granskningsområde');                 // § 8-tabellrubrik
+        expect(html).toContain('Lönesättningsprinciper');            // område 1-titel
+        expect(html).toContain('Granskningsområde'); // (tabell, ej generisk fillin)
+    });
+
+    it('ifylld bedömning + anteckning följer med till Word-utkastet', () => {
+        win.document.getElementById('bes8-status-1').value = 'Åtgärd krävs';
+        win.document.getElementById('bes8-note-1').value = 'Kriterierna är inte dokumenterade.';
+        const html = win.__docDraftHtml();
+        expect(html).toContain('Åtgärd krävs');
+        expect(html).toContain('Kriterierna är inte dokumenterade.');
+        // städa upp så andra tester inte påverkas
+        win.document.getElementById('bes8-status-1').value = '';
+        win.document.getElementById('bes8-note-1').value = '';
+    });
+});
 
 describe('Word-utkastet som .docx', () => {
     const jszip = async w => {
@@ -283,104 +384,6 @@ describe('Word-utkastet som .docx', () => {
     });
 });
 
-describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ersätter simulatorn)', () => {
-    const fonster = () => {
-        const w = createAppWindow();
-        const rader = [];
-        const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i * 100,
-            alder: 30 + (i * 7) % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
-        lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000'); lagg(6, 'kvinna', 36000, 'C', '5300');
-        w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        return w;
-    };
-    const rad = (w, over) => {
-        w.__state.forecast.targets = [{ bas: 'A', aid: '6000', kon: 'alla', lonCap: null, mode: 'kr', value: 1000, dist: 'flat', targetLevel: 'median', pool: 'övrigt', ...over }];
-        w.__renderTabContent('loneoversyn');
-        return w.__state.forecast.result.alloc.perPerson;
-    };
-    const iA = p => p.bas === 'A';
-    it('bara kvinnor: männen i gruppen får inget', () => {
-        const w = fonster();
-        const pp = rad(w, { kon: 'kvinna' });
-        expect(pp.filter(p => iA(p) && p.kon === 'man').every(p => p.delta === 0)).toBe(true);
-        expect(pp.filter(p => iA(p) && p.kon === 'kvinna' && p.delta > 0).length).toBe(30);
-        expect(w.document.getElementById('forecast-targets').querySelector('[data-f="kon"]').value).toBe('kvinna');
-    });
-    it('lönegräns: bara löner under gränsen omfattas', () => {
-        const pp = rad(fonster(), { lonCap: 25500 });
-        expect(pp.filter(p => p.delta > 0).map(p => p.lon).sort((a, b) => a - b)).toEqual([25000, 25100, 25200, 25300, 25400]);
-    });
-    it('höj till: var och en under beloppet lyfts upp till det, ingen pott att fördela', () => {
-        const pp = rad(fonster(), { kon: 'kvinna', mode: 'till', value: 26000 });
-        const lyfta = pp.filter(p => p.delta > 0);
-        expect(lyfta.length).toBe(10);
-        expect(lyfta.every(p => p.nyLon === 26000 && p.kon === 'kvinna')).toBe(true);
-    });
-    it('en rad som berör färre än tröskeln får noten om enskildas löner; en som berör ingen får besked', () => {
-        const w = fonster();
-        rad(w, { bas: 'C', aid: '5300' });
-        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10/);
-        rad(w, { bas: 'C', aid: '5300', kon: 'man' });
-        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Ingen i gruppen matchar/);
-        expect(w.document.getElementById('forecast-meter').textContent).toMatch(/matchar ingen person/);
-    });
-    it('Excel-exporten beskriver raden med kön, lönegräns och belopp', async () => {
-        const { readFileSync } = await import('node:fs');
-        const w = fonster();
-        w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
-        rad(w, { kon: 'kvinna', lonCap: 26000, mode: 'till', value: 26000 });
-        let rader = null;
-        w.XLSX.writeFile = wb => { rader = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }); };
-        w.eval('exportForecast()');
-        const r = rader.find(x => String(x[0]).startsWith('Riktad pott 1'));
-        expect(r[1]).toBe('BAS A, AID 6000, bara kvinnor, löner under 26000 kr: höj till 26000 kr/mån');
-    });
-});
-
-describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
-    // Ett kandidatpar: 6 kvinnor i yrke 5300 (BAS C) mot 20 män i yrke 6100 — den lilla gruppen är under tröskeln 10.
-    const fonster = () => {
-        const w = createAppWindow();
-        const rader = [];
-        const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + (i % 3) * 10,
-            alder: 30 + (i * 7) % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
-        lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000');
-        lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
-        lagg(6, 'kvinna', 36421, 'C', '5300');
-        w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__state.kLage = 'export';   // panelen hör till Exportera och ritas alltid i exportläget (ADR-51)
-        return w;
-    };
-    it('paret med en grupp under tröskeln namnges inte; antalet utelämnade par står i panelen och i resultatet', () => {
-        const w = fonster();
-        const r = w.__robusthetLikvardighet([55, 60, 65]);
-        expect(r.utelamnade).toBe(1);
-        expect(r.rows).toEqual([]);
-        expect(r.not).toBe('1 par med en grupp under 10 personer redovisas inte här.');
-        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
-        const t = w.document.getElementById('robusthet-body').textContent;
-        expect(t).not.toContain('5300');
-        expect(t).toContain('1 par med en grupp under 10 personer redovisas inte här.');
-        expect(t).toContain('Inga kandidatpar att namnge');
-        // Slutsatsraden räknar bara de namngivna paren som prövade slutsatser.
-        expect(w.document.getElementById('nyckel-dk-robusthet').textContent).toBe('Står sig');
-    });
-    it('vid 5 namnges paret och ingen mening om utelämnade står kvar', () => {
-        const w = fonster();
-        w.eval('sattKTroskel(5, { fraga: false })');
-        const r = w.__robusthetLikvardighet([55, 60, 65]);
-        expect(r.utelamnade).toBe(0);
-        expect(r.not).toBe('');
-        expect(r.rows.some(x => x.label.includes('5300'))).toBe(true);
-        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
-        const t = w.document.getElementById('robusthet-body').textContent;
-        expect(t).toContain('5300');
-        expect(t).not.toMatch(/redovisas inte här/);
-    });
-});
-
 describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
     const MED_DOSSIERER = w => w.eval("sattRapportUrval({ ordning: rapportUrval().ordning, med: [...RM_URVAL.hela.med, 'dossierer'] })");
     const bilaga = w => w.eval('rapportModell()').avsnitt.find(a => a.id === 'dossierer');
@@ -509,5 +512,209 @@ describe('reservationen om lönebegreppet vid EU-rapportmåtten', () => {
         const block = w.eval('rapportunderlagBlock()');
         expect(ren(JSON.stringify(block.find(b => b.rubrik === 'Struktur och lönetransparens')))).toContain(MENING);
         expect(ren(w.eval('INFO_SECTIONS.overview()'))).toContain(MENING);
+    });
+});
+
+describe('rapportunderlag', () => {
+    const stubbaUrklipp = w => {
+        const fångat = [];
+        w.ClipboardItem = class { constructor(o) { this.o = o; } };
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
+        return fångat;
+    };
+    it('utan data visar panelen hur man kommer igång', () => {
+        const w = createAppWindow();
+        w.__renderTabContent('rapporttext');   // fliken är låst utan lönefil; en direktlänk ritar den ändå
+        expect(w.document.getElementById('rapportunderlag-innehall').textContent).toContain('Läs in underlag');
+    });
+    it('med demodata: fem avsnitt, ett block per flaggat yrke och godkänt par, tre diagram', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
+        const block = w.__rapportunderlagBlock();
+        const flaggade = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;   // rapportunderlaget lämnar verktyget: inställd tröskel
+        const typer = block.map(b => b.id.split(':')[0]);
+        expect(typer.filter(t => ['sammanfattning', 'lika', 'likvardigt', 'struktur', 'handlingsplan'].includes(t)).length).toBe(5);
+        expect(typer.filter(t => t === 'yrke').length).toBe(flaggade);
+        expect(w.document.querySelectorAll('#rapportunderlag-innehall [data-rapport-kopiera]').length).toBe(block.length);
+        const harPar = typer.includes('par');
+        expect(w.document.querySelectorAll('#rapportunderlag-innehall [data-rapport-diagram]').length).toBe(harPar ? 3 : 2);
+        expect(w.document.getElementById('rapportunderlag-innehall').textContent).toContain('DEMODATA');
+    });
+    it('tal och intervall i blockens tabeller står på en rad på skärmen (95 % KI); urklippet är fortfarande utan klasser', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
+        const celler = [...w.document.querySelectorAll('#rapportunderlag-innehall .ru-innehall td')];
+        const tal = celler.filter(td => w.eval('_cellArTal')(td.textContent));
+        const intervall = tal.filter(td => /\d\s*(–|till)\s*[−+]?\d/.test(td.textContent));
+        expect(intervall.length).toBeGreaterThan(0);
+        expect(tal.every(td => td.classList.contains('ru-tal'))).toBe(true);
+        expect(celler.filter(td => td.classList.contains('ru-tal')).length).toBe(tal.length);
+    });
+    it('Kopiera lägger ren HTML och text på urklipp', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
+        const fångat = stubbaUrklipp(w);
+        expect(await w.__kopieraRapportBlock('sammanfattning')).toBe('urklipp');
+        const html = await fångat[0].o['text/html'].text();
+        const text = await fångat[0].o['text/plain'].text();
+        expect(html).toContain('<h3>Sammanfattning</h3>');
+        expect(html).not.toMatch(/style=|class=/);
+        expect(text).toMatch(/^Sammanfattning/);
+    });
+    it('utan urklipps-API används reserven och blocket markeras', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
+        w.document.execCommand = () => false;
+        expect(await w.__kopieraRapportBlock('lika')).toBe('markerat');
+        expect(w.getSelection().toString()).toContain('Lika arbete');
+    });
+    it('uppdelningsblocket ligger direkt efter Sammanfattning', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const ids = w.__rapportunderlagBlock().map(b => b.id);
+        expect(ids.slice(0, 2)).toEqual(['sammanfattning', 'uppdelning']);
+    });
+    it('Rensa all data tömmer panelen', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
+        w.__clearAllData();
+        expect(w.document.getElementById('rapportunderlag-innehall').textContent).not.toContain('Sammanfattning');
+    });
+});
+
+describe('rapportunderlag: kopiera diagram', () => {
+    it('data-URL blir en PNG-blob utan fetch (CSP)', async () => {
+        const w = createAppWindow();
+        const b = w.__dataUrlTillBlob('data:image/png;base64,iVBORw0KGgo=');
+        expect(b.type).toBe('image/png');
+        expect(b.size).toBe(8);
+    });
+    it('ritar diagrammet först om fliken inte öppnats, och lägger PNG på urklipp', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const fångat = [];
+        w.ClipboardItem = class { constructor(o) { this.o = o; } };
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
+        expect(w.document.getElementById('chart-perbas-gap')?._figur).toBeUndefined();
+        expect(await w.__kopieraRapportDiagram('chart-perbas-gap')).toBe('urklipp');
+        expect(w.document.getElementById('chart-perbas-gap')._figur.lager.length).toBeGreaterThan(0);   // ritat av diagramkärnan
+        expect(Object.keys(fångat[0].o)).toEqual(['image/png']);
+    });
+    it('diagram som inte finns för underlaget (inga kandidatpar i demodatan) ger saknas', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        expect(await w.__kopieraRapportDiagram('chart-likvardighet-heatmap')).toBe('saknas');
+    });
+    it('utan urklippsstöd för bilder laddas diagrammet ner', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');   // diagramkärnans bild: jsdom har ingen canvas
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
+        expect(await w.__kopieraRapportDiagram('chart-skevhet-overview')).toBe('nedladdat');
+    });
+});
+
+describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
+    it('I2: kandidatparens diagram erbjuds bara när inga par uteslutits', () => {
+        const w = createAppWindow();
+        const ids = (harPar, exkl) => w._rapportDiagramLista(harPar, exkl).map(g => g.id);
+        expect(ids(true, 0)).toContain('chart-likvardighet-heatmap');
+        expect(ids(true, 1)).not.toContain('chart-likvardighet-heatmap');
+        expect(ids(false, 0)).not.toContain('chart-likvardighet-heatmap');
+    });
+    it('I4: diagrammet ritas alltid om före kopiering (aktuellt urval)', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        const anrop = [];
+        const orig = w.renderTabContent;
+        w.renderTabContent = t => { anrop.push(t); return orig(t); };
+        w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');   // diagramkärnans bild: jsdom har ingen canvas
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
+        await w.__kopieraRapportDiagram('chart-skevhet-overview');
+        expect(anrop).toContain('struktur');
+    });
+    it('I5: misslyckad nedladdning ger "fel" utan att kasta', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
+        w.figurTillBild = () => Promise.reject(new Error('nej'));   // diagrammet ritas av diagramkärnan (ADR-39)
+        await expect(w.__kopieraRapportDiagram('chart-skevhet-overview')).resolves.toBe('fel');
+    });
+});
+
+describe('innehåll på sidan och i rapportunderlaget', () => {
+    const oppna = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
+    it('de långa flikarna har avsnitt, och deras rubriker är innehållsförteckningen', () => {
+        // Flikarna klickas fram i samma ordning som här, med fler flikar emellan (prövat: samma paneler).
+        const w = flikfonster();
+        for (const [flik, minst] of [['dashboard', 2], ['matrix', 4], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 2], ['rapporttext', 2], ['arbetet', 4], ['kon', 5], ['benchmark', 4]]) {
+            const synliga = ritade.get(flik).paneler;
+            const rubriker = synliga.flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2')]);
+            expect(rubriker.length, flik).toBeGreaterThanOrEqual(minst);
+            for (const h of rubriker) expect(h.textContent.trim().length, flik).toBeGreaterThan(3);
+        }
+        expect(w.eval('typeof renderSidansInnehall')).toBe('undefined');
+    });
+    it('rapportunderlaget: förteckning med en länk per block', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        oppna(w, 'rapporttext');
+        const block = w.document.querySelectorAll('#rapportunderlag-innehall .ru-block[data-block-id]');
+        expect(block.length).toBeGreaterThan(0);
+        const lankar = w.document.querySelectorAll('#rapportunderlag-innehall .ru-toc [data-hoppa-till]');
+        expect(lankar.length).toBe(block.length);
+        for (const a of lankar) expect(w.document.getElementById(a.dataset.hoppaTill)?.classList.contains('ru-block')).toBe(true);
+    });
+    it('Kopiera alla avsnitt lägger avsnittens rubriker i ordning på urklipp; reserv utan urklipp', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        oppna(w, 'rapporttext');
+        const fångat = [];
+        w.ClipboardItem = class { constructor(o) { this.o = o; } };
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
+        expect(await w.kopieraRapportAvsnitt()).toBe('urklipp');
+        const html = await fångat[0].o['text/html'].text();
+        const rubriker = [...html.matchAll(/<h3>([^<]+)<\/h3>/g)].map(m => m[1]);
+        const avsnitt = w.__rapportunderlagBlock().filter(b => !b.id.includes(':')).map(b => b.rubrik);
+        expect(rubriker).toEqual(avsnitt);
+        expect(await fångat[0].o['text/plain'].text()).toContain(avsnitt[1]);
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
+        w.document.execCommand = () => false;
+        expect(await w.kopieraRapportAvsnitt()).toBe('markerat');
+        expect(w.getSelection().toString()).toContain(avsnitt[0]);
+    });
+});
+
+describe('sortering, Att göra, kopiering och Likvärdigt arbete — kopiering', () => {
+    it('att rita en annan flik (t.ex. för att kopiera ett diagram) flyttar inte sidans navigering', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const d = w.document;
+        d.querySelector('.nav-item[data-tab="dashboard"]').click();
+        w.__renderTabContent('matrix');
+        expect(d.querySelectorAll('#view-regression .flow-next-bar, #view-lika-yrken .flow-next-bar, #view-skevhet .flow-next-bar').length).toBe(0);
+        expect(d.getElementById('view-dashboard').classList.contains('active') || d.getElementById('view-dashboard').style.display === 'block').toBe(true);
+    });
+    it('kopiera diagram: urklippet begärs direkt i klicket (Safari), bilden levereras som ett löfte', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const fångat = [];
+        w.ClipboardItem = class { constructor(o) { this.o = o; } };
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
+        w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');   // diagramkärnans bild: jsdom har ingen canvas
+        const p = w.__kopieraRapportDiagram('chart-perbas-gap');
+        expect(fångat).toHaveLength(1);                      // före första await
+        expect(typeof fångat[0].o['image/png'].then).toBe('function');
+        expect(await p).toBe('urklipp');
+        expect((await fångat[0].o['image/png']).type).toBe('image/png');
     });
 });

@@ -31,13 +31,17 @@ export const FK_TIMLON_MEDIAN = 5000;
 export const FK_SPRIDNING_GANGER = 10;
 export const FK_ALDER_MIN = 16;
 export const FK_ALDER_MAX = 75;
+/** Rimlig månadslön (heltid) i tabellen Underlagets kvalitet. */
+export const FK_LON_MIN = 15000;
+export const FK_LON_MAX = 250000;
+/** Ett rimligt BAS-värde är en enda bokstav (inläsningen versaliserar). */
+export const FK_BAS = /^[A-ZÅÄÖ]$/;
 /** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
 export const FK_SMA_GRUPP = 10;
 /** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
 export const FK_NAMN_RADNR = 5;
 /** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
 const MAX_RA = 24;
-const VANLIG_BAS = /^[A-N]$/;
 const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
 // Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
 const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
@@ -47,7 +51,7 @@ const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', i
 export function forhandskontrollGranser() {
     return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
         spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
-        namnRadnr: FK_NAMN_RADNR };
+        namnRadnr: FK_NAMN_RADNR, lonMin: FK_LON_MIN, lonMax: FK_LON_MAX, bas: FK_BAS };
 }
 
 const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
@@ -68,11 +72,11 @@ const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
 const _fkOchLista = v => (v.length < 2 ? v.join('') : `${v.slice(0, -1).join(', ')} och ${v[v.length - 1]}`);
 
 /**
- * Radnumren i varningen om personnamn i fältet för AID-etikett: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4
- * och 5" när fler rader träffats än som visas. Den enda källan till formuleringen, som står i hela varningen
- * (namnIYrkesfaltetText) och som exempel på inläsningsrapportens rad.
- * @param {number} antal - Rader där fältet ser ut att innehålla ett namn.
- * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
+ * Radnumren i en varning: "rad 12 och 40", eller "till exempel rad 1, 2, 3, 4 och 5" när fler rader träffats än som
+ * visas. Den enda källan till formuleringen, som står i varningen om personnamn i fältet för AID-etikett
+ * (namnIYrkesfaltetText och inläsningsrapportens rad) och i varningen om ålder utanför 16–75 år.
+ * @param {number} antal - Rader som varningen gäller.
+ * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem, i stigande ordning.
  * @returns {string} Tom när antalet är 0 eller inga radnummer finns.
  */
 export function namnIYrkesfaltetRadnr(antal, radnr = []) {
@@ -113,7 +117,7 @@ function _fkCell(roll, rad) {
     }
     if (roll === 'bas') {
         const t = String(tolkat ?? '');
-        const fel = !t ? 'saknas: raden faller bort' : VANLIG_BAS.test(t) ? null : 'inte en bokstav A–N';
+        const fel = !t ? 'saknas: raden faller bort' : FK_BAS.test(t) ? null : 'inte en bokstav';
         return { 'rå': ra, tolkat: t, fel, text: visa(t, ra === t) };
     }
     if (roll === 'kon') {
@@ -149,7 +153,7 @@ function _fkCell(roll, rad) {
  * Bygger förhandskontrollen.
  * @param {{
  *   rader?: Array<{radnr?: number|null, anvands: boolean, ra: Object<string, any>, tolkat: Object<string, any>, status?: Object<string, string>}>,
- *   data?: Array<{bas: string, lon: number, alder: number, kon: string}>,
+ *   data?: Array<{bas: string, lon: number, alder: number, kon: string, radnr?: number|null}>,
  *   konVarden?: Array<{'rå': string, tolkat: string|null, antal: number}>,
  *   parseStats?: Object<string, any>,
  *   headers?: string[],
@@ -185,11 +189,12 @@ export function byggForhandskontroll({ rader = [], data = [], konVarden = [], pa
     const perBas = new Map();
     for (const r of data) perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
     const basVarden = [...perBas.entries()].map(([bas, antal]) => ({ bas, antal })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
-    const ovanliga = basVarden.map(b => b.bas).filter(b => !VANLIG_BAS.test(b));
+    const ovanliga = basVarden.map(b => b.bas).filter(b => !FK_BAS.test(b));
     const loner = data.map(r => r.lon).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
     const lon = loner.length ? { min: loner[0], median: _fkMedian(loner), max: loner[loner.length - 1] } : null;
     const aldrar = data.map(r => r.alder).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
-    const utanfor = aldrar.filter(a => a < FK_ALDER_MIN || a > FK_ALDER_MAX).length;
+    const utanforAlder = a => typeof a === 'number' && a > 0 && (a < FK_ALDER_MIN || a > FK_ALDER_MAX);
+    const utanfor = aldrar.filter(utanforAlder).length;
     const alder = aldrar.length ? { min: aldrar[0], max: aldrar[aldrar.length - 1], utanfor } : null;
     const grans = typeof k === 'number' && k > 0 ? k : FK_SMA_GRUPP;
     const sma = basVarden.filter(b => b.antal < grans);
@@ -220,14 +225,18 @@ export function byggForhandskontroll({ rader = [], data = [], konVarden = [], pa
         varna('alder-fodelsear', 'varning', `Åldern har räknats ut ur födelseår för ${_fkRader(sammandrag.fodelsear)}: kontrollera att ålderskolumnen verkligen är födelseår.`);
     }
     if (utanfor > 0) {
-        varna('alder-utanfor', 'varning', `${_fkPersoner(utanfor)} har en ålder utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år: kontrollera ålderskolumnen.`);
+        // Bara antal och radnummer, så att raderna går att hitta i filen. Regressionen och Ålder & karriär räknar varje ålder över 0.
+        const radnr = data.filter(r => utanforAlder(r.alder)).map(r => r.radnr ?? NaN).filter(Number.isFinite).sort((a, b) => a - b);
+        const vilka = namnIYrkesfaltetRadnr(utanfor, radnr);
+        varna('alder-utanfor', 'varning', `${_fkPersoner(utanfor)} har en ålder utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år${vilka ? ` (${vilka})` : ''}. `
+            + `${utanfor === 1 ? 'Raden räknas' : 'Raderna räknas'} med i åldersjusteringen tills filen är rättad: kontrollera ålderskolumnen och läs in filen igen.`);
     }
     if (sammandrag.ogiltigAlder.antal > 0) {
         varna('alder-ogiltig', 'varning', `${_fkRader(sammandrag.ogiltigAlder.antal)} har en ålder som inte går att läsa som tal.`);
     }
     if (ovanliga.length) {
         const visa = ovanliga.slice(0, 5).map(b => _fkKorta(b)).join(', ') + (ovanliga.length > 5 ? ' …' : '');
-        varna('bas-ovanlig', 'varning', `${ovanliga.length} ${ovanliga.length === 1 ? 'BAS-värde är' : 'BAS-värden är'} inte en bokstav A–N (${visa}): kontrollera BAS-kolumnen.`);
+        varna('bas-ovanlig', 'varning', `${ovanliga.length} ${ovanliga.length === 1 ? 'BAS-värde är' : 'BAS-värden är'} inte en bokstav (${visa}): kontrollera BAS-kolumnen.`);
     }
     if ((ps.excludedMissingKon || 0) > 0) {
         varna('kon-okand', 'varning', `${_fkRader(ps.excludedMissingKon)} har ett kön som verktyget inte känner igen och faller bort.`);

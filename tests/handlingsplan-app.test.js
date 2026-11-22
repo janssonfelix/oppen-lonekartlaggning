@@ -1,7 +1,14 @@
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// Handlingsplanen i appen: fälten, det som bara visas i första kolumnen, Kostnaden avser, en AID-kod med två texter
+// som en grupp, och tabellens tomma rader på utskriften.
 import { describe, it, expect, vi } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster } from './helpers/app-harness.js';
 import { laddaXlsx, fangaBocker } from './helpers/ktroskel-rigg.js';
+import { las } from './helpers/granssnitt-rigg.js';
 vi.setConfig({ testTimeout: 30000 });
+
+const demo = delatFonster(w => w.__loadDemoData());
 // Demot förifyller sakliga skäl på tre rader (56-handlingsplan.js, _hpDemoSkal); testerna här börjar från en tom plan.
 const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); w.__state.handlingsplan = {}; return w; };
 const UNDERLAG = ['Prioritering (under referensen)', 'Likvärdigt arbete (kandidatpar)'];
@@ -309,37 +316,6 @@ describe('Handlingsplan: Kostnaden avser', () => {
     });
 });
 
-describe('Löneöversyn: förslaget nås från potten', () => {
-    it('knappen vid potten är inaktiv utan pott, aktiv med pott, och fäller ut Riktade potter', () => {
-        const w = fonster(); const d = w.document;
-        w.__renderTabContent('loneoversyn');
-        const knapp = d.getElementById('forecast-optimize-pott');
-        expect(knapp.textContent).toBe(d.getElementById('forecast-optimize').textContent);
-        expect(knapp.disabled).toBe(true);
-        const pott = d.getElementById('forecast-budget-value');
-        pott.value = '2.5'; pott.dispatchEvent(new w.Event('input', { bubbles: true }));
-        expect(knapp.disabled).toBe(false);
-        const avsnitt = d.getElementById('avsnitt-lo-riktade');
-        avsnitt.open = false;
-        w.alert = () => {};
-        knapp.click();
-        expect(avsnitt.open).toBe(true);
-        expect(w.__state.forecast.targets.length).toBeGreaterThan(0);
-        pott.value = ''; pott.dispatchEvent(new w.Event('input', { bubbles: true }));
-        expect(knapp.disabled).toBe(true);
-    });
-    it('Lönesumma per månad säger "från …" bara när summan har ändrats', () => {
-        const w = fonster(); const d = w.document;
-        w.__renderTabContent('loneoversyn');
-        const lonesumma = () => [...d.querySelectorAll('#lo-slutsatser > *')].find(el => /Lönesumma per månad/.test(el.textContent)).textContent;
-        expect(lonesumma()).toMatch(/utgångsläget/);
-        expect(lonesumma()).not.toMatch(/från/);
-        const gen = d.getElementById('forecast-generell-value');
-        gen.value = '2'; gen.dispatchEvent(new w.Event('input', { bubbles: true }));
-        expect(lonesumma()).toMatch(/från \d/);
-    });
-});
-
 // Prioriteringen grupperar på AID-koden och BAS-intervallet (src/lib/prioritering.js): en kod med två texter i samma
 // BAS-intervall är en grupp, och handlingsplanens förifyllda rad och gruppdossiern hittar den.
 describe('Handlingsplan och gruppdossier: en AID-kod med två texter är en grupp', () => {
@@ -370,5 +346,17 @@ describe('Handlingsplan och gruppdossier: en AID-kod med två texter är en grup
         const d = w.eval("buildGruppdossier('207011|C')");
         expect(d.n).toBe(15);
         expect(d.prio).toMatchObject({ aid: '207011', bas: 'C', n: 15, median: 31000 });
+    });
+});
+
+describe('Handlingsplanens tabell', () => {
+    it('de tomma raderna visas bara på utskriften, och en rad säger vart det ifyllda tar vägen', () => {
+        const css = las('src/style.css');
+        expect(css).toMatch(/#handlingsplan-tbody \.handlingsplan-empty \{ display: none; \}/);
+        expect(css).toMatch(/@media print \{ #handlingsplan-tbody \.handlingsplan-empty \{ display: table-row; \} \}/);
+        const w = demo();
+        w.__renderTabContent('handlingsplan');
+        expect(w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty').length).toBeGreaterThanOrEqual(5);   // finns kvar för utskriften
+        expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte');
     });
 });

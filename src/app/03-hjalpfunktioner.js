@@ -138,6 +138,13 @@ function importprofilText(p, headers = state._dataHeaders) {
     return `Känd uppsättning${andrad ? ', ändrad' : ''}: ${p.namn} (${_importprofilKalla(p.kalla)})`;
 }
 
+/** Dagens datum som 'ÅÅÅÅ-MM-DD' i lokal tid, för filnamn och fältet skapat. Inte toISOString(): den ger UTC, och
+ *  mellan midnatt och 01 (02 sommartid) blir det gårdagens datum. @param {Date} [datum] */
+function idagDatum(datum = new Date()) {
+    const p = n => String(n).padStart(2, '0');
+    return `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
+}
+
 // ---- Tal som text, svenskt format ----
 // All text som visas ska ha decimalkomma och mellanslag före procenttecknet ("85,2 %"). toFixed ger decimalpunkt
 // och används bara där ett tal ska läsas av kod (CSS-mått, sorteringsvärden, tal till Excel).

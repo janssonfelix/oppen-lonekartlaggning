@@ -245,7 +245,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
         const rubrik = [...d.querySelectorAll('#installningar-modal h3, #installningar-modal h4')].find(h => /Viktning av prioriteringsindex/.test(h.textContent));
         expect(rubrik.tagName).toBe('H4');
     });
-    // Menyns enda ordningstest (granssnitt.test.js och smoke-vyer.test.js hade var sitt, som det här täcker).
+    // Menyns enda ordningstest (två andra filer hade var sitt, som det här täcker).
     it('menyn står i rapportens ordning; med ställningstagandet syns varje flik, också Löneläget', () => {
         const w = createAppWindow(), d = w.document;
         const MENYN = ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon',
@@ -334,5 +334,16 @@ describe('Lönestrukturens mått räknas på ett ställe', () => {
             const kropp = kalla.slice(kalla.indexOf(`function ${f}(`)).split(/\n}\n/)[0];
             expect(kropp, f).toContain('_stMatt(d, k)');
         }
+    });
+});
+
+describe('Struktur: representation i BAS-ordning', () => {
+    it('tabellen listar BAS A–Ö', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
+        const bas = [...w.document.querySelectorAll('#struktur-representation tbody tr td:first-child')].map(td => td.textContent.trim());
+        expect(bas.length).toBeGreaterThan(1);
+        expect(bas).toEqual([...bas].sort((a, b) => a.localeCompare(b, 'sv')));
     });
 });

@@ -16,7 +16,7 @@ Dokumentet beskriver den byggda koden. Där det skiljer sig från koden är det 
 | Appen | `src/app/NN-*.js` (86 delar) | Ett enda globalt skript i prefixordning: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
 | Biblioteken | `vendor/` | D3, JSZip, PapaParse och SheetJS, låsta med kontrollsummor i `SHA256SUMS`. Licenserna står i `TREDJEPARTSLICENSER.md`. |
 | Bygget | `tools/` | `build-app.mjs` slår ihop appen, `bundle.mjs` bygger filen och `RELEASE.txt`, `kontroll.mjs` kör hela kedjan. Se [`bygge-och-test.md`](bygge-och-test.md). |
-| Testerna | `tests/` (131 testfiler) | Vitest: enhetstester av `src/lib/`, röktest av appen i jsdom, invarianter för exporterna och vakter för dokument och skydd. Webbläsarröktestet ligger i `tools/browser-smoke/`. |
+| Testerna | `tests/` | Vitest: enhetstester av `src/lib/`, appen per funktion i jsdom (`<område>-app.test.js`), invarianter för exporterna och vakter för dokument och skydd. Webbläsarröktestet ligger i `tools/browser-smoke/`. |
 | Leveransen | `dist/`, `.github/workflows/` | `dist/` är det byggda verktyget, genererat och incheckat. CI kräver att ett nytt bygge blir byte-identiskt med det incheckade. |
 
 Appen och kärnan är separerade i två steg: appen läser och visar, kärnan räknar. Mellan dem finns bara de tunna
@@ -79,7 +79,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `kon` | – |
 |  | `importprofiler` | – |
 |  | `forhandskontroll` | `termer` |
-|  | `datakvalitet` | `falt`, `namn`, `stat`, `termer` |
+|  | `datakvalitet` | `falt`, `forhandskontroll`, `namn`, `stat`, `termer` |
 |  | `organisationsfil` | – |
 |  | `organisationspaket` | `importprofiler`, `installningsgranser`, `perbas`, `tabellrecept`, `termer` |
 |  | `installningsgranser` | – |
@@ -98,7 +98,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `attgora` | `namn`, `termer` |
 
 Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter:
-`prioritera` (`kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`) och `loneoversyn` (den gällande tröskeln). Lägena och
+`prioritera` (`kTroskel`), `motiveringsgrunder` (`kInstalld`, `kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`) och `loneoversyn` (den gällande tröskeln). Lägena och
 vad som räknas med vilken tröskel står i [`k-troskeln.md`](k-troskeln.md). Modulen `undertryckning` har de två
 reglerna för vad som döljs eller räknas samman utöver de små grupperna själva: kompletterande undertryckning (ADR-83) och
 sammanslagning av delar där ett kön är för litet (ADR-87).

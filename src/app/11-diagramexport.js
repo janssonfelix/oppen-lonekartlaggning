@@ -88,8 +88,7 @@ function chartExportFilename(gd, ext, datum = new Date()) {
     const panel = (kalla || gd).closest ? (kalla || gd).closest('.view-panel') : null;
     const flik = panel && panel.id ? panel.id.replace(/^view-/, '') : 'diagram';
     const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
-    const pad = n => String(n).padStart(2, '0');
-    const dag = `${datum.getFullYear()}-${pad(datum.getMonth() + 1)}-${pad(datum.getDate())}`;
+    const dag = idagDatum(datum);
     const titel = _chartExportSlug(chartExportTitle(gd)) || 'Diagram';
     return `${state.isDemo ? 'DEMO_' : ''}${_chartExportSlug(Flik)}_${titel}_${dag}.${ext}`;
 }
@@ -175,8 +174,7 @@ function chartExportRows(gd, underlag) {
  *  (exportAnteckning) gäller hela underlaget och står då inte med.
  *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] @param {string} [underlag] */
 function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
-    const p = n => String(n).padStart(2, '0');
-    const dag = `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
+    const dag = idagDatum(datum);
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
     // Ett zoomat diagram exporteras som det visas: fotraden säger att bilden är ett utsnitt.
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn

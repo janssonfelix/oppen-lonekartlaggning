@@ -88,18 +88,15 @@ document.getElementById('btn-clear-all-data')?.addEventListener('click', () => {
     clearAllData();
     if (!state.data.length && typeof stangInstallningar === 'function') stangInstallningar();
 });
-document.getElementById('btn-data-residency')?.addEventListener('click', () => {
-    openDataResidency();
-    // Bind dropdown efter att modalen renderats
-    setTimeout(() => {
-        const sel = document.getElementById('inactivity-timeout-select');
-        if (sel) sel.addEventListener('change', e => {
-            const min = parseInt(/** @type {HTMLInputElement} */ (e.target).value, 10) || 0;
-            setInactivityTimeout(min);
-            const status = document.getElementById('inactivity-status');
-            if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : 'Av';
-        });
-    }, 50);
+document.getElementById('btn-data-residency')?.addEventListener('click', openDataResidency);
+// Tidsväljaren ritas om vid varje öppning; lyssnaren sitter på innehållet en gång och gäller hur dialogen än öppnas (även från sökningen).
+document.getElementById('data-residency-content')?.addEventListener('change', e => {
+    const sel = /** @type {HTMLSelectElement} */ (e.target);
+    if (sel.id !== 'inactivity-timeout-select') return;
+    const min = parseInt(sel.value, 10) || 0;
+    setInactivityTimeout(min);
+    const status = document.getElementById('inactivity-status');
+    if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : 'Av';
 });
 
 // ---- Inaktivitetstimer med tvåfas-varning ----
@@ -125,7 +122,7 @@ function _hideInactivityWarning() {
         _inactivityWarnEl = null;
     }
     if (_inactivityWarningTimer) {
-        clearTimeout(_inactivityWarningTimer);
+        clearInterval(_inactivityWarningTimer);
         _inactivityWarningTimer = null;
     }
 }
@@ -153,11 +150,12 @@ function _showInactivityWarning() {
     document.body.appendChild(warn);
     _inactivityWarnEl = warn;
 
-    // 60 s nedräkning
-    let secondsLeft = 60;
+    // 60 s nedräkning mot en sluttid: en flik som inte syns får sina intervall strypta (upp till ett tick per minut),
+    // så tick räknas inte, utan tiden som gått.
+    const slut = Date.now() + 60 * 1000;
     const countdownEl = warn.querySelector('#inactivity-countdown');
     _inactivityWarningTimer = setInterval(() => {
-        secondsLeft--;
+        const secondsLeft = Math.max(0, Math.ceil((slut - Date.now()) / 1000));
         if (countdownEl) countdownEl.textContent = String(secondsLeft);
         if (secondsLeft <= 0) {
             _autoClearOnInactivity();

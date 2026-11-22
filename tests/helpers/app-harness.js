@@ -1,7 +1,6 @@
 /**
  * Delad jsdom-rigg för de tester som kör hela app.js i ett fönster.
  *
- * Utbruten ur smoke.test.js när kanonymitet.test.js behövde samma rigg:
  * index.html + app.js laddas i jsdom, de tunga biblioteken (XLSX/
  * PapaParse/JSZip) stubbas, och en shim i SAMMA eval exponerar de top-level
  * `const`-bindningar (state m.fl.) som annars inte läcker till window.
@@ -218,4 +217,29 @@ export function delatFonster(forbered, skapa = createAppWindow) {
     });
     afterAll(() => { if (w) _stang(w); });
     return () => w;
+}
+
+// Flikarna som delatFlikfonster klickar fram, i menyns ordning.
+export const MENYFLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
+                           'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska'];
+
+/**
+ * Ett delat fönster med demodatan som klickar fram varje flik i MENYFLIKAR en gång och sparar en kopia av det som då
+ * syns (flikens paneler och sidhuvudet), för tester som söker igenom flikarna: att rita dem är det dyra. Testerna läser
+ * kopiorna. Anropas på filens toppnivå, som delatFonster.
+ * @returns {{ flikfonster: () => any, ritade: Map<string, {paneler: any[], titel: string}> }}
+ */
+export function delatFlikfonster() {
+    const ritade = new Map();
+    const flikfonster = delatFonster(w => {
+        w.__loadDemoData();
+        for (const flik of MENYFLIKAR) {
+            w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
+            ritade.set(flik, {
+                paneler: [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active')).map(p => p.cloneNode(true)),
+                titel: w.document.getElementById('page-title').textContent,
+            });
+        }
+    });
+    return { flikfonster, ritade };
 }

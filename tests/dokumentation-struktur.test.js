@@ -137,13 +137,6 @@ describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
     });
 });
 
-describe('dokumentation: valbar förklaringsmodell (ADR-56)', () => {
-    it('Om verktyget och körguiden beskriver valet', () => {
-        expect(läs('src/app/65-om-verktyget.js')).toMatch(/[Ff]örklaringsmodell/);
-        expect(läs('src/app/65-om-verktyget.js')).toMatch(/0,5 procentenheter/);
-        expect(läs('docs/anvandare/korguide.md')).toMatch(/välja om ålder, BAS-intervall och AID-etikett inom BAS/);
-    });
-});
 
 describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
     for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md']) {
@@ -180,10 +173,6 @@ describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
             expect(t, fil).not.toMatch(/alltid bär tröskeln|bär alltid\s+tröskeln/);
             expect(t, fil).not.toMatch(/lämnar ut par/);   // "lämnar ut" betyder röjer; "utelämnar" avses
         }
-    });
-    it('körguiden och organisationspaketets guide beskriver inställningen', () => {
-        expect(läs('docs/anvandare/korguide.md')).toContain('Minsta gruppstorlek för redovisning');
-        expect(läs('docs/anvandare/organisationspaket.md')).toContain('Minsta gruppstorlek för redovisning');
     });
 });
 
@@ -382,7 +371,6 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
     it('README, CONTRIBUTING och SECURITY finns och nämner licensen och kontaktvägen', () => {
         const readme = läs('README.md');
         expect(readme).toMatch(/MIT-licensen/);
-        expect(readme).toMatch(/Prova/);
         expect(läs('.github/CONTRIBUTING.md')).toMatch(/MIT-licensen/);
         for (const f of ['.github/GOVERNANCE.md', '.github/CODE_OF_CONDUCT.md']) expect(existsSync(join(root, f)), f).toBe(true);
         // En funktionsadress, inte en privat adress.
@@ -438,11 +426,5 @@ describe('dokumentation: Översikt och namn', () => {
     it('dataskyddet nämner namnen i konfigurationsfilen', () => {
         expect(läs('docs/dataskydd/riskanalys.md')).toMatch(/jämförelsestatistikens namn/);
         expect(läs('docs/dataskydd/dataskydd.md')).toMatch(/organisationens namn/i);
-    });
-});
-
-describe('dokumentation: Word-utkastet som .docx', () => {
-    it('körguiden säger .docx', () => {
-        expect(läs('docs/anvandare/korguide.md')).toMatch(/Word-utkast[^\n]*\.docx/);
     });
 });

@@ -119,7 +119,6 @@ function _afterDataLoaded() {
     if (typeof _resetInactivityTimer === 'function') _resetInactivityTimer();
     renderConsistencyBanner();
     renderOutliers();
-    renderRealityCheck();
     renderDataValidationReport();
     renderForhandskontroll();
     syncDatakvalitetPanel({ reg });

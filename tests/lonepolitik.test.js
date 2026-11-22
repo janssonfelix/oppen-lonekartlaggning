@@ -1,7 +1,7 @@
 /**
  * Ren kärna för analys mot lönepolitiskt ställningstagande (src/lib/lonepolitik.js).
  * Testar matematiken utan DOM/state. Uppslaget (policyFor) ligger i app.js och
- * testas via smoke-testet.
+ * testas i tests/lonelaget-app.test.js.
  */
 import { describe, it, expect } from 'vitest';
 import {

@@ -24,22 +24,6 @@
     outline-offset: 2px;
 }
 
-/* Reality check — sanity-check-panel
-   som ligger högst upp efter CSV-uppladdning. Färgkodar varje check
-   individuellt; ramen reflekterar samlat status. */
-#reality-check {
-    margin: 16px 0;
-    padding: 16px 18px;
-    border-radius: var(--radius);
-    background: var(--bg-card);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-}
-#reality-check.all-ok  { border-left: 3px solid var(--status-ok); }
-#reality-check.has-warn { border-left: 3px solid var(--status-varning); }
-#reality-check.has-err  { border-left: 3px solid var(--status-kritisk); background: var(--status-kritisk-yta); }
-#reality-check h3 { font-size: var(--fs-lg); color: var(--text-main); }
-
 :root {
     /* Typografisk skala: sex steg. Nya regler tar ett av dem; tests/granssnitt.test.js räknar de värden som står
        utskrivna och faller om de blir fler. Ett värde inom 0,05 rem från ett steg är steget. */
@@ -3590,7 +3574,6 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .pad-6-8.pad-6-8.pad-6-8 { padding: 6px 8px; }
 .pad-8.pad-8.pad-8 { padding: 8px; }
 .pad-8-0.pad-8-0.pad-8-0 { padding: 8px 0; }
-.pad-8-10.pad-8-10.pad-8-10 { padding: 8px 10px; }
 .pad-8-12.pad-8-12.pad-8-12 { padding: 8px 12px; }
 .pad-8-14.pad-8-14.pad-8-14 { padding: 8px 14px; }
 .pad-8-16.pad-8-16.pad-8-16 { padding: 8px 16px; }
@@ -3635,7 +3618,6 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .ram-v-3-kritisk.ram-v-3-kritisk.ram-v-3-kritisk { border-left: 3px solid var(--status-kritisk); }
 .ram-v-3-ok.ram-v-3-ok.ram-v-3-ok { border-left: 3px solid var(--status-ok); }
 .ram-v-3-varning.ram-v-3-varning.ram-v-3-varning { border-left: 3px solid var(--status-varning); }
-.rund-0-4-4-0.rund-0-4-4-0.rund-0-4-4-0 { border-radius: 0 4px 4px 0; }
 .rund-12.rund-12.rund-12 { border-radius: 12px; }
 .rund-4.rund-4.rund-4 { border-radius: 4px; }
 .rund-5.rund-5.rund-5 { border-radius: 5px; }
@@ -3747,10 +3729,6 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .bricka-neutral { color: var(--text-muted) !important; background: var(--yta-stark) !important; }
 .ruta-ok { background: var(--status-ok-bg) !important; border-left: 3px solid var(--status-ok) !important; }
 .ruta-varning { background: var(--status-varning-bg) !important; border-left: 3px solid var(--status-varning) !important; }
-/* Inläsningskontrollens rader: ok, varning, fel. */
-.reality-list .rc-ok.rc-ok.rc-ok { border-left: 3px solid var(--status-ok); background: var(--status-ok-bg); }
-.reality-list .rc-warn.rc-warn.rc-warn { border-left: 3px solid var(--status-varning); background: var(--status-varning-bg); }
-.reality-list .rc-err.rc-err.rc-err { border-left: 3px solid var(--status-kritisk); background: var(--status-kritisk-bg); }
 /* Rader i Lika arbete-tabellen: tonad botten för «Värt att granska» respektive «Följ upp». */
 tr.rad-granska { background: rgba(67, 56, 202, 0.08); }
 tr.rad-folj { background: rgba(245, 158, 11, 0.1); }

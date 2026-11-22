@@ -23,14 +23,14 @@ function clearAllData() {
  * Själva rensningen, utan bekräftelsefråga. Enda rensningsvägen: används av
  * knappen "Rensa all data" och av den automatiska rensningen vid inaktivitet,
  * så att de aldrig kan glida isär. Vaktas av invarianten "Rensa all data: ingen
- * lönedata kvar" i tests/smoke.test.js, för båda vägarna.
+ * lönedata kvar" i tests/dataskydd-app.test.js, för båda vägarna.
  */
 // Behållare som fylls av JavaScript med innehåll som kan bära lönedata. Listorna används av "Rensa all data" och av
 // exportgrinden (23-exportgrind.js), som tömmer flikar som inte längre är ritade med gällande tröskel.
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
     'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
 
 function _rensaAllData({ inbakat = true } = {}) {
@@ -112,7 +112,7 @@ function _rensaAllData({ inbakat = true } = {}) {
 
     // 2. Tear down renderad DOM som kan innehålla data
     // Behållare som fylls helt av JavaScript (Struktur, Löneöversyn, Utforska).
-    // Vaktas av invarianten "Rensa all data: ingen lönedata kvar" i tests/smoke.test.js —
+    // Vaktas av invarianten "Rensa all data: ingen lönedata kvar" i tests/dataskydd-app.test.js —
     // en ny vy som ritar lönedata utanför de rensade behållarna fångas där.
     // Hit hör också outliers-table-wrap (extremvärdesdetektorn) och print-report (utskriften med
     // kopior av tabellerna).

@@ -16,7 +16,7 @@
  *
  * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
-import { median, avrundaSymmetriskt } from './stat.js';
+import { median, quantile, avrundaSymmetriskt } from './stat.js';
 import { aidAvYrke, namnrader } from './aid.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 import { arKvinna, arMan } from './kon.js';
@@ -71,6 +71,58 @@ export function arsbeloppMening(g, costSettings, kr) {
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${_PO_FORMAT.format(po)} %). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
+}
+
+/**
+ * Grunderna för motiveringsförslagen till en prioriteringspost: deterministiska regler över gruppens rader, i den
+ * ordning förslagen visas. Texterna skriver appen (generateMotivationSuggestions i src/app/55-prioritering.js).
+ *
+ * Koderna: `underlag` (ett kön under minsta gruppstorlek), `styrka` (skillnaden under detektionströskeln), `alder`
+ * (könens medelålder skiljer minst 3 år), `kvintil` (kvinnor överrepresenterade i lägsta lönekvintilen; kräver
+ * kTroskel för båda könen, ADR-12), `brist`, `snabbVinst`, `over` (mer än 5 % över referensen) och `nara`
+ * (inom ±naraGrans % av referensen, minst 10 personer).
+ *
+ * @param {{_rows?: Array<{kon:string, lon:number, alder?:number}>, kvN:number, maN:number, n:number, diffPct:number,
+ *          isBrist?:boolean, isQuickWin?:boolean}} item
+ * @param {{kInstalld:number, kTroskel:number, mdePct?:number|null, naraGrans:number}} opt
+ *        kInstalld: den inställda minsta gruppstorleken; kTroskel: den gällande tröskeln; mdePct: detektionströskeln
+ *        i procent (saknas den prövas inte regeln); naraGrans: uppföljningsgränsen i procent (tecknet spelar ingen roll)
+ * @returns {Array<{kod:string, type:'warn'|'info'|'ok'|'flag'} & Object>}
+ */
+export function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGrans }) {
+    const out = [];
+    const rows = item._rows || [];
+    if (!rows.length) return out;
+
+    // Varningen gäller skattningens säkerhet, inte läget (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
+    if (item.kvN < kInstalld || item.maN < kInstalld) out.push({ kod: 'underlag', type: 'warn', kvN: item.kvN, maN: item.maN, k: kInstalld });
+
+    if (mdePct != null && Math.abs(item.diffPct) < mdePct && item.n < 30) out.push({ kod: 'styrka', type: 'info', diffPct: item.diffPct, mdePct });
+
+    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder || 0).filter(a => a > 0);
+    const maAges = rows.filter(r => arMan(r)).map(r => r.alder || 0).filter(a => a > 0);
+    if (kvAges.length >= 3 && maAges.length >= 3) {
+        const medelKv = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
+        const medelMa = maAges.reduce((s, v) => s + v, 0) / maAges.length;
+        if (Math.abs(medelMa - medelKv) >= 3) out.push({ kod: 'alder', type: 'info', medelKv, medelMa });
+    }
+
+    // Lönepositionsmått per kön: kräver tröskeln för båda könen (ADR-12)
+    if (item.kvN >= kTroskel && item.maN >= kTroskel) {
+        const q1 = quantile(rows.map(r => r.lon), 0.2);
+        const andelKv = item.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / item.kvN : 0;
+        const andelMa = item.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / item.maN : 0;
+        if (andelKv >= 0.4 && andelKv - andelMa >= 0.2) out.push({ kod: 'kvintil', type: 'flag', andelKv, andelMa });
+    }
+
+    if (item.isBrist) out.push({ kod: 'brist', type: 'info' });
+    if (item.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: item.n });
+    if (item.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: item.diffPct });
+
+    // Ett läge mot referensen, ingen bedömning (A5)
+    const nara = Math.abs(naraGrans);
+    if (Math.abs(item.diffPct) < nara && item.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
+    return out;
 }
 
 /**

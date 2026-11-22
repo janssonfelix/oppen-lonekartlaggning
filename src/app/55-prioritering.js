@@ -39,107 +39,30 @@ function computePrioritization(reference) {
  * en prio-rad. INGEN AI/LLM — bara deterministiska regler över datan.
  * Förslagen är frågor HR själv borde ställa, inte färdiga motiveringar.
  *
- * Regelpaket:
- *   1. Underlag — för få personer av endera kön
- *   2. Statistisk styrka — under MDE-tröskeln
- *   3. Ålderskillnad mellan kön i samma grupp
- *   4. Glasstaks/golvs-mönster — kvinnor överrepresenterade i lägsta lönekvintilen
- *   5. Bristyrke flagga — marknadsläge som potentiellt sakligt skäl
- *   6. Quick-win — hanterbar kostnad, lämplig för pilotåtgärd
- *   7. Positiv differens — över referens, andra slags motivering
+ * Reglerna och deras ordning: motiveringsgrunder i src/lib/prioritering.js.
  *
  * @param {Object} item - Prio-item med _rows.
  * @returns {Array<{type:'warn'|'info'|'ok'|'flag', text:string}>}
  */
 function generateMotivationSuggestions(item) {
-    const out = [];
-    const rows = item._rows || [];
-    if (!rows.length) return out;
+    return _prMotiveringsgrunder(item, {
+        kInstalld: kInstalld(), kTroskel: kTroskel(),
+        mdePct: state.powerAnalysis?.mdePct, naraGrans: state.prioConfig.bevakaThreshold
+    }).map(g => ({ type: g.type, text: _motiveringText(g) }));
+}
 
-    // 1. Underlag: ett kön under minsta gruppstorlek (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kInstalld() || item.maN < kInstalld()) {   // varningen gäller skattningens säkerhet, inte läget
-        out.push({
-            type: 'warn',
-            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kInstalld()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
-        });
+// Texten till en grund ur motiveringsgrunder; talen kommer ur lib och formateras här.
+function _motiveringText(g) {
+    switch (g.kod) {
+        case 'underlag': return `Underlaget är litet (${g.kvN} kvinnor / ${g.maN} män; minsta gruppstorlek ${g.k}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`;
+        case 'styrka': return `Skillnaden (${svPct(g.diffPct, 1)}) ligger under detektionströskeln (~${svPct(g.mdePct, 1)}). Det innebär att skillnaden är så liten att den inte med säkerhet kan skiljas från slumpmässiga variationer.`;
+        case 'alder': return `${g.medelMa > g.medelKv ? 'Männen' : 'Kvinnorna'} är i snitt <strong>${svTal(Math.abs(g.medelMa - g.medelKv), 1)} år äldre</strong> än motparten i denna grupp (${svTal(g.medelMa, 0)} mot ${svTal(g.medelKv, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`;
+        case 'kvintil': return `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((g.andelKv*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((g.andelMa*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`;
+        case 'brist': return 'Markerat som <strong>bristyrke</strong>. Marknadsläge (rekryteringssvårighet) kan vara ett sakligt skäl — dokumentera gärna marknadsläget med stöd av extern statistik (t.ex. från SCB lönestrukturstatistik).';
+        case 'snabbVinst': { const K = _prKonstanter(); return `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${g.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`; }
+        case 'over': return `Ligger ${svPct(g.diffPct, 1)} över referensen. Dokumentera gärna varför.`;
+        default: return `Gruppens median ligger inom ±${svTal(g.nara, g.nara % 1 ? 1 : 0)} % av referensen.`;   // 'nara'
     }
-
-    // 2. Power-tröskel
-    if (state.powerAnalysis && Math.abs(item.diffPct) < state.powerAnalysis.mdePct && item.n < 30) {
-        out.push({
-            type: 'info',
-            text: `Skillnaden (${svPct(item.diffPct, 1)}) ligger under detektionströskeln (~${svPct(state.powerAnalysis.mdePct, 1)}). Det innebär att skillnaden är så liten att den inte med säkerhet kan skiljas från slumpmässiga variationer.`
-        });
-    }
-
-    // 3. Åldersskillnad mellan kön i samma grupp
-    const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder).filter(a => a > 0);
-    const maAges = rows.filter(r => arMan(r)).map(r => r.alder).filter(a => a > 0);
-    if (kvAges.length >= 3 && maAges.length >= 3) {
-        const meanKvAge = kvAges.reduce((s, v) => s + v, 0) / kvAges.length;
-        const meanMaAge = maAges.reduce((s, v) => s + v, 0) / maAges.length;
-        const ageDiff = meanMaAge - meanKvAge;
-        if (Math.abs(ageDiff) >= 3) {
-            const who = ageDiff > 0 ? 'Männen' : 'Kvinnorna';
-            out.push({
-                type: 'info',
-                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`
-            });
-        }
-    }
-
-    // 4. Glasstak/-golv-mönster: kvinnor överrepresenterade i lägsta lönekvintil
-    //    (lönepositionsmått per kön: kräver k-tröskeln för båda könen, ADR-12)
-    if (item.kvN >= kTroskel() && item.maN >= kTroskel()) {
-        const allLons = rows.map(r => r.lon).sort((a, b) => a - b);
-        const q1 = allLons[Math.floor(allLons.length * 0.2)];
-        const kvBelowQ1 = rows.filter(r => arKvinna(r) && r.lon <= q1).length;
-        const maBelowQ1 = rows.filter(r => arMan(r) && r.lon <= q1).length;
-        const kvShareInQ1 = item.kvN > 0 ? kvBelowQ1 / item.kvN : 0;
-        const maShareInQ1 = item.maN > 0 ? maBelowQ1 / item.maN : 0;
-        if (kvShareInQ1 >= 0.4 && kvShareInQ1 - maShareInQ1 >= 0.2) {
-            out.push({
-                type: 'flag',
-                text: `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((kvShareInQ1*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((maShareInQ1*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`
-            });
-        }
-    }
-
-    // 5. Bristyrke
-    if (item.isBrist) {
-        out.push({
-            type: 'info',
-            text: 'Markerat som <strong>bristyrke</strong>. Marknadsläge (rekryteringssvårighet) kan vara ett sakligt skäl — dokumentera gärna marknadsläget med stöd av extern statistik (t.ex. från SCB lönestrukturstatistik).'
-        });
-    }
-
-    // 6. Quick-win (villkoret i src/lib/prioritering.js; texten beskriver det)
-    if (item.isQuickWin) {
-        const K = _prKonstanter();
-        out.push({
-            type: 'ok',
-            text: `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${item.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`
-        });
-    }
-
-    // 7. Positiv diff (över referens)
-    if (item.diffPct > 5) {
-        out.push({
-            type: 'info',
-            text: `Ligger ${svPct(item.diffPct, 1)} över referensen. Dokumentera gärna varför.`
-        });
-    }
-
-    // 8. Nära referensen: inom uppföljningsgränsen åt båda hållen (A5). Ett läge mot referensen, ingen bedömning.
-    const nara = Math.abs(state.prioConfig.bevakaThreshold);
-    if (Math.abs(item.diffPct) < nara && item.n >= 10) {
-        out.push({
-            type: 'ok',
-            text: `Gruppens median ligger inom ±${svTal(nara, nara % 1 ? 1 : 0)} % av referensen.`
-        });
-    }
-
-    return out;
 }
 
 // Prioriteringens egna ord för läget mot referensen (A5, ADR-62). De delar inte namn med uppmärksamhetstrappan för

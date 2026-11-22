@@ -400,5 +400,5 @@ function _exportActionChecklistCSVExport(items, done) {
     rows.push(['Hanterade', items.filter(it => done.has(it.id)).length]);
     const parNot = _attGoraParNot();
     if (parNot) rows.push(['Utelämnade par', parNot]);
-    _downloadCSV(rows, 'atgardslista_' + new Date().toISOString().slice(0, 10));
+    _downloadCSV(rows, 'atgardslista_' + idagDatum());
 }

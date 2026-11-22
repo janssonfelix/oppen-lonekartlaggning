@@ -174,7 +174,7 @@ export const MODULES = [
     {
         // Prioriteringsanalysen (ren modell; referensen kommer in som funktion från adaptern)
         file: 'prioritering.js', ns: '__mirrorPrioritering',
-        expose: { prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening', prioKonstanter: '_prKonstanter' }
+        expose: { prioritera: '_prPrioritera', arsbeloppMening: '_prArsbeloppMening', prioKonstanter: '_prKonstanter', motiveringsgrunder: '_prMotiveringsgrunder' }
     },
     {
         // Livscykelmodellen (log-lön med kön×ålder och BAS-indikatorer); importerar stat.js
@@ -214,6 +214,12 @@ export const MODULES = [
     {
         file: 'referens.js', ns: '__mirrorReferens',
         expose: { namnFranFil: '_refNamnFranFil' }
+    },
+    {
+        // Förhandskontrollen av lönefilen: tolkningen av de tio första raderna, sammandraget och varningarna.
+        // Underlagets kvalitet importerar åldersgränsen: före det.
+        file: 'forhandskontroll.js', ns: '__mirrorForhandskontroll',
+        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser', namnIYrkesfaltetText: '_fkNamnIYrkesfaltetText', namnIYrkesfaltetRadnr: '_fkNamnIYrkesfaltetRadnr' }
     },
     {
         file: 'datakvalitet.js', ns: '__mirrorDatakvalitet',
@@ -315,11 +321,6 @@ export const MODULES = [
         file: 'importprofiler.js', ns: '__mirrorImportprofiler',
         expose: { valideraImportprofil: '_ipValidera', valideraImportprofiler: '_ipValideraLista', matchaImportprofil: '_ipMatcha',
                   profilFranMappning: '_ipFranMappning', importprofilerTillJson: '_ipTillJson', inbyggdaProfiler: '_ipInbyggda' }
-    },
-    {
-        // Förhandskontrollen av lönefilen: tolkningen av de tio första raderna, sammandraget och varningarna.
-        file: 'forhandskontroll.js', ns: '__mirrorForhandskontroll',
-        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser', namnIYrkesfaltetText: '_fkNamnIYrkesfaltetText', namnIYrkesfaltetRadnr: '_fkNamnIYrkesfaltetRadnr' }
     },
     {
         // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.

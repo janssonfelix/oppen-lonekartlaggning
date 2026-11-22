@@ -2832,7 +2832,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       "Rimlighet",
       "OK",
       0,
-      "0 rader (0 %) har lön under 20 000 eller över 250 000 kr, ålder utanför 18–70 eller BAS som inte är en bokstav.",
+      "0 rader (0 %) har lön under 15 000 eller över 250 000 kr, ålder utanför 16–75 eller BAS som inte är en bokstav.",
     ],
     [
       "Modell",
@@ -7704,7 +7704,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
       "Rimlighet",
       "OK",
       0,
-      "0 rader (0 %) har lön under 20 000 eller över 250 000 kr, eller BAS som inte är en bokstav.",
+      "0 rader (0 %) har lön under 15 000 eller över 250 000 kr, eller BAS som inte är en bokstav.",
     ],
     [
       "Modell",

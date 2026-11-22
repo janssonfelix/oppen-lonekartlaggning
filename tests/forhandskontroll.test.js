@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     byggForhandskontroll, forhandskontrollGranser, FK_ANTAL_RADER, FK_ARSLON_MEDIAN, FK_TIMLON_MEDIAN,
-    FK_SPRIDNING_GANGER, FK_ALDER_MIN, FK_ALDER_MAX, FK_SMA_GRUPP, FK_NAMN_RADNR, namnIYrkesfaltetText, namnIYrkesfaltetRadnr,
+    FK_SPRIDNING_GANGER, FK_ALDER_MIN, FK_ALDER_MAX, FK_SMA_GRUPP, FK_NAMN_RADNR, FK_LON_MIN, FK_LON_MAX, FK_BAS, namnIYrkesfaltetText, namnIYrkesfaltetRadnr,
 } from '../src/lib/forhandskontroll.js';
 
 const MAPPNING = { bas: 'BAS', yrke: 'AID', lon: 'Månadslön', alder: 'Ålder', kon: 'Kön' };
@@ -36,14 +36,15 @@ const koder = fk => fk.varningar.map(v => v.kod);
 const trettio = (andra = r => r) => Array.from({ length: 30 }, (_, i) => andra(ren(i), i));
 
 describe('gränsvärdena', () => {
-    it('är designens: tio rader, årslön över 150 000, timlön under 5 000, spridning tio gånger medianen, ålder 16–75, grupper under tio', () => {
+    it('är designens: tio rader, årslön över 150 000, timlön under 5 000, spridning tio gånger medianen, ålder 16–75, grupper under tio, lön 15 000–250 000, BAS en bokstav', () => {
         expect(FK_ANTAL_RADER).toBe(10);
         expect(FK_ARSLON_MEDIAN).toBe(150000);
         expect(FK_TIMLON_MEDIAN).toBe(5000);
         expect(FK_SPRIDNING_GANGER).toBe(10);
         expect([FK_ALDER_MIN, FK_ALDER_MAX]).toEqual([16, 75]);
         expect(FK_SMA_GRUPP).toBe(10);
-        expect(forhandskontrollGranser()).toEqual({ antalRader: 10, arslonMedian: 150000, timlonMedian: 5000, spridningGanger: 10, alderMin: 16, alderMax: 75, smaGrupp: 10, namnRadnr: 5 });
+        expect([FK_LON_MIN, FK_LON_MAX]).toEqual([15000, 250000]);
+        expect(forhandskontrollGranser()).toEqual({ antalRader: 10, arslonMedian: 150000, timlonMedian: 5000, spridningGanger: 10, alderMin: 16, alderMax: 75, smaGrupp: 10, namnRadnr: 5, lonMin: 15000, lonMax: 250000, bas: FK_BAS });
     });
 });
 
@@ -135,10 +136,21 @@ describe('byggForhandskontroll: felläsningar', () => {
         const rader = trettio((r, i) => (i < 12 ? { ...r, ra: { ...r.ra, bas: 'C (chef)' }, tolkat: { ...r.tolkat, bas: 'C (CHEF)' } } : r));
         const fk = bygg(rader);
         expect(fk.tolkning[0].celler.bas).toMatchObject({ 'rå': 'C (chef)', tolkat: 'C (CHEF)', text: 'C (chef) tolkat som C (CHEF)' });
-        expect(fk.tolkning[0].celler.bas.fel).toMatch(/A–N/);
+        expect(fk.tolkning[0].celler.bas.fel).toBe('inte en bokstav');
         expect(fk.fordelning.bas.ovanliga).toEqual(['C (CHEF)']);
         expect(koder(fk)).toEqual(['bas-ovanlig']);
         expect(fk.varningar[0].text).toContain('C (CHEF)');
+    });
+    it('varje bokstav A–Ö är ett rimligt BAS-värde; en siffra eller två bokstäver ger varning', () => {
+        const med = varden => trettio((r, i) => { const bas = varden[i % varden.length]; return { ...r, ra: { ...r.ra, bas }, tolkat: { ...r.tolkat, bas } }; });
+        const fk = bygg(med(['P', 'Ö']));
+        expect(fk.tolkning.map(t => t.celler.bas.fel)).toEqual(Array(10).fill(null));
+        expect(fk.fordelning.bas.ovanliga).toEqual([]);
+        expect(koder(fk)).not.toContain('bas-ovanlig');
+        const fel = bygg(med(['1', 'AB']));
+        expect(fel.tolkning[0].celler.bas.fel).toBe('inte en bokstav');
+        expect(fel.fordelning.bas.ovanliga).toEqual(['1', 'AB']);
+        expect(fel.varningar.find(v => v.kod === 'bas-ovanlig').text).toBe('2 BAS-värden är inte en bokstav (1, AB): kontrollera BAS-kolumnen.');
     });
     it('ålder utanför 16–75: cellen markeras och antalet står i varningen', () => {
         const rader = trettio((r, i) => (i === 0 ? { ...r, ra: { ...r.ra, alder: '14' }, tolkat: { ...r.tolkat, alder: 14 } }
@@ -150,6 +162,30 @@ describe('byggForhandskontroll: felläsningar', () => {
         expect(koder(fk)).toEqual(['alder-utanfor']);
         expect(fk.varningar[0].text).toMatch(/2 personer/);
         expect(fk.varningar[0].text).not.toMatch(/14|81/);
+    });
+    describe('ålder utanför 16–75: radnumren och följden', () => {
+        // Poster med radnummer, som inläsningen ger dem: åldern 12 eller 88 på de angivna raderna, 40 på de andra.
+        const poster = utanfor => Array.from({ length: 30 }, (_, i) => ({ bas: 'C', lon: 30000, kon: i % 2 ? 'man' : 'kvinna',
+            radnr: 2 + i * 7, alder: utanfor.includes(2 + i * 7) ? (i % 2 ? 88 : 12) : 40 }));
+        const text = (utanfor, over = d => d) => bygg(trettio(), { data: over(poster(utanfor)) }).varningar.find(v => v.kod === 'alder-utanfor').text;
+        it('radnumren i stigande ordning, och följden för analysen', () => {
+            expect(text([2, 72, 163])).toBe('3 personer har en ålder utanför 16–75 år (rad 2, 72 och 163). '
+                + 'Raderna räknas med i åldersjusteringen tills filen är rättad: kontrollera ålderskolumnen och läs in filen igen.');
+            expect(text([163, 2], d => [...d].reverse())).toMatch(/\(rad 2 och 163\)/);
+        });
+        it('en person i singular', () => {
+            expect(text([9])).toBe('1 person har en ålder utanför 16–75 år (rad 9). '
+                + 'Raden räknas med i åldersjusteringen tills filen är rättad: kontrollera ålderskolumnen och läs in filen igen.');
+        });
+        it('fler än fem: "till exempel" och de fem första', () => {
+            expect(text([2, 9, 16, 23, 30, 37, 44])).toMatch(/^7 personer har en ålder utanför 16–75 år \(till exempel rad 2, 9, 16, 23 och 30\)\. /);
+        });
+        it('utan radnummer (som demodata) bara antalet', () => {
+            expect(text([2, 9], d => d.map(r => ({ ...r, radnr: null })))).toMatch(/^2 personer har en ålder utanför 16–75 år\. Raderna räknas med/);
+        });
+        it('ingen ålder ur filen i texten', () => {
+            expect(text([2, 9, 16])).not.toMatch(/\b(12|88)\b/);
+        });
     });
     it('en lön som inte går att läsa och en saknad BAS: cellerna markeras och bortfallet redovisas', () => {
         const rader = trettio((r, i) => (i === 0 ? { ...r, anvands: false, ra: { ...r.ra, lon: 'saknas' }, tolkat: { ...r.tolkat, lon: 0 }, status: { ...r.status, lon: 'invalid' } }

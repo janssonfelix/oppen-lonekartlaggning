@@ -2,139 +2,6 @@
 // Copyright 2026 Felix Jansson
 
 // ---- Datavalideringsrapport (efter CSV-parse) ----
-/**
- * Reality-check-panel.
- *
- * Före HR börjar tolka analyserna, kör en sanity-check av att underlaget
- * är rimligt. Fångar t.ex. fel kolumnmappning (95 % män), orealistiska
- * åldrar (medianålder 19 år) eller löner som lämnats i ören istället för
- * kronor. Skyddar mot tysta tolkningsfel.
- *
- * Klassificering av varje check:
- *   ✅ grönt   — inom rimligt intervall
- *   ⚠ gult    — utanför typiskt intervall men inte omöjligt
- *   🔴 rött   — extremt avvikande, kontrollera mappningen
- */
-function renderRealityCheck() {
-    const wrap = document.getElementById('reality-check');
-    if (!wrap) return;
-    if (!state.data.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-
-    const d = state.data;
-    const n = d.length;
-
-    // Check 1: könsfördelning
-    const nKv = d.filter(r => arKvinna(r)).length;
-    const pctKv = n > 0 ? nKv / n * 100 : 0;
-    let konStatus, konMsg;
-    if (pctKv >= 30 && pctKv <= 70) {
-        konStatus = 'ok';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Inom typiskt kommunalt intervall (30–70 %).`;
-    } else if (pctKv >= 15 && pctKv <= 85) {
-        konStatus = 'warn';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Skev men inte omöjlig — vanligt i specialiserade organisationer (t.ex. teknisk eller socialtjänst).`;
-    } else {
-        konStatus = 'err';
-        konMsg = `Könsfördelning: <strong>${svPct(pctKv, 1)} kvinnor, ${svPct((100 - pctKv), 1)} män</strong>. Extremt avvikande — <strong>kontrollera att kön-kolumnen är korrekt mappad</strong>. En vanlig felkälla är att kolumnen innehåller ett ID istället för "Kvinna"/"Man".`;
-    }
-
-    // Check 2: medianålder
-    const ages = d.map(r => r.alder).filter(a => a > 0);
-    const medAge = ages.length ? Stat.median(ages) : 0;
-    const minAge = ages.length ? Math.min(...ages) : 0;
-    const maxAge = ages.length ? Math.max(...ages) : 0;
-    let alderStatus, alderMsg;
-    if (!ages.length) {
-        // Ålderskolumnen är valfri (ADR-64).
-        alderStatus = 'warn';
-        alderMsg = 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.';
-    } else if (medAge >= 38 && medAge <= 55) {
-        alderStatus = 'ok';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Inom typiskt kommunalt intervall (38–55 år).`;
-    } else if (medAge >= 30 && medAge <= 60) {
-        alderStatus = 'warn';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Något utanför typiskt intervall — kontrollera om datan kommer från en specifik organisation med ovanlig demografi.`;
-    } else {
-        alderStatus = 'err';
-        alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Extremt avvikande — <strong>kontrollera ålders-kolumnen</strong>. Vanlig felkälla är att ett anställningsdatum lästs in som ålder, eller att kolumnen visar år för anställning istället.`;
-    }
-
-    // Check 3: lönespridning (P10, median, P90)
-    const lons = d.map(r => r.lon).filter(l => l > 0);
-    const p10 = Stat.quantile(lons, 0.10);
-    const p50 = Stat.median(lons);
-    const p90 = Stat.quantile(lons, 0.90);
-    const fmtK = v => svKr(v);
-    let lonStatus, lonMsg;
-    if (p50 >= 25000 && p50 <= 60000) {
-        lonStatus = 'ok';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Inom typiskt svenskt kommunintervall.`;
-    } else if (p50 >= 15000 && p50 < 25000) {
-        lonStatus = 'warn';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Låg medianlön — finns deltidsanställda räknade som heltid i underlaget? Lönen bör vara heltidsekvivalent.`;
-    } else if (p50 > 60000 && p50 <= 90000) {
-        lonStatus = 'warn';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Hög medianlön — typisk för specialistorganisationer eller äldre data har lönerevisionerats.`;
-    } else {
-        lonStatus = 'err';
-        lonMsg = `Lönespridning: P10 <strong>${fmtK(p10)}</strong> · median <strong>${fmtK(p50)}</strong> · P90 <strong>${fmtK(p90)}</strong>. Extremt avvikande — <strong>kontrollera lön-kolumnen</strong>. Vanlig felkälla: lönen är angiven i ören (multiplicera med 1/100), årslön istället för månadslön (dela med 12), eller deltidsproportionerad istället för heltidsekvivalent.`;
-    }
-
-    // (BAS-maskeringen bedöms nu av kriteriet Jämförbarhet i Underlagets kvalitet, ADR-19.)
-
-    // Check 5: FTE-heuristik — andel löner under heltidsgolvet.
-    // Check 3 fångar bara när MEDIANEN är låg; den vanliga felmoden är blandade
-    // heltids- och ej omräknade deltidslöner (normal median, fet låg svans).
-    // Heltidslöner i kommunal sektor understiger i praktiken inte ~20 000 kr/mån;
-    // deltid på 50–75 % hamnar ofta på 12–18 000 kr.
-    const FTE_GOLV = 20000;
-    const nLow = lons.filter(l => l < FTE_GOLV).length;
-    const pctLow = lons.length ? (nLow / lons.length) * 100 : 0;
-    let fteStatus, fteMsg;
-    if (nLow === 0) {
-        fteStatus = 'ok';
-        fteMsg = `Inga löner under ${fmtK(FTE_GOLV)}/mån — förenligt med heltidsomräknade (FTE) löner, som verktyget förutsätter.`;
-    } else if (pctLow <= 2) {
-        fteStatus = 'ok';
-        fteMsg = `${nLow} lön${nLow === 1 ? '' : 'er'} (${svPct(pctLow, 1)}) under ${fmtK(FTE_GOLV)}/mån — enstaka undantag (t.ex. ungdomsanställningar) är normalt. Verktyget förutsätter heltidsomräknade (FTE) löner.`;
-    } else if (pctLow <= 15) {
-        fteStatus = 'warn';
-        fteMsg = `<strong>${nLow}</strong> löner (<strong>${svPct(pctLow, 1)}</strong>) ligger under ${fmtK(FTE_GOLV)}/mån — kontrollera att månadslönerna är <strong>heltidsomräknade (FTE)</strong>. Ej omräknade deltidslöner snedvrider hela könsanalysen, eftersom deltid oftast är kvinnodominerad.`;
-    } else {
-        fteStatus = 'err';
-        fteMsg = `<strong>${nLow}</strong> löner (<strong>${svPct(pctLow, 1)}</strong>) ligger under ${fmtK(FTE_GOLV)}/mån — underlaget ser <strong>inte</strong> heltidsomräknat ut. Exportera lönerna som heltidsekvivalenter (FTE) ur lönesystemet innan analysen används; ej omräknade deltidslöner gör könsjämförelserna missvisande.`;
-    }
-
-    const icon = s => s === 'ok' ? ikon('bock') : s === 'warn' ? ikon('statusVarning') : ikon('statusKritisk');
-    const allStatuses = [konStatus, alderStatus, lonStatus, fteStatus];
-    const hasErr = allStatuses.includes('err');
-    const hasWarn = allStatuses.includes('warn');
-    const headerClass = hasErr ? 'has-err' : hasWarn ? 'has-warn' : 'all-ok';
-    wrap.style.display = 'block';
-    wrap.className = 'reality-check ' + headerClass;
-    wrap.innerHTML = `
-        <h4 class="text-dampad-xs versal marg-0-0-6">Rimlighet i detalj</h4>
-        <p class="text-dampad-sm marg-0-0-12">
-            Fångar typiska mappningsfel (fel kolumn, fel enhet, fel kön-kodning). Verktyget kan inte
-            avgöra om värdena är "rätt" — bara att de är inom rimliga intervall.
-        </p>
-        <ul class="reality-list utan-punkter marg-0 pad-0">
-            <li class="rc-${konStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(konStatus)}</span>${konMsg}
-            </li>
-            <li class="rc-${alderStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(alderStatus)}</span>${alderMsg}
-            </li>
-            <li class="rc-${lonStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(lonStatus)}</span>${lonMsg}
-            </li>
-            <li class="rc-${fteStatus} rund-0-4-4-0 fs-md lh-1_5 marg-b-6 pad-8-10">
-                <span class="mr-6">${icon(fteStatus)}</span>${fteMsg}
-            </li>
-        </ul>
-    `;
-}
-
 function renderDataValidationReport() {
     const wrap = document.getElementById('data-validation-report');
     if (!wrap) return;
@@ -242,9 +109,9 @@ function renderDataValidationReport() {
     `;
 }
 
-// Underlagets kvalitet (ADR-19): rimlighetskontrollen och inläsningsrapporten är
-// underlag i panelen; statusen kommer från bedomningUnderlag().
-// Anropas efter renderRealityCheck() + renderDataValidationReport().
+// Underlagets kvalitet (ADR-19): inläsningsrapporten är underlag i panelen;
+// statusen kommer från bedomningUnderlag().
+// Anropas efter renderDataValidationReport().
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
 function syncDatakvalitetPanel(val) {
     renderUnderlagetsKvalitet(val);

@@ -1,280 +1,13 @@
-/**
- * Röktest (jsdom): Sortering, organisationsneutralt läge, organisationspaket, licens och demosidan.
- *
- * Utbrutet ur smoke.test.js så att Vitest fördelar röktesterna över flera arbetare; varje describe-block
- * skapar sina egna fönster via createAppWindow (tests/helpers/app-harness.js).
- */
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// Organisationspaketet och organisationens namn i appen: läsa in och skapa paketet, escapning, byten mellan paket och
+// demot, namnen på organisationen och jämförelsestatistiken och namnen i etiketterna.
 import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { bakaIn, lasUt } from '../src/lib/organisationsfil.js';
-import { laddaXlsx } from './helpers/ktroskel-rigg.js';
-
-describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
-    it('sortering: en notrad (colspan, utan värde) stannar sist i sin grupp åt båda håll', () => {
-        const w = createAppWindow();
-        const d = w.document;
-        const t = d.createElement('table'); t.id = 'sorttest';
-        t.innerHTML = '<thead><tr><th>Namn</th><th>Värde</th></tr></thead><tbody>'
-            + '<tr class="group-header"><td colspan="2">BAS A</td></tr>'
-            + '<tr><td>x</td><td data-sort-value="1">1</td></tr><tr><td>y</td><td data-sort-value="2">2</td></tr>'
-            + '<tr><td colspan="2">not</td></tr></tbody>';
-        d.body.appendChild(t);
-        w.enableTableSort('sorttest');
-        const th = t.querySelectorAll('th')[1];
-        for (let i = 0; i < 2; i++) {
-            th.click();
-            const rader = [...t.querySelectorAll('tbody tr')].map(r => r.textContent);
-            expect(rader[rader.length - 1]).toBe('not');
-        }
-    });
-    it('Att göra: länkarna går att skilja åt för skärmläsare; datakvalitet leder till Underlagets kvalitet', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const d = w.document;
-        const lankar = [...d.querySelectorAll('#att-gora a[data-go-to-tab]')];
-        expect(lankar.length).toBeGreaterThan(4);
-        // Samma namn får bara förekomma för samma mål (Börja här och hela listan pekar på samma punkt).
-        const mal = new Map();
-        for (const a of lankar) {
-            const namn = a.getAttribute('aria-label') || a.textContent.trim();
-            const dit = a.dataset.goToTab + '#' + (a.dataset.goToAnchor || '');
-            expect(mal.get(namn) ?? dit, namn).toBe(dit);
-            mal.set(namn, dit);
-        }
-        expect([...mal.keys()].filter(n => /^(Visa|Gå dit|öppna fliken) →$/.test(n))).toEqual([]);
-        for (const a of lankar.filter(a => a.dataset.goToTab === 'dashboard')) expect(a.dataset.goToAnchor).toBe('underlagets-kvalitet');
-        const cb = [...d.querySelectorAll('#att-gora .act-cb')].map(c => c.getAttribute('aria-label'));
-        expect(new Set(cb).size).toBe(cb.length);
-    });
-    it('att rita en annan flik (t.ex. för att kopiera ett diagram) flyttar inte sidans navigering', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const d = w.document;
-        d.querySelector('.nav-item[data-tab="dashboard"]').click();
-        w.__renderTabContent('matrix');
-        expect(d.querySelectorAll('#view-regression .flow-next-bar, #view-lika-yrken .flow-next-bar, #view-skevhet .flow-next-bar').length).toBe(0);
-        expect(d.getElementById('view-dashboard').classList.contains('active') || d.getElementById('view-dashboard').style.display === 'block').toBe(true);
-    });
-    it('Att göra: oförklarat gap skrivs med riktningsord, inte med minustecken', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const it = w.eval('buildActionChecklist()').find(x => x.id === 'reg-oforklarat');
-        expect(it).toBeTruthy();
-        expect(it.titel).not.toMatch(/: [−-]/);
-        expect(it.titel).toMatch(/kvinnor .* (lägre|högre) lön än män/i);
-    });
-    it('Rapporttext räknar likvärdighetsparen en gång och sparar resultatet', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state.likvardighet.result = null;
-        const orig = w.computeLikvardighetPairs;
-        let n = 0;
-        w.computeLikvardighetPairs = (...a) => { n++; return orig(...a); };
-        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
-        w.__rapportunderlagBlock();
-        w.eval('_handlingsplanSeedRows()');
-        expect(n).toBe(1);
-        expect(w.__state.likvardighet.result).toBeTruthy();
-    });
-    it('ny jämförelsestatistik nollställer det sparade likvärdighetsresultatet', async () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const { readFileSync } = await import('node:fs');
-        const { join, dirname } = await import('node:path');
-        const { fileURLToPath } = await import('node:url');
-        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-        const sentinel = { pairs: [], sentinel: true };
-        w.__state.likvardighet.result = sentinel;
-        const input = w.document.getElementById('file-input-stat');
-        const fil = new w.File(['AID;BAS;Median\n5301;C;30000\n'], 'statistik.csv', { type: 'text/csv' });
-        Object.defineProperty(input, 'files', { configurable: true, value: [fil] });
-        input.dispatchEvent(new w.Event('change'));
-        for (let i = 0; i < 50 && !/inlästa|Fel/.test(w.document.getElementById('stat-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
-        expect(w.document.getElementById('stat-status').textContent).toMatch(/inlästa/);
-        expect(w.__state.likvardighet.result).not.toBe(sentinel);
-    });
-    it('kopiera diagram: urklippet begärs direkt i klicket (Safari), bilden levereras som ett löfte', async () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const fångat = [];
-        w.ClipboardItem = class { constructor(o) { this.o = o; } };
-        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
-        w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');   // diagramkärnans bild: jsdom har ingen canvas
-        const p = w.__kopieraRapportDiagram('chart-perbas-gap');
-        expect(fångat).toHaveLength(1);                      // före första await
-        expect(typeof fångat[0].o['image/png'].then).toBe('function');
-        expect(await p).toBe('urklipp');
-        expect((await fångat[0].o['image/png']).type).toBe('image/png');
-    });
-    it('Likvärdigt arbete i poängläget: fliken säger att kraven mäts med poäng och Lägre krav förklarar varför den är tom', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state.arbetsvardering = { byKey: new Map(w.__getData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
-        w.__state.likvardighet.result = null;
-        w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
-        const t = w.document.getElementById('view-likvardighet').textContent;
-        expect(t).toMatch(/Mått på kraven: arbetsvärdering \(poäng\)/);
-        expect(t).toMatch(/Med arbetsvärderingspoäng jämförs AID-etiketter redan över BAS-gränserna/);
-    });
-    // ADR-76: i poängläget används jämförelsestatistiken inte, och varken fliken eller exporterna beskriver en reserv
-    // eller visar rader som alltid är 0 (externa par, reserven per BAS, gemensamma BAS-intervall).
-    const poangFonster = () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state.arbetsvardering = { byKey: new Map(w.__getData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
-        w.__state.likvardighet.result = null;
-        return w;
-    };
-    it('Likvärdigt arbete i poängläget: introduktionen beskriver ingen reserv och inga gemensamma BAS-intervall', () => {
-        const w = poangFonster();
-        w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
-        const t = w.document.getElementById('view-likvardighet').textContent.replace(/\s+/g, ' ');
-        expect(t).not.toMatch(/används jämförelsestatistiken i stället/);
-        expect(t).toMatch(/Steg 2: Välj jämförelseetiketter med lika eller lägre poäng/);
-        expect(t).not.toMatch(/gemensamma BAS-intervall/);
-        expect(t).not.toMatch(/primär jämförelsekälla/);   // de egna är den enda källan med poäng
-        expect(t).toMatch(/Steg 2a — Organisationens interna jämförelseetiketter \(\d+ st\) — den enda jämförelsekällan med poäng/);
-    });
-    it('Likvärdigt arbete i poängläget: rutan Inga kandidatpar räknar inga interna och externa jämförelseetiketter', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        // De kvinnodominerade AID-etiketterna får lägst poäng: ingen jämförelseetikett har lika eller lägre poäng.
-        const andel = new Map();
-        for (const r of w.__getData()) {
-            const n = `${r.aid}|${r.bas}`, a = andel.get(n) || [0, 0];
-            andel.set(n, [a[0] + (r.kon.includes('kvinna') ? 1 : 0), a[1] + 1]);
-        }
-        w.__state.arbetsvardering = { byKey: new Map([...andel].map(([n, [kv, alla]]) => [n, kv / alla > 0.6 ? 1 : 1000])) };
-        w.__state.likvardighet.result = null;
-        w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
-        const t = w.document.getElementById('view-likvardighet').textContent.replace(/\s+/g, ' ');
-        expect(t).toMatch(/Inga kandidatpar hittades/);
-        expect(t).not.toMatch(/externa jämförelseetiketter/);
-        expect(t).toMatch(/Organisationen har \d+ kvinnodominerade grupper och \d+ jämförelseetiketter\./);
-    });
-    it('Likvärdigt arbete i poängläget: CSV- och Excel-exportens metadata beskriver ingen reserv', async () => {
-        const w = poangFonster();
-        expect(w.eval('likvardighetResultat()').pairs.length).toBeGreaterThan(0);
-        let csv = null;
-        w.eval('_downloadCSV = rows => { window.__lvCsv = rows; }');
-        w.eval('exportLikvardighetCSV()');
-        csv = w.__lvCsv;
-        const csvMeta = csv.slice(csv.findIndex(r => r[0] === '# METADATA'));
-        const csvText = csvMeta.map(r => r.join(' | ')).join('\n');
-        expect(csvText).not.toMatch(/externa/);
-        expect(csvText).not.toMatch(/jämförda med jämförelsestatistiken/);
-        expect(csvText).not.toMatch(/extern =/);
-
-        await laddaXlsx(w);
-        let bok = null;
-        w.XLSX.writeFile = wb => { bok = wb; };
-        w.eval('exportLikvardighet()');
-        const meta = w.XLSX.utils.sheet_to_json(bok.Sheets.Metadata, { header: 1, raw: true });
-        const rad = namn => meta.find(r => r[0] === namn);
-        const metaText = meta.map(r => r.join(' | ')).join('\n');
-        expect(metaText).not.toMatch(/externa par|jämförda med jämförelsestatistiken|Gemensamma BAS/);
-        expect(rad('Modell')[1]).not.toMatch(/extern/);
-        expect(rad('Modell')[1]).toMatch(/poäng/);
-        expect(rad('Jämförelsekälla')[1]).not.toMatch(/i stället/);
-        expect(rad('95 % KI')[1]).not.toMatch(/Extern/);
-        expect(rad('Mått på kraven')[1]).toMatch(/poäng/);
-    });
-    it('Att göra: rubrikordning h2 → h3, och länken till Jämförelse döljs utan jämförelsestatistik', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const d = w.document;
-        const rubriker = [...d.querySelectorAll('#att-gora h1, #att-gora h2, #att-gora h3, #att-gora h4')].map(h => Number(h.tagName[1]));
-        expect(rubriker[0]).toBe(2);
-        for (let i = 1; i < rubriker.length; i++) expect(rubriker[i] - rubriker[i - 1], `rubrik ${i}`).toBeLessThanOrEqual(1);
-        w.__state.statistik = [];
-        w.eval('updateCompliance()');
-        const lank = d.querySelector('#comp-bm .comp-lank');
-        expect(lank.hidden || lank.closest('[hidden]') !== null).toBe(true);
-    });
-    it('CSV med bara CR som radslut och en försättsrad: rubriken hittas och radnumren stämmer', async () => {
-        const { readFileSync } = await import('node:fs');
-        const { join, dirname } = await import('node:path');
-        const { fileURLToPath } = await import('node:url');
-        const w = createAppWindow();
-        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-        const rader = ['Lönerapport september', 'BAS;Månadslön;Ålder;Kön;AID', 'A;30000;40;Kvinna;5301', 'A;31000;41;Man;5301'];
-        w.loadStructureFile(new w.File([rader.join('\r')], 'p.csv', { type: 'text/csv' }));
-        for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
-        expect(w.__state.data.map(r => r.radnr)).toEqual([3, 4]);
-    });
-    it('Att göra: procenttal med decimalkomma och riktningsord, inga bindestreck som minus', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const texter = w.eval('buildActionChecklist()').flatMap(it => [it.titel, it.detalj]);
-        expect(texter.length).toBeGreaterThan(3);
-        for (const t of texter) {
-            expect(t, t).not.toMatch(/\d\.\d/);
-            expect(t, t).not.toMatch(/(^|[\s(])[-−]\d/);
-        }
-    });
-    it('Om verktyget visar licenstexterna från den inbyggda mallen', () => {
-        const w = createAppWindow();
-        const t = w.document.createElement('template'); t.id = 'licenstexter';
-        t.innerHTML = '<pre>Permission is hereby granted — testtext</pre>';
-        w.document.body.appendChild(t);
-        w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
-        expect(w.document.getElementById('om-licenstexter').textContent).toContain('Permission is hereby granted');
-        expect(w.document.getElementById('view-info').textContent).toContain('riskanalys.md');
-    });
-});
-
-describe('organisationsneutralt standardläge', () => {
-    const rader = () => {
-        const r = [];
-        for (let i = 0; i < 60; i++) r.push({ bas: 'ABC'[i % 3], kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 150, alder: 30 + (i % 30),
-            yrke: `${100 + (i % 4)} Yrke`, aid: String(100 + (i % 4)), yrkeLabel: 'Yrke', radnr: i + 2 });
-        return r;
-    };
-    const utanReferens = () => {
-        const w = createAppWindow();
-        w.__state.data = rader();
-        w.eval('populateSelects(); unlockTabs(); updateCompliance();');
-        return w;
-    };
-    it('ingen inbyggd referens och neutral profil', () => {
-        const w = createAppWindow();
-        expect(w.__state.policy).toEqual([]);
-        expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
-        expect(w.document.getElementById('referens-status').textContent).toContain('Ingen referens inläst');
-        expect(w.__state.profile.name).toBe('Organisationen');
-        expect(w.__state.profile.benchmarkLabel).toBe('jämförelsestatistiken');
-        expect(w.document.getElementById('profile-preset-select')).toBeNull();
-    });
-    it('Prioritering och Lönepolitik visar vad som behöver läsas in', () => {
-        const w = utanReferens();
-        w.document.querySelector('.nav-item[data-tab="prioritering"]').click();
-        expect(w.document.getElementById('view-prioritering').textContent).toMatch(/Läs in organisationens lönepolitiska ställningstagande/);
-        w.__renderTabContent('benchmark');
-        expect(w.document.getElementById('avsnitt-jmf-stallningstagande').textContent).toMatch(/Läs in organisationens lönepolitiska ställningstagande/);
-        expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/Kräver lönepolitiskt ställningstagande/);
-    });
-    it('Word-utkastet och rapportunderlaget skriver inte null eller undefined utan referens', () => {
-        const w = utanReferens();
-        const texter = [w.__docDraftHtml(), ...w.__rapportunderlagBlock().map(b => w.__ruTillText(b))].join('\n');
-        expect(texter).not.toMatch(/\bnull\b|\bundefined\b/);
-    });
-    it('demoläget använder Exempelkommunen och försvinner med rensningen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        expect(w.eval('referensNamn()')).toBe('Exempelkommunens lönepolitik');
-        expect(w.__state.policy.length).toBeGreaterThan(0);
-        expect(w.__state.profile.name).toBe('Exempelkommunen');
-        w.__clearAllData();
-        expect(w.__state.policy).toEqual([]);
-        expect(w.__state.profile.name).toBe('Organisationen');
-        expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
-    });
-});
-
 
 describe('organisationspaket: läs in och skapa', () => {
     const paket = (over = {}) => ({
@@ -639,54 +372,153 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
     });
 });
 
-describe('Om verktyget: licens', () => {
-    it('avsnittet Referenser anger MIT-licensen och upphovspersonen', () => {
+describe('namn på organisationen och jämförelsestatistiken', () => {
+    it('standard utan namn; namn sätts, genitiv räknas fram, tomt återställer', () => {
         const w = createAppWindow();
-        w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
-        const t = w.document.getElementById('view-info').textContent;
-        expect(t).toMatch(/MIT-licensen/);
-        expect(t).toContain('Felix Jansson');
+        expect(w.eval("orgNamn()")).toBe('Organisationen');
+        expect(w.eval("orgNamn('org.')")).toBe('org.');
+        expect(w.eval("jmfNamn('jämförelsestatistiken')")).toBe('jämförelsestatistiken');
+        expect(w.eval("sattOrgNamn('  Hallsbergs kommun ')").ok).toBe(true);
+        expect(w.eval("orgNamn('org.')")).toBe('Hallsbergs kommun');
+        expect(w.eval("sattJmfNamn('SKR:s statistik')").ok).toBe(true);
+        expect(w.__state.profile).toMatchObject({ benchmarkLabel: 'SKR:s statistik', benchmarkLabelGenitive: 'SKR:s statistiks', benchmarkShort: 'SKR:s statistik' });
+        w.eval("sattOrgNamn(''); sattJmfNamn('')");
+        expect(w.eval("orgNamn()")).toBe('Organisationen');
+        expect(w.__state.profile.benchmarkLabel).toBe('jämförelsestatistiken');
     });
-    it('Om verktyget berättar om nuläget, inte om tidigare versioner', () => {
+    it('personnummer eller e-post avvisas i alla tre namnen', () => {
         const w = createAppWindow();
-        w.document.querySelector('.nav-item[data-tab="info"]').click();
-        const sektioner = [...w.document.querySelectorAll('.info-section-btn')].map(b => b.dataset.section);
-        expect(sektioner.length).toBeGreaterThan(0);
-        let text = '';
-        for (const s of sektioner) {
-            w.eval(`renderInfoTab(${JSON.stringify(s)})`);
-            text += w.document.getElementById('info-tab-content').textContent + '\n';
-        }
-        expect(text).not.toMatch(/Versionshistorik/);
-        expect(text).not.toMatch(/Tidigare visades/);
-        expect(text).not.toMatch(/äldre profile\.json/);
-        expect(text).not.toMatch(/SKL/);
+        w.eval("sattOrgNamn('Kommunen')");
+        const r = w.eval("sattOrgNamn('Anna 19800101-1234')");
+        expect(r.ok).toBe(false);
+        expect(r.fel).toMatch(/personnummer/);
+        expect(w.eval("orgNamn()")).toBe('Kommunen');
+        expect(w.eval("sattJmfNamn('a@b.se')").ok).toBe(false);
+        w.__state.policy = [{ bas: 'C', p10: 1, med: 2, p90: 3 }];
+        w.__state.policyNamn = 'Min referens';
+        expect(w.eval("sattReferensNamn('19800101-1234')").ok).toBe(false);
+        expect(w.__state.policyNamn).toBe('Min referens');
     });
-});
-
-
-describe('demosidan: adressparametern ?demo=1', () => {
-    it('?demo=1 startar demoläget direkt vid laddning', () => {
-        const w = createAppWindow({ url: 'http://localhost/oppen-lonekartlaggning.html?demo=1' });
-        expect(w.__bootErr).toBeUndefined();
-        expect(w.__state.isDemo).toBe(true);
-        expect(w.__state.data.length).toBe(260);
+    it('Dokumentera-fältet och profilen följer varandra; konfigurationsfilen bär namnen', () => {
+        const w = createAppWindow();
+        w.eval("sattOrgNamn('Exempelregionen'); sattJmfNamn('Regionstatistiken')");
+        expect(w.document.getElementById('kl-org-name').value).toBe('Exempelregionen');
+        const kl = w.document.getElementById('kl-org-name');
+        kl.value = 'Ny region'; kl.dispatchEvent(new w.Event('change'));
+        expect(w.eval("orgNamn()")).toBe('Ny region');
+        const cfg = w.__buildConfigSnapshot();
+        expect(cfg.orgName).toBe('Ny region');
+        expect(cfg.jmfNamn).toBe('Regionstatistiken');
+        const w2 = createAppWindow();
+        w2.__applyConfigSnapshot(cfg);
+        expect(w2.eval("orgNamn()")).toBe('Ny region');
+        expect(w2.eval("jmfNamn()")).toBe('Regionstatistiken');
     });
-    it('utan parametern, eller med ett annat värde, laddas ingen data', () => {
-        for (const url of ['http://localhost/', 'http://localhost/?demo=0', 'http://localhost/?demo=ja', 'http://localhost/?data=1']) {
-            const w = createAppWindow({ url });
-            expect(w.__state.data.length, url).toBe(0);
-            expect(w.__state.isDemo, url).toBeFalsy();
-        }
-    });
-});
-
-describe('demot: ställningstagandet följer demolönerna', () => {
-    it('några grupper ligger under ställningstagandet, så att Prioritering har något att visa', () => {
+    it('demot sätter Exempelkommunen; Rensa och ett paket ersätter', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('prioritering');
-        expect(w.document.getElementById('view-prioritering').textContent).not.toMatch(/Inga grupper under referensen/);
+        expect(w.eval("orgNamn()")).toBe('Exempelkommunen');
+        w.eval('_rensaAllData()');
+        expect(w.eval("orgNamn()")).toBe('Organisationen');
+        expect(w.eval("jmfNamn()")).toBe('Jämförelsestatistiken');
+        w.eval("sattOrgNamn('Mitt namn')");
+        const paket = JSON.stringify({ format: 'lonekartlaggning-organisationspaket', version: 1, organisation: { namn: 'Paketkommunen' }, skapat: '2026-09-28',
+            profil: { jamforelseNamn: 'Paketstatistiken' }, referens: { rader: [{ bas: 'C', p10: 1, med: 2, p90: 3 }] } });
+        w.eval(`lasInPaket(${JSON.stringify(paket)}, 'p.json')`);
+        expect(w.eval("orgNamn()")).toBe('Paketkommunen');
+        expect(w.eval("jmfNamn()")).toBe('Paketstatistiken');
+    });
+});
+
+describe('namnen i etiketterna', () => {
+    const oppna = () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__state.statistik = w.__state.data.slice(0, 40).map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }));
+        w.__state.statistikHasP10 = w.__state.statistikHasP90 = true;
+        w.eval("sattOrgNamn('Testkommunen'); sattJmfNamn('Teststatistiken')");
+        return w;
+    };
+    const serier = (w, id) => ((w.document.getElementById(id)._figur || {}).lager || []).map(l => l.serie);
+    it('diagramserier: Jämförelsestatistik, Lönepolitik, Ålder & karriär', () => {
+        const w = oppna();
+        w.__renderTabContent('benchmark');
+        expect(serier(w, 'chart-jamforelse-spann')).toEqual(expect.arrayContaining(['Testkommunen P10–P90', 'Testkommunen median', 'Teststatistiken P10–P90']));
+        w.__renderTabContent('lonepolitik');
+        expect(serier(w, 'chart-lp-bandmap')).toContain('Testkommunen (P10–P90)');
+    });
+    it('tabellrubriker: Likvärdigt arbete och Jämförelsestatistik', () => {
+        const w = oppna();
+        w.__renderTabContent('likvardighet');
+        const lv = w.document.getElementById('likvardighet-content').textContent;
+        expect(lv).toMatch(/Median Testkommunen/);
+        expect(lv).toMatch(/Kvinnodom\. AID-etikett \(Testkommunen\)/);
+        w.__renderTabContent('benchmark');
+        const th = [...w.document.querySelectorAll('#benchmark-table thead th')].map(t => t.textContent.trim());
+        expect(th).toContain('P10 Testkommunen');
+        expect(th).toContain('Median Testkommunen');
+    });
+    it('utan namn: etiketterna som i dag', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.eval("sattOrgNamn('')");   // demot heter Exempelkommunen
+        w.__renderTabContent('likvardighet');
+        expect(w.document.getElementById('likvardighet-content').textContent).toMatch(/Median org\./);
+        w.__renderTabContent('lonepolitik');
+        expect(serier(w, 'chart-lp-bandmap')).toContain('Organisationen (P10–P90)');
+    });
+    it('namn med <, & och %{x} visas som text', () => {
+        const w = oppna();
+        w.eval("sattOrgNamn('A<b>&%{x}')");
+        w.__renderTabContent('likvardighet');
+        expect(w.document.getElementById('likvardighet-content').innerHTML).not.toMatch(/<b>&/);
+        expect(w.document.getElementById('likvardighet-content').textContent).toMatch(/Median A<b>&%\{x\}/);
+    });
+});
+
+describe('Jämförelsestatistik, Översikt och namn: detaljer — namn', () => {
+    const medStatistik = () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__state.statistik = w.__state.data.map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }))
+            .filter((s, i, a) => a.findIndex(x => x.aid === s.aid && x.bas === s.bas) === i);
+        w.__state.statistikHasP10 = w.__state.statistikHasP90 = true;
+        return w;
+    };
+    it('namn med < och > tolkas inte i diagrammens förklaringar', () => {
+        const w = medStatistik();
+        w.eval("sattOrgNamn('A<b>B</b>'); sattJmfNamn('<br>X')");
+        w.__renderTabContent('benchmark');
+        const namn = w.document.getElementById('chart-jamforelse-spann')._figur.lager.map(l => l.serie).join('|');
+        expect(namn).not.toMatch(/[<>]/);
+        expect(namn).toMatch(/A‹b›B‹\/b› P10–P90/);
+        expect(w.document.getElementById('chart-jamforelse-spann').querySelector('b, br')).toBeNull();
+        w.__renderTabContent('lonepolitik');
+        expect(w.document.getElementById('chart-lp-bandmap')._figur.lager.map(l => l.serie).join('|')).not.toMatch(/[<>]/);
+    });
+    it('namn ur ett paket kortas till 100 tecken', () => {
+        const w = createAppWindow();
+        const lang = 'K'.repeat(150);
+        const paket = JSON.stringify({ format: 'lonekartlaggning-organisationspaket', version: 1, organisation: { namn: lang }, skapat: '2026-09-28',
+            profil: { jamforelseNamn: 'S'.repeat(150) }, referens: { rader: [{ bas: 'C', p10: 30000, med: 34000, p90: 39000 }] } });
+        w.eval(`lasInPaket(${JSON.stringify(paket)}, 'p.json')`);
+        expect(w.eval('orgNamn()')).toHaveLength(100);
+        expect(w.eval('jmfNamn()')).toHaveLength(100);
+    });
+    it('ställningstagandets namn normaliseras; ett avvisat namn står inte kvar i fältet', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.eval("_lasInReferens([{ bas: 'C', p10: 30000, med: 34000, p90: 39000 }], 'min.csv')");
+        w.eval("sattReferensNamn('  Min   referens ')");
+        expect(w.__state.policyNamn).toBe('Min referens');
+        const f = w.document.getElementById('referens-namn');
+        expect(f.maxLength).toBe(100);
+        f.value = '19800101-1234'; f.dispatchEvent(new w.Event('change'));
+        expect(f.value).toBe('Min referens');
+    });
+    it('namnfälten har var sitt tillgängligt namn', () => {
+        const w = createAppWindow();
+        expect(w.document.getElementById('org-namn').getAttribute('aria-label')).toBe('Organisationens namn');
+        expect(w.document.getElementById('jmf-namn').getAttribute('aria-label')).toBe('Jämförelsestatistikens namn');
     });
 });

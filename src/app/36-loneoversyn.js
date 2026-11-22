@@ -982,7 +982,7 @@ function _exportForecastExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), 'Sammanfattning');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), 'Fördelning');
     _appendMethodSheet(wb);
-    XLSX.writeFile(wb, `loneoversyn_prognos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Löneöversynens prognosunderlag exporterat.');
 }
 (function wireForecast() {

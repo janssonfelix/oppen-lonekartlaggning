@@ -35,7 +35,7 @@ export async function forhandskontroll() {
     ok(l.synligt && l.rader === 10, `avsnittet är utfällt med tolkningen av de tio första raderna (${l.rader} rader)`);
     ok(l.markerade === 2 && l.cellSyns && l.markerad, `${l.markerade} markerade celler syns med egen bakgrund («${l.cellText.trim().slice(0, 60)}»)`);
     ok(/1972 tolkat som \d+ år/.test(l.fodd), `födelseåret visas med tolkningen («${l.fodd.trim().slice(0, 80)}»)`);
-    ok(/^\d varningar$/.test(l.nyckel) && l.varningar.some(t => /A–N/.test(t)) && l.varningar.some(t => /födelseår/.test(t)), `nyckeltalet säger «${l.nyckel}», varningarna nämner BAS och födelseår`);
+    ok(/^\d varningar$/.test(l.nyckel) && l.varningar.some(t => /inte en bokstav/.test(t)) && l.varningar.some(t => /födelseår/.test(t)), `nyckeltalet säger «${l.nyckel}», varningarna nämner BAS och födelseår`);
 
     // Blockerande läge: inställningen på, samma fil väntar på Läs in.
     await sida.evaluate(() => { oppnaInstallningar(); });
