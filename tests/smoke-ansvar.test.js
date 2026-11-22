@@ -86,6 +86,42 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         expect(w.__state.inactivityTimeoutMin).toBe(30);
     });
 
+    it('nedräkningen rensar när 60 sekunder gått, även om en dold flik bara hunnit köra ett tick', () => {
+        const w = createAppWindow();
+        w.__state.data = [{ bas: 'A', kon: 'kvinna', lon: 30000 }];
+        let tick = null;
+        w.setInterval = fn => { tick = fn; return 1; };   // intervallet körs för hand, som när webbläsaren stryper det
+        const start = w.Date.now();
+        w.Date.now = () => start;
+        w.eval('_showInactivityWarning()');
+        expect(w.document.querySelector('.inactivity-warn-overlay')).not.toBeNull();
+        w.Date.now = () => start + 30 * 1000;
+        tick();
+        expect(w.document.getElementById('inactivity-countdown').textContent).toBe('30');
+        w.Date.now = () => start + 61 * 1000;
+        tick();
+        expect(w.document.querySelector('.inactivity-warn-overlay')).toBeNull();
+        expect(w.__state.data).toEqual([]);
+        expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
+    });
+
+    it('tidsväljaren i Vad lagras? gäller direkt när dialogen öppnats, både från knappen och från sökningen', () => {
+        const w = createAppWindow();
+        const valj = min => {
+            const sel = w.document.getElementById('inactivity-timeout-select');
+            sel.value = String(min);
+            sel.dispatchEvent(new w.Event('change', { bubbles: true }));
+        };
+        w.document.getElementById('btn-data-residency').click();
+        valj(30);
+        expect(w.__state.inactivityTimeoutMin).toBe(30);
+        expect(w.document.getElementById('inactivity-status').textContent).toBe('Aktiv (30 min)');
+        w.eval('openDataResidency()');
+        valj(0);
+        expect(w.__state.inactivityTimeoutMin).toBe(0);
+        expect(w.document.getElementById('inactivity-status').textContent).toBe('Av');
+    });
+
     const steg = (w, re) => [...w.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => re.test(r.textContent));
     const status = (w, re) => steg(w, re).querySelector('.ptrack-status').dataset.status;   // klar | delvis | ej | manuell
 
