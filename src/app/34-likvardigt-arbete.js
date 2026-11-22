@@ -736,47 +736,7 @@ function _lvRitaTopp(result) {
 }
 
 // ---- Krav mot lön: en punkt per yrkesgrupp ----------------------------------
-// Kraven är arbetsvärderingspoäng när en poängtabell är inläst, annars BAS-intervallets rang — samma krav-proxy som
-// parbildningen. En grupp som saknar poäng i en inläst tabell placeras efter sitt BAS-intervall: medianpoängen för
-// intervallets värderade grupper; tipset och noten säger det. Finns ingen värderad grupp i
-// intervallet går gruppen inte att placera och namnges i noten.
-// Bara grupper som når tröskeln: diagrammet visar gruppens medianlön. Linjen räknas ur de grupper som visas.
-/**
- * @param {any[]} rader
- * @param {{k?: number, poangByKey?: Map<string, number>|null}} [opts]
- */
-function _lvKravGrupper(rader, { k = 10, poangByKey = null } = {}) {
-    const map = new Map();
-    // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
-    const iGrupp = r => !!(r && String(r.aid || '').trim() && r.lon > 0 && r.bas);
-    const namnrad = namnrader((rader || []).filter(iGrupp), r => String(r.aid).trim() + '|' + r.bas);
-    for (const r of rader || []) {
-        if (!iGrupp(r)) continue;
-        const aid = String(r.aid).trim();
-        const key = aid + '|' + r.bas, nr = namnrad.get(key);
-        if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: nr.yrkeLabel || nr.yrke || aid, n: 0, nKv: 0, loner: [] });
-        const g = map.get(key);
-        g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
-    }
-    const medPoang = !!(poangByKey && poangByKey.size);
-    const alla = [...map.values()].filter(g => g.n >= k).map(g => {
-        const andelKv = 100 * g.nKv / g.n;
-        const poang = medPoang ? (poangByKey.get(g.aid + '|' + g.bas) ?? poangByKey.get(g.aid) ?? null) : null;
-        return { aid: g.aid, bas: g.bas, namn: g.namn, n: g.n, andelKv, median: Stat.median(g.loner), poang,
-                 dominans: konsklassNu(andelKv) };   // den enda definitionen av kvinnodominerat (ADR-60)
-    });
-    if (!medPoang) return { medPoang, grupper: alla, utanPlats: [] };
-    // Medianpoängen per BAS-intervall, ur de värderade grupper som visas.
-    const perBas = new Map();
-    for (const g of alla) if (g.poang != null) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.poang); }
-    const grupper = [], utanPlats = [];
-    for (const g of alla) {
-        if (g.poang != null) grupper.push({ ...g, krav: g.poang });
-        else if (perBas.has(g.bas)) grupper.push({ ...g, krav: Stat.median(perBas.get(g.bas)), uppskattad: true });
-        else utanPlats.push(g);
-    }
-    return { medPoang, grupper, utanPlats };
-}
+// Grupperna räknas i src/lib/likvardighet.js (kravGrupper, här _lvKravGrupper).
 const _LV_KRAV_SERIER = [
     { dominans: 'kvinnodominerad', serie: 'Kvinnodominerad', farg: () => PALETTE.kon.kvinna, symbol: 'cirkel' },
     { dominans: 'mansdominerad', serie: 'Mansdominerad', farg: () => PALETTE.kon.man, symbol: 'triangelHoger' },
@@ -840,7 +800,7 @@ function renderLikvardighetKrav() {
     const el = document.getElementById('chart-likvardighet-krav');
     if (!el) return;
     const av = state.arbetsvardering, k = kTroskel();
-    const u = _lvKravGrupper(state.data || [], { k, poangByKey: av && av.byKey && av.byKey.size ? av.byKey : null });
+    const u = _lvKravGrupper(state.data || [], { k, definition: aidbasDefinition(), grans: aidbasGrans(), poangByKey: av && av.byKey && av.byKey.size ? av.byKey : null });
     const not = document.getElementById('lv-krav-not');
     if (u.grupper.length < 3) {
         rensaFigur(el);

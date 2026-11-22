@@ -88,7 +88,8 @@ export const MODULES = [
         expose: {
             medianGapPct: '_stMedianGapPct', representationByBas: '_stRepresentationByBas',
             quartileDistribution: '_stQuartileDistribution', distributionalGap: '_stDistributionalGap',
-            tillDirektivtecken: '_stTillDirektivtecken', lonebegreppReservation: '_stLonebegreppReservation'
+            tillDirektivtecken: '_stTillDirektivtecken', lonebegreppReservation: '_stLonebegreppReservation',
+            omfang: '_omfang', lonesteg: '_konLonesteg', histogramKlasser: '_konHistogramKlasser'
         }
     },
     {
@@ -106,7 +107,7 @@ export const MODULES = [
         file: 'likvardighet.js', ns: '__mirrorLikvardighet',
         expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn', bootstrapMedianer: '_lvBootstrapMedianer',
                   // Den enda definitionen av kvinnodominerat (ADR-60); aidbas.js och loneoversyn.js importerar dem
-                  arKvinnodominerad: '_arKvinnodominerad', konsklass: '_konsklass' }
+                  arKvinnodominerad: '_arKvinnodominerad', konsklass: '_konsklass', kravGrupper: '_lvKravGrupper' }
     },
     {
         // Löneöversynen — importerar likvardighet.js (definitionen av kvinnodominerat, ADR-60)
@@ -256,14 +257,21 @@ export const MODULES = [
                   ansvarsUnderrader: '_anUnderrader' }
     },
     {
+        // Importprofiler: kända kolumnuppsättningar (bara rubriknamn). Organisationspaketet importerar valideringen och inläsningen matchningen: före dem.
+        file: 'importprofiler.js', ns: '__mirrorImportprofiler',
+        expose: { valideraImportprofil: '_ipValidera', valideraImportprofiler: '_ipValideraLista', matchaImportprofil: '_ipMatcha',
+                  profilFranMappning: '_ipFranMappning', importprofilerTillJson: '_ipTillJson', inbyggdaProfiler: '_ipInbyggda' }
+    },
+    {
         // Tolkningen av indata: talen, normaliseringarna och kärnan i uppgiftsminimeringen. Funktionerna behåller i appen
-        // namnen de hade där. Importerar ansvar.js (ansvarskoden i en lönerad): efter den.
+        // namnen de hade där. Importerar ansvar.js (ansvarskoden i en lönerad) och importprofiler.js (rubrikraden): efter dem.
         file: 'inlasning.js', ns: '__mirrorInlasning',
         expose: { _normalizeNumberString: '_normalizeNumberString', parseNumber: 'parseNumber', parseNumberStrict: 'parseNumberStrict',
                   _cleanYrkeField: '_cleanYrkeField', _stripHtmlMeta: '_stripHtmlMeta', _normalizeBas: '_normalizeBas',
                   _normalizePolicyAid: '_normalizePolicyAid', _normalizeKon: '_normalizeKon', tolkaLonerad: '_ilTolkaLonerad',
                   _pnrSampelSteg: '_pnrSampelSteg', detectSensitiveColumns: 'detectSensitiveColumns', yrkeNamnNyckel: '_ilYrkeNamnNyckel',
-                  sallsyntaNamnrader: '_ilSallsyntaNamnrader' }
+                  sallsyntaNamnrader: '_ilSallsyntaNamnrader', _decodeCsvBuffer: '_decodeCsvBuffer', delaRader: '_delaRader',
+                  _detectDelimiter: '_detectDelimiter', _findCsvHeader: '_findCsvHeader' }
     },
     {
         file: 'aidkontroll.js', ns: '__mirrorAidkontroll',
@@ -315,12 +323,6 @@ export const MODULES = [
         expose: { byggArsbokslut: '_abBygg', valideraArsbokslut: '_abValidera', jamforArsbokslut: '_abJamfor', hantelRader: '_abHantelRader',
                   basHantelRader: '_abBasHantelRader', jamforBasIntervall: '_abJamforBas', bokslutMedGrans: '_abMedGrans', lonespridning: '_abSpridning',
                   jamforBedomningar: '_abJamforBedomningar' }
-    },
-    {
-        // Importprofiler: kända kolumnuppsättningar (bara rubriknamn). Organisationspaketet importerar valideringen: före det.
-        file: 'importprofiler.js', ns: '__mirrorImportprofiler',
-        expose: { valideraImportprofil: '_ipValidera', valideraImportprofiler: '_ipValideraLista', matchaImportprofil: '_ipMatcha',
-                  profilFranMappning: '_ipFranMappning', importprofilerTillJson: '_ipTillJson', inbyggdaProfiler: '_ipInbyggda' }
     },
     {
         // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.

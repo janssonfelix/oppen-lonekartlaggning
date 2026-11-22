@@ -693,3 +693,47 @@ export function computeLikvardighetPairs({ data = [], statistik = [], nationellK
         opts: { kvinnoTrosholdPct: kvinnoThr, kvDomDefinition: definition, jamforelse, minGapPct: minGap, topN }
     };
 }
+
+// ---- Krav mot lön: en punkt per yrkesgrupp ----------------------------------
+// Kraven är arbetsvärderingspoäng när en poängtabell är inläst, annars BAS-intervallets rang — samma krav-proxy som
+// parbildningen. En grupp som saknar poäng i en inläst tabell placeras efter sitt BAS-intervall: medianpoängen för
+// intervallets värderade grupper; tipset och noten säger det. Finns ingen värderad grupp i
+// intervallet går gruppen inte att placera och namnges i noten.
+// Bara grupper som når tröskeln: diagrammet visar gruppens medianlön. Linjen räknas ur de grupper som visas.
+/**
+ * @param {any[]} rader
+ * @param {{k?: number, poangByKey?: Map<string, number>|null, definition?: string, grans?: number}} [opts] definition och
+ *   grans: appens val av definitionen av kvinnodominerat (konsklass)
+ */
+export function kravGrupper(rader, { k = 10, poangByKey = null, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT } = {}) {
+    const map = new Map();
+    // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
+    const iGrupp = r => !!(r && String(r.aid || '').trim() && r.lon > 0 && r.bas);
+    const namnrad = namnrader((rader || []).filter(iGrupp), r => String(r.aid).trim() + '|' + r.bas);
+    for (const r of rader || []) {
+        if (!iGrupp(r)) continue;
+        const aid = String(r.aid).trim();
+        const key = aid + '|' + r.bas, nr = namnrad.get(key);
+        if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: nr.yrkeLabel || nr.yrke || aid, n: 0, nKv: 0, loner: [] });
+        const g = map.get(key);
+        g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
+    }
+    const medPoang = !!(poangByKey && poangByKey.size);
+    const alla = [...map.values()].filter(g => g.n >= k).map(g => {
+        const andelKv = 100 * g.nKv / g.n;
+        const poang = medPoang ? (poangByKey.get(g.aid + '|' + g.bas) ?? poangByKey.get(g.aid) ?? null) : null;
+        return { aid: g.aid, bas: g.bas, namn: g.namn, n: g.n, andelKv, median: _median(g.loner), poang,
+                 dominans: konsklass(andelKv, definition, grans) };   // den enda definitionen av kvinnodominerat (ADR-60)
+    });
+    if (!medPoang) return { medPoang, grupper: alla, utanPlats: [] };
+    // Medianpoängen per BAS-intervall, ur de värderade grupper som visas.
+    const perBas = new Map();
+    for (const g of alla) if (g.poang != null) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.poang); }
+    const grupper = [], utanPlats = [];
+    for (const g of alla) {
+        if (g.poang != null) grupper.push({ ...g, krav: g.poang });
+        else if (perBas.has(g.bas)) grupper.push({ ...g, krav: _median(perBas.get(g.bas)), uppskattad: true });
+        else utanPlats.push(g);
+    }
+    return { medPoang, grupper, utanPlats };
+}

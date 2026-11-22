@@ -3763,7 +3763,49 @@ const LONEBEGREPP_RESERVATION = 'Måtten är räknade på fast heltidsmånadslö
 /** @returns {string} reservationen om lönebegreppet vid EU-rapportmåtten */
 function lonebegreppReservation() { return LONEBEGREPP_RESERVATION; }
 
-    return { medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken, lonebegreppReservation };
+// ---- Lönefördelningen i Ålder & karriär: klasserna för histogrammet (flyttade från src/app/40-alder-karriar.js) ----
+
+// Minsta och största värdet i en lista: en slinga, eftersom Math.min(...v) slår i taket för antal argument vid stora filer.
+function omfang(v) {
+    let min = Infinity, max = -Infinity;
+    for (const x of v) { if (x < min) min = x; if (x > max) max = x; }
+    return [min, max];
+}
+
+// ---- Löneklasser: indelningen för histogrammet ----
+// Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
+// percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
+function lonesteg(loner, mal = 12) {
+    const spann = _quantile(loner, 0.95) - _quantile(loner, 0.05);
+    return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
+}
+
+// ---- Histogram: lönefördelningen för kvinnor och män, klass för klass ----
+// Andel av respektive kön per löneklass. Visas bara när båda könen når tröskeln. Ingen stapel får gälla en klass
+// med färre än tröskeln personer: klasserna i ändarna slås ihop inåt tills ändklassen når tröskeln ("under X",
+// "X eller mer"), och finns en gles klass i mitten fördubblas klassbredden och indelningen görs om. Går det inte
+// att få minst tre klasser ritas inget.
+function histogramKlasser(kv, ma, k) {
+    const alla = [...kv, ...ma];
+    if (kv.length < k || ma.length < k) return null;
+    let steg = lonesteg(alla);
+    for (let varv = 0; varv < 6; varv++, steg *= 2) {
+        const [lagst, hogst] = omfang(alla), golv = Math.floor(lagst / steg) * steg, antal = Math.floor((hogst - golv) / steg) + 1;
+        /** @type {Array<{fran: number, till: number, nKv: number, nMa: number, oppenNed?: boolean, oppenUpp?: boolean}>} */
+        let klasser = Array.from({ length: antal }, (_, i) => ({ fran: golv + i * steg, till: golv + (i + 1) * steg, nKv: 0, nMa: 0 }));
+        const plats = v => Math.min(antal - 1, Math.floor((v - golv) / steg));
+        for (const v of kv) klasser[plats(v)].nKv++;
+        for (const v of ma) klasser[plats(v)].nMa++;
+        const n = c => c.nKv + c.nMa;
+        const slaIhop = (a, b) => ({ fran: a.fran, till: b.till, nKv: a.nKv + b.nKv, nMa: a.nMa + b.nMa, ...(a.oppenNed ? { oppenNed: true } : {}), ...(b.oppenUpp ? { oppenUpp: true } : {}) });
+        while (klasser.length > 1 && n(klasser[0]) < k) klasser = [{ ...slaIhop(klasser[0], klasser[1]), oppenNed: true }, ...klasser.slice(2)];
+        while (klasser.length > 1 && n(klasser[klasser.length - 1]) < k) klasser = [...klasser.slice(0, -2), { ...slaIhop(klasser[klasser.length - 2], klasser[klasser.length - 1]), oppenUpp: true }];
+        if (klasser.length >= 3 && klasser.every(c => n(c) >= k)) return klasser;
+    }
+    return null;
+}
+
+    return { medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken, lonebegreppReservation, omfang, lonesteg, histogramKlasser };
 })();
 const _stMedianGapPct = __mirrorStructure.medianGapPct;
 const _stRepresentationByBas = __mirrorStructure.representationByBas;
@@ -3771,6 +3813,9 @@ const _stQuartileDistribution = __mirrorStructure.quartileDistribution;
 const _stDistributionalGap = __mirrorStructure.distributionalGap;
 const _stTillDirektivtecken = __mirrorStructure.tillDirektivtecken;
 const _stLonebegreppReservation = __mirrorStructure.lonebegreppReservation;
+const _omfang = __mirrorStructure.omfang;
+const _konLonesteg = __mirrorStructure.lonesteg;
+const _konHistogramKlasser = __mirrorStructure.histogramKlasser;
 
 // ---- speglar src/lib/rng.js ----
 const __mirrorRng = (() => {
@@ -4765,13 +4810,58 @@ function computeLikvardighetPairs({ data = [], statistik = [], nationellKlass = 
     };
 }
 
-    return { computeLikvardighetPairs, basRangFn, bootstrapMedianer, arKvinnodominerad, konsklass };
+// ---- Krav mot lön: en punkt per yrkesgrupp ----------------------------------
+// Kraven är arbetsvärderingspoäng när en poängtabell är inläst, annars BAS-intervallets rang — samma krav-proxy som
+// parbildningen. En grupp som saknar poäng i en inläst tabell placeras efter sitt BAS-intervall: medianpoängen för
+// intervallets värderade grupper; tipset och noten säger det. Finns ingen värderad grupp i
+// intervallet går gruppen inte att placera och namnges i noten.
+// Bara grupper som når tröskeln: diagrammet visar gruppens medianlön. Linjen räknas ur de grupper som visas.
+/**
+ * @param {any[]} rader
+ * @param {{k?: number, poangByKey?: Map<string, number>|null, definition?: string, grans?: number}} [opts] definition och
+ *   grans: appens val av definitionen av kvinnodominerat (konsklass)
+ */
+function kravGrupper(rader, { k = 10, poangByKey = null, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT } = {}) {
+    const map = new Map();
+    // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
+    const iGrupp = r => !!(r && String(r.aid || '').trim() && r.lon > 0 && r.bas);
+    const namnrad = namnrader((rader || []).filter(iGrupp), r => String(r.aid).trim() + '|' + r.bas);
+    for (const r of rader || []) {
+        if (!iGrupp(r)) continue;
+        const aid = String(r.aid).trim();
+        const key = aid + '|' + r.bas, nr = namnrad.get(key);
+        if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: nr.yrkeLabel || nr.yrke || aid, n: 0, nKv: 0, loner: [] });
+        const g = map.get(key);
+        g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
+    }
+    const medPoang = !!(poangByKey && poangByKey.size);
+    const alla = [...map.values()].filter(g => g.n >= k).map(g => {
+        const andelKv = 100 * g.nKv / g.n;
+        const poang = medPoang ? (poangByKey.get(g.aid + '|' + g.bas) ?? poangByKey.get(g.aid) ?? null) : null;
+        return { aid: g.aid, bas: g.bas, namn: g.namn, n: g.n, andelKv, median: _median(g.loner), poang,
+                 dominans: konsklass(andelKv, definition, grans) };   // den enda definitionen av kvinnodominerat (ADR-60)
+    });
+    if (!medPoang) return { medPoang, grupper: alla, utanPlats: [] };
+    // Medianpoängen per BAS-intervall, ur de värderade grupper som visas.
+    const perBas = new Map();
+    for (const g of alla) if (g.poang != null) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.poang); }
+    const grupper = [], utanPlats = [];
+    for (const g of alla) {
+        if (g.poang != null) grupper.push({ ...g, krav: g.poang });
+        else if (perBas.has(g.bas)) grupper.push({ ...g, krav: _median(perBas.get(g.bas)), uppskattad: true });
+        else utanPlats.push(g);
+    }
+    return { medPoang, grupper, utanPlats };
+}
+
+    return { computeLikvardighetPairs, basRangFn, bootstrapMedianer, arKvinnodominerad, konsklass, kravGrupper };
 })();
 const _lvComputePairs = __mirrorLikvardighet.computeLikvardighetPairs;
 const _lvBasRangFn = __mirrorLikvardighet.basRangFn;
 const _lvBootstrapMedianer = __mirrorLikvardighet.bootstrapMedianer;
 const _arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
 const _konsklass = __mirrorLikvardighet.konsklass;
+const _lvKravGrupper = __mirrorLikvardighet.kravGrupper;
 
 // ---- speglar src/lib/loneoversyn.js ----
 const __mirrorForecast = (() => {
@@ -9954,11 +10044,248 @@ const _anAndelGiltiga = __mirrorAnsvar.andelGiltiga;
 const _anArRubrik = __mirrorAnsvar.arAnsvarskodRubrik;
 const _anUnderrader = __mirrorAnsvar.ansvarsUnderrader;
 
+// ---- speglar src/lib/importprofiler.js ----
+const __mirrorImportprofiler = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — importprofiler: kända kolumnuppsättningar som gör kolumnmappningen automatisk.
+ *
+ * En importprofil är en sparad kolumnmappning: vilka rubriker i lönefilen som svarar mot verktygets roller (BAS,
+ * yrke, lön, ålder, kön och de valfria poäng och ansvarskod), och vilka rubriker som måste finnas för att profilen
+ * ska gälla (kännetecken). En profil bär BARA rubriknamn — aldrig värden ur filen. Valideringen här ser till att det
+ * gäller också för en fil som någon har skrivit för hand: bara vitlistade fält följer med, varje text är högst 80
+ * tecken och får inte likna ett personnummer eller en e-postadress, högst 20 rubriker per roll och högst 50
+ * profiler.
+ *
+ * Verktyget levererar inga påhittade profiler för namngivna lönesystem. De inbyggda profilerna gäller bara format
+ * som projektet självt definierar (CSV-mallen, testdatans fil och demodatans fältnamn); övriga kommer från
+ * organisationer som använt verktyget, via konfigurationsfilen eller organisationspaketet.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+const IMPORTPROFIL_FORMAT = 'lonekartlaggning-importprofiler';
+const IMPORTPROFIL_VERSION = 1;
+/** Rollerna i kolumnmappningens ordning. BAS, yrke, lön och kön är obligatoriska; ålder är valfri men rekommenderad (ADR-64). */
+const IMPORTPROFIL_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
+const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'kon'];
+/** Rollerna vars rubriker blir kännetecken när profilen inte anger egna: de obligatoriska och ålder, när den finns. */
+const KANNETECKEN_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon'];
+/** Källorna i prioritetsordning: organisationspaketets profiler prövas först, de inbyggda sist. */
+const IMPORTPROFIL_KALLOR = ['organisationspaket', 'konfiguration', 'inbyggd'];
+const MAX_PROFILER = 50;
+const MAX_RUBRIKER_PER_ROLL = 20;
+const MAX_TEXT = 80;
+
+const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
+const EPOST = /\S+@\S+\.\S+/;
+// Styrtecken och HTML-metatecken tas bort. Rubrikerna jämförs ändå utan andra tecken än a–z och 0–9 (se nedan),
+// så det ändrar aldrig vilken kolumn en profil pekar på.
+const BORT = /[\u0000-\u001f\u007f<>"'&]/g;
+
+/** Rubriken som den jämförs: gemener, bara a–z och 0–9 (samma regel som autoDetectColumnMap i appen). */
+function normaliseraRubrik(s) {
+    return String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/** En text i en profil: sanerad och trimmad, eller null när den inte får förekomma (ingen text, för lång, personuppgift). */
+function _text(v) {
+    if (typeof v !== 'string') return null;
+    const t = v.replace(BORT, '').trim();
+    if (!t || t.length > MAX_TEXT) return null;
+    if (PNR.test(t) || EPOST.test(t)) return null;
+    return t;
+}
+/** En rubrik: en tillåten text som inte blir tom när den normaliseras. */
+function _rubrik(v) {
+    const t = _text(v);
+    return t && normaliseraRubrik(t) ? t : null;
+}
+/** En lista med rubriker (högst `max`, utan dubbletter efter normalisering), eller null om något i den är ogiltigt. */
+function _rubrikLista(v, max) {
+    if (!Array.isArray(v) || !v.length || v.length > max) return null;
+    const ut = [], sedda = new Set();
+    for (const x of v) {
+        const r = _rubrik(x);
+        if (!r) return null;
+        const n = normaliseraRubrik(r);
+        if (!sedda.has(n)) { sedda.add(n); ut.push(r); }
+    }
+    return ut;
+}
+
+// Ett kort id ur namnet och kännetecknen, så att samma profil får samma id när den sparas igen.
+function _hash(s) {
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+}
+function _id(namn, kannetecken) {
+    const slug = namn.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '').slice(0, 40);
+    return `${slug || 'profil'}-${_hash(namn + '|' + kannetecken.map(normaliseraRubrik).join('|'))}`;
+}
+/**
+ * Validerar en profil. Bara vitlistade fält följer med; en profil med en ogiltig text (för lång, personnummer- eller
+ * e-postliknande) avvisas helt. Id:t härleds alltid ur namnet och kännetecknen: ett id i filen läses aldrig, så det
+ * kan inte bli en okontrollerad textkanal (till exempel ett personnummer) i exporter och paket.
+ * @param {any} o
+ * @param {{kalla?: string}} [val] Källan sätts av den som läser in (en fil kan inte göra sin profil inbyggd).
+ * @returns {{id:string, namn:string, kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}|null}
+ */
+function valideraImportprofil(o, { kalla } = {}) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+    const namn = _text(o.namn);
+    if (!namn) return null;
+    if (!o.rubriker || typeof o.rubriker !== 'object' || Array.isArray(o.rubriker)) return null;
+    /** @type {{[roll:string]:string[]}} */
+    const rubriker = {};
+    for (const roll of IMPORTPROFIL_ROLLER) {
+        if (o.rubriker[roll] == null) continue;
+        const lista = _rubrikLista(o.rubriker[roll], MAX_RUBRIKER_PER_ROLL);
+        if (!lista) return null;
+        rubriker[roll] = lista;
+    }
+    if (!Object.keys(rubriker).length) return null;
+    let kannetecken;
+    if (o.kannetecken == null) {
+        kannetecken = KANNETECKEN_ROLLER.filter(r => rubriker[r]).map(r => rubriker[r][0]);
+        if (!kannetecken.length) return null;
+    } else {
+        kannetecken = _rubrikLista(o.kannetecken, MAX_RUBRIKER_PER_ROLL);
+        if (!kannetecken) return null;
+    }
+    const k = IMPORTPROFIL_KALLOR.includes(/** @type {string} */ (kalla)) ? /** @type {string} */ (kalla)
+        : (o.kalla === 'organisationspaket' ? 'organisationspaket' : 'konfiguration');
+    return { id: _id(namn, kannetecken), namn, kalla: k, rubriker, kannetecken };
+}
+
+/**
+ * Validerar en lista med profiler. Fler än 50 avvisar hela listan; ogiltiga profiler hoppas över och räknas, och
+ * samma id tas bara en gång.
+ * @param {any} lista
+ * @param {{kalla?: string}} [val]
+ * @returns {{profiler: Array<NonNullable<ReturnType<typeof valideraImportprofil>>>, bort: number, fel: string|null}}
+ */
+function valideraImportprofiler(lista, val = {}) {
+    if (!Array.isArray(lista)) return { profiler: [], bort: 0, fel: 'Importprofilerna är inte en lista.' };
+    if (lista.length > MAX_PROFILER) return { profiler: [], bort: lista.length, fel: `Fler än ${MAX_PROFILER} importprofiler; ingen av dem läses in.` };
+    const profiler = [], ids = new Set();
+    let bort = 0;
+    for (const o of lista) {
+        const p = valideraImportprofil(o, val);
+        if (!p || ids.has(p.id)) { bort++; continue; }
+        ids.add(p.id);
+        profiler.push(p);
+    }
+    return { profiler, bort, fel: null };
+}
+
+/**
+ * Den första profilen som gäller för filens rubriker, i prioritetsordning (organisationspaketet, konfigurationsfilen,
+ * inbyggda; inom en källa listans ordning). En profil gäller när alla dess kännetecken finns bland rubrikerna.
+ * @param {string[]} rubriker filens rubriker
+ * @param {Array<{kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}>} profiler
+ * @returns {{profil: any, mappning: {[roll:string]: string}}|null} mappningen: roll → filens rubrik, bara för profilens roller
+ */
+function matchaImportprofil(rubriker, profiler) {
+    /** @type {Map<string, string>} */
+    const fil = new Map();
+    for (const r of rubriker || []) {
+        const n = normaliseraRubrik(r);
+        if (n && !fil.has(n)) fil.set(n, String(r));
+    }
+    const ordning = p => { const i = IMPORTPROFIL_KALLOR.indexOf(p.kalla); return i < 0 ? IMPORTPROFIL_KALLOR.length : i; };
+    const sorterade = (profiler || []).map((p, i) => ({ p, i })).sort((a, b) => ordning(a.p) - ordning(b.p) || a.i - b.i);
+    for (const { p } of sorterade) {
+        if (!p || !Array.isArray(p.kannetecken) || !p.kannetecken.length) continue;
+        if (!p.kannetecken.every(k => fil.has(normaliseraRubrik(k)))) continue;
+        /** @type {{[roll:string]: string}} */
+        const mappning = {};
+        for (const roll of IMPORTPROFIL_ROLLER) {
+            const hit = (p.rubriker[roll] || []).map(normaliseraRubrik).find(n => fil.has(n));
+            if (hit) mappning[roll] = /** @type {string} */ (fil.get(hit));
+        }
+        return { profil: p, mappning };
+    }
+    return null;
+}
+
+/**
+ * Bygger en profil ur en gjord kolumnmappning. Bara rubriker som finns i filen följer med, och alla obligatoriska
+ * roller måste vara mappade; kännetecknen är de obligatoriska rollernas rubriker och ålderns, när den är mappad.
+ * @param {{namn:string, kalla:string, mappning:{[roll:string]: string|null|undefined}, rubriker:string[]}} u
+ */
+function profilFranMappning({ namn, kalla, mappning, rubriker }) {
+    const iFilen = new Set((rubriker || []).map(String));
+    /** @type {{[roll:string]:string[]}} */
+    const r = {};
+    for (const roll of IMPORTPROFIL_ROLLER) {
+        const rubrik = mappning && mappning[roll];
+        if (rubrik && iFilen.has(rubrik)) r[roll] = [rubrik];
+    }
+    if (!OBLIGATORISKA_ROLLER.every(roll => r[roll])) return null;
+    return valideraImportprofil({ namn, rubriker: r }, { kalla });
+}
+
+/**
+ * Profilerna som en fil att dela eller bidra med: formatet, versionen och profilerna utan källan (den sätts av den
+ * som läser in).
+ * @param {Array<{id:string, namn:string, rubriker:Object, kannetecken:string[]}>} profiler
+ */
+function importprofilerTillJson(profiler) {
+    return JSON.stringify({
+        format: IMPORTPROFIL_FORMAT,
+        version: IMPORTPROFIL_VERSION,
+        profiler: (profiler || []).map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken })),
+    }, null, 2);
+}
+
+// ---- Inbyggda profiler: bara format som projektet självt definierar ----
+const _inbyggd = o => {
+    // De inbyggda profilerna har fasta id:n i koden (inte ur en fil), så de sätts efter valideringen.
+    const v = /** @type {NonNullable<ReturnType<typeof valideraImportprofil>>} */ (valideraImportprofil(o, { kalla: 'inbyggd' }));
+    const p = { ...v, id: o.id };
+    Object.values(p.rubriker).forEach(Object.freeze);
+    Object.freeze(p.rubriker); Object.freeze(p.kannetecken);
+    return Object.freeze(p);
+};
+const INBYGGDA_PROFILER = Object.freeze([
+    // CSV-mallen som lönefilens ruta laddar ner (strukturdata_mall.csv).
+    _inbyggd({ id: 'inbyggd-csv-mallen', namn: 'Verktygets CSV-mall',
+        rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'], poang: ['Poang'] } }),
+    // Testdatans personalfil (npm run gen:testdata, tools/lib/testdata.mjs). Kolumnen Ansvar är ett kännetecken men
+    // ingen roll: en kolumn som bara heter Ansvar läses aldrig som ansvarskod.
+    _inbyggd({ id: 'inbyggd-testdata', namn: 'Verktygets testdata',
+        rubriker: { bas: ['BAS'], yrke: ['AID-etikett'], lon: ['Månadslön'], alder: ['Ålder'], kon: ['Kön'] },
+        kannetecken: ['Ansvar', 'BAS', 'AID-etikett', 'Månadslön', 'Ålder', 'Kön'] }),
+    // Verktygets egna fältnamn (fälten i dess rader, som demodatan har). Namnet säger inte demo: en verklig fil kan ha
+    // just de rubrikerna. Id:t är det förra.
+    _inbyggd({ id: 'inbyggd-demodata', namn: 'Verktygets grundfält',
+        rubriker: { bas: ['bas'], yrke: ['yrke', 'aid'], lon: ['lon'], alder: ['alder'], kon: ['kon'] } }),
+]);
+
+/** De inbyggda profilerna (för appen, som bara når funktioner i spegeln). */
+function inbyggdaProfiler() {
+    return INBYGGDA_PROFILER;
+}
+
+    return { valideraImportprofil, valideraImportprofiler, matchaImportprofil, profilFranMappning, importprofilerTillJson, inbyggdaProfiler };
+})();
+const _ipValidera = __mirrorImportprofiler.valideraImportprofil;
+const _ipValideraLista = __mirrorImportprofiler.valideraImportprofiler;
+const _ipMatcha = __mirrorImportprofiler.matchaImportprofil;
+const _ipFranMappning = __mirrorImportprofiler.profilFranMappning;
+const _ipTillJson = __mirrorImportprofiler.importprofilerTillJson;
+const _ipInbyggda = __mirrorImportprofiler.inbyggdaProfiler;
+
 // ---- speglar src/lib/inlasning.js ----
 const __mirrorInlasning = (() => {
     // importer ur tidigare speglade lib-moduler
     const _anTolka = __mirrorAnsvar.tolkaAnsvarskod;
     const _anGrupp = __mirrorAnsvar.ansvarsgrupp;
+    const matchaImportprofil = __mirrorImportprofiler.matchaImportprofil;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -9976,6 +10303,7 @@ const __mirrorInlasning = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 // ---- Talen ----
 
@@ -10386,7 +10714,92 @@ function detectSensitiveColumns(rows) {
     return issues;
 }
 
-    return { _normalizeNumberString, parseNumber, parseNumberStrict, _cleanYrkeField, _stripHtmlMeta, _normalizeBas, _normalizePolicyAid, _normalizeKon, tolkaLonerad, _pnrSampelSteg, detectSensitiveColumns, yrkeNamnNyckel, sallsyntaNamnrader };
+// ---- Filtexten: teckenkodning, avgränsare och rubrikrad (flyttade från src/app/32-filinlasning.js) ----
+
+// #2: Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte
+// UTF-8) och ibland kommaseparerad. Vi detekterar teckenkodning och avgränsare
+// LOKALT (TextDecoder i webbläsaren, inga nätverksanrop) innan parsning så att
+// å/ä/ö inte mojibakar och raderna inte hamnar i en enda kolumn.
+function _decodeCsvBuffer(buf) {
+    const bytes = new Uint8Array(buf);
+    // UTF-16 (Excels "Unicode-text" sparar UTF-16LE med BOM, tab-avgränsat).
+    // Utan denna kontroll faller UTF-16 igenom till Windows-1252 och blir
+    // NUL-interfolierad rappakalja som parsern tuggar utan tydligt fel.
+    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+        return { text: new TextDecoder('utf-16le').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 LE' };
+    }
+    if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+        return { text: new TextDecoder('utf-16be').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 BE' };
+    }
+    if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+        return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (BOM)' };
+    }
+    try {
+        // Strikt UTF-8: kastar om byten inte är giltig UTF-8 (typiskt Windows-1252-åäö).
+        return { text: new TextDecoder('utf-8', { fatal: true }).decode(buf), encoding: 'UTF-8' };
+    } catch (_e) {
+        try {
+            return { text: new TextDecoder('windows-1252').decode(buf), encoding: 'Windows-1252' };
+        } catch (_e2) {
+            return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (osäker)' };
+        }
+    }
+}
+
+// Radslut: CRLF, LF eller bara CR (gamla Mac-filer) — samma regel i alla steg.
+const _RADSLUT = /\r\n|\r|\n/;
+/** Filtextens rader, med samma regel för radslut som avgränsaren och rubrikraden. */
+function delaRader(text) { return text.split(_RADSLUT); }
+
+function _detectDelimiter(text) {
+    const firstLine = (text.split(_RADSLUT).find(l => l.trim().length) || '');
+    let best = ';', bestN = 0;
+    for (const d of [';', ',', '\t', '|']) {
+        const n = firstLine.split(d).length - 1;
+        if (n > bestN) { bestN = n; best = d; }
+    }
+    return bestN > 0 ? best : ';';
+}
+
+/**
+ * Hittar rubrikraden i CSV-text och dess avgränsare. Exportverktyg lägger
+ * ofta försättsrader före rubrikerna ("Rapport uttagen 2026-01-15;;;;"), och
+ * de får inte tas för rubriker. Vi provar de
+ * 15 första raderna × alla avgränsare och väljer den kombination som matchar
+ * flest kända kolumnroller (synonymGroups = array av normaliserade substrängar
+ * per roll, t.ex. Object.values(ALLOWED_FIELDS)).
+ *
+ * @param {string} text - Avkodad filtext.
+ * @param {Array<Array<string>>} synonymGroups - En grupp synonymer per roll.
+ * @param {number} [minHits=2] - Min antal roller som måste matcha.
+ * @param {any[]} [profiler] - Importprofiler (lönefilen): den första raden där en profils alla kännetecken finns är
+ *          rubrikraden, också när den har färre delsträngsträffar än en försättsrad.
+ * @returns {{line:number, delim:string|null, hits:number}} line = 0-baserat radindex;
+ *          vid ingen träff: line 0 + avgränsaren från _detectDelimiter.
+ */
+function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
+    const lines = text.split(_RADSLUT).slice(0, 15);
+    /** @type {{line: number, delim: string|null, hits: number}} */
+    let best = { line: 0, delim: null, hits: -1 };
+    for (let i = 0; i < lines.length; i++) {
+        if (!lines[i] || !lines[i].trim()) continue;
+        for (const d of [';', ',', '\t', '|']) {
+            const raa = lines[i].split(d).map(c => c.replace(/^"+|"+$/g, ''));
+            if (raa.length < 2) continue;
+            if (profiler.length && matchaImportprofil(raa, profiler)) return { line: i, delim: d, hits: synonymGroups.length };
+            const cells = raa.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, ''));
+            let hits = 0;
+            for (const group of synonymGroups) {
+                if (group.some(syn => cells.some(c => c.includes(syn)))) hits++;
+            }
+            if (hits > best.hits) best = { line: i, delim: d, hits };
+        }
+    }
+    if (best.hits >= minHits) return best;
+    return { line: 0, delim: _detectDelimiter(text), hits: 0 };
+}
+
+    return { _normalizeNumberString, parseNumber, parseNumberStrict, _cleanYrkeField, _stripHtmlMeta, _normalizeBas, _normalizePolicyAid, _normalizeKon, tolkaLonerad, _pnrSampelSteg, detectSensitiveColumns, yrkeNamnNyckel, sallsyntaNamnrader, _decodeCsvBuffer, delaRader, _detectDelimiter, _findCsvHeader };
 })();
 const _normalizeNumberString = __mirrorInlasning._normalizeNumberString;
 const parseNumber = __mirrorInlasning.parseNumber;
@@ -10401,6 +10814,10 @@ const _pnrSampelSteg = __mirrorInlasning._pnrSampelSteg;
 const detectSensitiveColumns = __mirrorInlasning.detectSensitiveColumns;
 const _ilYrkeNamnNyckel = __mirrorInlasning.yrkeNamnNyckel;
 const _ilSallsyntaNamnrader = __mirrorInlasning.sallsyntaNamnrader;
+const _decodeCsvBuffer = __mirrorInlasning._decodeCsvBuffer;
+const _delaRader = __mirrorInlasning.delaRader;
+const _detectDelimiter = __mirrorInlasning._detectDelimiter;
+const _findCsvHeader = __mirrorInlasning._findCsvHeader;
 
 // ---- speglar src/lib/aidkontroll.js ----
 const __mirrorAidkontroll = (() => {
@@ -12662,242 +13079,6 @@ const _abJamforBas = __mirrorArsbokslut.jamforBasIntervall;
 const _abMedGrans = __mirrorArsbokslut.bokslutMedGrans;
 const _abSpridning = __mirrorArsbokslut.lonespridning;
 const _abJamforBedomningar = __mirrorArsbokslut.jamforBedomningar;
-
-// ---- speglar src/lib/importprofiler.js ----
-const __mirrorImportprofiler = (() => {
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — importprofiler: kända kolumnuppsättningar som gör kolumnmappningen automatisk.
- *
- * En importprofil är en sparad kolumnmappning: vilka rubriker i lönefilen som svarar mot verktygets roller (BAS,
- * yrke, lön, ålder, kön och de valfria poäng och ansvarskod), och vilka rubriker som måste finnas för att profilen
- * ska gälla (kännetecken). En profil bär BARA rubriknamn — aldrig värden ur filen. Valideringen här ser till att det
- * gäller också för en fil som någon har skrivit för hand: bara vitlistade fält följer med, varje text är högst 80
- * tecken och får inte likna ett personnummer eller en e-postadress, högst 20 rubriker per roll och högst 50
- * profiler.
- *
- * Verktyget levererar inga påhittade profiler för namngivna lönesystem. De inbyggda profilerna gäller bara format
- * som projektet självt definierar (CSV-mallen, testdatans fil och demodatans fältnamn); övriga kommer från
- * organisationer som använt verktyget, via konfigurationsfilen eller organisationspaketet.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- */
-
-const IMPORTPROFIL_FORMAT = 'lonekartlaggning-importprofiler';
-const IMPORTPROFIL_VERSION = 1;
-/** Rollerna i kolumnmappningens ordning. BAS, yrke, lön och kön är obligatoriska; ålder är valfri men rekommenderad (ADR-64). */
-const IMPORTPROFIL_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'kon'];
-/** Rollerna vars rubriker blir kännetecken när profilen inte anger egna: de obligatoriska och ålder, när den finns. */
-const KANNETECKEN_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon'];
-/** Källorna i prioritetsordning: organisationspaketets profiler prövas först, de inbyggda sist. */
-const IMPORTPROFIL_KALLOR = ['organisationspaket', 'konfiguration', 'inbyggd'];
-const MAX_PROFILER = 50;
-const MAX_RUBRIKER_PER_ROLL = 20;
-const MAX_TEXT = 80;
-
-const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
-const EPOST = /\S+@\S+\.\S+/;
-// Styrtecken och HTML-metatecken tas bort. Rubrikerna jämförs ändå utan andra tecken än a–z och 0–9 (se nedan),
-// så det ändrar aldrig vilken kolumn en profil pekar på.
-const BORT = /[\u0000-\u001f\u007f<>"'&]/g;
-
-/** Rubriken som den jämförs: gemener, bara a–z och 0–9 (samma regel som autoDetectColumnMap i appen). */
-function normaliseraRubrik(s) {
-    return String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-/** En text i en profil: sanerad och trimmad, eller null när den inte får förekomma (ingen text, för lång, personuppgift). */
-function _text(v) {
-    if (typeof v !== 'string') return null;
-    const t = v.replace(BORT, '').trim();
-    if (!t || t.length > MAX_TEXT) return null;
-    if (PNR.test(t) || EPOST.test(t)) return null;
-    return t;
-}
-/** En rubrik: en tillåten text som inte blir tom när den normaliseras. */
-function _rubrik(v) {
-    const t = _text(v);
-    return t && normaliseraRubrik(t) ? t : null;
-}
-/** En lista med rubriker (högst `max`, utan dubbletter efter normalisering), eller null om något i den är ogiltigt. */
-function _rubrikLista(v, max) {
-    if (!Array.isArray(v) || !v.length || v.length > max) return null;
-    const ut = [], sedda = new Set();
-    for (const x of v) {
-        const r = _rubrik(x);
-        if (!r) return null;
-        const n = normaliseraRubrik(r);
-        if (!sedda.has(n)) { sedda.add(n); ut.push(r); }
-    }
-    return ut;
-}
-
-// Ett kort id ur namnet och kännetecknen, så att samma profil får samma id när den sparas igen.
-function _hash(s) {
-    let h = 5381;
-    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
-    return h.toString(36);
-}
-function _id(namn, kannetecken) {
-    const slug = namn.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '').slice(0, 40);
-    return `${slug || 'profil'}-${_hash(namn + '|' + kannetecken.map(normaliseraRubrik).join('|'))}`;
-}
-/**
- * Validerar en profil. Bara vitlistade fält följer med; en profil med en ogiltig text (för lång, personnummer- eller
- * e-postliknande) avvisas helt. Id:t härleds alltid ur namnet och kännetecknen: ett id i filen läses aldrig, så det
- * kan inte bli en okontrollerad textkanal (till exempel ett personnummer) i exporter och paket.
- * @param {any} o
- * @param {{kalla?: string}} [val] Källan sätts av den som läser in (en fil kan inte göra sin profil inbyggd).
- * @returns {{id:string, namn:string, kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}|null}
- */
-function valideraImportprofil(o, { kalla } = {}) {
-    if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
-    const namn = _text(o.namn);
-    if (!namn) return null;
-    if (!o.rubriker || typeof o.rubriker !== 'object' || Array.isArray(o.rubriker)) return null;
-    /** @type {{[roll:string]:string[]}} */
-    const rubriker = {};
-    for (const roll of IMPORTPROFIL_ROLLER) {
-        if (o.rubriker[roll] == null) continue;
-        const lista = _rubrikLista(o.rubriker[roll], MAX_RUBRIKER_PER_ROLL);
-        if (!lista) return null;
-        rubriker[roll] = lista;
-    }
-    if (!Object.keys(rubriker).length) return null;
-    let kannetecken;
-    if (o.kannetecken == null) {
-        kannetecken = KANNETECKEN_ROLLER.filter(r => rubriker[r]).map(r => rubriker[r][0]);
-        if (!kannetecken.length) return null;
-    } else {
-        kannetecken = _rubrikLista(o.kannetecken, MAX_RUBRIKER_PER_ROLL);
-        if (!kannetecken) return null;
-    }
-    const k = IMPORTPROFIL_KALLOR.includes(/** @type {string} */ (kalla)) ? /** @type {string} */ (kalla)
-        : (o.kalla === 'organisationspaket' ? 'organisationspaket' : 'konfiguration');
-    return { id: _id(namn, kannetecken), namn, kalla: k, rubriker, kannetecken };
-}
-
-/**
- * Validerar en lista med profiler. Fler än 50 avvisar hela listan; ogiltiga profiler hoppas över och räknas, och
- * samma id tas bara en gång.
- * @param {any} lista
- * @param {{kalla?: string}} [val]
- * @returns {{profiler: Array<NonNullable<ReturnType<typeof valideraImportprofil>>>, bort: number, fel: string|null}}
- */
-function valideraImportprofiler(lista, val = {}) {
-    if (!Array.isArray(lista)) return { profiler: [], bort: 0, fel: 'Importprofilerna är inte en lista.' };
-    if (lista.length > MAX_PROFILER) return { profiler: [], bort: lista.length, fel: `Fler än ${MAX_PROFILER} importprofiler; ingen av dem läses in.` };
-    const profiler = [], ids = new Set();
-    let bort = 0;
-    for (const o of lista) {
-        const p = valideraImportprofil(o, val);
-        if (!p || ids.has(p.id)) { bort++; continue; }
-        ids.add(p.id);
-        profiler.push(p);
-    }
-    return { profiler, bort, fel: null };
-}
-
-/**
- * Den första profilen som gäller för filens rubriker, i prioritetsordning (organisationspaketet, konfigurationsfilen,
- * inbyggda; inom en källa listans ordning). En profil gäller när alla dess kännetecken finns bland rubrikerna.
- * @param {string[]} rubriker filens rubriker
- * @param {Array<{kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}>} profiler
- * @returns {{profil: any, mappning: {[roll:string]: string}}|null} mappningen: roll → filens rubrik, bara för profilens roller
- */
-function matchaImportprofil(rubriker, profiler) {
-    /** @type {Map<string, string>} */
-    const fil = new Map();
-    for (const r of rubriker || []) {
-        const n = normaliseraRubrik(r);
-        if (n && !fil.has(n)) fil.set(n, String(r));
-    }
-    const ordning = p => { const i = IMPORTPROFIL_KALLOR.indexOf(p.kalla); return i < 0 ? IMPORTPROFIL_KALLOR.length : i; };
-    const sorterade = (profiler || []).map((p, i) => ({ p, i })).sort((a, b) => ordning(a.p) - ordning(b.p) || a.i - b.i);
-    for (const { p } of sorterade) {
-        if (!p || !Array.isArray(p.kannetecken) || !p.kannetecken.length) continue;
-        if (!p.kannetecken.every(k => fil.has(normaliseraRubrik(k)))) continue;
-        /** @type {{[roll:string]: string}} */
-        const mappning = {};
-        for (const roll of IMPORTPROFIL_ROLLER) {
-            const hit = (p.rubriker[roll] || []).map(normaliseraRubrik).find(n => fil.has(n));
-            if (hit) mappning[roll] = /** @type {string} */ (fil.get(hit));
-        }
-        return { profil: p, mappning };
-    }
-    return null;
-}
-
-/**
- * Bygger en profil ur en gjord kolumnmappning. Bara rubriker som finns i filen följer med, och alla obligatoriska
- * roller måste vara mappade; kännetecknen är de obligatoriska rollernas rubriker och ålderns, när den är mappad.
- * @param {{namn:string, kalla:string, mappning:{[roll:string]: string|null|undefined}, rubriker:string[]}} u
- */
-function profilFranMappning({ namn, kalla, mappning, rubriker }) {
-    const iFilen = new Set((rubriker || []).map(String));
-    /** @type {{[roll:string]:string[]}} */
-    const r = {};
-    for (const roll of IMPORTPROFIL_ROLLER) {
-        const rubrik = mappning && mappning[roll];
-        if (rubrik && iFilen.has(rubrik)) r[roll] = [rubrik];
-    }
-    if (!OBLIGATORISKA_ROLLER.every(roll => r[roll])) return null;
-    return valideraImportprofil({ namn, rubriker: r }, { kalla });
-}
-
-/**
- * Profilerna som en fil att dela eller bidra med: formatet, versionen och profilerna utan källan (den sätts av den
- * som läser in).
- * @param {Array<{id:string, namn:string, rubriker:Object, kannetecken:string[]}>} profiler
- */
-function importprofilerTillJson(profiler) {
-    return JSON.stringify({
-        format: IMPORTPROFIL_FORMAT,
-        version: IMPORTPROFIL_VERSION,
-        profiler: (profiler || []).map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken })),
-    }, null, 2);
-}
-
-// ---- Inbyggda profiler: bara format som projektet självt definierar ----
-const _inbyggd = o => {
-    // De inbyggda profilerna har fasta id:n i koden (inte ur en fil), så de sätts efter valideringen.
-    const v = /** @type {NonNullable<ReturnType<typeof valideraImportprofil>>} */ (valideraImportprofil(o, { kalla: 'inbyggd' }));
-    const p = { ...v, id: o.id };
-    Object.values(p.rubriker).forEach(Object.freeze);
-    Object.freeze(p.rubriker); Object.freeze(p.kannetecken);
-    return Object.freeze(p);
-};
-const INBYGGDA_PROFILER = Object.freeze([
-    // CSV-mallen som lönefilens ruta laddar ner (strukturdata_mall.csv).
-    _inbyggd({ id: 'inbyggd-csv-mallen', namn: 'Verktygets CSV-mall',
-        rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'], poang: ['Poang'] } }),
-    // Testdatans personalfil (npm run gen:testdata, tools/lib/testdata.mjs). Kolumnen Ansvar är ett kännetecken men
-    // ingen roll: en kolumn som bara heter Ansvar läses aldrig som ansvarskod.
-    _inbyggd({ id: 'inbyggd-testdata', namn: 'Verktygets testdata',
-        rubriker: { bas: ['BAS'], yrke: ['AID-etikett'], lon: ['Månadslön'], alder: ['Ålder'], kon: ['Kön'] },
-        kannetecken: ['Ansvar', 'BAS', 'AID-etikett', 'Månadslön', 'Ålder', 'Kön'] }),
-    // Verktygets egna fältnamn (fälten i dess rader, som demodatan har). Namnet säger inte demo: en verklig fil kan ha
-    // just de rubrikerna. Id:t är det förra.
-    _inbyggd({ id: 'inbyggd-demodata', namn: 'Verktygets grundfält',
-        rubriker: { bas: ['bas'], yrke: ['yrke', 'aid'], lon: ['lon'], alder: ['alder'], kon: ['kon'] } }),
-]);
-
-/** De inbyggda profilerna (för appen, som bara når funktioner i spegeln). */
-function inbyggdaProfiler() {
-    return INBYGGDA_PROFILER;
-}
-
-    return { valideraImportprofil, valideraImportprofiler, matchaImportprofil, profilFranMappning, importprofilerTillJson, inbyggdaProfiler };
-})();
-const _ipValidera = __mirrorImportprofiler.valideraImportprofil;
-const _ipValideraLista = __mirrorImportprofiler.valideraImportprofiler;
-const _ipMatcha = __mirrorImportprofiler.matchaImportprofil;
-const _ipFranMappning = __mirrorImportprofiler.profilFranMappning;
-const _ipTillJson = __mirrorImportprofiler.importprofilerTillJson;
-const _ipInbyggda = __mirrorImportprofiler.inbyggdaProfiler;
 
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
@@ -25154,36 +25335,6 @@ document.getElementById('btn-download-csv-template')?.addEventListener('click', 
     announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
 });
 
-// #2: Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte
-// UTF-8) och ibland kommaseparerad. Vi detekterar teckenkodning och avgränsare
-// LOKALT (TextDecoder i webbläsaren, inga nätverksanrop) innan parsning så att
-// å/ä/ö inte mojibakar och raderna inte hamnar i en enda kolumn.
-function _decodeCsvBuffer(buf) {
-    const bytes = new Uint8Array(buf);
-    // UTF-16 (Excels "Unicode-text" sparar UTF-16LE med BOM, tab-avgränsat).
-    // Utan denna kontroll faller UTF-16 igenom till Windows-1252 och blir
-    // NUL-interfolierad rappakalja som parsern tuggar utan tydligt fel.
-    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
-        return { text: new TextDecoder('utf-16le').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 LE' };
-    }
-    if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
-        return { text: new TextDecoder('utf-16be').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 BE' };
-    }
-    if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
-        return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (BOM)' };
-    }
-    try {
-        // Strikt UTF-8: kastar om byten inte är giltig UTF-8 (typiskt Windows-1252-åäö).
-        return { text: new TextDecoder('utf-8', { fatal: true }).decode(buf), encoding: 'UTF-8' };
-    } catch (_e) {
-        try {
-            return { text: new TextDecoder('windows-1252').decode(buf), encoding: 'Windows-1252' };
-        } catch (_e2) {
-            return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (osäker)' };
-        }
-    }
-}
-
 /**
  * Identifierar filformat via magiska bytes (accept-attributet är bara rådgivande
  * — användare kan välja "Alla filer" och lägga en Excel-fil i en CSV-ruta).
@@ -25199,56 +25350,6 @@ function _sniffTabularFormat(bytes) {
     if (bytes.length >= 4 && bytes[0] === 0xD0 && bytes[1] === 0xCF &&
         bytes[2] === 0x11 && bytes[3] === 0xE0) return 'xls-legacy';
     return 'text';
-}
-// Radslut: CRLF, LF eller bara CR (gamla Mac-filer) — samma regel i alla steg.
-const _RADSLUT = /\r\n|\r|\n/;
-
-function _detectDelimiter(text) {
-    const firstLine = (text.split(_RADSLUT).find(l => l.trim().length) || '');
-    let best = ';', bestN = 0;
-    for (const d of [';', ',', '\t', '|']) {
-        const n = firstLine.split(d).length - 1;
-        if (n > bestN) { bestN = n; best = d; }
-    }
-    return bestN > 0 ? best : ';';
-}
-
-/**
- * Hittar rubrikraden i CSV-text och dess avgränsare. Exportverktyg lägger
- * ofta försättsrader före rubrikerna ("Rapport uttagen 2026-01-15;;;;"), och
- * de får inte tas för rubriker. Vi provar de
- * 15 första raderna × alla avgränsare och väljer den kombination som matchar
- * flest kända kolumnroller (synonymGroups = array av normaliserade substrängar
- * per roll, t.ex. Object.values(ALLOWED_FIELDS)).
- *
- * @param {string} text - Avkodad filtext.
- * @param {Array<Array<string>>} synonymGroups - En grupp synonymer per roll.
- * @param {number} [minHits=2] - Min antal roller som måste matcha.
- * @param {any[]} [profiler] - Importprofiler (lönefilen): den första raden där en profils alla kännetecken finns är
- *          rubrikraden, också när den har färre delsträngsträffar än en försättsrad.
- * @returns {{line:number, delim:string|null, hits:number}} line = 0-baserat radindex;
- *          vid ingen träff: line 0 + avgränsaren från _detectDelimiter.
- */
-function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
-    const lines = text.split(_RADSLUT).slice(0, 15);
-    /** @type {{line: number, delim: string|null, hits: number}} */
-    let best = { line: 0, delim: null, hits: -1 };
-    for (let i = 0; i < lines.length; i++) {
-        if (!lines[i] || !lines[i].trim()) continue;
-        for (const d of [';', ',', '\t', '|']) {
-            const raa = lines[i].split(d).map(c => c.replace(/^"+|"+$/g, ''));
-            if (raa.length < 2) continue;
-            if (profiler.length && _ipMatcha(raa, profiler)) return { line: i, delim: d, hits: synonymGroups.length };
-            const cells = raa.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, ''));
-            let hits = 0;
-            for (const group of synonymGroups) {
-                if (group.some(syn => cells.some(c => c.includes(syn)))) hits++;
-            }
-            if (hits > best.hits) best = { line: i, delim: d, hits };
-        }
-    }
-    if (best.hits >= minHits) return best;
-    return { line: 0, delim: _detectDelimiter(text), hits: 0 };
 }
 
 /**
@@ -25354,7 +25455,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
             const dec = _decodeCsvBuffer(buf);
             const hdr = _findCsvHeader(dec.text, synonymGroups);
             const csvText = hdr.line > 0
-                ? dec.text.split(_RADSLUT).slice(hdr.line).join('\n')
+                ? _delaRader(dec.text).slice(hdr.line).join('\n')
                 : dec.text;
             const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true, delimiter: hdr.delim });
             const rows = (parsed.data || []).filter(r => r && typeof r === 'object');
@@ -25674,7 +25775,7 @@ function loadStructureFile(file) {
       // radnummer för varje datarad räknas ur samma rader. Papa hoppar över tomma rader
       // (skipEmptyLines), så listan byggs med samma regel. Citerade fält med
       // radbrytning förskjuter numreringen (accepterad begränsning, ADR-23).
-      const linjer = _dec.text.split(_RADSLUT).slice(hdrInfo.line);
+      const linjer = _delaRader(_dec.text).slice(hdrInfo.line);
       const csvText = linjer.join('\n');
       const radLista = [];
       for (let j = 1; j < linjer.length; j++) if (linjer[j] !== '') radLista.push(hdrInfo.line + j + 1);
@@ -26796,47 +26897,7 @@ function _lvRitaTopp(result) {
 }
 
 // ---- Krav mot lön: en punkt per yrkesgrupp ----------------------------------
-// Kraven är arbetsvärderingspoäng när en poängtabell är inläst, annars BAS-intervallets rang — samma krav-proxy som
-// parbildningen. En grupp som saknar poäng i en inläst tabell placeras efter sitt BAS-intervall: medianpoängen för
-// intervallets värderade grupper; tipset och noten säger det. Finns ingen värderad grupp i
-// intervallet går gruppen inte att placera och namnges i noten.
-// Bara grupper som når tröskeln: diagrammet visar gruppens medianlön. Linjen räknas ur de grupper som visas.
-/**
- * @param {any[]} rader
- * @param {{k?: number, poangByKey?: Map<string, number>|null}} [opts]
- */
-function _lvKravGrupper(rader, { k = 10, poangByKey = null } = {}) {
-    const map = new Map();
-    // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
-    const iGrupp = r => !!(r && String(r.aid || '').trim() && r.lon > 0 && r.bas);
-    const namnrad = namnrader((rader || []).filter(iGrupp), r => String(r.aid).trim() + '|' + r.bas);
-    for (const r of rader || []) {
-        if (!iGrupp(r)) continue;
-        const aid = String(r.aid).trim();
-        const key = aid + '|' + r.bas, nr = namnrad.get(key);
-        if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: nr.yrkeLabel || nr.yrke || aid, n: 0, nKv: 0, loner: [] });
-        const g = map.get(key);
-        g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
-    }
-    const medPoang = !!(poangByKey && poangByKey.size);
-    const alla = [...map.values()].filter(g => g.n >= k).map(g => {
-        const andelKv = 100 * g.nKv / g.n;
-        const poang = medPoang ? (poangByKey.get(g.aid + '|' + g.bas) ?? poangByKey.get(g.aid) ?? null) : null;
-        return { aid: g.aid, bas: g.bas, namn: g.namn, n: g.n, andelKv, median: Stat.median(g.loner), poang,
-                 dominans: konsklassNu(andelKv) };   // den enda definitionen av kvinnodominerat (ADR-60)
-    });
-    if (!medPoang) return { medPoang, grupper: alla, utanPlats: [] };
-    // Medianpoängen per BAS-intervall, ur de värderade grupper som visas.
-    const perBas = new Map();
-    for (const g of alla) if (g.poang != null) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.poang); }
-    const grupper = [], utanPlats = [];
-    for (const g of alla) {
-        if (g.poang != null) grupper.push({ ...g, krav: g.poang });
-        else if (perBas.has(g.bas)) grupper.push({ ...g, krav: Stat.median(perBas.get(g.bas)), uppskattad: true });
-        else utanPlats.push(g);
-    }
-    return { medPoang, grupper, utanPlats };
-}
+// Grupperna räknas i src/lib/likvardighet.js (kravGrupper, här _lvKravGrupper).
 const _LV_KRAV_SERIER = [
     { dominans: 'kvinnodominerad', serie: 'Kvinnodominerad', farg: () => PALETTE.kon.kvinna, symbol: 'cirkel' },
     { dominans: 'mansdominerad', serie: 'Mansdominerad', farg: () => PALETTE.kon.man, symbol: 'triangelHoger' },
@@ -26900,7 +26961,7 @@ function renderLikvardighetKrav() {
     const el = document.getElementById('chart-likvardighet-krav');
     if (!el) return;
     const av = state.arbetsvardering, k = kTroskel();
-    const u = _lvKravGrupper(state.data || [], { k, poangByKey: av && av.byKey && av.byKey.size ? av.byKey : null });
+    const u = _lvKravGrupper(state.data || [], { k, definition: aidbasDefinition(), grans: aidbasGrans(), poangByKey: av && av.byKey && av.byKey.size ? av.byKey : null });
     const not = document.getElementById('lv-krav-not');
     if (u.grupper.length < 3) {
         rensaFigur(el);
@@ -29170,12 +29231,6 @@ document.getElementById("btn-export-excel")?.addEventListener("click", () => med
 // skillnader mellan åldersgrupper nu, inte hur en persons lön utvecklas — åldersgrupperna skiljer sig också i
 // utbildning, yrkesval och anställningstid (kohorteffekter). Står under kurvorna, i Om verktyget och i metodbilagan.
 const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.';
-// Minsta och största värdet i en lista: en slinga, eftersom Math.min(...v) slår i taket för antal argument vid stora filer.
-function _omfang(v) {
-    let min = Infinity, max = -Infinity;
-    for (const x of v) { if (x < min) min = x; if (x > max) max = x; }
-    return [min, max];
-}
 // Raden under nyckeltalen, i klartext: stiger lönen lika mycket per levnadsår för kvinnor och män, och hur mycket av
 // skillnaden förklarar åldersfördelningen? Ren funktion. lutKv/lutMa är trendlinjernas lutning i kronor per år;
 // ra och vidSammaAlder är kvinnors lön i procent av mäns, utan justering respektive avläst vid medelåldern.
@@ -29327,39 +29382,8 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
 }
 document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
 
-// ---- Löneklasser: indelningen för histogrammet ----
-// Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
-// percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
-function _konLonesteg(loner, mal = 12) {
-    const spann = Stat.quantile(loner, 0.95) - Stat.quantile(loner, 0.05);
-    return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
-}
 const _konTkr = v => _figTalformat(v / 1000, Number.isInteger(v / 1000) ? 'antal' : undefined);
 
-// ---- Histogram: lönefördelningen för kvinnor och män, klass för klass ----
-// Andel av respektive kön per löneklass. Visas bara när båda könen når tröskeln. Ingen stapel får gälla en klass
-// med färre än tröskeln personer: klasserna i ändarna slås ihop inåt tills ändklassen når tröskeln ("under X",
-// "X eller mer"), och finns en gles klass i mitten fördubblas klassbredden och indelningen görs om. Går det inte
-// att få minst tre klasser ritas inget.
-function _konHistogramKlasser(kv, ma, k) {
-    const alla = [...kv, ...ma];
-    if (kv.length < k || ma.length < k) return null;
-    let steg = _konLonesteg(alla);
-    for (let varv = 0; varv < 6; varv++, steg *= 2) {
-        const [lagst, hogst] = _omfang(alla), golv = Math.floor(lagst / steg) * steg, antal = Math.floor((hogst - golv) / steg) + 1;
-        /** @type {Array<{fran: number, till: number, nKv: number, nMa: number, oppenNed?: boolean, oppenUpp?: boolean}>} */
-        let klasser = Array.from({ length: antal }, (_, i) => ({ fran: golv + i * steg, till: golv + (i + 1) * steg, nKv: 0, nMa: 0 }));
-        const plats = v => Math.min(antal - 1, Math.floor((v - golv) / steg));
-        for (const v of kv) klasser[plats(v)].nKv++;
-        for (const v of ma) klasser[plats(v)].nMa++;
-        const n = c => c.nKv + c.nMa;
-        const slaIhop = (a, b) => ({ fran: a.fran, till: b.till, nKv: a.nKv + b.nKv, nMa: a.nMa + b.nMa, ...(a.oppenNed ? { oppenNed: true } : {}), ...(b.oppenUpp ? { oppenUpp: true } : {}) });
-        while (klasser.length > 1 && n(klasser[0]) < k) klasser = [{ ...slaIhop(klasser[0], klasser[1]), oppenNed: true }, ...klasser.slice(2)];
-        while (klasser.length > 1 && n(klasser[klasser.length - 1]) < k) klasser = [...klasser.slice(0, -2), { ...slaIhop(klasser[klasser.length - 2], klasser[klasser.length - 1]), oppenUpp: true }];
-        if (klasser.length >= 3 && klasser.every(c => n(c) >= k)) return klasser;
-    }
-    return null;
-}
 function _konHistogramFigur(klasser, nKv, nMa, scope) {
     const namn = c => (c.oppenNed ? `under ${_konTkr(c.till)}` : c.oppenUpp ? `${_konTkr(c.fran)} eller mer` : `${_konTkr(c.fran)}–${_konTkr(c.till)}`);
     // De två fördelningarna ligger på samma plats, halvgenomskinliga: formen på vardera syns, och där de täcker

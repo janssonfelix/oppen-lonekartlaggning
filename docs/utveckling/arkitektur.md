@@ -74,7 +74,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `aid-etiketter` | – |
 |  | `aidkontroll` | `aid`, `stat`, `termer` |
 |  | `ansvar` | `falt`, `stat` |
-| Indata och format | `inlasning` | `ansvar` |
+| Indata och format | `inlasning` | `ansvar`, `importprofiler` |
 |  | `falt` | `aid`, `kon`, `termer` |
 |  | `kon` | – |
 |  | `importprofiler` | – |

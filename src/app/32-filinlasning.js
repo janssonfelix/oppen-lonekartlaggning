@@ -183,36 +183,6 @@ document.getElementById('btn-download-csv-template')?.addEventListener('click', 
     announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
 });
 
-// #2: Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte
-// UTF-8) och ibland kommaseparerad. Vi detekterar teckenkodning och avgränsare
-// LOKALT (TextDecoder i webbläsaren, inga nätverksanrop) innan parsning så att
-// å/ä/ö inte mojibakar och raderna inte hamnar i en enda kolumn.
-function _decodeCsvBuffer(buf) {
-    const bytes = new Uint8Array(buf);
-    // UTF-16 (Excels "Unicode-text" sparar UTF-16LE med BOM, tab-avgränsat).
-    // Utan denna kontroll faller UTF-16 igenom till Windows-1252 och blir
-    // NUL-interfolierad rappakalja som parsern tuggar utan tydligt fel.
-    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
-        return { text: new TextDecoder('utf-16le').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 LE' };
-    }
-    if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
-        return { text: new TextDecoder('utf-16be').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 BE' };
-    }
-    if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
-        return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (BOM)' };
-    }
-    try {
-        // Strikt UTF-8: kastar om byten inte är giltig UTF-8 (typiskt Windows-1252-åäö).
-        return { text: new TextDecoder('utf-8', { fatal: true }).decode(buf), encoding: 'UTF-8' };
-    } catch (_e) {
-        try {
-            return { text: new TextDecoder('windows-1252').decode(buf), encoding: 'Windows-1252' };
-        } catch (_e2) {
-            return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (osäker)' };
-        }
-    }
-}
-
 /**
  * Identifierar filformat via magiska bytes (accept-attributet är bara rådgivande
  * — användare kan välja "Alla filer" och lägga en Excel-fil i en CSV-ruta).
@@ -228,56 +198,6 @@ function _sniffTabularFormat(bytes) {
     if (bytes.length >= 4 && bytes[0] === 0xD0 && bytes[1] === 0xCF &&
         bytes[2] === 0x11 && bytes[3] === 0xE0) return 'xls-legacy';
     return 'text';
-}
-// Radslut: CRLF, LF eller bara CR (gamla Mac-filer) — samma regel i alla steg.
-const _RADSLUT = /\r\n|\r|\n/;
-
-function _detectDelimiter(text) {
-    const firstLine = (text.split(_RADSLUT).find(l => l.trim().length) || '');
-    let best = ';', bestN = 0;
-    for (const d of [';', ',', '\t', '|']) {
-        const n = firstLine.split(d).length - 1;
-        if (n > bestN) { bestN = n; best = d; }
-    }
-    return bestN > 0 ? best : ';';
-}
-
-/**
- * Hittar rubrikraden i CSV-text och dess avgränsare. Exportverktyg lägger
- * ofta försättsrader före rubrikerna ("Rapport uttagen 2026-01-15;;;;"), och
- * de får inte tas för rubriker. Vi provar de
- * 15 första raderna × alla avgränsare och väljer den kombination som matchar
- * flest kända kolumnroller (synonymGroups = array av normaliserade substrängar
- * per roll, t.ex. Object.values(ALLOWED_FIELDS)).
- *
- * @param {string} text - Avkodad filtext.
- * @param {Array<Array<string>>} synonymGroups - En grupp synonymer per roll.
- * @param {number} [minHits=2] - Min antal roller som måste matcha.
- * @param {any[]} [profiler] - Importprofiler (lönefilen): den första raden där en profils alla kännetecken finns är
- *          rubrikraden, också när den har färre delsträngsträffar än en försättsrad.
- * @returns {{line:number, delim:string|null, hits:number}} line = 0-baserat radindex;
- *          vid ingen träff: line 0 + avgränsaren från _detectDelimiter.
- */
-function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
-    const lines = text.split(_RADSLUT).slice(0, 15);
-    /** @type {{line: number, delim: string|null, hits: number}} */
-    let best = { line: 0, delim: null, hits: -1 };
-    for (let i = 0; i < lines.length; i++) {
-        if (!lines[i] || !lines[i].trim()) continue;
-        for (const d of [';', ',', '\t', '|']) {
-            const raa = lines[i].split(d).map(c => c.replace(/^"+|"+$/g, ''));
-            if (raa.length < 2) continue;
-            if (profiler.length && _ipMatcha(raa, profiler)) return { line: i, delim: d, hits: synonymGroups.length };
-            const cells = raa.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, ''));
-            let hits = 0;
-            for (const group of synonymGroups) {
-                if (group.some(syn => cells.some(c => c.includes(syn)))) hits++;
-            }
-            if (hits > best.hits) best = { line: i, delim: d, hits };
-        }
-    }
-    if (best.hits >= minHits) return best;
-    return { line: 0, delim: _detectDelimiter(text), hits: 0 };
 }
 
 /**
@@ -383,7 +303,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
             const dec = _decodeCsvBuffer(buf);
             const hdr = _findCsvHeader(dec.text, synonymGroups);
             const csvText = hdr.line > 0
-                ? dec.text.split(_RADSLUT).slice(hdr.line).join('\n')
+                ? _delaRader(dec.text).slice(hdr.line).join('\n')
                 : dec.text;
             const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true, delimiter: hdr.delim });
             const rows = (parsed.data || []).filter(r => r && typeof r === 'object');
@@ -703,7 +623,7 @@ function loadStructureFile(file) {
       // radnummer för varje datarad räknas ur samma rader. Papa hoppar över tomma rader
       // (skipEmptyLines), så listan byggs med samma regel. Citerade fält med
       // radbrytning förskjuter numreringen (accepterad begränsning, ADR-23).
-      const linjer = _dec.text.split(_RADSLUT).slice(hdrInfo.line);
+      const linjer = _delaRader(_dec.text).slice(hdrInfo.line);
       const csvText = linjer.join('\n');
       const radLista = [];
       for (let j = 1; j < linjer.length; j++) if (linjer[j] !== '') radLista.push(hdrInfo.line + j + 1);

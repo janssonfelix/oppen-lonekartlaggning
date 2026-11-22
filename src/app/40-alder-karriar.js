@@ -6,12 +6,6 @@
 // skillnader mellan åldersgrupper nu, inte hur en persons lön utvecklas — åldersgrupperna skiljer sig också i
 // utbildning, yrkesval och anställningstid (kohorteffekter). Står under kurvorna, i Om verktyget och i metodbilagan.
 const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.';
-// Minsta och största värdet i en lista: en slinga, eftersom Math.min(...v) slår i taket för antal argument vid stora filer.
-function _omfang(v) {
-    let min = Infinity, max = -Infinity;
-    for (const x of v) { if (x < min) min = x; if (x > max) max = x; }
-    return [min, max];
-}
 // Raden under nyckeltalen, i klartext: stiger lönen lika mycket per levnadsår för kvinnor och män, och hur mycket av
 // skillnaden förklarar åldersfördelningen? Ren funktion. lutKv/lutMa är trendlinjernas lutning i kronor per år;
 // ra och vidSammaAlder är kvinnors lön i procent av mäns, utan justering respektive avläst vid medelåldern.
@@ -163,39 +157,8 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
 }
 document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
 
-// ---- Löneklasser: indelningen för histogrammet ----
-// Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
-// percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
-function _konLonesteg(loner, mal = 12) {
-    const spann = Stat.quantile(loner, 0.95) - Stat.quantile(loner, 0.05);
-    return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
-}
 const _konTkr = v => _figTalformat(v / 1000, Number.isInteger(v / 1000) ? 'antal' : undefined);
 
-// ---- Histogram: lönefördelningen för kvinnor och män, klass för klass ----
-// Andel av respektive kön per löneklass. Visas bara när båda könen når tröskeln. Ingen stapel får gälla en klass
-// med färre än tröskeln personer: klasserna i ändarna slås ihop inåt tills ändklassen når tröskeln ("under X",
-// "X eller mer"), och finns en gles klass i mitten fördubblas klassbredden och indelningen görs om. Går det inte
-// att få minst tre klasser ritas inget.
-function _konHistogramKlasser(kv, ma, k) {
-    const alla = [...kv, ...ma];
-    if (kv.length < k || ma.length < k) return null;
-    let steg = _konLonesteg(alla);
-    for (let varv = 0; varv < 6; varv++, steg *= 2) {
-        const [lagst, hogst] = _omfang(alla), golv = Math.floor(lagst / steg) * steg, antal = Math.floor((hogst - golv) / steg) + 1;
-        /** @type {Array<{fran: number, till: number, nKv: number, nMa: number, oppenNed?: boolean, oppenUpp?: boolean}>} */
-        let klasser = Array.from({ length: antal }, (_, i) => ({ fran: golv + i * steg, till: golv + (i + 1) * steg, nKv: 0, nMa: 0 }));
-        const plats = v => Math.min(antal - 1, Math.floor((v - golv) / steg));
-        for (const v of kv) klasser[plats(v)].nKv++;
-        for (const v of ma) klasser[plats(v)].nMa++;
-        const n = c => c.nKv + c.nMa;
-        const slaIhop = (a, b) => ({ fran: a.fran, till: b.till, nKv: a.nKv + b.nKv, nMa: a.nMa + b.nMa, ...(a.oppenNed ? { oppenNed: true } : {}), ...(b.oppenUpp ? { oppenUpp: true } : {}) });
-        while (klasser.length > 1 && n(klasser[0]) < k) klasser = [{ ...slaIhop(klasser[0], klasser[1]), oppenNed: true }, ...klasser.slice(2)];
-        while (klasser.length > 1 && n(klasser[klasser.length - 1]) < k) klasser = [...klasser.slice(0, -2), { ...slaIhop(klasser[klasser.length - 2], klasser[klasser.length - 1]), oppenUpp: true }];
-        if (klasser.length >= 3 && klasser.every(c => n(c) >= k)) return klasser;
-    }
-    return null;
-}
 function _konHistogramFigur(klasser, nKv, nMa, scope) {
     const namn = c => (c.oppenNed ? `under ${_konTkr(c.till)}` : c.oppenUpp ? `${_konTkr(c.fran)} eller mer` : `${_konTkr(c.fran)}–${_konTkr(c.till)}`);
     // De två fördelningarna ligger på samma plats, halvgenomskinliga: formen på vardera syns, och där de täcker

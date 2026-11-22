@@ -4,6 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+    histogramKlasser, omfang,
     medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken
 } from '../src/lib/struktur.js';
 
@@ -136,5 +137,24 @@ describe('structure: k per kön', () => {
         const oppen = quartileDistribution(treMan(), { k: 3 });
         expect(oppen[3]).toMatchObject({ nMa: 3, konDolt: false });
         expect(quartileDistribution(treMan())[3]).toMatchObject({ nMa: 3, konDolt: false });
+    });
+});
+
+describe('histogramKlasser: lönefördelningens klasser (k-tröskeln)', () => {
+    const loner = (fran, steg, n) => Array.from({ length: n }, (_, i) => fran + i * steg);
+    it('varje klass har minst k personer, och de glesa ändklasserna slås ihop inåt', () => {
+        const kv = loner(25000, 250, 60), ma = loner(28000, 250, 60);
+        const kl = histogramKlasser(kv, ma, 10);
+        expect(kl.length).toBeGreaterThanOrEqual(3);
+        for (const c of kl) expect(c.nKv + c.nMa).toBeGreaterThanOrEqual(10);
+        expect(kl.reduce((s, c) => s + c.nKv, 0)).toBe(60);
+        expect(kl.reduce((s, c) => s + c.nMa, 0)).toBe(60);
+        for (let i = 1; i < kl.length; i++) expect(kl[i].fran).toBe(kl[i - 1].till);
+    });
+    it('inget histogram när ett kön är under tröskeln', () => {
+        expect(histogramKlasser(loner(25000, 100, 9), loner(25000, 100, 50), 10)).toBeNull();
+    });
+    it('omfang klarar fler värden än Math.min tar som argument', () => {
+        expect(omfang(loner(1, 1, 300000))).toEqual([1, 300000]);
     });
 });
