@@ -323,8 +323,10 @@ kontrollsummorna i `vendor/SHA256SUMS`). Utvecklingsberoendena bevakas av Depend
    granskningsdatumet (punkt 17b i [`oppna-punkter.md`](oppna-punkter.md)).
 2. Sätt versionen i `VERSION` och `package.json`, och byt rubriken *Oförlöst* i `CHANGELOG.md` mot versionen.
 3. `npm run build:app && npm run bundle`; för in byggets kontrollsumma och version på rad 3 i riskanalysen.
-4. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden skriver ut taggkommandot.
-5. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om, signerar och
+4. Har funktionalitet tillkommit eller ändrats sedan förra versionen: uppdatera och bygg om bildspelet
+   `site/genomgang.html` (Definition of Done i `.github/CONTRIBUTING.md`).
+5. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden skriver ut taggkommandot.
+6. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om, signerar och
    publicerar en GitHub Release. Samma tagg publicerar demosidan (`.github/workflows/pages.yml`; går också att köra
    för hand).
 

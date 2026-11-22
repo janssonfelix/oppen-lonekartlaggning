@@ -29,6 +29,9 @@ datorn** — det styr hur vi tar emot bidrag.
      (medel, summa eller kostnad) deklareras i riggen för differensprovet.
    - Det som syns är sett i webbläsaren, och ett diagram också med ett underlag med många AID-etiketter —
      demodatan har bara åtta.
+   - Ny eller ändrad funktionalitet finns med i bildspelet för nya användare (`site/genomgang.html`): skriv i
+     beskrivningen vilka bilder som berörs. Bildspelet byggs om ur demot av underhållaren (steg 4 i *Släppa en
+     version*, `docs/utveckling/bygge-och-test.md`).
 4. Beskriv ändringen och varför den behövs.
 
 Varje uppgift som flera filer behöver står på ett ställe; andra filer hänvisar dit eller härleds ur det och skriver
