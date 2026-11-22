@@ -3234,17 +3234,20 @@ function quantile(arr, q) {
 /**
  * Enkel linjär regression y = m·x + b via OLS minsta kvadrat.
  * @param {Array<[number, number]>} data
- * @returns {{m:number, b:number, r2:number}}
+ * @returns {{m:number, b:number, r2:number} | null} null med färre än två punkter eller utan spridning i x
+ *   (alla x lika): då finns ingen lutning att räkna
  */
 function linearRegression(data) {
     const n = data.length;
-    if (n === 0) return { m: 0, b: 0, r2: 0 };
+    if (n < 2) return null;
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
     for (let i = 0; i < n; i++) {
         sumX += data[i][0]; sumY += data[i][1];
         sumXY += data[i][0] * data[i][1]; sumXX += data[i][0] * data[i][0];
     }
-    const m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const namnare = n * sumXX - sumX * sumX;
+    if (!(namnare > 1e-12 * n * sumXX)) return null;   // avrundningsfel: lika x med decimaler ger inte exakt 0
+    const m = (n * sumXY - sumX * sumY) / namnare;
     const b = (sumY - m * sumX) / n;
     const meanY = sumY / n;
     let ssTot = 0, ssRes = 0;
@@ -6734,6 +6737,7 @@ function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
     const n = data.length;
     if (n < BAND_MIN_N) return null;
     const reg = linearRegression(data);
+    if (!reg) return null;
     const meanX = data.reduce((s, p) => s + p[0], 0) / n;
     let ssX = 0, rss = 0;
     for (let i = 0; i < n; i++) {
@@ -26811,9 +26815,11 @@ function _lvKravFigur({ medPoang, grupper }) {
     let niva, linje;
     if (medPoang) {
         const reg = Stat.linearRegression(grupper.map(g => [g.krav, g.median]));
-        niva = g => reg.m * g.krav + reg.b;
+        // Utan spridning i poäng (null) är minsta kvadrat-nivån medelvärdet av gruppmedianerna, och ingen linje ritas.
+        const medel = grupper.reduce((s, g) => s + g.median, 0) / grupper.length;
+        niva = g => (reg ? reg.m * g.krav + reg.b : medel);
         const xs = grupper.map(g => g.krav), a = Math.min(...xs), b = Math.max(...xs);
-        linje = a < b ? [{ x: a, y: reg.m * a + reg.b }, { x: b, y: reg.m * b + reg.b }] : [];
+        linje = reg ? [{ x: a, y: reg.m * a + reg.b }, { x: b, y: reg.m * b + reg.b }] : [];
     } else {
         const perBas = new Map();
         for (const g of grupper) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.median); }
@@ -29181,8 +29187,10 @@ function renderKon(bas) {
     const konOk = kvOk && maOk;
     const medKv = Stat.median(rawLonKv) || 0, medMa = Stat.median(rawLonMa) || 0;
     const unadjGap = !konOk ? "–" : medMa > 0 ? svPct((medKv/medMa)*100, 1) : "–";
-    const expKv = regKv.m * avgAlder + regKv.b, expMa = regMa.m * avgAlder + regMa.b;
-    const ageAdjGap = !konOk ? "–" : expMa > 0 ? svPct((expKv/expMa)*100, 1) : "–";
+    // Ett köns regression är null när könet bara har en ålder i urvalet: då finns ingen lutning och ingen justering.
+    const medAlder = !!(regKv && regMa);
+    const expKv = medAlder ? regKv.m * avgAlder + regKv.b : NaN, expMa = medAlder ? regMa.m * avgAlder + regMa.b : NaN;
+    const ageAdjGap = !konOk || !medAlder ? "–" : expMa > 0 ? svPct((expKv/expMa)*100, 1) : "–";
     // Urvalsraden och avsnittens nyckeltal (ADR-41).
     const urvalText = document.getElementById('ak-urval-text');
     if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
@@ -29197,14 +29205,14 @@ function renderKon(bas) {
     // sätts i Lika arbete, där skillnaden prövas mot slumpen.
     { const u = document.getElementById("kon-kpi-agegap-under");
       if (u) { u.textContent = "kvinnors lön i % av mäns"; u.classList.remove("ar-granska"); } }
-    const lutning = (ok, reg) => (ok ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(reg.m), 0)}` : '–');
+    const lutning = (ok, reg) => (ok && reg ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(reg.m), 0)}` : '–');
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
     if (insightEl) {
         const scope = isAll ? "Hela urvalet" : `BAS ${bas}`;
-        insightEl.innerHTML = konOk && medMa > 0 && expMa > 0
+        insightEl.innerHTML = regKv && regMa && konOk && medMa > 0 && expMa > 0
             ? `<strong>${esc(scope)}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
-            : `<strong>${esc(scope)}:</strong> ${esc(_konUtelamnatNot())}`;
+            : `<strong>${esc(scope)}:</strong> ${esc(konOk && !medAlder ? 'Lönens samband med åldern kan inte räknas eftersom ett av könen bara har en ålder i urvalet.' : _konUtelamnatNot())}`;
     }
     { const not = document.getElementById('kon-kohort-not'); if (not) not.textContent = KOHORT_FORBEHALL; }
     const colorBy = /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || 'kon';
@@ -29233,8 +29241,8 @@ function renderKon(bas) {
         df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, liten, trendAlla,
         trendKv: kvOk ? regKv : null, trendMa: maOk ? regMa : null, ciKv, ciMa, pol: isAll ? null : policyFor(null, bas),
         beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` +
-            (konOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år, mäns med ${Math.round(regMa.m)} kr per år. `
-                   : `${kvOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ''}${maOk ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ''}Trendlinje visas inte för ${utan}: ${skal}. `) +
+            (konOk && medAlder ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år, mäns med ${Math.round(regMa.m)} kr per år. `
+                   : `${kvOk && regKv ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ''}${maOk && regMa ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ''}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ''}`) +
             `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` +
             (trendAlla ? ` Trend för hela urvalet: ${trendAlla.m >= 0 ? '+' : '−'}${svTal(Math.abs(trendAlla.m), 0)} kr per år.` : '') }), { hojd: 420 });
     // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln. Lådorna kan räknas för en sektor eller
@@ -29442,7 +29450,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
             if (data.length) lager.push({ marke: 'punkt', serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
         }
         const reg = Stat.linearRegression(g.map(r => [r.alder, r.lon])), [a0, a1] = _omfang(g.map(r => r.alder));
-        if (a1 > a0) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
+        if (reg) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
     }
     return { utanfor, nedsamplade, figur: { beskrivning: `Lön mot ålder i ${valda.length} ${termForAntal(valda.length, T.niva)}, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
         individer: true, urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.alder, URVAL.lon], paneler: valda.map(b => 'BAS ' + b), x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 340, lager } };

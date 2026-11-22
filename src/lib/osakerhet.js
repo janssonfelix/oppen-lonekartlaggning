@@ -176,6 +176,7 @@ export function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
     const n = data.length;
     if (n < BAND_MIN_N) return null;
     const reg = linearRegression(data);
+    if (!reg) return null;
     const meanX = data.reduce((s, p) => s + p[0], 0) / n;
     let ssX = 0, rss = 0;
     for (let i = 0; i < n; i++) {

@@ -942,17 +942,20 @@ function quantile(arr, q) {
 /**
  * Enkel linjär regression y = m·x + b via OLS minsta kvadrat.
  * @param {Array<[number, number]>} data
- * @returns {{m:number, b:number, r2:number}}
+ * @returns {{m:number, b:number, r2:number} | null} null med färre än två punkter eller utan spridning i x
+ *   (alla x lika): då finns ingen lutning att räkna
  */
 function linearRegression(data) {
     const n = data.length;
-    if (n === 0) return { m: 0, b: 0, r2: 0 };
+    if (n < 2) return null;
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
     for (let i = 0; i < n; i++) {
         sumX += data[i][0]; sumY += data[i][1];
         sumXY += data[i][0] * data[i][1]; sumXX += data[i][0] * data[i][0];
     }
-    const m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const namnare = n * sumXX - sumX * sumX;
+    if (!(namnare > 1e-12 * n * sumXX)) return null;   // avrundningsfel: lika x med decimaler ger inte exakt 0
+    const m = (n * sumXY - sumX * sumY) / namnare;
     const b = (sumY - m * sumX) / n;
     const meanY = sumY / n;
     let ssTot = 0, ssRes = 0;
@@ -4442,6 +4445,7 @@ function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
     const n = data.length;
     if (n < BAND_MIN_N) return null;
     const reg = linearRegression(data);
+    if (!reg) return null;
     const meanX = data.reduce((s, p) => s + p[0], 0) / n;
     let ssX = 0, rss = 0;
     for (let i = 0; i < n; i++) {

@@ -792,9 +792,11 @@ function _lvKravFigur({ medPoang, grupper }) {
     let niva, linje;
     if (medPoang) {
         const reg = Stat.linearRegression(grupper.map(g => [g.krav, g.median]));
-        niva = g => reg.m * g.krav + reg.b;
+        // Utan spridning i poäng (null) är minsta kvadrat-nivån medelvärdet av gruppmedianerna, och ingen linje ritas.
+        const medel = grupper.reduce((s, g) => s + g.median, 0) / grupper.length;
+        niva = g => (reg ? reg.m * g.krav + reg.b : medel);
         const xs = grupper.map(g => g.krav), a = Math.min(...xs), b = Math.max(...xs);
-        linje = a < b ? [{ x: a, y: reg.m * a + reg.b }, { x: b, y: reg.m * b + reg.b }] : [];
+        linje = reg ? [{ x: a, y: reg.m * a + reg.b }, { x: b, y: reg.m * b + reg.b }] : [];
     } else {
         const perBas = new Map();
         for (const g of grupper) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.median); }

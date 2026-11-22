@@ -102,8 +102,11 @@ describe('linearRegression', () => {
         // ssTot = 0 → R² returneras som 0
         expect(r.r2).toBe(0);
     });
-    it('tom array returnerar nollor', () => {
-        expect(linearRegression([])).toEqual({ m: 0, b: 0, r2: 0 });
+    it('null utan lutning att räkna: tom, en punkt, eller alla x lika', () => {
+        expect(linearRegression([])).toBeNull();
+        expect(linearRegression([[40, 30000]])).toBeNull();
+        expect(linearRegression([[40, 30000], [40, 32000], [40, 35000]])).toBeNull();
+        expect(linearRegression([[0.1, 1], [0.1, 2], [0.1, 3]])).toBeNull();
     });
 });
 
