@@ -78,6 +78,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `falt` | `aid`, `kon`, `termer` |
 |  | `kon` | – |
 |  | `importprofiler` | – |
+|  | `csv` | – |
 |  | `forhandskontroll` | `termer` |
 |  | `datakvalitet` | `falt`, `forhandskontroll`, `namn`, `stat`, `termer` |
 |  | `organisationsfil` | – |

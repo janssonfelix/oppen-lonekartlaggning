@@ -52,6 +52,11 @@ export const MODULES = [
         expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
     },
     {
+        // CSV- och urklippstext med formelskydd (ADR-15); importerar ingenting
+        file: 'csv.js', ns: '__mirrorCsv',
+        expose: { neutraliseraCell: '_neutraliseraCell', tillCsv: '_toCsv', tillTsv: '_tillTsv' }
+    },
+    {
         file: 'aid-etiketter.js', ns: '__mirrorAidEtiketter',
         expose: { aidEtikettlista: null }
     },

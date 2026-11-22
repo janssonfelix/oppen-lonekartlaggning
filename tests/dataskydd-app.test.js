@@ -298,27 +298,6 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — k-anonymitet', (
     });
 });
 
-// CSV- och urklippsexport: en cell som börjar med = + - @ (eller tabb/radbrytning)
-// tolkas som formel när filen öppnas eller klistras in i Excel. Yrkes- och
-// enhetsnamn kommer ur lönefilen, så en fientlig fil kunde annars smyga in en
-// formel i HR:s export ("CSV-injektion", OWASP).
-describe('export: formler i celler neutraliseras', () => {
-    const rad = celler => win.__toCsv([celler]);
-    it('formelstart får ett inledande apostrof-tecken', () => {
-        expect(rad(['=HYPERLINK("http://x","klick")'])).toBe(`"'=HYPERLINK(""http://x"",""klick"")"`);
-        expect(rad(['+1+1'])).toBe("'+1+1");
-        expect(rad(['@SUM(A1)'])).toBe("'@SUM(A1)");
-        expect(rad(['-2+3'])).toBe("'-2+3");
-        expect(rad(['\t=1'])).toBe("'\t=1");
-    });
-    it('vanliga tal och formaterade värden lämnas orörda', () => {
-        expect(rad([-5, 3.25, '-3,2 %', '+12', '−', '31 417 kr', '-1 250 kr', 'Förskollärare'])).toBe("-5;3.25;-3,2 %;+12;−;31 417 kr;-1 250 kr;Förskollärare");
-    });
-    it('urklippet neutraliseras på samma sätt', () => {
-        expect(win.__tillTsv([['=1+1', 'a'], ['-7', '@x']])).toBe("'=1+1\ta\n-7\t'@x");
-    });
-});
-
 describe('Rensa all data står i Inställningar', () => {
     it('sidhuvudet har bara «Vad lagras?»; knappen ligger under rubriken Rensa i panelen', () => {
         const w = createAppWindow();

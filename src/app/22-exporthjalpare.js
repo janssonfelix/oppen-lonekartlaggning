@@ -451,33 +451,7 @@ function tableToCleanBook(tableId, sheetName) {
 // semikolon-separerade filer med UTF-8 BOM (svenska Excel-default), CRLF-
 // radslut och korrekta citerade fält. Garanterat fungerande i alla webbläsare:
 // blob-URL + anchor-klick + revokeObjectURL.
-// En textcell som börjar med = + - @ (eller tabb/CR) blir en formel när filen
-// öppnas eller klistras in i Excel. Yrkesnamn och andra texter kommer ur lönefilen,
-// så en fientlig fil kunde annars lägga en formel i HR:s export (CSV-injektion,
-// OWASP). Sådana celler får ett inledande apostrof-tecken, som Excel visar som
-// text. Tal — även formaterade som "-3,2 %" eller "-1 250 kr" — lämnas orörda.
-const _CSV_FORMELSTART = /^[=+\-@\t\r]/;
-const _CSV_TALLIKT = /^[+-]?\d[\d\s.,]*(\s?(%|kr|st|år))?$/;
-// Tabellernas minustecken (U+2212, svTal/svPct) läser Excel som text; ett tal skrivs därför med '-'.
-// Text som innehåller '−' men inte är ett tal (t.ex. ett intervall) står kvar som den är.
-function _neutraliseraCell(v) {
-    if (typeof v === 'string' && v[0] === '−' && _CSV_TALLIKT.test('-' + v.slice(1))) return '-' + v.slice(1);
-    if (typeof v !== 'string' || !_CSV_FORMELSTART.test(v) || _CSV_TALLIKT.test(v)) return v;
-    return "'" + v;
-}
-
-function _toCsv(rows, delimiter) {
-    delimiter = delimiter || ';';
-    const escapeCell = v => {
-        if (v == null) return '';
-        let s = String(_neutraliseraCell(v));
-        if (s.includes(delimiter) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
-            s = '"' + s.replace(/"/g, '""') + '"';
-        }
-        return s;
-    };
-    return rows.map(r => (Array.isArray(r) ? r : [r]).map(escapeCell).join(delimiter)).join('\r\n');
-}
+// Formelskyddet (_neutraliseraCell) och CSV-texten (_toCsv) ligger i src/lib/csv.js (ADR-15).
 // Demoläget märks i filnamnet, som diagram- och Word-exporterna (bara en gång).
 function _csvFilnamn(namn) {
     const n = namn || 'export';

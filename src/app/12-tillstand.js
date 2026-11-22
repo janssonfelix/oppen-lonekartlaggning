@@ -346,11 +346,7 @@ function __copyTableToClipboardExport(tableId, btn) {
     if (!rows.length) { alert('Tabellen är tom, så det finns inget att kopiera.'); return; }
     _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
 }
-// Rad-matris → TSV i urklipp. Delas av tabellverktygen och diagrammens exportmeny.
-// Rad-matris → TSV för urklipp, med samma formelskydd som CSV-exporten.
-function _tillTsv(rows) {
-    return rows.map(r => r.map(c => (c == null ? '' : _neutraliseraCell(c))).join('\t')).join('\n');
-}
+// Rad-matris → TSV i urklipp (_tillTsv, src/lib/csv.js). Delas av tabellverktygen och diagrammens exportmeny.
 function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
     const tsv = _tillTsv(_tsvMedStampel(rows, undantag));
     const done = () => {
