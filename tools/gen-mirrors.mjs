@@ -378,6 +378,13 @@ export const MODULES = [
                   underlagKonAntal: '_figUnderlagKonAntal', underlagSkyddat: '_figUnderlagSkyddat', underlagVarde: '_figUnderlagVarde',
                   underlagDimension: '_figUnderlagDimension', underlagVarden: '_figUnderlagVarden', underlagValet: '_figUnderlagValet',
                   underlagProva: '_figUnderlagProva', underlagBeskrivning: '_figUnderlagBeskrivning', namnIMening: '_figNamnIMening' }
+    },
+    {
+        // Demodatans generatorer (det lilla och det stora demot) under appens namn; importerar kon.js, ansvar.js,
+        // inlasning.js och stat.js: efter dem. Konstanterna (_SD_GAP m.fl.) får inget alias: spegeln ger bara funktioner.
+        file: 'demodata.js', ns: '__mirrorDemodata',
+        expose: { generateTestData: 'generateTestData', generateDemoData: 'generateDemoData', generateStortDemo: 'generateStortDemo',
+                  generateStortDemoStatistik: 'generateStortDemoStatistik', _sdStallningstagande: '_sdStallningstagande' }
     }
 ];
 

@@ -2,44 +2,7 @@
 // Copyright 2026 Felix Jansson
 
 // ---- #16 Testdata + självdiagnostik ----
-function generateTestData() {
-    // Syntetisk dataset: 200 personer, 5 BAS (A-E), känd struktur:
-    // - Lön = 30000 + BAS_rank*5000 + age_centered*200 + random_noise
-    // - Kön-effekt: kvinnor får -3% justerad lön (oförklarat gap = ~3%)
-    // - Naturligt råa gapet ca -8% pga att kvinnor är yngre i snitt
-    const data = [];
-    const basList = ['A','B','C','D','E'];
-    const aidList = ['402010 Förskollärare', '207024 Vårdbiträde', '502010 Systemutvecklare', '401011 Lärare grundskola', '206017 Sjuksköterska'];
-    let seed = 42;
-    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-    const rndNorm = () => { let u = 0, v = 0; while(u === 0) u = rnd(); while(v === 0) v = rnd(); return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v); };
-    for (let i = 0; i < 200; i++) {
-        const isKvinna = i < 100; // 50/50
-        // Kvinnor är i snitt något yngre + tenderar att hamna i lägre BAS
-        const baseAge = isKvinna ? 38 : 44;
-        const alder = Math.max(22, Math.min(65, Math.round(baseAge + rndNorm() * 8)));
-        const basRank = isKvinna
-            ? Math.max(0, Math.min(4, Math.round(1.5 + rndNorm() * 1.2)))
-            : Math.max(0, Math.min(4, Math.round(2.5 + rndNorm() * 1.2)));
-        const bas = basList[basRank];
-        const yrke = aidList[basRank];
-        // Lön: baseras på BAS + ålder + ev kön-bias
-        const baseLon = 30000 + basRank * 5000 + (alder - 40) * 250;
-        const konPenalty = isKvinna ? -baseLon * 0.03 : 0; // -3% för kvinnor
-        const noise = rndNorm() * 1500;
-        const lon = Math.round(baseLon + konPenalty + noise);
-        data.push({
-            bas, yrke,
-            lon: Math.max(20000, lon),
-            alder,
-            kon: isKvinna ? 'kvinna' : 'man'
-        });
-        // Ett slumptal per person dras och används inte: testdatan — och självdiagnostikens
-        // förväntade värden — bygger på den dragningsföljden.
-        rnd();
-    }
-    return data;
-}
+// generateTestData och generateDemoData står i src/lib/demodata.js; appen når dem genom spegeln.
 
 function runDiagnostics() {
     const tests = [];
@@ -115,44 +78,6 @@ function runDiagnostics() {
     return tests;
 }
 
-// Demodata ("Prova med demodata"): självdiagnostikens 200 personer med AID och
-// yrkesnamn, plus tre yrken i BAS C som ger kandidatpar i likvärdigt arbete — två
-// kvinnodominerade yrken med lägre lön än ett mansdominerat på samma nivå. Systemutvecklare i BAS C (23 kvinnor av
-// 45) är blandad och därmed också jämförelseyrke (ADR-60).
-// generateTestData() lämnas orörd: självdiagnostiken bygger på dess kända egenskaper.
-function generateDemoData() {
-    const data = generateTestData().map(r => ({
-        ...r, aid: r.yrke.split(' ')[0], yrkeLabel: r.yrke.replace(/^\d+\s*/, '')
-    }));
-    const lagg = (yrke, n, kvinnor, grundlon) => {
-        for (let i = 0; i < n; i++) {
-            const alder = 26 + ((i * 7) % 34);
-            data.push({
-                bas: 'C', yrke, aid: yrke.split(' ')[0], yrkeLabel: yrke.replace(/^\d+\s*/, ''),
-                lon: Math.round(grundlon + (alder - 40) * 150 + ((i * 37) % 11 - 5) * 120),
-                alder, kon: i < kvinnor ? 'kvinna' : 'man'
-            });
-        }
-    };
-    lagg('403010 Barnskötare', 20, 18, 36500);    // 90 % kvinnor
-    lagg('207011 Undersköterska', 20, 17, 37500); // 85 % kvinnor
-    lagg('503012 Drifttekniker', 20, 3, 42500);   // 15 % kvinnor
-    // Ansvarskod (AID): var 15:e man och var 30:e kvinna har ledningsansvar, var 30:e person
-    // ett särskilt uppdrag och var 15:e lärare är förstelärare. Påverkar inte lönerna.
-    const raknare = { kvinna: 0, man: 0 };
-    let larare = 0;
-    data.forEach((r, i) => {
-        const nr = ++raknare[r.kon];
-        let koder = [];
-        if ((r.kon === 'man' && nr % 15 === 0) || (r.kon === 'kvinna' && nr % 30 === 0)) koder = ['C'];
-        else if (r.aid === '401011' && ++larare % 15 === 0) koder = ['1002'];
-        else if ((i + 1) % 30 === 0) koder = ['F'];
-        r.ansvarskoder = koder;
-        r.ansvarsgrupp = _anGrupp(koder);
-    });
-    return data;
-}
-
 // Demolägets påhittade organisation och ställningstagande (ADR-28). Bara i demoläget;
 // försvinner med rensningen. Siffrorna är påhittade och speglar ingen verklig organisation.
 // Nivåerna följer demolönerna (ca 30 000 kr i BAS A och 5 000 kr per intervall), så att
@@ -168,7 +93,7 @@ const DEMO_REFERENS = Object.freeze({
 });
 // Det stora demot (21-stort-demo.js) räknar sitt ställningstagande ur sina egna löner, BAS A–K.
 function _lasInDemoReferens({ stort = false } = {}) {
-    state.policy = (stort ? _sdStallningstagande(state.data) : DEMO_REFERENS.rader).map(r => ({ ...r }));
+    state.policy = (stort ? _sdStallningstagande(state.data, kInstalld()) : DEMO_REFERENS.rader).map(r => ({ ...r }));
     state.policyNamn = DEMO_REFERENS.namn;
     state.policyKortnamn = DEMO_REFERENS.namn;
     state.policyKalla = 'demo';

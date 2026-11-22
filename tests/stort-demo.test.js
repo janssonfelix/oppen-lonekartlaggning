@@ -2,8 +2,8 @@
  * Stort demo (21-stort-demo.js): 5 000 påhittade personer med 100 AID-etiketter bredvid det lilla demot, för att visa verktyget i verklig
  * storlek utan riktig data.
  *
- * Vaktar generatorn (storlek, determinism, fälten, BAS A–K, yrkesgrupperna och de små grupperna), inläsningen
- * (demoläget, flikarna, Översikt utan internt fel och utan självdiagnostik, den påhittade jämförelsestatistiken och
+ * Generatorn (storlek, determinism, fälten, BAS A–K, yrkesgrupperna och de små grupperna) prövas utan webbläsare i
+ * tests/demodata.test.js. Här vaktas inläsningen (demoläget, flikarna, Översikt utan internt fel och utan självdiagnostik, den påhittade jämförelsestatistiken och
  * ställningstagandet ur demots löner), att en riktig lönefil eller statistikfil ersätter demots statistik, ingångarna
  * (Kom igång, lönefilskortet, ?demo=stor), nyckeltalen (rått gap, könskoefficienten, antalet små grupper), att det lilla demot är oförändrat, att Excel (alla flikar) inte röjer ett
  * könsuppdelat lönemått för en grupp under tröskeln och att Rensa all data lämnar samma tillstånd som efter det lilla
@@ -31,84 +31,6 @@ function bevaka(w) {
         { const rd = runDiagnostics; runDiagnostics = function () { window.__diagnostik++; return rd(); }; }`);
     return w;
 }
-
-describe('stort demo: generatorn', () => {
-    let w, data;
-    beforeAll(() => { w = createAppWindow(); data = w.eval('generateStortDemo()'); });
-
-    it('5 000 rader, och samma rader vid ett andra anrop', () => {
-        expect(data).toHaveLength(5000);
-        const igen = w.eval('generateStortDemo()');
-        expect(igen[0]).toEqual(data[0]);
-        expect(JSON.stringify(igen)).toBe(JSON.stringify(data));
-    });
-
-    it('varje rad har samma fält som det lilla demot, alla satta', () => {
-        const fel = [];
-        data.forEach((r, i) => {
-            const ok = BAS_AK.includes(r.bas) && /^\d{6} \S/.test(r.yrke) && r.aid === r.yrke.slice(0, 6)
-                && r.yrkeLabel === r.yrke.slice(7) && Number.isInteger(r.lon) && r.lon > 15000 && r.lon < 150000
-                && Number.isInteger(r.alder) && r.alder >= 18 && r.alder <= 67 && (r.kon === 'kvinna' || r.kon === 'man')
-                && Array.isArray(r.ansvarskoder) && ['inget', 'uppdrag', 'ledning'].includes(r.ansvarsgrupp) && r.radnr === i + 2;
-            if (!ok) fel.push(i);
-        });
-        expect(fel.slice(0, 5)).toEqual([]);
-        const falt = Object.keys(w.eval('generateDemoData()')[0]).concat('radnr').sort();
-        expect(Object.keys(data[0]).sort()).toEqual(falt);
-    });
-
-    it('BAS A–K finns alla, flest i B–G', () => {
-        const per = Object.fromEntries(BAS_AK.map(b => [b, data.filter(r => r.bas === b).length]));
-        for (const b of BAS_AK) expect(per[b], b).toBeGreaterThan(0);
-        expect(per.B + per.C + per.D + per.E + per.F + per.G).toBeGreaterThan(0.7 * data.length);
-        expect(per.J + per.K).toBeLessThan(0.08 * data.length);
-    });
-
-    it('100 yrkesgrupper, några under tio personer och några där ett kön är färre än tio', () => {
-        const per = new Map();
-        for (const r of data) { const g = per.get(r.aid) || { n: 0, kv: 0 }; g.n++; if (arKvinna(r)) g.kv++; per.set(r.aid, g); }
-        expect(per.size).toBe(100);
-        const sma = [...per.values()].filter(g => g.n < 10);
-        expect(sma.length).toBeGreaterThanOrEqual(3);
-        const ettKonFa = [...per.values()].filter(g => g.n >= 10 && (g.kv < 10 || g.n - g.kv < 10));
-        expect(ettKonFa.length).toBeGreaterThanOrEqual(2);
-        expect(Math.max(...[...per.values()].map(g => g.n))).toBeLessThanOrEqual(900);
-    });
-
-    it('kontrollen av AID-kodningen är grön: koderna finns i etikettlistan och ansvarskoderna är tillåtna', () => {
-        const kriterier = w.eval('_akAidKriterier(generateStortDemo(), { k: 10, harAnsvar: true })');
-        expect(kriterier.filter(k => k.status !== 'ok').map(k => `${k.id}: ${k.text}`)).toEqual([]);
-    });
-
-    it('likvärdigt arbete: ett mansdominerat tekniskt yrke har högre lön än ett kvinnodominerat vårdyrke i samma intervall', () => {
-        const { hog, lag, bas } = w.eval('_SD_LIKVARDIGT');
-        const grupp = aid => data.filter(r => r.bas === bas && r.aid === aid);
-        const tekniker = grupp(hog), vard = grupp(lag);
-        expect(tekniker.filter(arKvinna).length / tekniker.length).toBeLessThan(0.25);
-        expect(vard.filter(arKvinna).length / vard.length).toBeGreaterThan(0.8);
-        expect(median(tekniker.map(r => r.lon))).toBeGreaterThan(median(vard.map(r => r.lon)) * 1.05);
-    });
-
-    it('gapet för kvinnor finns i yrkena i _SD_GAP och inte i övriga', () => {
-        const gap = w.eval('_SD_GAP');
-        const grupper = new Map();   // yrke inom BAS-intervall
-        for (const r of data) {
-            const nyckel = `${r.aid} ${r.bas}`;
-            const g = grupper.get(nyckel) || { aid: r.aid, kv: [], ma: [] };
-            if (arKvinna(r)) g.kv.push(r.lon); else if (arMan(r)) g.ma.push(r.lon);
-            grupper.set(nyckel, g);
-        }
-        const alla = [...grupper.values()];
-        expect(Object.keys(gap)).toHaveLength(4);
-        for (const aid of Object.keys(gap)) {
-            const iYrket = alla.filter(g => g.aid === aid);
-            expect(iYrket.length, aid).toBeGreaterThan(0);
-            for (const g of iYrket) expect(median(g.kv), aid).toBeLessThan(median(g.ma));
-        }
-        const utanGap = alla.filter(g => !(g.aid in gap) && g.kv.length >= 10 && g.ma.length >= 10);
-        expect(utanGap.some(g => median(g.kv) >= 0.99 * median(g.ma))).toBe(true);
-    });
-});
 
 describe('stort demo: inläsningen', () => {
     let w;
@@ -435,7 +357,7 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
         const sektor = w.eval(`Object.fromEntries(${JSON.stringify([...new Set(data.map(r => r.aid))])}.map(a => [a, _aidSektorsnamn(a)]))`);
         ({ varden: sentinel, block, provade } = sattSentinel(data, sektor));
         w.__sdJson = JSON.stringify(data);
-        w.eval('{ const original = generateStortDemo; generateStortDemo = () => JSON.parse(window.__sdJson); loadStortDemo(); generateStortDemo = original; }');
+        w.eval('_lasInDemounderlag(() => JSON.parse(window.__sdJson), { stort: true })');   // som loadStortDemo, med sentinellönerna
         w.alert = () => {};
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };

@@ -70,6 +70,7 @@ import * as libAb from '../src/lib/arsbokslut.js';
 import * as libSak from '../src/lib/sakligaskal.js';
 import * as libAidbas from '../src/lib/aidbas.js';
 import * as libKon from '../src/lib/kon.js';
+import * as libDemodata from '../src/lib/demodata.js';
 import { MODULES } from '../tools/gen-mirrors.mjs';
 import { regexEscape } from './helpers/regex.js';
 
@@ -100,7 +101,7 @@ function lcg(seed) { return () => { seed = (seed * 1103515245 + 12345) & 0x7ffff
 const allAliases = MODULES.flatMap(m => Object.values(m.expose)).filter(Boolean);
 const allEntries = MODULES.flatMap(m => Object.keys(m.expose));
 const M = new Function(`${mirrorsSrc}\n;return { ${[...allAliases, ...MODULES.map(m => m.ns)].join(', ')} };`)();
-const libByFile = { 'kon.js': libKon, 'stat.js': libStat, 'loneoversyn.js': libFc, 'struktur.js': libSt,
+const libByFile = { 'kon.js': libKon, 'demodata.js': libDemodata, 'stat.js': libStat, 'loneoversyn.js': libFc, 'struktur.js': libSt,
     'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'installningsgranser.js': libIg, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'inlasning.js': libIl, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'referenser.js': libRf, 'namn.js': libNamn, 'termer.js': libTermer, 'htmltext.js': libHtmlText, 'undertryckning.js': libUndertryckning, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
     'prioritering.js': libPr, 'kostnad.js': libKost, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts, 'osakerhet.js': libOs, 'csv.js': libCsv, 'talformat.js': libTalformat, 'ktroskel.js': libKtroskel };
 
