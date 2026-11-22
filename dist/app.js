@@ -17947,7 +17947,10 @@ const PALETTE = {
     // att något förklaras är ingen bedömning. Seriens två första färger, som skiljer sig också vid färgblindhet.
     // strukturLjus är ett steg som inte ingår i huvudtalet (regressionens AID-etikett inom BAS): strukturens blå,
     // ljusare, som en färg och inte som genomskinlighet, så att förklaringens ruta har samma färg som stapeln.
-    uppdelning: { helhet: FARG.dampad, struktur: '#2a78d6', strukturLjus: '#9fc2ed', lonesattning: '#eb6834' }
+    uppdelning: { helhet: FARG.dampad, struktur: '#2a78d6', strukturLjus: '#9fc2ed', lonesattning: '#eb6834' },
+    // Läget mot ett spann (lönepolitikens spann, personernas avstånd till gruppens median): varmt under, neutralt
+    // inom, kallt över, med den divergerande skalans mellansteg för tredjedelarna.
+    lage: { under: '#c2552d', nedre: '#e59a7b', inom: '#d5dae3', ovre: '#86b6ef', over: '#2a78d6' }
 };
 
 // Uppmärksamhetstrappan (ADR-59): statusordförrådet för en skillnad mellan kvinnors och mäns lön — ETT ställe för alla
@@ -28240,10 +28243,8 @@ function renderStructure() {
         <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per ${T.niva.en}, i ordning A–Ö. Sjunker andelen kvinnor mot högre ${T.niva.fl} (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak). Det är en strukturell orsak till löneskillnaden.</p>
         ${repVisade.length ? `<table class="data-table st-088"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">Median</th><th class="t-hoger">Andel kvinnor</th><th class="bredd-34p">Andel kvinnor (mot ${svPct(totAndel, 0)} totalt)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead><tbody>
         ${repVisade.map(g => {
-            const over = g.andelKv > totAndel + 10, under = g.andelKv < totAndel - 10;
-            const col = over ? 'bg-rosa' : under ? 'bg-accent' : 'bg-ok';
             return `<tr><td><strong>${esc(g.bas)}</strong></td><td class="t-hoger">${g.n}</td><td class="t-hoger">${kr(g.median)}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>
-            <td><div class="bak-yta-stark rund-7 hojd-14 pos-relativ"><div class="pos-botten-2 pos-absolut pos-topp-2 bredd-2 bg-dampad" data-stil-vanster="${totAndel.toFixed(1)}%" title="Snitt ${svPct(totAndel, 0)}"></div><div class="rund-7 hojd-100p ${col}" data-stil-bredd="${g.andelKv.toFixed(1)}%"></div></div></td>
+            <td><div class="bak-yta-stark rund-7 hojd-14 pos-relativ"><div class="pos-botten-2 pos-absolut pos-topp-2 bredd-2 bg-dampad" data-stil-vanster="${totAndel.toFixed(1)}%" title="Snitt ${svPct(totAndel, 0)}"></div><div class="rund-7 hojd-100p bg-accent" data-stil-bredd="${g.andelKv.toFixed(1)}%"></div></div></td>
             <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ''}</td></tr>`;
         }).join('')}
         </tbody></table>` : ''}
@@ -28265,7 +28266,7 @@ function renderStructure() {
             distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
             <div class="mb-10" id="chart-struktur-percentiler"></div>
             <table class="data-table st-088">${antalCaption(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
-            ${dist.map(x => `<tr><td>P${x.p}</td><td class="t-hoger">${kr(x.kv)}</td><td class="t-hoger">${kr(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 ${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join('')}
+            ${dist.map(x => `<tr><td>P${x.p}</td><td class="t-hoger">${kr(x.kv)}</td><td class="t-hoger">${kr(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 bg-accent" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join('')}
             </tbody></table>${tolk ? `<p class="fs-sm marg-8-0-0">${tolk}</p>` : ''}`; tillampaDataStil(distEl);
         }
     }
@@ -30975,7 +30976,7 @@ function _pagAvvikelseRader(d, grans) {
 // prövade och andelen långt under respektive över förväntad lön, och de två andelarna ritade i raden kring en
 // mittlinje (under åt vänster, över åt höger). Ett diagram med en stapel per rad stod till hälften tomt; tabellen
 // visar också nollorna och antalet bakom. `rader` kommer från _pagAvvikelseRader: bara BAS där båda könen når tröskeln.
-const _PAG_FARG = { under: '#c2552d', over: FARG.svag };
+const _PAG_FARG = { under: PALETTE.lage.under, over: FARG.svag };
 function _pagAvvikelseGrafik(o, kant) {
     const b = 200, h = 20, m = b / 2, w = v => +(Math.min(v, kant) / kant * (m - 2)).toFixed(1);
     return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">`
@@ -39334,7 +39335,7 @@ function _lpFigurKonHantel(rows) {
 // spannet, nedre, mellersta eller övre tredjedelen, eller över spannet. Genomsnittsläget (diagrammet ovanför) kan vara
 // detsamma för könen fast det ena samlas i nedre tredjedelen; fördelningen visar det. Klasserna räknas per BAS-intervall
 // med policyspann och läggs ihop över hela urvalet; ett kön redovisas bara när det når tröskeln.
-const _LP_LAGEN = [['Under spannet', '#c2552d'], ['Nedre tredjedelen', '#e59a7b'], ['Mellersta tredjedelen', '#d5dae3'], ['Övre tredjedelen', '#86b6ef'], ['Över spannet', '#2a78d6']];
+const _LP_LAGEN = [['Under spannet', PALETTE.lage.under], ['Nedre tredjedelen', PALETTE.lage.nedre], ['Mellersta tredjedelen', PALETTE.lage.inom], ['Övre tredjedelen', PALETTE.lage.ovre], ['Över spannet', PALETTE.lage.over]];
 function _lpLagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ? 2 : pos <= 1 ? 3 : 4; }
 function _lpKonLagen(rows, pol) {
     const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
@@ -39370,7 +39371,7 @@ function _lpRitaKonLagen(model) {
     if (not) not.textContent = `${pct(sum.kv, sum.nKv)} av kvinnorna och ${pct(sum.ma, sum.nMa)} av männen ligger i nedre tredjedelen eller under spannet. ${svTal(sum.nKv, 0)} kvinnor och ${svTal(sum.nMa, 0)} män med policyspann ingår.`;
 }
 
-const _LP_LAGE = { under: '#c2552d', inom: '#d5dae3', over: '#2a78d6' };
+const _LP_LAGE = PALETTE.lage;
 function _lpFigurKomplians(rows) {
     const pct = (v, n) => +((v / n) * 100).toFixed(1);
     const serie = (namn, farg, falt) => ({

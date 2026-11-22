@@ -301,7 +301,7 @@ function _lpFigurKonHantel(rows) {
 // spannet, nedre, mellersta eller övre tredjedelen, eller över spannet. Genomsnittsläget (diagrammet ovanför) kan vara
 // detsamma för könen fast det ena samlas i nedre tredjedelen; fördelningen visar det. Klasserna räknas per BAS-intervall
 // med policyspann och läggs ihop över hela urvalet; ett kön redovisas bara när det når tröskeln.
-const _LP_LAGEN = [['Under spannet', '#c2552d'], ['Nedre tredjedelen', '#e59a7b'], ['Mellersta tredjedelen', '#d5dae3'], ['Övre tredjedelen', '#86b6ef'], ['Över spannet', '#2a78d6']];
+const _LP_LAGEN = [['Under spannet', PALETTE.lage.under], ['Nedre tredjedelen', PALETTE.lage.nedre], ['Mellersta tredjedelen', PALETTE.lage.inom], ['Övre tredjedelen', PALETTE.lage.ovre], ['Över spannet', PALETTE.lage.over]];
 function _lpLagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ? 2 : pos <= 1 ? 3 : 4; }
 function _lpKonLagen(rows, pol) {
     const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
@@ -337,7 +337,7 @@ function _lpRitaKonLagen(model) {
     if (not) not.textContent = `${pct(sum.kv, sum.nKv)} av kvinnorna och ${pct(sum.ma, sum.nMa)} av männen ligger i nedre tredjedelen eller under spannet. ${svTal(sum.nKv, 0)} kvinnor och ${svTal(sum.nMa, 0)} män med policyspann ingår.`;
 }
 
-const _LP_LAGE = { under: '#c2552d', inom: '#d5dae3', over: '#2a78d6' };
+const _LP_LAGE = PALETTE.lage;
 function _lpFigurKomplians(rows) {
     const pct = (v, n) => +((v / n) * 100).toFixed(1);
     const serie = (namn, farg, falt) => ({

@@ -75,6 +75,7 @@
     --accent-mork: #1e3a8a;
     --accent-yta: #eff6ff;
     --accent-kant: #bfdbfe;
+    --diagram-ljusbla: #38bdf8;   /* åldersteget i regressionens budgetstapel, mellan BAS (info) och yrke */
     --accent-ring: color-mix(in srgb, var(--accent) 20%, transparent);   /* fokusringens yttre skugga */
     --danger: var(--status-kritisk);
     --warning-bg: var(--status-kritisk-yta);
@@ -2659,7 +2660,7 @@ summary:focus-visible {
 }
 .rb-seg { height: 100%; }
 .rb-bas { background: var(--status-info); }
-.rb-alder { background: #38bdf8; }
+.rb-alder { background: var(--diagram-ljusbla); }
 .rb-yrke { background: var(--status-granska); }
 .rb-kvar { background: var(--status-kritisk); }
 .reg-budget-legend {
@@ -3707,13 +3708,11 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .fg-info-mork { color: var(--status-info-mork) !important; }
 .fg-accent { color: var(--accent) !important; }
 .fg-granska { color: var(--status-granska) !important; }
-.fg-rosa { color: #e11d48 !important; }
 .bg-ok { background: var(--status-ok) !important; }
 .bg-varning { background: var(--status-varning) !important; }
 .bg-kritisk { background: var(--status-kritisk) !important; }
 .bg-info { background: var(--status-info) !important; }
 .bg-accent { background: var(--accent) !important; }
-.bg-rosa { background: #e11d48 !important; }
 .bg-blek { background: var(--text-blek) !important; }
 .bg-dampad { background: var(--text-muted) !important; }
 .bg-ok-yta { background: var(--status-ok-yta) !important; }
