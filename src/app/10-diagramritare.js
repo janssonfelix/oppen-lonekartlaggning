@@ -1190,11 +1190,8 @@ function _rfZoomGlom(el) { delete el._rfZoom; _rfZoomNot(el, false); }
 // och när en ny lönefil läses in (_rfUrvalGlom).
 /** @type {Map<string, Set<string>|{min: number|null, max: number|null}>} */
 const _rfUrvalMinne = new Map();
-// Diagrammen (id) vars rad "Filter" användaren har fällt ut. Raden är hopfälld tills dess, och minns och glöms som urvalet.
-/** @type {Set<string>} */
-const _rfUrvalUtfallda = new Set();
 /** Glömmer urvalet i alla diagram (ny lönefil, Rensa all data). Diagram som redan är ritade behåller sitt tills de ritas igen. */
-function _rfUrvalGlom() { _rfUrvalMinne.clear(); _rfUrvalUtfallda.clear(); }
+function _rfUrvalGlom() { _rfUrvalMinne.clear(); }
 function _rfUrvalNyckel(el, u) { return `${el.id}|${u.falt}`; }
 /** Ett tomt filter. */
 function _rfUrvalTomtFilter() { return { kategori: new Map(), intervall: new Map() }; }
@@ -1460,7 +1457,7 @@ function _rfUrvalIntervallRad(el, o) {
     }
     return rad;
 }
-// Antalet aktiva filter i raden "Filter": en dimension där något är bortvalt (också i underlaget, "Räkna för") eller
+// Antalet aktiva filter i rutan "Filter": en dimension där något är bortvalt (också i underlaget, "Räkna för") eller
 // där ett intervall är snävare än figurens hela spann.
 function _rfUrvalAntalAktiva(el) {
     const f = el._figurFilter || _rfUrvalTomtFilter();
@@ -1473,17 +1470,17 @@ function _rfUrvalAntalAktiva(el) {
     }
     return n;
 }
-function _rfUrvalFilterText(n) {
-    return `Filter: ${n === 0 ? 'inga' : n === 1 ? '1 aktivt' : `${_figTalformat(n, 'antal')} aktiva`}`;
+// Rubriken i rutan "Filter": "Filter: inga", "Filter: 1 aktivt" eller "Filter: N aktiva", med ordet Filter i fetstil.
+function _rfUrvalFilterRubrik(rubrik, n) {
+    const ord = document.createElement('strong');
+    ord.textContent = 'Filter';
+    rubrik.replaceChildren(ord, `: ${n === 0 ? 'inga' : n === 1 ? '1 aktivt' : `${_figTalformat(n, 'antal')} aktiva`}`);
 }
-// Bygger filterraderna (eller tar bort dem) och visar noten. Raderna står i en <details> ("Filter: …", data-urval-filter)
-// direkt före behållaren, hopfälld tills användaren fäller ut den. Fokus på summeringen, en knapp eller ett fält följer
-// med till de nya raderna.
+// Bygger filterraderna (eller tar bort dem) och visar noten. Raderna står i rutan "Filter" (data-urval-filter) direkt
+// före behållaren, alltid utfälld så att filtren inte missas. Fokus på en knapp eller ett fält följer med till de nya raderna.
 function _rfUrvalVisa(el) {
     const forra = el._rfUrvalRader || [];
     const forraFilter = el._rfUrvalFilterEl || null;
-    const a = document.activeElement;
-    const fokusSummering = !!(forraFilter && a && a.parentNode === forraFilter && a.hasAttribute('data-urval-filtersummering'));
     const fokus = _rfUrvalFokus(forra);
     const listor = _rfUrvalListLage(forra);
     for (const r of forra) r.remove();
@@ -1511,23 +1508,18 @@ function _rfUrvalVisa(el) {
             alla = k;
         }
         const rader = [...underlagRader, ...filterRader];
-        const filter = document.createElement('details');
+        const filter = document.createElement('div');
         filter.className = 'diagram-filter';
         filter.setAttribute('data-urval-filter', '');
-        if (el.id && _rfUrvalUtfallda.has(el.id)) filter.open = true;
-        const sum = document.createElement('summary');
-        sum.setAttribute('data-urval-filtersummering', '');
-        filter.appendChild(sum);
+        const rubrik = document.createElement('p');
+        rubrik.className = 'diagram-filter-rubrik';
+        rubrik.setAttribute('data-urval-filtersummering', '');
+        filter.appendChild(rubrik);
         for (const r of rader) filter.appendChild(r);
-        filter.addEventListener('toggle', () => {
-            if (!el.id) return;
-            if (filter.open) _rfUrvalUtfallda.add(el.id); else _rfUrvalUtfallda.delete(el.id);
-        });
         el.insertAdjacentElement('beforebegin', filter);
         el._rfUrvalRader = rader;
         el._rfUrvalFilterEl = filter;
-        if (fokusSummering) sum.focus();
-        else if (fokus) {
+        if (fokus) {
             const rad = rader.find(r => r.getAttribute('data-urval-falt') === fokus.falt);
             const mal = fokus.alla ? alla : fokus.underlagAlla ? underlagAlla
                 : rad && fokus.attr ? [...rad.querySelectorAll(`[${fokus.attr}]`)].find(k => k.getAttribute(fokus.attr) === fokus.varde) : null;
@@ -1573,7 +1565,11 @@ function _rfUrvalUppdatera(el) {
     const underlagAlla = rader.map(r => r.querySelector('[data-underlag-alla]')).find(Boolean);
     if (underlagAlla) /** @type {HTMLElement} */ (underlagAlla).hidden = !el._rfUnderlagText;
     const filterSum = el._rfUrvalFilterEl ? el._rfUrvalFilterEl.querySelector(':scope > [data-urval-filtersummering]') : null;
-    if (filterSum) filterSum.textContent = _rfUrvalFilterText(_rfUrvalAntalAktiva(el));
+    if (filterSum) {
+        const n = _rfUrvalAntalAktiva(el);
+        _rfUrvalFilterRubrik(filterSum, n);
+        el._rfUrvalFilterEl.toggleAttribute('data-aktivt', n > 0);
+    }
     const harlett = _figHarlettNot(el._rfHarlett);
     _rfUrvalNot(el, el._figur ? _figUrvalBeskrivning(el._figur, f, { visaSma: !!(el._figurVal && el._figurVal.visaSma) }) : [], [...fel.values()], [...harlett.omraknade, ...harlett.utelamnade], _rfUnderlagNot(el));
 }

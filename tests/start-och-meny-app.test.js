@@ -373,10 +373,9 @@ describe('menystruktur', () => {
 
 describe('utfällt som standard', () => {
     // Hjälppaneler förblir infällda; explore-urval-val är Utforskas rullgardin för värdeval och diagram-urval-lista
-    // diagramkärnans lista med kryssrutor ("Räkna för sektor", "Yrkesgrupp"), diagram-filter diagramkärnans rad
-    // "Filter: …" med filterraderna och gu-andra valet av förklaringsvariabler under trappan i Var uppstår
+    // diagramkärnans lista med kryssrutor ("Räkna för sektor", "Yrkesgrupp") och gu-andra valet av förklaringsvariabler under trappan i Var uppstår
     // löneskillnaden? ("Ändra uppdelning") — kontroller, inte grupperingar.
-    const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista', 'diagram-filter', 'gu-andra'];
+    const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista', 'gu-andra'];
     // Organisationspaketets förklaring (Vad är ett organisationspaket?) och formuläret för systemägaren är hopfällda i
     // steg 1 i Filer och kvalitet, och Underlagets kvalitet är ihopfälld när allt är OK (utfälld vid varning).
     // Livscykelns tabell per BAS-intervall och modelljämförelsen är modellens underlag, inte beskedet, och hopfällda.

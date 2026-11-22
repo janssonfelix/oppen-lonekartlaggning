@@ -207,11 +207,10 @@ export async function flikarOchDiagram() {
         const felFore = konsolfel.length + sidfel.length;
         const etiketter = () => page.evaluate(() => [...document.querySelectorAll('#chart-lp-bandmap > svg [data-axel="x"]')].map(t => t.textContent));
         const fore = await etiketter();
-        // Filterraderna står i den hopfällda raden "Filter: …" före diagrammet; den fälls ut först.
-        const filter = page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::details[@data-urval-filter][1]');
-        const filterSum = filter.locator(':scope > summary');
-        ok(await filter.evaluate(d => !d.open) && await filterSum.textContent() === 'Filter: inga', 'raden Filter är hopfälld och säger "Filter: inga"');
-        await filterSum.click();
+        // Filterraderna står i rutan "Filter: …" före diagrammet, alltid utfälld.
+        const filter = page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::div[@data-urval-filter][1]');
+        const filterSum = filter.locator(':scope > [data-urval-filtersummering]');
+        ok(await filterSum.isVisible() && await filterSum.textContent() === 'Filter: inga', 'rutan Filter syns och säger "Filter: inga"');
         const forsta = filter.locator('div[data-urval-falt="bas"] button[aria-pressed]').first();
         const namn = await forsta.textContent();
         await forsta.click();
@@ -219,8 +218,8 @@ export async function flikarOchDiagram() {
         const efter = await etiketter();
         ok(efter.length === fore.length - 1 && !efter.includes(namn), `bandkartan: ett klick på ${namn} döljer intervallet (${fore.length} → ${efter.length} x-etiketter)`);
         ok(await forsta.getAttribute('aria-pressed') === 'false', 'knappen är inte längre intryckt (aria-pressed="false")');
-        ok(await filterSum.textContent() === 'Filter: 1 aktivt', 'summeringen säger "Filter: 1 aktivt"');
-        ok(await forsta.evaluate(b => b === document.activeElement || b.contains(document.activeElement)) && await filter.evaluate(d => d.open), 'fokus står kvar på knappen och raden är utfälld');
+        ok(await filterSum.textContent() === 'Filter: 1 aktivt' && await filter.evaluate(d => d.hasAttribute('data-aktivt')), 'rubriken säger "Filter: 1 aktivt" och rutan är markerad');
+        ok(await forsta.evaluate(b => b === document.activeElement || b.contains(document.activeElement)), 'fokus står kvar på knappen');
         ok(konsolfel.length + sidfel.length === felFore, `inga konsolfel efter klicket${konsolfel.length + sidfel.length > felFore ? ': ' + [...konsolfel, ...sidfel].slice(felFore).join(' | ') : ''}`);
         // Tillbaka till alla, så att kontrollerna efter den här ser hela bandkartan.
         await filter.locator('[data-urval-alla]').click();
@@ -403,12 +402,11 @@ export async function flikarOchDiagram() {
         const fore = await punkter();
         const felFore = konsolfel.length + sidfel.length;
         const rader = await page.evaluate(() => { const d = document.getElementById('chart-prio-matrix').previousElementSibling;
-            return d && d.matches('details[data-urval-filter]') ? [...d.querySelectorAll(':scope > .diagram-urval')].map(r => r.getAttribute('data-urval-falt')) : []; });
+            return d && d.matches('div[data-urval-filter]') ? [...d.querySelectorAll(':scope > .diagram-urval')].map(r => r.getAttribute('data-urval-falt')) : []; });
         ok(['bas', 'n', 'x'].every(f => rader.includes(f)), `matrisen har filterraderna BAS, antal och avvikelse (${rader.join(', ')})`);
         // Ett Minst mitt i spannet: grupperna under döljs.
         const minst = await page.evaluate(() => { const sp = _figUrvalSpann(document.getElementById('chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
-        const filter = page.locator('#chart-prio-matrix').locator('xpath=preceding-sibling::details[@data-urval-filter][1]');
-        if (!(await filter.evaluate(d => d.open))) await filter.locator(':scope > summary').click();
+        const filter = page.locator('#chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-filter][1]');
         const falt = filter.locator('div[data-urval-falt="n"] input[data-urval-grans="min"]');
         await falt.fill(String(minst));
         await falt.press('Enter');
@@ -451,10 +449,9 @@ export async function flikarOchDiagram() {
         ok(['bas', 'n', 'x'].every(f => info.rader.includes(f)) && info.meny, `kopian av prioriteringsmatrisen har filterraderna (${info.rader.join(', ')}) och en egen exportmeny`);
         ok(info.punkter > 0 && info.punkter === info.kalla && info.hojd > 50, `kopian ritar samma punkter som källan (${info.punkter} och ${info.kalla})`);
         // Kopians filter: ett Minst i kopian döljer punkter där, men inte i källan.
-        // Kopian har sitt eget id och därmed sin egen rad Filter, hopfälld tills den fälls ut.
-        const kopiansFilter = page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::details[@data-urval-filter][1]');
-        ok(await kopiansFilter.evaluate(d => !d.open), 'kopians rad Filter är hopfälld från början');
-        await kopiansFilter.locator(':scope > summary').click();
+        // Kopian har sitt eget id och därmed sin egen ruta Filter.
+        const kopiansFilter = page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-filter][1]');
+        ok(await kopiansFilter.isVisible(), 'kopians ruta Filter syns från början');
         const falt = kopiansFilter.locator('div[data-urval-falt="n"] input[data-urval-grans="min"]');
         const minst = await page.evaluate(() => { const sp = _figUrvalSpann(document.getElementById('ut-diagram-chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
         await falt.fill(String(minst));
