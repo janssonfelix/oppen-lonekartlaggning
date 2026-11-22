@@ -24,11 +24,11 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
 8. **Ett gemensamt globalt scope** på omkring 30 000 rader, utan den genererade spegeln. Logik flyttas till `src/lib/` när en del ändå ändras.
-28. **Testsviten tar knappt tre minuter lokalt och två till tre per jobb i CI** (delad på fyra jobb, mätt
-    2026-11-15). Väntetiden för en pull request sätts av röktestet i webbläsarna (4,5–5,5 min), inte av sviten. Två
-    testfamiljer står för två tredjedelar av svitens tid: k-tröskeln och röktesterna av flikarna. En kortare svit
-    kräver att tester som bara läser delar fönster i riggen som vaktar skyddet S4 (`tests/helpers/ktroskel-rigg.js`);
-    det avstods 2026-11-15, eftersom vinsten är någon minut lokalt och ingen i väntetiden. Tas upp igen om sviten
+28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
+    2026-11-22: omkring 2 050 s sammanlagt på tolv arbetare). Väntetiden för en pull request sätts av röktestet i
+    webbläsarna (4,5–5,5 min), inte av sviten. Filerna som ritar verktyget i jsdom står för nästan hela tiden, och
+    k-tröskelns filer för en fjärdedel. Delade fönster provades 2026-11-22 och kastades: i de fem filer som skapade
+    flest fönster gick bara 39 av 330 att dela, eftersom de flesta apptester ändrar fönstret. Tas upp igen om sviten
     blir det som sätter väntetiden i CI.
 
 **Gränssnitt och analys (översynen 2026-10-29):**
@@ -91,6 +91,5 @@ direktivet beskrivs som inte infört i Sverige, med möjlig direkt verkan mot ko
 och kvar att pröva juridiskt: 5 %-gränsen används bara för gemensam lönebedömning, aldrig för att flagga lika eller
 likvärdigt arbete (ADR-59); inläsningen avvisar kolumner vars rubrik antyder fackmedlemskap, hälsa eller andra
 särskilda kategorier (`detectSensitiveColumns`). Fliken *Handlingsplan* behåller namnet, som är neutralt (beslut
-2026-11-15). Protokollet för gemensam lönebedömning är kartlagt mot art. 10.2 a–g i [`lagrum.md`](lagrum.md):
-a–c delvis, d och f som fält att fylla i, e och g saknas. Ingen juridisk granskning har gjorts; varje arbetsgivare
-stämmer av mot sin egen rådgivning.
+2026-11-15). Protokollet för gemensam lönebedömning är kartlagt led för led mot art. 10.2 a–g i [`lagrum.md`](lagrum.md).
+Ingen juridisk granskning har gjorts; varje arbetsgivare stämmer av mot sin egen rådgivning.
