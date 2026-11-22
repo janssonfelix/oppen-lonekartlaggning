@@ -619,6 +619,13 @@ function importprofilText(p, headers = state._dataHeaders) {
     return `Känd uppsättning${andrad ? ', ändrad' : ''}: ${p.namn} (${_importprofilKalla(p.kalla)})`;
 }
 
+/** Dagens datum som 'ÅÅÅÅ-MM-DD' i lokal tid, för filnamn och fältet skapat. Inte toISOString(): den ger UTC, och
+ *  mellan midnatt och 01 (02 sommartid) blir det gårdagens datum. @param {Date} [datum] */
+function idagDatum(datum = new Date()) {
+    const p = n => String(n).padStart(2, '0');
+    return `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
+}
+
 // ---- Tal som text, svenskt format ----
 // All text som visas ska ha decimalkomma och mellanslag före procenttecknet ("85,2 %"). toFixed ger decimalpunkt
 // och används bara där ett tal ska läsas av kod (CSS-mått, sorteringsvärden, tal till Excel).
@@ -18120,8 +18127,7 @@ function chartExportFilename(gd, ext, datum = new Date()) {
     const panel = (kalla || gd).closest ? (kalla || gd).closest('.view-panel') : null;
     const flik = panel && panel.id ? panel.id.replace(/^view-/, '') : 'diagram';
     const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
-    const pad = n => String(n).padStart(2, '0');
-    const dag = `${datum.getFullYear()}-${pad(datum.getMonth() + 1)}-${pad(datum.getDate())}`;
+    const dag = idagDatum(datum);
     const titel = _chartExportSlug(chartExportTitle(gd)) || 'Diagram';
     return `${state.isDemo ? 'DEMO_' : ''}${_chartExportSlug(Flik)}_${titel}_${dag}.${ext}`;
 }
@@ -18207,8 +18213,7 @@ function chartExportRows(gd, underlag) {
  *  (exportAnteckning) gäller hela underlaget och står då inte med.
  *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] @param {string} [underlag] */
 function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
-    const p = n => String(n).padStart(2, '0');
-    const dag = `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
+    const dag = idagDatum(datum);
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
     // Ett zoomat diagram exporteras som det visas: fotraden säger att bilden är ett utsnitt.
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn
@@ -20317,7 +20322,7 @@ function _exportActionChecklistCSVExport(items, done) {
     rows.push(['Hanterade', items.filter(it => done.has(it.id)).length]);
     const parNot = _attGoraParNot();
     if (parNot) rows.push(['Utelämnade par', parNot]);
-    _downloadCSV(rows, 'atgardslista_' + new Date().toISOString().slice(0, 10));
+    _downloadCSV(rows, 'atgardslista_' + idagDatum());
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -20762,7 +20767,7 @@ document.getElementById('btn-config-save')?.addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `lonekartlaggning_config_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `lonekartlaggning_config_${idagDatum()}.json`;
     a.click();
     const status = document.getElementById('config-status');
     if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
@@ -22355,7 +22360,7 @@ function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
-    XLSX.writeFile(wb, `lonekartlaggning_komplett_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
     _showExportSensitivityToast();
 }
 
@@ -22534,7 +22539,7 @@ function _exportJPAProtocolExport() {
 
     const d = getData();
     const now = new Date();
-    const isoDate = now.toISOString().slice(0, 10);
+    const isoDate = idagDatum(now);
     const localDate = now.toLocaleDateString('sv-SE');
     const profileLabel = state.profile.benchmarkLabel;
 
@@ -24081,7 +24086,7 @@ function skapaPaket() {
     return _opByggPaket({
         organisation: _paketText('paket-org'),
         utgivare: _paketText('paket-utgivare'),
-        skapat: new Date().toISOString().slice(0, 10),
+        skapat: idagDatum(),
         avserAr: _paketTal('paket-ar'),
         profil: {
             benchmarkLabel: jamfNamn || undefined,
@@ -24131,7 +24136,7 @@ function skapaPaketMedImportprofil(profil) {
     // Paketets profiler som de står i sessionen (en som tagits bort i Inställningar följer inte med).
     const ovriga = (state.importprofiler || []).filter(x => x.kalla === 'organisationspaket' && x.id !== profil.id);
     return _opByggPaket({
-        organisation: p.organisation, utgivare: p.utgivare, skapat: new Date().toISOString().slice(0, 10), avserAr: p.avserAr,
+        organisation: p.organisation, utgivare: p.utgivare, skapat: idagDatum(), avserAr: p.avserAr,
         profil: d.profil, installningar: d.installningar, referens: d.referens, statistik: d.statistik, rapport: d.rapport,
         importprofiler: [...ovriga, profil],
     });
@@ -24196,7 +24201,7 @@ async function skapaOrganisationsfil() {
     if (!kontroll.ok) { const m = 'Paketet kan inte bakas in: ' + kontroll.fel; _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
     const buf = await _verktygsfil.arrayBuffer();
     const html = new TextDecoder('utf-8').decode(buf);
-    const skapad = new Date().toISOString().slice(0, 10);
+    const skapad = idagDatum();
     const r = _ofBakaIn(html, JSON.stringify(paket), { skapad, organisation: paket.organisation.namn, verktygssha: await _sha256Hex(buf) });
     if (!r.ok) { _organisationsfilStatus(r.fel, false); return { ok: false, meddelande: r.fel }; }
     const filnamn = _ofNormaliseraFilnamn(_paketText('organisationsfil-namn'), paket.organisation.namn);
@@ -26990,7 +26995,7 @@ function _exportLikvardighetCSVExport() {
         : 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
     rows.push(['k-anonymitet', 'Tillämpas EJ i denna analys']);
-    _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10), { undantag: 'Likvärdigt arbete' });
+    _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -27117,7 +27122,7 @@ function _exportLikvardighetExport() {
         XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
         stegnamn = 'skriv fil';
-        const filename = 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+        const filename = 'lonekartlaggning_likvardighet_' + idagDatum() + '.xlsx';
         _appendMethodSheet(wb, { undantag: 'Likvärdigt arbete' });
         XLSX.writeFile(wb, filename);
 
@@ -28128,7 +28133,7 @@ function _exportForecastExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), 'Sammanfattning');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), 'Fördelning');
     _appendMethodSheet(wb);
-    XLSX.writeFile(wb, `loneoversyn_prognos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Löneöversynens prognosunderlag exporterat.');
 }
 (function wireForecast() {
@@ -28705,7 +28710,7 @@ function _exportEuReportExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(repArr), 'Representation');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), 'Skillnad i lönefördelningen');
     _appendMethodSheet(wb, { extra: [['Löneskillnadens tecken i den här filen', DIREKTIV_METOD]] });
-    XLSX.writeFile(wb, `eu_lonerapport_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('EU-lönerapport exporterad.');
 }
 (function wireStructure() {
@@ -34345,7 +34350,7 @@ function _exportHandlingsplanExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), 'Handlingsplan');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), 'Vägledning');
     _appendMethodSheet(wb);
-    XLSX.writeFile(wb, `handlingsplan_underlag_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Handlingsplansunderlag exporterat.');
 }
 document.getElementById('btn-export-handlingsplan')?.addEventListener('click', exportHandlingsplan);
@@ -36123,7 +36128,7 @@ async function _utkastFyllBilder(block) {
 async function byggWordUtkast() {
     if (typeof JSZip === 'undefined') throw new Error('zip-biblioteket saknas');
     const year = new Date().getFullYear();
-    const stamp = new Date().toISOString().slice(0, 10);
+    const stamp = idagDatum();
     const demo = state.isDemo;
     const { block } = await _utkastFyllBilder(_utkastTillBlock(_buildDocumentationDraftHtml()));
     const delar = _docxDelar(block, {
@@ -36400,7 +36405,7 @@ function _exportBenchmarkExcelExport() {
     XLSX.utils.book_append_sheet(wb, sheet, 'Jämförelse_alla_percentiler');
     XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
-    const filename = `lonekartlaggning_jamforelse_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const filename = `lonekartlaggning_jamforelse_${idagDatum()}.xlsx`;
     _appendMethodSheet(wb);
     XLSX.writeFile(wb, filename);
     _showExportSensitivityToast();
@@ -38468,7 +38473,7 @@ function byggArsbokslutNu() {
         const klara = state._actionChecklistDone || new Set();
         const punkter = typeof buildActionChecklist === 'function' ? buildActionChecklist() : [];
         return _abBygg({
-            ar: new Date().getFullYear(), skapat: new Date().toISOString().slice(0, 10), k, verktyg: `v${APP_VERSION}`,
+            ar: new Date().getFullYear(), skapat: idagDatum(), k, verktyg: `v${APP_VERSION}`,
             nyckeltal: { n: bild.n, nKv: bild.nKv, nMa: bild.nMa, medKv: bild.medianKv, medMa: bild.medianMa,
                 kvotPct: bild.rawGapPct == null ? null : 100 + bild.rawGapPct, oforklaratPct: bild.unexplainedGapPct,
                 antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },

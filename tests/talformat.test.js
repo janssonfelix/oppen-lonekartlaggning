@@ -332,3 +332,14 @@ describe('avrundningen i talformaten är symmetrisk kring noll', () => {
         expect(w.eval('svPct(12.34, 1)')).toBe(`12,3${NBSP}%`);
     });
 });
+
+describe('idagDatum: dagens datum i lokal tid, inte UTC', () => {
+    let w;
+    beforeAll(() => { w = createAppWindow(); });
+    it('nyårsnatten 00:30 och 23:30 ger den lokala dagen, i varje tidszon', () => {
+        // Datumen byggs i lokal tid; toISOString hade gett 2026-12-31 för 00:30 öster om UTC.
+        expect(w.eval('idagDatum(new Date(2027, 0, 1, 0, 30))')).toBe('2027-01-01');
+        expect(w.eval('idagDatum(new Date(2026, 11, 31, 23, 30))')).toBe('2026-12-31');
+        expect(w.eval('idagDatum(new Date(2026, 2, 9, 1, 5))')).toBe('2026-03-09');
+    });
+});

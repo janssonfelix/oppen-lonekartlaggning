@@ -966,7 +966,7 @@ function _exportLikvardighetCSVExport() {
         : 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
     rows.push(['k-anonymitet', 'Tillämpas EJ i denna analys']);
-    _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10), { undantag: 'Likvärdigt arbete' });
+    _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -1093,7 +1093,7 @@ function _exportLikvardighetExport() {
         XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
         stegnamn = 'skriv fil';
-        const filename = 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+        const filename = 'lonekartlaggning_likvardighet_' + idagDatum() + '.xlsx';
         _appendMethodSheet(wb, { undantag: 'Likvärdigt arbete' });
         XLSX.writeFile(wb, filename);
 

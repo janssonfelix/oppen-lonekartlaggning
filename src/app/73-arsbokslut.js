@@ -26,7 +26,7 @@ function byggArsbokslutNu() {
         const klara = state._actionChecklistDone || new Set();
         const punkter = typeof buildActionChecklist === 'function' ? buildActionChecklist() : [];
         return _abBygg({
-            ar: new Date().getFullYear(), skapat: new Date().toISOString().slice(0, 10), k, verktyg: `v${APP_VERSION}`,
+            ar: new Date().getFullYear(), skapat: idagDatum(), k, verktyg: `v${APP_VERSION}`,
             nyckeltal: { n: bild.n, nKv: bild.nKv, nMa: bild.nMa, medKv: bild.medianKv, medMa: bild.medianMa,
                 kvotPct: bild.rawGapPct == null ? null : 100 + bild.rawGapPct, oforklaratPct: bild.unexplainedGapPct,
                 antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },

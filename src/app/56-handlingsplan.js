@@ -485,7 +485,7 @@ function _exportHandlingsplanExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), 'Handlingsplan');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), 'Vägledning');
     _appendMethodSheet(wb);
-    XLSX.writeFile(wb, `handlingsplan_underlag_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Handlingsplansunderlag exporterat.');
 }
 document.getElementById('btn-export-handlingsplan')?.addEventListener('click', exportHandlingsplan);

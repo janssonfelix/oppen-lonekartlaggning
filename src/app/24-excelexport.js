@@ -151,7 +151,7 @@ function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
-    XLSX.writeFile(wb, `lonekartlaggning_komplett_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
     _showExportSensitivityToast();
 }
 
@@ -330,7 +330,7 @@ function _exportJPAProtocolExport() {
 
     const d = getData();
     const now = new Date();
-    const isoDate = now.toISOString().slice(0, 10);
+    const isoDate = idagDatum(now);
     const localDate = now.toLocaleDateString('sv-SE');
     const profileLabel = state.profile.benchmarkLabel;
 

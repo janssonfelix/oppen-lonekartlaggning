@@ -615,7 +615,7 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
     });
     it('protokollets blad om lika arbete heter "2. Lika arbete (AID)"', () => {
         // Samma namn som exportJPAProtocol skriver.
-        const prot = bocker[`lonekartlaggning_protokoll_gemensam_lonebedomning_${new Date().toISOString().slice(0, 10)}.xlsx`];
+        const prot = bocker[`lonekartlaggning_protokoll_gemensam_lonebedomning_${win.eval("idagDatum()")}.xlsx`];
         expect(prot, Object.keys(bocker).join(', ')).toBeTruthy();
         expect(prot.SheetNames).toContain('2. Lika arbete (AID)');
     });

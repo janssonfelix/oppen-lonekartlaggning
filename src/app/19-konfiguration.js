@@ -441,7 +441,7 @@ document.getElementById('btn-config-save')?.addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `lonekartlaggning_config_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `lonekartlaggning_config_${idagDatum()}.json`;
     a.click();
     const status = document.getElementById('config-status');
     if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
