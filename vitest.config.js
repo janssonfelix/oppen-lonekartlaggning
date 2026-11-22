@@ -6,7 +6,8 @@
 // «app» är filerna som ritar det byggda verktyget i jsdom (minuter). `npm test` kör bara «enhet»; `npm run test:full`
 // kör båda, och det är den som körs i CI och före en pull request. Klassningen görs när konfigurationen laddas, så
 // en ny testfil hamnar rätt utan att listas: en fil hör till «app» om källan nämner appriggen
-// (tests/helpers/app-harness.js, någon av tests/helpers/*-rigg.js eller createAppWindow) eller importerar jsdom.
+// (tests/helpers/app-harness.js, någon av tests/helpers/*-rigg.js eller createAppWindow) eller kör skript i jsdom
+// (runScripts). En fil som bara använder jsdom som tolk, som docx.test.js för XML, hör till «enhet».
 // Tidsgränserna och uteslutningen nedan ärvs av båda projekten (extends: true); antalet arbetare gäller hela
 // körningen, oavsett hur många projekt som körs.
 //
@@ -14,9 +15,8 @@
 // föll olika tester på standardgränsen 5 s från körning till körning, utan att något var fel. En längre gräns tar
 // bort den slumpen; ett test som hänger sig fälls fortfarande.
 //
-// Arbetare: Vitest kör en fil per arbetare, så den längsta filen sätter golvet för hela körningen (därför är
-// röktestet, k-tröskeltestet, gränssnittstestet och diagramvyerna delade i filer per område, se
-// docs/utveckling/bygge-och-test.md §5.3). Antalet arbetare är tre fjärdedelar av antalet trådar: de tunga filerna är processorbundna (jsdom ritar
+// Arbetare: Vitest kör en fil per arbetare; körtiden är ungefär den sammanlagda tiden delad på antalet arbetare, och
+// den längsta filen är bara ett golv (docs/utveckling/bygge-och-test.md §5.3). Antalet arbetare är tre fjärdedelar av antalet trådar: de tunga filerna är processorbundna (jsdom ritar
 // alla flikar), så på en maskin med åtta kärnor och sexton trådar (SMT) mättes åtta arbetare till 168 s (de tunga
 // filerna köar), femton (Vitests standard, trådar − 1) till 150–168 s (trådarna trängs om kärnorna och varje fil
 // tar tre gånger så lång tid som ensam) och tolv till 130 s. Taket från minnet: 1,2 GB per arbetare, som den
@@ -33,7 +33,7 @@ import { configDefaults, defineConfig } from 'vitest/config';
 const GB = 1024 ** 3;
 const maxWorkers = Math.max(1, Math.min(Math.round(availableParallelism() * 0.75), Math.floor((totalmem() - 2 * GB) / (1.2 * GB))));
 
-const LADDAR_APPEN = /app-harness|-rigg\.js|from ['"]jsdom['"]|createAppWindow/;
+const LADDAR_APPEN = /app-harness|-rigg\.js|runScripts|createAppWindow/;
 const testkatalog = new URL('./tests/', import.meta.url);
 const testfiler = readdirSync(testkatalog).filter(f => f.endsWith('.test.js')).sort();
 const appfiler = testfiler.filter(f => LADDAR_APPEN.test(readFileSync(new URL(f, testkatalog), 'utf8')));

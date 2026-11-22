@@ -158,7 +158,8 @@ en väg som ökar visningsversionen (`k-troskeln.md` §3).
 Sviten är delad i två Vitest-projekt i `vitest.config.js`: `enhet` (moduler, vakter och källtext, utan att verktyget
 laddas) och `app` (filerna som ritar verktyget i jsdom). Klassningen görs när konfigurationen laddas, så en ny
 testfil hamnar rätt utan att listas: en fil hör till `app` om källan nämner `app-harness`, en `-rigg.js` eller
-`createAppWindow`, eller importerar jsdom.
+`createAppWindow`, eller kör skript i jsdom (`runScripts`). En fil som bara använder jsdom som tolk, som
+`docx.test.js` för XML, hör till `enhet`.
 
 - `npm test` är den snabba körningen, bara `enhet` (sekunder).
 - `npm run test:full` kör båda projekten (minuter) och är den som körs i CI och i `npm run kontroll`.
@@ -175,10 +176,12 @@ behövs, så att varje arbetares minne håller sig under Nodes tak (den tyngsta 
 billigt efter det första (som bär kompileringen); det dyra är ritningen av alla flikar (omkring 2 s på demodatan), så
 tiden styrs av hur många flikritningar en fil gör.
 
-Vitest kör en fil per arbetare, så **den längsta filen sätter golvet för hela körningen**. Därför är apptesterna
-delade per funktion (`tests/*-app.test.js`), och k-tröskeltestet, gränssnittstestet och diagramvyerna per område
+Vitest kör en fil per arbetare. **Körtiden styrs av den sammanlagda tiden delad på antalet arbetare** (2026-11-22:
+omkring 2 050 s på tolv arbetare gav 198 s), och den längsta filen (omkring 100 s) är bara ett golv. Att dela en fil
+gör därför sviten snabbare först när filen är längre än den sammanlagda tiden per arbetare. Apptesterna är delade
+per funktion (`tests/*-app.test.js`), och k-tröskeltestet, gränssnittstestet och diagramvyerna per område
 (`tests/ktroskel*.test.js`, `tests/granssnitt*.test.js`, `tests/diagramvyer*.test.js`) med gemensamma riggar i
-`tests/helpers/`. Den längsta förberedelsen, invarianten över flikar och exporter (I4), är av samma skäl delad per
+`tests/helpers/`. Den längsta förberedelsen, invarianten över flikar och exporter (I4), är delad per
 tröskel (`tests/ktroskel-invarianter.test.js` och `tests/ktroskel-invarianter-25.test.js`, sviten i
 `tests/helpers/ktroskel-invariant.js`). Under full last tar varje fil omkring dubbelt så lång tid som ensam, och de
 tyngsta ett par minuter.
