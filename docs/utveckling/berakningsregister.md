@@ -90,6 +90,7 @@ avsnitt 11.
 | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|
 | Organisationens band, läget i bandet (lön − P10)/(P90 − P10), median mot ställningstagandet, avstånd till golvet | `organisationsBand`, `bandPosition`, `groupBandStats`, `complianceCounts`, `costToFloor`, `policyCoverage`, `lonepolitik.js` | lön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
+| Modellen per BAS-intervall med AID-grupperna under sig; maskeringstrappan (full analys från k, antal från 5, maskerad under); andelen per kön under spannet, i spannets tredjedelar och över | `lonepolitikModell`, `maskeringsniva`, `lagesklass`, `konLagen`, `lonepolitik.js` | lön, kön, AID, BAS, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
 | Könsgap i bandet; minst 10 av varje kön | `genderBandGap`, `lonepolitik.js` | lön, kön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
 | Jämförelsestatistikens matchning: samma AID och BAS, annars samma AID utan BAS | `statistikFor`, `jamforelse.js` | statistiken | ADR-35, 55 | `tests/jamforelse.test.js` | saknas |
 | Jämförelseraderna: P10, median, P90 per AID-kod och BAS, skillnad (org/ref − 1)·100 | `jamforelseRader`, `avvikelseRangordning`, `statistikMarknad`, `jamforelse.js` | lön, AID, BAS, referenserna | ADR-35, 55 | `tests/jamforelse.test.js`, `tests/jamforelsestatistik-app.test.js` | saknas |

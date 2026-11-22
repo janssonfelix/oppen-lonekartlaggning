@@ -6,85 +6,28 @@
 // Fliken svarar på "lever vi upp till vår egen
 // lönepolitik, och var gör vi det inte?" — ner på yrkesgruppsnivå (AID).
 //
-// Matematiken ligger i src/lib/lonepolitik.js (speglad som _lp* i 05). Uppslaget
-// av vilken policyrad som gäller görs av policyFor() (state-beroende).
+// Modellen och matematiken ligger i src/lib/lonepolitik.js (speglad som _lp* i 09). Uppslaget
+// av vilken policyrad som gäller görs av policyFor() (state-beroende) och skickas in.
 //
-// Maskeringstrappa (PLAN §4) — AID-upplösning utan att urholka k-anonymiteten:
+// Maskeringstrappan (PLAN §4, `maskeringsniva` i lib) — AID-upplösning utan att urholka k-anonymiteten:
 //   n >= kTroskel()                → full analys (median, band, kön)
 //   LP_COUNT_TIER_MIN <= n < k     → endast bandplacering i ANTAL ("2 av 7 under P10")
 //   n < min(LP_COUNT_TIER_MIN, k)  → maskerad rad, men inräknad i BAS-totalen
 // Är tröskeln satt till LP_COUNT_TIER_MIN eller lägre finns ingen mellannivå.
 // ====================================================================
 
-const LP_COUNT_TIER_MIN = 5;   // undre gräns för antalsbaserad redovisning
+const LP_COUNT_TIER_MIN = _lpKonstanter().ANTAL_MIN;   // undre gräns för antalsbaserad redovisning
 
-function _lpAidOf(r) {
-    return aidAvYrke(r.yrke);
-}
-function _lpTier(n) {
-    if (n >= kTroskel()) return 'full';
-    if (n >= LP_COUNT_TIER_MIN) return 'count';
-    return 'masked';
-}
+function _lpTier(n) { return _lpMaskeringsniva(n, kTroskel()); }
 
 /**
- * Bygger hela analysmodellen för fliken: per BAS, med AID-grupper under sig.
- * Ren nog att kunna inspekteras i test via window-shimmen.
+ * Hela analysmodellen för fliken: per BAS, med AID-grupper under sig. Modellen ligger i src/lib/lonepolitik.js;
+ * här översätts bara state till policyuppslaget och tröskeln.
  */
 function buildLonepolitikModel() {
-    const d = getData();
-    /** @type {{byBas: any[], coverage: any, hasPolicy: boolean}} */
-    const out = { byBas: [], coverage: null, hasPolicy: (state.policy || []).length > 0 };
-    if (!d.length || !out.hasPolicy) return out;
-
-    // Gruppera AID×BAS
-    const groups = new Map();
-    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
-    const namnrad = namnrader(d.filter(r => r.lon > 0 && r.bas), r => _lpAidOf(r) + '|' + r.bas);
-    d.forEach(r => {
-        if (!(r.lon > 0) || !r.bas) return;
-        const aid = _lpAidOf(r);
-        const key = aid + '|' + r.bas;
-        if (!groups.has(key)) groups.set(key, { aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
-        groups.get(key).rows.push(r);
+    return _lpLonepolitikModell(getData(), {
+        policyFor, nivaEtikett: policyLevelLabel, k: kTroskel(), harPolicy: (state.policy || []).length > 0
     });
-
-    const coverageInput = [];
-    const basMap = new Map();
-    for (const g of groups.values()) {
-        const pol = policyFor(g.aid, g.bas);
-        coverageInput.push({ n: g.rows.length, hasPolicy: !!pol });
-        if (!basMap.has(g.bas)) basMap.set(g.bas, { bas: g.bas, rows: [], groups: [] });
-        const b = basMap.get(g.bas);
-        b.rows.push(...g.rows);
-        b.groups.push({
-            aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.rows.length, rows: g.rows,
-            pol, level: policyLevelLabel(pol), tier: _lpTier(g.rows.length),
-            stats: pol ? _lpGroupBandStats(g.rows, pol) : null,
-            compliance: pol ? _lpComplianceCounts(g.rows, pol) : null
-        });
-    }
-    out.coverage = _lpPolicyCoverage(coverageInput);
-
-    out.byBas = [...basMap.values()].map(b => {
-        // BAS-nivåns eget band (AID-specifika rader gäller bara sina yrken)
-        const pol = policyFor(null, b.bas);
-        return {
-            bas: b.bas,
-            pol,
-            level: policyLevelLabel(pol),
-            n: b.rows.length,
-            stats: pol ? _lpGroupBandStats(b.rows, pol) : null,
-            compliance: pol ? _lpComplianceCounts(b.rows, pol) : null,
-            genderGap: pol ? _lpGenderBandGap(b.rows, pol, kTroskel()) : null,
-            konLagen: pol ? _lpKonLagen(b.rows, pol) : null,
-            cost: pol ? _lpCostToFloor(b.rows, pol) : null,
-            orgBand: _lpOrganisationsBand(b.rows, kTroskel()),   // organisationens eget P10–P90 (null under k)
-            groups: b.groups.sort((x, y) => y.n - x.n)
-        };
-    }).sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));
-
-    return out;
 }
 
 // ---- Renderare --------------------------------------------------------------
@@ -302,16 +245,6 @@ function _lpFigurKonHantel(rows) {
 // detsamma för könen fast det ena samlas i nedre tredjedelen; fördelningen visar det. Klasserna räknas per BAS-intervall
 // med policyspann och läggs ihop över hela urvalet; ett kön redovisas bara när det når tröskeln.
 const _LP_LAGEN = [['Under spannet', PALETTE.lage.under], ['Nedre tredjedelen', PALETTE.lage.nedre], ['Mellersta tredjedelen', PALETTE.lage.inom], ['Övre tredjedelen', PALETTE.lage.ovre], ['Över spannet', PALETTE.lage.over]];
-function _lpLagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ? 2 : pos <= 1 ? 3 : 4; }
-function _lpKonLagen(rows, pol) {
-    const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
-    for (const r of rows) {
-        const kon = arKvinna(r) ? 'kv' : arMan(r) ? 'ma' : null;
-        const pos = kon ? _lpBandPosition(r.lon, pol.p10, pol.p90) : null;
-        if (pos != null && isFinite(pos)) ut[kon][_lpLagesklass(pos)]++;
-    }
-    return ut;
-}
 function _lpKonLagenSumma(model) {
     const sum = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
     for (const b of model.byBas) if (b.konLagen) for (const k of ['kv', 'ma']) b.konLagen[k].forEach((v, i) => { sum[k][i] += v; });

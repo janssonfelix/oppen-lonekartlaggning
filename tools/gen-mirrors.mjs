@@ -166,11 +166,14 @@ export const MODULES = [
         }
     },
     {
+        // Importerar stat.js, kon.js och aid.js: efter dem.
         file: 'lonepolitik.js', ns: '__mirrorLonepolitik',
         expose: {
             bandPosition: '_lpBandPosition', groupBandStats: '_lpGroupBandStats',
             complianceCounts: '_lpComplianceCounts', genderBandGap: '_lpGenderBandGap',
-            costToFloor: '_lpCostToFloor', policyCoverage: '_lpPolicyCoverage', organisationsBand: '_lpOrganisationsBand'
+            costToFloor: '_lpCostToFloor', policyCoverage: '_lpPolicyCoverage', organisationsBand: '_lpOrganisationsBand',
+            lonepolitikModell: '_lpLonepolitikModell', maskeringsniva: '_lpMaskeringsniva', lagesklass: '_lpLagesklass',
+            konLagen: '_lpKonLagen', lonepolitikKonstanter: '_lpKonstanter'
         }
     },
     {

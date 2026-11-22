@@ -6,7 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     bandPosition, groupBandStats, complianceCounts,
-    genderBandGap, costToFloor, policyCoverage, organisationsBand
+    genderBandGap, costToFloor, policyCoverage, organisationsBand,
+    lonepolitikModell, maskeringsniva, lagesklass, konLagen
 } from '../src/lib/lonepolitik.js';
 
 const pol = { p10: 30000, med: 35000, p90: 40000 };
@@ -153,5 +154,44 @@ describe('organisationsBand', () => {
     });
     it('räknar bara positiva löner', () => {
         expect(organisationsBand([...rader(10), { lon: 0 }], 10).n).toBe(10);
+    });
+});
+
+describe('lonepolitikModell', () => {
+    // Syntetiska rader: två AID-grupper i BAS B, en i BAS A; policy på BAS-nivå för B, ingen för A.
+    const rad = (yrke, bas, lon, kon) => ({ yrke, bas, lon, kon });
+    const rader = [
+        ...Array.from({ length: 6 }, (_, i) => rad('101 Handläggare', 'B', 30000 + i * 1000, i % 2 ? 'kvinna' : 'man')),
+        ...Array.from({ length: 2 }, (_, i) => rad('202 Assistent', 'B', 26000 + i * 1000, 'kvinna')),
+        rad('303 Tekniker', 'A', 40000, 'man'),
+        rad('101 Handläggare', '', 50000, 'man'), rad('101 Handläggare', 'B', 0, 'man')
+    ];
+    const pol = { bas: 'B', p10: 29000, med: 33000, p90: 37000 };
+    const opt = { policyFor: (aid, bas) => (bas === 'B' ? pol : null), nivaEtikett: p => (p ? 'BAS' : null), k: 5, harPolicy: true };
+
+    it('grupperar AID × BAS, sorterar BAS i svensk ordning och grupperna efter storlek', () => {
+        const m = lonepolitikModell(rader, opt);
+        expect(m.byBas.map(b => b.bas)).toEqual(['A', 'B']);
+        const b = m.byBas[1];
+        expect(b.n).toBe(8);
+        expect(b.groups.map(g => [g.aid, g.n, g.tier])).toEqual([['101', 6, 'full'], ['202', 2, 'masked']]);
+        expect(b.groups[0].yrke).toBe('101 Handläggare');
+        expect(b.compliance).toEqual(complianceCounts(b.groups.flatMap(g => g.rows), pol));
+        expect(b.orgBand.n).toBe(8);
+        expect(m.byBas[0].pol).toBeNull();
+        expect(m.byBas[0].orgBand).toBeNull();
+        expect(m.coverage).toMatchObject({ groupsTotal: 3, groupsCovered: 2, personsTotal: 9, personsCovered: 8 });
+    });
+    it('utan ställningstagande byggs ingen modell', () => {
+        expect(lonepolitikModell(rader, { ...opt, harPolicy: false })).toEqual({ byBas: [], coverage: null, hasPolicy: false });
+    });
+    it('maskeringstrappan: full från k, antal från 5, annars maskerad', () => {
+        expect([4, 5, 9, 10].map(n => maskeringsniva(n, 10))).toEqual(['masked', 'count', 'count', 'full']);
+        expect(maskeringsniva(3, 3)).toBe('full');
+    });
+    it('konLagen räknar kvinnor och män per tredjedel av spannet', () => {
+        expect([-0.1, 0, 0.34, 0.67, 1.01].map(lagesklass)).toEqual([0, 1, 2, 3, 4]);
+        const ut = konLagen([{ lon: 28000, kon: 'kvinna' }, { lon: 33000, kon: 'man' }, { lon: 0, kon: 'man' }], pol);
+        expect(ut).toEqual({ kv: [1, 0, 0, 0, 0], ma: [0, 0, 1, 0, 0] });
     });
 });
