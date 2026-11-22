@@ -6796,6 +6796,27 @@ function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
 }
 
 /**
+ * Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, yrkesgrupp), bara där både kvinnorna och
+ * männen är minst k (k-tröskeln, S4). Den enda prövningen mot k för översikten per BAS-intervall, lönegapet per
+ * åldersgrupp och löneöversynens grupper före och efter. En grupp utan löner hoppas över, en grupp där ett kön har
+ * färre än k hamnar i `dolda`, och en grupp där männens median inte är positiv hoppas över (kvoten saknas).
+ * @param {Iterable<[any, number[], number[]]>} grupper  [nyckel, kvinnornas löner, männens löner], i visningsordning
+ * @param {{k: number, ki?: boolean}} val  ki: med medianKvotKI (B_PER_GRUPP) i `ci`
+ * @returns {{visade: Array<{nyckel: any, nKv: number, nMa: number, medKv: number, medMa: number, gap: number, ci?: null | {lo: number, hi: number}}>, dolda: any[]}}
+ */
+function konskvotPerGrupp(grupper, { k, ki = false }) {
+    const visade = [], dolda = [];
+    for (const [nyckel, kv, ma] of grupper) {
+        if (!kv.length && !ma.length) continue;
+        if (kv.length < k || ma.length < k) { dolda.push(nyckel); continue; }
+        const medKv = median(kv), medMa = median(ma);
+        if (!(medMa > 0)) continue;
+        visade.push({ nyckel, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ...(ki ? { ci: medianKvotKI(kv, ma) } : {}) });
+    }
+    return { visade, dolda };
+}
+
+/**
  * Som medianKvotKI, men dragningar där männens median inte är positiv räknas inte, och intervallet ges bara när minst
  * DOSSIER_MIN_GILTIGA dragningar återstår (gruppdossiern och rapportunderlaget).
  * @param {number[]} kvLons
@@ -7133,11 +7154,12 @@ function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng }
     return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
 }
 
-    return { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, regressionslinjensBand, styrkeanalys, gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter };
+    return { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, konskvotPerGrupp, regressionslinjensBand, styrkeanalys, gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter };
 })();
 const _osOrganisationensKvotKI = __mirrorOsakerhet.organisationensKvotKI;
 const _osMedianKvotKI = __mirrorOsakerhet.medianKvotKI;
 const _osMedianKvotKIGiltiga = __mirrorOsakerhet.medianKvotKIGiltiga;
+const _osKonskvotPerGrupp = __mirrorOsakerhet.konskvotPerGrupp;
 const _osRegressionslinjensBand = __mirrorOsakerhet.regressionslinjensBand;
 const _osStyrkeanalys = __mirrorOsakerhet.styrkeanalys;
 const _osGruppMde = __mirrorOsakerhet.gruppMde;
@@ -9467,9 +9489,35 @@ function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     } };
 }
 
-    return { flaggaIndivider };
+/**
+ * Avvikelsen från förväntad lön per BAS-intervall och kön: andelen av de prövade kvinnorna respektive männen som ligger
+ * minst `grans` procent under och minst `grans` procent över den förväntade lönen (hela procent). Bara BAS-intervall där
+ * både de prövade kvinnorna och de prövade männen är minst k (k-tröskeln, S4). Sorterat efter BAS-intervallet.
+ * @returns {Array<{bas: any, kon: string, n: number, under: number, over: number, nUnder: number, nOver: number}>}
+ */
+function avvikelsePerKonOchBas(rader, { k, minGrupp, grans }) {
+    const perBas = new Map();
+    // Gränsen −∞ ger avvikelsen för alla prövade, inte bara de flaggade.
+    for (const f of flaggaIndivider(rader, { minGrupp, grans: -Infinity }).flaggade) {
+        if (!perBas.has(f.bas)) perBas.set(f.bas, { Kvinna: [], Man: [] });
+        perBas.get(f.bas)[f.kon].push(f.avvikelsePct);
+    }
+    const ut = [];
+    for (const [bas, g] of [...perBas].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv', { numeric: true }))) {
+        if (g.Kvinna.length < k || g.Man.length < k) continue;
+        for (const [kon, namn] of [['Kvinna', 'Kvinnor'], ['Man', 'Män']]) {
+            const a = g[kon], andel = n => Math.round(100 * n / a.length);
+            const nUnder = a.filter(v => v <= -grans).length, nOver = a.filter(v => v >= grans).length;
+            ut.push({ bas, kon: namn, n: a.length, under: andel(nUnder), over: andel(nOver), nUnder, nOver });
+        }
+    }
+    return ut;
+}
+
+    return { flaggaIndivider, avvikelsePerKonOchBas };
 })();
 const _ifFlaggaIndivider = __mirrorIndivid.flaggaIndivider;
+const _ifAvvikelsePerKonOchBas = __mirrorIndivid.avvikelsePerKonOchBas;
 
 // ---- speglar src/lib/utforska.js ----
 const __mirrorUtforska = (() => {
@@ -27690,13 +27738,14 @@ function _forecastLutningRader(d, sim, niva) {
         const h = kv ? g.kv : g.ma;
         h[0].push(r.lon); h[1].push(sim[i].lon);
     });
-    const gap = (kv, ma) => { const mm = Stat.median(ma); return mm > 0 ? Stat.median(kv) / mm * 100 : null; };   // kvinnors median i % av mäns
+    // Kvinnors median i % av mäns och prövningen mot k: konskvotPerGrupp i src/lib/osakerhet.js, före och efter.
+    const fore = _osKonskvotPerGrupp([...grupper.values()].map(g => [g, g.kv[0], g.ma[0]]), { k }).visade;
+    const efter = new Map(_osKonskvotPerGrupp(fore.map(v => [v.nyckel, v.nyckel.kv[1], v.nyckel.ma[1]]), { k }).visade.map(v => [v.nyckel, v.gap]));
     // Färgen följer talen som de visas med en decimal (_fcRiktning), som utfallets rad för hela urvalet.
     const farg = (fore, efter) => ({ '-1': PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[_fcRiktning(fore, efter, 100)];
-    return [...grupper.values()].filter(g => g.kv[0].length >= k && g.ma[0].length >= k)
-        .map(g => ({ namn: g.namn, markering: g.markering, ...(g.bas != null ? { bas: g.bas } : { yrke: g.yrke }), nKv: g.kv[0].length, nMa: g.ma[0].length,
-                     n: g.kv[0].length + g.ma[0].length, fore: gap(g.kv[0], g.ma[0]), efter: gap(g.kv[1], g.ma[1]) }))
-        .filter(g => g.fore != null && g.efter != null)
+    return fore.filter(v => efter.has(v.nyckel))
+        .map(({ nyckel: g, nKv, nMa, gap }) => ({ namn: g.namn, markering: g.markering, ...(g.bas != null ? { bas: g.bas } : { yrke: g.yrke }), nKv, nMa,
+                     n: nKv + nMa, fore: gap, efter: /** @type {number} */ (efter.get(g)) }))
         .map(g => ({ ...g, farg: farg(g.fore, g.efter) }));
 }
 const FORECAST_LUTNING_MAX = 15;
@@ -29402,18 +29451,13 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
 // (_laBootstrapGapCI). Visar VAR i karriären skillnaden finns — inte varför: det är den råa skillnaden mellan alla
 // kvinnor och män i åldersgruppen, oavsett yrke och BAS-intervall. En åldersgrupp där ett kön har färre än tröskeln visas inte.
 const KON_ALDERSGRUPPER = [[0, 29, 'Under 30 år'], [30, 39, '30–39 år'], [40, 49, '40–49 år'], [50, 59, '50–59 år'], [60, 200, '60 år och äldre']];
+// Kvoten, intervallet och prövningen mot k är konskvotPerGrupp i src/lib/osakerhet.js.
 function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
-    const visade = [], dolda = [];
-    for (const [fran, till, namn] of KON_ALDERSGRUPPER) {
+    const { visade, dolda } = _osKonskvotPerGrupp(KON_ALDERSGRUPPER.map(([fran, till, namn]) => {
         const i = r => r.alder > 0 && r.alder >= fran && r.alder <= till && r.lon > 0;   // ålder 0 = saknas (ADR-64)
-        const kv = dataKv.filter(i).map(r => r.lon), ma = dataMa.filter(i).map(r => r.lon);
-        if (!kv.length && !ma.length) continue;
-        if (kv.length < k || ma.length < k) { dolda.push(namn); continue; }
-        const medKv = Stat.median(kv), medMa = Stat.median(ma);
-        if (!(medMa > 0)) continue;
-        visade.push({ namn, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ci: _laBootstrapGapCI(kv, ma) });
-    }
-    return { visade, dolda };
+        return [namn, dataKv.filter(i).map(r => r.lon), dataMa.filter(i).map(r => r.lon)];
+    }), { k, ki: true });
+    return { visade: visade.map(({ nyckel: namn, ...v }) => ({ namn, ...v })), dolda };
 }
 function _konAlderGapFigur(rader, scope) {
     const status = o => gapStatusKI(o);   // uppmärksamhetstrappan (ADR-59): KI:t mot 100 % och golvet statGolv()
@@ -29904,16 +29948,11 @@ function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
     minne.oversikt = ut; minne.oversiktNyckel = nyckel;
     return ut;
 }
+// Kvoten, intervallet och prövningen mot k är konskvotPerGrupp i src/lib/osakerhet.js.
 function _laOversiktRaderRakna(d, bas, k) {
-    const ut = [];
-    for (const b of bas) {
-        const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
-        if (kv.length < k || ma.length < k) continue;
-        const medKv = Stat.median(kv.map(r => r.lon)), medMa = Stat.median(ma.map(r => r.lon));
-        ut.push({ bas: b, gap: medKv / medMa * 100, n: df.length, ci: _laBootstrapGapCI(kv.map(r => r.lon), ma.map(r => r.lon)), medKv, medMa, nKv: kv.length, nMa: ma.length });
-    }
-    return ut;
+    const perBas = new Map(bas.map(b => [b, d.filter(r => r.bas === b)]));
+    const { visade } = _osKonskvotPerGrupp(bas.map(b => [b, perBas.get(b).filter(r => arKvinna(r)).map(r => r.lon), perBas.get(b).filter(r => arMan(r)).map(r => r.lon)]), { k, ki: true });
+    return visade.map(v => ({ bas: v.nyckel, gap: v.gap, n: perBas.get(v.nyckel).length, ci: v.ci, medKv: v.medKv, medMa: v.medMa, nKv: v.nKv, nMa: v.nMa }));
 }
 /** Beskedet under tabellen per BAS-intervall om de intervall där ett kön har färre än tröskeln (inga rader i tabellen). */
 function _laSamladNot(namn) {
@@ -30998,23 +31037,9 @@ function renderPersonerAttGranska(visaAlla = false) {
 // ingen person och bär ingen lön. Som resten av panelen går det inte att exportera (markeraUtanExport på rutan,
 // skälet `individer` i 11-diagramexport.js): inget ur Personer att granska lämnar verktyget.
 markeraUtanExport(document.getElementById('pag-diagram-ruta'), 'individer');
+// Räkningen är avvikelsePerKonOchBas i src/lib/individflaggor.js; här läses tröskeln och golvet.
 function _pagAvvikelseRader(d, grans) {
-    const k = kTroskel(), perBas = new Map();
-    // Gränsen −∞ ger avvikelsen för alla prövade, inte bara de flaggade.
-    for (const f of _ifFlaggaIndivider(d, { minGrupp: statGolv(), grans: -Infinity }).flaggade) {
-        if (!perBas.has(f.bas)) perBas.set(f.bas, { Kvinna: [], Man: [] });
-        perBas.get(f.bas)[f.kon].push(f.avvikelsePct);
-    }
-    const ut = [];
-    for (const [bas, g] of [...perBas].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv', { numeric: true }))) {
-        if (g.Kvinna.length < k || g.Man.length < k) continue;
-        for (const [kon, namn] of [['Kvinna', 'Kvinnor'], ['Man', 'Män']]) {
-            const a = g[kon], andel = n => Math.round(100 * n / a.length);
-            const nUnder = a.filter(v => v <= -grans).length, nOver = a.filter(v => v >= grans).length;
-            ut.push({ bas, kon: namn, n: a.length, under: andel(nUnder), over: andel(nOver), nUnder, nOver });
-        }
-    }
-    return ut;
+    return _ifAvvikelsePerKonOchBas(d, { k: kTroskel(), minGrupp: statGolv(), grans });
 }
 // Avvikelsen per kön och BAS-intervall som tabell med inbyggd grafik: en rad per kön och intervall med antalet
 // prövade och andelen långt under respektive över förväntad lön, och de två andelarna ritade i raden kring en

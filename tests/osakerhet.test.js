@@ -13,7 +13,7 @@ import { mulberry32, rngFor } from '../src/lib/rng.js';
 import { slumpensGranser } from '../src/lib/status.js';
 import { quantileRegressionAtAllTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
 import {
-    organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, regressionslinjensBand, mdeProcent, styrkeanalys, sigmaInomGrupp,
+    organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, konskvotPerGrupp, regressionslinjensBand, mdeProcent, styrkeanalys, sigmaInomGrupp,
     gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter,
     B_ORGANISATION, B_PER_GRUPP, B_DOSSIER, Z_95, Z_STYRKA, BALANSGRANS, MDE_SIGMA_MIN_RESIDUALER, EXTREMVARDE_Z, KVANTIL_KI_B
 } from '../src/lib/osakerhet.js';
@@ -102,6 +102,18 @@ describe('bootstrapintervallen på mediankvoten', () => {
         expect(a.ratio.lo).toBeLessThanOrEqual(a.ratio.point);
         expect(a.ratio.hi).toBeGreaterThanOrEqual(a.ratio.point);
         expect(a.gapPct).toEqual({ point: (a.ratio.point - 1) * 100, lo: (a.ratio.lo - 1) * 100, hi: (a.ratio.hi - 1) * 100 });
+    });
+});
+
+describe('konskvotPerGrupp', () => {
+    const kv = loner(12, 1, 29000), ma = loner(15, 2, 31000);
+    it('grupper där ett kön är färre än k är dolda, tomma och de där männens median inte är positiv hoppas över', () => {
+        const { visade, dolda } = konskvotPerGrupp([['A', kv, ma], ['tom', [], []], ['liten', kv.slice(0, 9), ma], ['noll', kv, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]], { k: 10 });
+        expect(dolda).toEqual(['liten']);
+        expect(visade).toEqual([{ nyckel: 'A', nKv: 12, nMa: 15, medKv: median(kv), medMa: median(ma), gap: median(kv) / median(ma) * 100 }]);
+    });
+    it('med ki står medianKvotKI med standardvärdena i ci', () => {
+        expect(konskvotPerGrupp([['A', kv, ma]], { k: 10, ki: true }).visade[0].ci).toEqual(medianKvotKI(kv, ma));
     });
 });
 

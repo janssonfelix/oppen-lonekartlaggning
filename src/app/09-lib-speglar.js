@@ -4497,6 +4497,27 @@ function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
 }
 
 /**
+ * Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, yrkesgrupp), bara där både kvinnorna och
+ * männen är minst k (k-tröskeln, S4). Den enda prövningen mot k för översikten per BAS-intervall, lönegapet per
+ * åldersgrupp och löneöversynens grupper före och efter. En grupp utan löner hoppas över, en grupp där ett kön har
+ * färre än k hamnar i `dolda`, och en grupp där männens median inte är positiv hoppas över (kvoten saknas).
+ * @param {Iterable<[any, number[], number[]]>} grupper  [nyckel, kvinnornas löner, männens löner], i visningsordning
+ * @param {{k: number, ki?: boolean}} val  ki: med medianKvotKI (B_PER_GRUPP) i `ci`
+ * @returns {{visade: Array<{nyckel: any, nKv: number, nMa: number, medKv: number, medMa: number, gap: number, ci?: null | {lo: number, hi: number}}>, dolda: any[]}}
+ */
+function konskvotPerGrupp(grupper, { k, ki = false }) {
+    const visade = [], dolda = [];
+    for (const [nyckel, kv, ma] of grupper) {
+        if (!kv.length && !ma.length) continue;
+        if (kv.length < k || ma.length < k) { dolda.push(nyckel); continue; }
+        const medKv = median(kv), medMa = median(ma);
+        if (!(medMa > 0)) continue;
+        visade.push({ nyckel, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ...(ki ? { ci: medianKvotKI(kv, ma) } : {}) });
+    }
+    return { visade, dolda };
+}
+
+/**
  * Som medianKvotKI, men dragningar där männens median inte är positiv räknas inte, och intervallet ges bara när minst
  * DOSSIER_MIN_GILTIGA dragningar återstår (gruppdossiern och rapportunderlaget).
  * @param {number[]} kvLons
@@ -4834,11 +4855,12 @@ function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng }
     return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
 }
 
-    return { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, regressionslinjensBand, styrkeanalys, gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter };
+    return { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, konskvotPerGrupp, regressionslinjensBand, styrkeanalys, gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter };
 })();
 const _osOrganisationensKvotKI = __mirrorOsakerhet.organisationensKvotKI;
 const _osMedianKvotKI = __mirrorOsakerhet.medianKvotKI;
 const _osMedianKvotKIGiltiga = __mirrorOsakerhet.medianKvotKIGiltiga;
+const _osKonskvotPerGrupp = __mirrorOsakerhet.konskvotPerGrupp;
 const _osRegressionslinjensBand = __mirrorOsakerhet.regressionslinjensBand;
 const _osStyrkeanalys = __mirrorOsakerhet.styrkeanalys;
 const _osGruppMde = __mirrorOsakerhet.gruppMde;
@@ -7168,9 +7190,35 @@ function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     } };
 }
 
-    return { flaggaIndivider };
+/**
+ * Avvikelsen från förväntad lön per BAS-intervall och kön: andelen av de prövade kvinnorna respektive männen som ligger
+ * minst `grans` procent under och minst `grans` procent över den förväntade lönen (hela procent). Bara BAS-intervall där
+ * både de prövade kvinnorna och de prövade männen är minst k (k-tröskeln, S4). Sorterat efter BAS-intervallet.
+ * @returns {Array<{bas: any, kon: string, n: number, under: number, over: number, nUnder: number, nOver: number}>}
+ */
+function avvikelsePerKonOchBas(rader, { k, minGrupp, grans }) {
+    const perBas = new Map();
+    // Gränsen −∞ ger avvikelsen för alla prövade, inte bara de flaggade.
+    for (const f of flaggaIndivider(rader, { minGrupp, grans: -Infinity }).flaggade) {
+        if (!perBas.has(f.bas)) perBas.set(f.bas, { Kvinna: [], Man: [] });
+        perBas.get(f.bas)[f.kon].push(f.avvikelsePct);
+    }
+    const ut = [];
+    for (const [bas, g] of [...perBas].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv', { numeric: true }))) {
+        if (g.Kvinna.length < k || g.Man.length < k) continue;
+        for (const [kon, namn] of [['Kvinna', 'Kvinnor'], ['Man', 'Män']]) {
+            const a = g[kon], andel = n => Math.round(100 * n / a.length);
+            const nUnder = a.filter(v => v <= -grans).length, nOver = a.filter(v => v >= grans).length;
+            ut.push({ bas, kon: namn, n: a.length, under: andel(nUnder), over: andel(nOver), nUnder, nOver });
+        }
+    }
+    return ut;
+}
+
+    return { flaggaIndivider, avvikelsePerKonOchBas };
 })();
 const _ifFlaggaIndivider = __mirrorIndivid.flaggaIndivider;
+const _ifAvvikelsePerKonOchBas = __mirrorIndivid.avvikelsePerKonOchBas;
 
 // ---- speglar src/lib/utforska.js ----
 const __mirrorUtforska = (() => {

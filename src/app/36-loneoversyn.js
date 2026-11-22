@@ -447,13 +447,14 @@ function _forecastLutningRader(d, sim, niva) {
         const h = kv ? g.kv : g.ma;
         h[0].push(r.lon); h[1].push(sim[i].lon);
     });
-    const gap = (kv, ma) => { const mm = Stat.median(ma); return mm > 0 ? Stat.median(kv) / mm * 100 : null; };   // kvinnors median i % av mäns
+    // Kvinnors median i % av mäns och prövningen mot k: konskvotPerGrupp i src/lib/osakerhet.js, före och efter.
+    const fore = _osKonskvotPerGrupp([...grupper.values()].map(g => [g, g.kv[0], g.ma[0]]), { k }).visade;
+    const efter = new Map(_osKonskvotPerGrupp(fore.map(v => [v.nyckel, v.nyckel.kv[1], v.nyckel.ma[1]]), { k }).visade.map(v => [v.nyckel, v.gap]));
     // Färgen följer talen som de visas med en decimal (_fcRiktning), som utfallets rad för hela urvalet.
     const farg = (fore, efter) => ({ '-1': PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[_fcRiktning(fore, efter, 100)];
-    return [...grupper.values()].filter(g => g.kv[0].length >= k && g.ma[0].length >= k)
-        .map(g => ({ namn: g.namn, markering: g.markering, ...(g.bas != null ? { bas: g.bas } : { yrke: g.yrke }), nKv: g.kv[0].length, nMa: g.ma[0].length,
-                     n: g.kv[0].length + g.ma[0].length, fore: gap(g.kv[0], g.ma[0]), efter: gap(g.kv[1], g.ma[1]) }))
-        .filter(g => g.fore != null && g.efter != null)
+    return fore.filter(v => efter.has(v.nyckel))
+        .map(({ nyckel: g, nKv, nMa, gap }) => ({ namn: g.namn, markering: g.markering, ...(g.bas != null ? { bas: g.bas } : { yrke: g.yrke }), nKv, nMa,
+                     n: nKv + nMa, fore: gap, efter: /** @type {number} */ (efter.get(g)) }))
         .map(g => ({ ...g, farg: farg(g.fore, g.efter) }));
 }
 const FORECAST_LUTNING_MAX = 15;

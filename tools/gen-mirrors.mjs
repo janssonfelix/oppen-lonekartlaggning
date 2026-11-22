@@ -159,6 +159,7 @@ export const MODULES = [
         file: 'osakerhet.js', ns: '__mirrorOsakerhet',
         expose: {
             organisationensKvotKI: '_osOrganisationensKvotKI', medianKvotKI: '_osMedianKvotKI', medianKvotKIGiltiga: '_osMedianKvotKIGiltiga',
+            konskvotPerGrupp: '_osKonskvotPerGrupp',
             regressionslinjensBand: '_osRegressionslinjensBand', styrkeanalys: '_osStyrkeanalys', gruppMde: '_osGruppMde',
             extremvarden: '_osExtremvarden', trattUnderlag: '_osTrattUnderlag', kvantilBootstrap: '_osKvantilBootstrap',
             osakerhetKonstanter: '_osKonstanter'
@@ -234,7 +235,7 @@ export const MODULES = [
     },
     {
         file: 'individflaggor.js', ns: '__mirrorIndivid',
-        expose: { flaggaIndivider: '_ifFlaggaIndivider' }
+        expose: { flaggaIndivider: '_ifFlaggaIndivider', avvikelsePerKonOchBas: '_ifAvvikelsePerKonOchBas' }
     },
     {
         file: 'utforska.js', ns: '__mirrorUtforska',

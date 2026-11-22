@@ -138,6 +138,27 @@ export function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
 }
 
 /**
+ * Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, yrkesgrupp), bara där både kvinnorna och
+ * männen är minst k (k-tröskeln, S4). Den enda prövningen mot k för översikten per BAS-intervall, lönegapet per
+ * åldersgrupp och löneöversynens grupper före och efter. En grupp utan löner hoppas över, en grupp där ett kön har
+ * färre än k hamnar i `dolda`, och en grupp där männens median inte är positiv hoppas över (kvoten saknas).
+ * @param {Iterable<[any, number[], number[]]>} grupper  [nyckel, kvinnornas löner, männens löner], i visningsordning
+ * @param {{k: number, ki?: boolean}} val  ki: med medianKvotKI (B_PER_GRUPP) i `ci`
+ * @returns {{visade: Array<{nyckel: any, nKv: number, nMa: number, medKv: number, medMa: number, gap: number, ci?: null | {lo: number, hi: number}}>, dolda: any[]}}
+ */
+export function konskvotPerGrupp(grupper, { k, ki = false }) {
+    const visade = [], dolda = [];
+    for (const [nyckel, kv, ma] of grupper) {
+        if (!kv.length && !ma.length) continue;
+        if (kv.length < k || ma.length < k) { dolda.push(nyckel); continue; }
+        const medKv = median(kv), medMa = median(ma);
+        if (!(medMa > 0)) continue;
+        visade.push({ nyckel, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ...(ki ? { ci: medianKvotKI(kv, ma) } : {}) });
+    }
+    return { visade, dolda };
+}
+
+/**
  * Som medianKvotKI, men dragningar där männens median inte är positiv räknas inte, och intervallet ges bara när minst
  * DOSSIER_MIN_GILTIGA dragningar återstår (gruppdossiern och rapportunderlaget).
  * @param {number[]} kvLons

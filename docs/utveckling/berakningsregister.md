@@ -63,6 +63,7 @@ avsnitt 11.
 | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|
 | Bootstrapintervall (95 %) för mediankvoten: hela organisationen, per grupp, per dossier | `organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `osakerhet.js`; dragningarna i `bootstrapMedianer`, `likvardighet.js` | lön, kön | `regressionsmodellen.md` §7; ADR-86 | `tests/osakerhet.test.js`, `tests/bootstrapkvot.test.js`, `tests/osakerhet-adapter.test.js` | saknas |
+| Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, löneöversynens grupper före och efter), bara där båda könen når k, med intervallet per grupp | `konskvotPerGrupp`, `osakerhet.js` | lön, kön | `k-troskeln.md`; intervallet ADR-86 | `tests/osakerhet.test.js` | saknas |
 | Generatorn: seed ur lönerna (sorterade), FNV-1a och mulberry32 | `seedFromNumbers`, `rngFor`, `rng.js` | lönerna | ADR-86 | `tests/rng.test.js`, `tests/slumpintervall-ordning.test.js` | saknas |
 | Konfidensband kring en regressionslinje | `regressionslinjensBand`, `osakerhet.js` | x, y | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
 | Minsta upptäckbara skillnad vid 80 % styrka och α = 0,05 | `mdeProcent`, `styrkeanalys`, `gruppMde`, `osakerhet.js` | σ, antal per kön | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
@@ -82,6 +83,7 @@ avsnitt 11.
 | Åldersjusterad skillnad i ett par | `aldersjusteradSkillnad`, `likvardighet.js` | lön, ålder | `likvardighetsmodellen.md` §5 | `tests/likvardighet.test.js` | saknas |
 | Tabellerna per AID-kod och BAS-intervall, hierarkiska par; Lika arbete AID x BAS är Lika arbetes grupper och status (`likaArbeteGrupper`) i BAS-ordning, utan egen bedömning, och samma blad (`_aidbasLikaBlad`) är blad 2a i JPA-protokollet; gränserna i tabellen är de statusen prövades mot (`bedomSkillnad`, `status.js`) | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57, 90, 93 | `tests/aidbas.test.js`, `tests/aidbas-app.test.js`, `tests/ktroskel-utdata.test.js` | saknas |
 | Personer att granska: förväntad lön ur kollegorna (log-lön mot ålder när spridningen är minst 5 år, annars medianen), flagga vid minst `grans` % under | `flaggaIndivider`, `individflaggor.js` | lön, ålder, AID, BAS | ADR-23, 89 | `tests/individflaggor.test.js`, `tests/grupp-aid-kod.test.js` | `14-granska-median.json`, `15-granska-alder.json` |
+| Personer att granska per BAS-intervall och kön: andelen prövade minst `grans` % under och över förväntad lön, bara där båda könen når k | `avvikelsePerKonOchBas`, `individflaggor.js` | lön, ålder, kön, AID, BAS | ADR-23 | `tests/individflaggor.test.js` | saknas |
 
 ## 6. Löneläget mot referenserna
 

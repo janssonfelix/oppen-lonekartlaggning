@@ -59,16 +59,11 @@ function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
     minne.oversikt = ut; minne.oversiktNyckel = nyckel;
     return ut;
 }
+// Kvoten, intervallet och prövningen mot k är konskvotPerGrupp i src/lib/osakerhet.js.
 function _laOversiktRaderRakna(d, bas, k) {
-    const ut = [];
-    for (const b of bas) {
-        const df = d.filter(r => r.bas === b);
-        const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
-        if (kv.length < k || ma.length < k) continue;
-        const medKv = Stat.median(kv.map(r => r.lon)), medMa = Stat.median(ma.map(r => r.lon));
-        ut.push({ bas: b, gap: medKv / medMa * 100, n: df.length, ci: _laBootstrapGapCI(kv.map(r => r.lon), ma.map(r => r.lon)), medKv, medMa, nKv: kv.length, nMa: ma.length });
-    }
-    return ut;
+    const perBas = new Map(bas.map(b => [b, d.filter(r => r.bas === b)]));
+    const { visade } = _osKonskvotPerGrupp(bas.map(b => [b, perBas.get(b).filter(r => arKvinna(r)).map(r => r.lon), perBas.get(b).filter(r => arMan(r)).map(r => r.lon)]), { k, ki: true });
+    return visade.map(v => ({ bas: v.nyckel, gap: v.gap, n: perBas.get(v.nyckel).length, ci: v.ci, medKv: v.medKv, medMa: v.medMa, nKv: v.nKv, nMa: v.nMa }));
 }
 /** Beskedet under tabellen per BAS-intervall om de intervall där ett kön har färre än tröskeln (inga rader i tabellen). */
 function _laSamladNot(namn) {

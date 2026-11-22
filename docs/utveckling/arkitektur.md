@@ -98,7 +98,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `attgora` | `namn`, `termer` |
 
 Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter:
-`prioritera` (`kTroskel`), `motiveringsgrunder` (`kInstalld`, `kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`) och `loneoversyn` (den gällande tröskeln). Lägena och
+`prioritera` (`kTroskel`), `motiveringsgrunder` (`kInstalld`, `kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`), `avvikelsePerKonOchBas` (`k`, `minGrupp`), `konskvotPerGrupp` (`k`) och `loneoversyn` (den gällande tröskeln). Lägena och
 vad som räknas med vilken tröskel står i [`k-troskeln.md`](k-troskeln.md). Modulen `undertryckning` har de två
 reglerna för vad som döljs eller räknas samman utöver de små grupperna själva: kompletterande undertryckning (ADR-83) och
 sammanslagning av delar där ett kön är för litet (ADR-87).

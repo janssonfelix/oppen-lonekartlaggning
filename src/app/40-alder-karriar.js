@@ -177,18 +177,13 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
 // (_laBootstrapGapCI). Visar VAR i karriären skillnaden finns — inte varför: det är den råa skillnaden mellan alla
 // kvinnor och män i åldersgruppen, oavsett yrke och BAS-intervall. En åldersgrupp där ett kön har färre än tröskeln visas inte.
 const KON_ALDERSGRUPPER = [[0, 29, 'Under 30 år'], [30, 39, '30–39 år'], [40, 49, '40–49 år'], [50, 59, '50–59 år'], [60, 200, '60 år och äldre']];
+// Kvoten, intervallet och prövningen mot k är konskvotPerGrupp i src/lib/osakerhet.js.
 function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
-    const visade = [], dolda = [];
-    for (const [fran, till, namn] of KON_ALDERSGRUPPER) {
+    const { visade, dolda } = _osKonskvotPerGrupp(KON_ALDERSGRUPPER.map(([fran, till, namn]) => {
         const i = r => r.alder > 0 && r.alder >= fran && r.alder <= till && r.lon > 0;   // ålder 0 = saknas (ADR-64)
-        const kv = dataKv.filter(i).map(r => r.lon), ma = dataMa.filter(i).map(r => r.lon);
-        if (!kv.length && !ma.length) continue;
-        if (kv.length < k || ma.length < k) { dolda.push(namn); continue; }
-        const medKv = Stat.median(kv), medMa = Stat.median(ma);
-        if (!(medMa > 0)) continue;
-        visade.push({ namn, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ci: _laBootstrapGapCI(kv, ma) });
-    }
-    return { visade, dolda };
+        return [namn, dataKv.filter(i).map(r => r.lon), dataMa.filter(i).map(r => r.lon)];
+    }), { k, ki: true });
+    return { visade: visade.map(({ nyckel: namn, ...v }) => ({ namn, ...v })), dolda };
 }
 function _konAlderGapFigur(rader, scope) {
     const status = o => gapStatusKI(o);   // uppmärksamhetstrappan (ADR-59): KI:t mot 100 % och golvet statGolv()
