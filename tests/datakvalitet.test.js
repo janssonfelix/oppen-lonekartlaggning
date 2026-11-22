@@ -69,8 +69,8 @@ describe('bedomUnderlag', () => {
         expect(c.varde).toBeCloseTo(4, 10);
         expect(c.status).toBe('varning');
     });
-    it('rimlighet: lön under 20 000 eller över 250 000, ålder utanför 16–75, BAS som inte är en bokstav', () => {
-        const r = [...grupp('A', 50, 49), rad('A', 'man', 19999)];         // 1/100 = 1 %
+    it('rimlighet: lön under 15 000 eller över 250 000, ålder utanför 16–75, BAS som inte är en bokstav', () => {
+        const r = [...grupp('A', 50, 49), rad('A', 'man', 14999)];         // 1/100 = 1 %
         expect(status(bedomUnderlag(r, ok), 'rimlighet')).toBe('ok');
         // 15 och 76 ligger precis utanför förhandskontrollens åldersgräns, 16 och 75 precis innanför.
         const r2 = [...grupp('A', 48, 46), rad('A', 'man', 250001), rad('A', 'man', 30000, 15),
@@ -79,8 +79,14 @@ describe('bedomUnderlag', () => {
         expect(rim.status).toBe('varning');
         expect(rim.varde).toBeCloseTo(4, 10);
         expect(rim.text).toContain('ålder utanför 16–75');
+        expect(rim.text).toBe('4 rader (4 %) har lön under 15\u00a0000 eller över 250\u00a0000 kr, ålder utanför 16–75 eller BAS som inte är en bokstav.');
         const r3 = [...grupp('A', 47, 47), ...Array.from({ length: 6 }, () => rad('A', 'man', 12000))];
         expect(status(bedomUnderlag(r3, ok), 'rimlighet')).toBe('kritisk');
+    });
+    it('rimlighet: 15 000 kr och varje bokstav A–Ö är rimliga; 14 999 kr, en siffra och två bokstäver är det inte', () => {
+        const rim = r => bedomUnderlag(r, ok).kriterier.find(c => c.id === 'rimlighet').varde;
+        expect(rim([...grupp('A', 49, 49), rad('P', 'man', 15000), rad('Ö', 'kvinna', 15000)])).toBe(0);
+        expect(rim([...grupp('A', 49, 48), rad('A', 'man', 14999), rad('1', 'man'), rad('AB', 'kvinna')])).toBeCloseTo(3, 10);
     });
     it('modell: full OK, minimal Varning, fel Kritisk', () => {
         expect(status(bedomUnderlag(bra, { ...ok, modell: 'full' }), 'modell')).toBe('ok');

@@ -18,9 +18,8 @@ const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
-const FTE_GOLV = 20000;
-/** Samma åldersgräns som förhandskontrollen: en uppgift på ett ställe. */
-const { alderMin: ALDER_MIN, alderMax: ALDER_MAX } = forhandskontrollGranser();
+/** Samma gränser för ålder, lön och BAS som förhandskontrollen: en uppgift på ett ställe. */
+const { alderMin: ALDER_MIN, alderMax: ALDER_MAX, lonMin: LON_MIN, lonMax: LON_MAX, bas: BAS } = forhandskontrollGranser();
 
 function _stat(v, okGrans, varnGrans, hogreArBattre) {
     if (v == null || !isFinite(v)) return 'kritisk';
@@ -96,13 +95,13 @@ export function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {})
 
     // Ålderskolumnen är valfri (ADR-64): utan ålder i lönefilen prövas bara lön och BAS.
     const harAlder = d.some(r => r && r.alder > 0);
-    const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || (harAlder && !(r.alder >= ALDER_MIN && r.alder <= ALDER_MAX)) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
+    const orimliga = d.filter(r => !(r.lon >= LON_MIN && r.lon <= LON_MAX)
+        || (harAlder && !(r.alder >= ALDER_MIN && r.alder <= ALDER_MAX)) || !BAS.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ${harAlder ? `ålder utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${LON_MIN.toLocaleString('sv-SE')} eller över ${LON_MAX.toLocaleString('sv-SE')} kr, ${harAlder ? `ålder utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';

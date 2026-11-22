@@ -8586,13 +8586,17 @@ const FK_TIMLON_MEDIAN = 5000;
 const FK_SPRIDNING_GANGER = 10;
 const FK_ALDER_MIN = 16;
 const FK_ALDER_MAX = 75;
+/** Rimlig månadslön (heltid) i tabellen Underlagets kvalitet. */
+const FK_LON_MIN = 15000;
+const FK_LON_MAX = 250000;
+/** Ett rimligt BAS-värde är en enda bokstav (inläsningen versaliserar). */
+const FK_BAS = /^[A-ZÅÄÖ]$/;
 /** Gruppstorleken för andelen rader i små BAS-intervall, när ingen minsta gruppstorlek skickas in. */
 const FK_SMA_GRUPP = 10;
 /** Så många radnummer sparar inläsningen för varningen om namn i fältet för AID-etikett. */
 const FK_NAMN_RADNR = 5;
 /** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
 const MAX_RA = 24;
-const VANLIG_BAS = /^[A-N]$/;
 const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
 // Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
 const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
@@ -8602,7 +8606,7 @@ const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', i
 function forhandskontrollGranser() {
     return { antalRader: FK_ANTAL_RADER, arslonMedian: FK_ARSLON_MEDIAN, timlonMedian: FK_TIMLON_MEDIAN,
         spridningGanger: FK_SPRIDNING_GANGER, alderMin: FK_ALDER_MIN, alderMax: FK_ALDER_MAX, smaGrupp: FK_SMA_GRUPP,
-        namnRadnr: FK_NAMN_RADNR };
+        namnRadnr: FK_NAMN_RADNR, lonMin: FK_LON_MIN, lonMax: FK_LON_MAX, bas: FK_BAS };
 }
 
 const _tal = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
@@ -8668,7 +8672,7 @@ function _fkCell(roll, rad) {
     }
     if (roll === 'bas') {
         const t = String(tolkat ?? '');
-        const fel = !t ? 'saknas: raden faller bort' : VANLIG_BAS.test(t) ? null : 'inte en bokstav A–N';
+        const fel = !t ? 'saknas: raden faller bort' : FK_BAS.test(t) ? null : 'inte en bokstav';
         return { 'rå': ra, tolkat: t, fel, text: visa(t, ra === t) };
     }
     if (roll === 'kon') {
@@ -8740,7 +8744,7 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     const perBas = new Map();
     for (const r of data) perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
     const basVarden = [...perBas.entries()].map(([bas, antal]) => ({ bas, antal })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
-    const ovanliga = basVarden.map(b => b.bas).filter(b => !VANLIG_BAS.test(b));
+    const ovanliga = basVarden.map(b => b.bas).filter(b => !FK_BAS.test(b));
     const loner = data.map(r => r.lon).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
     const lon = loner.length ? { min: loner[0], median: _fkMedian(loner), max: loner[loner.length - 1] } : null;
     const aldrar = data.map(r => r.alder).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
@@ -8787,7 +8791,7 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     }
     if (ovanliga.length) {
         const visa = ovanliga.slice(0, 5).map(b => _fkKorta(b)).join(', ') + (ovanliga.length > 5 ? ' …' : '');
-        varna('bas-ovanlig', 'varning', `${ovanliga.length} ${ovanliga.length === 1 ? 'BAS-värde är' : 'BAS-värden är'} inte en bokstav A–N (${visa}): kontrollera BAS-kolumnen.`);
+        varna('bas-ovanlig', 'varning', `${ovanliga.length} ${ovanliga.length === 1 ? 'BAS-värde är' : 'BAS-värden är'} inte en bokstav (${visa}): kontrollera BAS-kolumnen.`);
     }
     if ((ps.excludedMissingKon || 0) > 0) {
         varna('kon-okand', 'varning', `${_fkRader(ps.excludedMissingKon)} har ett kön som verktyget inte känner igen och faller bort.`);
@@ -8853,9 +8857,8 @@ const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
-const FTE_GOLV = 20000;
-/** Samma åldersgräns som förhandskontrollen: en uppgift på ett ställe. */
-const { alderMin: ALDER_MIN, alderMax: ALDER_MAX } = forhandskontrollGranser();
+/** Samma gränser för ålder, lön och BAS som förhandskontrollen: en uppgift på ett ställe. */
+const { alderMin: ALDER_MIN, alderMax: ALDER_MAX, lonMin: LON_MIN, lonMax: LON_MAX, bas: BAS } = forhandskontrollGranser();
 
 function _stat(v, okGrans, varnGrans, hogreArBattre) {
     if (v == null || !isFinite(v)) return 'kritisk';
@@ -8931,13 +8934,13 @@ function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {}) {
 
     // Ålderskolumnen är valfri (ADR-64): utan ålder i lönefilen prövas bara lön och BAS.
     const harAlder = d.some(r => r && r.alder > 0);
-    const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || (harAlder && !(r.alder >= ALDER_MIN && r.alder <= ALDER_MAX)) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
+    const orimliga = d.filter(r => !(r.lon >= LON_MIN && r.lon <= LON_MAX)
+        || (harAlder && !(r.alder >= ALDER_MIN && r.alder <= ALDER_MAX)) || !BAS.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ${harAlder ? `ålder utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${LON_MIN.toLocaleString('sv-SE')} eller över ${LON_MAX.toLocaleString('sv-SE')} kr, ${harAlder ? `ålder utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';
@@ -19883,7 +19886,7 @@ function renderForhandskontroll() {
     const f = fk.fordelning;
     const kon = f.kon.map(v => `${v['rå'] ? `"${esc(v['rå'])}"` : '(tom)'} ${v.tolkat ? `tolkat som ${esc(v.tolkat)}` : 'tolkas inte'} (${esc(svTal(v.antal, 0))})`).join(', ');
     const fordelning = _fkLista([
-        `BAS-värden: ${f.bas.varden.map(b => `${esc(b.bas)} (${esc(svTal(b.antal, 0))})`).join(', ') || '–'}${f.bas.ovanliga.length ? `; inte en bokstav A–N: ${f.bas.ovanliga.map(esc).join(', ')}` : ''}`,
+        `BAS-värden: ${f.bas.varden.map(b => `${esc(b.bas)} (${esc(svTal(b.antal, 0))})`).join(', ') || '–'}${f.bas.ovanliga.length ? `; inte en bokstav: ${f.bas.ovanliga.map(esc).join(', ')}` : ''}`,
         `Kön-värden: ${kon || '–'}`,
         `Lön: lägst ${_fkKr(f.lon?.min)}, median ${_fkKr(f.lon?.median)}, högst ${_fkKr(f.lon?.max)} (en median över ${esc(svTal(g.arslonMedian, 0))} kr ser ut som årslön, under ${esc(svTal(g.timlonMedian, 0))} kr som timlön)`,
         `Ålder: ${f.alder ? `lägst ${esc(svTal(f.alder.min, 0))}, högst ${esc(svTal(f.alder.max, 0))} år; utanför ${g.alderMin}–${g.alderMax} år: ${esc(svTal(f.alder.utanfor, 0))}` : 'saknas i filen (valfri)'}`,

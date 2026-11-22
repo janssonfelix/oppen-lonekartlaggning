@@ -195,7 +195,7 @@ function renderForhandskontroll() {
     const f = fk.fordelning;
     const kon = f.kon.map(v => `${v['rå'] ? `"${esc(v['rå'])}"` : '(tom)'} ${v.tolkat ? `tolkat som ${esc(v.tolkat)}` : 'tolkas inte'} (${esc(svTal(v.antal, 0))})`).join(', ');
     const fordelning = _fkLista([
-        `BAS-värden: ${f.bas.varden.map(b => `${esc(b.bas)} (${esc(svTal(b.antal, 0))})`).join(', ') || '–'}${f.bas.ovanliga.length ? `; inte en bokstav A–N: ${f.bas.ovanliga.map(esc).join(', ')}` : ''}`,
+        `BAS-värden: ${f.bas.varden.map(b => `${esc(b.bas)} (${esc(svTal(b.antal, 0))})`).join(', ') || '–'}${f.bas.ovanliga.length ? `; inte en bokstav: ${f.bas.ovanliga.map(esc).join(', ')}` : ''}`,
         `Kön-värden: ${kon || '–'}`,
         `Lön: lägst ${_fkKr(f.lon?.min)}, median ${_fkKr(f.lon?.median)}, högst ${_fkKr(f.lon?.max)} (en median över ${esc(svTal(g.arslonMedian, 0))} kr ser ut som årslön, under ${esc(svTal(g.timlonMedian, 0))} kr som timlön)`,
         `Ålder: ${f.alder ? `lägst ${esc(svTal(f.alder.min, 0))}, högst ${esc(svTal(f.alder.max, 0))} år; utanför ${g.alderMin}–${g.alderMax} år: ${esc(svTal(f.alder.utanfor, 0))}` : 'saknas i filen (valfri)'}`,
