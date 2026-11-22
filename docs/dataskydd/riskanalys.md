@@ -415,8 +415,8 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
 - **Bladet *Referenser*** i Excelfilen (och i ZIP-filens Excelfil) byggs i exportläget ur samma rader som
   överblicken i Löneläget. Grupper under tröskeln får ingen rad (§6.5; Löneläget i `docs/utveckling/k-troskeln.md` avsnitt 2).
 - **De fyra bladen per AID-kod och BAS-intervall** (*Lika arbete AID x BAS*, *Likvärdigt arbete*, *Hierarkisk
-  jämförelse* och *Analys på individnivå*) finns i Excelfilen med alla flikar och i ZIP-filens Excelfil. De byggs
-  i exportläget enligt §6.5. Lönemånaden från Inställningar (användarens fritext, §2) står på raden ovanför tabellen, och vald
+  jämförelse* och *Analys på individnivå*) finns i Excelfilen med alla flikar och i ZIP-filens Excelfil, och det
+  första också som blad 2a i protokollet för gemensam lönebedömning (ADR-93). De byggs i exportläget enligt §6.5. Lönemånaden från Inställningar (användarens fritext, §2) står på raden ovanför tabellen, och vald
   definition av kvinnodominerat (*Mer än X %* eller *X % eller mer*) i bladet *Metodik*. Samma tabeller har Kopiera och CSV i flikarna
   (ADR-57).
 - **Kvartilfördelningen (EU-måtten)** i Lönestruktur och EU-lönerapporten redovisar bara gränserna mellan
