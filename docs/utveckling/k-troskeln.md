@@ -522,7 +522,7 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 | Gruppdossierns textkopia, för varje valbar grupp | Avsnitt 2 och 7 | I4; `tests/ktroskel-utdata.test.js` (par) |
 | BAS-dossierns textkopia, för varje valbart intervall | Avsnitt 2 | I4; `tests/basdossier.test.js` |
 | Robusthetspanelen i Exportera | Avsnitt 2, kandidatparen | I4; `tests/ktroskel-utdata.test.js`; `tests/smoke-docx.test.js` |
-| Löneläget: tabellen, överblicken, bladet *Referenser*, statistikens matchning och överblickens diagram | Avsnitt 2 (Löneläget, ADR-55) | I4; `tests/smoke-referenser.test.js`; `tests/smoke-jamforelse.test.js` |
+| Löneläget: tabellen, överblicken, bladet *Referenser*, statistikens matchning och överblickens diagram | Avsnitt 2 (Löneläget, ADR-55) | I4; `tests/lonelaget-app.test.js`; `tests/jamforelsestatistik-app.test.js` |
 | Konfigurationsfilen (hela, årsbokslutet, importprofilerna) och importprofilerna som JSON | Bara aggregat och rubriknamn; bokslutet i exportläget (ADR-54) | I4; I8 (sakliga skäl); `tests/ktroskel-utdata.test.js` (konfigurationsfilen) |
 | Förra årets bokslut: rapportunderlagets block, rapportens avsnitt och BAS-hantelns diagramdata | Den högre av årens trösklar (ADR-54) | I4 |
 | Förhandskontrollens råvärden | Bara på skärmen | I4 |
@@ -545,7 +545,7 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 | Huvudtalets spärr (*Endast kön*) | Avsnitt 1 (ADR-56) | `tests/regression-app.test.js` |
 | Stämplarna för undantagen | Avsnitt 4 och 7 | I2 |
 | Omritning efter konfigurationsfil och organisationspaket | Avsnitt 3 | I5 i `tests/ktroskel-exporter.test.js` |
-| Låsningarna ur organisationspaketet | Avsnitt 6 (ADR-47) | `tests/organisationspaket.test.js`, `tests/ktroskel-regression.test.js`, `tests/smoke-organisation.test.js`, `tests/kanonymitet.test.js` |
+| Låsningarna ur organisationspaketet | Avsnitt 6 (ADR-47) | `tests/organisationspaket.test.js`, `tests/ktroskel-regression.test.js`, `tests/organisationspaket-app.test.js`, `tests/kanonymitet.test.js` |
 | Personer att granska och extremvärdeslistan | Avsnitt 4 (ADR-23) | Undantagna i I4; `tests/personer-att-granska-app.test.js` (listan lämnar inte verktyget); `tests/smoke.test.js` (`markeraUtanExport`) |
 | Likvärdigt arbete i fliken och dess egen export | Avsnitt 4 | Undantagna i I4; I2 (stämpeln) |
 | Tabellerna per AID-kod och BAS-intervall | Avsnitt 4 (ADR-57, ADR-90) | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js`; I4 i exportläget; `tests/ktroskel-utdata.test.js` (vid 10 och 25 har *Lika arbete AID x BAS* exakt tabellens grupper per AID-etikett, och grupperna under tröskeln bara sina namn i noten) |

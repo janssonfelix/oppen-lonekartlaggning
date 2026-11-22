@@ -51,75 +51,6 @@ describe('tomma lägen som inte låter som fel', () => {
     });
 });
 
-describe('Löneöversikten i Utforska', () => {
-    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('utforska'); return w; };
-    it('heter Löneöversikt, och sökfältet säger vad man söker på', () => {
-        const html = las('src/index.html');
-        expect(html).not.toMatch(/Hierarkisk Rapport/i);
-        expect(html).toContain('>Löneöversikt — alla BAS-intervall</h2>');
-        const w = createAppWindow();
-        expect(w.document.getElementById('search-rapport').placeholder).toBe('Sök AID eller BAS');
-    });
-    it('jämförelsestatistikens kolumner visas bara när en statistik är inläst', () => {
-        const w = rita();
-        const t = w.document.getElementById('rapport-table');
-        expect(w.__state.statistik.length).toBe(0);
-        expect(t.classList.contains('utan-jamforelse')).toBe(true);
-        expect(t.querySelectorAll('thead th').length).toBe(8);   // kolumnerna står kvar för exporten
-        expect(las('src/style.css')).toContain('#rapport-table.utan-jamforelse :is(th, td):nth-child(n+7) { display: none; }');
-        w.__state.statistik = [{ aid: '207011', bas: 'C', median: 30000 }];
-        w.__renderTabContent('utforska');
-        expect(t.classList.contains('utan-jamforelse')).toBe(false);
-    });
-    it('lönespridningen skrivs med decimalkomma och bär talet för sortering och export', () => {
-        const w = rita();
-        const celler = [...w.document.querySelectorAll('#rapport-table tbody tr:not(.group-header)')].map(tr => tr.cells[5]).filter(Boolean);
-        const tal = celler.filter(td => /\d/.test(td.textContent));
-        expect(tal.length).toBeGreaterThan(5);
-        for (const td of tal) {
-            expect(td.textContent).toMatch(/^\d,\d\d$/);
-            expect(td.getAttribute('data-sort-value')).toBe(td.textContent.replace(',', '.'));
-        }
-    });
-    it('BAS-grupperna är hopfällda utom den första; valet står kvar när tabellen ritas om, och en sökning visar träffar i alla', async () => {
-        const w = rita();
-        const d = w.document;
-        const rubriker = () => [...d.querySelectorAll('#rapport-table tbody tr.group-header')];
-        const synliga = tr => { const ut = []; for (let n = tr.nextElementSibling; n && !n.classList.contains('group-header'); n = n.nextElementSibling) ut.push(n.style.display !== 'none'); return ut; };
-        expect(rubriker().length).toBeGreaterThan(2);
-        expect(rubriker().map(tr => tr.classList.contains('collapsed'))).toEqual(rubriker().map((_, i) => i > 0));
-        expect(synliga(rubriker()[0]).every(Boolean)).toBe(true);
-        expect(synliga(rubriker()[1]).some(Boolean)).toBe(false);
-        rubriker()[1].firstElementChild.click();
-        await new Promise(r => setTimeout(r, 10));
-        w.__renderTabContent('utforska');
-        expect(rubriker()[1].classList.contains('collapsed')).toBe(false);
-        expect(synliga(rubriker()[1]).every(Boolean)).toBe(true);
-        const sok = d.getElementById('search-rapport');
-        sok.value = 'kvinna'; sok.dispatchEvent(new w.Event('input', { bubbles: true }));
-        expect(rubriker().some(tr => tr.classList.contains('collapsed'))).toBe(false);
-        expect(rubriker().every(tr => synliga(tr).some(Boolean))).toBe(true);
-        sok.value = ''; sok.dispatchEvent(new w.Event('input', { bubbles: true }));
-        expect(rubriker()[2].classList.contains('collapsed')).toBe(true);
-    });
-    it('PDF-rapportens kopia av en tabell har alla rader synliga, också hopfällda grupper och ansvarsrader', () => {
-        const w = rita();
-        w.__renderTabContent('matrix');
-        for (const id of ['rapport-table', 'matrix-table']) {
-            const klon = w.eval(`_exportVisaAllaRader(document.getElementById('${id}').cloneNode(true))`);
-            expect([...klon.querySelectorAll('tbody tr')].filter(tr => tr.hidden || tr.style.display === 'none' || tr.classList.contains('collapsed')).length, id).toBe(0);
-        }
-        expect(w.document.querySelectorAll('#matrix-table tr.la-underrad-ansvar[hidden]').length).toBeGreaterThan(0);   // skärmens tabell är orörd
-        expect(las('src/app/60-utskrift.js')).toContain('_exportUtanSkarmkolumner(_exportVisaAllaRader(t.cloneNode(true)))');   // utskriften: alla rader, utan skärmens egna kolumner
-    });
-    it('i arbetsboken är också de hopfällda raderna synliga', () => {
-        const w = rita();
-        const klon = w.eval("_cloneAndCleanTableForExport('rapport-table')");
-        expect([...klon.querySelectorAll('tbody tr')].filter(tr => tr.style.display === 'none').length).toBe(0);
-        expect(w.document.querySelectorAll('#rapport-table tbody tr[style*="display: none"]').length).toBeGreaterThan(0);
-    });
-});
-
 describe('formulären i Löneöversyn', () => {
     const FALT = ['forecast-budget-value', 'forecast-generell-value', 'forecast-min-n', 'forecast-rule-value', 'forecast-closure-pct', 'forecast-market-factor', 'forecast-threshold-pct', 'forecast-rem-pct'];
     it('varje talfält har en etikett ovanför och sin enhet som suffix i samma ruta', () => {
@@ -361,29 +292,6 @@ describe('Om verktyget följer flikmallen', () => {
         expect(flikar.length).toBe(6);
         expect(flikar.filter(b => b.querySelector('svg')).length).toBe(0);
         expect(flikar.map(b => b.textContent.trim()).every(t => t.length > 2)).toBe(true);
-    });
-});
-
-describe('Att göra: en stil på status', () => {
-    it('prioriteten bär statusmärket med egen form, och grupperna har den ritade pilen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('renderActionChecklist()');
-        const d = w.document;
-        const prio = [...d.querySelectorAll('#action-checklist-container .ag-prio')];
-        expect(prio.length).toBeGreaterThan(3);
-        for (const p of prio) {
-            const text = p.textContent.trim();
-            expect(text).toMatch(/^(Hög|Medel|Låg)$/);
-            expect(p.querySelector(text === 'Hög' ? 'svg.ikon-statusKritisk' : text === 'Medel' ? 'svg.ikon-statusVarning' : 'svg.ikon-bock')).toBeTruthy();
-        }
-        // S7 i punkt 26: märket står alltid på en egen rad ovanför rubriken, oavsett rubrikens längd.
-        for (const p of prio) expect(p.parentElement.classList.contains('ag-huvud')).toBe(true);
-        expect(las('src/style.css')).toMatch(/\.ag-huvud \{[^}]*flex-direction: column/);
-        const grupper = [...d.querySelectorAll('#action-checklist-container details.ag-grupp')];
-        expect(grupper.length).toBeGreaterThan(1);
-        expect(grupper.every(g => !g.getAttribute('style') && !g.querySelector(':scope > summary').getAttribute('style'))).toBe(true);
-        expect(las('src/style.css')).toContain('.ag-grupp > summary::-webkit-details-marker { display: none; }');
     });
 });
 

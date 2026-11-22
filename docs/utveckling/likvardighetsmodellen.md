@@ -317,7 +317,7 @@ bär inte minsta skillnaden (ADR-61), antalet par, kvinnotröskeln eller definit
 | `tests/likvardigt-arbete-app.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseetikett i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock; att paren räknas en gång vid inläsning, flikbyten och protokollet, och att fliken och valen nollställer resultatet; partabellens intervall och märke, att ett par under 5 % syns utan att något ändrats och fältets text; poängläget i fliken och att resultatet nollställs; att BAS-ordningen inte har panel, tillstånd eller fält i konfigurationsfilen, och att robusthetspanelen prövar Likvärdigt arbete |
 | `tests/ktroskel-exporter.test.js` | Antalet små kvinnodominerade grupper med gällande tröskel, och att ett tröskelbyte inte räknar om paren |
 | `tests/granssnitt-vyer.test.js` | Partabellens kolumner och att Översiktens tal är flikens |
-| `tests/smoke-organisation.test.js` | Organisationspaketets jämförelsemängd |
+| `tests/organisationspaket-app.test.js` | Organisationspaketets jämförelsemängd |
 | `tests/organisationspaket.test.js` | Fältet `installningar.jamforelse` i paketet |
 | `tests/rapportunderlag.test.js`, `tests/kanonymitet.test.js` | Blocket *Lägre krav* och tröskeln för paren och listan utanför fliken (`k-troskeln.md` §9) |
 | `tests/skrreferens.test.js` | Uppslaget i den nationella statistiken |

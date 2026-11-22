@@ -562,3 +562,37 @@ describe('lönefil vars kolumner inte känns igen', () => {
         expect(w.document.getElementById('data-status').textContent).toContain('2 rader utan lön');
     });
 });
+
+describe('sortering, Att göra, kopiering och Likvärdigt arbete — inläsning', () => {
+    it('CSV med bara CR som radslut och en försättsrad: rubriken hittas och radnumren stämmer', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { join, dirname } = await import('node:path');
+        const { fileURLToPath } = await import('node:url');
+        const w = createAppWindow();
+        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
+        const rader = ['Lönerapport september', 'BAS;Månadslön;Ålder;Kön;AID', 'A;30000;40;Kvinna;5301', 'A;31000;41;Man;5301'];
+        w.loadStructureFile(new w.File([rader.join('\r')], 'p.csv', { type: 'text/csv' }));
+        for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
+        expect(w.__state.data.map(r => r.radnr)).toEqual([3, 4]);
+    });
+});
+
+describe('Jämförelsestatistik, Översikt och namn: detaljer — inläsning', () => {
+    const vendor = async (w, fil) => {
+        const { readFileSync } = await import('node:fs');
+        const { join, dirname } = await import('node:path');
+        const { fileURLToPath } = await import('node:url');
+        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', fil), 'utf8'));
+    };
+    it('ett misslyckat Byt fil pekar inte om kolumnmappningen till den avvisade filen', async () => {
+        const w = createAppWindow();
+        await vendor(w, 'papaparse.min.js');
+        const rader = ['BAS;Månadslön;Ålder;Kön;AID'];
+        for (let i = 0; i < 20; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301`);
+        w.loadStructureFile(new w.File([rader.join('\n')], 'bra.csv', { type: 'text/csv' }));
+        for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
+        w.loadStructureFile(new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
+        await new Promise(r => setTimeout(r, 100));
+        expect(w.__state._lastStructureFile.name).toBe('bra.csv');
+    });
+});

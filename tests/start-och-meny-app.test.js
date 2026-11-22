@@ -1428,3 +1428,16 @@ describe('utskrift av den aktiva fliken (Ctrl+P)', () => {
         expect(w.document.body.classList.contains('print-mode')).toBe(false);
     });
 });
+
+describe('sortering, Att göra, kopiering och Likvärdigt arbete — licens', () => {
+    it('Om verktyget visar licenstexterna från den inbyggda mallen', () => {
+        const w = createAppWindow();
+        const t = w.document.createElement('template'); t.id = 'licenstexter';
+        t.innerHTML = '<pre>Permission is hereby granted — testtext</pre>';
+        w.document.body.appendChild(t);
+        w.document.querySelector('.nav-item[data-tab="info"]').click();
+        w.eval("renderInfoTab('references')");
+        expect(w.document.getElementById('om-licenstexter').textContent).toContain('Permission is hereby granted');
+        expect(w.document.getElementById('view-info').textContent).toContain('riskanalys.md');
+    });
+});
