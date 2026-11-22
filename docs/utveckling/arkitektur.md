@@ -86,6 +86,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `organisationspaket` | `importprofiler`, `installningsgranser`, `perbas`, `tabellrecept`, `termer` |
 |  | `installningsgranser` | – |
 | Skydd för små grupper | `undertryckning` | – |
+|  | `ktroskel` | `aid`, `kon`, `namn` |
 | Språk | `termer` | – |
 |  | `namn` | `termer` |
 |  | `htmltext` | – |
@@ -99,7 +100,10 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `sakligaskal` | – |
 |  | `attgora` | `namn`, `termer` |
 
-Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter:
+Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter. Reglerna
+för vad som får redovisas vid k (könen, § 3:10-paren, regressionens steg och BAS-effekter, punkterna per person,
+stämpeln och noterna) står i `ktroskel`; adaptrarna i `06-k-troskel.js` behåller appens namn och skickar tröskeln.
+Övriga moduler:
 `prioritera` (`kTroskel`), `motiveringsgrunder` (`kInstalld`, `kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`), `avvikelsePerKonOchBas` (`k`, `minGrupp`), `konskvotPerGrupp` (`k`), `lonepolitikModell` och `maskeringsniva` (`k`) och `loneoversyn` (den gällande tröskeln). Lägena och
 vad som räknas med vilken tröskel står i [`k-troskeln.md`](k-troskeln.md). Modulen `undertryckning` har de två
 reglerna för vad som döljs eller räknas samman utöver de små grupperna själva: kompletterande undertryckning (ADR-83) och

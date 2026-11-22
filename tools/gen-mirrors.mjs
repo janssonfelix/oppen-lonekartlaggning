@@ -75,6 +75,20 @@ export const MODULES = [
         expose: { kompletterandeUndertryckning: null, sammanslagning: null, kompletterandeUndertryckningPerNyckel: '_kompletterandeUndertryckningPerNyckel' }
     },
     {
+        // Vad som får redovisas vid k (S4); importerar kon.js, aid.js och namn.js: efter dem. Funktionerna som inte läser
+        // tröskeln får appens namn direkt; de övriga når appen genom adaptrarna i 06-k-troskel.js, som läser kTroskel()
+        // eller kInstalld().
+        file: 'ktroskel.js', ns: '__mirrorKtroskel',
+        expose: {
+            kTolka: '_kTolka', konAntal: '_konAntal', parNarK: '_parNarK', kUndantagNot: '_kUndantagNot',
+            statGolv: '_ktStatGolv', konFarRedovisas: '_ktKonFarRedovisas', konFarRedovisasFor: '_ktKonFarRedovisasFor',
+            konUtelamnatNot: '_ktKonUtelamnatNot', raGapText: '_ktRaGapText', regStegForRedovisning: '_ktRegSteg',
+            basEffekterForRedovisning: '_ktBasEffekter', parUtelamnadeNot: '_ktParUtelamnadeNot', parForRedovisning: '_ktParForRedovisning',
+            kStampel: '_ktStampel', kStampelFor: '_ktStampelFor', kSanktNot: '_ktSanktNot', kSidfot: '_ktSidfot',
+            csvMedStampel: '_ktCsvMedStampel', tsvMedStampel: '_ktTsvMedStampel', kText: '_ktText', individLitenFor: '_ktIndividLitenFor'
+        }
+    },
+    {
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',

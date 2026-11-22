@@ -37,7 +37,7 @@ function _kAterstallVarde() { return Math.max(K_STANDARD, kTroskelLagst() ?? K_M
  * redovisningen. Följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden.
  * Räknas på den inställda tröskeln i båda lägena (ADR-51), så att skattningarna — och deras cacher — är desamma.
  */
-function statGolv() { return Math.max(kInstalld(), K_STANDARD); }   // oberoende av läget: skattningarna är desamma på skärmen och i exporten
+function statGolv() { return _ktStatGolv(kInstalld()); }   // oberoende av läget: skattningarna är desamma på skärmen och i exporten
 
 /**
  * Avgör om en gruppstorlek är under k-tröskeln.
@@ -47,13 +47,6 @@ function statGolv() { return Math.max(kInstalld(), K_STANDARD); }   // oberoende
 function isKMasked(n) { return n < kTroskel(); }
 
 /**
- * Får ett KÖNSUPPDELAT lönemått redovisas (ett köns median eller percentil, ett könsgap, en
- * kostnad som räknats ur ett gap)? Varje kön ska nå tröskeln (ADR-12): annars pekar måttet ut
- * de få i det mindre könet, även när gruppen som helhet är stor nog.
- * @param {number} nKv - Antal kvinnor.
- * @param {number} nMa - Antal män.
- */
-/**
  * Gränsen för "litet underlag" i ett diagram: en stapel eller ett segment som gäller färre personer än så ritas
  * med mönster och sägs vara osäkert. Det är inte en maskeringsgräns — gruppen som stapeln räknas i når redan
  * minsta gruppstorlek — utan en varning för att några få personer kan se ut som ett mönster. Fem är den gräns
@@ -62,89 +55,25 @@ function isKMasked(n) { return n < kTroskel(); }
 const LITET_UNDERLAG = 5;
 function litetUnderlag() { return LITET_UNDERLAG; }
 
-function _konFarRedovisas(nKv, nMa) {
-    const k = kTroskel();
-    return nKv >= k && nMa >= k;
-}
-
-/** Antal kvinnor och män i en radmängd (samma könsregler som i övriga verktyget). */
-function _konAntal(rader) {
-    let nKv = 0, nMa = 0;
-    for (const r of rader || []) {
-        if (arKvinna(r)) nKv++;
-        else if (arMan(r)) nMa++;
-    }
-    return { nKv, nMa };
-}
-
+// Reglerna för vad som får redovisas vid k bor i src/lib/ktroskel.js med tröskeln som argument. Adaptrarna nedan
+// behåller appens namn och lägger till tröskeln som gäller: kTroskel() för det som redovisas, kInstalld() för stämpeln
+// och texterna om regeln. _kTolka, _konAntal, _parNarK och _kUndantagNot läser ingen tröskel och kommer direkt ur spegeln.
+function _konFarRedovisas(nKv, nMa) { return _ktKonFarRedovisas(nKv, nMa, kTroskel()); }
 /** Får könsuppdelade lönemått för hela radmängden redovisas? */
-function _konFarRedovisasFor(rader) {
-    const { nKv, nMa } = _konAntal(rader);
-    return _konFarRedovisas(nKv, nMa);
-}
-
+function _konFarRedovisasFor(rader) { return _ktKonFarRedovisasFor(rader, kTroskel()); }
 /** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
-function _konUtelamnatNot() {
-    return kTroskel() <= 1 ? 'Könsuppdelade lönemått redovisas inte eftersom ett av könen saknas i urvalet.'
-        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.`;
-}
+function _konUtelamnatNot() { return _ktKonUtelamnatNot(kTroskel()); }
 
-/**
- * Regressionens råa mediangap som text. Regressionen själv har ett fast golv (5 per kön, ADR-38),
- * men det råa gapet är ett beskrivande könsuppdelat mått och följer tröskeln: under den står ett
- * streck med förklaring.
- * @param {any} reg  regressionsresultatet (rawGapPct, nKvAnalysed, nMaAnalysed …)
- * @param {(v:number)=>string} fmt
- */
-function _raGapText(reg, fmt) {
-    if (!reg || reg.rawGapPct == null) return '–';
-    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : (kTroskel() <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())})`);
-}
+/** Regressionens råa mediangap som text (ktroskel.js: raGapText). */
+function _raGapText(reg, fmt) { return _ktRaGapText(reg, fmt, kTroskel()); }
 
-/**
- * Regressionens stegvisa uppdelning så som den får redovisas. Första steget ("Endast kön") är
- * skillnaden mellan könens geometriska medellöner utan någon kontroll — ett beskrivande
- * könsuppdelat mått som följer tröskeln, liksom allt som räknats ur det (förklarad andel,
- * förklaringsbudgeten). Det justerade gapet berörs inte: det visas från regressionens eget golv
- * (5 per kön, ADR-38). Beräkningen ändras inte; bara vad som visas.
- * @param {any} reg  regressionsresultatet (sequential, explainedShare, nKvAnalysed, nMaAnalysed …)
- * @returns {{steg:Array, explainedShare:number|null, utelamnat:boolean, not:string}}
- */
-function _regStegForRedovisning(reg) {
-    const alla = (reg && reg.sequential) || [];
-    if (!reg || _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed)) {
-        return { steg: alla, explainedShare: reg ? reg.explainedShare : null, utelamnat: false, not: '' };
-    }
-    return {
-        steg: alla.filter(s => s.name !== 'Endast kön'),
-        explainedShare: null,
-        utelamnat: true,
-        not: `Det ojusterade steget (endast kön) och den förklarade andelen visas inte eftersom ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i modellen.`
-    };
-}
+/** Regressionens stegvisa uppdelning så som den får redovisas (ktroskel.js: regStegForRedovisning). */
+function _regStegForRedovisning(reg) { return _ktRegSteg(reg, kTroskel()); }
 
-/**
- * Regressionens BAS-effekter så som de får redovisas (ADR-70, beslut 2026-11-14). Effekten för ett BAS-intervall med
- * färre personer än tröskeln ligger nära deras genomsnittliga lönenivå: den skrivs inte ut, och intervallet namnges i
- * noten (redovisningsformen i ADR-12). Är referensintervallet självt under tröskeln beskriver varje effekt dess nivå
- * baklänges; då skrivs ingen effekt ut. Modellen och dess referens (ADR-44) ändras inte; bara vad som visas. På
- * skärmen är tröskeln 1 och allt visas (ADR-51).
- * @param {any} reg  regressionsresultatet (basEffekter, basRef, basN)
- * @returns {{effekter: Array|null, utelamnade: string[], referensUtelamnad: boolean, not: string}}
- *   effekter är null när modellen inte har BAS-effekter; noten är text utan markup.
- */
+/** Regressionens BAS-effekter så som de får redovisas (ktroskel.js: basEffekterForRedovisning); noten med appens termer. */
 function _basEffekterForRedovisning(reg) {
-    const alla = reg && reg.basEffekter;
-    if (!alla) return { effekter: null, utelamnade: [], referensUtelamnad: false, not: '' };
-    const n = b => (reg.basN && reg.basN[b]) || 0;
     const k = kTroskel();
-    if (reg.basRef != null && isKMasked(n(reg.basRef))) {
-        return { effekter: [], utelamnade: alla.map(e => e.bas), referensUtelamnad: true,
-            not: `BAS-effekterna visas inte här: referensintervallet, BAS ${reg.basRef}, har färre än ${k} ${personOrd(k)}, och varje effekt mot det skulle visa dess lönenivå. Personerna ingår fortfarande i modellen.` };
-    }
-    const utelamnade = alla.filter(e => isKMasked(n(e.bas))).map(e => e.bas);
-    return { effekter: alla.filter(e => !isKMasked(n(e.bas))), utelamnade, referensUtelamnad: false,
-        not: utelamnade.length ? _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen') : '' };
+    return _ktBasEffekter(reg, k, utelamnade => _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen'));
 }
 
 /**
@@ -189,14 +118,6 @@ function _setDiagramMetodNot(chartId, text) {
     note.textContent = text;
 }
 
-/** Heltal K_MIN–K_MAX ur ett tal eller en sträng, annars null. Bara rena heltal godtas. */
-function _kTolka(v) {
-    const s = typeof v === 'number' ? String(v) : (typeof v === 'string' ? v.trim() : '');
-    if (!/^\d+$/.test(s)) return null;
-    const n = Number(s);
-    return n >= K_MIN && n <= K_MAX ? n : null;
-}
-
 /**
  * Får ett § 3:10-par redovisas i underlaget? Båda yrkesgrupperna ska nå tröskeln. Endast fliken
  * Likvärdigt arbete och dess egen export (Excel, CSV) är undantagna (dokumenterat); alla andra utdata
@@ -205,15 +126,8 @@ function _kTolka(v) {
  */
 function _parOverTroskel(p) { return _parNarK(p, kTroskel()); }
 
-/** Når båda yrkesgrupperna i paret gränsen k? Ett jämförelseyrke ur statistiken (maN saknas) prövas inte. */
-function _parNarK(p, k) {
-    return p.kvN >= k && (p.maN == null || p.maN >= k);
-}
-
 /** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
-function _parUtelamnadeNot(antal, k = kTroskel()) {
-    return antal ? `${antal} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.` : '';
-}
+function _parUtelamnadeNot(antal, k = kTroskel()) { return _ktParUtelamnadeNot(antal, k); }
 
 /**
  * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
@@ -223,28 +137,10 @@ function _parUtelamnadeNot(antal, k = kTroskel()) {
  * @param {any[]} [pairs]
  * @param {number} [k]
  */
-function _parForRedovisning(pairs, k = kTroskel()) {
-    const alla = pairs || [];
-    const par = alla.filter(p => _parNarK(p, k));
-    const utelamnade = alla.length - par.length;
-    return { par, utelamnade, not: _parUtelamnadeNot(utelamnade, k) };
-}
+function _parForRedovisning(pairs, k = kTroskel()) { return _ktParForRedovisning(pairs, k); }
 
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
-function kStampel() {
-    const k = kInstalld();
-    return `Minsta gruppstorlek för redovisning: ${k}.`
-        + (k < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
-}
-
-/**
- * Tillägget för en export som medvetet kan innehålla grupper under tröskeln (dokumenterade
- * undantag: Likvärdigt arbete, och Utforska när användaren kryssat i det). Utan tillägget läses
- * stämpeln som ett löfte om att filen saknar sådana grupper.
- */
-function _kUndantagNot(undantag) {
-    return undantag ? `Den här filen kan även innehålla grupper under tröskeln (undantag: ${undantag}).` : '';
-}
+function kStampel() { return _ktStampel(kInstalld()); }
 
 /**
  * Raden i diagramdata från ett diagram med en punkt per person (figurens `individer`, ADR-39): filen bär en rad
@@ -258,9 +154,7 @@ function kIndividRad() {
 }
 
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */
-function kStampelFor(undantag) {
-    return undantag ? `${kStampel()} ${_kUndantagNot(undantag)}` : kStampel();
-}
+function kStampelFor(undantag) { return _ktStampelFor(undantag, kInstalld()); }
 
 /**
  * Vilket dokumenterat undantag en tabell eller ett diagram hör till, om något: allt i fliken
@@ -292,7 +186,7 @@ function _kUndantagFor(el, medSma) {
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
-function _kSanktNot() { return kInstalld() < K_STANDARD ? kStampel() : ''; }
+function _kSanktNot() { return _ktSanktNot(kInstalld()); }
 
 /** Stycket med stämpeln för utskrifter när tröskeln är sänkt (escapat), annars tom sträng. */
 function _kSanktStycke() {
@@ -300,48 +194,24 @@ function _kSanktStycke() {
     return not ? `<p class="farg-kritisk fw-600">${esc(not)}</p>` : '';
 }
 
-/**
- * En punkt per person (spridningsdiagrammen lön mot ålder) röjer personens lön tillsammans med yrke och BAS.
- * Punkten är därför liten — den ritas inte och exporteras inte — när personens grupp (yrke inom BAS, samma
- * indelning som gruppdossiern) har färre än tröskeln, eller när personens kön har det i gruppen (ADR-12).
- * Antalen räknas på hela underlaget, inte på det urval diagrammet visar.
- * @returns {(rad:object) => boolean} sant om radens punkt är liten
- */
-function individLitenFor(rader) {
-    const k = kTroskel();
-    const grupp = r => `${_gruppAid(r)}|${r.bas}`;
-    const konAv = r => (arKvinna(r) ? 'kv' : (arMan(r) ? 'ma' : 'ovr'));
-    const n = new Map();
-    for (const r of rader) {
-        if (!(r.lon > 0) || !r.bas) continue;
-        const g = grupp(r);
-        n.set(g, (n.get(g) || 0) + 1);
-        n.set(`${g}|${konAv(r)}`, (n.get(`${g}|${konAv(r)}`) || 0) + 1);
-    }
-    return r => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv(r)}`) || 0) < k;
-}
-function _gruppAid(r) { return aidAvYrke(r.yrke); }
+/** En punkt per person är liten när gruppen eller personens kön i gruppen är under tröskeln (ktroskel.js: individLitenFor). */
+function individLitenFor(rader) { return _ktIndividLitenFor(rader, kTroskel()); }
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
-function _kSidfot(text) {
-    return kInstalld() < K_STANDARD ? `${text} · minsta gruppstorlek ${kInstalld()} (standard ${K_STANDARD})` : text;
-}
+function _kSidfot(text) { return _ktSidfot(text, kInstalld()); }
 
-const _kHarStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
 /** Tabell-CSV: stämpeln som sista rad, om den inte redan står i raderna (diagramdata). */
-function _csvMedStampel(rows, undantag) { return _kHarStampel(rows) ? rows : [...rows, [], [kStampelFor(undantag)]]; }
+function _csvMedStampel(rows, undantag) { return _ktCsvMedStampel(rows, undantag, kInstalld()); }
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
-function _tsvMedStampel(rows, undantag) { return (_kSanktNot() || undantag) && !_kHarStampel(rows) ? [...rows, [], [kStampelFor(undantag)]] : rows; }
+function _tsvMedStampel(rows, undantag) { return _ktTsvMedStampel(rows, undantag, kInstalld()); }
 
 /** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
-function _kText(s) {
-    return String(s ?? '').replace(/\{k\}/g, String(kInstalld())).replace(/\{golv\}/g, String(Math.max(kInstalld(), K_STANDARD)));
-}
+function _kText(s) { return _ktText(s, kInstalld()); }
 
 /** Fyller de fasta texterna i index.html som nämner talet. */
 function _fyllKTexter() {
     document.querySelectorAll('[data-k-troskel]').forEach(el => { el.textContent = String(kInstalld()); });
-    document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(Math.max(kInstalld(), K_STANDARD)); });
+    document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(statGolv()); });
     document.querySelectorAll('[data-k-tooltip]').forEach(el => { el.setAttribute('data-tooltip', _kText(el.getAttribute('data-k-tooltip'))); });
     const lbl = document.getElementById('explore-inkludera-sma-label');
     if (lbl) lbl.textContent = `Ta med grupper under ${kInstalld()} i exporten`;

@@ -154,8 +154,8 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 
 | Namn | Värde | Fil | Vad det styr | Vem ändrar |
 |---|---|---|---|---|
-| `K_STANDARD` | 10 | `src/app/06-k-troskel.js` | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (2–1000) och Organisationspaket |
-| `K_MIN`, `K_MAX` | 2, 1000 | `src/app/06-k-troskel.js` | tröskelns gränser | Fast |
+| `K_STANDARD` | 10 | `src/app/06-k-troskel.js` (samma värde i `src/lib/ktroskel.js`) | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (2–1000) och Organisationspaket |
+| `K_MIN`, `K_MAX` | 2, 1000 | `src/app/06-k-troskel.js` (samma värden i `src/lib/ktroskel.js`) | tröskelns gränser | Fast |
 | `K_SKARM` | 1 | `src/app/06-k-troskel.js` | tröskeln på skärmen | Fast |
 | `LITET_UNDERLAG` | 5 | `src/app/06-k-troskel.js` | en stapel för färre personer ritas med mönster; golvet för en egen rad i könsfördelningen i Lika arbete | Fast |
 | `KI_NEDRE` | 0,025 | `src/lib/stat.js` | percentilintervallens nedre andel | Fast |

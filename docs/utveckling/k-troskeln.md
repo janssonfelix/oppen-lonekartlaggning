@@ -16,7 +16,8 @@ Den som lägger till något som lämnar verktyget läser avsnitt 1, 2 och 9 för
 
 | Del | Fil |
 |---|---|
-| Tröskeln, golven, stämplarna, noterna om utelämnade kön och par, inställningen och omritningen | `src/app/06-k-troskel.js` |
+| Tröskeln, inställningen och omritningen | `src/app/06-k-troskel.js` |
+| Reglerna vid k: golven, stämplarna, noterna om utelämnade kön och par, BAS-effekterna, punkterna per person (tröskeln som argument; appens namn är adaptrar i `06-k-troskel.js`) | `src/lib/ktroskel.js` |
 | Maskeringsnoterna (`kMaskNote`, `kSamladNote`) | `src/app/06-maskeringsnoter.js` |
 | Exportläget, exportgrinden och förhandsvisningen | `src/app/23-exportgrind.js` |
 | Könsuppdelade mått i strukturen | `src/lib/struktur.js` |
@@ -120,7 +121,7 @@ om den justerade löneskillnaden i Word-utkastet, PDF-rapporten och utskriften, 
 specifikation i exportläget) skrivs effekten inte ut för ett intervall med färre än `kTroskel()` personer i modellen
 (`basN`); intervallen namnges i en not utan värden (`_kMaskNoteText`). Har referensintervallet självt färre skrivs
 ingen effekt ut, eftersom varje effekt då beskriver dess nivå baklänges, och noten säger varför. Modellen och dess
-referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-troskel.js`).
+referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-troskel.js`, regeln i `src/lib/ktroskel.js`).
 
 **Livscykelns lönekurva.** Kurvan i Ålder & karriär är livscykelmodellens lönenivå per kön i det valda BAS-intervallet
 (rullistan; som standard det mest folkrika). Översiktstabellen per intervall utelämnar ett intervall med färre än
