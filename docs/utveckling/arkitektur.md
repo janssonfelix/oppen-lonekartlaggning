@@ -16,7 +16,7 @@ Dokumentet beskriver den byggda koden. Där det skiljer sig från koden är det 
 | Appen | `src/app/NN-*.js` (86 delar) | Ett enda globalt skript i prefixordning: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
 | Biblioteken | `vendor/` | D3, JSZip, PapaParse och SheetJS, låsta med kontrollsummor i `SHA256SUMS`. Licenserna står i `TREDJEPARTSLICENSER.md`. |
 | Bygget | `tools/` | `build-app.mjs` slår ihop appen, `bundle.mjs` bygger filen och `RELEASE.txt`, `kontroll.mjs` kör hela kedjan. Se [`bygge-och-test.md`](bygge-och-test.md). |
-| Testerna | `tests/` (131 testfiler) | Vitest: enhetstester av `src/lib/`, röktest av appen i jsdom, invarianter för exporterna och vakter för dokument och skydd. Webbläsarröktestet ligger i `tools/browser-smoke/`. |
+| Testerna | `tests/` | Vitest: enhetstester av `src/lib/`, appen per funktion i jsdom (`<område>-app.test.js`), invarianter för exporterna och vakter för dokument och skydd. Webbläsarröktestet ligger i `tools/browser-smoke/`. |
 | Leveransen | `dist/`, `.github/workflows/` | `dist/` är det byggda verktyget, genererat och incheckat. CI kräver att ett nytt bygge blir byte-identiskt med det incheckade. |
 
 Appen och kärnan är separerade i två steg: appen läser och visar, kärnan räknar. Mellan dem finns bara de tunna

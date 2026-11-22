@@ -109,12 +109,13 @@ Vitest. De genererade filerna (`dist/` och `src/app/08-version.js` och
 `09-lib-speglar.js`) prövas av artefaktgrinden, inte av sviten, så `npm test` efter en ändring i `src/lib/` kräver
 `npm run build:app` först; `npm run kontroll` gör det själv.
 
-- rena `src/lib/`-moduler och CSV-parsningen;
-- jsdom-röktest av varje vy (ADR-7): `tests/smoke.test.js` med det delade fönstret och ett dussintal
-  `tests/smoke-*.test.js` per område;
-- k-tröskeln i fjorton `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`; gränssnittet i
-  `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
-  `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`);
+- rena `src/lib/`-moduler och CSV-parsningen, en fil per modul eller område (`tests/<område>.test.js`);
+- jsdom-röktest av appen (ADR-7), en fil per funktion (`tests/<område>-app.test.js`, till exempel `inlasning-app` och
+  `rapport-app`);
+- det som går tvärs över funktionerna: k-tröskeln i `tests/ktroskel*.test.js` med riggen i
+  `tests/helpers/ktroskel-rigg.js`; gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`);
+  diagrammen i `tests/diagram*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`); visningsminnet i
+  `tests/visningsminne*.test.js` (riggen `tests/helpers/visningsminne-rigg.js`);
 - axe-a11y (ADR-10, `tests/a11y.test.js`);
 - vakterna `drift`, `exports.golden`, `version`, `release` och `kanonymitet`;
 - escaping-vakten `tests/escaping.test.js` (motorn i `tests/helpers/htmlmallar.js`) läser `src/app/` utan att ladda
@@ -164,9 +165,9 @@ behövs, så att varje arbetares minne håller sig under Nodes tak (den tyngsta 
 billigt efter det första (som bär kompileringen); det dyra är ritningen av alla flikar (omkring 2 s på demodatan), så
 tiden styrs av hur många flikritningar en fil gör.
 
-Vitest kör en fil per arbetare, så **den längsta filen sätter golvet för hela körningen**. Därför är röktestet,
-k-tröskeltestet, gränssnittstestet och diagramvyerna delade i filer per område (`tests/smoke*.test.js`,
-`tests/ktroskel*.test.js`, `tests/granssnitt*.test.js`, `tests/diagramvyer*.test.js`) med gemensamma riggar i
+Vitest kör en fil per arbetare, så **den längsta filen sätter golvet för hela körningen**. Därför är apptesterna
+delade per funktion (`tests/*-app.test.js`), och k-tröskeltestet, gränssnittstestet och diagramvyerna per område
+(`tests/ktroskel*.test.js`, `tests/granssnitt*.test.js`, `tests/diagramvyer*.test.js`) med gemensamma riggar i
 `tests/helpers/`. Den längsta förberedelsen, invarianten över flikar och exporter (I4), är av samma skäl delad per
 tröskel (`tests/ktroskel-invarianter.test.js` och `tests/ktroskel-invarianter-25.test.js`, sviten i
 `tests/helpers/ktroskel-invariant.js`). Under full last tar varje fil omkring dubbelt så lång tid som ensam, och de
@@ -187,8 +188,8 @@ Avtrycket ser inte allt, till exempel stubbar på fönstret och värden i fält,
 behåller ett eget fönster.
 
 **En fil delar bara om den blir minst 20 % snabbare.** Under gränsen är vinsten mindre än variationen mellan
-körningar, och i de flesta sådana filer ändrar testerna något. `smoke`, `kanonymitet` och `diagramritare` delade
-redan eller har sin tid i ritningen.
+körningar, och i de flesta sådana filer ändrar testerna något. Apptesterna med ett fönster i `beforeAll`,
+`kanonymitet` och `diagramritare` delade redan eller har sin tid i ritningen.
 
 ### 5.5 Webbläsarröktestet
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // Vakttester för gränssnittets beteende: det som ser lyckat ut ska vara lyckat, tal skrivs på ett sätt, och
-// bildspråket är linjeikoner. Varje test faller om felet det vaktar kommer tillbaka. Delen här: dossiern, talen och
+// bildspråket är linjeikoner. Varje test faller om felet det vaktar kommer tillbaka. Delen här: talen, statusorden och
 // exportknapparna; resten i granssnitt-vyer.test.js (riggen i helpers/granssnitt-rigg.js).
 import { describe, it, expect } from 'vitest';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
@@ -12,36 +12,6 @@ import { fileURLToPath } from 'node:url';
 const demo = delatFonster(w => w.__loadDemoData());
 it('det delade fönstret står i utgångsläget', () => {
     expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
-});
-
-describe('gruppdossiern', () => {
-    it('gruppNamn skriver koden en gång', () => {
-        const w = createAppWindow();
-        const namn = g => w.eval(`gruppNamn(${JSON.stringify(g)})`);
-        expect(namn({ aid: '207024', yrke: '207024 Vårdbiträde' })).toBe('207024 Vårdbiträde');
-        expect(namn({ aid: '207024', yrke: 'Vårdbiträde' })).toBe('207024 Vårdbiträde');
-        expect(namn({ aid: '207024', yrke: '207024' })).toBe('207024');
-        expect(namn({ aid: '207024', yrke: '' })).toBe('207024');
-        expect(namn({ aid: '207024', yrke: '207024 (3 yrkesbenämningar)' })).toBe('207024 (3 yrkesbenämningar)');
-    });
-    it('rubriken, väljaren och textkopian dubblerar inte AID-koden, och inget tal har decimalpunkt', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const kandidater = w.eval('gruppdossierCandidates().map(g => ({ key: g.key, aid: g.aid }))');
-        expect(kandidater.length).toBeGreaterThan(3);
-        const fel = [];
-        for (const k of kandidater) {
-            w.eval(`openGruppdossier(${JSON.stringify(k.key)})`);
-            const modal = w.document.getElementById('dossier-modal');
-            const rubrik = modal.querySelector('.gd-head h3').textContent;
-            const val = modal.querySelector('select').selectedOptions[0].textContent;
-            const text = w.eval(`gruppdossierAsText(buildGruppdossier(${JSON.stringify(k.key)}))`);
-            for (const t of [rubrik, val, text.split('\n')[0]]) if (t.includes(`${k.aid} ${k.aid}`)) fel.push(t);
-            fel.push(...medDecimalpunkt(modal));
-            if (/\d\.\d/.test(text)) fel.push(text.split('\n').find(r => /\d\.\d/.test(r)));
-        }
-        expect(fel).toEqual([]);
-    }, 30000);
 });
 
 describe('modalerna skriver tal på svenska', () => {
@@ -94,76 +64,6 @@ describe('samma tal i samma precision på sidan', () => {
     });
 });
 
-describe('Löneöversyn utan påslag', () => {
-    it('ett tal som inte ändras sägs vara oförändrat, inte med en ensam pil', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        // En pott men inget påslag: utfallet visas, och inget tal har ändrats.
-        w.__state.forecast.budget = { mode: 'pct', value: 2 };
-        w.__renderTabContent('loneoversyn');
-        const text = w.document.getElementById('forecast-outcome').textContent.replace(/\s+/g, ' ');
-        expect(text).toMatch(/Kvinnors medianlön i % av mäns: [\d,]+ % till [\d,]+ % oförändrat/);
-        expect(text).toMatch(/Oförklarad skillnad \(regressionen\): \S+ % till \S+ % oförändrat/);
-        expect(text).not.toMatch(/[\u2190-\u21FF]/);
-    });
-});
-
-// Ordet och f\u00E4rgen p\u00E5 utfallets rader f\u00F6ljer talen som de visas med en decimal (_fcRiktning i 36-loneoversyn.js), inte
-// de oavrundade talen: efter ett generellt p\u00E5slag stod "\u22124,3 % till \u22124,3 % \u00F6kar" i r\u00F6tt.
-describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => {
-    const utfall = w => {
-        w.__renderTabContent('loneoversyn');
-        const el = w.document.getElementById('forecast-outcome');
-        return { el, text: el.textContent.replace(/\s+/g, ' ') };
-    };
-    const rad = (text, etikett) => text.match(new RegExp(`${etikett}: (\\S+ %) till (\\S+ %)(?: (minskar|\u00F6kar|of\u00F6r\u00E4ndrat|n\u00E4rmar sig 100 %|l\u00E4ngre fr\u00E5n 100 %))?`));
-    const OFORKL = 'Of\u00F6rklarad skillnad \\(regressionen\\)', ANDEL = 'Kvinnors medianl\u00F6n i % av m\u00E4ns';
-    it('generellt p\u00E5slag 2 % p\u00E5 demodatan: lika tal f\u00F6re och efter \u00E4r of\u00F6r\u00E4ndrat, utan r\u00F6d markering', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state.forecast.generell = { mode: 'pct', value: 2 };
-        const { el, text } = utfall(w);
-        for (const etikett of [OFORKL, ANDEL]) {
-            const m = rad(text, etikett);
-            expect(m, etikett).toBeTruthy();
-            expect(m[1], etikett).toBe(m[2]);
-            expect(m[3], etikett).toBe('of\u00F6r\u00E4ndrat');
-        }
-        const card = el.querySelector('.card');
-        expect(card.querySelectorAll('.f-kritisk')).toHaveLength(0);
-        expect(card.querySelectorAll('.f-dampad')).toHaveLength(2);
-        expect(card.querySelector('.bg-kritisk')).toBeNull();
-    });
-    it('riktade p\u00E5slag till kvinnorna \u00E4ndrar den of\u00F6rklarade skillnaden, och ordet st\u00E4mmer med de visade talen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const bas = [...new Set(w.__state.data.map(r => r.bas))];
-        w.__state.forecast.targets = bas.map(b => ({ bas: b, aid: '*', mode: 'pct', value: 6, dist: 'flat', kon: 'kvinna', pool: 'equity' }));
-        const { el, text } = utfall(w);
-        const tal = s => Number(s.replace(/\s%$/, '').replace('\u2212', '-').replace('+', '').replace(',', '.'));
-        const m = rad(text, OFORKL);
-        expect(m).toBeTruthy();
-        const [fore, efter] = [tal(m[1]), tal(m[2])];
-        expect(fore).toBeLessThan(0);
-        expect(efter).not.toBe(fore);
-        expect(m[3]).toBe(Math.abs(efter) < Math.abs(fore) ? 'minskar' : '\u00F6kar');
-        expect(m[3]).toBe('minskar');
-        const a = rad(text, ANDEL);
-        expect(a[3]).toBe(Math.abs(tal(a[2]) - 100) < Math.abs(tal(a[1]) - 100) ? 'n\u00E4rmar sig 100 %' : Math.abs(tal(a[2]) - 100) > Math.abs(tal(a[1]) - 100) ? 'l\u00E4ngre fr\u00E5n 100 %' : 'of\u00F6r\u00E4ndrat');
-        const ord = [...el.querySelector('.card').querySelectorAll('span')].find(s => s.textContent === 'minskar');
-        expect(ord.className).toBe('farg-ok');
-    });
-    it('_fcRiktning avg\u00F6r p\u00E5 en decimal: lika visade tal \u00E4r 0, och avst\u00E5ndet m\u00E4ts fr\u00E5n m\u00E5let', () => {
-        const w = demo();
-        expect(w.eval('_fcRiktning(-4.26, -4.34, 0)')).toBe(0);          // b\u00E5da visas som \u22124,3 %
-        expect(w.eval('_fcRiktning(-4.3, -4.0, 0)')).toBe(-1);
-        expect(w.eval('_fcRiktning(-4.0, -4.3, 0)')).toBe(1);
-        expect(w.eval('_fcRiktning(95.66, 95.74, 100)')).toBe(0);       // b\u00E5da visas som 95,7 %
-        expect(w.eval('_fcRiktning(95.7, 96.1, 100)')).toBe(-1);
-        expect(w.eval('_fcRiktning(null, 1, 0)')).toBeNull();
-    });
-});
-
 describe('en exportknapp per kort', () => {
     const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska'];
     it('varje diagram har en exportmeny, ingen behållare har två, och ingen fristående exportknapp står bredvid', () => {
@@ -203,82 +103,6 @@ describe('en exportknapp per kort', () => {
         csv = w.__csv;
         expect(csv).toBe(1);
         expect(meny.hidden).toBe(true);
-    });
-});
-
-describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
-    const prio = () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('prioritering');
-        w.document.querySelector('.nav-item[data-tab="prioritering"]').click();   // fokus når bara en flik som visas
-        return w;
-    };
-    it('varje rad har förstoringsglaset och en meny Mer med tre val i text; de tillgängliga namnen är som förut', () => {
-        const w = prio();
-        const rader = [...w.document.querySelectorAll('#prio-table tbody tr')].filter(tr => tr.querySelector('.prio-detalj'));
-        expect(rader.length).toBeGreaterThan(3);
-        for (const tr of rader) {
-            const yrke = tr.querySelector('th[scope="row"]').firstChild.textContent.trim();
-            const cell = tr.querySelector('.prio-detalj');
-            // Utanför menyn: bara Visa beräkningen och knappen Mer.
-            const synliga = [...cell.querySelectorAll('button')].filter(b => !b.closest('.chart-export-meny'));
-            expect(synliga.map(b => b.getAttribute('aria-label'))).toEqual([`Visa beräkningen för ${yrke}`, `Mer om ${yrke}`]);
-            const meny = cell.querySelector('.prio-mer .chart-export-meny');
-            expect(meny.hidden).toBe(true);
-            const val = [...meny.querySelectorAll('button')];
-            expect(val.map(b => b.getAttribute('aria-label'))).toEqual([
-                `Öppna ${yrke} i Löneöversikten`, `Visa motiveringsförslag för ${yrke}`, `Öppna gruppdossier för ${yrke}`]);
-            expect(val.map(b => b.textContent)).toEqual(['Löneöversikten', 'Motiveringsförslag', 'Gruppdossier']);
-            // Den synliga texten står i det tillgängliga namnet.
-            for (const b of [...val, synliga[1]]) expect(b.getAttribute('aria-label').toLowerCase()).toContain(b.textContent.toLowerCase());
-        }
-    });
-    it('Mer öppnas med fokus på första valet, Escape stänger med fokus tillbaka, och ett val stänger menyn', () => {
-        const w = prio();
-        const d = w.document;
-        const wrap = d.querySelector('#prio-table .prio-mer');
-        const knapp = wrap.querySelector(':scope > .chart-export-btn');
-        const meny = wrap.querySelector('.chart-export-meny');
-        knapp.click();
-        expect(meny.hidden).toBe(false);
-        expect(knapp.getAttribute('aria-expanded')).toBe('true');
-        expect(d.activeElement).toBe(meny.querySelector('button'));
-        d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-        expect(meny.hidden).toBe(true);
-        expect(knapp.getAttribute('aria-expanded')).toBe('false');
-        expect(d.activeElement).toBe(knapp);
-        // Motiveringsförslag: menyn stängs, förslagsraden kommer under raden och valet säger att det döljer den.
-        knapp.click();
-        const forslag = meny.querySelector('.btn-suggest');
-        forslag.click();
-        expect(meny.hidden).toBe(true);
-        expect(d.activeElement).toBe(knapp);
-        expect(wrap.closest('tr').nextElementSibling.classList.contains('suggest-row')).toBe(true);
-        expect(forslag.getAttribute('aria-expanded')).toBe('true');
-        expect(forslag.textContent).toBe('Dölj motiveringsförslag');
-        forslag.click();
-        expect(wrap.closest('tr').nextElementSibling?.classList.contains('suggest-row')).toBeFalsy();
-        expect(forslag.textContent).toBe('Motiveringsförslag');
-        // Gruppdossiern: menyn stängs, och när dossiern stängs får Mer fokus tillbaka.
-        knapp.click();
-        meny.querySelector('[data-open-dossier]').click();
-        expect(meny.hidden).toBe(true);
-        expect(d.getElementById('dossier-modal').style.display).toBe('flex');
-        w.eval('closeGruppdossier()');
-        expect(d.activeElement).toBe(knapp);
-    });
-});
-
-describe('Handlingsplanens tabell', () => {
-    it('de tomma raderna visas bara på utskriften, och en rad säger vart det ifyllda tar vägen', () => {
-        const css = las('src/style.css');
-        expect(css).toMatch(/#handlingsplan-tbody \.handlingsplan-empty \{ display: none; \}/);
-        expect(css).toMatch(/@media print \{ #handlingsplan-tbody \.handlingsplan-empty \{ display: table-row; \} \}/);
-        const w = demo();
-        w.__renderTabContent('handlingsplan');
-        expect(w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty').length).toBeGreaterThanOrEqual(5);   // finns kvar för utskriften
-        expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte');
     });
 });
 

@@ -379,7 +379,7 @@ export async function samlaUtdata(w) {
     // och ett ritas fliken om för varje, och en behållare som omritningen har ersatt hoppas då tyst över. Löneläget ritas
     // med statistiken i fixturen, så Överblickens diagram över statistikens spann (chart-jmf-statlage) är med; testet
     // kräver det. Ett diagram som inte får lämna verktyget (markeraUtanExport: Översiktens kopior, Personer att granska)
-    // ger ingen diagramdata alls och räknas därför inte som en väg; att det förblir så prövar tests/smoke.test.js.
+    // ger ingen diagramdata alls och räknas därför inte som en väg; att det förblir så prövar tests/alla-diagram.test.js.
     w.eval('medExportLage')(() => {
         w.exportSakraAlla();
         ritade.push(...ritadeDiagram(w, 'exportläget').filter(e => !e.kopia));

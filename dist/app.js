@@ -22973,7 +22973,7 @@ function clearAllData() {
  * Själva rensningen, utan bekräftelsefråga. Enda rensningsvägen: används av
  * knappen "Rensa all data" och av den automatiska rensningen vid inaktivitet,
  * så att de aldrig kan glida isär. Vaktas av invarianten "Rensa all data: ingen
- * lönedata kvar" i tests/smoke.test.js, för båda vägarna.
+ * lönedata kvar" i tests/dataskydd-app.test.js, för båda vägarna.
  */
 // Behållare som fylls av JavaScript med innehåll som kan bära lönedata. Listorna används av "Rensa all data" och av
 // exportgrinden (23-exportgrind.js), som tömmer flikar som inte längre är ritade med gällande tröskel.
@@ -23062,7 +23062,7 @@ function _rensaAllData({ inbakat = true } = {}) {
 
     // 2. Tear down renderad DOM som kan innehålla data
     // Behållare som fylls helt av JavaScript (Struktur, Löneöversyn, Utforska).
-    // Vaktas av invarianten "Rensa all data: ingen lönedata kvar" i tests/smoke.test.js —
+    // Vaktas av invarianten "Rensa all data: ingen lönedata kvar" i tests/dataskydd-app.test.js —
     // en ny vy som ritar lönedata utanför de rensade behållarna fångas där.
     // Hit hör också outliers-table-wrap (extremvärdesdetektorn) och print-report (utskriften med
     // kopior av tabellerna).

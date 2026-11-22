@@ -3,11 +3,18 @@
 // Tabeller och egna vyer: underflikarna Egna vyer och Alla diagram (74-alla-diagram.js). Underflikarnas ARIA och
 // tangentbord, grupperna i menyns ordning, kopiorna (samma figur som källan, egna filter, eget id, egen meny), att
 // kopiorna inte följer med i ZIP-filen, att en export ur en kopia går genom källan, och att flikarna utan grupp
-// förblir utan diagram.
-import { describe, it, expect, vi } from 'vitest';
+// förblir utan diagram. Och exportmenyn som varje diagram i verktyget har.
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 
 vi.setConfig({ testTimeout: 30000 });
+
+let win;
+
+beforeAll(() => {
+    win = createAppWindow();
+    win.__loadDemoData();   // exportmenyns block läser demodatan
+});
 
 const nav = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
 const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); nav(w, 'utforska'); return w; };
@@ -235,4 +242,101 @@ describe('Alla diagram: grupperna och kopiorna', () => {
         const iFlik = w.eval("[..._rfBehallare].filter(el => el.isConnected && ['dashboard', 'filer', 'bestammelser', 'handlingsplan'].includes(_egFlikFor(el))).map(el => el.id)");
         expect(iFlik).toEqual([]);
     });
+});
+
+describe('exportmeny på alla diagram', () => {
+    const vanta = () => new Promise(r => setTimeout(r, 0));
+    beforeAll(async () => {
+        win.__loadDemoData();
+        for (const flik of ['matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
+                            'kon', 'demografi', 'utforska', 'benchmark', 'kvalitet', 'rapport']) {
+            win.__renderTabContent(flik);
+        }
+        await vanta();
+    });
+
+    it('varje diagram som ritats har en exportknapp', () => {
+        // Ritade av diagramkärnan (_figur, ADR-39).
+        const ritade = [...win.document.querySelectorAll('div')].filter(el => el._figur);
+        expect(ritade.length).toBeGreaterThan(10);
+        const utan = ritade.filter(el => !el.closest('[data-no-export]')
+            && !el.parentElement.querySelector(':scope > .chart-export'));
+        expect(utan.map(el => el.id)).toEqual([]);
+    });
+
+    it('knappen läggs bara till en gång även om diagrammet ritas om', async () => {
+        win.__renderTabContent('demografi');
+        await vanta();
+        const host = win.document.getElementById('chart-demo-hist').parentElement;
+        expect(host.querySelectorAll(':scope > .chart-export')).toHaveLength(1);
+    });
+
+    it('knappen öppnar menyn och Escape stänger den', () => {
+        const host = win.document.getElementById('chart-demo-hist').parentElement;
+        const btn = host.querySelector('.chart-export-btn');
+        const meny = host.querySelector('.chart-export-meny');
+        btn.click();
+        expect(meny.hidden).toBe(false);
+        expect(btn.getAttribute('aria-expanded')).toBe('true');
+        win.document.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape' }));
+        expect(meny.hidden).toBe(true);
+        expect(btn.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('menyn har fem val', () => {
+        const meny = win.document.getElementById('chart-demo-hist').parentElement.querySelector('.chart-export-meny');
+        expect([...meny.querySelectorAll('[data-chart-export]')].map(b => b.getAttribute('data-chart-export')))
+            .toEqual(['png-presentation', 'png-dokument', 'svg', 'data-kopiera', 'data-csv']);
+    });
+
+    it('filnamnet bygger på flik, rubrik och datum och märks i demoläget', () => {
+        const gd = win.document.getElementById('chart-demo-hist');
+        expect(win.__chartExportFilename(gd, 'png', new Date(2026, 8, 24)))
+            .toBe('DEMO_Demografi_Åldersfördelning-per-5-årsintervall_2026-09-24.png');
+    });
+
+    it('diagramdatan börjar med rubrik och version och innehåller seriernas värden', () => {
+        const rows = win.__chartExportRows(win.document.getElementById('chart-demo-hist'));
+        expect(rows[0][0]).toMatch(/^Åldersfördelning per 5-årsintervall — Lönekartläggning \d{4}\.\d{2}\.\d{2}\. Minsta gruppstorlek för redovisning: 10\.$/);
+        expect(rows[1][0]).toBe('Serie');
+        expect(rows.length).toBeGreaterThan(3);
+    });
+
+    it('en behållare märkt med markeraUtanExport får ingen meny, och skälet står i verktygstipset', () => {
+        const box = win.document.createElement('div');
+        win.__markeraUtanExport(box, 'individer');
+        expect(box.getAttribute('data-no-export')).toBe('individer');
+        expect(box.title).toMatch(/^Lämnar inte verktyget: hör till Personer att granska/);
+        const gd = win.document.createElement('div');
+        box.appendChild(gd);
+        win.document.body.appendChild(box);
+        expect(win.__exportTillaten(gd)).toBe(false);
+        win.__attachChartExport(gd);
+        expect(box.querySelector('.chart-export')).toBeNull();
+        box.remove();
+        gd.remove();
+        expect(win.__exportTillaten(gd)).toBe(true);   // utanför behållaren gäller ingen spärr
+        // Ett skäl som inte är registrerat går inte att använda.
+        expect(() => win.__markeraUtanExport(win.document.createElement('div'), 'hemligt')).toThrow(/okänt skäl/);
+    });
+
+    it('varje behållare utan export i det ritade dokumentet har ett registrerat skäl', () => {
+        // Alla flikar är ritade (beforeAll); Lika arbete bär den märkta behållaren.
+        win.__renderTabContent('dashboard');
+        const skal = win.__exportSkal();
+        const markta = [...win.document.querySelectorAll('[data-no-export]')];
+        expect(markta.map(el => el.id).sort()).toEqual(['pag-diagram-ruta']);
+        for (const el of markta) {
+            const s = el.getAttribute('data-no-export');
+            expect(Object.keys(skal), el.id).toContain(s);
+            expect(el.title, el.id).toBe(`Lämnar inte verktyget: ${skal[s]}.`);
+            expect(win.__exportTillaten(el)).toBe(false);
+        }
+        // Inget ritat diagram i en märkt behållare har en meny, och ett ritat diagram i den ger ingen bild.
+        for (const gd of [...win.document.querySelectorAll('[data-no-export] div')].filter(el => el._figur)) {
+            expect(gd.parentElement.querySelector(':scope > .chart-export'), gd.id).toBeNull();
+            expect(win.__chartExportRows(gd), gd.id).toEqual([]);
+        }
+    });
+
 });

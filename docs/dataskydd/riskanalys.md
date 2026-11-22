@@ -578,7 +578,7 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
   kategorierna står kvar. En nyckel som står två gånger läses en gång.
 
   Bokslutet byggs i exportläget med den inställda tröskeln. Vid inläsning stryks varje grupp där ett kön är under
-  bokslutets k (`valideraArsbokslut`; vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`).
+  bokslutets k (`valideraArsbokslut`; vaktas av `tests/arsbokslut.test.js` och `tests/arsbokslut-app.test.js`).
 - sessionens egna **importprofiler** (`importprofiler`, utelämnat när de saknas): profilens namn, rubriknamnen per
   fält och kännetecknen. Det är bara rubriknamn, inga värden ur filen. Id:t härleds ur namnet och kännetecknen och
   läses aldrig ur filen. Vid inläsning prövas varje text mot längden (80 tecken) och mot personnummer och e-post

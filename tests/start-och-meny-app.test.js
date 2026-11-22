@@ -3,7 +3,7 @@
 // Start och meny i appen: att verktyget startar och varje flik ritas, menyn, flikarna och tangentbordet, startytan,
 // demot, interna fel och gränssnittets språk.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createAppWindow, delatFonster, tillstandsavtryck, utgangslage } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster, delatFlikfonster, MENYFLIKAR, tillstandsavtryck, utgangslage } from './helpers/app-harness.js';
 import { las, papa, vanta, csvFil, braRader } from './helpers/granssnitt-rigg.js';
 
 // Ett delat fönster med demodatan där varje flik i menyn har klickats fram en gång (det dyra är att rita flikarna), för
@@ -14,23 +14,9 @@ const allaFlikar = delatFonster(async w => {
     await new Promise(r => setTimeout(r, 0));
 });
 
-// Testerna som söker igenom flikarna ritar dem inte var för sig: ett delat fönster med demodatan klickar fram varje flik
-// en gång och sparar en kopia av det som då syns (flikens paneler och sidhuvudet), och testerna läser kopiorna.
+// Testerna som söker igenom flikarna läser kopior av varje flik ur ett delat fönster (delatFlikfonster).
 // Vakten i delatFonster fäller det test som ändrar fönstret.
-const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska'];
-/** @type {Map<string, {paneler: any[], titel: string}>} flik → kopior av panelerna som syns (eller är aktiva) och sidhuvudet */
-const ritade = new Map();
-const flikfonster = delatFonster(w => {
-    w.__loadDemoData();
-    for (const flik of FLIKAR) {
-        w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-        ritade.set(flik, {
-            paneler: [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active')).map(p => p.cloneNode(true)),
-            titel: w.document.getElementById('page-title').textContent,
-        });
-    }
-});
+const { flikfonster, ritade } = delatFlikfonster();
 
 // Fönstret skapas efter de delade fönstren ovan: bootskärmen tas bort med en timer, och testet av mallstilarna
 // förutsätter att den hunnit försvinna.
@@ -632,7 +618,7 @@ describe('gränssnittets språk, rubriker och hjälpblock', () => {
         const w = flikfonster();
         const traffar = [];
         const FORBJUDET = /Outlier|Pareto|[Qq]uantile|Boxplot|[Ss]napshot|Kompliansöversikt|Blinder-Oaxaca|[Mm]ultivariat|\bMetric\b|Z-score|Struktur-data|Datauppladdning|A–K\b/;
-        for (const flik of FLIKAR) {
+        for (const flik of MENYFLIKAR) {
             const { paneler: ritat, titel } = ritade.get(flik);
             const paneler = ritat.filter(v => v.style.display === 'block');
             for (const rad of paneler.flatMap(v => synligText(w, v))) {
@@ -644,7 +630,7 @@ describe('gränssnittets språk, rubriker och hjälpblock', () => {
     });
     it('inga rubriker börjar med emoji', () => {
         const traffar = [];
-        for (const flik of FLIKAR) {
+        for (const flik of MENYFLIKAR) {
             for (const h of ritade.get(flik).paneler.flatMap(p => [...p.querySelectorAll('.view-panel h1, .view-panel h2, .view-panel h3, .view-panel h4, .view-panel summary')])) {
                 if (h.closest('.view-panel').style.display !== 'block') continue;
                 const t = h.textContent.trim();
@@ -655,7 +641,7 @@ describe('gränssnittets språk, rubriker och hjälpblock', () => {
     });
     it('högst ett hjälpblock av varje slag per flik', () => {
         const traffar = [];
-        for (const flik of FLIKAR) {
+        for (const flik of MENYFLIKAR) {
             const synliga = sel => ritade.get(flik).paneler.flatMap(p => [...p.querySelectorAll(sel)]).filter(el => el.closest('.view-panel')?.style.display === 'block');
             // "Beräkning & urval" hör till varje enskild analys och får finnas en per analys.
             for (const [namn, sel] of [['Hur används', '.flik-usage'], ['Bakgrund', '.bakgrund-panel']]) {

@@ -1,0 +1,206 @@
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// Gruppdossiern i appen: dossiern, robusthetsanalysen och färdigchecken, och att robusthetspanelen följer minsta
+// gruppstorlek.
+import { describe, it, expect, beforeAll } from 'vitest';
+import { createAppWindow } from './helpers/app-harness.js';
+import { medDecimalpunkt } from './helpers/granssnitt-rigg.js';
+
+let win;
+
+beforeAll(() => {
+    win = createAppWindow();
+    win.__loadDemoData();   // blocken nedan läser demodatan
+});
+
+describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
+    it('dossier-kandidater respekterar k-anonymiteten', () => {
+        win.__loadDemoData();
+        const cands = win.__gruppdossierCandidates();
+        expect(cands.length).toBeGreaterThan(0);
+        cands.forEach(g => expect(g.rows.length).toBeGreaterThanOrEqual(10));
+    });
+
+    it('buildGruppdossier samlar blocken och tål saknade referenser', () => {
+        const key = win.__gruppdossierCandidates()[0].key;
+        const d = win.__buildGruppdossier(key);
+        expect(d).not.toBeNull();
+        expect(d.n).toBeGreaterThanOrEqual(10);
+        expect(d.nKv + d.nMa).toBeLessThanOrEqual(d.n);
+        expect(Number.isFinite(d.median)).toBe(true);
+        // block som saknar underlag ska vara null/tomma — aldrig kasta
+        expect(Array.isArray(d.lvAsSubject)).toBe(true);
+        expect(Array.isArray(d.suggestions)).toBe(true);
+    });
+
+    it('okänd nyckel ger null i stället för att kasta', () => {
+        expect(win.__buildGruppdossier('finns-inte|Z')).toBeNull();
+    });
+
+    it('textversionen innehåller gränsdragningen mot sakliga skäl', () => {
+        const d = win.__buildGruppdossier(win.__gruppdossierCandidates()[0].key);
+        const txt = win.__gruppdossierAsText(d);
+        expect(txt).toMatch(/^Gruppdossier: /);
+        expect(txt).toContain('dokumenterar inte sakliga skäl');
+    });
+
+    it('robusthet: kvinnotröskel-körningen ÅTERSTÄLLER state', () => {
+        win.__state.likvardighet.kvinnoTrosholdPct = 60;
+        const r = win.__robusthetLikvardighet([55, 60, 65]);
+        expect(win.__state.likvardighet.kvinnoTrosholdPct).toBe(60);   // kritiskt
+        expect(r.trösklar).toEqual([55, 60, 65]);
+        r.rows.forEach(row => {
+            expect(row.hits).toBeGreaterThanOrEqual(1);
+            expect(row.hits).toBeLessThanOrEqual(3);
+        });
+    });
+
+    it('robusthet: prioriteringsjämförelsen flaggar när bara en referens finns', () => {
+        const saved = win.__state.policy;
+        win.__state.policy = [];
+        const r = win.__robusthetPrioritering();
+        expect(r.tooFew === true || r.refs.length >= 2).toBe(true);
+        win.__state.policy = saved;
+    });
+
+    it('färdigcheck ger observationer med nivå och detalj', () => {
+        const items = win.__buildFardigcheck();
+        expect(Array.isArray(items)).toBe(true);
+        items.forEach(i => {
+            expect(['warn', 'info']).toContain(i.level);
+            expect(typeof i.title).toBe('string');
+            expect(i.title.length).toBeGreaterThan(0);
+            expect(typeof i.detail).toBe('string');
+        });
+    });
+
+    it('kvalitetssäkringsfliken renderar båda panelerna utan kast', () => {
+        expect(() => win.__renderKvalitetssakring()).not.toThrow();
+        expect(win.document.getElementById('robusthet-body')).not.toBeNull();
+        expect(win.document.getElementById('fardigcheck-body')).not.toBeNull();
+    });
+});
+
+describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
+    it('gruppdossiern är INTE en flik längre utan en modal', () => {
+        expect(win.document.getElementById('tab-gruppdossier')).toBeNull();
+        expect(win.document.getElementById('view-gruppdossier')).toBeNull();
+        expect(win.document.getElementById('dossier-modal')).not.toBeNull();
+    });
+
+    it('modalen öppnas med vald grupp och stängs igen', () => {
+        win.__loadDemoData();
+        const key = win.__gruppdossierCandidates()[0].key;
+        win.__openGruppdossier(key);
+        const modal = win.document.getElementById('dossier-modal');
+        expect(modal.style.display).toBe('flex');
+        expect(win.document.getElementById('dossier-select').value).toBe(key);
+        expect(win.document.getElementById('dossier-body').innerHTML.length).toBeGreaterThan(50);
+        win.__closeGruppdossier();
+        expect(modal.style.display).toBe('none');
+    });
+
+    it('robusthetspanelen visar en startknapp i stället för att räkna direkt', () => {
+        win.__renderKvalitetssakring();
+        const host = win.document.getElementById('robusthet-body');
+        expect(host.querySelector('#btn-run-robusthet')).not.toBeNull();
+        // färdigchecken är billig och körs direkt
+        expect(win.document.getElementById('fardigcheck-body').innerHTML.length).toBeGreaterThan(20);
+    });
+
+    it('robusthetsanalysen producerar resultat när den körs', async () => {
+        win.__runRobusthet();
+        await new Promise(r => setTimeout(r, 120));   // renderingen är fördröjd för att hinna måla om
+        const host = win.document.getElementById('robusthet-body');
+        expect(host.innerHTML).toMatch(/Likvärdigt arbete|Prioritering/);
+    });
+});
+
+describe('k-anonymitet, sortering, efterlevnad och dossiern — dossiern', () => {
+    it('hypotesrutan i dossiern renderar markup i stället för att visa taggar', () => {
+        win.__loadDemoData();
+        const key = win.__gruppdossierCandidates()[0].key;
+        const d = win.__buildGruppdossier(key);
+        win.__openGruppdossier(key);
+        const body = win.document.getElementById('dossier-body');
+        expect(body.innerHTML).not.toContain('&lt;strong&gt;');
+        if (d.suggestions.length) {
+            // textkopian ska däremot vara fri från markup
+            expect(win.__gruppdossierAsText(d)).not.toMatch(/<\/?strong>/);
+        }
+        win.__closeGruppdossier();
+    });
+});
+
+describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
+    // Ett kandidatpar: 6 kvinnor i yrke 5300 (BAS C) mot 20 män i yrke 6100 — den lilla gruppen är under tröskeln 10.
+    const fonster = () => {
+        const w = createAppWindow();
+        const rader = [];
+        const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + (i % 3) * 10,
+            alder: 30 + (i * 7) % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
+        lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000');
+        lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
+        lagg(6, 'kvinna', 36421, 'C', '5300');
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        w.__state.kLage = 'export';   // panelen hör till Exportera och ritas alltid i exportläget (ADR-51)
+        return w;
+    };
+    it('paret med en grupp under tröskeln namnges inte; antalet utelämnade par står i panelen och i resultatet', () => {
+        const w = fonster();
+        const r = w.__robusthetLikvardighet([55, 60, 65]);
+        expect(r.utelamnade).toBe(1);
+        expect(r.rows).toEqual([]);
+        expect(r.not).toBe('1 par med en grupp under 10 personer redovisas inte här.');
+        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+        const t = w.document.getElementById('robusthet-body').textContent;
+        expect(t).not.toContain('5300');
+        expect(t).toContain('1 par med en grupp under 10 personer redovisas inte här.');
+        expect(t).toContain('Inga kandidatpar att namnge');
+        // Slutsatsraden räknar bara de namngivna paren som prövade slutsatser.
+        expect(w.document.getElementById('nyckel-dk-robusthet').textContent).toBe('Står sig');
+    });
+    it('vid 5 namnges paret och ingen mening om utelämnade står kvar', () => {
+        const w = fonster();
+        w.eval('sattKTroskel(5, { fraga: false })');
+        const r = w.__robusthetLikvardighet([55, 60, 65]);
+        expect(r.utelamnade).toBe(0);
+        expect(r.not).toBe('');
+        expect(r.rows.some(x => x.label.includes('5300'))).toBe(true);
+        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+        const t = w.document.getElementById('robusthet-body').textContent;
+        expect(t).toContain('5300');
+        expect(t).not.toMatch(/redovisas inte här/);
+    });
+});
+
+describe('gruppdossiern', () => {
+    it('gruppNamn skriver koden en gång', () => {
+        const w = createAppWindow();
+        const namn = g => w.eval(`gruppNamn(${JSON.stringify(g)})`);
+        expect(namn({ aid: '207024', yrke: '207024 Vårdbiträde' })).toBe('207024 Vårdbiträde');
+        expect(namn({ aid: '207024', yrke: 'Vårdbiträde' })).toBe('207024 Vårdbiträde');
+        expect(namn({ aid: '207024', yrke: '207024' })).toBe('207024');
+        expect(namn({ aid: '207024', yrke: '' })).toBe('207024');
+        expect(namn({ aid: '207024', yrke: '207024 (3 yrkesbenämningar)' })).toBe('207024 (3 yrkesbenämningar)');
+    });
+    it('rubriken, väljaren och textkopian dubblerar inte AID-koden, och inget tal har decimalpunkt', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const kandidater = w.eval('gruppdossierCandidates().map(g => ({ key: g.key, aid: g.aid }))');
+        expect(kandidater.length).toBeGreaterThan(3);
+        const fel = [];
+        for (const k of kandidater) {
+            w.eval(`openGruppdossier(${JSON.stringify(k.key)})`);
+            const modal = w.document.getElementById('dossier-modal');
+            const rubrik = modal.querySelector('.gd-head h3').textContent;
+            const val = modal.querySelector('select').selectedOptions[0].textContent;
+            const text = w.eval(`gruppdossierAsText(buildGruppdossier(${JSON.stringify(k.key)}))`);
+            for (const t of [rubrik, val, text.split('\n')[0]]) if (t.includes(`${k.aid} ${k.aid}`)) fel.push(t);
+            fel.push(...medDecimalpunkt(modal));
+            if (/\d\.\d/.test(text)) fel.push(text.split('\n').find(r => /\d\.\d/.test(r)));
+        }
+        expect(fel).toEqual([]);
+    }, 30000);
+});
