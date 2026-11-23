@@ -28,7 +28,7 @@ import { bedomningUnderlag, statusMarke, UK_ETIKETT } from './13-oversikt.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laSlutsats } from './41-lika-arbete.js';
-import { _prioGrans, _selectedPrioReference, computePrioritization } from './55-prioritering.js';
+import { _prioGrans, _valdPrioReferens, raknaPrioritering } from './55-prioritering.js';
 import { _bes8Areas } from './61-regler-och-praxis.js';
 
 // ---- Rang 3: Robusthetspanel ------------------------------------------------
@@ -78,11 +78,11 @@ function robusthetLikvardighet(trösklar = [55, 60, 65]) {
 /**
  * Jämför prioriteringens topplista mellan de referenser som finns tillgängliga
  * (lönepolitiskt ställningstagande mot extern statistik). Muterar inte state —
- * computePrioritization tar referensen som argument.
+ * raknaPrioritering tar referensen som argument.
  * @returns {null|{refs:string[], rows:Array<{key:string,label:string,hits:number,of:number,ranks:Object}>, tooFew:boolean}}
  */
 function robusthetPrioritering(topN = 10) {
-    if (typeof computePrioritization !== 'function') return null;
+    if (typeof raknaPrioritering !== 'function') return null;
     const refs = [];
     if ((state.policy || []).length) refs.push('stallningstagande');
     if ((state.statistik || []).length) refs.push('statistik');
@@ -91,7 +91,7 @@ function robusthetPrioritering(topN = 10) {
     const seen = new Map();
     refs.forEach(ref => {
         let items = [];
-        try { items = (computePrioritization(ref) || []).slice(0, topN); } catch (_e) { items = []; }
+        try { items = (raknaPrioritering(ref) || []).slice(0, topN); } catch (_e) { items = []; }
         items.forEach((it, idx) => {
             const key = `${it.aid}|${it.bas}`;
             if (!seen.has(key)) {
@@ -211,8 +211,8 @@ function buildFardigcheck() {
 
     // 1. Flaggade grupper utan rad i handlingsplanen
     try {
-        const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
-        const items = computePrioritization(ref) || [];
+        const ref = (typeof _valdPrioReferens === 'function') ? _valdPrioReferens() : 'statistik';
+        const items = raknaPrioritering(ref) || [];
         const flagged = items.filter(i => i.diffPct < 0);
         // Av dem: de som ligger mer än granskningsgränsen under, alltså Prioriteringens Börja här och Under referens,
         // liten grupp (samma ord och samma gräns som nyckeltalen och matrisen där).

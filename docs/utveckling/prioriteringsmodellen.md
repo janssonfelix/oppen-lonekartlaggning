@@ -17,7 +17,7 @@ Varje beräkning har sin rad i spårbarhetsmatrisen, [`sparbarhet.md`](sparbarhe
 |---|---|
 | Modellen: grupperna, avvikelsen, status, delpoäng, index, snabb vinst, kostnad; konstanterna | `src/lib/prioritering.js` (`prioritera`, `prioIndex`, `prioKonstanter`, `arsbeloppMening`) |
 | Kostnadsformeln | `src/lib/kostnad.js` (`kostnadPerAr`) |
-| Adaptern: väljer referensen och läser inställningarna | `src/app/55-prioritering.js` (`computePrioritization`) |
+| Adaptern: väljer referensen och läser inställningarna | `src/app/55-prioritering.js` (`raknaPrioritering`) |
 | Orden för lägena | `src/app/55-prioritering.js` (`PRIO_STATUS_INFO`) |
 | Standardvärdena för trösklar, vikter och kostnad | `src/lib/prioritering.js` (`PRIO_CONFIG_DEFAULTS`, `PRIO_WEIGHTS_DEFAULTS`), `src/lib/kostnad.js` (`COST_DEFAULTS`) |
 | Inställningarnas gränser | `src/lib/installningsgranser.js` (`PRIO_TROSKEL_GRANS`, `PRIO_VIKT_GRANS`) |
@@ -156,7 +156,7 @@ Trösklarna och vikterna står inte i organisationspaketet.
 
 ## 8. Minsta gruppstorlek
 
-`computePrioritization` skickar `kTroskel()`: 1 på skärmen och den inställda tröskeln när något lämnar verktyget
+`raknaPrioritering` skickar `kTroskel()`: 1 på skärmen och den inställda tröskeln när något lämnar verktyget
 ([`k-troskeln.md`](k-troskeln.md) §1). Samma tröskel gäller gruppen och vartdera könet. Lägena och indexet bygger på
 gruppens samlade median, som redovisas när gruppen når tröskeln.
 

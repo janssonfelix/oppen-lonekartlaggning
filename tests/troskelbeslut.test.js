@@ -146,7 +146,7 @@ describe('Prioritering: varningen "underlaget är litet" går vid minsta gruppst
         for (let i = 0; i < kvN; i++) rows.push({ kon: 'kvinna', lon: 20000 + i, alder: 40 });
         for (let i = 0; i < maN; i++) rows.push({ kon: 'man', lon: 40000 + i, alder: 40 });
         w.__item = { _rows: rows, kvN, maN, n: kvN + maN, diffPct: -8, costPerPerson: 0 };
-        return w.eval('generateMotivationSuggestions(window.__item)').filter(f => f.type === 'warn').map(f => f.text).join(' ');
+        return w.eval('byggMotiveringsforslag(window.__item)').filter(f => f.type === 'warn').map(f => f.text).join(' ');
     };
     it('vid 10 varnar den för 7 män och nämner tröskeln', () => {
         expect(forslag(null, 12, 7)).toMatch(/Underlaget är litet \(12 kvinnor \/ 7 män; minsta gruppstorlek 10\)/);
@@ -265,7 +265,7 @@ describe('motiveringsförslagen: åldersskillnaden', () => {
         for (let i = 0; i < 12; i++) rows.push({ kon: 'kvinna', lon: 30000 + i, alder: 35 });
         for (let i = 0; i < 12; i++) rows.push({ kon: 'man', lon: 32000 + i, alder: 45 });
         w.__item = { _rows: rows, kvN: 12, maN: 12, n: 24, diffPct: -6, costPerPerson: 0 };
-        const text = w.eval('generateMotivationSuggestions(window.__item)').map(f => f.text).join(' ');
+        const text = w.eval('byggMotiveringsforslag(window.__item)').map(f => f.text).join(' ');
         expect(text).toMatch(/år äldre/);
         expect(text).toContain('Stäm av om åldersskillnaden förklarar');
         expect(text).not.toContain('rekommenderas');

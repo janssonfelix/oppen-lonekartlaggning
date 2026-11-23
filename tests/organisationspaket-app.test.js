@@ -305,7 +305,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         w.__state.data = rader();
         w.eval('fyllValjare(); lasUppFlikar();');
         las(w, paket({ referens: { ...paket().referens, namn: XSS, kortnamn: XSS } }));
-        const it0 = w.eval("computePrioritization('stallningstagande')")[0];
+        const it0 = w.eval("raknaPrioritering('stallningstagande')")[0];
         const bevis = w.eval('_bevisForPrioPost')(it0, 'stallningstagande');
         expect(bevis.intro).not.toContain('<img');
         w.print = () => {};
@@ -320,7 +320,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         las(w, paket());
         expect(w.document.getElementById('prio-po-pct').value).toBe('30');
         expect(w.document.getElementById('prio-cost-months').value).toBe('6');
-        w.eval('_readCostSettings()');
+        w.eval('_lasKostnadsinstallningar()');
         expect(w.__state.costSettings.poPct).toBe(30);
         expect(w.__state.costSettings.months).toBe(6);
     });

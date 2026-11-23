@@ -24,7 +24,7 @@ import { ritaAidBasLika, ritaAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { harAlder } from './50-regressionsmodeller.js';
 import { ritaBlinderOaxacaKort, ritaRegressionskort, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { ritaLivscykel } from './52-livscykel.js';
-import { renderPrioritering } from './55-prioritering.js';
+import { ritaPrioritering } from './55-prioritering.js';
 import { renderHandlingsplanSeed } from './56-handlingsplan.js';
 import { renderExportBesked } from './59-exportbesked.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
@@ -403,7 +403,7 @@ function _ritaFlik(target) {
         const reg = korOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
         ritaLikaArbete(laVymodell(), { reg }); ritaPersonerAttGranska(); ritaAidBasLika(); ritaLikaArbeteTopp({ reg });
     }
-    else if (target === "prioritering" && d.length) renderPrioritering();
+    else if (target === "prioritering" && d.length) ritaPrioritering();
     else if (target === "struktur"     && d.length) {
         ritaStruktur(); ritaLoneskillnadPerBas(lsBasVymodell());
         // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.

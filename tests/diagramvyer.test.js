@@ -882,7 +882,7 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         // BAS-delen läses som filterknappen ovanför diagrammet (BAS C), inte bara bokstaven.
         expect(f.y.ordning[0]).toBe('#1 207011 Ett ganska långt y… · BAS C');
         expect(f.lager[0].data[0].y).toBe(f.y.ordning[0]);
-        // Etiketterna skriver kostnaden som nyckeltalen och rutan Total (_fmtCost): tkr och Mkr, inte "mnkr".
+        // Etiketterna skriver kostnaden som nyckeltalen och rutan Total (_formateraKostnad): tkr och Mkr, inte "mnkr".
         expect(vanliga([f.lager[0].data.map(d => d.etikett)])[0]).toEqual(['400 tkr · 55 %', '200 tkr · 82 %']);
         expect(vanliga(f.lager[0].tips(f.lager[0].data[0]))).toEqual([['207011 Ett ganska långt yrkesnamn · BAS C'], ['Kostnad', '400 000 kr/år'], ['Kumulativ andel', '54,5 %']]);
         expect(f.lager[0].data[0].markering).toEqual(w.eval("markeringFor('C', '207011 Ett ganska långt yrkesnamn')"));
@@ -894,7 +894,7 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         const f2 = w.eval('_prioKostnadFigur(window.__m, window.__k)');
         expect(f2.y.ordning).toHaveLength(15);
         expect(vanliga([f2.lager[0].data.map(d => d.etikett)])[0][0]).toMatch(/^1,0 Mkr · \d+ %$/);
-        expect(f2.lager[0].data[0].etikett.split(' · ')[0]).toBe(w.eval('_fmtCost(1000000)'));
+        expect(f2.lager[0].data[0].etikett.split(' · ')[0]).toBe(w.eval('_formateraKostnad(1000000)'));
         expect(f2.lager.reduce((n, l) => n + l.data.length, 0)).toBe(15);
         expect(vanliga([[w.eval('_prioKostnadNot(kostnadskurva(window.__m, { max: 40, visas: PRIO_KOSTNAD_MAX }))')]])[0][0]).toMatch(/^Diagrammet visar de 15 grupper som kostar mest\. Övriga 7 grupper står tillsammans för [\d ]+ kr per år \(\d+ % av kostnaden\)/);
         expect(w.eval('_prioKostnadNot(kostnadskurva(window.__m.slice(0, 15), { max: 40, visas: PRIO_KOSTNAD_MAX }))')).toBe('');

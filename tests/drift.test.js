@@ -197,8 +197,8 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till li
     const prioSrc = readFileSync(join(root, 'src', 'app', '55-prioritering.js'), 'utf8');
     const lcSrc = readFileSync(join(root, 'src', 'app', '52-livscykel.js'), 'utf8');
 
-    it('computePrioritization delegerar till prioritera och bygger ingen egen beräkning', () => {
-        const kropp = extractFn(prioSrc, 'computePrioritization');
+    it('raknaPrioritering delegerar till prioritera och bygger ingen egen beräkning', () => {
+        const kropp = extractFn(prioSrc, 'raknaPrioritering');
         expect(kropp).toContain('prioritera(');
         for (const spår of ['Stat.median', 'kMaskerad', 'priorityIndex', 'sevScore', 'annualGapTotal', 'groups[']) {
             expect(kropp, `"${spår}" hör hemma i src/lib/prioritering.js`).not.toContain(spår);

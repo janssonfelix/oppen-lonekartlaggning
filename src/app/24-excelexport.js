@@ -31,7 +31,7 @@ import { byggJamforelse, jamforelseUrvalText } from './42-jamforelse.js';
 import { _rrExcelBlad } from './44-referensoverblick.js';
 import { _aidbasExcelBlad, _aidbasLikaBlad, _aidbasMetodRader, AIDBAS_BLADNAMN, konsklassOrd } from './45-aid-bas-tabeller.js';
 import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
-import { renderPrioritering } from './55-prioritering.js';
+import { ritaPrioritering } from './55-prioritering.js';
 import { _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
 import { rmPerBasUnderlag, rmPerBasUndertryckNoter } from './58-rapportmodell.js';
 import { _lpExcelBlad } from './75-lonepolitik.js';
@@ -202,7 +202,7 @@ function __excelAlltBokExport() {
     ensure('#rapport-table tbody tr', ritaLoneoversikt);
     ensure('#skevhet-table tbody tr', () => ritaLoneskillnadPerBas(lsBasVymodell()));
     ensure('#matrix-table tbody tr', () => ritaLikaArbete(laVymodell()));
-    if (state.policy.length || state.statistik.length) ensure('#prio-table tbody tr', renderPrioritering);
+    if (state.policy.length || state.statistik.length) ensure('#prio-table tbody tr', ritaPrioritering);
     if (state.statistik.length) ensure('#benchmark-table tbody tr', byggJamforelse);
 
     const wb = XLSX.utils.book_new();

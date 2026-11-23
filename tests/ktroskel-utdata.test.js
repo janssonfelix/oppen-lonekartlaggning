@@ -506,7 +506,7 @@ describe('k-tröskeln: motiveringsförslagen visar ingen lönepositionsslutsats 
         for (let i = 0; i < 6; i++) rows.push({ kon: 'kvinna', lon: 20000 + i, alder: 40 });
         for (let i = 0; i < 6; i++) rows.push({ kon: 'man', lon: 40000 + i, alder: 40 });
         w.__item = { _rows: rows, kvN: 6, maN: 6, n: 12, diffPct: -8, costPerPerson: 0 };
-        return w.eval('medExportLage(() => generateMotivationSuggestions(window.__item)).map(f => f.text).join(" ")');
+        return w.eval('medExportLage(() => byggMotiveringsforslag(window.__item)).map(f => f.text).join(" ")');
     };
     it('vid 10 saknas glasstaksmönstret för en grupp med 6 av varje kön', () => {
         expect(forslag(null)).not.toContain('Mönster med glastak eller klibbigt golv');

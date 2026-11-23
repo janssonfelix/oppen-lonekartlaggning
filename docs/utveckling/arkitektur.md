@@ -32,7 +32,7 @@ adaptrarna, som hämtar tillståndet, anropar en funktion i lib och ger tillbaka
 5. Vyerna räknar genom tunna adaptrar till lib. Två exempel:
    - `korOLSRegression` (`src/app/51-lika-arbete-regressionskort.js`) skickar tillståndet till `huvudregression` i
      `src/lib/regression.js`.
-   - `computePrioritization` (`src/app/55-prioritering.js`) skickar tillståndet till `prioritera` i
+   - `raknaPrioritering` (`src/app/55-prioritering.js`) skickar tillståndet till `prioritera` i
      `src/lib/prioritering.js`.
 6. Allt som lämnar verktyget går genom exportgrinden (`src/app/23-exportgrind.js`, med regeln `skaRitasForeExport` i
    `src/lib/exportgrind.js`). Grinden ser till att ingen export läser en flik som ritats med en annan tröskel än den

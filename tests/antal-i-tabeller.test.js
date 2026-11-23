@@ -169,7 +169,7 @@ describe('Handlingsplan: Antal berörda', () => {
         const i = rubriker(tabell).indexOf('Antal berörda');
         expect(i).toBe(2);
         const seed = w.eval('_handlingsplanSeedRows()');
-        const prio = w.eval('computePrioritization(_selectedPrioReference())');
+        const prio = w.eval('raknaPrioritering(_valdPrioReferens())');
         const forstaPrio = seed.rows.findIndex(r => r[2] === 'Prioritering (under referensen)');
         const forstaPar = seed.rows.findIndex(r => r[2] === 'Likvärdigt arbete (kandidatpar)');
         expect(forstaPrio).toBeGreaterThanOrEqual(0);

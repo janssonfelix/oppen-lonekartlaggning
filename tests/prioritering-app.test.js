@@ -36,7 +36,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         const w = oppna();
         const d = w.document;
         const rader = [...d.querySelectorAll('#prio-table tbody tr')].map(tr => tr._prioItem);
-        const items = w.eval('computePrioritization(_selectedPrioReference())');
+        const items = w.eval('raknaPrioritering(_valdPrioReferens())');
         expect(rader.length).toBe(items.length);
         const antal = s => rader.filter(i => i.status === s).length;
         const ruta = id => d.getElementById(id).closest('.stat-box');
@@ -65,11 +65,11 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         expect(d.getElementById('prio-stat-akut-not').textContent).toBe('mer än 2,5\u00a0% under, minst 30 personer');
         expect(d.getElementById('prio-stat-under-not').textContent).toBe('mer än 2,5\u00a0% under, färre än 30 personer');
         expect(d.getElementById('prio-stat-over-not').textContent).toBe('mer än 3\u00a0% över');
-        const items = w.eval('computePrioritization(_selectedPrioReference())');
+        const items = w.eval('raknaPrioritering(_valdPrioReferens())');
         for (const [id, status] of [['prio-stat-akut', 'akut'], ['prio-stat-under', 'atgard'], ['prio-stat-over', 'analysera']]) {
             expect(d.getElementById(id).textContent).toBe(String(items.filter(i => i.status === status).length));
         }
-        const f = w.eval("_prioMatrisFigur(computePrioritization(_selectedPrioReference()), 'topp10', 'referensen', state.prioConfig)");
+        const f = w.eval("_prioMatrisFigur(raknaPrioritering(_valdPrioReferens()), 'topp10', 'referensen', state.prioConfig)");
         expect(f.referens.map(z => z.etikett)).toEqual(['MER ÄN 2,5\u00a0% UNDER', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'MER ÄN 3\u00a0% ÖVER']);
         const punkt = w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper');
         const varav = items.filter(i => i.status === 'akut' || i.status === 'atgard').length;
@@ -114,16 +114,16 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
     it('förslagen säger hur nära referensen gruppen ligger, utan att avfärda skillnaden', () => {
         const w = oppna();
         w.__it = { diffPct: 0.8, n: 12, kvN: 12, maN: 12, _rows: [{ lon: 1, kon: 'kvinna', alder: 40 }] };
-        const nara = w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text).join(' ');
+        const nara = w.eval('byggMotiveringsforslag(window.__it)').map(f => f.text).join(' ');
         expect(nara).toContain('Gruppens median ligger inom ±2 % av referensen.');
         expect(nara).not.toMatch(/normal variation|kräver ytterligare utredning/);
         w.__it = { ...w.__it, diffPct: 7.4 };
-        expect(w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text)).toContain('Ligger 7,4\u00a0% över referensen. Dokumentera gärna varför.');
+        expect(w.eval('byggMotiveringsforslag(window.__it)').map(f => f.text)).toContain('Ligger 7,4\u00a0% över referensen. Dokumentera gärna varför.');
     });
     it('snabb vinst säger villkoret i klarspråk, också för en stor grupp (inget "få personer")', () => {
         const w = oppna();
         w.__it = { diffPct: -4, n: 300, kvN: 150, maN: 150, costPerPerson: 1200, isQuickWin: true, _rows: [{ lon: 1, kon: 'kvinna', alder: 40 }] };
-        const txt = w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text).join(' ');
+        const txt = w.eval('byggMotiveringsforslag(window.__it)').map(f => f.text).join(' ');
         expect(txt).toMatch(/Snabb vinst:<\/strong> gruppen ligger mer än 3\s%\s+under referensen, och kostnaden per person är under 1\s500\s+kr per månad \(300 personer\)\./);
         expect(txt).not.toMatch(/få personer|hanterbar/);
     });

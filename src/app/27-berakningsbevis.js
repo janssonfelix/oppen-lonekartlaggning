@@ -144,7 +144,7 @@ export function _bevisForLikvardighetspar(p) {
 
 /**
  * Bygger bevis-payload för en prio-rad.
- * @param {Object} it - item från computePrioritization
+ * @param {Object} it - item från raknaPrioritering
  * @param {string} _reference - 'stallningstagande' eller 'statistik' (f.n. ej använd i beviset)
  */
 export function _bevisForPrioPost(it, _reference) {

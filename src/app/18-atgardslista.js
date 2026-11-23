@@ -31,7 +31,7 @@ import { _laOversiktRader, _laOversiktStatus } from './41-lika-arbete.js';
 import { konsklassOrd } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _livscykelValdBas, korLivscykelregression } from './52-livscykel.js';
-import { _selectedPrioReference, computePrioritization } from './55-prioritering.js';
+import { _valdPrioReferens, raknaPrioritering } from './55-prioritering.js';
 import { _handlingsplanSeedRows, _hpArEgen } from './56-handlingsplan.js';
 
 // Tal i punkternas texter: decimalkomma och belopp utan tecken — riktningen skrivs med ord.
@@ -139,10 +139,10 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
     // === 2. Prioriteringsanalysen (AKUT, åtgärd, bevaka) ===
     try {
         if (state.policy.length || state.statistik.length) {
-            const ref = (typeof _selectedPrioReference === 'function')
-                ? _selectedPrioReference()
+            const ref = (typeof _valdPrioReferens === 'function')
+                ? _valdPrioReferens()
                 : (/** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || 'stallningstagande');
-            const prioItems = (typeof computePrioritization === 'function') ? computePrioritization(ref) : [];
+            const prioItems = (typeof raknaPrioritering === 'function') ? raknaPrioritering(ref) : [];
             prioItems.filter(i => i.status === 'akut').forEach(i => {
                 const fmt = new Intl.NumberFormat('sv-SE');
                 items.push({

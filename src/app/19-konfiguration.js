@@ -32,7 +32,7 @@ import { _fcRensaParMal, foreEfterFigur, ritaLoneoversyn } from './36-loneoversy
 import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
 import { sattLonemanad } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _readCostSettings } from './55-prioritering.js';
+import { _lasKostnadsinstallningar } from './55-prioritering.js';
 import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, renderHandlingsplanSeed } from './56-handlingsplan.js';
 import { sattRapportUrval } from './58-rapportmodell.js';
 import { _bes8Areas, bes8Uppdatera } from './61-regler-och-praxis.js';
@@ -453,7 +453,7 @@ function _tillampaKonfiguration(cfg) {
     setIf('prio-w-jamstalldhet', state.prioWeights.jamstalldhet);
     setIf('prio-cost-months',   state.costSettings.months);
     setIf('prio-po-pct',        state.costSettings.poPct);
-    _readCostSettings();
+    _lasKostnadsinstallningar();
     if (tmp.ui) {
         ['prio-label-mode','kon-color-by'].forEach(id => {
             const el = document.getElementById(id);

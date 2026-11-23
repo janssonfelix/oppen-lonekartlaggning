@@ -11,7 +11,7 @@
  * Referensen kommer utifrån som funktionen referensFor(aid, bas), så samma modell
  * används för både ställningstagandet och jämförelsestatistiken.
  *
- * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
+ * Appen får modellen genom lib-speglarna (ADR-8); raknaPrioritering() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  *
  * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md.
@@ -87,7 +87,7 @@ export function arsbeloppMening(g, kostnadsval, kr) {
 
 /**
  * Grunderna för motiveringsförslagen till en prioriteringspost: deterministiska regler över gruppens rader, i den
- * ordning förslagen visas. Texterna skriver appen (generateMotivationSuggestions i src/app/55-prioritering.js).
+ * ordning förslagen visas. Texterna skriver appen (byggMotiveringsforslag i src/app/55-prioritering.js).
  *
  * Koderna: `underlag` (ett kön under minsta gruppstorlek), `styrka` (skillnaden under detektionströskeln), `alder`
  * (könens medelålder skiljer minst 3 år), `kvintil` (kvinnor överrepresenterade i lägsta lönekvintilen; kräver

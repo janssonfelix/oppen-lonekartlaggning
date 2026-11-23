@@ -30,7 +30,7 @@ import { uppdateraAktivFlik } from './31-navigering.js';
 import { markeraFilrutaInlast, aterstallFilruta } from './32-filinlasning.js';
 import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { lvJamforelse } from './45-aid-bas-tabeller.js';
-import { _readCostSettings } from './55-prioritering.js';
+import { _lasKostnadsinstallningar } from './55-prioritering.js';
 import { explorerSynkaSmaLas } from './70-utforska.js';
 
 const PAKET_MAX_FILSTORLEK = installningsGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
@@ -57,7 +57,7 @@ export function _synkaKostnadsfalt() {
     const man = document.getElementById('prio-cost-months');
     if (po) /** @type {HTMLInputElement} */ (po).value = state.costSettings.poPct;
     if (man) /** @type {HTMLInputElement} */ (man).value = String(state.costSettings.months);
-    if (typeof _readCostSettings === 'function') _readCostSettings();
+    if (typeof _lasKostnadsinstallningar === 'function') _lasKostnadsinstallningar();
 }
 
 // Tar bort jämförelsestatistiken (när ett nytt paket saknar den eller vid rensning).

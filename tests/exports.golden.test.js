@@ -106,7 +106,7 @@ beforeAll(() => {
             ritaLoneoversikt();
             ritaLoneskillnadPerBas(lsBasVymodell());
             ritaLikaArbete(laVymodell());
-            renderPrioritering();
+            ritaPrioritering();
             byggJamforelse();
             ritaStruktur();
             _hpDemoSkal();   // demots sakliga skäl på tre rader: tabellerna och bladet Sakliga skäl låses också

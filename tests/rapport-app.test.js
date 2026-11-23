@@ -469,7 +469,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         const utelamnat = bilaga(w).utelamnat;
         expect(utelamnat.length).toBe(1);
         const rakna = namn => { const orig = w[namn]; const r = { n: 0 }; w[namn] = (...x) => { r.n++; return orig(...x); }; return r; };
-        const byggda = rakna('buildGruppdossier'), kandidater = rakna('gruppdossierCandidates'), prio = rakna('computePrioritization'), ki = rakna('_gdBootstrapGapCI');
+        const byggda = rakna('buildGruppdossier'), kandidater = rakna('gruppdossierCandidates'), prio = rakna('raknaPrioritering'), ki = rakna('_gdBootstrapGapCI');
         w.eval('renderExportBesked()');
         expect(byggda.n).toBe(0);
         expect(w.document.getElementById('besked-word').textContent).toContain(utelamnat[0]);

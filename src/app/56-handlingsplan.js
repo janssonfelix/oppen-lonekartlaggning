@@ -23,7 +23,7 @@ import { hamtaData, state } from './12-tillstand.js';
 import { _laggTillMetodblad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
-import { _selectedPrioReference, computePrioritization } from './55-prioritering.js';
+import { _valdPrioReferens, raknaPrioritering } from './55-prioritering.js';
 export const HP_UNDERLAG_PRIO = 'Prioritering (under referensen)';
 export const HP_UNDERLAG_PAR = 'Likvärdigt arbete (kandidatpar)';
 const HP_UNDERLAG_EGEN = 'Egen rad';
@@ -124,11 +124,11 @@ export function _handlingsplanSeedRows({ baraEgna = false } = {}) {
         minsta.push(Number.isFinite(nMin) ? nMin : null);
     };
     if (!baraEgna) try {
-        const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'stallningstagande';
+        const ref = (typeof _valdPrioReferens === 'function') ? _valdPrioReferens() : 'stallningstagande';
         const hasRef = ref === 'stallningstagande' ? state.policy.length : state.statistik.length;
         if (hasRef) {
             const thr = (state.prioConfig && state.prioConfig.atgardThreshold != null) ? state.prioConfig.atgardThreshold : -5;
-            computePrioritization(ref).filter(i => i.diffPct < thr).forEach(i => {
+            raknaPrioritering(ref).filter(i => i.diffPct < thr).forEach(i => {
                 lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, gruppSkillnadKr(i, kInstalld()), Math.min(i.kvN, i.maN));
                 prioCount++;
             });

@@ -32,7 +32,7 @@ import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline } from './41-lika-arbete.js';
 import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
-import { _selectedPrioReference, computePrioritization, generateMotivationSuggestions } from './55-prioritering.js';
+import { _valdPrioReferens, raknaPrioritering, byggMotiveringsforslag } from './55-prioritering.js';
 import { _hpBedomningar, _hpBedomningHtml, _hpPassarGrupp } from './56-handlingsplan.js';
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
@@ -91,14 +91,14 @@ export function buildGruppdossier(key, delat = null) {
     // Prioritering + hypoteser
     let prio = null, forslag = [];
     try {
-        const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
-        // computePrioritization grupperar på AID-kod och BAS, som dossiern: högst en post per grupp.
+        const ref = (typeof _valdPrioReferens === 'function') ? _valdPrioReferens() : 'statistik';
+        // raknaPrioritering grupperar på AID-kod och BAS, som dossiern: högst en post per grupp.
         let alla;
-        if (!delat) alla = computePrioritization(ref);
-        else { if (!delat.prio.has(ref)) delat.prio.set(ref, computePrioritization(ref)); alla = delat.prio.get(ref); }
+        if (!delat) alla = raknaPrioritering(ref);
+        else { if (!delat.prio.has(ref)) delat.prio.set(ref, raknaPrioritering(ref)); alla = delat.prio.get(ref); }
         prio = (alla || []).find(i => i.aid === g.aid && i.bas === g.bas) || null;
-        if (prio && typeof generateMotivationSuggestions === 'function') {
-            forslag = generateMotivationSuggestions(prio) || [];
+        if (prio && typeof byggMotiveringsforslag === 'function') {
+            forslag = byggMotiveringsforslag(prio) || [];
         }
     } catch (e) { rapporteraFel('Gruppdossier: prioriteringen', e); }
 

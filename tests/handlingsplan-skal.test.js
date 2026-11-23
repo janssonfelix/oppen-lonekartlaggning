@@ -45,7 +45,7 @@ describe('Handlingsplan: gruppens skillnad per rad', () => {
         const w = fonster();
         const { nycklar, skillnader } = seedExport(w);
         expect(skillnader).toHaveLength(nycklar.length);
-        const prio = w.eval(`medExportLage(() => { const thr = state.prioConfig.atgardThreshold ?? -5; return computePrioritization(_selectedPrioReference()).filter(i => i.diffPct < thr).map(i => ({ n: _hpNyckel('prio', i.aid || i.yrke, i.bas), s: i.medKv && i.medMa ? Math.round(i.medMa - i.medKv) : null })); })`);
+        const prio = w.eval(`medExportLage(() => { const thr = state.prioConfig.atgardThreshold ?? -5; return raknaPrioritering(_valdPrioReferens()).filter(i => i.diffPct < thr).map(i => ({ n: _hpNyckel('prio', i.aid || i.yrke, i.bas), s: i.medKv && i.medMa ? Math.round(i.medMa - i.medKv) : null })); })`);
         expect(prio.length).toBeGreaterThan(0);
         for (const p of prio) expect(skillnader[nycklar.indexOf(p.n)]).toBe(p.s);
         const par = w.eval(`medExportLage(() => _parForRedovisning(likvardighetResultat().pairs).par.map(p => ({ n: _hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), s: Math.round(p.gapKr) })))`);
