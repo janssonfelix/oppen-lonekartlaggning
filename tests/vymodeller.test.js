@@ -854,8 +854,11 @@ describe('[B7.13] Löneöversyns vymodell', () => {
         expect(kostnadPerPott(underlag(), [RIKTAD_A, { ...RIKTAD_A, pool: 'okänd' }], 0)).toEqual({ perPott: { equity: info.kostnad, övrigt: info.kostnad }, potter: ['equity', 'övrigt'] });
     });
     it('riktningen avgörs på talen som de visas, och den stegvisa planen har gapet bara när båda könen når k', () => {
-        expect(riktning(-4.26, -4.34, 0)).toBe(0);
+        expect(riktning(-4.26, -4.34, 0)).toBe(0);          // båda visas som −4,3 %
         expect(riktning(-4.3, -4.0, 0)).toBe(-1);
+        expect(riktning(-4.0, -4.3, 0)).toBe(1);
+        expect(riktning(95.66, 95.74, 100)).toBe(0);       // båda visas som 95,7 %; avståndet mäts från målet
+        expect(riktning(95.7, 96.1, 100)).toBe(-1);
         expect(riktning(null, 1)).toBeNull();
         const vm = lo(10, { years: 3 });
         expect(vm.plan).toHaveLength(3);
