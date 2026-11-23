@@ -103,6 +103,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-94 | Diagrammens filter står alltid utfällda | Gällande | 2026-11-22 |
 | ADR-95 | Beräkningsregistret blir spårbarhetsmatrisen | Gällande | 2026-11-23 |
 | ADR-96 | Konfigurationsfilens fält har svenska namn; äldre filer läses | Gällande | 2026-11-23 |
+| ADR-97 | Funktionerna i `src/lib/` har svenska namn | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -615,3 +616,36 @@ extern granskare ska känna igen samma ord i dokumenten, spårbarhetsmatrisen oc
 att bara läsa version 3, som gör sparade filer oläsbara; att byta också värdena (`'pct'`, `'lowest'`, `'do'` och andra),
 som står kvar som nycklarna i ADR-72; att byta tillståndets fält i appen i samma ändring, som inte syns i filen.
 *Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.8, `likvardighetsmodellen.md` §8.
+
+**ADR-97 — Funktionerna i `src/lib/` har svenska namn.** Beslutat av underhållaren 2026-11-23. Koden skrivs på
+domänens språk: de engelska och blandade namnen på funktioner, konstanter och parametrar i `src/lib/` har bytts mot
+svenska, liksom spegelns alias i `tools/gen-mirrors.mjs` (appens prefix, som `_fc` och `_st`, står kvar). Etablerade
+förkortningar (OLS, CSV, BAS, AID, KI, HC3, CDF) och ord som redan är svenska (median, regression, bootstrap) står
+kvar. Fälten i returvärdena och i tillståndets inställningsobjekt är oförändrade, eftersom de läses på många ställen i
+appen eller översätts till konfigurationsfilen (ADR-96). Bytet gjordes utan beteendeändring, en modul i taget. *Skäl:* en extern granskare ska känna igen samma ord i dokumenten, spårbarhetsmatrisen och koden (ADR-95).
+*Avvisat:* att låta lib behålla de engelska namnen och bara översätta i dokumenten, som ger två namn på samma sak.
+De äldre besluten och CHANGELOG nämner de gamla namnen; tabellen visar vad de heter nu:
+
+| Modul | Gammalt namn | Nytt namn |
+|---|---|---|
+| `stat.js` | `quantile`, `linearRegression`, `tDistCdf`, `tQuantile`, `pValue2Sided` | `kvantil`, `linjarRegression`, `tFordelningCdf`, `tKvantil`, `pVardeTvasidigt` |
+| `stat.js` | `matMul`, `transpose`, `invert`, `fitOLS`, `_regIncBeta` | `matrisprodukt`, `transponera`, `invertera`, `anpassaOLS`, `_regOfullstandigBeta` |
+| `rng.js` | `hashSeed`, `seedFromNumbers`, `rngFor` | `froAvText`, `froAvTal`, `slumpFor` |
+| `struktur.js` | `representationByBas`, `quartileDistribution`, `distributionalGap` | `representationPerBas`, `kvartilfordelning`, `fordelningsgap` |
+| `falt.js` | `groupKey`, `konOf`, `ageBucket`, `AGE_ORDER` | `gruppnyckel`, `konAv`, `aldersgrupp`, `ALDERSORDNING` |
+| `urval.js`, `utforska.js`, `figur.js` | `personFilter`, `computePivot`, `_filterNorm` | `iUrvalet`, `pivottabell`, `_normaliseratFilter` |
+| `demodata.js` | `generateTestData`, `generateDemoData`, `generateStortDemo`, `generateStortDemoStatistik` | `genereraTestdata`, `genereraDemodata`, `genereraStortDemo`, `genereraStortDemoStatistik` |
+| `lonepolitik.js` | `bandPosition`, `groupBandStats`, `complianceCounts`, `genderBandGap`, `costToFloor`, `policyCoverage` | `bandlage`, `gruppMotBand`, `antalMotBand`, `konsskillnadIBand`, `kostnadTillGolv`, `tackningsgrad` |
+| `loneoversyn.js` | `totalLonSum`, `computePott`, `rawGenderGap`, `targetRows`, `allocate`, `suggestTargets`, `closureTargets` | `lonesumma`, `beraknaPott`, `raLonegap`, `riktadeRader`, `fordela`, `foreslaRiktning`, `stangningsriktning` |
+| `loneoversyn.js` | `stagedPlan`, `summarizeGroups`, `detectLeapfrog`, `forecastOutcome`, `bandStats`, `individualRemediation`, `marketTargets`, `sensitivityCurve` | `stegvisPlan`, `sammanstallGrupper`, `hittaOmkorningar`, `prognosutfall`, `lonespannPerBas`, `individlyft`, `marknadsriktning`, `kanslighetskurva` |
+| `likvardighet.js` | `computeLikvardighetPairs`, `basRangFn`, `bootstrapMedianDiffKr`, `bootstrapMedianVsConstantKr`, `orgIckeKvByBas` | `likvardighetspar`, `basRangordning`, `bootstrapMedianskillnadKr`, `bootstrapMedianMotKonstantKr`, `orgIckeKvPerBas` |
+| `likvardighet.js` | `byggParPoäng`, `KVINNO_TROSKEL_DEFAULT`, `ALDERS_GOLV_DEFAULT` | `byggParPoang`, `KVINNO_TROSKEL_STANDARD`, `ALDERS_GOLV_STANDARD` |
+| `regression.js` | `computeSequentialGap`, `computePerBasGap`, `computeVariabelTillfor`, `computeYrkesgruppGap` | `stegvisGap`, `gapPerBas`, `variabelTillfor`, `yrkesgruppGap` |
+| `regression.js` | `diagnoseCollinearity`, `quantileRegression`, `quantileRegressionAtAllTau` | `kollinearitetsdiagnos`, `kvantilregression`, `kvantilregressionAllaTau` |
+| `inlasning.js` | `parseNumber`, `parseNumberStrict`, `detectSensitiveColumns`, `autoDetectColumnMap`, `ALLOWED_FIELDS` | `tolkaTal`, `tolkaTalStrikt`, `hittaKansligaKolumner`, `gissaKolumnmappning`, `TILLATNA_FALT` |
+| `inlasning.js` | `_normalizeNumberString`, `_cleanYrkeField`, `_stripHtmlMeta`, `_normalizeBas`, `_normalizePolicyAid`, `_normalizeKon` | `_normaliseraTaltext`, `_stadaYrkesfalt`, `_utanHtmlTecken`, `_normaliseraBas`, `_normaliseraPolicyAid`, `_normaliseraKon` |
+| `inlasning.js` | `_sniffTabularFormat`, `_decodeCsvBuffer`, `_detectDelimiter`, `_findCsvHeader` | `_gissaTabellformat`, `_avkodaCsv`, `_gissaAvgransare`, `_hittaCsvRubrik` |
+
+Spegelns alias följer samma ord: `_fitOLS` heter `_anpassaOLS`, `_rngFor` `_slumpFor`, `_fcComputePott` `_fcBeraknaPott`,
+`_lvComputePairs` `_lvLikvardighetspar`, `_toCsv` `_tillCsv` och så vidare. *Gäller i dag:* `sparbarhet.md`
+(kolumnen Funktion och fil), `tools/gen-mirrors.mjs`.
