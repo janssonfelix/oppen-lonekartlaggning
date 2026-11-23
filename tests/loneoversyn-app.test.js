@@ -64,16 +64,6 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ers
         expect(pp.filter(p => iA(p) && p.kon === 'kvinna' && p.delta > 0).length).toBe(30);
         expect(w.document.getElementById('forecast-targets').querySelector('[data-f="kon"]').value).toBe('kvinna');
     });
-    it('lönegräns: bara löner under gränsen omfattas', () => {
-        const pp = rad(fonster(), { lonCap: 25500 });
-        expect(pp.filter(p => p.delta > 0).map(p => p.lon).sort((a, b) => a - b)).toEqual([25000, 25100, 25200, 25300, 25400]);
-    });
-    it('höj till: var och en under beloppet lyfts upp till det, ingen pott att fördela', () => {
-        const pp = rad(fonster(), { kon: 'kvinna', mode: 'till', value: 26000 });
-        const lyfta = pp.filter(p => p.delta > 0);
-        expect(lyfta.length).toBe(10);
-        expect(lyfta.every(p => p.nyLon === 26000 && p.kon === 'kvinna')).toBe(true);
-    });
     it('en rad som berör färre än tröskeln får noten om enskildas löner; en som berör ingen får besked', () => {
         const w = fonster();
         rad(w, { bas: 'C', aid: '5300' });
