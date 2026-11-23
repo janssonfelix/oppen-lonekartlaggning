@@ -154,7 +154,8 @@ export function fordelningsgap(rader, percentiler, { k = 2 } = {}) {
     if (kv.length < minst || ma.length < minst) return [];
     return ps.map(p => {
         const kvP = _kvantil(kv, p / 100), maP = _kvantil(ma, p / 100);
-        return { p, kv: kvP, ma: maP, gapPct: maP > 0 ? (kvP / maP - 1) * 100 : null };
+        // En enda avrundning, som i konsMedianerUrLoner: 38 000 mot 40 000 ger exakt −5.
+        return { p, kv: kvP, ma: maP, gapPct: maP > 0 ? (kvP - maP) * 100 / maP : null };
     });
 }
 

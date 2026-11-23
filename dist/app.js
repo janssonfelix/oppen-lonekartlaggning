@@ -1880,7 +1880,7 @@ function fordelningsgap(rader, percentiler, { k = 2 } = {}) {
   if (kv.length < minst || ma.length < minst) return [];
   return ps.map((p) => {
     const kvP = kvantil(kv, p / 100), maP = kvantil(ma, p / 100);
-    return { p, kv: kvP, ma: maP, gapPct: maP > 0 ? (kvP / maP - 1) * 100 : null };
+    return { p, kv: kvP, ma: maP, gapPct: maP > 0 ? (kvP - maP) * 100 / maP : null };
   });
 }
 function tillDirektivtecken(gapPct) {
@@ -27662,8 +27662,9 @@ function _exportJPAProtocolExport() {
     tot: g.tot,
     medKv: Math.round(g.medKv),
     medMa: Math.round(g.medMa),
-    gapPct: +((g.kvot - 1) * 100).toFixed(2),
-    // negativ = kvinnor lägre
+    // Negativ = kvinnor lägre. En enda avrundning, som i konsMedianer, och ingen före cellens: 34 059 mot 40 000 är 85,1475 %
+    // och står som 85,1 (avrundat till två decimaler först blev det 85,2).
+    gapPct: (g.medKv - g.medMa) * 100 / g.medMa,
     diffKr: Math.round(g.medKv - g.medMa),
     direktiv: g.direktiv,
     // Medelvärdet redovisas bredvid medianen (ADR-79); urvalet och statusen bestäms av medianen som förut.

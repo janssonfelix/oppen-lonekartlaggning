@@ -388,6 +388,28 @@ describe('Lika arbete och rapportunderlaget flaggar samma yrken', () => {
     });
 });
 
+describe('protokollet för gemensam lönebedömning: kvinnors median i % av mäns', () => {
+    it('avrundas en gång: 34 059 mot 40 000 är 85,1475 % och står som 85,1, inte 85,2', async () => {
+        const w = createAppWindow();
+        const rader = [];
+        for (let i = 0; i < 15; i++) for (const [kon, mitt] of [['kvinna', 34059], ['man', 40000]])
+            rader.push({ bas: 'A', kon, lon: mitt + (i - 7) * 10, alder: 30 + i, yrke: '7100 Yrke', aid: '7100', yrkeLabel: 'Yrke', enhet: '' });
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        const { readFileSync } = await import('node:fs');
+        w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
+        w.alert = () => {};
+        let wb = null;
+        w.XLSX.writeFile = b => { wb = b; };
+        w.eval('exportJPAProtocol()');
+        const blad = w.XLSX.utils.sheet_to_json(wb.Sheets['2. Lika arbete (AID)'], { header: 1, raw: true, defval: '' });
+        const rubrik = blad.find(r => r.includes('Kvinnors median i % av mäns'));
+        const rad = blad.find(r => r.includes('7100 Yrke'));
+        expect(rad, JSON.stringify(blad)).toBeTruthy();
+        expect(rad[rubrik.indexOf('Kvinnors median i % av mäns')]).toBe(85.1);
+    });
+});
+
 describe('yrkesgruppstabellen i Lika arbete', () => {
     const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('matrix'); return w; };
     const synlig = el => { const k = el.cloneNode(true); k.querySelectorAll('.bara-export').forEach(e => e.remove()); return k.textContent.replace(/\s+/g, ' ').trim(); };

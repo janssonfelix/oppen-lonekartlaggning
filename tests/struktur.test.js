@@ -123,6 +123,11 @@ describe('[B2.5] structure: distributionellt gap (sticky floor vs glastak)', () 
         expect(p10).toBeLessThan(p90);
         expect(d.find(x => x.p === 50).gapPct).toBeCloseTo((34000 / 41000 - 1) * 100, 4);
     });
+    it('en kvot som är exakt en procentsats blir exakt den: en enda avrundning', () => {
+        const lika = (lon, kon) => Array.from({ length: 3 }, () => ({ kon, lon }));
+        const d = fordelningsgap([...lika(38000, 'kvinna'), ...lika(40000, 'man')]);
+        expect(d.map(x => x.gapPct)).toEqual([-5, -5, -5, -5, -5]);
+    });
 });
 
 // k-anonymitet: könsuppdelade mått kräver tröskeln
