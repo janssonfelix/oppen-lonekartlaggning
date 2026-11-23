@@ -8,7 +8,7 @@ import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
 import { _mkTabeller, diagramMarkering } from './11-markering.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { fyllValjare, ritaFilerDelar, ritaOversiktDelar, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
-import { renderForhandskontroll } from './17-forhandskontroll.js';
+import { ritaForhandskontroll } from './17-forhandskontroll.js';
 import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
 import { ritaLikvardigtArbete } from './34-likvardigt-arbete.js';
 import { ritaLoneoversyn } from './36-loneoversyn.js';
@@ -427,7 +427,7 @@ function _ritaFlik(target) {
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
     // Förhandskontrollen står i Filer och kvalitet också medan en fil väntar på Läs in, innan något är inläst.
-    if (target === "filer") renderForhandskontroll();
+    if (target === "filer") ritaForhandskontroll();
     // Sidans navigering hör till fliken som visas. Ritas en annan flik (t.ex. för att
     // kopiera ett diagram därifrån) ska den synliga flikens rader inte flyttas.
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');

@@ -51,7 +51,7 @@ describe('radnummer vid inläsning', () => {
         w.__loadDemoData();
         const i = 40;
         w.__state.data[i].lon = 400000;   // tydlig avvikelse
-        const ut = w.eval('detectOutliers(3)');
+        const ut = w.eval('hittaExtremvarden(3)');
         const o = ut.find(x => x.lon === 400000);
         expect(o.radnr).toBe(w.__state.data[i].radnr);
         expect(o.seq).toBeUndefined();

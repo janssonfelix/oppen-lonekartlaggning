@@ -15,11 +15,11 @@ import { hamtaData, state } from './12-tillstand.js';
  * @param {number} [threshold=3] - Z-tröskel.
  * @returns {Array<Object>} Outlier-rader sorterade på |Z| desc.
  */
-export function detectOutliers(threshold) {
+export function hittaExtremvarden(threshold) {
     return extremvarden(hamtaData(), statGolv(), threshold);
 }
 
-export function renderOutliers() {
+export function ritaExtremvarden() {
     const container = document.getElementById('outliers-container');
     const wrap = document.getElementById('outliers-table-wrap');
     const countEl = document.getElementById('outliers-count');
@@ -27,7 +27,7 @@ export function renderOutliers() {
     if (!state.data.length) { container.style.display = 'none'; return; }
     container.style.display = 'block';
     const threshold = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('outliers-threshold'))?.value) || 3;
-    const outs = detectOutliers(threshold);
+    const outs = hittaExtremvarden(threshold);
     if (countEl) countEl.textContent = outs.length === 0 ? `(inga minst ${threshold} standardavvikelser från medel)` : `(${outs.length} rader flaggade)`;
     if (!outs.length) {
         wrap.innerHTML = `<p class="farg-dampad pad-20 ta-mitt">Inga extremvärden med gränsen ${threshold} standardavvikelser. Datan är homogen inom BAS-grupperna.</p>`;
@@ -70,5 +70,5 @@ export function renderOutliers() {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartExtremvardenBasrang() {
-    document.getElementById('outliers-threshold')?.addEventListener('input', renderOutliers);
+    document.getElementById('outliers-threshold')?.addEventListener('input', ritaExtremvarden);
 }

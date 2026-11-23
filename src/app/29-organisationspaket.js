@@ -20,7 +20,7 @@ import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, harReferens, referensNamn, state } from './12-tillstand.js';
 import { fyllValjare, ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
-import { renderConsistencyBanner } from './16-inlasningskontroll.js';
+import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { visningNy } from './23-exportgrind.js';
 import { _rensaAllData } from './26-rensning.js';
@@ -219,7 +219,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     tomStatistikcacher();
     renderReferensKort();
     renderPaketInfo();
-    renderConsistencyBanner();
+    ritaKonsistenskontroll();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).
     if (kAndrad && state.data.length) { fyllValjare(); _ritaOmAllaFlikar(); }
     else { ritaKravstatus(); renderActionChecklist(); ritaKartlaggningensSteg(); uppdateraAktivFlik(); }

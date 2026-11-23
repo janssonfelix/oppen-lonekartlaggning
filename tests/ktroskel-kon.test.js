@@ -224,7 +224,7 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         w.__state.data = rader;
         w.eval('fyllValjare(); lasUppFlikar(); tomStatistikcacher();');
         // Som efter en vanlig inläsning (32-filinlasning.js): allt på Översikt är ritat.
-        w.eval('renderActionChecklist(); ritaKartlaggningensSteg(); renderDataValidationReport(); renderOutliers(); uppdateraAktivFlik();');
+        w.eval('renderActionChecklist(); ritaKartlaggningensSteg(); ritaValideringsrapport(); ritaExtremvarden(); uppdateraAktivFlik();');
         return w;
     };
     const kort = w => normalisera(w.document.getElementById('action-checklist-container').textContent + w.document.getElementById('att-gora-borja').textContent);
@@ -258,7 +258,7 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         // Extremvärdena följer golvet för skattningar: 10 på skärmen, max(inställd tröskel, 10) i exportläget (ADR-103).
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).toContain('91357');
         expect(d.getElementById('data-validation-report').textContent).not.toMatch(/Inga extremvärden/);
-        w.eval('medExportLage(() => { renderOutliers(); renderDataValidationReport(); })');
+        w.eval('medExportLage(() => { ritaExtremvarden(); ritaValideringsrapport(); })');
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).not.toContain('91357');
         expect(d.getElementById('data-validation-report').textContent).toMatch(/Inga extremvärden/);
     });

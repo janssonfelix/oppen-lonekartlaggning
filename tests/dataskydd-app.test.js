@@ -195,7 +195,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
                             'kon', 'demografi', 'benchmark', 'utforska', 'kvalitet', 'rapport', 'handlingsplan']) {
             try { w.__ritaFlik(flik); } catch (_e) { /* en flik utan data får kasta — det som ritats räknas */ }
         }
-        w.eval('renderOutliers()');
+        w.eval('ritaExtremvarden()');
         // Utskriftsrapporten byggs i dokumentet (window.print stubbas) — även den ska rensas.
         w.print = () => {};
         await w.eval('buildPrintReport()');

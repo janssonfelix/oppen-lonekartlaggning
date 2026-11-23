@@ -60,9 +60,9 @@ describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osaker
                         lika(w.eval(`raknaGruppMDE(${nKv}, ${nMa}, 0.08)`), gruppMde(nKv, nMa, 0.08));
                     }
                 });
-                it('detectOutliers', () => {
-                    lika(w.eval('detectOutliers()'), extremvarden(d, golv, 3));
-                    lika(w.eval('detectOutliers(2)'), extremvarden(d, golv, 2));
+                it('hittaExtremvarden', () => {
+                    lika(w.eval('hittaExtremvarden()'), extremvarden(d, golv, 3));
+                    lika(w.eval('hittaExtremvarden(2)'), extremvarden(d, golv, 2));
                 });
                 it('linjarRegressionKI', () => {
                     const par = d.filter(r => r.alder > 0 && arKv(r)).map(r => [r.alder, r.lon]);

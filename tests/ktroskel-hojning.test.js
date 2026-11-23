@@ -69,7 +69,7 @@ describe('k-tröskeln styr varje flik', () => {
         const w = fonster(null);
         const bild = () => FLIKAR.map(f => { w.__ritaFlik(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
         // Grundtillstånd som efter en vanlig inläsning (32-filinlasning.js): också Översiktens delar är ritade.
-        w.eval('tomStatistikcacher(); renderActionChecklist(); ritaKartlaggningensSteg(); renderOutliers(); renderDataValidationReport(); uppdateraAktivFlik();');
+        w.eval('tomStatistikcacher(); renderActionChecklist(); ritaKartlaggningensSteg(); ritaExtremvarden(); ritaValideringsrapport(); uppdateraAktivFlik();');
         w.__ritaFlik('matrix'); await w.eval('_regKvantilKlar()');   // kvantilregressionens intervall räknas i bakgrunden efter första ritningen
         const fore = bild();
         // Golvet ändras (10 → 25 → 10): bootstrap-KI och styrkan räknas om i bakgrunden efter omritningen; vänta in den.

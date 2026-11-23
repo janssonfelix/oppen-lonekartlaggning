@@ -9,8 +9,8 @@ import { T } from './09-termer.js';
 import { _rfExportFigur } from './10-diagramritare.js';
 import { state } from './12-tillstand.js';
 import { raknaBootstrapKI, raknaStyrkeanalys, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
-import { renderOutliers } from './15-extremvarden-basrang.js';
-import { renderDataValidationReport } from './16-inlasningskontroll.js';
+import { ritaExtremvarden } from './15-extremvarden-basrang.js';
+import { ritaValideringsrapport } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { ritGenerationNy, tomFlikarUtom, visningNy } from './23-exportgrind.js';
@@ -405,8 +405,8 @@ export function _omritningssteg() {
         if (typeof ritaKartlaggningensSteg !== 'function') return;
         ritaKartlaggningensSteg({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
     }]);
-    steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
-    steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
+    steg.push(['extremvärden', () => { if (typeof ritaExtremvarden === 'function') ritaExtremvarden(); }]);
+    steg.push(['inläsningsrapporten', () => { if (typeof ritaValideringsrapport === 'function') ritaValideringsrapport(); }]);
     steg.push(['A/B-jämförelsen', () => {
         const ab = document.getElementById('snapshot-comparison');
         if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();

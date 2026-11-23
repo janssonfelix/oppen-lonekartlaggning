@@ -6008,10 +6008,10 @@ function kravstatus(rader, { bas, k, golv, oversikt, policyFor: policyFor2, stat
 }
 
 // src/app/15-extremvarden-basrang.js
-function detectOutliers(threshold) {
+function hittaExtremvarden(threshold) {
   return extremvarden(hamtaData(), statGolv(), threshold);
 }
-function renderOutliers() {
+function ritaExtremvarden() {
   const container = document.getElementById("outliers-container");
   const wrap = document.getElementById("outliers-table-wrap");
   const countEl = document.getElementById("outliers-count");
@@ -6025,7 +6025,7 @@ function renderOutliers() {
     /** @type {HTMLInputElement} */
     document.getElementById("outliers-threshold")?.value
   ) || 3;
-  const outs = detectOutliers(threshold);
+  const outs = hittaExtremvarden(threshold);
   if (countEl) countEl.textContent = outs.length === 0 ? `(inga minst ${threshold} standardavvikelser från medel)` : `(${outs.length} rader flaggade)`;
   if (!outs.length) {
     wrap.innerHTML = `<p class="farg-dampad pad-20 ta-mitt">Inga extremvärden med gränsen ${threshold} standardavvikelser. Datan är homogen inom BAS-grupperna.</p>`;
@@ -6064,7 +6064,7 @@ function renderOutliers() {
     </p>`;
 }
 function uppstartExtremvardenBasrang() {
-  document.getElementById("outliers-threshold")?.addEventListener("input", renderOutliers);
+  document.getElementById("outliers-threshold")?.addEventListener("input", ritaExtremvarden);
 }
 
 // src/lib/kostnad.js
@@ -22533,11 +22533,11 @@ function _efterInlastData() {
   ritaKartlaggningensSteg({ reg });
   updateGdprBanner();
   if (typeof _aterstallInaktivitetstimer === "function") _aterstallInaktivitetstimer();
-  renderConsistencyBanner();
-  renderOutliers();
-  renderDataValidationReport();
-  renderForhandskontroll();
-  syncDatakvalitetPanel({ reg });
+  ritaKonsistenskontroll();
+  ritaExtremvarden();
+  ritaValideringsrapport();
+  ritaForhandskontroll();
+  synkaDatakvalitetspanel({ reg });
   meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
   doljLaddning();
   const DEFER_NOTE = " · förbereder analyser i bakgrunden…";
@@ -22858,7 +22858,7 @@ function lasInStrukturfil(file) {
       fkKon.clear();
       _fkSlappVantande();
       state.forhandskontroll = { ...fkEj, ejInlast: true };
-      renderForhandskontroll();
+      ritaForhandskontroll();
       _aterstallInaktivitetstimer();
       state.ansvarKolumn = tidigareAnsvarKolumn;
       state.importprofil = tidigareImportprofil;
@@ -24622,7 +24622,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   tomStatistikcacher();
   renderReferensKort();
   renderPaketInfo();
-  renderConsistencyBanner();
+  ritaKonsistenskontroll();
   if (kAndrad && state.data.length) {
     fyllValjare();
     _ritaOmAllaFlikar();
@@ -25104,11 +25104,11 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   const reg = runOLSRegression();
   ritaUnderlagetsKvalitet({ reg });
   updateGdprBanner();
-  renderConsistencyBanner();
+  ritaKonsistenskontroll();
   renderActionChecklist({ reg });
-  renderOutliers();
-  renderDataValidationReport();
-  syncDatakvalitetPanel({ reg });
+  ritaExtremvarden();
+  ritaValideringsrapport();
+  synkaDatakvalitetspanel({ reg });
   ritaKartlaggningensSteg({ reg });
   const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
   document.getElementById("data-status").innerHTML = `<span class="farg-info">${ikon("sok")} ${status}</span>`;
@@ -29233,7 +29233,7 @@ function uppstartReferensfiler() {
       ritaFilrutor();
       doljLaddning();
       ritaKravstatus();
-      renderConsistencyBanner();
+      ritaKonsistenskontroll();
       renderActionChecklist();
       ritaKartlaggningensSteg();
       if (hamtaData().length > 0) ritaLoneoversikt();
@@ -29330,7 +29330,7 @@ function uppstartReferensfiler() {
         synkaJamforelseFlik();
         doljLaddning();
         ritaKravstatus();
-        renderConsistencyBanner();
+        ritaKonsistenskontroll();
         renderActionChecklist();
         ritaKartlaggningensSteg();
       } catch (err) {
@@ -29703,7 +29703,7 @@ function _fkPausa(fk, lasIn) {
   doljLaddning();
   dataStatus.textContent = "Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.";
   dataStatus.className = "status-msg warning";
-  renderForhandskontroll();
+  ritaForhandskontroll();
   visaKolumnmappningOmBehov();
   _aterstallInaktivitetstimer();
   const av = document.getElementById("avsnitt-fi-forhandskontroll");
@@ -29727,7 +29727,7 @@ function _fkAvbryt() {
   if (!v) return;
   _fkVantar = null;
   state.forhandskontroll = v.tidigare || null;
-  renderForhandskontroll();
+  ritaForhandskontroll();
   visaKolumnmappningOmBehov();
   dataStatus.textContent = state.data.length ? "Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar." : "Inläsningen avbröts. Ingen lönefil är inläst.";
   dataStatus.className = "status-msg";
@@ -29737,7 +29737,7 @@ function _fkSlapp() {
   _fkVantar = null;
   _fkRitad = null;
   state.forhandskontroll = null;
-  renderForhandskontroll();
+  ritaForhandskontroll();
 }
 var FK_TITEL = {
   "yrke-namn": "personnamn i uttaget",
@@ -29782,7 +29782,7 @@ function _fkCellHtml(cell) {
 }
 var _fkLista = (rader) => `<ul class="fk-lista">${rader.map((r) => `<li>${r}</li>`).join("")}</ul>`;
 var _fkKr = (v) => svKr(v);
-function renderForhandskontroll() {
+function ritaForhandskontroll() {
   const av = (
     /** @type {HTMLDetailsElement|null} */
     document.getElementById("avsnitt-fi-forhandskontroll")
@@ -29855,7 +29855,7 @@ function renderForhandskontroll() {
 }
 
 // src/app/16-inlasningskontroll.js
-function renderDataValidationReport() {
+function ritaValideringsrapport() {
   const wrap = document.getElementById("data-validation-report");
   if (!wrap) return;
   if (!state.data.length) {
@@ -29876,7 +29876,7 @@ function renderDataValidationReport() {
   const yrkeNamn = da.yrkeNamn || 0;
   const yrkeNamnRadnr = namnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
   const used = state.data.length;
-  const outliers = detectOutliers(3);
+  const outliers = hittaExtremvarden(3);
   const bas = hamtaBasIntervall();
   const { enkonade: singleSexBas, underK: kMaskedBas } = basVarningar(state.data, bas, kInstalld());
   const dataBas = [...new Set(state.data.map((r) => r.bas))].sort();
@@ -29934,10 +29934,10 @@ function renderDataValidationReport() {
         </div>
     `;
 }
-function syncDatakvalitetPanel(val) {
+function synkaDatakvalitetspanel(val) {
   ritaUnderlagetsKvalitet(val);
 }
-function renderConsistencyBanner() {
+function ritaKonsistenskontroll() {
   const wrap = document.getElementById("consistency-banner-container");
   if (!wrap) return;
   if (!state.data.length) {
@@ -30586,8 +30586,8 @@ function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) {
 function ritaFilerDelar() {
   const delar = [
     ["underlagets kvalitet", () => ritaUnderlagetsKvalitet()],
-    ["extremvärden", () => renderOutliers()],
-    ["inläsningsrapporten", () => renderDataValidationReport()]
+    ["extremvärden", () => ritaExtremvarden()],
+    ["inläsningsrapporten", () => ritaValideringsrapport()]
   ];
   for (const [namn, fn] of delar) {
     try {
@@ -31003,10 +31003,10 @@ function _omritningssteg() {
     ritaKartlaggningensSteg({ punkter: oforandrat(punktFangst) ? punkter : void 0, reg: oforandrat(regFangst) ? reg : void 0 });
   }]);
   steg.push(["extremvärden", () => {
-    if (typeof renderOutliers === "function") renderOutliers();
+    if (typeof ritaExtremvarden === "function") ritaExtremvarden();
   }]);
   steg.push(["inläsningsrapporten", () => {
-    if (typeof renderDataValidationReport === "function") renderDataValidationReport();
+    if (typeof ritaValideringsrapport === "function") ritaValideringsrapport();
   }]);
   steg.push(["A/B-jämförelsen", () => {
     const ab = document.getElementById("snapshot-comparison");
@@ -32743,7 +32743,7 @@ function _ritaFlik(target) {
     if (typeof bes8Uppdatera === "function") bes8Uppdatera();
     if (typeof bes8Stod === "function") bes8Stod();
   }
-  if (target === "filer") renderForhandskontroll();
+  if (target === "filer") ritaForhandskontroll();
   const aktiv = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
   if (aktiv && flikMal(aktiv) !== target) return;
   ritaNastaSteg(target);
@@ -33485,7 +33485,7 @@ function ritaOmReferens() {
     renderReferensKort,
     uppdateraAktivFlik,
     ritaKravstatus,
-    renderConsistencyBanner,
+    ritaKonsistenskontroll,
     renderActionChecklist,
     ritaKartlaggningensSteg
   ]) {

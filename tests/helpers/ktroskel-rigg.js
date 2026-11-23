@@ -249,7 +249,7 @@ export async function samlaUtdata(w) {
         headers: ['BAS', 'AID', 'Lön', 'Ålder', 'Kön', 'FKKOLUMN'],
         mappning: { bas: 'BAS', yrke: 'AID', lon: 'Lön', alder: 'Ålder', kon: 'Kön' }, k: kInstalld() })`);
     // Översikt som efter en inläsning, och en prognos i Löneöversyn så att utfallstabellen finns.
-    w.eval('tomStatistikcacher(); renderActionChecklist(); ritaKartlaggningensSteg(); renderOutliers(); renderDataValidationReport(); uppdateraAktivFlik();');
+    w.eval('tomStatistikcacher(); renderActionChecklist(); ritaKartlaggningensSteg(); ritaExtremvarden(); ritaValideringsrapport(); uppdateraAktivFlik();');
     // Påslaget är 100 %: då är varje grupps kostnad lika med gruppens lönesumma, och kostnaden för en
     // ensam person hennes lön — så att en omaskerad kostnad syns i textsökningen.
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 100 }, years: 3 });

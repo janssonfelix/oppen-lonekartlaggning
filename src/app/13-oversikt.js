@@ -15,8 +15,8 @@ import { ikon } from './03-ikoner.js';
 import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { hamtaBasIntervall, hamtaData, harReferens, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
-import { renderOutliers } from './15-extremvarden-basrang.js';
-import { renderDataValidationReport } from './16-inlasningskontroll.js';
+import { ritaExtremvarden } from './15-extremvarden-basrang.js';
+import { ritaValideringsrapport } from './16-inlasningskontroll.js';
 import { buildActionChecklist, renderActionChecklist } from './18-atgardslista.js';
 import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
@@ -368,8 +368,8 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
 /** Filer och kvalitet: underlagets kvalitet, extremvärdena och inläsningsrapporten. Ritas vid inläsning och vid flikbyte. */
 export function ritaFilerDelar() {
     /** @type {[string, () => void][]} */
-    const delar = [['underlagets kvalitet', () => ritaUnderlagetsKvalitet()], ['extremvärden', () => renderOutliers()],
-        ['inläsningsrapporten', () => renderDataValidationReport()]];
+    const delar = [['underlagets kvalitet', () => ritaUnderlagetsKvalitet()], ['extremvärden', () => ritaExtremvarden()],
+        ['inläsningsrapporten', () => ritaValideringsrapport()]];
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Filer och kvalitet (${namn})`, e); } }
 }
 

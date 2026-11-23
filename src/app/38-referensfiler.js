@@ -8,7 +8,7 @@ import { _kopplaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, hamtaData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
 import { ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
-import { renderConsistencyBanner } from './16-inlasningskontroll.js';
+import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { renderPaketInfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
 import { markeraFilrutaInlast, lasTabellfil, ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
@@ -123,7 +123,7 @@ export function uppstartReferensfiler() {
             markeraFilrutaInlast('upload-cell-policy', 'Inläst');
             state.filnamn.policy = file.name; ritaFilrutor();
             doljLaddning(); ritaKravstatus();
-            renderConsistencyBanner();
+            ritaKonsistenskontroll();
             renderActionChecklist();
             ritaKartlaggningensSteg();
             if (hamtaData().length > 0) ritaLoneoversikt();
@@ -227,7 +227,7 @@ export function uppstartReferensfiler() {
                 if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
                 synkaJamforelseFlik();
                 doljLaddning(); ritaKravstatus();
-                renderConsistencyBanner();
+                ritaKonsistenskontroll();
                 renderActionChecklist();
                 ritaKartlaggningensSteg();
             } catch (err) {

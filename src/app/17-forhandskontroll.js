@@ -74,7 +74,7 @@ export function _fkPausa(fk, lasIn) {
     doljLaddning();
     dataStatus.textContent = 'Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.';
     dataStatus.className = 'status-msg warning';
-    renderForhandskontroll();
+    ritaForhandskontroll();
     visaKolumnmappningOmBehov();   // förra filens kolumnmappning döljs medan filen väntar
     _aterstallInaktivitetstimer();    // den väntande filen rensas vid inaktivitet som ett inläst underlag
     const av = document.getElementById('avsnitt-fi-forhandskontroll');
@@ -99,7 +99,7 @@ function _fkAvbryt() {
     if (!v) return;
     _fkVantar = null;
     state.forhandskontroll = v.tidigare || null;
-    renderForhandskontroll();
+    ritaForhandskontroll();
     visaKolumnmappningOmBehov();   // det tidigare underlagets kolumnmappning
     dataStatus.textContent = state.data.length
         ? 'Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar.'
@@ -112,7 +112,7 @@ export function _fkSlapp() {
     _fkVantar = null;
     _fkRitad = null;
     state.forhandskontroll = null;
-    renderForhandskontroll();
+    ritaForhandskontroll();
 }
 
 /** Titeln per varning i Att göra: olika titlar, så att länkarnas aria-label skiljer punkterna åt. */
@@ -168,7 +168,7 @@ const _fkLista = (rader) => `<ul class="fk-lista">${rader.map(r => `<li>${r}</li
 const _fkKr = v => svKr(v);
 
 /** Ritar avsnittet Förhandskontroll av lönefilen ur state.forhandskontroll (dolt när den saknas). */
-export function renderForhandskontroll() {
+export function ritaForhandskontroll() {
     const av = /** @type {HTMLDetailsElement|null} */ (document.getElementById('avsnitt-fi-forhandskontroll'));
     const host = document.getElementById('forhandskontroll');
     if (!av || !host) return;

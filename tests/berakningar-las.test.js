@@ -54,8 +54,8 @@ describe('beräkningar på demodatan (låsta tal)', () => {
         expect(stabil(w.raknaStyrkeanalys())).toMatchSnapshot('raknaStyrkeanalys');
     });
 
-    it('extremvärdena (detectOutliers) ger samma tal', () => {
-        expect(stabil(w.detectOutliers())).toMatchSnapshot('detectOutliers');
+    it('extremvärdena (hittaExtremvarden) ger samma tal', () => {
+        expect(stabil(w.hittaExtremvarden())).toMatchSnapshot('hittaExtremvarden');
     });
 
     it('regressionslinjens KI (linjarRegressionKI) på en påhittad serie ger samma tal', () => {
@@ -69,8 +69,8 @@ describe('beräkningar på demodatan (låsta tal)', () => {
 });
 
 describe('extremvärden med en påhittad avvikare', () => {
-    it('detectOutliers flaggar raden som multiplicerats med fem, och snapshoten låser listan', () => {
-        // Eget fönster: testet ändrar data. detectOutliers läser state.data direkt (hamtaData), så ingen cache behöver
+    it('hittaExtremvarden flaggar raden som multiplicerats med fem, och snapshoten låser listan', () => {
+        // Eget fönster: testet ändrar data. hittaExtremvarden läser state.data direkt (hamtaData), så ingen cache behöver
         // ogiltigförklaras.
         const w = createAppWindow();
         w.__loadDemoData();
@@ -83,10 +83,10 @@ describe('extremvärden med en påhittad avvikare', () => {
         const forre = rader[index].lon;
         rader[index].lon = forre * 5;
 
-        const utfall = w.detectOutliers();
+        const utfall = w.hittaExtremvarden();
         expect(utfall.length).toBeGreaterThanOrEqual(1);
         const flaggad = utfall.find(o => o.bas === storst && o.lon === forre * 5);
         expect(flaggad, 'den ändrade raden ska vara flaggad').toBeDefined();
-        expect(stabil(utfall)).toMatchSnapshot('detectOutliers med avvikare');
+        expect(stabil(utfall)).toMatchSnapshot('hittaExtremvarden med avvikare');
     });
 });

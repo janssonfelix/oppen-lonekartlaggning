@@ -11,8 +11,8 @@ import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
 import { hamtaBasIntervall, state } from './12-tillstand.js';
 import { bedomningUnderlag, fyllValjare, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
-import { renderOutliers } from './15-extremvarden-basrang.js';
-import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
+import { ritaExtremvarden } from './15-extremvarden-basrang.js';
+import { ritaKonsistenskontroll, ritaValideringsrapport, synkaDatakvalitetspanel } from './16-inlasningskontroll.js';
 import { _fkSlapp } from './17-forhandskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { STORT_DEMO_STATISTIKNAMN } from './21-stort-demo.js';
@@ -114,11 +114,11 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
     ritaUnderlagetsKvalitet({ reg });
     updateGdprBanner();
-    renderConsistencyBanner();
+    ritaKonsistenskontroll();
     renderActionChecklist({ reg });
-    renderOutliers();
-    renderDataValidationReport();
-    syncDatakvalitetPanel({ reg });
+    ritaExtremvarden();
+    ritaValideringsrapport();
+    synkaDatakvalitetspanel({ reg });
     ritaKartlaggningensSteg({ reg });
     const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;

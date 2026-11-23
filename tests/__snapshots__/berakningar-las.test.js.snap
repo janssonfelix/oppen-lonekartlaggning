@@ -257,7 +257,7 @@ exports[`beräkningar på demodatan (låsta tal) > [B3.1] regressionen (runOLSRe
 }
 `;
 
-exports[`beräkningar på demodatan (låsta tal) > extremvärdena (detectOutliers) ger samma tal > detectOutliers 1`] = `[]`;
+exports[`beräkningar på demodatan (låsta tal) > extremvärdena (hittaExtremvarden) ger samma tal > hittaExtremvarden 1`] = `[]`;
 
 exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal > _laBootstrapGapCI 1`] = `
 {
@@ -331,7 +331,7 @@ exports[`beräkningar på demodatan (låsta tal) > översiktens bootstrap-KI (st
 }
 `;
 
-exports[`extremvärden med en påhittad avvikare > detectOutliers flaggar raden som multiplicerats med fem, och snapshoten låser listan > detectOutliers med avvikare 1`] = `
+exports[`extremvärden med en påhittad avvikare > hittaExtremvarden flaggar raden som multiplicerats med fem, och snapshoten låser listan > hittaExtremvarden med avvikare 1`] = `
 [
   {
     "alder": 40,

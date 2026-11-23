@@ -17,9 +17,9 @@ import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
 import { aterstallReferens, hamtaBasIntervall, state } from './12-tillstand.js';
 import { raknaBootstrapKI, fyllValjare, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
-import { renderOutliers } from './15-extremvarden-basrang.js';
-import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
-import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, renderForhandskontroll } from './17-forhandskontroll.js';
+import { ritaExtremvarden } from './15-extremvarden-basrang.js';
+import { ritaKonsistenskontroll, ritaValideringsrapport, synkaDatakvalitetspanel } from './16-inlasningskontroll.js';
+import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, ritaForhandskontroll } from './17-forhandskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { _renderDemoBanner } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
@@ -146,11 +146,11 @@ function _efterInlastData() {
     updateGdprBanner();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
     if (typeof _aterstallInaktivitetstimer === 'function') _aterstallInaktivitetstimer();
-    renderConsistencyBanner();
-    renderOutliers();
-    renderDataValidationReport();
-    renderForhandskontroll();
-    syncDatakvalitetPanel({ reg });
+    ritaKonsistenskontroll();
+    ritaExtremvarden();
+    ritaValideringsrapport();
+    ritaForhandskontroll();
+    synkaDatakvalitetspanel({ reg });
     meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
     doljLaddning();
 
@@ -511,7 +511,7 @@ function lasInStrukturfil(file) {
             fkKon.clear();
             _fkSlappVantande();
             state.forhandskontroll = { ...fkEj, ejInlast: true };
-            renderForhandskontroll();
+            ritaForhandskontroll();
             _aterstallInaktivitetstimer();   // de tio raderna på skärmen rensas också vid inaktivitet
             state.ansvarKolumn = tidigareAnsvarKolumn;
             state.importprofil = tidigareImportprofil;
