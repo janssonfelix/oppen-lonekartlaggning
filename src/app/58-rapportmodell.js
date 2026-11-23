@@ -594,7 +594,7 @@ function _rmAvsnittenUtanUrval() {
     const reg = typeof runOLSRegression === 'function' ? runOLSRegression() : null;
     const lvRes = typeof computeLikvardighetPairs === 'function' ? likvardighetResultat() : null;
     const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);   // som rapportunderlaget
-    const rep = typeof _stRepresentationByBas === 'function' ? (_stRepresentationByBas(d, { k }) || []) : [];
+    const rep = typeof _stRepresentationPerBas === 'function' ? (_stRepresentationPerBas(d, { k }) || []) : [];
     const repVisade = rep.filter(g => !isKMasked(g.n)), repDolda = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
     const dq = typeof bedomningUnderlag === 'function' ? bedomningUnderlag({ reg }) : null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });

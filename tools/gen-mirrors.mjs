@@ -3,7 +3,7 @@
 // Genererar src/app/09-lib-speglar.js från de rena kärnmodulerna i src/lib/.
 //
 // BAKGRUND (ADR-8): app.js måste innehålla den statistiska kärnan
-// (stat/forecast/structure/rng/lonepolitik) eftersom webbläsarbygget skeppar app.js, inte
+// (stat/forecast/struktur/rng/lonepolitik) eftersom webbläsarbygget skeppar app.js, inte
 // src/lib/. src/lib/ är enda källa: varje modul inlinas VERBATIM i en
 // IIFE (endast `export` strippas — funktionskropparna rörs aldrig) och de namn
 // som app.js anropar exponeras som const-alias med oförändrade speglingsnamn
@@ -109,10 +109,10 @@ export const MODULES = [
         expose: { kostnadsfaktor: '_kostFaktor', periodkostnad: '_kostPeriod', kostnadPerAr: null }
     },
     {
-        file: 'struktur.js', ns: '__mirrorStructure',
+        file: 'struktur.js', ns: '__mirrorStruktur',
         expose: {
-            konsMedianer: '_stKonsMedianer', medianGapPct: '_stMedianGapPct', representationByBas: '_stRepresentationByBas',
-            quartileDistribution: '_stQuartileDistribution', distributionalGap: '_stDistributionalGap',
+            konsMedianer: '_stKonsMedianer', medianGapPct: '_stMedianGapPct', representationPerBas: '_stRepresentationPerBas',
+            kvartilfordelning: '_stKvartilfordelning', fordelningsgap: '_stFordelningsgap',
             tillDirektivtecken: '_stTillDirektivtecken', lonebegreppReservation: '_stLonebegreppReservation',
             omfang: '_omfang', lonesteg: '_konLonesteg', histogramKlasser: '_konHistogramKlasser'
         }
@@ -476,7 +476,7 @@ export function generateMirrorsSource() {
         '// ====================================================================',
         '// AUTO-GENERERAD FIL — RÖR INTE.',
         '//',
-        '// Speglar de rena kärnmodulerna i src/lib/ (stat, forecast, structure, rng,',
+        '// Speglar de rena kärnmodulerna i src/lib/ (stat, forecast, struktur, rng,',
         '// likvardighet, lonepolitik, falt, urval, utforska, chartdata)',
         '// för webbläsarbygget. Varje modul inlinas verbatim i en IIFE (endast',
         '// `export` strippas) och de namn app.js anropar exponeras som const-alias.',

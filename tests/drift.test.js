@@ -152,9 +152,9 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
         expect(M._fcComputePott(rows, { mode: 'pct', value: 2.5 })).toBe(libFc.computePott(rows, { mode: 'pct', value: 2.5 }));
         // structure: alla fyra mått speglar lib
         expect(M._stMedianGapPct(rows)).toBe(libSt.medianGapPct(rows));
-        expect(M._stRepresentationByBas(rows)).toEqual(libSt.representationByBas(rows));
-        expect(M._stQuartileDistribution(rows)).toEqual(libSt.quartileDistribution(rows));
-        expect(M._stDistributionalGap(rows)).toEqual(libSt.distributionalGap(rows));
+        expect(M._stRepresentationPerBas(rows)).toEqual(libSt.representationPerBas(rows));
+        expect(M._stKvartilfordelning(rows)).toEqual(libSt.kvartilfordelning(rows));
+        expect(M._stFordelningsgap(rows)).toEqual(libSt.fordelningsgap(rows));
         // stat: anpassaOLS speglar lib (känd linjär modell + brus)
         const X = rows.slice(0, 20).map((_, i) => [1, i, (i % 3)]);
         const y = X.map(r => 2 + 3 * r[1] - r[2]);

@@ -322,9 +322,9 @@ describe('Lönestrukturens mått räknas på ett ställe', () => {
         expect(m.kv).toEqual(kv); expect(m.ma).toEqual(ma);
         expect(m.meanGap).toBe((medel(kv) / medel(ma) - 1) * 100);
         expect(m.medGap).toBe(w.eval('_stMedianGapPct')(d, { k }));
-        expect(m.rep).toEqual(w.eval('_stRepresentationByBas')(d, { k }));
-        expect(m.dist).toEqual(w.eval('_stDistributionalGap')(d, undefined, { k }));
-        expect(m.q).toEqual(w.eval('_stQuartileDistribution')(d, { k }));
+        expect(m.rep).toEqual(w.eval('_stRepresentationPerBas')(d, { k }));
+        expect(m.dist).toEqual(w.eval('_stFordelningsgap')(d, undefined, { k }));
+        expect(m.q).toEqual(w.eval('_stKvartilfordelning')(d, { k }));
         expect(w.eval('_stMatt')([], k)).toMatchObject({ totKv: 0, totAndel: 0, meanGap: null });
     });
     it('medellönegapet står en gång i 37-struktur.js, inte i tre kopior', () => {

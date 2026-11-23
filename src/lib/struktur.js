@@ -13,7 +13,7 @@
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B2.1–B2.5).
  */
 
-import { median as _median, kvantil as _quantile } from './stat.js';
+import { median as _median, kvantil as _kvantil } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
 
 
@@ -40,8 +40,8 @@ export function konsMedianer(rader, { k = 1 } = {}) {
  * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
  * (k-anonymitet: gapet pekar annars ut de få i det mindre könet). Se konsMedianer.
  */
-export function medianGapPct(rows, { k = 1 } = {}) {
-    return konsMedianer(rows, { k }).gapPct;
+export function medianGapPct(rader, { k = 1 } = {}) {
+    return konsMedianer(rader, { k }).gapPct;
 }
 
 /**
@@ -53,10 +53,10 @@ export function medianGapPct(rows, { k = 1 } = {}) {
  * median och antalen står kvar — om BAS:et som helhet får redovisas avgör anroparen på `n`.
  * @returns {Array<{bas,n,nKv,nMa,andelKv,median,medianKv,medianMa,gapPct,konLitet}>}
  */
-export function representationByBas(rows, { k = 1 } = {}) {
+export function representationPerBas(rader, { k = 1 } = {}) {
     const minst = Math.max(1, k);
     const m = new Map();
-    (rows || []).forEach(r => {
+    (rader || []).forEach(r => {
         if (!(r.lon > 0)) return;
         let g = m.get(r.bas);
         if (!g) { g = { bas: r.bas, lons: [], kvLons: [], maLons: [], nKv: 0, nMa: 0, n: 0 }; m.set(r.bas, g); }
@@ -93,8 +93,8 @@ export function representationByBas(rows, { k = 1 } = {}) {
  * tjänar. Antal per kvartil och gränserna står kvar.
  * @returns {Array<{q:number, n:number, nKv:number|null, nMa:number|null, andelKv:number|null, undre:number|null, ovre:number|null, konDolt:boolean}>}
  */
-export function quartileDistribution(rows, { k = 1 } = {}) {
-    const all = (rows || []).filter(r => r.lon > 0).slice().sort((a, b) => a.lon - b.lon);
+export function kvartilfordelning(rader, { k = 1 } = {}) {
+    const all = (rader || []).filter(r => r.lon > 0).slice().sort((a, b) => a.lon - b.lon);
     const n = all.length;
     if (n < 4) return [];
     /** @type {Array<{q:number, n:number, nKv:number, nMa:number, undre:number|null, ovre:number|null}>} */
@@ -130,14 +130,14 @@ export function quartileDistribution(rows, { k = 1 } = {}) {
  * aldrig lägre än 2, eftersom en percentil av en enda lön inte är ett mått.
  * @returns {Array<{p,kv,ma,gapPct}>}
  */
-export function distributionalGap(rows, percentiles, { k = 2 } = {}) {
-    const ps = percentiles || [10, 25, 50, 75, 90];
+export function fordelningsgap(rader, percentiler, { k = 2 } = {}) {
+    const ps = percentiler || [10, 25, 50, 75, 90];
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
+    (rader || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     const minst = Math.max(2, k);
     if (kv.length < minst || ma.length < minst) return [];
     return ps.map(p => {
-        const kvP = _quantile(kv, p / 100), maP = _quantile(ma, p / 100);
+        const kvP = _kvantil(kv, p / 100), maP = _kvantil(ma, p / 100);
         return { p, kv: kvP, ma: maP, gapPct: maP > 0 ? (kvP / maP - 1) * 100 : null };
     });
 }
@@ -178,7 +178,7 @@ export function omfang(v) {
 // Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
 // percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
 export function lonesteg(loner, mal = 12) {
-    const spann = _quantile(loner, 0.95) - _quantile(loner, 0.05);
+    const spann = _kvantil(loner, 0.95) - _kvantil(loner, 0.05);
     return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
 }
 

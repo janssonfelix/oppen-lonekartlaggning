@@ -94,7 +94,7 @@ const BES8_STOD = {
         return `Lika arbete har ${svTal(granska, 0)} av ${svTal(rader.length, 0)} ${termForAntal(rader.length, T.enhet)} i ${T.niva.en} att granska (statistiskt säkerställd skillnad, minst 3 %).`;
     },
     struktur(d) {
-        const q = _stQuartileDistribution(d, { k: kTroskel() }) || [];
+        const q = _stKvartilfordelning(d, { k: kTroskel() }) || [];
         if (!q.length || !q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) return null;
         return `I Lönestruktur är ${svPct(q[q.length - 1].andelKv, 0)} kvinnor i den högsta lönekvartilen och ${svPct(q[0].andelKv, 0)} i den lägsta.`;
     }

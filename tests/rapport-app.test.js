@@ -24,7 +24,7 @@ describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
 
     it('§3:10- och strukturmåtten kan beräknas på demodata', () => {
         expect(() => win.__computeLikvardighetPairs()).not.toThrow();
-        expect(() => win.__stRepresentationByBas(win.__getData())).not.toThrow();
+        expect(() => win.__stRepresentationPerBas(win.__getData())).not.toThrow();
     });
 });
 

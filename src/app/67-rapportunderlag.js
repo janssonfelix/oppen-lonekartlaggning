@@ -69,8 +69,8 @@ function _rapportunderlagBlockExport() {
     const kravProxy = (lv && lv.diagnostik && lv.diagnostik.jämförelse && lv.diagnostik.jämförelse.kravProxy) || 'bas';
 
     // Struktur
-    const representation = (_stRepresentationByBas(d, { k: kTroskel() }) || []).slice().sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));
-    const kvartiler = _stQuartileDistribution(d, { k: kTroskel() }) || [];
+    const representation = (_stRepresentationPerBas(d, { k: kTroskel() }) || []).slice().sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));
+    const kvartiler = _stKvartilfordelning(d, { k: kTroskel() }) || [];
     _rapportParLage = { harPar: par.length > 0, exkluderade: parUtelamnade };
 
     // Handlingsplan — samma förifyllning som fliken (som redan utelämnar par under k)

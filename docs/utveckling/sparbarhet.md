@@ -56,9 +56,9 @@ avsnitt 11.
 |---|---|---|---|---|---|---|
 | B2.1 | Kvinnors och mäns medianlön, kvinnors median i procent av mäns och mediangapet (kvoten minus 100); bara lön över 0, null när ett kön har färre än k; appen räknar måttet bara med den | `konsMedianer` (och `medianGapPct`, som ger gapet), `struktur.js` | lön, kön | `regressionsmodellen.md` §1 *Tecknet*; `k-troskeln.md` §2 | `tests/struktur.test.js` | `01-mediangap-verktygets-tecken.json`, `03-mediangap-under-k.json` |
 | B2.2 | Direktivets tecken: samma belopp, omvänt tecken; 0 förblir 0 | `tillDirektivtecken`, `struktur.js` | gapet | lydelsen i `lagrum.md`; tecknet är verktygets eget val | `tests/struktur.test.js` | `02-mediangap-direktivets-tecken.json` |
-| B2.3 | Representation per BAS-intervall: andel kvinnor, medianer, gap | `representationByBas`, `struktur.js` | lön, kön, BAS | verktygets eget val, ingen extern källa | `tests/struktur.test.js` | saknas |
-| B2.4 | Kvartilfördelningen: rad i i sorterad ordning hamnar i kvartil min(3, ⌊4i/n⌋); gränsen är mittpunkten mellan kvartilerna | `quartileDistribution`, `struktur.js` | lön, kön | lydelsen i `lagrum.md`; indelningen är verktygets eget val | `tests/struktur.test.js` | `12-kvartiler-n5.json`, `13-kvartiler-n7.json` |
-| B2.5 | Gapet längs fördelningen (P10, P25, P50, P75, P90); minst max(2, k) av varje kön | `distributionalGap`, `struktur.js` | lön, kön | verktygets eget val, ingen extern källa | `tests/struktur.test.js` | saknas |
+| B2.3 | Representation per BAS-intervall: andel kvinnor, medianer, gap | `representationPerBas`, `struktur.js` | lön, kön, BAS | verktygets eget val, ingen extern källa | `tests/struktur.test.js` | saknas |
+| B2.4 | Kvartilfördelningen: rad i i sorterad ordning hamnar i kvartil min(3, ⌊4i/n⌋); gränsen är mittpunkten mellan kvartilerna | `kvartilfordelning`, `struktur.js` | lön, kön | lydelsen i `lagrum.md`; indelningen är verktygets eget val | `tests/struktur.test.js` | `12-kvartiler-n5.json`, `13-kvartiler-n7.json` |
+| B2.5 | Gapet längs fördelningen (P10, P25, P50, P75, P90); minst max(2, k) av varje kön | `fordelningsgap`, `struktur.js` | lön, kön | verktygets eget val, ingen extern källa | `tests/struktur.test.js` | saknas |
 
 ## 3. Regressionen och uppdelningarna
 
@@ -233,7 +233,7 @@ finns ingen C1.
 | I6 | Underlaget i exportläget, precis under och precis över skyddsregeln | `k-troskeln.md` §1; `diagramkarnan.md` §1 | `src/app/23-exportgrind.js` | `tests/ktroskel-invarianter.test.js` |
 | I7 | Var uppstår löneskillnaden med andra val av förklaringsvariabler, vid 10 och 25 | `k-troskeln.md` §2 (Var uppstår löneskillnaden); ADR-87 | `gapUppdelning`, `gapuppdelning.js` | `tests/ktroskel-invarianter.test.js` |
 | I8 | Sakliga skäl på en rad under tröskeln lämnar inte verktyget | `k-troskeln.md` §2 och §9 | `src/app/57-sakliga-skal.js` | `tests/ktroskel-invarianter-25.test.js` |
-| C2 | Struktur per BAS visar inget könsgap när ett kön är under tröskeln | `k-troskeln.md` §2 | `representationByBas`, `struktur.js` | `tests/ktroskel-kon.test.js` |
+| C2 | Struktur per BAS visar inget könsgap när ett kön är under tröskeln | `k-troskeln.md` §2 | `representationPerBas`, `struktur.js` | `tests/ktroskel-kon.test.js` |
 | C3 | Könsuppdelade mått för hela organisationen kräver tröskeln för varje kön | `k-troskeln.md` §2 | `konsMedianer`, `struktur.js`; `_konFarRedovisasFor`, `src/app/06-k-troskel.js` | `tests/ktroskel-kon.test.js` |
 | C4 | Allt som visar gruppmått följer tröskeln när den ändras (den öppna fliken direkt, övriga när de öppnas) | `k-troskeln.md` §3 | `sattKTroskel`, `src/app/06-k-troskel.js` | `tests/ktroskel-kon.test.js` |
 | C5 | Bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fliken | `k-troskeln.md` §2 | `lonepolitikModell`, `lonepolitik.js`; `src/app/24-excelexport.js` | `tests/ktroskel-kon.test.js` |

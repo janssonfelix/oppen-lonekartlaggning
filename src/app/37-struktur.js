@@ -20,9 +20,9 @@ function _stMatt(d, k) {
     const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
     return {
         konOk, kv, ma, totKv, totAndel: d.length ? 100 * totKv / d.length : 0, meanGap,
-        rep: _stRepresentationByBas(d, { k }),
-        dist: _stDistributionalGap(d, undefined, { k }),
-        q: _stQuartileDistribution(d, { k }),
+        rep: _stRepresentationPerBas(d, { k }),
+        dist: _stFordelningsgap(d, undefined, { k }),
+        q: _stKvartilfordelning(d, { k }),
         medGap: _stMedianGapPct(d, { k }),
     };
 }
@@ -291,12 +291,12 @@ function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
 // i botten (klibbigt golv). Samma tal som tabellen under; `dist` finns bara när båda könen når tröskeln.
 // Percentilerna för ett underlag (figur.underlag.rita): samma mått som fliken, eller en text när ett kön är under tröskeln.
 function _strukturPercentilFor(rader, { beskrivning }) {
-    const dist = _stDistributionalGap(rader, undefined, { k: kTroskel() });
+    const dist = _stFordelningsgap(rader, undefined, { k: kTroskel() });
     return dist.length && dist.every(x => x.gapPct != null) ? _strukturPercentilFigur(dist, beskrivning) : _konUtelamnatNot();
 }
 // Kvartilerna för ett underlag (figur.underlag.rita), med andelen kvinnor i urvalet som linje.
 function _strukturKvartilFor(rader, { beskrivning }) {
-    const q = _stQuartileDistribution(rader, { k: kTroskel() });
+    const q = _stKvartilfordelning(rader, { k: kTroskel() });
     if (!(q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0))) return _konUtelamnatNot();
     const nKv = rader.filter(r => arKvinna(r)).length;
     return _strukturKvartilFigur(q, rader.length ? 100 * nKv / rader.length : 0, beskrivning);
@@ -448,7 +448,7 @@ function _buildNarrative(d, ctx) {
     }
     // Segregation
     // Bara BAS som tabellen visar namnges (k-anonymitet).
-    // ctx.rep är sorterad BAS A–Ö (representationByBas): första är lägst värderat, sista högst.
+    // ctx.rep är sorterad BAS A–Ö (representationPerBas): första är lägst värderat, sista högst.
     const sorted = ctx.rep.filter(g => !isKMasked(g.n));
     if (sorted.length >= 2) {
         const lagsta = sorted[0], hogsta = sorted[sorted.length - 1];

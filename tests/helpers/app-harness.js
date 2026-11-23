@@ -104,7 +104,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __loadDemoData: loadDemoData,
         __computeLikvardighetPairs: computeLikvardighetPairs,
         __methodAppendixData: _methodAppendixData,
-        __stRepresentationByBas: _stRepresentationByBas,
+        __stRepresentationPerBas: _stRepresentationPerBas,
         __getData: getData,
         __cloneTable: _cloneAndCleanTableForExport,
         __groupedAoa: _groupedCloneToAoa,

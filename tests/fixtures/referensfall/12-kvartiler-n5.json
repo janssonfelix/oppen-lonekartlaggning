@@ -1,7 +1,7 @@
 {
   "id": "kvartiler-n5",
   "titel": "Kvartilfördelning med fem personer: vem hamnar i vilken kvartil, och gränserna",
-  "funktion": "src/lib/struktur.js#quartileDistribution",
+  "funktion": "src/lib/struktur.js#kvartilfordelning",
   "indata": [
     [
       { "kon": "kvinna", "lon": 28000 },
@@ -19,7 +19,7 @@
   ],
   "tolerans": 1e-9,
   "harledning": [
-    "Regeln (quartileDistribution i struktur.js): sortera lönerna stigande och numrera dem i = 0, 1, …, n − 1. Person i hamnar i kvartil floor(i × 4 / n) + 1, högst 4. Gränsen mellan två kvartiler är mittpunkten mellan högsta lönen i den lägre och lägsta i den högre (filhuvudet). Q1 har ingen undre gräns, Q4 ingen övre.",
+    "Regeln (kvartilfordelning i struktur.js): sortera lönerna stigande och numrera dem i = 0, 1, …, n − 1. Person i hamnar i kvartil floor(i × 4 / n) + 1, högst 4. Gränsen mellan två kvartiler är mittpunkten mellan högsta lönen i den lägre och lägsta i den högre (filhuvudet). Q1 har ingen undre gräns, Q4 ingen övre.",
     "Sorterat: i = 0: 20 000 (kvinna), i = 1: 22 000 (man), i = 2: 24 000 (kvinna), i = 3: 26 000 (man), i = 4: 28 000 (kvinna). n = 5.",
     "i = 0: floor(0 / 5) = 0, Q1. i = 1: floor(4 / 5) = floor(0,8) = 0, Q1. i = 2: floor(8 / 5) = floor(1,6) = 1, Q2. i = 3: floor(12 / 5) = floor(2,4) = 2, Q3. i = 4: floor(16 / 5) = floor(3,2) = 3, Q4.",
     "Q1: 20 000 (kvinna) och 22 000 (man), 2 personer, andel kvinnor 50 %. Q2: 24 000 (kvinna), 100 %. Q3: 26 000 (man), 0 %. Q4: 28 000 (kvinna), 100 %.",

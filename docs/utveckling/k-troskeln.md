@@ -95,10 +95,10 @@ regressionens ojusterade steg *Endast kön* med den förklarade andelen, en kost
 grupp och för hela organisationen bara när varje kön når tröskeln (`_konFarRedovisas`; för en radmängd
 `_konFarRedovisasFor`). Där ett sådant mått för hela urvalet utelämnats står ett streck och `_konUtelamnatNot()`.
 Det gäller också nyckeltalet på Översikt (`13-oversikt.js`), Löneöversyns råa gap före och efter och scenariojämförelsen A/B (regel R4).
-Samma regel gäller `representationByBas`, `medianGapPct`, `distributionalGap` och `quartileDistribution` i
+Samma regel gäller `representationPerBas`, `medianGapPct`, `fordelningsgap` och `kvartilfordelning` i
 `src/lib/struktur.js`, som tar `{ k }` och visar streck och en not i fliken Struktur, Word-utkastet, PDF-rapporten och
 EU-lönerapporten. Kvartilfördelningen visar då antalet per kvartil men inte könsfördelningen i kvartilerna (`konDolt` i
-`quartileDistribution`). Regressionens justerade gap visas från regressionens eget fasta golv, 5 per kön; övriga
+`kvartilfordelning`). Regressionens justerade gap visas från regressionens eget fasta golv, 5 per kön; övriga
 skattningar
 har fasta eller statistiska golv (avsnitt 5). Fem regler till står i avsnitt 8.
 

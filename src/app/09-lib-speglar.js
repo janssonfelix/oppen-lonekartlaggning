@@ -1,7 +1,7 @@
 // ====================================================================
 // AUTO-GENERERAD FIL — RÖR INTE.
 //
-// Speglar de rena kärnmodulerna i src/lib/ (stat, forecast, structure, rng,
+// Speglar de rena kärnmodulerna i src/lib/ (stat, forecast, struktur, rng,
 // likvardighet, lonepolitik, falt, urval, utforska, chartdata)
 // för webbläsarbygget. Varje modul inlinas verbatim i en IIFE (endast
 // `export` strippas) och de namn app.js anropar exponeras som const-alias.
@@ -1667,10 +1667,10 @@ const _kostFaktor = __mirrorKostnad.kostnadsfaktor;
 const _kostPeriod = __mirrorKostnad.periodkostnad;
 
 // ---- speglar src/lib/struktur.js ----
-const __mirrorStructure = (() => {
+const __mirrorStruktur = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
-    const _quantile = __mirrorStat.kvantil;
+    const _kvantil = __mirrorStat.kvantil;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
 
@@ -1714,8 +1714,8 @@ function konsMedianer(rader, { k = 1 } = {}) {
  * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
  * (k-anonymitet: gapet pekar annars ut de få i det mindre könet). Se konsMedianer.
  */
-function medianGapPct(rows, { k = 1 } = {}) {
-    return konsMedianer(rows, { k }).gapPct;
+function medianGapPct(rader, { k = 1 } = {}) {
+    return konsMedianer(rader, { k }).gapPct;
 }
 
 /**
@@ -1727,10 +1727,10 @@ function medianGapPct(rows, { k = 1 } = {}) {
  * median och antalen står kvar — om BAS:et som helhet får redovisas avgör anroparen på `n`.
  * @returns {Array<{bas,n,nKv,nMa,andelKv,median,medianKv,medianMa,gapPct,konLitet}>}
  */
-function representationByBas(rows, { k = 1 } = {}) {
+function representationPerBas(rader, { k = 1 } = {}) {
     const minst = Math.max(1, k);
     const m = new Map();
-    (rows || []).forEach(r => {
+    (rader || []).forEach(r => {
         if (!(r.lon > 0)) return;
         let g = m.get(r.bas);
         if (!g) { g = { bas: r.bas, lons: [], kvLons: [], maLons: [], nKv: 0, nMa: 0, n: 0 }; m.set(r.bas, g); }
@@ -1767,8 +1767,8 @@ function representationByBas(rows, { k = 1 } = {}) {
  * tjänar. Antal per kvartil och gränserna står kvar.
  * @returns {Array<{q:number, n:number, nKv:number|null, nMa:number|null, andelKv:number|null, undre:number|null, ovre:number|null, konDolt:boolean}>}
  */
-function quartileDistribution(rows, { k = 1 } = {}) {
-    const all = (rows || []).filter(r => r.lon > 0).slice().sort((a, b) => a.lon - b.lon);
+function kvartilfordelning(rader, { k = 1 } = {}) {
+    const all = (rader || []).filter(r => r.lon > 0).slice().sort((a, b) => a.lon - b.lon);
     const n = all.length;
     if (n < 4) return [];
     /** @type {Array<{q:number, n:number, nKv:number, nMa:number, undre:number|null, ovre:number|null}>} */
@@ -1804,14 +1804,14 @@ function quartileDistribution(rows, { k = 1 } = {}) {
  * aldrig lägre än 2, eftersom en percentil av en enda lön inte är ett mått.
  * @returns {Array<{p,kv,ma,gapPct}>}
  */
-function distributionalGap(rows, percentiles, { k = 2 } = {}) {
-    const ps = percentiles || [10, 25, 50, 75, 90];
+function fordelningsgap(rader, percentiler, { k = 2 } = {}) {
+    const ps = percentiler || [10, 25, 50, 75, 90];
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
+    (rader || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     const minst = Math.max(2, k);
     if (kv.length < minst || ma.length < minst) return [];
     return ps.map(p => {
-        const kvP = _quantile(kv, p / 100), maP = _quantile(ma, p / 100);
+        const kvP = _kvantil(kv, p / 100), maP = _kvantil(ma, p / 100);
         return { p, kv: kvP, ma: maP, gapPct: maP > 0 ? (kvP / maP - 1) * 100 : null };
     });
 }
@@ -1852,7 +1852,7 @@ function omfang(v) {
 // Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
 // percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
 function lonesteg(loner, mal = 12) {
-    const spann = _quantile(loner, 0.95) - _quantile(loner, 0.05);
+    const spann = _kvantil(loner, 0.95) - _kvantil(loner, 0.05);
     return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
 }
 
@@ -1881,18 +1881,18 @@ function histogramKlasser(kv, ma, k) {
     return null;
 }
 
-    return { konsMedianer, medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken, lonebegreppReservation, omfang, lonesteg, histogramKlasser };
+    return { konsMedianer, medianGapPct, representationPerBas, kvartilfordelning, fordelningsgap, tillDirektivtecken, lonebegreppReservation, omfang, lonesteg, histogramKlasser };
 })();
-const _stKonsMedianer = __mirrorStructure.konsMedianer;
-const _stMedianGapPct = __mirrorStructure.medianGapPct;
-const _stRepresentationByBas = __mirrorStructure.representationByBas;
-const _stQuartileDistribution = __mirrorStructure.quartileDistribution;
-const _stDistributionalGap = __mirrorStructure.distributionalGap;
-const _stTillDirektivtecken = __mirrorStructure.tillDirektivtecken;
-const _stLonebegreppReservation = __mirrorStructure.lonebegreppReservation;
-const _omfang = __mirrorStructure.omfang;
-const _konLonesteg = __mirrorStructure.lonesteg;
-const _konHistogramKlasser = __mirrorStructure.histogramKlasser;
+const _stKonsMedianer = __mirrorStruktur.konsMedianer;
+const _stMedianGapPct = __mirrorStruktur.medianGapPct;
+const _stRepresentationPerBas = __mirrorStruktur.representationPerBas;
+const _stKvartilfordelning = __mirrorStruktur.kvartilfordelning;
+const _stFordelningsgap = __mirrorStruktur.fordelningsgap;
+const _stTillDirektivtecken = __mirrorStruktur.tillDirektivtecken;
+const _stLonebegreppReservation = __mirrorStruktur.lonebegreppReservation;
+const _omfang = __mirrorStruktur.omfang;
+const _konLonesteg = __mirrorStruktur.lonesteg;
+const _konHistogramKlasser = __mirrorStruktur.histogramKlasser;
 
 // ---- speglar src/lib/rng.js ----
 const __mirrorRng = (() => {
@@ -9787,7 +9787,7 @@ const __mirrorRapportunderlag = (() => {
     const matchningEtikett = __mirrorJamforelse.matchningEtikett;
     const bedomSkillnad = __mirrorStatus.bedomSkillnad;
     const statusKonstanter = __mirrorStatus.statusKonstanter;
-    const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
+    const lonebegreppReservation = __mirrorStruktur.lonebegreppReservation;
     const personOrd = __mirrorNamn.personOrd;
     const sektorJusteradText = __mirrorSektor.sektorJusteradText;
     const sektorAndelNot = __mirrorSektor.sektorAndelNot;
