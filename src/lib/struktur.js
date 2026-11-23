@@ -247,3 +247,16 @@ export function strukturMatt(rader, k) {
         medGap: medianGapPct(d, { k }),
     };
 }
+
+/**
+ * Måtten i en ögonblicksbild av hela organisationen (Spara och jämför år, årsbokslutet): antalet, könsmedianerna och
+ * det råa gapet bara när båda könen når k (ADR-12), och medelåldern bland åldrar över 0 (null utan ålder).
+ * @param {any[]} rader
+ * @param {number} k
+ */
+export function ogonblicksbildMatt(rader, k) {
+    const m = konsMedianer(rader, { k });
+    const aldrar = rader.map(r => r.alder).filter(a => a > 0);
+    return { n: rader.length, nKv: m.nKv, nMa: m.nMa, medianKv: m.medKv, medianMa: m.medMa, rawGapPct: m.gapPct,
+        avgAge: aldrar.length ? aldrar.reduce((s, a) => s + a, 0) / aldrar.length : null };
+}

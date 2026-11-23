@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-    histogramKlasser, omfang, strukturMatt,
+    histogramKlasser, omfang, strukturMatt, ogonblicksbildMatt,
     konsMedianer, konsMedianerUrLoner, medianGapPct, representationPerBas, kvartilfordelning, fordelningsgap, tillDirektivtecken
 } from '../src/lib/struktur.js';
 
@@ -213,5 +213,15 @@ describe('[B2.14] strukturMatt: Lönestrukturs mått, med gapet i medellön och 
         expect(m.repKonLitet).toEqual(['A']);
         expect(m.rep).toEqual(representationPerBas(d, { k: 10 }));
         expect(m.medGap).toBe(medianGapPct(d, { k: 10 }));
+    });
+});
+
+describe('[B2.15] ogonblicksbildMatt: ögonblicksbildens mått för hela organisationen', () => {
+    const rader = [{ kon: 'kvinna', lon: 30000, alder: 40 }, { kon: 'kvinna', lon: 32000, alder: 0 }, { kon: 'man', lon: 33000, alder: 50 }, { kon: 'man', lon: 35000 }];
+    it('medianerna och gapet bara när båda könen når k; medelåldern bland åldrar över 0', () => {
+        expect(ogonblicksbildMatt(rader, 2)).toEqual({ n: 4, nKv: 2, nMa: 2, medianKv: 31000, medianMa: 34000, rawGapPct: konsMedianer(rader, { k: 2 }).gapPct, avgAge: 45 });
+        const under = ogonblicksbildMatt(rader, 3);
+        expect([under.medianKv, under.medianMa, under.rawGapPct]).toEqual([null, null, null]);
+        expect(ogonblicksbildMatt([{ kon: 'man', lon: 1 }], 1).avgAge).toBeNull();
     });
 });

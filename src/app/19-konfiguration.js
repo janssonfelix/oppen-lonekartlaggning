@@ -8,7 +8,7 @@ import { konfigurationMedNyaNamn, konfigurationVersion, konfigurationVersionFel 
 import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
 import { perBasReceptArStandard, valideraPerBasRecept } from '../lib/perbas.js';
 import { forklaringsmodellArStandard, normaliseraForklaringsmodell } from '../lib/regression.js';
-import { konsMedianer } from '../lib/struktur.js';
+import { ogonblicksbildMatt } from '../lib/struktur.js';
 import { valideraRecept } from '../lib/tabellrecept.js';
 import { svPct, svTal } from '../lib/talformat.js';
 import { FARG } from './01-farger.js';
@@ -494,23 +494,22 @@ function _buildAnalysisSnapshotExport() {
     if (!d.length) return null;
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
     // bilden visas i jämförelsetabellen och kan ligga kvar efter att urvalet ändrats.
-    const m = konsMedianer(d, { k: kTroskel() });
+    const m = ogonblicksbildMatt(d, kTroskel());
     const reg = runOLSRegression();
     const dq = bedomningUnderlag();
-    const ages = d.map(r => r.alder).filter(a => a > 0);
     return {
         timestamp: new Date().toISOString(),
         label: 'Hela organisationen',
-        n: d.length,
+        n: m.n,
         nKv: m.nKv,
         nMa: m.nMa,
-        medianKv: m.medKv,
-        medianMa: m.medMa,
-        rawGapPct: m.gapPct,
+        medianKv: m.medianKv,
+        medianMa: m.medianMa,
+        rawGapPct: m.rawGapPct,
         unexplainedGapPct: reg.error ? null : reg.konPct,
         unexplainedPValue: reg.error ? null : reg.pValue,
         underlag: dq ? UK_ETIKETT[dq.status] : null,
-        avgAge: ages.length ? ages.reduce((s, a) => s + a, 0) / ages.length : null,
+        avgAge: m.avgAge,
         nBas: getBasIntervals().length
     };
 }
