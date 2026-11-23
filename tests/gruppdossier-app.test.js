@@ -45,7 +45,7 @@ describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
     });
 
     it('färdigcheck ger observationer med nivå och detalj', () => {
-        const items = win.__buildFardigcheck();
+        const items = win.__byggFardigcheck();
         expect(Array.isArray(items)).toBe(true);
         items.forEach(i => {
             expect(['warn', 'info']).toContain(i.level);
@@ -56,7 +56,7 @@ describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
     });
 
     it('kvalitetssäkringsfliken renderar båda panelerna utan kast', () => {
-        expect(() => win.__renderKvalitetssakring()).not.toThrow();
+        expect(() => win.__ritaKvalitetssakring()).not.toThrow();
         expect(win.document.getElementById('robusthet-body')).not.toBeNull();
         expect(win.document.getElementById('fardigcheck-body')).not.toBeNull();
     });
@@ -82,7 +82,7 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
     });
 
     it('robusthetspanelen visar en startknapp i stället för att räkna direkt', () => {
-        win.__renderKvalitetssakring();
+        win.__ritaKvalitetssakring();
         const host = win.document.getElementById('robusthet-body');
         expect(host.querySelector('#btn-run-robusthet')).not.toBeNull();
         // färdigchecken är billig och körs direkt
@@ -90,7 +90,7 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
     });
 
     it('robusthetsanalysen producerar resultat när den körs', async () => {
-        win.__runRobusthet();
+        win.__korRobusthet();
         await new Promise(r => setTimeout(r, 120));   // renderingen är fördröjd för att hinna måla om
         const host = win.document.getElementById('robusthet-body');
         expect(host.innerHTML).toMatch(/Likvärdigt arbete|Prioritering/);
@@ -134,7 +134,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         expect(r.utelamnade).toBe(1);
         expect(r.rows).toEqual([]);
         expect(r.not).toBe('1 par med en grupp under 10 personer redovisas inte här.');
-        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+        w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))");
         const t = w.document.getElementById('robusthet-body').textContent;
         expect(t).not.toContain('5300');
         expect(t).toContain('1 par med en grupp under 10 personer redovisas inte här.');
@@ -149,7 +149,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         expect(r.utelamnade).toBe(0);
         expect(r.not).toBe('');
         expect(r.rows.some(x => x.label.includes('5300'))).toBe(true);
-        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+        w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))");
         const t = w.document.getElementById('robusthet-body').textContent;
         expect(t).toContain('5300');
         expect(t).not.toMatch(/redovisas inte här/);

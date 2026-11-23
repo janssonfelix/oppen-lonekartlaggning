@@ -35,7 +35,7 @@ import { ritaUtforska } from './70-utforska.js';
 import { ritaArsjamforelse } from './73-arsbokslut.js';
 import { utAllaDiagramVidRitning, utVisaUnderflikFor } from './74-alla-diagram.js';
 import { ritaLonepolitik } from './75-lonepolitik.js';
-import { renderKvalitetssakring } from './85-robusthet-fardigcheck.js';
+import { ritaKvalitetssakring } from './85-robusthet-fardigcheck.js';
 import { sidindexBygg } from './89-sidindex.js';
 
 /** Visar Filer och kvalitet, rullar fram filkortet `kortId`, ger dess filväljare fokus, markerar kortet en stund och läser upp `text`. */
@@ -417,7 +417,7 @@ function _ritaFlik(target) {
     // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.
     else if (target === "rapporttext") medExportLage(() => { ritaStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(ritaRapportunderlag)); });
     else if (target === "dokumentera") medExportLage(() => {
-        if (d.length) renderKvalitetssakring();
+        if (d.length) ritaKvalitetssakring();
         _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => ritaExportBesked()));
     });
     else if (target === "arbetet")     medExportLage(() => { if (typeof ritaArsjamforelse === 'function') ritaArsjamforelse(); });

@@ -54,7 +54,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         // Färdigcheck: alla under noll, varav Börja här och Under referens, liten grupp.
         const under = items.filter(i => i.diffPct < 0).length, varav = antal('akut') + antal('atgard');
         expect(under).toBeGreaterThan(varav); expect(varav).toBeGreaterThan(0);
-        const punkt = w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper');
+        const punkt = w.eval('byggFardigcheck()').find(p => p.id === 'flaggade-grupper');
         expect(punkt.title).toBe(`${under} grupper ligger under referensen, varav ${varav} mer än 5\u00a0% under`);
     });
     it('nyckeltalens undertexter, matrisens zoner och Färdigcheck följer inställda gränser', () => {
@@ -71,12 +71,12 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         }
         const f = w.eval("_prioMatrisFigur(raknaPrioritering(_valdPrioReferens()), 'topp10', 'referensen', state.prioConfig)");
         expect(f.referens.map(z => z.etikett)).toEqual(['MER ÄN 2,5\u00a0% UNDER', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'MER ÄN 3\u00a0% ÖVER']);
-        const punkt = w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper');
+        const punkt = w.eval('byggFardigcheck()').find(p => p.id === 'flaggade-grupper');
         const varav = items.filter(i => i.status === 'akut' || i.status === 'atgard').length;
         expect(punkt.title).toBe(`${items.filter(i => i.diffPct < 0).length} grupper ligger under referensen, varav ${varav} mer än 2,5\u00a0% under`);
         // Utan grupper bortom gränsen står bara den första delen.
         w.eval('state.prioConfig = { atgardThreshold: -40, akutMinN: 10, bevakaThreshold: -2, analyseraThreshold: 5 }');
-        expect(w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper').title).toMatch(/^\d+ grupper ligger under referensen$/);
+        expect(w.eval('byggFardigcheck()').find(p => p.id === 'flaggade-grupper').title).toMatch(/^\d+ grupper ligger under referensen$/);
     });
     it('kolumnen Skillnad kön bär uppmärksamhetstrappans bricka efter storleken, utan prövning (ADR-71)', () => {
         const w = oppna();

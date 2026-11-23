@@ -126,8 +126,8 @@ describe('BAS-ordningen är fast (se §6 i likvardighetsmodellen.md)', () => {
     it('robusthetspanelen prövar Likvärdigt arbete och Prioritering, inte BAS-ordningen', async () => {
         const w = createAppWindow();
         w.__lasInDemodata();
-        w.__renderKvalitetssakring();
-        w.__runRobusthet();
+        w.__ritaKvalitetssakring();
+        w.__korRobusthet();
         await new Promise(r => setTimeout(r, 120));
         const txt = w.document.getElementById('robusthet-body').textContent;
         expect(txt).toMatch(/Likvärdigt arbete|Prioritering/);

@@ -256,7 +256,7 @@ describe('Rensa all data tömmer Dokumentera', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
-        w.__runRobusthet?.();
+        w.__korRobusthet?.();
         expect(w.document.getElementById('fardigcheck-body').textContent.trim().length, 'färdigchecken ska ha ritats').toBeGreaterThan(0);
         w.__rensaAllData();
         expect(w.document.getElementById('fardigcheck-body').textContent.trim()).toBe('');

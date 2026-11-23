@@ -177,7 +177,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         expect(excel).toMatch(NOT);
     });
     it('vid 10: robusthetspanelen namnger inte den lilla gruppen och anger antalet; vid 5 står den med', () => {
-        const panel = w => { w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))"); return normalisera(w.document.getElementById('robusthet-body').textContent); };
+        const panel = w => { w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))"); return normalisera(w.document.getElementById('robusthet-body').textContent); };
         const vid10 = panel(fonsterPar(null));
         expect(vid10).not.toContain(ETIKETT);
         expect(vid10).not.toContain('5300');

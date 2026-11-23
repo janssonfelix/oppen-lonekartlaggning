@@ -271,7 +271,7 @@ export async function samlaUtdata(w) {
     d.getElementById('explore-inkludera-sma').checked = false;
     w.__ritaUtforska();
     // Robusthetspanelen (Dokumentera & exportera) räknas bara på knapptryck; här körs den direkt.
-    w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+    w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))");
     lagg('robusthetspanelen', d.getElementById('robusthet-body').textContent);
     ut.push(['skärm: alla flikar', skarmtext(w)]);
     // Alla flikar ritade i exportläget: det som läget "Som i exporten" visar och det exporterna läser (ADR-51), med

@@ -758,7 +758,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
-        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+        w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))");
         const rader = [...d.querySelectorAll('#robusthet-body tbody tr')];
         const flippar = d.querySelectorAll('#robusthet-body .rb-flip').length;
         const ruta = d.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent;

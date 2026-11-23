@@ -134,7 +134,7 @@ export function _dkRitaTopp(del) {
     _laNyckel('nyckel-dk-rapportunderlag', n ? `${n} avsnitt` : '');
 }
 
-function renderRobusthet() {
+function ritaRobusthet() {
     const host = document.getElementById('robusthet-body');
     if (!host) return;
     _dkRitaTopp({ robust: null });
@@ -146,17 +146,17 @@ function renderRobusthet() {
         <button type="button" class="btn btn-primary btn-sm" id="btn-run-robusthet">Kör robusthetsanalys</button>`;
 }
 
-function runRobusthet() {
+function korRobusthet() {
     const host = document.getElementById('robusthet-body');
     if (!host || !hamtaData().length) return;
     host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>';
     // Låt webbläsaren rita om innan det blockerande arbetet startar.
-    setTimeout(() => { try { _renderRobusthetResult(host); } finally { visningNy(); } }, 30);   // resultatet är nytt (ADR-81)
+    setTimeout(() => { try { _ritaRobusthetResultat(host); } finally { visningNy(); } }, 30);   // resultatet är nytt (ADR-81)
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function _renderRobusthetResult(...a) { return medExportLage(() => __renderRobusthetResultExport.apply(null, /** @type {any} */ (a))); }
-function __renderRobusthetResultExport(host) {
+function _ritaRobusthetResultat(...a) { return medExportLage(() => __ritaRobusthetResultatExport.apply(null, /** @type {any} */ (a))); }
+function __ritaRobusthetResultatExport(host) {
     const lv = robusthetLikvardighet();
     const prio = robusthetPrioritering();
 
@@ -204,7 +204,7 @@ function __renderRobusthetResultExport(host) {
  * Korsläser analysens fynd mot vad som faktiskt hanterats. Rena observationer.
  * @returns {Array<{id:string, level:'warn'|'info', title:string, detail:string, tab:string|null}>}
  */
-function buildFardigcheck() {
+function byggFardigcheck() {
     const out = [];
     const d = hamtaData();
     if (!d.length) return out;
@@ -293,11 +293,11 @@ function buildFardigcheck() {
     return out;
 }
 
-function renderFardigcheck() {
+function ritaFardigcheck() {
     const host = document.getElementById('fardigcheck-body');
     if (!host) return;
     if (!hamtaData().length) { host.innerHTML = ''; _dkRitaTopp({ fardig: null }); return; }
-    const items = buildFardigcheck();
+    const items = byggFardigcheck();
     _dkRitaTopp({ fardig: items });
     if (!items.length) {
         host.innerHTML = `<div class="fc-clear">${ikon('bock')} Inga lösa trådar hittades. Kom ihåg att verktyget bara ser det som går att
@@ -315,14 +315,14 @@ function renderFardigcheck() {
             </li>`).join('')}</ul>`;
 }
 
-export function renderKvalitetssakring() {
-    renderRobusthet();      // visar bara startknappen — analysen är dyr
-    renderFardigcheck();    // billig, körs direkt
+export function ritaKvalitetssakring() {
+    ritaRobusthet();      // visar bara startknappen — analysen är dyr
+    ritaFardigcheck();    // billig, körs direkt
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartRobusthetFardigcheck() {
     document.addEventListener('click', e => {
-        if (/** @type {HTMLElement} */ (e.target).closest('#btn-run-robusthet')) runRobusthet();
+        if (/** @type {HTMLElement} */ (e.target).closest('#btn-run-robusthet')) korRobusthet();
     });
 }

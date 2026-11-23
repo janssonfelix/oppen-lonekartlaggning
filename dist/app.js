@@ -31850,7 +31850,7 @@ function _dkRitaTopp(del) {
   _laNyckel("nyckel-dk-robusthet", robust);
   _laNyckel("nyckel-dk-rapportunderlag", n ? `${n} avsnitt` : "");
 }
-function renderRobusthet() {
+function ritaRobusthet() {
   const host = document.getElementById("robusthet-body");
   if (!host) return;
   _dkRitaTopp({ robust: null });
@@ -31864,26 +31864,26 @@ function renderRobusthet() {
         Den räknar om de tyngsta stegen flera gånger${n > 5e3 ? ` — med ${n.toLocaleString("sv-SE")} rader i underlaget kan det ta en stund` : ""}.</p>
         <button type="button" class="btn btn-primary btn-sm" id="btn-run-robusthet">Kör robusthetsanalys</button>`;
 }
-function runRobusthet() {
+function korRobusthet() {
   const host = document.getElementById("robusthet-body");
   if (!host || !hamtaData().length) return;
   host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>';
   setTimeout(() => {
     try {
-      _renderRobusthetResult(host);
+      _ritaRobusthetResultat(host);
     } finally {
       visningNy();
     }
   }, 30);
 }
-function _renderRobusthetResult(...a) {
-  return medExportLage(() => __renderRobusthetResultExport.apply(
+function _ritaRobusthetResultat(...a) {
+  return medExportLage(() => __ritaRobusthetResultatExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function __renderRobusthetResultExport(host) {
+function __ritaRobusthetResultatExport(host) {
   const lv = robusthetLikvardighet();
   const prio = robusthetPrioritering();
   const stabilBadge = (hits, of) => hits >= of ? '<span class="rb-stable">stabil</span>' : `<span class="rb-flip">flippar (${hits}/${of})</span>`;
@@ -31911,7 +31911,7 @@ function __renderRobusthetResultExport(host) {
   const rader = [...lv ? lv.rows : [], ...prio && !prio.tooFew ? prio.rows : []];
   _dkRitaTopp({ robust: { provade: rader.length, flippar: rader.filter((r) => r.hits < r.of).length } });
 }
-function buildFardigcheck() {
+function byggFardigcheck() {
   const out = [];
   const d = hamtaData();
   if (!d.length) return out;
@@ -32005,7 +32005,7 @@ function buildFardigcheck() {
   }
   return out;
 }
-function renderFardigcheck() {
+function ritaFardigcheck() {
   const host = document.getElementById("fardigcheck-body");
   if (!host) return;
   if (!hamtaData().length) {
@@ -32013,7 +32013,7 @@ function renderFardigcheck() {
     _dkRitaTopp({ fardig: null });
     return;
   }
-  const items = buildFardigcheck();
+  const items = byggFardigcheck();
   _dkRitaTopp({ fardig: items });
   if (!items.length) {
     host.innerHTML = `<div class="fc-clear">${ikon("bock")} Inga lösa trådar hittades. Kom ihåg att verktyget bara ser det som går att
@@ -32030,16 +32030,16 @@ function renderFardigcheck() {
                 ${i.tab ? `<button type="button" class="btn-table-tool" data-goto-tab="${esc(i.tab)}">Gå dit</button>` : ""}
             </li>`).join("")}</ul>`;
 }
-function renderKvalitetssakring() {
-  renderRobusthet();
-  renderFardigcheck();
+function ritaKvalitetssakring() {
+  ritaRobusthet();
+  ritaFardigcheck();
 }
 function uppstartRobusthetFardigcheck() {
   document.addEventListener("click", (e) => {
     if (
       /** @type {HTMLElement} */
       e.target.closest("#btn-run-robusthet")
-    ) runRobusthet();
+    ) korRobusthet();
   });
 }
 
@@ -32729,7 +32729,7 @@ function _ritaFlik(target) {
     _ritaTungtBlock(target, ["rapportunderlag-innehall"], () => medExportLage(ritaRapportunderlag));
   });
   else if (target === "dokumentera") medExportLage(() => {
-    if (d.length) renderKvalitetssakring();
+    if (d.length) ritaKvalitetssakring();
     _ritaTungtBlock(target, ["rapport-urval", "besked-word", "besked-pdf", "besked-excel", "besked-zip"], () => medExportLage(() => ritaExportBesked()));
   });
   else if (target === "arbetet") medExportLage(() => {
