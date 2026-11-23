@@ -217,6 +217,26 @@ describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
     });
 });
 
+describe('dokumentation: undantagen till S4 har samma namn i de tre dokumenten', () => {
+    // k-troskeln.md §4 bär listan och hur varje undantag är byggt; dataskydd.md §3 och riskanalysen §6.5 har en rad per
+    // undantag om risken, under samma namn i fetstil. Namnen läses ur tabellen i §4.
+    const avsnitt = (fil, fran, till) => { const t = läs(fil); return t.slice(t.indexOf(fran), t.indexOf(till, t.indexOf(fran))); };
+    const namn = [...avsnitt('docs/utveckling/k-troskeln.md', '## 4. ', '## 5. ').matchAll(/^\| \*\*(.+?)\*\* \|/gm)].map(m => m[1]);
+    it('tabellen i k-troskeln.md §4 har undantag', () => expect(namn.length).toBeGreaterThanOrEqual(5));
+    const fetstil = t => [...t.matchAll(/\*\*([^*]+)\*\*/g)].map(m => m[1]);
+    for (const [fil, fran, till] of [['docs/dataskydd/dataskydd.md', '## 3. ', '## 4. '], ['docs/dataskydd/riskanalys.md', '### 6.5 ', '### 6.6 ']]) {
+        it(`${fil} nämner varje undantag i fetstil under samma namn`, () => {
+            const fet = fetstil(avsnitt(fil, fran, till));
+            expect(namn.filter(n => !fet.some(f => f.includes(n))), fil).toEqual([]);
+        });
+    }
+    it('de numrerade undantagen i dataskydd.md §3 finns i tabellen', () => {
+        const numrerade = [...avsnitt('docs/dataskydd/dataskydd.md', '## 3. ', '## 4. ').matchAll(/^\d+\. \*\*([^*]+?)(?: \(ADR-\d+\))?:\*\*/gm)].map(m => m[1]);
+        expect(numrerade).toHaveLength(4);
+        expect(numrerade.filter(n => !namn.includes(n))).toEqual([]);
+    });
+});
+
 describe('dokumentation: dataskyddstexterna följer ADR-14 och ADR-15', () => {
     // Utforska visar små grupper tonade och exporten utelämnar dem bara när rutan
     // är urkryssad (ADR-14); formler i CSV/urklipp neutraliseras (ADR-15). De texter

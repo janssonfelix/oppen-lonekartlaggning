@@ -349,7 +349,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 
 ### 6.5 Minsta gruppstorlek ✔
 Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydelsen, med varje utdata och dess vakt, står i
-`docs/utveckling/k-troskeln.md` (avsnitt 1–11) och `docs/utveckling/skydd.md` S4.
+`docs/utveckling/k-troskeln.md` (avsnitt 1–11) och `docs/utveckling/skydd.md` S4. Undantagen och avstegen nedan står
+där som en lista i avsnitt 4, under samma namn och med hur vart och ett är byggt; här står vad de innebär för risken.
 
 - **Regeln gäller det som lämnar verktyget (ADR-51).** Inget som lämnar verktyget redovisar ett lönemått för en grupp,
   eller ett könsuppdelat lönemått för ett kön, med färre personer än tröskeln. På skärmen visas alla grupper: den som
@@ -376,15 +377,14 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   också när gruppen är liten. Fliken och dess egen Excel- och CSV-export visar kandidatparen med antal, andel kvinnor,
   medianlön och skillnad också när en grupp är under tröskeln, och resultaten hanteras konfidentiellt (§8). Utanför
   fliken utelämnas par med en grupp under tröskeln, och antalet anges.
-- **Medvetet undantag 2 — Tabeller och egna vyer (ADR-14).** Tabellens CSV och urklipp och diagrammets bild och
-  diagramdata utelämnar grupper och kön under tröskeln, om inte användaren kryssar i att ta med dem. Rutan är
-  undantaget, och antal följer alltid med. Organisationspaketet kan stänga av rutan (ADR-47). Skydd mot att räkna fram
-  en liten grupp ur två urval byggs inte.
+- **Medvetet undantag 2 — Tabeller och egna vyer med rutan (ADR-14).** Exporten utelämnar grupper och kön under
+  tröskeln, om inte användaren kryssar i att ta med dem. Rutan är undantaget, och antal följer alltid med.
+  Organisationspaketet kan stänga av rutan (ADR-47). Skydd mot att räkna fram en liten grupp ur två urval byggs inte.
 - **Medvetet undantag 3 — Personer att granska (ADR-23).** Panelen i Lika arbete visar enskilda personer med kön,
   ålder, AID, BAS, lön, förväntad lön och filens radnummer, som kopplar raden till källfilen. Panelen har inga
   exportverktyg, ingår inte i någon export och döljs vid utskrift. Detsamma gäller extremvärdeslistan i *Underlagets
   kvalitet*, som visar enskilda löner med radnummer.
-- **Bilder med en punkt per person (ADR-48).** ZIP-exporten och utskriftens *Komplett rapport* bär bilder av Ålder &
+- **Diagram med en punkt per person (ADR-48).** ZIP-exporten och utskriftens *Komplett rapport* bär bilder av Ålder &
   karriärs diagram med en punkt per person i grupper och kön som når tröskeln (§6.6). Text ur fältet för AID-etikett
   står i bildens förklaring som i lönefilen (ADR-85). Filerna hanteras som personuppgifter (§8, punkt 1).
 - **Egna riktade rader i Löneöversyn (ADR-38).** En rad som användaren själv lägger på en grupp under tröskeln visar
@@ -395,12 +395,13 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   Personer att granska, kräver 10 på skärmen och i det som lämnar verktyget det högre av tröskeln och 10 (ADR-103); de
   följer alltså inte med nedåt, och en höjd tröskel hindrar inte analysen på skärmen. Fasta golv står kvar
   enligt beslut: huvudregressionen i Lönestruktur kräver 5 kvinnor och 5 män, Prioriteringens motivering om medelålder
-  3 av varje kön (en ålder, inget lönemått) och Löneöversiktens rader per AID-etikett 5 personer. Tabellerna per
-  AID-kod och BAS-intervall utom *Lika arbete AID x BAS* (som har Lika arbetes grupper och regler, ADR-90) och
-  könsfördelningen per BAS-intervall ger en grupp en rad med antal från 5 personer, utan lönemått, och mindre grupper
-  namnges i en not: tabellerna är arbetsgivarens kartläggning av alla grupper, och lagen
-  kräver att också små grupper analyseras. Lönelägets avsnitt mot ställningstagandet redovisar en grupp från 5
-  personer upp till tröskeln med bara antal (`docs/utveckling/k-troskeln.md` avsnitt 4–5).
+  3 av varje kön (en ålder, inget lönemått) och Löneöversiktens rader per AID-etikett 5 personer.
+  **Tabellerna per AID-kod och BAS-intervall** utom *Lika arbete AID x BAS* (som har Lika arbetes grupper och regler,
+  ADR-90) ger en grupp en rad med antal från 5 personer, utan lönemått, och mindre grupper namnges i en not.
+  **Könsfördelningen per BAS-intervall** ger på samma sätt ett intervall en rad med antal från 5 personer, utan
+  lönemått. Tabellerna är arbetsgivarens kartläggning av alla grupper, och lagen kräver att också små grupper
+  analyseras. Lönelägets avsnitt mot ställningstagandet redovisar en grupp från 5 personer upp till tröskeln med bara
+  antal (`docs/utveckling/k-troskeln.md` avsnitt 4–5).
 - **Vad som inte vaktas.** Skyddet vaktas av en invariant som letar efter de små gruppernas lönevärden i flikarna och
   exporterna, och av ett differensprov på samma utdata (`docs/utveckling/k-troskeln.md` avsnitt 9–11). Invarianten
   prövar inte antal och andelar, undantagen ovan, innehållet i bilder, Ålder & karriär med ett valt BAS-intervall (som har
