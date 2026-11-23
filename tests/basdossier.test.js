@@ -2,8 +2,9 @@
 // Copyright 2026 Felix Jansson
 /**
  * BAS-dossiern (81-basdossier.js): ett BAS-intervall på en sida, i rapportens ordning — nyckeltal och läget mot
- * ställningstagandet, yrkesgrupperna, likvärdigt arbete, ålder, förra året och en textversion. Vaktar kandidaterna
- * (intervall med minst k personer), modellen för BAS C i demodatan, ingångarna (Löneöversikten, Lönestrukturs tabell
+ * ställningstagandet, yrkesgrupperna, likvärdigt arbete, ålder, förra året och en textversion. Kandidaterna och
+ * modellen (tal och maskering vid k) prövas i Node mot vymodellen ([B5.10] och [I9] i tests/vymodeller.test.js);
+ * här vaktas ingångarna (Löneöversikten, Lönestrukturs tabell
  * per BAS-intervall, gruppdossiern och sökrutan), tillgängligheten (dialog, Escape, fokus tillbaka) och att texten,
  * som lämnar verktyget, byggs i exportläget utan lönemått för grupper under k.
  */
@@ -18,71 +19,6 @@ const modal = w => w.document.getElementById('basdossier-modal');
 const oppen = w => modal(w).style.display === 'flex';
 const skriv = (w, t) => { const f = w.document.getElementById('sok-grupp'); f.value = t; f.dispatchEvent(new w.Event('input', { bubbles: true })); };
 const tangent = (w, el, key) => el.dispatchEvent(new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
-
-describe('BAS-dossiern: kandidater och modell', () => {
-    it('kandidaterna är BAS-intervallen med minst k personer, i intervallens ordning; i exportläget med k = 25 faller BAS E (23 personer)', () => {
-        const w = demo();
-        const k = w.eval('basdossierKandidater()');
-        expect(k.map(x => x.bas)).toEqual(['A', 'B', 'C', 'D', 'E']);
-        expect(k.find(x => x.bas === 'C').n).toBe(105);
-        w.eval('sattKTroskel(25, { fraga: false })');
-        expect(w.eval('medExportLage(() => basdossierKandidater())').map(x => x.bas)).toEqual(['A', 'B', 'C', 'D']);
-        expect(w.eval("medExportLage(() => buildBasdossier('E'))")).toBeNull();
-    });
-
-    it('modellen för BAS C: antal, läget mot ställningstagandet, yrkesgrupperna, kandidatparen och åldersgrupperna', () => {
-        const w = demo();
-        const d = w.eval("buildBasdossier('C')");
-        const data = w.eval("getData().filter(r => r.bas === 'C')");
-        expect(d).toMatchObject({ bas: 'C', n: 105 });
-        expect(d.nKv + d.nMa).toBe(105);
-        expect(d.nKv).toBe(data.filter(r => r.kon.includes('kvinna')).length);
-        expect(d.median).toBeGreaterThan(0);
-        expect(d.p10).toBeLessThan(d.median); expect(d.p90).toBeGreaterThan(d.median);
-        // 1. Läget mot ställningstagandet: referensens rad för BAS C.
-        expect(d.referens).toMatchObject({ p10: 36900, med: 41000, p90: 45900 });
-        expect(d.referens.diffPct.med).toBeCloseTo((d.median / 41000 - 1) * 100, 6);
-        // 2. Yrkesgrupperna: samma fyra som i datan, med Lika arbetes status och nyckeln till gruppdossiern.
-        expect(d.yrken.map(y => y.yrke).sort()).toEqual(['207011 Undersköterska', '403010 Barnskötare', '502010 Systemutvecklare', '503012 Drifttekniker']);
-        expect(d.yrken.reduce((s, y) => s + y.tot, 0)).toBe(105);
-        for (const y of d.yrken) {
-            expect(['granska', 'folj', 'balanserat', 'ejbedomd', 'liten']).toContain(y.status);   // ejbedomd: ett kön under statistikgolvet (ADR-59)
-            expect(y.dossierKey).toBe(`${y.aid}|C`);
-            if (y.status !== 'liten') expect(y.kvotPct).toBeCloseTo(y.medKv / y.medMa * 100, 6);
-        }
-        // Samma status som Lika arbetes yrkesgruppstabell för yrken som bara finns i BAS C.
-        w.__renderTabContent('matrix');
-        const euRader = [...w.document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(Boolean);
-        for (const y of d.yrken.filter(x => x.status !== 'liten')) {
-            const r = euRader.find(x => x.yrke === y.yrke);
-            expect({ granska: 'granska', folj: 'folj', balanserat: 'balanserat', ejbedomd: 'ejbedomd' }[y.status]).toBe(r.niva);
-        }
-        // 3. Kandidatparen där det kvinnodominerade yrket ligger i BAS C (demodatan har fyra: ADR-60 och minsta skillnad 0 %, ADR-61; inga hierarkiska).
-        const lv = w.eval('likvardighetResultat()');
-        expect(d.par.kandidat.length).toBe(lv.pairs.filter(p => p.kvBas === 'C').length);
-        expect(d.par.kandidat.length).toBe(4);
-        expect(d.par.hierarkiska).toEqual([]);
-        // 4. Åldersgrupperna –34, 35–49 och 50–, med alla i intervallet som har en ålder.
-        expect(d.alder.map(a => a.namn)).toEqual(['–34', '35–49', '50–']);
-        expect(d.alder.reduce((s, a) => s + a.n, 0)).toBe(data.filter(r => r.alder > 0).length);
-        for (const a of d.alder) expect(a.nKv + a.nMa).toBe(a.n);
-        // 5. Förra året: inget bokslut inläst.
-        expect(d.forra).toMatchObject({ lage: 'ingetBokslut' });
-    });
-
-    it('könsuppdelade mått bara där båda könen når k: i exportläget med k = 25 får ett yrke med 18 kvinnor och 2 män ingen könsmedian', () => {
-        const w = demo();
-        w.eval('sattKTroskel(25, { fraga: false })');
-        const d = w.eval("medExportLage(() => buildBasdossier('C'))");
-        for (const y of d.yrken) {
-            if (y.nKv < 25 || y.nMa < 25) { expect(y.medKv).toBeNull(); expect(y.medMa).toBeNull(); expect(y.kvotPct).toBeNull(); }
-        }
-        for (const a of d.alder) if (a.nKv < 25 || a.nMa < 25) { expect(a.medKv).toBeNull(); expect(a.medMa).toBeNull(); }
-        // Ett yrke under k står inte bland yrkesgrupperna i exportläget; det räknas upp bland de utelämnade.
-        expect(d.yrken.every(y => y.tot >= 25)).toBe(true);
-        expect(d.yrken.length + d.yrkenUtelamnade.length).toBeGreaterThanOrEqual(4);
-    });
-});
 
 describe('BAS-dossiern: dialogen och ingångarna', () => {
     it('öppnas från Löneöversiktens BAS-rad: dialog med rubrik och väljare, raden fälls inte, Escape stänger och fokus går tillbaka', () => {
