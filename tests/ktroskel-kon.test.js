@@ -283,7 +283,8 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
 });
 
 describe('[C6] räkneexemplet i kronor per år bara när båda könen når tröskeln', () => {
-    // G: 12 kvinnor och 12 män, kvinnorna omkring 3 000 kr lägre. H: 12 kvinnor och 4 män (under tröskeln).
+    // G: 12 kvinnor och 12 män, kvinnorna omkring 3 000 kr lägre. H: 12 kvinnor och 4 män (under tröskeln). Meningen
+    // själv (ingen under 100 kr eller när kvinnorna ligger högre) prövas i tests/kostnad.test.js under [B7.11].
     const fonster = () => {
         const w = createAppWindow();
         const rad = (yrke, aid, kon, lon, i) => ({ bas: 'C', kon, lon, alder: 30 + i, yrke: `${aid} ${yrke}`, aid: String(aid), yrkeLabel: yrke, enhet: '' });
@@ -315,11 +316,5 @@ describe('[C6] räkneexemplet i kronor per år bara när båda könen når trös
         }
         expect(block.map(b => b.rubrik)).toEqual([expect.stringMatching(/Gyrke/)]);
         expect(JSON.stringify(block)).not.toMatch(/8812\d/);
-    });
-    it('ingen mening när skillnaden är under 100 kr eller kvinnorna ligger högre', () => {
-        const w = fonster(), f = w.eval('arsbeloppMening'), kr = v => `${v} kr`;
-        expect(f({ medKv: 30000, medMa: 30040, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toBeNull();
-        expect(f({ medKv: 31000, medMa: 30000, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toBeNull();
-        expect(f({ medKv: 30000, medMa: 31000, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toMatch(/omkring 120000 kr per år/);
     });
 });
