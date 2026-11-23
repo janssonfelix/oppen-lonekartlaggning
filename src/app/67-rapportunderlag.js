@@ -9,7 +9,7 @@ import { arTal } from '../lib/htmltext.js';
 import { tillText, tillWordHtml } from '../lib/rapportunderlag.js';
 import { stor } from '../lib/termer.js';
 import { rapportunderlagDiagram, RU_GRUPPBLOCK, vymodellRapportunderlag } from '../lib/vymodell-rapportunderlag.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
 import { _kSanktNot, kInstalld, kStampel, kTroskel, statGolv } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
@@ -170,7 +170,7 @@ async function _kopieraRapportAvsnittExport() {
 function _rapportKvitto(knapp, text) {
     const k = knapp && knapp.parentElement && knapp.parentElement.querySelector('.ru-kvitto');
     if (k) k.textContent = text;
-    if (typeof announceToScreenReader === 'function') announceToScreenReader(text);
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(text);
 }
 
 /** Kopierar ett block som formaterad text + ren text. Reserv: markera och kopiera. */

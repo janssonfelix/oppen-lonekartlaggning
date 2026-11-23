@@ -21,7 +21,7 @@ import { skrDelText, skrKvinnoandel } from '../lib/skrreferens.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, artikel, stor, termFras } from '../lib/termer.js';
 import { justeradSaknas, kandidatparRader, kompletteraDiagnostik, kvDomUnderK, likvardighetFelresultat, lvPoang, parSakerhet, vymodellKravMotLon, vymodellLikvardigtArbete } from '../lib/vymodell-likvardigt-arbete.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { enableTableSort, flerKolumner } from './05-tabeller-och-lankar.js';
@@ -1002,7 +1002,7 @@ function _exportLikvardighetExport() {
 
         stegnamn = 'efter-steg';
         if (typeof _visaExportvarning === 'function') _visaExportvarning();
-        if (typeof announceToScreenReader === 'function') announceToScreenReader('Likvärdighetsanalys exporterad: ' + pairs.length + ' par.');
+        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Likvärdighetsanalys exporterad: ' + pairs.length + ' par.');
     } catch (err) {
         const msg = err && err.message ? err.message : String(err);
         const stackPreview = err && err.stack ? ('\n\nStack:\n' + String(err.stack).split('\n').slice(0, 4).join('\n')) : '';

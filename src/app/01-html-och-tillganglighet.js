@@ -35,7 +35,7 @@ export function stangAutofyll(rot = document) {
 
 // Focus trap för modaler: håller tabbning kvar inom modalen och
 // återställer fokus till öppnande element vid stängning.
-export const _focusTraps = new Map();
+export const _fokusfallor = new Map();
 /**
  * Aktiverar focus trap i en modal: Tab/Shift+Tab cyklar mellan första/sista
  * fokuserbara element. Sparar referens till opener-elementet så fokus kan
@@ -46,7 +46,7 @@ export const _focusTraps = new Map();
  *   Fokus står då kvar där det är; annars flyttas det till det första elementet en kort stund senare, och text som
  *   användaren hunnit börja skriva i ett annat fält hamnar där i stället.
  */
-export function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
+export function fangaFokus(modalEl, openerEl, { flyttaFokus = true } = {}) {
     if (!modalEl) return;
     const focusables = modalEl.querySelectorAll(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), summary'
@@ -64,34 +64,34 @@ export function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
         }
     };
     modalEl.addEventListener('keydown', handler);
-    _focusTraps.set(modalEl, { handler, opener: openerEl || document.activeElement });
+    _fokusfallor.set(modalEl, { handler, opener: openerEl || document.activeElement });
     if (flyttaFokus) setTimeout(() => /** @type {HTMLInputElement} */ (first).focus(), 50);
 }
 /**
  * Lossar focus trap från modal och återställer fokus till opener-elementet.
  * @param {HTMLElement} modalEl
  */
-export function releaseFocus(modalEl) {
-    const trap = _focusTraps.get(modalEl);
+export function slappFokus(modalEl) {
+    const trap = _fokusfallor.get(modalEl);
     if (trap) {
         modalEl.removeEventListener('keydown', trap.handler);
         if (trap.opener && trap.opener.focus) trap.opener.focus();
-        _focusTraps.delete(modalEl);
+        _fokusfallor.delete(modalEl);
     }
 }
 
 // Aria-live announcer för skärmläsare. Läser upp dynamiska statusändringar.
 /** @type {HTMLElement|null} */
-let _liveRegion = null;
-function _ensureLiveRegion() {
-    if (_liveRegion) return _liveRegion;
-    _liveRegion = document.createElement('div');
-    _liveRegion.id = 'aria-live-announcer';
-    _liveRegion.setAttribute('aria-live', 'polite');
-    _liveRegion.setAttribute('aria-atomic', 'true');
-    _liveRegion.className = 'sr-only';
-    document.body.appendChild(_liveRegion);
-    return _liveRegion;
+let _skarmlasarRegion = null;
+function _hamtaSkarmlasarRegion() {
+    if (_skarmlasarRegion) return _skarmlasarRegion;
+    _skarmlasarRegion = document.createElement('div');
+    _skarmlasarRegion.id = 'aria-live-announcer';
+    _skarmlasarRegion.setAttribute('aria-live', 'polite');
+    _skarmlasarRegion.setAttribute('aria-atomic', 'true');
+    _skarmlasarRegion.className = 'sr-only';
+    document.body.appendChild(_skarmlasarRegion);
+    return _skarmlasarRegion;
 }
 /**
  * Annonserar dynamisk statusändring till skärmläsare via aria-live="polite".
@@ -99,8 +99,8 @@ function _ensureLiveRegion() {
  * samma text annonceras igen. WCAG 4.1.3 Status Messages.
  * @param {string} message
  */
-export function announceToScreenReader(message) {
-    const region = _ensureLiveRegion();
+export function meddelaSkarmlasare(message) {
+    const region = _hamtaSkarmlasarRegion();
     region.textContent = '';
     setTimeout(() => { region.textContent = message; }, 50);
 }

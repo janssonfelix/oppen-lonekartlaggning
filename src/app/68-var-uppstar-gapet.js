@@ -4,7 +4,7 @@
 import { gapAllaVariabler, gapDelar, gapDelarIText, gapOvrigaText, gapStandardVariabler, gapVariabelEtikett, gapVariablerArStandard, gapVariablerIText, normaliseraGapVariabler } from '../lib/gapuppdelning.js';
 import { personOrd } from '../lib/namn.js';
 import { andelAvSkillnaden, gapTrappa, vymodellVarUppstarGapet } from '../lib/vymodell-var-uppstar-gapet.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -81,7 +81,7 @@ function _guAndra(ny, fokus, meddelande) {
     const el = /** @type {HTMLElement|null} */ (fokus && host ? host.querySelector(fokus) : null);
     if (el && !(/** @type {any} */ (el).disabled)) el.focus();
     else if (host) { const v = fokus && /data-gu-rad="(\w+)"/.exec(fokus); const r = /** @type {HTMLElement|null} */ (v ? host.querySelector(`[data-gu-var="${v[1]}"]`) : null); if (r) r.focus(); }
-    if (meddelande) announceToScreenReader(meddelande);
+    if (meddelande) meddelaSkarmlasare(meddelande);
 }
 
 function _guKr(v, tecken = true) {

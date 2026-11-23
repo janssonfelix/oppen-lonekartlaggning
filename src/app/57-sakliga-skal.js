@@ -17,7 +17,7 @@ import { personOrd } from '../lib/namn.js';
 import { skalKategorier, skalSammanstallning } from '../lib/sakligaskal.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { genitiv, stor, termFras } from '../lib/termer.js';
-import { _focusTraps, announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { _fokusfallor, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { getData } from './12-tillstand.js';
@@ -64,12 +64,12 @@ function openSkalDialog(nyckel, opener) {
     };
     _skalRender();
     modal.style.display = 'flex';
-    if (typeof trapFocus === 'function') trapFocus(modal, opener || document.activeElement);
+    if (typeof fangaFokus === 'function') fangaFokus(modal, opener || document.activeElement);
 }
 function closeSkalDialog() {
     const modal = document.getElementById('skal-modal');
     if (!modal || modal.style.display !== 'flex') return;
-    if (typeof releaseFocus === 'function') releaseFocus(modal);
+    if (typeof slappFokus === 'function') slappFokus(modal);
     modal.style.display = 'none';
     _skal = null;
 }
@@ -133,10 +133,10 @@ function _skalRender() {
     // flytta fokus. Anroparen sätter fokus (det nya skälets kategori, Lägg till skäl); en fördröjd flytt till
     // stängknappen tog annars text som användaren hunnit börja skriva i ett fält, och kommentaren sparades inte.
     const modal = document.getElementById('skal-modal');
-    if (modal && modal.style.display === 'flex' && typeof _focusTraps !== 'undefined') {
-        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
-        if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
-        trapFocus(modal, opener, { flyttaFokus: false });
+    if (modal && modal.style.display === 'flex' && typeof _fokusfallor !== 'undefined') {
+        const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
+        if (trap) { modal.removeEventListener('keydown', trap.handler); _fokusfallor.delete(modal); }
+        fangaFokus(modal, opener, { flyttaFokus: false });
     }
 }
 
@@ -222,7 +222,7 @@ export function uppstartSakligaSkal() {
             _skal.rader.splice(Number(bort.getAttribute('data-skal-ta-bort')), 1);
             _skalRender();
             document.getElementById('skal-lagg-till')?.focus();
-            if (typeof announceToScreenReader === 'function') announceToScreenReader('Skälet är borttaget.');
+            if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Skälet är borttaget.');
             return;
         }
         if (t.closest('#skal-markera')) {
@@ -235,7 +235,7 @@ export function uppstartSakligaSkal() {
             _skalUppdatera();
             document.getElementById('skal-summa')?.setAttribute('tabindex', '-1');
             document.getElementById('skal-summa')?.focus();
-            if (typeof announceToScreenReader === 'function') announceToScreenReader('Raden är markerad: sakligt skäl finns.');
+            if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Raden är markerad: sakligt skäl finns.');
         }
     });
     ['input', 'change'].forEach(typ => document.getElementById('skal-modal')?.addEventListener(typ, e => {

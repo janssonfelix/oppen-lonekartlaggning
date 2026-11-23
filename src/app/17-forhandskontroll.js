@@ -4,7 +4,7 @@ import { byggForhandskontroll, forhandskontrollGranser } from '../lib/forhandsko
 import { personOrd } from '../lib/namn.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { hideLoading, importprofilText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
@@ -82,7 +82,7 @@ export function _fkPausa(fk, lasIn) {
     if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
     av?.scrollIntoView?.({ block: 'start' });
     /** @type {HTMLElement|null} */ (document.getElementById('fk-las-in'))?.focus?.({ preventScroll: true });
-    announceToScreenReader(dataStatus.textContent);
+    meddelaSkarmlasare(dataStatus.textContent);
 }
 /** En fil som väntade på Läs in ersätts av en ny inläsning (32-filinlasning.js). */
 export function _fkSlappVantande() { _fkVantar = null; }
@@ -105,7 +105,7 @@ function _fkAvbryt() {
         ? 'Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar.'
         : 'Inläsningen avbröts. Ingen lönefil är inläst.';
     dataStatus.className = 'status-msg';
-    announceToScreenReader(dataStatus.textContent);
+    meddelaSkarmlasare(dataStatus.textContent);
 }
 /** Rensa all data och en ny inläsning av demot: förhandskontrollen och en väntande fil släpps. */
 export function _fkSlapp() {

@@ -11,7 +11,7 @@ import { bakaIn, filnamnForslag, normaliseraFilnamn } from '../lib/organisations
 import { byggPaket, tolkaPaket } from '../lib/organisationspaket.js';
 import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { _renderaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
@@ -227,7 +227,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.`
         + (varningar.length ? ' ' + varningar.join(' ') : '');
     _paketStatus(meddelande, true);
-    announceToScreenReader(meddelande);
+    meddelaSkarmlasare(meddelande);
     return { ok: true, meddelande };
 }
 
@@ -458,7 +458,7 @@ async function skapaOrganisationsfil() {
         + (annanVersion ? ` Observera: den utpekade filen är en annan version än den som körs (${APP_VERSION}).` : '')
         + ' Ingen lönedata ingår.';
     _organisationsfilStatus(meddelande, true);
-    announceToScreenReader(meddelande);
+    meddelaSkarmlasare(meddelande);
     return { ok: true, meddelande };
 }
 
@@ -498,7 +498,7 @@ function visaInbakatPaket() {
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])
         + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
     modal.style.display = 'flex';
-    if (typeof trapFocus === 'function') trapFocus(modal);
+    if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
 function laddaNerInbakatPaket() {
     const inb = state.paketInbakat;
@@ -511,9 +511,9 @@ function laddaNerInbakatPaket() {
     a.download = _paketFilnamn(inb.organisation);
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader(`Paketet sparat: ${a.download}`);
+    meddelaSkarmlasare(`Paketet sparat: ${a.download}`);
 }
-const _stangPaketModal = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; } };
+const _stangPaketModal = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; } };
 
 // Organisationstypen (kommun, region eller båda) styr vilken del av SKR:s personalstatistik som
 // är referens för kvinnoandel (ADR-34). Värdet bor i profilen och följer med paket och konfiguration.
@@ -547,7 +547,7 @@ export function uppstartOrganisationspaket() {
         a.download = _paketFilnamn(paket.organisation.namn);
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
+        meddelaSkarmlasare(`Organisationspaket sparat: ${a.download}`);
     });
     document.getElementById('file-input-verktygsfil')?.addEventListener('change', e => {
         const inp = /** @type {HTMLInputElement} */ (e.target);

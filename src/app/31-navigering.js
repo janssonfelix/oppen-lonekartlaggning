@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { announceToScreenReader, esc, stangAutofyll } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, stangAutofyll } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
 import { kInstalld } from './06-k-troskel.js';
@@ -48,7 +48,7 @@ export function _visaFilkortet(kortId, inputId, text) {
     kort.classList.add('visas-nu');
     setTimeout(() => kort.classList.remove('visas-nu'), 2000);
     document.getElementById(inputId)?.focus?.({ preventScroll: true });
-    announceToScreenReader(text);
+    meddelaSkarmlasare(text);
 }
 /** En låst flik har klickats: visa lönefilskortet i Filer och kvalitet. */
 export function visaLonefilskortet(flikNamn) {

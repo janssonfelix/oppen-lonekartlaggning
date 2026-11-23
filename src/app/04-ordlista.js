@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { _kText } from './06-k-troskel.js';
 import { termText } from './09-termer.js';
 
@@ -170,12 +170,12 @@ export function openGlossary() {
     if (!m) return;
     m.style.display = 'flex';
     renderGlossary('');
-    trapFocus(m);
+    fangaFokus(m);
 }
 function closeGlossary() {
     const m = document.getElementById('glossary-modal');
     if (m) {
-        releaseFocus(m);
+        slappFokus(m);
         m.style.display = 'none';
     }
 }
@@ -192,15 +192,15 @@ export function uppstartOrdlista() {
     // Symbol/färgförklaring-modal
     document.getElementById('btn-open-symbols')?.addEventListener('click', () => {
         const m = document.getElementById('symbols-modal');
-        if (m) { m.style.display = 'flex'; trapFocus(m); }
+        if (m) { m.style.display = 'flex'; fangaFokus(m); }
     });
     document.getElementById('symbols-close')?.addEventListener('click', () => {
         const m = document.getElementById('symbols-modal');
-        if (m) { releaseFocus(m); m.style.display = 'none'; }
+        if (m) { slappFokus(m); m.style.display = 'none'; }
     });
     document.querySelector('#symbols-modal .glossary-backdrop')?.addEventListener('click', () => {
         const m = document.getElementById('symbols-modal');
-        if (m) { releaseFocus(m); m.style.display = 'none'; }
+        if (m) { slappFokus(m); m.style.display = 'none'; }
     });
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && document.getElementById('symbols-modal')?.style.display === 'flex') {

@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_SKARM, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kUndantag, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, LITET_UNDERLAG, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
 import { personOrd } from '../lib/namn.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kMaskNotText } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
@@ -472,7 +472,7 @@ export function uppstartKTroskel() {
     document.getElementById('k-troskel')?.addEventListener('change', e => {
         const r = sattKTroskel(/** @type {HTMLInputElement} */ (e.target).value, { stegvis: true });
         _kVisaFel(r.ok || r.nekad ? '' : r.fel);
-        const sag = () => { if (r.ok && typeof announceToScreenReader === 'function') announceToScreenReader(`Minsta gruppstorlek är nu ${r.varde}.`); };
+        const sag = () => { if (r.ok && typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`Minsta gruppstorlek är nu ${r.varde}.`); };
         if (r.klar) r.klar.then(sag); else sag();
     });
     document.getElementById('btn-k-aterstall')?.addEventListener('click', () => {

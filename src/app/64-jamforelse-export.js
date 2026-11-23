@@ -4,7 +4,7 @@
 import { jamforelseRader, matchningEtikett } from '../lib/jamforelse.js';
 import { personOrd } from '../lib/namn.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { orgNamn } from './07-standardinstallningar.js';
@@ -160,7 +160,7 @@ function _exportBenchmarkExcelExport() {
     _laggTillMetodblad(wb);
     XLSX.writeFile(wb, filename);
     _visaExportvarning();
-    announceToScreenReader(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? '' : 'er'}, ${nPersoner} person${nPersoner === 1 ? '' : 'er'}.`);
+    meddelaSkarmlasare(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? '' : 'er'}, ${nPersoner} person${nPersoner === 1 ? '' : 'er'}.`);
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

@@ -12,7 +12,7 @@ import { receptBeskrivning, receptTillTabeller } from '../lib/tabellrecept.js';
 import { adjektiv, artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { kompletterandeUndertryckningPerNyckel } from '../lib/undertryckning.js';
 import { alderGapRader } from '../lib/vymodell-alder-karriar.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { auditPoster } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
@@ -740,7 +740,7 @@ function _exportJPAProtokollExport() {
     _laggTillMetodblad(wb);
     XLSX.writeFile(wb, filename);
     _visaExportvarning();
-    announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
+    meddelaSkarmlasare(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

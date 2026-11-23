@@ -14,7 +14,7 @@ import { liknarPersonuppgift } from '../lib/organisationspaket.js';
 import { gruppSkillnadKr, SKAL_UTAN_BELOPP, skalForRad, skalSammanstallning, skalUnderlag, skalUtanBelopp, valideraSkal } from '../lib/sakligaskal.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { genitiv, termFras } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, _parUtelamnadeNot, kInstalld } from './06-k-troskel.js';
@@ -103,7 +103,7 @@ function _hpTaBortEgen(nyckel) {
     if (!_hpArEgen(nyckel) || !state.handlingsplan || !state.handlingsplan[nyckel]) return;
     delete state.handlingsplan[nyckel];
     renderHandlingsplanSeed();
-    if (typeof announceToScreenReader === 'function') announceToScreenReader('Raden är borttagen.');
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Raden är borttagen.');
 }
 
 /** Raderna i handlingsplanen: de förifyllda från Prioritering och Likvärdigt arbete, sedan de egna. `baraEgna` hoppar
@@ -458,7 +458,7 @@ function _exportHandlingsplanExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), 'Vägledning');
     _laggTillMetodblad(wb);
     XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
-    if (typeof announceToScreenReader === 'function') announceToScreenReader('Handlingsplansunderlag exporterat.');
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Handlingsplansunderlag exporterat.');
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

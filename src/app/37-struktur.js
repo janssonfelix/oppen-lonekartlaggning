@@ -10,7 +10,7 @@ import { fordelningsgap, kvartilfordelning, strukturMatt, tillDirektivtecken } f
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { _kronorFalt, andelAvMan, antalCaption, direktivGap, idagDatum, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _konUtelamnatNot, _kSanktNot, _parForRedovisning, kTroskel } from './06-k-troskel.js';
@@ -544,7 +544,7 @@ function _exportEuReportExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), 'Skillnad i lönefördelningen');
     _laggTillMetodblad(wb, { extra: [['Löneskillnadens tecken i den här filen', DIREKTIV_METOD]] });
     XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
-    if (typeof announceToScreenReader === 'function') announceToScreenReader('EU-lönerapport exporterad.');
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('EU-lönerapport exporterad.');
 }
 
 // Kvartilens lönespann utan enskilda löner: bara gränserna mellan kvartilerna
@@ -571,7 +571,7 @@ export function uppstartStruktur() {
         document.getElementById('struktur-narrative-omfang')?.addEventListener('change', e => {
             state.utkastPerBas = /** @type {HTMLSelectElement} */ (e.target).value !== 'hela';
             const nb = document.getElementById('struktur-narrative');
-            if (nb && nb.dataset.dirty) { if (typeof announceToScreenReader === 'function') announceToScreenReader('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
+            if (nb && nb.dataset.dirty) { if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
             medExportLage(renderStrukturUtkast);
         });
         document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {

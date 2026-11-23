@@ -8,7 +8,7 @@ import { regressionslinjensBand } from '../lib/osakerhet.js';
 import { namnFranFil } from '../lib/referens.js';
 import { kvantil, linjarRegression, median } from '../lib/stat.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _cellSpann, enableTableSort, setupCollapsibleGroups } from './05-tabeller-och-lankar.js';
@@ -371,7 +371,7 @@ function __copyTableToClipboardExport(tableId, btn) {
 export function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
     const tsv = tillTsv(_tsvMedStampel(rows, undantag));
     const done = () => {
-        if (typeof announceToScreenReader === 'function') announceToScreenReader('Kopierat: ' + (rows.length - 1) + ' rader.');
+        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Kopierat: ' + (rows.length - 1) + ' rader.');
         // Knappens innehåll (ikonen och texten) läggs tillbaka som det var.
         if (btn) { const o = btn.innerHTML; btn.textContent = 'Kopierad'; setTimeout(() => { btn.innerHTML = o; }, 1500); }
     };

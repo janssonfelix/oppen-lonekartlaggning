@@ -16,7 +16,7 @@ import { avrundaSymmetriskt } from '../lib/stat.js';
 import { svKr, svPct, svPoPct, svTal } from '../lib/talformat.js';
 import { adjektiv, stor } from '../lib/termer.js';
 import { forslagskandidater, forslagUrPotten, individlyftGrupper, kvDomAv, LUTNING_MAX, lutningRader, lutningUrval, oforklaratForeEfter, rensaForeslagnaRader, riktadRadInfo, riktning, scenariojamforelse, scenarioUr, simuleradeRader, utfallsvy, vymodellIndividlyft, vymodellKanslighet, vymodellPrognos, vymodellTroskelmal, villkorsgrupper } from '../lib/vymodell-loneoversyn.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { andelAvMan, idagDatum, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _konFarRedovisasFor, _konUtelamnatNot, kInstalld, kTroskel } from './06-k-troskel.js';
@@ -850,7 +850,7 @@ function _exportForecastExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), 'Fördelning');
     _laggTillMetodblad(wb);
     XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
-    if (typeof announceToScreenReader === 'function') announceToScreenReader('Löneöversynens prognosunderlag exporterat.');
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Löneöversynens prognosunderlag exporterat.');
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

@@ -3,7 +3,7 @@
 // ---- Sök och hoppa ----
 import { svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { openGlossary } from './04-ordlista.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
 import { kMaskerad } from './06-k-troskel.js';
@@ -190,7 +190,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
             if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
             window.scrollTo(0, 0);
             /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
-            announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+            meddelaSkarmlasare(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
         };
         if (!navigateTo(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
     }

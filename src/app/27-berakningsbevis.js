@@ -19,7 +19,7 @@ import { direktivMarkering, perBasSignal } from '../lib/status.js';
 import { konsMedianer } from '../lib/struktur.js';
 import { svKr, svPct, svPoPct, svTal } from '../lib/talformat.js';
 import { adjektiv, artikel, genitiv, stor, termFras } from '../lib/termer.js';
-import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { kTroskel, statGolv } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { jmfNamn } from './07-standardinstallningar.js';
@@ -65,13 +65,13 @@ export function _openEvidenceModal(p) {
         ${p.footer ? `<p class="text-dampad-sm lh-1_55 marg-14-0-0">${p.footer}</p>` : ''}
     `;
     modal.style.display = 'flex';
-    if (typeof trapFocus === 'function') trapFocus(modal);
+    if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
 
 function _closeEvidenceModal() {
     const modal = document.getElementById('evidence-modal');
     if (!modal) return;
-    if (typeof releaseFocus === 'function') releaseFocus(modal);
+    if (typeof slappFokus === 'function') slappFokus(modal);
     modal.style.display = 'none';
 }
 

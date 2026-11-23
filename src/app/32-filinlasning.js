@@ -8,7 +8,7 @@ import { filStorlekFel } from '../lib/installningsgranser.js';
 import { arKvinna, arMan } from '../lib/kon.js';
 import { tolkaPaket } from '../lib/organisationspaket.js';
 import { ordForAntal, stor } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { _importprofilFor, _importprofilKalla, _importprofilLista, hideLoading, importprofilText, showLoading } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _hittaAnsvarKolumn, _lonefilensRubriker, extractMinimalRecord } from './06-uppgiftsminimering.js';
@@ -151,7 +151,7 @@ function _afterDataLoaded() {
     renderDataValidationReport();
     renderForhandskontroll();
     syncDatakvalitetPanel({ reg });
-    announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
+    meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
     hideLoading();
 
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden
@@ -800,7 +800,7 @@ function _visaEjInlast(saknas, stats) {
     }
     maybeShowColumnMapping();
     _visaKolumnmappning();
-    announceToScreenReader(dataStatus.textContent);
+    meddelaSkarmlasare(dataStatus.textContent);
 }
 /** Fäller ut kolumnmappningen, rullar den in i bild och sätter fokus i första fältet som saknar kolumn. */
 function _visaKolumnmappning() {
@@ -867,7 +867,7 @@ export function maybeShowColumnMapping() {
     panel.style.display = 'block';
 
     const namnFalt = () => /** @type {HTMLInputElement|null} */ (panel.querySelector('#colmap-profil-namn'));
-    const visaBesked = text => { _profilBesked = text; maybeShowColumnMapping(); announceToScreenReader(text); };
+    const visaBesked = text => { _profilBesked = text; maybeShowColumnMapping(); meddelaSkarmlasare(text); };
     panel.querySelector('#colmap-spara-profil')?.addEventListener('click', () => {
         const r = sparaImportprofil(namnFalt()?.value);
         visaBesked(r.ok ? `Importprofilen ${r.profil.namn} är sparad för sessionen.` : r.fel);
@@ -1001,7 +1001,7 @@ export function uppstartFilinlasning() {
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
+        meddelaSkarmlasare('CSV-mall nedladdad: lonefil_mall.csv');
     });
     /** @type {HTMLElement} */ (dataInput).addEventListener("change", e => loadStructureFile(/** @type {HTMLInputElement} */ (e.target).files?.[0]));
     // "Byt fil" öppnar respektive filväljare direkt.

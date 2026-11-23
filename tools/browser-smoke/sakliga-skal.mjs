@@ -28,7 +28,7 @@ export async function sakligaSkal() {
     await sida.click(knapp);
     await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'flex', null, { timeout: 5000 });
     ok(true, 'knappen Sakliga skäl öppnar dialogen');
-    // Fokusfällan sätter fokus efter en kort stund (trapFocus), som i de övriga dialogerna.
+    // Fokusfällan sätter fokus efter en kort stund (fangaFokus), som i de övriga dialogerna.
     ok(await sida.waitForFunction(() => document.getElementById('skal-modal').contains(document.activeElement), null, { timeout: 2000 }).then(() => true, () => false), 'fokus står i dialogen');
     await sida.click('#skal-lagg-till');
     const sista = '#skal-body .skal-rad:last-of-type';

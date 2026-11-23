@@ -21,7 +21,7 @@ import { direktivMarkering } from '../lib/status.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { basdossierIntervall, vymodellBasdossier } from '../lib/vymodell-basdossier.js';
-import { _focusTraps, announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { _fokusfallor, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
@@ -71,12 +71,12 @@ export function openBasdossier(bas, opener) {
     if (!modal) return;
     ritaBasdossier(bas);
     modal.style.display = 'flex';
-    if (typeof trapFocus === 'function') trapFocus(modal, opener || document.activeElement);
+    if (typeof fangaFokus === 'function') fangaFokus(modal, opener || document.activeElement);
 }
 export function closeBasdossier() {
     const modal = document.getElementById('basdossier-modal');
     if (!modal || modal.style.display !== 'flex') return;
-    if (typeof releaseFocus === 'function') releaseFocus(modal);
+    if (typeof slappFokus === 'function') slappFokus(modal);
     modal.style.display = 'none';
 }
 
@@ -96,7 +96,7 @@ function ritaBasdossier(bas) {
     sel.value = kand.some(x => x.bas === onskat) ? onskat : kand[0].bas;
     _bdVald = sel.value;
     // Ett begärt intervall som inte (längre) når tröskeln öppnas inte i tysthet som ett annat: det sägs.
-    if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
+    if (bas && bas !== sel.value) meddelaSkarmlasare(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
     const d = buildBasdossier(sel.value);
     body.innerHTML = d ? _bdRitaInnehall(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
     // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
@@ -104,9 +104,9 @@ function ritaBasdossier(bas) {
     // till stängknappen.
     const modal = document.getElementById('basdossier-modal');
     if (modal && modal.style.display === 'flex') {
-        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
-        if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
-        trapFocus(modal, opener, { flyttaFokus: false });
+        const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
+        if (trap) { modal.removeEventListener('keydown', trap.handler); _fokusfallor.delete(modal); }
+        fangaFokus(modal, opener, { flyttaFokus: false });
     }
 }
 
@@ -350,8 +350,8 @@ export function uppstartBasdossier() {
         if (t.closest('#btn-basdossier-copy')) {
             const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
             const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
-            if (!txt) { announceToScreenReader(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
-            const klart = () => announceToScreenReader('BAS-dossiern kopierad.');
+            if (!txt) { meddelaSkarmlasare(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
+            const klart = () => meddelaSkarmlasare('BAS-dossiern kopierad.');
             if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
             else klart();
         }

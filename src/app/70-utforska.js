@@ -20,7 +20,7 @@ import { svKr } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { beskrivUrval, iUrvalet, villkorAktivt } from '../lib/urval.js';
 import { pivottabell } from '../lib/utforska.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { enableTableSort } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -507,7 +507,7 @@ function explorerTillRapport() {
     state.rapportTabeller = [...(state.rapportTabeller || []), recept];
     if (namnEl) namnEl.value = '';
     satt(`Tillagd: ${recept.namn} (${state.rapportTabeller.length} ${state.rapportTabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}). Ordningen ändras under Exportera.`, true);
-    if (typeof announceToScreenReader === 'function') announceToScreenReader(`Tabellen ${recept.namn} är tillagd i rapporten.`);
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`Tabellen ${recept.namn} är tillagd i rapporten.`);
     return recept;
 }
 

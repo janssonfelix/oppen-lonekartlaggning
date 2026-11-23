@@ -166,7 +166,7 @@ describe('Funktionssök', () => {
         w.__state.policy = []; w.__state.statistik = [];
         w.eval('synkaJamforelseFlik()');
         expect(d.getElementById('tab-benchmark').hidden).toBe(true);
-        w.eval('window.__sagt = []; { const o = announceToScreenReader; window.announceToScreenReader = m => { window.__sagt.push(m); return o(m); }; }');
+        w.eval('window.__sagt = []; { const o = meddelaSkarmlasare; window.meddelaSkarmlasare = m => { window.__sagt.push(m); return o(m); }; }');
         skriv(w, 'ställningstagandet');
         const li = d.querySelector('#sok-grupp-lista [data-sok-funktion]');
         expect(li.querySelector('.sok-under').textContent).toContain('kräver referens eller jämförelsestatistik');
@@ -192,7 +192,7 @@ describe('Funktionssök', () => {
     it('med lönefil leder ett mål som är dolt av annan orsak till flikens topp och säger det, utan att fokusera det dolda', () => {
         const w = createAppWindow(), d = w.document;
         w.__loadDemoData();
-        w.eval('window.__sagt = []; { const o = announceToScreenReader; window.announceToScreenReader = m => { window.__sagt.push(m); return o(m); }; }');
+        w.eval('window.__sagt = []; { const o = meddelaSkarmlasare; window.meddelaSkarmlasare = m => { window.__sagt.push(m); return o(m); }; }');
         // Avsnittet döljs när fliken ritas, som ett avsnitt som inte gäller underlaget.
         w.eval(`{ const o = renderTabContent; window.renderTabContent = (...a) => { const r = o(...a); document.getElementById('avsnitt-ar-ogonblick').hidden = true; return r; }; }`);
         skriv(w, 'ögonblicksbild');

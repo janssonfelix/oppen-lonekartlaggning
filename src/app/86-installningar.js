@@ -3,7 +3,7 @@
 // ---- Inställningar ----
 import { importprofilerTillJson, inbyggdaProfiler } from '../lib/importprofiler.js';
 import { svTal } from '../lib/talformat.js';
-import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { _importprofilKalla } from './03-hjalpfunktioner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { orgNamn } from './07-standardinstallningar.js';
@@ -31,15 +31,15 @@ export function oppnaInstallningar({ fokus = null } = {}) {
     _instRita();
     const oppnare = document.activeElement;
     m.style.display = 'flex';
-    trapFocus(m, oppnare);
+    fangaFokus(m, oppnare);
     const mal = fokus ? document.getElementById(fokus) : null;
-    // trapFocus sätter fokus på panelens första knapp efter en kort stund: det efterfrågade fältet tar över efter det.
+    // fangaFokus sätter fokus på panelens första knapp efter en kort stund: det efterfrågade fältet tar över efter det.
     if (mal) { mal.focus(); setTimeout(() => { if (installningarOppna()) mal.focus(); }, 80); }
 }
 export function stangInstallningar() {
     const m = document.getElementById('installningar-modal');
     if (!m || !installningarOppna()) return;
-    releaseFocus(m);
+    slappFokus(m);
     m.style.display = 'none';
 }
 
@@ -123,7 +123,7 @@ function _ipExportera(id) {
     a.download = `importprofil-${p.id}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
+    meddelaSkarmlasare(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
 }
 function _ipTaBort(id) {
     const p = (state.importprofiler || []).find(x => x.id === id);
@@ -137,7 +137,7 @@ function _ipTaBort(id) {
     _instRitaImportprofiler();
     if (typeof maybeShowColumnMapping === 'function' && (state._dataHeaders || []).length) maybeShowColumnMapping();
     /** @type {HTMLElement|null} */ (document.getElementById('inst-importprofiler-rubrik'))?.focus();
-    announceToScreenReader(`Importprofilen ${p.namn} är borttagen för sessionen.`);
+    meddelaSkarmlasare(`Importprofilen ${p.namn} är borttagen för sessionen.`);
 }
 
 /** Stänger panelen, går till fliken och fäller ut avsnittet där inställningen står. */

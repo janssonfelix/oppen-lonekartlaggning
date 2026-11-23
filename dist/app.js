@@ -1,5 +1,5 @@
 // src/app/00-sakerhet-och-uppstart.js
-(function installStorageTripwire() {
+(function installeraLagringsspar() {
   try {
     if (typeof Storage !== "undefined" && Storage.prototype) {
       Storage.prototype.setItem = function(key) {
@@ -43,7 +43,7 @@
     console.warn("Storage tripwire kunde inte installeras:", e.message);
   }
 })();
-(function hideBootSplash() {
+(function doljStartskarm() {
   const start = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
   const hide = () => {
     const splash = document.getElementById("boot-splash");
@@ -123,8 +123,8 @@ function stangAutofyll(rot = document) {
   if (rot instanceof Element && rot.matches("input, select, textarea")) satt(rot);
   rot.querySelectorAll("input, select, textarea").forEach(satt);
 }
-var _focusTraps = /* @__PURE__ */ new Map();
-function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
+var _fokusfallor = /* @__PURE__ */ new Map();
+function fangaFokus(modalEl, openerEl, { flyttaFokus = true } = {}) {
   if (!modalEl) return;
   const focusables = modalEl.querySelectorAll(
     'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), summary'
@@ -143,33 +143,33 @@ function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
     }
   };
   modalEl.addEventListener("keydown", handler);
-  _focusTraps.set(modalEl, { handler, opener: openerEl || document.activeElement });
+  _fokusfallor.set(modalEl, { handler, opener: openerEl || document.activeElement });
   if (flyttaFokus) setTimeout(() => (
     /** @type {HTMLInputElement} */
     first.focus()
   ), 50);
 }
-function releaseFocus(modalEl) {
-  const trap = _focusTraps.get(modalEl);
+function slappFokus(modalEl) {
+  const trap = _fokusfallor.get(modalEl);
   if (trap) {
     modalEl.removeEventListener("keydown", trap.handler);
     if (trap.opener && trap.opener.focus) trap.opener.focus();
-    _focusTraps.delete(modalEl);
+    _fokusfallor.delete(modalEl);
   }
 }
-var _liveRegion = null;
-function _ensureLiveRegion() {
-  if (_liveRegion) return _liveRegion;
-  _liveRegion = document.createElement("div");
-  _liveRegion.id = "aria-live-announcer";
-  _liveRegion.setAttribute("aria-live", "polite");
-  _liveRegion.setAttribute("aria-atomic", "true");
-  _liveRegion.className = "sr-only";
-  document.body.appendChild(_liveRegion);
-  return _liveRegion;
+var _skarmlasarRegion = null;
+function _hamtaSkarmlasarRegion() {
+  if (_skarmlasarRegion) return _skarmlasarRegion;
+  _skarmlasarRegion = document.createElement("div");
+  _skarmlasarRegion.id = "aria-live-announcer";
+  _skarmlasarRegion.setAttribute("aria-live", "polite");
+  _skarmlasarRegion.setAttribute("aria-atomic", "true");
+  _skarmlasarRegion.className = "sr-only";
+  document.body.appendChild(_skarmlasarRegion);
+  return _skarmlasarRegion;
 }
-function announceToScreenReader(message) {
-  const region = _ensureLiveRegion();
+function meddelaSkarmlasare(message) {
+  const region = _hamtaSkarmlasarRegion();
   region.textContent = "";
   setTimeout(() => {
     region.textContent = message;
@@ -9824,7 +9824,7 @@ function loadStortDemo() {
   if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
   document.getElementById("diagnostic-results").style.display = "none";
   _renderDemoBanner();
-  announceToScreenReader(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
+  meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
 }
 function uppstartStortDemo() {
   ["first-run-stort-demo", "upload-demo-stort"].forEach((id) => document.getElementById(id)?.addEventListener("click", loadStortDemo));
@@ -9850,20 +9850,20 @@ function uppstartDataskyddsinfo() {
     const m = document.getElementById("gdpr-info-modal");
     if (m) {
       m.style.display = "flex";
-      trapFocus(m);
+      fangaFokus(m);
     }
   });
   document.getElementById("gdpr-info-close")?.addEventListener("click", () => {
     const m = document.getElementById("gdpr-info-modal");
     if (m) {
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
   document.querySelector("#gdpr-info-modal .yrke-backdrop")?.addEventListener("click", () => {
     const m = document.getElementById("gdpr-info-modal");
     if (m) {
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
@@ -9873,7 +9873,7 @@ function uppstartDataskyddsinfo() {
         /** @type {HTMLElement} */
         document.getElementById("gdpr-info-modal")
       );
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
@@ -11551,12 +11551,12 @@ function _openEvidenceModal(p) {
         ${p.footer ? `<p class="text-dampad-sm lh-1_55 marg-14-0-0">${p.footer}</p>` : ""}
     `;
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal);
+  if (typeof fangaFokus === "function") fangaFokus(modal);
 }
 function _closeEvidenceModal() {
   const modal = document.getElementById("evidence-modal");
   if (!modal) return;
-  if (typeof releaseFocus === "function") releaseFocus(modal);
+  if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
 }
 function _evidenceForLikvardighetPair(p) {
@@ -12766,7 +12766,7 @@ function oppnaInstallningar({ fokus = null } = {}) {
   _instRita();
   const oppnare = document.activeElement;
   m.style.display = "flex";
-  trapFocus(m, oppnare);
+  fangaFokus(m, oppnare);
   const mal = fokus ? document.getElementById(fokus) : null;
   if (mal) {
     mal.focus();
@@ -12778,7 +12778,7 @@ function oppnaInstallningar({ fokus = null } = {}) {
 function stangInstallningar() {
   const m = document.getElementById("installningar-modal");
   if (!m || !installningarOppna()) return;
-  releaseFocus(m);
+  slappFokus(m);
   m.style.display = "none";
 }
 function kTroskelLank() {
@@ -12901,7 +12901,7 @@ function _ipExportera(id) {
   a.download = `importprofil-${p.id}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-  announceToScreenReader(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
+  meddelaSkarmlasare(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
 }
 function _ipTaBort(id) {
   const p = (state.importprofiler || []).find((x) => x.id === id);
@@ -12914,7 +12914,7 @@ function _ipTaBort(id) {
   _instRitaImportprofiler();
   if (typeof maybeShowColumnMapping === "function" && (state._dataHeaders || []).length) maybeShowColumnMapping();
   document.getElementById("inst-importprofiler-rubrik")?.focus();
-  announceToScreenReader(`Importprofilen ${p.namn} är borttagen för sessionen.`);
+  meddelaSkarmlasare(`Importprofilen ${p.namn} är borttagen för sessionen.`);
 }
 function _instGaTill(flik, avsnitt) {
   stangInstallningar();
@@ -13913,7 +13913,7 @@ function _exportLikvardighetExport() {
     XLSX.writeFile(wb, filename);
     stegnamn = "efter-steg";
     if (typeof _visaExportvarning === "function") _visaExportvarning();
-    if (typeof announceToScreenReader === "function") announceToScreenReader("Likvärdighetsanalys exporterad: " + pairs.length + " par.");
+    if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Likvärdighetsanalys exporterad: " + pairs.length + " par.");
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
     const stackPreview = err && err.stack ? "\n\nStack:\n" + String(err.stack).split("\n").slice(0, 4).join("\n") : "";
@@ -16900,7 +16900,7 @@ function _exportForecastExport() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), "Fördelning");
   _laggTillMetodblad(wb);
   XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
-  if (typeof announceToScreenReader === "function") announceToScreenReader("Löneöversynens prognosunderlag exporterat.");
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Löneöversynens prognosunderlag exporterat.");
 }
 function uppstartLoneoversyn() {
   document.getElementById("forecast-lutning-niva")?.addEventListener("change", () => ritaPrognos());
@@ -17876,7 +17876,7 @@ function _hpTaBortEgen(nyckel) {
   if (!_hpArEgen(nyckel) || !state.handlingsplan || !state.handlingsplan[nyckel]) return;
   delete state.handlingsplan[nyckel];
   renderHandlingsplanSeed();
-  if (typeof announceToScreenReader === "function") announceToScreenReader("Raden är borttagen.");
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Raden är borttagen.");
 }
 function _handlingsplanSeedRows({ baraEgna = false } = {}) {
   const rows = [], nycklar = [], skillnader = [], minsta = [];
@@ -18180,7 +18180,7 @@ function _exportHandlingsplanExport() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), "Vägledning");
   _laggTillMetodblad(wb);
   XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
-  if (typeof announceToScreenReader === "function") announceToScreenReader("Handlingsplansunderlag exporterat.");
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Handlingsplansunderlag exporterat.");
 }
 function uppstartHandlingsplan() {
   ["input", "change"].forEach((typ) => document.getElementById("handlingsplan-tbody")?.addEventListener(typ, (e) => {
@@ -19728,12 +19728,12 @@ function openGlossary() {
   if (!m) return;
   m.style.display = "flex";
   renderGlossary("");
-  trapFocus(m);
+  fangaFokus(m);
 }
 function closeGlossary() {
   const m = document.getElementById("glossary-modal");
   if (m) {
-    releaseFocus(m);
+    slappFokus(m);
     m.style.display = "none";
   }
 }
@@ -19753,20 +19753,20 @@ function uppstartOrdlista() {
     const m = document.getElementById("symbols-modal");
     if (m) {
       m.style.display = "flex";
-      trapFocus(m);
+      fangaFokus(m);
     }
   });
   document.getElementById("symbols-close")?.addEventListener("click", () => {
     const m = document.getElementById("symbols-modal");
     if (m) {
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
   document.querySelector("#symbols-modal .glossary-backdrop")?.addEventListener("click", () => {
     const m = document.getElementById("symbols-modal");
     if (m) {
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
@@ -20158,12 +20158,12 @@ function openGruppdossier(preselectKey) {
   if (!modal) return;
   ritaGruppdossier(preselectKey);
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal);
+  if (typeof fangaFokus === "function") fangaFokus(modal);
 }
 function closeGruppdossier() {
   const modal = document.getElementById("dossier-modal");
   if (!modal) return;
-  if (typeof releaseFocus === "function") releaseFocus(modal);
+  if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
 }
 function ritaGruppdossier(preselectKey) {
@@ -20195,8 +20195,8 @@ function ritaGruppdossier(preselectKey) {
   body.innerHTML = _gdRitaInnehall(d);
   const modal = document.getElementById("dossier-modal");
   if (modal && modal.style.display === "flex") {
-    if (typeof releaseFocus === "function") releaseFocus(modal);
-    if (typeof trapFocus === "function") trapFocus(modal);
+    if (typeof slappFokus === "function") slappFokus(modal);
+    if (typeof fangaFokus === "function") fangaFokus(modal);
   }
 }
 function gruppNamn(g) {
@@ -20317,7 +20317,7 @@ function uppstartGruppdossier() {
     if (!d) return;
     const txt = medExportLage(() => gruppdossierAsText(d));
     const done = () => {
-      if (typeof announceToScreenReader === "function") announceToScreenReader("Dossier kopierad.");
+      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Dossier kopierad.");
     };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {
     });
@@ -22053,12 +22053,12 @@ function openBasdossier(bas, opener) {
   if (!modal) return;
   ritaBasdossier(bas);
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal, opener || document.activeElement);
+  if (typeof fangaFokus === "function") fangaFokus(modal, opener || document.activeElement);
 }
 function closeBasdossier() {
   const modal = document.getElementById("basdossier-modal");
   if (!modal || modal.style.display !== "flex") return;
-  if (typeof releaseFocus === "function") releaseFocus(modal);
+  if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
 }
 function ritaBasdossier(bas) {
@@ -22079,17 +22079,17 @@ function ritaBasdossier(bas) {
   sel.innerHTML = kand.map((x) => `<option value="${esc(x.bas)}">BAS ${esc(x.bas)} (${svTal(x.n, 0)} personer)</option>`).join("");
   sel.value = kand.some((x) => x.bas === onskat) ? onskat : kand[0].bas;
   _bdVald = sel.value;
-  if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
+  if (bas && bas !== sel.value) meddelaSkarmlasare(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
   const d = buildBasdossier(sel.value);
   body.innerHTML = d ? _bdRitaInnehall(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
   const modal = document.getElementById("basdossier-modal");
   if (modal && modal.style.display === "flex") {
-    const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
+    const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
     if (trap) {
       modal.removeEventListener("keydown", trap.handler);
-      _focusTraps.delete(modal);
+      _fokusfallor.delete(modal);
     }
-    trapFocus(modal, opener, { flyttaFokus: false });
+    fangaFokus(modal, opener, { flyttaFokus: false });
   }
 }
 var _bdKr = (v) => svKr(v);
@@ -22282,10 +22282,10 @@ function uppstartBasdossier() {
       );
       const txt = sel ? basdossierText(sel.value) : null;
       if (!txt) {
-        announceToScreenReader(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`);
+        meddelaSkarmlasare(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`);
         return;
       }
-      const klart = () => announceToScreenReader("BAS-dossiern kopierad.");
+      const klart = () => meddelaSkarmlasare("BAS-dossiern kopierad.");
       if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {
       });
       else klart();
@@ -22538,7 +22538,7 @@ function _afterDataLoaded() {
   renderDataValidationReport();
   renderForhandskontroll();
   syncDatakvalitetPanel({ reg });
-  announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
+  meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
   hideLoading();
   const DEFER_NOTE = " · förbereder analyser i bakgrunden…";
   setTimeout(() => {
@@ -23124,7 +23124,7 @@ function _visaEjInlast(saknas, stats) {
   }
   maybeShowColumnMapping();
   _visaKolumnmappning();
-  announceToScreenReader(dataStatus.textContent);
+  meddelaSkarmlasare(dataStatus.textContent);
 }
 function _visaKolumnmappning() {
   const panel = document.getElementById("column-map-panel");
@@ -23192,7 +23192,7 @@ function maybeShowColumnMapping() {
   const visaBesked = (text) => {
     _profilBesked = text;
     maybeShowColumnMapping();
-    announceToScreenReader(text);
+    meddelaSkarmlasare(text);
   };
   panel.querySelector("#colmap-spara-profil")?.addEventListener("click", () => {
     const r = sparaImportprofil(namnFalt()?.value);
@@ -23321,7 +23321,7 @@ function uppstartFilinlasning() {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-    announceToScreenReader("CSV-mall nedladdad: lonefil_mall.csv");
+    meddelaSkarmlasare("CSV-mall nedladdad: lonefil_mall.csv");
   });
   dataInput.addEventListener("change", (e) => loadStructureFile(
     /** @type {HTMLInputElement} */
@@ -24409,7 +24409,7 @@ function explorerTillRapport() {
   state.rapportTabeller = [...state.rapportTabeller || [], recept];
   if (namnEl) namnEl.value = "";
   satt(`Tillagd: ${recept.namn} (${state.rapportTabeller.length} ${state.rapportTabeller.length === 1 ? "egen tabell" : "egna tabeller"}). Ordningen ändras under Exportera.`, true);
-  if (typeof announceToScreenReader === "function") announceToScreenReader(`Tabellen ${recept.namn} är tillagd i rapporten.`);
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(`Tabellen ${recept.namn} är tillagd i rapporten.`);
   return recept;
 }
 function uppstartUtforska() {
@@ -24634,7 +24634,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   }
   const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.` + (varningar.length ? " " + varningar.join(" ") : "");
   _paketStatus(meddelande, true);
-  announceToScreenReader(meddelande);
+  meddelaSkarmlasare(meddelande);
   return { ok: true, meddelande };
 }
 var _paketFalt = (id) => document.getElementById(id);
@@ -24876,7 +24876,7 @@ async function skapaOrganisationsfil() {
   const annanVersion = r.version && r.version !== APP_VERSION;
   const meddelande = `Organisationsfilen ${filnamn} är nedladdad: paketet från ${paket.organisation.namn} (${skapad}) inbakat i verktyget version ${r.version || "okänd"}.` + (annanVersion ? ` Observera: den utpekade filen är en annan version än den som körs (${APP_VERSION}).` : "") + " Ingen lönedata ingår.";
   _organisationsfilStatus(meddelande, true);
-  announceToScreenReader(meddelande);
+  meddelaSkarmlasare(meddelande);
   return { ok: true, meddelande };
 }
 function lasInInbakatPaket() {
@@ -24912,7 +24912,7 @@ function visaInbakatPaket() {
   const inst = obj?.installningar || {};
   content.innerHTML = `<dl>${rad("Organisation", obj?.organisation?.namn)}${rad("Utgivare", obj?.utgivare)}${rad("Skapat", obj?.skapat)}${rad("Avser år", obj?.avserAr)}${rad("Inbakat", inb.skapad)}${rad("Verktygets version", inb.verktygsversion)}${rad("Verktygsfilens kontrollsumma (SHA-256)", inb.verktygssha)}${rad("Benämning på jämförelsestatistiken", obj?.profil?.jamforelseNamn)}${rad("Minsta gruppstorlek", inst.kTroskel)}${rad("Lägsta tillåtna minsta gruppstorlek", inst.kTroskelLagst)}${rad("Rensning vid inaktivitet (min)", inst.inaktivitetMin)}${rad("Rensningstiden låst", inst.inaktivitetLast ? "ja" : null)}${rad("Små grupper i exporten från Tabeller och egna vyer", inst.smaGrupperIExport === false ? "inte tillåtet" : null)}${rad(`${stor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === "mansdominerade" ? "bara mansdominerade" : inst.jamforelse === "alla" ? "alla som inte är kvinnodominerade" : null)}</dl>${rad("Egna tabeller i rapporten", obj?.rapport?.tabeller?.length)}${rad(`Receptet per ${T.niva.en}`, obj?.rapport?.perBasRecept ? "eget" : null)}` + tabell(obj?.referens?.namn || "Ställningstagandet", obj?.referens?.rader, ["aid", "bas", "p10", "med", "p90"]) + tabell(obj?.statistik?.namn || "Jämförelsestatistiken", obj?.statistik?.rader, ["aid", "bas", "median", "p10", "p90", "andelKv"]) + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal);
+  if (typeof fangaFokus === "function") fangaFokus(modal);
 }
 function laddaNerInbakatPaket() {
   const inb = state.paketInbakat;
@@ -24928,12 +24928,12 @@ function laddaNerInbakatPaket() {
   a.download = _paketFilnamn(inb.organisation);
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-  announceToScreenReader(`Paketet sparat: ${a.download}`);
+  meddelaSkarmlasare(`Paketet sparat: ${a.download}`);
 }
 var _stangPaketModal = () => {
   const m = document.getElementById("paket-modal");
   if (m) {
-    if (typeof releaseFocus === "function") releaseFocus(m);
+    if (typeof slappFokus === "function") slappFokus(m);
     m.style.display = "none";
   }
 };
@@ -24969,7 +24969,7 @@ function uppstartOrganisationspaket() {
     a.download = _paketFilnamn(paket.organisation.namn);
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-    announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
+    meddelaSkarmlasare(`Organisationspaket sparat: ${a.download}`);
   });
   document.getElementById("file-input-verktygsfil")?.addEventListener("change", (e) => {
     const inp = (
@@ -25176,7 +25176,7 @@ function uppstartDemodataDiagnostik() {
 function clearAllData() {
   const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length || _fkVantar || state.forhandskontroll;
   if (!hasAny) {
-    announceToScreenReader("Ingen data finns i minnet att rensa.");
+    meddelaSkarmlasare("Ingen data finns i minnet att rensa.");
     return;
   }
   if (!confirm("All data försvinner ur minnet: lönefilen, ställningstagandet, statistiken, scenarierna och ögonblicksbilden. Det går inte att ångra. Vill du fortsätta?")) return;
@@ -25391,7 +25391,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   if (typeof navigateTo === "function") navigateTo("dashboard");
   updateGdprBanner();
   if (typeof ritaKravstatus === "function") ritaKravstatus();
-  announceToScreenReader("All data har raderats ur minnet.");
+  meddelaSkarmlasare("All data har raderats ur minnet.");
   if (inbakat && typeof lasInInbakatPaket === "function") lasInInbakatPaket();
   visningNy();
 }
@@ -27294,7 +27294,7 @@ function _exportEuReportExport() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), "Skillnad i lönefördelningen");
   _laggTillMetodblad(wb, { extra: [["Löneskillnadens tecken i den här filen", DIREKTIV_METOD]] });
   XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
-  if (typeof announceToScreenReader === "function") announceToScreenReader("EU-lönerapport exporterad.");
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("EU-lönerapport exporterad.");
 }
 function _kvartilSpann(x, kr2) {
   if (x.undre == null) return `upp till ${kr2(x.ovre)}`;
@@ -27316,7 +27316,7 @@ function uppstartStruktur() {
       e.target.value !== "hela";
       const nb2 = document.getElementById("struktur-narrative");
       if (nb2 && nb2.dataset.dirty) {
-        if (typeof announceToScreenReader === "function") announceToScreenReader("Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.");
+        if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.");
         return;
       }
       medExportLage(renderStrukturUtkast);
@@ -28122,7 +28122,7 @@ function _exportJPAProtokollExport() {
   _laggTillMetodblad(wb);
   XLSX.writeFile(wb, filename);
   _visaExportvarning();
-  announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
+  meddelaSkarmlasare(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 function uppstartExcelexport() {
   document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAlltTillExcel);
@@ -28244,7 +28244,7 @@ function _guAndra(ny, fokus, meddelande) {
     );
     if (r) r.focus();
   }
-  if (meddelande) announceToScreenReader(meddelande);
+  if (meddelande) meddelaSkarmlasare(meddelande);
 }
 function _guKr(v, tecken = true) {
   const r = Math.round(v);
@@ -28730,7 +28730,7 @@ function _laddaNedCSV(rows, filename, { undantag = "" } = {}) {
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1500);
     if (typeof _visaExportvarning === "function") _visaExportvarning();
-    if (typeof announceToScreenReader === "function") announceToScreenReader("CSV exporterad: " + (rows.length - 1) + " rader.");
+    if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("CSV exporterad: " + (rows.length - 1) + " rader.");
   } catch (err) {
     alert("CSV-export misslyckades: " + (err.message || String(err)));
   }
@@ -29527,7 +29527,7 @@ function openDataResidency() {
             <p id="inactivity-last" class="k-mask-note" role="status"${last == null ? " hidden" : ""}>Låst till ${last} minuter av organisationspaketet${state.paket ? ` från ${esc(state.paket.organisation)}` : ""}: systemägaren har bestämt tiden, så den kan inte ändras här.</p>
         </div>`;
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal);
+  if (typeof fangaFokus === "function") fangaFokus(modal);
 }
 var _inactivityIdleTimer = null;
 var _inactivityWarningTimer = null;
@@ -29636,7 +29636,7 @@ function uppstartVadLagrasInaktivitet() {
   document.getElementById("data-residency-close")?.addEventListener("click", () => {
     const m = document.getElementById("data-residency-modal");
     if (m) {
-      if (typeof releaseFocus === "function") releaseFocus(m);
+      if (typeof slappFokus === "function") slappFokus(m);
       m.style.display = "none";
     }
   });
@@ -29647,7 +29647,7 @@ function uppstartVadLagrasInaktivitet() {
     ) {
       const m = document.getElementById("data-residency-modal");
       if (m) {
-        if (typeof releaseFocus === "function") releaseFocus(m);
+        if (typeof slappFokus === "function") slappFokus(m);
         m.style.display = "none";
       }
     }
@@ -29711,7 +29711,7 @@ function _fkPausa(fk, lasIn) {
   if (filer && !filer.classList.contains("active")) filer.click();
   av?.scrollIntoView?.({ block: "start" });
   document.getElementById("fk-las-in")?.focus?.({ preventScroll: true });
-  announceToScreenReader(dataStatus.textContent);
+  meddelaSkarmlasare(dataStatus.textContent);
 }
 function _fkSlappVantande() {
   _fkVantar = null;
@@ -29731,7 +29731,7 @@ function _fkAvbryt() {
   maybeShowColumnMapping();
   dataStatus.textContent = state.data.length ? "Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar." : "Inläsningen avbröts. Ingen lönefil är inläst.";
   dataStatus.className = "status-msg";
-  announceToScreenReader(dataStatus.textContent);
+  meddelaSkarmlasare(dataStatus.textContent);
 }
 function _fkSlapp() {
   _fkVantar = null;
@@ -30255,7 +30255,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
       }
       window.scrollTo(0, 0);
       document.getElementById("main-content")?.focus({ preventScroll: true });
-      announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+      meddelaSkarmlasare(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
     };
     if (!navigateTo(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
   }
@@ -31079,7 +31079,7 @@ function uppstartKTroskel() {
     );
     _kVisaFel(r.ok || r.nekad ? "" : r.fel);
     const sag = () => {
-      if (r.ok && typeof announceToScreenReader === "function") announceToScreenReader(`Minsta gruppstorlek är nu ${r.varde}.`);
+      if (r.ok && typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(`Minsta gruppstorlek är nu ${r.varde}.`);
     };
     if (r.klar) r.klar.then(sag);
     else sag();
@@ -32196,7 +32196,7 @@ async function _kopieraRapportAvsnittExport() {
 function _rapportKvitto(knapp, text) {
   const k = knapp && knapp.parentElement && knapp.parentElement.querySelector(".ru-kvitto");
   if (k) k.textContent = text;
-  if (typeof announceToScreenReader === "function") announceToScreenReader(text);
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(text);
 }
 function kopieraRapportBlock(...a) {
   return medExportLage(() => _kopieraRapportBlockExport.apply(
@@ -32326,7 +32326,7 @@ function _visaFilkortet(kortId, inputId, text) {
   kort.classList.add("visas-nu");
   setTimeout(() => kort.classList.remove("visas-nu"), 2e3);
   document.getElementById(inputId)?.focus?.({ preventScroll: true });
-  announceToScreenReader(text);
+  meddelaSkarmlasare(text);
 }
 function visaLonefilskortet(flikNamn) {
   _visaFilkortet(
@@ -33244,8 +33244,8 @@ function uppstartTabellerOchLankar() {
     if (!state.flerKolumner) state.flerKolumner = {};
     state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
     tillampaFlerKolumner(tableId);
-    if (typeof announceToScreenReader === "function")
-      announceToScreenReader(state.flerKolumner[cfg.nyckel] ? "Alla kolumner visas." : "Tabellen visar färre kolumner.");
+    if (typeof meddelaSkarmlasare === "function")
+      meddelaSkarmlasare(state.flerKolumner[cfg.nyckel] ? "Alla kolumner visas." : "Tabellen visar färre kolumner.");
   });
   document.addEventListener("click", (e) => {
     const link = (
@@ -33592,7 +33592,7 @@ function __copyTableToClipboardExport(tableId, btn) {
 function _copyMatrixToClipboard(rows, btn, { undantag = "" } = {}) {
   const tsv = tillTsv(_tsvMedStampel(rows, undantag));
   const done = () => {
-    if (typeof announceToScreenReader === "function") announceToScreenReader("Kopierat: " + (rows.length - 1) + " rader.");
+    if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Kopierat: " + (rows.length - 1) + " rader.");
     if (btn) {
       const o = btn.innerHTML;
       btn.textContent = "Kopierad";
@@ -34441,7 +34441,7 @@ function _rfTangentTill(el, m, nr, antal) {
     _rfTipsAgare = el;
   } else _rfDoljTips(el);
   const serie = t && t.lager.serie ? `${t.lager.serie}. ` : "";
-  if (typeof announceToScreenReader === "function") announceToScreenReader(`${serie}${_rfTipsText(rader) || "Datapunkt"} (${nr + 1} av ${antal})`);
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(`${serie}${_rfTipsText(rader) || "Datapunkt"} (${nr + 1} av ${antal})`);
 }
 function _rfTangentSlapp(el) {
   const k = el._rfKoppling;
@@ -35780,12 +35780,12 @@ function openSkalDialog(nyckel, opener) {
   };
   _skalRender();
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal, opener || document.activeElement);
+  if (typeof fangaFokus === "function") fangaFokus(modal, opener || document.activeElement);
 }
 function closeSkalDialog() {
   const modal = document.getElementById("skal-modal");
   if (!modal || modal.style.display !== "flex") return;
-  if (typeof releaseFocus === "function") releaseFocus(modal);
+  if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
   _skal = null;
 }
@@ -35823,13 +35823,13 @@ function _skalRender() {
   body.innerHTML = `<h3 class="fs-lg marg-0">${esc(s.grupp)}</h3>${_skalSkillnadHtml()}` + (s.rader.length ? `<div class="table-container"><table class="data-table st-088 skal-tabell"><thead><tr><th scope="col">Kategori</th><th scope="col" class="t-hoger">Belopp (kr/mån)</th><th scope="col" class="t-hoger">Andel av skillnaden</th><th scope="col">Kommentar</th><th scope="col"><span class="sr-only">Ta bort</span></th></tr></thead><tbody>${s.rader.map(_skalRadHtml).join("")}</tbody></table></div>` : '<p class="text-dampad-sm">Inga skäl ännu. Lägg till ett skäl för varje kategori som förklarar en del av skillnaden.</p>') + `<div class="rad-bryt-mitt gap-8 marg-t-8"><button id="skal-lagg-till" class="btn btn-secondary btn-sm" type="button"${fullt ? " disabled" : ""}>Lägg till skäl</button><span class="text-dampad-sm">Högst 8 skäl per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.</span></div><p id="skal-belopp-fel" class="handlingsplan-varning" role="status" hidden>Beloppet ska vara ett heltal mellan 0 och 200 000 kr. Skälet sparas när beloppet är giltigt.</p><p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p><div id="skal-status"></div>`;
   _skalUppdatera();
   const modal = document.getElementById("skal-modal");
-  if (modal && modal.style.display === "flex" && typeof _focusTraps !== "undefined") {
-    const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
+  if (modal && modal.style.display === "flex" && typeof _fokusfallor !== "undefined") {
+    const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
     if (trap) {
       modal.removeEventListener("keydown", trap.handler);
-      _focusTraps.delete(modal);
+      _fokusfallor.delete(modal);
     }
-    trapFocus(modal, opener, { flyttaFokus: false });
+    fangaFokus(modal, opener, { flyttaFokus: false });
   }
 }
 function _skalUppdatera() {
@@ -35932,7 +35932,7 @@ function uppstartSakligaSkal() {
       _skal.rader.splice(Number(bort.getAttribute("data-skal-ta-bort")), 1);
       _skalRender();
       document.getElementById("skal-lagg-till")?.focus();
-      if (typeof announceToScreenReader === "function") announceToScreenReader("Skälet är borttaget.");
+      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Skälet är borttaget.");
       return;
     }
     if (t.closest("#skal-markera")) {
@@ -35948,7 +35948,7 @@ function uppstartSakligaSkal() {
       _skalUppdatera();
       document.getElementById("skal-summa")?.setAttribute("tabindex", "-1");
       document.getElementById("skal-summa")?.focus();
-      if (typeof announceToScreenReader === "function") announceToScreenReader("Raden är markerad: sakligt skäl finns.");
+      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Raden är markerad: sakligt skäl finns.");
     }
   });
   ["input", "change"].forEach((typ) => document.getElementById("skal-modal")?.addEventListener(typ, (e) => {
@@ -36682,7 +36682,7 @@ function _exportBenchmarkExcelExport() {
   _laggTillMetodblad(wb);
   XLSX.writeFile(wb, filename);
   _visaExportvarning();
-  announceToScreenReader(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? "" : "er"}, ${nPersoner} person${nPersoner === 1 ? "" : "er"}.`);
+  meddelaSkarmlasare(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? "" : "er"}, ${nPersoner} person${nPersoner === 1 ? "" : "er"}.`);
 }
 function uppstartJamforelseExport() {
   document.getElementById("btn-export-benchmark")?.addEventListener("click", exportBenchmarkExcel);
@@ -36793,7 +36793,7 @@ function sattLage(nytt) {
     const k = document.getElementById(id);
     if (k) k.setAttribute("aria-pressed", String(l === namn));
   }
-  if (andrat && typeof announceToScreenReader === "function") announceToScreenReader(l === "kompakt" ? "Kompakt läge: förklaringarna är undanfällda." : "Vägledande läge: förklaringarna visas.");
+  if (andrat && typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(l === "kompakt" ? "Kompakt läge: förklaringarna är undanfällda." : "Vägledande läge: förklaringarna visas.");
 }
 function introRader(rot = document) {
   for (const intro of rot.querySelectorAll(".flik-intro")) {

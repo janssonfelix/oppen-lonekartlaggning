@@ -3,7 +3,7 @@
 import { genereraStortDemo } from '../lib/demodata.js';
 import { svTal } from '../lib/talformat.js';
 import { ordForAntal } from '../lib/termer.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { T } from './09-termer.js';
 import { getBasIntervals, state } from './12-tillstand.js';
 import { _lasInDemounderlag, _renderDemoBanner } from './20-demodata-diagnostik.js';
@@ -19,7 +19,7 @@ export function loadStortDemo() {
     if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
     /** @type {HTMLElement} */ (document.getElementById('diagnostic-results')).style.display = 'none';   // ett tidigare litet demos diagnostik gäller inte här
     _renderDemoBanner();
-    announceToScreenReader(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
+    meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

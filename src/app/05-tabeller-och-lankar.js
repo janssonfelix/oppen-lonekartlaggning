@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { svPct } from '../lib/talformat.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { T } from './09-termer.js';
 import { getData, referensKalla, referensNamn, state } from './12-tillstand.js';
 import { klickaFlik, tabMal } from './31-navigering.js';
@@ -318,8 +318,8 @@ export function uppstartTabellerOchLankar() {
         if (!state.flerKolumner) state.flerKolumner = {};
         state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
         tillampaFlerKolumner(tableId);
-        if (typeof announceToScreenReader === 'function')
-            announceToScreenReader(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
+        if (typeof meddelaSkarmlasare === 'function')
+            meddelaSkarmlasare(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
     });
     // Global delegation för cross-link-knappar
     document.addEventListener('click', e => {

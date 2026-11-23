@@ -8,7 +8,7 @@ import { modellBeskrivning, stegEtikett } from '../lib/regression.js';
 import { lonebegreppReservation } from '../lib/struktur.js';
 import { adjektiv } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
 import { _flerKolumnerAlla } from './05-tabeller-och-lankar.js';
 import { _csvMedStampel, kInstalld } from './06-k-troskel.js';
@@ -493,7 +493,7 @@ export function _laddaNedCSV(rows, filename, { undantag = '' } = {}) {
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 1500);
         if (typeof _visaExportvarning === 'function') _visaExportvarning();
-        if (typeof announceToScreenReader === 'function') announceToScreenReader('CSV exporterad: ' + (rows.length - 1) + ' rader.');
+        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('CSV exporterad: ' + (rows.length - 1) + ' rader.');
     } catch (err) {
         alert('CSV-export misslyckades: ' + (err.message || String(err)));
     }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { FARG } from './01-farger.js';
-import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { INAKTIVITET_STANDARD_MIN } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -89,7 +89,7 @@ export function openDataResidency() {
         </div>`;
 
     modal.style.display = 'flex';   // som övriga modaler: .glossary-modal centrerar sin panel
-    if (typeof trapFocus === 'function') trapFocus(modal);
+    if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
 
 // ---- Inaktivitetstimer med tvåfas-varning ----
@@ -225,12 +225,12 @@ export function uppstartVadLagrasInaktivitet() {
     });
     document.getElementById('data-residency-close')?.addEventListener('click', () => {
         const m = document.getElementById('data-residency-modal');
-        if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; }
+        if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; }
     });
     document.getElementById('data-residency-modal')?.addEventListener('click', e => {
         if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) {
             const m = document.getElementById('data-residency-modal');
-            if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; }
+            if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; }
         }
     });
 }

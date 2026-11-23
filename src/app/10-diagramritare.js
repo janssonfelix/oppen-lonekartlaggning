@@ -29,7 +29,7 @@
 import { antalPunkter, arBortvald, harleddaLager, harlettNot, kvantilpunkter, ladstatistik, namnIMening, panelerMedLager, skalDoman, talformat, underlagBeskrivning, underlagProva, underlagVarden, urvalBeskrivning, urvalEtikett, urvalLista, urvalSomLista, urvalSpann, urvalVarden, utanSmaGrupper, valideraFigur } from '../lib/figur.js';
 import { tolkaTalStrikt } from '../lib/inlasning.js';
 import { FARG } from './01-farger.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { _hideChartTip, _setScatterSampleNote, _showChartTip } from './02-verktygstips.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kSanktNot } from './06-k-troskel.js';
@@ -863,7 +863,7 @@ function _rfTangentTill(el, m, nr, antal) {
     const r = m.getBoundingClientRect ? m.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
     if (html) { _showChartTip(html, r.left + r.width / 2, r.top); _rfTipsAgare = el; } else _rfDoljTips(el);
     const serie = t && t.lager.serie ? `${t.lager.serie}. ` : '';
-    if (typeof announceToScreenReader === 'function') announceToScreenReader(`${serie}${_rfTipsText(rader) || 'Datapunkt'} (${nr + 1} av ${antal})`);
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`${serie}${_rfTipsText(rader) || 'Datapunkt'} (${nr + 1} av ${antal})`);
 }
 function _rfTangentSlapp(el) {
     const k = el._rfKoppling;

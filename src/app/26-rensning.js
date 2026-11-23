@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { K_STANDARD } from '../lib/ktroskel.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { visaInterntFel } from './03-hjalpfunktioner.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
 import { _kVisaFel, _synkaKTroskel } from './06-k-troskel.js';
@@ -37,7 +37,7 @@ export function clearAllData() {
     const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length
         || _fkVantar || state.forhandskontroll;   // en fil som väntar på Läs in, eller förhandskontrollens tio rader
     if (!hasAny) {
-        announceToScreenReader('Ingen data finns i minnet att rensa.');
+        meddelaSkarmlasare('Ingen data finns i minnet att rensa.');
         return;
     }
     if (!confirm('All data försvinner ur minnet: lönefilen, ställningstagandet, statistiken, scenarierna och ögonblicksbilden. Det går inte att ångra. Vill du fortsätta?')) return;
@@ -217,7 +217,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
 
     updateGdprBanner();
     if (typeof ritaKravstatus === 'function') ritaKravstatus();
-    announceToScreenReader('All data har raderats ur minnet.');
+    meddelaSkarmlasare('All data har raderats ur minnet.');
     // Organisationsfil: paketet är en del av filen och kommer tillbaka efter rensningen, som vid start.
     if (inbakat && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();
     visningNy();   // och det som ritades under rensningen visas inte igen heller

@@ -20,7 +20,7 @@ import { skrDelText } from '../lib/skrreferens.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, stor } from '../lib/termer.js';
 import { gruppdossierGrupper, vymodellGruppdossier } from '../lib/vymodell-gruppdossier.js';
-import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _kSanktNot, _parUtelamnadeNot, kTroskel } from './06-k-troskel.js';
@@ -116,12 +116,12 @@ export function openGruppdossier(preselectKey) {
     if (!modal) return;
     ritaGruppdossier(preselectKey);
     modal.style.display = 'flex';
-    if (typeof trapFocus === 'function') trapFocus(modal);
+    if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
 export function closeGruppdossier() {
     const modal = document.getElementById('dossier-modal');
     if (!modal) return;
-    if (typeof releaseFocus === 'function') releaseFocus(modal);
+    if (typeof slappFokus === 'function') slappFokus(modal);
     modal.style.display = 'none';
 }
 
@@ -153,8 +153,8 @@ export function ritaGruppdossier(preselectKey) {
     // måste därför läggas om medan modalen är öppen.
     const modal = document.getElementById('dossier-modal');
     if (modal && modal.style.display === 'flex') {
-        if (typeof releaseFocus === 'function') releaseFocus(modal);
-        if (typeof trapFocus === 'function') trapFocus(modal);
+        if (typeof slappFokus === 'function') slappFokus(modal);
+        if (typeof fangaFokus === 'function') fangaFokus(modal);
     }
 }
 
@@ -316,7 +316,7 @@ export function uppstartGruppdossier() {
         const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
         if (!d) return;
         const txt = medExportLage(() => gruppdossierAsText(d));
-        const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
+        const done = () => { if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Dossier kopierad.'); };
         if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
         else done();
     });

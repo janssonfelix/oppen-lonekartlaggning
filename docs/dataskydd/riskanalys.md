@@ -211,7 +211,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   `document.cookie` (sökning i biblioteksfilerna). Det är det
   egentliga skyddet, och webbläsarröktestet kräver att localStorage, sessionStorage och cookies är tomma efter
   en full körning.
-- **Storage-tripwire som reserv** (`installStorageTripwire`): den första koden i verktygets
+- **Storage-tripwire som reserv** (`installeraLagringsspar`): den första koden i verktygets
   eget skript, som körs efter att de fyra biblioteken laddats. Den kastar när
   `Storage.prototype.setItem` anropas (localStorage och sessionStorage) eller
   `document.cookie` sätts. `removeItem`/`clear` spärras inte — de kan inte lagra något.
