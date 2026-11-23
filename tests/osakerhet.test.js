@@ -107,9 +107,9 @@ describe('[B4.1] bootstrapintervallen på mediankvoten', () => {
 
 describe('[B4.2] konskvotPerGrupp', () => {
     const kv = loner(12, 1, 29000), ma = loner(15, 2, 31000);
-    it('grupper där ett kön är färre än k är dolda, tomma och de där männens median inte är positiv hoppas över', () => {
-        const { visade, dolda } = konskvotPerGrupp([['A', kv, ma], ['tom', [], []], ['liten', kv.slice(0, 9), ma], ['noll', kv, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]], { k: 10 });
-        expect(dolda).toEqual(['liten']);
+    it('grupper där ett kön är färre än k är dolda och tomma hoppas över; löner som inte är över 0 räknas inte (konsMedianerUrLoner)', () => {
+        const { visade, dolda } = konskvotPerGrupp([['A', kv, ma], ['tom', [], []], ['liten', kv.slice(0, 9), ma], ['noll', kv, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], ['bara noll', [0], [0, -1]]], { k: 10 });
+        expect(dolda).toEqual(['liten', 'noll']);
         expect(visade).toEqual([{ nyckel: 'A', nKv: 12, nMa: 15, medKv: median(kv), medMa: median(ma), gap: median(kv) / median(ma) * 100 }]);
     });
     it('med ki står medianKvotKI med standardvärdena i ci', () => {

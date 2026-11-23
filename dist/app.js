@@ -6799,6 +6799,7 @@ const __mirrorOsakerhet = (() => {
     const kvantilregression = __mirrorRegression.kvantilregression;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
+    const konsMedianerUrLoner = __mirrorStruktur.konsMedianerUrLoner;
     const aidAvRad = __mirrorAid.aidAvRad;
     const namnrader = __mirrorAid.namnrader;
 
@@ -6829,6 +6830,7 @@ const __mirrorOsakerhet = (() => {
  * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B4.1, B4.2 och B4.4–B4.8).
  */
+
 
 
 
@@ -6903,7 +6905,8 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const d = rader.filter(r => r.lon > 0);
     const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
     const ma = d.filter(r => arMan(r)).map(r => r.lon);
-    if (kv.length < golv || ma.length < golv) return null;
+    const km = konsMedianerUrLoner(kv, ma, { k: golv });
+    if (!km.konOk) return null;
     const ratios = new Array(B);
     const m = bootstrapMedianer(kv, ma, B, rng || slumpFor(kv, ma));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
@@ -6912,10 +6915,9 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     }
     ratios.sort((a, b) => a - b);
     const { lag: lo, hog: hi } = percentilintervall(ratios);
-    const point = median(kv) / median(ma);
     return {
-        ratio:  { point, lo, hi },
-        gapPct: { point: (point - 1) * 100, lo: (lo - 1) * 100, hi: (hi - 1) * 100 },
+        ratio:  { point: km.medKv / km.medMa, lo, hi },
+        gapPct: { point: km.gapPct, lo: (lo - 1) * 100, hi: (hi - 1) * 100 },
         B
     };
 }
@@ -6944,8 +6946,8 @@ function medianKvotKI(kvLoner, maLoner, { B = B_PER_GRUPP, rng } = {}) {
 /**
  * Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, yrkesgrupp), bara där både kvinnorna och
  * männen är minst k (k-tröskeln, S4). Den enda prövningen mot k för översikten per BAS-intervall, lönegapet per
- * åldersgrupp och löneöversynens grupper före och efter. En grupp utan löner hoppas över, en grupp där ett kön har
- * färre än k hamnar i `dolda`, och en grupp där männens median inte är positiv hoppas över (kvoten saknas).
+ * åldersgrupp och löneöversynens grupper före och efter. Kvoten räknas med konsMedianerUrLoner (struktur.js): bara
+ * löner över 0 räknas. En grupp utan sådana löner hoppas över, och en grupp där ett kön har färre än k hamnar i `dolda`.
  * @param {Iterable<[any, number[], number[]]>} grupper  [nyckel, kvinnornas löner, männens löner], i visningsordning
  * @param {{k: number, ki?: boolean}} val  ki: med medianKvotKI (B_PER_GRUPP) i `ci`
  * @returns {{visade: Array<{nyckel: any, nKv: number, nMa: number, medKv: number, medMa: number, gap: number, ci?: null | {lo: number, hi: number}}>, dolda: any[]}}
@@ -6953,11 +6955,10 @@ function medianKvotKI(kvLoner, maLoner, { B = B_PER_GRUPP, rng } = {}) {
 function konskvotPerGrupp(grupper, { k, ki = false }) {
     const visade = [], dolda = [];
     for (const [nyckel, kv, ma] of grupper) {
-        if (!kv.length && !ma.length) continue;
-        if (kv.length < k || ma.length < k) { dolda.push(nyckel); continue; }
-        const medKv = median(kv), medMa = median(ma);
-        if (!(medMa > 0)) continue;
-        visade.push({ nyckel, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ...(ki ? { ci: medianKvotKI(kv, ma) } : {}) });
+        const km = konsMedianerUrLoner(kv, ma, { k });
+        if (!km.nKv && !km.nMa) continue;
+        if (!km.konOk) { dolda.push(nyckel); continue; }
+        visade.push({ nyckel, nKv: km.nKv, nMa: km.nMa, medKv: km.medKv, medMa: km.medMa, gap: km.kvotPct, ...(ki ? { ci: medianKvotKI(kv, ma) } : {}) });
     }
     return { visade, dolda };
 }
@@ -7191,7 +7192,7 @@ function extremvarden(rader, golv, troskel = EXTREMVARDE_Z) {
  *   gransHog:number, utanfor:boolean}>}} null utan grupper eller utan spridning
  */
 function trattUnderlag(rader, k) {
-    /** @type {Map<string, {nyckel:string, yrke:any, bas:any, aid:string, kv:number[], ma:number[], medKv?:number, medMa?:number}>} */
+    /** @type {Map<string, {nyckel:string, yrke:any, bas:any, aid:string, kv:number[], ma:number[], km?:any}>} */
     const perGrupp = new Map();
     // Gruppens namn är texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
     const iGrupp = r => r.lon > 0 && r.bas && (arKvinna(r) || arMan(r));
@@ -7204,12 +7205,12 @@ function trattUnderlag(rader, k) {
         if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: namn.get(nyckel).yrke, bas: r.bas, aid, kv: [], ma: [] });
         /** @type {{kv: number[], ma: number[]}} */ (perGrupp.get(nyckel))[kv ? 'kv' : 'ma'].push(r.lon);
     }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
+    const grupper = [...perGrupp.values()].filter(g => (g.km = konsMedianerUrLoner(g.kv, g.ma, { k })).konOk);
     if (!grupper.length) return null;
     /** @type {number[]} */
     const rest = [];
     for (const g of grupper) {
-        const medKv = g.medKv = median(g.kv), medMa = g.medMa = median(g.ma);
+        const { medKv, medMa } = g.km;
         for (const v of g.kv) rest.push(Math.log(v) - Math.log(medKv));
         for (const v of g.ma) rest.push(Math.log(v) - Math.log(medMa));
     }
@@ -7218,8 +7219,8 @@ function trattUnderlag(rader, k) {
     /** @param {number} nKv @param {number} nMa */
     const halv = (nKv, nMa) => 100 * Z_95 * MEDIAN_SE_FAKTOR * sigma * Math.sqrt(1 / nKv + 1 / nMa) * (1 + SMA_GRUPPER_RATTNING / Math.min(nKv, nMa));
     return { sigma, halv, punkter: grupper.map(g => {
-        const medKv = /** @type {number} */ (g.medKv), medMa = /** @type {number} */ (g.medMa);
-        const kvot = medKv / medMa * 100, grans = slumpensGranser(g.kv, g.ma);
+        const { medKv, medMa, kvotPct: kvot } = g.km;
+        const grans = slumpensGranser(g.kv, g.ma);
         return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv, medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
                  utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
 }
