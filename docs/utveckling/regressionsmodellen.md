@@ -563,7 +563,7 @@ testerna speglar den.
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
 | `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan och de valbara variablerna |
 | `tests/lika-arbete-app.test.js` | Kortet *Förklara med:*: valet, tangentbordet och texterna |
-| `tests/ktroskel-invarianter.test.js` | I7: uppdelningen med andra val av variabler, vid 10 och 25 (`k-troskeln.md` §10) |
+| `tests/ktroskel-invarianter.test.js` | I7: uppdelningen med andra val av variabler, vid 10 och 25 (`sparbarhet.md` §11) |
 | `tests/ktroskel-regression.test.js` | Regel R1 och BH-texten i regressionskortet |
 | `tests/ktroskel-utdata.test.js` | Protokollets blad per BAS-intervall: ett intervall som bara är säkerställt på rått p utelämnas, ett som är säkerställt efter korrigering står med sitt q-värde |
 | `tests/ktroskel-utan-alder.test.js`, `tests/exports.golden.test.js` | Utan ålder: varje utdataväg, och facit *lönefil utan ålder* |
