@@ -988,3 +988,19 @@ describe('underlag: skyddsregeln, valbara värden och valet', () => {
     });
 });
 
+
+// Samma uppställning som I6 i appen (tests/ktroskel-invarianter.test.js), med tröskeln 10 som argument: Vård (30 kvinnor,
+// 30 män) väljs; Handläggare har 12 kvinnor och Ledning 3 kvinnor, så Ledning kan inte väljas för sig. Ledningens män
+// avgör: med 9 har resten 9 män och valet godtas inte, med 10 gör det. Att appen ritar och exporterar efter svaret prövas där.
+describe('[I6] underlaget precis under och precis över skyddsregeln (k = 10)', () => {
+    const p = (sektor, kv, ma) => [...Array.from({ length: kv }, () => ({ sektor, kon: 'kvinna' })), ...Array.from({ length: ma }, () => ({ sektor, kon: 'man' }))];
+    const und = man => ({ dimensioner: [{ falt: 'sektor', namn: 'Huvudområde' }], k: 10, rita: () => null,
+        rader: [...p('Vård', 30, 30), ...p('Handläggare', 12, 0), ...p('Ledning', 3, man)] });
+    const baraVard = new Map([['sektor', new Set(['Handläggare'])]]);
+    it.each([[9, false], [10, true]])('Ledningen har %i män: valet godtas %s', (man, ok) => {
+        expect(underlagVarden(und(man), und(man).dimensioner[0]).varden).toEqual(['Handläggare', 'Vård']);
+        const prov = underlagProva(und(man), baraVard);
+        expect(prov.antal).toEqual({ urval: { kv: 30, ma: 30 }, rest: { kv: 15, ma: man } });
+        expect(prov.ok).toBe(ok);
+    });
+});
