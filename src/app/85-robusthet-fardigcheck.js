@@ -20,7 +20,8 @@ import { ordForAntal, stor, termFras } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _parForRedovisning, _parOverTroskel, _parUtelamnadeNot, isKMasked } from './06-k-troskel.js';
+import { smaGrupperVid } from '../lib/ktroskel.js';
+import { _parForRedovisning, _parOverTroskel, _parUtelamnadeNot, kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { getBasIntervals, getData, policyFor, state } from './12-tillstand.js';
 import { bedomningUnderlag, statusMarke, UK_ETIKETT } from './13-oversikt.js';
@@ -238,15 +239,9 @@ function buildFardigcheck() {
         }
     }
 
-    // 3. Maskerade grupper som tillsammans är många
+    // 3. Grupper under den inställda tröskeln (de redovisas inte i det som lämnar verktyget) som tillsammans är många
     try {
-        const groups = new Map();
-        d.forEach(r => {
-            const key = (sifferprefixAvYrke(r.yrke) ?? r.yrke) + '|' + r.bas;
-            groups.set(key, (groups.get(key) || 0) + 1);
-        });
-        let maskerade = 0, personer = 0;
-        groups.forEach(n => { if (isKMasked(n)) { maskerade++; personer += n; } });
+        const { grupper: maskerade, personer } = smaGrupperVid(d, kInstalld());
         if (personer > 0) {
             const andel = (personer / d.length) * 100;
             out.push({

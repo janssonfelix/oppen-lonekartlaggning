@@ -1764,6 +1764,19 @@ function individLitenForVid(rader, k) {
   }
   return (r) => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv2(r)}`) || 0) < k;
 }
+function smaGrupperVid(rader, k) {
+  const n = /* @__PURE__ */ new Map();
+  for (const r of rader) {
+    const g = `${aidAvYrke(r.yrke)}|${r.bas}`;
+    n.set(g, (n.get(g) || 0) + 1);
+  }
+  let grupper = 0, personer = 0;
+  for (const antal of n.values()) if (antal < k) {
+    grupper++;
+    personer += antal;
+  }
+  return { grupper, personer };
+}
 
 // src/lib/struktur.js
 function konsMedianer(rader, { k = 1 } = {}) {
@@ -31880,18 +31893,7 @@ function buildFardigcheck() {
     }
   }
   try {
-    const groups = /* @__PURE__ */ new Map();
-    d.forEach((r) => {
-      const key = (sifferprefixAvYrke(r.yrke) ?? r.yrke) + "|" + r.bas;
-      groups.set(key, (groups.get(key) || 0) + 1);
-    });
-    let maskerade = 0, personer = 0;
-    groups.forEach((n) => {
-      if (isKMasked(n)) {
-        maskerade++;
-        personer += n;
-      }
-    });
+    const { grupper: maskerade, personer } = smaGrupperVid(d, kInstalld());
     if (personer > 0) {
       const andel = personer / d.length * 100;
       out.push({

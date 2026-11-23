@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import {
     statGolvVid, kTolka, konFarRedovisas, konAntal, konFarRedovisasFor, konUtelamnatNot, raGapText, regStegForRedovisning,
     basEffekterForRedovisning, parNarK, parForRedovisning, kStampelVid, kStampelForVid, kSanktNot, kSidfot, csvMedStampel,
-    tsvMedStampel, kText, individLitenForVid, kUndantag, kUndantagNot, K_UNDANTAG
+    tsvMedStampel, kText, individLitenForVid, kUndantag, kUndantagNot, K_UNDANTAG, smaGrupperVid
 } from '../src/lib/ktroskel.js';
 
 const STAMPEL_10 = 'Minsta gruppstorlek för redovisning: 10.';
@@ -147,4 +147,18 @@ describe('[I3] tröskeln står i det som lämnar verktyget, och sänkningen säg
         expect(kStampelForVid('', k)).toBe(text);
         expect(kSanktNot(k)).toBe(k < 10 ? text : '');
     });
+});
+
+describe('[I11] färdigcheckens små grupper räknas mot den inställda tröskeln', () => {
+    // A i BAS 1: 12, A i BAS 2: 9, B i BAS 1: 24 (yrkesfältets text efter koden skiljer inte grupperna), C utan kod: 3.
+    const rader = [
+        ...Array.from({ length: 12 }, () => ({ yrke: '111 Handläggare', bas: '1' })),
+        ...Array.from({ length: 9 }, () => ({ yrke: '111', bas: '2' })),
+        ...Array.from({ length: 24 }, (_, i) => ({ yrke: i % 2 ? '222 X' : '222 Y', bas: '1' })),
+        ...Array.from({ length: 3 }, () => ({ yrke: 'Utan kod', bas: '1' })),
+    ];
+    it('vid 10: grupperna med 9 och 3', () => expect(smaGrupperVid(rader, 10)).toEqual({ grupper: 2, personer: 12 }));
+    it('vid 25: alla fyra grupper', () => expect(smaGrupperVid(rader, 25)).toEqual({ grupper: 4, personer: 48 }));
+    it('vid 12 räknas inte gruppen med precis 12', () => expect(smaGrupperVid(rader, 12)).toEqual({ grupper: 2, personer: 12 }));
+    it('på skärmens tröskel 1 är ingen grupp liten, därför skickar appen den inställda', () => expect(smaGrupperVid(rader, 1)).toEqual({ grupper: 0, personer: 0 }));
 });

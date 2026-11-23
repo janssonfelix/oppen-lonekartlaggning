@@ -237,3 +237,22 @@ export function individLitenForVid(rader, k) {
     }
     return r => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv(r)}`) || 0) < k;
 }
+
+/**
+ * Färdigcheckens punkt om små grupper: hur många grupper (AID-koden inom BAS-intervallet) som har färre än k personer,
+ * och hur många personer de har tillsammans. De grupperna redovisas inte i det som lämnar verktyget, så appen skickar
+ * den inställda tröskeln, också på skärmen.
+ * @param {any[]} rader
+ * @param {number} k
+ * @returns {{ grupper: number, personer: number }}
+ */
+export function smaGrupperVid(rader, k) {
+    const n = new Map();
+    for (const r of rader) {
+        const g = `${aidAvYrke(r.yrke)}|${r.bas}`;
+        n.set(g, (n.get(g) || 0) + 1);
+    }
+    let grupper = 0, personer = 0;
+    for (const antal of n.values()) if (antal < k) { grupper++; personer += antal; }
+    return { grupper, personer };
+}

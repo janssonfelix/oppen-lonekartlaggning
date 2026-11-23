@@ -576,7 +576,7 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 
 ## 10. Testernas märkning
 
-Testerna för tröskeln bär sitt ID först i namnet på en `describe`, inom hakparentes (`[I4] …`). Serierna I1–I8,
+Testerna för tröskeln bär sitt ID först i namnet på en `describe`, inom hakparentes (`[I4] …`). Serierna I1–I11,
 C2–C6 och R1–R5, med vad de prövar, regeln, koden och testfilen, står i spårbarhetsmatrisen
 ([`sparbarhet.md`](sparbarhet.md) avsnitt 11); R-märkningen är reglernas i avsnitt 8. De övriga testerna i
 `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js` och `tests/troskelbeslut.test.js` heter efter det de prövar.
