@@ -11042,7 +11042,7 @@ function renderPrioritering() {
   if (s1) s1.textContent = _fmtCost(levels[0]);
   if (s2) s2.textContent = _fmtCost(levels[1]);
   if (s3) s3.textContent = _fmtCost(levels[2]) + "+";
-  const baseP = byggGrundberakning();
+  const baseP = byggGrundurval();
   const dForCount = hamtaData();
   let smallCount = 0, noRefCount = 0;
   const groupCheck = {};
@@ -11065,7 +11065,7 @@ function renderPrioritering() {
       if (!sr) noRefCount++;
     }
   });
-  sattBerakning("prioritering", {
+  sattMetodik("prioritering", {
     title: "Prioriteringsanalys",
     ...baseP,
     usedInAnalysis: items.length,
@@ -14950,9 +14950,9 @@ function ritaLivscykel(given) {
             Modellen bygger på ${svTal(result.n, 0)} personer och tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
     `;
-  const baseL = byggGrundberakning();
+  const baseL = byggGrundurval();
   const utanfor = Math.max(0, baseL.afterFilter - result.n);
-  sattBerakning("livscykel", {
+  sattMetodik("livscykel", {
     title: "Ålder & karriär — livscykelmodellen",
     ...baseL,
     usedInAnalysis: result.n,
@@ -19125,9 +19125,9 @@ function generateBenchmark() {
   const antal = matchningAntal(rader);
   const grupper = (n) => `${n} ${ordForAntal(n, T.enhet)} i ${T.niva.en}`;
   const urval = jamforelseUrvalText();
-  sattBerakning("benchmark", {
+  sattMetodik("benchmark", {
     title: "Jämförelsestatistik",
-    ...byggGrundberakning(),
+    ...byggGrundurval(),
     usedInAnalysis: rader.length,
     analysisExclusions: [
       ...urval ? [[esc(urval), ""]] : [],
@@ -22350,8 +22350,8 @@ function ritaLoneoversikt() {
   document.getElementById("rapport-table")?.classList.toggle("utan-jamforelse", !state.statistik.length);
   if (!/** @type {HTMLInputElement} */
   document.getElementById("search-rapport")?.value) _rapportTillampaHopfallning();
-  const base = byggGrundberakning();
-  sattBerakning("rapport", {
+  const base = byggGrundurval();
+  sattMetodik("rapport", {
     title: "Löneöversikt",
     ...base,
     usedInAnalysis: base.afterFilter,
@@ -25927,8 +25927,8 @@ function ritaLoneskillnadPerBas(vm) {
     if (konsfordelning.rader.length) ritaFigur(skEl, _skevhetAndelFigur(konsfordelning.rader));
     else rensaFigur(skEl);
   }
-  const baseS = byggGrundberakning();
-  sattBerakning("skevhet", {
+  const baseS = byggGrundurval();
+  sattMetodik("skevhet", {
     title: "Löneskillnad och könsfördelning",
     ...baseS,
     usedInAnalysis: baseS.afterFilter,
@@ -26073,12 +26073,12 @@ function ritaLikaArbete(vm, { reg: given } = {}) {
       _openEvidenceModal(_evidenceForEUMatrixRow(row));
     });
   });
-  const baseM = byggGrundberakning();
+  const baseM = byggGrundurval();
   const skippedTooFewKvOrMa = vm.ejJamforbara.length;
   const maskedYrken = vm.utelamnade.length;
   const reg = given || runOLSRegression();
   const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct(reg.R2 * 100, 1)}`;
-  sattBerakning("matrix", {
+  sattMetodik("matrix", {
     title: "Lika arbete — multivariat regression",
     ...baseM,
     usedInAnalysis: rows.length,
@@ -27585,7 +27585,7 @@ function __excelAlltBokExport() {
     ["Genererad", (/* @__PURE__ */ new Date()).toLocaleString("sv-SE")],
     []
   ];
-  berakningsposter().forEach(([id, a]) => {
+  metodikposter().forEach(([id, a]) => {
     metRows.push([a.title || id]);
     metRows.push(["Total i datafilen", a.totalRaw]);
     [...a.parseExcl || [], ...a.analysisExclusions || []].forEach(([r, c]) => {
@@ -32953,16 +32953,16 @@ function uppstartNavigering() {
 }
 
 // src/app/05-tabeller-och-lankar.js
-var berakningsregister = {};
-var BERAKNINGSORDNING = ["rapport", "skevhet", "livscykel", "matrix", "prioritering", "benchmark"];
-function berakningsposter() {
-  const ids = [...BERAKNINGSORDNING.filter((id) => id in berakningsregister), ...Object.keys(berakningsregister).filter((id) => !BERAKNINGSORDNING.includes(id))];
+var metodikregister = {};
+var METODIKORDNING = ["rapport", "skevhet", "livscykel", "matrix", "prioritering", "benchmark"];
+function metodikposter() {
+  const ids = [...METODIKORDNING.filter((id) => id in metodikregister), ...Object.keys(metodikregister).filter((id) => !METODIKORDNING.includes(id))];
   return ids.map((id) => (
     /** @type {[string, any]} */
-    [id, berakningsregister[id]]
+    [id, metodikregister[id]]
   ));
 }
-function byggGrundberakning() {
+function byggGrundurval() {
   const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
   const totalRaw = da.totalRaw;
   const afterParse = state.data.length;
@@ -32972,12 +32972,12 @@ function byggGrundberakning() {
   if (da.excludedZeroLon > 0) parseExcl.push(["Lön ≤ 0 eller saknas", da.excludedZeroLon]);
   return { totalRaw, afterParse, afterFilter, parseExcl };
 }
-function sattBerakning(id, audit) {
-  berakningsregister[id] = audit;
+function sattMetodik(id, audit) {
+  metodikregister[id] = audit;
   const panel = document.querySelector(`details.audit-panel[data-audit-id="${id}"] .audit-content`);
-  if (panel) panel.innerHTML = ritaBerakningHtml(audit);
+  if (panel) panel.innerHTML = ritaMetodikHtml(audit);
 }
-function ritaBerakningHtml(a) {
+function ritaMetodikHtml(a) {
   const fmt = (n) => n.toLocaleString("sv-SE");
   const exclRows = [
     ...(a.parseExcl || []).map(([r, c]) => `<tr><td>− ${esc(r)}</td><td class="t-tal">${fmt(c)}</td></tr>`),
@@ -36071,7 +36071,7 @@ async function _buildPrintReportExport() {
             <section class="page-break">
                 <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
                 <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
-                ${berakningsposter().map(([_id2, a]) => {
+                ${metodikposter().map(([_id2, a]) => {
         const fmtN = (n) => n.toLocaleString("sv-SE");
         const exclRows = [...a.parseExcl || [], ...a.analysisExclusions || []].map(([r, c]) => `<tr><th>− ${esc(htmlTillText(r))}</th><td>${fmtN(c)}</td></tr>`).join("");
         const used = a.usedInAnalysis !== void 0 ? a.usedInAnalysis : a.afterFilter;

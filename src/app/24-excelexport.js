@@ -14,7 +14,7 @@ import { kompletterandeUndertryckningPerNyckel } from '../lib/undertryckning.js'
 import { alderGapRader } from '../lib/vymodell-alder-karriar.js';
 import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
-import { berakningsposter } from './05-tabeller-och-lankar.js';
+import { metodikposter } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
@@ -280,7 +280,7 @@ function __excelAlltBokExport() {
         ['Genererad', new Date().toLocaleString('sv-SE')],
         []
     ];
-    berakningsposter().forEach(([id, a]) => {
+    metodikposter().forEach(([id, a]) => {
         metRows.push([a.title || id]);
         metRows.push(['Total i datafilen', a.totalRaw]);
         [...(a.parseExcl||[]), ...(a.analysisExclusions||[])].forEach(([r,c]) => {

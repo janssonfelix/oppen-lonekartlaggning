@@ -6,18 +6,18 @@ import { T } from './09-termer.js';
 import { hamtaData, referensKalla, referensNamn, state } from './12-tillstand.js';
 import { klickaFlik, flikMal } from './31-navigering.js';
 
-// ---- Audit / spårbarhet av beräkningar ("Beräkning & urval") ----
+// ---- Metodik och urval per analys ("Beräkning & urval", i exporten "Metodik & urval") ----
 // Varje analysfunktion fyller i sitt audit-objekt så användaren kan kvalitetssäkra.
-const berakningsregister = {};
+const metodikregister = {};
 // Metodbilagans ordning i Excel och utskrift: fast, oberoende av i vilken ordning flikarna råkade ritas
 // (strukturomläggningen 2026-11-06 flyttade regressionen till Lönestruktur utan att bilagan ska byta ordning).
-const BERAKNINGSORDNING = ['rapport', 'skevhet', 'livscykel', 'matrix', 'prioritering', 'benchmark'];
-export function berakningsposter() {
-    const ids = [...BERAKNINGSORDNING.filter(id => id in berakningsregister), ...Object.keys(berakningsregister).filter(id => !BERAKNINGSORDNING.includes(id))];
-    return ids.map(id => /** @type {[string, any]} */ ([id, berakningsregister[id]]));
+const METODIKORDNING = ['rapport', 'skevhet', 'livscykel', 'matrix', 'prioritering', 'benchmark'];
+export function metodikposter() {
+    const ids = [...METODIKORDNING.filter(id => id in metodikregister), ...Object.keys(metodikregister).filter(id => !METODIKORDNING.includes(id))];
+    return ids.map(id => /** @type {[string, any]} */ ([id, metodikregister[id]]));
 }
 
-export function byggGrundberakning() {
+export function byggGrundurval() {
     const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
     const totalRaw   = da.totalRaw;
     const afterParse = state.data.length;
@@ -28,13 +28,13 @@ export function byggGrundberakning() {
     return { totalRaw, afterParse, afterFilter, parseExcl };
 }
 
-export function sattBerakning(id, audit) {
-    berakningsregister[id] = audit;
+export function sattMetodik(id, audit) {
+    metodikregister[id] = audit;
     const panel = document.querySelector(`details.audit-panel[data-audit-id="${id}"] .audit-content`);
-    if (panel) panel.innerHTML = ritaBerakningHtml(audit);
+    if (panel) panel.innerHTML = ritaMetodikHtml(audit);
 }
 
-function ritaBerakningHtml(a) {
+function ritaMetodikHtml(a) {
     const fmt = n => n.toLocaleString('sv-SE');
     const exclRows = [
         ...(a.parseExcl || []).map(([r,c]) => `<tr><td>− ${esc(r)}</td><td class="t-tal">${fmt(c)}</td></tr>`),

@@ -5,7 +5,7 @@ import { stor } from '../lib/termer.js';
 import { vymodellLoneoversikt } from '../lib/vymodell-loneoversikt.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
-import { byggGrundberakning, sattBerakning, vaxlaAllaGrupper } from './05-tabeller-och-lankar.js';
+import { byggGrundurval, sattMetodik, vaxlaAllaGrupper } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
@@ -79,8 +79,8 @@ export function ritaLoneoversikt() {
     if (!/** @type {HTMLInputElement} */ (document.getElementById('search-rapport'))?.value) _rapportTillampaHopfallning();
 
     // Audit
-    const base = byggGrundberakning();
-    sattBerakning('rapport', {
+    const base = byggGrundurval();
+    sattMetodik('rapport', {
         title: 'Löneöversikt',
         ...base,
         usedInAnalysis: base.afterFilter,

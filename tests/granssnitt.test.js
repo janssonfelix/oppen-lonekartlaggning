@@ -326,6 +326,6 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         expect(innehall).toContain('log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)');
         expect(innehall).toContain('HC3-robusta standardfel');
         expect(innehall).toContain(`BAS ${r.refBas} referensintervall`);
-        expect(w.eval('berakningsregister.livscykel').usedInAnalysis).toBe(r.n);
+        expect(w.eval('metodikregister.livscykel').usedInAnalysis).toBe(r.n);
     });
 });

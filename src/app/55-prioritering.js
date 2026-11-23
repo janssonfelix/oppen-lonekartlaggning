@@ -13,7 +13,7 @@ import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { byggStapelcell, byggGrundberakning, flerKolumner, sattBerakning, tillampaFlerKolumner } from './05-tabeller-och-lankar.js';
+import { byggStapelcell, byggGrundurval, flerKolumner, sattMetodik, tillampaFlerKolumner } from './05-tabeller-och-lankar.js';
 import { kMaskerad, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { COST_DEFAULTS, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -289,7 +289,7 @@ export function renderPrioritering() {
     if (s3) s3.textContent = _fmtCost(levels[2]) + '+';
 
     // Audit
-    const baseP = byggGrundberakning();
+    const baseP = byggGrundurval();
     // Räkna grupper utan referens
     const dForCount = hamtaData();
     let smallCount = 0, noRefCount = 0;
@@ -310,7 +310,7 @@ export function renderPrioritering() {
             if (!sr) noRefCount++;
         }
     });
-    sattBerakning('prioritering', {
+    sattMetodik('prioritering', {
         title: 'Prioriteringsanalys',
         ...baseP,
         usedInAnalysis: items.length,
