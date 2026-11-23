@@ -99,8 +99,8 @@ function buildGruppdossier(key, delat = null) {
 
     // Lönepolitiskt ställningstagande
     const pol = (typeof policyFor === 'function') ? policyFor(g.aid, g.bas) : null;
-    const band = pol ? _lpGroupBandStats(g.rows, pol) : null;
-    const compliance = pol ? _lpComplianceCounts(g.rows, pol) : null;
+    const band = pol ? _lpGruppMotBand(g.rows, pol) : null;
+    const compliance = pol ? _lpAntalMotBand(g.rows, pol) : null;
 
     // § 3:10-par där gruppen ingår (som subjekt eller som jämförelseyrke)
     // Par där den andra gruppen är under tröskeln redovisas inte här (undantaget gäller bara fliken).

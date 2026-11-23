@@ -11,13 +11,13 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { bandPosition } from './lonepolitik.js';
+import { bandlage } from './lonepolitik.js';
 
 const _NAMN = { stallningstagande: 'ställningstagandet', statistik: 'statistiken' };
 const _inom = pos => pos >= 0 && pos <= 100;
 const _riktning = (pos, under, over) => (pos == null ? null : pos < 0 ? under : pos > 100 ? over : 'inom');
 const _pos = (median, ref) => {
-    const p = bandPosition(median, ref?.p10, ref?.p90);
+    const p = bandlage(median, ref?.p10, ref?.p90);
     return p == null ? null : p * 100;
 };
 const _skillnad = (varde, ref) => (varde != null && ref != null ? (varde / ref - 1) * 100 : null);

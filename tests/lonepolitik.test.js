@@ -5,38 +5,38 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-    bandPosition, groupBandStats, complianceCounts,
-    genderBandGap, costToFloor, policyCoverage, organisationsBand,
+    bandlage, gruppMotBand, antalMotBand,
+    konsskillnadIBand, kostnadTillGolv, tackningsgrad, organisationsBand,
     lonepolitikModell, maskeringsniva, lagesklass, konLagen
 } from '../src/lib/lonepolitik.js';
 
 const pol = { p10: 30000, med: 35000, p90: 40000 };
 
-describe('bandPosition', () => {
+describe('bandlage', () => {
     it('0 på golvet, 1 i taket, 0.5 mitt i', () => {
-        expect(bandPosition(30000, 30000, 40000)).toBe(0);
-        expect(bandPosition(40000, 30000, 40000)).toBe(1);
-        expect(bandPosition(35000, 30000, 40000)).toBe(0.5);
+        expect(bandlage(30000, 30000, 40000)).toBe(0);
+        expect(bandlage(40000, 30000, 40000)).toBe(1);
+        expect(bandlage(35000, 30000, 40000)).toBe(0.5);
     });
 
     it('klämmer INTE — utanför bandet ger <0 respektive >1 (det är signalen)', () => {
-        expect(bandPosition(28000, 30000, 40000)).toBeCloseTo(-0.2, 10);
-        expect(bandPosition(42000, 30000, 40000)).toBeCloseTo(1.2, 10);
+        expect(bandlage(28000, 30000, 40000)).toBeCloseTo(-0.2, 10);
+        expect(bandlage(42000, 30000, 40000)).toBeCloseTo(1.2, 10);
     });
 
     it('null när bandet är oanvändbart', () => {
-        expect(bandPosition(35000, 0, 40000)).toBeNull();
-        expect(bandPosition(35000, 30000, 0)).toBeNull();
-        expect(bandPosition(0, 30000, 40000)).toBeNull();
-        expect(bandPosition(35000, 40000, 40000)).toBeNull();   // P90 = P10
-        expect(bandPosition(35000, 45000, 40000)).toBeNull();   // P90 < P10
+        expect(bandlage(35000, 0, 40000)).toBeNull();
+        expect(bandlage(35000, 30000, 0)).toBeNull();
+        expect(bandlage(0, 30000, 40000)).toBeNull();
+        expect(bandlage(35000, 40000, 40000)).toBeNull();   // P90 = P10
+        expect(bandlage(35000, 45000, 40000)).toBeNull();   // P90 < P10
     });
 });
 
-describe('groupBandStats', () => {
+describe('gruppMotBand', () => {
     it('räknar median, position och avvikelse mot policymedian', () => {
         const rows = [{ lon: 30000 }, { lon: 35000 }, { lon: 40000 }];
-        const s = groupBandStats(rows, pol);
+        const s = gruppMotBand(rows, pol);
         expect(s.n).toBe(3);
         expect(s.median).toBe(35000);
         expect(s.position).toBe(0.5);
@@ -44,21 +44,21 @@ describe('groupBandStats', () => {
     });
 
     it('medianVsPolicyPct är negativ när gruppen ligger under policymedianen', () => {
-        const s = groupBandStats([{ lon: 31500 }], pol);
+        const s = gruppMotBand([{ lon: 31500 }], pol);
         expect(s.medianVsPolicyPct).toBeCloseTo(-10, 10);
     });
 
     it('null för tomt underlag', () => {
-        expect(groupBandStats([], pol)).toBeNull();
-        expect(groupBandStats([{ lon: 0 }], pol)).toBeNull();
-        expect(groupBandStats([{ lon: 35000 }], null)).toBeNull();
+        expect(gruppMotBand([], pol)).toBeNull();
+        expect(gruppMotBand([{ lon: 0 }], pol)).toBeNull();
+        expect(gruppMotBand([{ lon: 35000 }], null)).toBeNull();
     });
 });
 
-describe('complianceCounts', () => {
+describe('antalMotBand', () => {
     it('delar upp under/inom/över bandet', () => {
         const rows = [{ lon: 25000 }, { lon: 29999 }, { lon: 30000 }, { lon: 40000 }, { lon: 41000 }];
-        const c = complianceCounts(rows, pol);
+        const c = antalMotBand(rows, pol);
         expect(c.n).toBe(5);
         expect(c.under).toBe(2);      // 25000, 29999
         expect(c.within).toBe(2);     // 30000 och 40000 = på gränsen, räknas som inom
@@ -67,16 +67,16 @@ describe('complianceCounts', () => {
     });
 
     it('null utan användbara bandgränser', () => {
-        expect(complianceCounts([{ lon: 35000 }], { p10: 0, p90: 40000 })).toBeNull();
+        expect(antalMotBand([{ lon: 35000 }], { p10: 0, p90: 40000 })).toBeNull();
     });
 });
 
-describe('[B6.3] genderBandGap', () => {
+describe('[B6.3] konsskillnadIBand', () => {
     const mk = (n, lon, kon) => Array.from({ length: n }, () => ({ lon, kon }));
 
     it('negativ diff när kvinnor ligger lägre i samma band', () => {
         const rows = [...mk(10, 32000, 'kvinna'), ...mk(10, 38000, 'man')];
-        const g = genderBandGap(rows, pol);
+        const g = konsskillnadIBand(rows, pol);
         expect(g.nKv).toBe(10);
         expect(g.nMa).toBe(10);
         expect(g.kvPos).toBeCloseTo(0.2, 10);
@@ -86,30 +86,30 @@ describe('[B6.3] genderBandGap', () => {
 
     it('null när något kön är under tröskeln (k-anonymitet)', () => {
         const rows = [...mk(9, 32000, 'kvinna'), ...mk(20, 38000, 'man')];
-        expect(genderBandGap(rows, pol)).toBeNull();
+        expect(konsskillnadIBand(rows, pol)).toBeNull();
         // men med lägre tröskel går det
-        expect(genderBandGap(rows, pol, 5)).not.toBeNull();
+        expect(konsskillnadIBand(rows, pol, 5)).not.toBeNull();
     });
 });
 
-describe('costToFloor', () => {
+describe('kostnadTillGolv', () => {
     it('summerar bara underskottet upp till P10', () => {
         const rows = [{ lon: 28000 }, { lon: 29000 }, { lon: 35000 }];
-        const c = costToFloor(rows, pol);
+        const c = kostnadTillGolv(rows, pol);
         expect(c.nAffected).toBe(2);
         expect(c.totalMonth).toBe(3000);   // 2000 + 1000
     });
 
     it('noll när alla ligger på eller över golvet', () => {
-        const c = costToFloor([{ lon: 30000 }, { lon: 45000 }], pol);
+        const c = kostnadTillGolv([{ lon: 30000 }, { lon: 45000 }], pol);
         expect(c.nAffected).toBe(0);
         expect(c.totalMonth).toBe(0);
     });
 });
 
-describe('policyCoverage', () => {
+describe('tackningsgrad', () => {
     it('räknar täckning i både grupper och personer', () => {
-        const c = policyCoverage([
+        const c = tackningsgrad([
             { n: 10, hasPolicy: true },
             { n: 30, hasPolicy: true },
             { n: 60, hasPolicy: false }
@@ -122,24 +122,24 @@ describe('policyCoverage', () => {
     });
 
     it('tål tom lista utan att dividera med noll', () => {
-        expect(policyCoverage([]).personsPct).toBe(0);
+        expect(tackningsgrad([]).personsPct).toBe(0);
     });
 });
 
 describe('inverterat band (P10 >= P90) — malformerad policydata', () => {
     const inv = { p10: 40000, med: 35000, p90: 30000 };
-    it('complianceCounts returnerar null i stället för att räkna på felvänt band', () => {
-        expect(complianceCounts([{ lon: 35000 }, { lon: 45000 }], inv)).toBeNull();
-        expect(complianceCounts([{ lon: 35000 }], { p10: 30000, p90: 30000 })).toBeNull();
+    it('antalMotBand returnerar null i stället för att räkna på felvänt band', () => {
+        expect(antalMotBand([{ lon: 35000 }, { lon: 45000 }], inv)).toBeNull();
+        expect(antalMotBand([{ lon: 35000 }], { p10: 30000, p90: 30000 })).toBeNull();
     });
-    it('costToFloor avvisar felvänt band men räknar när taket saknas', () => {
-        expect(costToFloor([{ lon: 35000 }], inv)).toBeNull();
-        const utanTak = costToFloor([{ lon: 28000 }], { p10: 30000, med: 0, p90: 0 });
+    it('kostnadTillGolv avvisar felvänt band men räknar när taket saknas', () => {
+        expect(kostnadTillGolv([{ lon: 35000 }], inv)).toBeNull();
+        const utanTak = kostnadTillGolv([{ lon: 28000 }], { p10: 30000, med: 0, p90: 0 });
         expect(utanTak.nAffected).toBe(1);
         expect(utanTak.totalMonth).toBe(2000);
     });
-    it('bandPosition hade redan kontrollen — nu är de tre samstämmiga', () => {
-        expect(bandPosition(35000, inv.p10, inv.p90)).toBeNull();
+    it('bandlage hade redan kontrollen — nu är de tre samstämmiga', () => {
+        expect(bandlage(35000, inv.p10, inv.p90)).toBeNull();
     });
 });
 
@@ -176,7 +176,7 @@ describe('[B6.2] lonepolitikModell', () => {
         expect(b.n).toBe(8);
         expect(b.groups.map(g => [g.aid, g.n, g.tier])).toEqual([['101', 6, 'full'], ['202', 2, 'masked']]);
         expect(b.groups[0].yrke).toBe('101 Handläggare');
-        expect(b.compliance).toEqual(complianceCounts(b.groups.flatMap(g => g.rows), pol));
+        expect(b.compliance).toEqual(antalMotBand(b.groups.flatMap(g => g.rows), pol));
         expect(b.orgBand.n).toBe(8);
         expect(m.byBas[0].pol).toBeNull();
         expect(m.byBas[0].orgBand).toBeNull();

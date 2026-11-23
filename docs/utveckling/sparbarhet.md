@@ -106,9 +106,9 @@ avsnitt 11.
 
 | ID | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|---|
-| B6.1 | Organisationens band, läget i bandet (lön − P10)/(P90 − P10), median mot ställningstagandet, avstånd till golvet | `organisationsBand`, `bandPosition`, `groupBandStats`, `complianceCounts`, `costToFloor`, `policyCoverage`, `lonepolitik.js` | lön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
+| B6.1 | Organisationens band, läget i bandet (lön − P10)/(P90 − P10), median mot ställningstagandet, avstånd till golvet | `organisationsBand`, `bandlage`, `gruppMotBand`, `antalMotBand`, `kostnadTillGolv`, `tackningsgrad`, `lonepolitik.js` | lön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
 | B6.2 | Modellen per BAS-intervall med AID-grupperna under sig; maskeringstrappan (full analys från k, antal från 5, maskerad under); andelen per kön under spannet, i spannets tredjedelar och över | `lonepolitikModell`, `maskeringsniva`, `lagesklass`, `konLagen`, `lonepolitik.js` | lön, kön, AID, BAS, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
-| B6.3 | Könsgap i bandet; minst 10 av varje kön | `genderBandGap`, `lonepolitik.js` | lön, kön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
+| B6.3 | Könsgap i bandet; minst 10 av varje kön | `konsskillnadIBand`, `lonepolitik.js` | lön, kön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
 | B6.4 | Jämförelsestatistikens matchning: samma AID och BAS, annars samma AID utan BAS | `statistikFor`, `jamforelse.js` | statistiken | ADR-35, 55 | `tests/jamforelse.test.js` | saknas |
 | B6.5 | Jämförelseraderna: P10, median, P90 per AID-kod och BAS, skillnad (org/ref − 1)·100 | `jamforelseRader`, `avvikelseRangordning`, `statistikMarknad`, `jamforelse.js` | lön, AID, BAS, referenserna | ADR-35, 55 | `tests/jamforelse.test.js`, `tests/jamforelsestatistik-app.test.js` | saknas |
 | B6.6 | Läget i spannet (0–100, ord med gränserna 33 och 67), mönstret och förslaget på referens | `lageISpann`, `monster`, `forslag`, `lageOchForslag`, `referensOverblick`, `referenser.js` | jämförelseraderna | ADR-55 | `tests/referenser.test.js`, `tests/lonelaget-app.test.js` | saknas |
@@ -212,7 +212,7 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 Värden som står direkt i koden i stället för som namngivna konstanter, och som därför inte går att hitta på namn:
 gapgränsen 5 % i `individualRemediation` (`loneoversyn.js`),
 kvoterna 1,10 och 0,90 för över och under BAS-medianen i `src/app/36-loneoversyn.js`, minst 10 av varje kön i
-`genderBandGap` (`lonepolitik.js`), åldersspridningen 5 år i `flaggaIndivider` (`individflaggor.js`), gränsen för
+`konsskillnadIBand` (`lonepolitik.js`), åldersspridningen 5 år i `flaggaIndivider` (`individflaggor.js`), gränsen för
 personer att granska (standard 10 %, 5–30) i `src/app/43-personer-att-granska.js` och talen 1,96, 1,2533 och 1,4826 i
 `slumpensGranser` (`status.js`), som inte kan importera `osakerhet.js` utan att importgrafen får en cykel.
 

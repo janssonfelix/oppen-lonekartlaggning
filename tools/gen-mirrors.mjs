@@ -7,7 +7,7 @@
 // src/lib/. src/lib/ är enda källa: varje modul inlinas VERBATIM i en
 // IIFE (endast `export` strippas — funktionskropparna rörs aldrig) och de namn
 // som app.js anropar exponeras som const-alias med oförändrade speglingsnamn
-// (_anpassaOLS, _fcComputePott, _stMedianGapPct, _slumpFor, _lpBandPosition …).
+// (_anpassaOLS, _fcComputePott, _stMedianGapPct, _slumpFor, _lpBandlage …).
 //
 // Eftersom kropparna inlinas oförändrade kan spegel och lib inte glida isär.
 // tests/drift.test.js vaktar att den incheckade 09-lib-speglar.js är i synk med
@@ -194,9 +194,9 @@ export const MODULES = [
         // Importerar stat.js, kon.js och aid.js: efter dem.
         file: 'lonepolitik.js', ns: '__mirrorLonepolitik',
         expose: {
-            bandPosition: '_lpBandPosition', groupBandStats: '_lpGroupBandStats',
-            complianceCounts: '_lpComplianceCounts', genderBandGap: '_lpGenderBandGap',
-            costToFloor: '_lpCostToFloor', policyCoverage: '_lpPolicyCoverage', organisationsBand: '_lpOrganisationsBand',
+            bandlage: '_lpBandlage', gruppMotBand: '_lpGruppMotBand',
+            antalMotBand: '_lpAntalMotBand', konsskillnadIBand: '_lpKonsskillnadIBand',
+            kostnadTillGolv: '_lpKostnadTillGolv', tackningsgrad: '_lpTackningsgrad', organisationsBand: '_lpOrganisationsBand',
             lonepolitikModell: '_lpLonepolitikModell', maskeringsniva: '_lpMaskeringsniva', lagesklass: '_lpLagesklass',
             konLagen: '_lpKonLagen', lonepolitikKonstanter: '_lpKonstanter'
         }

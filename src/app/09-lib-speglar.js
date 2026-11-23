@@ -5250,7 +5250,7 @@ const _osKonstanter = __mirrorOsakerhet.osakerhetKonstanter;
 const __mirrorLonepolitik = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
-    const _quantile = __mirrorStat.kvantil;
+    const _kvantil = __mirrorStat.kvantil;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
     const aidAvYrke = __mirrorAid.aidAvYrke;
@@ -5297,10 +5297,10 @@ function lonepolitikKonstanter() {
  * referensens band i bandkartan. Percentiler kräver minst k personer; annars null.
  * @returns {null|{n:number, p10:number, med:number, p90:number}}
  */
-function organisationsBand(rows, k) {
-    const lons = (rows || []).map(r => r.lon).filter(v => v > 0).sort((a, b) => a - b);
+function organisationsBand(rader, k) {
+    const lons = (rader || []).map(r => r.lon).filter(v => v > 0).sort((a, b) => a - b);
     if (lons.length < k) return null;
-    return { n: lons.length, p10: _quantile(lons, 0.1), med: _median(lons), p90: _quantile(lons, 0.9) };
+    return { n: lons.length, p10: _kvantil(lons, 0.1), med: _median(lons), p90: _kvantil(lons, 0.9) };
 }
 
 
@@ -5320,7 +5320,7 @@ function organisationsBand(rows, k) {
  * @param {number} p90
  * @returns {number|null}
  */
-function bandPosition(lon, p10, p90) {
+function bandlage(lon, p10, p90) {
     if (!(lon > 0) || !(p10 > 0) || !(p90 > 0)) return null;
     if (p90 <= p10) return null;
     return (lon - p10) / (p90 - p10);
@@ -5328,19 +5328,19 @@ function bandPosition(lon, p10, p90) {
 
 /**
  * Sammanfattar en grupp mot sitt band.
- * @param {Array<{lon:number, kon?:string}>} rows
+ * @param {Array<{lon:number, kon?:string}>} rader
  * @param {{p10:number, med:number, p90:number}} pol
  * @returns {null|{n:number, median:number, position:number|null, medianVsPolicyPct:number|null, p10:number, med:number, p90:number}}
  */
-function groupBandStats(rows, pol) {
-    if (!Array.isArray(rows) || !rows.length || !pol) return null;
-    const lons = rows.map(r => r.lon).filter(v => v > 0);
+function gruppMotBand(rader, pol) {
+    if (!Array.isArray(rader) || !rader.length || !pol) return null;
+    const lons = rader.map(r => r.lon).filter(v => v > 0);
     if (!lons.length) return null;
     const median = _median(lons);
     return {
         n: lons.length,
         median,
-        position: bandPosition(median, pol.p10, pol.p90),
+        position: bandlage(median, pol.p10, pol.p90),
         medianVsPolicyPct: pol.med > 0 ? ((median / pol.med) - 1) * 100 : null,
         p10: pol.p10, med: pol.med, p90: pol.p90
     };
@@ -5351,15 +5351,15 @@ function groupBandStats(rows, pol) {
  * Kräver positiva P10/P90; annars null.
  * @returns {null|{n:number, under:number, within:number, over:number, underPct:number, overPct:number}}
  */
-function complianceCounts(rows, pol) {
-    if (!Array.isArray(rows) || !rows.length || !pol) return null;
+function antalMotBand(rader, pol) {
+    if (!Array.isArray(rader) || !rader.length || !pol) return null;
     if (!(pol.p10 > 0) || !(pol.p90 > 0)) return null;
-    // Samma kontroll som bandPosition: ett inverterat band (P10 >= P90) är
+    // Samma kontroll som bandlage: ett inverterat band (P10 >= P90) är
     // malformerad policydata. Utan den skulle varje individ hamna i "under"
     // eller "över" och "inom spann" alltid bli 0 — ett tyst, trovärdigt fel.
     if (pol.p90 <= pol.p10) return null;
     let under = 0, over = 0, n = 0;
-    for (const r of rows) {
+    for (const r of rader) {
         if (!(r.lon > 0)) continue;
         n++;
         if (r.lon < pol.p10) under++;
@@ -5381,16 +5381,16 @@ function complianceCounts(rows, pol) {
  * diff > 0 betyder att kvinnor i snitt ligger HÖGRE i bandet än män;
  * diff < 0 att de ligger lägre.
  *
- * @param {Array<{lon:number, kon:string}>} rows
+ * @param {Array<{lon:number, kon:string}>} rader
  * @param {{p10:number, p90:number}} pol
  * @param {number} [minPerKon=10]
  * @returns {null|{nKv:number, nMa:number, kvPos:number, maPos:number, diff:number}}
  */
-function genderBandGap(rows, pol, minPerKon = 10) {
-    if (!Array.isArray(rows) || !pol) return null;
-    const posOf = r => bandPosition(r.lon, pol.p10, pol.p90);
-    const kv = rows.filter(arKvinna).map(posOf).filter(v => v != null);
-    const ma = rows.filter(arMan).map(posOf).filter(v => v != null);
+function konsskillnadIBand(rader, pol, minPerKon = 10) {
+    if (!Array.isArray(rader) || !pol) return null;
+    const posOf = r => bandlage(r.lon, pol.p10, pol.p90);
+    const kv = rader.filter(arKvinna).map(posOf).filter(v => v != null);
+    const ma = rader.filter(arMan).map(posOf).filter(v => v != null);
     if (kv.length < minPerKon || ma.length < minPerKon) return null;
     const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
     const kvPos = mean(kv), maPos = mean(ma);
@@ -5403,13 +5403,13 @@ function genderBandGap(rows, pol, minPerKon = 10) {
  * beräkningsperiod från state.costSettings, som i Löneöversyn.
  * @returns {null|{nAffected:number, totalMonth:number}}
  */
-function costToFloor(rows, pol) {
-    if (!Array.isArray(rows) || !pol || !(pol.p10 > 0)) return null;
+function kostnadTillGolv(rader, pol) {
+    if (!Array.isArray(rader) || !pol || !(pol.p10 > 0)) return null;
     // Golvet ensamt är meningsfullt även utan tak, men ett ANGIVET tak under
     // golvet betyder att bandet är felvänt — räkna då inte på det.
     if (pol.p90 > 0 && pol.p90 <= pol.p10) return null;
     let nAffected = 0, totalMonth = 0;
-    for (const r of rows) {
+    for (const r of rader) {
         if (!(r.lon > 0)) continue;
         if (r.lon < pol.p10) { nAffected++; totalMonth += pol.p10 - r.lon; }
     }
@@ -5421,11 +5421,11 @@ function costToFloor(rows, pol) {
  * policyrad? En ofullständig policyfil får inte se ut som ett gott resultat —
  * "inga avvikelser" kan betyda "ingen referens".
  *
- * @param {Array<{n:number, hasPolicy:boolean}>} groups
+ * @param {Array<{n:number, hasPolicy:boolean}>} grupper
  * @returns {{groupsTotal:number, groupsCovered:number, personsTotal:number, personsCovered:number, personsPct:number}}
  */
-function policyCoverage(groups) {
-    const g = Array.isArray(groups) ? groups : [];
+function tackningsgrad(grupper) {
+    const g = Array.isArray(grupper) ? grupper : [];
     let personsTotal = 0, personsCovered = 0, groupsCovered = 0;
     for (const x of g) {
         const n = x && x.n > 0 ? x.n : 0;
@@ -5465,11 +5465,11 @@ function lagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ?
  * Antalet kvinnor och män i varje lägesklass mot bandet (personer utan användbart läge räknas inte).
  * @returns {{kv:number[], ma:number[]}}
  */
-function konLagen(rows, pol) {
+function konLagen(rader, pol) {
     const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
-    for (const r of rows) {
+    for (const r of rader) {
         const kon = arKvinna(r) ? 'kv' : arMan(r) ? 'ma' : null;
-        const pos = kon ? bandPosition(r.lon, pol.p10, pol.p90) : null;
+        const pos = kon ? bandlage(r.lon, pol.p10, pol.p90) : null;
         if (pos != null && isFinite(pos)) ut[kon][lagesklass(pos)]++;
     }
     return ut;
@@ -5514,11 +5514,11 @@ function lonepolitikModell(rader, { policyFor, nivaEtikett, k, harPolicy }) {
         b.groups.push({
             aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.rows.length, rows: g.rows,
             pol, level: nivaEtikett(pol), tier: maskeringsniva(g.rows.length, k),
-            stats: pol ? groupBandStats(g.rows, pol) : null,
-            compliance: pol ? complianceCounts(g.rows, pol) : null
+            stats: pol ? gruppMotBand(g.rows, pol) : null,
+            compliance: pol ? antalMotBand(g.rows, pol) : null
         });
     }
-    out.coverage = policyCoverage(coverageInput);
+    out.coverage = tackningsgrad(coverageInput);
 
     out.byBas = [...basMap.values()].map(b => {
         // BAS-nivåns eget band (AID-specifika rader gäller bara sina yrken)
@@ -5528,11 +5528,11 @@ function lonepolitikModell(rader, { policyFor, nivaEtikett, k, harPolicy }) {
             pol,
             level: nivaEtikett(pol),
             n: b.rows.length,
-            stats: pol ? groupBandStats(b.rows, pol) : null,
-            compliance: pol ? complianceCounts(b.rows, pol) : null,
-            genderGap: pol ? genderBandGap(b.rows, pol, k) : null,
+            stats: pol ? gruppMotBand(b.rows, pol) : null,
+            compliance: pol ? antalMotBand(b.rows, pol) : null,
+            genderGap: pol ? konsskillnadIBand(b.rows, pol, k) : null,
             konLagen: pol ? konLagen(b.rows, pol) : null,
-            cost: pol ? costToFloor(b.rows, pol) : null,
+            cost: pol ? kostnadTillGolv(b.rows, pol) : null,
             orgBand: organisationsBand(b.rows, k),   // organisationens eget P10–P90 (null under k)
             groups: b.groups.sort((x, y) => y.n - x.n)
         };
@@ -5541,14 +5541,14 @@ function lonepolitikModell(rader, { policyFor, nivaEtikett, k, harPolicy }) {
     return out;
 }
 
-    return { bandPosition, groupBandStats, complianceCounts, genderBandGap, costToFloor, policyCoverage, organisationsBand, lonepolitikModell, maskeringsniva, lagesklass, konLagen, lonepolitikKonstanter };
+    return { bandlage, gruppMotBand, antalMotBand, konsskillnadIBand, kostnadTillGolv, tackningsgrad, organisationsBand, lonepolitikModell, maskeringsniva, lagesklass, konLagen, lonepolitikKonstanter };
 })();
-const _lpBandPosition = __mirrorLonepolitik.bandPosition;
-const _lpGroupBandStats = __mirrorLonepolitik.groupBandStats;
-const _lpComplianceCounts = __mirrorLonepolitik.complianceCounts;
-const _lpGenderBandGap = __mirrorLonepolitik.genderBandGap;
-const _lpCostToFloor = __mirrorLonepolitik.costToFloor;
-const _lpPolicyCoverage = __mirrorLonepolitik.policyCoverage;
+const _lpBandlage = __mirrorLonepolitik.bandlage;
+const _lpGruppMotBand = __mirrorLonepolitik.gruppMotBand;
+const _lpAntalMotBand = __mirrorLonepolitik.antalMotBand;
+const _lpKonsskillnadIBand = __mirrorLonepolitik.konsskillnadIBand;
+const _lpKostnadTillGolv = __mirrorLonepolitik.kostnadTillGolv;
+const _lpTackningsgrad = __mirrorLonepolitik.tackningsgrad;
 const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
 const _lpLonepolitikModell = __mirrorLonepolitik.lonepolitikModell;
 const _lpMaskeringsniva = __mirrorLonepolitik.maskeringsniva;
@@ -9599,7 +9599,7 @@ const _jfStatistikensMedianFor = __mirrorJamforelse.statistikensMedianFor;
 // ---- speglar src/lib/referenser.js ----
 const __mirrorReferenser = (() => {
     // importer ur tidigare speglade lib-moduler
-    const bandPosition = __mirrorLonepolitik.bandPosition;
+    const bandlage = __mirrorLonepolitik.bandlage;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -9619,7 +9619,7 @@ const _NAMN = { stallningstagande: 'ställningstagandet', statistik: 'statistike
 const _inom = pos => pos >= 0 && pos <= 100;
 const _riktning = (pos, under, over) => (pos == null ? null : pos < 0 ? under : pos > 100 ? over : 'inom');
 const _pos = (median, ref) => {
-    const p = bandPosition(median, ref?.p10, ref?.p90);
+    const p = bandlage(median, ref?.p10, ref?.p90);
     return p == null ? null : p * 100;
 };
 const _skillnad = (varde, ref) => (varde != null && ref != null ? (varde / ref - 1) * 100 : null);

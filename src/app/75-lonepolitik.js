@@ -451,7 +451,7 @@ function _lpTableHtml(model) {
  * Talen bakom fliken som ett blad: yrkesgrupperna mot sitt spann, läget i spannet per kön och BAS-intervall,
  * fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall. Samma modell och samma regler
  * som fliken: maskeringstrappan för yrkesgrupperna (_lpTier), tröskeln per kön för de könsuppdelade måtten
- * (_konFarRedovisas — samma villkor som genderBandGap och kortet om tredjedelarna) och tröskeln per BAS-intervall
+ * (_konFarRedovisas — samma villkor som konsskillnadIBand och kortet om tredjedelarna) och tröskeln per BAS-intervall
  * för efterlevnaden (isKMasked). Finns inget ställningstagande, eller matchar det inte underlaget, blir det inget blad.
  * @returns {null|any[][]} bladets rader
  */
