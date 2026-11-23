@@ -63,13 +63,12 @@ export function vymodellLikaArbete(rader, { k, golv, sigma, dominansDefinition, 
             // Gruppens rader är koden i BAS-intervallet, inte texten (likaArbeteGrupper): alla stavningar av etiketten.
             ansvar: ansvarFor(rader.filter(x => aidAvRad(x) === aid && String(x.bas) === bas), k) };
         if (g.samladMedian) return { ...gemensamt, medTot: g.medTot, gap: 0, samladMedian: true };
-        // Styrkan: gruppens minsta upptäckbara skillnad. Jämförelsen är mot |gap − 100|, där gap redan är avståndet
-        // från lika lön, som i tabellen före vymodellen.
+        // Styrkan: låg när gruppens minsta upptäckbara skillnad är större än skillnaden, som redan är avståndet från lika lön.
         const mde = gruppMde(nKv, nMa, sigma);
         return { ...gemensamt, medKv: g.medKv, medMa: g.medMa, gap: g.gapPct, kvot: g.kvot * 100, samladMedian: false,
             niva: g.niva, direktiv: g.direktiv, tips: statusTips(g.niva, g.sakerstalld, golv),
             stabilitet: g.flaggad && g.stabilitet ? stabilitetKort(g.stabilitet, k) : null,
-            lagStyrka: mde && (mde.tooSmall || mde.mdePct > Math.abs(g.gapPct - 100)) ? mde : null };
+            lagStyrka: mde && (mde.tooSmall || mde.mdePct > g.gapPct) ? mde : null };
     });
     return {
         grupper,

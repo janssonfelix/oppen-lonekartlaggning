@@ -114,11 +114,15 @@ describe('[B5.8] Lika arbetes vymodell', () => {
         expect(vymodellLikaArbete([], { k: 10, golv: 10 })).toBeNull();
     });
 
-    it('låg styrka följer gruppens minsta upptäckbara skillnad', () => {
-        // Jämförelsen är mot |gap − 100| (gap är redan avståndet från lika lön), som i tabellen före vymodellen.
+    it('låg styrka när gruppens minsta upptäckbara skillnad är större än skillnaden', () => {
+        // gap är redan avståndet från lika lön: A skiljer 8,9 %, B 1,2 %. Med σ = 0,05 är B:s minsta upptäckbara
+        // skillnad 3,7 % och A:s 5,2 %, så bara B får markeringen.
         const jamforbara = s => vymodellLikaArbete(underlag(), { k: 10, golv: 10, sigma: s }).grupper.filter(g => !g.samladMedian);
-        expect(jamforbara(0.1).map(g => g.lagStyrka)).toEqual([null, null]);
-        expect(jamforbara(5).every(g => g.lagStyrka && g.lagStyrka.mdePct > Math.abs(g.gap - 100))).toBe(true);
+        expect(jamforbara(0.01).map(g => g.lagStyrka)).toEqual([null, null]);
+        const vid05 = jamforbara(0.05);
+        expect(vid05.map(g => [g.bas, !!g.lagStyrka])).toEqual([['A', false], ['B', true]]);
+        expect(vid05[1].lagStyrka.mdePct).toBeGreaterThan(vid05[1].gap);
+        expect(jamforbara(5).every(g => g.lagStyrka)).toBe(true);
         expect(vymodellLikaArbete(underlag(), { k: 10, golv: 10 }).grupper.every(g => !g.lagStyrka)).toBe(true);   // utan spridning ingen styrka
     });
 });
