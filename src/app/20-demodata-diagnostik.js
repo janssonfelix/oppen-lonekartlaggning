@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 
 // ---- #16 Testdata + självdiagnostik ----
-// generateTestData och generateDemoData står i src/lib/demodata.js; appen når dem genom spegeln.
+// genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen når dem genom spegeln.
 
 function runDiagnostics() {
     const tests = [];
@@ -106,7 +106,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
 // det stora tas bort.
 function _lasInDemoStatistik({ stort = false } = {}) {
     if (stort) {
-        state.statistik = generateStortDemoStatistik();
+        state.statistik = genereraStortDemoStatistik();
         state.statistikNamn = STORT_DEMO_STATISTIKNAMN;
         state.statistikKalla = 'demo';
         state.statistikHasP10 = state.statistikHasP90 = state.statistikHasKon = true;
@@ -167,7 +167,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
 }
 
 function loadDemoData() {
-    if (!_lasInDemounderlag(generateDemoData)) return;
+    if (!_lasInDemounderlag(genereraDemodata)) return;
 
     // Kör diagnostik
     const tests = runDiagnostics();

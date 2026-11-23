@@ -7,7 +7,7 @@
  * självdiagnostiken i appens tester.
  */
 import { describe, it, expect } from 'vitest';
-import { generateTestData, generateDemoData, generateStortDemo, generateStortDemoStatistik, _sdStallningstagande,
+import { genereraTestdata, genereraDemodata, genereraStortDemo, genereraStortDemoStatistik, _sdStallningstagande,
     _SD_GAP, _SD_LIKVARDIGT } from '../src/lib/demodata.js';
 import { aidKriterier } from '../src/lib/aidkontroll.js';
 import { arKvinna, arMan } from '../src/lib/kon.js';
@@ -17,28 +17,28 @@ const median = l => { const s = [...l].sort((a, b) => a - b); return (s[(s.lengt
 
 describe('det lilla demot', () => {
     it('testdatan har 200 rader och demodatan 260, samma vid ett andra anrop', () => {
-        expect(generateTestData()).toHaveLength(200);
-        expect(generateDemoData()).toHaveLength(260);
-        expect(JSON.stringify(generateTestData())).toBe(JSON.stringify(generateTestData()));
-        expect(JSON.stringify(generateDemoData())).toBe(JSON.stringify(generateDemoData()));
+        expect(genereraTestdata()).toHaveLength(200);
+        expect(genereraDemodata()).toHaveLength(260);
+        expect(JSON.stringify(genereraTestdata())).toBe(JSON.stringify(genereraTestdata()));
+        expect(JSON.stringify(genereraDemodata())).toBe(JSON.stringify(genereraDemodata()));
     });
 });
 
 describe('stort demo: statistiken och ställningstagandet', () => {
     it('samma statistik och samma ställningstagande vid ett andra anrop', () => {
-        expect(JSON.stringify(generateStortDemoStatistik())).toBe(JSON.stringify(generateStortDemoStatistik()));
-        const data = generateStortDemo();
+        expect(JSON.stringify(genereraStortDemoStatistik())).toBe(JSON.stringify(genereraStortDemoStatistik()));
+        const data = genereraStortDemo();
         expect(_sdStallningstagande(data, 10).map(r => r.bas)).toEqual(BAS_AK);
-        expect(_sdStallningstagande(data, 10)).toEqual(_sdStallningstagande(generateStortDemo(), 10));
+        expect(_sdStallningstagande(data, 10)).toEqual(_sdStallningstagande(genereraStortDemo(), 10));
     });
 });
 
 describe('stort demo: generatorn', () => {
-    const data = generateStortDemo();
+    const data = genereraStortDemo();
 
     it('5 000 rader, och samma rader vid ett andra anrop', () => {
         expect(data).toHaveLength(5000);
-        const igen = generateStortDemo();
+        const igen = genereraStortDemo();
         expect(igen[0]).toEqual(data[0]);
         expect(JSON.stringify(igen)).toBe(JSON.stringify(data));
     });
@@ -53,7 +53,7 @@ describe('stort demo: generatorn', () => {
             if (!ok) fel.push(i);
         });
         expect(fel.slice(0, 5)).toEqual([]);
-        const falt = Object.keys(generateDemoData()[0]).concat('radnr').sort();
+        const falt = Object.keys(genereraDemodata()[0]).concat('radnr').sort();
         expect(Object.keys(data[0]).sort()).toEqual(falt);
     });
 
@@ -76,7 +76,7 @@ describe('stort demo: generatorn', () => {
     });
 
     it('kontrollen av AID-kodningen är grön: koderna finns i etikettlistan och ansvarskoderna är tillåtna', () => {
-        const kriterier = aidKriterier(generateStortDemo(), { k: 10, harAnsvar: true });
+        const kriterier = aidKriterier(genereraStortDemo(), { k: 10, harAnsvar: true });
         expect(kriterier.filter(k => k.status !== 'ok').map(k => `${k.id}: ${k.text}`)).toEqual([]);
     });
 

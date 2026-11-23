@@ -394,8 +394,8 @@ export const MODULES = [
         // Demodatans generatorer (det lilla och det stora demot) under appens namn; importerar kon.js, ansvar.js,
         // inlasning.js och stat.js: efter dem. Konstanterna (_SD_GAP m.fl.) får inget alias: spegeln ger bara funktioner.
         file: 'demodata.js', ns: '__mirrorDemodata',
-        expose: { generateTestData: 'generateTestData', generateDemoData: 'generateDemoData', generateStortDemo: 'generateStortDemo',
-                  generateStortDemoStatistik: 'generateStortDemoStatistik', _sdStallningstagande: '_sdStallningstagande' }
+        expose: { genereraTestdata: 'genereraTestdata', genereraDemodata: 'genereraDemodata', genereraStortDemo: 'genereraStortDemo',
+                  genereraStortDemoStatistik: 'genereraStortDemoStatistik', _sdStallningstagande: '_sdStallningstagande' }
     }
 ];
 

@@ -124,7 +124,7 @@ describe('stort demo: demots statistik byts ut', () => {
     it('en riktig lönefil efter det stora demot tar bort demots statistik', () => {
         const w = createAppWindow();
         w.eval('loadStortDemo()');
-        w.eval('__state.data = generateTestData(); _afterDataLoaded();');
+        w.eval('__state.data = genereraTestdata(); _afterDataLoaded();');
         expect(w.__state.statistik).toHaveLength(0);
         expect(w.__state.statistikKalla).toBe(null);
         expect(w.document.getElementById('upload-cell-stat').classList.contains('loaded')).toBe(false);
@@ -353,7 +353,7 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
     beforeAll(() => {
         w = createAppWindow();
         w.eval(readFileSync(join(root, 'vendor', 'xlsx.mini.min.js'), 'utf8'));
-        const data = w.eval('generateStortDemo()');
+        const data = w.eval('genereraStortDemo()');
         const sektor = w.eval(`Object.fromEntries(${JSON.stringify([...new Set(data.map(r => r.aid))])}.map(a => [a, _aidSektorsnamn(a)]))`);
         ({ varden: sentinel, block, provade } = sattSentinel(data, sektor));
         w.__sdJson = JSON.stringify(data);

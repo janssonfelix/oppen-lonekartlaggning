@@ -4,8 +4,8 @@
  * Öppen lönekartläggning — demodatan: de påhittade underlagen i demoläget och självdiagnostiken.
  *
  * Rena generatorer med en egen deterministisk slump (LCG med fast frö): samma rader, i samma ordning, vid varje
- * anrop. Det lilla demot (generateTestData, generateDemoData) är självdiagnostikens och testsvitens kända underlag;
- * det stora (generateStortDemo m.fl.) visar verktyget i verklig storlek. Allt är påhittat: inga personer, inga namn,
+ * anrop. Det lilla demot (genereraTestdata, genereraDemodata) är självdiagnostikens och testsvitens kända underlag;
+ * det stora (genereraStortDemo m.fl.) visar verktyget i verklig storlek. Allt är påhittat: inga personer, inga namn,
  * ingen verklig organisation. Inläsningen i demoläget (state, DOM) står i src/app/20-demodata-diagnostik.js och
  * src/app/21-stort-demo.js.
  *
@@ -17,7 +17,7 @@ import { _normalizePolicyAid } from './inlasning.js';
 import { median, kvantil } from './stat.js';
 
 // ---- Det lilla demot ----
-export function generateTestData() {
+export function genereraTestdata() {
     // Syntetisk dataset: 200 personer, 5 BAS (A-E), känd struktur:
     // - Lön = 30000 + BAS_rank*5000 + age_centered*200 + random_noise
     // - Kön-effekt: kvinnor får -3% justerad lön (oförklarat gap = ~3%)
@@ -60,9 +60,9 @@ export function generateTestData() {
 // yrkesnamn, plus tre yrken i BAS C som ger kandidatpar i likvärdigt arbete — två
 // kvinnodominerade yrken med lägre lön än ett mansdominerat på samma nivå. Systemutvecklare i BAS C (23 kvinnor av
 // 45) är blandad och därmed också jämförelseyrke (ADR-60).
-// generateTestData() lämnas orörd: självdiagnostiken bygger på dess kända egenskaper.
-export function generateDemoData() {
-    const data = generateTestData().map(r => ({
+// genereraTestdata() lämnas orörd: självdiagnostiken bygger på dess kända egenskaper.
+export function genereraDemodata() {
+    const data = genereraTestdata().map(r => ({
         ...r, aid: r.yrke.split(' ')[0], yrkeLabel: r.yrke.replace(/^\d+\s*/, '')
     }));
     const lagg = (yrke, n, kvinnor, grundlon) => {
@@ -228,8 +228,8 @@ export const _SD_GAP = Object.freeze({ '401011': -0.025, '401012': -0.04, '20709
 // samma BAS-intervall.
 export const _SD_LIKVARDIGT = Object.freeze({ hog: '503090', lag: '207011', bas: 'D' });
 
-export function generateStortDemo() {
-    // Samma slags seedade slump som generateTestData, med ett eget frö: samma underlag vid varje anrop.
+export function genereraStortDemo() {
+    // Samma slags seedade slump som genereraTestdata, med ett eget frö: samma underlag vid varje anrop.
     let seed = 5000;
     const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
     const rndNorm = () => { let u = 0, v = 0; while (u === 0) u = rnd(); while (v === 0) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
@@ -287,7 +287,7 @@ export function generateStortDemo() {
 // påslag kring noll, så att ungefär en fjärdedel av grupperna ligger över statistiken och inte alla ser underbetalda ut. Ingen verklig källa efterliknas.
 const _sdAvrunda = (x, steg) => Math.round(x / steg) * steg;
 
-export function generateStortDemoStatistik() {
+export function genereraStortDemoStatistik() {
     // Eget frö: samma statistik vid varje anrop, oberoende av lönerna.
     let seed = 126;
     const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };

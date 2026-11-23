@@ -711,7 +711,7 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
     it('inläsningen (lönefil och demo) kör regressionen en gång och ritar samma sak som en egen körning per del', () => {
         const w = createAppWindow();
         raknaRegressioner(w);
-        w.eval('_lasInDemounderlag(generateDemoData)');   // demots inläsning; diagnostiken efteråt kör en egen
+        w.eval('_lasInDemounderlag(genereraDemodata)');   // demots inläsning; diagnostiken efteråt kör en egen
         expect(w.__regKorningar).toBe(1);
         w.__regKorningar = 0;
         w.eval('_afterDataLoaded()');

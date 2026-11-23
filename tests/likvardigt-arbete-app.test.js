@@ -232,7 +232,7 @@ describe('demodata med kandidatpar', () => {
     });
     it('självdiagnostikens testdata är oförändrad (200 personer, BAS A–E)', () => {
         const w = createAppWindow();
-        const d = w.eval('generateTestData()');
+        const d = w.eval('genereraTestdata()');
         expect(d.length).toBe(200);
         expect([...new Set(d.map(r => r.bas))].sort()).toEqual(['A', 'B', 'C', 'D', 'E']);
     });

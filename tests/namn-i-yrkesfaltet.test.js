@@ -49,9 +49,9 @@ describe('namn i fältet för AID-etikett: demona', () => {
     it('ingen yrkestext i det lilla demot, demots testdata eller det stora demot ser ut att innehålla ett namn', () => {
         const w = createAppWindow();
         const yrken = new Set([
-            ...w.eval('generateDemoData()').map(r => r.yrke),
-            ...w.eval('generateTestData()').map(r => r.yrke),
-            ...w.eval('generateStortDemo()').map(r => r.yrke),
+            ...w.eval('genereraDemodata()').map(r => r.yrke),
+            ...w.eval('genereraTestdata()').map(r => r.yrke),
+            ...w.eval('genereraStortDemo()').map(r => r.yrke),
         ]);
         expect(yrken.size).toBeGreaterThan(10);
         expect([...yrken].filter(y => yrkeLiknarNamn(y))).toEqual([]);

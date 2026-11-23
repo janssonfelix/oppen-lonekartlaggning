@@ -5,7 +5,7 @@ Version:    2026.11.22
 Build:      2026-11-22
 Output:     oppen-lonekartlaggning.html
 Size:       3.65 MB (3825109 bytes)
-SHA-256:    b3fd5152ac94c4892cd107b05d1819d56ad592c79655a5668ce1bf82472f7a19
+SHA-256:    f5f00cfe762e3f9582c9565548981e93031b41bef120f3bb98f3b3bb6a69315a
 
 Sources (storlek post-minify):
   - style.css (minified)          121.2 KB
