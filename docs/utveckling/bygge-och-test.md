@@ -119,7 +119,8 @@ Vitest. De genererade filerna (`dist/` och `src/app/08-version.js`) prövas av a
 
 - rena `src/lib/`-moduler och CSV-parsningen, en fil per modul eller område (`tests/<område>.test.js`);
 - jsdom-röktest av appen (ADR-7), en fil per funktion (`tests/<område>-app.test.js`, till exempel `inlasning-app` och
-  `rapport-app`);
+  `rapport-app`). Tal, maskering, status och urval prövas i Node mot vymodellen eller lib-funktionen; jsdom prövar att
+  vyn ritar den, händelser, exportflöden och tillgänglighet, och k-invarianten (I4);
 - det som går tvärs över funktionerna: k-tröskeln i `tests/ktroskel*.test.js` med riggen i
   `tests/helpers/ktroskel-rigg.js`; gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`);
   diagrammen i `tests/diagram*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`); visningsminnet i
