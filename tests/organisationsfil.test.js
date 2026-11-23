@@ -20,6 +20,10 @@ describe('organisationsfil: känna igen verktyget', () => {
     it('den byggda filen känns igen med version', () => {
         expect(kannIgenVerktyget(bygge)).toMatchObject({ ok: true, version: expect.stringMatching(/^\d{4}\.\d{2}\.\d{2}$/) });
     });
+    it('en fil byggd före ADR-98 (const APP_VERSION = \'…\') känns igen med version', () => {
+        const gammal = kalla.replace('</head>', "<script>const APP_VERSION = '2026.01.15';</script></head>");
+        expect(kannIgenVerktyget(gammal)).toEqual({ ok: true, version: '2026.01.15' });
+    });
     it('källans index.html känns igen men saknar version', () => {
         expect(kannIgenVerktyget(kalla)).toEqual({ ok: true, version: null });
     });

@@ -9046,7 +9046,7 @@ var _delad = (html) => {
   const i = s.lastIndexOf("<\/script>");
   return i < 0 ? ["", s] : [s.slice(0, i + 9), s.slice(i + 9)];
 };
-var VERSION_RE = /const APP_VERSION = '([0-9]{4}\.[0-9]{2}\.[0-9]{2})'/;
+var VERSION_RE = /(?:const|var) APP_VERSION = (['"])([0-9]{4}\.[0-9]{2}\.[0-9]{2})\1/;
 var CSP_RE = /<meta http-equiv="Content-Security-Policy"/;
 var _attr = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 var _avattr = (v) => String(v ?? "").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
@@ -9065,7 +9065,7 @@ function kannIgenVerktyget(html) {
   if (!CSP_RE.test(s)) return { ok: false, version: null, fel: "Filen är inte verktyget: innehållssäkerhetspolicyn saknas." };
   if (s.lastIndexOf("</body>") < 0) return { ok: false, version: null, fel: "Filen är inte verktyget: dokumentet är ofullständigt." };
   const m = VERSION_RE.exec(s);
-  return { ok: true, version: m ? m[1] : null };
+  return { ok: true, version: m ? m[2] : null };
 }
 function lasUt(html) {
   const m = MALL_RE.exec(_delad(html)[1]);
