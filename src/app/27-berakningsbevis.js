@@ -25,7 +25,7 @@ import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { jmfNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_EJ, gapStatusKI, gapStatusNiva } from './10-diagramtema.js';
-import { referensNamn, Stat, state } from './12-tillstand.js';
+import { referensNamn, state } from './12-tillstand.js';
 import { _laBootstrapGapCI } from './41-lika-arbete.js';
 import { kvDomGransText } from './45-aid-bas-tabeller.js';
 import { harAlder } from './50-regressionsmodeller.js';
@@ -293,18 +293,21 @@ export function _evidenceForPerBasRow(p, bhCtx) {
 }
 
 /**
- * Bevis-payload för en rad i Löneöversikten (AID-etikett/kön/organisation).
- * @param {Object} p - { kategori, bas, lons, polRow, statRefMedian, masked }
+ * Bevis-payload för en rad i Löneöversikten (AID-etikett/kön/organisation). Talen är radens i vymodellen
+ * (vymodellLoneoversikt, src/lib/vymodell-loneoversikt.js); beviset visar hur de hänger ihop.
+ * @param {{kategori: string, bas: string, rad: any, polRow: any, masked?: boolean}} p
  */
 export function _evidenceForRapportRow(p) {
     const fmtKr = v => svKr(v, '—');
-    const n = (p.lons || []).length;
+    const r = p.rad || {};
+    const n = r.n || 0;
     const masked = !!p.masked;
-    const med = masked || !n ? null : Stat.median(p.lons);
-    const p10 = masked || !n ? null : Stat.kvantil(p.lons, 0.1);
-    const p90 = masked || !n ? null : Stat.kvantil(p.lons, 0.9);
-    const spread = (p10 != null && p10 > 0 && p90 != null) ? p90 / p10 : null;
-    const statDiffPct = (med != null && p.statRefMedian) ? ((med / p.statRefMedian) - 1) * 100 : null;
+    const med = masked || !n ? null : r.med;
+    const p10 = masked || !n ? null : r.p10;
+    const p90 = masked || !n ? null : r.p90;
+    const spread = masked || !n ? null : r.spridning;
+    const statDiffPct = masked || !n ? null : r.statDiff;
+    const statRefMedian = r.statMedian;
 
     /** @type {Array<{label: string, value: string, isHtml?: boolean, note?: string}>} */
 
@@ -332,9 +335,9 @@ export function _evidenceForRapportRow(p) {
             rows.push({ label: 'Varning',  value: 'Median ligger UNDER policy-P10 (varningsfärg i tabellen)', isHtml: true });
         }
     }
-    if (p.statRefMedian && !masked) {
+    if (statRefMedian && !masked) {
         rows.push({ label: `— ${jmfNamn('Jämförelsestatistik')}`,          value: '' });
-        rows.push({ label: `Median i ${jmfNamn('jämförelsestatistiken')}`,                value: fmtKr(p.statRefMedian) });
+        rows.push({ label: `Median i ${jmfNamn('jämförelsestatistiken')}`,                value: fmtKr(statRefMedian) });
         rows.push({ label: `Skillnad mot ${jmfNamn('jämförelsestatistiken')}`,          value: (statDiffPct != null && statDiffPct >= 0 ? '+' : '') + svPct(statDiffPct, 2), note: '(organisationens median / referens) − 1' });
     }
 

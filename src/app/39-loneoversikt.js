@@ -53,7 +53,7 @@ export function ritaLoneoversikt() {
             const svDiff = statDiffRaw != null ? ` data-sort-value="${statDiffRaw}"` : '';
             tr.innerHTML = `<td>${esc(kategori)}${evidenceBtn}</td><td class="${warn}" data-sort-value="${p10}">${fmt.format(p10)}</td><td class="${warn}" data-sort-value="${med}">${fmt.format(med)}</td><td data-sort-value="${p90}">${fmt.format(p90)}</td><td data-sort-value="${lons.length}">${lons.length}</td><td${spridning != null ? ` data-sort-value="${spridning.toFixed(2)}"` : ''}>${spridning != null ? svTal(spridning, 2) : "-"}</td><td class="bak-info-yta"${svMed}>${statMed}</td><td class="bg-info-yta halvfet ${statColor}"${svDiff}>${statDiff}</td>`;
             // Cache rad-data så bevis-handler kan plocka upp den
-            tr._rapportRow = { kategori, bas: b, lons: lons.slice(), polRow: pol, statRefMedian: statMedian, masked: false };
+            tr._rapportRow = { kategori, bas: b, rad: r, polRow: pol, masked: false };
             tbody.appendChild(tr);
         }
         if (utelamnade.length) {
