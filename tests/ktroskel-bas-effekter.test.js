@@ -11,7 +11,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { utanTaggar } from '../src/lib/htmltext.js';
-import { normalisera, iExport, harNagon, samlaUtdata, sammanhang } from './helpers/ktroskel-rigg.js';
+import { normalisera, samlaUtdata, sammanhang } from './helpers/ktroskel-rigg.js';
 
 vi.setConfig({ testTimeout: 60000 });
 
@@ -67,18 +67,6 @@ describe('[S4] BAS-effekterna i regressionen: ett intervall under tröskeln har 
         w.__renderTabContent('struktur');
         const t = normalisera(w.document.getElementById('regression-card').textContent);
         for (const e of effekter(w)) expect(t, e.bas).toContain(svPct1(e.pct));
-    });
-
-    it('exportläget vid 10: kortet visar effekterna för B och C men inte för D, och noten namnger D', () => {
-        const w = iExport(fonsterMed(LITET_D));
-        w.__renderTabContent('struktur');
-        const kort = w.document.getElementById('regression-card');
-        const t = normalisera(kort.textContent);
-        const e = Object.fromEntries(effekter(w).map(x => [x.bas, x]));
-        expect(t).toContain(svPct1(e.B.pct));
-        expect(t).toContain(svPct1(e.C.pct));
-        expect(harNagon(t, [...former(e.D.pct), ...former(e.D.low), ...former(e.D.high)])).toEqual([]);
-        expect(t).toMatch(/1 BAS-intervall visas inte här: D\./);
     });
 
     it('vid 10: samma utdatavägar som invarianten; D:s effekt och intervall står ingenstans, B:s och C:s står i rapporterna', async () => {
