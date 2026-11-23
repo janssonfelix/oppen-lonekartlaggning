@@ -181,7 +181,7 @@ describe('Utforska 2.0', () => {
     it('filter som tillsammans ger noll personer visar tomläget, och Rensa filter fungerar', () => {
         aterstall();
         const rows = win.__getData();
-        const aidAv = r => win.__utGroupKey(r, 'aid');
+        const aidAv = r => win.__utGruppnyckel(r, 'aid');
         let par = null;
         for (const b of new Set(rows.map(r => r.bas))) {
             const iB = new Set(rows.filter(r => r.bas === b).map(aidAv));
@@ -286,13 +286,13 @@ describe('Utforska: klick till gruppdossiern', () => {
 
     it('AID × BAS pekar ut exakt grupp', () => {
         const c = kand[0];
-        const aidEtikett = win.__getData().map(r => win.__utGroupKey(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
+        const aidEtikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
         expect(win.__explorerDossierTarget(spec({ rad: 'aid', kolumn: 'bas' }), aidEtikett, c.bas)).toEqual({ key: c.key });
     });
 
     it('ett filter med ett enda BAS räcker tillsammans med AID som rad', () => {
         const c = kand[0];
-        const aidEtikett = win.__getData().map(r => win.__utGroupKey(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
+        const aidEtikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
         expect(win.__explorerDossierTarget(spec({ rad: 'aid', urval: { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [c.bas] }] } }), aidEtikett, null))
             .toEqual({ key: c.key });
     });
@@ -375,7 +375,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
     it('tomläget försvinner när diagrammet ritas igen', () => {
         grund();
         const rows = win.__getData();
-        const aidAv = r => win.__utGroupKey(r, 'aid');
+        const aidAv = r => win.__utGruppnyckel(r, 'aid');
         let par = null;
         for (const b of new Set(rows.map(r => r.bas))) {
             const iB = new Set(rows.filter(r => r.bas === b).map(aidAv));
@@ -657,7 +657,7 @@ describe('Utforska: helhet eller per kön, fler rader, urval alltid synligt', ()
 
     it('klick på en yrkesgrupp inom BAS pekar ut exakt den gruppens dossier', () => {
         const c = win.__gruppdossierCandidates()[0];
-        const etikett = win.__getData().map(r => win.__utGroupKey(r, 'aidbas')).find(l => l.startsWith(c.aid + ' ') && l.endsWith(` · BAS ${c.bas}`));
+        const etikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aidbas')).find(l => l.startsWith(c.aid + ' ') && l.endsWith(` · BAS ${c.bas}`));
         const spec = { rad: 'aidbas', kolumn: null, matt: 'median', delaKon: false, urval: { lage: 'alla', villkor: [] }, gruppVillkor: [] };
         expect(win.__explorerDossierTarget(spec, etikett, null)).toEqual({ key: c.key });
     });
