@@ -65,14 +65,6 @@ describe('Lägre krav, högre lön', () => {
         oppna(w, [...grupp('100', 'C', 18, 2, 30000), ...grupp('200', 'E', 2, 18, 34000)]);
         expect(w.document.getElementById('likvardighet-lagre-krav').textContent).toContain('Ingen av de kvinnodominerade AID-etiketterna har lägre medianlön än en AID-etikett i lägre BAS.');
     });
-    it('demodatan: kandidatparen finns kvar och lagreKrav är en lista', () => {
-        // Att dagens par är oförändrade vaktas av lib-testet och golden-facit.
-        const w = createAppWindow();
-        w.__loadDemoData();
-        const r = w.__likvardighetspar();
-        expect(r.pairs.length).toBeGreaterThan(0);
-        expect(Array.isArray(r.lagreKrav)).toBe(true);
-    });
 });
 
 describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall', () => {
