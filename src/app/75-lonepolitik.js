@@ -28,7 +28,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { aktiveraSortering } from './05-tabeller-och-lankar.js';
 import { _konUtelamnatNot, kTroskel, litetUnderlag } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
-import { orgNamn, plotNamn } from './07-standardinstallningar.js';
+import { orgNamn, diagramNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
@@ -208,7 +208,7 @@ export function _lpForskjutning(aid, bas) { return ((froAvText(aid + '|' + bas) 
 // nivå (percentiler kräver n ≥ k; bandkarta i vymodellen) — inget annat når figuren.
 function _lpBandkartaFigur({ bas, punkter }) {
     const x = b => 'BAS ' + b.bas, kr = v => talformat(v, 'kr'), utanKr = v => talformat(v, 'kr', { enhet: false });
-    const refNamn = referensKortnamn(), org = plotNamn(orgNamn());
+    const refNamn = referensKortnamn(), org = diagramNamn(orgNamn());
     const refMed = b => (b.pol.med > 0 ? b.pol.med : (b.pol.p10 + b.pol.p90) / 2);
     const medOrgBand = bas.filter(b => b.orgBand);
     const pts = punkter.map(p => ({ x: 'BAS ' + p.bas, y: p.median, forskjutning: _lpForskjutning(p.aid, p.bas),

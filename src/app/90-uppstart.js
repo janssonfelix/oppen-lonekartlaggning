@@ -7,7 +7,7 @@
 // varje datahändelse. Vaktad: funktionen finns (13-oversikt.js) och gör inget om
 // dess container saknas.
 import { _synkaKTroskel } from './06-k-troskel.js';
-import { applyProfileLabels } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter } from './07-standardinstallningar.js';
 import { state } from './12-tillstand.js';
 import { renderProcessTracker } from './13-oversikt.js';
 import { loadDemoData } from './20-demodata-diagnostik.js';
@@ -22,7 +22,7 @@ export function uppstartSist() {
         try { renderProcessTracker(); } catch (_e) { /* icke-kritisk vid boot */ }
     }
     setupTabA11y();
-    applyProfileLabels();  // Tillämpa default-profil vid uppstart
+    tillampaProfiletiketter();  // Tillämpa default-profil vid uppstart
     _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
     renderReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
     // Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (5 000 personer), så att

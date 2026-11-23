@@ -12,7 +12,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { byggGrundberakning, flerKolumner, sattBerakning } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
-import { jmfNamn, orgNamn, plotNamn } from './07-standardinstallningar.js';
+import { jmfNamn, orgNamn, diagramNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
@@ -223,7 +223,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
     const etikett = _jmfEtikett, ref = r => r[kalla];
     const harBand = v => v.p10 != null && v.p90 != null;
     const kr = v => talformat(v, 'kr');
-    const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
+    const refNamn = diagramNamn(namn), org = diagramNamn(orgNamn());
     return { beskrivning: `Organisationens lönespann från P10 till P90 per ${T.enhet.en}, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
         hojd: 110 + 26 * visa.length, paneler: 'auto',   // fler än femton yrken: små multiplar

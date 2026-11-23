@@ -12,7 +12,7 @@ import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { _importprofilFor, _importprofilKalla, _importprofilLista, doljLaddning, importprofilText, visaLaddning } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _hittaAnsvarKolumn, _lonefilensRubriker, extractMinimalRecord } from './06-uppgiftsminimering.js';
-import { _kopplaNamnFalt, applyProfileLabels, DEFAULT_PROFILE, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
+import { _kopplaNamnFalt, tillampaProfiletiketter, STANDARDPROFIL, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
 import { aterstallReferens, getBasIntervals, state } from './12-tillstand.js';
@@ -105,7 +105,7 @@ function _afterDataLoaded() {
     // En riktig lönefil efter demot: demots namn, organisationstyp, ställningstagande och jämförelsestatistik
     // hör till den påhittade organisationen och tas bort (ADR-36).
     if (state.isDemo) {
-        state.profile = { ...DEFAULT_PROFILE };
+        state.profile = { ...STANDARDPROFIL };
         // Demots sakliga skäl hör till demots grupper: en riktig fil kan ha samma AID och BAS.
         if (typeof _hpRensaDemoSkal === 'function') _hpRensaDemoSkal();
         if (state.policyKalla === 'demo') {
@@ -115,7 +115,7 @@ function _afterDataLoaded() {
         if (state.statistikKalla === 'demo') _tomStatistik();   // tömmer också filrutan
         if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
         if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
-        applyProfileLabels();
+        tillampaProfiletiketter();
         if (typeof renderReferensKort === 'function') renderReferensKort();
     }
     state.isDemo = false;   // #9: verklig uppladdning lämnar demoläge

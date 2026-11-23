@@ -5,7 +5,7 @@ import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { visaInterntFel } from './03-hjalpfunktioner.js';
 import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _kVisaFel, _synkaKTroskel } from './06-k-troskel.js';
-import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
 import { _rfRensaAlla } from './10-diagramritare.js';
 import { sattDiagramMarkering } from './11-markering.js';
 import { aterstallReferens, state } from './12-tillstand.js';
@@ -81,8 +81,8 @@ export function _rensaAllData({ inbakat = true } = {}) {
     if (typeof _kVisaFel === 'function') _kVisaFel('');   // ett felmeddelande vid fältet hör till det rensade läget
     if (typeof _synkaKTroskel === 'function') _synkaKTroskel();
     aterstallReferens();   // ADR-28: ingen referens (ingen inbyggd)
-    state.profile = { ...DEFAULT_PROFILE };   // neutral profil (demoläget och paket sätter en egen)
-    if (typeof applyProfileLabels === 'function') applyProfileLabels();
+    state.profile = { ...STANDARDPROFIL };   // neutral profil (demoläget och paket sätter en egen)
+    if (typeof tillampaProfiletiketter === 'function') tillampaProfiletiketter();
     if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
     if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
     if (typeof jamforelseSattVal === 'function') jamforelseSattVal({ bas: '', sektor: '' });

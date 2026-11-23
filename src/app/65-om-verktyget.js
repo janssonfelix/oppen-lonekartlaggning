@@ -9,7 +9,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
 import { AID_METODTEXT } from './04-ordlista.js';
 import { kInstalld, statGolv } from './06-k-troskel.js';
-import { applyProfileLabels } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter } from './07-standardinstallningar.js';
 import { APP_BUILD_DATE, APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { state } from './12-tillstand.js';
@@ -365,7 +365,7 @@ export function renderInfoTab(section = 'overview') {
             : 'Licenstexterna byggs in i den färdiga filen (src/licenser.txt).';
     }
     // Tillämpa profil-substitutioner i nyrenderat innehåll
-    applyProfileLabels();
+    tillampaProfiletiketter();
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

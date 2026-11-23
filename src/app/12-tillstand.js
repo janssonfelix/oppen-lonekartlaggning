@@ -13,7 +13,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _cellSpann, aktiveraSortering, kopplaHopfallbaraGrupper } from './05-tabeller-och-lankar.js';
 import { _kUndantagFor, _tsvMedStampel } from './06-k-troskel.js';
-import { COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
+import { COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { PALETTE } from './10-diagramtema.js';
 import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
@@ -86,7 +86,7 @@ export const state = {
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
     forraArsbokslut: null,  // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
-    profile: { ...DEFAULT_PROFILE },
+    profile: { ...STANDARDPROFIL },
     filnamn: { data: null, policy: null, statistik: null },   // filrutornas status (ADR-36)  // #14 lokalkalibrering
     kTroskel: K_STANDARD,             // minsta gruppstorlek för redovisning (ADR-38); ändras bara av sattKTroskel()
     // Organisationspaketets låsningar (ADR-47): golv för tröskeln, låst rensningstid (minuter) och om små grupper

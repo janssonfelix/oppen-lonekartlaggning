@@ -198,14 +198,14 @@ describe('termerna i appen', () => {
         matrix.setAttribute('data-tip', 'x');
         const not = d.querySelector('#la-aid-bakgrund span[data-term-template]');
         not.textContent = 'x';
-        w.eval('applyProfileLabels()');
+        w.eval('tillampaProfiletiketter()');
         expect(matrix.getAttribute('data-tip')).toBe('Kvinnor och män med samma AID-etikett — skiljer sig lönen?');
         expect(matrix.textContent).not.toMatch(/AID-etikett/);
         expect(not.textContent).toBe(fyllTermer(AID_METODTEXT));
     });
     it('Löneläget: kolumnrubriken har den korta formen, exportetiketten hela termen (ADR-75)', () => {
         const w = createAppWindow(), d = w.document;
-        w.eval('applyProfileLabels()');
+        w.eval('tillampaProfiletiketter()');
         const th = d.querySelector('#benchmark-thead th');
         expect(th.textContent.trim()).toBe('AID');
         expect(th.getAttribute('data-export-label')).toBe('AID-etikett');

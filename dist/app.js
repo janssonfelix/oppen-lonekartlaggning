@@ -14519,7 +14519,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
       }
     };
   }
-  if (statMedian != null) lager.push(_vagratLinje(`Median i ${plotNamn(jmfNamn("jämförelsestatistiken"))}`, PALETTE.serie[10], statMedian, minAlder, maxAlder, { streck: "streckad" }));
+  if (statMedian != null) lager.push(_vagratLinje(`Median i ${diagramNamn(jmfNamn("jämförelsestatistiken"))}`, PALETTE.serie[10], statMedian, minAlder, maxAlder, { streck: "streckad" }));
   return {
     beskrivning,
     individer: true,
@@ -18631,7 +18631,7 @@ function _lpForskjutning(aid, bas) {
 }
 function _lpBandkartaFigur({ bas, punkter }) {
   const x = (b) => "BAS " + b.bas, kr2 = (v) => talformat(v, "kr"), utanKr = (v) => talformat(v, "kr", { enhet: false });
-  const refNamn = referensKortnamn(), org = plotNamn(orgNamn());
+  const refNamn = referensKortnamn(), org = diagramNamn(orgNamn());
   const refMed = (b) => b.pol.med > 0 ? b.pol.med : (b.pol.p10 + b.pol.p90) / 2;
   const medOrgBand = bas.filter((b) => b.orgBand);
   const pts = punkter.map((p) => ({
@@ -19194,7 +19194,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
   const etikett2 = _jmfEtikett, ref = (r) => r[kalla];
   const harBand = (v) => v.p10 != null && v.p90 != null;
   const kr2 = (v) => talformat(v, "kr");
-  const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
+  const refNamn = diagramNamn(namn), org = diagramNamn(orgNamn());
   return {
     beskrivning: `Organisationens lönespann från P10 till P90 per ${T.enhet.en}, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
     urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal],
@@ -22499,7 +22499,7 @@ function _deriveArbetsvarderingFromData() {
 }
 function _afterDataLoaded() {
   if (state.isDemo) {
-    state.profile = { ...DEFAULT_PROFILE };
+    state.profile = { ...STANDARDPROFIL };
     if (typeof _hpRensaDemoSkal === "function") _hpRensaDemoSkal();
     if (state.policyKalla === "demo") {
       aterstallReferens();
@@ -22508,7 +22508,7 @@ function _afterDataLoaded() {
     if (state.statistikKalla === "demo") _tomStatistik();
     if (typeof synkaNamnFalt === "function") synkaNamnFalt();
     if (typeof _synkaOrgTyp === "function") _synkaOrgTyp();
-    applyProfileLabels();
+    tillampaProfiletiketter();
     if (typeof renderReferensKort === "function") renderReferensKort();
   }
   state.isDemo = false;
@@ -24555,7 +24555,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     }
     if (!statistik && state.statistikKalla === "paket") _tomStatistik();
   }
-  state.profile = { ...DEFAULT_PROFILE, ...profil };
+  state.profile = { ...STANDARDPROFIL, ...profil };
   if (installningar.poPct != null) state.costSettings.poPct = installningar.poPct;
   if (installningar.months != null) state.costSettings.months = installningar.months;
   if (installningar.jamforelse != null && state.likvardighet) {
@@ -24614,7 +24614,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     }
   }
   synkaJamforelseFlik();
-  applyProfileLabels();
+  tillampaProfiletiketter();
   synkaNamnFalt();
   _synkaOrgTyp();
   _synkaKostnadsfalt();
@@ -24658,8 +24658,8 @@ function _fyllPaketFormular() {
   satt("paket-org", p ? p.organisation : "");
   satt("paket-utgivare", p ? p.utgivare : "");
   satt("paket-ar", p ? p.avserAr : (/* @__PURE__ */ new Date()).getFullYear());
-  satt("paket-jamf-namn", state.profile.benchmarkLabel === DEFAULT_PROFILE.benchmarkLabel ? "" : state.profile.benchmarkLabel);
-  satt("paket-jamf-genitiv", state.profile.benchmarkLabelGenitive === DEFAULT_PROFILE.benchmarkLabelGenitive ? "" : state.profile.benchmarkLabelGenitive);
+  satt("paket-jamf-namn", state.profile.benchmarkLabel === STANDARDPROFIL.benchmarkLabel ? "" : state.profile.benchmarkLabel);
+  satt("paket-jamf-genitiv", state.profile.benchmarkLabelGenitive === STANDARDPROFIL.benchmarkLabelGenitive ? "" : state.profile.benchmarkLabelGenitive);
   satt("paket-ref-namn", harReferens() ? state.policyNamn || "" : "");
   satt("paket-ref-kortnamn", harReferens() && state.policyKortnamn !== state.policyNamn ? state.policyKortnamn || "" : "");
   satt("paket-po", state.costSettings.poPct);
@@ -25058,7 +25058,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
   state.profile = { ...state.profile, name: DEMO_ORGANISATION, orgTyp: "kommun" };
   if (typeof _synkaOrgTyp === "function") _synkaOrgTyp();
   if (typeof synkaNamnFalt === "function") synkaNamnFalt();
-  if (typeof applyProfileLabels === "function") applyProfileLabels();
+  if (typeof tillampaProfiletiketter === "function") tillampaProfiletiketter();
   if (typeof renderReferensKort === "function") renderReferensKort();
   if (typeof markUploadLoaded === "function") markUploadLoaded("upload-cell-policy", "Demo");
 }
@@ -25238,8 +25238,8 @@ function _rensaAllData({ inbakat = true } = {}) {
   if (typeof _kVisaFel === "function") _kVisaFel("");
   if (typeof _synkaKTroskel === "function") _synkaKTroskel();
   aterstallReferens();
-  state.profile = { ...DEFAULT_PROFILE };
-  if (typeof applyProfileLabels === "function") applyProfileLabels();
+  state.profile = { ...STANDARDPROFIL };
+  if (typeof tillampaProfiletiketter === "function") tillampaProfiletiketter();
   if (typeof _synkaOrgTyp === "function") _synkaOrgTyp();
   if (typeof synkaNamnFalt === "function") synkaNamnFalt();
   if (typeof jamforelseSattVal === "function") jamforelseSattVal({ bas: "", sektor: "" });
@@ -29345,7 +29345,7 @@ function uppstartReferensfiler() {
 // src/app/07-standardinstallningar.js
 var INAKTIVITET_STANDARD_MIN = 90;
 var ORG_STANDARDNAMN = "Organisationen";
-var DEFAULT_PROFILE = Object.freeze({
+var STANDARDPROFIL = Object.freeze({
   name: ORG_STANDARDNAMN,
   benchmarkLabel: "jämförelsestatistiken",
   benchmarkLabelGenitive: "jämförelsestatistikens",
@@ -29366,7 +29366,7 @@ var DEFAULT_PROFILE = Object.freeze({
   locale: "sv-SE",
   notes: "Neutral standard. Läs in ett organisationspaket för organisationens benämningar."
 });
-function applyProfileLabels() {
+function tillampaProfiletiketter() {
   document.querySelectorAll("[data-term-template]").forEach((el) => {
     const text = termText(el.getAttribute("data-term-template") || "");
     const attr = el.getAttribute("data-term-attr");
@@ -29392,17 +29392,17 @@ function applyProfileLabels() {
 var _PERSONUPPGIFT_FEL = "Namnet liknar ett personnummer eller en e-postadress och sparades inte.";
 function orgNamn(standard = ORG_STANDARDNAMN) {
   const n = state.profile && state.profile.name;
-  return n && n !== DEFAULT_PROFILE.name ? normaliseraNamn(n) : standard;
+  return n && n !== STANDARDPROFIL.name ? normaliseraNamn(n) : standard;
 }
 function jmfNamn(standard = "Jämförelsestatistiken") {
   const n = state.profile && state.profile.benchmarkLabel;
-  return n && n !== DEFAULT_PROFILE.benchmarkLabel ? normaliseraNamn(n) : standard;
+  return n && n !== STANDARDPROFIL.benchmarkLabel ? normaliseraNamn(n) : standard;
 }
 function jmfNamnGenitiv() {
   const n = state.profile && state.profile.benchmarkLabelGenitive;
-  return n && n !== DEFAULT_PROFILE.benchmarkLabelGenitive ? normaliseraNamn(n) : DEFAULT_PROFILE.benchmarkLabelGenitive;
+  return n && n !== STANDARDPROFIL.benchmarkLabelGenitive ? normaliseraNamn(n) : STANDARDPROFIL.benchmarkLabelGenitive;
 }
-function plotNamn(text) {
+function diagramNamn(text) {
   return String(text ?? "").replace(/</g, "‹").replace(/>/g, "›");
 }
 function synkaNamnFalt() {
@@ -29416,13 +29416,13 @@ function synkaNamnFalt() {
 }
 function _namnAndrat() {
   synkaNamnFalt();
-  applyProfileLabels();
+  tillampaProfiletiketter();
   if (typeof ritaOmReferens === "function") ritaOmReferens();
 }
 function sattOrgNamn(text) {
   const n = normaliseraNamn(text);
   if (n && liknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
-  state.profile = { ...state.profile, name: n || DEFAULT_PROFILE.name };
+  state.profile = { ...state.profile, name: n || STANDARDPROFIL.name };
   _namnAndrat();
   return { ok: true };
 }
@@ -29431,9 +29431,9 @@ function sattJmfNamn(text) {
   if (n && liknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
   state.profile = {
     ...state.profile,
-    benchmarkLabel: n || DEFAULT_PROFILE.benchmarkLabel,
-    benchmarkLabelGenitive: n ? namnGenitiv(n) : DEFAULT_PROFILE.benchmarkLabelGenitive,
-    benchmarkShort: n || DEFAULT_PROFILE.benchmarkShort
+    benchmarkLabel: n || STANDARDPROFIL.benchmarkLabel,
+    benchmarkLabelGenitive: n ? namnGenitiv(n) : STANDARDPROFIL.benchmarkLabelGenitive,
+    benchmarkShort: n || STANDARDPROFIL.benchmarkShort
   };
   _namnAndrat();
   return { ok: true };
@@ -31655,7 +31655,7 @@ function renderInfoTab(section = "overview") {
       mall.content.textContent.trim()
     ) : "Licenstexterna byggs in i den färdiga filen (src/licenser.txt).";
   }
-  applyProfileLabels();
+  tillampaProfiletiketter();
 }
 function uppstartOmVerktyget() {
   document.querySelectorAll("#view-info .info-section-btn").forEach((btn) => {
@@ -33331,7 +33331,7 @@ var state = {
   // för A/B-jämförelse
   forraArsbokslut: null,
   // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
-  profile: { ...DEFAULT_PROFILE },
+  profile: { ...STANDARDPROFIL },
   filnamn: { data: null, policy: null, statistik: null },
   // filrutornas status (ADR-36)  // #14 lokalkalibrering
   kTroskel: K_STANDARD,
@@ -36831,7 +36831,7 @@ function uppstartSist() {
     }
   }
   setupTabA11y();
-  applyProfileLabels();
+  tillampaProfiletiketter();
   _synkaKTroskel();
   renderReferensKort();
   try {

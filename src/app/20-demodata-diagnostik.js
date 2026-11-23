@@ -6,7 +6,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
-import { applyProfileLabels, synkaNamnFalt } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter, synkaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
 import { getBasIntervals, state } from './12-tillstand.js';
@@ -62,7 +62,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
     state.profile = { ...state.profile, name: DEMO_ORGANISATION, orgTyp: 'kommun' };
     if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
     if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
-    if (typeof applyProfileLabels === 'function') applyProfileLabels();
+    if (typeof tillampaProfiletiketter === 'function') tillampaProfiletiketter();
     if (typeof renderReferensKort === 'function') renderReferensKort();
     if (typeof markUploadLoaded === 'function') markUploadLoaded('upload-cell-policy', 'Demo');
 }

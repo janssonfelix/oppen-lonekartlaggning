@@ -11,7 +11,7 @@ import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { _kronorFalt, _kvantilTipsRader } from './03-hjalpfunktioner.js';
 import { _konUtelamnatNot, _sattDiagramKNot, individLitenFor, kInstalld, kTroskel, litetUnderlag } from './06-k-troskel.js';
-import { jmfNamn, plotNamn } from './07-standardinstallningar.js';
+import { jmfNamn, diagramNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { gapStatusKI, PALETTE, UNDERLAG, URVAL } from './10-diagramtema.js';
@@ -312,7 +312,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
         l.harleddAv = { ...perKon(kon), minN: kTroskel(), namn: konNamn(kon),
             berakna: p => { const t = _konScatterTrend(p, l.marke === 'band'); return t ? (l.marke === 'band' ? t.band : t.linje) : []; } };
     }
-    if (statMedian != null) lager.push(_vagratLinje(`Median i ${plotNamn(jmfNamn('jämförelsestatistiken'))}`, PALETTE.serie[10], statMedian, minAlder, maxAlder, { streck: 'streckad' }));
+    if (statMedian != null) lager.push(_vagratLinje(`Median i ${diagramNamn(jmfNamn('jämförelsestatistiken'))}`, PALETTE.serie[10], statMedian, minAlder, maxAlder, { streck: 'streckad' }));
     return { beskrivning, individer: true, urval: [...(isAll ? [URVAL.bas] : []), URVAL.yrkesgrupp, URVAL.alder, URVAL.lon],
         x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, lager,
         referens: pol ? [{ typ: 'zon', y0: pol.p10, y1: pol.p90, farg: PALETTE.semantic.neutral, opacitet: 0.15 },

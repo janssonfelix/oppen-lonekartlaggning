@@ -15,7 +15,7 @@ import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-t
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { _renderaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
-import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, harReferens, referensNamn, state } from './12-tillstand.js';
@@ -152,7 +152,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         }
         if (!statistik && state.statistikKalla === 'paket') _tomStatistik();
     }
-    state.profile = { ...DEFAULT_PROFILE, ...profil };
+    state.profile = { ...STANDARDPROFIL, ...profil };
     if (installningar.poPct != null) state.costSettings.poPct = installningar.poPct;
     if (installningar.months != null) state.costSettings.months = installningar.months;
     // Jämförelseetiketterna i likvärdigt arbete (ADR-60): alla som inte är kvinnodominerade, eller bara de mansdominerade.
@@ -211,7 +211,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     }
     synkaJamforelseFlik();
 
-    applyProfileLabels();
+    tillampaProfiletiketter();
     synkaNamnFalt();
     _synkaOrgTyp();
     _synkaKostnadsfalt();
@@ -244,8 +244,8 @@ export function _fyllPaketFormular() {
     satt('paket-org', p ? p.organisation : '');
     satt('paket-utgivare', p ? p.utgivare : '');
     satt('paket-ar', p ? p.avserAr : new Date().getFullYear());
-    satt('paket-jamf-namn', state.profile.benchmarkLabel === DEFAULT_PROFILE.benchmarkLabel ? '' : state.profile.benchmarkLabel);
-    satt('paket-jamf-genitiv', state.profile.benchmarkLabelGenitive === DEFAULT_PROFILE.benchmarkLabelGenitive ? '' : state.profile.benchmarkLabelGenitive);
+    satt('paket-jamf-namn', state.profile.benchmarkLabel === STANDARDPROFIL.benchmarkLabel ? '' : state.profile.benchmarkLabel);
+    satt('paket-jamf-genitiv', state.profile.benchmarkLabelGenitive === STANDARDPROFIL.benchmarkLabelGenitive ? '' : state.profile.benchmarkLabelGenitive);
     // Ställningstagandets namn: det som gäller nu (ur fil, paket eller namnfältet), så att paketet inte
     // tyst bär ett filnamn som "2026 lonepol.csv" vidare.
     satt('paket-ref-namn', harReferens() ? (state.policyNamn || '') : '');

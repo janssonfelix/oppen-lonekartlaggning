@@ -22,7 +22,7 @@ export const INAKTIVITET_STANDARD_MIN = 90;
 // organisationspaket.
 /** Standardnamnet när inget organisationspaket satt ett namn. */
 const ORG_STANDARDNAMN = 'Organisationen';
-export const DEFAULT_PROFILE = Object.freeze({
+export const STANDARDPROFIL = Object.freeze({
     name:                    ORG_STANDARDNAMN,
     benchmarkLabel:          'jämförelsestatistiken',
     benchmarkLabelGenitive:  'jämförelsestatistikens',
@@ -42,7 +42,7 @@ export const DEFAULT_PROFILE = Object.freeze({
  * Tillämpar profilens etiketter på alla DOM-noder med data-profile-attribut, och termerna (ADR-74) på noderna med
  * data-term-template. Anropas vid uppstart och varje gång state.profile uppdateras.
  */
-export function applyProfileLabels() {
+export function tillampaProfiletiketter() {
     // Mall som "Kvinnor och män med samma {enhet.en}" → fylls med de gällande termerna (termText, 09-termer.js).
     // Med data-term-attr fylls det attributet (till exempel data-tip) i stället för texten.
     document.querySelectorAll('[data-term-template]').forEach(el => {
@@ -75,19 +75,19 @@ export function applyProfileLabels() {
 const _PERSONUPPGIFT_FEL = 'Namnet liknar ett personnummer eller en e-postadress och sparades inte.';
 export function orgNamn(standard = ORG_STANDARDNAMN) {
     const n = state.profile && state.profile.name;
-    return n && n !== DEFAULT_PROFILE.name ? normaliseraNamn(n) : standard;   // även paketnamn högst 100 tecken
+    return n && n !== STANDARDPROFIL.name ? normaliseraNamn(n) : standard;   // även paketnamn högst 100 tecken
 }
 export function jmfNamn(standard = 'Jämförelsestatistiken') {
     const n = state.profile && state.profile.benchmarkLabel;
-    return n && n !== DEFAULT_PROFILE.benchmarkLabel ? normaliseraNamn(n) : standard;
+    return n && n !== STANDARDPROFIL.benchmarkLabel ? normaliseraNamn(n) : standard;
 }
 /** Jämförelsens namn i genitiv i löptext ("jämförelsestatistikens", eller paketets eget namn). */
 export function jmfNamnGenitiv() {
     const n = state.profile && state.profile.benchmarkLabelGenitive;
-    return n && n !== DEFAULT_PROFILE.benchmarkLabelGenitive ? normaliseraNamn(n) : DEFAULT_PROFILE.benchmarkLabelGenitive;
+    return n && n !== STANDARDPROFIL.benchmarkLabelGenitive ? normaliseraNamn(n) : STANDARDPROFIL.benchmarkLabelGenitive;
 }
 // Namn i diagrammens serier visas alltid som text: vinkelparenteser byts mot typografiska, så att ett namn aldrig ser ut som markering.
-export function plotNamn(text) {
+export function diagramNamn(text) {
     return String(text ?? '').replace(/</g, '‹').replace(/>/g, '›');
 }
 export function synkaNamnFalt() {
@@ -98,13 +98,13 @@ export function synkaNamnFalt() {
 }
 function _namnAndrat() {
     synkaNamnFalt();
-    applyProfileLabels();
+    tillampaProfiletiketter();
     if (typeof ritaOmReferens === 'function') ritaOmReferens();
 }
 export function sattOrgNamn(text) {
     const n = normaliseraNamn(text);
     if (n && liknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
-    state.profile = { ...state.profile, name: n || DEFAULT_PROFILE.name };
+    state.profile = { ...state.profile, name: n || STANDARDPROFIL.name };
     _namnAndrat();
     return { ok: true };
 }
@@ -112,9 +112,9 @@ export function sattJmfNamn(text) {
     const n = normaliseraNamn(text);
     if (n && liknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
     state.profile = { ...state.profile,
-        benchmarkLabel: n || DEFAULT_PROFILE.benchmarkLabel,
-        benchmarkLabelGenitive: n ? namnGenitiv(n) : DEFAULT_PROFILE.benchmarkLabelGenitive,
-        benchmarkShort: n || DEFAULT_PROFILE.benchmarkShort };
+        benchmarkLabel: n || STANDARDPROFIL.benchmarkLabel,
+        benchmarkLabelGenitive: n ? namnGenitiv(n) : STANDARDPROFIL.benchmarkLabelGenitive,
+        benchmarkShort: n || STANDARDPROFIL.benchmarkShort };
     _namnAndrat();
     return { ok: true };
 }
