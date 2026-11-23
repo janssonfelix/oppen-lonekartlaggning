@@ -9,6 +9,7 @@
  * kvalitetskriterium — den är ett fynd (könsskevhet).
  */
 import { konAv } from './falt.js';
+import { arKvinna, arMan } from './kon.js';
 import { avrundaSymmetriskt } from './stat.js';
 import { personOrd } from './namn.js';
 import { STANDARDTERMER as T, ordForAntal } from './termer.js';
@@ -45,6 +46,23 @@ export function jamforbaraBas(rader, k) {
         else maskerade.push(bas);
     }
     return { jamforbara, maskerade, andelPersoner: totalt ? iJamforbara / totalt : null };
+}
+
+/**
+ * Inläsningsrapportens räkning per BAS-intervall: hur många intervall med minst tre personer som har bara ett kön, och
+ * hur många som har färre än k personer och därför inte redovisas i exporterna.
+ * @param {any[]} rader
+ * @param {string[]} basLista
+ * @param {number} k
+ */
+export function basVarningar(rader, basLista, k) {
+    let enkonade = 0, underK = 0;
+    for (const b of basLista) {
+        const sub = rader.filter(r => r.bas === b);
+        if (sub.length >= 3 && (!sub.some(r => arKvinna(r)) || !sub.some(r => arMan(r)))) enkonade++;
+        if (sub.length < k) underK++;
+    }
+    return { enkonade, underK };
 }
 
 /** Minsta upptäckbara skillnad i % (80 % styrka, α = 0,05) ur könskoefficientens SE (log-skala). */

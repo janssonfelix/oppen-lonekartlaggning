@@ -82,7 +82,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `csv` | – |
 |  | `talformat` | `stat` |
 |  | `forhandskontroll` | `termer` |
-|  | `datakvalitet` | `falt`, `forhandskontroll`, `namn`, `stat`, `termer` |
+|  | `datakvalitet` | `falt`, `forhandskontroll`, `kon`, `namn`, `stat`, `termer` |
 |  | `organisationsfil` | – |
 |  | `organisationspaket` | `importprofiler`, `installningsgranser`, `perbas`, `tabellrecept`, `termer` |
 |  | `installningsgranser` | – |

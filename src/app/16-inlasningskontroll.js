@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { sifferprefixAvYrke } from '../lib/aid.js';
+import { basVarningar } from '../lib/datakvalitet.js';
 import { namnIYrkesfaltetRadnr } from '../lib/forhandskontroll.js';
-import { arKvinna, arMan } from '../lib/kon.js';
 import { svPct } from '../lib/talformat.js';
 import { ordForAntal } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
@@ -40,14 +40,7 @@ export function renderDataValidationReport() {
     // Räkna varningar
     const outliers = detectOutliers(3);
     const bas = getBasIntervals();
-    const singleSexBas = bas.filter(b => {
-        const sub = state.data.filter(r => r.bas === b);
-        if (sub.length < 3) return false;
-        const hasKv = sub.some(r => arKvinna(r));
-        const hasMa = sub.some(r => arMan(r));
-        return !hasKv || !hasMa;
-    }).length;
-    const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;
+    const { enkonade: singleSexBas, underK: kMaskedBas } = basVarningar(state.data, bas, kInstalld());
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
