@@ -1234,7 +1234,7 @@ describe('länkade vyer: markering', () => {
         expect(w2.document.getElementById('markering-rad').textContent).toContain(`BAS ${d.markering[0].slice(4)}`);
         expect(w2.document.querySelector('#markering-rad [data-markering="dossier"]')).toBeNull();     // ett BAS har ingen dossier
         // En yrkesgrupp med dossier: knappen finns och öppnar den.
-        const kand = w2.__gruppdossierCandidates()[0];
+        const kand = w2.__gruppdossierKandidater()[0];
         w2.eval(`sattDiagramMarkering('grupp:${kand.key}')`);
         const knapp = w2.document.querySelector('#markering-rad [data-markering="dossier"]');
         expect(knapp).not.toBeNull();

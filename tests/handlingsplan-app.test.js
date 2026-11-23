@@ -343,7 +343,7 @@ describe('Handlingsplan och gruppdossier: en AID-kod med två texter är en grup
     });
     it('gruppdossiern för 207011 i BAS C hittar prioriteringens post', () => {
         const w = fonsterTvaTexter();
-        const d = w.eval("buildGruppdossier('207011|C')");
+        const d = w.eval("byggGruppdossier('207011|C')");
         expect(d.n).toBe(15);
         expect(d.prio).toMatchObject({ aid: '207011', bas: 'C', n: 15, median: 31000 });
     });

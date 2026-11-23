@@ -29,7 +29,7 @@ import { nedborrningGlom } from './11-markering.js';
 import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { utforskaFigur } from './71-utforska-figur.js';
 import { utforskaNollstallUrval, utforskaRensaUrval, utforskaUrval, utforskaUrvalSlappMinne, ritaUtforskaUrval } from './72-utforska-urval.js';
-import { gruppdossierCandidates, openGruppdossier } from './80-gruppdossier.js';
+import { gruppdossierKandidater, oppnaGruppdossier } from './80-gruppdossier.js';
 
 const UTFORSKA_DIM_ETIKETT = {
     bas: stor(T.niva.en), aid: stor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',
@@ -456,7 +456,7 @@ function utforskaDossiermal(spec, radEtikett, kolEtikett) {
     if (aidEtikett != null && String(aidEtikett).startsWith('Övriga i ')) return { hopslagen: true };
     // Etiketten är "AID Yrkesnamn"; dossiern använder AID-sifferprefixet.
     const aid = aidEtikett == null ? null : aidAvYrke(aidEtikett);
-    const traff = gruppdossierCandidates().find(c => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
+    const traff = gruppdossierKandidater().find(c => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
     return traff ? { key: traff.key } : { saknas: true };
 }
 // Klick på ett märke: datapunkten bär radens och kolumnens etikett (`rad`, `kol`); en låda bär gruppens etikett
@@ -477,7 +477,7 @@ function utforskaVidKlick(d) {
             `Gruppen har ingen gruppdossier, eftersom dossiern bara finns för grupper med minst ${kTroskel()} ${personOrd(kTroskel())}.`);
         return;
     }
-    openGruppdossier(mal.key);
+    oppnaGruppdossier(mal.key);
 }
 
 /** Släpper Utforskas referenser till lönerader (anropas av "Rensa all data"). */

@@ -39,12 +39,12 @@ import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 // Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
 // dragningar som översikten per BAS-intervall (_laBootstrapGapKI), med B = 2000 som raknaBootstrapKI; dragningar
 // där männens median inte är positiv räknas inte.
-export function _gdBootstrapGapCI(kvLons, maLons, B) {
+export function _gdBootstrapGapKI(kvLons, maLons, B) {
     return medianKvotKIGiltiga(kvLons, maLons, { B });
 }
 
 /** Alla grupper som får öppnas i dossier (minsta gruppstorlek som överallt annars): gruppdossierGrupper i src/lib/vymodell-gruppdossier.js. */
-export function gruppdossierCandidates() {
+export function gruppdossierKandidater() {
     return gruppdossierGrupper(hamtaData(), kTroskel());
 }
 
@@ -61,7 +61,7 @@ export function _gdKon(rows) {
  * @param {{text?: boolean}} [val]
  */
 export function gruppdossierDelat({ text = false } = {}) {
-    return { kandidater: gruppdossierCandidates(), perBas: new Map(), prio: new Map(), text };
+    return { kandidater: gruppdossierKandidater(), perBas: new Map(), prio: new Map(), text };
 }
 
 /**
@@ -69,8 +69,8 @@ export function gruppdossierDelat({ text = false } = {}) {
  * @param {string} key
  * @param {any} [delat] ur gruppdossierDelat(), när flera dossierer byggs i samma anrop
  */
-export function buildGruppdossier(key, delat = null) {
-    const g = (delat ? delat.kandidater : gruppdossierCandidates()).find(x => x.key === key);
+export function byggGruppdossier(key, delat = null) {
+    const g = (delat ? delat.kandidater : gruppdossierKandidater()).find(x => x.key === key);
     if (!g) return null;
 
     // Justerat (åldersrensat) gap för gruppens BAS. Utan ålder i lönefilen (ADR-64) visar dossiern inget sådant.
@@ -111,14 +111,14 @@ export function buildGruppdossier(key, delat = null) {
 
 // Dossiern är en DETALJVY för en rad, inte ett eget arbetsläge — därför modal
 // som nås från tabellrader, inte en post i huvudmenyn.
-export function openGruppdossier(preselectKey) {
+export function oppnaGruppdossier(preselectKey) {
     const modal = document.getElementById('dossier-modal');
     if (!modal) return;
     ritaGruppdossier(preselectKey);
     modal.style.display = 'flex';
     if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
-export function closeGruppdossier() {
+export function stangGruppdossier() {
     const modal = document.getElementById('dossier-modal');
     if (!modal) return;
     if (typeof slappFokus === 'function') slappFokus(modal);
@@ -130,7 +130,7 @@ export function ritaGruppdossier(preselectKey) {
     const body = document.getElementById('dossier-body');
     if (!sel || !body) return;
 
-    const cands = gruppdossierCandidates();
+    const cands = gruppdossierKandidater();
     if (!cands.length) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
@@ -145,7 +145,7 @@ export function ritaGruppdossier(preselectKey) {
     ).join('');
     /** @type {HTMLInputElement} */ (sel).value = cands.some(g => g.key === wanted) ? wanted : cands[0].key;
 
-    const d = buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value);
+    const d = byggGruppdossier(/** @type {HTMLInputElement} */ (sel).value);
     if (!d) { body.innerHTML = '<p class="f-dampad">Gruppen kunde inte läsas.</p>'; return; }
     body.innerHTML = _gdRitaInnehall(d);
     // Fokusfällan cachar de fokuserbara elementen när modalen öppnas. Byter man
@@ -271,7 +271,7 @@ function _gdRitaInnehall(d) {
  * @param {any} d
  * @param {{stampel?: boolean}} [val]
  */
-export function gruppdossierAsText(d, { stampel = true } = {}) {
+export function gruppdossierSomText(d, { stampel = true } = {}) {
     const kr = v => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
     const L = [];
     L.push(`Gruppdossier: ${gruppNamn(d)} – BAS ${d.bas}`);
@@ -302,20 +302,20 @@ export function uppstartGruppdossier() {
     // Djuplänk från tabellrader i andra flikar
     document.addEventListener('click', e => {
         const btn = /** @type {HTMLElement} */ (e.target).closest('[data-open-dossier]');
-        if (btn) { openGruppdossier(btn.getAttribute('data-open-dossier')); return; }
-        if (/** @type {HTMLElement} */ (e.target).closest('[data-dossier-close]')) closeGruppdossier();
+        if (btn) { oppnaGruppdossier(btn.getAttribute('data-open-dossier')); return; }
+        if (/** @type {HTMLElement} */ (e.target).closest('[data-dossier-close]')) stangGruppdossier();
     });
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && document.getElementById('dossier-modal')?.style.display === 'flex') {
-            closeGruppdossier();
+            stangGruppdossier();
         }
     });
     document.addEventListener('click', e => {
         if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
         const sel = document.getElementById('dossier-select');
-        const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
+        const d = sel ? medExportLage(() => byggGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
         if (!d) return;
-        const txt = medExportLage(() => gruppdossierAsText(d));
+        const txt = medExportLage(() => gruppdossierSomText(d));
         const done = () => { if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Dossier kopierad.'); };
         if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
         else done();

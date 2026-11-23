@@ -20088,20 +20088,20 @@ function uppstartReglerOchPraxis() {
 }
 
 // src/app/80-gruppdossier.js
-function _gdBootstrapGapCI(kvLons, maLons, B) {
+function _gdBootstrapGapKI(kvLons, maLons, B) {
   return medianKvotKIGiltiga(kvLons, maLons, { B });
 }
-function gruppdossierCandidates() {
+function gruppdossierKandidater() {
   return gruppdossierGrupper(hamtaData(), kTroskel());
 }
 function _gdKon(rows) {
   return { kv: rows.filter((r) => arKvinna(r)), ma: rows.filter((r) => arMan(r)) };
 }
 function gruppdossierDelat({ text = false } = {}) {
-  return { kandidater: gruppdossierCandidates(), perBas: /* @__PURE__ */ new Map(), prio: /* @__PURE__ */ new Map(), text };
+  return { kandidater: gruppdossierKandidater(), perBas: /* @__PURE__ */ new Map(), prio: /* @__PURE__ */ new Map(), text };
 }
-function buildGruppdossier(key, delat = null) {
-  const g = (delat ? delat.kandidater : gruppdossierCandidates()).find((x) => x.key === key);
+function byggGruppdossier(key, delat = null) {
+  const g = (delat ? delat.kandidater : gruppdossierKandidater()).find((x) => x.key === key);
   if (!g) return null;
   let justerat = null;
   if (harAlder()) try {
@@ -20153,14 +20153,14 @@ function buildGruppdossier(key, delat = null) {
     forslag: forslag2
   });
 }
-function openGruppdossier(preselectKey) {
+function oppnaGruppdossier(preselectKey) {
   const modal = document.getElementById("dossier-modal");
   if (!modal) return;
   ritaGruppdossier(preselectKey);
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal);
 }
-function closeGruppdossier() {
+function stangGruppdossier() {
   const modal = document.getElementById("dossier-modal");
   if (!modal) return;
   if (typeof slappFokus === "function") slappFokus(modal);
@@ -20170,7 +20170,7 @@ function ritaGruppdossier(preselectKey) {
   const sel = document.getElementById("dossier-select");
   const body = document.getElementById("dossier-body");
   if (!sel || !body) return;
-  const cands = gruppdossierCandidates();
+  const cands = gruppdossierKandidater();
   if (!cands.length) {
     sel.innerHTML = "";
     body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon("tomLada")}</div>
@@ -20184,7 +20184,7 @@ function ritaGruppdossier(preselectKey) {
     (g) => `<option value="${esc(g.key)}">${esc(gruppNamn(g))} — BAS ${esc(g.bas)} (n=${g.rows.length})</option>`
   ).join("");
   sel.value = cands.some((g) => g.key === wanted) ? wanted : cands[0].key;
-  const d = buildGruppdossier(
+  const d = byggGruppdossier(
     /** @type {HTMLInputElement} */
     sel.value
   );
@@ -20263,7 +20263,7 @@ function _gdRitaInnehall(d) {
             ${card("Frågor att undersöka", hypInner, "Regelbaserade uppslag, inte färdiga motiveringar. Ingen AI är inblandad.")}
         </div>`;
 }
-function gruppdossierAsText(d, { stampel = true } = {}) {
+function gruppdossierSomText(d, { stampel = true } = {}) {
   const kr2 = (v) => v == null || !isFinite(v) ? "–" : Math.round(v).toLocaleString("sv-SE") + " kr";
   const L = [];
   L.push(`Gruppdossier: ${gruppNamn(d)} – BAS ${d.bas}`);
@@ -20293,29 +20293,29 @@ function uppstartGruppdossier() {
       e.target.closest("[data-open-dossier]")
     );
     if (btn) {
-      openGruppdossier(btn.getAttribute("data-open-dossier"));
+      oppnaGruppdossier(btn.getAttribute("data-open-dossier"));
       return;
     }
     if (
       /** @type {HTMLElement} */
       e.target.closest("[data-dossier-close]")
-    ) closeGruppdossier();
+    ) stangGruppdossier();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && document.getElementById("dossier-modal")?.style.display === "flex") {
-      closeGruppdossier();
+      stangGruppdossier();
     }
   });
   document.addEventListener("click", (e) => {
     if (!/** @type {HTMLElement} */
     e.target.closest("#btn-dossier-copy")) return;
     const sel = document.getElementById("dossier-select");
-    const d = sel ? medExportLage(() => buildGruppdossier(
+    const d = sel ? medExportLage(() => byggGruppdossier(
       /** @type {HTMLInputElement} */
       sel.value
     )) : null;
     if (!d) return;
-    const txt = medExportLage(() => gruppdossierAsText(d));
+    const txt = medExportLage(() => gruppdossierSomText(d));
     const done = () => {
       if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Dossier kopierad.");
     };
@@ -20576,7 +20576,7 @@ function rmBasintervallAvsnitt(k, bi) {
   const delar = [stycke(`Ett avsnitt per ${T.niva.en} med minst ${k} ${personOrd(k)}, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? "läget mot ställningstagandet, " : ""}${T.enhet.bfl} med status enligt Lika arbete, likvärdigt arbete${harAlder() ? ", ålder" : ""} och förra året när ett bokslut är inläst. Tabellen har ${T.enhet.bfl} där både kvinnor och män når minsta gruppstorlek.`, "dampad")];
   let smaYrken = 0;
   for (const { bas } of kand) {
-    const d = buildBasdossier(bas);
+    const d = byggBasdossier(bas);
     if (!d) continue;
     smaYrken += d.yrkenUtelamnade.length;
     delar.push({ typ: "rubrik", niva: 3, text: `${stor(T.niva.en)} ${d.bas}` });
@@ -20659,12 +20659,12 @@ function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
   if (besked) return avsnitt;
   const dossierer = (
     /** @type {any[]} */
-    medGrupper.map((g) => buildGruppdossier(g.key, delat)).filter(Boolean)
+    medGrupper.map((g) => byggGruppdossier(g.key, delat)).filter(Boolean)
   );
   avsnitt.delar.push({ typ: "stycke", stil: "dampad", text: `En dossier per ${T.enhet.en} i ${T.niva.en} där både kvinnor och män är minst ${k}, störst först — samma text som gruppdossierns kopia. ${stor(T.niva.bfl)} står i avsnittet Lönekartläggning per ${T.niva.en}.` });
   if (_kSanktNot()) avsnitt.delar.push({ typ: "stycke", text: _kSanktNot() });
   for (const d of dossierer) {
-    const rader = gruppdossierAsText(d, { stampel: false }).split("\n");
+    const rader = gruppdossierSomText(d, { stampel: false }).split("\n");
     avsnitt.delar.push({ typ: "rubrik", niva: 3, text: rader[0] });
     for (const r of rader.slice(1)) if (r.trim()) avsnitt.delar.push({ typ: "stycke", text: r.trim() });
   }
@@ -22026,7 +22026,7 @@ function basdossierKandidater() {
 }
 var BD_STATUS_TEXT = { granska: "Värt att granska", folj: "Följ upp", balanserat: "Balanserat", ejbedomd: "Går ej att bedöma", liten: "Könsuppdelningen är för liten" };
 var BD_STATUS_KLASS = { granska: ["farg-granska", "sok"], folj: ["farg-varning", "oga"], balanserat: ["farg-ok", "bock"], ejbedomd: ["f-dampad", "streck"], liten: ["f-dampad", null] };
-function buildBasdossier(bas) {
+function byggBasdossier(bas) {
   const k = kTroskel(), d = hamtaData();
   let likvardighet = null;
   try {
@@ -22048,14 +22048,14 @@ function buildBasdossier(bas) {
   });
 }
 var _bdVald = null;
-function openBasdossier(bas, opener) {
+function oppnaBasdossier(bas, opener) {
   const modal = document.getElementById("basdossier-modal");
   if (!modal) return;
   ritaBasdossier(bas);
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal, opener || document.activeElement);
 }
-function closeBasdossier() {
+function stangBasdossier() {
   const modal = document.getElementById("basdossier-modal");
   if (!modal || modal.style.display !== "flex") return;
   if (typeof slappFokus === "function") slappFokus(modal);
@@ -22080,7 +22080,7 @@ function ritaBasdossier(bas) {
   sel.value = kand.some((x) => x.bas === onskat) ? onskat : kand[0].bas;
   _bdVald = sel.value;
   if (bas && bas !== sel.value) meddelaSkarmlasare(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
-  const d = buildBasdossier(sel.value);
+  const d = byggBasdossier(sel.value);
   body.innerHTML = d ? _bdRitaInnehall(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
   const modal = document.getElementById("basdossier-modal");
   if (modal && modal.style.display === "flex") {
@@ -22194,7 +22194,7 @@ var BD_BEDOMNING = `Bedömning: har skillnaderna mellan kvinnor och män i inter
 function _bdTextRader(d, val) {
   return [`${stor(T.niva.en)} ${d.bas}`, "", ...basdossierStycken(d, val).flatMap((s, i) => [...i ? [""] : [], s.rubrik, ...s.rader])];
 }
-function basdossierAsText(d) {
+function basdossierSomText(d) {
   const L = _bdTextRader(d);
   if (_kSanktNot()) L.push("", _kSanktNot());
   return L.join("\n");
@@ -22221,8 +22221,8 @@ function basdossierUtelamnade() {
 }
 function basdossierText(bas) {
   return medExportLage(() => {
-    const d = buildBasdossier(bas);
-    return d ? basdossierAsText(d) : null;
+    const d = byggBasdossier(bas);
+    return d ? basdossierSomText(d) : null;
   });
 }
 function basdossierKnapp(bas, { text = "BAS-dossier", ikonEndast = false } = {}) {
@@ -22243,9 +22243,9 @@ function uppstartBasdossier() {
     const bas = btn.getAttribute("data-open-basdossier") || "";
     const iGrupp = btn.closest("#dossier-modal");
     if (iGrupp) {
-      closeGruppdossier();
-      openBasdossier(bas);
-    } else openBasdossier(bas, btn);
+      stangGruppdossier();
+      oppnaBasdossier(bas);
+    } else oppnaBasdossier(bas, btn);
   }, true);
   document.addEventListener("click", (e) => {
     const t = (
@@ -22254,19 +22254,19 @@ function uppstartBasdossier() {
     );
     if (!t.closest) return;
     if (t.closest("[data-basdossier-close]")) {
-      closeBasdossier();
+      stangBasdossier();
       return;
     }
     const grupp = t.closest("[data-bd-gruppdossier]");
     if (grupp) {
-      closeBasdossier();
-      openGruppdossier(grupp.getAttribute("data-bd-gruppdossier"));
+      stangBasdossier();
+      oppnaGruppdossier(grupp.getAttribute("data-bd-gruppdossier"));
       return;
     }
     const alder = t.closest("[data-bd-alder]");
     if (alder) {
       const bas = alder.getAttribute("data-bd-alder") || "";
-      closeBasdossier();
+      stangBasdossier();
       const sel = (
         /** @type {HTMLSelectElement|null} */
         document.getElementById("bas-select-kon")
@@ -22292,7 +22292,7 @@ function uppstartBasdossier() {
     }
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && document.getElementById("basdossier-modal")?.style.display === "flex") closeBasdossier();
+    if (e.key === "Escape" && document.getElementById("basdossier-modal")?.style.display === "flex") stangBasdossier();
   });
 }
 
@@ -24345,7 +24345,7 @@ function utforskaDossiermal(spec, radEtikett, kolEtikett) {
   if (bas == null && aidEtikett == null) return null;
   if (aidEtikett != null && String(aidEtikett).startsWith("Övriga i ")) return { hopslagen: true };
   const aid = aidEtikett == null ? null : aidAvYrke(aidEtikett);
-  const traff = gruppdossierCandidates().find((c) => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
+  const traff = gruppdossierKandidater().find((c) => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
   return traff ? { key: traff.key } : { saknas: true };
 }
 function utforskaVidKlick(d) {
@@ -24368,7 +24368,7 @@ function utforskaVidKlick(d) {
     );
     return;
   }
-  openGruppdossier(mal.key);
+  oppnaGruppdossier(mal.key);
 }
 function utforskaSlappMinne() {
   _utforskaTillstand = null;
@@ -25676,11 +25676,11 @@ function _mkRitaRad() {
       const vad = knapp.getAttribute("data-markering");
       if (vad === "dossier") {
         const k = _mkDossierNyckel();
-        if (k) openGruppdossier(k);
+        if (k) oppnaGruppdossier(k);
       } else if (vad === "borra") nedborrningTillUtforska();
       else if (vad === "basdossier") {
         const b = _mkBorrBas();
-        if (b != null) openBasdossier(b, knapp);
+        if (b != null) oppnaBasdossier(b, knapp);
       } else sattDiagramMarkering(null);
     });
   }
@@ -25712,7 +25712,7 @@ function _mkKnapp(vad, text) {
 function _mkDossierNyckel() {
   if (_markering.length !== 1 || !_markering[0].startsWith("grupp:")) return null;
   const nyckel = _markering[0].slice(6);
-  return typeof gruppdossierCandidates === "function" && gruppdossierCandidates().some((c) => c.key === nyckel) ? nyckel : null;
+  return typeof gruppdossierKandidater === "function" && gruppdossierKandidater().some((c) => c.key === nyckel) ? nyckel : null;
 }
 var _mkTillbaka = null;
 function _mkBorrBas() {
@@ -26863,7 +26863,7 @@ function _stUtkastPerBas(k) {
   const under = basdossierUtelamnade();
   if (under.length) lines.push(`BAS ${under.join(", ")} redovisas inte (färre än ${k} ${personOrd(k)}).`);
   for (const { bas } of kand) {
-    const d = buildBasdossier(bas);
+    const d = byggBasdossier(bas);
     if (d) lines.push("", basintervallUtkastText(d));
   }
   return lines.join("\n");
@@ -30101,7 +30101,7 @@ function sokKandidater() {
   const perBas = /* @__PURE__ */ new Map();
   for (const r of d) if (r.bas != null && r.bas !== "") perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
   const ut = [...perBas].filter(([, n]) => !kMaskerad(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), "sv")).map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
-  for (const g of gruppdossierCandidates()) {
+  for (const g of gruppdossierKandidater()) {
     ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${stor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
   }
   return ut;
@@ -30218,7 +30218,7 @@ function sokValj(i, { uppskjut = false } = {}) {
   }
   if (t.typ === "basdossier") {
     _sokStang();
-    openBasdossier(t.bas, document.getElementById("sok-grupp"));
+    oppnaBasdossier(t.bas, document.getElementById("sok-grupp"));
     return;
   }
   const nu = diagramMarkering();
@@ -30243,7 +30243,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
   if (p.dialog === "installningar") oppnaInstallningar({ fokus: p.falt || null });
   else if (p.dialog === "ordlista") oppnaOrdlista();
   else if (p.dialog === "lagras") oppnaVadLagras();
-  else if (p.dialog === "basdossier") openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById("sok-grupp"));
+  else if (p.dialog === "basdossier") oppnaBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById("sok-grupp"));
   else if (p.dialog === "symboler") document.getElementById("btn-open-symbols")?.click();
   else {
     const tillAvsnitt = () => {
@@ -32101,7 +32101,7 @@ function _rapportunderlagBlockExport() {
     kostnad: state.costSettings,
     arsjamforelse: arsjamforelse(),
     basintervall: basdossierKandidater().flatMap(({ bas }) => {
-      const bd = buildBasdossier(bas);
+      const bd = byggBasdossier(bas);
       return bd ? [{ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd) }] : [];
     }),
     basBedomning: BD_BEDOMNING,
@@ -35901,8 +35901,8 @@ function uppstartSakligaSkal() {
     const gaTill = t.closest("[data-hp-ga-till]");
     if (gaTill) {
       e.preventDefault();
-      if (typeof closeGruppdossier === "function") closeGruppdossier();
-      if (typeof closeBasdossier === "function") closeBasdossier();
+      if (typeof stangGruppdossier === "function") stangGruppdossier();
+      if (typeof stangBasdossier === "function") stangBasdossier();
       _hpGaTillRad(gaTill.getAttribute("data-hp-ga-till") || "");
       return;
     }

@@ -274,7 +274,7 @@ describe('Utforska: klick till gruppdossiern', () => {
         doc.getElementById('explore-typ').value = 'auto';
         win.__utforskaSattFilter({});
         win.__ritaUtforska();
-        kand = win.__gruppdossierCandidates();
+        kand = win.__gruppdossierKandidater();
         expect(kand.length).toBeGreaterThan(0);
     });
 
@@ -304,7 +304,7 @@ describe('Utforska: klick till gruppdossiern', () => {
     it('klick öppnar modalen', () => {
         win.__utforskaVidKlick({ rad: kand[0].bas, kol: null });
         expect(win.document.getElementById('dossier-modal').style.display).toBe('flex');
-        win.__closeGruppdossier();
+        win.__stangGruppdossier();
     });
 
     it('klick på en liten grupp öppnar dossiern: skärmen maskerar inget (ADR-51)', () => {
@@ -360,7 +360,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         grund();
         // Diagramkärnan (ADR-39): klicket hör till behållaren och överlever omritningar — ett klick, ett anrop.
         const el = $('chart-explore');
-        const kand = win.__gruppdossierCandidates()[0];
+        const kand = win.__gruppdossierKandidater()[0];
         win.__ritaUtforska();
         await vanta();
         $('explore-measure').value = 'medel';
@@ -369,7 +369,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         const i = el._figur.lager[0].data.findIndex(d => d.rad === kand.bas);
         el.querySelector(`rect[data-marke="stapel"][data-i="${i}"]`).dispatchEvent(new win.Event('click', { bubbles: true }));
         expect($('dossier-modal').style.display).toBe('flex');
-        win.__closeGruppdossier();
+        win.__stangGruppdossier();
     });
 
     it('tomläget försvinner när diagrammet ritas igen', () => {
@@ -656,7 +656,7 @@ describe('Utforska: helhet eller per kön, fler rader, urval alltid synligt', ()
     });
 
     it('klick på en yrkesgrupp inom BAS pekar ut exakt den gruppens dossier', () => {
-        const c = win.__gruppdossierCandidates()[0];
+        const c = win.__gruppdossierKandidater()[0];
         const etikett = win.__hamtaData().map(r => win.__utGruppnyckel(r, 'aidbas')).find(l => l.startsWith(c.aid + ' ') && l.endsWith(` · BAS ${c.bas}`));
         const spec = { rad: 'aidbas', kolumn: null, matt: 'median', delaKon: false, urval: { lage: 'alla', villkor: [] }, gruppVillkor: [] };
         expect(win.__utforskaDossiermal(spec, etikett, null)).toEqual({ key: c.key });

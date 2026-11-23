@@ -47,9 +47,9 @@ function intervall(omkasta) {
     const oversikt = Object.fromEntries(w._laOversiktRader(d).map(o => [o.bas, { gap: o.gap, ci: o.ci, status: w.gapStatusKI(o).niva }]));
     const lika = Object.fromEntries(w.laLikaGrupper(d).grupper.map(g => [g.yrke, { niva: g.niva, sakerstalld: g.sakerstalld, flaggad: g.flaggad }]));
     const tratt = Object.fromEntries(w._laTrattUnderlag(d).punkter.map(p => [p.nyckel, { kvot: p.kvot, gransLag: p.gransLag, gransHog: p.gransHog, utanfor: p.utanfor }]));
-    const dossier = Object.fromEntries(w.gruppdossierCandidates().map(g => {
+    const dossier = Object.fromEntries(w.gruppdossierKandidater().map(g => {
         const { kv, ma } = w._gdKon(g.rows);
-        return [g.key, w._gdBootstrapGapCI(kv.map(r => r.lon), ma.map(r => r.lon))];
+        return [g.key, w._gdBootstrapGapKI(kv.map(r => r.lon), ma.map(r => r.lon))];
     }));
     const kv = w._regKvantilBerakna({ direkt: true });
     // Kvantilregressionens punktskattningar räknas med IRLS och kan skilja i sista decimalerna med radordningen; här

@@ -27,7 +27,7 @@ import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _handlingsplanForifyllning, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 import { arsjamforelse } from './73-arsbokslut.js';
-import { basdossierKandidater, basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, buildBasdossier } from './81-basdossier.js';
+import { basdossierKandidater, basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, byggBasdossier } from './81-basdossier.js';
 import { _dkRitaTopp } from './85-robusthet-fardigcheck.js';
 
 // Diagram som kan kopieras som bild: id på diagrammet och fliken som ritar det.
@@ -71,7 +71,7 @@ function _rapportunderlagBlockExport() {
         hp: { rader: _rapportHpRader(hpSeed.rows), skal: _hpSkalUnderlag(hpSeed), utanBelopp: HP_SKAL_UTAN_BELOPP, kInstalld: kInstalld(), prio: HP_UNDERLAG_PRIO, par: HP_UNDERLAG_PAR },
         referenser: referensOverblick(), harStatistik: state.statistik.length > 0, kostnad: state.costSettings, arsjamforelse: arsjamforelse(),
         basintervall: basdossierKandidater().flatMap(({ bas }) => {
-            const bd = buildBasdossier(bas);
+            const bd = byggBasdossier(bas);
             return bd ? [{ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd) }] : [];
         }),
         basBedomning: BD_BEDOMNING, recept: state.rapportTabeller || [],

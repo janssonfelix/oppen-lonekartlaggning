@@ -414,12 +414,12 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         const a = bilaga(w);
         expect(a.rubrik).toBe('Bilaga: gruppdossierer');
         const k = w.eval('kInstalld()');
-        const nycklar = w.eval('medExportLage(() => gruppdossierCandidates().map(g => buildGruppdossier(g.key)).filter(d => d.nKv >= kTroskel() && d.nMa >= kTroskel()).map(d => d.key))');
+        const nycklar = w.eval('medExportLage(() => gruppdossierKandidater().map(g => byggGruppdossier(g.key)).filter(d => d.nKv >= kTroskel() && d.nMa >= kTroskel()).map(d => d.key))');
         expect(nycklar.length).toBeGreaterThan(1);
         const rubriker = a.delar.filter(p => p.typ === 'rubrik');
         expect(rubriker).toHaveLength(nycklar.length);
         // Varje dossier: rubriken är textens första rad och styckena resten, rad för rad.
-        const forsta = w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(nycklar[0]))).split('\n');
+        const forsta = w.medExportLage(() => w.gruppdossierSomText(w.byggGruppdossier(nycklar[0]))).split('\n');
         const i = a.delar.findIndex(p => p.typ === 'rubrik' && p.text === forsta[0]);
         expect(i).toBeGreaterThan(-1);
         const resten = forsta.slice(1).map(t => t.trim()).filter(Boolean);
@@ -433,11 +433,11 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         w.eval('sattKTroskel(25, { fraga: false })');
         MED_DOSSIERER(w);
         const a = bilaga(w);
-        const alla = w.eval('medExportLage(() => gruppdossierCandidates().map(g => buildGruppdossier(g.key)))');
+        const alla = w.eval('medExportLage(() => gruppdossierKandidater().map(g => byggGruppdossier(g.key)))');
         const med = alla.filter(d => d.nKv >= 25 && d.nMa >= 25);
         expect(alla.length).toBeGreaterThan(med.length);
         // Exakt grupperna där båda könen når 25, i kandidaternas ordning.
-        const forvantat = med.map(d => w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(d.key))).split('\n')[0]);
+        const forvantat = med.map(d => w.medExportLage(() => w.gruppdossierSomText(w.byggGruppdossier(d.key))).split('\n')[0]);
         expect(a.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(forvantat);
         expect(a.utelamnat.join(' ')).toMatch(/AID-etikett(er)? där ett kön har färre än 25 personer/);
     });
@@ -459,8 +459,8 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(iStampel).toBeGreaterThan(-1);
         expect(iStampel).toBeLessThan(iRubrik);
         // Kopian ur gruppdossiern bär fortfarande stämpeln, eftersom den kan spridas för sig.
-        const key = w.eval('gruppdossierCandidates()[0].key');
-        expect(w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(key)))).toContain(stampel);
+        const key = w.eval('gruppdossierKandidater()[0].key');
+        expect(w.medExportLage(() => w.gruppdossierSomText(w.byggGruppdossier(key)))).toContain(stampel);
     });
     it('förhandsbeskedet bygger inga dossierer men räknar utelämnat som exporten, och bilagan räknar kandidaterna en gång', () => {
         const w = createAppWindow(); w.__lasInDemodata();
@@ -469,7 +469,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         const utelamnat = bilaga(w).utelamnat;
         expect(utelamnat.length).toBe(1);
         const rakna = namn => { const orig = w[namn]; const r = { n: 0 }; w[namn] = (...x) => { r.n++; return orig(...x); }; return r; };
-        const byggda = rakna('buildGruppdossier'), kandidater = rakna('gruppdossierCandidates'), prio = rakna('raknaPrioritering'), ki = rakna('_gdBootstrapGapCI');
+        const byggda = rakna('byggGruppdossier'), kandidater = rakna('gruppdossierKandidater'), prio = rakna('raknaPrioritering'), ki = rakna('_gdBootstrapGapKI');
         w.eval('ritaExportBesked()');
         expect(byggda.n).toBe(0);
         expect(w.document.getElementById('besked-word').textContent).toContain(utelamnat[0]);

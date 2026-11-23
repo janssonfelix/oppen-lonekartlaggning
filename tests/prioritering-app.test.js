@@ -213,7 +213,7 @@ describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
         meny.querySelector('[data-open-dossier]').click();
         expect(meny.hidden).toBe(true);
         expect(d.getElementById('dossier-modal').style.display).toBe('flex');
-        w.eval('closeGruppdossier()');
+        w.eval('stangGruppdossier()');
         expect(d.activeElement).toBe(knapp);
     });
 });

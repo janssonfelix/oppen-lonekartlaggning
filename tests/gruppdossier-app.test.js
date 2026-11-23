@@ -15,12 +15,12 @@ beforeAll(() => {
 
 describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
     it('okänd nyckel ger null i stället för att kasta', () => {
-        expect(win.__buildGruppdossier('finns-inte|Z')).toBeNull();
+        expect(win.__byggGruppdossier('finns-inte|Z')).toBeNull();
     });
 
     it('textversionen innehåller gränsdragningen mot sakliga skäl', () => {
-        const d = win.__buildGruppdossier(win.__gruppdossierCandidates()[0].key);
-        const txt = win.__gruppdossierAsText(d);
+        const d = win.__byggGruppdossier(win.__gruppdossierKandidater()[0].key);
+        const txt = win.__gruppdossierSomText(d);
         expect(txt).toMatch(/^Gruppdossier: /);
         expect(txt).toContain('dokumenterar inte sakliga skäl');
     });
@@ -71,13 +71,13 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
 
     it('modalen öppnas med vald grupp och stängs igen', () => {
         win.__lasInDemodata();
-        const key = win.__gruppdossierCandidates()[0].key;
-        win.__openGruppdossier(key);
+        const key = win.__gruppdossierKandidater()[0].key;
+        win.__oppnaGruppdossier(key);
         const modal = win.document.getElementById('dossier-modal');
         expect(modal.style.display).toBe('flex');
         expect(win.document.getElementById('dossier-select').value).toBe(key);
         expect(win.document.getElementById('dossier-body').innerHTML.length).toBeGreaterThan(50);
-        win.__closeGruppdossier();
+        win.__stangGruppdossier();
         expect(modal.style.display).toBe('none');
     });
 
@@ -100,16 +100,16 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
 describe('k-anonymitet, sortering, efterlevnad och dossiern — dossiern', () => {
     it('hypotesrutan i dossiern renderar markup i stället för att visa taggar', () => {
         win.__lasInDemodata();
-        const key = win.__gruppdossierCandidates()[0].key;
-        const d = win.__buildGruppdossier(key);
-        win.__openGruppdossier(key);
+        const key = win.__gruppdossierKandidater()[0].key;
+        const d = win.__byggGruppdossier(key);
+        win.__oppnaGruppdossier(key);
         const body = win.document.getElementById('dossier-body');
         expect(body.innerHTML).not.toContain('&lt;strong&gt;');
         if (d.suggestions.length) {
             // textkopian ska däremot vara fri från markup
-            expect(win.__gruppdossierAsText(d)).not.toMatch(/<\/?strong>/);
+            expect(win.__gruppdossierSomText(d)).not.toMatch(/<\/?strong>/);
         }
-        win.__closeGruppdossier();
+        win.__stangGruppdossier();
     });
 });
 
@@ -169,15 +169,15 @@ describe('gruppdossiern', () => {
     it('rubriken, väljaren och textkopian dubblerar inte AID-koden, och inget tal har decimalpunkt', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
-        const kandidater = w.eval('gruppdossierCandidates().map(g => ({ key: g.key, aid: g.aid }))');
+        const kandidater = w.eval('gruppdossierKandidater().map(g => ({ key: g.key, aid: g.aid }))');
         expect(kandidater.length).toBeGreaterThan(3);
         const fel = [];
         for (const k of kandidater) {
-            w.eval(`openGruppdossier(${JSON.stringify(k.key)})`);
+            w.eval(`oppnaGruppdossier(${JSON.stringify(k.key)})`);
             const modal = w.document.getElementById('dossier-modal');
             const rubrik = modal.querySelector('.gd-head h3').textContent;
             const val = modal.querySelector('select').selectedOptions[0].textContent;
-            const text = w.eval(`gruppdossierAsText(buildGruppdossier(${JSON.stringify(k.key)}))`);
+            const text = w.eval(`gruppdossierSomText(byggGruppdossier(${JSON.stringify(k.key)}))`);
             for (const t of [rubrik, val, text.split('\n')[0]]) if (t.includes(`${k.aid} ${k.aid}`)) fel.push(t);
             fel.push(...medDecimalpunkt(modal));
             if (/\d\.\d/.test(text)) fel.push(text.split('\n').find(r => /\d\.\d/.test(r)));

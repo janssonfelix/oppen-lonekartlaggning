@@ -14,8 +14,8 @@ import { visningNy } from './23-exportgrind.js';
 import { oppnaVadLagras } from './28-vad-lagras-inaktivitet.js';
 import { visaAlderskravet, visaLonefilskortet, visaReferenskortet } from './31-navigering.js';
 import { utVisaUnderflikFor } from './74-alla-diagram.js';
-import { gruppdossierCandidates } from './80-gruppdossier.js';
-import { basdossierKandidater, openBasdossier } from './81-basdossier.js';
+import { gruppdossierKandidater } from './80-gruppdossier.js';
+import { basdossierKandidater, oppnaBasdossier } from './81-basdossier.js';
 import { oppnaInstallningar } from './86-installningar.js';
 import { SOK_FUNKTIONER } from './86-sok-register.js';
 import { sidindexGaTill } from './89-sidindex.js';
@@ -50,7 +50,7 @@ function sokKandidater() {
     for (const r of d) if (r.bas != null && r.bas !== '') perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
     const ut = [...perBas].filter(([, n]) => !kMaskerad(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv'))
         .map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
-    for (const g of gruppdossierCandidates()) {
+    for (const g of gruppdossierKandidater()) {
         ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${stor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
     }
     return ut;
@@ -161,7 +161,7 @@ function sokValj(i, { uppskjut = false } = {}) {
     // Sökfältet är navigering (31-navigering.js): bara ett val som gör något annat än att byta flik ändrar det som visas (ADR-81).
     if (t.typ !== 'funktion' || t.dialog) visningNy();
     if (t.typ === 'funktion') { _sokValjFunktion(t, { uppskjut }); return; }
-    if (t.typ === 'basdossier') { _sokStang(); openBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
+    if (t.typ === 'basdossier') { _sokStang(); oppnaBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
     const nu = diagramMarkering();
     if (!(nu && nu.length === 1 && nu[0] === t.nyckel)) sattDiagramMarkering(t.nyckel);
     _sokStang();
@@ -179,7 +179,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
     if (p.dialog === 'installningar') oppnaInstallningar({ fokus: p.falt || null });
     else if (p.dialog === 'ordlista') oppnaOrdlista();
     else if (p.dialog === 'lagras') oppnaVadLagras();
-    else if (p.dialog === 'basdossier') openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
+    else if (p.dialog === 'basdossier') oppnaBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();
     else {
         // Användarens val visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.

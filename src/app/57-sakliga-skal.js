@@ -23,8 +23,8 @@ import { T } from './09-termer.js';
 import { hamtaData } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { _handlingsplanForifyllning, _hpArEgen, _hpGaTillRad, _hpLiknarPersonuppgift, _hpSatt, _hpSattSkal, _hpSkalEtikett, _hpSkalSammanfattning, _hpUtanBelopp, _hpVarden } from './56-handlingsplan.js';
-import { closeGruppdossier } from './80-gruppdossier.js';
-import { closeBasdossier } from './81-basdossier.js';
+import { stangGruppdossier } from './80-gruppdossier.js';
+import { stangBasdossier } from './81-basdossier.js';
 
 /** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, konUnder: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
 let _skal = null;
@@ -197,8 +197,8 @@ export function uppstartSakligaSkal() {
         const gaTill = t.closest('[data-hp-ga-till]');
         if (gaTill) {
             e.preventDefault();
-            if (typeof closeGruppdossier === 'function') closeGruppdossier();
-            if (typeof closeBasdossier === 'function') closeBasdossier();
+            if (typeof stangGruppdossier === 'function') stangGruppdossier();
+            if (typeof stangBasdossier === 'function') stangBasdossier();
             _hpGaTillRad(gaTill.getAttribute('data-hp-ga-till') || '');
             return;
         }

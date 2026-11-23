@@ -151,11 +151,11 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
         expect(th.filter(t => t === '% kvinnor, SKR').length).toBeGreaterThanOrEqual(1);
     });
     it('gruppdossiern visar SKR:s kvinnoandel för AID-etiketten', () => {
-        const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
-        const d = w.__buildGruppdossier(key);
+        const key = w.__gruppdossierKandidater().find(c => c.aid === '207011').key;
+        const d = w.__byggGruppdossier(key);
         expect(d.skr).toMatchObject({ niva: 'etikett' });
-        expect(w.eval(`_gdRitaInnehall(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+\s% kvinnor i kommuner</);
-        expect(w.__gruppdossierAsText(d)).toMatch(/Nationell referens: \d+\s% kvinnor/);
+        expect(w.eval(`_gdRitaInnehall(__byggGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+\s% kvinnor i kommuner</);
+        expect(w.__gruppdossierSomText(d)).toMatch(/Nationell referens: \d+\s% kvinnor/);
     });
     it('Om verktyget anger SKR:s personalstatistik som källa', () => {
         w.document.querySelector('.nav-item[data-tab="info"]').click();
@@ -191,8 +191,8 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
         sel.dispatchEvent(new w.Event('change'));
         expect(w.__state.profile.orgTyp).toBe('region');
         expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'region' }).pct.toFixed(0)}\u00a0%`);
-        const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
-        expect(w.__gruppdossierAsText(w.__buildGruppdossier(key))).toMatch(/Nationell referens: \d+\s% kvinnor i regioner/);
+        const key = w.__gruppdossierKandidater().find(c => c.aid === '207011').key;
+        expect(w.__gruppdossierSomText(w.__byggGruppdossier(key))).toMatch(/Nationell referens: \d+\s% kvinnor i regioner/);
     });
     it('konfigurationsfilen bär organisationstypen', () => {
         const w = createAppWindow();

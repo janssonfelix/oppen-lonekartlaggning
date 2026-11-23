@@ -296,14 +296,14 @@ describe('[C6] räkneexemplet i kronor per år bara när båda könen når trös
     };
     it('dossiern och textkopian: kronsumman med prioriteringens formel för G, ingen för H', () => {
         const w = fonster(), cs = w.__state.costSettings;
-        const g = w.eval('buildGruppdossier(gruppdossierCandidates().find(c => c.key.startsWith("8101")).key)');
-        const h = w.eval('buildGruppdossier(gruppdossierCandidates().find(c => c.key.startsWith("8102")).key)');
+        const g = w.eval('byggGruppdossier(gruppdossierKandidater().find(c => c.key.startsWith("8101")).key)');
+        const h = w.eval('byggGruppdossier(gruppdossierKandidater().find(c => c.key.startsWith("8102")).key)');
         const diff = Math.round((g.gap.medMa - g.gap.medKv) / 100) * 100;
         const vantat = Math.round(diff * cs.months * (1 + cs.poPct / 100) * 12 / 1000) * 1000;
         expect(Number(/omkring ([\d\s\u00a0]+) kr per år/.exec(g.gap.arsbelopp)[1].replace(/\D/g, ''))).toBe(vantat);
-        expect(w.eval('gruppdossierAsText')(g)).toContain(g.gap.arsbelopp);
+        expect(w.eval('gruppdossierSomText')(g)).toContain(g.gap.arsbelopp);
         expect(h.gap).toBeNull();
-        const hText = w.eval('gruppdossierAsText')(h);
+        const hText = w.eval('gruppdossierSomText')(h);
         expect(hText).not.toMatch(/Räkneexempel|kr per år/);
         expect(hText).not.toMatch(/8812\d/);
     });

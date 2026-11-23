@@ -28,8 +28,8 @@ import { hamtaData } from './12-tillstand.js';
 import { visningNy } from './23-exportgrind.js';
 import { ritaUtforska } from './70-utforska.js';
 import { utforskaSattUrval, utforskaUrval } from './72-utforska-urval.js';
-import { gruppdossierCandidates, openGruppdossier } from './80-gruppdossier.js';
-import { basdossierKandidater, openBasdossier } from './81-basdossier.js';
+import { gruppdossierKandidater, oppnaGruppdossier } from './80-gruppdossier.js';
+import { basdossierKandidater, oppnaBasdossier } from './81-basdossier.js';
 
 let _markering = [];   // de markerade gruppernas nycklar, i den ordning de markerades
 
@@ -144,9 +144,9 @@ function _mkRitaRad() {
             const knapp = /** @type {HTMLElement} */ (e.target).closest('button[data-markering]');
             if (!knapp) return;
             const vad = knapp.getAttribute('data-markering');
-            if (vad === 'dossier') { const k = _mkDossierNyckel(); if (k) openGruppdossier(k); }
+            if (vad === 'dossier') { const k = _mkDossierNyckel(); if (k) oppnaGruppdossier(k); }
             else if (vad === 'borra') nedborrningTillUtforska();
-            else if (vad === 'basdossier') { const b = _mkBorrBas(); if (b != null) openBasdossier(b, knapp); }
+            else if (vad === 'basdossier') { const b = _mkBorrBas(); if (b != null) oppnaBasdossier(b, knapp); }
             else sattDiagramMarkering(null);
         });
     }
@@ -181,7 +181,7 @@ function _mkKnapp(vad, text) {
 function _mkDossierNyckel() {
     if (_markering.length !== 1 || !_markering[0].startsWith('grupp:')) return null;
     const nyckel = _markering[0].slice(6);
-    return typeof gruppdossierCandidates === 'function' && gruppdossierCandidates().some(c => c.key === nyckel) ? nyckel : null;
+    return typeof gruppdossierKandidater === 'function' && gruppdossierKandidater().some(c => c.key === nyckel) ? nyckel : null;
 }
 
 // ---- Nedborrning: från ett markerat BAS-intervall till dess yrkesgrupper i Utforska ----

@@ -160,7 +160,7 @@ for (const [namn, ms] of Object.entries(tKonDelar)) console.log(kolumn(namn, ms)
 
 // Navigeringen: sidindexet per flik (fliken ritas först, sedan mäts bara byggandet av listan), sökfältets första och
 // andra sökning, och dossiererna (öppna tills de är ritade, sedan stängs de).
-/* global sidindexBygg, openBasdossier, closeBasdossier, basdossierKandidater, openGruppdossier, closeGruppdossier, rapportUrval, RM_AVSNITT -- körs i sidan */
+/* global sidindexBygg, oppnaBasdossier, stangBasdossier, basdossierKandidater, oppnaGruppdossier, stangGruppdossier, rapportUrval, RM_AVSNITT -- körs i sidan */
 const NAV_GRANS_MS = 2000;
 const navLangsam = [];
 const navRad = (t, ms) => { if (ms > NAV_GRANS_MS) navLangsam.push(t); console.log(kolumn(t, ms) + (ms > NAV_GRANS_MS ? `  ← över ${NAV_GRANS_MS} ms` : '')); };
@@ -194,15 +194,15 @@ const tDossier = await page.evaluate(async () => {
     const ritad = () => new Promise(r => requestAnimationFrame(() => r()));
     const bas = (basdossierKandidater()[0] || {}).bas;
     let t0 = performance.now();
-    openBasdossier(bas, null);
+    oppnaBasdossier(bas, null);
     await ritad();
     const basMs = Math.round(performance.now() - t0);
-    closeBasdossier();
+    stangBasdossier();
     t0 = performance.now();
-    openGruppdossier(null);
+    oppnaGruppdossier(null);
     await ritad();
     const gruppMs = Math.round(performance.now() - t0);
-    closeGruppdossier();
+    stangGruppdossier();
     return { bas: basMs, grupp: gruppMs };
 });
 navRad('Öppna BAS-dossiern', tDossier.bas);

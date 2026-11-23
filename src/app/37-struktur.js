@@ -29,7 +29,7 @@ import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline, _laNyckel, _laSlutsats } from './41-lika-arbete.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { utforskaSattUrval } from './72-utforska-urval.js';
-import { basdossierKandidater, basdossierUtelamnade, basintervallUtkastText, buildBasdossier } from './81-basdossier.js';
+import { basdossierKandidater, basdossierUtelamnade, basintervallUtkastText, byggBasdossier } from './81-basdossier.js';
 import { kTroskelLank } from './86-installningar.js';
 
 // ===================================================================
@@ -166,7 +166,7 @@ function _stUtkastPerBas(k) {
     const under = basdossierUtelamnade();
     if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} ${personOrd(k)}).`);
     for (const { bas } of kand) {
-        const d = buildBasdossier(bas);
+        const d = byggBasdossier(bas);
         if (d) lines.push('', basintervallUtkastText(d));
     }
     return lines.join('\n');

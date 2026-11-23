@@ -26,22 +26,22 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     it('dossiern visar antal per ansvarsgrupp och kön, aldrig lön per ansvarsgrupp', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
-        const kand = w.__gruppdossierCandidates().find(c => c.rows.some(r => r.ansvarsgrupp === 'ledning'));
-        const d = w.__buildGruppdossier(kand.key);
+        const kand = w.__gruppdossierKandidater().find(c => c.rows.some(r => r.ansvarsgrupp === 'ledning'));
+        const d = w.__byggGruppdossier(kand.key);
         const nLed = kand.rows.filter(r => r.ansvarsgrupp === 'ledning');
         expect(d.ansvar).toMatchObject({ ledning: { kv: nLed.filter(r => r.kon === 'kvinna').length, ma: nLed.filter(r => r.kon === 'man').length } });
-        const html = w.eval(`_gdRitaInnehall(__buildGruppdossier(${JSON.stringify(kand.key)}))`);
+        const html = w.eval(`_gdRitaInnehall(__byggGruppdossier(${JSON.stringify(kand.key)}))`);
         expect(html).toMatch(/Ledningsansvar \d+ kv \/ \d+ män/);
-        expect(w.__gruppdossierAsText(d)).toMatch(/Ansvar: ledningsansvar \d+ kvinnor \/ \d+ män · särskilt uppdrag \d+ kvinnor \/ \d+ män/);
+        expect(w.__gruppdossierSomText(d)).toMatch(/Ansvar: ledningsansvar \d+ kvinnor \/ \d+ män · särskilt uppdrag \d+ kvinnor \/ \d+ män/);
     });
     it('dossiern utan ansvarskolumn har ingen ansvarsrad', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
         w.__state.data.forEach(r => { r.ansvarsgrupp = null; r.ansvarskoder = null; });
         w.__state.ansvarKolumn = null;
-        const key = w.__gruppdossierCandidates()[0].key;
-        expect(w.__buildGruppdossier(key).ansvar).toBeNull();
-        expect(w.eval(`_gdRitaInnehall(__buildGruppdossier(${JSON.stringify(key)}))`)).not.toMatch(/Ledningsansvar/);
+        const key = w.__gruppdossierKandidater()[0].key;
+        expect(w.__byggGruppdossier(key).ansvar).toBeNull();
+        expect(w.eval(`_gdRitaInnehall(__byggGruppdossier(${JSON.stringify(key)}))`)).not.toMatch(/Ledningsansvar/);
     });
     it('Personer att granska har kolumnen Ansvar bara när ansvarskolumnen finns', () => {
         const w = createAppWindow();

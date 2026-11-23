@@ -128,13 +128,13 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
         const iD = a.delar.findIndex(p => p.typ === 'rubrik' && p.text === 'BAS-intervall D');
         const c = a.delar.slice(iC + 1, iD);
         const text = c.filter(p => p.typ === 'stycke').map(p => p.text);
-        const stycken = w.eval("medExportLage(() => basdossierStycken(buildBasdossier('C'), { forraBaraMedBokslut: true }))");
+        const stycken = w.eval("medExportLage(() => basdossierStycken(byggBasdossier('C'), { forraBaraMedBokslut: true }))");
         expect(text).toEqual(stycken.flatMap(s => [s.rubrik, ...s.rader]));
         expect(c.filter(p => p.typ === 'stycke' && p.stil === 'fet').map(p => p.text)).toEqual(stycken.map(s => s.rubrik));
         // Tabellen: AID, yrke, antal per kön, medianer per kön, kvoten och status; bara yrken där båda könen når k.
         const tab = c.find(p => p.typ === 'tabell');
         expect(tab.kolumner.map(k => k.rubrik)).toEqual(['AID', 'Etikettnamn', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status']);
-        const d = w.eval("medExportLage(() => buildBasdossier('C'))");
+        const d = w.eval("medExportLage(() => byggBasdossier('C'))");
         const delade = d.yrken.filter(y => !y.samlad);
         expect(tab.rader.map(r => r[0])).toEqual(delade.map(y => y.aid));
         for (const r of tab.rader) { expect(typeof r[3]).toBe('number'); expect(typeof r[4]).toBe('number'); expect(typeof r[5]).toBe('number'); }
@@ -210,7 +210,7 @@ describe('rapportunderlaget: Per BAS-intervall', () => {
         expect(block.map(b => b.id)).toEqual(['bas:A', 'bas:B', 'bas:C', 'bas:D', 'bas:E']);
         const c = block.find(b => b.id === 'bas:C');
         expect(c.rubrik).toBe('BAS-intervall C');
-        const stycken = w.eval("medExportLage(() => basdossierStycken(buildBasdossier('C'), { forraBaraMedBokslut: true }))");
+        const stycken = w.eval("medExportLage(() => basdossierStycken(byggBasdossier('C'), { forraBaraMedBokslut: true }))");
         for (const s of stycken) for (const r of s.rader) expect(c.stycken).toContain(r);
         // Raden att fylla i efter intervallets stycken; urvalet sist, som i övriga block.
         const iBed = c.stycken.findIndex(t => /^\[HR fyller i\] Bedömning: /.test(t));

@@ -71,12 +71,12 @@ describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osaker
                     lika(w.eval('linjarRegressionKI(window.__par, 20, 65)'), regressionslinjensBand(par, 20, 65));
                     delete w.__par;
                 });
-                it('_laBootstrapGapKI och _gdBootstrapGapCI per BAS-intervall', () => {
+                it('_laBootstrapGapKI och _gdBootstrapGapKI per BAS-intervall', () => {
                     for (const bas of [...new Set(d.map(r => r.bas))].sort()) {
                         const kv = d.filter(r => r.bas === bas && arKv(r)).map(r => r.lon), ma = d.filter(r => r.bas === bas && arMa(r)).map(r => r.lon);
                         lika(w._laBootstrapGapKI(kv, ma), medianKvotKI(kv, ma));
                         lika(w._laBootstrapGapKI(kv, ma, 300), medianKvotKI(kv, ma, { B: 300 }));
-                        lika(w._gdBootstrapGapCI(kv, ma), medianKvotKIGiltiga(kv, ma));
+                        lika(w._gdBootstrapGapKI(kv, ma), medianKvotKIGiltiga(kv, ma));
                     }
                 });
                 it('_laTrattUnderlagRakna', () => {

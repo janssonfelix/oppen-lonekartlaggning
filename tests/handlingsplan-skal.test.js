@@ -355,7 +355,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
     };
     it('gruppdossiern: "Bedömning i handlingsplanen: 2 skäl, NN % av skillnaden förklarad", produktgränsen står kvar', () => {
         const { w, aid, bas, pct, grupp } = medSkal();
-        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        w.eval(`oppnaGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
         const d = w.document.getElementById('dossier-modal');
         const text = ren(d.textContent);
         expect(text).toContain(`${grupp} (kandidatpar): Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
@@ -365,7 +365,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
     it('länken stänger dossiern och visar raden i Handlingsplan med fokus på knappen Sakliga skäl', () => {
         const { w, nyckel, aid, bas } = medSkal();
         w.__ritaFlik('dashboard');
-        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        w.eval(`oppnaGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
         [...w.document.querySelectorAll('#dossier-modal [data-hp-ga-till]')].find(a => a.dataset.hpGaTill === nyckel).click();
         expect(w.document.getElementById('dossier-modal').style.display).not.toBe('flex');
         expect(w.document.getElementById('view-handlingsplan').style.display).toBe('block');
@@ -373,13 +373,13 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
     });
     it('BAS-dossiern listar bedömningarna i intervallet med gruppen först; en grupp utan rad får ingen läs-rad', () => {
         const { w, bas, grupp, pct } = medSkal();
-        w.eval(`openBasdossier(${JSON.stringify(bas)})`);
+        w.eval(`oppnaBasdossier(${JSON.stringify(bas)})`);
         const text = ren(w.document.getElementById('basdossier-modal').textContent);
         expect(text).toContain(`${grupp} (kandidatpar): Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
         expect(text).toContain('Dossiern dokumenterar inte sakliga skäl. Skälen dokumenterar du i Handlingsplan.');
         // En grupp som inte finns i handlingsplanen: ingen läs-rad.
-        const utan = w.eval(`gruppdossierCandidates().map(g => g.key).find(k => !_handlingsplanForifyllning().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
-        w.eval(`closeBasdossier(); openGruppdossier(${JSON.stringify(utan)})`);
+        const utan = w.eval(`gruppdossierKandidater().map(g => g.key).find(k => !_handlingsplanForifyllning().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
+        w.eval(`stangBasdossier(); oppnaGruppdossier(${JSON.stringify(utan)})`);
         expect(w.document.querySelector('#dossier-modal .hp-bedomningar')).toBeNull();
     });
     it('matchningen: AID eller yrke som i prioriteringens nyckel, och kandidatparet också i jämförelseyrkets dossier', () => {
@@ -395,14 +395,14 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         // I jämförelseyrkets dossier märks raden.
         const tr = radMedSkillnad(w);
         const [, , , maAid, maBas] = knapp(tr).dataset.hpSkal.split('|');
-        w.eval(`openGruppdossier(${JSON.stringify(`${maAid}|${maBas}`)})`);
+        w.eval(`oppnaGruppdossier(${JSON.stringify(`${maAid}|${maBas}`)})`);
         expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain(`${ren(tr.cells[1].textContent)} (kandidatpar, jämförelseetikett): Bedömning i handlingsplanen`);
     });
     it('en rad utan skäl: läs-raden säger att inga skäl är angivna', () => {
         const w = fonster();
         const nyckel = knapp(radMedSkillnad(w)).dataset.hpSkal;
         const [, aid, bas] = nyckel.split('|');
-        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        w.eval(`oppnaGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
         expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain('Bedömning i handlingsplanen: inga sakliga skäl angivna ännu.');
     });
 });

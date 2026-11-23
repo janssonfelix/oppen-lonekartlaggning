@@ -1115,7 +1115,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         // Kandidaterna är BAS-intervall och yrkesgrupper med minst tröskeln personer — samma urval som gruppdossiern.
         const kand = w.eval('sokKandidater()');
         expect(kand.every(k => k.n >= 10)).toBe(true);
-        expect(kand.filter(k => k.nyckel.startsWith('grupp:')).map(k => k.nyckel.slice(6)).sort()).toEqual(w.eval('gruppdossierCandidates().map(c => c.key)').sort());
+        expect(kand.filter(k => k.nyckel.startsWith('grupp:')).map(k => k.nyckel.slice(6)).sort()).toEqual(w.eval('gruppdossierKandidater().map(c => c.key)').sort());
         expect(kand.filter(k => k.nyckel.startsWith('bas:')).length).toBeGreaterThanOrEqual(3);
         // Sökningen: varje ord ska finnas, accenter och versaler spelar ingen roll, ord som börjar med söktexten först.
         skriv('UND');

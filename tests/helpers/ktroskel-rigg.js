@@ -397,8 +397,8 @@ export async function samlaUtdata(w) {
 
 
     // Gruppdossiern: textkopian lämnar verktyget (exportläget); det som visas på skärmen maskeras inte (ADR-51).
-    for (const g of w.__gruppdossierCandidates()) {
-        lagg(`gruppdossier ${g.key}`, w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(g.key))));
+    for (const g of w.__gruppdossierKandidater()) {
+        lagg(`gruppdossier ${g.key}`, w.medExportLage(() => w.gruppdossierSomText(w.byggGruppdossier(g.key))));
     }
     // BAS-dossiern: textkopian byggs i exportläget (basdossierText), för varje intervall som når den inställda tröskeln.
     for (const { bas } of w.eval('medExportLage(() => basdossierKandidater())')) lagg(`basdossier ${bas}`, w.basdossierText(bas));

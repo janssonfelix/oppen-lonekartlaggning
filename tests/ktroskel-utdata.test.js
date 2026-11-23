@@ -139,7 +139,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
     const dossier = (w, nyckel) => {
         w.eval(`ritaGruppdossier('${nyckel}')`);
         return { skarm: normalisera(w.document.getElementById('dossier-body').textContent),
-                 text: normalisera(w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier('${nyckel}')))`)) };
+                 text: normalisera(w.eval(`medExportLage(() => gruppdossierSomText(byggGruppdossier('${nyckel}')))`)) };
     };
 
     it('paret finns i beräkningen (annars prövar testet inget)', () => {
@@ -525,8 +525,8 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
     it('gruppdossierns text slutar med stämpeln vid 6 och saknar den vid 10', () => {
         for (const [k, stampel] of [[6, STAMPEL_6], [10, null]]) {
             const w = fonsterLitet(k);
-            const d = w.__buildGruppdossier(w.__gruppdossierCandidates()[0].key);
-            const txt = w.__gruppdossierAsText(d);
+            const d = w.__byggGruppdossier(w.__gruppdossierKandidater()[0].key);
+            const txt = w.__gruppdossierSomText(d);
             if (stampel) expect(txt.endsWith('\n\n' + stampel)).toBe(true);
             else expect(txt).not.toContain('Minsta gruppstorlek');
         }

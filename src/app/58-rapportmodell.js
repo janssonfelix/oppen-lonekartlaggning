@@ -51,8 +51,8 @@ import { _formateraPVarde, _yrkesStegText, korOLSRegression } from './51-lika-ar
 import { _handlingsplanForifyllning, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
 import { _bes8Omraden } from './61-regler-och-praxis.js';
 import { _abForandringText, _abGruppAntal, _abKr, _abSpridningText, AB_SPRIDNING_NOT, abGrupperEjJamforbara, arsjamforelse } from './73-arsbokslut.js';
-import { buildGruppdossier, gruppdossierAsText, gruppdossierDelat } from './80-gruppdossier.js';
-import { basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, BD_YRKESKOLUMNER, buildBasdossier } from './81-basdossier.js';
+import { byggGruppdossier, gruppdossierSomText, gruppdossierDelat } from './80-gruppdossier.js';
+import { basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, BD_YRKESKOLUMNER, byggBasdossier } from './81-basdossier.js';
 
 /** Lönegapets form i exporterna: kvinnors lön i procent av mäns. `gapPct` är (kvinnor − män) / män. */
 function rmAndelAvMan(gapPct, dec = 1) { return andelAvMan(gapPct, dec); }
@@ -279,7 +279,7 @@ function rmBasintervallAvsnitt(k, bi) {
     const delar = [stycke(`Ett avsnitt per ${T.niva.en} med minst ${k} ${personOrd(k)}, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}${T.enhet.bfl} med status enligt Lika arbete, likvärdigt arbete${harAlder() ? ', ålder' : ''} och förra året när ett bokslut är inläst. Tabellen har ${T.enhet.bfl} där både kvinnor och män når minsta gruppstorlek.`, 'dampad')];
     let smaYrken = 0;
     for (const { bas } of kand) {
-        const d = buildBasdossier(bas);
+        const d = byggBasdossier(bas);
         if (!d) continue;
         smaYrken += d.yrkenUtelamnade.length;
         delar.push({ typ: 'rubrik', niva: 3, text: `${stor(T.niva.en)} ${d.bas}` });
@@ -341,7 +341,7 @@ function rmArsjamforelseAvsnitt(diagram) {
 
 /**
  * Bilaga: gruppdossierer. En dossier per yrkesgrupp (AID inom BAS) där båda könen når k, i gruppdossierns ordning
- * (störst först), med samma text som gruppdossierns kopia (gruppdossierAsText): första raden som rubrik, resten som
+ * (störst först), med samma text som gruppdossierns kopia (gruppdossierSomText): första raden som rubrik, resten som
  * stycken. Byggs i exportläget, som hela modellen. AID-etiketter där ett kön är under k räknas, de namnges inte. BAS-
  * intervallens dossierer står redan i avsnittet Lönekartläggning per BAS-intervall och upprepas inte här.
  * @param {number} k
@@ -358,12 +358,12 @@ function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
     if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${ordForAntal(utan, T.enhet)} där ett kön har färre än ${k} ${personOrd(k)}`);
     // Förhandsbeskedet behöver bara antalet och det utelämnade, inte texterna.
     if (besked) return avsnitt;
-    const dossierer = /** @type {any[]} */ (medGrupper.map(g => buildGruppdossier(g.key, delat)).filter(Boolean));
+    const dossierer = /** @type {any[]} */ (medGrupper.map(g => byggGruppdossier(g.key, delat)).filter(Boolean));
     avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `En dossier per ${T.enhet.en} i ${T.niva.en} där både kvinnor och män är minst ${k}, störst först — samma text som gruppdossierns kopia. ${stor(T.niva.bfl)} står i avsnittet Lönekartläggning per ${T.niva.en}.` });
     // Meningen om sänkt tröskel en gång för hela bilagan, inte en gång per dossier.
     if (_kSanktNot()) avsnitt.delar.push({ typ: 'stycke', text: _kSanktNot() });
     for (const d of dossierer) {
-        const rader = gruppdossierAsText(d, { stampel: false }).split('\n');
+        const rader = gruppdossierSomText(d, { stampel: false }).split('\n');
         avsnitt.delar.push({ typ: 'rubrik', niva: 3, text: rader[0] });
         for (const r of rader.slice(1)) if (r.trim()) avsnitt.delar.push({ typ: 'stycke', text: r.trim() });
     }
