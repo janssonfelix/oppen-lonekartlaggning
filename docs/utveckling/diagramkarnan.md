@@ -152,7 +152,7 @@ och finns till för `tips`.
   yttersta värdet inom 1,5 kvartilavstånd) ur de individer som ritas i kategorin. Flera lådlager i samma
   panel delar kategorins band sida vid sida. Har lådans alla ritade individer samma `farg` får lådan den färgen
   (ett lager med en färg per kategori); annars lagrets.
-- Punktlager, och lådlager med `punkter: 'alla'` eller `'svarm'`, med fler än 8 000 ritbara punkter (`SCATTER_MAX_POINTS`)
+- Punktlager, och lådlager med `punkter: 'alla'` eller `'svarm'`, med fler än 8 000 ritbara punkter (`PUNKTMOLN_MAX_PUNKTER`)
   ritar var k:te. Små punkter tas bort före urvalet. Lådor räknas alltid ur alla.
 
 ### Färgskala
@@ -250,7 +250,7 @@ eller visar serien; posten står kvar, nedtonad. Högst fyra rader, namn kortas 
 `<title>`), därefter "+ N till". Rader tas bort om ritytan annars blir lägre än 40 px.
 
 **Notisen om urval.** Har ritaren nedsamplat står antalen i en rad under diagrammet
-(`_setScatterSampleNote`). Antalen räknar inte dolda punkter.
+(`_sattPunkturvalsnot`). Antalen räknar inte dolda punkter.
 
 **Filterraderna för figurens `urval`.** Har figuren `urval` och behållaren ett id lägger `ritaFigur` en rad
 `<div class="diagram-urval" role="group" data-urval-falt="<falt>">` per dimension, i figurens ordning — för en

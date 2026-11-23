@@ -793,7 +793,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 /* Tooltipen är en JS-portal, inte CSS-only via .info-tip::after: en tabell med
    overflow:auto skapar ett nytt stacking context som klipper en sådan. Ett enskilt
    .tip-portal-element läggs i body, position:fixed, och undgår all overflow.
-   Se 02-verktygstips.js _showTip / _hideTip. */
+   Se 02-verktygstips.js _visaTips / _doljTips. */
 .tip-portal {
     position: fixed;
     background: var(--text-main);

@@ -163,7 +163,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __diagramexportRader: diagramexportRader,
         __laggTillDiagramexport: _laggTillDiagramexport,
         __exportSkal: () => ({ ...EXPORT_SKAL }), __exportTillaten: exportTillaten, __markeraUtanExport: markeraUtanExport,
-        SCATTER_MAX_POINTS,
+        PUNKTMOLN_MAX_PUNKTER,
         __rfMarken: () => Object.keys(_RF_MARKEN),
         __ritaFigur: ritaFigur, __rensaFigur: rensaFigur, __rfTipsAgare: () => _rfTipsAgare, __rfBehallare: () => [..._rfBehallare]
     });

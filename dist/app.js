@@ -8311,7 +8311,7 @@ function _rfPunkt(g, l, li, c) {
   l.data.forEach((d, i) => {
     if (d && !c.dold(d)) syns.push([d, i]);
   });
-  const steg = syns.length > SCATTER_MAX_POINTS ? Math.ceil(syns.length / SCATTER_MAX_POINTS) : 1;
+  const steg = syns.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(syns.length / PUNKTMOLN_MAX_PUNKTER) : 1;
   let ritade = 0;
   syns.forEach(([d, i], n) => {
     if (n % steg) return;
@@ -8575,7 +8575,7 @@ function _rfLada(g, l, li, c) {
   const plats = inre.bandwidth(), bw = Math.min(plats, _RF.ladaMax), lagerfarg = c.farg(l, li);
   const svarm = l.punkter === "svarm", alla = svarm || l.punkter === "alla";
   const individer = _rfLadIndivider(c.figur, l, c.dold, ys);
-  const steg = (alla || l.form === "regnmoln") && individer.length > SCATTER_MAX_POINTS ? Math.ceil(individer.length / SCATTER_MAX_POINTS) : 1;
+  const steg = (alla || l.form === "regnmoln") && individer.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(individer.length / PUNKTMOLN_MAX_PUNKTER) : 1;
   const grupper = /* @__PURE__ */ new Map();
   individer.forEach((o, n) => {
     if (n % steg) return;
@@ -34014,7 +34014,7 @@ function _rfTipsDolt() {
   if (agare && !agare.isConnected) rensaFigur(agare);
 }
 function _rfNollstallTips() {
-  _hideChartTip();
+  _doljDiagramtips();
 }
 function _rfStadaAgare() {
   if (_rfTipsAgare && !_rfTipsAgare.isConnected) _rfNollstallTips();
@@ -34100,7 +34100,7 @@ function _rfMeddelande(el, slag, text) {
 }
 function _rfNotis(el, svg) {
   const m = svg ? /^(\d+)\/(\d+)$/.exec(svg.getAttribute("data-nedsamplat") || "") : null;
-  _setScatterSampleNote(el, m ? { shown: Number(m[1]), total: Number(m[2]) } : null);
+  _sattPunkturvalsnot(el, m ? { shown: Number(m[1]), total: Number(m[2]) } : null);
 }
 var RF_OVERGANG_MS = 200, RF_OVERGANG_MAX = 2e3;
 var _RF_OVERGANG_ATTR = { circle: ["cx", "cy", "r"], rect: ["x", "y", "width", "height"], line: ["x1", "x2", "y1", "y2"] };
@@ -34339,7 +34339,7 @@ function _rfVidRorelse(el, e) {
     _rfDoljTips(el);
     return;
   }
-  _showChartTip(k.senast.html, e.clientX || 0, e.clientY || 0);
+  _visaDiagramtips(k.senast.html, e.clientX || 0, e.clientY || 0);
   _rfTipsAgare = el;
 }
 function _rfVidKlick(el, e) {
@@ -34437,7 +34437,7 @@ function _rfTangentTill(el, m, nr, antal) {
   const html = _rfTipsHtml(rader);
   const r = m.getBoundingClientRect ? m.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
   if (html) {
-    _showChartTip(html, r.left + r.width / 2, r.top);
+    _visaDiagramtips(html, r.left + r.width / 2, r.top);
     _rfTipsAgare = el;
   } else _rfDoljTips(el);
   const serie = t && t.lager.serie ? `${t.lager.serie}. ` : "";
@@ -34557,7 +34557,7 @@ function rensaFigur(id) {
   delete el._figurFilter;
   delete el._figurBredd;
   _rfUrvalTaBort(el);
-  _setScatterSampleNote(el, null);
+  _sattPunkturvalsnot(el, null);
   _rfPenselGlom(el);
   _rfZoomGlom(el);
   _rfOvergangAvsluta(el);
@@ -35541,18 +35541,18 @@ function _rfExportFigur(gd) {
 }
 
 // src/app/02-verktygstips.js
-var _chartTipEl = null;
-function _ensureChartTip() {
-  if (_chartTipEl) return _chartTipEl;
-  _chartTipEl = document.createElement("div");
-  _chartTipEl.className = "chart-tip-portal";
-  _chartTipEl.setAttribute("role", "tooltip");
-  document.body.appendChild(_chartTipEl);
-  return _chartTipEl;
+var _diagramtipsElement = null;
+function _hamtaDiagramtips() {
+  if (_diagramtipsElement) return _diagramtipsElement;
+  _diagramtipsElement = document.createElement("div");
+  _diagramtipsElement.className = "chart-tip-portal";
+  _diagramtipsElement.setAttribute("role", "tooltip");
+  document.body.appendChild(_diagramtipsElement);
+  return _diagramtipsElement;
 }
-function _showChartTip(html, mouseX, mouseY) {
+function _visaDiagramtips(html, mouseX, mouseY) {
   if (!html) return;
-  const tip = _ensureChartTip();
+  const tip = _hamtaDiagramtips();
   tip.innerHTML = html;
   tip.classList.add("visible");
   tip.style.visibility = "hidden";
@@ -35571,15 +35571,15 @@ function _showChartTip(html, mouseX, mouseY) {
   tip.style.top = top + "px";
   tip.style.visibility = "";
 }
-function _hideChartTip() {
-  if (_chartTipEl) {
-    _chartTipEl.classList.remove("visible");
-    _chartTipEl.textContent = "";
+function _doljDiagramtips() {
+  if (_diagramtipsElement) {
+    _diagramtipsElement.classList.remove("visible");
+    _diagramtipsElement.textContent = "";
   }
   if (typeof _rfTipsDolt === "function") _rfTipsDolt();
 }
-var SCATTER_MAX_POINTS = 8e3;
-function _setScatterSampleNote(chartId, sampled) {
+var PUNKTMOLN_MAX_PUNKTER = 8e3;
+function _sattPunkturvalsnot(chartId, sampled) {
   const chart = typeof chartId === "string" ? document.getElementById(chartId) : chartId;
   if (!chart) return;
   const noteId = chart.id ? chart.id + "-sample-note" : "";
@@ -35601,19 +35601,19 @@ function _setScatterSampleNote(chartId, sampled) {
   const fmt = (n) => n.toLocaleString("sv-SE");
   note.textContent = `Visar ett representativt urval (${fmt(sampled.shown)} av ${fmt(sampled.total)} punkter) för prestanda — alla beräkningar använder fullständig data.`;
 }
-var _tipPortal = null;
-var _tipHost = null;
-function _ensureTipPortal() {
-  if (_tipPortal) return _tipPortal;
-  _tipPortal = document.createElement("div");
-  _tipPortal.className = "tip-portal";
-  _tipPortal.setAttribute("role", "tooltip");
-  _tipPortal.id = "tip-portal";
-  document.body.appendChild(_tipPortal);
-  return _tipPortal;
+var _tipsPortal = null;
+var _tipsVard = null;
+function _hamtaTipsPortal() {
+  if (_tipsPortal) return _tipsPortal;
+  _tipsPortal = document.createElement("div");
+  _tipsPortal.className = "tip-portal";
+  _tipsPortal.setAttribute("role", "tooltip");
+  _tipsPortal.id = "tip-portal";
+  document.body.appendChild(_tipsPortal);
+  return _tipsPortal;
 }
-function _positionTip(host) {
-  const tip = _tipPortal;
+function _placeraTips(host) {
+  const tip = _tipsPortal;
   if (!tip) return;
   const r = host.getBoundingClientRect();
   tip.style.visibility = "hidden";
@@ -35633,30 +35633,30 @@ function _positionTip(host) {
   tip.style.top = top + "px";
   tip.style.visibility = "";
 }
-function _showTip(host) {
-  if (!host || _tipHost === host) return;
+function _visaTips(host) {
+  if (!host || _tipsVard === host) return;
   const text = host.getAttribute("data-tooltip");
   if (!text) return;
-  if (_tipHost && _tipHost !== host) {
-    _tipHost.removeAttribute("aria-describedby");
-    _restoreTitle(_tipHost);
+  if (_tipsVard && _tipsVard !== host) {
+    _tipsVard.removeAttribute("aria-describedby");
+    _aterstallTitel(_tipsVard);
   }
-  _tipHost = host;
-  const tip = _ensureTipPortal();
+  _tipsVard = host;
+  const tip = _hamtaTipsPortal();
   tip.textContent = text;
-  _positionTip(host);
+  _placeraTips(host);
   if (!host.id) host.id = "tip-host-" + Math.random().toString(36).slice(2, 8);
   host.setAttribute("aria-describedby", tip.id);
 }
-function _hideTip() {
-  if (_tipPortal) _tipPortal.classList.remove("visible");
-  if (_tipHost) {
-    _tipHost.removeAttribute("aria-describedby");
-    _restoreTitle(_tipHost);
+function _doljTips() {
+  if (_tipsPortal) _tipsPortal.classList.remove("visible");
+  if (_tipsVard) {
+    _tipsVard.removeAttribute("aria-describedby");
+    _aterstallTitel(_tipsVard);
   }
-  _tipHost = null;
+  _tipsVard = null;
 }
-function _findTipHost(target) {
+function _hittaTipsVard(target) {
   if (!target || !target.closest) return null;
   const dt = target.closest("[data-tooltip]");
   if (dt && dt.getAttribute("data-tooltip")) return dt;
@@ -35664,7 +35664,7 @@ function _findTipHost(target) {
   if (t && !["IFRAME", "OPTION"].includes(t.tagName)) return t;
   return null;
 }
-function _stealTitle(host) {
+function _stjalTitel(host) {
   if (!host.hasAttribute("title")) return;
   const t = host.getAttribute("title");
   if (!t) return;
@@ -35675,7 +35675,7 @@ function _stealTitle(host) {
     host.setAttribute("data-tooltip-from-title", "1");
   }
 }
-function _restoreTitle(host) {
+function _aterstallTitel(host) {
   if (!host || !host.hasAttribute("data-stolen-title")) return;
   host.setAttribute("title", host.getAttribute("data-stolen-title"));
   host.removeAttribute("data-stolen-title");
@@ -35685,47 +35685,47 @@ function _restoreTitle(host) {
   }
 }
 function uppstartVerktygstips() {
-  window.addEventListener("scroll", _hideChartTip, true);
-  window.addEventListener("resize", _hideChartTip);
+  window.addEventListener("scroll", _doljDiagramtips, true);
+  window.addEventListener("resize", _doljDiagramtips);
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") _hideChartTip();
+    if (e.key === "Escape") _doljDiagramtips();
   });
   document.addEventListener("mouseover", (e) => {
-    const host = _findTipHost(e.target);
+    const host = _hittaTipsVard(e.target);
     if (host) {
-      _stealTitle(host);
-      _showTip(host);
+      _stjalTitel(host);
+      _visaTips(host);
     }
   });
   document.addEventListener("mouseout", (e) => {
-    const host = _findTipHost(e.target) || /** @type {HTMLElement} */
+    const host = _hittaTipsVard(e.target) || /** @type {HTMLElement} */
     e.target.closest && /** @type {HTMLElement} */
     e.target.closest("[data-stolen-title]");
     if (host && (!e.relatedTarget || !host.contains(e.relatedTarget))) {
-      _hideTip();
-      _restoreTitle(host);
+      _doljTips();
+      _aterstallTitel(host);
     }
   });
   document.addEventListener("focusin", (e) => {
-    const host = _findTipHost(e.target);
+    const host = _hittaTipsVard(e.target);
     if (host) {
-      _stealTitle(host);
-      _showTip(host);
+      _stjalTitel(host);
+      _visaTips(host);
     }
   });
   document.addEventListener("focusout", (e) => {
-    const host = _findTipHost(e.target) || /** @type {HTMLElement} */
+    const host = _hittaTipsVard(e.target) || /** @type {HTMLElement} */
     e.target.closest && /** @type {HTMLElement} */
     e.target.closest("[data-stolen-title]");
     if (host) {
-      _hideTip();
-      _restoreTitle(host);
+      _doljTips();
+      _aterstallTitel(host);
     }
   });
-  window.addEventListener("scroll", _hideTip, true);
-  window.addEventListener("resize", _hideTip);
+  window.addEventListener("scroll", _doljTips, true);
+  window.addEventListener("resize", _doljTips);
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") _hideTip();
+    if (e.key === "Escape") _doljTips();
   });
 }
 

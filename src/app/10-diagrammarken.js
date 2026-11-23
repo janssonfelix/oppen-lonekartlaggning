@@ -16,7 +16,7 @@
 // ====================================================================
 import { kvantilpunkter, ladstatistik, talformat } from '../lib/figur.js';
 import { FARG } from './01-farger.js';
-import { SCATTER_MAX_POINTS } from './02-verktygstips.js';
+import { PUNKTMOLN_MAX_PUNKTER } from './02-verktygstips.js';
 import { _RF, _rfBas, _rfBredd, _rfDomanSorterad, _rfInomDoman, _rfKorta, _rfLinjeSkarRuta, _rfLitenPx, _rfPlaceraEtiketter, _rfPos, _rfRadbryt, _rfStapelPlats, _rfTal, _rfText } from './10-diagramlayout.js';
 import { CHART_FONT, PALETTE } from './10-diagramtema.js';
 
@@ -197,7 +197,7 @@ function _rfPunkt(g, l, li, c) {
     // Bara ritningen — alla mått räknas på hela underlaget innan figuren byggs.
     const syns = [];
     l.data.forEach((d, i) => { if (d && !c.dold(d)) syns.push([d, i]); });
-    const steg = syns.length > SCATTER_MAX_POINTS ? Math.ceil(syns.length / SCATTER_MAX_POINTS) : 1;
+    const steg = syns.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(syns.length / PUNKTMOLN_MAX_PUNKTER) : 1;
     let ritade = 0;
     syns.forEach(([d, i], n) => {
         if (n % steg) return;
@@ -540,7 +540,7 @@ function _rfLada(g, l, li, c) {
     const individer = _rfLadIndivider(c.figur, l, c.dold, ys);
     // Individpunkter nedsamplas som punktlager: var k:te av de individer som återstår (små är redan borta).
     // Lådor räknas alltid ur alla återstående individer.
-    const steg = (alla || l.form === 'regnmoln') && individer.length > SCATTER_MAX_POINTS ? Math.ceil(individer.length / SCATTER_MAX_POINTS) : 1;
+    const steg = (alla || l.form === 'regnmoln') && individer.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(individer.length / PUNKTMOLN_MAX_PUNKTER) : 1;
     const grupper = new Map();
     individer.forEach((o, n) => {
         if (n % steg) return;

@@ -8,23 +8,23 @@ import { _rfTipsDolt } from './10-diagramritare.js';
 // så att ingen behållare med overflow kan klippa dem. Innehållet är alltid escapad HTML (_rfTipsHtml).
 
 /** @type {HTMLElement|null} */
-let _chartTipEl = null;
-function _ensureChartTip() {
-    if (_chartTipEl) return _chartTipEl;
-    _chartTipEl = document.createElement('div');
-    _chartTipEl.className = 'chart-tip-portal';
-    _chartTipEl.setAttribute('role', 'tooltip');
-    document.body.appendChild(_chartTipEl);
-    return _chartTipEl;
+let _diagramtipsElement = null;
+function _hamtaDiagramtips() {
+    if (_diagramtipsElement) return _diagramtipsElement;
+    _diagramtipsElement = document.createElement('div');
+    _diagramtipsElement.className = 'chart-tip-portal';
+    _diagramtipsElement.setAttribute('role', 'tooltip');
+    document.body.appendChild(_diagramtipsElement);
+    return _diagramtipsElement;
 }
 
 /**
  * Visar chart-tooltipen vid muspekarens position.
  * Använder fixed positioning så ingen overflow:auto-container kan klippa den.
  */
-export function _showChartTip(html, mouseX, mouseY) {
+export function _visaDiagramtips(html, mouseX, mouseY) {
     if (!html) return;
-    const tip = _ensureChartTip();
+    const tip = _hamtaDiagramtips();
     tip.innerHTML = html;
     tip.classList.add('visible');
     tip.style.visibility = 'hidden';
@@ -49,13 +49,13 @@ export function _showChartTip(html, mouseX, mouseY) {
 
 /**
  * Döljer OCH tömmer portalen: ett dolt tips lämnar ingen lönetext i sidan (Escape, rullning, ändrad
- * fönsterstorlek, pekaren lämnar diagrammet). _showChartTip sätter innehållet på nytt varje gång. Ett tips
+ * fönsterstorlek, pekaren lämnar diagrammet). _visaDiagramtips sätter innehållet på nytt varje gång. Ett tips
  * som ägs av ett diagram ritat med diagramkärnan (ADR-39) släpper samtidigt sin ägare — _rfTipsDolt i 10-diagramritare.js (funktionsdeklaration: finns i hela bygget).
  */
-export function _hideChartTip() {
-    if (_chartTipEl) {
-        _chartTipEl.classList.remove('visible');
-        _chartTipEl.textContent = '';
+export function _doljDiagramtips() {
+    if (_diagramtipsElement) {
+        _diagramtipsElement.classList.remove('visible');
+        _diagramtipsElement.textContent = '';
     }
     if (typeof _rfTipsDolt === 'function') _rfTipsDolt();
 }
@@ -64,13 +64,13 @@ export function _hideChartTip() {
 // Vid mycket stora underlag (tiotusentals rader) blir punktmolnet trögt och punkterna överlappar ändå till
 // oläsbarhet. Diagramkärnan ritar då ett DETERMINISTISKT, jämnt fördelat urval (var k:te punkt) — ENBART
 // visualiseringen. Alla statistiska mått räknas på FULL data före det steget.
-export const SCATTER_MAX_POINTS = 8000;
+export const PUNKTMOLN_MAX_PUNKTER = 8000;
 
 /**
  * Visar/uppdaterar en diskret notis under diagrammet när sampling är aktiv.
  * `chartId` är diagrammets id eller elementet självt; ett element utan id får notisen som nästa syskon.
  */
-export function _setScatterSampleNote(chartId, sampled) {
+export function _sattPunkturvalsnot(chartId, sampled) {
     const chart = typeof chartId === 'string' ? document.getElementById(chartId) : chartId;
     if (!chart) return;
     const noteId = chart.id ? chart.id + '-sample-note' : '';
@@ -99,22 +99,22 @@ export function _setScatterSampleNote(chartId, sampled) {
 // på .info-tip[data-tooltip] via event delegation — fungerar även för
 // element som renderas dynamiskt efter sidladdning.
 /** @type {HTMLElement|null} */
-let _tipPortal = null;
+let _tipsPortal = null;
 /** @type {HTMLElement|null} */
-let _tipHost   = null;
+let _tipsVard   = null;
 
-function _ensureTipPortal() {
-    if (_tipPortal) return _tipPortal;
-    _tipPortal = document.createElement('div');
-    _tipPortal.className = 'tip-portal';
-    _tipPortal.setAttribute('role', 'tooltip');
-    _tipPortal.id = 'tip-portal';
-    document.body.appendChild(_tipPortal);
-    return _tipPortal;
+function _hamtaTipsPortal() {
+    if (_tipsPortal) return _tipsPortal;
+    _tipsPortal = document.createElement('div');
+    _tipsPortal.className = 'tip-portal';
+    _tipsPortal.setAttribute('role', 'tooltip');
+    _tipsPortal.id = 'tip-portal';
+    document.body.appendChild(_tipsPortal);
+    return _tipsPortal;
 }
 
-function _positionTip(host) {
-    const tip = _tipPortal;
+function _placeraTips(host) {
+    const tip = _tipsPortal;
     if (!tip) return;
     const r = host.getBoundingClientRect();
     // Mät tooltip-storlek (synlig men osynlig för layout)
@@ -140,31 +140,31 @@ function _positionTip(host) {
     tip.style.visibility = '';
 }
 
-function _showTip(host) {
-    if (!host || _tipHost === host) return;
+function _visaTips(host) {
+    if (!host || _tipsVard === host) return;
     const text = host.getAttribute('data-tooltip');
     if (!text) return;
     // Om en annan tooltip visades → städa upp den först (annars läcker stolen-title)
-    if (_tipHost && _tipHost !== host) {
-        _tipHost.removeAttribute('aria-describedby');
-        _restoreTitle(_tipHost);
+    if (_tipsVard && _tipsVard !== host) {
+        _tipsVard.removeAttribute('aria-describedby');
+        _aterstallTitel(_tipsVard);
     }
-    _tipHost = host;
-    const tip = _ensureTipPortal();
+    _tipsVard = host;
+    const tip = _hamtaTipsPortal();
     tip.textContent = text;
-    _positionTip(host);
+    _placeraTips(host);
     // Koppla aria-describedby till värd-elementet för skärmläsare
     if (!host.id) host.id = 'tip-host-' + Math.random().toString(36).slice(2, 8);
     host.setAttribute('aria-describedby', tip.id);
 }
 
-function _hideTip() {
-    if (_tipPortal) _tipPortal.classList.remove('visible');
-    if (_tipHost) {
-        _tipHost.removeAttribute('aria-describedby');
-        _restoreTitle(_tipHost);
+function _doljTips() {
+    if (_tipsPortal) _tipsPortal.classList.remove('visible');
+    if (_tipsVard) {
+        _tipsVard.removeAttribute('aria-describedby');
+        _aterstallTitel(_tipsVard);
     }
-    _tipHost = null;
+    _tipsVard = null;
 }
 
 /**
@@ -177,7 +177,7 @@ function _hideTip() {
  * Vissa element undantas eftersom deras title= används för annat eller
  * skulle ge dålig UX i portalen (t.ex. <option>, <iframe>).
  */
-function _findTipHost(target) {
+function _hittaTipsVard(target) {
     if (!target || !target.closest) return null;
     const dt = target.closest('[data-tooltip]');
     if (dt && dt.getAttribute('data-tooltip')) return dt;
@@ -190,7 +190,7 @@ function _findTipHost(target) {
  * "Stjäl" title= attribut → flytta värdet till data-tooltip så OS-native
  * tooltip inte triggas. Original sparas i data-stolen-title för återställning.
  */
-function _stealTitle(host) {
+function _stjalTitel(host) {
     if (!host.hasAttribute('title')) return;
     const t = host.getAttribute('title');
     if (!t) return;
@@ -203,7 +203,7 @@ function _stealTitle(host) {
 }
 
 /** Återställ title= från data-stolen-title. */
-function _restoreTitle(host) {
+function _aterstallTitel(host) {
     if (!host || !host.hasAttribute('data-stolen-title')) return;
     host.setAttribute('title', host.getAttribute('data-stolen-title'));
     host.removeAttribute('data-stolen-title');
@@ -217,40 +217,40 @@ function _restoreTitle(host) {
 export function uppstartVerktygstips() {
     // Globalt: dölj (och töm) diagrammens verktygstips vid rullning, ändrad fönsterstorlek och Escape — när diagrammet
     // rör sig under pekaren står tipset annars kvar på fel plats, med ett lönevärde i.
-    window.addEventListener('scroll', _hideChartTip, true);
-    window.addEventListener('resize', _hideChartTip);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideChartTip(); });
+    window.addEventListener('scroll', _doljDiagramtips, true);
+    window.addEventListener('resize', _doljDiagramtips);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') _doljDiagramtips(); });
     document.addEventListener('mouseover', e => {
-        const host = _findTipHost(e.target);
+        const host = _hittaTipsVard(e.target);
         if (host) {
-            _stealTitle(host);
-            _showTip(host);
+            _stjalTitel(host);
+            _visaTips(host);
         }
     });
     document.addEventListener('mouseout', e => {
         // Hitta värd från ut-händelsen (kan vara delegerad descendant)
-        const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
+        const host = _hittaTipsVard(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
         if (host && (!e.relatedTarget || !host.contains(e.relatedTarget))) {
-            _hideTip();
-            _restoreTitle(host);
+            _doljTips();
+            _aterstallTitel(host);
         }
     });
     document.addEventListener('focusin', e => {
-        const host = _findTipHost(e.target);
+        const host = _hittaTipsVard(e.target);
         if (host) {
-            _stealTitle(host);
-            _showTip(host);
+            _stjalTitel(host);
+            _visaTips(host);
         }
     });
     document.addEventListener('focusout', e => {
-        const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
+        const host = _hittaTipsVard(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
         if (host) {
-            _hideTip();
-            _restoreTitle(host);
+            _doljTips();
+            _aterstallTitel(host);
         }
     });
     // Dölj vid scroll/resize/escape — tooltipen följer inte med när värd-elementet flyttas
-    window.addEventListener('scroll', _hideTip, true);
-    window.addEventListener('resize', _hideTip);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideTip(); });
+    window.addEventListener('scroll', _doljTips, true);
+    window.addEventListener('resize', _doljTips);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') _doljTips(); });
 }

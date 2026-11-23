@@ -30,7 +30,7 @@ import { antalPunkter, arBortvald, harleddaLager, harlettNot, kvantilpunkter, la
 import { tolkaTalStrikt } from '../lib/inlasning.js';
 import { FARG } from './01-farger.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { _hideChartTip, _setScatterSampleNote, _showChartTip } from './02-verktygstips.js';
+import { _doljDiagramtips, _sattPunkturvalsnot, _visaDiagramtips } from './02-verktygstips.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kSanktNot } from './06-k-troskel.js';
 import { _RF, _rfBredvid, _rfEtikettBeslut, _rfEtikettRum, _rfIPanel, _rfKorta, _rfLitenPx, _rfLodratLayout, _rfPunktEtikettRum, _rfSkala, _rfStapelEtikettRum, _rfTal, _rfText, _rfVagratLayout, _rfXEtiketter, _rfXOmfang, _rfYAxlar } from './10-diagramlayout.js';
@@ -354,7 +354,7 @@ function _rfTipsHtml(rader) {
 }
 
 /**
- * Kroken som _hideChartTip (02-verktygstips.js) anropar varje gång portalen döljs och töms — av ett diagram
+ * Kroken som _doljDiagramtips (02-verktygstips.js) anropar varje gång portalen döljs och töms — av ett diagram
  * här, av Escape, rullning eller ändrad fönsterstorlek, eller av en annan del av sidan: ägaren glöms. Sitter den
  * inte längre i dokumentet (vyn har bytt ut sin behållare utan rensaFigur) rensas den också, så att figuren,
  * lyssnarna, storleksbevakningen och en väntande omritning släpps.
@@ -367,10 +367,10 @@ export function _rfTipsDolt() {
 
 /**
  * Nollställer verktygstipset oavsett vem som äger det: portalen döljs och töms, ägaren glöms och en ägare som
- * lämnat dokumentet rensas (allt görs av _hideChartTip och kroken ovan — ett ställe). Anropas när ett diagram
+ * lämnat dokumentet rensas (allt görs av _doljDiagramtips och kroken ovan — ett ställe). Anropas när ett diagram
  * döljer sitt eget tips (_rfDoljTips) och av rensningen av sidan (_rfRensaAlla).
  */
-function _rfNollstallTips() { _hideChartTip(); }
+function _rfNollstallTips() { _doljDiagramtips(); }
 
 // En ägare som lämnat dokumentet städas bort (billig koll: vid pekarrörelse, storleksändring och när ett tips döljs).
 function _rfStadaAgare() {
@@ -498,7 +498,7 @@ function _rfMeddelande(el, slag, text) {
 // räknar dolda punkter — aldrig ur el._figur.
 function _rfNotis(el, svg) {
     const m = svg ? /^(\d+)\/(\d+)$/.exec(svg.getAttribute('data-nedsamplat') || '') : null;
-    _setScatterSampleNote(el, m ? { shown: Number(m[1]), total: Number(m[2]) } : null);
+    _sattPunkturvalsnot(el, m ? { shown: Number(m[1]), total: Number(m[2]) } : null);
 }
 
 // ---- Övergångar: märkena flyttar sig mellan två ritningar av samma diagram ----
@@ -760,7 +760,7 @@ function _rfVidRorelse(el, e) {
         k.senast = { m: t.m, html };
     }
     if (!k.senast.html) { _rfDoljTips(el); return; }
-    _showChartTip(k.senast.html, e.clientX || 0, e.clientY || 0);
+    _visaDiagramtips(k.senast.html, e.clientX || 0, e.clientY || 0);
     _rfTipsAgare = el;
 }
 
@@ -861,7 +861,7 @@ function _rfTangentTill(el, m, nr, antal) {
     }
     const html = _rfTipsHtml(rader);
     const r = m.getBoundingClientRect ? m.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
-    if (html) { _showChartTip(html, r.left + r.width / 2, r.top); _rfTipsAgare = el; } else _rfDoljTips(el);
+    if (html) { _visaDiagramtips(html, r.left + r.width / 2, r.top); _rfTipsAgare = el; } else _rfDoljTips(el);
     const serie = t && t.lager.serie ? `${t.lager.serie}. ` : '';
     if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`${serie}${_rfTipsText(rader) || 'Datapunkt'} (${nr + 1} av ${antal})`);
 }
@@ -980,7 +980,7 @@ export function rensaFigur(id) {
     if ('_figur' in el) delete el._exportBeskrivning;
     delete el._figur; delete el._figurVal; delete el._figurDolda; delete el._figurFilter; delete el._figurBredd;
     _rfUrvalTaBort(el);   // filterraderna och noten; minnet (_rfUrvalMinne) står kvar
-    _setScatterSampleNote(el, null);
+    _sattPunkturvalsnot(el, null);
     _rfPenselGlom(el);
     _rfZoomGlom(el);
     _rfOvergangAvsluta(el);
