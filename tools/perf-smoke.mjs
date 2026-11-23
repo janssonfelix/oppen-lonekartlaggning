@@ -214,10 +214,10 @@ const tRapport = await page.evaluate(() => {
     const fore = rapportUrval();
     sattRapportUrval({ ordning: [...RM_AVSNITT], med: RM_AVSNITT.filter(id => id !== 'dossierer') });
     const utan = mat(() => rapportModell());
-    const beskedUtan = mat(() => renderExportBesked());
+    const beskedUtan = mat(() => ritaExportBesked());
     sattRapportUrval({ ordning: [...RM_AVSNITT], med: [...RM_AVSNITT] });
     const med = mat(() => rapportModell());
-    const besked = mat(() => renderExportBesked());
+    const besked = mat(() => ritaExportBesked());
     sattRapportUrval({ ordning: fore.ordning, med: fore.med });
     return { utan, med, beskedUtan, besked };
 });

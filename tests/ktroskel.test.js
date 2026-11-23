@@ -106,7 +106,7 @@ describe('k-tröskeln styr varje flik', () => {
     const rapport = async k => {
         const w = fonsterLitet(k);
         w.eval("sattRapportUrval('hela')");   // hela dokumentationen, med bilagorna
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         return w.document.getElementById('print-report');
     };
     const basNot = el => [...el.querySelectorAll('.k-mask-note')].find(n => /BAS-intervall/.test(n.textContent))?.textContent;

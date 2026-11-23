@@ -296,7 +296,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         expect(per).toMatchObject({ 402010: 'AID + BAS', 207024: 'Endast AID', 207011: '–' });
         const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportBenchmarkExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportJamforelseExcel()')))[0];
         // fangaBocker slår ihop siffror över radbrytningar (tusentalsavgränsaren): sök i hela texten.
         expect(bok).toMatch(/AID-etikett \| BAS \| Matchning \| N \(organisationen\) \| /);
         expect(bok).toMatch(/402010 Förskollärare \| A \| AID \+ BAS \| 33 \| /);
@@ -342,7 +342,7 @@ describe('samlad jämförelseexport: ställningstagandet per AID och BAS som i t
         w.eval('fyllValjare(); lasUppFlikar();');
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
-        w.eval('exportBenchmarkExcel()');
+        w.eval('exportJamforelseExcel()');
         const wb = Object.values(fangat)[0];
         const rad = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true })[2];
         expect(rad[20]).toBe(32222);   // ställningstagandets median (efter kolumnen Matchning)

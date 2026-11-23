@@ -31101,7 +31101,7 @@ function _ebText(delar) {
 function _ebAntal(n, en, flera) {
   return `${n} ${n === 1 ? en : flera}`;
 }
-function renderExportBesked({ baraUrval = false } = {}) {
+function ritaExportBesked({ baraUrval = false } = {}) {
   const har = hamtaData().length > 0;
   const satt = (id, html) => {
     const el = document.getElementById(id);
@@ -31232,7 +31232,7 @@ function uppstartExportbesked() {
     if (!el || !el.closest || !el.closest("#rapport-perbas")) return;
     _ebLasPerBasRecept();
     const fokus = el.id;
-    renderExportBesked();
+    ritaExportBesked();
     document.getElementById(fokus)?.focus();
   });
   document.addEventListener("click", (e) => {
@@ -31243,7 +31243,7 @@ function uppstartExportbesked() {
     if (!t || !t.closest) return;
     if (t.closest("#pb-aterstall")) {
       state.perBasRecept = null;
-      renderExportBesked();
+      ritaExportBesked();
       return;
     }
     const bort = t.closest("[data-egen-bort]"), flytta = t.closest("[data-egen-flytta]");
@@ -31261,7 +31261,7 @@ function uppstartExportbesked() {
       [lista[i], lista[j]] = [lista[j], lista[i]];
     }
     state.rapportTabeller = lista;
-    renderExportBesked();
+    ritaExportBesked();
     if (flytta) document.querySelector(`[data-egen-id="${id}"] [data-egen-flytta="${flytta.getAttribute("data-egen-flytta")}"]:not([disabled])`)?.focus();
   });
   document.addEventListener("click", (e) => {
@@ -31273,7 +31273,7 @@ function uppstartExportbesked() {
     );
     if (fast) {
       sattRapportUrval(fast.getAttribute("data-urval-fast"));
-      renderExportBesked({ baraUrval: true });
+      ritaExportBesked({ baraUrval: true });
       document.querySelector(`[data-urval-fast="${fast.getAttribute("data-urval-fast")}"]`)?.focus();
       return;
     }
@@ -31291,7 +31291,7 @@ function uppstartExportbesked() {
     ordning.splice(i, 1);
     ordning.splice(j, 0, id);
     sattRapportUrval({ ordning, med: u.med });
-    renderExportBesked({ baraUrval: true });
+    ritaExportBesked({ baraUrval: true });
     document.querySelector(`#rapport-urval [data-urval-id="${id}"] [data-urval-flytta="${steg}"]:not([disabled])`)?.focus();
   });
   document.addEventListener("change", (e) => {
@@ -31307,7 +31307,7 @@ function uppstartExportbesked() {
       /** @type {HTMLInputElement} */
       ruta.checked ? [...u.med, id] : u.med.filter((x) => x !== id)
     ) });
-    renderExportBesked({ baraUrval: true });
+    ritaExportBesked({ baraUrval: true });
     document.querySelector(`[data-urval-med="${id}"]`)?.focus();
   });
 }
@@ -32051,7 +32051,7 @@ var RAPPORT_DIAGRAM = [
 ];
 var _rapportBlockSenast = /* @__PURE__ */ new Map();
 var _rapportParLage = { harPar: false, exkluderade: 0 };
-function _ruTopN() {
+function _ruMaxPar() {
   return (state.likvardighet && state.likvardighet.topN) ?? 100;
 }
 function _rapportDiagramLista(harPar, exkluderade) {
@@ -32089,7 +32089,7 @@ function _rapportunderlagBlockExport() {
     kvalitet: bedomningUnderlag({ reg }),
     lika: laLikaGrupper(d, k),
     lv,
-    topN: _ruTopN(),
+    topN: _ruMaxPar(),
     kvinnoTroskel: aidbasGrans(),
     kvDomDefinition: aidbasDefinition(),
     jamforelse: lvJamforelse(),
@@ -32110,7 +32110,7 @@ function _rapportunderlagBlockExport() {
   _rapportParLage = { harPar: vm.harPar, exkluderade: vm.exkluderade };
   return vm.block;
 }
-function renderRapportunderlag() {
+function ritaRapportunderlag() {
   const host = document.getElementById("rapportunderlag-innehall");
   if (!host) return;
   if (!hamtaData().length) {
@@ -32726,11 +32726,11 @@ function _ritaFlik(target) {
     utAllaDiagramVidRitning();
   } else if (target === "rapporttext") medExportLage(() => {
     ritaStrukturUtkast();
-    _ritaTungtBlock(target, ["rapportunderlag-innehall"], () => medExportLage(renderRapportunderlag));
+    _ritaTungtBlock(target, ["rapportunderlag-innehall"], () => medExportLage(ritaRapportunderlag));
   });
   else if (target === "dokumentera") medExportLage(() => {
     if (d.length) renderKvalitetssakring();
-    _ritaTungtBlock(target, ["rapport-urval", "besked-word", "besked-pdf", "besked-excel", "besked-zip"], () => medExportLage(() => renderExportBesked()));
+    _ritaTungtBlock(target, ["rapport-urval", "besked-word", "besked-pdf", "besked-excel", "besked-zip"], () => medExportLage(() => ritaExportBesked()));
   });
   else if (target === "arbetet") medExportLage(() => {
     if (typeof renderArsjamforelse === "function") renderArsjamforelse();
@@ -36014,14 +36014,14 @@ function _utskriftAvstavar() {
     return ja;
   });
 }
-function buildPrintReport(...a) {
-  return medExportLage(() => _buildPrintReportExport.apply(
+function byggUtskriftsrapport(...a) {
+  return medExportLage(() => _byggUtskriftsrapportExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-async function _buildPrintReportExport() {
+async function _byggUtskriftsrapportExport() {
   if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return;
@@ -36116,7 +36116,7 @@ async function _buildPrintReportExport() {
     alert("Fel vid PDF-generering: " + err.message);
   }
 }
-function printScaffoldView(viewId, heading) {
+function skrivUtMallflik(viewId, heading) {
   const view = document.getElementById(viewId);
   if (!view) return;
   const clone = view.cloneNode(true);
@@ -36197,14 +36197,14 @@ function _utskriftEfter() {
   });
 }
 function uppstartUtskrift() {
-  document.getElementById("btn-export-pdf")?.addEventListener("click", buildPrintReport);
+  document.getElementById("btn-export-pdf")?.addEventListener("click", byggUtskriftsrapport);
   document.addEventListener("click", (e) => {
     const btn = (
       /** @type {HTMLElement} */
       e.target.closest("[data-print-view]")
     );
     if (!btn) return;
-    printScaffoldView(btn.getAttribute("data-print-view"), btn.getAttribute("data-print-title") || "Checklista");
+    skrivUtMallflik(btn.getAttribute("data-print-view"), btn.getAttribute("data-print-title") || "Checklista");
   });
   window.addEventListener("beforeprint", _utskriftFore);
   window.addEventListener("afterprint", _utskriftEfter);
@@ -36350,7 +36350,7 @@ function docxDelar(block, { titel, sidfot, skapad }) {
 }
 
 // src/app/62-word-utkast.js
-function _buildDocumentationDraftHtml() {
+function _byggWordUtkastHtml() {
   return rmTillHtml(rapportModell());
 }
 var DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -36448,7 +36448,7 @@ async function byggWordUtkast() {
   const year = (/* @__PURE__ */ new Date()).getFullYear();
   const stamp = idagDatum();
   const demo = state.isDemo;
-  const { block } = await _utkastFyllBilder(_utkastTillBlock(_buildDocumentationDraftHtml()));
+  const { block } = await _utkastFyllBilder(_utkastTillBlock(_byggWordUtkastHtml()));
   const delar = docxDelar(block, {
     titel: `Lönekartläggning ${year} — dokumentation (utkast)`,
     sidfot: _kSidfot(`Lönekartläggning ${year} — ${demo ? "DEMODATA, UTKAST" : "UTKAST"}`),
@@ -36462,14 +36462,14 @@ async function byggWordUtkast() {
   const blob = await zip.generateAsync({ type: "blob", mimeType: DOCX_MIME, compression: "DEFLATE" });
   return { blob, namn: `Lonekartlaggning_${year}_dokumentation_UTKAST_${demo ? "DEMODATA_" : ""}${stamp}.docx` };
 }
-function exportDocumentationDraft(...a) {
-  return medExportLage(() => _exportDocumentationDraftExport.apply(
+function exportWordUtkast(...a) {
+  return medExportLage(() => _exportWordUtkastExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-async function _exportDocumentationDraftExport() {
+async function _exportWordUtkastExport() {
   if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return false;
@@ -36485,18 +36485,18 @@ async function _exportDocumentationDraftExport() {
   }
 }
 function uppstartWordUtkast() {
-  document.getElementById("btn-export-docdraft")?.addEventListener("click", exportDocumentationDraft);
+  document.getElementById("btn-export-docdraft")?.addEventListener("click", exportWordUtkast);
 }
 
 // src/app/64-jamforelse-export.js
-function exportBenchmarkExcel(...a) {
-  return medExportLage(() => _exportBenchmarkExcelExport.apply(
+function exportJamforelseExcel(...a) {
+  return medExportLage(() => _exportJamforelseExcelExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportBenchmarkExcelExport() {
+function _exportJamforelseExcelExport() {
   if (typeof XLSX === "undefined") {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
@@ -36685,7 +36685,7 @@ function _exportBenchmarkExcelExport() {
   meddelaSkarmlasare(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? "" : "er"}, ${nPersoner} person${nPersoner === 1 ? "" : "er"}.`);
 }
 function uppstartJamforelseExport() {
-  document.getElementById("btn-export-benchmark")?.addEventListener("click", exportBenchmarkExcel);
+  document.getElementById("btn-export-benchmark")?.addEventListener("click", exportJamforelseExcel);
 }
 
 // src/app/66-zip-export.js
@@ -36770,7 +36770,7 @@ async function _exportZipExport() {
   } finally {
     if (typeof doljLaddning === "function") doljLaddning();
     const oppen = document.querySelector(".nav-item.active[data-tab]");
-    if (oppen && oppen.getAttribute("data-tab") === "dokumentera" && typeof renderExportBesked === "function") renderExportBesked();
+    if (oppen && oppen.getAttribute("data-tab") === "dokumentera" && typeof ritaExportBesked === "function") ritaExportBesked();
   }
 }
 function uppstartZipExport() {

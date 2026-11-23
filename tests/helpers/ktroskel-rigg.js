@@ -185,7 +185,7 @@ export function fangaBocker(w, kor) {
 export const utskriftAv = async (w, mall) => {
     // Urvalet ur rapportmodellen: 'komplett' betyder hela dokumentationen.
     w.eval(`sattRapportUrval(${JSON.stringify(mall === 'komplett' ? 'hela' : mall)})`);
-    await w.eval('buildPrintReport()');
+    await w.eval('byggUtskriftsrapport()');
     return w.document.getElementById('print-report');
 };
 
@@ -343,7 +343,7 @@ export async function samlaUtdata(w) {
     for (const [namn, kor] of [
         ['Excel alla flikar', () => w.eval('exportAlltTillExcel()')], ['protokollet', () => w.eval('exportJPAProtokoll()')],
         ['EU-lönerapporten', () => w.eval('exportEuRapport()')], ['handlingsplanen', () => w.eval('exportHandlingsplan()')],
-        ['jämförelseexporten', () => w.eval('exportBenchmarkExcel()')], ['Löneöversyn', () => w.eval('exportPrognos()')],
+        ['jämförelseexporten', () => w.eval('exportJamforelseExcel()')], ['Löneöversyn', () => w.eval('exportPrognos()')],
         ['Löneöversikten', () => d.getElementById('btn-export-excel').click()],
         ['prioriteringslistan', () => d.getElementById('btn-export-prio-excel').click()],
     ]) {
@@ -405,7 +405,7 @@ export async function samlaUtdata(w) {
     // Bilagan med gruppdossierer (förvald av): kryssas i här, och prövas i Word-utkastets HTML och i utskriften.
     w.eval("sattRapportUrval({ ordning: rapportUrval().ordning, med: [...RM_URVAL.hela.med, 'dossierer'] })");
     lagg('rapportmodell: dossierer', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'dossierer') }))(rapportModell())"));
-    lagg('utskrift: med gruppdossierer', (await w.eval('buildPrintReport()'), d.getElementById('print-report').innerHTML.replace(/src="data:[^"]*"/g, '')));
+    lagg('utskrift: med gruppdossierer', (await w.eval('byggUtskriftsrapport()'), d.getElementById('print-report').innerHTML.replace(/src="data:[^"]*"/g, '')));
     w.eval("sattRapportUrval('hela')");
     for (const mall of ['komplett', 'ledning', 'facklig']) lagg(`utskrift: ${mall}`, (await utskriftAv(w, mall)).innerHTML.replace(/src="data:[^"]*"/g, ''));
     // Förra årets bokslut (årets, ett år bakåt): rapportunderlagets block om förra året med tabellen Löneutveckling per

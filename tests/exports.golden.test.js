@@ -64,9 +64,9 @@ beforeAll(() => {
         __state: state,
         __appVersion: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : ''),
         __XLSX: XLSX,
-        __docDraftHtml: _buildDocumentationDraftHtml,
-        __docxDocumentXml: () => docxDelar(_utkastTillBlock(_buildDocumentationDraftHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
-        __buildPrintReport: buildPrintReport,
+        __docDraftHtml: _byggWordUtkastHtml,
+        __docxDocumentXml: () => docxDelar(_utkastTillBlock(_byggWordUtkastHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
+        __byggUtskriftsrapport: byggUtskriftsrapport,
         __excelBlad: () => ({ besked: excelAlltBlad(), bok: _excelAlltBok().SheetNames }),
         __loadFixture: function(utanAlder) {
             window.__resetSeed();
@@ -122,7 +122,7 @@ beforeAll(() => {
             safe('handlingsplan', exportHandlingsplan);
             safe('eu-rapport', exportEuRapport);
             safe('likvardighet', exportLikvardighet);
-            safe('jamforelse', exportBenchmarkExcel);
+            safe('jamforelse', exportJamforelseExcel);
             // Exporternas interna felhantering rapporterar via alert — lyft in dem.
             for (const a of window.__alerts) window.__exportErrors.push('alert: ' + a);
             return Object.keys(window.__captured);
@@ -365,7 +365,7 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
 /**
  * Golden-lås för Word-utkastet (§§ 8–14) — verktygets mest centrala juridiska
  * leverans. En formatregression (borttappad §-sektion, trasig tabell, försvunnen
- * [HR fyller i]) får inte passera CI, så här snapshot-låses hela `_buildDocumentationDraftHtml()`-utdatan
+ * [HR fyller i]) får inte passera CI, så här snapshot-låses hela `_byggWordUtkastHtml()`-utdatan
  * på det fasta 62-raders-datasetet, normaliserad för datum/tid/version/år.
  */
 describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
@@ -459,13 +459,13 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
 });
 
 /**
- * Golden-lås för PDF-/print-rapporten (`buildPrintReport`) — den sista oskyddade
+ * Golden-lås för PDF-/print-rapporten (`byggUtskriftsrapport`) — den sista oskyddade
  * HTML-leveransen. Det var här (i struktur-sektionen) andelKv-buggen "5000 %" också
  * satt, sida vid sida med Word-utkastet. Vi kör hela den asynkrona funktionen på det
  * fasta datasetet (window.print är stubbad), fångar det den skriver
  * till `#print-report` och låser innehållet per mall, normaliserat för datum/tid/version.
  */
-describe('golden: PDF/print-rapporten (buildPrintReport) på fast dataset', () => {
+describe('golden: PDF/print-rapporten (byggUtskriftsrapport) på fast dataset', () => {
     const normalize = html => {
         let s = html
             .replace(/\d{4}-\d{2}-\d{2}/g, '<DATUM>')
@@ -477,12 +477,12 @@ describe('golden: PDF/print-rapporten (buildPrintReport) på fast dataset', () =
     };
 
     // Ren start per anrop: __loadFixture nollställer seed + § 3:10-cachen och renderar
-    // om vyerna. buildPrintReport konsumerar Math.random (regression, bootstrap-CI).
+    // om vyerna. byggUtskriftsrapport konsumerar Math.random (regression, bootstrap-CI).
     const renderPrint = async (template) => {
         win.__loadFixture();
         { const f = win.document.getElementById('kl-org-name'); f.value = 'Testorganisationen'; f.dispatchEvent(new win.Event('change')); }
         win.eval(`sattRapportUrval(${JSON.stringify(template === 'komplett' ? 'hela' : template)})`);   // mallarna är urval ur rapportmodellen
-        await win.__buildPrintReport();
+        await win.__byggUtskriftsrapport();
         expect(win.__bootErr, 'boot-fel: ' + win.__bootErr).toBeUndefined();
         return win.document.getElementById('print-report').innerHTML;
     };
@@ -565,7 +565,7 @@ describe('golden: lönefil utan ålder (ADR-64)', () => {
     it('PDF-rapporten (komplett) byggs utan fel och matchar facit', async () => {
         win.__loadFixture(true);
         win.eval("sattRapportUrval('hela')");
-        await win.__buildPrintReport();
+        await win.__byggUtskriftsrapport();
         const html = normalize(win.document.getElementById('print-report').innerHTML);
         expect(html.length).toBeGreaterThan(200);
         expect(html).toContain('Att ålder räknas bort är ett metodval');

@@ -41,7 +41,7 @@ let _rapportBlockSenast = new Map();
 let _rapportParLage = { harPar: false, exkluderade: 0 };
 
 // Maxantalet par som likvärdighetsberäkningen tar fram (samma standard som 34).
-function _ruTopN() { return (state.likvardighet && state.likvardighet.topN) ?? 100; }
+function _ruMaxPar() { return (state.likvardighet && state.likvardighet.topN) ?? 100; }
 
 function _rapportDiagramLista(harPar, exkluderade) { return rapportunderlagDiagram(RAPPORT_DIAGRAM, harPar, exkluderade); }
 
@@ -66,7 +66,7 @@ function _rapportunderlagBlockExport() {
     const hpSeed = _handlingsplanForifyllning();
     const vm = vymodellRapportunderlag(d, {
         k, golv: statGolv(), demo: !!state.isDemo, troskelNot: _kSanktNot(), kStampel: kStampel(),
-        reg, kvalitet: bedomningUnderlag({ reg }), lika: laLikaGrupper(d, k), lv, topN: _ruTopN(),
+        reg, kvalitet: bedomningUnderlag({ reg }), lika: laLikaGrupper(d, k), lv, topN: _ruMaxPar(),
         kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), gapVariabler: gapVariabler(), skrDel: _skrDel(),
         hp: { rader: _rapportHpRader(hpSeed.rows), skal: _hpSkalUnderlag(hpSeed), utanBelopp: HP_SKAL_UTAN_BELOPP, kInstalld: kInstalld(), prio: HP_UNDERLAG_PRIO, par: HP_UNDERLAG_PAR },
         referenser: referensOverblick(), harStatistik: state.statistik.length > 0, kostnad: state.costSettings, arsjamforelse: arsjamforelse(),
@@ -80,7 +80,7 @@ function _rapportunderlagBlockExport() {
     return vm.block;
 }
 
-export function renderRapportunderlag() {
+export function ritaRapportunderlag() {
     const host = document.getElementById('rapportunderlag-innehall');
     if (!host) return;
     if (!hamtaData().length) {

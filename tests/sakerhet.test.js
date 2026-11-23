@@ -139,7 +139,7 @@ describe('säkerhet: utskriftsfönstret', () => {
         let skrivet = '';
         const fonster = { document: { write: s => { skrivet += s; }, close() {}, head: null }, focus() {}, print() {} };
         w.open = () => fonster;
-        w.eval(`printScaffoldView('view-bestammelser', 'Rubrik <img src=x onerror="window.__xss=1">')`);
+        w.eval(`skrivUtMallflik('view-bestammelser', 'Rubrik <img src=x onerror="window.__xss=1">')`);
         expect(skrivet).not.toContain('<img src=x');
         expect(skrivet).toContain('&lt;img');
         expect(skrivet).toMatch(/<meta http-equiv="Content-Security-Policy" content="default-src 'none';/);

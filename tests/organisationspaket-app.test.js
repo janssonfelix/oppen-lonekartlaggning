@@ -309,7 +309,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         const bevis = w.eval('_bevisForPrioPost')(it0, 'stallningstagande');
         expect(bevis.intro).not.toContain('<img');
         w.print = () => {};
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         await new Promise(r => setTimeout(r, 0));
         // Inget element skapas ur namnet (inuti ett citerat attributvärde är "<" ofarligt).
         expect(w.document.querySelectorAll('#print-report img[onerror], #print-report [onerror]')).toHaveLength(0);

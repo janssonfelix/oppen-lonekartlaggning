@@ -97,7 +97,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const oppnat = [];
         w.open = () => { const doc = { html: '', write(s) { this.html += s; }, close() {}, adoptedStyleSheets: [], createElement: () => ({ sheet: { insertRule() {}, cssRules: [] } }), head: { appendChild() {} } };
             oppnat.push(doc); return { document: doc, focus() {}, print() {} }; };
-        w.eval("printScaffoldView('view-handlingsplan', 'Handlingsplan')");
+        w.eval("skrivUtMallflik('view-handlingsplan', 'Handlingsplan')");
         expect(oppnat[0].html).toContain('HR-chef');
         expect(oppnat[0].html).not.toContain('hp-falt');
     });
@@ -169,7 +169,7 @@ describe('Handlingsplan: skärmen samlar det som bara visas i första kolumnen',
     const utskrift = w => {
         let html = '';
         w.open = () => ({ document: { write(s) { html += s; }, close() {}, adoptedStyleSheets: [], createElement: () => ({ sheet: { insertRule() {}, cssRules: [] } }), head: { appendChild() {} } }, focus() {}, print() {} });
-        w.eval("printScaffoldView('view-handlingsplan', 'Handlingsplan')");
+        w.eval("skrivUtMallflik('view-handlingsplan', 'Handlingsplan')");
         const div = w.document.createElement('div');
         div.innerHTML = html.replace(/^[\s\S]*<body>/, '').replace(/<\/body>[\s\S]*$/, '');
         return { html, tabell: div.querySelector('table') };
@@ -224,7 +224,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
     const utskrift = w => {
         let html = '';
         w.open = () => ({ document: { write(s) { html += s; }, close() {}, adoptedStyleSheets: [], createElement: () => ({ sheet: { insertRule() {}, cssRules: [] } }), head: { appendChild() {} } }, focus() {}, print() {} });
-        w.eval("printScaffoldView('view-handlingsplan', 'Handlingsplan')");
+        w.eval("skrivUtMallflik('view-handlingsplan', 'Handlingsplan')");
         const div = w.document.createElement('div');
         div.innerHTML = html.replace(/^[\s\S]*<body>/, '').replace(/<\/body>[\s\S]*$/, '');
         return { html, tabell: div.querySelector('table') };

@@ -198,7 +198,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         w.eval('ritaExtremvarden()');
         // Utskriftsrapporten byggs i dokumentet (window.print stubbas) — även den ska rensas.
         w.print = () => {};
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         await new Promise(r => setTimeout(r, 0));
         const kvar = () => {
             const ut = [];

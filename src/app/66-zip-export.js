@@ -7,7 +7,7 @@ import { hamtaData, state } from './12-tillstand.js';
 import { exportSakraAlla, medExportLage } from './23-exportgrind.js';
 import { _excelAlltBok } from './24-excelexport.js';
 import { ritaFlik } from './31-navigering.js';
-import { renderExportBesked } from './59-exportbesked.js';
+import { ritaExportBesked } from './59-exportbesked.js';
 import { byggWordUtkast } from './62-word-utkast.js';
 import { diagramUrval } from './74-alla-diagram.js';
 
@@ -70,7 +70,7 @@ async function _exportZipExport() {
     } finally {
         if (typeof doljLaddning === 'function') doljLaddning();
         const oppen = document.querySelector('.nav-item.active[data-tab]');
-        if (oppen && oppen.getAttribute('data-tab') === 'dokumentera' && typeof renderExportBesked === 'function') renderExportBesked();
+        if (oppen && oppen.getAttribute('data-tab') === 'dokumentera' && typeof ritaExportBesked === 'function') ritaExportBesked();
     }
 }
 

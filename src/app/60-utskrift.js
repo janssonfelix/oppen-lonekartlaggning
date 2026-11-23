@@ -75,8 +75,8 @@ function _utskriftAvstavar() {
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
-async function _buildPrintReportExport() {
+function byggUtskriftsrapport(...a) { return medExportLage(() => _byggUtskriftsrapportExport.apply(null, /** @type {any} */ (a))); }
+async function _byggUtskriftsrapportExport() {
     if (!hamtaData().length) { alert('Läs in lönefilen först.'); return; }
     visaLaddning();
     try {
@@ -190,7 +190,7 @@ async function _buildPrintReportExport() {
 // Skriv ut en scaffold-flik (§ 8-checklista / handlingsplansmall) i ett rent
 // fönster med alla <details> expanderade. Offlinesäkert: inga nätverksanrop,
 // inga skript i utskriftsdokumentet.
-function printScaffoldView(viewId, heading) {
+function skrivUtMallflik(viewId, heading) {
     const view = document.getElementById(viewId);
     if (!view) return;
     const clone = view.cloneNode(true);
@@ -267,12 +267,12 @@ function _utskriftEfter() {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartUtskrift() {
-    document.getElementById('btn-export-pdf')?.addEventListener('click', buildPrintReport);
+    document.getElementById('btn-export-pdf')?.addEventListener('click', byggUtskriftsrapport);
     // Generisk koppling: knappar med data-print-view="<viewId>" data-print-title="..."
     document.addEventListener('click', e => {
         const btn = /** @type {HTMLElement} */ (e.target).closest('[data-print-view]');
         if (!btn) return;
-        printScaffoldView(btn.getAttribute('data-print-view'), btn.getAttribute('data-print-title') || 'Checklista');
+        skrivUtMallflik(btn.getAttribute('data-print-view'), btn.getAttribute('data-print-title') || 'Checklista');
     });
     window.addEventListener('beforeprint', _utskriftFore);
     window.addEventListener('afterprint', _utskriftEfter);

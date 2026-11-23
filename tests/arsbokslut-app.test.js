@@ -97,9 +97,9 @@ describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-5
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('arsjamforelse');
         w.eval("sattRapportUrval({ ordning: ['sammanfattning', 'lika'], med: ['sammanfattning', 'lika'] })");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('arsjamforelse');   // utan Åtgärder följer den inte med
-        expect(w.eval('_buildDocumentationDraftHtml()')).not.toContain('Jämförelse med förra året');
+        expect(w.eval('_byggWordUtkastHtml()')).not.toContain('Jämförelse med förra året');
         w.eval("sattRapportUrval('hela')");
-        expect(w.eval('_buildDocumentationDraftHtml()')).toContain('Jämförelse med förra året');
+        expect(w.eval('_byggWordUtkastHtml()')).toContain('Jämförelse med förra året');
     });
     it('rapportunderlaget får blocket, panelen ritar hanteln med båda årens värden, och rapportens bild kommer därifrån', () => {
         const { w, cfg } = medBokslut();

@@ -114,7 +114,7 @@ bibliotek av hjälpklasser som ersatte alla `style`-attribut (ADR-30).
   utan `!important`; färg- och statusklasserna (`fg-`, `bg-`, `bricka-` …) och de äldre hjälpklasserna (`t-hoger`,
   `mb-14` …) är `!important` och ligger efter biblioteket.
 - **En ny kombination** skrivs med klasserna som finns; saknas ett värde läggs en rad till i rätt grupp.
-- **Utskriftsfönstret** för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
+- **Utskriftsfönstret** för checklistorna (`skrivUtMallflik`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett
   `<style>`-element som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare
   helt ostilat.

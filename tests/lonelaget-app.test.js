@@ -167,7 +167,7 @@ describe('överblicken i exporterna', () => {
         w.eval("sattRapportUrval('facklig')");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('referenser');
         w.eval("sattRapportUrval('hela')");
-        expect(w.eval('_buildDocumentationDraftHtml()')).toContain('Lönerna mot referenserna');
+        expect(w.eval('_byggWordUtkastHtml()')).toContain('Lönerna mot referenserna');
         const avsnitt = w.eval('rapportModell()').avsnitt.find(a => a.id === 'referenser');
         expect(avsnitt.delar.some(p => p.typ === 'diagram' && p.id === 'chart-ref-hantel')).toBe(true);
     });

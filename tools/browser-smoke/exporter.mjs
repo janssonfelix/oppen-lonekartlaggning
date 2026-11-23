@@ -72,7 +72,7 @@ export async function beskedPdfZip() {
     console.log('\n── PDF-rapporten ur rapportmodellen ──');
     {
         // Utskriftsdialogen öppnas inte i testet: window.print ersätts, och det som skulle skrivas ut läses ur sidan.
-        const skriv = async urval => page.evaluate(async u => { window.print = () => {}; sattRapportUrval(u); await buildPrintReport(); await new Promise(r => setTimeout(r, 1300));
+        const skriv = async urval => page.evaluate(async u => { window.print = () => {}; sattRapportUrval(u); await byggUtskriftsrapport(); await new Promise(r => setTimeout(r, 1300));
             const el = document.getElementById('print-report'), modell = rapportModell().avsnitt;
             return { bilder: [...el.querySelectorAll('figure.rm-bild img')].filter(i => /^data:image\/png/.test(i.src) && i.alt.length > 10).length,
                 diagram: modell.flatMap(a => a.delar.filter(p => p.typ === 'diagram')).length }; }, urval);
@@ -100,7 +100,7 @@ export async function beskedPdfZip() {
                 // Utan avstavning: ett byggt stilark (CSP:n stoppar <style>) tvingar hyphens: manual på hela sidan innan
                 // rapporten byggs, som i en webbläsare som inte avstavar svenska.
                 if (!avstavning) await page.evaluate(() => { const a = new CSSStyleSheet(); a.replaceSync('* { hyphens: manual !important; }'); window.__utanAvstavning = a; document.adoptedStyleSheets = [...document.adoptedStyleSheets, a]; });
-                await page.evaluate(async u => { window.print = () => {}; sattRapportUrval(u); await buildPrintReport(); await new Promise(r => setTimeout(r, 1300)); document.body.classList.add('print-mode'); }, urval);
+                await page.evaluate(async u => { window.print = () => {}; sattRapportUrval(u); await byggUtskriftsrapport(); await new Promise(r => setTimeout(r, 1300)); document.body.classList.add('print-mode'); }, urval);
                 await page.emulateMedia({ media: 'print' });
                 const m = await mat();
                 const lage = avstavning ? 'med avstavning' : 'utan avstavning';
@@ -136,7 +136,7 @@ export async function beskedPdfZip() {
 
 // Checklistornas utskriftsfönster.
 export async function checklistor() {
-    // Utskriftsfönstret för checklistorna (printScaffoldView, 60-utskrift.js) ärver verktygets CSP: ett <style> som
+    // Utskriftsfönstret för checklistorna (skrivUtMallflik, 60-utskrift.js) ärver verktygets CSP: ett <style> som
     // skriptet skapar får inget ark, så fönstrets stilar kommer som ett byggt stilark (adoptedStyleSheets).
     console.log('\n── Checklistornas utskriftsfönster ──');
     for (const [vy, namn] of [['view-bestammelser', 'Regler & praxis'], ['view-handlingsplan', 'Handlingsplanens mall']]) {

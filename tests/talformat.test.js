@@ -4,7 +4,7 @@
  * Talformatet självt (src/lib/talformat.js) prövas utan DOM längst ned. Tre vägar ut ur verktyget prövas:
  *   1. CSV- och urklippsexporten av en tabell: talen som de står på skärmen (`tabellTillMatris` och src/lib/csv.js).
  *      Cellernas formelskydd och talformat prövas utan DOM i tests/csv.test.js.
- *   2. Jämförelseexporten (`exportBenchmarkExcel`, src/app/64-jamforelse-export.js): kronor och procent är talceller
+ *   2. Jämförelseexporten (`exportJamforelseExcel`, src/app/64-jamforelse-export.js): kronor och procent är talceller
  *      med svenskt talformat, koder är textceller, och en tom cell är tom. Arbetsboken skrivs och läses tillbaka
  *      med SheetJS, och värdena är desamma.
  *   3. Rundtur av talen: ett tal som verktyget skriver i svenskt format (svTal/svPct, som tabellerna och därmed
@@ -130,7 +130,7 @@ describe('Jämförelseexporten: talceller med svenskt talformat, koder som text'
         })()`);
         w.__fangad = null;
         w.XLSX.writeFile = (wb, namn) => { w.__fangad = { wb, namn }; };
-        w.eval('exportBenchmarkExcel()');
+        w.eval('exportJamforelseExcel()');
         bok = w.__fangad.wb;
     });
     const blad = () => bok.Sheets['Jämförelse_alla_percentiler'];

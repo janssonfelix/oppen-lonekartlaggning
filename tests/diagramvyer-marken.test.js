@@ -523,7 +523,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         expect(blad.filter(r => ['A', 'B', 'C'].includes(String(r[0]).trim())).map(r => String(r[0]).trim())).toEqual(['A', 'B']);
         expect(blad.some(r => /visas inte här: C\./.test(String(r[0])))).toBe(true);
         // Utskriften klonar tabellen.
-        await w2.eval('buildPrintReport()');
+        await w2.eval('byggUtskriftsrapport()');
         const utskrift = [...d.querySelectorAll('#print-report #skevhet-table tbody tr, #print-report table[id$="skevhet-table"] tbody tr')];
         expect(utskrift.length).toBeGreaterThan(0);
         expect(utskrift.filter(tr => tr.cells.length > 1).map(tr => tr.cells[0].textContent.trim())).toEqual(['A', 'B']);
@@ -1082,7 +1082,7 @@ describe('utskriften ur rapportmodellen', () => {
         const w2 = createAppWindow();
         w2.__lasInDemodata();
         w2.print = () => {};
-        const bygg = async urval => { w2.eval(`sattRapportUrval(${JSON.stringify(urval)})`); await w2.eval('buildPrintReport()'); await new Promise(r => setTimeout(r, 0)); return w2.document.getElementById('print-report'); };
+        const bygg = async urval => { w2.eval(`sattRapportUrval(${JSON.stringify(urval)})`); await w2.eval('byggUtskriftsrapport()'); await new Promise(r => setTimeout(r, 0)); return w2.document.getElementById('print-report'); };
         const rubriker = el => [...el.querySelectorAll('h1, h2')].map(h => h.textContent);
         const hela = await bygg('hela');
         // Samma avsnitt i samma ordning som Word-utkastet.

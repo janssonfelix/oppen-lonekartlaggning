@@ -65,7 +65,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     it('ett block som väntar ritar inget när användaren har gått vidare, och fliken räknas då som inte ritad', async () => {
         const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'rapporttext').click();
-        const anrop = spionera(w, 'renderRapportunderlag');
+        const anrop = spionera(w, 'ritaRapportunderlag');
         // Fliken ritas som från ett flikbyte: rapportunderlaget får en platshållare och väntar.
         w.eval('_uppskjutNasta = "rapporttext"; ritaFlik("rapporttext")');
         const host = w.document.getElementById('rapportunderlag-innehall');
@@ -82,7 +82,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     it('en ändrad tröskel under väntan ger inget resultat ur den gamla tröskeln', async () => {
         const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'dokumentera').click();
-        const anrop = spionera(w, 'renderExportBesked');
+        const anrop = spionera(w, 'ritaExportBesked');
         w.eval('_uppskjutNasta = "dokumentera"; ritaFlik("dokumentera")');
         expect(w.document.querySelector('#besked-excel .block-raknas')).not.toBeNull();
         // Tröskeln ändras utan omritning (som en anropare som ritar själv senare): blocket ritar inget ur den gamla
@@ -99,7 +99,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
         const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'dokumentera').click();
         w.eval('_uppskjutNasta = "dokumentera"; ritaFlik("dokumentera")');
-        const anrop = spionera(w, 'renderExportBesked');
+        const anrop = spionera(w, 'ritaExportBesked');
         w.eval('sattKTroskel(13, { fraga: false })');   // ritar om den öppna fliken direkt
         expect(anrop.map(a => a.k)).toEqual([13]);
         await vantaKlart(w);

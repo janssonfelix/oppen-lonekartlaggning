@@ -141,10 +141,10 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
         expect(c.filter(p => p.typ === 'fyllIn')).toHaveLength(1);
         expect(c.find(p => p.typ === 'fyllIn').text).toMatch(/^Bedömning/);
         // Word-utkastet och utskriften ritas ur modellen.
-        const html = w.eval('_buildDocumentationDraftHtml()');
+        const html = w.eval('_byggWordUtkastHtml()');
         expect(html).toContain('Lönekartläggning per BAS-intervall');
         expect(html).toContain('<p><strong>AID-etiketterna i intervallet</strong></p>');
-        const block = w.eval('_utkastTillBlock(_buildDocumentationDraftHtml())');
+        const block = w.eval('_utkastTillBlock(_byggWordUtkastHtml())');
         const fet = block.find(b => b.typ === 'stycke' && b.delar.length === 1 && b.delar[0].text === 'AID-etiketterna i intervallet');
         expect(fet.delar[0].fet).toBe(true);
         expect(w.__state.kLage).toBe('skarm');
@@ -174,7 +174,7 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
         expect(ordning[ordning.indexOf('likvardigt') + 1]).toBe('basintervall');
         ruta.checked = false; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('basintervall');
-        expect(w.eval('_buildDocumentationDraftHtml()')).not.toContain('Lönekartläggning per BAS-intervall');
+        expect(w.eval('_byggWordUtkastHtml()')).not.toContain('Lönekartläggning per BAS-intervall');
         w.eval("sattRapportUrval('ledning')");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('basintervall');
         w.eval("sattRapportUrval('facklig')");
@@ -194,7 +194,7 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
     it('PDF-rapporten har avsnittet som egen sektion', async () => {
         const w = demo();
         w.eval("sattRapportUrval('hela')");
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         const s = w.document.querySelector('#print-report section[data-rm-avsnitt="basintervall"]');
         expect(s).not.toBeNull();
         expect(s.querySelector('h2').textContent).toMatch(/Lönekartläggning per BAS-intervall$/);

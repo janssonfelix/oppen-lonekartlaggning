@@ -3375,7 +3375,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
    egen klass). Klasser i samma element rör aldrig samma egenskap; en längre ledad egenskap (margin-top) kommer efter
    sin förkortning (margin) i arket. Telefonbreddens regler längre ned väljer klasserna efter innehåll (flex, grid-template-columns,
    min-width), så en ny klass som sätter någon av dem läggs till i de listorna.
-   Utskriftsfönstret (printScaffoldView, 60-utskrift.js) hämtar samma regler ur den här stilmallen. ==== */
+   Utskriftsfönstret (skrivUtMallflik, 60-utskrift.js) hämtar samma regler ur den här stilmallen. ==== */
 .dold.dold.dold { display: none; }
 /* Sammansatta */
 /* Rad som bryter och centreras lodrätt */

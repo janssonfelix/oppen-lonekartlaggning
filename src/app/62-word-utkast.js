@@ -13,7 +13,7 @@ import { rapportModell, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js'
  * Läser state/DOM men returnerar bara en sträng.
  */
 /** Utkastet som HTML, ritat ur rapportmodellen (58-rapportmodell.js). */
-function _buildDocumentationDraftHtml() { return rmTillHtml(rapportModell()); }
+function _byggWordUtkastHtml() { return rmTillHtml(rapportModell()); }
 
 // ---- Word-utkastet som .docx (ADR-37) ----
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -102,7 +102,7 @@ export async function byggWordUtkast() {
     const year = new Date().getFullYear();
     const stamp = idagDatum();
     const demo = state.isDemo;
-    const { block } = await _utkastFyllBilder(_utkastTillBlock(_buildDocumentationDraftHtml()));
+    const { block } = await _utkastFyllBilder(_utkastTillBlock(_byggWordUtkastHtml()));
     const delar = docxDelar(block, {
         titel: `Lönekartläggning ${year} — dokumentation (utkast)`,
         sidfot: _kSidfot(`Lönekartläggning ${year} — ${demo ? 'DEMODATA, UTKAST' : 'UTKAST'}`),
@@ -118,8 +118,8 @@ export async function byggWordUtkast() {
 
 /** Bygger och laddar ner Word-utkastet som .docx. */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportDocumentationDraft(...a) { return medExportLage(() => _exportDocumentationDraftExport.apply(null, /** @type {any} */ (a))); }
-async function _exportDocumentationDraftExport() {
+function exportWordUtkast(...a) { return medExportLage(() => _exportWordUtkastExport.apply(null, /** @type {any} */ (a))); }
+async function _exportWordUtkastExport() {
     if (!hamtaData().length) { alert('Läs in lönefilen först.'); return false; }
     try {
         const { blob, namn } = await byggWordUtkast();
@@ -134,5 +134,5 @@ async function _exportDocumentationDraftExport() {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartWordUtkast() {
-    document.getElementById('btn-export-docdraft')?.addEventListener('click', exportDocumentationDraft);
+    document.getElementById('btn-export-docdraft')?.addEventListener('click', exportWordUtkast);
 }

@@ -65,7 +65,7 @@ describe('k-tröskeln: par i likvärdigt arbete i Word-utkastet och utskriften',
     };
     const utskrift = async w => {
         w.eval("sattRapportUrval('hela')");   // hela dokumentationen, med bilagorna
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         return normalisera(w.document.getElementById('print-report').innerHTML);
     };
     it('paret finns i beräkningen (annars prövar testet inget)', () => {
@@ -473,7 +473,7 @@ describe('k-tröskeln i utskriften', () => {
     const utskrift = async k => {
         const w = fonsterLitet(k);
         w.eval("sattRapportUrval('hela')");   // hela dokumentationen, med bilagorna
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         return w.document.getElementById('print-report').innerHTML;
     };
     it('vid 6 står meningen högt upp, före första tabellen', async () => {
@@ -489,7 +489,7 @@ describe('k-tröskeln i utskriften', () => {
             const w = fonsterLitet(k);
             let html = '';
             w.open = () => ({ document: { write: h => { html += h; }, close() {}, createElement: t => w.document.createElement(t), head: w.document.head }, focus() {}, print() {} });
-            w.eval(`printScaffoldView('${vy}', 'X')`);
+            w.eval(`skrivUtMallflik('${vy}', 'X')`);
             return html;
         };
         expect(skriv(6, 'view-handlingsplan')).toContain(MENING);
@@ -559,7 +559,7 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
         w.JSZip = class { file(sokvag, xml) { delar[sokvag] = xml; } generateAsync() { return Promise.resolve(new w.Blob(['x'])); } };
         w.URL.createObjectURL = () => 'blob:x';
         w.alert = () => {};
-        await w.eval('exportDocumentationDraft()');
+        await w.eval('exportWordUtkast()');
         const foot = Object.entries(delar).filter(([namn]) => /footer/i.test(namn)).map(([, xml]) => xml).join('');
         expect(foot).toContain('UTKAST');
         if (suffix) expect(foot).toContain(suffix);

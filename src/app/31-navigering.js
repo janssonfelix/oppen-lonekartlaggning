@@ -26,10 +26,10 @@ import { ritaBlinderOaxacaKort, ritaRegressionskort, korOLSRegression } from './
 import { ritaLivscykel } from './52-livscykel.js';
 import { ritaPrioritering } from './55-prioritering.js';
 import { ritaHandlingsplan } from './56-handlingsplan.js';
-import { renderExportBesked } from './59-exportbesked.js';
+import { ritaExportBesked } from './59-exportbesked.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
 import { renderInfoTab } from './65-om-verktyget.js';
-import { renderRapportunderlag } from './67-rapportunderlag.js';
+import { ritaRapportunderlag } from './67-rapportunderlag.js';
 import { ritaGapUppdelning } from './68-var-uppstar-gapet.js';
 import { renderExplorer } from './70-utforska.js';
 import { renderArsjamforelse } from './73-arsbokslut.js';
@@ -415,10 +415,10 @@ function _ritaFlik(target) {
     else if (target === "utforska"     && d.length) { ritaLoneoversikt(); renderExplorer(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
     // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.
-    else if (target === "rapporttext") medExportLage(() => { ritaStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(renderRapportunderlag)); });
+    else if (target === "rapporttext") medExportLage(() => { ritaStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(ritaRapportunderlag)); });
     else if (target === "dokumentera") medExportLage(() => {
         if (d.length) renderKvalitetssakring();
-        _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => renderExportBesked()));
+        _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => ritaExportBesked()));
     });
     else if (target === "arbetet")     medExportLage(() => { if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });
     else if (target === "dashboard" && d.length) ritaOversiktDelar();

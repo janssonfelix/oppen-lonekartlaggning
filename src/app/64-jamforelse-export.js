@@ -28,8 +28,8 @@ import { medExportLage } from './23-exportgrind.js';
  * Inte beroende av vilken metric-knapp som är vald i UI:t — alla värden exporteras alltid.
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmarkExcelExport.apply(null, /** @type {any} */ (a))); }
-function _exportBenchmarkExcelExport() {
+function exportJamforelseExcel(...a) { return medExportLage(() => _exportJamforelseExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportJamforelseExcelExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = hamtaData();
     if (!d.length) { alert('Ingen lönefil är inläst. Läs in lönefilen först.'); return; }
@@ -165,5 +165,5 @@ function _exportBenchmarkExcelExport() {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartJamforelseExport() {
-    document.getElementById('btn-export-benchmark')?.addEventListener('click', exportBenchmarkExcel);
+    document.getElementById('btn-export-benchmark')?.addEventListener('click', exportJamforelseExcel);
 }

@@ -393,7 +393,7 @@ describe('k-anonymitet: utskriften ur rapportmodellen mot referensen', () => {
         w.__state.policy = [...SAKRA_BAS, TOPP_BAS, ...SMA_BAS].map(b => ({ aid: null, bas: b, p10: 90000, med: 95000, p90: 99000 }));
         w.eval('fyllValjare(); lasUppFlikar();');
         w.print = () => {};
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         const el = w.document.getElementById('print-report');
         const text = normalisera(el.innerHTML.replace(/src="data:[^"]*"/g, ''));
         expect(el.querySelectorAll('section.rm-avsnitt').length).toBeGreaterThanOrEqual(8);
@@ -586,7 +586,7 @@ describe('k-anonymitet: den samlade jämförelseexporten', () => {
         w.eval('fyllValjare(); lasUppFlikar();');
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
-        w.eval('exportBenchmarkExcel()');
+        w.eval('exportJamforelseExcel()');
         const wb = Object.values(fangat)[0];
         const celler = wb.SheetNames.flatMap(b => w.XLSX.utils.sheet_to_json(wb.Sheets[b], { header: 1, raw: true }).flat());
         expect(celler.some(c => String(c).includes(String(MARKOR)))).toBe(false);

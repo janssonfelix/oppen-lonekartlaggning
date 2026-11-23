@@ -121,7 +121,7 @@ describe('Word-utkastet som .docx', () => {
     it('HTML → block: rubriker, fyll i-rutor, tabeller och all text följer med', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
-        const html = w.eval('_buildDocumentationDraftHtml()');
+        const html = w.eval('_byggWordUtkastHtml()');
         const block = w.eval(`_utkastTillBlock(${JSON.stringify(html)})`);
         const rubriker = block.filter(b => b.typ === 'rubrik').map(b => b.delar.map(d => d.text).join(''));
         for (const n of [1, 2, 3, 4, 6, 7, 8]) expect(rubriker.some(r => r.startsWith(`${n}. `)), `avsnitt ${n}`).toBe(true);
@@ -260,7 +260,7 @@ describe('Word-utkastet som .docx', () => {
         expect(w.eval('rapportUrval()').namn).toBe('Eget urval (3 av 14 avsnitt)');
         expect(rubriker()[0]).toMatch(/^1\. Struktur/);
         // Utkastet följer urvalet; listan med alla avsnitt gör det inte.
-        const html = w.eval('_buildDocumentationDraftHtml()');
+        const html = w.eval('_byggWordUtkastHtml()');
         expect(html).not.toMatch(/Samverkan med arbetstagarna/);
         expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(14);   // med bilagan med gruppdossierer, som är förvald av
         // Rensning återställer urvalet.
@@ -331,7 +331,7 @@ describe('Word-utkastet som .docx', () => {
         d.querySelector('[data-urval-fast="ledning"]').click();
         let fangad = null;
         w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
-        expect(await w.eval('exportDocumentationDraft()')).toBe(true);
+        expect(await w.eval('exportWordUtkast()')).toBe(true);
         const doc = await (await w.JSZip.loadAsync(await fangad.blob.arrayBuffer())).file('word/document.xml').async('string');
         expect(doc).toContain('4. Åtgärder och tidsplan');
         expect(doc).not.toContain('Samverkan med arbetstagarna');
@@ -349,7 +349,7 @@ describe('Word-utkastet som .docx', () => {
         w.__lasInDemodata();
         let fangad = null;
         w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
-        expect(await w.eval('exportDocumentationDraft()')).toBe(true);
+        expect(await w.eval('exportWordUtkast()')).toBe(true);
         expect(fangad.namn).toMatch(/^Lonekartlaggning_\d{4}_dokumentation_UTKAST_DEMODATA_\d{4}-\d{2}-\d{2}\.docx$/);
         expect(fangad.blob.type).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         const zip = await w.JSZip.loadAsync(await fangad.blob.arrayBuffer());
@@ -365,7 +365,7 @@ describe('Word-utkastet som .docx', () => {
         w.eval("_bes8Areas = () => [{ title: 'Löneregler', status: 'Möjlig risk', note: 'Rad 1\\u0007 <b> & rad 2' }]");
         let fangad = null;
         w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
-        await w.eval('exportDocumentationDraft()');
+        await w.eval('exportWordUtkast()');
         const zip = await w.JSZip.loadAsync(await fangad.blob.arrayBuffer());
         const doc = await zip.file('word/document.xml').async('string');
         expect(new w.DOMParser().parseFromString(doc, 'application/xml').getElementsByTagName('parsererror').length).toBe(0);
@@ -378,7 +378,7 @@ describe('Word-utkastet som .docx', () => {
         let meddelande = '', nerladdad = false;
         w.alert = m => { meddelande = m; };
         w._laddaNerBlob = () => { nerladdad = true; };
-        expect(await w.eval('exportDocumentationDraft()')).toBe(false);
+        expect(await w.eval('exportWordUtkast()')).toBe(false);
         expect(meddelande).toMatch(/Word-utkastet kunde inte skapas/);
         expect(nerladdad).toBe(false);
     });
@@ -393,7 +393,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         for (const u of ['hela', 'facklig', 'ledning']) {
             w.eval(`sattRapportUrval('${u}')`);
             expect(bilaga(w), u).toBeUndefined();
-            expect(w.eval('_buildDocumentationDraftHtml()'), u).not.toContain('Bilaga: gruppdossierer');
+            expect(w.eval('_byggWordUtkastHtml()'), u).not.toContain('Bilaga: gruppdossierer');
         }
         w.eval("sattRapportUrval('hela')");
         expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
@@ -425,7 +425,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         const resten = forsta.slice(1).map(t => t.trim()).filter(Boolean);
         expect(a.delar.slice(i + 1, i + 1 + resten.length).map(p => p.text)).toEqual(resten);
         // Word-utkastet och PDF-rapporten har avsnittet.
-        expect(w.eval('_buildDocumentationDraftHtml()')).toContain('<h2>Bilaga: gruppdossierer</h2>');
+        expect(w.eval('_byggWordUtkastHtml()')).toContain('<h2>Bilaga: gruppdossierer</h2>');
         expect(k).toBe(10);
     });
     it('ingen grupp under k: vid k = 25 faller grupperna där ett kön har färre än 25, och de räknas i utelämnat', () => {
@@ -470,7 +470,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(utelamnat.length).toBe(1);
         const rakna = namn => { const orig = w[namn]; const r = { n: 0 }; w[namn] = (...x) => { r.n++; return orig(...x); }; return r; };
         const byggda = rakna('buildGruppdossier'), kandidater = rakna('gruppdossierCandidates'), prio = rakna('raknaPrioritering'), ki = rakna('_gdBootstrapGapCI');
-        w.eval('renderExportBesked()');
+        w.eval('ritaExportBesked()');
         expect(byggda.n).toBe(0);
         expect(w.document.getElementById('besked-word').textContent).toContain(utelamnat[0]);
         // Vid k = 10 kommer flera grupper med i bilagan.
