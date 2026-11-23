@@ -10275,7 +10275,7 @@ const _skSektorAndelNot = __mirrorSektor.sektorAndelNot;
 const __mirrorAnsvar = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const konAv = __mirrorFalt.konAv;
+    const konsMedianer = __mirrorStruktur.konsMedianer;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -10343,13 +10343,11 @@ function ansvarsUnderrader(rader, { k }) {
     return ORDNING.map(grupp => {
         const g = (rader || []).filter(r => r.ansvarsgrupp === grupp && r.lon > 0);
         if (!g.length) return null;
-        const kv = g.filter(r => konAv(r) === 'Kvinna'), ma = g.filter(r => konAv(r) === 'Man');
-        const liten = g.length < k, bada = kv.length >= k && ma.length >= k;
-        const medKv = !liten && bada ? median(kv.map(r => r.lon)) : null;
-        const medMa = !liten && bada ? median(ma.map(r => r.lon)) : null;
-        return { grupp, namn: ANSVARSGRUPP_NAMN[grupp], n: g.length, nKv: kv.length, nMa: ma.length, liten,
-            samladMedian: !liten && !bada, medTot: liten ? null : median(g.map(r => r.lon)),
-            medKv, medMa, kvot: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null };
+        const km = konsMedianer(g, { k });
+        const liten = g.length < k, visa = !liten && km.konOk;
+        return { grupp, namn: ANSVARSGRUPP_NAMN[grupp], n: g.length, nKv: km.nKv, nMa: km.nMa, liten,
+            samladMedian: !liten && !km.konOk, medTot: liten ? null : median(g.map(r => r.lon)),
+            medKv: visa ? km.medKv : null, medMa: visa ? km.medMa : null, kvot: visa ? km.kvotPct : null };
     }).filter(Boolean);
 }
 
