@@ -757,7 +757,7 @@ describe('Livscykel: lifecycle-chart', () => {
     it('två band (95 % KI) och två kurvor; bandens gränser finns i diagramdatan', () => {
         const pred = lon => [25, 45, 65].map((age, i) => ({ age, lon: lon + i * 4000, lo: lon + i * 4000 - 900, hi: lon + i * 4000 + 900 }));
         w.__r = { predKvinna: pred(28000), predMan: pred(29000), fixBas: '5', gapAt25: -3.4, gapAt65: -6.1 };
-        const f = w.eval('_lifecycleFigur(window.__r)');
+        const f = w.eval('_livscykelFigur(window.__r)');
         expect(f.lager.map(l => [l.marke, l.serie, l.streck])).toEqual([['band', 'Kvinna 95 % KI', undefined], ['band', 'Man 95 % KI', undefined],
             ['linje', 'Kvinna (predikterad lön)', 'hel'], ['linje', 'Man (predikterad lön)', 'streckad']]);
         expect(f.lager[0].data[0]).toEqual({ x: 25, lag: 27100, hog: 28900 });

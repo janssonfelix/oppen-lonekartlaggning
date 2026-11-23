@@ -47,7 +47,7 @@ async function valj(w, bas) {
 // Kurvans tal för ett intervall: predikterad lön och bandets gränser vid varje ålder, i formerna de skrivs (heltal,
 // avrundat och avkortat, och diagramdatans två decimaler med komma).
 function kurvansTal(w, bas) {
-    const r = w.eval(`runLifecycleRegression(${JSON.stringify(bas)})`);
+    const r = w.eval(`korLivscykelregression(${JSON.stringify(bas)})`);
     const v = [...r.predKvinna, ...r.predMan].flatMap(p => [p.lon, p.lo, p.hi]);
     return [...new Set(v.flatMap(x => [String(Math.round(x)), String(Math.trunc(x)), String(Math.round(x * 100) / 100).replace('.', ',')]))];
 }
@@ -98,13 +98,13 @@ async function livscykelVagar(w) {
 describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under tröskeln ritas inte i det som lämnar verktyget (ADR-70)', () => {
     it('fixturen: modellen skattas med alla intervall, D kan väljas i rullistan och dess kurva ligger långt över de andras', async () => {
         const w = fonster();
-        const r = w.eval('runLifecycleRegression(null)');
+        const r = w.eval('korLivscykelregression(null)');
         expect(r.ok).toBe(true);
         expect(r.basList).toEqual(['A', 'B', 'C', 'D']);
         expect(r.fixBas).not.toBe('D');
         await valj(w, 'D');
-        expect(w.eval('_lifecycleFixBas')).toBe('D');
-        const d = w.eval('runLifecycleRegression("D")');
+        expect(w.eval('_livscykelValdBas')).toBe('D');
+        const d = w.eval('korLivscykelregression("D")');
         expect(d.predKvinna[0].lon).toBeGreaterThan(2 * r.predKvinna[0].lon);
     });
 
@@ -114,7 +114,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
         const el = w.document.getElementById('lifecycle-chart');
         expect(el._figur).toBeTruthy();
         expect(el.querySelector('svg')).toBeTruthy();
-        const d = w.eval('runLifecycleRegression("D")');
+        const d = w.eval('korLivscykelregression("D")');
         const linje = el._figur.lager.find(l => l.marke === 'linje');
         expect(linje.data[0].y).toBeCloseTo(d.predKvinna[0].lon, 6);
         expect(normalisera(w.document.getElementById('livscykel-content').textContent)).not.toMatch(NOT);
@@ -141,7 +141,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
     it('exportläget vid 10: beräkningsbeviset för ett annat intervall skriver inte nivåfaktorn mot D', async () => {
         const w = fonster();
         await valj(w, 'D');
-        const faktor = w.eval('svTal(runLifecycleRegression("D").basFaktor.B, 3)');
+        const faktor = w.eval('svTal(korLivscykelregression("D").basFaktor.B, 3)');
         iExport(w);
         w.__ritaFlik('kon');
         await vanta();
@@ -168,7 +168,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
     it('ett valt intervall över tröskeln har sin kurva i exporten som förut: diagramdatan, bilden, ZIP-filen och Alla diagram', async () => {
         const w = fonster();
         await valj(w, 'B');
-        const tal = String(Math.round(w.eval('runLifecycleRegression("B")').predKvinna[0].lon * 100) / 100).replace('.', ',');
+        const tal = String(Math.round(w.eval('korLivscykelregression("B")').predKvinna[0].lon * 100) / 100).replace('.', ',');
         const vagar = Object.fromEntries(await livscykelVagar(w));
         expect(vagar.diagramdata).toContain(tal);
         expect(vagar['kopian i Alla diagram']).toBe(vagar.diagramdata);

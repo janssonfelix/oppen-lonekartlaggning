@@ -10,7 +10,7 @@
  * och AIC. Modellen tar raderna och golvet som parametrar och läser inget globalt
  * tillstånd. Det analysen visar räknas i vymodellen (src/lib/vymodell-livscykel.js); orden och ritningen ligger i appen.
  *
- * Appen får modellen genom lib-speglarna (ADR-8); runLifecycleRegression() i
+ * Appen får modellen genom lib-speglarna (ADR-8); korLivscykelregression() i
  * src/app/52-livscykel.js är den tunna adaptern som läser hamtaData() och statGolv().
  */
 

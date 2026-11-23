@@ -14767,11 +14767,11 @@ function uppstartAlderKarriar() {
 }
 
 // src/app/52-livscykel.js
-var _lifecycleFixBas = null;
+var _livscykelValdBas = null;
 function ritaLivscykel(given) {
   const wrap = document.getElementById("livscykel-content") || document.getElementById("lifecycle-content");
   if (!wrap) return;
-  const result = runLifecycleRegression(_lifecycleFixBas);
+  const result = korLivscykelregression(_livscykelValdBas);
   if (result.error) {
     wrap.innerHTML = `<div class="insight-box warn pad-18">
             <strong>${ikon("statusVarning")} Livscykelanalysen kunde inte köras</strong>
@@ -14780,7 +14780,7 @@ function ritaLivscykel(given) {
         </div>`;
     return;
   }
-  _lifecycleFixBas = result.fixBas;
+  _livscykelValdBas = result.fixBas;
   const primary = given || korOLSRegression();
   const vm = vymodellLivscykel(result, { rader: state.data, k: kTroskel(), huvud: primary });
   const h = vm.huvud;
@@ -14973,13 +14973,13 @@ function ritaLivscykel(given) {
   state._lifecycleCache = { result, basRows: vm.basRader };
   const behallare = document.getElementById("lifecycle-chart");
   if (kurvaUtelamnad || !behallare) {
-  } else if (typeof iExportLage === "function" && iExportLage()) _renderLifecycleChart(result, behallare);
+  } else if (typeof iExportLage === "function" && iExportLage()) _ritaLivscykelDiagram(result, behallare);
   else requestAnimationFrame(() => {
-    if (behallare.isConnected) _renderLifecycleChart(result, behallare);
+    if (behallare.isConnected) _ritaLivscykelDiagram(result, behallare);
   });
   const sel = document.getElementById("lifecycle-bas-select");
   if (sel) sel.addEventListener("change", () => {
-    _lifecycleFixBas = /** @type {HTMLInputElement} */
+    _livscykelValdBas = /** @type {HTMLInputElement} */
     sel.value;
     ritaLivscykel();
   });
@@ -14993,11 +14993,11 @@ function ritaLivscykel(given) {
       if (!row) return;
       if (kMaskerad(row.n)) return;
       const c = state._lifecycleCache;
-      _oppnaBevisruta(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
+      _oppnaBevisruta(_bevisForLivscykelBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
     });
   });
 }
-function _evidenceForLifecycleBas(row, result, utanKurva = false) {
+function _bevisForLivscykelBas(row, result, utanKurva = false) {
   const fmtKr = (v) => svKr(v, "—");
   const fmtPct = (v) => v == null || !isFinite(v) ? "—" : (v >= 0 ? "+" : "") + svPct(v, 1);
   return {
@@ -15030,10 +15030,10 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
     footer: `Livscykelmodellen låter skillnaden variera med åldern (via samspelet mellan kön och ålder). Är samspelet inte signifikant (p minst 0,10) är skillnaden i praktiken densamma, och då räcker huvudregressionen. Är det signifikant behöver du överväga åtgärder som rör karriären.`
   };
 }
-function _renderLifecycleChart(r, el) {
-  ritaFigur(el || "lifecycle-chart", _lifecycleFigur(r), { hojd: 380 });
+function _ritaLivscykelDiagram(r, el) {
+  ritaFigur(el || "lifecycle-chart", _livscykelFigur(r), { hojd: 380 });
 }
-function _lifecycleFigur(r) {
+function _livscykelFigur(r) {
   const band = (serie, farg, pred) => ({ marke: "band", serie, farg, opacitet: 0.18, legend: false, data: pred.map((p) => ({ x: p.age, lag: p.lo, hog: p.hi })) });
   const kurva = (serie, kon, farg, pred, streck) => ({
     marke: "linje",
@@ -15056,7 +15056,7 @@ function _lifecycleFigur(r) {
     ]
   };
 }
-function runLifecycleRegression(fixBas) {
+function korLivscykelregression(fixBas) {
   return livscykelRegression(hamtaData(), { fixBas, golv: statGolv() });
 }
 
@@ -28940,7 +28940,7 @@ function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
       rapporteraFel("Att göra: handlingsplanen", e);
     }
     try {
-      const life = typeof runLifecycleRegression === "function" ? runLifecycleRegression(_lifecycleFixBas) : null;
+      const life = typeof korLivscykelregression === "function" ? korLivscykelregression(_livscykelValdBas) : null;
       if (life && life.ok && livscykelMonster(life) === "växande") {
         items.push({
           id: "livscykel-vaxer",

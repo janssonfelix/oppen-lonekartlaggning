@@ -205,8 +205,8 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till li
         }
     });
 
-    it('runLifecycleRegression delegerar till livscykelRegression och bygger ingen egen modell', () => {
-        const kropp = extractFn(lcSrc, 'runLifecycleRegression');
+    it('korLivscykelregression delegerar till livscykelRegression och bygger ingen egen modell', () => {
+        const kropp = extractFn(lcSrc, 'korLivscykelregression');
         expect(kropp).toContain('livscykelRegression(');
         expect(lcSrc, 'OLS anropas i src/lib/livscykel.js').not.toContain('anpassaOLS(');
         expect(kropp, 'log-lön räknas i src/lib/livscykel.js').not.toContain('Math.log(');

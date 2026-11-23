@@ -30,7 +30,7 @@ import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.j
 import { _laOversiktRader, _laOversiktStatus } from './41-lika-arbete.js';
 import { konsklassOrd } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _lifecycleFixBas, runLifecycleRegression } from './52-livscykel.js';
+import { _livscykelValdBas, korLivscykelregression } from './52-livscykel.js';
 import { _selectedPrioReference, computePrioritization } from './55-prioritering.js';
 import { _handlingsplanSeedRows, _hpArEgen } from './56-handlingsplan.js';
 
@@ -233,7 +233,7 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
 
         // === 6. Livscykelanalys — växande gap ===
         try {
-            const life = (typeof runLifecycleRegression === 'function') ? runLifecycleRegression(_lifecycleFixBas) : null;
+            const life = (typeof korLivscykelregression === 'function') ? korLivscykelregression(_livscykelValdBas) : null;
             if (life && life.ok && livscykelMonster(life) === 'växande') {   // samma regel som livscykelanalysen (src/lib/vymodell-livscykel.js)
                 items.push({
                     id: 'livscykel-vaxer',

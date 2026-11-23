@@ -254,7 +254,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         const w = demo();
         w.__ritaFlik('kon');
         w.eval('ritaLivscykel()');
-        const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
+        const d = w.document, r = w.eval('korLivscykelregression(_livscykelValdBas)');
         const pct = v => v.toFixed(1).replace('.', ',') + '\u00a0%';
         const rutor = [...d.querySelectorAll('#livscykel-content .stat-box')].map(b => [b.querySelector('.stat-etikett').textContent, b.querySelector('.fs-xl')?.textContent.trim()]);
         expect(rutor[0]).toEqual(['Kvinnors lön i % av mäns, 25 år', pct(100 + r.gapAt25)]);
@@ -284,9 +284,9 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         w.__ritaFlik('kon');
         // Samma modell med andra p-värden för samspelet och en annan förändring: bara prövningen avgör färgen.
         const ruta = (kvAgePVal, kvAge2PVal, gapDelta) => {
-            w.eval(`globalThis.__lcOrig = runLifecycleRegression; runLifecycleRegression = b => ({ ...__lcOrig(b), kvAgePVal: ${kvAgePVal}, kvAge2PVal: ${kvAge2PVal}, gapDelta: ${gapDelta} });`);
+            w.eval(`globalThis.__lcOrig = korLivscykelregression; korLivscykelregression = b => ({ ...__lcOrig(b), kvAgePVal: ${kvAgePVal}, kvAge2PVal: ${kvAge2PVal}, gapDelta: ${gapDelta} });`);
             try { w.eval('ritaLivscykel()'); }
-            finally { w.eval('runLifecycleRegression = __lcOrig; delete globalThis.__lcOrig;'); }
+            finally { w.eval('korLivscykelregression = __lcOrig; delete globalThis.__lcOrig;'); }
             const box = [...w.document.querySelectorAll('#livscykel-content .stat-box')]
                 .find(b => b.querySelector('.stat-etikett').textContent.startsWith('Förändring 25–65 år'));
             return { tal: box.querySelector('.fs-xl'), sr: box.querySelector('.sr-only')?.textContent };
@@ -308,7 +308,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         const w = demo();
         w.__ritaFlik('kon');
         w.eval('ritaLivscykel()');
-        const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
+        const d = w.document, r = w.eval('korLivscykelregression(_livscykelValdBas)');
         const lop = d.getElementById('livscykel-content').textContent;
         expect(lop).not.toMatch(/(^|[\s(>])ns([\s).,<]|$)/);   // \b räcker inte: å, ä och ö räknas inte som bokstäver där
         expect(lop).not.toMatch(/log\(lön\)|HC3|C\(BAS\)|referensintervall/);
