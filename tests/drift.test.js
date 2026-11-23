@@ -322,7 +322,7 @@ describe('regression: 50-regressionsmodeller.js är en tunn adapter', () => {
     }
 
     it('de app-globala spegelnamnen finns i 09-lib-speglar.js och pekar på regression.js', () => {
-        for (const namn of Object.values(MODULES.find(m => m.file === 'regression.js').expose)) {
+        for (const namn of Object.values(MODULES.find(m => m.file === 'regression.js').expose).filter(Boolean)) {
             expect(typeof M[namn], namn).toBe('function');
         }
     });

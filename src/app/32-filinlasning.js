@@ -183,22 +183,7 @@ document.getElementById('btn-download-csv-template')?.addEventListener('click', 
     announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
 });
 
-/**
- * Identifierar filformat via magiska bytes (accept-attributet är bara rådgivande
- * — användare kan välja "Alla filer" och lägga en Excel-fil i en CSV-ruta).
- *   - "xlsx"       : ZIP-container (PK..) — .xlsx
- *   - "xls-legacy" : OLE2-container — gammalt .xls (stöds ej av mini-bygget)
- *   - "text"       : allt annat — behandlas som CSV/text
- * @param {Uint8Array} bytes
- * @returns {'xlsx'|'xls-legacy'|'text'}
- */
-function _sniffTabularFormat(bytes) {
-    if (bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4B &&
-        (bytes[2] === 0x03 || bytes[2] === 0x05 || bytes[2] === 0x07)) return 'xlsx';
-    if (bytes.length >= 4 && bytes[0] === 0xD0 && bytes[1] === 0xCF &&
-        bytes[2] === 0x11 && bytes[3] === 0xE0) return 'xls-legacy';
-    return 'text';
-}
+// _sniffTabularFormat (filformatet ur de magiska byten) bor i src/lib/inlasning.js och nås genom spegeln.
 
 /**
  * Läser första bladet i en XLSX-buffer till rad-objekt (samma form som
@@ -602,7 +587,7 @@ function loadStructureFile(file) {
           // Excel-väg: hela bladet läses (kan inte strömmas), därefter exakt
           // samma pipeline som CSV — PII-detektering på sample, sedan processRow.
           let x;
-          try { x = _xlsxToObjects(/** @type {ArrayBuffer} */ (buf), Object.values(ALLOWED_FIELDS), 2, _importprofilLista()); }
+          try { x = _xlsxToObjects(/** @type {ArrayBuffer} */ (buf), _ilRubrikgrupper(), 2, _importprofilLista()); }
           catch (err) { failLoad('Kunde inte läsa Excel-filen: ' + err.message); return; }
           capturedHeaders = x.headers.filter(h => h);
           valjImportprofil(capturedHeaders);
@@ -617,7 +602,7 @@ function loadStructureFile(file) {
       // Text-/CSV-väg: avkoda → hitta rubrikrad (preamble-tolerant) → strömma.
       const _dec = _decodeCsvBuffer(buf);
       detectedEnc = _dec.encoding;
-      const hdrInfo = _findCsvHeader(_dec.text, Object.values(ALLOWED_FIELDS), 2, _importprofilLista());
+      const hdrInfo = _findCsvHeader(_dec.text, _ilRubrikgrupper(), 2, _importprofilLista());
       detectedDelim = hdrInfo.delim || ';';
       // Filen delas i rader en gång: försättsraderna före rubriken tas bort, och filens
       // radnummer för varje datarad räknas ur samma rader. Papa hoppar över tomma rader

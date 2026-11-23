@@ -162,7 +162,7 @@ export const MODULES = [
             // Huvudregressionen, verktygets huvudtal (adaptern är runOLSRegression i 51-lika-arbete-regressionskort.js)
             huvudregression: '_rgHuvudregression',
             computePerBasGap: '_rgComputePerBasGap', computeSequentialGap: '_rgComputeSequentialGap',
-            quantileRegression: '_rgQuantileRegression',
+            quantileRegression: null,
             blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
             kvantilDesign: '_rgKvantilDesign',   // kvantilregressionens design, delad av punktskattningen och bootstrappen (ADR-63)
             // Förklaringsmodellen (ADR-56)
@@ -300,7 +300,13 @@ export const MODULES = [
                   _normalizePolicyAid: '_normalizePolicyAid', _normalizeKon: '_normalizeKon', tolkaLonerad: '_ilTolkaLonerad',
                   _pnrSampelSteg: '_pnrSampelSteg', detectSensitiveColumns: 'detectSensitiveColumns', yrkeNamnNyckel: '_ilYrkeNamnNyckel',
                   sallsyntaNamnrader: '_ilSallsyntaNamnrader', _decodeCsvBuffer: '_decodeCsvBuffer', delaRader: '_delaRader',
-                  _detectDelimiter: '_detectDelimiter', _findCsvHeader: '_findCsvHeader' }
+                  _detectDelimiter: '_detectDelimiter', _findCsvHeader: '_findCsvHeader', _sniffTabularFormat: '_sniffTabularFormat',
+                  // Kolumnvalet och uppgiftsminimeringen: lib tar kolumnmappningen, importprofilen och ansvarskolumnen som
+                  // argument, och appens adaptrar (getField, _lonefilensRubriker, _hittaAnsvarKolumn, extractMinimalRecord)
+                  // läser dem ur tillståndet. ALLOWED_FIELDS är en konstant och får inget alias; appen når sökorden med rubrikgrupper.
+                  rubrikgrupper: '_ilRubrikgrupper', vardeForRoll: '_ilVardeForRoll', autoDetectColumnMap: 'autoDetectColumnMap',
+                  lonefilensRubriker: '_ilLonefilensRubriker', _faltIRad: '_faltIRad', hittaAnsvarKolumn: '_ilHittaAnsvarKolumn',
+                  _bedomAnsvarKolumn: '_bedomAnsvarKolumn', minimeraRad: '_ilMinimeraRad' }
     },
     {
         file: 'aidkontroll.js', ns: '__mirrorAidkontroll',

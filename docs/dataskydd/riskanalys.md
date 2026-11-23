@@ -258,11 +258,13 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - Vid fliksstängning försvinner allt minne (ingen persistens).
 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
-- **Var koden bor:** vitlistan och kolumnvalet (`ALLOWED_FIELDS`, `getField`, ansvarskolumnen) ligger i appen
-  (`src/app/06-uppgiftsminimering.js`, `src/app/03-hjalpfunktioner.js`). Tolkningen av värdena — talen, kön, BAS,
-  saneringen av AID-etiketten, kärnan i `extractMinimalRecord` (`tolkaLonerad`) och `detectSensitiveColumns` — är
-  rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan klocka (året som ett födelseår räknas mot skickas
-  in), och prövas fristående i `tests/inlasning.test.js` och genom appen i `tests/parsing.test.js`.
+- **Var koden bor:** vitlistan och kolumnvalet (`ALLOWED_FIELDS`, kolumnuppslaget, ansvarskolumnen), tolkningen av
+  värdena — talen, kön, BAS, saneringen av AID-etiketten, kärnan i `extractMinimalRecord` (`minimeraRad`,
+  `tolkaLonerad`) — och `detectSensitiveColumns` är rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan
+  klocka. Kolumnmappningen, importprofilen, den godkända ansvarskolumnen och året som ett födelseår räknas mot skickas
+  in av appens tunna adaptrar (`getField`, `extractMinimalRecord` m.fl. i `src/app/03-hjalpfunktioner.js` och
+  `src/app/06-uppgiftsminimering.js`). Reglerna prövas i `tests/inlasning.test.js`, adaptrarna och hela filer i
+  `tests/inlasning-app.test.js`.
 - **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID-etikett, lön och kön, samt valfri ålder
   (ADR-64; saknas kolumnen blir åldern 0 på varje rad och betyder *saknas*), valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
   (ADR-33) läses in. Kolumnen *Ansvar* (ofta kostnadsställe) läses inte in (se avgränsningen i
@@ -292,7 +294,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   värden i bara några få rader kan ändå gå förbi samplet. Kolumnen läses då ändå inte in, eftersom bara
   godkända kolumner läses. Rubrikkontrollen normaliserar rubriken (gemener, å/ä/ö → a/a/o). Därför känns
   *Förnamn*, *Fornamn*, *Namn*, *Efternamn*, *Personnummer*, *PNR* och *E-post* igen
-  (rubrik- och värdeprov i `tests/parsing.test.js`, filprov i `tests/inlasning-app.test.js`, bland dem en fil
+  (rubrik- och värdeprov i `tests/inlasning.test.js`, filprov i `tests/inlasning-app.test.js`, bland dem en fil
   med personnummer först från rad 200 i CSV och Excel).
   Rubrikkontrollen avvisar också kolumner vars rubrik antyder en **särskild kategori av personuppgifter**:
   fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning,
@@ -332,7 +334,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   ett namn som står på tre eller fler rader. Prövat i `tests/inlasning.test.js` och genom appen i
   `tests/namn-i-yrkesfaltet.test.js` (CSV och Excel).
 - **Utdatakodning:** `esc()` escapear `& < > " '` och är därmed säker även i attributkontext
-  (regressionstester i `tests/parsing.test.js`).
+  (regressionstester i `tests/sakerhet.test.js`).
 - **Förhandskontrollen av lönefilen visar de tio första raderna bara på skärmen.** Varje rad har fem till sju
   fält: BAS, AID-etikett, lön, ålder och kön, och poäng och ansvarskod när de finns. AID-etiketten är som den
   sparats efter saneringen ovan; dess råvärde sparas inte. Filens råvärde är kortat till 24 tecken och ligger i
@@ -750,7 +752,7 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Web Workers | Webbläsarröktestet skapar en worker från `blob:` | ✔ avvisas av CSP (`script-src` som reserv för `worker-src`) |
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
 | Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/inlasning-app.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
-| PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ lönefilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/parsing.test.js` (§6.4) |
+| PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ lönefilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/inlasning.test.js` (§6.4) |
 | Namn i fältet för AID-etikett | `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader`; jsdom-prov med CSV och Excel | ✔ ingen maskering (ADR-85): "101010 Anna Andersson" behålls; ✔ två namnrader ger varningen med antal och radnummer på de tre ställena; ✔ "Sjuksköterska Natt" på 20 rader varnar inte; ✔ ingen etikett i etikettlistan och ingen AID-etikett i demona träffas |
 | k-anonymitet | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |
 | k-anonymitet i exporten från Tabeller och egna vyer (ADR-14) | Exporttester i `tests/kanonymitet.test.js` + genomsökning i Chromium av alla kombinationer rad × kolumn × diagramtyp × helhet/per kön × mått med rutan urkryssad | ✔ inga grupper eller kön under 10 i tabell- eller diagramexport |
@@ -764,7 +766,7 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Formelskydd i CSV/urklipp (ADR-15) | Regressionstest (`tests/csv.test.js`) + kodläsning av alla CSV-skrivare | ✔ `= + - @`-celler neutraliseras; tal orörda; mallfilen innehåller ingen användardata |
 | Lokala exporter | Blob/`<a download>`/print-läsning | ✔ inga uppladdningar |
 | Hash-baserad CSP (ADR-9) | Hash-jämförelse + webbläsarröktestet: injicerat `<script>`, inline-`onclick` och `<img onerror>`; skadlig text i lönefil och paket i jsdom (`tests/dataskydd-app.test.js`) | ✔ ingen av dem exekverades; appen fullt funktionell |
-| XSS-utdatakodning | `esc()` escapear `& < > " '` + regressionstester (`tests/parsing.test.js`) | ✔ säker även i attributkontext |
+| XSS-utdatakodning | `esc()` escapear `& < > " '` + regressionstester (`tests/sakerhet.test.js`) | ✔ säker även i attributkontext |
 | Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |

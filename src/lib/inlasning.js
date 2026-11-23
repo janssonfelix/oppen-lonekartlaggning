@@ -8,13 +8,15 @@
  * Fältet för AID-etikett maskeras inte (ADR-85): verktyget behåller koden och högst 40 tecken av etiketten, utan
  * tecknen < > " ' &. Ser fältet ut att innehålla personnamn varnar inläsningen (yrkeNamnNyckel, sallsyntaNamnrader).
  *
- * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgör appen
- * (getField och ALLOWED_FIELDS i src/app/, med kolumnmappningen, importprofilen och ansvarskolumnen), och året som ett
- * födelseår i ålderskolumnen räknas mot skickas in. Funktionerna behåller namnen de hade i appen.
+ * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgörs här (ALLOWED_FIELDS,
+ * _rubrikForRoll), men kolumnmappningen, importprofilen och ansvarskolumnen kommer ur appens tillstånd och skickas in,
+ * liksom året som ett födelseår i ålderskolumnen räknas mot. Appens tunna adaptrar (getField, _lonefilensRubriker,
+ * _hittaAnsvarKolumn och extractMinimalRecord) läser tillståndet. Funktionerna utan adapter behåller namnen de hade i
+ * appen.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { tolkaAnsvarskod as _anTolka, ansvarsgrupp as _anGrupp } from './ansvar.js';
+import { tolkaAnsvarskod as _anTolka, ansvarsgrupp as _anGrupp, arAnsvarskodRubrik as _anArRubrik, andelGiltiga as _anAndelGiltiga } from './ansvar.js';
 import { matchaImportprofil } from './importprofiler.js';
 
 // ---- Talen ----
@@ -281,12 +283,135 @@ export function _normalizeKon(raw) {
     return MAP[s] || s;
 }
 
+// ---- Kolumnerna: vilken rubrik som bär vilket fält (flyttade från src/app/03-hjalpfunktioner.js och 06) ----
+
+// GDPR uppgiftsminimering (Art. 5(1)(c)): vitlista över tillåtna datafält. Verktyget extraherar ENBART dessa roller
+// från lönefilen. Alla övriga kolumner ignoreras helt även om de finns i filen.
+export const ALLOWED_FIELDS = {
+    bas:     ["bas","basintervall"],
+    // Yrke matchas via mönster på rensat kolumnnamn (lowercase, å→a, ö→o, alfanum).
+    // Ordningen spelar roll — specifika mönster först, generella sist.
+    //   - "aidetik"    → "AID-etikett" (export ur lönestatistiksystem)
+    //   - "yrkesgrupp" → "Yrkesgrupp"
+    //   - "yrke"       → "Yrke", "Yrkesnamn", "Yrkeskod"
+    //   - "befattning" → "Befattning"
+    //   - "aid"        → fallback för CSV som har enbart "AID"-kolumn (vanligt!)
+    //                    Måste vara sist så mer-specifika mönster matchas först.
+    yrke:    ["aidetik","yrkesgrupp","yrke","befattning","aid"],
+    lon:     ["mnadsln","lon","ln"],
+    alder:   ["lder","alder"],
+    kon:     ["kon","kn"],
+    // Valfri arbetsvärderingspoäng per befattning — del av strukturdatan (som BAS),
+    // aktiverar poäng som krav-proxy i § 3:10. Normaliserade mönster:
+    // "Poäng"→pong, "Poang"→poang, "Arbetsvärdering"→arbetsvrdering.
+    poang:   ["pong","poang","arbetsvrdering","arbetsvardering"],
+    // Valfri ansvarskod enligt AID (ADR-33): "Ansvarskod", "AID-ansvar",
+    // "Ansvarsnivå". Kolumnen "Ansvar" (oftast ett kostnadsställe) läses aldrig — själva
+    // kolumnen väljs med hittaAnsvarKolumn, och den godkänns bara med ≥ 95 % giltiga värden.
+    ansvar:  ["ansvarskod","aidansvar","ansvarsniv"]
+};
+
+/** Sökorden per roll i ALLOWED_FIELDS, för rubrikradssökningen (_findCsvHeader och Excelläsaren i appen). */
+export function rubrikgrupper() {
+    return Object.values(ALLOWED_FIELDS);
+}
+
+/**
+ * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med sökordet, annars en som innehåller det; sökorden
+ * prövas i tur och ordning. Exakt likhet först, så att "Lön" går före "Lönetillägg" för sökordet "ln".
+ */
+export function _hittaRubrik(headers, possibleNames, role) {
+    // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
+    // får aldrig tas för yrke (ADR-33).
+    const hoppa = h => role === 'yrke' && _anArRubrik(h);
+    const rensade = (headers || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
+    for (const name of possibleNames) {
+        const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        let i = rensade.indexOf(searchStr);
+        if (i < 0) i = rensade.findIndex(r => r !== null && r.includes(searchStr));
+        if (i >= 0) return headers[i];
+    }
+    return undefined;
+}
+
+/**
+ * Rubriken som bär rollen bland `headers`: #11 den manuella kolumnmappningen, därefter importprofilen som gäller för
+ * filen (roll → filens rubrik), och för roller ingen av dem täcker namnet (_hittaRubrik). En vald rubrik gäller bara om
+ * filen har den. undefined när ingen rubrik passar.
+ * @param {{columnMap?: Object<string,string>|null, importprofil?: {mappning: Object<string,string>}|null}} [val] -
+ *   Kolumnmappningen och importprofilen ur appens tillstånd.
+ */
+export function _rubrikForRoll(headers, possibleNames, role, val = {}) {
+    const mapped = role && val.columnMap && val.columnMap[role];
+    if (mapped && headers.includes(mapped)) return mapped;
+    const profil = role && val.importprofil && val.importprofil.mappning[role];
+    if (profil && headers.includes(profil)) return profil;
+    return _hittaRubrik(headers, possibleNames, role);
+}
+
+/** Radens värde i kolumnen som bär rollen (_rubrikForRoll), eller tom sträng. Appens getField skickar tillståndets val. */
+export function vardeForRoll(row, possibleNames, role, val = {}) {
+    const key = _rubrikForRoll(Object.keys(row), possibleNames, role, val);
+    return key == null ? "" : row[key];
+}
+
+// #11: vilken rubrik auto-matchar varje roll (samma logik som getField,
+// utan columnMap-override). Returnerar { roll: rubrik|null }.
+export function autoDetectColumnMap(headers) {
+    const map = {};
+    for (const role of Object.keys(ALLOWED_FIELDS)) map[role] = _hittaRubrik(headers, ALLOWED_FIELDS[role], role) ?? null;
+    return map;
+}
+
+/**
+ * Rubriken för varje fält i ALLOWED_FIELDS bland lönefilens rubriker (_rubrikForRoll: kolumnmappningen, importprofilen,
+ * namnet). Slås upp en gång per fil; en ändrad mappning läser in filen på nytt.
+ * @param {string[]} headers
+ * @param {{columnMap?: Object<string,string>|null, importprofil?: {mappning: Object<string,string>}|null}} [val]
+ */
+export function lonefilensRubriker(headers, val = {}) {
+    const rubriker = {};
+    for (const role of Object.keys(ALLOWED_FIELDS)) rubriker[role] = _rubrikForRoll(headers, ALLOWED_FIELDS[role], role, val);
+    return rubriker;
+}
+/** Radens värde för rollen, som getField: tom sträng när filen saknar kolumnen. */
+export function _faltIRad(row, rubriker, roll) {
+    return rubriker[roll] == null ? '' : row[rubriker[roll]] ?? '';
+}
+
+/**
+ * Kolumnen med AID:s ansvarskod: manuell mappning först, annars första rubrik som
+ * arAnsvarskodRubrik känner igen. Aldrig kolumnen "Ansvar".
+ * @param {string[]} rubriker
+ * @param {{columnMap?: Object<string,string>|null, importprofil?: {mappning: Object<string,string>}|null}} [val]
+ * @returns {string|null}
+ */
+export function hittaAnsvarKolumn(rubriker, val = {}) {
+    // "— ingen —" i kolumnmappningen sparas som tom sträng: då läses ingen ansvarskod alls.
+    if (val.columnMap && val.columnMap.ansvar === '') return null;
+    const manuell = val.columnMap && val.columnMap.ansvar;
+    if (manuell && (rubriker || []).includes(manuell)) return manuell;
+    // En importprofil som pekar ut ansvarskoden (godkänns ändå bara med ≥ 95 % giltiga värden).
+    const profil = val.importprofil && val.importprofil.mappning.ansvar;
+    if (profil && (rubriker || []).includes(profil)) return profil;
+    return (rubriker || []).find(r => _anArRubrik(r)) ?? null;
+}
+
+/**
+ * Godkänner ansvarskodskolumnen om minst 95 % av de ifyllda värdena är giltiga.
+ * @returns {{namn:string, godkand:boolean, giltiga:number|null}}
+ */
+export function _bedomAnsvarKolumn(namn, varden) {
+    const giltiga = _anAndelGiltiga(varden);
+    return { namn, godkand: giltiga != null && giltiga >= 0.95, giltiga };
+}
+
 // ---- En lönerad ----
 
 /**
  * Kärnan i uppgiftsminimeringen (GDPR Art. 5(1)(c)): de vitlistade fälten ur en lönerad, tolkade och normaliserade.
- * Appen slår upp råvärdena i raden (extractMinimalRecord i src/app/06-uppgiftsminimering.js, med getField och
- * ALLOWED_FIELDS) och skickar in dem här; inga andra kolumner når hit.
+ * minimeraRad slår upp råvärdena i raden (rubrikerna ur lonefilensRubriker, med ALLOWED_FIELDS) och skickar in dem
+ * här; inga andra kolumner når hit.
  * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, utan tecknen < > " ' &; ingen namnmaskering, ADR-85).
  * Ger { bas, yrke, aid, yrkeLabel, lon, alder, kon, poang, ansvarskoder, ansvarsgrupp, _lonStatus, _alderStatus }.
  * @param {{bas:*, kon:*, lon:*, alder:*, poang:*, yrke:*, ansvar?:*}} falt - Råvärdet per roll ur raden.
@@ -337,6 +462,29 @@ export function tolkaLonerad(falt, referensar, medAnsvar = false) {
         _lonStatus:   lonParsed.status,
         _alderStatus: alderStatus
     };
+}
+
+/**
+ * Extraherar ENBART vitlistade fält ur en lönerad — GDPR Art. 5(1)(c) uppgiftsminimering. Säkerställer att verktyget
+ * aldrig laddar identifierande fält (PNR, namn, e-post) även om användarens fil innehåller dem. Råvärdena slås upp i
+ * raden (rubrikerna ur lonefilensRubriker, och den godkända ansvarskolumnen) och tolkas av tolkaLonerad.
+ * Appens extractMinimalRecord (src/app/06-uppgiftsminimering.js) skickar tillståndets ansvarskolumn och innevarande år.
+ * @param {Object<string,*>} row - Rå rad (PapaParse-objekt).
+ * @param {Object<string,string|undefined>} rubriker - Uppslaget för filen (lonefilensRubriker).
+ * @param {{namn: string}|null} ansvarKolumn - Den godkända kolumnen för AID:s ansvarskod, eller null.
+ * @param {number} referensar - Året som ett födelseår i ålderskolumnen räknas mot.
+ */
+export function minimeraRad(row, rubriker, ansvarKolumn, referensar) {
+    const falt = roll => _faltIRad(row, rubriker, roll);
+    return tolkaLonerad({
+        bas:    falt('bas'),
+        kon:    falt('kon'),
+        lon:    falt('lon'),
+        alder:  falt('alder'),
+        poang:  falt('poang'),
+        yrke:   falt('yrke'),
+        ansvar: ansvarKolumn ? row[ansvarKolumn.namn] : undefined
+    }, referensar, !!ansvarKolumn);
 }
 
 /**
@@ -428,6 +576,23 @@ export function detectSensitiveColumns(rows) {
 
 // ---- Filtexten: teckenkodning, avgränsare och rubrikrad (flyttade från src/app/32-filinlasning.js) ----
 
+/**
+ * Identifierar filformat via magiska bytes (accept-attributet är bara rådgivande
+ * — användare kan välja "Alla filer" och lägga en Excel-fil i en CSV-ruta).
+ *   - "xlsx"       : ZIP-container (PK..) — .xlsx
+ *   - "xls-legacy" : OLE2-container — gammalt .xls (stöds ej av mini-bygget)
+ *   - "text"       : allt annat — behandlas som CSV/text
+ * @param {Uint8Array} bytes
+ * @returns {'xlsx'|'xls-legacy'|'text'}
+ */
+export function _sniffTabularFormat(bytes) {
+    if (bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4B &&
+        (bytes[2] === 0x03 || bytes[2] === 0x05 || bytes[2] === 0x07)) return 'xlsx';
+    if (bytes.length >= 4 && bytes[0] === 0xD0 && bytes[1] === 0xCF &&
+        bytes[2] === 0x11 && bytes[3] === 0xE0) return 'xls-legacy';
+    return 'text';
+}
+
 // #2: Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte
 // UTF-8) och ibland kommaseparerad. Vi detekterar teckenkodning och avgränsare
 // LOKALT (TextDecoder i webbläsaren, inga nätverksanrop) innan parsning så att
@@ -479,7 +644,7 @@ export function _detectDelimiter(text) {
  * de får inte tas för rubriker. Vi provar de
  * 15 första raderna × alla avgränsare och väljer den kombination som matchar
  * flest kända kolumnroller (synonymGroups = array av normaliserade substrängar
- * per roll, t.ex. Object.values(ALLOWED_FIELDS)).
+ * per roll, t.ex. rubrikgrupper()).
  *
  * @param {string} text - Avkodad filtext.
  * @param {Array<Array<string>>} synonymGroups - En grupp synonymer per roll.

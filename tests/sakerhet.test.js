@@ -109,6 +109,18 @@ describe('säkerhet: en enda escaping-funktion', () => {
             .flatMap(f => (läs(`src/app/${f}`).match(/\bconst esc\s*=/g) || []).map(() => f));
         expect(def).toEqual(['01-html-och-tillganglighet.js']);
     });
+    // Citattecken måste escapas så att data-bas="${esc(x)}" inte kan brytas ut. esc är en enradig pilfunktion vars
+    // stränglitteraler innehåller ';' ("&amp;"), så hela raden tas.
+    it('esc escapear < > & samt citattecken (säker i attributkontext)', () => {
+        const rad = läs('src/app/01-html-och-tillganglighet.js').split('\n').find(r => /^const esc\s*=/.test(r));
+        const esc = new Function(`${rad}; return esc;`)();
+        expect(esc('<b>')).toBe('&lt;b&gt;');
+        expect(esc('a & b')).toBe('a &amp; b');
+        expect(esc('A" onmouseover="alert(1)')).toBe('A&quot; onmouseover=&quot;alert(1)');
+        expect(esc("x' onx='y")).toBe('x&#39; onx=&#39;y');
+        expect(esc(null)).toBe('');
+        expect(esc(undefined)).toBe('');
+    });
 });
 
 describe('säkerhet: utskriftsfönstret', () => {

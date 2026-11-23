@@ -283,7 +283,7 @@ const UNDANTAG_FRASER = [
 // Yrke, Yrkesgrupp eller Befattning ska fortfarande läsas in (ALLOWED_FIELDS), och importprofilernas rubriker och
 // kännetecken är rubrikerna i en känd uppsättning. De blocken prövas inte.
 const KOLUMNIGENKANNING = [
-    { fil: 'src/app/06-uppgiftsminimering.js', block: /const ALLOWED_FIELDS = \{[\s\S]*?\n\};/g },
+    { fil: 'src/lib/inlasning.js', block: /const ALLOWED_FIELDS = \{[\s\S]*?\n\};/g },
     { fil: 'src/lib/importprofiler.js', block: /\b(?:rubriker|kannetecken):\s*(?:\{[^}]*\}|\[[^\]]*\])/g },
     // CSV-mallens rubriker är kolumnnamnen i filen som laddas ned, och de ska kännas igen när filen läses in igen.
     { fil: 'src/app/32-filinlasning.js', block: /const CSV_MALL_RUBRIKER = \[[^\]]*\];/g },

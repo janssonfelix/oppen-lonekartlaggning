@@ -3,6 +3,8 @@
 // Inläsningen av lönefilen i appen: kolumner, radnummer, ansvarskoden, PII-kontrollen, BAS-intervallen, filrutorna och
 // en lönefil vars kolumner inte känns igen.
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createAppWindow } from './helpers/app-harness.js';
 import { papa, vanta, csvFil, braRader, okandaRader } from './helpers/granssnitt-rigg.js';
 import { utanTaggar } from '../src/lib/htmltext.js';
@@ -594,5 +596,76 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — inläsning', (
         w.loadStructureFile(new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
         await new Promise(r => setTimeout(r, 100));
         expect(w.__state._lastStructureFile.name).toBe('bra.csv');
+    });
+});
+
+// ---- Adaptrarna i appen: tillståndet och klockan (reglerna prövas i tests/inlasning.test.js) ----
+describe('extractMinimalRecord i appen', () => {
+    it('tolkar födelseår i ålderskolumnen som ålder', () => {
+        const w = createAppWindow();
+        const rec = w.eval(`extractMinimalRecord({ 'BAS': 'A', 'Månadslön': '30000', 'Ålder': '1980', 'Kön': 'Kvinna', 'AID': '5301' })`);
+        const expectedAge = new Date().getFullYear() - 1980;
+        expect(rec.alder).toBe(expectedAge);
+        expect(rec._alderStatus).toBe('birthyear');
+    });
+});
+
+describe('inläsning i appen: lönefil utan ålderskolumn', () => {
+    it('filen med bara BAS, AID, lön och kön läses in med alla rader, utan kolumnmappning', async () => {
+        const w = createAppWindow();
+        papa(w);
+        const rader = ['BAS;AID;Månadslön;Kön'];
+        for (let i = 0; i < 40; i++) rader.push(`${i % 2 ? 'C' : 'D'};207011 Handläggare;${30000 + i * 10};${i % 4 < 2 ? 'Man' : 'Kvinna'}`);
+        w.loadStructureFile(csvFil(w, rader, 'utan-alder.csv'));
+        await vanta(() => w.__state.data.length > 0);
+        expect(w.__state.data).toHaveLength(40);
+        expect(w.__state.data.every(r => r.alder === 0)).toBe(true);
+        expect(w.eval('harAlder()')).toBe(false);
+        expect(w.eval('_kolumnerSomSaknas(state._dataHeaders)')).toEqual([]);
+        expect(w.document.getElementById('column-map-panel').textContent).not.toContain('Kolumnmappning behövs');
+        expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toContain('alder-saknas');
+        expect(w.document.getElementById('forhandskontroll').textContent).toContain('Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
+    });
+});
+
+describe('inläsning i appen: kolumnvalet', () => {
+    // Samma tabell med två kolumner som heter Lön: CSV-läsaren behåller den första och döper om den andra till Lön_1.
+    const tabell = () => {
+        const t = [['Kön', 'Lön', 'BAS', 'AID', 'Lön']];
+        for (let i = 0; i < 40; i++) t.push([i % 2 ? 'Man' : 'Kvinna', String(30000 + i * 10), 'C', '207011 Handläggare', '500']);
+        return t;
+    };
+    const lasIn = async (w, fil) => {
+        w.loadStructureFile(fil);
+        await vanta(() => w.__state.data.length > 0);
+        return w.__state.data.map(r => r.lon);
+    };
+    it('dubbla rubriker: CSV och Excel tar lönen ur samma kolumn', async () => {
+        const wCsv = createAppWindow();
+        papa(wCsv);
+        const csv = await lasIn(wCsv, csvFil(wCsv, tabell().map(r => r.join(';')), 'dubbla.csv'));
+        const wX = createAppWindow();
+        wX.eval(readFileSync(join(import.meta.dirname, '..', 'vendor', 'xlsx.mini.min.js'), 'utf8'));
+        const X = wX.XLSX, wb = X.utils.book_new();
+        X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(tabell()), 'Blad1');
+        const xlsx = await lasIn(wX, new wX.File([X.write(wb, { type: 'array', bookType: 'xlsx' })], 'dubbla.xlsx'));
+        expect(csv).toHaveLength(40);
+        expect(csv[0]).toBe(30000);
+        expect(xlsx).toEqual(csv);
+        expect(wX.__state._dataHeaders).toEqual(['Kön', 'Lön', 'BAS', 'AID', 'Lön_1']);
+    });
+
+    it('kolumnerna slås upp en gång per fil, inte för varje rad', async () => {
+        const w = createAppWindow();
+        papa(w);
+        const original = w.getField;
+        let anrop = 0;
+        w.getField = (...a) => { anrop++; return original(...a); };
+        const rader = ['BAS;AID;Månadslön;Ålder;Kön'];
+        for (let i = 0; i < 40; i++) rader.push(`C;207011 Handläggare;${30000 + i * 10};40;${i % 2 ? 'Man' : 'Kvinna'}`);
+        w.loadStructureFile(csvFil(w, rader, 'uppslag.csv'));
+        await vanta(() => w.__state.data.length > 0);
+        expect(w.__state.data).toHaveLength(40);
+        expect(anrop).toBe(0);
     });
 });
