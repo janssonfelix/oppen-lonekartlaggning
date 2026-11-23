@@ -24,7 +24,9 @@ och `.github/workflows/ci.yml`) bygger om och kräver samma fil. `npm run bundle
 ## Delarna
 
 Delarna är namngivna efter den flik eller funktion de hör till, i samma ordning som
-menyn där det går. ES-moduler körs i importgrafens ordning, inte i sifferordning, så en del
+menyn där det går. Delarnas funktioner och konstanter har svenska namn, som lib (ADR-97, ADR-104):
+prefixen (`_fc`, `_rf` …) och förkortningar som CSV och OLS står kvar, liksom tillståndets fält
+(`state.data` …) och sidans id:n och klasser. ES-moduler körs i importgrafens ordning, inte i sifferordning, så en del
 **deklarerar bara**: funktioner, konstanter och tillstånd. Det som ska köras vid laddning
 (händelsekopplingar, anrop) står i delens uppstartsfunktion (`uppstartFilinlasning` och så vidare),
 och `index.js` anropar dem i sifferordning när alla delar är lästa; bygget fäller en del med kod
