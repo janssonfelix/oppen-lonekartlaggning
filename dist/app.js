@@ -11071,7 +11071,7 @@ function renderPrioritering() {
     ...baseP,
     usedInAnalysis: items.length,
     analysisExclusions: [
-      ...smallCount > 0 ? [[`${stor(T.enhet.fl)} i ${T.niva.en} för små (k-anonymitet n&lt;${kTroskel()})`, smallCount]] : [],
+      ...smallCount > 0 ? [[`${stor(T.enhet.fl)} i ${T.niva.en} för små (minsta gruppstorlek, n&lt;${kTroskel()})`, smallCount]] : [],
       ...noRefCount > 0 ? [[`${stor(T.enhet.fl)} i ${T.niva.en} utan matchning i ${ref === "stallningstagande" ? referensNamn() : "jämförelsestatistiken"}`, noRefCount]] : []
     ],
     formler: [
@@ -11698,7 +11698,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
   if (p.status !== "ok") {
     return {
       title: `Beräkningen — BAS ${p.bas}`,
-      intro: p.status === "too_few" ? `Per-BAS-regression kunde inte köras eftersom underlaget är för litet (k-anonymitet).` : `Per-BAS-regression misslyckades på grund av multikollinearitet (singulär designmatris — typiskt om alla i gruppen har samma BAS-rang och ålder är extremt korrelerad med kön).`,
+      intro: p.status === "too_few" ? `Per-BAS-regression kunde inte köras eftersom underlaget är för litet (minsta gruppstorlek).` : `Per-BAS-regression misslyckades på grund av multikollinearitet (singulär designmatris — typiskt om alla i gruppen har samma BAS-rang och ålder är extremt korrelerad med kön).`,
       rows: [
         { label: stor(T.niva.en), value: p.bas },
         { label: "Antal totalt", value: (p.n || 0).toLocaleString("sv-SE") },
@@ -13138,7 +13138,7 @@ function ritaLikvardigtArbete() {
             <ul class="fs-sm lh-1_6 marg-8-0 pad-v-22">
                 <li><strong>Steg 1</strong>: Identifiera <em>organisationens kvinnodominerade</em>
                     ${T.enhet.fl} i varje ${T.niva.en} (${esc(aidbasDefinitionText())}).
-                    K-anonymitet tillämpas <strong>inte</strong> i denna analys eftersom
+                    Minsta gruppstorlek tillämpas <strong>inte</strong> i denna analys eftersom
                     resultatet är aggregerat per ${T.enhet.en}.</li>
                 ${vm.poang ? `<li><strong>Steg 2</strong>: Välj ${T.jamforelse.fl} med lika eller lägre poäng
                     (likvärdiga eller lägre krav), också i andra ${T.niva.fl}. Bara organisationens egna
@@ -13779,7 +13779,7 @@ function _exportLikvardighetCSVExport() {
   rows.push(["Klassificeringskälla — SKR:s personalstatistik", result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
   rows.push(["KI-metod", poang ? "Bootstrap B=1000 på bägge individurvalen" : "Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median"]);
   rows.push(["Justerad för ålder", LV_JUSTERAD_METOD]);
-  rows.push(["k-anonymitet", "Tillämpas EJ i denna analys"]);
+  rows.push(["Minsta gruppstorlek", "Tillämpas EJ i denna analys"]);
   _downloadCSV(rows, "lonekartlaggning_likvardighet_" + idagDatum(), { undantag: "Likvärdigt arbete" });
 }
 function exportLikvardighet(...a) {
@@ -13871,7 +13871,7 @@ function _exportLikvardighetExport() {
       [stor(T.jamforelse.fl), jamforelseGransText()],
       ["Minsta skillnad (%)", safe(() => opts.minGapPct, "")],
       ["Visa max antal par", safe(() => opts.topN, "")],
-      ["k-anonymitet", "Tillämpas EJ i denna analys"],
+      ["Minsta gruppstorlek", "Tillämpas EJ i denna analys"],
       ["", ""],
       ["— DIAGNOSTIK —", ""],
       [`Organisationens ${T.enhet.fl} i ${T.niva.fl} totalt`, safe(() => diagnostik.organisation.antalAidxBas, 0)],
@@ -19131,7 +19131,7 @@ function generateBenchmark() {
     usedInAnalysis: rader.length,
     analysisExclusions: [
       ...urval ? [[esc(urval), ""]] : [],
-      ...utelamnadeIUrval.length ? [[`${stor(T.enhet.fl)} i ${T.niva.en} för små (k-anonymitet n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : [],
+      ...utelamnadeIUrval.length ? [[`${stor(T.enhet.fl)} i ${T.niva.en} för små (minsta gruppstorlek, n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : [],
       ...utanMatch ? [[`${stor(T.enhet.fl)} i ${T.niva.en} utan median i ${esc(_jmfKallaNamn(kalla))}`, utanMatch]] : []
     ],
     formler: [
@@ -19641,10 +19641,10 @@ var GLOSSARY = [
   { cat: "Verktyget", term: "Över referens", short: "Gruppens median över referensen (Prioritering)", long: "I Prioritering: gruppens median ligger mer än gränsen för Över referens (standard 5 %) över referensen. Ett läge, ingen allvarlighetsgrad; dokumentera gärna varför. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män." },
   { cat: "Verktyget", term: "Oförklarad skillnad per {niva.en}", short: "Separata regressioner inom varje {niva.en}", long: "För varje {niva.en} med minst {golv} personer av varje kön körs en separat regression: log(lön) ~ kön + ålder. Visar var inom organisationen den oförklarade löneskillnaden är som störst." },
   // GDPR
-  { cat: "GDPR", term: "K-anonymitet", short: "Skydd mot återidentifiering i det som lämnar verktyget", long: "Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen. På skärmen visas alla grupper. Det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget — redovisar inte lönemått för grupper med färre än {k} personer (minsta gruppstorlek, standard 10), och könsuppdelade mått bara när varje kön når den. Värdet ställs in under Inställningar och står i metodbilagan." },
+  { cat: "GDPR", term: "Minsta gruppstorlek", sok: "k-anonymitet", short: "Skydd mot återidentifiering i det som lämnar verktyget", long: "Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen. På skärmen visas alla grupper. Det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget — redovisar inte lönemått för grupper med färre än {k} personer (standard 10), och könsuppdelade mått bara när varje kön når den. Värdet ställs in under Inställningar och står i metodbilagan." },
   { cat: "GDPR", term: "Uppgiftsminimering", short: "Behandla bara nödvändiga uppgifter (enligt dataskyddsförordningen)", long: "Personuppgifter ska vara adekvata, relevanta och begränsade till vad som är nödvändigt. Verktyget läser bara in godkända fält (BAS, {enhet.en}, lön och kön samt tre valfria: ålder, arbetsvärderingspoäng och AID:s kod för ledning och särskilda uppdrag) — anställningsnummer, namn, e-post och personnummer plockas inte upp ens om de finns i filen. Ålder behövs bara för åldersjusteringen och fliken Ålder & karriär; utan ålder körs analysen ändå." },
   { cat: "GDPR", term: "Pseudonymisering", short: "Ersätt direkta identifierare med koder", long: "Direkta personidentifierare ersätts med löpnummer eller koder. Återmappning hålls separat. Möjliggör analys utan direkt återidentifiering. Rekommenderas innan lönefilen läses in." },
-  { cat: "GDPR", term: "Inbyggt dataskydd", short: "Dataskydd inbyggt från början (eng. privacy by design)", long: "Tekniska och organisatoriska åtgärder som standard. Verktyget har inbyggt dataskydd genom att allt körs bara lokalt (data lämnar aldrig enheten), CSP-spärrar mot nätverksanrop, k-anonymitet, att bara godkända fält läses och att filer med personidentifierare avvisas automatiskt." },
+  { cat: "GDPR", term: "Inbyggt dataskydd", short: "Dataskydd inbyggt från början (eng. privacy by design)", long: "Tekniska och organisatoriska åtgärder som standard. Verktyget har inbyggt dataskydd genom att allt körs bara lokalt (data lämnar aldrig enheten), CSP-spärrar mot nätverksanrop, minsta gruppstorlek i det som lämnar verktyget, att bara godkända fält läses och att filer med personidentifierare avvisas automatiskt." },
   { cat: "GDPR", term: "Content Security Policy (CSP)", short: "Webbläsar-policy som blockerar nätverksanrop", long: "En meta-tagg i HTML-filen som instruerar webbläsaren att förbjuda alla utgående nätverksanslutningar (connect-src 'none'). Hård teknisk spärr mot att data förs ut: även om en framtida bug skulle försöka göra fetch/XHR/WebSocket blockeras anropet." },
   { cat: "GDPR", term: "Beräkning och urval", short: "Spårbarhet från lönefil till analys", long: 'I flera analysflikar finns en panel "Beräkning och urval" som redovisar exakt hur många rader som ingår, vilka som exkluderats och varför. Möjliggör kvalitetssäkring och svar på frågan "Stämmer denna siffra?".' }
 ];
@@ -22366,7 +22366,7 @@ function ritaLoneoversikt() {
       ["Diff mot jämförelsestatistiken", "<code>(organisationens median / jämförelsens median) − 1</code> uttryckt i %"]
     ],
     notes: [
-      `K-anonymitet: ${vm.utelamnade} grupp${vm.utelamnade === 1 ? "" : "er"} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
+      `Minsta gruppstorlek: ${vm.utelamnade} grupp${vm.utelamnade === 1 ? "" : "er"} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
       `BAS-grupper visar i ordning: "${esc(referensKortnamn())}" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje ${T.enhet.en} med ≥5 personer`
     ]
   });
@@ -25932,7 +25932,7 @@ function ritaLoneskillnadPerBas(vm) {
     ...baseS,
     usedInAnalysis: baseS.afterFilter,
     analysisExclusions: [
-      ...skillnad.maskerade > 0 ? [[`${stor(T.niva.fl)} maskerade (k-anonymitet n&lt;${kTroskel()} per kön)`, skillnad.maskerade]] : [],
+      ...skillnad.maskerade > 0 ? [[`${stor(T.niva.fl)} maskerade (minsta gruppstorlek, n&lt;${kTroskel()} per kön)`, skillnad.maskerade]] : [],
       ...konsfordelning.utelamnade.length > 0 ? [[`${stor(T.niva.fl)} för små för könsfördelningen (n&lt;${LITET_UNDERLAG} totalt, ADR-57)`, konsfordelning.utelamnade.length]] : []
     ],
     formler: [
@@ -25943,7 +25943,7 @@ function ritaLoneskillnadPerBas(vm) {
       ["Översiktsdiagram", "Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)"]
     ],
     notes: [
-      `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
+      `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (minsta gruppstorlek)`,
       `Könsfördelningen redovisas för ${T.niva.fl} med minst ${LITET_UNDERLAG} personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen`
     ]
   });
@@ -26083,7 +26083,7 @@ function ritaLikaArbete(vm, { reg: given } = {}) {
     usedInAnalysis: rows.length,
     analysisExclusions: [
       ...skippedTooFewKvOrMa > 0 ? [[`${stor(T.enhet.fl)} med &lt;2 av varje kön (ej jämförbara)`, skippedTooFewKvOrMa]] : [],
-      ...maskedYrken > 0 ? [[`${stor(T.enhet.fl)} utelämnade, k-anonymitet (kön n&lt;${kTroskel()})`, maskedYrken]] : []
+      ...maskedYrken > 0 ? [[`${stor(T.enhet.fl)} utelämnade, minsta gruppstorlek (kön n&lt;${kTroskel()})`, maskedYrken]] : []
     ],
     formler: [
       [`Löneskillnad per ${T.enhet.en}`, "<code>(median kvinnor / median män − 1) × 100 %</code>"],
@@ -27272,7 +27272,7 @@ function _exportEuReportExport() {
   const repArr = [["BAS", "n", "Median", "Andel kvinnor (%)", DIREKTIV_RUBRIK]].concat(repVisade.map((g) => [g.bas, g.n, kr2(g.median), +g.andelKv.toFixed(0), g.gapPct == null ? "" : direktivRound(g.gapPct)]));
   if (repUtelamnadeX.length) {
     repArr.push([]);
-    repArr.push([`Utelämnat enligt k-anonymitet (n < ${kTroskel()}): ${repUtelamnadeX.join(", ")}`]);
+    repArr.push([`Utelämnat under minsta gruppstorlek (n < ${kTroskel()}): ${repUtelamnadeX.join(", ")}`]);
   }
   if (repKonLitet.length) {
     repArr.push([]);
@@ -27617,8 +27617,8 @@ function __excelAlltBokExport() {
 }
 function _jpaExkluderadeTexter() {
   return {
-    yrken: `  Utelämnade: färre än ${kTroskel()} av ett kön (k-anonymitet)`,
-    bas: `  Utelämnade: färre än ${statGolv()} av ett kön (k-anonymitet)`
+    yrken: `  Utelämnade: färre än ${kTroskel()} av ett kön (minsta gruppstorlek)`,
+    bas: `  Utelämnade: färre än ${statGolv()} av ett kön (minsta gruppstorlek)`
   };
 }
 var _JPA_MEDEL_KOLUMNER = ["Medelvärde kvinnor (kr)", "Medelvärde män (kr)", "Differens medelvärde (kr)", "Kvinnors medelvärde i % av mäns"];
@@ -28038,13 +28038,13 @@ function _exportJPAProtocolExport() {
     ["", ""],
     ["Statusen bygger på statistisk signal: säkerställd skillnad och minst 3 % (verktygets storleksgräns). Lagen kräver ändå att varje skillnad analyseras.", ""],
     [`${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`, ""],
-    [`k-anonymitet (n<${kTroskel()}) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).`, ""],
+    [`Minsta gruppstorlek (n<${kTroskel()}) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).`, ""],
     ["Grupper under k-tröskeln kan inte analyseras säkert utan risk för återidentifiering.", ""],
     ["Om dessa grupper behöver granskas separat bör det ske utan numeriska bilagor.", ""]
   ];
   const excludedSheet = XLSX.utils.aoa_to_sheet(excludedRows);
   excludedSheet["!cols"] = [{ wch: 60 }, { wch: 16 }];
-  XLSX.utils.book_append_sheet(wb, excludedSheet, "4. Exkluderat (k-anon)");
+  XLSX.utils.book_append_sheet(wb, excludedSheet, "4. Exkluderat (små grupper)");
   const metodikRows = [
     ["METODIK & RÄTTSLIG GRUND", ""],
     ["", ""],
@@ -28063,7 +28063,7 @@ function _exportJPAProtocolExport() {
     ["Konfidensintervall", "95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader."],
     ["Statistisk signifikans", `p < 0.05 = ej slumpmässig skillnad. För ${T.niva.bfl} gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).`],
     ["", ""],
-    ["— k-anonymitet —", ""],
+    ["— Minsta gruppstorlek —", ""],
     ["Tröskel", `n ≥ ${kTroskel()} per kön krävs för att en grupp ska redovisas individuellt.`],
     ["Bakgrund", `Skydd mot återidentifiering av enskilda anställda via deduktion (kön + ålder + ${T.enhet.en} + BAS).`],
     ["Konsekvens", "Små grupper har inga lönemått i protokollet: blad 2a visar dem med antal men utan median, och antal exkluderade redovisas i flik 4."],
@@ -31357,7 +31357,7 @@ var INFO_SECTIONS = {
             Verktyget krypterar inte data i vila. Detta är ett medvetet arkitekturval. Den motsvarande kontrollen är <strong>RAM-only architecture med automatisk radering</strong>. Eftersom datan aldrig skrivs till disk finns ingen "rest" att kryptera. Detta är en starkare position än krypterad lagring eftersom det inte finns någon nyckel att läcka och ingen tidslucka mellan användning och radering.
         </p>
 
-        <h3>k-anonymitet</h3>
+        <h3>Minsta gruppstorlek</h3>
         <p><strong>På skärmen visas allt.</strong> Den som arbetar i verktyget har redan lönefilen, så vyerna maskerar inga grupper: varje ${T.enhet.en}, varje ${T.niva.en} och varje könsuppdelat mått visas oavsett storlek (beslut 2026-10-29).</p>
         <p><strong>Det som lämnar verktyget följer minsta gruppstorlek.</strong> Tröskeln gäller:</p>
         <ul>
@@ -36599,7 +36599,7 @@ function _exportBenchmarkExcelExport() {
     ["", ""],
     ["Antal grupper i export", nGroups],
     ["Antal personer (totalt)", nPersoner],
-    [`Antal grupper utelämnade, k-anonymitet (n<${kTroskel()})`, maskedGroups.length],
+    [`Antal grupper utelämnade, minsta gruppstorlek (n<${kTroskel()})`, maskedGroups.length],
     ...maskedGroups.length ? [["  - vilka", maskedGroups.join(", ")]] : [],
     ["", ""],
     ["Jämförelsestatistik laddat", hasStat ? "Ja" : "Nej"],
@@ -36611,7 +36611,7 @@ function _exportBenchmarkExcelExport() {
     ["Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.", ""],
     ["Negativa värden (röd) = organisationen ligger under referens.", ""],
     ["Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.", ""],
-    [`k-anonymitet (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, ""]
+    [`Minsta gruppstorlek (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, ""]
   ];
   const metaSheet = XLSX.utils.aoa_to_sheet(meta);
   metaSheet["!cols"] = [{ wch: 48 }, { wch: 32 }];

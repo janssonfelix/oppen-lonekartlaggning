@@ -121,7 +121,7 @@ function _exportBenchmarkExcelExport() {
         ['', ''],
         ['Antal grupper i export', nGroups],
         ['Antal personer (totalt)', nPersoner],
-        [`Antal grupper utelämnade, k-anonymitet (n<${kTroskel()})`, maskedGroups.length],
+        [`Antal grupper utelämnade, minsta gruppstorlek (n<${kTroskel()})`, maskedGroups.length],
         ...(maskedGroups.length ? [['  - vilka', maskedGroups.join(', ')]] : []),
         ['', ''],
         ['Jämförelsestatistik laddat', hasStat ? 'Ja' : 'Nej'],
@@ -133,7 +133,7 @@ function _exportBenchmarkExcelExport() {
         ['Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.', ''],
         ['Negativa värden (röd) = organisationen ligger under referens.', ''],
         ['Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.', ''],
-        [`k-anonymitet (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, '']
+        [`Minsta gruppstorlek (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, '']
     ];
     const metaSheet = XLSX.utils.aoa_to_sheet(meta);
     metaSheet['!cols'] = [{ wch: 48 }, { wch: 32 }];

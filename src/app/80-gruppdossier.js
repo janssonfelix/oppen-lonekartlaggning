@@ -43,7 +43,7 @@ export function _gdBootstrapGapCI(kvLons, maLons, B) {
     return medianKvotKIGiltiga(kvLons, maLons, { B });
 }
 
-/** Alla grupper som får öppnas i dossier (k-anonymitet som överallt annars): gruppdossierGrupper i src/lib/vymodell-gruppdossier.js. */
+/** Alla grupper som får öppnas i dossier (minsta gruppstorlek som överallt annars): gruppdossierGrupper i src/lib/vymodell-gruppdossier.js. */
 export function gruppdossierCandidates() {
     return gruppdossierGrupper(getData(), kTroskel());
 }

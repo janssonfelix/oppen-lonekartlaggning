@@ -109,8 +109,8 @@ export function genereraDemodata() {
 //   - likvärdigt arbete: ett mansdominerat tekniskt yrke med högre lön än ett kvinnodominerat vårdyrke i samma
 //     intervall (_SD_LIKVARDIGT);
 //   - män något oftare och äldre oftare i det högre av yrkets två intervall (struktur, inte lön för lika arbete);
-//   - små grupper: yrken under tio personer och yrken där ett kön är färre än tio, så att k-anonymitetens
-//     maskering syns i exporterna.
+//   - små grupper: yrken under tio personer och yrken där ett kön är färre än tio, så att maskeringen vid
+//     minsta gruppstorlek syns i exporterna.
 // Ansvarskoderna följer det lilla demots regel (ledningsansvar, särskilt uppdrag, förstelärare); cheferna (AID som
 // börjar med 10) har ledningsansvar. Ansvarskoderna påverkar inte lönerna.
 

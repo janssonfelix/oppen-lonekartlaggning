@@ -59,7 +59,7 @@ export function renderStructure() {
     const k = kTroskel();
     const { konOk, totKv, totAndel, dist, q, medGap, ma, meanGap, repVisade, repUtelamnade } = strukturMatt(d, k);
     const konNot = konOk ? '' : `<p class="k-mask-note">${esc(_konUtelamnatNot())}</p>`;
-    // k-anonymitet: lönemåtten (median, gap inom BAS) får inte redovisas för
+    // Minsta gruppstorlek: lönemåtten (median, gap inom BAS) får inte redovisas för
     // BAS-intervall under tröskeln. Raden utelämnas helt i stället för att
     // fyllas med "< 10"-celler — andelen kvinnor ensam bär inte tabellen, och
     // de utelämnade BAS:en räknas upp i noten under.
@@ -458,7 +458,7 @@ function _buildNarrative(d, ctx) {
         else if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) lines.push(`Löneskillnaden är störst bland de högst betalda (kvinnors lön vid P90: ${andelAvMan(p90.gapPct)} av mäns, vid P10: ${andelAvMan(p10.gapPct)}) — ett glastak. Granska befordran och lönesättning i toppen.`);
     }
     // Segregation
-    // Bara BAS som tabellen visar namnges (k-anonymitet).
+    // Bara BAS som tabellen visar namnges (minsta gruppstorlek).
     // ctx.repVisade är sorterad BAS A–Ö (representationPerBas): första är lägst värderat, sista högst.
     const sorted = ctx.repVisade;
     if (sorted.length >= 2) {
@@ -467,7 +467,7 @@ function _buildNarrative(d, ctx) {
     }
     // § 3:10
     /** @type {any} */ let lv = null; try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
-    // k-anonymitet: antalet redovisas för par där båda grupperna når tröskeln; resten nämns (som övriga utdata)
+    // Minsta gruppstorlek: antalet redovisas för par där båda grupperna når tröskeln; resten nämns (som övriga utdata)
     const lvPar = _parForRedovisning(lv && lv.pairs);
     if (lvPar.par.length || lvPar.utelamnade) {
         lines.push('');
@@ -520,13 +520,13 @@ function _exportEuReportExport() {
         ...q.map(x => ['Q' + x.q, _kvartilSpann(x, v => Math.round(v).toLocaleString('sv-SE') + ' kr'), x.n, x.nKv ?? '', x.nMa ?? '', x.andelKv == null ? '' : +x.andelKv.toFixed(0)])];
     if (!konOk) { quart.push([]); quart.push([_konUtelamnatNot()]); }
     const repArr = [['BAS', 'n', 'Median', 'Andel kvinnor (%)', DIREKTIV_RUBRIK]]
-        // k-anonymitet: BAS under tröskeln utelämnas och summeras i en slutrad,
+        // Minsta gruppstorlek: BAS under tröskeln utelämnas och summeras i en slutrad,
         // samma princip som i vyn — en rad med enbart "< 10" bär ingen analys.
         .concat(repVisade
             .map(g => [g.bas, g.n, kr(g.median), +g.andelKv.toFixed(0), g.gapPct == null ? '' : direktivRound(g.gapPct)]));
     if (repUtelamnadeX.length) {
         repArr.push([]);
-        repArr.push([`Utelämnat enligt k-anonymitet (n < ${kTroskel()}): ${repUtelamnadeX.join(', ')}`]);
+        repArr.push([`Utelämnat under minsta gruppstorlek (n < ${kTroskel()}): ${repUtelamnadeX.join(', ')}`]);
     }
     if (repKonLitet.length) {
         repArr.push([]);

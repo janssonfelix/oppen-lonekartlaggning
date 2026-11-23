@@ -137,7 +137,7 @@ export function _handlingsplanSeedRows({ baraEgna = false } = {}) {
     if (!baraEgna) try {
         if (state.statistik.length || state.data.length) {
             const lv = likvardighetResultat();
-            // k-anonymitet: par med en grupp under tröskeln förifylls inte (undantaget gäller bara fliken)
+            // Minsta gruppstorlek: par med en grupp under tröskeln förifylls inte (undantaget gäller bara fliken)
             const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
             parUtelamnade = utelamnade;
             par.forEach(p => {

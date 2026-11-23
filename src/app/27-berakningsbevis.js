@@ -251,7 +251,7 @@ export function _evidenceForPerBasRow(p, bhCtx) {
         return {
             title: `Beräkningen — BAS ${p.bas}`,
             intro: p.status === 'too_few'
-                ? `Per-BAS-regression kunde inte köras eftersom underlaget är för litet (k-anonymitet).`
+                ? `Per-BAS-regression kunde inte köras eftersom underlaget är för litet (minsta gruppstorlek).`
                 : `Per-BAS-regression misslyckades på grund av multikollinearitet (singulär designmatris — typiskt om alla i gruppen har samma BAS-rang och ålder är extremt korrelerad med kön).`,
             rows: [
                 { label: stor(T.niva.en), value: p.bas },

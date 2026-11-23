@@ -24,7 +24,7 @@ import { diagramKopiaKalla } from './74-alla-diagram.js';
 import { ritaGruppdossier } from './80-gruppdossier.js';
 import { oppnaInstallningar } from './86-installningar.js';
 
-// ---- k-anonymitet (uppgiftsminimering och inbyggt dataskydd, art. 5.1 c och 25) ----
+// ---- Minsta gruppstorlek (uppgiftsminimering och inbyggt dataskydd, art. 5.1 c och 25) ----
 // Grupper med färre än kTroskel() personer redovisas inte i det som lämnar verktyget, så att enskildas
 // löner inte kan räknas fram via t.ex. känd åldersstruktur.
 //

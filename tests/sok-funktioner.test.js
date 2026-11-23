@@ -276,6 +276,11 @@ describe('ordlistans sökning: de gamla orden hittar rätt post (fältet sok)', 
         expect(traffar).toContain('Oförklarad löneskillnad');
         expect(w.document.getElementById('glossary-content').textContent).not.toMatch(/[Ll]önegap/);
     });
+    it('"k-anonymitet" hittar Minsta gruppstorlek, fast ordet inte står i posterna', () => {
+        const w = createAppWindow();
+        expect(termer(w, 'k-anonymitet')).toEqual(['Minsta gruppstorlek']);
+        expect(w.document.getElementById('glossary-content').textContent).not.toMatch(/[Kk]-anon/);
+    });
     it('"rågap" hittar den råa löneskillnaden', () => {
         expect(termer(createAppWindow(), 'rågap')).toContain('Rå (ojusterad) löneskillnad');
     });

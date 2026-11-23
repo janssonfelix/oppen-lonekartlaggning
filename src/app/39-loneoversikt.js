@@ -35,7 +35,7 @@ export function ritaLoneoversikt() {
             tr.innerHTML = `<td>${esc(referensKortnamn())}</td><td data-sort-value="${pol.p10}">${fmt.format(pol.p10)}</td><td data-sort-value="${pol.med}">${fmt.format(pol.med)}</td><td data-sort-value="${pol.p90}">${fmt.format(pol.p90)}</td><td>-</td><td>-</td><td>-</td><td>-</td>`;
             tbody.appendChild(tr);
         }
-        // k-anonymitet: en rad under tröskeln utelämnas i stället för att fyllas med "< 10"-celler; gruppen räknas i
+        // Minsta gruppstorlek: en rad under tröskeln utelämnas i stället för att fyllas med "< 10"-celler; gruppen räknas i
         // stället upp i noten sist i BAS-blocket (vymodellen).
         for (const r of rader) {
             const kategori = r.kategori, lons = r.lons, med = r.med, p10 = r.p10, p90 = r.p90, spridning = r.spridning, statMedian = r.statMedian;
@@ -95,7 +95,7 @@ export function ritaLoneoversikt() {
             ['Diff mot jämförelsestatistiken', '<code>(organisationens median / jämförelsens median) − 1</code> uttryckt i %']
         ],
         notes: [
-            `K-anonymitet: ${vm.utelamnade} grupp${vm.utelamnade === 1 ? '' : 'er'} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
+            `Minsta gruppstorlek: ${vm.utelamnade} grupp${vm.utelamnade === 1 ? '' : 'er'} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
             `BAS-grupper visar i ordning: "${esc(referensKortnamn())}" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje ${T.enhet.en} med ≥5 personer`
         ]
     });

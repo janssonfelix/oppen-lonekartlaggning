@@ -96,7 +96,7 @@ export function likvardighetResultat() {
  * resultat (aldrig null), även när en datakälla saknas.
  *
  * Egenskaper:
- *   - Ingen k-anonymitet (aggregat per yrkesgrupp; uttryckligt designbeslut)
+ *   - Ingen minsta gruppstorlek (aggregat per yrkesgrupp; uttryckligt designbeslut)
  *   - Bootstrap-KI i kronor på medianskillnaden för VARJE par, seedat ur
  *     parets egna löner så att KI:t går att återskapa
  *   - Arbetsvärderingspoäng som krav-proxy när tabell finns, annars BAS-rank
@@ -263,7 +263,7 @@ export function ritaLikvardigtArbete() {
             <ul class="fs-sm lh-1_6 marg-8-0 pad-v-22">
                 <li><strong>Steg 1</strong>: Identifiera <em>organisationens kvinnodominerade</em>
                     ${T.enhet.fl} i varje ${T.niva.en} (${esc(aidbasDefinitionText())}).
-                    K-anonymitet tillämpas <strong>inte</strong> i denna analys eftersom
+                    Minsta gruppstorlek tillämpas <strong>inte</strong> i denna analys eftersom
                     resultatet är aggregerat per ${T.enhet.en}.</li>
                 ${vm.poang ? `<li><strong>Steg 2</strong>: Välj ${T.jamforelse.fl} med lika eller lägre poäng
                     (likvärdiga eller lägre krav), också i andra ${T.niva.fl}. Bara organisationens egna
@@ -868,7 +868,7 @@ function _exportLikvardighetCSVExport() {
     rows.push(['KI-metod', poang ? 'Bootstrap B=1000 på bägge individurvalen'
         : 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
-    rows.push(['k-anonymitet', 'Tillämpas EJ i denna analys']);
+    rows.push(['Minsta gruppstorlek', 'Tillämpas EJ i denna analys']);
     _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
 }
 
@@ -953,7 +953,7 @@ function _exportLikvardighetExport() {
             [stor(T.jamforelse.fl), jamforelseGransText()],
             ['Minsta skillnad (%)', safe(() => opts.minGapPct, '')],
             ['Visa max antal par', safe(() => opts.topN, '')],
-            ['k-anonymitet', 'Tillämpas EJ i denna analys'],
+            ['Minsta gruppstorlek', 'Tillämpas EJ i denna analys'],
             ['', ''],
             ['— DIAGNOSTIK —', ''],
             [`Organisationens ${T.enhet.fl} i ${T.niva.fl} totalt`, safe(() => diagnostik.organisation.antalAidxBas, 0)],

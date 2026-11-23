@@ -203,7 +203,7 @@ export function ritaLoneskillnadPerBas(vm) {
         ...baseS,
         usedInAnalysis: baseS.afterFilter,
         analysisExclusions: [
-            ...(skillnad.maskerade > 0 ? [[`${stor(T.niva.fl)} maskerade (k-anonymitet n&lt;${kTroskel()} per kön)`, skillnad.maskerade]] : []),
+            ...(skillnad.maskerade > 0 ? [[`${stor(T.niva.fl)} maskerade (minsta gruppstorlek, n&lt;${kTroskel()} per kön)`, skillnad.maskerade]] : []),
             ...(konsfordelning.utelamnade.length > 0 ? [[`${stor(T.niva.fl)} för små för könsfördelningen (n&lt;${LITET_UNDERLAG} totalt, ADR-57)`, konsfordelning.utelamnade.length]] : [])
         ],
         formler: [
@@ -214,7 +214,7 @@ export function ritaLoneskillnadPerBas(vm) {
             ['Översiktsdiagram', 'Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)']
         ],
         notes: [
-            `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
+            `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (minsta gruppstorlek)`,
             `Könsfördelningen redovisas för ${T.niva.fl} med minst ${LITET_UNDERLAG} personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen`
         ]
     });
@@ -396,7 +396,7 @@ export function ritaLikaArbete(vm, { reg: given } = {}) {
         usedInAnalysis: rows.length,
         analysisExclusions: [
             ...(skippedTooFewKvOrMa > 0 ? [[`${stor(T.enhet.fl)} med &lt;2 av varje kön (ej jämförbara)`, skippedTooFewKvOrMa]] : []),
-            ...(maskedYrken > 0 ? [[`${stor(T.enhet.fl)} utelämnade, k-anonymitet (kön n&lt;${kTroskel()})`, maskedYrken]] : [])
+            ...(maskedYrken > 0 ? [[`${stor(T.enhet.fl)} utelämnade, minsta gruppstorlek (kön n&lt;${kTroskel()})`, maskedYrken]] : [])
         ],
         formler: [
             [`Löneskillnad per ${T.enhet.en}`, '<code>(median kvinnor / median män − 1) × 100 %</code>'],

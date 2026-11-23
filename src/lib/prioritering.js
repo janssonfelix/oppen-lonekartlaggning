@@ -190,7 +190,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
     const items = [];
     Object.values(groups).forEach(g => {
-        // GDPR k-anonymitet: kräver minst kTroskel personer per grupp
+        // Minsta gruppstorlek (S4): kräver minst kTroskel personer per grupp
         if (g.rows.length < kTroskel) return;
 
         const lons     = g.rows.map(r => r.lon);

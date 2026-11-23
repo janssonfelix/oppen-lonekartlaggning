@@ -10,7 +10,7 @@
 // vymodellen src/lib/vymodell-lonepolitik.js (ADR-99). Uppslaget av vilken policyrad som gäller görs av policyFor()
 // (state-beroende) och skickas in; här skrivs orden och ritas.
 //
-// Maskeringstrappan (`maskeringsniva` i lib) — AID-upplösning utan att urholka k-anonymiteten:
+// Maskeringstrappan (`maskeringsniva` i lib) — AID-upplösning utan att urholka minsta gruppstorlek:
 //   n >= kTroskel()           → full analys (median, band, kön)
 //   ANTAL_MIN <= n < k        → endast bandplacering i ANTAL ("2 av 7 under P10")
 //   n < min(ANTAL_MIN, k)     → maskerad rad, men inräknad i BAS-totalen
@@ -340,7 +340,7 @@ function _lpRitaKonPosition(vm) {
 function _lpRitaEfterlevnad(vm) {
     const el = document.getElementById('chart-lp-compliance');
     if (!el) return;
-    // K-anonymitet: staplarna visar andelar med en decimal, så ett BAS-intervall
+    // Minsta gruppstorlek: staplarna visar andelar med en decimal, så ett BAS-intervall
     // under tröskeln skulle gå att baklängesräkna till antal individer — och
     // policyns P10/P90 visas i samma vy. BAS-rollupen byggs av ALLA AID-grupper
     // oavsett maskeringstrappa, så tröskeln sätts i vymodellen (efterlevnad).
@@ -411,7 +411,7 @@ function _lpTableHtml(vm) {
                 + `<td class="t-mitt" data-sort-value="${c ? c.under : 0}">${c ? `${c.under} av ${c.n}` : '–'}</td>`
                 + `<td class="t-mitt">${esc(g.level || '–')}</td></tr>`);
         });
-        // k-anonymitet, nedersta steget: gruppen är så liten att inte ens antalet får visas. Raden utelämnas och
+        // Minsta gruppstorlek, nedersta steget: gruppen är så liten att inte ens antalet får visas. Raden utelämnas och
         // gruppen räknas upp i noten sist i BAS-blocket. Personerna ingår fortfarande i BAS-totalen.
         if (utelamnade.length) {
             rows.push(`<tr><td colspan="7">${kMaskNote(utelamnade.map(_lpGruppnamn), `${T.enhet.en}|${T.enhet.fl}`, vm.antalMin)}</td></tr>`);

@@ -117,7 +117,7 @@ export function antalMotBand(rader, pol) {
  * Könsskillnad i bandposition — analysens kärnfråga: placeras kvinnor lägre i
  * SAMMA lönespann än män?
  *
- * Kräver minst `minPerKon` av varje kön (k-anonymitet + meningsfullhet).
+ * Kräver minst `minPerKon` av varje kön (minsta gruppstorlek + meningsfullhet).
  * diff > 0 betyder att kvinnor i snitt ligger HÖGRE i bandet än män;
  * diff < 0 att de ligger lägre.
  *

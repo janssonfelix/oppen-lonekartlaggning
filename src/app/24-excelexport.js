@@ -316,14 +316,14 @@ function __excelAlltBokExport() {
 
 // ---- Joint Pay Assessment-protokoll (EU 2023/970 Art. 10) ----
 /**
- * Etiketterna för de två "exkluderade p.g.a. k-anonymitet"-raderna. Yrkesgrupperna
+ * Etiketterna för de två "exkluderade p.g.a. minsta gruppstorlek"-raderna. Yrkesgrupperna
  * prövas mot redovisningströskeln (kTroskel()); BAS-regressionen avgörs av
  * statGolv() (se _computePerBasGap), så dess rad nämner golvet.
  */
 function _jpaExkluderadeTexter() {
     return {
-        yrken: `  Utelämnade: färre än ${kTroskel()} av ett kön (k-anonymitet)`,
-        bas: `  Utelämnade: färre än ${statGolv()} av ett kön (k-anonymitet)`
+        yrken: `  Utelämnade: färre än ${kTroskel()} av ett kön (minsta gruppstorlek)`,
+        bas: `  Utelämnade: färre än ${statGolv()} av ett kön (minsta gruppstorlek)`
     };
 }
 /** Rubrikerna för medelvärdet i protokollets blad 2 och 3, bredvid medianens (ADR-79). */
@@ -351,13 +351,13 @@ const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
  *     regressionskortet och Att göra (ADR-71)
  *   - Blad 2a: alla grupper i lika arbete med antal per kön och medianerna, samma blad som Lika arbete AID x BAS i
  *     Excel (alla flikar), så att art. 10.2 a och c täcks för alla kategorier (ADR-93)
- *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas ur blad 2 och 3,
+ *   - Minsta gruppstorlek tillämpas: grupper med färre än kTroskel() personer av något kön exkluderas ur blad 2 och 3,
  *     och blad 2a visar dem med antal men utan median
  *   - Median och medelvärde per kön för varje redovisad grupp och intervall; statusen följer medianen (ADR-79)
  *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder, och på försättssidan för löneökning efter
  *     ledighet, utvärderingen av föregående lönebedömnings åtgärder och systemen för arbetsvärdering (ADR-79)
  *   - Signaturblad för arbetsgivare + fackliga representanter
- *   - Transparens om vad som EXKLUDERATS p.g.a. k-anonymitet (antal, ingen PII)
+ *   - Transparens om vad som EXKLUDERATS p.g.a. minsta gruppstorlek (antal, ingen PII)
  *
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
@@ -376,14 +376,14 @@ function _exportJPAProtocolExport() {
     // § 3:10-paren hämtas EN GÅNG här, så att försättssidan och flik 3b alltid är konsistenta, och ur samma resultat som
     // fliken visar (likvardighetResultat, som nollställs när underlaget eller valen ändras).
     const lvResult = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
-    // k-anonymitet: protokollet redovisar bara par där båda grupperna når tröskeln (undantaget gäller
+    // Minsta gruppstorlek: protokollet redovisar bara par där båda grupperna når tröskeln (undantaget gäller
     // bara fliken Likvärdigt arbete); antalet som utelämnats anges i stället.
     const lvRedovisning = _parForRedovisning(lvResult?.pairs);
     const lvPairsCount = lvRedovisning.par.length;
 
     // ---- A) Identifiera JPA-grupper (lika arbete = AID-kod i BAS-intervall, ADR-89) ----
     // Samma grupper och samma status som Lika arbete (laLikaGrupper, ADR-59): Värt att granska = skillnaden mellan
-    // medianerna är säkerställd mot slumpens gränser för gruppen och minst 3 %. k-anonymitet som i tabellen.
+    // medianerna är säkerställd mot slumpens gränser för gruppen och minst 3 %. Minsta gruppstorlek som i tabellen.
     const lika = laLikaGrupper(d);
     const jamforda = lika.grupper.filter(g => !g.samladMedian);
     const jpaYrken = jamforda.filter(g => g.niva === 'granska').map(g => ({
@@ -632,7 +632,7 @@ function _exportJPAProtocolExport() {
         XLSX.utils.book_append_sheet(wb, lvSheet, '3b. Likvärdigt arbete (krav)');
     }
 
-    // === Sheet 4: Exkluderade grupper (transparens om k-anonymitet) ===
+    // === Sheet 4: Exkluderade grupper (transparens om minsta gruppstorlek) ===
     const excludedRows = [
         ['EXKLUDERADE GRUPPER — transparens för fackliga parter', ''],
         ['', ''],
@@ -650,13 +650,13 @@ function _exportJPAProtocolExport() {
         ['', ''],
         ['Statusen bygger på statistisk signal: säkerställd skillnad och minst 3 % (verktygets storleksgräns). Lagen kräver ändå att varje skillnad analyseras.', ''],
         [`${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`, ''],
-        [`k-anonymitet (n<${kTroskel()}) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).`, ''],
+        [`Minsta gruppstorlek (n<${kTroskel()}) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).`, ''],
         ['Grupper under k-tröskeln kan inte analyseras säkert utan risk för återidentifiering.', ''],
         ['Om dessa grupper behöver granskas separat bör det ske utan numeriska bilagor.', '']
     ];
     const excludedSheet = XLSX.utils.aoa_to_sheet(excludedRows);
     excludedSheet['!cols'] = [{ wch: 60 }, { wch: 16 }];
-    XLSX.utils.book_append_sheet(wb, excludedSheet, '4. Exkluderat (k-anon)');
+    XLSX.utils.book_append_sheet(wb, excludedSheet, '4. Exkluderat (små grupper)');
 
     // === Sheet 5: Metodik & rättslig grund ===
     const metodikRows = [
@@ -677,7 +677,7 @@ function _exportJPAProtocolExport() {
         ['Konfidensintervall', '95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader.'],
         ['Statistisk signifikans', `p < 0.05 = ej slumpmässig skillnad. För ${T.niva.bfl} gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).`],
         ['', ''],
-        ['— k-anonymitet —', ''],
+        ['— Minsta gruppstorlek —', ''],
         ['Tröskel', `n ≥ ${kTroskel()} per kön krävs för att en grupp ska redovisas individuellt.`],
         ['Bakgrund', `Skydd mot återidentifiering av enskilda anställda via deduktion (kön + ålder + ${T.enhet.en} + BAS).`],
         ['Konsekvens', 'Små grupper har inga lönemått i protokollet: blad 2a visar dem med antal men utan median, och antal exkluderade redovisas i flik 4.'],

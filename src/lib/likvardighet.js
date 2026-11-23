@@ -15,7 +15,7 @@
  *            • kvinnodominerade — analysens subjekt
  *            • alla övriga (mansdominerade och blandade) — interna jämförelsekandidater
  *              med klassen synlig (PRIMÄR jämförelsekälla; § 3:10 är en
- *              inom-arbetsgivare-analys). K-anonymitet tillämpas EJ.
+ *              inom-arbetsgivare-analys). Minsta gruppstorlek tillämpas EJ.
  *   Steg 2 — jämförelsestatistikens AID×BAS som inte är kvinnodominerade blir
  *            kandidater med klass. Lokal könsdata primär, den nationella
  *            personalstatistiken som reserv (injicerad `nationellKlass`-funktion) annars.

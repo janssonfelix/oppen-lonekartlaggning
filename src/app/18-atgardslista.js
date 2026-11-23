@@ -175,7 +175,7 @@ export function buildActionChecklist({ endastGrupper = false, reg: given } = {})
     try {
         if (typeof likvardighetspar === 'function') {
             const lv = likvardighetResultat();
-            // k-anonymitet: par med en grupp under tröskeln tas bort FÖRE begränsningen till 20
+            // Minsta gruppstorlek: par med en grupp under tröskeln tas bort FÖRE begränsningen till 20
             // (undantaget gäller bara fliken Likvärdigt arbete); meningen om dem: _attGoraParNot().
             _parForRedovisning(lv?.pairs).par.slice(0, 20).forEach(p => {
                 items.push({

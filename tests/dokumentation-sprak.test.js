@@ -131,6 +131,9 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         ['leverage', /[Ll]everage/],
         ['media-mått', /[Mm]edia-mått/],
         ['rekryteringspipeline', /[Rr]ekryteringspipeline/],
+        // Verktyget tillämpar tröskelvärdesregeln på tabeller, inte k-anonymitet (ett krav på mikrodatafiler); det
+        // användaren läser säger "minsta gruppstorlek" (docs/utveckling/k-troskeln.md). Ordlistans sok-fält leder dit.
+        ['k-anonymitet', /[Kk]-anon/],
     ];
     // I gränssnittet: inget paragraftecken och inget artikelnummer. "3 kap." är tillåtet.
     const LAGRUM_UI = [['§', /§/], ['artikel', /\b[Aa]rt\.\s*\d|[Aa]rtikel\s+\d/]];
@@ -149,11 +152,11 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
             'BAS-nivån', 'Ladda upp strukturdata', 'strukturfilen', 'medarbetarna', 'likvärdiga arbeten',
             'osakliga gap', 'anmälningspliktig', 'EU-direktivets utredningströskel', 'Lagstadgat tröskelvärde', 'Gap-analys',
             'i successionszon', 'Hög successionsrisk', 'Per-BAS conditional gap', 'Privacy by Design', 'Privacy by design', 'Urval (datafunnel)', 'bara vitlistade kolumner', 'Fältvitlistan',
-            'lokal-only-arkitektur', 'leverage', 'media-mått', 'rekryteringspipelinen'])
+            'lokal-only-arkitektur', 'leverage', 'media-mått', 'rekryteringspipelinen', 'K-anonymitet', 'k-anonymiteten', '4. Exkluderat (k-anon)'])
             expect(traffar(t, AVFORDA), t).not.toEqual([]);
         for (const t of ['gapPct', 'meanGap', '68-var-uppstar-gapet.js', 'chart-perbas-gap', 'BAS-nivå B',
             'löneskillnad', 'anställda', 'BAS-intervall', 'likvärdigt arbete', 'lönefilen', '`gap`',
-            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'vitlista `TILLATNA_FALT`', 'inflytelserika punkter', 'rekryteringen'])
+            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'vitlista `TILLATNA_FALT`', 'inflytelserika punkter', 'rekryteringen', 'minsta gruppstorlek', 'tests/kanonymitet.test.js'])
             expect(traffar(t, AVFORDA), t).toEqual([]);
         for (const t of ['(§ 8)', 'art. 9', 'Art. 9', 'artikel 10', '3 kap. 9 §']) expect(traffar(t, LAGRUM_UI), t).not.toEqual([]);
         for (const t of ['Diskrimineringslagen kräver att du analyserar varje skillnad (3 kap.).', 'lagen'])
@@ -163,7 +166,7 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
     });
     it('strängfiltret prövar text men inte identifierare, kommentarer, synonymer eller ordlistans sok-fält', () => {
         const src = "const lonegapPct = 1; // Lönegapets form\n/* Gapet */ x('gap-uppdelning', 'Gapet visar');\n"
-            + "{ synonymer: ['lönegap'] } { sok:'lönegap gap' } y(`Läs in ${'Strukturdata'} först`);";
+            + "{ synonymer: ['lönegap'] } { sok:'lönegap gap k-anonymitet' } y(`Läs in ${'Strukturdata'} först`);";
         expect(textLiteraler(appKalla('x.js', src))).toEqual(['Gapet visar', 'Läs in   först']);
         expect(etikettVarden("gap: { etikett: 'gap', enhet: '%' }, x: { label: 'medellön' }, y: { rubrik: \"Lönegap\" }"))
             .toEqual(['gap', 'medellön', 'Lönegap']);

@@ -315,7 +315,7 @@ export function renderPrioritering() {
         ...baseP,
         usedInAnalysis: items.length,
         analysisExclusions: [
-            ...(smallCount > 0 ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} för små (k-anonymitet n&lt;${kTroskel()})`, smallCount]] : []),
+            ...(smallCount > 0 ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} för små (minsta gruppstorlek, n&lt;${kTroskel()})`, smallCount]] : []),
             ...(noRefCount > 0 ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} utan matchning i ${ref === 'stallningstagande' ? referensNamn() : 'jämförelsestatistiken'}`, noRefCount]] : [])
         ],
         formler: [

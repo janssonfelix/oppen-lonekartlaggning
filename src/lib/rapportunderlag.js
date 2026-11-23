@@ -309,7 +309,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     const blk = (rubrik, stycken, tabell) => ({ id: typ, rubrik, stycken: [...fore, ...stycken, ...efter], tabell, provat: null, fragor: null });
     if (typ === 'sammanfattning') {
-        // k-anonymitet: med ett kön under k i urvalet redovisas inga könsuppdelade lönemått.
+        // Minsta gruppstorlek: med ett kön under k i urvalet redovisas inga könsuppdelade lönemått.
         const litet = u.nKv < k || u.nMa < k;
         const kvot = litet ? null : u.kvotPct ?? null;   // ur konsMedianer (struktur.js), som anroparen räknat
         const st = [`Underlaget omfattar ${formatTal(u.n)} anställda, varav ${formatTal(u.nKv)} kvinnor och ${formatTal(u.nMa)} män.`

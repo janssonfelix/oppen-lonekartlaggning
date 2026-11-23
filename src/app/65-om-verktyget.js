@@ -117,7 +117,7 @@ const INFO_SECTIONS = {
             Verktyget krypterar inte data i vila. Detta är ett medvetet arkitekturval. Den motsvarande kontrollen är <strong>RAM-only architecture med automatisk radering</strong>. Eftersom datan aldrig skrivs till disk finns ingen "rest" att kryptera. Detta är en starkare position än krypterad lagring eftersom det inte finns någon nyckel att läcka och ingen tidslucka mellan användning och radering.
         </p>
 
-        <h3>k-anonymitet</h3>
+        <h3>Minsta gruppstorlek</h3>
         <p><strong>På skärmen visas allt.</strong> Den som arbetar i verktyget har redan lönefilen, så vyerna maskerar inga grupper: varje ${T.enhet.en}, varje ${T.niva.en} och varje könsuppdelat mått visas oavsett storlek (beslut 2026-10-29).</p>
         <p><strong>Det som lämnar verktyget följer minsta gruppstorlek.</strong> Tröskeln gäller:</p>
         <ul>

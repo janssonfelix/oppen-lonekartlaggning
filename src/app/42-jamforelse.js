@@ -157,7 +157,7 @@ export function generateBenchmark() {
         usedInAnalysis: rader.length,
         analysisExclusions: [
             ...(urval ? [[esc(urval), '']] : []),
-            ...(utelamnadeIUrval.length ? [[`${stor(T.enhet.fl)} i ${T.niva.en} för små (k-anonymitet n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : []),
+            ...(utelamnadeIUrval.length ? [[`${stor(T.enhet.fl)} i ${T.niva.en} för små (minsta gruppstorlek, n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : []),
             ...(utanMatch ? [[`${stor(T.enhet.fl)} i ${T.niva.en} utan median i ${esc(_jmfKallaNamn(kalla))}`, utanMatch]] : [])
         ],
         formler: [

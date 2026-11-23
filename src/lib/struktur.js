@@ -19,7 +19,7 @@ import { konFarRedovisasFor } from './ktroskel.js';
 
 /**
  * Kvinnors och mäns medianlön och kvoten mellan dem: det enda stället där verktygets centrala mått räknas. Bara rader
- * med lön över 0 räknas. `konOk` är att båda könen har minst max(1, k) personer (k-anonymitet: annars pekar måtten ut
+ * med lön över 0 räknas. `konOk` är att båda könen har minst max(1, k) personer (minsta gruppstorlek: annars pekar måtten ut
  * de få i det mindre könet); medianerna, kvoten (kvinnors median i procent av mäns) och gapet (kvoten minus 100) är
  * null när konOk är falskt. Antalen står alltid kvar. Anroparen i appen skickar gällande tröskel; standardvärdet 1
  * finns för enhetstesterna.
@@ -51,7 +51,7 @@ export function konsMedianerUrLoner(kvLoner, maLoner, { k = 1 } = {}) {
 
 /**
  * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
- * (k-anonymitet: gapet pekar annars ut de få i det mindre könet). Se konsMedianer.
+ * (minsta gruppstorlek: gapet pekar annars ut de få i det mindre könet). Se konsMedianer.
  */
 export function medianGapPct(rader, { k = 1 } = {}) {
     return konsMedianer(rader, { k }).gapPct;
@@ -61,7 +61,7 @@ export function medianGapPct(rader, { k = 1 } = {}) {
  * Representation/segregation per BAS-nivå. Sorteras BAS A–Ö (lägst värderad nivå
  * först) — om andelen kvinnor sjunker mot högre BAS finns vertikal segregering.
  *
- * `k` är minsta antal per kön för att könsuppdelade mått ska lämnas ut (k-anonymitet): har
+ * `k` är minsta antal per kön för att könsuppdelade mått ska lämnas ut (minsta gruppstorlek): har
  * ett kön färre, blir medianKv, medianMa och gapPct null och `konLitet` sant. BAS:ets samlade
  * median och antalen står kvar — om BAS:et som helhet får redovisas avgör anroparen på `n`.
  * @returns {Array<{bas,n,nKv,nMa,andelKv,median,medianKv,medianMa,gapPct,konLitet}>}
@@ -139,7 +139,7 @@ export function kvartilfordelning(rader, { k = 1 } = {}) {
  * Distributionellt gap: lönegapet vid olika percentiler. Större gap i toppen =
  * glastak; större i botten = sticky floor.
  *
- * `k` är minsta antal per kön (k-anonymitet); under det returneras en tom lista. Golvet är
+ * `k` är minsta antal per kön (minsta gruppstorlek); under det returneras en tom lista. Golvet är
  * aldrig lägre än 2, eftersom en percentil av en enda lön inte är ett mått.
  * @returns {Array<{p,kv,ma,gapPct}>}
  */

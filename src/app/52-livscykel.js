@@ -96,7 +96,7 @@ export function ritaLivscykel(given) {
     const kvotMening = `Modellen ger skillnaden i procent, kvinnor mot män: ${gapStart >= 0 ? '+' : ''}${svPct(gapStart, 1)} vid 25 år och ${gapEnd >= 0 ? '+' : ''}${svPct(gapEnd, 1)} vid 65 år. Det är samma sak som att kvinnors lön är ${svPct(kvot25, 1)} respektive ${svPct(kvot65, 1)} av mäns, talen ovan.`;
 
     // ====== B4: Översiktstabell — modellens lönenivåer per BAS (vm.basRader) ======
-    // k-anonymitet: ett BAS-intervall under tröskeln har en koefficient skattad på få personers löner, så
+    // Minsta gruppstorlek: ett BAS-intervall under tröskeln har en koefficient skattad på få personers löner, så
     // kronvärdena skulle peka ut dem. Raden utelämnas helt — en rad där varenda kronkolumn står som "< 10" ger
     // inget att analysera — och BAS:et räknas upp i noten under tabellen.
     const basVisade = vm.visade;
@@ -319,7 +319,7 @@ export function ritaLivscykel(given) {
             const bas = /** @type {HTMLElement} */ (btn).dataset.livscykelBas;
             const row = (state._lifecycleCache?.basRows || []).find(r => r.bas === bas);
             if (!row) return;
-            if (isKMasked(row.n)) return;   // k-anonymitet: knappen ritas inte för
+            if (isKMasked(row.n)) return;   // Minsta gruppstorlek: knappen ritas inte för
                                             // maskerade BAS, men vägen stängs även här
             const c = state._lifecycleCache;
             _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));

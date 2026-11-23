@@ -23,7 +23,7 @@ export function _kNoteNamn(lista) {
 }
 
 /**
- * Not om grupper som UTELÄMNATS ur en tabell på grund av k-anonymiteten.
+ * Not om grupper som UTELÄMNATS ur en tabell på grund av minsta gruppstorlek.
  *
  * En rad där varje mätvärde står som "< k" bär ingen information — den gör
  * bara tabellen längre och analysen svårare att läsa. I stället utelämnas

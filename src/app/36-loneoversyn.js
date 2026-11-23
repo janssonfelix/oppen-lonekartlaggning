@@ -229,7 +229,7 @@ function ritaPrognos() {
         ${state.forecast.roundStep > 0 ? `<p class="text-dampad-xs marg-6-0-0">Nya löner avrundas till närmaste ${state.forecast.roundStep} kr.</p>` : ''}`; if (meterEl) tillampaDataStil(meterEl);
 
     // (A) Lönespann per BAS + compa-ratio
-    // k-anonymitet: ett BAS under tröskeln får inte röja sitt lönespann —
+    // Minsta gruppstorlek: ett BAS under tröskeln får inte röja sitt lönespann —
     // P25/median/P75 pekar då ut enskilda löner. Raden utelämnas i stället för
     // att fyllas med "< 10"-celler, och BAS:et räknas upp i noten under (vm.band).
     const bandVisade = vm.band.visade;
@@ -250,7 +250,7 @@ function ritaPrognos() {
         </tbody></table>
         <p class="text-dampad-xs marg-6-0-0">Ring-fenced pottar — tagga varje riktad rad med en pott-typ för att se vart utrymmet går.</p>
     </div>` : '';
-    // Utfall: nyckeltal + gap + per-grupp-tabell (k-anonymitet på medianer)
+    // Utfall: nyckeltal + gap + per-grupp-tabell (minsta gruppstorlek på medianer)
     // Där medianerna maskeras maskeras också kostnaden: i en grupp med en person är ett påslag i
     // procent personens lön gånger procentsatsen. Kostnaden för de maskerade raderna står samlad, så att
     // summorna minus de visade raderna inte ger en liten grupps kostnad (ADR-70, utfallsrader i vymodellen).
@@ -750,7 +750,7 @@ function _forecastRemediation() {
     _fcKnappresultat.add('forecast-rem-result');
     if (!d.length) { host.innerHTML = ''; return; }
     const gp = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-rem-pct'))?.value);
-    // k-anonymitet: jämförelsen kräver tröskeln i antal män (mot en enda mans lön vore kostnaden
+    // Minsta gruppstorlek: jämförelsen kräver tröskeln i antal män (mot en enda mans lön vore kostnaden
     // hans lön minus hennes), och en grupp får egen rad först när tröskeln i antal kvinnor berörs
     // (vymodellIndividlyft i src/lib/vymodell-loneoversyn.js).
     const K = kTroskel();

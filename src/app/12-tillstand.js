@@ -346,7 +346,7 @@ function _tableToMatrixExport(tableId) {
         const cells = tr.querySelectorAll('th, td');
         if (!cells.length) return;
         // colspan expanderas till tomma celler så matrisen förblir rektangulär.
-        // Gruppubriker och k-anonymitetsnoter spänner över hela bredden; utan
+        // Gruppubriker och noter om minsta gruppstorlek spänner över hela bredden; utan
         // detta blev raden ett enda fält och CSV-/klippbordsexporten hamnade
         // ur fas med rubrikraden.
         const rad = [];

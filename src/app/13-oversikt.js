@@ -398,7 +398,7 @@ export function ritaNyckeltal() {
         if (vm.lage === 'ettKonSaknas') {
             pgEl.textContent = "-";
         } else if (vm.lage === 'underK') {
-            // k-anonymitet (ADR-12): kvoten pekar ut de få i det mindre könet.
+            // Minsta gruppstorlek (ADR-12): kvoten pekar ut de få i det mindre könet.
             pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.</div>`;
         } else {
             // Rå kvot för hela organisationen: direktivmarkeringen (≥ 5 %) står per grupp,
