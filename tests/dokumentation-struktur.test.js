@@ -138,6 +138,47 @@ describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
 });
 
 
+describe('dokumentation: talen för intervallet och golven står rätt', () => {
+    // Samma slags vakt som för K_STANDARD ovan: talet läses ur konstanten i koden, och varje dokument som anges måste
+    // nämna det minst en gång med mönstret (en vakt som inte hittar något faller) och aldrig med ett annat tal. Ett tal
+    // får stå med siffror eller i ord ("fem"). Arkitekturbesluten är en logg och tas inte med: ett äldre beslut får
+    // ange det tal som gällde då.
+    const konstant = (fil, namn) => Number(new RegExp(`export const ${namn} = (\\d+);`).exec(läs(fil))[1]);
+    const ORD = ['noll', 'ett', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta', 'nio', 'tio'];
+    const tal = s => (ORD.includes(s) ? ORD.indexOf(s) : Number(s.replace(/\s/g, '')));
+    const KT = 'docs/utveckling/k-troskeln.md', DS = 'docs/dataskydd/dataskydd.md', RA = 'docs/dataskydd/riskanalys.md';
+    const SP = 'docs/utveckling/sparbarhet.md', RM = 'docs/utveckling/regressionsmodellen.md';
+    const vakter = [
+        { namn: 'K_MIN', kalla: 'src/lib/ktroskel.js', filer: [DS, RA, KT, SP, 'docs/anvandare/organisationspaket.md'],
+          // "heltal 3–1000", "heltal mellan 3 och 1000", "Inställning (3–1000)", "till lägst 3"
+          monster: /heltal (?:mellan )?(\d+)(?:–| och )\d|Inställning \((\d+)–\d|(?:till|är) lägst (\d+)\b/g },
+        { namn: 'K_MAX', kalla: 'src/lib/ktroskel.js', filer: [RA, KT, SP, 'docs/anvandare/organisationspaket.md'],
+          monster: /heltal (?:mellan )?\d+(?:–| och )(\d(?:[\d ]*\d)?)\b|Inställning \(\d+–(\d+)\)/g },
+        { namn: 'LITET_UNDERLAG', kalla: 'src/lib/ktroskel.js', filer: [DS, RA, KT, SP],
+          // Könsfördelningens och tabellernas egen rad "från fem personer", mönstret och asterisken "färre än fem
+          // personer med/sägs"; inte Löneöversiktens golv per AID-etikett, som också är 5 men är en annan konstant.
+          monster: /färre än ([\p{L}\d]+) personer (?:med|sägs)|från ([\p{L}\d]+) personer|minst ([\p{L}\d]+) personer i exportläget|`LITET_UNDERLAG` \(([\p{L}\d]+)\)/gu },
+        { namn: 'HUVUDREGRESSION_MIN_PER_KON', kalla: 'src/lib/regression.js',
+          filer: [DS, RA, KT, SP, RM, 'docs/anvandare/korguide.md', 'docs/anvandare/sammanfattning-hr-chefer.md'],
+          // "regressionens eget fasta golv, 5 av varje kön", "kräver 5 kvinnor och 5 män", "golven 30 och 5"
+          monster: /golv(?:\*\*)?,? (?:är )?(\d+) (?:av varje kön|per kön)|kräver (\d+) kvinnor och (\d+) män|golven \d+ och (\d+)|och med färre än (\d+)\s+av något kön/g },
+        { namn: 'HUVUDREGRESSION_MIN_N', kalla: 'src/lib/regression.js', filer: [RM, SP],
+          // Inte översikten per huvudområde ("minst 30 sådana rader"), som har en egen konstant i sektor.js.
+          monster: /färre än (\d+) sådana rader|minst (\d+) rader|golven (\d+) och \d+/g }
+    ];
+    for (const { namn, kalla, filer, monster } of vakter) {
+        const varde = konstant(kalla, namn);
+        for (const fil of filer) {
+            it(`${namn} = ${varde} (${kalla}) står rätt i ${fil}`, () => {
+                const traffar = [...läs(fil).matchAll(monster)].flatMap(m => m.slice(1).filter(x => x !== undefined).map(tal));
+                expect(traffar.length, `${fil} nämner inte ${namn}`).toBeGreaterThan(0);
+                expect(traffar.filter(n => n !== varde), `${fil} anger fel tal för ${namn}`).toEqual([]);
+            });
+        }
+    }
+});
+
+
 describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
     for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md']) {
         it(`${fil} säger att värdet kan ändras och att det skrivs ut i utdata`, () => {
