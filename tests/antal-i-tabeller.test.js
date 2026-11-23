@@ -168,7 +168,7 @@ describe('Handlingsplan: Antal berörda', () => {
         const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
         const i = rubriker(tabell).indexOf('Antal berörda');
         expect(i).toBe(2);
-        const seed = w.eval('_handlingsplanSeedRows()');
+        const seed = w.eval('_handlingsplanForifyllning()');
         const prio = w.eval('raknaPrioritering(_valdPrioReferens())');
         const forstaPrio = seed.rows.findIndex(r => r[2] === 'Prioritering (under referensen)');
         const forstaPar = seed.rows.findIndex(r => r[2] === 'Likvärdigt arbete (kandidatpar)');
@@ -201,7 +201,7 @@ describe('Handlingsplan: Antal berörda', () => {
         expect(t.rader[forstaPar][j]).toBe(par.kvN);
         expect(t.rader.at(-1)[j]).toEqual({ text: '' });
         // Rapportunderlaget.
-        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanSeedRows().rows)') }, { k: 10 });
+        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanForifyllning().rows)') }, { k: 10 });
         const r = ru.tabell.rubriker.indexOf('Antal berörda');
         expect(r).toBe(2);
         expect(ru.tabell.rader[forstaPrio][r]).toBe(String(prioRad.n));

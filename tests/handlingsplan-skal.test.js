@@ -31,7 +31,7 @@ const laggTill = (w, kategori, belopp, kommentar = '') => {
     return r;
 };
 /** Seedraderna i exportläget, med gruppens skillnad per rad. */
-const seedExport = w => w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
+const seedExport = w => w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
 /** En förifylld rad där gruppens skillnad (i exportläget) är över 100 kr/mån. I demot är det kandidatparen: i
  *  prioriteringens grupper har ett kön färre än minsta gruppstorlek, så de har ingen skillnad. */
 const radMedSkillnad = w => { const { nycklar, skillnader } = seedExport(w);
@@ -378,7 +378,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         expect(text).toContain(`${grupp} (kandidatpar): Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
         expect(text).toContain('Dossiern dokumenterar inte sakliga skäl. Skälen dokumenterar du i Handlingsplan.');
         // En grupp som inte finns i handlingsplanen: ingen läs-rad.
-        const utan = w.eval(`gruppdossierCandidates().map(g => g.key).find(k => !_handlingsplanSeedRows().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
+        const utan = w.eval(`gruppdossierCandidates().map(g => g.key).find(k => !_handlingsplanForifyllning().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
         w.eval(`closeBasdossier(); openGruppdossier(${JSON.stringify(utan)})`);
         expect(w.document.querySelector('#dossier-modal .hp-bedomningar')).toBeNull();
     });

@@ -166,11 +166,11 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
     });
     it('vid 10: handlingsplanens förifyllda rader visar paret på skärmen; i exportläget och i Excel saknas det, och antalet anges', async () => {
         const w = fonsterPar(null);
-        expect(w.eval('_handlingsplanSeedRows()').lvCount).toBe(1);   // skärmen maskerar inget (ADR-51)
-        const seed = w.eval('medExportLage(() => _handlingsplanSeedRows())');
+        expect(w.eval('_handlingsplanForifyllning()').lvCount).toBe(1);   // skärmen maskerar inget (ADR-51)
+        const seed = w.eval('medExportLage(() => _handlingsplanForifyllning())');
         expect(seed.lvCount).toBe(0);
         expect(JSON.stringify(seed.rows)).not.toContain('5300');
-        w.eval('renderHandlingsplanSeed()');
+        w.eval('ritaHandlingsplan()');
         expect(normalisera(w.document.getElementById('handlingsplan-tbody').textContent)).toContain('5300');
         const excel = await fangaExcel(w, 'exportHandlingsplan');
         expect(excel).not.toContain('5300');
@@ -204,7 +204,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         const a = attGora(w);
         for (const t of [a.punkter, a.kort, a.csv]) expect(t).toContain(ETIKETT);
         expect(a.kort).not.toMatch(NOT);
-        const seed = w.eval('_handlingsplanSeedRows()');
+        const seed = w.eval('_handlingsplanForifyllning()');
         expect(seed.lvCount).toBe(1);
         expect(JSON.stringify(seed.rows)).toContain('5300');
         const d = dossier(w, '6100|C');
@@ -282,7 +282,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
     });
     it('vid 6 (precis på den lilla gruppens storlek): paret finns', () => {
         const w = fonsterPar(6);
-        expect(w.eval('_handlingsplanSeedRows().lvCount')).toBe(1);
+        expect(w.eval('_handlingsplanForifyllning().lvCount')).toBe(1);
         expect(w.eval('byggAtgardslista().some(i => i.titel.includes("Yrke 5300"))')).toBe(true);
     });
 });

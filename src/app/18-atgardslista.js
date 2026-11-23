@@ -32,7 +32,7 @@ import { konsklassOrd } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _livscykelValdBas, korLivscykelregression } from './52-livscykel.js';
 import { _valdPrioReferens, raknaPrioritering } from './55-prioritering.js';
-import { _handlingsplanSeedRows, _hpArEgen } from './56-handlingsplan.js';
+import { _handlingsplanForifyllning, _hpArEgen } from './56-handlingsplan.js';
 
 // Tal i punkternas texter: decimalkomma och belopp utan tecken — riktningen skrivs med ord.
 const _agPct = v => Math.abs(v).toFixed(1).replace('.', ',');
@@ -219,8 +219,8 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
         // === 5. Handlingsplan: förifyllda rader där rullistan Sakliga skäl prövade? är tom (56-handlingsplan.js) ===
         // En egen rad räknas inte: den är ingen grupp ur underlaget. Punkten försvinner när varje rad har ett val.
         try {
-            if (typeof _handlingsplanSeedRows === 'function') {
-                const seed = _handlingsplanSeedRows();
+            if (typeof _handlingsplanForifyllning === 'function') {
+                const seed = _handlingsplanForifyllning();
                 const utan = seed.rows.filter((r, i) => !_hpArEgen(seed.nycklar[i]) && !r[3]).length;
                 if (utan) items.push({
                     id: 'hp-sakliga-skal', kategori: 'Handlingsplan', prioritet: 'medel',

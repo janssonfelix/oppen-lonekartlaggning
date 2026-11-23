@@ -33,7 +33,7 @@ import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
 import { sattLonemanad } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _lasKostnadsinstallningar } from './55-prioritering.js';
-import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, renderHandlingsplanSeed } from './56-handlingsplan.js';
+import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, ritaHandlingsplan } from './56-handlingsplan.js';
 import { sattRapportUrval } from './58-rapportmodell.js';
 import { _bes8Areas, bes8Uppdatera } from './61-regler-och-praxis.js';
 import { byggArsbokslutNu, renderArsjamforelse } from './73-arsbokslut.js';
@@ -428,7 +428,7 @@ function _tillampaKonfiguration(cfg) {
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
     // Handlingsplanens fält ersätts bara när filen bär dem; rader som inte finns i underlaget nu ligger kvar i minnet.
     // Demots nycklar glöms: filens skäl är användarens, också på en nyckel där demot skrev skäl.
-    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear(); if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
+    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear(); if (typeof ritaHandlingsplan === 'function') ritaHandlingsplan(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
     // Bara en fil med profiler ersätter sessionens egna: en äldre fil (eller en tom lista) tar inte bort dem tyst.

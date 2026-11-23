@@ -416,7 +416,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
         w.likvardighetspar = (...a) => { n++; return orig(...a); };
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         w.__rapportunderlagBlock();
-        w.eval('_handlingsplanSeedRows()');
+        w.eval('_handlingsplanForifyllning()');
         expect(n).toBe(1);
         expect(w.__state.likvardighet.result).toBeTruthy();
     });

@@ -17864,7 +17864,7 @@ function _hpLaggTillEgen() {
   if (!state.handlingsplan) state.handlingsplan = {};
   const nyckel = _hpNyckel("egen", Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
   state.handlingsplan[nyckel] = { egen: true, atgard: "", grupp: "", sakligt: "", ansvarig: "", tidsplan: "", status: "" };
-  renderHandlingsplanSeed();
+  ritaHandlingsplan();
   const forsta = [...document.querySelectorAll("#handlingsplan-tbody .hp-falt")].find((el) => (
     /** @type {HTMLElement} */
     el.dataset.hpNyckel === nyckel
@@ -17875,10 +17875,10 @@ function _hpLaggTillEgen() {
 function _hpTaBortEgen(nyckel) {
   if (!_hpArEgen(nyckel) || !state.handlingsplan || !state.handlingsplan[nyckel]) return;
   delete state.handlingsplan[nyckel];
-  renderHandlingsplanSeed();
+  ritaHandlingsplan();
   if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Raden är borttagen.");
 }
-function _handlingsplanSeedRows({ baraEgna = false } = {}) {
+function _handlingsplanForifyllning({ baraEgna = false } = {}) {
   const rows = [], nycklar = [], skillnader = [], minsta = [];
   let prioCount = 0, lvCount = 0, parUtelamnade = 0;
   const lagg = (nyckel, atgard, grupp, underlag2, kostnad, antal, skillnad, nMin) => {
@@ -17974,7 +17974,7 @@ function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
   return `<button type="button" class="btn-table-tool hp-skal" data-hp-skal="${esc(nyckel)}" data-hp-grupp="${esc(grupp)}" data-hp-skillnad="${skillnadKr == null ? "" : esc(String(skillnadKr))}" data-noprint aria-label="${esc(_hpSkalEtikett(nyckel, grupp, skillnadKr))}"><span class="hp-skal-sammanfattning">${esc(_hpSkalSammanfattning(nyckel, skillnadKr))}</span></button>`;
 }
 function _hpBedomningar(passar) {
-  const seed = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
+  const seed = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
   return seed.nycklar.map((nyckel, i) => ({ nyckel, i, roll: _hpArEgen(nyckel) ? "" : passar(nyckel.split("|")) })).filter((x) => x.roll).map(({ nyckel, i, roll }) => {
     const s = skalSammanstallning(_hpVarden(nyckel).skal || [], seed.skillnader[i]);
     return { nyckel, grupp: seed.rows[i][1], kalla: nyckel.split("|")[0], roll, antal: s.antal, summa: s.summa, andel: s.forklaradAndel };
@@ -18012,7 +18012,7 @@ function _hpGaTillRad(nyckel) {
   setTimeout(fokus, 120);
 }
 function _hpSkalUnderlag(seed) {
-  const s = seed || _handlingsplanSeedRows();
+  const s = seed || _handlingsplanForifyllning();
   return skalUnderlag(s.nycklar.map((nyckel, i) => ({
     nyckel,
     grupp: s.rows[i][1] || "Egen rad",
@@ -18049,7 +18049,7 @@ function _hpRensaDemoSkal() {
   _hpDemoNycklar.clear();
 }
 function _hpDemoSkal() {
-  const seed = medExportLage(() => _handlingsplanSeedRows());
+  const seed = medExportLage(() => _handlingsplanForifyllning());
   const kand = seed.nycklar.map((nyckel, i) => ({ nyckel, s: seed.skillnader[i] })).filter((x) => !_hpArEgen(x.nyckel));
   const ordning = [...kand.filter((x) => x.s > 0), ...kand.filter((x) => !(x.s > 0))].slice(0, HP_DEMO_SKAL.length);
   ordning.forEach(({ nyckel, s }, j) => {
@@ -18062,13 +18062,13 @@ function _hpDemoSkal() {
     })));
   });
 }
-function renderHandlingsplanSeed() {
+function ritaHandlingsplan() {
   document.querySelectorAll("[data-dok-klick]").forEach((b) => {
     b.disabled = !hamtaData().length;
   });
   const tbody = document.getElementById("handlingsplan-tbody");
   if (!tbody) return;
-  const seed = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
+  const seed = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
   const fmtKr = (n) => n ? svKr(n) : "";
   const lista = (id, nyckel, falt, val, alt, etikett2) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett2)}">` + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? " selected" : ""}>${esc(l)}</option>`).join("") + "</select>";
   const text = (id, nyckel, falt, val, platshallare, etikett2) => `<input type="text" id="${id}" class="hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" value="${esc(val)}" maxlength="${HP_MAX_TEXT}" autocomplete="off" placeholder="${esc(platshallare)}" aria-label="${esc(etikett2)}">`;
@@ -18155,7 +18155,7 @@ function _exportHandlingsplanExport() {
     "Sakliga skäl (kategori och belopp)",
     "Förklarad andel av skillnaden (%)"
   ];
-  const seed = _handlingsplanSeedRows();
+  const seed = _handlingsplanForifyllning();
   const prioCount = seed.prioCount, lvCount = seed.lvCount;
   const rows = seed.rows.map((r, i) => {
     const sum = skalForRad(_hpVarden(seed.nycklar[i]).skal || [], { egen: _hpArEgen(seed.nycklar[i]), nMin: seed.minsta[i], skillnadKr: seed.skillnader[i] }, kInstalld()).sammanstallning;
@@ -21031,7 +21031,7 @@ function _rmAvsnittenUtanUrval() {
   const referenser = d.length ? rmReferenserAvsnitt(diagram) : null;
   const egna = rmEgnaAvsnitt(vm.egna, k);
   const arsjamf = d.length ? rmArsjamforelseAvsnitt(diagram) : null;
-  const hpSeed = _handlingsplanSeedRows();
+  const hpSeed = _handlingsplanForifyllning();
   const hp = hpSeed.rows;
   const hpSkal = _hpSkalUnderlag(hpSeed);
   const hpFalt = (v) => v || { text: "[HR fyller i]", fyllIn: true };
@@ -21551,7 +21551,7 @@ function _tillampaKonfiguration(cfg) {
   if (tmp.handlingsplan) {
     state.handlingsplan = tmp.handlingsplan;
     if (typeof _hpDemoNycklar !== "undefined") _hpDemoNycklar.clear();
-    if (typeof renderHandlingsplanSeed === "function") renderHandlingsplanSeed();
+    if (typeof ritaHandlingsplan === "function") ritaHandlingsplan();
   }
   if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
   if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter((p) => p.kalla !== "konfiguration"), ...tmp.importprofiler];
@@ -25328,7 +25328,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   if (typeof bes8Stod === "function") bes8Stod();
   state.handlingsplan = {};
   if (typeof _hpDemoNycklar !== "undefined") _hpDemoNycklar.clear();
-  if (typeof renderHandlingsplanSeed === "function") renderHandlingsplanSeed();
+  if (typeof ritaHandlingsplan === "function") ritaHandlingsplan();
   const utkast = document.getElementById("struktur-narrative");
   if (utkast) {
     utkast.value = "";
@@ -28923,8 +28923,8 @@ function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
       rapporteraFel("Att göra: per-BAS-regressionen", e);
     }
     try {
-      if (typeof _handlingsplanSeedRows === "function") {
-        const seed = _handlingsplanSeedRows();
+      if (typeof _handlingsplanForifyllning === "function") {
+        const seed = _handlingsplanForifyllning();
         const utan = seed.rows.filter((r, i) => !_hpArEgen(seed.nycklar[i]) && !r[3]).length;
         if (utan) items.push({
           id: "hp-sakliga-skal",
@@ -30538,7 +30538,7 @@ function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) {
   }, { n: 4, tab: "likvardighet", title: "4. Likvärdigt arbete", status: "ej", detail: "Kräver inläst underlag." }));
   rows.push(safe(() => {
     if (!hasData) return { n: 5, tab: "handlingsplan", title: "5. Handlingsplan", status: "ej", detail: "Kräver inläst underlag." };
-    const rader = typeof _handlingsplanSeedRows === "function" ? _handlingsplanSeedRows().rows : [];
+    const rader = typeof _handlingsplanForifyllning === "function" ? _handlingsplanForifyllning().rows : [];
     const t = rader.length;
     const genomforda = rader.filter((r) => r[7] === "Genomförd").length;
     const planerade = rader.filter((r) => r[7] === "Planerad" || r[7] === "Pågår").length;
@@ -32078,7 +32078,7 @@ function _rapportunderlagBlockExport() {
   } catch (_e) {
     lv = null;
   }
-  const hpSeed = _handlingsplanSeedRows();
+  const hpSeed = _handlingsplanForifyllning();
   const vm = vymodellRapportunderlag(d, {
     k,
     golv: statGolv(),
@@ -32738,7 +32738,7 @@ function _ritaFlik(target) {
   else if (target === "dashboard" && d.length) ritaOversiktDelar();
   else if (target === "filer" && d.length) ritaFilerDelar();
   else if (target === "info") renderInfoTab();
-  else if (target === "handlingsplan") renderHandlingsplanSeed();
+  else if (target === "handlingsplan") ritaHandlingsplan();
   else if (target === "bestammelser") {
     if (typeof bes8Uppdatera === "function") bes8Uppdatera();
     if (typeof bes8Stod === "function") bes8Stod();
@@ -35761,11 +35761,11 @@ var _skalGiltiga = () => _skal ? (
   /** @type {any[]} */
   _skal.rader.map((r) => ({ kategori: r.kategori, belopp: _skalBelopp(r.belopp), kommentar: r.kommentar })).filter((r) => r.belopp != null)
 ) : [];
-function openSkalDialog(nyckel, opener) {
+function oppnaSkalDialog(nyckel, opener) {
   const modal = document.getElementById("skal-modal");
   if (!modal || !nyckel) return;
-  const iExport = medExportLage(() => _handlingsplanSeedRows());
-  const skarm = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
+  const iExport = medExportLage(() => _handlingsplanForifyllning());
+  const skarm = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
   const i = iExport.nycklar.indexOf(nyckel), j = skarm.nycklar.indexOf(nyckel);
   const rad = i >= 0 ? iExport.rows[i] : j >= 0 ? skarm.rows[j] : null;
   const egen = _hpArEgen(nyckel);
@@ -35778,11 +35778,11 @@ function openSkalDialog(nyckel, opener) {
     konUnder: i >= 0 && !egen && _hpUtanBelopp(nyckel, iExport.minsta[i]),
     rader: (_hpVarden(nyckel).skal || []).map((s) => ({ kategori: s.kategori, belopp: String(s.belopp), kommentar: s.kommentar || "" }))
   };
-  _skalRender();
+  _skalRita();
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal, opener || document.activeElement);
 }
-function closeSkalDialog() {
+function stangSkalDialog() {
   const modal = document.getElementById("skal-modal");
   if (!modal || modal.style.display !== "flex") return;
   if (typeof slappFokus === "function") slappFokus(modal);
@@ -35816,7 +35816,7 @@ function _skalAndelText(r) {
   const b = _skalBelopp(r.belopp), n = _skal && _skal.skillnadKr;
   return b != null && n && n > 0 ? _skalPct(b / n) : "–";
 }
-function _skalRender() {
+function _skalRita() {
   const body = document.getElementById("skal-body");
   if (!body || !_skal) return;
   const s = _skal, fullt = s.rader.length >= 8;
@@ -35908,12 +35908,12 @@ function uppstartSakligaSkal() {
     }
     const oppna = t.closest("[data-hp-skal]");
     if (oppna) {
-      openSkalDialog(oppna.getAttribute("data-hp-skal") || "", oppna);
+      oppnaSkalDialog(oppna.getAttribute("data-hp-skal") || "", oppna);
       return;
     }
     if (!t.closest("#skal-modal")) return;
     if (t.closest("[data-skal-close]")) {
-      closeSkalDialog();
+      stangSkalDialog();
       return;
     }
     if (!_skal) return;
@@ -35922,7 +35922,7 @@ function uppstartSakligaSkal() {
       const anvanda = new Set(_skal.rader.map((r) => r.kategori));
       const forsta = skalKategorier().find((k) => !anvanda.has(k.id)) || skalKategorier()[0];
       _skal.rader.push({ kategori: forsta.id, belopp: "", kommentar: "" });
-      _skalRender();
+      _skalRita();
       const sel = [...document.querySelectorAll("#skal-body select.skal-kategori")].at(-1);
       if (sel) sel.focus();
       return;
@@ -35930,7 +35930,7 @@ function uppstartSakligaSkal() {
     const bort = t.closest("[data-skal-ta-bort]");
     if (bort) {
       _skal.rader.splice(Number(bort.getAttribute("data-skal-ta-bort")), 1);
-      _skalRender();
+      _skalRita();
       document.getElementById("skal-lagg-till")?.focus();
       if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Skälet är borttaget.");
       return;
@@ -35974,7 +35974,7 @@ function uppstartSakligaSkal() {
     _skalUppdatera();
   }));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && document.getElementById("skal-modal")?.style.display === "flex") closeSkalDialog();
+    if (e.key === "Escape" && document.getElementById("skal-modal")?.style.display === "flex") stangSkalDialog();
   });
 }
 

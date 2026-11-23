@@ -118,7 +118,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const nyckel = egen.cells[0].querySelector('input').dataset.hpNyckel;
         expect(nyckel).toMatch(/^egen\|/);
         expect(w.__state.handlingsplan[nyckel]).toMatchObject({ egen: true, atgard: 'Se över lönekriterierna', grupp: 'Alla chefer', status: 'Planerad' });
-        const seed = w.eval('_handlingsplanSeedRows()');
+        const seed = w.eval('_handlingsplanForifyllning()');
         expect(seed.egenCount).toBe(1);
         expect(seed.rows[seed.rows.length - 1]).toEqual(['Se över lönekriterierna', 'Alla chefer', 'Egen rad', '', null, '', '', 'Planerad', null]);
         expect(w.document.getElementById('handlingsplan-seed-note').textContent).toContain('En egen rad står sist.');
@@ -155,7 +155,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         for (const tr of par) expect(tr.querySelector('.hp-atgard').textContent.length, tr.cells[0].textContent).toBeLessThanOrEqual(45);
         for (const tr of rader(w)) expect(tr.cells[1].textContent).toMatch(/ · BAS\u00a0\S+$/);
         // Exporterna och fältens etiketter har ett vanligt mellanslag.
-        expect(w.eval('_handlingsplanSeedRows({})').rows.map(r => r[1]).join('')).not.toContain('\u00a0');
+        expect(w.eval('_handlingsplanForifyllning({})').rows.map(r => r[1]).join('')).not.toContain('\u00a0');
     });
 });
 
@@ -198,7 +198,7 @@ describe('Handlingsplan: skärmen samlar det som bara visas i första kolumnen',
         const pr = utskrift(w);
         expect([...pr.tabell.querySelectorAll('thead th')].map(t => ren(t.textContent))).toEqual(RUBRIKER);
         expect(pr.html).not.toContain('hp-under');
-        const seed = w.eval('_handlingsplanSeedRows()').rows;
+        const seed = w.eval('_handlingsplanForifyllning()').rows;
         const prRader = [...pr.tabell.querySelectorAll('tbody tr.handlingsplan-seeded')];
         expect(prRader.map(tr => ren(tr.cells[0].textContent))).toEqual(seed.map(r => r[0]));
         expect(prRader.map(tr => ren(tr.cells[1].textContent))).toEqual(seed.map(r => r[1]));
@@ -236,8 +236,8 @@ describe('Handlingsplan: Kostnaden avser', () => {
         await laddaXlsx(w);
         w.__ritaFlik('handlingsplan');
         w.eval('_hpLaggTillEgen()');
-        const skarm = w.eval('_handlingsplanSeedRows()').rows.map(r => r[2]);
-        const ut = w.eval('medExportLage(() => _handlingsplanSeedRows())').rows.map(r => r[2]);
+        const skarm = w.eval('_handlingsplanForifyllning()').rows.map(r => r[2]);
+        const ut = w.eval('medExportLage(() => _handlingsplanForifyllning())').rows.map(r => r[2]);
         for (const u of [skarm, ut]) { expect(u).toContain(UNDERLAG[0]); expect(u).toContain(UNDERLAG[1]); expect(u.at(-1)).toBe('Egen rad'); }
         const vantat = skarm.map(u => AVSER[u]), vantatUt = ut.map(u => AVSER[u]);
         expect(w.eval('_hpKostnadAvser')(UNDERLAG[0])).toBe('Nå referensens median');
@@ -270,7 +270,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
     });
     it('rapportunderlaget delar summan på de två slagen av kostnad', () => {
         const w = fonster();
-        const rader = w.eval('medExportLage(() => _rapportHpRader(_handlingsplanSeedRows().rows))');
+        const rader = w.eval('medExportLage(() => _rapportHpRader(_handlingsplanForifyllning().rows))');
         const kr = v => w.eval(`svTal(${v}, 0)`).replace(/\s/g, ' ');
         const summa = u => rader.filter(r => r.underlag === u).reduce((s, r) => s + (r.kostnad || 0), 0);
         const text = ren(w.__ruTillText(w.__rapportunderlagBlock().find(b => b.id === 'handlingsplan')));
@@ -284,7 +284,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
         await laddaXlsx(w);
         w.__ritaFlik('handlingsplan');
         w.eval('_hpLaggTillEgen()');
-        expect(w.eval('_handlingsplanSeedRows()').rows.map(r => r[2])).toEqual(['Egen rad']);
+        expect(w.eval('_handlingsplanForifyllning()').rows.map(r => r[2])).toEqual(['Egen rad']);
         const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
         const k = rubrikerAv(tabell).indexOf('Kostnaden avser');
         expect(ren(rader(w)[0].cells[k].textContent)).toBe('');
@@ -297,7 +297,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
         expect(pr.tabell.textContent).not.toMatch(/undefined|null/);
         const t = atgardsTabell(w), j = t.kolumner.findIndex(c => c.rubrik === 'Kostnaden avser');
         expect(w.eval('rmCell')(t.rader[0][j], t.kolumner[j].typ)).toBe('');
-        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanSeedRows().rows)') }, { k: 10 });
+        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanForifyllning().rows)') }, { k: 10 });
         expect(ru.tabell.rader[0][ru.tabell.rubriker.indexOf('Kostnaden avser')]).toBe('');
         expect(JSON.stringify(ru.tabell)).not.toMatch(/undefined|null/);
     });
@@ -336,7 +336,7 @@ describe('Handlingsplan och gruppdossier: en AID-kod med två texter är en grup
         const w = fonsterTvaTexter();
         const prio = w.eval("raknaPrioritering('stallningstagande')");
         expect(prio.map(i => [i.aid, i.bas, i.n, i.median])).toEqual([['207011', 'C', 15, 31000]]);
-        const seed = w.eval('_handlingsplanSeedRows()');
+        const seed = w.eval('_handlingsplanForifyllning()');
         expect(seed.nycklar.filter(n => n.startsWith('prio|'))).toEqual(['prio|207011|C']);
         expect(seed.rows[0][1]).toBe('207011 Handläggare · BAS C');
         expect(seed.rows[0][8]).toBe(15);

@@ -25,7 +25,7 @@ import { harAlder } from './50-regressionsmodeller.js';
 import { ritaBlinderOaxacaKort, ritaRegressionskort, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { ritaLivscykel } from './52-livscykel.js';
 import { ritaPrioritering } from './55-prioritering.js';
-import { renderHandlingsplanSeed } from './56-handlingsplan.js';
+import { ritaHandlingsplan } from './56-handlingsplan.js';
 import { renderExportBesked } from './59-exportbesked.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
 import { renderInfoTab } from './65-om-verktyget.js';
@@ -424,7 +424,7 @@ function _ritaFlik(target) {
     else if (target === "dashboard" && d.length) ritaOversiktDelar();
     else if (target === "filer"     && d.length) ritaFilerDelar();
     else if (target === "info")  renderInfoTab();
-    else if (target === "handlingsplan") renderHandlingsplanSeed();
+    else if (target === "handlingsplan") ritaHandlingsplan();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
     // Förhandskontrollen står i Filer och kvalitet också medan en fil väntar på Läs in, innan något är inläst.
     if (target === "filer") ritaForhandskontroll();

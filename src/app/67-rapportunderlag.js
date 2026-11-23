@@ -24,7 +24,7 @@ import { laLikaGrupper } from './41-lika-arbete.js';
 import { referensOverblick } from './44-referensoverblick.js';
 import { aidbasDefinition, aidbasGrans, lvJamforelse } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _handlingsplanSeedRows, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
+import { _handlingsplanForifyllning, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 import { arsjamforelse } from './73-arsbokslut.js';
 import { basdossierKandidater, basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, buildBasdossier } from './81-basdossier.js';
@@ -45,7 +45,7 @@ function _ruTopN() { return (state.likvardighet && state.likvardighet.topN) ?? 1
 
 function _rapportDiagramLista(harPar, exkluderade) { return rapportunderlagDiagram(RAPPORT_DIAGRAM, harPar, exkluderade); }
 
-// Handlingsplanens rader för rapportunderlaget. Förifyllningen (_handlingsplanSeedRows) tar
+// Handlingsplanens rader för rapportunderlaget. Förifyllningen (_handlingsplanForifyllning) tar
 // redan bort par med en grupp under k, så raderna används som de är — en enda regel för
 // skärmen, Excel, utskriften och underlaget.
 function _rapportHpRader(seedRows) {
@@ -63,7 +63,7 @@ function _rapportunderlagBlockExport() {
     const reg = korOLSRegression();
     /** @type {any} */ let lv = null;
     try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
-    const hpSeed = _handlingsplanSeedRows();
+    const hpSeed = _handlingsplanForifyllning();
     const vm = vymodellRapportunderlag(d, {
         k, golv: statGolv(), demo: !!state.isDemo, troskelNot: _kSanktNot(), kStampel: kStampel(),
         reg, kvalitet: bedomningUnderlag({ reg }), lika: laLikaGrupper(d, k), lv, topN: _ruTopN(),

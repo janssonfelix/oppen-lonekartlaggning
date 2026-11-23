@@ -22,7 +22,7 @@ import { _visaJamforelseFlik, ritaReferensKort } from './38-referensfiler.js';
 import { rapportGlomHopfallning } from './39-loneoversikt.js';
 import { laMinneSlapp } from './41-lika-arbete.js';
 import { jamforelseSattVal } from './42-jamforelse.js';
-import { _hpDemoNycklar, renderHandlingsplanSeed } from './56-handlingsplan.js';
+import { _hpDemoNycklar, ritaHandlingsplan } from './56-handlingsplan.js';
 import { _rmMinneSlapp } from './58-rapportmodell.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
 import { explorerSlappMinne, explorerSynkaSmaLas } from './70-utforska.js';
@@ -171,7 +171,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
     state.handlingsplan = {};
     if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear();
-    if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
+    if (typeof ritaHandlingsplan === 'function') ritaHandlingsplan();
     // Rapporttextens utkast bär fynden i klarspråk, också ett redigerat: det töms och markeringen tas bort.
     const utkast = document.getElementById('struktur-narrative');
     if (utkast) { /** @type {HTMLTextAreaElement} */ (utkast).value = ''; delete utkast.dataset.dirty; }

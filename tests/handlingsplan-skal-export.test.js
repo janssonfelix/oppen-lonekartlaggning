@@ -18,7 +18,7 @@ describe('demot: förifyllda skäl på tre rader', () => {
         const w = demo();
         const rader = medSkal(w);
         expect(rader).toHaveLength(3);
-        const { nycklar, skillnader } = w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
+        const { nycklar, skillnader } = w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
         for (const [n, v] of rader) {
             expect(nycklar).toContain(n);
             for (const s of v.skal) { expect(Number.isInteger(s.belopp)).toBe(true); expect(s.kommentar).not.toMatch(/\d/); }
@@ -130,7 +130,7 @@ describe('demot följer inte med till en riktig fil', () => {
         w.lasInStrukturfil(new w.File([rader.join('\n')], 'riktig.csv', { type: 'text/csv' }));
         for (let i = 0; i < 200 && w.__state.data.length !== n; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.isDemo).toBe(false);
-        const nya = w.eval('medExportLage(() => _handlingsplanSeedRows().nycklar)');
+        const nya = w.eval('medExportLage(() => _handlingsplanForifyllning().nycklar)');
         expect(demoNycklar.some(k => nya.includes(k)), 'minst en av demots nycklar finns i den riktiga filen').toBe(true);
         expect(w.eval('medExportLage(() => _hpSkalUnderlag().grupper.length)')).toBe(0);
         const cfg = JSON.parse(w.eval('JSON.stringify(byggKonfiguration())'));
@@ -172,7 +172,7 @@ describe('ett kön under minsta gruppstorlek: bara kategorin lämnar verktyget',
     /** Demots rad med skäl där ett kön är under tröskeln (prioriteringens grupp), med ett känt belopp och en känd kommentar. */
     const medKonUnder = () => {
         const w = demo();
-        const { nycklar, minsta } = w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, minsta: s.minsta }; })');
+        const { nycklar, minsta } = w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, minsta: s.minsta }; })');
         const nyckel = nycklar.find((n, i) => n.startsWith('prio|') && minsta[i] < 10);
         expect(nyckel, 'demot har en prioriteringsrad med ett kön under tröskeln').toBeTruthy();
         w.eval(`_hpSattSkal(${JSON.stringify(nyckel)}, [{ kategori: 'erfarenhet', belopp: 13579, kommentar: 'Hemlig 24680' }])`);
@@ -214,7 +214,7 @@ describe('ett kön under minsta gruppstorlek: bara kategorin lämnar verktyget',
 describe('Rapporttext: skälen överstiger skillnaden', () => {
     it('samma mening som i rapportmodellen, med beloppen', () => {
         const w = demo();
-        const { nycklar, skillnader } = w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
+        const { nycklar, skillnader } = w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
         const i = skillnader.findIndex(s => s > 0);
         w.eval(`_hpSattSkal(${JSON.stringify(nycklar[i])}, [{ kategori: 'marknad', belopp: ${skillnader[i] + 300}, kommentar: '' }])`);
         const kr = v => w.eval(`svTal(${v}, 0)`).replace(/\s/g, ' ');

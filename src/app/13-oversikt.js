@@ -22,7 +22,7 @@ import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laOversiktRader } from './41-lika-arbete.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _handlingsplanSeedRows } from './56-handlingsplan.js';
+import { _handlingsplanForifyllning } from './56-handlingsplan.js';
 import { _bes8Areas } from './61-regler-och-praxis.js';
 import { kTroskelLank } from './86-installningar.js';
 import { sokUppdatera } from './87-sok.js';
@@ -292,7 +292,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
     // 5. § 3:11 Handlingsplan: raderna på fliken (förifyllda och egna) och statusen som fyllts i där (56-handlingsplan.js).
     rows.push(safe(() => {
         if (!hasData) return { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' };
-        const rader = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
+        const rader = typeof _handlingsplanForifyllning === 'function' ? _handlingsplanForifyllning().rows : [];
         const t = rader.length;
         const genomforda = rader.filter(r => r[7] === 'Genomförd').length;
         const planerade = rader.filter(r => r[7] === 'Planerad' || r[7] === 'Pågår').length;

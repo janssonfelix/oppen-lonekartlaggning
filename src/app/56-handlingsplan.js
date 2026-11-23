@@ -7,7 +7,7 @@
 // Renodlar analysflödet: verktyget levererar underlaget, planen färdigställs i Word.
 // Delad seedning av handlingsplanen: rader från Prioritering (under referens, § 9)
 // + § 3:10-par. Returnerar enbart de förifyllda dataraderna (utan tomrader) så att
-// både Excel-exporten och skärm-mallen (renderHandlingsplanSeed) använder samma logik.
+// både Excel-exporten och skärm-mallen (ritaHandlingsplan) använder samma logik.
 // Varifrån en förifylld rad kommer, som kolumnen Underlag och exporterna säger det.
 import { periodkostnad } from '../lib/kostnad.js';
 import { liknarPersonuppgift } from '../lib/organisationspaket.js';
@@ -94,7 +94,7 @@ function _hpLaggTillEgen() {
     if (!state.handlingsplan) state.handlingsplan = {};
     const nyckel = _hpNyckel('egen', Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
     state.handlingsplan[nyckel] = { egen: true, atgard: '', grupp: '', sakligt: '', ansvarig: '', tidsplan: '', status: '' };
-    renderHandlingsplanSeed();
+    ritaHandlingsplan();
     const forsta = [...document.querySelectorAll('#handlingsplan-tbody .hp-falt')].find(el => /** @type {HTMLElement} */ (el).dataset.hpNyckel === nyckel);
     if (forsta) /** @type {HTMLElement} */ (forsta).focus();
     return nyckel;
@@ -102,13 +102,13 @@ function _hpLaggTillEgen() {
 function _hpTaBortEgen(nyckel) {
     if (!_hpArEgen(nyckel) || !state.handlingsplan || !state.handlingsplan[nyckel]) return;
     delete state.handlingsplan[nyckel];
-    renderHandlingsplanSeed();
+    ritaHandlingsplan();
     if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Raden är borttagen.');
 }
 
 /** Raderna i handlingsplanen: de förifyllda från Prioritering och Likvärdigt arbete, sedan de egna. `baraEgna` hoppar
  *  över förifyllningen (utan underlag). */
-export function _handlingsplanSeedRows({ baraEgna = false } = {}) {
+export function _handlingsplanForifyllning({ baraEgna = false } = {}) {
     const rows = [], nycklar = [], skillnader = [], minsta = [];
     let prioCount = 0, lvCount = 0, parUtelamnade = 0;
     // En rad: [åtgärd, grupp, underlag, sakligt skäl, kostnad, ansvarig, tidsplan, status, antal berörda] — med det som
@@ -224,7 +224,7 @@ function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
  * @param {(delar: string[]) => string|boolean} passar
  */
 export function _hpBedomningar(passar) {
-    const seed = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
+    const seed = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
     return seed.nycklar.map((nyckel, i) => ({ nyckel, i, roll: _hpArEgen(nyckel) ? '' : passar(nyckel.split('|')) })).filter(x => x.roll)
         .map(({ nyckel, i, roll }) => {
             const s = skalSammanstallning(_hpVarden(nyckel).skal || [], seed.skillnader[i]);
@@ -276,10 +276,10 @@ export function _hpGaTillRad(nyckel) {
  * De sakliga skälen för exporterna (skalUnderlag, src/lib/sakligaskal.js): förifyllningens rader med skäl, i tabellens
  * ordning. Bygger på förifyllningen, så en rad som inte finns i underlaget (i exportläget: en grupp under tröskeln)
  * inte följer med. `seed` återanvänder en förifyllning som redan är räknad.
- * @param {ReturnType<typeof _handlingsplanSeedRows>} [seed]
+ * @param {ReturnType<typeof _handlingsplanForifyllning>} [seed]
  */
 export function _hpSkalUnderlag(seed) {
-    const s = seed || _handlingsplanSeedRows();
+    const s = seed || _handlingsplanForifyllning();
     return skalUnderlag(s.nycklar.map((nyckel, i) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i],
         skillnadKr: s.skillnader[i], egen: _hpArEgen(nyckel), skal: _hpVarden(nyckel).skal || [] })), kInstalld());
 }
@@ -315,7 +315,7 @@ export function _hpRensaDemoSkal() {
 }
 /** Förifyller demots skäl på tre rader som följer med i exporterna: rader med en medianskillnad först. Rör inte rader som redan har skäl. */
 export function _hpDemoSkal() {
-    const seed = medExportLage(() => _handlingsplanSeedRows());
+    const seed = medExportLage(() => _handlingsplanForifyllning());
     const kand = seed.nycklar.map((nyckel, i) => ({ nyckel, s: seed.skillnader[i] })).filter(x => !_hpArEgen(x.nyckel));
     const ordning = [...kand.filter(x => x.s > 0), ...kand.filter(x => !(x.s > 0))].slice(0, HP_DEMO_SKAL.length);
     ordning.forEach(({ nyckel, s }, j) => {
@@ -328,12 +328,12 @@ export function _hpDemoSkal() {
 
 // #UX Renderar de förifyllda raderna direkt i skärm-mallen, med fält för sakligt skäl, ansvarig, tidsplan och status,
 // ovanför tomrader som syns på utskriften — så HR ser underlaget och kan fylla i planen utan att först exportera.
-export function renderHandlingsplanSeed() {
+export function ritaHandlingsplan() {
     // Samverkansknapparna (kortet Samverkan & uppföljning) exporterar underlag — inaktiva tills data finns.
     document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !hamtaData().length; });
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
-    const seed = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
+    const seed = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
     const fmtKr = n => (n ? svKr(n) : '');
     const lista = (id, nyckel, falt, val, alt, etikett) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett)}">`
         + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
@@ -428,7 +428,7 @@ function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const header = ['Åtgärd', `Grupp (${T.enhet.en} och ${T.niva.en})`, 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Kostnaden avser', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
         'Sakliga skäl (kategori och belopp)', 'Förklarad andel av skillnaden (%)'];
-    const seed = _handlingsplanSeedRows();
+    const seed = _handlingsplanForifyllning();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;
     // Bladets kolumner i skärmens ordning: Antal berörda efter gruppen (tomt för en egen rad), Kostnaden avser efter
     // kostnaden (tomt för en egen rad). Sist de sakliga skälen ("Marknad 800 kr; Erfarenhet 400 kr") och hur stor andel

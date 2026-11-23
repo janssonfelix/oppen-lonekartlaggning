@@ -48,7 +48,7 @@ import { referensOverblick } from './44-referensoverblick.js';
 import { konsklassOrd, lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, harAlder } from './50-regressionsmodeller.js';
 import { _formateraPVarde, _yrkesStegText, korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _handlingsplanSeedRows, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
+import { _handlingsplanForifyllning, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
 import { _bes8Areas } from './61-regler-och-praxis.js';
 import { _abForandringText, _abGruppAntal, _abKr, _abSpridningText, AB_SPRIDNING_NOT, abGrupperEjJamforbara, arsjamforelse } from './73-arsbokslut.js';
 import { buildGruppdossier, gruppdossierAsText, gruppdossierDelat } from './80-gruppdossier.js';
@@ -665,7 +665,7 @@ function _rmAvsnittenUtanUrval() {
     // ---- 6. Åtgärder och tidsplan ----
     // Tabellen är handlingsplanen från fliken (samma förifyllning, som redan utelämnar par under tröskeln), med det som
     // fyllts i där; ett tomt fält står kvar att fylla i.
-    const hpSeed = _handlingsplanSeedRows();
+    const hpSeed = _handlingsplanForifyllning();
     const hp = hpSeed.rows;
     const hpSkal = _hpSkalUnderlag(hpSeed);
     const hpFalt = v => v || { text: '[HR fyller i]', fyllIn: true };
