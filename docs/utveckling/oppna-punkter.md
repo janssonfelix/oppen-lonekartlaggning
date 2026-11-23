@@ -23,10 +23,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    bakgrundsanalyser ~7,5 s; en ändrad minsta gruppstorlek tar 1,9 s. Äldre mätningar står i git-historiken.
 
 **Kod och bygge:**
-6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
-   Provat 2026-11-22: `tests/ktroskel-invarianter.test.js` 40 gånger på Node 22 och 40 gånger på Node 24, sex åt
-   gången, gav ingen krasch i någon, och hela sviten är grön på Node 24. Kraschen gick inte att framkalla, så ett
-   byte av Node-version har inget mätbart att vinna; omkörningen står kvar.
+6. *Avslutad 2026-11-23:* kraschen i Node under testkörning (V8:s skräpsamlare) har inte setts sedan dess: inte i 80
+   framkallningsförsök på Node 22 och 24 (2026-11-22), inte i de 25 senaste CI-körningarna och inte i åtta hela
+   kontroller lokalt. Omkörningen i `tools/test.mjs` står kvar som skydd och kostar inget när inget kraschar.
 8. **Ett gemensamt globalt scope i den byggda filen:** delarna är ES-moduler (ADR-98), men utfilen är platt så att testerna når appens namn som globala. Logik flyttas till `src/lib/` när en del ändå ändras.
 28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
     2026-11-22: omkring 2 050 s sammanlagt på tolv arbetare). Väntetiden för en pull request sätts av röktestet i
