@@ -268,12 +268,12 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
         const w = fonster();
         const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
         const las = ändring => () => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, ...ändring }) + ')');
-        expect(las({ costSettings: { poPct: 100, months: 12 } })).not.toThrow();
-        expect(las({ costSettings: { poPct: 150, months: 12 } })).toThrow('costSettings.poPct måste vara ett tal mellan 0 och 100.');
-        expect(las({ costSettings: { poPct: 39.15, months: 61 } })).toThrow('costSettings.months måste vara ett tal mellan 1 och 60.');
-        expect(las({ prioConfig: { ...cfg.prioConfig, atgardThreshold: 5 } })).toThrow('prioConfig.atgardThreshold måste vara ett tal mellan -50 och 0.');
-        expect(las({ prioConfig: { ...cfg.prioConfig, akutMinN: 0 } })).toThrow('prioConfig.akutMinN måste vara ett tal mellan 1 och 500.');
-        expect(las({ prioWeights: { ...cfg.prioWeights, volym: 101 } })).toThrow('prioWeights.volym måste vara ett tal mellan 0 och 100.');
+        expect(las({ kostnad: { poPct: 100, manader: 12 } })).not.toThrow();
+        expect(las({ kostnad: { poPct: 150, manader: 12 } })).toThrow('kostnad.poPct måste vara ett tal mellan 0 och 100.');
+        expect(las({ kostnad: { poPct: 39.15, manader: 61 } })).toThrow('kostnad.manader måste vara ett tal mellan 1 och 60.');
+        expect(las({ prioTrosklar: { ...cfg.prioTrosklar, atgardTroskel: 5 } })).toThrow('prioTrosklar.atgardTroskel måste vara ett tal mellan -50 och 0.');
+        expect(las({ prioTrosklar: { ...cfg.prioTrosklar, akutMinstN: 0 } })).toThrow('prioTrosklar.akutMinstN måste vara ett tal mellan 1 och 500.');
+        expect(las({ prioVikter: { ...cfg.prioVikter, volym: 101 } })).toThrow('prioVikter.volym måste vara ett tal mellan 0 och 100.');
     });
     it('en konfigurationsfil som läses in före lönefilen behåller yrkesgrupp (valet prövas mot datat när det finns)', () => {
         const w = createAppWindow();

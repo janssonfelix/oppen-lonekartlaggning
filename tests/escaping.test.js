@@ -70,7 +70,7 @@ const UNDANTAG = [
     { fil: '19-konfiguration.js', uttryck: 'formatter(a)', skal: 'Formaterarna i jämförelsetabellen ger tal eller ögonblicksbildens fasta texter (UK_ETIKETT); bilden räknas i sessionen.' },
     { fil: '19-konfiguration.js', uttryck: 'formatter(b)', skal: 'Som formatter(a).' },
     { fil: '19-konfiguration.js', uttryck: 'formatter', skal: 'Som formatter(a): skickas till diff och anropas med en skillnad mellan två tal.' },
-    { fil: '19-konfiguration.js', uttryck: 'cfg.likvardighet[k]', skal: 'Varje värde prövas på raden nedanför som ett ändligt tal inom fältets gränser innan det sparas; annars kastas fel.' },
+    { fil: '19-konfiguration.js', uttryck: 'cfg.likvardighet[f]', skal: 'Varje värde prövas på raden nedanför som ett ändligt tal inom fältets gränser innan det sparas; annars kastas fel.' },
     { fil: SPEGEL, uttryck: '_forandring(f && f[m], n && n[m])', skal: 'm löper över ARSBOKSLUT_BAS_MATT (fasta måttnamn); vakten kan inte skilja dessa nycklar från radens bas.' },
 ];
 

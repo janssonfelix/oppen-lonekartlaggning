@@ -57,12 +57,12 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         const snap = w.__buildConfigSnapshot();
         const visningNy = w.visningNy;
         w.visningNy = () => {};
-        w.__applyConfigSnapshot({ ...snap, costSettings: { ...snap.costSettings, months: 9 } });
+        w.__applyConfigSnapshot({ ...snap, kostnad: { ...snap.kostnad, manader: 9 } });
         w.visningNy = visningNy;
         const fel = await jamforAlla(w);
         expect(fel.map(f => f.split('\n')[0])).toContain('prioritering');
         // Med ökningen visas ingenting som det var.
-        expect(await prova(w, 'dashboard', w => { w.__applyConfigSnapshot({ ...snap, costSettings: { ...snap.costSettings, months: 4 } }); })).toEqual([]);
+        expect(await prova(w, 'dashboard', w => { w.__applyConfigSnapshot({ ...snap, kostnad: { ...snap.kostnad, manader: 4 } }); })).toEqual([]);
     });
 
     it('direkta anrop, exportläget och klick från koden ritar alltid', async () => {

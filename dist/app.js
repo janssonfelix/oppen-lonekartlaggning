@@ -10584,6 +10584,94 @@ const _ipFranMappning = __mirrorImportprofiler.profilFranMappning;
 const _ipTillJson = __mirrorImportprofiler.importprofilerTillJson;
 const _ipInbyggda = __mirrorImportprofiler.inbyggdaProfiler;
 
+// ---- speglar src/lib/konfiguration.js ----
+const __mirrorKonfiguration = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — konfigurationsfilens format: versionen och namnbytena (ADR-96).
+ *
+ * Konfigurationsfilen skrivs med svenska fältnamn från version 3. Filer sparade i version 2 bär de äldre, engelska
+ * eller blandade namnen. Tabellen nedan är det enda stället där de gamla namnen står: konfigurationMedNyaNamn() byter
+ * dem mot de nya när filen läses in, före den vanliga valideringen, så att valideringen bara känner de nya namnen.
+ * Byggandet och valideringen av filen står i appen (src/app/19-konfiguration.js).
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** Versionen som skrivs. */
+const KONFIGURATION_VERSION = 3;
+/** Versionen som skrivs, för appen (spegelns alias är funktioner). */
+function konfigurationVersion() { return KONFIGURATION_VERSION; }
+/** Versionerna som läses: 2 med de gamla namnen, 3 med de nya. */
+const KONFIGURATION_LASBARA = Object.freeze([2, 3]);
+
+/**
+ * Gamla namn → nya, per nivå i filen. Nyckeln är vägen dit med de nya namnen ('' är filens översta nivå), och `[]`
+ * står för varje post i en lista. Ett fält utan rad här heter detsamma i båda versionerna.
+ * @type {Readonly<Record<string, Readonly<Record<string, string>>>>}
+ */
+const KONFIGURATION_NAMNBYTEN = Object.freeze({
+    '': Object.freeze({
+        timestamp: 'sparad', prioConfig: 'prioTrosklar', prioWeights: 'prioVikter', costSettings: 'kostnad',
+        forecast: 'loneoversyn', ui: 'visning', actionChecklistDone: 'attGoraKlara', orgName: 'orgNamn',
+        strukturNarrative: 'strukturNarrativ'
+    }),
+    prioTrosklar: Object.freeze({
+        atgardThreshold: 'atgardTroskel', akutMinN: 'akutMinstN', bevakaThreshold: 'bevakaTroskel', analyseraThreshold: 'analyseraTroskel'
+    }),
+    kostnad: Object.freeze({ months: 'manader' }),
+    likvardighet: Object.freeze({ kvinnoTrosholdPct: 'kvinnoTroskelPct', minGapPct: 'minstaGapPct', topN: 'antalPar' }),
+    loneoversyn: Object.freeze({ targets: 'mal', minGroupN: 'minstaGruppN', roundStep: 'avrundning', years: 'ar' }),
+    'loneoversyn.budget': Object.freeze({ mode: 'enhet', value: 'varde' }),
+    'loneoversyn.generell': Object.freeze({ mode: 'enhet', value: 'varde' }),
+    'loneoversyn.mal[]': Object.freeze({ mode: 'enhet', value: 'varde', dist: 'fordelning', targetLevel: 'malniva', pool: 'pott' }),
+    visning: Object.freeze({ prioRef: 'prioReferens', prioLabelMode: 'prioEtiketter', konColorBy: 'konFargning', orgTyp: 'organisationstyp' }),
+    'bes8[]': Object.freeze({ note: 'anteckning' })
+});
+
+/**
+ * Felet för en version som inte läses, annars null.
+ * @param {unknown} version
+ * @returns {string|null}
+ */
+function konfigurationVersionFel(version) {
+    if (KONFIGURATION_LASBARA.includes(/** @type {number} */ (version))) return null;
+    return `Konfigurationsfilen är från en annan version av verktyget (version ${version}; den här läser version `
+        + `${KONFIGURATION_LASBARA.join(' och ')}). Spara en ny konfigurationsfil i den här versionen.`;
+}
+
+/**
+ * En kopia av filen där varje gammalt namn i tabellen har bytts mot det nya. Står båda namnen i filen gäller det nya.
+ * Allt annat (värden, okända fält, ordningen) är orört; valideringen görs efteråt.
+ * @param {any} cfg
+ * @returns {any}
+ */
+function konfigurationMedNyaNamn(cfg) {
+    return _byt(cfg, '');
+}
+
+/** @param {any} v @param {string} vag @returns {any} */
+function _byt(v, vag) {
+    if (Array.isArray(v)) return v.map(x => _byt(x, `${vag}[]`));
+    if (!v || typeof v !== 'object') return v;
+    const byten = KONFIGURATION_NAMNBYTEN[vag] || {};
+    /** @type {Record<string, any>} */ const ut = {};
+    for (const [k, x] of Object.entries(v)) {
+        const ny = Object.hasOwn(byten, k) ? byten[k] : k;
+        if (ny !== k && Object.hasOwn(v, ny)) continue;   // det nya namnet går före
+        // defineProperty: ett fält som heter __proto__ blir ett vanligt fält, som i JSON.parse.
+        Object.defineProperty(ut, ny, { value: _byt(x, vag ? `${vag}.${ny}` : ny), enumerable: true, writable: true, configurable: true });
+    }
+    return ut;
+}
+
+    return { konfigurationVersion, konfigurationVersionFel, konfigurationMedNyaNamn };
+})();
+const _kfVersion = __mirrorKonfiguration.konfigurationVersion;
+const _kfVersionFel = __mirrorKonfiguration.konfigurationVersionFel;
+const _kfMedNyaNamn = __mirrorKonfiguration.konfigurationMedNyaNamn;
+
 // ---- speglar src/lib/inlasning.js ----
 const __mirrorInlasning = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -21354,16 +21442,20 @@ function _konfigImportprofiler() {
 /**
  * Bygger ett serialiserbart snapshot av användarens konfiguration: prio-trösklar,
  * vikter, kostnadsinställningar och bristyrkes-AID:n.
- * Set-objekt konverteras till Array (JSON.stringify hanterar inte Set).
+ * Set-objekt konverteras till Array (JSON.stringify hanterar inte Set). Fälten har svenska namn från version 3; de
+ * äldre namnen står bara i namnbytenas tabell i src/lib/konfiguration.js (ADR-96).
  * @returns {Object} JSON-säker konfigurationsstruktur.
  */
 function buildConfigSnapshot() {
     return {
-        version: 2,
-        timestamp: new Date().toISOString(),
-        prioConfig: { ...state.prioConfig },
-        prioWeights: { ...state.prioWeights },
-        costSettings: { ...state.costSettings },
+        version: _kfVersion(),
+        sparad: new Date().toISOString(),
+        prioTrosklar: {
+            atgardTroskel: state.prioConfig.atgardThreshold, akutMinstN: state.prioConfig.akutMinN,
+            bevakaTroskel: state.prioConfig.bevakaThreshold, analyseraTroskel: state.prioConfig.analyseraThreshold
+        },
+        prioVikter: { ...state.prioWeights },
+        kostnad: { manader: state.costSettings.months, poPct: state.costSettings.poPct },
         kTroskel: kInstalld(),  // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
         rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med], ...(state.rapportUrval.fast ? { fast: state.rapportUrval.fast } : {}) } : null,
         rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
@@ -21373,22 +21465,23 @@ function buildConfigSnapshot() {
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
-            kvinnoTrosholdPct: state.likvardighet.kvinnoTrosholdPct,
+            kvinnoTroskelPct: state.likvardighet.kvinnoTrosholdPct,
             kvDomDefinition: state.likvardighet.kvDomDefinition || 'do',
             jamforelse: state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla',
-            minGapPct: state.likvardighet.minGapPct,
-            topN: state.likvardighet.topN
+            minstaGapPct: state.likvardighet.minGapPct,
+            antalPar: state.likvardighet.topN
         } : null,
         lonemanad: state.lonemanad || null,   // lönemånaden på bladen per AID och BAS
         forhandskontrollStopp: state.forhandskontrollStopp === true,   // stoppa och visa förhandskontrollen innan inläsning
         // Löneöversyn/prognos: bara inställningar (pott + fördelningsregler), ej utfall
-        forecast: state.forecast ? {
-            budget:   { ...state.forecast.budget },
-            generell: { ...state.forecast.generell },
-            targets:  (state.forecast.targets || []).map(t => ({ ...t })),
-            minGroupN: state.forecast.minGroupN,
-            roundStep: state.forecast.roundStep,
-            years: state.forecast.years
+        loneoversyn: state.forecast ? {
+            budget:   { enhet: state.forecast.budget.mode, varde: state.forecast.budget.value },
+            generell: { enhet: state.forecast.generell.mode, varde: state.forecast.generell.value },
+            mal: (state.forecast.targets || []).map(t => ({ bas: t.bas, aid: t.aid, enhet: t.mode, varde: t.value, fordelning: t.dist,
+                malniva: t.targetLevel, pott: t.pool, ...(t.kalla ? { kalla: t.kalla } : {}) })),
+            minstaGruppN: state.forecast.minGroupN,
+            avrundning: state.forecast.roundStep,
+            ar: state.forecast.years
         } : null,
         // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
         // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (applyConfigSnapshot).
@@ -21396,11 +21489,11 @@ function buildConfigSnapshot() {
         // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
         // den som läser in konfigurationen kan läsa in samma paket.
         organisationspaket: state.paket ? { organisation: state.paket.organisation, skapat: state.paket.skapat } : null,
-        ui: {
-            prioRef:          /** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || null,
-            prioLabelMode:    /** @type {HTMLInputElement} */ (document.getElementById('prio-label-mode'))?.value || null,
-            konColorBy:       /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || null,
-            orgTyp:           _skrDel(),   // organisationstypen styr SKR-referensen (ADR-34)
+        visning: {
+            prioReferens:     /** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || null,
+            prioEtiketter:    /** @type {HTMLInputElement} */ (document.getElementById('prio-label-mode'))?.value || null,
+            konFargning:      /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || null,
+            organisationstyp: _skrDel(),   // organisationstypen styr SKR-referensen (ADR-34)
             jamforelse:       jamforelseVal()   // Jämförelsestatistik: källa, BAS-intervall, sektor
         },
         // HR:s manuella arbete (användarens egna inmatningar). Ingår i den
@@ -21408,15 +21501,15 @@ function buildConfigSnapshot() {
         // Innehåller INGA råa individrader; kan innehålla användarförfattad text
         // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
         bes8: (typeof _bes8Areas === 'function' ? _bes8Areas() : [])
-            .map(a => ({ n: a.n, status: a.status, note: a.note })),
+            .map(a => ({ n: a.n, status: a.status, anteckning: a.note })),
         // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
         handlingsplan: (typeof _hpForKonfiguration === 'function' ? _hpForKonfiguration() : []),
-        actionChecklistDone: Array.from(state._actionChecklistDone || []),
+        attGoraKlara: Array.from(state._actionChecklistDone || []),
         // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
         arsbokslut: (typeof byggArsbokslutNu === 'function' ? byggArsbokslutNu() : null) || state.forraArsbokslut || null,
-        orgName: orgNamn(''),
+        orgNamn: orgNamn(''),
         jmfNamn: jmfNamn(''),
-        strukturNarrative: (() => {
+        strukturNarrativ: (() => {
             const nb = document.getElementById('struktur-narrative');
             return (nb && nb.dataset.dirty === '1') ? /** @type {HTMLInputElement} */ (nb).value : null;   // null = auto-genererat, spara ej
         })()
@@ -21436,7 +21529,8 @@ function buildConfigSnapshot() {
  * tillstånd (vissa fält ändrade, andra kvar) — vilket annars kan leda till
  * tysta felaktiga analyser.
  *
- * @param {Object} cfg - Snapshot från buildConfigSnapshot().
+ * @param {Object} cfg - Snapshot från buildConfigSnapshot(), version 3, eller en äldre fil i version 2 (de gamla namnen
+ *   byts mot de nya före valideringen, ADR-96).
  * @returns {{varningar: string[]}} Det i filen som inte tillämpades fast filen var giltig (en tröskel under
  *   organisationspaketets golv, ADR-47).
  * @throws {Error} Med beskrivande meddelande vid valideringsfel. State opåverkat.
@@ -21451,41 +21545,46 @@ function _applyConfigSnapshot(cfg) {
     // ---- FAS 1: Validera + bygg upp i isolerat temp-objekt ----
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');
-    if (cfg.version !== 2)
-        throw new Error(`Konfigurationsfilen är från en annan version av verktyget (version ${cfg.version}; den här läser version 2). Spara en ny konfigurationsfil i den här versionen.`);
+    const versionFel = _kfVersionFel(/** @type {any} */ (cfg).version);
+    if (versionFel) throw new Error(versionFel);
+    cfg = _kfMedNyaNamn(cfg);   // en äldre fils namn byts mot de nya; valideringen nedan känner bara de nya (ADR-96)
 
     const tmp = {};
 
-    // prioConfig: kräver numeriska tröskelvärden
-    if (cfg.prioConfig != null) {
-        if (typeof cfg.prioConfig !== 'object') throw new Error('prioConfig är inte ett objekt.');
-        ['atgardThreshold', 'akutMinN', 'bevakaThreshold', 'analyseraThreshold'].forEach(k => {
-            if (cfg.prioConfig[k] != null && typeof cfg.prioConfig[k] !== 'number')
-                throw new Error(`prioConfig.${k} måste vara ett nummer, fick ${typeof cfg.prioConfig[k]}.`);
-            if (cfg.prioConfig[k] != null && !_igInomGrans(cfg.prioConfig[k], _igGrans('prioTroskel')[k]))
-                throw new Error(`prioConfig.${k} måste vara ett tal mellan ${_igGrans('prioTroskel')[k].min} och ${_igGrans('prioTroskel')[k].max}.`);
+    // prioTrosklar: numeriska tröskelvärden; filens namn → tillståndets (state.prioConfig)
+    if (cfg.prioTrosklar != null) {
+        if (typeof cfg.prioTrosklar !== 'object') throw new Error('prioTrosklar är inte ett objekt.');
+        const pt = /** @type {any} */ ({ ...PRIO_CONFIG_DEFAULTS });
+        [['atgardTroskel', 'atgardThreshold'], ['akutMinstN', 'akutMinN'], ['bevakaTroskel', 'bevakaThreshold'], ['analyseraTroskel', 'analyseraThreshold']].forEach(([f, k]) => {
+            const v = cfg.prioTrosklar[f];
+            if (v == null) return;
+            if (typeof v !== 'number') throw new Error(`prioTrosklar.${f} måste vara ett nummer, fick ${typeof v}.`);
+            if (!_igInomGrans(v, _igGrans('prioTroskel')[k]))
+                throw new Error(`prioTrosklar.${f} måste vara ett tal mellan ${_igGrans('prioTroskel')[k].min} och ${_igGrans('prioTroskel')[k].max}.`);
+            pt[k] = v;
         });
-        tmp.prioConfig = { ...PRIO_CONFIG_DEFAULTS, ...cfg.prioConfig };
+        tmp.prioConfig = pt;
     }
-    // prioWeights: numeriska
-    if (cfg.prioWeights != null) {
-        if (typeof cfg.prioWeights !== 'object') throw new Error('prioWeights är inte ett objekt.');
+    // prioVikter: numeriska
+    if (cfg.prioVikter != null) {
+        if (typeof cfg.prioVikter !== 'object') throw new Error('prioVikter är inte ett objekt.');
         ['avvikelse', 'volym', 'jamstalldhet'].forEach(k => {
-            if (cfg.prioWeights[k] != null && typeof cfg.prioWeights[k] !== 'number')
-                throw new Error(`prioWeights.${k} måste vara ett nummer.`);
-            if (cfg.prioWeights[k] != null && !_igInomGrans(cfg.prioWeights[k], _igGrans('prioVikt')[k]))
-                throw new Error(`prioWeights.${k} måste vara ett tal mellan ${_igGrans('prioVikt')[k].min} och ${_igGrans('prioVikt')[k].max}.`);
+            if (cfg.prioVikter[k] != null && typeof cfg.prioVikter[k] !== 'number')
+                throw new Error(`prioVikter.${k} måste vara ett nummer.`);
+            if (cfg.prioVikter[k] != null && !_igInomGrans(cfg.prioVikter[k], _igGrans('prioVikt')[k]))
+                throw new Error(`prioVikter.${k} måste vara ett tal mellan ${_igGrans('prioVikt')[k].min} och ${_igGrans('prioVikt')[k].max}.`);
         });
-        tmp.prioWeights = { ...PRIO_WEIGHTS_DEFAULTS, ...cfg.prioWeights };
+        tmp.prioWeights = { ...PRIO_WEIGHTS_DEFAULTS, ...cfg.prioVikter };
     }
-    // costSettings: numeriska + bounds
-    if (cfg.costSettings != null) {
-        if (typeof cfg.costSettings !== 'object') throw new Error('costSettings är inte ett objekt.');
-        if (cfg.costSettings.poPct != null && !_igInomGrans(cfg.costSettings.poPct, _igGrans('poPct')))
-            throw new Error(`costSettings.poPct måste vara ett tal mellan ${_igGrans('poPct').min} och ${_igGrans('poPct').max}.`);
-        if (cfg.costSettings.months != null && !_igInomGrans(cfg.costSettings.months, _igGrans('manader')))
-            throw new Error(`costSettings.months måste vara ett tal mellan ${_igGrans('manader').min} och ${_igGrans('manader').max}.`);
-        tmp.costSettings = { ...COST_DEFAULTS, ...cfg.costSettings };
+    // kostnad: numeriska + gränser; filens manader är tillståndets months
+    if (cfg.kostnad != null) {
+        const ko = cfg.kostnad;
+        if (typeof ko !== 'object') throw new Error('kostnad är inte ett objekt.');
+        if (ko.poPct != null && !_igInomGrans(ko.poPct, _igGrans('poPct')))
+            throw new Error(`kostnad.poPct måste vara ett tal mellan ${_igGrans('poPct').min} och ${_igGrans('poPct').max}.`);
+        if (ko.manader != null && !_igInomGrans(ko.manader, _igGrans('manader')))
+            throw new Error(`kostnad.manader måste vara ett tal mellan ${_igGrans('manader').min} och ${_igGrans('manader').max}.`);
+        tmp.costSettings = { ...COST_DEFAULTS, ...(ko.manader != null ? { months: ko.manader } : {}), ...(ko.poPct != null ? { poPct: ko.poPct } : {}) };
     }
     // bristAids: array av strängar
     if (cfg.rapportUrval != null) {
@@ -21509,16 +21608,17 @@ function _applyConfigSnapshot(cfg) {
         // Gränserna är fältens i Likvärdigt arbetes inställningar. Antalet par har ingen övre gräns: Visa alla sätter det
         // till hela listan, som kan vara längre än fältets 500. Den nedre är 1, inte fältets 10: en fil får kapa listan
         // kortare än fältet (testerna av den kapade listan i Löneöversyn läser in sådana filer).
-        /** @type {Array<[string, number, number, string]>} */
+        // Filens namn och tillståndets (state.likvardighet).
+        /** @type {Array<[string, string, number, number, string]>} */
         const lvGranser = [
-            ['kvinnoTrosholdPct', 50, 70, 'ett tal mellan 50 och 70'],
-            ['minGapPct', 0, 50, 'ett tal mellan 0 och 50'],
-            ['topN', 1, Infinity, 'ett tal som är minst 1']
+            ['kvinnoTroskelPct', 'kvinnoTrosholdPct', 50, 70, 'ett tal mellan 50 och 70'],
+            ['minstaGapPct', 'minGapPct', 0, 50, 'ett tal mellan 0 och 50'],
+            ['antalPar', 'topN', 1, Infinity, 'ett tal som är minst 1']
         ];
-        for (const [k, min, max, text] of lvGranser) {
-            const v = cfg.likvardighet[k];
+        for (const [f, k, min, max, text] of lvGranser) {
+            const v = cfg.likvardighet[f];
             if (v != null) {
-                if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max) throw new Error(`likvardighet.${k} måste vara ${text}.`);
+                if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max) throw new Error(`likvardighet.${f} måste vara ${text}.`);
                 lv[k] = v;
             }
         }
@@ -21544,39 +21644,40 @@ function _applyConfigSnapshot(cfg) {
         if (typeof cfg.forhandskontrollStopp !== 'boolean') throw new Error('forhandskontrollStopp måste vara true eller false.');
         tmp.forhandskontrollStopp = cfg.forhandskontrollStopp;
     }
-    // forecast: löneöversynsinställningar (inga råa rader)
-    if (cfg.forecast != null) {
-        if (typeof cfg.forecast !== 'object') throw new Error('forecast måste vara ett objekt.');
+    // loneoversyn: löneöversynsinställningar (inga råa rader); filens namn → tillståndets (state.forecast)
+    if (cfg.loneoversyn != null) {
+        const lo = cfg.loneoversyn;
+        if (typeof lo !== 'object') throw new Error('loneoversyn måste vara ett objekt.');
         const fc = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
-        if (cfg.forecast.minGroupN != null) {
-            if (typeof cfg.forecast.minGroupN !== 'number' || cfg.forecast.minGroupN < 0) throw new Error('forecast.minGroupN måste vara ett icke-negativt tal.');
-            fc.minGroupN = cfg.forecast.minGroupN;
+        if (lo.minstaGruppN != null) {
+            if (typeof lo.minstaGruppN !== 'number' || lo.minstaGruppN < 0) throw new Error('loneoversyn.minstaGruppN måste vara ett icke-negativt tal.');
+            fc.minGroupN = lo.minstaGruppN;
         }
-        if (cfg.forecast.roundStep != null) {
-            if (typeof cfg.forecast.roundStep !== 'number' || cfg.forecast.roundStep < 0) throw new Error('forecast.roundStep måste vara ett icke-negativt tal.');
-            fc.roundStep = cfg.forecast.roundStep;
+        if (lo.avrundning != null) {
+            if (typeof lo.avrundning !== 'number' || lo.avrundning < 0) throw new Error('loneoversyn.avrundning måste vara ett icke-negativt tal.');
+            fc.roundStep = lo.avrundning;
         }
-        if (cfg.forecast.years != null) {
-            if (typeof cfg.forecast.years !== 'number' || cfg.forecast.years < 1 || cfg.forecast.years > 5) throw new Error('forecast.years måste vara 1–5.');
-            fc.years = Math.round(cfg.forecast.years);
+        if (lo.ar != null) {
+            if (typeof lo.ar !== 'number' || lo.ar < 1 || lo.ar > 5) throw new Error('loneoversyn.ar måste vara 1–5.');
+            fc.years = Math.round(lo.ar);
         }
         const valMode = (o, name) => {
             if (!o) return { mode: 'pct', value: null };
-            if (o.mode != null && o.mode !== 'pct' && o.mode !== 'kr') throw new Error(`forecast.${name}.mode måste vara "pct" eller "kr".`);
-            if (o.value != null && typeof o.value !== 'number') throw new Error(`forecast.${name}.value måste vara ett nummer eller null.`);
-            return { mode: o.mode || 'pct', value: o.value == null ? null : o.value };
+            if (o.enhet != null && o.enhet !== 'pct' && o.enhet !== 'kr') throw new Error(`loneoversyn.${name}.enhet måste vara "pct" eller "kr".`);
+            if (o.varde != null && typeof o.varde !== 'number') throw new Error(`loneoversyn.${name}.varde måste vara ett nummer eller null.`);
+            return { mode: o.enhet || 'pct', value: o.varde == null ? null : o.varde };
         };
-        fc.budget = valMode(cfg.forecast.budget, 'budget');
-        fc.generell = valMode(cfg.forecast.generell, 'generell');
-        if (cfg.forecast.targets != null) {
-            if (!Array.isArray(cfg.forecast.targets)) throw new Error('forecast.targets måste vara en array.');
-            fc.targets = cfg.forecast.targets.filter(t => t && typeof t === 'object').map(t => ({
+        fc.budget = valMode(lo.budget, 'budget');
+        fc.generell = valMode(lo.generell, 'generell');
+        if (lo.mal != null) {
+            if (!Array.isArray(lo.mal)) throw new Error('loneoversyn.mal måste vara en array.');
+            fc.targets = lo.mal.filter(t => t && typeof t === 'object').map(t => ({
                 bas: String(t.bas || ''), aid: String(t.aid || ''),
-                mode: t.mode === 'kr' ? 'kr' : 'pct',
-                value: (t.value == null || typeof t.value !== 'number') ? null : t.value,
-                dist: ['flat', 'lowest', 'target'].includes(t.dist) ? t.dist : 'lowest',
-                targetLevel: t.targetLevel === 'p25' ? 'p25' : 'median',
-                pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pool) ? t.pool : 'övrigt',
+                mode: t.enhet === 'kr' ? 'kr' : 'pct',
+                value: (t.varde == null || typeof t.varde !== 'number') ? null : t.varde,
+                dist: ['flat', 'lowest', 'target'].includes(t.fordelning) ? t.fordelning : 'lowest',
+                targetLevel: t.malniva === 'p25' ? 'p25' : 'median',
+                pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pott) ? t.pott : 'övrigt',
                 // Valfritt och bakåtkompatibelt (filer utan fältet läses som förut): en rad verktyget själv
                 // föreslog ur § 3:10-par bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
                 // och rensas när tröskeln höjs (ADR-69); en rad utan fältet är användarens egen och står kvar
@@ -21586,16 +21687,16 @@ function _applyConfigSnapshot(cfg) {
         }
         tmp.forecast = fc;
     }
-    // ui: optional objekt
-    if (cfg.ui != null && typeof cfg.ui !== 'object')
-        throw new Error('ui-blocket måste vara ett objekt.');
+    // visning: valfritt objekt
+    if (cfg.visning != null && typeof cfg.visning !== 'object')
+        throw new Error('visning måste vara ett objekt.');
     // organisationspaket: bara en påminnelse; värdena visas som text och vitlistas.
     if (cfg.organisationspaket && typeof cfg.organisationspaket === 'object') {
         const org = typeof cfg.organisationspaket.organisation === 'string' ? cfg.organisationspaket.organisation.substring(0, 200) : null;
         const skapat = typeof cfg.organisationspaket.skapat === 'string' ? cfg.organisationspaket.skapat.substring(0, 20) : null;
         if (org) tmp.organisationspaket = { organisation: org, skapat };
     }
-    tmp.ui = cfg.ui || null;
+    tmp.ui = cfg.visning || null;
 
     // HR:s manuella arbete. Saknas fälten hoppar vi över dem.
     if (cfg.bes8 != null) {
@@ -21605,22 +21706,22 @@ function _applyConfigSnapshot(cfg) {
             const n = Number(a.n);
             if (!Number.isInteger(n) || n < 1 || n > 6) throw new Error(`bes8[${i}].n måste vara ett heltal 1–6.`);
             if (a.status != null && typeof a.status !== 'string') throw new Error(`bes8[${i}].status måste vara en sträng.`);
-            if (a.note != null && typeof a.note !== 'string') throw new Error(`bes8[${i}].note måste vara en sträng.`);
-            return { n, status: a.status || '', note: a.note || '' };
+            if (a.anteckning != null && typeof a.anteckning !== 'string') throw new Error(`bes8[${i}].anteckning måste vara en sträng.`);
+            return { n, status: a.status || '', note: a.anteckning || '' };
         });
     }
     // Sakliga skäl som inte går att läsa faller bort med en varning (läggs till varningarna nedan).
     tmp.hpVarningar = [];
     if (cfg.handlingsplan != null) tmp.handlingsplan = _hpValideraKonfiguration(cfg.handlingsplan, tmp.hpVarningar);
-    if (cfg.actionChecklistDone != null) {
-        if (!Array.isArray(cfg.actionChecklistDone)) throw new Error('actionChecklistDone måste vara en array.');
-        if (!cfg.actionChecklistDone.every(id => typeof id === 'string')) throw new Error('actionChecklistDone får endast innehålla strängar.');
-        tmp.actionChecklistDone = cfg.actionChecklistDone.slice();
+    if (cfg.attGoraKlara != null) {
+        if (!Array.isArray(cfg.attGoraKlara)) throw new Error('attGoraKlara måste vara en array.');
+        if (!cfg.attGoraKlara.every(id => typeof id === 'string')) throw new Error('attGoraKlara får endast innehålla strängar.');
+        tmp.actionChecklistDone = cfg.attGoraKlara.slice();
     }
-    if (cfg.orgName != null) {
-        if (typeof cfg.orgName !== 'string') throw new Error('orgName måste vara en sträng.');
-        if (cfg.orgName.length > 200) throw new Error('orgName är för långt (max 200 tecken).');
-        tmp.orgName = cfg.orgName;
+    if (cfg.orgNamn != null) {
+        if (typeof cfg.orgNamn !== 'string') throw new Error('orgNamn måste vara en sträng.');
+        if (cfg.orgNamn.length > 200) throw new Error('orgNamn är för långt (max 200 tecken).');
+        tmp.orgName = cfg.orgNamn;
     }
     if (cfg.jmfNamn != null) {
         if (typeof cfg.jmfNamn !== 'string') throw new Error('jmfNamn måste vara en sträng.');
@@ -21634,9 +21735,9 @@ function _applyConfigSnapshot(cfg) {
             throw new Error(`kTroskel måste vara ett heltal mellan ${K_MIN} och ${K_MAX}.`);
         tmp.kTroskel = cfg.kTroskel;
     }
-    if (cfg.strukturNarrative != null) {
-        if (typeof cfg.strukturNarrative !== 'string') throw new Error('strukturNarrative måste vara en sträng eller null.');
-        tmp.strukturNarrative = cfg.strukturNarrative;
+    if (cfg.strukturNarrativ != null) {
+        if (typeof cfg.strukturNarrativ !== 'string') throw new Error('strukturNarrativ måste vara en sträng eller null.');
+        tmp.strukturNarrative = cfg.strukturNarrativ;
     }
 
     // ---- FAS 2: Atomär applicering — state nu garanterat reparerbart ----
@@ -21749,17 +21850,17 @@ function _applyConfigSnapshot(cfg) {
     if (tmp.ui) {
         ['prio-label-mode','kon-color-by'].forEach(id => {
             const el = document.getElementById(id);
-            const map = { 'prio-label-mode':'prioLabelMode','kon-color-by':'konColorBy' };
+            const map = { 'prio-label-mode':'prioEtiketter','kon-color-by':'konFargning' };
             const val = tmp.ui[map[id]];
             if (el && val != null) /** @type {HTMLInputElement} */ (el).value = val;
         });
         // Vitlista (värdet kommer ur filen).
-        const prioRef = tmp.ui.prioRef;
+        const prioRef = tmp.ui.prioReferens;
         if (prioRef === 'stallningstagande' || prioRef === 'statistik') {
             const r = document.querySelector(`input[name="prio-ref"][value="${prioRef}"]`);
             if (r) /** @type {HTMLInputElement} */ (r).checked = true;
         }
-        sattOrgTyp(tmp.ui.orgTyp);   // vitlistas i sattOrgTyp
+        sattOrgTyp(tmp.ui.organisationstyp);   // vitlistas i sattOrgTyp
         if (tmp.ui.jamforelse && typeof tmp.ui.jamforelse === 'object') jamforelseSattVal(tmp.ui.jamforelse);
     }
     invalidateStatCaches({ recompute: false });

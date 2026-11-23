@@ -376,7 +376,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         const a = createAppWindow();
         a.eval('sattKTroskel(5, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
-        cfg.orgName = 'Ur filen';
+        cfg.orgNamn = 'Ur filen';
         expect('kTroskelLagst' in cfg).toBe(false);   // konfigurationsfilen bär inte låsningarna
         const b = medGolv(8, 12);
         let fragor = 0;

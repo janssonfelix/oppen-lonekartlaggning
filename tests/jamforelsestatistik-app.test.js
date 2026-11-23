@@ -91,9 +91,9 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         const w = oppna();
         w.eval("jamforelseSattVal({ bas: 'C', sektor: 'Teknikarbete' })");
         const cfg = w.__buildConfigSnapshot();
-        expect(cfg.ui.jamforelse).toEqual({ bas: 'C', sektor: 'Teknikarbete' });
+        expect(cfg.visning.jamforelse).toEqual({ bas: 'C', sektor: 'Teknikarbete' });
         const w2 = oppna();
-        w2.__applyConfigSnapshot({ ...cfg, ui: { ...cfg.ui, jamforelse: { kalla: 'stallningstagande', bas: 'C', sektor: '' } } });
+        w2.__applyConfigSnapshot({ ...cfg, visning: { ...cfg.visning, jamforelse: { kalla: 'stallningstagande', bas: 'C', sektor: '' } } });
         expect(w2.eval('jamforelseVal()')).toEqual({ bas: 'C', sektor: '' });
         w2.eval('_rensaAllData()');
         expect(w2.eval('jamforelseVal()')).toEqual({ bas: '', sektor: '' });

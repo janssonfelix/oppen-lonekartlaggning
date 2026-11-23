@@ -20,7 +20,7 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
             referens: { namn: 'Ställningstagande', rader: [{ aid: null, bas: 'A', p10: 25000, med: 30000, p90: 36000 }, { aid: null, bas: 'C', p10: 30000, med: 35000, p90: 41000 }] } }))`);
         expect(await prova(w, 'struktur', w => { expect(w.lasInPaket(paket).ok).toBe(true); }), 'paketet').toEqual([]);
         const snap = w.__buildConfigSnapshot();
-        expect(await prova(w, 'dashboard', w => { w.__applyConfigSnapshot({ ...snap, costSettings: { ...snap.costSettings, months: 9 } }); }), 'konfigurationsfilen').toEqual([]);
+        expect(await prova(w, 'dashboard', w => { w.__applyConfigSnapshot({ ...snap, kostnad: { ...snap.kostnad, manader: 9 } }); }), 'konfigurationsfilen').toEqual([]);
         expect(await prova(w, 'prioritering', w => w.__autoClearOnInactivity()), 'rensningen efter en tid').toEqual([]);
     });
 

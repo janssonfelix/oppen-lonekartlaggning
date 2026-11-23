@@ -105,9 +105,9 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag un
     const aids = w => w.__state.forecast.targets.map(t => t.aid).sort();
     it('filen bär kalla på förslaget men inte på den egna raden, och versionen är oförändrad', () => {
         const cfg = parFonsterMedRader().eval('buildConfigSnapshot()');
-        expect(cfg.version).toBe(2);
-        expect(cfg.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
-        expect(cfg.forecast.targets.find(t => t.aid === '6000').kalla).toBeUndefined();
+        expect(cfg.version).toBe(3);
+        expect(cfg.loneoversyn.mal.find(t => t.aid === '5300').kalla).toBe('par');
+        expect(cfg.loneoversyn.mal.find(t => t.aid === '6000').kalla).toBeUndefined();
     });
     it('spara vid 5, höj till 10, läs in: förslaget rensas, också på skärmen, och den egna raden står kvar', () => {
         const w = parFonsterMedRader();
@@ -119,7 +119,7 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag un
         w.eval('applyConfigSnapshot(window.__cfg)');
         expect(aids(w)).toEqual(['6000']);
         // En egen rad på en grupp under tröskeln läses in som egen och får noten.
-        w.__cfg.forecast.targets = [{ bas: 'C', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' }];
+        w.__cfg.loneoversyn.mal = [{ bas: 'C', aid: '5300', enhet: 'kr', varde: 500, fordelning: 'lowest', malniva: 'median', pott: 'övrigt' }];
         w.eval('applyConfigSnapshot(window.__cfg)');
         expect(aids(w)).toEqual(['5300']);
         expect(w.__state.forecast.targets[0].kalla).toBeUndefined();

@@ -407,7 +407,7 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
         kl.value = 'Ny region'; kl.dispatchEvent(new w.Event('change'));
         expect(w.eval("orgNamn()")).toBe('Ny region');
         const cfg = w.__buildConfigSnapshot();
-        expect(cfg.orgName).toBe('Ny region');
+        expect(cfg.orgNamn).toBe('Ny region');
         expect(cfg.jmfNamn).toBe('Regionstatistiken');
         const w2 = createAppWindow();
         w2.__applyConfigSnapshot(cfg);

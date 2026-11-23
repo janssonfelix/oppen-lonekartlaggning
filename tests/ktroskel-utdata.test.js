@@ -583,7 +583,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         const a = createAppWindow();
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
         delete cfg.kTroskel;
-        cfg.orgName = 'Exempelorganisationen';
+        cfg.orgNamn = 'Exempelorganisationen';
         const b = createAppWindow();
         b.eval('sattKTroskel(15, { fraga: false })');
         b.__cfg = cfg;
@@ -596,7 +596,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         a.eval('sattKTroskel(15, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
         cfg.kTroskel = v;
-        cfg.orgName = 'Ska inte läsas in';
+        cfg.orgNamn = 'Ska inte läsas in';
         a.__cfg = cfg;
         // null räknas som att fältet saknas: värdet står kvar och resten läses in.
         if (v === null) { a.eval('applyConfigSnapshot(window.__cfg)'); expect(a.eval('kInstalld()')).toBe(15); return; }
@@ -609,7 +609,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(6, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
-        cfg.orgName = 'Exempelorganisationen';
+        cfg.orgNamn = 'Exempelorganisationen';
         const b = createAppWindow();
         let fragor = 0;
         b.confirm = () => { fragor++; return false; };

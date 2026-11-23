@@ -82,10 +82,10 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(bok).toContain('[Fördelning]');
         expect(bok).toContain(NOT_10);
         const cfg = w.eval('buildConfigSnapshot()');
-        expect(cfg.forecast.targets.filter(t => t.kalla === 'par')).toEqual([]);
+        expect(cfg.loneoversyn.mal.filter(t => t.kalla === 'par')).toEqual([]);
         // Löneöversyns del av filen: resten bär BAS-intervallets percentiler, och med 17 personer i BAS C kan dess övre
         // kvartil vara jämförelseyrkets lön utan att något läcker.
-        forvantaInget(w, 12, { Excel: bok, konfigurationsfilen: normalisera(JSON.stringify(cfg.forecast)) });
+        forvantaInget(w, 12, { Excel: bok, konfigurationsfilen: normalisera(JSON.stringify(cfg.loneoversyn)) });
     });
     it('det kvinnodominerade yrket under tröskeln (6) med minsta antal i gruppen 0: inget förslag, inget belopp i Excel eller konfigurationsfilen', async () => {
         const w = fonsterPar({ kvN: 6, jmfN: 24 });
@@ -93,7 +93,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(parRader(w)).toEqual([]);
         expect(text(w, 'forecast-par-not')).toBe(NOT_10);
         const bok = await excel(w);
-        const cfg = normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').forecast));
+        const cfg = normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').loneoversyn));
         forvantaInget(w, 6, { Excel: bok, konfigurationsfilen: cfg });
         expect(bok).not.toContain(String(KV_LON));
     });
@@ -138,7 +138,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(aids(w)).toEqual(['6000']);
         expect(text(w, 'forecast-par-not')).toBe(`${NOT_10} 1 föreslagen rad togs bort eftersom paret den räknades ur har en grupp under 10 personer. `
             + 'Klicka på Föreslå fördelning mot skillnaderna i likvärdigt arbete för ett nytt förslag.');
-        forvantaInget(w, 6, { 'hela arbetsboken': await excel(w), konfigurationsfilen: normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').forecast)) });
+        forvantaInget(w, 6, { 'hela arbetsboken': await excel(w), konfigurationsfilen: normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').loneoversyn)) });
         // Sänks tröskeln igen följer meningen om utelämnade par med; raden kommer inte tillbaka av sig själv, och
         // meningen om den borttagna raden står kvar tills ett nytt förslag görs.
         w.eval('sattKTroskel(5, { fraga: false })');
@@ -160,7 +160,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         fran.eval('_forecastOptimize()');
         fran.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         const cfg = JSON.parse(JSON.stringify(fran.eval('buildConfigSnapshot()')));
-        expect(cfg.forecast.targets.filter(t => t.kalla === 'par')).toHaveLength(1);
+        expect(cfg.loneoversyn.mal.filter(t => t.kalla === 'par')).toHaveLength(1);
         // Filen läses in vid tröskeln 10: med fältet kTroskel i filen satt till 10, och utan fältet.
         for (const kTroskel of [10, undefined]) {
             const w = fonsterPar({ kvN: 6, jmfN: 24 });
@@ -214,7 +214,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         return cfg;
     };
     const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)'); };
-    const parRad = value => ({ bas: 'C', aid: '5300', mode: 'kr', value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' });
+    const parRad = varde => ({ bas: 'C', aid: '5300', enhet: 'kr', varde, fordelning: 'lowest', malniva: 'median', pott: 'equity', kalla: 'par' });
 
     it('dubbelräkningen: två godkända jämförelseyrken ger en rad, och exporten stämmer med ett par', async () => {
         const w = tvaJmf(12);
@@ -246,7 +246,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         expect(text(w, 'forecast-par-not')).toMatch(BORTTAGEN);
         const bok = await excel(w);
         sokInte(bok, litetTal, 'Excel');
-        sokInte(normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').forecast)), litetTal, 'konfigurationsfilen');
+        sokInte(normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').loneoversyn)), litetTal, 'konfigurationsfilen');
     });
     it('väg 1, säkert: förslaget vid 5 ur det stora jämförelseyrket står kvar när tröskeln höjs till 10', () => {
         const w = tvaJmf(6, 5, 40000);   // 6200 har lägre lön än 6100: paret med 6100 har störst skillnad
@@ -280,25 +280,25 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
     });
     it('väg 2, försiktigt: en fil med en rad ur det stora paret tas också bort när yrket har ett par under tröskeln', () => {
         const w = tvaJmf(6);
-        lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP * 12)] } });
+        lasIn(w, { ...cfgFran(w), loneoversyn: { ...cfgFran(w).loneoversyn, mal: [parRad(GAP * 12)] } });
         expect(parRader(w)).toEqual([]);
     });
     it('väg 2: en fil med en föreslagen rad står kvar när alla yrkets par når tröskeln', () => {
         const w = tvaJmf(12);
-        lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP2 * 12)] } });
+        lasIn(w, { ...cfgFran(w), loneoversyn: { ...cfgFran(w).loneoversyn, mal: [parRad(GAP2 * 12)] } });
         expect(parRader(w).map(t => t.value)).toEqual([GAP2 * 12]);
         expect(text(w, 'forecast-par-not')).not.toMatch(BORTTAGEN);
     });
     it('väg 3: en äldre fil med två föreslagna rader för samma yrke, en per jämförelseyrke: båda tas bort vid 10', async () => {
         const w = tvaJmf(6);
-        lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP2 * 12), parRad(GAP * 12)] } });
+        lasIn(w, { ...cfgFran(w), loneoversyn: { ...cfgFran(w).loneoversyn, mal: [parRad(GAP2 * 12), parRad(GAP * 12)] } });
         expect(parRader(w)).toEqual([]);
         sokInte(await excel(w), litetTal, 'Excel');
     });
     it('väg 3 och 4: inläst vid 5 står båda kvar; en tas bort för hand och tröskeln höjs: den andra tas bort', async () => {
         const w = tvaJmf(6, 5);
         const cfg = cfgFran(w);
-        lasIn(w, { ...cfg, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12), parRad(GAP2 * 12)] } });
+        lasIn(w, { ...cfg, loneoversyn: { ...cfg.loneoversyn, mal: [parRad(GAP * 12), parRad(GAP2 * 12)] } });
         expect(parRader(w).map(t => t.value)).toEqual([GAP * 12, GAP2 * 12]);
         w.__state.forecast.targets.splice(0, 1);   // som knappen Ta bort på raden
         w.eval('renderForecastTargets(); updateForecast();');
@@ -309,7 +309,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
     });
     it('väg 4: en ensam föreslagen rad ur det lilla paret i en fil tas bort vid 10', async () => {
         const w = tvaJmf(6);
-        lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP2 * 12)] } });
+        lasIn(w, { ...cfgFran(w), loneoversyn: { ...cfgFran(w).loneoversyn, mal: [parRad(GAP2 * 12)] } });
         expect(parRader(w)).toEqual([]);
         await sokOveralltUtom(w, 'väg 4');
     });
@@ -320,7 +320,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         sokInte(await excel(w), litetTal, `${namn}: Löneöversyns export`);
         // Alla flikar bär BAS-intervallets percentiler, och 6200:s lön är den högsta i BAS C: där söks skillnaden och beloppet.
         sokInte(await excelAlla(w), [GAP2, GAP2 * 12], `${namn}: Excel (alla flikar)`);
-        sokInte(normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').forecast)), litetTal, `${namn}: konfigurationsfilen`);
+        sokInte(normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').loneoversyn)), litetTal, `${namn}: konfigurationsfilen`);
         sokInte(text(w, 'view-loneoversyn'), [GAP2 * 12], `${namn}: Löneöversyn på skärmen`);
     };
     it('utfallet: tröskeln höjs medan en annan flik är öppen; inget ur den borttagna raden i exporten eller filen', async () => {
@@ -377,7 +377,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
     it('väg 2, kapad lista: ett par med en liten grupp utanför de visade paren gör att filens rad tas bort', async () => {
         const w = tvaJmf(6, null, 40000);   // 6200 (6 män) har mindre skillnad än 6100 och hamnar efter det
         const cfg = cfgFran(w);
-        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, topN: 1 }, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12)] } });
+        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, antalPar: 1 }, loneoversyn: { ...cfg.loneoversyn, mal: [parRad(GAP * 12)] } });
         expect(w.eval("likvardighetResultat().pairs.map(p => p.maAid)")).toEqual(['6100']);
         expect(w.eval('likvardighetResultat().parAntal.totalt')).toBe(2);
         expect(parRader(w)).toEqual([]);
@@ -387,7 +387,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
     it('väg 2, okapad lista: samma underlag med alla par över tröskeln och alla par i listan, raden står kvar', () => {
         const w = tvaJmf(12, null, 40000);
         const cfg = cfgFran(w);
-        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, topN: 2 }, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12)] } });
+        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, antalPar: 2 }, loneoversyn: { ...cfg.loneoversyn, mal: [parRad(GAP * 12)] } });
         expect(w.eval("likvardighetResultat().pairs.map(p => p.maAid)")).toEqual(['6100', '6200']);
         expect(w.eval('likvardighetResultat().parAntal.totalt')).toBe(2);
         expect(parRader(w).map(t => t.value)).toEqual([GAP * 12]);
@@ -396,7 +396,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
     it('väg 2, kapad lista med alla par över tröskeln: raden tas bort på den försiktiga sidan', () => {
         const w = tvaJmf(12, null, 40000);
         const cfg = cfgFran(w);
-        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, topN: 1 }, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12)] } });
+        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, antalPar: 1 }, loneoversyn: { ...cfg.loneoversyn, mal: [parRad(GAP * 12)] } });
         expect(parRader(w)).toEqual([]);
         expect(text(w, 'forecast-par-not')).toMatch(BORTTAGEN);
     });

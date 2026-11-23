@@ -297,8 +297,9 @@ dess export är undantagna från tröskeln och märks med undantaget (`k-troskel
 Avsnittet *Inställningar* i fliken säger *Standardvärden* eller *Anpassade värden* efter kvinnotröskeln, minsta
 skillnaden, antalet par, definitionen och jämförelsemängden.
 
-**Konfigurationsfilen** bär `likvardighet` med `kvinnoTrosholdPct`, `kvDomDefinition`, `jamforelse`, `minGapPct` och
-`topN`. Vid inläsning prövas att talen ligger inom fältens gränser (kvinnotröskeln 50–70, minsta skillnaden 0–50, antalet
+**Konfigurationsfilen** bär `likvardighet` med `kvinnoTroskelPct`, `kvDomDefinition`, `jamforelse`, `minstaGapPct` och
+`antalPar` (tillståndets `kvinnoTrosholdPct`, `minGapPct` och `topN`; en fil i version 2 med de namnen läses också,
+ADR-96). Vid inläsning prövas att talen ligger inom fältens gränser (kvinnotröskeln 50–70, minsta skillnaden 0–50, antalet
 par minst 1, utan övre gräns eftersom *Visa alla* sätter det till hela listan), att `likvardighet.kvDomDefinition` är
 `do` eller `scb` och att `likvardighet.jamforelse` är `alla` eller `mansdominerade`; ett ogiltigt värde avvisar filen.
 Fältet `source` i äldre filer hoppas över. Värdena läggs över tillståndet och resultatet nollställs. Bandet för poäng

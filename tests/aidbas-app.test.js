@@ -113,11 +113,11 @@ describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på ind
         expect(Object.keys(w.__state.likvardighet)).not.toContain('source');
         // Utanför gränserna: kvinnotröskeln 50–70, minsta skillnad 0–50, antal par minst 1. Inget ändras.
         const fel = lv => () => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, ...lv } }) + ')');
-        expect(fel({ kvinnoTrosholdPct: 80 })).toThrow(/kvinnoTrosholdPct måste vara ett tal mellan 50 och 70/);
-        expect(fel({ kvinnoTrosholdPct: 45 })).toThrow(/kvinnoTrosholdPct/);
-        expect(fel({ minGapPct: -1 })).toThrow(/minGapPct måste vara ett tal mellan 0 och 50/);
-        expect(fel({ minGapPct: 60 })).toThrow(/minGapPct/);
-        expect(fel({ topN: 0 })).toThrow(/topN måste vara ett tal som är minst 1/);
+        expect(fel({ kvinnoTroskelPct: 80 })).toThrow(/kvinnoTroskelPct måste vara ett tal mellan 50 och 70/);
+        expect(fel({ kvinnoTroskelPct: 45 })).toThrow(/kvinnoTroskelPct/);
+        expect(fel({ minstaGapPct: -1 })).toThrow(/minstaGapPct måste vara ett tal mellan 0 och 50/);
+        expect(fel({ minstaGapPct: 60 })).toThrow(/minstaGapPct/);
+        expect(fel({ antalPar: 0 })).toThrow(/antalPar måste vara ett tal som är minst 1/);
         expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(60);
         // Visa alla sätter antalet par till hela listan, som kan vara fler än fältets 500; ett sparat sådant värde läses in.
         w.__state.likvardighet.topN = 750;

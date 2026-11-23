@@ -530,17 +530,18 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   och kör `node --check`. Verifiera SHA före driftsättning.
 
 ### 6.8 Konfigurationsfilen ("Spara/Läs in konfiguration") — innehåll
-Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
+Konfig-JSON:en (**version 3**) innehåller tre slags uppgifter. Fälten har svenska namn; en fil i version 2 med de
+äldre namnen läses också, och tabellen över namnbytena står i `src/lib/konfiguration.js` (ADR-96).
 
 **Inställningar:**
-- trösklar, vikter, kostnadsinställningar och bristyrken
+- trösklar (`prioTrosklar`), vikter (`prioVikter`), kostnadsinställningar (`kostnad`) och bristyrken (`bristAids`)
 - rapportens innehåll: vilka avsnitt som är med och i vilken ordning (`rapportUrval`), receptet för avsnittet per
   BAS-intervall (`perBasRecept`) och egna tabeller som recept (`rapportTabeller`, ADR-52): rader, kolumner, mått,
   urval och ett namn som är fritext, kortat till 80 tecken och prövat bara mot längden. Recepten bär inga tal;
   tabellerna ritas om ur underlaget i exportläget.
-- val i gränssnittet (`ui`): referens och etiketter i Prioritering, färgning i Ålder & karriär, organisationstyp
+- val i gränssnittet (`visning`): referens och etiketter i Prioritering, färgning i Ålder & karriär, organisationstyp
   och jämförelsestatistikens källa, BAS-intervall och huvudområde
-- löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete
+- löneöversynens inställningar (`loneoversyn`), där en riktad rad (`mal`) bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete
 - förklaringsmodellen (`forklaringsmodell`): vilka variabler regressionen räknar bort och skälet som fritext, kortad
   till 300 tecken. Ett ogiltigt värde ger standard med varning, aldrig fel (ADR-56).
 - uppdelningens variabler (`gapUppdelning`): vilka variabler *Var uppstår löneskillnaden?* delar med, i ordning, utan
@@ -564,8 +565,8 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
   belopp, andel och kommentar utelämnas, med noten *belopp och kommentar utelämnade: ett kön har färre personer än minsta
   gruppstorlek*. Annars skulle beloppen avslöja hur stor en skillnad är som verktyget inte redovisar. Demots skäl tas bort när en riktig
   lönefil läses in.
-- avbockningarna i Att göra (punkternas id, som innehåller AID-kod och BAS)
-- organisationsnamnet och ett redigerat struktur-narrativ.
+- avbockningarna i Att göra (`attGoraKlara`: punkternas id, som innehåller AID-kod och BAS)
+- organisationsnamnet (`orgNamn`) och ett redigerat struktur-narrativ (`strukturNarrativ`).
 
 **Årsbokslutet** (ADR-54) och **importprofilerna:**
 - nyckeltal för hela organisationen
@@ -599,7 +600,7 @@ Filen kan alltså innehålla inställningar och **användarförfattad text**. De
 eller personnummer. Handlingsplanens fritextfält varnar (utan att blockera) när texten liknar ett personnummer eller
 en e-postadress. Skälet i förklaringsmodellen sparas inte från panelen när det liknar en sådan. Men vid inläsning av
 en fil prövas det bara mot längden, som handlingsplanens fält. Import är transaktionell (tvåfas-validering) och
-läser bara **version 2**. En korrupt fil eller en fil av annan version lämnar verktygets tillstånd orört (kastar
+läser **version 2 och 3**. En korrupt fil eller en fil av annan version lämnar verktygets tillstånd orört (kastar
 före någon mutation).
 
 ---
@@ -767,7 +768,7 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Lokala exporter | Blob/`<a download>`/print-läsning | ✔ inga uppladdningar |
 | Hash-baserad CSP (ADR-9) | Hash-jämförelse + webbläsarröktestet: injicerat `<script>`, inline-`onclick` och `<img onerror>`; skadlig text i lönefil och paket i jsdom (`tests/dataskydd-app.test.js`) | ✔ ingen av dem exekverades; appen fullt funktionell |
 | XSS-utdatakodning | `esc()` escapear `& < > " '` + regressionstester (`tests/sakerhet.test.js`) | ✔ säker även i attributkontext |
-| Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och avvisar andra versioner |
+| Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och 3 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
 | Automatiska tester | `npm run test:full` (hela Vitest-sviten; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
