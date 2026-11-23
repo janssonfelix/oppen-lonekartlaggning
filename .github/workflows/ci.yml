@@ -1,8 +1,8 @@
 name: CI
 
 # Kvalitetsgrind. Fyra jobb:
-#   grindar — lint, typkontroll, mojibake-skydd och kontroll av att den incheckade artefakten
-#             faktiskt motsvarar källan.
+#   grindar — lint, typkontroll, mojibake-skydd, kontroll av att den incheckade artefakten
+#             faktiskt motsvarar källan och att ett andra bygge i en annan katalog blir samma fil.
 #   tester  — hela testsviten, delad på fyra parallella jobb (Vitests --shard). Varje testfil körs
 #             i exakt ett av dem; tillsammans är de `npm run test:full`.
 #   quality — grön först när grindar och alla fyra delar av tester är gröna. Det är den kontroll
@@ -82,6 +82,21 @@ jobs:
             exit 1
           fi
           echo "Artefakten och RELEASE.txt är byte-identiska med en färsk build ($fore)."
+
+      # Reproducerbart bygge (ADR-101): samma commit byggd i en annan katalog, med annan tidszon och annat språk,
+      # ska ge samma fil. Fångar det som artefaktgrinden ovan inte ser, eftersom den bygger i samma katalog.
+      - name: Bygget är reproducerbart (annan katalog, tidszon och språk)
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/andra-bygget" HEAD
+          ln -s "$PWD/node_modules" "$RUNNER_TEMP/andra-bygget/node_modules"
+          (cd "$RUNNER_TEMP/andra-bygget" && TZ=Pacific/Kiritimati LC_ALL=C npm run bundle)
+          forsta=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
+          andra=$(sha256sum "$RUNNER_TEMP/andra-bygget/dist/oppen-lonekartlaggning.html" | cut -d' ' -f1)
+          if [ "$forsta" != "$andra" ]; then
+            echo "::error::Två byggen ur samma commit gav olika filer ($forsta, $andra)."
+            exit 1
+          fi
+          echo "Två byggen ur samma commit gav samma fil ($forsta)."
 
   # Hela sviten tar omkring tolv minuter i ett jobb, eftersom CI-maskinen har få kärnor. Delad på
   # fyra jobb körs samma tester parallellt. Vitest fördelar filerna efter sökvägen,

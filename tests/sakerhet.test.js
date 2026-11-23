@@ -178,7 +178,10 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
         expect(rel).toMatch(/^permissions: \{\}$/m);
         expect(rel).toMatch(/id-token: write/);
         expect(rel).toMatch(/fetch-depth: 0/);
-        const steg = ['npm ci', 'npm run release:kontroll', 'npm run bundle', 'npm run sbom', 'npm run valideringsrapport', 'cosign sign-blob', 'cosign verify-blob', 'gh release create'];
+        expect(rel).toMatch(/attestations: write/);
+        const steg = ['npm ci', 'npm run release:kontroll', 'npm run bundle', 'npm run sbom', 'npm run valideringsrapport',
+            'git worktree add --detach "$RUNNER_TEMP/ombygge" "$GITHUB_REF_NAME"', 'cosign sign-blob', 'cosign verify-blob',
+            'uses: actions/attest-build-provenance@', 'gh release create'];
         const jobb = rel.slice(rel.indexOf('\njobs:'));   // kommentaren överst nämner stegen i annan ordning
         const plats = steg.map(s => jobb.indexOf(s));
         expect(plats.every(p => p > 0), steg.join(', ')).toBe(true);
@@ -189,7 +192,17 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
         for (const f of ['oppen-lonekartlaggning.html', 'RELEASE.txt', 'sbom.cdx.json', 'valideringsrapport.md', 'valideringsrapport.json']) {
             expect(jobb, f).toContain(`cosign sign-blob --yes --bundle ${f}.sigstore.json ${f}`);
             expect(jobb, f).toContain(`dist/${f}.sigstore.json`);
+            // ... och får en attestering av ursprunget (ADR-101).
+            expect(jobb.slice(jobb.indexOf('actions/attest-build-provenance@')), f).toMatch(new RegExp(`^ {12}dist/${f.replace(/\./g, '\\.')}$`, 'm'));
         }
+    });
+    it('ci.yml och release.yml: ett andra bygge i en ny katalog jämförs med filen (reproducerbart bygge, ADR-101)', () => {
+        const ci = läs('.github/workflows/ci.yml');
+        expect(ci).toMatch(/git worktree add --detach "\$RUNNER_TEMP\/andra-bygget" HEAD/);
+        expect(ci).toMatch(/cd "\$RUNNER_TEMP\/andra-bygget" && TZ=\S+ LC_ALL=C npm run bundle/);
+        const rel = läs('.github/workflows/release.yml');
+        expect(rel).toMatch(/cd "\$RUNNER_TEMP\/ombygge" && npm run bundle/);
+        expect(rel).toContain('if [ "$signeras" != "$ombyggd" ]');
     });
     it('dependabot uppdaterar npm och arbetsflödenas steg', () => {
         const d = läs('.github/dependabot.yml');

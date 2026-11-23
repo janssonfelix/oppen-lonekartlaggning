@@ -1,0 +1,3 @@
+# Radslut LF i varje utcheckning, också på Windows med core.autocrlf: bygget läser källfilerna som de är,
+# och CRLF ger en annan dist/oppen-lonekartlaggning.html (reproducerbart bygge, ADR-101).
+* text=auto eol=lf

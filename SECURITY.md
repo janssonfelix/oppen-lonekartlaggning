@@ -58,6 +58,35 @@ cosign verify-blob oppen-lonekartlaggning.html --bundle oppen-lonekartlaggning.h
 Samma kommando fungerar i PowerShell på Windows (`cosign.exe`). `Verified OK` betyder att filen är
 oförändrad sedan arbetsflödet signerade den. Gör samma kontroll av `RELEASE.txt` med dess paket.
 
+**Attesteringen visar varifrån filen kommer.** Release-arbetsflödet låter GitHub attestera ursprunget för verktyget,
+`RELEASE.txt`, programvaruförteckningen och valideringsrapporten (SLSA build provenance, `actions/attest-build-provenance`):
+ett intyg, signerat genom Sigstore och sparat hos GitHub, om repot, taggen, commiten och arbetsflödet som byggde filen.
+Pröva det med [GitHub CLI](https://cli.github.com/):
+
+```bash
+gh attestation verify oppen-lonekartlaggning.html --repo janssonfelix/oppen-lonekartlaggning --signer-workflow janssonfelix/oppen-lonekartlaggning/.github/workflows/release.yml
+```
+
+Svaret visar commiten och taggen som filen byggdes ur. Signaturen med cosign och attesteringen styrker samma sak på två
+oberoende sätt; den ena räcker för att lita på filen.
+
+**Vem som helst kan bygga samma fil igen.** Bygget är reproducerbart: samma tagg ger samma fil, bit för bit, oavsett
+dator, katalog, tidszon och datum. Release-arbetsflödet bygger om filen ur taggen i en ren katalog och släpper ingenting
+om den inte blir den fil som signeras, och CI bygger varje commit två gånger. Bygg om själv med Node 22.12 eller senare
+och git (radsluten är LF också på Windows, genom `.gitattributes`):
+
+```bash
+git clone https://github.com/janssonfelix/oppen-lonekartlaggning.git
+cd oppen-lonekartlaggning
+git checkout v<VERSION>
+npm ci
+npm run bundle
+sha256sum dist/oppen-lonekartlaggning.html
+```
+
+Kontrollsumman ska vara densamma som för den nedladdade filen och i `RELEASE.txt`. Bygget hämtar inget från nätet; `npm ci`
+installerar de låsta versionerna ur `package-lock.json`, också esbuild.
+
 **Valideringsrapporten visar att kraven prövades mot just den filen.** Release-arbetsflödet kör hela testsviten
 innan det signerar, och rapporten har en rad per krav i spårbarhetsmatrisen
 ([`docs/utveckling/sparbarhet.md`](docs/utveckling/sparbarhet.md)): påståendet, funktionen och filen som gör det,

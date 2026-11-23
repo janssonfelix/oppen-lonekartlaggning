@@ -79,6 +79,15 @@ genererade filerna motsvarar källan.
   oförändrad källa smutsar inte ner arbetskatalogen. Bygget är byte-reproducerbart, och det är vad artefaktgrinden
   i CI prövar (avsnitt 9).
 
+**Reproducerbart bygge** (ADR-101). Samma commit ger samma `dist/oppen-lonekartlaggning.html` bit för bit, oavsett
+katalog, tidszon, språk och datum: bygget läser inte klockan (`Build:` och `APP_BUILD_DATE` härleds ur `VERSION`;
+datumet läses bara för påminnelsen om att `VERSION` inte är dagens), inga sökvägar hamnar i filen (esbuild skriver
+relativa sökvägar i sina kommentarer), filerna läses i en fast ordning (skripten i en lista, modulerna i
+importordning), och esbuilds version är låst i `package.json`. Radsluten är LF i varje utcheckning genom
+`.gitattributes`: med `core.autocrlf` på Windows blev källan CRLF och filen en annan. `tests/build-app.test.js`
+prövar att två byggen av `dist/app.js` i samma process, med klockan på olika år, ger samma bytes; CI bygger om i en
+annan katalog (avsnitt 9) och release-arbetsflödet ur taggen (avsnitt 10).
+
 **Byggets skyddsnät.** Bundlern avbryter bygget vid U+FFFD (mojibake) i egna källfiler (`src/index.html`,
 `src/style.css`, `dist/app.js` och `src/licenser.txt`, inte de minifierade biblioteken), och kör `node --check` på
 `dist/app.js`: ett syntaxfel avbryter bygget. Den avbryter också om CSP-metan i `src/index.html` saknar de
@@ -304,7 +313,8 @@ körs i exakt ett av dem, **`quality`** är grön först när `grindar` och alla
 kontroll som regeln för `main` kräver), och **`browser`** kör röktestet i Chromium, Firefox och WebKit mot en artefakt som
 byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, också `RELEASE.txt`, och den genererade
 `src/app/08-version.js` blir byte-identiska med det incheckade. Den är den enda
-kontrollen av de genererade filerna.
+kontrollen av de genererade filerna. Efter den bygger `grindar` samma commit en gång till i en ny katalog
+(`git worktree`), med annan tidszon och annat språk, och kräver samma kontrollsumma (ADR-101).
 
 **Sårbarhetsbevakningen** är ett eget arbetsflöde, `.github/workflows/sarbarheter.yml`, vars kommentarer är källan
 till stegen. Det bygger programvaruförteckningen (`tools/sbom.mjs`), frågar den öppna sårbarhetsdatabasen OSV direkt
@@ -348,9 +358,11 @@ commit prövar den inte, utan testsviten och artefaktgrinden (princip 4 i [`prin
 
 **Arbetsflödet** `.github/workflows/release.yml` körs på en tagg `v*`: det kör grinden igen, bygger om, tar fram
 programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), bygger
-valideringsrapporten, signerar med Sigstore cosign utan nyckel och publicerar en GitHub Release. Stegen, deras ordning och behörigheterna står i arbetsflödet och
-dess kommentarer; `tests/sakerhet.test.js` prövar ordningen, den fullständiga klonen, att signeringen är utan nyckel
-och att jobbet har minsta behörighet.
+valideringsrapporten, bygger om verktyget ur taggen i en ren katalog och kräver att det blir filen som signeras,
+signerar med Sigstore cosign utan nyckel, låter GitHub attestera ursprunget (`actions/attest-build-provenance`, SLSA
+build provenance, ADR-101) och publicerar en GitHub Release. Stegen, deras ordning och behörigheterna står i arbetsflödet och
+dess kommentarer; `tests/sakerhet.test.js` prövar ordningen, den fullständiga klonen, att signeringen är utan nyckel,
+att varje fil attesteras, ombygget och att jobbet har minsta behörighet.
 
 **Valideringsrapporten** `npm run valideringsrapport` (`tools/valideringsrapport.mjs`, prövad i
 `tests/valideringsrapport.test.js`, ADR-100) kör hela sviten med Vitests JSON-rapport och skriver

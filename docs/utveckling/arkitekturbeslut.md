@@ -107,6 +107,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-98 | Appen byggs från ES-moduler med esbuild | Gällande | 2026-11-23 |
 | ADR-99 | En vymodell per flik i `src/lib/` | Gällande | 2026-11-23 |
 | ADR-100 | Varje release har en signerad valideringsrapport | Gällande | 2026-11-23 |
+| ADR-101 | Releasen attesteras och bygget prövas reproducerbart | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -703,3 +704,18 @@ CI:s fyra delar; att hämta CI:s körning av taggen till release-arbetsflödet, 
 en tredjepartsaction för testrapporter (repot tillåter bara GitHubs egna och cosign-installeraren); att checka in
 rapporten, som har ett datum och skulle ändras i varje körning. *Gäller i dag:* `bygge-och-test.md` §10, `SECURITY.md`,
 `sparbarhet.md`.
+
+**ADR-101 — Releasen attesteras och bygget prövas reproducerbart.** Beslutat av underhållaren 2026-11-23.
+Release-arbetsflödet låter GitHub attestera ursprunget (SLSA build provenance) för verktyget, `RELEASE.txt`,
+programvaruförteckningen och valideringsrapporten med GitHubs egen action `actions/attest-build-provenance`, låst på
+commit; jobbet får `attestations: write` utöver `contents: write` och `id-token: write`. Bygget ska vara reproducerbart:
+CI bygger varje commit en gång till i en ny katalog med annan tidszon och annat språk och kräver samma kontrollsumma,
+och release-arbetsflödet bygger om ur taggen i en ren katalog och släpper ingenting om det inte blir den fil som
+signeras. Radsluten är LF i varje utcheckning (`.gitattributes`), eftersom en utcheckning med CRLF gav en annan fil.
+*Skäl:* en extern granskare ska kunna belägga, inte bara läsa, att filen byggdes ur just den källan i just det
+arbetsflödet (`gh attestation verify`), och kunna bygga samma fil själv och jämföra kontrollsumman. Signaturen med cosign
+står kvar: den kräver inget GitHub-konto och styrker samma sak på ett oberoende sätt. *Avvisat:* att ersätta cosign med
+attesteringen, som binder verifieringen till GitHub; `SOURCE_DATE_EPOCH` eller commitens tid i bygget, som inte behövs
+eftersom bygget inte läser klockan; att normalisera radsluten i bundlern, som inte når källan esbuild läser;
+tredjepartsactions för att jämföra byggen (repot tillåter bara GitHubs egna och cosign-installeraren). *Gäller i dag:*
+`bygge-och-test.md` §2, §9 och §10, `SECURITY.md`.
