@@ -4,9 +4,7 @@
 // Konfigurationsfilen bär ett k-skyddat årsbokslut (src/lib/arsbokslut.js). Läses förra årets fil in ligger dess
 // bokslut i state.forraArsbokslut, och panelen i Spara och jämför år visar skillnaden mot årets. Allt byggs i
 // exportläget (ADR-51): bokslutet lämnar verktyget i filen.
-import { aidAvRad } from '../lib/aid.js';
-import { basHantelRader, bokslutBasRad, byggArsbokslut, hantelRader as _abHantelRader, jamforArsbokslut, lonespridning } from '../lib/arsbokslut.js';
-import { arKvinna, arMan } from '../lib/kon.js';
+import { basHantelRader, bokslutBasRad, bokslutGrupper, byggArsbokslut, hantelRader as _abHantelRader, jamforArsbokslut } from '../lib/arsbokslut.js';
 import { personOrd } from '../lib/namn.js';
 import { gruppMedBas } from '../lib/rapportunderlag.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
@@ -39,13 +37,6 @@ export function byggArsbokslutNu() {
         /** @type {any} */ let lv = null;
         try { lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null; } catch (_e) { lv = null; }
         const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
-        // Lönerna per grupp (kvinnor och män, som Lika arbete räknar dem: AID-koden i BAS-intervallet) för lönespridningen.
-        /** @type {Map<string, number[]>} */ const lonPerYrke = new Map();
-        for (const r of d) if (r.lon > 0 && r.kon && (arKvinna(r) || arMan(r))) {
-            const kod = `${aidAvRad(r)}|${r.bas}`;
-            if (!lonPerYrke.has(kod)) lonPerYrke.set(kod, []);
-            /** @type {number[]} */ (lonPerYrke.get(kod)).push(r.lon);
-        }
         const klara = state._actionChecklistDone || new Set();
         const punkter = typeof buildActionChecklist === 'function' ? buildActionChecklist() : [];
         return byggArsbokslut({
@@ -53,8 +44,7 @@ export function byggArsbokslutNu() {
             nyckeltal: { n: bild.n, nKv: bild.nKv, nMa: bild.nMa, medKv: bild.medianKv, medMa: bild.medianMa,
                 kvotPct: bild.rawGapPct == null ? null : 100 + bild.rawGapPct, oforklaratPct: bild.unexplainedGapPct,
                 antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },
-            grupper: lika.grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad,
-                spridning: lonespridning(lonPerYrke.get(`${g.aid}|${g.bas}`) || [], k) })),
+            grupper: bokslutGrupper(lika.grupper, d, k),
             punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
             basIntervall: getBasIntervals().map(b => bokslutBasRad(d, b, k)).filter(Boolean),
             bedomningar: _abBedomningarNu(),

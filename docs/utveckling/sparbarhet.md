@@ -163,7 +163,7 @@ Modellerna beskrivs i [`loneoversynsmodellen.md`](loneoversynsmodellen.md) och
 | ID | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|---|
 | B8.1 | Lönespridningen (P90 − P10)/median, fyra decimaler | `lonespridning`, `arsbokslut.js` | lön | verktygets eget val, ingen extern källa | `tests/arsbokslut.test.js` | saknas |
-| B8.2 | Bokslutet och jämförelsen mellan år | `byggArsbokslut`, `jamforArsbokslut`, `jamforBasIntervall`, `jamforBedomningar`, `bokslutMedGrans`, `bokslutBasRad`, `arsbokslut.js` | årets aggregat, förra årets bokslut | ADR-54 | `tests/arsbokslut.test.js`, `tests/arsbokslut-app.test.js` | saknas |
+| B8.2 | Bokslutet och jämförelsen mellan år | `byggArsbokslut`, `jamforArsbokslut`, `jamforBasIntervall`, `jamforBedomningar`, `bokslutMedGrans`, `bokslutBasRad`, `bokslutGrupper`, `arsbokslut.js` | årets aggregat, förra årets bokslut | ADR-54 | `tests/arsbokslut.test.js`, `tests/arsbokslut-app.test.js` | saknas |
 | B8.3 | De sakliga skälen: andel av skillnaden, vad som återstår, om summan överstiger skillnaden | `skalSammanstallning`, `skalPerKategori`, `valideraSkal`, `sakligaskal.js` | belopp per kategori, skillnaden | verktygets eget val, ingen extern källa | `tests/sakligaskal.test.js`, `tests/handlingsplan-skal.test.js` | saknas |
 
 **Bokslutets grupper** (ADR-89). En grupp i bokslutet är AID-koden i BAS-intervallet, och intervallet står i ett

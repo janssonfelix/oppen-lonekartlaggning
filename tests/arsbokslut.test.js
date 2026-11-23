@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Årsbokslutet (ADR-54): validering, k-skydd och jämförelsen mellan två år — den rena modulen.
 import { describe, it, expect } from 'vitest';
-import { bokslutBasRad, byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, lonespridning, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
+import { bokslutBasRad, bokslutGrupper, byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, lonespridning, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
 import { arsjamforelseBlock, tillWordHtml } from '../src/lib/rapportunderlag.js';
 
 const bokslut = (ar, over = {}) => byggArsbokslut({
@@ -366,5 +366,19 @@ describe('[B8.2] årsbokslut: raden per BAS-intervall', () => {
         expect(bokslutBasRad(rader, 'B', 3)).toMatchObject({ n: 6, medKv: null, medMa: null });
         expect(bokslutBasRad(rader, 'B', 7)).toBeNull();
         expect(bokslutBasRad(rader, 'B', 2).spridning).toBe(lonespridning([30000, 31000, 32000, 33000, 34000, 35000], 2));
+    });
+});
+
+describe('[B8.2] årsbokslut: grupperna ur Lika arbetes grupper', () => {
+    it('bokslutGrupper: en samlad median följer inte med; gapet ur kvoten och spridningen ur gruppens löner', () => {
+        const rader = [30000, 31000, 32000, 33000].flatMap((lon, i) => [{ yrke: '5100 Vård', aid: '5100', bas: 'A', kon: i % 2 ? 'man' : 'kvinna', lon }]);
+        const grupper = [
+            { aid: '5100', yrke: 'Vård', bas: 'A', nKv: 2, nMa: 2, medKv: 31000, medMa: 32000, kvot: 0.96875, flaggad: false },
+            { aid: '6100', yrke: 'Annat', bas: 'B', nKv: 1, nMa: 9, medKv: null, medMa: null, kvot: null, flaggad: false, samladMedian: true },
+        ];
+        const ut = bokslutGrupper(grupper, rader, 2);
+        expect(ut).toHaveLength(1);
+        expect(ut[0]).toEqual({ yrke: 'Vård', bas: 'A', nKv: 2, nMa: 2, medKv: 31000, medMa: 32000, gapPct: 0.96875 * 100 - 100, flaggad: false,
+            spridning: lonespridning([30000, 31000, 32000, 33000], 2) });
     });
 });
