@@ -17,9 +17,7 @@ import { median, kvantil } from './stat.js';
 import { gruppnycklar, konAv, jamforAldersgrupp, jamforLonespann } from './falt.js';
 import { jamforSektor, mellannivaEtikett, huvudomrade } from './aid.js';
 import { iUrvalet, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
-import { skapaTermer, ordForAntal } from './termer.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { STANDARDTERMER as T, ordForAntal } from './termer.js';
 
 
 export const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];

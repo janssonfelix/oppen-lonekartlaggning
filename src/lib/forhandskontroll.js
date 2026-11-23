@@ -16,10 +16,8 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { skapaTermer } from './termer.js';
+import { STANDARDTERMER as T } from './termer.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 /** Antal rader i tolkningen. */
 export const FK_ANTAL_RADER = 10;

@@ -15,10 +15,8 @@
 import { valideraRecept } from './tabellrecept.js';
 import { valideraPerBasRecept, perBasReceptArStandard } from './perbas.js';
 import { valideraImportprofiler } from './importprofiler.js';
-import { skapaTermer } from './termer.js';
+import { STANDARDTERMER as T } from './termer.js';
 import { installningsGrans } from './installningsgranser.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 export const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';

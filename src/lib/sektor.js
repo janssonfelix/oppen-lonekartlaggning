@@ -22,11 +22,10 @@ import { sektorsnamn, jamforSektor } from './aid.js';
 import { konAv } from './falt.js';
 import { konsMedianer } from './struktur.js';
 import { skrKvinnoandelSektor } from './skrreferens.js';
-import { skapaTermer, stor } from './termer.js';
+import { STANDARDTERMER as T, stor } from './termer.js';
 import { personOrd } from './namn.js';
 import { sammanslagning } from './undertryckning.js';
 
-const T = skapaTermer();
 
 const MIN_REGRESSION = 30;
 

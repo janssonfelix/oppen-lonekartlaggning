@@ -11,10 +11,8 @@
 import { konAv } from './falt.js';
 import { avrundaSymmetriskt } from './stat.js';
 import { personOrd } from './namn.js';
-import { skapaTermer, ordForAntal } from './termer.js';
+import { STANDARDTERMER as T, ordForAntal } from './termer.js';
 import { forhandskontrollGranser } from './forhandskontroll.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };

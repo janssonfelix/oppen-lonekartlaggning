@@ -42,7 +42,7 @@ export const MODULES = [
         // Termerna (ADR-74): först, så att varje senare lib-modul kan importera dem; namn.js importerar genitiv, och
         // modulerna som skriver text (regression.js m.fl.) hämtar standarduppsättningen med skapaTermer()
         file: 'termer.js', ns: '__mirrorTermer',
-        expose: { skapaTermer: '_tmSkapa', fyllTermer: '_tmFyll', termFras: 'termFras', artikel: 'termArtikel',
+        expose: { STANDARDTERMER: null, skapaTermer: '_tmSkapa', fyllTermer: '_tmFyll', termFras: 'termFras', artikel: 'termArtikel',
                   adjektiv: 'termAdjektiv', genitiv: 'termGenitiv', stor: 'termStor', ordForAntal: 'termForAntal' }
     },
     {
@@ -80,12 +80,12 @@ export const MODULES = [
         // eller kInstalld().
         file: 'ktroskel.js', ns: '__mirrorKtroskel',
         expose: {
-            kTolka: '_kTolka', konAntal: '_konAntal', parNarK: '_parNarK', kUndantagNot: '_kUndantagNot',
-            statGolv: '_ktStatGolv', konFarRedovisas: '_ktKonFarRedovisas', konFarRedovisasFor: '_ktKonFarRedovisasFor',
+            K_STANDARD: 'K_STANDARD', K_MIN: 'K_MIN', K_MAX: 'K_MAX', kTolka: '_kTolka', konAntal: '_konAntal', parNarK: '_parNarK', kUndantagNot: '_kUndantagNot',
+            statGolvVid: '_ktStatGolv', konFarRedovisas: '_ktKonFarRedovisas', konFarRedovisasFor: '_ktKonFarRedovisasFor',
             konUtelamnatNot: '_ktKonUtelamnatNot', raGapText: '_ktRaGapText', regStegForRedovisning: '_ktRegSteg',
             basEffekterForRedovisning: '_ktBasEffekter', parUtelamnadeNot: '_ktParUtelamnadeNot', parForRedovisning: '_ktParForRedovisning',
-            kStampel: '_ktStampel', kStampelFor: '_ktStampelFor', kSanktNot: '_ktSanktNot', kSidfot: '_ktSidfot',
-            csvMedStampel: '_ktCsvMedStampel', tsvMedStampel: '_ktTsvMedStampel', kText: '_ktText', individLitenFor: '_ktIndividLitenFor'
+            kStampelVid: '_ktStampel', kStampelForVid: '_ktStampelFor', kSanktNot: '_ktSanktNot', kSidfot: '_ktSidfot',
+            csvMedStampel: '_ktCsvMedStampel', tsvMedStampel: '_ktTsvMedStampel', kText: '_ktText', individLitenForVid: '_ktIndividLitenFor'
         }
     },
     {
@@ -130,7 +130,7 @@ export const MODULES = [
     },
     {
         file: 'likvardighet.js', ns: '__mirrorLikvardighet',
-        expose: { likvardighetspar: '_lvLikvardighetspar', basRangordning: '_lvBasRangordning', bootstrapMedianer: '_lvBootstrapMedianer',
+        expose: { likvardighetsparUr: '_lvLikvardighetspar', basRangordning: '_lvBasRangordning', bootstrapMedianer: '_lvBootstrapMedianer',
                   // Den enda definitionen av kvinnodominerat (ADR-60); aidbas.js och loneoversyn.js importerar dem
                   arKvinnodominerad: '_arKvinnodominerad', konsklass: '_konsklass', kravGrupper: '_lvKravGrupper' }
     },
@@ -142,10 +142,8 @@ export const MODULES = [
             stegvisPlan: '_fcStegvisPlan', sammanstallGrupper: '_fcSammanstallGrupper', hittaOmkorningar: '_fcHittaOmkorningar',
             prognosutfall: '_fcPrognosutfall', lonespannPerBas: '_fcLonespannPerBas',
             individlyft: '_fcIndividlyft', marknadsriktning: '_fcMarknadsriktning',
-            kanslighetskurva: '_fcKanslighetskurva',
+            kanslighetskurva: '_fcKanslighetskurva', _median: '_fcMedian',
             likalonslyftForMal: '_fcLyftForMal', troskelmalKonstanter: '_fcTroskelmalKonstanter',
-            // privata hjälpare som app.js anropar direkt:
-            _median: '_fcMedian'
         }
     },
     {
@@ -326,7 +324,7 @@ export const MODULES = [
     {
         // Löneläget och statistiken mot ställningstagandet (ADR-55); importerar lonepolitik.js
         file: 'referenser.js', ns: '__mirrorReferenser',
-        expose: { lageISpann: '_rrLage', monster: '_rrMonster', forslag: '_rrForslag', referensOverblick: '_rrOverblick', hantelRader: '_rrHantelRader', lageOchForslag: '_rrLageOchForslag' }
+        expose: { lageISpann: '_rrLage', monster: '_rrMonster', forslag: '_rrForslag', referensOverblickUr: '_rrOverblick', hantelRader: '_rrHantelRader', lageOchForslag: '_rrLageOchForslag' }
     },
     {
         // Rapportunderlagets block formaterar resultaten av jamforelse.js och referenser.js (matchningens etikett i

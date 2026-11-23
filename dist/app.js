@@ -1274,9 +1274,7 @@ function buildBarCell(percent, scaleMax = 25, options = {}) {
 // Standardvärdet 10 är verktygets eget (docs/utveckling/k-troskeln.md). Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
 // står i metodbilagan, i exporterad diagramdata och i tabell-CSV; under standard står meningen
 // om sänkt tröskel dessutom på det som kan spridas för sig (se kStampel och _kSanktNot).
-const K_STANDARD = 10;
-const K_MIN = 2;
-const K_MAX = 1000;
+// K_STANDARD, K_MIN och K_MAX står i src/lib/ktroskel.js.
 
 /** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
 const K_SKARM = 1;
@@ -2328,7 +2326,7 @@ function termformer(termer = STANDARDTERMER) {
     return [...ord].sort((a, b) => b.length - a.length);
 }
 
-    return { skapaTermer, fyllTermer, termFras, artikel, adjektiv, genitiv, stor, ordForAntal };
+    return { STANDARDTERMER, skapaTermer, fyllTermer, termFras, artikel, adjektiv, genitiv, stor, ordForAntal };
 })();
 const _tmSkapa = __mirrorTermer.skapaTermer;
 const _tmFyll = __mirrorTermer.fyllTermer;
@@ -2689,7 +2687,7 @@ function aidEtikettlista() {
 const __mirrorAid = (() => {
     // importer ur tidigare speglade lib-moduler
     const aidEtikettlista = __mirrorAidEtiketter.aidEtikettlista;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
 
@@ -2705,10 +2703,6 @@ const __mirrorAid = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const HUVUDOMRADEN = Object.freeze([
@@ -3010,13 +3004,13 @@ const __mirrorKtroskel = (() => {
 
 
 
-/** Samma värden som K_STANDARD, K_MIN och K_MAX i src/app/06-k-troskel.js (tests/ktroskel-lib.test.js jämför). */
+/** Tröskelns standardvärde och gränser (ADR-38); appen läser dem härifrån. */
 const K_STANDARD = 10;
 const K_MIN = 2;
 const K_MAX = 1000;
 
 /** Golvet för skattningar: aldrig under standardvärdet, och följer en högre inställd tröskel uppåt. */
-function statGolv(kInstalld) { return Math.max(kInstalld, K_STANDARD); }
+function statGolvVid(kInstalld) { return Math.max(kInstalld, K_STANDARD); }
 
 /** Heltal K_MIN–K_MAX ur ett tal eller en sträng, annars null. Bara rena heltal godtas. */
 function kTolka(v) {
@@ -3146,7 +3140,7 @@ function parForRedovisning(allaPar, k) {
 }
 
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
-function kStampel(kInstalld) {
+function kStampelVid(kInstalld) {
     return `Minsta gruppstorlek för redovisning: ${kInstalld}.`
         + (kInstalld < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
 }
@@ -3161,12 +3155,12 @@ function kUndantagNot(undantag) {
 }
 
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */
-function kStampelFor(undantag, kInstalld) {
-    return undantag ? `${kStampel(kInstalld)} ${kUndantagNot(undantag)}` : kStampel(kInstalld);
+function kStampelForVid(undantag, kInstalld) {
+    return undantag ? `${kStampelVid(kInstalld)} ${kUndantagNot(undantag)}` : kStampelVid(kInstalld);
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
-function kSanktNot(kInstalld) { return kInstalld < K_STANDARD ? kStampel(kInstalld) : ''; }
+function kSanktNot(kInstalld) { return kInstalld < K_STANDARD ? kStampelVid(kInstalld) : ''; }
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 function kSidfot(text, kInstalld) {
@@ -3176,16 +3170,16 @@ function kSidfot(text, kInstalld) {
 const harStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
 /** Tabell-CSV: stämpeln som sista rad, om den inte redan står i raderna (diagramdata). */
 function csvMedStampel(rader, undantag, kInstalld) {
-    return harStampel(rader) ? rader : [...rader, [], [kStampelFor(undantag, kInstalld)]];
+    return harStampel(rader) ? rader : [...rader, [], [kStampelForVid(undantag, kInstalld)]];
 }
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
 function tsvMedStampel(rader, undantag, kInstalld) {
-    return (kSanktNot(kInstalld) || undantag) && !harStampel(rader) ? [...rader, [], [kStampelFor(undantag, kInstalld)]] : rader;
+    return (kSanktNot(kInstalld) || undantag) && !harStampel(rader) ? [...rader, [], [kStampelForVid(undantag, kInstalld)]] : rader;
 }
 
 /** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
 function kText(s, kInstalld) {
-    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(statGolv(kInstalld)));
+    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(statGolvVid(kInstalld)));
 }
 
 /**
@@ -3197,7 +3191,7 @@ function kText(s, kInstalld) {
  * @param {number} k
  * @returns {(rad:any) => boolean} sant om radens punkt är liten
  */
-function individLitenFor(rader, k) {
+function individLitenForVid(rader, k) {
     const grupp = r => `${aidAvYrke(r.yrke)}|${r.bas}`;
     const konAv = r => (arKvinna(r) ? 'kv' : (arMan(r) ? 'ma' : 'ovr'));
     const n = new Map();
@@ -3210,13 +3204,16 @@ function individLitenFor(rader, k) {
     return r => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv(r)}`) || 0) < k;
 }
 
-    return { kTolka, konAntal, parNarK, kUndantagNot, statGolv, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, raGapText, regStegForRedovisning, basEffekterForRedovisning, parUtelamnadeNot, parForRedovisning, kStampel, kStampelFor, kSanktNot, kSidfot, csvMedStampel, tsvMedStampel, kText, individLitenFor };
+    return { K_STANDARD, K_MIN, K_MAX, kTolka, konAntal, parNarK, kUndantagNot, statGolvVid, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, raGapText, regStegForRedovisning, basEffekterForRedovisning, parUtelamnadeNot, parForRedovisning, kStampelVid, kStampelForVid, kSanktNot, kSidfot, csvMedStampel, tsvMedStampel, kText, individLitenForVid };
 })();
+const K_STANDARD = __mirrorKtroskel.K_STANDARD;
+const K_MIN = __mirrorKtroskel.K_MIN;
+const K_MAX = __mirrorKtroskel.K_MAX;
 const _kTolka = __mirrorKtroskel.kTolka;
 const _konAntal = __mirrorKtroskel.konAntal;
 const _parNarK = __mirrorKtroskel.parNarK;
 const _kUndantagNot = __mirrorKtroskel.kUndantagNot;
-const _ktStatGolv = __mirrorKtroskel.statGolv;
+const _ktStatGolv = __mirrorKtroskel.statGolvVid;
 const _ktKonFarRedovisas = __mirrorKtroskel.konFarRedovisas;
 const _ktKonFarRedovisasFor = __mirrorKtroskel.konFarRedovisasFor;
 const _ktKonUtelamnatNot = __mirrorKtroskel.konUtelamnatNot;
@@ -3225,14 +3222,14 @@ const _ktRegSteg = __mirrorKtroskel.regStegForRedovisning;
 const _ktBasEffekter = __mirrorKtroskel.basEffekterForRedovisning;
 const _ktParUtelamnadeNot = __mirrorKtroskel.parUtelamnadeNot;
 const _ktParForRedovisning = __mirrorKtroskel.parForRedovisning;
-const _ktStampel = __mirrorKtroskel.kStampel;
-const _ktStampelFor = __mirrorKtroskel.kStampelFor;
+const _ktStampel = __mirrorKtroskel.kStampelVid;
+const _ktStampelFor = __mirrorKtroskel.kStampelForVid;
 const _ktSanktNot = __mirrorKtroskel.kSanktNot;
 const _ktSidfot = __mirrorKtroskel.kSidfot;
 const _ktCsvMedStampel = __mirrorKtroskel.csvMedStampel;
 const _ktTsvMedStampel = __mirrorKtroskel.tsvMedStampel;
 const _ktText = __mirrorKtroskel.kText;
-const _ktIndividLitenFor = __mirrorKtroskel.individLitenFor;
+const _ktIndividLitenFor = __mirrorKtroskel.individLitenForVid;
 
 // ---- speglar src/lib/stat.js ----
 const __mirrorStat = (() => {
@@ -4895,7 +4892,7 @@ function basRangordning(allaBas) {
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
-function likvardighetspar({ data = [], statistik = [], nationellKlass = null, opts = {} } = {}) {
+function likvardighetsparUr({ data = [], statistik = [], nationellKlass = null, opts = {} } = {}) {
     const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_STANDARD;
     const definition = opts.kvDomDefinition === 'scb' ? 'scb' : 'do';
     const jamforelse = opts.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
@@ -5005,9 +5002,9 @@ function kravGrupper(rader, { k = 10, poangByKey = null, definition = 'do', gran
     return { medPoang, grupper, utanPlats };
 }
 
-    return { likvardighetspar, basRangordning, bootstrapMedianer, arKvinnodominerad, konsklass, kravGrupper };
+    return { likvardighetsparUr, basRangordning, bootstrapMedianer, arKvinnodominerad, konsklass, kravGrupper };
 })();
-const _lvLikvardighetspar = __mirrorLikvardighet.likvardighetspar;
+const _lvLikvardighetspar = __mirrorLikvardighet.likvardighetsparUr;
 const _lvBasRangordning = __mirrorLikvardighet.basRangordning;
 const _lvBootstrapMedianer = __mirrorLikvardighet.bootstrapMedianer;
 const _arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
@@ -5570,7 +5567,7 @@ function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifika
     return { status: 'hittat', utgangslage, lyftPct: hi, kostnadPerManad: kostnad, resultat: { konPct, pValue } };
 }
 
-    return { beraknaPott, fordela, riktadeRader, foreslaRiktning, stangningsriktning, ettParPerYrke, stegvisPlan, sammanstallGrupper, hittaOmkorningar, prognosutfall, lonespannPerBas, individlyft, marknadsriktning, kanslighetskurva, likalonslyftForMal, troskelmalKonstanter, _median };
+    return { beraknaPott, fordela, riktadeRader, foreslaRiktning, stangningsriktning, ettParPerYrke, stegvisPlan, sammanstallGrupper, hittaOmkorningar, prognosutfall, lonespannPerBas, individlyft, marknadsriktning, kanslighetskurva, _median, likalonslyftForMal, troskelmalKonstanter };
 })();
 const _fcBeraknaPott = __mirrorLoneoversyn.beraknaPott;
 const _fcFordela = __mirrorLoneoversyn.fordela;
@@ -5586,9 +5583,9 @@ const _fcLonespannPerBas = __mirrorLoneoversyn.lonespannPerBas;
 const _fcIndividlyft = __mirrorLoneoversyn.individlyft;
 const _fcMarknadsriktning = __mirrorLoneoversyn.marknadsriktning;
 const _fcKanslighetskurva = __mirrorLoneoversyn.kanslighetskurva;
+const _fcMedian = __mirrorLoneoversyn._median;
 const _fcLyftForMal = __mirrorLoneoversyn.likalonslyftForMal;
 const _fcTroskelmalKonstanter = __mirrorLoneoversyn.troskelmalKonstanter;
-const _fcMedian = __mirrorLoneoversyn._median;
 
 // ---- speglar src/lib/aidbas.js ----
 const __mirrorAidbas = (() => {
@@ -5837,7 +5834,7 @@ const __mirrorRegression = (() => {
     const median = __mirrorStat.median;
     const pVardeTvasidigt = __mirrorStat.pVardeTvasidigt;
     const tKvantil = __mirrorStat.tKvantil;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const fyllTermer = __mirrorTermer.fyllTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
     const stor = __mirrorTermer.stor;
@@ -5872,9 +5869,6 @@ const __mirrorRegression = (() => {
 
 
 
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 // Stegens namn i den sekventiella dekomponeringen är nycklar: kortet, rapporten, exporten och testerna slår upp stegen
 // på dem, så de står kvar oförändrade. Det som visas för ett steg kommer ur termerna (stegEtikett, ADR-74).
@@ -7908,7 +7902,7 @@ const __mirrorLivscykel = (() => {
     const pVardeTvasidigt = __mirrorStat.pVardeTvasidigt;
     const tKvantil = __mirrorStat.tKvantil;
     const statusNiva = __mirrorStatus.statusNiva;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
 
@@ -7931,9 +7925,6 @@ const __mirrorLivscykel = (() => {
 
 
 
-
-/** Standardtermerna (ADR-74). */
-const T = skapaTermer();
 
 /**
  * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är
@@ -8640,7 +8631,7 @@ const __mirrorFalt = (() => {
     const mellannivaEtikett = __mirrorAid.mellannivaEtikett;
     const aidAvRad = __mirrorAid.aidAvRad;
     const namnrader = __mirrorAid.namnrader;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
     const arKvinna = __mirrorKon.arKvinna;
@@ -8658,10 +8649,6 @@ const __mirrorFalt = (() => {
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const ALDERSORDNING = ['<20', '20–24', '25–29', '30–34', '35–39', '40–44', '45–49',
@@ -8757,7 +8744,7 @@ const _faltJamforAlder = __mirrorFalt.jamforAldersgrupp;
 const __mirrorUrval = (() => {
     // importer ur tidigare speglade lib-moduler
     const gruppnyckel = __mirrorFalt.gruppnyckel;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const stor = __mirrorTermer.stor;
 
 // SPDX-License-Identifier: MIT
@@ -8776,10 +8763,6 @@ const __mirrorUrval = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const FALT = {
@@ -8935,7 +8918,7 @@ const _refNamnFranFil = __mirrorReferens.namnFranFil;
 // ---- speglar src/lib/forhandskontroll.js ----
 const __mirrorForhandskontroll = (() => {
     // importer ur tidigare speglade lib-moduler
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8955,9 +8938,6 @@ const __mirrorForhandskontroll = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 /** Antal rader i tolkningen. */
 const FK_ANTAL_RADER = 10;
@@ -9216,7 +9196,7 @@ const __mirrorDatakvalitet = (() => {
     const konAv = __mirrorFalt.konAv;
     const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const personOrd = __mirrorNamn.personOrd;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const ordForAntal = __mirrorTermer.ordForAntal;
     const forhandskontrollGranser = __mirrorForhandskontroll.forhandskontrollGranser;
 
@@ -9233,10 +9213,6 @@ const __mirrorDatakvalitet = (() => {
 
 
 
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
@@ -9350,7 +9326,7 @@ const __mirrorGapuppdelning = (() => {
     // importer ur tidigare speglade lib-moduler
     const gruppnycklar = __mirrorFalt.gruppnycklar;
     const konAv = __mirrorFalt.konAv;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const stor = __mirrorTermer.stor;
     const personOrd = __mirrorNamn.personOrd;
     const sammanslagning = __mirrorUndertryckning.sammanslagning;
@@ -9385,9 +9361,6 @@ const __mirrorGapuppdelning = (() => {
 
 
 
-
-/** Standardtermerna (ADR-74). */
-const T = skapaTermer();
 
 /** Variablerna i den ordning gränssnittet visar dem. */
 const GAP_VARIABLER = ['bas', 'sektor', 'aidniva', 'aid', 'alder'];
@@ -9799,7 +9772,7 @@ const __mirrorUtforska = (() => {
     const iUrvalet = __mirrorUrval.iUrvalet;
     const uppfyllerGrupp = __mirrorUrval.uppfyllerGrupp;
     const gruppVillkorAktivt = __mirrorUrval.gruppVillkorAktivt;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const ordForAntal = __mirrorTermer.ordForAntal;
 
 // SPDX-License-Identifier: MIT
@@ -9820,10 +9793,6 @@ const __mirrorUtforska = (() => {
 
 
 
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
@@ -10011,7 +9980,7 @@ const _utPivottabell = __mirrorUtforska.pivottabell;
 const __mirrorAttgora = (() => {
     // importer ur tidigare speglade lib-moduler
     const personOrd = __mirrorNamn.personOrd;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const termFras = __mirrorTermer.termFras;
 
 // SPDX-License-Identifier: MIT
@@ -10025,10 +9994,6 @@ const __mirrorAttgora = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */
@@ -10109,7 +10074,7 @@ const __mirrorSektor = (() => {
     const konAv = __mirrorFalt.konAv;
     const konsMedianer = __mirrorStruktur.konsMedianer;
     const skrKvinnoandelSektor = __mirrorSkrReferens.skrKvinnoandelSektor;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const stor = __mirrorTermer.stor;
     const personOrd = __mirrorNamn.personOrd;
     const sammanslagning = __mirrorUndertryckning.sammanslagning;
@@ -10140,8 +10105,6 @@ const __mirrorSektor = (() => {
 
 
 
-
-const T = skapaTermer();
 
 const MIN_REGRESSION = 30;
 
@@ -11404,7 +11367,7 @@ const __mirrorAidkontroll = (() => {
     const arLedningsetikett = __mirrorAid.arLedningsetikett;
     const normaliseraAid = __mirrorAid.normaliseraAid;
     const kvantil = __mirrorStat.kvantil;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
     const ordForAntal = __mirrorTermer.ordForAntal;
@@ -11419,10 +11382,6 @@ const __mirrorAidkontroll = (() => {
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const RESTKOD_GRANS = 10;      // % av personerna
@@ -11498,7 +11457,7 @@ const __mirrorJamforelse = (() => {
     const sektorsnamn = __mirrorAid.sektorsnamn;
     const aidAvYrke = __mirrorAid.aidAvYrke;
     const namnrader = __mirrorAid.namnrader;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const ordForAntal = __mirrorTermer.ordForAntal;
     const adjektiv = __mirrorTermer.adjektiv;
     const arKvinna = __mirrorKon.arKvinna;
@@ -11520,9 +11479,6 @@ const __mirrorJamforelse = (() => {
 
 
 
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 const _pos = v => (typeof v === 'number' && v > 0 ? v : null);
 const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(p90) });
@@ -11789,7 +11745,7 @@ const _utanforMitten = g => {
  * @param {Array<any>} rader raderna ur jamforelseRader
  * @param {{harStatistik?:boolean, harStallningstagande?:boolean, statistikHarSpann?:boolean}} opt
  */
-function referensOverblick(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
+function referensOverblickUr(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
     const tom = { p10: null, median: null, p90: null };
     const grupper = (rader || []).map(r => {
         const rad = { ...r, statistik: harStatistik ? r.statistik : tom, statistikMatchning: harStatistik ? r.statistikMatchning ?? null : null,
@@ -11835,12 +11791,12 @@ function hantelRader(grupper) {
     return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, yrke: g.yrke, aid: g.aid, bas: g.bas, n: g.n, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
 }
 
-    return { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchForslag };
+    return { lageISpann, monster, forslag, referensOverblickUr, hantelRader, lageOchForslag };
 })();
 const _rrLage = __mirrorReferenser.lageISpann;
 const _rrMonster = __mirrorReferenser.monster;
 const _rrForslag = __mirrorReferenser.forslag;
-const _rrOverblick = __mirrorReferenser.referensOverblick;
+const _rrOverblick = __mirrorReferenser.referensOverblickUr;
 const _rrHantelRader = __mirrorReferenser.hantelRader;
 const _rrLageOchForslag = __mirrorReferenser.lageOchForslag;
 
@@ -11865,7 +11821,7 @@ const __mirrorRapportunderlag = (() => {
     const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
     const gapVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
     const gapStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const genitiv = __mirrorTermer.genitiv;
     const stor = __mirrorTermer.stor;
     const artikel = __mirrorTermer.artikel;
@@ -11902,9 +11858,6 @@ const __mirrorRapportunderlag = (() => {
 
 
 
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
@@ -12472,7 +12425,7 @@ function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskelNot } =
  * Lönerna mot referenserna (ADR-55): överblickens tal i ord och listan. Ställningstagandet är referenspunkten: orden
  * säger var löneläget och statistiken ligger mot det, aldrig tvärtom. Med statistik har listan kolumnen Matchning
  * (samma ord som tabellen mot jämförelsestatistiken och detaljlistan).
- * @param {any} overblick resultatet av referensOverblick (grupper under minsta gruppstorlek är redan borta)
+ * @param {any} overblick resultatet av referensOverblickUr (grupper under minsta gruppstorlek är redan borta)
  * @param {{id?:string, urval?:any, demo?:any, troskelNot?:any, harStatistik?:boolean}} opt
  */
 function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot, harStatistik = false }) {
@@ -12798,7 +12751,7 @@ const __mirrorPerBas = (() => {
     const aidAvRad = __mirrorAid.aidAvRad;
     const namnrader = __mirrorAid.namnrader;
     const statistikFor = __mirrorJamforelse.statistikFor;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
     const kompletterandeUndertryckning = __mirrorUndertryckning.kompletterandeUndertryckning;
@@ -12832,10 +12785,6 @@ const __mirrorPerBas = (() => {
 
 
 
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
@@ -13036,7 +12985,7 @@ const __mirrorTabellrecept = (() => {
     // importer ur tidigare speglade lib-moduler
     const pivottabell = __mirrorUtforska.pivottabell;
     const personOrd = __mirrorNamn.personOrd;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const stor = __mirrorTermer.stor;
 
 // SPDX-License-Identifier: MIT
@@ -13052,10 +13001,6 @@ const __mirrorTabellrecept = (() => {
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 // Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.
@@ -13315,7 +13260,7 @@ const __mirrorArsbokslut = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
     const kvantil = __mirrorStat.kvantil;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const valideraSkal = __mirrorSakligaskal.valideraSkal;
     const skalPerKategori = __mirrorSakligaskal.skalPerKategori;
     const skalSammanstallning = __mirrorSakligaskal.skalSammanstallning;
@@ -13336,9 +13281,6 @@ const __mirrorArsbokslut = (() => {
 
 
 
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 const ARSBOKSLUT_VERSION = 2;
 const MAX_TEXT = 200;
@@ -13771,7 +13713,7 @@ const __mirrorOrganisationspaket = (() => {
     const valideraPerBasRecept = __mirrorPerBas.valideraPerBasRecept;
     const perBasReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
     const valideraImportprofiler = __mirrorImportprofiler.valideraImportprofiler;
-    const skapaTermer = __mirrorTermer.skapaTermer;
+    const T = __mirrorTermer.STANDARDTERMER;
     const installningsGrans = __mirrorInstallningsgranser.installningsGrans;
 
 // SPDX-License-Identifier: MIT
@@ -13791,10 +13733,6 @@ const __mirrorOrganisationspaket = (() => {
 
 
 
-
-
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';

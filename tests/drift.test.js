@@ -120,6 +120,8 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
             for (const [internal, alias] of Object.entries(mod.expose)) {
                 const appName = alias || `${mod.ns}.${internal}`;
                 const fn = alias ? M[alias] : M[mod.ns][internal];
+                // Konstanterna (STANDARDTERMER, K_STANDARD …) är samma värde som i lib.
+                if (typeof lib[internal] !== 'function') { expect(fn, appName).toStrictEqual(lib[internal]); checked++; continue; }
                 expect(typeof fn, `${appName} ska vara en funktion`).toBe('function');
                 // Spegelns källtext ska finnas ordagrant i lib-FILEN. Jämförelsen görs mot
                 // filen, inte mot den importerade funktionens toString(): testmiljöns

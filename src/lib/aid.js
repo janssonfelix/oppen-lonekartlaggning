@@ -11,9 +11,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { aidEtikettlista } from './aid-etiketter.js';
-import { skapaTermer, stor, adjektiv } from './termer.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { STANDARDTERMER as T, stor, adjektiv } from './termer.js';
 
 
 export const HUVUDOMRADEN = Object.freeze([

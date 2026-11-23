@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchForslag } from '../src/lib/referenser.js';
+import { lageISpann, monster, forslag, referensOverblickUr, hantelRader, lageOchForslag } from '../src/lib/referenser.js';
 const rad = (over = {}) => ({ aid: '1', yrke: '1 Yrke', bas: 'C', n: 42, org: { p10: 34100, median: 38900, p90: 44200 },
     stallningstagande: { p10: 29000, median: 32000, p90: 36000 }, statistik: { p10: 33700, median: 37800, p90: 42900 }, ...over });
 const alla = { harStatistik: true, harStallningstagande: true, statistikHarSpann: true };
@@ -31,7 +31,7 @@ describe('mönster och förslag', () => {
     it('statistik med bara median: mönstret räknas på medianen men läget mot statistiken är null', () => {
         const r = rad({ statistik: { p10: null, median: 37800, p90: null } });
         expect(monster(r).statistik).toBe('över');
-        expect(referensOverblick([r], { ...alla, statistikHarSpann: false }).grupper[0].lage.statistik.pos).toBeNull();
+        expect(referensOverblickUr([r], { ...alla, statistikHarSpann: false }).grupper[0].lage.statistik.pos).toBeNull();
     });
     it('utanför båda: den referens vars spann ligger närmast, och orden gäller löneläget', () => {
         const r = rad({ org: { p10: 44000, median: 45000, p90: 46000 } });
@@ -57,7 +57,7 @@ describe('mönster och förslag', () => {
 describe('överblicken', () => {
     const tva = () => [rad(), rad({ aid: '2', yrke: '2 Annat', n: 58, org: { p10: 30000, median: 32500, p90: 35000 }, statistik: { p10: 30500, median: 33000, p90: 35500 } })];
     it('räknar grupper, personer och andel per mönster, förslag och vägda medianskillnader', () => {
-        const o = referensOverblick(tva(), alla);
+        const o = referensOverblickUr(tva(), alla);
         expect(o.tal.antalGrupper).toBe(2);
         expect(o.tal.perMonster.badaOver).toEqual({ grupper: 1, personer: 42, andel: 42 });
         expect(o.tal.perMonster.badaInom).toEqual({ grupper: 1, personer: 58, andel: 58 });
@@ -68,31 +68,31 @@ describe('överblicken', () => {
     it('listan har grupper utanför spannet först, längst bort överst', () => {
         const nara = rad({ aid: '3', yrke: '3 Nära', org: { p10: 34000, median: 36500, p90: 39000 } });
         const inom = rad({ aid: '0', yrke: '0 Inom', org: { p10: 30000, median: 32500, p90: 35000 } });
-        expect(referensOverblick([inom, nara, rad()], alla).grupper.map(g => g.yrke)).toEqual(['1 Yrke', '3 Nära', '0 Inom']);
+        expect(referensOverblickUr([inom, nara, rad()], alla).grupper.map(g => g.yrke)).toEqual(['1 Yrke', '3 Nära', '0 Inom']);
     });
     it('statistiken mot ställningstagandet sorteras fallande och visar båda ändarna', () => {
         const lag = rad({ aid: '4', yrke: '4 Låg', statistik: { p10: 26000, median: 30000, p90: 34000 } });
-        const o = referensOverblick([lag, rad()], alla).statistikMotStallningstagande;
+        const o = referensOverblickUr([lag, rad()], alla).statistikMotStallningstagande;
         expect(o.map(r => r.yrke)).toEqual(['1 Yrke', '4 Låg']);
         expect(o[1].median).toBeLessThan(0);
     });
     it('en grupp utan rad i statistiken får null där och räknas inte i statistikens tal', () => {
-        const o = referensOverblick([rad({ statistik: { p10: null, median: null, p90: null } })], alla);
+        const o = referensOverblickUr([rad({ statistik: { p10: null, median: null, p90: null } })], alla);
         expect(o.grupper[0].monster.statistik).toBeNull();
         expect(o.grupper[0].monster.text).toBe('löneläget ovanför ställningstagandet');
         expect(o.statistikMotStallningstagande).toEqual([]);
         expect(o.tal.vagdMedianMotStatistikPct).toBeNull();
     });
     it('hantelns rader bär de tre spannen i listans ordning, null för en referens utan median', () => {
-        const h = hantelRader(referensOverblick(tva(), alla).grupper);
+        const h = hantelRader(referensOverblickUr(tva(), alla).grupper);
         expect(h).toHaveLength(2);
         expect(h[0]).toMatchObject({ namn: '1 Yrke · BAS C', n: 42, org: { median: 38900 }, stallningstagande: { median: 32000 }, statistik: { median: 37800 } });
-        expect(hantelRader(referensOverblick([rad({ statistik: { p10: null, median: null, p90: null } })], alla).grupper)[0].statistik).toBeNull();
+        expect(hantelRader(referensOverblickUr([rad({ statistik: { p10: null, median: null, p90: null } })], alla).grupper)[0].statistik).toBeNull();
     });
 });
 
 describe('läge och förslag i en kolumn', () => {
-    const g = (r, opt = alla) => referensOverblick([r], opt).grupper[0];
+    const g = (r, opt = alla) => referensOverblickUr([r], opt).grupper[0];
     it('förslaget nämns när det är statistiken, med skälet', () => {
         expect(g(rad()).lageOchForslag).toBe('Löneläget ovanför ställningstagandet, statistiken också över. Förslag: statistiken som referens (löneläget ligger inom statistiken men inte inom ställningstagandet).');
         expect(g(rad({ org: { p10: 44000, median: 45000, p90: 46000 } })).lageOchForslag).toMatch(/Förslag: statistiken som referens \(statistikens spann ligger närmast löneläget\)\.$/);

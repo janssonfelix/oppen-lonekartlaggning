@@ -9,9 +9,7 @@
  */
 import { etikett, huvudomrade, arRestkod, arLedningsetikett, normaliseraAid } from './aid.js';
 import { kvantil } from './stat.js';
-import { skapaTermer, stor, adjektiv, ordForAntal } from './termer.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { STANDARDTERMER as T, stor, adjektiv, ordForAntal } from './termer.js';
 
 
 const RESTKOD_GRANS = 10;      // % av personerna

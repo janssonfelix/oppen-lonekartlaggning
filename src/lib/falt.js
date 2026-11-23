@@ -10,10 +10,8 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { sektorsnamn, mellannivaEtikett, aidAvRad, namnrader } from './aid.js';
-import { skapaTermer, stor, adjektiv } from './termer.js';
+import { STANDARDTERMER as T, stor, adjektiv } from './termer.js';
 import { arKvinna, arMan } from './kon.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const ALDERSORDNING = ['<20', '20–24', '25–29', '30–34', '35–39', '40–44', '45–49',

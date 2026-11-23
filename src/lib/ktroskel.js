@@ -14,13 +14,13 @@ import { arKvinna, arMan } from './kon.js';
 import { aidAvYrke } from './aid.js';
 import { personOrd } from './namn.js';
 
-/** Samma värden som K_STANDARD, K_MIN och K_MAX i src/app/06-k-troskel.js (tests/ktroskel-lib.test.js jämför). */
-const K_STANDARD = 10;
-const K_MIN = 2;
-const K_MAX = 1000;
+/** Tröskelns standardvärde och gränser (ADR-38); appen läser dem härifrån. */
+export const K_STANDARD = 10;
+export const K_MIN = 2;
+export const K_MAX = 1000;
 
 /** Golvet för skattningar: aldrig under standardvärdet, och följer en högre inställd tröskel uppåt. */
-export function statGolv(kInstalld) { return Math.max(kInstalld, K_STANDARD); }
+export function statGolvVid(kInstalld) { return Math.max(kInstalld, K_STANDARD); }
 
 /** Heltal K_MIN–K_MAX ur ett tal eller en sträng, annars null. Bara rena heltal godtas. */
 export function kTolka(v) {
@@ -150,7 +150,7 @@ export function parForRedovisning(allaPar, k) {
 }
 
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
-export function kStampel(kInstalld) {
+export function kStampelVid(kInstalld) {
     return `Minsta gruppstorlek för redovisning: ${kInstalld}.`
         + (kInstalld < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
 }
@@ -165,12 +165,12 @@ export function kUndantagNot(undantag) {
 }
 
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */
-export function kStampelFor(undantag, kInstalld) {
-    return undantag ? `${kStampel(kInstalld)} ${kUndantagNot(undantag)}` : kStampel(kInstalld);
+export function kStampelForVid(undantag, kInstalld) {
+    return undantag ? `${kStampelVid(kInstalld)} ${kUndantagNot(undantag)}` : kStampelVid(kInstalld);
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
-export function kSanktNot(kInstalld) { return kInstalld < K_STANDARD ? kStampel(kInstalld) : ''; }
+export function kSanktNot(kInstalld) { return kInstalld < K_STANDARD ? kStampelVid(kInstalld) : ''; }
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 export function kSidfot(text, kInstalld) {
@@ -180,16 +180,16 @@ export function kSidfot(text, kInstalld) {
 const harStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
 /** Tabell-CSV: stämpeln som sista rad, om den inte redan står i raderna (diagramdata). */
 export function csvMedStampel(rader, undantag, kInstalld) {
-    return harStampel(rader) ? rader : [...rader, [], [kStampelFor(undantag, kInstalld)]];
+    return harStampel(rader) ? rader : [...rader, [], [kStampelForVid(undantag, kInstalld)]];
 }
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
 export function tsvMedStampel(rader, undantag, kInstalld) {
-    return (kSanktNot(kInstalld) || undantag) && !harStampel(rader) ? [...rader, [], [kStampelFor(undantag, kInstalld)]] : rader;
+    return (kSanktNot(kInstalld) || undantag) && !harStampel(rader) ? [...rader, [], [kStampelForVid(undantag, kInstalld)]] : rader;
 }
 
 /** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
 export function kText(s, kInstalld) {
-    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(statGolv(kInstalld)));
+    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(statGolvVid(kInstalld)));
 }
 
 /**
@@ -201,7 +201,7 @@ export function kText(s, kInstalld) {
  * @param {number} k
  * @returns {(rad:any) => boolean} sant om radens punkt är liten
  */
-export function individLitenFor(rader, k) {
+export function individLitenForVid(rader, k) {
     const grupp = r => `${aidAvYrke(r.yrke)}|${r.bas}`;
     const konAv = r => (arKvinna(r) ? 'kv' : (arMan(r) ? 'ma' : 'ovr'));
     const n = new Map();

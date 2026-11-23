@@ -15,9 +15,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { gruppnyckel } from './falt.js';
-import { skapaTermer, stor } from './termer.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { STANDARDTERMER as T, stor } from './termer.js';
 
 
 const FALT = {

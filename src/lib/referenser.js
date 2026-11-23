@@ -120,7 +120,7 @@ const _utanforMitten = g => {
  * @param {Array<any>} rader raderna ur jamforelseRader
  * @param {{harStatistik?:boolean, harStallningstagande?:boolean, statistikHarSpann?:boolean}} opt
  */
-export function referensOverblick(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
+export function referensOverblickUr(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
     const tom = { p10: null, median: null, p90: null };
     const grupper = (rader || []).map(r => {
         const rad = { ...r, statistik: harStatistik ? r.statistik : tom, statistikMatchning: harStatistik ? r.statistikMatchning ?? null : null,

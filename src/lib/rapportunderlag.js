@@ -21,13 +21,11 @@ import { sektorJusteradText, sektorAndelNot } from './sektor.js';
 import { kvDefinitionText } from './aidbas.js';
 import { basRangordning } from './likvardighet.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
-import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
+import { STANDARDTERMER as T, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
 import { arKvinna } from './kon.js';
 import { svTal as formatTal } from './talformat.js';
 import { aidAvRad, namnrader } from './aid.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
@@ -595,7 +593,7 @@ export function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskel
  * Lönerna mot referenserna (ADR-55): överblickens tal i ord och listan. Ställningstagandet är referenspunkten: orden
  * säger var löneläget och statistiken ligger mot det, aldrig tvärtom. Med statistik har listan kolumnen Matchning
  * (samma ord som tabellen mot jämförelsestatistiken och detaljlistan).
- * @param {any} overblick resultatet av referensOverblick (grupper under minsta gruppstorlek är redan borta)
+ * @param {any} overblick resultatet av referensOverblickUr (grupper under minsta gruppstorlek är redan borta)
  * @param {{id?:string, urval?:any, demo?:any, troskelNot?:any, harStatistik?:boolean}} opt
  */
 export function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot, harStatistik = false }) {

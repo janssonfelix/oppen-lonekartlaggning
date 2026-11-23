@@ -29,7 +29,7 @@ Modellen bor i `src/lib/likvardighet.js` och speglas in i bygget som övriga kä
 `src/app/34-likvardigt-arbete.js` innehåller bara tillståndsadaptern och gränssnittet: rendering, diagram och export.
 Att adaptern verkligen delegerar vaktas av `tests/drift.test.js`.
 
-**Orkestratorn** `likvardighetspar({ data, statistik, nationellKlass, opts })` i lib kör stegen i ordning:
+**Orkestratorn** `likvardighetsparUr({ data, statistik, nationellKlass, opts })` i lib kör stegen i ordning:
 `aggregeraOrgKvDom` (steg 1, och organisationens jämförelseetiketter), `klassificeraStatistik` (jämförelsestatistikens
 jämförelseetiketter), filtret för jämförelsemängden (avsnitt 4), `byggPar` eller `byggParPoang` (steg 3) och
 `byggParLagreKrav` (avsnitt 6). Den returnerar `orgKvDom`, `orgIckeKv`, `statIckeKv`, `pairs`, `parAntal`,

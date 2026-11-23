@@ -29,7 +29,7 @@ import { arKvinna, arMan } from './kon.js';
 import { konsMedianerUrLoner } from './struktur.js';
 
 // Omslag: tål null/undefined som indata (0 för tom), vilket stat.js inte gör. Algoritmen finns bara i stat.js.
-function _median(arr) { return arr && arr.length ? _medianStat(arr) : 0; }
+export function _median(arr) { return arr && arr.length ? _medianStat(arr) : 0; }
 function _kvantil(arr, q) { return arr && arr.length ? _kvantilStat(arr, q) : 0; }
 
 /**

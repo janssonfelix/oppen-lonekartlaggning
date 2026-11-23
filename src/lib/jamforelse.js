@@ -14,11 +14,9 @@
  */
 import { median, kvantil } from './stat.js';
 import { sektorsnamn, aidAvYrke, namnrader } from './aid.js';
-import { skapaTermer, ordForAntal, adjektiv } from './termer.js';
+import { STANDARDTERMER as T, ordForAntal, adjektiv } from './termer.js';
 import { arKvinna } from './kon.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 const _pos = v => (typeof v === 'number' && v > 0 ? v : null);
 const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(p90) });

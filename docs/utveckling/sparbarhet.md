@@ -96,7 +96,7 @@ avsnitt 11.
 |---|---|---|---|---|---|---|
 | B5.1 | Grupperna: AID-koden (de inledande siffrorna i fältet, annars hela texten) i BAS-intervallet, med namnet från texten på flest av gruppens rader (vid lika många den första i lönefilen); också Lika arbetes tabell, med en rad per kod och intervall | `aidAvRad` och `namnrader`, `aid.js`; `gruppnycklar`, `falt.js`; `likaArbeteGrupper`, `rapportunderlag.js` | AID, BAS | ADR-89 | `tests/grupp-aid-kod.test.js`, `tests/grupp-aid-kod-app.test.js` | saknas |
 | B5.2 | Kvinnodominerat: *Mer än* (`'do'`) eller *Minst* (`'scb'`) gränsen, standard 60 % | `arKvinnodominerad`, `konsklass`, `likvardighet.js` | andel kvinnor | `likvardighetsmodellen.md` §2; ADR-60, 72 | `tests/likvardighet.test.js` | saknas |
-| B5.3 | Paren i likvärdigt arbete och lägre krav, högre lön | `byggPar`, `byggParLagreKrav`, `likvardighetspar`, `likvardighet.js` | lön, kön, AID, BAS | `likvardighetsmodellen.md` §3–§6; ADR-25, 61 | `tests/likvardighet.test.js` | saknas |
+| B5.3 | Paren i likvärdigt arbete och lägre krav, högre lön | `byggPar`, `byggParLagreKrav`, `likvardighetsparUr`, `likvardighet.js` | lön, kön, AID, BAS | `likvardighetsmodellen.md` §3–§6; ADR-25, 61 | `tests/likvardighet.test.js` | saknas |
 | B5.4 | Åldersjusterad skillnad i ett par | `aldersjusteradSkillnad`, `likvardighet.js` | lön, ålder | `likvardighetsmodellen.md` §5 | `tests/likvardighet.test.js` | saknas |
 | B5.5 | Tabellerna per AID-kod och BAS-intervall, hierarkiska par; Lika arbete AID x BAS är Lika arbetes grupper och status (`likaArbeteGrupper`) i BAS-ordning, utan egen bedömning, och samma blad (`_aidbasLikaBlad`) är blad 2a i JPA-protokollet; gränserna i tabellen är de statusen prövades mot (`bedomSkillnad`, `status.js`) | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57, 90, 93 | `tests/aidbas.test.js`, `tests/aidbas-app.test.js`, `tests/ktroskel-utdata.test.js` | saknas |
 | B5.6 | Personer att granska: förväntad lön ur kollegorna (log-lön mot ålder när spridningen är minst 5 år, annars medianen), flagga vid minst `grans` % under | `flaggaIndivider`, `individflaggor.js` | lön, ålder, AID, BAS | ADR-23, 89 | `tests/individflaggor.test.js`, `tests/grupp-aid-kod.test.js` | `14-granska-median.json`, `15-granska-alder.json` |
@@ -111,7 +111,7 @@ avsnitt 11.
 | B6.3 | Könsgap i bandet; minst 10 av varje kön | `konsskillnadIBand`, `lonepolitik.js` | lön, kön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
 | B6.4 | Jämförelsestatistikens matchning: samma AID och BAS, annars samma AID utan BAS | `statistikFor`, `jamforelse.js` | statistiken | ADR-35, 55 | `tests/jamforelse.test.js` | saknas |
 | B6.5 | Jämförelseraderna: P10, median, P90 per AID-kod och BAS, skillnad (org/ref − 1)·100 | `jamforelseRader`, `avvikelseRangordning`, `statistikMarknad`, `jamforelse.js` | lön, AID, BAS, referenserna | ADR-35, 55 | `tests/jamforelse.test.js`, `tests/jamforelsestatistik-app.test.js` | saknas |
-| B6.6 | Läget i spannet (0–100, ord med gränserna 33 och 67), mönstret och förslaget på referens | `lageISpann`, `monster`, `forslag`, `lageOchForslag`, `referensOverblick`, `referenser.js` | jämförelseraderna | ADR-55 | `tests/referenser.test.js`, `tests/lonelaget-app.test.js` | saknas |
+| B6.6 | Läget i spannet (0–100, ord med gränserna 33 och 67), mönstret och förslaget på referens | `lageISpann`, `monster`, `forslag`, `lageOchForslag`, `referensOverblickUr`, `referenser.js` | jämförelseraderna | ADR-55 | `tests/referenser.test.js`, `tests/lonelaget-app.test.js` | saknas |
 | B6.7 | Tabellerna per BAS-intervall med kompletterande undertryckning | `perBasTabeller`, `perbas.js`; regeln i `kompletterandeUndertryckning`, `undertryckning.js` | lön, kön, ålder, AID, BAS | ADR-52, 83; `k-troskeln.md` §2 | `tests/perbas.test.js`, `tests/undertryckning.test.js` | saknas |
 | B6.8 | Kompletterande undertryckning mellan JPA-protokollets blad för BAS-intervall och för lika arbete | `kompletterandeUndertryckningPerNyckel`, `undertryckning.js`; anropet i `src/app/24-excelexport.js` | antal per kön och intervall | ADR-91, 92; `k-troskeln.md` §2 | `tests/undertryckning.test.js` | saknas |
 | B6.9 | Sammanslagning av delar där ett kön har 1 till k − 1 personer | `sammanslagning`, `undertryckning.js` | antal per kön och del | ADR-87; `k-troskeln.md` §2 | `tests/undertryckning.test.js`, `tests/gapuppdelning.test.js`, `tests/sektor.test.js` | saknas |
@@ -171,8 +171,8 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 
 | Namn | Värde | Fil | Vad det styr | Vem ändrar |
 |---|---|---|---|---|
-| `K_STANDARD` | 10 | `src/app/06-k-troskel.js` (samma värde i `src/lib/ktroskel.js`) | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (2–1000) och Organisationspaket |
-| `K_MIN`, `K_MAX` | 2, 1000 | `src/app/06-k-troskel.js` (samma värden i `src/lib/ktroskel.js`) | tröskelns gränser | Fast |
+| `K_STANDARD` | 10 | `src/lib/ktroskel.js` | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (2–1000) och Organisationspaket |
+| `K_MIN`, `K_MAX` | 2, 1000 | `src/lib/ktroskel.js` | tröskelns gränser | Fast |
 | `K_SKARM` | 1 | `src/app/06-k-troskel.js` | tröskeln på skärmen | Fast |
 | `LITET_UNDERLAG` | 5 | `src/app/06-k-troskel.js` | en stapel för färre personer ritas med mönster; golvet för en egen rad i könsfördelningen i Lika arbete | Fast |
 | `KI_NEDRE` | 0,025 | `src/lib/stat.js` | percentilintervallens nedre andel | Fast |

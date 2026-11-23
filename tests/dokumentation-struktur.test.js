@@ -118,7 +118,7 @@ describe('dokumentation: CHANGELOG är kronologisk', () => {
 describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
     // Källan är K_STANDARD i koden. Användaren kan ändra tröskeln (ADR-38): appens texter fylls i ur kTroskel()
     // (vaktas i ktroskel.test.js), och dokumenten nedan anger standardvärdet. Det här är den enda kontrollen av talet.
-    const K = Number(/const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-troskel.js'))[1]);
+    const K = Number(/export const K_STANDARD = (\d+);/.exec(läs('src/lib/ktroskel.js'))[1]);
     const filer = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
                    'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', MAL, ADR];
 

@@ -26,12 +26,9 @@
  */
 
 import { gruppnycklar, konAv } from './falt.js';
-import { skapaTermer, stor } from './termer.js';
+import { STANDARDTERMER as T, stor } from './termer.js';
 import { personOrd } from './namn.js';
 import { sammanslagning } from './undertryckning.js';
-
-/** Standardtermerna (ADR-74). */
-const T = skapaTermer();
 
 /** Variablerna i den ordning gränssnittet visar dem. */
 export const GAP_VARIABLER = ['bas', 'sektor', 'aidniva', 'aid', 'alder'];

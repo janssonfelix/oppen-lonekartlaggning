@@ -16,11 +16,8 @@
 
 import { anpassaOLS, pVardeTvasidigt, tKvantil } from './stat.js';
 import { statusNiva } from './status.js';
-import { skapaTermer } from './termer.js';
+import { STANDARDTERMER as T } from './termer.js';
 import { arKvinna, arMan } from './kon.js';
-
-/** Standardtermerna (ADR-74). */
-const T = skapaTermer();
 
 /**
  * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är

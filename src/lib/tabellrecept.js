@@ -12,9 +12,7 @@
  */
 import { pivottabell } from './utforska.js';
 import { personOrd } from './namn.js';
-import { skapaTermer, stor } from './termer.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { STANDARDTERMER as T, stor } from './termer.js';
 
 
 // Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.

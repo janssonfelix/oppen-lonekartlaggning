@@ -24,11 +24,9 @@
 import { median, kvantil } from './stat.js';
 import { sektorsnamn, aidAvRad, namnrader } from './aid.js';
 import { statistikFor } from './jamforelse.js';
-import { skapaTermer, stor, adjektiv } from './termer.js';
+import { STANDARDTERMER as T, stor, adjektiv } from './termer.js';
 import { kompletterandeUndertryckning } from './undertryckning.js';
 import { arKvinna, arMan } from './kon.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----

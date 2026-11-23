@@ -10,12 +10,10 @@
 // jämförelsen kan visa fördelningen per kategori båda åren. Ett bokslut från version 1 läses som förut, utan skäl.
 
 import { median, kvantil } from './stat.js';
-import { skapaTermer } from './termer.js';
+import { STANDARDTERMER as T } from './termer.js';
 import { valideraSkal, skalPerKategori, skalSammanstallning, skalKategorier } from './sakligaskal.js';
 import { aidAvYrke } from './aid.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 export const ARSBOKSLUT_VERSION = 2;
 const MAX_TEXT = 200;

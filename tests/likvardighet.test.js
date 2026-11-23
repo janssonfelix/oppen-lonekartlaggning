@@ -22,7 +22,7 @@ import {
     byggParPoang,
     byggParLagreKrav,
     aldersjusteradSkillnad,
-    likvardighetspar,
+    likvardighetsparUr,
     arKvinnodominerad,
     konsklass
 } from '../src/lib/likvardighet.js';
@@ -314,7 +314,7 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
 });
 
 // ===================================================================
-describe('[B5.3] likvardighetspar — full pipeline (v4)', () => {
+describe('[B5.3] likvardighetsparUr — full pipeline (v4)', () => {
     it('end-to-end: internt jämförelseyrke är primärt över jämförelsestatistiken', () => {
         const rng = makeRng();
         const data = [
@@ -326,7 +326,7 @@ describe('[B5.3] likvardighetspar — full pipeline (v4)', () => {
         const statistik = [
             statRow({ aid: '2051', bas: 'B', median: 99000, andelKv: 25, aidFull: '2051 Ingenjör' })
         ];
-        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub,
+        const res = likvardighetsparUr({ data, statistik, nationellKlass: nationellStub,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng } });
         expect(res.orgKvDom).toHaveLength(1);
         expect(res.orgIckeKv).toHaveLength(1);
@@ -345,7 +345,7 @@ describe('[B5.3] likvardighetspar — full pipeline (v4)', () => {
             statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: 25, aidFull: '2051 Ingenjör' }),
             statRow({ aid: '7000', bas: 'B', median: 41000, andelKv: 75, aidFull: '7000 Chef' })  // kv-dom → skippas
         ];
-        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub,
+        const res = likvardighetsparUr({ data, statistik, nationellKlass: nationellStub,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng } });
         expect(res.orgIckeKv).toHaveLength(0);
         expect(res.statIckeKv).toHaveLength(1);
@@ -360,7 +360,7 @@ describe('[B5.3] likvardighetspar — full pipeline (v4)', () => {
         const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
             kvLons: Array(16).fill(30000), maLons: Array(4).fill(30000) });
         const statistik = [statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: null, aidFull: '2051 Ingenjör' })];
-        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub,
+        const res = likvardighetsparUr({ data, statistik, nationellKlass: nationellStub,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng: makeRng() } });
         expect(res.pairs).toHaveLength(1);
         expect(res.pairs[0].maKlassKort).toBe('nationell');
@@ -372,7 +372,7 @@ describe('[B5.3] likvardighetspar — full pipeline (v4)', () => {
     it('ger tomt resultat utan jämförbara BAS-intervall', () => {
         const data = orgRows({ aid: '5301', bas: 'A', kvLons: Array(12).fill(28000), maLons: [] });
         const statistik = [statRow({ aid: '2051', bas: 'C', median: 40000, andelKv: 20 })];
-        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub });
+        const res = likvardighetsparUr({ data, statistik, nationellKlass: nationellStub });
         expect(res.pairs).toHaveLength(0);
         expect(res.diagnostik.jämförelse.gemensammaBas).toBe(0);
     });
@@ -545,7 +545,7 @@ describe('byggParPoang — #5: arbetsvärdering som krav-proxy', () => {
         expect(jämförelse.kvUtanPoang).toBe(1);
     });
 
-    it('likvardighetspar väljer poäng-läge när poangByKey finns', () => {
+    it('likvardighetsparUr väljer poäng-läge när poangByKey finns', () => {
         const data = [
             ...orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
                 kvLons: [29000, 30000, 31000, 30000, 30000, 30000, 30000, 30000], maLons: [30000, 30000] }),
@@ -553,7 +553,7 @@ describe('byggParPoang — #5: arbetsvärdering som krav-proxy', () => {
                 kvLons: [34000], maLons: [33000, 34000, 35000, 34000, 34000, 34000, 34000, 34000, 34000] })
         ];
         const poangByKey = new Map([['5301|B', 100], ['4100|D', 100]]);
-        const res = likvardighetspar({ data, statistik: [], nationellKlass: nationellStub,
+        const res = likvardighetsparUr({ data, statistik: [], nationellKlass: nationellStub,
             opts: { poangByKey, poangBandPct: 5, rng: makeRng() } });
         expect(res.diagnostik.jämförelse.kravProxy).toBe('poäng');
         expect(res.pairs.length).toBe(1);
@@ -571,7 +571,7 @@ describe('byggParPoang — #5: arbetsvärdering som krav-proxy', () => {
             statRow({ aid: '2001', bas: 'B', median: 40000, andelKv: 20 })    // ingen poäng i tabellen
         ];
         const poangByKey = new Map([['5301|B', 100]]);
-        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub,
+        const res = likvardighetsparUr({ data, statistik, nationellKlass: nationellStub,
             opts: { poangByKey, poangBandPct: 5, rng: makeRng() } });
         expect(res.statIckeKv).toHaveLength(2);
         expect(res.pairs).toHaveLength(0);
@@ -582,7 +582,7 @@ describe('byggParPoang — #5: arbetsvärdering som krav-proxy', () => {
     it('faller tillbaka på BAS-läge utan poangByKey (oförändrat)', () => {
         const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
             kvLons: [29000, 30000, 31000], maLons: [30000] });
-        const res = likvardighetspar({ data, statistik: [], nationellKlass: nationellStub,
+        const res = likvardighetsparUr({ data, statistik: [], nationellKlass: nationellStub,
             opts: { rng: makeRng() } });
         expect(res.diagnostik.jämförelse.kravProxy).toBe('bas');
     });
@@ -594,7 +594,7 @@ describe('lägre krav, högre lön', () => {
         ...Array.from({ length: ma }, (_, i) => ({ aid, bas, lon: lon + i, kon: 'man', yrkeLabel: `Yrke ${aid}` })),
     ];
     const rng = () => 0.5;
-    const kor = (data, opts = {}) => likvardighetspar({ data, opts: { rng, B: 50, ...opts } });
+    const kor = (data, opts = {}) => likvardighetsparUr({ data, opts: { rng, B: 50, ...opts } });
 
     it('par mot icke-kvinnodominerat yrke i lägre BAS med högre median', () => {
         const r = kor([...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000)]);
@@ -745,7 +745,7 @@ describe('[B5.4] aldersjusteradSkillnad — jämförelseyrkets lön omräknad ti
         const rows = [];
         unga.forEach(alder => rows.push({ aid: '5301', bas: 'B', lon: kurva(alder), kon: 'kvinna' }));
         aldre.forEach(alder => rows.push({ aid: '4100', bas: 'B', lon: kurva(alder), kon: 'man' }));
-        const { pairs } = likvardighetspar({ data: rows, opts: { B: 20, rng: makeRng() } });
+        const { pairs } = likvardighetsparUr({ data: rows, opts: { B: 20, rng: makeRng() } });
         expect(pairs).toHaveLength(1);
         expect(pairs[0].aldersJusterad).toBeNull();
         expect(pairs[0].kvMedelAlder).toBeNull();
@@ -803,7 +803,7 @@ describe('jämförelseyrken: alla som inte är kvinnodominerade (ADR-60)', () =>
         ...orgRows({ aid: '503012', bas: 'C', label: 'Drifttekniker', kvLons: Array(3).fill(38000), maLons: Array(17).fill(38000) })   // 15 %
     ];
     it('blandad grupp blir jämförelseyrke och paret bär klass och könsandel', () => {
-        const res = likvardighetspar({ data, opts: { minGapPct: 0, B: 20, rng: makeRng() } });
+        const res = likvardighetsparUr({ data, opts: { minGapPct: 0, B: 20, rng: makeRng() } });
         expect(res.orgIckeKv.map(g => g.aid).sort()).toEqual(['502010', '503012']);
         const par = res.pairs.find(p => p.maAid === '502010');
         expect(par).toBeDefined();
@@ -814,7 +814,7 @@ describe('jämförelseyrken: alla som inte är kvinnodominerade (ADR-60)', () =>
     });
 
     it("filtret 'mansdominerade' tar bort den blandade gruppen", () => {
-        const res = likvardighetspar({ data, opts: { minGapPct: 0, B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
+        const res = likvardighetsparUr({ data, opts: { minGapPct: 0, B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
         expect(res.orgIckeKv.map(g => g.aid)).toEqual(['503012']);
         expect(res.pairs.map(p => p.maAid)).toEqual(['503012']);
         expect(res.opts.jamforelse).toBe('mansdominerade');
@@ -825,21 +825,21 @@ describe('jämförelseyrken: alla som inte är kvinnodominerade (ADR-60)', () =>
             ...orgRows({ aid: '100', bas: 'E', kvLons: Array(18).fill(30000), maLons: Array(2).fill(30000) }),
             ...orgRows({ aid: '200', bas: 'C', kvLons: Array(10).fill(34000), maLons: Array(10).fill(34000) })   // 50 %, lägre BAS
         ];
-        const alla = likvardighetspar({ data: d2, opts: { B: 20, rng: makeRng() } });
+        const alla = likvardighetsparUr({ data: d2, opts: { B: 20, rng: makeRng() } });
         expect(alla.lagreKrav.map(p => [p.kvAid, p.maAid, p.maKlass])).toEqual([['100', '200', 'blandad']]);
-        const ma = likvardighetspar({ data: d2, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
+        const ma = likvardighetsparUr({ data: d2, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
         expect(ma.lagreKrav).toEqual([]);
     });
 
     it('externa par bär klassen från statistiken', () => {
         const d3 = orgRows({ aid: '5301', bas: 'B', kvLons: Array(16).fill(30000), maLons: Array(4).fill(30000) });
         const statistik = [statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: 45 })];
-        const res = likvardighetspar({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng() } });
+        const res = likvardighetsparUr({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng() } });
         expect(res.pairs).toHaveLength(1);
         expect(res.pairs[0].jamforKalla).toBe('extern');
         expect(res.pairs[0].maKlass).toBe('blandad');
         expect(res.pairs[0].maKvinnoPct).toBe(45);
-        const ma = likvardighetspar({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
+        const ma = likvardighetsparUr({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
         expect(ma.pairs).toHaveLength(0);
     });
 });

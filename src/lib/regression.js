@@ -21,13 +21,11 @@
  */
 
 import { anpassaOLS, invertera, matrisprodukt, median, pVardeTvasidigt, tKvantil } from './stat.js';
-import { skapaTermer, fyllTermer, ordForAntal, stor } from './termer.js';
+import { STANDARDTERMER as T, fyllTermer, ordForAntal, stor } from './termer.js';
 import { personOrd } from './namn.js';
 import { arKvinna, arMan } from './kon.js';
 import { konsMedianer } from './struktur.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 // Stegens namn i den sekventiella dekomponeringen är nycklar: kortet, rapporten, exporten och testerna slår upp stegen
 // på dem, så de står kvar oförändrade. Det som visas för ett steg kommer ur termerna (stegEtikett, ADR-74).

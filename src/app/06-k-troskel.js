@@ -14,9 +14,7 @@
 // Standardvärdet 10 är verktygets eget (docs/utveckling/k-troskeln.md). Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
 // står i metodbilagan, i exporterad diagramdata och i tabell-CSV; under standard står meningen
 // om sänkt tröskel dessutom på det som kan spridas för sig (se kStampel och _kSanktNot).
-const K_STANDARD = 10;
-const K_MIN = 2;
-const K_MAX = 1000;
+// K_STANDARD, K_MIN och K_MAX står i src/lib/ktroskel.js.
 
 /** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
 const K_SKARM = 1;
