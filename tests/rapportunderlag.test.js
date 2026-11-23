@@ -182,7 +182,7 @@ describe('avsnittBlock', () => {
         expect(t.length).toBe(2);
     });
     it('sammanfattning med oförklarat gap och kvalitet', () => {
-        const b = avsnittBlock('sammanfattning', { n: 200, nKv: 100, nMa: 100, medKv: 36000, medMa: 40000,
+        const b = avsnittBlock('sammanfattning', { n: 200, nKv: 100, nMa: 100, medKv: 36000, medMa: 40000, kvotPct: 90,
             oforklarat: { pct: -2.44, lo: -3.5, hi: -1.4 }, kvalitet: { status: 'varning', brister: ['Jämförbarhet'] } }, {});
         const t = norm(b.stycken.join(' '));
         expect(t).toContain('200 anställda, varav 100 kvinnor och 100 män');

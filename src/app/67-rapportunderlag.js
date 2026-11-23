@@ -49,10 +49,11 @@ function _rapportunderlagBlockExport() {
 
     // Sammanfattning
     const kvLon = d.filter(arKv).map(r => r.lon), maLon = d.filter(arMa).map(r => r.lon);
+    const km = _stKonsMedianerUrLoner(kvLon, maLon);   // k prövas i avsnittet
     const reg = runOLSRegression();
     const uk = bedomningUnderlag({ reg });
     const sammanfattning = {
-        n: d.length, nKv: kvLon.length, nMa: maLon.length, medKv: Stat.median(kvLon), medMa: Stat.median(maLon),
+        n: d.length, nKv: kvLon.length, nMa: maLon.length, medKv: km.medKv, medMa: km.medMa, kvotPct: km.kvotPct,
         oforklarat: reg.error ? null : { pct: reg.konPct, lo: reg.konPctLow, hi: reg.konPctHigh, fras: reg.fras, bortvalt: reg.bortvalt },   // frasen och det bortvalda följer modellen (ADR-56)
         kvalitet: uk ? { status: uk.status, brister: uk.kriterier.filter(c => c.status !== 'ok').map(c => c.namn) } : null,
     };

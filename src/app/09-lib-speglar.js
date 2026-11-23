@@ -1897,6 +1897,7 @@ function histogramKlasser(kv, ma, k) {
     return { konsMedianer, konsMedianerUrLoner, medianGapPct, representationPerBas, kvartilfordelning, fordelningsgap, tillDirektivtecken, lonebegreppReservation, omfang, lonesteg, histogramKlasser };
 })();
 const _stKonsMedianer = __mirrorStruktur.konsMedianer;
+const _stKonsMedianerUrLoner = __mirrorStruktur.konsMedianerUrLoner;
 const _stMedianGapPct = __mirrorStruktur.medianGapPct;
 const _stRepresentationPerBas = __mirrorStruktur.representationPerBas;
 const _stKvartilfordelning = __mirrorStruktur.kvartilfordelning;
@@ -9797,6 +9798,7 @@ const __mirrorRapportunderlag = (() => {
     const bedomSkillnad = __mirrorStatus.bedomSkillnad;
     const statusKonstanter = __mirrorStatus.statusKonstanter;
     const lonebegreppReservation = __mirrorStruktur.lonebegreppReservation;
+    const konsMedianerUrLoner = __mirrorStruktur.konsMedianerUrLoner;
     const personOrd = __mirrorNamn.personOrd;
     const sektorJusteradText = __mirrorSektor.sektorJusteradText;
     const sektorAndelNot = __mirrorSektor.sektorAndelNot;
@@ -9904,11 +9906,11 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
                 gapPct: 0, medTot: median(kv.concat(ma)), lag: null, hog: null });
             continue;
         }
-        const medKv = median(kv), medMa = median(ma);
+        const km = konsMedianerUrLoner(kv, ma), { medKv, medMa } = km;
         // Medelvärdet på samma löner som medianen; protokollet redovisar båda (ADR-79), statusen följer medianen.
         const medelKv = kv.reduce((s, x) => s + x, 0) / kv.length, medelMa = ma.reduce((s, x) => s + x, 0) / ma.length;
         const kvot = medKv / medMa;
-        const gapPct = Math.abs(kvot * 100 - 100);
+        const gapPct = Math.abs(km.kvotPct - 100);
         const b = bedomSkillnad(kv, ma, { golv });
         const g = { yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
             medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
@@ -10134,7 +10136,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     if (typ === 'sammanfattning') {
         // k-anonymitet: med ett kön under k i urvalet redovisas inga könsuppdelade lönemått.
         const litet = u.nKv < k || u.nMa < k;
-        const kvot = !litet && u.medMa > 0 ? u.medKv / u.medMa * 100 : null;
+        const kvot = litet ? null : u.kvotPct ?? null;   // ur konsMedianer (struktur.js), som anroparen räknat
         const st = [`Underlaget omfattar ${formatTal(u.n)} anställda, varav ${formatTal(u.nKv)} kvinnor och ${formatTal(u.nMa)} män.`
             + (litet ? ` Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${k} ${personOrd(k)} i urvalet.`
                      : ` Kvinnornas medianlön är ${_kr(u.medKv)} och männens ${_kr(u.medMa)}, vilket motsvarar ${_pct(kvot)} av männens.`)];
