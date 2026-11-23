@@ -71,6 +71,8 @@ function _fkPausa(fk, lasIn) {
     /** @type {HTMLElement|null} */ (document.getElementById('fk-las-in'))?.focus?.({ preventScroll: true });
     announceToScreenReader(dataStatus.textContent);
 }
+/** En fil som väntade på Läs in ersätts av en ny inläsning (32-filinlasning.js). */
+function _fkSlappVantande() { _fkVantar = null; }
 /** Läs in: filen läses in som om inställningen vore av. */
 function _fkLasIn() {
     const v = _fkVantar;

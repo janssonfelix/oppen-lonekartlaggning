@@ -20881,6 +20881,8 @@ function _fkPausa(fk, lasIn) {
     /** @type {HTMLElement|null} */ (document.getElementById('fk-las-in'))?.focus?.({ preventScroll: true });
     announceToScreenReader(dataStatus.textContent);
 }
+/** En fil som väntade på Läs in ersätts av en ny inläsning (32-filinlasning.js). */
+function _fkSlappVantande() { _fkVantar = null; }
 /** Läs in: filen läses in som om inställningen vore av. */
 function _fkLasIn() {
     const v = _fkVantar;
@@ -23782,7 +23784,7 @@ const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-valida
 function _rensaAllData({ inbakat = true } = {}) {
     visningNy();   // också rensningen efter en tid utan aktivitet: ingen ritad flik visas igen (ADR-81)
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
-    _rmMinne = null;   // förhandsbeskedets minne (58-rapportmodell.js)
+    _rmMinneSlapp();   // förhandsbeskedets minne (58-rapportmodell.js)
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
     //    urvalets värdelistor, diagrammets exportfunktion) — släpp dem också,
     //    annars finns hela underlaget kvar i minnet efter rensningen.
@@ -26248,7 +26250,7 @@ function loadStructureFile(file) {
             const fkEj = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: [], filnamn: file ? file.name : null });
             fkForsta.length = 0;
             fkKon.clear();
-            _fkVantar = null;
+            _fkSlappVantande();
             state.forhandskontroll = { ...fkEj, ejInlast: true };
             renderForhandskontroll();
             _resetInactivityTimer();   // de tio raderna på skärmen rensas också vid inaktivitet
@@ -26266,7 +26268,7 @@ function loadStructureFile(file) {
         fkKon.clear();
         const nyAnsvarKolumn = state.ansvarKolumn, nyImportprofil = state.importprofil;
         const lasIn = () => {
-            _fkVantar = null;   // en fil som väntade på Läs in ersätts av den här
+            _fkSlappVantande();   // en fil som väntade på Läs in ersätts av den här
             state.ansvarKolumn = nyAnsvarKolumn;
             state.importprofil = nyImportprofil;
             state.forhandskontroll = fk;
@@ -35745,6 +35747,8 @@ let _rmHandelser = 0;
 }, true));
 /** @type {{nyckel: any[], avsnitt: any}|null} */
 let _rmMinne = null;
+/** Rensa all data släpper minnet (26-rensning.js). */
+function _rmMinneSlapp() { _rmMinne = null; }
 function _rmMinnesNyckel() {
     return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
         state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];

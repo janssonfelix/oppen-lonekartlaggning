@@ -510,7 +510,7 @@ function loadStructureFile(file) {
             const fkEj = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: [], filnamn: file ? file.name : null });
             fkForsta.length = 0;
             fkKon.clear();
-            _fkVantar = null;
+            _fkSlappVantande();
             state.forhandskontroll = { ...fkEj, ejInlast: true };
             renderForhandskontroll();
             _resetInactivityTimer();   // de tio raderna på skärmen rensas också vid inaktivitet
@@ -528,7 +528,7 @@ function loadStructureFile(file) {
         fkKon.clear();
         const nyAnsvarKolumn = state.ansvarKolumn, nyImportprofil = state.importprofil;
         const lasIn = () => {
-            _fkVantar = null;   // en fil som väntade på Läs in ersätts av den här
+            _fkSlappVantande();   // en fil som väntade på Läs in ersätts av den här
             state.ansvarKolumn = nyAnsvarKolumn;
             state.importprofil = nyImportprofil;
             state.forhandskontroll = fk;

@@ -36,7 +36,7 @@ const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-valida
 function _rensaAllData({ inbakat = true } = {}) {
     visningNy();   // också rensningen efter en tid utan aktivitet: ingen ritad flik visas igen (ADR-81)
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
-    _rmMinne = null;   // förhandsbeskedets minne (58-rapportmodell.js)
+    _rmMinneSlapp();   // förhandsbeskedets minne (58-rapportmodell.js)
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
     //    urvalets värdelistor, diagrammets exportfunktion) — släpp dem också,
     //    annars finns hela underlaget kvar i minnet efter rensningen.

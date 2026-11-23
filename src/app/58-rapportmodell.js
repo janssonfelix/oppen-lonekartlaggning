@@ -538,6 +538,8 @@ let _rmHandelser = 0;
 }, true));
 /** @type {{nyckel: any[], avsnitt: any}|null} */
 let _rmMinne = null;
+/** Rensa all data släpper minnet (26-rensning.js). */
+function _rmMinneSlapp() { _rmMinne = null; }
 function _rmMinnesNyckel() {
     return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
         state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];
