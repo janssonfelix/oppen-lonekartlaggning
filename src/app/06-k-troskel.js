@@ -8,7 +8,7 @@ import { _kMaskNoteText } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _rfExportFigur } from './10-diagramritare.js';
 import { state } from './12-tillstand.js';
-import { computeBootstrapCI, computePowerAnalysis, renderProcessTracker, renderUnderlagetsKvalitet, updateCompliance, updateDashboardStats } from './13-oversikt.js';
+import { computeBootstrapCI, computePowerAnalysis, renderProcessTracker, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderDataValidationReport } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
@@ -21,7 +21,7 @@ import { forklaringsmodell } from './50-regressionsmodeller.js';
 import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { explorerSmaIExport } from './70-utforska.js';
 import { diagramKopiaKalla } from './74-alla-diagram.js';
-import { renderGruppdossier } from './80-gruppdossier.js';
+import { ritaGruppdossier } from './80-gruppdossier.js';
 import { oppnaInstallningar } from './86-installningar.js';
 
 // ---- k-anonymitet (uppgiftsminimering och inbyggt dataskydd, art. 5.1 c och 25) ----
@@ -339,7 +339,7 @@ function _skattningarIBakgrunden() {
             if (state.data.length) {
                 try { computeBootstrapCI(); } catch (_e) { state.bootstrapCI = null; }
                 try { state.powerAnalysis = computePowerAnalysis(); } catch (_e) { state.powerAnalysis = null; }
-                if (typeof updateDashboardStats === 'function') updateDashboardStats();
+                if (typeof ritaNyckeltal === 'function') ritaNyckeltal();
                 if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet();
                 const oppen = document.querySelector('.nav-item.active[data-tab]');
                 const flik = oppen ? oppen.getAttribute('data-tab') : null;
@@ -379,8 +379,8 @@ export function _omritningssteg() {
     }]);
     // Översikt och Filer och kvalitet: nyckeltal, kompliansöversikt, underlagets kvalitet, processöversikten, Att göra,
     // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
-    steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
-    steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
+    steg.push(['nyckeltal', () => { if (typeof ritaNyckeltal === 'function') ritaNyckeltal(); }]);
+    steg.push(['kompliansöversikt', () => { if (typeof ritaKravstatus === 'function') ritaKravstatus(); }]);
     // Underlagets kvalitet, Att göra och processöversikten läser samma regression: den körs en gång i omritningen och
     // skickas vidare, som punkterna nedan (ADR-17: ett värde inom omritningen, ingen cache). Kastar den ritar varje del
     // med en egen körning. Mellan stegen kan en tidtagare byta underlaget (en fil som läses klart, rensningen vid
@@ -422,7 +422,7 @@ export function _omritningssteg() {
     // En öppen gruppdossier byggdes med den gamla tröskeln.
     steg.push(['gruppdossiern', () => {
         const dossier = document.getElementById('dossier-body');
-        if (dossier && dossier.innerHTML.trim() && typeof renderGruppdossier === 'function') renderGruppdossier();
+        if (dossier && dossier.innerHTML.trim() && typeof ritaGruppdossier === 'function') ritaGruppdossier();
     }]);
     return steg;
 }

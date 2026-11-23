@@ -436,7 +436,7 @@ describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
         expect(w.document.getElementById('aria-live-announcer').textContent).toMatch(/kräver ålder i lönefilen/);
         expect(w.eval("_sokKraver({ flik: 'kon' })")).toBe('alder');
         // Översiktens medelålder är tom.
-        w.eval('updateDashboardStats()');
+        w.eval('ritaNyckeltal()');
         expect(w.document.getElementById('stat-age').textContent).toBe('–');
     });
     it('med ålder igen låses fliken upp och får sitt eget tips', () => {
@@ -510,7 +510,7 @@ describe('[S5] organisationsneutralt standardläge', () => {
     const utanReferens = () => {
         const w = createAppWindow();
         w.__state.data = rader();
-        w.eval('populateSelects(); unlockTabs(); updateCompliance();');
+        w.eval('populateSelects(); unlockTabs(); ritaKravstatus();');
         return w;
     };
     it('ingen inbyggd referens och neutral profil', () => {
@@ -693,7 +693,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
         w.__lasInReferens([{ bas: 'C', p10: 28300, med: 31700, p90: 35400 }, { bas: 'D', p10: 30000, med: 33900, p90: 37800 }], 'ref.csv');
-        w.__updateCompliance();
+        w.__ritaKravstatus();
         expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/^0 av 1 BAS-intervall/);
     });
     it('Exportera har checklistan överst, robustheten och exporterna som lista; rapportunderlaget står i Rapporttext', () => {

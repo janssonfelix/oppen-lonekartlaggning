@@ -167,14 +167,14 @@ describe('samma bild på Översikt', () => {
     beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
 
     it('kompliansen räknar bara jämförbara BAS och säger hur många intervall exporten inte redovisar', () => {
-        w.__updateCompliance();
+        w.__ritaKravstatus();
         const t = w.document.getElementById('comp-gap').textContent;
         expect(t).toMatch(/av \d+ jämförbara BAS-intervall/);
         expect(t).toMatch(/\d+ intervall redovisas inte i exporten \(ett kön under \d+\)/);
         expect(t).not.toMatch(/maskeras/);
     });
     it('referensens P10 skrivs "P10 i {referens}", utan genitiv-s efter kolon', () => {
-        w.__updateCompliance();
+        w.__ritaKravstatus();
         const t = w.document.getElementById('comp-pol-label').textContent;
         expect(t).not.toMatch(/:s\b/);
         if (w.eval('harReferens()')) expect(t).toBe(`Under P10 i ${w.eval('referensKortnamn()')}`);
@@ -192,7 +192,7 @@ describe('samma bild på Översikt', () => {
         w.__state.kLage = 'skarm';
     });
     it('en röd gap-ruta står aldrig bredvid en tom åtgärdslista', () => {
-        w.__updateCompliance();
+        w.__ritaKravstatus();
         w.eval('renderActionChecklist()');
         const kort = w.document.getElementById('comp-gap');
         const rod = /crit|warn/.test(kort.className);
@@ -209,11 +209,11 @@ describe('samma bild på Översikt', () => {
         flaggade.forEach(b => expect(ids).toContain('gap-bas-' + b));
         expect(ids.filter(i => i.startsWith('gap-bas-')).sort()).toEqual(flaggade.map(b => 'gap-bas-' + b).sort());
         // Rutan på Översikt räknar samma intervall.
-        w.eval('updateCompliance()');
+        w.eval('ritaKravstatus()');
         expect(w.document.getElementById('comp-gap-val').textContent).toMatch(new RegExp(`^${flaggade.length} `));
     });
     it('nyckeltalet hänvisar inte till EU-gränsen för hela organisationen', () => {
-        w.eval('updateDashboardStats()');
+        w.eval('ritaNyckeltal()');
         const t = w.document.getElementById('dashboard-summary').textContent;
         expect(t).not.toContain('bör utredas enligt EU');
         // Under talet står bara vad det är; förklaringen ligger i verktygstipset (nyckeltalsraden är en rad hög).
@@ -427,7 +427,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Att göra',
         expect(rubriker[0]).toBe(2);
         for (let i = 1; i < rubriker.length; i++) expect(rubriker[i] - rubriker[i - 1], `rubrik ${i}`).toBeLessThanOrEqual(1);
         w.__state.statistik = [];
-        w.eval('updateCompliance()');
+        w.eval('ritaKravstatus()');
         const lank = d.querySelector('#comp-bm .comp-lank');
         expect(lank.hidden || lank.closest('[hidden]') !== null).toBe(true);
     });
@@ -449,7 +449,7 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — efterlevnad', ()
         try {
             win.__loadDemoData();
             win.__state.policy = [{ aid: '5301', p10: 25000, med: 30000, p90: 40000 }];   // endast AID
-            win.__updateCompliance();
+            win.__ritaKravstatus();
             const card = win.document.getElementById('comp-pol');
             expect(card.className).toContain('na');
             expect(card.className).not.toContain('ok');

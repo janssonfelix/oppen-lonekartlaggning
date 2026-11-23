@@ -9,7 +9,7 @@ import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDAR
 import { _rfRensaAlla } from './10-diagramritare.js';
 import { sattDiagramMarkering } from './11-markering.js';
 import { aterstallReferens, state } from './12-tillstand.js';
-import { ovRitaLage, updateCompliance } from './13-oversikt.js';
+import { ovRitaLage, ritaKravstatus } from './13-oversikt.js';
 import { _fkSlapp, _fkVantar } from './17-forhandskontroll.js';
 import { _renderDemoBanner } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
@@ -215,7 +215,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     if (typeof navigateTo === 'function') navigateTo('dashboard');
 
     updateGdprBanner();
-    if (typeof updateCompliance === 'function') updateCompliance();
+    if (typeof ritaKravstatus === 'function') ritaKravstatus();
     announceToScreenReader('All data har raderats ur minnet.');
     // Organisationsfil: paketet är en del av filen och kommer tillbaka efter rensningen, som vid start.
     if (inbakat && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();

@@ -19,7 +19,7 @@ import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDAR
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, harReferens, referensNamn, state } from './12-tillstand.js';
-import { populateSelects, renderProcessTracker, updateCompliance } from './13-oversikt.js';
+import { populateSelects, renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
 import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { visningNy } from './23-exportgrind.js';
@@ -222,7 +222,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     renderConsistencyBanner();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).
     if (kAndrad && state.data.length) { populateSelects(); _renderaOmAllaFlikar(); }
-    else { updateCompliance(); renderActionChecklist(); renderProcessTracker(); refreshCurrentTab(); }
+    else { ritaKravstatus(); renderActionChecklist(); renderProcessTracker(); refreshCurrentTab(); }
 
     const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.`
         + (varningar.length ? ' ' + varningar.join(' ') : '');
@@ -580,7 +580,7 @@ export function uppstartOrganisationspaket() {
         sattOrgTyp(/** @type {HTMLInputElement} */ (e.target).value);
         if (!state.data.length) return;
         invalidateStatCaches();
-        updateCompliance();
+        ritaKravstatus();
         renderActionChecklist();
         refreshCurrentTab();
     });

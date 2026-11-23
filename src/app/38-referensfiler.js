@@ -7,12 +7,12 @@ import { getField, hideLoading, showLoading } from './03-hjalpfunktioner.js';
 import { _kopplaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, getData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
-import { renderProcessTracker, updateCompliance } from './13-oversikt.js';
+import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
 import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { renderPaketInfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
 import { markUploadLoaded, readTabularFile, renderFilrutor, resetUploadCell } from './32-filinlasning.js';
-import { generateRapport } from './39-loneoversikt.js';
+import { ritaLoneoversikt } from './39-loneoversikt.js';
 
 // ---- File Upload: Policy CSV ----
 // Läser in ett eget ställningstagande (redan tolkade rader) och namnger det efter
@@ -122,11 +122,11 @@ export function uppstartReferensfiler() {
             synkaJamforelseFlik();
             markUploadLoaded('upload-cell-policy', 'Inläst');
             state.filnamn.policy = file.name; renderFilrutor();
-            hideLoading(); updateCompliance();
+            hideLoading(); ritaKravstatus();
             renderConsistencyBanner();
             renderActionChecklist();
             renderProcessTracker();
-            if (getData().length > 0) generateRapport();
+            if (getData().length > 0) ritaLoneoversikt();
         }, 'stallningstagande');
     });
     statInput.addEventListener("change", e => {
@@ -226,7 +226,7 @@ export function uppstartReferensfiler() {
                 state.filnamn.statistik = file.name; renderFilrutor();
                 if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
                 synkaJamforelseFlik();
-                hideLoading(); updateCompliance();
+                hideLoading(); ritaKravstatus();
                 renderConsistencyBanner();
                 renderActionChecklist();
                 renderProcessTracker();

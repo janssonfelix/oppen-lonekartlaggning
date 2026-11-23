@@ -46,7 +46,7 @@ Exempel ur koden i dag:
   under den inställda tröskeln. Spärren följer `kInstalld()` oavsett läge, så att huvudtalet är detsamma på skärmen och
   i exporten, och panelen säger varför (`51-lika-arbete-regressionskort.js`).
 - **Det Översikt säger om exporterna.** Hur många BAS-intervall exporterna kan jämföra (`_dqJamforbaraBas`) och
-  underlagets kvalitet räknas med `kInstalld()` (`13-oversikt.js`), eftersom de gäller det som lämnar verktyget.
+  underlagets kvalitet räknas med `kInstalld()` (`kravstatus` i `src/lib/vymodell-oversikt.js`, `13-oversikt.js`), eftersom de gäller det som lämnar verktyget.
 - **Handlingsplanens belopp.** En förifylld rad där den minsta gruppen bakom skillnaden är under den inställda
   tröskeln står i exporterna och bokslutet bara med kategorierna (`_hpUtanBelopp` i `56-handlingsplan.js`).
 - **Löneöversyns förslag (ADR-69).** *Föreslå riktade potter*, mål-läget och känslighetskurvan tar bara kandidatpar
@@ -94,7 +94,7 @@ utan avskiljare, vilket ger `4 AID-etikettervisas` i Excel-exporten. Noten är �
 regressionens ojusterade steg *Endast kön* med den förklarade andelen, en kostnad som räknats ur ett gap — redovisas per
 grupp och för hela organisationen bara när varje kön når tröskeln (`_konFarRedovisas`; för en radmängd
 `_konFarRedovisasFor`). Där ett sådant mått för hela urvalet utelämnats står ett streck och `_konUtelamnatNot()`.
-Det gäller också nyckeltalet på Översikt (`13-oversikt.js`), Löneöversyns råa gap före och efter och scenariojämförelsen A/B (regel R4).
+Det gäller också nyckeltalet på Översikt (`oversiktNyckeltal` i `src/lib/vymodell-oversikt.js`), Löneöversyns råa gap före och efter och scenariojämförelsen A/B (regel R4).
 Samma regel gäller `representationPerBas`, `medianGapPct`, `fordelningsgap` och `kvartilfordelning` i
 `src/lib/struktur.js`, som tar `{ k }` och visar streck och en not i fliken Struktur, Word-utkastet, PDF-rapporten och
 EU-lönerapporten. Kvartilfördelningen visar då antalet per kvartil men inte könsfördelningen i kvartilerna (`konDolt` i
@@ -261,7 +261,7 @@ bara att ta bort personer så länge varje kön har kvar minst tröskeln.
 **Ansvarsgrupperna** (ansvarskod enligt AID). Underraderna per ansvarsgrupp i Lika arbete följer samma regel som raden
 för AID-etiketten: under tröskeln inga lönemått, ett kön under tröskeln ger den samlade medianen; raden *Utan
 ledningsansvar* visar kvoten bara när båda könen där når tröskeln (`ansvarFor` i `src/lib/vymodell-lika-arbete.js`). Gruppdossiern visar bara antal
-per ansvarsgrupp och kön, aldrig lön (`80-gruppdossier.js`), och översiktens andel med ledningsansvar per huvudområde
+per ansvarsgrupp och kön, aldrig lön (`vymodellGruppdossier` i `src/lib/vymodell-gruppdossier.js`), och översiktens andel med ledningsansvar per huvudområde
 står bara för ett kön som når tröskeln (`ledningKv`, `ledningMa` i `src/lib/sektor.js`).
 
 **Löneläget** (ADR-55). Organisationens P10, median och P90 per AID-etikett är gruppvärden. Tabellen mot
@@ -380,7 +380,7 @@ Tröskeln är redovisningens gräns. Skattningar och några tabeller har egna go
 | `statGolv()`: regression per BAS, Blinder-Oaxaca, bootstrap-KI, livscykelmodellen, extremvärdesdetektorn, det justerade gapet inom AID-etikett, ansvarsindikatorn och Personer att granska; därtill statusen *Går ej att bedöma* i uppmärksamhetstrappan (ADR-59) och lönemåtten i tabellerna per AID-kod och BAS-intervall (ADR-57) | `max(kInstalld(), K_STANDARD)`, i båda lägena | Gränsen gäller skattningens tillförlitlighet, inte redovisningen, och följer därför inte med nedåt. Den följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden. |
 | Huvudregressionen (Lönestruktur; `runOLSRegression`) | 5 av varje kön | Fast golv (beslut, ADR-38). Det justerade gapet med konfidensintervall visas därifrån, också när det ojusterade steget utelämnas (regel R1). |
 | Motiveringsregeln om medelålder per kön (`55-prioritering.js`) | 3 av varje kön | Fast golv (beslut, ADR-38). |
-| Löneöversiktens rader per AID-etikett (`39-loneoversikt.js`) | 5 | Fast golv (beslut, ADR-38). |
+| Löneöversiktens rader per AID-etikett (`LONEOVERSIKT_MINSTA_YRKE` i `src/lib/vymodell-loneoversikt.js`) | 5 | Fast golv (beslut, ADR-38). |
 | `LITET_UNDERLAG` (`litetUnderlag()`) | 5 | Ingen maskeringsgräns. I ett diagram ritas en stapel eller ett segment som gäller färre än fem personer med mönster, som en varning (ADR-39, `diagramkarnan.md`). I tabellerna per AID-kod och BAS-intervall är det gränsen för en egen rad i exportläget, och i könsfördelningen per BAS-intervall gränsen för en egen rad i båda lägena (avsnitt 4). |
 | Lönepolitikens mellannivå (`ANTAL_MIN` och `maskeringsniva` i `src/lib/lonepolitik.js`) | Från 5 upp till tröskeln | Grupper mellan 5 och k redovisas med antal (bandplacering i antal), inga lönemått; under 5 maskeras raden, namnges i en not och räknas in i BAS-totalen. Mellannivån försvinner när tröskeln är 5 eller lägre. |
 

@@ -7,14 +7,14 @@ import { kInstalld } from './06-k-troskel.js';
 import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
 import { _mkTabeller, diagramMarkering } from './11-markering.js';
 import { getData, state } from './12-tillstand.js';
-import { populateSelects, renderFilerDelar, renderOversiktDelar, renderUnderlagetsKvalitet, updateCompliance, updateDashboardStats } from './13-oversikt.js';
+import { populateSelects, renderFilerDelar, renderOversiktDelar, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderForhandskontroll } from './17-forhandskontroll.js';
 import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
 import { renderLikvardighet } from './34-likvardigt-arbete.js';
 import { renderForecast } from './36-loneoversyn.js';
 import { renderStructure, renderStrukturUtkast } from './37-struktur.js';
 import { synkaJamforelseFlik } from './38-referensfiler.js';
-import { generateRapport } from './39-loneoversikt.js';
+import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAldersstruktur, ritaAlderOchLon } from './40-alder-karriar.js';
 import { laVymodell, lsBasVymodell, renderLikaArbeteTopp, renderLonestrukturNycklar, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { generateBenchmark, renderStatistikLage } from './42-jamforelse.js';
@@ -412,7 +412,7 @@ function _renderTabContent(target) {
     }
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
-    else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); utAllaDiagramVidRitning(); }
+    else if (target === "utforska"     && d.length) { ritaLoneoversikt(); renderExplorer(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
     // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.
     else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(renderRapportunderlag)); });
@@ -475,9 +475,9 @@ export function refreshCurrentTab() {
     const active = document.querySelector('.nav-item.active');
     if (!active) return;
     const target = active.getAttribute('data-tab');
-    updateDashboardStats();
+    ritaNyckeltal();
     populateSelects();
-    updateCompliance();
+    ritaKravstatus();
     renderUnderlagetsKvalitet();
     renderTabContent(target);
 }

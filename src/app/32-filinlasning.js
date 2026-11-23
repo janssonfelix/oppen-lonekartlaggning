@@ -16,7 +16,7 @@ import { _kopplaNamnFalt, applyProfileLabels, DEFAULT_PROFILE, sattJmfNamn, satt
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
 import { aterstallReferens, getBasIntervals, state } from './12-tillstand.js';
-import { computeBootstrapCI, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, updateCompliance, updateDashboardStats } from './13-oversikt.js';
+import { computeBootstrapCI, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
 import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, renderForhandskontroll } from './17-forhandskontroll.js';
@@ -29,7 +29,7 @@ import { _paketFilnamn, _synkaOrgTyp, _tomStatistik, skapaPaketMedImportprofil }
 import { _aktivFlik, _visaFilkortet, unlockTabs } from './31-navigering.js';
 import { _fcGlomKnappresultat, _fcRensaParMal } from './36-loneoversyn.js';
 import { renderReferensKort } from './38-referensfiler.js';
-import { generateRapport } from './39-loneoversikt.js';
+import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
@@ -129,15 +129,15 @@ function _afterDataLoaded() {
     // konfigurationsfil innan det fanns en lönefil att pröva dem mot (ADR-69). Egna rader står kvar.
     if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     unlockTabs();
-    updateDashboardStats();
+    ritaNyckeltal();
     populateSelects();
-    generateRapport();
+    ritaLoneoversikt();
     const bas = getBasIntervals();
     dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
     if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
     dataStatus.className = "status-msg success";
     markUploadLoaded('upload-cell-data', 'Inläst');
-    updateCompliance();
+    ritaKravstatus();
     // Regressionen körs en gång i det här varvet och skickas vidare till underlagets kvalitet, processöversikten och
     // Att göra, som annars kör den var för sig på samma underlag (ADR-17: ett värde, ingen cache).
     const reg = runOLSRegression();

@@ -12,7 +12,7 @@ import { applyProfileLabels, synkaNamnFalt } from './07-standardinstallningar.js
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
 import { getBasIntervals, state } from './12-tillstand.js';
-import { bedomningUnderlag, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, UK_ETIKETT, updateCompliance, updateDashboardStats } from './13-oversikt.js';
+import { bedomningUnderlag, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
 import { _fkSlapp } from './17-forhandskontroll.js';
@@ -26,7 +26,7 @@ import { unlockTabs } from './31-navigering.js';
 import { _deriveArbetsvarderingFromData, markUploadLoaded } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
 import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
-import { generateRapport } from './39-loneoversikt.js';
+import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { _formatPValue, runOLSRegression } from './51-lika-arbete-regressionskort.js';
@@ -172,12 +172,12 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     unlockTabs();
-    updateDashboardStats();
+    ritaNyckeltal();
     populateSelects();
-    generateRapport();
+    ritaLoneoversikt();
     ritaLoneskillnadPerBas(lsBasVymodell());
     ritaAlderOchLon('__ALLA__');
-    updateCompliance();
+    ritaKravstatus();
     const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
     renderUnderlagetsKvalitet({ reg });
     updateGdprBanner();

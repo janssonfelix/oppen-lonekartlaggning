@@ -8,138 +8,57 @@
 // Lika arbete), likvärdigt arbete, ålder, förra året (årsbokslutet, ADR-54) och en textversion.
 //
 // Ingen ny statistik: yrkesgrupperna och deras status kommer ur likaArbeteGrupper (src/lib/rapportunderlag.js) med
-// Lika arbetes gränser, paren ur likvardighetResultat() och förra året ur state.forraArsbokslut. Samma dialogmönster
-// som gruppdossiern (80-gruppdossier.js).
+// Lika arbetes gränser, paren ur likvardighetResultat() och förra året ur state.forraArsbokslut. Vymodellen
+// (src/lib/vymodell-basdossier.js, ADR-99) räknar och maskerar; här ritas den. Samma dialogmönster som gruppdossiern
+// (80-gruppdossier.js).
 //
 // Dataskydd: skärmen följer läget (kTroskel(), ADR-51) som övriga flikar; könsuppdelade mått bara där båda könen når
 // k. Textversionen lämnar verktyget och byggs därför i exportläget (basdossierText): grupper under k utelämnas och
 // räknas upp utan lönemått.
 // ====================================================================
-import { aidAvRad } from '../lib/aid.js';
-import { bokslutMedGrans, jamforBasIntervall } from '../lib/arsbokslut.js';
-import { arKvinna, arMan } from '../lib/kon.js';
 import { personOrd } from '../lib/namn.js';
-import { aldersgruppNamn } from '../lib/perbas.js';
 import { direktivMarkering } from '../lib/status.js';
-import { konsMedianer } from '../lib/struktur.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, ordForAntal, stor, termFras } from '../lib/termer.js';
+import { basdossierIntervall, vymodellBasdossier } from '../lib/vymodell-basdossier.js';
 import { _focusTraps, announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
-import { _konFarRedovisas, _konUtelamnatNot, _kSanktNot, _parForRedovisning, _parUtelamnadeNot, isKMasked, kInstalld, kTroskel } from './06-k-troskel.js';
+import { _konUtelamnatNot, _kSanktNot, _parUtelamnadeNot, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { kMaskNote } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT } from './10-diagramtema.js';
-import { getBasIntervals, getData, policyFor, referensKortnamn, Stat, state } from './12-tillstand.js';
+import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline, laLikaGrupper } from './41-lika-arbete.js';
 import { harAlder } from './50-regressionsmodeller.js';
 import { _hpBedomningar, _hpBedomningHtml } from './56-handlingsplan.js';
-import { _abBasRad, _abForandringText } from './73-arsbokslut.js';
-import { closeGruppdossier, gruppdossierCandidates, gruppNamn, openGruppdossier } from './80-gruppdossier.js';
+import { _abForandringText } from './73-arsbokslut.js';
+import { closeGruppdossier, gruppNamn, openGruppdossier } from './80-gruppdossier.js';
 
-const BD_ALDERSGRANSER = [35, 50];   // –34, 35–49, 50– (samma som rapportens tabell Löneskillnader i åldersgrupper)
-
-/** BAS-intervallen som får öppnas i dossiern: minst k personer, i intervallens ordning. */
+/** BAS-intervallen som får öppnas i dossiern: minst k personer, i intervallens ordning (basdossierIntervall i src/lib/vymodell-basdossier.js). */
 export function basdossierKandidater() {
-    const d = getData();
-    return getBasIntervals().map(bas => ({ bas, n: d.filter(r => r.bas === bas && r.lon > 0).length }))
-        .filter(x => x.n > 0 && !isKMasked(x.n));
+    return basdossierIntervall(getData(), getBasIntervals(), kTroskel());
 }
 
-/**
- * Lika arbetes status för en yrkesgrupp ur likaArbeteGrupper: uppmärksamhetstrappan (ADR-59), samma som
- * yrkesgruppstabellen i Lika arbete.
- */
-function _bdStatus(g) {
-    if (g.samladMedian) return 'liten';
-    return g.niva || 'ejbedomd';
-}
 const BD_STATUS_TEXT = { granska: 'Värt att granska', folj: 'Följ upp', balanserat: 'Balanserat', ejbedomd: 'Går ej att bedöma', liten: 'Könsuppdelningen är för liten' };
 const BD_STATUS_KLASS = { granska: ['farg-granska', 'sok'], folj: ['farg-varning', 'oga'], balanserat: ['farg-ok', 'bock'], ejbedomd: ['f-dampad', 'streck'], liten: ['f-dampad', null] };
 
 /**
- * Dossiern för ett BAS-intervall som ren data, eller null när intervallet saknas eller har färre än k personer.
+ * Dossiern för ett BAS-intervall som ren data (vymodellBasdossier i src/lib/vymodell-basdossier.js), eller null när
+ * intervallet saknas eller har färre än k personer. Här hämtas bara tillståndets delar.
  * @param {string} bas
  */
 export function buildBasdossier(bas) {
-    if (!basdossierKandidater().some(x => x.bas === bas)) return null;
-    const k = kTroskel();
-    const df = getData().filter(r => r.bas === bas && r.lon > 0);
-    const arKv = arKvinna, arMa = arMan;
-    const lon = df.map(r => r.lon);
-    const median = Stat.median(lon), p10 = Stat.kvantil(lon, 0.10), p90 = Stat.kvantil(lon, 0.90);
-    const { nKv, nMa, medKv, medMa, kvotPct, konOk } = konsMedianer(df, { k });
-
-    // 1. Läget mot ställningstagandet: referensens rad för BAS-intervallet (inte en yrkesrad).
-    const pol = typeof policyFor === 'function' ? policyFor(null, bas) : null;
-    const pct = (v, ref) => (v != null && ref > 0 ? (v / ref - 1) * 100 : null);
-    const referens = pol ? { namn: referensKortnamn(), p10: pol.p10 ?? null, med: pol.med ?? null, p90: pol.p90 ?? null,
-        diffPct: { p10: pct(p10, pol.p10), med: pct(median, pol.med), p90: pct(p90, pol.p90) } } : null;
-
-    // 2. Grupperna i intervallet: Lika arbetes grupper (AID-koden i BAS-intervallet, ADR-89) läses direkt, med antal,
-    //    medianer och status, så att dossiern aldrig säger något annat än Lika arbete.
-    const alla = getData();
-    const lika = laLikaGrupper(alla, k);
-    const iBas = g => g.bas === String(bas);
-    const basPerYrke = new Map();
-    for (const r of alla) { if (!(r.lon > 0)) continue; const kod = aidAvRad(r); if (!basPerYrke.has(kod)) basPerYrke.set(kod, new Set()); basPerYrke.get(kod).add(r.bas); }
-    const nycklar = new Set(gruppdossierCandidates().map(g => g.key));
-    const yrken = lika.grupper.filter(iBas).map(g => {
-        const aid = g.aid;
-        const delade = !g.samladMedian;
-        const ocksaI = [...(basPerYrke.get(aid) || [])].filter(b => b !== bas).sort();
-        return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(g), samlad: !!g.samladMedian, ocksaI,
-            medKv: delade ? g.medKv : null, medMa: delade ? g.medMa : null, kvotPct: delade ? g.kvot * 100 : null,
-            medTot: g.samladMedian ? g.medTot : null, dossierKey: nycklar.has(`${aid}|${bas}`) ? `${aid}|${bas}` : null };
-    }).sort((a, b) => b.tot - a.tot || String(a.yrke).localeCompare(String(b.yrke), 'sv'));
-
-    // 3. Likvärdigt arbete: kandidatpar och hierarkiska par där det kvinnodominerade yrket ligger i intervallet.
-    let kandidat = [], hierarkiska = [], parUtelamnade = 0;
-    try {
-        const lv = likvardighetResultat();
-        const a = _parForRedovisning(((lv && lv.pairs) || []).filter(p => p.kvBas === bas));
-        const b = _parForRedovisning(((lv && lv.lagreKrav) || []).filter(p => p.kvBas === bas));
-        kandidat = a.par; hierarkiska = b.par; parUtelamnade = a.utelamnade + b.utelamnade;
-    } catch (e) { rapporteraFel('BAS-dossier: likvärdigt arbete', e); }
-    const parRad = p => ({ kvLabel: p.kvLabel, kvAid: p.kvAid, kvBas: p.kvBas, kvN: p.kvN, kvMedian: p.kvMedian,
-        maLabel: p.maLabel, maAid: p.maAid, maBas: p.maBas, maN: p.maN ?? null, maMedian: p.maMedian, gapKr: p.gapKr, gapPct: p.gapPct });
-
-    // 4. Ålder: medianlön per åldersgrupp och kön; ett köns median bara när båda könen i åldersgruppen når k.
-    const namn = aldersgruppNamn(BD_ALDERSGRANSER);
-    const iGrupp = (r, i) => { const lo = i === 0 ? -Infinity : BD_ALDERSGRANSER[i - 1], hi = i < BD_ALDERSGRANSER.length ? BD_ALDERSGRANSER[i] : Infinity; return r.alder >= lo && r.alder < hi; };
-    const medAlder = df.filter(r => typeof r.alder === 'number' && r.alder > 0);
-    // Utan ålder i lönefilen (ADR-64) har dossiern inget avsnitt om ålder (null).
-    const alder = !harAlder() ? null : namn.map((n, i) => {
-        const rader = medAlder.filter(r => iGrupp(r, i)), gKv = rader.filter(arKv), gMa = rader.filter(arMa);
-        const ok = _konFarRedovisas(gKv.length, gMa.length);
-        return { namn: n, n: rader.length, nKv: gKv.length, nMa: gMa.length,
-            med: rader.length && !isKMasked(rader.length) ? Stat.median(rader.map(r => r.lon)) : null,
-            medKv: ok ? Stat.median(gKv.map(r => r.lon)) : null, medMa: ok ? Stat.median(gMa.map(r => r.lon)) : null };
-    });
-
-    // 5. Förra året: intervallets rad ur förra årets bokslut, jämförd med årets (samma rad som bokslutet bär).
-    // Förra årets fil kan ha sparats med en lägre tröskel: raden läses med den högre av filens och den inställda.
-    const fb0 = state.forraArsbokslut;
-    /** @type {any} */ const fb = fb0 ? bokslutMedGrans(fb0, Math.max(fb0.k, kInstalld())) : null;
-    /** @type {any} */ let forra = { lage: 'ingetBokslut' };
-    if (fb && !Array.isArray(fb.basIntervall)) forra = { lage: 'saknasFalt', ar: fb.ar };
-    else if (fb) {
-        const f = fb.basIntervall.find(r => r.bas === bas);
-        const nu = typeof _abBasRad === 'function' ? _abBasRad(getData(), bas, k) : null;
-        const j = f && nu ? jamforBasIntervall([f], [nu]) : null;
-        forra = j && j[0] ? { lage: 'ok', ar: fb.ar, rad: j[0] } : { lage: 'saknasIntervall', ar: fb.ar };
-    }
-
-    return { bas, n: df.length, nKv, nMa, andelKv: df.length ? nKv / df.length * 100 : null,
-        median, p10, p90, konOk, medKv, medMa, kvotPct,
-        referens, yrken, yrkenUtelamnade: lika.utelamnadeGrupper.filter(iBas).map(g => g.yrke).sort((a, b) => String(a).localeCompare(String(b), 'sv')),
-        ejJamforbara: lika.ejJamforbaraGrupper.filter(iBas).map(g => g.yrke),
-        par: { kandidat: kandidat.map(parRad), hierarkiska: hierarkiska.map(parRad), utelamnade: parUtelamnade },
-        alder, forra, k };
+    const k = kTroskel(), d = getData();
+    let likvardighet = null;
+    try { likvardighet = likvardighetResultat(); }
+    catch (e) { rapporteraFel('BAS-dossier: likvärdigt arbete', e); }
+    return vymodellBasdossier(d, bas, { k, basIntervall: getBasIntervals(), golv: statGolv(), kInstalld: kInstalld(),
+        referens: policyFor(null, bas), referensNamn: referensKortnamn(), lika: laLikaGrupper(d, k), likvardighet,
+        harAlder: harAlder(), forraBokslut: state.forraArsbokslut });
 }
 
 // ---- Rendering --------------------------------------------------------------
@@ -150,7 +69,7 @@ let _bdVald = null;
 export function openBasdossier(bas, opener) {
     const modal = document.getElementById('basdossier-modal');
     if (!modal) return;
-    renderBasdossier(bas);
+    ritaBasdossier(bas);
     modal.style.display = 'flex';
     if (typeof trapFocus === 'function') trapFocus(modal, opener || document.activeElement);
 }
@@ -161,7 +80,7 @@ export function closeBasdossier() {
     modal.style.display = 'none';
 }
 
-function renderBasdossier(bas) {
+function ritaBasdossier(bas) {
     const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
     const body = document.getElementById('basdossier-body');
     if (!sel || !body) return;
@@ -179,7 +98,7 @@ function renderBasdossier(bas) {
     // Ett begärt intervall som inte (längre) når tröskeln öppnas inte i tysthet som ett annat: det sägs.
     if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
     const d = buildBasdossier(sel.value);
-    body.innerHTML = d ? _bdRenderBody(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
+    body.innerHTML = d ? _bdRitaInnehall(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
     // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
     // med samma öppnare och utan att flytta fokus. Fokus står kvar där det var (väljaren), i stället för att hoppa
     // till stängknappen.
@@ -195,7 +114,7 @@ const _bdKr = v => svKr(v);
 const _bdTecken = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
 const _bdPctTecken = v => (v == null ? '–' : `${_bdTecken(v)}${svPct(Math.abs(v), 1)}`);
 
-function _bdRenderBody(d) {
+function _bdRitaInnehall(d) {
     const card = (title, inner, note) => `<div class="gd-card bd-card"><h3>${title}</h3>${note ? `<p class="gd-note">${note}</p>` : ''}${inner}</div>`;
     const missing = txt => `<p class="gd-missing">${txt}</p>`;
     const k = d.k;
@@ -402,7 +321,7 @@ export function basdossierKnapp(bas, { text = 'BAS-dossier', ikonEndast = false 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartBasdossier() {
     // ---- Wiring ----
-    document.getElementById('basdossier-select')?.addEventListener('change', () => renderBasdossier());
+    document.getElementById('basdossier-select')?.addEventListener('change', () => ritaBasdossier());
     // Knapparna i tabellraderna: fångas före radens egna lyssnare (fäll in/ut, markering), som inte ska reagera.
     document.addEventListener('click', e => {
         const btn = /** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-open-basdossier]');

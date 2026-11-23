@@ -5,7 +5,7 @@
 // bokslut i state.forraArsbokslut, och panelen i Spara och jämför år visar skillnaden mot årets. Allt byggs i
 // exportläget (ADR-51): bokslutet lämnar verktyget i filen.
 import { aidAvRad } from '../lib/aid.js';
-import { basHantelRader, byggArsbokslut, hantelRader as _abHantelRader, jamforArsbokslut, lonespridning } from '../lib/arsbokslut.js';
+import { basHantelRader, bokslutBasRad, byggArsbokslut, hantelRader as _abHantelRader, jamforArsbokslut, lonespridning } from '../lib/arsbokslut.js';
 import { arKvinna, arMan } from '../lib/kon.js';
 import { personOrd } from '../lib/namn.js';
 import { gruppMedBas } from '../lib/rapportunderlag.js';
@@ -19,7 +19,7 @@ import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getBasIntervals, getData, Stat, state } from './12-tillstand.js';
+import { getBasIntervals, getData, state } from './12-tillstand.js';
 import { buildActionChecklist } from './18-atgardslista.js';
 import { buildAnalysisSnapshot } from './19-konfiguration.js';
 import { medExportLage } from './23-exportgrind.js';
@@ -56,7 +56,7 @@ export function byggArsbokslutNu() {
             grupper: lika.grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad,
                 spridning: lonespridning(lonPerYrke.get(`${g.aid}|${g.bas}`) || [], k) })),
             punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
-            basIntervall: getBasIntervals().map(b => _abBasRad(d, b, k)).filter(Boolean),
+            basIntervall: getBasIntervals().map(b => bokslutBasRad(d, b, k)).filter(Boolean),
             bedomningar: _abBedomningarNu(),
         });
     });
@@ -74,23 +74,6 @@ function _abBedomningarNu() {
         .map(g => ({ nyckel: g.nyckel, grupp: g.grupp, n: g.antal, nMin: g.nMin, skillnadKr: g.skillnadKr,
             // Ett kön under minsta gruppstorlek: bara kategorierna (lib-valideringen gör samma sak vid inläsning).
             skal: g.utanBelopp ? g.sammanstallning.skal.map(s => ({ kategori: s.kategori })) : g.sammanstallning.skal }));
-}
-
-/**
- * Bokslutets rad för ett BAS-intervall: antal, P10, median, P90 och lönespridningen när intervallet har minst k
- * personer, och kvinnors och mäns median bara när båda könen når k (samma regel som Lönestruktur). null under k.
- * @param {any[]} d
- * @param {string} bas
- * @param {number} k
- */
-export function _abBasRad(d, bas, k) {
-    const df = d.filter(r => r.bas === bas && r.lon > 0);
-    if (df.length < k) return null;
-    const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
-    const lon = df.map(r => r.lon), konOk = kv.length >= k && ma.length >= k;
-    return { bas, n: df.length, nKv: kv.length, nMa: ma.length, p10: Stat.kvantil(lon, 0.10), med: Stat.median(lon), p90: Stat.kvantil(lon, 0.90),
-        medKv: konOk ? Stat.median(kv.map(r => r.lon)) : null, medMa: konOk ? Stat.median(ma.map(r => r.lon)) : null,
-        spridning: lonespridning(lon, k) };
 }
 
 /** Jämförelsen mellan förra årets bokslut och årets, eller null utan bokslut eller underlag. Byggs i exportläget. */

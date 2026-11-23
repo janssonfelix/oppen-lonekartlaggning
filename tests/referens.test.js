@@ -84,7 +84,7 @@ describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
     it('en ren AID-policy med eget namn ger "saknar rader per BAS-intervall" i kompliansrutan', () => {
         w.__loadDemoData();
         w.__lasInReferens([{ aid: '123456', p10: 1, med: 2, p90: 3 }], 'AID-policy.csv');
-        w.__updateCompliance();
+        w.__ritaKravstatus();
         expect(w.document.getElementById('comp-pol-val').textContent).toContain('saknar rader per BAS-intervall');
         expect(w.document.getElementById('compliance-overview').textContent).toContain('AID-policy');
         w.__aterstallReferens();
@@ -154,7 +154,7 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
         const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
         const d = w.__buildGruppdossier(key);
         expect(d.skr).toMatchObject({ niva: 'etikett' });
-        expect(w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+\s% kvinnor i kommuner</);
+        expect(w.eval(`_gdRitaInnehall(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+\s% kvinnor i kommuner</);
         expect(w.__gruppdossierAsText(d)).toMatch(/Nationell referens: \d+\s% kvinnor/);
     });
     it('Om verktyget anger SKR:s personalstatistik som källa', () => {

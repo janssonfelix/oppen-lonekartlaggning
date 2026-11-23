@@ -137,7 +137,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         };
     };
     const dossier = (w, nyckel) => {
-        w.eval(`renderGruppdossier('${nyckel}')`);
+        w.eval(`ritaGruppdossier('${nyckel}')`);
         return { skarm: normalisera(w.document.getElementById('dossier-body').textContent),
                  text: normalisera(w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier('${nyckel}')))`)) };
     };

@@ -193,7 +193,7 @@ describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
         const w = fonster();
         w.__renderTabContent('dashboard');
         let antal = 0;
-        w.updateDashboardStats = () => { antal++; };
+        w.ritaNyckeltal = () => { antal++; };
         w.__renderTabContent('dokumentera');                       // ritar inga andra flikar
         expect(antal).toBe(0);
         w.eval("medExportLage(() => renderTabContent('dashboard'))");   // som ZIP-exporten

@@ -14,7 +14,7 @@ import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
 import { getData, state } from './12-tillstand.js';
 import { _exportUtanSkarmkolumner, _exportVisaAllaRader } from './22-exporthjalpare.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
-import { generateRapport } from './39-loneoversikt.js';
+import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { _jmfKallaNamn, generateBenchmark, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
@@ -91,7 +91,7 @@ async function _buildPrintReportExport() {
         if (helaDokumentationen) {
             // Bilagor med flikarnas egna tabeller och diagram — underlaget bakom avsnitten. De följer bara med när hela
             // dokumentationen är vald; ett kortare urval (ledningsbrief, facklig dialog) är just avsnitten.
-            generateRapport();
+            ritaLoneoversikt();
             ritaLoneskillnadPerBas(lsBasVymodell());
             ritaLikaArbete(laVymodell());
             if (state.statistik.length) generateBenchmark();

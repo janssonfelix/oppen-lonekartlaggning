@@ -2,7 +2,9 @@
 // Copyright 2026 Felix Jansson
 // Vymodellerna (ADR-99) prövade i Node, utan DOM och tillstånd: Lönestrukturs avsnitt per BAS-intervall
 // (src/lib/vymodell-lonestruktur.js), fliken Lika arbete (src/lib/vymodell-lika-arbete.js), fliken Ålder & karriär
-// (src/lib/vymodell-alder-karriar.js) och kortet Var uppstår löneskillnaden? (src/lib/vymodell-var-uppstar-gapet.js).
+// (src/lib/vymodell-alder-karriar.js), kortet Var uppstår löneskillnaden? (src/lib/vymodell-var-uppstar-gapet.js),
+// Översikt (src/lib/vymodell-oversikt.js), Löneöversikten (src/lib/vymodell-loneoversikt.js) och dossiererna
+// (src/lib/vymodell-gruppdossier.js, src/lib/vymodell-basdossier.js).
 // Underlaget är påhittat:
 //   BAS A  100001 Handläggare   15 kvinnor, 15 män (kvinnorna ungefär 10 % lägre)
 //   BAS B  100002 Utredare      30 kvinnor, 30 män (hälften av varje kön med ledningsansvar, resten inget ansvar)
@@ -20,6 +22,10 @@ import { alderBandRader, alderGapRader, alderInsiktText, konHistogram, ladaPerKo
 import { andelAvSkillnaden, gapTrappa, vymodellVarUppstarGapet } from '../src/lib/vymodell-var-uppstar-gapet.js';
 import { gapUppdelning } from '../src/lib/gapuppdelning.js';
 import { konsMedianer } from '../src/lib/struktur.js';
+import { kravstatus, oversiktNyckeltal } from '../src/lib/vymodell-oversikt.js';
+import { vymodellLoneoversikt } from '../src/lib/vymodell-loneoversikt.js';
+import { gruppdossierGrupper, vymodellGruppdossier } from '../src/lib/vymodell-gruppdossier.js';
+import { basdossierIntervall, basdossierStatus, vymodellBasdossier } from '../src/lib/vymodell-basdossier.js';
 
 const rad = (yrke, bas, kon, lon, extra) => ({ yrke, aid: yrke.slice(0, 6), yrkeLabel: yrke.slice(7), bas, kon, lon, alder: 40, ...extra });
 const flera = (yrke, bas, kon, n, lon, extra = () => ({})) => Array.from({ length: n }, (_, i) => rad(yrke, bas, kon, lon + 100 * i, extra(i)));
@@ -248,6 +254,157 @@ describe('[B3.11] Var uppstår löneskillnadens vymodell', () => {
     });
 });
 
+// Ställningstagandet, jämförelsestatistiken och paren i likvärdigt arbete för dossiererna och Översikt (påhittade).
+const policyFor = (aid, bas) => (aid === null ? { A: { p10: 33000, med: 34000, p90: 36000 }, C: { p10: 20000, med: 25000, p90: 30000 }, D: { p10: 40000, med: 41000, p90: 42000 } }[bas] || null
+    : { p10: 30000, med: 32000, p90: 34000 });
+const PAR = [
+    { kvAid: '100003', kvBas: 'C', kvN: 16, kvLabel: 'Assistent', kvMedian: 28600, maAid: '100001', maBas: 'A', maN: 30, maLabel: 'Handläggare', maMedian: 32200, gapKr: -3600, gapPct: -11.2 },
+    { kvAid: '100003', kvBas: 'C', kvN: 16, kvLabel: 'Assistent', kvMedian: 28600, maAid: '100005', maBas: 'E', maN: 6, maLabel: 'Vaktmästare', maMedian: 27250, gapKr: 1350, gapPct: 5 },
+];
+
+describe('[B2.9] Översiktens nyckeltal', () => {
+    it('antal, kön och medelålder; kvoten bara när båda könen når k', () => {
+        const vm = oversiktNyckeltal(underlag(), 10);
+        expect(vm).toMatchObject({ n: 115, nKv: 62, nMa: 53, medelalder: 40, lage: 'ok' });
+        expect(vm.kvotPct).toBe(konsMedianer(underlag(), { k: 10 }).kvotPct);
+        expect(oversiktNyckeltal(underlag(), 60)).toMatchObject({ lage: 'underK', kvotPct: null });
+        expect(oversiktNyckeltal(underlag().filter(r => r.kon === 'kvinna'), 1)).toMatchObject({ lage: 'ettKonSaknas', kvotPct: null });
+        expect(oversiktNyckeltal(underlag().map(r => ({ ...r, alder: null })), 10).medelalder).toBeNull();
+        expect(oversiktNyckeltal([], 10)).toBeNull();
+    });
+});
+
+describe('[B2.10] Översiktens läge mot lagkraven', () => {
+    const ks = (val = {}) => kravstatus(underlag(), { bas: BAS, k: 10, golv: 10, ...val });
+    it('säkerställd skillnad och könsfördelning bara i intervall där båda könen når k', () => {
+        const vm = ks();
+        expect(vm).toMatchObject({ jamforbara: 2, maskerade: 3 });
+        // A: kvinnorna omkring 10 % lägre (Värt att granska); B: omkring 1 % (inte säkerställd).
+        expect(vm.gap).toEqual({ antal: 1, av: 2, lage: 'warn' });
+        expect(vm.skev).toEqual({ antal: 0, av: 2, lage: 'ok' });
+        // Översiktens rader från appen ger samma tal.
+        expect(ks({ oversikt: oversiktPerBas(underlag(), BAS, 1) }).gap).toEqual(vm.gap);
+        expect(ks({ k: 40 })).toMatchObject({ jamforbara: 0, gap: { av: 0, lage: 'na' }, skev: { lage: 'na' } });
+        const skeva = [...underlag(), ...flera('100002 Utredare', 'B', 'kvinna', 60, 40000)];
+        expect(kravstatus(skeva, { bas: BAS, k: 10, golv: 10 }).skev).toEqual({ antal: 1, av: 2, lage: 'warn' });
+    });
+    it('referensens P10: intervall med minst k personer och en rad med P10; utan ställningstagande inget kort', () => {
+        // A: median 32 200 under P10 33 000; C: över 20 000; D har färre än k och räknas inte.
+        expect(ks({ policyFor }).referens).toEqual({ antal: 1, av: 2, lage: 'warn' });
+        expect(ks({ policyFor: (a, b) => (b === 'A' || b === 'B' ? { p10: 50000 } : null) }).referens).toEqual({ antal: 2, av: 2, lage: 'crit' });
+        expect(ks({ policyFor: () => null }).referens).toEqual({ antal: 0, av: 0, lage: 'na' });
+        expect(ks().referens).toBeNull();
+    });
+    it('jämförelsestatistiken: grupper med en rad, kritiskt när mer än hälften ligger under', () => {
+        const statistik = [{ aid: '100001', median: 40000 }, { aid: '100003', bas: 'C', median: 20000 }];
+        expect(ks({ statistik }).statistik).toEqual({ antal: 1, av: 2, lage: 'warn' });
+        expect(ks({ statistik: [...statistik, { aid: '100002', bas: 'B', median: 50000 }] }).statistik).toEqual({ antal: 2, av: 3, lage: 'crit' });
+        expect(ks({ statistik: [{ aid: '999999', median: 1 }] }).statistik).toEqual({ antal: 0, av: 0, lage: 'na' });
+        expect(ks({ statistik: [] }).statistik).toBeNull();
+        expect(kravstatus([], { bas: BAS, k: 10, golv: 10 })).toBeNull();
+    });
+});
+
+describe('[B6.10] Löneöversiktens vymodell', () => {
+    it('raderna per BAS-intervall: organisationen, könen och yrkesgrupperna med minst fem, under k utelämnade', () => {
+        const vm = vymodellLoneoversikt(underlag(), { bas: BAS, k: 10, policyFor, statistik: [{ aid: '100001', bas: 'A', median: 40000 }] });
+        const a = vm.block[0];
+        expect(a.referens).toEqual({ p10: 33000, med: 34000, p90: 36000 });
+        expect(a.rader.map(r => [r.kategori, r.n])).toEqual([['Organisationen', 30], ['Kvinna', 15], ['Man', 15], ['100001 Handläggare', 30]]);
+        const org = a.rader[0];
+        expect(org).toMatchObject({ med: 32200, underReferens: true, statMedian: null, statDiff: null });
+        expect(org.spridning).toBeCloseTo(org.p90 / org.p10, 12);
+        expect(a.rader[3].statMedian).toBe(40000);
+        expect(a.rader[3].statDiff).toBeCloseTo((32200 / 40000 - 1) * 100, 9);
+        expect(vm.block.map(b => b.utelamnade)).toEqual([[], [], ['Man'], ['Organisationen', 'Kvinna', 'Man'], ['Organisationen', 'Kvinna', 'Man', '100005 Vaktmästare']]);
+        expect(vm.utelamnade).toBe(8);
+        expect(vm.smaYrken).toBe(1);   // D: tre personer
+        expect(vm.block[1].referens).toBeNull();
+        expect(vymodellLoneoversikt(underlag(), { bas: ['A'], k: 10 }).block[0].rader[0].underReferens).toBe(false);
+    });
+});
+
+describe('[B5.9] Gruppdossierns vymodell', () => {
+    const grupp = (k, bas) => gruppdossierGrupper(underlag(), k).find(g => g.bas === bas);
+    const gd = (k, bas, val = {}) => vymodellGruppdossier(grupp(k, bas), { k, kostnad: { months: 12, poPct: 40 }, par: PAR, ...val });
+    it('grupperna: AID-koden i BAS-intervallet med minst k personer, störst först', () => {
+        expect(gruppdossierGrupper(underlag(), 10).map(g => [g.key, g.rows.length])).toEqual([['100002|B', 60], ['100001|A', 30], ['100003|C', 16]]);
+        expect(gruppdossierGrupper(underlag(), 25).map(g => g.key)).toEqual(['100002|B', '100001|A']);
+        expect(gruppdossierGrupper([...underlag(), rad('100001 Handläggare', 'A', 'man', 0)], 10).find(g => g.bas === 'A').rows).toHaveLength(30);
+    });
+    it('nyckeltalen, den ojusterade skillnaden med KI och räkneexemplet bara när båda könen når k', () => {
+        const a = gd(10, 'A');
+        expect(a).toMatchObject({ key: '100001|A', n: 30, nKv: 15, nMa: 15, median: 32200, ansvar: null });
+        expect(a.gap).toMatchObject({ pct: 30700 / 33700 * 100, medKv: 30700, medMa: 33700 });
+        expect(a.gap.ci.lo).toBeLessThan(a.gap.ci.hi);
+        expect(a.gap.arsbelopp).toMatch(/^Räkneexempel: kvinnornas medianlön ligger 3\s000\skr per månad under männens\. För gruppens 15 kvinnor/);
+        expect(gd(10, 'A', { ki: false }).gap.ci).toBeNull();
+        expect(gd(10, 'C').gap).toBeNull();   // fyra män
+        expect(gd(25, 'A').gap).toBeNull();
+    });
+    it('antal per ansvarsgrupp, läget mot ställningstagandet, jämförelsestatistiken och det appen ger', () => {
+        expect(gd(10, 'B').ansvar).toEqual({ ledning: { kv: 15, ma: 15 }, uppdrag: { kv: 0, ma: 0 } });
+        const ref = { p10: 30000, med: 32000, p90: 34000 };
+        const a = gd(10, 'A', { referens: ref, referensNiva: 'AID + BAS', statistik: [{ aid: '100001', median: 35000 }],
+            justerat: { bas: 'A', status: 'ok' }, prio: { aid: '100001' }, forslag: [{ text: 'x' }] });
+        expect(a).toMatchObject({ pol: ref, polLevel: 'AID + BAS', bench: { median: 35000 }, adjusted: { status: 'ok' }, prio: { aid: '100001' }, suggestions: [{ text: 'x' }] });
+        expect(a.band.position).toBeCloseTo((32200 - 30000) / 4000, 12);
+        expect(a.compliance).toMatchObject({ n: 30, under: 0, over: 4 });
+        expect(gd(10, 'A')).toMatchObject({ pol: null, band: null, compliance: null, bench: null });
+    });
+    it('paren i likvärdigt arbete: gruppen som kvinnodominerad eller jämförelse, par med en grupp under k utelämnade', () => {
+        const c = gd(10, 'C');
+        expect(c.lvAsSubject.map(p => p.maAid)).toEqual(['100001']);
+        expect(c.lvUtelamnade).toBe(1);
+        expect(gd(10, 'A').lvAsComparator.map(p => p.kvAid)).toEqual(['100003']);
+        expect(gd(5, 'C').lvAsSubject).toHaveLength(2);
+    });
+});
+
+describe('[B5.10] BAS-dossierns vymodell', () => {
+    const bd = (bas, k, val = {}) => vymodellBasdossier(underlag(), bas, { k, basIntervall: BAS, golv: Math.max(k, 10), ...val });
+    const bokslut = (k = 10) => ({ ar: 2025, k, nyckeltal: { nKv: 0, nMa: 0 }, grupper: [],
+        basIntervall: [{ bas: 'A', n: 28, nKv: 14, nMa: 14, p10: 29000, med: 31000, p90: 33000, medKv: 30000, medMa: 32000, spridning: 0.13 }] });
+    it('intervallen: minst k personer med lön; ingen modell för de andra', () => {
+        expect(basdossierIntervall(underlag(), BAS, 10)).toEqual([{ bas: 'A', n: 30 }, { bas: 'B', n: 60 }, { bas: 'C', n: 16 }]);
+        expect(bd('D', 10)).toBeNull();
+        expect(bd('X', 1)).toBeNull();
+    });
+    it('nyckeltalen, könens medianer bara när båda når k, och läget mot ställningstagandets rad', () => {
+        const a = bd('A', 10, { referens: { p10: 33000, med: 34000, p90: 36000 }, referensNamn: 'referensen' });
+        expect(a).toMatchObject({ bas: 'A', n: 30, nKv: 15, nMa: 15, andelKv: 50, median: 32200, konOk: true, medKv: 30700, medMa: 33700, k: 10 });
+        expect(a.referens.diffPct.med).toBeCloseTo((32200 / 34000 - 1) * 100, 9);
+        expect(a.referens.namn).toBe('referensen');
+        expect(bd('C', 10)).toMatchObject({ konOk: false, medKv: null, kvotPct: null, referens: null });
+    });
+    it('yrkesgrupperna: Lika arbetes status, samlad median när ett kön är under k, gruppdossiern när gruppen når k', () => {
+        expect(bd('A', 10).yrken).toMatchObject([{ aid: '100001', status: basdossierStatus(likaArbeteGrupper(underlag(), { k: 10, golv: 10 }).grupper.find(g => g.bas === 'A')), samlad: false, medKv: 30700, dossierKey: '100001|A', ocksaI: [] }]);
+        expect(bd('C', 10).yrken).toMatchObject([{ status: 'liten', samlad: true, medKv: null, medTot: 28600, dossierKey: '100003|C' }]);
+        expect(bd('A', 25).yrken).toMatchObject([{ samlad: true, medKv: null, dossierKey: '100001|A' }]);
+        expect(basdossierStatus({ niva: 'granska' })).toBe('granska');
+        expect(basdossierStatus({})).toBe('ejbedomd');
+        const ocksa = [...underlag(), ...flera('100001 Handläggare', 'B', 'kvinna', 2, 40000)];
+        expect(vymodellBasdossier(ocksa, 'A', { k: 10, basIntervall: BAS }).yrken[0].ocksaI).toEqual(['B']);
+    });
+    it('paren där det kvinnodominerade yrket ligger i intervallet; ålder; förra årets rad med den högre tröskeln', () => {
+        const c = bd('C', 10, { likvardighet: { pairs: PAR, lagreKrav: [PAR[0]] } });
+        expect(c.par.kandidat.map(p => p.maAid)).toEqual(['100001']);
+        expect(c.par.hierarkiska).toHaveLength(1);
+        expect(c.par.utelamnade).toBe(1);
+        expect(bd('A', 10).alder).toBeNull();
+        const alder = bd('A', 10, { harAlder: true }).alder;
+        expect(alder.map(x => [x.namn, x.n])).toEqual([['–34', 0], ['35–49', 30], ['50–', 0]]);
+        expect(alder[1]).toMatchObject({ med: 32200, medKv: 30700, medMa: 33700 });
+        expect(bd('A', 25, { harAlder: true }).alder[1]).toMatchObject({ med: 32200, medKv: null, medMa: null });
+        expect(bd('A', 10).forra).toEqual({ lage: 'ingetBokslut' });
+        const forra = bd('A', 10, { forraBokslut: bokslut() }).forra;
+        expect(forra).toMatchObject({ lage: 'ok', ar: 2025, rad: { n: { forra: 28, nu: 30 } } });
+        expect(bd('B', 10, { forraBokslut: bokslut() }).forra).toEqual({ lage: 'saknasIntervall', ar: 2025 });
+        expect(bd('A', 10, { forraBokslut: bokslut(), kInstalld: 30 }).forra.lage).toBe('saknasIntervall');   // raden har 28
+        expect(bd('A', 10, { forraBokslut: { ...bokslut(), basIntervall: undefined } }).forra).toEqual({ lage: 'saknasFalt', ar: 2025 });
+    });
+});
+
 // Invarianten på vymodellerna: inget lönemått för en grupp eller ett kön under tröskeln, vid 10 och 25.
 describe.each([10, 25])('[I9] vymodellerna vid k = %i', k => {
     const lonemått = ['medKv', 'medMa', 'kvot', 'kvotPct', 'gap', 'ci', 'medTot', 'utanLedning'];
@@ -314,4 +471,49 @@ describe.each([10, 25])('[I9] vymodellerna vid k = %i', k => {
         const helt = vymodellVarUppstarGapet(underlag(), { k, variabler: ['bas', 'aid'] });
         for (const d of helt.delar) expect(d.topp.every(p => !/Assistent|Tekniker|Vaktmästare|BAS [CDE]$/.test(p.namn))).toBe(true);
     });
+    it('Översikt: kvoten bara när båda könen når k; korten räknar bara intervall där båda könen gör det', () => {
+        const n = oversiktNyckeltal(underlag(), k);
+        if (n.kvotPct !== null) expect(Math.min(n.nKv, n.nMa)).toBeGreaterThanOrEqual(k);
+        const vm = kravstatus(underlag(), { bas: BAS, k, golv: Math.max(k, 10), policyFor });
+        expect(vm.jamforbara).toBe(k === 10 ? 2 : 1);
+        expect(vm.referens.av).toBe(k === 10 ? 2 : 1);   // A (och C vid 10); D under k
+    });
+
+    it('Löneöversikten: ingen rad med färre än k, de utelämnade bara med namn', () => {
+        const vm = vymodellLoneoversikt(underlag(), { bas: BAS, k, policyFor });
+        for (const b of vm.block) for (const r of b.rader) expect(r.n, `${b.bas} ${r.kategori}`).toBeGreaterThanOrEqual(k);
+        for (const b of vm.block) for (const u of b.utelamnade) expect(typeof u).toBe('string');
+    });
+
+    it('Gruppdossiern: grupperna når k, skillnaden och räkneexemplet bara när båda könen gör det, paren under k utelämnade', () => {
+        for (const g of gruppdossierGrupper(underlag(), k)) {
+            expect(g.rows.length).toBeGreaterThanOrEqual(k);
+            const vm = vymodellGruppdossier(g, { k, par: PAR, kostnad: {} });
+            if (vm.gap !== null) expect(Math.min(vm.nKv, vm.nMa)).toBeGreaterThanOrEqual(k);
+            for (const p of [...vm.lvAsSubject, ...vm.lvAsComparator]) expect(Math.min(p.kvN, p.maN)).toBeGreaterThanOrEqual(k);
+        }
+    });
+
+    it('BAS-dossiern: könens medianer, yrkesgruppernas, åldersgruppernas och förra årets bara där k nås', () => {
+        for (const { bas } of basdossierIntervall(underlag(), BAS, k)) {
+            const vm = vymodellBasdossier(underlag(), bas, { k, basIntervall: BAS, golv: Math.max(k, 10), harAlder: true,
+                likvardighet: { pairs: PAR, lagreKrav: [] }, forraBokslut: { ar: 2025, k: 2, nyckeltal: { nKv: 0, nMa: 0 }, grupper: [],
+                    basIntervall: [{ bas, n: 12, nKv: 6, nMa: 6, p10: 1, med: 2, p90: 3, medKv: 2, medMa: 2 }] } });
+            expect(vm.n).toBeGreaterThanOrEqual(k);
+            if (vm.konOk) expect(Math.min(vm.nKv, vm.nMa)).toBeGreaterThanOrEqual(k); else expect(harLonematt(vm)).toBe(false);
+            for (const y of vm.yrken) {
+                if (y.samlad) { expect(y.tot).toBeGreaterThanOrEqual(k); expect(y.medKv ?? y.medMa ?? y.kvotPct).toBeNull(); }
+                else expect(Math.min(y.nKv, y.nMa)).toBeGreaterThanOrEqual(k);
+            }
+            for (const a of vm.alder) {
+                if (a.med !== null) expect(a.n).toBeGreaterThanOrEqual(k);
+                if (a.medKv !== null || a.medMa !== null) expect(Math.min(a.nKv, a.nMa)).toBeGreaterThanOrEqual(k);
+            }
+            for (const p of [...vm.par.kandidat, ...vm.par.hierarkiska]) expect(Math.min(p.kvN, p.maN)).toBeGreaterThanOrEqual(k);
+            // Förra årets rad har tolv personer: den läses med den inställda tröskeln, inte filens.
+            if (vm.forra.lage === 'ok') expect(vm.forra.rad.n.forra).toBeGreaterThanOrEqual(k);
+            expect(vm.forra.lage).toBe(k === 10 ? 'ok' : 'saknasIntervall');
+        }
+    });
 });
+

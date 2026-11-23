@@ -13,6 +13,7 @@ import { median, kvantil } from './stat.js';
 import { STANDARDTERMER as T } from './termer.js';
 import { valideraSkal, skalPerKategori, skalSammanstallning, skalKategorier } from './sakligaskal.js';
 import { aidAvYrke } from './aid.js';
+import { arKvinna, arMan } from './kon.js';
 
 
 export const ARSBOKSLUT_VERSION = 2;
@@ -37,6 +38,24 @@ export function lonespridning(lon, k) {
     const med = median(lon);
     if (!(med > 0)) return null;
     return Math.round((kvantil(lon, 0.9) - kvantil(lon, 0.1)) / med * 1e4) / 1e4;
+}
+
+/**
+ * Bokslutets rad för ett BAS-intervall: antal, P10, median, P90 och lönespridningen när intervallet har minst k
+ * personer, och kvinnors och mäns median bara när båda könen når k (samma regel som Lönestruktur). null under k.
+ * Bara rader med lön över 0 räknas. Också BAS-dossierns jämförelse med förra året (vymodell-basdossier.js).
+ * @param {any[]} rader
+ * @param {string} bas
+ * @param {number} k
+ */
+export function bokslutBasRad(rader, bas, k) {
+    const df = rader.filter(r => r.bas === bas && r.lon > 0);
+    if (df.length < k) return null;
+    const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
+    const lon = df.map(r => r.lon), konOk = kv.length >= k && ma.length >= k;
+    return { bas, n: df.length, nKv: kv.length, nMa: ma.length, p10: kvantil(lon, 0.10), med: median(lon), p90: kvantil(lon, 0.90),
+        medKv: konOk ? median(kv.map(r => r.lon)) : null, medMa: konOk ? median(ma.map(r => r.lon)) : null,
+        spridning: lonespridning(lon, k) };
 }
 
 /**

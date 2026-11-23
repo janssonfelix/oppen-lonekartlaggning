@@ -25,7 +25,7 @@ import { _appendMethodSheet, _applyColumnNumFormats, _excelBladnamn, _showExport
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { renderSektorer } from './37-struktur.js';
-import { generateRapport } from './39-loneoversikt.js';
+import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, laLikaGrupper, laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { generateBenchmark, jamforelseUrvalText } from './42-jamforelse.js';
 import { _rrExcelBlad } from './44-referensoverblick.js';
@@ -199,7 +199,7 @@ function __excelAlltBokExport() {
     // och flikar som aldrig besökts (EU-matrisen renderades annars först vid
     // flikbesök → arket föll tyst bort ur exporten).
     const ensure = (sel, fn) => { if (!document.querySelector(sel)) { try { fn(); } catch (_e) { /* tolerant */ } } };
-    ensure('#rapport-table tbody tr', generateRapport);
+    ensure('#rapport-table tbody tr', ritaLoneoversikt);
     ensure('#skevhet-table tbody tr', () => ritaLoneskillnadPerBas(lsBasVymodell()));
     ensure('#matrix-table tbody tr', () => ritaLikaArbete(laVymodell()));
     if (state.policy.length || state.statistik.length) ensure('#prio-table tbody tr', renderPrioritering);

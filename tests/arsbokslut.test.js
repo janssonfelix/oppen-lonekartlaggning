@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Årsbokslutet (ADR-54): validering, k-skydd och jämförelsen mellan två år — den rena modulen.
 import { describe, it, expect } from 'vitest';
-import { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, lonespridning, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
+import { bokslutBasRad, byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, lonespridning, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
 import { arsjamforelseBlock, tillWordHtml } from '../src/lib/rapportunderlag.js';
 
 const bokslut = (ar, over = {}) => byggArsbokslut({
@@ -355,5 +355,16 @@ describe('årsbokslut: jämförelsen av de sakliga skälen', () => {
     it('null när ett av åren saknar fältet (ett bokslut från version 1)', () => {
         const v1 = { ...forra(), version: 1 }; delete v1.bedomningar;
         expect(jamforArsbokslut(valideraArsbokslut(v1), nu()).bedomningar).toBeNull();
+    });
+});
+
+describe('[B8.2] årsbokslut: raden per BAS-intervall', () => {
+    const rad = (kon, lon) => ({ bas: 'B', kon, lon });
+    const rader = [...[30000, 31000, 32000, 33000].map(l => rad('kvinna', l)), ...[34000, 35000].map(l => rad('man', l)), rad('man', 0), { bas: 'C', kon: 'man', lon: 1 }];
+    it('antal och kvantiler från k personer med lön, könens medianer bara när båda könen når k', () => {
+        expect(bokslutBasRad(rader, 'B', 2)).toMatchObject({ bas: 'B', n: 6, nKv: 4, nMa: 2, med: 32500, medKv: 31500, medMa: 34500 });
+        expect(bokslutBasRad(rader, 'B', 3)).toMatchObject({ n: 6, medKv: null, medMa: null });
+        expect(bokslutBasRad(rader, 'B', 7)).toBeNull();
+        expect(bokslutBasRad(rader, 'B', 2).spridning).toBe(lonespridning([30000, 31000, 32000, 33000, 34000, 35000], 2));
     });
 });

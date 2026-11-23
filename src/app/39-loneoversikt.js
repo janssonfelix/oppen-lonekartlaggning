@@ -1,98 +1,64 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { aidAvYrke } from '../lib/aid.js';
-import { statistikFor } from '../lib/jamforelse.js';
-import { arKvinna, arMan } from '../lib/kon.js';
 import { svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
+import { vymodellLoneoversikt } from '../lib/vymodell-loneoversikt.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { buildBaseAudit, setAudit, toggleAllGroups } from './05-tabeller-och-lankar.js';
-import { isKMasked, kTroskel } from './06-k-troskel.js';
+import { kTroskel } from './06-k-troskel.js';
 import { kMaskNote } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
-import { getBasIntervals, getData, policyFor, referensKortnamn, Stat, state } from './12-tillstand.js';
+import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { _evidenceForRapportRow, _openEvidenceModal } from './27-berakningsbevis.js';
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
 // ---- Löneöversikten (tabellen överst i Utforska) ----
-export function generateRapport() {
+export function ritaLoneoversikt() {
     const tbody = /** @type {HTMLElement} */ (document.querySelector("#rapport-table tbody"));
     tbody.innerHTML = "";
     const fmt = new Intl.NumberFormat('sv-SE', {style:'currency',currency:'SEK',maximumFractionDigits:0});
-    const d   = getData();
-    const bas = getBasIntervals();
-    let kMaskedRowsCount = 0;
-    let yrkenSkippedCount = 0;
+    const vm = vymodellLoneoversikt(getData(), { bas: getBasIntervals(), k: kTroskel(), policyFor, statistik: state.statistik });
+    const dossierBas = new Set(basdossierKandidater().map(x => x.bas));
 
-    bas.forEach(b => {
-        const df  = d.filter(r => r.bas === b);
-        const pol = policyFor(null, b);
+    vm.block.forEach(({ bas: b, referens: pol, rader, utelamnade }) => {
         const trH = document.createElement("tr");
         trH.className = "group-header";
         trH.dataset.bas = b;
-        trH.innerHTML = `<td colspan="8">BAS ${esc(b)}${basdossierKandidater().some(x => x.bas === b) ? basdossierKnapp(b) : ''}</td>`;
+        trH.innerHTML = `<td colspan="8">BAS ${esc(b)}${dossierBas.has(b) ? basdossierKnapp(b) : ''}</td>`;
         tbody.appendChild(trH);
-        const basUtelamnade = [];
         if (pol) {
             const tr = document.createElement("tr");
             // data-sort-value → Excel-exporten får riktiga tal (sorterbara/summerbara)
             tr.innerHTML = `<td>${esc(referensKortnamn())}</td><td data-sort-value="${pol.p10}">${fmt.format(pol.p10)}</td><td data-sort-value="${pol.med}">${fmt.format(pol.med)}</td><td data-sort-value="${pol.p90}">${fmt.format(pol.p90)}</td><td>-</td><td>-</td><td>-</td><td>-</td>`;
             tbody.appendChild(tr);
         }
-        const addRow = (kategori, subset) => {
-            if (!subset.length) return;
-            // k-anonymitet: raden utelämnas i stället för att fyllas med
-            // "< 10"-celler. En rad där P10, median, P90 och spridning alla är
-            // maskerade ger inget att analysera — den gör bara rapporten längre.
-            // Gruppen räknas i stället upp i noten sist i BAS-blocket.
-            if (isKMasked(subset.length)) { kMaskedRowsCount++; basUtelamnade.push(kategori); return; }
-            const lons = subset.map(r => r.lon);
-            const med = Stat.median(lons), p10 = Stat.kvantil(lons, 0.1), p90 = Stat.kvantil(lons, 0.9);
-            const isWarn = pol && pol.p10 && med < pol.p10;
-            const spreadTal = p10 > 0 ? p90 / p10 : null;
-            const spread = spreadTal != null ? svTal(spreadTal, 2) : "-";
-            let statMed = "-", statDiff = "-", statColor = "";
-            /** @type {number|null} */ let statRefMedian = null;
-            /** @type {number|null} */ let statDiffRaw = null;
-            if (state.statistik.length > 0) {
-                const aidCode = aidAvYrke(kategori);
-                const sr = statistikFor(state.statistik, aidCode, b)?.rad;
-                if (sr && sr.median > 0) {
-                    statMed = fmt.format(sr.median);
-                    statRefMedian = sr.median;
-                    const diff = ((med / sr.median) - 1) * 100;
-                    statDiffRaw = +diff.toFixed(1);
-                    statDiff = (diff > 0 ? "+" : "") + svPct(diff, 1);
-                    statColor = diff < 0 ? "f-kritisk" : "fg-ok";
-                }
-            }
+        // k-anonymitet: en rad under tröskeln utelämnas i stället för att fyllas med "< 10"-celler; gruppen räknas i
+        // stället upp i noten sist i BAS-blocket (vymodellen).
+        for (const r of rader) {
+            const kategori = r.kategori, lons = r.lons, med = r.med, p10 = r.p10, p90 = r.p90, spridning = r.spridning, statMedian = r.statMedian;
+            const warn = r.underReferens ? 'warning-cell' : '';
+            const statDiffRaw = r.statDiff != null ? +r.statDiff.toFixed(1) : null;
+            const statMed = statMedian != null ? fmt.format(statMedian) : "-";
+            const statDiff = r.statDiff != null ? (r.statDiff > 0 ? "+" : "") + svPct(r.statDiff, 1) : "-";
+            const statColor = r.statDiff != null ? (r.statDiff < 0 ? "f-kritisk" : "fg-ok") : "";
             // Bevis-knapp i kategori-cellen
             // (ingen ny kolumn — håller rapportstrukturen oförändrad).
             const evidenceBtn = ` <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa beräkningen för ${esc(kategori)}">${ikon('sok')}</button>`;
             const tr = document.createElement("tr");
             // data-sort-value på talceller → Excel-exporten får riktiga tal
-            const svMed = statRefMedian != null ? ` data-sort-value="${statRefMedian}"` : '';
+            const svMed = statMedian != null ? ` data-sort-value="${statMedian}"` : '';
             const svDiff = statDiffRaw != null ? ` data-sort-value="${statDiffRaw}"` : '';
-            tr.innerHTML = `<td>${esc(kategori)}${evidenceBtn}</td><td class="${isWarn?'warning-cell':''}" data-sort-value="${p10}">${fmt.format(p10)}</td><td class="${isWarn?'warning-cell':''}" data-sort-value="${med}">${fmt.format(med)}</td><td data-sort-value="${p90}">${fmt.format(p90)}</td><td data-sort-value="${lons.length}">${lons.length}</td><td${spreadTal != null ? ` data-sort-value="${spreadTal.toFixed(2)}"` : ''}>${spread}</td><td class="bak-info-yta"${svMed}>${statMed}</td><td class="bg-info-yta halvfet ${statColor}"${svDiff}>${statDiff}</td>`;
+            tr.innerHTML = `<td>${esc(kategori)}${evidenceBtn}</td><td class="${warn}" data-sort-value="${p10}">${fmt.format(p10)}</td><td class="${warn}" data-sort-value="${med}">${fmt.format(med)}</td><td data-sort-value="${p90}">${fmt.format(p90)}</td><td data-sort-value="${lons.length}">${lons.length}</td><td${spridning != null ? ` data-sort-value="${spridning.toFixed(2)}"` : ''}>${spridning != null ? svTal(spridning, 2) : "-"}</td><td class="bak-info-yta"${svMed}>${statMed}</td><td class="bg-info-yta halvfet ${statColor}"${svDiff}>${statDiff}</td>`;
             // Cache rad-data så bevis-handler kan plocka upp den
-            tr._rapportRow = { kategori, bas: b, lons: lons.slice(), polRow: pol, statRefMedian, masked: false };
+            tr._rapportRow = { kategori, bas: b, lons: lons.slice(), polRow: pol, statRefMedian: statMedian, masked: false };
             tbody.appendChild(tr);
-        };
-        addRow("Organisationen", df);
-        addRow("Kvinna", df.filter(r => arKvinna(r)));
-        addRow("Man", df.filter(r => arMan(r)));
-        const yrkeMap = {};
-        df.forEach(r => { if (!yrkeMap[r.yrke]) yrkeMap[r.yrke] = []; yrkeMap[r.yrke].push(r); });
-        Object.keys(yrkeMap).sort().forEach(y => {
-            if (yrkeMap[y].length >= 5) addRow(y, yrkeMap[y]);
-            else yrkenSkippedCount++;
-        });
-        if (basUtelamnade.length) {
+        }
+        if (utelamnade.length) {
             const trN = document.createElement("tr");
-            trN.innerHTML = `<td colspan="8">${kMaskNote(basUtelamnade, 'grupp i detta BAS|grupper i detta BAS')}</td>`;
+            trN.innerHTML = `<td colspan="8">${kMaskNote(utelamnade, 'grupp i detta BAS|grupper i detta BAS')}</td>`;
             tbody.appendChild(trN);
         }
     });
@@ -119,7 +85,7 @@ export function generateRapport() {
         ...base,
         usedInAnalysis: base.afterFilter,
         analysisExclusions: [
-            ...(yrkenSkippedCount > 0 ? [[`${stor(T.enhet.fl)} med <5 personer (slås ihop med "Organisationen"-raden)`, yrkenSkippedCount]] : [])
+            ...(vm.smaYrken > 0 ? [[`${stor(T.enhet.fl)} med <5 personer (slås ihop med "Organisationen"-raden)`, vm.smaYrken]] : [])
         ],
         formler: [
             ['Median', 'P50, mittersta värdet av sorterad lönelista'],
@@ -129,7 +95,7 @@ export function generateRapport() {
             ['Diff mot jämförelsestatistiken', '<code>(organisationens median / jämförelsens median) − 1</code> uttryckt i %']
         ],
         notes: [
-            `K-anonymitet: ${kMaskedRowsCount} grupp${kMaskedRowsCount === 1 ? '' : 'er'} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
+            `K-anonymitet: ${vm.utelamnade} grupp${vm.utelamnade === 1 ? '' : 'er'} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
             `BAS-grupper visar i ordning: "${esc(referensKortnamn())}" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje ${T.enhet.en} med ≥5 personer`
         ]
     });

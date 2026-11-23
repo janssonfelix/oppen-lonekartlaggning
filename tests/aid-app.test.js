@@ -30,7 +30,7 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
         const d = w.__buildGruppdossier(kand.key);
         const nLed = kand.rows.filter(r => r.ansvarsgrupp === 'ledning');
         expect(d.ansvar).toMatchObject({ ledning: { kv: nLed.filter(r => r.kon === 'kvinna').length, ma: nLed.filter(r => r.kon === 'man').length } });
-        const html = w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(kand.key)}))`);
+        const html = w.eval(`_gdRitaInnehall(__buildGruppdossier(${JSON.stringify(kand.key)}))`);
         expect(html).toMatch(/Ledningsansvar \d+ kv \/ \d+ män/);
         expect(w.__gruppdossierAsText(d)).toMatch(/Ansvar: ledningsansvar \d+ kvinnor \/ \d+ män · särskilt uppdrag \d+ kvinnor \/ \d+ män/);
     });
@@ -41,7 +41,7 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
         w.__state.ansvarKolumn = null;
         const key = w.__gruppdossierCandidates()[0].key;
         expect(w.__buildGruppdossier(key).ansvar).toBeNull();
-        expect(w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(key)}))`)).not.toMatch(/Ledningsansvar/);
+        expect(w.eval(`_gdRitaInnehall(__buildGruppdossier(${JSON.stringify(key)}))`)).not.toMatch(/Ledningsansvar/);
     });
     it('Personer att granska har kolumnen Ansvar bara när ansvarskolumnen finns', () => {
         const w = createAppWindow();

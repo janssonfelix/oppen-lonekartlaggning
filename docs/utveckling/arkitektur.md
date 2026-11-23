@@ -94,7 +94,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 | Diagram, rapport och utforskning | `figur` | `kon`, `stat`, `talformat` |
 |  | `docx` | `htmltext` |
 |  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `likvardighet`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `talformat`, `termer` |
-|  | `arsbokslut` | `aid`, `sakligaskal`, `stat`, `termer` |
+|  | `arsbokslut` | `aid`, `kon`, `sakligaskal`, `stat`, `termer` |
 |  | `tabellrecept` | `namn`, `termer`, `utforska` |
 |  | `utforska` | `aid`, `falt`, `stat`, `termer`, `urval` |
 |  | `urval` | `falt`, `termer` |
@@ -103,7 +103,11 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 | Demoläget | `demodata` | `ansvar`, `inlasning`, `kon`, `stat` |
 | Vymodeller (ADR-99) | `vymodell-lika-arbete` | `aid`, `aidbas`, `ansvar`, `namn`, `osakerhet`, `rapportunderlag`, `skrreferens`, `struktur` |
 |  | `vymodell-alder-karriar` | `aid`, `jamforelse`, `kon`, `ktroskel`, `osakerhet`, `stat`, `struktur`, `talformat`, `termer` |
+|  | `vymodell-basdossier` | `aid`, `arsbokslut`, `kon`, `ktroskel`, `perbas`, `rapportunderlag`, `stat`, `struktur`, `vymodell-gruppdossier` |
+|  | `vymodell-gruppdossier` | `aid`, `figur`, `jamforelse`, `kon`, `ktroskel`, `lonepolitik`, `osakerhet`, `prioritering`, `skrreferens`, `stat`, `struktur` |
+|  | `vymodell-loneoversikt` | `aid`, `jamforelse`, `kon`, `stat` |
 |  | `vymodell-lonestruktur` | `figur`, `kon`, `osakerhet`, `stat`, `status`, `struktur` |
+|  | `vymodell-oversikt` | `aid`, `datakvalitet`, `jamforelse`, `kon`, `stat`, `struktur`, `vymodell-lonestruktur` |
 |  | `vymodell-var-uppstar-gapet` | `gapuppdelning`, `struktur` |
 
 Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter. Reglerna
