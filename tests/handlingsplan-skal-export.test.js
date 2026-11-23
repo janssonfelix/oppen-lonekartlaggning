@@ -90,14 +90,14 @@ describe('Excel: bladet Sakliga skäl och handlingsplanens kolumner', () => {
     it('"Excel (alla flikar)" får bladet Sakliga skäl när någon rad har skäl, och förhandsbeskedet säger det', async () => {
         const w = demo();
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         expect(bok).toContain('[Sakliga skäl]');
         expect(w.eval('excelAlltBlad()')).toContain('Sakliga skäl');
         const blad = bok.slice(bok.indexOf('[Sakliga skäl]'));
         expect(blad).toContain('Sammanställning per kategori');
         w.__state.handlingsplan = {};
         expect(w.eval('excelAlltBlad()')).not.toContain('Sakliga skäl');
-        const utan = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const utan = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         expect(utan).not.toContain('[Sakliga skäl]');
     });
     it('handlingsplansunderlaget får kolumnerna Sakliga skäl och Förklarad andel', async () => {
@@ -197,7 +197,7 @@ describe('ett kön under minsta gruppstorlek: bara kategorin lämnar verktyget',
         expect(rt).toContain(NOT);
         for (const v of ['13579', '13 579', '24680']) expect(rt).not.toContain(v);
         await laddaXlsx(w);
-        const alla = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const alla = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         const hp = Object.values(fangaBocker(w, () => w.eval('exportHandlingsplan()')))[0];
         for (const bok of [alla, hp]) { for (const v of ['13579', '24680']) expect(bok).not.toContain(v); expect(bok).toContain(NOT); }
     });

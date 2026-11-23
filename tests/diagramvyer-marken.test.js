@@ -518,7 +518,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         await laddaXlsx(w2);
         let bok = null;
         w2.XLSX.writeFile = wb => { bok = wb; };
-        w2.eval('exportAllToExcel()');
+        w2.eval('exportAlltTillExcel()');
         const blad = w2.XLSX.utils.sheet_to_json(bok.Sheets['Könsskevhet'], { header: 1, raw: true });
         expect(blad.filter(r => ['A', 'B', 'C'].includes(String(r[0]).trim())).map(r => String(r[0]).trim())).toEqual(['A', 'B']);
         expect(blad.some(r => /visas inte här: C\./.test(String(r[0])))).toBe(true);

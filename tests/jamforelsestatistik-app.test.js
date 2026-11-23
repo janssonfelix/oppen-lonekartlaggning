@@ -196,7 +196,7 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — Jämförelsest
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
         w.alert = () => {};
-        w.eval('exportAllToExcel()');
+        w.eval('exportAlltTillExcel()');
         const wb = Object.values(fangat)[0];
         const rader = w.XLSX.utils.sheet_to_json(wb.Sheets['Jämförelsestatistik'], { header: 1 }).flat();
         expect(rader).toContain('Urval: BAS C');

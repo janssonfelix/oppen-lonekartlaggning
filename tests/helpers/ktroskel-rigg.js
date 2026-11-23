@@ -341,7 +341,7 @@ export async function samlaUtdata(w) {
     if (forra) oppnaFlik(w, forra);
 
     for (const [namn, kor] of [
-        ['Excel alla flikar', () => w.eval('exportAllToExcel()')], ['protokollet', () => w.eval('exportJPAProtocol()')],
+        ['Excel alla flikar', () => w.eval('exportAlltTillExcel()')], ['protokollet', () => w.eval('exportJPAProtokoll()')],
         ['EU-lönerapporten', () => w.eval('exportEuReport()')], ['handlingsplanen', () => w.eval('exportHandlingsplan()')],
         ['jämförelseexporten', () => w.eval('exportBenchmarkExcel()')], ['Löneöversyn', () => w.eval('exportForecast()')],
         ['Löneöversikten', () => d.getElementById('btn-export-excel').click()],

@@ -138,7 +138,7 @@ describe('överblicken i exporterna', () => {
         w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
         const blad = w.eval('excelAlltBlad()');
         expect(blad.indexOf('Referenser')).toBe(blad.indexOf('Lönepolitik') + 1);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         const ref = bok.split('[Referenser]')[1].split('\n[')[0];
         expect(ref).toContain('Statistiken mot ställningstagandet (%)');
         // Samma kolumner som skärmen: en kolumn för läge och förslag, läget i spannet med sin skala i rubriken

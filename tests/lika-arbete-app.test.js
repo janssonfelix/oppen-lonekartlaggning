@@ -401,7 +401,7 @@ describe('protokollet för gemensam lönebedömning: kvinnors median i % av män
         w.alert = () => {};
         let wb = null;
         w.XLSX.writeFile = b => { wb = b; };
-        w.eval('exportJPAProtocol()');
+        w.eval('exportJPAProtokoll()');
         const blad = w.XLSX.utils.sheet_to_json(wb.Sheets['2. Lika arbete (AID)'], { header: 1, raw: true, defval: '' });
         const rubrik = blad.find(r => r.includes('Kvinnors median i % av mäns'));
         const rad = blad.find(r => r.includes('7100 Yrke'));

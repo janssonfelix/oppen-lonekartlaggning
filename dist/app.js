@@ -27495,14 +27495,14 @@ function _excelLonepolitikMetod(blad) {
   if (!blad.some((b) => b[0] === "Lönepolitik")) return [];
   return [["Bladet Lönepolitik", `Läget i referensens lönespann (0 % = P10, 100 % = P90) per ${T.enhet.en}, per kön och ${T.niva.en} samt fördelningen i spannets tredjedelar per kön och efterlevnaden per ${T.niva.en} — samma mått och samma regler för minsta gruppstorlek som avsnittet Mot ställningstagandet i fliken Löneläget: ${T.enhet.fl} under ${kTroskel()} ${personOrd(kTroskel())} utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} ${personOrd(kTroskel())}.`]];
 }
-function exportAllToExcel(...a) {
-  return medExportLage(() => _exportAllToExcelExport.apply(
+function exportAlltTillExcel(...a) {
+  return medExportLage(() => _exportAlltTillExcelExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportAllToExcelExport() {
+function _exportAlltTillExcelExport() {
   if (!state.data.length) {
     alert("Läs in lönefilen först.");
     return;
@@ -27630,14 +27630,14 @@ function _jpaNivaCeller(kv, ma, nKv, nMa) {
   return [Math.round(kv), Math.round(ma), Math.round(kv - ma), +(kv / ma * 100).toFixed(1)];
 }
 var JPA_BLAD_ALLA_GRUPPER = "2a. Lika arbete, alla grupper";
-function exportJPAProtocol(...a) {
-  return medExportLage(() => _exportJPAProtocolExport.apply(
+function exportJPAProtokoll(...a) {
+  return medExportLage(() => _exportJPAProtokollExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportJPAProtocolExport() {
+function _exportJPAProtokollExport() {
   if (!state.data.length) {
     alert("Läs in lönefilen först.");
     return;
@@ -28125,7 +28125,7 @@ function _exportJPAProtocolExport() {
   announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 function uppstartExcelexport() {
-  document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAllToExcel);
+  document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAlltTillExcel);
 }
 
 // src/lib/vymodell-var-uppstar-gapet.js
@@ -28752,7 +28752,7 @@ function _visaExportvarning(bodyHtml) {
   }, 12e3);
 }
 function uppstartExporthjalpare() {
-  document.getElementById("btn-hub-jpa")?.addEventListener("click", () => exportJPAProtocol());
+  document.getElementById("btn-hub-jpa")?.addEventListener("click", () => exportJPAProtokoll());
   document.getElementById("btn-hub-handlingsplan")?.addEventListener("click", () => exportHandlingsplan());
 }
 

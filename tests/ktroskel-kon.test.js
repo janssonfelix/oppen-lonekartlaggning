@@ -163,7 +163,7 @@ describe('[C5] bladet Lönepolitik i Excel (alla flikar) följer tröskeln som f
     const bladet = async k => {
         const w = fonsterKon(k);
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         expect(bok).toContain('[Lönepolitik]');
         const text = bok.split('[Lönepolitik]')[1].split('\n[')[0];
         const del = (fran, till) => text.split(fran)[1].split(till)[0];
@@ -202,7 +202,7 @@ describe('[C5] bladet Lönepolitik i Excel (alla flikar) följer tröskeln som f
         const w = fonsterKon(null);
         w.__state.policy = [];
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         expect(bok).not.toContain('[Lönepolitik]');
         expect(bok).not.toContain('Bladet Lönepolitik');
     });

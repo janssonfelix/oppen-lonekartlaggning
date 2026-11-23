@@ -63,7 +63,7 @@ arbeten som är lika eller likvärdiga är arbetsgivarens.
 ### Protokollet för gemensam lönebedömning mot art. 10.2
 
 Kartlagt 2026-11-15 mot den svenska lydelsen av direktivet på EUR-Lex (CELEX 32023L0970). Protokollet är
-Excel-filen *Protokoll för gemensam lönebedömning* (`exportJPAProtocol`, `src/app/24-excelexport.js`). Blad 2a är
+Excel-filen *Protokoll för gemensam lönebedömning* (`exportJPAProtokoll`, `src/app/24-excelexport.js`). Blad 2a är
 samma blad som *Lika arbete AID x BAS* i Excel (alla flikar), byggt på ett ställe (`_aidbasLikaBlad`). Status
 *Förslag*: inte juridiskt granskat.
 

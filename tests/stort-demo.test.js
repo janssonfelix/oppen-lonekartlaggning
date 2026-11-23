@@ -361,7 +361,7 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
         w.alert = () => {};
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
-        w.eval('exportAllToExcel()');
+        w.eval('exportAlltTillExcel()');
         expect(Object.keys(fangat)).toHaveLength(1);
         const wb = Object.values(fangat)[0];
         bok = wb.SheetNames.map(namn => ({ namn, rader: w.XLSX.utils.sheet_to_json(wb.Sheets[namn], { header: 1, raw: true }) }));

@@ -77,7 +77,7 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         let wb = null;
         w.XLSX.writeFile = b => { wb = b; };
         w.alert = () => {};
-        w.eval('exportAllToExcel()');
+        w.eval('exportAlltTillExcel()');
         expect(wb.SheetNames).toContain('Egna tabeller');
         const rader = w.XLSX.utils.sheet_to_json(wb.Sheets['Egna tabeller'], { header: 1, raw: true });
         expect(rader[2][0]).toBe('Per kön');

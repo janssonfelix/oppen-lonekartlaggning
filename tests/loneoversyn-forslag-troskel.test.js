@@ -61,7 +61,7 @@ async function excel(w) {
 // Excel (alla flikar), som också ZIP-filen bär.
 async function excelAlla(w) {
     await laddaXlsx(w);
-    const bocker = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')));
+    const bocker = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')));
     expect(bocker.length).toBe(1);
     return bocker[0];
 }

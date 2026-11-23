@@ -149,7 +149,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
 
     it('vid 10: protokollet för gemensam lönebedömning saknar paret och anger antalet', async () => {
         const w = fonsterPar(null);
-        const text = await fangaExcel(w, 'exportJPAProtocol');
+        const text = await fangaExcel(w, 'exportJPAProtokoll');
         expect(text).not.toContain(ETIKETT);
         expect(text).not.toContain(String(SENT));
         expect(text).toMatch(NOT);
@@ -197,7 +197,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
 
     it('vid 5 (den lilla gruppens storlek är 6): paret finns i alla fyra', async () => {
         const w = fonsterPar(5);
-        const protokoll = await fangaExcel(w, 'exportJPAProtocol');
+        const protokoll = await fangaExcel(w, 'exportJPAProtokoll');
         expect(protokoll).toContain(ETIKETT);
         expect(protokoll).toContain(String(SENT));
         expect(protokoll).not.toMatch(NOT);
@@ -743,7 +743,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         w.alert = () => {};
         let wb = null;
         w.XLSX.writeFile = b => { wb = b; };
-        w.eval('exportJPAProtocol()');
+        w.eval('exportJPAProtokoll()');
         const blad = n => w.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true }).map(r => r.map(c => String(c ?? '')));
         return { forsatt: blad('1. Försättssida'), bas: blad('3. Likvärdigt arbete (BAS)') };
     };
@@ -835,7 +835,7 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
         w.eval('populateSelects(); unlockTabs();');
         return w;
     };
-    const protokollet = async (w, fn = 'exportJPAProtocol') => {
+    const protokollet = async (w, fn = 'exportJPAProtokoll') => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');
         const { fileURLToPath } = await import('node:url');
@@ -903,7 +903,7 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
     for (const [k, utan] of [[null, ['7200']], [25, ['7100', '7200']]]) {
         it(`vid ${k ?? 10}: blad 2a har samma rader som bladet Lika arbete AID x BAS, och ${utan.join(' och ')} utan median`, async () => {
             const w = fonsterNiva(k);
-            const bok = await protokollet(w), alla = await protokollet(w, 'exportAllToExcel');
+            const bok = await protokollet(w), alla = await protokollet(w, 'exportAlltTillExcel');
             const blad = bok['2a. Lika arbete, alla grupper'];
             expect(blad).toEqual(alla['Lika arbete AID x BAS']);
             const rubrik = blad.findIndex(r => r.includes('Medianlön kvinnor'));

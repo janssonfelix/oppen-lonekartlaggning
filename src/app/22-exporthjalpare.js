@@ -17,7 +17,7 @@ import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { _exportText, getData, referensKalla, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
-import { exportJPAProtocol } from './24-excelexport.js';
+import { exportJPAProtokoll } from './24-excelexport.js';
 import { _RG_STEG_YRKE, forklaringsmodell, harAlder } from './50-regressionsmodeller.js';
 import { exportHandlingsplan } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
@@ -524,6 +524,6 @@ export function _visaExportvarning(bodyHtml) {
 export function uppstartExporthjalpare() {
     // #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
     // respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
-    document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
+    document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtokoll());
     document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
 }

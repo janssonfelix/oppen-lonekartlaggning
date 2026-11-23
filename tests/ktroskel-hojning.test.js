@@ -32,7 +32,7 @@ describe('k-tröskeln styr varje flik', () => {
         w.alert = () => {};
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
-        w.eval('exportAllToExcel()');
+        w.eval('exportAlltTillExcel()');
         expect(Object.keys(fangat).length).toBeGreaterThan(0);
         const lackor = [];
         for (const [namn, wb] of Object.entries(fangat)) for (const blad of wb.SheetNames) {

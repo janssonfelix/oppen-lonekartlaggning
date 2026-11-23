@@ -157,7 +157,7 @@ function _afterDataLoaded() {
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden
     // vid stora underlag. De körs EFTER att gränssnittet målats (deferrade i två steg så
     // statusnotisen hinner synas). Flikbesök renderar ändå on-demand via
-    // renderTabContent, och exporterna self-heal:ar (se exportAllToExcel).
+    // renderTabContent, och exporterna self-heal:ar (se exportAlltTillExcel).
     const DEFER_NOTE = ' · förbereder analyser i bakgrunden…';
     setTimeout(() => {
         if (dataStatus) dataStatus.textContent += DEFER_NOTE;

@@ -180,8 +180,8 @@ function _excelLonepolitikMetod(blad) {
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
-function _exportAllToExcelExport() {
+function exportAlltTillExcel(...a) { return medExportLage(() => _exportAlltTillExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportAlltTillExcelExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
@@ -362,8 +362,8 @@ const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-export function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
-function _exportJPAProtocolExport() {
+export function exportJPAProtokoll(...a) { return medExportLage(() => _exportJPAProtokollExport.apply(null, /** @type {any} */ (a))); }
+function _exportJPAProtokollExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
 
@@ -746,5 +746,5 @@ function _exportJPAProtocolExport() {
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartExcelexport() {
     // Multi-flik Excel-export
-    document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAllToExcel);
+    document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAlltTillExcel);
 }

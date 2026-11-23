@@ -117,8 +117,8 @@ beforeAll(() => {
             window.__exportErrors = [];
             window.__alerts.length = 0;
             const safe = (name, fn) => { try { fn(); } catch (e) { window.__exportErrors.push(name + ': ' + (e && e.message || e)); } };
-            safe('jpa', exportJPAProtocol);
-            safe('alla-flikar', exportAllToExcel);
+            safe('jpa', exportJPAProtokoll);
+            safe('alla-flikar', exportAlltTillExcel);
             safe('handlingsplan', exportHandlingsplan);
             safe('eu-rapport', exportEuReport);
             safe('likvardighet', exportLikvardighet);
@@ -316,7 +316,7 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
             rows.push({ bas: 'B', yrke: '5301 Undersköterska', aid: '5301', yrkeLabel: 'Undersköterska', lon, alder: 30 + i * 2, kon, poang: null, enhet: '1234' });
         win.__state.data = rows;
         win.__state.dataAudit = { totalRaw: rows.length, excludedNoBas: 0, excludedZeroLon: 0 };
-        win.eval('_deriveArbetsvarderingFromData(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell()); ritaLikaArbete(laVymodell()); renderStructure(); window.__captured = {}; exportEuReport(); exportAllToExcel();');
+        win.eval('_deriveArbetsvarderingFromData(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell()); ritaLikaArbete(laVymodell()); renderStructure(); window.__captured = {}; exportEuReport(); exportAlltTillExcel();');
         eu = win.__captured[Object.keys(win.__captured).find(f => /eu_lonerapport/.test(f))];
         alla = win.__captured[Object.keys(win.__captured).find(f => /lonekartlaggning_komplett/.test(f))];
         expect(eu && alla).toBeTruthy();
@@ -446,12 +446,12 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
     it('bladet Lönepolitik finns bara med ett ställningstagande, och metodbladet säger då vad det bär', () => {
         win.__loadFixture();
         const X = win.__XLSX, text = wb => wb.SheetNames.map(n => X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true }).map(r => r.join(' | ')).join('\n')).join('\n');
-        win.eval('window.__captured = {}; exportAllToExcel();');
+        win.eval('window.__captured = {}; exportAlltTillExcel();');
         const med = Object.values(win.__captured)[0];
         expect(med.SheetNames).toContain('Lönepolitik');
         expect(text(med)).toMatch(/Bladet Lönepolitik \| Läget i referensens lönespann/);
         win.__state.policy = [];
-        win.eval('window.__captured = {}; exportAllToExcel();');
+        win.eval('window.__captured = {}; exportAlltTillExcel();');
         const utan = Object.values(win.__captured)[0];
         expect(utan.SheetNames).not.toContain('Lönepolitik');
         expect(text(utan)).not.toContain('Bladet Lönepolitik');
@@ -614,7 +614,7 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
         expect(blad('[Huvud]', 'Reserv')).toBe('Reserv');
     });
     it('protokollets blad om lika arbete heter "2. Lika arbete (AID)"', () => {
-        // Samma namn som exportJPAProtocol skriver.
+        // Samma namn som exportJPAProtokoll skriver.
         const prot = bocker[`lonekartlaggning_protokoll_gemensam_lonebedomning_${win.eval("idagDatum()")}.xlsx`];
         expect(prot, Object.keys(bocker).join(', ')).toBeTruthy();
         expect(prot.SheetNames).toContain('2. Lika arbete (AID)');

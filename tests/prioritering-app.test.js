@@ -131,7 +131,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');
         const w = oppna();
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         const blad = bok.split(/\n(?=\[)/).find(b => b.startsWith('[Prioritering]'));
         expect(blad).toBeTruthy();
         expect(blad).not.toMatch(TRAPPAN);

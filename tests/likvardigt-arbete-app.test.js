@@ -250,7 +250,7 @@ describe('Likvärdigt arbete räknas en gång per underlag', () => {
         w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
         w.alert = () => {};
         w.XLSX.writeFile = () => {};
-        w.eval('exportJPAProtocol()');
+        w.eval('exportJPAProtokoll()');
         expect(w.__lvBerakningar).toBe(1);
     });
     // Fältens ändringar i fliken: resultatet nollställs, och det nya räknas med det nya värdet (en gång).
