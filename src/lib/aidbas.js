@@ -20,7 +20,7 @@
  * (nyckeln 'do') och *X % eller mer* (nyckeln 'scb'). Gränsen X är 60 % om inget annat anges. Mansdominerat
  * speglas; övriga är könsblandade.
  *
- * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ * Ren modul utan DOM eller state.
  */
 import { median, kvantil } from './stat.js';
 import { basRangordning, konsklass } from './likvardighet.js';

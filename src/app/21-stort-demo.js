@@ -10,7 +10,7 @@ import { _lasInDemounderlag, _renderDemoBanner } from './20-demodata-diagnostik.
 
 // ---- Stort demo: 5 000 påhittade personer i 100 yrken ----
 // Generatorerna (genereraStortDemo, genereraStortDemoStatistik, _sdStallningstagande) och deras konstanter står i
-// src/lib/demodata.js; appen når dem genom spegeln. Här står inläsningen och namnet på den påhittade statistiken.
+// src/lib/demodata.js; appen importerar dem. Här står inläsningen och namnet på den påhittade statistiken.
 
 export const STORT_DEMO_STATISTIKNAMN = 'Påhittad jämförelsestatistik (demo)';
 

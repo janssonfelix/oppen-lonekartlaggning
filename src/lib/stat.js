@@ -4,11 +4,8 @@
  * Öppen lönekartläggning — Pure statistical kernel
  *
  * Denna modul är ENDA KÄLLAN (single source of truth) för den matematiska
- * kärnan och kan testas via Vitest utan att ladda DOM/CSP. Webbläsarbygget
- * (app.js) får en AUTO-GENERERAD spegel av modulen i src/app/09-lib-speglar.js
- * (tools/gen-mirrors.mjs inlinar verbatim). Ändra därför ALDRIG spegeln — ändra
- * här och kör `npm run build:app`. tests/stat.test.js verifierar de numeriska
- * resultaten; artefaktgrinden vaktar att spegeln är i synk med src/lib/.
+ * kärnan och kan testas via Vitest utan att ladda DOM/CSP. Appen importerar
+ * modulen. tests/stat.test.js verifierar de numeriska resultaten.
  *
  * Funktioner exporterade:
  *   - median, kvantil, linjarRegression     (Stat-objektet i appen pekar hit)

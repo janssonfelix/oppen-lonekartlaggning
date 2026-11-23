@@ -7,8 +7,6 @@
  * eller medicinskt ansvarsområde), 1001 (lektor), 1002 (förstelärare). En sista position kan
  * användas lokalt (C1, 10013) och ignoreras. Flera koder per person tillåts. Analyserna använder
  * bara tre ansvarsgrupper. Kolumnen "Ansvar" är oftast ett kostnadsställe och läses aldrig.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median } from './stat.js';
 import { konsMedianer } from './struktur.js';

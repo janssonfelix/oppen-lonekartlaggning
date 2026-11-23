@@ -13,8 +13,6 @@
  *
  * Ren modul: bara strängar in och ut. Appen (29-organisationspaket.js) läser filen med FileReader,
  * laddar ner resultatet som Blob och läser vid start blocket ur DOM:en.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 export const MALL_ID = 'inbakat-organisationspaket';

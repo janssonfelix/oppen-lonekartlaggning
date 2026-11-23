@@ -35,7 +35,7 @@ import { kTroskelLank } from './86-installningar.js';
 // ===================================================================
 // Struktur & EU-rapport — representation/segregation, kvartilfördelning
 // (EU 2023/970), distributionellt gap. Auto-rapportutkastet (renderStrukturUtkast) står i fliken Rapporttext.
-// De rena måtten (_st*) genereras i src/app/09-lib-speglar.js från src/lib/struktur.js.
+// De rena måtten står i src/lib/struktur.js.
 // ===================================================================
 
 /**

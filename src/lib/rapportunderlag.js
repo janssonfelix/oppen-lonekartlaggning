@@ -8,8 +8,6 @@
  * ett yrke, och block med faktastycke, tabell och frågor som kopieras in i en egen
  * Word-mall. Bedömningen (sakliga skäl) skrivs inte här — den kräver kunskap som
  * bara verksamheten har.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median, kvantil, anpassaOLS } from './stat.js';
 import { skrDelText } from './skrreferens.js';

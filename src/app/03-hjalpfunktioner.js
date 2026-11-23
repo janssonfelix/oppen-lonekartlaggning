@@ -33,7 +33,7 @@ export function tillampaDataStil(rot) {
 
 // ---- Kolumnerna: vilken rubrik som bär vilket fält ----
 // Reglerna (TILLATNA_FALT, _rubrikForRoll, _hittaRubrik och gissaKolumnmappning) bor i src/lib/inlasning.js; appen
-// når gissaKolumnmappning under samma namn genom spegeln. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
+// importerar gissaKolumnmappning under samma namn. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
 // kolumnmappningen och importprofilen ur tillståndet.
 /** Kolumnmappningen och importprofilen ur tillståndet, som lib-funktionerna för kolumnvalet tar emot. */
 export function _kolumnvalIState() {
@@ -86,8 +86,8 @@ export function idagDatum(datum = new Date()) {
 }
 
 // ---- Tal som text, svenskt format ----
-// svTal, svPct, svKr och svPoPct bor i src/lib/talformat.js och når appen genom spegeln (09-lib-speglar.js) under
-// samma namn. Där står också varför ett hårt mellanslag står före enheten.
+// svTal, svPct, svKr och svPoPct bor i src/lib/talformat.js; delarna importerar dem därifrån.
+// Där står också varför ett hårt mellanslag står före enheten.
 
 // ---- Underlagets storlek i en tabell ----
 // En tabell med ett lönemått för en grupp visar gruppens antal (som egen kolumn); en modelltabell, där alla rader

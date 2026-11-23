@@ -18,9 +18,7 @@
  * likvardighet.js och status.js, kvantilbootstrapen i osakerhet.js) sorterar
  * den först. Samma löner i en annan ordning ger samma intervall.
  *
- * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_slump*`
- * i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra här och kör
- * `npm run build:app`, rör ej spegeln (vaktas av artefaktgrinden).
+ * Separat från appen för Vitest.
  */
 
 /**

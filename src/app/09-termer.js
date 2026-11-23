@@ -3,8 +3,7 @@
 import { fyllTermer, skapaTermer } from '../lib/termer.js';
 
 // ---- Termerna (ADR-74) ----
-// Orden för AID:s begrepp står i src/lib/termer.js, speglad i 09-lib-speglar.js. Den här delen kommer efter
-// spegeln, så att T finns när flikarna ritas. Texter byggs med T och hjälparna, aldrig med orden själva:
+// Orden för AID:s begrepp står i src/lib/termer.js. Texter byggs med T och hjälparna, aldrig med orden själva:
 //   `${T.enhet.fl} i samma ${T.niva.en}`                         → "AID-etiketter i samma BAS-intervall"
 //   `${termArtikel(T.enhet)} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })}`
 //                                                                → "en kvinnodominerad AID-etikett"

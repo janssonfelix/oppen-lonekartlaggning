@@ -7,13 +7,11 @@
  * eller blandade namnen. Tabellen nedan är det enda stället där de gamla namnen står: konfigurationMedNyaNamn() byter
  * dem mot de nya när filen läses in, före den vanliga valideringen, så att valideringen bara känner de nya namnen.
  * Byggandet och valideringen av filen står i appen (src/app/19-konfiguration.js).
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 /** Versionen som skrivs. */
 export const KONFIGURATION_VERSION = 3;
-/** Versionen som skrivs, för appen (spegelns alias är funktioner). */
+/** Versionen som skrivs. */
 export function konfigurationVersion() { return KONFIGURATION_VERSION; }
 /** Versionerna som läses: 2 med de gamla namnen, 3 med de nya. */
 export const KONFIGURATION_LASBARA = Object.freeze([2, 3]);

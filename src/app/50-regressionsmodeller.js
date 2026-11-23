@@ -3,11 +3,11 @@
 // Regressionsmodeller för lika arbete — app-adaptern
 // ============================================================
 // De rena modellerna (huvudregressionen, kollinearitet, gap per BAS, sekventiell dekomponering med
-// yrkesgrupp, kvantilregression, Blinder-Oaxaca) ligger i src/lib/regression.js och
-// speglas in i 09-lib-speglar.js (ADR-8). Här finns bara de tunna adaptrarna som
+// yrkesgrupp, kvantilregression, Blinder-Oaxaca) ligger i src/lib/regression.js, som
+// appen importerar (ADR-98). Här finns bara de tunna adaptrarna som
 // läser appens tillstånd (getData(), statGolv()) och skickar det som parametrar.
 //
-// OLS-kärnan (_anpassaOLS m.fl.) är också speglad.
+// OLS-kärnan (anpassaOLS m.fl.) står i src/lib/stat.js.
 // Huvudregressionens adapter, runOLSRegression, står i 51-lika-arbete-regressionskort.js; den cachas aldrig (ADR-17).
 import { blinderOaxaca, forklaringsmodellArStandard, gapPerBas, harAlderIRader, kvantilregressionAllaTau, normaliseraForklaringsmodell, stegNamn } from '../lib/regression.js';
 import { _renderaOmAllaFlikar, statGolv } from './06-k-troskel.js';

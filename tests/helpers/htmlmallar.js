@@ -896,10 +896,10 @@ function skapaBedomare(filer, undantag = []) {
         if (!((d.typ === 'const' || d.typ === 'let') && d.init)) return null;
         const f = d.fil.funkVidStart.get(d.init[0]);
         if (f) return f;
-        // En lib-import: const termFras = __mirror_termer.termFras pekar på funktionen i modulens IIFE (libSomKalla).
+        // En lib-import: const termFras = __lib_termer.termFras pekar på funktionen i modulens IIFE (libSomKalla).
         const { tok } = d.fil;
         const [s, e] = d.init;
-        if (e - s === 3 && ar(tok[s], 'namn') && tok[s].v.startsWith('__mirror') && op(tok[s + 1], '.') && ar(tok[s + 2], 'namn')) {
+        if (e - s === 3 && ar(tok[s], 'namn') && tok[s].v.startsWith('__lib') && op(tok[s + 1], '.') && ar(tok[s + 2], 'namn')) {
             const modul = d.fil.dekl.find(m => m.namn === tok[s].v && m.init);
             const inre = modul && d.fil.dekl.find(m => m.typ === 'funktion' && m.namn === tok[s + 2].v && m.idx > modul.init[0] && m.idx < modul.init[1]);
             if (inre) { inre.funk.alias = d; return inre.funk; }
@@ -1074,9 +1074,9 @@ function skapaBedomare(filer, undantag = []) {
         return ut;
     }
 
-    // Lib-importerna (const termFras = __mirror_termer.termFras, se libSomKalla) kopplas till funktionerna innan något
+    // Lib-importerna (const termFras = __lib_termer.termFras, se libSomKalla) kopplas till funktionerna innan något
     // prövas, så att anropen räknas som anrop av funktionen.
-    for (const d of globala.values()) if (d.typ === 'const' && d.init && d.fil.tok[d.init[0]].v?.startsWith?.('__mirror')) funktionFor(d);
+    for (const d of globala.values()) if (d.typ === 'const' && d.init && d.fil.tok[d.init[0]].v?.startsWith?.('__lib')) funktionFor(d);
 
     return { prova, anvanda, undantag };
 }
@@ -1174,16 +1174,16 @@ function granska(kallor, undantag = []) {
 }
 
 /**
- * src/lib/ som en källa vakten kan läsa: varje modul i en IIFE (`const __mirror_<modul> = (() => { … })()`) med sina
+ * src/lib/ som en källa vakten kan läsa: varje modul i en IIFE (`const __lib_<modul> = (() => { … })()`) med sina
  * importer som alias inuti, och appens importer ur lib (`import { x as y } from '../lib/m.js'`) som globala alias
- * (`const y = __mirror_m.x;`). Vakten känner inte ES-moduler; så når den lib-funktionerna som appen anropar, utan att
+ * (`const y = __lib_m.x;`). Vakten känner inte ES-moduler; så når den lib-funktionerna som appen anropar, utan att
  * lib:s privata namn blir globala.
  * @param {string} libDir
  * @param {string[]} appTexter
  */
 function libSomKalla(libDir, appTexter) {
     const IMPORT = /^import\s*\{([^}]*)\}\s*from\s*'(?:\.\/|\.\.\/lib\/)([\w.-]+)\.js';?\s*$/gm;
-    const ns = fil => `__mirror_${fil.replace(/\W/g, '_')}`;
+    const ns = fil => `__lib_${fil.replace(/\W/g, '_')}`;
     const alias = text => [...text.matchAll(IMPORT)].flatMap(m => m[1].split(',').map(b => b.trim()).filter(Boolean)
         .map(b => { const [ex, lok = ex] = b.split(/\s+as\s+/); return `const ${lok} = ${ns(m[2])}.${ex};`; }));
     const moduler = readdirSync(libDir).filter(f => f.endsWith('.js')).sort().map(f => {

@@ -4,8 +4,6 @@
  * Öppen lönekartläggning — kontroll av AID-kodningen (ADR-33).
  * Kriterierna har samma form som i datakvalitet.js och läggs till i Underlagets kvalitet.
  * Texterna redovisar antal och koder, aldrig enskilda personer eller löner.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { etikett, huvudomrade, arRestkod, arLedningsetikett, normaliseraAid } from './aid.js';
 import { kvantil } from './stat.js';

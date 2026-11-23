@@ -21,8 +21,6 @@
  * (ADR-87, `sammanslagning` i undertryckning.js), och den sammanslagna gruppen namnges inte; se _beraknaPoster.
  * AID-nivåerna (sektor, aidniva, aid) ordnas alltid grovt till fint på sina platser: en finare nivå före en grövre
  * ger annars en tom del. Ålder (åldersgrupp, `aldersgrupp` i falt.js) kan bara väljas när lönefilen har ålder (ADR-64).
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 import { gruppnycklar, konAv } from './falt.js';

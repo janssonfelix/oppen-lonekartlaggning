@@ -37,7 +37,7 @@ describe('gränssnittets färger har en källa', () => {
     });
     it('ingen annan del av appen skriver ut en av tabellens färger som hexkod (paletten i 10-diagramtema.js har diagrammens egna)', () => {
         const fynd = [];
-        for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && !['01-farger.js', '09-lib-speglar.js'].includes(f))) {
+        for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && f !== '01-farger.js')) {
             utanKommentarer(läs(`src/app/${f}`)).split('\n').forEach(rad => { if (KODER.test(rad)) fynd.push(`${f}: ${rad.trim().slice(0, 90)}`); KODER.lastIndex = 0; });
         }
         expect(fynd).toEqual([]);
@@ -62,7 +62,7 @@ describe('gränssnittets färger har en källa', () => {
     it('nära dubbletter av tabellens färger står inte i vyerna, sidan eller stilmallen (ADR-43)', () => {
         const NARA_DUBBLETTER = /#(991b1b|7f1d1d|8f1616|fde8e8|92400e|9a3412|7c2d12|78350f|7a4a04|fdf0d8|fef9c3|fff7d6|fff7ed|047857|065f46|0a544e|166534|064e3b|d1fae5|dcfce7|dff3ef|4f46e5|3730a3|e0e7ff|0c4a6e|fefefe|1e293b|0f172a|334155|374151|e2e8f0|cfd5df|fafbfc|f6f7f9|eef2f6|eef2f7|3b82f6|1e40af|1e3a5f|fca5a5|f87171|fbbf24|fef08a|fdba74|bbf7d0|34d399|a9b9ff|fffbf9)\b/gi;
         const fynd = [];
-        for (const f of [...readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js').map(f => `src/app/${f}`), 'src/style.css', 'src/index.html']) {
+        for (const f of [...readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js')).map(f => `src/app/${f}`), 'src/style.css', 'src/index.html']) {
             const text = läs(f);
             const n = (text.match(NARA_DUBBLETTER) || []).length; if (n) fynd.push(`${f}: ${n}`);
         }
@@ -101,7 +101,7 @@ describe('hjälpklasserna', () => {
     it('högerjusteringen står sällan direkt på elementen i flikarnas mallar', () => {
         const EXPORT = /^(22|23|24|27|58|59|60|62|64|66|67)-/;   // exporternas mallar bär stilen i markeringen: den ska följa med till Word och urklipp
         let n = 0;
-        for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && !EXPORT.test(f) && f !== '09-lib-speglar.js')) n += (läs(`src/app/${f}`).match(/style="text-align:\s*right;?"/g) || []).length;
+        for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && !EXPORT.test(f))) n += (läs(`src/app/${f}`).match(/style="text-align:\s*right;?"/g) || []).length;
         expect(n).toBeLessThanOrEqual(8);   // de som står direkt på elementen sitter i taggar med uttryck, där en hjälpklass inte går att sätta säkert
     });
 });
@@ -136,7 +136,7 @@ describe('könsfärgerna', () => {
     });
     it('hexkoderna står bara i paletten; vyerna läser PALETTE.kon eller colors', () => {
         const koder = new RegExp(`${kvinna}|${man}`, 'i'), fynd = [];
-        for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && !['10-diagramtema.js', '09-lib-speglar.js'].includes(f))) {
+        for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && f !== '10-diagramtema.js')) {
             if (koder.test(utanKommentarer(läs(`src/app/${f}`)))) fynd.push(f);
         }
         for (const f of ['src/style.css', 'src/index.html']) if (koder.test(läs(f))) fynd.push(f);

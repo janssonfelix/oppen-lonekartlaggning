@@ -7,8 +7,6 @@
  * listor och textkopior ska de stå som vanlig text. Taggarna tas bort tills inga finns kvar (en ersättning i ett svep
  * lämnar `<scr<b>ipt>` som `<script>`), och ett ensamt `<` som blir kvar tas bort. Avkodningen tar &amp; sist, så att
  * `&amp;lt;` blir `&lt;` och inte `<`. Här står också regeln för en cell som är ett tal (`arTal`).
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 /** Texten utan HTML-taggar (entiteterna står kvar). */

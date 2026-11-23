@@ -3,8 +3,6 @@
 /**
  * Öppen lönekartläggning — namnformer för organisationen och jämförelsestatistiken
  * (ADR-36), och ordformen för ett antal personer.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { genitiv } from './termer.js';
 

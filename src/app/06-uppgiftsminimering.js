@@ -4,7 +4,7 @@
 // Vitlistan över tillåtna datafält (TILLATNA_FALT), uppslaget av rubrikerna, bedömningen av ansvarskolumnen och
 // tolkningen av en rad bor i src/lib/inlasning.js. Här står de tunna adaptrarna som läser tillståndet: kolumnmappningen
 // och importprofilen (_kolumnvalIState i 03-hjalpfunktioner.js), den godkända ansvarskolumnen och innevarande år.
-// _faltIRad och _bedomAnsvarKolumn når appen under samma namn genom spegeln.
+// _faltIRad och _bedomAnsvarKolumn importeras under samma namn ur lib.
 import { hittaAnsvarKolumn, lonefilensRubriker, minimeraRad } from '../lib/inlasning.js';
 import { _kolumnvalIState } from './03-hjalpfunktioner.js';
 import { state } from './12-tillstand.js';

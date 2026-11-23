@@ -11,8 +11,6 @@
  * Regler: ofullständiga villkor ignoreras; ett
  * saknat värde uppfyller aldrig ett villkor, inte heller när det är vänt med
  * `inte`; `mellan` är inklusive och tål omvända gränser.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { gruppnyckel } from './falt.js';
 import { STANDARDTERMER as T, stor } from './termer.js';

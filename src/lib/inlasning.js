@@ -13,8 +13,6 @@
  * liksom året som ett födelseår i ålderskolumnen räknas mot. Appens tunna adaptrar (getField, _lonefilensRubriker,
  * _hittaAnsvarKolumn och extractMinimalRecord) läser tillståndet. Funktionerna utan adapter behåller namnen de hade i
  * appen.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { tolkaAnsvarskod as _anTolka, ansvarsgrupp as _anGrupp, arAnsvarskodRubrik as _anArRubrik, andelGiltiga as _anAndelGiltiga } from './ansvar.js';
 import { matchaImportprofil } from './importprofiler.js';

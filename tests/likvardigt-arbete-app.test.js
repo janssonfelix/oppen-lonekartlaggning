@@ -242,7 +242,7 @@ describe('demodata med kandidatpar', () => {
 // läser samma resultat, och varje ändring av något som beräkningen läser nollställer det. På 55 000 rader är en
 // beräkning sekunder.
 describe('Likvärdigt arbete räknas en gång per underlag', () => {
-    // Adaptern likvardighetspar() är den enda som anropar spegeln (likvardighetsparUr); den räknas.
+    // Adaptern likvardighetspar() är den enda som anropar lib (likvardighetsparUr); den räknas.
     const raknaBerakningar = w => w.eval('window.__lvBerakningar = 0; const __lvOrig = likvardighetspar; '
         + 'likvardighetspar = function (o) { window.__lvBerakningar++; return __lvOrig(o); };');
     const flik = (w, f) => w.document.querySelector(`.nav-item[data-tab="${f}"]`).click();

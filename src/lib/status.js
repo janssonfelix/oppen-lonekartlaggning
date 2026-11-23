@@ -18,7 +18,7 @@
  * Slumpens gränser för en grupp är trattdiagrammets: omkastning av könen inom gruppen (1 000 gånger, seedad ur
  * datat), och för en grupp över 300 personer en normalapproximation med gruppens egen spridning.
  *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
+ * Inga DOM-/state-beroenden.
  */
 import { median, percentilintervall } from './stat.js';
 import { slumpFor } from './rng.js';

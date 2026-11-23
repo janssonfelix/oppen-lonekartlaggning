@@ -7,8 +7,6 @@
  * per månad av gruppens medianskillnad och en kort kommentar. Modulen är ren: kategorierna, valideringen av en lista
  * med skäl, sammanställningen för en rad (andel, summa, återstår) och summan per kategori över raderna. Andelarna är
  * organisationens bedömning; verktyget räknar bara ihop dem. Ingen DOM, inget state.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 /** Kategorierna i fast ordning (rullistan, tabellerna och årsjämförelsen följer den). */

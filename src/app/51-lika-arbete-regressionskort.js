@@ -29,7 +29,7 @@ import { renderLifecycleAnalysis } from './52-livscykel.js';
 
 /**
  * Huvudregression för "oförklarad löneskillnad" (EU 2023/970), verktygets huvudtal: en tunn adapter som läser
- * appens tillstånd och anropar huvudregression i src/lib/regression.js (via spegeln _rgHuvudregression). Modellen,
+ * appens tillstånd och anropar huvudregression i src/lib/regression.js. Modellen,
  * golven och returvärdet beskrivs där och i regressionsmodellen.md §1. Räknas om vid varje anrop (ADR-17).
  * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
  *   annars konPct, konPctLow, konPctHigh, sequential, perBas m.fl. — se huvudregression.

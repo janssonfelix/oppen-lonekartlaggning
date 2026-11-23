@@ -12,8 +12,6 @@
  * I appen: `T` är den gällande uppsättningen (`src/app/09-termer.js`), `${T.enhet.fl}` i stället för ordet, och
  * fast text skrivs som mall: `{enhet.en}`, se `fyllTermer`. Vakten i `tests/termer.test.js` håller orden borta
  * från resten av gränssnittet.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 /** @typedef {'utrum'|'neutrum'} Genus */

@@ -77,7 +77,7 @@ const UNDANTAG = [
 // ---- Testerna ----
 
 const appKallor = () => {
-    const app = readdirSync(APP).filter(f => /^\d\d-.*\.js$/.test(f) && f !== '09-lib-speglar.js').sort()
+    const app = readdirSync(APP).filter(f => /^\d\d-.*\.js$/.test(f)).sort()
         .map(f => ({ namn: f, text: readFileSync(join(APP, f), 'utf8') }));
     // Importraderna töms (radnumren står kvar): namnen i dem är inga värden; libSomKalla läser dem.
     return [...app.map(a => ({ namn: a.namn, src: a.text.replace(/^import .*$/gm, ''), prova: true })),

@@ -44,7 +44,7 @@ export const SNABB_VINST_AVVIKELSE = 3;
 /** Snabb vinst: gruppen ska ha minst detta antal personer (en nedre gräns, ingen övre). */
 export const SNABB_VINST_MIN_N = 5;
 
-/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+/** Konstanterna ovan i ett objekt, för appen. */
 export function prioKonstanter() {
     return Object.freeze({ AVVIKELSE_TAK, VOLYM_TAK, GAP_TAK, RIKTNING_UNDER, RIKTNING_OVER, BRIST_MULTIPLIKATOR,
         SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });

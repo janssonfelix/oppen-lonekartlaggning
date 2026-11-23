@@ -16,8 +16,6 @@
  * underlaget, så att en utelämnad grupps medellön inte ska gå att räkna fram som en differens undertrycks vid behov
  * också medelvärdena för en visad grupp (kompletterande undertryckning, ADR-83, `kompletterandeUndertryckning` i undertryckning.js).
  *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- *
  * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B6.7).
  */

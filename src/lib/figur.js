@@ -13,8 +13,6 @@
  *
  * Formatet som det är byggt — alla val, vad vyn själv måste göra för att små grupper ska vara skyddade, och
  * kända luckor — står i docs/utveckling/diagramkarnan.md.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { kvantil, avrundaSymmetriskt } from './stat.js';
 import { arKvinna, arMan } from './kon.js';

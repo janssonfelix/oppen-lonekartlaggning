@@ -8,8 +8,6 @@
  * det stora (genereraStortDemo m.fl.) visar verktyget i verklig storlek. Allt är påhittat: inga personer, inga namn,
  * ingen verklig organisation. Inläsningen i demoläget (state, DOM) står i src/app/20-demodata-diagnostik.js och
  * src/app/21-stort-demo.js.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js, under samma namn.
  */
 import { arKvinna, arMan } from './kon.js';
 import { ansvarsgrupp as _anGrupp } from './ansvar.js';

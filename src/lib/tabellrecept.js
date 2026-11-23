@@ -7,8 +7,6 @@
  * upprepas per BAS-intervall — aldrig som tal. Recepten ritas om i exportläget när Word-utkastet, PDF-rapporten och
  * Excel-filen byggs, med samma pivot som fliken (pivottabell) och samma regler för minsta gruppstorlek som Utforskas
  * export: en cell under tröskeln blir tom, och rader och kolumner som bara har tomma celler utelämnas och räknas.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { pivottabell } from './utforska.js';
 import { personOrd } from './namn.js';

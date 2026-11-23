@@ -6,8 +6,6 @@
  * Skriver en enkel blocklista (rubriker, stycken, tabeller, bilder) som Office Open XML-filer. Ingen DOM och
  * ingen zip här: appen packar filerna med JSZip. En bild är ett block `{ typ: 'bild', base64, bredd, hojd, alt,
  * text }` (PNG; mått i bildpunkter). Saknar blocket bilddata skrivs bara bildtexten, inom hakparentes.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { arTal } from './htmltext.js';
 

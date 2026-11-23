@@ -13,8 +13,6 @@
  * Verktyget levererar inga påhittade profiler för namngivna lönesystem. De inbyggda profilerna gäller bara format
  * som projektet självt definierar (CSV-mallen, testdatans fil och demodatans fältnamn); övriga kommer från
  * organisationer som använt verktyget, via konfigurationsfilen eller organisationspaketet.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 export const IMPORTPROFIL_FORMAT = 'lonekartlaggning-importprofiler';
@@ -218,7 +216,7 @@ export const INBYGGDA_PROFILER = Object.freeze([
         rubriker: { bas: ['bas'], yrke: ['yrke', 'aid'], lon: ['lon'], alder: ['alder'], kon: ['kon'] } }),
 ]);
 
-/** De inbyggda profilerna (för appen, som bara når funktioner i spegeln). */
+/** De inbyggda profilerna. */
 export function inbyggdaProfiler() {
     return INBYGGDA_PROFILER;
 }

@@ -5,10 +5,7 @@
  *
  * Rena funktioner för att analysera organisationens löneläge mot det EGNA
  * lönepolitiska ställningstagandet (P10/Median/P90 per BAS och/eller AID).
- * Separat från app.js för att kunna testas via Vitest utan DOM/state; app.js
- * får en AUTO-GENERERAD spegel (`_lp*` i src/app/09-lib-speglar.js via
- * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej
- * spegeln (vaktas av artefaktgrinden).
+ * Separat från appen för att kunna testas via Vitest utan DOM/state.
  *
  * Själva uppslaget (vilken policyrad som gäller för en grupp) görs av
  * policyFor() i app.js, eftersom det läser state; lonepolitikModell() tar emot
@@ -30,7 +27,7 @@ import { aidAvYrke, namnrader } from './aid.js';
 /** Undre gräns för den antalsbaserade mellannivån i maskeringstrappan. */
 const ANTAL_MIN = 5;
 
-/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+/** Konstanterna ovan i ett objekt, för appen. */
 export function lonepolitikKonstanter() {
     return Object.freeze({ ANTAL_MIN });
 }

@@ -8,8 +8,6 @@
  * referenserna) och räknar läget i spannet, mönstret, förslaget på referens, båda i ord (`lageOchForslag`), och
  * överblickens tal. Grupper under minsta gruppstorlek är redan borta ur raderna; modulen vet inget om tröskeln.
  * Förslaget är ett förslag, ingen regel som verktyget tillämpar någon annanstans.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { bandlage } from './lonepolitik.js';
 

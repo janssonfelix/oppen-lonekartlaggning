@@ -171,7 +171,7 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
     });
 
     const appFiler = [
-        ...appDelar.filter(f => f !== '09-lib-speglar.js').map(f => `src/app/${f}`),
+        ...appDelar.map(f => `src/app/${f}`),
         ...readdirSync(join(root, 'src/lib')).filter(f => f.endsWith('.js')).map(f => `src/lib/${f}`),
     ];
     const dokument = ['README.md',

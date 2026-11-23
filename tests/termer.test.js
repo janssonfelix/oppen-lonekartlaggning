@@ -323,7 +323,7 @@ function synligText(fil) {
 const fyndI = fil => synligText(fil).flatMap(t => traffar(t).map(n => `${fil}: ${n}: ${t.trim().slice(0, 90)}`));
 
 const GRANSKADE = [
-    ...readdirSync(join(ROOT, 'src/app')).filter(f => /^\d\d-.*\.js$/.test(f) && f !== '09-lib-speglar.js').map(f => `src/app/${f}`),
+    ...readdirSync(join(ROOT, 'src/app')).filter(f => /^\d\d-.*\.js$/.test(f)).map(f => `src/app/${f}`),
     ...readdirSync(join(ROOT, 'src/lib')).filter(f => f.endsWith('.js') && f !== 'termer.js').map(f => `src/lib/${f}`),
     'src/index.html',
 ].filter(f => !UNDANTAG_FILER.includes(f));

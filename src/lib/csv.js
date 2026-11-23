@@ -7,8 +7,6 @@
  * Yrkesnamn och andra texter kommer ur lönefilen, så en fientlig fil kunde annars lägga en formel i HR:s export
  * (CSV-injektion, OWASP). Sådana celler får ett inledande apostrof-tecken, som Excel visar som text. Tal — även
  * formaterade som "-3,2 %" eller "-1 250 kr" — lämnas orörda. Modulen importerar ingenting.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 const FORMELSTART = /^[=+\-@\t\r]/;

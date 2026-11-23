@@ -9,8 +9,6 @@
  *
  * Statistikens matchning (`statistikFor`) är det enda uppslaget i verktyget: samma AID och samma BAS, annars en rad
  * för samma AID som saknar BAS. En rad för ett annat BAS-intervall används aldrig.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median, kvantil } from './stat.js';
 import { sektorsnamn, aidAvYrke, namnrader } from './aid.js';

@@ -1220,7 +1220,6 @@ describe('ett bildspråk — linjeikoner i stället för bildtecken', () => {
     it('källan har inga bildtecken kvar utanför kommentarer', () => {
         const kvar = [];
         for (const [fil, text] of [...KALLA, ['index.html', readFileSync('src/index.html', 'utf8')]]) {
-            if (/^09-lib/.test(fil)) continue;
             text.split('\n').forEach((rad, i) => { if (!/^\s*(\/\/|\*|\/\*|<!--)/.test(rad) && BILDTECKEN.test(rad)) kvar.push(`${fil}:${i + 1}`); });
         }
         expect(kvar).toEqual([]);

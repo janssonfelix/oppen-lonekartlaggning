@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Löneöversyn & prognos (budget-först-fördelning)
 // -------------------------------------------------------------------
-// De rena funktionerna (_fc*) genereras i src/app/09-lib-speglar.js från src/lib/loneoversyn.js.
+// De rena funktionerna står i src/lib/loneoversyn.js.
 // Endast UI/state-koden ligger här.
 // ===================================================================
 import { namnrader } from '../lib/aid.js';

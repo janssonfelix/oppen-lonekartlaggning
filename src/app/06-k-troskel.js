@@ -78,7 +78,7 @@ export function litetUnderlag() { return LITET_UNDERLAG; }
 
 // Reglerna för vad som får redovisas vid k bor i src/lib/ktroskel.js med tröskeln som argument. Adaptrarna nedan
 // behåller appens namn och lägger till tröskeln som gäller: kTroskel() för det som redovisas, kInstalld() för stämpeln
-// och texterna om regeln. _kTolka, _konAntal, _parNarK och _kUndantagNot läser ingen tröskel och kommer direkt ur spegeln.
+// och texterna om regeln. _kTolka, _konAntal, _parNarK och _kUndantagNot läser ingen tröskel och importeras direkt ur lib.
 export function _konFarRedovisas(nKv, nMa) { return konFarRedovisas(nKv, nMa, kTroskel()); }
 /** Får könsuppdelade lönemått för hela radmängden redovisas? */
 export function _konFarRedovisasFor(rader) { return konFarRedovisasFor(rader, kTroskel()); }

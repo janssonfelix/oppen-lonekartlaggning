@@ -249,7 +249,7 @@ describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisninga
         const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
             e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
         const filer = [...gå('src'), ...gå('tools'), ...gå('tests'), ...gå('docs')]
-            .filter(f => /\.(js|mjs|html|css|md)$/.test(f) && !f.endsWith('09-lib-speglar.js'));
+            .filter(f => /\.(js|mjs|html|css|md)$/.test(f));
         const saknas = filer.flatMap(f => [...läs(f).matchAll(/ADR-(\d+)\b/g)].map(m => Number(m[1])).filter(n => !finns.has(n)).map(n => `${f}: ADR-${n}`));
         expect([...new Set(saknas)]).toEqual([]);
     });
@@ -403,7 +403,7 @@ describe('dokumentation: licens MIT', () => {
     });
     it('varje källfil bär licensraden (SPDX)', () => {
         const filer = [...gå('src/app'), ...gå('src/lib'), ...gå('tools'), 'src/index.html', 'src/style.css']
-            .filter(f => /\.(js|mjs|html|css)$/.test(f) && !f.endsWith('09-lib-speglar.js'));
+            .filter(f => /\.(js|mjs|html|css)$/.test(f));
         expect(filer.filter(f => !läs(f).slice(0, 400).includes('SPDX-License-Identifier: MIT'))).toEqual([]);
     });
     it('den byggda filen bär verktygets MIT-text och upphovspersonen', () => {

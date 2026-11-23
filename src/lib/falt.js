@@ -6,8 +6,6 @@
  * Gemensamma nycklar för hur en rad grupperas och jämförs: åldersgrupp,
  * normaliserat kön och gruppnyckel per dimension. Används av src/lib/utforska.js
  * (gruppering) och src/lib/urval.js (villkor), som inte får importera varandra.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { sektorsnamn, mellannivaEtikett, aidAvRad, namnrader } from './aid.js';
 import { STANDARDTERMER as T, stor, adjektiv } from './termer.js';

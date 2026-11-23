@@ -254,11 +254,11 @@ export function ritaOmReferens() {
 // Härleds ur PALETTE (10-diagramtema.js) så könsfärgerna har EN källa.
 export const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
 
-// Statistiska helpers för vyerna; en källa: src/lib/stat.js via spegeln (tests/stat.test.js prövar den).
+// Statistiska helpers för vyerna; en källa: src/lib/stat.js (tests/stat.test.js prövar den).
 export const Stat = { median, kvantil, linjarRegression };
 
-// Talen i indata (_normaliseraTaltext, tolkaTal, tolkaTalStrikt) tolkas i src/lib/inlasning.js och nås här
-// genom spegeln under samma namn.
+// Talen i indata (_normaliseraTaltext, tolkaTal, tolkaTalStrikt) tolkas i src/lib/inlasning.js och importeras
+// under samma namn.
 
 /**
  * 95-procentigt konfidensband för en enkel linjär regressionslinje (regressionslinjensBand i src/lib/osakerhet.js):

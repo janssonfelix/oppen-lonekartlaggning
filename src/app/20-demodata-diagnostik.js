@@ -33,7 +33,7 @@ import { _formatPValue, runOLSRegression } from './51-lika-arbete-regressionskor
 import { _hpDemoSkal } from './56-handlingsplan.js';
 
 // ---- #16 Testdata + självdiagnostik ----
-// genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen når dem genom spegeln.
+// genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen importerar dem.
 
 function runDiagnostics() {
     const tests = [];

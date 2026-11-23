@@ -3,7 +3,7 @@
 /**
  * Öppen lönekartläggning — Tal som text, svenskt format (ren modul)
  *
- * Talformatet på ett ställe: appens tabeller (genom spegeln, under samma namn) och lib-modulerna som skriver text
+ * Talformatet på ett ställe: appens tabeller och lib-modulerna som skriver text
  * (rapportunderlaget, diagramkärnan, prioriteringen) använder samma funktioner och avrundar därför likadant.
  *
  * All text som visas ska ha decimalkomma och mellanslag före procenttecknet ("85,2 %"). toFixed ger decimalpunkt

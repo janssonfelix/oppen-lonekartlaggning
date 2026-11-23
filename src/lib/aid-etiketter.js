@@ -2,8 +2,6 @@
 // Copyright 2026 Felix Jansson
 // AUTO-GENERERAD av tools/gen-aid-etiketter.mjs ur SKR, Etikettlista AID 2018 (reviderad 2026-09-23). Ändra inte för hand.
 // Innehåller bara kod, etikettnamn och möjliga ansvarskoder per etikett.
-//
-// Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
 
 const LISTA = Object.freeze({
     version: '2026-09-23',

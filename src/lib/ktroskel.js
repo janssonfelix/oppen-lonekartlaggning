@@ -7,8 +7,6 @@
  * Funktionerna tar tröskeln som argument. Vilken tröskel som gäller (den inställda i exportläget, 1 på skärmen; ADR-51)
  * avgör appen: adaptrarna i `src/app/06-k-troskel.js` läser `kTroskel()` eller `kInstalld()` och behåller sina
  * tidigare namn. Stämpeln och texterna om regeln får alltid den inställda tröskeln.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { arKvinna, arMan } from './kon.js';
 import { aidAvYrke } from './aid.js';

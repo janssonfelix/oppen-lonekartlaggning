@@ -11,8 +11,6 @@
  * gapuppdelning.js, med sektor i stället för BAS). Går modellen med BAS inte att skatta i ett huvudområde med minst två
  * BAS-intervall (kön och BAS går inte att skilja åt) ges inget justerat tal: ett tal utan BAS vore inte justerat för BAS.
  *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- *
  * Bygger på: ADR-33, ADR-78 och ADR-87; docs/utveckling/regressionsmodellen.md avsnitt 10.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B3.8 och B3.9).
  */

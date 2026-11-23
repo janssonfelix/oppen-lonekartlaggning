@@ -8,8 +8,6 @@
  * läser in i ett steg. Modulen bygger paketet ur appens delar och tolkar ett paket
  * tillbaka till dem. Bara vitlistade fält följer med; allt annat ignoreras, så att en
  * manipulerad fil inte kan föra in något annat än aggregat i verktyget.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 import { valideraRecept } from './tabellrecept.js';

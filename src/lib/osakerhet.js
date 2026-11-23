@@ -20,7 +20,7 @@
  * computePowerAnalysis, computeGroupMDE, linearRegressionCI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
  * _laTrattUnderlagRakna, _regKvantilBootstrap) är tunna adaptrar som läser tillståndet och anropar funktionerna här.
  *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
+ * Inga DOM-/state-beroenden.
  *
  * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B4.1, B4.2 och B4.4–B4.8).
@@ -71,7 +71,7 @@ export const SMA_GRUPPER_RATTNING = 0.6;
 /** Kvantilregressionens bootstrap: antalet omsamplingar och största antal personer som intervallet räknas för. */
 export const KVANTIL_KI_B = 200, KVANTIL_KI_MAX_N = 2000;
 
-/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+/** Konstanterna ovan i ett objekt, för appen. */
 export function osakerhetKonstanter() {
     return Object.freeze({ B_ORGANISATION, B_PER_GRUPP, B_DOSSIER, KVOT_MIN_N, DOSSIER_MIN_GILTIGA, Z_95, BAND_MIN_N, BAND_STEG,
         Z_STYRKA, BALANSGRANS, STYRKA_MIN_N, MDE_SIGMA_MIN_RESIDUALER, MDE_GOD, MDE_GODTAGBAR, MDE_FOR_LITEN, EXTREMVARDE_Z,

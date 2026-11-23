@@ -6,8 +6,6 @@
  * Ren logik utan DOM och state: vilka punkter som visas under Börja här och när ett
  * analyssteg i processöversikten räknas som klart. Appen (18-atgardslista.js,
  * 13-oversikt.js) bygger punkterna och skickar in dem.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { personOrd } from './namn.js';
 import { STANDARDTERMER as T, termFras } from './termer.js';

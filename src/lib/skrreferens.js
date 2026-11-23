@@ -8,8 +8,6 @@
  * Där SKR döljer andelen (små tal) räknas bara den del som redovisas; saknas etiketten helt
  * används prefixet (tre första siffrorna). Används som reserv i Likvärdigt arbete och som
  * referensvärde att jämföra organisationens egen könsfördelning mot.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { skrPersonalstatistik } from './skr-personal.js';
 import { normaliseraAid, sektorsnamn } from './aid.js';

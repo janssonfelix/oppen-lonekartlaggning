@@ -36,8 +36,8 @@ const BYGGSTEG = 'bundle';
 
 const TECKENKODNING = ['dist/app.js', 'src/index.html', 'src/style.css'];
 
-/** De genererade filerna i src/app/ (tools/build-app.mjs skriver dem ur VERSION och src/lib/). */
-const GENERERADE = ['src/app/08-version.js', 'src/app/09-lib-speglar.js'];
+/** Den genererade filen i src/app/ (tools/build-app.mjs skriver den ur VERSION). */
+const GENERERADE = ['src/app/08-version.js'];
 
 /**
  * Kontrollsumman för varje genererad fil: de spårade filerna under dist/ och GENERERADE.

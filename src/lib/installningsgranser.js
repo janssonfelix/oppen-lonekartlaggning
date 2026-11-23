@@ -8,9 +8,7 @@
  * är de som fälten redan använder (min/max i index.html och fältens tak i koden); en ny gräns hör inte hit utan till
  * fältet först.
  *
- * Appen når gränserna genom installningsGrans(nyckel): spegelns alias måste vara funktioner (tests/drift.test.js).
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ * Appen når gränserna genom installningsGrans(nyckel).
  */
 
 const MB = 1024 * 1024;

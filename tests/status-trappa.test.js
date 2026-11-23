@@ -194,8 +194,8 @@ describe('ingen färg på storleken ensam i appen', () => {
     // jämförelse med 5 % som direkt väljer en färgklass (fg-, farg-, ar-, bricka-, bg-, f-) är samma fel.
     const MONSTER = /Math\.abs\([^)]*\)\s*>=?\s*5(?:\.0+)?\s*\?\s*['"`](?:fg|farg|ar|bricka|bg|f)-[\w-]+/;
     const appDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'app');
-    it('ingen fil under src/app/ (utom spegeln) sätter en färgklass på |skillnad| > 5', () => {
-        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js')
+    it('ingen fil under src/app/ sätter en färgklass på |skillnad| > 5', () => {
+        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js'))
             .flatMap(f => readFileSync(join(appDir, f), 'utf8').split('\n')
                 .map((rad, i) => (MONSTER.test(rad) ? `${f}:${i + 1}: ${rad.trim()}` : null)).filter(Boolean));
         expect(traffar).toEqual([]);
@@ -213,8 +213,8 @@ describe('ingen färg på storleken ensam i appen', () => {
     // Undantag: rader som får jämföra en skillnad med en storleksgräns och välja klass, som "fil:rad-text" med motiv.
     // Listan är tom: inget ställe under src/app/ har i dag ett beslut som tillåter det.
     const STORLEK_UNDANTAG = /** @type {Set<string>} */ (new Set([]));
-    it('ingen fil under src/app/ (utom spegeln) sätter färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {
-        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js')
+    it('ingen fil under src/app/ sätter färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {
+        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js'))
             .flatMap(f => readFileSync(join(appDir, f), 'utf8').split('\n')
                 .map((rad, i) => (STORLEK.test(rad) && !STORLEK_UNDANTAG.has(`${f}:${rad.trim()}`) ? `${f}:${i + 1}: ${rad.trim()}` : null))
                 .filter(Boolean));

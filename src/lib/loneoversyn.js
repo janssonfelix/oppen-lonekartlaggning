@@ -8,9 +8,7 @@
  * budgetutnyttjande, råa lönegapet före/efter) beräknas.
  *
  * Separat från app.js för att kunna testas via Vitest utan DOM/state.
- * app.js får en AUTO-GENERERAD spegel (`_fc*` i src/app/09-lib-speglar.js via
- * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
- * (vaktas av artefaktgrinden). Det oförklarade gapet (OLS) beräknas INTE
+ * Det oförklarade gapet (OLS) beräknas INTE
  * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
  * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
  * sökning (likalonslyftForMal) får appens skattning som argument.
@@ -341,7 +339,7 @@ export function prognosutfall(rader, budget, generell, riktningar, kostnadsval) 
     const alloc = fordela(rader, generell, riktningar, kostnadsval && kostnadsval.roundStep);
     const totalRaise = alloc.totals.totalRaise;
     // Gränsen för kvinnodominerat: saknas den gäller arKvinnodominerads standard, KVINNO_TROSKEL_STANDARD i
-    // likvardighet.js (spegeln exponerar bara funktioner, så konstanten importeras inte hit). 0 är en gräns, inte en som saknas.
+    // likvardighet.js. 0 är en gräns, inte en som saknas.
     const kvThreshold = kostnadsval?.kvThreshold ?? undefined;
     const lonsummaFore = lonesumma(rader);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
@@ -502,7 +500,7 @@ export const TROSKELMAL_VARV = 22;
 /** Signifikansgränsen i läget "inte signifikant": målet är nått när p-värdet är över den (eller saknas). */
 export const TROSKELMAL_SIGNIFIKANS_P = 0.05;
 
-/** Tröskelmålets konstanter, för appen (spegeln exponerar bara funktioner). */
+/** Tröskelmålets konstanter, för appen. */
 export function troskelmalKonstanter() {
     return { STANDARD_PCT: TROSKELMAL_STANDARD_PCT, MAX_LYFT_PCT: TROSKELMAL_MAX_LYFT_PCT,
              VARV: TROSKELMAL_VARV, SIGNIFIKANS_P: TROSKELMAL_SIGNIFIKANS_P };

@@ -182,7 +182,7 @@ function _afterDataLoaded() {
 // verktygets; de byts inte med termerna (ADR-74).
 const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 'Poang'];
 
-// _gissaTabellformat (filformatet ur de magiska byten) bor i src/lib/inlasning.js och nås genom spegeln.
+// _gissaTabellformat (filformatet ur de magiska byten) bor i src/lib/inlasning.js.
 
 /**
  * Läser första bladet i en XLSX-buffer till rad-objekt (samma form som

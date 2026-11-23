@@ -9,9 +9,6 @@
  * DÖLJER INGENTING. Små grupper (n < k) räknas och markeras med `liten`, och
  * grupper där ena könet är under k med `konLiten`. Vyn tonar dem och exporten
  * utelämnar dem som standard (ADR-14). Regeln bor här, på ett ställe.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js
- * (tools/gen-mirrors.mjs). Ändra här och kör `npm run build:app`.
  */
 import { median, kvantil } from './stat.js';
 import { gruppnycklar, konAv, jamforAldersgrupp, jamforLonespann } from './falt.js';

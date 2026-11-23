@@ -115,14 +115,14 @@ describe('säkerhet: tredjepartsbiblioteken är låsta med kontrollsummor', () =
 
 describe('säkerhet: en enda escaping-funktion', () => {
     it('src/app definierar esc() på ett ställe', () => {
-        const def = readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && !f.startsWith('09-'))
+        const def = readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js'))
             .flatMap(f => (läs(`src/app/${f}`).match(/\bconst esc\s*=/g) || []).map(() => f));
         expect(def).toEqual(['01-html-och-tillganglighet.js']);
     });
     // Citattecken måste escapas så att data-bas="${esc(x)}" inte kan brytas ut. esc är en enradig pilfunktion vars
     // stränglitteraler innehåller ';' ("&amp;"), så hela raden tas.
     it('esc escapear < > & samt citattecken (säker i attributkontext)', () => {
-        const rad = läs('src/app/01-html-och-tillganglighet.js').split('\n').find(r => /^const esc\s*=/.test(r));
+        const rad = läs('src/app/01-html-och-tillganglighet.js').split('\n').find(r => /^export const esc\s*=/.test(r)).replace(/^export /, '');
         const esc = new Function(`${rad}; return esc;`)();
         expect(esc('<b>')).toBe('&lt;b&gt;');
         expect(esc('a & b')).toBe('a &amp; b');
@@ -337,7 +337,7 @@ describe('för ljusa statusnyanser används inte som text', () => {
     it('för ljusa statusnyanser (under 4,5:1 som text) står inte i vyerna, sidan eller stilmallen', async () => {
         const { readdirSync } = await import('node:fs');
         // Diagrammens palett (10-diagram*.js) har egna färger för serier, prövade för sig (3:1 för grafik).
-        const filer = [...readdirSync('src/app').filter(f => /^\d\d-.*\.js$/.test(f) && !/^(09-lib-speglar|10-diagram)/.test(f)).map(f => `src/app/${f}`), 'src/index.html', 'src/style.css'];
+        const filer = [...readdirSync('src/app').filter(f => /^\d\d-.*\.js$/.test(f) && !/^10-diagram/.test(f)).map(f => `src/app/${f}`), 'src/index.html', 'src/style.css'];
         const forLjusa = /#(ef4444|f59e0b|10b981|059669|d97706|dc2626)\b/i;
         expect(filer.filter(f => forLjusa.test(läs(f)))).toEqual([]);
         // Word-utkastets egna ramar (src/lib/docx.js skriver färger utan #): bärnsten som duger som kant mot vitt.
@@ -387,7 +387,7 @@ describe('[S5] namnen: inga hårdkodade etiketter', () => {
         const forbjudna = [/name:\s*'Organisationen/, />Median org\.</, />Kvinnodom\. yrke \(org\.\)</, /'Median i jämförelsestatistiken'/,
             /label:\s*'— Jämförelsestatistik'/, /label:\s*'jämförelsestatistiken'/];
         const traffar = [];
-        for (const f of readdirSync(dir).filter(f => /^\d\d-.*\.js$/.test(f) && f !== '09-lib-speglar.js')) {
+        for (const f of readdirSync(dir).filter(f => /^\d\d-.*\.js$/.test(f))) {
             const src = readFileSync(new URL(f, dir), 'utf8');
             for (const re of forbjudna) if (re.test(src)) traffar.push(`${f}: ${re}`);
         }
