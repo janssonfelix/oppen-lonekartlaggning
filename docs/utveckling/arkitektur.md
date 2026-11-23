@@ -51,9 +51,9 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |---|---|---|
 | Statistik | `stat` | – |
 |  | `rng` | – |
-|  | `osakerhet` | `aid`, `kon`, `likvardighet`, `regression`, `rng`, `stat`, `status` |
-|  | `status` | `rng`, `stat` |
-| Regression | `regression` | `kon`, `namn`, `stat`, `termer` |
+|  | `osakerhet` | `aid`, `kon`, `likvardighet`, `regression`, `rng`, `stat`, `status`, `struktur` |
+|  | `status` | `rng`, `stat`, `struktur` |
+| Regression | `regression` | `kon`, `namn`, `stat`, `struktur`, `termer` |
 |  | `gapuppdelning` | `falt`, `namn`, `termer`, `undertryckning` |
 |  | `livscykel` | `kon`, `stat`, `status`, `termer` |
 | Lika och likvärdigt arbete | `likvardighet` | `aid`, `kon`, `rng`, `stat`, `status` |
@@ -61,7 +61,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `perbas` | `aid`, `jamforelse`, `kon`, `stat`, `termer`, `undertryckning` |
 |  | `individflaggor` | `aid`, `falt` |
 | Struktur och rapportmått | `struktur` | `kon`, `stat` |
-|  | `sektor` | `aid`, `falt`, `namn`, `regression`, `skrreferens`, `stat`, `termer`, `undertryckning` |
+|  | `sektor` | `aid`, `falt`, `namn`, `regression`, `skrreferens`, `stat`, `struktur`, `termer`, `undertryckning` |
 | Referenser och jämförelse | `referens` | – |
 |  | `referenser` | `lonepolitik` |
 |  | `lonepolitik` | `aid`, `kon`, `stat` |
@@ -70,11 +70,11 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `skr-personal` | – |
 | Simulering och prioritering | `prioritering` | `aid`, `kon`, `kostnad`, `stat`, `talformat` |
 |  | `kostnad` | – |
-|  | `loneoversyn` | `kon`, `kostnad`, `likvardighet`, `stat` |
+|  | `loneoversyn` | `kon`, `kostnad`, `likvardighet`, `stat`, `struktur` |
 | Klassificering | `aid` | `aid-etiketter`, `termer` |
 |  | `aid-etiketter` | – |
 |  | `aidkontroll` | `aid`, `stat`, `termer` |
-|  | `ansvar` | `falt`, `stat` |
+|  | `ansvar` | `stat`, `struktur` |
 | Indata och format | `inlasning` | `ansvar`, `importprofiler` |
 |  | `falt` | `aid`, `kon`, `termer` |
 |  | `kon` | – |
