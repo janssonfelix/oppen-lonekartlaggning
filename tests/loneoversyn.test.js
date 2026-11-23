@@ -5,9 +5,9 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-    totalLonSum, computePott, allocate, targetRows, rawGenderGap, suggestTargets, forecastOutcome,
-    summarizeGroups, detectLeapfrog, closureTargets, stagedPlan,
-    bandStats, individualRemediation, marketTargets, sensitivityCurve, ettParPerYrke, pottArAngiven
+    lonesumma, beraknaPott, fordela, riktadeRader, raLonegap, foreslaRiktning, prognosutfall,
+    sammanstallGrupper, hittaOmkorningar, stangningsriktning, stegvisPlan,
+    lonespannPerBas, individlyft, marknadsriktning, kanslighetskurva, ettParPerYrke, pottArAngiven
 } from '../src/lib/loneoversyn.js';
 import { KVINNO_TROSKEL_DEFAULT } from '../src/lib/likvardighet.js';
 
@@ -20,30 +20,30 @@ const rows = () => [
 ];
 
 describe('[B7.2] forecast: pott & lönesumma', () => {
-    it('totalLonSum summerar månadslöner', () => {
-        expect(totalLonSum(rows())).toBe(174000);
+    it('lonesumma summerar månadslöner', () => {
+        expect(lonesumma(rows())).toBe(174000);
     });
-    it('computePott i krontal returnerar beloppet', () => {
-        expect(computePott(rows(), { mode: 'kr', value: 5000 })).toBe(5000);
+    it('beraknaPott i krontal returnerar beloppet', () => {
+        expect(beraknaPott(rows(), { mode: 'kr', value: 5000 })).toBe(5000);
     });
-    it('computePott i procent = andel av lönesumman', () => {
-        expect(computePott(rows(), { mode: 'pct', value: 2 })).toBeCloseTo(3480, 6);
+    it('beraknaPott i procent = andel av lönesumman', () => {
+        expect(beraknaPott(rows(), { mode: 'pct', value: 2 })).toBeCloseTo(3480, 6);
     });
     it('negativ/saknad budget ger 0', () => {
-        expect(computePott(rows(), { mode: 'kr', value: -100 })).toBe(0);
-        expect(computePott(rows(), null)).toBe(0);
+        expect(beraknaPott(rows(), { mode: 'kr', value: -100 })).toBe(0);
+        expect(beraknaPott(rows(), null)).toBe(0);
     });
 });
 
 describe('forecast: generellt påslag', () => {
     it('generellt procentpåslag till alla', () => {
-        const a = allocate(rows(), { mode: 'pct', value: 2 }, []);
+        const a = fordela(rows(), { mode: 'pct', value: 2 }, []);
         expect(a.totals.generellCost).toBeCloseTo(3480, 6);
         expect(a.totals.riktadCost).toBe(0);
         expect(a.perPerson[0].nyLon).toBeCloseTo(30600, 6);
     });
     it('generellt krontal (flat) till varje individ', () => {
-        const a = allocate(rows(), { mode: 'kr', value: 1000 }, []);
+        const a = fordela(rows(), { mode: 'kr', value: 1000 }, []);
         expect(a.totals.generellCost).toBe(5000);   // 5 individer × 1000
         expect(a.perPerson[3].nyLon).toBe(41000);
     });
@@ -51,30 +51,30 @@ describe('forecast: generellt påslag', () => {
 
 describe('forecast: riktat — kön, lönegräns och höj till', () => {
     const t = over => ({ bas: 'A', aid: '5301', mode: 'kr', value: 3000, dist: 'flat', ...over });
-    it('targetRows: gruppen, snävad till kön och löner under gränsen', () => {
-        expect(targetRows(rows(), t())).toEqual([0, 1, 2]);
-        expect(targetRows(rows(), t({ kon: 'kvinna' }))).toEqual([0, 1]);
-        expect(targetRows(rows(), t({ kon: 'man' }))).toEqual([2]);
-        expect(targetRows(rows(), t({ lonCap: 32000 }))).toEqual([0]);
-        expect(targetRows(rows(), t({ aid: '*', kon: 'alla', lonCap: null }))).toEqual([0, 1, 2]);
-        expect(targetRows(rows(), t({ bas: 'B', aid: '*', kon: 'kvinna' }))).toEqual([4]);
+    it('riktadeRader: gruppen, snävad till kön och löner under gränsen', () => {
+        expect(riktadeRader(rows(), t())).toEqual([0, 1, 2]);
+        expect(riktadeRader(rows(), t({ kon: 'kvinna' }))).toEqual([0, 1]);
+        expect(riktadeRader(rows(), t({ kon: 'man' }))).toEqual([2]);
+        expect(riktadeRader(rows(), t({ lonCap: 32000 }))).toEqual([0]);
+        expect(riktadeRader(rows(), t({ aid: '*', kon: 'alla', lonCap: null }))).toEqual([0, 1, 2]);
+        expect(riktadeRader(rows(), t({ bas: 'B', aid: '*', kon: 'kvinna' }))).toEqual([4]);
     });
     it('bara kvinnor: potten fördelas bland kvinnorna, mannen får inget', () => {
-        const a = allocate(rows(), { mode: 'pct', value: 0 }, [t({ kon: 'kvinna' })]);
+        const a = fordela(rows(), { mode: 'pct', value: 0 }, [t({ kon: 'kvinna' })]);
         expect(a.perPerson[2].delta).toBe(0);
         expect(a.perPerson[0].delta + a.perPerson[1].delta).toBeCloseTo(3000, 6);
     });
     it('lönegräns: bara den under gränsen får påslaget', () => {
-        const a = allocate(rows(), { mode: 'pct', value: 0 }, [t({ lonCap: 31000 })]);
+        const a = fordela(rows(), { mode: 'pct', value: 0 }, [t({ lonCap: 31000 })]);
         expect(a.perPerson.map(p => p.delta)).toEqual([3000, 0, 0, 0, 0]);
     });
     it('höj till: var och en under beloppet lyfts dit, de över rörs inte; fördelningen spelar ingen roll', () => {
-        const a = allocate(rows(), { mode: 'pct', value: 0 }, [t({ mode: 'till', value: 31000, dist: 'lowest' })]);
+        const a = fordela(rows(), { mode: 'pct', value: 0 }, [t({ mode: 'till', value: 31000, dist: 'lowest' })]);
         expect(a.perPerson.map(p => p.nyLon)).toEqual([31000, 32000, 34000, 40000, 38000]);
         expect(a.totals.riktadCost).toBe(1000);
     });
     it('en rad utan träff (kön som inte finns i gruppen) kostar inget', () => {
-        const a = allocate(rows(), { mode: 'pct', value: 0 }, [t({ bas: 'B', aid: '2000', kon: 'kvinna', lonCap: 30000 })]);
+        const a = fordela(rows(), { mode: 'pct', value: 0 }, [t({ bas: 'B', aid: '2000', kon: 'kvinna', lonCap: 30000 })]);
         expect(a.totals.riktadCost).toBe(0);
     });
 });
@@ -83,7 +83,7 @@ describe('forecast: riktat — inom-grupp-metoder', () => {
     const tgt = (over) => [{ bas: 'A', aid: '5301', mode: 'kr', value: 3000, ...over }];
 
     it('flat: lika procent, hela potten används', () => {
-        const a = allocate(rows(), { mode: 'pct', value: 0 }, tgt({ dist: 'flat' }));
+        const a = fordela(rows(), { mode: 'pct', value: 0 }, tgt({ dist: 'flat' }));
         expect(a.totals.riktadCost).toBeCloseTo(3000, 6);
         // frac = 3000/96000 = 0.03125
         expect(a.perPerson[0].delta).toBeCloseTo(937.5, 6);
@@ -91,7 +91,7 @@ describe('forecast: riktat — inom-grupp-metoder', () => {
     });
 
     it('lowest: water-filling lyfter de lägst betalda först', () => {
-        const a = allocate(rows(), { mode: 'pct', value: 0 }, tgt({ dist: 'lowest' }));
+        const a = fordela(rows(), { mode: 'pct', value: 0 }, tgt({ dist: 'lowest' }));
         expect(a.totals.riktadCost).toBeCloseTo(3000, 6);
         expect(a.perPerson[0].delta).toBeCloseTo(2500, 6);  // 30000 -> 32500
         expect(a.perPerson[1].delta).toBeCloseTo(500, 6);   // 32000 -> 32500
@@ -99,7 +99,7 @@ describe('forecast: riktat — inom-grupp-metoder', () => {
     });
 
     it('target (median): kapar vid målnivån, leftover används ej', () => {
-        const a = allocate(rows(), { mode: 'pct', value: 0 },
+        const a = fordela(rows(), { mode: 'pct', value: 0 },
             tgt({ dist: 'target', targetLevel: 'median', value: 5000 }));
         // median(A) = 32000; bara den lägsta lyfts till 32000 = 2000 kr, resten oanvänt
         expect(a.perPerson[0].delta).toBeCloseTo(2000, 6);
@@ -110,10 +110,10 @@ describe('forecast: riktat — inom-grupp-metoder', () => {
 
 describe('forecast: råa gapet före/efter', () => {
     it('riktat lyft mot kvinnor minskar gapet', () => {
-        const before = rawGenderGap(rows(), r => r.lon);     // median kv 31000 / median ma ~37000
-        const a = allocate(rows(), { mode: 'pct', value: 0 },
+        const before = raLonegap(rows(), r => r.lon);     // median kv 31000 / median ma ~37000
+        const a = fordela(rows(), { mode: 'pct', value: 0 },
             [{ bas: 'A', aid: '5301', mode: 'kr', value: 6000, dist: 'flat' }]);
-        const after = rawGenderGap(a.perPerson, p => p.nyLon);
+        const after = raLonegap(a.perPerson, p => p.nyLon);
         expect(before).toBeLessThan(0);                       // kvinnor under män
         expect(after).toBeGreaterThan(before);                // gapet krymper (mindre negativt)
     });
@@ -125,7 +125,7 @@ describe('forecast: optimeringsförslag', () => {
             { bas: 'A', aid: '5301', gapKr: 1000, n: 3 },   // index 3000
             { bas: 'B', aid: '2000', gapKr: 500,  n: 2 }    // index 1000
         ];
-        const t = suggestTargets(cand, 2000);
+        const t = foreslaRiktning(cand, 2000);
         expect(t).toHaveLength(2);
         const a = t.find(x => x.bas === 'A'), b = t.find(x => x.bas === 'B');
         expect(a.value).toBe(1500);   // min(3000, 2000*0.75)
@@ -133,8 +133,8 @@ describe('forecast: optimeringsförslag', () => {
         expect(a.dist).toBe('lowest');
     });
     it('ignorerar grupper utan gap och tom pott', () => {
-        expect(suggestTargets([{ bas: 'A', aid: '1', gapKr: 0, n: 5 }], 1000)).toEqual([]);
-        expect(suggestTargets([{ bas: 'A', aid: '1', gapKr: 100, n: 5 }], 0)).toEqual([]);
+        expect(foreslaRiktning([{ bas: 'A', aid: '1', gapKr: 0, n: 5 }], 1000)).toEqual([]);
+        expect(foreslaRiktning([{ bas: 'A', aid: '1', gapKr: 100, n: 5 }], 0)).toEqual([]);
     });
 });
 
@@ -145,39 +145,39 @@ describe('forecast: riktning mot hela BAS (wildcard) + min-storlek', () => {
         { bas: 'B', aid: '3', kon: 'man',    lon: 40000 }
     ];
     it('aid="*" fördelar på hela BAS, inte bara ett yrke', () => {
-        const a = allocate(rowsW(), { mode: 'pct', value: 0 },
+        const a = fordela(rowsW(), { mode: 'pct', value: 0 },
             [{ bas: 'A', aid: '*', mode: 'kr', value: 2000, dist: 'flat' }]);
         expect(a.totals.riktadCost).toBeCloseTo(2000, 6);
         expect(a.perPerson[0].delta).toBeGreaterThan(0);  // A/1
         expect(a.perPerson[1].delta).toBeGreaterThan(0);  // A/2
         expect(a.perPerson[2].delta).toBe(0);             // B/3 orörd
     });
-    it('suggestTargets respekterar minN', () => {
+    it('foreslaRiktning respekterar minN', () => {
         const cand = [
             { bas: 'A', aid: '1', gapKr: 1000, n: 4 },   // för liten
             { bas: 'A', aid: '2', gapKr: 1000, n: 20 }   // ok
         ];
-        const t = suggestTargets(cand, 50000, 10);
+        const t = foreslaRiktning(cand, 50000, 10);
         expect(t).toHaveLength(1);
         expect(t[0].aid).toBe('2');
     });
 });
 
-describe('forecast: summarizeGroups & detectLeapfrog', () => {
-    it('summarizeGroups ger n, andel kvinnor och median per grupp', () => {
-        const g = summarizeGroups(rows());
+describe('forecast: sammanstallGrupper & hittaOmkorningar', () => {
+    it('sammanstallGrupper ger n, andel kvinnor och median per grupp', () => {
+        const g = sammanstallGrupper(rows());
         const a = g.find(x => x.bas === 'A' && x.aid === '5301');
         expect(a.n).toBe(3);
         expect(a.kvN).toBe(2);
         expect(a.andelKv).toBeCloseTo(66.67, 1);
         expect(a.median).toBe(32000);
     });
-    it('detectLeapfrog hittar grupp som går om en tidigare högre grupp', () => {
+    it('hittaOmkorningar hittar grupp som går om en tidigare högre grupp', () => {
         const pg = [
             { bas: 'A', aid: '1', n: 5, gammalMedian: 30000, nyMedian: 36000, andelKv: 0, kostnad: 1 },
             { bas: 'A', aid: '2', n: 5, gammalMedian: 34000, nyMedian: 34000, andelKv: 0, kostnad: 0 }
         ];
-        const l = detectLeapfrog(pg);
+        const l = hittaOmkorningar(pg);
         expect(l).toHaveLength(1);
         expect(l[0].aid).toBe('1');
         expect(l[0].overAid).toBe('2');
@@ -187,29 +187,29 @@ describe('forecast: summarizeGroups & detectLeapfrog', () => {
             { bas: 'A', aid: '1', n: 5, gammalMedian: 30000, nyMedian: 31000, andelKv: 0, kostnad: 1 },
             { bas: 'A', aid: '2', n: 5, gammalMedian: 34000, nyMedian: 34000, andelKv: 0, kostnad: 0 }
         ];
-        expect(detectLeapfrog(pg)).toHaveLength(0);
+        expect(hittaOmkorningar(pg)).toHaveLength(0);
     });
 });
 
 describe('forecast: jämställdhetsandel (equityCost)', () => {
     it('riktat lyft mot kvinnodominerad grupp räknas som equity', () => {
-        const out = forecastOutcome(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 },
+        const out = prognosutfall(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 },
             [{ bas: 'A', aid: '5301', mode: 'kr', value: 3000, dist: 'flat' }], { months: 12, poPct: 0 });
         // A/5301 = 2 kvinnor / 3 = 66,7 % ≥ 60 → hela riktade potten är equity
         expect(out.equityCost).toBeCloseTo(3000, 6);
         expect(out.riktadCost).toBeCloseTo(3000, 6);
     });
     it('lyft mot mansdominerad grupp räknas inte som equity', () => {
-        const out = forecastOutcome(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 },
+        const out = prognosutfall(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 },
             [{ bas: 'B', aid: '2000', mode: 'kr', value: 3000, dist: 'flat' }], { months: 12, poPct: 0 });
         // B/2000 = 1 kvinna / 2 = 50 % < 60 → ingen equity
         expect(out.equityCost).toBeCloseTo(0, 6);
     });
     it('följer definitionen av kvinnodominerat (ADR-60): 50 % med gränsen 50 är kvinnodominerat bara med *50 % eller mer*', () => {
         const mal = [{ bas: 'B', aid: '2000', mode: 'kr', value: 3000, dist: 'flat' }];
-        const scb = forecastOutcome(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 }, mal, { months: 12, poPct: 0, kvThreshold: 50, kvDefinition: 'scb' });
+        const scb = prognosutfall(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 }, mal, { months: 12, poPct: 0, kvThreshold: 50, kvDefinition: 'scb' });
         expect(scb.equityCost).toBeCloseTo(3000, 6);
-        const dO = forecastOutcome(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 }, mal, { months: 12, poPct: 0, kvThreshold: 50, kvDefinition: 'do' });
+        const dO = prognosutfall(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 }, mal, { months: 12, poPct: 0, kvThreshold: 50, kvDefinition: 'do' });
         expect(dO.equityCost).toBeCloseTo(0, 6);
     });
 });
@@ -217,39 +217,39 @@ describe('forecast: jämställdhetsandel (equityCost)', () => {
 describe('forecast: avrundning till lönetrappa', () => {
     it('avrundar nya löner till närmaste steg, aldrig under ursprungslön', () => {
         const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30000 }];
-        const a = allocate(data, { mode: 'kr', value: 1230 }, [], 100);
+        const a = fordela(data, { mode: 'kr', value: 1230 }, [], 100);
         expect(a.perPerson[0].nyLon).toBe(31200);   // 31230 → 31200
         expect(a.totals.totalRaise).toBe(1200);
     });
     it('rör inte individer utan påslag (delta = 0)', () => {
         const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30150 }];
-        const a = allocate(data, { mode: 'pct', value: 0 }, [], 100);
+        const a = fordela(data, { mode: 'pct', value: 0 }, [], 100);
         expect(a.perPerson[0].nyLon).toBe(30150);
         expect(a.totals.totalRaise).toBe(0);
     });
 });
 
-describe('forecast: mål-läge (closureTargets)', () => {
+describe('forecast: mål-läge (stangningsriktning)', () => {
     it('stänger en andel av gapet → kostnad = andel × gapKr × n', () => {
         const cand = [{ bas: 'A', aid: '1', gapKr: 1000, n: 10 }];
-        const t = closureTargets(cand, 0.5);
+        const t = stangningsriktning(cand, 0.5);
         expect(t).toHaveLength(1);
         expect(t[0].value).toBe(5000);   // 0,5 × 1000 × 10
         expect(t[0].dist).toBe('lowest');
     });
     it('respekterar minN och fraction=0', () => {
         const cand = [{ bas: 'A', aid: '1', gapKr: 1000, n: 4 }];
-        expect(closureTargets(cand, 0.5, 10)).toEqual([]);
-        expect(closureTargets([{ bas: 'A', aid: '1', gapKr: 1000, n: 20 }], 0)).toEqual([]);
+        expect(stangningsriktning(cand, 0.5, 10)).toEqual([]);
+        expect(stangningsriktning([{ bas: 'A', aid: '1', gapKr: 1000, n: 20 }], 0)).toEqual([]);
     });
 });
 
-describe('[B7.7] forecast: stegvis plan (stagedPlan)', () => {
+describe('[B7.7] forecast: stegvis plan (stegvisPlan)', () => {
     it('rampar linjärt över N år med ackumulerad kostnad', () => {
         const data = rows();
-        const a = allocate(data, { mode: 'pct', value: 0 },
+        const a = fordela(data, { mode: 'pct', value: 0 },
             [{ bas: 'A', aid: '5301', mode: 'kr', value: 6000, dist: 'flat' }]);
-        const plan = stagedPlan(data, a.perPerson, 3, { months: 12, poPct: 0 });
+        const plan = stegvisPlan(data, a.perPerson, 3, { months: 12, poPct: 0 });
         expect(plan).toHaveLength(3);
         expect(plan[0].andelPct).toBeCloseTo(33.33, 1);
         expect(plan[2].andelPct).toBe(100);
@@ -258,14 +258,14 @@ describe('[B7.7] forecast: stegvis plan (stagedPlan)', () => {
     });
 });
 
-describe('forecast: lönespann (bandStats)', () => {
+describe('forecast: lönespann (lonespannPerBas)', () => {
     it('P25/median/P75 per BAS', () => {
         const data = [
             { bas: 'A', aid: '1', kon: 'man', lon: 30000 },
             { bas: 'A', aid: '1', kon: 'man', lon: 32000 },
             { bas: 'A', aid: '1', kon: 'man', lon: 34000 }
         ];
-        const b = bandStats(data);
+        const b = lonespannPerBas(data);
         expect(b).toHaveLength(1);
         expect(b[0].p25).toBe(31000);
         expect(b[0].median).toBe(32000);
@@ -281,7 +281,7 @@ describe('forecast: individnivå-remediation (B)', () => {
         { bas: 'A', aid: '1', kon: 'kvinna', lon: 34000 }    // < 5% under → ej flaggad
     ];
     it('flaggar kvinnor under likalöne-benchmark och kostar lyftet', () => {
-        const r = individualRemediation(data(), { gapPct: 5 });
+        const r = individlyft(data(), { gapPct: 5 });
         expect(r.count).toBe(1);
         expect(r.totalCost).toBe(5000);     // 35000 - 30000
         expect(r.perGroup[0]).toMatchObject({ bas: 'A', aid: '1', count: 1, cost: 5000 });
@@ -291,7 +291,7 @@ describe('forecast: individnivå-remediation (B)', () => {
             { bas: 'A', aid: '1', kon: 'man', lon: 40000 },          // män finns i BAS men annat AID
             { bas: 'A', aid: '2', kon: 'kvinna', lon: 30000 }
         ];
-        const r = individualRemediation(rows, { gapPct: 5 });
+        const r = individlyft(rows, { gapPct: 5 });
         expect(r.count).toBe(1);
         expect(r.flagged[0].kalla).toBe('bas');
         expect(r.flagged[0].benchmark).toBe(40000);
@@ -302,15 +302,15 @@ describe('forecast: marknadspositionering (E)', () => {
     it('lyfter grupp under marknad × factor mot marknad', () => {
         const groups = [{ bas: 'A', aid: '1', n: 5, median: 30000 }];
         const market = new Map([['1', 35000]]);
-        const t = marketTargets(groups, market, 1, 0);
+        const t = marknadsriktning(groups, market, 1, 0);
         expect(t).toHaveLength(1);
         expect(t[0].value).toBe(25000);   // (35000-30000) × 5
         expect(t[0].pool).toBe('marknad');
     });
     it('hoppar över grupper över marknad eller under minN', () => {
         const groups = [{ bas: 'A', aid: '1', n: 2, median: 30000 }];
-        expect(marketTargets(groups, new Map([['1', 35000]]), 1, 10)).toEqual([]);   // n<minN
-        expect(marketTargets([{ bas: 'A', aid: '1', n: 5, median: 40000 }], new Map([['1', 35000]]), 1, 0)).toEqual([]);
+        expect(marknadsriktning(groups, new Map([['1', 35000]]), 1, 10)).toEqual([]);   // n<minN
+        expect(marknadsriktning([{ bas: 'A', aid: '1', n: 5, median: 40000 }], new Map([['1', 35000]]), 1, 0)).toEqual([]);
     });
 });
 
@@ -327,16 +327,16 @@ describe('[B7.6] forecast: ett par per yrke i förslagen (ADR-69)', () => {
         expect(ettParPerYrke([])).toEqual([]);
         expect(ettParPerYrke(undefined)).toEqual([]);
     });
-    it('suggestTargets ger en rad per yrke, räknad ur paret med störst skillnad', () => {
-        const t = suggestTargets(cand, 10000000);
+    it('foreslaRiktning ger en rad per yrke, räknad ur paret med störst skillnad', () => {
+        const t = foreslaRiktning(cand, 10000000);
         expect(t.map(x => [x.aid, x.value])).toEqual([['5300', 21690 * 12], ['5400', 500 * 20]]);
     });
-    it('closureTargets och känslighetskurvan räknar också ett par per yrke', () => {
-        expect(closureTargets(cand, 1).map(x => [x.aid, x.value])).toEqual([['5300', 21690 * 12], ['5400', 500 * 20]]);
+    it('stangningsriktning och känslighetskurvan räknar också ett par per yrke', () => {
+        expect(stangningsriktning(cand, 1).map(x => [x.aid, x.value])).toEqual([['5300', 21690 * 12], ['5400', 500 * 20]]);
         const data = [];
         for (let i = 0; i < 12; i++) data.push({ bas: 'C', aid: '5300', kon: 'kvinna', lon: 36421 });
         for (let i = 0; i < 20; i++) data.push({ bas: 'D', aid: '5400', kon: 'kvinna', lon: 30000 });
-        const kurva = sensitivityCurve(data, cand, { months: 1, poPct: 0 }, 1);
+        const kurva = kanslighetskurva(data, cand, { months: 1, poPct: 0 }, 1);
         expect(kurva[1].kostnad).toBe(21690 * 12 + 500 * 20);
     });
 });
@@ -345,16 +345,16 @@ describe('forecast: budgetkänslighet (F)', () => {
     it('svep ger monotont ökande kostnad från 0', () => {
         const data = rows();
         const cand = [{ bas: 'A', aid: '5301', gapKr: 2000, n: 3 }];
-        const curve = sensitivityCurve(data, cand, { months: 12, poPct: 0 }, 4);
+        const curve = kanslighetskurva(data, cand, { months: 12, poPct: 0 }, 4);
         expect(curve).toHaveLength(5);
         expect(curve[0].kostnad).toBe(0);
         for (let i = 1; i < curve.length; i++) expect(curve[i].kostnad).toBeGreaterThanOrEqual(curve[i - 1].kostnad);
     });
 });
 
-describe('[B7.4] forecast: forecastOutcome', () => {
+describe('[B7.4] forecast: prognosutfall', () => {
     it('budgetutnyttjande och total kostnad inkl. PO + period', () => {
-        const out = forecastOutcome(rows(),
+        const out = prognosutfall(rows(),
             { mode: 'pct', value: 2 }, { mode: 'pct', value: 2 }, [],
             { months: 12, poPct: 39.15 });
         expect(out.pott).toBeCloseTo(3480, 6);
@@ -365,7 +365,7 @@ describe('[B7.4] forecast: forecastOutcome', () => {
         expect(out.lonsummaEfter).toBeCloseTo(177480, 6);
     });
     it('flaggar överbudget', () => {
-        const out = forecastOutcome(rows(),
+        const out = prognosutfall(rows(),
             { mode: 'kr', value: 1000 }, { mode: 'kr', value: 1000 }, [],
             { months: 12, poPct: 0 });
         expect(out.pott).toBe(1000);
@@ -377,7 +377,7 @@ describe('[B7.4] forecast: forecastOutcome', () => {
     // Ingen budget angiven är ett eget läge: ingen pott att överskrida och inget kvar att räkna.
     it('utan angiven pott: pottAngiven falskt, kvar null och ingen överskridning, fast något fördelas', () => {
         for (const budget of [{ mode: 'kr', value: null }, { mode: 'pct', value: null }, null]) {
-            const out = forecastOutcome(rows(), budget, { mode: 'kr', value: 1000 }, [], { months: 12, poPct: 0 });
+            const out = prognosutfall(rows(), budget, { mode: 'kr', value: 1000 }, [], { months: 12, poPct: 0 });
             expect(out.pottAngiven).toBe(false);
             expect(out.pott).toBe(0);
             expect(out.använt).toBe(5000);
@@ -386,9 +386,9 @@ describe('[B7.4] forecast: forecastOutcome', () => {
         }
     });
     it('en angiven pott på 0 kr flaggas när något fördelas, men inte när inget fördelas', () => {
-        const med = forecastOutcome(rows(), { mode: 'kr', value: 0 }, { mode: 'kr', value: 1000 }, [], { months: 12, poPct: 0 });
+        const med = prognosutfall(rows(), { mode: 'kr', value: 0 }, { mode: 'kr', value: 1000 }, [], { months: 12, poPct: 0 });
         expect(med).toMatchObject({ pottAngiven: true, pott: 0, kvar: -5000, overBudget: true });
-        const utan = forecastOutcome(rows(), { mode: 'pct', value: 0 }, { mode: 'kr', value: 0 }, [], { months: 12, poPct: 0 });
+        const utan = prognosutfall(rows(), { mode: 'pct', value: 0 }, { mode: 'kr', value: 0 }, [], { months: 12, poPct: 0 });
         expect(utan).toMatchObject({ pottAngiven: true, pott: 0, kvar: 0, overBudget: false });
     });
     it('pottArAngiven: ett tal, också 0, är en angiven pott; null, NaN och ingen budget är det inte', () => {
@@ -402,28 +402,28 @@ describe('[B7.4] forecast: forecastOutcome', () => {
     // grupper med någon kvinna går över.
     it('kvThreshold: saknad gräns ger standardgränsen, gränsen 0 är 0', () => {
         const gen = { mode: 'kr', value: 1000 };
-        const utan = forecastOutcome(rows(), null, gen, [], { months: 12, poPct: 0 });
-        const standard = forecastOutcome(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: KVINNO_TROSKEL_DEFAULT });
+        const utan = prognosutfall(rows(), null, gen, [], { months: 12, poPct: 0 });
+        const standard = prognosutfall(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: KVINNO_TROSKEL_DEFAULT });
         expect(utan.equityCost).toBe(standard.equityCost);
         expect(utan.equityCost).toBe(3000);   // 5301 (2 av 3 kvinnor, 67 %); 2000 har 50 %
-        const noll = forecastOutcome(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: 0 });
+        const noll = prognosutfall(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: 0 });
         expect(noll.equityCost).toBe(5000);   // båda grupperna har mer än 0 % kvinnor
     });
 });
 
 // k-anonymitet: appen skickar gällande tröskel som minMen.
-describe('[B7.8] forecast: individualRemediation — minsta antal män bakom ett benchmark', () => {
+describe('[B7.8] forecast: individlyft — minsta antal män bakom ett benchmark', () => {
     const rader = () => [
         { bas: 'S3', aid: '7300', kon: 'kvinna', lon: 29417 }, { bas: 'S3', aid: '7300', kon: 'man', lon: 38963 },
         ...Array.from({ length: 12 }, (_, i) => ({ bas: 'A', aid: '6000', kon: 'man', lon: 40000 + i })),
         ...Array.from({ length: 12 }, (_, i) => ({ bas: 'A', aid: '6000', kon: 'kvinna', lon: i < 3 ? 31117 : 40000 + i })),
     ];
     it('standard (en man räcker): kostnaden för paret är hans lön minus hennes', () => {
-        const r = individualRemediation(rader(), { gapPct: 5 });
+        const r = individlyft(rader(), { gapPct: 5 });
         expect(r.perGroup.find(g => g.aid === '7300')).toMatchObject({ count: 1, cost: 38963 - 29417 });
     });
     it('minMen = 10: gruppen med en man jämförs inte alls; gruppen med 12 män gör det', () => {
-        const r = individualRemediation(rader(), { gapPct: 5, minMen: 10 });
+        const r = individlyft(rader(), { gapPct: 5, minMen: 10 });
         expect(r.perGroup.map(g => g.aid)).toEqual(['6000']);
         expect(r.count).toBe(3);
         expect(r.totalCost).toBeCloseTo(3 * (40005.5 - 31117), 6);
@@ -434,12 +434,12 @@ describe('[B7.8] forecast: individualRemediation — minsta antal män bakom ett
             ...Array.from({ length: 5 }, (_, i) => ({ bas: 'B', aid: '2', kon: 'man', lon: 50000 + i })),
             { bas: 'B', aid: '1', kon: 'kvinna', lon: 30000 },
         ];
-        expect(individualRemediation(rows, { gapPct: 5, minMen: 10 }).perGroup[0]).toMatchObject({ aid: '1', count: 1 });   // 10 män i BAS
-        expect(individualRemediation(rows, { gapPct: 5, minMen: 11 }).count).toBe(0);
+        expect(individlyft(rows, { gapPct: 5, minMen: 10 }).perGroup[0]).toMatchObject({ aid: '1', count: 1 });   // 10 män i BAS
+        expect(individlyft(rows, { gapPct: 5, minMen: 11 }).count).toBe(0);
     });
 });
 
-describe('[B7.3] allocate: lägst först (water-filling) med fem löner (characterization)', () => {
+describe('[B7.3] fordela: lägst först (water-filling) med fem löner (characterization)', () => {
     // Löner 10 000, 12 000, 14 000, 16 000, 20 000. Vattenytan stiger från den lägsta lönen upp till nästa brytpunkt.
     const femLoner = () => [10000, 12000, 14000, 16000, 20000].map(lon => ({ bas: 'A', aid: '1', kon: 'man', lon }));
     const riktat = (value) => [{ bas: 'A', aid: '1', mode: 'kr', value, dist: 'lowest' }];
@@ -447,46 +447,46 @@ describe('[B7.3] allocate: lägst först (water-filling) med fem löner (charact
     it('pott 5 000: vattenytan når 13 500; de två lägsta lyfts, resten rörs inte', () => {
         // Brytpunkt 12 000 kostar 2 000 (en person); sedan 2 × (14 000 − 12 000) = 4 000 → totalt 6 000 > 5 000.
         // Kvar 3 000 fördelas på två personer: 1 500 var → L = 12 000 + 1 500 = 13 500.
-        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, riktat(5000));
+        const a = fordela(femLoner(), { mode: 'pct', value: 0 }, riktat(5000));
         expect(a.perPerson.map(p => p.delta)).toEqual([3500, 1500, 0, 0, 0]);
         expect(a.totals.riktadCost).toBeCloseTo(5000, 6);
     });
     it('pott 2 000 tar slut exakt på brytpunkten 12 000: bara den lägsta lyfts', () => {
-        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, riktat(2000));
+        const a = fordela(femLoner(), { mode: 'pct', value: 0 }, riktat(2000));
         expect(a.perPerson.map(p => p.delta)).toEqual([2000, 0, 0, 0, 0]);
         expect(a.perPerson[0].nyLon).toBe(12000);
     });
     it('pott 6 000 tar slut exakt på brytpunkten 14 000: de två lägsta når 14 000', () => {
-        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, riktat(6000));
+        const a = fordela(femLoner(), { mode: 'pct', value: 0 }, riktat(6000));
         expect(a.perPerson.map(p => p.delta)).toEqual([4000, 2000, 0, 0, 0]);
         expect(a.perPerson[1].nyLon).toBe(14000);
     });
 });
 
-describe('allocate: tak vid median eller P25 (dist target, characterization)', () => {
+describe('fordela: tak vid median eller P25 (dist target, characterization)', () => {
     const femLoner = () => [10000, 12000, 14000, 16000, 20000].map(lon => ({ bas: 'A', aid: '1', kon: 'man', lon }));
     const tak = value => [{ bas: 'A', aid: '1', mode: 'kr', value, dist: 'target', targetLevel: 'median' }];
 
     it('pott 10 000 kapas vid medianen 14 000: de två lägsta lyfts dit (6 000), resten av potten används inte', () => {
-        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, tak(10000));
+        const a = fordela(femLoner(), { mode: 'pct', value: 0 }, tak(10000));
         expect(a.perPerson.map(p => p.delta)).toEqual([4000, 2000, 0, 0, 0]);
         expect(a.totals.riktadCost).toBeCloseTo(6000, 6);
     });
     it('pott 3 000 under taket: vattenytan 12 500 utan att nå medianen', () => {
-        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, tak(3000));
+        const a = fordela(femLoner(), { mode: 'pct', value: 0 }, tak(3000));
         expect(a.perPerson.map(p => p.delta)).toEqual([2500, 500, 0, 0, 0]);
     });
     it('tak vid BAS P25 (12 000): bara den lägsta lyfts dit (2 000), resten av potten används inte', () => {
-        const a = allocate(femLoner(), { mode: 'pct', value: 0 }, [{ ...tak(10000)[0], targetLevel: 'p25' }]);
+        const a = fordela(femLoner(), { mode: 'pct', value: 0 }, [{ ...tak(10000)[0], targetLevel: 'p25' }]);
         expect(a.perPerson.map(p => p.delta)).toEqual([2000, 0, 0, 0, 0]);
         expect(a.totals.riktadCost).toBeCloseTo(2000, 6);
     });
 });
 
-describe('allocate: avrundning till lönesteg (roundStep 100, characterization)', () => {
+describe('fordela: avrundning till lönesteg (roundStep 100, characterization)', () => {
     it('påslaget 40 kr på 30 000 rundas nedåt till 0: ingen höjning alls', () => {
         const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30000 }];
-        const a = allocate(data, { mode: 'kr', value: 40 }, [], 100);
+        const a = fordela(data, { mode: 'kr', value: 40 }, [], 100);
         expect(a.perPerson[0].nyLon).toBe(30000);
         expect(a.perPerson[0].delta).toBe(0);
         expect(a.totals.totalRaise).toBe(0);
@@ -494,37 +494,37 @@ describe('allocate: avrundning till lönesteg (roundStep 100, characterization)'
     });
     it('påslaget 50 kr på 30 000 rundas uppåt till 100 kr: summan (200) överstiger den generella potten (100)', () => {
         const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30000 }, { bas: 'A', aid: '1', kon: 'kvinna', lon: 30000 }];
-        const a = allocate(data, { mode: 'kr', value: 50 }, [], 100);
+        const a = fordela(data, { mode: 'kr', value: 50 }, [], 100);
         expect(a.perPerson.map(p => p.nyLon)).toEqual([30100, 30100]);
         expect(a.totals.generellCost).toBe(100);
         expect(a.totals.totalRaise).toBe(200);
     });
     it('riktat påslag avrundas men riktadCost visar det oavrundade: 950 kr på 30 000 blir 1 000 kr', () => {
         const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30000 }];
-        const a = allocate(data, { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 30950 }], 100);
+        const a = fordela(data, { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 30950 }], 100);
         expect(a.perPerson[0].nyLon).toBe(31000);
         expect(a.totals.riktadCost).toBe(950);
         expect(a.totals.totalRaise).toBe(1000);
     });
 });
 
-describe('allocate: mode till (characterization)', () => {
+describe('fordela: mode till (characterization)', () => {
     const data = () => [
         { bas: 'A', aid: '1', kon: 'man', lon: 30000 },
         { bas: 'A', aid: '1', kon: 'kvinna', lon: 31000 },
         { bas: 'A', aid: '1', kon: 'kvinna', lon: 32000 }
     ];
     it('lön exakt lika med målet får ingen höjning (jämförelsen är strikt <)', () => {
-        const a = allocate(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 31000 }]);
+        const a = fordela(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 31000 }]);
         expect(a.perPerson.map(p => p.delta)).toEqual([1000, 0, 0]);
     });
     it('varje individ under målet lyfts till målet, ingen pott att fördela: kostnaden är summan av skillnaderna', () => {
-        const a = allocate(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 33000 }]);
+        const a = fordela(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 33000 }]);
         expect(a.perPerson.map(p => p.nyLon)).toEqual([33000, 33000, 33000]);
         expect(a.totals.riktadCost).toBe(3000 + 2000 + 1000);
     });
     it('mål 0 eller lägre lyfter ingen', () => {
-        const a = allocate(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 0 }]);
+        const a = fordela(data(), { mode: 'pct', value: 0 }, [{ bas: 'A', aid: '1', mode: 'till', value: 0 }]);
         expect(a.totals.riktadCost).toBe(0);
     });
 });

@@ -3,11 +3,11 @@
 // Genererar src/app/09-lib-speglar.js från de rena kärnmodulerna i src/lib/.
 //
 // BAKGRUND (ADR-8): app.js måste innehålla den statistiska kärnan
-// (stat/forecast/struktur/rng/lonepolitik) eftersom webbläsarbygget skeppar app.js, inte
+// (stat/loneoversyn/struktur/rng/lonepolitik) eftersom webbläsarbygget skeppar app.js, inte
 // src/lib/. src/lib/ är enda källa: varje modul inlinas VERBATIM i en
 // IIFE (endast `export` strippas — funktionskropparna rörs aldrig) och de namn
 // som app.js anropar exponeras som const-alias med oförändrade speglingsnamn
-// (_anpassaOLS, _fcComputePott, _stMedianGapPct, _slumpFor, _lpBandlage …).
+// (_anpassaOLS, _fcBeraknaPott, _stMedianGapPct, _slumpFor, _lpBandlage …).
 //
 // Eftersom kropparna inlinas oförändrade kan spegel och lib inte glida isär.
 // tests/drift.test.js vaktar att den incheckade 09-lib-speglar.js är i synk med
@@ -136,13 +136,13 @@ export const MODULES = [
     },
     {
         // Löneöversynen — importerar likvardighet.js (definitionen av kvinnodominerat, ADR-60)
-        file: 'loneoversyn.js', ns: '__mirrorForecast',
+        file: 'loneoversyn.js', ns: '__mirrorLoneoversyn',
         expose: {
-            computePott: '_fcComputePott', allocate: '_fcAllocate', targetRows: '_fcTargetRows', suggestTargets: '_fcSuggestTargets', closureTargets: '_fcClosureTargets', ettParPerYrke: '_fcEttParPerYrke',
-            stagedPlan: '_fcStagedPlan', summarizeGroups: '_fcSummarizeGroups', detectLeapfrog: '_fcDetectLeapfrog',
-            forecastOutcome: '_fcForecastOutcome', bandStats: '_fcBandStats',
-            individualRemediation: '_fcIndividualRemediation', marketTargets: '_fcMarketTargets',
-            sensitivityCurve: '_fcSensitivityCurve',
+            beraknaPott: '_fcBeraknaPott', fordela: '_fcFordela', riktadeRader: '_fcRiktadeRader', foreslaRiktning: '_fcForeslaRiktning', stangningsriktning: '_fcStangningsriktning', ettParPerYrke: '_fcEttParPerYrke',
+            stegvisPlan: '_fcStegvisPlan', sammanstallGrupper: '_fcSammanstallGrupper', hittaOmkorningar: '_fcHittaOmkorningar',
+            prognosutfall: '_fcPrognosutfall', lonespannPerBas: '_fcLonespannPerBas',
+            individlyft: '_fcIndividlyft', marknadsriktning: '_fcMarknadsriktning',
+            kanslighetskurva: '_fcKanslighetskurva',
             likalonslyftForMal: '_fcLyftForMal', troskelmalKonstanter: '_fcTroskelmalKonstanter',
             // privata hjälpare som app.js anropar direkt:
             _median: '_fcMedian'
@@ -476,7 +476,7 @@ export function generateMirrorsSource() {
         '// ====================================================================',
         '// AUTO-GENERERAD FIL — RÖR INTE.',
         '//',
-        '// Speglar de rena kärnmodulerna i src/lib/ (stat, forecast, struktur, rng,',
+        '// Speglar de rena kärnmodulerna i src/lib/ (stat, loneoversyn, struktur, rng,',
         '// likvardighet, lonepolitik, falt, urval, utforska, chartdata)',
         '// för webbläsarbygget. Varje modul inlinas verbatim i en IIFE (endast',
         '// `export` strippas) och de namn app.js anropar exponeras som const-alias.',

@@ -35,7 +35,7 @@ Alla belopp är kronor per månad tills kostnaden räknas över perioden (avsnit
     pott = max(0, belopp)                         när budgeten är i kronor
     pott = max(0, lönesumman × procent / 100)     när budgeten är i procent
 
-Lönesumman är summan av alla löner över 0 (`totalLonSum`). En budget som saknas eller inte är ett tal (ett tomt fält)
+Lönesumman är summan av alla löner över 0 (`lonesumma`). En budget som saknas eller inte är ett tal (ett tomt fält)
 är **ingen angiven pott** (`pottArAngiven` falskt): potten räknas då som 0, men utfallet jämförs inte med den
 (avsnitt 6). En angiven pott på 0 kr är en pott. Potten styr ingenting i fördelningen; den är måttstocken som utfallet
 jämförs med.
@@ -47,7 +47,7 @@ som 0.
 
 ## 4. Riktade rader
 
-**Urvalet** (`targetRows`). En rad gäller ett BAS-intervall och en AID-kod, eller hela BAS-intervallet när koden är
+**Urvalet** (`riktadeRader`). En rad gäller ett BAS-intervall och en AID-kod, eller hela BAS-intervallet när koden är
 `*`. Den kan snävas in till ett kön (kvinnor eller män) och till löner under en gräns (strikt under).
 
 **Tre sätt att ange beloppet:**
@@ -70,7 +70,7 @@ En pott som är 0 eller mindre fördelar ingenting.
 
 Taket räknas på **urvalet**, alltså efter att kön och lönegräns har snävat in det.
 
-**Lägst först** (`_waterLevelDeltas`) hittar en gemensam nivå L och lyfter alla under L upp till L, så långt potten
+**Lägst först** (`_lyftLagstForst`) hittar en gemensam nivå L och lyfter alla under L upp till L, så långt potten
 räcker. För hand:
 
 1. Sortera lönerna stigande. Låt L vara den lägsta lönen och *använt* vara 0.
@@ -109,7 +109,7 @@ Det generella och det riktade påslaget redovisas före avrundning (`generellCos
 
 ## 6. Utfallet
 
-`forecastOutcome` ger:
+`prognosutfall` ger:
 
 | Tal | Hur |
 |---|---|
@@ -118,9 +118,9 @@ Det generella och det riktade påslaget redovisas före avrundning (`generellCos
 | Kvar | potten − använt; null utan angiven pott |
 | Över potten | använt > potten + 0,000001 när en pott är angiven, annars falskt; fliken säger *Fördelningen överskrider potten* |
 | Lönesumman före och efter | före + använt |
-| Den råa skillnaden före och efter | kvinnornas median i procent av männens, minus 100 (`rawGenderGap`) |
+| Den råa skillnaden före och efter | kvinnornas median i procent av männens, minus 100 (`raLonegap`) |
 | Varav till kvinnodominerade grupper | kostnaden i grupper (BAS och AID) som är kvinnodominerade enligt inställningen i Likvärdigt arbete; skickas ingen gräns gäller `KVINNO_TROSKEL_DEFAULT` (60 %) |
-| Grupper som går om varandra | en grupp vars median låg under en annans och efter påslaget ligger över den (`detectLeapfrog`) |
+| Grupper som går om varandra | en grupp vars median låg under en annans och efter påslaget ligger över den (`hittaOmkorningar`) |
 | Total kostnad | se avsnitt 10 |
 
 **Utan angiven pott** visar fliken påslagen som vanligt, men *Pott* och *Kvar att fördela* står som ett streck med
@@ -131,7 +131,7 @@ Det generella och det riktade påslaget redovisas före avrundning (`generellCos
 **Den oförklarade skillnaden före och efter** räknas i appen (`_forecastOlsGap`): huvudregressionen körs en gång på
 lönerna före och en gång på de nya lönerna, med samma förklaringsmodell ([`regressionsmodellen.md`](regressionsmodellen.md)).
 
-**Lönespannet per BAS-intervall** (`bandStats`) ger P25, median och P75. Gruppens läge är den nya medianen delad med
+**Lönespannet per BAS-intervall** (`lonespannPerBas`) ger P25, median och P75. Gruppens läge är den nya medianen delad med
 BAS-intervallets median; över 1,10 märks *över* och under 0,90 *under*.
 
 **Kontrollerna** varnar för en negativ budget eller ett negativt generellt påslag, en budget över 50 % av lönesumman,
@@ -149,24 +149,24 @@ personer i gruppen* (standard 10) tas med.
 
 | Förslag | Funktion | Belopp per grupp |
 |---|---|---|
-| Förslag ur potten | `suggestTargets` | potten efter det generella påslaget, fördelad i proportion till gapKr × n, men aldrig mer än gapKr × n; avrundat till hela kronor |
-| Minska skillnaderna med en andel | `closureTargets` | andelen × gapKr × n, avrundat |
-| Lyft mot marknaden | `marketTargets` | (marknadens median × faktorn − gruppens median) × n, för grupper under; faktorn är standard 95 % |
+| Förslag ur potten | `foreslaRiktning` | potten efter det generella påslaget, fördelad i proportion till gapKr × n, men aldrig mer än gapKr × n; avrundat till hela kronor |
+| Minska skillnaderna med en andel | `stangningsriktning` | andelen × gapKr × n, avrundat |
+| Lyft mot marknaden | `marknadsriktning` | (marknadens median × faktorn − gruppens median) × n, för grupper under; faktorn är standard 95 % |
 | Grupper som uppfyller ett villkor | i appen (`_forecastAddByCriteria`) | samma belopp och fördelning för alla grupper som är kvinnodominerade, under BAS-medianen, under BAS-intervallets P25 eller alla |
 
 Förslagen ur paren, ur potten och mot marknaden fördelas *lägst först* inom gruppen; villkorsraderna får den
 fördelning användaren väljer.
 
-**Känsligheten** (`sensitivityCurve`) räknar *minska skillnaderna* för andelarna 0, 10, … 100 % och visar kostnaden
+**Känsligheten** (`kanslighetskurva`) räknar *minska skillnaderna* för andelarna 0, 10, … 100 % och visar kostnaden
 och den råa skillnaden för varje andel.
 
-**Individuell rättelse** (`individualRemediation`) jämför varje kvinna med männens median i samma BAS och AID, eller i
+**Individuell rättelse** (`individlyft`) jämför varje kvinna med männens median i samma BAS och AID, eller i
 BAS-intervallet när gruppen har för få män. Hon räknas när hennes lön ligger mer än en gräns (standard 5 %) under
 jämförelsevärdet; kostnaden är jämförelsevärdet minus lönen.
 
 ## 8. Den stegvisa planen
 
-`stagedPlan` sprider fördelningen över 1–5 år. År k av N ger varje person påslaget × k / N. För varje år redovisas
+`stegvisPlan` sprider fördelningen över 1–5 år. År k av N ger varje person påslaget × k / N. För varje år redovisas
 det samlade påslaget, kostnaden över perioden och den råa skillnaden. Påslagen per år avrundas inte på nytt.
 
 ## 9. Tröskelmålet

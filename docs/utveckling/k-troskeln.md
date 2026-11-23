@@ -153,7 +153,7 @@ finns bara i minnet och i fliken. Ett scenario sparar det råa gapet bara när v
 kvinnor och män, så att gapet prövas mot den tröskel som gäller när jämförelsen visas; ett scenario sparat vid en lägre
 tröskel visar ett streck och en not när tröskeln har höjts.
 
-**Kostnaden på individnivå** i Löneöversyn (`_forecastRemediation`, `individualRemediation` i `src/lib/loneoversyn.js`)
+**Kostnaden på individnivå** i Löneöversyn (`_forecastRemediation`, `individlyft` i `src/lib/loneoversyn.js`)
 jämför varje kvinna med männens median i hennes grupp när minst `kTroskel()` män finns där, annars med männens median i
 BAS-intervallet (också minst `kTroskel()` män); mot en enda mans lön vore kostnaden hans lön minus hennes. En grupp får
 egen rad, och kan bli en riktad rad, först när minst `kTroskel()` kvinnor i den berörs, och den samlade kostnaden står
@@ -473,7 +473,7 @@ Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38).
   ur kandidatpar i likvärdigt arbete omfattas inte (ADR-69): verktyget föreslår ingen rad ur ett par där den
   kvinnodominerade AID-etiketten eller jämförelseetiketten har färre personer än den inställda tröskeln, i något läge
   (`_fcKandidater`, avsnitt 1), och tar ett par per kvinnodominerad AID-etikett, det med störst skillnad bland dem som når
-  tröskeln (`ettParPerYrke` i `src/lib/loneoversyn.js`, som `suggestTargets` och `closureTargets`, och därmed
+  tröskeln (`ettParPerYrke` i `src/lib/loneoversyn.js`, som `foreslaRiktning` och `stangningsriktning`, och därmed
   känslighetskurvan, går genom). En föreslagen rad bär `kalla: 'par'` men inte paret. `_fcRensaParMal` prövar den när
   den inställda tröskeln ändras (`sattKTroskel`), när en konfigurationsfil läses in och när lönefilen läses in, också på
   skärmen. En rad som föreslogs i sessionen avgörs säkert: storleken på grupperna i paret den räknades ur finns i

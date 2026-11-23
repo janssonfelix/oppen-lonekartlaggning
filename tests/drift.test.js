@@ -5,7 +5,7 @@
  * tools/gen-mirrors.mjs (endast `export` strippas), så kropparna kan inte
  * glida isär. Att den incheckade spegeln är i synk med src/lib/ prövar artefaktgrinden
  * (tools/kontroll.mjs och .github/workflows/ci.yml). Detta test vaktar ALIAS-WIRING:
- * att varje app-globalt spegelnamn (_anpassaOLS, _fcComputePott …) faktiskt pekar på
+ * att varje app-globalt spegelnamn (_anpassaOLS, _fcBeraknaPott …) faktiskt pekar på
  * RÄTT lib-funktion (en felmappning i manifestet fångas).
  *
  * Själva lib-logiken testas direkt i stat/loneoversyn/struktur.test.js m.fl., och
@@ -143,13 +143,13 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
             expect(M._pVardeTvasidigt(x, 202, 2)).toBe(libStat.pVardeTvasidigt(x, 202, 2));   // df = 200 ≥ 100: går genom normalCdf
             expect(M._pVardeTvasidigt(x, 22, 2)).toBe(libStat.pVardeTvasidigt(x, 22, 2));     // df = 20: går genom tFordelningCdf
         }
-        // forecast: summarizeGroups + computePott speglar lib på slumprader
+        // forecast: sammanstallGrupper + beraknaPott speglar lib på slumprader
         const rows = Array.from({ length: 60 }, () => ({
             bas: ['A', 'B', 'C'][rnd() * 3 | 0], aid: String(5000 + (rnd() * 4 | 0)),
             kon: rnd() > 0.5 ? 'kvinna' : 'man', lon: 25000 + Math.round(rnd() * 20000)
         }));
-        expect(M._fcSummarizeGroups(rows)).toEqual(libFc.summarizeGroups(rows));
-        expect(M._fcComputePott(rows, { mode: 'pct', value: 2.5 })).toBe(libFc.computePott(rows, { mode: 'pct', value: 2.5 }));
+        expect(M._fcSammanstallGrupper(rows)).toEqual(libFc.sammanstallGrupper(rows));
+        expect(M._fcBeraknaPott(rows, { mode: 'pct', value: 2.5 })).toBe(libFc.beraknaPott(rows, { mode: 'pct', value: 2.5 }));
         // structure: alla fyra mått speglar lib
         expect(M._stMedianGapPct(rows)).toBe(libSt.medianGapPct(rows));
         expect(M._stRepresentationPerBas(rows)).toEqual(libSt.representationPerBas(rows));

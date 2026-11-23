@@ -1,7 +1,7 @@
 {
   "id": "loneoversyn-generellt-avrundning",
   "titel": "Löneöversyn: generellt påslag 2,5 % och avrundning av nya löner till lönesteg 100 kr",
-  "funktion": "src/lib/loneoversyn.js#allocate",
+  "funktion": "src/lib/loneoversyn.js#fordela",
   "indata": [
     [
       { "bas": "D", "aid": "Y", "kon": "kvinna", "lon": 25000 },
@@ -26,7 +26,7 @@
   },
   "tolerans": 1e-6,
   "harledning": [
-    "Regeln (allocate i loneoversyn.js): påslag = lön × 2,5 / 100. Med lönesteg 100 blir ny lön = avrundning((lön + påslag) / 100) × 100, och påslaget det som återstår: ny lön − lön (aldrig under 0). Avrundningen är Math.round: ,5 avrundas uppåt.",
+    "Regeln (fordela i loneoversyn.js): påslag = lön × 2,5 / 100. Med lönesteg 100 blir ny lön = avrundning((lön + påslag) / 100) × 100, och påslaget det som återstår: ny lön − lön (aldrig under 0). Avrundningen är Math.round: ,5 avrundas uppåt.",
     "25 000: påslag 625, 25 625 / 100 = 256,25, avrundat 256, ny lön 25 600, påslag efter avrundning 600 (25 kr mindre än avsett).",
     "26 000: påslag 650, 26 650 / 100 = 266,5, avrundat uppåt till 267, ny lön 26 700, påslag 700 (50 kr mer än avsett).",
     "28 000: påslag 700, 28 700 / 100 = 287, ny lön 28 700, påslag 700.",

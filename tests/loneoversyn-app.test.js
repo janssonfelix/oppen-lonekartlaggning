@@ -215,7 +215,7 @@ describe('formulären i Löneöversyn', () => {
     });
 });
 
-// Ingen budget angiven är ett eget läge (pottAngiven ur forecastOutcome): ett påslag utan pott överskrider ingen pott.
+// Ingen budget angiven är ett eget läge (pottAngiven ur prognosutfall): ett påslag utan pott överskrider ingen pott.
 // En angiven pott på 0 kr flaggas som förut.
 describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
     const rita = budget => {

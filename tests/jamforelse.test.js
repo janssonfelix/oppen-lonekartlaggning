@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { jamforelseRader, avvikelseRangordning, aidAvYrke, statistikFor, matchningEtikett, matchningAntal, matchningSammanfattning,
     statistikMarknad, statistikensMedianFor } from '../src/lib/jamforelse.js';
-import { marketTargets } from '../src/lib/loneoversyn.js';
+import { marknadsriktning } from '../src/lib/loneoversyn.js';
 
 const grupp = (yrke, bas, loner) => loner.map(lon => ({ yrke, bas, lon }));
 const tio = (_bas = 'C', start = 30000) => Array.from({ length: 10 }, (_, i) => start + i * 1000);   // 30 000 … 39 000
@@ -107,7 +107,7 @@ describe('jamforelse: statistikMarknad (Löneöversyns marknadspositionering)', 
         const marknad = statistikMarknad(statistik, grupper);
         expect([...marknad.entries()]).toEqual([['2|3', 35000], ['2|4', 41000]]);
         // AID 1 har bara en rad för BAS 5: gruppen i BAS 3 får ingen marknadsnivå och inget lyft.
-        const t = marketTargets(grupper, marknad, 1, 0);
+        const t = marknadsriktning(grupper, marknad, 1, 0);
         expect(t.map(x => [x.aid, x.bas, x.value])).toEqual([['2', '3', 25000], ['2', '4', 55000]]);
     });
     it('rader utan positiv median räknas inte', () => {
