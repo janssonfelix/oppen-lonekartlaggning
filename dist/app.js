@@ -824,18 +824,18 @@ function harlettNot(h) {
     utelamnade: unika((h && h.utelamnade || []).map((o) => `${stor2(o.namn)} visas inte: färre än ${talformat(o.minN, "antal")} synliga punkter.`))
   };
 }
-function _underlagKon(underlag, r) {
-  if (underlag && typeof underlag.kon === "function") {
-    const k = underlag.kon(r);
+function _underlagKon(underlag2, r) {
+  if (underlag2 && typeof underlag2.kon === "function") {
+    const k = underlag2.kon(r);
     return k === "kv" || k === "ma" ? k : null;
   }
   if (arKvinna(r)) return "kv";
   return arMan(r) ? "ma" : null;
 }
-function underlagKonAntal(underlag, rader) {
+function underlagKonAntal(underlag2, rader) {
   const ut = { kv: 0, ma: 0 };
   for (const r of rader || []) {
-    const k = _underlagKon(underlag, r);
+    const k = _underlagKon(underlag2, r);
     if (k) ut[k]++;
   }
   return ut;
@@ -847,57 +847,57 @@ function underlagVarde(dim, rad) {
   const v = dim && typeof dim.varde === "function" ? dim.varde(rad) : rad && dim ? rad[dim.falt] : null;
   return v == null || v === "" ? null : String(v);
 }
-function underlagDimension(underlag, falt) {
-  const dims = underlag && Array.isArray(underlag.dimensioner) ? underlag.dimensioner : [];
+function underlagDimension(underlag2, falt) {
+  const dims = underlag2 && Array.isArray(underlag2.dimensioner) ? underlag2.dimensioner : [];
   return dims.find((u) => u && u.falt === falt) || null;
 }
-function underlagVarden(underlag, dim) {
+function underlagVarden(underlag2, dim) {
   const grupper = /* @__PURE__ */ new Map();
-  for (const r of underlag && underlag.rader || []) {
+  for (const r of underlag2 && underlag2.rader || []) {
     const v = underlagVarde(dim, r);
     if (v == null) continue;
     if (!grupper.has(v)) grupper.set(v, { kv: 0, ma: 0 });
-    const k = _underlagKon(underlag, r);
+    const k = _underlagKon(underlag2, r);
     if (k) grupper.get(v)[k]++;
   }
   const varden = [];
   let utelamnade = 0;
   for (const [v, antal] of grupper) {
-    if (antal.kv + antal.ma > 0 && underlagSkyddat(antal, underlag.k)) varden.push(v);
+    if (antal.kv + antal.ma > 0 && underlagSkyddat(antal, underlag2.k)) varden.push(v);
     else utelamnade++;
   }
   varden.sort(typeof dim.ordning === "function" ? dim.ordning : (a, b) => a.localeCompare(b, "sv", { numeric: true }));
   return { varden, utelamnade };
 }
-function underlagValet(underlag, filter) {
+function underlagValet(underlag2, filter) {
   if (!filter || typeof filter.get !== "function") return null;
-  for (const dim of underlag && underlag.dimensioner || []) {
+  for (const dim of underlag2 && underlag2.dimensioner || []) {
     const bort = filter.get(dim.falt);
     if (!bort || !bort.size) continue;
-    const { varden } = underlagVarden(underlag, dim);
+    const { varden } = underlagVarden(underlag2, dim);
     if (!varden.some((v) => bort.has(v))) continue;
     return { dim, varden, valda: varden.filter((v) => !bort.has(v)) };
   }
   return null;
 }
-function underlagProva(underlag, filter) {
-  const rader = underlag && underlag.rader || [];
-  const valet = underlagValet(underlag, filter);
+function underlagProva(underlag2, filter) {
+  const rader = underlag2 && underlag2.rader || [];
+  const valet = underlagValet(underlag2, filter);
   const valbara = valet ? new Set(valet.valda) : null;
   const valda = valet && valbara ? rader.filter((r) => {
     const v = underlagVarde(valet.dim, r);
     return v != null && valbara.has(v);
   }) : rader;
-  const alla = underlagKonAntal(underlag, rader), urval = underlagKonAntal(underlag, valda);
+  const alla = underlagKonAntal(underlag2, rader), urval = underlagKonAntal(underlag2, valda);
   const rest = { kv: alla.kv - urval.kv, ma: alla.ma - urval.ma };
-  return { ok: !valet || underlagSkyddat(urval, underlag.k) && underlagSkyddat(rest, underlag.k), valet, valda, antal: { urval, rest } };
+  return { ok: !valet || underlagSkyddat(urval, underlag2.k) && underlagSkyddat(rest, underlag2.k), valet, valda, antal: { urval, rest } };
 }
 function namnIMening(namn) {
   const s = String(namn || "");
   return s.length > 1 && s[1] === s[1].toLocaleLowerCase("sv") ? s[0].toLocaleLowerCase("sv") + s.slice(1) : s;
 }
-function underlagBeskrivning(underlag, filter) {
-  const valet = underlagValet(underlag, filter);
+function underlagBeskrivning(underlag2, filter) {
+  const valet = underlagValet(underlag2, filter);
   if (!valet) return "";
   const namn = namnIMening(valet.dim.namn);
   if (!valet.valda.length) return `${namn}: inga`;
@@ -5837,6 +5837,89 @@ function uppstartExtremvardenBasrang() {
 var APP_VERSION = "2026.11.22";
 var APP_BUILD_DATE = "2026-11-22";
 
+// src/lib/vymodell-lonestruktur.js
+var JAMN_KONSFORDELNING = 40;
+var kvinnorsLoner = (rader) => rader.filter((r) => arKvinna(r)).map((r) => r.lon);
+var mansLoner = (rader) => rader.filter((r) => arMan(r)).map((r) => r.lon);
+var underlag = (bas, rader) => ({ bas, rader, kvLons: kvinnorsLoner(rader), maLons: mansLoner(rader), masked: false });
+function oversiktPerBas(rader, bas, k) {
+  const perBas = (
+    /** @type {Record<string, any[]>} */
+    Object.fromEntries(bas.map((b) => [b, rader.filter((r) => r.bas === b)]))
+  );
+  const { visade } = konskvotPerGrupp(bas.map((b) => [b, kvinnorsLoner(perBas[b]), mansLoner(perBas[b])]), { k, ki: true });
+  return visade.map((v) => ({ bas: v.nyckel, gap: v.gap, n: perBas[v.nyckel].length, ci: v.ci, medKv: v.medKv, medMa: v.medMa, nKv: v.nKv, nMa: v.nMa }));
+}
+function oversiktNiva(o, golv) {
+  if (!(o.nKv >= golv && o.nMa >= golv)) return "ejbedomd";
+  return statusNiva(Math.abs(100 - o.gap), kiUtesluterLika(o.ci));
+}
+function vymodellLonestruktur(rader, { bas, k, golv, litetUnderlag: litetUnderlag2, oversikt }) {
+  const perBas = (
+    /** @type {Record<string, any[]>} */
+    Object.fromEntries(bas.map((b) => [b, rader.filter((r) => r.bas === b)]))
+  );
+  const visade = (oversikt || oversiktPerBas(rader, bas, k)).map((o) => ({
+    ...o,
+    niva: oversiktNiva(o, golv),
+    direktiv: direktivMarkering(o.gap),
+    skillnadKr: Math.round(o.medKv) - Math.round(o.medMa),
+    underlag: underlag(o.bas, perBas[o.bas])
+  }));
+  const storst = visade.slice().sort((a, b) => Math.abs(100 - b.gap) - Math.abs(100 - a.gap))[0] || null;
+  const iTabell = new Set(visade.map((o) => o.bas)), forSma = (
+    /** @type {string[]} */
+    []
+  ), ettKon = (
+    /** @type {string[]} */
+    []
+  );
+  for (const b of bas) {
+    const n = perBas[b].length;
+    if (!iTabell.has(b) && n) (n < k ? forSma : ettKon).push(b);
+  }
+  const skillnad = { rader: [], utelamnade: [], samlade: [], maskerade: 0 };
+  for (const b of bas) {
+    const df = perBas[b], nKv = df.filter((r) => arKvinna(r)).length, nMa = df.filter((r) => arMan(r)).length;
+    if (nKv < 2 || nMa < 2) continue;
+    if (nKv < k || nMa < k) skillnad.maskerade++;
+    const m = konsMedianer(df, { k });
+    if (!m.konOk && df.length < k) {
+      skillnad.utelamnade.push(b);
+      continue;
+    }
+    if (!m.konOk) {
+      skillnad.samlade.push(b);
+      skillnad.rader.push({ bas: b, nKv, nMa, samlad: true, medTot: median(df.map((r) => r.lon)) });
+      continue;
+    }
+    const kvotPct = parseFloat(m.kvotPct.toFixed(1));
+    skillnad.rader.push({ bas: b, nKv, nMa, samlad: false, kvotPct, direktiv: direktivMarkering(kvotPct), medKv: m.medKv, medMa: m.medMa, underlag: underlag(b, df) });
+  }
+  const konsfordelning = { rader: [], utelamnade: [] };
+  for (const b of bas) {
+    const df = perBas[b], nKv = df.filter((r) => arKvinna(r)).length, nMa = df.filter((r) => arMan(r)).length, tot = nKv + nMa;
+    if (tot < litetUnderlag2) {
+      if (tot > 0) konsfordelning.utelamnade.push(b);
+      continue;
+    }
+    const pctKv = parseFloat((nKv / tot * 100).toFixed(1)), pctMa = parseFloat((nMa / tot * 100).toFixed(1));
+    const underrepresenterat = pctKv < JAMN_KONSFORDELNING ? "Kvinna" : pctMa < JAMN_KONSFORDELNING ? "Man" : null;
+    konsfordelning.rader.push({ bas: b, tot, nKv, nMa, pctKv, pctMa, underrepresenterat });
+  }
+  return {
+    oversikt: {
+      rader: visade,
+      storst,
+      forSma,
+      ettKon,
+      exportAnteckning: storst ? `Störst skillnad: BAS ${storst.bas}, kvinnors median ${talformat(storst.gap, "pct")} av männens` : null
+    },
+    skillnad,
+    konsfordelning
+  };
+}
+
 // src/app/10-diagramtema.js
 var PALETTE = {
   // Kön — genomgående i hela verktyget. Plommon för kvinnor och olivgrönt för män (beslut 2026-10-17):
@@ -5957,8 +6040,7 @@ function gapStatusNiva(niva) {
   return GAP_STATUS_ALLA.find((s) => s.niva === niva) || GAP_STATUS_EJ;
 }
 function gapStatusKI(o) {
-  if (!(o.nKv >= statGolv() && o.nMa >= statGolv())) return GAP_STATUS_EJ;
-  return gapStatus(Math.abs(100 - o.gap), kiUtesluterLika(o.ci));
+  return gapStatusNiva(oversiktNiva(o, statGolv()));
 }
 var CHART_FONT = {
   family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -7374,6 +7456,72 @@ ${t.not}` : ""));
   if (b.provat) delar.push("Redan prövat:\n" + b.provat.map((p) => `- ${p}`).join("\n"));
   if (b.fragor) delar.push("Frågor till ansvarig chef:\n" + b.fragor.map((f, i) => `${i + 1}. ${f}`).join("\n"));
   return delar.join("\n\n");
+}
+
+// src/lib/vymodell-lika-arbete.js
+function ansvarFor(rader, k) {
+  if (!rader.some((x) => x.ansvarsgrupp)) return null;
+  const grupper = ansvarsUnderrader(rader, { k });
+  if (grupper.length < 2) return null;
+  let utanLedning = (
+    /** @type {number|null} */
+    null
+  );
+  if (grupper.some((u) => u.grupp === "ledning")) {
+    const ovriga = konsMedianer(rader.filter((x) => x.ansvarsgrupp && x.ansvarsgrupp !== "ledning"), { k });
+    if (ovriga.konOk) utanLedning = ovriga.kvotPct;
+  }
+  return { grupper, utanLedning };
+}
+function statusTips(niva, sakerstalld, golv) {
+  if (niva === "ejbedomd") return `Går ej att bedöma: ett kön har färre än ${golv} ${personOrd(golv)}, för få för att pröva skillnaden`;
+  if (niva === "granska") return "Skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)";
+  if (niva === "folj") return sakerstalld ? "Skillnaden är statistiskt säkerställd men under 3 % (verktygets storleksgräns)" : "Skillnaden är minst 3 % men inte statistiskt säkerställd (inom slumpens gränser för gruppen)";
+  return "Skillnaden är under 3 % och inte statistiskt säkerställd";
+}
+function vymodellLikaArbete(rader, { k, golv, sigma, dominansDefinition, dominansGrans, skrDel, lika, tratt }) {
+  if (!rader.length) return null;
+  const lg = lika || likaArbeteGrupper(rader, { k, golv });
+  const u = tratt === void 0 ? trattUnderlag(rader, k) : tratt;
+  const grupper = lg.grupper.map((g) => {
+    const { yrke, aid, bas, nKv, nMa, tot } = g;
+    const gemensamt = {
+      yrke,
+      aid,
+      bas,
+      nKv,
+      nMa,
+      tot,
+      dominans: dominans(nKv / tot * 100, dominansDefinition, dominansGrans),
+      nationellt: skrKvinnoandel(yrke, { del: skrDel }),
+      // Gruppens rader är koden i BAS-intervallet, inte texten (likaArbeteGrupper): alla stavningar av etiketten.
+      ansvar: ansvarFor(rader.filter((x) => aidAvRad(x) === aid && String(x.bas) === bas), k)
+    };
+    if (g.samladMedian) return { ...gemensamt, medTot: g.medTot, gap: 0, samladMedian: true };
+    const mde = gruppMde(nKv, nMa, sigma);
+    return {
+      ...gemensamt,
+      medKv: g.medKv,
+      medMa: g.medMa,
+      gap: g.gapPct,
+      kvot: g.kvot * 100,
+      samladMedian: false,
+      niva: g.niva,
+      direktiv: g.direktiv,
+      tips: statusTips(g.niva, g.sakerstalld, golv),
+      stabilitet: g.flaggad && g.stabilitet ? stabilitetKort(g.stabilitet, k) : null,
+      lagStyrka: mde && (mde.tooSmall || mde.mdePct > Math.abs(g.gapPct - 100)) ? mde : null
+    };
+  });
+  return {
+    grupper,
+    utelamnade: lg.utelamnade,
+    samlade: lg.grupper.filter((g) => g.samladMedian).map(gruppMedBas),
+    ejJamforbara: lg.ejJamforbara,
+    skor: lg.grupper.some((g) => g.flaggad),
+    // Med färre än två grupper finns inget att jämföra: trattens kort visas inte.
+    tratt: u && u.punkter.length >= 2 ? u : null
+  };
 }
 
 // src/app/10-diagrammarken.js
@@ -11340,8 +11488,8 @@ function _chartExportHarlett(ut) {
   if (!ut || !ut.filter) return [];
   return harlettNot(harleddaLager(ut.bild || ut.figur, ut.filter, { visaSma: !!ut.visaSma })).utelamnade;
 }
-function chartExportRows(gd, underlag) {
-  const ut = underlag === void 0 ? _chartExportUnderlag(gd) : underlag;
+function chartExportRows(gd, underlag2) {
+  const ut = underlag2 === void 0 ? _chartExportUnderlag(gd) : underlag2;
   if (!ut || ut.underlag && ut.underlag.tom) return [];
   gd = _chartExportAktuell(gd);
   const medSma = ut.visaSma;
@@ -11359,11 +11507,11 @@ function chartExportRows(gd, underlag) {
     ...rader
   ];
 }
-function _chartExportRubrikFot(gd, datum = /* @__PURE__ */ new Date(), dolt = [], harlett = [], underlag = "") {
+function _chartExportRubrikFot(gd, datum = /* @__PURE__ */ new Date(), dolt = [], harlett = [], underlag2 = "") {
   const dag = idagDatum(datum);
   const urval = typeof gd._exportBeskrivning === "string" && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : "";
-  const v = !underlag && gd._figurVal && typeof gd._figurVal.exportAnteckning === "string" ? gd._figurVal.exportAnteckning.trim() : "";
-  const underlagText = underlag ? ` · Räknat för: ${underlag}` : "";
+  const v = !underlag2 && gd._figurVal && typeof gd._figurVal.exportAnteckning === "string" ? gd._figurVal.exportAnteckning.trim() : "";
+  const underlagText = underlag2 ? ` · Räknat för: ${underlag2}` : "";
   const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join("; ")}` : "";
   const harlettText = (harlett || []).map((t) => ` · ${String(t).replace(/\.$/, "")}`).join("");
   return { rubrik: chartExportTitle(gd), fot: `${v ? v + " · " : ""}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? " · Utsnitt av diagrammet" : ""}` };
@@ -11396,10 +11544,10 @@ function _chartExportImage(...a) {
     a
   ));
 }
-async function __chartExportImageExport(gd, val, underlag) {
+async function __chartExportImageExport(gd, val, underlag2) {
   const [width, height] = CHART_EXPORT_STORLEKAR[val];
   const format = val === "svg" ? "svg" : "png";
-  const ut = underlag === void 0 ? _chartExportUnderlag(gd) : underlag;
+  const ut = underlag2 === void 0 ? _chartExportUnderlag(gd) : underlag2;
   gd = _chartExportAktuell(gd);
   if (!ut || ut.underlag && ut.underlag.tom) throw new Error("Det finns inget att exportera i diagrammet.");
   const url = await figurTillBild(ut.bild || ut.figur, format, width, height, {
@@ -11426,15 +11574,15 @@ function chartExportRun(...a) {
   ));
 }
 function _chartExportRunExport(gd, val) {
-  const underlag = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : void 0;
+  const underlag2 = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : void 0;
   gd = _chartExportAktuell(gd);
-  if (underlag === null) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
-  if (underlag && underlag.underlag && underlag.underlag.tom) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
-  if (val === "data-kopiera") return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag)));
+  if (underlag2 === null) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
+  if (underlag2 && underlag2.underlag && underlag2.underlag.tom) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
+  if (val === "data-kopiera") return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag2)));
   if (val === "data-csv") {
-    return Promise.resolve(_downloadCSV(chartExportRows(gd, underlag), chartExportFilename(gd, "csv").replace(/\.csv$/, "")));
+    return Promise.resolve(_downloadCSV(chartExportRows(gd, underlag2), chartExportFilename(gd, "csv").replace(/\.csv$/, "")));
   }
-  return _chartExportImage(gd, val, underlag);
+  return _chartExportImage(gd, val, underlag2);
 }
 function _attachChartExport(graphDiv) {
   const gd = _chartExportEl(graphDiv);
@@ -16762,9 +16910,9 @@ function _hpTaBortEgen(nyckel) {
 function _handlingsplanSeedRows({ baraEgna = false } = {}) {
   const rows = [], nycklar = [], skillnader = [], minsta = [];
   let prioCount = 0, lvCount = 0, parUtelamnade = 0;
-  const lagg = (nyckel, atgard, grupp, underlag, kostnad, antal, skillnad, nMin) => {
+  const lagg = (nyckel, atgard, grupp, underlag2, kostnad, antal, skillnad, nMin) => {
     const v = _hpVarden(nyckel);
-    rows.push([atgard, grupp, underlag, v.sakligt, kostnad, v.ansvarig, v.tidsplan, v.status, antal == null ? null : antal]);
+    rows.push([atgard, grupp, underlag2, v.sakligt, kostnad, v.ansvarig, v.tidsplan, v.status, antal == null ? null : antal]);
     nycklar.push(nyckel);
     skillnader.push(skillnad == null ? null : skillnad);
     minsta.push(Number.isFinite(nMin) ? nMin : null);
@@ -16807,13 +16955,13 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
   });
   return { rows, nycklar, skillnader, minsta, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
 }
-function _handlingsplanUnderlag(underlag) {
-  if (/^Lika arbete\b/.test(underlag)) return HP_UNDERLAG_PRIO;
-  if (/^Likvärdigt arbete$/.test(underlag)) return HP_UNDERLAG_PAR;
-  return underlag;
+function _handlingsplanUnderlag(underlag2) {
+  if (/^Lika arbete\b/.test(underlag2)) return HP_UNDERLAG_PRIO;
+  if (/^Likvärdigt arbete$/.test(underlag2)) return HP_UNDERLAG_PAR;
+  return underlag2;
 }
-function _hpKostnadAvser(underlag) {
-  const u = _handlingsplanUnderlag(String(underlag ?? ""));
+function _hpKostnadAvser(underlag2) {
+  const u = _handlingsplanUnderlag(String(underlag2 ?? ""));
   return u === HP_UNDERLAG_PRIO ? "Nå referensens median" : u === HP_UNDERLAG_PAR ? `Nå ${genitiv(T.jamforelse.bf)} median` : "";
 }
 function _hpLiknarPersonuppgift(t) {
@@ -21752,7 +21900,7 @@ function _afterDataLoaded() {
     if (dataStatus) dataStatus.textContent += DEFER_NOTE;
     setTimeout(() => {
       try {
-        generateSkevhet();
+        ritaLoneskillnadPerBas(lsBasVymodell());
         renderKon("__ALLA__");
         computeBootstrapCI();
         renderActionChecklist();
@@ -24358,7 +24506,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   updateDashboardStats();
   populateSelects();
   generateRapport();
-  generateSkevhet();
+  ritaLoneskillnadPerBas(lsBasVymodell());
   renderKon("__ALLA__");
   updateCompliance();
   const reg = runOLSRegression();
@@ -25074,28 +25222,26 @@ function laLikaGrupper(d = getData(), k = kTroskel()) {
   }
   return minne.lika;
 }
-function _direktivBricka(kvot) {
-  return direktivMarkering(kvot) ? `<span class="direktiv-bricka" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : "";
+function _direktivBricka(markerad) {
+  return markerad ? `<span class="direktiv-bricka" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : "";
 }
 function _direktivInline(kvot) {
-  return direktivMarkering(kvot) ? ` <span class="direktiv-bricka direktiv-inline" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : "";
+  return _direktivInlineOm(direktivMarkering(kvot));
 }
-function _direktivCell(kvot) {
-  const b = _direktivBricka(kvot);
+function _direktivInlineOm(markerad) {
+  return markerad ? ` <span class="direktiv-bricka direktiv-inline" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : "";
+}
+function _direktivCell(markerad) {
+  const b = _direktivBricka(markerad);
   return `<td class="t-mitt" data-sort-value="${b ? 1 : 0}">${b}</td>`;
 }
 function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
   const minne = _laMinneFor(d, k), nyckel = bas.join("\0");
   if (minne.oversikt && minne.oversiktNyckel === nyckel) return minne.oversikt;
-  const ut = _laOversiktRaderRakna(d, bas, k);
+  const ut = oversiktPerBas(d, bas, k);
   minne.oversikt = ut;
   minne.oversiktNyckel = nyckel;
   return ut;
-}
-function _laOversiktRaderRakna(d, bas, k) {
-  const perBas = new Map(bas.map((b) => [b, d.filter((r) => r.bas === b)]));
-  const { visade } = konskvotPerGrupp(bas.map((b) => [b, perBas.get(b).filter((r) => arKvinna(r)).map((r) => r.lon), perBas.get(b).filter((r) => arMan(r)).map((r) => r.lon)]), { k, ki: true });
-  return visade.map((v) => ({ bas: v.nyckel, gap: v.gap, n: perBas.get(v.nyckel).length, ci: v.ci, medKv: v.medKv, medMa: v.medMa, nKv: v.nKv, nMa: v.nMa }));
 }
 function _laSamladNot(namn) {
   const lista = (namn || []).filter(Boolean);
@@ -25105,20 +25251,21 @@ function _laSamladNot(namn) {
 function _laOversiktStatus(o) {
   return gapStatusKI(o);
 }
-function generateSkevhet() {
-  const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
+function lsBasVymodell() {
   const d = getData();
-  const bas = getBasIntervals();
+  return vymodellLonestruktur(d, { bas: getBasIntervals(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
+}
+function ritaLoneskillnadPerBas(vm) {
+  const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
   const overviewEl = document.getElementById("chart-skevhet-overview");
   if (overviewEl) {
-    const bars = _laOversiktRader(d, bas);
-    const storst = bars.slice().sort((a, b) => Math.abs(100 - b.gap) - Math.abs(100 - a.gap))[0];
-    if (bars.length) ritaFigur(overviewEl, _skevhetFigur(bars), { exportAnteckning: `Störst skillnad: BAS ${storst.bas}, kvinnors median ${talformat(storst.gap, "pct")} av männens` });
+    const bars = vm.oversikt.rader;
+    if (bars.length) ritaFigur(overviewEl, _skevhetFigur(bars), { exportAnteckning: vm.oversikt.exportAnteckning });
     else rensaFigur(overviewEl);
-    _laOversiktTabell(bars, d);
+    _laOversiktTabell(vm.oversikt);
     const ladEl = document.getElementById("chart-skevhet-lador");
     if (ladEl) {
-      const { figur, utelamnade } = _konTathetFigur(d, true, kTroskel(), "lada");
+      const { figur, utelamnade } = _konTathetFigur(getData(), true, kTroskel(), "lada");
       if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.niva))} ${T.niva.en} har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` });
       else rensaFigur(ladEl);
       const not = document.getElementById("skevhet-lador-not");
@@ -25133,37 +25280,25 @@ function generateSkevhet() {
     document.querySelector("#paygap-table tbody")
   );
   pgBody.innerHTML = "";
-  const pgUtelamnade = [];
-  const pgSamlad = [];
-  bas.forEach((b) => {
-    const df = d.filter((r) => r.bas === b);
-    const kv = df.filter((r) => arKvinna(r));
-    const ma = df.filter((r) => arMan(r));
-    if (kv.length < 2 || ma.length < 2) return;
-    const nCell = `<td class="t-hoger">${kv.length}/${ma.length}</td>`;
-    const m = konsMedianer(df, { k: kTroskel() }), masked = !m.konOk;
-    const evidenceCell = `<td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa beräkningen för BAS ${esc(b)}">${ikon("sok")}</button></td>`;
-    if (masked && isKMasked(df.length)) {
-      pgUtelamnade.push(b);
-      return;
-    }
-    if (masked) {
-      pgSamlad.push(b);
+  const { skillnad } = vm;
+  for (const r of skillnad.rader) {
+    const nCell = `<td class="t-hoger">${r.nKv}/${r.nMa}</td>`;
+    if (r.samlad) {
       const trS = document.createElement("tr");
-      trS.innerHTML = `<td>${esc(b)}</td>${nCell}<td class="f-dampad">–</td><td class="t-mitt" colspan="2">Gruppens median ${fmt.format(Stat.median(df.map((r) => r.lon)))}</td><td class="t-mitt">–</td>`;
+      trS.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td class="f-dampad">–</td><td class="t-mitt" colspan="2">Gruppens median ${fmt.format(r.medTot)}</td><td class="t-mitt">–</td>`;
       pgBody.appendChild(trS);
-      return;
+      continue;
     }
-    const gap = m.kvotPct.toFixed(1);
+    const evidenceCell = `<td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon("sok")}</button></td>`;
     const tr = document.createElement("tr");
-    tr._markering = markeringFor(b);
-    tr.innerHTML = `<td>${esc(b)}</td>${nCell}<td>${svPct(parseFloat(gap), 1)}${_direktivInline(parseFloat(gap))}</td><td>${fmt.format(m.medKv)}</td><td>${fmt.format(m.medMa)}</td>${evidenceCell}`;
-    tr._paygapRow = { bas: b, rader: df, kvLons: kv.map((r) => r.lon), maLons: ma.map((r) => r.lon), masked: false };
+    tr._markering = markeringFor(r.bas);
+    tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivInlineOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
+    tr._paygapRow = r.underlag;
     pgBody.appendChild(tr);
-  });
-  if (pgUtelamnade.length || pgSamlad.length) {
+  }
+  if (skillnad.utelamnade.length || skillnad.samlade.length) {
     const trN = document.createElement("tr");
-    trN.innerHTML = `<td colspan="6">${kMaskNote(pgUtelamnade, `${T.niva.en}|${T.niva.fl}`)}${kSamladNote(pgSamlad, `${T.niva.en}|${T.niva.fl}`)}</td>`;
+    trN.innerHTML = `<td colspan="6">${kMaskNote(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}${kSamladNote(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
     pgBody.appendChild(trN);
   }
   pgBody.querySelectorAll(".btn-evidence[data-paygap-row]").forEach((btn) => {
@@ -25180,52 +25315,33 @@ function generateSkevhet() {
     document.querySelector("#skevhet-table tbody")
   );
   skBody.innerHTML = "";
-  const skUtelamnade = [];
-  const skRader = [];
-  bas.forEach((b) => {
-    const df = d.filter((r) => r.bas === b);
-    const nKv = df.filter((r) => arKvinna(r)).length;
-    const nMa = df.filter((r) => arMan(r)).length;
-    const tot = nKv + nMa;
-    if (tot < LITET_UNDERLAG) {
-      if (tot > 0) skUtelamnade.push(b);
-      return;
-    }
-    const pctKv = (nKv / tot * 100).toFixed(1), pctMa = (nMa / tot * 100).toFixed(1);
-    skRader.push({ bas: b, tot, pctKv: parseFloat(pctKv), pctMa: parseFloat(pctMa) });
-    const underrep = parseFloat(pctKv) < 40 ? "Kvinna" : parseFloat(pctMa) < 40 ? "Man" : "-";
+  const { konsfordelning } = vm;
+  for (const r of konsfordelning.rader) {
+    const underrep = r.underrepresenterat || "-";
     const tr = document.createElement("tr");
-    tr._markering = markeringFor(b);
-    tr.innerHTML = `<td>${esc(b)}</td><td>${tot}</td><td>${nKv}</td><td>${nMa}</td><td>${svPct(parseFloat(pctKv), 1)}</td><td>${svPct(parseFloat(pctMa), 1)}</td><td${underrep !== "-" ? ' class="f-kritisk"' : ""}>${underrep}</td>`;
+    tr._markering = markeringFor(r.bas);
+    tr.innerHTML = `<td>${esc(r.bas)}</td><td>${r.tot}</td><td>${r.nKv}</td><td>${r.nMa}</td><td>${svPct(r.pctKv, 1)}</td><td>${svPct(r.pctMa, 1)}</td><td${underrep !== "-" ? ' class="f-kritisk"' : ""}>${underrep}</td>`;
     skBody.appendChild(tr);
-  });
-  if (skUtelamnade.length) {
+  }
+  if (konsfordelning.utelamnade.length) {
     const trN = document.createElement("tr");
     trN.className = "skevhet-not";
-    trN.innerHTML = `<td colspan="7">${_skevhetNot(skUtelamnade)}</td>`;
+    trN.innerHTML = `<td colspan="7">${_skevhetNot(konsfordelning.utelamnade)}</td>`;
     skBody.appendChild(trN);
   }
   const skEl = document.getElementById("chart-skevhet-andel");
   if (skEl) {
-    if (skRader.length) ritaFigur(skEl, _skevhetAndelFigur(skRader));
+    if (konsfordelning.rader.length) ritaFigur(skEl, _skevhetAndelFigur(konsfordelning.rader));
     else rensaFigur(skEl);
   }
   const baseS = buildBaseAudit();
-  let pgKMasked = 0;
-  bas.forEach((b) => {
-    const df = d.filter((r) => r.bas === b);
-    const kv = df.filter((r) => arKvinna(r));
-    const ma = df.filter((r) => arMan(r));
-    if (kv.length < 2 || ma.length < 2) return;
-    if (isKMasked(kv.length) || isKMasked(ma.length)) pgKMasked++;
-  });
   setAudit("skevhet", {
     title: "Löneskillnad och könsfördelning",
     ...baseS,
     usedInAnalysis: baseS.afterFilter,
     analysisExclusions: [
-      ...pgKMasked > 0 ? [[`${stor(T.niva.fl)} maskerade (k-anonymitet n&lt;${kTroskel()} per kön)`, pgKMasked]] : [],
-      ...skUtelamnade.length > 0 ? [[`${stor(T.niva.fl)} för små för könsfördelningen (n&lt;${LITET_UNDERLAG} totalt, ADR-57)`, skUtelamnade.length]] : []
+      ...skillnad.maskerade > 0 ? [[`${stor(T.niva.fl)} maskerade (k-anonymitet n&lt;${kTroskel()} per kön)`, skillnad.maskerade]] : [],
+      ...konsfordelning.utelamnade.length > 0 ? [[`${stor(T.niva.fl)} för små för könsfördelningen (n&lt;${LITET_UNDERLAG} totalt, ADR-57)`, konsfordelning.utelamnade.length]] : []
     ],
     formler: [
       ["Kvinnors lön i % av mäns", "<code>median(kvinnors lön) / median(mäns lön) × 100 %</code>. 100 % = lika lön."],
@@ -25248,12 +25364,10 @@ function _laStabilitetRad(hel) {
   if (m = /^(Kan inte prövas)(.*)$/.exec(hel)) return esc(m[1]) + dold(m[2]);
   return esc(hel);
 }
-function _ansvarsUnderraderFor(yrkesRader, fmt) {
-  if (!yrkesRader.some((x) => x.ansvarsgrupp)) return [];
-  const under = ansvarsUnderrader(yrkesRader, { k: kTroskel() });
-  if (under.length < 2) return [];
+function _ansvarsUnderraderFor(ansvar, fmt) {
+  if (!ansvar) return [];
   const pct = (v) => `${v.toFixed(1).replace(".", ",")} %`;
-  const ut = under.map((u) => {
+  const ut = ansvar.grupper.map((u) => {
     const tr = document.createElement("tr");
     tr.className = "la-underrad";
     let celler;
@@ -25265,89 +25379,51 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
     tr.hidden = true;
     return tr;
   });
-  if (under.some((u) => u.grupp === "ledning")) {
-    const ovriga = konsMedianer(yrkesRader.filter((x) => x.ansvarsgrupp && x.ansvarsgrupp !== "ledning"), { k: kTroskel() });
-    if (ovriga.konOk) {
-      const tr = document.createElement("tr");
-      tr.className = "la-underrad";
-      tr.innerHTML = `<td colspan="11" class="la-underrad-namn">Utan ledningsansvar: kvinnors lön i % av mäns ${pct(ovriga.kvotPct)}</td>`;
-      tr.hidden = true;
-      ut.push(tr);
-    }
+  if (ansvar.utanLedning != null) {
+    const tr = document.createElement("tr");
+    tr.className = "la-underrad";
+    tr.innerHTML = `<td colspan="11" class="la-underrad-namn">Utan ledningsansvar: kvinnors lön i % av mäns ${pct(ansvar.utanLedning)}</td>`;
+    tr.hidden = true;
+    ut.push(tr);
   }
   return ut;
 }
-function _skrReferensCell(yrke) {
-  const ref = skrKvinnoandel(yrke, { del: _skrDel() });
+function _skrReferensCell(ref) {
   return ref ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="Andel kvinnor nationellt: ${ref.niva === "etikett" ? "AID-etiketten" : "AID-prefixet " + esc(ref.prefix)} i ${skrDelText(ref.del)}, ${esc(skrKallaKort())}">${svPct(ref.pct, 0)}</td>` : `<td data-sort-value="" title="${stor(T.kod.bf)} finns inte i ${esc(skrKallaKort())}">–</td>`;
 }
 var LA_DOLDA_KOLUMNER = ["dominans", "nationellt"];
 var LA_OVERSIKT_DOLDA_KOLUMNER = ["direktiv"];
-function generateEUDirectiveMatrix({ reg: given } = {}) {
+function laVymodell() {
+  const d = getData();
+  return vymodellLikaArbete(d, {
+    k: kTroskel(),
+    golv: statGolv(),
+    sigma: state.powerAnalysis?.sigma,
+    dominansDefinition: aidbasDefinition(),
+    dominansGrans: aidbasGrans(),
+    skrDel: _skrDel(),
+    lika: d.length ? laLikaGrupper(d) : void 0,
+    tratt: d.length ? _laTrattUnderlag(d) : void 0
+  });
+}
+function ritaLikaArbete(vm, { reg: given } = {}) {
   const tbody = document.querySelector("#matrix-table tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
-  const d = getData();
-  if (!d.length) return;
+  if (!vm) return;
   const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
-  const lika = laLikaGrupper(d);
-  _laRitaTratt(d);
-  const rows = [];
-  const utelamnadeYrken = lika.utelamnade;
-  const samladMedianYrken = [];
-  lika.grupper.forEach((g) => {
-    const { yrke, aid, bas, nKv, nMa, tot } = g;
-    const pctKv = nKv / tot;
-    const dominans2 = dominans(pctKv * 100, aidbasDefinition(), aidbasGrans());
+  _laRitaTratt(vm.tratt);
+  const rows = vm.grupper.map((g) => {
     if (g.samladMedian) {
-      samladMedianYrken.push(gruppMedBas(g));
-      rows.push({
-        yrke,
-        aid,
-        bas,
-        nKv,
-        nMa,
-        tot,
-        dominans: dominans2,
-        medTot: g.medTot,
-        gap: 0,
-        samladMedian: true,
-        statusKlass: "",
-        status: `<span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; ${kTroskel()}<span class="bara-export">)</span></span>`
-      });
-      return;
+      return { ...g, statusKlass: "", status: `<span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; ${kTroskel()}<span class="bara-export">)</span></span>` };
     }
-    const { medKv, medMa, kvot: ratio, gapPct: gap } = g;
     const bara = (t) => `<span class="bara-export">${t}</span>`;
     const st = gapStatusNiva(g.niva);
-    const tips = g.niva === "ejbedomd" ? `Går ej att bedöma: ett kön har färre än ${statGolv()} ${personOrd(statGolv())}, för få för att pröva skillnaden` : g.niva === "granska" ? "Skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)" : g.niva === "folj" ? g.sakerstalld ? "Skillnaden är statistiskt säkerställd men under 3 % (verktygets storleksgräns)" : "Skillnaden är minst 3 % men inte statistiskt säkerställd (inom slumpens gränser för gruppen)" : "Skillnaden är under 3 % och inte statistiskt säkerställd";
     const fargKlass = { granska: "farg-granska", varning: "farg-varning", ok: "farg-ok" }[st.farg] || "farg-dampad";
-    let status = `<span class="la-status ${fargKlass}" title="${esc(tips)}">${ikon(st.ikon)} ${esc(st.serie)}${bara(` (${esc(st.grans)})`)}</span>`;
+    let status = `<span class="la-status ${fargKlass}" title="${esc(g.tips)}">${ikon(st.ikon)} ${esc(st.serie)}${bara(` (${esc(st.grans)})`)}</span>`;
     const statusKlass = g.niva === "granska" ? "rad-granska" : g.niva === "folj" ? "rad-folj" : "";
-    if (g.flaggad && g.stabilitet) {
-      const stabil = stabilitetKort(g.stabilitet, kTroskel());
-      status += ` <br><span class="la-stabilitet" title="${esc(stabil)}">${_laStabilitetRad(stabil)}</span>`;
-    }
-    const displayGap = svPct(ratio * 100, 1);
-    rows.push({
-      yrke,
-      aid,
-      bas,
-      nKv,
-      nMa,
-      tot,
-      dominans: dominans2,
-      medKv,
-      medMa,
-      gap,
-      displayGap,
-      status,
-      statusKlass,
-      samladMedian: false,
-      niva: g.niva,
-      direktiv: g.direktiv,
-      kvot: ratio * 100
-    });
+    if (g.stabilitet) status += ` <br><span class="la-stabilitet" title="${esc(g.stabilitet)}">${_laStabilitetRad(g.stabilitet)}</span>`;
+    return { ...g, displayGap: svPct(g.kvot, 1), status, statusKlass };
   });
   const kvotDoman = _laOversiktDoman(rows.filter((r) => !r.samladMedian && isFinite(r.kvot)).map((r) => ({ gap: r.kvot })));
   rows.forEach((r) => {
@@ -25356,14 +25432,11 @@ function generateEUDirectiveMatrix({ reg: given } = {}) {
     const cellKv = r.samladMedian ? `<td colspan="2" class="t-mitt" data-sort-value="${r.medTot}">Gruppens median ${fmt.format(r.medTot)}</td>` : `<td data-sort-value="${r.medKv}">${fmt.format(r.medKv)}</td>`;
     const cellMa = r.samladMedian ? "" : `<td data-sort-value="${r.medMa}">${fmt.format(r.medMa)}</td>`;
     const gapSort = r.gap;
-    const groupGap = Math.abs(r.gap - 100);
-    const grpMDE = computeGroupMDE(r.nKv, r.nMa);
-    const lowPower = grpMDE && (grpMDE.tooSmall || grpMDE.mdePct > groupGap);
-    const powerBadge = lowPower && !r.samladMedian ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(grpMDE.mdePct, 1)}, ${grpMDE.tooSmall ? "och underlaget per kön är litet (<5)" : "större än observerad avvikelse"}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke hjalp-markor">${ikon("statusVarning", 14)}</span>` : "";
-    tr.innerHTML = `<td>${esc(r.yrke)}${powerBadge}</td><td class="text">${esc(r.bas ?? "")}</td><td class="text">${r.status}</td><td data-sort-value="${r.tot}">${r.tot} (${r.nKv}/${r.nMa})</td><td>${r.dominans}</td>${_skrReferensCell(r.yrke)}${cellKv}${cellMa}<td data-sort-value="${gapSort}">${r.samladMedian ? "–" : `<span class="la-kvotcell"${_kvotcellTitel(r)}>${_laOversiktGrafik({ gap: r.kvot, ci: null }, kvotDoman, gapStatusNiva(r.niva), 64)}<span>${r.displayGap}</span></span>`}</td>${r.samladMedian ? '<td class="t-mitt" data-sort-value="0"></td>' : _direktivCell(r.kvot)}<td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="${esc(r.yrke)}" data-bas="${esc(r.bas ?? "")}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(r.yrke)} i Löneöversikten">${ikon("pilUt", 14)}</button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(r.yrke)}">${ikon("sok")}</button></td>`;
+    const powerBadge = r.lagStyrka ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(r.lagStyrka.mdePct, 1)}, ${r.lagStyrka.tooSmall ? "och underlaget per kön är litet (<5)" : "större än observerad avvikelse"}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke hjalp-markor">${ikon("statusVarning", 14)}</span>` : "";
+    tr.innerHTML = `<td>${esc(r.yrke)}${powerBadge}</td><td class="text">${esc(r.bas ?? "")}</td><td class="text">${r.status}</td><td data-sort-value="${r.tot}">${r.tot} (${r.nKv}/${r.nMa})</td><td>${r.dominans}</td>${_skrReferensCell(r.nationellt)}${cellKv}${cellMa}<td data-sort-value="${gapSort}">${r.samladMedian ? "–" : `<span class="la-kvotcell"${_kvotcellTitel(r)}>${_laOversiktGrafik({ gap: r.kvot, ci: null }, kvotDoman, gapStatusNiva(r.niva), 64)}<span>${r.displayGap}</span></span>`}</td>${r.samladMedian ? '<td class="t-mitt" data-sort-value="0"></td>' : _direktivCell(r.direktiv)}<td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="${esc(r.yrke)}" data-bas="${esc(r.bas ?? "")}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(r.yrke)} i Löneöversikten">${ikon("pilUt", 14)}</button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(r.yrke)}">${ikon("sok")}</button></td>`;
     tr._euRow = r;
     tbody.appendChild(tr);
-    const under = _ansvarsUnderraderFor(d.filter((x) => aidAvRad(x) === r.aid && String(x.bas) === r.bas), fmt);
+    const under = _ansvarsUnderraderFor(r.ansvar, fmt);
     under.forEach((u) => tbody.appendChild(u));
     if (under.some((u) => u.classList.contains("la-underrad-ansvar"))) {
       const pil = document.createElement("button");
@@ -25387,12 +25460,12 @@ function generateEUDirectiveMatrix({ reg: given } = {}) {
       );
     }
   });
-  if (utelamnadeYrken.length || samladMedianYrken.length) {
+  if (vm.utelamnade.length || vm.samlade.length) {
     const trN = document.createElement("tr");
-    trN.innerHTML = `<td colspan="11">${kMaskNote(utelamnadeYrken, `${T.enhet.en}|${T.enhet.fl}`)}${kSamladNote(samladMedianYrken, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
+    trN.innerHTML = `<td colspan="11">${kMaskNote(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}${kSamladNote(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
     tbody.appendChild(trN);
   }
-  if (lika.grupper.some((g) => g.flaggad)) {
+  if (vm.skor) {
     const trS = document.createElement("tr");
     trS.innerHTML = `<td colspan="11" class="text-dampad-xs">Skör betyder att skillnaden kan hamna under 3 % (statusens storleksgräns) om en eller två personer tas bort ur gruppen. Statusen ligger kvar — märkningen visar var enskilda löner avgör utfallet. Kolumnen ${esc(_STS_DIR_ETIKETT)} är direktivmarkeringen på den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</td>`;
     tbody.appendChild(trS);
@@ -25408,8 +25481,8 @@ function generateEUDirectiveMatrix({ reg: given } = {}) {
     });
   });
   const baseM = buildBaseAudit();
-  const skippedTooFewKvOrMa = lika.ejJamforbara.length;
-  const maskedYrken = utelamnadeYrken.length;
+  const skippedTooFewKvOrMa = vm.ejJamforbara.length;
+  const maskedYrken = vm.utelamnade.length;
   const reg = given || runOLSRegression();
   const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct(reg.R2 * 100, 1)}`;
   setAudit("matrix", {
@@ -25494,20 +25567,13 @@ function _laOversiktGrafik(o, dom, status, bredd) {
   const symbol = status.symbol === "romb" ? `<path d="M${px},${m - 6}L${px + 6},${m}L${px},${m + 6}L${px - 6},${m}Z" fill="${farg}" stroke="#fff"/>` : status.symbol === "kvadrat" ? `<rect x="${px - 4.5}" y="${m - 4.5}" width="9" height="9" rx="1" fill="${farg}" stroke="#fff"/>` : `<circle cx="${px}" cy="${m}" r="5" fill="${farg}" stroke="#fff"/>`;
   return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false"><rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETTE.semantic.ok}" fill-opacity="0.12"/><line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETTE.semantic.mork}" stroke-width="1.2"/>` + (o.ci ? `<line x1="${x(o.ci.lo)}" x2="${x(o.ci.hi)}" y1="${m}" y2="${m}" stroke="${farg}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>` : "") + symbol + "</svg>";
 }
-function _laOversiktTabell(bars, d = getData()) {
+function _laOversiktTabell(ov) {
   const tb = document.querySelector("#la-oversikt tbody"), skala = document.getElementById("la-oversikt-skala");
   if (!tb) return;
   tb.innerHTML = "";
+  const bars = ov.rader;
   const not = document.getElementById("la-oversikt-not");
-  if (not) {
-    const iTabell = new Set(bars.map((o) => o.bas)), forSma = [], ettKon = [];
-    for (const b2 of getBasIntervals()) {
-      if (iTabell.has(b2)) continue;
-      const n = d.filter((r) => r.bas === b2).length;
-      if (n) (isKMasked(n) ? forSma : ettKon).push(b2);
-    }
-    not.innerHTML = kMaskNote(forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ettKon);
-  }
+  if (not) not.innerHTML = kMaskNote(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
   if (skala) skala.innerHTML = "";
   if (!bars.length) {
     tb.innerHTML = `<tr><td colspan="9" class="la-oversikt-tom">För få ${T.niva.fl} där både kvinnor och män når minsta gruppstorlek.</td></tr>`;
@@ -25520,17 +25586,15 @@ function _laOversiktTabell(bars, d = getData()) {
     skala.innerHTML = `<svg viewBox="0 0 ${b} 16" width="${b}" height="16" aria-hidden="true" focusable="false">` + [95, 100, 105].map((v) => `<text x="${x(v)}" y="12" text-anchor="middle" font-size="11" fill="currentColor">${v}${v === 100 ? " %" : ""}</text>`).join("") + "</svg>";
   }
   for (const o of bars) {
-    const status = _laOversiktStatus(o);
-    const skillnad = Math.round(o.medKv) - Math.round(o.medMa);
+    const status = gapStatusNiva(o.niva);
+    const skillnad = o.skillnadKr;
     const tr = document.createElement("tr");
     tr._markering = markeringFor(o.bas);
-    tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<span class="la-oversikt-verktyg"><button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon("sok")}</button>${basdossierKnapp(o.bas, { ikonEndast: true })}</span></th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${talformat(o.medKv, "kr")}</td><td class="tal">${talformat(o.medMa, "kr")}</td><td class="tal">${skillnad < 0 ? "−" : skillnad > 0 ? "+" : ""}${talformat(Math.abs(skillnad), "kr")}</td><td class="la-oversikt-cell" data-export-utelamna>${_laOversiktGrafik(o, dom, status)}</td><td class="tal la-oversikt-kvot" data-sort-value="${o.gap.toFixed(3)}">${svPct(o.gap, 1)}${o.ci ? `<span class="la-oversikt-ki">${svTal(o.ci.lo, 1)}–${svPct(o.ci.hi, 1)}</span>` : ""}</td><td><span class="la-status ar-${status.farg}" title="${esc(status.serie)}: ${esc(status.grans)}">${ikon(status.ikon)}${esc(status.serie)}</span></td>` + _direktivCell(o.gap);
+    tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<span class="la-oversikt-verktyg"><button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon("sok")}</button>${basdossierKnapp(o.bas, { ikonEndast: true })}</span></th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${talformat(o.medKv, "kr")}</td><td class="tal">${talformat(o.medMa, "kr")}</td><td class="tal">${skillnad < 0 ? "−" : skillnad > 0 ? "+" : ""}${talformat(Math.abs(skillnad), "kr")}</td><td class="la-oversikt-cell" data-export-utelamna>${_laOversiktGrafik(o, dom, status)}</td><td class="tal la-oversikt-kvot" data-sort-value="${o.gap.toFixed(3)}">${svPct(o.gap, 1)}${o.ci ? `<span class="la-oversikt-ki">${svTal(o.ci.lo, 1)}–${svPct(o.ci.hi, 1)}</span>` : ""}</td><td><span class="la-status ar-${status.farg}" title="${esc(status.serie)}: ${esc(status.grans)}">${ikon(status.ikon)}${esc(status.serie)}</span></td>` + _direktivCell(o.direktiv);
     tb.appendChild(tr);
-    const df = d.filter((r) => r.bas === o.bas);
-    const payload = { bas: o.bas, rader: df, kvLons: df.filter((r) => arKvinna(r)).map((r) => r.lon), maLons: df.filter((r) => arMan(r)).map((r) => r.lon), masked: false };
     tr.querySelector("[data-la-bevis]")?.addEventListener("click", (e) => {
       e.stopPropagation();
-      _openEvidenceModal(_evidenceForPaygapRow(payload));
+      _openEvidenceModal(_evidenceForPaygapRow(o.underlag));
     });
   }
   flerKolumner("la-oversikt", LA_OVERSIKT_DOLDA_KOLUMNER, "laOversikt");
@@ -25591,12 +25655,11 @@ function _laTrattFigur(u, k = kTroskel()) {
     ].filter((l) => l.data.length)
   };
 }
-function _laRitaTratt(d) {
+function _laRitaTratt(u) {
   const el = document.getElementById("chart-la-tratt"), kort = document.getElementById("la-tratt-kort"), not = document.getElementById("la-tratt-not");
   if (!el) return;
-  const u = d && d.length ? _laTrattUnderlag(d) : null;
-  if (kort) kort.hidden = !u || u.punkter.length < 2;
-  if (!u || u.punkter.length < 2) {
+  if (kort) kort.hidden = !u;
+  if (!u) {
     rensaFigur(el);
     if (not) not.textContent = "";
     _setDiagramMetodNot("chart-la-tratt", null);
@@ -26167,10 +26230,10 @@ function renderStructure() {
       tillampaDataStil(distEl);
     }
   }
-  const underlag = (rita) => ({ dimensioner: [UNDERLAG.sektor, UNDERLAG.bas], rader: d, k, rita });
+  const underlag2 = (rita) => ({ dimensioner: [UNDERLAG.sektor, UNDERLAG.bas], rader: d, k, rita });
   {
     const pEl = document.getElementById("chart-struktur-percentiler");
-    if (pEl && dist.length && dist.every((x) => x.gapPct != null)) ritaFigur(pEl, { ..._strukturPercentilFigur(dist), underlag: underlag(_strukturPercentilFor) });
+    if (pEl && dist.length && dist.every((x) => x.gapPct != null)) ritaFigur(pEl, { ..._strukturPercentilFigur(dist), underlag: underlag2(_strukturPercentilFor) });
   }
   const antal = (n) => n == null ? "–" : n;
   const kvGammal = document.getElementById("chart-struktur-kvartiler");
@@ -26190,7 +26253,7 @@ function renderStructure() {
   const kvEl = document.getElementById("chart-struktur-kvartiler");
   if (kvEl && q.length && q.every((x) => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(
     kvEl,
-    { ..._strukturKvartilFigur(q, totAndel), underlag: underlag(_strukturKvartilFor) },
+    { ..._strukturKvartilFigur(q, totAndel), underlag: underlag2(_strukturKvartilFor) },
     { exportAnteckning: `Andel kvinnor: ${talformat(q[0].andelKv, "pct")} i lägsta kvartilen, ${talformat(q[q.length - 1].andelKv, "pct")} i högsta` }
   );
   renderSektorer(d);
@@ -26899,8 +26962,8 @@ function __excelAlltBokExport() {
     }
   };
   ensure("#rapport-table tbody tr", generateRapport);
-  ensure("#skevhet-table tbody tr", generateSkevhet);
-  ensure("#matrix-table tbody tr", generateEUDirectiveMatrix);
+  ensure("#skevhet-table tbody tr", () => ritaLoneskillnadPerBas(lsBasVymodell()));
+  ensure("#matrix-table tbody tr", () => ritaLikaArbete(laVymodell()));
   if (state.policy.length || state.statistik.length) ensure("#prio-table tbody tr", renderPrioritering);
   if (state.statistik.length) ensure("#benchmark-table tbody tr", generateBenchmark);
   const wb = XLSX.utils.book_new();
@@ -32038,14 +32101,14 @@ function _renderTabContent(target) {
     generateBenchmark();
   } else if (target === "matrix" && d.length) {
     const reg = runOLSRegression();
-    generateEUDirectiveMatrix({ reg });
+    ritaLikaArbete(laVymodell(), { reg });
     renderPersonerAttGranska();
     renderAidBasLika();
     renderLikaArbeteTopp({ reg });
   } else if (target === "prioritering" && d.length) renderPrioritering();
   else if (target === "struktur" && d.length) {
     renderStructure();
-    generateSkevhet();
+    ritaLoneskillnadPerBas(lsBasVymodell());
     _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => renderBlinderOaxacaCard(renderRegressionCard()));
     renderGapUppdelning();
     renderLonestrukturNycklar();
@@ -34564,9 +34627,9 @@ function _rfUrvalVisaAlla(el) {
   if (aktivt) _rfRitaSakert(el);
   _rfUrvalUppdatera(el);
 }
-function _rfUrvalNot(el, delar, fel = [], harlett = [], underlag = { fel: "", rakna: "", info: "" }) {
+function _rfUrvalNot(el, delar, fel = [], harlett = [], underlag2 = { fel: "", rakna: "", info: "" }) {
   let not = el._rfUrvalNotEl;
-  const u = underlag || { fel: "", rakna: "", info: "" };
+  const u = underlag2 || { fel: "", rakna: "", info: "" };
   if ((!delar || !delar.length) && !fel.length && !harlett.length && !u.fel && !u.rakna && !u.info) {
     if (not) not.remove();
     delete el._rfUrvalNotEl;
@@ -34859,17 +34922,17 @@ function _rfExportFigur(gd) {
   }
   const figur = gd._figur;
   const und = gd._rfUnderlagText ? gd._rfUnderlagFigur || null : null;
-  const underlag = gd._rfUnderlagText ? { figur: und, text: gd._rfUnderlagText, tom: !und || antalPunkter(visaSma ? und : utanSmaGrupper(und)) === 0 } : null;
+  const underlag2 = gd._rfUnderlagText ? { figur: und, text: gd._rfUnderlagText, tom: !und || antalPunkter(visaSma ? und : utanSmaGrupper(und)) === 0 } : null;
   return {
     figur,
-    bild: underlag ? und ? _rfZoomad(gd, und) : null : _rfZoomad(gd, figur),
+    bild: underlag2 ? und ? _rfZoomad(gd, und) : null : _rfZoomad(gd, figur),
     hel: _rfZoomad(gd, figur),
     utsnitt: !!gd._rfZoom,
     visaSma,
     dolda: new Set(gd._figurDolda || []),
     filter: _rfUrvalKopia(gd._figurFilter),
     tom: antalPunkter(visaSma ? figur : utanSmaGrupper(figur)) === 0,
-    underlag
+    underlag: underlag2
   };
 }
 
@@ -35371,8 +35434,8 @@ async function _buildPrintReportExport() {
     let bilagor = "";
     if (helaDokumentationen) {
       generateRapport();
-      generateSkevhet();
-      generateEUDirectiveMatrix();
+      ritaLoneskillnadPerBas(lsBasVymodell());
+      ritaLikaArbete(laVymodell());
       if (state.statistik.length) generateBenchmark();
       const imgs = {};
       renderKon("__ALLA__");
