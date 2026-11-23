@@ -1629,12 +1629,12 @@ const __mirrorKostnad = (() => {
 
 /**
  * Kostnadsinställningarna med standardvärdena ifyllda.
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval
  * @returns {{months: number, poPct: number, poFaktor: number}}  poFaktor = 1 + poPct / 100
  */
-function kostnadsfaktor(costSettings) {
-    const months = (costSettings && costSettings.months) || 12;
-    const poPct = (costSettings && costSettings.poPct) || 0;
+function kostnadsfaktor(kostnadsval) {
+    const months = (kostnadsval && kostnadsval.months) || 12;
+    const poPct = (kostnadsval && kostnadsval.poPct) || 0;
     return { months, poPct, poFaktor: 1 + poPct / 100 };
 }
 
@@ -1642,10 +1642,10 @@ function kostnadsfaktor(costSettings) {
  * En redan summerad månadskostnad för hela perioden med PO-påslag: belopp × månader × (1 + PO). Beloppet behåller
  * sitt tecken.
  * @param {number} kronorPerManad
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval
  */
-function periodkostnad(kronorPerManad, costSettings) {
-    const { months, poFaktor } = kostnadsfaktor(costSettings);
+function periodkostnad(kronorPerManad, kostnadsval) {
+    const { months, poFaktor } = kostnadsfaktor(kostnadsval);
     return kronorPerManad * months * poFaktor;
 }
 
@@ -1655,10 +1655,10 @@ function periodkostnad(kronorPerManad, costSettings) {
  * gruppdossierns räkneexempel räknar med samma formel.
  * @param {number} kronorPerManad
  * @param {number} antal
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval
  */
-function kostnadPerAr(kronorPerManad, antal, costSettings) {
-    return periodkostnad(Math.abs(kronorPerManad), costSettings) * antal;
+function kostnadPerAr(kronorPerManad, antal, kostnadsval) {
+    return periodkostnad(Math.abs(kronorPerManad), kostnadsval) * antal;
 }
 
     return { kostnadsfaktor, periodkostnad, kostnadPerAr };
