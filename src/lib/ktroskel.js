@@ -139,11 +139,11 @@ export function parUtelamnadeNot(antal, k) {
  * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
  * utelämnas. `not` är meningen om de utelämnade (tom när inga utelämnats). Ordningen bevaras och
  * objekten är desamma som i indata.
- * @param {any[]|undefined} pairs
+ * @param {any[]|undefined} allaPar
  * @param {number} k
  */
-export function parForRedovisning(pairs, k) {
-    const alla = pairs || [];
+export function parForRedovisning(allaPar, k) {
+    const alla = allaPar || [];
     const par = alla.filter(p => parNarK(p, k));
     const utelamnade = alla.length - par.length;
     return { par, utelamnade, not: parUtelamnadeNot(utelamnade, k) };
@@ -179,12 +179,12 @@ export function kSidfot(text, kInstalld) {
 
 const harStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
 /** Tabell-CSV: stämpeln som sista rad, om den inte redan står i raderna (diagramdata). */
-export function csvMedStampel(rows, undantag, kInstalld) {
-    return harStampel(rows) ? rows : [...rows, [], [kStampelFor(undantag, kInstalld)]];
+export function csvMedStampel(rader, undantag, kInstalld) {
+    return harStampel(rader) ? rader : [...rader, [], [kStampelFor(undantag, kInstalld)]];
 }
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
-export function tsvMedStampel(rows, undantag, kInstalld) {
-    return (kSanktNot(kInstalld) || undantag) && !harStampel(rows) ? [...rows, [], [kStampelFor(undantag, kInstalld)]] : rows;
+export function tsvMedStampel(rader, undantag, kInstalld) {
+    return (kSanktNot(kInstalld) || undantag) && !harStampel(rader) ? [...rader, [], [kStampelFor(undantag, kInstalld)]] : rader;
 }
 
 /** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
