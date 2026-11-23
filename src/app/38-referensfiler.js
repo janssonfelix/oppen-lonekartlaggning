@@ -11,7 +11,7 @@ import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
 import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { renderPaketInfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
-import { markUploadLoaded, readTabularFile, renderFilrutor, resetUploadCell } from './32-filinlasning.js';
+import { markeraFilrutaInlast, lasTabellfil, ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 
 // ---- File Upload: Policy CSV ----
@@ -87,7 +87,7 @@ export function uppstartReferensfiler() {
         if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
         const fil = document.getElementById('file-input-policy');
         if (fil) /** @type {HTMLInputElement} */ (fil).value = '';   // samma fil ska kunna laddas upp igen
-        if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
+        if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         ritaOmReferens();
     });
     policyInput.addEventListener("change", e => {
@@ -99,7 +99,7 @@ export function uppstartReferensfiler() {
         // (yrke oavsett BAS) eller AID+BAS (mest specifik). Uppslaget sker via
         // policyFor(), som följer specificitetsordningen. _hittaCsvRubrik poängsätter
         // synonymträffar (kräver inte alla grupper), så BAS-only-filer hittas också.
-        readTabularFile(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], res => {
+        lasTabellfil(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], res => {
             if (!res.ok) {
                 doljLaddning();
                 policyStatus.textContent = '' + res.error;
@@ -120,8 +120,8 @@ export function uppstartReferensfiler() {
                 + ` · ${res.encoding === 'XLSX' ? res.format : res.encoding}`;
             policyStatus.className = "status-msg success";
             synkaJamforelseFlik();
-            markUploadLoaded('upload-cell-policy', 'Inläst');
-            state.filnamn.policy = file.name; renderFilrutor();
+            markeraFilrutaInlast('upload-cell-policy', 'Inläst');
+            state.filnamn.policy = file.name; ritaFilrutor();
             doljLaddning(); ritaKravstatus();
             renderConsistencyBanner();
             renderActionChecklist();
@@ -134,9 +134,9 @@ export function uppstartReferensfiler() {
         if (!file) return;
         visaLaddning();
         // Gemensam läsväg (samma som struktur/policy/historik): CSV alla kodningar +
-        // preamble-tolerans, XLSX, och tydligt .xls-besked. Rubrikraden hittas av readTabularFile via synonymerna
+        // preamble-tolerans, XLSX, och tydligt .xls-besked. Rubrikraden hittas av lasTabellfil via synonymerna
         // AID + Median; kolumnrollerna mappas därefter på de funna rubrikerna.
-        readTabularFile(file, [["aid", "yrkesgrupp"], ["median"]], res => {
+        lasTabellfil(file, [["aid", "yrkesgrupp"], ["median"]], res => {
             if (!res.ok) {
                 doljLaddning();
                 statStatus.textContent = "Fel: " + res.error;
@@ -222,8 +222,8 @@ export function uppstartReferensfiler() {
                     ? `${state.statistik.length} poster inlästa (median + ${extras.join(' + ')})`
                     : `${state.statistik.length} poster inlästa`) + ` · ${src}`;
                 statStatus.className = "status-msg success";
-                markUploadLoaded('upload-cell-stat', 'Inläst');
-                state.filnamn.statistik = file.name; renderFilrutor();
+                markeraFilrutaInlast('upload-cell-stat', 'Inläst');
+                state.filnamn.statistik = file.name; ritaFilrutor();
                 if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
                 synkaJamforelseFlik();
                 doljLaddning(); ritaKravstatus();

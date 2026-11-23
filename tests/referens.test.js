@@ -106,7 +106,7 @@ describe('referensbyte ritar om allt som namnger referensen', () => {
         expect(lista()).not.toContain('Egen A');
     });
     it('"Återgå" rensar åtgärdslistan, uppladdningsmärket och filfältet', () => {
-        w.eval("markUploadLoaded('upload-cell-policy', 'Inläst')");
+        w.eval("markeraFilrutaInlast('upload-cell-policy', 'Inläst')");
         w.document.getElementById('btn-referens-aterga').click();
         expect(lista()).not.toContain('Egen B');
         expect(w.document.getElementById('upload-cell-policy').textContent).not.toContain('Inläst');

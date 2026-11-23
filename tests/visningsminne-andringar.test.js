@@ -45,7 +45,7 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         expect(await jamforAlla(w), 'kvantilregressionen').toEqual([]);
         // Inläsningens efterarbete (skevheten, kurvorna per kön, bootstrap-KI, Att göra) körs efter att gränssnittet målats.
         papa(w);
-        w.loadStructureFile(csvFil(w, lonefil(300), 'lonefil.csv'));
+        w.lasInStrukturfil(csvFil(w, lonefil(300), 'lonefil.csv'));
         const status = () => w.document.getElementById('data-status').textContent;
         for (let i = 0; i < 500 && !/förbereder analyser/.test(status()); i++) await vanta(1);
         expect(status()).toMatch(/förbereder analyser/);

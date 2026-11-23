@@ -101,7 +101,7 @@ beforeAll(() => {
                 { aid: '2000', bas: 'C', median: 36500, andelKv: 15, aidFull: '2000 Ingenjör' }
             ];
             if (state.likvardighet) state.likvardighet.result = null;
-            _deriveArbetsvarderingFromData();
+            _harledArbetsvarderingUrData();
             // Rendera vyerna som exporterna plockar tabeller ur
             ritaLoneoversikt();
             ritaLoneskillnadPerBas(lsBasVymodell());
@@ -316,7 +316,7 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
             rows.push({ bas: 'B', yrke: '5301 Undersköterska', aid: '5301', yrkeLabel: 'Undersköterska', lon, alder: 30 + i * 2, kon, poang: null, enhet: '1234' });
         win.__state.data = rows;
         win.__state.dataAudit = { totalRaw: rows.length, excludedNoBas: 0, excludedZeroLon: 0 };
-        win.eval('_deriveArbetsvarderingFromData(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell()); ritaLikaArbete(laVymodell()); renderStructure(); window.__captured = {}; exportEuReport(); exportAlltTillExcel();');
+        win.eval('_harledArbetsvarderingUrData(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell()); ritaLikaArbete(laVymodell()); renderStructure(); window.__captured = {}; exportEuReport(); exportAlltTillExcel();');
         eu = win.__captured[Object.keys(win.__captured).find(f => /eu_lonerapport/.test(f))];
         alla = win.__captured[Object.keys(win.__captured).find(f => /lonekartlaggning_komplett/.test(f))];
         expect(eu && alla).toBeTruthy();

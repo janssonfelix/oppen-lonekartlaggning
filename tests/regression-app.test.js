@@ -541,7 +541,7 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
         w.eval('_lasInDemounderlag(genereraDemodata)');   // demots inläsning; diagnostiken efteråt kör en egen
         expect(w.__regKorningar).toBe(1);
         w.__regKorningar = 0;
-        w.eval('_afterDataLoaded()');
+        w.eval('_efterInlastData()');
         expect(w.__regKorningar).toBe(1);
         const delad = DELAR.map(id => html(w, id));
         w.eval('renderUnderlagetsKvalitet(); renderProcessTracker();');

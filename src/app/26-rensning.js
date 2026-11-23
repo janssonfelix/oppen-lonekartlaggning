@@ -16,7 +16,7 @@ import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
 import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
 import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, renderPaketInfo } from './29-organisationspaket.js';
-import { renderFilrutor, resetUploadCell } from './32-filinlasning.js';
+import { ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
 import { _visaJamforelseFlik, renderReferensKort } from './38-referensfiler.js';
 import { rapportGlomHopfallning } from './39-loneoversikt.js';
@@ -192,11 +192,11 @@ export function _rensaAllData({ inbakat = true } = {}) {
     ['underlagets-kvalitet-status','underlagets-kvalitet-rader'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
 
     // 3. Återställ uppladdningsceller
-    if (typeof resetUploadCell === 'function') {
-        resetUploadCell('upload-cell-data',    'upload-cell required', 'Obligatorisk');
-        resetUploadCell('upload-cell-policy',  'upload-cell optional', 'Valfritt');
-        resetUploadCell('upload-cell-stat',    'upload-cell optional', 'Valfritt');
-        resetUploadCell('upload-cell-history', 'upload-cell optional', 'Valfritt');
+    if (typeof aterstallFilruta === 'function') {
+        aterstallFilruta('upload-cell-data',    'upload-cell required', 'Obligatorisk');
+        aterstallFilruta('upload-cell-policy',  'upload-cell optional', 'Valfritt');
+        aterstallFilruta('upload-cell-stat',    'upload-cell optional', 'Valfritt');
+        aterstallFilruta('upload-cell-history', 'upload-cell optional', 'Valfritt');
     }
     document.querySelectorAll('input[type="file"]').forEach(inp => { /** @type {HTMLInputElement} */ (inp).value = ''; });
     if (typeof renderReferensKort === 'function') renderReferensKort();
@@ -212,7 +212,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     });
     if (typeof _visaJamforelseFlik === 'function') _visaJamforelseFlik(false);
     state.filnamn = { data: null, policy: null, statistik: null };
-    if (typeof renderFilrutor === 'function') renderFilrutor();
+    if (typeof ritaFilrutor === 'function') ritaFilrutor();
     if (typeof navigeraTill === 'function') navigeraTill('dashboard');
 
     updateGdprBanner();

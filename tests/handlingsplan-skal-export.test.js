@@ -127,7 +127,7 @@ describe('demot följer inte med till en riktig fil', () => {
         const rader = ['BAS;Månadslön;Ålder;Kön;AID', ...w.__state.data.map(r => `${r.bas};${r.lon};${r.alder};${r.kon === 'man' ? 'Man' : 'Kvinna'};${r.aid}`)];
         const n = w.__state.data.length;
         w.__state.data = [];
-        w.loadStructureFile(new w.File([rader.join('\n')], 'riktig.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'riktig.csv', { type: 'text/csv' }));
         for (let i = 0; i < 200 && w.__state.data.length !== n; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.isDemo).toBe(false);
         const nya = w.eval('medExportLage(() => _handlingsplanSeedRows().nycklar)');

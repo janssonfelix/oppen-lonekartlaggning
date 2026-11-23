@@ -12870,7 +12870,7 @@ function _instRita() {
     </li>`).join("");
 }
 function _ipRollNamn(roll) {
-  const r = COLMAP_ROLES.find((x) => x.role === roll);
+  const r = KOLUMNMAPPNING_ROLLER.find((x) => x.role === roll);
   return r ? r.label : roll;
 }
 function _instRitaImportprofiler() {
@@ -12909,10 +12909,10 @@ function _ipTaBort(id) {
   state.importprofiler = state.importprofiler.filter((x) => x !== p);
   if (state.importprofil && state.importprofil.id === id) {
     state.importprofil = null;
-    if (typeof renderFilrutor === "function") renderFilrutor();
+    if (typeof ritaFilrutor === "function") ritaFilrutor();
   }
   _instRitaImportprofiler();
-  if (typeof maybeShowColumnMapping === "function" && (state._dataHeaders || []).length) maybeShowColumnMapping();
+  if (typeof visaKolumnmappningOmBehov === "function" && (state._dataHeaders || []).length) visaKolumnmappningOmBehov();
   document.getElementById("inst-importprofiler-rubrik")?.focus();
   meddelaSkarmlasare(`Importprofilen ${p.namn} är borttagen för sessionen.`);
 }
@@ -22436,12 +22436,12 @@ function uppstartLoneoversikt() {
 
 // src/app/32-filinlasning.js
 var _RADNR = /* @__PURE__ */ Symbol("radnr");
-var dataInput = document.getElementById("file-input-data");
+var datafilFalt = document.getElementById("file-input-data");
 var dataStatus = (
   /** @type {HTMLElement} */
   document.getElementById("data-status")
 );
-function setupDrop(dropId, inputId) {
+function kopplaSlappyta(dropId, inputId) {
   const drop = document.getElementById(dropId);
   const inp = document.getElementById(inputId);
   if (!drop || !inp) return;
@@ -22470,7 +22470,7 @@ function setupDrop(dropId, inputId) {
     }
   });
 }
-function _renderSensitiveRejection(sensitive) {
+function _ritaKansligAvvisning(sensitive) {
   const list = sensitive.map((s) => `<li><code>${esc(s.col)}</code> – ${esc(s.reason)}</li>`).join("");
   dataStatus.innerHTML = `<div class="bak-varning-bg-gammal ram-v-3-kritisk rund-6 lh-1_55 marg-t-10 pad-14-16">
         <strong class="f-kritisk">${ikon("stopp")} Filen avvisad – innehåller känsliga personuppgifter</strong><br>
@@ -22480,7 +22480,7 @@ function _renderSensitiveRejection(sensitive) {
     </div>`;
   dataStatus.className = "status-msg";
 }
-function _deriveArbetsvarderingFromData() {
+function _harledArbetsvarderingUrData() {
   const byKey = /* @__PURE__ */ new Map();
   let count = 0;
   for (const r of state.data) {
@@ -22497,13 +22497,13 @@ function _deriveArbetsvarderingFromData() {
   if (state.likvardighet) state.likvardighet.result = null;
   return count;
 }
-function _afterDataLoaded() {
+function _efterInlastData() {
   if (state.isDemo) {
     state.profile = { ...STANDARDPROFIL };
     if (typeof _hpRensaDemoSkal === "function") _hpRensaDemoSkal();
     if (state.policyKalla === "demo") {
       aterstallReferens();
-      resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
+      aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
     }
     if (state.statistikKalla === "demo") _tomStatistik();
     if (typeof synkaNamnFalt === "function") synkaNamnFalt();
@@ -22516,7 +22516,7 @@ function _afterDataLoaded() {
   if (typeof _fcGlomKnappresultat === "function") _fcGlomKnappresultat();
   if (typeof _renderDemoBanner === "function") _renderDemoBanner();
   document.getElementById("dashboard-summary").style.display = "grid";
-  const poangCount = _deriveArbetsvarderingFromData();
+  const poangCount = _harledArbetsvarderingUrData();
   if (typeof _fcRensaParMal === "function") _fcRensaParMal();
   lasUppFlikar();
   ritaNyckeltal();
@@ -22526,7 +22526,7 @@ function _afterDataLoaded() {
   dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
   if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
   dataStatus.className = "status-msg success";
-  markUploadLoaded("upload-cell-data", "Inläst");
+  markeraFilrutaInlast("upload-cell-data", "Inläst");
   ritaKravstatus();
   const reg = runOLSRegression();
   renderUnderlagetsKvalitet({ reg });
@@ -22557,7 +22557,7 @@ function _afterDataLoaded() {
   }, 0);
 }
 var CSV_MALL_RUBRIKER = ["BAS-intervall", "AID", "Manadslon", "Alder", "Kon", "Poang"];
-function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
+function _xlsxTillObjekt(buf, synonymGroups, minHits = 2, profiler = []) {
   if (typeof XLSX === "undefined") throw new Error("Excelfilen kan inte läsas: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
   const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
   const sheetName = wb.SheetNames[0];
@@ -22616,7 +22616,7 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
   }
   return { headers, rows, sheet: sheetName };
 }
-function readTabularFile(file, synonymGroups, utfall, typ) {
+function lasTabellfil(file, synonymGroups, utfall, typ) {
   const callback = (res) => {
     try {
       utfall(res);
@@ -22647,7 +22647,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
         return;
       }
       if (fmt === "xlsx") {
-        const x = _xlsxToObjects(
+        const x = _xlsxTillObjekt(
           /** @type {ArrayBuffer} */
           buf,
           synonymGroups
@@ -22674,7 +22674,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
   };
   reader.readAsArrayBuffer(file);
 }
-function loadStructureFile(file) {
+function lasInStrukturfil(file) {
   if (!file) return;
   const storlekFel = filStorlekFel(file.size, "lonefil");
   if (storlekFel) {
@@ -22827,7 +22827,7 @@ function loadStructureFile(file) {
     state.importprofil = tidigareImportprofil;
     sampleBuffer = null;
     doljLaddning();
-    _renderSensitiveRejection(sensitive);
+    _ritaKansligAvvisning(sensitive);
   }
   function finishLoad(metaText) {
     sampleBuffer = null;
@@ -22884,8 +22884,8 @@ function loadStructureFile(file) {
       state.dataAudit = parseStats;
       state._dataHeaders = capturedHeaders || [];
       _senasteInlasningLyckades = true;
-      _afterDataLoaded();
-      maybeShowColumnMapping();
+      _efterInlastData();
+      visaKolumnmappningOmBehov();
       if (dataStatus) {
         dataStatus.textContent += ` · ${metaText}${ansvarNot}`;
         if (parseStats.alderFromBirthYear > 0) {
@@ -22938,7 +22938,7 @@ function loadStructureFile(file) {
     if (fmt === "xlsx") {
       let x;
       try {
-        x = _xlsxToObjects(
+        x = _xlsxTillObjekt(
           /** @type {ArrayBuffer} */
           buf,
           rubrikgrupper(),
@@ -23015,7 +23015,7 @@ function _beskedEfterOversikt(franOversikt) {
   }
   if (document.querySelector("#column-map-panel select.colmap-saknas")) _visaKolumnmappning();
 }
-var COLMAP_ROLES = [
+var KOLUMNMAPPNING_ROLLER = [
   { role: "bas", label: stor(T.niva.en), required: true },
   // Fältet är AID-etiketten; kolumnen i lönefilen heter ofta något annat, och tipset säger det.
   { role: "yrke", label: stor(T.enhet.en), required: true, tips: "i lönefilen ofta Yrke eller Befattning" },
@@ -23030,7 +23030,7 @@ function _kolumnval(headers) {
   const auto = gissaKolumnmappning(headers), eff = {};
   const profil = _importprofilFor(headers);
   const prof = profil ? profil.mappning : {};
-  COLMAP_ROLES.forEach(({ role }) => {
+  KOLUMNMAPPNING_ROLLER.forEach(({ role }) => {
     const vald = state.columnMap && state.columnMap[role];
     eff[role] = role === "ansvar" && state.columnMap?.ansvar === "" ? "" : (vald && headers.includes(vald) ? vald : "") || prof[role] || auto[role] || "";
   });
@@ -23096,7 +23096,7 @@ function _importprofilRuta(missing) {
 }
 function _kolumnerSomSaknas(headers) {
   const { eff } = _kolumnval(headers);
-  return COLMAP_ROLES.filter((r) => r.required && !eff[r.role]);
+  return KOLUMNMAPPNING_ROLLER.filter((r) => r.required && !eff[r.role]);
 }
 function _visaEjInlast(saknas, stats) {
   doljLaddning();
@@ -23122,7 +23122,7 @@ function _visaEjInlast(saknas, stats) {
       badge.textContent = saknas.length ? "Kolumnmappning behövs" : "Inga rader lästa";
     }
   }
-  maybeShowColumnMapping();
+  visaKolumnmappningOmBehov();
   _visaKolumnmappning();
   meddelaSkarmlasare(dataStatus.textContent);
 }
@@ -23135,7 +23135,7 @@ function _visaKolumnmappning() {
   panel.scrollIntoView?.({ block: "center" });
   (panel.querySelector("select.colmap-saknas") || panel.querySelector("select"))?.focus?.({ preventScroll: true });
 }
-function maybeShowColumnMapping() {
+function visaKolumnmappningOmBehov() {
   const headers = state._dataHeaders || [];
   let panel = document.getElementById("column-map-panel");
   if (_fkVantar) {
@@ -23158,8 +23158,8 @@ function maybeShowColumnMapping() {
   const esc2 = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const { auto, eff, profil } = _kolumnval(headers);
   const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc2(importprofilText(profil))}</p>` : "";
-  const missing = COLMAP_ROLES.filter((r) => r.required && !eff[r.role]);
-  const selects = COLMAP_ROLES.map(({ role, label, required, tips }) => {
+  const missing = KOLUMNMAPPNING_ROLLER.filter((r) => r.required && !eff[r.role]);
+  const selects = KOLUMNMAPPNING_ROLLER.map(({ role, label, required, tips }) => {
     const opts = ['<option value="">— ingen —</option>'].concat(headers.map((h) => `<option value="${esc2(h)}"${eff[role] === h ? " selected" : ""}>${esc2(h)}</option>`)).join("");
     const saknas = required && !eff[role];
     return `<label class="faltkolumn">
@@ -23191,7 +23191,7 @@ function maybeShowColumnMapping() {
   );
   const visaBesked = (text) => {
     _profilBesked = text;
-    maybeShowColumnMapping();
+    visaKolumnmappningOmBehov();
     meddelaSkarmlasare(text);
   };
   panel.querySelector("#colmap-spara-profil")?.addEventListener("click", () => {
@@ -23228,9 +23228,9 @@ function maybeShowColumnMapping() {
     });
     state.columnMap = Object.keys(map).length ? map : null;
     const f = state._lastStructureFile || /** @type {HTMLInputElement} */
-    dataInput.files && /** @type {HTMLInputElement} */
-    dataInput.files?.[0];
-    if (f) loadStructureFile(f);
+    datafilFalt.files && /** @type {HTMLInputElement} */
+    datafilFalt.files?.[0];
+    if (f) lasInStrukturfil(f);
     else {
       dataStatus.textContent = "Läs in filen igen för att tillämpa mappningen.";
       dataStatus.className = "status-msg";
@@ -23239,12 +23239,12 @@ function maybeShowColumnMapping() {
   panel.querySelector("#colmap-reset")?.addEventListener("click", () => {
     state.columnMap = null;
     const f = state._lastStructureFile || /** @type {HTMLInputElement} */
-    dataInput.files && /** @type {HTMLInputElement} */
-    dataInput.files?.[0];
-    if (f) loadStructureFile(f);
+    datafilFalt.files && /** @type {HTMLInputElement} */
+    datafilFalt.files?.[0];
+    if (f) lasInStrukturfil(f);
   });
 }
-function markUploadLoaded(cellId, badgeText) {
+function markeraFilrutaInlast(cellId, badgeText) {
   const cell = document.getElementById(cellId);
   if (!cell) return;
   cell.classList.remove("required", "optional");
@@ -23257,9 +23257,9 @@ function markUploadLoaded(cellId, badgeText) {
   }
   const inl = cell.querySelector(".upload-inlast");
   if (inl) inl.hidden = false;
-  renderFilrutor();
+  ritaFilrutor();
 }
-function resetUploadCell(cellId, originalClass, originalBadge) {
+function aterstallFilruta(cellId, originalClass, originalBadge) {
   const cell = document.getElementById(cellId);
   if (!cell) return;
   const tokens = String(originalClass || "").split(/\s+/).filter(Boolean);
@@ -23274,9 +23274,9 @@ function resetUploadCell(cellId, originalClass, originalBadge) {
   }
   const inl = cell.querySelector(".upload-inlast");
   if (inl) inl.hidden = true;
-  renderFilrutor();
+  ritaFilrutor();
 }
-function renderFilrutor() {
+function ritaFilrutor() {
   const fn = state.filnamn || {};
   const rad = (cellId, text) => {
     const el = document.querySelector(`#${cellId} .upload-filnamn`);
@@ -23296,10 +23296,10 @@ function renderFilrutor() {
   }
 }
 function uppstartFilinlasning() {
-  setupDrop("drop-area-data", "file-input-data");
-  setupDrop("drop-area-start", "file-input-data");
-  setupDrop("drop-area-policy", "file-input-policy");
-  setupDrop("drop-area-stat", "file-input-stat");
+  kopplaSlappyta("drop-area-data", "file-input-data");
+  kopplaSlappyta("drop-area-start", "file-input-data");
+  kopplaSlappyta("drop-area-policy", "file-input-policy");
+  kopplaSlappyta("drop-area-stat", "file-input-stat");
   document.getElementById("btn-download-csv-template")?.addEventListener("click", () => {
     const headers = CSV_MALL_RUBRIKER;
     const examples = [
@@ -23323,7 +23323,7 @@ function uppstartFilinlasning() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
     meddelaSkarmlasare("CSV-mall nedladdad: lonefil_mall.csv");
   });
-  dataInput.addEventListener("change", (e) => loadStructureFile(
+  datafilFalt.addEventListener("change", (e) => lasInStrukturfil(
     /** @type {HTMLInputElement} */
     e.target.files?.[0]
   ));
@@ -23338,7 +23338,7 @@ function uppstartFilinlasning() {
     )?.click();
   });
   document.getElementById("btn-kolumnmappning")?.addEventListener("click", () => {
-    if (typeof maybeShowColumnMapping === "function") maybeShowColumnMapping();
+    if (typeof visaKolumnmappningOmBehov === "function") visaKolumnmappningOmBehov();
     _visaKolumnmappning();
   });
   _kopplaNamnFalt("org-namn", sattOrgNamn);
@@ -24478,7 +24478,7 @@ function _tomStatistik() {
   state.statistikHasP10 = false;
   state.statistikHasP90 = false;
   state.statistikHasKon = false;
-  if (typeof resetUploadCell === "function") resetUploadCell("upload-cell-stat", "upload-cell optional", "Valfritt");
+  if (typeof aterstallFilruta === "function") aterstallFilruta("upload-cell-stat", "upload-cell optional", "Valfritt");
   const ss = document.getElementById("stat-status");
   if (ss) {
     ss.textContent = "";
@@ -24546,7 +24546,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
     if (!referens && state.policyKalla === "paket") {
       aterstallReferens();
-      if (typeof resetUploadCell === "function") resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
+      if (typeof aterstallFilruta === "function") aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
       const ps = document.getElementById("policy-status");
       if (ps) {
         ps.textContent = "";
@@ -24592,7 +24592,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     state.policyNamn = referens.namn || "Lönepolitiskt ställningstagande";
     state.policyKortnamn = referens.kortnamn || state.policyNamn;
     state.policyKalla = "paket";
-    markUploadLoaded("upload-cell-policy", "Från organisationspaketet");
+    markeraFilrutaInlast("upload-cell-policy", "Från organisationspaketet");
     const ps = document.getElementById("policy-status");
     if (ps) {
       ps.textContent = `${state.policy.length} rader ur organisationspaketet`;
@@ -24606,7 +24606,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     state.statistikHasP10 = state.statistik.some((x) => x.p10 > 0);
     state.statistikHasP90 = state.statistik.some((x) => x.p90 > 0);
     state.statistikHasKon = state.statistik.some((x) => x.andelKv != null);
-    markUploadLoaded("upload-cell-stat", "Från organisationspaketet");
+    markeraFilrutaInlast("upload-cell-stat", "Från organisationspaketet");
     const ss = document.getElementById("stat-status");
     if (ss) {
       ss.textContent = `${state.statistik.length} poster ur organisationspaketet`;
@@ -25060,7 +25060,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
   if (typeof synkaNamnFalt === "function") synkaNamnFalt();
   if (typeof tillampaProfiletiketter === "function") tillampaProfiletiketter();
   if (typeof renderReferensKort === "function") renderReferensKort();
-  if (typeof markUploadLoaded === "function") markUploadLoaded("upload-cell-policy", "Demo");
+  if (typeof markeraFilrutaInlast === "function") markeraFilrutaInlast("upload-cell-policy", "Demo");
 }
 function _lasInDemoStatistik({ stort = false } = {}) {
   if (stort) {
@@ -25068,7 +25068,7 @@ function _lasInDemoStatistik({ stort = false } = {}) {
     state.statistikNamn = STORT_DEMO_STATISTIKNAMN;
     state.statistikKalla = "demo";
     state.statistikHasP10 = state.statistikHasP90 = state.statistikHasKon = true;
-    markUploadLoaded("upload-cell-stat", "Demo");
+    markeraFilrutaInlast("upload-cell-stat", "Demo");
   } else if (state.statistikKalla === "demo") {
     _tomStatistik();
   }
@@ -25086,7 +25086,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   state.data.forEach((r, i) => {
     r.radnr = i + 2;
   });
-  _deriveArbetsvarderingFromData();
+  _harledArbetsvarderingUrData();
   state.ansvarKolumn = { namn: "Ansvarskod (demo)", godkand: true, giltiga: 1 };
   state.isDemo = true;
   state.demoStort = stort;
@@ -25113,7 +25113,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
   document.getElementById("data-status").innerHTML = `<span class="farg-info">${ikon("sok")} ${status}</span>`;
   document.getElementById("data-status").className = "status-msg";
-  markUploadLoaded("upload-cell-data", "Testdata");
+  markeraFilrutaInlast("upload-cell-data", "Testdata");
   if (typeof _hpDemoSkal === "function") try {
     _hpDemoSkal();
   } catch (e) {
@@ -25360,11 +25360,11 @@ function _rensaAllData({ inbakat = true } = {}) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = "";
   });
-  if (typeof resetUploadCell === "function") {
-    resetUploadCell("upload-cell-data", "upload-cell required", "Obligatorisk");
-    resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
-    resetUploadCell("upload-cell-stat", "upload-cell optional", "Valfritt");
-    resetUploadCell("upload-cell-history", "upload-cell optional", "Valfritt");
+  if (typeof aterstallFilruta === "function") {
+    aterstallFilruta("upload-cell-data", "upload-cell required", "Obligatorisk");
+    aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
+    aterstallFilruta("upload-cell-stat", "upload-cell optional", "Valfritt");
+    aterstallFilruta("upload-cell-history", "upload-cell optional", "Valfritt");
   }
   document.querySelectorAll('input[type="file"]').forEach((inp) => {
     inp.value = "";
@@ -25387,7 +25387,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   });
   if (typeof _visaJamforelseFlik === "function") _visaJamforelseFlik(false);
   state.filnamn = { data: null, policy: null, statistik: null };
-  if (typeof renderFilrutor === "function") renderFilrutor();
+  if (typeof ritaFilrutor === "function") ritaFilrutor();
   if (typeof navigeraTill === "function") navigeraTill("dashboard");
   updateGdprBanner();
   if (typeof ritaKravstatus === "function") ritaKravstatus();
@@ -29199,7 +29199,7 @@ function uppstartReferensfiler() {
     }
     const fil = document.getElementById("file-input-policy");
     if (fil) fil.value = "";
-    if (typeof resetUploadCell === "function") resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
+    if (typeof aterstallFilruta === "function") aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
     ritaOmReferens();
   });
   policyInput.addEventListener("change", (e) => {
@@ -29209,7 +29209,7 @@ function uppstartReferensfiler() {
     );
     if (!file) return;
     visaLaddning();
-    readTabularFile(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], (res) => {
+    lasTabellfil(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], (res) => {
       if (!res.ok) {
         doljLaddning();
         policyStatus.textContent = "" + res.error;
@@ -29228,9 +29228,9 @@ function uppstartReferensfiler() {
       policyStatus.textContent = `${state.policy.length} rader inlästa` + (nAid ? ` (${nBas} per ${T.niva.en}, ${nAid} per ${T.kod.en})` : ` (per ${T.niva.en})`) + ` · ${res.encoding === "XLSX" ? res.format : res.encoding}`;
       policyStatus.className = "status-msg success";
       synkaJamforelseFlik();
-      markUploadLoaded("upload-cell-policy", "Inläst");
+      markeraFilrutaInlast("upload-cell-policy", "Inläst");
       state.filnamn.policy = file.name;
-      renderFilrutor();
+      ritaFilrutor();
       doljLaddning();
       ritaKravstatus();
       renderConsistencyBanner();
@@ -29246,7 +29246,7 @@ function uppstartReferensfiler() {
     );
     if (!file) return;
     visaLaddning();
-    readTabularFile(file, [["aid", "yrkesgrupp"], ["median"]], (res) => {
+    lasTabellfil(file, [["aid", "yrkesgrupp"], ["median"]], (res) => {
       if (!res.ok) {
         doljLaddning();
         statStatus.textContent = "Fel: " + res.error;
@@ -29320,9 +29320,9 @@ function uppstartReferensfiler() {
         const src = res.encoding === "XLSX" ? res.format : res.encoding;
         statStatus.textContent = (extras.length ? `${state.statistik.length} poster inlästa (median + ${extras.join(" + ")})` : `${state.statistik.length} poster inlästa`) + ` · ${src}`;
         statStatus.className = "status-msg success";
-        markUploadLoaded("upload-cell-stat", "Inläst");
+        markeraFilrutaInlast("upload-cell-stat", "Inläst");
         state.filnamn.statistik = file.name;
-        renderFilrutor();
+        ritaFilrutor();
         if (typeof renderPaketInfo === "function") {
           renderPaketInfo();
           uppdateraPaketKnapp();
@@ -29704,7 +29704,7 @@ function _fkPausa(fk, lasIn) {
   dataStatus.textContent = "Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.";
   dataStatus.className = "status-msg warning";
   renderForhandskontroll();
-  maybeShowColumnMapping();
+  visaKolumnmappningOmBehov();
   _aterstallInaktivitetstimer();
   const av = document.getElementById("avsnitt-fi-forhandskontroll");
   const filer = document.querySelector('.nav-item[data-tab="filer"]');
@@ -29728,7 +29728,7 @@ function _fkAvbryt() {
   _fkVantar = null;
   state.forhandskontroll = v.tidigare || null;
   renderForhandskontroll();
-  maybeShowColumnMapping();
+  visaKolumnmappningOmBehov();
   dataStatus.textContent = state.data.length ? "Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar." : "Inläsningen avbröts. Ingen lönefil är inläst.";
   dataStatus.className = "status-msg";
   meddelaSkarmlasare(dataStatus.textContent);

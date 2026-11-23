@@ -21,7 +21,7 @@ import { updateGdprBanner } from './25-dataskyddsinfo.js';
 import { _rensaAllData, rensaAllData } from './26-rensning.js';
 import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
 import { lasUppFlikar } from './31-navigering.js';
-import { _deriveArbetsvarderingFromData, markUploadLoaded } from './32-filinlasning.js';
+import { _harledArbetsvarderingUrData, markeraFilrutaInlast } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
 import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
@@ -64,7 +64,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
     if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
     if (typeof tillampaProfiletiketter === 'function') tillampaProfiletiketter();
     if (typeof renderReferensKort === 'function') renderReferensKort();
-    if (typeof markUploadLoaded === 'function') markUploadLoaded('upload-cell-policy', 'Demo');
+    if (typeof markeraFilrutaInlast === 'function') markeraFilrutaInlast('upload-cell-policy', 'Demo');
 }
 // Det stora demots påhittade jämförelsestatistik (21-stort-demo.js). Det lilla demot har ingen: en kvarvarande från
 // det stora tas bort.
@@ -74,7 +74,7 @@ function _lasInDemoStatistik({ stort = false } = {}) {
         state.statistikNamn = STORT_DEMO_STATISTIKNAMN;
         state.statistikKalla = 'demo';
         state.statistikHasP10 = state.statistikHasP90 = state.statistikHasKon = true;
-        markUploadLoaded('upload-cell-stat', 'Demo');
+        markeraFilrutaInlast('upload-cell-stat', 'Demo');
     } else if (state.statistikKalla === 'demo') {
         _tomStatistik();
     }
@@ -96,7 +96,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     state.importprofil = null;   // demodatan läses inte ur en fil: ingen känd uppsättning
     _fkSlapp();   // inte heller någon förhandskontroll, och en fil som väntade på Läs in släpps
     state.data.forEach((r, i) => { r.radnr = i + 2; });   // som en fil med rubrik på rad 1
-    _deriveArbetsvarderingFromData();   // demodata saknar poäng → rensar ev. kvarvarande
+    _harledArbetsvarderingUrData();   // demodata saknar poäng → rensar ev. kvarvarande
     state.ansvarKolumn = { namn: 'Ansvarskod (demo)', godkand: true, giltiga: 1 };
     state.isDemo = true;   // #9: markera som demoläge — syntetisk data, aldrig verklig analys
     state.demoStort = stort;   // bannern och filraden säger vilket demo det är
@@ -123,7 +123,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';
-    markUploadLoaded('upload-cell-data', 'Testdata');
+    markeraFilrutaInlast('upload-cell-data', 'Testdata');
     // Exempel på sakliga skäl på tre rader i handlingsplanen, så att tabellerna i rapporten och Excel syns.
     if (typeof _hpDemoSkal === 'function') try { _hpDemoSkal(); } catch (e) { rapporteraFel('Demot: sakliga skäl', e); }
     visningNy();   // ett nytt underlag: ingen ritad flik visas igen som den är (ADR-81)

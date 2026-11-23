@@ -95,6 +95,6 @@ export function lonefil(n = 240, bas = ['A', 'B', 'C', 'D']) {
 export async function lasInLonefil(w, rader) {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
-    w.loadStructureFile(csvFil(w, rader, 'lonefil.csv'));
+    w.lasInStrukturfil(csvFil(w, rader, 'lonefil.csv'));
     for (let i = 0; i < 500 && !/rader/.test(w.document.getElementById('data-status').textContent); i++) await vanta(10);
 }

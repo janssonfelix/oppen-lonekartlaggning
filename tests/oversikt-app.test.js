@@ -95,7 +95,7 @@ describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
         const rader = ['BAS;Månadslön;Ålder;Kön;AID'];
         for (let i = 0; i < 20; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301`);
         w.__state.data = [];
-        w.loadStructureFile(new w.File([rader.join('\n')], 'riktig.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'riktig.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && w.__state.data.length !== 20; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.isDemo).toBe(false);
         expect(w.eval("orgNamn('')")).toBe('');

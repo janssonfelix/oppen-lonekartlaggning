@@ -673,7 +673,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const { join, dirname } = await import('node:path');
         const { fileURLToPath } = await import('node:url');
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-        w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
     };
     it('användbarhetsgraden räknar inte avsiktligt uteslutna BAS; singular för en person', async () => {
@@ -1304,7 +1304,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
 
 describe('startytan på Översikt (före inläsning)', () => {
     // Ytan för lönefilen har ingen egen filväljare: den öppnar lönefilskortets, och en släppt fil går samma väg
-    // (change-händelsen på #file-input-data och loadStructureFile).
+    // (change-händelsen på #file-input-data och lasInStrukturfil).
     const slapp = (w, fil) => {
         const inp = w.document.getElementById('file-input-data');
         let filer = { length: 0 };

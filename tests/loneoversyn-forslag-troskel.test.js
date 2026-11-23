@@ -184,7 +184,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         w.eval('tillampaKonfiguration(window.__cfg)');
         expect(parRader(w)).toHaveLength(1);   // utan lönefil finns inga par att pröva mot
         w.__state.data = rader;
-        w.eval('_afterDataLoaded()');
+        w.eval('_efterInlastData()');
         expect(parRader(w)).toEqual([]);
     });
     it('en egen rad på en grupp under tröskeln står kvar med sin not och följer med i exporten (regel R2)', async () => {
@@ -272,7 +272,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
             fore.alert = () => {};
             lasIn(fore, cfg);
             fore.__state.data = JSON.parse(JSON.stringify(rader));
-            fore.eval('_afterDataLoaded()');
+            fore.eval('_efterInlastData()');
             expect(fore.eval('kInstalld()')).toBe(10);
             expect(parRader(fore), `före lönefilen, utanK=${utanK}`).toEqual([]);
             await sokOveralltUtom(fore, `före lönefilen, utanK=${utanK}`);
@@ -351,7 +351,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         oppnaFlik(w, 'kon');
         w.__state.data = JSON.parse(JSON.stringify(w.__state.data));
         w.eval('sattKTroskel(10, { fraga: false })');
-        w.eval('_afterDataLoaded()');
+        w.eval('_efterInlastData()');
         expect(parRader(w)).toEqual([]);
         await sokOveralltUtom(w, 'ny lönefil');
     });

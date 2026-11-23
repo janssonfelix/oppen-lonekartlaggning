@@ -27,7 +27,7 @@ import { _rensaAllData } from './26-rensning.js';
 import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
 import { tomStatistikcacher } from './30-statistikcacher.js';
 import { uppdateraAktivFlik } from './31-navigering.js';
-import { markUploadLoaded, resetUploadCell } from './32-filinlasning.js';
+import { markeraFilrutaInlast, aterstallFilruta } from './32-filinlasning.js';
 import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _readCostSettings } from './55-prioritering.js';
@@ -68,7 +68,7 @@ export function _tomStatistik() {
     state.statistikHasP10 = false;
     state.statistikHasP90 = false;
     state.statistikHasKon = false;
-    if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-stat', 'upload-cell optional', 'Valfritt');
+    if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-stat', 'upload-cell optional', 'Valfritt');
     const ss = document.getElementById('stat-status');
     if (ss) { ss.textContent = ''; ss.className = 'status-msg'; }
     if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
@@ -146,7 +146,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
         if (!referens && state.policyKalla === 'paket') {
             aterstallReferens();
-            if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
+            if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
             const ps = document.getElementById('policy-status');
             if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
         }
@@ -194,7 +194,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         state.policyNamn = referens.namn || 'Lönepolitiskt ställningstagande';
         state.policyKortnamn = referens.kortnamn || state.policyNamn;
         state.policyKalla = 'paket';
-        markUploadLoaded('upload-cell-policy', 'Från organisationspaketet');
+        markeraFilrutaInlast('upload-cell-policy', 'Från organisationspaketet');
         const ps = document.getElementById('policy-status');
         if (ps) { ps.textContent = `${state.policy.length} rader ur organisationspaketet`; ps.className = 'status-msg success'; }
     }
@@ -205,7 +205,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         state.statistikHasP10 = state.statistik.some(x => x.p10 > 0);
         state.statistikHasP90 = state.statistik.some(x => x.p90 > 0);
         state.statistikHasKon = state.statistik.some(x => x.andelKv != null);
-        markUploadLoaded('upload-cell-stat', 'Från organisationspaketet');
+        markeraFilrutaInlast('upload-cell-stat', 'Från organisationspaketet');
         const ss = document.getElementById('stat-status');
         if (ss) { ss.textContent = `${state.statistik.length} poster ur organisationspaketet`; ss.className = 'status-msg success'; }
     }

@@ -40,7 +40,7 @@ describe('Uppgift 1: kolumnmappningen', () => {
         const w = createAppWindow(), d = w.document;
         d.querySelector('.nav-item[data-tab="info"]').click();
         w.__state._dataHeaders = ['Avd', 'Befattning', 'Grundlon', 'Fodd', 'Sex'];
-        w.eval('maybeShowColumnMapping(); _visaKolumnmappning()');
+        w.eval('visaKolumnmappningOmBehov(); _visaKolumnmappning()');
         expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
         expect(d.getElementById('view-filer').contains(d.getElementById('column-map-panel'))).toBe(true);
     });

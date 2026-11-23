@@ -124,7 +124,7 @@ describe('stort demo: demots statistik byts ut', () => {
     it('en riktig lönefil efter det stora demot tar bort demots statistik', () => {
         const w = createAppWindow();
         w.eval('loadStortDemo()');
-        w.eval('__state.data = genereraTestdata(); _afterDataLoaded();');
+        w.eval('__state.data = genereraTestdata(); _efterInlastData();');
         expect(w.__state.statistik).toHaveLength(0);
         expect(w.__state.statistikKalla).toBe(null);
         expect(w.document.getElementById('upload-cell-stat').classList.contains('loaded')).toBe(false);

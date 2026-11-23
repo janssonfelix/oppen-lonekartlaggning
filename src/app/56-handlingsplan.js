@@ -301,7 +301,7 @@ const HP_DEMO_SKAL = [
     [['overgang', 0.5, 'Exempel i demot: lön som följde med vid en omorganisation']],
     [['utbildning', 0.3, 'Exempel i demot: vidareutbildning utöver kraven'], ['prestation', 0.2, 'Exempel i demot: bedömning enligt lönekriterierna']],
 ];
-/** Nycklarna där demot skrev skäl: de tas bort när en riktig lönefil läses in (_afterDataLoaded, 32-filinlasning.js). */
+/** Nycklarna där demot skrev skäl: de tas bort när en riktig lönefil läses in (_efterInlastData, 32-filinlasning.js). */
 export const _hpDemoNycklar = new Set();
 /** Tar bort skälen som demot skrev, och raden om inget annat är ifyllt. Övriga rader och egna rader rörs inte. */
 export function _hpRensaDemoSkal() {

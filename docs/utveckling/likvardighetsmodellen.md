@@ -21,7 +21,7 @@ regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 | Inställningarna och deras standardvärden | `state.likvardighet` i `src/app/12-tillstand.js` |
 | Definitionen i appen (`kvDomNu`, `konsklassNu`, `aidbasDefinition`, `lvJamforelse`) | `src/app/45-aid-bas-tabeller.js` |
 | Reserven för kvinnoandel (`nationellAidKlass`) och regeln för paren utanför fliken (`_parForRedovisning`) | `src/app/06-kvinnoandel-referens.js` (`nationellAidKlass`), `src/app/06-k-troskel.js` (`_parForRedovisning`), `src/lib/skrreferens.js` |
-| Poängen ur lönefilen (`_deriveArbetsvarderingFromData`) | `src/app/32-filinlasning.js` |
+| Poängen ur lönefilen (`_harledArbetsvarderingUrData`) | `src/app/32-filinlasning.js` |
 | Vakterna | avsnitt 9 |
 
 ## 1. Vad modellen gör och var den bor
@@ -152,7 +152,7 @@ kvinnodominerad AID-etikett används i första hand organisationens **egna** jä
 `'intern'`). Saknas sådana i intervallet används **jämförelsestatistiken** som reserv (`'extern'`), och diagnostiken
 räknar det i `basMedExternFallback`. Saknas båda bildas inga par för AID-etiketten.
 
-**Poängläget.** Har lönefilen kolumnen Poäng bygger `_deriveArbetsvarderingFromData` en tabell `aid|bas` → poäng
+**Poängläget.** Har lönefilen kolumnen Poäng bygger `_harledArbetsvarderingUrData` en tabell `aid|bas` → poäng
 (det första värdet per grupp) i `state.arbetsvardering.byKey`, och `byggParPoang` ersätter `byggPar`. En
 jämförelseetikett kvalificerar när dess poäng är högst den kvinnodominerade AID-etikettens poäng × (1 + band / 100) — lika eller
 lägre krav — **även över BAS-gränserna**. Bandet är standard 5 % (`state.likvardighet.poangBandPct`, fältet *Räkna som

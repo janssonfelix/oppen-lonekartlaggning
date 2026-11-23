@@ -20,7 +20,7 @@ const vantaPaInlasning = w => vanta(() => status(w) && !/läser|Läser/.test(sta
 const lasIn = async (w, rader, namn = 'lonefil.csv') => {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
-    w.loadStructureFile(csvFil(w, rader, namn));
+    w.lasInStrukturfil(csvFil(w, rader, namn));
     await vantaPaInlasning(w);
 };
 // 30 påhittade rader; rad 5 och 19 i filen (i = 3 och 17) har ett namn i fältet för AID-etikett.
@@ -130,7 +130,7 @@ describe('[B9.5] namn i fältet för AID-etikett: inläsningen', () => {
         X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(tabell()), 'Blad1');
         const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
         w.document.getElementById('data-status').textContent = '';
-        w.loadStructureFile(new w.File([buf], 'lonefil.xlsx'));
+        w.lasInStrukturfil(new w.File([buf], 'lonefil.xlsx'));
         await vantaPaInlasning(w);
         expect(w.__state.data).toHaveLength(30);
         expect(w.__state.dataAudit.yrkeNamn).toBe(2);

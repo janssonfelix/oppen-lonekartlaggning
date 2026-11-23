@@ -948,7 +948,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 }
 .upload-cell .file-drop-area p { font-size: var(--fs-sm); }
 /* Lönefilen krävs: kortet står först, är bredast och har ram och en större yta tills filen är inläst
-   (markUploadLoaded byter klassen required mot loaded). */
+   (markeraFilrutaInlast byter klassen required mot loaded). */
 @media (min-width: 1400px) { .upload-row { grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 3fr); } }
 .upload-cell.required { border: 2px solid var(--primary); padding: 12px 14px; }
 .upload-cell.required .file-drop-area { padding: 26px 14px; border-color: var(--primary); }

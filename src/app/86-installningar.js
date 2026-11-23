@@ -10,7 +10,7 @@ import { orgNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { hamtaData, referensNamn, state } from './12-tillstand.js';
 import { sattMeny } from './31-navigering.js';
-import { COLMAP_ROLES, maybeShowColumnMapping, renderFilrutor } from './32-filinlasning.js';
+import { KOLUMNMAPPNING_ROLLER, visaKolumnmappningOmBehov, ritaFilrutor } from './32-filinlasning.js';
 import { _pagGrans } from './43-personer-att-granska.js';
 import { aidbasDefinition, lvJamforelse } from './45-aid-bas-tabeller.js';
 /**
@@ -88,7 +88,7 @@ function _instRita() {
 // ---- Importprofiler (src/lib/importprofiler.js) ----
 /** Rollernas namn som i kolumnmappningen. */
 function _ipRollNamn(roll) {
-    const r = COLMAP_ROLES.find(x => x.role === roll);
+    const r = KOLUMNMAPPNING_ROLLER.find(x => x.role === roll);
     return r ? r.label : roll;
 }
 /** Listan i Inställningar: sessionens profiler med namn, källa och rubriker per roll, och de inbyggda med namn. */
@@ -132,10 +132,10 @@ function _ipTaBort(id) {
     // Gällde profilen för den inlästa filen nollas den, så att filrutan inte nämner en borttagen profil.
     if (state.importprofil && state.importprofil.id === id) {
         state.importprofil = null;
-        if (typeof renderFilrutor === 'function') renderFilrutor();
+        if (typeof ritaFilrutor === 'function') ritaFilrutor();
     }
     _instRitaImportprofiler();
-    if (typeof maybeShowColumnMapping === 'function' && (state._dataHeaders || []).length) maybeShowColumnMapping();
+    if (typeof visaKolumnmappningOmBehov === 'function' && (state._dataHeaders || []).length) visaKolumnmappningOmBehov();
     /** @type {HTMLElement|null} */ (document.getElementById('inst-importprofiler-rubrik'))?.focus();
     meddelaSkarmlasare(`Importprofilen ${p.namn} är borttagen för sessionen.`);
 }

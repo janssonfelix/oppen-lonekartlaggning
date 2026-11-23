@@ -168,7 +168,7 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         oppnaFlik(w, 'loneoversyn');
         for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
         const v = fyllt();
-        v.eval('_afterDataLoaded()');
+        v.eval('_efterInlastData()');
         oppnaFlik(v, 'loneoversyn');
         for (const id of KNAPPRUTOR) expect(text(v, id), id).toBe('');
         expect(v.__state.forecast._remediation).toBeUndefined();

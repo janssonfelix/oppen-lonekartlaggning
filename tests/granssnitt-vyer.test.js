@@ -316,7 +316,7 @@ describe('kantränderna', () => {
 });
 
 describe('slutgranskningens fynd', () => {
-    const lasIn = async (w, rader) => { papa(w); w.loadStructureFile(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
+    const lasIn = async (w, rader) => { papa(w); w.lasInStrukturfil(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
     it('en fil som saknar en obligatorisk kolumn men har läsbara rader läses in, och kolumnmappningen säger vad som saknas', async () => {
         const w = createAppWindow();
         // Ålder är valfri (ADR-64); filen saknar i stället AID.

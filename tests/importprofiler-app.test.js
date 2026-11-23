@@ -14,14 +14,14 @@ const status = w => w.document.getElementById('data-status').textContent;
 const lasIn = async (w, rader, namn) => {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
-    w.loadStructureFile(csvFil(w, rader, namn));
+    w.lasInStrukturfil(csvFil(w, rader, namn));
     await vanta(() => status(w) && !/läser|Läser/.test(status(w)));
 };
 // Som lasIn, men väntar tills state.data bytts ut (statusraden kan stå kvar från förra filen medan den nya läses).
 const lasInNy = async (w, rader) => {
     papa(w);
     const fore = w.__state.data;
-    w.loadStructureFile(csvFil(w, rader));
+    w.lasInStrukturfil(csvFil(w, rader));
     await vanta(() => w.__state.data !== fore);
 };
 const panel = w => w.document.getElementById('column-map-panel');
@@ -168,7 +168,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         ruta.checked = true; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
         w.eval('stangInstallningar()');
         papa(w);
-        w.loadStructureFile(csvFil(w, okandaRader()));
+        w.lasInStrukturfil(csvFil(w, okandaRader()));
         await vanta(() => w.document.getElementById('fk-las-in'));   // filen väntar på Läs in
         const fkProfil = () => w.document.querySelector('#avsnitt-fi-forhandskontroll .fk-profil').textContent;
         expect(w.document.getElementById('fk-las-in')).not.toBeNull();
@@ -246,7 +246,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(rader), 'Blad1');
         const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
         w.document.getElementById('data-status').textContent = '';
-        w.loadStructureFile(new w.File([buf], 'personallista.xlsx'));
+        w.lasInStrukturfil(new w.File([buf], 'personallista.xlsx'));
         await vanta(() => w.__state.data.length === 30);
         expect(w.__state.data.length).toBe(30);
         expect(w.__state.importprofil?.id).toBe(PID);

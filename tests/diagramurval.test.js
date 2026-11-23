@@ -237,7 +237,7 @@ describe('minnet', () => {
     it('lönefilens inläsning anropar _rfUrvalGlom', async () => {
         const { readFileSync } = await import('node:fs');
         const kalla = readFileSync('src/app/32-filinlasning.js', 'utf8');
-        const lasIn = kalla.slice(kalla.indexOf('const lasIn = () => {'), kalla.indexOf('_afterDataLoaded();', kalla.indexOf('const lasIn = () => {')));
+        const lasIn = kalla.slice(kalla.indexOf('const lasIn = () => {'), kalla.indexOf('_efterInlastData();', kalla.indexOf('const lasIn = () => {')));
         expect(lasIn).toContain('_rfUrvalGlom()');
     });
     it('demot (litet och stort) glömmer urvalet: den gemensamma inläsningen anropar _rfUrvalGlom', () => {

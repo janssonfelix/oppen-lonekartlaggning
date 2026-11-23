@@ -1015,7 +1015,7 @@ function _exportLikvardighetExport() {
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartLikvardigtArbete() {
     // Arbetsvärdering (poäng) läses ur strukturdatans valfria Poäng-kolumn —
-    // se _deriveArbetsvarderingFromData (anropas i _afterDataLoaded); någon egen uppladdning
+    // se _harledArbetsvarderingUrData (anropas i _efterInlastData); någon egen uppladdning
     // finns inte. Ekvivalensbandet ställs in i § 3:10-fliken.
     document.getElementById('arbvard-band')?.addEventListener('change', e => {
         const v = parseFloat(/** @type {HTMLInputElement} */ (e.target).value);

@@ -11,7 +11,7 @@ import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { state } from './12-tillstand.js';
 import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
-import { _kolumnval, dataStatus, maybeShowColumnMapping } from './32-filinlasning.js';
+import { _kolumnval, dataStatus, visaKolumnmappningOmBehov } from './32-filinlasning.js';
 import { _laNyckel } from './41-lika-arbete.js';
 
 // ---- Förhandskontroll av lönefilen ----
@@ -75,7 +75,7 @@ export function _fkPausa(fk, lasIn) {
     dataStatus.textContent = 'Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.';
     dataStatus.className = 'status-msg warning';
     renderForhandskontroll();
-    maybeShowColumnMapping();   // förra filens kolumnmappning döljs medan filen väntar
+    visaKolumnmappningOmBehov();   // förra filens kolumnmappning döljs medan filen väntar
     _aterstallInaktivitetstimer();    // den väntande filen rensas vid inaktivitet som ett inläst underlag
     const av = document.getElementById('avsnitt-fi-forhandskontroll');
     const filer = document.querySelector('.nav-item[data-tab="filer"]');
@@ -100,7 +100,7 @@ function _fkAvbryt() {
     _fkVantar = null;
     state.forhandskontroll = v.tidigare || null;
     renderForhandskontroll();
-    maybeShowColumnMapping();   // det tidigare underlagets kolumnmappning
+    visaKolumnmappningOmBehov();   // det tidigare underlagets kolumnmappning
     dataStatus.textContent = state.data.length
         ? 'Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar.'
         : 'Inläsningen avbröts. Ingen lönefil är inläst.';
