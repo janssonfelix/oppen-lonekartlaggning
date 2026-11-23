@@ -9,7 +9,7 @@ import { aidAvRad } from '../lib/aid.js';
 import { talformat } from '../lib/figur.js';
 import { gapUppdelning } from '../lib/gapuppdelning.js';
 import { arTal } from '../lib/htmltext.js';
-import { arKvinna } from '../lib/kon.js';
+import { arKvinna, arMan } from '../lib/kon.js';
 import { arsbeloppMening } from '../lib/prioritering.js';
 import { arsjamforelseBlock, avsnittBlock, basintervallBlock, egenTabellBlock, gruppBlock, justeratGapInomYrke, parBlock, referenserBlock, tillText, tillWordHtml } from '../lib/rapportunderlag.js';
 import { sektorernasAndel, sektorsTabell } from '../lib/sektor.js';
@@ -76,8 +76,7 @@ function _rapportunderlagBlockExport() {
     if (!d.length) return [];
     const k = kTroskel();
     const opt = { k, urval: 'Hela organisationen', demo: !!state.isDemo, troskelNot: _kSanktNot() || undefined };
-    const arKv = arKvinna;
-    const arMa = r => !arKv(r) && (r.kon.includes('man') || r.kon.includes('män'));
+    const arKv = arKvinna, arMa = arMan;
 
     // Sammanfattning
     const kvLon = d.filter(arKv).map(r => r.lon), maLon = d.filter(arMa).map(r => r.lon);

@@ -20,14 +20,12 @@ import { kvDefinitionText } from './aidbas.js';
 import { basRangordning } from './likvardighet.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { STANDARDTERMER as T, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
-import { arKvinna } from './kon.js';
+import { arKvinna, arMan } from './kon.js';
 import { svTal as formatTal } from './talformat.js';
 import { aidAvRad, namnrader } from './aid.js';
 
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
-
-const _arMan = r => typeof r.kon === 'string' && !r.kon.includes('kvinna') && (r.kon.includes('man') || r.kon.includes('män'));
 
 /**
  * Noteringen om en variabel som valts bort ur förklaringsmodellen (ADR-56), som den står i rapporten och i panelen.
@@ -64,12 +62,12 @@ export function gruppMedBas(g) {
 export function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const perGrupp = new Map();
     const nyckelAv = r => `${aidAvRad(r)}\u0000${r.bas == null ? '' : String(r.bas)}`;
-    const namn = namnrader((rader || []).filter(r => arKvinna(r) || _arMan(r)), nyckelAv);
+    const namn = namnrader((rader || []).filter(r => arKvinna(r) || arMan(r)), nyckelAv);
     for (const r of rader || []) {
         const aid = aidAvRad(r), bas = r.bas == null ? '' : String(r.bas), nyckel = nyckelAv(r);
         if (!perGrupp.has(nyckel)) { const nr = namn.get(nyckel) ?? r; perGrupp.set(nyckel, { yrke: nr.yrke, etikett: String(nr.yrkeLabel || nr.yrke || aid), aid, bas, kv: [], ma: [] }); }
         if (arKvinna(r)) perGrupp.get(nyckel).kv.push(r.lon);
-        else if (_arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
+        else if (arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
     }
     const grupper = [], utelamnadeGrupper = [], ejJamforbaraGrupper = [];
     for (const { yrke, etikett, aid, bas, kv, ma } of perGrupp.values()) {
@@ -119,7 +117,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
  */
 export function justeratGapInomYrke(rader, { k }) {
     if ((rader || []).length && !(rader || []).some(r => r && r.alder > 0)) return { utanAlder: true };
-    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (arKvinna(r) || _arMan(r)));
+    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (arKvinna(r) || arMan(r)));
     const nKv = d.filter(arKvinna).length, nMa = d.length - nKv;
     if (nKv < k || nMa < k) return { forFa: true };
     const basLista = [...new Set(d.map(r => r.bas))].sort();
