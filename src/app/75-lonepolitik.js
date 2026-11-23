@@ -25,7 +25,7 @@ import { adjektiv, genitiv, ordForAntal, stor } from '../lib/termer.js';
 import { vymodellLonepolitik } from '../lib/vymodell-lonepolitik.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { enableTableSort } from './05-tabeller-och-lankar.js';
+import { aktiveraSortering } from './05-tabeller-och-lankar.js';
 import { _konUtelamnatNot, kTroskel, litetUnderlag } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { orgNamn, plotNamn } from './07-standardinstallningar.js';
@@ -104,7 +104,7 @@ export function ritaLonepolitik() {
     _lpRitaKonPosition(vm);
     _lpRitaKonLagen(vm);
     _lpRitaEfterlevnad(vm);
-    if (typeof enableTableSort === 'function') enableTableSort('lonepolitik-table');
+    if (typeof aktiveraSortering === 'function') aktiveraSortering('lonepolitik-table');
     if (typeof addTableExportTools === 'function') addTableExportTools('lonepolitik-table', 'lonepolitik');
 }
 

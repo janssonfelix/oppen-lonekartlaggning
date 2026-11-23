@@ -16,7 +16,7 @@ import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { genitiv, termFras } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, _parUtelamnadeNot, kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { getData, state } from './12-tillstand.js';
@@ -263,7 +263,7 @@ export function _hpBedomningHtml(lista, { medGrupp = false } = {}) {
 }
 /** Visar raden i Handlingsplan med fokus på dess knapp Sakliga skäl. */
 export function _hpGaTillRad(nyckel) {
-    navigateTo('handlingsplan');
+    navigeraTill('handlingsplan');
     const fokus = () => {
         const b = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]')].find(el => /** @type {HTMLElement} */ (el).dataset.hpSkal === nyckel);
         if (b) { /** @type {HTMLElement} */ (b).focus(); b.scrollIntoView?.({ block: 'center' }); }

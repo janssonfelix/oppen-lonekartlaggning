@@ -10,7 +10,7 @@ import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { buildBaseAudit, flerKolumner, setAudit } from './05-tabeller-och-lankar.js';
+import { byggGrundberakning, flerKolumner, sattBerakning } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
 import { jmfNamn, orgNamn, plotNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -151,9 +151,9 @@ export function generateBenchmark() {
     const antal = matchningAntal(rader);
     const grupper = n => `${n} ${ordForAntal(n, T.enhet)} i ${T.niva.en}`;
     const urval = jamforelseUrvalText();
-    setAudit('benchmark', {
+    sattBerakning('benchmark', {
         title: 'Jämförelsestatistik',
-        ...buildBaseAudit(),
+        ...byggGrundberakning(),
         usedInAnalysis: rader.length,
         analysisExclusions: [
             ...(urval ? [[esc(urval), '']] : []),

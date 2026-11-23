@@ -311,9 +311,9 @@ describe('menystruktur', () => {
         expect(oversikt.contains(w.document.getElementById('export-hub'))).toBe(false);
     });
     it('flikmålen rapport, demografi och kvalitet leds till sina flikar', () => {
-        w.eval("navigateTo('rapport')");     expect(synlig('view-rapport') && synlig('view-utforska')).toBe(true);
-        w.eval("navigateTo('demografi')");   expect(synlig('view-demografi')).toBe(true);
-        w.eval("navigateTo('kvalitet')");    expect(synlig('view-dokumentera')).toBe(true);
+        w.eval("navigeraTill('rapport')");     expect(synlig('view-rapport') && synlig('view-utforska')).toBe(true);
+        w.eval("navigeraTill('demografi')");   expect(synlig('view-demografi')).toBe(true);
+        w.eval("navigeraTill('kvalitet')");    expect(synlig('view-dokumentera')).toBe(true);
         const a = w.document.createElement('button'); a.setAttribute('data-goto-tab', 'kvalitet');
         w.document.body.appendChild(a); a.click(); a.remove();
         expect(synlig('view-dokumentera')).toBe(true);

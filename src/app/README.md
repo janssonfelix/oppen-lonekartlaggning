@@ -42,7 +42,7 @@ först i utfilen och sätter lagringsspärren innan något annat körs.
 | `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator och adaptern `hamtaFalt`, som skickar kolumnmappningen och importprofilen ur tillståndet till kolumnvalet i `src/lib/inlasning.js` (där också `gissaKolumnmappning` bor) |
 | `03-ikoner.js` | Linjeikonerna (`ikon`): ett bildspråk i stället för bildtecken; statusmärken med egen form |
 | `04-ordlista.js` | Ordlistan, symbolförklaringen och metodtexten om AID (`AID_METODTEXT`); texterna är mallar med termerna (`{enhet.en}`), fyllda med `termText` |
-| `05-tabeller-och-lankar.js` | Beräkningspaneler (audit), sorterbara (underrader följer sin rad) och hopfällbara tabeller, växeln *Fler kolumner* för breda tabeller (`flerKolumner`; grundvyn gömmer sekundära kolumner, exporterna tar alla), `navigateTo`, korslänkar, stapelceller |
+| `05-tabeller-och-lankar.js` | Beräkningspaneler (audit), sorterbara (underrader följer sin rad) och hopfällbara tabeller, växeln *Fler kolumner* för breda tabeller (`flerKolumner`; grundvyn gömmer sekundära kolumner, exporterna tar alla), `navigeraTill`, korslänkar, stapelceller |
 | `06-k-troskel.js` | Tröskeln för minsta gruppstorlek: `kTroskel()`, `statGolv()`, `sattKTroskel()` (ADR-38), könsuppdelade mått och par för redovisning, stämplarna, diagramnoterna och omritningen (se `docs/utveckling/k-troskeln.md`) |
 | `06-kvinnoandel-referens.js` | Den nationella kvinnoandelen per AID ur SKR:s personalstatistik (`nationellAidKlass`, `skrForklaring`), reserv i likvärdighetsanalysen |
 | `06-maskeringsnoter.js` | Maskeringsnoterna: `kMaskNot`, `kSamladNot` |

@@ -8,16 +8,16 @@ import { klickaFlik, tabMal } from './31-navigering.js';
 
 // ---- Audit / spårbarhet av beräkningar ("Beräkning & urval") ----
 // Varje analysfunktion fyller i sitt audit-objekt så användaren kan kvalitetssäkra.
-const auditRegistry = {};
+const berakningsregister = {};
 // Metodbilagans ordning i Excel och utskrift: fast, oberoende av i vilken ordning flikarna råkade ritas
 // (strukturomläggningen 2026-11-06 flyttade regressionen till Lönestruktur utan att bilagan ska byta ordning).
-const AUDIT_ORDNING = ['rapport', 'skevhet', 'livscykel', 'matrix', 'prioritering', 'benchmark'];
-export function auditPoster() {
-    const ids = [...AUDIT_ORDNING.filter(id => id in auditRegistry), ...Object.keys(auditRegistry).filter(id => !AUDIT_ORDNING.includes(id))];
-    return ids.map(id => /** @type {[string, any]} */ ([id, auditRegistry[id]]));
+const BERAKNINGSORDNING = ['rapport', 'skevhet', 'livscykel', 'matrix', 'prioritering', 'benchmark'];
+export function berakningsposter() {
+    const ids = [...BERAKNINGSORDNING.filter(id => id in berakningsregister), ...Object.keys(berakningsregister).filter(id => !BERAKNINGSORDNING.includes(id))];
+    return ids.map(id => /** @type {[string, any]} */ ([id, berakningsregister[id]]));
 }
 
-export function buildBaseAudit() {
+export function byggGrundberakning() {
     const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
     const totalRaw   = da.totalRaw;
     const afterParse = state.data.length;
@@ -28,13 +28,13 @@ export function buildBaseAudit() {
     return { totalRaw, afterParse, afterFilter, parseExcl };
 }
 
-export function setAudit(id, audit) {
-    auditRegistry[id] = audit;
+export function sattBerakning(id, audit) {
+    berakningsregister[id] = audit;
     const panel = document.querySelector(`details.audit-panel[data-audit-id="${id}"] .audit-content`);
-    if (panel) panel.innerHTML = renderAuditHtml(audit);
+    if (panel) panel.innerHTML = ritaBerakningHtml(audit);
 }
 
-function renderAuditHtml(a) {
+function ritaBerakningHtml(a) {
     const fmt = n => n.toLocaleString('sv-SE');
     const exclRows = [
         ...(a.parseExcl || []).map(([r,c]) => `<tr><td>− ${esc(r)}</td><td class="t-tal">${fmt(c)}</td></tr>`),
@@ -67,7 +67,7 @@ function renderAuditHtml(a) {
 }
 
 // ---- Generisk tabell-sortering ----
-function _parseSwedishNumber(str) {
+function _tolkaSvensktTal(str) {
     if (str == null) return NaN;
     // Svenskt format: decimalkomma, och minustecknet U+2212 som Intl skriver (annars sorteras negativa tal som positiva).
     const s = str.toString().trim().replace(/\u2212/g, '-').replace(/ /g, ' ').replace(',', '.');
@@ -75,19 +75,19 @@ function _parseSwedishNumber(str) {
     if (cleaned === '' || cleaned === '-' || cleaned === '.') return NaN;
     return parseFloat(cleaned);
 }
-function _compareCells(a, b, idx, dir) {
+function _jamforCeller(a, b, idx, dir) {
     const ca = a.children[idx], cb = b.children[idx];
     if (!ca || !cb) return 0;
     const va = ca.getAttribute('data-sort-value') ?? ca.textContent;
     const vb = cb.getAttribute('data-sort-value') ?? cb.textContent;
-    const na = _parseSwedishNumber(va), nb = _parseSwedishNumber(vb);
+    const na = _tolkaSvensktTal(va), nb = _tolkaSvensktTal(vb);
     const bothNum = !isNaN(na) && !isNaN(nb);
     let cmp;
     if (bothNum) cmp = na - nb;
     else cmp = va.toString().trim().localeCompare(vb.toString().trim(), 'sv');
     return dir === 'asc' ? cmp : -cmp;
 }
-export function enableTableSort(tableId) {
+export function aktiveraSortering(tableId) {
     const table = document.getElementById(tableId);
     if (!table || table._sortInit) return;
     table._sortInit = true;
@@ -112,7 +112,7 @@ export function enableTableSort(tableId) {
                     if (r.classList.contains('group-header')) { cur = { header: r, children: [] }; groups.push(cur); }
                     else if (cur) cur.children.push(r);
                 });
-                groups.forEach(g => g.children.sort((a,b) => _compareCells(a, b, idx, dir)));
+                groups.forEach(g => g.children.sort((a,b) => _jamforCeller(a, b, idx, dir)));
                 tbody.innerHTML = '';
                 const frag = document.createDocumentFragment();
                 groups.forEach(g => { frag.appendChild(g.header); g.children.forEach(c => frag.appendChild(c)); });
@@ -124,7 +124,7 @@ export function enableTableSort(tableId) {
                     if (r.classList.contains('la-underrad') && enheter.length) enheter[enheter.length - 1].push(r);
                     else enheter.push([r]);
                 });
-                enheter.sort((a,b) => _compareCells(a[0], b[0], idx, dir));
+                enheter.sort((a,b) => _jamforCeller(a[0], b[0], idx, dir));
                 enheter.forEach(e => e.forEach(r => tbody.appendChild(r)));
             }
         });
@@ -214,7 +214,7 @@ export function _flerKolumnerAlla(rot) {
 }
 
 // ---- Collapsible BAS-grupper ----
-export function setupCollapsibleGroups(tableId) {
+export function kopplaHopfallbaraGrupper(tableId) {
     const tbody = document.querySelector(`#${tableId} tbody`);
     if (!tbody || tbody._collapseInit) return;
     tbody._collapseInit = true;
@@ -229,7 +229,7 @@ export function setupCollapsibleGroups(tableId) {
         }
     });
 }
-export function toggleAllGroups(tableId, collapse) {
+export function vaxlaAllaGrupper(tableId, collapse) {
     const tbody = document.querySelector(`#${tableId} tbody`);
     if (!tbody) return;
     tbody.querySelectorAll('tr.group-header').forEach(row => {
@@ -247,14 +247,14 @@ export function toggleAllGroups(tableId, collapse) {
  * @param {{uppskjut?: boolean, efter?: (() => void)|null, search?: string, searchInputId?: string,
  *   highlightMatch?: {tableId: string, contains: string[]}}} [opts]
  */
-export function navigateTo(tabName, opts = {}) {
+export function navigeraTill(tabName, opts = {}) {
     tabName = tabMal(tabName);
     const btn = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
     if (!btn || /** @type {HTMLInputElement} */ (btn).disabled) return false;
     klickaFlik(btn, { uppskjut: !!opts.uppskjut, efter: () => _navigeratTill(opts) });
     return true;
 }
-/** Det som navigateTo gör i fliken när den är ritad. */
+/** Det som navigeraTill gör i fliken när den är ritad. */
 function _navigeratTill(opts) {
     if (opts.efter) opts.efter();
     if (opts.search && opts.searchInputId) {
@@ -287,7 +287,7 @@ function _navigeratTill(opts) {
 
 // ---- Mini-bar för procentkolumn (bidirektionell) ----
 // percent: signerat procentvärde, scaleMax: max abs-värde som motsvarar full bar
-export function buildBarCell(percent, scaleMax = 25, options = {}) {
+export function byggStapelcell(percent, scaleMax = 25, options = {}) {
     const fmt = options.format || (p => (p >= 0 ? '+' : '') + svPct(p, 1));
     // En decimal på skärmen; exporten bär två (data-export-text, se _exportText).
     const exportText = options.format ? '' : ` data-export-text="${(percent >= 0 ? '+' : '') + svPct(percent, 2)}"`;
@@ -331,11 +331,11 @@ export function uppstartTabellerOchLankar() {
         const yrke = /** @type {HTMLElement} */ (link).dataset.yrke || '';
         const bas  = /** @type {HTMLElement} */ (link).dataset.bas  || '';
         if (target === 'rapport') {
-            navigateTo('rapport', { search: yrke, searchInputId: 'search-rapport' });
+            navigeraTill('rapport', { search: yrke, searchInputId: 'search-rapport' });
         } else if (target === 'matrix') {
-            navigateTo('matrix', { highlightMatch: { tableId: 'matrix-table', contains: [yrke] } });
+            navigeraTill('matrix', { highlightMatch: { tableId: 'matrix-table', contains: [yrke] } });
         } else if (target === 'demografi') {
-            navigateTo('demografi');
+            navigeraTill('demografi');
             setTimeout(() => {
                 const sel = document.getElementById('bas-select-demo');
                 if (sel) {

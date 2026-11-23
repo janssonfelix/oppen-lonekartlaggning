@@ -11,7 +11,7 @@ import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _cellSpann, enableTableSort, setupCollapsibleGroups } from './05-tabeller-och-lankar.js';
+import { _cellSpann, aktiveraSortering, kopplaHopfallbaraGrupper } from './05-tabeller-och-lankar.js';
 import { _kUndantagFor, _tsvMedStampel } from './06-k-troskel.js';
 import { COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -286,13 +286,13 @@ const ENHANCED_TABLES = [
     { id: 'likvardighet-table', file: 'likvardighet' }
 ];
 function initTableEnhancements() {
-    ENHANCED_TABLES.forEach(t => { enableTableSort(t.id); addTableExportTools(t.id, t.file); });
-    setupCollapsibleGroups('rapport-table');
-    setupCollapsibleGroups('benchmark-table');
+    ENHANCED_TABLES.forEach(t => { aktiveraSortering(t.id); addTableExportTools(t.id, t.file); });
+    kopplaHopfallbaraGrupper('rapport-table');
+    kopplaHopfallbaraGrupper('benchmark-table');
 }
 
 // ---- Kopiera/CSV per tabell (visualiserings-Steg 3-komplettering) ------------
-// Sortering fanns redan (enableTableSort); det som saknades var att få UT en
+// Sortering fanns redan (aktiveraSortering); det som saknades var att få UT en
 // enskild tabell. En diskret verktygsrad placeras EN gång framför tabellens
 // container (utanför det som ritas om vid re-render), och klicken hanteras
 // delegerat så att tabellen läses LIVE — sorterad ordning och omritad tbody

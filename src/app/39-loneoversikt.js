@@ -5,7 +5,7 @@ import { stor } from '../lib/termer.js';
 import { vymodellLoneoversikt } from '../lib/vymodell-loneoversikt.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
-import { buildBaseAudit, setAudit, toggleAllGroups } from './05-tabeller-och-lankar.js';
+import { byggGrundberakning, sattBerakning, vaxlaAllaGrupper } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
@@ -79,8 +79,8 @@ export function ritaLoneoversikt() {
     if (!/** @type {HTMLInputElement} */ (document.getElementById('search-rapport'))?.value) _rapportTillampaHopfallning();
 
     // Audit
-    const base = buildBaseAudit();
-    setAudit('rapport', {
+    const base = byggGrundberakning();
+    sattBerakning('rapport', {
         title: 'Löneöversikt',
         ...base,
         usedInAnalysis: base.afterFilter,
@@ -119,8 +119,8 @@ export function rapportGlomHopfallning() { _rapportHopfallda = null; }
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartLoneoversikt() {
     // Löneöversikten: fäll in/ut alla
-    document.getElementById('rapport-collapse-all')?.addEventListener('click', () => toggleAllGroups('rapport-table', true));
-    document.getElementById('rapport-expand-all')?.addEventListener('click', () => toggleAllGroups('rapport-table', false));
+    document.getElementById('rapport-collapse-all')?.addEventListener('click', () => vaxlaAllaGrupper('rapport-table', true));
+    document.getElementById('rapport-expand-all')?.addEventListener('click', () => vaxlaAllaGrupper('rapport-table', false));
     document.querySelector('#rapport-table tbody')?.addEventListener('click', e => {
         if (!/** @type {HTMLElement} */ (e.target).closest('tr.group-header')) return;
         // Raden fälls av tabellens gemensamma lyssnare; här noteras bara läget när den har gjort sitt.

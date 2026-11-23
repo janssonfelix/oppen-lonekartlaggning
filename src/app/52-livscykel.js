@@ -9,7 +9,7 @@ import { adjektiv, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { antalRubrik, antalText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { buildBaseAudit, setAudit } from './05-tabeller-och-lankar.js';
+import { byggGrundberakning, sattBerakning } from './05-tabeller-och-lankar.js';
 import { kMaskerad, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
@@ -272,9 +272,9 @@ export function ritaLivscykel(given) {
     `;
 
     // Modellformeln och de statistiska detaljerna står i flikens beräkningspanel (Så räknas det), inte i löptexten.
-    const baseL = buildBaseAudit();
+    const baseL = byggGrundberakning();
     const utanfor = Math.max(0, baseL.afterFilter - result.n);
-    setAudit('livscykel', {
+    sattBerakning('livscykel', {
         title: 'Ålder & karriär — livscykelmodellen',
         ...baseL,
         usedInAnalysis: result.n,

@@ -5,7 +5,7 @@ import { svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { oppnaOrdlista } from './04-ordlista.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { kMaskerad } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { diagramMarkering, sattDiagramMarkering } from './11-markering.js';
@@ -192,7 +192,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
             /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
             meddelaSkarmlasare(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
         };
-        if (!navigateTo(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
+        if (!navigeraTill(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
     }
 }
 /** @type {boolean|null} */

@@ -1186,8 +1186,8 @@ describe('lönegapet visas som kvinnors lön i procent av mäns', () => {
 
 describe('svenskt talformat i alla vyer, utan att exporterna ändras', () => {
     it('sorteringen läser minustecknet som Intl skriver', () => {
-        expect(w.eval('_parseSwedishNumber("\\u22124,63 %")')).toBeCloseTo(-4.63, 5);
-        expect(w.eval('_parseSwedishNumber("85,2 %")')).toBeCloseTo(85.2, 5);
+        expect(w.eval('_tolkaSvensktTal("\\u22124,63 %")')).toBeCloseTo(-4.63, 5);
+        expect(w.eval('_tolkaSvensktTal("85,2 %")')).toBeCloseTo(85.2, 5);
     });
     it('ingen flik visar ett procenttal med decimalpunkt', () => {
         const w2 = demo();

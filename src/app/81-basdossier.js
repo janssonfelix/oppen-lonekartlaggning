@@ -24,7 +24,7 @@ import { basdossierIntervall, vymodellBasdossier } from '../lib/vymodell-basdoss
 import { _fokusfallor, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _konUtelamnatNot, _kSanktNot, _parUtelamnadeNot, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
@@ -344,7 +344,7 @@ export function uppstartBasdossier() {
             closeBasdossier();
             const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('bas-select-kon'));
             if (sel && [...sel.options].some(o => o.value === bas)) sel.value = bas;
-            navigateTo('kon');
+            navigeraTill('kon');
             return;
         }
         if (t.closest('#btn-basdossier-copy')) {

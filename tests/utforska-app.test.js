@@ -988,7 +988,7 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — sortering', () =
         win.__renderExplorer();            // andra renderingen: tabellhuvudet behåller sina lyssnare
         const th = win.document.querySelectorAll('#explore-table thead th');
         expect(th.length).toBeGreaterThan(0);
-        // enableTableSort märker sorterbara kolumner med .sortable — saknas den
+        // aktiveraSortering märker sorterbara kolumner med .sortable — saknas den
         // har lyssnarna inte registrerats om.
         expect(th[0].classList.contains('sortable')).toBe(true);
     });
@@ -1004,7 +1004,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — sortering',
             + '<tr><td>x</td><td data-sort-value="1">1</td></tr><tr><td>y</td><td data-sort-value="2">2</td></tr>'
             + '<tr><td colspan="2">not</td></tr></tbody>';
         d.body.appendChild(t);
-        w.enableTableSort('sorttest');
+        w.aktiveraSortering('sorttest');
         const th = t.querySelectorAll('th')[1];
         for (let i = 0; i < 2; i++) {
             th.click();

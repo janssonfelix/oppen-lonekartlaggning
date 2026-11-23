@@ -8,7 +8,7 @@ import { svPct, svTal } from '../lib/talformat.js';
 import { ordForAntal, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
-import { enableTableSort } from './05-tabeller-och-lankar.js';
+import { aktiveraSortering } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
@@ -183,6 +183,6 @@ export function renderReferensOverblick() {
         ${har.harStatistik && har.harStallningstagande ? _rrStatTabellHtml(o.statistikMotStallningstagande) : ''}`;
     try { ritaFigur('chart-ref-hantel', _rrHantelFigur(_rrHantelRader(o.grupper.slice(0, _RR_MAX)), har)); } catch (e) { rapporteraFel('Löneläget: överblickens bild', e); }
     addTableExportTools('ref-tabell', 'referenser');
-    enableTableSort('ref-tabell');
-    enableTableSort('ref-stat-mot-stallning');
+    aktiveraSortering('ref-tabell');
+    aktiveraSortering('ref-stat-mot-stallning');
 }

@@ -13,7 +13,7 @@ import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { buildBarCell, buildBaseAudit, flerKolumner, setAudit, tillampaFlerKolumner } from './05-tabeller-och-lankar.js';
+import { byggStapelcell, byggGrundberakning, flerKolumner, sattBerakning, tillampaFlerKolumner } from './05-tabeller-och-lankar.js';
 import { kMaskerad, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { COST_DEFAULTS, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -289,7 +289,7 @@ export function renderPrioritering() {
     if (s3) s3.textContent = _fmtCost(levels[2]) + '+';
 
     // Audit
-    const baseP = buildBaseAudit();
+    const baseP = byggGrundberakning();
     // Räkna grupper utan referens
     const dForCount = getData();
     let smallCount = 0, noRefCount = 0;
@@ -310,7 +310,7 @@ export function renderPrioritering() {
             if (!sr) noRefCount++;
         }
     });
-    setAudit('prioritering', {
+    sattBerakning('prioritering', {
         title: 'Prioriteringsanalys',
         ...baseP,
         usedInAnalysis: items.length,
@@ -347,8 +347,8 @@ export function renderPrioritering() {
         const tr = document.createElement('tr');
         const statusInfo = PRIO_STATUS_INFO[i.status];
         const sgnKr  = i.diffKr  >= 0 ? '+' : '';
-        const gapBar = buildBarCell(i.gapPct, 15);
-        const diffBar = buildBarCell(i.diffPct, 25);
+        const gapBar = byggStapelcell(i.gapPct, 15);
+        const diffBar = byggStapelcell(i.diffPct, 25);
         const costTxt = i.annualGapTotal > 0 ? svKr(i.annualGapTotal) : '–';
         const costSort = i.annualGapTotal > 0 ? i.annualGapTotal : 0;
         const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : '–';

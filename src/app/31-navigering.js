@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 import { meddelaSkarmlasare, esc, stangAutofyll } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { kInstalld } from './06-k-troskel.js';
 import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
 import { _mkTabeller, diagramMarkering } from './11-markering.js';
@@ -602,7 +602,7 @@ export function uppstartNavigering() {
             oppnaHopfallda(ankare);
             if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
         };
-        if (!(target && typeof navigateTo === 'function' && navigateTo(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
+        if (!(target && typeof navigeraTill === 'function' && navigeraTill(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
     });
     document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!menyOppen()));
     document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));

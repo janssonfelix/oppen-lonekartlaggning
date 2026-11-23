@@ -11042,7 +11042,7 @@ function renderPrioritering() {
   if (s1) s1.textContent = _fmtCost(levels[0]);
   if (s2) s2.textContent = _fmtCost(levels[1]);
   if (s3) s3.textContent = _fmtCost(levels[2]) + "+";
-  const baseP = buildBaseAudit();
+  const baseP = byggGrundberakning();
   const dForCount = getData();
   let smallCount = 0, noRefCount = 0;
   const groupCheck = {};
@@ -11065,7 +11065,7 @@ function renderPrioritering() {
       if (!sr) noRefCount++;
     }
   });
-  setAudit("prioritering", {
+  sattBerakning("prioritering", {
     title: "Prioriteringsanalys",
     ...baseP,
     usedInAnalysis: items.length,
@@ -11108,8 +11108,8 @@ function renderPrioritering() {
     const tr = document.createElement("tr");
     const statusInfo = PRIO_STATUS_INFO[i.status];
     const sgnKr = i.diffKr >= 0 ? "+" : "";
-    const gapBar = buildBarCell(i.gapPct, 15);
-    const diffBar = buildBarCell(i.diffPct, 25);
+    const gapBar = byggStapelcell(i.gapPct, 15);
+    const diffBar = byggStapelcell(i.diffPct, 25);
     const costTxt = i.annualGapTotal > 0 ? svKr(i.annualGapTotal) : "–";
     const costSort = i.annualGapTotal > 0 ? i.annualGapTotal : 0;
     const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : "–";
@@ -13521,11 +13521,11 @@ function ritaLikvardigtArbete() {
       _openEvidenceModal(_evidenceForLikvardighetPair(p));
     });
   });
-  if (typeof enableTableSort === "function") enableTableSort("likvardighet-table");
+  if (typeof aktiveraSortering === "function") aktiveraSortering("likvardighet-table");
   if (typeof addTableExportTools === "function") addTableExportTools("likvardighet-table", "likvardighet");
   if (typeof flerKolumner === "function") flerKolumner("likvardighet-table", LV_DOLDA_KOLUMNER, "likvardighet");
   if (document.getElementById("likvardighet-lagre-krav-table")) {
-    if (typeof enableTableSort === "function") enableTableSort("likvardighet-lagre-krav-table");
+    if (typeof aktiveraSortering === "function") aktiveraSortering("likvardighet-lagre-krav-table");
     if (typeof addTableExportTools === "function") addTableExportTools("likvardighet-lagre-krav-table", "likvardighet_lagre_krav");
     if (typeof flerKolumner === "function") flerKolumner("likvardighet-lagre-krav-table", LV_LAGRE_KRAV_DOLDA_KOLUMNER, "lvLagreKrav");
   }
@@ -14950,9 +14950,9 @@ function ritaLivscykel(given) {
             Modellen bygger på ${svTal(result.n, 0)} personer och tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
     `;
-  const baseL = buildBaseAudit();
+  const baseL = byggGrundberakning();
   const utanfor = Math.max(0, baseL.afterFilter - result.n);
-  setAudit("livscykel", {
+  sattBerakning("livscykel", {
     title: "Ålder & karriär — livscykelmodellen",
     ...baseL,
     usedInAnalysis: result.n,
@@ -17997,7 +17997,7 @@ function _hpBedomningHtml(lista, { medGrupp = false } = {}) {
   return `<ul class="gd-list hp-bedomningar">${lista.map((b) => `<li>${medGrupp ? `${esc(b.grupp)}${markning(b)}: ` : ""}${esc(_hpBedomningText(b))}. <a href="#" data-hp-ga-till="${esc(b.nyckel)}" aria-label="${esc(`Gå till raden i Handlingsplan: ${b.grupp}`)}">Gå till raden</a></li>`).join("")}</ul>`;
 }
 function _hpGaTillRad(nyckel) {
-  navigateTo("handlingsplan");
+  navigeraTill("handlingsplan");
   const fokus = () => {
     const b = [...document.querySelectorAll("#handlingsplan-tbody [data-hp-skal]")].find((el) => (
       /** @type {HTMLElement} */
@@ -18536,7 +18536,7 @@ function ritaLonepolitik() {
   _lpRitaKonPosition(vm);
   _lpRitaKonLagen(vm);
   _lpRitaEfterlevnad(vm);
-  if (typeof enableTableSort === "function") enableTableSort("lonepolitik-table");
+  if (typeof aktiveraSortering === "function") aktiveraSortering("lonepolitik-table");
   if (typeof addTableExportTools === "function") addTableExportTools("lonepolitik-table", "lonepolitik");
 }
 function _lpCoverageHtml(vm) {
@@ -19125,9 +19125,9 @@ function generateBenchmark() {
   const antal = matchningAntal(rader);
   const grupper = (n) => `${n} ${ordForAntal(n, T.enhet)} i ${T.niva.en}`;
   const urval = jamforelseUrvalText();
-  setAudit("benchmark", {
+  sattBerakning("benchmark", {
     title: "Jämförelsestatistik",
-    ...buildBaseAudit(),
+    ...byggGrundberakning(),
     usedInAnalysis: rader.length,
     analysisExclusions: [
       ...urval ? [[esc(urval), ""]] : [],
@@ -19969,8 +19969,8 @@ function renderReferensOverblick() {
     rapporteraFel("Löneläget: överblickens bild", e);
   }
   addTableExportTools("ref-tabell", "referenser");
-  enableTableSort("ref-tabell");
-  enableTableSort("ref-stat-mot-stallning");
+  aktiveraSortering("ref-tabell");
+  aktiveraSortering("ref-stat-mot-stallning");
 }
 
 // src/app/61-regler-och-praxis.js
@@ -22272,7 +22272,7 @@ function uppstartBasdossier() {
         document.getElementById("bas-select-kon")
       );
       if (sel && [...sel.options].some((o) => o.value === bas)) sel.value = bas;
-      navigateTo("kon");
+      navigeraTill("kon");
       return;
     }
     if (t.closest("#btn-basdossier-copy")) {
@@ -22350,8 +22350,8 @@ function ritaLoneoversikt() {
   document.getElementById("rapport-table")?.classList.toggle("utan-jamforelse", !state.statistik.length);
   if (!/** @type {HTMLInputElement} */
   document.getElementById("search-rapport")?.value) _rapportTillampaHopfallning();
-  const base = buildBaseAudit();
-  setAudit("rapport", {
+  const base = byggGrundberakning();
+  sattBerakning("rapport", {
     title: "Löneöversikt",
     ...base,
     usedInAnalysis: base.afterFilter,
@@ -22391,8 +22391,8 @@ function rapportGlomHopfallning() {
   _rapportHopfallda = null;
 }
 function uppstartLoneoversikt() {
-  document.getElementById("rapport-collapse-all")?.addEventListener("click", () => toggleAllGroups("rapport-table", true));
-  document.getElementById("rapport-expand-all")?.addEventListener("click", () => toggleAllGroups("rapport-table", false));
+  document.getElementById("rapport-collapse-all")?.addEventListener("click", () => vaxlaAllaGrupper("rapport-table", true));
+  document.getElementById("rapport-expand-all")?.addEventListener("click", () => vaxlaAllaGrupper("rapport-table", false));
   document.querySelector("#rapport-table tbody")?.addEventListener("click", (e) => {
     if (!/** @type {HTMLElement} */
     e.target.closest("tr.group-header")) return;
@@ -24299,7 +24299,7 @@ function _renderExplorerTable(model, typ, inkl) {
   table.innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
   table.setAttribute("data-export-beskrivning", beskrivUrval(spec.urval, spec.gruppVillkor));
   table._sortInit = false;
-  if (typeof enableTableSort === "function") enableTableSort("explore-table");
+  if (typeof aktiveraSortering === "function") aktiveraSortering("explore-table");
   if (typeof addTableExportTools === "function") addTableExportTools("explore-table", "utforska");
   const container = table.closest(".table-container");
   const verktyg = container && container.previousElementSibling;
@@ -25388,7 +25388,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   if (typeof _visaJamforelseFlik === "function") _visaJamforelseFlik(false);
   state.filnamn = { data: null, policy: null, statistik: null };
   if (typeof renderFilrutor === "function") renderFilrutor();
-  if (typeof navigateTo === "function") navigateTo("dashboard");
+  if (typeof navigeraTill === "function") navigeraTill("dashboard");
   updateGdprBanner();
   if (typeof ritaKravstatus === "function") ritaKravstatus();
   meddelaSkarmlasare("All data har raderats ur minnet.");
@@ -25927,8 +25927,8 @@ function ritaLoneskillnadPerBas(vm) {
     if (konsfordelning.rader.length) ritaFigur(skEl, _skevhetAndelFigur(konsfordelning.rader));
     else rensaFigur(skEl);
   }
-  const baseS = buildBaseAudit();
-  setAudit("skevhet", {
+  const baseS = byggGrundberakning();
+  sattBerakning("skevhet", {
     title: "Löneskillnad och könsfördelning",
     ...baseS,
     usedInAnalysis: baseS.afterFilter,
@@ -26073,12 +26073,12 @@ function ritaLikaArbete(vm, { reg: given } = {}) {
       _openEvidenceModal(_evidenceForEUMatrixRow(row));
     });
   });
-  const baseM = buildBaseAudit();
+  const baseM = byggGrundberakning();
   const skippedTooFewKvOrMa = vm.ejJamforbara.length;
   const maskedYrken = vm.utelamnade.length;
   const reg = given || runOLSRegression();
   const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct(reg.R2 * 100, 1)}`;
-  setAudit("matrix", {
+  sattBerakning("matrix", {
     title: "Lika arbete — multivariat regression",
     ...baseM,
     usedInAnalysis: rows.length,
@@ -26568,7 +26568,7 @@ function _aidbasTabellHtml(id, kolumner, rader, { not = "", tom = "Inga grupper 
 }
 function _aidbasEfter(id, dolda, nyckel) {
   if (!document.getElementById(id)) return;
-  if (typeof enableTableSort === "function") enableTableSort(id);
+  if (typeof aktiveraSortering === "function") aktiveraSortering(id);
   if (typeof addTableExportTools === "function") addTableExportTools(id, document.getElementById(id)?.getAttribute("data-aidbas-fil") || id);
   if (dolda && nyckel && typeof flerKolumner === "function") flerKolumner(id, dolda, nyckel);
 }
@@ -27585,7 +27585,7 @@ function __excelAlltBokExport() {
     ["Genererad", (/* @__PURE__ */ new Date()).toLocaleString("sv-SE")],
     []
   ];
-  auditPoster().forEach(([id, a]) => {
+  berakningsposter().forEach(([id, a]) => {
     metRows.push([a.title || id]);
     metRows.push(["Total i datafilen", a.totalRaw]);
     [...a.parseExcl || [], ...a.analysisExclusions || []].forEach(([r, c]) => {
@@ -30257,7 +30257,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
       document.getElementById("main-content")?.focus({ preventScroll: true });
       meddelaSkarmlasare(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
     };
-    if (!navigateTo(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
+    if (!navigeraTill(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
   }
 }
 var _sokHadeData = null;
@@ -32933,7 +32933,7 @@ function uppstartNavigering() {
       oppnaHopfallda(ankare);
       if (typeof ankare.scrollIntoView === "function") ankare.scrollIntoView({ block: "start" });
     };
-    if (!(target && typeof navigateTo === "function" && navigateTo(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
+    if (!(target && typeof navigeraTill === "function" && navigeraTill(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
   });
   document.getElementById("btn-meny")?.addEventListener("click", () => sattMeny(!menyOppen()));
   document.getElementById("meny-skugga")?.addEventListener("click", () => sattMeny(false));
@@ -32953,16 +32953,16 @@ function uppstartNavigering() {
 }
 
 // src/app/05-tabeller-och-lankar.js
-var auditRegistry = {};
-var AUDIT_ORDNING = ["rapport", "skevhet", "livscykel", "matrix", "prioritering", "benchmark"];
-function auditPoster() {
-  const ids = [...AUDIT_ORDNING.filter((id) => id in auditRegistry), ...Object.keys(auditRegistry).filter((id) => !AUDIT_ORDNING.includes(id))];
+var berakningsregister = {};
+var BERAKNINGSORDNING = ["rapport", "skevhet", "livscykel", "matrix", "prioritering", "benchmark"];
+function berakningsposter() {
+  const ids = [...BERAKNINGSORDNING.filter((id) => id in berakningsregister), ...Object.keys(berakningsregister).filter((id) => !BERAKNINGSORDNING.includes(id))];
   return ids.map((id) => (
     /** @type {[string, any]} */
-    [id, auditRegistry[id]]
+    [id, berakningsregister[id]]
   ));
 }
-function buildBaseAudit() {
+function byggGrundberakning() {
   const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
   const totalRaw = da.totalRaw;
   const afterParse = state.data.length;
@@ -32972,12 +32972,12 @@ function buildBaseAudit() {
   if (da.excludedZeroLon > 0) parseExcl.push(["Lön ≤ 0 eller saknas", da.excludedZeroLon]);
   return { totalRaw, afterParse, afterFilter, parseExcl };
 }
-function setAudit(id, audit) {
-  auditRegistry[id] = audit;
+function sattBerakning(id, audit) {
+  berakningsregister[id] = audit;
   const panel = document.querySelector(`details.audit-panel[data-audit-id="${id}"] .audit-content`);
-  if (panel) panel.innerHTML = renderAuditHtml(audit);
+  if (panel) panel.innerHTML = ritaBerakningHtml(audit);
 }
-function renderAuditHtml(a) {
+function ritaBerakningHtml(a) {
   const fmt = (n) => n.toLocaleString("sv-SE");
   const exclRows = [
     ...(a.parseExcl || []).map(([r, c]) => `<tr><td>− ${esc(r)}</td><td class="t-tal">${fmt(c)}</td></tr>`),
@@ -33007,26 +33007,26 @@ function renderAuditHtml(a) {
         </div>
     `;
 }
-function _parseSwedishNumber(str) {
+function _tolkaSvensktTal(str) {
   if (str == null) return NaN;
   const s = str.toString().trim().replace(/\u2212/g, "-").replace(/ /g, " ").replace(",", ".");
   const cleaned = s.replace(/[^\d.\-]/g, "");
   if (cleaned === "" || cleaned === "-" || cleaned === ".") return NaN;
   return parseFloat(cleaned);
 }
-function _compareCells(a, b, idx, dir) {
+function _jamforCeller(a, b, idx, dir) {
   const ca = a.children[idx], cb = b.children[idx];
   if (!ca || !cb) return 0;
   const va = ca.getAttribute("data-sort-value") ?? ca.textContent;
   const vb = cb.getAttribute("data-sort-value") ?? cb.textContent;
-  const na = _parseSwedishNumber(va), nb = _parseSwedishNumber(vb);
+  const na = _tolkaSvensktTal(va), nb = _tolkaSvensktTal(vb);
   const bothNum = !isNaN(na) && !isNaN(nb);
   let cmp;
   if (bothNum) cmp = na - nb;
   else cmp = va.toString().trim().localeCompare(vb.toString().trim(), "sv");
   return dir === "asc" ? cmp : -cmp;
 }
-function enableTableSort(tableId) {
+function aktiveraSortering(tableId) {
   const table = document.getElementById(tableId);
   if (!table || table._sortInit) return;
   table._sortInit = true;
@@ -33052,7 +33052,7 @@ function enableTableSort(tableId) {
             groups.push(cur);
           } else if (cur) cur.children.push(r);
         });
-        groups.forEach((g) => g.children.sort((a, b) => _compareCells(a, b, idx, dir)));
+        groups.forEach((g) => g.children.sort((a, b) => _jamforCeller(a, b, idx, dir)));
         tbody.innerHTML = "";
         const frag = document.createDocumentFragment();
         groups.forEach((g) => {
@@ -33066,7 +33066,7 @@ function enableTableSort(tableId) {
           if (r.classList.contains("la-underrad") && enheter.length) enheter[enheter.length - 1].push(r);
           else enheter.push([r]);
         });
-        enheter.sort((a, b) => _compareCells(a[0], b[0], idx, dir));
+        enheter.sort((a, b) => _jamforCeller(a[0], b[0], idx, dir));
         enheter.forEach((e) => e.forEach((r) => tbody.appendChild(r)));
       }
     });
@@ -33149,7 +33149,7 @@ function _flerKolumnerAlla(rot) {
   });
   return rot;
 }
-function setupCollapsibleGroups(tableId) {
+function kopplaHopfallbaraGrupper(tableId) {
   const tbody = document.querySelector(`#${tableId} tbody`);
   if (!tbody || tbody._collapseInit) return;
   tbody._collapseInit = true;
@@ -33167,7 +33167,7 @@ function setupCollapsibleGroups(tableId) {
     }
   });
 }
-function toggleAllGroups(tableId, collapse) {
+function vaxlaAllaGrupper(tableId, collapse) {
   const tbody = document.querySelector(`#${tableId} tbody`);
   if (!tbody) return;
   tbody.querySelectorAll("tr.group-header").forEach((row) => {
@@ -33176,7 +33176,7 @@ function toggleAllGroups(tableId, collapse) {
     else if (!collapse && isCol) row.click();
   });
 }
-function navigateTo(tabName, opts = {}) {
+function navigeraTill(tabName, opts = {}) {
   tabName = tabMal(tabName);
   const btn = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
   if (!btn || /** @type {HTMLInputElement} */
@@ -33213,7 +33213,7 @@ function _navigeratTill(opts) {
     }, 200);
   }
 }
-function buildBarCell(percent, scaleMax = 25, options = {}) {
+function byggStapelcell(percent, scaleMax = 25, options = {}) {
   const fmt = options.format || ((p) => (p >= 0 ? "+" : "") + svPct(p, 1));
   const exportText = options.format ? "" : ` data-export-text="${(percent >= 0 ? "+" : "") + svPct(percent, 2)}"`;
   if (percent === null || percent === void 0 || isNaN(percent)) {
@@ -33268,11 +33268,11 @@ function uppstartTabellerOchLankar() {
       link.dataset.bas || ""
     );
     if (target === "rapport") {
-      navigateTo("rapport", { search: yrke, searchInputId: "search-rapport" });
+      navigeraTill("rapport", { search: yrke, searchInputId: "search-rapport" });
     } else if (target === "matrix") {
-      navigateTo("matrix", { highlightMatch: { tableId: "matrix-table", contains: [yrke] } });
+      navigeraTill("matrix", { highlightMatch: { tableId: "matrix-table", contains: [yrke] } });
     } else if (target === "demografi") {
-      navigateTo("demografi");
+      navigeraTill("demografi");
       setTimeout(() => {
         const sel = document.getElementById("bas-select-demo");
         if (sel) {
@@ -33515,11 +33515,11 @@ var ENHANCED_TABLES = [
 ];
 function initTableEnhancements() {
   ENHANCED_TABLES.forEach((t) => {
-    enableTableSort(t.id);
+    aktiveraSortering(t.id);
     addTableExportTools(t.id, t.file);
   });
-  setupCollapsibleGroups("rapport-table");
-  setupCollapsibleGroups("benchmark-table");
+  kopplaHopfallbaraGrupper("rapport-table");
+  kopplaHopfallbaraGrupper("benchmark-table");
 }
 function addTableExportTools(tableId, fileBase) {
   const table = document.getElementById(tableId);
@@ -36071,7 +36071,7 @@ async function _buildPrintReportExport() {
             <section class="page-break">
                 <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
                 <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
-                ${auditPoster().map(([_id2, a]) => {
+                ${berakningsposter().map(([_id2, a]) => {
         const fmtN = (n) => n.toLocaleString("sv-SE");
         const exclRows = [...a.parseExcl || [], ...a.analysisExclusions || []].map(([r, c]) => `<tr><th>− ${esc(htmlTillText(r))}</th><td>${fmtN(c)}</td></tr>`).join("");
         const used = a.usedInAnalysis !== void 0 ? a.usedInAnalysis : a.afterFilter;

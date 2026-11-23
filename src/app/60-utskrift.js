@@ -7,7 +7,7 @@ import { arHelaDokumentationen } from '../lib/vymodell-rapport.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { doljLaddning, rapporteraFel, visaLaddning, tillampaDataStil } from './03-hjalpfunktioner.js';
-import { auditPoster } from './05-tabeller-och-lankar.js';
+import { berakningsposter } from './05-tabeller-och-lankar.js';
 import { _kSanktStycke, kStampel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS } from './10-diagramtema.js';
@@ -123,7 +123,7 @@ async function _buildPrintReportExport() {
             <section class="page-break">
                 <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
                 <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
-                ${auditPoster().map(([_id, a]) => {
+                ${berakningsposter().map(([_id, a]) => {
                     const fmtN = n => n.toLocaleString('sv-SE');
                     const exclRows = [...(a.parseExcl||[]), ...(a.analysisExclusions||[])]
                         // Texten kan innehålla referensens namn (ur fil eller organisationspaket):

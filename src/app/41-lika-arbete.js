@@ -15,7 +15,7 @@ import { oversiktPerBas, vymodellLonestruktur } from '../lib/vymodell-lonestrukt
 import { esc } from './01-html-och-tillganglighet.js';
 import { _kronorFalt, rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { buildBaseAudit, flerKolumner, setAudit } from './05-tabeller-och-lankar.js';
+import { byggGrundberakning, flerKolumner, sattBerakning } from './05-tabeller-och-lankar.js';
 import { _sattDiagramMetodNot, kTroskel, LITET_UNDERLAG, statGolv } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { _kNotForm, _kNotNamn, kMaskNot, kSamladNot } from './06-maskeringsnoter.js';
@@ -199,8 +199,8 @@ export function ritaLoneskillnadPerBas(vm) {
     if (skEl) { if (konsfordelning.rader.length) ritaFigur(skEl, _skevhetAndelFigur(konsfordelning.rader)); else rensaFigur(skEl); }
 
     // Audit
-    const baseS = buildBaseAudit();
-    setAudit('skevhet', {
+    const baseS = byggGrundberakning();
+    sattBerakning('skevhet', {
         title: 'Löneskillnad och könsfördelning',
         ...baseS,
         usedInAnalysis: baseS.afterFilter,
@@ -387,12 +387,12 @@ export function ritaLikaArbete(vm, { reg: given } = {}) {
     });
 
     // Audit
-    const baseM = buildBaseAudit();
+    const baseM = byggGrundberakning();
     const skippedTooFewKvOrMa = vm.ejJamforbara.length;
     const maskedYrken = vm.utelamnade.length;
     const reg = given || runOLSRegression();
     const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct((reg.R2*100), 1)}`;
-    setAudit('matrix', {
+    sattBerakning('matrix', {
         title: 'Lika arbete — multivariat regression',
         ...baseM,
         usedInAnalysis: rows.length,

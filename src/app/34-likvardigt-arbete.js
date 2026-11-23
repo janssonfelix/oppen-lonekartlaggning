@@ -24,7 +24,7 @@ import { justeradSaknas, kandidatparRader, kompletteraDiagnostik, kvDomUnderK, l
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { enableTableSort, flerKolumner } from './05-tabeller-och-lankar.js';
+import { aktiveraSortering, flerKolumner } from './05-tabeller-och-lankar.js';
 import { kInstalld, kTroskel } from './06-k-troskel.js';
 import { _skrDel, nationellAidKlass, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { orgNamn } from './07-standardinstallningar.js';
@@ -670,12 +670,12 @@ export function ritaLikvardigtArbete() {
         });
     });
 
-    if (typeof enableTableSort === 'function') enableTableSort('likvardighet-table');
+    if (typeof aktiveraSortering === 'function') aktiveraSortering('likvardighet-table');
     if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-table', 'likvardighet');
     // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset i kolumnen Bevis).
     if (typeof flerKolumner === 'function') flerKolumner('likvardighet-table', LV_DOLDA_KOLUMNER, 'likvardighet');
     if (document.getElementById('likvardighet-lagre-krav-table')) {
-        if (typeof enableTableSort === 'function') enableTableSort('likvardighet-lagre-krav-table');
+        if (typeof aktiveraSortering === 'function') aktiveraSortering('likvardighet-lagre-krav-table');
         if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
         if (typeof flerKolumner === 'function') flerKolumner('likvardighet-lagre-krav-table', LV_LAGRE_KRAV_DOLDA_KOLUMNER, 'lvLagreKrav');
     }

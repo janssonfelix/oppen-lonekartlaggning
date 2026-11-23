@@ -21,7 +21,7 @@ import { stor } from '../lib/termer.js';
 import { beskrivUrval, iUrvalet, villkorAktivt } from '../lib/urval.js';
 import { pivottabell } from '../lib/utforska.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { enableTableSort } from './05-tabeller-och-lankar.js';
+import { aktiveraSortering } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
@@ -390,7 +390,7 @@ function _renderExplorerTable(model, typ, inkl) {
     // innerHTML bygger ett NYTT thead; sorteringsflaggan sitter på tabellnoden
     // och måste nollställas, annars är sorteringen död från andra renderingen.
     table._sortInit = false;
-    if (typeof enableTableSort === 'function') enableTableSort('explore-table');
+    if (typeof aktiveraSortering === 'function') aktiveraSortering('explore-table');
     if (typeof addTableExportTools === 'function') addTableExportTools('explore-table', 'utforska');
     const container = table.closest('.table-container');
     const verktyg = container && container.previousElementSibling;

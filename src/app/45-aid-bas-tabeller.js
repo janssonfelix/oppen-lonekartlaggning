@@ -31,7 +31,7 @@ import { direktivMarkering } from '../lib/status.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, artikel, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { enableTableSort, flerKolumner } from './05-tabeller-och-lankar.js';
+import { aktiveraSortering, flerKolumner } from './05-tabeller-och-lankar.js';
 import { K_SKARM, kTroskel, LITET_UNDERLAG, statGolv } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { T, termText } from './09-termer.js';
@@ -189,7 +189,7 @@ function _aidbasTabellHtml(id, kolumner, rader, { not = '', tom = 'Inga grupper 
  */
 function _aidbasEfter(id, dolda, nyckel) {
     if (!document.getElementById(id)) return;
-    if (typeof enableTableSort === 'function') enableTableSort(id);
+    if (typeof aktiveraSortering === 'function') aktiveraSortering(id);
     if (typeof addTableExportTools === 'function') addTableExportTools(id, document.getElementById(id)?.getAttribute('data-aidbas-fil') || id);
     if (dolda && nyckel && typeof flerKolumner === 'function') flerKolumner(id, dolda, nyckel);
 }

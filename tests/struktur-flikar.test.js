@@ -97,10 +97,10 @@ describe('Uppgift 2: Lönestruktur', () => {
         // Sökregistret leder till avsnittet.
         expect(w.eval('SOK_FUNKTIONER').some(r => r.avsnitt === 'avsnitt-st-karta' && r.flik === 'struktur')).toBe(true);
     });
-    it('navigateTo("skevhet") och navigateTo("regression") öppnar Lönestruktur', () => {
+    it('navigeraTill("skevhet") och navigeraTill("regression") öppnar Lönestruktur', () => {
         const w = createAppWindow(); w.__loadDemoData();
         for (const alias of ['skevhet', 'regression']) {
-            w.eval(`navigateTo('${alias}')`);
+            w.eval(`navigeraTill('${alias}')`);
             expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab'), alias).toBe('struktur');
         }
     });
@@ -176,7 +176,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(w.document.getElementById('struktur-narrative').value).toBe('');
         expect(w.eval('RM_DIAGRAM').find(r => r.id === 'chart-arsjamforelse').flik).toBe('arbetet');
-        w.eval(`navigateTo('spara')`);
+        w.eval(`navigeraTill('spara')`);
         expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('arbetet');
     });
     it('samverkansknapparna står i Handlingsplan och leder till exporterna', () => {

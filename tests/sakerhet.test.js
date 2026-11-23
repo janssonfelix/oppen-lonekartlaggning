@@ -434,7 +434,7 @@ describe('säkerhet: inga style-attribut i markeringen (ADR-30, ADR-43)', () => 
         expect(skal.match(/\sstyle\s*=/g) || []).toEqual([]);
     });
     it('filer som skriver data-stil-* anropar tillampaDataStil, och hjälparen sätter bara bredd och läge', () => {
-        // buildBarCell (05) ger bara en cell; tabellen byggs och sätts in i 55-prioritering.js, som anropar hjälparen.
+        // byggStapelcell (05) ger bara en cell; tabellen byggs och sätts in i 55-prioritering.js, som anropar hjälparen.
         const KONSUMENT = { '05-tabeller-och-lankar.js': '55-prioritering.js' };
         const utan = [];
         for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && f !== '03-hjalpfunktioner.js')) {

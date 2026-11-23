@@ -3,7 +3,7 @@
 import { K_STANDARD } from '../lib/ktroskel.js';
 import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { visaInterntFel } from './03-hjalpfunktioner.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _kVisaFel, _synkaKTroskel } from './06-k-troskel.js';
 import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
 import { _rfRensaAlla } from './10-diagramritare.js';
@@ -213,7 +213,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     if (typeof _visaJamforelseFlik === 'function') _visaJamforelseFlik(false);
     state.filnamn = { data: null, policy: null, statistik: null };
     if (typeof renderFilrutor === 'function') renderFilrutor();
-    if (typeof navigateTo === 'function') navigateTo('dashboard');
+    if (typeof navigeraTill === 'function') navigeraTill('dashboard');
 
     updateGdprBanner();
     if (typeof ritaKravstatus === 'function') ritaKravstatus();
