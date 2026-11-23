@@ -34,6 +34,11 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     k-tröskelns filer för en fjärdedel. Delade fönster provades 2026-11-22 och kastades: i de fem filer som skapade
     flest fönster gick bara 39 av 330 att dela, eftersom de flesta apptester ändrar fönstret. Tas upp igen om sviten
     blir det som sätter väntetiden i CI.
+    *Framtida utveckling (mätt 2026-11-23):* när flikarnas regler flyttade till vymodeller (ADR-99) och 31 dubbletter
+    i jsdom ersattes av tester i Node gick sviten från 201 till 199 s, omkring 1 %. Tiden går till tre filer som ritar
+    och exporterar: k-invarianten (100 s), start och meny (79 s) och diagramritaren (68 s). De har inga dubbletter
+    att ta bort; tiden kortas bara om de görs om, till exempel så att invarianten prövar vymodellerna i Node och
+    bara ett urval av utdatavägarna i jsdom.
 
 **Gränssnitt och analys (översynen 2026-10-29):**
 9e. *Avslutad 2026-11-21:* att Utforska och kolumnen *Skillnad kön* i Prioriteringen visar storleken utan prövning
