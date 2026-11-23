@@ -23,7 +23,7 @@ exports[`beräkningar på demodatan (låsta tal) > power-analysen (computePowerA
 }
 `;
 
-exports[`beräkningar på demodatan (låsta tal) > regressionen (runOLSRegression) ger samma tal > runOLSRegression 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > [B3.1] regressionen (runOLSRegression) ger samma tal > runOLSRegression 1`] = `
 {
   "R2": 0.9193716702,
   "adjR2": 0.9174595359,
