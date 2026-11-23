@@ -344,7 +344,7 @@ function _evidenceForRapportRow(p) {
 
 /**
  * Bevis-payload för en rad i Skevhet-flikens lönegap-tabell (paygap-table).
- * @param {Object} p - { bas, kvLons, maLons, masked }
+ * @param {Object} p - { bas, rader, kvLons, maLons, masked }; rader är BAS-intervallets personer
  */
 function _evidenceForPaygapRow(p) {
     const fmtKr = v => svKr(v, '—');
@@ -363,10 +363,9 @@ function _evidenceForPaygapRow(p) {
             footer: `Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, ${T.niva.en} och lön.`
         };
     }
-    const medKv = Stat.median(p.kvLons);
-    const medMa = Stat.median(p.maLons);
-    const ratio = medMa > 0 ? medKv / medMa : null;
-    const gapPct = ratio != null ? (ratio * 100) : null;
+    const { medKv, medMa, kvotPct } = _stKonsMedianer(p.rader, { k: kTroskel() });
+    const ratio = kvotPct != null ? medKv / medMa : null;
+    const gapPct = kvotPct;
     const diff100 = gapPct != null ? gapPct - 100 : null;
     // Statusen prövas som i översiktstabellen: bootstrap-KI:t mot 100 % och golvet statGolv() (ADR-59).
     const ci = gapPct != null ? _laBootstrapGapCI(p.kvLons, p.maLons) : null;

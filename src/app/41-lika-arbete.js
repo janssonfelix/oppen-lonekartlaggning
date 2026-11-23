@@ -113,7 +113,7 @@ function generateSkevhet() {
         if (kv.length < 2 || ma.length < 2) return;
         // (a) N-kolumn: antal per kön bakom mediansiffrorna
         const nCell = `<td class="t-hoger">${kv.length}/${ma.length}</td>`;
-        const masked = isKMasked(kv.length) || isKMasked(ma.length);
+        const m = _stKonsMedianer(df, { k: kTroskel() }), masked = !m.konOk;
         // Bevis-knapp per BAS-rad
         const evidenceCell = `<td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa beräkningen för BAS ${esc(b)}">${ikon('sok')}</button></td>`;
         // k-anonymitet, samma tvådelade regel som i EU-matrisen:
@@ -131,12 +131,12 @@ function generateSkevhet() {
             pgBody.appendChild(trS);
             return;
         }
-        const gap = (Stat.median(kv.map(r=>r.lon)) / Stat.median(ma.map(r=>r.lon)) * 100).toFixed(1);
+        const gap = m.kvotPct.toFixed(1);
         const tr = document.createElement("tr");
         tr._markering = markeringFor(b);   // länkade vyer; en egenskap, inte ett attribut: utskriften kopierar radernas HTML
         // Den ojusterade skillnaden bär direktivmarkeringen (≥ 5 %), ingen status (ADR-59).
-        tr.innerHTML = `<td>${esc(b)}</td>${nCell}<td>${svPct(parseFloat(gap), 1)}${_direktivInline(parseFloat(gap))}</td><td>${fmt.format(Stat.median(kv.map(r=>r.lon)))}</td><td>${fmt.format(Stat.median(ma.map(r=>r.lon)))}</td>${evidenceCell}`;
-        tr._paygapRow = { bas: b, kvLons: kv.map(r => r.lon), maLons: ma.map(r => r.lon), masked: false };
+        tr.innerHTML = `<td>${esc(b)}</td>${nCell}<td>${svPct(parseFloat(gap), 1)}${_direktivInline(parseFloat(gap))}</td><td>${fmt.format(m.medKv)}</td><td>${fmt.format(m.medMa)}</td>${evidenceCell}`;
+        tr._paygapRow = { bas: b, rader: df, kvLons: kv.map(r => r.lon), maLons: ma.map(r => r.lon), masked: false };
         pgBody.appendChild(tr);
     });
     if (pgUtelamnade.length || pgSamlad.length) {
@@ -546,7 +546,7 @@ function _laOversiktTabell(bars, d = getData()) {
             + _direktivCell(o.gap);
         tb.appendChild(tr);
         const df = d.filter(r => r.bas === o.bas);
-        const payload = { bas: o.bas, kvLons: df.filter(r => arKvinna(r)).map(r => r.lon), maLons: df.filter(r => arMan(r)).map(r => r.lon), masked: false };
+        const payload = { bas: o.bas, rader: df, kvLons: df.filter(r => arKvinna(r)).map(r => r.lon), maLons: df.filter(r => arMan(r)).map(r => r.lon), masked: false };
         tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _openEvidenceModal(_evidenceForPaygapRow(payload)); });
     }    flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
 }
