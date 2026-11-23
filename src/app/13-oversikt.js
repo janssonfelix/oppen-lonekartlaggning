@@ -70,10 +70,13 @@ export function ritaKravstatus() {
     else setCompCard('comp-pol', ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
 
     // 4. Jämförelsestatistiken
+    // Bara grupper med minst k, som Löneläget; de utelämnade nämns med antal.
     const bm = vm.statistik;
     if (bm) {
-        if (bm.av === 0) setCompCard('comp-bm', 0, 0, 'Ingen matchning hittad', 'na');
-        else setCompCard('comp-bm', bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}`, bm.lage);
+        const k = kInstalld();
+        const utel = bm.utelamnade ? ` · ${bm.utelamnade} ${bm.utelamnade === 1 ? T.enhet.en : T.enhet.fl} visas inte här (färre än ${k} ${personOrd(k)})` : '';
+        if (bm.av === 0) setCompCard('comp-bm', 0, 0, `Ingen matchning hittad${utel}`, 'na');
+        else setCompCard('comp-bm', bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
     }
     // Länken till fliken Löneläget bara när fliken finns (jämförelsestatistik inläst).
     const bmLank = document.querySelector('#comp-bm .comp-lank');

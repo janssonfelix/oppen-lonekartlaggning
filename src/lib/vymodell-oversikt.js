@@ -42,8 +42,9 @@ const kortLage = (antal, av, kritisk) => (av === 0 ? 'na' : antal === 0 ? 'ok' :
  *   `maskerade` är antalet intervall där ett kön är under k.
  * - `referens`: intervall med minst k personer och en rad med P10 i ställningstagandet, där intervallets median ligger
  *   under P10; kritisk från två. null utan ställningstagande (`policyFor` saknas).
- * - `statistik`: AID-kod i BAS-intervall med en rad i jämförelsestatistiken, där organisationens median ligger under
- *   statistikens; kritisk när mer än hälften ligger under. null utan jämförelsestatistik.
+ * - `statistik`: AID-kod i BAS-intervall med minst k personer och en rad i jämförelsestatistiken, där organisationens
+ *   median ligger under statistikens; kritisk när mer än hälften ligger under. Samma grupper som Löneläget
+ *   (jamforelseRader); `utelamnade` är antalet grupper med en rad men färre än k. null utan jämförelsestatistik.
  * @param {any[]} rader
  * @param {{bas:string[], k:number, golv:number, oversikt?:any[], policyFor?:((aid:any, bas:string) => any)|null,
  *   statistik?:any[]}} val
@@ -76,7 +77,7 @@ export function kravstatus(rader, { bas, k, golv, oversikt, policyFor, statistik
         referens = { antal: under, av: total, lage: kortLage(under, total, a => a >= 2) };
     }
 
-    /** @type {{antal:number, av:number, lage:string}|null} */ let stat = null;
+    /** @type {{antal:number, av:number, lage:string, utelamnade:number}|null} */ let stat = null;
     if (statistik && statistik.length) {
         const perGrupp = new Map();
         for (const r of rader) {
@@ -84,14 +85,15 @@ export function kravstatus(rader, { bas, k, golv, oversikt, policyFor, statistik
             if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { aid: aidAvYrke(r.yrke), bas: r.bas, lon: [] });
             perGrupp.get(nyckel).lon.push(r.lon);
         }
-        let under = 0, total = 0;
+        let under = 0, total = 0, utelamnade = 0;
         for (const g of perGrupp.values()) {
             const rad = statistikFor(statistik, g.aid, g.bas)?.rad;
             if (!rad) continue;
+            if (g.lon.length < k) { utelamnade++; continue; }
             total++;
             if (median(g.lon) < rad.median) under++;
         }
-        stat = { antal: under, av: total, lage: kortLage(under, total, (a, t) => a / t > 0.5) };
+        stat = { antal: under, av: total, lage: kortLage(under, total, (a, t) => a / t > 0.5), utelamnade };
     }
 
     return { jamforbara: av, maskerade: jb.maskerade.length,

@@ -274,6 +274,9 @@ mot ställningstagandet bär inga organisationsvärden och maskeras inte, och k�
 *Matchning* och sammanfattningen av antalet AID-etiketter per matchningsnivå säger bara hur statistiken matchades och bär
 inga lönemått. Diagrammet över statistikens spann (`chart-jmf-statlage`) läser samma rader och visar inget som inte
 står i tabellen och bandkartan; filtren på BAS-intervall och huvudområde gäller inte diagrammet.
+Kortet *Under jämförelsestatistiken* på Översikt räknar samma grupper, med den inställda tröskeln: bara AID-etiketter i
+BAS-intervall med minst tröskeln personer, och en kort not säger hur många med en rad i statistiken som inte visas
+(`kravstatus` i `src/lib/vymodell-oversikt.js`, `ritaKravstatus` i `13-oversikt.js`).
 
 ## 3. Vägen ut
 

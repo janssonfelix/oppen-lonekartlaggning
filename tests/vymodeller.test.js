@@ -24,6 +24,7 @@ import { andelAvSkillnaden, gapTrappa, vymodellVarUppstarGapet } from '../src/li
 import { gapUppdelning } from '../src/lib/gapuppdelning.js';
 import { konsMedianer } from '../src/lib/struktur.js';
 import { kravstatus, oversiktNyckeltal } from '../src/lib/vymodell-oversikt.js';
+import { jamforelseRader } from '../src/lib/jamforelse.js';
 import { vymodellLoneoversikt } from '../src/lib/vymodell-loneoversikt.js';
 import { gruppdossierGrupper, vymodellGruppdossier } from '../src/lib/vymodell-gruppdossier.js';
 import { basdossierIntervall, basdossierStatus, vymodellBasdossier } from '../src/lib/vymodell-basdossier.js';
@@ -302,11 +303,18 @@ describe('[B2.10] Översiktens läge mot lagkraven', () => {
     });
     it('jämförelsestatistiken: grupper med en rad, kritiskt när mer än hälften ligger under', () => {
         const statistik = [{ aid: '100001', median: 40000 }, { aid: '100003', bas: 'C', median: 20000 }];
-        expect(ks({ statistik }).statistik).toEqual({ antal: 1, av: 2, lage: 'warn' });
-        expect(ks({ statistik: [...statistik, { aid: '100002', bas: 'B', median: 50000 }] }).statistik).toEqual({ antal: 2, av: 3, lage: 'crit' });
-        expect(ks({ statistik: [{ aid: '999999', median: 1 }] }).statistik).toEqual({ antal: 0, av: 0, lage: 'na' });
+        expect(ks({ statistik }).statistik).toEqual({ antal: 1, av: 2, lage: 'warn', utelamnade: 0 });
+        expect(ks({ statistik: [...statistik, { aid: '100002', bas: 'B', median: 50000 }] }).statistik).toEqual({ antal: 2, av: 3, lage: 'crit', utelamnade: 0 });
+        expect(ks({ statistik: [{ aid: '999999', median: 1 }] }).statistik).toEqual({ antal: 0, av: 0, lage: 'na', utelamnade: 0 });
         expect(ks({ statistik: [] }).statistik).toBeNull();
         expect(kravstatus([], { bas: BAS, k: 10, golv: 10 })).toBeNull();
+    });
+    it('jämförelsestatistiken: bara grupper med minst k, som Löneläget; de utelämnade räknas', () => {
+        // E (sex personer) har en rad men räknas inte; vid 25 inte heller C (16).
+        const statistik = [{ aid: '100001', median: 40000 }, { aid: '100003', bas: 'C', median: 50000 }, { aid: '100005', bas: 'E', median: 50000 }];
+        expect(ks({ statistik }).statistik).toEqual({ antal: 2, av: 2, lage: 'crit', utelamnade: 1 });
+        expect(ks({ statistik, k: 25 }).statistik).toEqual({ antal: 1, av: 1, lage: 'crit', utelamnade: 2 });
+        expect(ks({ statistik, k: 40 }).statistik).toEqual({ antal: 0, av: 0, lage: 'na', utelamnade: 3 });
     });
 });
 
@@ -586,6 +594,12 @@ describe.each([10, 25])('[I9] vymodellerna vid k = %i', k => {
         const vm = kravstatus(underlag(), { bas: BAS, k, golv: Math.max(k, 10), policyFor });
         expect(vm.jamforbara).toBe(k === 10 ? 2 : 1);
         expect(vm.referens.av).toBe(k === 10 ? 2 : 1);   // A (och C vid 10); D under k
+        // Jämförelsestatistiken: bara grupper som når k, som Löneläget (jamforelseRader).
+        const statistik = BAS.map((bas, i) => ({ aid: `10000${i + 1}`, bas, median: 30000 }));
+        const st = kravstatus(underlag(), { bas: BAS, k, golv: Math.max(k, 10), statistik }).statistik;
+        const lonelaget = jamforelseRader(underlag(), { statistik, k });
+        expect(st.av).toBe(lonelaget.rader.length);
+        expect(st.utelamnade).toBe(lonelaget.utelamnade.length);
     });
 
     it('Löneöversikten: ingen rad med färre än k, de utelämnade bara med namn', () => {
