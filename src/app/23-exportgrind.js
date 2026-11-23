@@ -11,7 +11,7 @@
 //     En flik som inte syns bär alltså aldrig tal från en tröskel som inte längre gäller, hur den än ritades.
 //  2. En räknare (generationen) ökar vid samma tillfälle, och varje flik minns vid vilken generation
 //     renderTabContent senast ritade den. De två funktioner som ALL export av tabeller respektive diagram går genom
-//     (_cloneAndCleanTableForExport och _chartExportUnderlag) frågar grinden först: en flik som ritades före
+//     (_tabellkopiaForExport och _chartExportUnderlag) frågar grinden först: en flik som ritades före
 //     ändringen ritas om innan något läses ur den. Går det inte, exporteras ingenting ur den — hellre en utebliven
 //     export än en med fel tröskel.
 // tests/ktroskel.test.js prövar varje exportväg mot detta.
@@ -20,7 +20,7 @@
 // På skärmen maskeras inget (kTroskel() är 1). Allt som lämnar verktyget ritas och räknas i exportläget, där
 // kTroskel() är den inställda tröskeln. Ett byte av läge är som en ändrad tröskel: generationen ökar, så att
 // grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av
-// tabeller och diagram går genom (_cloneAndCleanTableForExport, _chartExportUnderlag) går själva in i
+// tabeller och diagram går genom (_tabellkopiaForExport, _chartExportUnderlag) går själva in i
 // exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
 import { flikInaktuellVid, skaRitasForeExport } from '../lib/exportgrind.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';

@@ -292,7 +292,7 @@ describe('menystruktur', () => {
         expect(w.document.getElementById('kon-kohort-not').textContent).toMatch(/tvärsnitt/);
         w.eval("renderInfoTab('metodik')");
         expect(w.document.getElementById('view-info').textContent).toMatch(/tvärsnitt.*kohorteffekter/);
-        expect(w.eval('_methodAppendixData()').find(r => r[0] === 'Ålder & karriär (tvärsnitt)')[1]).toMatch(/tvärsnitt.*kohorteffekter/);
+        expect(w.eval('_metodbilaga()').find(r => r[0] === 'Ålder & karriär (tvärsnitt)')[1]).toMatch(/tvärsnitt.*kohorteffekter/);
     });
     it('flikar med flera paneler visar alla sina paneler', () => {
         klicka('kon');
@@ -1207,7 +1207,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.eval('sattKTroskel(26, { fraga: false })');                    // en ändring till: Lika arbete är inaktuell igen
         expect(w.eval("flikInaktuell('matrix')")).toBe(true);
         // Tabell: en läsning genom grinden ritar om Lika arbete först, och raderna bär den nya tröskeln.
-        const klon = w.eval("_cloneAndCleanTableForExport('paygap-table')");   // ritar om Lika arbete i exportläget; efteråt är fliken inaktuell igen (skärmläget)
+        const klon = w.eval("_tabellkopiaForExport('paygap-table')");   // ritar om Lika arbete i exportläget; efteråt är fliken inaktuell igen (skärmläget)
         expect(klon).not.toBeNull();
         expect(klon.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
     });
@@ -1219,7 +1219,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="dashboard"]').click();
         w.eval('sattKTroskel(25, { fraga: false })');
         w.eval("const __r = _renderTabContent; _renderTabContent = function (f) { if (f === 'struktur') throw new Error('prov'); return __r(f); };");
-        expect(w.eval("_cloneAndCleanTableForExport('paygap-table')")).toBeNull();
+        expect(w.eval("_tabellkopiaForExport('paygap-table')")).toBeNull();
         expect(w.eval('exportSakra(document.getElementById("chart-skevhet-overview"))')).toBe(false);
         expect(w.eval("flikInaktuell('struktur')")).toBe(true);
     });

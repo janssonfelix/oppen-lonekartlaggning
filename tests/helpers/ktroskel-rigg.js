@@ -312,10 +312,10 @@ export async function samlaUtdata(w) {
     lagg('rapportmodell: basintervall', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'basintervall') }))(rapportModell())"));
     for (const b of w.__rapportunderlagBlock()) lagg(`rapportunderlag: ${b.id}`, w.__ruTillWordHtml(b) + '\n' + w.__ruTillText(b));
     lagg('Att göra-punkter', w.eval('JSON.stringify(medExportLage(() => buildActionChecklist()))'));
-    w.eval('window.__csv = null; window.__csvOrig = _downloadCSV; _downloadCSV = rows => { window.__csv = rows; }');
+    w.eval('window.__csv = null; window.__csvOrig = _laddaNedCSV; _laddaNedCSV = rows => { window.__csv = rows; }');
     d.getElementById('btn-export-checklist')?.click();
     lagg('Att göra-CSV', (w.__csv || []).map(r => r.join(' | ')).join('\n'));
-    w.eval('_downloadCSV = window.__csvOrig');
+    w.eval('_laddaNedCSV = window.__csvOrig');
 
     // Alla diagram (74-alla-diagram.js): ingen ny utdata, men en ny väg till den. Varje grupp öppnas och varje kopias
     // diagramdata prövas som en egen väg; testet "kopiorna i Alla diagram" kräver att den är källans, rad för rad.

@@ -23,7 +23,7 @@ import { gapStatus, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { getData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { computeGroupMDE, styrkaGallande } from './13-oversikt.js';
-import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { _evidenceForPrioItem, _openEvidenceModal } from './27-berakningsbevis.js';
 import { renderTabContent } from './31-navigering.js';
@@ -723,8 +723,8 @@ export function uppstartPrioritering() {
     document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
         const table = document.getElementById('prio-table');
         if (table) {
-            const wb = tableToCleanBook('prio-table', 'Prioritering');
-            if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _showExportSensitivityToast(); }
+            const wb = tabellTillBok('prio-table', 'Prioritering');
+            if (wb) { _laggTillMetodblad(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _visaExportvarning(); }
         }
     }));
 }

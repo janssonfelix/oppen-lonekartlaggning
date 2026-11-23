@@ -19,7 +19,7 @@ import { PALETTE } from './10-diagramtema.js';
 import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
 import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
-import { _downloadCSV } from './22-exporthjalpare.js';
+import { _laddaNedCSV } from './22-exporthjalpare.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
 import { refreshCurrentTab } from './31-navigering.js';
 import { renderReferensKort } from './38-referensfiler.js';
@@ -296,7 +296,7 @@ function initTableEnhancements() {
 // enskild tabell. En diskret verktygsrad placeras EN gång framför tabellens
 // container (utanför det som ritas om vid re-render), och klicken hanteras
 // delegerat så att tabellen läses LIVE — sorterad ordning och omritad tbody
-// följer med. CSV återanvänder _downloadCSV; kopiering ger TAB-separerat så
+// följer med. CSV återanvänder _laddaNedCSV; kopiering ger TAB-separerat så
 // att inklistring i Excel hamnar i kolumner.
 export function addTableExportTools(tableId, fileBase) {
     const table = document.getElementById(tableId);
@@ -397,7 +397,7 @@ export function uppstartTillstand() {
         const csvBtn = /** @type {HTMLElement} */ (e.target).closest('[data-csv-table]');
         if (csvBtn) {
             const rows = tableToMatrix(csvBtn.getAttribute('data-csv-table'));
-            if (rows.length) _downloadCSV(rows, csvBtn.getAttribute('data-csv-file') || 'tabell',
+            if (rows.length) _laddaNedCSV(rows, csvBtn.getAttribute('data-csv-file') || 'tabell',
                 { undantag: _kUndantagFor(document.getElementById(csvBtn.getAttribute('data-csv-table') || '')) });
             else alert('Tabellen är tom, så det finns inget att exportera.');
         }

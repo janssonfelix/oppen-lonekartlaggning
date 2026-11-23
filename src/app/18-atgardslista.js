@@ -24,7 +24,7 @@ import { _STS_STORLEK } from './10-diagramtema.js';
 import { getData, state } from './12-tillstand.js';
 import { bedomningUnderlag } from './13-oversikt.js';
 import { _fkAttGora } from './17-forhandskontroll.js';
-import { _downloadCSV } from './22-exporthjalpare.js';
+import { _laddaNedCSV } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
 import { _laOversiktRader, _laOversiktStatus } from './41-lika-arbete.js';
@@ -420,5 +420,5 @@ function _exportActionChecklistCSVExport(items, done) {
     rows.push(['Hanterade', items.filter(it => done.has(it.id)).length]);
     const parNot = _attGoraParNot();
     if (parNot) rows.push(['Utelämnade par', parNot]);
-    _downloadCSV(rows, 'atgardslista_' + idagDatum());
+    _laddaNedCSV(rows, 'atgardslista_' + idagDatum());
 }

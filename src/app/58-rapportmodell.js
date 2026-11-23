@@ -39,7 +39,7 @@ import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS, gapStatusNiva } from 
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
 import { getBasIntervals, getData, policyFor, referensKalla, referensKortnamn, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
 import { bedomningUnderlag, bootstrapCIGallande, styrkaGallande, UK_ETIKETT } from './13-oversikt.js';
-import { _methodAppendixData, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
+import { _metodbilaga, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { renderTabContent } from './31-navigering.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
@@ -738,7 +738,7 @@ function _rmAvsnittenUtanUrval() {
 
     const metod = { id: 'metod', rubrik: 'Bilaga: Metod och parametrar', utelamnat: [], delar: [
         dampad('Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte.'),
-        { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: _methodAppendixData().map(([n, v]) => [String(n), String(v)]) },
+        { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: _metodbilaga().map(([n, v]) => [String(n), String(v)]) },
         // Metodreservationen om ålder (S7, ADR-64), oavsett om lönefilen har ålder.
         dampad(`${ALDER_METODVAL_TEXT}${harAlder() ? '' : ` ${ALDER_SAKNAS_TEXT}`}`),
     ] };

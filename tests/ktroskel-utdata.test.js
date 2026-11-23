@@ -123,7 +123,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
             .map(r => r.map(c => String(c ?? '')).join(' | ')).join('\n')).join('\n'));
     };
     const fangaCsv = w => {
-        w.eval('window.__csv = null; _downloadCSV = rows => { window.__csv = rows; }');
+        w.eval('window.__csv = null; _laddaNedCSV = rows => { window.__csv = rows; }');
         w.document.getElementById('btn-export-checklist').click();
         return normalisera((w.__csv || []).map(r => r.join(' | ')).join('\n'));
     };
@@ -531,13 +531,13 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
             else expect(txt).not.toContain('Minsta gruppstorlek');
         }
     });
-    it('_downloadCSV: sista raden är stämpeln', async () => {
+    it('_laddaNedCSV: sista raden är stämpeln', async () => {
         const w = fonsterLitet(null);
         let blob = null;
         w.URL.createObjectURL = b => { blob = b; return 'blob:x'; };
         w.alert = () => {};
         w.__rader = rader;
-        w.eval("_downloadCSV(window.__rader, 'x')");
+        w.eval("_laddaNedCSV(window.__rader, 'x')");
         expect(blob).not.toBeNull();
         const text = await new Promise(res => { const fr = new w.FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsText(blob); });
         expect(sistaRaden(text)).toBe(STAMPEL_10);

@@ -28,7 +28,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { getBasIntervals, getData, state } from './12-tillstand.js';
-import { _appendMethodSheet } from './22-exporthjalpare.js';
+import { _laggTillMetodblad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laSlutsats } from './41-lika-arbete.js';
@@ -848,7 +848,7 @@ function _exportForecastExport() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), 'Sammanfattning');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), 'Fördelning');
-    _appendMethodSheet(wb);
+    _laggTillMetodblad(wb);
     XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Löneöversynens prognosunderlag exporterat.');
 }

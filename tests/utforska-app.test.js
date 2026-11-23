@@ -975,7 +975,7 @@ describe('Löneöversikten i Utforska', () => {
     });
     it('i arbetsboken är också de hopfällda raderna synliga', () => {
         const w = rita();
-        const klon = w.eval("_cloneAndCleanTableForExport('rapport-table')");
+        const klon = w.eval("_tabellkopiaForExport('rapport-table')");
         expect([...klon.querySelectorAll('tbody tr')].filter(tr => tr.style.display === 'none').length).toBe(0);
         expect(w.document.querySelectorAll('#rapport-table tbody tr[style*="display: none"]').length).toBeGreaterThan(0);
     });

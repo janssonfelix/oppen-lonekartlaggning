@@ -160,7 +160,7 @@ describe('Jämförelsestatistik: exporten namnger statistiken', () => {
         w.__state.statistik = w.__state.data.slice(0, 1).map(r => ({ aid: r.aid, bas: r.bas, median: 30000 }));
         w.__renderTabContent('benchmark');
         // Excelexporten läser rubrikerna ur den rensade klonen (data-export-label).
-        const rubriker = () => [...w.eval("_cloneAndCleanTableForExport('benchmark-table')").querySelectorAll('thead th')].map(t => t.textContent.trim()).join(' | ');
+        const rubriker = () => [...w.eval("_tabellkopiaForExport('benchmark-table')").querySelectorAll('thead th')].map(t => t.textContent.trim()).join(' | ');
         expect(rubriker()).toMatch(/P10 jämförelsestatistiken \(kr\/mån\).*Median jämförelsestatistiken \(kr\/mån\).*P90 jämförelsestatistiken \(kr\/mån\)/);
     });
 });
@@ -305,7 +305,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     });
     it('Excel (alla flikar) och utskriften följer tabellen', () => {
         const w = medMatchning();
-        const klon = w.eval("_cloneAndCleanTableForExport('benchmark-table')");
+        const klon = w.eval("_tabellkopiaForExport('benchmark-table')");
         expect([...klon.querySelectorAll('thead th')].map(t => t.textContent.trim())[2]).toBe('Matchning mot jämförelsestatistiken');
         expect(klon.querySelector('tbody tr[data-rad="207024|B"]').children[2].textContent).toBe('Endast AID');
     });

@@ -84,7 +84,7 @@ describe('Fler kolumner: grundvyn och full vy', () => {
             expect(dolda.length).toBe(t.dolda.length);
             for (const r of dolda) expect(kopia).toContain(r);
             // Arbetsbokens kopia: inga gömda celler och hela colspan.
-            const klon = w.__cloneTable(t.id);
+            const klon = w.__tabellkopia(t.id);
             expect(klon.querySelectorAll('[hidden], [data-fler-dold], [data-hel-colspan]')).toHaveLength(0);
             expect(rubriker(w, t.id).filter(th => th.hidden)).toHaveLength(t.dolda.length);   // skärmens tabell är orörd
         });

@@ -229,7 +229,7 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
     };
     const kort = w => normalisera(w.document.getElementById('action-checklist-container').textContent + w.document.getElementById('att-gora-borja').textContent);
     const csv = w => {
-        w.eval('window.__csv = null; _downloadCSV = rows => { window.__csv = rows; }');
+        w.eval('window.__csv = null; _laddaNedCSV = rows => { window.__csv = rows; }');
         w.document.getElementById('btn-export-checklist').click();
         return normalisera((w.__csv || []).map(r => r.join(' | ')).join('\n'));
     };

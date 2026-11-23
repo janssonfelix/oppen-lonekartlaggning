@@ -31,7 +31,7 @@ describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
 describe('#export röktest: BAS-grupperade tabeller blir Word-block', () => {
     it('rapport-tabellen exporteras som block: titel + upprepade rubriker + tomrad per BAS', () => {
         // ritaLoneoversikt har körts av demodata-pipelinen → rapport-table har group-headers
-        const clone = win.__cloneTable('rapport-table');
+        const clone = win.__tabellkopia('rapport-table');
         expect(clone).toBeTruthy();
         const g = win.__groupedAoa(clone);
         const headers = g.aoa[g.firstHeaderRowIdx];

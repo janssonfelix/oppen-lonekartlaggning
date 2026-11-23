@@ -264,8 +264,8 @@ describe('exporten', () => {
     const fanga = async (fn) => {
         const org = w.figurTillBild, sedda = [];
         w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, format, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
-        const dl = w._downloadCSV, kop = w._copyMatrixToClipboard;
-        try { await fn(); } finally { w.figurTillBild = org; w._downloadCSV = dl; w._copyMatrixToClipboard = kop; }
+        const dl = w._laddaNedCSV, kop = w._copyMatrixToClipboard;
+        try { await fn(); } finally { w.figurTillBild = org; w._laddaNedCSV = dl; w._copyMatrixToClipboard = kop; }
         return sedda;
     };
     it('_rfExportFigur bär filtret; diagramdatan har raden Urval i diagrammet och alla datarader', () => {

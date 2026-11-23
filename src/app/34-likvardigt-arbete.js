@@ -36,7 +36,7 @@ import { _STS_DIR_KOLUMN, _STS_DIR_TIPS, PALETTE, URVAL } from './10-diagramtema
 import { markeringFor } from './11-markering.js';
 import { addTableExportTools, getData, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
-import { _appendMethodSheet, _downloadCSV, _showExportSensitivityToast } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _laddaNedCSV, _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { _evidenceForLikvardighetPair, _openEvidenceModal } from './27-berakningsbevis.js';
 import { _laSlutsats } from './41-lika-arbete.js';
@@ -795,7 +795,7 @@ function _lvParFigur(pairs, max = 14) {
  * Exporterar § 3:10-tabellen + metadatablad till Excel.
  */
 /**
- * Robust CSV-export för § 3:10. Använder _downloadCSV-helpern direkt —
+ * Robust CSV-export för § 3:10. Använder _laddaNedCSV-helpern direkt —
  * INGA beroenden på XLSX-biblioteket. Detta är PRIMÄR exportväg (Excel-versionen
  * är sekundär).
  */
@@ -869,7 +869,7 @@ function _exportLikvardighetCSVExport() {
         : 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
     rows.push(['Minsta gruppstorlek', 'Tillämpas EJ i denna analys']);
-    _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
+    _laddaNedCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -997,11 +997,11 @@ function _exportLikvardighetExport() {
 
         stegnamn = 'skriv fil';
         const filename = 'lonekartlaggning_likvardighet_' + idagDatum() + '.xlsx';
-        _appendMethodSheet(wb, { undantag: 'Likvärdigt arbete' });
+        _laggTillMetodblad(wb, { undantag: 'Likvärdigt arbete' });
         XLSX.writeFile(wb, filename);
 
         stegnamn = 'efter-steg';
-        if (typeof _showExportSensitivityToast === 'function') _showExportSensitivityToast();
+        if (typeof _visaExportvarning === 'function') _visaExportvarning();
         if (typeof announceToScreenReader === 'function') announceToScreenReader('Likvärdighetsanalys exporterad: ' + pairs.length + ' par.');
     } catch (err) {
         const msg = err && err.message ? err.message : String(err);

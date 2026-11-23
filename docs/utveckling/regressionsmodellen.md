@@ -130,7 +130,7 @@ räknats bort": "ålder och BAS-intervall" (standard), "BAS-intervall", "ålder"
 BAS-intervall och AID-etikett", och tom sträng för endast kön, då texterna säger "utan att något räknats bort".
 `modellBeskrivning(m)` ger modellen i ord, "kön + ålder + BAS-intervall (indikatorer) + AID-etikett inom BAS (fasta
 effekter)" med de delar som är valda; den är regressionens `modelDesc` och står i rapportens bilaga. Metodbilagan
-(bladet *Metod & parametrar*, `_methodAppendixData` i `22-exporthjalpare.js`) bygger raden *Modell — oförklarad
+(bladet *Metod & parametrar*, `_metodbilaga` i `22-exporthjalpare.js`) bygger raden *Modell — oförklarad
 skillnad* ur `modellBeskrivning(forklaringsmodell())`: med ålder i lönefilen och BAS som indikatorer står BAS som
 "BAS-intervall (indikatorvariabler, första BAS som referens)", och med AID-etikett inom BAS vald tillkommer
 "skattat med inomtransformation". Standardmodellen ger samma rad som före valet.
@@ -422,7 +422,7 @@ kolumnen *Säkerställd efter korrigering* gäller q (ADR-71).
 (`ALDER_METODVAL_TEXT`), står alltid, med eller utan ålder: i nyckeltalets verktygstips i Lika arbete, i
 regressionskortets *Så fungerar regressionen* och i rapportens metodtext. Utan ålder står efter den, i regressionskortet och i rapportens
 metodtext, "Lönefilen saknar ålder: analysen körs utan åldersjustering, och Ålder & karriär visas inte."
-(`ALDER_SAKNAS_TEXT`), och rutan för ålder i panelen är avstängd. Bladet *Metod & parametrar* (`_methodAppendixData` i `22-exporthjalpare.js`)
+(`ALDER_SAKNAS_TEXT`), och rutan för ålder i panelen är avstängd. Bladet *Metod & parametrar* (`_metodbilaga` i `22-exporthjalpare.js`)
 säger i raderna *Modell — oförklarad skillnad* och *Steg + AID-etikett inom BAS (dekomponeringen)* modellen utan ålder
 (`modellBeskrivning(forklaringsmodell())`, avsnitt 2) och att lönefilen saknar ålder. Vad inläsningen, flikarna och exporterna gör utan ålder står i ADR-64.
 
@@ -480,7 +480,7 @@ inget under den räknas (ΔW = 0).
 finast först ("AID, BAS X"). Delarnas namn, kortets texter, trappans beskrivning och rapportunderlagets meningar byggs
 ur variablerna; standardvalet ger samma texter som före ADR-65, och samma tal bit för bit (posterna läggs i samma
 ordning och räknas med samma operationer). Ett annat val än standard nämns i rapportunderlaget och som raden *Var
-uppstår löneskillnaden (variabler)* i metodbilagan (`_methodAppendixData`).
+uppstår löneskillnaden (variabler)* i metodbilagan (`_metodbilaga`).
 
 **Rangordningen.** Grupperna i varje del rangordnas efter bidrag i kronor till hela skillnaden — medvetet annorlunda
 än Lika arbetes sortering efter skillnadens storlek, och avsnittet säger det. Varje del visar sitt belopp, sin andel av

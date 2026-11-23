@@ -11517,11 +11517,11 @@ function uppstartPrioritering() {
   document.getElementById("btn-export-prio-excel")?.addEventListener("click", () => medExportLage(() => {
     const table = document.getElementById("prio-table");
     if (table) {
-      const wb = tableToCleanBook("prio-table", "Prioritering");
+      const wb = tabellTillBok("prio-table", "Prioritering");
       if (wb) {
-        _appendMethodSheet(wb);
+        _laggTillMetodblad(wb);
         XLSX.writeFile(wb, "prioriteringslista.xlsx");
-        _showExportSensitivityToast();
+        _visaExportvarning();
       }
     }
   }));
@@ -12514,7 +12514,7 @@ async function __chartExportImageExport(gd, val, underlag2) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  if (typeof _showExportSensitivityToast === "function") _showExportSensitivityToast();
+  if (typeof _visaExportvarning === "function") _visaExportvarning();
 }
 function chartExportRun(...a) {
   return medExportLage(() => _chartExportRunExport.apply(
@@ -12530,7 +12530,7 @@ function _chartExportRunExport(gd, val) {
   if (underlag2 && underlag2.underlag && underlag2.underlag.tom) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
   if (val === "data-kopiera") return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag2)));
   if (val === "data-csv") {
-    return Promise.resolve(_downloadCSV(chartExportRows(gd, underlag2), chartExportFilename(gd, "csv").replace(/\.csv$/, "")));
+    return Promise.resolve(_laddaNedCSV(chartExportRows(gd, underlag2), chartExportFilename(gd, "csv").replace(/\.csv$/, "")));
   }
   return _chartExportImage(gd, val, underlag2);
 }
@@ -13779,7 +13779,7 @@ function _exportLikvardighetCSVExport() {
   rows.push(["KI-metod", poang ? "Bootstrap B=1000 på bägge individurvalen" : "Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median"]);
   rows.push(["Justerad för ålder", LV_JUSTERAD_METOD]);
   rows.push(["Minsta gruppstorlek", "Tillämpas EJ i denna analys"]);
-  _downloadCSV(rows, "lonekartlaggning_likvardighet_" + idagDatum(), { undantag: "Likvärdigt arbete" });
+  _laddaNedCSV(rows, "lonekartlaggning_likvardighet_" + idagDatum(), { undantag: "Likvärdigt arbete" });
 }
 function exportLikvardighet(...a) {
   return medExportLage(() => _exportLikvardighetExport.apply(
@@ -13909,10 +13909,10 @@ function _exportLikvardighetExport() {
     XLSX.utils.book_append_sheet(wb, metaSheet, "Metadata");
     stegnamn = "skriv fil";
     const filename = "lonekartlaggning_likvardighet_" + idagDatum() + ".xlsx";
-    _appendMethodSheet(wb, { undantag: "Likvärdigt arbete" });
+    _laggTillMetodblad(wb, { undantag: "Likvärdigt arbete" });
     XLSX.writeFile(wb, filename);
     stegnamn = "efter-steg";
-    if (typeof _showExportSensitivityToast === "function") _showExportSensitivityToast();
+    if (typeof _visaExportvarning === "function") _visaExportvarning();
     if (typeof announceToScreenReader === "function") announceToScreenReader("Likvärdighetsanalys exporterad: " + pairs.length + " par.");
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
@@ -16898,7 +16898,7 @@ function _exportForecastExport() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), "Sammanfattning");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), "Fördelning");
-  _appendMethodSheet(wb);
+  _laggTillMetodblad(wb);
   XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
   if (typeof announceToScreenReader === "function") announceToScreenReader("Löneöversynens prognosunderlag exporterat.");
 }
@@ -18178,7 +18178,7 @@ function _exportHandlingsplanExport() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), "Handlingsplan");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), "Vägledning");
-  _appendMethodSheet(wb);
+  _laggTillMetodblad(wb);
   XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
   if (typeof announceToScreenReader === "function") announceToScreenReader("Handlingsplansunderlag exporterat.");
 }
@@ -21111,7 +21111,7 @@ function _rmAvsnittenUtanUrval() {
   const regressionAvsnitt = regression.delar.length ? regression : null;
   const metod = { id: "metod", rubrik: "Bilaga: Metod och parametrar", utelamnat: [], delar: [
     dampad("Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte."),
-    { typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader: _methodAppendixData().map(([n, v]) => [String(n), String(v)]) },
+    { typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader: _metodbilaga().map(([n, v]) => [String(n), String(v)]) },
     // Metodreservationen om ålder (S7, ADR-64), oavsett om lönefilen har ålder.
     dampad(`${ALDER_METODVAL_TEXT}${harAlder() ? "" : ` ${ALDER_SAKNAS_TEXT}`}`)
   ] };
@@ -21731,7 +21731,7 @@ function uppstartKonfiguration() {
       status.style.color = FARG.ok;
       setTimeout(() => status.textContent = "", 3e3);
     }
-    _showExportSensitivityToast(`<strong>Konfiguration sparad</strong><br>
+    _visaExportvarning(`<strong>Konfiguration sparad</strong><br>
         Filen innehåller dina inställningar och <em>dina bedömningar och anteckningar</em>
         (bedömningar av regler och praxis, handlingsplan, narrativ) — men ingen rå lönedata. Förvara på behörighetsstyrd
         disk och skicka den inte via okrypterad e-post.`);
@@ -22425,11 +22425,11 @@ function uppstartLoneoversikt() {
     });
   });
   document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
-    const wb = tableToCleanBook("rapport-table", "Rapport");
+    const wb = tabellTillBok("rapport-table", "Rapport");
     if (wb) {
-      _appendMethodSheet(wb);
+      _laggTillMetodblad(wb);
       XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx");
-      _showExportSensitivityToast();
+      _visaExportvarning();
     }
   }));
 }
@@ -27292,7 +27292,7 @@ function _exportEuReportExport() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(quart), "Kvartilfördelning");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(repArr), "Representation");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), "Skillnad i lönefördelningen");
-  _appendMethodSheet(wb, { extra: [["Löneskillnadens tecken i den här filen", DIREKTIV_METOD]] });
+  _laggTillMetodblad(wb, { extra: [["Löneskillnadens tecken i den här filen", DIREKTIV_METOD]] });
   XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
   if (typeof announceToScreenReader === "function") announceToScreenReader("EU-lönerapport exporterad.");
 }
@@ -27513,7 +27513,7 @@ function _exportAllToExcelExport() {
   }
   const wb = _excelAlltBok();
   XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
-  _showExportSensitivityToast();
+  _visaExportvarning();
 }
 function _excelAlltBok(...a) {
   return medExportLage(() => __excelAlltBokExport.apply(
@@ -27538,7 +27538,7 @@ function __excelAlltBokExport() {
   if (state.statistik.length) ensure("#benchmark-table tbody tr", generateBenchmark);
   const wb = XLSX.utils.book_new();
   const tableToSheet = (id, fallback) => {
-    const sheet = tableToCleanSheet(id);
+    const sheet = tabellTillBlad(id);
     if (sheet) return sheet;
     return fallback ? XLSX.utils.aoa_to_sheet(fallback) : null;
   };
@@ -27609,7 +27609,7 @@ function __excelAlltBokExport() {
   for (const [rubrik, text] of _aidbasMetodRader()) metRows.push(["  " + rubrik, text]);
   metRows.push([]);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metRows), "Metodik");
-  _appendMethodSheet(wb, { extra: [
+  _laggTillMetodblad(wb, { extra: [
     ["Bladen Per BAS och Löneskillnad", `Per BAS är lönestrukturen per ${T.niva.en} som i en skriven lönekartläggning: referensen, organisationen och varje ${T.enhet.en} med P10, median, P90 och antal, per kön. Löneskillnad är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per ${T.niva.en}, med antal och medianer. Samma underlag, två frågor.`],
     ..._excelLonepolitikMetod(diagramBlad),
     ..._aidbasMetodRader()
@@ -27837,7 +27837,7 @@ function _exportJPAProtocolExport() {
     { wch: 22 }
   ];
   yrkenSheet["!freeze"] = { xSplit: 2, ySplit: 1 };
-  _applyColumnNumFormats(yrkenSheet, SV_NUM_FORMATS);
+  _tillampaTalformat(yrkenSheet, SV_TALFORMAT);
   XLSX.utils.book_append_sheet(wb, yrkenSheet, _excelBladnamn(`2. Lika arbete (${T.system})`, "2. Lika arbete"));
   XLSX.utils.book_append_sheet(wb, _aidbasLikaBlad(likaArbeteTabell(lika)), JPA_BLAD_ALLA_GRUPPER);
   const basHeaderRow = [
@@ -27924,7 +27924,7 @@ function _exportJPAProtocolExport() {
     { wch: 22 }
   ];
   basSheet["!freeze"] = { xSplit: 2, ySplit: 1 };
-  _applyColumnNumFormats(basSheet, SV_NUM_FORMATS);
+  _tillampaTalformat(basSheet, SV_TALFORMAT);
   XLSX.utils.book_append_sheet(wb, basSheet, "3. Likvärdigt arbete (BAS)");
   if (lvResult && lvResult.pairs.length && !lvRedovisning.par.length) {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[lvRedovisning.not]]), "3b. Likvärdigt arbete (krav)");
@@ -28020,7 +28020,7 @@ function _exportJPAProtocolExport() {
       { wch: 22 }
     ];
     lvSheet["!freeze"] = { xSplit: 3, ySplit: 1 };
-    _applyColumnNumFormats(lvSheet, SV_NUM_FORMATS);
+    _tillampaTalformat(lvSheet, SV_TALFORMAT);
     XLSX.utils.book_append_sheet(wb, lvSheet, "3b. Likvärdigt arbete (krav)");
   }
   const excludedRows = [
@@ -28119,9 +28119,9 @@ function _exportJPAProtocolExport() {
   signSheet["!cols"] = [{ wch: 32 }, { wch: 60 }];
   XLSX.utils.book_append_sheet(wb, signSheet, "6. Signaturer");
   const filename = `lonekartlaggning_protokoll_gemensam_lonebedomning_${isoDate}.xlsx`;
-  _appendMethodSheet(wb);
+  _laggTillMetodblad(wb);
   XLSX.writeFile(wb, filename);
-  _showExportSensitivityToast();
+  _visaExportvarning();
   announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 function uppstartExcelexport() {
@@ -28425,7 +28425,7 @@ function uppstartVarUppstarGapet() {
 
 // src/app/22-exporthjalpare.js
 var EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
-function _methodAppendixData() {
+function _metodbilaga() {
   const total = state.data && state.data.length || 0;
   const used = typeof getData === "function" ? getData().length : total;
   const ver = typeof APP_VERSION !== "undefined" ? APP_VERSION : "–";
@@ -28465,9 +28465,9 @@ function _methodAppendixData() {
 function _excelBladnamn(namn, reserv) {
   return namn.length <= 31 && namn.trim() && !/[:\\/?*[\]]/.test(namn) ? namn : reserv;
 }
-function _appendMethodSheet(wb, { undantag = "", extra = [] } = {}) {
+function _laggTillMetodblad(wb, { undantag = "", extra = [] } = {}) {
   if (typeof XLSX === "undefined" || !XLSX.utils || !wb) return;
-  const rows = [["Metod & parametrar — reproducerbarhet och tolkning"], [""], ..._methodAppendixData(), ...extra];
+  const rows = [["Metod & parametrar — reproducerbarhet och tolkning"], [""], ..._metodbilaga(), ...extra];
   const ram = rows.findIndex((rad) => rad[0] === "Rättslig ram");
   rows.splice(ram < 0 ? rows.length : ram + 1, 0, ["Ansvar", ANSVARSFORBEHALL]);
   if (undantag) {
@@ -28492,14 +28492,14 @@ function _exportVisaAllaRader(klon) {
   klon.querySelectorAll("[data-open-basdossier]").forEach((b) => b.remove());
   return _flerKolumnerAlla(klon);
 }
-function _cloneAndCleanTableForExport(...a) {
-  return medExportLage(() => __cloneAndCleanTableForExportExport.apply(
+function _tabellkopiaForExport(...a) {
+  return medExportLage(() => __tabellkopiaForExportExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function __cloneAndCleanTableForExportExport(tableId) {
+function __tabellkopiaForExportExport(tableId) {
   const t = exportElement(tableId);
   if (!t || !t.querySelector("tbody tr")) return null;
   const clone = t.cloneNode(true);
@@ -28531,7 +28531,7 @@ function __cloneAndCleanTableForExportExport(tableId) {
       td.querySelectorAll("[style]").forEach((el) => el.removeAttribute("style"));
       td.innerHTML = td.innerHTML.replace(/&nbsp;/g, " ");
     });
-    tr.querySelectorAll("td, th").forEach((td) => _exportMarkCell(td));
+    tr.querySelectorAll("td, th").forEach((td) => _exportMarkeraCell(td));
   });
   return _exportUtanSkarmkolumner(clone);
 }
@@ -28581,7 +28581,7 @@ function _exportCellVarde(td) {
   const z = p.enhet === "%" ? `0${dec}\\ "%"` : p.enhet === "kr" ? '#,##0\\ "kr"' : p.dec ? `0${dec}` : null;
   return z ? { t: "n", v, z } : { t: "n", v };
 }
-function _exportMarkCell(td) {
+function _exportMarkeraCell(td) {
   const c = _exportCellVarde(td);
   if (!c) return;
   td.setAttribute("data-t", c.t);
@@ -28589,7 +28589,7 @@ function _exportMarkCell(td) {
   if (c.z) td.setAttribute("data-z", c.z);
   td.textContent = String(c.v);
 }
-var SV_NUM_FORMATS = Object.freeze({
+var SV_TALFORMAT = Object.freeze({
   // Ordningen avgör: första träffen gäller. Rubriker som "Kvinnors median i % av männens", "P10 skillnad mot …
   // (%)" och "Avvikelse per person (kr/mån)" innehåller flera nyckelord, så enheten i parentesen prövas först.
   "(%)": '0.00\\ "%"',
@@ -28612,7 +28612,7 @@ var SV_NUM_FORMATS = Object.freeze({
   "index": "0",
   "ålder": "0"
 });
-function _groupedCloneToAoa(clone) {
+function _grupperadKopiaTillAoa(clone) {
   const headers = [...clone.querySelectorAll("thead th")].map((th) => th.textContent.replace(/\s+/g, " ").trim());
   const aoa = [];
   const merges = [];
@@ -28641,7 +28641,7 @@ function _groupedCloneToAoa(clone) {
   });
   return { aoa, merges, firstHeaderRowIdx };
 }
-function _autoColWidths(sheet) {
+function _autoKolumnbredder(sheet) {
   if (!sheet || !sheet["!ref"]) return;
   const range = XLSX.utils.decode_range(sheet["!ref"]);
   const widths = [];
@@ -28657,30 +28657,30 @@ function _autoColWidths(sheet) {
   }
   sheet["!cols"] = widths;
 }
-function tableToCleanSheet(tableId) {
-  const clone = _cloneAndCleanTableForExport(tableId);
+function tabellTillBlad(tableId) {
+  const clone = _tabellkopiaForExport(tableId);
   if (!clone) return null;
   if (
     /** @type {HTMLElement} */
     clone.querySelector("tbody tr.group-header")
   ) {
-    const g = _groupedCloneToAoa(
+    const g = _grupperadKopiaTillAoa(
       /** @type {HTMLTableElement} */
       clone
     );
     const sheet2 = XLSX.utils.aoa_to_sheet(g.aoa);
     if (g.merges.length) sheet2["!merges"] = g.merges;
-    _applyColumnNumFormats(sheet2, SV_NUM_FORMATS, g.firstHeaderRowIdx ?? 0);
-    _autoColWidths(sheet2);
+    _tillampaTalformat(sheet2, SV_TALFORMAT, g.firstHeaderRowIdx ?? 0);
+    _autoKolumnbredder(sheet2);
     return sheet2;
   }
   const sheet = XLSX.utils.table_to_sheet(clone);
-  _applyColumnNumFormats(sheet, SV_NUM_FORMATS);
-  _autoColWidths(sheet);
+  _tillampaTalformat(sheet, SV_TALFORMAT);
+  _autoKolumnbredder(sheet);
   sheet["!freeze"] = { ySplit: 1 };
   return sheet;
 }
-function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
+function _tillampaTalformat(sheet, formatMap, headerRowIdx = 0) {
   if (!sheet || !sheet["!ref"]) return;
   const range = XLSX.utils.decode_range(sheet["!ref"]);
   for (let c = range.s.c; c <= range.e.c; c++) {
@@ -28700,8 +28700,8 @@ function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
     }
   }
 }
-function tableToCleanBook(tableId, sheetName) {
-  const sheet = tableToCleanSheet(tableId);
+function tabellTillBok(tableId, sheetName) {
+  const sheet = tabellTillBlad(tableId);
   if (!sheet) return null;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, sheetName);
@@ -28711,7 +28711,7 @@ function _csvFilnamn(namn) {
   const n = namn || "export";
   return state.isDemo && !n.startsWith("DEMO_") ? "DEMO_" + n : n;
 }
-function _downloadCSV(rows, filename, { undantag = "" } = {}) {
+function _laddaNedCSV(rows, filename, { undantag = "" } = {}) {
   if (!Array.isArray(rows) || !rows.length) {
     alert("Ingen data att exportera.");
     return;
@@ -28729,13 +28729,13 @@ function _downloadCSV(rows, filename, { undantag = "" } = {}) {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1500);
-    if (typeof _showExportSensitivityToast === "function") _showExportSensitivityToast();
+    if (typeof _visaExportvarning === "function") _visaExportvarning();
     if (typeof announceToScreenReader === "function") announceToScreenReader("CSV exporterad: " + (rows.length - 1) + " rader.");
   } catch (err) {
     alert("CSV-export misslyckades: " + (err.message || String(err)));
   }
 }
-function _showExportSensitivityToast(bodyHtml) {
+function _visaExportvarning(bodyHtml) {
   const existing = document.getElementById("export-sensitivity-toast");
   if (existing) existing.remove();
   const toast = document.createElement("div");
@@ -29117,7 +29117,7 @@ function _exportActionChecklistCSVExport(items, done) {
   rows.push(["Hanterade", items.filter((it) => done.has(it.id)).length]);
   const parNot = _attGoraParNot();
   if (parNot) rows.push(["Utelämnade par", parNot]);
-  _downloadCSV(rows, "atgardslista_" + idagDatum());
+  _laddaNedCSV(rows, "atgardslista_" + idagDatum());
 }
 
 // src/app/38-referensfiler.js
@@ -33640,7 +33640,7 @@ function uppstartTillstand() {
     );
     if (csvBtn) {
       const rows = tableToMatrix(csvBtn.getAttribute("data-csv-table"));
-      if (rows.length) _downloadCSV(
+      if (rows.length) _laddaNedCSV(
         rows,
         csvBtn.getAttribute("data-csv-file") || "tabell",
         { undantag: _kUndantagFor(document.getElementById(csvBtn.getAttribute("data-csv-table") || "")) }
@@ -36667,21 +36667,21 @@ function _exportBenchmarkExcelExport() {
   ];
   const metaSheet = XLSX.utils.aoa_to_sheet(meta);
   metaSheet["!cols"] = [{ wch: 48 }, { wch: 32 }];
-  _applyColumnNumFormats(sheet, SV_NUM_FORMATS, 1);
+  _tillampaTalformat(sheet, SV_TALFORMAT, 1);
   headerRow2.forEach((rubrik, c) => {
     if (rubrik !== "P10" && rubrik !== "P90") return;
     for (let r = 2; r < aoa.length; r++) {
       const cell = sheet[XLSX.utils.encode_cell({ c, r })];
-      if (cell && cell.t === "n") cell.z = SV_NUM_FORMATS.median;
+      if (cell && cell.t === "n") cell.z = SV_TALFORMAT.median;
     }
   });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, "Jämförelse_alla_percentiler");
   XLSX.utils.book_append_sheet(wb, metaSheet, "Metadata");
   const filename = `lonekartlaggning_jamforelse_${idagDatum()}.xlsx`;
-  _appendMethodSheet(wb);
+  _laggTillMetodblad(wb);
   XLSX.writeFile(wb, filename);
-  _showExportSensitivityToast();
+  _visaExportvarning();
   announceToScreenReader(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? "" : "er"}, ${nPersoner} person${nPersoner === 1 ? "" : "er"}.`);
 }
 function uppstartJamforelseExport() {

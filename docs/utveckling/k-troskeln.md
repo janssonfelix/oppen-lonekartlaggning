@@ -68,7 +68,7 @@ Exempel ur koden i dag:
   gruppen har färre än tröskeln och gäller skattningens säkerhet, inte läget) och antalet små grupper i
   likvärdighetsanalysens diagnostik (`kvDomUnderK` i `src/lib/vymodell-likvardigt-arbete.js`, `34-likvardigt-arbete.js`) läser
   `kInstalld()`.
-- **Texterna.** Stämpeln (`kStampel`), metodbilagan (`_methodAppendixData` i `22-exporthjalpare.js`), sidfoten
+- **Texterna.** Stämpeln (`kStampel`), metodbilagan (`_metodbilaga` i `22-exporthjalpare.js`), sidfoten
   (`_kSidfot`), exportbeskeden och appens texter (`_kText`, `_fyllKTexter`) nämner den inställda tröskeln.
 - **Det som ritas.** Noterna (`kMaskNot`, `kSamladNot`), `_konFarRedovisas`, `_parForRedovisning` (utan andra
   argument), `individLitenFor` och vyernas `liten`-flaggor läser `kTroskel()`.
@@ -296,7 +296,7 @@ BAS-intervall med minst tröskeln personer, och en kort not säger hur många me
 rapportunderlaget, gruppdossierns textkopia, Att göra-CSV, konfigurationsfilens ögonblicksbild — körs i
 `medExportLage()` (`23-exportgrind.js`): generationen ökar så att grinden ritar om varje flik som läses, och efteråt
 ritas skärmen tillbaka. Nästlade anrop byter inte läge. De två funktioner all export av tabeller och diagram går genom,
-`_cloneAndCleanTableForExport` och `_chartExportUnderlag`, går själva in i läget, så ingen väg kan läsa skärmens tal.
+`_tabellkopiaForExport` och `_chartExportUnderlag`, går själva in i läget, så ingen väg kan läsa skärmens tal.
 Flikarna Rapporttext, Exportera och Spara och jämför år ritas alltid i exportläget. Alla diagram har en gemensam
 exportmeny (`11-diagramexport.js`) som diagramkärnan kopplar in, så att nya diagram får den automatiskt; vägen från
 diagram till bild står i `diagramkarnan.md` §6 och §8.
@@ -464,7 +464,7 @@ från standardvärdet 10." (`_kSanktNot()`).
 
 | Utdata | När |
 |---|---|
-| Metodbilagans rad *Minsta gruppstorlek för redovisning* (metodbladet i varje Excelfil, `_appendMethodSheet`; metodavsnittet i Word-utkastet och PDF-rapporten) | Alltid |
+| Metodbilagans rad *Minsta gruppstorlek för redovisning* (metodbladet i varje Excelfil, `_laggTillMetodblad`; metodavsnittet i Word-utkastet och PDF-rapporten) | Alltid |
 | Diagramdatans första rad | Alltid |
 | Tabell-CSV:ens sista rad (`_csvMedStampel`) | Alltid |
 | Rapportunderlagets sammanfattning | Alltid |

@@ -23,7 +23,7 @@ import { PALETTE } from './10-diagramtema.js';
 import { getBasIntervals, getData, state } from './12-tillstand.js';
 import { bedomningUnderlag, populateSelects, UK_ETIKETT } from './13-oversikt.js';
 import { renderActionChecklist } from './18-atgardslista.js';
-import { _showExportSensitivityToast } from './22-exporthjalpare.js';
+import { _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { sattOrgTyp } from './29-organisationspaket.js';
 import { invalidateStatCaches } from './30-statistikcacher.js';
@@ -590,7 +590,7 @@ export function uppstartKonfiguration() {
         if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
         // Konfigfilen är en arbetsfil: den bär dina egna bedömningar och anteckningar,
         // inte bara inställningar. Påminn om förvaringsdisciplinen (ingen rå lönedata).
-        _showExportSensitivityToast(`<strong>Konfiguration sparad</strong><br>
+        _visaExportvarning(`<strong>Konfiguration sparad</strong><br>
         Filen innehåller dina inställningar och <em>dina bedömningar och anteckningar</em>
         (bedömningar av regler och praxis, handlingsplan, narrativ) — men ingen rå lönedata. Förvara på behörighetsstyrd
         disk och skicka den inte via okrypterad e-post.`);

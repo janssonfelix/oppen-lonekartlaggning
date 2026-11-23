@@ -89,7 +89,7 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
     });
     it('notisen efter export nämner varken aggregering eller gruppstorlek', () => {
         const w = fonsterKon(null);
-        w.eval('_showExportSensitivityToast()');
+        w.eval('_visaExportvarning()');
         const t = w.document.getElementById('export-sensitivity-toast').textContent;
         expect(t).toMatch(/Filen innehåller lönedata/);
         expect(t).not.toMatch(/aggregera|gruppstorlek|anonym/i);

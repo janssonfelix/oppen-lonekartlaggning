@@ -2688,13 +2688,13 @@ const utanSmaPunkter = f => {
 // Kör ett menyval och fångar allt som skulle lämna verktyget: bildanrop, nedladdad CSV, urklipp.
 const korMeny = async (el, menyval) => {
     const ut = { bilder: [], csv: [], urklipp: [], fel: null };
-    const org = { bild: w.figurTillBild, csv: w._downloadCSV, kopiera: w._copyMatrixToClipboard };
+    const org = { bild: w.figurTillBild, csv: w._laddaNedCSV, kopiera: w._copyMatrixToClipboard };
     w.figurTillBild = (figur, format, bredd, hojd, val) => { ut.bilder.push({ figur, format, bredd, hojd, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
-    w._downloadCSV = rader => { ut.csv.push(rader); };
+    w._laddaNedCSV = rader => { ut.csv.push(rader); };
     w._copyMatrixToClipboard = rader => { ut.urklipp.push(rader); };
     w.__el = el;
     try { for (const v of menyval) await w.eval(`chartExportRun(window.__el, ${JSON.stringify(v)})`); } catch (e) { ut.fel = e; } finally {
-        w.figurTillBild = org.bild; w._downloadCSV = org.csv; w._copyMatrixToClipboard = org.kopiera;
+        w.figurTillBild = org.bild; w._laddaNedCSV = org.csv; w._copyMatrixToClipboard = org.kopiera;
     }
     return ut;
 };

@@ -10,7 +10,7 @@ import { kTroskel } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
-import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { _evidenceForRapportRow, _openEvidenceModal } from './27-berakningsbevis.js';
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
@@ -141,7 +141,7 @@ export function uppstartLoneoversikt() {
     });
     // Export Excel (bara Löneöversikten)
     document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
-        const wb = tableToCleanBook('rapport-table', 'Rapport');
-        if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _showExportSensitivityToast(); }
+        const wb = tabellTillBok('rapport-table', 'Rapport');
+        if (wb) { _laggTillMetodblad(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _visaExportvarning(); }
     }));
 }

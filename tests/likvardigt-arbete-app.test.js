@@ -487,7 +487,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
         const w = poangFonster();
         expect(w.eval('likvardighetResultat()').pairs.length).toBeGreaterThan(0);
         let csv = null;
-        w.eval('_downloadCSV = rows => { window.__lvCsv = rows; }');
+        w.eval('_laddaNedCSV = rows => { window.__lvCsv = rows; }');
         w.eval('exportLikvardighetCSV()');
         csv = w.__lvCsv;
         const csvMeta = csv.slice(csv.findIndex(r => r[0] === '# METADATA'));

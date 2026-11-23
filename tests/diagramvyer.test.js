@@ -1683,7 +1683,7 @@ describe('metodförbehåll under diagram', () => {
             expect(not).toBeNull();
             expect(delar[i + 1]?.text || '').not.toMatch(/färre än tio grupper/);
         }
-        expect(w2.eval('_methodAppendixData()').map(r => r[0])).toContain('Trattdiagrammet');
+        expect(w2.eval('_metodbilaga()').map(r => r[0])).toContain('Trattdiagrammet');
     });
 });
 

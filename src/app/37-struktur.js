@@ -23,7 +23,7 @@ import { PALETTE, UNDERLAG, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { getBasIntervals, getData, state } from './12-tillstand.js';
 import { buildActionChecklist } from './18-atgardslista.js';
-import { _appendMethodSheet, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline, _laNyckel, _laSlutsats } from './41-lika-arbete.js';
@@ -542,7 +542,7 @@ function _exportEuReportExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(quart), 'Kvartilfördelning');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(repArr), 'Representation');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), 'Skillnad i lönefördelningen');
-    _appendMethodSheet(wb, { extra: [['Löneskillnadens tecken i den här filen', DIREKTIV_METOD]] });
+    _laggTillMetodblad(wb, { extra: [['Löneskillnadens tecken i den här filen', DIREKTIV_METOD]] });
     XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('EU-lönerapport exporterad.');
 }

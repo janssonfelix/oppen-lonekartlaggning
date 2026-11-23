@@ -98,7 +98,7 @@ describe('en exportknapp per kort', () => {
         expect(meny.hidden).toBe(false);
         expect([...meny.querySelectorAll('button')].map(b => b.id)).toEqual(['btn-export-likvardighet-csv', 'btn-export-likvardighet']);
         let csv = 0;
-        w.eval('_downloadCSV = () => { window.__csv = (window.__csv || 0) + 1; }');
+        w.eval('_laddaNedCSV = () => { window.__csv = (window.__csv || 0) + 1; }');
         w.document.getElementById('btn-export-likvardighet-csv').click();
         csv = w.__csv;
         expect(csv).toBe(1);

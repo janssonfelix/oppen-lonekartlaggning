@@ -21,7 +21,7 @@ import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS } from './10-diagramtema.js';
 import { getData, state } from './12-tillstand.js';
 import { bedomningUnderlag, UK_ETIKETT } from './13-oversikt.js';
-import { _appendMethodSheet, _applyColumnNumFormats, _excelBladnamn, _showExportSensitivityToast, EU_LONEBEGREPP_RESERVATION, SV_NUM_FORMATS, tableToCleanSheet } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _tillampaTalformat, _excelBladnamn, _visaExportvarning, EU_LONEBEGREPP_RESERVATION, SV_TALFORMAT, tabellTillBlad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { renderSektorer } from './37-struktur.js';
@@ -186,7 +186,7 @@ function _exportAllToExcelExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
     XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
-    _showExportSensitivityToast();
+    _visaExportvarning();
 }
 
 /** Bygger arbetsboken för "Excel (alla flikar)". */
@@ -207,7 +207,7 @@ function __excelAlltBokExport() {
 
     const wb = XLSX.utils.book_new();
     const tableToSheet = (id, fallback) => {
-        const sheet = tableToCleanSheet(id);
+        const sheet = tabellTillBlad(id);
         if (sheet) return sheet;
         return fallback ? XLSX.utils.aoa_to_sheet(fallback) : null;
     };
@@ -308,7 +308,7 @@ function __excelAlltBokExport() {
 
     // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
     // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
-    _appendMethodSheet(wb, { extra: [
+    _laggTillMetodblad(wb, { extra: [
         ['Bladen Per BAS och Löneskillnad', `Per BAS är lönestrukturen per ${T.niva.en} som i en skriven lönekartläggning: referensen, organisationen och varje ${T.enhet.en} med P10, median, P90 och antal, per kön. Löneskillnad är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per ${T.niva.en}, med antal och medianer. Samma underlag, två frågor.`],
         ..._excelLonepolitikMetod(diagramBlad), ..._aidbasMetodRader()] });
     return wb;
@@ -529,7 +529,7 @@ function _exportJPAProtocolExport() {
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     yrkenSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
-    _applyColumnNumFormats(yrkenSheet, SV_NUM_FORMATS);
+    _tillampaTalformat(yrkenSheet, SV_TALFORMAT);
     XLSX.utils.book_append_sheet(wb, yrkenSheet, _excelBladnamn(`2. Lika arbete (${T.system})`, '2. Lika arbete'));
 
     // === Sheet 2a: Alla grupper i lika arbete (art. 10.2 a och c för alla kategorier) ===
@@ -578,7 +578,7 @@ function _exportJPAProtocolExport() {
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     basSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
-    _applyColumnNumFormats(basSheet, SV_NUM_FORMATS);
+    _tillampaTalformat(basSheet, SV_TALFORMAT);
     XLSX.utils.book_append_sheet(wb, basSheet, '3. Likvärdigt arbete (BAS)');
 
     // === Sheet 3b: § 3:10 Likvärdighet (kv-dom yrken vs yrken som inte är kv-dom, ADR-60) ===
@@ -628,7 +628,7 @@ function _exportJPAProtocolExport() {
             { wch: 50 }, { wch: 50 }, { wch: 28 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
         ];
         lvSheet['!freeze'] = { xSplit: 3, ySplit: 1 };
-        _applyColumnNumFormats(lvSheet, SV_NUM_FORMATS);
+        _tillampaTalformat(lvSheet, SV_TALFORMAT);
         // OBS: kolon är förbjudet i Excel-arknamn (SheetJS kastar) — därav "3-10".
         // Demodata saknar § 3:10-par, så arket prövas bara med riktiga par.
         XLSX.utils.book_append_sheet(wb, lvSheet, '3b. Likvärdigt arbete (krav)');
@@ -737,9 +737,9 @@ function _exportJPAProtocolExport() {
 
     // === Spara filen ===
     const filename = `lonekartlaggning_protokoll_gemensam_lonebedomning_${isoDate}.xlsx`;
-    _appendMethodSheet(wb);
+    _laggTillMetodblad(wb);
     XLSX.writeFile(wb, filename);
-    _showExportSensitivityToast();
+    _visaExportvarning();
     announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 

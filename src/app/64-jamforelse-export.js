@@ -11,7 +11,7 @@ import { orgNamn } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { getData, policyFor, referensKalla, referensNamn, state } from './12-tillstand.js';
-import { _appendMethodSheet, _applyColumnNumFormats, _showExportSensitivityToast, SV_NUM_FORMATS } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _tillampaTalformat, _visaExportvarning, SV_TALFORMAT } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 
 /**
@@ -140,14 +140,14 @@ function _exportBenchmarkExcelExport() {
 
     // Applicera svenska nummerformat på data-kolumnerna.
     // Jämförelse-arket har två header-rader (group + sub) — applicera mot sub-header (rad 1).
-    _applyColumnNumFormats(sheet, SV_NUM_FORMATS, 1);
-    // P10 och P90 är kronor som medianen, men rubrikerna har inget nyckelord i SV_NUM_FORMATS (och "Bredd P90/P10"
+    _tillampaTalformat(sheet, SV_TALFORMAT, 1);
+    // P10 och P90 är kronor som medianen, men rubrikerna har inget nyckelord i SV_TALFORMAT (och "Bredd P90/P10"
     // är en kvot): de får medianens format här.
     headerRow2.forEach((rubrik, c) => {
         if (rubrik !== 'P10' && rubrik !== 'P90') return;
         for (let r = 2; r < aoa.length; r++) {
             const cell = sheet[XLSX.utils.encode_cell({ c, r })];
-            if (cell && cell.t === 'n') cell.z = SV_NUM_FORMATS.median;
+            if (cell && cell.t === 'n') cell.z = SV_TALFORMAT.median;
         }
     });
 
@@ -157,9 +157,9 @@ function _exportBenchmarkExcelExport() {
     XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
     const filename = `lonekartlaggning_jamforelse_${idagDatum()}.xlsx`;
-    _appendMethodSheet(wb);
+    _laggTillMetodblad(wb);
     XLSX.writeFile(wb, filename);
-    _showExportSensitivityToast();
+    _visaExportvarning();
     announceToScreenReader(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? '' : 'er'}, ${nPersoner} person${nPersoner === 1 ? '' : 'er'}.`);
 }
 
