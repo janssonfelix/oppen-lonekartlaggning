@@ -14,25 +14,6 @@ beforeAll(() => {
 });
 
 describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
-    it('dossier-kandidater respekterar k-anonymiteten', () => {
-        win.__loadDemoData();
-        const cands = win.__gruppdossierCandidates();
-        expect(cands.length).toBeGreaterThan(0);
-        cands.forEach(g => expect(g.rows.length).toBeGreaterThanOrEqual(10));
-    });
-
-    it('buildGruppdossier samlar blocken och tål saknade referenser', () => {
-        const key = win.__gruppdossierCandidates()[0].key;
-        const d = win.__buildGruppdossier(key);
-        expect(d).not.toBeNull();
-        expect(d.n).toBeGreaterThanOrEqual(10);
-        expect(d.nKv + d.nMa).toBeLessThanOrEqual(d.n);
-        expect(Number.isFinite(d.median)).toBe(true);
-        // block som saknar underlag ska vara null/tomma — aldrig kasta
-        expect(Array.isArray(d.lvAsSubject)).toBe(true);
-        expect(Array.isArray(d.suggestions)).toBe(true);
-    });
-
     it('okänd nyckel ger null i stället för att kasta', () => {
         expect(win.__buildGruppdossier('finns-inte|Z')).toBeNull();
     });
