@@ -17,7 +17,7 @@ import { ritaFigur } from './10-diagramritare.js';
 import { gapStatusNiva, PALETTE } from './10-diagramtema.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { iExportLage } from './23-exportgrind.js';
-import { _openEvidenceModal } from './27-berakningsbevis.js';
+import { _oppnaBevisruta } from './27-berakningsbevis.js';
 import { KOHORT_FORBEHALL } from './40-alder-karriar.js';
 import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
 
@@ -322,7 +322,7 @@ export function ritaLivscykel(given) {
             if (kMaskerad(row.n)) return;   // Minsta gruppstorlek: knappen ritas inte för
                                             // maskerade BAS, men vägen stängs även här
             const c = state._lifecycleCache;
-            _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
+            _oppnaBevisruta(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
         });
     });
 }

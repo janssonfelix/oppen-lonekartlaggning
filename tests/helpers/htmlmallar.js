@@ -1134,7 +1134,7 @@ function provningar(fil) {
         }
     }
     // Beräkningsbevisen (_evidenceFor…): intro, formula och footer skrivs som HTML i bevisrutan, liksom value på en
-    // rad med isHtml: true (_openEvidenceModal i 27-berakningsbevis.js). De prövas där de byggs.
+    // rad med isHtml: true (_oppnaBevisruta i 27-berakningsbevis.js). De prövas där de byggs.
     for (const f of fil.funktioner.filter(f => f.namn && f.namn.startsWith('_evidenceFor') && f.kropp.typ === 'block')) {
         for (let j = f.kropp.a; j < f.kropp.b; j++) {
             if (!ar(tok[j], 'namn') || !op(tok[j + 1], ':') || !(op(tok[j - 1], '{') || op(tok[j - 1], ','))) continue;

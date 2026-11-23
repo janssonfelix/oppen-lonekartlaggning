@@ -11154,7 +11154,7 @@ function renderPrioritering() {
       const tr = btn.closest("tr");
       const item = tr?._prioItem;
       if (!item) return;
-      _openEvidenceModal(_evidenceForPrioItem(item, ref));
+      _oppnaBevisruta(_bevisForPrioPost(item, ref));
     });
   });
   tbody.querySelectorAll(".btn-suggest").forEach((btn) => {
@@ -11528,7 +11528,7 @@ function uppstartPrioritering() {
 }
 
 // src/app/27-berakningsbevis.js
-function _openEvidenceModal(p) {
+function _oppnaBevisruta(p) {
   const modal = document.getElementById("evidence-modal");
   const content = document.getElementById("evidence-modal-content");
   const titleEl = document.getElementById("evidence-modal-title");
@@ -11553,13 +11553,13 @@ function _openEvidenceModal(p) {
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal);
 }
-function _closeEvidenceModal() {
+function _stangBevisruta() {
   const modal = document.getElementById("evidence-modal");
   if (!modal) return;
   if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
 }
-function _evidenceForLikvardighetPair(p) {
+function _bevisForLikvardighetspar(p) {
   const fmtKr = (v) => svKr(v);
   const fmtN = (v) => v.toLocaleString("sv-SE");
   const alderText = (v) => typeof v === "number" && isFinite(v) ? svTal(v, 0) : "–";
@@ -11603,7 +11603,7 @@ function _evidenceForLikvardighetPair(p) {
     footer: `Verktyget identifierar statistiska kandidater. Den slutliga bedömningen — om kraven verkligen är likvärdiga och om det finns sakliga skäl — gör du själv, i dokumentationen.${p.maKlassKort === "nationell" ? " SKR:s kvinnoandel är nationell; jämförelsestatistikens faktiska könsfördelning per AID kan avvika och bör verifieras vid behov." : ""}`
   };
 }
-function _evidenceForPrioItem(it, _reference) {
+function _bevisForPrioPost(it, _reference) {
   const fmtKr = (v) => svKr(v);
   const fmtN = (v) => v.toLocaleString("sv-SE");
   const w = state.prioWeights;
@@ -11639,7 +11639,7 @@ function _evidenceForPrioItem(it, _reference) {
     footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPoPct(poPct)}).`
   };
 }
-function _evidenceForEUMatrixRow(r) {
+function _bevisForEUMatrisrad(r) {
   const fmtKr = (v) => svKr(v);
   const skr = skrKvinnoandel(r.yrke, { del: _skrDel() });
   const nationellt = {
@@ -11692,7 +11692,7 @@ function _evidenceForEUMatrixRow(r) {
     footer: `Jämförelsen gäller lika arbete: samma ${T.enhet.en}, oberoende av andra egenskaper. För likvärdigt arbete (${adjektiv({ utrum: "annan", neutrum: "annat", plural: "andra" }, T.enhet)} ${T.enhet.en}, likvärdiga krav), se fliken Likvärdigt arbete.`
   };
 }
-function _evidenceForPerBasRow(p, bhCtx) {
+function _bevisForPerBasRad(p, bhCtx) {
   const fmtPct = (v) => (v >= 0 ? "+" : "") + svPct(v, 2);
   if (p.status !== "ok") {
     return {
@@ -11732,7 +11732,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
     footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null && bhCtx.allM > 1 ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ""}Klassningen "Titta närmare" kräver både p < 0,05 (efter BH) och att skillnaden är minst 3 % (verktygets storleksgräns). ${harAlder() ? "Talet är justerat för ålder och bär därför ingen direktivmarkering. " : ""}Prövningen av sakliga skäl gör du själv, i dokumentationen.`
   };
 }
-function _evidenceForRapportRow(p) {
+function _bevisForRapportrad(p) {
   const fmtKr = (v) => svKr(v, "—");
   const r = p.rad || {};
   const n = r.n || 0;
@@ -11784,7 +11784,7 @@ function _evidenceForRapportRow(p) {
     footer: `Detta är en deskriptiv vy — inga statistiska tester eller kontroller görs här. För regressionen (oförklarad skillnad när ålder och ${T.niva.en} räknats bort), se fliken Lönestruktur.`
   };
 }
-function _evidenceForPaygapRow(p) {
+function _bevisForLonegapsrad(p) {
   const fmtKr = (v) => svKr(v, "—");
   const nKv = (p.kvLons || []).length;
   const nMa = (p.maLons || []).length;
@@ -11833,11 +11833,11 @@ function uppstartBerakningsbevis() {
     if (
       /** @type {HTMLElement} */
       e.target.closest("[data-evidence-close]")
-    ) _closeEvidenceModal();
+    ) _stangBevisruta();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && document.getElementById("evidence-modal")?.style.display === "flex") {
-      _closeEvidenceModal();
+      _stangBevisruta();
     }
   });
 }
@@ -13518,7 +13518,7 @@ function ritaLikvardigtArbete() {
       );
       const p = (state.likvardighet.result?.pairs || [])[idx];
       if (!p) return;
-      _openEvidenceModal(_evidenceForLikvardighetPair(p));
+      _oppnaBevisruta(_bevisForLikvardighetspar(p));
     });
   });
   if (typeof aktiveraSortering === "function") aktiveraSortering("likvardighet-table");
@@ -14993,7 +14993,7 @@ function ritaLivscykel(given) {
       if (!row) return;
       if (kMaskerad(row.n)) return;
       const c = state._lifecycleCache;
-      _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
+      _oppnaBevisruta(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
     });
   });
 }
@@ -15899,7 +15899,7 @@ function ritaRegressionskort() {
       const p = (r.perBas || []).find((x) => x.bas === basName);
       if (!p) return;
       const q = bhQByBas[p.bas];
-      _openEvidenceModal(_evidenceForPerBasRow(p, { q, allM }));
+      _oppnaBevisruta(_bevisForPerBasRad(p, { q, allM }));
     });
   });
   return r;
@@ -22344,7 +22344,7 @@ function ritaLoneoversikt() {
       const tr = btn.closest("tr");
       const payload = tr?._rapportRow;
       if (!payload) return;
-      _openEvidenceModal(_evidenceForRapportRow(payload));
+      _oppnaBevisruta(_bevisForRapportrad(payload));
     });
   });
   document.getElementById("rapport-table")?.classList.toggle("utan-jamforelse", !state.statistik.length);
@@ -25900,7 +25900,7 @@ function ritaLoneskillnadPerBas(vm) {
       const tr = btn.closest("tr");
       const payload = tr?._paygapRow;
       if (!payload) return;
-      _openEvidenceModal(_evidenceForPaygapRow(payload));
+      _oppnaBevisruta(_bevisForLonegapsrad(payload));
     });
   });
   const skBody = (
@@ -26070,7 +26070,7 @@ function ritaLikaArbete(vm, { reg: given } = {}) {
       const tr = btn.closest("tr");
       const row = tr?._euRow;
       if (!row) return;
-      _openEvidenceModal(_evidenceForEUMatrixRow(row));
+      _oppnaBevisruta(_bevisForEUMatrisrad(row));
     });
   });
   const baseM = byggGrundurval();
@@ -26187,7 +26187,7 @@ function _laOversiktTabell(ov) {
     tb.appendChild(tr);
     tr.querySelector("[data-la-bevis]")?.addEventListener("click", (e) => {
       e.stopPropagation();
-      _openEvidenceModal(_evidenceForPaygapRow(o.underlag));
+      _oppnaBevisruta(_bevisForLonegapsrad(o.underlag));
     });
   }
   flerKolumner("la-oversikt", LA_OVERSIKT_DOLDA_KOLUMNER, "laOversikt");

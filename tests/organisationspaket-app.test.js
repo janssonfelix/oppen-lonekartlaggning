@@ -306,7 +306,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         w.eval('fyllValjare(); lasUppFlikar();');
         las(w, paket({ referens: { ...paket().referens, namn: XSS, kortnamn: XSS } }));
         const it0 = w.eval("computePrioritization('stallningstagande')")[0];
-        const bevis = w.eval('_evidenceForPrioItem')(it0, 'stallningstagande');
+        const bevis = w.eval('_bevisForPrioPost')(it0, 'stallningstagande');
         expect(bevis.intro).not.toContain('<img');
         w.print = () => {};
         await w.eval('buildPrintReport()');

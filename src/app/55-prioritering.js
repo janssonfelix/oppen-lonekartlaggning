@@ -25,7 +25,7 @@ import { hamtaData, policyFor, referensKortnamn, referensNamn, state } from './1
 import { raknaGruppMDE, styrkaGallande } from './13-oversikt.js';
 import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
-import { _evidenceForPrioItem, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _bevisForPrioPost, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { ritaFlik } from './31-navigering.js';
 import { _laNyckel } from './41-lika-arbete.js';
 
@@ -413,7 +413,7 @@ export function renderPrioritering() {
             const tr = btn.closest('tr');
             const item = tr?._prioItem;
             if (!item) return;
-            _openEvidenceModal(_evidenceForPrioItem(item, ref));
+            _oppnaBevisruta(_bevisForPrioPost(item, ref));
         });
     });
 

@@ -38,7 +38,7 @@ import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
 import { _laggTillMetodblad, _laddaNedCSV, _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
-import { _evidenceForLikvardighetPair, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _bevisForLikvardighetspar, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { _laSlutsats } from './41-lika-arbete.js';
 import { aidbasDefinition, aidbasDefinitionText, aidbasGrans, jamforelseGransText, konsklassOrd, kvDomGransText, lvJamforelse, renderAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { kTroskelLank } from './86-installningar.js';
@@ -666,7 +666,7 @@ export function ritaLikvardigtArbete() {
             const idx = parseInt(/** @type {HTMLElement} */ (btn).dataset.lvPair || '', 10);
             const p = (state.likvardighet.result?.pairs || [])[idx];
             if (!p) return;
-            _openEvidenceModal(_evidenceForLikvardighetPair(p));
+            _oppnaBevisruta(_bevisForLikvardighetspar(p));
         });
     });
 

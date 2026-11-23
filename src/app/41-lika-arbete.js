@@ -26,7 +26,7 @@ import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_ALLA, gapStatusKI, gapStatu
 import { markeringFor } from './11-markering.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { styrkaGallande } from './13-oversikt.js';
-import { _evidenceForEUMatrixRow, _evidenceForPaygapRow, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _bevisForEUMatrisrad, _bevisForLonegapsrad, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { _konTathetFigur } from './40-alder-karriar.js';
 import { _pagGrans } from './43-personer-att-granska.js';
 import { aidbasDefinition, aidbasDefinitionText, aidbasGrans } from './45-aid-bas-tabeller.js';
@@ -174,7 +174,7 @@ export function ritaLoneskillnadPerBas(vm) {
             const tr = btn.closest('tr');
             const payload = tr?._paygapRow;
             if (!payload) return;
-            _openEvidenceModal(_evidenceForPaygapRow(payload));
+            _oppnaBevisruta(_bevisForLonegapsrad(payload));
         });
     });
     const skBody = /** @type {HTMLElement} */ (document.querySelector("#skevhet-table tbody"));
@@ -382,7 +382,7 @@ export function ritaLikaArbete(vm, { reg: given } = {}) {
             const tr = btn.closest('tr');
             const row = tr?._euRow;
             if (!row) return;
-            _openEvidenceModal(_evidenceForEUMatrixRow(row));
+            _oppnaBevisruta(_bevisForEUMatrisrad(row));
         });
     });
 
@@ -506,7 +506,7 @@ function _laOversiktTabell(ov) {
             + `<td><span class="la-status ar-${status.farg}" title="${esc(status.serie)}: ${esc(status.grans)}">${ikon(status.ikon)}${esc(status.serie)}</span></td>`
             + _direktivCell(o.direktiv);
         tb.appendChild(tr);
-        tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _openEvidenceModal(_evidenceForPaygapRow(o.underlag)); });
+        tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _oppnaBevisruta(_bevisForLonegapsrad(o.underlag)); });
     }    flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
 }
 

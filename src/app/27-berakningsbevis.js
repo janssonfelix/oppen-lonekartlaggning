@@ -40,7 +40,7 @@ import { PRIO_STATUS_INFO } from './55-prioritering.js';
  * @param {string} [p.intro]   - inledande förklaring
  * @param {string} [p.footer]  - tolkningskommentar
  */
-export function _openEvidenceModal(p) {
+export function _oppnaBevisruta(p) {
     const modal = document.getElementById('evidence-modal');
     const content = document.getElementById('evidence-modal-content');
     const titleEl = document.getElementById('evidence-modal-title');
@@ -68,7 +68,7 @@ export function _openEvidenceModal(p) {
     if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
 
-function _closeEvidenceModal() {
+function _stangBevisruta() {
     const modal = document.getElementById('evidence-modal');
     if (!modal) return;
     if (typeof slappFokus === 'function') slappFokus(modal);
@@ -79,7 +79,7 @@ function _closeEvidenceModal() {
  * Bygger bevis-payload för ett § 3:10-par.
  * @param {Object} p - par-objekt från likvardighetspar
  */
-export function _evidenceForLikvardighetPair(p) {
+export function _bevisForLikvardighetspar(p) {
     const fmtKr = v => svKr(v);
     const fmtN = v => v.toLocaleString('sv-SE');
     const alderText = v => typeof v === 'number' && isFinite(v) ? svTal(v, 0) : '–';
@@ -147,7 +147,7 @@ export function _evidenceForLikvardighetPair(p) {
  * @param {Object} it - item från computePrioritization
  * @param {string} _reference - 'stallningstagande' eller 'statistik' (f.n. ej använd i beviset)
  */
-export function _evidenceForPrioItem(it, _reference) {
+export function _bevisForPrioPost(it, _reference) {
     const fmtKr = v => svKr(v);
     const fmtN = v => v.toLocaleString('sv-SE');
     const w = state.prioWeights;
@@ -190,7 +190,7 @@ export function _evidenceForPrioItem(it, _reference) {
  * Bevis-payload för en EU-matris-rad (jämförelse per AID-etikett).
  * @param {Object} r - rad från EU-matris-aggregering
  */
-export function _evidenceForEUMatrixRow(r) {
+export function _bevisForEUMatrisrad(r) {
     const fmtKr = v => svKr(v);
     // Andelen kvinnor i AID-etiketten nationellt (kolumnen Kvinnor nationellt, som grundvyn gömmer).
     const skr = skrKvinnoandel(r.yrke, { del: _skrDel() });
@@ -245,7 +245,7 @@ export function _evidenceForEUMatrixRow(r) {
  * @param {Object} p - {bas, n, kvN, maN, status, gapPct, ciLow, ciHigh, pValue, R2}
  * @param {Object} [bhCtx] - {q, allM} BH-FDR-context: justerat q-värde + total antal tester
  */
-export function _evidenceForPerBasRow(p, bhCtx) {
+export function _bevisForPerBasRad(p, bhCtx) {
     const fmtPct = v => (v >= 0 ? '+' : '') + svPct(v, 2);
     if (p.status !== 'ok') {
         return {
@@ -297,7 +297,7 @@ export function _evidenceForPerBasRow(p, bhCtx) {
  * (vymodellLoneoversikt, src/lib/vymodell-loneoversikt.js); beviset visar hur de hänger ihop.
  * @param {{kategori: string, bas: string, rad: any, polRow: any, masked?: boolean}} p
  */
-export function _evidenceForRapportRow(p) {
+export function _bevisForRapportrad(p) {
     const fmtKr = v => svKr(v, '—');
     const r = p.rad || {};
     const n = r.n || 0;
@@ -359,7 +359,7 @@ export function _evidenceForRapportRow(p) {
  * Bevis-payload för en rad i Skevhet-flikens lönegap-tabell (paygap-table).
  * @param {Object} p - { bas, rader, kvLons, maLons, masked }; rader är BAS-intervallets personer
  */
-export function _evidenceForPaygapRow(p) {
+export function _bevisForLonegapsrad(p) {
     const fmtKr = v => svKr(v, '—');
     const nKv = (p.kvLons || []).length;
     const nMa = (p.maLons || []).length;
@@ -409,11 +409,11 @@ export function _evidenceForPaygapRow(p) {
 export function uppstartBerakningsbevis() {
     // Stäng-handlers + Esc-tangent
     document.addEventListener('click', e => {
-        if (/** @type {HTMLElement} */ (e.target).closest('[data-evidence-close]')) _closeEvidenceModal();
+        if (/** @type {HTMLElement} */ (e.target).closest('[data-evidence-close]')) _stangBevisruta();
     });
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && document.getElementById('evidence-modal')?.style.display === 'flex') {
-            _closeEvidenceModal();
+            _stangBevisruta();
         }
     });
 }

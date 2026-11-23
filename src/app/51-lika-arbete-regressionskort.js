@@ -22,7 +22,7 @@ import { markeringFor } from './11-markering.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { bootstrapKIGallande, formateraKI } from './13-oversikt.js';
 import { iExportLage, visningNy } from './23-exportgrind.js';
-import { _evidenceForPerBasRow, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _bevisForPerBasRad, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { _RG_STEG_BAS, _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, forklaringsmodell, harAlder, runBlinderOaxaca, runQuantileRegressionAtAllTau, sattForklaringsmodell } from './50-regressionsmodeller.js';
 import { ritaLivscykel } from './52-livscykel.js';
 
@@ -977,7 +977,7 @@ export function ritaRegressionskort() {
             const p = (r.perBas || []).find(x => x.bas === basName);
             if (!p) return;
             const q = bhQByBas[p.bas];
-            _openEvidenceModal(_evidenceForPerBasRow(p, { q, allM }));
+            _oppnaBevisruta(_bevisForPerBasRad(p, { q, allM }));
         });
     });
     return r;

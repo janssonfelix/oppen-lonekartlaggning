@@ -323,7 +323,7 @@ describe('k-tröskeln i texterna', () => {
     it('beviset för en överhoppad per-BAS-regression citerar statistiska golvet (7 kvinnor vid k=5)', () => {
         const w = createAppWindow();
         w.eval('sattKTroskel(5, { fraga: false })');
-        const rad = w.eval('_evidenceForPerBasRow({ bas: "X", n: 17, kvN: 7, maN: 10, status: "too_few" })').rows;
+        const rad = w.eval('_bevisForPerBasRad({ bas: "X", n: 17, kvN: 7, maN: 10, status: "too_few" })').rows;
         const kv = rad.find(r => r.label === 'Antal kvinnor');
         expect(kv.note).toBe('Färre än 10 (golvet för skattningar)');
         expect(rad.find(r => r.label === 'Antal män').note).toBe('');

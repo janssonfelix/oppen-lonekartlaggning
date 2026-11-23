@@ -12,7 +12,7 @@ import { T } from './09-termer.js';
 import { hamtaBasIntervall, hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
-import { _evidenceForRapportRow, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _bevisForRapportrad, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
 // ---- Löneöversikten (tabellen överst i Utforska) ----
@@ -70,7 +70,7 @@ export function ritaLoneoversikt() {
             const tr = btn.closest('tr');
             const payload = tr?._rapportRow;
             if (!payload) return;
-            _openEvidenceModal(_evidenceForRapportRow(payload));
+            _oppnaBevisruta(_bevisForRapportrad(payload));
         });
     });
 

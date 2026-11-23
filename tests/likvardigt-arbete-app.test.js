@@ -102,7 +102,7 @@ describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall'
         const under = [...w.document.querySelectorAll('#likvardighet-table .lv-under')].map(e => e.textContent);
         expect(under.length).toBeGreaterThan(0);
         expect(under.some(t => /intern/.test(t))).toBe(false);
-        const intro = w.eval('_evidenceForLikvardighetPair')(r.pairs[0]).intro;
+        const intro = w.eval('_bevisForLikvardighetspar')(r.pairs[0]).intro;
         expect(intro).toContain('som enligt arbetsvärderingen har <em>lika eller lägre krav</em> (480 poäng mot 500)');
         expect(intro).not.toContain('samma BAS-intervall');
     });

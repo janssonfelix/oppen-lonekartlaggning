@@ -38,7 +38,7 @@ describe('modalerna skriver tal på svenska', () => {
                 oppnade++;
                 const t = medDecimalpunkt(m);
                 if (t.length) (fel[flik] = fel[flik] || new Set()).add(t[0]);
-                w.eval('_closeEvidenceModal()');
+                w.eval('_stangBevisruta()');
             }
         }
         expect(oppnade).toBeGreaterThan(10);
