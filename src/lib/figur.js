@@ -923,3 +923,25 @@ export function figurTillTabell(figur) {
     block.forEach((b, i) => { if (i) ut.push([]); ut.push(...b); });
     return ut;
 }
+
+// ---- När ett diagram inte får lämna verktyget ----
+// Ett diagram får inte lämna verktyget (ingen exportmeny, ingen bild till ZIP-filen, rapportunderlaget eller
+// utskriften, ingen diagramdata) när det står i en behållare som vyn har märkt utan export. Skälen är få och
+// uppräknade, så att det syns varför varje spärr finns.
+export const EXPORT_SKAL = Object.freeze({
+    // Personer att granska (ADR-23): panelen visar enskilda personer med filens radnummer. Diagrammet namnger ingen
+    // och bär ingen lön, men hör till panelen, och inget ur den lämnar verktyget.
+    individer: 'hör till Personer att granska, som visar enskilda personer (ADR-23)'
+});
+
+/**
+ * Skälet till att ett diagram inte får lämna verktyget, eller null när det får det. `markering` är skälet som
+ * behållaren är märkt med (null när ingen behållare är märkt). En märkning utan registrerat skäl spärrar ändå:
+ * hellre ett diagram för lite i en export än ett för mycket.
+ * @param {string|null|undefined} markering
+ * @returns {string|null}
+ */
+export function exportSkal(markering) {
+    if (markering == null) return null;
+    return Object.prototype.hasOwnProperty.call(EXPORT_SKAL, markering) ? EXPORT_SKAL[markering] : 'är märkt utan export';
+}

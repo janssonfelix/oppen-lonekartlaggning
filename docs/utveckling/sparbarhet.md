@@ -11,7 +11,7 @@ som kan ändra dem.
 Koden är sanningen. Där matrisen och koden skiljer sig är det matrisen som ska rättas.
 
 **ID:n.** Beräkningarna heter `B<avsnitt>.<rad>` (B1.1, B1.2 …) efter avsnitt 1–9 nedan. Testerna för minsta
-gruppstorlek heter efter sina serier, I1–I9 (och I1b), C2–C6 och R1–R5 (avsnitt 11), och skydden S1–S5 (avsnitt 12).
+gruppstorlek heter efter sina serier, I1–I10 (och I1b), C2–C6 och R1–R5 (avsnitt 11), och skydden S1–S5 (avsnitt 12).
 Ett ID är stabilt: det byts aldrig och återanvänds aldrig. En rad som stryks lämnar en lucka i numreringen, och en ny
 rad får nästa lediga nummer i sitt avsnitt.
 
@@ -255,6 +255,7 @@ finns ingen C1.
 | I7 | Var uppstår löneskillnaden med andra val av förklaringsvariabler, vid 10 och 25 | `k-troskeln.md` §2 (Var uppstår löneskillnaden); ADR-87 | `gapUppdelning`, `gapuppdelning.js` | `tests/ktroskel-invarianter.test.js` |
 | I8 | Sakliga skäl på en rad under tröskeln lämnar inte verktyget | `k-troskeln.md` §2 och §9 | `gruppSkillnadKr`, `skalUtanBelopp`, `skalForRad`, `skalUnderlag`, `sakligaskal.js`; adaptern `_hpSkalUnderlag`, `src/app/56-handlingsplan.js` (förifyllningen i exportläget, där en grupp under tröskeln inte finns) | `tests/sakligaskal.test.js`, `tests/ktroskel-invarianter-25.test.js` |
 | I9 | Vymodellerna redovisar inget lönemått för en grupp eller ett kön under tröskeln, vid 10 och 25 | `k-troskeln.md` §2; ADR-99 | `vymodellLikaArbete`, `vymodell-lika-arbete.js`; `vymodellLonestruktur`, `vymodell-lonestruktur.js`; `vymodellAlderOchLon`, `vymodellAldersstruktur`, `vymodell-alder-karriar.js`; `vymodellVarUppstarGapet`, `vymodell-var-uppstar-gapet.js`; `oversiktNyckeltal`, `kravstatus`, `vymodell-oversikt.js`; `vymodellLoneoversikt`, `vymodell-loneoversikt.js`; `vymodellGruppdossier`, `vymodell-gruppdossier.js`; `vymodellBasdossier`, `vymodell-basdossier.js`; `vymodellRapport`, `rapportDossierGrupper`, `vymodell-rapport.js`; `vymodellRapportunderlag`, `vymodell-rapportunderlag.js`; `vymodellKravMotLon`, `kvDomUnderK`, `vymodell-likvardigt-arbete.js`; `vymodellRegressionskort`, `vymodell-regressionskort.js`; `vymodellLivscykel`, `vymodell-livscykel.js`; `vymodellPrognos`, `lutningRader`, `vymodellIndividlyft`, `vymodell-loneoversyn.js`; `vymodellLonepolitik`, `vymodell-lonepolitik.js` | `tests/vymodeller.test.js` |
+| I10 | Ett diagram i en behållare märkt utan export (Personer att granska) lämnar inte verktyget: ingen meny, bild eller diagramdata; en märkning utan registrerat skäl spärrar också | `k-troskeln.md` §4 (Personer att granska); ADR-23, 39 | `exportSkal`, `EXPORT_SKAL`, `figur.js`; märkningen läses ur sidan av `exportTillaten`, `src/app/11-diagramexport.js` | `tests/figur.test.js`, `tests/alla-diagram.test.js` |
 | C2 | Struktur per BAS visar inget könsgap när ett kön är under tröskeln | `k-troskeln.md` §2 | `representationPerBas`, `struktur.js` | `tests/ktroskel-kon.test.js` |
 | C3 | Könsuppdelade mått för hela organisationen kräver tröskeln för varje kön | `k-troskeln.md` §2 | `konsMedianer`, `struktur.js`; `_konFarRedovisasFor`, `src/app/06-k-troskel.js` | `tests/ktroskel-kon.test.js` |
 | C4 | Allt som visar gruppmått följer tröskeln när den ändras (den öppna fliken direkt, övriga när de öppnas) | `k-troskeln.md` §3 | `sattKTroskel`, `src/app/06-k-troskel.js` | `tests/ktroskel-kon.test.js` |

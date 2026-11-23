@@ -568,7 +568,7 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 | Stämplarna för undantagen | Avsnitt 4 och 7 | I2 |
 | Omritning efter konfigurationsfil och organisationspaket | Avsnitt 3 | I5 i `tests/ktroskel-exporter.test.js` |
 | Låsningarna ur organisationspaketet | Avsnitt 6 (ADR-47) | `tests/organisationspaket.test.js`, `tests/ktroskel-regression.test.js`, `tests/organisationspaket-app.test.js`, `tests/kanonymitet.test.js` |
-| Personer att granska och extremvärdeslistan | Avsnitt 4 (ADR-23) | Undantagna i I4; `tests/personer-att-granska-app.test.js` (listan lämnar inte verktyget); `tests/alla-diagram.test.js` (`markeraUtanExport`) |
+| Personer att granska och extremvärdeslistan | Avsnitt 4 (ADR-23) | Undantagna i I4; `tests/personer-att-granska-app.test.js` (listan lämnar inte verktyget); I10 (diagrammet: `exportSkal` i `src/lib/figur.js`, `markeraUtanExport`) |
 | Likvärdigt arbete i fliken och dess egen export | Avsnitt 4 | Undantagna i I4; I2 (stämpeln) |
 | Tabellerna per AID-kod och BAS-intervall | Avsnitt 4 (ADR-57, ADR-90) | `tests/aidbas.test.js`, `tests/aidbas-app.test.js`; I4 i exportläget; `tests/ktroskel-utdata.test.js` (vid 10 och 25 har *Lika arbete AID x BAS* exakt tabellens grupper per AID-etikett, och grupperna under tröskeln bara sina namn i noten) |
 | Könsfördelningen per BAS-intervall: tabellen, diagrammet och dess diagramdata, Excel-bladet *Könsskevhet* och utskriften | Avsnitt 4 (ADR-57) | `tests/diagramvyer-marken.test.js` (i exportläget vid tröskeln 10 får ett intervall med 7 personer en rad och ett med 4 bara sitt namn i noten, utan andelar, i tabellen, diagrammets data och bild, diagramdatan, Excel-bladet och utskriften; ett annat test kräver att diagrammet har tabellens intervall och andelar) |

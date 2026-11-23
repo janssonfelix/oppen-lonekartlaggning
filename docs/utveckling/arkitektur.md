@@ -37,7 +37,7 @@ adaptrarna, som hämtar tillståndet, anropar en funktion i lib och ger tillbaka
 6. Allt som lämnar verktyget går genom exportgrinden (`src/app/23-exportgrind.js`). Grinden ser till att ingen export
    läser en flik som ritats med en annan tröskel än den som gäller nu. Exportläget räknar med den inställda
    minsta gruppstorleken (`kTroskel()`, `src/app/06-k-troskel.js`), och ett diagram lämnar bara om `exportTillaten`
-   (`src/app/11-diagramexport.js`) säger ja. All export av tabeller och diagram går genom två funktioner,
+   (`src/app/11-diagramexport.js`, med regeln `exportSkal` i `src/lib/figur.js`) säger ja. All export av tabeller och diagram går genom två funktioner,
    `_cloneAndCleanTableForExport` och `_chartExportUnderlag`, som frågar grinden först.
 
 ## Beräkningskärnans moduler

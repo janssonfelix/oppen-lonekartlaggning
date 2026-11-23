@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalIntervallText, TALFORMAT,
     URVAL_LISTA_MAX, urvalSomLista, urvalAktivt, harleddaLager, harlettNamn, harlettNot,
-    underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening } from '../src/lib/figur.js';
+    underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening, exportSkal, EXPORT_SKAL } from '../src/lib/figur.js';
 import { kvantil } from '../src/lib/stat.js';
 
 const blank = s => s.replace(/\s/g, ' ').replace('−', '-');
@@ -1002,5 +1002,18 @@ describe('[I6] underlaget precis under och precis över skyddsregeln (k = 10)', 
         const prov = underlagProva(und(man), baraVard);
         expect(prov.antal).toEqual({ urval: { kv: 30, ma: 30 }, rest: { kv: 15, ma: man } });
         expect(prov.ok).toBe(ok);
+    });
+});
+
+describe('[I10] ett diagram i en behållare märkt utan export lämnar inte verktyget', () => {
+    it('exportSkal: omärkt får lämna verktyget; ett registrerat skäl och en okänd märkning spärrar båda', () => {
+        expect(exportSkal(null)).toBeNull();
+        expect(exportSkal(undefined)).toBeNull();
+        expect(exportSkal('individer')).toBe(EXPORT_SKAL.individer);
+        expect(EXPORT_SKAL.individer).toMatch(/Personer att granska.*ADR-23/);
+        expect(exportSkal('hemligt')).toBe('är märkt utan export');
+        expect(exportSkal('')).toBe('är märkt utan export');
+        expect(exportSkal('toString')).toBe('är märkt utan export');
+        expect(Object.isFrozen(EXPORT_SKAL)).toBe(true);
     });
 });

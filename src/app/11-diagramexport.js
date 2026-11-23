@@ -30,7 +30,7 @@
 // chartExportRun, och lämnas vidare till innehållet och stämpeln: de kan då aldrig komma ur olika svar.
 // Rensas eller ritas diagrammet om medan bilden görs laddas ingenting ner.
 // ====================================================================
-import { figurTillTabell, harleddaLager, harlettNot, urvalBeskrivning, utanSmaGrupper } from '../lib/figur.js';
+import { EXPORT_SKAL, exportSkal, figurTillTabell, harleddaLager, harlettNot, urvalBeskrivning, utanSmaGrupper } from '../lib/figur.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
@@ -43,15 +43,7 @@ import { exportSakra, medExportLage } from './23-exportgrind.js';
 import { diagramKopiaKalla } from './74-alla-diagram.js';
 
 // ---- När ett diagram inte får lämna verktyget ----
-// Regeln står här och bara här. Ett diagram får inte lämna verktyget — ingen exportmeny, ingen bild till ZIP-filen,
-// rapportunderlaget eller utskriften (diagramTillBild), ingen diagramdata — när det står i en behållare som vyn har
-// märkt med markeraUtanExport. Skälen är få och uppräknade; ett diagram utan registrerat skäl kan inte märkas, så
-// det syns i koden varför varje spärr finns, och användaren ser det i behållarens verktygstips.
-const EXPORT_SKAL = {
-    // Personer att granska (ADR-23): panelen visar enskilda personer med filens radnummer. Diagrammet namnger ingen
-    // och bär ingen lön, men hör till panelen, och inget ur den lämnar verktyget.
-    individer: 'hör till Personer att granska, som visar enskilda personer (ADR-23)'
-};
+// Regeln och skälen står i src/lib/figur.js (exportSkal, EXPORT_SKAL). Här märks behållaren och läses märkningen.
 /** Märker en behållare: inget diagram i den lämnar verktyget. `skal` måste vara en nyckel i EXPORT_SKAL. */
 export function markeraUtanExport(el, skal) {
     if (!el) return;
@@ -60,14 +52,12 @@ export function markeraUtanExport(el, skal) {
     el.title = `Lämnar inte verktyget: ${EXPORT_SKAL[skal]}.`;
 }
 /** Skälet till att diagrammet i behållaren inte får lämna verktyget, eller null när det får det. */
-function exportSkal(behallare) {
+function _exportSkalFor(behallare) {
     const m = behallare && behallare.closest ? behallare.closest('[data-no-export]') : null;
-    if (!m) return null;
-    // En märkning utan registrerat skäl spärrar ändå: hellre ett diagram för lite i en export än ett för mycket.
-    return EXPORT_SKAL[m.getAttribute('data-no-export')] || 'är märkt utan export';
+    return exportSkal(m ? m.getAttribute('data-no-export') : null);
 }
 /** Får diagrammet i behållaren lämna verktyget (meny, bild, diagramdata, ZIP, utskrift)? */
-export function exportTillaten(behallare) { return exportSkal(behallare) == null; }
+export function exportTillaten(behallare) { return _exportSkalFor(behallare) == null; }
 
 const CHART_EXPORT_STORLEKAR = {
     'png-presentation': [1920, 1080],
@@ -209,7 +199,7 @@ export function diagramRitat(el) {
 export function diagramTillBild(...a) { return medExportLage(() => _diagramTillBildExport.apply(null, /** @type {any} */ (a))); }
 async function _diagramTillBildExport(el, val) {
     const { bredd, hojd, utanRubrik = false } = val || {};
-    const skal = exportSkal(el);
+    const skal = _exportSkalFor(el);
     if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
     const ut = _chartExportUnderlag(el);
     el = _chartExportAktuell(el);
