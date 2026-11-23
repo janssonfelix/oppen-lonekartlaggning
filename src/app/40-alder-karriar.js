@@ -177,7 +177,6 @@ export function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     return { utelamnade, figur: { beskrivning: `Lönefördelningen per ${T.niva.en}${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
         legend: perKon ? undefined : false, urval: URVAL.bas, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
 }
-document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
 
 const _konTkr = v => talformat(v / 1000, Number.isInteger(v / 1000) ? 'antal' : undefined);
 
@@ -442,12 +441,6 @@ function _akValj(varde, kalla) {
     if (konSel) renderKon(/** @type {HTMLInputElement} */ (konSel).value);
     if (demoSel) renderDemografi(/** @type {HTMLInputElement} */ (demoSel).value);
 }
-if (konSel)  konSel.addEventListener("change",  e => _akValj(/** @type {HTMLInputElement} */ (e.target).value, konSel));
-document.getElementById('kon-color-by')?.addEventListener('change', () => {
-    const s = document.getElementById('bas-select-kon');
-    if (s) renderKon(/** @type {HTMLInputElement} */ (s).value);
-});
-if (demoSel) demoSel.addEventListener("change", e => _akValj(/** @type {HTMLInputElement} */ (e.target).value, demoSel));
 
 // ---- Demografi ----
 const AGE_BRACKETS    = ['20–24','25–29','30–34','35–39','40–44','45–49','50–54','55–59','60–64','65+'];
@@ -635,3 +628,13 @@ function _demoBandFigur(df, k, pol, aLo, aHi) {
                        _vagratLinje('Ställn. P90', colors.policy, pol.p90, aLo, aHi, { streck: 'streckad', tjocklek: 1 })] : [])] };
 }
 
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartAlderKarriar() {
+    document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
+    if (konSel)  konSel.addEventListener("change",  e => _akValj(/** @type {HTMLInputElement} */ (e.target).value, konSel));
+    document.getElementById('kon-color-by')?.addEventListener('change', () => {
+        const s = document.getElementById('bas-select-kon');
+        if (s) renderKon(/** @type {HTMLInputElement} */ (s).value);
+    });
+    if (demoSel) demoSel.addEventListener("change", e => _akValj(/** @type {HTMLInputElement} */ (e.target).value, demoSel));
+}

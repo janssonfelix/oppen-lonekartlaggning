@@ -486,54 +486,6 @@ function _applyConfigSnapshot(cfg) {
     return { varningar };
 }
 
-document.getElementById('btn-config-save')?.addEventListener('click', () => {
-    const cfg = buildConfigSnapshot();
-    const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `lonekartlaggning_config_${idagDatum()}.json`;
-    a.click();
-    const status = document.getElementById('config-status');
-    if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
-    // Konfigfilen är en arbetsfil: den bär dina egna bedömningar och anteckningar,
-    // inte bara inställningar. Påminn om förvaringsdisciplinen (ingen rå lönedata).
-    _showExportSensitivityToast(`<strong>Konfiguration sparad</strong><br>
-        Filen innehåller dina inställningar och <em>dina bedömningar och anteckningar</em>
-        (bedömningar av regler och praxis, handlingsplan, narrativ) — men ingen rå lönedata. Förvara på behörighetsstyrd
-        disk och skicka den inte via okrypterad e-post.`);
-});
-
-document.getElementById('btn-config-load')?.addEventListener('change', e => {
-    const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
-    if (!file) return;
-    const status = document.getElementById('config-status');
-    // Storleken prövas innan filen läses: en för stor fil tolkas inte alls.
-    const storlekFel = filStorlekFel(file.size, 'konfiguration');
-    if (storlekFel) {
-        if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
-        /** @type {HTMLInputElement} */ (e.target).value = '';
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = ev => {
-        try {
-            const cfg = JSON.parse(String(/** @type {FileReader} */ (ev.target).result));
-            const { varningar } = applyConfigSnapshot(cfg);
-            const status = document.getElementById('config-status');
-            if (status) {
-                status.textContent = 'Konfiguration laddad' + (varningar.length ? '. ' + varningar.join(' ') : '');
-                status.style.color = FARG.ok;
-                setTimeout(() => status.textContent = '', varningar.length ? 10000 : 3000);
-            }
-        } catch (err) {
-            const status = document.getElementById('config-status');
-            if (status) { status.textContent = 'Fel: ' + err.message; status.style.color = 'var(--danger)'; }
-        }
-        /** @type {HTMLInputElement} */ (e.target).value = '';
-    };
-    reader.readAsText(file);
-});
-
 // ---- #18 A/B-jämförelse via snapshot ----
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 export function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
@@ -626,27 +578,76 @@ function _snapshotLutning(snap, cur) {
         beskrivning: 'Kvinnors och mäns medianlön i ögonblicksbilden och i den nuvarande analysen, en rad per kön: strecket är värdet i ögonblicksbilden, punkten det nuvarande. Samma tal som i tabellen ovanför.' }));
 }
 
-document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
-    const snap = buildAnalysisSnapshot();
-    if (!snap) { alert('Läs in lönefilen först.'); return; }
-    // I: möjlighet att namnge scenariot
-    const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
-    snap.label = name;
-    state.snapshot = snap;
-    // I: Spara även i state.scenarios (max 5)
-    state.scenarios = (state.scenarios || []);
-    state.scenarios.unshift({ ...snap });
-    if (state.scenarios.length > 5) state.scenarios.length = 5;
-    /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = false;
-    /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-clear')).disabled = false;
-    const status = document.getElementById('snapshot-status');
-    if (status) status.textContent = `Ögonblicksbild "${name}" sparad (${state.scenarios.length} scenario${state.scenarios.length>1?'n':''} totalt)`;
-});
-document.getElementById('btn-snapshot-compare')?.addEventListener('click', renderSnapshotComparison);
-document.getElementById('btn-snapshot-clear')?.addEventListener('click', () => {
-    state.snapshot = null;
-    /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = true;
-    /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-clear')).disabled = true;
-    /** @type {HTMLElement} */ (document.getElementById('snapshot-status')).textContent = '';
-    /** @type {HTMLElement} */ (document.getElementById('snapshot-comparison')).style.display = 'none';
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartKonfiguration() {
+    document.getElementById('btn-config-save')?.addEventListener('click', () => {
+        const cfg = buildConfigSnapshot();
+        const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `lonekartlaggning_config_${idagDatum()}.json`;
+        a.click();
+        const status = document.getElementById('config-status');
+        if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
+        // Konfigfilen är en arbetsfil: den bär dina egna bedömningar och anteckningar,
+        // inte bara inställningar. Påminn om förvaringsdisciplinen (ingen rå lönedata).
+        _showExportSensitivityToast(`<strong>Konfiguration sparad</strong><br>
+        Filen innehåller dina inställningar och <em>dina bedömningar och anteckningar</em>
+        (bedömningar av regler och praxis, handlingsplan, narrativ) — men ingen rå lönedata. Förvara på behörighetsstyrd
+        disk och skicka den inte via okrypterad e-post.`);
+    });
+    document.getElementById('btn-config-load')?.addEventListener('change', e => {
+        const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
+        if (!file) return;
+        const status = document.getElementById('config-status');
+        // Storleken prövas innan filen läses: en för stor fil tolkas inte alls.
+        const storlekFel = filStorlekFel(file.size, 'konfiguration');
+        if (storlekFel) {
+            if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
+            /** @type {HTMLInputElement} */ (e.target).value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const cfg = JSON.parse(String(/** @type {FileReader} */ (ev.target).result));
+                const { varningar } = applyConfigSnapshot(cfg);
+                const status = document.getElementById('config-status');
+                if (status) {
+                    status.textContent = 'Konfiguration laddad' + (varningar.length ? '. ' + varningar.join(' ') : '');
+                    status.style.color = FARG.ok;
+                    setTimeout(() => status.textContent = '', varningar.length ? 10000 : 3000);
+                }
+            } catch (err) {
+                const status = document.getElementById('config-status');
+                if (status) { status.textContent = 'Fel: ' + err.message; status.style.color = 'var(--danger)'; }
+            }
+            /** @type {HTMLInputElement} */ (e.target).value = '';
+        };
+        reader.readAsText(file);
+    });
+    document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
+        const snap = buildAnalysisSnapshot();
+        if (!snap) { alert('Läs in lönefilen först.'); return; }
+        // I: möjlighet att namnge scenariot
+        const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
+        snap.label = name;
+        state.snapshot = snap;
+        // I: Spara även i state.scenarios (max 5)
+        state.scenarios = (state.scenarios || []);
+        state.scenarios.unshift({ ...snap });
+        if (state.scenarios.length > 5) state.scenarios.length = 5;
+        /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = false;
+        /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-clear')).disabled = false;
+        const status = document.getElementById('snapshot-status');
+        if (status) status.textContent = `Ögonblicksbild "${name}" sparad (${state.scenarios.length} scenario${state.scenarios.length>1?'n':''} totalt)`;
+    });
+    document.getElementById('btn-snapshot-compare')?.addEventListener('click', renderSnapshotComparison);
+    document.getElementById('btn-snapshot-clear')?.addEventListener('click', () => {
+        state.snapshot = null;
+        /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = true;
+        /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-clear')).disabled = true;
+        /** @type {HTMLElement} */ (document.getElementById('snapshot-status')).textContent = '';
+        /** @type {HTMLElement} */ (document.getElementById('snapshot-comparison')).style.display = 'none';
+    });
+}

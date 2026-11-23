@@ -1,8 +1,9 @@
 # src/app/ — källmoduler för dist/app.js
 
-`dist/app.js` är ett **genererat** hopslaget bygge av de numrerade
-delarna i den här mappen. Syftet är navigerbarhet: i stället för en fil på drygt 27 000
-rader är logiken uppdelad i hanterbara delar.
+`dist/app.js` är **genererad** ur de numrerade delarna i den här mappen, som är ES-moduler:
+varje del importerar det den använder ur andra delar och ur `src/lib/` under lib-namnet, och
+exporterar det andra delar, sidan och testerna använder. Syftet är navigerbarhet och granskning:
+beroendena står i källan (ADR-98).
 
 ## Arbetsflöde
 
@@ -12,16 +13,22 @@ rader är logiken uppdelad i hanterbara delar.
 npm run build:app        # eller: node tools/build-app.mjs
 ```
 
-Artefaktgrinden (`tools/kontroll.mjs` och `.github/workflows/ci.yml`) vaktar att
-`dist/app.js` och `src/app/` aldrig glider isär (byte-identisk hopslagning).
-`npm run bundle` regenererar `dist/app.js` automatiskt före varje bygge.
+`tools/build-app.mjs` bygger med esbuild från `index.js` till en platt fil utan `import` och
+`export`, som körs som ett klassiskt skript: appens toppnivånamn är globala, som sidan, testerna
+och röktestet läser dem. Bygget fäller om ett av appens namn skulle döpas om (två moduler med samma
+toppnivånamn) eller om utfilen inte är ett klassiskt skript. Artefaktgrinden (`tools/kontroll.mjs`
+och `.github/workflows/ci.yml`) bygger om och kräver samma fil. `npm run bundle` bygger
+`dist/app.js` före varje bygge.
 
 ## Delarna
 
 Delarna är namngivna efter den flik eller funktion de hör till, i samma ordning som
-menyn där det går. Sifferprefixet styr i vilken ordning de slås ihop — hela bygget är
-ett enda klassiskt skript, så funktionsdeklarationer syns överallt, men kod som körs
-direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
+menyn där det går. ES-moduler körs i importgrafens ordning, inte i sifferordning, så en del
+**deklarerar bara**: funktioner, konstanter och tillstånd. Det som ska köras vid laddning
+(händelsekopplingar, anrop) står i delens uppstartsfunktion (`uppstartFilinlasning` och så vidare),
+och `index.js` anropar dem i sifferordning när alla delar är lästa; bygget fäller en del med kod
+utanför en deklaration. `00-sakerhet-och-uppstart.js` är undantaget: den importerar inget, körs
+först i utfilen och sätter lagringsspärren innan något annat körs.
 
 | Del | Innehåll |
 |---|---|
@@ -36,11 +43,10 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `06-k-troskel.js` | Tröskeln för minsta gruppstorlek: `kTroskel()`, `statGolv()`, `sattKTroskel()` (ADR-38), könsuppdelade mått och par för redovisning, stämplarna, diagramnoterna och omritningen (se `docs/utveckling/k-troskeln.md`) |
 | `06-kvinnoandel-referens.js` | Den nationella kvinnoandelen per AID ur SKR:s personalstatistik (`nationellAidKlass`, `skrForklaring`), reserv i likvärdighetsanalysen |
 | `06-maskeringsnoter.js` | Maskeringsnoterna: `kMaskNote`, `kSamladNote` |
-| `06-uppgiftsminimering.js` | Uppgiftsminimeringens adaptrar: `_hittaAnsvarKolumn`, `_lonefilensRubriker` och `extractMinimalRecord` skickar kolumnmappningen, importprofilen, den godkända ansvarskolumnen och innevarande år till `src/lib/inlasning.js`. Där bor vitlistan (`TILLATNA_FALT`), kolumnvalet, `_bedomAnsvarKolumn` och själva tolkningen (talen, kön, BAS, `_stadaYrkesfalt` utan namnmaskering, ADR-85, `hittaKansligaKolumner` och upptäckten av personnamn i fältet för AID-etikett); funktionerna utan adapter nås under samma namn genom spegeln |
+| `06-uppgiftsminimering.js` | Uppgiftsminimeringens adaptrar: `_hittaAnsvarKolumn`, `_lonefilensRubriker` och `extractMinimalRecord` skickar kolumnmappningen, importprofilen, den godkända ansvarskolumnen och innevarande år till `src/lib/inlasning.js`. Där bor vitlistan (`TILLATNA_FALT`), kolumnvalet, `_bedomAnsvarKolumn` och själva tolkningen (talen, kön, BAS, `_stadaYrkesfalt` utan namnmaskering, ADR-85, `hittaKansligaKolumner` och upptäckten av personnamn i fältet för AID-etikett); funktionerna utan adapter importeras ur lib |
 | `07-standardinstallningar.js` | Standardvärden för prioritering och kostnad, den neutrala standardprofilen (inga färdiga profiler, ADR-28), profiletiketter och termerna i `index.html` (`applyProfileLabels` fyller `data-profile-template` och `data-term-template`), namnen på organisationen och jämförelsestatistiken (`orgNamn`, `jmfNamn`, ADR-36) |
 | `08-version.js` | **AUTO-GENERERAD** ur `VERSION`: `APP_VERSION`, `APP_BUILD_DATE` |
-| `09-lib-speglar.js` | **AUTO-GENERERAD** spegel av `src/lib/` |
-| `09-termer.js` | Termerna (ADR-74): `T`, den gällande uppsättningen ur `src/lib/termer.js`, och `termText`, som fyller en mall (`{Enhet.bfl} i samma {niva.en}`). Efter spegeln, så att `T` finns när flikarna ritas; hjälparna (`termFras`, `termArtikel`, `termAdjektiv`, `termGenitiv`, `termStor`, `termForAntal`) kommer ur spegeln. Vakten `tests/termer.test.js` håller orden borta från resten av appen |
+| `09-termer.js` | Termerna (ADR-74): `T`, den gällande uppsättningen ur `src/lib/termer.js`, och `termText`, som fyller en mall (`{Enhet.bfl} i samma {niva.en}`); hjälparna (`termFras`, `artikel`, `adjektiv`, `genitiv`, `stor`, `ordForAntal`) importeras ur `src/lib/termer.js`. Vakten `tests/termer.test.js` håller orden borta från resten av appen |
 | `10-diagramlayout.js` | Diagramkärnan (ADR-39), del 1 av 3 — mått och layout: konstanter (`_RF`), texthjälpare (bredd ur teckenantal, aldrig DOM-mätning), skalor, märkenas marginaler och stapeletiketternas beslut, förklaringens poster och layoutstegen (lodrätt, y-axlar, vågrätt, x-markeringar) |
 | `10-diagrammarken.js` | Diagramkärnan, del 2 av 3 — det som ritas i en panel: märkena stapel, punkt (med symbolerna cirkel, romb, kvadrat och streck, och osäkerhet som ett streck genom punkten), linje, band, intervall, låda och ruta (`_RF_MARKEN`), markeringen av små grupper, mönstren, färgskalan och färgstapeln, referenserna (zoner och linjer) |
 | `10-diagramritare.js` | Diagramkärnan, del 3 av 3 — figur → SVG med D3: vad som ritas (`_rfSynligt`: små grupper, dolda serier, paneler, domäner), panelen med klippning, förklaringen och `_rfByggSvg`; sidans API `ritaFigur`/`rensaFigur` (verktygstips, klick, förklaring, storlek), registret och `_rfRensaAlla`, och exporten `figurTillSvg`/`figurTillBild`/`_rfExportFigur`. Formatets logik i `src/lib/figur.js`; referensen för hela kärnan (format, vyernas skyldigheter, kända luckor) är `docs/utveckling/diagramkarnan.md` |
@@ -79,10 +85,10 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `43-personer-att-granska.js` | Panelen "Personer att granska" i Lika arbete: personer minst X % under förväntad lön bland kollegor i samma AID och BAS (logiken i `src/lib/individflaggor.js`), med kolumnen Ansvar när ansvarskoden finns, och tabellen över avvikelsen per kön och BAS-intervall |
 | `45-aid-bas-tabeller.js` | Tabellerna per AID-kod och BAS-intervall för rapporten (logiken i `src/lib/aidbas.js`): *Lika arbete AID x BAS* och *Analys på individnivå* i Lika arbete, *Likvärdigt arbete per BAS-intervall* och *Hierarkisk jämförelse* i Likvärdigt arbete, de fyra Excel-bladen med samma namn och raderna i Metodik; definitionen av kvinnodominerat (DO/SCB) och lönemånaden (ADR-57) |
 | `44-referensoverblick.js` | Löneläget, avsnittet Överblick: löneläget och statistiken mot ställningstagandet per AID-etikett, med talen, listan, bilden och statistiken mot ställningstagandet (beräkningen i `src/lib/referenser.js`) |
-| `50-regressionsmodeller.js` | Tunn adapter till `src/lib/regression.js` (via spegeln): kollinearitet, gap per BAS, sekventiell dekomponering (med stegen för AID-etikett inom BAS och ansvar), kvantilregression, Blinder-Oaxaca. Läser `getData()` och `statGolv()` |
-| `51-lika-arbete-regressionskort.js` | Regressionen (avsnittet *Vad blir kvar av lönegapet?* i Lönestruktur; huvudtalet står också i Lika arbetes nyckeltal): `runOLSRegression`, den tunna adaptern som läser tillståndet och anropar `huvudregression` i `src/lib/regression.js` (via spegeln), p-värden, kronor, panelen Förklaringsmodell, förklaringsbudget, ansvarsraden, regressions- och Oaxaca-korten, och diagrammen trappan, oförklarat gap per BAS och gapet längs lönefördelningen (kvantilregressionens intervall: `_regKvantilBootstrap`, adapter till `kvantilBootstrap` i `src/lib/osakerhet.js`) |
-| `52-livscykel.js` | Ålder & karriär: adaptern till livscykelmodellen (`src/lib/livscykel.js`, speglad), tolkningstexten, analysen och dess diagram |
-| `55-prioritering.js` | Prioriteringsanalys: adaptern till `src/lib/prioritering.js` (speglad), matrisen, kostnadsdiagrammet (sorterade staplar, högst 15 grupper), texterna till motiveringsförslagen (reglerna är `motiveringsgrunder` i lib), trösklarna och viktningen (fälten står i Inställningar; fliken visar raden *Trösklar och viktning*) och export |
+| `50-regressionsmodeller.js` | Tunn adapter till `src/lib/regression.js`: kollinearitet, gap per BAS, sekventiell dekomponering (med stegen för AID-etikett inom BAS och ansvar), kvantilregression, Blinder-Oaxaca. Läser `getData()` och `statGolv()` |
+| `51-lika-arbete-regressionskort.js` | Regressionen (avsnittet *Vad blir kvar av lönegapet?* i Lönestruktur; huvudtalet står också i Lika arbetes nyckeltal): `runOLSRegression`, den tunna adaptern som läser tillståndet och anropar `huvudregression` i `src/lib/regression.js`, p-värden, kronor, panelen Förklaringsmodell, förklaringsbudget, ansvarsraden, regressions- och Oaxaca-korten, och diagrammen trappan, oförklarat gap per BAS och gapet längs lönefördelningen (kvantilregressionens intervall: `_regKvantilBootstrap`, adapter till `kvantilBootstrap` i `src/lib/osakerhet.js`) |
+| `52-livscykel.js` | Ålder & karriär: adaptern till livscykelmodellen (`src/lib/livscykel.js`), tolkningstexten, analysen och dess diagram |
+| `55-prioritering.js` | Prioriteringsanalys: adaptern till `src/lib/prioritering.js`, matrisen, kostnadsdiagrammet (sorterade staplar, högst 15 grupper), texterna till motiveringsförslagen (reglerna är `motiveringsgrunder` i lib), trösklarna och viktningen (fälten står i Inställningar; fliken visar raden *Trösklar och viktning*) och export |
 | `56-handlingsplan.js` | Handlingsplan: mall, förifyllning och export |
 | `57-sakliga-skal.js` | Dialogen Sakliga skäl i Handlingsplan: kategori, belopp och kommentar per grupp |
 | `58-rapportmodell.js` | Rapportmodellen: rapportens avsnitt som data (stycken, typade tabeller, diagram, fält att fylla i) som Word-utkastet och PDF-kopian ritas ur; vilka diagram som följer med (`RM_DIAGRAM`) och urvalen (`RM_URVAL`) |
@@ -112,15 +118,5 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `89-sidindex.js` | Sidindex (*På den här sidan*): flikens synliga avsnitt som en lista som följer med när sidan rullas, byggs när fliken ritas; ett klick fäller ut och ger fokus |
 | `90-uppstart.js` | Uppstart: anrop som körs en gång sist vid laddning (processkartan, tangentbordsnavigering, profiletiketter, referenskortet) |
 
-Delarna underhålls för hand: `tools/build-app.mjs` slår helt enkelt ihop alla
-`NN-*.js` i namnordning, så en ny del skapas genom att lägga en fil med rätt
-sifferprefix. Uppstartsanropen ligger i `90-uppstart.js`. Delas en fil måste bitarna
-behålla sorteringsordningen.
-
-`09-lib-speglar.js` är ett undantag: den **genereras** ur `src/lib/*.js` av
-`tools/gen-mirrors.mjs` (varje lib-modul inlinas verbatim i en IIFE, endast
-`export` strippas, och namnen `app.js` anropar exponeras som `const`-alias).
-`tools/build-app.mjs` regenererar den före varje hopslagning, så `src/lib/` är enda
-källa för den statistiska kärnan (se ADR-8 i `arkitekturbeslut.md`). **Redigera aldrig `09`
-för hand** — ändra `src/lib/`-modulen och kör `npm run build:app`. Artefaktgrinden
-vaktar att den är i synk med `src/lib/`.
+Delarna underhålls för hand. En ny del är en fil med rätt sifferprefix och en rad i `index.js`
+(med uppstartsfunktionen om den har en). Den sista uppstarten är `90-uppstart.js`.

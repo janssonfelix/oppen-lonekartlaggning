@@ -66,7 +66,6 @@ function renderAuditHtml(a) {
     `;
 }
 
-
 // ---- Generisk tabell-sortering ----
 function _parseSwedishNumber(str) {
     if (str == null) return NaN;
@@ -213,18 +212,6 @@ export function _flerKolumnerAlla(rot) {
     rot.querySelectorAll('[data-hel-colspan]').forEach(c => { c.setAttribute('colspan', c.getAttribute('data-hel-colspan')); c.removeAttribute('data-hel-colspan'); });
     return rot;
 }
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-fler-kolumner]');
-    if (!btn) return;
-    const tableId = btn.getAttribute('data-fler-kolumner') || '';
-    const cfg = _flerKolumnerTabeller[tableId];
-    if (!cfg) return;
-    if (!state.flerKolumner) state.flerKolumner = {};
-    state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
-    tillampaFlerKolumner(tableId);
-    if (typeof announceToScreenReader === 'function')
-        announceToScreenReader(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
-});
 
 // ---- Collapsible BAS-grupper ----
 export function setupCollapsibleGroups(tableId) {
@@ -297,30 +284,6 @@ function _navigeratTill(opts) {
         }, 200);
     }
 }
-// Global delegation för cross-link-knappar
-document.addEventListener('click', e => {
-    const link = /** @type {HTMLElement} */ (e.target).closest('.row-cross-link');
-    if (!link) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const target = /** @type {HTMLElement} */ (link).dataset.target;
-    const yrke = /** @type {HTMLElement} */ (link).dataset.yrke || '';
-    const bas  = /** @type {HTMLElement} */ (link).dataset.bas  || '';
-    if (target === 'rapport') {
-        navigateTo('rapport', { search: yrke, searchInputId: 'search-rapport' });
-    } else if (target === 'matrix') {
-        navigateTo('matrix', { highlightMatch: { tableId: 'matrix-table', contains: [yrke] } });
-    } else if (target === 'demografi') {
-        navigateTo('demografi');
-        setTimeout(() => {
-            const sel = document.getElementById('bas-select-demo');
-            if (sel) {
-                /** @type {HTMLInputElement} */ (sel).value = bas;
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }, 150);
-    }
-});
 
 // ---- Mini-bar för procentkolumn (bidirektionell) ----
 // percent: signerat procentvärde, scaleMax: max abs-värde som motsvarar full bar
@@ -342,4 +305,44 @@ export function buildBarCell(percent, scaleMax = 25, options = {}) {
         </span>
         <span class="cell-bar-value ${isNeg ? 'f-kritisk' : 'fg-ok'} halvfet"${exportText}>${fmt(percent)}</span>
     </div>`;
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartTabellerOchLankar() {
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('[data-fler-kolumner]');
+        if (!btn) return;
+        const tableId = btn.getAttribute('data-fler-kolumner') || '';
+        const cfg = _flerKolumnerTabeller[tableId];
+        if (!cfg) return;
+        if (!state.flerKolumner) state.flerKolumner = {};
+        state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
+        tillampaFlerKolumner(tableId);
+        if (typeof announceToScreenReader === 'function')
+            announceToScreenReader(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
+    });
+    // Global delegation för cross-link-knappar
+    document.addEventListener('click', e => {
+        const link = /** @type {HTMLElement} */ (e.target).closest('.row-cross-link');
+        if (!link) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const target = /** @type {HTMLElement} */ (link).dataset.target;
+        const yrke = /** @type {HTMLElement} */ (link).dataset.yrke || '';
+        const bas  = /** @type {HTMLElement} */ (link).dataset.bas  || '';
+        if (target === 'rapport') {
+            navigateTo('rapport', { search: yrke, searchInputId: 'search-rapport' });
+        } else if (target === 'matrix') {
+            navigateTo('matrix', { highlightMatch: { tableId: 'matrix-table', contains: [yrke] } });
+        } else if (target === 'demografi') {
+            navigateTo('demografi');
+            setTimeout(() => {
+                const sel = document.getElementById('bas-select-demo');
+                if (sel) {
+                    /** @type {HTMLInputElement} */ (sel).value = bas;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }, 150);
+        }
+    });
 }

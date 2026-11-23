@@ -180,29 +180,31 @@ function closeGlossary() {
     }
 }
 
-document.getElementById('btn-open-glossary')?.addEventListener('click', openGlossary);
-document.getElementById('glossary-close')?.addEventListener('click', closeGlossary);
-document.querySelector('#glossary-modal .glossary-backdrop')?.addEventListener('click', closeGlossary);
-document.getElementById('glossary-search')?.addEventListener('input', e => renderGlossary(/** @type {HTMLInputElement} */ (e.target).value));
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && /** @type {HTMLElement} */ (document.getElementById('glossary-modal')).style.display === 'flex') closeGlossary();
-});
-
-// Symbol/färgförklaring-modal
-document.getElementById('btn-open-symbols')?.addEventListener('click', () => {
-    const m = document.getElementById('symbols-modal');
-    if (m) { m.style.display = 'flex'; trapFocus(m); }
-});
-document.getElementById('symbols-close')?.addEventListener('click', () => {
-    const m = document.getElementById('symbols-modal');
-    if (m) { releaseFocus(m); m.style.display = 'none'; }
-});
-document.querySelector('#symbols-modal .glossary-backdrop')?.addEventListener('click', () => {
-    const m = document.getElementById('symbols-modal');
-    if (m) { releaseFocus(m); m.style.display = 'none'; }
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('symbols-modal')?.style.display === 'flex') {
-        /** @type {HTMLElement} */ (document.getElementById('symbols-modal')).style.display = 'none';
-    }
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartOrdlista() {
+    document.getElementById('btn-open-glossary')?.addEventListener('click', openGlossary);
+    document.getElementById('glossary-close')?.addEventListener('click', closeGlossary);
+    document.querySelector('#glossary-modal .glossary-backdrop')?.addEventListener('click', closeGlossary);
+    document.getElementById('glossary-search')?.addEventListener('input', e => renderGlossary(/** @type {HTMLInputElement} */ (e.target).value));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && /** @type {HTMLElement} */ (document.getElementById('glossary-modal')).style.display === 'flex') closeGlossary();
+    });
+    // Symbol/färgförklaring-modal
+    document.getElementById('btn-open-symbols')?.addEventListener('click', () => {
+        const m = document.getElementById('symbols-modal');
+        if (m) { m.style.display = 'flex'; trapFocus(m); }
+    });
+    document.getElementById('symbols-close')?.addEventListener('click', () => {
+        const m = document.getElementById('symbols-modal');
+        if (m) { releaseFocus(m); m.style.display = 'none'; }
+    });
+    document.querySelector('#symbols-modal .glossary-backdrop')?.addEventListener('click', () => {
+        const m = document.getElementById('symbols-modal');
+        if (m) { releaseFocus(m); m.style.display = 'none'; }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('symbols-modal')?.style.display === 'flex') {
+            /** @type {HTMLElement} */ (document.getElementById('symbols-modal')).style.display = 'none';
+        }
+    });
+}

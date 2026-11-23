@@ -476,12 +476,6 @@ export function generateEUDirectiveMatrix({ reg: given } = {}) {
     });
 }
 
-document.getElementById("search-skevhet")?.addEventListener("input", e => {
-    const q = /** @type {HTMLInputElement} */ (e.target).value.toLowerCase();
-    document.querySelectorAll("#skevhet-table tbody tr").forEach(tr => { /** @type {HTMLElement} */ (tr).style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none"; });
-});
-
-
 // Översiktsdiagrammets figur (diagramkärnan, ADR-39): kvinnors median i % av männens per BAS-intervall, med 95 % KI.
 // Formen är en punkt med intervall mot en referenslinje (100 % = lika lön) — inte en stapel: en stapel från en
 // avkortad axel säger ingenting med sin längd, och det som ska läsas är avståndet till 100 och om intervallet når dit.
@@ -778,4 +772,12 @@ export function renderLonestrukturNycklar() {
     _laNyckel('nyckel-ls-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');
     // Samma mått som Lika arbetes nyckeltalsrad: kvinnors lön i % av mäns när ålder och nivå räknats bort (inte "−4,3 % oförklarat").
     _laNyckel('nyckel-ls-regression', regOk ? `${svPct(reg.konKvot, 1)} ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'}` : '', regOk && _laRegGranska(reg) ? 'granska' : false);
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartLikaArbete() {
+    document.getElementById("search-skevhet")?.addEventListener("input", e => {
+        const q = /** @type {HTMLInputElement} */ (e.target).value.toLowerCase();
+        document.querySelectorAll("#skevhet-table tbody tr").forEach(tr => { /** @type {HTMLElement} */ (tr).style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none"; });
+    });
 }

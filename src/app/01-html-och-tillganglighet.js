@@ -14,7 +14,6 @@
  */
 export const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
-
 // GDPR: stäng av webbläsarens autofyllning på alla input/select/textarea så att organisationsnamn, sökord,
 // anteckningar m.m. inte sparas i webbläsarens autofyll-historik (som kan synkas till leverantörens moln vid
 // Chrome Sync/Edge Sync etc.). Gäller sidans fasta fält och alla fält som skapas medan användaren arbetar
@@ -30,14 +29,6 @@ export function stangAutofyll(rot = document) {
     const satt = el => { if (/** @type {HTMLInputElement} */ (el).type !== 'file' && !el.hasAttribute('autocomplete')) el.setAttribute('autocomplete', 'off'); };
     if (rot instanceof Element && rot.matches('input, select, textarea')) satt(rot);
     rot.querySelectorAll('input, select, textarea').forEach(satt);
-}
-stangAutofyll(document);
-if (typeof MutationObserver === 'function') {
-    // Bara HTML-element prövas: diagrammens tusentals SVG-noder kan inte bära fält.
-    const HTML_NS = 'http://www.w3.org/1999/xhtml';
-    new MutationObserver(poster => {
-        for (const m of poster) for (const n of m.addedNodes) if (n instanceof Element && n.namespaceURI === HTML_NS) stangAutofyll(n);
-    }).observe(document.documentElement, { childList: true, subtree: true });
 }
 
 // ---- WCAG 2.1 AA: Tillgänglighetshelpers ----
@@ -112,4 +103,16 @@ export function announceToScreenReader(message) {
     const region = _ensureLiveRegion();
     region.textContent = '';
     setTimeout(() => { region.textContent = message; }, 50);
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartHtmlOchTillganglighet() {
+    stangAutofyll(document);
+    if (typeof MutationObserver === 'function') {
+        // Bara HTML-element prövas: diagrammens tusentals SVG-noder kan inte bära fält.
+        const HTML_NS = 'http://www.w3.org/1999/xhtml';
+        new MutationObserver(poster => {
+            for (const m of poster) for (const n of m.addedNodes) if (n instanceof Element && n.namespaceURI === HTML_NS) stangAutofyll(n);
+        }).observe(document.documentElement, { childList: true, subtree: true });
+    }
 }

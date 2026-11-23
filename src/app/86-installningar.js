@@ -154,30 +154,32 @@ function _instGaTill(flik, avsnitt) {
     if (sammanfattning) /** @type {HTMLInputElement} */ (sammanfattning).focus();
 }
 
-document.getElementById('btn-open-installningar')?.addEventListener('click', () => oppnaInstallningar());
-document.getElementById('installningar-close')?.addEventListener('click', stangInstallningar);
-document.querySelector('#installningar-modal .glossary-backdrop')?.addEventListener('click', stangInstallningar);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && installningarOppna()) stangInstallningar(); });
-document.addEventListener('click', e => {
-    if (!/** @type {HTMLElement} */ (e.target).closest) return;
-    const lank = /** @type {HTMLElement} */ (e.target).closest('[data-oppna-installningar]');
-    if (lank) { oppnaInstallningar({ fokus: lank.getAttribute('data-oppna-installningar') || null }); return; }
-    const ipExp = /** @type {HTMLElement} */ (e.target).closest('[data-ip-exportera]');
-    if (ipExp) { _ipExportera(ipExp.getAttribute('data-ip-exportera')); return; }
-    const ipBort = /** @type {HTMLElement} */ (e.target).closest('[data-ip-ta-bort]');
-    if (ipBort) { _ipTaBort(ipBort.getAttribute('data-ip-ta-bort')); return; }
-    const flik = /** @type {HTMLElement} */ (e.target).closest('[data-inst-flik]');
-    if (flik) { _instGaTill(flik.getAttribute('data-inst-flik'), flik.getAttribute('data-inst-avsnitt')); return; }
-    if (/** @type {HTMLElement} */ (e.target).closest('#inst-till-filer')) {
-        stangInstallningar();
-        const nav = document.querySelector('.nav-item[data-tab="filer"]');
-        if (nav) /** @type {HTMLElement} */ (nav).click();
-        const rad = document.getElementById('upload-row');
-        if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
-    }
-});
-
-// Stoppa och visa förhandskontrollen innan inläsning (17-forhandskontroll.js): standard av, följer med i konfigurationsfilen.
-document.getElementById('inst-fk-stopp')?.addEventListener('change', e => {
-    state.forhandskontrollStopp = /** @type {HTMLInputElement} */ (e.target).checked;
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartInstallningar() {
+    document.getElementById('btn-open-installningar')?.addEventListener('click', () => oppnaInstallningar());
+    document.getElementById('installningar-close')?.addEventListener('click', stangInstallningar);
+    document.querySelector('#installningar-modal .glossary-backdrop')?.addEventListener('click', stangInstallningar);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && installningarOppna()) stangInstallningar(); });
+    document.addEventListener('click', e => {
+        if (!/** @type {HTMLElement} */ (e.target).closest) return;
+        const lank = /** @type {HTMLElement} */ (e.target).closest('[data-oppna-installningar]');
+        if (lank) { oppnaInstallningar({ fokus: lank.getAttribute('data-oppna-installningar') || null }); return; }
+        const ipExp = /** @type {HTMLElement} */ (e.target).closest('[data-ip-exportera]');
+        if (ipExp) { _ipExportera(ipExp.getAttribute('data-ip-exportera')); return; }
+        const ipBort = /** @type {HTMLElement} */ (e.target).closest('[data-ip-ta-bort]');
+        if (ipBort) { _ipTaBort(ipBort.getAttribute('data-ip-ta-bort')); return; }
+        const flik = /** @type {HTMLElement} */ (e.target).closest('[data-inst-flik]');
+        if (flik) { _instGaTill(flik.getAttribute('data-inst-flik'), flik.getAttribute('data-inst-avsnitt')); return; }
+        if (/** @type {HTMLElement} */ (e.target).closest('#inst-till-filer')) {
+            stangInstallningar();
+            const nav = document.querySelector('.nav-item[data-tab="filer"]');
+            if (nav) /** @type {HTMLElement} */ (nav).click();
+            const rad = document.getElementById('upload-row');
+            if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
+        }
+    });
+    // Stoppa och visa förhandskontrollen innan inläsning (17-forhandskontroll.js): standard av, följer med i konfigurationsfilen.
+    document.getElementById('inst-fk-stopp')?.addEventListener('change', e => {
+        state.forhandskontrollStopp = /** @type {HTMLInputElement} */ (e.target).checked;
+    });
+}

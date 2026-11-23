@@ -417,20 +417,6 @@ function _hpSpegla(nyckel, varde) {
     if (el) el.textContent = varde;
 }
 
-// Fälten skriver till state.handlingsplan medan man skriver; tabellen ritas inte om (fokus står kvar).
-['input', 'change'].forEach(typ => document.getElementById('handlingsplan-tbody')?.addEventListener(typ, e => {
-    const el = /** @type {HTMLInputElement} */ (e.target);
-    if (!el || !el.classList || !el.classList.contains('hp-falt')) return;
-    _hpSatt(el.dataset.hpNyckel, el.dataset.hpFalt, el.value);
-    if (el.dataset.hpFalt === 'grupp') _hpSpegla(el.dataset.hpNyckel, el.value);
-    if (el.tagName === 'INPUT') _hpUppdateraVarning();
-}));
-document.getElementById('handlingsplan-tbody')?.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-hp-ta-bort]');
-    if (btn) _hpTaBortEgen(btn.getAttribute('data-hp-ta-bort'));
-});
-document.getElementById('btn-hp-lagg-till')?.addEventListener('click', () => _hpLaggTillEgen());
-
 /** Det ifyllda i konfigurationsfilen: en post per rad med något ifyllt (också bara sakliga skäl). */
 export function _hpForKonfiguration() {
     return Object.keys(state.handlingsplan || {}).map(nyckel => ({ nyckel, ..._hpVarden(nyckel) }))
@@ -503,4 +489,21 @@ function _exportHandlingsplanExport() {
     XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Handlingsplansunderlag exporterat.');
 }
-document.getElementById('btn-export-handlingsplan')?.addEventListener('click', exportHandlingsplan);
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartHandlingsplan() {
+    // Fälten skriver till state.handlingsplan medan man skriver; tabellen ritas inte om (fokus står kvar).
+    ['input', 'change'].forEach(typ => document.getElementById('handlingsplan-tbody')?.addEventListener(typ, e => {
+        const el = /** @type {HTMLInputElement} */ (e.target);
+        if (!el || !el.classList || !el.classList.contains('hp-falt')) return;
+        _hpSatt(el.dataset.hpNyckel, el.dataset.hpFalt, el.value);
+        if (el.dataset.hpFalt === 'grupp') _hpSpegla(el.dataset.hpNyckel, el.value);
+        if (el.tagName === 'INPUT') _hpUppdateraVarning();
+    }));
+    document.getElementById('handlingsplan-tbody')?.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('[data-hp-ta-bort]');
+        if (btn) _hpTaBortEgen(btn.getAttribute('data-hp-ta-bort'));
+    });
+    document.getElementById('btn-hp-lagg-till')?.addEventListener('click', () => _hpLaggTillEgen());
+    document.getElementById('btn-export-handlingsplan')?.addEventListener('click', exportHandlingsplan);
+}

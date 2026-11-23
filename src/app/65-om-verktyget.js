@@ -368,8 +368,11 @@ export function renderInfoTab(section = 'overview') {
     applyProfileLabels();
 }
 
-// Underflikarna i Tabeller och egna vyer har samma klasser (74-alla-diagram.js): väljarna gäller bara Om verktyget.
-document.querySelectorAll('#view-info .info-section-btn').forEach(btn => {
-    btn.addEventListener('click', () => renderInfoTab(/** @type {HTMLElement} */ (btn).dataset.section));
-});
-_wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('#view-info .info-section-btn')]));
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartOmVerktyget() {
+    // Underflikarna i Tabeller och egna vyer har samma klasser (74-alla-diagram.js): väljarna gäller bara Om verktyget.
+    document.querySelectorAll('#view-info .info-section-btn').forEach(btn => {
+        btn.addEventListener('click', () => renderInfoTab(/** @type {HTMLElement} */ (btn).dataset.section));
+    });
+    _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('#view-info .info-section-btn')]));
+}

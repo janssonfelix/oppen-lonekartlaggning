@@ -214,79 +214,83 @@ function _urvalSattTal(obj, el) {
 
 // ---- Wiring ----
 const _urvalPanel = document.getElementById('explore-urval');
-_urvalPanel?.addEventListener('change', e => {
-    const t = /** @type {HTMLInputElement} */ (e.target);
-    const falt = faltInfo();
-    let i;
-    if (/** @type {HTMLElement} */ (t).id === 'explore-urval-lage') {
-        _urvalState.lage = /** @type {HTMLInputElement} */ (t).value === 'nagot' ? 'nagot' : 'alla';
-    } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-falt')) != null) {
-        const v = _urvalState.villkor[i];
-        const fore = falt[v.falt] && falt[v.falt].typ;
-        v.falt = /** @type {HTMLInputElement} */ (t).value;
-        if (falt[v.falt].typ !== fore) {
-            Object.assign(v, falt[v.falt].typ === 'kategori'
-                ? { op: 'enAv', varde: [], inte: false } : { op: 'minst', varde: null, inte: false });
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartUtforskaUrval() {
+    _urvalPanel?.addEventListener('change', e => {
+        const t = /** @type {HTMLInputElement} */ (e.target);
+        const falt = faltInfo();
+        let i;
+        if (/** @type {HTMLElement} */ (t).id === 'explore-urval-lage') {
+            _urvalState.lage = /** @type {HTMLInputElement} */ (t).value === 'nagot' ? 'nagot' : 'alla';
+        } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-falt')) != null) {
+            const v = _urvalState.villkor[i];
+            const fore = falt[v.falt] && falt[v.falt].typ;
+            v.falt = /** @type {HTMLInputElement} */ (t).value;
+            if (falt[v.falt].typ !== fore) {
+                Object.assign(v, falt[v.falt].typ === 'kategori'
+                    ? { op: 'enAv', varde: [], inte: false } : { op: 'minst', varde: null, inte: false });
+            } else {
+                // Samma typ men annat fält: värdet hör till det gamla fältet (lön och
+                // ålder har olika enheter, BAS och yrkesgrupp olika värden).
+                v.varde = falt[v.falt].typ === 'kategori' ? [] : (v.op === 'mellan' ? [null, null] : null);
+            }
+        } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-op')) != null) {
+            const v = _urvalState.villkor[i];
+            const var_mellan = v.op === 'mellan';
+            Object.assign(v, _urvalFranOpVarde(/** @type {HTMLInputElement} */ (t).value));
+            if ((v.op === 'mellan') !== var_mellan) v.varde = v.op === 'mellan' ? [null, null] : null;
+        } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-varde')) != null) {
+            const v = _urvalState.villkor[i];
+            const s = new Set(v.varde || []);
+            if (/** @type {HTMLInputElement} */ (t).checked) s.add(/** @type {HTMLInputElement} */ (t).value); else s.delete(/** @type {HTMLInputElement} */ (t).value);
+            v.varde = [...s];
+        } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-tal')) != null) {
+            _urvalSattTal(_urvalState.villkor[i], t);
+        } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-matt')) != null) {
+            _gruppState[i].matt = /** @type {HTMLInputElement} */ (t).value;
+        } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-op')) != null) {
+            const g = _gruppState[i];
+            const var_mellan = g.op === 'mellan';
+            g.op = /** @type {HTMLInputElement} */ (t).value;
+            if ((g.op === 'mellan') !== var_mellan) g.varde = g.op === 'mellan' ? [null, null] : null;
+        } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-tal')) != null) {
+            _urvalSattTal(_gruppState[i], t);
         } else {
-            // Samma typ men annat fält: värdet hör till det gamla fältet (lön och
-            // ålder har olika enheter, BAS och yrkesgrupp olika värden).
-            v.varde = falt[v.falt].typ === 'kategori' ? [] : (v.op === 'mellan' ? [null, null] : null);
+            return;
         }
-    } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-op')) != null) {
-        const v = _urvalState.villkor[i];
-        const var_mellan = v.op === 'mellan';
-        Object.assign(v, _urvalFranOpVarde(/** @type {HTMLInputElement} */ (t).value));
-        if ((v.op === 'mellan') !== var_mellan) v.varde = v.op === 'mellan' ? [null, null] : null;
-    } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-varde')) != null) {
-        const v = _urvalState.villkor[i];
-        const s = new Set(v.varde || []);
-        if (/** @type {HTMLInputElement} */ (t).checked) s.add(/** @type {HTMLInputElement} */ (t).value); else s.delete(/** @type {HTMLInputElement} */ (t).value);
-        v.varde = [...s];
-    } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-tal')) != null) {
-        _urvalSattTal(_urvalState.villkor[i], t);
-    } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-matt')) != null) {
-        _gruppState[i].matt = /** @type {HTMLInputElement} */ (t).value;
-    } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-op')) != null) {
-        const g = _gruppState[i];
-        const var_mellan = g.op === 'mellan';
-        g.op = /** @type {HTMLInputElement} */ (t).value;
-        if ((g.op === 'mellan') !== var_mellan) g.varde = g.op === 'mellan' ? [null, null] : null;
-    } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-tal')) != null) {
-        _urvalSattTal(_gruppState[i], t);
-    } else {
-        return;
-    }
-    renderExplorer();
-});
-_urvalPanel?.addEventListener('input', e => {
-    const t = /** @type {HTMLInputElement} */ (e.target);
-    const i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-sok');
-    if (i == null) return;
-    const q = /** @type {HTMLInputElement} */ (t).value.trim().toLowerCase();
-    /** @type {HTMLElement} */ (t).parentElement?.querySelectorAll('.explore-filter-val').forEach(l => {
-        /** @type {HTMLElement} */ (l).hidden = !!q && !l.textContent.toLowerCase().includes(q);
+        renderExplorer();
     });
-});
-_urvalPanel?.addEventListener('click', e => {
-    const lagg = /** @type {HTMLElement} */ (e.target).closest('[data-urval-lagg-till]');
-    if (lagg) {
-        if (lagg.getAttribute('data-urval-lagg-till') === 'grupp') _gruppState.push({ matt: 'gap', op: 'mindre', varde: null });
-        else _urvalState.villkor.push({ falt: 'bas', op: 'enAv', varde: [], inte: false });
-        renderExplorer();
-        return;
-    }
-    const bort = /** @type {HTMLElement} */ (e.target).closest('[data-urval-bort]');
-    if (bort) {
-        const [typ, i] = (bort.getAttribute('data-urval-bort') || '').split(':');
-        if (typ === 'grupp') _gruppState.splice(Number(i), 1); else _urvalState.villkor.splice(Number(i), 1);
-        renderExplorer();
-    }
-});
-_urvalPanel?.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    const lista = /** @type {HTMLElement} */ (e.target).closest('.explore-urval-val');
-    if (!lista || !/** @type {HTMLDetailsElement} */ (lista).open) return;
-    /** @type {HTMLDetailsElement} */ (lista).open = false;
-    lista.querySelector('summary')?.focus();
-    e.stopPropagation();
-});
+    _urvalPanel?.addEventListener('input', e => {
+        const t = /** @type {HTMLInputElement} */ (e.target);
+        const i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-sok');
+        if (i == null) return;
+        const q = /** @type {HTMLInputElement} */ (t).value.trim().toLowerCase();
+        /** @type {HTMLElement} */ (t).parentElement?.querySelectorAll('.explore-filter-val').forEach(l => {
+            /** @type {HTMLElement} */ (l).hidden = !!q && !l.textContent.toLowerCase().includes(q);
+        });
+    });
+    _urvalPanel?.addEventListener('click', e => {
+        const lagg = /** @type {HTMLElement} */ (e.target).closest('[data-urval-lagg-till]');
+        if (lagg) {
+            if (lagg.getAttribute('data-urval-lagg-till') === 'grupp') _gruppState.push({ matt: 'gap', op: 'mindre', varde: null });
+            else _urvalState.villkor.push({ falt: 'bas', op: 'enAv', varde: [], inte: false });
+            renderExplorer();
+            return;
+        }
+        const bort = /** @type {HTMLElement} */ (e.target).closest('[data-urval-bort]');
+        if (bort) {
+            const [typ, i] = (bort.getAttribute('data-urval-bort') || '').split(':');
+            if (typ === 'grupp') _gruppState.splice(Number(i), 1); else _urvalState.villkor.splice(Number(i), 1);
+            renderExplorer();
+        }
+    });
+    _urvalPanel?.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const lista = /** @type {HTMLElement} */ (e.target).closest('.explore-urval-val');
+        if (!lista || !/** @type {HTMLDetailsElement} */ (lista).open) return;
+        /** @type {HTMLDetailsElement} */ (lista).open = false;
+        lista.querySelector('summary')?.focus();
+        e.stopPropagation();
+    });
+}

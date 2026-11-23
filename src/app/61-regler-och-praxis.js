@@ -46,7 +46,6 @@ function _setupBes8Assessment() {
         /** @type {HTMLElement} */ (host).dataset.ready = '1';
     });
 }
-_setupBes8Assessment();
 
 /** Läser § 8-områdenas titel + bedömning + anteckning från DOM (sorterat). */
 export function _bes8Areas() {
@@ -81,8 +80,6 @@ export function bes8Uppdatera() {
         marke.classList.toggle('ar-bedomd', !!a.status);
     }
 }
-document.addEventListener('change', e => { if (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[id^="bes8-status-"]')) bes8Uppdatera(); });
-bes8Uppdatera();
 
 // ---- Stöd i verktyget: talet från fliken och en länk dit ----
 // Där en flik har ett tal som hör till området (Likvärdigt arbetes par, Lika arbetes yrkesgrupper att granska,
@@ -122,4 +119,11 @@ export function bes8Stod() {
         li.innerHTML = text ? `${esc(text)} <a href="#" data-go-to-tab="${esc(flik)}" aria-label="Gå dit: ${esc(BES8_STOD_FLIK[flik] || flik)}">Gå dit</a>` : li.dataset.fast;
     });
 }
-bes8Stod();
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartReglerOchPraxis() {
+    _setupBes8Assessment();
+    document.addEventListener('change', e => { if (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[id^="bes8-status-"]')) bes8Uppdatera(); });
+    bes8Uppdatera();
+    bes8Stod();
+}

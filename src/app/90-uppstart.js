@@ -15,30 +15,33 @@ import { loadStortDemo } from './21-stort-demo.js';
 import { _paketStatus, lasInInbakatPaket } from './29-organisationspaket.js';
 import { renderReferensKort } from './38-referensfiler.js';
 import { setupTabA11y } from './63-tangentbordsnavigering.js';
-if (typeof renderProcessTracker === 'function') {
-    try { renderProcessTracker(); } catch (_e) { /* icke-kritisk vid boot */ }
-}
-setupTabA11y();
-applyProfileLabels();  // Tillämpa default-profil vid uppstart
-_synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
-renderReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
 
-// Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (5 000 personer), så att
-// en länk från webbplatsen öppnar verktyget med påhittad data. Ingen annan parameter och
-// inget annat värde läses — adressen kan aldrig föra in data eller inställningar.
-try {
-    const demoVal = new URLSearchParams(window.location.search).get('demo');
-    const demo = demoVal === '1' || demoVal === 'stor';
-    if (demo && !state.data.length) (demoVal === 'stor' ? loadStortDemo : loadDemoData)();
-    // Organisationsfil: paketet som ligger inbakat i den här filen läses in vid start — utom i demoläget,
-    // som går före (organisationsfil.md §3).
-    // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i
-    // DOM:en förrän dokumentet är klart (i jsdom-riggen körs skriptet efter hela dokumentet).
-    const inbakat = () => {
-        if (!demo && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();
-        else if (demo && document.getElementById('inbakat-organisationspaket') && typeof _paketStatus === 'function') _paketStatus('Det inbakade paketet används inte i demoläget.', false);
-    };
-    // Finns blocket redan (dokumentet färdigtolkat, t.ex. i testriggen) läses det direkt; annars när dokumentet är klart.
-    if (document.getElementById('inbakat-organisationspaket') || document.readyState !== 'loading') inbakat();
-    else document.addEventListener('DOMContentLoaded', inbakat, { once: true });
-} catch (_e) { /* icke-kritisk vid boot */ }
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartSist() {
+    if (typeof renderProcessTracker === 'function') {
+        try { renderProcessTracker(); } catch (_e) { /* icke-kritisk vid boot */ }
+    }
+    setupTabA11y();
+    applyProfileLabels();  // Tillämpa default-profil vid uppstart
+    _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
+    renderReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
+    // Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (5 000 personer), så att
+    // en länk från webbplatsen öppnar verktyget med påhittad data. Ingen annan parameter och
+    // inget annat värde läses — adressen kan aldrig föra in data eller inställningar.
+    try {
+        const demoVal = new URLSearchParams(window.location.search).get('demo');
+        const demo = demoVal === '1' || demoVal === 'stor';
+        if (demo && !state.data.length) (demoVal === 'stor' ? loadStortDemo : loadDemoData)();
+        // Organisationsfil: paketet som ligger inbakat i den här filen läses in vid start — utom i demoläget,
+        // som går före (organisationsfil.md §3).
+        // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i
+        // DOM:en förrän dokumentet är klart (i jsdom-riggen körs skriptet efter hela dokumentet).
+        const inbakat = () => {
+            if (!demo && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();
+            else if (demo && document.getElementById('inbakat-organisationspaket') && typeof _paketStatus === 'function') _paketStatus('Det inbakade paketet används inte i demoläget.', false);
+        };
+        // Finns blocket redan (dokumentet färdigtolkat, t.ex. i testriggen) läses det direkt; annars när dokumentet är klart.
+        if (document.getElementById('inbakat-organisationspaket') || document.readyState !== 'loading') inbakat();
+        else document.addEventListener('DOMContentLoaded', inbakat, { once: true });
+    } catch (_e) { /* icke-kritisk vid boot */ }
+}

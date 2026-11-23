@@ -22,11 +22,6 @@ import { _RG_STEG_YRKE, forklaringsmodell, harAlder } from './50-regressionsmode
 import { exportHandlingsplan } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 
-// #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
-// respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
-document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
-document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
-
 // Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
 // bladet EU-lönekartläggning, rapportens avsnitt om lönetransparens och Om verktyget.
 export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
@@ -524,3 +519,11 @@ export function _showExportSensitivityToast(bodyHtml) {
 }
 
 // ---- Multi-flik Excel-export ----
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartExporthjalpare() {
+    // #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
+    // respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
+    document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
+    document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
+}

@@ -134,53 +134,56 @@ function _ebLasPerBasRecept() {
     const giltigt = valideraPerBasRecept(r);
     state.perBasRecept = perBasReceptArStandard(giltigt) ? null : giltigt;
 }
-document.addEventListener('change', e => {
-    const el = /** @type {HTMLElement} */ (e.target);
-    if (!el || !el.closest || !el.closest('#rapport-perbas')) return;
-    _ebLasPerBasRecept();
-    const fokus = el.id;
-    renderExportBesked();
-    document.getElementById(fokus)?.focus();
-});
-document.addEventListener('click', e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    if (!t || !t.closest) return;
-    if (t.closest('#pb-aterstall')) { state.perBasRecept = null; renderExportBesked(); return; }
-    const bort = t.closest('[data-egen-bort]'), flytta = t.closest('[data-egen-flytta]');
-    if (!bort && !flytta) return;
-    const id = /** @type {HTMLElement} */ (bort || flytta).closest('[data-egen-id]')?.getAttribute('data-egen-id');
-    const lista = [...(state.rapportTabeller || [])], i = lista.findIndex(r => r.id === id);
-    if (i < 0) return;
-    if (bort) lista.splice(i, 1);
-    else if (flytta) { const j = i + Number(flytta.getAttribute('data-egen-flytta')); if (j < 0 || j >= lista.length) return; [lista[i], lista[j]] = [lista[j], lista[i]]; }
-    state.rapportTabeller = lista;
-    renderExportBesked();
-    if (flytta) /** @type {HTMLElement} */ (document.querySelector(`[data-egen-id="${id}"] [data-egen-flytta="${flytta.getAttribute('data-egen-flytta')}"]:not([disabled])`))?.focus();
-});
 
-document.addEventListener('click', e => {
-    if (!/** @type {HTMLElement} */ (e.target).closest) return;
-    const fast = /** @type {HTMLElement} */ (e.target).closest('[data-urval-fast]');
-    if (fast) { sattRapportUrval(fast.getAttribute('data-urval-fast')); renderExportBesked({ baraUrval: true }); /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-fast="${fast.getAttribute('data-urval-fast')}"]`))?.focus(); return; }
-    const flytta = /** @type {HTMLElement} */ (e.target).closest('[data-urval-flytta]');
-    if (!flytta) return;
-    const id = flytta.closest('[data-urval-id]')?.getAttribute('data-urval-id') || '', steg = Number(flytta.getAttribute('data-urval-flytta'));
-    const u = rapportUrval(), i = u.ordning.indexOf(id);
-    // Flytta förbi nästa avsnitt som finns i listan (ett avsnitt som saknas i underlaget visas inte, men behåller sin plats).
-    const synliga = [...document.querySelectorAll('#rapport-urval [data-urval-id]')].map(li => li.getAttribute('data-urval-id'));
-    const granne = synliga[synliga.indexOf(id) + steg];
-    if (i < 0 || !granne) return;
-    const j = u.ordning.indexOf(granne), ordning = [...u.ordning];
-    ordning.splice(i, 1); ordning.splice(j, 0, id);
-    sattRapportUrval({ ordning, med: u.med });
-    renderExportBesked({ baraUrval: true });
-    /** @type {HTMLInputElement} */ (document.querySelector(`#rapport-urval [data-urval-id="${id}"] [data-urval-flytta="${steg}"]:not([disabled])`))?.focus();
-});
-document.addEventListener('change', e => {
-    const ruta = e.target && /** @type {HTMLElement} */ (e.target).matches && /** @type {HTMLElement} */ (e.target).matches('[data-urval-med]') ? e.target : null;
-    if (!ruta) return;
-    const u = rapportUrval(), id = /** @type {HTMLElement} */ (ruta).getAttribute('data-urval-med');
-    sattRapportUrval({ ordning: u.ordning, med: /** @type {HTMLInputElement} */ (ruta).checked ? [...u.med, id] : u.med.filter(x => x !== id) });
-    renderExportBesked({ baraUrval: true });
-    /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-med="${id}"]`))?.focus();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartExportbesked() {
+    document.addEventListener('change', e => {
+        const el = /** @type {HTMLElement} */ (e.target);
+        if (!el || !el.closest || !el.closest('#rapport-perbas')) return;
+        _ebLasPerBasRecept();
+        const fokus = el.id;
+        renderExportBesked();
+        document.getElementById(fokus)?.focus();
+    });
+    document.addEventListener('click', e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (!t || !t.closest) return;
+        if (t.closest('#pb-aterstall')) { state.perBasRecept = null; renderExportBesked(); return; }
+        const bort = t.closest('[data-egen-bort]'), flytta = t.closest('[data-egen-flytta]');
+        if (!bort && !flytta) return;
+        const id = /** @type {HTMLElement} */ (bort || flytta).closest('[data-egen-id]')?.getAttribute('data-egen-id');
+        const lista = [...(state.rapportTabeller || [])], i = lista.findIndex(r => r.id === id);
+        if (i < 0) return;
+        if (bort) lista.splice(i, 1);
+        else if (flytta) { const j = i + Number(flytta.getAttribute('data-egen-flytta')); if (j < 0 || j >= lista.length) return; [lista[i], lista[j]] = [lista[j], lista[i]]; }
+        state.rapportTabeller = lista;
+        renderExportBesked();
+        if (flytta) /** @type {HTMLElement} */ (document.querySelector(`[data-egen-id="${id}"] [data-egen-flytta="${flytta.getAttribute('data-egen-flytta')}"]:not([disabled])`))?.focus();
+    });
+    document.addEventListener('click', e => {
+        if (!/** @type {HTMLElement} */ (e.target).closest) return;
+        const fast = /** @type {HTMLElement} */ (e.target).closest('[data-urval-fast]');
+        if (fast) { sattRapportUrval(fast.getAttribute('data-urval-fast')); renderExportBesked({ baraUrval: true }); /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-fast="${fast.getAttribute('data-urval-fast')}"]`))?.focus(); return; }
+        const flytta = /** @type {HTMLElement} */ (e.target).closest('[data-urval-flytta]');
+        if (!flytta) return;
+        const id = flytta.closest('[data-urval-id]')?.getAttribute('data-urval-id') || '', steg = Number(flytta.getAttribute('data-urval-flytta'));
+        const u = rapportUrval(), i = u.ordning.indexOf(id);
+        // Flytta förbi nästa avsnitt som finns i listan (ett avsnitt som saknas i underlaget visas inte, men behåller sin plats).
+        const synliga = [...document.querySelectorAll('#rapport-urval [data-urval-id]')].map(li => li.getAttribute('data-urval-id'));
+        const granne = synliga[synliga.indexOf(id) + steg];
+        if (i < 0 || !granne) return;
+        const j = u.ordning.indexOf(granne), ordning = [...u.ordning];
+        ordning.splice(i, 1); ordning.splice(j, 0, id);
+        sattRapportUrval({ ordning, med: u.med });
+        renderExportBesked({ baraUrval: true });
+        /** @type {HTMLInputElement} */ (document.querySelector(`#rapport-urval [data-urval-id="${id}"] [data-urval-flytta="${steg}"]:not([disabled])`))?.focus();
+    });
+    document.addEventListener('change', e => {
+        const ruta = e.target && /** @type {HTMLElement} */ (e.target).matches && /** @type {HTMLElement} */ (e.target).matches('[data-urval-med]') ? e.target : null;
+        if (!ruta) return;
+        const u = rapportUrval(), id = /** @type {HTMLElement} */ (ruta).getAttribute('data-urval-med');
+        sattRapportUrval({ ordning: u.ordning, med: /** @type {HTMLInputElement} */ (ruta).checked ? [...u.med, id] : u.med.filter(x => x !== id) });
+        renderExportBesked({ baraUrval: true });
+        /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-med="${id}"]`))?.focus();
+    });
+}

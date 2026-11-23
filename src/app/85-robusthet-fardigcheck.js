@@ -325,6 +325,9 @@ export function renderKvalitetssakring() {
     renderFardigcheck();    // billig, körs direkt
 }
 
-document.addEventListener('click', e => {
-    if (/** @type {HTMLElement} */ (e.target).closest('#btn-run-robusthet')) runRobusthet();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartRobusthetFardigcheck() {
+    document.addEventListener('click', e => {
+        if (/** @type {HTMLElement} */ (e.target).closest('#btn-run-robusthet')) runRobusthet();
+    });
+}

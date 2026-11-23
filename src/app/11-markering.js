@@ -101,15 +101,6 @@ export function _mkTabeller() {
         if (traff !== tr.classList.contains('rad-markerad')) tr.classList.toggle('rad-markerad', traff);
     }
 }
-// Ett klick på en tabellrad som hör till en grupp markerar den — men inte ett klick på en knapp, länk eller ett fält i raden.
-document.addEventListener('click', e => {
-    const t = e.target;
-    if (!t || !/** @type {HTMLElement} */ (t).closest || /** @type {HTMLElement} */ (t).closest('button, a, input, select, label, textarea, summary')) return;
-    const tr = /** @type {HTMLElement} */ (t).closest('tbody tr');
-    if (!tr) return;
-    const nycklar = _mkRadNycklar(tr);
-    if (nycklar && nycklar.length) sattDiagramMarkering(nycklar[nycklar.length - 1], { lagg: e.ctrlKey || e.metaKey || e.shiftKey });
-});
 
 /**
  * Framhäver det markerade i ett ritat diagram: märken som hör till markeringen behåller sitt utseende och får
@@ -245,10 +236,22 @@ function _mkBorrRad() {
     el.appendChild(b);
 }
 
-// Escape tar bort markeringen och penslingen, utom när en dialog är öppen: då stänger Escape bara dialogen
-// (dialogerna har klassen glossary-modal, de äldre modal; båda visas med display: flex).
-document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape' || document.querySelector('.modal[style*="flex"], .glossary-modal[style*="flex"]')) return;
-    if (typeof _rfPenselRensaAlla === 'function') _rfPenselRensaAlla();
-    if (_markering.length) sattDiagramMarkering(null);
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartMarkering() {
+    // Ett klick på en tabellrad som hör till en grupp markerar den — men inte ett klick på en knapp, länk eller ett fält i raden.
+    document.addEventListener('click', e => {
+        const t = e.target;
+        if (!t || !/** @type {HTMLElement} */ (t).closest || /** @type {HTMLElement} */ (t).closest('button, a, input, select, label, textarea, summary')) return;
+        const tr = /** @type {HTMLElement} */ (t).closest('tbody tr');
+        if (!tr) return;
+        const nycklar = _mkRadNycklar(tr);
+        if (nycklar && nycklar.length) sattDiagramMarkering(nycklar[nycklar.length - 1], { lagg: e.ctrlKey || e.metaKey || e.shiftKey });
+    });
+    // Escape tar bort markeringen och penslingen, utom när en dialog är öppen: då stänger Escape bara dialogen
+    // (dialogerna har klassen glossary-modal, de äldre modal; båda visas med display: flex).
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape' || document.querySelector('.modal[style*="flex"], .glossary-modal[style*="flex"]')) return;
+        if (typeof _rfPenselRensaAlla === 'function') _rfPenselRensaAlla();
+        if (_markering.length) sattDiagramMarkering(null);
+    });
+}

@@ -62,11 +62,6 @@ function setupDrop(dropId, inputId) {
         if (/** @type {DataTransfer} */ (e.dataTransfer).files.length) { /** @type {HTMLInputElement} */ (inp).files = /** @type {DataTransfer} */ (e.dataTransfer).files; inp.dispatchEvent(new Event("change")); }
     });
 }
-setupDrop("drop-area-data", "file-input-data");
-// Startytan på Översikt (före inläsning) öppnar lönefilskortets filväljare: en fil därifrån läses in på samma väg.
-setupDrop("drop-area-start", "file-input-data");
-setupDrop("drop-area-policy", "file-input-policy");
-setupDrop("drop-area-stat", "file-input-stat");
 
 /**
  * Visar GDPR-avvisning i UI:t när hittaKansligaKolumner flaggat känsliga fält.
@@ -186,36 +181,6 @@ function _afterDataLoaded() {
 // Mallens rubriker är rubriker som kolumnigenkänningen (TILLATNA_FALT) känner igen, alltså filens ord och inte
 // verktygets; de byts inte med termerna (ADR-74).
 const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 'Poang'];
-document.getElementById('btn-download-csv-template')?.addEventListener('click', () => {
-    // Poang är valfri: arbetsvärderingspoäng per befattning (krav-proxy i § 3:10).
-    // Lämnas tom om ingen arbetsvärdering gjorts — BAS-rank används då.
-    const headers = CSV_MALL_RUBRIKER;
-    const examples = [
-        ['E', '101011 Ledning, ekonomi',         '52000', '47', 'Kvinna', '480'],
-        ['D', '152012 Administrator personal/HR', '34500', '38', 'Man',    '350'],
-        ['C', '207009 Underskoterska, hemtjanst', '29800', '54', 'Kvinna', '']
-    ];
-    // Använd semikolon-separator (svensk Excel-default), CRLF radslut
-    const csv = [headers, ...examples].map(row =>
-        row.map(cell => {
-            const s = String(cell);
-            // Citera om cellen innehåller separator, citationstecken eller radslut
-            // Citattecknet skrivs \u0022 i reguljäruttrycken, så att vakterna som läser källans strängar inte tappar takten.
-            return /[;\u0022\r\n]/.test(s) ? '"' + s.replace(/\u0022/g, '""') + '"' : s;
-        }).join(';')
-    ).join('\r\n');
-
-    // UTF-8 BOM så Excel öppnar med korrekt encoding
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'lonefil_mall.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
-});
 
 // _gissaTabellformat (filformatet ur de magiska byten) bor i src/lib/inlasning.js och nås genom spegeln.
 
@@ -695,7 +660,6 @@ function _beskedEfterOversikt(franOversikt) {
     }
     if (document.querySelector('#column-map-panel select.colmap-saknas')) _visaKolumnmappning();
 }
-/** @type {HTMLElement} */ (dataInput).addEventListener("change", e => loadStructureFile(/** @type {HTMLInputElement} */ (e.target).files?.[0]));
 
 // #11: Kolumnmappnings-guide. Visas efter inläsning om en obligatorisk roll
 // inte kunde auto-matchas mot någon CSV-rubrik (olika personalsystem döper
@@ -998,18 +962,58 @@ export function renderFilrutor() {
         ip.hidden = !t;
     }
 }
-// "Byt fil" öppnar respektive filväljare direkt.
-document.addEventListener('click', e => {
-    const b = /** @type {HTMLElement} */ (e.target).closest('[data-byt-fil]');
-    if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.bytFil || '')?.click();
-});
-document.getElementById('btn-kolumnmappning')?.addEventListener('click', () => {
-    // Panelen byggs av maybeShowColumnMapping; knappen fäller ut den och visar den.
-    if (typeof maybeShowColumnMapping === 'function') maybeShowColumnMapping();
-    _visaKolumnmappning();
-});
-_kopplaNamnFalt('org-namn', sattOrgNamn);
-_kopplaNamnFalt('jmf-namn', sattJmfNamn);
 
 // #8: kollapsa uppladdningsraden när data lästs in så att översikten/insikterna
 // hamnar överst. Återställs av clearAllData.
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartFilinlasning() {
+    setupDrop("drop-area-data", "file-input-data");
+    // Startytan på Översikt (före inläsning) öppnar lönefilskortets filväljare: en fil därifrån läses in på samma väg.
+    setupDrop("drop-area-start", "file-input-data");
+    setupDrop("drop-area-policy", "file-input-policy");
+    setupDrop("drop-area-stat", "file-input-stat");
+    document.getElementById('btn-download-csv-template')?.addEventListener('click', () => {
+        // Poang är valfri: arbetsvärderingspoäng per befattning (krav-proxy i § 3:10).
+        // Lämnas tom om ingen arbetsvärdering gjorts — BAS-rank används då.
+        const headers = CSV_MALL_RUBRIKER;
+        const examples = [
+            ['E', '101011 Ledning, ekonomi',         '52000', '47', 'Kvinna', '480'],
+            ['D', '152012 Administrator personal/HR', '34500', '38', 'Man',    '350'],
+            ['C', '207009 Underskoterska, hemtjanst', '29800', '54', 'Kvinna', '']
+        ];
+        // Använd semikolon-separator (svensk Excel-default), CRLF radslut
+        const csv = [headers, ...examples].map(row =>
+            row.map(cell => {
+                const s = String(cell);
+                // Citera om cellen innehåller separator, citationstecken eller radslut
+                // Citattecknet skrivs \u0022 i reguljäruttrycken, så att vakterna som läser källans strängar inte tappar takten.
+                return /[;\u0022\r\n]/.test(s) ? '"' + s.replace(/\u0022/g, '""') + '"' : s;
+            }).join(';')
+        ).join('\r\n');
+
+        // UTF-8 BOM så Excel öppnar med korrekt encoding
+        const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'lonefil_mall.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
+    });
+    /** @type {HTMLElement} */ (dataInput).addEventListener("change", e => loadStructureFile(/** @type {HTMLInputElement} */ (e.target).files?.[0]));
+    // "Byt fil" öppnar respektive filväljare direkt.
+    document.addEventListener('click', e => {
+        const b = /** @type {HTMLElement} */ (e.target).closest('[data-byt-fil]');
+        if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.bytFil || '')?.click();
+    });
+    document.getElementById('btn-kolumnmappning')?.addEventListener('click', () => {
+        // Panelen byggs av maybeShowColumnMapping; knappen fäller ut den och visar den.
+        if (typeof maybeShowColumnMapping === 'function') maybeShowColumnMapping();
+        _visaKolumnmappning();
+    });
+    _kopplaNamnFalt('org-namn', sattOrgNamn);
+    _kopplaNamnFalt('jmf-namn', sattJmfNamn);
+}

@@ -145,27 +145,31 @@ export function sidindexGaTill(id) {
     _sidindexValt = id;
 }
 
-// Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.
-document.addEventListener('click', e => {
-    const a = /** @type {HTMLElement} */ (e.target).closest('[data-sidindex]');
-    if (!a) return;
-    e.preventDefault();
-    sidindexGaTill(/** @type {HTMLElement} */ (a).dataset.sidindex || '');
-});
-// Läsarens egen rullning släpper valet. Klicket på en post kommer efter musknappen och Retur-tangenten, så valet sätts
-// efter att de har släppt det förra.
-for (const typ of ['wheel', 'touchstart', 'keydown', 'mousedown']) window.addEventListener(typ, () => { _sidindexValt = null; }, { passive: true, capture: true });
 let _sidindexRam = 0;
-window.addEventListener('scroll', () => {
-    if (!_sidindexBevakare || _sidindexRam) return;
-    _sidindexRam = requestAnimationFrame(() => { _sidindexRam = 0; _sidindexFolj(); });
-}, { passive: true });
-// Breddas fönstret förbi brytpunkten står listan i spalten och är alltid utfälld; smalnas det av blir den den
-// hopfällda raden överst, som annars skulle täcka innehållet när den följer med.
-if (typeof window.matchMedia === 'function') {
-    const bred = window.matchMedia(SIDINDEX_BRED);
-    bred.addEventListener?.('change', () => {
-        const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
-        if (ram) ram.open = bred.matches;
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartSidindex() {
+    // Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.
+    document.addEventListener('click', e => {
+        const a = /** @type {HTMLElement} */ (e.target).closest('[data-sidindex]');
+        if (!a) return;
+        e.preventDefault();
+        sidindexGaTill(/** @type {HTMLElement} */ (a).dataset.sidindex || '');
     });
+    // Läsarens egen rullning släpper valet. Klicket på en post kommer efter musknappen och Retur-tangenten, så valet sätts
+    // efter att de har släppt det förra.
+    for (const typ of ['wheel', 'touchstart', 'keydown', 'mousedown']) window.addEventListener(typ, () => { _sidindexValt = null; }, { passive: true, capture: true });
+    window.addEventListener('scroll', () => {
+        if (!_sidindexBevakare || _sidindexRam) return;
+        _sidindexRam = requestAnimationFrame(() => { _sidindexRam = 0; _sidindexFolj(); });
+    }, { passive: true });
+    // Breddas fönstret förbi brytpunkten står listan i spalten och är alltid utfälld; smalnas det av blir den den
+    // hopfällda raden överst, som annars skulle täcka innehållet när den följer med.
+    if (typeof window.matchMedia === 'function') {
+        const bred = window.matchMedia(SIDINDEX_BRED);
+        bred.addEventListener?.('change', () => {
+            const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
+            if (ram) ram.open = bred.matches;
+        });
+    }
 }

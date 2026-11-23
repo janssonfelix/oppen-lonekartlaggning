@@ -1097,16 +1097,18 @@ function _exportLikvardighetExport() {
     }
 }
 
-
 // ===================================================================
 
-// Arbetsvärdering (poäng) läses ur strukturdatans valfria Poäng-kolumn —
-// se _deriveArbetsvarderingFromData (anropas i _afterDataLoaded); någon egen uppladdning
-// finns inte. Ekvivalensbandet ställs in i § 3:10-fliken.
-document.getElementById('arbvard-band')?.addEventListener('change', e => {
-    const v = parseFloat(/** @type {HTMLInputElement} */ (e.target).value);
-    if (state.likvardighet && isFinite(v) && v >= 0) state.likvardighet.poangBandPct = v;
-    if (state.likvardighet) state.likvardighet.result = null;
-    const active = document.querySelector('.nav-item.active');
-    if (active && active.getAttribute('data-tab') === 'likvardighet') renderLikvardighet();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartLikvardigtArbete() {
+    // Arbetsvärdering (poäng) läses ur strukturdatans valfria Poäng-kolumn —
+    // se _deriveArbetsvarderingFromData (anropas i _afterDataLoaded); någon egen uppladdning
+    // finns inte. Ekvivalensbandet ställs in i § 3:10-fliken.
+    document.getElementById('arbvard-band')?.addEventListener('change', e => {
+        const v = parseFloat(/** @type {HTMLInputElement} */ (e.target).value);
+        if (state.likvardighet && isFinite(v) && v >= 0) state.likvardighet.poangBandPct = v;
+        if (state.likvardighet) state.likvardighet.result = null;
+        const active = document.querySelector('.nav-item.active');
+        if (active && active.getAttribute('data-tab') === 'likvardighet') renderLikvardighet();
+    });
+}

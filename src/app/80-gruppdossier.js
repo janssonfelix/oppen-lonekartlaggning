@@ -359,26 +359,29 @@ export function gruppdossierAsText(d, { stampel = true } = {}) {
     return L.join('\n');
 }
 
-// ---- Wiring ----
-document.getElementById('dossier-select')?.addEventListener('change', () => renderGruppdossier());
-// Djuplänk från tabellrader i andra flikar
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-open-dossier]');
-    if (btn) { openGruppdossier(btn.getAttribute('data-open-dossier')); return; }
-    if (/** @type {HTMLElement} */ (e.target).closest('[data-dossier-close]')) closeGruppdossier();
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('dossier-modal')?.style.display === 'flex') {
-        closeGruppdossier();
-    }
-});
-document.addEventListener('click', e => {
-    if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
-    const sel = document.getElementById('dossier-select');
-    const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
-    if (!d) return;
-    const txt = medExportLage(() => gruppdossierAsText(d));
-    const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
-    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
-    else done();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartGruppdossier() {
+    // ---- Wiring ----
+    document.getElementById('dossier-select')?.addEventListener('change', () => renderGruppdossier());
+    // Djuplänk från tabellrader i andra flikar
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('[data-open-dossier]');
+        if (btn) { openGruppdossier(btn.getAttribute('data-open-dossier')); return; }
+        if (/** @type {HTMLElement} */ (e.target).closest('[data-dossier-close]')) closeGruppdossier();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('dossier-modal')?.style.display === 'flex') {
+            closeGruppdossier();
+        }
+    });
+    document.addEventListener('click', e => {
+        if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
+        const sel = document.getElementById('dossier-select');
+        const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
+        if (!d) return;
+        const txt = medExportLage(() => gruppdossierAsText(d));
+        const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
+        else done();
+    });
+}

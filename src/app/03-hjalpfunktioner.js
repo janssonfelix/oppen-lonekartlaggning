@@ -11,50 +11,11 @@ import { klickaFlik, tabMal } from './31-navigering.js';
 import { _kolumnval } from './32-filinlasning.js';
 import { sidindexGaTill } from './89-sidindex.js';
 
-// HTTP-varning vid osäker anslutning. file:// och localhost är OK.
-(function checkHttpWarning() {
-    const proto = window.location.protocol;
-    const host  = window.location.hostname;
-    if (proto === 'http:' && host !== 'localhost' && host !== '127.0.0.1' && host !== '') {
-        const w = document.getElementById('http-warning');
-        if (w) w.style.display = 'flex';
-    }
-})();
-document.getElementById('http-warning-dismiss')?.addEventListener('click', () => {
-    const w = document.getElementById('http-warning');
-    if (w) w.style.display = 'none';
-});
-
-// Delegerade klick-hanterare i stället för inline `onclick=` i markup. Krävs av den
-// hash-baserade CSP:n (ADR-9): `script-src` saknar `'unsafe-inline'`, vilket
-// blockerar inline event-handler-attribut. Två mönster täcks:
-//   data-goto-tab="<tab>"   → klickar motsvarande nav-flik (tomt-läges-knappar); med data-goto-avsnitt="<id>"
-//                             går sidan sedan till avsnittet eller kortet med det id:t (som sidindexet)
-//   data-dismiss-parent     → tar bort knappens föräldernod (notis-/toast-OK)
-document.addEventListener('click', e => {
-    const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
-    if (goto) {
-        const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute('data-goto-tab')) + '"]');
-        const avsnitt = goto.getAttribute('data-goto-avsnitt');
-        const tillAvsnitt = () => { if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt); };
-        // Användarens klick visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
-        if (nav && !(/** @type {HTMLInputElement} */ (nav).disabled)) klickaFlik(nav, { uppskjut: e.isTrusted, efter: tillAvsnitt });
-        else { if (nav) /** @type {HTMLElement} */ (nav).click(); tillAvsnitt(); }
-        return;
-    }
-    const dismiss = /** @type {HTMLElement} */ (e.target).closest('[data-dismiss-parent]');
-    if (dismiss && dismiss.parentNode) /** @type {HTMLElement} */ (dismiss.parentNode).remove();
-});
-
 /** Ansvarsförbehållet (beslut 8c): samma lydelse i Om verktyget, Word/PDF, Excel och rapportunderlaget. tests/juridiksprak.test.js vaktar. */
 export const ANSVARSFORBEHALL = 'Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.';
 
 export function showLoading() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "flex"; }
 export function hideLoading() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "none"; }
-
-// Det som är dolt från start bär klassen .dold i markeringen (stilmallen döljer det utan att vänta på skriptet). Skriptet
-// sätter dessutom display:none via CSSOM, så att el.style.display visar läget som förr (öppen 'flex', stängd 'none').
-document.querySelectorAll('.dold').forEach(el => { /** @type {HTMLElement} */ (el).style.display = 'none'; });
 
 // Uträknade mått (stapelbredd i procent, läge) får inte stå som style="…" i markeringen: CSP:n har inget style-src-attr
 // (ADR-30), så en sådan stil blockeras. Mallarna skriver måttet som data-stil-bredd="42%" (också -vanster, -mvanster),
@@ -193,3 +154,42 @@ export function _kvantilTipsRader(s) {
     return [[`Prick ${q.nr} av ${q.antal}`, `${talformat(q.varde, 'kr')} — varje prick är ${del} av gruppen`]];
 }
 
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartHjalpfunktioner() {
+    // HTTP-varning vid osäker anslutning. file:// och localhost är OK.
+    (function checkHttpWarning() {
+        const proto = window.location.protocol;
+        const host  = window.location.hostname;
+        if (proto === 'http:' && host !== 'localhost' && host !== '127.0.0.1' && host !== '') {
+            const w = document.getElementById('http-warning');
+            if (w) w.style.display = 'flex';
+        }
+    })();
+    document.getElementById('http-warning-dismiss')?.addEventListener('click', () => {
+        const w = document.getElementById('http-warning');
+        if (w) w.style.display = 'none';
+    });
+    // Delegerade klick-hanterare i stället för inline `onclick=` i markup. Krävs av den
+    // hash-baserade CSP:n (ADR-9): `script-src` saknar `'unsafe-inline'`, vilket
+    // blockerar inline event-handler-attribut. Två mönster täcks:
+    //   data-goto-tab="<tab>"   → klickar motsvarande nav-flik (tomt-läges-knappar); med data-goto-avsnitt="<id>"
+    //                             går sidan sedan till avsnittet eller kortet med det id:t (som sidindexet)
+    //   data-dismiss-parent     → tar bort knappens föräldernod (notis-/toast-OK)
+    document.addEventListener('click', e => {
+        const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
+        if (goto) {
+            const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute('data-goto-tab')) + '"]');
+            const avsnitt = goto.getAttribute('data-goto-avsnitt');
+            const tillAvsnitt = () => { if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt); };
+            // Användarens klick visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
+            if (nav && !(/** @type {HTMLInputElement} */ (nav).disabled)) klickaFlik(nav, { uppskjut: e.isTrusted, efter: tillAvsnitt });
+            else { if (nav) /** @type {HTMLElement} */ (nav).click(); tillAvsnitt(); }
+            return;
+        }
+        const dismiss = /** @type {HTMLElement} */ (e.target).closest('[data-dismiss-parent]');
+        if (dismiss && dismiss.parentNode) /** @type {HTMLElement} */ (dismiss.parentNode).remove();
+    });
+    // Det som är dolt från start bär klassen .dold i markeringen (stilmallen döljer det utan att vänta på skriptet). Skriptet
+    // sätter dessutom display:none via CSSOM, så att el.style.display visar läget som förr (öppen 'flex', stängd 'none').
+    document.querySelectorAll('.dold').forEach(el => { /** @type {HTMLElement} */ (el).style.display = 'none'; });
+}

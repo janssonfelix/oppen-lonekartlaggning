@@ -399,42 +399,45 @@ export function basdossierKnapp(bas, { text = 'BAS-dossier', ikonEndast = false 
         : `<button ${attr} class="btn-table-tool bd-oppna">${esc(text)}</button>`;
 }
 
-// ---- Wiring ----
-document.getElementById('basdossier-select')?.addEventListener('change', () => renderBasdossier());
-// Knapparna i tabellraderna: fångas före radens egna lyssnare (fäll in/ut, markering), som inte ska reagera.
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-open-basdossier]');
-    if (!btn) return;
-    e.preventDefault(); e.stopPropagation();
-    const bas = btn.getAttribute('data-open-basdossier') || '';
-    // Från gruppdossiern: den stängs först, så att fokus går tillbaka till det som öppnade den när BAS-dossiern stängs.
-    const iGrupp = btn.closest('#dossier-modal');
-    if (iGrupp) { closeGruppdossier(); openBasdossier(bas); } else openBasdossier(bas, btn);
-}, true);
-document.addEventListener('click', e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    if (!t.closest) return;
-    if (t.closest('[data-basdossier-close]')) { closeBasdossier(); return; }
-    const grupp = t.closest('[data-bd-gruppdossier]');
-    if (grupp) { closeBasdossier(); openGruppdossier(grupp.getAttribute('data-bd-gruppdossier')); return; }
-    const alder = t.closest('[data-bd-alder]');
-    if (alder) {
-        const bas = alder.getAttribute('data-bd-alder') || '';
-        closeBasdossier();
-        const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('bas-select-kon'));
-        if (sel && [...sel.options].some(o => o.value === bas)) sel.value = bas;
-        navigateTo('kon');
-        return;
-    }
-    if (t.closest('#btn-basdossier-copy')) {
-        const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
-        const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
-        if (!txt) { announceToScreenReader(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
-        const klart = () => announceToScreenReader('BAS-dossiern kopierad.');
-        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
-        else klart();
-    }
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('basdossier-modal')?.style.display === 'flex') closeBasdossier();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartBasdossier() {
+    // ---- Wiring ----
+    document.getElementById('basdossier-select')?.addEventListener('change', () => renderBasdossier());
+    // Knapparna i tabellraderna: fångas före radens egna lyssnare (fäll in/ut, markering), som inte ska reagera.
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-open-basdossier]');
+        if (!btn) return;
+        e.preventDefault(); e.stopPropagation();
+        const bas = btn.getAttribute('data-open-basdossier') || '';
+        // Från gruppdossiern: den stängs först, så att fokus går tillbaka till det som öppnade den när BAS-dossiern stängs.
+        const iGrupp = btn.closest('#dossier-modal');
+        if (iGrupp) { closeGruppdossier(); openBasdossier(bas); } else openBasdossier(bas, btn);
+    }, true);
+    document.addEventListener('click', e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (!t.closest) return;
+        if (t.closest('[data-basdossier-close]')) { closeBasdossier(); return; }
+        const grupp = t.closest('[data-bd-gruppdossier]');
+        if (grupp) { closeBasdossier(); openGruppdossier(grupp.getAttribute('data-bd-gruppdossier')); return; }
+        const alder = t.closest('[data-bd-alder]');
+        if (alder) {
+            const bas = alder.getAttribute('data-bd-alder') || '';
+            closeBasdossier();
+            const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('bas-select-kon'));
+            if (sel && [...sel.options].some(o => o.value === bas)) sel.value = bas;
+            navigateTo('kon');
+            return;
+        }
+        if (t.closest('#btn-basdossier-copy')) {
+            const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
+            const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
+            if (!txt) { announceToScreenReader(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
+            const klart = () => announceToScreenReader('BAS-dossiern kopierad.');
+            if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
+            else klart();
+        }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('basdossier-modal')?.style.display === 'flex') closeBasdossier();
+    });
+}

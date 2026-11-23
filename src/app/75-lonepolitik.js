@@ -332,11 +332,6 @@ function _lpFigurKompliansMitt(rows) {
         hojd: Math.max(260, 70 + sorterade.length * 38),
         lager: [serie('Under P10', _LP_LAGE.under, 'under', -1), serie('Över P90', _LP_LAGE.over, 'over', 1)] };
 }
-document.addEventListener('change', e => {
-    if (!e.target || /** @type {HTMLElement} */ (e.target).id !== 'lp-komplians-vy') return;
-    _lpKompliansVy = /** @type {HTMLInputElement} */ (e.target).value === 'mitt' ? 'mitt' : 'staplad';
-    if (typeof renderLonepolitik === 'function') renderLonepolitik();
-});
 
 // Ett meddelande i stället för diagrammet: figuren släpps först, så att ingen export eller omritning finns kvar.
 export function _lpIngetDiagram(el, text) {
@@ -538,4 +533,13 @@ export function _lpExcelBlad() {
     }
     if (efterDolda.length) ut.push([`Visas inte (färre än ${k} ${personOrd(k)}): ${efterDolda.join(', ')}.`]);
     return ut;
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartLonepolitik() {
+    document.addEventListener('change', e => {
+        if (!e.target || /** @type {HTMLElement} */ (e.target).id !== 'lp-komplians-vy') return;
+        _lpKompliansVy = /** @type {HTMLInputElement} */ (e.target).value === 'mitt' ? 'mitt' : 'staplad';
+        if (typeof renderLonepolitik === 'function') renderLonepolitik();
+    });
 }

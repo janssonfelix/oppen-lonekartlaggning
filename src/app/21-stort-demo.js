@@ -21,5 +21,9 @@ export function loadStortDemo() {
     _renderDemoBanner();
     announceToScreenReader(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
 }
-['first-run-stort-demo', 'upload-demo-stort'].forEach(id =>
-    document.getElementById(id)?.addEventListener('click', loadStortDemo));
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartStortDemo() {
+    ['first-run-stort-demo', 'upload-demo-stort'].forEach(id =>
+        document.getElementById(id)?.addEventListener('click', loadStortDemo));
+}

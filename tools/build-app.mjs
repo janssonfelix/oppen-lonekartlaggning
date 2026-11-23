@@ -26,7 +26,7 @@ const ingang = join(root, 'src', 'app', 'index.js');
  * Toppnivånamnen i en modul eller ett skript: de deklarerade och, för en modul, de importerade under eget namn.
  * @param {string} text
  * @param {'module'|'script'} sourceType
- * @returns {{ deklarerade: string[], importerade: string[] }}
+ * @returns {{ deklarerade: string[], importerade: string[], ovriga: string[], harImport: boolean }}
  */
 function toppnivanamn(text, sourceType) {
     const ast = espree.parse(text, { ecmaVersion: 'latest', sourceType, range: true });
@@ -34,7 +34,10 @@ function toppnivanamn(text, sourceType) {
     const topp = sourceType === 'module' ? scope.globalScope.childScopes[0] : scope.globalScope;
     const importerade = topp.variables.filter(v => v.defs.some(d => d.type === 'ImportBinding'
         && (d.node.type !== 'ImportSpecifier' || d.node.imported.name === v.name)));
+    const DEKL = ['ImportDeclaration', 'ExportNamedDeclaration', 'FunctionDeclaration', 'VariableDeclaration', 'ClassDeclaration'];
     return {
+        ovriga: ast.body.filter(st => !DEKL.includes(st.type)).map(st => st.type),
+        harImport: ast.body.some(st => st.type === 'ImportDeclaration'),
         deklarerade: topp.variables.filter(v => v.defs.some(d => d.type !== 'ImportBinding')).map(v => v.name),
         importerade: importerade.map(v => v.name)
     };
@@ -61,6 +64,12 @@ export function byggApp() {
         throw new Error(`build-app: dist/app.js är inget klassiskt skript (import eller export kvar?): ${e.message}`);
     }
     const moduler = Object.keys(r.metafile.inputs).map(f => ({ f, ...toppnivanamn(readFileSync(join(root, f), 'utf8'), 'module') }));
+    // Delarna deklarerar bara; det som körs vid laddning står i uppstartsfunktionerna, som index.js anropar i
+    // sifferordning (ES-moduler körs i importgrafens ordning). 00 importerar inget och körs därför först.
+    const delar = moduler.filter(m => /^src\/app\/\d\d-/.test(m.f));
+    const laddning = delar.filter(m => !m.f.startsWith('src/app/00-') && m.ovriga.length).map(m => m.f);
+    if (laddning.length) throw new Error(`build-app: kod utanför en deklaration (flytta den till delens uppstartsfunktion): ${laddning.join(', ')}`);
+    if (delar.some(m => m.f.startsWith('src/app/00-') && m.harImport)) throw new Error('build-app: 00-sakerhet-och-uppstart.js ska inte importera något; den körs först.');
     const app = new Set(moduler.filter(m => m.f.startsWith('src/app/')).flatMap(m => [...m.deklarerade, ...m.importerade]));
     const antal = new Map();
     for (const n of moduler.flatMap(m => m.deklarerade)) antal.set(n, (antal.get(n) || 0) + 1);

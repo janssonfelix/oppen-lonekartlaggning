@@ -569,10 +569,6 @@ export function rapportModellBada({ besked = false, ateranvand = false } = {}) {
 // (ADR-17). Minnet gäller bara så länge ingenting annat har hänt: varje annan inmatning i sidan (_rmHandelser), ett
 // nytt underlag, en ny tröskel, nya referenser eller bokslut och bakgrundsanalyser som blivit klara gör det ogiltigt.
 let _rmHandelser = 0;
-['input', 'change', 'click', 'keydown'].forEach(typ => document.addEventListener(typ, e => {
-    const el = /** @type {HTMLElement} */ (e.target);
-    if (!(el && el.closest && el.closest('#rapport-urval .urval-rad[data-urval-id], #rapport-urval .urval-fasta'))) _rmHandelser++;
-}, true));
 /** @type {{nyckel: any[], avsnitt: any}|null} */
 let _rmMinne = null;
 /** Rensa all data släpper minnet (26-rensning.js). */
@@ -920,4 +916,12 @@ export async function rmDiagramBild(del, ritade = new Set()) {
         if (!/^data:image\/png/.test(url) || !url.split(',')[1]) return null;
         return { url, base64: url.split(',')[1], alt: el._exportBeskrivning || del.rubrik, ...RM_BILD };
     } catch (_e) { return null; }
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartRapportmodell() {
+    ['input', 'change', 'click', 'keydown'].forEach(typ => document.addEventListener(typ, e => {
+        const el = /** @type {HTMLElement} */ (e.target);
+        if (!(el && el.closest && el.closest('#rapport-urval .urval-rad[data-urval-id], #rapport-urval .urval-fasta'))) _rmHandelser++;
+    }, true));
 }

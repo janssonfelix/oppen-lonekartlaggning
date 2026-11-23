@@ -467,76 +467,6 @@ export function renderPrioritering() {
     });
 }
 
-// Menyn Mer på raderna. Ett val stänger menyn och ger fokus tillbaka till knappen Mer innan valet körs (fångstfasen,
-// före valens egna lyssnare): gruppdossiern lämnar då tillbaka fokus till Mer när den stängs, inte till ett dolt menyval.
-document.addEventListener('click', e => {
-    const val = /** @type {HTMLElement} */ (e.target).closest('.prio-mer .chart-export-meny button');
-    if (!val) return;
-    const wrap = /** @type {HTMLElement} */ (val.closest('.prio-mer'));
-    const knapp = /** @type {HTMLElement} */ (wrap.querySelector(':scope > .chart-export-btn'));
-    /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-meny')).hidden = true;
-    knapp.setAttribute('aria-expanded', 'false');
-    knapp.focus();
-}, true);
-// En öppnad meny som inte ryms under knappen i tabellens rullyta öppnas uppåt (tabellen rullar i sidled, så en meny
-// som går under rullytans kant skulle annars klippas). Körs efter 11-diagramexport.js, som har öppnat menyn.
-document.addEventListener('click', e => {
-    const knapp = /** @type {HTMLElement} */ (e.target).closest('.prio-mer > .chart-export-btn');
-    if (!knapp) return;
-    const wrap = /** @type {HTMLElement} */ (knapp.parentElement);
-    const meny = /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-meny'));
-    wrap.classList.remove('uppat');
-    if (meny.hidden) return;
-    const yta = wrap.closest('.table-container');
-    if (!yta) return;
-    const y = yta.getBoundingClientRect(), m = meny.getBoundingClientRect(), k = knapp.getBoundingClientRect();
-    if (m.bottom > y.bottom && k.top - y.top > m.height) wrap.classList.add('uppat');
-});
-
-// Lyssnare för referens-toggle och etikett-toggle
-document.querySelectorAll('input[name="prio-ref"]').forEach(el => {
-    el.addEventListener('change', renderPrioritering);
-});
-document.getElementById('prio-label-mode')?.addEventListener('change', renderPrioritering);
-document.getElementById('prio-filter-quickwin')?.addEventListener('change', renderPrioritering);
-document.getElementById('prio-filter-brist')?.addEventListener('change', renderPrioritering);
-
-// F: Stegvis konsekvensanalys — visar effekt om vi gör topp N
-document.getElementById('btn-prio-consequence')?.addEventListener('click', () => {
-    const panel = document.getElementById('prio-consequence-panel');
-    if (!panel) return;
-    if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
-    const ref = _selectedPrioReference();
-    const items = computePrioritization(ref);
-    if (!items.length) { panel.innerHTML = '<p class="farg-dampad pad-12">Ingen data att analysera.</p>'; panel.style.display='block'; return; }
-    const totalCost = items.reduce((s, i) => s + i.annualGapTotal, 0);
-    const checkpoints = [3, 5, 10, 15, 20, 30, items.length];
-    const fmt = new Intl.NumberFormat('sv-SE');
-    let rows = '';
-    let cumCost = 0;
-    items.forEach((i, idx) => {
-        cumCost += i.annualGapTotal;
-        if (checkpoints.includes(idx + 1)) {
-            const pctOfTotal = totalCost > 0 ? svTal(cumCost / totalCost * 100, 0) : '0';
-            const personerLyfta = items.slice(0, idx + 1).reduce((s, x) => s + x.n, 0);
-            rows += `<tr><td>Topp <strong>${idx + 1}</strong></td><td class="t-hoger">${fmt.format(personerLyfta)} pers</td><td class="t-hoger">${_fmtCost(cumCost)}</td><td class="t-hoger">${pctOfTotal} %</td></tr>`;
-        }
-    });
-    panel.innerHTML = `
-        <div class="bak-white ram-1-kant rund-8 pad-14-16">
-            <h4 class="underrubrik">Stegvis konsekvensanalys: budgetpåverkan om N grupper åtgärdas</h4>
-            <p class="text-dampad-sm lh-1_55 marg-0-0-10">
-                Visar kumulativ kostnad och täckningsgrad om de prioriterade grupperna åtgärdas i ordning. Det gör det lättare att välja ambition, till exempel de fem första i år eller de tio första.
-            </p>
-            <table class="data-table st-088">
-                <thead><tr><th>Åtgärd</th><th class="t-hoger">Antal personer</th><th class="t-hoger">Kostnad att nå referensen</th><th class="t-hoger">Andel av total</th></tr></thead>
-                <tbody>${rows}</tbody>
-            </table>
-        </div>
-    `;
-    panel.style.display = 'block';
-});
-
 // Lyssnare för konfigurerbara tröskelvärden
 function _readPrioConfigInputs() {
     const get = (id, def) => {
@@ -556,20 +486,6 @@ function _readPrioConfigInputs() {
     const flag = document.getElementById('prio-cfg-custom-flag');
     if (flag) flag.style.display = isCustom ? 'inline' : 'none';
 }
-['prio-cfg-atgard','prio-cfg-akutN','prio-cfg-bevaka','prio-cfg-analysera'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => {
-        _readPrioConfigInputs();
-        renderPrioritering();
-    });
-});
-document.getElementById('prio-cfg-reset')?.addEventListener('click', () => {
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-atgard')).value    = String(PRIO_CONFIG_DEFAULTS.atgardThreshold);
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-akutN')).value     = String(PRIO_CONFIG_DEFAULTS.akutMinN);
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-bevaka')).value    = String(PRIO_CONFIG_DEFAULTS.bevakaThreshold);
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-analysera')).value = String(PRIO_CONFIG_DEFAULTS.analyseraThreshold);
-    _readPrioConfigInputs();
-    renderPrioritering();
-});
 
 // Viktnings-inputs
 function _readPrioWeightsInputs() {
@@ -588,19 +504,6 @@ function _readPrioWeightsInputs() {
     const sum = state.prioWeights.avvikelse + state.prioWeights.volym + state.prioWeights.jamstalldhet;
     if (sumEl) sumEl.textContent = `Summa: ${sum} (normaliseras till 100% automatiskt)`;
 }
-['prio-w-avvikelse','prio-w-volym','prio-w-jamstalldhet'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => {
-        _readPrioWeightsInputs();
-        renderPrioritering();
-    });
-});
-document.getElementById('prio-w-reset')?.addEventListener('click', () => {
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-w-avvikelse')).value    = String(PRIO_WEIGHTS_DEFAULTS.avvikelse);
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-w-volym')).value        = String(PRIO_WEIGHTS_DEFAULTS.volym);
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-w-jamstalldhet')).value = String(PRIO_WEIGHTS_DEFAULTS.jamstalldhet);
-    _readPrioWeightsInputs();
-    renderPrioritering();
-});
 
 // Kostnadsberäknings-inputs (månader + PO-påslag)
 export function _readCostSettings() {
@@ -629,25 +532,6 @@ function _kostnadAndrad() {
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
     if (aktiv && aktiv !== 'prioritering' && typeof renderTabContent === 'function') renderTabContent(aktiv);
 }
-['prio-cost-months','prio-po-pct'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', _kostnadAndrad);
-    document.getElementById(id)?.addEventListener('change', _kostnadAndrad);
-});
-document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-cost-months')).value = String(COST_DEFAULTS.months);
-    /** @type {HTMLInputElement} */ (document.getElementById('prio-po-pct')).value      = String(COST_DEFAULTS.poPct);
-    _kostnadAndrad();
-});
-// Initiera period-sammanfattningen vid sidladdning
-setTimeout(() => { _readCostSettings(); visningNy(); }, 0);   // kostnadsinställningarna läses: ingen ritad flik visas igen (ADR-81)
-
-document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
-    const table = document.getElementById('prio-table');
-    if (table) {
-        const wb = tableToCleanBook('prio-table', 'Prioritering');
-        if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _showExportSensitivityToast(); }
-    }
-}));
 
 // ---- Print-to-PDF: komplett rapport ----
 // Använder webbläsarens inbyggda "Skriv ut → Spara som PDF". Inga externa beroenden.
@@ -736,4 +620,120 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard', cfg), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka', cfg), FARG.varning),
                    zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok', cfg), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera', cfg), FARG.infoMork)].filter(z => z.x1 > z.x0),
         lager };
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartPrioritering() {
+    // Menyn Mer på raderna. Ett val stänger menyn och ger fokus tillbaka till knappen Mer innan valet körs (fångstfasen,
+    // före valens egna lyssnare): gruppdossiern lämnar då tillbaka fokus till Mer när den stängs, inte till ett dolt menyval.
+    document.addEventListener('click', e => {
+        const val = /** @type {HTMLElement} */ (e.target).closest('.prio-mer .chart-export-meny button');
+        if (!val) return;
+        const wrap = /** @type {HTMLElement} */ (val.closest('.prio-mer'));
+        const knapp = /** @type {HTMLElement} */ (wrap.querySelector(':scope > .chart-export-btn'));
+        /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-meny')).hidden = true;
+        knapp.setAttribute('aria-expanded', 'false');
+        knapp.focus();
+    }, true);
+    // En öppnad meny som inte ryms under knappen i tabellens rullyta öppnas uppåt (tabellen rullar i sidled, så en meny
+    // som går under rullytans kant skulle annars klippas). Körs efter 11-diagramexport.js, som har öppnat menyn.
+    document.addEventListener('click', e => {
+        const knapp = /** @type {HTMLElement} */ (e.target).closest('.prio-mer > .chart-export-btn');
+        if (!knapp) return;
+        const wrap = /** @type {HTMLElement} */ (knapp.parentElement);
+        const meny = /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-meny'));
+        wrap.classList.remove('uppat');
+        if (meny.hidden) return;
+        const yta = wrap.closest('.table-container');
+        if (!yta) return;
+        const y = yta.getBoundingClientRect(), m = meny.getBoundingClientRect(), k = knapp.getBoundingClientRect();
+        if (m.bottom > y.bottom && k.top - y.top > m.height) wrap.classList.add('uppat');
+    });
+    // Lyssnare för referens-toggle och etikett-toggle
+    document.querySelectorAll('input[name="prio-ref"]').forEach(el => {
+        el.addEventListener('change', renderPrioritering);
+    });
+    document.getElementById('prio-label-mode')?.addEventListener('change', renderPrioritering);
+    document.getElementById('prio-filter-quickwin')?.addEventListener('change', renderPrioritering);
+    document.getElementById('prio-filter-brist')?.addEventListener('change', renderPrioritering);
+    // F: Stegvis konsekvensanalys — visar effekt om vi gör topp N
+    document.getElementById('btn-prio-consequence')?.addEventListener('click', () => {
+        const panel = document.getElementById('prio-consequence-panel');
+        if (!panel) return;
+        if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+        const ref = _selectedPrioReference();
+        const items = computePrioritization(ref);
+        if (!items.length) { panel.innerHTML = '<p class="farg-dampad pad-12">Ingen data att analysera.</p>'; panel.style.display='block'; return; }
+        const totalCost = items.reduce((s, i) => s + i.annualGapTotal, 0);
+        const checkpoints = [3, 5, 10, 15, 20, 30, items.length];
+        const fmt = new Intl.NumberFormat('sv-SE');
+        let rows = '';
+        let cumCost = 0;
+        items.forEach((i, idx) => {
+            cumCost += i.annualGapTotal;
+            if (checkpoints.includes(idx + 1)) {
+                const pctOfTotal = totalCost > 0 ? svTal(cumCost / totalCost * 100, 0) : '0';
+                const personerLyfta = items.slice(0, idx + 1).reduce((s, x) => s + x.n, 0);
+                rows += `<tr><td>Topp <strong>${idx + 1}</strong></td><td class="t-hoger">${fmt.format(personerLyfta)} pers</td><td class="t-hoger">${_fmtCost(cumCost)}</td><td class="t-hoger">${pctOfTotal} %</td></tr>`;
+            }
+        });
+        panel.innerHTML = `
+        <div class="bak-white ram-1-kant rund-8 pad-14-16">
+            <h4 class="underrubrik">Stegvis konsekvensanalys: budgetpåverkan om N grupper åtgärdas</h4>
+            <p class="text-dampad-sm lh-1_55 marg-0-0-10">
+                Visar kumulativ kostnad och täckningsgrad om de prioriterade grupperna åtgärdas i ordning. Det gör det lättare att välja ambition, till exempel de fem första i år eller de tio första.
+            </p>
+            <table class="data-table st-088">
+                <thead><tr><th>Åtgärd</th><th class="t-hoger">Antal personer</th><th class="t-hoger">Kostnad att nå referensen</th><th class="t-hoger">Andel av total</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+    `;
+        panel.style.display = 'block';
+    });
+    ['prio-cfg-atgard','prio-cfg-akutN','prio-cfg-bevaka','prio-cfg-analysera'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => {
+            _readPrioConfigInputs();
+            renderPrioritering();
+        });
+    });
+    document.getElementById('prio-cfg-reset')?.addEventListener('click', () => {
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-atgard')).value    = String(PRIO_CONFIG_DEFAULTS.atgardThreshold);
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-akutN')).value     = String(PRIO_CONFIG_DEFAULTS.akutMinN);
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-bevaka')).value    = String(PRIO_CONFIG_DEFAULTS.bevakaThreshold);
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-analysera')).value = String(PRIO_CONFIG_DEFAULTS.analyseraThreshold);
+        _readPrioConfigInputs();
+        renderPrioritering();
+    });
+    ['prio-w-avvikelse','prio-w-volym','prio-w-jamstalldhet'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => {
+            _readPrioWeightsInputs();
+            renderPrioritering();
+        });
+    });
+    document.getElementById('prio-w-reset')?.addEventListener('click', () => {
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-w-avvikelse')).value    = String(PRIO_WEIGHTS_DEFAULTS.avvikelse);
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-w-volym')).value        = String(PRIO_WEIGHTS_DEFAULTS.volym);
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-w-jamstalldhet')).value = String(PRIO_WEIGHTS_DEFAULTS.jamstalldhet);
+        _readPrioWeightsInputs();
+        renderPrioritering();
+    });
+    ['prio-cost-months','prio-po-pct'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', _kostnadAndrad);
+        document.getElementById(id)?.addEventListener('change', _kostnadAndrad);
+    });
+    document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-cost-months')).value = String(COST_DEFAULTS.months);
+        /** @type {HTMLInputElement} */ (document.getElementById('prio-po-pct')).value      = String(COST_DEFAULTS.poPct);
+        _kostnadAndrad();
+    });
+    // Initiera period-sammanfattningen vid sidladdning
+    setTimeout(() => { _readCostSettings(); visningNy(); }, 0);   // kostnadsinställningarna läses: ingen ritad flik visas igen (ADR-81)
+    document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
+        const table = document.getElementById('prio-table');
+        if (table) {
+            const wb = tableToCleanBook('prio-table', 'Prioritering');
+            if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _showExportSensitivityToast(); }
+        }
+    }));
 }

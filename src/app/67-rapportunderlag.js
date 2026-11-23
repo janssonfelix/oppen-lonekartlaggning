@@ -250,13 +250,6 @@ async function _kopieraRapportAvsnittExport() {
     return ok ? 'urklipp' : 'markerat';
 }
 
-document.addEventListener('click', async e => {
-    const knapp = /** @type {HTMLElement} */ (e.target).closest('#btn-ru-kopiera-avsnitt');
-    if (!knapp) return;
-    const utfall = await kopieraRapportAvsnitt();
-    _rapportKvitto(knapp, utfall === 'urklipp' ? 'Kopierat' : utfall === 'markerat' ? 'Markerat — tryck Ctrl+C' : 'Kunde inte kopiera');
-});
-
 function _rapportKvitto(knapp, text) {
     const k = knapp && knapp.parentElement && knapp.parentElement.querySelector('.ru-kvitto');
     if (k) k.textContent = text;
@@ -292,13 +285,6 @@ async function _kopieraRapportBlockExport(id) {
     try { ok = document.execCommand('copy'); } catch (_e) { ok = false; }
     return ok ? 'urklipp' : 'markerat';
 }
-
-document.addEventListener('click', async e => {
-    const knapp = /** @type {HTMLElement} */ (e.target).closest('[data-rapport-kopiera]');
-    if (!knapp) return;
-    const utfall = await kopieraRapportBlock(/** @type {HTMLElement} */ (knapp).dataset.rapportKopiera);
-    _rapportKvitto(knapp, utfall === 'urklipp' ? 'Kopierat' : utfall === 'markerat' ? 'Markerat — tryck Ctrl+C' : 'Kunde inte kopiera');
-});
 
 // data:-URL → Blob utan fetch: verktygets CSP (connect-src 'none') blockerar fetch av data:.
 function _dataUrlTillBlob(dataUrl) {
@@ -341,12 +327,27 @@ async function _kopieraRapportDiagramExport(id) {
     }
 }
 
-document.addEventListener('click', async e => {
-    const knapp = /** @type {HTMLElement} */ (e.target).closest('[data-rapport-diagram]');
-    if (!knapp) return;
-    const utfall = await kopieraRapportDiagram(/** @type {HTMLElement} */ (knapp).dataset.rapportDiagram);
-    _rapportKvitto(knapp, utfall === 'urklipp' ? 'Kopierat som bild'
-        : utfall === 'nedladdat' ? 'Bilden laddades ner'
-        : utfall === 'fel' ? 'Kunde inte skapa bilden — använd exportmenyn i diagrammet'
-        : 'Diagrammet finns inte för det här underlaget');
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartRapportunderlag() {
+    document.addEventListener('click', async e => {
+        const knapp = /** @type {HTMLElement} */ (e.target).closest('#btn-ru-kopiera-avsnitt');
+        if (!knapp) return;
+        const utfall = await kopieraRapportAvsnitt();
+        _rapportKvitto(knapp, utfall === 'urklipp' ? 'Kopierat' : utfall === 'markerat' ? 'Markerat — tryck Ctrl+C' : 'Kunde inte kopiera');
+    });
+    document.addEventListener('click', async e => {
+        const knapp = /** @type {HTMLElement} */ (e.target).closest('[data-rapport-kopiera]');
+        if (!knapp) return;
+        const utfall = await kopieraRapportBlock(/** @type {HTMLElement} */ (knapp).dataset.rapportKopiera);
+        _rapportKvitto(knapp, utfall === 'urklipp' ? 'Kopierat' : utfall === 'markerat' ? 'Markerat — tryck Ctrl+C' : 'Kunde inte kopiera');
+    });
+    document.addEventListener('click', async e => {
+        const knapp = /** @type {HTMLElement} */ (e.target).closest('[data-rapport-diagram]');
+        if (!knapp) return;
+        const utfall = await kopieraRapportDiagram(/** @type {HTMLElement} */ (knapp).dataset.rapportDiagram);
+        _rapportKvitto(knapp, utfall === 'urklipp' ? 'Kopierat som bild'
+            : utfall === 'nedladdat' ? 'Bilden laddades ner'
+            : utfall === 'fel' ? 'Kunde inte skapa bilden — använd exportmenyn i diagrammet'
+            : 'Diagrammet finns inte för det här underlaget');
+    });
+}

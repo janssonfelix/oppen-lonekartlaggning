@@ -73,5 +73,8 @@ async function _exportZipExport() {
         if (oppen && oppen.getAttribute('data-tab') === 'dokumentera' && typeof renderExportBesked === 'function') renderExportBesked();
     }
 }
-document.getElementById('btn-export-zip')?.addEventListener('click', () => { exportZip(); });
 
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartZipExport() {
+    document.getElementById('btn-export-zip')?.addEventListener('click', () => { exportZip(); });
+}

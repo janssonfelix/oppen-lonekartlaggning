@@ -78,10 +78,6 @@ function _guValHtml() {
     </fieldset></details>`;
 }
 let _guValOppen = false;
-document.addEventListener('toggle', e => {
-    const d = /** @type {HTMLElement} */ (e.target);
-    if (d && d.classList && d.classList.contains('gu-andra') && d.closest('#gap-uppdelning')) _guValOppen = /** @type {HTMLDetailsElement} */ (d).open;
-}, true);
 // Ritar om kortet och lägger tillbaka fokus på samma kontroll (eller rutan för samma variabel, om knappen nu är avstängd).
 function _guAndra(ny, fokus, meddelande) {
     sattGapVariabler(ny);
@@ -91,28 +87,6 @@ function _guAndra(ny, fokus, meddelande) {
     else if (host) { const v = fokus && /data-gu-rad="(\w+)"/.exec(fokus); const r = /** @type {HTMLElement|null} */ (v ? host.querySelector(`[data-gu-var="${v[1]}"]`) : null); if (r) r.focus(); }
     if (meddelande) announceToScreenReader(meddelande);
 }
-document.addEventListener('change', e => {
-    const el = /** @type {HTMLInputElement} */ (e.target);
-    if (!el || !el.closest || !el.closest('#gap-uppdelning .gu-val') || !el.hasAttribute('data-gu-var')) return;
-    const v = /** @type {string} */ (el.getAttribute('data-gu-var'));
-    const val = gapVariabler();
-    const ny = el.checked ? [...val, v].slice(0, _GU_MAX) : val.filter(x => x !== v);
-    if (!ny.length) { el.checked = true; return; }
-    _guAndra(ny, `[data-gu-var="${v}"]`, `Uppdelningen förklarar nu med ${gapVariablerIText(normaliseraGapVariabler(ny).variabler)}.`);
-});
-document.addEventListener('click', e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    if (!t || !t.closest || !t.closest('#gap-uppdelning .gu-val')) return;
-    if (t.closest('[data-gu-standard]')) { _guAndra(null, '[data-gu-var="bas"]', 'Uppdelningen förklarar nu med BAS och AID (standard).'); return; }
-    const knapp = t.closest('[data-gu-flytta]');
-    if (!knapp) return;
-    const v = knapp.closest('[data-gu-rad]')?.getAttribute('data-gu-rad');
-    const steg = Number(knapp.getAttribute('data-gu-flytta'));
-    const val = gapVariabler(), i = val.indexOf(/** @type {string} */ (v)), j = i + steg;
-    if (i < 0 || j < 0 || j >= val.length) return;
-    const ny = [...val]; [ny[i], ny[j]] = [ny[j], ny[i]];
-    _guAndra(ny, `[data-gu-rad="${v}"] [data-gu-flytta="${steg}"]`, `${gapVariabelEtikett(/** @type {string} */ (v))} flyttad ${steg < 0 ? 'upp' : 'ned'}. Ordningen är nu ${gapVariablerIText(normaliseraGapVariabler(ny).variabler)}.`);
-});
 
 function _guKr(v, tecken = true) {
     const r = Math.round(v);
@@ -228,4 +202,34 @@ function _guTrappaFigur(u) {
                 { marke: 'punkt', symbol: 'streck', serie: 'Belopp', legend: false, utanData: true, farg: PALETTE.semantic.mork,
                   data: [{ x: _GU_SERIE.helhet, y: gap, storlek: 0, etikett: _guKr(u.gap), etikettLage: lage(gap, Math.min(gap, 0)) },
                          ...steg.map(s => { const y = Math.round(ande(s)); return { x: s.x, y, storlek: 0, etikett: etikett(s), etikettLage: lage(y, s.lag) }; })] }] };
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartVarUppstarGapet() {
+    document.addEventListener('toggle', e => {
+        const d = /** @type {HTMLElement} */ (e.target);
+        if (d && d.classList && d.classList.contains('gu-andra') && d.closest('#gap-uppdelning')) _guValOppen = /** @type {HTMLDetailsElement} */ (d).open;
+    }, true);
+    document.addEventListener('change', e => {
+        const el = /** @type {HTMLInputElement} */ (e.target);
+        if (!el || !el.closest || !el.closest('#gap-uppdelning .gu-val') || !el.hasAttribute('data-gu-var')) return;
+        const v = /** @type {string} */ (el.getAttribute('data-gu-var'));
+        const val = gapVariabler();
+        const ny = el.checked ? [...val, v].slice(0, _GU_MAX) : val.filter(x => x !== v);
+        if (!ny.length) { el.checked = true; return; }
+        _guAndra(ny, `[data-gu-var="${v}"]`, `Uppdelningen förklarar nu med ${gapVariablerIText(normaliseraGapVariabler(ny).variabler)}.`);
+    });
+    document.addEventListener('click', e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (!t || !t.closest || !t.closest('#gap-uppdelning .gu-val')) return;
+        if (t.closest('[data-gu-standard]')) { _guAndra(null, '[data-gu-var="bas"]', 'Uppdelningen förklarar nu med BAS och AID (standard).'); return; }
+        const knapp = t.closest('[data-gu-flytta]');
+        if (!knapp) return;
+        const v = knapp.closest('[data-gu-rad]')?.getAttribute('data-gu-rad');
+        const steg = Number(knapp.getAttribute('data-gu-flytta'));
+        const val = gapVariabler(), i = val.indexOf(/** @type {string} */ (v)), j = i + steg;
+        if (i < 0 || j < 0 || j >= val.length) return;
+        const ny = [...val]; [ny[i], ny[j]] = [ny[j], ny[i]];
+        _guAndra(ny, `[data-gu-rad="${v}"] [data-gu-flytta="${steg}"]`, `${gapVariabelEtikett(/** @type {string} */ (v))} flyttad ${steg < 0 ? 'upp' : 'ned'}. Ordningen är nu ${gapVariablerIText(normaliseraGapVariabler(ny).variabler)}.`);
+    });
 }

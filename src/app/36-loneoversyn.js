@@ -527,7 +527,6 @@ function _renderForecastLutning(d, sim) {
         beskrivning: `Kvinnors medianlön i procent av mäns per ${niva === 'bas' ? T.niva.en : T.enhet.en} före och efter påslagen i prognosen: strecket är värdet före, punkten värdet efter. Linjen vid 100 procent är lika lön. Samma tal står i tabellen under.` }),
         urval: [niva === 'bas' ? URVAL.bas : URVAL.yrkesgrupp, URVAL.antal] });
 }
-document.getElementById('forecast-lutning-niva')?.addEventListener('change', () => updateForecast());
 
 export function renderForecast() {
     // Spegla state → statiska kontroller (för config-load)
@@ -1016,39 +1015,44 @@ function _exportForecastExport() {
     XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Löneöversynens prognosunderlag exporterat.');
 }
-(function wireForecast() {
-    ['forecast-budget-mode', 'forecast-budget-value', 'forecast-generell-mode', 'forecast-generell-value', 'forecast-min-n', 'forecast-round', 'forecast-years'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) { el.addEventListener('input', updateForecast); el.addEventListener('change', updateForecast); }
-    });
-    document.getElementById('forecast-closure')?.addEventListener('click', _forecastClosure);
-    document.getElementById('forecast-market-btn')?.addEventListener('click', _forecastMarket);
-    document.getElementById('forecast-threshold-btn')?.addEventListener('click', _forecastThreshold);
-    document.getElementById('forecast-sensitivity-btn')?.addEventListener('click', _forecastSensitivity);
-    document.getElementById('forecast-rem-btn')?.addEventListener('click', _forecastRemediation);
-    document.getElementById('forecast-rem-seed')?.addEventListener('click', _forecastRemediationSeed);
-    document.getElementById('forecast-save-a')?.addEventListener('click', () => _forecastSaveScenario('A'));
-    document.getElementById('forecast-save-b')?.addEventListener('click', () => _forecastSaveScenario('B'));
-    document.getElementById('forecast-add-target')?.addEventListener('click', () => {
-        const basList = getBasIntervals();
-        const bas = basList[0] || '';
-        const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
-        state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
-        renderForecastTargets();
-        updateForecast();
-    });
-    document.getElementById('forecast-add-criteria')?.addEventListener('click', _forecastAddByCriteria);
-    document.getElementById('forecast-optimize')?.addEventListener('click', _forecastOptimize);
-    document.getElementById('forecast-optimize-pott')?.addEventListener('click', _forecastOptimizeFranPott);
-    _fcUppdateraForslagPott();
-    document.getElementById('forecast-export')?.addEventListener('click', exportForecast);
-    document.getElementById('forecast-reset')?.addEventListener('click', () => {
-        state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
-        ['forecast-budget-value', 'forecast-generell-value'].forEach(id => { const el = document.getElementById(id); if (el) /** @type {HTMLInputElement} */ (el).value = ''; });
-        const mn = document.getElementById('forecast-min-n'); if (mn) /** @type {HTMLInputElement} */ (mn).value = '10';
-        const rs = document.getElementById('forecast-round'); if (rs) /** @type {HTMLInputElement} */ (rs).value = '0';
-        const yr = document.getElementById('forecast-years'); if (yr) /** @type {HTMLInputElement} */ (yr).value = '1';
-        _fcGlomKnappresultat();
-        renderForecast();
-    });
-})();
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartLoneoversyn() {
+    document.getElementById('forecast-lutning-niva')?.addEventListener('change', () => updateForecast());
+    (function wireForecast() {
+        ['forecast-budget-mode', 'forecast-budget-value', 'forecast-generell-mode', 'forecast-generell-value', 'forecast-min-n', 'forecast-round', 'forecast-years'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.addEventListener('input', updateForecast); el.addEventListener('change', updateForecast); }
+        });
+        document.getElementById('forecast-closure')?.addEventListener('click', _forecastClosure);
+        document.getElementById('forecast-market-btn')?.addEventListener('click', _forecastMarket);
+        document.getElementById('forecast-threshold-btn')?.addEventListener('click', _forecastThreshold);
+        document.getElementById('forecast-sensitivity-btn')?.addEventListener('click', _forecastSensitivity);
+        document.getElementById('forecast-rem-btn')?.addEventListener('click', _forecastRemediation);
+        document.getElementById('forecast-rem-seed')?.addEventListener('click', _forecastRemediationSeed);
+        document.getElementById('forecast-save-a')?.addEventListener('click', () => _forecastSaveScenario('A'));
+        document.getElementById('forecast-save-b')?.addEventListener('click', () => _forecastSaveScenario('B'));
+        document.getElementById('forecast-add-target')?.addEventListener('click', () => {
+            const basList = getBasIntervals();
+            const bas = basList[0] || '';
+            const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
+            state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
+            renderForecastTargets();
+            updateForecast();
+        });
+        document.getElementById('forecast-add-criteria')?.addEventListener('click', _forecastAddByCriteria);
+        document.getElementById('forecast-optimize')?.addEventListener('click', _forecastOptimize);
+        document.getElementById('forecast-optimize-pott')?.addEventListener('click', _forecastOptimizeFranPott);
+        _fcUppdateraForslagPott();
+        document.getElementById('forecast-export')?.addEventListener('click', exportForecast);
+        document.getElementById('forecast-reset')?.addEventListener('click', () => {
+            state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
+            ['forecast-budget-value', 'forecast-generell-value'].forEach(id => { const el = document.getElementById(id); if (el) /** @type {HTMLInputElement} */ (el).value = ''; });
+            const mn = document.getElementById('forecast-min-n'); if (mn) /** @type {HTMLInputElement} */ (mn).value = '10';
+            const rs = document.getElementById('forecast-round'); if (rs) /** @type {HTMLInputElement} */ (rs).value = '0';
+            const yr = document.getElementById('forecast-years'); if (yr) /** @type {HTMLInputElement} */ (yr).value = '1';
+            _fcGlomKnappresultat();
+            renderForecast();
+        });
+    })();
+}

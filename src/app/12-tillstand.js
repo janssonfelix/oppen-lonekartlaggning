@@ -255,7 +255,7 @@ export function ritaOmReferens() {
 export const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
 
 // Statistiska helpers för vyerna; en källa: src/lib/stat.js via spegeln (tests/stat.test.js prövar den).
-export const Stat = { median: median, kvantil: kvantil, linjarRegression: linjarRegression };
+export const Stat = { median, kvantil, linjarRegression };
 
 // Talen i indata (_normaliseraTaltext, tolkaTal, tolkaTalStrikt) tolkas i src/lib/inlasning.js och nås här
 // genom spegeln under samma namn.
@@ -290,8 +290,6 @@ function initTableEnhancements() {
     setupCollapsibleGroups('rapport-table');
     setupCollapsibleGroups('benchmark-table');
 }
-// Körs när DOM är klar (app.js ligger sist i body)
-initTableEnhancements();
 
 // ---- Kopiera/CSV per tabell (visualiserings-Steg 3-komplettering) ------------
 // Sortering fanns redan (enableTableSort); det som saknades var att få UT en
@@ -388,15 +386,20 @@ export function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
         navigator.clipboard.writeText(tsv).then(done).catch(fallback);
     } else { fallback(); }
 }
-document.addEventListener('click', e => {
-    const copyBtn = /** @type {HTMLElement} */ (e.target).closest('[data-copy-table]');
-    if (copyBtn) { _copyTableToClipboard(copyBtn.getAttribute('data-copy-table'), copyBtn); return; }
-    const csvBtn = /** @type {HTMLElement} */ (e.target).closest('[data-csv-table]');
-    if (csvBtn) {
-        const rows = tableToMatrix(csvBtn.getAttribute('data-csv-table'));
-        if (rows.length) _downloadCSV(rows, csvBtn.getAttribute('data-csv-file') || 'tabell',
-            { undantag: _kUndantagFor(document.getElementById(csvBtn.getAttribute('data-csv-table') || '')) });
-        else alert('Tabellen är tom, så det finns inget att exportera.');
-    }
-});
 
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartTillstand() {
+    // Körs när DOM är klar (app.js ligger sist i body)
+    initTableEnhancements();
+    document.addEventListener('click', e => {
+        const copyBtn = /** @type {HTMLElement} */ (e.target).closest('[data-copy-table]');
+        if (copyBtn) { _copyTableToClipboard(copyBtn.getAttribute('data-copy-table'), copyBtn); return; }
+        const csvBtn = /** @type {HTMLElement} */ (e.target).closest('[data-csv-table]');
+        if (csvBtn) {
+            const rows = tableToMatrix(csvBtn.getAttribute('data-csv-table'));
+            if (rows.length) _downloadCSV(rows, csvBtn.getAttribute('data-csv-file') || 'tabell',
+                { undantag: _kUndantagFor(document.getElementById(csvBtn.getAttribute('data-csv-table') || '')) });
+            else alert('Tabellen är tom, så det finns inget att exportera.');
+        }
+    });
+}

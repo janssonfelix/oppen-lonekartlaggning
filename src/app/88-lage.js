@@ -13,7 +13,7 @@ import { announceToScreenReader } from './01-html-och-tillganglighet.js';
  * hur ett resultat ska läsas visas i båda lägena.
  */
 let _lage = 'vagledande';
-export function lage() { return _lage; }   // eslint-disable-line no-unused-vars -- läses av testerna och av den som felsöker i konsolen
+export function lage() { return _lage; }   // läses av testerna och av den som felsöker i konsolen
 
 function sattLage(nytt) {
     const l = nytt === 'kompakt' ? 'kompakt' : 'vagledande';
@@ -26,9 +26,6 @@ function sattLage(nytt) {
     }
     if (andrat && typeof announceToScreenReader === 'function') announceToScreenReader(l === 'kompakt' ? 'Kompakt läge: förklaringarna är undanfällda.' : 'Vägledande läge: förklaringarna visas.');
 }
-
-document.getElementById('lage-vagledande')?.addEventListener('click', () => sattLage('vagledande'));
-document.getElementById('lage-kompakt')?.addEventListener('click', () => sattLage('kompakt'));
 
 // ---- Flikens inledning: en rad, resten bakom «Visa mer» ----
 // Varje .flik-intro läggs i en rad med en knapp. Knappen visas bara när texten faktiskt är avkortad. Valet gäller
@@ -54,4 +51,10 @@ function introRader(rot = document) {
         rad.appendChild(knapp);
     }
 }
-introRader();
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartLage() {
+    document.getElementById('lage-vagledande')?.addEventListener('click', () => sattLage('vagledande'));
+    document.getElementById('lage-kompakt')?.addEventListener('click', () => sattLage('kompakt'));
+    introRader();
+}

@@ -402,24 +402,6 @@ export function skapaPaketMedImportprofil(profil) {
     });
 }
 
-document.getElementById('paket-skapa')?.addEventListener('input', uppdateraPaketKnapp);
-document.getElementById('paket-skapa')?.addEventListener('toggle', uppdateraPaketKnapp);
-document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
-    const formFel = _paketFormularFel();
-    if (formFel) { _paketStatus(formFel, false); return; }
-    const paket = skapaPaket();
-    // Samma kontroll som vid inläsning — ett paket som inte går att läsa in sparas inte.
-    const kontroll = tolkaPaket(JSON.stringify(paket));
-    if (!kontroll.ok) { _paketStatus('Paketet kan inte sparas: ' + kontroll.fel, false); return; }
-    const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = _paketFilnamn(paket.organisation.namn);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
-});
-
 // ---- Organisationsfil: verktyget med paketet inbakat (organisationsfil.md) ----
 const INBAKAT_PAKET_ID = 'inbakat-organisationspaket';   // = MALL_ID i src/lib/organisationsfil.js
 /** @type {File|null} */
@@ -479,13 +461,6 @@ async function skapaOrganisationsfil() {
     announceToScreenReader(meddelande);
     return { ok: true, meddelande };
 }
-document.getElementById('file-input-verktygsfil')?.addEventListener('change', e => {
-    const inp = /** @type {HTMLInputElement} */ (e.target);
-    _verktygsfil = inp.files && inp.files[0] ? inp.files[0] : null;
-    uppdateraOrganisationsfilKnapp();
-});
-document.getElementById('paket-skapa')?.addEventListener('input', uppdateraOrganisationsfilKnapp);
-document.getElementById('btn-organisationsfil-spara')?.addEventListener('click', () => { skapaOrganisationsfil(); });
 
 /**
  * Läser det paket som ligger inbakat i den här filen (mallen med id inbakat-organisationspaket, lagd dit av
@@ -538,28 +513,7 @@ function laddaNerInbakatPaket() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     announceToScreenReader(`Paketet sparat: ${a.download}`);
 }
-document.getElementById('paket-info')?.addEventListener('click', e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    if (t.closest('#btn-paket-visa')) visaInbakatPaket();
-    else if (t.closest('#btn-paket-ladda-ner')) laddaNerInbakatPaket();
-});
 const _stangPaketModal = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; } };
-document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketModal);
-document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketModal(); });
-
-document.getElementById('file-input-paket')?.addEventListener('change', e => {
-    const file = /** @type {HTMLInputElement} */ (e.target).files && /** @type {HTMLInputElement} */ (e.target).files?.[0];
-    if (!file) return;
-    /** @type {HTMLInputElement} */ (e.target).value = '';   // samma fil ska kunna läsas in igen
-    if (file.size > PAKET_MAX_FILSTORLEK) {
-        _paketStatus('Filen är för stor för att vara ett organisationspaket (högst 5 MB).', false);
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = ev => lasInPaket(String(/** @type {FileReader} */ (ev.target).result), file.name);
-    reader.onerror = () => _paketStatus('Filen kunde inte läsas.', false);
-    reader.readAsText(file);
-});
 
 // Organisationstypen (kommun, region eller båda) styr vilken del av SKR:s personalstatistik som
 // är referens för kvinnoandel (ADR-34). Värdet bor i profilen och följer med paket och konfiguration.
@@ -575,14 +529,61 @@ export function sattOrgTyp(v) {
     state.profile = { ...state.profile, orgTyp: v };
     _synkaOrgTyp();
 }
-document.getElementById('org-typ')?.addEventListener('change', e => {
-    sattOrgTyp(/** @type {HTMLInputElement} */ (e.target).value);
-    if (!state.data.length) return;
-    invalidateStatCaches();
-    updateCompliance();
-    renderActionChecklist();
-    refreshCurrentTab();
-});
 
-_fyllPaketFormular();
-_synkaOrgTyp();
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartOrganisationspaket() {
+    document.getElementById('paket-skapa')?.addEventListener('input', uppdateraPaketKnapp);
+    document.getElementById('paket-skapa')?.addEventListener('toggle', uppdateraPaketKnapp);
+    document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
+        const formFel = _paketFormularFel();
+        if (formFel) { _paketStatus(formFel, false); return; }
+        const paket = skapaPaket();
+        // Samma kontroll som vid inläsning — ett paket som inte går att läsa in sparas inte.
+        const kontroll = tolkaPaket(JSON.stringify(paket));
+        if (!kontroll.ok) { _paketStatus('Paketet kan inte sparas: ' + kontroll.fel, false); return; }
+        const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = _paketFilnamn(paket.organisation.namn);
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
+    });
+    document.getElementById('file-input-verktygsfil')?.addEventListener('change', e => {
+        const inp = /** @type {HTMLInputElement} */ (e.target);
+        _verktygsfil = inp.files && inp.files[0] ? inp.files[0] : null;
+        uppdateraOrganisationsfilKnapp();
+    });
+    document.getElementById('paket-skapa')?.addEventListener('input', uppdateraOrganisationsfilKnapp);
+    document.getElementById('btn-organisationsfil-spara')?.addEventListener('click', () => { skapaOrganisationsfil(); });
+    document.getElementById('paket-info')?.addEventListener('click', e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (t.closest('#btn-paket-visa')) visaInbakatPaket();
+        else if (t.closest('#btn-paket-ladda-ner')) laddaNerInbakatPaket();
+    });
+    document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketModal);
+    document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketModal(); });
+    document.getElementById('file-input-paket')?.addEventListener('change', e => {
+        const file = /** @type {HTMLInputElement} */ (e.target).files && /** @type {HTMLInputElement} */ (e.target).files?.[0];
+        if (!file) return;
+        /** @type {HTMLInputElement} */ (e.target).value = '';   // samma fil ska kunna läsas in igen
+        if (file.size > PAKET_MAX_FILSTORLEK) {
+            _paketStatus('Filen är för stor för att vara ett organisationspaket (högst 5 MB).', false);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => lasInPaket(String(/** @type {FileReader} */ (ev.target).result), file.name);
+        reader.onerror = () => _paketStatus('Filen kunde inte läsas.', false);
+        reader.readAsText(file);
+    });
+    document.getElementById('org-typ')?.addEventListener('change', e => {
+        sattOrgTyp(/** @type {HTMLInputElement} */ (e.target).value);
+        if (!state.data.length) return;
+        invalidateStatCaches();
+        updateCompliance();
+        renderActionChecklist();
+        refreshCurrentTab();
+    });
+    _fyllPaketFormular();
+    _synkaOrgTyp();
+}

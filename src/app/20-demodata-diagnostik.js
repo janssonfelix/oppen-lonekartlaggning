@@ -229,12 +229,6 @@ export function loadDemoData() {
     `;
     _renderDemoBanner();
 }
-// #9: samma demoladdning nås från självdiagnostiken, den synliga "Prova"-knappen
-// OCH länken i första-intryck-hinten.
-// Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
-['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>
-    document.getElementById(id)?.addEventListener('click', loadDemoData));
-document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData);
 
 // #9 Demo-/utbildningsläge: visa/dölj en tydlig banner så syntetisk demodata
 // aldrig förväxlas med verklig analys. Banner-elementet finns i index.html.
@@ -253,4 +247,14 @@ export function _renderDemoBanner() {
     // #5 Export-hubben är bara meningsfull när det finns data att exportera
     const hub = document.getElementById('export-hub');
     if (hub) hub.style.display = state.data.length ? 'block' : 'none';   // 'block', inte '': klassen .dold i markeringen döljer annars kortet
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartDemodataDiagnostik() {
+    // #9: samma demoladdning nås från självdiagnostiken, den synliga "Prova"-knappen
+    // OCH länken i första-intryck-hinten.
+    // Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
+    ['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>
+        document.getElementById(id)?.addEventListener('click', loadDemoData));
+    document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData);
 }

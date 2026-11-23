@@ -3,27 +3,6 @@
 import { releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
 import { state } from './12-tillstand.js';
 
-// ---- GDPR info-modal (kompakt -> full info) ----
-document.getElementById('gdpr-info-readmore')?.addEventListener('click', () => {
-    const m = document.getElementById('gdpr-info-modal');
-    if (m) { m.style.display = 'flex'; trapFocus(m); }
-});
-document.getElementById('gdpr-info-close')?.addEventListener('click', () => {
-    const m = document.getElementById('gdpr-info-modal');
-    if (m) { releaseFocus(m); m.style.display = 'none'; }
-});
-document.querySelector('#gdpr-info-modal .yrke-backdrop')?.addEventListener('click', () => {
-    const m = document.getElementById('gdpr-info-modal');
-    if (m) { releaseFocus(m); m.style.display = 'none'; }
-});
-// Esc-tangent för GDPR-modal
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('gdpr-info-modal')?.style.display === 'flex') {
-        const m = /** @type {HTMLElement} */ (document.getElementById('gdpr-info-modal'));
-        releaseFocus(m); m.style.display = 'none';
-    }
-});
-
 // ---- GDPR-banner: visar lokal-bearbetning-status ----
 export function updateGdprBanner() {
     const banner = document.getElementById('gdpr-banner');
@@ -39,4 +18,28 @@ export function updateGdprBanner() {
     } else {
         banner.style.display = 'none';
     }
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartDataskyddsinfo() {
+    // ---- GDPR info-modal (kompakt -> full info) ----
+    document.getElementById('gdpr-info-readmore')?.addEventListener('click', () => {
+        const m = document.getElementById('gdpr-info-modal');
+        if (m) { m.style.display = 'flex'; trapFocus(m); }
+    });
+    document.getElementById('gdpr-info-close')?.addEventListener('click', () => {
+        const m = document.getElementById('gdpr-info-modal');
+        if (m) { releaseFocus(m); m.style.display = 'none'; }
+    });
+    document.querySelector('#gdpr-info-modal .yrke-backdrop')?.addEventListener('click', () => {
+        const m = document.getElementById('gdpr-info-modal');
+        if (m) { releaseFocus(m); m.style.display = 'none'; }
+    });
+    // Esc-tangent för GDPR-modal
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('gdpr-info-modal')?.style.display === 'flex') {
+            const m = /** @type {HTMLElement} */ (document.getElementById('gdpr-info-modal'));
+            releaseFocus(m); m.style.display = 'none';
+        }
+    });
 }

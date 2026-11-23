@@ -141,4 +141,8 @@ export function _kopplaNamnFalt(id, satt) {
         if (!r.ok) { synkaNamnFalt(); if (typeof renderReferensKort === 'function') renderReferensKort(); }
     });
 }
-_kopplaNamnFalt('kl-org-name', sattOrgNamn);
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartStandardinstallningar() {
+    _kopplaNamnFalt('kl-org-name', sattOrgNamn);
+}

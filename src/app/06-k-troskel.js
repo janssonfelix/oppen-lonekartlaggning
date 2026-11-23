@@ -272,21 +272,6 @@ export function _kVisaFel(meddelande) {
     fel.textContent = meddelande || '';
     fel.hidden = !meddelande;
 }
-document.getElementById('k-troskel')?.addEventListener('change', e => {
-    const r = sattKTroskel(/** @type {HTMLInputElement} */ (e.target).value, { stegvis: true });
-    _kVisaFel(r.ok || r.nekad ? '' : r.fel);
-    const sag = () => { if (r.ok && typeof announceToScreenReader === 'function') announceToScreenReader(`Minsta gruppstorlek är nu ${r.varde}.`); };
-    if (r.klar) r.klar.then(sag); else sag();
-});
-document.getElementById('btn-k-aterstall')?.addEventListener('click', () => {
-    sattKTroskel(_kAterstallVarde(), { fraga: false, stegvis: true });
-    _kVisaFel('');
-});
-// Länken i varningen: öppna inställningarna med fokus i fältet.
-document.getElementById('k-troskel-varning-lank')?.addEventListener('click', e => {
-    e.preventDefault();
-    if (typeof oppnaInstallningar === 'function') oppnaInstallningar({ fokus: 'k-troskel' });
-});
 
 /**
  * Sätter tröskeln. Sänkning till ett värde under standard kräver bekräftelse (fraga: false
@@ -486,3 +471,21 @@ export function _renderaOmAllaFlikarStegvis() {
     return _omritningPagar;
 }
 
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartKTroskel() {
+    document.getElementById('k-troskel')?.addEventListener('change', e => {
+        const r = sattKTroskel(/** @type {HTMLInputElement} */ (e.target).value, { stegvis: true });
+        _kVisaFel(r.ok || r.nekad ? '' : r.fel);
+        const sag = () => { if (r.ok && typeof announceToScreenReader === 'function') announceToScreenReader(`Minsta gruppstorlek är nu ${r.varde}.`); };
+        if (r.klar) r.klar.then(sag); else sag();
+    });
+    document.getElementById('btn-k-aterstall')?.addEventListener('click', () => {
+        sattKTroskel(_kAterstallVarde(), { fraga: false, stegvis: true });
+        _kVisaFel('');
+    });
+    // Länken i varningen: öppna inställningarna med fokus i fältet.
+    document.getElementById('k-troskel-varning-lank')?.addEventListener('click', e => {
+        e.preventDefault();
+        if (typeof oppnaInstallningar === 'function') oppnaInstallningar({ fokus: 'k-troskel' });
+    });
+}

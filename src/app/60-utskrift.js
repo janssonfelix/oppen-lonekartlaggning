@@ -175,8 +175,6 @@ async function _buildPrintReportExport() {
     }
 }
 
-document.getElementById('btn-export-pdf')?.addEventListener('click', buildPrintReport);
-
 // ====================================================================
 // Word-utkast: redigerbar §§ 8–14-dokumentation ("sista milen")
 // --------------------------------------------------------------------
@@ -187,8 +185,6 @@ document.getElementById('btn-export-pdf')?.addEventListener('click', buildPrintR
 // kompletterar och äger slutdokumentet — inget lagras, inget skickas (samma
 // lokal-only-princip som övriga exporter; .doc byggs som en lokal Blob).
 // ====================================================================
-
-
 
 // Skriv ut en scaffold-flik (§ 8-checklista / handlingsplansmall) i ett rent
 // fönster med alla <details> expanderade. Offlinesäkert: inga nätverksanrop,
@@ -249,12 +245,6 @@ function printScaffoldView(viewId, heading) {
     w.focus();
     setTimeout(() => { try { w.print(); } catch (_e) {} }, 250);
 }
-// Generisk koppling: knappar med data-print-view="<viewId>" data-print-title="..."
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-print-view]');
-    if (!btn) return;
-    printScaffoldView(btn.getAttribute('data-print-view'), btn.getAttribute('data-print-title') || 'Checklista');
-});
 
 // Webbläsarens egen utskrift (Ctrl+P) skriver ut den aktiva fliken. Hopfällda avsnitt går inte att fälla ut i
 // stilmallen, så de öppnas före utskriften och fälls tillbaka efteråt. PDF-rapporten (body.print-mode) berörs inte.
@@ -273,5 +263,16 @@ function _utskriftEfter() {
         d.removeAttribute('data-oppnad-for-utskrift');
     });
 }
-window.addEventListener('beforeprint', _utskriftFore);
-window.addEventListener('afterprint', _utskriftEfter);
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartUtskrift() {
+    document.getElementById('btn-export-pdf')?.addEventListener('click', buildPrintReport);
+    // Generisk koppling: knappar med data-print-view="<viewId>" data-print-title="..."
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('[data-print-view]');
+        if (!btn) return;
+        printScaffoldView(btn.getAttribute('data-print-view'), btn.getAttribute('data-print-title') || 'Checklista');
+    });
+    window.addEventListener('beforeprint', _utskriftFore);
+    window.addEventListener('afterprint', _utskriftEfter);
+}

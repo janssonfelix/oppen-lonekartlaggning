@@ -292,14 +292,17 @@ export function utAllaDiagramEfterExport() {
     }
 }
 
-// ---- Kopplingar ----
-document.querySelectorAll('[data-ut-underflik]').forEach(b => {
-    b.addEventListener('click', () => utValjUnderflik(/** @type {HTMLElement} */ (b).dataset.utUnderflik || 'egna'));
-});
-_wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-ut-underflik]')]));
-// En grupp som öppnas ritar sina kopior. toggle bubblar inte: lyssnaren fångar den på vägen ned. En grupp som öppnas
-// medan samlingen inte visas ritas när den visas.
-document.getElementById('ut-alla-grupper')?.addEventListener('toggle', e => {
-    const g = /** @type {HTMLDetailsElement} */ (e.target);
-    if (g && g.matches && g.matches('details[data-ut-flik]') && g.open && _utAllaVisas()) utAllaGruppRita(g);
-}, true);
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartAllaDiagram() {
+    // ---- Kopplingar ----
+    document.querySelectorAll('[data-ut-underflik]').forEach(b => {
+        b.addEventListener('click', () => utValjUnderflik(/** @type {HTMLElement} */ (b).dataset.utUnderflik || 'egna'));
+    });
+    _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-ut-underflik]')]));
+    // En grupp som öppnas ritar sina kopior. toggle bubblar inte: lyssnaren fångar den på vägen ned. En grupp som öppnas
+    // medan samlingen inte visas ritas när den visas.
+    document.getElementById('ut-alla-grupper')?.addEventListener('toggle', e => {
+        const g = /** @type {HTMLDetailsElement} */ (e.target);
+        if (g && g.matches && g.matches('details[data-ut-flik]') && g.open && _utAllaVisas()) utAllaGruppRita(g);
+    }, true);
+}

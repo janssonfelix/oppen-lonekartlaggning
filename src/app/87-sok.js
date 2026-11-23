@@ -205,36 +205,39 @@ export function sokUppdatera() {
     _sokHadeData = har;
 }
 
-document.getElementById('sok-grupp')?.addEventListener('input', _sokRita);
-document.getElementById('sok-grupp')?.addEventListener('focus', () => { if (/** @type {HTMLInputElement} */ (document.getElementById('sok-grupp')).value.trim()) _sokRita(); });
-document.getElementById('sok-grupp')?.addEventListener('keydown', e => {
-    const oppen = !/** @type {HTMLElement} */ (document.getElementById('sok-grupp-lista')).hidden;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        if (!_sokTraffar.length) return;
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartSok() {
+    document.getElementById('sok-grupp')?.addEventListener('input', _sokRita);
+    document.getElementById('sok-grupp')?.addEventListener('focus', () => { if (/** @type {HTMLInputElement} */ (document.getElementById('sok-grupp')).value.trim()) _sokRita(); });
+    document.getElementById('sok-grupp')?.addEventListener('keydown', e => {
+        const oppen = !/** @type {HTMLElement} */ (document.getElementById('sok-grupp-lista')).hidden;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            if (!_sokTraffar.length) return;
+            e.preventDefault();
+            _sokAktiv = (_sokAktiv + (e.key === 'ArrowDown' ? 1 : -1) + _sokTraffar.length) % _sokTraffar.length;
+            _sokMarkeraAktiv();
+        } else if (e.key === 'Enter') {
+            if (_sokAktiv >= 0) { e.preventDefault(); sokValj(_sokAktiv, { uppskjut: e.isTrusted }); }
+        } else if (e.key === 'Escape' && (oppen || /** @type {HTMLInputElement} */ (e.target).value)) {
+            // Escape i fältet stänger listan; markeringen (som Escape annars tar bort) rörs inte.
+            e.stopPropagation();
+            _sokStang();
+        }
+    });
+    document.getElementById('sok-grupp-lista')?.addEventListener('mousedown', e => e.preventDefault());   // fältet behåller fokus vid klick i listan
+    document.getElementById('sok-grupp-lista')?.addEventListener('click', e => {
+        const li = /** @type {HTMLElement} */ (e.target).closest('[data-sok-index]');
+        if (li) sokValj(Number(li.getAttribute('data-sok-index')), { uppskjut: e.isTrusted });
+    });
+    document.getElementById('sok-grupp')?.addEventListener('blur', () => _sokStang({ tom: false }));
+    // Kortkommandon: "/" (utanför textfält) och Ctrl/Cmd+K sätter fokus i sökfältet.
+    document.addEventListener('keydown', e => {
+        const falt = document.getElementById('sok-grupp'), ruta = document.getElementById('sok-ruta');
+        if (!falt || !ruta || ruta.hidden) return;
+        const iFalt = e.target && /** @type {HTMLElement} */ (e.target).matches && /** @type {HTMLElement} */ (e.target).matches('input, textarea, select, [contenteditable="true"]');
+        const snabb = (e.key === '/' && !iFalt && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k');
+        if (!snabb || document.querySelector('[role="dialog"][style*="flex"]')) return;
         e.preventDefault();
-        _sokAktiv = (_sokAktiv + (e.key === 'ArrowDown' ? 1 : -1) + _sokTraffar.length) % _sokTraffar.length;
-        _sokMarkeraAktiv();
-    } else if (e.key === 'Enter') {
-        if (_sokAktiv >= 0) { e.preventDefault(); sokValj(_sokAktiv, { uppskjut: e.isTrusted }); }
-    } else if (e.key === 'Escape' && (oppen || /** @type {HTMLInputElement} */ (e.target).value)) {
-        // Escape i fältet stänger listan; markeringen (som Escape annars tar bort) rörs inte.
-        e.stopPropagation();
-        _sokStang();
-    }
-});
-document.getElementById('sok-grupp-lista')?.addEventListener('mousedown', e => e.preventDefault());   // fältet behåller fokus vid klick i listan
-document.getElementById('sok-grupp-lista')?.addEventListener('click', e => {
-    const li = /** @type {HTMLElement} */ (e.target).closest('[data-sok-index]');
-    if (li) sokValj(Number(li.getAttribute('data-sok-index')), { uppskjut: e.isTrusted });
-});
-document.getElementById('sok-grupp')?.addEventListener('blur', () => _sokStang({ tom: false }));
-// Kortkommandon: "/" (utanför textfält) och Ctrl/Cmd+K sätter fokus i sökfältet.
-document.addEventListener('keydown', e => {
-    const falt = document.getElementById('sok-grupp'), ruta = document.getElementById('sok-ruta');
-    if (!falt || !ruta || ruta.hidden) return;
-    const iFalt = e.target && /** @type {HTMLElement} */ (e.target).matches && /** @type {HTMLElement} */ (e.target).matches('input, textarea, select, [contenteditable="true"]');
-    const snabb = (e.key === '/' && !iFalt && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k');
-    if (!snabb || document.querySelector('[role="dialog"][style*="flex"]')) return;
-    e.preventDefault();
-    falt.focus(); /** @type {HTMLInputElement} */ (falt).select();
-});
+        falt.focus(); /** @type {HTMLInputElement} */ (falt).select();
+    });
+}

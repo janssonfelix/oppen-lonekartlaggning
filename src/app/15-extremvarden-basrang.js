@@ -68,4 +68,7 @@ export function renderOutliers() {
     </p>`;
 }
 
-document.getElementById('outliers-threshold')?.addEventListener('input', renderOutliers);
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartExtremvardenBasrang() {
+    document.getElementById('outliers-threshold')?.addEventListener('input', renderOutliers);
+}

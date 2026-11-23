@@ -299,48 +299,51 @@ function _chartExportStang(utom) {
     });
 }
 
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('.chart-export-btn');
-    if (btn) {
-        const meny = /** @type {HTMLElement} */ (/** @type {HTMLElement} */ (btn.parentElement).querySelector('.chart-export-meny'));
-        const oppna = /** @type {HTMLElement} */ (meny).hidden;
-        _chartExportStang(meny);
-        /** @type {HTMLElement} */ (meny).hidden = !oppna;
-        btn.setAttribute('aria-expanded', String(oppna));
-        if (oppna) meny.querySelector('button')?.focus();
-        return;
-    }
-    const val = /** @type {HTMLElement} */ (e.target).closest('[data-chart-export]');
-    if (val) {
-        const wrap = /** @type {HTMLElement} */ (val.closest('.chart-export'));
-        const fel = /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-fel'));
-        /** @type {HTMLElement} */ (fel).hidden = true;
-        chartExportRun(wrap._gd, val.getAttribute('data-chart-export'))
-            .then(() => {
-                _chartExportStang();
-                /** @type {HTMLInputElement} */ (wrap.querySelector('.chart-export-btn'))?.focus();   // fokus tillbaka dit man var
-            })
-            .catch(err => {
-                fel.textContent = 'Exporten misslyckades: ' + ((err && err.message) || String(err));
-                /** @type {HTMLElement} */ (fel).hidden = false;
-            });
-        return;
-    }
-    // En tabells exportmeny (.tabell-export) har egna knappar med egna lyssnare: menyn stängs när ett val gjorts.
-    if (!/** @type {HTMLElement} */ (e.target).closest('.chart-export') || /** @type {HTMLElement} */ (e.target).closest('.tabell-export .chart-export-meny button')) _chartExportStang();
-});
-// Stäng menyn när tangentbordsfokus lämnar den (Tab ut).
-document.addEventListener('focusout', e => {
-    const wrap = /** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('.chart-export');
-    if (!wrap) return;
-    if (e.relatedTarget && wrap.contains(/** @type {Node} */ (e.relatedTarget))) return;
-    const meny = wrap.querySelector('.chart-export-meny');
-    if (meny && !/** @type {HTMLElement} */ (meny).hidden) _chartExportStang();
-});
-document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    const oppen = document.querySelector('.chart-export-meny:not([hidden])');
-    if (!oppen) return;
-    _chartExportStang();
-    /** @type {HTMLElement} */ (/** @type {HTMLInputElement} */ (oppen.parentElement).querySelector('.chart-export-btn'))?.focus();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartDiagramexport() {
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('.chart-export-btn');
+        if (btn) {
+            const meny = /** @type {HTMLElement} */ (/** @type {HTMLElement} */ (btn.parentElement).querySelector('.chart-export-meny'));
+            const oppna = /** @type {HTMLElement} */ (meny).hidden;
+            _chartExportStang(meny);
+            /** @type {HTMLElement} */ (meny).hidden = !oppna;
+            btn.setAttribute('aria-expanded', String(oppna));
+            if (oppna) meny.querySelector('button')?.focus();
+            return;
+        }
+        const val = /** @type {HTMLElement} */ (e.target).closest('[data-chart-export]');
+        if (val) {
+            const wrap = /** @type {HTMLElement} */ (val.closest('.chart-export'));
+            const fel = /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-fel'));
+            /** @type {HTMLElement} */ (fel).hidden = true;
+            chartExportRun(wrap._gd, val.getAttribute('data-chart-export'))
+                .then(() => {
+                    _chartExportStang();
+                    /** @type {HTMLInputElement} */ (wrap.querySelector('.chart-export-btn'))?.focus();   // fokus tillbaka dit man var
+                })
+                .catch(err => {
+                    fel.textContent = 'Exporten misslyckades: ' + ((err && err.message) || String(err));
+                    /** @type {HTMLElement} */ (fel).hidden = false;
+                });
+            return;
+        }
+        // En tabells exportmeny (.tabell-export) har egna knappar med egna lyssnare: menyn stängs när ett val gjorts.
+        if (!/** @type {HTMLElement} */ (e.target).closest('.chart-export') || /** @type {HTMLElement} */ (e.target).closest('.tabell-export .chart-export-meny button')) _chartExportStang();
+    });
+    // Stäng menyn när tangentbordsfokus lämnar den (Tab ut).
+    document.addEventListener('focusout', e => {
+        const wrap = /** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('.chart-export');
+        if (!wrap) return;
+        if (e.relatedTarget && wrap.contains(/** @type {Node} */ (e.relatedTarget))) return;
+        const meny = wrap.querySelector('.chart-export-meny');
+        if (meny && !/** @type {HTMLElement} */ (meny).hidden) _chartExportStang();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const oppen = document.querySelector('.chart-export-meny:not([hidden])');
+        if (!oppen) return;
+        _chartExportStang();
+        /** @type {HTMLElement} */ (/** @type {HTMLInputElement} */ (oppen.parentElement).querySelector('.chart-export-btn'))?.focus();
+    });
+}

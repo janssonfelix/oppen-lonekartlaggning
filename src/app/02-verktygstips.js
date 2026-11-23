@@ -60,12 +60,6 @@ export function _hideChartTip() {
     if (typeof _rfTipsDolt === 'function') _rfTipsDolt();
 }
 
-// Globalt: dölj (och töm) diagrammens verktygstips vid rullning, ändrad fönsterstorlek och Escape — när diagrammet
-// rör sig under pekaren står tipset annars kvar på fel plats, med ett lönevärde i.
-window.addEventListener('scroll', _hideChartTip, true);
-window.addEventListener('resize', _hideChartTip);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideChartTip(); });
-
 // ---- Punkt-sampling för stora punktmoln (prestanda) ----
 // Vid mycket stora underlag (tiotusentals rader) blir punktmolnet trögt och punkterna överlappar ändå till
 // oläsbarhet. Diagramkärnan ritar då ett DETERMINISTISKT, jämnt fördelat urval (var k:te punkt) — ENBART
@@ -219,36 +213,44 @@ function _restoreTitle(host) {
     }
 }
 
-document.addEventListener('mouseover', e => {
-    const host = _findTipHost(e.target);
-    if (host) {
-        _stealTitle(host);
-        _showTip(host);
-    }
-});
-document.addEventListener('mouseout', e => {
-    // Hitta värd från ut-händelsen (kan vara delegerad descendant)
-    const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
-    if (host && (!e.relatedTarget || !host.contains(e.relatedTarget))) {
-        _hideTip();
-        _restoreTitle(host);
-    }
-});
-document.addEventListener('focusin', e => {
-    const host = _findTipHost(e.target);
-    if (host) {
-        _stealTitle(host);
-        _showTip(host);
-    }
-});
-document.addEventListener('focusout', e => {
-    const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
-    if (host) {
-        _hideTip();
-        _restoreTitle(host);
-    }
-});
-// Dölj vid scroll/resize/escape — tooltipen följer inte med när värd-elementet flyttas
-window.addEventListener('scroll', _hideTip, true);
-window.addEventListener('resize', _hideTip);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideTip(); });
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartVerktygstips() {
+    // Globalt: dölj (och töm) diagrammens verktygstips vid rullning, ändrad fönsterstorlek och Escape — när diagrammet
+    // rör sig under pekaren står tipset annars kvar på fel plats, med ett lönevärde i.
+    window.addEventListener('scroll', _hideChartTip, true);
+    window.addEventListener('resize', _hideChartTip);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideChartTip(); });
+    document.addEventListener('mouseover', e => {
+        const host = _findTipHost(e.target);
+        if (host) {
+            _stealTitle(host);
+            _showTip(host);
+        }
+    });
+    document.addEventListener('mouseout', e => {
+        // Hitta värd från ut-händelsen (kan vara delegerad descendant)
+        const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
+        if (host && (!e.relatedTarget || !host.contains(e.relatedTarget))) {
+            _hideTip();
+            _restoreTitle(host);
+        }
+    });
+    document.addEventListener('focusin', e => {
+        const host = _findTipHost(e.target);
+        if (host) {
+            _stealTitle(host);
+            _showTip(host);
+        }
+    });
+    document.addEventListener('focusout', e => {
+        const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
+        if (host) {
+            _hideTip();
+            _restoreTitle(host);
+        }
+    });
+    // Dölj vid scroll/resize/escape — tooltipen följer inte med när värd-elementet flyttas
+    window.addEventListener('scroll', _hideTip, true);
+    window.addEventListener('resize', _hideTip);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideTip(); });
+}

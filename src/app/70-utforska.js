@@ -164,8 +164,6 @@ function _explorerSpec() {
     };
 }
 
-
-
 function _explorerSyncControls(spec, typ, valdTyp, urval) {
     const typSel = document.getElementById('explore-typ');
     if (typSel) {
@@ -493,17 +491,6 @@ export function explorerSlappMinne() {
 
 // ---- Wiring ----
 const _exploreVy = document.getElementById('view-utforska');
-_exploreVy?.addEventListener('change', e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    if (['explore-rad', 'explore-kolumn', 'explore-measure', 'explore-visa',
-         'explore-typ', 'explore-inkludera-sma', 'explore-sla-ihop', 'explore-stapel-visa'].includes(/** @type {HTMLElement} */ (t).id)) renderExplorer();
-});
-_exploreVy?.addEventListener('click', e => {
-    if (/** @type {HTMLElement} */ (e.target).closest('[data-explore-clear]')) {
-        explorerNollstallUrval();
-        renderExplorer();
-    }
-});
 
 // ---- Egna tabeller i rapporten (ADR-52) ----
 // Vyn sparas som ett recept (rader, kolumner, mått, urval); talen räknas om när rapporten byggs, i exportläget.
@@ -523,5 +510,20 @@ function explorerTillRapport() {
     if (typeof announceToScreenReader === 'function') announceToScreenReader(`Tabellen ${recept.namn} är tillagd i rapporten.`);
     return recept;
 }
-document.getElementById('btn-explore-till-rapport')?.addEventListener('click', explorerTillRapport);
-document.getElementById('explore-rapport-namn')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); explorerTillRapport(); } });
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartUtforska() {
+    _exploreVy?.addEventListener('change', e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (['explore-rad', 'explore-kolumn', 'explore-measure', 'explore-visa',
+             'explore-typ', 'explore-inkludera-sma', 'explore-sla-ihop', 'explore-stapel-visa'].includes(/** @type {HTMLElement} */ (t).id)) renderExplorer();
+    });
+    _exploreVy?.addEventListener('click', e => {
+        if (/** @type {HTMLElement} */ (e.target).closest('[data-explore-clear]')) {
+            explorerNollstallUrval();
+            renderExplorer();
+        }
+    });
+    document.getElementById('btn-explore-till-rapport')?.addEventListener('click', explorerTillRapport);
+    document.getElementById('explore-rapport-namn')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); explorerTillRapport(); } });
+}

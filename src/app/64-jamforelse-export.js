@@ -163,4 +163,7 @@ function _exportBenchmarkExcelExport() {
     announceToScreenReader(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? '' : 'er'}, ${nPersoner} person${nPersoner === 1 ? '' : 'er'}.`);
 }
 
-document.getElementById('btn-export-benchmark')?.addEventListener('click', exportBenchmarkExcel);
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartJamforelseExport() {
+    document.getElementById('btn-export-benchmark')?.addEventListener('click', exportBenchmarkExcel);
+}

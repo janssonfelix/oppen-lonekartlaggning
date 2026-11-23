@@ -75,16 +75,6 @@ function _closeEvidenceModal() {
     modal.style.display = 'none';
 }
 
-// Stäng-handlers + Esc-tangent
-document.addEventListener('click', e => {
-    if (/** @type {HTMLElement} */ (e.target).closest('[data-evidence-close]')) _closeEvidenceModal();
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('evidence-modal')?.style.display === 'flex') {
-        _closeEvidenceModal();
-    }
-});
-
 /**
  * Bygger bevis-payload för ett § 3:10-par.
  * @param {Object} p - par-objekt från likvardighetspar
@@ -412,3 +402,15 @@ export function _evidenceForPaygapRow(p) {
     };
 }
 
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartBerakningsbevis() {
+    // Stäng-handlers + Esc-tangent
+    document.addEventListener('click', e => {
+        if (/** @type {HTMLElement} */ (e.target).closest('[data-evidence-close]')) _closeEvidenceModal();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('evidence-modal')?.style.display === 'flex') {
+            _closeEvidenceModal();
+        }
+    });
+}

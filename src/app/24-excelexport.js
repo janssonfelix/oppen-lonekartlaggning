@@ -741,5 +741,8 @@ function _exportJPAProtocolExport() {
     announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 
-// Multi-flik Excel-export
-document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAllToExcel);
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartExcelexport() {
+    // Multi-flik Excel-export
+    document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAllToExcel);
+}

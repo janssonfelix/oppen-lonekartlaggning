@@ -108,8 +108,6 @@ function sattForhandsvisning(pa, { stegvis = false } = {}) {
     return true;
 }
 export function iForhandsvisning() { return document.body.classList.contains('forhandsvisning'); }
-document.getElementById('btn-forhandsvisa')?.addEventListener('click', () => sattForhandsvisning(!iForhandsvisning(), { stegvis: true }));
-document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => sattForhandsvisning(false, { stegvis: true }));
 
 let _ritGeneration = 1;
 export const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
@@ -196,4 +194,10 @@ export function tomFlikarUtom(utom = new Set()) {
     document.querySelectorAll('.view-panel .avsnitt-nyckel').forEach(el => { if (ska(el)) { el.textContent = ''; el.classList.remove('ar-kritisk', 'ar-granska'); } });
     const tryck = document.getElementById('print-report');
     if (tryck) tryck.innerHTML = '';     // en färdig utskrift bär kopior av tabellerna
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartExportgrind() {
+    document.getElementById('btn-forhandsvisa')?.addEventListener('click', () => sattForhandsvisning(!iForhandsvisning(), { stegvis: true }));
+    document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => sattForhandsvisning(false, { stegvis: true }));
 }

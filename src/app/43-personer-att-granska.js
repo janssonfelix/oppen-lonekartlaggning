@@ -82,14 +82,6 @@ export function renderPersonerAttGranska(visaAlla = false) {
             ? `<p class="pag-not">Visar de ${tal(visade.length)} största avvikelserna. <button type="button" class="btn btn-secondary btn-sm" id="pag-visa-alla">Visa alla (${tal(n)})</button></p>` : '');
 }
 
-// ---- Avvikelse från förväntad lön per kön och BAS-intervall (divergerande stapel) ----
-// Samma prövning som listan ovanför (samma grupper, samma förväntade lön, samma gräns), summerad per BAS-intervall
-// och kön: hur stor andel av de prövade kvinnorna respektive männen som ligger minst gränsen UNDER den förväntade
-// lönen (åt vänster) och minst gränsen ÖVER (åt höger). Bara BAS-intervall där både de prövade kvinnorna och de
-// prövade männen når tröskeln — ett segment gäller aldrig färre. Andelarna är hela procent. Diagrammet namnger
-// ingen person och bär ingen lön. Som resten av panelen går det inte att exportera (markeraUtanExport på rutan,
-// skälet `individer` i 11-diagramexport.js): inget ur Personer att granska lämnar verktyget.
-markeraUtanExport(document.getElementById('pag-diagram-ruta'), 'individer');
 // Räkningen är avvikelsePerKonOchBas i src/lib/individflaggor.js; här läses tröskeln och golvet.
 function _pagAvvikelseRader(d, grans) {
     return avvikelsePerKonOchBas(d, { k: kTroskel(), minGrupp: statGolv(), grans });
@@ -139,7 +131,18 @@ function _pagRitaAvvikelse(d, grans) {
         + (fa ? ` Andelar märkta med * gäller färre än ${litetUnderlag()} personer: ett litet underlag, som inte ska läsas som ett mönster.` : '');
 }
 
-document.getElementById('pag-grans')?.addEventListener('input', () => renderPersonerAttGranska());
-// När fältet lämnas visas värdet som faktiskt används (klämt till 5–30).
-document.getElementById('pag-grans')?.addEventListener('change', e => { /** @type {HTMLInputElement} */ (e.target).value = String(_pagGrans()); renderPersonerAttGranska(); });
-document.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('#pag-visa-alla')) renderPersonerAttGranska(true); });
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartPersonerAttGranska() {
+    // ---- Avvikelse från förväntad lön per kön och BAS-intervall (divergerande stapel) ----
+    // Samma prövning som listan ovanför (samma grupper, samma förväntade lön, samma gräns), summerad per BAS-intervall
+    // och kön: hur stor andel av de prövade kvinnorna respektive männen som ligger minst gränsen UNDER den förväntade
+    // lönen (åt vänster) och minst gränsen ÖVER (åt höger). Bara BAS-intervall där både de prövade kvinnorna och de
+    // prövade männen når tröskeln — ett segment gäller aldrig färre. Andelarna är hela procent. Diagrammet namnger
+    // ingen person och bär ingen lön. Som resten av panelen går det inte att exportera (markeraUtanExport på rutan,
+    // skälet `individer` i 11-diagramexport.js): inget ur Personer att granska lämnar verktyget.
+    markeraUtanExport(document.getElementById('pag-diagram-ruta'), 'individer');
+    document.getElementById('pag-grans')?.addEventListener('input', () => renderPersonerAttGranska());
+    // När fältet lämnas visas värdet som faktiskt används (klämt till 5–30).
+    document.getElementById('pag-grans')?.addEventListener('change', e => { /** @type {HTMLInputElement} */ (e.target).value = String(_pagGrans()); renderPersonerAttGranska(); });
+    document.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('#pag-visa-alla')) renderPersonerAttGranska(true); });
+}

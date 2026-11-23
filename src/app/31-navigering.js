@@ -38,17 +38,6 @@ import { renderLonepolitik } from './75-lonepolitik.js';
 import { renderKvalitetssakring } from './85-robusthet-fardigcheck.js';
 import { sidindexBygg } from './89-sidindex.js';
 
-// ---- Tab Navigation ----
-// En låst flik är aria-disabled, inte disabled: knappen går att nå och klicka på, skärmläsaren hör den och skälet, och
-// klicket leder till lönefilskortet i Filer och kvalitet i stället för att ingenting händer. Egenskapen `disabled` på knappen
-// läser och sätter aria-disabled, så att resten av koden låser och låser upp flikar som vanligt (el.disabled = true).
-document.querySelectorAll(".nav-item").forEach(btn => {
-    Object.defineProperty(btn, 'disabled', {
-        configurable: true,
-        get() { return this.getAttribute('aria-disabled') === 'true'; },
-        set(v) { if (v) this.setAttribute('aria-disabled', 'true'); else this.removeAttribute('aria-disabled'); }
-    });
-});
 /** Visar Filer och kvalitet, rullar fram filkortet `kortId`, ger dess filväljare fokus, markerar kortet en stund och läser upp `text`. */
 export function _visaFilkortet(kortId, inputId, text) {
     const filer = document.querySelector('.nav-item[data-tab="filer"]');
@@ -95,47 +84,6 @@ function synkaAlderFlik() {
         if (tip) el.setAttribute('title', tip); else el.removeAttribute('title');
     }
 }
-document.querySelectorAll(".nav-item").forEach(btn => {
-    btn.addEventListener("click", e => {
-        const byte = _nastaFlikbyte;
-        _nastaFlikbyte = null;
-        if (/** @type {HTMLInputElement} */ (btn).disabled) {
-            if (/** @type {HTMLElement} */ (btn).dataset.kraver === 'alder' && state.data.length) visaAlderskravet(btn.textContent.trim());
-            else visaLonefilskortet(btn.textContent.trim());
-            return;
-        }
-        const target = btn.getAttribute("data-tab");
-        document.querySelectorAll(".view-panel").forEach(v => /** @type {HTMLElement} */ (v).style.display = "none");
-        // Visa alla paneler i flikens grupp (sammanslagna flikar), annars panelen själv.
-        (PANEL_GROUPS[target] || [target]).forEach(p => {
-            const el = document.getElementById(`view-${p}`);
-            if (el) el.style.display = "block";
-        });
-        document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
-        btn.classList.add("active");
-        const titles = {
-            dashboard: 'Översikt', filer: 'Filer och kvalitet',
-            kon: 'Ålder & karriär', dokumentera: 'Exportera',
-            rapporttext: 'Rapporttext', arbetet: 'Spara och jämför år',
-            benchmark: 'Löneläget', matrix: 'Lika arbete',
-            bestammelser: 'Regler & praxis',
-            handlingsplan: 'Handlingsplan',
-            prioritering: 'Prioritering',
-            struktur: 'Lönestruktur',
-            loneoversyn: 'Löneöversyn',
-            likvardighet: 'Likvärdigt arbete',
-            utforska: 'Tabeller och egna vyer',
-            info: 'Om verktyget'
-        };
-        const titleEl = document.getElementById("page-title");
-        if (titleEl) titleEl.textContent = titles[target] || target;
-        // En ny flik börjar överst: annars står läsaren kvar där förra fliken slutade (granskning 2026-10-30).
-        // Före ritningen, så att det som görs efter den (efter: ett avsnitt att visa) får sista ordet.
-        window.scrollTo(0, 0);
-        // Användarens eget klick (eller ett flikbyte som begär det) visar fliken först och räknar den sedan (ADR-80).
-        flikbyte(target || '', { uppskjut: e.isTrusted || !!byte?.uppskjut, efter: byte?.efter || null });
-    });
-});
 
 // ---- Flikbytet: rita först, räkna sedan (ADR-80) ----
 // När användaren själv byter flik (ett klick i menyn, pilarna i menyn, sökfältet, en länk till en flik) blir fliken
@@ -172,7 +120,6 @@ const _blockKo = [];
 /** @type {any} */
 let _blockTimer = 0;
 let _valRaknare = 0;                // användarens egna val (change), som kan ändra det ett väntande block skulle rita
-document.addEventListener('change', e => { if (e.isTrusted) _valRaknare++; }, true);
 const FLIK_RAKNAS_TEXT = 'Räknar fram fliken …';
 const BLOCK_RAKNAS_TEXT = 'Räknar …';
 
@@ -348,7 +295,6 @@ function _visningAndras(e) {
     // Pilar, Home, End och mellanslag rullar sidan när ingenting i den har fokus; i ett fält eller en kontroll räknas de.
     return !(_TANGENT_RULLA.has(tangent) && (!el || el === document || el === document.body || el === document.documentElement));
 }
-for (const typ of _VISNING_HANDELSER) document.addEventListener(typ, e => { if (_visningAndras(e)) visningNy(); }, true);
 
 /** Det som görs när en flik har ritats: markeringen i tabellerna och autocomplete på nya fält. */
 function _efterRitning(flik) {
@@ -524,22 +470,6 @@ function renderFlowNav(target) {
         + `<button type="button" class="flow-next-btn" data-flow-tab="${next.tab}">${esc(next.label)}</button>`;
     view.appendChild(bar);
 }
-// Delegerad klick: knappar utanför Exportera (samverkanskortet i Handlingsplan) som återanvänder navets exportknappar.
-document.addEventListener('click', e => {
-    const b = /** @type {HTMLElement} */ (e.target).closest('[data-dok-klick]');
-    if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.dokKlick || '')?.click();
-});
-// Delegerad klick: "Nästa steg"-knapparna leder till rätt flik via nav-klicket. En låst flik gör som i menyn:
-// nav-klicket visar lönefilskortet i Filer och kvalitet, och då får sidan inte rullas upp förbi kortet.
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-flow-tab]');
-    if (!btn) return;
-    const nav = document.querySelector(`.nav-item[data-tab="${tabMal(btn.getAttribute('data-flow-tab'))}"]`);
-    if (!nav) return;
-    const last = /** @type {HTMLInputElement} */ (nav).disabled;
-    klickaFlik(nav, { uppskjut: e.isTrusted });
-    if (!last) window.scrollTo({ top: 0, behavior: 'smooth' });
-});
 
 export function refreshCurrentTab() {
     const active = document.querySelector('.nav-item.active');
@@ -552,21 +482,6 @@ export function refreshCurrentTab() {
     renderTabContent(target);
 }
 
-// Delegerad click-handler för "gå till flik X"-länkar i HTML-strängar
-document.addEventListener('click', e => {
-    const a = /** @type {HTMLElement} */ (e.target).closest('[data-go-to-tab]');
-    if (!a) return;
-    e.preventDefault();
-    const target = /** @type {HTMLElement} */ (a).dataset.goToTab;
-    // Avsnittet länken leder till visas när fliken är ritad (ADR-80: användarens klick ritar fliken efter att den målats).
-    const tillAnkare = () => {
-        const ankare = /** @type {HTMLElement} */ (a).dataset.goToAnchor && document.getElementById(/** @type {HTMLElement} */ (a).dataset.goToAnchor || '');
-        if (!ankare) return;
-        oppnaHopfallda(ankare);
-        if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
-    };
-    if (!(target && typeof navigateTo === 'function' && navigateTo(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
-});
 /** Fäller ut ett avsnitt som en länk leder till: elementet självt om det är ett hopfällt avsnitt, och varje hopfällt
  *  avsnitt det ligger i. Annars landar länken på en rubrik vars innehåll inte syns. */
 export function oppnaHopfallda(el) {
@@ -591,10 +506,6 @@ export function sattMeny(oppen, { fokus = true } = {}) {
     if (oppen) /** @type {HTMLInputElement} */ ((document.querySelector('.nav-item.active') || document.querySelector('.nav-item:not([aria-disabled="true"])')))?.focus();
     else knapp.focus();
 }
-document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!menyOppen()));
-document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && menyOppen()) sattMeny(false); });
-document.getElementById('sidomeny')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('.nav-item')) sattMeny(false, { fokus: false }); });
 // Fönstret passerar brytpunkten 640 punkter (åt något håll): menyn stängs, och utan glidning. Breddas fönstret medan
 // menyn är öppen ligger annars skuggan kvar när menyn åter är en spalt; smalnas det av gled spalten ut över
 // innehållet på väg utanför bild. Den smala vyn börjar alltså alltid med menyn stängd; öppnar användaren den själv
@@ -605,7 +516,100 @@ function _menyVidBrytpunkt() {
     const av = () => document.body.classList.remove('meny-utan-glidning');
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(av)); else setTimeout(av, 50);
 }
-if (typeof window.matchMedia === 'function') {
-    const smal = window.matchMedia('(max-width: 640px)');
-    if (smal.addEventListener) smal.addEventListener('change', _menyVidBrytpunkt);
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartNavigering() {
+    // ---- Tab Navigation ----
+    // En låst flik är aria-disabled, inte disabled: knappen går att nå och klicka på, skärmläsaren hör den och skälet, och
+    // klicket leder till lönefilskortet i Filer och kvalitet i stället för att ingenting händer. Egenskapen `disabled` på knappen
+    // läser och sätter aria-disabled, så att resten av koden låser och låser upp flikar som vanligt (el.disabled = true).
+    document.querySelectorAll(".nav-item").forEach(btn => {
+        Object.defineProperty(btn, 'disabled', {
+            configurable: true,
+            get() { return this.getAttribute('aria-disabled') === 'true'; },
+            set(v) { if (v) this.setAttribute('aria-disabled', 'true'); else this.removeAttribute('aria-disabled'); }
+        });
+    });
+    document.querySelectorAll(".nav-item").forEach(btn => {
+        btn.addEventListener("click", e => {
+            const byte = _nastaFlikbyte;
+            _nastaFlikbyte = null;
+            if (/** @type {HTMLInputElement} */ (btn).disabled) {
+                if (/** @type {HTMLElement} */ (btn).dataset.kraver === 'alder' && state.data.length) visaAlderskravet(btn.textContent.trim());
+                else visaLonefilskortet(btn.textContent.trim());
+                return;
+            }
+            const target = btn.getAttribute("data-tab");
+            document.querySelectorAll(".view-panel").forEach(v => /** @type {HTMLElement} */ (v).style.display = "none");
+            // Visa alla paneler i flikens grupp (sammanslagna flikar), annars panelen själv.
+            (PANEL_GROUPS[target] || [target]).forEach(p => {
+                const el = document.getElementById(`view-${p}`);
+                if (el) el.style.display = "block";
+            });
+            document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
+            btn.classList.add("active");
+            const titles = {
+                dashboard: 'Översikt', filer: 'Filer och kvalitet',
+                kon: 'Ålder & karriär', dokumentera: 'Exportera',
+                rapporttext: 'Rapporttext', arbetet: 'Spara och jämför år',
+                benchmark: 'Löneläget', matrix: 'Lika arbete',
+                bestammelser: 'Regler & praxis',
+                handlingsplan: 'Handlingsplan',
+                prioritering: 'Prioritering',
+                struktur: 'Lönestruktur',
+                loneoversyn: 'Löneöversyn',
+                likvardighet: 'Likvärdigt arbete',
+                utforska: 'Tabeller och egna vyer',
+                info: 'Om verktyget'
+            };
+            const titleEl = document.getElementById("page-title");
+            if (titleEl) titleEl.textContent = titles[target] || target;
+            // En ny flik börjar överst: annars står läsaren kvar där förra fliken slutade (granskning 2026-10-30).
+            // Före ritningen, så att det som görs efter den (efter: ett avsnitt att visa) får sista ordet.
+            window.scrollTo(0, 0);
+            // Användarens eget klick (eller ett flikbyte som begär det) visar fliken först och räknar den sedan (ADR-80).
+            flikbyte(target || '', { uppskjut: e.isTrusted || !!byte?.uppskjut, efter: byte?.efter || null });
+        });
+    });
+    document.addEventListener('change', e => { if (e.isTrusted) _valRaknare++; }, true);
+    for (const typ of _VISNING_HANDELSER) document.addEventListener(typ, e => { if (_visningAndras(e)) visningNy(); }, true);
+    // Delegerad klick: knappar utanför Exportera (samverkanskortet i Handlingsplan) som återanvänder navets exportknappar.
+    document.addEventListener('click', e => {
+        const b = /** @type {HTMLElement} */ (e.target).closest('[data-dok-klick]');
+        if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.dokKlick || '')?.click();
+    });
+    // Delegerad klick: "Nästa steg"-knapparna leder till rätt flik via nav-klicket. En låst flik gör som i menyn:
+    // nav-klicket visar lönefilskortet i Filer och kvalitet, och då får sidan inte rullas upp förbi kortet.
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('[data-flow-tab]');
+        if (!btn) return;
+        const nav = document.querySelector(`.nav-item[data-tab="${tabMal(btn.getAttribute('data-flow-tab'))}"]`);
+        if (!nav) return;
+        const last = /** @type {HTMLInputElement} */ (nav).disabled;
+        klickaFlik(nav, { uppskjut: e.isTrusted });
+        if (!last) window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    // Delegerad click-handler för "gå till flik X"-länkar i HTML-strängar
+    document.addEventListener('click', e => {
+        const a = /** @type {HTMLElement} */ (e.target).closest('[data-go-to-tab]');
+        if (!a) return;
+        e.preventDefault();
+        const target = /** @type {HTMLElement} */ (a).dataset.goToTab;
+        // Avsnittet länken leder till visas när fliken är ritad (ADR-80: användarens klick ritar fliken efter att den målats).
+        const tillAnkare = () => {
+            const ankare = /** @type {HTMLElement} */ (a).dataset.goToAnchor && document.getElementById(/** @type {HTMLElement} */ (a).dataset.goToAnchor || '');
+            if (!ankare) return;
+            oppnaHopfallda(ankare);
+            if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
+        };
+        if (!(target && typeof navigateTo === 'function' && navigateTo(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
+    });
+    document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!menyOppen()));
+    document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && menyOppen()) sattMeny(false); });
+    document.getElementById('sidomeny')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('.nav-item')) sattMeny(false, { fokus: false }); });
+    if (typeof window.matchMedia === 'function') {
+        const smal = window.matchMedia('(max-width: 640px)');
+        if (smal.addEventListener) smal.addEventListener('change', _menyVidBrytpunkt);
+    }
 }

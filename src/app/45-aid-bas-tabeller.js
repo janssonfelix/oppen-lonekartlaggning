@@ -82,13 +82,6 @@ export function sattLonemanad(v) {
     const el = /** @type {HTMLInputElement|null} */ (document.getElementById('lonemanad'));
     if (el && el.value !== state.lonemanad) el.value = state.lonemanad;
 }
-document.getElementById('lonemanad')?.addEventListener('change', e => {
-    sattLonemanad(/** @type {HTMLInputElement} */ (e.target).value);
-    // Den öppna fliken ritas om direkt; övriga ritas när de öppnas.
-    const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
-    if (aktiv === 'matrix') renderAidBasLika();
-    if (aktiv === 'likvardighet') renderAidBasLikvardigt();
-});
 
 /** Andelen kvinnor nationellt för en AID-kod (SKR:s personalstatistik, organisationstypen i Inställningar), eller null. */
 function _aidbasNationell(aid) {
@@ -318,4 +311,15 @@ export function _aidbasMetodRader() {
         ['Gränser för slumpen (statusen i Lika arbete, Slumpens gränser)', `Kvinnors median i procent av mäns jämförs med de mittersta 95 procenten av de kvoter slumpen ger när könen kastas om slumpvis mellan gruppens löner 1 000 gånger (för grupper över 300 personer en normalapproximation med gruppens egen spridning). Gränserna gäller gruppens egna löner, antal och könsfördelning. Statusen i Lika arbete, i tabellen per ${T.enhet.en} och i ${AIDBAS_BLADNAMN[0]}, väger samman gränserna med storleken 3 %; trattdiagrammet och bladet Slumpens gränser visar samma gränser utan status. En kvot utanför gränserna är svår att förklara med slumpen; gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`],
         ['Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)', `Kvinnodominerad vid ${aidbasDefinitionText()}. Mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt med ${T.enhet.bf} (${skrKallaKort()}) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre ${T.niva.en} och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.`]
     ];
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartAidBasTabeller() {
+    document.getElementById('lonemanad')?.addEventListener('change', e => {
+        sattLonemanad(/** @type {HTMLInputElement} */ (e.target).value);
+        // Den öppna fliken ritas om direkt; övriga ritas när de öppnas.
+        const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
+        if (aktiv === 'matrix') renderAidBasLika();
+        if (aktiv === 'likvardighet') renderAidBasLikvardigt();
+    });
 }

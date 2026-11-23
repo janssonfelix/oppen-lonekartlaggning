@@ -131,4 +131,8 @@ async function _exportDocumentationDraftExport() {
         return false;
     }
 }
-document.getElementById('btn-export-docdraft')?.addEventListener('click', exportDocumentationDraft);
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartWordUtkast() {
+    document.getElementById('btn-export-docdraft')?.addEventListener('click', exportDocumentationDraft);
+}

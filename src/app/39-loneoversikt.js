@@ -135,10 +135,6 @@ export function generateRapport() {
     });
 }
 
-// Löneöversikten: fäll in/ut alla
-document.getElementById('rapport-collapse-all')?.addEventListener('click', () => toggleAllGroups('rapport-table', true));
-document.getElementById('rapport-expand-all')?.addEventListener('click', () => toggleAllGroups('rapport-table', false));
-
 // Vilka BAS-grupper som är hopfällda. Från början alla utom den första: tabellen är lång, och det man söker är oftast
 // ett BAS i taget. Valet står kvar när tabellen ritas om; «Rensa all data» glömmer det.
 /** @type {Set<string>|null} */
@@ -153,28 +149,33 @@ function _rapportTillampaHopfallning() {
     }
 }
 export function rapportGlomHopfallning() { _rapportHopfallda = null; }
-document.querySelector('#rapport-table tbody')?.addEventListener('click', e => {
-    if (!/** @type {HTMLElement} */ (e.target).closest('tr.group-header')) return;
-    // Raden fälls av tabellens gemensamma lyssnare; här noteras bara läget när den har gjort sitt.
-    setTimeout(() => { _rapportHopfallda = new Set([...document.querySelectorAll('#rapport-table tbody tr.group-header.collapsed')].map(tr => /** @type {HTMLElement} */ (tr).dataset.bas || '')); }, 0);
-});
 
-// Search rapport
-document.getElementById("search-rapport")?.addEventListener("input", e => {
-    const q = /** @type {HTMLInputElement} */ (e.target).value.toLowerCase();
-    if (!q) { _rapportTillampaHopfallning(); return; }   // tomt sökfält: tillbaka till det hopfällda läget
-    document.querySelectorAll('#rapport-table tbody tr.group-header.collapsed').forEach(tr => tr.classList.remove('collapsed'));   // en sökning visar träffar i alla BAS
-    const rows = [...document.querySelectorAll("#rapport-table tbody tr")];
-    rows.forEach(tr => { if (!tr.classList.contains("group-header")) /** @type {HTMLElement} */ (tr).style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none"; });
-    rows.forEach((tr, i) => {
-        if (!tr.classList.contains("group-header")) return;
-        const hasVisible = rows.slice(i+1).some(r => !r.classList.contains("group-header") && /** @type {HTMLElement} */ (r).style.display !== "none");
-        /** @type {HTMLElement} */ (tr).style.display = !q || hasVisible ? "" : "none";
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartLoneoversikt() {
+    // Löneöversikten: fäll in/ut alla
+    document.getElementById('rapport-collapse-all')?.addEventListener('click', () => toggleAllGroups('rapport-table', true));
+    document.getElementById('rapport-expand-all')?.addEventListener('click', () => toggleAllGroups('rapport-table', false));
+    document.querySelector('#rapport-table tbody')?.addEventListener('click', e => {
+        if (!/** @type {HTMLElement} */ (e.target).closest('tr.group-header')) return;
+        // Raden fälls av tabellens gemensamma lyssnare; här noteras bara läget när den har gjort sitt.
+        setTimeout(() => { _rapportHopfallda = new Set([...document.querySelectorAll('#rapport-table tbody tr.group-header.collapsed')].map(tr => /** @type {HTMLElement} */ (tr).dataset.bas || '')); }, 0);
     });
-});
-
-// Export Excel (bara Löneöversikten)
-document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
-    const wb = tableToCleanBook('rapport-table', 'Rapport');
-    if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _showExportSensitivityToast(); }
-}));
+    // Search rapport
+    document.getElementById("search-rapport")?.addEventListener("input", e => {
+        const q = /** @type {HTMLInputElement} */ (e.target).value.toLowerCase();
+        if (!q) { _rapportTillampaHopfallning(); return; }   // tomt sökfält: tillbaka till det hopfällda läget
+        document.querySelectorAll('#rapport-table tbody tr.group-header.collapsed').forEach(tr => tr.classList.remove('collapsed'));   // en sökning visar träffar i alla BAS
+        const rows = [...document.querySelectorAll("#rapport-table tbody tr")];
+        rows.forEach(tr => { if (!tr.classList.contains("group-header")) /** @type {HTMLElement} */ (tr).style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none"; });
+        rows.forEach((tr, i) => {
+            if (!tr.classList.contains("group-header")) return;
+            const hasVisible = rows.slice(i+1).some(r => !r.classList.contains("group-header") && /** @type {HTMLElement} */ (r).style.display !== "none");
+            /** @type {HTMLElement} */ (tr).style.display = !q || hasVisible ? "" : "none";
+        });
+    });
+    // Export Excel (bara Löneöversikten)
+    document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
+        const wb = tableToCleanBook('rapport-table', 'Rapport');
+        if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _showExportSensitivityToast(); }
+    }));
+}

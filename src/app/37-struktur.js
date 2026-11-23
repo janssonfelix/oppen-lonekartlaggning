@@ -568,30 +568,6 @@ function _exportEuReportExport() {
     XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('EU-lönerapport exporterad.');
 }
-(function wireStructure() {
-    document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
-    document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
-        const nb = document.getElementById('struktur-narrative');
-        if (!nb) return;
-        // Ett redigerat utkast skrivs inte över utan fråga; avbryter användaren är texten och markeringen orörda.
-        if (nb.dataset.dirty && !confirm('Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?')) return;
-        delete nb.dataset.dirty; medExportLage(renderStrukturUtkast);
-    });
-    // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
-    // över; Återskapa ritar om det med valet.
-    document.getElementById('struktur-narrative-omfang')?.addEventListener('change', e => {
-        state.utkastPerBas = /** @type {HTMLSelectElement} */ (e.target).value !== 'hela';
-        const nb = document.getElementById('struktur-narrative');
-        if (nb && nb.dataset.dirty) { if (typeof announceToScreenReader === 'function') announceToScreenReader('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
-        medExportLage(renderStrukturUtkast);
-    });
-    document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
-        const nb = document.getElementById('struktur-narrative');
-        if (nb) { /** @type {HTMLInputElement} */ (nb).select(); try { document.execCommand('copy'); } catch (_e) { /* ignore */ } }
-    });
-    const nb = document.getElementById('struktur-narrative');
-    if (nb) nb.addEventListener('input', () => { nb.dataset.dirty = '1'; });
-})();
 
 // Kvartilens lönespann utan enskilda löner: bara gränserna mellan kvartilerna
 // (Q1 "upp till", Q4 "över").
@@ -599,4 +575,32 @@ function _kvartilSpann(x, kr) {
     if (x.undre == null) return `upp till ${kr(x.ovre)}`;
     if (x.ovre == null) return `över ${kr(x.undre)}`;
     return `${kr(x.undre)} – ${kr(x.ovre)}`;
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartStruktur() {
+    (function wireStructure() {
+        document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
+        document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
+            const nb = document.getElementById('struktur-narrative');
+            if (!nb) return;
+            // Ett redigerat utkast skrivs inte över utan fråga; avbryter användaren är texten och markeringen orörda.
+            if (nb.dataset.dirty && !confirm('Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?')) return;
+            delete nb.dataset.dirty; medExportLage(renderStrukturUtkast);
+        });
+        // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
+        // över; Återskapa ritar om det med valet.
+        document.getElementById('struktur-narrative-omfang')?.addEventListener('change', e => {
+            state.utkastPerBas = /** @type {HTMLSelectElement} */ (e.target).value !== 'hela';
+            const nb = document.getElementById('struktur-narrative');
+            if (nb && nb.dataset.dirty) { if (typeof announceToScreenReader === 'function') announceToScreenReader('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
+            medExportLage(renderStrukturUtkast);
+        });
+        document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
+            const nb = document.getElementById('struktur-narrative');
+            if (nb) { /** @type {HTMLInputElement} */ (nb).select(); try { document.execCommand('copy'); } catch (_e) { /* ignore */ } }
+        });
+        const nb = document.getElementById('struktur-narrative');
+        if (nb) nb.addEventListener('input', () => { nb.dataset.dirty = '1'; });
+    })();
 }
