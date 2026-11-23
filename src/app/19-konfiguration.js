@@ -490,13 +490,9 @@ function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysis
 function _buildAnalysisSnapshotExport() {
     const d = getData();
     if (!d.length) return null;
-    const kv = d.filter(r => arKvinna(r));
-    const ma = d.filter(r => arMan(r));
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
     // bilden visas i jämförelsetabellen och kan ligga kvar efter att urvalet ändrats.
-    const konOk = _konFarRedovisas(kv.length, ma.length);
-    const medKv = konOk ? Stat.median(kv.map(r => r.lon)) : null;
-    const medMa = konOk ? Stat.median(ma.map(r => r.lon)) : null;
+    const m = _stKonsMedianer(d, { k: kTroskel() });
     const reg = runOLSRegression();
     const dq = bedomningUnderlag();
     const ages = d.map(r => r.alder).filter(a => a > 0);
@@ -504,11 +500,11 @@ function _buildAnalysisSnapshotExport() {
         timestamp: new Date().toISOString(),
         label: 'Hela organisationen',
         n: d.length,
-        nKv: kv.length,
-        nMa: ma.length,
-        medianKv: medKv,
-        medianMa: medMa,
-        rawGapPct: konOk && medKv != null && medMa != null && medMa > 0 ? (medKv / medMa - 1) * 100 : null,
+        nKv: m.nKv,
+        nMa: m.nMa,
+        medianKv: m.medKv,
+        medianMa: m.medMa,
+        rawGapPct: m.gapPct,
         unexplainedGapPct: reg.error ? null : reg.konPct,
         unexplainedPValue: reg.error ? null : reg.pValue,
         underlag: dq ? UK_ETIKETT[dq.status] : null,
