@@ -896,8 +896,8 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         expect(vanliga([f2.lager[0].data.map(d => d.etikett)])[0][0]).toMatch(/^1,0 Mkr · \d+ %$/);
         expect(f2.lager[0].data[0].etikett.split(' · ')[0]).toBe(w.eval('_fmtCost(1000000)'));
         expect(f2.lager.reduce((n, l) => n + l.data.length, 0)).toBe(15);
-        expect(vanliga([[w.eval(`_prioKostnadNot(window.__m, ${tot})`)]])[0][0]).toMatch(/^Diagrammet visar de 15 grupper som kostar mest\. Övriga 7 grupper står tillsammans för [\d ]+ kr per år \(\d+ % av kostnaden\)/);
-        expect(w.eval(`_prioKostnadNot(window.__m.slice(0, 15), ${tot})`)).toBe('');
+        expect(vanliga([[w.eval('_prioKostnadNot(kostnadskurva(window.__m, { max: 40, visas: PRIO_KOSTNAD_MAX }))')]])[0][0]).toMatch(/^Diagrammet visar de 15 grupper som kostar mest\. Övriga 7 grupper står tillsammans för [\d ]+ kr per år \(\d+ % av kostnaden\)/);
+        expect(w.eval('_prioKostnadNot(kostnadskurva(window.__m.slice(0, 15), { max: 40, visas: PRIO_KOSTNAD_MAX }))')).toBe('');
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('matrisen: en serie per status som finns, logaritmisk y-axel, fyra zoner med namn, etikett enligt läget', () => {
