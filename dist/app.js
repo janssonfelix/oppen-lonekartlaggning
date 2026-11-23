@@ -14421,7 +14421,7 @@ function urvalSpann(figur, dim, { visaSma = false } = {}) {
 
 // Filtret som { kategori: Map, intervall: Map }. En mängd (det äldre formatet) är de bortvalda värdena i figurens
 // första kategoridimension. Annat än ett objekt: inget filter.
-function _filterNorm(figur, filter) {
+function _normaliseratFilter(figur, filter) {
     if (!filter || typeof filter !== 'object') return null;
     if (typeof filter.has === 'function') {
         const k = _urvalRa(figur).find(u => u && _urvalTyp(u) === 'kategori');
@@ -14499,7 +14499,7 @@ function urvalIntervallText(dim, g) {
  * @returns {string[]}
  */
 function urvalBeskrivning(figur, filter, { visaSma = false } = {}) {
-    const f = _filterNorm(figur, filter);
+    const f = _normaliseratFilter(figur, filter);
     if (!f) return [];
     const ut = [];
     for (const u of urvalLista(figur)) {
