@@ -2962,6 +2962,7 @@ const __mirrorLoneoversyn = (() => {
     const _kvantilStat = __mirrorStat.kvantil;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
+    const konsMedianerUrLoner = __mirrorStruktur.konsMedianerUrLoner;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -2986,6 +2987,7 @@ const __mirrorLoneoversyn = (() => {
  * Bygger på: verktygets egen modell, docs/utveckling/loneoversynsmodellen.md.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.2–B7.4 och B7.6–B7.9).
  */
+
 
 
 
@@ -3044,14 +3046,8 @@ function beraknaPott(rader, budget) {
  */
 function raLonegap(rader, lonAv) {
     const kv = [], ma = [];
-    (rader || []).forEach(r => {
-        const L = lonAv(r);
-        if (!(L > 0)) return;
-        if (arKvinna(r)) kv.push(L);
-        else if (arMan(r)) ma.push(L);
-    });
-    if (!kv.length || !ma.length) return null;
-    return (_median(kv) / _median(ma) - 1) * 100;
+    (rader || []).forEach(r => { if (arKvinna(r)) kv.push(lonAv(r)); else if (arMan(r)) ma.push(lonAv(r)); });
+    return konsMedianerUrLoner(kv, ma).gapPct;
 }
 
 /**

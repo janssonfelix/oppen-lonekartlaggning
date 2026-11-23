@@ -26,6 +26,7 @@ import { arKvinnodominerad } from './likvardighet.js';
 import { periodkostnad } from './kostnad.js';
 import { median as _medianStat, kvantil as _kvantilStat } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
+import { konsMedianerUrLoner } from './struktur.js';
 
 // Omslag: tål null/undefined som indata (0 för tom), vilket stat.js inte gör. Algoritmen finns bara i stat.js.
 function _median(arr) { return arr && arr.length ? _medianStat(arr) : 0; }
@@ -80,14 +81,8 @@ export function beraknaPott(rader, budget) {
  */
 export function raLonegap(rader, lonAv) {
     const kv = [], ma = [];
-    (rader || []).forEach(r => {
-        const L = lonAv(r);
-        if (!(L > 0)) return;
-        if (arKvinna(r)) kv.push(L);
-        else if (arMan(r)) ma.push(L);
-    });
-    if (!kv.length || !ma.length) return null;
-    return (_median(kv) / _median(ma) - 1) * 100;
+    (rader || []).forEach(r => { if (arKvinna(r)) kv.push(lonAv(r)); else if (arMan(r)) ma.push(lonAv(r)); });
+    return konsMedianerUrLoner(kv, ma).gapPct;
 }
 
 /**
