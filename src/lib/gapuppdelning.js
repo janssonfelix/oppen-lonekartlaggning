@@ -20,12 +20,12 @@
  * Grupper där ett kön har 1 till k − 1 personer räknas samman med andra grupper under samma cell innan delarna räknas
  * (ADR-87, `sammanslagning` i undertryckning.js), och den sammanslagna gruppen namnges inte; se _beraknaPoster.
  * AID-nivåerna (sektor, aidniva, aid) ordnas alltid grovt till fint på sina platser: en finare nivå före en grövre
- * ger annars en tom del. Ålder (åldersgrupp, ageBucket) kan bara väljas när lönefilen har ålder (ADR-64).
+ * ger annars en tom del. Ålder (åldersgrupp, `aldersgrupp` i falt.js) kan bara väljas när lönefilen har ålder (ADR-64).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
-import { gruppnycklar, konOf } from './falt.js';
+import { gruppnycklar, konAv } from './falt.js';
 import { skapaTermer, stor } from './termer.js';
 import { personOrd } from './namn.js';
 import { sammanslagning } from './undertryckning.js';
@@ -189,7 +189,7 @@ function _beraknaPoster(rader, k, variabler) {
     const kv = [], ma = [];
     for (const r of rader || []) {
         if (!(r.lon > 0)) continue;
-        const g = konOf(r);
+        const g = konAv(r);
         if (g === 'Kvinna') kv.push(r);
         else if (g === 'Man') ma.push(r);
     }

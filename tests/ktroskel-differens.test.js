@@ -40,7 +40,7 @@ import { computePivot } from '../src/lib/utforska.js';
 import { sektorernasAndel, sektorsTabell } from '../src/lib/sektor.js';
 import { gapUppdelning, gapPoster } from '../src/lib/gapuppdelning.js';
 import { sektorsnamn } from '../src/lib/aid.js';
-import { groupKey, konOf } from '../src/lib/falt.js';
+import { gruppnyckel, konAv } from '../src/lib/falt.js';
 import { byggArsbokslut, bokslutMedGrans, jamforBasIntervall, ARSBOKSLUT_NYCKELTAL, ARSBOKSLUT_BAS_MATT } from '../src/lib/arsbokslut.js';
 import { kompletterandeUndertryckning } from '../src/lib/undertryckning.js';
 import { rest, heltal, avvikelse, GRANS, underlagMedEnLitenGrupp, harledLinjart, differensprov, tabellerUrText, tabellerUrHtml, tal } from './helpers/differens.js';
@@ -529,7 +529,7 @@ describe('Var uppstår löneskillnaden: delarna och de största posterna', () =>
     // Samma underlag som ett ekvationssystem: allt som står samtidigt (medellönerna, varje del och de namngivna
     // posterna) mot medellönen i varje cell. Det prövar också delarna, som ensamma kan ge en liten grupps medellön (se
     // valet med en variabel nedan).
-    const cellFor = variabler => r => [...variabler.map(v => String(groupKey(r, v) ?? '—')), konOf(r)].join('|');
+    const cellFor = variabler => r => [...variabler.map(v => String(gruppnyckel(r, v) ?? '—')), konAv(r)].join('|');
     const ekvationer = (rader, variabler) => {
         const gu = gapUppdelning(rader, { k: K, variabler });
         const namn = gu.delar ? Object.entries(gu.topp).flatMap(([d, l]) => l.map(p => [d, p.namn])) : [];

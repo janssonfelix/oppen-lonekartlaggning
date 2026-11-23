@@ -11,7 +11,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median } from './stat.js';
-import { konOf } from './falt.js';
+import { konAv } from './falt.js';
 
 export const ANSVARSGRUPP_NAMN = Object.freeze({ ledning: 'Ledningsansvar', uppdrag: 'Särskilt uppdrag', inget: 'Inget särskilt ansvar' });
 const LEDNING = new Set(['A', 'B', 'C', 'L']);
@@ -65,7 +65,7 @@ export function ansvarsUnderrader(rader, { k }) {
     return ORDNING.map(grupp => {
         const g = (rader || []).filter(r => r.ansvarsgrupp === grupp && r.lon > 0);
         if (!g.length) return null;
-        const kv = g.filter(r => konOf(r) === 'Kvinna'), ma = g.filter(r => konOf(r) === 'Man');
+        const kv = g.filter(r => konAv(r) === 'Kvinna'), ma = g.filter(r => konAv(r) === 'Man');
         const liten = g.length < k, bada = kv.length >= k && ma.length >= k;
         const medKv = !liten && bada ? median(kv.map(r => r.lon)) : null;
         const medMa = !liten && bada ? median(ma.map(r => r.lon)) : null;

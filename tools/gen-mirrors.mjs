@@ -231,7 +231,7 @@ export const MODULES = [
     },
     {
         file: 'falt.js', ns: '__mirrorFalt',
-        expose: { groupKey: '_utGroupKey', gruppnycklar: '_utGruppnycklar', konOf: '_utKonOf', jamforAldersgrupp: '_faltJamforAlder', jamforLonespann: null }
+        expose: { gruppnyckel: '_utGruppnyckel', gruppnycklar: '_utGruppnycklar', konAv: '_utKonAv', jamforAldersgrupp: '_faltJamforAlder', jamforLonespann: null }
     },
     {
         file: 'urval.js', ns: '__mirrorUrval',

@@ -110,8 +110,8 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
     it('ALIAS-WIRING: varje spegelnamn pekar på exakt rätt lib-funktion', () => {
         // Normalisera radslut: `new Function`-källan (05) och ES-import-källan (lib)
         // kan ha olika radslut beroende på git autocrlf — jämför text, inte radslut.
-        // Vitest skriver om importerade namn i lib-källan (`groupKey(` blir
-        // `__vite_ssr_import_1__.groupKey(`); spegeln har dem som vanliga namn.
+        // Vitest skriver om importerade namn i lib-källan (`gruppnyckel(` blir
+        // `__vite_ssr_import_1__.gruppnyckel(`); spegeln har dem som vanliga namn.
         const nlnorm = s => s.replace(/\r\n/g, '\n').replace(/__vite_ssr_import_\d+__\./g, '');
         let checked = 0;
         for (const mod of MODULES) {

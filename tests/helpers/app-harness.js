@@ -124,7 +124,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         }),
         __csvFilnamn: namn => _csvFilnamn(namn),
         __tillTsv: _tillTsv,
-        __utGroupKey: _utGroupKey,
+        __utGroupKey: _utGruppnyckel,
         __explorerFigure: explorerFigure,
         __explorerTypSkal: explorerTypSkal,
         __explorerDossierTarget: explorerDossierTarget,

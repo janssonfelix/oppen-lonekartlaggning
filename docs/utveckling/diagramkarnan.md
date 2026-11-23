@@ -390,8 +390,8 @@ huvudområde Teknikarbete" (vyns `exportBeskrivning` lämnas då bort, eftersom 
 raden "Räknat för: huvudområde Teknikarbete". Ger valet tomt läge exporteras inget. `diagramTillBild` (rapport, utskrift, ZIP,
 rapportunderlag) ritar alltid hela underlaget.
 
-`UNDERLAG` (`10-diagramtema.js`) har `sektor` (huvudområdet, `groupKey(r, 'sektor')`, lista), `aldersgrupp`
-(`groupKey(r, 'alder')`, lista, i åldersordning), `yrkesgrupp` (AID-etiketten, `r.yrke`, lista) och `bas` (`r.bas`,
+`UNDERLAG` (`10-diagramtema.js`) har `sektor` (huvudområdet, `gruppnyckel(r, 'sektor')`, lista), `aldersgrupp`
+(`gruppnyckel(r, 'alder')`, lista, i åldersordning), `yrkesgrupp` (AID-etiketten, `r.yrke`, lista) och `bas` (`r.bas`,
 etikett `'BAS {v}'`). Lådorna och histogrammet i Ålder & karriär har huvudområde och åldersgrupp, löneskillnaden per
 åldersgrupp huvudområde och AID-etikett, percentilerna och kvartilerna i Lönestruktur huvudområde och BAS. Testerna står i `tests/figur.test.js`, `tests/diagramurval.test.js`
 (*underlag: Räkna för*) och `tests/ktroskel-invarianter.test.js` (I6: precis under och precis över regeln i exportläget).

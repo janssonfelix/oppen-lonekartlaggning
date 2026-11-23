@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { gapUppdelning, gapPoster, gapOvrigaText, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, GAP_VARIABLER_STANDARD } from '../src/lib/gapuppdelning.js';
 import { mulberry32 } from '../src/lib/rng.js';
-import { groupKey, konOf } from '../src/lib/falt.js';
+import { gruppnyckel, konAv } from '../src/lib/falt.js';
 
 const K = 10;
 const flera = (n, kon, lon, bas, aid) => Array.from({ length: n }, () => ({ kon, lon, bas, aid, alder: 40 }));
@@ -327,13 +327,13 @@ describe('ADR-65: valbara förklaringsvariabler', () => {
 
 // En oberoende räkning av den nästlade uppdelningen (utan centrering och utan skyddsregeln), för testet ovan.
 function handrakning(rader, variabler) {
-    const kv = rader.filter(r => konOf(r) === 'Kvinna'), ma = rader.filter(r => konOf(r) === 'Man');
+    const kv = rader.filter(r => konAv(r) === 'Kvinna'), ma = rader.filter(r => konAv(r) === 'Man');
     const medel = a => a.reduce((s, r) => s + r.lon, 0) / a.length;
     const delar = new Array(variabler.length + 1).fill(0);
     const steg = (kvC, maC, vikt, niva) => {
         const wKv = medel(kvC), wMa = medel(maC);
         if (niva === variabler.length) { delar[niva] += vikt * (wKv - wMa); return; }
-        const nyckel = r => String(groupKey(r, variabler[niva]));
+        const nyckel = r => String(gruppnyckel(r, variabler[niva]));
         const grupper = new Map();
         for (const r of kvC) { const g = nyckel(r); if (!grupper.has(g)) grupper.set(g, { kv: [], ma: [] }); grupper.get(g).kv.push(r); }
         for (const r of maC) { const g = nyckel(r); if (!grupper.has(g)) grupper.set(g, { kv: [], ma: [] }); grupper.get(g).ma.push(r); }
@@ -375,7 +375,7 @@ describe('[B6.9] ADR-65 och ADR-87: sammanslagningen per del, djupt ner', () => 
         const variabler = ['bas', 'alder', 'aid'];
         const p = gapPoster(r, { k: K, variabler });
         // Räkna om ur rådata: varje nivå i namnet (finast först) ska ha 0 eller ≥ k av varje kön.
-        const nyckel = (x, v) => v === 'alder' ? `${groupKey(x, 'alder')} år` : v === 'bas' ? `BAS ${groupKey(x, 'bas')}` : String(groupKey(x, v));
+        const nyckel = (x, v) => v === 'alder' ? `${gruppnyckel(x, 'alder')} år` : v === 'bas' ? `BAS ${gruppnyckel(x, 'bas')}` : String(gruppnyckel(x, v));
         let namngivna = 0;
         for (const [i, lista] of Object.values(p).entries()) {
             const djup = Math.min(i + 1, variabler.length);

@@ -14,7 +14,7 @@
  * (tools/gen-mirrors.mjs). Ändra här och kör `npm run build:app`.
  */
 import { median, kvantil } from './stat.js';
-import { gruppnycklar, konOf, jamforAldersgrupp, jamforLonespann } from './falt.js';
+import { gruppnycklar, konAv, jamforAldersgrupp, jamforLonespann } from './falt.js';
 import { jamforSektor, mellannivaEtikett, huvudomrade } from './aid.js';
 import { personFilter, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
 import { skapaTermer, ordForAntal } from './termer.js';
@@ -30,7 +30,7 @@ const UTAN_KONSUPPDELNING = new Set(['andelKv', 'gap']);
 function _hink() { return { lons: [], kv: [], ma: [] }; }
 function _lagg(h, r) {
     h.lons.push(r.lon);
-    const k = konOf(r);
+    const k = konAv(r);
     if (k === 'Kvinna') h.kv.push(r.lon);
     else if (k === 'Man') h.ma.push(r.lon);
 }
@@ -137,7 +137,7 @@ export function computePivot(rows, spec, { k = 10 } = {}) {
     const urval = { n: urvalRader.length, nKv: 0, nMa: 0 };
     const cellHinkar = new Map(), radHinkar = new Map(), kolHinkar = new Map();
     for (const r of urvalRader) {
-        const ko = konOf(r);
+        const ko = konAv(r);
         if (ko === 'Kvinna') urval.nKv++;
         else if (ko === 'Man') urval.nMa++;
         const rk0 = gruppnyckel(r, rad);

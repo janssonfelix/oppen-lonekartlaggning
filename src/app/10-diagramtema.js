@@ -121,11 +121,11 @@ const URVAL = Object.freeze({
     lonegap: Object.freeze({ typ: 'intervall', falt: 'gap', namn: 'Löneskillnad (%)', format: 'pct', etikett: 'löneskillnad {v}' }),
 });
 // Dimensionerna i ett underlag (figur.underlag.dimensioner): vad ett sammanfattande diagram kan räknas om för. Värdet
-// läses ur personraden med samma gruppnycklar som Tabeller och egna vyer (groupKey i src/lib/falt.js); personerna har
+// läses ur personraden med samma gruppnycklar som Tabeller och egna vyer (gruppnyckel i src/lib/falt.js); personerna har
 // inget färdigt sektorsfält.
 const UNDERLAG = Object.freeze({
-    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: termStor(T.huvudomrade.en), visning: 'lista', varde: r => _utGroupKey(r, 'sektor') }),
-    aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', visning: 'lista', varde: r => _utGroupKey(r, 'alder'), ordning: (a, b) => _faltJamforAlder(a, b) }),
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: termStor(T.huvudomrade.en), visning: 'lista', varde: r => _utGruppnyckel(r, 'sektor') }),
+    aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', visning: 'lista', varde: r => _utGruppnyckel(r, 'alder'), ordning: (a, b) => _faltJamforAlder(a, b) }),
     yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: termStor(T.enhet.en), visning: 'lista', varde: r => r.yrke }),
     bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: termStor(T.niva.en), etikett: 'BAS {v}', varde: r => r.bas }),
 });

@@ -8,7 +8,7 @@
  * kan inte spädas ut av andra delar. Könsfördelningen i organisationen är inget
  * kvalitetskriterium — den är ett fynd (könsskevhet).
  */
-import { konOf } from './falt.js';
+import { konAv } from './falt.js';
 import { avrundaSymmetriskt } from './stat.js';
 import { personOrd } from './namn.js';
 import { skapaTermer, ordForAntal } from './termer.js';
@@ -32,7 +32,7 @@ const _pct = v => (v == null || !isFinite(v)) ? '–' : `${avrundaSymmetriskt(v,
 export function jamforbaraBas(rader, k) {
     const perBas = new Map();
     for (const r of rader || []) {
-        const kon = konOf(r);
+        const kon = konAv(r);
         if (kon === 'Övrig/okänd' || !r.bas) continue;
         const g = perBas.get(r.bas) || { kv: 0, ma: 0 };
         if (kon === 'Kvinna') g.kv++; else g.ma++;

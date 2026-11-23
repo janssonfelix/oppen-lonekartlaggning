@@ -14,7 +14,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { groupKey } from './falt.js';
+import { gruppnyckel } from './falt.js';
 import { skapaTermer, stor } from './termer.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -72,7 +72,7 @@ export function villkorAktivt(v) {
     return TAL_OP.includes(v.op) && _grans(v.op, v.varde) !== null;
 }
 
-// Radens värde i fältet, eller null om det saknas. `nyckel` ger kategorins värde (groupKey, eller gruppnycklar(rader)
+// Radens värde i fältet, eller null om det saknas. `nyckel` ger kategorins värde (gruppnyckel, eller gruppnycklar(rader)
 // i falt.js, som grupperar AID-etiketten på koden).
 function _radVarde(rad, falt, nyckel) {
     const f = FALT[falt];
@@ -92,7 +92,7 @@ function _uppfyller(rad, v, nyckel) {
  * @param {(row: any, dim: string) => (string|null)} [nyckel] kategorins värde för en rad; gruppnycklar(rader) så att
  *        villkoren läser samma grupper som pivoten
  */
-export function personFilter(urval, nyckel = groupKey) {
+export function personFilter(urval, nyckel = gruppnyckel) {
     const aktiva = ((urval && urval.villkor) || []).filter(villkorAktivt);
     if (!aktiva.length) return () => true;
     if (urval.lage === 'nagot') return rad => aktiva.some(v => _uppfyller(rad, v, nyckel));

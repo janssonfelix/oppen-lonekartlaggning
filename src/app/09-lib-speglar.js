@@ -6595,11 +6595,11 @@ const __mirrorFalt = (() => {
 const T = skapaTermer();
 
 
-const AGE_ORDER = ['<20', '20–24', '25–29', '30–34', '35–39', '40–44', '45–49',
+const ALDERSORDNING = ['<20', '20–24', '25–29', '30–34', '35–39', '40–44', '45–49',
                    '50–54', '55–59', '60–64', '65+'];
 
 /** Ålder → 5-årsgrupp. Under 20 och från 65 får egna grupper. */
-function ageBucket(alder) {
+function aldersgrupp(alder) {
     const n = Number(alder);
     if (alder == null || !isFinite(n) || n <= 0) return null;
     if (n >= 65) return '65+';
@@ -6610,7 +6610,7 @@ function ageBucket(alder) {
 
 /** Sorteringsfunktion för åldersgrupper: yngst först. */
 function jamforAldersgrupp(a, b) {
-    return AGE_ORDER.indexOf(a) - AGE_ORDER.indexOf(b);
+    return ALDERSORDNING.indexOf(a) - ALDERSORDNING.indexOf(b);
 }
 
 // Lönespann: 5 000 kr breda intervall, t.ex. "30 000–34 999 kr".
@@ -6629,9 +6629,9 @@ function jamforLonespann(a, b) {
 }
 
 /** Normaliserat kön för gruppering och uppdelning. */
-function konOf(row) {
-    if (arKvinna(row)) return 'Kvinna';
-    if (arMan(row)) return 'Man';
+function konAv(rad) {
+    if (arKvinna(rad)) return 'Kvinna';
+    if (arMan(rad)) return 'Man';
     return 'Övrig/okänd';
 }
 
@@ -6639,55 +6639,55 @@ function konOf(row) {
 const OKAND_AID_KOD = `${stor(adjektiv('okänd', T.kod))} ${T.kod.en}`;
 
 /** Gruppnyckel för en rad i en dimension. null = raden saknar värde där. */
-function groupKey(row, dim) {
-    if (dim === 'bas') return row.bas || '—';
+function gruppnyckel(rad, dim) {
+    if (dim === 'bas') return rad.bas || '—';
     if (dim === 'aid') {
-        if (!row.aid) return row.yrke || '—';
-        return row.yrkeLabel && row.yrkeLabel !== row.aid ? `${row.aid} ${row.yrkeLabel}` : String(row.aid);
+        if (!rad.aid) return rad.yrke || '—';
+        return rad.yrkeLabel && rad.yrkeLabel !== rad.aid ? `${rad.aid} ${rad.yrkeLabel}` : String(rad.aid);
     }
-    if (dim === 'alder') return ageBucket(row.alder);
-    if (dim === 'kon') return konOf(row);
+    if (dim === 'alder') return aldersgrupp(rad.alder);
+    if (dim === 'kon') return konAv(rad);
     if (dim === 'alla') return 'Hela urvalet';
     // Samma grupper som gruppdossiern och lönekartläggningen arbetar med.
-    if (dim === 'aidbas') return `${groupKey(row, 'aid')} · BAS ${row.bas || '—'}`;
-    if (dim === 'lonespann') return _lonespann(row.lon);
+    if (dim === 'aidbas') return `${gruppnyckel(rad, 'aid')} · BAS ${rad.bas || '—'}`;
+    if (dim === 'lonespann') return _lonespann(rad.lon);
     // AID-hierarkin (ADR-33): sektor = huvudområde, aidniva = fyra första siffrorna.
-    if (dim === 'sektor') return sektorsnamn(row.aid);
-    if (dim === 'aidniva') return mellannivaEtikett(row.aid) ?? OKAND_AID_KOD;
+    if (dim === 'sektor') return sektorsnamn(rad.aid);
+    if (dim === 'aidniva') return mellannivaEtikett(rad.aid) ?? OKAND_AID_KOD;
     return null;
 }
 
 /**
- * Gruppnycklarna för ett underlag: som groupKey, men dimensionerna 'aid' och 'aidbas' grupperar på AID-koden
- * (aidAvRad), inte på texten i fältet för AID-etikett. Namnet är groupKey(rad, 'aid') för texten som står på flest
+ * Gruppnycklarna för ett underlag: som gruppnyckel, men dimensionerna 'aid' och 'aidbas' grupperar på AID-koden
+ * (aidAvRad), inte på texten i fältet för AID-etikett. Namnet är gruppnyckel(rad, 'aid') för texten som står på flest
  * rader (namnrader i aid.js): för 'aid' bland kodens rader i underlaget, för 'aidbas' bland kodens rader i
  * BAS-intervallet, så att 'aidbas' bär samma namn som gruppen i resten av verktyget. Två stavningar av samma etikett
- * blir alltså en grupp med ett namn. För ett underlag där varje kod har en enda text är nycklarna desamma som groupKey ger.
+ * blir alltså en grupp med ett namn. För ett underlag där varje kod har en enda text är nycklarna desamma som gruppnyckel ger.
  * @param {any[]} rader
  * @returns {(row: any, dim: string) => (string|null)}
  */
 function gruppnycklar(rader) {
     const gruppAv = r => `${aidAvRad(r)}\u0000${r.bas || '—'}`;
     const perKod = namnrader(rader, aidAvRad), perGrupp = namnrader(rader, gruppAv);
-    const namnAv = (karta, nyckel, row) => { const r = karta.get(nyckel); return groupKey(r ?? row, 'aid'); };
+    const namnAv = (karta, nyckel, row) => { const r = karta.get(nyckel); return gruppnyckel(r ?? row, 'aid'); };
     return (row, dim) => {
         if (dim === 'aid') return namnAv(perKod, aidAvRad(row), row);
         if (dim === 'aidbas') return `${namnAv(perGrupp, gruppAv(row), row)} · BAS ${row.bas || '—'}`;
-        return groupKey(row, dim);
+        return gruppnyckel(row, dim);
     };
 }
 
-    return { groupKey, gruppnycklar, konOf, jamforAldersgrupp, jamforLonespann };
+    return { gruppnyckel, gruppnycklar, konAv, jamforAldersgrupp, jamforLonespann };
 })();
-const _utGroupKey = __mirrorFalt.groupKey;
+const _utGruppnyckel = __mirrorFalt.gruppnyckel;
 const _utGruppnycklar = __mirrorFalt.gruppnycklar;
-const _utKonOf = __mirrorFalt.konOf;
+const _utKonAv = __mirrorFalt.konAv;
 const _faltJamforAlder = __mirrorFalt.jamforAldersgrupp;
 
 // ---- speglar src/lib/urval.js ----
 const __mirrorUrval = (() => {
     // importer ur tidigare speglade lib-moduler
-    const groupKey = __mirrorFalt.groupKey;
+    const gruppnyckel = __mirrorFalt.gruppnyckel;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const stor = __mirrorTermer.stor;
 
@@ -6765,7 +6765,7 @@ function villkorAktivt(v) {
     return TAL_OP.includes(v.op) && _grans(v.op, v.varde) !== null;
 }
 
-// Radens värde i fältet, eller null om det saknas. `nyckel` ger kategorins värde (groupKey, eller gruppnycklar(rader)
+// Radens värde i fältet, eller null om det saknas. `nyckel` ger kategorins värde (gruppnyckel, eller gruppnycklar(rader)
 // i falt.js, som grupperar AID-etiketten på koden).
 function _radVarde(rad, falt, nyckel) {
     const f = FALT[falt];
@@ -6785,7 +6785,7 @@ function _uppfyller(rad, v, nyckel) {
  * @param {(row: any, dim: string) => (string|null)} [nyckel] kategorins värde för en rad; gruppnycklar(rader) så att
  *        villkoren läser samma grupper som pivoten
  */
-function personFilter(urval, nyckel = groupKey) {
+function personFilter(urval, nyckel = gruppnyckel) {
     const aktiva = ((urval && urval.villkor) || []).filter(villkorAktivt);
     if (!aktiva.length) return () => true;
     if (urval.lage === 'nagot') return rad => aktiva.some(v => _uppfyller(rad, v, nyckel));
@@ -7144,7 +7144,7 @@ const _fkNamnIYrkesfaltetRadnr = __mirrorForhandskontroll.namnIYrkesfaltetRadnr;
 // ---- speglar src/lib/datakvalitet.js ----
 const __mirrorDatakvalitet = (() => {
     // importer ur tidigare speglade lib-moduler
-    const konOf = __mirrorFalt.konOf;
+    const konAv = __mirrorFalt.konAv;
     const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const personOrd = __mirrorNamn.personOrd;
     const skapaTermer = __mirrorTermer.skapaTermer;
@@ -7185,7 +7185,7 @@ const _pct = v => (v == null || !isFinite(v)) ? '–' : `${avrundaSymmetriskt(v,
 function jamforbaraBas(rader, k) {
     const perBas = new Map();
     for (const r of rader || []) {
-        const kon = konOf(r);
+        const kon = konAv(r);
         if (kon === 'Övrig/okänd' || !r.bas) continue;
         const g = perBas.get(r.bas) || { kv: 0, ma: 0 };
         if (kon === 'Kvinna') g.kv++; else g.ma++;
@@ -7280,7 +7280,7 @@ const _dqBedomUnderlag = __mirrorDatakvalitet.bedomUnderlag;
 const __mirrorGapuppdelning = (() => {
     // importer ur tidigare speglade lib-moduler
     const gruppnycklar = __mirrorFalt.gruppnycklar;
-    const konOf = __mirrorFalt.konOf;
+    const konAv = __mirrorFalt.konAv;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const stor = __mirrorTermer.stor;
     const personOrd = __mirrorNamn.personOrd;
@@ -7308,7 +7308,7 @@ const __mirrorGapuppdelning = (() => {
  * Grupper där ett kön har 1 till k − 1 personer räknas samman med andra grupper under samma cell innan delarna räknas
  * (ADR-87, `sammanslagning` i undertryckning.js), och den sammanslagna gruppen namnges inte; se _beraknaPoster.
  * AID-nivåerna (sektor, aidniva, aid) ordnas alltid grovt till fint på sina platser: en finare nivå före en grövre
- * ger annars en tom del. Ålder (åldersgrupp, ageBucket) kan bara väljas när lönefilen har ålder (ADR-64).
+ * ger annars en tom del. Ålder (åldersgrupp, `aldersgrupp` i falt.js) kan bara väljas när lönefilen har ålder (ADR-64).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -7476,7 +7476,7 @@ function _beraknaPoster(rader, k, variabler) {
     const kv = [], ma = [];
     for (const r of rader || []) {
         if (!(r.lon > 0)) continue;
-        const g = konOf(r);
+        const g = konAv(r);
         if (g === 'Kvinna') kv.push(r);
         else if (g === 'Man') ma.push(r);
     }
@@ -7589,8 +7589,8 @@ const _guOvrigaText = __mirrorGapuppdelning.gapOvrigaText;
 // ---- speglar src/lib/individflaggor.js ----
 const __mirrorIndivid = (() => {
     // importer ur tidigare speglade lib-moduler
-    const groupKey = __mirrorFalt.groupKey;
-    const konOf = __mirrorFalt.konOf;
+    const gruppnyckel = __mirrorFalt.gruppnyckel;
+    const konAv = __mirrorFalt.konAv;
     const aidAvRad = __mirrorAid.aidAvRad;
 
 // SPDX-License-Identifier: MIT
@@ -7647,7 +7647,7 @@ function _grupp(g, grans) {
         }
         const avvikelsePct = (r.lon - forvantad) / forvantad * 100;
         if (avvikelsePct <= -grans) {
-            ut.push({ radnr: r.radnr ?? null, kon: konOf(r), alder: r.alder, aid: groupKey(r, 'aid'), bas: r.bas,
+            ut.push({ radnr: r.radnr ?? null, kon: konAv(r), alder: r.alder, aid: gruppnyckel(r, 'aid'), bas: r.bas,
                       lon: r.lon, forvantad, avvikelsePct, kollegor: m, metod, ansvarsgrupp: r.ansvarsgrupp ?? null });
         }
     }
@@ -7660,7 +7660,7 @@ function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     const harAlder = (rader || []).some(r => r && r.alder > 0);
     for (const r of rader || []) {
         if (!(r.lon > 0) || (harAlder && !(r.alder > 0))) continue;
-        const kon = konOf(r);
+        const kon = konAv(r);
         if (kon !== 'Kvinna' && kon !== 'Man') continue;
         // Gruppen är AID-koden i BAS-intervallet (aidAvRad), inte texten i fältet: två stavningar av samma etikett
         // är samma kollegor. Posten bär personens egen text i `aid`.
@@ -7673,7 +7673,7 @@ function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     const flaggade = [];
     for (const g of grupper.values()) {
         if (g.length < minGrupp) { ejProvade += g.length; continue; }
-        for (const r of g) konOf(r) === 'Kvinna' ? provade.kv++ : provade.ma++;
+        for (const r of g) konAv(r) === 'Kvinna' ? provade.kv++ : provade.ma++;
         flaggade.push(..._grupp(g, grans));
     }
     flaggade.sort((a, b) => a.avvikelsePct - b.avvikelsePct || (a.radnr ?? Infinity) - (b.radnr ?? Infinity));
@@ -7721,7 +7721,7 @@ const __mirrorUtforska = (() => {
     const median = __mirrorStat.median;
     const kvantil = __mirrorStat.kvantil;
     const gruppnycklar = __mirrorFalt.gruppnycklar;
-    const konOf = __mirrorFalt.konOf;
+    const konAv = __mirrorFalt.konAv;
     const jamforAldersgrupp = __mirrorFalt.jamforAldersgrupp;
     const jamforLonespann = __mirrorFalt.jamforLonespann;
     const jamforSektor = __mirrorAid.jamforSektor;
@@ -7765,7 +7765,7 @@ const UTAN_KONSUPPDELNING = new Set(['andelKv', 'gap']);
 function _hink() { return { lons: [], kv: [], ma: [] }; }
 function _lagg(h, r) {
     h.lons.push(r.lon);
-    const k = konOf(r);
+    const k = konAv(r);
     if (k === 'Kvinna') h.kv.push(r.lon);
     else if (k === 'Man') h.ma.push(r.lon);
 }
@@ -7872,7 +7872,7 @@ function computePivot(rows, spec, { k = 10 } = {}) {
     const urval = { n: urvalRader.length, nKv: 0, nMa: 0 };
     const cellHinkar = new Map(), radHinkar = new Map(), kolHinkar = new Map();
     for (const r of urvalRader) {
-        const ko = konOf(r);
+        const ko = konAv(r);
         if (ko === 'Kvinna') urval.nKv++;
         else if (ko === 'Man') urval.nMa++;
         const rk0 = gruppnyckel(r, rad);
@@ -8037,7 +8037,7 @@ const __mirrorSektor = (() => {
     const harAlderIRader = __mirrorRegression.harAlderIRader;
     const sektorsnamn = __mirrorAid.sektorsnamn;
     const jamforSektor = __mirrorAid.jamforSektor;
-    const konOf = __mirrorFalt.konOf;
+    const konAv = __mirrorFalt.konAv;
     const skrKvinnoandelSektor = __mirrorSkrReferens.skrKvinnoandelSektor;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const stor = __mirrorTermer.stor;
@@ -8076,8 +8076,8 @@ const MIN_REGRESSION = 30;
 
 // Justerad skillnad med huvudregressionens kodning (ADR-78): k-villkoren här, modellen i regression.js.
 function _justerat(rader, k, medAlder) {
-    const giltiga = rader.filter(r => r.lon > 0 && (!medAlder || r.alder > 0) && konOf(r) !== 'Övrig/okänd');
-    const nKv = giltiga.filter(r => konOf(r) === 'Kvinna').length;
+    const giltiga = rader.filter(r => r.lon > 0 && (!medAlder || r.alder > 0) && konAv(r) !== 'Övrig/okänd');
+    const nKv = giltiga.filter(r => konAv(r) === 'Kvinna').length;
     if (giltiga.length < MIN_REGRESSION || nKv < k || giltiga.length - nKv < k) return { just: null, skal: 'fa' };
     const just = justeradSkillnad(giltiga, { medAlder });
     // Räknat utan BAS fast huvudområdet har flera BAS-intervall: talet är inte justerat för BAS och visas inte.
@@ -8112,7 +8112,7 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
     const medAlder = harAlderIRader(rader);   // lönefilen har ålder (ADR-64): gäller alla huvudområden
     return [...per.keys()].sort(jamforSektor).map(namn => {
         const g = per.get(namn);
-        const kv = g.filter(r => konOf(r) === 'Kvinna'), ma = g.filter(r => konOf(r) === 'Man');
+        const kv = g.filter(r => konAv(r) === 'Kvinna'), ma = g.filter(r => konAv(r) === 'Man');
         const n = g.length, maskerad = n < k;
         const bada = kv.length >= k && ma.length >= k;
         const medKv = !maskerad && bada ? median(kv.map(r => r.lon)) : null;
@@ -8151,8 +8151,8 @@ function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
  * Räknas alla samman till ett är sektorKr och andel null: beloppet vore noll och säger ingenting om fördelningen.
  */
 function sektorernasAndel(rader, { k = 10 } = {}) {
-    const kv = (rader || []).filter(r => r.lon > 0 && konOf(r) === 'Kvinna');
-    const ma = (rader || []).filter(r => r.lon > 0 && konOf(r) === 'Man');
+    const kv = (rader || []).filter(r => r.lon > 0 && konAv(r) === 'Kvinna');
+    const ma = (rader || []).filter(r => r.lon > 0 && konAv(r) === 'Man');
     if (!kv.length || !ma.length || kv.length < k || ma.length < k) return null;
     const medel = a => a.reduce((s, r) => s + r.lon, 0) / a.length;
     const gapKr = medel(kv) - medel(ma);
@@ -8203,7 +8203,7 @@ const _skSektorAndelNot = __mirrorSektor.sektorAndelNot;
 const __mirrorAnsvar = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const konOf = __mirrorFalt.konOf;
+    const konAv = __mirrorFalt.konAv;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8271,7 +8271,7 @@ function ansvarsUnderrader(rader, { k }) {
     return ORDNING.map(grupp => {
         const g = (rader || []).filter(r => r.ansvarsgrupp === grupp && r.lon > 0);
         if (!g.length) return null;
-        const kv = g.filter(r => konOf(r) === 'Kvinna'), ma = g.filter(r => konOf(r) === 'Man');
+        const kv = g.filter(r => konAv(r) === 'Kvinna'), ma = g.filter(r => konAv(r) === 'Man');
         const liten = g.length < k, bada = kv.length >= k && ma.length >= k;
         const medKv = !liten && bada ? median(kv.map(r => r.lon)) : null;
         const medMa = !liten && bada ? median(ma.map(r => r.lon)) : null;
@@ -12569,7 +12569,7 @@ function harlettNot(h) {
 // (det ingår bara i hela underlaget), och underlaget räknas för en dimension i taget. Då är skillnaden mellan två val
 // alltid en förening av valbara värden — själva skyddade — och "alla" minus ett val är resten, som regeln prövar.
 
-// Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
+// Radens kön som 'kv' eller 'ma' (samma regel som konAv i falt.js), eller null.
 function _underlagKon(underlag, r) {
     if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
     if (arKvinna(r)) return 'kv';

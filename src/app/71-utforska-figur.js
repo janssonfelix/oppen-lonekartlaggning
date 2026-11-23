@@ -245,7 +245,7 @@ function _figFordelning(model, rows, allaPunkter) {
         if (!(r.lon > 0) || !person(r)) continue;
         const g = nyckel(r, rad);
         if (g == null || !gruppLiten.has(g)) continue;
-        const kon = delaKon ? _utKonOf(r) : 'Alla';
+        const kon = delaKon ? _utKonAv(r) : 'Alla';
         if (!hinkar.has(kon)) hinkar.set(kon, []);
         hinkar.get(kon).push({ g, lon: r.lon });
         antal.set(`${g}|${kon}`, (antal.get(`${g}|${kon}`) || 0) + 1);

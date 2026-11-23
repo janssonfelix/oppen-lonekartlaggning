@@ -564,7 +564,7 @@ export function harlettNot(h) {
 // (det ingår bara i hela underlaget), och underlaget räknas för en dimension i taget. Då är skillnaden mellan två val
 // alltid en förening av valbara värden — själva skyddade — och "alla" minus ett val är resten, som regeln prövar.
 
-// Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
+// Radens kön som 'kv' eller 'ma' (samma regel som konAv i falt.js), eller null.
 function _underlagKon(underlag, r) {
     if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
     if (arKvinna(r)) return 'kv';

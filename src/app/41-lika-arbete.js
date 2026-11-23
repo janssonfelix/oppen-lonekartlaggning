@@ -264,8 +264,8 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
     });
     if (under.some(u => u.grupp === 'ledning')) {
         const ovriga = yrkesRader.filter(x => x.ansvarsgrupp && x.ansvarsgrupp !== 'ledning' && x.lon > 0);
-        const kv = ovriga.filter(x => _utKonOf(x) === 'Kvinna').map(x => x.lon);
-        const ma = ovriga.filter(x => _utKonOf(x) === 'Man').map(x => x.lon);
+        const kv = ovriga.filter(x => _utKonAv(x) === 'Kvinna').map(x => x.lon);
+        const ma = ovriga.filter(x => _utKonAv(x) === 'Man').map(x => x.lon);
         if (kv.length >= kTroskel() && ma.length >= kTroskel()) {
             const tr = document.createElement('tr');
             tr.className = 'la-underrad';

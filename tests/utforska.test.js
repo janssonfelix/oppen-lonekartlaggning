@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { computePivot, DIMENSIONER, slaIhopSmaAid } from '../src/lib/utforska.js';
-import { groupKey, ageBucket, konOf, jamforAldersgrupp } from '../src/lib/falt.js';
+import { gruppnyckel, aldersgrupp, konAv, jamforAldersgrupp } from '../src/lib/falt.js';
 import { median, kvantil } from '../src/lib/stat.js';
 
 const rad = (bas, kon, lon, extra = {}) => ({
@@ -23,41 +23,41 @@ function grupp(bas, nKv, nMa, basLon, extra = {}) {
 }
 const spec = over => ({ rad: 'bas', kolumn: null, matt: 'median', delaKon: false, urval: { lage: 'alla', villkor: [] }, gruppVillkor: [], ...over });
 
-describe('ageBucket', () => {
+describe('aldersgrupp', () => {
     it('jamforAldersgrupp sorterar yngst först', () => {
         expect(['65+', '<20', '30–34'].sort(jamforAldersgrupp)).toEqual(['<20', '30–34', '65+']);
     });
     it('delar in i 5-årsgrupper med egna grupper under 20 och från 65', () => {
-        expect(ageBucket(19)).toBe('<20');
-        expect(ageBucket(20)).toBe('20–24');
-        expect(ageBucket(24)).toBe('20–24');
-        expect(ageBucket(64)).toBe('60–64');
-        expect(ageBucket(65)).toBe('65+');
-        expect(ageBucket(80)).toBe('65+');
+        expect(aldersgrupp(19)).toBe('<20');
+        expect(aldersgrupp(20)).toBe('20–24');
+        expect(aldersgrupp(24)).toBe('20–24');
+        expect(aldersgrupp(64)).toBe('60–64');
+        expect(aldersgrupp(65)).toBe('65+');
+        expect(aldersgrupp(80)).toBe('65+');
     });
     it('ger null för saknad eller ogiltig ålder', () => {
-        expect(ageBucket(0)).toBeNull();
-        expect(ageBucket(null)).toBeNull();
-        expect(ageBucket('x')).toBeNull();
+        expect(aldersgrupp(0)).toBeNull();
+        expect(aldersgrupp(null)).toBeNull();
+        expect(aldersgrupp('x')).toBeNull();
     });
 });
 
-describe('konOf och groupKey', () => {
+describe('konAv och gruppnyckel', () => {
     it('normaliserar kön', () => {
-        expect(konOf({ kon: 'kvinna' })).toBe('Kvinna');
-        expect(konOf({ kon: 'man' })).toBe('Man');
-        expect(konOf({ kon: 'män' })).toBe('Man');
-        expect(konOf({ kon: '' })).toBe('Övrig/okänd');
+        expect(konAv({ kon: 'kvinna' })).toBe('Kvinna');
+        expect(konAv({ kon: 'man' })).toBe('Man');
+        expect(konAv({ kon: 'män' })).toBe('Man');
+        expect(konAv({ kon: '' })).toBe('Övrig/okänd');
     });
     it('bygger nycklar per dimension', () => {
         const r = rad('B', 'kvinna', 30000, { alder: 33 });
-        expect(groupKey(r, 'bas')).toBe('B');
-        expect(groupKey(r, 'aid')).toBe('100 Yrke 100');
-        expect(groupKey(r, 'alder')).toBe('30–34');
-        expect(groupKey(r, 'kon')).toBe('Kvinna');
-        expect(groupKey({ ...r, bas: '' }, 'bas')).toBe('—');
-        expect(groupKey({ ...r, aid: '', yrke: 'Okänt yrke' }, 'aid')).toBe('Okänt yrke');
-        expect(groupKey(r, 'finns-inte')).toBeNull();
+        expect(gruppnyckel(r, 'bas')).toBe('B');
+        expect(gruppnyckel(r, 'aid')).toBe('100 Yrke 100');
+        expect(gruppnyckel(r, 'alder')).toBe('30–34');
+        expect(gruppnyckel(r, 'kon')).toBe('Kvinna');
+        expect(gruppnyckel({ ...r, bas: '' }, 'bas')).toBe('—');
+        expect(gruppnyckel({ ...r, aid: '', yrke: 'Okänt yrke' }, 'aid')).toBe('Okänt yrke');
+        expect(gruppnyckel(r, 'finns-inte')).toBeNull();
     });
 });
 
@@ -230,13 +230,13 @@ describe('computePivot — gruppvillkor och k-regeln', () => {
 });
 
 describe('nya dimensioner och uppdelning per kön', () => {
-    it('groupKey: hela urvalet, yrkesgrupp inom BAS och lönespann', () => {
+    it('gruppnyckel: hela urvalet, yrkesgrupp inom BAS och lönespann', () => {
         const r = { bas: 'E', aid: '207', yrkeLabel: 'Förskollärare', yrke: '207 Förskollärare', lon: 32499, alder: 40, kon: 'kvinna', enhet: '' };
-        expect(groupKey(r, 'alla')).toBe('Hela urvalet');
-        expect(groupKey(r, 'aidbas')).toBe('207 Förskollärare · BAS E');
-        expect(groupKey(r, 'lonespann').replace(/ /g, ' ')).toBe('30 000–34 999 kr');
-        expect(groupKey({ ...r, lon: 35000 }, 'lonespann').replace(/ /g, ' ')).toBe('35 000–39 999 kr');
-        expect(groupKey({ ...r, lon: 0 }, 'lonespann')).toBeNull();
+        expect(gruppnyckel(r, 'alla')).toBe('Hela urvalet');
+        expect(gruppnyckel(r, 'aidbas')).toBe('207 Förskollärare · BAS E');
+        expect(gruppnyckel(r, 'lonespann').replace(/ /g, ' ')).toBe('30 000–34 999 kr');
+        expect(gruppnyckel({ ...r, lon: 35000 }, 'lonespann').replace(/ /g, ' ')).toBe('35 000–39 999 kr');
+        expect(gruppnyckel({ ...r, lon: 0 }, 'lonespann')).toBeNull();
     });
     it('lönespann sorteras från lägst till högst oavsett mått', () => {
         const rows = [...grupp('A', 6, 6, 42000), ...grupp('A', 6, 6, 21000), ...grupp('A', 6, 6, 30000)];
@@ -277,12 +277,12 @@ describe('utforska: sektor och AID-mellannivå', () => {
         { aid: '502010', yrkeLabel: 'Systemutvecklare', bas: 'D', kon: 'man', lon: 45000, alder: 35 },
         { aid: '5301', yrkeLabel: 'X', bas: 'B', kon: 'kvinna', lon: 29000, alder: 50 },
     ];
-    it('groupKey', async () => {
-        const { groupKey } = await import('../src/lib/falt.js');
-        expect(groupKey(rader[0], 'sektor')).toBe('Vård- och omsorgsarbete med mera');
-        expect(groupKey(rader[3], 'sektor')).toBe('Okänt huvudområde');
-        expect(groupKey(rader[0], 'aidniva')).toBe('AID 2070xx');
-        expect(groupKey(rader[3], 'aidniva')).toBe('Okänd AID-kod');
+    it('gruppnyckel', async () => {
+        const { gruppnyckel } = await import('../src/lib/falt.js');
+        expect(gruppnyckel(rader[0], 'sektor')).toBe('Vård- och omsorgsarbete med mera');
+        expect(gruppnyckel(rader[3], 'sektor')).toBe('Okänt huvudområde');
+        expect(gruppnyckel(rader[0], 'aidniva')).toBe('AID 2070xx');
+        expect(gruppnyckel(rader[3], 'aidniva')).toBe('Okänd AID-kod');
     });
     it('pivot per mellannivå tappar inga rader: okänd kod får en egen grupp sist', () => {
         const p = computePivot(rader, { rad: 'aidniva', matt: 'n' }, { k: 1 });

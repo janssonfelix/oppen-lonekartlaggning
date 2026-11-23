@@ -126,7 +126,7 @@ function _explorerUrvalAntal(rows, urval) {
     for (const r of rows) {
         if (!(r.lon > 0) || !person(r)) continue;
         ut.n++;
-        const k = _utKonOf(r);
+        const k = _utKonAv(r);
         if (k === 'Kvinna') ut.nKv++; else if (k === 'Man') ut.nMa++;
     }
     return ut;

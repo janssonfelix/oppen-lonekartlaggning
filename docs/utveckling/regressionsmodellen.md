@@ -460,7 +460,7 @@ Grupposterna mäts mot snittet (− W̄, − W̄_b); det ändrar inga summor, ef
 **Valbara variabler.** Kortet *Förklara med:* (under trappan, bakom *Ändra uppdelning*) låter handläggaren välja en till fyra variabler bland BAS, huvudområde
 (nyckeln `sektor`), AID-mellannivå, AID och åldersgrupp (`GAP_VARIABLER`), och ordna dem med knappar. Huvudområde och
 AID-mellannivå kan väljas
-när lönefilen har AID-koder, åldersgrupp (`ageBucket`: under 20, femårsgrupper från 20–24 till 60–64, 65+) när den har
+när lönefilen har AID-koder, åldersgrupp (`aldersgrupp`: under 20, femårsgrupper från 20–24 till 60–64, 65+) när den har
 ålder. Uppdelningen nästlas i den valda ordningen: varje cell c på nivå i−1 har vikten ω_c, produkten av s̄ längs
 vägen från hela urvalet (ω = 1). Del i är Σ_c ω_c · Σ_barn Δs_barn|c · (W̄_barn − W̄_c), och den sista delen (*Inom …*)
 är Σ_löv ω_löv · ΔW_löv. Delarna summerar exakt till hela skillnaden, eftersom ΔW_c = Σ Δs · W̄ + Σ s̄ · ΔW på varje

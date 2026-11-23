@@ -19,7 +19,7 @@
 import { median } from './stat.js';
 import { justeradSkillnad, harAlderIRader } from './regression.js';
 import { sektorsnamn, jamforSektor } from './aid.js';
-import { konOf } from './falt.js';
+import { konAv } from './falt.js';
 import { skrKvinnoandelSektor } from './skrreferens.js';
 import { skapaTermer, stor } from './termer.js';
 import { personOrd } from './namn.js';
@@ -31,8 +31,8 @@ const MIN_REGRESSION = 30;
 
 // Justerad skillnad med huvudregressionens kodning (ADR-78): k-villkoren här, modellen i regression.js.
 function _justerat(rader, k, medAlder) {
-    const giltiga = rader.filter(r => r.lon > 0 && (!medAlder || r.alder > 0) && konOf(r) !== 'Övrig/okänd');
-    const nKv = giltiga.filter(r => konOf(r) === 'Kvinna').length;
+    const giltiga = rader.filter(r => r.lon > 0 && (!medAlder || r.alder > 0) && konAv(r) !== 'Övrig/okänd');
+    const nKv = giltiga.filter(r => konAv(r) === 'Kvinna').length;
     if (giltiga.length < MIN_REGRESSION || nKv < k || giltiga.length - nKv < k) return { just: null, skal: 'fa' };
     const just = justeradSkillnad(giltiga, { medAlder });
     // Räknat utan BAS fast huvudområdet har flera BAS-intervall: talet är inte justerat för BAS och visas inte.
@@ -67,7 +67,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
     const medAlder = harAlderIRader(rader);   // lönefilen har ålder (ADR-64): gäller alla huvudområden
     return [...per.keys()].sort(jamforSektor).map(namn => {
         const g = per.get(namn);
-        const kv = g.filter(r => konOf(r) === 'Kvinna'), ma = g.filter(r => konOf(r) === 'Man');
+        const kv = g.filter(r => konAv(r) === 'Kvinna'), ma = g.filter(r => konAv(r) === 'Man');
         const n = g.length, maskerad = n < k;
         const bada = kv.length >= k && ma.length >= k;
         const medKv = !maskerad && bada ? median(kv.map(r => r.lon)) : null;
@@ -106,8 +106,8 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
  * Räknas alla samman till ett är sektorKr och andel null: beloppet vore noll och säger ingenting om fördelningen.
  */
 export function sektorernasAndel(rader, { k = 10 } = {}) {
-    const kv = (rader || []).filter(r => r.lon > 0 && konOf(r) === 'Kvinna');
-    const ma = (rader || []).filter(r => r.lon > 0 && konOf(r) === 'Man');
+    const kv = (rader || []).filter(r => r.lon > 0 && konAv(r) === 'Kvinna');
+    const ma = (rader || []).filter(r => r.lon > 0 && konAv(r) === 'Man');
     if (!kv.length || !ma.length || kv.length < k || ma.length < k) return null;
     const medel = a => a.reduce((s, r) => s + r.lon, 0) / a.length;
     const gapKr = medel(kv) - medel(ma);

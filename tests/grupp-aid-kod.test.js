@@ -13,7 +13,7 @@ import { trattUnderlag, sigmaInomGrupp } from '../src/lib/osakerhet.js';
 import { flaggaIndivider } from '../src/lib/individflaggor.js';
 import { inomYrkesgrupp } from '../src/lib/regression.js';
 import { gapPoster } from '../src/lib/gapuppdelning.js';
-import { groupKey, gruppnycklar } from '../src/lib/falt.js';
+import { gruppnyckel, gruppnycklar } from '../src/lib/falt.js';
 import { computePivot } from '../src/lib/utforska.js';
 import { personFilter } from '../src/lib/urval.js';
 import { aidAvRad, namnrader } from '../src/lib/aid.js';
@@ -43,9 +43,9 @@ describe('[B5.1] aidAvRad och gruppnycklarna', () => {
         expect(aidAvRad({ aid: '1', bas: 'A' })).toBe('1');
         expect(aidAvRad({ yrke: 'Ingen kod', aid: '' })).toBe('Ingen kod');
     });
-    it('groupKey följer texten (tre grupper); gruppnycklar följer koden (en grupp, med namnet på flest rader)', () => {
+    it('gruppnyckel följer texten (tre grupper); gruppnycklar följer koden (en grupp, med namnet på flest rader)', () => {
         const r = underlag();
-        expect(new Set(r.map(x => groupKey(x, 'aid'))).size).toBe(3);
+        expect(new Set(r.map(x => gruppnyckel(x, 'aid'))).size).toBe(3);
         const nyckel = gruppnycklar(r);
         expect([...new Set(r.map(x => nyckel(x, 'aid')))]).toEqual([TEXT_A]);
         expect([...new Set(r.map(x => nyckel(x, 'aidbas')))]).toEqual([`${TEXT_A} · BAS C`]);
@@ -165,7 +165,7 @@ describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och 
         expect(m.celler.map(c => [c.rad, c.n, c.liten])).toEqual([[TEXT_A, 16, false]]);
         const villkor = { lage: 'alla', villkor: [{ falt: 'aid', op: 'enAv', varde: [TEXT_A] }] };
         expect(r.filter(personFilter(villkor, gruppnycklar(r)))).toHaveLength(16);
-        expect(r.filter(personFilter(villkor))).toHaveLength(8);   // groupKey utan underlag: bara texten
+        expect(r.filter(personFilter(villkor))).toHaveLength(8);   // gruppnyckel utan underlag: bara texten
     });
 });
 
