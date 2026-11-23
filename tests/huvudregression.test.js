@@ -251,3 +251,46 @@ describe('BAS-steg räknas i bokstäver i huvudregressionen, Blinder-Oaxaca och 
         for (const q of r.results) { expect(q.error).toBeUndefined(); expect(Math.abs(q.konPct)).toBeLessThan(0.5); }
     });
 });
+
+describe('huvudregression: den valda förklaringsmodellen i returvärdet (ADR-56)', () => {
+    const rader = underlag();
+    const kor = modell => huvudregression(rader, opts({ modell }));
+    const std = kor(STD);
+    it('standard: modelDesc, frasen "ålder och BAS-intervall", inget bortvalt, tillför-tabellen med tre rader', () => {
+        expect(std.error).toBeUndefined();
+        expect(std.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer)');
+        expect(std.fras).toBe('ålder och BAS-intervall');
+        expect(std.bortvalt).toEqual([]);
+        expect(std.modell).toEqual({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
+        expect(std.tillfor.rader.map(x => x.variabel)).toEqual(['bas', 'alder', 'yrkesgrupp']);
+        expect(std.modellVarning).toBeNull();
+    });
+    it('utan ålder: en kolumn färre, ingen ålderseffekt, ålder bortvald med skälet, inget steg + Ålder', () => {
+        const r = kor({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        expect(r.k).toBe(std.k - 1);
+        expect(r.ageEffect).toBeNull();
+        expect(r.ageP).toBeNull();
+        expect(r.bortvalt).toHaveLength(1);
+        expect(r.bortvalt[0]).toMatchObject({ variabel: 'alder', etikett: 'Ålder', skal: 'ingen lön efter ålder' });
+        expect(typeof r.bortvalt[0].deltaR2pp).toBe('number');
+        expect(r.sequential.map(x => x.name)).not.toContain('+ Ålder');
+        expect(r.fras).toBe('BAS-intervall');
+        expect(r.konPct).toBeCloseTo(r.sequential.find(x => x.name === '+ BAS-intervall').gapPct, 8);
+    });
+    it('utan BAS: inga BAS-effekter, frasen "ålder"', () => {
+        const r = kor({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
+        expect(r.basEffekter).toBeNull();
+        expect(r.basRef).toBeNull();
+        expect(r.fras).toBe('ålder');
+        expect(r.modelDesc).toBe('kön + ålder');
+        expect(r.bortvalt.map(b => b.variabel)).toEqual(['bas']);
+    });
+    it('yrkesgrupp vald: frasen, modelDesc och steget + Yrkesgrupp sist; inget bortvalt', () => {
+        const r = kor({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        expect(r.konPct).toBeCloseTo(std.yrkesSteg.gapPct, 6);
+        expect(r.fras).toBe('ålder, BAS-intervall och AID-etikett');
+        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + AID-etikett inom BAS (fasta effekter)');
+        expect(r.sequential.at(-1).name).toBe(STEG_YRKE);
+        expect(r.bortvalt).toEqual([]);
+    });
+});
