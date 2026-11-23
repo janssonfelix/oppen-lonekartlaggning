@@ -105,6 +105,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-96 | Konfigurationsfilens fält har svenska namn; äldre filer läses | Gällande | 2026-11-23 |
 | ADR-97 | Funktionerna i `src/lib/` har svenska namn | Gällande | 2026-11-23 |
 | ADR-98 | Appen byggs från ES-moduler med esbuild | Gällande | 2026-11-23 |
+| ADR-99 | En vymodell per flik i `src/lib/` | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -669,3 +670,20 @@ gör toppnivåns `const` och `let` till `var` i utfilen. *Avvisat:* att behålla
 ES-modul som utfil, som döljer namnen för testerna eller kräver en server; att ersätta testernas globala namn med
 exporter i samma ändring. Ersätter ADR-8 och ändrar ADR-6 (delarna slås inte längre ihop byte för byte). *Gäller i dag:*
 `bygge-och-test.md` §2, `src/app/README.md`.
+
+**ADR-99 — En vymodell per flik i `src/lib/`.** Beslutat av underhållaren 2026-11-23. Det en flik visar räknas av en
+vymodell: en funktion i `src/lib/` (`vymodellLikaArbete(rader, { k, golv, … })`) som tar underlaget, tröskeln och de
+inställningar som behövs som argument och ger rena data: tal, rader, maskeringar, statusar och de texter som är
+beräknade (statusens förklaring, anteckningen i en exportbild). Vymodellen rör ingen DOM, läser inga globala och inget
+tillstånd, har svenska namn och innehåller ingen HTML, färg eller ikon. Appens ritfunktion (`ritaLikaArbete(vm)`) ritar
+bara det den får; en tunn adapter i samma del (`laVymodell()`) läser tillståndet och skickar det vidare, med appens
+minne för de dyra delarna (bootstrap, omkastning) som valfria argument. Vymodellen för en flik ligger i
+`src/lib/vymodell-<flik>.js`, platt bland de andra modulerna, så att vakterna för `src/lib/` (`tests/lib-beroenden.test.js`,
+modultabellen i `arkitektur.md`) gäller utan ändring. Varje vymodell prövas i Node med ID-märkta tester i
+spårbarhetsmatrisen, och k-invarianten prövas på vymodellen vid 10 och 25 (I9). Först ute är Lika arbete och
+Lönestrukturs avsnitt per BAS-intervall (`vymodell-lonestruktur.js`); flikens övriga delar och de andra flikarna följer.
+Diagrammens figurer byggs kvar i appen ur vymodellens data. *Skäl:* en extern granskare ska kunna läsa och pröva varje
+regel som styr vad en flik visar utan DOM och tillstånd (ADR-95, ADR-98). *Avvisat:* en mapp `src/lib/vymodeller/`,
+som vakterna för `src/lib/` inte läser och som skulle kräva att de skrivs om; att låta ritfunktionen läsa tillståndet
+själv, som döljer vad vyn bygger på; HTML i vymodellen, som binder den till webbläsaren. *Gäller i dag:*
+`arkitektur.md`, `src/app/README.md`.

@@ -31,7 +31,7 @@ describe('[B5.1] Lika arbete i appen: en grupp per AID-kod', () => {
     });
     it('tabellen per AID-etikett har en rad för koden, och underraderna per ansvarsgrupp räknar alla kodens rader', () => {
         const w = fonster();
-        w.eval('generateEUDirectiveMatrix()');
+        w.eval('ritaLikaArbete(laVymodell())');
         const tbody = w.document.querySelector('#matrix-table tbody');
         // Yrkesraderna; under dem står underraderna och notraden om skörhet.
         const huvud = [...tbody.querySelectorAll('tr')].filter(tr => !tr.classList.contains('la-underrad') && /^\s*\d{6}/.test(tr.textContent));
@@ -49,7 +49,7 @@ describe('[B5.1] Lika arbete i appen: en grupp per AID-kod', () => {
         const w = createAppWindow();
         const iD = underlag().map(r => ({ ...r, bas: 'D', lon: r.lon + 4000 }));
         w.__state.data = [...underlag(), ...iD];
-        w.eval('generateEUDirectiveMatrix()');
+        w.eval('ritaLikaArbete(laVymodell())');
         const rubriker = [...w.document.querySelectorAll('#matrix-table thead th')].map(th => th.textContent.trim());
         expect(rubriker[1]).toBe('BAS');
         const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow);

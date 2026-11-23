@@ -16,7 +16,7 @@ import { renderStructure, renderStrukturUtkast } from './37-struktur.js';
 import { synkaJamforelseFlik } from './38-referensfiler.js';
 import { generateRapport } from './39-loneoversikt.js';
 import { renderDemografi, renderKon } from './40-alder-karriar.js';
-import { generateEUDirectiveMatrix, generateSkevhet, renderLikaArbeteTopp, renderLonestrukturNycklar } from './41-lika-arbete.js';
+import { laVymodell, lsBasVymodell, renderLikaArbeteTopp, renderLonestrukturNycklar, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { generateBenchmark, renderStatistikLage } from './42-jamforelse.js';
 import { renderPersonerAttGranska } from './43-personer-att-granska.js';
 import { renderReferensOverblick } from './44-referensoverblick.js';
@@ -401,11 +401,11 @@ function _renderTabContent(target) {
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); renderStatistikLage(); generateBenchmark(); }
     else if (target === "matrix"       && d.length) {
         const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
-        generateEUDirectiveMatrix({ reg }); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp({ reg });
+        ritaLikaArbete(laVymodell(), { reg }); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp({ reg });
     }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) {
-        renderStructure(); generateSkevhet();
+        renderStructure(); ritaLoneskillnadPerBas(lsBasVymodell());
         // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.
         _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(renderRegressionCard()));
         renderGapUppdelning(); renderLonestrukturNycklar();

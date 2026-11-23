@@ -26,7 +26,7 @@ import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { renderSektorer } from './37-struktur.js';
 import { generateRapport } from './39-loneoversikt.js';
 import { _konAlderGapRader } from './40-alder-karriar.js';
-import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, generateEUDirectiveMatrix, generateSkevhet, laLikaGrupper } from './41-lika-arbete.js';
+import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, laLikaGrupper, laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { generateBenchmark, jamforelseUrvalText } from './42-jamforelse.js';
 import { _rrExcelBlad } from './44-referensoverblick.js';
 import { _aidbasExcelBlad, _aidbasLikaBlad, _aidbasMetodRader, AIDBAS_BLADNAMN, konsklassOrd } from './45-aid-bas-tabeller.js';
@@ -200,8 +200,8 @@ function __excelAlltBokExport() {
     // flikbesök → arket föll tyst bort ur exporten).
     const ensure = (sel, fn) => { if (!document.querySelector(sel)) { try { fn(); } catch (_e) { /* tolerant */ } } };
     ensure('#rapport-table tbody tr', generateRapport);
-    ensure('#skevhet-table tbody tr', generateSkevhet);
-    ensure('#matrix-table tbody tr', generateEUDirectiveMatrix);
+    ensure('#skevhet-table tbody tr', () => ritaLoneskillnadPerBas(lsBasVymodell()));
+    ensure('#matrix-table tbody tr', () => ritaLikaArbete(laVymodell()));
     if (state.policy.length || state.statistik.length) ensure('#prio-table tbody tr', renderPrioritering);
     if (state.statistik.length) ensure('#benchmark-table tbody tr', generateBenchmark);
 

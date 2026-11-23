@@ -8,8 +8,9 @@
 // egen hexkod.
 // ====================================================================
 import { gruppnyckel, jamforAldersgrupp } from '../lib/falt.js';
-import { kiUtesluterLika, statusKonstanter, statusNiva } from '../lib/status.js';
+import { statusKonstanter, statusNiva } from '../lib/status.js';
 import { stor } from '../lib/termer.js';
+import { oversiktNiva } from '../lib/vymodell-lonestruktur.js';
 import { FARG } from './01-farger.js';
 import { statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -148,10 +149,7 @@ export function gapStatus(avstand, sakerstalld) {
 /** Statusen för en nivå ('granska', 'folj', 'balanserat', 'ejbedomd'). */
 export function gapStatusNiva(niva) { return GAP_STATUS_ALLA.find(s => s.niva === niva) || GAP_STATUS_EJ; }
 /** Statusen för en rad med kvot (i %), 95 % KI och antal per kön: KI:t mot 100 % prövar, golvet är statGolv(). */
-export function gapStatusKI(o) {
-    if (!(o.nKv >= statGolv() && o.nMa >= statGolv())) return GAP_STATUS_EJ;
-    return gapStatus(Math.abs(100 - o.gap), kiUtesluterLika(o.ci));
-}
+export function gapStatusKI(o) { return gapStatusNiva(oversiktNiva(o, statGolv())); }
 
 // Gemensamt teckensnitt/typografi för diagram (matchar appens sans-stack).
 export const CHART_FONT = {

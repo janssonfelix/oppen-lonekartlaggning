@@ -31,7 +31,7 @@ import { _fcGlomKnappresultat, _fcRensaParMal } from './36-loneoversyn.js';
 import { renderReferensKort } from './38-referensfiler.js';
 import { generateRapport } from './39-loneoversikt.js';
 import { renderKon } from './40-alder-karriar.js';
-import { generateSkevhet } from './41-lika-arbete.js';
+import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _hpRensaDemoSkal } from './56-handlingsplan.js';
 
@@ -163,7 +163,7 @@ function _afterDataLoaded() {
         if (dataStatus) dataStatus.textContent += DEFER_NOTE;
         setTimeout(() => {
             try {
-                generateSkevhet();
+                ritaLoneskillnadPerBas(lsBasVymodell());
                 renderKon("__ALLA__");
                 computeBootstrapCI();
                 renderActionChecklist();

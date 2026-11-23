@@ -101,6 +101,8 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `sakligaskal` | – |
 |  | `attgora` | `namn`, `termer` |
 | Demoläget | `demodata` | `ansvar`, `inlasning`, `kon`, `stat` |
+| Vymodeller (ADR-99) | `vymodell-lika-arbete` | `aid`, `aidbas`, `ansvar`, `namn`, `osakerhet`, `rapportunderlag`, `skrreferens`, `struktur` |
+|  | `vymodell-lonestruktur` | `figur`, `kon`, `osakerhet`, `stat`, `status`, `struktur` |
 
 Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter. Reglerna
 för vad som får redovisas vid k (könen, § 3:10-paren, regressionens steg och BAS-effekter, punkterna per person,

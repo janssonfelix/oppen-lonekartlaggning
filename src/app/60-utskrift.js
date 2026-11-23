@@ -16,7 +16,7 @@ import { _exportUtanSkarmkolumner, _exportVisaAllaRader } from './22-exporthjalp
 import { exportElement, medExportLage } from './23-exportgrind.js';
 import { generateRapport } from './39-loneoversikt.js';
 import { renderKon } from './40-alder-karriar.js';
-import { generateEUDirectiveMatrix, generateSkevhet } from './41-lika-arbete.js';
+import { laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { _jmfKallaNamn, generateBenchmark, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
 import { _utskriftReferenserHtml } from './44-referensoverblick.js';
 import { rapportModellBada, rmArHelaDokumentationen, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
@@ -92,8 +92,8 @@ async function _buildPrintReportExport() {
             // Bilagor med flikarnas egna tabeller och diagram — underlaget bakom avsnitten. De följer bara med när hela
             // dokumentationen är vald; ett kortare urval (ledningsbrief, facklig dialog) är just avsnitten.
             generateRapport();
-            generateSkevhet();
-            generateEUDirectiveMatrix();
+            ritaLoneskillnadPerBas(lsBasVymodell());
+            ritaLikaArbete(laVymodell());
             if (state.statistik.length) generateBenchmark();
             const imgs = {};
             renderKon('__ALLA__');

@@ -30,7 +30,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
             statistik: { namn: X('stat'), rader: [0, 1, 2, 3, 4, 5].map(g => ({ aid: g < 3 ? `10${g}` : `20${g}`, aidFull: X('aidfull' + g), bas: 'ABC'[g % 3],
                 median: 33000 + g * 1000, p10: 30000, p90: 36000, nKv: 20, nMa: 20, andelKv: g < 3 ? 80 : 20 })) } };
         w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket))}, 'x')`);
-        w.eval('populateSelects(); unlockTabs(); updateDashboardStats(); generateRapport(); generateSkevhet();');
+        w.eval('populateSelects(); unlockTabs(); updateDashboardStats(); generateRapport(); ritaLoneskillnadPerBas(lsBasVymodell());');
     };
 
     it('skadlig text i fil och organisationspaket skapar inga element i någon flik', async () => {

@@ -11,7 +11,7 @@ som kan ändra dem.
 Koden är sanningen. Där matrisen och koden skiljer sig är det matrisen som ska rättas.
 
 **ID:n.** Beräkningarna heter `B<avsnitt>.<rad>` (B1.1, B1.2 …) efter avsnitt 1–9 nedan. Testerna för minsta
-gruppstorlek heter efter sina serier, I1–I8 (och I1b), C2–C6 och R1–R5 (avsnitt 11), och skydden S1–S5 (avsnitt 12).
+gruppstorlek heter efter sina serier, I1–I9 (och I1b), C2–C6 och R1–R5 (avsnitt 11), och skydden S1–S5 (avsnitt 12).
 Ett ID är stabilt: det byts aldrig och återanvänds aldrig. En rad som stryks lämnar en lucka i numreringen, och en ny
 rad får nästa lediga nummer i sitt avsnitt.
 
@@ -59,6 +59,7 @@ avsnitt 11.
 | B2.3 | Representation per BAS-intervall: andel kvinnor, medianer, gap | `representationPerBas`, `struktur.js` | lön, kön, BAS | verktygets eget val, ingen extern källa | `tests/struktur.test.js` | saknas |
 | B2.4 | Kvartilfördelningen: rad i i sorterad ordning hamnar i kvartil min(3, ⌊4i/n⌋); gränsen är mittpunkten mellan kvartilerna | `kvartilfordelning`, `struktur.js` | lön, kön | lydelsen i `lagrum.md`; indelningen är verktygets eget val | `tests/struktur.test.js` | `12-kvartiler-n5.json`, `13-kvartiler-n7.json` |
 | B2.5 | Gapet längs fördelningen (P10, P25, P50, P75, P90); minst max(2, k) av varje kön | `fordelningsgap`, `struktur.js` | lön, kön | verktygets eget val, ingen extern källa | `tests/struktur.test.js` | saknas |
+| B2.6 | Lönestrukturs avsnitt per BAS-intervall (vymodellen): översikten bara där båda könen når k, med status (ett kön under golvet ger Går ej att bedöma, annars KI:t mot 100 % och storleken) och intervallen som saknas (hela under k, eller ett kön under k); tabellen per intervall utan rad under k och med samlad median när ett kön är under k; könsfördelningen från fem personer oavsett k, ojämn när ett kön är under 40 % | `oversiktPerBas`, `oversiktNiva`, `vymodellLonestruktur`, `vymodell-lonestruktur.js` | lön, kön, BAS | `k-troskeln.md` §2; ADR-57, 59, 99 | `tests/vymodeller.test.js` | saknas |
 
 ## 3. Regressionen och uppdelningarna
 
@@ -101,6 +102,7 @@ avsnitt 11.
 | B5.5 | Tabellerna per AID-kod och BAS-intervall, hierarkiska par; Lika arbete AID x BAS är Lika arbetes grupper och status (`likaArbeteGrupper`) i BAS-ordning, utan egen bedömning, och samma blad (`_aidbasLikaBlad`) är blad 2a i JPA-protokollet; gränserna i tabellen är de statusen prövades mot (`bedomSkillnad`, `status.js`) | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57, 90, 93 | `tests/aidbas.test.js`, `tests/aidbas-app.test.js`, `tests/ktroskel-utdata.test.js` | saknas |
 | B5.6 | Personer att granska: förväntad lön ur kollegorna (log-lön mot ålder när spridningen är minst 5 år, annars medianen), flagga vid minst `grans` % under | `flaggaIndivider`, `individflaggor.js` | lön, ålder, AID, BAS | ADR-23, 89 | `tests/individflaggor.test.js`, `tests/grupp-aid-kod.test.js` | `14-granska-median.json`, `15-granska-alder.json` |
 | B5.7 | Personer att granska per BAS-intervall och kön: andelen prövade minst `grans` % under och över förväntad lön, bara där båda könen når k | `avvikelsePerKonOchBas`, `individflaggor.js` | lön, ålder, kön, AID, BAS | ADR-23 | `tests/individflaggor.test.js` | saknas |
+| B5.8 | Lika arbetes vymodell: grupperna med status och statusens förklaring, könsdominans, nationell andel kvinnor, samlad median när ett kön är under k, underrader per ansvarsgrupp och kvoten utan ledningsansvar, låg styrka, noterna över utelämnade och samlade grupper; trattens underlag bara med minst två grupper | `ansvarFor`, `statusTips`, `vymodellLikaArbete`, `vymodell-lika-arbete.js` | lön, kön, AID, BAS, ansvarsgrupp | `k-troskeln.md` §2; ADR-59, 60, 89, 99 | `tests/vymodeller.test.js` | saknas |
 
 ## 6. Löneläget mot referenserna
 
@@ -233,6 +235,7 @@ finns ingen C1.
 | I6 | Underlaget i exportläget, precis under och precis över skyddsregeln | `k-troskeln.md` §1; `diagramkarnan.md` §1 | `src/app/23-exportgrind.js` | `tests/ktroskel-invarianter.test.js` |
 | I7 | Var uppstår löneskillnaden med andra val av förklaringsvariabler, vid 10 och 25 | `k-troskeln.md` §2 (Var uppstår löneskillnaden); ADR-87 | `gapUppdelning`, `gapuppdelning.js` | `tests/ktroskel-invarianter.test.js` |
 | I8 | Sakliga skäl på en rad under tröskeln lämnar inte verktyget | `k-troskeln.md` §2 och §9 | `src/app/57-sakliga-skal.js` | `tests/ktroskel-invarianter-25.test.js` |
+| I9 | Vymodellerna redovisar inget lönemått för en grupp eller ett kön under tröskeln, vid 10 och 25 | `k-troskeln.md` §2; ADR-99 | `vymodellLikaArbete`, `vymodell-lika-arbete.js`; `vymodellLonestruktur`, `vymodell-lonestruktur.js` | `tests/vymodeller.test.js` |
 | C2 | Struktur per BAS visar inget könsgap när ett kön är under tröskeln | `k-troskeln.md` §2 | `representationPerBas`, `struktur.js` | `tests/ktroskel-kon.test.js` |
 | C3 | Könsuppdelade mått för hela organisationen kräver tröskeln för varje kön | `k-troskeln.md` §2 | `konsMedianer`, `struktur.js`; `_konFarRedovisasFor`, `src/app/06-k-troskel.js` | `tests/ktroskel-kon.test.js` |
 | C4 | Allt som visar gruppmått följer tröskeln när den ändras (den öppna fliken direkt, övriga när de öppnas) | `k-troskeln.md` §3 | `sattKTroskel`, `src/app/06-k-troskel.js` | `tests/ktroskel-kon.test.js` |
