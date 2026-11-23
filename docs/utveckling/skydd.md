@@ -50,10 +50,12 @@ Verktyget är en enda HTML-fil som körs lokalt, utan server och utan molntjäns
 inga externa resurser. Den går att öppna från `file://` och fungerar utan internet.
 
 *Varför:* utan server och nät har lönedata ingen väg ut, och filen kan köras där lönefilen redan finns.
-*Beslut:* ADR-6 och ADR-8 (`app.js` och lib-speglarna som klassiska skript, utan ES-moduler i bygget).
+*Beslut:* ADR-6 och ADR-98 (källan är ES-moduler; esbuild bygger dem till ett klassiskt skript utan `import` och
+`export`, som läggs in i filen).
 *Vakt:* webbläsarröktestet, `tools/browser-smoke.mjs`, öppnar den byggda filen från `file://` och kör alla flikar
-och exporter; artefaktgrinden i `.github/workflows/ci.yml` kräver att en färsk build ger samma `dist/` som den
-incheckade, artefakten och `RELEASE.txt`.
+och exporter; `tools/build-app.mjs` fäller bygget om `dist/app.js` har `import` eller `export` kvar; artefaktgrinden
+i `.github/workflows/ci.yml` kräver att en färsk build ger samma `dist/` som den incheckade, artefakten och
+`RELEASE.txt`.
 *Vaktas inte:* röktestet körs i CI och med `npm run test:browser`, inte i `npm test`.
 
 ## S4. Minsta gruppstorlek i allt som lämnar verktyget

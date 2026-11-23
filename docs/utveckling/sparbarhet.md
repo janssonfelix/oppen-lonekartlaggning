@@ -27,7 +27,7 @@ och funktionerna i kolumnen *Funktion och fil* finns. Den prövar inte att teste
 [`arkitekturbeslut.md`](arkitekturbeslut.md) eller skriver *verktygets eget val, ingen extern källa*. Lagrummen står
 samlade i [`lagrum.md`](lagrum.md); matrisen bedömer inte om en beräkning följer lag eller avtal.
 
-**Funktionerna** ligger i `src/lib/` om inget annat sägs. Appen får dem genom spegeln (ADR-8). En adapter i
+**Funktionerna** ligger i `src/lib/` om inget annat sägs. Appen importerar dem under samma namn (ADR-98). En adapter i
 `src/app/` nämns bara när den gör mer än att skicka vidare.
 
 **Referensfallen** ligger i `tests/fixtures/referensfall/` och prövas av `tests/referensfall.test.js`. Varje fall
@@ -54,7 +54,7 @@ avsnitt 11.
 
 | ID | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|---|
-| B2.1 | Kvinnors och mäns medianlön, kvinnors median i procent av mäns och mediangapet (kvoten minus 100); bara lön över 0, null när ett kön har färre än k; appen räknar måttet bara med den | `konsMedianer`, `konsMedianerUrLoner` (lönerna redan delade efter kön) och `medianGapPct` (gapet), `struktur.js`. Används av `representationPerBas`, `struktur.js`; `ansvarsUnderrader`, `ansvar.js`; `sektorsTabell`, `sektor.js`; `raLonegap`, `loneoversyn.js`; `organisationensKvotKI`, `konskvotPerGrupp`, `trattUnderlag`, `osakerhet.js`; `bedomSkillnad`, `status.js`; `likaArbeteGrupper`, `rapportunderlag.js`; `huvudregression`, `regression.js`; och av appens vyer genom spegeln | lön, kön | `regressionsmodellen.md` §1 *Tecknet*; `k-troskeln.md` §2 | `tests/struktur.test.js` | `01-mediangap-verktygets-tecken.json`, `03-mediangap-under-k.json` |
+| B2.1 | Kvinnors och mäns medianlön, kvinnors median i procent av mäns och mediangapet (kvoten minus 100); bara lön över 0, null när ett kön har färre än k; appen räknar måttet bara med den | `konsMedianer`, `konsMedianerUrLoner` (lönerna redan delade efter kön) och `medianGapPct` (gapet), `struktur.js`. Används av `representationPerBas`, `struktur.js`; `ansvarsUnderrader`, `ansvar.js`; `sektorsTabell`, `sektor.js`; `raLonegap`, `loneoversyn.js`; `organisationensKvotKI`, `konskvotPerGrupp`, `trattUnderlag`, `osakerhet.js`; `bedomSkillnad`, `status.js`; `likaArbeteGrupper`, `rapportunderlag.js`; `huvudregression`, `regression.js`; och av appens vyer, som importerar dem | lön, kön | `regressionsmodellen.md` §1 *Tecknet*; `k-troskeln.md` §2 | `tests/struktur.test.js` | `01-mediangap-verktygets-tecken.json`, `03-mediangap-under-k.json` |
 | B2.2 | Direktivets tecken: samma belopp, omvänt tecken; 0 förblir 0 | `tillDirektivtecken`, `struktur.js` | gapet | lydelsen i `lagrum.md`; tecknet är verktygets eget val | `tests/struktur.test.js` | `02-mediangap-direktivets-tecken.json` |
 | B2.3 | Representation per BAS-intervall: andel kvinnor, medianer, gap | `representationPerBas`, `struktur.js` | lön, kön, BAS | verktygets eget val, ingen extern källa | `tests/struktur.test.js` | saknas |
 | B2.4 | Kvartilfördelningen: rad i i sorterad ordning hamnar i kvartil min(3, ⌊4i/n⌋); gränsen är mittpunkten mellan kvartilerna | `kvartilfordelning`, `struktur.js` | lön, kön | lydelsen i `lagrum.md`; indelningen är verktygets eget val | `tests/struktur.test.js` | `12-kvartiler-n5.json`, `13-kvartiler-n7.json` |

@@ -19,9 +19,9 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-2 | JS-minifiering avvisad | Gällande | – |
 | ADR-4 | Byggskyddsnät | Flyttad till `bygge-och-test.md` | – |
 | ADR-5 | Kodhygien | Flyttad till `CONTRIBUTING.md` | – |
-| ADR-6 | `app.js` genereras från `src/app/`-moduler | Gällande | – |
+| ADR-6 | `app.js` genereras från `src/app/`-moduler | Ändrad av ADR-98 | – |
 | ADR-7 | Två lager röktest: jsdom och den byggda filen i riktiga webbläsare | Gällande | – |
-| ADR-8 | lib-speglarna genereras från `src/lib/` | Gällande | – |
+| ADR-8 | lib-speglarna genereras från `src/lib/` | Upphävd | – |
 | ADR-9 | Hash-baserad CSP `script-src` | Gällande | – |
 | ADR-10 | Sidopanelen är navigation, inte ARIA-tabs | Gällande | – |
 | ADR-12 | K-anonymitetens redovisningsform: utelämna och namnge | Ändrad av ADR-51 | – |
@@ -104,6 +104,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-95 | Beräkningsregistret blir spårbarhetsmatrisen | Gällande | 2026-11-23 |
 | ADR-96 | Konfigurationsfilens fält har svenska namn; äldre filer läses | Gällande | 2026-11-23 |
 | ADR-97 | Funktionerna i `src/lib/` har svenska namn | Gällande | 2026-11-23 |
+| ADR-98 | Appen byggs från ES-moduler med esbuild | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -123,7 +124,7 @@ för omkring 14 % mindre fil. *Gäller i dag:* `bygge-och-test.md` §2.
 samlad i `docs/dataskydd/riskanalys.md`. *Gäller i dag:* `.github/CONTRIBUTING.md` punkt 2 och princip 4 i
 `principer.md`.
 
-**ADR-6 — `app.js` genereras från `src/app/`-moduler.** Appens kod ligger i numrerade källmoduler som slås ihop byte för
+**ADR-6 — `app.js` genereras från `src/app/`-moduler.** *Ändrad av ADR-98.* Appens kod ligger i numrerade källmoduler som slås ihop byte för
 byte till `dist/app.js`, för navigerbarhet utan ES-moduler i bygget (`file://`-kravet). En modul som växer delas vid en
 sektionsgräns som ren byteskiva, så att `dist/app.js` blir bit för bit oförändrad. *Gäller i dag:* `bygge-och-test.md`
 §1–§2 och `src/app/README.md`.
@@ -133,8 +134,8 @@ inte CSP:n, `file://` eller bildexporten via canvas; webbläsarlagret kör den b
 WebKit, med en färskhetsspärr mot ett gammalt bygge. *Avvisat:* ett av lagren ensamt. *Gäller i dag:*
 `bygge-och-test.md` §5.5 och §9.
 
-**ADR-8 — lib-speglarna genereras från `src/lib/`.** `tools/gen-mirrors.mjs` inlinar varje `src/lib/`-modul ordagrant i
-en IIFE i `src/app/09-lib-speglar.js`, så att `src/lib/` är enda källan och appens moduler bara är adaptrar. Lib-moduler
+**ADR-8 — lib-speglarna genereras från `src/lib/`.** *Upphävd: ersatt av ADR-98.* `gen-mirrors.mjs` inlinar varje `src/lib/`-modul ordagrant i
+en IIFE i `09-lib-speglar.js`, så att `src/lib/` är enda källan och appens moduler bara är adaptrar. Lib-moduler
 får importera varandra; aliaset injiceras inuti den importerande modulens IIFE, så att inga nya globala namn uppstår.
 *Gäller i dag:* `bygge-och-test.md` §2.
 
@@ -619,7 +620,7 @@ som står kvar som nycklarna i ADR-72; att byta tillståndets fält i appen i sa
 
 **ADR-97 — Funktionerna i `src/lib/` har svenska namn.** Beslutat av underhållaren 2026-11-23. Koden skrivs på
 domänens språk: de engelska och blandade namnen på funktioner, konstanter och parametrar i `src/lib/` har bytts mot
-svenska, liksom spegelns alias i `tools/gen-mirrors.mjs` (appens prefix, som `_fc` och `_st`, står kvar). Etablerade
+svenska, liksom spegelns alias i `gen-mirrors.mjs` (appens prefix, som `_fc` och `_st`, står kvar). Etablerade
 förkortningar (OLS, CSV, BAS, AID, KI, HC3, CDF) och ord som redan är svenska (median, regression, bootstrap) står
 kvar. Fälten i returvärdena och i tillståndets inställningsobjekt är oförändrade, eftersom de läses på många ställen i
 appen eller översätts till konfigurationsfilen (ADR-96). Bytet gjordes utan beteendeändring, en modul i taget. *Skäl:* en extern granskare ska känna igen samma ord i dokumenten, spårbarhetsmatrisen och koden (ADR-95).
@@ -648,4 +649,23 @@ De äldre besluten och CHANGELOG nämner de gamla namnen; tabellen visar vad de 
 
 Spegelns alias följer samma ord: `_fitOLS` heter `_anpassaOLS`, `_rngFor` `_slumpFor`, `_fcComputePott` `_fcBeraknaPott`,
 `_lvComputePairs` `_lvLikvardighetspar`, `_toCsv` `_tillCsv` och så vidare. *Gäller i dag:* `sparbarhet.md`
-(kolumnen Funktion och fil), `tools/gen-mirrors.mjs`.
+(kolumnen Funktion och fil), `gen-mirrors.mjs`.
+
+**ADR-98 — Appen byggs från ES-moduler med esbuild.** Beslutat av underhållaren 2026-11-23. Delarna i `src/app/` är
+ES-moduler med explicita `import` och `export`, och de importerar `src/lib/` under lib-namnen. `tools/build-app.mjs`
+bygger `dist/app.js` med esbuild (utvecklingsberoende; ingen esbuild-kod hamnar i filen) från `src/app/index.js`, utan
+tree shaking och utan minifiering (ADR-2 står kvar). Spegeln (`gen-mirrors.mjs`, `09-lib-speglar.js`) och
+dess alias (`_stKonsMedianer` m.fl.) är borta. *Skäl:* en extern granskare kan följa varje beroende i källan, från en
+flik till lib-funktionen som räknar och dess test, och lib-funktionen heter detsamma i appen som i Node (ADR-95, ADR-97);
+spegeln var en andra väg till samma kod. *Utfilen är platt:* format `esm` utan import och export kvar, som körs som ett
+klassiskt skript (S3: fortfarande en fil som fungerar från `file://`). Appens toppnivånamn är därmed globala, som sidan,
+testerna (`w.eval`) och röktestet (`page.evaluate`) läser dem. Ett namn som två moduler deklarerar skulle esbuild döpa
+om, så bygget fäller om ett av appens namn inte står oförändrat i utfilen; därför heter lib-funktionerna som krockade
+med appens adaptrar `statGolvVid`, `likvardighetsparUr` och så vidare, och K_STANDARD, K_MIN och K_MAX finns bara i
+`src/lib/ktroskel.js`. ES-moduler körs i importgrafens ordning, inte i sifferordning: delarna deklarerar bara, och det
+som körs vid laddning står i en uppstartsfunktion per del som `index.js` anropar i sifferordning (bygget fäller en del
+med annan kod på toppnivån; `00-sakerhet-och-uppstart.js`, som importerar inget och körs först, är undantaget). esbuild
+gör toppnivåns `const` och `let` till `var` i utfilen. *Avvisat:* att behålla hopslagningen och spegeln; en IIFE eller
+ES-modul som utfil, som döljer namnen för testerna eller kräver en server; att ersätta testernas globala namn med
+exporter i samma ändring. Ersätter ADR-8 och ändrar ADR-6 (delarna slås inte längre ihop byte för byte). *Gäller i dag:*
+`bygge-och-test.md` §2, `src/app/README.md`.

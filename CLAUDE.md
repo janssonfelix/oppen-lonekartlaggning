@@ -22,8 +22,8 @@ med underhållaren innan den görs.
 - **S5. Ingen inbyggd organisation:** det organisationsspecifika kommer ur användarens filer.
 
 **Klart betyder** Definition of Done i `.github/CONTRIBUTING.md` punkt 3. Kör `npm run kontroll` före en pull
-request och `npm run kontroll -- --snabb` under arbetet. Ändra i `src/`, aldrig i `dist/` eller
-`src/app/09-lib-speglar.js`, och kör `npm run build:app` efter en ändring i `src/`.
+request och `npm run kontroll -- --snabb` under arbetet. Ändra i `src/`, aldrig i `dist/`, och kör
+`npm run build:app` efter en ändring i `src/`.
 
 | Innan du ändrar … | läs |
 |---|---|

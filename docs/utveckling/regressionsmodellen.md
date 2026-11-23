@@ -31,7 +31,7 @@ och upprepas inte här (avsnitt 9).
 den saknas), `medAlder` om lönefilen har ålder (avsnitt 8; räknas ur raderna när den saknas), `kInstalld` den
 inställda tröskeln (spärren i avsnitt 2) och `golv` det som appen kallar `statGolv()` (avsnitt 9). I appen är
 `runOLSRegression` (`51-lika-arbete-regressionskort.js`) en tunn adapter som läser `getData()`, `forklaringsmodell()`,
-`harAlder()`, `kInstalld()` och `statGolv()` och anropar den genom spegeln (`_rgHuvudregression`).
+`harAlder()`, `kInstalld()` och `statGolv()` och anropar den (`huvudregression`, importerad ur `src/lib/regression.js`).
 
 **Raderna.** Med rader menas lönefilens rader (`getData()` i appen) med lön över 0, kön kvinna eller man och, när
 lönefilen har ålder, en ålder över 0. Med färre än 30 sådana rader skattas ingen modell (`low_n`), och med färre än 5

@@ -9,7 +9,7 @@ Alla diagram i verktyget ritas av kärnan. Den som lägger till ett diagram läs
 
 | Del | Fil |
 |---|---|
-| Figurformatet: validering, små grupper, domäner, lådstatistik, talformat, diagramdata | `src/lib/figur.js` (speglad i `src/app/09-lib-speglar.js` med namn som börjar på `_fig`) |
+| Figurformatet: validering, små grupper, domäner, lådstatistik, talformat, diagramdata | `src/lib/figur.js` (appen importerar funktionerna under samma namn) |
 | Mått och layout | `src/app/10-diagramlayout.js` |
 | Märkena, färgskalan, referenserna | `src/app/10-diagrammarken.js` |
 | `_rfByggSvg`, sidans API (`ritaFigur`, `rensaFigur`), registret, exporten (`figurTillSvg`, `figurTillBild`) | `src/app/10-diagramritare.js` |

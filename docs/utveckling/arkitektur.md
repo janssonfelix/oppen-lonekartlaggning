@@ -12,10 +12,9 @@ Dokumentet beskriver den byggda koden. Där det skiljer sig från koden är det 
 |---|---|---|
 | Sidan | `src/index.html`, `src/style.css` | Skalet, stilmallen och innehållspolicyn (CSP) som bygget gör till en fil. Sidan kör inget från nätet (S1). |
 | Beräkningskärnan | `src/lib/` (50 moduler) | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
-| Spegeln | `src/app/09-lib-speglar.js` | Genererad av `tools/gen-mirrors.mjs`. Varje lib-modul är inlinad, med de alias som appen anropar. Redigeras aldrig för hand. |
-| Appen | `src/app/NN-*.js` (86 delar) | Ett enda globalt skript i prefixordning: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
+| Appen | `src/app/NN-*.js` (85 delar) och `src/app/index.js` | ES-moduler som importerar det de använder, ur andra delar och ur lib under lib-namnen: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas; bygget gör dem till ett klassiskt skript. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
 | Biblioteken | `vendor/` | D3, JSZip, PapaParse och SheetJS, låsta med kontrollsummor i `SHA256SUMS`. Licenserna står i `TREDJEPARTSLICENSER.md`. |
-| Bygget | `tools/` | `build-app.mjs` slår ihop appen, `bundle.mjs` bygger filen och `RELEASE.txt`, `kontroll.mjs` kör hela kedjan. Se [`bygge-och-test.md`](bygge-och-test.md). |
+| Bygget | `tools/` | `build-app.mjs` bygger appen med esbuild, `bundle.mjs` bygger filen och `RELEASE.txt`, `kontroll.mjs` kör hela kedjan. Se [`bygge-och-test.md`](bygge-och-test.md). |
 | Testerna | `tests/` | Vitest: enhetstester av `src/lib/`, appen per funktion i jsdom (`<område>-app.test.js`), invarianter för exporterna och vakter för dokument och skydd. Webbläsarröktestet ligger i `tools/browser-smoke/`. |
 | Leveransen | `dist/`, `.github/workflows/` | `dist/` är det byggda verktyget, genererat och incheckat. CI kräver att ett nytt bygge blir byte-identiskt med det incheckade. |
 
@@ -32,7 +31,7 @@ adaptrarna, som hämtar tillståndet, anropar en funktion i lib och ger tillbaka
 4. Raderna läggs i `state.data` (`src/app/12-tillstand.js`). Vyerna läser dem med `getData()`.
 5. Vyerna räknar genom tunna adaptrar till lib. Två exempel:
    - `runOLSRegression` (`src/app/51-lika-arbete-regressionskort.js`) skickar tillståndet till `huvudregression` i
-     `src/lib/regression.js`, via spegeln.
+     `src/lib/regression.js`.
    - `computePrioritization` (`src/app/55-prioritering.js`) skickar tillståndet till `prioritera` i
      `src/lib/prioritering.js`.
 6. Allt som lämnar verktyget går genom exportgrinden (`src/app/23-exportgrind.js`). Grinden ser till att ingen export
@@ -119,10 +118,10 @@ text. Språket i det användaren läser prövas av de vakter som nämns i [`prin
 
 1. **Lib rör varken DOM eller tillstånd.** Modulerna i `src/lib/` läser inte `document`, `window`, lagring eller appens
    tillstånd, och de får inte importera något utanför `src/lib/`. Vakt: `tests/lib-beroenden.test.js`. Det gör att
-   samma funktion kan köras i Node och i appen, via spegeln (ADR-8).
-2. **Spegeln och `dist/` är genererade och redigeras aldrig för hand.** Ändra `src/lib/` eller `src/app/` och kör
-   `npm run build:app`. Vakt: artefaktgrinden, som kräver att ett nytt bygge ger byte-identiska `dist/`,
-   `src/app/08-version.js` och `src/app/09-lib-speglar.js` (`tools/kontroll.mjs` och `.github/workflows/ci.yml`).
+   samma funktion kan köras i Node och i appen, som importerar den (ADR-98).
+2. **`dist/` är genererad och redigeras aldrig för hand.** Ändra `src/lib/` eller `src/app/` och kör
+   `npm run build:app`. Vakt: artefaktgrinden, som kräver att ett nytt bygge ger byte-identiska `dist/` och
+   `src/app/08-version.js` (`tools/kontroll.mjs` och `.github/workflows/ci.yml`).
 3. **Allt som lämnar verktyget prövas mot minsta gruppstorlek.** Det gäller text, tabeller, bilder och filer. Regeln
    och undantagen står i [`k-troskeln.md`](k-troskeln.md), skyddet i [`skydd.md`](skydd.md) (S4). Vakten är
    invarianten I4 i `tests/helpers/ktroskel-invariant.js`, som ritar flikarna i exportläget och bygger exporterna
