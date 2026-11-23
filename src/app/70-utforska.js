@@ -5,7 +5,7 @@
 //
 // Användaren väljer rader, ev. kolumner, mått, diagramtyp och urval (72-utforska-urval.js) och får
 // diagram + tabell direkt. All beräkning sker i src/lib/utforska.js (speglad som
-// _utComputePivot m.fl.); figurerna byggs i 71-utforska-figur.js.
+// _utPivottabell m.fl.); figurerna byggs i 71-utforska-figur.js.
 //
 // SMÅ GRUPPER (ADR-14, ADR-51): på skärmen visas alla grupper som andra (kTroskel() är 1 där); i exportläget
 // märks grupper under tröskeln med klassen explore-liten, som exporten läser. Den som använder verktyget har
@@ -254,7 +254,7 @@ function renderExplorer() {
     if (typ === 'staplade') modelSpec.matt = 'n';
     const { tvingad } = explorerVisaSkal(spec, lasTyp, probe.urval);
     modelSpec.delaKon = tvingad ? tvingad === 'kon' : spec.delaKon;
-    const model = _utComputePivot(rows, modelSpec, { k: kTroskel() });
+    const model = _utPivottabell(rows, modelSpec, { k: kTroskel() });
 
     _explorerSyncControls(spec, lasTyp, valdTyp, model.urval);
     renderExplorerUrvalUi(rows);

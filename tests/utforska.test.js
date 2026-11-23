@@ -7,7 +7,7 @@
  * och sorteringsreglerna (BAS A→Z, ålder yngst→äldst, övrigt efter värde).
  */
 import { describe, it, expect } from 'vitest';
-import { computePivot, DIMENSIONER, slaIhopSmaAid } from '../src/lib/utforska.js';
+import { pivottabell, DIMENSIONER, slaIhopSmaAid } from '../src/lib/utforska.js';
 import { gruppnyckel, aldersgrupp, konAv, jamforAldersgrupp } from '../src/lib/falt.js';
 import { median, kvantil } from '../src/lib/stat.js';
 
@@ -61,10 +61,10 @@ describe('konAv och gruppnyckel', () => {
     });
 });
 
-describe('computePivot — en dimension', () => {
+describe('pivottabell — en dimension', () => {
     it('sorterar BAS A → Z oavsett värde', () => {
         const rows = [...grupp('C', 6, 6, 20000), ...grupp('A', 6, 6, 40000), ...grupp('B', 6, 6, 30000)];
-        expect(computePivot(rows, spec()).radEtiketter).toEqual(['A', 'B', 'C']);
+        expect(pivottabell(rows, spec()).radEtiketter).toEqual(['A', 'B', 'C']);
     });
     it('sorterar åldersgrupper från yngst till äldst', () => {
         const rows = [
@@ -72,21 +72,21 @@ describe('computePivot — en dimension', () => {
             ...grupp('A', 6, 6, 20000, { alder: 18 }),
             ...grupp('A', 6, 6, 30000, { alder: 66 })
         ];
-        expect(computePivot(rows, spec({ rad: 'alder' })).radEtiketter).toEqual(['<20', '50–54', '65+']);
+        expect(pivottabell(rows, spec({ rad: 'alder' })).radEtiketter).toEqual(['<20', '50–54', '65+']);
     });
     it('sorterar övriga dimensioner efter värde, fallande — gap stigande', () => {
         const rows = [
             ...grupp('A', 6, 6, 20000, { aid: '1', yrkeLabel: 'Låg', yrke: '1 Låg' }),
             ...grupp('A', 6, 6, 40000, { aid: '2', yrkeLabel: 'Hög', yrke: '2 Hög' })
         ];
-        expect(computePivot(rows, spec({ rad: 'aid' })).radEtiketter).toEqual(['2 Hög', '1 Låg']);
+        expect(pivottabell(rows, spec({ rad: 'aid' })).radEtiketter).toEqual(['2 Hög', '1 Låg']);
         // Gör "Hög" mer ojämställd: kvinnorna i aid 2 tjänar mindre.
         const skev = rows.map(r => (r.aid === '2' && r.kon === 'kvinna') ? { ...r, lon: r.lon - 8000 } : r);
-        expect(computePivot(skev, spec({ rad: 'aid', matt: 'gap' })).radEtiketter).toEqual(['2 Hög', '1 Låg']);
+        expect(pivottabell(skev, spec({ rad: 'aid', matt: 'gap' })).radEtiketter).toEqual(['2 Hög', '1 Låg']);
     });
     it('döljer ingenting: små grupper räknas och markeras', () => {
         const rows = [...grupp('A', 3, 3, 30000), ...grupp('B', 10, 10, 30000)];
-        const m = computePivot(rows, spec());
+        const m = pivottabell(rows, spec());
         const a = m.celler.find(c => c.rad === 'A');
         const b = m.celler.find(c => c.rad === 'B');
         expect(a.n).toBe(6);
@@ -96,18 +96,18 @@ describe('computePivot — en dimension', () => {
         expect(b.konLiten).toBe(false);
     });
     it('konLiten när bara ena könet är under k', () => {
-        const m = computePivot(grupp('A', 3, 12, 30000), spec());
+        const m = pivottabell(grupp('A', 3, 12, 30000), spec());
         expect(m.celler[0].liten).toBe(false);
         expect(m.celler[0].konLiten).toBe(true);
     });
     it('respekterar k', () => {
-        const m = computePivot(grupp('A', 3, 3, 30000), spec(), { k: 5 });
+        const m = pivottabell(grupp('A', 3, 3, 30000), spec(), { k: 5 });
         expect(m.celler[0].liten).toBe(false);
     });
     it('räknar alla mått', () => {
         const rows = grupp('A', 10, 10, 25000);
         const lons = rows.map(r => r.lon);
-        const v = matt => computePivot(rows, spec({ matt })).celler[0].value;
+        const v = matt => pivottabell(rows, spec({ matt })).celler[0].value;
         expect(v('median')).toBe(median(lons));
         expect(v('medel')).toBeCloseTo(lons.reduce((s, x) => s + x, 0) / lons.length, 9);
         expect(v('n')).toBe(20);
@@ -123,42 +123,42 @@ describe('computePivot — en dimension', () => {
     });
     it('okänt mått faller tillbaka på median', () => {
         const rows = grupp('A', 5, 5, 25000);
-        expect(computePivot(rows, spec({ matt: 'hittepå' })).spec.matt).toBe('median');
+        expect(pivottabell(rows, spec({ matt: 'hittepå' })).spec.matt).toBe('median');
     });
     it('delaKon ger värden per kön', () => {
         const rows = grupp('A', 10, 10, 25000);
-        const c = computePivot(rows, spec({ delaKon: true })).celler[0];
+        const c = pivottabell(rows, spec({ delaKon: true })).celler[0];
         expect(c.valueKv).toBe(median(rows.filter(r => r.kon === 'kvinna').map(r => r.lon)));
         expect(c.valueMa).toBe(median(rows.filter(r => r.kon === 'man').map(r => r.lon)));
     });
     it('delaKon ignoreras för andelKv och gap och när raderna är kön', () => {
         const rows = grupp('A', 10, 10, 25000);
         for (const matt of ['andelKv', 'gap']) {
-            expect(computePivot(rows, spec({ matt, delaKon: true })).spec.delaKon).toBe(false);
+            expect(pivottabell(rows, spec({ matt, delaKon: true })).spec.delaKon).toBe(false);
         }
-        expect(computePivot(rows, spec({ rad: 'kon', delaKon: true })).spec.delaKon).toBe(false);
+        expect(pivottabell(rows, spec({ rad: 'kon', delaKon: true })).spec.delaKon).toBe(false);
     });
     it('rader utan lön räknas inte; rader utan värde i dimensionen ingår i urvalet men inte i grupperna', () => {
         const rows = [...grupp('A', 5, 5, 25000), rad('A', 'kvinna', 0), rad('A', 'man', 30000, { alder: null })];
-        const m = computePivot(rows, spec({ rad: 'alder' }));
+        const m = pivottabell(rows, spec({ rad: 'alder' }));
         expect(m.urval).toEqual({ n: 11, nKv: 5, nMa: 6 });
         expect(m.celler.reduce((s, c) => s + c.n, 0)).toBe(10);
     });
     it('filtret tillämpas före grupperingen', () => {
         const rows = [...grupp('A', 5, 5, 25000), ...grupp('B', 5, 5, 35000)];
-        const m = computePivot(rows, spec({ urval: { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: ['B'] }] } }));
+        const m = pivottabell(rows, spec({ urval: { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: ['B'] }] } }));
         expect(m.radEtiketter).toEqual(['B']);
         expect(m.urval.n).toBe(10);
     });
 });
 
-describe('computePivot — två dimensioner', () => {
+describe('pivottabell — två dimensioner', () => {
     const rows = [
         ...grupp('B', 6, 6, 20000, { aid: '1', yrkeLabel: 'Låg', yrke: '1 Låg' }),
         ...grupp('A', 6, 6, 21000, { aid: '1', yrkeLabel: 'Låg', yrke: '1 Låg' }),
         ...grupp('A', 6, 6, 40000, { aid: '2', yrkeLabel: 'Hög', yrke: '2 Hög' })
     ];
-    const m = computePivot(rows, spec({ rad: 'aid', kolumn: 'bas' }));
+    const m = pivottabell(rows, spec({ rad: 'aid', kolumn: 'bas' }));
     it('ger en cell per kombination som finns', () => {
         expect(m.celler).toHaveLength(3);
         expect(m.celler.every(c => c.kol !== null)).toBe(true);
@@ -171,43 +171,43 @@ describe('computePivot — två dimensioner', () => {
         expect(m.celler.map(c => [c.rad, c.kol])).toEqual([['2 Hög', 'A'], ['1 Låg', 'A'], ['1 Låg', 'B']]);
     });
     it('kolumn lika med rad räknas som en dimension', () => {
-        expect(computePivot(rows, spec({ rad: 'bas', kolumn: 'bas' })).kolumnEtiketter).toBeNull();
+        expect(pivottabell(rows, spec({ rad: 'bas', kolumn: 'bas' })).kolumnEtiketter).toBeNull();
     });
 });
 
-describe('computePivot — urval och gruppvillkor', () => {
+describe('pivottabell — urval och gruppvillkor', () => {
     const rows = [...grupp('A', 10, 10, 20000), ...grupp('B', 10, 10, 30000), ...grupp('C', 3, 3, 40000)];
     it('personvillkor på lön körs före grupperingen', () => {
-        const m = computePivot(rows, spec({ urval: { lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000 }] } }));
+        const m = pivottabell(rows, spec({ urval: { lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000 }] } }));
         expect(m.radEtiketter).toEqual(['B', 'C']);
         expect(m.urval.n).toBe(26);
     });
     it('gruppvillkor tar bort celler och räknar dolda', () => {
-        const m = computePivot(rows, spec({ gruppVillkor: [{ matt: 'n', op: 'minst', varde: 20 }] }));
+        const m = pivottabell(rows, spec({ gruppVillkor: [{ matt: 'n', op: 'minst', varde: 20 }] }));
         expect(m.radEtiketter).toEqual(['A', 'B']);
         expect(m.dolda).toBe(1);
     });
     it('gruppvillkor på ett annat mått än det visade', () => {
-        const m = computePivot(rows, spec({ matt: 'n', gruppVillkor: [{ matt: 'median', op: 'storre', varde: 25000 }] }));
+        const m = pivottabell(rows, spec({ matt: 'n', gruppVillkor: [{ matt: 'median', op: 'storre', varde: 25000 }] }));
         expect(m.radEtiketter).toEqual(['B', 'C']);
         expect(m.celler.every(c => Number.isInteger(c.value))).toBe(true);
     });
     it('ofullständiga gruppvillkor ignoreras', () => {
-        expect(computePivot(rows, spec({ gruppVillkor: [{ matt: 'n', op: 'minst', varde: null }] })).dolda).toBe(0);
+        expect(pivottabell(rows, spec({ gruppVillkor: [{ matt: 'n', op: 'minst', varde: null }] })).dolda).toBe(0);
     });
     it('vid två dimensioner försvinner rader och kolumner utan kvarvarande celler', () => {
-        const m = computePivot(rows, spec({ rad: 'bas', kolumn: 'kon', matt: 'n', gruppVillkor: [{ matt: 'n', op: 'minst', varde: 5 }] }));
+        const m = pivottabell(rows, spec({ rad: 'bas', kolumn: 'kon', matt: 'n', gruppVillkor: [{ matt: 'n', op: 'minst', varde: 5 }] }));
         expect(m.radEtiketter).toEqual(['A', 'B']);
         expect(m.dolda).toBe(2);
     });
     it('liten räknas på det som finns kvar efter urvalet', () => {
-        const m = computePivot(rows, spec({ urval: { lage: 'alla', villkor: [{ falt: 'kon', op: 'enAv', varde: ['Kvinna'] }] } }));
+        const m = pivottabell(rows, spec({ urval: { lage: 'alla', villkor: [{ falt: 'kon', op: 'enAv', varde: ['Kvinna'] }] } }));
         expect(m.celler.find(c => c.rad === 'A').n).toBe(10);
         expect(m.celler.find(c => c.rad === 'A').liten).toBe(false);
         expect(m.celler.find(c => c.rad === 'C').liten).toBe(true);
     });
     it('utan urval och gruppvillkor i spec gäller alla', () => {
-        const m = computePivot(rows, { rad: 'bas', matt: 'median' });
+        const m = pivottabell(rows, { rad: 'bas', matt: 'median' });
         expect(m.radEtiketter).toEqual(['A', 'B', 'C']);
         expect(m.dolda).toBe(0);
         expect(m.spec.urval).toEqual({ lage: 'alla', villkor: [] });
@@ -215,14 +215,14 @@ describe('computePivot — urval och gruppvillkor', () => {
     });
 });
 
-describe('computePivot — gruppvillkor och k-regeln', () => {
+describe('pivottabell — gruppvillkor och k-regeln', () => {
     it('gap-villkor kräver att båda könen har minst k personer', () => {
         const rows = [
             ...grupp('A', 0, 12, 30000),                                   // 12 män …
             ...[0, 1].map(() => ({ bas: 'A', kon: 'kvinna', lon: 25000, alder: 40, aid: '100', yrkeLabel: 'Yrke 100', yrke: '100 Yrke 100', enhet: '1000' })),
             ...grupp('B', 10, 10, 30000).map(r => r.kon === 'kvinna' ? { ...r, lon: r.lon - 3000 } : r)
         ];
-        const m = computePivot(rows, spec({ matt: 'median', gruppVillkor: [{ matt: 'gap', op: 'mindre', varde: 95 }] }));
+        const m = pivottabell(rows, spec({ matt: 'median', gruppVillkor: [{ matt: 'gap', op: 'mindre', varde: 95 }] }));
         // A har gap ≈ 83 %, men räknat på två kvinnor — det får inte avgöra om A visas.
         expect(m.radEtiketter).toEqual(['B']);
         expect(m.dolda).toBe(1);
@@ -240,28 +240,28 @@ describe('nya dimensioner och uppdelning per kön', () => {
     });
     it('lönespann sorteras från lägst till högst oavsett mått', () => {
         const rows = [...grupp('A', 6, 6, 42000), ...grupp('A', 6, 6, 21000), ...grupp('A', 6, 6, 30000)];
-        const m = computePivot(rows, spec({ rad: 'lonespann', matt: 'n' }));
+        const m = pivottabell(rows, spec({ rad: 'lonespann', matt: 'n' }));
         expect(m.radEtiketter.map(l => l.replace(/ /g, ' '))).toEqual(['20 000–24 999 kr', '30 000–34 999 kr', '40 000–44 999 kr']);
     });
     it('hela urvalet ger en enda grupp', () => {
         const rows = [...grupp('A', 5, 5, 20000), ...grupp('B', 5, 5, 30000)];
-        const m = computePivot(rows, spec({ rad: 'alla' }));
+        const m = pivottabell(rows, spec({ rad: 'alla' }));
         expect(m.radEtiketter).toEqual(['Hela urvalet']);
         expect(m.celler[0].n).toBe(20);
     });
     it('uppdelning per kön fungerar för antal och med två dimensioner', () => {
         const rows = [...grupp('A', 4, 6, 20000), ...grupp('B', 7, 3, 30000)];
-        const n = computePivot(rows, spec({ matt: 'n', delaKon: true }));
+        const n = pivottabell(rows, spec({ matt: 'n', delaKon: true }));
         expect(n.spec.delaKon).toBe(true);
         expect(n.celler.map(c => [c.valueKv, c.valueMa])).toEqual([[4, 6], [7, 3]]);
-        const tva = computePivot(rows, spec({ rad: 'bas', kolumn: 'aid', delaKon: true }));
+        const tva = pivottabell(rows, spec({ rad: 'bas', kolumn: 'aid', delaKon: true }));
         expect(tva.spec.delaKon).toBe(true);
         expect(tva.celler[0].valueKv).not.toBeNull();
     });
     it('uppdelning per kön gäller inte gap, andel kvinnor eller när kön redan är en dimension', () => {
         const rows = grupp('A', 10, 10, 20000);
-        for (const matt of ['gap', 'andelKv']) expect(computePivot(rows, spec({ matt, delaKon: true })).spec.delaKon).toBe(false);
-        expect(computePivot(rows, spec({ rad: 'bas', kolumn: 'kon', delaKon: true })).spec.delaKon).toBe(false);
+        for (const matt of ['gap', 'andelKv']) expect(pivottabell(rows, spec({ matt, delaKon: true })).spec.delaKon).toBe(false);
+        expect(pivottabell(rows, spec({ rad: 'bas', kolumn: 'kon', delaKon: true })).spec.delaKon).toBe(false);
     });
 });
 
@@ -285,17 +285,17 @@ describe('utforska: sektor och AID-mellannivå', () => {
         expect(gruppnyckel(rader[3], 'aidniva')).toBe('Okänd AID-kod');
     });
     it('pivot per mellannivå tappar inga rader: okänd kod får en egen grupp sist', () => {
-        const p = computePivot(rader, { rad: 'aidniva', matt: 'n' }, { k: 1 });
+        const p = pivottabell(rader, { rad: 'aidniva', matt: 'n' }, { k: 1 });
         expect(p.radEtiketter).toEqual(['AID 2070xx', 'AID 5020xx', 'Okänd AID-kod']);
         expect(p.celler.reduce((s, c) => s + c.n, 0)).toBe(4);
     });
     it('pivot per sektor sorteras i prefixordning, okänt sist', () => {
-        const p = computePivot(rader, { rad: 'sektor', matt: 'n' }, { k: 1 });
+        const p = pivottabell(rader, { rad: 'sektor', matt: 'n' }, { k: 1 });
         expect(p.radEtiketter).toEqual(['Vård- och omsorgsarbete med mera', 'Teknikarbete', 'Okänt huvudområde']);
         expect(p.celler.find(c => c.rad === 'Vård- och omsorgsarbete med mera').n).toBe(2);
     });
     it('sektor som personvillkor i urvalet', () => {
-        const p = computePivot(rader, { rad: 'aid', matt: 'n',
+        const p = pivottabell(rader, { rad: 'aid', matt: 'n',
             urval: { lage: 'alla', villkor: [{ falt: 'sektor', op: 'enAv', varde: ['Teknikarbete'] }] } }, { k: 1 });
         expect(p.urval.n).toBe(1);
     });
@@ -318,12 +318,12 @@ describe('utforska: slå ihop små AID-grupper', () => {
         expect(m.has('502010 Sysutv')).toBe(false);
     });
     it('pivoten använder ersättningen bara med slaIhop och rad = aid', () => {
-        const med = computePivot(rader, { rad: 'aid', matt: 'n', slaIhop: true }, { k: 10 });
+        const med = pivottabell(rader, { rad: 'aid', matt: 'n', slaIhop: true }, { k: 10 });
         expect(med.radEtiketter).toContain('Övriga i AID 2070xx (2 AID-etiketter)');
         expect(med.celler.find(c => c.rad === 'Övriga i AID 2070xx (2 AID-etiketter)').n).toBe(11);
-        const utan = computePivot(rader, { rad: 'aid', matt: 'n' }, { k: 10 });
+        const utan = pivottabell(rader, { rad: 'aid', matt: 'n' }, { k: 10 });
         expect(utan.radEtiketter).not.toContain('Övriga i AID 2070xx (2 AID-etiketter)');
-        const bas = computePivot(rader, { rad: 'bas', matt: 'n', slaIhop: true }, { k: 10 });
+        const bas = pivottabell(rader, { rad: 'bas', matt: 'n', slaIhop: true }, { k: 10 });
         expect(bas.radEtiketter).toEqual(['C']);
     });
 });

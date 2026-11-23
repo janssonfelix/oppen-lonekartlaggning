@@ -268,7 +268,7 @@ export const MODULES = [
     {
         file: 'utforska.js', ns: '__mirrorUtforska',
         expose: {
-            computePivot: '_utComputePivot'
+            pivottabell: '_utPivottabell'
         }
     },
     {

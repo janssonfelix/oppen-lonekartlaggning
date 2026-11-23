@@ -7813,14 +7813,14 @@ function _sortera(dim, etiketter, varden, matt) {
  * Hopslagning av små AID-grupper (bara i Utforska, ADR-33): grupper under k slås
  * ihop per AID-mellannivå; räcker inte summan, per sektor. Grupper som fortfarande är under k
  * behåller sin nyckel (och visas som små). Nyckel = AID-etiketten, grupperad på koden (gruppnycklar i falt.js).
- * @param {any[]} rows
+ * @param {any[]} rader
  * @param {number} k
  * @param {(row: any, dim: string) => (string|null)} [nyckel] gruppnycklarna för underlaget; standard gruppnycklar(rows)
  * @returns {Map<string, string>} aid-nyckel → ersättningsnyckel ("Övriga i AID 2070xx (2 yrken)")
  */
-function slaIhopSmaAid(rows, k, nyckel = gruppnycklar(rows)) {
+function slaIhopSmaAid(rader, k, nyckel = gruppnycklar(rader)) {
     const n = new Map(), aidAv = new Map();
-    for (const r of rows || []) {
+    for (const r of rader || []) {
         const key = nyckel(r, 'aid');
         n.set(key, (n.get(key) || 0) + 1);
         aidAv.set(key, r.aid);
@@ -7849,11 +7849,11 @@ function slaIhopSmaAid(rows, k, nyckel = gruppnycklar(rows)) {
 
 /**
  * Pivot över lönerader.
- * @param {any[]} rows - lönerader ({ bas, aid, yrke, yrkeLabel, lon, alder, kon })
+ * @param {any[]} rader - lönerader ({ bas, aid, yrke, yrkeLabel, lon, alder, kon })
  * @param {{rad:string, kolumn?:string|null, matt?:string, delaKon?:boolean, urval?:any, gruppVillkor?:any[], slaIhop?:boolean}} spec
  * @param {{k?:number}} [opts]
  */
-function computePivot(rows, spec, { k = 10 } = {}) {
+function pivottabell(rader, spec, { k = 10 } = {}) {
     const rad = spec.rad;
     const kol = spec.kolumn && spec.kolumn !== rad ? spec.kolumn : null;
     const matt = spec.matt && MATT.includes(spec.matt) ? spec.matt : 'median';
@@ -7863,10 +7863,10 @@ function computePivot(rows, spec, { k = 10 } = {}) {
     const aktivaGrupp = gruppVillkor.filter(g => gruppVillkorAktivt(g) && MATT.includes(g.matt));
     // AID-etiketten grupperas på koden, med namnet från texten på flest av kodens rader i hela underlaget (inte bara urvalet), så
     // att pivoten, villkoren och värdelistorna i appen har samma namn på samma grupp.
-    const gruppnyckel = gruppnycklar(rows);
+    const gruppnyckel = gruppnycklar(rader);
     const person = iUrvalet(urvalSpec, gruppnyckel);
 
-    const urvalRader = (rows || []).filter(r => r.lon > 0 && person(r));
+    const urvalRader = (rader || []).filter(r => r.lon > 0 && person(r));
     // Hopslagning av små AID-grupper, bara när raderna är AID (ADR-33).
     const ersatt = spec.slaIhop && rad === 'aid' ? slaIhopSmaAid(urvalRader, k, gruppnyckel) : null;
     const urval = { n: urvalRader.length, nKv: 0, nMa: 0 };
@@ -7934,9 +7934,9 @@ function computePivot(rows, spec, { k = 10 } = {}) {
              radEtiketter, kolumnEtiketter, celler, urval, dolda };
 }
 
-    return { computePivot };
+    return { pivottabell };
 })();
-const _utComputePivot = __mirrorUtforska.computePivot;
+const _utPivottabell = __mirrorUtforska.pivottabell;
 
 // ---- speglar src/lib/attgora.js ----
 const __mirrorAttgora = (() => {
@@ -10965,7 +10965,7 @@ const _pbReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
 // ---- speglar src/lib/tabellrecept.js ----
 const __mirrorTabellrecept = (() => {
     // importer ur tidigare speglade lib-moduler
-    const computePivot = __mirrorUtforska.computePivot;
+    const pivottabell = __mirrorUtforska.pivottabell;
     const personOrd = __mirrorNamn.personOrd;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const stor = __mirrorTermer.stor;
@@ -10977,7 +10977,7 @@ const __mirrorTabellrecept = (() => {
  *
  * En tabell som användaren byggt i Utforska sparas som ett RECEPT — rader, kolumner, mått, urval och om tabellen ska
  * upprepas per BAS-intervall — aldrig som tal. Recepten ritas om i exportläget när Word-utkastet, PDF-rapporten och
- * Excel-filen byggs, med samma pivot som fliken (computePivot) och samma regler för minsta gruppstorlek som Utforskas
+ * Excel-filen byggs, med samma pivot som fliken (pivottabell) och samma regler för minsta gruppstorlek som Utforskas
  * export: en cell under tröskeln blir tom, och rader och kolumner som bara har tomma celler utelämnas och räknas.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
@@ -11065,7 +11065,7 @@ const _nText = c => `${c.n} (${c.nKv}/${c.nMa})`;
 function receptTillTabeller(rows, recept, { k = 10 } = {}) {
     const r = valideraRecept(recept);
     if (!r) return [];
-    const bygg = (rader, rubrik) => _tabell(computePivot(rader, r.spec, { k }), r.spec, k, rubrik);
+    const bygg = (rader, rubrik) => _tabell(pivottabell(rader, r.spec, { k }), r.spec, k, rubrik);
     if (r.upprepa === 'bas') {
         return /** @type {any[]} */ (_bas(rows).map(b => bygg(rows.filter(x => String(x.bas) === b), `${r.namn} — BAS ${b}`)).filter(t => t && t.rader.length));
     }

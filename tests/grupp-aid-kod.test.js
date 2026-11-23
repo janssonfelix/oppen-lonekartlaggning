@@ -14,7 +14,7 @@ import { flaggaIndivider } from '../src/lib/individflaggor.js';
 import { inomYrkesgrupp } from '../src/lib/regression.js';
 import { gapPoster } from '../src/lib/gapuppdelning.js';
 import { gruppnyckel, gruppnycklar } from '../src/lib/falt.js';
-import { computePivot } from '../src/lib/utforska.js';
+import { pivottabell } from '../src/lib/utforska.js';
 import { iUrvalet } from '../src/lib/urval.js';
 import { aidAvRad, namnrader } from '../src/lib/aid.js';
 import { byggArsbokslut, jamforArsbokslut } from '../src/lib/arsbokslut.js';
@@ -161,7 +161,7 @@ describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och 
     });
     it('Utforska: pivoten och villkoren på AID-etikett läser koden', () => {
         const r = underlag();
-        const m = computePivot(r, { rad: 'aid', matt: 'median' }, { k: 10 });
+        const m = pivottabell(r, { rad: 'aid', matt: 'median' }, { k: 10 });
         expect(m.celler.map(c => [c.rad, c.n, c.liten])).toEqual([[TEXT_A, 16, false]]);
         const villkor = { lage: 'alla', villkor: [{ falt: 'aid', op: 'enAv', varde: [TEXT_A] }] };
         expect(r.filter(iUrvalet(villkor, gruppnycklar(r)))).toHaveLength(16);

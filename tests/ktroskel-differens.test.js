@@ -36,7 +36,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { perBasTabeller } from '../src/lib/perbas.js';
-import { computePivot } from '../src/lib/utforska.js';
+import { pivottabell } from '../src/lib/utforska.js';
 import { sektorernasAndel, sektorsTabell } from '../src/lib/sektor.js';
 import { gapUppdelning, gapPoster } from '../src/lib/gapuppdelning.js';
 import { sektorsnamn } from '../src/lib/aid.js';
@@ -364,7 +364,7 @@ describe('per BAS-intervall: Löneskillnader i åldersgrupper', () => {
 
 // ---- b. Egna vyers pivot (src/lib/utforska.js) ----
 describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () => {
-    // computePivot räknar summor per rad och per kolumn (radHinkar, kolHinkar), men bara för att sortera etiketterna;
+    // pivottabell räknar summor per rad och per kolumn (radHinkar, kolHinkar), men bara för att sortera etiketterna;
     // resultatet bär inga totaler, bara cellerna, och urvalets antal. Tabellen i src/app/70-utforska.js skriver en
     // kolumn per kolumnvärde utan totalrad eller totalkolumn; en cell under tröskeln blir tom i exporten och rader och
     // kolumner med bara sådana celler utelämnas (data-export-tom, data-export-utelamna), om inte användaren kryssar i
@@ -374,7 +374,7 @@ describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () =
         it(`${fall.namn}: resultatet har inga totaler, och cellerna utan den lilla räcker inte till en differens`, () => {
             const { rader } = underlag(fall, { stora: [{ bas: 'A' }, { bas: 'B' }, { bas: 'C' }], liten: { bas: 'C', kon: 'man' } });
             for (const r of rader) if (r.bas === 'C' && r.lon < 90000) r.kon = 'kvinna';   // C: bara kvinnor utom den lilla gruppen
-            const p = computePivot(rader, { rad: 'bas', kolumn: 'kon', matt: 'medel' }, { k: K });
+            const p = pivottabell(rader, { rad: 'bas', kolumn: 'kon', matt: 'medel' }, { k: K });
             expect(Object.keys(p).sort()).toEqual(['celler', 'dolda', 'kolumnEtiketter', 'radEtiketter', 'spec', 'urval']);
             expect(Object.keys(p.urval).sort()).toEqual(['n', 'nKv', 'nMa']);
             const liten = p.celler.find(c => c.liten);
@@ -389,8 +389,8 @@ describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () =
     // vy, BAS i en annan). Skyddet gäller summorna i samma export; differenser mellan två exporter står som ovaktade.
     it('två exporter: vyn Hela urvalet och vyn BAS ger tillsammans ett utelämnat intervalls medellön (utanför S4)', () => {
         const { rader, liten } = underlag(FALL[0], { stora: [{ bas: 'A' }, { bas: 'B' }], liten: { bas: 'C' } });
-        const hela = computePivot(rader, { rad: 'alla', matt: 'medel' }, { k: K }).celler[0];
-        const bas = computePivot(rader, { rad: 'bas', matt: 'medel' }, { k: K }).celler.filter(c => !c.liten);
+        const hela = pivottabell(rader, { rad: 'alla', matt: 'medel' }, { k: K }).celler[0];
+        const bas = pivottabell(rader, { rad: 'bas', matt: 'medel' }, { k: K }).celler.filter(c => !c.liten);
         const r = rest(skriven(hela.n, hela.value, true), bas.map(c => skriven(c.n, c.value, true)));
         expect(avvikelse(r.medel, liten.medel)).toBeLessThan(GRANS);
     });
