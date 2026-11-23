@@ -6958,7 +6958,6 @@ function sektorAndelNot(a, k) {
 
 // src/lib/rapportunderlag.js
 var { STORLEKSGRANS: STORLEKSGRANS2, DIREKTIV_KOLUMN: DIREKTIV_KOLUMN2, DIREKTIV_ETIKETT: DIREKTIV_ETIKETT2, DIREKTIV_TIPS: DIREKTIV_TIPS2 } = statusKonstanter();
-var _arMan = (r) => typeof r.kon === "string" && !r.kon.includes("kvinna") && (r.kon.includes("man") || r.kon.includes("män"));
 function bortvaltNotering(b) {
   const tal = typeof b.deltaR2pp === "number" && isFinite(b.deltaR2pp) ? `tillför ${Math.abs(b.deltaR2pp).toFixed(1).replace(".", ",")} procentenheter i förklaringsgrad` : "gick inte att pröva";
   return `${b.etikett} har kontrollerats och ${tal}; den ingår inte i siffrorna.${b.skal ? ` Skäl: ${b.skal}` : ""}`;
@@ -6969,7 +6968,7 @@ function gruppMedBas(g) {
 function likaArbeteGrupper(rader, { k, golv = 10 }) {
   const perGrupp = /* @__PURE__ */ new Map();
   const nyckelAv = (r) => `${aidAvRad(r)}\0${r.bas == null ? "" : String(r.bas)}`;
-  const namn = namnrader((rader || []).filter((r) => arKvinna(r) || _arMan(r)), nyckelAv);
+  const namn = namnrader((rader || []).filter((r) => arKvinna(r) || arMan(r)), nyckelAv);
   for (const r of rader || []) {
     const aid = aidAvRad(r), bas = r.bas == null ? "" : String(r.bas), nyckel = nyckelAv(r);
     if (!perGrupp.has(nyckel)) {
@@ -6977,7 +6976,7 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
       perGrupp.set(nyckel, { yrke: nr.yrke, etikett: String(nr.yrkeLabel || nr.yrke || aid), aid, bas, kv: [], ma: [] });
     }
     if (arKvinna(r)) perGrupp.get(nyckel).kv.push(r.lon);
-    else if (_arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
+    else if (arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
   }
   const grupper = [], utelamnadeGrupper = [], ejJamforbaraGrupper = [];
   for (const { yrke, etikett: etikett2, aid, bas, kv, ma } of perGrupp.values()) {
@@ -7060,7 +7059,7 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
 }
 function justeratGapInomYrke(rader, { k }) {
   if ((rader || []).length && !(rader || []).some((r) => r && r.alder > 0)) return { utanAlder: true };
-  const d = (rader || []).filter((r) => r.lon > 0 && r.alder > 0 && (arKvinna(r) || _arMan(r)));
+  const d = (rader || []).filter((r) => r.lon > 0 && r.alder > 0 && (arKvinna(r) || arMan(r)));
   const nKv = d.filter(arKvinna).length, nMa = d.length - nKv;
   if (nKv < k || nMa < k) return { forFa: true };
   const basLista = [...new Set(d.map((r) => r.bas))].sort();
@@ -19018,6 +19017,151 @@ function arTal(text) {
   return _AR_TAL.test(String(text ?? "").trim());
 }
 
+// src/lib/vymodell-rapport.js
+var RM_AVSNITT = Object.freeze(["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod", "dossierer"]);
+var RM_FORVALT_AV = Object.freeze(["dossierer"]);
+var RM_URVAL = Object.freeze({
+  hela: { namn: "Hela dokumentationen", med: RM_AVSNITT.filter((id) => !RM_FORVALT_AV.includes(id)) },
+  ledning: { namn: "Ledningsbrief", med: ["sammanfattning", "lika", "likvardigt", "atgarder"] },
+  facklig: { namn: "Facklig dialog", med: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "samverkan", "regression", "metod"] }
+});
+var RM_URVAL_TIDIGARE = Object.freeze([
+  {
+    fast: "hela",
+    ordning: ["sammanfattning", "regler", "lika", "likvardigt", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"],
+    med: ["sammanfattning", "regler", "lika", "likvardigt", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"]
+  },
+  {
+    fast: "facklig",
+    ordning: ["sammanfattning", "regler", "lika", "likvardigt", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"],
+    med: ["sammanfattning", "regler", "lika", "likvardigt", "struktur", "referenser", "perbas", "samverkan", "regression", "metod"]
+  },
+  // Före bilagan med gruppdossierer (tretton avsnitt).
+  {
+    fast: "hela",
+    ordning: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"],
+    med: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"]
+  },
+  {
+    fast: "facklig",
+    ordning: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"],
+    med: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "samverkan", "regression", "metod"]
+  }
+]);
+var sammaLista = (a, b) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
+function rapportUrvalAv(u) {
+  if (u && u.fast && RM_URVAL[u.fast]) return { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u.fast].med], namn: RM_URVAL[u.fast].namn };
+  const ordning = u && Array.isArray(u.ordning) ? medNyaAvsnitt(u.ordning.filter((id) => RM_AVSNITT.includes(id))) : [...RM_AVSNITT];
+  const med = u && Array.isArray(u.med) ? ordning.filter((id) => u.med.includes(id)) : ordning.filter((id) => !RM_FORVALT_AV.includes(id));
+  return { ordning, med, namn: urvalNamn(ordning, med) };
+}
+function urvalNamn(ordning, med) {
+  if (med.length === ordning.length) return "Alla avsnitt";
+  if (sammaLista(ordning, RM_AVSNITT)) {
+    const utanBilagor = med.filter((id) => !RM_FORVALT_AV.includes(id));
+    for (const f of Object.values(RM_URVAL)) {
+      if (sammaLista(med, f.med)) return f.namn;
+      if (sammaLista(utanBilagor, f.med)) return `${f.namn} + bilaga`;
+    }
+  }
+  return `Eget urval (${med.length} av ${ordning.length} avsnitt)`;
+}
+function medNyaAvsnitt(ordning) {
+  const ut = [...ordning];
+  RM_AVSNITT.forEach((id, i) => {
+    if (ut.includes(id)) return;
+    const fore = RM_AVSNITT.slice(0, i).reverse().find((x) => ut.includes(x)), efter = RM_AVSNITT.slice(i + 1).find((x) => ut.includes(x));
+    if (fore && efter && ut.indexOf(efter) === ut.indexOf(fore) + 1) ut.splice(ut.indexOf(efter), 0, id);
+    else ut.push(id);
+  });
+  return ut;
+}
+function rapportUrvalAttSpara(u) {
+  if (u && typeof u === "object" && !(u.fast && RM_URVAL[u.fast])) {
+    const tidigare = RM_URVAL_TIDIGARE.find((t) => sammaLista(u.ordning, t.ordning) && sammaLista(u.med, t.med));
+    if (tidigare) u = tidigare.fast;
+  }
+  if (u && typeof u === "object" && u.fast && RM_URVAL[u.fast]) u = u.fast;
+  if (typeof u === "string") u = u === "hela" || !RM_URVAL[u] ? null : { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u].med], fast: u };
+  return u ? { ordning: u.ordning.filter((id) => RM_AVSNITT.includes(id)), med: u.med.filter((id) => RM_AVSNITT.includes(id)), ...u.fast ? { fast: u.fast } : {} } : null;
+}
+function arHelaDokumentationen(modell, alla) {
+  const med = new Set(modell.avsnitt.map((a) => a.id));
+  return alla.avsnitt.every((a) => med.has(a.id) || RM_FORVALT_AV.includes(a.id));
+}
+function rapportAvsnittIUrval(finns, { urval, alla = false, egna = null, arsjamf = null }) {
+  const valda = alla ? [...finns] : urval.med.map((id) => finns.find((a) => a.id === id)).filter(Boolean);
+  const sattEfter = (avsnitt, efter) => {
+    if (!avsnitt || !(alla || urval.med.includes(efter))) return;
+    const i = valda.findIndex((a) => a.id === efter);
+    valda.splice(i >= 0 ? i + 1 : valda.length, 0, avsnitt);
+  };
+  sattEfter(egna, "perbas");
+  sattEfter(arsjamf, "atgarder");
+  let nr = 0;
+  return valda.map((a) => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
+}
+var RM_LIKA_MAX = 30, RM_PAR_MAX = 25;
+var RM_IAKTTAGELSE_PE = 15;
+function vymodellRapport(rader, { k, golv, bas, reg = null, lika, lvPar = null, oversikt, recept = [], basEffektNot = () => "" }) {
+  const rep = representationPerBas(rader, { k }) || [];
+  const visade = rep.filter((g) => !(g.n < k)), dolda = rep.filter((g) => g.n < k).map((g) => g.bas);
+  let iakttagelse = null;
+  if (visade.length >= 2) {
+    const sorterade = [...visade].sort((a, b) => b.median - a.median), topp = sorterade[0], botten = sorterade[sorterade.length - 1];
+    if (botten.andelKv - topp.andelKv > RM_IAKTTAGELSE_PE) iakttagelse = { topp, botten };
+  }
+  const likaGr = lika || likaArbeteGrupper(rader, { k, golv });
+  const attBedoma = likaGr.grupper.filter((g) => g.flaggad);
+  const { par, utelamnade: parUtelamnade, not: parNot } = parForRedovisning(lvPar || void 0, k);
+  const regOk = !!(reg && !reg.error);
+  const kandidater = rader.length ? basdossierIntervall(rader, bas, k) : [];
+  const kand = new Set(kandidater.map((x) => x.bas));
+  return {
+    sammanfattning: konsMedianer(rader, { k }),
+    representation: { visade, dolda, konLitet: visade.filter((g) => g.konLitet).map((g) => g.bas), iakttagelse },
+    lika: {
+      grupper: attBedoma.slice(0, RM_LIKA_MAX),
+      overskott: Math.max(0, attBedoma.length - RM_LIKA_MAX),
+      sma: likaGr.utelamnade.length + likaGr.grupper.filter((g) => g.samladMedian).length
+    },
+    likvardigt: {
+      par: par.slice(0, RM_PAR_MAX),
+      antal: par.length,
+      overskott: Math.max(0, par.length - RM_PAR_MAX),
+      utelamnade: parUtelamnade,
+      not: parNot,
+      allaParVisas: par.length > 0 && !parUtelamnade
+    },
+    oversikt: (oversikt || oversiktPerBas(rader, bas, k)).map((o) => ({
+      ...o,
+      skillnadKr: Math.round(o.medKv) - Math.round(o.medMa),
+      niva: oversiktNiva(o, golv),
+      direktiv: direktivMarkering(o.gap)
+    })),
+    regression: regOk ? {
+      kritisk: statusNiva(Math.abs(reg.konPct), isFinite(reg.konPctLow) && isFinite(reg.konPctHigh) ? reg.konPctLow > 0 || reg.konPctHigh < 0 : null) === "granska",
+      steg: regStegForRedovisning(reg, k),
+      basEffekter: basEffekterForRedovisning(reg, k, basEffektNot),
+      perBas: (reg.perBas || []).filter((pb) => pb.status === "ok").map((pb) => ({ ...pb, sakerstalld: perBasSignal(pb.gapPct, pb.pValue < 0.05, pb.pValue < 0.05).niva === "titta" }))
+    } : null,
+    basintervall: { kandidater, utelamnade: bas.filter((b) => !kand.has(b) && rader.some((r) => r.bas === b && r.lon > 0)) },
+    egna: rader.length ? recept.map((r) => ({ recept: r, tabeller: receptTillTabeller(rader, r, { k }) })) : []
+  };
+}
+function rapportDossierGrupper(kandidater, k) {
+  const med = kandidater.filter((g) => g.rows.filter((r) => arKvinna(r)).length >= k && g.rows.filter((r) => arMan(r)).length >= k);
+  return { med, utan: kandidater.length - med.length };
+}
+function perBasUtelamnat(pb) {
+  return {
+    basUtelamnade: pb.basUtelamnade,
+    smaYrken: pb.intervall.reduce((s, i) => s + i.utelamnade.length, 0),
+    konDolda: pb.intervall.filter((i) => !i.konVisas).map((i) => i.bas),
+    medelDolda: [.../* @__PURE__ */ new Set([...pb.konsgap ? pb.konsgap.undertryckta : [], ...pb.aldersgrupper ? pb.aldersgrupper.undertryckta : []])]
+  };
+}
+
 // src/app/04-ordlista.js
 var AID_METODTEXT = "AID är ett klassificeringssystem för att gruppera arbetsuppgifter, som SKR och de fackliga organisationerna använder gemensamt för lönestatistik. {Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en} och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga; för det behöver AID kompletteras. {Enhet.bfl} är därför en utgångspunkt för lika arbete, som arbetsgivaren bekräftar; för likvärdigt arbete kompletterar {niva.bfl} eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).";
 var GLOSSARY = [
@@ -19865,78 +20009,11 @@ var RM_DIAGRAM = [
     om: () => !!(state.forraArsbokslut && Array.isArray(state.forraArsbokslut.basIntervall))
   }
 ];
-var RM_AVSNITT = ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod", "dossierer"];
-var RM_FORVALT_AV = Object.freeze(["dossierer"]);
-var RM_URVAL = Object.freeze({
-  hela: { namn: "Hela dokumentationen", med: RM_AVSNITT.filter((id) => !RM_FORVALT_AV.includes(id)) },
-  ledning: { namn: "Ledningsbrief", med: ["sammanfattning", "lika", "likvardigt", "atgarder"] },
-  facklig: { namn: "Facklig dialog", med: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "samverkan", "regression", "metod"] }
-});
-var RM_URVAL_TIDIGARE = Object.freeze([
-  {
-    fast: "hela",
-    ordning: ["sammanfattning", "regler", "lika", "likvardigt", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"],
-    med: ["sammanfattning", "regler", "lika", "likvardigt", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"]
-  },
-  {
-    fast: "facklig",
-    ordning: ["sammanfattning", "regler", "lika", "likvardigt", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"],
-    med: ["sammanfattning", "regler", "lika", "likvardigt", "struktur", "referenser", "perbas", "samverkan", "regression", "metod"]
-  },
-  // Före bilagan med gruppdossierer (tretton avsnitt).
-  {
-    fast: "hela",
-    ordning: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"],
-    med: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"]
-  },
-  {
-    fast: "facklig",
-    ordning: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "atgarder", "samverkan", "beslut", "regression", "metod"],
-    med: ["sammanfattning", "regler", "lika", "likvardigt", "basintervall", "struktur", "referenser", "perbas", "samverkan", "regression", "metod"]
-  }
-]);
 function rapportUrval() {
-  const u = state.rapportUrval;
-  if (u && u.fast && RM_URVAL[u.fast]) return { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u.fast].med], namn: RM_URVAL[u.fast].namn };
-  const ordning = u && Array.isArray(u.ordning) ? _rmMedNyaAvsnitt(u.ordning.filter((id) => RM_AVSNITT.includes(id))) : [...RM_AVSNITT];
-  const med = u && Array.isArray(u.med) ? ordning.filter((id) => u.med.includes(id)) : ordning.filter((id) => !RM_FORVALT_AV.includes(id));
-  return { ordning, med, namn: _rmUrvalNamn(ordning, med) };
-}
-function _rmUrvalNamn(ordning, med) {
-  if (med.length === ordning.length) return "Alla avsnitt";
-  const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
-  if (lika(ordning, RM_AVSNITT)) {
-    const utanBilagor = med.filter((id) => !RM_FORVALT_AV.includes(id));
-    for (const f of Object.values(RM_URVAL)) {
-      if (lika(med, f.med)) return f.namn;
-      if (lika(utanBilagor, f.med)) return `${f.namn} + bilaga`;
-    }
-  }
-  return `Eget urval (${med.length} av ${ordning.length} avsnitt)`;
-}
-function _rmMedNyaAvsnitt(ordning) {
-  const ut = [...ordning];
-  RM_AVSNITT.forEach((id, i) => {
-    if (ut.includes(id)) return;
-    const fore = RM_AVSNITT.slice(0, i).reverse().find((x) => ut.includes(x)), efter = RM_AVSNITT.slice(i + 1).find((x) => ut.includes(x));
-    if (fore && efter && ut.indexOf(efter) === ut.indexOf(fore) + 1) ut.splice(ut.indexOf(efter), 0, id);
-    else ut.push(id);
-  });
-  return ut;
+  return rapportUrvalAv(state.rapportUrval);
 }
 function sattRapportUrval(u) {
-  const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
-  if (u && typeof u === "object" && !(u.fast && RM_URVAL[u.fast])) {
-    const tidigare = RM_URVAL_TIDIGARE.find((t) => lika(u.ordning, t.ordning) && lika(u.med, t.med));
-    if (tidigare) u = tidigare.fast;
-  }
-  if (u && typeof u === "object" && u.fast && RM_URVAL[u.fast]) u = u.fast;
-  if (typeof u === "string") u = u === "hela" || !RM_URVAL[u] ? null : { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u].med], fast: u };
-  state.rapportUrval = u ? { ordning: u.ordning.filter((id) => RM_AVSNITT.includes(id)), med: u.med.filter((id) => RM_AVSNITT.includes(id)), ...u.fast ? { fast: u.fast } : {} } : null;
-}
-function rmArHelaDokumentationen(modell, alla) {
-  const med = new Set(modell.avsnitt.map((a) => a.id));
-  return alla.avsnitt.every((a) => med.has(a.id) || RM_FORVALT_AV.includes(a.id));
+  state.rapportUrval = rapportUrvalAttSpara(u);
 }
 function rmSakligaSkalDelar(skal, dampad) {
   if (!skal || !skal.grupper.length) return [];
@@ -20015,13 +20092,11 @@ function rmPerBasAvsnitt(d, k) {
   const kol = [{ rubrik: "Grupp", typ: "text" }, { rubrik: "Antal", typ: "antal" }, ...matt.map((m) => ({ rubrik: MATT3[m], typ: "kr" }))];
   const dimEtikett = pb.dimEtikett, kort = pb.dim === "sektor" ? T.huvudomrade.en : "BAS", per = pb.dim === "sektor" ? T.huvudomrade.en : T.niva.en;
   const utelamnat = [];
-  if (pb.basUtelamnade.length) utelamnat.push(`BAS ${pb.basUtelamnade.join(", ")} (färre än ${k} ${personOrd(k)})`);
-  const smaYrken = pb.intervall.reduce((s, i) => s + i.utelamnade.length, 0);
+  const { basUtelamnade, smaYrken, konDolda, medelDolda } = perBasUtelamnat(pb);
+  if (basUtelamnade.length) utelamnat.push(`BAS ${basUtelamnade.join(", ")} (färre än ${k} ${personOrd(k)})`);
   if (smaYrken) utelamnat.push(`${smaYrken} ${ordForAntal(smaYrken, T.enhet)} med färre än ${k} ${personOrd(k)}`);
-  const konDolda = pb.intervall.filter((i) => !i.konVisas).map((i) => i.bas);
   if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(", ")} (ett kön har färre än ${k} ${personOrd(k)})`);
   const undertryckNoter = rmPerBasUndertryckNoter(pb, k);
-  const medelDolda = [.../* @__PURE__ */ new Set([...pb.konsgap ? pb.konsgap.undertryckta : [], ...pb.aldersgrupper ? pb.aldersgrupper.undertryckta : []])];
   if (medelDolda.length) utelamnat.push(`medellön för ${kort} ${medelDolda.join(", ")} (så att en grupp med färre än ${k} ${personOrd(k)} inte kan räknas fram)`);
   const delar = [
     stycke(pb.dim === "sektor" ? `Löneläget i varje ${T.huvudomrade.en}: organisationen, de ${T.enhet.fl} som når minsta gruppstorlek, och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.` : `Löneläget i varje ${T.niva.en} mot ${referensKortnamn()}: organisationen, de ${T.enhet.fl} som når minsta gruppstorlek (med jämförelsestatistikens nivå under, när den finns) och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.`, "dampad")
@@ -20080,12 +20155,11 @@ function rmPerBasAvsnitt(d, k) {
   }
   return { id: "perbas", numrerad: true, rubrik: `Lönestruktur per ${per}`, utelamnat, delar };
 }
-function rmBasintervallAvsnitt(k) {
-  if (typeof basdossierKandidater !== "function") return null;
-  const kand = basdossierKandidater();
+function rmBasintervallAvsnitt(k, bi) {
+  const kand = bi.kandidater;
   if (!kand.length) return null;
   const stycke = (text, stil) => ({ typ: "stycke", text, ...stil ? { stil } : {} });
-  const under = basdossierUtelamnade();
+  const under = bi.utelamnade;
   const utelamnat = under.length ? [`BAS ${under.join(", ")} (färre än ${k} ${personOrd(k)})`] : [];
   const delar = [stycke(`Ett avsnitt per ${T.niva.en} med minst ${k} ${personOrd(k)}, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? "läget mot ställningstagandet, " : ""}${T.enhet.bfl} med status enligt Lika arbete, likvärdigt arbete${harAlder() ? ", ålder" : ""} och förra året när ett bokslut är inläst. Tabellen har ${T.enhet.bfl} där både kvinnor och män når minsta gruppstorlek.`, "dampad")];
   let smaYrken = 0;
@@ -20166,13 +20240,9 @@ function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
     /** @type {any[]} */
     []
   ) };
-  if (stub || typeof gruppdossierCandidates !== "function") return avsnitt;
+  if (stub) return avsnitt;
   const delat = gruppdossierDelat({ text: true });
-  const medGrupper = delat.kandidater.filter((g) => {
-    const { kv, ma } = _gdKon(g.rows);
-    return kv.length >= k && ma.length >= k;
-  });
-  const utan = delat.kandidater.length - medGrupper.length;
+  const { med: medGrupper, utan } = rapportDossierGrupper(delat.kandidater, k);
   if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${ordForAntal(utan, T.enhet)} där ett kön har färre än ${k} ${personOrd(k)}`);
   if (besked) return avsnitt;
   const dossierer = (
@@ -20263,15 +20333,13 @@ function rmReferenserAvsnitt(diagram) {
   const utelamnat = [...harStatistik ? [] : ["jämförelsestatistik saknas"], ...harStallningstagande ? [] : ["ställningstagande saknas"]];
   return { id: "referenser", numrerad: true, rubrik: "Lönerna mot referenserna", utelamnat, delar };
 }
-function rmEgnaAvsnitt(d, k) {
-  const recept = state.rapportTabeller || [];
-  if (!recept.length || !d.length || typeof receptTillTabeller !== "function") return null;
+function rmEgnaAvsnitt(egna, k) {
+  if (!egna.length) return null;
   const stycke = (text, stil) => ({ typ: "stycke", text, ...stil ? { stil } : {} });
   const delar = [stycke("Tabeller som byggts i fliken Tabeller och egna vyer och lagts till i rapporten. De räknas på samma underlag och med samma minsta gruppstorlek som rapporten i övrigt.", "dampad")];
   const utelamnat = [];
   let antal = 0;
-  for (const r of recept) {
-    const tabeller = receptTillTabeller(d, r, { k });
+  for (const { recept: r, tabeller } of egna) {
     if (!tabeller.length) {
       utelamnat.push(`tabellen "${r.namn}" (ingen grupp når minsta gruppstorlek)`);
       continue;
@@ -20338,23 +20406,7 @@ function _rapportModellExport({ alla = false, bada = false, besked = false, ater
     /** @type {any[]} */
     [...b.fasta, dossierer].filter(Boolean)
   );
-  const avsnitt = (alla2) => {
-    const urval2 = rapportUrval();
-    const valda = (
-      /** @type {any[]} */
-      alla2 ? finns : urval2.med.map((id) => finns.find((a) => a.id === id)).filter(Boolean)
-    );
-    if (egna && (alla2 || urval2.med.includes("perbas"))) {
-      const i = valda.findIndex((a) => a.id === "perbas");
-      valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna);
-    }
-    if (arsjamf && (alla2 || urval2.med.includes("atgarder"))) {
-      const i = valda.findIndex((a) => a.id === "atgarder");
-      valda.splice(i >= 0 ? i + 1 : valda.length, 0, arsjamf);
-    }
-    let nr = 0;
-    return valda.map((a) => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
-  };
+  const avsnitt = (alla2) => rapportAvsnittIUrval(finns, { urval: rapportUrval(), alla: alla2, egna, arsjamf });
   const modell = (alla2) => ({
     titel: `Lönekartläggning ${year} — dokumentation`,
     undertitel: `${orgNamn("") || "[HR fyller i: organisation/arbetsgivare]"} · ${urval} · genererad ${today} · v${APP_VERSION}${dqStatus ? ` · Underlagets kvalitet: ${UK_ETIKETT[dqStatus]}` : ""}`,
@@ -20369,18 +20421,28 @@ function _rmAvsnittenUtanUrval() {
   const year = (/* @__PURE__ */ new Date()).getFullYear(), today = (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE");
   const k = kTroskel();
   const urval = "Hela organisationen";
-  const { nKv: kvN, nMa: maN, medKv, medMa, kvotPct, konOk } = konsMedianer(d, { k });
-  const reg = typeof runOLSRegression === "function" ? runOLSRegression() : null;
-  const lvRes = typeof likvardighetspar === "function" ? likvardighetResultat() : null;
-  const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);
-  const rep = typeof representationPerBas === "function" ? representationPerBas(d, { k }) || [] : [];
-  const repVisade = rep.filter((g) => !isKMasked(g.n)), repDolda = rep.filter((g) => isKMasked(g.n)).map((g) => g.bas);
-  const dq = typeof bedomningUnderlag === "function" ? bedomningUnderlag({ reg }) : null;
+  const reg = runOLSRegression();
+  const lvRes = likvardighetResultat();
+  const vm = vymodellRapport(d, {
+    k,
+    golv: statGolv(),
+    bas: getBasIntervals(),
+    reg,
+    lika: laLikaGrupper(d, k),
+    lvPar: lvRes && lvRes.pairs,
+    oversikt: _laOversiktRader(d, void 0, k),
+    recept: state.rapportTabeller || [],
+    basEffektNot: (utelamnade) => _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, "deras effekt i modellen skulle visa deras genomsnittliga lönenivå", "modellen")
+  });
+  const { nKv: kvN, nMa: maN, medKv, medMa, kvotPct, konOk } = vm.sammanfattning;
+  const { par, utelamnade: parUtelamnade, not: parNot } = vm.likvardigt;
+  const { visade: repVisade, dolda: repDolda } = vm.representation;
+  const dq = bedomningUnderlag({ reg });
   const stycke = (text, stil) => ({ typ: "stycke", text, ...stil ? { stil } : {} });
   const dampad = (text) => stycke(text, "dampad");
   const fyllIn = (text) => ({ typ: "fyllIn", text });
   const diagram = (avsnitt, del) => RM_DIAGRAM.filter((g) => g.avsnitt === avsnitt && /** @type {any} */
-  (g.del || null) === (del || null) && (!g.kraverAllaPar || par.length > 0 && !parUtelamnade) && (!g.om || g.om())).flatMap((g) => {
+  (g.del || null) === (del || null) && (!g.kraverAllaPar || vm.likvardigt.allaParVisas) && (!g.om || g.om())).flatMap((g) => {
     const not = g.metodNot ? g.metodNot() : null;
     return [{ typ: "diagram", id: g.id, flik: g.flik, rubrik: g.rubrik }, ...not ? [dampad(not)] : []];
   });
@@ -20400,11 +20462,11 @@ function _rmAvsnittenUtanUrval() {
   const regler = { id: "regler", numrerad: true, rubrik: "Regler och praxis kring lön", utelamnat: [], delar: [
     dampad("Granskning av de regler och den praxis som styr lönesättningen — inte lönerna i sig. En regel kan vara könsneutralt skriven och ändå slå olika i praktiken. Redovisas per granskningsområde.")
   ] };
-  if (repVisade.length >= 2) {
-    const sorterade = [...repVisade].sort((a, b) => b.median - a.median), topp = sorterade[0], botten = sorterade[sorterade.length - 1];
-    if (botten.andelKv - topp.andelKv > 15) regler.delar.push(stycke(`Automatisk iakttagelse: andelen kvinnor är högre i lägre betalda ${T.niva.fl} (${botten.bas}: ${svPct(botten.andelKv, 0)}) än i högre betalda (${topp.bas}: ${svPct(topp.andelKv, 0)}). Det kan tyda på att kvinnor och män är ojämnt fördelade mellan ${T.niva.bfl}, och det är värt att ta med i granskningen av regler och praxis.`));
+  if (vm.representation.iakttagelse) {
+    const { topp, botten } = vm.representation.iakttagelse;
+    regler.delar.push(stycke(`Automatisk iakttagelse: andelen kvinnor är högre i lägre betalda ${T.niva.fl} (${botten.bas}: ${svPct(botten.andelKv, 0)}) än i högre betalda (${topp.bas}: ${svPct(topp.andelKv, 0)}). Det kan tyda på att kvinnor och män är ojämnt fördelade mellan ${T.niva.bfl}, och det är värt att ta med i granskningen av regler och praxis.`));
   }
-  const bes8 = typeof _bes8Areas === "function" ? _bes8Areas() : [];
+  const bes8 = _bes8Areas();
   if (bes8.length) {
     regler.delar.push({
       typ: "tabell",
@@ -20433,8 +20495,7 @@ function _rmAvsnittenUtanUrval() {
   }
   lika.delar.push(...diagram("lika"));
   lika.delar.push({ typ: "rubrik", niva: 3, text: "Grupper att bedöma" });
-  const likaGr = laLikaGrupper(d, k);
-  const attBedoma = likaGr.grupper.filter((g) => g.flaggad);
+  const attBedoma = vm.lika.grupper;
   if (attBedoma.length) {
     lika.delar.push({
       typ: "tabell",
@@ -20449,13 +20510,13 @@ function _rmAvsnittenUtanUrval() {
         { rubrik: "Saklig förklaring (fyll i)", typ: "fyllIn" },
         { rubrik: "Åtgärd/beslut (fyll i)", typ: "fyllIn" }
       ],
-      rader: attBedoma.slice(0, 30).map((g) => [g.yrke, String(g.bas ?? ""), `${g.nKv} / ${g.nMa}`, g.medKv, g.medMa, g.kvot * 100, g.direktiv ? _STS_DIR_ETIKETT : "", "", ""])
+      rader: attBedoma.map((g) => [g.yrke, String(g.bas ?? ""), `${g.nKv} / ${g.nMa}`, g.medKv, g.medMa, g.kvot * 100, g.direktiv ? _STS_DIR_ETIKETT : "", "", ""])
     });
-    if (attBedoma.length > 30) lika.utelamnat.push(`${attBedoma.length - 30} ${T.enhet.fl} utöver de 30 första`);
+    if (vm.lika.overskott) lika.utelamnat.push(`${vm.lika.overskott} ${T.enhet.fl} utöver de ${RM_LIKA_MAX} första`);
   } else {
     lika.delar.push(dampad(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} har statusen Värt att granska: ingen skillnad mellan kvinnors och mäns medianlön är både statistiskt säkerställd och minst 3 %.`));
   }
-  const likaSma = likaGr.utelamnade.length + likaGr.grupper.filter((g) => g.samladMedian).length;
+  const likaSma = vm.lika.sma;
   if (likaSma) lika.utelamnat.push(`könsjämförelsen för ${likaSma} ${ordForAntal(likaSma, T.enhet)} där ett kön har färre än ${k} ${personOrd(k)}`);
   lika.delar.push(fyllIn("Bedöm för varje grupp om löneskillnaden har samband med kön. Ange sakligt skäl (t.ex. dokumenterad erfarenhet, prestation, marknadsläge, tjänstetillägg) eller besluta åtgärd."));
   const likvardigt = { id: "likvardigt", numrerad: true, rubrik: `Likvärdigt arbete — ${termFras(T.enhet, "fl", { adjektiv: "kvinnodominerad" })}`, utelamnat: [], delar: [
@@ -20475,7 +20536,7 @@ function _rmAvsnittenUtanUrval() {
         { rubrik: "Högre med (%)", typ: "pct1" },
         { rubrik: "Kravvärdering / sakligt skäl (fyll i)", typ: "fyllIn" }
       ],
-      rader: par.slice(0, 25).map((p, i) => [
+      rader: par.map((p, i) => [
         i + 1,
         medNamn(p.kvAid, p.kvLabel, p.kvBas),
         medNamn(p.maAid, p.maLabel, p.maBas),
@@ -20486,7 +20547,7 @@ function _rmAvsnittenUtanUrval() {
         ""
       ])
     });
-    if (par.length > 25) likvardigt.utelamnat.push(`${par.length - 25} par utöver de 25 första`);
+    if (vm.likvardigt.overskott) likvardigt.utelamnat.push(`${vm.likvardigt.overskott} par utöver de ${RM_PAR_MAX} första`);
   } else if (!parNot) {
     likvardigt.delar.push(dampad(`Inga jämförelsepar hittades. Antingen är grupperna för små för att redovisas, eller så ligger ${adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet)} ${termFras(T.enhet, "en", { adjektiv: "kvinnodominerad" })} lägre än sin jämförelse.`));
   }
@@ -20496,15 +20557,15 @@ function _rmAvsnittenUtanUrval() {
   }
   likvardigt.delar.push(...diagram("likvardigt"));
   likvardigt.delar.push(fyllIn(`Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om ${genitiv(T.jamforelse.bf)} krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.`));
-  const repNot = [_rmNotText(kMaskNote(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNote(repVisade.filter((g) => g.konLitet).map((g) => g.bas), `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
-  const oversikt = typeof _laOversiktRader === "function" ? _laOversiktRader(d, void 0, k) : [];
+  const repNot = [_rmNotText(kMaskNote(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNote(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
+  const oversikt = vm.oversikt;
   const struktur = repVisade.length || repNot.length ? {
     id: "struktur",
     numrerad: true,
     rubrik: "Struktur och lönetransparens",
     utelamnat: [
       ...repDolda.length ? [`BAS ${repDolda.join(", ")} (färre än ${k} ${personOrd(k)})`] : [],
-      ...repVisade.some((g) => g.konLitet) ? [`könsuppdelade lönemått för BAS ${repVisade.filter((g) => g.konLitet).map((g) => g.bas).join(", ")} (ett kön har färre än ${k} ${personOrd(k)})`] : []
+      ...vm.representation.konLitet.length ? [`könsuppdelade lönemått för BAS ${vm.representation.konLitet.join(", ")} (ett kön har färre än ${k} ${personOrd(k)})`] : []
     ],
     delar: [
       dampad(`Hur kvinnor och män fördelar sig mellan ${T.niva.bfl}, och löneskillnaden i median i varje intervall, räknad som i direktivet: skillnaden i procent av mäns lön, positivt tal = kvinnor lägre. Verktygets flikar visar samma skillnad som kvinnors lön i procent av mäns.`),
@@ -20534,7 +20595,7 @@ function _rmAvsnittenUtanUrval() {
             { rubrik: _STS_DIR_KOLUMN, typ: "text" }
           ],
           rader: oversikt.map((o) => {
-            const skillnad = Math.round(o.medKv) - Math.round(o.medMa);
+            const skillnad = o.skillnadKr;
             return [
               o.bas,
               `${o.nKv} / ${o.nMa}`,
@@ -20543,8 +20604,8 @@ function _rmAvsnittenUtanUrval() {
               `${skillnad < 0 ? "−" : skillnad > 0 ? "+" : ""}${rmCell(Math.abs(skillnad), "kr")}`,
               o.gap,
               o.ci ? `${svTal(o.ci.lo, 1)}–${svPct(o.ci.hi, 1)}` : "—",
-              _laOversiktStatus(o).serie,
-              direktivMarkering(o.gap) ? _STS_DIR_ETIKETT : ""
+              gapStatusNiva(o.niva).serie,
+              o.direktiv ? _STS_DIR_ETIKETT : ""
             ];
           })
         },
@@ -20553,14 +20614,14 @@ function _rmAvsnittenUtanUrval() {
       ...diagram("struktur")
     ]
   } : null;
-  const basintervall = d.length ? rmBasintervallAvsnitt(k) : null;
+  const basintervall = d.length ? rmBasintervallAvsnitt(k, vm.basintervall) : null;
   const perbas = rmPerBasAvsnitt(d, k);
   const referenser = d.length ? rmReferenserAvsnitt(diagram) : null;
-  const egna = rmEgnaAvsnitt(d, k);
+  const egna = rmEgnaAvsnitt(vm.egna, k);
   const arsjamf = d.length ? rmArsjamforelseAvsnitt(diagram) : null;
-  const hpSeed = typeof _handlingsplanSeedRows === "function" ? _handlingsplanSeedRows() : null;
-  const hp = hpSeed ? hpSeed.rows : [];
-  const hpSkal = hpSeed && typeof _hpSkalUnderlag === "function" ? _hpSkalUnderlag(hpSeed) : { grupper: [], perKategori: null };
+  const hpSeed = _handlingsplanSeedRows();
+  const hp = hpSeed.rows;
+  const hpSkal = _hpSkalUnderlag(hpSeed);
   const hpFalt = (v) => v || { text: "[HR fyller i]", fyllIn: true };
   const atgarder = { id: "atgarder", numrerad: true, rubrik: "Åtgärder och tidsplan", utelamnat: [], delar: [
     dampad(`Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen visar åtgärderna. Den tar med de grupper som ligger under referensen enligt prioriteringen och kandidatparen i likvärdigt arbete, med uppskattad kostnad och det som fyllts i på fliken Handlingsplan. Kolumnen Kostnaden avser säger vilken kostnad raden har. För grupperna ur prioriteringen (Nå referensens median) är kostnaden kostnad att nå referensen: löneläget mot er referens, inte lönekartläggningens könsskillnader. För kandidatparen (Nå ${genitiv(T.jamforelse.bf)} median) är den kostnaden att lyfta ${termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad" })} till ${genitiv(T.jamforelse.bf)} median.`),
@@ -20583,10 +20644,10 @@ function _rmAvsnittenUtanUrval() {
   const nyckel = (rader) => ({ typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader });
   const utanTaggar2 = (t) => utanTaggar(t);
   const regression = { id: "regression", rubrik: "Bilaga: Justerad löneskillnad i detalj", utelamnat: [], delar: [] };
-  if (reg && !reg.error) {
-    const stegUt = _regStegForRedovisning(reg);
-    const kritisk = _laRegGranska(reg);
-    const basEffUt = _basEffekterForRedovisning(reg);
+  if (vm.regression) {
+    const stegUt = vm.regression.steg;
+    const kritisk = vm.regression.kritisk;
+    const basEffUt = vm.regression.basEffekter;
     regression.delar.push(
       dampad(`Skattad modell: log(lön) ~ ${reg.modelDesc} (OLS-regression). Löneskillnaden anges i procent: negativ när kvinnor ligger lägre.`),
       nyckel([
@@ -20620,13 +20681,13 @@ function _rmAvsnittenUtanUrval() {
       regression.delar.push(stycke(stegUt.not, "not"));
       regression.utelamnat.push("första steget i dekomponeringen (ett kön under tröskeln)");
     } else if (stegUt.explainedShare !== null) regression.delar.push(stycke(`Strukturellt förklarad andel: ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden förklaras av strukturella variabler (${reg.fras}). Oförklarad rest: ${svPct(100 - stegUt.explainedShare, 0)}.`));
-    const perBas = (reg.perBas || []).filter((pb) => pb.status === "ok");
+    const perBas = vm.regression.perBas;
     if (perBas.length) regression.delar.push(
       { typ: "rubrik", niva: 3, text: `Per ${T.niva.en} (separata regressioner)` },
       {
         typ: "tabell",
         kolumner: [{ rubrik: "BAS", typ: "text" }, { rubrik: "N", typ: "antal" }, { rubrik: "Kvinnor / män", typ: "text" }, { rubrik: "Oförklarad skillnad", typ: "tecken2" }, { rubrik: "Signifikans", typ: "text" }, { rubrik: "Säkerställd, minst 3 %", typ: "text" }],
-        rader: perBas.map((pb) => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formatPValue(pb.pValue), perBasSignal(pb.gapPct, pb.pValue < 0.05, pb.pValue < 0.05).niva === "titta" ? "ja" : ""])
+        rader: perBas.map((pb) => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formatPValue(pb.pValue), pb.sakerstalld ? "ja" : ""])
       }
     );
   } else if (reg && reg.error) {
@@ -20638,7 +20699,7 @@ function _rmAvsnittenUtanUrval() {
   const regressionAvsnitt = regression.delar.length ? regression : null;
   const metod = { id: "metod", rubrik: "Bilaga: Metod och parametrar", utelamnat: [], delar: [
     dampad("Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte."),
-    { typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader: (typeof _methodAppendixData === "function" ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
+    { typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader: _methodAppendixData().map(([n, v]) => [String(n), String(v)]) },
     // Metodreservationen om ålder (S7, ADR-64), oavsett om lönefilen har ålder.
     dampad(`${ALDER_METODVAL_TEXT}${harAlder() ? "" : ` ${ALDER_SAKNAS_TEXT}`}`)
   ] };
@@ -30736,7 +30797,7 @@ function renderExportBesked({ baraUrval = false } = {}) {
   }
   if (b) {
     satt("besked-word", `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, "avsnitt", "avsnitt"), _ebAntal(b.tabeller, "tabell", "tabeller"), _ebAntal(b.diagram, "diagram", "diagram"), `${b.fyllIn} fält att fylla i`]))}` + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(" · "))}` : "<br><strong>Utelämnar:</strong> ingenting"));
-    const hela = !!alla && rmArHelaDokumentationen(bada.urval, alla);
+    const hela = !!alla && arHelaDokumentationen(bada.urval, alla);
     satt("besked-pdf", `<strong>Innehåller:</strong> ${esc(_ebText([
       b.urval,
       _ebAntal(b.avsnitt, "avsnitt", "avsnitt"),
@@ -31282,6 +31343,103 @@ function uppstartOmVerktyget() {
   );
 }
 
+// src/lib/vymodell-rapportunderlag.js
+var RU_GRUPPBLOCK = "yrke:";
+function rapportunderlagDiagram(diagram, harPar, exkluderade) {
+  return diagram.filter((g) => g.flik !== "likvardighet" || harPar && !exkluderade);
+}
+function vymodellRapportunderlag(rader, val) {
+  const {
+    k,
+    golv,
+    demo = false,
+    troskelNot,
+    kStampel: kStampel2,
+    reg = null,
+    kvalitet = null,
+    lv = null,
+    hp,
+    referenser = null,
+    harStatistik = false,
+    kostnad,
+    arsjamforelse: arsjamforelse2 = null,
+    basintervall = [],
+    basBedomning = "",
+    recept = []
+  } = val;
+  if (!rader.length) return { block: [], harPar: false, exkluderade: 0 };
+  const opt = { k, urval: "Hela organisationen", demo: !!demo, troskelNot: troskelNot || void 0 };
+  const kvLon = rader.filter((r) => arKvinna(r)).map((r) => r.lon), maLon = rader.filter((r) => arMan(r)).map((r) => r.lon);
+  const km = konsMedianerUrLoner(kvLon, maLon);
+  const sammanfattning = {
+    n: rader.length,
+    nKv: kvLon.length,
+    nMa: maLon.length,
+    medKv: km.medKv,
+    medMa: km.medMa,
+    kvotPct: km.kvotPct,
+    oforklarat: !reg || reg.error ? null : { pct: reg.konPct, lo: reg.konPctLow, hi: reg.konPctHigh, fras: reg.fras, bortvalt: reg.bortvalt },
+    // frasen och det bortvalda följer modellen (ADR-56)
+    kvalitet: kvalitet ? { status: kvalitet.status, brister: kvalitet.kriterier.filter((c) => c.status !== "ok").map((c) => c.namn) } : null
+  };
+  const lika = val.lika || likaArbeteGrupper(rader, { k, golv });
+  const { par, utelamnade: parUtelamnade } = parForRedovisning(lv && lv.pairs, k);
+  const topN = (lv && lv.opts && lv.opts.topN) ?? val.topN;
+  const kravProxy = lv && lv.diagnostik && lv.diagnostik.jämförelse && lv.diagnostik.jämförelse.kravProxy || "bas";
+  const lagreKrav = lv && lv.lagreKrav || [];
+  const representation = (representationPerBas(rader, { k }) || []).slice().sort((a, b) => String(a.bas).localeCompare(String(b.bas), "sv"));
+  const kvartiler = kvartilfordelning(rader, { k }) || [];
+  const hpRader = hp.rader;
+  const hpSkal = hp.skal;
+  const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map((g) => ({
+    grupp: g.grupp,
+    antal: g.antal,
+    skillnadKr: g.skillnadKr,
+    skal: g.sammanstallning.skal,
+    utanBelopp: !!g.utanBelopp,
+    summa: g.sammanstallning.summa,
+    overstiger: !!g.sammanstallning.overstiger
+  })), perKategori: hpSkal.perKategori, notUtanBelopp: hp.utanBelopp, k: hp.kInstalld } : null;
+  const summa = (lista) => lista.reduce((s, r) => s + (r.kostnad || 0), 0);
+  const block = [
+    avsnittBlock("sammanfattning", sammanfattning, { ...opt, troskelNot: kStampel2 }),
+    avsnittBlock("uppdelning", gapUppdelning(rader, { k, variabler: val.gapVariabler }), opt),
+    // valda variabler (ADR-65)
+    avsnittBlock("lika", lika, opt),
+    avsnittBlock("likvardigt", {
+      par,
+      exkluderade: parUtelamnade,
+      kravProxy,
+      kvinnoTroskel: val.kvinnoTroskel,
+      kvDomDefinition: val.kvDomDefinition,
+      jamforelse: val.jamforelse,
+      topN
+    }, opt),
+    avsnittBlock("lagreKrav", { par: lagreKrav.filter((p) => parNarK(p, k)), exkluderade: lagreKrav.filter((p) => !parNarK(p, k)).length, kravProxy, topN }, opt),
+    avsnittBlock("struktur", { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
+    avsnittBlock("sektorer", { sektorer: sektorsTabell(rader, { k, skrDel: val.skrDel }), andel: sektorernasAndel(rader, { k }) }, opt),
+    avsnittBlock("handlingsplan", {
+      rader: hpRader,
+      summa: summa(hpRader),
+      summaReferens: summa(hpRader.filter((r) => r.underlag === hp.prio)),
+      summaJamforelse: summa(hpRader.filter((r) => r.underlag === hp.par)),
+      ...hpSkalBlock ? { skal: hpSkalBlock } : {}
+    }, opt)
+  ];
+  if (referenser) block.push(referenserBlock(referenser, { ...opt, harStatistik }));
+  lika.grupper.filter((g) => g.flaggad).forEach((g, i) => {
+    const gruppen = rader.filter((r) => aidAvRad(r) === g.aid && String(r.bas) === g.bas);
+    const ki = medianKvotKIGiltiga(gruppen.filter((r) => arKvinna(r)).map((r) => r.lon), gruppen.filter((r) => arMan(r)).map((r) => r.lon));
+    const arsbelopp = arsbeloppMening(g, kostnad, (v) => talformat(v, "kr"));
+    block.push(gruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: justeratGapInomYrke(gruppen, { k: golv }), ki, arsbelopp }));
+  });
+  par.forEach((p, i) => block.push(parBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
+  if (arsjamforelse2) block.push(arsjamforelseBlock(arsjamforelse2.j, { ...opt, forraAr: arsjamforelse2.forra.ar, nuAr: arsjamforelse2.nu.ar }));
+  for (const b of basintervall) block.push(basintervallBlock({ ...b, bedomning: basBedomning }, opt));
+  recept.forEach((r, i) => receptTillTabeller(rader, r, { k }).forEach((t, j) => block.push(egenTabellBlock(t, { ...opt, id: `egen:${i}:${j}` }))));
+  return { block, harPar: par.length > 0, exkluderade: parUtelamnade };
+}
+
 // src/app/85-robusthet-fardigcheck.js
 function robusthetLikvardighet(trösklar = [55, 60, 65]) {
   if (typeof likvardighetspar !== "function") return null;
@@ -31570,7 +31728,6 @@ function uppstartRobusthetFardigcheck() {
 }
 
 // src/app/67-rapportunderlag.js
-var RU_GRUPPBLOCK = "yrke:";
 var RAPPORT_DIAGRAM = [
   { id: "chart-skevhet-overview", rubrik: `Löneskillnad per ${T.niva.en}`, flik: "struktur" },
   { id: "chart-perbas-gap", rubrik: `Oförklarad löneskillnad per ${T.niva.en}`, flik: "struktur" },
@@ -31582,7 +31739,7 @@ function _ruTopN() {
   return (state.likvardighet && state.likvardighet.topN) ?? 100;
 }
 function _rapportDiagramLista(harPar, exkluderade) {
-  return RAPPORT_DIAGRAM.filter((g) => g.flik !== "likvardighet" || harPar && !exkluderade);
+  return rapportunderlagDiagram(RAPPORT_DIAGRAM, harPar, exkluderade);
 }
 function _rapportHpRader(seedRows) {
   return seedRows.map((r) => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4], kostnadAvser: _hpKostnadAvser(r[2]) }));
@@ -31598,103 +31755,44 @@ function _rapportunderlagBlockExport() {
   const d = getData();
   if (!d.length) return [];
   const k = kTroskel();
-  const opt = { k, urval: "Hela organisationen", demo: !!state.isDemo, troskelNot: _kSanktNot() || void 0 };
-  const arKv2 = arKvinna;
-  const arMa2 = (r) => !arKv2(r) && (r.kon.includes("man") || r.kon.includes("män"));
-  const kvLon = d.filter(arKv2).map((r) => r.lon), maLon = d.filter(arMa2).map((r) => r.lon);
-  const km = konsMedianerUrLoner(kvLon, maLon);
   const reg = runOLSRegression();
-  const uk = bedomningUnderlag({ reg });
-  const sammanfattning = {
-    n: d.length,
-    nKv: kvLon.length,
-    nMa: maLon.length,
-    medKv: km.medKv,
-    medMa: km.medMa,
-    kvotPct: km.kvotPct,
-    oforklarat: reg.error ? null : { pct: reg.konPct, lo: reg.konPctLow, hi: reg.konPctHigh, fras: reg.fras, bortvalt: reg.bortvalt },
-    // frasen och det bortvalda följer modellen (ADR-56)
-    kvalitet: uk ? { status: uk.status, brister: uk.kriterier.filter((c) => c.status !== "ok").map((c) => c.namn) } : null
-  };
-  const lika = laLikaGrupper(d, k);
   let lv = null;
   try {
     lv = likvardighetResultat();
   } catch (_e) {
     lv = null;
   }
-  const { par, utelamnade: parUtelamnade } = _parForRedovisning(lv && lv.pairs);
-  const topN = (lv && lv.opts && lv.opts.topN) ?? _ruTopN();
-  const kravProxy = lv && lv.diagnostik && lv.diagnostik.jämförelse && lv.diagnostik.jämförelse.kravProxy || "bas";
-  const representation = (representationPerBas(d, { k: kTroskel() }) || []).slice().sort((a, b) => String(a.bas).localeCompare(String(b.bas), "sv"));
-  const kvartiler = kvartilfordelning(d, { k: kTroskel() }) || [];
-  _rapportParLage = { harPar: par.length > 0, exkluderade: parUtelamnade };
   const hpSeed = _handlingsplanSeedRows();
-  const hpRader = _rapportHpRader(hpSeed.rows);
-  const hpSkal = typeof _hpSkalUnderlag === "function" ? _hpSkalUnderlag(hpSeed) : null;
-  const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map((g) => ({
-    grupp: g.grupp,
-    antal: g.antal,
-    skillnadKr: g.skillnadKr,
-    skal: g.sammanstallning.skal,
-    utanBelopp: !!g.utanBelopp,
-    summa: g.sammanstallning.summa,
-    overstiger: !!g.sammanstallning.overstiger
-  })), perKategori: hpSkal.perKategori, notUtanBelopp: HP_SKAL_UTAN_BELOPP, k: kInstalld() } : null;
-  const block = [
-    avsnittBlock("sammanfattning", sammanfattning, { ...opt, troskelNot: kStampel() }),
-    avsnittBlock("uppdelning", gapUppdelning(d, { k, variabler: gapVariabler() }), opt),
-    // valda variabler (ADR-65)
-    avsnittBlock("lika", lika, opt),
-    avsnittBlock("likvardigt", {
-      par,
-      exkluderade: parUtelamnade,
-      kravProxy,
-      kvinnoTroskel: aidbasGrans(),
-      kvDomDefinition: aidbasDefinition(),
-      jamforelse: lvJamforelse(),
-      topN
-    }, opt),
-    avsnittBlock("lagreKrav", {
-      par: (lv && lv.lagreKrav || []).filter(_parOverTroskel),
-      exkluderade: (lv && lv.lagreKrav || []).filter((p) => !_parOverTroskel(p)).length,
-      kravProxy,
-      topN
-    }, opt),
-    avsnittBlock("struktur", { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
-    avsnittBlock("sektorer", { sektorer: sektorsTabell(d, { k, skrDel: _skrDel() }), andel: sektorernasAndel(d, { k }) }, opt),
-    avsnittBlock("handlingsplan", {
-      rader: hpRader,
-      summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0),
-      summaReferens: hpRader.filter((r) => r.underlag === HP_UNDERLAG_PRIO).reduce((s, r) => s + (r.kostnad || 0), 0),
-      summaJamforelse: hpRader.filter((r) => r.underlag === HP_UNDERLAG_PAR).reduce((s, r) => s + (r.kostnad || 0), 0),
-      ...hpSkalBlock ? { skal: hpSkalBlock } : {}
-    }, opt)
-  ];
-  const referenser = referensOverblick();
-  if (referenser) block.push(referenserBlock(referenser, { ...opt, harStatistik: state.statistik.length > 0 }));
-  lika.grupper.filter((g) => g.flaggad).forEach((g, i) => {
-    const rader = d.filter((r) => aidAvRad(r) === g.aid && String(r.bas) === g.bas);
-    const ki = _gdBootstrapGapCI(rader.filter(arKv2).map((r) => r.lon), rader.filter(arMa2).map((r) => r.lon));
-    const arsbelopp = arsbeloppMening(g, state.costSettings, (v) => talformat(v, "kr"));
-    block.push(gruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: justeratGapInomYrke(rader, { k: statGolv() }), ki, arsbelopp }));
-  });
-  par.forEach((p, i) => block.push(parBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
-  if (typeof arsjamforelse === "function" && typeof arsjamforelseBlock === "function") {
-    const jf = arsjamforelse();
-    if (jf) block.push(arsjamforelseBlock(jf.j, { ...opt, forraAr: jf.forra.ar, nuAr: jf.nu.ar }));
-  }
-  if (typeof basdossierKandidater === "function" && typeof basintervallBlock === "function") {
-    for (const { bas } of basdossierKandidater()) {
+  const vm = vymodellRapportunderlag(d, {
+    k,
+    golv: statGolv(),
+    demo: !!state.isDemo,
+    troskelNot: _kSanktNot(),
+    kStampel: kStampel(),
+    reg,
+    kvalitet: bedomningUnderlag({ reg }),
+    lika: laLikaGrupper(d, k),
+    lv,
+    topN: _ruTopN(),
+    kvinnoTroskel: aidbasGrans(),
+    kvDomDefinition: aidbasDefinition(),
+    jamforelse: lvJamforelse(),
+    gapVariabler: gapVariabler(),
+    skrDel: _skrDel(),
+    hp: { rader: _rapportHpRader(hpSeed.rows), skal: _hpSkalUnderlag(hpSeed), utanBelopp: HP_SKAL_UTAN_BELOPP, kInstalld: kInstalld(), prio: HP_UNDERLAG_PRIO, par: HP_UNDERLAG_PAR },
+    referenser: referensOverblick(),
+    harStatistik: state.statistik.length > 0,
+    kostnad: state.costSettings,
+    arsjamforelse: arsjamforelse(),
+    basintervall: basdossierKandidater().flatMap(({ bas }) => {
       const bd = buildBasdossier(bas);
-      if (bd) block.push(basintervallBlock({ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd), bedomning: BD_BEDOMNING }, opt));
-    }
-  }
-  (state.rapportTabeller || []).forEach((r, i) => {
-    if (typeof receptTillTabeller !== "function" || typeof egenTabellBlock !== "function") return;
-    receptTillTabeller(d, r, { k }).forEach((t, j) => block.push(egenTabellBlock(t, { ...opt, id: `egen:${i}:${j}` })));
+      return bd ? [{ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd) }] : [];
+    }),
+    basBedomning: BD_BEDOMNING,
+    recept: state.rapportTabeller || []
   });
-  return block;
+  _rapportParLage = { harPar: vm.harPar, exkluderade: vm.exkluderade };
+  return vm.block;
 }
 function renderRapportunderlag() {
   const host = document.getElementById("rapportunderlag-innehall");
@@ -35620,7 +35718,7 @@ async function _buildPrintReportExport() {
       const b = await rmDiagramBild(del, ritade);
       if (b) bilder.set(del.id, b);
     }
-    const helaDokumentationen = rmArHelaDokumentationen(modell, bada.alla);
+    const helaDokumentationen = arHelaDokumentationen(modell, bada.alla);
     let bilagor = "";
     if (helaDokumentationen) {
       ritaLoneoversikt();
