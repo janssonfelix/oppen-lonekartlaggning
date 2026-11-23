@@ -402,19 +402,16 @@ function updateDashboardStats() {
     const d   = getData();
     if (!d.length) return;
     const allAges = d.map(r => r.alder).filter(a => a && !isNaN(a));
-    const medKv = Stat.median(d.filter(r => arKvinna(r)).map(r => r.lon));
-    const medMa = Stat.median(d.filter(r => arMan(r)).map(r => r.lon));
+    const m = _stKonsMedianer(d, { k: kTroskel() }), { nKv, nMa } = m;
     /** @type {HTMLElement} */ (document.getElementById("stat-n")).textContent = String(d.length);
-    const nKv = d.filter(r => arKvinna(r)).length, nMa = d.filter(r => arMan(r)).length;
     const konEl = document.getElementById('stat-kon');
     if (konEl) konEl.textContent = `${nKv.toLocaleString('sv-SE')} / ${nMa.toLocaleString('sv-SE')}`;
     /** @type {HTMLElement} */ (document.getElementById("stat-age")).textContent = allAges.length ? svTal(allAges.reduce((a,b)=>a+b,0)/allAges.length, 1) : "–";
     const pgEl = document.getElementById("stat-paygap");
     if (pgEl) {
-        const ratio = medMa > 0 ? (medKv / medMa) * 100 : null;
-        if (ratio == null) {
+        if (!nKv || !nMa) {
             pgEl.textContent = "-";
-        } else if (!_konFarRedovisas(nKv, nMa)) {
+        } else if (!m.konOk) {
             // k-anonymitet (ADR-12): kvoten pekar ut de få i det mindre könet.
             pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.</div>`;
         } else {
@@ -423,7 +420,7 @@ function updateDashboardStats() {
             // är en utgångspunkt, inget fynd. Bedömningen görs per grupp i Lika arbete.
             const tipText = `Rå skillnad för hela organisationen, före hänsyn till ${T.enhet.en}, ${T.niva.en} och ålder. Se Lika arbete för skillnaden per grupp.`;
             // Förklaringen står i verktygstipset; under talet står bara vad det är för tal (nyckeltalsraden är en rad hög).
-            pgEl.innerHTML = svPct(ratio, 1) +
+            pgEl.innerHTML = svPct(m.kvotPct, 1) +
                 `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan ${T.enhet.en} och ${T.niva.en} räknats bort</div>`;
         }
     }
