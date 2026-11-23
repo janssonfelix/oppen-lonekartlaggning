@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { jamforbaraBas, mdeFranSe, bedomUnderlag, basVarningar } from '../src/lib/datakvalitet.js';
+import { jamforbaraBas, mdeFranSe, bedomUnderlag, basVarningar, medFlerKriterier } from '../src/lib/datakvalitet.js';
 
 const rad = (bas, kon, lon = 35000, alder = 40) => ({ bas, kon, lon, alder });
 const grupp = (bas, nKv, nMa, extra = {}) => [
@@ -138,5 +138,14 @@ describe('basVarningar: inläsningsrapportens räkning per BAS-intervall', () =>
         const rader = [...p('A', 3, 0), ...p('B', 2, 0), ...p('C', 5, 5), ...p('D', 4, 5)];
         expect(basVarningar(rader, ['A', 'B', 'C', 'D'], 10)).toEqual({ enkonade: 1, underK: 3 });
         expect(basVarningar(rader, ['A', 'B', 'C', 'D'], 9)).toEqual({ enkonade: 1, underK: 2 });
+    });
+});
+
+describe('medFlerKriterier: svagaste länken avgör (ADR-19)', () => {
+    it('statusen är den sämsta av bedömningens och de tillagda kriteriernas', () => {
+        const b = { status: 'varning', kriterier: [{ status: 'varning' }], annat: 1 };
+        expect(medFlerKriterier(b, [{ status: 'ok' }])).toEqual({ status: 'varning', kriterier: [{ status: 'varning' }, { status: 'ok' }], annat: 1 });
+        expect(medFlerKriterier(b, [{ status: 'kritisk' }]).status).toBe('kritisk');
+        expect(medFlerKriterier({ status: 'ok', kriterier: [] }, []).status).toBe('ok');
     });
 });

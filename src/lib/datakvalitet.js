@@ -65,6 +65,19 @@ export function basVarningar(rader, basLista, k) {
     return { enkonade, underK };
 }
 
+/**
+ * Bedömningen med fler kriterier (till exempel AID-kodningens, aidkontroll.js): svagaste länken avgör, så statusen är
+ * den sämsta av bedömningens och de tillagdas (ADR-19).
+ * @template {{status: string, kriterier: {status: string}[]}} B
+ * @param {B} bedomning
+ * @param {{status: string}[]} fler
+ * @returns {B}
+ */
+export function medFlerKriterier(bedomning, fler) {
+    const kriterier = [...bedomning.kriterier, ...fler];
+    return { ...bedomning, status: kriterier.reduce((s, c) => (RANG[c.status] > RANG[s] ? c.status : s), bedomning.status), kriterier };
+}
+
 /** Minsta upptäckbara skillnad i % (80 % styrka, α = 0,05) ur könskoefficientens SE (log-skala). */
 export function mdeFranSe(se) {
     if (typeof se !== 'number' || !isFinite(se) || se <= 0) return null;

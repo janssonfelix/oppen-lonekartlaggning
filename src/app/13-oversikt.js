@@ -3,7 +3,7 @@
 // ---- Compliance overview ----
 import { aidKriterier } from '../lib/aidkontroll.js';
 import { hanterade as _agHanterade, stegLikaArbete, stegLikvardigt } from '../lib/attgora.js';
-import { bedomUnderlag, mdeFranSe } from '../lib/datakvalitet.js';
+import { bedomUnderlag, medFlerKriterier, mdeFranSe } from '../lib/datakvalitet.js';
 import { personOrd } from '../lib/namn.js';
 import { gruppMde, organisationensKvotKI, osakerhetKonstanter, styrkeanalys } from '../lib/osakerhet.js';
 import { forklaringsmodellArStandard } from '../lib/regression.js';
@@ -98,9 +98,7 @@ export function bedomningUnderlag({ reg: given } = {}) {
     let aid = [];
     try { aid = aidKriterier(d, { k: kInstalld(), harAnsvar: !!state.ansvarKolumn }); }
     catch (e) { rapporteraFel('Underlagets kvalitet: AID-kodning', e); }
-    const kriterier = [...b.kriterier, ...aid];
-    const rang = { ok: 0, varning: 1, kritisk: 2 };
-    return { ...b, status: kriterier.reduce((s, c) => (rang[c.status] > rang[s] ? c.status : s), b.status), kriterier };
+    return medFlerKriterier(b, aid);
 }
 
 export const UK_ETIKETT = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' };
