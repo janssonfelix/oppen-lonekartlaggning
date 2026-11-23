@@ -20,6 +20,7 @@
     "build:app": "node tools/build-app.mjs",
     "bundle": "node tools/bundle.mjs",
     "sbom": "node tools/sbom.mjs",
+    "valideringsrapport": "node tools/valideringsrapport.mjs",
     "gen:testdata": "node tools/gen-testdata.mjs",
     "gen:aid": "node tools/gen-aid-etiketter.mjs",
     "gen:skr": "node tools/gen-skr-personal.mjs",

@@ -12,23 +12,14 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { lasMatris } from '../tools/valideringsrapport.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
 const läs = f => readFileSync(join(ROOT, f), 'utf8');
-const celler = rad => rad.trim().replace(/^\||\|$/g, '').split(' | ').map(c => c.trim());
 const kod = cell => [...cell.matchAll(/`([^`]+)`/g)].map(m => m[1]);
 
-// Matrisens rader: varje tabell vars första kolumn heter ID.
-const matris = [];
-let rubrik = null;
-for (const rad of läs('docs/utveckling/sparbarhet.md').split('\n')) {
-    if (!rad.startsWith('|')) { rubrik = null; continue; }
-    if (/^[|: -]+$/.test(rad)) continue;   // avgränsaren under rubrikraden
-    const c = celler(rad);
-    if (c[0] === 'ID') { rubrik = c; continue; }
-    if (!rubrik) continue;
-    matris.push(Object.fromEntries(rubrik.map((namn, i) => [namn, c[i] ?? ''])));
-}
+// Matrisens rader: varje tabell vars första kolumn heter ID (samma läsning som valideringsrapporten).
+const matris = lasMatris(läs('docs/utveckling/sparbarhet.md'));
 const ider = matris.map(r => r.ID);
 
 // Testnamnen: en sträng som börjar med ett eller flera [ID] direkt efter describe(, it( eller test( (också .each).
