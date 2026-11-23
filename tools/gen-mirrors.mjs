@@ -54,7 +54,7 @@ export const MODULES = [
     {
         // CSV- och urklippstext med formelskydd (ADR-15); importerar ingenting
         file: 'csv.js', ns: '__mirrorCsv',
-        expose: { neutraliseraCell: '_neutraliseraCell', tillCsv: '_toCsv', tillTsv: '_tillTsv' }
+        expose: { neutraliseraCell: '_neutraliseraCell', tillCsv: '_tillCsv', tillTsv: '_tillTsv' }
     },
     {
         file: 'aid-etiketter.js', ns: '__mirrorAidEtiketter',

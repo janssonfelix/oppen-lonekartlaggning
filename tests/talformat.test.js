@@ -32,7 +32,7 @@ describe('CSV-exporten av en tabell: talen som de står på skärmen', () => {
         w.document.body.appendChild(t);
         const rader = w.__tableToMatrix('talformat-prov');
         expect(rader[1]).toEqual(['012345 Påhittat yrke', 'A', `${MINUS}31 417`, '1 250,50', `${MINUS}3,25 %`, '12,5 %', '']);
-        expect(w.__toCsv(rader.slice(1))).toBe('012345 Påhittat yrke;A;-31 417;1 250,50;-3,25 %;12,5 %;');
+        expect(w.__tillCsv(rader.slice(1))).toBe('012345 Påhittat yrke;A;-31 417;1 250,50;-3,25 %;12,5 %;');
         expect(w.__tillTsv(rader.slice(1))).toBe('012345 Påhittat yrke\tA\t-31 417\t1 250,50\t-3,25 %\t12,5 %\t');
     });
 });
@@ -50,7 +50,7 @@ describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)',
         w.document.body.appendChild(t);
         const rader = w.__tableToMatrix('talformat-enhet');
         expect(rader[1]).toEqual(['012345 Påhittat yrke', '36 262 kr', `${MINUS}3,25 %`]);
-        expect(w.__toCsv(rader.slice(1))).toBe('012345 Påhittat yrke;36 262 kr;-3,25 %');
+        expect(w.__tillCsv(rader.slice(1))).toBe('012345 Påhittat yrke;36 262 kr;-3,25 %');
     });
     it('p-värdet hålls ihop: «p < 0,001» bryts inte mellan tecknet och talet', () => {
         expect(w.eval('_formatPValue(0.0004)')).toBe(`p${NBSP}<${NBSP}0,001`);
@@ -87,7 +87,7 @@ describe('[B9.1] Rundtur: verktygets svenska tal läses tillbaka till samma vär
         for (const [v, dec] of [[-31417, 0], [-1250.5, 2], [-3.25, 2], [-0.05, 2], [-7, 0]]) {
             for (const text of [w.eval(`svTal(${v}, ${dec})`), w.eval(`svPct(${v}, ${dec})`)]) {
                 expect(text.startsWith(MINUS), JSON.stringify(text)).toBe(true);
-                const csv = w.__toCsv([[text]]), tsv = w.__tillTsv([[text]]);
+                const csv = w.__tillCsv([[text]]), tsv = w.__tillTsv([[text]]);
                 expect(csv.startsWith('-'), JSON.stringify(csv)).toBe(true);
                 expect(tsv).toBe(csv);
                 expect(las(csv).value, JSON.stringify(csv)).toBe(v);

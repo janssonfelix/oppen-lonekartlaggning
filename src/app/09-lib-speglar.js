@@ -367,7 +367,7 @@ function tillTsv(rader) {
     return { neutraliseraCell, tillCsv, tillTsv };
 })();
 const _neutraliseraCell = __mirrorCsv.neutraliseraCell;
-const _toCsv = __mirrorCsv.tillCsv;
+const _tillCsv = __mirrorCsv.tillCsv;
 const _tillTsv = __mirrorCsv.tillTsv;
 
 // ---- speglar src/lib/aid-etiketter.js ----

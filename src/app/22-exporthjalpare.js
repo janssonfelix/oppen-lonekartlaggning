@@ -451,7 +451,7 @@ function tableToCleanBook(tableId, sheetName) {
 // semikolon-separerade filer med UTF-8 BOM (svenska Excel-default), CRLF-
 // radslut och korrekta citerade fält. Garanterat fungerande i alla webbläsare:
 // blob-URL + anchor-klick + revokeObjectURL.
-// Formelskyddet (_neutraliseraCell) och CSV-texten (_toCsv) ligger i src/lib/csv.js (ADR-15).
+// Formelskyddet (_neutraliseraCell) och CSV-texten (_tillCsv) ligger i src/lib/csv.js (ADR-15).
 // Demoläget märks i filnamnet, som diagram- och Word-exporterna (bara en gång).
 function _csvFilnamn(namn) {
     const n = namn || 'export';
@@ -465,7 +465,7 @@ function _downloadCSV(rows, filename, { undantag = '' } = {}) {
     }
     try {
         const BOM = '﻿';  // UTF-8 BOM så Excel öppnar med korrekt teckenkodning
-        const csv = BOM + _toCsv(_csvMedStampel(rows, undantag));
+        const csv = BOM + _tillCsv(_csvMedStampel(rows, undantag));
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

@@ -114,7 +114,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __bes8Areas: _bes8Areas,
         __renderProcessTracker: renderProcessTracker,
         __tableToMatrix: tableToMatrix,
-        __toCsv: _toCsv,
+        __tillCsv: _tillCsv,
         __clearAllData: clearAllData,
         __autoClearOnInactivity: _autoClearOnInactivity,
         __explorerMinne: () => ({
