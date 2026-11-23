@@ -28,7 +28,7 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(f.lager[2].data.map(d => [d.x, d.lag, d.hog])).toEqual([['Oförklarad skillnad', -4.6, 0]]);
         expect(f.lager[1].data.map(d => [d.x, d.lag, d.hog])).toEqual([['BAS-intervall', -9.4, -4.1], ['Ålder', -4.6, -4.1]]);
         // Färgen säger vad stapeln betyder, inte riktningen: helheten neutral, stegen struktur, det oförklarade lönesättningen.
-        const P = w.eval('PALETTE.uppdelning');
+        const P = w.eval('PALETT.uppdelning');
         expect(f.lager.slice(0, 3).map(l => l.farg)).toEqual([P.helhet, P.struktur, P.lonesattning]);
         expect(f.lager[1].data.every(d => d.farg === undefined)).toBe(true);
         expect(f.lager[3].data.map(d => [d.etikett, d.etikettLage])).toEqual([['−9,4\u00a0%', 'under'], ['−4,1\u00a0%', 'over'], ['−4,6\u00a0%', 'under'], ['−4,6\u00a0%', 'under']]);
@@ -42,7 +42,7 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         const f = w.eval('_regTrappaFigur(window.__s, window.__y)');
         expect(f.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
         expect(f.lager.map(l => l.marke)).toEqual(['intervall', 'intervall', 'intervall', 'intervall', 'punkt']);
-        expect(f.lager[3]).toMatchObject({ farg: w.eval('PALETTE.uppdelning.strukturLjus'), serie: 'Utöver huvudtalet' });
+        expect(f.lager[3]).toMatchObject({ farg: w.eval('PALETT.uppdelning.strukturLjus'), serie: 'Utöver huvudtalet' });
         expect(f.lager[3].data.map(d => [d.x, d.lag, d.hog])).toEqual([['AID-etikett inom BAS', -4.6, -2.3]]);
         expect(f.lager[4].data.map(d => d.etikett)).toEqual(['−9,4\u00a0%', '−4,1\u00a0%', '−4,6\u00a0%', '−4,6\u00a0%', '−2,3\u00a0%']);
         expect(f.beskrivning).toMatch(/Räknas också AID-etikett inom BAS bort blir −2,3\s% kvar; det steget ingår inte i huvudtalet/);

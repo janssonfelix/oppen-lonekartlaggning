@@ -10,7 +10,7 @@ import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { kTroskel, litetUnderlag, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { PALETTE } from './10-diagramtema.js';
+import { PALETT } from './10-diagramtema.js';
 import { markeraUtanExport } from './11-diagramexport.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaData, state } from './12-tillstand.js';
@@ -90,13 +90,13 @@ function _pagAvvikelseRader(d, grans) {
 // prövade och andelen långt under respektive över förväntad lön, och de två andelarna ritade i raden kring en
 // mittlinje (under åt vänster, över åt höger). Ett diagram med en stapel per rad stod till hälften tomt; tabellen
 // visar också nollorna och antalet bakom. `rader` kommer från _pagAvvikelseRader: bara BAS där båda könen når tröskeln.
-const _PAG_FARG = { under: PALETTE.lage.under, over: FARG.svag };
+const _PAG_FARG = { under: PALETT.lage.under, over: FARG.svag };
 function _pagAvvikelseGrafik(o, kant) {
     const b = 200, h = 20, m = b / 2, w = v => +(Math.min(v, kant) / kant * (m - 2)).toFixed(1);
     return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">`
         + (o.under > 0 ? `<rect x="${m - w(o.under)}" y="4" width="${w(o.under)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.under}"/>` : '')
         + (o.over > 0 ? `<rect x="${m}" y="4" width="${w(o.over)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.over}"/>` : '')
-        + `<line x1="${m}" x2="${m}" y1="0" y2="${h}" stroke="${PALETTE.semantic.mork}" stroke-width="1.2"/></svg>`;
+        + `<line x1="${m}" x2="${m}" y1="0" y2="${h}" stroke="${PALETT.semantic.mork}" stroke-width="1.2"/></svg>`;
 }
 function _pagAvvikelseTabell(rader, grans) {
     const t = document.getElementById('pag-avvikelse-tabell');

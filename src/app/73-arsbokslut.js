@@ -15,7 +15,7 @@ import { _parForRedovisning, kTroskel } from './06-k-troskel.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
-import { PALETTE, URVAL } from './10-diagramtema.js';
+import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { byggAtgardslista } from './18-atgardslista.js';
@@ -84,7 +84,7 @@ export function arsjamforelse() {
 function _abHantelFigur(j, forraAr, nuAr) {
     const { rader } = _abHantelRader(j);
     if (!rader.length) return null;
-    const farg = { mot: PALETTE.semantic.ok, fran: PALETTE.semantic.varning, lika: PALETTE.semantic.neutral };
+    const farg = { mot: PALETT.semantic.ok, fran: PALETT.semantic.varning, lika: PALETT.semantic.neutral };
     const namnAv = g => (g.bas ? `${g.yrke} (BAS ${g.bas})` : g.yrke);
     const antal = new Map([...j.grupper.kvar, ...j.grupper.nya, ...j.grupper.borta].map(g => [namnAv(g), g.nKv != null && g.nMa != null ? g.nKv + g.nMa : null]));
     const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, yrke: r.namn, ...(r.bas != null ? { bas: r.bas } : {}),
@@ -109,7 +109,7 @@ function _abEtiketterBortFranStrecket(fig) {
 function _abBasHantelFigur(j, forraAr, nuAr) {
     const { rader } = basHantelRader(j);
     if (!rader.length) return null;
-    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
+    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETT.semantic.linje, markering: markeringFor(r.bas) })),
         kolumner: [String(forraAr), String(nuAr)], titel: `Medianlön per ${T.niva.en}`, format: 'kr',
         beskrivning: `Medianlönen per ${T.niva.en}, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${j.kGrans} ${personOrd(j.kGrans)} båda åren.` });
     return { ..._abEtiketterBortFranStrecket(fig), urval: URVAL.bas };

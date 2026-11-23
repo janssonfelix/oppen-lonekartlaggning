@@ -19,7 +19,7 @@ import { _skrDel } from './06-kvinnoandel-referens.js';
 import { COST_DEFAULTS, jmfNamn, orgNamn, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS, sattJmfNamn, sattOrgNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { PALETTE } from './10-diagramtema.js';
+import { PALETT } from './10-diagramtema.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag, fyllValjare, UK_ETIKETT } from './13-oversikt.js';
 import { ritaAtgardslista } from './18-atgardslista.js';
@@ -568,7 +568,7 @@ export function ritaOgonblicksbildJamforelse() {
 function _ogonblicksbildLutning(snap, cur) {
     const ruta = document.getElementById('snapshot-lutning-ruta'), el = document.getElementById('chart-snapshot-lutning');
     if (!ruta || !el) return;
-    const rader = !snap || !cur ? [] : [['Kvinnor', snap.medianKv, cur.medianKv, PALETTE.kon.kvinna], ['Män', snap.medianMa, cur.medianMa, PALETTE.kon.man]]
+    const rader = !snap || !cur ? [] : [['Kvinnor', snap.medianKv, cur.medianKv, PALETT.kon.kvinna], ['Män', snap.medianMa, cur.medianMa, PALETT.kon.man]]
         .filter(([, a, b]) => typeof a === 'number' && typeof b === 'number')
         .map(([namn, fore, efter, farg]) => ({ namn, fore: Math.round(fore), efter: Math.round(efter), farg }));
     ruta.hidden = !rader.length;

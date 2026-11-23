@@ -15,7 +15,7 @@ import { kTroskel } from './06-k-troskel.js';
 import { jmfNamn, orgNamn, diagramNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { PALETTE, URVAL } from './10-diagramtema.js';
+import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { _lpForskjutning, _lpIngetDiagram, _lpKonsdominans } from './75-lonepolitik.js';
@@ -228,15 +228,15 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
         hojd: 110 + 26 * visa.length, paneler: 'auto',   // fler än femton yrken: små multiplar
         lager: [
-            { marke: 'intervall', riktning: 'liggande', serie: `${refNamn} P10–P90`, farg: PALETTE.semantic.spann, tjocklek: 14,
+            { marke: 'intervall', riktning: 'liggande', serie: `${refNamn} P10–P90`, farg: PALETT.semantic.spann, tjocklek: 14,
               data: visa.filter(r => harBand(ref(r))).map(r => ({ y: etikett(r), lag: ref(r).p10, hog: ref(r).p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
               tips: d => [[d.y], [`${refNamn} P10–P90`, `${talformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
-            { marke: 'intervall', riktning: 'liggande', serie: `${org} P10–P90`, farg: PALETTE.serie[0], tjocklek: 7,
+            { marke: 'intervall', riktning: 'liggande', serie: `${org} P10–P90`, farg: PALETT.serie[0], tjocklek: 7,
               data: visa.map(r => ({ y: etikett(r), lag: r.org.p10, hog: r.org.p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
               tips: d => [[d.y], ['Organisationen', `${talformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
-            { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETTE.semantic.linje, storlek: 5,
+            { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETT.semantic.linje, storlek: 5,
               data: visa.filter(r => ref(r).median != null).map(r => ({ y: etikett(r), x: ref(r).median, ..._jmfUrvalFalt(r) })), tips: d => [[d.y], [`${refNamn} median`, kr(d.x)]] },
-            { marke: 'punkt', serie: `${org} median`, farg: PALETTE.semantic.trend, storlek: 4.5,
+            { marke: 'punkt', serie: `${org} median`, farg: PALETT.semantic.trend, storlek: 4.5,
               data: visa.map(r => ({ y: etikett(r), x: r.org.median, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })), tips: d => [[d.y], ['Organisationen median', kr(d.x)]] }
         ].filter(l => l.data.length) };
 }
@@ -270,14 +270,14 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: `Skillnad mot ${namn} (%)`, nollinje: true }, y: { skala: 'band', ordning: visa.map(_jmfEtikett), etikettMax: 48 },
         hojd: 110 + 28 * visa.length, paneler: 'auto',
         lager: [
-            { marke: 'intervall', riktning: 'liggande', serie: 'Spann P10–P90', farg: PALETTE.semantic.spann, tjocklek: 4, legend: false,
+            { marke: 'intervall', riktning: 'liggande', serie: 'Spann P10–P90', farg: PALETT.semantic.spann, tjocklek: 4, legend: false,
               data: visa.filter(r => varden(r).length > 1).map(r => ({ ...bas(r), lag: Math.min(...varden(r)), hog: Math.max(...varden(r)), r })), tips: d => tipsRad(d.r) },
             // Etiketten bärs av en egen, genomskinlig punkt vid radens yttersta märke (lika stor som medianpunkten, så att
             // texten hamnar utanför den).
-            { marke: 'punkt', serie: 'Medianens värde', farg: PALETTE.semantic.spann, storlek: 6, opacitet: 0, etikettLage: 'hoger', legend: false, utanData: true,
+            { marke: 'punkt', serie: 'Medianens värde', farg: PALETT.semantic.spann, storlek: 6, opacitet: 0, etikettLage: 'hoger', legend: false, utanData: true,
               data: visa.filter(r => diff(r, 'median') != null).map(r => ({ y: _jmfEtikett(r), x: Math.max(...varden(r)), ..._jmfUrvalFalt(r), etikett: _jmfPct(diff(r, 'median')) })) },
-            streck('Skillnad i P10', FARG.blek, 'p10'), streck('Skillnad i P90', PALETTE.semantic.mork, 'p90'),
-            { marke: 'punkt', serie: 'Skillnad i median', farg: PALETTE.serie[0], storlek: 6,
+            streck('Skillnad i P10', FARG.blek, 'p10'), streck('Skillnad i P90', PALETT.semantic.mork, 'p90'),
+            { marke: 'punkt', serie: 'Skillnad i median', farg: PALETT.serie[0], storlek: 6,
               data: visa.filter(r => diff(r, 'median') != null).map(r => ({ ...bas(r), x: diff(r, 'median'), r })), tips: d => tipsRad(d.r) }
         ].filter(l => l.data.length) };
 }
@@ -317,7 +317,7 @@ function _jmfStatlageFigur(rader) {
     const punktlager = _lpKonsdominans().flatMap(([klass, farg, hor]) => /** @type {Array<['aid-bas'|'aid', boolean]>} */ ([['aid-bas', false], ['aid', true]])
         .map(([matchning, ofylld]) => ({ marke: 'punkt', serie: `${klass} · ${matchningEtikett(matchning)}`, farg,
             ...(ofylld ? { ofylld: true } : { kant: FARG.vit }), data: pts.filter(p => p.matchning === matchningEtikett(matchning) && hor(p.kvAndel)).map(p => ({ ...p, konsdom: klass })), tips })));
-    const linje = (y, etikett) => ({ typ: 'linje', y, streck: 'streckad', farg: PALETTE.semantic.referens, tjocklek: 1, etikett, textfarg: PALETTE.semantic.referens });
+    const linje = (y, etikett) => ({ typ: 'linje', y, streck: 'streckad', farg: PALETT.semantic.referens, tjocklek: 1, etikett, textfarg: PALETT.semantic.referens });
     return { beskrivning: `Var varje ${genitiv(T.enhet.en)} medianlön ligger i jämförelsestatistikens spann per ${T.niva.en}: 0 är statistikens P10 och 100 dess P90. `
             + 'Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; '
             + 'läget räknas ur P10, median och P90 i tabellen där.',
@@ -325,7 +325,7 @@ function _jmfStatlageFigur(rader) {
         referens: [linje(0, 'P10'), linje(100, 'P90')],
         lager: [
             // Spannet bär inga värden (0 och 100 i varje BAS) och får därför inga rader i diagramdatan.
-            { marke: 'intervall', serie: 'Statistikens spann (P10–P90)', farg: PALETTE.semantic.spann, tjocklek: 14, legend: false, utanData: true,
+            { marke: 'intervall', serie: 'Statistikens spann (P10–P90)', farg: PALETT.semantic.spann, tjocklek: 14, legend: false, utanData: true,
               data: ordning.map(b => ({ x: b, lag: 0, hog: 100, bas: b.slice(4) })) },
             ...punktlager
         ].filter(l => l.data.length) };

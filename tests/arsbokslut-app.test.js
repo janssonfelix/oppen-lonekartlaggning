@@ -119,7 +119,7 @@ describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-5
         expect(f.lager.slice(2).reduce((n, l) => n + l.data.length, 0)).toBe(f.lager[0].data.length);   // varje rad har årets punkt
         const rad = f.lager[0].data[0];
         expect(typeof rad.r.fore).toBe('number'); expect(typeof rad.r.efter).toBe('number');
-        const farger = w.eval('[PALETTE.semantic.ok, PALETTE.semantic.varning, PALETTE.semantic.neutral]');
+        const farger = w.eval('[PALETT.semantic.ok, PALETT.semantic.varning, PALETT.semantic.neutral]');
         expect(f.lager[0].data.every(d => farger.includes(d.farg))).toBe(true);                     // en färg per riktning (fjärmat sig prövas i lib-testet)
         expect(f.lager[0].data.some(d => d.farg === farger[0])).toBe(true);                         // de som närmat sig lika lön
         expect(f.lager[0].data.some(d => d.farg === farger[2])).toBe(true);                         // de oförändrade

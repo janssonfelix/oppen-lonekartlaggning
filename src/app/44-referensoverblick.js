@@ -12,7 +12,7 @@ import { aktiveraSortering } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { PALETTE, URVAL } from './10-diagramtema.js';
+import { PALETT, URVAL } from './10-diagramtema.js';
 import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { _laSlutsats } from './41-lika-arbete.js';
 import { jamforelseUnderlag } from './42-jamforelse.js';
@@ -90,9 +90,9 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
 // etikett bara behöver säga yrkesgruppen. En referens med bara median får inget band, bara strecket.
 function _rrHantelFigur(rader, { harStatistik }) {
     const serier = [
-        { namn: 'Ställningstagandet', nyckel: 'stallningstagande', farg: PALETTE.semantic.neutral },
-        ...(harStatistik ? [{ namn: 'Statistiken', nyckel: 'statistik', farg: PALETTE.semantic.trend }] : []),
-        { namn: 'Organisationen', nyckel: 'org', farg: PALETTE.semantic.mork }
+        { namn: 'Ställningstagandet', nyckel: 'stallningstagande', farg: PALETT.semantic.neutral },
+        ...(harStatistik ? [{ namn: 'Statistiken', nyckel: 'statistik', farg: PALETT.semantic.trend }] : []),
+        { namn: 'Organisationen', nyckel: 'org', farg: PALETT.semantic.mork }
     ];
     const steg = serier.length === 3 ? 0.27 : 0.2;   // seriernas läge i raden, i andelar av radens höjd
     const kr = v => talformat(v, 'kr');

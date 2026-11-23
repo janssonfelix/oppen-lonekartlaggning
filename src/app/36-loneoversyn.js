@@ -25,7 +25,7 @@ import { jmfNamnGenitiv } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { PALETTE, URVAL } from './10-diagramtema.js';
+import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { _laggTillMetodblad } from './22-exporthjalpare.js';
@@ -367,11 +367,11 @@ export function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolu
     return { beskrivning, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 36 },
         x: { skala: 'linjar', titel, ...(kvot ? {} : { format }), doman: kvot ? [Math.floor(Math.min(lag, 95) - 1), Math.ceil(Math.max(hog, 100) + 1)] : [lag - luft, hog + luft * 1.6] },
         hojd: Math.max(160, 96 + rader.length * 32),
-        ...(kvot ? { referens: [{ x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }] } : {}),
+        ...(kvot ? { referens: [{ x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }] } : {}),
         lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Förändring', tjocklek: 3, legend: false,
                   data: rader.map(r => ({ y: r.namn, lag: Math.min(r.fore, r.efter), hog: Math.max(r.fore, r.efter), farg: r.farg, r, ...m(r) })), tips },
-                { marke: 'punkt', symbol: 'streck', serie: a, farg: PALETTE.semantic.neutral, storlek: 6, data: rader.map(r => ({ y: r.namn, x: r.fore, r, ...m(r) })), tips },
-                { marke: 'punkt', serie: b, farg: PALETTE.semantic.mork, storlek: 6, etikettLage: 'hoger',
+                { marke: 'punkt', symbol: 'streck', serie: a, farg: PALETT.semantic.neutral, storlek: 6, data: rader.map(r => ({ y: r.namn, x: r.fore, r, ...m(r) })), tips },
+                { marke: 'punkt', serie: b, farg: PALETT.semantic.mork, storlek: 6, etikettLage: 'hoger',
                   data: rader.map(r => ({ y: r.namn, x: r.efter, farg: r.farg, etikett: p(r.efter), r, ...m(r) })), tips }] };
 }
 
@@ -381,7 +381,7 @@ export function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolu
 // (riktning), som utfallets rad för hela urvalet.
 /** @returns {Array<{namn: string, fore: number, efter: number, [k: string]: any}>} */
 function _lutningRader(d, sim, niva) {
-    const farg = r => ({ '-1': PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[riktning(r.fore, r.efter, 100)];
+    const farg = r => ({ '-1': PALETT.semantic.ok, 0: PALETT.semantic.neutral, 1: PALETT.semantic.kritisk })[riktning(r.fore, r.efter, 100)];
     return lutningRader(d, sim, niva, { k: kTroskel(), markering: markeringFor }).map(r => ({ ...r, farg: farg(r) }));
 }
 // Samma tal som diagrammet, som tabell: gapet per grupp före och efter påslagen står inte någon annanstans.

@@ -1309,7 +1309,7 @@ describe('Uppgift 5: färgskala och färgstapel', () => {
     it('mitt: en divergerande skala med mittvärde har mittfärgen där, också när domänen är sned', () => {
         w.__fs = { typ: 'divergerande', doman: [50, 200], mitt: 100 };
         const [vid100, vid125, lag, hog] = w.eval('(() => { const s = _rfFargskala(window.__fs); return [s(100), s(125), s(50), s(200)]; })()');
-        const mittfarg = w.eval('d3.color("#eeeeec").formatRgb()');   // PALETTE.divergerande: mittstoppet
+        const mittfarg = w.eval('d3.color("#eeeeec").formatRgb()');   // PALETT.divergerande: mittstoppet
         expect(w.eval(`d3.color(${JSON.stringify(vid100)}).formatRgb()`)).toBe(mittfarg);
         expect(vid125).not.toBe(vid100);
         expect(new Set([vid100, lag, hog]).size).toBe(3);

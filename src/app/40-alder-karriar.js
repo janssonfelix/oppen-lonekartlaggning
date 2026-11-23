@@ -14,7 +14,7 @@ import { _konUtelamnatNot, _sattDiagramKNot, individLitenFor, kInstalld, kTroske
 import { jmfNamn, diagramNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { gapStatusKI, PALETTE, UNDERLAG, URVAL } from './10-diagramtema.js';
+import { gapStatusKI, PALETT, UNDERLAG, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { farger, hamtaBasIntervall, hamtaData, linjarRegressionKI, policyFor, Stat, state } from './12-tillstand.js';
 import { tomFlikarUtom } from './23-exportgrind.js';
@@ -110,7 +110,7 @@ export function ritaAlderOchLon(bas) {
 // Vilka som är små, vilka som saknas och ordningen är lonefordelningPerBas i src/lib/vymodell-alder-karriar.js.
 export function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     const { punkter, utelamnade, ordning } = lonefordelningPerBas(rader, perKon, k);
-    const serier = perKon ? [['Kvinna', PALETTE.kon.kvinna], ['Man', PALETTE.kon.man]] : [['Alla', PALETTE.serie[0]]];
+    const serier = perKon ? [['Kvinna', PALETT.kon.kvinna], ['Man', PALETT.kon.man]] : [['Alla', PALETT.serie[0]]];
     const lager = serier.map(([namn, farg]) => ({
         marke: 'lada', ...(form === 'fiol' ? { form: 'fiol' } : form === 'kvantiler' ? { form: 'kvantiler', antal: 20 } : { avvikare: false }), serie: namn, farg,
         data: punkter.filter(p => !perKon || p.kon === namn).map(({ rad: r, liten }) => ({ x: 'BAS ' + r.bas, y: r.lon, bas: r.bas, markering: markeringFor(r.bas), ...(liten ? { liten: true } : {}) })),
@@ -138,7 +138,7 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
         tips: d => [[`${d.x} tkr`], [s, talformat(d.y, 'pct')], ['Personer i klassen', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${litetUnderlag()} ${s.toLowerCase()}`]] : [])] });
     return { beskrivning: `Lönefördelningen för kvinnor och män i ${scope}: andel av respektive kön per löneklass. Varje klass rymmer minst ${kTroskel()} ${personOrd(kTroskel())}; klasserna i ändarna är hopslagna.`,
         x: { skala: 'band', titel: 'Månadslön (tusen kronor)', ordning: klasser.map(namn) }, y: { skala: 'linjar', titel: 'Andel av könet (%)' }, hojd: 340,
-        lager: [serie('Kvinnor', PALETTE.kon.kvinna, 'nKv', nKv), serie('Män', PALETTE.kon.man, 'nMa', nMa)] };
+        lager: [serie('Kvinnor', PALETT.kon.kvinna, 'nKv', nKv), serie('Män', PALETT.kon.man, 'nMa', nMa)] };
 }
 // ---- Lönegap per åldersgrupp ----
 // Kvinnors medianlön i procent av mäns i varje åldersgrupp, med samma bootstrap-intervall som BAS-översikten i Lönestruktur
@@ -160,8 +160,8 @@ function _konAlderGapFigur(rader, scope) {
         y: { skala: 'band', ordning: rader.map(o => o.namn) },
         x: { skala: 'linjar', titel: 'Kvinnors median i % av mäns — 100 = lika lön', doman: [Math.floor(Math.min(90, ...alla) - 2), Math.ceil(Math.max(105, ...alla) + 2)] },
         hojd: Math.max(180, 110 + rader.length * 34),
-        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: '±3 %' }, { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-        lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg],
+        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: '±3 %' }, { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+        lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETT.semantic[s.farg],
             data: rader.filter(o => status(o) === s).map(pkt), tips })).filter(l => l.data.length) };
 }
 function ritaAlderGap(dataKv, dataMa, scope) {
@@ -221,12 +221,12 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
     const lager = [];
     for (const { bas: b, punkter, trend } of paneler) {
         const panel = 'BAS ' + b;
-        for (const [namn, farg] of [['Kvinna', PALETTE.kon.kvinna], ['Man', PALETTE.kon.man]]) {
+        for (const [namn, farg] of [['Kvinna', PALETT.kon.kvinna], ['Man', PALETT.kon.man]]) {
             const data = punkter.filter(p => p.kon === namn).map(({ rad: r, liten: l }) => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...(l ? { liten: true } : {}), markering: markeringFor(r.bas, r.yrke) }));
             if (data.length) lager.push({ marke: 'punkt', serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
         }
         if (trend) { const { reg, a0, a1 } = trend;
-            lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] }); }
+            lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETT.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] }); }
     }
     return { utanfor, nedsamplade: paneler.filter(p => p.nedsamplad).map(p => 'BAS ' + p.bas), figur: { beskrivning: `Lön mot ålder i ${paneler.length} ${ordForAntal(paneler.length, T.niva)}, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
         individer: true, urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.alder, URVAL.lon], paneler: paneler.map(p => 'BAS ' + p.bas), x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 340, lager } };
@@ -276,10 +276,10 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
         const l = { marke: 'band', serie, farg, opacitet: 0.15, legend: false, data: ci.map(p => ({ x: p.x, lag: p.lo, hog: p.hi })) };
         lager.push(l); harledda.push([l, kon]);
     };
-    band('Kvinna 95 % KI', PALETTE.kon.kvinna, ciKv, 'Kvinna');
-    band('Man 95 % KI', PALETTE.kon.man, ciMa, 'Man');
+    band('Kvinna 95 % KI', PALETT.kon.kvinna, ciKv, 'Kvinna');
+    band('Man 95 % KI', PALETT.kon.man, ciMa, 'Man');
     if (colorBy === 'kon') {
-        lager.push(punktlager('Kvinna', PALETTE.kon.kvinna, dataKv, false), punktlager('Man', PALETTE.kon.man, dataMa, false));
+        lager.push(punktlager('Kvinna', PALETT.kon.kvinna, dataKv, false), punktlager('Man', PALETT.kon.man, dataMa, false));
     } else {
         // Färglägg efter BAS eller yrkesgrupp (AID): vid 'aid' de åtta största, övriga som "Övrigt".
         const nyckel = d => (colorBy === 'bas' ? d.bas : d.yrke);
@@ -290,7 +290,7 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
         const grupper = new Map();
         df.forEach(d => { const k = topp.has(String(nyckel(d))) ? String(nyckel(d)) : 'Övrigt'; if (!grupper.has(k)) grupper.set(k, []); grupper.get(k).push(d); });
         [...grupper].forEach(([namn, rader], i) => lager.push(
-            punktlager(colorBy === 'bas' ? `BAS-${namn}` : namn, PALETTE.serie[i % PALETTE.serie.length], rader, true)));
+            punktlager(colorBy === 'bas' ? `BAS-${namn}` : namn, PALETT.serie[i % PALETT.serie.length], rader, true)));
     }
     const trend = (serie, farg, reg, kon) => {
         if (!reg) return;
@@ -298,10 +298,10 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
             data: [{ x: minAlder, y: reg.m * minAlder + reg.b }, { x: maxAlder, y: reg.m * maxAlder + reg.b }] });
         lager.push(l); harledda.push([l, kon]);
     };
-    trend('Kvinna (trend)', PALETTE.kon.kvinna, trendKv, 'Kvinna');
-    trend('Man (trend)', PALETTE.kon.man, trendMa, 'Man');
+    trend('Kvinna (trend)', PALETT.kon.kvinna, trendKv, 'Kvinna');
+    trend('Man (trend)', PALETT.kon.man, trendMa, 'Man');
     const allaNamn = reg => `Hela urvalet (trend, R² = ${svTal(reg.r2, 2)})`;
-    if (trendAlla) lager.push({ ..._vagratLinje(allaNamn(trendAlla), PALETTE.semantic.trend, 0, minAlder, maxAlder, { tjocklek: 2, streck: 'streckad',
+    if (trendAlla) lager.push({ ..._vagratLinje(allaNamn(trendAlla), PALETT.semantic.trend, 0, minAlder, maxAlder, { tjocklek: 2, streck: 'streckad',
         data: [{ x: minAlder, y: trendAlla.m * minAlder + trendAlla.b }, { x: maxAlder, y: trendAlla.m * maxAlder + trendAlla.b }] }),
         harleddAv: { lager: kallor(), minN: kTroskel(), namn: 'trendlinjen för hela urvalet', berakna: p => {
             const t = _konPunktmolnTrend(p);
@@ -312,11 +312,11 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
         l.harleddAv = { ...perKon(kon), minN: kTroskel(), namn: konNamn(kon),
             berakna: p => { const t = _konPunktmolnTrend(p, l.marke === 'band'); return t ? (l.marke === 'band' ? t.band : t.linje) : []; } };
     }
-    if (statMedian != null) lager.push(_vagratLinje(`Median i ${diagramNamn(jmfNamn('jämförelsestatistiken'))}`, PALETTE.serie[10], statMedian, minAlder, maxAlder, { streck: 'streckad' }));
+    if (statMedian != null) lager.push(_vagratLinje(`Median i ${diagramNamn(jmfNamn('jämförelsestatistiken'))}`, PALETT.serie[10], statMedian, minAlder, maxAlder, { streck: 'streckad' }));
     return { beskrivning, individer: true, urval: [...(isAll ? [URVAL.bas] : []), URVAL.yrkesgrupp, URVAL.alder, URVAL.lon],
         x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, lager,
-        referens: pol ? [{ typ: 'zon', y0: pol.p10, y1: pol.p90, farg: PALETTE.semantic.neutral, opacitet: 0.15 },
-                         { y: pol.med, streck: 'streckad', farg: PALETTE.semantic.neutral, tjocklek: 2 }] : [] };
+        referens: pol ? [{ typ: 'zon', y0: pol.p10, y1: pol.p90, farg: PALETT.semantic.neutral, opacitet: 0.15 },
+                         { y: pol.med, streck: 'streckad', farg: PALETT.semantic.neutral, tjocklek: 2 }] : [] };
 }
 
 // Trendlinjen (och med `medBand` konfidensbandet) ur punkter i spridningsdiagrammet, för ett härlett lager: samma
@@ -344,7 +344,7 @@ function _konLadFigurFor({ lonKv, lonMa, nKv, nMa, utan }, scope, k) {
 }
 // Lådagrammet per kön: ett lager, en kategori per kön som når tröskeln (null = könet redovisas inte).
 function _konLadFigur({ lonKv, lonMa, beskrivning }) {
-    const data = [...(lonKv || []).map(y => ({ x: 'Kvinna', y, farg: PALETTE.kon.kvinna })), ...(lonMa || []).map(y => ({ x: 'Man', y, farg: PALETTE.kon.man }))];
+    const data = [...(lonKv || []).map(y => ({ x: 'Kvinna', y, farg: PALETT.kon.kvinna })), ...(lonMa || []).map(y => ({ x: 'Man', y, farg: PALETT.kon.man }))];
     return { beskrivning, legend: false, x: { skala: 'band', ordning: ['Kvinna', 'Man'] }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },
         lager: [{ marke: 'lada', serie: 'Lön', data,
                   tips: (d, s) => (s ? [[d.x], ['Median', talformat(s.median, 'kr')], ['Kvartiler', `${talformat(s.q1, 'kr', { enhet: false })}–${talformat(s.q3, 'kr')}`], ['Antal', String(s.n)]]
@@ -431,8 +431,8 @@ function _demoHistFigur({ pctKv, pctMa, refPct, isAll }) {
     return { beskrivning: `Åldersfördelning i ${adjektiv('vald', T.niva)} ${T.niva.en} jämfört med Sveriges sysselsatta befolkning. Nyckeltal i rutorna ovan.`,
         x: { skala: 'band', titel: 'Åldersgrupp', ordning: ALDERSKLASSER.slice() },
         y: { skala: 'linjar', titel: isAll ? 'Andel av organisationen (%)' : `Andel av ${T.niva.en} (%)` },
-        lager: [serie('Kvinna', PALETTE.kon.kvinna, pctKv), serie('Man', PALETTE.kon.man, pctMa),
-            { marke: 'linje', serie: 'Sveriges sysselsatta (SCB AKU 2023)', farg: PALETTE.semantic.referens, streck: 'prickad', punkter: true,
+        lager: [serie('Kvinna', PALETT.kon.kvinna, pctKv), serie('Man', PALETT.kon.man, pctMa),
+            { marke: 'linje', serie: 'Sveriges sysselsatta (SCB AKU 2023)', farg: PALETT.semantic.referens, streck: 'prickad', punkter: true,
               data: ALDERSKLASSER.map((x, i) => ({ x, y: refPct[i] })),
               tips: d => [[d.x], ['Sveriges sysselsatta', talformat(d.y, 'pct')]] }] };
 }
@@ -452,7 +452,7 @@ function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
         y: { skala: 'band', titel: 'Åldersgrupp', ordning: grupper },
         x: { skala: 'linjar', titel: `Kvinnor åt vänster · andel av ${isAll ? 'organisationen' : T.niva.bf} (%) · Män åt höger`, format: 'pctAbs', doman: [-grans, grans], nollinje: true },
         hojd: Math.max(300, 70 + grupper.length * 24),
-        lager: [serie('Kvinna', PALETTE.kon.kvinna, pctKv, -1), serie('Man', PALETTE.kon.man, pctMa, 1)] };
+        lager: [serie('Kvinna', PALETT.kon.kvinna, pctKv, -1), serie('Man', PALETT.kon.man, pctMa, 1)] };
 }
 
 // Utjämnade kurvor ritas monotont: de går aldrig utanför värdena.
@@ -461,7 +461,7 @@ function _demoAlderskurvaFigur(kv, ma) {
         data: c.ages.map((x, i) => ({ x, y: c.share[i], alder: x })), tips: d => [[`${d.x} år`], [serie, `${talformat(d.y, 'pct')} av ${vilka}`]] });
     return { beskrivning: 'Åldersfördelning som kurva per kön: andel av det egna könet per ålder, 5-årigt glidande medel.',
         urval: [URVAL.alder], x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Andel av könet (%)' },
-        lager: [kurva('Kvinna', PALETTE.kon.kvinna, kv, 'kvinnorna'), kurva('Man', PALETTE.kon.man, ma, 'männen')] };
+        lager: [kurva('Kvinna', PALETT.kon.kvinna, kv, 'kvinnorna'), kurva('Man', PALETT.kon.man, ma, 'männen')] };
 }
 
 // Lönespridning över ålder: lönen per femårsgrupp som median med två band —
@@ -473,11 +473,11 @@ function _demoBandFigur(df, k, pol, aLo, aHi, rader = alderBandRader(df, k)) {
     if (!rader) return null;
     const kr = v => `${talformat(v, 'kr')}/mån`;
     const tips = d => [[d.namn], ['P90', kr(d.r.p90)], ['P75', kr(d.r.p75)], ['Median', kr(d.r.p50)], ['P25', kr(d.r.p25)], ['P10', kr(d.r.p10)], ['Antal', String(d.r.n)]];
-    const band = (serie, lag, hog, opacitet) => ({ marke: 'band', serie, farg: PALETTE.serie[0], opacitet, data: rader.map(r => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, alder: r.alder, r })), tips });
+    const band = (serie, lag, hog, opacitet) => ({ marke: 'band', serie, farg: PALETT.serie[0], opacitet, data: rader.map(r => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, alder: r.alder, r })), tips });
     return { beskrivning: `Lönespridning över ålder: medianlön per femårsgrupp, med band för mittersta hälften (P25–P75) och för P10–P90. Åldersgrupper med färre än ${k} ${personOrd(k)} visas inte.`,
         urval: [URVAL.alder], x: { skala: 'linjar', titel: 'Ålder (femårsgrupper)' }, y: { skala: 'linjar', titel: 'Kronor/månad', format: 'kr' },
         lager: [band('P10–P90', 'p10', 'p90', 0.16), band('Mittersta hälften (P25–P75)', 'p25', 'p75', 0.3),
-                { marke: 'linje', serie: 'Median', farg: PALETTE.serie[0], tjocklek: 2.5, punkter: true, data: rader.map(r => ({ x: r.x, y: r.p50, namn: r.namn, alder: r.alder, r })), tips },
+                { marke: 'linje', serie: 'Median', farg: PALETT.serie[0], tjocklek: 2.5, punkter: true, data: rader.map(r => ({ x: r.x, y: r.p50, namn: r.namn, alder: r.alder, r })), tips },
             ...(pol ? [_vagratLinje('Ställn. P10', farger.policy, pol.p10, aLo, aHi, { streck: 'streckad', tjocklek: 1 }),
                        _vagratLinje('Ställn. Median', farger.policy, pol.med, aLo, aHi, { streck: 'streckad', tjocklek: 1.5 }),
                        _vagratLinje('Ställn. P90', farger.policy, pol.p90, aLo, aHi, { streck: 'streckad', tjocklek: 1 })] : [])] };

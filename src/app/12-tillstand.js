@@ -15,7 +15,7 @@ import { _cellSpann, aktiveraSortering, kopplaHopfallbaraGrupper } from './05-ta
 import { _kUndantagFor, _tsvMedStampel } from './06-k-troskel.js';
 import { COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
-import { PALETTE } from './10-diagramtema.js';
+import { PALETT } from './10-diagramtema.js';
 import { ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
 import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
 import { ritaAtgardslista } from './18-atgardslista.js';
@@ -251,8 +251,8 @@ export function ritaOmReferens() {
 }
 
 // ---- Colors & Stats ----
-// Härleds ur PALETTE (10-diagramtema.js) så könsfärgerna har EN källa.
-export const farger = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
+// Härleds ur PALETT (10-diagramtema.js) så könsfärgerna har EN källa.
+export const farger = { kvinna: PALETT.kon.kvinna, man: PALETT.kon.man, policy: PALETT.semantic.policy };
 
 // Statistiska helpers för vyerna; en källa: src/lib/stat.js (tests/stat.test.js prövar den).
 export const Stat = { median, kvantil, linjarRegression };

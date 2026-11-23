@@ -19,7 +19,7 @@ import { kMaskNot, kSamladNot } from './06-maskeringsnoter.js';
 import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { PALETTE, UNDERLAG, URVAL } from './10-diagramtema.js';
+import { PALETT, UNDERLAG, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { byggAtgardslista } from './18-atgardslista.js';
@@ -276,7 +276,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
         beskrivning: `Organisationen som karta: varje yta är ${artikel(T.enhet)} ${T.enhet.en}, storleken är antalet personer och färgen andelen kvinnor, samlade per ${T.niva.en}. ${stor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} är hopslagna till en grå yta per intervall.`,
         urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
         x: { skala: 'linjar', doman: [0, TRADKARTA_FORM], dold: true }, y: { skala: 'linjar', doman: [0, 1], dold: true },
-        fargskala: { typ: 'divergerande', doman: [0, 100], mitt: 50, titel: 'Andel kvinnor (%)', farger: [[0, PALETTE.kon.man], [0.5, FARG.ytaStark], [1, PALETTE.kon.kvinna]] },
+        fargskala: { typ: 'divergerande', doman: [0, 100], mitt: 50, titel: 'Andel kvinnor (%)', farger: [[0, PALETT.kon.man], [0.5, FARG.ytaStark], [1, PALETT.kon.kvinna]] },
         lager: [{ marke: 'yta', serie: stor(T.niva.en), farg: FARG.kant, opacitet: 0.5, etikettLage: 'topp', data: basYtor,
                   tips: d => [[d.namn], ['Antal', String(d.varde)]],
                   harleddAv: { lager: [stor(T.enhet.fl)], namn, berakna: p => _tradkartaLagen(p).basYtor.map(b => ({ ...b, varde: basAntal.get(b.namn) })) } },
@@ -321,10 +321,10 @@ function _strukturPercentilFigur(dist, omfang) {
     const hogst = x => (x.ma >= x.kv ? 'ma' : 'kv');
     return { beskrivning: `Kvinnors och mäns lön vid samma percentil i respektive köns lönefördelning (P10 till P90), som två punkter per percentil. Procenttalet är kvinnors lön i procent av mäns. ${omfang ? `Räknat för ${omfang}; tabellen under gäller hela underlaget.` : 'Samma tal står i tabellen under.'}`,
         x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: dist.map(namn) }, hojd: Math.max(220, 100 + dist.length * 34),
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETT.semantic.neutral, tjocklek: 2, legend: false,
                   data: dist.map(x => ({ y: namn(x), lag: Math.round(Math.min(x.kv, x.ma)), hog: Math.round(Math.max(x.kv, x.ma)), r: x, ..._kronorFalt(x.kv, x.ma) })), tips },
-                punkt('Kvinnor', PALETTE.kon.kvinna, 'kv', dist.every(x => hogst(x) === 'kv') ? { etikettLage: 'hoger' } : {}),
-                punkt('Män', PALETTE.kon.man, 'ma', dist.every(x => hogst(x) === 'kv') ? {} : { etikettLage: 'hoger' })] };
+                punkt('Kvinnor', PALETT.kon.kvinna, 'kv', dist.every(x => hogst(x) === 'kv') ? { etikettLage: 'hoger' } : {}),
+                punkt('Män', PALETT.kon.man, 'ma', dist.every(x => hogst(x) === 'kv') ? {} : { etikettLage: 'hoger' })] };
 }
 
 function _strukturKvartilFigur(q, totAndel, omfang) {
@@ -338,8 +338,8 @@ function _strukturKvartilFigur(q, totAndel, omfang) {
         y: { skala: 'band', ordning: q.slice().reverse().map(namn) },
         x: { skala: 'linjar', titel: 'Andel av kvartilen (%)', doman: [0, 100] },
         hojd: 240,
-        referens: [{ x: +totAndel.toFixed(1), streck: 'streckad', farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-        lager: [serie('Kvinnor', PALETTE.kon.kvinna, x => x.andelKv, x => x.nKv), serie('Män', PALETTE.kon.man, x => 100 * x.nMa / x.n, x => x.nMa)] };
+        referens: [{ x: +totAndel.toFixed(1), streck: 'streckad', farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+        lager: [serie('Kvinnor', PALETT.kon.kvinna, x => x.andelKv, x => x.nKv), serie('Män', PALETT.kon.man, x => 100 * x.nMa / x.n, x => x.nMa)] };
 }
 
 /** Verktygstipset när modellen med BAS inte går att skatta i ett huvudområde (ADR-78): båda orsakerna. */
@@ -427,12 +427,12 @@ function _sektorFigur(visa, justText = sektorJusteradText(visa)) {
         urval: [URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Kvinnors lön i % av mäns', doman: [xMin, xMax] },
         y: { skala: 'band', ordning: visa.map(r => r.namn), etikettMax: 64 },   // sektornamnen är långa och ska gå att läsa
         hojd: Math.max(170, 90 + visa.length * 36),
-        referens: [{ x: 100, streck: 'prickad', farg: PALETTE.semantic.referens, etikett: 'Lika lön' }],
+        referens: [{ x: 100, streck: 'prickad', farg: PALETT.semantic.referens, etikett: 'Lika lön' }],
         // Strecket från rå till justerad visar hur mycket ålder (när lönefilen har den) och nivå förklarar: långt streck = mycket.
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: `Förklaras av ${forklaras}`, farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: `Förklaras av ${forklaras}`, farg: PALETT.semantic.neutral, tjocklek: 2, legend: false,
                   data: visa.filter(r => just(r) != null).map(r => ({ y: r.namn, lag: +Math.min(r.kvot ?? 0, just(r) ?? 0).toFixed(1), hog: +Math.max(r.kvot ?? 0, just(r) ?? 0).toFixed(1), ra: r.kvot, ju: just(r), ...falt(r) })),
                   tips: d => [[d.y], ['Rå', talformat(d.ra, 'pct')], ['Justerad', talformat(d.ju, 'pct')]] },
-                lager('Rå', PALETTE.semantic.neutral, r => r.kvot, 0), lager(rubrik, PALETTE.serie[0], just, 0)] };
+                lager('Rå', PALETT.semantic.neutral, r => r.kvot, 0), lager(rubrik, PALETT.serie[0], just, 0)] };
 }
 
 // (4) Bygg ett klarspråksutkast av fynden.

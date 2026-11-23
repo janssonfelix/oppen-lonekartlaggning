@@ -32,7 +32,7 @@ import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { _STS_DIR_KOLUMN, _STS_DIR_TIPS, PALETTE, URVAL } from './10-diagramtema.js';
+import { _STS_DIR_KOLUMN, _STS_DIR_TIPS, PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
@@ -688,7 +688,7 @@ export function ritaLikvardigtArbete() {
 // ---- § 3:10: kandidatparen som bild (visualiserings-Steg 2) -----------------
 // Rena par-listan (kvinnodominerat yrke × jämförelseyrke, z = lönegap %) blir en
 // äkta 2D-matris. Tabellen finns kvar som tillgänglighetsalternativ (role="img"
-// + aria pekar dit). Färgen är enkelriktad (PALETTE.sekventiell): rödare cell =
+// + aria pekar dit). Färgen är enkelriktad (PALETT.sekventiell): rödare cell =
 // större gap = jämförelseyrket tjänar mer än det kvinnodominerade yrket.
 /** Flikens topp: urvalsraden och slutsatserna ur vymodellen. Talen är de som tabellerna i fliken visar. */
 function _lvRitaTopp(result, vm) {
@@ -718,9 +718,9 @@ function _lvRitaTopp(result, vm) {
 // ---- Krav mot lön: en punkt per yrkesgrupp ----------------------------------
 // Grupperna, nivån, avståndet och placeringen räknas i vymodellen (vymodellKravMotLon); här ritas de.
 const _LV_KRAV_SERIER = [
-    { dominans: 'kvinnodominerad', serie: 'Kvinnodominerad', farg: () => PALETTE.kon.kvinna, symbol: 'cirkel' },
-    { dominans: 'mansdominerad', serie: 'Mansdominerad', farg: () => PALETTE.kon.man, symbol: 'triangelHoger' },
-    { dominans: 'blandad', serie: 'Blandad', farg: () => PALETTE.semantic.neutral, symbol: 'cirkel' }
+    { dominans: 'kvinnodominerad', serie: 'Kvinnodominerad', farg: () => PALETT.kon.kvinna, symbol: 'cirkel' },
+    { dominans: 'mansdominerad', serie: 'Mansdominerad', farg: () => PALETT.kon.man, symbol: 'triangelHoger' },
+    { dominans: 'blandad', serie: 'Blandad', farg: () => PALETT.semantic.neutral, symbol: 'cirkel' }
 ];
 /** @param {any} vm vymodellKravMotLon */
 function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
@@ -737,7 +737,7 @@ function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
                     ['Andel kvinnor', talformat(d.andelKv, 'pct')], ['Antal', String(d.n)],
                     ...(medPoang ? [[d.uppskattad ? `Poäng (efter ${T.niva.bf})` : 'Arbetsvärderingspoäng', talformat(d.krav, 'antal')]] : [])]
     })).filter(l => l.data.length);
-    if (linje.length >= 2) lager.unshift({ marke: 'linje', serie: medPoang ? 'Nivå efter kraven (trend)' : `Nivå per ${T.niva.en}`, farg: PALETTE.semantic.mork, streck: 'streckad', tjocklek: 1.5, data: linje });
+    if (linje.length >= 2) lager.unshift({ marke: 'linje', serie: medPoang ? 'Nivå efter kraven (trend)' : `Nivå per ${T.niva.en}`, farg: PALETT.semantic.mork, streck: 'streckad', tjocklek: 1.5, data: linje });
     return { beskrivning: `En punkt per ${T.enhet.en}: arbetets krav (${medPoang ? 'arbetsvärderingspoäng' : T.niva.en}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replaceAll('%', 'procent')}). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
         urval: [URVAL.bas, URVAL.sektor, URVAL.antal], x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: `${stor(T.niva.en)} (stigande krav)`, ordning: basOrdning.map(b => 'BAS ' + b) },
         y: { skala: 'linjar', titel: 'Gruppens medianlön', format: 'kr' }, hojd: 420, lager };
@@ -786,9 +786,9 @@ function _lvParFigur(pairs, max = 14) {
         urval: [{ ...URVAL.bas, namn: termText('{Niva.en} ({enhet.en:kvinnodominerad})') }, URVAL.lonegap, LV_PAR_ANTAL],
         x: { skala: 'linjar', titel: 'Medianlön (kr/månad)', format: 'kr' }, y: { skala: 'band', ordning: rader.map(r => r.y), etikettMax: 48 },
         hojd: Math.max(160, 96 + rader.length * 32),
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETT.semantic.neutral, tjocklek: 2, legend: false,
                   data: rader.map(r => ({ y: r.y, lag: Math.round(Math.min(r.p.kvMedian, r.p.maMedian)), hog: Math.round(Math.max(r.p.kvMedian, r.p.maMedian)), p: r.p, ...parFalt(r.p) })), tips: d => tips(d) },
-                punkt(termText('{Enhet.en:kvinnodominerad}'), PALETTE.kon.kvinna, 'kvMedian'), punkt(termText('{Jamforelse.en}'), PALETTE.kon.man, 'maMedian', { etikettLage: 'hoger' })] };
+                punkt(termText('{Enhet.en:kvinnodominerad}'), PALETT.kon.kvinna, 'kvMedian'), punkt(termText('{Jamforelse.en}'), PALETT.kon.man, 'maMedian', { etikettLage: 'hoger' })] };
 }
 
 /**

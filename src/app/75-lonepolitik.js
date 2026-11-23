@@ -31,7 +31,7 @@ import { kMaskNot } from './06-maskeringsnoter.js';
 import { orgNamn, diagramNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { PALETTE, URVAL } from './10-diagramtema.js';
+import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { laggTillTabellverktyg, hamtaData, harReferens, policyFor, policyNivaEtikett, referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
@@ -197,7 +197,7 @@ function _lpRitaBandkarta(karta) {
 // spann i Löneläget (42-jamforelse.js) delar klasserna, så att samma färg betyder samma sak i båda.
 /** @returns {Array<[string, string, (a: number) => boolean]>} */
 export function _lpKonsdominans() {
-    return [['Kvinnodominerad', PALETTE.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad', PALETTE.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad', PALETTE.semantic.neutral, a => konsklassNu(a) === 'blandad']];
+    return [['Kvinnodominerad', PALETT.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad', PALETT.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad', PALETT.semantic.neutral, a => konsklassNu(a) === 'blandad']];
 }
 // Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
 export function _lpForskjutning(aid, bas) { return ((froAvText(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
@@ -216,11 +216,11 @@ function _lpBandkartaFigur({ bas, punkter }) {
     return { beskrivning: `Referensens lönespann och organisationens faktiska lönespann per ${T.niva.en}, med varje ${genitiv(T.enhet.en)} median inlagd som punkt. Samma värden finns i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.konsdominans, URVAL.antal], x: { skala: 'band', ordning: bas.map(x) }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },
         lager: [
-            { marke: 'intervall', serie: `${refNamn} (P10–P90)`, farg: PALETTE.semantic.spann, tjocklek: 14,
+            { marke: 'intervall', serie: `${refNamn} (P10–P90)`, farg: PALETT.semantic.spann, tjocklek: 14,
               data: bas.map(b => ({ x: x(b), lag: b.pol.p10, hog: b.pol.p90, bas: b.bas, markering: markeringFor(b.bas) })), tips: d => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr(d.hog)}`]] },
-            { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETTE.semantic.referens, storlek: 4.5, legend: false,
+            { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETT.semantic.referens, storlek: 4.5, legend: false,
               data: bas.map(b => ({ x: x(b), y: refMed(b), bas: b.bas })), tips: d => [[d.x], [`${refNamn} median`, kr(d.y)]] },
-            { marke: 'intervall', serie: `${org} (P10–P90)`, farg: PALETTE.serie[0], opacitet: 0.55, tjocklek: 6,
+            { marke: 'intervall', serie: `${org} (P10–P90)`, farg: PALETT.serie[0], opacitet: 0.55, tjocklek: 6,
               // Spannets antal heter `antal`, inte `n`: `n` är en yrkesgrupps antal, som filtret Antal personer i gruppen läser.
               data: medOrgBand.map(b => ({ x: x(b), lag: b.orgBand.p10, hog: b.orgBand.p90, med: b.orgBand.med, antal: b.orgBand.n, bas: b.bas, markering: markeringFor(b.bas) })),
               tips: d => [[d.x], ['Organisationen', `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr(d.hog)}`], ['Antal', String(d.antal)]] },
@@ -242,11 +242,11 @@ function _lpFigurKonHantel(rows) {
     return { beskrivning: `Kvinnors respektive mäns genomsnittliga position i ställningstagandets lönespann per ${T.niva.en}, som två punkter på spannet: 0 procent är spannets nedre gräns (P10), 100 procent den övre (P90).`,
         urval: URVAL.bas, y: { skala: 'band', ordning: rows.map(y) }, x: { skala: 'linjar', titel: 'Position i spannet (%) — 0 = P10, 100 = P90', doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
         hojd: Math.max(170, 100 + rows.length * 34),
-        referens: [{ x: 50, streck: 'prickad', farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: 'Mitten' }],
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Policyns spann', farg: PALETTE.semantic.spann, tjocklek: 12, data: rows.map(b => ({ y: y(b), lag: 0, hog: 100, bas: b.bas })), tips: d => [[d.y], ['Spann', 'P10–P90']] },
-                { marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
+        referens: [{ x: 50, streck: 'prickad', farg: PALETT.semantic.neutral, tjocklek: 1, etikett: 'Mitten' }],
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Policyns spann', farg: PALETT.semantic.spann, tjocklek: 12, data: rows.map(b => ({ y: y(b), lag: 0, hog: 100, bas: b.bas })), tips: d => [[d.y], ['Spann', 'P10–P90']] },
+                { marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETT.semantic.neutral, tjocklek: 2, legend: false,
                   data: rows.map(b => ({ y: y(b), lag: Math.min(pos(b, 'kvPos'), pos(b, 'maPos')), hog: Math.max(pos(b, 'kvPos'), pos(b, 'maPos')), bas: b.bas })) },
-                punkt('Kvinnor', PALETTE.kon.kvinna, 'kvPos'), punkt('Män', PALETTE.kon.man, 'maPos')] };
+                punkt('Kvinnor', PALETT.kon.kvinna, 'kvPos'), punkt('Män', PALETT.kon.man, 'maPos')] };
 }
 
 // ---- Var i spannet ligger kvinnor och män? ----
@@ -254,7 +254,7 @@ function _lpFigurKonHantel(rows) {
 // spannet, nedre, mellersta eller övre tredjedelen, eller över spannet. Genomsnittsläget (diagrammet ovanför) kan vara
 // detsamma för könen fast det ena samlas i nedre tredjedelen; fördelningen visar det. Klasserna räknas per BAS-intervall
 // med policyspann och läggs ihop över hela urvalet; ett kön redovisas bara när det når tröskeln.
-const _LP_LAGEN = [['Under spannet', PALETTE.lage.under], ['Nedre tredjedelen', PALETTE.lage.nedre], ['Mellersta tredjedelen', PALETTE.lage.inom], ['Övre tredjedelen', PALETTE.lage.ovre], ['Över spannet', PALETTE.lage.over]];
+const _LP_LAGEN = [['Under spannet', PALETT.lage.under], ['Nedre tredjedelen', PALETT.lage.nedre], ['Mellersta tredjedelen', PALETT.lage.inom], ['Övre tredjedelen', PALETT.lage.ovre], ['Över spannet', PALETT.lage.over]];
 function _lpFigurKonLagen(sum) {
     const rader = [['Kvinnor', sum.kv, sum.nKv], ['Män', sum.ma, sum.nMa]];
     return { beskrivning: `Andel av kvinnorna respektive männen i policyspannets nedre, mellersta och övre tredjedel samt under och över spannet, staplat till 100 procent. Varje person räknas mot sitt ${genitiv(T.niva.en)} spann.`,
@@ -276,7 +276,7 @@ function _lpRitaKonLagen(vm) {
     if (not) not.textContent = `${pct(sum.kv, sum.nKv)} av kvinnorna och ${pct(sum.ma, sum.nMa)} av männen ligger i nedre tredjedelen eller under spannet. ${svTal(sum.nKv, 0)} kvinnor och ${svTal(sum.nMa, 0)} män med policyspann ingår.`;
 }
 
-const _LP_LAGE = PALETTE.lage;
+const _LP_LAGE = PALETT.lage;
 function _lpFigurKomplians(rows) {
     const pct = (v, n) => +((v / n) * 100).toFixed(1);
     const serie = (namn, farg, falt) => ({

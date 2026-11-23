@@ -22,7 +22,7 @@ import { _kNotForm, _kNotNamn, kMaskNot, kSamladNot } from './06-maskeringsnoter
 import { T } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_ALLA, gapStatusKI, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
+import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_ALLA, gapStatusKI, gapStatusNiva, PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { styrkaGallande } from './13-oversikt.js';
@@ -435,9 +435,9 @@ function _skevhetFigur(bars) {
         x: { skala: 'linjar', titel: 'Kvinnors median i % av männens — 100 = lika lön',
              doman: [Math.floor(Math.min(90, ...bars.map(o => (o.ci ? o.ci.lo : o.gap))) - 2), Math.ceil(Math.max(110, ...bars.map(o => (o.ci ? o.ci.hi : o.gap))) + 2)] },
         hojd: Math.max(180, 110 + bars.length * 34),
-        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: 'Lika lön ±3 %' },
-                   { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-        lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg],
+        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: 'Lika lön ±3 %' },
+                   { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+        lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETT.semantic[s.farg],
             data: bars.filter(o => status(o) === s).map(pkt), tips }))
             .filter(l => l.data.length) };
 }
@@ -459,13 +459,13 @@ function _kvotcellTitel(r) {
     return rad ? ` title="${esc(`${rad[0]}: ${rad[1]}`)}"` : '';
 }
 function _laOversiktGrafik(o, dom, status, bredd) {
-    const b = bredd || _LA_OV.b, h = _LA_OV.h, x = v => +((v - dom[0]) / (dom[1] - dom[0]) * b).toFixed(1), m = h / 2, farg = PALETTE.semantic[status.farg], px = x(o.gap);
+    const b = bredd || _LA_OV.b, h = _LA_OV.h, x = v => +((v - dom[0]) / (dom[1] - dom[0]) * b).toFixed(1), m = h / 2, farg = PALETT.semantic[status.farg], px = x(o.gap);
     const symbol = status.symbol === 'romb' ? `<path d="M${px},${m - 6}L${px + 6},${m}L${px},${m + 6}L${px - 6},${m}Z" fill="${farg}" stroke="#fff"/>`
         : status.symbol === 'kvadrat' ? `<rect x="${px - 4.5}" y="${m - 4.5}" width="9" height="9" rx="1" fill="${farg}" stroke="#fff"/>`
         : `<circle cx="${px}" cy="${m}" r="5" fill="${farg}" stroke="#fff"/>`;
     return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">`
-        + `<rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETTE.semantic.ok}" fill-opacity="0.12"/>`
-        + `<line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETTE.semantic.mork}" stroke-width="1.2"/>`
+        + `<rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETT.semantic.ok}" fill-opacity="0.12"/>`
+        + `<line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETT.semantic.mork}" stroke-width="1.2"/>`
         + (o.ci ? `<line x1="${x(o.ci.lo)}" x2="${x(o.ci.hi)}" y1="${m}" y2="${m}" stroke="${farg}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>` : '')
         + symbol + '</svg>';
 }
@@ -568,9 +568,9 @@ function _laTrattFigur(u, k = kTroskel()) {
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
         y: { skala: 'linjar', titel: 'Kvinnors median i % av mäns', doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
         hojd: 340,
-        referens: [{ y: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }],
-        lager: [{ marke: 'band', serie: 'Slumpens gränser (95 %)', farg: PALETTE.semantic.neutral, opacitet: 0.14, data: falt },
-                lager('Inom gränserna', PALETTE.semantic.neutral, 'cirkel', p => !p.utanfor), lager('Utanför gränserna', PALETTE.semantic.kritisk, 'romb', p => p.utanfor)].filter(l => l.data.length) };
+        referens: [{ y: 100, farg: PALETT.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }],
+        lager: [{ marke: 'band', serie: 'Slumpens gränser (95 %)', farg: PALETT.semantic.neutral, opacitet: 0.14, data: falt },
+                lager('Inom gränserna', PALETT.semantic.neutral, 'cirkel', p => !p.utanfor), lager('Utanför gränserna', PALETT.semantic.kritisk, 'romb', p => p.utanfor)].filter(l => l.data.length) };
 }
 /** @param {any} u  vymodellens trattunderlag, null med färre än två grupper (då visas kortet inte) */
 function _laRitaTratt(u) {
@@ -595,8 +595,8 @@ function _skevhetAndelFigur(rader) {
         x: { skala: 'linjar', titel: 'Andel av intervallet (%)', doman: [0, 100] },
         hojd: Math.max(160, 70 + rader.length * 32),
         // Linjerna har ingen etikett: den skulle skriva över staplarnas siffror, och axeln visar 40 och 60.
-        referens: [{ x: 40, streck: 'streckad', farg: PALETTE.semantic.mork, tjocklek: 1.5 }, { x: 60, streck: 'streckad', farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-        lager: [serie('Kvinnor', PALETTE.kon.kvinna, 'pctKv'), serie('Män', PALETTE.kon.man, 'pctMa')] };
+        referens: [{ x: 40, streck: 'streckad', farg: PALETT.semantic.mork, tjocklek: 1.5 }, { x: 60, streck: 'streckad', farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+        lager: [serie('Kvinnor', PALETT.kon.kvinna, 'pctKv'), serie('Män', PALETT.kon.man, 'pctMa')] };
 }
 
 // ====================================================================

@@ -4,7 +4,7 @@
 // 71-utforska-figur.js — figurer för Utforska (diagramkärnan, ADR-39 steg 4)
 //
 // utforskaFigur(model, typ, rows) → en figur för ritaFigur (docs/utveckling/diagramkarnan.md).
-// Ren: läser bara modellen (src/lib/utforska.js), raderna och PALETTE.
+// Ren: läser bara modellen (src/lib/utforska.js), raderna och PALETT.
 //
 // Små grupper (ADR-14): Utforska VISAR grupper under tröskeln, markerade. Figuren innehåller därför alla
 // celler, och varje datapunkt som bygger på färre än k personer är märkt `liten`:
@@ -23,7 +23,7 @@ import { iUrvalet } from '../lib/urval.js';
 import { FARG } from './01-farger.js';
 import { _kvantilTipsRader } from './03-hjalpfunktioner.js';
 import { kTroskel } from './06-k-troskel.js';
-import { GAP_STATUS, gapStatus, PALETTE } from './10-diagramtema.js';
+import { GAP_STATUS, gapStatus, PALETT } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { _utforskaFormatera, _utforskaAidBas, _utNycklar, UTFORSKA_MATT_ETIKETT } from './70-utforska.js';
 
@@ -48,9 +48,9 @@ function _utforskaKonVyer(model) {
     const { matt, delaKon } = model.spec, k = kTroskel();
     const konLiten = n => matt !== 'n' && n < k;
     return delaKon
-        ? [{ namn: 'Kvinnor', kort: 'Kvinna', farg: PALETTE.kon.kvinna, v: c => c.valueKv, n: c => c.nKv, liten: c => !!(c.liten || konLiten(c.nKv)) },
-           { namn: 'Män', kort: 'Man', farg: PALETTE.kon.man, v: c => c.valueMa, n: c => c.nMa, liten: c => !!(c.liten || konLiten(c.nMa)) }]
-        : [{ namn: null, kort: null, farg: PALETTE.serie[0], v: c => c.value, n: c => c.n, liten: c => !!(c.liten || (matt === 'gap' && c.konLiten)) }];
+        ? [{ namn: 'Kvinnor', kort: 'Kvinna', farg: PALETT.kon.kvinna, v: c => c.valueKv, n: c => c.nKv, liten: c => !!(c.liten || konLiten(c.nKv)) },
+           { namn: 'Män', kort: 'Man', farg: PALETT.kon.man, v: c => c.valueMa, n: c => c.nMa, liten: c => !!(c.liten || konLiten(c.nMa)) }]
+        : [{ namn: null, kort: null, farg: PALETT.serie[0], v: c => c.value, n: c => c.n, liten: c => !!(c.liten || (matt === 'gap' && c.konLiten)) }];
 }
 const _utforskaHar = v => v != null && isFinite(v);
 // Länkade vyer (11-markering.js): en rad som är ett BAS-intervall eller en yrkesgrupp inom BAS kan markeras.
@@ -99,7 +99,7 @@ function _figStaplar(model, liggande) {
     let lager;
     if (!delaKon && matt === 'gap') {
         const vy = vyer[0], status = c => gapStatus(Math.abs(100 - vy.v(c)), false);
-        lager = _UTFORSKA_GAPSTATUS.map(s => ({ marke: 'punkt', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg], ...riktning,
+        lager = _UTFORSKA_GAPSTATUS.map(s => ({ marke: 'punkt', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETT.semantic[s.farg], ...riktning,
             data: celler.filter(c => _utforskaHar(vy.v(c)) && status(c) === s).map(c => punkt(vy, c)), tips: tips(UTFORSKA_MATT_ETIKETT[matt]) }));
     } else {
         lager = vyer.map(vy => {
@@ -112,7 +112,7 @@ function _figStaplar(model, liggande) {
     return { beskrivning: _utforskaBeskrivning(model, liggande ? 'Liggande staplar' : 'Staplar'), legend: delaKon || matt === 'gap' ? undefined : false,
         x: liggande ? _utforskaAxel(matt) : kategori, y: liggande ? kategori : _utforskaAxel(matt),
         hojd: liggande ? Math.max(260, 110 + 24 * celler.length) : 420,
-        referens: matt === 'gap' ? [{ ...(liggande ? { x: 100 } : { y: 100 }), streck: 'prickad', farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: 'Lika lön' }] : [],
+        referens: matt === 'gap' ? [{ ...(liggande ? { x: 100 } : { y: 100 }), streck: 'prickad', farg: PALETT.semantic.neutral, tjocklek: 1, etikett: 'Lika lön' }] : [],
         lager };
 }
 
@@ -135,7 +135,7 @@ function _figVarmekarta(model) {
         hojd: Math.max(260, 120 + 26 * rader.length),
         ...(delaKon ? { paneler: vyer.map(vy => vy.namn) } : {}),
         fargskala: diverg ? { typ: 'divergerande', doman: [mitt - spann, mitt + spann], mitt, titel: _utforskaAxelrubrik(matt) }
-                          : { typ: 'sekventiell', farger: PALETTE.sekventiellNeutral, doman: [zmin, zmax], titel: _utforskaAxelrubrik(matt), ...(format ? { format } : {}) },
+                          : { typ: 'sekventiell', farger: PALETT.sekventiellNeutral, doman: [zmin, zmax], titel: _utforskaAxelrubrik(matt), ...(format ? { format } : {}) },
         lager: vyer.map(vy => {
             const serie = vy.namn ? `${UTFORSKA_MATT_ETIKETT[matt]} · ${vy.namn}` : UTFORSKA_MATT_ETIKETT[matt];
             return { marke: 'ruta', serie, visaText, ...(vy.namn ? { panel: vy.namn } : {}),
@@ -171,7 +171,7 @@ function _figGrupperade(model) {
     // förklaringen visar varje kolumnvärde en gång.
     const lager = model.kolumnEtiketter.flatMap((kl, i) => vyer.map(vy => {
         const serie = vy.kort ? `${kl} · ${vy.kort}` : kl;
-        return { marke: 'stapel', serie, farg: PALETTE.serie[i % PALETTE.serie.length],
+        return { marke: 'stapel', serie, farg: PALETT.serie[i % PALETT.serie.length],
             ...(vy.kort === 'Man' ? { opacitet: 0.55, legend: false } : {}),
             data: model.radEtiketter.map(r => byKey.get(r + '\u0000' + kl)).filter(c => c && _utforskaHar(vy.v(c)))
                 .map(c => ({ x: c.rad, y: vy.v(c), rad: c.rad, kol: kl, n: vy.n(c), ...(vy.liten(c) ? { liten: true } : {}) })),
@@ -191,9 +191,9 @@ function _figStaplade(model, somAndel) {
     for (const c of model.celler) summa.set(c.rad, (summa.get(c.rad) || 0) + (c.n || 0));
     const rader = model.radEtiketter.filter(r => summa.get(r) > 0);
     // Kön som kolumn får verktygets könsfärger; övriga kolumner seriefärgerna.
-    const konFarg = model.spec.kolumn === 'kon' ? { Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, 'Övrig/okänd': PALETTE.semantic.neutral } : {};
+    const konFarg = model.spec.kolumn === 'kon' ? { Kvinna: PALETT.kon.kvinna, Man: PALETT.kon.man, 'Övrig/okänd': PALETT.semantic.neutral } : {};
     const lager = model.kolumnEtiketter.map((kl, i) => ({
-        marke: 'stapel', lage: 'staplad', serie: kl, farg: konFarg[kl] || PALETTE.serie[i % PALETTE.serie.length],
+        marke: 'stapel', lage: 'staplad', serie: kl, farg: konFarg[kl] || PALETT.serie[i % PALETT.serie.length],
         data: rader.map(r => byKey.get(r + '\u0000' + kl)).filter(c => c && c.n > 0).map(c => {
             const andel = +(100 * c.n / summa.get(c.rad)).toFixed(1);
             return { x: c.rad, y: somAndel ? andel : c.n, rad: c.rad, kol: kl, n: c.n, andel, ...(c.liten ? { liten: true } : {}), ..._utforskaMarkering(model, c.rad) };
@@ -213,7 +213,7 @@ function _figHantel(model) {
         data: celler.filter(c => _utforskaHar(vy.v(c))).map(c => ({ y: c.rad, x: vy.v(c), rad: c.rad, kol: null, n: vy.n(c), ..._utforskaMarkering(model, c.rad), ...(vy.liten(c) ? { liten: true } : {}) })),
         tips: d => [[d.rad], [vy.kort, _utforskaFormatera(d.x, matt)], ['Antal', String(d.n)]] });
     // Strecket mellan kvinnors och mäns värde. Det röjer båda värdena, och är därför litet så snart ett av dem är det.
-    const streck = { marke: 'intervall', riktning: 'liggande', serie: 'Skillnad kvinnor–män', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
+    const streck = { marke: 'intervall', riktning: 'liggande', serie: 'Skillnad kvinnor–män', farg: PALETT.semantic.neutral, tjocklek: 2, legend: false,
         data: celler.filter(c => _utforskaHar(c.valueKv) && _utforskaHar(c.valueMa)).map(c => ({
             y: c.rad, lag: Math.min(c.valueKv, c.valueMa), hog: Math.max(c.valueKv, c.valueMa), rad: c.rad, kol: null,
             ...(kv.liten(c) || ma.liten(c) ? { liten: true } : {}) })) };
@@ -233,8 +233,8 @@ function _figBubbla(model) {
         x: { skala: 'linjar', titel: 'Andel kvinnor (%) — bubblans storlek visar antal personer', doman: [0, 100] }, y: { skala: 'linjar', titel: 'Median, kronor/månad', format: 'kr' },
         hojd: 460,
         // 40 % och 60 %: gränserna för könsdominans som § 3:10-analysen använder.
-        referens: [40, 60].map(x => ({ x, streck: 'prickad', farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
-        lager: [{ marke: 'punkt', serie: 'Grupper', farg: PALETTE.serie[0], opacitet: 0.8, kant: FARG.vit,
+        referens: [40, 60].map(x => ({ x, streck: 'prickad', farg: PALETT.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
+        lager: [{ marke: 'punkt', serie: 'Grupper', farg: PALETT.serie[0], opacitet: 0.8, kant: FARG.vit,
             data: pts.map(c => ({ x: (c.nKv / (c.nKv + c.nMa)) * 100, y: c.value, storlek: Math.max(4, 22 * Math.sqrt(c.n / maxN)),
                                   rad: c.rad, kol: null, n: c.n, ..._utforskaMarkering(model, c.rad), ...(c.liten ? { liten: true } : {}) })),
             tips: d => [[d.rad], ['Andel kvinnor', talformat(d.x, 'pct')], ['Median', kr(d.y)], ['Antal', String(d.n)]] }] };
@@ -247,7 +247,7 @@ function _figFordelning(model, rows, allaPunkter) {
     const { rad, urval, delaKon } = model.spec, k = kTroskel();
     const nyckel = _utNycklar(rows), person = iUrvalet(urval, nyckel);
     const gruppLiten = new Map(model.celler.map(c => [c.rad, !!c.liten]));
-    const farg = { Alla: PALETTE.serie[0], Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, 'Övrig/okänd': PALETTE.semantic.neutral };
+    const farg = { Alla: PALETT.serie[0], Kvinna: PALETT.kon.kvinna, Man: PALETT.kon.man, 'Övrig/okänd': PALETT.semantic.neutral };
     const hinkar = new Map();   // kön → [{ g, lon }]
     const antal = new Map();    // `${g}|${kön}` → antal
     for (const r of rows) {

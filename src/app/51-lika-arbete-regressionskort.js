@@ -17,7 +17,7 @@ import { ikon } from './03-ikoner.js';
 import { _basEffektNot, _raGapText, kInstalld, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { T, termText } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { PALETTE, URVAL } from './10-diagramtema.js';
+import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { bootstrapKIGallande, formateraKI } from './13-oversikt.js';
@@ -170,7 +170,7 @@ function _perBasFigur(sorted, bhQByBas) {
         x: { skala: 'linjar', titel: 'Oförklarad skillnad (%), negativt = kvinnor lägre', nollinje: true, doman: _perBasDoman(sorted) },
         urval: URVAL.bas, y: { skala: 'band', ordning: sorted.map(p => 'BAS ' + p.bas) },
         hojd: Math.max(170, 104 + sorted.length * 30),
-        lager: _PERBAS_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg],
+        lager: _PERBAS_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETT.semantic[s.farg],
             data: sorted.filter(p => status(p) === s).map(pkt), tips }))
             .filter(l => l.data.length) };
 }
@@ -186,7 +186,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
     const pp = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} procentenheter`;
     const kategorier = ['Ojusterad skillnad', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarad skillnad', ...(yrke ? [_REG_TRAPPSTEG[_RG_STEG_YRKE]] : [])];
     // Som trappan i Var uppstår löneskillnaden?: helheten först, sedan stegen, och färgen säger vad stapeln
-    // betyder (PALETTE.uppdelning), inte åt vilket håll den går. Den ojusterade skillnaden är neutral, stegen är struktur
+    // betyder (PALETT.uppdelning), inte åt vilket håll den går. Den ojusterade skillnaden är neutral, stegen är struktur
     // och den oförklarade skillnaden får lönesättningens färg — inte grönt och gult: att ett gap FÖRKLARAS av ålder
     // eller nivå är ingen bedömning av att det är bra.
     const steg = seqOk.slice(1).map((s, i) => {
@@ -203,17 +203,17 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
         hojd: 320,
         x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Löneskillnad (%)', nollinje: true },
         lager: [
-            { marke: 'intervall', serie: 'Ojusterad skillnad', farg: PALETTE.uppdelning.helhet, tjocklek: 44,
+            { marke: 'intervall', serie: 'Ojusterad skillnad', farg: PALETT.uppdelning.helhet, tjocklek: 44,
               data: [helhet('Ojusterad skillnad', forst.gapPct)], tips: d => [[d.x], ['Löneskillnad', pct(d.varde)]] },
-            { marke: 'intervall', serie: 'Förklaras av', farg: PALETTE.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
-            { marke: 'intervall', serie: 'Oförklarad skillnad', farg: PALETTE.uppdelning.lonesattning, tjocklek: 44,
+            { marke: 'intervall', serie: 'Förklaras av', farg: PALETT.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
+            { marke: 'intervall', serie: 'Oförklarad skillnad', farg: PALETT.uppdelning.lonesattning, tjocklek: 44,
               data: [helhet('Oförklarad skillnad', sist.gapPct)], tips: d => [[d.x], ['Löneskillnad', pct(d.varde)]] },
             // Yrkesgruppssteget (ADR-46) efter huvudtalet, ljusare: det ingår inte i huvudtalet.
-            ...(yrke ? [{ marke: 'intervall', serie: 'Utöver huvudtalet', farg: PALETTE.uppdelning.strukturLjus, tjocklek: 44,
+            ...(yrke ? [{ marke: 'intervall', serie: 'Utöver huvudtalet', farg: PALETT.uppdelning.strukturLjus, tjocklek: 44,
               data: [{ x: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct }],
               tips: d => [[d.x], ['Ändrar skillnaden med', pp(d.andring)], ['Skillnad före', pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ['Ingår inte i huvudtalet', '']] }] : []),
             // Nivån efter varje steg, med sitt värde: ett streck och en etikett.
-            { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', legend: false, farg: PALETTE.semantic.mork, storlek: 11,
+            { marke: 'punkt', symbol: 'streck', serie: 'Skillnad efter steget', legend: false, farg: PALETT.semantic.mork, storlek: 11,
               data: [niva('Ojusterad skillnad', forst.gapPct), ...seqOk.slice(1).map((s, i) => niva(kategorier[i + 1], s.gapPct, seqOk[i].gapPct)), niva('Oförklarad skillnad', sist.gapPct),
                      ...(yrke ? [niva(_REG_TRAPPSTEG[_RG_STEG_YRKE], yrke.gapPct, sist.gapPct)] : [])] }
         ] };
@@ -302,10 +302,10 @@ function _regKvantilFigur(resultat) {
             + (medKi ? ' Strecket genom punkten är ett 95-procentigt bootstrap-konfidensintervall.' : ''),
         legend: false, y: { skala: 'band', ordning: data.map(d => d.y) }, x: { skala: 'linjar', titel: 'Löneskillnad (%), negativt = kvinnor lägre', nollinje: true, doman: [lag - luft, hog + luft] },
         hojd: 200,
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Avstånd från noll', farg: PALETTE.serie[0], opacitet: 0.5, tjocklek: 3, data: data.map(d => ({ y: d.y, lag: Math.min(0, d.x), hog: Math.max(0, d.x) })) },
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Avstånd från noll', farg: PALETT.serie[0], opacitet: 0.5, tjocklek: 3, data: data.map(d => ({ y: d.y, lag: Math.min(0, d.x), hog: Math.max(0, d.x) })) },
                 // Liggande: punktens intervall (`fel`) ligger längs värdeaxeln x. Utan riktning lästes gränserna som
                 // kategorier på bandaxeln och skrevs ut som råa tal (U4, ADR-63).
-                { marke: 'punkt', riktning: 'liggande', serie: 'Löneskillnad', farg: PALETTE.serie[0], storlek: 6, etikettLage: 'vanster', data: data.map(d => ({ ...d, etikett: pct(d.x) })),
+                { marke: 'punkt', riktning: 'liggande', serie: 'Löneskillnad', farg: PALETT.serie[0], storlek: 6, etikettLage: 'vanster', data: data.map(d => ({ ...d, etikett: pct(d.x) })),
                   tips: d => [[d.y], ['Löneskillnad', pct(d.x)], ...(d.fel ? [['95 % KI (bootstrap)', `${pct(d.fel.lag)} till ${pct(d.fel.hog)}`]] : [])] }] };
 }
 

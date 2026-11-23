@@ -19,7 +19,7 @@ import { COST_DEFAULTS, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07
 import { T } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { gapStatus, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
+import { gapStatus, gapStatusNiva, PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { raknaGruppMDE, styrkaGallande } from './13-oversikt.js';
@@ -555,7 +555,7 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     return { beskrivning: 'Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.',
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
         hojd: Math.max(170, 90 + visade.length * 28),
-        lager: [lager('Når tillsammans 80 % av kostnaden', PALETTE.serie[0], 1, inom), lager('Övriga', PALETTE.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
+        lager: [lager('Når tillsammans 80 % av kostnaden', PALETT.serie[0], 1, inom), lager('Övriga', PALETT.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
 
 // Zonernas rubriker i matrisen, med versaler: de två yttre zonerna säger gränsen ur inställningen («Mer än 5 % under»,
@@ -586,7 +586,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     // Namnen undviker bubblorna och varandra (etikettLage 'undvik'); ett namn som står en bit från sin bubbla får en
     // hänvisningslinje.
     const lager = Object.keys(PRIO_STATUS_INFO).map(status => ({
-        marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETTE.prio[status], opacitet: 0.72, kant: FARG.vit, tips, etikettLage: 'undvik',
+        marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETT.prio[status], opacitet: 0.72, kant: FARG.vit, tips, etikettLage: 'undvik',
         data: items.filter(i => i.status === status && isFinite(i.diffPct) && i.n > 0).map(i => {
             const etikett = _byggPrioEtikett(i, i.rank, etikettlage);
             return { x: +i.diffPct.toFixed(2), y: i.n, storlek: Math.max(4, 16 * Math.sqrt(Math.max(kostnad(i), storst * 0.02) / storst)),
@@ -608,8 +608,8 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         // Logskala bara när grupperna skiljer sig med mer än en tiopotens; annars är en vanlig axel lättare att läsa.
         y: stor ? { skala: 'log', titel: 'Antal personer i gruppen (log skala)' } : { skala: 'linjar', titel: 'Antal personer i gruppen' },
         // Zonerna: gränserna ur inställningen ytterst, statusarnas namn i mitten (_prioZonNamn).
-        referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard', cfg), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka', cfg), FARG.varning),
-                   zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok', cfg), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera', cfg), FARG.infoMork)].filter(z => z.x1 > z.x0),
+        referens: [zon(xMin, tAt, PALETT.prio.akut, _prioZonNamn('atgard', cfg), FARG.granska), zon(tAt, tBe, PALETT.semantic.varning, _prioZonNamn('bevaka', cfg), FARG.varning),
+                   zon(tBe, tAn, PALETT.semantic.ok, _prioZonNamn('ok', cfg), FARG.ok), zon(tAn, xMax, PALETT.prio.analysera, _prioZonNamn('analysera', cfg), FARG.infoMork)].filter(z => z.x1 > z.x0),
         lager };
 }
 

@@ -14,7 +14,7 @@ import { kMaskerad, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
-import { gapStatusNiva, PALETTE } from './10-diagramtema.js';
+import { gapStatusNiva, PALETT } from './10-diagramtema.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { iExportLage } from './23-exportgrind.js';
 import { _oppnaBevisruta } from './27-berakningsbevis.js';
@@ -384,9 +384,9 @@ function _livscykelFigur(r) {
             `Vid 25 år är skillnaden, kvinnor mot män, ${svTal(r.gapAt25, 1)} procent, vid 65 år ${svTal(r.gapAt65, 1)} procent. Skuggade band visar 95 % konfidensintervall.`,
         x: { skala: 'linjar', titel: `Ålder — predikterad lönekurva för BAS ${r.fixBas} (valt intervall)` },
         y: { skala: 'linjar', titel: 'Predikterad månadslön (kr)', format: 'kr' },
-        lager: [band('Kvinna 95 % KI', PALETTE.kon.kvinna, r.predKvinna), band('Man 95 % KI', PALETTE.kon.man, r.predMan),
-                kurva('Kvinna (predikterad lön)', 'Kvinna', PALETTE.kon.kvinna, r.predKvinna, 'hel'),
-                kurva('Man (predikterad lön)', 'Man', PALETTE.kon.man, r.predMan, 'streckad')] };
+        lager: [band('Kvinna 95 % KI', PALETT.kon.kvinna, r.predKvinna), band('Man 95 % KI', PALETT.kon.man, r.predMan),
+                kurva('Kvinna (predikterad lön)', 'Kvinna', PALETT.kon.kvinna, r.predKvinna, 'hel'),
+                kurva('Man (predikterad lön)', 'Man', PALETT.kon.man, r.predMan, 'streckad')] };
 }
 
 /**

@@ -377,7 +377,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         expect(f.lager[0].data.map(d => [d.x, d.lag, d.hog])).toEqual([['Hela skillnaden', -2091, 0]]);
         expect([...f.lager[1].data, ...f.lager[2].data].map(d => [d.x, d.lag, d.hog])).toEqual([['A. BAS-fördelning', -2091, -663], ['B. AID inom BAS', -663, -229], ['C. Oförklarat: lön inom samma AID och BAS', -229, 0]]);
         // Färgen säger vad delen betyder: struktur för delarna som förklaras av var kvinnor och män arbetar, lönesättningen för den sista.
-        const P = w.eval('PALETTE.uppdelning');
+        const P = w.eval('PALETT.uppdelning');
         expect(f.lager.slice(0, 3).map(l => l.farg)).toEqual([P.helhet, P.struktur, P.lonesattning]);
         // Strecket står där steget landar; beloppet vid stapelns ände längst från noll, så att det aldrig korsar nollinjen.
         expect(f.lager[3].data.map(d => [d.y, d.etikett])).toEqual([[-2091, undefined], [-663, undefined], [-229, undefined], [0, undefined]]);
@@ -1489,7 +1489,7 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
 describe('statusfärgerna syns: kontrast mot vit bakgrund och åtskillnad i ljushet', () => {
     const lum = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
     const kontrast = hex => 1.05 / (lum(hex) + 0.05);
-    // Paletten läses ur källan (PALETTE är en const i appens eget skript och nås inte utifrån).
+    // Paletten läses ur källan (PALETT är en const i appens eget skript och nås inte utifrån).
     const palett = () => {
         const t = readFileSync('src/app/10-diagramtema.js', 'utf8');
         // Ett värde är en hexkod eller en hänvisning till statusfärgernas tabell (FARG i 01-farger.js, ADR-43).

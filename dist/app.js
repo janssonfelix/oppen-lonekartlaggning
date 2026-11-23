@@ -6578,7 +6578,7 @@ var APP_VERSION = "2026.11.22";
 var APP_BUILD_DATE = "2026-11-22";
 
 // src/app/10-diagramtema.js
-var PALETTE = {
+var PALETT = {
   // Kön — genomgående i hela verktyget. Plommon för kvinnor och olivgrönt för män (beslut 2026-10-17):
   // inte rosa och blått, som kopplar färgen till en stereotyp. Båda har minst 4,5:1 mot vit yta (7,1 och
   // 4,6), skiljer sig mer än det tidigare paret vid simulerad protanopi och deuteranopi, och ligger tydligt ifrån
@@ -6699,7 +6699,7 @@ function gapStatusNiva(niva) {
 function gapStatusKI(o) {
   return gapStatusNiva(oversiktNiva(o, statGolv()));
 }
-var CHART_FONT = {
+var DIAGRAM_TYPSNITT = {
   family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   size: 12,
   minsta: 11,
@@ -8185,7 +8185,7 @@ function vymodellLikaArbete(rader, { k, golv, sigma, dominansDefinition, dominan
 // src/app/10-diagrammarken.js
 var _RF_RANDER = { steg: 10 * Math.SQRT2, bredd: 1.6, max: 400, minst: 3 };
 function _rfLitenYta(g, rect, c) {
-  rect.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
+  rect.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
   const x0 = Math.max(0, +rect.attr("x")), y0 = Math.max(0, +rect.attr("y"));
   const x1 = Math.min(c.panelB, +rect.attr("x") + +rect.attr("width")), y1 = Math.min(c.inreH, +rect.attr("y") + +rect.attr("height"));
   const w = x1 - x0, h = y1 - y0;
@@ -8222,18 +8222,18 @@ function _rfMonsterIPanel(g, rect, c, monster2) {
   _rfMonster(g, x0, y0, x1 - x0, y1 - y0, monster2);
 }
 function _rfLitenRuta(g, rect) {
-  rect.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
+  rect.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
   const x = +rect.attr("x"), y = +rect.attr("y"), w = +rect.attr("width"), h = +rect.attr("height");
   const s = Math.min(9, w / 2, h / 2);
   if (s < 3) return;
-  g.append("path").attr("data-marke", "rander").attr("pointer-events", "none").attr("d", `M${x + w - s},${y}H${x + w}V${y + s}Z`).attr("fill", PALETTE.semantic.neutral);
+  g.append("path").attr("data-marke", "rander").attr("pointer-events", "none").attr("d", `M${x + w - s},${y}H${x + w}V${y + s}Z`).attr("fill", PALETT.semantic.neutral);
 }
 function _rfTextPaFarg(farg) {
   const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(farg));
-  if (!m) return CHART_FONT.color;
+  if (!m) return DIAGRAM_TYPSNITT.color;
   const h = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5 ? FARG.vit : CHART_FONT.color;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5 ? FARG.vit : DIAGRAM_TYPSNITT.color;
 }
 function _rfStapel(g, l, li, c) {
   const ligg = l.riktning === "liggande";
@@ -8364,7 +8364,7 @@ function _rfPunkt(g, l, li, c) {
     if (d.liten) {
       if (l.symbol === "streck") m.attr("stroke-dasharray", "3 2");
       else {
-        m.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 2).attr("stroke-dasharray", "2 2");
+        m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 2).attr("stroke-dasharray", "2 2");
         if (!l.symbol || l.symbol === "cirkel") m.attr("fill-opacity", 0.45);
       }
     }
@@ -8420,7 +8420,7 @@ function _rfUndvikEtiketter(c) {
   });
 }
 function _rfLitenPunkt(g, li, i, x, y) {
-  g.append("circle").attr("data-marke", "litenpunkt").attr("data-l", li).attr("data-i", i).attr("pointer-events", "none").attr("cx", x).attr("cy", y).attr("r", 5).attr("fill", "none").attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "2 2");
+  g.append("circle").attr("data-marke", "litenpunkt").attr("data-l", li).attr("data-i", i).attr("pointer-events", "none").attr("cx", x).attr("cy", y).attr("r", 5).attr("fill", "none").attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "2 2");
 }
 function _rfLinje(g, l, li, c) {
   const ys = c.yFor(l);
@@ -8604,7 +8604,7 @@ function _rfLada(g, l, li, c) {
         return Math.max(2, b.t * (halv - kant));
       };
       const moln = g.append("path").attr("data-marke", "lada").attr("data-form", "regnmoln").attr("data-l", li).attr("data-i", punkter[0].i).attr("d", d3.area().y((p) => ys(p.v)).x0(() => mitt + kant).x1((p) => mitt + kant + p.t * (halv - kant)).curve(d3.curveMonotoneY)(kurva) || "").attr("fill", farg).attr("fill-opacity", 0.3).attr("stroke", farg).attr("stroke-width", 1.5);
-      if (punkter.some((p) => p.d.liten)) moln.attr("stroke", PALETTE.semantic.neutral).attr("stroke-dasharray", "3 2");
+      if (punkter.some((p) => p.d.liten)) moln.attr("stroke", PALETT.semantic.neutral).attr("stroke-dasharray", "3 2");
       const streck = (marke, v, tjock) => g.append("line").attr("data-marke", marke).attr("pointer-events", "none").attr("x1", mitt + kant).attr("x2", mitt + kant + bredd(v)).attr("y1", ys(v)).attr("y2", ys(v)).attr("stroke", farg).attr("stroke-width", tjock);
       streck("kvartil", s2.q1, 1);
       streck("kvartil", s2.q3, 1);
@@ -8612,7 +8612,7 @@ function _rfLada(g, l, li, c) {
       const ordnade = [...punkter.filter((p) => !p.d.liten), ...punkter.filter((p) => p.d.liten)];
       ordnade.forEach(({ d, i }, n) => {
         const m = g.append("circle").attr("data-marke", "individ").attr("data-l", li).attr("data-i", i).attr("cx", mitt - kant - _RF.individ - (_rfSprid(n) + 0.5) * Math.max(0, halv - kant - 2 * _RF.individ)).attr("cy", ys(d.y)).attr("r", _RF.individ).attr("fill", d.farg || farg).attr("fill-opacity", 0.6);
-        if (d.liten) m.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
+        if (d.liten) m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
         else m.attr("stroke", "#000000").attr("stroke-opacity", 0).attr("stroke-width", _RF.individTraff);
       });
       ritade += ordnade.length;
@@ -8630,7 +8630,7 @@ function _rfLada(g, l, li, c) {
       for (const kol of kolumner) {
         kol.index.forEach((j, n) => {
           const m = g.append("circle").attr("data-marke", "kvantilpunkt").attr("data-l", li).attr("data-i", punkter[0].i).attr("data-kvantil", j).attr("cx", mitt + (n - (kol.index.length - 1) / 2) * 2 * r).attr("cy", kol.y).attr("r", Math.max(1, r - 0.6)).attr("fill", farg).attr("fill-opacity", 0.85);
-          if (liten) m.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.2);
+          if (liten) m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.2);
         });
       }
       continue;
@@ -8640,7 +8640,7 @@ function _rfLada(g, l, li, c) {
       const sidled = svarm ? _rfSvarm(ordnade.map((p) => ys(p.d.y)), ordnade.filter((p) => !p.d.liten).length, _RF.individ, Math.max(_RF.individ, plats / 2 - _RF.individ)) : null;
       ordnade.forEach(({ d, i }, n) => {
         const m = g.append("circle").attr("data-marke", "individ").attr("data-l", li).attr("data-i", i).attr("cx", mitt + (sidled ? sidled[n] : _rfSprid(n) * bw * 0.8)).attr("cy", ys(d.y)).attr("r", _RF.individ).attr("fill", d.farg || farg).attr("fill-opacity", svarm ? 0.85 : 0.6);
-        if (d.liten) m.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
+        if (d.liten) m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
         else m.attr("stroke", "#000000").attr("stroke-opacity", 0).attr("stroke-width", _RF.individTraff);
       });
       ritade += ordnade.length;
@@ -8658,7 +8658,7 @@ function _rfLada(g, l, li, c) {
         return Math.max(2, b.t * halv);
       };
       const fiol = g.append("path").attr("data-marke", "lada").attr("data-form", "fiol").attr("data-l", li).attr("data-i", punkter[0].i).attr("d", d3.area().y((p) => ys(p.v)).x0((p) => mitt - p.t * halv).x1((p) => mitt + p.t * halv).curve(d3.curveMonotoneY)(kurva) || "").attr("fill", farg).attr("fill-opacity", 0.3).attr("stroke", farg).attr("stroke-width", 1.5);
-      if (punkter.some((p) => p.d.liten)) fiol.attr("stroke", PALETTE.semantic.neutral).attr("stroke-dasharray", "3 2");
+      if (punkter.some((p) => p.d.liten)) fiol.attr("stroke", PALETT.semantic.neutral).attr("stroke-dasharray", "3 2");
       linje("kvartil", ys(s.q1), ys(s.q1), mitt - bredd(s.q1), mitt + bredd(s.q1), 1);
       linje("kvartil", ys(s.q3), ys(s.q3), mitt - bredd(s.q3), mitt + bredd(s.q3), 1);
       linje("median", ys(s.median), ys(s.median), mitt - bredd(s.median), mitt + bredd(s.median), 2.5);
@@ -8687,9 +8687,9 @@ function _rfFargskala(fs) {
   if (!dom) return null;
   const [a, b] = dom;
   const std = {
-    sekventiell: PALETTE.sekventiell,
-    divergerande: PALETTE.divergerande,
-    tvafarg: [[0, PALETTE.kon.man], [1, PALETTE.kon.kvinna]]
+    sekventiell: PALETT.sekventiell,
+    divergerande: PALETT.divergerande,
+    tvafarg: [[0, PALETT.kon.man], [1, PALETT.kon.kvinna]]
   };
   const stopp = (Array.isArray(fs.farger) && fs.farger.length > 1 ? fs.farger : null) || std[fs.typ] || std.sekventiell;
   const mitt = _rfFargMitt(fs, dom);
@@ -8755,7 +8755,7 @@ function _rfRuta(g, l, li, c) {
     if (!medText || d.text == null) continue;
     const f = d3.color(farg), textfarg = _rfTextPaFarg(f ? f.formatHex() : "");
     const vit = textfarg === FARG.vit;
-    const attr = d.liten ? { stroke: vit ? CHART_FONT.color : FARG.vit, "stroke-width": vit ? _RF.kantMork : 3, "stroke-linejoin": "round", "paint-order": "stroke" } : null;
+    const attr = d.liten ? { stroke: vit ? DIAGRAM_TYPSNITT.color : FARG.vit, "stroke-width": vit ? _RF.kantMork : 3, "stroke-linejoin": "round", "paint-order": "stroke" } : null;
     _rfText(g, mx, my + fpx * 0.35, String(d.text), { px: fpx, ankare: "middle", farg: textfarg, attr }).attr("data-marke", "rutatext").attr("pointer-events", "none");
   }
 }
@@ -8918,7 +8918,7 @@ function _rfYta(g, l, li, c) {
     if (l.opacitet != null) r.attr("fill-opacity", l.opacitet);
     if (d.liten) _rfLitenYta(g, r, c);
     if (d.etikett == null || String(d.etikett) === "" || h < fpx + 6 || w < 28) return;
-    const f = d3.color(farg), textfarg = l.opacitet != null && l.opacitet < 0.6 ? CHART_FONT.color : _rfTextPaFarg(f ? f.formatHex() : "");
+    const f = d3.color(farg), textfarg = l.opacitet != null && l.opacitet < 0.6 ? DIAGRAM_TYPSNITT.color : _rfTextPaFarg(f ? f.formatHex() : "");
     const tecken = Math.max(3, Math.floor((w - 8) / (fpx * _RF.tecken)));
     const hel = String(d.etikett);
     _rfText(g, x + 4, y + fpx + 2, _rfKorta(hel, tecken), { px: fpx, farg: textfarg, fet: true, title: hel, attr: { "data-marke": "ytetikett", "pointer-events": "none" } });
@@ -8959,7 +8959,7 @@ var _RF = {
   fargH: 180,
   fargSteg: 3
 };
-var _rfLitenPx = (px) => Math.max(CHART_FONT.minsta, px - 2);
+var _rfLitenPx = (px) => Math.max(DIAGRAM_TYPSNITT.minsta, px - 2);
 var _rfBredd = (s, px) => String(s == null ? "" : s).length * px * _RF.tecken;
 function _rfKorta(s, maxTecken) {
   s = String(s == null ? "" : s);
@@ -9282,13 +9282,13 @@ function _rfDecimaler(vard) {
   }
   return 8;
 }
-function _rfMarkText(axel, v, dec) {
+function _rfMarkeringstext(axel, v, dec) {
   if (axel.format) return talformat(v, axel.format, { enhet: false });
   if (axel.skala === "log") dec = _rfDecimaler([v]);
   if (!_rfNf.has(dec)) _rfNf.set(dec, new Intl.NumberFormat("sv-SE", { minimumFractionDigits: dec, maximumFractionDigits: dec }));
   return _rfNf.get(dec).format(v === 0 ? 0 : v);
 }
-function _rfMarkSida(axel, v) {
+function _rfMarkeringssida(axel, v) {
   return axel.format === "pctAbs" ? Math.sign(v) : 0;
 }
 function _rfTalKandidater(axel, skala, langd, per) {
@@ -9317,17 +9317,17 @@ function _rfValjMarkeringar(kand, storlek, lucka, inom) {
 function _rfLodratMarkningar(axel, skala, langd, px, maxB) {
   const kand = _rfTalKandidater(axel, skala, langd, 40);
   const dec = _rfDecimaler(kand.map((k) => k.v));
-  const med = kand.map((k) => ({ ...k, p: skala(k.v), text: _rfMarkText(axel, k.v, dec), sida: _rfMarkSida(axel, k.v) })).filter((k) => _rfTal(k.p) && _rfBredd(k.text, px) <= maxB);
+  const med = kand.map((k) => ({ ...k, p: skala(k.v), text: _rfMarkeringstext(axel, k.v, dec), sida: _rfMarkeringssida(axel, k.v) })).filter((k) => _rfTal(k.p) && _rfBredd(k.text, px) <= maxB);
   return { alla: kand.map((k) => skala(k.v)).filter(_rfTal), valda: _rfValjMarkeringar(med, () => px + 2, 0, () => true) };
 }
 function _rfText(g, x, y, text, { px, ankare = "start", farg, fet, title, attr } = {}) {
-  const t = g.append("text").attr("x", x).attr("y", y).attr("text-anchor", ankare).attr("font-family", CHART_FONT.family).attr("font-size", px || CHART_FONT.size).attr("fill", farg || CHART_FONT.color).text(text);
+  const t = g.append("text").attr("x", x).attr("y", y).attr("text-anchor", ankare).attr("font-family", DIAGRAM_TYPSNITT.family).attr("font-size", px || DIAGRAM_TYPSNITT.size).attr("fill", farg || DIAGRAM_TYPSNITT.color).text(text);
   if (fet) t.attr("font-weight", 600);
   if (attr) for (const [k, v] of Object.entries(attr)) t.attr(k, v);
   if (title && title !== text) t.append("title").text(title);
   return t;
 }
-function _rfLegendPoster(serier, px, avail, maxRader) {
+function _rfForklaringensPoster(serier, px, avail, maxRader) {
   const fler = (n) => `+ ${n} till`;
   const maxTecken = Math.max(3, Math.min(_RF.legendText, Math.floor((avail - 18) / (px * _RF.tecken))));
   const alla = serier.map((s) => {
@@ -9404,7 +9404,7 @@ function _rfLodratLayout(figurIn, val, B, H, px, syn) {
       serier.push({ serie: String(l.serie), l, li });
     }
   }
-  const legend = _rfLegendPoster(serier, px, B - 16, maxRader);
+  const legend = _rfForklaringensPoster(serier, px, B - 16, maxRader);
   const inreH = Math.max(_RF.minYta, H - topp - botten(legend.rader));
   return { xTitel, axelNer, legBas, notRader, topp, legend, inreH, xTvaRader, rubrik, fot };
 }
@@ -9448,7 +9448,7 @@ function _rfVagratLayout(figurIn, syn, yAx, B, px, fargskala) {
     const sPre = _rfSkala(figurIn.x, syn.doms.x, [0, pre]);
     const kand = _rfTalKandidater(figurIn.x, sPre, pre, 80);
     const dec = _rfDecimaler(kand.map((k) => k.v));
-    xHalv = kand.reduce((s, k) => Math.max(s, _rfBredd(_rfMarkText(figurIn.x, k.v, dec), px) / 2), 0);
+    xHalv = kand.reduce((s, k) => Math.max(s, _rfBredd(_rfMarkeringstext(figurIn.x, k.v, dec), px) / 2), 0);
   }
   const vanster = Math.max(vanster0, Math.ceil(xHalv) + 4);
   const y2Block = yAx.y2 ? 8 + yAx.y2B + 8 + (figurIn.y2.titel ? px + 8 : 0) : 0;
@@ -9487,7 +9487,7 @@ function _rfXEtiketter(figurIn, x, panelB, utV, utH, px, tvaRader) {
     const kand = _rfTalKandidater(figurIn.x, x, panelB, 80);
     const dec = _rfDecimaler(kand.map((k) => k.v));
     rutnat = kand.map((k) => x(k.v)).filter(_rfTal);
-    const med = kand.map((k) => ({ ...k, p: x(k.v), text: _rfMarkText(figurIn.x, k.v, dec), sida: _rfMarkSida(figurIn.x, k.v) })).filter((k) => _rfTal(k.p));
+    const med = kand.map((k) => ({ ...k, p: x(k.v), text: _rfMarkeringstext(figurIn.x, k.v, dec), sida: _rfMarkeringssida(figurIn.x, k.v) })).filter((k) => _rfTal(k.p));
     for (const k of _rfValjMarkeringar(med, (t) => _rfBredd(t, px), 6, (p, s) => p - s / 2 >= -utV && p + s / 2 <= panelB + utH)) xEt.push({ p: k.p, text: k.text, hel: k.text });
   }
   return { xEt, rutnat };
@@ -11308,7 +11308,7 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     y: { skala: "band", ordning: y, etikettMax: 40 },
     x: { skala: "linjar", titel: "Årskostnad (kr) · procenttalet är kumulativ andel", format: "kr" },
     hojd: Math.max(170, 90 + visade.length * 28),
-    lager: [lager("Når tillsammans 80 % av kostnaden", PALETTE.serie[0], 1, inom), lager("Övriga", PALETTE.serie[0], 0.4, (n) => !inom(n))].filter((l) => l.data.length)
+    lager: [lager("Når tillsammans 80 % av kostnaden", PALETT.serie[0], 1, inom), lager("Övriga", PALETT.serie[0], 0.4, (n) => !inom(n))].filter((l) => l.data.length)
   };
 }
 function _prioZonNamn(zon, cfg) {
@@ -11333,7 +11333,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
   const lager = Object.keys(PRIO_STATUS_INFO).map((status) => ({
     marke: "punkt",
     serie: PRIO_STATUS_INFO[status].label,
-    farg: PALETTE.prio[status],
+    farg: PALETT.prio[status],
     opacitet: 0.72,
     kant: FARG.vit,
     tips,
@@ -11379,10 +11379,10 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     y: stor2 ? { skala: "log", titel: "Antal personer i gruppen (log skala)" } : { skala: "linjar", titel: "Antal personer i gruppen" },
     // Zonerna: gränserna ur inställningen ytterst, statusarnas namn i mitten (_prioZonNamn).
     referens: [
-      zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn("atgard", cfg), FARG.granska),
-      zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn("bevaka", cfg), FARG.varning),
-      zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn("ok", cfg), FARG.ok),
-      zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn("analysera", cfg), FARG.infoMork)
+      zon(xMin, tAt, PALETT.prio.akut, _prioZonNamn("atgard", cfg), FARG.granska),
+      zon(tAt, tBe, PALETT.semantic.varning, _prioZonNamn("bevaka", cfg), FARG.varning),
+      zon(tBe, tAn, PALETT.semantic.ok, _prioZonNamn("ok", cfg), FARG.ok),
+      zon(tAn, xMax, PALETT.prio.analysera, _prioZonNamn("analysera", cfg), FARG.infoMork)
     ].filter((z) => z.x1 > z.x0),
     lager
   };
@@ -12698,10 +12698,10 @@ function ritaPersonerAttGranska(visaAlla = false) {
 function _pagAvvikelseRader(d, grans) {
   return avvikelsePerKonOchBas(d, { k: kTroskel(), minGrupp: statGolv(), grans });
 }
-var _PAG_FARG = { under: PALETTE.lage.under, over: FARG.svag };
+var _PAG_FARG = { under: PALETT.lage.under, over: FARG.svag };
 function _pagAvvikelseGrafik(o, kant) {
   const b = 200, h = 20, m = b / 2, w = (v) => +(Math.min(v, kant) / kant * (m - 2)).toFixed(1);
-  return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">` + (o.under > 0 ? `<rect x="${m - w(o.under)}" y="4" width="${w(o.under)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.under}"/>` : "") + (o.over > 0 ? `<rect x="${m}" y="4" width="${w(o.over)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.over}"/>` : "") + `<line x1="${m}" x2="${m}" y1="0" y2="${h}" stroke="${PALETTE.semantic.mork}" stroke-width="1.2"/></svg>`;
+  return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">` + (o.under > 0 ? `<rect x="${m - w(o.under)}" y="4" width="${w(o.under)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.under}"/>` : "") + (o.over > 0 ? `<rect x="${m}" y="4" width="${w(o.over)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.over}"/>` : "") + `<line x1="${m}" x2="${m}" y1="0" y2="${h}" stroke="${PALETT.semantic.mork}" stroke-width="1.2"/></svg>`;
 }
 function _pagAvvikelseTabell(rader, grans) {
   const t = document.getElementById("pag-avvikelse-tabell");
@@ -13565,9 +13565,9 @@ function _lvRitaTopp(result, vm) {
   ) : "");
 }
 var _LV_KRAV_SERIER = [
-  { dominans: "kvinnodominerad", serie: "Kvinnodominerad", farg: () => PALETTE.kon.kvinna, symbol: "cirkel" },
-  { dominans: "mansdominerad", serie: "Mansdominerad", farg: () => PALETTE.kon.man, symbol: "triangelHoger" },
-  { dominans: "blandad", serie: "Blandad", farg: () => PALETTE.semantic.neutral, symbol: "cirkel" }
+  { dominans: "kvinnodominerad", serie: "Kvinnodominerad", farg: () => PALETT.kon.kvinna, symbol: "cirkel" },
+  { dominans: "mansdominerad", serie: "Mansdominerad", farg: () => PALETT.kon.man, symbol: "triangelHoger" },
+  { dominans: "blandad", serie: "Blandad", farg: () => PALETT.semantic.neutral, symbol: "cirkel" }
 ];
 function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
   const kr2 = (v) => talformat(v, "kr");
@@ -13606,7 +13606,7 @@ function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
       ...medPoang ? [[d.uppskattad ? `Poäng (efter ${T.niva.bf})` : "Arbetsvärderingspoäng", talformat(d.krav, "antal")]] : []
     ]
   })).filter((l) => l.data.length);
-  if (linje.length >= 2) lager.unshift({ marke: "linje", serie: medPoang ? "Nivå efter kraven (trend)" : `Nivå per ${T.niva.en}`, farg: PALETTE.semantic.mork, streck: "streckad", tjocklek: 1.5, data: linje });
+  if (linje.length >= 2) lager.unshift({ marke: "linje", serie: medPoang ? "Nivå efter kraven (trend)" : `Nivå per ${T.niva.en}`, farg: PALETT.semantic.mork, streck: "streckad", tjocklek: 1.5, data: linje });
   return {
     beskrivning: `En punkt per ${T.enhet.en}: arbetets krav (${medPoang ? "arbetsvärderingspoäng" : T.niva.en}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replaceAll("%", "procent")}). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
     urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
@@ -13669,14 +13669,14 @@ function _lvParFigur(pairs, max = 14) {
         marke: "intervall",
         riktning: "liggande",
         serie: "Skillnad",
-        farg: PALETTE.semantic.neutral,
+        farg: PALETT.semantic.neutral,
         tjocklek: 2,
         legend: false,
         data: rader.map((r) => ({ y: r.y, lag: Math.round(Math.min(r.p.kvMedian, r.p.maMedian)), hog: Math.round(Math.max(r.p.kvMedian, r.p.maMedian)), p: r.p, ...parFalt(r.p) })),
         tips: (d) => tips(d)
       },
-      punkt(termText("{Enhet.en:kvinnodominerad}"), PALETTE.kon.kvinna, "kvMedian"),
-      punkt(termText("{Jamforelse.en}"), PALETTE.kon.man, "maMedian", { etikettLage: "hoger" })
+      punkt(termText("{Enhet.en:kvinnodominerad}"), PALETT.kon.kvinna, "kvMedian"),
+      punkt(termText("{Jamforelse.en}"), PALETT.kon.man, "maMedian", { etikettLage: "hoger" })
     ]
   };
 }
@@ -14236,7 +14236,7 @@ function ritaAlderOchLon(bas) {
 }
 function _konTathetFigur(rader, perKon, k = kTroskel(), form = "fiol") {
   const { punkter, utelamnade, ordning } = lonefordelningPerBas(rader, perKon, k);
-  const serier = perKon ? [["Kvinna", PALETTE.kon.kvinna], ["Man", PALETTE.kon.man]] : [["Alla", PALETTE.serie[0]]];
+  const serier = perKon ? [["Kvinna", PALETT.kon.kvinna], ["Man", PALETT.kon.man]] : [["Alla", PALETT.serie[0]]];
   const lager = serier.map(([namn, farg]) => ({
     marke: "lada",
     ...form === "fiol" ? { form: "fiol" } : form === "kvantiler" ? { form: "kvantiler", antal: 20 } : { avvikare: false },
@@ -14295,7 +14295,7 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
     x: { skala: "band", titel: "Månadslön (tusen kronor)", ordning: klasser.map(namn) },
     y: { skala: "linjar", titel: "Andel av könet (%)" },
     hojd: 340,
-    lager: [serie("Kvinnor", PALETTE.kon.kvinna, "nKv", nKv), serie("Män", PALETTE.kon.man, "nMa", nMa)]
+    lager: [serie("Kvinnor", PALETT.kon.kvinna, "nKv", nKv), serie("Män", PALETT.kon.man, "nMa", nMa)]
   };
 }
 function _konAlderGapFigur(rader, scope) {
@@ -14327,14 +14327,14 @@ function _konAlderGapFigur(rader, scope) {
     y: { skala: "band", ordning: rader.map((o) => o.namn) },
     x: { skala: "linjar", titel: "Kvinnors median i % av mäns — 100 = lika lön", doman: [Math.floor(Math.min(90, ...alla) - 2), Math.ceil(Math.max(105, ...alla) + 2)] },
     hojd: Math.max(180, 110 + rader.length * 34),
-    referens: [{ typ: "zon", x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: "±3 %" }, { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
+    referens: [{ typ: "zon", x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: "±3 %" }, { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }],
     lager: _SKEVHET_STATUS.map((s) => ({
       marke: "punkt",
       riktning: "liggande",
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
-      farg: PALETTE.semantic[s.farg],
+      farg: PALETT.semantic[s.farg],
       data: rader.filter((o) => status(o) === s).map(pkt),
       tips
     })).filter((l) => l.data.length)
@@ -14392,13 +14392,13 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
   const lager = [];
   for (const { bas: b, punkter, trend } of paneler) {
     const panel = "BAS " + b;
-    for (const [namn, farg] of [["Kvinna", PALETTE.kon.kvinna], ["Man", PALETTE.kon.man]]) {
+    for (const [namn, farg] of [["Kvinna", PALETT.kon.kvinna], ["Man", PALETT.kon.man]]) {
       const data = punkter.filter((p) => p.kon === namn).map(({ rad: r, liten: l }) => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...l ? { liten: true } : {}, markering: markeringFor(r.bas, r.yrke) }));
       if (data.length) lager.push({ marke: "punkt", serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
     }
     if (trend) {
       const { reg, a0, a1 } = trend;
-      lager.push({ marke: "linje", serie: "Trend (alla i intervallet)", farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
+      lager.push({ marke: "linje", serie: "Trend (alla i intervallet)", farg: PALETT.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
     }
   }
   return { utanfor, nedsamplade: paneler.filter((p) => p.nedsamplad).map((p) => "BAS " + p.bas), figur: {
@@ -14462,10 +14462,10 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
     lager.push(l);
     harledda.push([l, kon]);
   };
-  band("Kvinna 95 % KI", PALETTE.kon.kvinna, ciKv, "Kvinna");
-  band("Man 95 % KI", PALETTE.kon.man, ciMa, "Man");
+  band("Kvinna 95 % KI", PALETT.kon.kvinna, ciKv, "Kvinna");
+  band("Man 95 % KI", PALETT.kon.man, ciMa, "Man");
   if (colorBy === "kon") {
-    lager.push(punktlager("Kvinna", PALETTE.kon.kvinna, dataKv, false), punktlager("Man", PALETTE.kon.man, dataMa, false));
+    lager.push(punktlager("Kvinna", PALETT.kon.kvinna, dataKv, false), punktlager("Man", PALETT.kon.man, dataMa, false));
   } else {
     const nyckel = (d) => colorBy === "bas" ? d.bas : d.yrke;
     const antal = {};
@@ -14481,7 +14481,7 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
       grupper.get(k).push(d);
     });
     [...grupper].forEach(([namn, rader], i) => lager.push(
-      punktlager(colorBy === "bas" ? `BAS-${namn}` : namn, PALETTE.serie[i % PALETTE.serie.length], rader, true)
+      punktlager(colorBy === "bas" ? `BAS-${namn}` : namn, PALETT.serie[i % PALETT.serie.length], rader, true)
     ));
   }
   const trend = (serie, farg, reg, kon) => {
@@ -14494,11 +14494,11 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
     lager.push(l);
     harledda.push([l, kon]);
   };
-  trend("Kvinna (trend)", PALETTE.kon.kvinna, trendKv, "Kvinna");
-  trend("Man (trend)", PALETTE.kon.man, trendMa, "Man");
+  trend("Kvinna (trend)", PALETT.kon.kvinna, trendKv, "Kvinna");
+  trend("Man (trend)", PALETT.kon.man, trendMa, "Man");
   const allaNamn = (reg) => `Hela urvalet (trend, R² = ${svTal(reg.r2, 2)})`;
   if (trendAlla) lager.push({
-    ..._vagratLinje(allaNamn(trendAlla), PALETTE.semantic.trend, 0, minAlder, maxAlder, {
+    ..._vagratLinje(allaNamn(trendAlla), PALETT.semantic.trend, 0, minAlder, maxAlder, {
       tjocklek: 2,
       streck: "streckad",
       data: [{ x: minAlder, y: trendAlla.m * minAlder + trendAlla.b }, { x: maxAlder, y: trendAlla.m * maxAlder + trendAlla.b }]
@@ -14519,7 +14519,7 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
       }
     };
   }
-  if (statMedian != null) lager.push(_vagratLinje(`Median i ${diagramNamn(jmfNamn("jämförelsestatistiken"))}`, PALETTE.serie[10], statMedian, minAlder, maxAlder, { streck: "streckad" }));
+  if (statMedian != null) lager.push(_vagratLinje(`Median i ${diagramNamn(jmfNamn("jämförelsestatistiken"))}`, PALETT.serie[10], statMedian, minAlder, maxAlder, { streck: "streckad" }));
   return {
     beskrivning,
     individer: true,
@@ -14528,8 +14528,8 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
     y: { skala: "linjar", titel: "Månadslön", format: "kr" },
     lager,
     referens: pol ? [
-      { typ: "zon", y0: pol.p10, y1: pol.p90, farg: PALETTE.semantic.neutral, opacitet: 0.15 },
-      { y: pol.med, streck: "streckad", farg: PALETTE.semantic.neutral, tjocklek: 2 }
+      { typ: "zon", y0: pol.p10, y1: pol.p90, farg: PALETT.semantic.neutral, opacitet: 0.15 },
+      { y: pol.med, streck: "streckad", farg: PALETT.semantic.neutral, tjocklek: 2 }
     ] : []
   };
 }
@@ -14556,7 +14556,7 @@ function _konLadFigurFor({ lonKv, lonMa, nKv, nMa, utan }, scope, k) {
   });
 }
 function _konLadFigur({ lonKv, lonMa, beskrivning }) {
-  const data = [...(lonKv || []).map((y) => ({ x: "Kvinna", y, farg: PALETTE.kon.kvinna })), ...(lonMa || []).map((y) => ({ x: "Man", y, farg: PALETTE.kon.man }))];
+  const data = [...(lonKv || []).map((y) => ({ x: "Kvinna", y, farg: PALETT.kon.kvinna })), ...(lonMa || []).map((y) => ({ x: "Man", y, farg: PALETT.kon.man }))];
   return {
     beskrivning,
     legend: false,
@@ -14662,12 +14662,12 @@ function _demoHistFigur({ pctKv, pctMa, refPct, isAll }) {
     x: { skala: "band", titel: "Åldersgrupp", ordning: ALDERSKLASSER.slice() },
     y: { skala: "linjar", titel: isAll ? "Andel av organisationen (%)" : `Andel av ${T.niva.en} (%)` },
     lager: [
-      serie("Kvinna", PALETTE.kon.kvinna, pctKv),
-      serie("Man", PALETTE.kon.man, pctMa),
+      serie("Kvinna", PALETT.kon.kvinna, pctKv),
+      serie("Man", PALETT.kon.man, pctMa),
       {
         marke: "linje",
         serie: "Sveriges sysselsatta (SCB AKU 2023)",
-        farg: PALETTE.semantic.referens,
+        farg: PALETT.semantic.referens,
         streck: "prickad",
         punkter: true,
         data: ALDERSKLASSER.map((x, i) => ({ x, y: refPct[i] })),
@@ -14696,7 +14696,7 @@ function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
     y: { skala: "band", titel: "Åldersgrupp", ordning: grupper },
     x: { skala: "linjar", titel: `Kvinnor åt vänster · andel av ${isAll ? "organisationen" : T.niva.bf} (%) · Män åt höger`, format: "pctAbs", doman: [-grans, grans], nollinje: true },
     hojd: Math.max(300, 70 + grupper.length * 24),
-    lager: [serie("Kvinna", PALETTE.kon.kvinna, pctKv, -1), serie("Man", PALETTE.kon.man, pctMa, 1)]
+    lager: [serie("Kvinna", PALETT.kon.kvinna, pctKv, -1), serie("Man", PALETT.kon.man, pctMa, 1)]
   };
 }
 function _demoAlderskurvaFigur(kv, ma) {
@@ -14714,14 +14714,14 @@ function _demoAlderskurvaFigur(kv, ma) {
     urval: [URVAL.alder],
     x: { skala: "linjar", titel: "Ålder" },
     y: { skala: "linjar", titel: "Andel av könet (%)" },
-    lager: [kurva("Kvinna", PALETTE.kon.kvinna, kv, "kvinnorna"), kurva("Man", PALETTE.kon.man, ma, "männen")]
+    lager: [kurva("Kvinna", PALETT.kon.kvinna, kv, "kvinnorna"), kurva("Man", PALETT.kon.man, ma, "männen")]
   };
 }
 function _demoBandFigur(df, k, pol, aLo, aHi, rader = alderBandRader(df, k)) {
   if (!rader) return null;
   const kr2 = (v) => `${talformat(v, "kr")}/mån`;
   const tips = (d) => [[d.namn], ["P90", kr2(d.r.p90)], ["P75", kr2(d.r.p75)], ["Median", kr2(d.r.p50)], ["P25", kr2(d.r.p25)], ["P10", kr2(d.r.p10)], ["Antal", String(d.r.n)]];
-  const band = (serie, lag, hog, opacitet) => ({ marke: "band", serie, farg: PALETTE.serie[0], opacitet, data: rader.map((r) => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, alder: r.alder, r })), tips });
+  const band = (serie, lag, hog, opacitet) => ({ marke: "band", serie, farg: PALETT.serie[0], opacitet, data: rader.map((r) => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, alder: r.alder, r })), tips });
   return {
     beskrivning: `Lönespridning över ålder: medianlön per femårsgrupp, med band för mittersta hälften (P25–P75) och för P10–P90. Åldersgrupper med färre än ${k} ${personOrd(k)} visas inte.`,
     urval: [URVAL.alder],
@@ -14730,7 +14730,7 @@ function _demoBandFigur(df, k, pol, aLo, aHi, rader = alderBandRader(df, k)) {
     lager: [
       band("P10–P90", "p10", "p90", 0.16),
       band("Mittersta hälften (P25–P75)", "p25", "p75", 0.3),
-      { marke: "linje", serie: "Median", farg: PALETTE.serie[0], tjocklek: 2.5, punkter: true, data: rader.map((r) => ({ x: r.x, y: r.p50, namn: r.namn, alder: r.alder, r })), tips },
+      { marke: "linje", serie: "Median", farg: PALETT.serie[0], tjocklek: 2.5, punkter: true, data: rader.map((r) => ({ x: r.x, y: r.p50, namn: r.namn, alder: r.alder, r })), tips },
       ...pol ? [
         _vagratLinje("Ställn. P10", farger.policy, pol.p10, aLo, aHi, { streck: "streckad", tjocklek: 1 }),
         _vagratLinje("Ställn. Median", farger.policy, pol.med, aLo, aHi, { streck: "streckad", tjocklek: 1.5 }),
@@ -15049,10 +15049,10 @@ function _livscykelFigur(r) {
     x: { skala: "linjar", titel: `Ålder — predikterad lönekurva för BAS ${r.fixBas} (valt intervall)` },
     y: { skala: "linjar", titel: "Predikterad månadslön (kr)", format: "kr" },
     lager: [
-      band("Kvinna 95 % KI", PALETTE.kon.kvinna, r.predKvinna),
-      band("Man 95 % KI", PALETTE.kon.man, r.predMan),
-      kurva("Kvinna (predikterad lön)", "Kvinna", PALETTE.kon.kvinna, r.predKvinna, "hel"),
-      kurva("Man (predikterad lön)", "Man", PALETTE.kon.man, r.predMan, "streckad")
+      band("Kvinna 95 % KI", PALETT.kon.kvinna, r.predKvinna),
+      band("Man 95 % KI", PALETT.kon.man, r.predMan),
+      kurva("Kvinna (predikterad lön)", "Kvinna", PALETT.kon.kvinna, r.predKvinna, "hel"),
+      kurva("Man (predikterad lön)", "Man", PALETT.kon.man, r.predMan, "streckad")
     ]
   };
 }
@@ -15169,7 +15169,7 @@ function _perBasFigur(sorted, bhQByBas) {
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
-      farg: PALETTE.semantic[s.farg],
+      farg: PALETT.semantic[s.farg],
       data: sorted.filter((p) => status(p) === s).map(pkt),
       tips
     })).filter((l) => l.data.length)
@@ -15199,16 +15199,16 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
       {
         marke: "intervall",
         serie: "Ojusterad skillnad",
-        farg: PALETTE.uppdelning.helhet,
+        farg: PALETT.uppdelning.helhet,
         tjocklek: 44,
         data: [helhet("Ojusterad skillnad", forst.gapPct)],
         tips: (d) => [[d.x], ["Löneskillnad", pct(d.varde)]]
       },
-      { marke: "intervall", serie: "Förklaras av", farg: PALETTE.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
+      { marke: "intervall", serie: "Förklaras av", farg: PALETT.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
       {
         marke: "intervall",
         serie: "Oförklarad skillnad",
-        farg: PALETTE.uppdelning.lonesattning,
+        farg: PALETT.uppdelning.lonesattning,
         tjocklek: 44,
         data: [helhet("Oförklarad skillnad", sist.gapPct)],
         tips: (d) => [[d.x], ["Löneskillnad", pct(d.varde)]]
@@ -15217,7 +15217,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
       ...yrke ? [{
         marke: "intervall",
         serie: "Utöver huvudtalet",
-        farg: PALETTE.uppdelning.strukturLjus,
+        farg: PALETT.uppdelning.strukturLjus,
         tjocklek: 44,
         data: [{ x: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct }],
         tips: (d) => [[d.x], ["Ändrar skillnaden med", pp(d.andring)], ["Skillnad före", pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ["Ingår inte i huvudtalet", ""]]
@@ -15228,7 +15228,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
         symbol: "streck",
         serie: "Skillnad efter steget",
         legend: false,
-        farg: PALETTE.semantic.mork,
+        farg: PALETT.semantic.mork,
         storlek: 11,
         data: [
           niva("Ojusterad skillnad", forst.gapPct),
@@ -15305,14 +15305,14 @@ function _regKvantilFigur(resultat) {
     x: { skala: "linjar", titel: "Löneskillnad (%), negativt = kvinnor lägre", nollinje: true, doman: [lag - luft, hog + luft] },
     hojd: 200,
     lager: [
-      { marke: "intervall", riktning: "liggande", serie: "Avstånd från noll", farg: PALETTE.serie[0], opacitet: 0.5, tjocklek: 3, data: data.map((d) => ({ y: d.y, lag: Math.min(0, d.x), hog: Math.max(0, d.x) })) },
+      { marke: "intervall", riktning: "liggande", serie: "Avstånd från noll", farg: PALETT.serie[0], opacitet: 0.5, tjocklek: 3, data: data.map((d) => ({ y: d.y, lag: Math.min(0, d.x), hog: Math.max(0, d.x) })) },
       // Liggande: punktens intervall (`fel`) ligger längs värdeaxeln x. Utan riktning lästes gränserna som
       // kategorier på bandaxeln och skrevs ut som råa tal (U4, ADR-63).
       {
         marke: "punkt",
         riktning: "liggande",
         serie: "Löneskillnad",
-        farg: PALETTE.serie[0],
+        farg: PALETT.serie[0],
         storlek: 6,
         etikettLage: "vanster",
         data: data.map((d) => ({ ...d, etikett: pct(d.x) })),
@@ -16336,7 +16336,7 @@ function foreEfterFigur({ rader, titel, beskrivning, format = "pct", kolumner = 
     y: { skala: "band", ordning: rader.map((r) => r.namn), etikettMax: 36 },
     x: { skala: "linjar", titel, ...kvot ? {} : { format }, doman: kvot ? [Math.floor(Math.min(lag, 95) - 1), Math.ceil(Math.max(hog, 100) + 1)] : [lag - luft, hog + luft * 1.6] },
     hojd: Math.max(160, 96 + rader.length * 32),
-    ...kvot ? { referens: [{ x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: "Lika lön" }] } : {},
+    ...kvot ? { referens: [{ x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5, etikett: "Lika lön" }] } : {},
     lager: [
       {
         marke: "intervall",
@@ -16347,11 +16347,11 @@ function foreEfterFigur({ rader, titel, beskrivning, format = "pct", kolumner = 
         data: rader.map((r) => ({ y: r.namn, lag: Math.min(r.fore, r.efter), hog: Math.max(r.fore, r.efter), farg: r.farg, r, ...m(r) })),
         tips
       },
-      { marke: "punkt", symbol: "streck", serie: a, farg: PALETTE.semantic.neutral, storlek: 6, data: rader.map((r) => ({ y: r.namn, x: r.fore, r, ...m(r) })), tips },
+      { marke: "punkt", symbol: "streck", serie: a, farg: PALETT.semantic.neutral, storlek: 6, data: rader.map((r) => ({ y: r.namn, x: r.fore, r, ...m(r) })), tips },
       {
         marke: "punkt",
         serie: b,
-        farg: PALETTE.semantic.mork,
+        farg: PALETT.semantic.mork,
         storlek: 6,
         etikettLage: "hoger",
         data: rader.map((r) => ({ y: r.namn, x: r.efter, farg: r.farg, etikett: p(r.efter), r, ...m(r) })),
@@ -16361,7 +16361,7 @@ function foreEfterFigur({ rader, titel, beskrivning, format = "pct", kolumner = 
   };
 }
 function _lutningRader(d, sim, niva) {
-  const farg = (r) => ({ "-1": PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[riktning(r.fore, r.efter, 100)];
+  const farg = (r) => ({ "-1": PALETT.semantic.ok, 0: PALETT.semantic.neutral, 1: PALETT.semantic.kritisk })[riktning(r.fore, r.efter, 100)];
   return lutningRader(d, sim, niva, { k: kTroskel(), markering: markeringFor }).map((r) => ({ ...r, farg: farg(r) }));
 }
 function _ritaLutningTabell(rader, niva) {
@@ -18624,7 +18624,7 @@ function _lpRitaBandkarta(karta) {
   ritaFigur(el, _lpBandkartaFigur(karta), { hojd: 460 });
 }
 function _lpKonsdominans() {
-  return [["Kvinnodominerad", PALETTE.kon.kvinna, (a) => konsklassNu(a) === "kvinnodominerad"], ["Mansdominerad", PALETTE.kon.man, (a) => konsklassNu(a) === "mansdominerad"], ["Blandad", PALETTE.semantic.neutral, (a) => konsklassNu(a) === "blandad"]];
+  return [["Kvinnodominerad", PALETT.kon.kvinna, (a) => konsklassNu(a) === "kvinnodominerad"], ["Mansdominerad", PALETT.kon.man, (a) => konsklassNu(a) === "mansdominerad"], ["Blandad", PALETT.semantic.neutral, (a) => konsklassNu(a) === "blandad"]];
 }
 function _lpForskjutning(aid, bas) {
   return (froAvText(aid + "|" + bas) % 1e3 / 1e3 - 0.5) * 0.36;
@@ -18655,7 +18655,7 @@ function _lpBandkartaFigur({ bas, punkter }) {
       {
         marke: "intervall",
         serie: `${refNamn} (P10–P90)`,
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         tjocklek: 14,
         data: bas.map((b) => ({ x: x(b), lag: b.pol.p10, hog: b.pol.p90, bas: b.bas, markering: markeringFor(b.bas) })),
         tips: (d) => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr2(d.hog)}`]]
@@ -18664,7 +18664,7 @@ function _lpBandkartaFigur({ bas, punkter }) {
         marke: "punkt",
         symbol: "streck",
         serie: `${refNamn} median`,
-        farg: PALETTE.semantic.referens,
+        farg: PALETT.semantic.referens,
         storlek: 4.5,
         legend: false,
         data: bas.map((b) => ({ x: x(b), y: refMed(b), bas: b.bas })),
@@ -18673,7 +18673,7 @@ function _lpBandkartaFigur({ bas, punkter }) {
       {
         marke: "intervall",
         serie: `${org} (P10–P90)`,
-        farg: PALETTE.serie[0],
+        farg: PALETT.serie[0],
         opacitet: 0.55,
         tjocklek: 6,
         // Spannets antal heter `antal`, inte `n`: `n` är en yrkesgrupps antal, som filtret Antal personer i gruppen läser.
@@ -18710,24 +18710,24 @@ function _lpFigurKonHantel(rows) {
     y: { skala: "band", ordning: rows.map(y) },
     x: { skala: "linjar", titel: "Position i spannet (%) — 0 = P10, 100 = P90", doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
     hojd: Math.max(170, 100 + rows.length * 34),
-    referens: [{ x: 50, streck: "prickad", farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: "Mitten" }],
+    referens: [{ x: 50, streck: "prickad", farg: PALETT.semantic.neutral, tjocklek: 1, etikett: "Mitten" }],
     lager: [
-      { marke: "intervall", riktning: "liggande", serie: "Policyns spann", farg: PALETTE.semantic.spann, tjocklek: 12, data: rows.map((b) => ({ y: y(b), lag: 0, hog: 100, bas: b.bas })), tips: (d) => [[d.y], ["Spann", "P10–P90"]] },
+      { marke: "intervall", riktning: "liggande", serie: "Policyns spann", farg: PALETT.semantic.spann, tjocklek: 12, data: rows.map((b) => ({ y: y(b), lag: 0, hog: 100, bas: b.bas })), tips: (d) => [[d.y], ["Spann", "P10–P90"]] },
       {
         marke: "intervall",
         riktning: "liggande",
         serie: "Skillnad",
-        farg: PALETTE.semantic.neutral,
+        farg: PALETT.semantic.neutral,
         tjocklek: 2,
         legend: false,
         data: rows.map((b) => ({ y: y(b), lag: Math.min(pos(b, "kvPos"), pos(b, "maPos")), hog: Math.max(pos(b, "kvPos"), pos(b, "maPos")), bas: b.bas }))
       },
-      punkt("Kvinnor", PALETTE.kon.kvinna, "kvPos"),
-      punkt("Män", PALETTE.kon.man, "maPos")
+      punkt("Kvinnor", PALETT.kon.kvinna, "kvPos"),
+      punkt("Män", PALETT.kon.man, "maPos")
     ]
   };
 }
-var _LP_LAGEN = [["Under spannet", PALETTE.lage.under], ["Nedre tredjedelen", PALETTE.lage.nedre], ["Mellersta tredjedelen", PALETTE.lage.inom], ["Övre tredjedelen", PALETTE.lage.ovre], ["Över spannet", PALETTE.lage.over]];
+var _LP_LAGEN = [["Under spannet", PALETT.lage.under], ["Nedre tredjedelen", PALETT.lage.nedre], ["Mellersta tredjedelen", PALETT.lage.inom], ["Övre tredjedelen", PALETT.lage.ovre], ["Över spannet", PALETT.lage.over]];
 function _lpFigurKonLagen(sum) {
   const rader = [["Kvinnor", sum.kv, sum.nKv], ["Män", sum.ma, sum.nMa]];
   return {
@@ -18763,7 +18763,7 @@ function _lpRitaKonLagen(vm) {
   const pct = (a, n) => svPct(100 * (a[0] + a[1]) / n, 0);
   if (not) not.textContent = `${pct(sum.kv, sum.nKv)} av kvinnorna och ${pct(sum.ma, sum.nMa)} av männen ligger i nedre tredjedelen eller under spannet. ${svTal(sum.nKv, 0)} kvinnor och ${svTal(sum.nMa, 0)} män med policyspann ingår.`;
 }
-var _LP_LAGE = PALETTE.lage;
+var _LP_LAGE = PALETT.lage;
 function _lpFigurKomplians(rows) {
   const pct = (v, n) => +(v / n * 100).toFixed(1);
   const serie = (namn, farg, falt) => ({
@@ -19208,7 +19208,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         marke: "intervall",
         riktning: "liggande",
         serie: `${refNamn} P10–P90`,
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         tjocklek: 14,
         data: visa.filter((r) => harBand(ref(r))).map((r) => ({ y: etikett2(r), lag: ref(r).p10, hog: ref(r).p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
         tips: (d) => [[d.y], [`${refNamn} P10–P90`, `${talformat(d.lag, "kr", { enhet: false })}–${kr2(d.hog)}`]]
@@ -19217,7 +19217,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         marke: "intervall",
         riktning: "liggande",
         serie: `${org} P10–P90`,
-        farg: PALETTE.serie[0],
+        farg: PALETT.serie[0],
         tjocklek: 7,
         data: visa.map((r) => ({ y: etikett2(r), lag: r.org.p10, hog: r.org.p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
         tips: (d) => [[d.y], ["Organisationen", `${talformat(d.lag, "kr", { enhet: false })}–${kr2(d.hog)}`]]
@@ -19226,7 +19226,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         marke: "punkt",
         symbol: "streck",
         serie: `${refNamn} median`,
-        farg: PALETTE.semantic.linje,
+        farg: PALETT.semantic.linje,
         storlek: 5,
         data: visa.filter((r) => ref(r).median != null).map((r) => ({ y: etikett2(r), x: ref(r).median, ..._jmfUrvalFalt(r) })),
         tips: (d) => [[d.y], [`${refNamn} median`, kr2(d.x)]]
@@ -19234,7 +19234,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
       {
         marke: "punkt",
         serie: `${org} median`,
-        farg: PALETTE.semantic.trend,
+        farg: PALETT.semantic.trend,
         storlek: 4.5,
         data: visa.map((r) => ({ y: etikett2(r), x: r.org.median, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
         tips: (d) => [[d.y], ["Organisationen median", kr2(d.x)]]
@@ -19284,7 +19284,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
         marke: "intervall",
         riktning: "liggande",
         serie: "Spann P10–P90",
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         tjocklek: 4,
         legend: false,
         data: visa.filter((r) => varden(r).length > 1).map((r) => ({ ...bas(r), lag: Math.min(...varden(r)), hog: Math.max(...varden(r)), r })),
@@ -19295,7 +19295,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
       {
         marke: "punkt",
         serie: "Medianens värde",
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         storlek: 6,
         opacitet: 0,
         etikettLage: "hoger",
@@ -19304,11 +19304,11 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
         data: visa.filter((r) => diff(r, "median") != null).map((r) => ({ y: _jmfEtikett(r), x: Math.max(...varden(r)), ..._jmfUrvalFalt(r), etikett: _jmfPct(diff(r, "median")) }))
       },
       streck("Skillnad i P10", FARG.blek, "p10"),
-      streck("Skillnad i P90", PALETTE.semantic.mork, "p90"),
+      streck("Skillnad i P90", PALETT.semantic.mork, "p90"),
       {
         marke: "punkt",
         serie: "Skillnad i median",
-        farg: PALETTE.serie[0],
+        farg: PALETT.serie[0],
         storlek: 6,
         data: visa.filter((r) => diff(r, "median") != null).map((r) => ({ ...bas(r), x: diff(r, "median"), r })),
         tips: (d) => tipsRad(d.r)
@@ -19372,7 +19372,7 @@ function _jmfStatlageFigur(rader) {
       tips
     }))
   ));
-  const linje = (y, etikett2) => ({ typ: "linje", y, streck: "streckad", farg: PALETTE.semantic.referens, tjocklek: 1, etikett: etikett2, textfarg: PALETTE.semantic.referens });
+  const linje = (y, etikett2) => ({ typ: "linje", y, streck: "streckad", farg: PALETT.semantic.referens, tjocklek: 1, etikett: etikett2, textfarg: PALETT.semantic.referens });
   return {
     beskrivning: `Var varje ${genitiv(T.enhet.en)} medianlön ligger i jämförelsestatistikens spann per ${T.niva.en}: 0 är statistikens P10 och 100 dess P90. Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; läget räknas ur P10, median och P90 i tabellen där.`,
     urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.konsdominans, URVAL.antal],
@@ -19384,7 +19384,7 @@ function _jmfStatlageFigur(rader) {
       {
         marke: "intervall",
         serie: "Statistikens spann (P10–P90)",
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         tjocklek: 14,
         legend: false,
         utanData: true,
@@ -19851,9 +19851,9 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
 }
 function _rrHantelFigur(rader, { harStatistik }) {
   const serier = [
-    { namn: "Ställningstagandet", nyckel: "stallningstagande", farg: PALETTE.semantic.neutral },
-    ...harStatistik ? [{ namn: "Statistiken", nyckel: "statistik", farg: PALETTE.semantic.trend }] : [],
-    { namn: "Organisationen", nyckel: "org", farg: PALETTE.semantic.mork }
+    { namn: "Ställningstagandet", nyckel: "stallningstagande", farg: PALETT.semantic.neutral },
+    ...harStatistik ? [{ namn: "Statistiken", nyckel: "statistik", farg: PALETT.semantic.trend }] : [],
+    { namn: "Organisationen", nyckel: "org", farg: PALETT.semantic.mork }
   ];
   const steg = serier.length === 3 ? 0.27 : 0.2;
   const kr2 = (v) => talformat(v, "kr");
@@ -21703,7 +21703,7 @@ function ritaOgonblicksbildJamforelse() {
 function _ogonblicksbildLutning(snap, cur) {
   const ruta = document.getElementById("snapshot-lutning-ruta"), el = document.getElementById("chart-snapshot-lutning");
   if (!ruta || !el) return;
-  const rader = !snap || !cur ? [] : [["Kvinnor", snap.medianKv, cur.medianKv, PALETTE.kon.kvinna], ["Män", snap.medianMa, cur.medianMa, PALETTE.kon.man]].filter(([, a, b]) => typeof a === "number" && typeof b === "number").map(([namn, fore, efter, farg]) => ({ namn, fore: Math.round(fore), efter: Math.round(efter), farg }));
+  const rader = !snap || !cur ? [] : [["Kvinnor", snap.medianKv, cur.medianKv, PALETT.kon.kvinna], ["Män", snap.medianMa, cur.medianMa, PALETT.kon.man]].filter(([, a, b]) => typeof a === "number" && typeof b === "number").map(([namn, fore, efter, farg]) => ({ namn, fore: Math.round(fore), efter: Math.round(efter), farg }));
   ruta.hidden = !rader.length;
   if (!rader.length) {
     rensaFigur(el);
@@ -21867,7 +21867,7 @@ function arsjamforelse() {
 function _abHantelFigur(j, forraAr, nuAr) {
   const { rader } = hantelRader(j);
   if (!rader.length) return null;
-  const farg = { mot: PALETTE.semantic.ok, fran: PALETTE.semantic.varning, lika: PALETTE.semantic.neutral };
+  const farg = { mot: PALETT.semantic.ok, fran: PALETT.semantic.varning, lika: PALETT.semantic.neutral };
   const namnAv = (g) => g.bas ? `${g.yrke} (BAS ${g.bas})` : g.yrke;
   const antal = new Map([...j.grupper.kvar, ...j.grupper.nya, ...j.grupper.borta].map((g) => [namnAv(g), g.nKv != null && g.nMa != null ? g.nKv + g.nMa : null]));
   const fig = foreEfterFigur({
@@ -21901,7 +21901,7 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
   const { rader } = basHantelRader(j);
   if (!rader.length) return null;
   const fig = foreEfterFigur({
-    rader: rader.map((r) => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
+    rader: rader.map((r) => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETT.semantic.linje, markering: markeringFor(r.bas) })),
     kolumner: [String(forraAr), String(nuAr)],
     titel: `Medianlön per ${T.niva.en}`,
     format: "kr",
@@ -23367,9 +23367,9 @@ function _utforskaKonVyer(model) {
   const { matt, delaKon } = model.spec, k = kTroskel();
   const konLiten = (n) => matt !== "n" && n < k;
   return delaKon ? [
-    { namn: "Kvinnor", kort: "Kvinna", farg: PALETTE.kon.kvinna, v: (c) => c.valueKv, n: (c) => c.nKv, liten: (c) => !!(c.liten || konLiten(c.nKv)) },
-    { namn: "Män", kort: "Man", farg: PALETTE.kon.man, v: (c) => c.valueMa, n: (c) => c.nMa, liten: (c) => !!(c.liten || konLiten(c.nMa)) }
-  ] : [{ namn: null, kort: null, farg: PALETTE.serie[0], v: (c) => c.value, n: (c) => c.n, liten: (c) => !!(c.liten || matt === "gap" && c.konLiten) }];
+    { namn: "Kvinnor", kort: "Kvinna", farg: PALETT.kon.kvinna, v: (c) => c.valueKv, n: (c) => c.nKv, liten: (c) => !!(c.liten || konLiten(c.nKv)) },
+    { namn: "Män", kort: "Man", farg: PALETT.kon.man, v: (c) => c.valueMa, n: (c) => c.nMa, liten: (c) => !!(c.liten || konLiten(c.nMa)) }
+  ] : [{ namn: null, kort: null, farg: PALETT.serie[0], v: (c) => c.value, n: (c) => c.n, liten: (c) => !!(c.liten || matt === "gap" && c.konLiten) }];
 }
 var _utforskaHar = (v) => v != null && isFinite(v);
 function _utforskaMarkering(model, rad) {
@@ -23438,7 +23438,7 @@ function _figStaplar(model, liggande) {
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
-      farg: PALETTE.semantic[s.farg],
+      farg: PALETT.semantic[s.farg],
       ...riktning2,
       data: celler.filter((c) => _utforskaHar(vy.v(c)) && status(c) === s).map((c) => punkt(vy, c)),
       tips: tips(UTFORSKA_MATT_ETIKETT[matt])
@@ -23457,7 +23457,7 @@ function _figStaplar(model, liggande) {
     x: liggande ? _utforskaAxel(matt) : kategori,
     y: liggande ? kategori : _utforskaAxel(matt),
     hojd: liggande ? Math.max(260, 110 + 24 * celler.length) : 420,
-    referens: matt === "gap" ? [{ ...liggande ? { x: 100 } : { y: 100 }, streck: "prickad", farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: "Lika lön" }] : [],
+    referens: matt === "gap" ? [{ ...liggande ? { x: 100 } : { y: 100 }, streck: "prickad", farg: PALETT.semantic.neutral, tjocklek: 1, etikett: "Lika lön" }] : [],
     lager
   };
 }
@@ -23479,7 +23479,7 @@ function _figVarmekarta(model) {
     y: { skala: "band", ordning: rader, etikettMax: 44 },
     hojd: Math.max(260, 120 + 26 * rader.length),
     ...delaKon ? { paneler: vyer.map((vy) => vy.namn) } : {},
-    fargskala: diverg ? { typ: "divergerande", doman: [mitt - spann, mitt + spann], mitt, titel: _utforskaAxelrubrik(matt) } : { typ: "sekventiell", farger: PALETTE.sekventiellNeutral, doman: [zmin, zmax], titel: _utforskaAxelrubrik(matt), ...format ? { format } : {} },
+    fargskala: diverg ? { typ: "divergerande", doman: [mitt - spann, mitt + spann], mitt, titel: _utforskaAxelrubrik(matt) } : { typ: "sekventiell", farger: PALETT.sekventiellNeutral, doman: [zmin, zmax], titel: _utforskaAxelrubrik(matt), ...format ? { format } : {} },
     lager: vyer.map((vy) => {
       const serie = vy.namn ? `${UTFORSKA_MATT_ETIKETT[matt]} · ${vy.namn}` : UTFORSKA_MATT_ETIKETT[matt];
       return {
@@ -23537,7 +23537,7 @@ function _figGrupperade(model) {
     return {
       marke: "stapel",
       serie,
-      farg: PALETTE.serie[i % PALETTE.serie.length],
+      farg: PALETT.serie[i % PALETT.serie.length],
       ...vy.kort === "Man" ? { opacitet: 0.55, legend: false } : {},
       data: model.radEtiketter.map((r) => byKey.get(r + "\0" + kl)).filter((c) => c && _utforskaHar(vy.v(c))).map((c) => ({ x: c.rad, y: vy.v(c), rad: c.rad, kol: kl, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
       tips: (d) => [[`${d.rad} · ${serie}`], [UTFORSKA_MATT_ETIKETT[matt], _utforskaFormatera(d.y, matt)], ["Antal", String(d.n)]]
@@ -23556,12 +23556,12 @@ function _figStaplade(model, somAndel) {
   const summa = /* @__PURE__ */ new Map();
   for (const c of model.celler) summa.set(c.rad, (summa.get(c.rad) || 0) + (c.n || 0));
   const rader = model.radEtiketter.filter((r) => summa.get(r) > 0);
-  const konFarg = model.spec.kolumn === "kon" ? { Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, "Övrig/okänd": PALETTE.semantic.neutral } : {};
+  const konFarg = model.spec.kolumn === "kon" ? { Kvinna: PALETT.kon.kvinna, Man: PALETT.kon.man, "Övrig/okänd": PALETT.semantic.neutral } : {};
   const lager = model.kolumnEtiketter.map((kl, i) => ({
     marke: "stapel",
     lage: "staplad",
     serie: kl,
-    farg: konFarg[kl] || PALETTE.serie[i % PALETTE.serie.length],
+    farg: konFarg[kl] || PALETT.serie[i % PALETT.serie.length],
     data: rader.map((r) => byKey.get(r + "\0" + kl)).filter((c) => c && c.n > 0).map((c) => {
       const andel = +(100 * c.n / summa.get(c.rad)).toFixed(1);
       return { x: c.rad, y: somAndel ? andel : c.n, rad: c.rad, kol: kl, n: c.n, andel, ...c.liten ? { liten: true } : {}, ..._utforskaMarkering(model, c.rad) };
@@ -23591,7 +23591,7 @@ function _figHantel(model) {
     marke: "intervall",
     riktning: "liggande",
     serie: "Skillnad kvinnor–män",
-    farg: PALETTE.semantic.neutral,
+    farg: PALETT.semantic.neutral,
     tjocklek: 2,
     legend: false,
     data: celler.filter((c) => _utforskaHar(c.valueKv) && _utforskaHar(c.valueMa)).map((c) => ({
@@ -23623,11 +23623,11 @@ function _figBubbla(model) {
     y: { skala: "linjar", titel: "Median, kronor/månad", format: "kr" },
     hojd: 460,
     // 40 % och 60 %: gränserna för könsdominans som § 3:10-analysen använder.
-    referens: [40, 60].map((x) => ({ x, streck: "prickad", farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
+    referens: [40, 60].map((x) => ({ x, streck: "prickad", farg: PALETT.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
     lager: [{
       marke: "punkt",
       serie: "Grupper",
-      farg: PALETTE.serie[0],
+      farg: PALETT.serie[0],
       opacitet: 0.8,
       kant: FARG.vit,
       data: pts.map((c) => ({
@@ -23648,7 +23648,7 @@ function _figFordelning(model, rows, allaPunkter) {
   const { rad, urval, delaKon } = model.spec, k = kTroskel();
   const nyckel = _utNycklar(rows), person = iUrvalet(urval, nyckel);
   const gruppLiten = new Map(model.celler.map((c) => [c.rad, !!c.liten]));
-  const farg = { Alla: PALETTE.serie[0], Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, "Övrig/okänd": PALETTE.semantic.neutral };
+  const farg = { Alla: PALETT.serie[0], Kvinna: PALETT.kon.kvinna, Man: PALETT.kon.man, "Övrig/okänd": PALETT.semantic.neutral };
   const hinkar = /* @__PURE__ */ new Map();
   const antal = /* @__PURE__ */ new Map();
   for (const r of rows) {
@@ -26132,8 +26132,8 @@ function _skevhetFigur(bars) {
     },
     hojd: Math.max(180, 110 + bars.length * 34),
     referens: [
-      { typ: "zon", x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: "Lika lön ±3 %" },
-      { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }
+      { typ: "zon", x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: "Lika lön ±3 %" },
+      { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }
     ],
     lager: _SKEVHET_STATUS.map((s) => ({
       marke: "punkt",
@@ -26141,7 +26141,7 @@ function _skevhetFigur(bars) {
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
-      farg: PALETTE.semantic[s.farg],
+      farg: PALETT.semantic[s.farg],
       data: bars.filter((o) => status(o) === s).map(pkt),
       tips
     })).filter((l) => l.data.length)
@@ -26156,9 +26156,9 @@ function _kvotcellTitel(r) {
   return rad ? ` title="${esc(`${rad[0]}: ${rad[1]}`)}"` : "";
 }
 function _laOversiktGrafik(o, dom, status, bredd) {
-  const b = bredd || _LA_OV.b, h = _LA_OV.h, x = (v) => +((v - dom[0]) / (dom[1] - dom[0]) * b).toFixed(1), m = h / 2, farg = PALETTE.semantic[status.farg], px = x(o.gap);
+  const b = bredd || _LA_OV.b, h = _LA_OV.h, x = (v) => +((v - dom[0]) / (dom[1] - dom[0]) * b).toFixed(1), m = h / 2, farg = PALETT.semantic[status.farg], px = x(o.gap);
   const symbol = status.symbol === "romb" ? `<path d="M${px},${m - 6}L${px + 6},${m}L${px},${m + 6}L${px - 6},${m}Z" fill="${farg}" stroke="#fff"/>` : status.symbol === "kvadrat" ? `<rect x="${px - 4.5}" y="${m - 4.5}" width="9" height="9" rx="1" fill="${farg}" stroke="#fff"/>` : `<circle cx="${px}" cy="${m}" r="5" fill="${farg}" stroke="#fff"/>`;
-  return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false"><rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETTE.semantic.ok}" fill-opacity="0.12"/><line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETTE.semantic.mork}" stroke-width="1.2"/>` + (o.ci ? `<line x1="${x(o.ci.lo)}" x2="${x(o.ci.hi)}" y1="${m}" y2="${m}" stroke="${farg}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>` : "") + symbol + "</svg>";
+  return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false"><rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETT.semantic.ok}" fill-opacity="0.12"/><line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETT.semantic.mork}" stroke-width="1.2"/>` + (o.ci ? `<line x1="${x(o.ci.lo)}" x2="${x(o.ci.hi)}" y1="${m}" y2="${m}" stroke="${farg}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>` : "") + symbol + "</svg>";
 }
 function _laOversiktTabell(ov) {
   const tb = document.querySelector("#la-oversikt tbody"), skala = document.getElementById("la-oversikt-skala");
@@ -26240,11 +26240,11 @@ function _laTrattFigur(u, k = kTroskel()) {
     x: { skala: "linjar", titel: "Antal personer i gruppen", doman: [x0, x1] },
     y: { skala: "linjar", titel: "Kvinnors median i % av mäns", doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
     hojd: 340,
-    referens: [{ y: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: "Lika lön" }],
+    referens: [{ y: 100, farg: PALETT.semantic.mork, tjocklek: 1.5, etikett: "Lika lön" }],
     lager: [
-      { marke: "band", serie: "Slumpens gränser (95 %)", farg: PALETTE.semantic.neutral, opacitet: 0.14, data: falt },
-      lager("Inom gränserna", PALETTE.semantic.neutral, "cirkel", (p) => !p.utanfor),
-      lager("Utanför gränserna", PALETTE.semantic.kritisk, "romb", (p) => p.utanfor)
+      { marke: "band", serie: "Slumpens gränser (95 %)", farg: PALETT.semantic.neutral, opacitet: 0.14, data: falt },
+      lager("Inom gränserna", PALETT.semantic.neutral, "cirkel", (p) => !p.utanfor),
+      lager("Utanför gränserna", PALETT.semantic.kritisk, "romb", (p) => p.utanfor)
     ].filter((l) => l.data.length)
   };
 }
@@ -26279,8 +26279,8 @@ function _skevhetAndelFigur(rader) {
     x: { skala: "linjar", titel: "Andel av intervallet (%)", doman: [0, 100] },
     hojd: Math.max(160, 70 + rader.length * 32),
     // Linjerna har ingen etikett: den skulle skriva över staplarnas siffror, och axeln visar 40 och 60.
-    referens: [{ x: 40, streck: "streckad", farg: PALETTE.semantic.mork, tjocklek: 1.5 }, { x: 60, streck: "streckad", farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-    lager: [serie("Kvinnor", PALETTE.kon.kvinna, "pctKv"), serie("Män", PALETTE.kon.man, "pctMa")]
+    referens: [{ x: 40, streck: "streckad", farg: PALETT.semantic.mork, tjocklek: 1.5 }, { x: 60, streck: "streckad", farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+    lager: [serie("Kvinnor", PALETT.kon.kvinna, "pctKv"), serie("Män", PALETT.kon.man, "pctMa")]
   };
 }
 function _laSlutsats(etikett2, varde, under, kritisk, tips) {
@@ -26971,7 +26971,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
     x: { skala: "linjar", doman: [0, TRADKARTA_FORM], dold: true },
     y: { skala: "linjar", doman: [0, 1], dold: true },
-    fargskala: { typ: "divergerande", doman: [0, 100], mitt: 50, titel: "Andel kvinnor (%)", farger: [[0, PALETTE.kon.man], [0.5, FARG.ytaStark], [1, PALETTE.kon.kvinna]] },
+    fargskala: { typ: "divergerande", doman: [0, 100], mitt: 50, titel: "Andel kvinnor (%)", farger: [[0, PALETT.kon.man], [0.5, FARG.ytaStark], [1, PALETT.kon.kvinna]] },
     lager: [
       {
         marke: "yta",
@@ -27038,14 +27038,14 @@ function _strukturPercentilFigur(dist, omfang2) {
         marke: "intervall",
         riktning: "liggande",
         serie: "Skillnad",
-        farg: PALETTE.semantic.neutral,
+        farg: PALETT.semantic.neutral,
         tjocklek: 2,
         legend: false,
         data: dist.map((x) => ({ y: namn(x), lag: Math.round(Math.min(x.kv, x.ma)), hog: Math.round(Math.max(x.kv, x.ma)), r: x, ..._kronorFalt(x.kv, x.ma) })),
         tips
       },
-      punkt("Kvinnor", PALETTE.kon.kvinna, "kv", dist.every((x) => hogst(x) === "kv") ? { etikettLage: "hoger" } : {}),
-      punkt("Män", PALETTE.kon.man, "ma", dist.every((x) => hogst(x) === "kv") ? {} : { etikettLage: "hoger" })
+      punkt("Kvinnor", PALETT.kon.kvinna, "kv", dist.every((x) => hogst(x) === "kv") ? { etikettLage: "hoger" } : {}),
+      punkt("Män", PALETT.kon.man, "ma", dist.every((x) => hogst(x) === "kv") ? {} : { etikettLage: "hoger" })
     ]
   };
 }
@@ -27068,8 +27068,8 @@ function _strukturKvartilFigur(q, totAndel, omfang2) {
     y: { skala: "band", ordning: q.slice().reverse().map(namn) },
     x: { skala: "linjar", titel: "Andel av kvartilen (%)", doman: [0, 100] },
     hojd: 240,
-    referens: [{ x: +totAndel.toFixed(1), streck: "streckad", farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-    lager: [serie("Kvinnor", PALETTE.kon.kvinna, (x) => x.andelKv, (x) => x.nKv), serie("Män", PALETTE.kon.man, (x) => 100 * x.nMa / x.n, (x) => x.nMa)]
+    referens: [{ x: +totAndel.toFixed(1), streck: "streckad", farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+    lager: [serie("Kvinnor", PALETT.kon.kvinna, (x) => x.andelKv, (x) => x.nKv), serie("Män", PALETT.kon.man, (x) => 100 * x.nMa / x.n, (x) => x.nMa)]
   };
 }
 function _sektorEjBasTitel() {
@@ -27146,21 +27146,21 @@ function _sektorFigur(visa, justText = sektorJusteradText(visa)) {
     y: { skala: "band", ordning: visa.map((r) => r.namn), etikettMax: 64 },
     // sektornamnen är långa och ska gå att läsa
     hojd: Math.max(170, 90 + visa.length * 36),
-    referens: [{ x: 100, streck: "prickad", farg: PALETTE.semantic.referens, etikett: "Lika lön" }],
+    referens: [{ x: 100, streck: "prickad", farg: PALETT.semantic.referens, etikett: "Lika lön" }],
     // Strecket från rå till justerad visar hur mycket ålder (när lönefilen har den) och nivå förklarar: långt streck = mycket.
     lager: [
       {
         marke: "intervall",
         riktning: "liggande",
         serie: `Förklaras av ${forklaras}`,
-        farg: PALETTE.semantic.neutral,
+        farg: PALETT.semantic.neutral,
         tjocklek: 2,
         legend: false,
         data: visa.filter((r) => just(r) != null).map((r) => ({ y: r.namn, lag: +Math.min(r.kvot ?? 0, just(r) ?? 0).toFixed(1), hog: +Math.max(r.kvot ?? 0, just(r) ?? 0).toFixed(1), ra: r.kvot, ju: just(r), ...falt(r) })),
         tips: (d) => [[d.y], ["Rå", talformat(d.ra, "pct")], ["Justerad", talformat(d.ju, "pct")]]
       },
-      lager("Rå", PALETTE.semantic.neutral, (r) => r.kvot, 0),
-      lager(rubrik, PALETTE.serie[0], just, 0)
+      lager("Rå", PALETT.semantic.neutral, (r) => r.kvot, 0),
+      lager(rubrik, PALETT.serie[0], just, 0)
     ]
   };
 }
@@ -28276,7 +28276,7 @@ function ritaGapUppdelning() {
   const rader = vm.delar.map((d) => {
     const del = { ...d, ..._GU_ATGARD[d.variabel || "inom"] }, v = del.belopp;
     const bredd = Math.abs(v) / vm.storst * 50;
-    const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
+    const farg = del.variabel === null ? PALETT.uppdelning.lonesattning : PALETT.uppdelning.struktur;
     const andel = del.andel === null ? "" : `<span class="gu-andel">${_guPct(del.andel, 0)} av skillnaden</span>`;
     const topp = del.topp.map((p) => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join("") + (del.ovrigaAntal ? `<li class="gu-ovriga">${esc(gapOvrigaText(del.ovrigaAntal, kTroskel()))}</li>` : "");
     return `<div class="gu-rad" data-gu-del="${del.id}">
@@ -28331,13 +28331,13 @@ function _guTrappaFigur(u) {
       {
         marke: "intervall",
         serie: _GU_SERIE.helhet,
-        farg: PALETTE.uppdelning.helhet,
+        farg: PALETT.uppdelning.helhet,
         tjocklek: 44,
         data: [{ x: _GU_SERIE.helhet, lag: Math.min(gap, 0), hog: Math.max(gap, 0), skillnadKr: gap }],
         tips: (d) => [[d.x], ["Skillnad i medellön", _guKr(d.skillnadKr)]]
       },
-      delLager(false, _GU_SERIE.struktur, PALETTE.uppdelning.struktur),
-      delLager(true, _GU_SERIE.inom, PALETTE.uppdelning.lonesattning),
+      delLager(false, _GU_SERIE.struktur, PALETT.uppdelning.struktur),
+      delLager(true, _GU_SERIE.inom, PALETT.uppdelning.lonesattning),
       // Ett streck där steget landar, och beloppet vid stapelns ände längst från noll (ett osynligt streck bär
       // etiketten). Bara markeringar: talen står redan i lagren ovan, och lagren får inga rader i diagramdatan.
       {
@@ -28346,7 +28346,7 @@ function _guTrappaFigur(u) {
         serie: "Nivå",
         legend: false,
         utanData: true,
-        farg: PALETTE.semantic.mork,
+        farg: PALETT.semantic.mork,
         storlek: 11,
         data: [{ x: _GU_SERIE.helhet, y: gap }, ...steg.map((s) => ({ x: s.x, y: Math.round(s.efter) }))]
       },
@@ -28356,7 +28356,7 @@ function _guTrappaFigur(u) {
         serie: "Belopp",
         legend: false,
         utanData: true,
-        farg: PALETTE.semantic.mork,
+        farg: PALETT.semantic.mork,
         data: [
           { x: _GU_SERIE.helhet, y: gap, storlek: 0, etikett: _guKr(u.gap), etikettLage: lage2(gap, Math.min(gap, 0)) },
           ...steg.map((s) => {
@@ -33498,7 +33498,7 @@ function ritaOmReferens() {
     }
   }
 }
-var farger = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
+var farger = { kvinna: PALETT.kon.kvinna, man: PALETT.kon.man, policy: PALETT.semantic.policy };
 var Stat = { median, kvantil, linjarRegression };
 function linjarRegressionKI(data, minX, maxX, steps) {
   return regressionslinjensBand(data, minX, maxX, steps);
@@ -33832,7 +33832,7 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
     panelB,
     inreH,
     yFor: (l) => l.axel === "y2" && y2 ? y2 : y,
-    farg: (l, li) => l.farg || PALETTE.serie[li % PALETTE.serie.length],
+    farg: (l, li) => l.farg || PALETT.serie[li % PALETT.serie.length],
     dold: syn.dold,
     bredvid: _rfBredvid(iPanel),
     lador: iPanel.filter(({ l }) => l.marke === "lada").map(({ li }) => li),
@@ -33857,18 +33857,18 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
   }
   if (!figurIn.x.dold) g.append("line").attr("x1", 0).attr("x2", panelB).attr("y1", inreH).attr("y2", inreH).attr("stroke", FARG.blek).attr("stroke-width", 1);
   for (const k of xEt) {
-    const t = _rfText(g, k.p, inreH + px + 6, k.text, { px, ankare: "middle", title: k.hel, farg: x.bandwidth ? void 0 : CHART_FONT.dampad, attr: { "data-axel": "x" } });
+    const t = _rfText(g, k.p, inreH + px + 6, k.text, { px, ankare: "middle", title: k.hel, farg: x.bandwidth ? void 0 : DIAGRAM_TYPSNITT.dampad, attr: { "data-axel": "x" } });
     if (k.rad2) t.append("tspan").attr("x", k.p).attr("dy", px + 2).text(k.rad2);
   }
   if (panel != null) _rfText(g, panelB / 2, -8, _rfKorta(panel, panelB / ((px + 1) * _RF.tecken)), { px: px + 1, ankare: "middle", fet: true, title: String(panel) });
 }
-function _rfRitaLegend(svg, L, syn, px, H, notRader) {
+function _rfRitaForklaring(svg, L, syn, px, H, notRader) {
   const legendY = L.topp + L.inreH + L.axelNer + L.legBas;
   const lg = svg.append("g").attr("data-del", "forklaring");
   L.legend.poster.forEach((p) => {
     const dold_ = syn.dolda.has(p.serie);
     const g = lg.append("g").attr("data-serie", p.serie).attr("role", "button").attr("tabindex", 0).attr("aria-pressed", dold_ ? "false" : "true").attr("aria-label", `${p.serie}, visa eller dölj serien`).attr("transform", `translate(${8 + p.x},${legendY + p.rad * _RF.legendRad})`).attr("cursor", "pointer").attr("opacity", dold_ ? 0.4 : 1);
-    const f = p.l.farg || PALETTE.serie[p.li % PALETTE.serie.length];
+    const f = p.l.farg || PALETT.serie[p.li % PALETT.serie.length];
     if (p.l.marke === "linje") g.append("line").attr("x1", 0).attr("x2", 12).attr("y1", -4).attr("y2", -4).attr("stroke", f).attr("stroke-width", 2.5);
     else if (p.l.marke === "punkt" && (!p.l.symbol || p.l.symbol === "cirkel" || p.l.symbol === "romb" || p.l.symbol === "kvadrat")) (p.l.ofylld ? _rfOfylld(_rfSymbol(g, p.l.symbol, 6, -4, 5, f), f) : _rfSymbol(g, p.l.symbol, 6, -4, 5, f)).attr("data-prov", "punkt");
     else if (p.l.marke === "punkt" && p.l.symbol === "streck") g.append("line").attr("data-prov", "punkt").attr("x1", 6).attr("x2", 6).attr("y1", -10).attr("y2", 2).attr("stroke", f).attr("stroke-width", 2.5);
@@ -33889,7 +33889,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     if (delar) return _rfByggRadpaneler(figurIn, delar, bredd, val);
     figurIn = { ...figurIn, paneler: void 0 };
   }
-  const px = CHART_FONT.size;
+  const px = DIAGRAM_TYPSNITT.size;
   const B = isFinite(+bredd) && +bredd > 0 ? +bredd : 600;
   const hv = val.hojd || figurIn.hojd || _RF.hojd;
   const H = isFinite(+hv) && +hv > 0 ? +hv : _RF.hojd;
@@ -33908,12 +33908,12 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
   const bild = svg.append("g").attr("data-del", "rityta").attr("role", "img").attr("aria-label", "Diagramyta");
   const rot = bild.append("g").attr("transform", `translate(${L.vanster},${L.topp})`);
   const urval = /* @__PURE__ */ new Map();
-  for (const k of L.yEt) _rfText(rot, -8, k.p + px * 0.35, k.text, { px, ankare: "end", title: k.hel, farg: L.yBand ? void 0 : CHART_FONT.dampad, attr: { "data-axel": "y" } });
+  for (const k of L.yEt) _rfText(rot, -8, k.p + px * 0.35, k.text, { px, ankare: "end", title: k.hel, farg: L.yBand ? void 0 : DIAGRAM_TYPSNITT.dampad, attr: { "data-axel": "y" } });
   if (figurIn.y.titel) {
     const t = String(figurIn.y.titel);
     _rfText(rot, 0, 0, _rfKorta(t, L.inreH / (px * _RF.tecken)), { px, ankare: "middle", title: t, attr: { transform: `translate(${-(L.vanster - px - 2)},${L.inreH / 2}) rotate(-90)` } });
   }
-  for (const k of L.y2Et) _rfText(rot, L.inreB + 8, k.p + px * 0.35, k.text, { px, farg: CHART_FONT.dampad, attr: { "data-axel": "y2" } });
+  for (const k of L.y2Et) _rfText(rot, L.inreB + 8, k.p + px * 0.35, k.text, { px, farg: DIAGRAM_TYPSNITT.dampad, attr: { "data-axel": "y2" } });
   if (L.y2 && figurIn.y2.titel) {
     const t = String(figurIn.y2.titel);
     _rfText(rot, 0, 0, _rfKorta(t, L.inreH / (px * _RF.tecken)), { px, ankare: "middle", title: t, attr: { transform: `translate(${L.inreB + L.y2Block - px + 2},${L.inreH / 2}) rotate(90)` } });
@@ -33921,7 +33921,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
   syn.paneler.forEach((panel, pi) => _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval));
   if (L.xTitel) _rfText(rot, L.inreB / 2, L.inreH + px + 6 + px + 8 + (L.xTvaRader ? px + 2 : 0), _rfKorta(L.xTitel, L.inreB / (px * _RF.tecken)), { px, ankare: "middle", title: L.xTitel });
   if (fargskala) _rfFargstapel(rot, figurIn.fargskala, fargskala, L.inreB + L.hoger - L.fargB + 8, L.inreH, px, L.fargB - _RF.fargLuft);
-  _rfRitaLegend(svg, L, syn, px, H, L.notRader);
+  _rfRitaForklaring(svg, L, syn, px, H, L.notRader);
   let ritade = 0, totalt = 0;
   for (const [r, t] of urval.values()) {
     ritade += r;
@@ -34268,7 +34268,7 @@ function _rfOmStorlek(el) {
   if (!(isFinite(fast) && fast > 0) && !el.clientWidth) return;
   if (_rfMattBredd(el) !== el._figurBredd) _rfRitaSakert(el, { overgang: false });
 }
-function _rfLegendPost(el, mal) {
+function _rfForklaringspost(el, mal) {
   const post = mal && mal.closest ? mal.closest("[data-serie]") : null;
   return post && el.contains(post) ? post : null;
 }
@@ -34347,7 +34347,7 @@ function _rfVidKlick(el, e) {
     el._rfKoppling.nyssPenslat = false;
     return;
   }
-  const post = _rfLegendPost(el, e.target);
+  const post = _rfForklaringspost(el, e.target);
   if (post) {
     _rfVaxla(el, post.getAttribute("data-serie"));
     return;
@@ -34360,7 +34360,7 @@ function _rfVidKlick(el, e) {
   _rfAktivera(el, t.m, e);
 }
 function _rfVidTangent(el, e) {
-  const post = _rfLegendPost(el, e.target);
+  const post = _rfForklaringspost(el, e.target);
   if (post) {
     if (e.key !== "Enter" && e.key !== " ") return;
     e.preventDefault();

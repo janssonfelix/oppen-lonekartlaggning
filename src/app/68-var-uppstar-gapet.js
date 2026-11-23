@@ -9,7 +9,7 @@ import { ikon } from './03-ikoner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
-import { PALETTE } from './10-diagramtema.js';
+import { PALETT } from './10-diagramtema.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { harAlder } from './50-regressionsmodeller.js';
 /**
@@ -115,8 +115,8 @@ export function ritaGapUppdelning() {
     const rader = vm.delar.map(d => {
         const del = { ...d, ..._GU_ATGARD[d.variabel || 'inom'] }, v = del.belopp;
         const bredd = Math.abs(v) / vm.storst * 50;
-        // Samma färg som delens stapel i trappan: struktur eller lönesättningen (PALETTE.uppdelning).
-        const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
+        // Samma färg som delens stapel i trappan: struktur eller lönesättningen (PALETT.uppdelning).
+        const farg = del.variabel === null ? PALETT.uppdelning.lonesattning : PALETT.uppdelning.struktur;
         const andel = del.andel === null ? '' : `<span class="gu-andel">${_guPct(del.andel, 0)} av skillnaden</span>`;
         const topp = del.topp.map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
             // Grupper som räknats samman (ADR-87) redovisas bara med antal — deras belopp kunde röja en liten grupp.
@@ -143,7 +143,7 @@ export function ritaGapUppdelning() {
 // Uppdelningen som trappa i omvänd ordning: hela skillnaden först, sedan delarna (A, B, … en per vald variabel
 // och sist "inom") en i taget från hela skillnaden mot noll. Bara delsummorna och helheten ritas — samma tal som raderna
 // under, och aldrig en enskild grupps bidrag (i exportläget räknas grupper där ett kön är under tröskeln samman först,
-// ADR-87). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
+// ADR-87). Färgen säger vad delen betyder (PALETT.uppdelning), inte åt vilket håll den går.
 const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
 // Stegen och andelarna är gapTrappa och andelAvSkillnaden i src/lib/vymodell-var-uppstar-gapet.js.
 function _guTrappaFigur(u) {
@@ -175,15 +175,15 @@ function _guTrappaFigur(u) {
     return { beskrivning: `Skillnaden i medellön, kvinnor mot män: först hela skillnaden, ${_guKr(u.gap)}, och sedan ${antal} delar som tillsammans blir hela skillnaden, en i taget från hela skillnaden mot noll: ${gapDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
         hojd: 320,
         x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true, ...(hog > lag ? { doman: [lag - luft, hog + luft] } : {}) },
-        lager: [{ marke: 'intervall', serie: _GU_SERIE.helhet, farg: PALETTE.uppdelning.helhet, tjocklek: 44,
+        lager: [{ marke: 'intervall', serie: _GU_SERIE.helhet, farg: PALETT.uppdelning.helhet, tjocklek: 44,
                   data: [{ x: _GU_SERIE.helhet, lag: Math.min(gap, 0), hog: Math.max(gap, 0), skillnadKr: gap }], tips: d => [[d.x], ['Skillnad i medellön', _guKr(d.skillnadKr)]] },
-                delLager(false, _GU_SERIE.struktur, PALETTE.uppdelning.struktur),
-                delLager(true, _GU_SERIE.inom, PALETTE.uppdelning.lonesattning),
+                delLager(false, _GU_SERIE.struktur, PALETT.uppdelning.struktur),
+                delLager(true, _GU_SERIE.inom, PALETT.uppdelning.lonesattning),
                 // Ett streck där steget landar, och beloppet vid stapelns ände längst från noll (ett osynligt streck bär
                 // etiketten). Bara markeringar: talen står redan i lagren ovan, och lagren får inga rader i diagramdatan.
-                { marke: 'punkt', symbol: 'streck', serie: 'Nivå', legend: false, utanData: true, farg: PALETTE.semantic.mork, storlek: 11,
+                { marke: 'punkt', symbol: 'streck', serie: 'Nivå', legend: false, utanData: true, farg: PALETT.semantic.mork, storlek: 11,
                   data: [{ x: _GU_SERIE.helhet, y: gap }, ...steg.map(s => ({ x: s.x, y: Math.round(s.efter) }))] },
-                { marke: 'punkt', symbol: 'streck', serie: 'Belopp', legend: false, utanData: true, farg: PALETTE.semantic.mork,
+                { marke: 'punkt', symbol: 'streck', serie: 'Belopp', legend: false, utanData: true, farg: PALETT.semantic.mork,
                   data: [{ x: _GU_SERIE.helhet, y: gap, storlek: 0, etikett: _guKr(u.gap), etikettLage: lage(gap, Math.min(gap, 0)) },
                          ...steg.map(s => { const y = Math.round(ande(s)); return { x: s.x, y, storlek: 0, etikett: etikett(s), etikettLage: lage(y, s.lag) }; })] }] };
 }

@@ -134,7 +134,7 @@ describe('könsfärgerna', () => {
             for (const s of [FARG.kritisk, FARG.varning, FARG.ok, FARG.granska, FARG.granskaLjus, FARG.info, ...serie]) expect(dE(k, s), `${k} mot ${s}`).toBeGreaterThanOrEqual(20);
         }
     });
-    it('hexkoderna står bara i paletten; vyerna läser PALETTE.kon eller farger', () => {
+    it('hexkoderna står bara i paletten; vyerna läser PALETT.kon eller farger', () => {
         const koder = new RegExp(`${kvinna}|${man}`, 'i'), fynd = [];
         for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && f !== '10-diagramtema.js')) {
             if (koder.test(utanKommentarer(läs(`src/app/${f}`)))) fynd.push(f);

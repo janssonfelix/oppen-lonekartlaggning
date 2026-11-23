@@ -479,10 +479,10 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
   `linjepunkt`, `litenpunkt`, `intervall`, `individ`, `ruta` och `lada` (lådans `data-i` är den första ritade
   individen i kategorin). Banorna `linje` och `band` har bara `data-l`.
 - Ett `<text>` har ett `<title>` bara när den visade texten har kortats.
-- Texten har grundstorleken 12 px (`CHART_FONT.size`): axlarna, axeltitlarna och förklaringen. Stapel- och
+- Texten har grundstorleken 12 px (`DIAGRAM_TYPSNITT.size`): axlarna, axeltitlarna och förklaringen. Stapel- och
   rutetexter, noten och ytans etikett är ett steg mindre, rubriken och paneltiteln större. De minsta rollerna —
   punktetiketter, referenslinjernas etiketter, ytans andra rad och exportens fotrad — har `_rfLitenPx`, som aldrig
-  går under golvet 11 px (`CHART_FONT.minsta`). Ingen text i en figur är alltså mindre än 11 px. Exporten ritar med
+  går under golvet 11 px (`DIAGRAM_TYPSNITT.minsta`). Ingen text i en figur är alltså mindre än 11 px. Exporten ritar med
   samma storlekar i den logiska bredden och skalas sedan (avsnitt 6).
 - Det finns två slags inre `<svg>`: panelen (`data-del="panel"`) och ränderna i en liten yta
   (`data-marke="rander"`). Diagrammets egen svg är `:scope > svg` i behållaren.
@@ -641,13 +641,13 @@ Tabellernas radgrafik (`_laOversiktGrafik`, `_pagAvvikelseGrafik`) ritas med van
 utsmyckning av talet i cellen bredvid (`aria-hidden`), har ingen export och bär inga värden som inte står i raden.
 ADR-39 gäller för allt som är ett diagram.
 
-**Färg** (`PALETTE` i `10-diagramtema.js`). Färgen väljs efter vad den ska säga:
+**Färg** (`PALETT` i `10-diagramtema.js`). Färgen väljs efter vad den ska säga:
 
 - **Kön:** två färger, plommon för kvinnor och olivgrönt för män — inte rosa och blått, som knyter färgen till en stereotyp. Båda har minst 4,5:1 mot vitt, skiljer sig vid simulerad protanopi och deuteranopi och ligger ifrån status- och seriefärgerna (`tests/farger.test.js`). Används bara för kön, och kön står alltid också med ord i legenden.
 - **Serier:** en fast ordning av tydligt olika färger; en serie behåller sin färg när andra döljs.
 - **Storlek:** en nyans, ljus till mörk. **Avvikelse:** två nyanser kring neutralt grått.
 - **Uppdelning av en skillnad** (trapporna i *Var uppstår löneskillnaden?* och *Vad blir kvar av löneskillnaden?*):
-  `PALETTE.uppdelning`. Färgen säger vad delen betyder, inte åt vilket håll den går: helheten neutral och mörk, det som
+  `PALETT.uppdelning`. Färgen säger vad delen betyder, inte åt vilket håll den går: helheten neutral och mörk, det som
   förklaras av var kvinnor och män arbetar (struktur) blått, det som blir kvar inom samma grupp (lönesättningen)
   orange. Förklaringen under diagrammet säger det i ord, och kortens färgrutor har samma färger.
 - **Status:** bara för status, och alltid tillsammans med form eller ord. En skillnad som bedöms mot 3- och
