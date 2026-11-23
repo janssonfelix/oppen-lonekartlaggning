@@ -106,7 +106,9 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
         w.__lasInDemodata();
         w.raknaBootstrapKI();
         const r = w.korOLSRegression();
-        const text = w.formateraKI(w.__state.bootstrapCI.gapPct).replace(/<[^>]*>/g, '').replace(/ /g, ' ');
+        const el = w.document.createElement('span');
+        el.innerHTML = w.formateraKI(w.__state.bootstrapCI.gapPct);
+        const text = el.textContent.replace(/ /g, ' ');
         expect(text).toBe(' [95 % KI: −17,8 % till −11,9 %]');
         const { lo, hi } = w.__state.bootstrapCI.gapPct;
         expect(r.rawGapPct).toBeLessThan(0);

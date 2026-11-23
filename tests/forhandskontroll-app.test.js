@@ -11,7 +11,8 @@ const lasIn = async (w, rader, namn = 'lonefil.csv') => {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
     w.lasInStrukturfil(csvFil(w, rader, namn));
-    await vanta(() => status(w) && !/läser|Läser/.test(status(w)));
+    // Bakgrundsräkningen från en tidigare inläsning kan skriva sin not på den tömda raden; den räknas inte som klar.
+    await vanta(() => { const s = status(w).replace(' · förbereder analyser i bakgrunden…', ''); return s && !/läser|Läser/.test(s); });
 };
 // CSV-mallens rubriker med 30 rader; lönen kan räknas om (årslön) och ålder skrivas som födelseår.
 const fil = ({ lon = i => 30000 + i * 10, alder = i => String(30 + i), kon = i => (i % 2 ? 'Man' : 'Kvinna'), n = 30 } = {}) => {

@@ -15,7 +15,8 @@ const lasIn = async (w, rader, namn) => {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
     w.lasInStrukturfil(csvFil(w, rader, namn));
-    await vanta(() => status(w) && !/läser|Läser/.test(status(w)));
+    // Bakgrundsräkningen från en tidigare inläsning kan skriva sin not på den tömda raden; den räknas inte som klar.
+    await vanta(() => { const s = status(w).replace(' · förbereder analyser i bakgrunden…', ''); return s && !/läser|Läser/.test(s); });
 };
 // Som lasIn, men väntar tills state.data bytts ut (statusraden kan stå kvar från förra filen medan den nya läses).
 const lasInNy = async (w, rader) => {
