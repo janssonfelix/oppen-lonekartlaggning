@@ -3,7 +3,7 @@ import { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchFo
 const rad = (over = {}) => ({ aid: '1', yrke: '1 Yrke', bas: 'C', n: 42, org: { p10: 34100, median: 38900, p90: 44200 },
     stallningstagande: { p10: 29000, median: 32000, p90: 36000 }, statistik: { p10: 33700, median: 37800, p90: 42900 }, ...over });
 const alla = { harStatistik: true, harStallningstagande: true, statistikHarSpann: true };
-describe('läge i spannet', () => {
+describe('[B6.6] läge i spannet', () => {
     it('0 vid P10, 100 vid P90, över 100 ovanför, null utan spann', () => {
         expect(lageISpann(29000, { p10: 29000, p90: 36000 })).toEqual({ pos: 0, ord: 'i nedre delen' });
         expect(lageISpann(36000, { p10: 29000, p90: 36000 }).pos).toBe(100);

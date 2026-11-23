@@ -58,7 +58,7 @@ describe('aidbas: gruppering och dominans', () => {
     });
 });
 
-describe('aidbas: Tabell 1 — Lika arbete AID x BAS (ADR-90)', () => {
+describe('[B5.5] aidbas: Tabell 1 — Lika arbete AID x BAS (ADR-90)', () => {
     // Tabellen får Lika arbetes grupper (likaArbeteGrupper) och räknar ingen egen bedömning.
     const lika = (d, k = 10) => likaArbeteGrupper(d, { k, golv: 10 });
     it('samma grupper som Lika arbete, i BAS-ordning: under tröskeln i noten med namn, färre än två av ett kön räknas', () => {

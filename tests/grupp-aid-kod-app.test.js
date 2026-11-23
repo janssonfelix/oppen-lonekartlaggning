@@ -21,7 +21,7 @@ const underlag = () => [
 ];
 const fonster = () => { const w = createAppWindow(); w.__state.data = underlag(); return w; };
 
-describe('Lika arbete i appen: en grupp per AID-kod', () => {
+describe('[B5.1] Lika arbete i appen: en grupp per AID-kod', () => {
     it('laLikaGrupper: en grupp på 22 med 11 kvinnor och 11 män och könsmedianer, vid tröskeln 10', () => {
         const w = fonster();
         const res = w.eval('laLikaGrupper(getData(), 10)');

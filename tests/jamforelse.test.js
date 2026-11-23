@@ -9,7 +9,7 @@ import { marketTargets } from '../src/lib/loneoversyn.js';
 const grupp = (yrke, bas, loner) => loner.map(lon => ({ yrke, bas, lon }));
 const tio = (_bas = 'C', start = 30000) => Array.from({ length: 10 }, (_, i) => start + i * 1000);   // 30 000 … 39 000
 
-describe('jamforelse: organisationens percentiler och skillnader', () => {
+describe('[B6.5] jamforelse: organisationens percentiler och skillnader', () => {
     it('räknar P10, median och P90 som quantile och skillnaden mot statistiken', () => {
         const { rader } = jamforelseRader(grupp('402010 Förskollärare', 'C', tio()),
             { statistik: [{ aid: '402010', bas: 'C', p10: 31000, median: 35000, p90: 40000 }], policyFor: () => null, k: 10 });
@@ -61,7 +61,7 @@ describe('jamforelse: matchning mot jämförelsestatistiken', () => {
     });
 });
 
-describe('jamforelse: statistikFor, det gemensamma uppslaget', () => {
+describe('[B6.4] jamforelse: statistikFor, det gemensamma uppslaget', () => {
     const utanBas = { aid: '207011', bas: '', median: 33000 }, medC = { aid: '207011', bas: 'C', median: 36000 };
     it('samma AID och BAS först', () => {
         expect(statistikFor([utanBas, medC], '207011', 'C')).toEqual({ rad: medC, matchning: 'aid-bas' });

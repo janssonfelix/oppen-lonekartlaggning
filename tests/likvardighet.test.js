@@ -314,7 +314,7 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
 });
 
 // ===================================================================
-describe('computeLikvardighetPairs — full pipeline (v4)', () => {
+describe('[B5.3] computeLikvardighetPairs — full pipeline (v4)', () => {
     it('end-to-end: internt jämförelseyrke är primärt över jämförelsestatistiken', () => {
         const rng = makeRng();
         const data = [
@@ -672,7 +672,7 @@ describe('basRangFn: BAS-steg i bokstäver (se §6 i likvardighetsmodellen.md)',
 });
 
 // ===================================================================
-describe('aldersjusteradSkillnad — jämförelseyrkets lön omräknad till den kvinnodominerade gruppens åldrar', () => {
+describe('[B5.4] aldersjusteradSkillnad — jämförelseyrkets lön omräknad till den kvinnodominerade gruppens åldrar', () => {
     // Samma lönekurva i båda yrkena: lön = 20 000 × exp(0,02 × ålder). Skillnaden i rå median
     // beror då helt på att yrkena har olika åldrar.
     const kurva = alder => 20000 * Math.exp(0.02 * alder);
@@ -753,7 +753,7 @@ describe('aldersjusteradSkillnad — jämförelseyrkets lön omräknad till den 
 });
 
 // ===================================================================
-describe('en definition av kvinnodominerat (ADR-60, §9.22)', () => {
+describe('[B5.2] en definition av kvinnodominerat (ADR-60, §9.22)', () => {
     it('arKvinnodominerad: \'do\' är mer än gränsen, \'scb\' gränsen eller mer', () => {
         expect(arKvinnodominerad(60, 'do')).toBe(false);
         expect(arKvinnodominerad(60.01, 'do')).toBe(true);

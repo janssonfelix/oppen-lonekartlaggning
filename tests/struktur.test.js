@@ -28,7 +28,7 @@ describe('structure: mediangap', () => {
     });
 });
 
-describe('structure: konsMedianer', () => {
+describe('[B2.1] structure: konsMedianer', () => {
     const tom = { nKv: 0, nMa: 0, medKv: null, medMa: null, kvotPct: null, gapPct: null, konOk: false };
     it('tom lista och saknad lista: inga tal', () => {
         expect(konsMedianer([])).toEqual(tom);
@@ -55,7 +55,7 @@ describe('structure: konsMedianer', () => {
     });
 });
 
-describe('structure: direktivets tecken (EU 2023/970 art. 9)', () => {
+describe('[B2.2] structure: direktivets tecken (EU 2023/970 art. 9)', () => {
     it('verktygets −8 % (kvinnor lägre) blir +8 %; beloppet är detsamma', () => {
         expect(tillDirektivtecken(-8)).toBe(8);
         expect(tillDirektivtecken(3.25)).toBe(-3.25);
@@ -70,7 +70,7 @@ describe('structure: direktivets tecken (EU 2023/970 art. 9)', () => {
     });
 });
 
-describe('structure: representation per BAS (pyramid)', () => {
+describe('[B2.3] structure: representation per BAS (pyramid)', () => {
     it('sorterar BAS A–Ö med andel kvinnor', () => {
         const r = representationByBas(rows());
         expect(r.map(x => x.bas)).toEqual(['A', 'B', 'C']);
@@ -80,7 +80,7 @@ describe('structure: representation per BAS (pyramid)', () => {
     });
 });
 
-describe('structure: kvartilfördelning (EU 2023/970)', () => {
+describe('[B2.4] structure: kvartilfördelning (EU 2023/970)', () => {
     it('fyra lika stora lönekvartiler med andel kvinnor', () => {
         const q = quartileDistribution(rows());
         expect(q).toHaveLength(4);
@@ -101,7 +101,7 @@ describe('structure: kvartilfördelning (EU 2023/970)', () => {
     });
 });
 
-describe('structure: distributionellt gap (sticky floor vs glastak)', () => {
+describe('[B2.5] structure: distributionellt gap (sticky floor vs glastak)', () => {
     it('gap per percentil', () => {
         const d = distributionalGap(rows());
         expect(d.map(x => x.p)).toEqual([10, 25, 50, 75, 90]);

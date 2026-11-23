@@ -47,7 +47,7 @@ async function bok(w) {
     return { namn: wb.SheetNames, blad, celler: n => blad(n).flat() };
 }
 
-describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individnivå', () => {
+describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individnivå', () => {
     it('Lika arbetes grupper och status per AID-kod och BAS-intervall; på skärmen alla grupper med två av varje kön (ADR-90)', () => {
         const w = fonster([...UNDERLAG, ...TVA_BAS]);
         w.__renderTabContent('matrix');

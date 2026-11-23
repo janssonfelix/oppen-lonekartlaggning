@@ -202,7 +202,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
 
 // ADR-69, tillägget: ett par per kvinnodominerat yrke (det med störst skillnad bland dem som når den inställda
 // tröskeln), och en föreslagen rad som inte säkert går att föra till ett par som når tröskeln tas bort.
-describe('Löneöversyn: ett par per yrke i förslagen, och försiktig rensning (ADR-69)', () => {
+describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig rensning (ADR-69)', () => {
     // 5300 (12 kvinnor) har två jämförelseyrken: 6100 (24 personer, skillnad 14 952) och 6200 (jmf2N män).
     const tvaJmf = (jmf2N, k = null, jmf2Lon = JMF2_LON) => fonsterPar({ kvN: 12, jmfN: 24, jmf2N, k, jmf2Lon });
     const BORTTAGEN = /föreslag(?:en rad|na rader) togs bort/;

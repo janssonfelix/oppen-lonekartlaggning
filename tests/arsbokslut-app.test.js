@@ -15,7 +15,7 @@ const siffror = t => ren(t).replace(/(\d)\s(?=\d{3}\b)/g, '$1');
 const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
 const medSkal = w => Object.entries(w.__state.handlingsplan).filter(([, v]) => v.skal && v.skal.length);
 
-describe('årsbokslutet i verktyget', () => {
+describe('[B8.2] årsbokslutet i verktyget', () => {
     it('byggs med den inställda tröskeln: grupperna om 6 finns inte i det, och skärmen är kvar i skärmläget', () => {
         const w = fonster(null);
         const b = w.eval('byggArsbokslutNu()');

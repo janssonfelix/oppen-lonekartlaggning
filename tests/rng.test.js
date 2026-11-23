@@ -60,7 +60,7 @@ describe('seedFromNumbers', () => {
     });
 });
 
-describe('rngFor — reproducerbar bootstrap', () => {
+describe('[B4.3] rngFor — reproducerbar bootstrap', () => {
     // Samma bootstrap som analyserna gör: återsampla och ta medianen.
     const boot = (arr, B = 200) => {
         const rnd = rngFor(arr);

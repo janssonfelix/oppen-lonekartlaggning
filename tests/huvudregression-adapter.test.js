@@ -24,7 +24,7 @@ const FALL = [
     ['standardmodellen, höjd tröskel', STD, 60],
 ];
 
-describe('runOLSRegression är en tunn adapter till huvudregression', () => {
+describe('[B3.1] runOLSRegression är en tunn adapter till huvudregression', () => {
     const w = createAppWindow();
     let demo;
     beforeAll(() => { w.__loadDemoData(); demo = w.__state.data.map(r => ({ ...r })); });

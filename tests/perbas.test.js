@@ -15,7 +15,7 @@ const underlag = () => [
 const referens = (aid, bas) => (bas === 'D' ? { p10: 33000, med: 33900, p90: 37800 } : null);
 const statistik = [{ aid: '2071', bas: 'D', median: 34700, p10: 31000, p90: 38950 }, { aid: '3510', median: 43000 }];
 
-describe('perbas: tabellen per BAS-intervall', () => {
+describe('[B6.7] perbas: tabellen per BAS-intervall', () => {
     it('raderna kommer i utkastets ordning: referens, organisationen, yrken med statistik under, kvinnor, män', () => {
         const t = perBasTabeller(underlag(), { k: 10, referens, statistik, referensNamn: 'Ställningstagande 2026', statistikNamn: 'Lönestatistik' });
         const D = t.intervall.find(i => i.bas === 'D');

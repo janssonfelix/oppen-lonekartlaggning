@@ -52,7 +52,7 @@ describe('säkerhet: CSP för stilar i bygget', () => {
     });
 });
 
-describe('säkerhet: byggets CSP släpper inte nätet (S1)', () => {
+describe('[S1] säkerhet: byggets CSP släpper inte nätet', () => {
     const csp = cspIHtml(läs('dist/oppen-lonekartlaggning.html'));
     const direktiv = delaCsp(csp);
     it('default-src och connect-src är \'none\' och inget annat', () => {
@@ -85,6 +85,16 @@ describe('säkerhet: byggets CSP släpper inte nätet (S1)', () => {
         expect(delaCsp(csp.replace(/connect-src [^;]*;/, ''))['connect-src']).toBeUndefined();
         expect(skriptkallorUtomKontrollsummor(delaCsp(csp.replace('script-src ', "script-src 'unsafe-inline' "))['script-src']))
             .toEqual(["'unsafe-inline'"]);
+    });
+});
+
+describe('[S3] en fil, utan server: bygget hämtar inget utifrån', () => {
+    const html = läs('dist/oppen-lonekartlaggning.html');
+    it('inga skript med src och inga modulskript, inga länkade stilmallar eller resurser', () => {
+        const skripttaggar = [...html.matchAll(/<script\b([^>]*)>/gi)].map(m => m[1]);
+        expect(skripttaggar.length).toBeGreaterThan(0);
+        expect(skripttaggar.filter(a => /\bsrc\s*=|type\s*=\s*["']?module/i.test(a))).toEqual([]);
+        expect(utanSkript(html, { medAttribut: true })).not.toMatch(/<link\b/i);
     });
 });
 
@@ -299,7 +309,7 @@ describe('säkerhet: bibliotekens versioner stämmer i dokumentationen', () => {
     });
 });
 
-describe('lagringsspärren', () => {
+describe('[S2] lagringsspärren', () => {
     it('lagringsspärren har inget undantag: varje skrivning till localStorage och sessionStorage kastar', () => {
         const w = createAppWindow();
         for (const nyckel of ['x', 'd3']) {
@@ -370,7 +380,7 @@ describe('diagram: beskrivning för skärmläsare, svenska talformat och Pareto'
     });
 });
 
-describe('namnen: inga hårdkodade etiketter', () => {
+describe('[S5] namnen: inga hårdkodade etiketter', () => {
     it('etiketterna läser orgNamn/jmfNamn', async () => {
         const { readFileSync, readdirSync } = await import('node:fs');
         const dir = new URL('../src/app/', import.meta.url);

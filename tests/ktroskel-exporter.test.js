@@ -12,7 +12,7 @@ import { STORA, MELLAN, SMA, FLIKAR, synliga, fonster, ritaAlla, fonsterKon, fon
 // fäller olika tester från körning till körning.
 vi.setConfig({ testTimeout: 30000 });
 
-describe('I4: listan över flikar är menyns flikar', () => {
+describe('[I4] listan över flikar är menyns flikar', () => {
     it('FLIKAR täcker varje flik i menyn (utom Utforska, som är undantagen på skärmen)', () => {
         const w = createAppWindow();
         const meny = [...w.document.querySelectorAll('.nav-item[data-tab]')].map(e => e.getAttribute('data-tab'));
@@ -22,7 +22,7 @@ describe('I4: listan över flikar är menyns flikar', () => {
     });
 });
 
-describe('I2: exporter som hör till ett undantag säger det, och notisen utlovar ingen aggregering', () => {
+describe('[I2] exporter som hör till ett undantag säger det, och notisen utlovar ingen aggregering', () => {
     const UNDANTAG_LV = 'Den här filen kan även innehålla grupper under tröskeln (undantag: Likvärdigt arbete).';
     const UNDANTAG_UT = 'Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).';
     const fangaCsv = w => { w.eval('window.__csv = []; _csvMedStampel = (f => (rows, u) => { const ut = f(rows, u); window.__csv.push(ut); return ut; })(_csvMedStampel)'); return () => w.__csv.at(-1).map(r => r.join(' | ')); };
@@ -97,7 +97,7 @@ describe('I2: exporter som hör till ett undantag säger det, och notisen utlova
 });
 
 // Prövar raden och stämpeln, inte vilka grupper som syns: den lilla fixturen (fonsterLitet) räcker.
-describe('I3: tröskeln står i ZIP-filens Excel-fil och i utskriftens korta urval', () => {
+describe('[I3] tröskeln står i ZIP-filens Excel-fil och i utskriftens korta urval', () => {
     it('ZIP-filens Excel-fil har bladet Metod & parametrar med raden om minsta gruppstorlek', async () => {
         const w = fonsterLitet(null);
         await laddaXlsx(w);
@@ -227,7 +227,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
     });
 });
 
-describe('I5: konfigurationsfil och organisationspaket: det som syns ritas om en gång när tröskeln ändras, resten töms', () => {
+describe('[I5] konfigurationsfil och organisationspaket: det som syns ritas om en gång när tröskeln ändras, resten töms', () => {
     const rakna = w => w.eval('window.__antal = {}; const __orig = renderTabContent; renderTabContent = function (f) { window.__antal[f] = (window.__antal[f] || 0) + 1; return __orig(f); };');
     it('konfigurationsfil med annan tröskel: Översikts delar ritas av stegen (ingen flik genom renderTabContent), övriga töms, och Att göra följer den nya tröskeln', () => {
         const a = createAppWindow();

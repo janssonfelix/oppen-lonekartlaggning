@@ -53,7 +53,7 @@ describe('prioIndex: själva indexformeln', () => {
     });
 });
 
-describe('prioritera: gruppering och k-regel', () => {
+describe('[B7.10] prioritera: gruppering och k-regel', () => {
     it('tom indata ger en tom lista', () => {
         expect(kör([])).toEqual([]);
     });
@@ -362,7 +362,7 @@ describe('prioritera: delpoängen ligger på posten och konstanterna har sina v�
     });
 });
 
-describe('motiveringsgrunder: reglerna bakom motiveringsförslagen', () => {
+describe('[B7.12] motiveringsgrunder: reglerna bakom motiveringsförslagen', () => {
     // En post med kvinnor och män (lön, ålder per person); diffPct −20 slår inte till på någon regel om läget.
     const rad = (kon, lon, alder = 0) => ({ kon, lon, alder });
     const post = (kv, ma, falt = {}) => ({ _rows: [...kv.map(([l, a]) => rad('kvinna', l, a)), ...ma.map(([l, a]) => rad('man', l, a))],

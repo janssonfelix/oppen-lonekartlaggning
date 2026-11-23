@@ -44,7 +44,7 @@ describe('årsbokslut: validering och k-skydd', () => {
     });
 });
 
-describe('årsbokslut: jämförelsen mellan två år', () => {
+describe('[B8.2] årsbokslut: jämförelsen mellan två år', () => {
     it('nyckeltal rad för rad, flaggade grupper som kvar, nya och borta, och förra årets öppna punkter', () => {
         const forra = bokslut(2025);
         const nu = bokslut(2026, {
@@ -231,7 +231,7 @@ describe('årsbokslut: grupperna är AID-koden i BAS-intervallet (ADR-89)', () =
     });
 });
 
-describe('årsbokslut: lönespridningen (P90 − P10) / median', () => {
+describe('[B8.1] årsbokslut: lönespridningen (P90 − P10) / median', () => {
     it('räknas för en lönelista med minst k personer, avrundad till fyra decimaler; under k, tom eller median 0 ger null', () => {
         const lon = [20000, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000, 38000];
         // P10 = 21 800, P90 = 36 200 (linjär interpolation), median 29 000.

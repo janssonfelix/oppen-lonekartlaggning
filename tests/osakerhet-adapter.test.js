@@ -22,7 +22,7 @@ const lika = (app, lib) => expect(forstaSkillnad(app, lib)).toBeNull();
 const utanHalv = u => (u ? { sigma: u.sigma, punkter: u.punkter, halvar: [[3, 3], [5, 8], [10, 10], [40, 60]].map(([a, b]) => u.halv(a, b)) } : u);
 const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
 
-describe('osäkerhetens adaptrar i appen ger samma tal som src/lib/osakerhet.js', () => {
+describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osakerhet.js', () => {
     const w = createAppWindow();
     let demo;
     beforeAll(() => { w.__loadDemoData(); demo = w.__state.data.map(r => ({ ...r })); });

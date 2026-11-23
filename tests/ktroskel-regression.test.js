@@ -13,7 +13,7 @@ import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_KV, KON_MA, ENS
 // fäller olika tester från körning till körning.
 vi.setConfig({ testTimeout: 30000 });
 
-describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln för varje kön', () => {
+describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln för varje kön', () => {
     const NOT = /ojusterade steget[^.]*visas inte[^.]*färre än 10 personer/;
     const tal = w => {
         const r = w.eval('runOLSRegression()');
@@ -99,7 +99,7 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
     });
 });
 
-describe('R4: Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel', () => {
+describe('[R4] Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel', () => {
     it('i exportläget: sparat vid 5 med 7 män, rågapet visas vid 5 och döljs när tröskeln höjs till 10', () => {
         const w = iExport(fonsterMan(5, SJU_MAN));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
@@ -131,7 +131,7 @@ describe('R4: Löneöversynens scenariojämförelse maskerar ett rågap som spar
     });
 });
 
-describe('R2: en egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning', () => {
+describe('[R2] en egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning', () => {
     it('raden på en grupp om en person får noten; raden på en stor grupp får den inte', () => {
         const w = fonsterKon(null);
         w.__state.forecast.targets = [
@@ -166,7 +166,7 @@ describe('R2: en egen riktad rad på en grupp under tröskeln är tillåten och 
     });
 });
 
-describe('R3: Ålder & karriär följer regeln för könsuppdelade mått', () => {
+describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () => {
     const TRE_MAN = [41417, 43719, 47827];
     // Serierna i ett diagram ritat av diagramkärnan (ADR-39); för lådagrammet de kön som har en låda.
     const namn = (w, id) => {

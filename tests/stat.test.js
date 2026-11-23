@@ -32,7 +32,7 @@ import {
 
 const close = (a, b, tol = 1e-9) => Math.abs(a - b) < tol;
 
-describe('median', () => {
+describe('[B1.1] median', () => {
     it('returnerar 0 för tom array', () => {
         expect(median([])).toBe(0);
     });
@@ -52,7 +52,7 @@ describe('median', () => {
     });
 });
 
-describe('quantile', () => {
+describe('[B1.2] quantile', () => {
     const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     it('q=0 → minimum', () => {
         expect(quantile(arr, 0)).toBe(1);
@@ -110,7 +110,7 @@ describe('linearRegression', () => {
     });
 });
 
-describe('normalCdf', () => {
+describe('[B1.5] normalCdf', () => {
     it('Φ(0) ≈ 0.5', () => {
         expect(close(normalCdf(0), 0.5, 1e-6)).toBe(true);
     });
@@ -190,7 +190,7 @@ describe('matMul / transpose / invert', () => {
     });
 });
 
-describe('fitOLS', () => {
+describe('[B1.3] fitOLS', () => {
     it('återskapar kända koefficienter på brusfri data: y = 3 + 2·x1 - 1·x2', () => {
         const X = [];
         const y = [];
@@ -337,7 +337,7 @@ function fitOLSFull(X, y, hTillagg = null) {
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }
 
-describe('tDistCdf', () => {
+describe('[B1.4] tDistCdf', () => {
     // Kända t-fördelningsvärden från standardtabeller (R: pt(q, df))
     // df=1 (Cauchy): pt(0, 1) = 0.5; pt(1, 1) ≈ 0.75; pt(-1, 1) ≈ 0.25
     it('returnerar 0,5 vid t=0', () => {
@@ -436,7 +436,7 @@ describe('pValue2Sided', () => {
     });
 });
 
-describe('bhJustera', () => {
+describe('[B1.6] bhJustera', () => {
     // Handräknat (m = 4): sorterat 0,005 · 0,01 · 0,03 · 0,04 ger p·m/rang = 0,02 · 0,02 · 0,04 · 0,04, redan monotont.
     it('ger q i indatans ordning', () => {
         const q = bhJustera([0.01, 0.04, 0.03, 0.005]);

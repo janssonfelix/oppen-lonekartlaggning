@@ -32,7 +32,7 @@ describe('fixturen för kön under tröskeln', () => {
     });
 });
 
-describe('C2: Struktur per BAS visar inget könsgap när ett kön är under tröskeln', () => {
+describe('[C2] Struktur per BAS visar inget könsgap när ett kön är under tröskeln', () => {
     const radFor = (html, bas) => { const m = html.match(new RegExp(`<tr><td>(?:<strong>)?${bas}(?:</strong>)?</td>.*?</tr>`, 's')); return m ? normalisera(m[0].replace(/&nbsp;/g, ' ').replace(/<[^>]+>/g, ' | ')) : null; };
     it('fliken Struktur på skärmen: gapet visas också mot en, två och tre män (ADR-51)', () => {
         const w = fonsterKon(null);
@@ -62,7 +62,7 @@ describe('C2: Struktur per BAS visar inget könsgap när ett kön är under trö
     });
 });
 
-describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln för varje kön', () => {
+describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln för varje kön', () => {
     // 60 kvinnor och 3 män: männens median är en enskild mans lön.
     const MAN = [41417, 43719, 47827];
     const fonster3 = k => {
@@ -159,7 +159,7 @@ describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln f�
 
 // Bladet Lönepolitik i "Excel (alla flikar)": samma regler som fliken. Underlaget är könsfixturen (ställningstagande
 // för varje BAS): Y1–Y3 har 1–3 män, X har 4 personer, E–F 6, A–D 20, S1–S7 150.
-describe('C5: bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fliken', () => {
+describe('[C5] bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fliken', () => {
     const bladet = async k => {
         const w = fonsterKon(k);
         await laddaXlsx(w);
@@ -208,7 +208,7 @@ describe('C5: bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fl
     });
 });
 
-describe('C4: allt som visar gruppmått följer tröskeln när den ändras (den öppna fliken direkt, övriga när de öppnas)', () => {
+describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den öppna fliken direkt, övriga när de öppnas)', () => {
     const fonsterPar = () => {
         const w = createAppWindow();
         w.eval('sattKTroskel(5, { fraga: false })');
@@ -279,7 +279,7 @@ describe('C4: allt som visar gruppmått följer tröskeln när den ändras (den 
     });
 });
 
-describe('C6: räkneexemplet i kronor per år bara när båda könen når tröskeln', () => {
+describe('[C6] räkneexemplet i kronor per år bara när båda könen når tröskeln', () => {
     // G: 12 kvinnor och 12 män, kvinnorna omkring 3 000 kr lägre. H: 12 kvinnor och 4 män (under tröskeln).
     const fonster = () => {
         const w = createAppWindow();

@@ -22,7 +22,7 @@ import {
 const loner = (n, s, bas = 30000) => Array.from({ length: n }, (_, i) => bas + Math.round(((i * 7919 + s) % 1000) * 4 + (i % 7) * 3));
 const rad = (kon, lon, ovrigt = {}) => ({ kon, lon, bas: 'B', yrke: '111111 Påhittat yrke', aid: '111111', alder: 40, ...ovrigt });
 
-describe('percentilintervall', () => {
+describe('[B1.7] percentilintervall', () => {
     // Listan 0, 1, …, n − 1: värdet är indexet. Symmetriskt: lika många värden under den nedre gränsen som över den övre.
     const lista = n => Array.from({ length: n }, (_, i) => i);
     const symmetriskt = n => { const svans = Math.floor(n * 0.025); return { lag: svans, hog: n - 1 - svans }; };
@@ -59,7 +59,7 @@ describe('konstanterna', () => {
     });
 });
 
-describe('bootstrapintervallen på mediankvoten', () => {
+describe('[B4.1] bootstrapintervallen på mediankvoten', () => {
     const kv = loner(25, 1, 29000), ma = loner(30, 2, 31000);
 
     it('medianKvotKI: samma seed ger samma intervall, och det rymmer punktskattningen', () => {
@@ -105,7 +105,7 @@ describe('bootstrapintervallen på mediankvoten', () => {
     });
 });
 
-describe('konskvotPerGrupp', () => {
+describe('[B4.2] konskvotPerGrupp', () => {
     const kv = loner(12, 1, 29000), ma = loner(15, 2, 31000);
     it('grupper där ett kön är färre än k är dolda, tomma och de där männens median inte är positiv hoppas över', () => {
         const { visade, dolda } = konskvotPerGrupp([['A', kv, ma], ['tom', [], []], ['liten', kv.slice(0, 9), ma], ['noll', kv, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]], { k: 10 });
@@ -117,7 +117,7 @@ describe('konskvotPerGrupp', () => {
     });
 });
 
-describe('regressionslinjensBand', () => {
+describe('[B4.4] regressionslinjensBand', () => {
     it('n = 3, räknat för hand: (0, 0), (1, 1), (2, 3)', () => {
         // Linjen y = 1,5x − 1/6; RSS = 1/6, σ² = RSS/(n − 2) = 1/6, x̄ = 1, Σ(x − x̄)² = 2.
         const band = regressionslinjensBand([[0, 0], [1, 1], [2, 3]], 0, 2, 3);
@@ -153,7 +153,7 @@ describe('regressionslinjensBand', () => {
     });
 });
 
-describe('styrkan', () => {
+describe('[B4.5] styrkan', () => {
     it('mdeProcent räknad för hand: σ = 0,1, 20 kvinnor och 30 män', () => {
         // 2,802 · 0,1 · √(1/20 + 1/30) = 0,2802 · 0,288675 = 0,0808868; (e^0,0808868 − 1) · 100 = 8,4248 %
         expect(mdeProcent(0.1, 20, 30)).toBeCloseTo(8.4248, 4);
@@ -211,7 +211,7 @@ describe('styrkan', () => {
     });
 });
 
-describe('extremvarden', () => {
+describe('[B4.6] extremvarden', () => {
     const basA = loner(15, 3, 30000).map((l, i) => rad(i % 2 ? 'man' : 'kvinna', l, { bas: 'A', radnr: i + 2 }));
     basA[4] = { ...basA[4], lon: 150000 };   // den kända avvikaren, en kvinna
     const basB = loner(6, 4, 30000).map((l, i) => rad('man', l, { bas: 'B', radnr: 100 + i }));
@@ -239,7 +239,7 @@ describe('extremvarden', () => {
     });
 });
 
-describe('trattUnderlag', () => {
+describe('[B4.7] trattUnderlag', () => {
     const grupp = (aid, bas, nKv, nMa, faktor) => [
         ...loner(nKv, aid.length, 30000).map(l => rad('kvinna', Math.round(l * faktor), { aid, bas, yrke: `${aid} Yrke` })),
         ...loner(nMa, aid.length + 1, 30000).map(l => rad('man', l, { aid, bas, yrke: `${aid} Yrke` }))
@@ -267,7 +267,7 @@ describe('trattUnderlag', () => {
     });
 });
 
-describe('kvantilBootstrap', () => {
+describe('[B4.8] kvantilBootstrap', () => {
     // 120 påhittade personer i tre BAS-intervall; kvinnornas lön är 5 % lägre.
     const rader = Array.from({ length: 120 }, (_, i) => {
         const kv = i % 2 === 0, bas = ['A', 'B', 'C'][i % 3], alder = 25 + (i * 7) % 40;

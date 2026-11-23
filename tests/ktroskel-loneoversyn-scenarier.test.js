@@ -49,7 +49,7 @@ function utfall(w) {
     return { synlig, varav };
 }
 
-describe('Scenariojämförelsen A/B: Till kv-dom följer regeln för Varav till kvinnodominerade grupper (ADR-70)', () => {
+describe('[B7.4] Scenariojämförelsen A/B: Till kv-dom följer regeln för Varav till kvinnodominerade grupper (ADR-70)', () => {
     it('fixturen: på skärmen är Till kv-dom den ensamma kvinnans påslag', () => {
         const w = fonster(STRECK);
         w.eval("_forecastSaveScenario('A')");
@@ -93,7 +93,7 @@ describe('Scenariojämförelsen A/B: Till kv-dom följer regeln för Varav till 
         expect(scenario(w)['Till kv-dom']).toBe(u.varav);
     });
 
-    it('övriga kolumner: Använt och total kostnad är utfallets summor, och lönegapen gäller hela organisationen', () => {
+    it('[B7.5] övriga kolumner: Använt och total kostnad är utfallets summor, och lönegapen gäller hela organisationen', () => {
         const w = fonster(STRECK);
         w.eval("_forecastSaveScenario('A')");
         iExport(w);

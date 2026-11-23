@@ -262,7 +262,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         const sok = w.eval('SOK_FUNKTIONER').filter(s => s.flik === 'benchmark').map(s => s.avsnitt);
         expect(sok).toEqual(expect.arrayContaining(['avsnitt-jmf-bandkartor', 'avsnitt-jmf-overblick']));
     });
-    it('en punkt per yrkesgrupp med P10 och P90: läget 0 = P10, 100 = P90; fylld = AID + BAS, ofylld = Endast AID', () => {
+    it('[B6.6] en punkt per yrkesgrupp med P10 och P90: läget 0 = P10, 100 = P90; fylld = AID + BAS, ofylld = Endast AID', () => {
         const w = medBlandad();
         const rader = w.eval('jamforelseUnderlag()').rader, f = el(w, 'chart-jmf-statlage')._figur;
         expect(() => w.eval('_figValidera')(f, 't')).not.toThrow();

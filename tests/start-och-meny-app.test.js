@@ -500,7 +500,7 @@ describe('demot och testdatan har riktiga AID-koder', () => {
     });
 });
 
-describe('organisationsneutralt standardläge', () => {
+describe('[S5] organisationsneutralt standardläge', () => {
     const rader = () => {
         const r = [];
         for (let i = 0; i < 60; i++) r.push({ bas: 'ABC'[i % 3], kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 150, alder: 30 + (i % 30),

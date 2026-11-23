@@ -24,7 +24,7 @@ const person = (yrke, kon, lon) => ({ yrke, kon, lon, alder: 40, bas: 'C' });
 const loner = (n, mitt, spann) => Array.from({ length: n }, (_, i) => Math.round(mitt * (1 + spann * (2 * i / (n - 1) - 1))));
 const yrke = (namn, kv, ma) => [...kv.map(l => person(namn, 'kvinna', l)), ...ma.map(l => person(namn, 'man', l))];
 
-describe('statusNiva: trappan', () => {
+describe('[B4.10] statusNiva: trappan', () => {
     it('säkerställd och minst 3 % är Värt att granska', () => {
         expect(statusNiva(4, true)).toBe('granska');
         expect(statusNiva(3, true)).toBe('granska');
@@ -100,7 +100,7 @@ function refOmkastningsGranser(kv, ma, B = 1000) {
     return { lag: kvoter[svans], hog: kvoter[B - 1 - svans] };
 }
 
-describe('omkastningsGranser ur rangordning ger samma gränser som omkastade löner', () => {
+describe('[B4.9] omkastningsGranser ur rangordning ger samma gränser som omkastade löner', () => {
     const fall = [
         ['2 mot 2', loner(2, 30000, 0.1), loner(2, 31000, 0.1)],
         ['udda mot jämnt', loner(11, 97000, 0.1), loner(8, 100000, 0.1)],

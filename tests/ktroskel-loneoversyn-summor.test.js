@@ -71,7 +71,7 @@ function ingenDifferens(r, dolda, pct = 2) {
 // grupp vars kostnad står på den samlade raden.
 const maskeradRad = (bas, aid, n, andel, median = 'n<10') => `${bas} | ${aid} | ${n} | ${andel} | ${median} | ${median} |  | `;
 
-describe('Löneöversyns blad Fördelning: de små grupperna har sina rader, och summorna röjer ingen liten grupps kostnad (ADR-70)', () => {
+describe('[B7.3] Löneöversyns blad Fördelning: de små grupperna har sina rader, och summorna röjer ingen liten grupps kostnad (ADR-70)', () => {
     it('exportläget vid 10: varje liten grupp har sin rad med antal och andel; kostnaden står samlad; bladet summerar till Använt', async () => {
         const r = await exporteraFonster(forbered(iExport(fonsterKon(null))));
         const alla = r.w.eval('_fcBeraknaUtfall(getData())').alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5);

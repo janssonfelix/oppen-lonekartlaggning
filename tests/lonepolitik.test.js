@@ -71,7 +71,7 @@ describe('complianceCounts', () => {
     });
 });
 
-describe('genderBandGap', () => {
+describe('[B6.3] genderBandGap', () => {
     const mk = (n, lon, kon) => Array.from({ length: n }, () => ({ lon, kon }));
 
     it('negativ diff när kvinnor ligger lägre i samma band', () => {
@@ -143,7 +143,7 @@ describe('inverterat band (P10 >= P90) — malformerad policydata', () => {
     });
 });
 
-describe('organisationsBand', () => {
+describe('[B6.1] organisationsBand', () => {
     const rader = n => Array.from({ length: n }, (_, i) => ({ lon: 30000 + i * 1000 }));
     it('ger organisationens P10, median och P90 när gruppen har minst k personer', () => {
         const b = organisationsBand(rader(11), 10);
@@ -157,7 +157,7 @@ describe('organisationsBand', () => {
     });
 });
 
-describe('lonepolitikModell', () => {
+describe('[B6.2] lonepolitikModell', () => {
     // Syntetiska rader: två AID-grupper i BAS B, en i BAS A; policy på BAS-nivå för B, ingen för A.
     const rad = (yrke, bas, lon, kon) => ({ yrke, bas, lon, kon });
     const rader = [

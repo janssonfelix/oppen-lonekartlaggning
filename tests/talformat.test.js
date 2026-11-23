@@ -63,7 +63,7 @@ describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)',
     });
 });
 
-describe('Rundtur: verktygets svenska tal läses tillbaka till samma värde', () => {
+describe('[B9.1] Rundtur: verktygets svenska tal läses tillbaka till samma värde', () => {
     let w;
     beforeAll(() => { w = createAppWindow(); });
     const las = s => w.eval(`parseNumberStrict(${JSON.stringify(s)})`);

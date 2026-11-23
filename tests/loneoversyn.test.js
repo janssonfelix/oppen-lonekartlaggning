@@ -19,7 +19,7 @@ const rows = () => [
     { bas: 'B', aid: '2000', kon: 'kvinna', lon: 38000 }
 ];
 
-describe('forecast: pott & lönesumma', () => {
+describe('[B7.2] forecast: pott & lönesumma', () => {
     it('totalLonSum summerar månadslöner', () => {
         expect(totalLonSum(rows())).toBe(174000);
     });
@@ -244,7 +244,7 @@ describe('forecast: mål-läge (closureTargets)', () => {
     });
 });
 
-describe('forecast: stegvis plan (stagedPlan)', () => {
+describe('[B7.7] forecast: stegvis plan (stagedPlan)', () => {
     it('rampar linjärt över N år med ackumulerad kostnad', () => {
         const data = rows();
         const a = allocate(data, { mode: 'pct', value: 0 },
@@ -316,7 +316,7 @@ describe('forecast: marknadspositionering (E)', () => {
 
 // ADR-69: ett kandidatpar per kvinnodominerat yrke (BAS-intervall och AID), det med störst skillnad, så att ett yrke
 // med flera jämförelseyrken får en rad och en pott, inte en per jämförelseyrke.
-describe('forecast: ett par per yrke i förslagen (ADR-69)', () => {
+describe('[B7.6] forecast: ett par per yrke i förslagen (ADR-69)', () => {
     const cand = [
         { bas: 'C', aid: '5300', gapKr: 14952, n: 12, maN: 24 },
         { bas: 'C', aid: '5300', gapKr: 21690, n: 12, maN: 12 },
@@ -352,7 +352,7 @@ describe('forecast: budgetkänslighet (F)', () => {
     });
 });
 
-describe('forecast: forecastOutcome', () => {
+describe('[B7.4] forecast: forecastOutcome', () => {
     it('budgetutnyttjande och total kostnad inkl. PO + period', () => {
         const out = forecastOutcome(rows(),
             { mode: 'pct', value: 2 }, { mode: 'pct', value: 2 }, [],
@@ -412,7 +412,7 @@ describe('forecast: forecastOutcome', () => {
 });
 
 // k-anonymitet: appen skickar gällande tröskel som minMen.
-describe('forecast: individualRemediation — minsta antal män bakom ett benchmark', () => {
+describe('[B7.8] forecast: individualRemediation — minsta antal män bakom ett benchmark', () => {
     const rader = () => [
         { bas: 'S3', aid: '7300', kon: 'kvinna', lon: 29417 }, { bas: 'S3', aid: '7300', kon: 'man', lon: 38963 },
         ...Array.from({ length: 12 }, (_, i) => ({ bas: 'A', aid: '6000', kon: 'man', lon: 40000 + i })),
@@ -439,7 +439,7 @@ describe('forecast: individualRemediation — minsta antal män bakom ett benchm
     });
 });
 
-describe('allocate: lägst först (water-filling) med fem löner (characterization)', () => {
+describe('[B7.3] allocate: lägst först (water-filling) med fem löner (characterization)', () => {
     // Löner 10 000, 12 000, 14 000, 16 000, 20 000. Vattenytan stiger från den lägsta lönen upp till nästa brytpunkt.
     const femLoner = () => [10000, 12000, 14000, 16000, 20000].map(lon => ({ bas: 'A', aid: '1', kon: 'man', lon }));
     const riktat = (value) => [{ bas: 'A', aid: '1', mode: 'kr', value, dist: 'lowest' }];

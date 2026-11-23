@@ -95,7 +95,7 @@ async function livscykelVagar(w) {
     return ut;
 }
 
-describe('Livscykelns lönekurva: ett valt BAS-intervall under tröskeln ritas inte i det som lämnar verktyget (ADR-70)', () => {
+describe('[B3.10] Livscykelns lönekurva: ett valt BAS-intervall under tröskeln ritas inte i det som lämnar verktyget (ADR-70)', () => {
     it('fixturen: modellen skattas med alla intervall, D kan väljas i rullistan och dess kurva ligger långt över de andras', async () => {
         const w = fonster();
         const r = w.eval('runLifecycleRegression(null)');

@@ -71,7 +71,7 @@ describe('sakliga skäl: valideraSkal', () => {
     });
 });
 
-describe('sakliga skäl: skalSammanstallning för en rad', () => {
+describe('[B8.3] sakliga skäl: skalSammanstallning för en rad', () => {
     it('andel per skäl, summa, förklarad andel och återstår', () => {
         const r = skalSammanstallning([s('marknad', 800), s('erfarenhet', 400)], 1800);
         expect(r.skal.map(x => [x.namn, x.andel])).toEqual([['Marknad', 800 / 1800], ['Erfarenhet', 400 / 1800]]);

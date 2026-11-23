@@ -98,7 +98,7 @@ describe('fixturen', () => {
     });
 });
 
-describe('fitOLS mot statsmodels', () => {
+describe('[B1.3] fitOLS mot statsmodels', () => {
     const fit = fitOLS(X, y);
     it('β (6 decimaler) och R², adjR², σ², RSS', () => {
         expect(fit).not.toBeNull();
@@ -127,7 +127,7 @@ describe('fitOLS mot statsmodels', () => {
     });
 });
 
-describe('tDistCdf och pValue2Sided mot scipy.stats.t', () => {
+describe('[B1.4] tDistCdf och pValue2Sided mot scipy.stats.t', () => {
     // Hills approximations uppmätta maxfel per df med marginal, från före ADR-45; inte skärpta (se filhuvudet).
     const tol = { 5: 3e-3, 10: 1e-3, 26: 1e-4, 99: 1e-5 };
     for (const df of [5, 10, 26, 99]) {
@@ -151,7 +151,7 @@ describe('tDistCdf och pValue2Sided mot scipy.stats.t', () => {
     });
 });
 
-describe('kvantilregression (IRLS) mot exakt LP-lösning (≡ quantreg::rq)', () => {
+describe('[B3.5] kvantilregression (IRLS) mot exakt LP-lösning (≡ quantreg::rq)', () => {
     // IRLS är en approximation; toleranserna är de uppmätta avvikelserna med marginal (se filhuvudet).
     const tolBeta = 3e-3, tolKonPp = 0.3;
     for (const tau of ['0.1', '0.5', '0.9']) {
@@ -215,7 +215,7 @@ describe('kvantilregressionen på indikatormodellen mot exakt LP-lösning (ADR-6
     });
 });
 
-describe('sekventiell dekomponering (BAS som indikatorer, ADR-44)', () => {
+describe('[B3.2] sekventiell dekomponering (BAS som indikatorer, ADR-44)', () => {
     // Referensen för stegen med BAS-indikatorer räknas här med lib-fitOLS, som ovan är prövad mot
     // statsmodels på samma fixtur. Steget "Endast kön" jämförs därtill mot statsmodels-värdet
     // (ref.sekventiell.endastKon); plusBas/plusAlder i referensfilen gäller den tidigare linjära
@@ -246,7 +246,7 @@ describe('sekventiell dekomponering (BAS som indikatorer, ADR-44)', () => {
     });
 });
 
-describe('Blinder-Oaxaca (BAS som indikatorer, ADR-53)', () => {
+describe('[B3.4] Blinder-Oaxaca (BAS som indikatorer, ADR-53)', () => {
     const bo = ref.blinderOaxaca;
     it('komponenterna från två fitOLS-regressioner, handräknade i testet, matchar referensens', () => {
         // Oberoende av app-scope: samma regel som blinderOaxaca, men handskriven här. Referens = alfabetiskt första
@@ -397,7 +397,7 @@ describe('HC3 med AID-etikett inom BAS mot statsmodels: hävstången med gruppde
     });
 });
 
-describe('BH-korrigeringen mot statsmodels', () => {
+describe('[B1.6] BH-korrigeringen mot statsmodels', () => {
     const fall = Object.entries(refBh.fall);
     it('referensen har fallen band, ett, osorterad och monotonisering', () => {
         expect(Object.keys(refBh.fall)).toEqual(expect.arrayContaining(['band', 'ett', 'osorterad', 'monotonisering']));

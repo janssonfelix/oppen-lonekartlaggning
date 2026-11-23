@@ -17,7 +17,7 @@ import {
 } from '../src/lib/inlasning.js';
 import { aidEtikettlista } from '../src/lib/aid-etiketter.js';
 
-describe('inlasning: tal (parseNumber, parseNumberStrict)', () => {
+describe('[B9.1] inlasning: tal (parseNumber, parseNumberStrict)', () => {
     // [råvärde, parseNumber, parseNumberStrict.status]
     it.each([
         ['32 500,50', 32500.5, 'ok'],
@@ -93,7 +93,7 @@ describe('inlasning: tal (parseNumber, parseNumberStrict)', () => {
     });
 });
 
-describe('inlasning: kön, BAS och AID', () => {
+describe('[B9.2] [B9.3] inlasning: kön, BAS och AID', () => {
     it.each([
         // Förkortningar, engelska värden och pluralformerna ("Män", "Kvinnor").
         ['K', 'kvinna'], ['K.', 'kvinna'], [' Kvinna ', 'kvinna'], ['kvinna', 'kvinna'], ['KVINNA', 'kvinna'],
@@ -127,7 +127,7 @@ describe('inlasning: kön, BAS och AID', () => {
     });
 });
 
-describe('inlasning: yrke (_cleanYrkeField)', () => {
+describe('[B9.5] inlasning: yrke (_cleanYrkeField)', () => {
     it.each([
         ['101010 Ledning', '101010 Ledning'],
         ['203010 Förskollärare', '203010 Förskollärare'],
@@ -281,7 +281,7 @@ describe('inlasning: sällsynta namnrader (sallsyntaNamnrader)', () => {
     });
 });
 
-describe('inlasning: en lönerad (tolkaLonerad)', () => {
+describe('[B9.4] inlasning: en lönerad (tolkaLonerad)', () => {
     const falt = (alder, ovrigt = {}) => ({ bas: 'A', kon: 'Man', lon: '30000', alder, poang: '', yrke: '5301', ...ovrigt });
 
     // Referensåret är ett argument: ingen klocka behövs. [ålderskolumnen, referensår, ålder, status]
@@ -386,7 +386,7 @@ describe('detectSensitiveColumns (PII-rubriker)', () => {
     });
 });
 
-describe('detectSensitiveColumns (värdena, B4)', () => {
+describe('detectSensitiveColumns (värdena)', () => {
     // 300 rader; personnumren börjar på rad 200. De 50 första raderna är rena, så bara en sampling över hela filen
     // (var ⌈n/50⌉:e rad) hittar dem.
     const fil = (kol, varde) => Array.from({ length: 300 }, (_, i) => ({ BAS: 'C', Lön: String(30000 + i), [kol]: varde(i) }));

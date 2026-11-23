@@ -11,7 +11,7 @@ import { createAppWindow } from './helpers/app-harness.js';
 const rad = (aid, kon, lon, alder = 40, bas = 'C', extra = {}) => ({ aid, kon, lon, alder, bas, ...extra });
 const flera = (n, f) => Array.from({ length: n }, (_, i) => f(i));
 
-describe('sektor: tabellen', () => {
+describe('[B3.8] sektor: tabellen', () => {
     // Vård: 20 kvinnor à 30 000 och 12 män à 33 000 (jämna åldrar/BAS) → kvot 90,9 %.
     const vard = [...flera(20, i => rad('207011', 'kvinna', 30000, 30 + i, i % 2 ? 'C' : 'B')),
                   ...flera(12, i => rad('207011', 'man', 33000, 30 + i, i % 2 ? 'C' : 'B'))];
@@ -181,7 +181,7 @@ describe('sektor: rubriken och bisatsen för den justerade skillnaden (en regel 
     });
 });
 
-describe('sektor: sektorernas andel av gapet', () => {
+describe('[B3.9] sektor: sektorernas andel av gapet', () => {
     // Verktygets tecken (regressionsmodellen §1, Tecknet): kvinnor − män, negativt när kvinnor ligger lägre.
     it('hela gapet beror på sektorsfördelningen när lönerna är lika inom sektorerna', () => {
         // Vård 30 000 för alla, teknik 40 000 för alla; kvinnor mest i vård, män mest i teknik.
@@ -231,7 +231,7 @@ describe('sektor: sektorernas andel av gapet', () => {
 
 // ADR-87: ett huvudområde där ett kön har 1 till k − 1 personer räknas samman med andra, så att beloppet tillsammans
 // med medellönerna och antalen inte ger dess medellön (härledningarna står i tests/ktroskel-differens.test.js).
-describe('sektor: sammanräknade huvudområden (ADR-87)', () => {
+describe('[B6.9] sektor: sammanräknade huvudområden (ADR-87)', () => {
     // Vård: 30 kvinnor och 20 män; teknik: 12 kvinnor och 25 män; städ: 3 män.
     const tre = () => [...flera(30, () => rad('207011', 'kvinna', 30000)), ...flera(20, () => rad('207011', 'man', 31000)),
         ...flera(12, () => rad('502010', 'kvinna', 39000)), ...flera(25, () => rad('502010', 'man', 41000)),

@@ -37,7 +37,7 @@ function identiska(a, b, vag = '') {
 
 const STORLEKAR = [[12, 12], [30, 20], [300, 200]];
 
-describe.each(STORLEKAR)('%i kvinnor och %i män i två ordningar', (nKv, nMa) => {
+describe.each(STORLEKAR)('[B4.3] %i kvinnor och %i män i två ordningar', (nKv, nMa) => {
     const kv = loner(nKv, 3, -500), ma = loner(nMa, 11);
     const kv2 = omkastad(kv, 101), ma2 = omkastad(ma, 202);
 
@@ -49,7 +49,7 @@ describe.each(STORLEKAR)('%i kvinnor och %i män i två ordningar', (nKv, nMa) =
     it('bootstrapens medianer per dragning', () => {
         identiska(bootstrapMedianer(kv, ma, 200, rngFor(kv, ma)), bootstrapMedianer(kv2, ma2, 200, rngFor(kv2, ma2)));
     });
-    it('mediankvotens intervall (organisationen, per grupp, giltiga dragningar)', () => {
+    it('[B1.7] mediankvotens intervall (organisationen, per grupp, giltiga dragningar)', () => {
         const rader = l => [...l.kv.map(lon => ({ kon: 'kvinna', lon })), ...l.ma.map(lon => ({ kon: 'man', lon }))];
         // Raderna blandas också mellan könen: en kvinna och en man byter plats i filen.
         identiska(organisationensKvotKI(rader({ kv, ma }), 3), organisationensKvotKI(omkastad(rader({ kv: kv2, ma: ma2 }), 7), 3));
@@ -61,7 +61,7 @@ describe.each(STORLEKAR)('%i kvinnor och %i män i två ordningar', (nKv, nMa) =
         identiska(bootstrapMedianVsConstantKr(kv, 32000, 1000, rngFor(kv, [32000])),
             bootstrapMedianVsConstantKr(kv2, 32000, 1000, rngFor(kv2, [32000])));
     });
-    it('omkastningens gränser, slumpens gränser och trappans nivå', () => {
+    it('[B4.9] omkastningens gränser, slumpens gränser och trappans nivå', () => {
         identiska(omkastningsGranser(kv, ma), omkastningsGranser(kv2, ma2));
         identiska(slumpensGranser(kv, ma), slumpensGranser(kv2, ma2));
         identiska(bedomSkillnad(kv, ma), bedomSkillnad(kv2, ma2));

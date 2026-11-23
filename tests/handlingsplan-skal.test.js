@@ -218,7 +218,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         expect(w.document.getElementById('skal-lagg-till').disabled).toBe(true);
         expect(ren(modal(w).textContent)).toContain('Högst 8 skäl per grupp');
     });
-    it('summan över skillnaden varnar; vid 100 % föreslås markeringen, som sätts först när användaren bekräftar', () => {
+    it('[B8.3] summan över skillnaden varnar; vid 100 % föreslås markeringen, som sätts först när användaren bekräftar', () => {
         const w = fonster();
         const tr = radMedSkillnad(w);
         const nyckel = knapp(tr).dataset.hpSkal;

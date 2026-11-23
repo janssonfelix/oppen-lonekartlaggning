@@ -64,7 +64,7 @@ describe('namn i fältet för AID-etikett: demona', () => {
     });
 });
 
-describe('namn i fältet för AID-etikett: inläsningen', () => {
+describe('[B9.5] namn i fältet för AID-etikett: inläsningen', () => {
     it('en CSV med två namnrader: varningen står på de tre ställena, och tillståndet bär bara antal och radnummer', async () => {
         const w = createAppWindow();
         await lasIn(w, csv());

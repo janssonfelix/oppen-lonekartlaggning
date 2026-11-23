@@ -65,7 +65,7 @@ describe('livscykelRegression: felvägar', () => {
     });
 });
 
-describe('livscykelRegression: skattning', () => {
+describe('[B3.10] livscykelRegression: skattning', () => {
     const rader = fixtur(240);
     const res = livscykelRegression(rader, { golv: 10 });
 

@@ -919,7 +919,7 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
     }
 });
 
-describe('k-tröskeln: Lika arbete AID x BAS har samma grupper som tabellen per AID-etikett (ADR-90)', () => {
+describe('[B5.5] k-tröskeln: Lika arbete AID x BAS har samma grupper som tabellen per AID-etikett (ADR-90)', () => {
     // Förut hade tabellen ett eget golv (fem personer) och visade grupper under tröskeln med antal per kön, som tabellen
     // per AID-etikett utelämnar. Nu är raderna Lika arbetes grupper: ingen grupp under tröskeln står i den ena men inte
     // i den andra, i exportläget vid 10 och 25.

@@ -332,7 +332,7 @@ describe('Handlingsplan och gruppdossier: en AID-kod med två texter är en grup
         w.eval('populateSelects(); unlockTabs(); sattKTroskel(10, { fraga: false });');
         return w;
     };
-    it('prioriteringen har en post på 15 personer, och handlingsplanen en förifylld rad för den', () => {
+    it('[B7.10] prioriteringen har en post på 15 personer, och handlingsplanen en förifylld rad för den', () => {
         const w = fonsterTvaTexter();
         const prio = w.eval("computePrioritization('stallningstagande')");
         expect(prio.map(i => [i.aid, i.bas, i.n, i.median])).toEqual([['207011', 'C', 15, 31000]]);

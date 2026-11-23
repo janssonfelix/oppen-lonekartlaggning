@@ -21,7 +21,7 @@ invariantSvit(25, SENT_MELLAN);
 // verktyget. En rad där ett kön är under tröskeln (den minsta gruppen bakom skillnaden) följer med, men bara med
 // kategorin: belopp och kommentar utelämnas. Konfigurationsfilen är användarens egen fil med det som skrivits in och
 // undantas (riskanalysen § 6.8), men dess årsbokslut prövas.
-describe('I8: sakliga skäl på en rad under tröskeln lämnar inte verktyget', () => {
+describe('[I8] sakliga skäl på en rad under tröskeln lämnar inte verktyget', () => {
     let utdata;
     beforeAll(async () => {
         const w = fonsterKon(10);

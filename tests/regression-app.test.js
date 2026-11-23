@@ -627,7 +627,7 @@ describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-5
     });
 });
 
-describe('regressionskortets tekniska specifikation (B4)', () => {
+describe('regressionskortets tekniska specifikation', () => {
     it('visar antalet observationer med hävstång > 0,99, som fitOLS räknar', () => {
         const w = createAppWindow();
         w.__loadDemoData();

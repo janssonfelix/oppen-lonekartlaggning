@@ -24,7 +24,7 @@ const refKv = las('stat-referens-kvantil.json');
 const pct = b => (Math.exp(b) - 1) * 100;
 const y = fx.design.map(d => d.y);
 
-describe('computeSequentialGap: steget "Endast kön"', () => {
+describe('[B3.2] computeSequentialGap: steget "Endast kön"', () => {
     it('könsgapet i procent matchar statsmodels-referensen', () => {
         const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
         const steg = computeSequentialGap(fx.rows.map(r => ({ ...r })), fx.ageMean, basList, { golv: 10 });
@@ -125,7 +125,7 @@ describe('computeSequentialGap med vald modell (ADR-56)', () => {
     });
 });
 
-describe('computeVariabelTillfor (ADR-56)', () => {
+describe('[B3.6] computeVariabelTillfor (ADR-56)', () => {
     const rader = () => fx.rows.map(r => ({ ...r }));
     const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
     it('utan yrke: raderna bas och alder, ΔR² ≥ 0, gapMed = fullmodellens gap, gapUtan = stegets gap utan variabeln', () => {
@@ -225,7 +225,7 @@ describe('kvantilDesign: kvantilregressionen på huvudmodellens design (ADR-63)'
     });
 });
 
-describe('quantileRegressionAtAllTau på indikatormodellen (ADR-63)', () => {
+describe('[B3.5] quantileRegressionAtAllTau på indikatormodellen (ADR-63)', () => {
     it('tar förklaringsmodellen, inte en rangfunktion, och ger könsprocenten per τ och skillnaden P90 − P10', () => {
         const q = quantileRegressionAtAllTau(fx.rows.map(r => ({ ...r })));
         expect(q.n).toBe(100);
@@ -286,7 +286,7 @@ describe('modellerna utan ålder i lönefilen (ADR-64)', () => {
         expect(t.rader.map(x => x.variabel)).not.toContain('alder');
         expect(t.forslag.tabort).not.toContain('alder');
     });
-    it('computePerBasGap kör kön utan ålderskolumn', () => {
+    it('[B3.3] computePerBasGap kör kön utan ålderskolumn', () => {
         const ut = computePerBasGap(utanAlder(), ['A', 'B', 'C'], { golv: 10 });
         expect(ut).toHaveLength(3);
         for (const b of ut) {

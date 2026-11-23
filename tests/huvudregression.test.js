@@ -40,7 +40,7 @@ const STD = { ...FORKLARINGSMODELL_STANDARD };
 const ENDAST_KON = { bas: false, alder: false, yrkesgrupp: false, skal: '' };
 const opts = (extra = {}) => ({ modell: STD, kInstalld: 10, golv: 10, ...extra });
 
-describe('huvudregression: påhittat underlag', () => {
+describe('[B3.1] huvudregression: påhittat underlag', () => {
     const rader = underlag();
 
     it('könskoefficienten är OLS på [1, kön, ålder − medel, en indikator per BAS utom A] med HC3 och t-kvantil', () => {

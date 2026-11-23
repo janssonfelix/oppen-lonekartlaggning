@@ -71,7 +71,7 @@ describe('bootstrapMedianer: samma medianer som en sortering per dragning', () =
     }
 });
 
-describe('appens intervall på mediankvoten är desamma som med sortering per dragning', () => {
+describe('[B4.1] appens intervall på mediankvoten är desamma som med sortering per dragning', () => {
     const w = createAppWindow();
     for (const [namn, kv, ma] of fall) {
         it(`_laBootstrapGapCI och _gdBootstrapGapCI: ${namn}`, () => {

@@ -192,7 +192,7 @@ describe('ansvarskodskolumnen vid inläsning', () => {
     });
 });
 
-describe('PII-kontrollen vid inläsning samplar hela filen (B4)', () => {
+describe('PII-kontrollen vid inläsning samplar hela filen', () => {
     const vendorPapa = async w => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');

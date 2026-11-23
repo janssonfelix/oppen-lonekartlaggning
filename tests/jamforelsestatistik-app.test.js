@@ -24,7 +24,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
             `P90 ${org}`, 'P90 statistik', 'P90 skillnad']);
         expect(w.document.querySelectorAll('.benchmark-metric-btn[data-metric]').length).toBe(0);
     });
-    it('värdena stämmer med modulen för ett demoyrke', () => {
+    it('[B6.5] värdena stämmer med modulen för ett demoyrke', () => {
         const w = oppna();
         const u = w.eval('jamforelseUnderlag()').rader[0];
         const tr = rad(w, u.aid, u.bas);
