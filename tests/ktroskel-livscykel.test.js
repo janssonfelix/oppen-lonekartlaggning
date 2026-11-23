@@ -31,7 +31,7 @@ function fonster() {
     w.__state.data = r;
     w.__state.policy = NIVAER.map(([bas]) => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
     w.__state.statistik = NIVAER.map(([bas]) => ({ aid: '6100', bas, median: 61700, p10: 55000, p90: 71000 }));
-    w.eval('populateSelects(); lasUppFlikar();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     return w;
 }
 const vanta = () => new Promise(r => setTimeout(r, 30));

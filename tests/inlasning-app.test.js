@@ -69,7 +69,7 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
             ...flera(25, 'G', 'kvinna', 38000, 'G1'), ...flera(15, 'G', 'man', 41000, 'G1')];
         w.__state.data = [...flera(20, 'A', 'kvinna', 30000, 'A1'), ...flera(20, 'A', 'man', 31000, 'A1'),
             ...flera(5, 'C', 'kvinna', 50000, 'C1'), ...flera(3, 'C', 'man', 60000, 'C1'), ...bakgrund];
-        w.eval('populateSelects(); lasUppFlikar(); ritaGapUppdelning();');
+        w.eval('fyllValjare(); lasUppFlikar(); ritaGapUppdelning();');
         const ovriga = [...w.document.querySelectorAll('#gap-uppdelning .gu-ovriga')].map(li => li.textContent);
         expect(ovriga.length).toBeGreaterThan(0);
         for (const t of ovriga) { expect(t).not.toMatch(/kr/); expect(t).toMatch(/namnges inte: ett kön har färre än 10 personer/); }
@@ -333,7 +333,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
         for (let i = 0; i < 12; i++) rader.push(rad('kvinna', 31000 + i * 50, i));
         for (let i = 0; i < 3; i++) rader.push(rad('man', 77777, i));
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const text = w.__rapportunderlagBlock().map(b => w.__ruTillText(b)).join('\n').replace(/(\d)[\s\u00a0\u202f](?=\d)/g, '$1');
         expect(text).not.toContain('77777');
         expect(text).toContain('Urval: Hela organisationen');

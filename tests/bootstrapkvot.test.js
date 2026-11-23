@@ -6,7 +6,7 @@
  *
  * Täcker kärnan i lib och de tre anroparna i appen: översikten per BAS-intervall och lönegapet per åldersgrupp
  * (`_laBootstrapGapCI`), gruppdossiern och rapportunderlaget (`_gdBootstrapGapCI`) och Översiktens intervall
- * för hela organisationen (`computeBootstrapCI`).
+ * för hela organisationen (`raknaBootstrapKI`).
  */
 import { describe, it, expect } from 'vitest';
 import { bootstrapMedianer } from '../src/lib/likvardighet.js';
@@ -83,9 +83,9 @@ describe('[B4.1] appens intervall på mediankvoten är desamma som med sortering
         expect(w._laBootstrapGapCI([1, 2], [1, 2, 3])).toBeNull();
         expect(w._gdBootstrapGapCI([1, 2, 3], [1, 2])).toBeNull();
     });
-    it('computeBootstrapCI på demodatan', () => {
+    it('raknaBootstrapKI på demodatan', () => {
         w.__loadDemoData();
-        w.eval('computeBootstrapCI()');
+        w.eval('raknaBootstrapKI()');
         const d = w.__state.data.filter(r => r.lon > 0);
         const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
         const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
@@ -104,9 +104,9 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
     it('på demodatan: intervallet är "−17,8 % till −11,9 %" och den råa skillnaden ligger inom det', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.computeBootstrapCI();
+        w.raknaBootstrapKI();
         const r = w.runOLSRegression();
-        const text = w.fmtCI(w.__state.bootstrapCI.gapPct).replace(/<[^>]*>/g, '').replace(/ /g, ' ');
+        const text = w.formateraKI(w.__state.bootstrapCI.gapPct).replace(/<[^>]*>/g, '').replace(/ /g, ' ');
         expect(text).toBe(' [95 % KI: −17,8 % till −11,9 %]');
         const { lo, hi } = w.__state.bootstrapCI.gapPct;
         expect(r.rawGapPct).toBeLessThan(0);
@@ -124,8 +124,8 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
             rader.push(rad('S2', i < 10 ? 'kvinna' : 'man', 34000 + ((i * 53) % 29) * 100, 25 + (i * 11) % 35));
         }
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
-        w.computeBootstrapCI();
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.raknaBootstrapKI();
         w.__ritaFlik('struktur');
         expect(w.runOLSRegression().pValue).toBeGreaterThanOrEqual(0.05);
         const text = w.document.getElementById('regression-card').textContent.replace(/ /g, ' ');

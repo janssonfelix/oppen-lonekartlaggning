@@ -40,7 +40,7 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         for (let i = 0; i < 12; i++) r.push(rad('man', 40000 + i, i));
         for (let i = 0; i < 12; i++) r.push(rad('kvinna', i < 3 ? 31117 : 40000 + i, i));   // tre kvinnor långt under männens median
         w.__state.data = r;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         iExport(w);
         w.__ritaFlik('loneoversyn');
         w.eval('_forecastRemediation()');
@@ -90,7 +90,7 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
         lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar(); sattKTroskel(5, { fraga: false });');
+        w.eval('fyllValjare(); lasUppFlikar(); sattKTroskel(5, { fraga: false });');
         w.alert = () => {};
         Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
         oppnaFlik(w, 'loneoversyn');
@@ -164,7 +164,7 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         w.eval('_rensaAllData()');
         for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
         w.__state.data = byggKonDataset();
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         oppnaFlik(w, 'loneoversyn');
         for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
         const v = fyllt();
@@ -200,7 +200,7 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
         for (let i = 0; i < 3; i++) r.push(rad('101010', 'kvinna', 41000 + i * 100, 55, 'S3'));
         for (let i = 0; i < man; i++) r.push(rad('101010', 'man', LEDNING_MAN, 56, 'S3'));
         w.__state.data = r;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         if (export_) iExport(w);
         w.__ritaFlik('kon');
         w.__ritaFlik('struktur');

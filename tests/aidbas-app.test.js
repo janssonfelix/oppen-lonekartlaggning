@@ -29,7 +29,7 @@ const TVA_BAS = [...grupp('D', '7007', 'kvinna', 12, 30000, 150), ...grupp('D', 
 function fonster(data = UNDERLAG) {
     const w = createAppWindow();
     w.__state.data = data;
-    w.eval('populateSelects(); lasUppFlikar();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     return w;
 }
 const tabell = (w, id) => {

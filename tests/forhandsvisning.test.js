@@ -77,11 +77,11 @@ describe('tröskelbytet räknar bara om det som beror på tröskeln', () => {
     it('Att göras lista byggs en gång för Att göra och processöversikten tillsammans', () => {
         const w = fonster(null);
         w.eval('window.__byggda = 0; const __b = buildActionChecklist; buildActionChecklist = function (...a) { window.__byggda++; return __b.apply(null, a); };');
-        w.eval('renderOversiktDelar()');
+        w.eval('ritaOversiktDelar()');
         expect(w.__byggda).toBe(1);
         w.eval('window.__byggda = 0; _ritaOmAllaFlikar()');
         expect(w.__byggda).toBe(1);
-        w.eval('window.__byggda = 0; renderProcessTracker()');                 // ensam bygger den själv
+        w.eval('window.__byggda = 0; ritaKartlaggningensSteg()');                 // ensam bygger den själv
         expect(w.__byggda).toBe(1);
     });
 });

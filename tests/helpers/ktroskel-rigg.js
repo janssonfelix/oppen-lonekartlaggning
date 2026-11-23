@@ -52,7 +52,7 @@ export function fonster(k) {
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
     win.__state.data = byggDataset();
     win.__state.policy = [...STORA, TOPP, ...MELLAN, ...SMA].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-    win.eval('populateSelects(); lasUppFlikar();');
+    win.eval('fyllValjare(); lasUppFlikar();');
     return win;
 }
 // En liten fixtur för tester som bara prövar en stämpel eller en mening om tröskeln (utskriften, Word-utkastets
@@ -76,7 +76,7 @@ export function fonsterLitet(k) {
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
     win.__state.data = byggLitetDataset();
     win.__state.policy = LITEN_BAS.map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-    win.eval('populateSelects(); lasUppFlikar();');
+    win.eval('fyllValjare(); lasUppFlikar();');
     return win;
 }
 export const ritaAlla = win => { for (const f of FLIKAR) win.__ritaFlik(f); };
@@ -159,7 +159,7 @@ export function fonsterKon(k) {
     const sedda = new Set();
     win.__state.statistik = data.filter(r => !sedda.has(r.aid + '|' + r.bas) && sedda.add(r.aid + '|' + r.bas))
         .map(r => ({ aid: r.aid, bas: r.bas, median: 61700, p10: 55000, p90: 71000 }));
-    win.eval('populateSelects(); lasUppFlikar();');
+    win.eval('fyllValjare(); lasUppFlikar();');
     return win;
 }
 export const harNagon = (text, varden) => varden.filter(v => text.includes(String(v)));
@@ -249,7 +249,7 @@ export async function samlaUtdata(w) {
         headers: ['BAS', 'AID', 'Lön', 'Ålder', 'Kön', 'FKKOLUMN'],
         mappning: { bas: 'BAS', yrke: 'AID', lon: 'Lön', alder: 'Ålder', kon: 'Kön' }, k: kInstalld() })`);
     // Översikt som efter en inläsning, och en prognos i Löneöversyn så att utfallstabellen finns.
-    w.eval('tomStatistikcacher(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); uppdateraAktivFlik();');
+    w.eval('tomStatistikcacher(); renderActionChecklist(); ritaKartlaggningensSteg(); renderOutliers(); renderDataValidationReport(); uppdateraAktivFlik();');
     // Påslaget är 100 %: då är varje grupps kostnad lika med gruppens lönesumma, och kostnaden för en
     // ensam person hennes lön — så att en omaskerad kostnad syns i textsökningen.
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 100 }, years: 3 });
@@ -561,7 +561,7 @@ export function fonsterMan(k, manLoner) {
     for (let i = 0; i < 60; i++) r.push(rad(i < 30 ? 'S1' : 'S2', 'kvinna', 25000 + i * 10 + (i % 7) * 130, 30 + (i * 3) % 25));
     manLoner.forEach((l, i) => r.push(rad(i % 2 ? 'S2' : 'S1', 'man', l, 38 + i * 3)));
     w.__state.data = r;
-    w.eval('populateSelects(); lasUppFlikar(); uppdateraAktivFlik();');
+    w.eval('fyllValjare(); lasUppFlikar(); uppdateraAktivFlik();');
     return w;
 }
 // Ett tal som det skrivs med två decimaler, med punkt och med komma, utan tecken.

@@ -145,7 +145,7 @@ describe('Jämförelsestatistik: diagrammen', () => {
             data.push({ aid: String(207000 + y), yrke: `${207000 + y} Yrke ${y}`, yrkeLabel: 'Y', bas: 'C', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + y * 100 + i * 50, alder: 40 });
         w.__state.data = data;
         w.__state.statistik = Array.from({ length: 30 }, (_, y) => ({ aid: String(207000 + y), bas: 'C', median: 31000, p10: 29000, p90: 34000 }));
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('benchmark');
         expect(w.document.getElementById('chart-jamforelse-spann')._figur.y.ordning.length).toBe(25);
         expect(w.document.getElementById('jmf-spann-not').textContent).toMatch(/de 25 största AID-etiketterna av 30/);
@@ -324,7 +324,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     it('rättelse, Ålder & karriär i hela urvalet: ett uppslag per AID×BAS och medianen av de matchade', () => {
         const w = medMatchning();
         w.__state.statistik = [{ aid: '402010', bas: 'Z', median: 99999 }, { aid: '207024', bas: '', median: 40000 }, { aid: '502010', bas: 'C', median: 50000 }];
-        w.eval("populateSelects(); ritaAlderOchLon('__ALLA__')");
+        w.eval("fyllValjare(); ritaAlderOchLon('__ALLA__')");
         const linje = w.document.getElementById('chart-kon-scatter')._figur.lager.find(l => /^Median i /.test(l.serie));
         expect(linje.data.map(p => p.y)).toEqual([45000, 45000]);   // inte 50000 (med BAS Z:s 99999)
     });
@@ -339,7 +339,7 @@ describe('samlad jämförelseexport: ställningstagandet per AID och BAS som i t
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'xlsx.mini.min.js'), 'utf8'));
         w.__state.data = Array.from({ length: 12 }, (_, i) => ({ aid: '207011', yrke: '207011 Usk', yrkeLabel: 'Usk', bas: 'C', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 100, alder: 40 }));
         w.__state.policy = [{ aid: null, bas: 'C', p10: 28000, med: 31000, p90: 35000 }, { aid: '207011', bas: 'C', p10: 29000, med: 32222, p90: 36000 }];
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
         w.eval('exportBenchmarkExcel()');

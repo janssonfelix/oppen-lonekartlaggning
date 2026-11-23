@@ -22,7 +22,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { gapStatus, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
-import { computeGroupMDE, styrkaGallande } from './13-oversikt.js';
+import { raknaGruppMDE, styrkaGallande } from './13-oversikt.js';
 import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { _evidenceForPrioItem, _openEvidenceModal } from './27-berakningsbevis.js';
@@ -356,7 +356,7 @@ export function renderPrioritering() {
         const bristBadge    = i.isBrist    ? ' <span title="Bristyrke" class="hjalpmarke hjalp-markor">' + ikon('statusVarning', 14) + '</span>' : '';
         // #2 Power-varning per grupp: visa ⚠️ när gruppens MDE > observerad avvikelse
         // eller när någon köns-cell har < 5 personer.
-        const groupMDE = computeGroupMDE(i.kvN, i.maN);
+        const groupMDE = raknaGruppMDE(i.kvN, i.maN);
         const lowPower = groupMDE && (groupMDE.tooSmall || groupMDE.mdePct > Math.abs(i.diffPct));
         const powerBadge = lowPower
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon('statusVarning', 14)}</span>`

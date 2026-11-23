@@ -7,7 +7,7 @@ import { hamtaFalt, doljLaddning, visaLaddning } from './03-hjalpfunktioner.js';
 import { _kopplaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, hamtaData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
-import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
+import { ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
 import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { renderPaketInfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
@@ -125,7 +125,7 @@ export function uppstartReferensfiler() {
             doljLaddning(); ritaKravstatus();
             renderConsistencyBanner();
             renderActionChecklist();
-            renderProcessTracker();
+            ritaKartlaggningensSteg();
             if (hamtaData().length > 0) ritaLoneoversikt();
         }, 'stallningstagande');
     });
@@ -229,7 +229,7 @@ export function uppstartReferensfiler() {
                 doljLaddning(); ritaKravstatus();
                 renderConsistencyBanner();
                 renderActionChecklist();
-                renderProcessTracker();
+                ritaKartlaggningensSteg();
             } catch (err) {
                 doljLaddning();
                 statStatus.textContent = "Fel: " + err.message;

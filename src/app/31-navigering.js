@@ -7,7 +7,7 @@ import { kInstalld } from './06-k-troskel.js';
 import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
 import { _mkTabeller, diagramMarkering } from './11-markering.js';
 import { hamtaData, state } from './12-tillstand.js';
-import { populateSelects, renderFilerDelar, renderOversiktDelar, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { fyllValjare, ritaFilerDelar, ritaOversiktDelar, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderForhandskontroll } from './17-forhandskontroll.js';
 import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
 import { ritaLikvardigtArbete } from './34-likvardigt-arbete.js';
@@ -421,8 +421,8 @@ function _ritaFlik(target) {
         _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => renderExportBesked()));
     });
     else if (target === "arbetet")     medExportLage(() => { if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });
-    else if (target === "dashboard" && d.length) renderOversiktDelar();
-    else if (target === "filer"     && d.length) renderFilerDelar();
+    else if (target === "dashboard" && d.length) ritaOversiktDelar();
+    else if (target === "filer"     && d.length) ritaFilerDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
@@ -476,9 +476,9 @@ export function uppdateraAktivFlik() {
     if (!active) return;
     const target = active.getAttribute('data-tab');
     ritaNyckeltal();
-    populateSelects();
+    fyllValjare();
     ritaKravstatus();
-    renderUnderlagetsKvalitet();
+    ritaUnderlagetsKvalitet();
     ritaFlik(target);
 }
 

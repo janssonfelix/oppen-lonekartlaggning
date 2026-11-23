@@ -16,8 +16,8 @@
  * Rena funktioner: raderna, golvet och tröskeln kommer in som argument. Där slump används är generatorn ett val
  * (`rng`); utan den seedas den ur datat (slumpFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
  * sorterade listor, så att det inte beror på radordningen (ADR-86). Percentilintervallet tas
- * med percentilintervall i stat.js. Appens funktioner med de tidigare namnen (computeBootstrapCI,
- * computePowerAnalysis, computeGroupMDE, linjarRegressionKI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
+ * med percentilintervall i stat.js. Appens funktioner (raknaBootstrapKI,
+ * raknaStyrkeanalys, raknaGruppMDE, linjarRegressionKI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
  * _laTrattUnderlagRakna, _regKvantilBootstrap) är tunna adaptrar som läser tillståndet och anropar funktionerna här.
  *
  * Inga DOM-/state-beroenden.

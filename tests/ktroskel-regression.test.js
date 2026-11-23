@@ -54,7 +54,7 @@ describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln f
         // Referens och jämförelsestatistik, så att varje export har något att skriva (som fonsterKon).
         w.__state.policy = ['S1', 'S2'].map(bas => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
         w.__state.statistik = ['S1', 'S2'].map(bas => ({ aid: '6000', bas, median: 60000, p10: 55000, p90: 71000 }));
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const { forsta, justerat } = tal(w);
         const utdata = await samlaUtdata(w);
         expect(utdata.length).toBeGreaterThan(20);

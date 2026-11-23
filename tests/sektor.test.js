@@ -285,7 +285,7 @@ describe('sektorsöversikten', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
-        w.eval('tomStatistikcacher(); populateSelects(); lasUppFlikar();');
+        w.eval('tomStatistikcacher(); fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('struktur');
         const rubriker = [...w.document.querySelectorAll('#sektor-table thead th')].map(th => th.textContent.trim());
         expect(rubriker).toContain('Justerad (BAS)');

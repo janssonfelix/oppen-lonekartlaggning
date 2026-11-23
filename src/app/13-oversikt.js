@@ -26,7 +26,7 @@ import { _handlingsplanSeedRows } from './56-handlingsplan.js';
 import { _bes8Areas } from './61-regler-och-praxis.js';
 import { kTroskelLank } from './86-installningar.js';
 import { sokUppdatera } from './87-sok.js';
-function setCompCard(id, count, total, valueText, cardState) {
+function sattKravkort(id, count, total, valueText, cardState) {
     const card = document.getElementById(id);
     const icon = document.getElementById(`${id}-icon`);
     const val  = document.getElementById(`${id}-val`);
@@ -51,11 +51,11 @@ export function ritaKravstatus() {
     // 1–2. Säkerställd skillnad och könsskevhet — bara i jämförbara BAS (båda könen ≥ k).
     const maskText = vm.maskerade ? ` · ${vm.maskerade} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : '';
     if (vm.jamforbara === 0) {
-        setCompCard('comp-gap', 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, 'na');
-        setCompCard('comp-skev', 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, 'na');
+        sattKravkort('comp-gap', 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, 'na');
+        sattKravkort('comp-skev', 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, 'na');
     } else {
-        setCompCard('comp-gap', vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} jämförbara ${T.niva.fl}${maskText}`, vm.gap.lage);
-        setCompCard('comp-skev', vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} jämförbara ${T.niva.fl}${maskText}`, vm.skev.lage);
+        sattKravkort('comp-gap', vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} jämförbara ${T.niva.fl}${maskText}`, vm.gap.lage);
+        sattKravkort('comp-skev', vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} jämförbara ${T.niva.fl}${maskText}`, vm.skev.lage);
     }
 
     // 3. Policy P10-underläge — referensen namnges; utan referens ett tomläge (ADR-28)
@@ -64,10 +64,10 @@ export function ritaKravstatus() {
     const polSub = document.getElementById('comp-pol-sub');
     if (polSub) polSub.textContent = referensNamn();
     const ref = vm.referens;
-    if (!ref) setCompCard('comp-pol', 0, 0, 'Kräver lönepolitiskt ställningstagande', 'na');
+    if (!ref) sattKravkort('comp-pol', 0, 0, 'Kräver lönepolitiskt ställningstagande', 'na');
     // Inga rader per BAS-intervall (t.ex. en ren AID-policy): grönt "0 av 0" vore falskt lugnande, så kortet blir 'na'.
-    else if (ref.av === 0) setCompCard('comp-pol', 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, 'na');
-    else setCompCard('comp-pol', ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
+    else if (ref.av === 0) sattKravkort('comp-pol', 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, 'na');
+    else sattKravkort('comp-pol', ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
 
     // 4. Jämförelsestatistiken
     // Bara grupper med minst k, som Löneläget; de utelämnade nämns med antal.
@@ -75,8 +75,8 @@ export function ritaKravstatus() {
     if (bm) {
         const k = kInstalld();
         const utel = bm.utelamnade ? ` · ${bm.utelamnade} ${bm.utelamnade === 1 ? T.enhet.en : T.enhet.fl} visas inte här (färre än ${k} ${personOrd(k)})` : '';
-        if (bm.av === 0) setCompCard('comp-bm', 0, 0, `Ingen matchning hittad${utel}`, 'na');
-        else setCompCard('comp-bm', bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
+        if (bm.av === 0) sattKravkort('comp-bm', 0, 0, `Ingen matchning hittad${utel}`, 'na');
+        else sattKravkort('comp-bm', bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
     }
     // Länken till fliken Löneläget bara när fliken finns (jämförelsestatistik inläst).
     const bmLank = document.querySelector('#comp-bm .comp-lank');
@@ -113,7 +113,7 @@ export function statusMarke(status, ord = UK_ETIKETT[status]) {
     return `<span class="uk-marke uk-${status}">${ikon(UK_IKON[status], 14)} ${esc(ord)}</span>`;
 }
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
-export function renderUnderlagetsKvalitet({ reg } = {}) {
+export function ritaUnderlagetsKvalitet({ reg } = {}) {
     const host = document.getElementById('underlagets-kvalitet');
     if (!host) return;
     const b = bedomningUnderlag({ reg });
@@ -147,15 +147,15 @@ export function renderUnderlagetsKvalitet({ reg } = {}) {
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
  * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
  * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Det som visas läses genom
- * bootstrapCIGallande() (golvet i nyckeln, nedan). Skillnaden i
+ * bootstrapKIGallande() (golvet i nyckeln, nedan). Skillnaden i
  * procent (gapPct) har verktygets tecken, negativ när kvinnor ligger lägre.
  */
-export function computeBootstrapCI() { state.bootstrapCI = _skattning('bootstrapCI', statGolv()); }
+export function raknaBootstrapKI() { state.bootstrapCI = _skattning('bootstrapCI', statGolv()); }
 
 // ---- Skattningarna per golv (ADR-103) ----
 // Bootstrap-KI:t och styrkan sparas i state.bootstrapCI och state.powerAnalysis och beror på golvet, som är K_STANDARD på
 // skärmen och kan vara högre i exportläget. Varje resultat minns sitt golv, och det som visas läses genom
-// bootstrapCIGallande() och styrkaGallande(): ett resultat räknat vid ett annat golv används aldrig, utan det som gäller
+// bootstrapKIGallande() och styrkaGallande(): ett resultat räknat vid ett annat golv används aldrig, utan det som gäller
 // räknas en gång per golv och underlag. Så följer skärmens skattning aldrig med ut. Ett tomt fält som inte räknats
 // (bakgrundsräkningen pågår) ger inget.
 /** @type {WeakMap<object, number>} */
@@ -187,7 +187,7 @@ function _vidGolv(falt) {
     return m[falt];
 }
 /** Bootstrap-KI:t för golvet som gäller nu (statGolv), eller null. */
-export function bootstrapCIGallande() { return _vidGolv('bootstrapCI'); }
+export function bootstrapKIGallande() { return _vidGolv('bootstrapCI'); }
 /** Styrkan för golvet som gäller nu (statGolv), eller null. */
 export function styrkaGallande() { return _vidGolv('powerAnalysis'); }
 
@@ -198,7 +198,7 @@ export function styrkaGallande() { return _vidGolv('powerAnalysis'); }
  * @param {{lo:number, hi:number}} ci
  * @param {number} [decimals=1]
  */
-export function fmtCI(ci, decimals = 1) {
+export function formateraKI(ci, decimals = 1) {
     if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return '';
     const intervall = ci.lo < 0 || ci.hi < 0 ? `${svPct(ci.lo, decimals)} till ${svPct(ci.hi, decimals)}` : `${svTal(ci.lo, decimals)}–${svPct(ci.hi, decimals)}`;
     const B = Number(state.bootstrapCI?.B || osakerhetKonstanter().B_ORGANISATION);
@@ -212,7 +212,7 @@ export function fmtCI(ci, decimals = 1) {
  * @returns {null | {n:number, nKv:number, nMa:number, mdePct:number, sigma:number, sigmaKalla:'inomGrupp'|'helaUrvalet',
  *                   sigmaHela:number, sigmaGrupper:number, balanced:boolean}}
  */
-export function computePowerAnalysis() { return _skattning('powerAnalysis', statGolv()); }
+export function raknaStyrkeanalys() { return _skattning('powerAnalysis', statGolv()); }
 
 // ---- Process-tracker: status för hela lagresan (kap. 3, §§ 8–14) ----
 /**
@@ -231,7 +231,7 @@ export function computePowerAnalysis() { return _skattning('powerAnalysis', stat
  * @param {{punkter?: any[], reg?: any}} [val] punkter: Att göras lista; reg: regressionen när anroparen just kört den i
  *   samma varv (ADR-17). Båda är värden som skickas vidare, ingen cache.
  */
-export function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
+export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
@@ -366,9 +366,9 @@ export function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
  * kvartilerna står i Filer och kvalitet respektive Lönestruktur. Klassen `har-data` på panelen styr vad som visas.
  */
 /** Filer och kvalitet: underlagets kvalitet, extremvärdena och inläsningsrapporten. Ritas vid inläsning och vid flikbyte. */
-export function renderFilerDelar() {
+export function ritaFilerDelar() {
     /** @type {[string, () => void][]} */
-    const delar = [['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['extremvärden', () => renderOutliers()],
+    const delar = [['underlagets kvalitet', () => ritaUnderlagetsKvalitet()], ['extremvärden', () => renderOutliers()],
         ['inläsningsrapporten', () => renderDataValidationReport()]];
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Filer och kvalitet (${namn})`, e); } }
 }
@@ -407,14 +407,14 @@ function _ovRitaFilrad(har, antal) {
 }
 
 /**
- * Minsta upptäckbara skillnad för en undergrupp (yrkesgrupp, BAS-rad) med σ ur computePowerAnalysis: spridningen i
+ * Minsta upptäckbara skillnad för en undergrupp (yrkesgrupp, BAS-rad) med σ ur raknaStyrkeanalys: spridningen i
  * log-lön INOM grupp (gruppMde i src/lib/osakerhet.js).
  * @param {number} nKv - antal kvinnor i gruppen
  * @param {number} nMa - antal män i gruppen
  * @param {number} [sigmaLog] - σ för log(lön) (default: hämta från cache)
  * @returns {null | {mdePct:number, level:'good'|'fair'|'poor', tooSmall:boolean}}
  */
-export function computeGroupMDE(nKv, nMa, sigmaLog) {
+export function raknaGruppMDE(nKv, nMa, sigmaLog) {
     return gruppMde(nKv, nMa, sigmaLog || styrkaGallande()?.sigma);
 }
 
@@ -447,20 +447,20 @@ export function ritaNyckeltal() {
 }
 
 /** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
-export function renderOversiktDelar() {
+export function ritaOversiktDelar() {
     /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
     /** @type {any} */ let reg;   // och samma regression: körs en gång och skickas vidare (ADR-17)
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => ritaNyckeltal()], ['kompliansöversikt', () => ritaKravstatus()],
         ['Att göra', () => { reg = runOLSRegression(); punkter = renderActionChecklist({ reg }); }],
-        ['processöversikten', () => renderProcessTracker({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (ritaFlik('struktur'))
+        ['processöversikten', () => ritaKartlaggningensSteg({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (ritaFlik('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
     if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();
 }
 
 // ---- Populate BAS selects ----
-export function populateSelects() {
+export function fyllValjare() {
     const bas = hamtaBasIntervall();
     ['bas-select-kon','bas-select-demo'].forEach(selId => {
         const sel = document.getElementById(selId);

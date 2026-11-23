@@ -130,7 +130,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(b.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-egen')).toHaveLength(1);
         expect(b.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen').cells[0].querySelector('[data-hp-falt="grupp"]').value).toBe('Alla chefer');
         // Översikt-kortet räknar raderna efter status, inte åtgärdslistans bockar.
-        b.eval('renderProcessTracker()');
+        b.eval('ritaKartlaggningensSteg()');
         const kort = [...b.document.querySelectorAll('.ptrack-detail')].map(el => el.textContent).find(t => /rader genomförda/.test(t));
         expect(kort).toMatch(/^0 av \d+ rader genomförda, 1 planerade eller pågår; \d+ utan något ifyllt\.$/);
         egen.querySelector('[data-hp-ta-bort]').click();
@@ -329,7 +329,7 @@ describe('Handlingsplan och gruppdossier: en AID-kod med två texter är en grup
         w.__state.data = data;
         w.__state.policy = [{ bas: 'C', p10: 30000, med: 35000, p90: 40000 }];
         w.__state.handlingsplan = {};
-        w.eval('populateSelects(); lasUppFlikar(); sattKTroskel(10, { fraga: false });');
+        w.eval('fyllValjare(); lasUppFlikar(); sattKTroskel(10, { fraga: false });');
         return w;
     };
     it('[B7.10] prioriteringen har en post på 15 personer, och handlingsplanen en förifylld rad för den', () => {

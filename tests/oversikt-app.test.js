@@ -36,7 +36,7 @@ describe('Översikt: ordning, kvalitet och nyckeltal', () => {
         expect(d.getElementById('uk-sammanfattning').textContent).toMatch(/\d+ av \d+ kriterier OK/);
         expect(d.getElementById('uk-sammanfattning').textContent).toMatch(/Jämförbarhet/);
         expect(fall.contains(d.getElementById('consistency-banner-container'))).toBe(true);
-        w.eval("bedomningUnderlag = () => ({ status: 'ok', kriterier: [{ id: 'a', namn: 'A', status: 'ok', text: 'x' }] }); renderUnderlagetsKvalitet();");
+        w.eval("bedomningUnderlag = () => ({ status: 'ok', kriterier: [{ id: 'a', namn: 'A', status: 'ok', text: 'x' }] }); ritaUnderlagetsKvalitet();");
         expect(fall.open).toBe(false);
         expect(d.getElementById('uk-sammanfattning').textContent).toMatch(/1 av 1 kriterier OK/);
     });
@@ -107,7 +107,7 @@ describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
         w.__loadDemoData();
         w.eval("bedomningUnderlag = () => ({ status: 'ok', kriterier: [{ id: 'a', namn: 'A', status: 'ok', text: 'x' }] })");
         w.document.getElementById('consistency-banner-container').innerHTML = '<div class="consistency-banner warn">Filerna matchar inte</div>';
-        w.eval('renderUnderlagetsKvalitet()');
+        w.eval('ritaUnderlagetsKvalitet()');
         expect(w.document.getElementById('uk-fallbar').open).toBe(true);
     });
 });
@@ -119,9 +119,9 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — Översikt', ()
         const fall = w.document.getElementById('uk-fallbar');
         expect(fall.open).toBe(true);
         fall.open = false;
-        w.eval('renderUnderlagetsKvalitet()');
+        w.eval('ritaUnderlagetsKvalitet()');
         expect(fall.open).toBe(false);
-        w.eval("bedomningUnderlag = () => ({ status: 'kritisk', kriterier: [{ id: 'a', namn: 'A', status: 'kritisk', text: 'x' }] }); renderUnderlagetsKvalitet();");
+        w.eval("bedomningUnderlag = () => ({ status: 'kritisk', kriterier: [{ id: 'a', namn: 'A', status: 'kritisk', text: 'x' }] }); ritaUnderlagetsKvalitet();");
         expect(fall.open).toBe(true);
     });
 });
@@ -299,7 +299,7 @@ describe('Att göra', () => {
             lon: (i % 2 ? maLon : kvLon) + (i % 7) * 50 + 'ABC'.indexOf('ABC'[i % 3]) * 2000, yrke: '100 Y', aid: '100', yrkeLabel: 'Y' });
         return r;
     };
-    const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('populateSelects(); lasUppFlikar();'); return w; };
+    const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('fyllValjare(); lasUppFlikar();'); return w; };
     it('punkten om oförklarat gap: hög vid signifikant gap på minst 3 %, ingen när gapet inte är signifikant', () => {
         const hog = med(rader(30000, 33000)).eval('buildActionChecklist()').find(i => i.id === 'reg-oforklarat');
         expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'struktur' });

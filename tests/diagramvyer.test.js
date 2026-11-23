@@ -207,7 +207,7 @@ describe('Rapporttext: auto-utkastets mening om vertikal könssegregering', () =
         for (let i = 0; i < 40; i++) r.push(rad('E', i < 20 ? 'kvinna' : 'man', 35000 + i));
         for (let i = 0; i < 40; i++) r.push(rad('J', i < 40 * andelKvJ / 100 ? 'kvinna' : 'man', 60000 + i));
         win.__state.data = r;
-        win.eval('populateSelects(); lasUppFlikar();');
+        win.eval('fyllValjare(); lasUppFlikar();');
         win.__ritaFlik('rapporttext');
         return win.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
     };
@@ -652,7 +652,7 @@ describe('Ålder & karriär: chart-demo-hist', () => {
 // ---- Linjer, band och lådor ----
 describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
     const rader = (n, kon, bas = 'A') => Array.from({ length: n }, (_, i) => person(bas, kon, 30000 + i * 300, { alder: 25 + (i % 35), yrke: `53${i % 3} Yrke` }));
-    const rita = (data, fn) => medData(data, [], () => { w.eval("populateSelects(); ritaAlderOchLon('__ALLA__')"); return fn(w.document); });
+    const rita = (data, fn) => medData(data, [], () => { w.eval("fyllValjare(); ritaAlderOchLon('__ALLA__')"); return fn(w.document); });
     const serier = id => w.document.getElementById(id)._figur.lager.map(l => [l.marke, l.serie]);
     it('båda könen över tröskeln: band och trend per kön, punkter per kön, låda per kön', () => {
         rita([...rader(30, 'kvinna'), ...rader(30, 'man')], d => {
@@ -974,7 +974,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
         w2.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('A', 'man', 30000 + i * 7)), ...Array.from({ length: 3 }, () => rad('A', 'kvinna', MARKOR)),
                            ...Array.from({ length: 24 }, (_, i) => rad('B', i % 2 ? 'man' : 'kvinna', 26000 + i * 11, 30 + (i % 3) * 12)),
                            ...Array.from({ length: 4 }, (_, i) => rad('LITEN', i % 2 ? 'man' : 'kvinna', MARKOR + 1 + i))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         w2.__ritaFlik('utforska');
         return w2;
@@ -1133,7 +1133,7 @@ describe('spridningsdiagrammen: en person i en grupp under tröskeln visas inte 
     it.each([['chart-kon-scatter', "ritaAlderOchLon('__ALLA__')"]])(
         '%s: punkterna ritas inte, syns inte i exportbilden eller diagramdatan, och noten säger hur många', (id, rita) => {
         medData(data(), [], () => {
-            w.eval(`populateSelects(); ${rita}`);
+            w.eval(`fyllValjare(); ${rita}`);
             const el = w.document.getElementById(id);
             const punkter = el._figur.lager.filter(l => l.marke === 'punkt').flatMap(l => l.data);
             expect(punkter).toHaveLength(42);
@@ -1428,7 +1428,7 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
         w2.__state.data = [...Array.from({ length: 24 }, (_, i) => rad('207011 Usk', 'A', i % 2 ? 'man' : 'kvinna', 30000 + i * 7)),
                            ...Array.from({ length: 24 }, (_, i) => rad('502010 Sys', 'A', i % 2 ? 'man' : 'kvinna', 34000 + i * 9)),
                            ...Array.from({ length: 24 }, (_, i) => rad('403010 Bsk', 'B', i % 2 ? 'man' : 'kvinna', 26000 + i * 11))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('utforska');
         return w2;
     };

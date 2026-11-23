@@ -11,7 +11,7 @@ vi.setConfig({ testTimeout: 120000 });   // samlaUtdata går igenom varje utdata
 
 const utanAlder = w => {
     w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
-    w.eval('tomStatistikcacher(); populateSelects(); lasUppFlikar();');
+    w.eval('tomStatistikcacher(); fyllValjare(); lasUppFlikar();');
     return w;
 };
 

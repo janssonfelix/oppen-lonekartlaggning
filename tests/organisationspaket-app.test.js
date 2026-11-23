@@ -303,7 +303,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
     it('referensens namn ur ett paket escapas i beräkningsbeviset och utskriften', async () => {
         const w = createAppWindow();
         w.__state.data = rader();
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         las(w, paket({ referens: { ...paket().referens, namn: XSS, kortnamn: XSS } }));
         const it0 = w.eval("computePrioritization('stallningstagande')")[0];
         const bevis = w.eval('_evidenceForPrioItem')(it0, 'stallningstagande');

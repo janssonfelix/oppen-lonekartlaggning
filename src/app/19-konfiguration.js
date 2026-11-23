@@ -21,7 +21,7 @@ import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE } from './10-diagramtema.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
-import { bedomningUnderlag, populateSelects, UK_ETIKETT } from './13-oversikt.js';
+import { bedomningUnderlag, fyllValjare, UK_ETIKETT } from './13-oversikt.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
@@ -472,7 +472,7 @@ function _tillampaKonfiguration(cfg) {
     }
     tomStatistikcacher({ recompute: false });
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker uppdateraAktivFlik och Att göra).
-    if (kAndrad && state.data.length) { populateSelects(); _ritaOmAllaFlikar(); }
+    if (kAndrad && state.data.length) { fyllValjare(); _ritaOmAllaFlikar(); }
     else { uppdateraAktivFlik(); renderActionChecklist(); }
     // Påminnelse om organisationspaketet som konfigurationen skapades med.
     const op = tmp.organisationspaket;

@@ -151,7 +151,7 @@ describe('Löneöversyn: löneskillnad per BAS-intervall före och efter', () =>
         const rad = (aid, bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: `${aid} Yrke${aid}`, aid, yrkeLabel: `Yrke${aid}`, enhet: '' });
         w.__state.data = [...Array.from({ length: 14 }, (_, i) => rad('6000', 'A', 'kvinna', 30000 + i * 10)), ...Array.from({ length: 10 }, (_, i) => rad('6000', 'A', 'man', 30000 + i * 10)),
                           ...Array.from({ length: 10 }, (_, i) => rad('6100', 'A', 'kvinna', 36000 + i * 10)), ...Array.from({ length: 14 }, (_, i) => rad('6100', 'A', 'man', 36000 + i * 10))];
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.forecast.targets = [{ bas: 'A', aid: '6000', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
         w.__ritaFlik('loneoversyn');
         const tabell = w.document.getElementById('forecast-lutning-table');

@@ -74,7 +74,7 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
         MAN.forEach((l, i) => r.push(rad('S1', 'man', l, 40 + i)));
         w.__state.data = r;
         iExport(w);   // måtten prövas så som de lämnar verktyget; skärmen maskerar inget (ADR-51)
-        w.eval('populateSelects(); lasUppFlikar(); uppdateraAktivFlik();');
+        w.eval('fyllValjare(); lasUppFlikar(); uppdateraAktivFlik();');
         return w;
     };
     const kvMed = 25295, gap = [(kvMed / MAN[1] - 1) * 100, kvMed / MAN[1] * 100].flatMap(v => [v.toFixed(1), v.toFixed(2)]).map(s => s.replace('-', ''));
@@ -222,9 +222,9 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         for (let i = 0; i < 19; i++) rader.push({ bas: 'D', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 20, alder: 30 + i, yrke: '6200 Yrke 6200', aid: '6200', yrkeLabel: 'Yrke 6200', enhet: '' });
         rader.push({ bas: 'D', kon: 'man', lon: 91357, alder: 50, yrke: '6200 Yrke 6200', aid: '6200', yrkeLabel: 'Yrke 6200', enhet: '' });
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar(); tomStatistikcacher();');
+        w.eval('fyllValjare(); lasUppFlikar(); tomStatistikcacher();');
         // Som efter en vanlig inläsning (32-filinlasning.js): allt på Översikt är ritat.
-        w.eval('renderActionChecklist(); renderProcessTracker(); renderDataValidationReport(); renderOutliers(); uppdateraAktivFlik();');
+        w.eval('renderActionChecklist(); ritaKartlaggningensSteg(); renderDataValidationReport(); renderOutliers(); uppdateraAktivFlik();');
         return w;
     };
     const kort = w => normalisera(w.document.getElementById('action-checklist-container').textContent + w.document.getElementById('att-gora-borja').textContent);
@@ -243,7 +243,7 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         expect(fil).not.toContain('Yrke 5300');
         expect(fil).toMatch(/1 par med en grupp under 10 personer redovisas inte här/);
         // I exportläget är steg 4 "inget att hantera": paret redovisas bara i fliken (tests/troskelbeslut.test.js).
-        w.__state.kLage = 'export'; w.eval('renderProcessTracker()');
+        w.__state.kLage = 'export'; w.eval('ritaKartlaggningensSteg()');
         expect(w.document.getElementById('process-tracker').textContent).toMatch(/Inget att hantera i Att göra: 1 par har en grupp under 10 personer/);
     });
     it('10 → 25: inläsningsrapportens antal och extremvärdeslistan', () => {
@@ -290,7 +290,7 @@ describe('[C6] räkneexemplet i kronor per år bara när båda könen når trös
         const rad = (yrke, aid, kon, lon, i) => ({ bas: 'C', kon, lon, alder: 30 + i, yrke: `${aid} ${yrke}`, aid: String(aid), yrkeLabel: yrke, enhet: '' });
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('Gyrke', 8101, 'kvinna', 30000 + i * 37, i)), ...Array.from({ length: 12 }, (_, i) => rad('Gyrke', 8101, 'man', 33000 + i * 41, i)),
                           ...Array.from({ length: 12 }, (_, i) => rad('Hyrke', 8102, 'kvinna', 30000 + i * 29, i)), ...Array.from({ length: 4 }, (_, i) => rad('Hyrke', 8102, 'man', 88123 + i, i))];
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.kLage = 'export';   // dossierns text lämnar verktyget (ADR-51)
         return w;
     };

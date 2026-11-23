@@ -10,7 +10,7 @@ import { tillampaProfiletiketter, synkaNamnFalt } from './07-standardinstallning
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
 import { hamtaBasIntervall, state } from './12-tillstand.js';
-import { bedomningUnderlag, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { bedomningUnderlag, fyllValjare, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
 import { _fkSlapp } from './17-forhandskontroll.js';
@@ -106,20 +106,20 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     lasUppFlikar();
     ritaNyckeltal();
-    populateSelects();
+    fyllValjare();
     ritaLoneoversikt();
     ritaLoneskillnadPerBas(lsBasVymodell());
     ritaAlderOchLon('__ALLA__');
     ritaKravstatus();
     const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
-    renderUnderlagetsKvalitet({ reg });
+    ritaUnderlagetsKvalitet({ reg });
     updateGdprBanner();
     renderConsistencyBanner();
     renderActionChecklist({ reg });
     renderOutliers();
     renderDataValidationReport();
     syncDatakvalitetPanel({ reg });
-    renderProcessTracker({ reg });
+    ritaKartlaggningensSteg({ reg });
     const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';

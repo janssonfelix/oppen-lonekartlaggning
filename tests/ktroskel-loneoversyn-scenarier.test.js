@@ -26,7 +26,7 @@ const STAR = [...STOR, ...grupp('B', '6100', 12, 35000, 'kvinna'), rad('C', '620
 function fonster(data) {
     const w = createAppWindow();
     w.__state.data = data;
-    w.eval('populateSelects(); lasUppFlikar();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
     w.__ritaFlik('loneoversyn');
     return w;

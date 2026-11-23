@@ -16,7 +16,7 @@ import { _kopplaNamnFalt, tillampaProfiletiketter, STANDARDPROFIL, sattJmfNamn, 
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
 import { aterstallReferens, hamtaBasIntervall, state } from './12-tillstand.js';
-import { computeBootstrapCI, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { raknaBootstrapKI, fyllValjare, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
 import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, renderForhandskontroll } from './17-forhandskontroll.js';
@@ -130,7 +130,7 @@ function _efterInlastData() {
     if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     lasUppFlikar();
     ritaNyckeltal();
-    populateSelects();
+    fyllValjare();
     ritaLoneoversikt();
     const bas = hamtaBasIntervall();
     dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
@@ -141,8 +141,8 @@ function _efterInlastData() {
     // Regressionen körs en gång i det här varvet och skickas vidare till underlagets kvalitet, processöversikten och
     // Att göra, som annars kör den var för sig på samma underlag (ADR-17: ett värde, ingen cache).
     const reg = runOLSRegression();
-    renderUnderlagetsKvalitet({ reg });
-    renderProcessTracker({ reg });
+    ritaUnderlagetsKvalitet({ reg });
+    ritaKartlaggningensSteg({ reg });
     updateGdprBanner();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
     if (typeof _aterstallInaktivitetstimer === 'function') _aterstallInaktivitetstimer();
@@ -165,7 +165,7 @@ function _efterInlastData() {
             try {
                 ritaLoneskillnadPerBas(lsBasVymodell());
                 ritaAlderOchLon("__ALLA__");
-                computeBootstrapCI();
+                raknaBootstrapKI();
                 renderActionChecklist();
             } finally {
                 if (dataStatus) dataStatus.textContent = dataStatus.textContent.replace(DEFER_NOTE, '');

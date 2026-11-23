@@ -59,7 +59,7 @@ describe('#1 röktest: boot', () => {
     });
 
     it('process-tracker renderas redan vid boot (utan data) med steg 1 ej klart', () => {
-        // Boot-koden i 61-regler-och-praxis.js kör renderProcessTracker() — kortet ska
+        // Boot-koden i 61-regler-och-praxis.js kör ritaKartlaggningensSteg() — kortet ska
         // finnas ÄVEN innan data laddats (demo laddas i ett senare describe-block).
         const host = win.document.getElementById('process-tracker');
         expect(host).toBeTruthy();
@@ -86,7 +86,7 @@ describe('#1 röktest: demodata + full pipeline', () => {
 
 describe('process-tracker: statusar härleds ur inläst data', () => {
     it('steg 1 blir klart (✅) och likvärdighetsraden visar kandidatpar-antal efter demodata', () => {
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         const host = win.document.getElementById('process-tracker');
         const rows = host.querySelectorAll('.ptrack-row');
         expect(rows.length).toBe(9);
@@ -101,13 +101,13 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
     it('regler & praxis-raden speglar antal ifyllda bedömningar (0/6 → 1/6)', () => {
         // nollställ, rendera → 0/6
         for (let i = 1; i <= 6; i++) { const s = win.document.getElementById('bes8-status-' + i); if (s) s.value = ''; }
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         let bes8Row = [...win.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Regler & praxis/.test(r.textContent));
         expect(bes8Row.textContent).toContain('0/6');
 
         // fyll ett område → 1/6
         win.document.getElementById('bes8-status-1').value = 'Åtgärd krävs';
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         bes8Row = [...win.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Regler & praxis/.test(r.textContent));
         expect(bes8Row.textContent).toContain('1/6');
         expect(bes8Row.querySelector('.ptrack-status').dataset.status).toBe('delvis');   // delvis
@@ -115,7 +115,7 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
     });
 
     it('steg 6 (samverkan), 7 (rapporttext) och 8 (dokumentation) är manuella (➖)', () => {
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
         const samverkan = rows.find(r => /Samverkan/.test(r.textContent));
         const dok = rows.find(r => /Dokumentation/.test(r.textContent));
@@ -171,7 +171,7 @@ describe('#1 röktest: varje flik renderar utan kast', () => {
 
 describe('process-trackern och § 3:10', () => {
     it('process-trackern har nio steg och steg 9 är manuellt (➖)', () => {
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
         expect(rows.length).toBe(9);
         const step9 = rows[8];
@@ -326,7 +326,7 @@ describe('menystruktur', () => {
         mal.forEach(m => expect(finns.has(w.eval(`flikMal(${JSON.stringify(m)})`)), m).toBe(true));
     });
     it('processkartan har 9 steg under menyns faser: Samverkan under Åtgärder, Rapporttext först under Rapport', () => {
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         const host = w.document.getElementById('process-tracker');
         // Faserna och stegen i den ordning de står: varje fasrubrik följs av sina steg.
         const faser = {}; let fas = null;
@@ -350,7 +350,7 @@ describe('menystruktur', () => {
         expect(rows[6].querySelector('.ptrack-status').dataset.status).toBe('manuell');
     });
     it('"Gå till steget" för Samverkan öppnar Handlingsplan och går till kortet', () => {
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         const knapp = [...w.document.querySelectorAll('#process-tracker [data-goto-avsnitt]')][0];
         const kort = w.document.getElementById('hp-samverkan');
         let rullad = false; kort.scrollIntoView = () => { rullad = true; };
@@ -510,7 +510,7 @@ describe('[S5] organisationsneutralt standardläge', () => {
     const utanReferens = () => {
         const w = createAppWindow();
         w.__state.data = rader();
-        w.eval('populateSelects(); lasUppFlikar(); ritaKravstatus();');
+        w.eval('fyllValjare(); lasUppFlikar(); ritaKravstatus();');
         return w;
     };
     it('ingen inbyggd referens och neutral profil', () => {
@@ -691,7 +691,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         for (let i = 0; i < 30; i++) rader.push({ bas: 'D', kon: i % 2 ? 'man' : 'kvinna', lon: 40000, alder: 40, yrke: '1 Y', aid: '1', enhet: '1000' });
         for (let i = 0; i < 3; i++) rader.push({ bas: 'C', kon: 'kvinna', lon: 20000, alder: 40, yrke: '2 Y', aid: '2', enhet: '1000' });
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__lasInReferens([{ bas: 'C', p10: 28300, med: 31700, p90: 35400 }, { bas: 'D', p10: 30000, med: 33900, p90: 37800 }], 'ref.csv');
         w.__ritaKravstatus();
         expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/^0 av 1 BAS-intervall/);

@@ -69,7 +69,7 @@ describe('k-tröskeln styr varje flik', () => {
         const w = fonster(null);
         const bild = () => FLIKAR.map(f => { w.__ritaFlik(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
         // Grundtillstånd som efter en vanlig inläsning (32-filinlasning.js): också Översiktens delar är ritade.
-        w.eval('tomStatistikcacher(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); uppdateraAktivFlik();');
+        w.eval('tomStatistikcacher(); renderActionChecklist(); ritaKartlaggningensSteg(); renderOutliers(); renderDataValidationReport(); uppdateraAktivFlik();');
         w.__ritaFlik('matrix'); await w.eval('_regKvantilKlar()');   // kvantilregressionens intervall räknas i bakgrunden efter första ritningen
         const fore = bild();
         // Golvet ändras (10 → 25 → 10): bootstrap-KI och styrkan räknas om i bakgrunden efter omritningen; vänta in den.
@@ -106,7 +106,7 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
             alder: 25 + ((i * 11) % 40), yrke: '6001 Säkeryrke 1', aid: '6001', yrkeLabel: 'Säkeryrke 1', enhet: '' });
         w.__state.data = rader;
         w.__state.policy = ['S1', 'S2'].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         return w;
     }
     const json = v => JSON.parse(JSON.stringify(v));
@@ -134,20 +134,20 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
         const w = fonsterObalans();
         w.eval('tomStatistikcacher()');                                       // skärmen först (golvet 10)
         expect(w.__state.bootstrapCI).not.toBeNull();
-        expect(w.eval('bootstrapCIGallande()')).toBe(w.__state.bootstrapCI);
-        expect(w.eval('medExportLage(() => bootstrapCIGallande())')).toBeNull();  // 15 kvinnor når inte 25
+        expect(w.eval('bootstrapKIGallande()')).toBe(w.__state.bootstrapCI);
+        expect(w.eval('medExportLage(() => bootstrapKIGallande())')).toBeNull();  // 15 kvinnor når inte 25
         const skarm = json(w.eval('styrkaGallande()')), ut = json(w.eval('medExportLage(() => styrkaGallande())'));
         expect(skarm).toEqual(json(styrkeanalys(w.__state.data, 10)));
         expect(ut).toEqual(json(styrkeanalys(w.__state.data, 25)));
         expect(ut).not.toEqual(skarm);
-        expect(w.eval('bootstrapCIGallande()')).toBe(w.__state.bootstrapCI);   // och skärmen har kvar sitt
+        expect(w.eval('bootstrapKIGallande()')).toBe(w.__state.bootstrapCI);   // och skärmen har kvar sitt
     });
     it('räknade i exportläget först ger de skärmen dess egna, och exporten sina', () => {
         const w = fonsterObalans();
         w.eval('medExportLage(() => tomStatistikcacher())');                  // exporten först (golvet 25)
         expect(w.__state.bootstrapCI).toBeNull();
-        expect(w.eval('bootstrapCIGallande()')).not.toBeNull();                 // skärmen räknar sitt
-        expect(w.eval('medExportLage(() => bootstrapCIGallande())')).toBeNull();
+        expect(w.eval('bootstrapKIGallande()')).not.toBeNull();                 // skärmen räknar sitt
+        expect(w.eval('medExportLage(() => bootstrapKIGallande())')).toBeNull();
         expect(json(w.eval('styrkaGallande()'))).toEqual(json(styrkeanalys(w.__state.data, 10)));
         expect(json(w.eval('medExportLage(() => styrkaGallande())'))).toEqual(json(styrkeanalys(w.__state.data, 25)));
     });

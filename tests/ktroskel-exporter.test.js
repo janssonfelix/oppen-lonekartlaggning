@@ -35,7 +35,7 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000');
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = data;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('likvardighet');
         const rader = fangaCsv(w);
         w.eval('exportLikvardighetCSV()');
@@ -182,7 +182,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         for (let i = 0; i < 40; i++) r.push(rad('C', i < 10 ? 'kvinna' : 'man', 32000 + i));            // 25 % kvinnor (högst namngivna BAS)
         for (let i = 0; i < 4; i++) r.push(rad('D', 'man', 33000 + i));                                 // 4 personer, 0 % kvinnor
         w.__state.data = r;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         iExport(w);
         w.__ritaFlik('rapporttext');
         const seg = w.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
@@ -198,7 +198,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
             const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
             lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
             w.__state.data = rader;
-            w.eval('populateSelects(); lasUppFlikar();');
+            w.eval('fyllValjare(); lasUppFlikar();');
             return w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         };
         expect(antal(5)).toBe(0);
@@ -211,7 +211,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
         lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('likvardighet');
         const text = w.document.getElementById('likvardighet-content').textContent.replace(/\s+/g, ' ');
         expect(text).toContain('varav 1 grupp med n < 10');
@@ -222,7 +222,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
         lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const antal = () => w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         expect(antal()).toBe(1);
         const par = w.eval('likvardighetResultat().pairs');
@@ -245,7 +245,7 @@ describe('[I5] konfigurationsfil och organisationspaket: det som syns ritas om e
         a.eval('sattKTroskel(25, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const w = fonster(null);
-        w.eval('renderActionChecklist(); renderProcessTracker(); renderDataValidationReport(); uppdateraAktivFlik();');
+        w.eval('renderActionChecklist(); ritaKartlaggningensSteg(); renderDataValidationReport(); uppdateraAktivFlik();');
         ritaAlla(w);
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
         rakna(w);

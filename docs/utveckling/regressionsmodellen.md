@@ -365,7 +365,7 @@ organisationen, 1 000 per BAS-intervall och 2 000 i gruppdossiern, kvantilregres
 konfidensbandet kring regressionslinjen i Ålder & karriär (fast 1,96) och trattens fält i Lika arbete (fast 1,96). De
 räknas i `src/lib/osakerhet.js` (`organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `kvantilBootstrap`,
 `regressionslinjensBand`, `trattUnderlag`), där antalen dragningar och faktorerna är namngivna konstanter; appens
-funktioner med de tidigare namnen (`computeBootstrapCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`,
+funktioner (`raknaBootstrapKI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`,
 `_regKvantilBootstrap`, `linjarRegressionKI`, `_laTrattUnderlagRakna`) är tunna adaptrar. Percentilgränserna tas på ett
 ställe, `percentilintervall` i `src/lib/stat.js`, också för bootstrapintervallen i likvärdigt arbete och omkastningen i
 `src/lib/status.js`. Indexen i de stigande sorterade dragningarna är symmetriska (ADR-86): den nedre gränsen har index
@@ -560,7 +560,7 @@ testerna speglar den.
 | `tests/huvudregression-adapter.test.js` | Att `runOLSRegression` ger exakt samma returvärde som `huvudregression` med samma argument (varje tal med `Object.is`), på demodatan, utan ålder och i reservsteget |
 | `tests/berakningar-las.test.js` | Ögonblicksbilden av hela returvärdet från `runOLSRegression` på demodatan |
 | `tests/osakerhet.test.js` | `src/lib/osakerhet.js` direkt: bootstrapintervallen med en injicerad, seedad generator, konfidensbandet kring en regressionslinje och styrkan räknade för hand, extremvärdena, trattens underlag och kvantilregressionens intervall; `percentilintervall` i `src/lib/stat.js` |
-| `tests/osakerhet-adapter.test.js` | Att appens adaptrar (`computeBootstrapCI`, `computePowerAnalysis`, `computeGroupMDE`, `detectOutliers`, `linjarRegressionKI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`, `_laTrattUnderlagRakna`, `_regKvantilBootstrap`) ger exakt samma tal som `src/lib/osakerhet.js` med samma argument, på demodatan och utan ålder vid tröskeln 3, 10 och 25 |
+| `tests/osakerhet-adapter.test.js` | Att appens adaptrar (`raknaBootstrapKI`, `raknaStyrkeanalys`, `raknaGruppMDE`, `detectOutliers`, `linjarRegressionKI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`, `_laTrattUnderlagRakna`, `_regKvantilBootstrap`) ger exakt samma tal som `src/lib/osakerhet.js` med samma argument, på demodatan och utan ålder vid tröskeln 3, 10 och 25 |
 | `tests/regression-app.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
 | `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan och de valbara variablerna |

@@ -21,7 +21,7 @@ describe('Lägre krav, högre lön', () => {
     const oppna = (w, data) => {
         w.__state.data = data;
         if (w.__state.likvardighet) w.__state.likvardighet.result = null;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('likvardighet');
     };
     it('avsnittet ritas med paret, utan §; blocket kommer efter Likvärdigt arbete', () => {
@@ -78,7 +78,7 @@ describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall'
         w.__state.data = [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000)];
         w.__state.arbetsvardering = poang ? { byKey: new Map([['100', 500], ['200', 480]]), count: 2, hasBas: false } : null;
         if (w.__state.likvardighet) w.__state.likvardighet.result = null;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('likvardighet');
         return w;
     };

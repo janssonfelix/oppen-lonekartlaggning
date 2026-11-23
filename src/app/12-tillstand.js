@@ -16,7 +16,7 @@ import { _kUndantagFor, _tsvMedStampel } from './06-k-troskel.js';
 import { COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { PALETTE } from './10-diagramtema.js';
-import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
+import { ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
 import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { _laddaNedCSV } from './22-exporthjalpare.js';
@@ -245,7 +245,7 @@ export function sattReferensNamn(namn) {
 // Allt som namnger eller räknar mot referensen ritas om när den byts eller döps om.
 export function ritaOmReferens() {
     for (const fn of [renderReferensKort, uppdateraAktivFlik, ritaKravstatus, renderConsistencyBanner,
-                      renderActionChecklist, renderProcessTracker]) {
+                      renderActionChecklist, ritaKartlaggningensSteg]) {
         if (typeof fn === 'function') { try { fn(); } catch (e) { rapporteraFel(`Omritning (${fn.name})`, e); } }   // en vy får inte stoppa de andra
     }
 }

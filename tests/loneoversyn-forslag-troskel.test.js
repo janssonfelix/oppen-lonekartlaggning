@@ -33,7 +33,7 @@ function fonsterPar({ kvN, jmfN, k = null, minGroupN = 0, jmf2N = 0, jmf2Lon = J
     for (let i = 0; i < jmf2N; i++) rader.push(rad('C', 'man', jmf2Lon, '6200', i));
     for (let i = 0; i < kvN; i++) rader.push(rad('C', 'kvinna', KV_LON, '5300', i));
     w.__state.data = rader;
-    w.eval('populateSelects(); lasUppFlikar();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     if (k !== null) w.eval(`sattKTroskel(${k}, { fraga: false })`);
     w.alert = () => {};
     Object.assign(w.__state.forecast, { minGroupN, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });

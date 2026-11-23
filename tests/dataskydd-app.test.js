@@ -30,7 +30,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
             statistik: { namn: X('stat'), rader: [0, 1, 2, 3, 4, 5].map(g => ({ aid: g < 3 ? `10${g}` : `20${g}`, aidFull: X('aidfull' + g), bas: 'ABC'[g % 3],
                 median: 33000 + g * 1000, p10: 30000, p90: 36000, nKv: 20, nMa: 20, andelKv: g < 3 ? 80 : 20 })) } };
         w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket))}, 'x')`);
-        w.eval('populateSelects(); lasUppFlikar(); ritaNyckeltal(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell());');
+        w.eval('fyllValjare(); lasUppFlikar(); ritaNyckeltal(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell());');
     };
 
     it('skadlig text i fil och organisationspaket skapar inga element i någon flik', async () => {
@@ -133,7 +133,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
     it('processöversikten: lika och likvärdigt arbete är inte klara medan punkter återstår i Att göra', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         expect(status(w, /3\. Lika arbete/)).toBe('delvis');
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('delvis');
         expect(steg(w, /4\. Likvärdigt arbete/).textContent).toMatch(/0 av \d+ kandidatpar hanterade/);
@@ -141,7 +141,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         const punkter = w.eval('buildActionChecklist()');
         const done = w.__state._actionChecklistDone || (w.__state._actionChecklistDone = new w.Set());
         punkter.filter(p => ['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete'].includes(p.kategori)).forEach(p => done.add(p.id));
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         expect(status(w, /3\. Lika arbete/)).toBe('klar');
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('klar');
     });
@@ -150,7 +150,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.likvardighet.result = { pairs: [] };
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('klar');
     });
 
@@ -190,7 +190,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         // har något att visa.
         rader.push({ bas: 'A', kon: 'man', lon: 187650, alder: 50, yrke: '100 Yrke', aid: '100', yrkeLabel: 'Yrke', enhet: '1000' });
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
                             'kon', 'demografi', 'benchmark', 'utforska', 'kvalitet', 'rapport', 'handlingsplan']) {
             try { w.__ritaFlik(flik); } catch (_e) { /* en flik utan data får kasta — det som ritats räknas */ }

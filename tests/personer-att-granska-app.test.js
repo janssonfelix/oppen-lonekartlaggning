@@ -88,7 +88,7 @@ describe('Personer att granska', () => {
         for (let i = 0; i < 400; i++) rader.push({ bas: 'B', kon: i % 2 ? 'man' : 'kvinna', lon: 30000, alder: 40, aid: '5301', yrke: '5301 Undersköterska', enhet: '', radnr: i + 2 });
         for (let i = 0; i < 250; i++) rader.push({ bas: 'B', kon: i % 2 ? 'man' : 'kvinna', lon: 20000 + i, alder: 40, aid: '5301', yrke: '5301 Undersköterska', enhet: '', radnr: 500 + i });
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('matrix');
         expect(w.document.querySelectorAll('#pag-tabell tbody tr')).toHaveLength(200);
         const knapp = w.document.getElementById('pag-visa-alla');

@@ -768,6 +768,7 @@ några av appens gamla namn; tabellen visar vad de heter nu och fylls på grupp 
 
 | Modul | Gammalt namn | Nytt namn |
 |---|---|---|
+| `13-oversikt.js` | `bootstrapCIGallande` | `bootstrapKIGallande` |
 | `31-navigering.js` | `renderTabContent` | `ritaFlik` |
 
 Namnen i S4 och exporten (`06-k-troskel.js`, `06-maskeringsnoter.js`, `11-diagramexport.js`, `19-konfiguration.js`,

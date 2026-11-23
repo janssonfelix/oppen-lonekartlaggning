@@ -45,13 +45,13 @@ describe('beräkningar på demodatan (låsta tal)', () => {
     });
 
     it('översiktens bootstrap-KI (state.bootstrapCI utan elapsed) ger samma tal', () => {
-        w.computeBootstrapCI();
+        w.raknaBootstrapKI();
         const { elapsed: _tid, ...utanTid } = w.__state.bootstrapCI;
         expect(stabil(utanTid)).toMatchSnapshot('bootstrapCI');
     });
 
-    it('power-analysen (computePowerAnalysis) ger samma tal', () => {
-        expect(stabil(w.computePowerAnalysis())).toMatchSnapshot('computePowerAnalysis');
+    it('power-analysen (raknaStyrkeanalys) ger samma tal', () => {
+        expect(stabil(w.raknaStyrkeanalys())).toMatchSnapshot('raknaStyrkeanalys');
     });
 
     it('extremvärdena (detectOutliers) ger samma tal', () => {

@@ -19,7 +19,7 @@ import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STA
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, harReferens, referensNamn, state } from './12-tillstand.js';
-import { populateSelects, renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
+import { fyllValjare, ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
 import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { visningNy } from './23-exportgrind.js';
@@ -221,8 +221,8 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     renderPaketInfo();
     renderConsistencyBanner();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).
-    if (kAndrad && state.data.length) { populateSelects(); _ritaOmAllaFlikar(); }
-    else { ritaKravstatus(); renderActionChecklist(); renderProcessTracker(); uppdateraAktivFlik(); }
+    if (kAndrad && state.data.length) { fyllValjare(); _ritaOmAllaFlikar(); }
+    else { ritaKravstatus(); renderActionChecklist(); ritaKartlaggningensSteg(); uppdateraAktivFlik(); }
 
     const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.`
         + (varningar.length ? ' ' + varningar.join(' ') : '');

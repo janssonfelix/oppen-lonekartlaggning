@@ -315,7 +315,7 @@ describe('Utforska: klick till gruppdossiern', () => {
         for (let i = 0; i < 4; i++) rader.push({ bas: 'B', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i, alder: 40,
             yrke: '200 Liten', aid: '200', yrkeLabel: 'Liten', enhet: '' });
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('utforska');
         expect(w.__explorerDossierTarget(spec(), 'B', null)).toEqual({ key: '200|B' });
         w.__state.kLage = 'export';
@@ -343,7 +343,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         for (let i = 0; i < 2; i++) rader.push(r('kvinna', 25000, '100'));
         for (let i = 0; i < 20; i++) rader.push(r(i % 2 ? 'man' : 'kvinna', 30000, '200'));   // 10 + 10
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const d = w.document;
         d.getElementById('explore-rad').value = 'bas';
         d.getElementById('explore-kolumn').value = 'aid';
@@ -534,7 +534,7 @@ describe('Utforska: urval', () => {
         const w = createAppWindow();
         const rad = bas => ({ bas, kon: 'kvinna', lon: 30000, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w.__state.data = Array.from({ length: 12 }, () => rad('E'));
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [], inte: false }] });
         w.__renderExplorer();
         w.__state.data = Array.from({ length: 12 }, () => rad('X'));
@@ -724,7 +724,7 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         const w = createAppWindow();
         const r = (kon, i) => ({ bas: 'A', kon, lon: 30000 + i, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => r('man', i)), ...Array.from({ length: 3 }, (_, i) => r('kvinna', i))];
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const d = w.document;
         d.getElementById('explore-measure').value = 'n';
         d.getElementById('explore-visa').value = 'kon';
@@ -858,7 +858,7 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
     const p = (aid, label, n) => Array.from({ length: n }, (_, i) => ({ aid, yrke: `${aid} ${label}`, yrkeLabel: label, bas: 'C',
         kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 37, alder: 30 + i, radnr: i + 2 }));
     w.__state.data = [...p('207011', 'Usk', 24), ...p('207024', 'Vb', 5), ...p('207009', 'Usk hemtj', 7), ...p('502010', 'Sysutv', 22)];
-    w.eval('populateSelects(); lasUppFlikar();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     const d = w.document;
     const satt = (id, v) => { d.getElementById(id).value = v; };
     it('rutan syns bara när raderna är yrkesgrupper', () => {

@@ -203,7 +203,7 @@ describe('BAS-dossiern: förra året och textversionen', () => {
         const w = fonster(null);
         const SENT = 41573;
         for (let i = 0; i < 6; i++) w.__state.data.push({ bas: 'S1', kon: i % 2 ? 'man' : 'kvinna', lon: SENT, alder: 30 + i * 5, yrke: '5999 Litet yrke', aid: '5999', yrkeLabel: 'Litet yrke', enhet: '' });
-        w.eval('tomStatistikcacher(); populateSelects();');
+        w.eval('tomStatistikcacher(); fyllValjare();');
         const skarm = w.eval("buildBasdossier('S1')");
         expect(skarm.yrken.some(y => y.aid === '5999')).toBe(true);
         const text = normalisera(w.eval("basdossierText('S1')"));
@@ -221,7 +221,7 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         const w = demo();
         // Flytta systemutvecklarna med lön under 37 000 kr från BAS C till BAS D: AID-etiketten finns då i två intervall
         // och är två grupper i Lika arbete (ADR-89). Dossiern för C läser gruppen i C direkt: antal, medianer och status.
-        w.eval(`(() => { for (const r of state.data) if (r.aid === '502010' && r.bas === 'C' && r.lon < 37000) r.bas = 'D'; tomStatistikcacher(); populateSelects(); })()`);
+        w.eval(`(() => { for (const r of state.data) if (r.aid === '502010' && r.bas === 'C' && r.lon < 37000) r.bas = 'D'; tomStatistikcacher(); fyllValjare(); })()`);
         const grupper = w.eval("laLikaGrupper(hamtaData(), kTroskel()).grupper.filter(g => g.aid === '502010')");
         expect(grupper.map(g => g.bas)).toEqual(['C', 'D']);
         const iC = grupper[0];

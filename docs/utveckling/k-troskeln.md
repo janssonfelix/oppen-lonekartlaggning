@@ -354,7 +354,7 @@ en ruta som visar förloppet och tar emot alla klick och tangenter tills omritni
 konfigurationsfil och organisationspaket sätter värdet med `rita: false` och gör omritningen själva, sist, så att allt
 ritas en gång. Ett tröskelbyte räknar om skattningarna (`tomStatistikcacher`) bara när `statGolv()` ändras, alltså bara
 i förhandsvisningen: på skärmen är golvet 10 vid varje tröskel. Bootstrap-KI:t och styrkan läses genom
-`bootstrapCIGallande()` och `styrkaGallande()` (`13-oversikt.js`), som bara ger ett resultat räknat vid golvet som
+`bootstrapKIGallande()` och `styrkaGallande()` (`13-oversikt.js`), som bara ger ett resultat räknat vid golvet som
 gäller och annars räknar det en gång per golv och underlag; Lika arbetes grupper (`laLikaGrupper`) har golvet i
 minnets nyckel (ADR-103). Paren i
 Likvärdigt arbete läser ingen tröskel och räknas inte om; antalet små grupper i deras diagnostik räknas när resultatet
@@ -366,7 +366,7 @@ ritas om, om det visas (`_fcRitaOmKnappresultat`), också när fliken öppnas ef
 knappresultaten (`vymodellIndividlyft`, `vymodellKanslighet`, `vymodellTroskelmal`) räknar med den tröskel de får; en ruta utan resultat
 förblir tom, och *Rensa all data*, en ny lönefil och *Nollställ* glömmer resultaten (`_fcGlomKnappresultat`). Att göras lista byggs en gång för Att göra och
 processöversikten
-(`renderProcessTracker({ punkter })`), och regressionen körs en gång i omritningen för underlagets kvalitet, Att göra
+(`ritaKartlaggningensSteg({ punkter })`), och regressionen körs en gång i omritningen för underlagets kvalitet, Att göra
 och processöversikten (`{ reg }`) — ingen cache, bara värden som skickas vidare (ADR-17), och bara så länge underlaget,
 k och förklaringsmodellen är desamma som när de räknades. Rutan under omritningen i steg stoppar också `dragover` och
 `drop`, så att ingen fil kan släppas in mitt i den.

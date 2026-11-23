@@ -149,7 +149,7 @@ beforeAll(() => {
     win = createAppWindow();
     win.__state.data = byggDataset();
     win.__state.policy = byggPolicy();
-    win.eval('populateSelects(); lasUppFlikar();');
+    win.eval('fyllValjare(); lasUppFlikar();');
     // Vyerna ritas här i exportläget (ADR-51): så läser exporterna dem. Skärmläget prövas positivt nedan. Att varje flik
     // i exportläget utelämnar grupperna under tröskeln prövar invarianten I4 (tests/helpers/ktroskel-invariant.js).
     win.__state.kLage = 'export';
@@ -160,7 +160,7 @@ describe('k-anonymitet: skärmen maskerar inget (ADR-51)', () => {
         const w = createAppWindow();
         w.__state.data = byggDataset();
         w.__state.policy = byggPolicy();
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         for (const f of ['matrix', 'struktur', 'prioritering']) w.__ritaFlik(f);
         expect(rojandeElement(w).length).toBeGreaterThan(0);
         w.__state.kLage = 'export';
@@ -221,7 +221,7 @@ describe('k-anonymitet: samlad median när bara könsuppdelningen är för liten
                 yrke: '7100 Blandyrke', aid: '7100', yrkeLabel: 'Blandyrke', enhet: '' });
         }
         w2.__state.data = rader;
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__state.kLage = 'export';   // så som tabellen lämnar verktyget (ADR-51)
         w2.__ritaFlik('matrix');
     });
@@ -261,7 +261,7 @@ describe('k-anonymitet: Utforskas export', () => {
     beforeAll(async () => {
         w3 = createAppWindow();
         w3.__state.data = byggDataset();
-        w3.eval('populateSelects(); lasUppFlikar();');
+        w3.eval('fyllValjare(); lasUppFlikar();');
         w3.__ritaFlik('utforska');
         await new Promise(r => setTimeout(r, 0));
     });
@@ -351,7 +351,7 @@ describe('k-anonymitet: kön under tröskeln inuti en större grupp (Per kön)',
         for (let i = 0; i < 3; i++) rader.push(rad('A', 'kvinna', MARKOR));
         for (let i = 0; i < 20; i++) rader.push(rad('B', i % 2 ? 'man' : 'kvinna', 26000 + i * 11));
         w4.__state.data = rader;
-        w4.eval('populateSelects(); lasUppFlikar();');
+        w4.eval('fyllValjare(); lasUppFlikar();');
         w4.__ritaFlik('utforska');
         await new Promise(r => setTimeout(r, 0));
     });
@@ -391,7 +391,7 @@ describe('k-anonymitet: utskriften ur rapportmodellen mot referensen', () => {
         w.__state.data = byggDataset();
         // P10 över alla sentinelvärden → varje BAS hamnar "under referensens P10".
         w.__state.policy = [...SAKRA_BAS, TOPP_BAS, ...SMA_BAS].map(b => ({ aid: null, bas: b, p10: 90000, med: 95000, p90: 99000 }));
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.print = () => {};
         await w.eval('buildPrintReport()');
         const el = w.document.getElementById('print-report');
@@ -431,7 +431,7 @@ describe('k-anonymitet: rapportunderlagets parblock med små kvinnodominerade gr
         lägg(6, 'kvinna', SENTINEL[0], 'C', '5300');                                   // litet, kvinnodominerat
         lägg(6, 'kvinna', SENTINEL[1], 'E', '5301');                                   // litet, högre krav än 6100
         w2.__state.data = rader;
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
     });
     it('paren med små grupper finns i beräkningen (annars prövar testet inget)', () => {
         const lv = w2.eval('likvardighetResultat()');
@@ -457,7 +457,7 @@ describe('k-anonymitet: små grupper i Utforska markeras även utan färg', () =
         for (let i = 0; i < 3; i++) rader.push(rad('A', 'kvinna', 29000 + i));
         for (let i = 0; i < 24; i++) rader.push(rad('B', i % 2 ? 'man' : 'kvinna', 26000 + i * 11, 30 + (i % 3) * 12));
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.kLage = 'export';   // nedtoningen hör till exportläget (ADR-51)
         w.__ritaFlik('utforska');
         await new Promise(r => setTimeout(r, 0));
@@ -508,7 +508,7 @@ describe('k-anonymitet: sektorsöversikten', () => {
         for (let i = 0; i < 15; i++) rader.push(rad('503012', 'man', 42000 + i * 13, 30 + i));
         for (let i = 0; i < 30; i++) rader.push(rad('207011', i % 2 ? 'man' : 'kvinna', 30000 + i * 17, 25 + i));
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.kLage = 'export';   // tabellen så som Excel-bladet läser den (ADR-51)
         w.__ritaFlik('struktur');
         w.__ritaFlik('rapporttext');
@@ -540,7 +540,7 @@ describe('k-anonymitet: ansvarsunderrader i Lika arbete', () => {
         for (let i = 0; i < 14; i++) rader.push(rad('kvinna', 30000 + i * 41, 30 + i, 'inget'));
         for (let i = 0; i < 14; i++) rader.push(rad('man', 30300 + i * 43, 31 + i, 'inget'));
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.kLage = 'export';   // tabellen så som Excel-matrisen läser den (ADR-51)
         w.__ritaFlik('matrix');
     });
@@ -561,7 +561,7 @@ describe('k-anonymitet: sektorernas andel när ett kön är under k i hela under
         const rader = Array.from({ length: 40 }, (_, i) => ({ aid: '207011', yrke: '207011 X', yrkeLabel: 'X', bas: 'C', kon: 'kvinna', lon: 30000 + i * 11, alder: 25 + i }));
         rader.push({ aid: '502010', yrke: '502010 Y', yrkeLabel: 'Y', bas: 'C', kon: 'man', lon: 47123, alder: 44 });
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.kLage = 'export';
         w.__ritaFlik('struktur');
         w.__ritaFlik('rapporttext');
@@ -583,7 +583,7 @@ describe('k-anonymitet: den samlade jämförelseexporten', () => {
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('207011 Usk', i % 2 ? 'man' : 'kvinna', 30000 + i * 100)),
                           ...Array.from({ length: 3 }, () => rad('502010 Sysutv', 'kvinna', MARKOR))];
         w.__state.statistik = [{ aid: '207011', bas: 'C', median: 31000, p10: 29000, p90: 33000 }, { aid: '502010', bas: 'C', median: 45000 }];
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
         w.eval('exportBenchmarkExcel()');
@@ -599,7 +599,7 @@ describe('k-anonymitet: den samlade jämförelseexporten', () => {
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('207011 Usk', i % 2 ? 'man' : 'kvinna', 30000 + i * 100)),
                           ...Array.from({ length: 3 }, () => rad('502010 Sysutv', 'kvinna', MARKOR))];
         w.__state.statistik = [{ aid: '207011', bas: 'C', median: 31000 }, { aid: '502010', bas: 'C', median: 45000 }];
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.kLage = 'export';
         w.__ritaFlik('benchmark');
         const t = w.document.getElementById('benchmark-table').textContent.replace(/\s/g, '');
@@ -614,7 +614,7 @@ describe('k-anonymitet: den samlade jämförelseexporten', () => {
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('207011 Usk', i % 2 ? 'man' : 'kvinna', 30000 + i * 100)),
                           ...Array.from({ length: 3 }, () => rad('502010 Sysutv', 'kvinna', MARKOR))];
         w.__state.statistik = [{ aid: '207011', bas: 'C', median: 31000 }, { aid: '502010', bas: 'C', median: 45000 }];
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('benchmark');
         for (const id of ['chart-jamforelse-spann', 'chart-jamforelse-avvikelse']) {
             // Ritade av diagramkärnan (ADR-39): figuren på elementet, skärmens SVG, exportbilden och diagramdatan.
@@ -638,7 +638,7 @@ describe('k-anonymitet: organisationspaketet kan stänga av små grupper i Utfor
             referens: { rader: [{ bas: 'S1', p10: 20000, med: 25000, p90: 30000 }] } };
         expect(w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket))}, 'x.lonepaket.json')`).ok).toBe(true);
         w.__state.data = byggDataset();
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__ritaFlik('utforska');
         await new Promise(r => setTimeout(r, 0));
     });

@@ -37,7 +37,7 @@ import { _hpBedomningar, _hpBedomningHtml, _hpPassarGrupp } from './56-handlings
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
 // Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
-// dragningar som översikten per BAS-intervall (_laBootstrapGapCI), med B = 2000 som computeBootstrapCI; dragningar
+// dragningar som översikten per BAS-intervall (_laBootstrapGapCI), med B = 2000 som raknaBootstrapKI; dragningar
 // där männens median inte är positiv räknas inte.
 export function _gdBootstrapGapCI(kvLons, maLons, B) {
     return medianKvotKIGiltiga(kvLons, maLons, { B });

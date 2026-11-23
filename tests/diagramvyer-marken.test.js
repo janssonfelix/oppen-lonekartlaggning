@@ -62,12 +62,12 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         const rad = (kon, i, bas) => ({ bas, kon, lon: 28000 + i * 137 + (kon === 'man' ? 2500 : 0), alder: 25 + (i % 35), yrke: '100 X', aid: '100', yrkeLabel: 'X' });
         const w2 = createAppWindow();
         w2.__state.data = [...Array.from({ length: 40 }, (_, i) => rad('kvinna', i, i % 2 ? 'A' : 'B')), ...Array.from({ length: 3 }, (_, i) => rad('man', i, 'A'))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('struktur');
         expect(w2.document.getElementById('chart-reg-trappa')).toBeNull();
         const w3 = createAppWindow();
         w3.__state.data = [...Array.from({ length: 40 }, (_, i) => rad('kvinna', i, i % 2 ? 'A' : 'B')), ...Array.from({ length: 40 }, (_, i) => rad('man', i, i % 3 ? 'A' : 'B'))];
-        w3.eval('populateSelects(); lasUppFlikar();');
+        w3.eval('fyllValjare(); lasUppFlikar();');
         w3.__ritaFlik('struktur');
         const el = w3.document.getElementById('chart-reg-trappa');
         expect(el && el._figur).toBeTruthy();
@@ -215,7 +215,7 @@ describe('före och efter: lutningsdiagrammen', () => {
     const skapa = () => {
         const w2 = createAppWindow();
         w2.__state.data = data();
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__state.forecast.targets = [{ bas: 'A', aid: '6000', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
         w2.__state.kLage = 'export';   // diagrammet så som det lämnar verktyget (ADR-51)
         w2.__ritaFlik('loneoversyn');
@@ -414,7 +414,7 @@ describe('Utforska: staplade staplar, i antal eller som andel av raden', () => {
         const rad = (bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X' });
         w2.__state.data = [...Array.from({ length: 30 }, (_, i) => rad('A', 'man', 30000 + i * 7)), ...Array.from({ length: 10 }, (_, i) => rad('A', 'kvinna', 31000 + i)),
                            ...Array.from({ length: 17 }, (_, i) => rad('B', 'man', 26000 + i * 11)), ...Array.from({ length: 3 }, () => rad('B', 'kvinna', MARKOR))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__state.kLage = 'export';
         w2.__ritaFlik('utforska');
         return w2;
@@ -451,7 +451,7 @@ describe('Utforska: staplade staplar, i antal eller som andel av raden', () => {
     it('för många kolumnvärden ger en text i stället för ett diagram', () => {
         const w2 = skapa();
         w2.__state.data = Array.from({ length: 60 }, (_, i) => ({ bas: 'A', kon: 'man', lon: 30000 + i, alder: 40, yrke: `${100 + (i % 15)} Y${i % 15}`, aid: String(100 + (i % 15)), yrkeLabel: `Y${i % 15}` }));
-        w2.eval('populateSelects()');
+        w2.eval('fyllValjare()');
         const el = valj(w2, { 'explore-rad': 'bas', 'explore-kolumn': 'aid', 'explore-typ': 'staplade' });
         expect(el._figur).toBeUndefined();
         expect(el.textContent).toMatch(/15 värden — för många för staplade staplar \(högst 12\)/);
@@ -471,7 +471,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
     const skapa = () => {
         const w2 = createAppWindow();
         w2.__state.data = data();
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__state.kLage = 'export';
         return w2;
     };
@@ -498,7 +498,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         w2.__state.data = [...Array.from({ length: 20 }, (_, i) => rad('kvinna', i, 'A')), ...Array.from({ length: 20 }, (_, i) => rad('man', i, 'A')),
             ...Array.from({ length: 4 }, (_, i) => rad('kvinna', i, 'B')), ...Array.from({ length: 3 }, (_, i) => rad('man', i, 'B')),
             ...Array.from({ length: 2 }, (_, i) => rad('kvinna', i, 'C')), ...Array.from({ length: 2 }, (_, i) => rad('man', i, 'C'))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         expect(w2.eval('kTroskel()')).toBe(10);
         w2.__ritaFlik('struktur');
@@ -629,7 +629,7 @@ describe('närmaste punkt får verktygstipset och klicket', () => {
 
 describe('Struktur: lönekvartilerna som diagram', () => {
     const rad = (kon, lon) => ({ bas: 'A', kon, lon, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
-    const oppna = data => { const w2 = createAppWindow(); w2.__state.data = data; w2.eval('populateSelects(); lasUppFlikar();'); w2.__state.kLage = 'export'; w2.__ritaFlik('struktur'); return w2; };
+    const oppna = data => { const w2 = createAppWindow(); w2.__state.data = data; w2.eval('fyllValjare(); lasUppFlikar();'); w2.__state.kLage = 'export'; w2.__ritaFlik('struktur'); return w2; };
     it('fyra staplar till 100 % med högst lön överst, linje vid organisationens andel kvinnor, samma tal som tabellen', () => {
         // 40 personer: kvinnorna lågt, männen högt. Q1 och Q2 är alla kvinnor utom ..., osv.
         const data = [...Array.from({ length: 24 }, (_, i) => rad('kvinna', 30000 + i * 100)), ...Array.from({ length: 16 }, (_, i) => rad('man', 32500 + i * 100))];
@@ -697,7 +697,7 @@ describe('Likvärdigt arbete: krav mot lön', () => {
         w2.__state.kLage = 'export';
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         w2.__state.data = data();
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('likvardighet');
         const d = w2.document, el = () => d.getElementById('chart-likvardighet-krav');
         expect(el()._figur.lager.filter(l => l.marke === 'punkt').reduce((s, l) => s + l.data.length, 0)).toBe(5);
@@ -782,7 +782,7 @@ describe('Lönefördelningen per BAS-intervall (figuren och Lika arbetes lådor)
         const w2 = createAppWindow();
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         w2.__state.data = data();
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('struktur');
         const d = w2.document, el = d.getElementById('chart-skevhet-lador');
         expect(el.querySelectorAll('[data-marke="lada"]').length).toBe(3);               // A kvinnor, A män, B män
@@ -841,7 +841,7 @@ describe('Ålder & karriär: lön mot ålder i små multiplar', () => {
         const w2 = createAppWindow();
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         w2.__state.data = data();
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('kon');
         const d = w2.document, el = d.getElementById('chart-kon-multiplar'), f = el._figur;
         expect(f.paneler).toEqual(['BAS A', 'BAS B']);
@@ -858,7 +858,7 @@ describe('Ålder & karriär: lön mot ålder i små multiplar', () => {
     it('på skärmen (tröskeln 1) säger noten inte «färre än 1 person»', () => {
         const w2 = createAppWindow();
         w2.__state.data = [...data(), ...Array.from({ length: 30 }, (_, i) => ({ bas: String.fromCharCode(67 + (i % 15)), kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i, alder: 30 + i, yrke: '500 Q', aid: '500', yrkeLabel: 'Q', enhet: '' }))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('kon');
         expect(w2.eval('kTroskel()')).toBe(1);
         const not = w2.document.getElementById('kon-multiplar-not').textContent;
@@ -899,7 +899,7 @@ describe('Ålder & karriär: lönefördelningen per kön i fliken', () => {
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         const rad = (kon, lon, alder) => ({ bas: 'A', kon, lon, alder, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w2.__state.data = [...Array.from({ length: 30 }, (_, i) => rad('kvinna', 30000 + i * 200, 30 + (i % 4))), ...Array.from({ length: 30 }, (_, i) => rad('man', 32000 + i * 200, 40 + (i % 4)))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('kon');
         const d = w2.document;
         expect(d.getElementById('chart-kon-histogram')._figur.lager.map(l => l.serie)).toEqual(['Kvinnor', 'Män']);
@@ -980,7 +980,7 @@ describe('Struktur: organisationen som trädkarta', () => {
         const w2 = createAppWindow();
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         w2.__state.data = data();
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('struktur');
         const el = w2.document.getElementById('chart-struktur-tradkarta');
         expect(el.querySelectorAll('rect[data-marke="yta"]')).toHaveLength(6);           // två BAS + fyra ytor
@@ -1013,7 +1013,7 @@ describe('litet underlag: staplar som gäller få personer ritas med mönster', 
         const w2 = createAppWindow();
         const rad = (kon, lon) => ({ bas: 'A', kon, lon, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w2.__state.data = [...Array.from({ length: 30 }, (_, i) => rad('kvinna', 30000 + i * 200)), ...Array.from({ length: 30 }, (_, i) => rad('man', 32000 + i * 200))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('kon');
         const not = w2.document.getElementById('kon-histogram-not');
         const fa = w2.document.getElementById('chart-kon-histogram')._figur.lager.some(l => l.data.some(d => d.fa));
@@ -1028,7 +1028,7 @@ describe('Löneöversyn: gapet per grupp före och efter står också i en tabel
         const rad = (aid, bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: `${aid} Yrke${aid}`, aid, yrkeLabel: `Yrke${aid}`, enhet: '' });
         w2.__state.data = [...Array.from({ length: 14 }, (_, i) => rad('6000', 'A', 'kvinna', 30000 + i * 10)), ...Array.from({ length: 10 }, (_, i) => rad('6000', 'A', 'man', 30000 + i * 10)),
                            ...Array.from({ length: 10 }, (_, i) => rad('6100', 'A', 'kvinna', 36000 + i * 10)), ...Array.from({ length: 14 }, (_, i) => rad('6100', 'A', 'man', 36000 + i * 10))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__state.forecast.targets = [{ bas: 'A', aid: '6000', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
         w2.__ritaFlik('loneoversyn');
         const d = w2.document, f = d.getElementById('chart-forecast-lutning')._figur;
@@ -1299,7 +1299,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         const rad = (yrke, bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke, aid: yrke.slice(0, 6), yrkeLabel: yrke.slice(7), enhet: '' });
         w2.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('207011 Usk', 'A', 'kvinna', 30000 + i * 10)), ...Array.from({ length: 12 }, (_, i) => rad('207011 Usk', 'A', 'man', 33000 + i * 10)),
                            ...Array.from({ length: 12 }, (_, i) => rad('502010 Hemlig', 'A', 'man', 40000 + i * 10)), ...Array.from({ length: 2 }, (_, i) => rad('502010 Hemlig', 'A', 'kvinna', MARKOR + i))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('matrix');
         const topp = t(w2.document.getElementById('la-topp').textContent);
         expect(topp).toMatch(/AID-etiketter att granska\s*1 av 1/);
@@ -1355,7 +1355,7 @@ describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyck
         w2.__state.kLage = 'export';
         const rad = (kon, lon, alder) => ({ bas: 'A', kon, lon, alder, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w2.__state.data = [...Array.from({ length: 20 }, (_, i) => rad('kvinna', 30000 + i * 100, 30 + i)), ...Array.from({ length: 3 }, (_, i) => rad('man', 55555 + i, 40 + i))];
-        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.eval('fyllValjare(); lasUppFlikar();');
         w2.__ritaFlik('kon');
         expect(w2.document.getElementById('nyckel-ak-fordelning').textContent).toBe('');
         expect(w2.document.getElementById('avsnitt-ak-fordelning').querySelector('summary').textContent).not.toMatch(/5555\d/);

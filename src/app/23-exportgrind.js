@@ -38,7 +38,7 @@ function _bytKLage(lage, { tur = false } = {}) {
     ritGenerationNy({ tur });
     // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), bootstrap-KI:t och
     // styrkan läses per golv (statGolv är K_STANDARD på skärmen och kan vara högre i exportläget, ADR-103;
-    // bootstrapCIGallande och styrkaGallande i 13-oversikt.js), och § 3:10-paren läser ingen tröskel. Livscykelns
+    // bootstrapKIGallande och styrkaGallande i 13-oversikt.js), och § 3:10-paren läser ingen tröskel. Livscykelns
     // bevisunderlag hör till det som är ritat.
     state._lifecycleCache = null;
 }

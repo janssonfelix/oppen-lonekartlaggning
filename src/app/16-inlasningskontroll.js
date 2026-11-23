@@ -10,7 +10,7 @@ import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { hamtaBasIntervall, referensKortnamn, state } from './12-tillstand.js';
-import { renderUnderlagetsKvalitet } from './13-oversikt.js';
+import { ritaUnderlagetsKvalitet } from './13-oversikt.js';
 import { detectOutliers } from './15-extremvarden-basrang.js';
 import { _fkRapportrad } from './17-forhandskontroll.js';
 import { harAlder } from './50-regressionsmodeller.js';
@@ -121,7 +121,7 @@ export function renderDataValidationReport() {
 // Anropas efter renderDataValidationReport().
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
 export function syncDatakvalitetPanel(val) {
-    renderUnderlagetsKvalitet(val);
+    ritaUnderlagetsKvalitet(val);
 }
 
 // ---- Konsistenscheck mellan filer ----

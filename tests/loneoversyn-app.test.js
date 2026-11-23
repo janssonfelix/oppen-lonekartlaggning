@@ -47,7 +47,7 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ers
             alder: 30 + (i * 7) % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
         lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000'); lagg(6, 'kvinna', 36000, 'C', '5300');
         w.__state.data = rader;
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         return w;
     };
     const rad = (w, over) => {

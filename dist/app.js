@@ -9949,12 +9949,12 @@ function tomStatistikcacher({ recompute = true, likvardighet = true } = {}) {
   if (likvardighet && state.likvardighet) state.likvardighet.result = null;
   if (recompute && state.data && state.data.length) {
     try {
-      computeBootstrapCI();
+      raknaBootstrapKI();
     } catch (_e) {
       state.bootstrapCI = null;
     }
     try {
-      state.powerAnalysis = computePowerAnalysis();
+      state.powerAnalysis = raknaStyrkeanalys();
     } catch (_e) {
       state.powerAnalysis = null;
     }
@@ -11115,7 +11115,7 @@ function renderPrioritering() {
     const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : "–";
     const quickwinBadge = i.isQuickWin ? ' <span title="Snabb vinst" class="hjalpmarke hjalp-markor">' + ikon("blixt", 14) + "</span>" : "";
     const bristBadge = i.isBrist ? ' <span title="Bristyrke" class="hjalpmarke hjalp-markor">' + ikon("statusVarning", 14) + "</span>" : "";
-    const groupMDE = computeGroupMDE(i.kvN, i.maN);
+    const groupMDE = raknaGruppMDE(i.kvN, i.maN);
     const lowPower = groupMDE && (groupMDE.tooSmall || groupMDE.mdePct > Math.abs(i.diffPct));
     const powerBadge = lowPower ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? "och underlaget per kön är litet (<5)" : "större än observerad avvikelse"}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon("statusVarning", 14)}</span>` : "";
     const rowKey = `${i.aid}|${i.bas}`;
@@ -15642,7 +15642,7 @@ function ritaRegressionskort() {
     const note = s.status === "singular" ? " (multikollinearitet)" : s.status === "too_few" ? " (för få obs)" : "";
     return `${sym} <code class="fs-xs">${esc(s.desc)}</code><span class="text-dampad-xs">${note}</span>`;
   }).join(" &nbsp;|&nbsp; ");
-  const ki = bootstrapCIGallande(), rawCIsuffix = ki ? fmtCI(ki.gapPct) : "";
+  const ki = bootstrapKIGallande(), rawCIsuffix = ki ? formateraKI(ki.gapPct) : "";
   const tolkning = isSig ? vm.niva === "titta" ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : "utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den."} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.` : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under verktygets storleksgräns på 3 %. Lagen kräver att du analyserar också den: dokumentera de sakliga skälen och följ upp den över tid.` : `<strong>Den råa löneskillnaden (${_raGapText(r, (v) => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : "är statistiskt obetydligt redan utan kontroller"}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig: underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
   const tf = vm.tillforlitlighet;
   const _obsPerParam = tf.obsPerParam;
@@ -20795,7 +20795,7 @@ function _rmMinnesNyckel() {
     state.perBasRecept,
     state.forklaringsmodell,
     state.gapUppdelning,
-    bootstrapCIGallande(),
+    bootstrapKIGallande(),
     styrkaGallande(),
     state.likvardighet && state.likvardighet.result,
     state.isDemo
@@ -21599,7 +21599,7 @@ function _tillampaKonfiguration(cfg) {
   }
   tomStatistikcacher({ recompute: false });
   if (kAndrad && state.data.length) {
-    populateSelects();
+    fyllValjare();
     _ritaOmAllaFlikar();
   } else {
     uppdateraAktivFlik();
@@ -22520,7 +22520,7 @@ function _efterInlastData() {
   if (typeof _fcRensaParMal === "function") _fcRensaParMal();
   lasUppFlikar();
   ritaNyckeltal();
-  populateSelects();
+  fyllValjare();
   ritaLoneoversikt();
   const bas = hamtaBasIntervall();
   dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
@@ -22529,8 +22529,8 @@ function _efterInlastData() {
   markeraFilrutaInlast("upload-cell-data", "Inläst");
   ritaKravstatus();
   const reg = runOLSRegression();
-  renderUnderlagetsKvalitet({ reg });
-  renderProcessTracker({ reg });
+  ritaUnderlagetsKvalitet({ reg });
+  ritaKartlaggningensSteg({ reg });
   updateGdprBanner();
   if (typeof _aterstallInaktivitetstimer === "function") _aterstallInaktivitetstimer();
   renderConsistencyBanner();
@@ -22547,7 +22547,7 @@ function _efterInlastData() {
       try {
         ritaLoneskillnadPerBas(lsBasVymodell());
         ritaAlderOchLon("__ALLA__");
-        computeBootstrapCI();
+        raknaBootstrapKI();
         renderActionChecklist();
       } finally {
         if (dataStatus) dataStatus.textContent = dataStatus.textContent.replace(DEFER_NOTE, "");
@@ -24624,12 +24624,12 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   renderPaketInfo();
   renderConsistencyBanner();
   if (kAndrad && state.data.length) {
-    populateSelects();
+    fyllValjare();
     _ritaOmAllaFlikar();
   } else {
     ritaKravstatus();
     renderActionChecklist();
-    renderProcessTracker();
+    ritaKartlaggningensSteg();
     uppdateraAktivFlik();
   }
   const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.` + (varningar.length ? " " + varningar.join(" ") : "");
@@ -25096,20 +25096,20 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   document.getElementById("dashboard-summary").style.display = "grid";
   lasUppFlikar();
   ritaNyckeltal();
-  populateSelects();
+  fyllValjare();
   ritaLoneoversikt();
   ritaLoneskillnadPerBas(lsBasVymodell());
   ritaAlderOchLon("__ALLA__");
   ritaKravstatus();
   const reg = runOLSRegression();
-  renderUnderlagetsKvalitet({ reg });
+  ritaUnderlagetsKvalitet({ reg });
   updateGdprBanner();
   renderConsistencyBanner();
   renderActionChecklist({ reg });
   renderOutliers();
   renderDataValidationReport();
   syncDatakvalitetPanel({ reg });
-  renderProcessTracker({ reg });
+  ritaKartlaggningensSteg({ reg });
   const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
   document.getElementById("data-status").innerHTML = `<span class="farg-info">${ikon("sok")} ${status}</span>`;
   document.getElementById("data-status").className = "status-msg";
@@ -29235,7 +29235,7 @@ function uppstartReferensfiler() {
       ritaKravstatus();
       renderConsistencyBanner();
       renderActionChecklist();
-      renderProcessTracker();
+      ritaKartlaggningensSteg();
       if (hamtaData().length > 0) ritaLoneoversikt();
     }, "stallningstagande");
   });
@@ -29332,7 +29332,7 @@ function uppstartReferensfiler() {
         ritaKravstatus();
         renderConsistencyBanner();
         renderActionChecklist();
-        renderProcessTracker();
+        ritaKartlaggningensSteg();
       } catch (err) {
         doljLaddning();
         statStatus.textContent = "Fel: " + err.message;
@@ -29935,7 +29935,7 @@ function renderDataValidationReport() {
     `;
 }
 function syncDatakvalitetPanel(val) {
-  renderUnderlagetsKvalitet(val);
+  ritaUnderlagetsKvalitet(val);
 }
 function renderConsistencyBanner() {
   const wrap = document.getElementById("consistency-banner-container");
@@ -30317,7 +30317,7 @@ function uppstartSok() {
 }
 
 // src/app/13-oversikt.js
-function setCompCard(id, count, total, valueText, cardState) {
+function sattKravkort(id, count, total, valueText, cardState) {
   const card = document.getElementById(id);
   const icon = document.getElementById(`${id}-icon`);
   const val = document.getElementById(`${id}-val`);
@@ -30345,26 +30345,26 @@ function ritaKravstatus() {
   );
   const maskText = vm.maskerade ? ` · ${vm.maskerade} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : "";
   if (vm.jamforbara === 0) {
-    setCompCard("comp-gap", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
-    setCompCard("comp-skev", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
+    sattKravkort("comp-gap", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
+    sattKravkort("comp-skev", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
   } else {
-    setCompCard("comp-gap", vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} jämförbara ${T.niva.fl}${maskText}`, vm.gap.lage);
-    setCompCard("comp-skev", vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} jämförbara ${T.niva.fl}${maskText}`, vm.skev.lage);
+    sattKravkort("comp-gap", vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} jämförbara ${T.niva.fl}${maskText}`, vm.gap.lage);
+    sattKravkort("comp-skev", vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} jämförbara ${T.niva.fl}${maskText}`, vm.skev.lage);
   }
   const polLabel = document.getElementById("comp-pol-label");
   if (polLabel) polLabel.textContent = harReferens() ? `Under P10 i ${referensKortnamn()}` : "Under ställningstagandets P10";
   const polSub = document.getElementById("comp-pol-sub");
   if (polSub) polSub.textContent = referensNamn();
   const ref = vm.referens;
-  if (!ref) setCompCard("comp-pol", 0, 0, "Kräver lönepolitiskt ställningstagande", "na");
-  else if (ref.av === 0) setCompCard("comp-pol", 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, "na");
-  else setCompCard("comp-pol", ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
+  if (!ref) sattKravkort("comp-pol", 0, 0, "Kräver lönepolitiskt ställningstagande", "na");
+  else if (ref.av === 0) sattKravkort("comp-pol", 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, "na");
+  else sattKravkort("comp-pol", ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
   const bm = vm.statistik;
   if (bm) {
     const k = kInstalld();
     const utel = bm.utelamnade ? ` · ${bm.utelamnade} ${bm.utelamnade === 1 ? T.enhet.en : T.enhet.fl} visas inte här (färre än ${k} ${personOrd(k)})` : "";
-    if (bm.av === 0) setCompCard("comp-bm", 0, 0, `Ingen matchning hittad${utel}`, "na");
-    else setCompCard("comp-bm", bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
+    if (bm.av === 0) sattKravkort("comp-bm", 0, 0, `Ingen matchning hittad${utel}`, "na");
+    else sattKravkort("comp-bm", bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
   }
   const bmLank = document.querySelector("#comp-bm .comp-lank");
   if (bmLank) bmLank.hidden = !state.statistik.length;
@@ -30390,7 +30390,7 @@ var UK_IKON = { ok: "bock", varning: "statusVarning", kritisk: "statusKritisk", 
 function statusMarke(status, ord = UK_ETIKETT[status]) {
   return `<span class="uk-marke uk-${status}">${ikon(UK_IKON[status], 14)} ${esc(ord)}</span>`;
 }
-function renderUnderlagetsKvalitet({ reg } = {}) {
+function ritaUnderlagetsKvalitet({ reg } = {}) {
   const host = document.getElementById("underlagets-kvalitet");
   if (!host) return;
   const b = bedomningUnderlag({ reg });
@@ -30423,7 +30423,7 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
   }
   if (detaljer) detaljer.hidden = false;
 }
-function computeBootstrapCI() {
+function raknaBootstrapKI() {
   state.bootstrapCI = _skattning("bootstrapCI", statGolv());
 }
 var _golvFor = /* @__PURE__ */ new WeakMap();
@@ -30469,22 +30469,22 @@ function _vidGolv(falt) {
   }
   return m[falt];
 }
-function bootstrapCIGallande() {
+function bootstrapKIGallande() {
   return _vidGolv("bootstrapCI");
 }
 function styrkaGallande() {
   return _vidGolv("powerAnalysis");
 }
-function fmtCI(ci, decimals = 1) {
+function formateraKI(ci, decimals = 1) {
   if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return "";
   const intervall = ci.lo < 0 || ci.hi < 0 ? `${svPct(ci.lo, decimals)} till ${svPct(ci.hi, decimals)}` : `${svTal(ci.lo, decimals)}–${svPct(ci.hi, decimals)}`;
   const B = Number(state.bootstrapCI?.B || osakerhetKonstanter().B_ORGANISATION);
   return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${B})">[95 % KI: ${intervall}]</span>`;
 }
-function computePowerAnalysis() {
+function raknaStyrkeanalys() {
   return _skattning("powerAnalysis", statGolv());
 }
-function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
+function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) {
   const host = document.getElementById("process-tracker");
   if (!host) return;
   const hasData = (() => {
@@ -30583,9 +30583,9 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
   _laNyckel("nyckel-ov-process", hasData && autoTotal ? `Klara: ${autoDone} av ${autoTotal} steg som verktyget kan se` : "");
   ovRitaLage();
 }
-function renderFilerDelar() {
+function ritaFilerDelar() {
   const delar = [
-    ["underlagets kvalitet", () => renderUnderlagetsKvalitet()],
+    ["underlagets kvalitet", () => ritaUnderlagetsKvalitet()],
     ["extremvärden", () => renderOutliers()],
     ["inläsningsrapporten", () => renderDataValidationReport()]
   ];
@@ -30632,7 +30632,7 @@ function _ovRitaFilrad(har, antal) {
   }
   rad.innerHTML = `<span><strong>Lönefil:</strong> ${svTal(antal, 0)} personer</span><span><strong>Referens:</strong> ${esc(harReferens() ? referensNamn() : "ingen inläst")}</span><span><strong>Jämförelsestatistik:</strong> ${state.statistik.length ? `${svTal(state.statistik.length, 0)} rader` : "ingen inläst"}</span>` + kTroskelLank() + `<a href="#" class="btn btn-secondary btn-sm" data-go-to-tab="filer">Filer och kvalitet</a>`;
 }
-function computeGroupMDE(nKv, nMa, sigmaLog) {
+function raknaGruppMDE(nKv, nMa, sigmaLog) {
   return gruppMde(nKv, nMa, sigmaLog || styrkaGallande()?.sigma);
 }
 function ritaNyckeltal() {
@@ -30658,7 +30658,7 @@ function ritaNyckeltal() {
     }
   }
 }
-function renderOversiktDelar() {
+function ritaOversiktDelar() {
   let punkter;
   let reg;
   const delar = [
@@ -30668,7 +30668,7 @@ function renderOversiktDelar() {
       reg = runOLSRegression();
       punkter = renderActionChecklist({ reg });
     }],
-    ["processöversikten", () => renderProcessTracker({ punkter, reg })]
+    ["processöversikten", () => ritaKartlaggningensSteg({ punkter, reg })]
   ];
   for (const [namn, fn] of delar) {
     try {
@@ -30680,7 +30680,7 @@ function renderOversiktDelar() {
   const ab = document.getElementById("snapshot-comparison");
   if (ab && ab.style.display !== "none" && typeof ritaOgonblicksbildJamforelse === "function") ritaOgonblicksbildJamforelse();
 }
-function populateSelects() {
+function fyllValjare() {
   const bas = hamtaBasIntervall();
   ["bas-select-kon", "bas-select-demo"].forEach((selId) => {
     const sel = document.getElementById(selId);
@@ -30928,17 +30928,17 @@ function _skattningarIBakgrunden() {
     try {
       if (state.data.length) {
         try {
-          computeBootstrapCI();
+          raknaBootstrapKI();
         } catch (_e) {
           state.bootstrapCI = null;
         }
         try {
-          state.powerAnalysis = computePowerAnalysis();
+          state.powerAnalysis = raknaStyrkeanalys();
         } catch (_e) {
           state.powerAnalysis = null;
         }
         if (typeof ritaNyckeltal === "function") ritaNyckeltal();
-        if (typeof renderUnderlagetsKvalitet === "function") renderUnderlagetsKvalitet();
+        if (typeof ritaUnderlagetsKvalitet === "function") ritaUnderlagetsKvalitet();
         const oppen = document.querySelector(".nav-item.active[data-tab]");
         const flik = oppen ? oppen.getAttribute("data-tab") : null;
         if ((flik === "matrix" || flik === "prioritering") && typeof ritaFlik === "function") ritaFlik(flik);
@@ -30986,10 +30986,10 @@ function _omritningssteg() {
   let reg;
   let regFangst = null;
   steg.push(["underlagets kvalitet", () => {
-    if (typeof renderUnderlagetsKvalitet !== "function") return;
+    if (typeof ritaUnderlagetsKvalitet !== "function") return;
     regFangst = indata();
     reg = typeof runOLSRegression === "function" ? runOLSRegression() : void 0;
-    renderUnderlagetsKvalitet({ reg });
+    ritaUnderlagetsKvalitet({ reg });
   }]);
   let punkter;
   let punktFangst = null;
@@ -30999,8 +30999,8 @@ function _omritningssteg() {
     punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : void 0 });
   }]);
   steg.push(["processöversikten", () => {
-    if (typeof renderProcessTracker !== "function") return;
-    renderProcessTracker({ punkter: oforandrat(punktFangst) ? punkter : void 0, reg: oforandrat(regFangst) ? reg : void 0 });
+    if (typeof ritaKartlaggningensSteg !== "function") return;
+    ritaKartlaggningensSteg({ punkter: oforandrat(punktFangst) ? punkter : void 0, reg: oforandrat(regFangst) ? reg : void 0 });
   }]);
   steg.push(["extremvärden", () => {
     if (typeof renderOutliers === "function") renderOutliers();
@@ -32735,8 +32735,8 @@ function _ritaFlik(target) {
   else if (target === "arbetet") medExportLage(() => {
     if (typeof renderArsjamforelse === "function") renderArsjamforelse();
   });
-  else if (target === "dashboard" && d.length) renderOversiktDelar();
-  else if (target === "filer" && d.length) renderFilerDelar();
+  else if (target === "dashboard" && d.length) ritaOversiktDelar();
+  else if (target === "filer" && d.length) ritaFilerDelar();
   else if (target === "info") renderInfoTab();
   else if (target === "handlingsplan") renderHandlingsplanSeed();
   else if (target === "bestammelser") {
@@ -32784,9 +32784,9 @@ function uppdateraAktivFlik() {
   if (!active) return;
   const target = active.getAttribute("data-tab");
   ritaNyckeltal();
-  populateSelects();
+  fyllValjare();
   ritaKravstatus();
-  renderUnderlagetsKvalitet();
+  ritaUnderlagetsKvalitet();
   ritaFlik(target);
 }
 function oppnaHopfallda(el) {
@@ -33487,7 +33487,7 @@ function ritaOmReferens() {
     ritaKravstatus,
     renderConsistencyBanner,
     renderActionChecklist,
-    renderProcessTracker
+    ritaKartlaggningensSteg
   ]) {
     if (typeof fn === "function") {
       try {
@@ -36824,9 +36824,9 @@ function uppstartLage() {
 
 // src/app/90-uppstart.js
 function uppstartSist() {
-  if (typeof renderProcessTracker === "function") {
+  if (typeof ritaKartlaggningensSteg === "function") {
     try {
-      renderProcessTracker();
+      ritaKartlaggningensSteg();
     } catch (_e) {
     }
   }

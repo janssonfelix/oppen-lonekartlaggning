@@ -9,7 +9,7 @@
 import { _synkaKTroskel } from './06-k-troskel.js';
 import { tillampaProfiletiketter } from './07-standardinstallningar.js';
 import { state } from './12-tillstand.js';
-import { renderProcessTracker } from './13-oversikt.js';
+import { ritaKartlaggningensSteg } from './13-oversikt.js';
 import { loadDemoData } from './20-demodata-diagnostik.js';
 import { loadStortDemo } from './21-stort-demo.js';
 import { _paketStatus, lasInInbakatPaket } from './29-organisationspaket.js';
@@ -18,8 +18,8 @@ import { setupTabA11y } from './63-tangentbordsnavigering.js';
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartSist() {
-    if (typeof renderProcessTracker === 'function') {
-        try { renderProcessTracker(); } catch (_e) { /* icke-kritisk vid boot */ }
+    if (typeof ritaKartlaggningensSteg === 'function') {
+        try { ritaKartlaggningensSteg(); } catch (_e) { /* icke-kritisk vid boot */ }
     }
     setupTabA11y();
     tillampaProfiletiketter();  // Tillämpa default-profil vid uppstart

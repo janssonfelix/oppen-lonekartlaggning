@@ -45,19 +45,19 @@ describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osaker
                     golv = lage === 'export' ? Math.max(k, w.__K) : w.__K;
                 });
 
-                it('computeBootstrapCI', () => {
-                    w.eval('computeBootstrapCI()');
+                it('raknaBootstrapKI', () => {
+                    w.eval('raknaBootstrapKI()');
                     const { elapsed: _tid, ...app } = w.__state.bootstrapCI;
                     lika(app, organisationensKvotKI(d, golv));
                 });
-                it('computePowerAnalysis och computeGroupMDE', () => {
-                    const app = w.eval('computePowerAnalysis()');
+                it('raknaStyrkeanalys och raknaGruppMDE', () => {
+                    const app = w.eval('raknaStyrkeanalys()');
                     const lib = styrkeanalys(d, golv);
                     lika(app, lib);
                     w.__state.powerAnalysis = app;
                     for (const [nKv, nMa] of [[1, 5], [4, 9], [10, 10], [37, 12]]) {
-                        lika(w.eval(`computeGroupMDE(${nKv}, ${nMa})`), gruppMde(nKv, nMa, lib.sigma));
-                        lika(w.eval(`computeGroupMDE(${nKv}, ${nMa}, 0.08)`), gruppMde(nKv, nMa, 0.08));
+                        lika(w.eval(`raknaGruppMDE(${nKv}, ${nMa})`), gruppMde(nKv, nMa, lib.sigma));
+                        lika(w.eval(`raknaGruppMDE(${nKv}, ${nMa}, 0.08)`), gruppMde(nKv, nMa, 0.08));
                     }
                 });
                 it('detectOutliers', () => {

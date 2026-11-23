@@ -18,7 +18,7 @@ function fonster(k = null, rader = byggDataset()) {
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
     win.__state.data = rader;
     win.__state.policy = [...STORA, TOPP, ...MELLAN, ...SMA].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-    win.eval('populateSelects(); lasUppFlikar();');
+    win.eval('fyllValjare(); lasUppFlikar();');
     return win;
 }
 const text = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
@@ -84,7 +84,7 @@ function parFonster(k = 5) {
     lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
     lagg(6, 'kvinna', 36421, 'C', '5300');
     w.__state.data = rader;
-    w.eval(`populateSelects(); lasUppFlikar(); sattKTroskel(${k}, { fraga: false });`);
+    w.eval(`fyllValjare(); lasUppFlikar(); sattKTroskel(${k}, { fraga: false });`);
     w.alert = () => {};
     return w;
 }
@@ -161,7 +161,7 @@ describe('Prioritering: varningen "underlaget är litet" går vid minsta gruppst
 });
 
 describe('Processöversiktens steg 4: inget att hantera när alla kandidatpar har en grupp under tröskeln', () => {
-    const steg4 = w => { w.eval('renderProcessTracker()'); return [...w.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Likvärdigt arbete/.test(r.textContent)); };
+    const steg4 = w => { w.eval('ritaKartlaggningensSteg()'); return [...w.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Likvärdigt arbete/.test(r.textContent)); };
     it('regeln: tillståndet inget, inte klar, med antalet par och hänvisning till fliken', async () => {
         const { stegLikvardigt } = await import('../src/lib/attgora.js');
         expect(stegLikvardigt({ analys: true, antalPar: 0, utelamnade: 2, k: 10, t: 0, d: 0 })).toEqual({ status: 'inget',

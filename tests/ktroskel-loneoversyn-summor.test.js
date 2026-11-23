@@ -51,7 +51,7 @@ const grupp = (bas, aid, n, lon0, kon) => Array.from({ length: n }, (_, i) => ra
 const exportera = async (data, pct = 2) => {
     const w = createAppWindow();
     w.__state.data = data;
-    w.eval('populateSelects(); lasUppFlikar();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     return exporteraFonster(forbered(iExport(w), pct));
 };
 const STOR = grupp('A', '6000', 30, 30000), MELLAN12 = grupp('B', '6100', 12, 35000);

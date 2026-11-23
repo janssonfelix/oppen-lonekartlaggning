@@ -33,7 +33,7 @@ function fonsterMed(nivaer) {
     const basar = nivaer.map(n => n[0]);
     w.__state.policy = basar.map(bas => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
     w.__state.statistik = basar.map(bas => ({ aid: '6100', bas, median: 61700, p10: 55000, p90: 71000 }));
-    w.eval('populateSelects(); lasUppFlikar();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     return w;
 }
 // Det lilla intervallet D ligger 80 % över de andra; referensen är A.

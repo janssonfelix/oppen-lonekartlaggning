@@ -159,15 +159,15 @@ describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () =>
     const sdLog = loner => { const l = loner.map(Math.log), m = l.reduce((a, b) => a + b, 0) / l.length; return Math.sqrt(l.reduce((a, v) => a + (v - m) ** 2, 0) / (l.length - 1)); };
     it('σ är poolad inom grupp och MDE för en grupp med 20 + 20 blir klart mindre än med hela urvalets σ', () => {
         const w = createAppWindow(); const data = rader(); w.__state.data = data;
-        const p = w.eval('computePowerAnalysis()');
+        const p = w.eval('raknaStyrkeanalys()');
         expect(p.sigmaKalla).toBe('inomGrupp');
         expect(p.sigmaGrupper).toBe(3);
         expect(p.sigmaHela).toBeCloseTo(sdLog(data.map(d => d.lon)), 6);
         expect(p.sigma).toBeLessThan(p.sigmaHela / 5);
         expect(p.sigma).toBeGreaterThan(0);
-        w.eval('state.powerAnalysis = computePowerAnalysis()');
-        const ny = w.eval('computeGroupMDE(20, 20)');
-        const gammal = w.eval(`computeGroupMDE(20, 20, ${p.sigmaHela})`);
+        w.eval('state.powerAnalysis = raknaStyrkeanalys()');
+        const ny = w.eval('raknaGruppMDE(20, 20)');
+        const gammal = w.eval(`raknaGruppMDE(20, 20, ${p.sigmaHela})`);
         expect(gammal.mdePct).toBeGreaterThan(25);
         expect(ny.mdePct).toBeLessThan(gammal.mdePct / 5);
         expect(ny.level).toBe('good');
@@ -266,7 +266,7 @@ describe('modellpanelen (ADR-56)', () => {
     it('utan AID och yrke finns ingen kryssruta för yrkesgrupp och tabellen har två rader', () => {
         const w = createAppWindow();
         w.__state.data = Array.from({ length: 120 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i % 2 ? 'kvinna' : 'man', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 7) * 100 }));
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const p = oppna(w);
         expect(p.querySelector('input[data-fm="yrkesgrupp"]')).toBeNull();
         expect(p.querySelectorAll('table tbody tr').length).toBe(2);
@@ -309,7 +309,7 @@ describe('modellpanelen (ADR-56)', () => {
     it('med ett kön under tröskeln kan inte båda kryssas ur: BAS och ålder är åter ikryssade och varningen visas', () => {
         const w = createAppWindow();
         w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i < 7 ? 'man' : 'kvinna', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 9) * 100 }));
-        w.eval('populateSelects(); lasUppFlikar();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const p = oppna(w);
         andra(w, p.querySelector('input[data-fm="alder"]'), false);
         andra(w, w.document.getElementById('forklaringsmodell-panel').querySelector('input[data-fm="bas"]'), false);
@@ -420,7 +420,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
         const w = createAppWindow(); await laddaXlsx(w); w.__loadDemoData();
         if (utanAlder) {
             w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
-            w.eval('tomStatistikcacher(); populateSelects(); lasUppFlikar();');
+            w.eval('tomStatistikcacher(); fyllValjare(); lasUppFlikar();');
         }
         w.__state.forklaringsmodell = modell;
         const blad = w.eval('_excelAlltBok()').Sheets['Metod & parametrar'];
@@ -544,7 +544,7 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
         w.eval('_efterInlastData()');
         expect(w.__regKorningar).toBe(1);
         const delad = DELAR.map(id => html(w, id));
-        w.eval('renderUnderlagetsKvalitet(); renderProcessTracker();');
+        w.eval('ritaUnderlagetsKvalitet(); ritaKartlaggningensSteg();');
         expect(DELAR.map(id => html(w, id))).toEqual(delad);
     });
     it('omritningen efter ett tröskelbyte kör regressionen en gång och ritar samma sak', () => {
@@ -554,7 +554,7 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
         w.eval('sattKTroskel(11, { fraga: false })');
         expect(w.__regKorningar).toBe(1);
         const delad = [...DELAR, 'action-checklist-container'].map(id => html(w, id));
-        w.eval('renderUnderlagetsKvalitet(); renderProcessTracker({ punkter: renderActionChecklist() });');
+        w.eval('ritaUnderlagetsKvalitet(); ritaKartlaggningensSteg({ punkter: renderActionChecklist() });');
         expect([...DELAR, 'action-checklist-container'].map(id => html(w, id))).toEqual(delad);
     });
     // Omritningen i steg släpper fram tidtagare mellan stegen: en fil som läses klart (FileReader) eller en rensning vid
@@ -564,12 +564,12 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
         w.__loadDemoData();
         w.eval('sattKTroskel(11, { fraga: false, rita: false })');
         raknaRegressioner(w);
-        w.eval('const __ukOrig = renderUnderlagetsKvalitet; renderUnderlagetsKvalitet = function (v) { __ukOrig(v); '
+        w.eval('const __ukOrig = ritaUnderlagetsKvalitet; ritaUnderlagetsKvalitet = function (v) { __ukOrig(v); '
             + 'state.data = state.data.slice(0, 150); };');
         w.eval('_ritaOmAllaFlikar()');
         expect(w.__regKorningar).toBe(3);   // underlagets kvalitet, Att göra och processöversikten var för sig
         const delad = ['action-checklist-container', 'process-tracker'].map(id => html(w, id));
-        w.eval('renderProcessTracker({ punkter: renderActionChecklist() });');
+        w.eval('ritaKartlaggningensSteg({ punkter: renderActionChecklist() });');
         expect(['action-checklist-container', 'process-tracker'].map(id => html(w, id))).toEqual(delad);
     });
     it('en fil som släpps under en pågående omritning i steg når inte filinläsningen', async () => {
@@ -594,7 +594,7 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
         const w = createAppWindow();
         w.__loadDemoData();
         raknaRegressioner(w);
-        w.eval('renderOversiktDelar()');
+        w.eval('ritaOversiktDelar()');
         expect(w.__regKorningar).toBe(1);
     });
 });

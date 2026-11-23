@@ -20,7 +20,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaData, state } from './12-tillstand.js';
-import { bootstrapCIGallande, fmtCI } from './13-oversikt.js';
+import { bootstrapKIGallande, formateraKI } from './13-oversikt.js';
 import { iExportLage, visningNy } from './23-exportgrind.js';
 import { _evidenceForPerBasRow, _openEvidenceModal } from './27-berakningsbevis.js';
 import { _RG_STEG_BAS, _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, forklaringsmodell, harAlder, runBlinderOaxaca, runQuantileRegressionAtAllTau, sattForklaringsmodell } from './50-regressionsmodeller.js';
@@ -702,7 +702,7 @@ export function ritaRegressionskort() {
     // Tolkning – plain language sammanfattning
     // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har, som det råa gapet framför det
     // (rawGapPct), verktygets tecken: negativt när kvinnor ligger lägre.
-    const ki = bootstrapCIGallande(), rawCIsuffix = ki ? fmtCI(ki.gapPct) : '';
+    const ki = bootstrapKIGallande(), rawCIsuffix = ki ? formateraKI(ki.gapPct) : '';
     const tolkning = isSig
         ? (vm.niva === 'titta'
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`

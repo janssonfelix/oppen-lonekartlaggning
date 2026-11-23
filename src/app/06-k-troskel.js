@@ -8,7 +8,7 @@ import { _kMaskNotText } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _rfExportFigur } from './10-diagramritare.js';
 import { state } from './12-tillstand.js';
-import { computeBootstrapCI, computePowerAnalysis, renderProcessTracker, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { raknaBootstrapKI, raknaStyrkeanalys, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderDataValidationReport } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
@@ -56,7 +56,7 @@ function _kAterstallVarde() { return Math.max(K_STANDARD, kTroskelLagst() ?? K_M
  * där gäller skattningens tillförlitlighet och inte redovisningen. På skärmen är det K_STANDARD, ett kvalitetsgolv; i
  * exportläget följer det med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden i det som lämnar
  * verktyget (ADR-103). En höjd tröskel hindrar alltså inte analysen på skärmen. Skattningar som sparas har golvet i
- * nyckeln (bootstrapCIGallande och styrkaGallande i 13-oversikt.js, laLikaGrupper i 41-lika-arbete.js).
+ * nyckeln (bootstrapKIGallande och styrkaGallande i 13-oversikt.js, laLikaGrupper i 41-lika-arbete.js).
  */
 export function statGolv() { return statGolvVid(kTroskel()); }   // kTroskel() är 1 på skärmen: golvet blir K_STANDARD
 
@@ -299,7 +299,7 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     state._lifecycleCache = null;
     // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
     // bootstrapen sekunder. På skärmen är golvet alltid K_STANDARD (ADR-103), så det händer bara i förhandsvisningen;
-    // exportens golv räknas när en export läser det (bootstrapCIGallande, styrkaGallande). § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
+    // exportens golv räknas när en export läser det (bootstrapKIGallande, styrkaGallande). § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
     // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
     if (golvAndrat && typeof tomStatistikcacher === 'function') tomStatistikcacher({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
@@ -333,10 +333,10 @@ function _skattningarIBakgrunden() {
     _bakgrundsrakning = new Promise(resolve => setTimeout(() => {
         try {
             if (state.data.length) {
-                try { computeBootstrapCI(); } catch (_e) { state.bootstrapCI = null; }
-                try { state.powerAnalysis = computePowerAnalysis(); } catch (_e) { state.powerAnalysis = null; }
+                try { raknaBootstrapKI(); } catch (_e) { state.bootstrapCI = null; }
+                try { state.powerAnalysis = raknaStyrkeanalys(); } catch (_e) { state.powerAnalysis = null; }
                 if (typeof ritaNyckeltal === 'function') ritaNyckeltal();
-                if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet();
+                if (typeof ritaUnderlagetsKvalitet === 'function') ritaUnderlagetsKvalitet();
                 const oppen = document.querySelector('.nav-item.active[data-tab]');
                 const flik = oppen ? oppen.getAttribute('data-tab') : null;
                 if ((flik === 'matrix' || flik === 'prioritering') && typeof ritaFlik === 'function') ritaFlik(flik);
@@ -388,10 +388,10 @@ export function _omritningssteg() {
     /** @type {any} */ let reg;
     /** @type {any} */ let regFangst = null;
     steg.push(['underlagets kvalitet', () => {
-        if (typeof renderUnderlagetsKvalitet !== 'function') return;
+        if (typeof ritaUnderlagetsKvalitet !== 'function') return;
         regFangst = indata();
         reg = typeof runOLSRegression === 'function' ? runOLSRegression() : undefined;
-        renderUnderlagetsKvalitet({ reg });
+        ritaUnderlagetsKvalitet({ reg });
     }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
     /** @type {any[]|undefined} */ let punkter;
@@ -402,8 +402,8 @@ export function _omritningssteg() {
         punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : undefined });
     }]);
     steg.push(['processöversikten', () => {
-        if (typeof renderProcessTracker !== 'function') return;
-        renderProcessTracker({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
+        if (typeof ritaKartlaggningensSteg !== 'function') return;
+        ritaKartlaggningensSteg({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
     }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);

@@ -266,7 +266,7 @@ exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-interv
 }
 `;
 
-exports[`beräkningar på demodatan (låsta tal) > power-analysen (computePowerAnalysis) ger samma tal > computePowerAnalysis 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > power-analysen (raknaStyrkeanalys) ger samma tal > raknaStyrkeanalys 1`] = `
 {
   "balanced": true,
   "mdePct": 2.201268033,

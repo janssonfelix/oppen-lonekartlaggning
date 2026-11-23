@@ -41,7 +41,7 @@ function intervall(omkasta) {
         // Översiktens intervall, Lika arbetes minne och likvärdighetens par följer underlaget.
         w.eval('tomStatistikcacher({ recompute: false })');
     }
-    w.computeBootstrapCI();
+    w.raknaBootstrapKI();
     const { elapsed: _tid, ...bootstrapCI } = w.__state.bootstrapCI;
     const d = w.hamtaData();
     const oversikt = Object.fromEntries(w._laOversiktRader(d).map(o => [o.bas, { gap: o.gap, ci: o.ci, status: w.gapStatusKI(o).niva }]));
