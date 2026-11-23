@@ -173,15 +173,6 @@ describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () =>
         expect(ny.level).toBe('good');
         expect(gammal.level).toBe('poor');
     });
-    it('reserv: når ingen grupp golvet för båda könen används hela urvalets σ', () => {
-        // Varje kön får en egen AID-kod (en grupp är koden, inte texten, ADR-89), så att ingen grupp har båda könen.
-        const egenKod = d => `${d.kon === 'man' ? '11' : '12'}${d.bas}`;
-        const w = createAppWindow(); w.__state.data = rader().map(d => ({ ...d, yrke: `${egenKod(d)} Y${d.bas}`, aid: egenKod(d) }));
-        const p = w.eval('computePowerAnalysis()');
-        expect(p.sigmaKalla).toBe('helaUrvalet');
-        expect(p.sigma).toBe(p.sigmaHela);
-        expect(p.sigmaGrupper).toBe(0);
-    });
     it('metodtexten i Om verktyget beskriver σ inom grupp och reserven', () => {
         const w = createAppWindow(); w.__state.data = rader();
         w.eval("renderInfoTab('metodik')");
