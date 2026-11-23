@@ -31,7 +31,7 @@ describe('demot: förifyllda skäl på tre rader', () => {
     });
     it('det stora demot får också tre rader med skäl', () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
+        w.eval('lasInStortDemo()');
         expect(medSkal(w)).toHaveLength(3);
     });
     it('förifyllningen skriver inte över skäl som redan finns', () => {

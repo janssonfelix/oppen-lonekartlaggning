@@ -11,7 +11,7 @@ import { tillampaProfiletiketter } from './07-standardinstallningar.js';
 import { state } from './12-tillstand.js';
 import { ritaKartlaggningensSteg } from './13-oversikt.js';
 import { lasInDemodata } from './20-demodata-diagnostik.js';
-import { loadStortDemo } from './21-stort-demo.js';
+import { lasInStortDemo } from './21-stort-demo.js';
 import { _paketStatus, lasInInbakatPaket } from './29-organisationspaket.js';
 import { ritaReferensKort } from './38-referensfiler.js';
 import { kopplaFlikarnasTillganglighet } from './63-tangentbordsnavigering.js';
@@ -31,7 +31,7 @@ export function uppstartSist() {
     try {
         const demoVal = new URLSearchParams(window.location.search).get('demo');
         const demo = demoVal === '1' || demoVal === 'stor';
-        if (demo && !state.data.length) (demoVal === 'stor' ? loadStortDemo : lasInDemodata)();
+        if (demo && !state.data.length) (demoVal === 'stor' ? lasInStortDemo : lasInDemodata)();
         // Organisationsfil: paketet som ligger inbakat i den här filen läses in vid start — utom i demoläget,
         // som går före (organisationsfil.md §3).
         // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i

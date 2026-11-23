@@ -13,9 +13,9 @@ import { ovRitaLage, ritaKravstatus, skattningarSlapp } from './13-oversikt.js';
 import { _fkSlapp, _fkVantar } from './17-forhandskontroll.js';
 import { _ritaDemoruta } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
-import { updateGdprBanner } from './25-dataskyddsinfo.js';
+import { uppdateraDataskyddsbesked } from './25-dataskyddsinfo.js';
 import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
-import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, renderPaketInfo } from './29-organisationspaket.js';
+import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, ritaPaketinfo } from './29-organisationspaket.js';
 import { ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
 import { _visaJamforelseFlik, ritaReferensKort } from './38-referensfiler.js';
@@ -95,7 +95,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     state.statistikHasP90 = false;
     state.statistikHasKon = false;
     if (typeof _synkaKostnadsfalt === 'function') _synkaKostnadsfalt();
-    if (typeof renderPaketInfo === 'function') renderPaketInfo();
+    if (typeof ritaPaketinfo === 'function') ritaPaketinfo();
     const paketStatus = document.getElementById('paket-status');
     if (paketStatus) { paketStatus.textContent = ''; paketStatus.className = 'status-msg'; }
     if (typeof _fyllPaketFormular === 'function') _fyllPaketFormular();
@@ -215,7 +215,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     if (typeof ritaFilrutor === 'function') ritaFilrutor();
     if (typeof navigeraTill === 'function') navigeraTill('dashboard');
 
-    updateGdprBanner();
+    uppdateraDataskyddsbesked();
     if (typeof ritaKravstatus === 'function') ritaKravstatus();
     meddelaSkarmlasare('All data har raderats ur minnet.');
     // Organisationsfil: paketet är en del av filen och kommer tillbaka efter rensningen, som vid start.

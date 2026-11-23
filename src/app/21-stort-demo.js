@@ -15,7 +15,7 @@ import { _lasInDemounderlag, _ritaDemoruta } from './20-demodata-diagnostik.js';
 export const STORT_DEMO_STATISTIKNAMN = 'Påhittad jämförelsestatistik (demo)';
 
 // Som det lilla demot (_lasInDemounderlag), men utan självdiagnostik: den hör till det lilla demots kända egenskaper.
-export function loadStortDemo() {
+export function lasInStortDemo() {
     if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
     /** @type {HTMLElement} */ (document.getElementById('diagnostic-results')).style.display = 'none';   // ett tidigare litet demos diagnostik gäller inte här
     _ritaDemoruta();
@@ -25,5 +25,5 @@ export function loadStortDemo() {
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartStortDemo() {
     ['first-run-stort-demo', 'upload-demo-stort'].forEach(id =>
-        document.getElementById(id)?.addEventListener('click', loadStortDemo));
+        document.getElementById(id)?.addEventListener('click', lasInStortDemo));
 }

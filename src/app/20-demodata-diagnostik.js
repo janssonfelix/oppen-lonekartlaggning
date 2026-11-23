@@ -17,7 +17,7 @@ import { _fkSlapp } from './17-forhandskontroll.js';
 import { ritaAtgardslista } from './18-atgardslista.js';
 import { STORT_DEMO_STATISTIKNAMN } from './21-stort-demo.js';
 import { visningNy } from './23-exportgrind.js';
-import { updateGdprBanner } from './25-dataskyddsinfo.js';
+import { uppdateraDataskyddsbesked } from './25-dataskyddsinfo.js';
 import { _rensaAllData, rensaAllData } from './26-rensning.js';
 import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
 import { lasUppFlikar } from './31-navigering.js';
@@ -113,7 +113,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     ritaKravstatus();
     const reg = korOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
     ritaUnderlagetsKvalitet({ reg });
-    updateGdprBanner();
+    uppdateraDataskyddsbesked();
     ritaKonsistenskontroll();
     ritaAtgardslista({ reg });
     ritaExtremvarden();

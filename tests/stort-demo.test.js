@@ -34,7 +34,7 @@ function bevaka(w) {
 
 describe('stort demo: inläsningen', () => {
     let w;
-    beforeAll(() => { w = bevaka(createAppWindow()); w.eval('loadStortDemo()'); });
+    beforeAll(() => { w = bevaka(createAppWindow()); w.eval('lasInStortDemo()'); });
 
     it('sätter demoläget, låser upp flikarna och kör inte självdiagnostiken', () => {
         const d = w.document;
@@ -123,7 +123,7 @@ describe('stort demo: inläsningen', () => {
 describe('stort demo: demots statistik byts ut', () => {
     it('en riktig lönefil efter det stora demot tar bort demots statistik', () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
+        w.eval('lasInStortDemo()');
         w.eval('__state.data = genereraTestdata(); _efterInlastData();');
         expect(w.__state.statistik).toHaveLength(0);
         expect(w.__state.statistikKalla).toBe(null);
@@ -133,7 +133,7 @@ describe('stort demo: demots statistik byts ut', () => {
 
     it('en statistikfil efter det stora demot ersätter demots statistik', async () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
+        w.eval('lasInStortDemo()');
         w.eval(readFileSync(join(root, 'vendor', 'papaparse.min.js'), 'utf8'));
         const input = w.document.getElementById('file-input-stat');
         const fil = new w.File(['AID;BAS;Median\n401011;F;41000\n'], 'statistik.csv', { type: 'text/csv' });
@@ -199,7 +199,7 @@ const SD_SMA_GRUPPER = 101;     // grupper (AID-kod i BAS-intervallet, ADR-89) m
 
 describe('stort demo: nyckeltalen', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); w.eval('loadStortDemo()'); });
+    beforeAll(() => { w = createAppWindow(); w.eval('lasInStortDemo()'); });
 
     it('rått gap', () => {
         const d = w.__state.data;
@@ -236,7 +236,7 @@ describe('det lilla demot är oförändrat', () => {
     });
     it('det lilla demot efter det stora: 260 rader och referensen A–J', () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
+        w.eval('lasInStortDemo()');
         w.__lasInDemodata();
         expect(w.__state.data).toHaveLength(260);
         expect(w.__state.policy).toHaveLength(10);
@@ -244,7 +244,7 @@ describe('det lilla demot är oförändrat', () => {
     });
     it('det lilla demot efter det stora: ingen statistik kvar', () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
+        w.eval('lasInStortDemo()');
         w.__lasInDemodata();
         expect(w.__state.statistik).toHaveLength(0);
         expect(w.__state.statistikKalla).toBe(null);
@@ -357,7 +357,7 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
         const sektor = w.eval(`Object.fromEntries(${JSON.stringify([...new Set(data.map(r => r.aid))])}.map(a => [a, sektorsnamn(a)]))`);
         ({ varden: sentinel, block, provade } = sattSentinel(data, sektor));
         w.__sdJson = JSON.stringify(data);
-        w.eval('_lasInDemounderlag(() => JSON.parse(window.__sdJson), { stort: true })');   // som loadStortDemo, med sentinellönerna
+        w.eval('_lasInDemounderlag(() => JSON.parse(window.__sdJson), { stort: true })');   // som lasInStortDemo, med sentinellönerna
         w.alert = () => {};
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
@@ -416,7 +416,7 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
 describe('stort demo: Rensa all data', () => {
     it('tömmer allt, och lämnar samma tillstånd som efter det lilla demot', () => {
         const stort = createAppWindow(), litet = createAppWindow();
-        stort.eval('loadStortDemo()');
+        stort.eval('lasInStortDemo()');
         litet.__lasInDemodata();
         stort.eval('_rensaAllData()');
         litet.eval('_rensaAllData()');

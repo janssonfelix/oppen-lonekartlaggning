@@ -10,7 +10,7 @@ import { aterstallReferens, hamtaData, harReferens, referensKalla, referensNamn,
 import { ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
 import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
 import { ritaAtgardslista } from './18-atgardslista.js';
-import { renderPaketInfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
+import { ritaPaketinfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
 import { markeraFilrutaInlast, lasTabellfil, ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 
@@ -32,7 +32,7 @@ function _lasInReferens(rader, filnamn) {
     state.policyNamn = namn;
     state.policyKortnamn = namn;
     ritaReferensKort();
-    if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
+    if (typeof ritaPaketinfo === 'function') { ritaPaketinfo(); uppdateraPaketKnapp(); }
     return policy.length;
 }
 
@@ -224,7 +224,7 @@ export function uppstartReferensfiler() {
                 statStatus.className = "status-msg success";
                 markeraFilrutaInlast('upload-cell-stat', 'Inläst');
                 state.filnamn.statistik = file.name; ritaFilrutor();
-                if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
+                if (typeof ritaPaketinfo === 'function') { ritaPaketinfo(); uppdateraPaketKnapp(); }
                 synkaJamforelseFlik();
                 doljLaddning(); ritaKravstatus();
                 ritaKonsistenskontroll();

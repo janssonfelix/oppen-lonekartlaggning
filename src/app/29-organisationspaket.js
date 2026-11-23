@@ -82,7 +82,7 @@ export function _paketStatus(text, ok) {
 }
 
 // Faktarutan under knappen: vilket paket som är inläst och vad det innehöll.
-export function renderPaketInfo() {
+export function ritaPaketinfo() {
     const el = document.getElementById('paket-info');
     if (!el) return;
     const p = state.paket;
@@ -218,7 +218,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     _fyllPaketFormular();
     tomStatistikcacher();
     ritaReferensKort();
-    renderPaketInfo();
+    ritaPaketinfo();
     ritaKonsistenskontroll();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).
     if (kAndrad && state.data.length) { fyllValjare(); _ritaOmAllaFlikar(); }
@@ -513,7 +513,7 @@ function laddaNerInbakatPaket() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     meddelaSkarmlasare(`Paketet sparat: ${a.download}`);
 }
-const _stangPaketModal = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; } };
+const _stangPaketDialog = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; } };
 
 // Organisationstypen (kommun, region eller båda) styr vilken del av SKR:s personalstatistik som
 // är referens för kvinnoandel (ADR-34). Värdet bor i profilen och följer med paket och konfiguration.
@@ -561,8 +561,8 @@ export function uppstartOrganisationspaket() {
         if (t.closest('#btn-paket-visa')) visaInbakatPaket();
         else if (t.closest('#btn-paket-ladda-ner')) laddaNerInbakatPaket();
     });
-    document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketModal);
-    document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketModal(); });
+    document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketDialog);
+    document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketDialog(); });
     document.getElementById('file-input-paket')?.addEventListener('change', e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files && /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;

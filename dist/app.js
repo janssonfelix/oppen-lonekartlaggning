@@ -9820,18 +9820,18 @@ function demodiagnostik({ rader, reg, underlag: underlag2, antalBas }, ord) {
 
 // src/app/21-stort-demo.js
 var STORT_DEMO_STATISTIKNAMN = "Påhittad jämförelsestatistik (demo)";
-function loadStortDemo() {
+function lasInStortDemo() {
   if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
   document.getElementById("diagnostic-results").style.display = "none";
   _ritaDemoruta();
   meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
 }
 function uppstartStortDemo() {
-  ["first-run-stort-demo", "upload-demo-stort"].forEach((id) => document.getElementById(id)?.addEventListener("click", loadStortDemo));
+  ["first-run-stort-demo", "upload-demo-stort"].forEach((id) => document.getElementById(id)?.addEventListener("click", lasInStortDemo));
 }
 
 // src/app/25-dataskyddsinfo.js
-function updateGdprBanner() {
+function uppdateraDataskyddsbesked() {
   const banner = document.getElementById("gdpr-banner");
   const count = document.getElementById("gdpr-banner-count");
   if (!banner || !count) return;
@@ -22531,7 +22531,7 @@ function _efterInlastData() {
   const reg = korOLSRegression();
   ritaUnderlagetsKvalitet({ reg });
   ritaKartlaggningensSteg({ reg });
-  updateGdprBanner();
+  uppdateraDataskyddsbesked();
   if (typeof _aterstallInaktivitetstimer === "function") _aterstallInaktivitetstimer();
   ritaKonsistenskontroll();
   ritaExtremvarden();
@@ -24492,7 +24492,7 @@ function _paketStatus(text, ok) {
   el.textContent = text;
   el.className = "status-msg" + (ok ? " success" : "");
 }
-function renderPaketInfo() {
+function ritaPaketinfo() {
   const el = document.getElementById("paket-info");
   if (!el) return;
   const p = state.paket;
@@ -24621,7 +24621,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   _fyllPaketFormular();
   tomStatistikcacher();
   ritaReferensKort();
-  renderPaketInfo();
+  ritaPaketinfo();
   ritaKonsistenskontroll();
   if (kAndrad && state.data.length) {
     fyllValjare();
@@ -24930,7 +24930,7 @@ function laddaNerInbakatPaket() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
   meddelaSkarmlasare(`Paketet sparat: ${a.download}`);
 }
-var _stangPaketModal = () => {
+var _stangPaketDialog = () => {
   const m = document.getElementById("paket-modal");
   if (m) {
     if (typeof slappFokus === "function") slappFokus(m);
@@ -24991,12 +24991,12 @@ function uppstartOrganisationspaket() {
     if (t.closest("#btn-paket-visa")) visaInbakatPaket();
     else if (t.closest("#btn-paket-ladda-ner")) laddaNerInbakatPaket();
   });
-  document.getElementById("paket-modal-close")?.addEventListener("click", _stangPaketModal);
+  document.getElementById("paket-modal-close")?.addEventListener("click", _stangPaketDialog);
   document.getElementById("paket-modal")?.addEventListener("click", (e) => {
     if (
       /** @type {HTMLElement} */
       e.target.classList.contains("glossary-backdrop")
-    ) _stangPaketModal();
+    ) _stangPaketDialog();
   });
   document.getElementById("file-input-paket")?.addEventListener("change", (e) => {
     const file = (
@@ -25103,7 +25103,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   ritaKravstatus();
   const reg = korOLSRegression();
   ritaUnderlagetsKvalitet({ reg });
-  updateGdprBanner();
+  uppdateraDataskyddsbesked();
   ritaKonsistenskontroll();
   ritaAtgardslista({ reg });
   ritaExtremvarden();
@@ -25251,7 +25251,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   state.statistikHasP90 = false;
   state.statistikHasKon = false;
   if (typeof _synkaKostnadsfalt === "function") _synkaKostnadsfalt();
-  if (typeof renderPaketInfo === "function") renderPaketInfo();
+  if (typeof ritaPaketinfo === "function") ritaPaketinfo();
   const paketStatus = document.getElementById("paket-status");
   if (paketStatus) {
     paketStatus.textContent = "";
@@ -25389,7 +25389,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   state.filnamn = { data: null, policy: null, statistik: null };
   if (typeof ritaFilrutor === "function") ritaFilrutor();
   if (typeof navigeraTill === "function") navigeraTill("dashboard");
-  updateGdprBanner();
+  uppdateraDataskyddsbesked();
   if (typeof ritaKravstatus === "function") ritaKravstatus();
   meddelaSkarmlasare("All data har raderats ur minnet.");
   if (inbakat && typeof lasInInbakatPaket === "function") lasInInbakatPaket();
@@ -29136,8 +29136,8 @@ function _lasInReferens(rader, filnamn) {
   state.policyNamn = namn;
   state.policyKortnamn = namn;
   ritaReferensKort();
-  if (typeof renderPaketInfo === "function") {
-    renderPaketInfo();
+  if (typeof ritaPaketinfo === "function") {
+    ritaPaketinfo();
     uppdateraPaketKnapp();
   }
   return policy.length;
@@ -29323,8 +29323,8 @@ function uppstartReferensfiler() {
         markeraFilrutaInlast("upload-cell-stat", "Inläst");
         state.filnamn.statistik = file.name;
         ritaFilrutor();
-        if (typeof renderPaketInfo === "function") {
-          renderPaketInfo();
+        if (typeof ritaPaketinfo === "function") {
+          ritaPaketinfo();
           uppdateraPaketKnapp();
         }
         synkaJamforelseFlik();
@@ -36837,7 +36837,7 @@ function uppstartSist() {
   try {
     const demoVal = new URLSearchParams(window.location.search).get("demo");
     const demo = demoVal === "1" || demoVal === "stor";
-    if (demo && !state.data.length) (demoVal === "stor" ? loadStortDemo : lasInDemodata)();
+    if (demo && !state.data.length) (demoVal === "stor" ? lasInStortDemo : lasInDemodata)();
     const inbakat = () => {
       if (!demo && typeof lasInInbakatPaket === "function") lasInInbakatPaket();
       else if (demo && document.getElementById("inbakat-organisationspaket") && typeof _paketStatus === "function") _paketStatus("Det inbakade paketet används inte i demoläget.", false);

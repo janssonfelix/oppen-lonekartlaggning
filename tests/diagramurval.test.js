@@ -256,7 +256,7 @@ describe('minnet', () => {
         const kalla = w2.eval('_lasInDemounderlag.toString()');
         expect(kalla.indexOf('_rfUrvalGlom()')).toBeGreaterThan(-1);
         expect(kalla.indexOf('_rfUrvalGlom()')).toBeLessThan(kalla.indexOf('state.data = skapa()'));
-        expect(w2.eval('loadStortDemo.toString()')).toContain('_lasInDemounderlag(');
+        expect(w2.eval('lasInStortDemo.toString()')).toContain('_lasInDemounderlag(');
     });
 });
 

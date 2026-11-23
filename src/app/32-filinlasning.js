@@ -23,7 +23,7 @@ import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, ritaForh
 import { ritaAtgardslista } from './18-atgardslista.js';
 import { _ritaDemoruta } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
-import { updateGdprBanner } from './25-dataskyddsinfo.js';
+import { uppdateraDataskyddsbesked } from './25-dataskyddsinfo.js';
 import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
 import { _paketFilnamn, _synkaOrgTyp, _tomStatistik, skapaPaketMedImportprofil } from './29-organisationspaket.js';
 import { _aktivFlik, _visaFilkortet, lasUppFlikar } from './31-navigering.js';
@@ -143,7 +143,7 @@ function _efterInlastData() {
     const reg = korOLSRegression();
     ritaUnderlagetsKvalitet({ reg });
     ritaKartlaggningensSteg({ reg });
-    updateGdprBanner();
+    uppdateraDataskyddsbesked();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
     if (typeof _aterstallInaktivitetstimer === 'function') _aterstallInaktivitetstimer();
     ritaKonsistenskontroll();

@@ -4,7 +4,7 @@ import { slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { state } from './12-tillstand.js';
 
 // ---- GDPR-banner: visar lokal-bearbetning-status ----
-export function updateGdprBanner() {
+export function uppdateraDataskyddsbesked() {
     const banner = document.getElementById('gdpr-banner');
     const count  = document.getElementById('gdpr-banner-count');
     if (!banner || !count) return;
