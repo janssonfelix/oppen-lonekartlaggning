@@ -236,7 +236,7 @@ function _figBubbla(model) {
 // en låda över en handfull personer röjer deras löner (docs/utveckling/diagramkarnan.md, vyns skyldigheter).
 function _figFordelning(model, rows, allaPunkter) {
     const { rad, urval, delaKon } = model.spec, k = kTroskel();
-    const nyckel = _utNycklar(rows), person = _urPersonFilter(urval, nyckel);
+    const nyckel = _utNycklar(rows), person = _urIUrvalet(urval, nyckel);
     const gruppLiten = new Map(model.celler.map(c => [c.rad, !!c.liten]));
     const farg = { Alla: PALETTE.serie[0], Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, 'Övrig/okänd': PALETTE.semantic.neutral };
     const hinkar = new Map();   // kön → [{ g, lon }]

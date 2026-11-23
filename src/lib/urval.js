@@ -92,7 +92,7 @@ function _uppfyller(rad, v, nyckel) {
  * @param {(row: any, dim: string) => (string|null)} [nyckel] kategorins värde för en rad; gruppnycklar(rader) så att
  *        villkoren läser samma grupper som pivoten
  */
-export function personFilter(urval, nyckel = gruppnyckel) {
+export function iUrvalet(urval, nyckel = gruppnyckel) {
     const aktiva = ((urval && urval.villkor) || []).filter(villkorAktivt);
     if (!aktiva.length) return () => true;
     if (urval.lage === 'nagot') return rad => aktiva.some(v => _uppfyller(rad, v, nyckel));

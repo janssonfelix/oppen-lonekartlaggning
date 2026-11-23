@@ -15,7 +15,7 @@ import { inomYrkesgrupp } from '../src/lib/regression.js';
 import { gapPoster } from '../src/lib/gapuppdelning.js';
 import { gruppnyckel, gruppnycklar } from '../src/lib/falt.js';
 import { computePivot } from '../src/lib/utforska.js';
-import { personFilter } from '../src/lib/urval.js';
+import { iUrvalet } from '../src/lib/urval.js';
 import { aidAvRad, namnrader } from '../src/lib/aid.js';
 import { byggArsbokslut, jamforArsbokslut } from '../src/lib/arsbokslut.js';
 import { prioritera } from '../src/lib/prioritering.js';
@@ -164,8 +164,8 @@ describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och 
         const m = computePivot(r, { rad: 'aid', matt: 'median' }, { k: 10 });
         expect(m.celler.map(c => [c.rad, c.n, c.liten])).toEqual([[TEXT_A, 16, false]]);
         const villkor = { lage: 'alla', villkor: [{ falt: 'aid', op: 'enAv', varde: [TEXT_A] }] };
-        expect(r.filter(personFilter(villkor, gruppnycklar(r)))).toHaveLength(16);
-        expect(r.filter(personFilter(villkor))).toHaveLength(8);   // gruppnyckel utan underlag: bara texten
+        expect(r.filter(iUrvalet(villkor, gruppnycklar(r)))).toHaveLength(16);
+        expect(r.filter(iUrvalet(villkor))).toHaveLength(8);   // gruppnyckel utan underlag: bara texten
     });
 });
 

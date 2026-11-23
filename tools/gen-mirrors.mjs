@@ -236,7 +236,7 @@ export const MODULES = [
     {
         file: 'urval.js', ns: '__mirrorUrval',
         expose: {
-            villkorAktivt: '_urVillkorAktivt', personFilter: '_urPersonFilter',
+            villkorAktivt: '_urVillkorAktivt', iUrvalet: '_urIUrvalet',
             gruppVillkorAktivt: '_urGruppVillkorAktivt', uppfyllerGrupp: null,
             beskrivUrval: '_urBeskrivUrval', faltInfo: '_urFaltInfo', gruppMattInfo: '_urGruppMattInfo'
         }

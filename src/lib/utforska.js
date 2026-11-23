@@ -16,7 +16,7 @@
 import { median, kvantil } from './stat.js';
 import { gruppnycklar, konAv, jamforAldersgrupp, jamforLonespann } from './falt.js';
 import { jamforSektor, mellannivaEtikett, huvudomrade } from './aid.js';
-import { personFilter, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
+import { iUrvalet, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
 import { skapaTermer, ordForAntal } from './termer.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -129,7 +129,7 @@ export function computePivot(rows, spec, { k = 10 } = {}) {
     // AID-etiketten grupperas på koden, med namnet från texten på flest av kodens rader i hela underlaget (inte bara urvalet), så
     // att pivoten, villkoren och värdelistorna i appen har samma namn på samma grupp.
     const gruppnyckel = gruppnycklar(rows);
-    const person = personFilter(urvalSpec, gruppnyckel);
+    const person = iUrvalet(urvalSpec, gruppnyckel);
 
     const urvalRader = (rows || []).filter(r => r.lon > 0 && person(r));
     // Hopslagning av små AID-grupper, bara när raderna är AID (ADR-33).

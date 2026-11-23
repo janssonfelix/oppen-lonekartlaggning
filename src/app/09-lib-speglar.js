@@ -6785,7 +6785,7 @@ function _uppfyller(rad, v, nyckel) {
  * @param {(row: any, dim: string) => (string|null)} [nyckel] kategorins värde för en rad; gruppnycklar(rader) så att
  *        villkoren läser samma grupper som pivoten
  */
-function personFilter(urval, nyckel = gruppnyckel) {
+function iUrvalet(urval, nyckel = gruppnyckel) {
     const aktiva = ((urval && urval.villkor) || []).filter(villkorAktivt);
     if (!aktiva.length) return () => true;
     if (urval.lage === 'nagot') return rad => aktiva.some(v => _uppfyller(rad, v, nyckel));
@@ -6833,10 +6833,10 @@ function beskrivUrval(urval, gruppVillkor) {
     return delar.join('. ');
 }
 
-    return { villkorAktivt, personFilter, gruppVillkorAktivt, uppfyllerGrupp, beskrivUrval, faltInfo, gruppMattInfo };
+    return { villkorAktivt, iUrvalet, gruppVillkorAktivt, uppfyllerGrupp, beskrivUrval, faltInfo, gruppMattInfo };
 })();
 const _urVillkorAktivt = __mirrorUrval.villkorAktivt;
-const _urPersonFilter = __mirrorUrval.personFilter;
+const _urIUrvalet = __mirrorUrval.iUrvalet;
 const _urGruppVillkorAktivt = __mirrorUrval.gruppVillkorAktivt;
 const _urBeskrivUrval = __mirrorUrval.beskrivUrval;
 const _urFaltInfo = __mirrorUrval.faltInfo;
@@ -7727,7 +7727,7 @@ const __mirrorUtforska = (() => {
     const jamforSektor = __mirrorAid.jamforSektor;
     const mellannivaEtikett = __mirrorAid.mellannivaEtikett;
     const huvudomrade = __mirrorAid.huvudomrade;
-    const personFilter = __mirrorUrval.personFilter;
+    const iUrvalet = __mirrorUrval.iUrvalet;
     const uppfyllerGrupp = __mirrorUrval.uppfyllerGrupp;
     const gruppVillkorAktivt = __mirrorUrval.gruppVillkorAktivt;
     const skapaTermer = __mirrorTermer.skapaTermer;
@@ -7864,7 +7864,7 @@ function computePivot(rows, spec, { k = 10 } = {}) {
     // AID-etiketten grupperas på koden, med namnet från texten på flest av kodens rader i hela underlaget (inte bara urvalet), så
     // att pivoten, villkoren och värdelistorna i appen har samma namn på samma grupp.
     const gruppnyckel = gruppnycklar(rows);
-    const person = personFilter(urvalSpec, gruppnyckel);
+    const person = iUrvalet(urvalSpec, gruppnyckel);
 
     const urvalRader = (rows || []).filter(r => r.lon > 0 && person(r));
     // Hopslagning av små AID-grupper, bara när raderna är AID (ADR-33).

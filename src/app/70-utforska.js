@@ -121,7 +121,7 @@ function _utNycklar(rows) {
 }
 
 function _explorerUrvalAntal(rows, urval) {
-    const person = _urPersonFilter(urval, _utNycklar(rows));
+    const person = _urIUrvalet(urval, _utNycklar(rows));
     const ut = { n: 0, nKv: 0, nMa: 0 };
     for (const r of rows) {
         if (!(r.lon > 0) || !person(r)) continue;
