@@ -86,6 +86,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `organisationsfil` | – |
 |  | `organisationspaket` | `importprofiler`, `installningsgranser`, `perbas`, `tabellrecept`, `termer` |
 |  | `installningsgranser` | – |
+|  | `konfiguration` | – |
 | Skydd för små grupper | `undertryckning` | – |
 |  | `ktroskel` | `aid`, `kon`, `namn` |
 | Språk | `termer` | – |

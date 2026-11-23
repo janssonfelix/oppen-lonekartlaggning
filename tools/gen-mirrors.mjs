@@ -292,6 +292,11 @@ export const MODULES = [
                   profilFranMappning: '_ipFranMappning', importprofilerTillJson: '_ipTillJson', inbyggdaProfiler: '_ipInbyggda' }
     },
     {
+        // Konfigurationsfilens version och namnbytena (ADR-96); importerar ingenting
+        file: 'konfiguration.js', ns: '__mirrorKonfiguration',
+        expose: { konfigurationVersion: '_kfVersion', konfigurationVersionFel: '_kfVersionFel', konfigurationMedNyaNamn: '_kfMedNyaNamn' }
+    },
+    {
         // Tolkningen av indata: talen, normaliseringarna och kärnan i uppgiftsminimeringen. Funktionerna behåller i appen
         // namnen de hade där. Importerar ansvar.js (ansvarskoden i en lönerad) och importprofiler.js (rubrikraden): efter dem.
         file: 'inlasning.js', ns: '__mirrorInlasning',

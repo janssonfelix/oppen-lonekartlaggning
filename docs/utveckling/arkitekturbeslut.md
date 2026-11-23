@@ -102,6 +102,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-93 | JPA-protokollet redovisar alla grupper i lika arbete | Gällande | 2026-11-22 |
 | ADR-94 | Diagrammens filter står alltid utfällda | Gällande | 2026-11-22 |
 | ADR-95 | Beräkningsregistret blir spårbarhetsmatrisen | Gällande | 2026-11-23 |
+| ADR-96 | Konfigurationsfilens fält har svenska namn; äldre filer läses | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -604,3 +605,13 @@ och tillbaka utan att lita på att dokumentet stämmer, och att en uppgift ska s
 behålla registret med testfiler i stället för tester, som inte går att pröva; ett eget dokument för spårbarheten
 bredvid registret och k-tröskelns tabell, som ger tre ställen för samma uppgift; att märka testerna i kommentarer,
 som inte syns i testkörningens utdata. *Gäller i dag:* `sparbarhet.md`, `k-troskeln.md` avsnitt 10.
+
+**ADR-96 — Konfigurationsfilens fält har svenska namn; äldre filer läses.** Beslutat av underhållaren 2026-11-23.
+Konfigurationsfilen skrivs i version 3 med svenska fältnamn (`prioTrosklar`, `loneoversyn`, `kvinnoTroskelPct` och så
+vidare) i stället för de engelska och blandade i version 2. Filer i version 2 läses fortfarande: de gamla namnen byts mot
+de nya före valideringen, och tabellen över bytena står på ett ställe, `src/lib/konfiguration.js`, prövad i Node.
+Organisationspaketet (ADR-28, ADR-47) och importprofilernas fil hade redan svenska namn och är oförändrade. *Skäl:* en
+extern granskare ska känna igen samma ord i dokumenten, spårbarhetsmatrisen och filen som användaren sparar. *Avvisat:*
+att bara läsa version 3, som gör sparade filer oläsbara; att byta också värdena (`'pct'`, `'lowest'`, `'do'` och andra),
+som står kvar som nycklarna i ADR-72; att byta tillståndets fält i appen i samma ändring, som inte syns i filen.
+*Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.8, `likvardighetsmodellen.md` §8.
