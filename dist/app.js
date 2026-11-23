@@ -6239,7 +6239,7 @@ function gapUppdelning(rader, { k, variabler } = {}) {
   for (const d of Object.keys(poster)) {
     delar[d] = poster[d].reduce((s, p) => s + p.kr, 0);
     ovrigaAntal[d] = poster[d].reduce((s, p) => s + (p.synlig ? 0 : p.grupper), 0);
-    topp[d] = poster[d].filter((p) => p.synlig && Math.abs(p.kr) >= 0.5).sort((x, y) => Math.abs(y.kr) - Math.abs(x.kr) || x.namn.localeCompare(y.namn, "sv")).slice(0, 3).map(({ namn, kr }) => ({ namn, kr }));
+    topp[d] = poster[d].filter((p) => p.synlig && Math.abs(p.kr) >= 0.5).sort((x, y) => Math.abs(y.kr) - Math.abs(x.kr) || x.namn.localeCompare(y.namn, "sv")).slice(0, 3).map(({ namn, kr: kr2 }) => ({ namn, kr: kr2 }));
   }
   const gapPct = gap / medel.ma * 100;
   return { n: { kv: kv.length, ma: ma.length }, medel, gap, gapPct, litetGap: Math.abs(gapPct) < 1, delar, topp, ovrigaAntal, variabler: val };
@@ -7510,7 +7510,7 @@ function vymodellLikaArbete(rader, { k, golv, sigma, dominansDefinition, dominan
       direktiv: g.direktiv,
       tips: statusTips(g.niva, g.sakerstalld, golv),
       stabilitet: g.flaggad && g.stabilitet ? stabilitetKort(g.stabilitet, k) : null,
-      lagStyrka: mde && (mde.tooSmall || mde.mdePct > Math.abs(g.gapPct - 100)) ? mde : null
+      lagStyrka: mde && (mde.tooSmall || mde.mdePct > g.gapPct) ? mde : null
     };
   });
   return {
@@ -9702,13 +9702,13 @@ function prioKonstanter() {
     SNABB_VINST_MIN_N
   });
 }
-function arsbeloppMening(g, kostnadsval, kr) {
+function arsbeloppMening(g, kostnadsval, kr2) {
   if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
   const diff = avrundaSymmetriskt((g.medMa - g.medKv) / 100) * 100;
   if (diff < 100) return null;
   const { months, poPct: po } = kostnadsfaktor(kostnadsval);
   const belopp = Math.round(kostnadPerAr(diff, g.nKv, kostnadsval) / 1e3) * 1e3;
-  return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.`;
+  return `Räkneexempel: kvinnornas medianlön ligger ${kr2(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar det omkring ${kr2(belopp)} per år (${months} månader, PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.`;
 }
 function motiveringsgrunder(post, { kInstalld: kInstalld2, kTroskel: kTroskel2, mdePct, naraGrans }) {
   const out = [];
@@ -9978,10 +9978,10 @@ function _niceCostLevels(maxCost) {
   const cap = base * Math.ceil(maxCost / base);
   return [Math.round(cap * 0.1), Math.round(cap * 0.3), Math.round(cap)];
 }
-function _fmtCost(kr) {
-  if (kr >= 1e6) return svTal(kr / 1e6, kr >= 1e7 ? 0 : 1) + " Mkr";
-  if (kr >= 1e3) return svTal(kr / 1e3, 0) + " tkr";
-  return svKr(kr);
+function _fmtCost(kr2) {
+  if (kr2 >= 1e6) return svTal(kr2 / 1e6, kr2 >= 1e7 ? 0 : 1) + " Mkr";
+  if (kr2 >= 1e3) return svTal(kr2 / 1e3, 0) + " tkr";
+  return svKr(kr2);
 }
 var PRIO_DOLDA_KOLUMNER = ["kvma", "median", "referens", "avvikelsekr", "kostnadpers", "brist"];
 function renderPrioritering() {
@@ -10362,18 +10362,18 @@ function _prioZonNamn(zon, cfg) {
   return namn.toUpperCase();
 }
 function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
-  const kr = (v) => talformat(v, "kr");
+  const kr2 = (v) => talformat(v, "kr");
   const pm = (v, dec) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(dec).replace(".", ",")}`;
   const kostnad = (i) => Math.max(i.annualGapTotal, i.annualOverTotal);
   const storst = Math.max(1, ...items.map(kostnad));
   const tips = (d) => [
     [`#${d.rang} ${d.yrke}`],
     [`BAS ${d.bas}`, `n = ${d.n} (Kv: ${d.kvN}, Mä: ${d.maN})`],
-    ["Median", kr(d.median)],
-    [`Referens (${d.refKalla})`, kr(d.refMedian)],
-    ["Avvikelse", `${pm(d.x, 2)} % (${pm(d.diffKr, 0).slice(0, 1)}${kr(Math.abs(d.diffKr))}/mån)`],
+    ["Median", kr2(d.median)],
+    [`Referens (${d.refKalla})`, kr2(d.refMedian)],
+    ["Avvikelse", `${pm(d.x, 2)} % (${pm(d.diffKr, 0).slice(0, 1)}${kr2(Math.abs(d.diffKr))}/mån)`],
     ...d.gapPct != null ? [["Skillnad kvinnor–män", `${pm(d.gapPct, 1)} %`]] : [],
-    ...d.atgard > 0 ? [["Kostnad att nå referensen/år", kr(d.atgard)]] : d.over > 0 ? [["Överlönekostnad/år", kr(d.over)]] : [],
+    ...d.atgard > 0 ? [["Kostnad att nå referensen/år", kr2(d.atgard)]] : d.over > 0 ? [["Överlönekostnad/år", kr2(d.over)]] : [],
     ["Prioriteringsindex", `${svTal(d.index, 0)}/100`]
   ];
   const lager = Object.keys(PRIO_STATUS_INFO).map((status) => ({
@@ -12680,7 +12680,7 @@ var _LV_KRAV_SERIER = [
   { dominans: "blandad", serie: "Blandad", farg: () => PALETTE.semantic.neutral, symbol: "cirkel" }
 ];
 function _lvKravFigur({ medPoang, grupper }) {
-  const kr = (v) => talformat(v, "kr");
+  const kr2 = (v) => talformat(v, "kr");
   const rang = basRangordning(grupper.map((g) => g.bas));
   const basOrdning = [...new Set(grupper.map((g) => g.bas))].sort((a, b) => rang(a) - rang(b)).map((b) => "BAS " + b);
   const x = (g) => medPoang ? g.krav : "BAS " + g.bas;
@@ -12740,8 +12740,8 @@ function _lvKravFigur({ medPoang, grupper }) {
     })),
     tips: (d) => [
       [`${d.namn} · BAS ${d.bas}`],
-      ["Medianlön", kr(d.y)],
-      [d.avstand < 0 ? "Under nivån" : "Över nivån", kr(Math.abs(d.avstand))],
+      ["Medianlön", kr2(d.y)],
+      [d.avstand < 0 ? "Under nivån" : "Över nivån", kr2(Math.abs(d.avstand))],
       ["Andel kvinnor", talformat(d.andelKv, "pct")],
       ["Antal", String(d.n)],
       ...medPoang ? [[d.uppskattad ? `Poäng (efter ${T.niva.bf})` : "Arbetsvärderingspoäng", talformat(d.krav, "antal")]] : []
@@ -12797,9 +12797,9 @@ function _lvParFigur(pairs, max = 14) {
       rader.push({ p, y });
     }
   }
-  const kr = (v) => talformat(v, "kr");
+  const kr2 = (v) => talformat(v, "kr");
   const parFalt = (p) => ({ ...p.kvBas != null && p.kvBas !== "" ? { bas: String(p.kvBas) } : {}, ...isFinite(p.gapPct) ? { gap: +p.gapPct.toFixed(1) } : {}, ...p.kvN > 0 ? { n: p.kvN } : {} });
-  const tips = ({ p }) => [[`${p.kvLabel} (BAS ${p.kvBas})`], ["Median", kr(p.kvMedian)], [`${p.maLabel} (BAS ${p.maBas})`], ["Median", kr(p.maMedian)], ["Skillnad", `${svPct(p.gapPct, 1)} (${kr(p.gapKr)})`]];
+  const tips = ({ p }) => [[`${p.kvLabel} (BAS ${p.kvBas})`], ["Median", kr2(p.kvMedian)], [`${p.maLabel} (BAS ${p.maBas})`], ["Median", kr2(p.maMedian)], ["Skillnad", `${svPct(p.gapPct, 1)} (${kr2(p.gapKr)})`]];
   const punkt = (serie, farg, falt, extra = {}) => ({
     marke: "punkt",
     serie,
@@ -13228,43 +13228,229 @@ function livscykelRegression(rader, { fixBas, golv }) {
   };
 }
 
-// src/app/40-alder-karriar.js
-var KOHORT_FORBEHALL = "Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.";
-function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
-  const kr = (v) => `${v >= 0 ? "+" : "−"}${svKr(Math.abs(v))}`;
+// src/lib/vymodell-alder-karriar.js
+var kr = (v) => `${v >= 0 ? "+" : "−"}${svKr(Math.abs(v))}`;
+function alderInsiktText(lutKv, lutMa, ra, vidSammaAlder, termer = STANDARDTERMER) {
   const medel = (Math.abs(lutKv) + Math.abs(lutMa)) / 2;
   const likaLutning = medel === 0 || Math.abs(lutKv - lutMa) / medel <= 0.25;
   const lutning = likaLutning ? `Lönen stiger ungefär lika mycket per levnadsår för kvinnor (${kr(lutKv)}) och män (${kr(lutMa)}).` : lutKv < lutMa ? `Lönen stiger långsammare med åldern för kvinnor (${kr(lutKv)} per år) än för män (${kr(lutMa)}).` : `Lönen stiger snabbare med åldern för kvinnor (${kr(lutKv)} per år) än för män (${kr(lutMa)}).`;
   const skillnad = vidSammaAlder - ra;
   const justering = Math.abs(skillnad) < 1 ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, nästan som utan justering (${svPct(ra, 1)}): åldersfördelningen förklarar lite av skillnaden.` : skillnad > 0 ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: åldersfördelningen förklarar en del av skillnaden${vidSammaAlder < 95 ? ", men inte hela" : ""}.` : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
-  return `${lutning} ${justering} Vad ${T.niva.en} och ${T.enhet.en} förklarar står i Lönestruktur.`;
+  return `${lutning} ${justering} Vad ${termer.niva.en} och ${termer.enhet.en} förklarar står i Lönestruktur.`;
 }
+function ladaPerKon(rader, k) {
+  const lonKv = rader.filter((d) => arKvinna(d)).map((d) => d.lon), lonMa = rader.filter((d) => arMan(d)).map((d) => d.lon);
+  const kvOk = lonKv.length >= k, maOk = lonMa.length >= k;
+  return {
+    nKv: lonKv.length,
+    nMa: lonMa.length,
+    lonKv: kvOk ? lonKv : null,
+    lonMa: maOk ? lonMa : null,
+    utan: [kvOk ? null : "kvinnor", maOk ? null : "män"].filter(Boolean).join(" och ")
+  };
+}
+function konHistogram(rader, k) {
+  const lon = (ar) => rader.filter(ar).map((d) => d.lon).filter((v) => v > 0);
+  const kv = lon((d) => arKvinna(d)), ma = lon((d) => arMan(d));
+  const klasser = histogramKlasser(kv, ma, k);
+  return { nKv: kv.length, nMa: ma.length, klasser, orsak: klasser ? null : kv.length < k || ma.length < k ? "kon" : "klasser" };
+}
+var ALDERSGRUPPER = [[0, 29, "Under 30 år"], [30, 39, "30–39 år"], [40, 49, "40–49 år"], [50, 59, "50–59 år"], [60, 200, "60 år och äldre"]];
+function alderGapRader(dataKv, dataMa, k) {
+  const { visade, dolda } = konskvotPerGrupp(ALDERSGRUPPER.map(([fran, till, namn]) => {
+    const i = (r) => r.alder > 0 && r.alder >= fran && r.alder <= till && r.lon > 0;
+    return [namn, dataKv.filter(i).map((r) => r.lon), dataMa.filter(i).map((r) => r.lon)];
+  }), { k, ki: true });
+  return { visade: visade.map(({ nyckel: namn, ...v }) => ({ namn, ...v })), dolda };
+}
+function lonefordelningPerBas(rader, perKon, k) {
+  const kon = (r) => arKvinna(r) ? "Kvinna" : arMan(r) ? "Man" : null;
+  const giltiga = rader.filter((r) => r.lon > 0 && r.bas != null && r.bas !== "" && (!perKon || kon(r)));
+  const antal = /* @__PURE__ */ new Map();
+  const cell = (r) => perKon ? `${r.bas}\0${kon(r)}` : String(r.bas);
+  for (const r of giltiga) antal.set(cell(r), (antal.get(cell(r)) || 0) + 1);
+  const utelamnade = [...antal].filter(([, n]) => n < k).map(([c]) => {
+    const [bas, kn] = c.split("\0");
+    return kn ? `BAS ${bas} (${kn === "Kvinna" ? "kvinnor" : "män"})` : `BAS ${bas}`;
+  }).sort((a, b) => a.localeCompare(b, "sv", { numeric: true }));
+  return {
+    punkter: giltiga.map((r) => ({ rad: r, kon: kon(r), liten: antal.get(cell(r)) < k })),
+    utelamnade,
+    ordning: [...new Set(giltiga.map((r) => r.bas))].sort().map((b) => "BAS " + b)
+  };
+}
+var MULTIPLAR_MAX = 8, MULTIPLAR_PUNKTER = 1500;
+function multiplarPaneler(rader, liten, k) {
+  const giltiga = rader.filter((r) => r.lon > 0 && r.alder > 0 && r.kon && r.bas != null && r.bas !== "");
+  const perBas = /* @__PURE__ */ new Map();
+  for (const r of giltiga) {
+    if (!perBas.has(r.bas)) perBas.set(r.bas, []);
+    perBas.get(r.bas).push(r);
+  }
+  const stora = [...perBas].filter(([, g]) => g.length >= k).sort((a, b) => b[1].length - a[1].length);
+  const valda = stora.slice(0, MULTIPLAR_MAX).map(([b]) => b).sort();
+  const utanfor = [...perBas.keys()].filter((b) => !valda.includes(b)).sort().map((b) => "BAS " + b);
+  const paneler = valda.map((bas) => {
+    const g = perBas.get(bas);
+    const ritbara = g.filter((r) => !liten(r)), steg = Math.max(1, Math.ceil(ritbara.length / MULTIPLAR_PUNKTER));
+    const urval = steg > 1 ? new Set(ritbara.filter((_, i) => i % steg === 0)) : null;
+    const punkter = g.filter((r) => !urval || liten(r) || urval.has(r)).map((r) => ({ rad: r, kon: arKvinna(r) ? "Kvinna" : arMan(r) ? "Man" : null, liten: liten(r) }));
+    const reg = linjarRegression(g.map((r) => [r.alder, r.lon])), [a0, a1] = omfang(g.map((r) => r.alder));
+    return { bas, punkter, trend: reg ? { reg, a0, a1 } : null, nedsamplad: !!urval };
+  });
+  return { paneler, utanfor };
+}
+function vymodellAlderOchLon(rader, { bas, k, statistik = [], trendAlla = false, termer = STANDARDTERMER }) {
+  const isAll = bas === "__ALLA__";
+  const df = rader.filter((d) => (isAll || d.bas === bas) && d.alder && d.alder > 0 && d.kon);
+  if (df.length < 2) return null;
+  const dataKv = df.filter((d) => arKvinna(d)), dataMa = df.filter((d) => arMan(d));
+  const par = (rr) => rr.map((d) => [d.alder, d.lon]);
+  const regKv = linjarRegression(par(dataKv)), regMa = linjarRegression(par(dataMa));
+  const aldrar = df.map((d) => d.alder);
+  const [minAlder, maxAlder] = omfang(aldrar);
+  const medelAlder = aldrar.reduce((a, b) => a + b, 0) / aldrar.length;
+  const kvOk = dataKv.length >= k, maOk = dataMa.length >= k, konOk = kvOk && maOk;
+  const kvot = konsMedianer(df, { k }).kvotPct;
+  const medAlder = !!(regKv && regMa);
+  const expKv = medAlder ? regKv.m * medelAlder + regKv.b : NaN, expMa = medAlder ? regMa.m * medelAlder + regMa.b : NaN;
+  const vidSammaAlder = konOk && medAlder && expMa > 0 ? expKv / expMa * 100 : null;
+  const liten = individLitenForVid(rader, k);
+  return {
+    isAll,
+    df,
+    dataKv,
+    dataMa,
+    minAlder,
+    maxAlder,
+    kvOk,
+    maOk,
+    konOk,
+    kvot,
+    vidSammaAlder,
+    // Trendlinjerna bara för ett kön som når k.
+    trendKv: kvOk ? regKv : null,
+    trendMa: maOk ? regMa : null,
+    insikt: kvot != null && vidSammaAlder != null ? alderInsiktText(
+      /** @type {any} */
+      regKv.m,
+      /** @type {any} */
+      regMa.m,
+      kvot,
+      vidSammaAlder,
+      termer
+    ) : null,
+    enAlder: konOk && !medAlder,
+    trendAllaOk: df.length >= k,
+    trendAlla: trendAlla && df.length >= k ? linjarRegression(par(df)) : null,
+    ciKv: kvOk ? regressionslinjensBand(par(dataKv), minAlder, maxAlder, 25) : null,
+    ciMa: maOk ? regressionslinjensBand(par(dataMa), minAlder, maxAlder, 25) : null,
+    // En uppslagning per AID×BAS-grupp i urvalet (aldrig ett annat BAS), och medianen av de matchade medianerna.
+    statMedian: statistik.length ? statistikensMedianFor(statistik, df.map((d) => ({ aid: aidAvYrke(d.yrke), bas: d.bas }))) : null,
+    utan: [kvOk ? null : "kvinnor", maOk ? null : "män"].filter(Boolean).join(" och "),
+    liten,
+    dolda: df.filter(liten).length,
+    lada: ladaPerKon(df, k),
+    histogram: konHistogram(df, k)
+  };
+}
+var ALDERSKLASSER = ["20–24", "25–29", "30–34", "35–39", "40–44", "45–49", "50–54", "55–59", "60–64", "65+"];
+var KLASS_MIN = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65];
+var KLASS_MAX = [24, 29, 34, 39, 44, 49, 54, 59, 64, 120];
+var SYSSELSATTA_PCT = [9, 12, 13, 13, 12, 12, 11, 10, 6, 2];
+var perKlass = (rader) => KLASS_MIN.map((lo, i) => rader.filter((d) => d.alder >= lo && d.alder <= KLASS_MAX[i]).length);
+function andelPerAlder(rows, lo, hi, win) {
+  const total = rows.length;
+  const cnt = {};
+  rows.forEach((r) => {
+    const a = Math.round(r.alder);
+    cnt[a] = (cnt[a] || 0) + 1;
+  });
+  const ages = [], share = [];
+  for (let a = lo; a <= hi; a++) {
+    let s = 0, n = 0;
+    for (let x = a - win; x <= a + win; x++) {
+      s += cnt[x] || 0;
+      n++;
+    }
+    ages.push(a);
+    share.push(total ? +(s / n / total * 100).toFixed(2) : 0);
+  }
+  return { ages, share };
+}
+function alderBandRader(df, k) {
+  const grupper = /* @__PURE__ */ new Map();
+  for (const r of df) {
+    const a = Number(r.alder), l = Number(r.lon);
+    if (!isFinite(a) || !(l > 0)) continue;
+    const g = Math.floor(a / 5) * 5;
+    if (!grupper.has(g)) grupper.set(g, []);
+    grupper.get(g).push(l);
+  }
+  const rader = [...grupper.entries()].sort((x, y) => x[0] - y[0]).filter(([, v]) => v.length >= k).map(([g, v]) => {
+    const s = v.slice().sort((x, y) => x - y), q = (p) => Math.round(kvantil(s, p));
+    return { x: g + 2.5, alder: g, namn: `${g}–${g + 4} år`, n: s.length, p10: q(0.1), p25: q(0.25), p50: q(0.5), p75: q(0.75), p90: q(0.9) };
+  });
+  return rader.length < 2 ? null : rader;
+}
+function vymodellAldersstruktur(rader, { bas, k, alla }) {
+  const isAll = bas === "__ALLA__" || !bas;
+  const df = rader.filter((d) => (isAll || d.bas === bas) && d.alder > 0);
+  if (df.length < 2) return null;
+  const n = df.length;
+  const pct = (c) => +(c / n * 100).toFixed(1);
+  const basKv = df.filter((d) => arKvinna(d)), basMa = df.filter((d) => arMan(d));
+  const aldrar = df.map((d) => d.alder);
+  const medianAlder = median(aldrar), orgMedian = median(alla.filter((d) => d.alder > 0).map((d) => d.alder));
+  const andel60 = pct(df.filter((d) => d.alder >= 60).length), andelU40 = pct(df.filter((d) => d.alder < 40).length);
+  const alderDiff = +(medianAlder - orgMedian).toFixed(1);
+  const [minA, maxA] = omfang(aldrar);
+  const aLo = Math.max(18, Math.floor(minA)), aHi = Math.min(67, Math.ceil(maxA));
+  return {
+    isAll,
+    n,
+    df,
+    pctKv: perKlass(basKv).map(pct),
+    pctMa: perKlass(basMa).map(pct),
+    refPct: SYSSELSATTA_PCT.slice(),
+    medianAlder,
+    orgMedian,
+    alderDiff,
+    andel60,
+    andelU40,
+    q25: Math.round(kvantil(aldrar, 0.25)),
+    q75: Math.round(kvantil(aldrar, 0.75)),
+    pension: andel60 > 25 ? "manga" : andel60 > 15 ? "uppsikt" : null,
+    atervaxt: andelU40 < 15,
+    avvikelse: isAll ? null : alderDiff > 5 ? "aldre" : alderDiff < -5 ? "yngre" : null,
+    aLo,
+    aHi,
+    // Andel av eget kön per ålder, 5-årigt glidande medel (win = 2).
+    kurvaKv: andelPerAlder(basKv, aLo, aHi, 2),
+    kurvaMa: andelPerAlder(basMa, aLo, aHi, 2),
+    band: alderBandRader(df, k)
+  };
+}
+
+// src/app/40-alder-karriar.js
+var KOHORT_FORBEHALL = "Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.";
 function _akTomUtanAlder() {
   const andra = new Set([...document.querySelectorAll(".nav-item[data-tab]")].map((b) => b.getAttribute("data-tab") || "").filter((t) => t && t !== "kon"));
   if (typeof tomFlikarUtom === "function") tomFlikarUtom(andra);
 }
-function renderKon(bas) {
+function ritaAlderOchLon(bas) {
   if (!harAlder()) {
     _akTomUtanAlder();
     return;
   }
-  const isAll = bas === "__ALLA__";
-  const df = getData().filter((d) => (isAll || d.bas === bas) && d.alder && d.alder > 0 && d.kon);
-  if (df.length < 2) return;
-  const dataKv = df.filter((d) => arKvinna(d));
-  const dataMa = df.filter((d) => arMan(d));
-  const regKv = Stat.linjarRegression(dataKv.map((d) => [d.alder, d.lon]));
-  const regMa = Stat.linjarRegression(dataMa.map((d) => [d.alder, d.lon]));
-  const allAges = df.map((d) => d.alder);
-  const [minAlder, maxAlder] = omfang(allAges);
-  const avgAlder = allAges.reduce((a, b) => a + b, 0) / allAges.length;
-  const kvOk = !isKMasked(dataKv.length), maOk = !isKMasked(dataMa.length);
-  const konOk = kvOk && maOk;
-  const kvot = konsMedianer(df, { k: kTroskel() }).kvotPct;
+  const k = kTroskel();
+  const trendAlla = !!/** @type {HTMLInputElement|null} */
+  document.getElementById("kon-trend-alla")?.checked;
+  const vm = vymodellAlderOchLon(getData(), { bas, k, statistik: state.statistik, termer: T, trendAlla });
+  if (!vm) return;
+  const { isAll, df, dataKv, dataMa, kvOk, maOk, konOk, kvot, trendKv, trendMa } = vm;
   const unadjGap = kvot != null ? svPct(kvot, 1) : "–";
-  const medAlder = !!(regKv && regMa);
-  const expKv = medAlder ? regKv.m * avgAlder + regKv.b : NaN, expMa = medAlder ? regMa.m * avgAlder + regMa.b : NaN;
-  const ageAdjGap = !konOk || !medAlder ? "–" : expMa > 0 ? svPct(expKv / expMa * 100, 1) : "–";
+  const ageAdjGap = vm.vidSammaAlder != null ? svPct(vm.vidSammaAlder, 1) : "–";
   const urvalText = document.getElementById("ak-urval-text");
   if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
   _laNyckel("nyckel-ak-fordelning", kvot != null ? `Kvinnors median ${unadjGap} av mäns` : "");
@@ -13287,12 +13473,12 @@ function renderKon(bas) {
       u.classList.remove("ar-granska");
     }
   }
-  const lutning = (ok, reg) => ok && reg ? `${reg.m >= 0 ? "+" : "−"}${svTal(Math.abs(reg.m), 0)}` : "–";
-  document.getElementById("kon-kpi-slope").textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
+  const lutning = (reg) => reg ? `${reg.m >= 0 ? "+" : "−"}${svTal(Math.abs(reg.m), 0)}` : "–";
+  document.getElementById("kon-kpi-slope").textContent = `${lutning(trendKv)} / ${lutning(trendMa)} kr`;
   const insightEl = document.getElementById("p-value-insight");
   if (insightEl) {
     const scope = isAll ? "Hela urvalet" : `BAS ${bas}`;
-    insightEl.innerHTML = regKv && regMa && kvot != null && expMa > 0 ? `<strong>${esc(scope)}:</strong> ${_akInsiktText(regKv.m, regMa.m, kvot, expKv / expMa * 100)}` : `<strong>${esc(scope)}:</strong> ${esc(konOk && !medAlder ? "Lönens samband med åldern kan inte räknas eftersom ett av könen bara har en ålder i urvalet." : _konUtelamnatNot())}`;
+    insightEl.innerHTML = vm.insikt ? `<strong>${esc(scope)}:</strong> ${vm.insikt}` : `<strong>${esc(scope)}:</strong> ${esc(vm.enAlder ? "Lönens samband med åldern kan inte räknas eftersom ett av könen bara har en ålder i urvalet." : _konUtelamnatNot())}`;
   }
   {
     const not = document.getElementById("kon-kohort-not");
@@ -13302,72 +13488,56 @@ function renderKon(bas) {
     /** @type {HTMLInputElement} */
     document.getElementById("kon-color-by")?.value || "kon"
   );
-  const trendAllaVald = !!/** @type {HTMLInputElement|null} */
-  document.getElementById("kon-trend-alla")?.checked;
-  const trendAllaOk = df.length >= kTroskel();
-  const trendAlla = trendAllaVald && trendAllaOk ? Stat.linjarRegression(df.map((d) => [d.alder, d.lon])) : null;
-  const ciKv = kvOk ? linearRegressionCI(dataKv.map((d) => [d.alder, d.lon]), minAlder, maxAlder, 25) : null;
-  const ciMa = maOk ? linearRegressionCI(dataMa.map((d) => [d.alder, d.lon]), minAlder, maxAlder, 25) : null;
-  let statMedian = null;
-  if (state.statistik.length > 0) {
-    statMedian = statistikensMedianFor(state.statistik, df.map((d) => ({ aid: aidAvYrke(d.yrke), bas: d.bas })));
-  }
   const scope2 = isAll ? "hela urvalet" : `${T.niva.en} ${bas}`;
-  const utan = [kvOk ? null : "kvinnor", maOk ? null : "män"].filter(Boolean).join(" och ");
-  const skal = `färre än ${kTroskel()} ${personOrd(kTroskel())} av ${kvOk || maOk ? "könet" : "vartdera könet"} finns i urvalet`;
-  const liten = individLitenFor(getData());
-  const dolda = df.filter(liten).length;
+  const { utan } = vm;
+  const skal = `färre än ${k} ${personOrd(k)} av ${kvOk || maOk ? "könet" : "vartdera könet"} finns i urvalet`;
   ritaFigur("chart-kon-scatter", _konScatterFigur({
     df,
     dataKv,
     dataMa,
     isAll,
     colorBy,
-    minAlder,
-    maxAlder,
-    statMedian,
-    liten,
-    trendAlla,
-    trendKv: kvOk ? regKv : null,
-    trendMa: maOk ? regMa : null,
-    ciKv,
-    ciMa,
+    minAlder: vm.minAlder,
+    maxAlder: vm.maxAlder,
+    statMedian: vm.statMedian,
+    liten: vm.liten,
+    trendAlla: vm.trendAlla,
+    trendKv,
+    trendMa,
+    ciKv: vm.ciKv,
+    ciMa: vm.ciMa,
     pol: isAll ? null : policyFor(null, bas),
-    beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` + (konOk && medAlder ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år, mäns med ${Math.round(regMa.m)} kr per år. ` : `${kvOk && regKv ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ""}${maOk && regMa ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ""}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ""}`) + `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` + (trendAlla ? ` Trend för hela urvalet: ${trendAlla.m >= 0 ? "+" : "−"}${svTal(Math.abs(trendAlla.m), 0)} kr per år.` : "")
+    beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` + (konOk && trendKv && trendMa ? `Kvinnors trend ökar med ${Math.round(trendKv.m)} kr per år, mäns med ${Math.round(trendMa.m)} kr per år. ` : `${trendKv ? `Kvinnors trend ökar med ${Math.round(trendKv.m)} kr per år. ` : ""}${trendMa ? `Mäns trend ökar med ${Math.round(trendMa.m)} kr per år. ` : ""}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ""}`) + `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` + (vm.trendAlla ? ` Trend för hela urvalet: ${vm.trendAlla.m >= 0 ? "+" : "−"}${svTal(Math.abs(vm.trendAlla.m), 0)} kr per år.` : "")
   }), { hojd: 420 });
   const boxEl = document.getElementById("chart-kon-boxplot");
-  const lada = _konLadFigurFor([...dataKv, ...dataMa], scope2);
+  const lada = _konLadFigurFor(vm.lada, scope2, k);
   if (typeof lada !== "string") {
     ritaFigur(boxEl, { ...lada, underlag: {
       dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp],
       rader: [...dataKv, ...dataMa],
-      k: kTroskel(),
-      rita: (rader, { beskrivning }) => _konLadFigurFor(rader, `${scope2}, ${beskrivning}`)
+      k,
+      rita: (rader, { beskrivning }) => _konLadFigurFor(ladaPerKon(rader, k), `${scope2}, ${beskrivning}`, k)
     } }, { hojd: 420 });
   } else if (boxEl) rensaFigur(boxEl);
   _setDiagramKNot("chart-kon-scatter", [
     utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : "",
-    trendAllaVald && !trendAllaOk ? _demoTrendNot(df.length) : "",
-    _individNot(dolda)
+    trendAlla && !vm.trendAllaOk ? _demoTrendNot(df.length) : "",
+    _individNot(vm.dolda)
   ].filter(Boolean).join(" "));
   _setDiagramKNot("chart-kon-boxplot", utan ? `Lådan visas inte för ${utan}: ${skal}.` : "");
-  renderKonMultiplar();
-  renderKonHistogram(dataKv, dataMa, scope2);
-  _ritaTungtBlock("kon", ["chart-kon-aldergap", "kon-aldergap-not"], () => renderKonAlderGap(dataKv, dataMa, scope2));
+  ritaKonMultiplar();
+  ritaKonHistogram(vm, scope2);
+  _ritaTungtBlock("kon", ["chart-kon-aldergap", "kon-aldergap-not"], () => ritaAlderGap(dataKv, dataMa, scope2));
 }
 function _konTathetFigur(rader, perKon, k = kTroskel(), form = "fiol") {
-  const kon = (r) => arKvinna(r) ? "Kvinna" : arMan(r) ? "Man" : null;
-  const giltiga = rader.filter((r) => r.lon > 0 && r.bas != null && r.bas !== "" && (!perKon || kon(r)));
-  const antal = /* @__PURE__ */ new Map();
-  const cell = (r) => perKon ? `${r.bas}\0${kon(r)}` : String(r.bas);
-  for (const r of giltiga) antal.set(cell(r), (antal.get(cell(r)) || 0) + 1);
+  const { punkter, utelamnade, ordning } = lonefordelningPerBas(rader, perKon, k);
   const serier = perKon ? [["Kvinna", PALETTE.kon.kvinna], ["Man", PALETTE.kon.man]] : [["Alla", PALETTE.serie[0]]];
   const lager = serier.map(([namn, farg]) => ({
     marke: "lada",
     ...form === "fiol" ? { form: "fiol" } : form === "kvantiler" ? { form: "kvantiler", antal: 20 } : { avvikare: false },
     serie: namn,
     farg,
-    data: giltiga.filter((r) => !perKon || kon(r) === namn).map((r) => ({ x: "BAS " + r.bas, y: r.lon, bas: r.bas, markering: markeringFor(r.bas), ...antal.get(cell(r)) < k ? { liten: true } : {} })),
+    data: punkter.filter((p) => !perKon || p.kon === namn).map(({ rad: r, liten }) => ({ x: "BAS " + r.bas, y: r.lon, bas: r.bas, markering: markeringFor(r.bas), ...liten ? { liten: true } : {} })),
     tips: (d, s) => s ? [
       [d.x],
       ..._kvantilTipsRader(s),
@@ -13376,11 +13546,6 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = "fiol") {
       ["Antal", String(s.n)]
     ] : [[d.x]]
   })).filter((l) => l.data.length);
-  const utelamnade = [...antal].filter(([, n]) => n < k).map(([c]) => {
-    const [bas, kn] = c.split("\0");
-    return kn ? `BAS ${bas} (${kn === "Kvinna" ? "kvinnor" : "män"})` : `BAS ${bas}`;
-  }).sort((a, b) => a.localeCompare(b, "sv", { numeric: true }));
-  const ordning = [...new Set(giltiga.map((r) => r.bas))].sort().map((b) => "BAS " + b);
   if (form === "kvantiler") return { utelamnade, figur: {
     beskrivning: `Lönefördelningen per ${T.niva.en}${perKon ? " och kön" : ""} som kvantilpunkter: varje prick är en tjugondel av gruppen (i små grupper en större andel, aldrig färre än två personer), lagd vid den lönen. Räkna prickarna under en lön för att se hur stor andel som tjänar mindre. Inga enskilda löner visas.`,
     legend: perKon ? void 0 : false,
@@ -13428,14 +13593,6 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
     lager: [serie("Kvinnor", PALETTE.kon.kvinna, "nKv", nKv), serie("Män", PALETTE.kon.man, "nMa", nMa)]
   };
 }
-var KON_ALDERSGRUPPER = [[0, 29, "Under 30 år"], [30, 39, "30–39 år"], [40, 49, "40–49 år"], [50, 59, "50–59 år"], [60, 200, "60 år och äldre"]];
-function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
-  const { visade, dolda } = konskvotPerGrupp(KON_ALDERSGRUPPER.map(([fran, till, namn]) => {
-    const i = (r) => r.alder > 0 && r.alder >= fran && r.alder <= till && r.lon > 0;
-    return [namn, dataKv.filter(i).map((r) => r.lon), dataMa.filter(i).map((r) => r.lon)];
-  }), { k, ki: true });
-  return { visade: visade.map(({ nyckel: namn, ...v }) => ({ namn, ...v })), dolda };
-}
 function _konAlderGapFigur(rader, scope) {
   const status = (o) => gapStatusKI(o);
   const pkt = (o) => ({
@@ -13448,13 +13605,13 @@ function _konAlderGapFigur(rader, scope) {
     ...o.ci ? { fel: { lag: o.ci.lo, hog: o.ci.hi } } : {},
     ..._kronorFalt(o.medKv, o.medMa)
   });
-  const kr = (v) => talformat(v, "kr");
+  const kr2 = (v) => talformat(v, "kr");
   const tips = (d) => [
     [d.y],
     ["Kvinnors median", `${talformat(d.x, "pct")} av männens`],
     ...kronorTipsRad(d.skillnadKr),
     ["95 % KI", d.fel ? `${talformat(d.fel.lag, "pct", { enhet: false })}–${talformat(d.fel.hog, "pct")}` : "–"],
-    ["Median kvinnor / män", `${kr(d.o.medKv)} / ${kr(d.o.medMa)}`],
+    ["Median kvinnor / män", `${kr2(d.o.medKv)} / ${kr2(d.o.medMa)}`],
     ["Antal kvinnor / män", `${d.o.nKv} / ${d.o.nMa}`]
   ];
   const alla = rader.flatMap((o) => [o.gap, ...o.ci ? [o.ci.lo, o.ci.hi] : []]);
@@ -13478,10 +13635,10 @@ function _konAlderGapFigur(rader, scope) {
     })).filter((l) => l.data.length)
   };
 }
-function renderKonAlderGap(dataKv, dataMa, scope) {
+function ritaAlderGap(dataKv, dataMa, scope) {
   const el = document.getElementById("chart-kon-aldergap");
   if (!el) return;
-  const { visade, dolda } = _konAlderGapRader(dataKv, dataMa), not = document.getElementById("kon-aldergap-not"), k = kTroskel();
+  const k = kTroskel(), { visade, dolda } = alderGapRader(dataKv, dataMa, k), not = document.getElementById("kon-aldergap-not");
   if (not) {
     not.hidden = !dolda.length;
     not.textContent = dolda.length ? `Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${dolda.join(", ")}.` : "";
@@ -13492,19 +13649,18 @@ function renderKonAlderGap(dataKv, dataMa, scope) {
     return;
   }
   const rita = (rader, { beskrivning }) => {
-    const r = _konAlderGapRader(rader.filter((d) => arKvinna(d)), rader.filter((d) => arMan(d)));
+    const r = alderGapRader(rader.filter((d) => arKvinna(d)), rader.filter((d) => arMan(d)), k);
     return r.visade.length ? _konAlderGapFigur(r.visade, `${scope}, ${beskrivning}`) : `Ingen åldersgrupp har minst ${k} kvinnor och ${k} män i urvalet.`;
   };
   ritaFigur(el, { ..._konAlderGapFigur(visade, scope), underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.yrkesgrupp], rader: [...dataKv, ...dataMa], k, rita } });
 }
-function renderKonHistogram(dataKv, dataMa, scope) {
+function ritaKonHistogram(vm, scope) {
   const el = document.getElementById("chart-kon-histogram");
   if (!el) return;
-  const kv = dataKv.map((d) => d.lon).filter((v) => v > 0), ma = dataMa.map((d) => d.lon).filter((v) => v > 0), k = kTroskel();
-  const klasser = histogramKlasser(kv, ma, k);
-  if (!klasser) {
+  const k = kTroskel(), h = vm.histogram;
+  if (!h.klasser) {
     rensaFigur(el);
-    el.innerHTML = `<p class="text-dampad-sm marg-8-0">${kv.length < k || ma.length < k ? esc(_konUtelamnatNot()) : `Lönerna går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`}</p>`;
+    el.innerHTML = `<p class="text-dampad-sm marg-8-0">${h.orsak === "kon" ? esc(_konUtelamnatNot()) : `Lönerna går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`}</p>`;
     const n0 = document.getElementById("kon-histogram-not");
     if (n0) {
       n0.hidden = true;
@@ -13512,15 +13668,13 @@ function renderKonHistogram(dataKv, dataMa, scope) {
     }
     return;
   }
-  const figur = _konHistogramFigur(klasser, kv.length, ma.length, scope);
+  const figur = _konHistogramFigur(h.klasser, h.nKv, h.nMa, scope);
   const rita = (rader, { beskrivning }) => {
-    const lon = (ar) => rader.filter(ar).map((d) => d.lon).filter((v) => v > 0);
-    const kv2 = lon((d) => arKvinna(d)), ma2 = lon((d) => arMan(d));
-    const kl = histogramKlasser(kv2, ma2, k);
-    if (kl) return _konHistogramFigur(kl, kv2.length, ma2.length, `${scope}, ${beskrivning}`);
-    return kv2.length < k || ma2.length < k ? _konUtelamnatNot() : `Lönerna i urvalet går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`;
+    const u = konHistogram(rader, k);
+    if (u.klasser) return _konHistogramFigur(u.klasser, u.nKv, u.nMa, `${scope}, ${beskrivning}`);
+    return u.orsak === "kon" ? _konUtelamnatNot() : `Lönerna i urvalet går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`;
   };
-  ritaFigur(el, { ...figur, underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp], rader: [...dataKv, ...dataMa], k, rita } });
+  ritaFigur(el, { ...figur, underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp], rader: [...vm.dataKv, ...vm.dataMa], k, rita } });
   const not = document.getElementById("kon-histogram-not");
   const fa = figur.lager.some((l) => l.data.some((d) => d.fa));
   if (not) {
@@ -13528,43 +13682,32 @@ function renderKonHistogram(dataKv, dataMa, scope) {
     not.textContent = fa ? `Några staplar gäller färre än ${litetUnderlag()} personer av könet i klassen (se verktygstipset på stapeln). Det är ett litet underlag — läs dem som enstaka personer, inte som ett mönster.` : "";
   }
 }
-var KON_MULTIPLAR_MAX = 8;
-var KON_MULTIPLAR_PUNKTER = 1500;
 function _konMultiplarFigur(rader, liten, k = kTroskel()) {
-  const giltiga = rader.filter((r) => r.lon > 0 && r.alder > 0 && r.kon && r.bas != null && r.bas !== "");
-  const perBas = /* @__PURE__ */ new Map();
-  for (const r of giltiga) {
-    if (!perBas.has(r.bas)) perBas.set(r.bas, []);
-    perBas.get(r.bas).push(r);
-  }
-  const stora = [...perBas].filter(([, g]) => g.length >= k).sort((a, b) => b[1].length - a[1].length);
-  const valda = stora.slice(0, KON_MULTIPLAR_MAX).map(([b]) => b).sort();
-  const utanfor = [...perBas.keys()].filter((b) => !valda.includes(b)).sort().map((b) => "BAS " + b);
-  const lager = [], nedsamplade = [];
-  for (const b of valda) {
-    const g = perBas.get(b), panel = "BAS " + b;
-    const ritbara = g.filter((r) => !liten(r)), steg = Math.max(1, Math.ceil(ritbara.length / KON_MULTIPLAR_PUNKTER));
-    const urval = steg > 1 ? new Set(ritbara.filter((_, i) => i % steg === 0)) : null;
-    if (urval) nedsamplade.push(panel);
-    for (const [namn, farg, ar] of [["Kvinna", PALETTE.kon.kvinna, (r) => arKvinna(r)], ["Man", PALETTE.kon.man, (r) => arMan(r)]]) {
-      const data = g.filter(ar).filter((r) => !urval || liten(r) || urval.has(r)).map((r) => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...liten(r) ? { liten: true } : {}, markering: markeringFor(r.bas, r.yrke) }));
+  const { paneler, utanfor } = multiplarPaneler(rader, liten, k);
+  const lager = [];
+  for (const { bas: b, punkter, trend } of paneler) {
+    const panel = "BAS " + b;
+    for (const [namn, farg] of [["Kvinna", PALETTE.kon.kvinna], ["Man", PALETTE.kon.man]]) {
+      const data = punkter.filter((p) => p.kon === namn).map(({ rad: r, liten: l }) => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...l ? { liten: true } : {}, markering: markeringFor(r.bas, r.yrke) }));
       if (data.length) lager.push({ marke: "punkt", serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
     }
-    const reg = Stat.linjarRegression(g.map((r) => [r.alder, r.lon])), [a0, a1] = omfang(g.map((r) => r.alder));
-    if (reg) lager.push({ marke: "linje", serie: "Trend (alla i intervallet)", farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
+    if (trend) {
+      const { reg, a0, a1 } = trend;
+      lager.push({ marke: "linje", serie: "Trend (alla i intervallet)", farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
+    }
   }
-  return { utanfor, nedsamplade, figur: {
-    beskrivning: `Lön mot ålder i ${valda.length} ${ordForAntal(valda.length, T.niva)}, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
+  return { utanfor, nedsamplade: paneler.filter((p) => p.nedsamplad).map((p) => "BAS " + p.bas), figur: {
+    beskrivning: `Lön mot ålder i ${paneler.length} ${ordForAntal(paneler.length, T.niva)}, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
     individer: true,
     urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.alder, URVAL.lon],
-    paneler: valda.map((b) => "BAS " + b),
+    paneler: paneler.map((p) => "BAS " + p.bas),
     x: { skala: "linjar", titel: "Ålder" },
     y: { skala: "linjar", titel: "Månadslön", format: "kr" },
     hojd: 340,
     lager
   } };
 }
-function renderKonMultiplar() {
+function ritaKonMultiplar() {
   const el = document.getElementById("chart-kon-multiplar");
   if (!el) return;
   const d = getData();
@@ -13573,8 +13716,8 @@ function renderKonMultiplar() {
   else rensaFigur(el);
   const not = document.getElementById("kon-multiplar-not");
   const delar = [
-    utanfor.length ? `Visas inte här (${kTroskel() > 1 ? `färre än ${kTroskel()} ${personOrd(kTroskel())}, eller ` : ""}fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(", ")}.` : "",
-    nedsamplade.length ? `I ${nedsamplade.join(", ")} visas ett urval av punkterna (högst ${KON_MULTIPLAR_PUNKTER} per intervall); trendlinjen räknas ur alla.` : ""
+    utanfor.length ? `Visas inte här (${kTroskel() > 1 ? `färre än ${kTroskel()} ${personOrd(kTroskel())}, eller ` : ""}fler intervall än ${MULTIPLAR_MAX}): ${utanfor.join(", ")}.` : "",
+    nedsamplade.length ? `I ${nedsamplade.join(", ")} visas ett urval av punkterna (högst ${MULTIPLAR_PUNKTER} per intervall); trendlinjen räknas ur alla.` : ""
   ].filter(Boolean);
   if (not) {
     not.hidden = !delar.length;
@@ -13698,17 +13841,13 @@ function _konScatterTrend(punkter, medBand = false) {
     band: ci ? ci.map((p) => ({ x: p.x, lag: p.lo, hog: p.hi })) : []
   };
 }
-function _konLadFigurFor(rader, scope) {
-  const lonKv = rader.filter((d) => arKvinna(d)).map((d) => d.lon);
-  const lonMa = rader.filter((d) => arMan(d)).map((d) => d.lon);
-  const kvOk = !isKMasked(lonKv.length), maOk = !isKMasked(lonMa.length);
-  if (!kvOk && !maOk) return _konUtelamnatNot();
-  const utan = [kvOk ? null : "kvinnor", maOk ? null : "män"].filter(Boolean).join(" och ");
-  const skal = `färre än ${kTroskel()} ${personOrd(kTroskel())} av ${kvOk || maOk ? "könet" : "vartdera könet"} finns i urvalet`;
+function _konLadFigurFor({ lonKv, lonMa, nKv, nMa, utan }, scope, k) {
+  if (!lonKv && !lonMa) return _konUtelamnatNot();
+  const skal = `färre än ${k} ${personOrd(k)} av könet finns i urvalet`;
   return _konLadFigur({
-    lonKv: kvOk ? lonKv : null,
-    lonMa: maOk ? lonMa : null,
-    beskrivning: `Lådagram av lönefördelning per kön för ${scope}. ${lonKv.length} kvinnor, ${lonMa.length} män.` + (utan ? ` Lådan visas inte för ${utan}: ${skal}.` : "")
+    lonKv,
+    lonMa,
+    beskrivning: `Lådagram av lönefördelning per kön för ${scope}. ${nKv} kvinnor, ${nMa} män.` + (utan ? ` Lådan visas inte för ${utan}: ${skal}.` : "")
   });
 }
 function _konLadFigur({ lonKv, lonMa, beskrivning }) {
@@ -13733,116 +13872,52 @@ function _akValj(varde, kalla) {
     if (sel && sel !== kalla && [.../** @type {HTMLSelectElement} */
     sel.options].some((o) => o.value === varde)) sel.value = varde;
   }
-  if (konSel) renderKon(
+  if (konSel) ritaAlderOchLon(
     /** @type {HTMLInputElement} */
     konSel.value
   );
-  if (demoSel) renderDemografi(
+  if (demoSel) ritaAldersstruktur(
     /** @type {HTMLInputElement} */
     demoSel.value
   );
 }
-var AGE_BRACKETS = ["20–24", "25–29", "30–34", "35–39", "40–44", "45–49", "50–54", "55–59", "60–64", "65+"];
-var AGE_BRACKET_MIN = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65];
-var AGE_BRACKET_MAX = [24, 29, 34, 39, 44, 49, 54, 59, 64, 120];
-var SWEDISH_WORKING_POP_PCT = [
-  9,
-  // 20–24
-  12,
-  // 25–29
-  13,
-  // 30–34
-  13,
-  // 35–39
-  12,
-  // 40–44
-  12,
-  // 45–49
-  11,
-  // 50–54
-  10,
-  // 55–59
-  6,
-  // 60–64
-  2
-  // 65+
-];
-function countByBracket(data) {
-  return AGE_BRACKET_MIN.map((lo, i) => data.filter((d) => d.alder >= lo && d.alder <= AGE_BRACKET_MAX[i]).length);
-}
-function _ageShareCurve(rows, lo, hi, win) {
-  const total = rows.length;
-  const cnt = {};
-  rows.forEach((r) => {
-    const a = Math.round(r.alder);
-    cnt[a] = (cnt[a] || 0) + 1;
-  });
-  const ages = [], share = [];
-  for (let a = lo; a <= hi; a++) {
-    let s = 0, k = 0;
-    for (let x = a - win; x <= a + win; x++) {
-      s += cnt[x] || 0;
-      k++;
-    }
-    ages.push(a);
-    share.push(total ? +(s / k / total * 100).toFixed(2) : 0);
-  }
-  return { ages, share };
-}
-function renderDemografi(bas) {
+function ritaAldersstruktur(bas) {
   if (!harAlder()) {
     _akTomUtanAlder();
     return;
   }
-  const isAll = bas === "__ALLA__" || !bas;
-  const df = isAll ? getData().filter((d) => d.alder > 0) : getData().filter((d) => d.bas === bas && d.alder > 0);
-  if (df.length < 2) return;
+  const vm = vymodellAldersstruktur(getData(), { bas, k: kTroskel(), alla: state.data });
+  if (!vm) return;
+  const { isAll, n, pctKv, pctMa, andel60, andelU40, alderDiff, orgMedian } = vm;
   const scopeShort = isAll ? "urvalet" : T.niva.bf;
-  const basKv = df.filter((d) => arKvinna(d));
-  const basMa = df.filter((d) => arMan(d));
-  const cntKv = countByBracket(basKv), cntMa = countByBracket(basMa);
-  const n = df.length;
-  const refPct = SWEDISH_WORKING_POP_PCT.slice();
-  const orgAll = state.data.filter((d) => d.alder > 0);
-  const pctKv = cntKv.map((c) => +(c / n * 100).toFixed(1));
-  const pctMa = cntMa.map((c) => +(c / n * 100).toFixed(1));
-  const ages = df.map((d) => d.alder);
-  const medianAge = Stat.median(ages);
-  const orgMedian = Stat.median(orgAll.map((d) => d.alder));
-  const pct60p = +(df.filter((d) => d.alder >= 60).length / n * 100).toFixed(1);
-  const pctU40 = +(df.filter((d) => d.alder < 40).length / n * 100).toFixed(1);
-  const q25 = Math.round(Stat.kvantil(ages, 0.25)), q75 = Math.round(Stat.kvantil(ages, 0.75));
-  const ageDiff = +(medianAge - orgMedian).toFixed(1);
   const ageEl = document.getElementById("demo-kpi-age");
   if (ageEl) {
-    ageEl.textContent = `${svTal(medianAge, 0)} år`;
-    ageEl.style.color = !isAll && Math.abs(ageDiff) > 5 ? "var(--danger)" : "var(--text-main)";
+    ageEl.textContent = `${svTal(vm.medianAlder, 0)} år`;
+    ageEl.style.color = vm.avvikelse ? "var(--danger)" : "var(--text-main)";
   }
   const ageSubEl = document.getElementById("demo-kpi-age-sub");
   if (ageSubEl) {
-    ageSubEl.textContent = isAll ? `${n} personer i organisationen` : `${ageDiff >= 0 ? "+" : ""}${svTal(ageDiff, 1)} år mot organisationen (${svTal(orgMedian, 0)} år)`;
+    ageSubEl.textContent = isAll ? `${n} personer i organisationen` : `${alderDiff >= 0 ? "+" : ""}${svTal(alderDiff, 1)} år mot organisationen (${svTal(orgMedian, 0)} år)`;
   }
   const senEl = document.getElementById("demo-kpi-senior");
-  _laNyckel("nyckel-ak-struktur", `${svPct(pct60p, 1)} är 60 år eller äldre`, pct60p > 25);
+  _laNyckel("nyckel-ak-struktur", `${svPct(andel60, 1)} är 60 år eller äldre`, vm.pension === "manga");
   if (senEl) {
-    senEl.textContent = svPct(pct60p, 1);
-    senEl.style.color = pct60p > 25 ? "var(--danger)" : pct60p > 15 ? FARG.varning : FARG.ok;
+    senEl.textContent = svPct(andel60, 1);
+    senEl.style.color = vm.pension === "manga" ? "var(--danger)" : vm.pension === "uppsikt" ? FARG.varning : FARG.ok;
   }
   const junEl = document.getElementById("demo-kpi-junior");
   if (junEl) {
-    junEl.textContent = svPct(pctU40, 1);
-    junEl.style.color = pctU40 < 15 ? FARG.varning : "var(--text-main)";
+    junEl.textContent = svPct(andelU40, 1);
+    junEl.style.color = vm.atervaxt ? FARG.varning : "var(--text-main)";
   }
   const iqrEl = document.getElementById("demo-kpi-iqr");
-  if (iqrEl) iqrEl.textContent = `${q25}–${q75} år`;
+  if (iqrEl) iqrEl.textContent = `${vm.q25}–${vm.q75} år`;
   const risks = [];
-  if (pct60p > 25) risks.push(`<strong>Många nära pension:</strong> ${svPct(pct60p, 1)} av ${scopeShort} är 60 år eller äldre. Med riktåldern 60–67 kan en stor del gå i pension inom 0–7 år. Planera för att deras kunskap förs vidare.`);
-  else if (pct60p > 15) risks.push(`<strong>Håll uppsikt – nära pension:</strong> ${svPct(pct60p, 1)} är 60 år eller äldre.`);
-  if (pctU40 < 15) risks.push(`<strong>Brist på återväxt:</strong> Endast ${svPct(pctU40, 1)} är under 40 år.`);
-  if (!isAll) {
-    if (ageDiff > 5) risks.push(`Medelåldern är ${svTal(ageDiff, 1)} år <em>högre</em> än organisationssnittet.`);
-    else if (ageDiff < -5) risks.push(`Medelåldern är ${svTal(Math.abs(ageDiff), 1)} år <em>lägre</em> än organisationssnittet.`);
-  }
+  if (vm.pension === "manga") risks.push(`<strong>Många nära pension:</strong> ${svPct(andel60, 1)} av ${scopeShort} är 60 år eller äldre. Med riktåldern 60–67 kan en stor del gå i pension inom 0–7 år. Planera för att deras kunskap förs vidare.`);
+  else if (vm.pension === "uppsikt") risks.push(`<strong>Håll uppsikt – nära pension:</strong> ${svPct(andel60, 1)} är 60 år eller äldre.`);
+  if (vm.atervaxt) risks.push(`<strong>Brist på återväxt:</strong> Endast ${svPct(andelU40, 1)} är under 40 år.`);
+  if (vm.avvikelse === "aldre") risks.push(`Medelåldern är ${svTal(alderDiff, 1)} år <em>högre</em> än organisationssnittet.`);
+  else if (vm.avvikelse === "yngre") risks.push(`Medelåldern är ${svTal(Math.abs(alderDiff), 1)} år <em>lägre</em> än organisationssnittet.`);
   const riskEl = document.getElementById("demo-risk-insight");
   if (riskEl) {
     if (risks.length === 0) {
@@ -13850,17 +13925,15 @@ function renderDemografi(bas) {
     } else {
       riskEl.style.display = "block";
       riskEl.innerHTML = risks.join("<br>") + '<br><span class="text-dampad-sm">Hör till personalplaneringen, inte till lönekartläggningen.</span>';
-      riskEl.className = pct60p > 25 ? "insight-box warning" : "insight-box";
+      riskEl.className = vm.pension === "manga" ? "insight-box warning" : "insight-box";
     }
   }
-  ritaFigur("chart-demo-hist", _demoHistFigur({ pctKv, pctMa, refPct, isAll }), { hojd: 340 });
+  ritaFigur("chart-demo-hist", _demoHistFigur({ pctKv, pctMa, refPct: vm.refPct, isAll }), { hojd: 340 });
   if (document.getElementById("chart-demo-pyramid")) ritaFigur("chart-demo-pyramid", _demoPyramidFigur({ pctKv, pctMa, isAll }));
-  const [minA, maxA] = omfang(ages);
   const pol = isAll ? null : policyFor(null, bas);
-  const aLo = Math.max(18, Math.floor(minA)), aHi = Math.min(67, Math.ceil(maxA));
-  ritaFigur("chart-demo-agecurve", _demoAgecurveFigur(_ageShareCurve(basKv, aLo, aHi, 2), _ageShareCurve(basMa, aLo, aHi, 2)), { hojd: 300 });
+  ritaFigur("chart-demo-agecurve", _demoAgecurveFigur(vm.kurvaKv, vm.kurvaMa), { hojd: 300 });
   {
-    const f = _demoBandFigur(df, kTroskel(), pol, aLo, aHi);
+    const f = vm.band ? _demoBandFigur(vm.df, kTroskel(), pol, vm.aLo, vm.aHi, vm.band) : null;
     if (f) ritaFigur("chart-demo-spread", f, { hojd: 320 });
     else rensaFigur("chart-demo-spread");
     _laNyckel("nyckel-ak-lon", f ? `${f.lager[2].data.length} femårsgrupper` : "");
@@ -13876,12 +13949,12 @@ function _demoHistFigur({ pctKv, pctMa, refPct, isAll }) {
     serie: namn,
     farg,
     opacitet: 0.85,
-    data: AGE_BRACKETS.map((x, i) => ({ x, y: varden[i] })),
+    data: ALDERSKLASSER.map((x, i) => ({ x, y: varden[i] })),
     tips: (d) => [[d.x], [namn, talformat(d.y, "pct")]]
   });
   return {
     beskrivning: `Åldersfördelning i ${adjektiv("vald", T.niva)} ${T.niva.en} jämfört med Sveriges sysselsatta befolkning. Nyckeltal i rutorna ovan.`,
-    x: { skala: "band", titel: "Åldersgrupp", ordning: AGE_BRACKETS.slice() },
+    x: { skala: "band", titel: "Åldersgrupp", ordning: ALDERSKLASSER.slice() },
     y: { skala: "linjar", titel: isAll ? "Andel av organisationen (%)" : `Andel av ${T.niva.en} (%)` },
     lager: [
       serie("Kvinna", PALETTE.kon.kvinna, pctKv),
@@ -13892,14 +13965,14 @@ function _demoHistFigur({ pctKv, pctMa, refPct, isAll }) {
         farg: PALETTE.semantic.referens,
         streck: "prickad",
         punkter: true,
-        data: AGE_BRACKETS.map((x, i) => ({ x, y: refPct[i] })),
+        data: ALDERSKLASSER.map((x, i) => ({ x, y: refPct[i] })),
         tips: (d) => [[d.x], ["Sveriges sysselsatta", talformat(d.y, "pct")]]
       }
     ]
   };
 }
 function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
-  const grupper = AGE_BRACKETS.slice().reverse();
+  const grupper = ALDERSKLASSER.slice().reverse();
   const serie = (namn, farg, varden, tecken) => ({
     marke: "stapel",
     lage: "staplad",
@@ -13908,7 +13981,7 @@ function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
     farg,
     opacitet: 0.85,
     ...tecken < 0 ? { absolut: true } : {},
-    data: AGE_BRACKETS.map((y, i) => ({ y, x: tecken * varden[i] || 0, andel: varden[i] })),
+    data: ALDERSKLASSER.map((y, i) => ({ y, x: tecken * varden[i] || 0, andel: varden[i] })),
     tips: (d) => [[d.y], [namn, talformat(d.andel, "pct")]]
   });
   const storst = Math.max(5, ...pctKv, ...pctMa);
@@ -13939,22 +14012,10 @@ function _demoAgecurveFigur(kv, ma) {
     lager: [kurva("Kvinna", PALETTE.kon.kvinna, kv, "kvinnorna"), kurva("Man", PALETTE.kon.man, ma, "männen")]
   };
 }
-function _demoBandFigur(df, k, pol, aLo, aHi) {
-  const grupper = /* @__PURE__ */ new Map();
-  for (const r of df) {
-    const a = Number(r.alder), l = Number(r.lon);
-    if (!isFinite(a) || !(l > 0)) continue;
-    const g = Math.floor(a / 5) * 5;
-    if (!grupper.has(g)) grupper.set(g, []);
-    grupper.get(g).push(l);
-  }
-  const rader = [...grupper.entries()].sort((x, y) => x[0] - y[0]).filter(([, v]) => v.length >= k).map(([g, v]) => {
-    const s = v.slice().sort((x, y) => x - y), q = (p) => Math.round(kvantil(s, p));
-    return { x: g + 2.5, alder: g, namn: `${g}–${g + 4} år`, n: s.length, p10: q(0.1), p25: q(0.25), p50: q(0.5), p75: q(0.75), p90: q(0.9) };
-  });
-  if (rader.length < 2) return null;
-  const kr = (v) => `${talformat(v, "kr")}/mån`;
-  const tips = (d) => [[d.namn], ["P90", kr(d.r.p90)], ["P75", kr(d.r.p75)], ["Median", kr(d.r.p50)], ["P25", kr(d.r.p25)], ["P10", kr(d.r.p10)], ["Antal", String(d.r.n)]];
+function _demoBandFigur(df, k, pol, aLo, aHi, rader = alderBandRader(df, k)) {
+  if (!rader) return null;
+  const kr2 = (v) => `${talformat(v, "kr")}/mån`;
+  const tips = (d) => [[d.namn], ["P90", kr2(d.r.p90)], ["P75", kr2(d.r.p75)], ["Median", kr2(d.r.p50)], ["P25", kr2(d.r.p25)], ["P10", kr2(d.r.p10)], ["Antal", String(d.r.n)]];
   const band = (serie, lag, hog, opacitet) => ({ marke: "band", serie, farg: PALETTE.serie[0], opacitet, data: rader.map((r) => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, alder: r.alder, r })), tips });
   return {
     beskrivning: `Lönespridning över ålder: medianlön per femårsgrupp, med band för mittersta hälften (P25–P75) och för P10–P90. Åldersgrupper med färre än ${k} ${personOrd(k)} visas inte.`,
@@ -13979,7 +14040,7 @@ function uppstartAlderKarriar() {
       /** @type {HTMLInputElement|null} */
       document.getElementById("bas-select-kon")
     );
-    if (s) renderKon(s.value);
+    if (s) ritaAlderOchLon(s.value);
   });
   if (konSel) konSel.addEventListener("change", (e) => _akValj(
     /** @type {HTMLInputElement} */
@@ -13988,7 +14049,7 @@ function uppstartAlderKarriar() {
   ));
   document.getElementById("kon-color-by")?.addEventListener("change", () => {
     const s = document.getElementById("bas-select-kon");
-    if (s) renderKon(
+    if (s) ritaAlderOchLon(
       /** @type {HTMLInputElement} */
       s.value
     );
@@ -14863,9 +14924,9 @@ function renderRegressionCard() {
            </div>` : "";
   const krFmt = (v) => svKr(v);
   const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);
-  const kr = konOk ? _regressionKronor(r) : null;
+  const kr2 = konOk ? _regressionKronor(r) : null;
   const lonesummaKvAr = konOk ? getData().filter((d) => d.lon > 0 && (!harAlder() || d.alder > 0) && arKvinna(d)).reduce((s, d) => s + d.lon, 0) * 12 : 0;
-  const andelAvLonesumma = kr && lonesummaKvAr > 0 ? Math.abs(kr.krTotalYear) / lonesummaKvAr * 100 : null;
+  const andelAvLonesumma = kr2 && lonesummaKvAr > 0 ? Math.abs(kr2.krTotalYear) / lonesummaKvAr * 100 : null;
   const budget = stegUt.utelamnat ? null : _explanationBudget(yrkeVisas ? stegIKortet : seqOk);
   const caveatInline = `
         <p class="reg-caveat-inline" role="note"><strong>Kom ihåg:</strong> <em>oförklarat</em> betyder att skillnaden
@@ -14887,20 +14948,20 @@ function renderRegressionCard() {
                 <p class="marg-0 text-dampad-sm"><strong>Två råa skillnader:</strong> rutan överst räknar på medianlönen, som direktivmarkeringen (≥ 5 %) gör. Trappan räknar på medellönen i modellens skala (genomsnitt av logaritmerad lön). Talen skiljer sig något när lönefördelningen är skev. Båda är riktiga: medianen för markeringen, modellens tal för uppdelningen.</p>
             </div>
         </details>`;
-  const kronorHtml = !konOk ? `<p class="k-mask-note">Skillnaden räknas inte om till kronor: exemplet utgår från männens medianlön, och ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i modellen.</p>` : kr ? `
+  const kronorHtml = !konOk ? `<p class="k-mask-note">Skillnaden räknas inte om till kronor: exemplet utgår från männens medianlön, och ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i modellen.</p>` : kr2 ? `
         <div class="reg-kronor" role="region" aria-label="Löneskillnaden uttryckt i kronor">
             <div class="reg-kronor-head">Vad betyder ${svPct(Math.abs(r.konPct), 1)} i kronor?
-                ${isSig && kr.krMonth < 0 ? '<span class="farg-dampad fw-400">(här ligger kvinnorna över männen)</span>' : ""}</div>
+                ${isSig && kr2.krMonth < 0 ? '<span class="farg-dampad fw-400">(här ligger kvinnorna över männen)</span>' : ""}</div>
             ${isSig ? `
             <div class="reg-kronor-grid">
-                <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr.krMonth))}</div><div class="rk-lbl">per kvinna och månad</div></div>
-                <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr.krYear))}</div><div class="rk-lbl">per kvinna och år</div></div>
-                <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr.krTotalYear))}</div><div class="rk-lbl">för alla ${r.nKvAnalysed} kvinnor i underlaget, per år${andelAvLonesumma != null ? ` (${svPct(andelAvLonesumma, 1)} av kvinnornas samlade årslön)` : ""}</div></div>
+                <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr2.krMonth))}</div><div class="rk-lbl">per kvinna och månad</div></div>
+                <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr2.krYear))}</div><div class="rk-lbl">per kvinna och år</div></div>
+                <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr2.krTotalYear))}</div><div class="rk-lbl">för alla ${r.nKvAnalysed} kvinnor i underlaget, per år${andelAvLonesumma != null ? ` (${svPct(andelAvLonesumma, 1)} av kvinnornas samlade årslön)` : ""}</div></div>
             </div>
-            <p class="rk-example"><strong>Konkret:</strong> en man med medianlön tjänar <strong>${krFmt(kr.refMan)}</strong>/mån.
+            <p class="rk-example"><strong>Konkret:</strong> en man med medianlön tjänar <strong>${krFmt(kr2.refMan)}</strong>/mån.
             En kvinna <em>${esc(fmT.samma)}</em> förutsägs enligt modellen tjäna
-            <strong>${krFmt(kr.refKvinna)}</strong>/mån — alltså <strong>${krFmt(Math.abs(kr.krMonth))}</strong>
-            ${kr.krMonth >= 0 ? "mindre" : "mer"} i månaden.</p>
+            <strong>${krFmt(kr2.refKvinna)}</strong>/mån — alltså <strong>${krFmt(Math.abs(kr2.krMonth))}</strong>
+            ${kr2.krMonth >= 0 ? "mindre" : "mer"} i månaden.</p>
             <p class="rk-caveat">Räknat med medianlönen som referens. Detta är en <strong>storleksordning</strong> för att göra
             procenttalet begripligt — inte en åtgärdskostnad. Faktisk kostnad räknas mot individlöner i fliken <em>Löneöversyn</em>.</p>
             ` : `
@@ -15594,20 +15655,20 @@ function updateForecast() {
   const simRows = d.map((r, i) => ({ ...r, lon: out.alloc.perPerson[i].nyLon }));
   const ols = _forecastOlsGap(d, simRows);
   _renderForecastLutning(d, simRows);
-  const kr = (n) => svKr(n);
+  const kr2 = (n) => svKr(n);
   const pct = (n) => n == null ? "–" : (n >= 0 ? "+" : "") + svPct(n, 1);
   const anvPct = out.pott > 0 ? Math.min(100, 100 * out.använt / out.pott) : 0;
   const meterKlass = out.overBudget ? "bg-kritisk" : anvPct > 95 ? "bg-varning" : "bg-ok";
   {
     const topp = document.getElementById("lo-slutsatser");
     if (topp) topp.innerHTML = [
-      _laSlutsats("Pott", out.pottAngiven ? kr(out.pott) : "–", out.pottAngiven ? "kr per månad att fördela" : "ingen pott angiven"),
-      _laSlutsats("Använt", kr(out.använt), out.pott > 0 ? `${svTal(100 * out.använt / out.pott, 0)} % av potten` : "av påslagen hittills"),
+      _laSlutsats("Pott", out.pottAngiven ? kr2(out.pott) : "–", out.pottAngiven ? "kr per månad att fördela" : "ingen pott angiven"),
+      _laSlutsats("Använt", kr2(out.använt), out.pott > 0 ? `${svTal(100 * out.använt / out.pott, 0)} % av potten` : "av påslagen hittills"),
       // Utan angiven pott finns inget kvar att räkna och ingen pott att överskrida (pottAngiven ur prognosutfall).
-      out.kvar != null ? _laSlutsats("Kvar att fördela", kr(out.kvar), out.kvar < -0.5 ? "fördelningen överskrider potten" : "av potten", out.kvar < -0.5) : _laSlutsats("Kvar att fördela", "–", "ingen pott angiven"),
+      out.kvar != null ? _laSlutsats("Kvar att fördela", kr2(out.kvar), out.kvar < -0.5 ? "fördelningen överskrider potten" : "av potten", out.kvar < -0.5) : _laSlutsats("Kvar att fördela", "–", "ingen pott angiven"),
       // "från …" bara när summan har ändrats; före första påslaget står utgångsläget
-      _laSlutsats("Lönesumma per månad", kr(out.lonsummaEfter), Math.round(out.lonsummaEfter) !== Math.round(out.lonsummaFore) ? `från ${kr(out.lonsummaFore)}` : "utgångsläget"),
-      _laSlutsats("Total kostnad", kr(out.totalKostnad), `${cost.months} mån, PO ${svPoPct(cost.poPct)}`)
+      _laSlutsats("Lönesumma per månad", kr2(out.lonsummaEfter), Math.round(out.lonsummaEfter) !== Math.round(out.lonsummaFore) ? `från ${kr2(out.lonsummaFore)}` : "utgångsläget"),
+      _laSlutsats("Total kostnad", kr2(out.totalKostnad), `${cost.months} mån, PO ${svPoPct(cost.poPct)}`)
     ].join("");
   }
   if (meterEl) meterEl.innerHTML = `
@@ -15628,7 +15689,7 @@ function updateForecast() {
   const bandPanelHtml = bands.length ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Lönespann per BAS (P25 / median / P75)</strong>
         ${bandVisade.length ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">P25</th><th class="t-hoger">Median</th><th class="t-hoger">P75</th></tr></thead>
-        <tbody>${bandVisade.map((b) => `<tr><td>${esc(b.bas)}</td><td class="t-hoger">${b.n}</td><td class="t-hoger">${kr(b.p25)}</td><td class="t-hoger">${kr(b.median)}</td><td class="t-hoger">${kr(b.p75)}</td></tr>`).join("")}</tbody></table>` : ""}
+        <tbody>${bandVisade.map((b) => `<tr><td>${esc(b.bas)}</td><td class="t-hoger">${b.n}</td><td class="t-hoger">${kr2(b.p25)}</td><td class="t-hoger">${kr2(b.median)}</td><td class="t-hoger">${kr2(b.p75)}</td></tr>`).join("")}</tbody></table>` : ""}
         ${kMaskNote(bandUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
         <p class="text-dampad-xs marg-6-0-0">Läget mot BAS-medianen i tabellen nedan är gruppens nya median delad med BAS-medianen: över 1,10 märks «över», under 0,90 märks «under».</p>
     </div>` : "";
@@ -15648,8 +15709,8 @@ function updateForecast() {
   const poolHtml = poolRows.length || out.generellCost > 0.5 ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Kostnad per pott (kr/mån)</strong>
         <table class="data-table st-085"><tbody>
-            ${out.generellCost > 0.5 ? `<tr><td>Generellt påslag</td><td class="t-hoger">${kr(out.generellCost)}</td></tr>` : ""}
-            ${poolRows.map((p) => `<tr><td>${poolLabels[p]}</td><td class="t-hoger">${kr(poolCost[p])}</td></tr>`).join("")}
+            ${out.generellCost > 0.5 ? `<tr><td>Generellt påslag</td><td class="t-hoger">${kr2(out.generellCost)}</td></tr>` : ""}
+            ${poolRows.map((p) => `<tr><td>${poolLabels[p]}</td><td class="t-hoger">${kr2(poolCost[p])}</td></tr>`).join("")}
         </tbody></table>
         <p class="text-dampad-xs marg-6-0-0">Ring-fenced pottar — tagga varje riktad rad med en pott-typ för att se vart utrymmet går.</p>
     </div>` : "";
@@ -15661,12 +15722,12 @@ function updateForecast() {
   const konOk = _konFarRedovisasFor(d);
   const tableRows = [...utfall.visade, ...utfall.maskerade].map((g) => {
     const masked = utfall.maskerade.includes(g);
-    const medCells = masked ? `<td colspan="3" class="farg-dampad kursiv">${g.n < K ? `n &lt; ${K} (maskerad)` : "visas inte (se noten)"}</td>` : `<td class="t-hoger">${kr(g.gammalMedian)}</td><td class="fw-600 ta-hoger">${kr(g.nyMedian)}</td><td class="farg-ok ta-hoger">+${svPct(100 * (g.nyMedian / g.gammalMedian - 1), 1)}</td>`;
+    const medCells = masked ? `<td colspan="3" class="farg-dampad kursiv">${g.n < K ? `n &lt; ${K} (maskerad)` : "visas inte (se noten)"}</td>` : `<td class="t-hoger">${kr2(g.gammalMedian)}</td><td class="fw-600 ta-hoger">${kr2(g.nyMedian)}</td><td class="farg-ok ta-hoger">+${svPct(100 * (g.nyMedian / g.gammalMedian - 1), 1)}</td>`;
     const bm = bandByBas[g.bas] ? bandByBas[g.bas].median : null;
     const compa = !masked && bm > 0 ? g.nyMedian / bm : null;
     const compaCell = compa == null ? '<td class="farg-dampad ta-hoger">–</td>' : `<td class="t-hoger${compa > 1.1 ? " fg-varning" : compa < 0.9 ? " fg-info-mork" : ""}">${svTal(compa, 2)}${compa > 1.1 ? " över" : compa < 0.9 ? " under" : ""}</td>`;
-    return `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.n}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>${medCells}<td class="t-hoger">${masked ? "–" : kr(g.kostnad) + "/mån"}</td>${compaCell}</tr>`;
-  }).join("") + (utfall.samlad && utfall.samlad.kostnad != null ? `<tr><td>Kostnad för grupper under tröskeln</td><td>${utfall.samlad.antalGrupper} ${utfall.samlad.antalGrupper === 1 ? "grupp" : "grupper"}, ${utfall.samlad.n} ${personOrd(utfall.samlad.n)}</td><td colspan="5"></td><td class="t-hoger">${kr(utfall.samlad.kostnad)}/mån</td><td></td></tr>` : "");
+    return `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.n}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>${medCells}<td class="t-hoger">${masked ? "–" : kr2(g.kostnad) + "/mån"}</td>${compaCell}</tr>`;
+  }).join("") + (utfall.samlad && utfall.samlad.kostnad != null ? `<tr><td>Kostnad för grupper under tröskeln</td><td>${utfall.samlad.antalGrupper} ${utfall.samlad.antalGrupper === 1 ? "grupp" : "grupper"}, ${utfall.samlad.n} ${personOrd(utfall.samlad.n)}</td><td colspan="5"></td><td class="t-hoger">${kr2(utfall.samlad.kostnad)}/mån</td><td></td></tr>` : "");
   const riktningsord = (r, narmare, langre) => r == null ? "" : r < 0 ? ` <span class="farg-ok">${narmare}</span>` : r > 0 ? ` <span class="f-kritisk">${langre}</span>` : ' <span class="f-dampad">oförändrat</span>';
   const gapCell = (before, after) => `${pct(before)} till <strong>${pct(after)}</strong>${riktningsord(_fcRiktning(before, after, 0), "minskar", "ökar")}`;
   const andelRiktning = (before, after) => before == null || after == null ? null : _fcRiktning(100 + before, 100 + after, 100);
@@ -15687,7 +15748,7 @@ function updateForecast() {
     stagedHtml = `<div class="card marg-0-0-14">
             <strong class="block-mb6">Stegvis plan över ${years} år (senast inom tre år)</strong>
             <table class="data-table fs-sm"><thead><tr><th>År</th><th class="t-hoger">Andel infört</th><th class="t-hoger">Ack. kostnad (inkl. PO)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead>
-            <tbody>${plan.map((p) => `<tr><td>${p.year}</td><td class="t-hoger">${svPct(p.andelPct, 0)}</td><td class="t-hoger">${kr(p.kumKostnad)}</td><td class="t-hoger">${!konOk || p.rawGap == null ? "–" : andelAvMan(p.rawGap)}</td></tr>`).join("")}</tbody></table>
+            <tbody>${plan.map((p) => `<tr><td>${p.year}</td><td class="t-hoger">${svPct(p.andelPct, 0)}</td><td class="t-hoger">${kr2(p.kumKostnad)}</td><td class="t-hoger">${!konOk || p.rawGap == null ? "–" : andelAvMan(p.rawGap)}</td></tr>`).join("")}</tbody></table>
             <p class="text-dampad-xs marg-8-0-0">Linjär infasning (1/${years} per år). Skillnaden visar läget när varje års andel är införd.</p>
         </div>`;
   }
@@ -15697,8 +15758,8 @@ function updateForecast() {
         <div class="card marg-0-0-14">
             <strong class="block-mb6">Hur potten används</strong>
             <div class="fs-md lh-1_8">
-                Generellt påslag: <strong>${kr(out.generellCost)}</strong> &nbsp;·&nbsp; Riktade potter: <strong>${kr(out.riktadCost)}</strong><br>
-                Varav till kvinnodominerade grupper (${esc(kvDomGransText())}): <strong>${varavKvDom == null ? "–" : kr(varavKvDom)}</strong>${equityPctOfPott != null ? ` <span class="f-dampad">(${svPct(equityPctOfPott, 0)} av potten)</span>` : ""}
+                Generellt påslag: <strong>${kr2(out.generellCost)}</strong> &nbsp;·&nbsp; Riktade potter: <strong>${kr2(out.riktadCost)}</strong><br>
+                Varav till kvinnodominerade grupper (${esc(kvDomGransText())}): <strong>${varavKvDom == null ? "–" : kr2(varavKvDom)}</strong>${equityPctOfPott != null ? ` <span class="f-dampad">(${svPct(equityPctOfPott, 0)} av potten)</span>` : ""}
             </div>
             <p class="text-dampad-xs marg-8-0-0">Andelen till kvinnodominerade grupper visar ungefär hur mycket av översynen som riktas mot skillnaderna i likvärdigt arbete.</p>
         </div>` : "";
@@ -15707,7 +15768,7 @@ function updateForecast() {
         <div class="card bak-varning-yta ram-v-3-varning marg-0-0-14">
             <strong class="block-mb6">${ikon("statusVarning")} Spillover: ${leaps.length} grupp${leaps.length > 1 ? "er" : ""} går om en tidigare högre grupp</strong>
             <ul class="fs-sm lh-1_6 marg-4-0-0-18">
-                ${leaps.slice(0, 6).map((l) => `<li><strong>${esc(l.bas)}·${esc(l.aid)}</strong> (median ${kr(l.gammalA)} till ${kr(l.nyA)}) passerar <strong>${esc(l.overBas)}·${esc(l.overAid)}</strong> (${kr(l.gammalB)} till ${kr(l.nyB)})</li>`).join("")}
+                ${leaps.slice(0, 6).map((l) => `<li><strong>${esc(l.bas)}·${esc(l.aid)}</strong> (median ${kr2(l.gammalA)} till ${kr2(l.nyA)}) passerar <strong>${esc(l.overBas)}·${esc(l.overAid)}</strong> (${kr2(l.gammalB)} till ${kr2(l.nyB)})</li>`).join("")}
                 ${leaps.length > 6 ? `<li>… och ${leaps.length - 6} till.</li>` : ""}
             </ul>
             <p class="text-dampad-xs marg-8-0-0">En grupp som passerar en tidigare högre betald grupp kan skapa ny skevhet — kontrollera att omkastningen är sakligt motiverad.</p>
@@ -16151,14 +16212,14 @@ function _renderScenarioCompare() {
     host.innerHTML = '<p class="text-dampad-sm marg-0">Spara två scenarier (A/B) för att jämföra utfall sida vid sida.</p>';
     return;
   }
-  const kr = (n) => svKr(n);
+  const kr2 = (n) => svKr(n);
   const pc = (n) => n == null ? "–" : (n >= 0 ? "+" : "") + svPct(n, 1);
   const nu = konAntal(getData());
   const konOk = (s) => _konFarRedovisas(s.nKv ?? nu.nKv, s.nMa ?? nu.nMa);
   const maskerat = [sc.A, sc.B].some((s) => s && s.summary.rawGapEfter != null && !konOk(s));
   const K = kTroskel();
   const tillKvDom = (s) => Array.isArray(s.grupper) ? _fcVaravKvDom(_fcUtfallsrader(s.grupper, K), s.summary.equityCost, K) : null;
-  const col = (s) => s ? `<td class="t-hoger">${kr(s.summary.använt)}</td><td class="t-hoger">${kr(s.summary.totalKostnad)}</td><td class="t-hoger">${andelAvMan(konOk(s) ? s.summary.rawGapEfter : null)}</td><td class="t-hoger">${pc(s.summary.oforklaratEfter)}</td><td class="t-hoger">${kr(tillKvDom(s))}</td><td class="t-hoger">${s.summary.leapfrog}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
+  const col = (s) => s ? `<td class="t-hoger">${kr2(s.summary.använt)}</td><td class="t-hoger">${kr2(s.summary.totalKostnad)}</td><td class="t-hoger">${andelAvMan(konOk(s) ? s.summary.rawGapEfter : null)}</td><td class="t-hoger">${pc(s.summary.oforklaratEfter)}</td><td class="t-hoger">${kr2(tillKvDom(s))}</td><td class="t-hoger">${s.summary.leapfrog}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
   host.innerHTML = `<table class="data-table fs-sm">
         <thead><tr><th>Scenario</th><th class="t-hoger">Använt/mån</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kv. median i % av mäns, efter</th><th class="t-hoger">Oförkl. efter</th><th class="t-hoger">Till kv-dom</th><th class="t-hoger">Spillover</th></tr></thead>
         <tbody>
@@ -16294,9 +16355,9 @@ function _forecastSensitivity() {
     c.rawGap = null;
   });
   const maxGap = Math.max(...curve.map((c) => Math.abs(c.rawGap || 0)), 0.01);
-  const kr = (n) => svKr(n);
+  const kr2 = (n) => svKr(n);
   host.innerHTML = `<table class="data-table fs-sm"><thead><tr><th>Minskning av skillnaderna</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kvinnors median i % av mäns</th><th>　</th></tr></thead><tbody>
-        ${curve.map((c) => `<tr><td>${svPct(c.fraction * 100, 0)}</td><td class="t-hoger">${kr(c.kostnad)}</td><td class="t-hoger">${c.rawGap == null ? "–" : andelAvMan(c.rawGap)}</td><td><div class="rund-4 hojd-9 min-bredd-2 bg-info" data-stil-bredd="${(Math.abs(c.rawGap || 0) / maxGap * 100).toFixed(0)}%"></div></td></tr>`).join("")}
+        ${curve.map((c) => `<tr><td>${svPct(c.fraction * 100, 0)}</td><td class="t-hoger">${kr2(c.kostnad)}</td><td class="t-hoger">${c.rawGap == null ? "–" : andelAvMan(c.rawGap)}</td><td><div class="rund-4 hojd-9 min-bredd-2 bg-info" data-stil-bredd="${(Math.abs(c.rawGap || 0) / maxGap * 100).toFixed(0)}%"></div></td></tr>`).join("")}
     </tbody></table><p class="text-dampad-xs marg-6-0-0">Avtagande avkastning: visar hur den råa skillnaden och kostnaden utvecklas när skillnaderna i likvärdigt arbete minskar allt mer.${_fcParNot ? " " + esc(_fcParNot) : ""}</p>`;
   tillampaDataStil(host);
 }
@@ -16315,7 +16376,7 @@ function _forecastRemediation() {
   );
   const rem = individlyft(d, { gapPct: isFinite(gp) ? gp : 5, minMen: kTroskel() });
   state.forecast._remediation = rem;
-  const kr = (n) => svKr(n);
+  const kr2 = (n) => svKr(n);
   if (!rem.count) {
     host.innerHTML = `<span class="farg-ok">${ikon("bock")} Inga kvinnor ligger mer än tröskeln under sitt jämförelsevärde.</span>`;
     return;
@@ -16323,8 +16384,8 @@ function _forecastRemediation() {
   const K = kTroskel();
   const visade = rem.perGroup.filter((g) => g.count >= K);
   const dolda = rem.perGroup.length - visade.length;
-  const rowsHtml = visade.slice(0, 12).map((g) => `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.count}</td><td class="t-hoger">${kr(g.cost)}/mån</td></tr>`).join("");
-  const summa = rem.count >= K ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(periodkostnad(rem.totalCost, state.costSettings))} inkl. PO/period).` : `Kostnaden visas inte, eftersom färre än ${K} ${personOrd(K)} berörs.`;
+  const rowsHtml = visade.slice(0, 12).map((g) => `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.count}</td><td class="t-hoger">${kr2(g.cost)}/mån</td></tr>`).join("");
+  const summa = rem.count >= K ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr2(rem.totalCost)}/mån</strong> (≈ ${kr2(periodkostnad(rem.totalCost, state.costSettings))} inkl. PO/period).` : `Kostnaden visas inte, eftersom färre än ${K} ${personOrd(K)} berörs.`;
   const doldaNot = dolda ? `<p class="k-mask-note">${dolda} ${dolda === 1 ? "grupp" : "grupper"} där färre än ${K} kvinnor berörs ${rem.count >= K ? "ingår i summan men " : ""}redovisas inte per grupp och blir inga riktade rader.</p>` : "";
   host.innerHTML = `<div class="fs-sm marg-b-8"><strong>${rem.count}</strong> individer (kvinnor) ligger mer än tröskeln under sitt jämförelsevärde. ${summa}</div>
         ${rowsHtml ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th>${stor(T.kod.en)}</th><th class="t-hoger">Antal</th><th class="t-hoger">Kostnad</th></tr></thead><tbody>${rowsHtml}</tbody></table>` : ""}${doldaNot}
@@ -16370,7 +16431,7 @@ function _exportForecastExport() {
   }
   const out = _fcBeraknaUtfall(getData());
   _fcKandidater();
-  const kr = (n) => Math.round(n);
+  const kr2 = (n) => Math.round(n);
   const K = kTroskel();
   const konOk = _konFarRedovisasFor(getData());
   const exportGrupper = out.alloc.perGroup.filter((g) => Math.abs(g.kostnad) > 0.5).sort((a, b) => b.kostnad - a.kostnad);
@@ -16383,22 +16444,22 @@ function _exportForecastExport() {
     ["", ""],
     ["Budgetläge", state.forecast.budget.mode === "kr" ? "Krontal/mån" : "% av lönesumman"],
     ["Budgetvärde", state.forecast.budget.value],
-    ["Pott (kr/mån)", out.pottAngiven ? kr(out.pott) : "ingen pott angiven"],
-    ["Använt (kr/mån)", kr(out.använt)],
-    ["Kvar att fördela (kr/mån)", out.kvar != null ? kr(out.kvar) : "–"],
+    ["Pott (kr/mån)", out.pottAngiven ? kr2(out.pott) : "ingen pott angiven"],
+    ["Använt (kr/mån)", kr2(out.använt)],
+    ["Kvar att fördela (kr/mån)", out.kvar != null ? kr2(out.kvar) : "–"],
     ["Generellt påslag", (state.forecast.generell.value || 0) + (state.forecast.generell.mode === "kr" ? " kr/mån" : " %")],
     ["Minsta antal personer i gruppen för riktning", state.forecast.minGroupN || 0],
     ...state.forecast.targets.map((t, i) => [`Riktad pott ${i + 1}`, `BAS ${t.bas}, ${t.aid === "*" ? `alla ${T.enhet.fl}` : "AID " + t.aid}${t.kon === "kvinna" ? ", bara kvinnor" : t.kon === "man" ? ", bara män" : ""}${t.lonCap > 0 ? `, löner under ${Math.round(t.lonCap)} kr` : ""}: ${t.mode === "till" ? `höj till ${t.value} kr/mån` : t.mode === "kr" ? `${t.value} kr/mån` : `${t.value} % av grupplön`}${t.mode === "till" ? "" : ` (${{ flat: "lika %", lowest: "lägst först", target: "mot målnivå" }[t.dist] || t.dist})`}`]),
     ..._fcParNot ? [["Utelämnade kandidatpar (likvärdigt arbete)", _fcParNot]] : [],
     ["Avrundning av nya löner (kr)", state.forecast.roundStep || 0],
     ["Stegvis plan (antal år)", state.forecast.years || 1],
-    ["Generellt (kr/mån)", kr(out.generellCost || 0)],
-    ["Riktat (kr/mån)", kr(out.riktadCost || 0)],
-    ["Varav till kvinnodominerade grupper (kr/mån)", varavKvDom == null ? "–" : kr(varavKvDom || 0)],
+    ["Generellt (kr/mån)", kr2(out.generellCost || 0)],
+    ["Riktat (kr/mån)", kr2(out.riktadCost || 0)],
+    ["Varav till kvinnodominerade grupper (kr/mån)", varavKvDom == null ? "–" : kr2(varavKvDom || 0)],
     ["Spillover-varningar (grupper som går om en högre grupp)", hittaOmkorningar(out.alloc.perGroup.filter((g) => !isKMasked(g.n) && !utfall.invikta.includes(g))).length],
-    ["Total kostnad (inkl. PO + period)", kr(out.totalKostnad)],
-    ["Lönesumma före (kr/mån)", kr(out.lonsummaFore)],
-    ["Lönesumma efter (kr/mån)", kr(out.lonsummaEfter)],
+    ["Total kostnad (inkl. PO + period)", kr2(out.totalKostnad)],
+    ["Lönesumma före (kr/mån)", kr2(out.lonsummaFore)],
+    ["Lönesumma efter (kr/mån)", kr2(out.lonsummaEfter)],
     ["Kvinnors medianlön i % av mäns, före", !konOk || out.rawGapFore == null ? "–" : +(100 + out.rawGapFore).toFixed(1)],
     ["Kvinnors medianlön i % av mäns, efter", !konOk || out.rawGapEfter == null ? "–" : +(100 + out.rawGapEfter).toFixed(1)],
     ...konOk ? [] : [["Könsuppdelade mått", _konUtelamnatNot()]],
@@ -16414,14 +16475,14 @@ function _exportForecastExport() {
       g.aid,
       g.n,
       +g.andelKv.toFixed(0),
-      masked ? dold : kr(g.gammalMedian),
-      masked ? dold : kr(g.nyMedian),
+      masked ? dold : kr2(g.gammalMedian),
+      masked ? dold : kr2(g.nyMedian),
       masked ? "" : +(100 * (g.nyMedian / g.gammalMedian - 1)).toFixed(1),
-      masked ? "" : kr(g.kostnad)
+      masked ? "" : kr2(g.kostnad)
     ];
   });
   const s = utfall.samlad;
-  if (s && s.kostnad != null) body.push(["Kostnad för grupper under tröskeln", `${s.antalGrupper} ${s.antalGrupper === 1 ? "grupp" : "grupper"}, ${s.n} ${personOrd(s.n)}`, "", "", "", "", "", kr(s.kostnad)]);
+  if (s && s.kostnad != null) body.push(["Kostnad för grupper under tröskeln", `${s.antalGrupper} ${s.antalGrupper === 1 ? "grupp" : "grupper"}, ${s.n} ${personOrd(s.n)}`, "", "", "", "", "", kr2(s.kostnad)]);
   if (s) body.push([], [_fcUtfallsNot(utfall, K)]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), "Sammanfattning");
@@ -17771,7 +17832,7 @@ function _lpForskjutning(aid, bas) {
   return (froAvText(aid + "|" + bas) % 1e3 / 1e3 - 0.5) * 0.36;
 }
 function _lpBandkartaFigur(bas) {
-  const x = (b) => "BAS " + b.bas, kr = (v) => talformat(v, "kr"), utanKr = (v) => talformat(v, "kr", { enhet: false });
+  const x = (b) => "BAS " + b.bas, kr2 = (v) => talformat(v, "kr"), utanKr = (v) => talformat(v, "kr", { enhet: false });
   const refNamn = referensKortnamn(), org = plotNamn(orgNamn());
   const refMed = (b) => b.pol.med > 0 ? b.pol.med : (b.pol.p10 + b.pol.p90) / 2;
   const medOrgBand = bas.filter((b) => b.orgBand);
@@ -17804,7 +17865,7 @@ function _lpBandkartaFigur(bas) {
         farg: PALETTE.semantic.spann,
         tjocklek: 14,
         data: bas.map((b) => ({ x: x(b), lag: b.pol.p10, hog: b.pol.p90, bas: b.bas, markering: markeringFor(b.bas) })),
-        tips: (d) => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr(d.hog)}`]]
+        tips: (d) => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr2(d.hog)}`]]
       },
       {
         marke: "punkt",
@@ -17814,7 +17875,7 @@ function _lpBandkartaFigur(bas) {
         storlek: 4.5,
         legend: false,
         data: bas.map((b) => ({ x: x(b), y: refMed(b), bas: b.bas })),
-        tips: (d) => [[d.x], [`${refNamn} median`, kr(d.y)]]
+        tips: (d) => [[d.x], [`${refNamn} median`, kr2(d.y)]]
       },
       {
         marke: "intervall",
@@ -17824,7 +17885,7 @@ function _lpBandkartaFigur(bas) {
         tjocklek: 6,
         // Spannets antal heter `antal`, inte `n`: `n` är en yrkesgrupps antal, som filtret Antal personer i gruppen läser.
         data: medOrgBand.map((b) => ({ x: x(b), lag: b.orgBand.p10, hog: b.orgBand.p90, med: b.orgBand.med, antal: b.orgBand.n, bas: b.bas, markering: markeringFor(b.bas) })),
-        tips: (d) => [[d.x], ["Organisationen", `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr(d.hog)}`], ["Antal", String(d.antal)]]
+        tips: (d) => [[d.x], ["Organisationen", `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr2(d.hog)}`], ["Antal", String(d.antal)]]
       },
       // Yrkesgrupperna i tre klasser efter könsfördelning (som i Likvärdigt arbete) i stället för en färgskala:
       // tre färger går att läsa mot spannen, en glidande skala gör det inte.
@@ -17834,7 +17895,7 @@ function _lpBandkartaFigur(bas) {
         farg,
         kant: FARG.vit,
         data: pts.filter((p) => hor(p.kvAndel)).map((p) => ({ ...p, konsdom: klass })),
-        tips: (d) => [[d.yrke], [`BAS ${d.bas}`, `median ${kr(d.y)}`], ["Kvinnor", talformat(d.kvAndel, "antal") + " %"], ["Referens", d.niva], ["Antal", String(d.n)]]
+        tips: (d) => [[d.yrke], [`BAS ${d.bas}`, `median ${kr2(d.y)}`], ["Kvinnor", talformat(d.kvAndel, "antal") + " %"], ["Referens", d.niva], ["Antal", String(d.n)]]
       }))
     ].filter((l) => l.data.length)
   };
@@ -18025,7 +18086,7 @@ function _lpBenamning(g) {
   return rest === "" || /^\s/.test(rest) ? rest.trim() : yrke;
 }
 function _lpTableHtml(model) {
-  const kr = (v) => svKr(v);
+  const kr2 = (v) => svKr(v);
   const rows = [];
   model.byBas.forEach((b) => {
     rows.push(`<tr class="group-header"><td colspan="7">BAS ${esc(b.bas)}${b.pol ? "" : " — <em>ingen policyreferens</em>"}</td></tr>`);
@@ -18048,7 +18109,7 @@ function _lpTableHtml(model) {
       const s = g.stats, c = g.compliance;
       const posPct = s && s.position != null ? s.position * 100 : null;
       const posKlass = posPct == null ? "" : posPct < 0 ? " f-kritisk halvfet" : posPct > 100 ? " fg-info" : "";
-      rows.push(`<tr><td>${name}</td><td class="t-hoger">${g.n}</td><td class="tabelltal ta-hoger" data-sort-value="${s.median}">${kr(s.median)}</td><td class="t-tal">${kr(g.pol.p10)}–${kr(g.pol.p90)}</td><td class="t-tal${posKlass}" data-sort-value="${posPct == null ? "" : posPct}">${posPct == null ? "Spann för smalt" : svPct(posPct, 0)}</td><td class="t-mitt" data-sort-value="${c ? c.under : 0}">${c ? `${c.under} av ${c.n}` : "–"}</td><td class="t-mitt">${esc(g.level || "–")}</td></tr>`);
+      rows.push(`<tr><td>${name}</td><td class="t-hoger">${g.n}</td><td class="tabelltal ta-hoger" data-sort-value="${s.median}">${kr2(s.median)}</td><td class="t-tal">${kr2(g.pol.p10)}–${kr2(g.pol.p90)}</td><td class="t-tal${posKlass}" data-sort-value="${posPct == null ? "" : posPct}">${posPct == null ? "Spann för smalt" : svPct(posPct, 0)}</td><td class="t-mitt" data-sort-value="${c ? c.under : 0}">${c ? `${c.under} av ${c.n}` : "–"}</td><td class="t-mitt">${esc(g.level || "–")}</td></tr>`);
     });
     if (utelamnade.length) {
       rows.push(`<tr><td colspan="7">${kMaskNote(utelamnade, `${T.enhet.en}|${T.enhet.fl}`, Math.min(LP_COUNT_TIER_MIN, kTroskel()))}</td></tr>`);
@@ -18081,7 +18142,7 @@ function _lpTableHtml(model) {
 function _lpExcelBlad() {
   const model = buildLonepolitikModel();
   if (!model.hasPolicy || !model.byBas.length) return null;
-  const k = kTroskel(), r1 = (v) => Math.round(v * 10) / 10, kr = (v) => Math.round(v);
+  const k = kTroskel(), r1 = (v) => Math.round(v * 10) / 10, kr2 = (v) => Math.round(v);
   const pct = (a, n) => n ? r1(100 * a / n) : "";
   const ut = [
     [`Lönerna mot ${referensNamn()} (fliken Löneläget)`],
@@ -18112,9 +18173,9 @@ function _lpExcelBlad() {
         g.aid,
         _lpBenamning(g),
         g.n,
-        s ? kr(s.median) : "",
-        kr(g.pol.p10),
-        kr(g.pol.p90),
+        s ? kr2(s.median) : "",
+        kr2(g.pol.p10),
+        kr2(g.pol.p90),
         s && s.position != null ? r1(s.position * 100) : "",
         c ? c.under : "",
         g.level || ""
@@ -18279,9 +18340,9 @@ function generateBenchmark() {
   const matchEl = document.getElementById("benchmark-matchning-info");
   if (matchEl) matchEl.textContent = matchningSammanfattning(rader);
   const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
-  const kr = (v) => v == null ? "–" : fmt.format(Math.round(v));
+  const kr2 = (v) => v == null ? "–" : fmt.format(Math.round(v));
   const diffCell = (dd) => dd == null ? '<td class="num muted" data-sort-value="">–</td>' : `<td class="num ${dd.pct < 0 ? "jmf-neg" : "jmf-pos"}" data-sort-value="${dd.pct.toFixed(2)}" title="${dd.kr >= 0 ? "+" : "−"}${fmt.format(Math.abs(dd.kr))}">${dd.pct >= 0 ? "+" : "−"}${Math.abs(dd.pct).toFixed(1).replace(".", ",")} %</td>`;
-  const block = (r, p) => `<td class="num jmf-block" data-sort-value="${r.org[p] ?? ""}">${kr(r.org[p])}</td><td class="num muted" data-sort-value="${r[kalla][p] ?? ""}">${kr(r[kalla][p])}</td>${diffCell(r.diff[kalla][p])}`;
+  const block = (r, p) => `<td class="num jmf-block" data-sort-value="${r.org[p] ?? ""}">${kr2(r.org[p])}</td><td class="num muted" data-sort-value="${r[kalla][p] ?? ""}">${kr2(r[kalla][p])}</td>${diffCell(r.diff[kalla][p])}`;
   const matchSort = { "aid-bas": 1, aid: 2 };
   let html = "", curBas = null;
   for (const r of rader) {
@@ -18375,7 +18436,7 @@ function _ritaJmfSpann(rader, kalla, namnLitet) {
 function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
   const etikett2 = _jmfEtikett, ref = (r) => r[kalla];
   const harBand = (v) => v.p10 != null && v.p90 != null;
-  const kr = (v) => talformat(v, "kr");
+  const kr2 = (v) => talformat(v, "kr");
   const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
   return {
     beskrivning: `Organisationens lönespann från P10 till P90 per ${T.enhet.en}, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
@@ -18393,7 +18454,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         farg: PALETTE.semantic.spann,
         tjocklek: 14,
         data: visa.filter((r) => harBand(ref(r))).map((r) => ({ y: etikett2(r), lag: ref(r).p10, hog: ref(r).p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
-        tips: (d) => [[d.y], [`${refNamn} P10–P90`, `${talformat(d.lag, "kr", { enhet: false })}–${kr(d.hog)}`]]
+        tips: (d) => [[d.y], [`${refNamn} P10–P90`, `${talformat(d.lag, "kr", { enhet: false })}–${kr2(d.hog)}`]]
       },
       {
         marke: "intervall",
@@ -18402,7 +18463,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         farg: PALETTE.serie[0],
         tjocklek: 7,
         data: visa.map((r) => ({ y: etikett2(r), lag: r.org.p10, hog: r.org.p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
-        tips: (d) => [[d.y], ["Organisationen", `${talformat(d.lag, "kr", { enhet: false })}–${kr(d.hog)}`]]
+        tips: (d) => [[d.y], ["Organisationen", `${talformat(d.lag, "kr", { enhet: false })}–${kr2(d.hog)}`]]
       },
       {
         marke: "punkt",
@@ -18411,7 +18472,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         farg: PALETTE.semantic.linje,
         storlek: 5,
         data: visa.filter((r) => ref(r).median != null).map((r) => ({ y: etikett2(r), x: ref(r).median, ..._jmfUrvalFalt(r) })),
-        tips: (d) => [[d.y], [`${refNamn} median`, kr(d.x)]]
+        tips: (d) => [[d.y], [`${refNamn} median`, kr2(d.x)]]
       },
       {
         marke: "punkt",
@@ -18419,7 +18480,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         farg: PALETTE.semantic.trend,
         storlek: 4.5,
         data: visa.map((r) => ({ y: etikett2(r), x: r.org.median, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
-        tips: (d) => [[d.y], ["Organisationen median", kr(d.x)]]
+        tips: (d) => [[d.y], ["Organisationen median", kr2(d.x)]]
       }
     ].filter((l) => l.data.length)
   };
@@ -18515,7 +18576,7 @@ function renderStatistikLage() {
   ritaFigur(el, _jmfStatlageFigur(rader), { hojd: 460 });
 }
 function _jmfStatlageFigur(rader) {
-  const x = (r) => "BAS " + r.bas, kr = (v) => talformat(v, "kr"), utanKr = (v) => v == null ? "–" : talformat(v, "kr", { enhet: false });
+  const x = (r) => "BAS " + r.bas, kr2 = (v) => talformat(v, "kr"), utanKr = (v) => v == null ? "–" : talformat(v, "kr", { enhet: false });
   const ordning = [...new Set(rader.map(x))];
   const pts = rader.map((r) => ({
     x: x(r),
@@ -18537,8 +18598,8 @@ function _jmfStatlageFigur(rader) {
     [d.yrke],
     ["BAS", d.bas],
     ["Läget i spannet", `${svTal(d.y, 0)} %`],
-    ["Organisationens median", kr(d.median)],
-    ["Statistiken", `P10 ${utanKr(d.stat.p10)} · median ${utanKr(d.stat.median)} · P90 ${kr(d.stat.p90)}`],
+    ["Organisationens median", kr2(d.median)],
+    ["Statistiken", `P10 ${utanKr(d.stat.p10)} · median ${utanKr(d.stat.median)} · P90 ${kr2(d.stat.p90)}`],
     ["Matchning", d.matchning],
     ["Kvinnor", talformat(d.kvAndel, "antal") + " %"],
     ["Antal", String(d.n)]
@@ -18893,7 +18954,7 @@ function _rrHantelFigur(rader, { harStatistik }) {
     { namn: "Organisationen", nyckel: "org", farg: PALETTE.semantic.mork }
   ];
   const steg = serier.length === 3 ? 0.27 : 0.2;
-  const kr = (v) => talformat(v, "kr");
+  const kr2 = (v) => talformat(v, "kr");
   const lager = serier.flatMap((s, i) => {
     const forskjutning = (i - (serier.length - 1) / 2) * steg;
     const med = rader.map((r) => ({ y: r.namn, bas: r.bas, yrke: r.yrke, sektor: r.aid != null ? sektorsnamn(r.aid) : void 0, n: r.n, v: r[s.nyckel] })).filter((d) => d.v && d.v.median != null);
@@ -18907,7 +18968,7 @@ function _rrHantelFigur(rader, { harStatistik }) {
         tjocklek: 8,
         opacitet: 0.45,
         data: med.filter((d) => d.v.p10 != null && d.v.p90 != null).map((d) => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, forskjutning, ...falt(d) })),
-        tips: (d) => [[d.y], [s.namn], ["P10–P90", `${talformat(d.lag, "kr", { enhet: false })}–${kr(d.hog)}`]]
+        tips: (d) => [[d.y], [s.namn], ["P10–P90", `${talformat(d.lag, "kr", { enhet: false })}–${kr2(d.hog)}`]]
       },
       {
         marke: "punkt",
@@ -18916,7 +18977,7 @@ function _rrHantelFigur(rader, { harStatistik }) {
         farg: s.farg,
         storlek: 5,
         data: med.map((d) => ({ y: d.y, x: d.v.median, forskjutning, ...falt(d) })),
-        tips: (d) => [[d.y], [s.namn], ["Median", kr(d.x)]]
+        tips: (d) => [[d.y], [s.namn], ["Median", kr2(d.x)]]
       }
     ];
   });
@@ -19295,7 +19356,7 @@ function gruppNamn(g) {
   return yrke.startsWith(aid) ? yrke : `${aid} ${yrke}`;
 }
 function _gdRenderBody(d) {
-  const kr = (v) => svKr(v);
+  const kr2 = (v) => svKr(v);
   const pct = (v, dec = 1) => svPct(v, dec);
   const card = (title, inner, note) => `
         <div class="gd-card">
@@ -19309,30 +19370,30 @@ function _gdRenderBody(d) {
         <div class="gd-kpis">
             <div class="gd-kpi"><span>${d.n}</span><small>personer</small></div>
             <div class="gd-kpi"><span>${d.nKv} / ${d.nMa}</span><small>kvinnor / män (${svPct(kvPct, 0)} kv)${d.skr ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${skrDelText(d.skr.del)}</span>` : ""}</small></div>
-            <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
-            <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
+            <div class="gd-kpi"><span>${kr2(d.median)}</span><small>median</small></div>
+            <div class="gd-kpi"><span>${kr2(d.p10)} – ${kr2(d.p90)}</span><small>P10 – P90</small></div>
         </div>${basdossierKandidater().some((x) => x.bas === d.bas) ? `<p class="gd-note">${basdossierKnapp(d.bas, { text: `Hela BAS ${d.bas}` })} allt om intervallet på en sida</p>` : ""}${d.ansvar ? `
         <p class="gd-ansvar">Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} män ·
             Särskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} män</p>` : ""}`;
   const gapKlass = d.gap && d.gap.pct != null ? { granska: "farg-granska", folj: "fg-varning", balanserat: "fg-ok" }[gapStatusKI({ gap: d.gap.pct, ci: d.gap.ci, nKv: d.nKv, nMa: d.nMa }).niva] || "f-dampad" : "";
   const gapInner = d.gap && d.gap.pct != null ? `<div class="gd-big ${gapKlass}">${pct(d.gap.pct, 1)}${_direktivInline(d.gap.pct)}</div>
-           <p>Kvinnors median som andel av männens. Kvinnor ${kr(d.gap.medKv)} · Män ${kr(d.gap.medMa)}.</p>
+           <p>Kvinnors median som andel av männens. Kvinnor ${kr2(d.gap.medKv)} · Män ${kr2(d.gap.medMa)}.</p>
            ${d.gap.arsbelopp ? `<p class="gd-note">${esc(d.gap.arsbelopp)}</p>` : ""}
            ${d.gap.ci ? `<p class="gd-note">95 % bootstrap-KI: ${pct(d.gap.ci.lo)} – ${pct(d.gap.ci.hi)}${d.gap.ci.lo <= 100 && d.gap.ci.hi >= 100 ? " — intervallet rymmer 100 %, skillnaden är inte säkerställd." : ""}</p>` : ""}` : missing(`Kräver minst ${kTroskel()} av varje kön i gruppen (här ${d.nKv} kv / ${d.nMa} mä).`);
   const adjInner = d.adjusted && d.adjusted.status === "ok" ? `<div class="gd-big">${d.adjusted.gapPct >= 0 ? "+" : ""}${svPct(d.adjusted.gapPct, 1)}</div>
            <p>Åldersrensad skillnad för hela BAS ${esc(d.bas)} (gruppens arbetsvärderingsnivå), 95 % KI ${svTal(d.adjusted.ciLow, 1)} – ${svPct(d.adjusted.ciHigh, 1)}.</p>
            <p class="gd-note">Avser ${T.niva.bf}, inte enbart den här gruppen.</p>` : missing(`${stor(T.niva.bf)} har inte tillräcklig könsbalans för en åldersrensad skattning.`);
-  const polInner = d.pol ? `<p>Referens (${esc(referensKortnamn())}): <strong>${kr(d.pol.p10)} – ${kr(d.pol.p90)}</strong> (median ${kr(d.pol.med)}) · nivå: <strong>${esc(d.polLevel || "–")}</strong></p>
+  const polInner = d.pol ? `<p>Referens (${esc(referensKortnamn())}): <strong>${kr2(d.pol.p10)} – ${kr2(d.pol.p90)}</strong> (median ${kr2(d.pol.med)}) · nivå: <strong>${esc(d.polLevel || "–")}</strong></p>
            ${d.band && d.band.position != null ? `<div class="gd-big">${svPct(d.band.position * 100, 0)}</div><p>Gruppens median ligger så långt in i spannet (0 % = P10, 100 % = P90).</p>` : '<p class="gd-note">Spannet är för smalt för ett positionsmått.</p>'}
            ${d.compliance ? `<p>${d.compliance.under} av ${d.compliance.n} under P10 · ${d.compliance.over} över P90.</p>` : ""}` : missing(`Ingen policyreferens träffar denna grupp (varken på ${T.kod.en} eller ${T.niva.en}).`);
-  const lvRow = (p) => `<li>${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} — skillnad ${svPct(p.gapPct, 1)} (${kr(p.gapKr)})</li>`;
+  const lvRow = (p) => `<li>${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} — skillnad ${svPct(p.gapPct, 1)} (${kr2(p.gapKr)})</li>`;
   const lvNot = d.lvUtelamnade ? `<p class="gd-note">${esc(_parUtelamnadeNot(d.lvUtelamnade))}</p>` : "";
   const lvInner = d.lvAsSubject.length || d.lvAsComparator.length ? `${d.lvAsSubject.length ? `<p><strong>Gruppen är kvinnodominerad och jämförs mot:</strong></p><ul class="gd-list">${d.lvAsSubject.map(lvRow).join("")}</ul>` : ""}
            ${d.lvAsComparator.length ? `<p><strong>Gruppen används som ${T.jamforelse.en} för:</strong></p><ul class="gd-list">${d.lvAsComparator.map((p) => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} — skillnad ${svPct(p.gapPct, 1)}</li>`).join("")}</ul>` : ""}${lvNot}` : lvNot || missing("Gruppen ingår inte i någon jämförelse av likvärdigt arbete.");
-  const benchInner = d.bench && d.bench.median > 0 ? `<p>Extern median: <strong>${kr(d.bench.median)}</strong> · organisationen: <strong>${kr(d.median)}</strong>
+  const benchInner = d.bench && d.bench.median > 0 ? `<p>Extern median: <strong>${kr2(d.bench.median)}</strong> · organisationen: <strong>${kr2(d.median)}</strong>
            (${svPct((d.median / d.bench.median - 1) * 100, 1)})</p>` : missing("Ingen matchande rad i jämförelsestatistiken.");
   const prioInner = d.prio ? `<p>Status: <strong>${esc(d.prio.status || "–")}</strong> · avvikelse mot referens (${esc(d.prio.refSource || "–")}): <strong>${pct(d.prio.diffPct)}</strong></p>
-           <p>Kostnad att lyfta till referensens median: <strong>${kr(d.prio.annualGapTotal)}/år</strong> (${kr(d.prio.costPerPerson)}/person).</p>` : missing("Gruppen finns inte i prioriteringslistan (saknar referens eller ligger över den).");
+           <p>Kostnad att lyfta till referensens median: <strong>${kr2(d.prio.annualGapTotal)}/år</strong> (${kr2(d.prio.costPerPerson)}/person).</p>` : missing("Gruppen finns inte i prioriteringslistan (saknar referens eller ligger över den).");
   const hypInner = d.suggestions.length ? `<ul class="gd-list">${d.suggestions.map((s) => `<li class="gd-hyp gd-hyp-${esc(s.type || "info")}">${s.text}</li>`).join("")}</ul>` : missing("Inga regelbaserade hypoteser utlöstes för denna grupp.");
   return `
         <div class="gd-head">
@@ -19354,17 +19415,17 @@ function _gdRenderBody(d) {
         </div>`;
 }
 function gruppdossierAsText(d, { stampel = true } = {}) {
-  const kr = (v) => v == null || !isFinite(v) ? "–" : Math.round(v).toLocaleString("sv-SE") + " kr";
+  const kr2 = (v) => v == null || !isFinite(v) ? "–" : Math.round(v).toLocaleString("sv-SE") + " kr";
   const L = [];
   L.push(`Gruppdossier: ${gruppNamn(d)} – BAS ${d.bas}`);
-  L.push(`Antal: ${d.n} (${d.nKv} kvinnor, ${d.nMa} män) · median ${kr(d.median)} · P10–P90 ${kr(d.p10)}–${kr(d.p90)}`);
+  L.push(`Antal: ${d.n} (${d.nKv} kvinnor, ${d.nMa} män) · median ${kr2(d.median)} · P10–P90 ${kr2(d.p10)}–${kr2(d.p90)}`);
   if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${skrDelText(d.skr.del)} (${skrKallaKort()})`);
   if (d.ansvar) L.push(`Ansvar: ledningsansvar ${d.ansvar.ledning.kv} kvinnor / ${d.ansvar.ledning.ma} män · särskilt uppdrag ${d.ansvar.uppdrag.kv} kvinnor / ${d.ansvar.uppdrag.ma} män`);
   if (d.gap && d.gap.pct != null) L.push(`Ojusterad löneskillnad: ${svPct(d.gap.pct, 1)} av männens median`);
   if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
   if (d.adjusted && d.adjusted.status === "ok") L.push(`Skillnad när åldern räknats bort (BAS ${d.bas}): ${svPct(d.adjusted.gapPct, 1)}`);
-  if (d.pol) L.push(`Referensspann ${referensKortnamn()}: ${kr(d.pol.p10)}–${kr(d.pol.p90)} (${d.polLevel})` + (d.band && d.band.position != null ? ` · position ${svPct(d.band.position * 100, 0)}` : ""));
-  if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per år`);
+  if (d.pol) L.push(`Referensspann ${referensKortnamn()}: ${kr2(d.pol.p10)}–${kr2(d.pol.p90)} (${d.polLevel})` + (d.band && d.band.position != null ? ` · position ${svPct(d.band.position * 100, 0)}` : ""));
+  if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr2(d.prio.annualGapTotal)} per år`);
   const somText = (h) => htmlTillText(h);
   if (d.suggestions.length) {
     L.push("Frågor att undersöka:");
@@ -19599,7 +19660,7 @@ function rmSakligaSkalDelar(skal, dampad) {
   const pk = skal.perKategori;
   const kat = pk.kategorier.map((k) => [k.namn, k.summa, k.andel != null ? k.andel * 100 : null, k.antalGrupper]);
   const over = skal.grupper.filter((g) => g.sammanstallning.overstiger);
-  const kr = (v) => svKr(v);
+  const kr2 = (v) => svKr(v);
   return [
     { typ: "rubrik", niva: 3, text: "Sakliga skäl per grupp" },
     { typ: "tabell", kolumner: [
@@ -19611,7 +19672,7 @@ function rmSakligaSkalDelar(skal, dampad) {
       { rubrik: "Andel av skillnaden", typ: "pct0" },
       { rubrik: "Kommentar", typ: "text" }
     ], rader },
-    ...over.length ? [dampad(over.map((g) => `${g.grupp}: skälen är tillsammans större än skillnaden (${kr(g.sammanstallning.summa)} mot ${kr(g.skillnadKr)}).`).join(" ") + ` Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`)] : [],
+    ...over.length ? [dampad(over.map((g) => `${g.grupp}: skälen är tillsammans större än skillnaden (${kr2(g.sammanstallning.summa)} mot ${kr2(g.skillnadKr)}).`).join(" ") + ` Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`)] : [],
     { typ: "rubrik", niva: 3, text: "Sammanställning per kategori" },
     {
       typ: "tabell",
@@ -20685,11 +20746,11 @@ function _applyConfigSnapshot(cfg) {
   varningar.push(...gu.varningar);
   let kAndrad = false;
   if (tmp.kTroskel != null) {
-    const kr = sattKTroskel(tmp.kTroskel, { rita: false });
-    kAndrad = kr.andrad === true;
-    if (!kr.ok && kr.fel) {
-      varningar.push(`Filens minsta gruppstorlek ${tmp.kTroskel} används inte: ${kr.fel}`);
-      if (typeof _kVisaFel === "function") _kVisaFel(kr.fel);
+    const kr2 = sattKTroskel(tmp.kTroskel, { rita: false });
+    kAndrad = kr2.andrad === true;
+    if (!kr2.ok && kr2.fel) {
+      varningar.push(`Filens minsta gruppstorlek ${tmp.kTroskel} används inte: ${kr2.fel}`);
+      if (typeof _kVisaFel === "function") _kVisaFel(kr2.fel);
     }
   }
   state.bristAids = tmp.bristAids || /* @__PURE__ */ new Set();
@@ -21120,10 +21181,10 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
 function _abKr(v) {
   return svKr(v);
 }
-function _abForandringText(f, { kr = true } = {}) {
+function _abForandringText(f, { kr: kr2 = true } = {}) {
   if (!f || f.diff == null) return "–";
   const t = (v) => v > 0 ? "+" : v < 0 ? "−" : "±";
-  const belopp = kr ? `${t(f.diff)}${_abKr(Math.abs(f.diff))}` : `${t(f.diff)}${svTal(Math.abs(f.diff), 0)}`;
+  const belopp = kr2 ? `${t(f.diff)}${_abKr(Math.abs(f.diff))}` : `${t(f.diff)}${svTal(Math.abs(f.diff), 0)}`;
   return f.pct == null ? belopp : `${belopp} (${t(f.pct)}${svPct(Math.abs(f.pct), 1)})`;
 }
 function _abSpridningText(v) {
@@ -21198,8 +21259,8 @@ function renderArsjamforelse() {
     host.innerHTML = huvud;
     return;
   }
-  const kr = (v) => svKr(v);
-  const skriv = (v, typ) => v == null ? "–" : typ === "kr" ? kr(v) : typ === "pct" ? svPct(v, 1) : String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  const kr2 = (v) => svKr(v);
+  const skriv = (v, typ) => v == null ? "–" : typ === "kr" ? kr2(v) : typ === "pct" ? svPct(v, 1) : String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   const diff = (v, typ) => {
     if (v == null) return '<span class="f-dampad">–</span>';
     const tkn = v > 0 ? "+" : v < 0 ? "−" : "±";
@@ -21466,22 +21527,22 @@ function _bdForraText(f) {
   return "Inget årsbokslut inläst. Konfigurationsfilen bär bokslutet: läs in förra årets fil i Spara och jämför år, så står intervallets rad här.";
 }
 function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
-  const kr = _bdKr;
+  const kr2 = _bdKr;
   const ut = [];
-  const nyckeltal = [`${svTal(d.n, 0)} personer, ${d.nKv} kvinnor och ${d.nMa} män (${svPct(d.andelKv, 0)} kvinnor). Medianlön ${kr(d.median)}, P10–P90 ${kr(d.p10)}–${kr(d.p90)}.` + (d.konOk ? ` Kvinnors median ${kr(d.medKv)} och mäns ${kr(d.medMa)}: kvinnors median är ${svPct(d.kvotPct, 1)} av mäns.` : ` ${_konUtelamnatNot()}`)];
-  if (d.referens) nyckeltal.push(`Mot ${d.referens.namn}: P10 ${kr(d.p10)} mot ${kr(d.referens.p10)} (${_bdPctTecken(d.referens.diffPct.p10)}), median ${kr(d.median)} mot ${kr(d.referens.med)} (${_bdPctTecken(d.referens.diffPct.med)}), P90 ${kr(d.p90)} mot ${kr(d.referens.p90)} (${_bdPctTecken(d.referens.diffPct.p90)}).`);
+  const nyckeltal = [`${svTal(d.n, 0)} personer, ${d.nKv} kvinnor och ${d.nMa} män (${svPct(d.andelKv, 0)} kvinnor). Medianlön ${kr2(d.median)}, P10–P90 ${kr2(d.p10)}–${kr2(d.p90)}.` + (d.konOk ? ` Kvinnors median ${kr2(d.medKv)} och mäns ${kr2(d.medMa)}: kvinnors median är ${svPct(d.kvotPct, 1)} av mäns.` : ` ${_konUtelamnatNot()}`)];
+  if (d.referens) nyckeltal.push(`Mot ${d.referens.namn}: P10 ${kr2(d.p10)} mot ${kr2(d.referens.p10)} (${_bdPctTecken(d.referens.diffPct.p10)}), median ${kr2(d.median)} mot ${kr2(d.referens.med)} (${_bdPctTecken(d.referens.diffPct.med)}), P90 ${kr2(d.p90)} mot ${kr2(d.referens.p90)} (${_bdPctTecken(d.referens.diffPct.p90)}).`);
   ut.push({ rubrik: "Nyckeltal", rader: nyckeltal });
   const yrken = [];
   if (!d.yrken.length) yrken.push(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`);
   for (const y of d.yrken) {
     const antal = `${y.tot} personer (${y.nKv} kvinnor, ${y.nMa} män)`;
-    yrken.push((y.samlad ? `- ${y.yrke}: ${antal}. Gruppens median ${kr(y.medTot)}; könsuppdelningen är för liten för en jämförelse.${y.ocksaI.length && y.status !== "liten" ? ` ${BD_STATUS_TEXT[y.status]}.` : ""}` : `- ${y.yrke}: ${antal}. Kvinnor ${kr(y.medKv)}, män ${kr(y.medMa)}; kvinnors median ${svPct(y.kvotPct, 1)} av mäns${direktivMarkering(y.kvotPct) ? ` (${_STS_DIR_ETIKETT}, direktivmarkering)` : ""}. ${BD_STATUS_TEXT[y.status]}.`) + (y.ocksaI.length ? ` ${_bdHelaYrketNot(y)}.` : ""));
+    yrken.push((y.samlad ? `- ${y.yrke}: ${antal}. Gruppens median ${kr2(y.medTot)}; könsuppdelningen är för liten för en jämförelse.${y.ocksaI.length && y.status !== "liten" ? ` ${BD_STATUS_TEXT[y.status]}.` : ""}` : `- ${y.yrke}: ${antal}. Kvinnor ${kr2(y.medKv)}, män ${kr2(y.medMa)}; kvinnors median ${svPct(y.kvotPct, 1)} av mäns${direktivMarkering(y.kvotPct) ? ` (${_STS_DIR_ETIKETT}, direktivmarkering)` : ""}. ${BD_STATUS_TEXT[y.status]}.`) + (y.ocksaI.length ? ` ${_bdHelaYrketNot(y)}.` : ""));
   }
   if (d.yrkenUtelamnade.length) yrken.push(`Redovisas inte (färre än ${d.k} ${personOrd(d.k)}): ${d.yrkenUtelamnade.join(", ")}.`);
   if (d.ejJamforbara.length) yrken.push(`Inte jämförbara (ett kön har färre än två personer): ${d.ejJamforbara.join(", ")}.`);
   ut.push({ rubrik: `${stor(T.enhet.bfl)} i intervallet`, rader: yrken });
   const likvardigt = [];
-  const par = (p) => `- ${gruppNamn({ aid: p.kvAid, yrke: p.kvLabel })} (BAS ${p.kvBas}) mot ${gruppNamn({ aid: p.maAid, yrke: p.maLabel })} (BAS ${p.maBas}): ${kr(p.kvMedian)} mot ${kr(p.maMedian)}, skillnad ${kr(p.gapKr)} (${svPct(p.gapPct, 1)}).`;
+  const par = (p) => `- ${gruppNamn({ aid: p.kvAid, yrke: p.kvLabel })} (BAS ${p.kvBas}) mot ${gruppNamn({ aid: p.maAid, yrke: p.maLabel })} (BAS ${p.maBas}): ${kr2(p.kvMedian)} mot ${kr2(p.maMedian)}, skillnad ${kr2(p.gapKr)} (${svPct(p.gapPct, 1)}).`;
   if (d.par.kandidat.length) {
     likvardigt.push(`Kandidatpar där ${termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad" })} ligger i intervallet:`);
     d.par.kandidat.forEach((p) => likvardigt.push(par(p)));
@@ -21495,8 +21556,8 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
   ut.push({ rubrik: "Likvärdigt arbete i intervallet", rader: likvardigt });
   if (d.alder) {
     const alder = d.alder.map((a) => {
-      const kon = a.medKv != null ? `, kvinnor ${kr(a.medKv)}, män ${kr(a.medMa)}` : "";
-      return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ""}.`;
+      const kon = a.medKv != null ? `, kvinnor ${kr2(a.medKv)}, män ${kr2(a.medMa)}` : "";
+      return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr2(a.med)}${kon}` : ""}.`;
     });
     alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} ${personOrd(d.k)}.`);
     ut.push({ rubrik: "Ålder", rader: alder });
@@ -21504,7 +21565,7 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
   const f = d.forra;
   if (f.lage === "ok") {
     const r = f.rad;
-    ut.push({ rubrik: "Förra året", rader: [`Jämfört med ${f.ar}: antal ${r.n.forra ?? "–"} till ${r.n.nu ?? "–"}; ` + [["p10", "P10"], ["med", "median"], ["p90", "P90"]].map(([m, e]) => `${e} ${kr(r[m].forra)} till ${kr(r[m].nu)} (${_abForandringText(r[m])})`).join("; ") + "."] });
+    ut.push({ rubrik: "Förra året", rader: [`Jämfört med ${f.ar}: antal ${r.n.forra ?? "–"} till ${r.n.nu ?? "–"}; ` + [["p10", "P10"], ["med", "median"], ["p90", "P90"]].map(([m, e]) => `${e} ${kr2(r[m].forra)} till ${kr2(r[m].nu)} (${_abForandringText(r[m])})`).join("; ") + "."] });
   } else if (!(forraBaraMedBokslut && f.lage === "ingetBokslut")) ut.push({ rubrik: "Förra året", rader: [_bdForraText(f)] });
   return ut;
 }
@@ -21901,7 +21962,7 @@ function _afterDataLoaded() {
     setTimeout(() => {
       try {
         ritaLoneskillnadPerBas(lsBasVymodell());
-        renderKon("__ALLA__");
+        ritaAlderOchLon("__ALLA__");
         computeBootstrapCI();
         renderActionChecklist();
       } finally {
@@ -22970,7 +23031,7 @@ function _figHantel(model) {
 function _figBubbla(model) {
   const pts = model.celler.filter((c) => c.nKv + c.nMa > 0 && _exploreHar(c.value));
   const maxN = Math.max(1, ...pts.map((c) => c.n));
-  const kr = (v) => talformat(v, "kr");
+  const kr2 = (v) => talformat(v, "kr");
   return {
     beskrivning: "Bubbeldiagram: varje grupps andel kvinnor mot dess medianlön, med gruppens storlek som bubblans storlek. Samma värden finns i tabellen nedan.",
     legend: false,
@@ -22995,7 +23056,7 @@ function _figBubbla(model) {
         ..._exploreMarkering(model, c.rad),
         ...c.liten ? { liten: true } : {}
       })),
-      tips: (d) => [[d.rad], ["Andel kvinnor", talformat(d.x, "pct")], ["Median", kr(d.y)], ["Antal", String(d.n)]]
+      tips: (d) => [[d.rad], ["Andel kvinnor", talformat(d.x, "pct")], ["Median", kr2(d.y)], ["Antal", String(d.n)]]
     }]
   };
 }
@@ -23926,9 +23987,9 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   if (typeof explorerSynkaSmaLas === "function") explorerSynkaSmaLas();
   let kAndrad = false;
   if (installningar.kTroskel != null) {
-    const kr = sattKTroskel(installningar.kTroskel, { rita: false });
-    kAndrad = kr.andrad === true;
-    if (!kr.ok && kr.fel) varningar.push(`Paketets minsta gruppstorlek ${installningar.kTroskel} används inte: ${kr.fel}`);
+    const kr2 = sattKTroskel(installningar.kTroskel, { rita: false });
+    kAndrad = kr2.andrad === true;
+    if (!kr2.ok && kr2.fel) varningar.push(`Paketets minsta gruppstorlek ${installningar.kTroskel} används inte: ${kr2.fel}`);
   }
   if (nyttGolv != null && kInstalld() < nyttGolv) {
     kAndrad = sattKTroskel(nyttGolv, { fraga: false, rita: false }).andrad === true || kAndrad;
@@ -24507,7 +24568,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   populateSelects();
   generateRapport();
   ritaLoneskillnadPerBas(lsBasVymodell());
-  renderKon("__ALLA__");
+  ritaAlderOchLon("__ALLA__");
   updateCompliance();
   const reg = runOLSRegression();
   renderUnderlagetsKvalitet({ reg });
@@ -26192,7 +26253,7 @@ function renderStructure() {
     _stRitaTopp(d, null);
     return;
   }
-  const kr = (n) => svKr(n);
+  const kr2 = (n) => svKr(n);
   const k = kTroskel();
   const { konOk, rep, totKv, totAndel, dist, q, medGap, ma, meanGap } = _stMatt(d, k);
   const konNot = konOk ? "" : `<p class="k-mask-note">${esc(_konUtelamnatNot())}</p>`;
@@ -26202,7 +26263,7 @@ function renderStructure() {
         <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per ${T.niva.en}, i ordning A–Ö. Sjunker andelen kvinnor mot högre ${T.niva.fl} (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak). Det är en strukturell orsak till löneskillnaden.</p>
         ${repVisade.length ? `<table class="data-table st-088"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">Median</th><th class="t-hoger">Andel kvinnor</th><th class="bredd-34p">Andel kvinnor (mot ${svPct(totAndel, 0)} totalt)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead><tbody>
         ${repVisade.map((g) => {
-    return `<tr><td><strong>${esc(g.bas)}</strong></td><td class="t-hoger">${g.n}</td><td class="t-hoger">${kr(g.median)}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>
+    return `<tr><td><strong>${esc(g.bas)}</strong></td><td class="t-hoger">${g.n}</td><td class="t-hoger">${kr2(g.median)}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>
             <td><div class="bak-yta-stark rund-7 hojd-14 pos-relativ"><div class="pos-botten-2 pos-absolut pos-topp-2 bredd-2 bg-dampad" data-stil-vanster="${totAndel.toFixed(1)}%" title="Snitt ${svPct(totAndel, 0)}"></div><div class="rund-7 hojd-100p bg-accent" data-stil-bredd="${g.andelKv.toFixed(1)}%"></div></div></td>
             <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ""}</td></tr>`;
   }).join("")}
@@ -26225,7 +26286,7 @@ function renderStructure() {
       distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
             <div class="mb-10" id="chart-struktur-percentiler"></div>
             <table class="data-table st-088">${antalCaption(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
-            ${dist.map((x) => `<tr><td>P${x.p}</td><td class="t-hoger">${kr(x.kv)}</td><td class="t-hoger">${kr(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 bg-accent" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join("")}
+            ${dist.map((x) => `<tr><td>P${x.p}</td><td class="t-hoger">${kr2(x.kv)}</td><td class="t-hoger">${kr2(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 bg-accent" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join("")}
             </tbody></table>${tolk ? `<p class="fs-sm marg-8-0-0">${tolk}</p>` : ""}`;
       tillampaDataStil(distEl);
     }
@@ -26248,7 +26309,7 @@ function renderStructure() {
         <strong class="block-mb6">Andel kvinnor/män per lönekvartil</strong>
         <div class="mb-10" id="chart-struktur-kvartiler"></div>
         <table class="data-table st-088"><thead><tr><th>Kvartil</th><th>Lönespann</th><th class="t-hoger">n</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Andel kvinnor</th></tr></thead><tbody>
-        ${q.map((x) => `<tr><td>Q${x.q}${x.q === 1 ? " (lägst)" : x.q === 4 ? " (högst)" : ""}</td><td>${_kvartilSpann(x, kr)}</td><td class="t-hoger">${x.n}</td><td class="t-hoger">${antal(x.nKv)}</td><td class="t-hoger">${antal(x.nMa)}</td><td class="t-hoger">${x.andelKv == null ? "–" : svPct(x.andelKv, 0)}</td></tr>`).join("")}
+        ${q.map((x) => `<tr><td>Q${x.q}${x.q === 1 ? " (lägst)" : x.q === 4 ? " (högst)" : ""}</td><td>${_kvartilSpann(x, kr2)}</td><td class="t-hoger">${x.n}</td><td class="t-hoger">${antal(x.nKv)}</td><td class="t-hoger">${antal(x.nMa)}</td><td class="t-hoger">${x.andelKv == null ? "–" : svPct(x.andelKv, 0)}</td></tr>`).join("")}
         </tbody></table>${konNot}`;
   const kvEl = document.getElementById("chart-struktur-kvartiler");
   if (kvEl && q.length && q.every((x) => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(
@@ -26444,8 +26505,8 @@ function _strukturKvartilFor(rader, { beskrivning }) {
   return _strukturKvartilFigur(q, rader.length ? 100 * nKv / rader.length : 0, beskrivning);
 }
 function _strukturPercentilFigur(dist, omfang2) {
-  const namn = (x) => `P${x.p}${x.p === 10 ? " (lägst betalda)" : x.p === 50 ? " (median)" : x.p === 90 ? " (högst betalda)" : ""}`, kr = (v) => talformat(v, "kr");
-  const tips = (d) => [[d.y], ["Kvinnor", kr(d.r.kv)], ["Män", kr(d.r.ma)], ["Kvinnors lön i % av mäns", talformat(100 + d.r.gapPct, "pct")], ...kronorTipsRad(kronorSkillnad(d.r.kv, d.r.ma))];
+  const namn = (x) => `P${x.p}${x.p === 10 ? " (lägst betalda)" : x.p === 50 ? " (median)" : x.p === 90 ? " (högst betalda)" : ""}`, kr2 = (v) => talformat(v, "kr");
+  const tips = (d) => [[d.y], ["Kvinnor", kr2(d.r.kv)], ["Män", kr2(d.r.ma)], ["Kvinnors lön i % av mäns", talformat(100 + d.r.gapPct, "pct")], ...kronorTipsRad(kronorSkillnad(d.r.kv, d.r.ma))];
   const punkt = (serie, farg, falt, extra = {}) => ({
     marke: "punkt",
     serie,
@@ -26515,12 +26576,12 @@ function renderSektorer(d) {
     host.innerHTML = "";
     return;
   }
-  const kr = (n) => svKr(n);
+  const kr2 = (n) => svKr(n);
   const pc = (n) => n == null ? "–" : `${n.toFixed(1).replace(".", ",")} %`;
   const harLedning = tabell.some((r) => r.ledningKv != null || r.ledningMa != null);
   const justText = sektorJusteradText(tabell);
   const rader = tabell.map((r) => {
-    const loner = r.maskerad ? `<td colspan="3" class="muted">Färre än ${kTroskel()} ${personOrd(kTroskel())} — lönemått redovisas inte</td>` : r.samladMedian ? `<td colspan="2">Samlad median ${kr(r.medTot)}</td><td class="muted">Ett kön under ${kTroskel()}</td>` : `<td class="num" data-sort-value="${Math.round(r.medKv)}">${kr(r.medKv)}</td><td class="num" data-sort-value="${Math.round(r.medMa)}">${kr(r.medMa)}</td><td class="num" data-sort-value="${r.kvot.toFixed(1)}">${pc(r.kvot)}</td>`;
+    const loner = r.maskerad ? `<td colspan="3" class="muted">Färre än ${kTroskel()} ${personOrd(kTroskel())} — lönemått redovisas inte</td>` : r.samladMedian ? `<td colspan="2">Samlad median ${kr2(r.medTot)}</td><td class="muted">Ett kön under ${kTroskel()}</td>` : `<td class="num" data-sort-value="${Math.round(r.medKv)}">${kr2(r.medKv)}</td><td class="num" data-sort-value="${Math.round(r.medMa)}">${kr2(r.medMa)}</td><td class="num" data-sort-value="${r.kvot.toFixed(1)}">${pc(r.kvot)}</td>`;
     const just = r.justerat ? `${pc(100 + r.justerat.pct)} <small class="muted">(${pc(100 + r.justerat.low)}–${pc(100 + r.justerat.high)})</small>` : r.justeratSkal === "fa" ? '<span class="muted">För få</span>' : r.justeratSkal === "ejBas" ? `<span class="muted" title="${esc(_sektorEjBasTitel())}">Kan inte justeras för BAS</span>` : "–";
     const ledning = harLedning ? `<td class="num">${pc(r.ledningKv)} / ${pc(r.ledningMa)}</td>` : "";
     return `<tr><td><span class="sektor-namn">${esc(r.namn)}</span> <button type="button" class="row-cross-link" data-sektor="${esc(r.namn)}"
@@ -26529,9 +26590,9 @@ function renderSektorer(d) {
             <td class="num" data-sort-value="${r.antalAid}">${r.antalAid}</td><td class="num" data-sort-value="${r.punkter}">${r.punkter}</td>${ledning}</tr>`;
   }).join("");
   const andelNot = sektorAndelNot(andel, kTroskel());
-  const andelText = (!andel || andel.andel == null ? "" : Math.abs(andel.andel) < 0.01 ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror nästan inte alls
-               på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).</p>` : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror
-               ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`) + (andelNot ? `<p class="sektor-andel">${esc(andelNot)}</p>` : "");
+  const andelText = (!andel || andel.andel == null ? "" : Math.abs(andel.andel) < 0.01 ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen, kvinnor mot män (${kr2(andel.gapKr)} per månad), beror nästan inte alls
+               på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).</p>` : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen, kvinnor mot män (${kr2(andel.gapKr)} per månad), beror
+               ${kr2(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`) + (andelNot ? `<p class="sektor-andel">${esc(andelNot)}</p>` : "");
   host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${stor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
         <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>${justText.rubrik}</th>
         <th>${stor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? "<th>Ledningsansvar kv / män</th>" : ""}</tr></thead>
@@ -26668,7 +26729,7 @@ function _exportEuReportExport() {
     alert("Ingen data.");
     return;
   }
-  const kr = (n) => n == null ? "" : Math.round(n);
+  const kr2 = (n) => n == null ? "" : Math.round(n);
   const k = kTroskel();
   const { konOk, q, rep, dist, kv, ma, meanGap, medGap } = _stMatt(d, k);
   const DIREKTIV_RUBRIK = "Löneskillnad enligt direktivet (%), positivt tal = kvinnor lägre";
@@ -26698,7 +26759,7 @@ function _exportEuReportExport() {
     quart.push([]);
     quart.push([_konUtelamnatNot()]);
   }
-  const repArr = [["BAS", "n", "Median", "Andel kvinnor (%)", DIREKTIV_RUBRIK]].concat(rep.filter((g) => !isKMasked(g.n)).map((g) => [g.bas, g.n, kr(g.median), +g.andelKv.toFixed(0), g.gapPct == null ? "" : direktivRound(g.gapPct)]));
+  const repArr = [["BAS", "n", "Median", "Andel kvinnor (%)", DIREKTIV_RUBRIK]].concat(rep.filter((g) => !isKMasked(g.n)).map((g) => [g.bas, g.n, kr2(g.median), +g.andelKv.toFixed(0), g.gapPct == null ? "" : direktivRound(g.gapPct)]));
   const repUtelamnadeX = rep.filter((g) => isKMasked(g.n)).map((g) => g.bas);
   if (repUtelamnadeX.length) {
     repArr.push([]);
@@ -26711,7 +26772,7 @@ function _exportEuReportExport() {
   }
   const distArr = [
     ["Percentil", "Kvinnor", "Män", DIREKTIV_RUBRIK, "Antal kvinnor", "Antal män"],
-    ...dist.map((x) => ["P" + x.p, kr(x.kv), kr(x.ma), x.gapPct == null ? "" : direktivRound(x.gapPct), kv.length, ma.length])
+    ...dist.map((x) => ["P" + x.p, kr2(x.kv), kr2(x.ma), x.gapPct == null ? "" : direktivRound(x.gapPct), kv.length, ma.length])
   ];
   if (!konOk) {
     distArr.push([]);
@@ -26726,10 +26787,10 @@ function _exportEuReportExport() {
   XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
   if (typeof announceToScreenReader === "function") announceToScreenReader("EU-lönerapport exporterad.");
 }
-function _kvartilSpann(x, kr) {
-  if (x.undre == null) return `upp till ${kr(x.ovre)}`;
-  if (x.ovre == null) return `över ${kr(x.undre)}`;
-  return `${kr(x.undre)} – ${kr(x.ovre)}`;
+function _kvartilSpann(x, kr2) {
+  if (x.undre == null) return `upp till ${kr2(x.ovre)}`;
+  if (x.ovre == null) return `över ${kr2(x.undre)}`;
+  return `${kr2(x.undre)} – ${kr2(x.ovre)}`;
 }
 function uppstartStruktur() {
   (function wireStructure() {
@@ -26907,7 +26968,7 @@ function _excelDiagramBlad() {
     ["Bladet visar gränserna, inte statusen: statusen per grupp står i bladen EU-lönekartläggning och Lika arbete AID x BAS och väger samman gränserna med storleken, minst 3 %."]
   ]]);
   const arKv2 = arKvinna, arMa2 = arMan;
-  const alder = _konAlderGapRader(d.filter(arKv2), d.filter(arMa2), k);
+  const alder = alderGapRader(d.filter(arKv2), d.filter(arMa2), k);
   if (alder.visade.length) ut.push(["Löneskillnad per ålder", [
     ["Löneskillnad per åldersgrupp (Ålder & karriär)"],
     ...alder.dolda.length ? [[`Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${alder.dolda.join(", ")}.`]] : [],
@@ -27557,6 +27618,52 @@ function uppstartExcelexport() {
   document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAllToExcel);
 }
 
+// src/lib/vymodell-var-uppstar-gapet.js
+function andelAvSkillnaden(u, v) {
+  if (u.litetGap || !u.gap) return null;
+  const a = v / u.gap * 100;
+  return a >= 0 && a <= 100 ? a : null;
+}
+function gapTrappa(u) {
+  const delar = gapDelar(u.variabler || gapStandardVariabler());
+  let niva = u.gap;
+  return delar.map((d) => {
+    const v = u.delar[d.id], fore = niva;
+    niva -= v;
+    return {
+      del: d,
+      belopp: v,
+      fore,
+      efter: niva,
+      lag: Math.round(Math.min(fore, niva)),
+      hog: Math.round(Math.max(fore, niva)),
+      inom: d.variabel === null,
+      andel: andelAvSkillnaden(u, v)
+    };
+  });
+}
+function vymodellVarUppstarGapet(rader, { k, variabler }) {
+  if (!rader.length) return null;
+  const u = gapUppdelning(rader, { k, variabler });
+  if (!u) return { forFa: true };
+  const valda = u.variabler || variabler;
+  const delar = gapDelar(valda).map((d) => ({
+    ...d,
+    belopp: u.delar[d.id],
+    andel: u.litetGap ? null : u.delar[d.id] / u.gap * 100,
+    topp: u.topp[d.id],
+    ovrigaAntal: u.ovrigaAntal[d.id] || 0
+  }));
+  return {
+    forFa: false,
+    uppdelning: u,
+    variabler: valda,
+    medianKvot: konsMedianer(rader, { k }).kvotPct,
+    delar,
+    storst: Math.max(1, ...delar.map((d) => Math.abs(d.belopp)))
+  };
+}
+
 // src/app/68-var-uppstar-gapet.js
 var _GU_ATGARD = {
   bas: { atgard: "Hör till karriärvägar och rekrytering — inte till lönesättningen.", flik: "struktur", flikNamn: "Lönestruktur" },
@@ -27572,16 +27679,13 @@ var _GU_ATGARD = {
     ankareNamn: "Personer att granska"
   }
 };
-function _guDelarMedAtgard(variabler) {
-  return gapDelar(variabler).map((d) => ({ ...d, ..._GU_ATGARD[d.variabel || "inom"] }));
-}
 function gapVariabler() {
   return normaliseraGapVariabler(state.gapUppdelning && state.gapUppdelning.variabler, { harAlder: harAlder() }).variabler;
 }
 function sattGapVariabler(v, { rita = true } = {}) {
   const { variabler, varningar } = normaliseraGapVariabler(v);
   state.gapUppdelning = gapVariablerArStandard(variabler) ? null : { variabler };
-  if (rita) renderGapUppdelning();
+  if (rita) ritaGapUppdelning();
   return { variabler: gapVariabler(), varningar };
 }
 function _guValbara() {
@@ -27640,35 +27744,31 @@ function _guKr(v, tecken = true) {
 function _guPct(v, dec = 1) {
   return `${new Intl.NumberFormat("sv-SE", { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)} %`;
 }
-function renderGapUppdelning() {
+function ritaGapUppdelning() {
   const host = document.getElementById("gap-uppdelning");
   const body = document.getElementById("gap-uppdelning-innehall");
   if (!host || !body) return;
-  const d = getData();
-  if (!d.length) {
+  const vm = vymodellVarUppstarGapet(getData(), { k: kTroskel(), variabler: gapVariabler() });
+  if (!vm) {
     host.hidden = true;
     body.innerHTML = "";
     return;
   }
   host.hidden = false;
   const demo = state.isDemo ? '<p class="gu-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : "";
-  const variabler = gapVariabler();
-  const u = gapUppdelning(d, { k: kTroskel(), variabler });
-  if (!u) {
+  if (vm.forFa) {
     body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>`;
     return;
   }
+  const u = vm.uppdelning;
   const inledning = u.gap <= 0 ? `Kvinnors medellön är <strong>${_guKr(-u.gap, false)}</strong> lägre än mäns, det är ${_guPct(-u.gapPct)} av mäns medellön.` : `Kvinnors medellön är <strong>${_guKr(u.gap, false)}</strong> högre än mäns, det är ${_guPct(u.gapPct)} av mäns medellön.`;
-  const kvot = konsMedianer(d, { k: kTroskel() }).kvotPct;
-  const medianText = kvot != null ? ` Kvinnors medianlön är ${_guPct(kvot)} av mäns.` : "";
-  const delar = _guDelarMedAtgard(u.variabler || variabler);
-  const max = Math.max(1, ...delar.map((x) => Math.abs(u.delar[x.id])));
-  const rader = delar.map((del) => {
-    const v = u.delar[del.id];
-    const bredd = Math.abs(v) / max * 50;
+  const medianText = vm.medianKvot != null ? ` Kvinnors medianlön är ${_guPct(vm.medianKvot)} av mäns.` : "";
+  const rader = vm.delar.map((d) => {
+    const del = { ...d, ..._GU_ATGARD[d.variabel || "inom"] }, v = del.belopp;
+    const bredd = Math.abs(v) / vm.storst * 50;
     const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
-    const andel = u.litetGap ? "" : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
-    const topp = u.topp[del.id].map((p) => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join("") + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${esc(gapOvrigaText(u.ovrigaAntal[del.id], kTroskel()))}</li>` : "");
+    const andel = del.andel === null ? "" : `<span class="gu-andel">${_guPct(del.andel, 0)} av skillnaden</span>`;
+    const topp = del.topp.map((p) => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join("") + (del.ovrigaAntal ? `<li class="gu-ovriga">${esc(gapOvrigaText(del.ovrigaAntal, kTroskel()))}</li>` : "");
     return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><svg class="gu-ruta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="2" fill="${farg}"/></svg><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
             <div class="gu-stapel" aria-hidden="true"><svg width="100%" height="10" focusable="false"><rect x="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" width="${bredd.toFixed(1)}%" height="10" rx="2" fill="${farg}"/></svg></div>
@@ -27683,39 +27783,29 @@ function renderGapUppdelning() {
   }
 }
 var _GU_SERIE = { helhet: "Hela skillnaden", struktur: "Hur kvinnor och män är fördelade", inom: "Oförklarat (lön inom samma grupp)" };
-function _guAndel(u, v) {
-  if (u.litetGap || !u.gap) return null;
-  const a = v / u.gap * 100;
-  return a >= 0 && a <= 100 ? a : null;
-}
 function _guTrappaFigur(u) {
   const variabler = u.variabler || gapStandardVariabler();
   const delar = gapDelar(variabler);
   const kategorier = [_GU_SERIE.helhet, ...delar.map((d) => `${d.id}. ${d.namn}`)];
   const gap = Math.round(u.gap);
-  let niva = u.gap;
-  const steg = delar.map((d, i) => {
-    const v = u.delar[d.id], fore = niva;
-    niva -= v;
-    return {
-      x: kategorier[i + 1],
-      lag: Math.round(Math.min(fore, niva)),
-      hog: Math.round(Math.max(fore, niva)),
-      del: v,
-      fore,
-      efter: niva,
-      skillnadKr: Math.round(v),
-      inom: d.variabel === null
-    };
-  });
+  const steg = gapTrappa(u).map((t, i) => ({
+    x: kategorier[i + 1],
+    lag: t.lag,
+    hog: t.hog,
+    del: t.belopp,
+    fore: t.fore,
+    efter: t.efter,
+    skillnadKr: Math.round(t.belopp),
+    inom: t.inom
+  }));
   const etikett2 = (s) => {
-    const a = _guAndel(u, s.del);
+    const a = andelAvSkillnaden(u, s.del);
     return a === null ? _guKr(s.del) : `${_guKr(s.del)} · ${_guPct(a, 0)}`;
   };
   const ande = (s) => Math.abs(s.fore) >= Math.abs(s.efter) ? s.fore : s.efter;
   const lage2 = (y, lag2) => y <= lag2 ? "under" : "over";
   const tips = (d) => {
-    const a = _guAndel(u, d.del);
+    const a = andelAvSkillnaden(u, d.del);
     const andel = a !== null ? [["Andel av skillnaden", _guPct(a, 0)]] : u.litetGap ? [] : [["Andel av skillnaden", Math.sign(d.del) !== Math.sign(u.gap) ? "anges inte: delen går åt andra hållet än hela skillnaden" : "anges inte: delen är större än hela skillnaden, eftersom en annan del går åt andra hållet"]];
     return [[d.x], ["Bidrag", _guKr(d.del)], ...andel, ["Kvar efter delen", _guKr(d.efter)]];
   };
@@ -32084,13 +32174,13 @@ function _renderTabContent(target) {
   if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
   if (target === "kon" && d.length) {
     const s = document.getElementById("bas-select-kon");
-    if (s) renderKon(
+    if (s) ritaAlderOchLon(
       /** @type {HTMLInputElement} */
       s.value
     );
     renderLifecycleAnalysis();
     const s2 = document.getElementById("bas-select-demo");
-    if (s2) renderDemografi(
+    if (s2) ritaAldersstruktur(
       /** @type {HTMLInputElement} */
       s2.value
     );
@@ -32110,7 +32200,7 @@ function _renderTabContent(target) {
     renderStructure();
     ritaLoneskillnadPerBas(lsBasVymodell());
     _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => renderBlinderOaxacaCard(renderRegressionCard()));
-    renderGapUppdelning();
+    ritaGapUppdelning();
     renderLonestrukturNycklar();
   } else if (target === "loneoversyn" && d.length) renderForecast();
   else if (target === "likvardighet" && (d.length || state.statistik.length)) {
@@ -35438,7 +35528,7 @@ async function _buildPrintReportExport() {
       ritaLikaArbete(laVymodell());
       if (state.statistik.length) generateBenchmark();
       const imgs = {};
-      renderKon("__ALLA__");
+      ritaAlderOchLon("__ALLA__");
       await new Promise((r) => setTimeout(r, 250));
       for (const [nyckel, id, hojd] of [["kon", "chart-kon-scatter", 600], ["box", "chart-kon-boxplot", 500], ["lador", "chart-skevhet-lador", 560]]) {
         const elD = document.getElementById(String(id));
