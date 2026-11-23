@@ -16,6 +16,15 @@ import { personOrd } from './namn.js';
 export const K_STANDARD = 10;
 export const K_MIN = 2;
 export const K_MAX = 1000;
+/** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
+export const K_SKARM = 1;
+/**
+ * Gränsen för "litet underlag" i ett diagram: en stapel eller ett segment som gäller färre personer än så ritas
+ * med mönster och sägs vara osäkert. Det är inte en maskeringsgräns — gruppen som stapeln räknas i når redan
+ * minsta gruppstorlek — utan en varning för att några få personer kan se ut som ett mönster. Fem är den gräns
+ * som är vanlig för små tal i tabeller, och samma som könsskevhetstabellen använder.
+ */
+export const LITET_UNDERLAG = 5;
 
 /** Golvet för skattningar: aldrig under standardvärdet, och följer en högre inställd tröskel uppåt. */
 export function statGolvVid(kInstalld) { return Math.max(kInstalld, K_STANDARD); }

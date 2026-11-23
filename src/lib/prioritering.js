@@ -26,6 +26,19 @@ import { svPoPct } from './talformat.js';
 // Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
 // Bevisrutan i appen hämtar dem genom prioKonstanter(), så förklaringarna och poängen visar samma tal.
 /** Avvikelsen i procent som ger full avvikelsepoäng (sev): över detta tas poängen upp till 100. */
+/** Standardvärdena för statusarnas trösklar (ändras i Inställningar). */
+export const PRIO_CONFIG_DEFAULTS = Object.freeze({
+    atgardThreshold:    -5,   // %, gränsvärde för Åtgärd/AKUT
+    akutMinN:           10,   // minst antal personer för att klassas som AKUT
+    bevakaThreshold:    -2,   // %, gränsvärde för Bevaka
+    analyseraThreshold:  5    // %, gränsvärde för Analysera
+});
+/** Standardvärdena för indexets vikter (ändras i Inställningar). */
+export const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
+    avvikelse:    50,   // viktning av avvikelsens storlek
+    volym:        30,   // viktning av gruppens volym
+    jamstalldhet: 20    // viktning av jämställdhet (lönegap kön)
+});
 export const AVVIKELSE_TAK = 30;
 /** Antalet personer i gruppen som ger full volympoäng (vol). */
 export const VOLYM_TAK = 50;

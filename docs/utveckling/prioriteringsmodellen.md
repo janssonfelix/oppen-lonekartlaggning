@@ -19,7 +19,7 @@ Varje beräkning har sin rad i spårbarhetsmatrisen, [`sparbarhet.md`](sparbarhe
 | Kostnadsformeln | `src/lib/kostnad.js` (`kostnadPerAr`) |
 | Adaptern: väljer referensen och läser inställningarna | `src/app/55-prioritering.js` (`computePrioritization`) |
 | Orden för lägena | `src/app/55-prioritering.js` (`PRIO_STATUS_INFO`) |
-| Standardvärdena för trösklar, vikter och kostnad | `src/app/07-standardinstallningar.js` |
+| Standardvärdena för trösklar, vikter och kostnad | `src/lib/prioritering.js` (`PRIO_CONFIG_DEFAULTS`, `PRIO_WEIGHTS_DEFAULTS`), `src/lib/kostnad.js` (`COST_DEFAULTS`) |
 | Inställningarnas gränser | `src/lib/installningsgranser.js` (`PRIO_TROSKEL_GRANS`, `PRIO_VIKT_GRANS`) |
 
 ## 1. Grupperna

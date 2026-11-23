@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kUndantag, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
+import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_SKARM, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kUndantag, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, LITET_UNDERLAG, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
 import { personOrd } from '../lib/namn.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
@@ -37,10 +37,9 @@ import { oppnaInstallningar } from './86-installningar.js';
 // Standardvärdet 10 är verktygets eget (docs/utveckling/k-troskeln.md). Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
 // står i metodbilagan, i exporterad diagramdata och i tabell-CSV; under standard står meningen
 // om sänkt tröskel dessutom på det som kan spridas för sig (se kStampel och _kSanktNot).
-// K_STANDARD, K_MIN och K_MAX står i src/lib/ktroskel.js.
-
-/** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
-export const K_SKARM = 1;
+// K_STANDARD, K_MIN, K_MAX, K_SKARM (tröskeln på skärmen, ADR-51) och LITET_UNDERLAG står i src/lib/ktroskel.js;
+// appen läser de två sista härifrån.
+export { K_SKARM, LITET_UNDERLAG };
 /** Tröskeln som gäller just nu: den inställda i exportläget, annars 1. Enda vägen att läsa det som ska tillämpas. */
 export function kTroskel() { return state.kLage === 'export' ? state.kTroskel : K_SKARM; }
 /** Den inställda minsta gruppstorleken (gäller det som lämnar verktyget), oavsett läge. */
@@ -67,13 +66,7 @@ export function statGolv() { return statGolvVid(kInstalld()); }   // oberoende a
  */
 export function isKMasked(n) { return n < kTroskel(); }
 
-/**
- * Gränsen för "litet underlag" i ett diagram: en stapel eller ett segment som gäller färre personer än så ritas
- * med mönster och sägs vara osäkert. Det är inte en maskeringsgräns — gruppen som stapeln räknas i når redan
- * minsta gruppstorlek — utan en varning för att några få personer kan se ut som ett mönster. Fem är den gräns
- * som är vanlig för små tal i tabeller, och samma som könsskevhetstabellen använder.
- */
-export const LITET_UNDERLAG = 5;
+/** Gränsen för "litet underlag" i ett diagram (LITET_UNDERLAG, src/lib/ktroskel.js). */
 export function litetUnderlag() { return LITET_UNDERLAG; }
 
 // Reglerna för vad som får redovisas vid k bor i src/lib/ktroskel.js med tröskeln som argument. Adaptrarna nedan

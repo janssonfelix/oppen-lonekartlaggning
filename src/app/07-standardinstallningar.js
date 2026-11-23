@@ -1,29 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { COST_DEFAULTS } from '../lib/kostnad.js';
 import { namnGenitiv, normaliseraNamn } from '../lib/namn.js';
 import { liknarPersonuppgift } from '../lib/organisationspaket.js';
+import { PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from '../lib/prioritering.js';
 import { _fyllKTexter } from './06-k-troskel.js';
 import { T, termText } from './09-termer.js';
 import { ritaOmReferens, state } from './12-tillstand.js';
 import { renderReferensKort } from './38-referensfiler.js';
 
 // ---- State ----
-export const PRIO_CONFIG_DEFAULTS = Object.freeze({
-    atgardThreshold:    -5,   // %, gränsvärde för Åtgärd/AKUT
-    akutMinN:           10,   // minst antal personer för att klassas som AKUT
-    bevakaThreshold:    -2,   // %, gränsvärde för Bevaka
-    analyseraThreshold:  5    // %, gränsvärde för Analysera
-});
-export const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
-    avvikelse:    50,   // viktning av avvikelsens storlek
-    volym:        30,   // viktning av gruppens volym
-    jamstalldhet: 20    // viktning av jämställdhet (lönegap kön)
-});
-// Kostnadsberäknings-defaults — PO-påslaget 40 % är ett standardantagande; organisationen sätter sitt eget
-export const COST_DEFAULTS = Object.freeze({
-    months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
-    poPct:  40          // PO-påslag i % (arbetsgivaravgifter och pension ovanpå lönen)
-});
+// Standardvärdena för prioriteringen och kostnaden står i src/lib/prioritering.js och src/lib/kostnad.js.
+export { COST_DEFAULTS, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS };
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
 export const INAKTIVITET_STANDARD_MIN = 90;

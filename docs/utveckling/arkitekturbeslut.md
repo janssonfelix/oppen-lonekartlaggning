@@ -505,7 +505,7 @@ kommuner och regioner, utan cirkulärets nummer. Påslaget skiljer sig mellan ar
 ett avrundat antagande och gränssnittet säger det, utan att namnge någon källa. Organisationspaketets egen not om
 påslaget (`poNot`) finns kvar; verktygets standard har ingen not. *Avvisat:* att behålla 39,15 % med hänvisningen, som
 saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i dag:* `COST_DEFAULTS` i
-`src/app/07-standardinstallningar.js`.
+`src/lib/kostnad.js`.
 
 **ADR-85 — Fältet för AID-etikett maskeras inte; inläsningen varnar för personnamn.** Beslutat av underhållaren 2026-11-20.
 Ingenting i texten i fältet för AID-etikett maskeras, och inläsningen varnar i stället när fältet ser ut att innehålla

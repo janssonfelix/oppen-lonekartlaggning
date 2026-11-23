@@ -16,6 +16,12 @@
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.1).
  */
 
+/** Kostnadsinställningarnas standardvärden. PO-påslaget 40 % är ett standardantagande; organisationen sätter sitt eget. */
+export const COST_DEFAULTS = Object.freeze({
+    months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
+    poPct:  40          // PO-påslag i % (arbetsgivaravgifter och pension ovanpå lönen)
+});
+
 /**
  * Kostnadsinställningarna med standardvärdena ifyllda.
  * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval

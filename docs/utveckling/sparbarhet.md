@@ -192,8 +192,8 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 |---|---|---|---|---|
 | `K_STANDARD` | 10 | `src/lib/ktroskel.js` | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (2–1000) och Organisationspaket |
 | `K_MIN`, `K_MAX` | 2, 1000 | `src/lib/ktroskel.js` | tröskelns gränser | Fast |
-| `K_SKARM` | 1 | `src/app/06-k-troskel.js` | tröskeln på skärmen | Fast |
-| `LITET_UNDERLAG` | 5 | `src/app/06-k-troskel.js` | en stapel för färre personer ritas med mönster; golvet för en egen rad i könsfördelningen i Lika arbete | Fast |
+| `K_SKARM` | 1 | `src/lib/ktroskel.js` | tröskeln på skärmen | Fast |
+| `LITET_UNDERLAG` | 5 | `src/lib/ktroskel.js` | en stapel för färre personer ritas med mönster; golvet för en egen rad i könsfördelningen i Lika arbete | Fast |
 | `KI_NEDRE` | 0,025 | `src/lib/stat.js` | percentilintervallens nedre andel | Fast |
 | `HUVUDREGRESSION_MIN_N`, `HUVUDREGRESSION_MIN_PER_KON` | 30, 5 | `src/lib/regression.js` | huvudregressionens golv | Fast |
 | `TILLFOR_GRANS_PP` | 0,5 | `src/lib/regression.js` | under så många procentenheter i R² tillför en variabel lite | Fast |
@@ -219,13 +219,13 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `ALDERS_GOLV_STANDARD`, `ALDERS_SPRIDNING_MIN` | 10, 5 år | `src/lib/likvardighet.js` | åldersjusteringen i paren | Fast |
 | `ARSBOKSLUT_K_MIN` | 2 | `src/lib/arsbokslut.js` | lägsta tröskel ett bokslut bär; ett lägre k i filen höjs hit | Fast |
 | `SKAL_GRANSER` | 200 000 kr, 200 tecken, 8 skäl | `src/lib/sakligaskal.js` | gränserna för de sakliga skälen | Fast |
-| `PRIO_CONFIG_DEFAULTS` | åtgärd −5 %, akut minst 10, bevaka −2 %, analysera 5 % | `src/app/07-standardinstallningar.js` | prioriteringens statusar | Inställning |
-| `PRIO_WEIGHTS_DEFAULTS` | avvikelse 50, volym 30, jämställdhet 20 | `src/app/07-standardinstallningar.js` | prioriteringens vikter | Inställning |
+| `PRIO_CONFIG_DEFAULTS` | åtgärd −5 %, akut minst 10, bevaka −2 %, analysera 5 % | `src/lib/prioritering.js` | prioriteringens statusar | Inställning |
+| `PRIO_WEIGHTS_DEFAULTS` | avvikelse 50, volym 30, jämställdhet 20 | `src/lib/prioritering.js` | prioriteringens vikter | Inställning |
 | `AVVIKELSE_TAK`, `VOLYM_TAK`, `GAP_TAK` | 30 %, 50 personer, 15 % | `src/lib/prioritering.js` | delpoängens tak | Fast |
 | `RIKTNING_UNDER`, `RIKTNING_OVER` | 1,0, 0,5 | `src/lib/prioritering.js` | riktningsvikten | Fast |
 | `BRIST_MULTIPLIKATOR` | 1,2 | `src/lib/prioritering.js` | bristyrken | Fast |
 | `SNABB_VINST_KR`, `SNABB_VINST_AVVIKELSE`, `SNABB_VINST_MIN_N` | 1 500 kr, 3 %, 5 | `src/lib/prioritering.js` | snabb vinst | Fast |
-| `COST_DEFAULTS` | 12 månader, PO 40 % | `src/app/07-standardinstallningar.js` | kostnaden | Inställning och Organisationspaket (ADR-84) |
+| `COST_DEFAULTS` | 12 månader, PO 40 % | `src/lib/kostnad.js` | kostnaden | Inställning och Organisationspaket (ADR-84) |
 | `TROSKELMAL_STANDARD_PCT`, `TROSKELMAL_MAX_LYFT_PCT`, `TROSKELMAL_VARV`, `TROSKELMAL_SIGNIFIKANS_P` | 5 %, 40 %, 22, 0,05 | `src/lib/loneoversyn.js` | tröskelmålet; målet går att ändra i fliken | Fast (målet: värde i fliken) |
 | `LAGE_OVER`, `LAGE_UNDER` | 1,10, 0,90 | `src/lib/vymodell-loneoversyn.js` | läget mot BAS-medianen i Löneöversyn | Fast |
 | `TACKNING_OK`, `TACKNING_LAG` | 90 %, 60 % | `src/lib/vymodell-lonepolitik.js` | täckningsgradens status mot ställningstagandet | Fast |
