@@ -37,7 +37,7 @@ avsnitt 11.
 
 | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|
-| Mediangapet, kvinnors median i procent av mäns minus 100; null när ett kön har färre än k | `medianGapPct`, `struktur.js` | lön, kön | `regressionsmodellen.md` §1 *Tecknet*; `k-troskeln.md` §2 | `tests/struktur.test.js` | `01-mediangap-verktygets-tecken.json`, `03-mediangap-under-k.json` |
+| Kvinnors och mäns medianlön, kvinnors median i procent av mäns och mediangapet (kvoten minus 100); bara lön över 0, null när ett kön har färre än k; appen räknar måttet bara med den | `konsMedianer` (och `medianGapPct`, som ger gapet), `struktur.js` | lön, kön | `regressionsmodellen.md` §1 *Tecknet*; `k-troskeln.md` §2 | `tests/struktur.test.js` | `01-mediangap-verktygets-tecken.json`, `03-mediangap-under-k.json` |
 | Direktivets tecken: samma belopp, omvänt tecken; 0 förblir 0 | `tillDirektivtecken`, `struktur.js` | gapet | lydelsen i `lagrum.md`; tecknet är verktygets eget val | `tests/struktur.test.js` | `02-mediangap-direktivets-tecken.json` |
 | Representation per BAS-intervall: andel kvinnor, medianer, gap | `representationByBas`, `struktur.js` | lön, kön, BAS | verktygets eget val, ingen extern källa | `tests/struktur.test.js` | saknas |
 | Kvartilfördelningen: rad i i sorterad ordning hamnar i kvartil min(3, ⌊4i/n⌋); gränsen är mittpunkten mellan kvartilerna | `quartileDistribution`, `struktur.js` | lön, kön | lydelsen i `lagrum.md`; indelningen är verktygets eget val | `tests/struktur.test.js` | `12-kvartiler-n5.json`, `13-kvartiler-n7.json` |
