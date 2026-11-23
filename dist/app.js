@@ -21943,14 +21943,12 @@ function runDiagnostics() {
     const tests = [];
 
     // Test 1: råa gapet ska vara märkbart negativt (kvinnor yngre + lägre BAS = lägre lön)
-    const kv = state.data.filter(r => arKvinna(r));
-    const ma = state.data.filter(r => arMan(r));
-    const rawGap = (Stat.median(kv.map(r=>r.lon)) / Stat.median(ma.map(r=>r.lon)) - 1) * 100;
+    const rawGap = _stKonsMedianer(state.data).gapPct;   // diagnostik på demodata: ingen tröskel (k = 1)
     tests.push({
         name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',
         expected: '< -3%',
         actual: svPct(rawGap, 2),
-        pass: rawGap < -3
+        pass: rawGap != null && rawGap < -3
     });
 
     // Test 2: oförklarat gap (efter ålder + BAS) ska vara nära den injicerade -3%-effekten
