@@ -30,10 +30,10 @@ const ingang = join(root, 'src', 'app', 'index.js');
  */
 function toppnivanamn(text, sourceType) {
     const ast = espree.parse(text, { ecmaVersion: 'latest', sourceType, range: true });
-    const scope = eslintScope.analyze(ast, { ecmaVersion: 2022, sourceType });
-    const topp = sourceType === 'module' ? scope.globalScope.childScopes[0] : scope.globalScope;
+    const scope = eslintScope.analyze(/** @type {any} */ (ast), { ecmaVersion: 2022, sourceType });
+    const topp = /** @type {import('eslint-scope').Scope} */ (sourceType === 'module' ? scope.globalScope?.childScopes[0] : scope.globalScope);
     const importerade = topp.variables.filter(v => v.defs.some(d => d.type === 'ImportBinding'
-        && (d.node.type !== 'ImportSpecifier' || d.node.imported.name === v.name)));
+        && (d.node.type !== 'ImportSpecifier' || (d.node.imported.type === 'Identifier' && d.node.imported.name === v.name))));
     const DEKL = ['ImportDeclaration', 'ExportNamedDeclaration', 'FunctionDeclaration', 'VariableDeclaration', 'ClassDeclaration'];
     return {
         ovriga: ast.body.filter(st => !DEKL.includes(st.type)).map(st => st.type),

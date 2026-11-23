@@ -1,11 +1,12 @@
 {
-  "//": "Typkontroll av webbläsarappen (npm run typecheck). src/app/*.js är skript utan import/export och delar ett globalt scope, precis som i dist/app.js; src/lib speglas in via 09-lib-speglar.js. Tredjepartsbiblioteken deklareras i types/globals.d.ts.",
+  "//": "Typkontroll av webbläsarappen (npm run typecheck). Ingången är src/app/index.js, som bygget (tools/build-app.mjs); delarna och de lib-moduler de importerar följer med genom importerna. Tredjepartsbiblioteken och appens fält på DOM-elementen deklareras i types/globals.d.ts.",
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
     "target": "es2022",
     "module": "es2022",
+    "moduleResolution": "bundler",
     "lib": ["es2022", "dom", "dom.iterable"],
     "types": [],
     "strict": true,
@@ -14,5 +15,5 @@
     "useUnknownInCatchVariables": false,
     "skipLibCheck": true
   },
-  "include": ["src/app/*.js", "types/**/*.d.ts"]
+  "include": ["src/app/index.js", "types/**/*.d.ts"]
 }
