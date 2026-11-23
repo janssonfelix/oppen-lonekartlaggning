@@ -40204,10 +40204,11 @@ function buildGruppdossier(key, delat = null) {
 
     // Ojusterat gap — visas bara när bägge könen når k-tröskeln
     /** @type {any} */ let gap = null;
-    if (kvLons.length >= kTroskel() && maLons.length >= kTroskel()) {
-        const mKv = Stat.median(kvLons), mMa = Stat.median(maLons);
+    const km = _stKonsMedianer(g.rows, { k: kTroskel() });
+    if (km.konOk) {
+        const mKv = km.medKv, mMa = km.medMa;
         gap = {
-            pct: mMa > 0 ? (mKv / mMa) * 100 : null,
+            pct: km.kvotPct,
             medKv: mKv, medMa: mMa,
             ci: delat && delat.text ? null : _gdBootstrapGapCI(kvLons, maLons),
             // Räkneexemplet i kronor per år, med prioriteringens kostnadsinställningar.
