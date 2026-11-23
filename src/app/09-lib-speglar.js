@@ -3785,6 +3785,7 @@ const __mirrorRegression = (() => {
     const personOrd = __mirrorNamn.personOrd;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
+    const konsMedianer = __mirrorStruktur.konsMedianer;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3807,6 +3808,7 @@ const __mirrorRegression = (() => {
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
+
 
 
 
@@ -4638,11 +4640,7 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
     const diagnostics = fellBackFromFull ? kollinearitetsdiagnos(raw, basList) : [];
 
     // Rått gap (median)
-    const kv = raw.filter(d => arKvinna(d));
-    const ma = raw.filter(d => arMan(d));
-    const medianKv = median(kv.map(d=>d.lon));
-    const medianMa = median(ma.map(d=>d.lon));
-    const rawGapPct = (medianKv / medianMa - 1) * 100;
+    const { medKv: medianKv, medMa: medianMa, gapPct: rawGapPct } = konsMedianer(raw);
 
     return {
         modelName: chosen.modelName,

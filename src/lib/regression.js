@@ -24,6 +24,7 @@ import { anpassaOLS, invertera, matrisprodukt, median, pVardeTvasidigt, tKvantil
 import { skapaTermer, fyllTermer, ordForAntal, stor } from './termer.js';
 import { personOrd } from './namn.js';
 import { arKvinna, arMan } from './kon.js';
+import { konsMedianer } from './struktur.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -851,11 +852,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
     const diagnostics = fellBackFromFull ? kollinearitetsdiagnos(raw, basList) : [];
 
     // Rått gap (median)
-    const kv = raw.filter(d => arKvinna(d));
-    const ma = raw.filter(d => arMan(d));
-    const medianKv = median(kv.map(d=>d.lon));
-    const medianMa = median(ma.map(d=>d.lon));
-    const rawGapPct = (medianKv / medianMa - 1) * 100;
+    const { medKv: medianKv, medMa: medianMa, gapPct: rawGapPct } = konsMedianer(raw);
 
     return {
         modelName: chosen.modelName,
