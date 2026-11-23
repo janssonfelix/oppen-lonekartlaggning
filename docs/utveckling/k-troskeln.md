@@ -19,7 +19,7 @@ Den som lägger till något som lämnar verktyget läser avsnitt 1, 2 och 9 för
 | Tröskeln, inställningen och omritningen | `src/app/06-k-troskel.js` |
 | Reglerna vid k: golven, stämplarna, noterna om utelämnade kön och par, BAS-effekterna, punkterna per person (tröskeln som argument; appens namn är adaptrar i `06-k-troskel.js`) | `src/lib/ktroskel.js` |
 | Maskeringsnoterna (`kMaskNote`, `kSamladNote`) | `src/app/06-maskeringsnoter.js` |
-| Exportläget, exportgrinden och förhandsvisningen | `src/app/23-exportgrind.js` |
+| Exportläget, exportgrinden och förhandsvisningen | `src/app/23-exportgrind.js`; grindens regel (`skaRitasForeExport`) i `src/lib/exportgrind.js` |
 | Könsuppdelade mått i strukturen | `src/lib/struktur.js` |
 | Organisationspaketets låsningar | `src/lib/organisationspaket.js` (`_lasningar`), `src/app/29-organisationspaket.js` |
 | Vakterna | `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js`, `tests/troskelbeslut.test.js`, `tests/loneoversyn-forslag-troskel.test.js`, riggen `tests/helpers/ktroskel-rigg.js` och invarianten `tests/helpers/ktroskel-invariant.js` |
@@ -300,7 +300,8 @@ diagram till bild står i `diagramkarnan.md` §6 och §8.
 bära tal från en tröskel eller ett läge som inte gäller. Två saker tillsammans: när tröskeln ändras töms varje flik som
 inte syns (`tomFlikarUtom`), och varje flik minns vid vilken generation den senast ritades, så att en flik som ritades
 före ändringen ritas om innan något läses ur den (`exportSakra`, `exportElement`; ZIP-exporten `exportSakraAlla`). Går
-det inte att rita om fliken exporteras ingenting ur den — hellre en utebliven export än en med fel tröskel.
+det inte att rita om fliken exporteras ingenting ur den — hellre en utebliven export än en med fel tröskel. Regeln för
+när en flik ska ritas, med generationerna som argument, står i `src/lib/exportgrind.js` (`skaRitasForeExport`).
 
 **Flikbytet** (`31-navigering.js`, ADR-80). När användaren själv byter flik (ett klick i menyn, pilarna i menyn,
 sökfältet, en länk till en flik) visas fliken och sidan målas innan fliken räknas (`flikbyte`): panelen får

@@ -64,7 +64,7 @@ först i utfilen och sätter lagringsspärren innan något annat körs.
 | `20-demodata-diagnostik.js` | Inläsningen av det lilla demot (`loadDemoData`), självdiagnostik, demobanner, demoreferensen; inläsningen som det lilla och det stora demot delar (`_lasInDemounderlag`). Generatorerna (demodata och testdata) står i `src/lib/demodata.js` |
 | `21-stort-demo.js` | Stort demo: `loadStortDemo` (som det lilla demot, utan självdiagnostik) och ingångarna i Kom igång, lönefilskortet och `?demo=stor`. Generatorn står i `src/lib/demodata.js`: `genereraStortDemo` (5 000 påhittade personer med 100 AID-etiketter i BAS A–K, med inlagda gap, ett par för likvärdigt arbete och små grupper), påhittad jämförelsestatistik och ett ställningstagande ur demots löner |
 | `22-exporthjalpare.js` | Exportnavets knappar, metodbilagans data, Excel-/CSV-hjälpare, formelskydd |
-| `23-exportgrind.js` | Exportgrinden: ingen export läser en tabell eller ett diagram ur en flik som inte är ritad med gällande tröskel |
+| `23-exportgrind.js` | Exportgrinden: ingen export läser en tabell eller ett diagram ur en flik som inte är ritad med gällande tröskel; regeln (`skaRitasForeExport`) står i `src/lib/exportgrind.js` |
 | `24-excelexport.js` | Excel (alla flikar) och JPA-protokollet |
 | `25-dataskyddsinfo.js` | Dataskyddsrutan och GDPR-bannern |
 | `26-rensning.js` | "Rensa all data" (`_rensaAllData`) |

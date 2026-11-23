@@ -22,6 +22,7 @@
 // grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av
 // tabeller och diagram går genom (_cloneAndCleanTableForExport, _chartExportUnderlag) går själva in i
 // exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
+import { flikInaktuellVid, skaRitasForeExport } from '../lib/exportgrind.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _omritningForsok, _omritningssteg, _renderaOmAllaFlikar, _renderaOmAllaFlikarStegvis } from './06-k-troskel.js';
 import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
@@ -129,7 +130,7 @@ export const _ritasNu = new Set();      // flikar som ritas just nu (ritningen f
 export function ritGenerationNy({ tur = false } = {}) { _ritGeneration++; if (!tur) visningNy(); }
 export function ritGeneration() { return _ritGeneration; }
 /** Ritades fliken före den senaste ändringen, utan att ha ritats om sedan dess? */
-export function flikInaktuell(flik) { return _ritadVid.has(flik) && _ritadVid.get(flik) !== _ritGeneration; }
+export function flikInaktuell(flik) { return flikInaktuellVid(_ritadVid.get(flik), _ritGeneration); }
 
 /** Fliken som äger ett element, eller null för det som ligger utanför flikarna (dialoger, sidhuvud). */
 export function _egFlikFor(el) {
@@ -151,9 +152,9 @@ export function exportSakra(el) {
     if (typeof arDiagramKopia === 'function' && arDiagramKopia(el)) return _exportSakraKopia(el);
     const flik = _egFlikFor(el);
     if (!flik) return el.isConnected !== false;   // utanför flikarna (en dialog) — eller ett element som inte sitter kvar i sidan
-    // En flik som aldrig ritats genom navigeringen (eller är inaktuell) ritas i det läge som gäller nu — i exportläget
-    // också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
-    if (!_ritasNu.has(flik) && (flikInaktuell(flik) || (iExportLage() && !_ritadVid.has(flik)))) {
+    // Regeln (skaRitasForeExport, src/lib/exportgrind.js): en inaktuell flik ritas i det läge som gäller nu — i
+    // exportläget också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
+    if (skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik), exportLage: iExportLage() })) {
         try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
         if (flikInaktuell(flik)) return false;                      // fliken gick inte att rita om: ingenting exporteras ur den
     }
@@ -171,7 +172,7 @@ export function exportElement(id) {
 /** Ritar om varje flik som har ritats någon gång men inte är aktuell — före en export som tar "allt som är ritat" (ZIP). */
 export function exportSakraAlla() {
     for (const flik of [..._ritadVid.keys()]) {
-        if (!flikInaktuell(flik) || _ritasNu.has(flik)) continue;
+        if (!skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik) })) continue;
         try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
     }
 }
