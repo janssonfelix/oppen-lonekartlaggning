@@ -6,6 +6,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { FLIKAR, normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { createAppWindow } from './helpers/app-harness.js';
+import { styrkeanalys } from '../src/lib/osakerhet.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -86,5 +88,67 @@ describe('k-tröskeln styr varje flik', () => {
         const w = fonster(25);
         w.eval('_rensaAllData()');
         expect(w.eval('kInstalld()')).toBe(10);
+    });
+});
+
+// ADR-103: golvet för skattningar är 10 på skärmen och följer en högre tröskel bara i exportläget. Vid 25 ska en skattning
+// för en grupp med 10–24 av ett kön synas på skärmen men inte i det som lämnar verktyget, också när skattningen räknats
+// och sparats i det andra läget först.
+describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103)', () => {
+    // 15 kvinnor och 30 män i en grupp, 30 män i en annan: kvinnorna når golvet 10 men inte 25.
+    function fonsterObalans() {
+        const w = createAppWindow();
+        w.eval('sattKTroskel(25, { fraga: false })');
+        const rader = [];
+        for (let i = 0; i < 45; i++) rader.push({ bas: 'S1', kon: i < 15 ? 'kvinna' : 'man', lon: 28000 + ((i * 37) % 900) + (i < 15 ? 0 : 600),
+            alder: 25 + ((i * 7) % 40), yrke: '6000 Säkeryrke 0', aid: '6000', yrkeLabel: 'Säkeryrke 0', enhet: '' });
+        for (let i = 0; i < 30; i++) rader.push({ bas: 'S2', kon: 'man', lon: 32000 + ((i * 41) % 1100),
+            alder: 25 + ((i * 11) % 40), yrke: '6001 Säkeryrke 1', aid: '6001', yrkeLabel: 'Säkeryrke 1', enhet: '' });
+        w.__state.data = rader;
+        w.__state.policy = ['S1', 'S2'].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
+        w.eval('populateSelects(); unlockTabs();');
+        return w;
+    }
+    const json = v => JSON.parse(JSON.stringify(v));
+
+    it('vid 25 är golvet 10 på skärmen och 25 i exportläget; vid 5 är det 10 i båda', () => {
+        const w = fonster(25);
+        expect(w.eval('statGolv()')).toBe(10);
+        expect(w.eval('medExportLage(() => statGolv())')).toBe(25);
+        w.eval('sattKTroskel(5, { fraga: false })');
+        expect(w.eval('statGolv()')).toBe(10);
+        expect(w.eval('medExportLage(() => statGolv())')).toBe(10);
+    });
+    it('vid 25 prövas grupperna om 20 (10 av varje kön) på skärmen men inte i exporten', () => {
+        const w = fonster(25);
+        const status = uttryck => w.eval(uttryck).find(p => p.bas === 'A').status;
+        expect(status(`_computePerBasGap(getData(), ['A'])`)).not.toBe('too_few');
+        expect(status(`medExportLage(() => _computePerBasGap(getData(), ['A']))`)).toBe('too_few');
+        expect(status(`_computePerBasGap(getData(), ['A'])`)).not.toBe('too_few');
+        // Personer att granska (bara på skärmen): grupperna om 20 prövas; de två om 6 inte, och noten säger vad man kan göra.
+        w.eval('renderPersonerAttGranska()');
+        expect(normalisera(w.document.getElementById('pag-innehall').textContent))
+            .toMatch(/12 personer i grupper med färre än 10 personer prövades inte\. Se lönerna under Tabeller och egna vyer och dokumentera bedömningen under Sakliga skäl i Handlingsplan\./);
+    });
+    it('bootstrap-KI och styrkan som räknats på skärmen följer inte med ut', () => {
+        const w = fonsterObalans();
+        w.eval('invalidateStatCaches()');                                       // skärmen först (golvet 10)
+        expect(w.__state.bootstrapCI).not.toBeNull();
+        expect(w.eval('bootstrapCIGallande()')).toBe(w.__state.bootstrapCI);
+        expect(w.eval('medExportLage(() => bootstrapCIGallande())')).toBeNull();  // 15 kvinnor når inte 25
+        const skarm = json(w.eval('styrkaGallande()')), ut = json(w.eval('medExportLage(() => styrkaGallande())'));
+        expect(skarm).toEqual(json(styrkeanalys(w.__state.data, 10)));
+        expect(ut).toEqual(json(styrkeanalys(w.__state.data, 25)));
+        expect(ut).not.toEqual(skarm);
+        expect(w.eval('bootstrapCIGallande()')).toBe(w.__state.bootstrapCI);   // och skärmen har kvar sitt
+    });
+    it('räknade i exportläget först ger de skärmen dess egna, och exporten sina', () => {
+        const w = fonsterObalans();
+        w.eval('medExportLage(() => invalidateStatCaches())');                  // exporten först (golvet 25)
+        expect(w.__state.bootstrapCI).toBeNull();
+        expect(w.eval('bootstrapCIGallande()')).not.toBeNull();                 // skärmen räknar sitt
+        expect(w.eval('medExportLage(() => bootstrapCIGallande())')).toBeNull();
+        expect(json(w.eval('styrkaGallande()'))).toEqual(json(styrkeanalys(w.__state.data, 10)));
+        expect(json(w.eval('medExportLage(() => styrkaGallande())'))).toEqual(json(styrkeanalys(w.__state.data, 25)));
     });
 });

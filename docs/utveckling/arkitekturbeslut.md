@@ -34,7 +34,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-20 | Rapportunderlag via urklipp; bedömningen skrivs utanför verktyget | Gällande | – |
 | ADR-21 | Alla BAS-intervall ingår (upphävd begränsning) | Sammanförd i `mal.md` | – |
 | ADR-22 | Var uppstår löneskillnaden? Uppdelning på medellön | Ändrad av ADR-65 | – |
-| ADR-23 | Personer att granska: individlista i verktyget, aldrig i utdata | Gällande | – |
+| ADR-23 | Personer att granska: individlista i verktyget, aldrig i utdata | Ändrad av ADR-103 | – |
 | ADR-24 | Stabilitet för flaggor i Lika arbete: märkning, inte nedgradering | Ändrad av ADR-59 | – |
 | ADR-25 | Lägre krav, högre lön: jämförelse över BAS-gränserna | Gällande | – |
 | ADR-28 | Organisationspaket; ingen inbyggd organisation | Gällande | – |
@@ -109,6 +109,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-100 | Varje release har en signerad valideringsrapport | Gällande | 2026-11-23 |
 | ADR-101 | Releasen attesteras och bygget prövas reproducerbart | Gällande | 2026-11-23 |
 | ADR-102 | Minsta gruppstorlek är lägst 3 | Gällande | 2026-11-23 |
+| ADR-103 | Golvet för skattningar följer tröskeln bara i exportläget | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -731,3 +732,18 @@ statistiken, [*Handbok i statistisk röjandekontroll*](https://scb.se/contentass
 (2015, uppdaterad 2018), avsnitt 5.1, s. 40: tröskelvärdet måste
 vara minst 3. Standardvärdet 10 och friheten att sänka det med bekräftelse (ADR-38) står kvar. *Gäller i dag:*
 `k-troskeln.md` §6.
+
+**ADR-103 — Golvet för skattningar följer tröskeln bara i exportläget.** Beslutat av underhållaren 2026-11-23. Ändrar
+ADR-23 och regeln för `statGolv()`: på skärmen är golvet för skattningar (regression per BAS-intervall, ansvarssteget,
+Blinder-Oaxaca, bootstrap-KI, styrkan, livscykelmodellen, extremvärdena, statusen *Går ej att bedöma* och Personer att
+granska) alltid `K_STANDARD`, 10; i exportläget är det som förut den inställda tröskeln när den är högre
+(`statGolvVid(kTroskel())`). En höjd tröskel hindrar alltså inte analysen på skärmen. Skattningar som sparas har
+golvet i nyckeln, så att det som räknats på skärmen aldrig följer med ut (`bootstrapCIGallande`, `styrkaGallande`,
+`laLikaGrupper`); regressionen cachas fortfarande inte (ADR-17). Där en grupp på skärmen är för liten för att prövas
+säger texten att lönerna syns under Tabeller och egna vyer och att bedömningen dokumenteras under Sakliga skäl.
+*Skäl:* golvet är ett kvalitetsgolv, inte ett skydd mot röjande. Rådet för den officiella statistiken,
+[*Handbok i statistisk röjandekontroll*](https://scb.se/contentassets/0cd92207266d40eb8829244d51d90b94/handbok-i-statistisk-rojandekontroll.pdf)
+(2015), s. 41: kvalitetsskäl kan motivera ett eget tröskelvärde. Skyddet mot röjande är tröskeln i exportläget
+(ADR-51), och den som arbetar i verktyget har redan lönefilen. *Avvisat:* att golvet följer den inställda tröskeln
+också på skärmen (som förut): en höjd tröskel tog bort skattningar för grupper som är stora nog att pröva. *Gäller i
+dag:* `k-troskeln.md` §1 och §5.

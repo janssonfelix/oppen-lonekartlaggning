@@ -22,7 +22,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { gapStatus, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { getData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
-import { computeGroupMDE } from './13-oversikt.js';
+import { computeGroupMDE, styrkaGallande } from './13-oversikt.js';
 import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { _evidenceForPrioItem, _openEvidenceModal } from './27-berakningsbevis.js';
@@ -75,7 +75,7 @@ export function computePrioritization(reference) {
 export function generateMotivationSuggestions(item) {
     return motiveringsgrunder(item, {
         kInstalld: kInstalld(), kTroskel: kTroskel(),
-        mdePct: state.powerAnalysis?.mdePct, naraGrans: state.prioConfig.bevakaThreshold
+        mdePct: styrkaGallande()?.mdePct, naraGrans: state.prioConfig.bevakaThreshold
     }).map(g => ({ type: g.type, text: _motiveringText(g) }));
 }
 

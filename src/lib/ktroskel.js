@@ -26,7 +26,11 @@ export const K_SKARM = 1;
  */
 export const LITET_UNDERLAG = 5;
 
-/** Golvet för skattningar: aldrig under standardvärdet, och följer en högre inställd tröskel uppåt. */
+/**
+ * Golvet för skattningar vid en tröskel: aldrig under standardvärdet, och följer en högre tröskel uppåt. Appen ger den
+ * tröskeln som gäller i läget (kTroskel), så golvet är standardvärdet på skärmen och följer den inställda i exportläget
+ * (ADR-103).
+ */
 export function statGolvVid(kInstalld) { return Math.max(kInstalld, K_STANDARD); }
 
 /** Heltal K_MIN–K_MAX ur ett tal eller en sträng, annars null. Bara rena heltal godtas. */
@@ -211,9 +215,9 @@ export function tsvMedStampel(rader, undantag, kInstalld) {
     return (kSanktNot(kInstalld) || undantag) && !harStampel(rader) ? [...rader, [], [kStampelForVid(undantag, kInstalld)]] : rader;
 }
 
-/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
-export function kText(s, kInstalld) {
-    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(statGolvVid(kInstalld)));
+/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet (utan golv: det i exportläget). */
+export function kText(s, kInstalld, golv = statGolvVid(kInstalld)) {
+    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(golv));
 }
 
 /**

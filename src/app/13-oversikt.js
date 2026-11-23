@@ -146,14 +146,50 @@ export function renderUnderlagetsKvalitet({ reg } = {}) {
 /**
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
  * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
- * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
+ * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Det som visas läses genom
+ * bootstrapCIGallande() (golvet i nyckeln, nedan). Skillnaden i
  * procent (gapPct) har verktygets tecken, negativ när kvinnor ligger lägre.
  */
-export function computeBootstrapCI() {
-    const t0 = performance.now();
-    const ki = organisationensKvotKI(getData(), statGolv());
-    state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
+export function computeBootstrapCI() { state.bootstrapCI = _skattning('bootstrapCI', statGolv()); }
+
+// ---- Skattningarna per golv (ADR-103) ----
+// Bootstrap-KI:t och styrkan sparas i state.bootstrapCI och state.powerAnalysis och beror på golvet, som är K_STANDARD på
+// skärmen och kan vara högre i exportläget. Varje resultat minns sitt golv, och det som visas läses genom
+// bootstrapCIGallande() och styrkaGallande(): ett resultat räknat vid ett annat golv används aldrig, utan det som gäller
+// räknas en gång per golv och underlag. Så följer skärmens skattning aldrig med ut. Ett tomt fält som inte räknats
+// (bakgrundsräkningen pågår) ger inget.
+/** @type {WeakMap<object, number>} */
+const _golvFor = new WeakMap();
+/** Golvet där fältet senast räknades till null (då är null svaret vid det golvet). */
+const _nollVid = /** @type {Record<string, number|undefined>} */ ({});
+/** @type {Map<number, {d: any[], n: number, [falt: string]: any}>} */
+const _andraGolv = new Map();
+const _RAKNA = {
+    bootstrapCI: golv => {
+        const t0 = performance.now(), ki = organisationensKvotKI(getData(), golv);
+        return ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
+    },
+    powerAnalysis: golv => styrkeanalys(getData(), golv),
+};
+function _skattning(falt, golv) {
+    const ut = _RAKNA[falt](golv);
+    if (ut) _golvFor.set(ut, golv); else _nollVid[falt] = golv;
+    return ut;
 }
+/** Glömmer skattningarna vid andra golv (invalidateStatCaches och Rensa all data). */
+export function skattningarSlapp() { _andraGolv.clear(); delete _nollVid.bootstrapCI; delete _nollVid.powerAnalysis; }
+function _vidGolv(falt) {
+    const golv = statGolv(), v = state[falt];
+    if (v != null ? _golvFor.get(v) === golv : (_nollVid[falt] === undefined || _nollVid[falt] === golv)) return v;
+    let m = _andraGolv.get(golv);
+    if (!m || m.d !== state.data || m.n !== state.data.length) { m = { d: state.data, n: state.data.length }; _andraGolv.set(golv, m); }
+    if (!(falt in m)) { try { const ut = _RAKNA[falt](golv); if (ut) _golvFor.set(ut, golv); m[falt] = ut; } catch (_e) { m[falt] = null; } }
+    return m[falt];
+}
+/** Bootstrap-KI:t för golvet som gäller nu (statGolv), eller null. */
+export function bootstrapCIGallande() { return _vidGolv('bootstrapCI'); }
+/** Styrkan för golvet som gäller nu (statGolv), eller null. */
+export function styrkaGallande() { return _vidGolv('powerAnalysis'); }
 
 /**
  * Formaterar bootstrap-CI som textsuffix för punktestimat, med samma tecken som talet framför.
@@ -176,9 +212,7 @@ export function fmtCI(ci, decimals = 1) {
  * @returns {null | {n:number, nKv:number, nMa:number, mdePct:number, sigma:number, sigmaKalla:'inomGrupp'|'helaUrvalet',
  *                   sigmaHela:number, sigmaGrupper:number, balanced:boolean}}
  */
-export function computePowerAnalysis() {
-    return styrkeanalys(getData(), statGolv());
-}
+export function computePowerAnalysis() { return _skattning('powerAnalysis', statGolv()); }
 
 // ---- Process-tracker: status för hela lagresan (kap. 3, §§ 8–14) ----
 /**
@@ -381,7 +415,7 @@ function _ovRitaFilrad(har, antal) {
  * @returns {null | {mdePct:number, level:'good'|'fair'|'poor', tooSmall:boolean}}
  */
 export function computeGroupMDE(nKv, nMa, sigmaLog) {
-    return gruppMde(nKv, nMa, sigmaLog || state.powerAnalysis?.sigma);
+    return gruppMde(nKv, nMa, sigmaLog || styrkaGallande()?.sigma);
 }
 
 // ---- Nyckeltalen ----

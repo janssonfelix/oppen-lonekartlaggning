@@ -36,9 +36,10 @@ function _bytKLage(lage, { tur = false } = {}) {
     // Allt som är ritat bär det andra läget. En exports tur och retur (tur) ändrar inget som visas när den är klar:
     // visningsversionen står kvar, och en flik som ritades om under exporten känns igen på sin generation (31-navigering.js).
     ritGenerationNy({ tur });
-    // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), och skattningarna
-    // (statGolv, bootstrap, styrka, § 3:10-paren) är desamma i båda lägena. Livscykelns bevisunderlag hör till det
-    // som är ritat.
+    // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), bootstrap-KI:t och
+    // styrkan läses per golv (statGolv är K_STANDARD på skärmen och kan vara högre i exportläget, ADR-103;
+    // bootstrapCIGallande och styrkaGallande i 13-oversikt.js), och § 3:10-paren läser ingen tröskel. Livscykelns
+    // bevisunderlag hör till det som är ritat.
     state._lifecycleCache = null;
 }
 const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);

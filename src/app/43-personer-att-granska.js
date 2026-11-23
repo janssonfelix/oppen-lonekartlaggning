@@ -8,7 +8,7 @@ import { svKr } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { kTroskel, litetUnderlag, statGolv } from './06-k-troskel.js';
+import { kTroskel, litetUnderlag, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { PALETTE } from './10-diagramtema.js';
 import { markeraUtanExport } from './11-diagramexport.js';
@@ -48,7 +48,7 @@ export function renderPersonerAttGranska(visaAlla = false) {
     const g = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1 }).format(grans);
     const demo = state.isDemo ? '<p class="pag-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';
     const ejProvade = r.ejProvade
-        ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? 'person' : 'personer'} i grupper med färre än ${statGolv()} ${personOrd(statGolv())} prövades inte.</p>` : '';
+        ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? 'person' : 'personer'} i grupper med färre än ${statGolv()} ${personOrd(statGolv())} prövades inte.${provaEnskiltText()}</p>` : '';
     if (!(r.provade.kv + r.provade.ma)) {
         body.innerHTML = demo + `<p>Inga grupper med minst ${statGolv()} ${personOrd(statGolv())} i samma AID och BAS.</p>` + ejProvade;
         return;

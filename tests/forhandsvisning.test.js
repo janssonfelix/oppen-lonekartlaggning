@@ -62,7 +62,11 @@ describe('tröskelbytet räknar bara om det som beror på tröskeln', () => {
         w.eval('sattKTroskel(8, { fraga: false })');                            // statGolv 10 → 10
         expect(w.__state.bootstrapCI).toBe(ci);
         expect(w.__state.powerAnalysis).toBe(styrka);
-        w.eval('sattKTroskel(12, { fraga: false })');                           // statGolv 10 → 12: räknas om i bakgrunden
+        w.eval('sattKTroskel(12, { fraga: false })');                           // på skärmen är golvet 10 vid varje tröskel (ADR-103)
+        expect(w.__state.bootstrapCI).toBe(ci);
+        expect(w.__state.powerAnalysis).toBe(styrka);
+        w.eval('sattForhandsvisning(true)');                                     // i exportläget följer golvet tröskeln
+        w.eval('sattKTroskel(13, { fraga: false })');                           // statGolv 12 → 13: räknas om i bakgrunden
         expect(w.__state.bootstrapCI).toBeNull();
         expect(w.document.getElementById('data-status').textContent).toMatch(/förbereder analyser i bakgrunden/);
         await w.eval('_skattningarIBakgrunden()');

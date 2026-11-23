@@ -433,8 +433,8 @@ Golven och redovisningen står i `k-troskeln.md` och upprepas inte här. Regress
 - **Huvudregressionens fasta golv** är 5 av varje kön (och minst 30 rader, avsnitt 1; `HUVUDREGRESSION_MIN_PER_KON`
   och `HUVUDREGRESSION_MIN_N` i `regression.js`); det justerade gapet med konfidensintervall visas därifrån
   (`k-troskeln.md` §5).
-- **`statGolv()`** gäller regressionerna per BAS-intervall, Blinder-Oaxaca, ansvarssteget och bootstrap-intervallen
-  (`k-troskeln.md` §5).
+- **`statGolv()`** gäller regressionerna per BAS-intervall, Blinder-Oaxaca, ansvarssteget och bootstrap-intervallen:
+  10 på skärmen och den inställda tröskeln när den är högre i exportläget (`k-troskeln.md` §5, ADR-103).
 - **Det ojusterade steget** *Endast kön* och den förklarade andelen redovisas bara när varje kön når tröskeln
   (`regStegForRedovisning` i `src/lib/ktroskel.js`, genom `vymodellRegressionskort`); annars ritas ingen trappa och ingen förklaringsbudget, och en mening står i stället (regel
   R1 i `k-troskeln.md` §8). Hur det könsuppdelade redovisas står i `k-troskeln.md` §2.

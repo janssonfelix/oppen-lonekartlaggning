@@ -52,12 +52,21 @@ function kTroskelLagst() { return state.paketLas.kTroskelLagst; }
 function _kAterstallVarde() { return Math.max(K_STANDARD, kTroskelLagst() ?? K_MIN); }
 
 /**
- * Golv för skattningar (regression per BAS, bootstrap, förväntad lön): aldrig under
- * standardvärdet, eftersom gränsen där gäller skattningens tillförlitlighet och inte
- * redovisningen. Följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden.
- * Räknas på den inställda tröskeln i båda lägena (ADR-51), så att skattningarna — och deras cacher — är desamma.
+ * Golv för skattningar (regression per BAS, bootstrap, förväntad lön): aldrig under standardvärdet, eftersom gränsen
+ * där gäller skattningens tillförlitlighet och inte redovisningen. På skärmen är det K_STANDARD, ett kvalitetsgolv; i
+ * exportläget följer det med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden i det som lämnar
+ * verktyget (ADR-103). En höjd tröskel hindrar alltså inte analysen på skärmen. Skattningar som sparas har golvet i
+ * nyckeln (bootstrapCIGallande och styrkaGallande i 13-oversikt.js, laLikaGrupper i 41-lika-arbete.js).
  */
-export function statGolv() { return statGolvVid(kInstalld()); }   // oberoende av läget: skattningarna är desamma på skärmen och i exporten
+export function statGolv() { return statGolvVid(kTroskel()); }   // kTroskel() är 1 på skärmen: golvet blir K_STANDARD
+
+/**
+ * Meningen där en analys på skärmen säger att en grupp är för liten för att prövas (ADR-103): vad användaren kan göra
+ * i stället. Med inledande mellanslag; tom i exportläget, där den inte hör hemma.
+ */
+export function provaEnskiltText() {
+    return state.kLage === 'export' ? '' : ' Se lönerna under Tabeller och egna vyer och dokumentera bedömningen under Sakliga skäl i Handlingsplan.';
+}
 
 /**
  * Avgör om en gruppstorlek är under k-tröskeln.
@@ -212,8 +221,8 @@ export function _csvMedStampel(rows, undantag) { return csvMedStampel(rows, unda
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
 export function _tsvMedStampel(rows, undantag) { return tsvMedStampel(rows, undantag, kInstalld()); }
 
-/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
-export function _kText(s) { return kText(s, kInstalld()); }
+/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet som gäller i läget (statGolv). */
+export function _kText(s) { return kText(s, kInstalld(), statGolv()); }
 
 /** Fyller de fasta texterna i index.html som nämner talet. */
 export function _fyllKTexter() {
@@ -289,7 +298,8 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     state.kTroskel = n;
     state._lifecycleCache = null;
     // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
-    // bootstrapen sekunder. § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
+    // bootstrapen sekunder. På skärmen är golvet alltid K_STANDARD (ADR-103), så det händer bara i förhandsvisningen;
+    // exportens golv räknas när en export läser det (bootstrapCIGallande, styrkaGallande). § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
     // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
     if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan

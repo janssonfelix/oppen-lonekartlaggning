@@ -14,13 +14,13 @@ import { kvantilVymodell, perBasNiva, sistaSteg, vymodellRegressionskort } from 
 import { esc } from './01-html-och-tillganglighet.js';
 import { antalCaption, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _basEffektNot, _raGapText, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { _basEffektNot, _raGapText, kInstalld, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { T, termText } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { getData, state } from './12-tillstand.js';
-import { fmtCI } from './13-oversikt.js';
+import { bootstrapCIGallande, fmtCI } from './13-oversikt.js';
 import { iExportLage, visningNy } from './23-exportgrind.js';
 import { _evidenceForPerBasRow, _openEvidenceModal } from './27-berakningsbevis.js';
 import { _RG_STEG_BAS, _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, forklaringsmodell, harAlder, runBlinderOaxaca, runQuantileRegressionAtAllTau, sattForklaringsmodell } from './50-regressionsmodeller.js';
@@ -702,7 +702,7 @@ export function ritaRegressionskort() {
     // Tolkning – plain language sammanfattning
     // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har, som det råa gapet framför det
     // (rawGapPct), verktygets tecken: negativt när kvinnor ligger lägre.
-    const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
+    const ki = bootstrapCIGallande(), rawCIsuffix = ki ? fmtCI(ki.gapPct) : '';
     const tolkning = isSig
         ? (vm.niva === 'titta'
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`
@@ -813,9 +813,10 @@ export function ritaRegressionskort() {
                             <th class="col-stat t-mitt">q-värde (BH-justerat) <span class="info-tip" data-tooltip="p-värdet justerat för att många grupper prövas samtidigt (Benjamini–Hochberg). Under 0,05: skillnaden håller också efter justeringen. Symboler: nålen = säkerställt efter korrigering och minst 3 % (verktygets storleksgräns), ögat = säkerställt efter korrigering men under 3 %, varningstriangeln = säkerställt i det råa p-värdet men inte efter korrigering.">${ikon('info', 14)}</span></th>
                             <th class="t-mitt" title="Öppnar bevis-popup som visar exakt formel, ingångsdata och BH-FDR-context för denna rad.">Bevis</th>
                         </tr></thead>
-                        <tbody>${perBasRows || `<tr><td class="t-mitt f-dampad" colspan="8">Inga ${T.niva.fl} har tillräcklig könsbalans (≥${statGolv()} av varje kön).</td></tr>`}</tbody>
+                        <tbody>${perBasRows || `<tr><td class="t-mitt f-dampad" colspan="8">Inga ${T.niva.fl} har tillräcklig könsbalans (≥${statGolv()} av varje kön).${provaEnskiltText()}</td></tr>`}</tbody>
                     </table>
                 </div>
+                ${provaEnskiltText() && vm.perBas.rader.some(p => p.status === 'too_few') ? `<p class="text-dampad-xs lh-1_5 marg-t-8">Där det står <em>För få</em> prövas skillnaden inte.${provaEnskiltText()}</p>` : ''}
                 <p class="text-dampad-xs lh-1_5 marg-t-8">
                     <strong>Multipel jämförelse-korrigering:</strong> ${esc(_bhTextFor(allM))}
                 </p>
@@ -996,7 +997,7 @@ export function renderBlinderOaxacaCard(reg) {
         wrap.innerHTML = `<div class="card">
             <h3 class="marg-0-0-8">Förklarad och oförklarad löneskillnad</h3>
             <p class="farg-dampad fs-md marg-0">
-                För få observationer (kräver minst 50 personer totalt och ${statGolv()} av varje kön).
+                För få observationer (kräver minst 50 personer totalt och ${statGolv()} av varje kön).${provaEnskiltText()}
             </p>
         </div>`;
         return;

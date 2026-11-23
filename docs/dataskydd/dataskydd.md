@@ -194,7 +194,9 @@ fältet, en konfigurationsfil eller ett senare paket kan gå under golvet. Fält
 lägre värden som ogiltiga. En lägre tröskel höjs till golvet när paketet läses in, och ett nytt paket med
 lägre eller inget golv kräver bekräftelse. Golvet följer paketet: *Rensa all data* tar bort det, och
 konfigurationsfilen bär det inte.
-Vissa skattningar (till exempel regression per BAS) följer `statGolv()` och sänks inte med tröskeln. Verktyget
+Vissa skattningar (till exempel regression per BAS) har ett eget golv, `statGolv()`, som är ett kvalitetsgolv och
+inte sänks med tröskeln. På skärmen är det 10; i det som lämnar verktyget är det den inställda tröskeln när den är
+högre (ADR-103), så att en höjd tröskel inte hindrar analysen på skärmen men gäller i exporterna. Verktyget
 har också andra, fasta golv som inte gör det (arkitekturbeslut.md, ADR-38). Texten ska alltså inte läsas som att alla
 golv är minst 10.
 

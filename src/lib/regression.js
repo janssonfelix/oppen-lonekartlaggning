@@ -704,7 +704,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
 
     // Förklaringsmodellen (ADR-56): vilka variabler som räknas bort. "Endast kön" är det ojusterade gapet, som inte får
     // lämna verktyget när ett kön ligger under den inställda tröskeln (ADR-12); huvudtalet ska vara detsamma på skärmen
-    // och i exporten, så spärren följer den inställda tröskeln oavsett läge (som statGolv). Då gäller standardmodellen
+    // och i exporten, så spärren följer den inställda tröskeln oavsett läge. Då gäller standardmodellen
     // och panelen säger varför. Modellen normaliseras som appens forklaringsmodell(): yrkesgrupp bara när raderna har
     // AID eller yrke, ålder bara när lönefilen har ålder.
     /** @type {any} */

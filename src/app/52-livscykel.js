@@ -10,7 +10,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { antalCaption, antalText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { buildBaseAudit, setAudit } from './05-tabeller-och-lankar.js';
-import { isKMasked, kTroskel, statGolv } from './06-k-troskel.js';
+import { isKMasked, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { kMaskNote } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
@@ -49,7 +49,7 @@ export function ritaLivscykel(given) {
         wrap.innerHTML = `<div class="insight-box warn pad-18">
             <strong>${ikon('statusVarning')} Livscykelanalysen kunde inte köras</strong>
             <p class="fs-md marg-8-0-0">${esc(result.error)}</p>
-            ${result.errorCode === 'no_age' ? '' : `<p class="text-dampad-sm marg-8-0-0">Analysen kräver minst 50 personer totalt, minst ${statGolv()} av varje kön och minst 2 ${T.niva.fl}. Säkerställ också att kön-, ålders- och lönefält är korrekt mappade.</p>`}
+            ${result.errorCode === 'no_age' ? '' : `<p class="text-dampad-sm marg-8-0-0">Analysen kräver minst 50 personer totalt, minst ${statGolv()} av varje kön och minst 2 ${T.niva.fl}. Säkerställ också att kön-, ålders- och lönefält är korrekt mappade.${result.errorCode === 'low_n' || result.errorCode === 'imbalance' ? provaEnskiltText() : ''}</p>`}
         </div>`;
         return;
     }

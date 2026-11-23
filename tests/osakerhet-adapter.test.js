@@ -33,14 +33,16 @@ describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osaker
     };
 
     for (const [namn, data] of Object.entries(underlag)) {
-        for (const k of [3, 10, 25]) {
-            describe(`${namn}, k = ${k}`, () => {
+        // Golvet är K_STANDARD på skärmen och följer den inställda tröskeln i exportläget (ADR-103).
+        for (const [k, lage] of [[3, 'skarm'], [10, 'skarm'], [25, 'skarm'], [25, 'export']]) {
+            describe(`${namn}, k = ${k}${lage === 'export' ? ' i exportläget' : ''}`, () => {
                 let d, golv;
                 beforeAll(() => {
                     w.__state.data = data().map(r => ({ ...r }));
                     w.__state.kTroskel = k;
+                    w.__state.kLage = lage;
                     d = w.__state.data;
-                    golv = Math.max(k, w.__K);
+                    golv = lage === 'export' ? Math.max(k, w.__K) : w.__K;
                 });
 
                 it('computeBootstrapCI', () => {

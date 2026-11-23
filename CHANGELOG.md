@@ -9,6 +9,10 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **En höjd minsta gruppstorlek hindrar inte analysen på skärmen.** Golvet för skattningar (regression per
+  BAS-intervall, Personer att granska, bootstrap-intervallen, livscykelmodellen med flera) är 10 på skärmen och följer
+  en högre tröskel bara i det som lämnar verktyget. Där en grupp är för liten för att prövas säger texten var lönerna
+  syns och att bedömningen dokumenteras under Sakliga skäl (ADR-103).
 - **Minsta gruppstorlek är lägst 3.** Med tröskeln 2 kan två personer i en grupp räkna fram varandras lön. En
   konfigurationsfil med tröskeln 2 avvisas, och i ett organisationspaket används värdet inte (tröskeln eller golvet)
   och ger en varning (ADR-102).

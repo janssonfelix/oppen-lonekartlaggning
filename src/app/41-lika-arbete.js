@@ -25,6 +25,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_ALLA, gapStatusKI, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { styrkaGallande } from './13-oversikt.js';
 import { _evidenceForEUMatrixRow, _evidenceForPaygapRow, _openEvidenceModal } from './27-berakningsbevis.js';
 import { _konTathetFigur } from './40-alder-karriar.js';
 import { _pagGrans } from './43-personer-att-granska.js';
@@ -62,7 +63,8 @@ export function laMinneSlapp() { _laMinnen.clear(); }
 /**
  * Lika arbetes yrkesgrupper med uppmärksamhetstrappans status (ADR-59, src/lib/status.js), EN gång per underlag,
  * tröskel och golv: prövningen mot slumpens gränser är en omkastning per grupp och behövs av fliken, rapportmodellen,
- * rapportunderlaget, årsbokslutet och dossiererna. Golvet för prövningen är statGolv() i båda lägena.
+ * rapportunderlaget, årsbokslutet och dossiererna. Golvet för prövningen är statGolv(), K_STANDARD på skärmen och
+ * följer den inställda tröskeln i exportläget (ADR-103); minnet räknar om när golvet inte är det det räknades vid.
  */
 export function laLikaGrupper(d = getData(), k = kTroskel()) {
     const minne = _laMinneFor(d, k), golv = statGolv();
@@ -288,7 +290,7 @@ const LA_OVERSIKT_DOLDA_KOLUMNER = ['direktiv'];
 /** Lika arbetes vymodell ur tillståndet (src/lib/vymodell-lika-arbete.js), med appens minne för de dyra delarna. */
 export function laVymodell() {
     const d = getData();
-    return vymodellLikaArbete(d, { k: kTroskel(), golv: statGolv(), sigma: state.powerAnalysis?.sigma,
+    return vymodellLikaArbete(d, { k: kTroskel(), golv: statGolv(), sigma: styrkaGallande()?.sigma,
         dominansDefinition: aidbasDefinition(), dominansGrans: aidbasGrans(), skrDel: _skrDel(),
         lika: d.length ? laLikaGrupper(d) : undefined, tratt: d.length ? _laTrattUnderlag(d) : undefined });
 }

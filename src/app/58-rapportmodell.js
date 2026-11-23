@@ -38,7 +38,7 @@ import { T, termText } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS, gapStatusNiva } from './10-diagramtema.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
 import { getBasIntervals, getData, policyFor, referensKalla, referensKortnamn, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
-import { bedomningUnderlag, UK_ETIKETT } from './13-oversikt.js';
+import { bedomningUnderlag, bootstrapCIGallande, styrkaGallande, UK_ETIKETT } from './13-oversikt.js';
 import { _methodAppendixData, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { renderTabContent } from './31-navigering.js';
@@ -480,7 +480,7 @@ let _rmMinne = null;
 export function _rmMinneSlapp() { _rmMinne = null; }
 function _rmMinnesNyckel() {
     return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
-        state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];
+        state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, bootstrapCIGallande(), styrkaGallande(), state.likvardighet && state.likvardighet.result, state.isDemo];
 }
 /** Ett avsnitt som förhandsbeskedet ser det: id, rubrik, delarnas typ och det utelämnade. */
 function _rmLattAvsnitt(a) {

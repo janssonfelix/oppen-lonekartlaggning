@@ -1749,8 +1749,8 @@ function csvMedStampel(rader, undantag, kInstalld2) {
 function tsvMedStampel(rader, undantag, kInstalld2) {
   return (kSanktNot(kInstalld2) || undantag) && !harStampel(rader) ? [...rader, [], [kStampelForVid(undantag, kInstalld2)]] : rader;
 }
-function kText(s, kInstalld2) {
-  return String(s ?? "").replace(/\{k\}/g, String(kInstalld2)).replace(/\{golv\}/g, String(statGolvVid(kInstalld2)));
+function kText(s, kInstalld2, golv = statGolvVid(kInstalld2)) {
+  return String(s ?? "").replace(/\{k\}/g, String(kInstalld2)).replace(/\{golv\}/g, String(golv));
 }
 function individLitenForVid(rader, k) {
   const grupp = (r) => `${aidAvYrke(r.yrke)}|${r.bas}`;
@@ -9946,6 +9946,7 @@ function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
   if (typeof ritGenerationNy === "function") ritGenerationNy();
   state.bootstrapCI = null;
   state.powerAnalysis = null;
+  if (typeof skattningarSlapp === "function") skattningarSlapp();
   if (typeof laMinneSlapp === "function") laMinneSlapp();
   if (likvardighet && state.likvardighet) state.likvardighet.result = null;
   if (recompute && state.data && state.data.length) {
@@ -10858,7 +10859,7 @@ function generateMotivationSuggestions(item) {
   return motiveringsgrunder(item, {
     kInstalld: kInstalld(),
     kTroskel: kTroskel(),
-    mdePct: state.powerAnalysis?.mdePct,
+    mdePct: styrkaGallande()?.mdePct,
     naraGrans: state.prioConfig.bevakaThreshold
   }).map((g) => ({ type: g.type, text: _motiveringText(g) }));
 }
@@ -12670,7 +12671,7 @@ function renderPersonerAttGranska(visaAlla = false) {
   const tal = (v, dec = 0) => new Intl.NumberFormat("sv-SE", { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v);
   const g = new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(grans);
   const demo = state.isDemo ? '<p class="pag-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : "";
-  const ejProvade = r.ejProvade ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? "person" : "personer"} i grupper med färre än ${statGolv()} ${personOrd(statGolv())} prövades inte.</p>` : "";
+  const ejProvade = r.ejProvade ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? "person" : "personer"} i grupper med färre än ${statGolv()} ${personOrd(statGolv())} prövades inte.${provaEnskiltText()}</p>` : "";
   if (!(r.provade.kv + r.provade.ma)) {
     body.innerHTML = demo + `<p>Inga grupper med minst ${statGolv()} ${personOrd(statGolv())} i samma AID och BAS.</p>` + ejProvade;
     return;
@@ -14777,7 +14778,7 @@ function ritaLivscykel(given) {
     wrap.innerHTML = `<div class="insight-box warn pad-18">
             <strong>${ikon("statusVarning")} Livscykelanalysen kunde inte köras</strong>
             <p class="fs-md marg-8-0-0">${esc(result.error)}</p>
-            ${result.errorCode === "no_age" ? "" : `<p class="text-dampad-sm marg-8-0-0">Analysen kräver minst 50 personer totalt, minst ${statGolv()} av varje kön och minst 2 ${T.niva.fl}. Säkerställ också att kön-, ålders- och lönefält är korrekt mappade.</p>`}
+            ${result.errorCode === "no_age" ? "" : `<p class="text-dampad-sm marg-8-0-0">Analysen kräver minst 50 personer totalt, minst ${statGolv()} av varje kön och minst 2 ${T.niva.fl}. Säkerställ också att kön-, ålders- och lönefält är korrekt mappade.${result.errorCode === "low_n" || result.errorCode === "imbalance" ? provaEnskiltText() : ""}</p>`}
         </div>`;
     return;
   }
@@ -15643,7 +15644,7 @@ function ritaRegressionskort() {
     const note = s.status === "singular" ? " (multikollinearitet)" : s.status === "too_few" ? " (för få obs)" : "";
     return `${sym} <code class="fs-xs">${esc(s.desc)}</code><span class="text-dampad-xs">${note}</span>`;
   }).join(" &nbsp;|&nbsp; ");
-  const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : "";
+  const ki = bootstrapCIGallande(), rawCIsuffix = ki ? fmtCI(ki.gapPct) : "";
   const tolkning = isSig ? vm.niva === "titta" ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : "utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den."} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.` : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under verktygets storleksgräns på 3 %. Lagen kräver att du analyserar också den: dokumentera de sakliga skälen och följ upp den över tid.` : `<strong>Den råa löneskillnaden (${_raGapText(r, (v) => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : "är statistiskt obetydligt redan utan kontroller"}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig: underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
   const tf = vm.tillforlitlighet;
   const _obsPerParam = tf.obsPerParam;
@@ -15743,9 +15744,10 @@ function ritaRegressionskort() {
                             <th class="col-stat t-mitt">q-värde (BH-justerat) <span class="info-tip" data-tooltip="p-värdet justerat för att många grupper prövas samtidigt (Benjamini–Hochberg). Under 0,05: skillnaden håller också efter justeringen. Symboler: nålen = säkerställt efter korrigering och minst 3 % (verktygets storleksgräns), ögat = säkerställt efter korrigering men under 3 %, varningstriangeln = säkerställt i det råa p-värdet men inte efter korrigering.">${ikon("info", 14)}</span></th>
                             <th class="t-mitt" title="Öppnar bevis-popup som visar exakt formel, ingångsdata och BH-FDR-context för denna rad.">Bevis</th>
                         </tr></thead>
-                        <tbody>${perBasRows || `<tr><td class="t-mitt f-dampad" colspan="8">Inga ${T.niva.fl} har tillräcklig könsbalans (≥${statGolv()} av varje kön).</td></tr>`}</tbody>
+                        <tbody>${perBasRows || `<tr><td class="t-mitt f-dampad" colspan="8">Inga ${T.niva.fl} har tillräcklig könsbalans (≥${statGolv()} av varje kön).${provaEnskiltText()}</td></tr>`}</tbody>
                     </table>
                 </div>
+                ${provaEnskiltText() && vm.perBas.rader.some((p) => p.status === "too_few") ? `<p class="text-dampad-xs lh-1_5 marg-t-8">Där det står <em>För få</em> prövas skillnaden inte.${provaEnskiltText()}</p>` : ""}
                 <p class="text-dampad-xs lh-1_5 marg-t-8">
                     <strong>Multipel jämförelse-korrigering:</strong> ${esc(_bhTextFor(allM))}
                 </p>
@@ -15760,7 +15762,7 @@ function ritaRegressionskort() {
     const { p10, p50, p90 } = kv;
     const pctTecken = (v) => `${v >= 0 ? "+" : "−"}${svPct(Math.abs(v), 1)}`;
     const peTecken = (v) => `${v >= 0 ? "+" : "−"}${svTal(Math.abs(v), 1)}`;
-    const kiCell = (ki, fmt) => ki ? `${fmt(ki.lag)} till ${fmt(ki.hog)}` : qr.kiVantar ? '<span class="f-dampad">räknas i bakgrunden…</span>' : '<span class="f-dampad">–</span>';
+    const kiCell = (ki2, fmt) => ki2 ? `${fmt(ki2.lag)} till ${fmt(ki2.hog)}` : qr.kiVantar ? '<span class="f-dampad">räknas i bakgrunden…</span>' : '<span class="f-dampad">–</span>';
     const fmtRow = (label, helper, x) => {
       if (!x || x.error) return `<tr><td>${label}</td><td><em class="f-dampad">Kunde ej estimeras</em></td><td>–</td><td>${helper}</td></tr>`;
       return `<tr><td>${label}</td><td class="halvfet tabelltal">${pctTecken(x.konPct)}</td><td class="tabelltal">${kiCell(x.ki, pctTecken)}</td><td class="text-dampad-sm">${helper}</td></tr>`;
@@ -15917,7 +15919,7 @@ function renderBlinderOaxacaCard(reg) {
     wrap.innerHTML = `<div class="card">
             <h3 class="marg-0-0-8">Förklarad och oförklarad löneskillnad</h3>
             <p class="farg-dampad fs-md marg-0">
-                För få observationer (kräver minst 50 personer totalt och ${statGolv()} av varje kön).
+                För få observationer (kräver minst 50 personer totalt och ${statGolv()} av varje kön).${provaEnskiltText()}
             </p>
         </div>`;
     return;
@@ -20795,8 +20797,8 @@ function _rmMinnesNyckel() {
     state.perBasRecept,
     state.forklaringsmodell,
     state.gapUppdelning,
-    state.bootstrapCI,
-    state.powerAnalysis,
+    bootstrapCIGallande(),
+    styrkaGallande(),
     state.likvardighet && state.likvardighet.result,
     state.isDemo
   ];
@@ -25287,6 +25289,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   if (typeof _fcGlomKnappresultat === "function") _fcGlomKnappresultat();
   state.bootstrapCI = null;
   state.powerAnalysis = null;
+  if (typeof skattningarSlapp === "function") skattningarSlapp();
   state.dataAudit = null;
   if (state.likvardighet) state.likvardighet.result = null;
   RENSA_BEHALLARE.forEach((id) => {
@@ -25990,7 +25993,7 @@ function laVymodell() {
   return vymodellLikaArbete(d, {
     k: kTroskel(),
     golv: statGolv(),
-    sigma: state.powerAnalysis?.sigma,
+    sigma: styrkaGallande()?.sigma,
     dominansDefinition: aidbasDefinition(),
     dominansGrans: aidbasGrans(),
     skrDel: _skrDel(),
@@ -30422,9 +30425,56 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
   if (detaljer) detaljer.hidden = false;
 }
 function computeBootstrapCI() {
-  const t0 = performance.now();
-  const ki = organisationensKvotKI(getData(), statGolv());
-  state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
+  state.bootstrapCI = _skattning("bootstrapCI", statGolv());
+}
+var _golvFor = /* @__PURE__ */ new WeakMap();
+var _nollVid = (
+  /** @type {Record<string, number|undefined>} */
+  {}
+);
+var _andraGolv = /* @__PURE__ */ new Map();
+var _RAKNA = {
+  bootstrapCI: (golv) => {
+    const t0 = performance.now(), ki = organisationensKvotKI(getData(), golv);
+    return ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
+  },
+  powerAnalysis: (golv) => styrkeanalys(getData(), golv)
+};
+function _skattning(falt, golv) {
+  const ut = _RAKNA[falt](golv);
+  if (ut) _golvFor.set(ut, golv);
+  else _nollVid[falt] = golv;
+  return ut;
+}
+function skattningarSlapp() {
+  _andraGolv.clear();
+  delete _nollVid.bootstrapCI;
+  delete _nollVid.powerAnalysis;
+}
+function _vidGolv(falt) {
+  const golv = statGolv(), v = state[falt];
+  if (v != null ? _golvFor.get(v) === golv : _nollVid[falt] === void 0 || _nollVid[falt] === golv) return v;
+  let m = _andraGolv.get(golv);
+  if (!m || m.d !== state.data || m.n !== state.data.length) {
+    m = { d: state.data, n: state.data.length };
+    _andraGolv.set(golv, m);
+  }
+  if (!(falt in m)) {
+    try {
+      const ut = _RAKNA[falt](golv);
+      if (ut) _golvFor.set(ut, golv);
+      m[falt] = ut;
+    } catch (_e) {
+      m[falt] = null;
+    }
+  }
+  return m[falt];
+}
+function bootstrapCIGallande() {
+  return _vidGolv("bootstrapCI");
+}
+function styrkaGallande() {
+  return _vidGolv("powerAnalysis");
 }
 function fmtCI(ci, decimals = 1) {
   if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return "";
@@ -30433,7 +30483,7 @@ function fmtCI(ci, decimals = 1) {
   return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${B})">[95 % KI: ${intervall}]</span>`;
 }
 function computePowerAnalysis() {
-  return styrkeanalys(getData(), statGolv());
+  return _skattning("powerAnalysis", statGolv());
 }
 function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
   const host = document.getElementById("process-tracker");
@@ -30584,7 +30634,7 @@ function _ovRitaFilrad(har, antal) {
   rad.innerHTML = `<span><strong>Lönefil:</strong> ${svTal(antal, 0)} personer</span><span><strong>Referens:</strong> ${esc(harReferens() ? referensNamn() : "ingen inläst")}</span><span><strong>Jämförelsestatistik:</strong> ${state.statistik.length ? `${svTal(state.statistik.length, 0)} rader` : "ingen inläst"}</span>` + kTroskelLank() + `<a href="#" class="btn btn-secondary btn-sm" data-go-to-tab="filer">Filer och kvalitet</a>`;
 }
 function computeGroupMDE(nKv, nMa, sigmaLog) {
-  return gruppMde(nKv, nMa, sigmaLog || state.powerAnalysis?.sigma);
+  return gruppMde(nKv, nMa, sigmaLog || styrkaGallande()?.sigma);
 }
 function ritaNyckeltal() {
   const vm = oversiktNyckeltal(getData(), kTroskel());
@@ -30670,7 +30720,10 @@ function _kAterstallVarde() {
   return Math.max(K_STANDARD, kTroskelLagst() ?? K_MIN);
 }
 function statGolv() {
-  return statGolvVid(kInstalld());
+  return statGolvVid(kTroskel());
+}
+function provaEnskiltText() {
+  return state.kLage === "export" ? "" : " Se lönerna under Tabeller och egna vyer och dokumentera bedömningen under Sakliga skäl i Handlingsplan.";
 }
 function isKMasked(n) {
   return n < kTroskel();
@@ -30778,7 +30831,7 @@ function _tsvMedStampel(rows, undantag) {
   return tsvMedStampel(rows, undantag, kInstalld());
 }
 function _kText(s) {
-  return kText(s, kInstalld());
+  return kText(s, kInstalld(), statGolv());
 }
 function _fyllKTexter() {
   document.querySelectorAll("[data-k-troskel]").forEach((el) => {

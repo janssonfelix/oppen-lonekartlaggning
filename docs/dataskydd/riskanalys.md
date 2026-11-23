@@ -392,7 +392,8 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   personens lön gånger procentsatsen. Raden får en not, och filen hanteras som personuppgifter (§8). Rader som
   verktyget föreslår ur kandidatparen omfattas inte (ADR-69).
 - **Golven (ADR-38, ADR-57).** Skattningarna, bland dem regressionen per BAS, Blinder-Oaxaca, livscykelmodellen och
-  Personer att granska, kräver det högre av tröskeln och 10 och följer alltså inte med nedåt. Fasta golv står kvar
+  Personer att granska, kräver 10 på skärmen och i det som lämnar verktyget det högre av tröskeln och 10 (ADR-103); de
+  följer alltså inte med nedåt, och en höjd tröskel hindrar inte analysen på skärmen. Fasta golv står kvar
   enligt beslut: huvudregressionen i Lönestruktur kräver 5 kvinnor och 5 män, Prioriteringens motivering om medelålder
   3 av varje kön (en ålder, inget lönemått) och Löneöversiktens rader per AID-etikett 5 personer. Tabellerna per
   AID-kod och BAS-intervall utom *Lika arbete AID x BAS* (som har Lika arbetes grupper och regler, ADR-90) och
