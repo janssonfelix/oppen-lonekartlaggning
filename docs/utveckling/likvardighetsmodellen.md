@@ -196,7 +196,7 @@ var sida, ADR-86).
   `null`.
 - Externa par (`bootstrapMedianVsConstantKr`): den kvinnodominerade AID-etikettens löner dras om mot statistikens median som
   konstant, eftersom statistiken saknar individdata. Kräver minst 3 löner och en median över 0.
-- **Reproducerbart:** utan en injicerad slumpgenerator seedas bootstrappen per par ur parets egna löner (`rngFor` ur
+- **Reproducerbart:** utan en injicerad slumpgenerator seedas bootstrappen per par ur parets egna löner (`slumpFor` ur
   `src/lib/rng.js`; för externa par lönerna och statistikens median). Dragningarna görs ur lönerna sorterade stigande,
   så att intervallet inte beror på radordningen i filen (ADR-86). Två körningar på samma underlag ger samma
   intervall, också med raderna i en annan ordning, så att ett exporterat underlag går att återskapa. Orkestratorn skickar `opts.rng` vidare orört; bara

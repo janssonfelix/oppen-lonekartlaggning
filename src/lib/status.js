@@ -21,7 +21,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
  */
 import { median, percentilintervall } from './stat.js';
-import { rngFor } from './rng.js';
+import { slumpFor } from './rng.js';
 
 /** Verktygets egen storleksgräns för statusen, i procent av mäns lön. */
 export const STORLEKSGRANS = 3;
@@ -96,7 +96,7 @@ export function kiUtesluterLika(ci) {
  * @returns {{lag:number, hog:number}}
  */
 export function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
-    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = slumpFor(kv, ma), kvoter = new Array(B);
     // rang[i]: platsen i den sorterade listan för personen på plats i; sorterad[r]: lönen med rang r.
     const ordning = Array.from({ length: n }, (_, i) => i).sort((x, y) => alla[x] - alla[y]);
     const rang = new Int32Array(n), sorterad = new Float64Array(n), arKv = new Uint8Array(n);

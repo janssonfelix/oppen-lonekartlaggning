@@ -558,7 +558,7 @@ function _laOversiktTabell(bars, d = getData()) {
 // BEDÖMNINGEN av en grupp görs med omkastning (permutation) inom gruppen: könen kastas om slumpvis mellan gruppens
 // löner 1 000 gånger, och gruppens kvot jämförs med de mittersta 95 % av de kvoter slumpen ger. Det är exakt för
 // gruppens egen lönefördelning och egna antal — också för små grupper, ojämn könsfördelning och löner i steg.
-// Slumptalen är seedade ur datat (_rngFor), så resultatet är detsamma varje gång.
+// Slumptalen är seedade ur datat (_slumpFor), så resultatet är detsamma varje gång.
 //
 // Det skuggade FÄLTET är en jämn kurva för orientering, ritad för en grupp med lika många kvinnor som män:
 // 1,96 × 1,2533 × σ × √(1/nKv + 1/nMa), där σ = 1,4826 × MAD av ln(lön) − ln(könets median i gruppen) över alla

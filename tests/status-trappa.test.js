@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { statusNiva, direktivMarkering, slumpensGranser, omkastningsGranser, bedomSkillnad, perBasSignal, STORLEKSGRANS, DIREKTIVNIVA,
     STATUS_ORD, DIREKTIV_TIPS, DIREKTIV_KOLUMN } from '../src/lib/status.js';
 import { likaArbeteGrupper, stabilitetKort, avsnittBlock } from '../src/lib/rapportunderlag.js';
-import { rngFor } from '../src/lib/rng.js';
+import { slumpFor } from '../src/lib/rng.js';
 
 const person = (yrke, kon, lon) => ({ yrke, kon, lon, alder: 40, bas: 'C' });
 /** n löner jämnt fördelade kring `mitt` med relativ halvbredd `spann` (deterministiskt). */
@@ -89,7 +89,7 @@ function refMedian(a) {
     return n & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 function refOmkastningsGranser(kv, ma, B = 1000) {
-    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, rnd = slumpFor(kv, ma), kvoter = new Array(B);
     for (let b = 0; b < B; b++) {
         for (let i = 0; i < nKv; i++) { const j = i + ((rnd() * (n - i)) | 0), t = alla[i]; alla[i] = alla[j]; alla[j] = t; }
         const mKv = refMedian(alla.slice(0, nKv)), mMa = refMedian(alla.slice(nKv));

@@ -257,7 +257,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
 // högst betalda (glastak), längst i botten bland de lägst betalda (klibbigt golv). Samma tal som tabellen under.
 /** @type {any[]|null} */
 let _regKvantilSenast = null;
-// Bootstrap-KI på könskoefficienten och på skillnaden P90 − P10 (ADR-63): B omsamplingar av raderna, percentilintervall, seedat ur datat (_rngFor) så
+// Bootstrap-KI på könskoefficienten och på skillnaden P90 − P10 (ADR-63): B omsamplingar av raderna, percentilintervall, seedat ur datat (_slumpFor) så
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
 // tabellen säger det. IRLS-skattningen (quantileRegression i src/lib/regression.js) är en approximation av
 // kvantillösningen; intervallet bootstrappar den approximationen, inte den exakta LP-lösningen.
@@ -298,7 +298,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     const modell = forklaringsmodell();
     const raw = _rgKvantilDesign(getData(), modell).rader;
     const arKv = arKvinna;
-    const nyckel = `${_rngSeedFrom(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
+    const nyckel = `${_slumpFroAvTal(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
     const rakna = () => { const ut = _regKvantilBootstrap(raw, modell, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, diff: { varde: diff.varde, ki: ut.diffKi }, n: qr.n, nKv: qr.nKv, nMa: qr.nMa } }; return _regKvantilMinne.ut; };
     if (direkt) return rakna();

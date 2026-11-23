@@ -81,7 +81,7 @@ avsnitt 11.
 |---|---|---|---|---|---|---|
 | B4.1 | Bootstrapintervall (95 %) för mediankvoten: hela organisationen, per grupp, per dossier | `organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `osakerhet.js`; dragningarna i `bootstrapMedianer`, `likvardighet.js` | lön, kön | `regressionsmodellen.md` §7; ADR-86 | `tests/osakerhet.test.js`, `tests/bootstrapkvot.test.js`, `tests/osakerhet-adapter.test.js` | saknas |
 | B4.2 | Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, löneöversynens grupper före och efter), bara där båda könen når k, med intervallet per grupp | `konskvotPerGrupp`, `osakerhet.js` | lön, kön | `k-troskeln.md`; intervallet ADR-86 | `tests/osakerhet.test.js` | saknas |
-| B4.3 | Generatorn: seed ur lönerna (sorterade), FNV-1a och mulberry32 | `seedFromNumbers`, `rngFor`, `rng.js` | lönerna | ADR-86 | `tests/rng.test.js`, `tests/slumpintervall-ordning.test.js` | saknas |
+| B4.3 | Generatorn: seed ur lönerna (sorterade), FNV-1a och mulberry32 | `froAvTal`, `slumpFor`, `rng.js` | lönerna | ADR-86 | `tests/rng.test.js`, `tests/slumpintervall-ordning.test.js` | saknas |
 | B4.4 | Konfidensband kring en regressionslinje | `regressionslinjensBand`, `osakerhet.js` | x, y | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
 | B4.5 | Minsta upptäckbara skillnad vid 80 % styrka och α = 0,05 | `mdeProcent`, `styrkeanalys`, `gruppMde`, `osakerhet.js` | σ, antal per kön | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
 | B4.6 | Extremvärden: z på log-lön per BAS-intervall, \|z\| ≥ 3 | `extremvarden`, `osakerhet.js` | lön, BAS | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |

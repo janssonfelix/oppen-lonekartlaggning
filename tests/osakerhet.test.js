@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { percentilintervall, median } from '../src/lib/stat.js';
-import { mulberry32, rngFor } from '../src/lib/rng.js';
+import { mulberry32, slumpFor } from '../src/lib/rng.js';
 import { slumpensGranser } from '../src/lib/status.js';
 import { quantileRegressionAtAllTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
 import {
@@ -75,8 +75,8 @@ describe('[B4.1] bootstrapintervallen på mediankvoten', () => {
         expect(a.hi).toBeLessThan(105);
     });
     it('medianKvotKI: utan generator seedas den ur lönerna', () => {
-        expect(medianKvotKI(kv, ma)).toEqual(medianKvotKI(kv, ma, { rng: rngFor(kv, ma) }));
-        expect(medianKvotKI(kv, ma, { B: 300 })).toEqual(medianKvotKI(kv, ma, { B: 300, rng: rngFor(kv, ma) }));
+        expect(medianKvotKI(kv, ma)).toEqual(medianKvotKI(kv, ma, { rng: slumpFor(kv, ma) }));
+        expect(medianKvotKI(kv, ma, { B: 300 })).toEqual(medianKvotKI(kv, ma, { B: 300, rng: slumpFor(kv, ma) }));
     });
     it('medianKvotKI: färre än tre av ett kön ger inget intervall', () => {
         expect(medianKvotKI([1, 2], [1, 2, 3])).toBeNull();
@@ -86,7 +86,7 @@ describe('[B4.1] bootstrapintervallen på mediankvoten', () => {
         const a = medianKvotKIGiltiga(kv, ma, { rng: mulberry32(7) });
         expect(a).toEqual(medianKvotKIGiltiga(kv, ma, { rng: mulberry32(7) }));
         expect(a.lo).toBeLessThan(a.hi);
-        expect(medianKvotKIGiltiga(kv, ma)).toEqual(medianKvotKIGiltiga(kv, ma, { rng: rngFor(kv, ma) }));
+        expect(medianKvotKIGiltiga(kv, ma)).toEqual(medianKvotKIGiltiga(kv, ma, { rng: slumpFor(kv, ma) }));
         // Männens löner är noll: ingen dragning har en positiv median.
         expect(medianKvotKIGiltiga(kv, [0, 0, 0, 0])).toBeNull();
         expect(medianKvotKIGiltiga([1, 2], [1, 2, 3])).toBeNull();
@@ -96,7 +96,7 @@ describe('[B4.1] bootstrapintervallen på mediankvoten', () => {
         expect(organisationensKvotKI(rader, 26)).toBeNull();
         const a = organisationensKvotKI(rader, 10, { rng: mulberry32(5) });
         expect(a).toEqual(organisationensKvotKI(rader, 10, { rng: mulberry32(5) }));
-        expect(organisationensKvotKI(rader, 10)).toEqual(organisationensKvotKI(rader, 10, { rng: rngFor(kv, ma) }));
+        expect(organisationensKvotKI(rader, 10)).toEqual(organisationensKvotKI(rader, 10, { rng: slumpFor(kv, ma) }));
         expect(a.B).toBe(2000);
         expect(a.ratio.point).toBe(median(kv) / median(ma));
         expect(a.ratio.lo).toBeLessThanOrEqual(a.ratio.point);
@@ -296,7 +296,7 @@ describe('[B4.8] kvantilBootstrap', () => {
     });
     it('utan generator seedas den ur lönerna per kön, och standardantalet är 200', () => {
         const b = kor({ B: 20 });
-        const c = kor({ B: 20, rng: rngFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon)) });
+        const c = kor({ B: 20, rng: slumpFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon)) });
         expect(b).toEqual(c);
         expect(KVANTIL_KI_B).toBe(200);
     });

@@ -8,7 +8,7 @@
  * Påhittade, uppenbart syntetiska löner.
  */
 import { describe, it, expect } from 'vitest';
-import { mulberry32, rngFor } from '../src/lib/rng.js';
+import { mulberry32, slumpFor } from '../src/lib/rng.js';
 import { omkastningsGranser, slumpensGranser, bedomSkillnad } from '../src/lib/status.js';
 import { bootstrapMedianer, bootstrapMedianDiffKr, bootstrapMedianVsConstantKr } from '../src/lib/likvardighet.js';
 import { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, trattUnderlag, kvantilBootstrap } from '../src/lib/osakerhet.js';
@@ -47,7 +47,7 @@ describe.each(STORLEKAR)('[B4.3] %i kvinnor och %i män i två ordningar', (nKv,
         expect([...kv2].sort()).toEqual([...kv].sort());
     });
     it('bootstrapens medianer per dragning', () => {
-        identiska(bootstrapMedianer(kv, ma, 200, rngFor(kv, ma)), bootstrapMedianer(kv2, ma2, 200, rngFor(kv2, ma2)));
+        identiska(bootstrapMedianer(kv, ma, 200, slumpFor(kv, ma)), bootstrapMedianer(kv2, ma2, 200, slumpFor(kv2, ma2)));
     });
     it('[B1.7] mediankvotens intervall (organisationen, per grupp, giltiga dragningar)', () => {
         const rader = l => [...l.kv.map(lon => ({ kon: 'kvinna', lon })), ...l.ma.map(lon => ({ kon: 'man', lon }))];
@@ -57,9 +57,9 @@ describe.each(STORLEKAR)('[B4.3] %i kvinnor och %i män i två ordningar', (nKv,
         identiska(medianKvotKIGiltiga(kv, ma), medianKvotKIGiltiga(kv2, ma2));
     });
     it('medianskillnadens intervall i kronor, mot en annan grupp och mot en konstant', () => {
-        identiska(bootstrapMedianDiffKr(kv, ma, 1000, rngFor(kv, ma)), bootstrapMedianDiffKr(kv2, ma2, 1000, rngFor(kv2, ma2)));
-        identiska(bootstrapMedianVsConstantKr(kv, 32000, 1000, rngFor(kv, [32000])),
-            bootstrapMedianVsConstantKr(kv2, 32000, 1000, rngFor(kv2, [32000])));
+        identiska(bootstrapMedianDiffKr(kv, ma, 1000, slumpFor(kv, ma)), bootstrapMedianDiffKr(kv2, ma2, 1000, slumpFor(kv2, ma2)));
+        identiska(bootstrapMedianVsConstantKr(kv, 32000, 1000, slumpFor(kv, [32000])),
+            bootstrapMedianVsConstantKr(kv2, 32000, 1000, slumpFor(kv2, [32000])));
     });
     it('[B4.9] omkastningens gränser, slumpens gränser och trappans nivå', () => {
         identiska(omkastningsGranser(kv, ma), omkastningsGranser(kv2, ma2));

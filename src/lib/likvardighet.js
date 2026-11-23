@@ -38,7 +38,7 @@
  */
 
 import { median as _median, percentilintervall } from './stat.js';
-import { rngFor } from './rng.js';
+import { slumpFor } from './rng.js';
 import { direktivMarkering } from './status.js';
 import { arKvinna } from './kon.js';
 import { namnrader } from './aid.js';
@@ -408,11 +408,11 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
     const B = opts.B ?? 1000;
     const golv = opts.golv ?? ALDERS_GOLV_DEFAULT;
     // Utan explicit rng seedas bootstrappen PER PAR ur parets egna löner
-    // (rngFor). Då blir konfidensintervallen reproducerbara mellan körningar —
+    // (slumpFor). Då blir konfidensintervallen reproducerbara mellan körningar —
     // ett Math.random-default gav nya KI varje gång och gjorde ett exporterat
     // underlag omöjligt att återskapa. Tester injicerar sin egen rng.
     const rngOpt = opts.rng ?? null;
-    const prngFor = (a, b) => rngOpt || rngFor(a, b);
+    const prngFor = (a, b) => rngOpt || slumpFor(a, b);
     const jämförelse = {
         gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
         internaPar: 0, externaPar: 0, basMedExternFallback: 0,
@@ -500,11 +500,11 @@ export function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
     const B = opts.B ?? 1000;
     const golv = opts.golv ?? ALDERS_GOLV_DEFAULT;
     // Utan explicit rng seedas bootstrappen PER PAR ur parets egna löner
-    // (rngFor). Då blir konfidensintervallen reproducerbara mellan körningar —
+    // (slumpFor). Då blir konfidensintervallen reproducerbara mellan körningar —
     // ett Math.random-default gav nya KI varje gång och gjorde ett exporterat
     // underlag omöjligt att återskapa. Tester injicerar sin egen rng.
     const rngOpt = opts.rng ?? null;
-    const prngFor = (a, b) => rngOpt || rngFor(a, b);
+    const prngFor = (a, b) => rngOpt || slumpFor(a, b);
     const bandPct = opts.bandPct ?? 5;
     // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget;
     // fliken och exporterna visar dem inte när kravProxy är 'poäng'.
@@ -598,7 +598,7 @@ export function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
     // Konfidensintervall bara för paren som behålls — sorteringen beror inte på dem, och
     // bootstrappen seedas per par, så resultatet blir detsamma som om alla räknats.
     return ut.slice(0, topN).map(({ _f, _g, ...p }) => {
-        try { p.gapCI = bootstrapMedianDiffKr(_f.lons, _g.lons, B, rngOpt || rngFor(_f.lons, _g.lons)); } catch (_) { p.gapCI = null; }
+        try { p.gapCI = bootstrapMedianDiffKr(_f.lons, _g.lons, B, rngOpt || slumpFor(_f.lons, _g.lons)); } catch (_) { p.gapCI = null; }
         return p;
     });
 }

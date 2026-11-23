@@ -14,7 +14,7 @@
  *   - kvantilBootstrap: intervallen kring kvantilregressionens skattningar (ADR-63).
  *
  * Rena funktioner: raderna, golvet och tröskeln kommer in som argument. Där slump används är generatorn ett val
- * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
+ * (`rng`); utan den seedas den ur datat (slumpFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
  * sorterade listor, så att det inte beror på radordningen (ADR-86). Percentilintervallet tas
  * med percentilintervall i stat.js. Appens funktioner med de tidigare namnen (computeBootstrapCI,
  * computePowerAnalysis, computeGroupMDE, linearRegressionCI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
@@ -26,7 +26,7 @@
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B4.1, B4.2 och B4.4–B4.8).
  */
 import { median, linjarRegression, percentilintervall } from './stat.js';
-import { rngFor } from './rng.js';
+import { slumpFor } from './rng.js';
 import { slumpensGranser } from './status.js';
 import { bootstrapMedianer } from './likvardighet.js';
 import { kvantilDesign, quantileRegression } from './regression.js';
@@ -102,7 +102,7 @@ export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } =
     const ma = d.filter(r => arMan(r)).map(r => r.lon);
     if (kv.length < golv || ma.length < golv) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kv, ma, B, rng || rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kv, ma, B, rng || slumpFor(kv, ma));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? mKv / mMa : 1;
@@ -128,7 +128,7 @@ export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } =
 export function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
     if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLons, maLons, B, rng || rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kvLons, maLons, B, rng || slumpFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
@@ -170,7 +170,7 @@ export function konskvotPerGrupp(grupper, { k, ki = false }) {
 export function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {}) {
     if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLons, maLons, B, rng || rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kvLons, maLons, B, rng || slumpFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
@@ -458,7 +458,7 @@ function _kvantilRadordning(a, b) {
  * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number, kiUtelamnad:string}}
  */
 export function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
-    const rnd = rng || rngFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+    const rnd = rng || slumpFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
     // Raderna sorteras på en fast, fullständig nyckel innan dragningen, så att omsamplingarna inte beror på
     // radordningen (ADR-86). Två rader som är lika i nyckeln är utbytbara i designen.
     const raw = [...raw0].sort(_kvantilRadordning);

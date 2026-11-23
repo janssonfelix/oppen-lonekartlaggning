@@ -3975,19 +3975,19 @@ const __mirrorRng = (() => {
  * likvardighet.js och status.js, kvantilbootstrapen i osakerhet.js) sorterar
  * den först. Samma löner i en annan ordning ger samma intervall.
  *
- * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_rng*`
+ * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_slump*`
  * i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra här och kör
  * `npm run build:app`, rör ej spegeln (vaktas av artefaktgrinden).
  */
 
 /**
  * FNV-1a, 32 bitar. Snabb och stabil sträng→heltal-hash.
- * @param {string} str
+ * @param {string} text
  * @returns {number} osignerat 32-bitars heltal
  */
-function hashSeed(str) {
+function froAvText(text) {
     let h = 2166136261;
-    const s = String(str);
+    const s = String(text);
     for (let i = 0; i < s.length; i++) {
         h ^= s.charCodeAt(i);
         h = Math.imul(h, 16777619);
@@ -4017,12 +4017,12 @@ function mulberry32(seed) {
  * urval → nytt men reproducerbart intervall). Summan tas över talen sorterade
  * stigande: med decimaler (öre) kan en flyttalssumma annars skilja i sista
  * siffran mellan två ordningar och, när den slutar på ,50, avrundas olika.
- * @param {...Array<number>} arrays
+ * @param {...Array<number>} serier
  * @returns {number}
  */
-function seedFromNumbers(...arrays) {
+function froAvTal(...serier) {
     let s = '';
-    for (const arr of arrays) {
+    for (const arr of serier) {
         if (!Array.isArray(arr)) { s += 'x|'; continue; }
         const tal = [];
         for (let i = 0; i < arr.length; i++) {
@@ -4034,30 +4034,30 @@ function seedFromNumbers(...arrays) {
         for (let i = 0; i < tal.length; i++) sum += tal[i];
         s += arr.length + ':' + Math.round(sum) + '|';
     }
-    return hashSeed(s);
+    return froAvText(s);
 }
 
 /**
  * Bekvämlighet: seedad generator direkt ur talserierna.
- * @param {...Array<number>} arrays
+ * @param {...Array<number>} serier
  * @returns {() => number}
  */
-function rngFor(...arrays) {
-    return mulberry32(seedFromNumbers(...arrays));
+function slumpFor(...serier) {
+    return mulberry32(froAvTal(...serier));
 }
 
-    return { hashSeed, seedFromNumbers, rngFor };
+    return { froAvText, froAvTal, slumpFor };
 })();
-const _rngHashSeed = __mirrorRng.hashSeed;
-const _rngSeedFrom = __mirrorRng.seedFromNumbers;
-const _rngFor = __mirrorRng.rngFor;
+const _slumpFroAvText = __mirrorRng.froAvText;
+const _slumpFroAvTal = __mirrorRng.froAvTal;
+const _slumpFor = __mirrorRng.slumpFor;
 
 // ---- speglar src/lib/status.js ----
 const __mirrorStatus = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
     const percentilintervall = __mirrorStat.percentilintervall;
-    const rngFor = __mirrorRng.rngFor;
+    const slumpFor = __mirrorRng.slumpFor;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4156,7 +4156,7 @@ function kiUtesluterLika(ci) {
  * @returns {{lag:number, hog:number}}
  */
 function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
-    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = slumpFor(kv, ma), kvoter = new Array(B);
     // rang[i]: platsen i den sorterade listan för personen på plats i; sorterad[r]: lönen med rang r.
     const ordning = Array.from({ length: n }, (_, i) => i).sort((x, y) => alla[x] - alla[y]);
     const rang = new Int32Array(n), sorterad = new Float64Array(n), arKv = new Uint8Array(n);
@@ -4246,7 +4246,7 @@ const __mirrorLikvardighet = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
     const percentilintervall = __mirrorStat.percentilintervall;
-    const rngFor = __mirrorRng.rngFor;
+    const slumpFor = __mirrorRng.slumpFor;
     const direktivMarkering = __mirrorStatus.direktivMarkering;
     const arKvinna = __mirrorKon.arKvinna;
     const namnrader = __mirrorAid.namnrader;
@@ -4660,11 +4660,11 @@ function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
     const B = opts.B ?? 1000;
     const golv = opts.golv ?? ALDERS_GOLV_DEFAULT;
     // Utan explicit rng seedas bootstrappen PER PAR ur parets egna löner
-    // (rngFor). Då blir konfidensintervallen reproducerbara mellan körningar —
+    // (slumpFor). Då blir konfidensintervallen reproducerbara mellan körningar —
     // ett Math.random-default gav nya KI varje gång och gjorde ett exporterat
     // underlag omöjligt att återskapa. Tester injicerar sin egen rng.
     const rngOpt = opts.rng ?? null;
-    const prngFor = (a, b) => rngOpt || rngFor(a, b);
+    const prngFor = (a, b) => rngOpt || slumpFor(a, b);
     const jämförelse = {
         gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
         internaPar: 0, externaPar: 0, basMedExternFallback: 0,
@@ -4752,11 +4752,11 @@ function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
     const B = opts.B ?? 1000;
     const golv = opts.golv ?? ALDERS_GOLV_DEFAULT;
     // Utan explicit rng seedas bootstrappen PER PAR ur parets egna löner
-    // (rngFor). Då blir konfidensintervallen reproducerbara mellan körningar —
+    // (slumpFor). Då blir konfidensintervallen reproducerbara mellan körningar —
     // ett Math.random-default gav nya KI varje gång och gjorde ett exporterat
     // underlag omöjligt att återskapa. Tester injicerar sin egen rng.
     const rngOpt = opts.rng ?? null;
-    const prngFor = (a, b) => rngOpt || rngFor(a, b);
+    const prngFor = (a, b) => rngOpt || slumpFor(a, b);
     const bandPct = opts.bandPct ?? 5;
     // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget;
     // fliken och exporterna visar dem inte när kravProxy är 'poäng'.
@@ -4850,7 +4850,7 @@ function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
     // Konfidensintervall bara för paren som behålls — sorteringen beror inte på dem, och
     // bootstrappen seedas per par, så resultatet blir detsamma som om alla räknats.
     return ut.slice(0, topN).map(({ _f, _g, ...p }) => {
-        try { p.gapCI = bootstrapMedianDiffKr(_f.lons, _g.lons, B, rngOpt || rngFor(_f.lons, _g.lons)); } catch (_) { p.gapCI = null; }
+        try { p.gapCI = bootstrapMedianDiffKr(_f.lons, _g.lons, B, rngOpt || slumpFor(_f.lons, _g.lons)); } catch (_) { p.gapCI = null; }
         return p;
     });
 }
@@ -6783,7 +6783,7 @@ const __mirrorOsakerhet = (() => {
     const median = __mirrorStat.median;
     const linjarRegression = __mirrorStat.linjarRegression;
     const percentilintervall = __mirrorStat.percentilintervall;
-    const rngFor = __mirrorRng.rngFor;
+    const slumpFor = __mirrorRng.slumpFor;
     const slumpensGranser = __mirrorStatus.slumpensGranser;
     const bootstrapMedianer = __mirrorLikvardighet.bootstrapMedianer;
     const kvantilDesign = __mirrorRegression.kvantilDesign;
@@ -6809,7 +6809,7 @@ const __mirrorOsakerhet = (() => {
  *   - kvantilBootstrap: intervallen kring kvantilregressionens skattningar (ADR-63).
  *
  * Rena funktioner: raderna, golvet och tröskeln kommer in som argument. Där slump används är generatorn ett val
- * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
+ * (`rng`); utan den seedas den ur datat (slumpFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
  * sorterade listor, så att det inte beror på radordningen (ADR-86). Percentilintervallet tas
  * med percentilintervall i stat.js. Appens funktioner med de tidigare namnen (computeBootstrapCI,
  * computePowerAnalysis, computeGroupMDE, linearRegressionCI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
@@ -6896,7 +6896,7 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
     const ma = d.filter(r => arMan(r)).map(r => r.lon);
     if (kv.length < golv || ma.length < golv) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kv, ma, B, rng || rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kv, ma, B, rng || slumpFor(kv, ma));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? mKv / mMa : 1;
@@ -6922,7 +6922,7 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
 function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
     if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLons, maLons, B, rng || rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kvLons, maLons, B, rng || slumpFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
@@ -6964,7 +6964,7 @@ function konskvotPerGrupp(grupper, { k, ki = false }) {
 function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {}) {
     if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLons, maLons, B, rng || rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kvLons, maLons, B, rng || slumpFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
@@ -7252,7 +7252,7 @@ function _kvantilRadordning(a, b) {
  * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number, kiUtelamnad:string}}
  */
 function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
-    const rnd = rng || rngFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+    const rnd = rng || slumpFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
     // Raderna sorteras på en fast, fullständig nyckel innan dragningen, så att omsamplingarna inte beror på
     // radordningen (ADR-86). Två rader som är lika i nyckeln är utbytbara i designen.
     const raw = [...raw0].sort(_kvantilRadordning);
@@ -30959,7 +30959,7 @@ function _laOversiktTabell(bars, d = getData()) {
 // BEDÖMNINGEN av en grupp görs med omkastning (permutation) inom gruppen: könen kastas om slumpvis mellan gruppens
 // löner 1 000 gånger, och gruppens kvot jämförs med de mittersta 95 % av de kvoter slumpen ger. Det är exakt för
 // gruppens egen lönefördelning och egna antal — också för små grupper, ojämn könsfördelning och löner i steg.
-// Slumptalen är seedade ur datat (_rngFor), så resultatet är detsamma varje gång.
+// Slumptalen är seedade ur datat (_slumpFor), så resultatet är detsamma varje gång.
 //
 // Det skuggade FÄLTET är en jämn kurva för orientering, ritad för en grupp med lika många kvinnor som män:
 // 1,96 × 1,2533 × σ × √(1/nKv + 1/nMa), där σ = 1,4826 × MAD av ln(lön) − ln(könets median i gruppen) över alla
@@ -32418,7 +32418,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
 // högst betalda (glastak), längst i botten bland de lägst betalda (klibbigt golv). Samma tal som tabellen under.
 /** @type {any[]|null} */
 let _regKvantilSenast = null;
-// Bootstrap-KI på könskoefficienten och på skillnaden P90 − P10 (ADR-63): B omsamplingar av raderna, percentilintervall, seedat ur datat (_rngFor) så
+// Bootstrap-KI på könskoefficienten och på skillnaden P90 − P10 (ADR-63): B omsamplingar av raderna, percentilintervall, seedat ur datat (_slumpFor) så
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
 // tabellen säger det. IRLS-skattningen (quantileRegression i src/lib/regression.js) är en approximation av
 // kvantillösningen; intervallet bootstrappar den approximationen, inte den exakta LP-lösningen.
@@ -32459,7 +32459,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     const modell = forklaringsmodell();
     const raw = _rgKvantilDesign(getData(), modell).rader;
     const arKv = arKvinna;
-    const nyckel = `${_rngSeedFrom(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
+    const nyckel = `${_slumpFroAvTal(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
     const rakna = () => { const ut = _regKvantilBootstrap(raw, modell, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, diff: { varde: diff.varde, ki: ut.diffKi }, n: qr.n, nKv: qr.nKv, nMa: qr.nMa } }; return _regKvantilMinne.ut; };
     if (direkt) return rakna();
@@ -39793,7 +39793,7 @@ function _lpKonsdominans() {
     return [['Kvinnodominerad', PALETTE.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad', PALETTE.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad', PALETTE.semantic.neutral, a => konsklassNu(a) === 'blandad']];
 }
 // Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
-function _lpForskjutning(aid, bas) { return ((_rngHashSeed(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
+function _lpForskjutning(aid, bas) { return ((_slumpFroAvText(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
 
 // Bandkartans figur (diagramkärnan, ADR-39): referensens spann och organisationens faktiska spann per BAS som märket
 // `intervall`, med varje yrkesgrupps median som punkt.

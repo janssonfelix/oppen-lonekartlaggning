@@ -7,7 +7,7 @@
 // src/lib/. src/lib/ är enda källa: varje modul inlinas VERBATIM i en
 // IIFE (endast `export` strippas — funktionskropparna rörs aldrig) och de namn
 // som app.js anropar exponeras som const-alias med oförändrade speglingsnamn
-// (_anpassaOLS, _fcComputePott, _stMedianGapPct, _rngFor, _lpBandPosition …).
+// (_anpassaOLS, _fcComputePott, _stMedianGapPct, _slumpFor, _lpBandPosition …).
 //
 // Eftersom kropparna inlinas oförändrade kan spegel och lib inte glida isär.
 // tests/drift.test.js vaktar att den incheckade 09-lib-speglar.js är i synk med
@@ -119,7 +119,7 @@ export const MODULES = [
     },
     {
         file: 'rng.js', ns: '__mirrorRng',
-        expose: { hashSeed: '_rngHashSeed', seedFromNumbers: '_rngSeedFrom', rngFor: '_rngFor' }
+        expose: { froAvText: '_slumpFroAvText', froAvTal: '_slumpFroAvTal', slumpFor: '_slumpFor' }
     },
     {
         // Uppmärksamhetstrappan och direktivmarkeringen (ADR-59) — importerar stat.js och rng.js
@@ -405,7 +405,7 @@ export const MODULES = [
 // INUTI den importerande modulens IIFE — alltså inget nytt globalt namn.
 //
 // Måste hantera detta eftersom lib-moduler bygger på varandra
-// (likvardighet.js använder stat.median och rng.rngFor). Utan stödet hamnar en
+// (likvardighet.js använder stat.median och rng.slumpFor). Utan stödet hamnar en
 // `import`-sats i ett classic script och hela bygget faller.
 function _parseImports(src, modIndex, självFil) {
     const rx = /^import\s*\{([^}]*)\}\s*from\s*['"]\.\/([\w.-]+)['"];?\s*$/gm;

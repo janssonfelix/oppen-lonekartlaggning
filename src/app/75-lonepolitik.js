@@ -185,7 +185,7 @@ function _lpKonsdominans() {
     return [['Kvinnodominerad', PALETTE.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad', PALETTE.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad', PALETTE.semantic.neutral, a => konsklassNu(a) === 'blandad']];
 }
 // Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
-function _lpForskjutning(aid, bas) { return ((_rngHashSeed(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
+function _lpForskjutning(aid, bas) { return ((_slumpFroAvText(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
 
 // Bandkartans figur (diagramkärnan, ADR-39): referensens spann och organisationens faktiska spann per BAS som märket
 // `intervall`, med varje yrkesgrupps median som punkt.

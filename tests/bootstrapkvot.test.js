@@ -10,7 +10,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { bootstrapMedianer } from '../src/lib/likvardighet.js';
-import { rngFor } from '../src/lib/rng.js';
+import { slumpFor } from '../src/lib/rng.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 function refMedian(arr) {
@@ -31,7 +31,7 @@ function refDragningar(kv0, ma0, B, rnd) {
 // Den tidigare _laBootstrapGapCI (B = 1000, 100 när männens median inte är positiv).
 function refLa(kv, ma, B = 1000) {
     if (kv.length < 3 || ma.length < 3) return null;
-    const ratios = refDragningar(kv, ma, B, rngFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : 100));
+    const ratios = refDragningar(kv, ma, B, slumpFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : 100));
     ratios.sort((a, b) => a - b);
     const svans = Math.floor(B * 0.025);
     return { lo: ratios[svans], hi: ratios[B - 1 - svans] };
@@ -39,7 +39,7 @@ function refLa(kv, ma, B = 1000) {
 // Den tidigare _gdBootstrapGapCI (B = 2000, dragningar med männens median 0 räknas inte).
 function refGd(kv, ma, B = 2000) {
     if (kv.length < 3 || ma.length < 3) return null;
-    const ratios = refDragningar(kv, ma, B, rngFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : NaN));
+    const ratios = refDragningar(kv, ma, B, slumpFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : NaN));
     const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
     if (ok.length < 20) return null;
     const svans = Math.floor(ok.length * 0.025);
@@ -61,8 +61,8 @@ const fall = [
 describe('bootstrapMedianer: samma medianer som en sortering per dragning', () => {
     for (const [namn, kv, ma] of fall) {
         it(namn, () => {
-            const m = bootstrapMedianer(kv, ma, 300, rngFor(kv, ma));
-            const ref = refDragningar(kv, ma, 300, rngFor(kv, ma));
+            const m = bootstrapMedianer(kv, ma, 300, slumpFor(kv, ma));
+            const ref = refDragningar(kv, ma, 300, slumpFor(kv, ma));
             ref.forEach(([mKv, mMa], b) => {
                 expect(m.kv[b], `kv, dragning ${b}`).toBe(mKv);
                 expect(m.ma[b], `ma, dragning ${b}`).toBe(mMa);
@@ -90,7 +90,7 @@ describe('[B4.1] appens intervall på mediankvoten är desamma som med sortering
         const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
         const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
         const B = 2000;
-        const ratios = refDragningar(kv, ma, B, rngFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? mKv / mMa : 1)).sort((a, b) => a - b);
+        const ratios = refDragningar(kv, ma, B, slumpFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? mKv / mMa : 1)).sort((a, b) => a - b);
         const ci = w.__state.bootstrapCI;
         expect(ci.B).toBe(B);
         expect(ci.ratio.lo).toBe(ratios[Math.floor(B * 0.025)]);

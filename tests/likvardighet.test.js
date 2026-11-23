@@ -27,7 +27,7 @@ import {
     konsklass
 } from '../src/lib/likvardighet.js';
 import { dominans, kvDefinitionNamn } from '../src/lib/aidbas.js';
-import { rngFor } from '../src/lib/rng.js';
+import { slumpFor } from '../src/lib/rng.js';
 
 // ---- Helpers ----
 function orgRows({ aid, bas, label, kvLons = [], maLons = [] }) {
@@ -465,11 +465,11 @@ describe('bootstrapmedianen ur rangräkning ger samma intervall som sortering', 
     ];
     for (const [namn, kv, ma] of fall) {
         it(`bootstrapMedianDiffKr: ${namn}`, () => {
-            expect(bootstrapMedianDiffKr(kv, ma, 1000, rngFor(kv, ma))).toEqual(refDiffKr(kv, ma, 1000, rngFor(kv, ma)));
+            expect(bootstrapMedianDiffKr(kv, ma, 1000, slumpFor(kv, ma))).toEqual(refDiffKr(kv, ma, 1000, slumpFor(kv, ma)));
             expect(bootstrapMedianDiffKr(kv, ma, 200, makeRng())).toEqual(refDiffKr(kv, ma, 200, makeRng()));
         });
         it(`bootstrapMedianVsConstantKr: ${namn}`, () => {
-            expect(bootstrapMedianVsConstantKr(kv, 38000, 1000, rngFor(kv, [38000]))).toEqual(refVsConstantKr(kv, 38000, 1000, rngFor(kv, [38000])));
+            expect(bootstrapMedianVsConstantKr(kv, 38000, 1000, slumpFor(kv, [38000]))).toEqual(refVsConstantKr(kv, 38000, 1000, slumpFor(kv, [38000])));
             expect(bootstrapMedianVsConstantKr(ma, 31000, 200, makeRng())).toEqual(refVsConstantKr(ma, 31000, 200, makeRng()));
         });
     }
@@ -491,7 +491,7 @@ describe('bootstrapmedianen ur rangräkning ger samma intervall som sortering', 
         const kv = loner(2000, 7), ma = loner(1000, 8);
         bootstrapMedianDiffKr(kv.slice(0, 50), ma.slice(0, 50), 50, makeRng());   // uppvärmning av JIT
         const t0 = performance.now();
-        const ci = bootstrapMedianDiffKr(kv, ma, 1000, rngFor(kv, ma));
+        const ci = bootstrapMedianDiffKr(kv, ma, 1000, slumpFor(kv, ma));
         const ms = performance.now() - t0;
         expect(ci).not.toBeNull();
         expect(ms).toBeLessThan(200);

@@ -369,7 +369,7 @@ ställe, `percentilintervall` i `src/lib/stat.js`, också för bootstrapinterval
 `src/lib/status.js`. Indexen i de stigande sorterade dragningarna är symmetriska (ADR-86): den nedre gränsen har index
 golvet av n · 0,025 och den övre n − 1 − golvet av n · 0,025, räknat från 0, så att lika många dragningar ligger under
 den nedre som över den övre (med B = 1 000: 25 på var sida). **Radordningen** påverkar inga intervall (ADR-86):
-generatorn seedas ur antal och summa per serie (`rngFor` i `src/lib/rng.js`), och dragningarna görs ur gruppens
+generatorn seedas ur antal och summa per serie (`slumpFor` i `src/lib/rng.js`), och dragningarna görs ur gruppens
 stigande sorterade löner (bootstrapen), ur kvinnornas löner stigande följda av männens (omkastningen) och ur raderna
 sorterade på en fast nyckel (kvantilregressionen, avsnitt 6). Samma löner i en annan ordning ger samma gränser. Nedsamplingen
 av punktmoln följer filens ordning: den avgör vilka punkter som ritas, inget tal som redovisas. Styrkan (minsta upptäckbara
