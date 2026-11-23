@@ -5,7 +5,7 @@
  * percentilindex: med samma slumpföljd ska intervallen vara exakt desamma.
  *
  * Täcker kärnan i lib och de tre anroparna i appen: översikten per BAS-intervall och lönegapet per åldersgrupp
- * (`_laBootstrapGapCI`), gruppdossiern och rapportunderlaget (`_gdBootstrapGapCI`) och Översiktens intervall
+ * (`_laBootstrapGapKI`), gruppdossiern och rapportunderlaget (`_gdBootstrapGapCI`) och Översiktens intervall
  * för hela organisationen (`raknaBootstrapKI`).
  */
 import { describe, it, expect } from 'vitest';
@@ -28,7 +28,7 @@ function refDragningar(kv0, ma0, B, rnd) {
     }
     return ut;
 }
-// Den tidigare _laBootstrapGapCI (B = 1000, 100 när männens median inte är positiv).
+// Den tidigare _laBootstrapGapKI (B = 1000, 100 när männens median inte är positiv).
 function refLa(kv, ma, B = 1000) {
     if (kv.length < 3 || ma.length < 3) return null;
     const ratios = refDragningar(kv, ma, B, slumpFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : 100));
@@ -74,13 +74,13 @@ describe('bootstrapMedianer: samma medianer som en sortering per dragning', () =
 describe('[B4.1] appens intervall på mediankvoten är desamma som med sortering per dragning', () => {
     const w = createAppWindow();
     for (const [namn, kv, ma] of fall) {
-        it(`_laBootstrapGapCI och _gdBootstrapGapCI: ${namn}`, () => {
-            expect(w._laBootstrapGapCI(kv, ma)).toEqual(refLa(kv, ma));
+        it(`_laBootstrapGapKI och _gdBootstrapGapCI: ${namn}`, () => {
+            expect(w._laBootstrapGapKI(kv, ma)).toEqual(refLa(kv, ma));
             expect(w._gdBootstrapGapCI(kv, ma)).toEqual(refGd(kv, ma));
         });
     }
     it('för få personer ger inget intervall', () => {
-        expect(w._laBootstrapGapCI([1, 2], [1, 2, 3])).toBeNull();
+        expect(w._laBootstrapGapKI([1, 2], [1, 2, 3])).toBeNull();
         expect(w._gdBootstrapGapCI([1, 2, 3], [1, 2])).toBeNull();
     });
     it('raknaBootstrapKI på demodatan', () => {

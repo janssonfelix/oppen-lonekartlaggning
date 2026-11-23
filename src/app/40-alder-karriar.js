@@ -142,7 +142,7 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
 }
 // ---- Lönegap per åldersgrupp ----
 // Kvinnors medianlön i procent av mäns i varje åldersgrupp, med samma bootstrap-intervall som BAS-översikten i Lönestruktur
-// (_laBootstrapGapCI). Visar VAR i karriären skillnaden finns — inte varför: det är den råa skillnaden mellan alla
+// (_laBootstrapGapKI). Visar VAR i karriären skillnaden finns — inte varför: det är den råa skillnaden mellan alla
 // kvinnor och män i åldersgruppen, oavsett yrke och BAS-intervall. En åldersgrupp där ett kön har färre än tröskeln visas inte.
 // Kvoten, intervallet och prövningen mot k är alderGapRader i src/lib/vymodell-alder-karriar.js.
 function _konAlderGapFigur(rader, scope) {

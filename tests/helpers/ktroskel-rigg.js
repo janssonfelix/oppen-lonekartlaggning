@@ -301,7 +301,7 @@ export async function samlaUtdata(w) {
     // Statistikens matchning i Löneläget: sammanfattningen ovanför tabellen och Beräkning & urval, ritade i exportläget
     // (där grupperna under tröskeln inte finns i raderna). Kolumnen Matchning följer med i tabellens CSV, Excel och
     // utskriften och i jämförelseexporten, som prövas nedan.
-    lagg('Löneläget: statistikens matchning', w.eval(`medExportLage(() => { generateBenchmark(); return document.getElementById('benchmark-matchning-info').textContent
+    lagg('Löneläget: statistikens matchning', w.eval(`medExportLage(() => { byggJamforelse(); return document.getElementById('benchmark-matchning-info').textContent
         + '\\n' + document.querySelector('details.audit-panel[data-audit-id="benchmark"] .audit-content').textContent; })`));
 
     lagg('Word-utkastet', w.__docDraftHtml());

@@ -34,7 +34,7 @@ function ansvarsgruppNamn(g) { return _ANSVARSGRUPP_NAMN[g] || '—'; }
 /** Ansvarsgruppens namn i tabellens smala kolumn; hela namnet står i cellens verktygstips. */
 function _pagAnsvarKort(g) { return ansvarsgruppNamn(g).replace(/^(Inget särskilt) ansvar$/, '$1'); }
 
-export function renderPersonerAttGranska(visaAlla = false) {
+export function ritaPersonerAttGranska(visaAlla = false) {
     const host = document.getElementById('personer-att-granska');
     const body = document.getElementById('pag-innehall');
     if (!host || !body) return;
@@ -141,8 +141,8 @@ export function uppstartPersonerAttGranska() {
     // ingen person och bär ingen lön. Som resten av panelen går det inte att exportera (markeraUtanExport på rutan,
     // skälet `individer` i 11-diagramexport.js): inget ur Personer att granska lämnar verktyget.
     markeraUtanExport(document.getElementById('pag-diagram-ruta'), 'individer');
-    document.getElementById('pag-grans')?.addEventListener('input', () => renderPersonerAttGranska());
+    document.getElementById('pag-grans')?.addEventListener('input', () => ritaPersonerAttGranska());
     // När fältet lämnas visas värdet som faktiskt används (klämt till 5–30).
-    document.getElementById('pag-grans')?.addEventListener('change', e => { /** @type {HTMLInputElement} */ (e.target).value = String(_pagGrans()); renderPersonerAttGranska(); });
-    document.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('#pag-visa-alla')) renderPersonerAttGranska(true); });
+    document.getElementById('pag-grans')?.addEventListener('change', e => { /** @type {HTMLInputElement} */ (e.target).value = String(_pagGrans()); ritaPersonerAttGranska(); });
+    document.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('#pag-visa-alla')) ritaPersonerAttGranska(true); });
 }

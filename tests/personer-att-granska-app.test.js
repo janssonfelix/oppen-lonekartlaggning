@@ -117,14 +117,14 @@ describe('Personer att granska', () => {
 describe('Personer att granska', () => {
     it('tabellens rullande ruta nås med tangentbordet och har ett namn', () => {
         const w = demo();
-        w.eval('renderPersonerAttGranska(true)');
+        w.eval('ritaPersonerAttGranska(true)');
         const ruta = w.document.querySelector('.pag-tabell-wrap');
         expect(ruta.getAttribute('tabindex')).toBe('0');
         expect(ruta.getAttribute('aria-label')).toBe('Personer att granska, rullar i sidled');
     });
     it('metoden står i en not under tabellen, och ansvarsetiketten är kort med hela namnet i verktygstipset', () => {
         const w = demo();
-        w.eval('renderPersonerAttGranska(true)');
+        w.eval('ritaPersonerAttGranska(true)');
         const d = w.document;
         const rubriker = [...d.querySelectorAll('#pag-tabell thead th')].map(th => th.textContent);
         expect(rubriker).not.toContain('Metod');
@@ -142,7 +142,7 @@ describe('Personer att granska', () => {
         w.__lasInDemodata();
         // Alla lika gamla: ingen åldersspridning att räkna med, så den förväntade lönen blir gruppens median.
         w.__state.data.forEach(r => { r.alder = 40; });
-        w.eval('renderPersonerAttGranska(true)');
+        w.eval('ritaPersonerAttGranska(true)');
         const rader = w.document.querySelectorAll('#pag-tabell tbody tr').length;
         expect(rader).toBeGreaterThan(0);
         expect(w.document.querySelectorAll('#pag-tabell .pag-median').length).toBe(rader);

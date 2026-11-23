@@ -63,8 +63,8 @@ describe('beräkningar på demodatan (låsta tal)', () => {
         expect(stabil(w.linjarRegressionKI(serie, 1, 8, 5))).toMatchSnapshot('linjarRegressionKI');
     });
 
-    it('lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal', () => {
-        expect(stabil(w._laBootstrapGapCI(kvinnoLoner, mansLoner))).toMatchSnapshot('_laBootstrapGapCI');
+    it('lönegapets KI per BAS-intervall (_laBootstrapGapKI) på två påhittade lönelistor ger samma tal', () => {
+        expect(stabil(w._laBootstrapGapKI(kvinnoLoner, mansLoner))).toMatchSnapshot('_laBootstrapGapKI');
     });
 });
 

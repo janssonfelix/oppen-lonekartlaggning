@@ -107,7 +107,7 @@ beforeAll(() => {
             ritaLoneskillnadPerBas(lsBasVymodell());
             ritaLikaArbete(laVymodell());
             renderPrioritering();
-            generateBenchmark();
+            byggJamforelse();
             ritaStruktur();
             _hpDemoSkal();   // demots sakliga skäl på tre rader: tabellerna och bladet Sakliga skäl låses också
             return rows.length;

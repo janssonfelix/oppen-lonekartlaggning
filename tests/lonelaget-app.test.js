@@ -326,7 +326,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
     it('bara grupper som når tröskeln: i exportläget med tröskeln 25 finns bara de större grupperna', () => {
         const w = medBlandad();
         w.eval('sattKTroskel(25, { fraga: false })');
-        const { pts, rader } = w.eval("medExportLage(() => { renderStatistikLage(); return { pts: document.getElementById('chart-jmf-statlage')._figur, rader: jamforelseUnderlag() }; })");
+        const { pts, rader } = w.eval("medExportLage(() => { ritaStatistikLage(); return { pts: document.getElementById('chart-jmf-statlage')._figur, rader: jamforelseUnderlag() }; })");
         const alla = w.eval('jamforelseUnderlag()').rader;
         expect(rader.utelamnade.length).toBeGreaterThan(0);
         const visade = punkter(pts);

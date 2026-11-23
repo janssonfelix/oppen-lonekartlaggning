@@ -162,7 +162,7 @@ function _rrRitaTopp(o, { harStatistik, harStallningstagande }) {
         + (harStatistik && harStallningstagande ? _laSlutsats('Statistiken över ställningstagandet', grupper(antal(g => g.monster.statistik === 'över')), `av ${o.tal.antalGrupper}`) : '');
 }
 
-export function renderReferensOverblick() {
+export function ritaReferensOverblick() {
     const host = document.getElementById('ref-overblick');
     if (!host) return;
     rensaFigur('chart-ref-hantel');

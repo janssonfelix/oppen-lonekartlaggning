@@ -126,7 +126,7 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
         expect(status(`medExportLage(() => _computePerBasGap(hamtaData(), ['A']))`)).toBe('too_few');
         expect(status(`_computePerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
         // Personer att granska (bara på skärmen): grupperna om 20 prövas; de två om 6 inte, och noten säger vad man kan göra.
-        w.eval('renderPersonerAttGranska()');
+        w.eval('ritaPersonerAttGranska()');
         expect(normalisera(w.document.getElementById('pag-innehall').textContent))
             .toMatch(/12 personer i grupper med färre än 10 personer prövades inte\. Se lönerna under Tabeller och egna vyer och dokumentera bedömningen under Sakliga skäl i Handlingsplan\./);
     });

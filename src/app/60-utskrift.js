@@ -18,7 +18,7 @@ import { exportElement, medExportLage } from './23-exportgrind.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { _jmfKallaNamn, generateBenchmark, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
+import { _jmfKallaNamn, byggJamforelse, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
 import { _utskriftReferenserHtml } from './44-referensoverblick.js';
 import { rapportModellBada, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
 /**
@@ -95,7 +95,7 @@ async function _buildPrintReportExport() {
             ritaLoneoversikt();
             ritaLoneskillnadPerBas(lsBasVymodell());
             ritaLikaArbete(laVymodell());
-            if (state.statistik.length) generateBenchmark();
+            if (state.statistik.length) byggJamforelse();
             const imgs = {};
             ritaAlderOchLon('__ALLA__');
             await new Promise(r => setTimeout(r, 250));

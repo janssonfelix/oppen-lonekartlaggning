@@ -196,7 +196,7 @@ function _aidbasEfter(id, dolda, nyckel) {
 function _aidbasNyckel(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
 
 /** Lika arbete: tabell 1 och arbetslistan (tabell 4). */
-export function renderAidBasLika() {
+export function ritaAidBasLika() {
     const lika = document.getElementById('aidbas-lika'), individ = document.getElementById('aidbas-individ');
     if (!lika || !individ) return;
     const d = hamtaData();
@@ -214,7 +214,7 @@ export function renderAidBasLika() {
     _aidbasNyckel('nyckel-la-individ', t.individ.rader.length ? `${t.individ.rader.length} grupper` : '');
 }
 /** Likvärdigt arbete: tabell 2 med sammanfattningen, och den hierarkiska jämförelsen (tabell 3). */
-export function renderAidBasLikvardigt() {
+export function ritaAidBasLikvardigt() {
     const lv = document.getElementById('aidbas-likvardigt'), hi = document.getElementById('aidbas-hierarki');
     if (!lv || !hi) return;
     const d = hamtaData();
@@ -319,7 +319,7 @@ export function uppstartAidBasTabeller() {
         sattLonemanad(/** @type {HTMLInputElement} */ (e.target).value);
         // Den öppna fliken ritas om direkt; övriga ritas när de öppnas.
         const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
-        if (aktiv === 'matrix') renderAidBasLika();
-        if (aktiv === 'likvardighet') renderAidBasLikvardigt();
+        if (aktiv === 'matrix') ritaAidBasLika();
+        if (aktiv === 'likvardighet') ritaAidBasLikvardigt();
     });
 }

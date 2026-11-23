@@ -40,7 +40,7 @@ import { _laggTillMetodblad, _laddaNedCSV, _visaExportvarning } from './22-expor
 import { medExportLage } from './23-exportgrind.js';
 import { _bevisForLikvardighetspar, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { _laSlutsats } from './41-lika-arbete.js';
-import { aidbasDefinition, aidbasDefinitionText, aidbasGrans, jamforelseGransText, konsklassOrd, kvDomGransText, lvJamforelse, renderAidBasLikvardigt } from './45-aid-bas-tabeller.js';
+import { aidbasDefinition, aidbasDefinitionText, aidbasGrans, jamforelseGransText, konsklassOrd, kvDomGransText, lvJamforelse, ritaAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { kTroskelLank } from './86-installningar.js';
 /**
  * Likvärdighetsparen för nuvarande data och inställningar: det sparade resultatet om det
@@ -650,12 +650,12 @@ export function ritaLikvardigtArbete() {
     document.getElementById('lv-kv-definition')?.addEventListener('change', e => {
         state.likvardighet.kvDomDefinition = /** @type {HTMLSelectElement} */ (e.target).value === 'scb' ? 'scb' : 'do';
         state.likvardighet.result = null;
-        ritaLikvardigtArbete(); renderAidBasLikvardigt();
+        ritaLikvardigtArbete(); ritaAidBasLikvardigt();
     });
     document.getElementById('lv-bara-mansdominerade')?.addEventListener('change', e => {
         state.likvardighet.jamforelse = /** @type {HTMLInputElement} */ (e.target).checked ? 'mansdominerade' : 'alla';
         state.likvardighet.result = null;
-        ritaLikvardigtArbete(); renderAidBasLikvardigt();
+        ritaLikvardigtArbete(); ritaAidBasLikvardigt();
     });
     document.getElementById('btn-export-likvardighet')?.addEventListener('click', exportLikvardighet);
     document.getElementById('btn-export-likvardighet-csv')?.addEventListener('click', exportLikvardighetCSV);

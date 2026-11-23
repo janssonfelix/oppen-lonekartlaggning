@@ -26,7 +26,7 @@ import { jmfNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_EJ, gapStatusKI, gapStatusNiva } from './10-diagramtema.js';
 import { referensNamn, state } from './12-tillstand.js';
-import { _laBootstrapGapCI } from './41-lika-arbete.js';
+import { _laBootstrapGapKI } from './41-lika-arbete.js';
 import { kvDomGransText } from './45-aid-bas-tabeller.js';
 import { harAlder } from './50-regressionsmodeller.js';
 import { PRIO_STATUS_INFO } from './55-prioritering.js';
@@ -381,7 +381,7 @@ export function _bevisForLonegapsrad(p) {
     const gapPct = kvotPct;
     const diff100 = gapPct != null ? gapPct - 100 : null;
     // Statusen prövas som i översiktstabellen: bootstrap-KI:t mot 100 % och golvet statGolv() (ADR-59).
-    const ci = gapPct != null ? _laBootstrapGapCI(p.kvLons, p.maLons) : null;
+    const ci = gapPct != null ? _laBootstrapGapKI(p.kvLons, p.maLons) : null;
     const status = gapPct != null ? gapStatusKI({ gap: gapPct, ci, nKv, nMa }) : GAP_STATUS_EJ;
     return {
         title: `Beräkningen — BAS ${p.bas}`,

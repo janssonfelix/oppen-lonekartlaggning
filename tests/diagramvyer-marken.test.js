@@ -553,7 +553,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         expect(rader[1].over).toBe(8);                                                  // 1 av 12 män
         expect(rader.every(r => Number.isInteger(r.under) && Number.isInteger(r.over))).toBe(true);
         w2.__ritaFlik('matrix');
-        w2.eval('renderPersonerAttGranska()');
+        w2.eval('ritaPersonerAttGranska()');
         const d = w2.document, t = d.getElementById('pag-avvikelse-tabell');
         expect(d.getElementById('pag-diagram-ruta').hidden).toBe(false);
         expect(d.getElementById('chart-pag-avvikelse')).toBeNull();                     // tabell med inbyggd grafik i stället för diagram
@@ -571,7 +571,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         expect(d.getElementById('personer-att-granska').querySelector('.chart-export, .chart-export-btn')).toBeNull();
         // Höjd tröskel: inget kön i BAS A når den längre — tabellen försvinner.
         w2.eval('sattKTroskel(13, { fraga: false })');
-        w2.eval('renderPersonerAttGranska()');
+        w2.eval('ritaPersonerAttGranska()');
         expect(d.getElementById('pag-diagram-ruta').hidden).toBe(true);
         expect(t.querySelectorAll('tbody tr')).toHaveLength(0);
     });

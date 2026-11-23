@@ -41,16 +41,16 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         const synliga = [...w.document.querySelectorAll('#benchmark-table tbody tr[data-rad]')];
         expect(synliga.length).toBeGreaterThan(0);
         expect(synliga.every(t => t.dataset.rad.endsWith('|' + valt))).toBe(true);
-        w.eval("jamforelseSattVal({ bas: 'Z', sektor: 'Finns inte' }); generateBenchmark();");
+        w.eval("jamforelseSattVal({ bas: 'Z', sektor: 'Finns inte' }); byggJamforelse();");
         expect(w.eval('jamforelseVal()')).toMatchObject({ bas: '', sektor: '' });
     });
     it('sektorfiltret avgränsar; en sektor som försvinner ur datan faller tillbaka till Alla', () => {
         const w = oppna();
-        w.eval("jamforelseSattVal({ sektor: 'Teknikarbete' }); generateBenchmark();");
+        w.eval("jamforelseSattVal({ sektor: 'Teknikarbete' }); byggJamforelse();");
         const rader = w.eval('jamforelseUnderlag()').rader.filter(r => r.sektor === 'Teknikarbete');
         expect(w.document.querySelectorAll('#benchmark-table tbody tr[data-rad]').length).toBe(rader.length);
         w.__state.data = w.__state.data.filter(r => !/^50/.test(r.aid));
-        w.eval('generateBenchmark()');
+        w.eval('byggJamforelse()');
         expect(w.eval('jamforelseVal()').sektor).toBe('');
     });
     it('"Inga yrken i urvalet" när BAS och sektor inte har något gemensamt yrke', () => {
@@ -59,7 +59,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         const baser = [...new Set(alla.map(r => r.bas))], sektorer = [...new Set(alla.map(r => r.sektor))];
         const par = baser.flatMap(b => sektorer.map(s => [b, s])).find(([b, s]) => !alla.some(r => r.bas === b && r.sektor === s));
         expect(par).toBeTruthy();
-        w.eval(`jamforelseSattVal({ bas: ${JSON.stringify(par[0])}, sektor: ${JSON.stringify(par[1])} }); generateBenchmark();`);
+        w.eval(`jamforelseSattVal({ bas: ${JSON.stringify(par[0])}, sektor: ${JSON.stringify(par[1])} }); byggJamforelse();`);
         expect(w.document.getElementById('benchmark-table').textContent).toMatch(/Inga AID-etiketter i urvalet/);
     });
     it('bara ställningstagandet inläst: avsnittet säger att statistiken saknas och ritar inga rader', () => {
@@ -257,9 +257,9 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         const w = medMatchning();
         const info = () => w.document.getElementById('benchmark-matchning-info').textContent;
         expect(info()).toBe('Statistiken: 1 AID-etikett i BAS-intervall matchad på AID och BAS, 1 på endast AID, 6 utan statistik.');
-        w.eval("jamforelseSattVal({ bas: 'C' }); generateBenchmark();");
+        w.eval("jamforelseSattVal({ bas: 'C' }); byggJamforelse();");
         expect(info()).toBe('Statistiken: 0 AID-etiketter i BAS-intervall matchade på AID och BAS, 0 på endast AID, 4 utan statistik.');
-        w.eval("jamforelseSattVal({ bas: 'B' }); generateBenchmark();");
+        w.eval("jamforelseSattVal({ bas: 'B' }); byggJamforelse();");
         expect(info()).toBe('Statistiken: 0 AID-etiketter i BAS-intervall matchade på AID och BAS, 1 på endast AID, 0 utan statistik.');
     });
     it('Beräkning & urval anger antalet per matchningsnivå', () => {

@@ -69,7 +69,7 @@ function jamforelseMarkeraRad(aid, bas) {
 // Grundvyn visar yrke, BAS, antal och medianens tre kolumner; P10 och P90 ligger bakom *Fler kolumner* (05-tabeller-och-lankar.js),
 // så att tabellen ryms utan rullist i sidled. Kopiera, CSV, Excel och utskriften tar alltid med alla.
 const JMF_DOLDA_KOLUMNER = ['p10org', 'p10jmf', 'p10diff', 'p90org', 'p90jmf', 'p90diff'];
-export function generateBenchmark() {
+export function byggJamforelse() {
     const tbody = document.querySelector('#benchmark-table tbody');
     const infoEl = document.getElementById('benchmark-metric-info');
     if (!tbody) return;
@@ -286,7 +286,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
 // Kortet står i avsnittet Överblick, under bandkartan (src/index.html, #jmf-statlage-kort). Samma rader som tabellen mot
 // statistiken (jamforelseUnderlag: grupper under tröskeln finns inte i raderna), men utan tabellens filter på BAS och
 // sektor: överblicken visar hela underlaget. En punkt per yrkesgrupp med P10 och P90 i statistiken.
-export function renderStatistikLage() {
+export function ritaStatistikLage() {
     const kort = document.getElementById('jmf-statlage-kort'), el = document.getElementById('chart-jmf-statlage');
     if (!kort || !el) return;
     if (!state.statistik.length || !hamtaData().length) { rensaFigur(el); kort.hidden = true; return; }
@@ -341,6 +341,6 @@ function _jmfStatlageFigur(rader) {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartJamforelse() {
-    document.getElementById('jmf-bas')?.addEventListener('change', e => { jamforelseSattVal({ bas: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
-    document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamforelseSattVal({ sektor: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
+    document.getElementById('jmf-bas')?.addEventListener('change', e => { jamforelseSattVal({ bas: /** @type {HTMLInputElement} */ (e.target).value }); byggJamforelse(); });
+    document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamforelseSattVal({ sektor: /** @type {HTMLInputElement} */ (e.target).value }); byggJamforelse(); });
 }

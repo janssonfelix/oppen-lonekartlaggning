@@ -11805,7 +11805,7 @@ function _bevisForLonegapsrad(p) {
   const ratio = kvotPct != null ? medKv / medMa : null;
   const gapPct = kvotPct;
   const diff100 = gapPct != null ? gapPct - 100 : null;
-  const ci = gapPct != null ? _laBootstrapGapCI(p.kvLons, p.maLons) : null;
+  const ci = gapPct != null ? _laBootstrapGapKI(p.kvLons, p.maLons) : null;
   const status = gapPct != null ? gapStatusKI({ gap: gapPct, ci, nKv, nMa }) : GAP_STATUS_EJ;
   return {
     title: `Beräkningen — BAS ${p.bas}`,
@@ -12651,7 +12651,7 @@ function ansvarsgruppNamn(g) {
 function _pagAnsvarKort(g) {
   return ansvarsgruppNamn(g).replace(/^(Inget särskilt) ansvar$/, "$1");
 }
-function renderPersonerAttGranska(visaAlla = false) {
+function ritaPersonerAttGranska(visaAlla = false) {
   const host = document.getElementById("personer-att-granska");
   const body = document.getElementById("pag-innehall");
   if (!host || !body) return;
@@ -12741,16 +12741,16 @@ function _pagRitaAvvikelse(d, grans) {
 }
 function uppstartPersonerAttGranska() {
   markeraUtanExport(document.getElementById("pag-diagram-ruta"), "individer");
-  document.getElementById("pag-grans")?.addEventListener("input", () => renderPersonerAttGranska());
+  document.getElementById("pag-grans")?.addEventListener("input", () => ritaPersonerAttGranska());
   document.getElementById("pag-grans")?.addEventListener("change", (e) => {
     e.target.value = String(_pagGrans());
-    renderPersonerAttGranska();
+    ritaPersonerAttGranska();
   });
   document.addEventListener("click", (e) => {
     if (
       /** @type {HTMLElement} */
       e.target.closest("#pag-visa-alla")
-    ) renderPersonerAttGranska(true);
+    ) ritaPersonerAttGranska(true);
   });
 }
 
@@ -13498,14 +13498,14 @@ function ritaLikvardigtArbete() {
     e.target.value === "scb" ? "scb" : "do";
     state.likvardighet.result = null;
     ritaLikvardigtArbete();
-    renderAidBasLikvardigt();
+    ritaAidBasLikvardigt();
   });
   document.getElementById("lv-bara-mansdominerade")?.addEventListener("change", (e) => {
     state.likvardighet.jamforelse = /** @type {HTMLInputElement} */
     e.target.checked ? "mansdominerade" : "alla";
     state.likvardighet.result = null;
     ritaLikvardigtArbete();
-    renderAidBasLikvardigt();
+    ritaAidBasLikvardigt();
   });
   document.getElementById("btn-export-likvardighet")?.addEventListener("click", exportLikvardighet);
   document.getElementById("btn-export-likvardighet-csv")?.addEventListener("click", exportLikvardighetCSV);
@@ -19040,7 +19040,7 @@ function jamforelseMarkeraRad(aid, bas) {
   return true;
 }
 var JMF_DOLDA_KOLUMNER = ["p10org", "p10jmf", "p10diff", "p90org", "p90jmf", "p90diff"];
-function generateBenchmark() {
+function byggJamforelse() {
   const tbody = document.querySelector("#benchmark-table tbody");
   const infoEl = document.getElementById("benchmark-metric-info");
   if (!tbody) return;
@@ -19316,7 +19316,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
     ].filter((l) => l.data.length)
   };
 }
-function renderStatistikLage() {
+function ritaStatistikLage() {
   const kort = document.getElementById("jmf-statlage-kort"), el = document.getElementById("chart-jmf-statlage");
   if (!kort || !el) return;
   if (!state.statistik.length || !hamtaData().length) {
@@ -19400,14 +19400,14 @@ function uppstartJamforelse() {
       /** @type {HTMLInputElement} */
       e.target.value
     ) });
-    generateBenchmark();
+    byggJamforelse();
   });
   document.getElementById("jmf-sektor")?.addEventListener("change", (e) => {
     jamforelseSattVal({ sektor: (
       /** @type {HTMLInputElement} */
       e.target.value
     ) });
-    generateBenchmark();
+    byggJamforelse();
   });
 }
 
@@ -19941,7 +19941,7 @@ function _rrRitaTopp(o, { harStatistik, harStallningstagande }) {
     harStatistik && harStallningstagande ? "Ställningstagandet är referenspunkten" : "Bara den referensen är inläst"
   ) + (harStallningstagande ? _laSlutsats("Löneläget utanför ställningstagandet", grupper(antal((g) => g.monster.lonelage === "ovanför" || g.monster.lonelage === "nedanför")), `av ${o.tal.antalGrupper}`) : "") + (harStatistik && harStallningstagande ? _laSlutsats("Statistiken över ställningstagandet", grupper(antal((g) => g.monster.statistik === "över")), `av ${o.tal.antalGrupper}`) : "");
 }
-function renderReferensOverblick() {
+function ritaReferensOverblick() {
   const host = document.getElementById("ref-overblick");
   if (!host) return;
   rensaFigur("chart-ref-hantel");
@@ -25790,7 +25790,7 @@ function uppstartMarkering() {
 }
 
 // src/app/41-lika-arbete.js
-function _laBootstrapGapCI(kvLons, maLons, B) {
+function _laBootstrapGapKI(kvLons, maLons, B) {
   return medianKvotKI(kvLons, maLons, { B });
 }
 var _laMinnen = /* @__PURE__ */ new Map();
@@ -26309,7 +26309,7 @@ function _laRegFaNot(reg) {
   const fa = [reg.nKvAnalysed < 10 ? `kvinnor (${reg.nKvAnalysed} i modellen)` : "", reg.nMaAnalysed < 10 ? `män (${reg.nMaAnalysed} i modellen)` : ""].filter(Boolean);
   return fa.length ? ` Bygger på få ${fa.join(" och ")}; talet är osäkert.` : "";
 }
-function renderLikaArbeteTopp({ reg: given } = {}) {
+function ritaLikaArbeteTopp({ reg: given } = {}) {
   const urval = document.getElementById("la-urval"), ut = document.getElementById("la-slutsatser");
   if (!urval || !ut) return;
   const d = hamtaData();
@@ -26364,7 +26364,7 @@ function _skevhetNot(lista) {
   const n = lista.length, t = LITET_UNDERLAG;
   return `<p class="k-mask-note">${n} ${esc(_kNotForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: ${_kNotNamn(lista)}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och könsfördelningen skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
 }
-function renderLonestrukturNycklar() {
+function ritaLonestrukturNycklar() {
   const d = hamtaData();
   if (!d.length) {
     for (const id of ["nyckel-ls-bas", "nyckel-ls-kon", "nyckel-ls-regression"]) _laNyckel(id, "");
@@ -26576,7 +26576,7 @@ function _aidbasNyckel(id, text) {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
 }
-function renderAidBasLika() {
+function ritaAidBasLika() {
   const lika = document.getElementById("aidbas-lika"), individ = document.getElementById("aidbas-individ");
   if (!lika || !individ) return;
   const d = hamtaData();
@@ -26597,7 +26597,7 @@ function renderAidBasLika() {
   _aidbasEfter("aidbas-individ-tabell");
   _aidbasNyckel("nyckel-la-individ", t.individ.rader.length ? `${t.individ.rader.length} grupper` : "");
 }
-function renderAidBasLikvardigt() {
+function ritaAidBasLikvardigt() {
   const lv = document.getElementById("aidbas-likvardigt"), hi = document.getElementById("aidbas-hierarki");
   if (!lv || !hi) return;
   const d = hamtaData();
@@ -26718,8 +26718,8 @@ function uppstartAidBasTabeller() {
       e.target.value
     );
     const aktiv = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
-    if (aktiv === "matrix") renderAidBasLika();
-    if (aktiv === "likvardighet") renderAidBasLikvardigt();
+    if (aktiv === "matrix") ritaAidBasLika();
+    if (aktiv === "likvardighet") ritaAidBasLikvardigt();
   });
 }
 
@@ -27535,7 +27535,7 @@ function __excelAlltBokExport() {
   ensure("#skevhet-table tbody tr", () => ritaLoneskillnadPerBas(lsBasVymodell()));
   ensure("#matrix-table tbody tr", () => ritaLikaArbete(laVymodell()));
   if (state.policy.length || state.statistik.length) ensure("#prio-table tbody tr", renderPrioritering);
-  if (state.statistik.length) ensure("#benchmark-table tbody tr", generateBenchmark);
+  if (state.statistik.length) ensure("#benchmark-table tbody tr", byggJamforelse);
   const wb = XLSX.utils.book_new();
   const tableToSheet = (id, fallback) => {
     const sheet = tabellTillBlad(id);
@@ -32699,27 +32699,27 @@ function _ritaFlik(target) {
       s2.value
     );
   } else if (target === "benchmark" && d.length) {
-    renderReferensOverblick();
+    ritaReferensOverblick();
     ritaLonepolitik();
-    renderStatistikLage();
-    generateBenchmark();
+    ritaStatistikLage();
+    byggJamforelse();
   } else if (target === "matrix" && d.length) {
     const reg = runOLSRegression();
     ritaLikaArbete(laVymodell(), { reg });
-    renderPersonerAttGranska();
-    renderAidBasLika();
-    renderLikaArbeteTopp({ reg });
+    ritaPersonerAttGranska();
+    ritaAidBasLika();
+    ritaLikaArbeteTopp({ reg });
   } else if (target === "prioritering" && d.length) renderPrioritering();
   else if (target === "struktur" && d.length) {
     ritaStruktur();
     ritaLoneskillnadPerBas(lsBasVymodell());
     _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => renderBlinderOaxacaCard(ritaRegressionskort()));
     ritaGapUppdelning();
-    renderLonestrukturNycklar();
+    ritaLonestrukturNycklar();
   } else if (target === "loneoversyn" && d.length) ritaLoneoversyn();
   else if (target === "likvardighet" && (d.length || state.statistik.length)) {
     ritaLikvardigtArbete();
-    renderAidBasLikvardigt();
+    ritaAidBasLikvardigt();
   } else if (target === "utforska" && d.length) {
     ritaLoneoversikt();
     renderExplorer();
@@ -36040,7 +36040,7 @@ async function _buildPrintReportExport() {
       ritaLoneoversikt();
       ritaLoneskillnadPerBas(lsBasVymodell());
       ritaLikaArbete(laVymodell());
-      if (state.statistik.length) generateBenchmark();
+      if (state.statistik.length) byggJamforelse();
       const imgs = {};
       ritaAlderOchLon("__ALLA__");
       await new Promise((r) => setTimeout(r, 250));

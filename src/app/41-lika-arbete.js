@@ -41,7 +41,7 @@ import { kTroskelLank } from './86-installningar.js';
 // Bara BAS-intervall där BÅDA könen når tröskeln får en rad: varje tal i raden bygger på minst k personer.
 // Intervallet är medianKvotKI i src/lib/osakerhet.js: bootstrap med B = 1000, seedad ur datat så att intervallet blir
 // detsamma varje gång; dragningarnas medianer tas ur rangräkning (_lvBootstrapMedianer, O(n) per dragning).
-export function _laBootstrapGapCI(kvLons, maLons, B) {
+export function _laBootstrapGapKI(kvLons, maLons, B) {
     return medianKvotKI(kvLons, maLons, { B });
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
@@ -637,7 +637,7 @@ function _laRegFaNot(reg) {
     return fa.length ? ` Bygger på få ${fa.join(' och ')}; talet är osäkert.` : '';
 }
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den, i samma varv (ADR-17) */
-export function renderLikaArbeteTopp({ reg: given } = {}) {
+export function ritaLikaArbeteTopp({ reg: given } = {}) {
     const urval = document.getElementById('la-urval'), ut = document.getElementById('la-slutsatser');
     if (!urval || !ut) return;
     const d = hamtaData();
@@ -686,7 +686,7 @@ function _skevhetNot(lista) {
 }
 
 /** Lönestrukturs avsnittsnyckeltal för BAS-skevheten, könsfördelningen och regressionen. Ritas efter ritaLoneskillnadPerBas och regressionskortet. */
-export function renderLonestrukturNycklar() {
+export function ritaLonestrukturNycklar() {
     const d = hamtaData();
     if (!d.length) { for (const id of ['nyckel-ls-bas', 'nyckel-ls-kon', 'nyckel-ls-regression']) _laNyckel(id, ''); return; }
     // Per BAS-intervall: översiktens rader (båda könen når tröskeln) med samma status som tabellen (ADR-59).

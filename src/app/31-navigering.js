@@ -16,11 +16,11 @@ import { ritaStruktur, ritaStrukturUtkast } from './37-struktur.js';
 import { synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAldersstruktur, ritaAlderOchLon } from './40-alder-karriar.js';
-import { laVymodell, lsBasVymodell, renderLikaArbeteTopp, renderLonestrukturNycklar, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { generateBenchmark, renderStatistikLage } from './42-jamforelse.js';
-import { renderPersonerAttGranska } from './43-personer-att-granska.js';
-import { renderReferensOverblick } from './44-referensoverblick.js';
-import { renderAidBasLika, renderAidBasLikvardigt } from './45-aid-bas-tabeller.js';
+import { laVymodell, lsBasVymodell, ritaLikaArbeteTopp, ritaLonestrukturNycklar, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
+import { byggJamforelse, ritaStatistikLage } from './42-jamforelse.js';
+import { ritaPersonerAttGranska } from './43-personer-att-granska.js';
+import { ritaReferensOverblick } from './44-referensoverblick.js';
+import { ritaAidBasLika, ritaAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { harAlder } from './50-regressionsmodeller.js';
 import { renderBlinderOaxacaCard, ritaRegressionskort, runOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { ritaLivscykel } from './52-livscykel.js';
@@ -398,20 +398,20 @@ function _ritaFlik(target) {
         const s = document.getElementById("bas-select-kon"); if (s) ritaAlderOchLon(/** @type {HTMLInputElement} */ (s).value); ritaLivscykel();
         const s2 = document.getElementById("bas-select-demo"); if (s2) ritaAldersstruktur(/** @type {HTMLInputElement} */ (s2).value);
     }
-    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); ritaLonepolitik(); renderStatistikLage(); generateBenchmark(); }
+    else if (target === "benchmark"    && d.length) { ritaReferensOverblick(); ritaLonepolitik(); ritaStatistikLage(); byggJamforelse(); }
     else if (target === "matrix"       && d.length) {
         const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
-        ritaLikaArbete(laVymodell(), { reg }); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp({ reg });
+        ritaLikaArbete(laVymodell(), { reg }); ritaPersonerAttGranska(); ritaAidBasLika(); ritaLikaArbeteTopp({ reg });
     }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) {
         ritaStruktur(); ritaLoneskillnadPerBas(lsBasVymodell());
         // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.
         _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(ritaRegressionskort()));
-        ritaGapUppdelning(); renderLonestrukturNycklar();
+        ritaGapUppdelning(); ritaLonestrukturNycklar();
     }
     else if (target === "loneoversyn"  && d.length) ritaLoneoversyn();
-    else if (target === "likvardighet" && (d.length || state.statistik.length)) { ritaLikvardigtArbete(); renderAidBasLikvardigt(); }
+    else if (target === "likvardighet" && (d.length || state.statistik.length)) { ritaLikvardigtArbete(); ritaAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { ritaLoneoversikt(); renderExplorer(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
     // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.

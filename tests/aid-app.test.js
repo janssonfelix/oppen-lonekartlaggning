@@ -46,12 +46,12 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     it('Personer att granska har kolumnen Ansvar bara när ansvarskolumnen finns', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
-        w.eval('renderPersonerAttGranska(true)');
+        w.eval('ritaPersonerAttGranska(true)');
         const rubriker = () => [...w.document.querySelectorAll('#pag-tabell thead th')].map(th => th.textContent);
         expect(rubriker()).toContain('Ansvar');
         expect([...w.document.querySelectorAll('#pag-tabell tbody tr')].every(tr => tr.children.length === rubriker().length)).toBe(true);
         w.__state.ansvarKolumn = null;
-        w.eval('renderPersonerAttGranska(true)');
+        w.eval('ritaPersonerAttGranska(true)');
         expect(rubriker()).not.toContain('Ansvar');
     });
 });

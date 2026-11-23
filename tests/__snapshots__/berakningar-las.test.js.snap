@@ -259,7 +259,7 @@ exports[`beräkningar på demodatan (låsta tal) > [B3.1] regressionen (runOLSRe
 
 exports[`beräkningar på demodatan (låsta tal) > extremvärdena (hittaExtremvarden) ger samma tal > hittaExtremvarden 1`] = `[]`;
 
-exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal > _laBootstrapGapCI 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapKI) på två påhittade lönelistor ger samma tal > _laBootstrapGapKI 1`] = `
 {
   "hi": 94.59854015,
   "lo": 88.63636364,
