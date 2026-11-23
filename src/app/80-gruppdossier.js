@@ -30,7 +30,7 @@ import { gapStatusKI } from './10-diagramtema.js';
 import { hamtaData, policyFor, policyNivaEtikett, referensKortnamn, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
-import { _direktivInline } from './41-lika-arbete.js';
+import { _direktivITalcell } from './41-lika-arbete.js';
 import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
 import { _valdPrioReferens, raknaPrioritering, byggMotiveringsforslag } from './55-prioritering.js';
 import { _hpBedomningar, _hpBedomningHtml, _hpPassarGrupp } from './56-handlingsplan.js';
@@ -195,7 +195,7 @@ function _gdRitaInnehall(d) {
         ? ({ granska: 'farg-granska', folj: 'fg-varning', balanserat: 'fg-ok' }[gapStatusKI({ gap: d.gap.pct, ci: d.gap.ci, nKv: d.nKv, nMa: d.nMa }).niva] || 'f-dampad')
         : '';
     const gapInner = d.gap && d.gap.pct != null
-        ? `<div class="gd-big ${gapKlass}">${pct(d.gap.pct, 1)}${_direktivInline(d.gap.pct)}</div>
+        ? `<div class="gd-big ${gapKlass}">${pct(d.gap.pct, 1)}${_direktivITalcell(d.gap.pct)}</div>
            <p>Kvinnors median som andel av männens. Kvinnor ${kr(d.gap.medKv)} · Män ${kr(d.gap.medMa)}.</p>
            ${d.gap.arsbelopp ? `<p class="gd-note">${esc(d.gap.arsbelopp)}</p>` : ''}
            ${d.gap.ci ? `<p class="gd-note">95 % bootstrap-KI: ${pct(d.gap.ci.lo)} – ${pct(d.gap.ci.hi)}${d.gap.ci.lo <= 100 && d.gap.ci.hi >= 100 ? ' — intervallet rymmer 100 %, skillnaden är inte säkerställd.' : ''}</p>` : ''}`

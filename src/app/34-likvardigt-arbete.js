@@ -66,7 +66,7 @@ function _lvJusteradSaknasText(p) {
 }
 
 /** Metadataraden om kvinnodominerade enheter som jämfördes med jämförelsestatistiken (CSV och Excel). */
-function _lvExternFallbackText() {
+function _lvExternReservText() {
     return termText('{Enhet.fl:kvinnodominerad} (i {niva.en}) jämförda med jämförelsestatistiken');
 }
 
@@ -861,7 +861,7 @@ function _exportLikvardighetCSVExport() {
     const poang = lvPoang(result);
     if (!poang) {   // i poängläget används jämförelsestatistiken inte (ADR-76)
         rows.push(['•varav externa (mot jämförelsestatistiken)', result.diagnostik?.jämförelse?.externaPar ?? 0]);
-        rows.push([_lvExternFallbackText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
+        rows.push([_lvExternReservText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
     }
     rows.push(['Klassificeringskälla — jämförelsestatistiken', result.diagnostik?.statistik?.klassKalla?.lokal ?? 0]);
     rows.push(['Klassificeringskälla — SKR:s personalstatistik', result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
@@ -974,7 +974,7 @@ function _exportLikvardighetExport() {
             ['Flaggade interna par', safe(() => diagnostik.jämförelse.internaPar, 0)],
             ...(poang ? [] : [   // i poängläget används jämförelsestatistiken inte (ADR-76)
                 ['Flaggade externa par (jämförelsestatistiken)', safe(() => diagnostik.jämförelse.externaPar, 0)],
-                [_lvExternFallbackText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]]),
+                [_lvExternReservText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]]),
             ['Par i utdata', pairs.length],
             ['', ''],
             ['— RÄTTSLIG GRUND —', ''],

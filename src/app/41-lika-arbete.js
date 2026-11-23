@@ -79,9 +79,9 @@ function _direktivBricka(markerad) {
  * Brickan inne i en talcell (med ett mellanslag före), eller ''. Klassen direktiv-inline tas bort i en tabellexport så
  * att cellen förblir ett tal i arbetsboken; markeringen står där i en egen kolumn eller en not.
  */
-export function _direktivInline(kvot) { return _direktivInlineOm(direktivMarkering(kvot)); }
-/** Som _direktivInline, med markeringen redan bestämd (vymodellen). */
-function _direktivInlineOm(markerad) {
+export function _direktivITalcell(kvot) { return _direktivITalcellOm(direktivMarkering(kvot)); }
+/** Som _direktivITalcell, med markeringen redan bestämd (vymodellen). */
+function _direktivITalcellOm(markerad) {
     return markerad ? ` <span class="direktiv-bricka direktiv-inline" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : '';
 }
 /** Direktivmarkeringens cell i en tabell: brickan, eller tom. Sorteras på markeringen. */
@@ -156,7 +156,7 @@ export function ritaLoneskillnadPerBas(vm) {
         const tr = document.createElement("tr");
         tr._markering = markeringFor(r.bas);   // länkade vyer; en egenskap, inte ett attribut: utskriften kopierar radernas HTML
         // Den ojusterade skillnaden bär direktivmarkeringen (≥ 5 %), ingen status (ADR-59).
-        tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivInlineOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
+        tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivITalcellOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
         tr._paygapRow = r.underlag;
         pgBody.appendChild(tr);
     }

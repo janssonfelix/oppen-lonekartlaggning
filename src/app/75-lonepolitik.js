@@ -157,8 +157,8 @@ function _lpDiagramskalHtml() {
         <div class="rad-bryt-mitt gap-12 slutjusterad marg-b-8">
             <span><label for="lp-komplians-vy" class="fs-sm marg-h-6">Uppställning</label>
             <select id="lp-komplians-vy" class="form-select pad-4-8 bredd-auto">
-                <option value="staplad"${_lpKompliansVy === 'staplad' ? ' selected' : ''}>Hela fördelningen (100 %)</option>
-                <option value="mitt"${_lpKompliansVy === 'mitt' ? ' selected' : ''}>Avvikelserna kring en mittlinje</option>
+                <option value="staplad"${_lpEfterlevnadVy === 'staplad' ? ' selected' : ''}>Hela fördelningen (100 %)</option>
+                <option value="mitt"${_lpEfterlevnadVy === 'mitt' ? ' selected' : ''}>Avvikelserna kring en mittlinje</option>
             </select></span>
         </div>
         <div id="chart-lp-compliance"></div>
@@ -277,7 +277,7 @@ function _lpRitaKonLagen(vm) {
 }
 
 const _LP_LAGE = PALETT.lage;
-function _lpFigurKomplians(rows) {
+function _lpFigurEfterlevnad(rows) {
     const pct = (v, n) => +((v / n) * 100).toFixed(1);
     const serie = (namn, farg, falt) => ({
         marke: 'stapel', lage: 'staplad', serie: namn, farg,
@@ -295,8 +295,8 @@ function _lpFigurKomplians(rows) {
 // Samma andelar ställda kring en mittlinje (divergerande stapel): under spannet åt vänster, över åt höger, störst
 // andel utanför spannet överst. Andelen inom spannet ritas inte — den står i tipset. Under-lagret har negativa
 // värden för att hamna till vänster och är märkt `absolut`, så diagramdatan bär andelen utan tecken.
-let _lpKompliansVy = 'staplad';   // 'staplad' | 'mitt' — användarens val, gäller tills sidan laddas om
-function _lpFigurKompliansMitt(rows) {
+let _lpEfterlevnadVy = 'staplad';   // 'staplad' | 'mitt' — användarens val, gäller tills sidan laddas om
+function _lpFigurEfterlevnadMitt(rows) {
     const pct = (v, n) => +((v / n) * 100).toFixed(1);
     const sorterade = rows.slice().sort((a, b) => (b.compliance.under + b.compliance.over) / b.compliance.n - (a.compliance.under + a.compliance.over) / a.compliance.n);
     const serie = (namn, farg, falt, tecken) => ({
@@ -355,7 +355,7 @@ function _lpRitaEfterlevnad(vm) {
             : 'Ingen BAS har användbara bandgränser i policyn.');
         return;
     }
-    ritaFigur(el, _lpKompliansVy === 'mitt' ? _lpFigurKompliansMitt(rows) : _lpFigurKomplians(rows));
+    ritaFigur(el, _lpEfterlevnadVy === 'mitt' ? _lpFigurEfterlevnadMitt(rows) : _lpFigurEfterlevnad(rows));
     if (dolda.length) {
         // Namnger de utelämnade intervallen i stället för att bara räkna dem —
         // samma princip som noterna under tabellerna.
@@ -512,7 +512,7 @@ export function _lpExcelBlad() {
 export function uppstartLonepolitik() {
     document.addEventListener('change', e => {
         if (!e.target || /** @type {HTMLElement} */ (e.target).id !== 'lp-komplians-vy') return;
-        _lpKompliansVy = /** @type {HTMLInputElement} */ (e.target).value === 'mitt' ? 'mitt' : 'staplad';
+        _lpEfterlevnadVy = /** @type {HTMLInputElement} */ (e.target).value === 'mitt' ? 'mitt' : 'staplad';
         if (typeof ritaLonepolitik === 'function') ritaLonepolitik();
     });
 }

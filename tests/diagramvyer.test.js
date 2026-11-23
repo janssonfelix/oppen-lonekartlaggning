@@ -87,7 +87,7 @@ describe('Lönepolitik: chart-lp-gender och chart-lp-compliance', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('chart-lp-compliance: staplat till 100 %, tre serier i ordningen under, inom, över', () => {
-        const f = w.eval(`_lpFigurKomplians([{ bas: '5', n: 40, compliance: { under: 4, within: 30, over: 6, n: 40 } }])`);
+        const f = w.eval(`_lpFigurEfterlevnad([{ bas: '5', n: 40, compliance: { under: 4, within: 30, over: 6, n: 40 } }])`);
         expect(f.lager.map(l => [l.serie, l.farg])).toEqual([['Under P10', '#c2552d'], ['Inom spann', '#d5dae3'], ['Över P90', '#2a78d6']]);   // två nyanser kring neutralt, inte rött och grönt
         expect(f.lager.every(l => l.lage === 'staplad')).toBe(true);
         expect(f.lager.map(l => l.data[0].y)).toEqual([10, 75, 15]);
@@ -1783,7 +1783,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
         expect(hel).not.toMatch(/NaN|undefined/);
     });
     it('efterlevnadens andra vy (kring en mittlinje) har samma urval', () => {
-        const f = fonster().eval(`_lpFigurKompliansMitt([{ bas: '5', n: 40, compliance: { under: 4, within: 30, over: 6, n: 40 } }, { bas: '7', n: 20, compliance: { under: 0, within: 18, over: 2, n: 20 } }])`);
+        const f = fonster().eval(`_lpFigurEfterlevnadMitt([{ bas: '5', n: 40, compliance: { under: 4, within: 30, over: 6, n: 40 } }, { bas: '7', n: 20, compliance: { under: 0, within: 18, over: 2, n: 20 } }])`);
         expect(f.urval).toBe(fonster().eval('URVAL.bas'));
         expect(f.lager.flatMap(l => l.data.map(d => d.bas))).toEqual(['5', '7', '5', '7']);
     });

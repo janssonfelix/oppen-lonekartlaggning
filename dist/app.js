@@ -13004,7 +13004,7 @@ function _lvJusteradSaknasText(p) {
   if (justeradSaknas(p) === "extern") return termText("Ingen åldersjustering: {jamforelse.bf} kommer från jämförelsestatistiken och saknar individdata.");
   return `Ingen åldersjustering: ${T.jamforelse.bf} har färre än ${ALDERS_GOLV_STANDARD} personer med ålder eller mindre än ${ALDERS_SPRIDNING_MIN} års åldersspridning, eller åldrar saknas i underlaget.`;
 }
-function _lvExternFallbackText() {
+function _lvExternReservText() {
   return termText("{Enhet.fl:kvinnodominerad} (i {niva.en}) jämförda med jämförelsestatistiken");
 }
 function likvardighetResultat() {
@@ -13772,7 +13772,7 @@ function _exportLikvardighetCSVExport() {
   const poang = lvPoang(result);
   if (!poang) {
     rows.push(["•varav externa (mot jämförelsestatistiken)", result.diagnostik?.jämförelse?.externaPar ?? 0]);
-    rows.push([_lvExternFallbackText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
+    rows.push([_lvExternReservText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
   }
   rows.push(["Klassificeringskälla — jämförelsestatistiken", result.diagnostik?.statistik?.klassKalla?.lokal ?? 0]);
   rows.push(["Klassificeringskälla — SKR:s personalstatistik", result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
@@ -13892,7 +13892,7 @@ function _exportLikvardighetExport() {
       ...poang ? [] : [
         // i poängläget används jämförelsestatistiken inte (ADR-76)
         ["Flaggade externa par (jämförelsestatistiken)", safe(() => diagnostik.jämförelse.externaPar, 0)],
-        [_lvExternFallbackText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]
+        [_lvExternReservText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]
       ],
       ["Par i utdata", pairs.length],
       ["", ""],
@@ -18592,8 +18592,8 @@ function _lpDiagramskalHtml() {
         <div class="rad-bryt-mitt gap-12 slutjusterad marg-b-8">
             <span><label for="lp-komplians-vy" class="fs-sm marg-h-6">Uppställning</label>
             <select id="lp-komplians-vy" class="form-select pad-4-8 bredd-auto">
-                <option value="staplad"${_lpKompliansVy === "staplad" ? " selected" : ""}>Hela fördelningen (100 %)</option>
-                <option value="mitt"${_lpKompliansVy === "mitt" ? " selected" : ""}>Avvikelserna kring en mittlinje</option>
+                <option value="staplad"${_lpEfterlevnadVy === "staplad" ? " selected" : ""}>Hela fördelningen (100 %)</option>
+                <option value="mitt"${_lpEfterlevnadVy === "mitt" ? " selected" : ""}>Avvikelserna kring en mittlinje</option>
             </select></span>
         </div>
         <div id="chart-lp-compliance"></div>
@@ -18764,7 +18764,7 @@ function _lpRitaKonLagen(vm) {
   if (not) not.textContent = `${pct(sum.kv, sum.nKv)} av kvinnorna och ${pct(sum.ma, sum.nMa)} av männen ligger i nedre tredjedelen eller under spannet. ${svTal(sum.nKv, 0)} kvinnor och ${svTal(sum.nMa, 0)} män med policyspann ingår.`;
 }
 var _LP_LAGE = PALETT.lage;
-function _lpFigurKomplians(rows) {
+function _lpFigurEfterlevnad(rows) {
   const pct = (v, n) => +(v / n * 100).toFixed(1);
   const serie = (namn, farg, falt) => ({
     marke: "stapel",
@@ -18788,8 +18788,8 @@ function _lpFigurKomplians(rows) {
     ]
   };
 }
-var _lpKompliansVy = "staplad";
-function _lpFigurKompliansMitt(rows) {
+var _lpEfterlevnadVy = "staplad";
+function _lpFigurEfterlevnadMitt(rows) {
   const pct = (v, n) => +(v / n * 100).toFixed(1);
   const sorterade = rows.slice().sort((a, b) => (b.compliance.under + b.compliance.over) / b.compliance.n - (a.compliance.under + a.compliance.over) / a.compliance.n);
   const serie = (namn, farg, falt, tecken) => ({
@@ -18852,7 +18852,7 @@ function _lpRitaEfterlevnad(vm) {
     _lpIngetDiagram(el, vm.efterlevnad.harSpann ? `Samtliga ${T.niva.fl} med policyspann har färre än ${kTroskel()} ${personOrd(kTroskel())} och kan därför inte redovisas.` : "Ingen BAS har användbara bandgränser i policyn.");
     return;
   }
-  ritaFigur(el, _lpKompliansVy === "mitt" ? _lpFigurKompliansMitt(rows) : _lpFigurKomplians(rows));
+  ritaFigur(el, _lpEfterlevnadVy === "mitt" ? _lpFigurEfterlevnadMitt(rows) : _lpFigurEfterlevnad(rows));
   if (dolda.length) {
     const note = document.createElement("div");
     note.setAttribute("data-lp-not", "komplians");
@@ -18987,7 +18987,7 @@ function uppstartLonepolitik() {
   document.addEventListener("change", (e) => {
     if (!e.target || /** @type {HTMLElement} */
     e.target.id !== "lp-komplians-vy") return;
-    _lpKompliansVy = /** @type {HTMLInputElement} */
+    _lpEfterlevnadVy = /** @type {HTMLInputElement} */
     e.target.value === "mitt" ? "mitt" : "staplad";
     if (typeof ritaLonepolitik === "function") ritaLonepolitik();
   });
@@ -20225,7 +20225,7 @@ function _gdRitaInnehall(d) {
         <p class="gd-ansvar">Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} män ·
             Särskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} män</p>` : ""}`;
   const gapKlass = d.gap && d.gap.pct != null ? { granska: "farg-granska", folj: "fg-varning", balanserat: "fg-ok" }[gapStatusKI({ gap: d.gap.pct, ci: d.gap.ci, nKv: d.nKv, nMa: d.nMa }).niva] || "f-dampad" : "";
-  const gapInner = d.gap && d.gap.pct != null ? `<div class="gd-big ${gapKlass}">${pct(d.gap.pct, 1)}${_direktivInline(d.gap.pct)}</div>
+  const gapInner = d.gap && d.gap.pct != null ? `<div class="gd-big ${gapKlass}">${pct(d.gap.pct, 1)}${_direktivITalcell(d.gap.pct)}</div>
            <p>Kvinnors median som andel av männens. Kvinnor ${kr2(d.gap.medKv)} · Män ${kr2(d.gap.medMa)}.</p>
            ${d.gap.arsbelopp ? `<p class="gd-note">${esc(d.gap.arsbelopp)}</p>` : ""}
            ${d.gap.ci ? `<p class="gd-note">95 % bootstrap-KI: ${pct(d.gap.ci.lo)} – ${pct(d.gap.ci.hi)}${d.gap.ci.lo <= 100 && d.gap.ci.hi >= 100 ? " — intervallet rymmer 100 %, skillnaden är inte säkerställd." : ""}</p>` : ""}` : missing(`Kräver minst ${kTroskel()} av varje kön i gruppen (här ${d.nKv} kv / ${d.nMa} mä).`);
@@ -22109,7 +22109,7 @@ function _bdRitaInnehall(d) {
     const [klass, ik] = BD_STATUS_KLASS[y.status];
     return `<span class="la-status ${klass}">${ik ? ikon(ik) : ""} ${BD_STATUS_TEXT[y.status]}</span>`;
   };
-  const yrkesrad = (y) => `<tr><td>${esc(y.aid)}</td><td>${esc(String(y.yrke).replace(/^\d+\s*/, "") || y.yrke)}</td><td class="t-tal">${y.tot} (${y.nKv}/${y.nMa})</td>` + (y.samlad ? `<td colspan="3" class="t-mitt">Gruppens median ${_bdKr(y.medTot)}</td>` : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}${_direktivInline(y.kvotPct)}</td>`) + `<td>${status(y)}${y.ocksaI.length ? `<br><span class="gd-note">${esc(_bdHelaYrketNot(y))}</span>` : ""}</td><td class="t-mitt">${y.dossierKey ? `<button type="button" class="btn-table-tool" data-bd-gruppdossier="${esc(y.dossierKey)}" aria-label="Öppna gruppdossiern för ${esc(y.yrke)}">Gruppdossier</button>` : ""}</td></tr>`;
+  const yrkesrad = (y) => `<tr><td>${esc(y.aid)}</td><td>${esc(String(y.yrke).replace(/^\d+\s*/, "") || y.yrke)}</td><td class="t-tal">${y.tot} (${y.nKv}/${y.nMa})</td>` + (y.samlad ? `<td colspan="3" class="t-mitt">Gruppens median ${_bdKr(y.medTot)}</td>` : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}${_direktivITalcell(y.kvotPct)}</td>`) + `<td>${status(y)}${y.ocksaI.length ? `<br><span class="gd-note">${esc(_bdHelaYrketNot(y))}</span>` : ""}</td><td class="t-mitt">${y.dossierKey ? `<button type="button" class="btn-table-tool" data-bd-gruppdossier="${esc(y.dossierKey)}" aria-label="Öppna gruppdossiern för ${esc(y.yrke)}">Gruppdossier</button>` : ""}</td></tr>`;
   const yrken = (d.yrken.length ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">${stor(T.namn.en)}</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join("")}</tbody></table></div>` : missing(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`)) + (d.yrkenUtelamnade.length ? kMaskNot(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : "") + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(", "))}.</p>` : "");
   const parLista = (lista) => `<ul class="gd-list">${lista.map((p) => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} (BAS ${esc(p.kvBas)}) mot ${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} (BAS ${esc(p.maBas)}): ${_bdKr(p.kvMedian)} mot ${_bdKr(p.maMedian)}, skillnad ${_bdKr(p.gapKr)} (${svPct(p.gapPct, 1)})</li>`).join("")}</ul>`;
   const parNot = d.par.utelamnade ? `<p class="gd-note">${esc(_parUtelamnadeNot(d.par.utelamnade))}</p>` : "";
@@ -25818,10 +25818,10 @@ function laLikaGrupper(d = hamtaData(), k = kTroskel()) {
 function _direktivBricka(markerad) {
   return markerad ? `<span class="direktiv-bricka" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : "";
 }
-function _direktivInline(kvot) {
-  return _direktivInlineOm(direktivMarkering(kvot));
+function _direktivITalcell(kvot) {
+  return _direktivITalcellOm(direktivMarkering(kvot));
 }
-function _direktivInlineOm(markerad) {
+function _direktivITalcellOm(markerad) {
   return markerad ? ` <span class="direktiv-bricka direktiv-inline" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : "";
 }
 function _direktivCell(markerad) {
@@ -25885,7 +25885,7 @@ function ritaLoneskillnadPerBas(vm) {
     const evidenceCell = `<td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon("sok")}</button></td>`;
     const tr = document.createElement("tr");
     tr._markering = markeringFor(r.bas);
-    tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivInlineOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
+    tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivITalcellOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
     tr._paygapRow = r.underlag;
     pgBody.appendChild(tr);
   }
@@ -26776,7 +26776,7 @@ function ritaStruktur() {
         ${repVisade.map((g) => {
     return `<tr><td><strong>${esc(g.bas)}</strong></td><td class="t-hoger">${g.n}</td><td class="t-hoger">${kr2(g.median)}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>
             <td><div class="bak-yta-stark rund-7 hojd-14 pos-relativ"><div class="pos-botten-2 pos-absolut pos-topp-2 bredd-2 bg-dampad" data-stil-vanster="${totAndel.toFixed(1)}%" title="Snitt ${svPct(totAndel, 0)}"></div><div class="rund-7 hojd-100p bg-accent" data-stil-bredd="${g.andelKv.toFixed(1)}%"></div></div></td>
-            <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ""}</td></tr>`;
+            <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivITalcell(100 + g.gapPct) : ""}</td></tr>`;
   }).join("")}
         </tbody></table>` : ""}
         ${kMaskNot(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
@@ -26815,7 +26815,7 @@ function ritaStruktur() {
         <p class="text-dampad-sm marg-0-0-10"><strong>Lönebegrepp.</strong> ${EU_LONEBEGREPP_RESERVATION}</p>
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="card m-0"><div class="text-dampad-xs">Kvinnors medellön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(meanGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(meanGap)}</div></div>
-            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}${medGap != null ? _direktivInline(100 + medGap) : ""}</div></div>
+            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}${medGap != null ? _direktivITalcell(100 + medGap) : ""}</div></div>
         </div>
         <strong class="block-mb6">Andel kvinnor/män per lönekvartil</strong>
         <div class="mb-10" id="chart-struktur-kvartiler"></div>

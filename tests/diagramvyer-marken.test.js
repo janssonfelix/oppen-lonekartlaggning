@@ -365,7 +365,7 @@ describe('övergångar: märkena flyttar sig mellan två ritningar', () => {
 describe('Lönepolitik: efterlevnaden kring en mittlinje', () => {
     const rader = "[{ bas: '5', n: 40, compliance: { under: 4, within: 30, over: 6, n: 40 } }, { bas: '7', n: 20, compliance: { under: 8, within: 10, over: 2, n: 20 } }]";
     it('under åt vänster och över åt höger, störst andel utanför överst, symmetrisk axel utan tecken', () => {
-        const f = w.eval(`_lpFigurKompliansMitt(${rader})`);
+        const f = w.eval(`_lpFigurEfterlevnadMitt(${rader})`);
         expect(f.lager.map(l => [l.serie, l.farg, l.riktning, l.lage, !!l.absolut])).toEqual([['Under P10', '#c2552d', 'liggande', 'staplad', true], ['Över P90', '#2a78d6', 'liggande', 'staplad', false]]);
         expect(f.y.ordning).toEqual(['BAS 7', 'BAS 5']);                              // 50 % utanför före 25 %
         expect(f.lager[0].data.map(d => d.x)).toEqual([-40, -10]);

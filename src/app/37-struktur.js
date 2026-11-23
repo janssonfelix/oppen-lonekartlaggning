@@ -26,7 +26,7 @@ import { byggAtgardslista } from './18-atgardslista.js';
 import { _laggTillMetodblad, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
-import { _direktivInline, _laNyckel, _laSlutsats } from './41-lika-arbete.js';
+import { _direktivITalcell, _laNyckel, _laSlutsats } from './41-lika-arbete.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { utforskaSattUrval } from './72-utforska-urval.js';
 import { basdossierKandidater, basdossierUtelamnade, basintervallUtkastText, byggBasdossier } from './81-basdossier.js';
@@ -69,7 +69,7 @@ export function ritaStruktur() {
         ${repVisade.map(g => {
             return `<tr><td><strong>${esc(g.bas)}</strong></td><td class="t-hoger">${g.n}</td><td class="t-hoger">${kr(g.median)}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>
             <td><div class="bak-yta-stark rund-7 hojd-14 pos-relativ"><div class="pos-botten-2 pos-absolut pos-topp-2 bredd-2 bg-dampad" data-stil-vanster="${totAndel.toFixed(1)}%" title="Snitt ${svPct(totAndel, 0)}"></div><div class="rund-7 hojd-100p bg-accent" data-stil-bredd="${g.andelKv.toFixed(1)}%"></div></div></td>
-            <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ''}</td></tr>`;
+            <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivITalcell(100 + g.gapPct) : ''}</td></tr>`;
         }).join('')}
         </tbody></table>` : ''}
         ${kMaskNot(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
@@ -110,7 +110,7 @@ export function ritaStruktur() {
         <p class="text-dampad-sm marg-0-0-10"><strong>Lönebegrepp.</strong> ${EU_LONEBEGREPP_RESERVATION}</p>
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="card m-0"><div class="text-dampad-xs">Kvinnors medellön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(meanGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(meanGap)}</div></div>
-            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}${medGap != null ? _direktivInline(100 + medGap) : ''}</div></div>
+            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}${medGap != null ? _direktivITalcell(100 + medGap) : ''}</div></div>
         </div>
         <strong class="block-mb6">Andel kvinnor/män per lönekvartil</strong>
         <div class="mb-10" id="chart-struktur-kvartiler"></div>
