@@ -12,7 +12,7 @@ vi.setConfig({ testTimeout: 60000 });
 
 const ren = t => String(t).replace(/\s+/g, ' ').trim();
 const siffror = t => ren(t).replace(/(\d)\s(?=\d{3}\b)/g, '$1');
-const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const medSkal = w => Object.entries(w.__state.handlingsplan).filter(([, v]) => v.skal && v.skal.length);
 
 describe('[B8.2] årsbokslutet i verktyget', () => {
@@ -149,9 +149,9 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         expect(w.__state.kLage).toBe('skarm');
     });
     it('med demodatan och ett konstruerat förra-års-bokslut visar panelen tabellen med antal och hanteln för medianen', () => {
-        const a = createAppWindow(); a.__loadDemoData();
+        const a = createAppWindow(); a.__lasInDemodata();
         const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => ab.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; }));
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         lasIn(w, cfg);
         w.__ritaFlik('arbetet');
         const host = w.document.getElementById('arsjamforelse');
@@ -173,9 +173,9 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         expect(w.__state.kLage).toBe('skarm');
     });
     it('ett bokslut utan fältet (äldre fil) ger en rad om att det saknas, och ingen tabell eller hantel', () => {
-        const a = createAppWindow(); a.__loadDemoData();
+        const a = createAppWindow(); a.__lasInDemodata();
         const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => { delete ab.basIntervall; });
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         lasIn(w, cfg);
         expect(w.__state.forraArsbokslut.basIntervall).toBeNull();
         w.__ritaFlik('arbetet');
@@ -210,9 +210,9 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
     const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)'); };
 
     it('panelen har kolumnen Lönespridning förra året och i år i tabellen per BAS-intervall och i de flaggade gruppernas tabeller', () => {
-        const a = createAppWindow(); a.__loadDemoData();
+        const a = createAppWindow(); a.__lasInDemodata();
         const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => ab.basIntervall.forEach(r => { r.spridning = 0.5; }));
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         lasIn(w, cfg);
         w.__ritaFlik('arbetet');
         const tab = w.document.getElementById('arsjamforelse-bas');

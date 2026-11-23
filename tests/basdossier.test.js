@@ -14,7 +14,7 @@ import { fonster, normalisera } from './helpers/ktroskel-rigg.js';
 
 vi.setConfig({ testTimeout: 60000 });
 
-const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const modal = w => w.document.getElementById('basdossier-modal');
 const oppen = w => modal(w).style.display === 'flex';
 const skriv = (w, t) => { const f = w.document.getElementById('sok-grupp'); f.value = t; f.dispatchEvent(new w.Event('input', { bubbles: true })); };
@@ -113,7 +113,7 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
         skriv(w, 'per intervall');
         const li = [...doc.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => x.querySelector('.sok-namn').textContent === 'BAS-dossier');
         expect(li.querySelector('.sok-under').textContent).toMatch(/kräver lönefil/);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         skriv(w, 'bas-intervall dossier');
         const li2 = [...doc.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => x.querySelector('.sok-namn').textContent === 'BAS-dossier');
         expect(li2.querySelector('.sok-under').textContent).toBe('Öppnar BAS-dossiern');

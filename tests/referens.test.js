@@ -22,7 +22,7 @@ describe('src/lib/referens.js', () => {
 describe('jämförelsestatistik: AID och BAS saneras vid inläsning', () => {
     it('ett AID-värde med "<b>" läses in utan HTML-metatecken, i både aid, aidFull och bas', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
         const input = w.document.getElementById('file-input-stat');
         const csv = 'AID;BAS;Median\n5301 <b>Undersköterska</b>;"C&";30000\n';
@@ -41,7 +41,7 @@ describe('jämförelsestatistik: AID och BAS saneras vid inläsning', () => {
 
 describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
+    beforeAll(() => { w = createAppWindow(); w.__lasInDemodata(); });
     const klicka = tab => w.document.querySelector(`.nav-item[data-tab="${tab}"]`).click();
 
     it('demoläget använder Exempelkommunens påhittade ställningstagande, märkt som påhittat', () => {
@@ -76,13 +76,13 @@ describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
         w.__lasInReferens([{ bas: 'A', p10: 1, med: 2, p90: 3 }], 'x.csv');
         w.__rensaAllData();
         expect(w.__state.policy).toEqual([]);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__lasInReferens([{ bas: 'A', p10: 1, med: 2, p90: 3 }], 'y.csv');
         w.__rensaVidInaktivitet();
         expect(w.__state.policy).toEqual([]);
     });
     it('en ren AID-policy med eget namn ger "saknar rader per BAS-intervall" i kompliansrutan', () => {
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__lasInReferens([{ aid: '123456', p10: 1, med: 2, p90: 3 }], 'AID-policy.csv');
         w.__ritaKravstatus();
         expect(w.document.getElementById('comp-pol-val').textContent).toContain('saknar rader per BAS-intervall');
@@ -95,11 +95,11 @@ describe('referensbyte ritar om allt som namnger referensen', () => {
     let w;
     const hog = [...'ABCDEFGHIJK'].map(b => ({ bas: b, p10: 90000, med: 95000, p90: 99000 }));
     const lista = () => w.document.getElementById('action-checklist-container').textContent;
-    beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
+    beforeAll(() => { w = createAppWindow(); w.__lasInDemodata(); });
 
     it('namnbyte syns direkt i åtgärdslistan', () => {
         w.__lasInReferens(hog, 'Egen A.csv');
-        w.eval('renderActionChecklist()');
+        w.eval('ritaAtgardslista()');
         expect(lista()).toContain('Egen A');
         w.__sattReferensNamn('Egen B');
         expect(lista()).toContain('Egen B');
@@ -116,7 +116,7 @@ describe('referensbyte ritar om allt som namnger referensen', () => {
 
 describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen fördelning', () => {
     const w = createAppWindow();
-    w.__loadDemoData();
+    w.__lasInDemodata();
     const rubriker = id => [...w.document.querySelectorAll(`#${id} thead th`)].map(th => th.textContent.trim());
     const kol = (id, namn) => rubriker(id).indexOf(namn);
     it('Lika arbete: kolumnen "Kvinnor nationellt" per yrke, och underraderna följer kolumnantalet', async () => {
@@ -178,14 +178,14 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
         const sel = w.document.getElementById('org-typ');
         expect([...sel.options].map(o => o.value)).toEqual(['alla', 'kommun', 'region']);
         expect(sel.value).toBe('alla');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(sel.value).toBe('kommun');
         expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)}\u00a0%`);
     });
     it('byte till region ritar om med regionernas andel och rätt text', async () => {
         const { skrKvinnoandel } = await skr();
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const sel = w.document.getElementById('org-typ');
         sel.value = 'region';
         sel.dispatchEvent(new w.Event('change'));
@@ -196,7 +196,7 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
     });
     it('konfigurationsfilen bär organisationstypen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const cfg = w.__byggKonfiguration();
         expect(cfg.visning.organisationstyp).toBe('kommun');
         const w2 = createAppWindow();
@@ -208,7 +208,7 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
     });
     it('Rensa all data återställer till båda', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('_rensaAllData()');
         expect(w.document.getElementById('org-typ').value).toBe('alla');
     });

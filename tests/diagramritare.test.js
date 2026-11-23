@@ -3398,7 +3398,7 @@ describe('inga råa decimaltal i någon ritad figur (DU4)', () => {
     });
     it('alla diagram som demot ritar i flikarna, också kvantilfiguren när intervallet är klart', async () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         const flikar = [...w2.document.querySelectorAll('.nav-item[data-tab]')].filter(b => !b.hidden).map(b => b.dataset.tab);
         expect(flikar.length).toBeGreaterThan(5);
         const hittat = [];

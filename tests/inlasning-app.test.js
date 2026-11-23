@@ -43,12 +43,12 @@ describe('radnummer vid inläsning', () => {
     });
     it('demodatan har radnr = index + 2', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.data.slice(0, 3).map(r => r.radnr)).toEqual([2, 3, 4]);
     });
     it('extremvärdesdetektorn visar filens radnummer', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const i = 40;
         w.__state.data[i].lon = 400000;   // tydlig avvikelse
         const ut = w.eval('hittaExtremvarden(3)');
@@ -90,7 +90,7 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     });
     it('kortet förklarar beloppens tecken', () => {
         const w = createAppWindow();
-        w.__loadDemoData(); w.__ritaFlik('struktur');
+        w.__lasInDemodata(); w.__ritaFlik('struktur');
         expect(w.document.getElementById('gap-uppdelning').textContent).toContain('negativa belopp betyder att kvinnornas medellön är lägre');
     });
     it('CSV med bara CR som radslut får radnummer', async () => {
@@ -106,7 +106,7 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     });
     it('gränsfältet visar det värde som används när man lämnar det', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const g = w.document.getElementById('pag-grans');
         for (const [in_, ut] of [['100', '30'], ['2', '5'], ['', '10'], ['abc', '10']]) {
@@ -184,7 +184,7 @@ describe('ansvarskodskolumnen vid inläsning', () => {
     it('en avvisad fil ändrar inte ansvarskolumnen för den data som redan finns', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const fore = JSON.stringify(w.__state.ansvarKolumn);
         w.lasInStrukturfil(new w.File([csv(';Personnummer', i => `;19800101-${String(1000 + i)}`)], 'p.csv', { type: 'text/csv' }));
         await new Promise(r => setTimeout(r, 400));
@@ -255,7 +255,7 @@ describe('ansvarsraden och ansvarskolumnen vid fel', () => {
     it('ett CSV-fel mitt i läsningen återställer ansvarskolumnen för den data som redan finns', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const fore = JSON.stringify(w.__state.ansvarKolumn);
         const antal = w.__state.data.length;
         w.Papa.parse = (text, cfg) => {
@@ -305,14 +305,14 @@ describe('inläsning: alla BAS-intervall ingår', () => {
         const status = w.document.getElementById('data-status').textContent;
         expect(status).toContain('47 rader · 5 BAS');
         expect(status).not.toContain('analyseras manuellt');
-        expect(w.eval('buildActionChecklist()').some(i => i.id === 'bas-ovanfor-grans')).toBe(false);
+        expect(w.eval('byggAtgardslista()').some(i => i.id === 'bas-ovanfor-grans')).toBe(false);
     });
 });
 
 describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i mal.md)', () => {
     it('ordlistan, Vad lagras? och riskanalysen beskriver fem fält, utan enhet', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-content').textContent).not.toMatch(/\bsex fält\b/);
         expect(w.document.body.innerHTML).not.toMatch(/hur en enhet skiljer sig/);
@@ -349,7 +349,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
     });
     it('exporterna och hjälptexterna nämner ingen enhet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const html = w.__docDraftHtml();
         expect(html).not.toMatch(/Enhet \d|enhetsfilter/i);
         w.eval('oppnaVadLagras()');
@@ -357,7 +357,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
     });
     it('ingen vy erbjuder enhet som val, och rapportunderlaget har inga enhetsblock', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.document.querySelectorAll('option[value="enhet"]')).toHaveLength(0);
         expect(w.document.getElementById('prio-per-enhet-card')).toBeNull();
         const ids = w.__rapportunderlagBlock();
@@ -383,7 +383,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
     });
     it('hamtaData är hela datan, och tillståndet har inget enhetsfilter', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.document.getElementById('enhet-select')).toBeNull();
         expect(w.__hamtaData()).toBe(w.__state.data);
         expect('activeEnhet' in w.__state).toBe(false);
@@ -396,7 +396,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         const w = createAppWindow();
         const d = w.document;
         expect(d.querySelector('.gdpr-info-compact').hidden).toBe(false);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(d.getElementById('upload-row').style.display).toBe('');
         expect(d.getElementById('upload-collapsed-bar')).toBeNull();
         expect(d.getElementById('btn-toggle-upload')).toBeNull();
@@ -443,7 +443,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
     });
     it('ställningstagande och statistik: kompakta med namnfält; Ta bort referensen återställer rutan', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval("_lasInReferens([{ bas: 'C', p10: 30000, med: 34000, p90: 39000 }], 'lonepolitik_2026.csv'); markeraFilrutaInlast('upload-cell-policy', 'Inläst');");
         w.__state.filnamn.policy = 'lonepolitik_2026.csv';
         w.eval('ritaFilrutor()');
@@ -480,7 +480,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         expect(skapa.classList.contains('bakgrund-panel')).toBe(false);
         expect(skapa.querySelector('summary').textContent.trim()).toBe('Skapa organisationspaket (för systemägaren)');
         expect([...paket.children].pop()).toBe(skapa);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const pol = d.getElementById('upload-cell-policy');
         expect(pol.classList.contains('loaded')).toBe(true);
         expect(pol.querySelector('.upload-filnamn').textContent).toMatch(/Demots ställningstagande/);

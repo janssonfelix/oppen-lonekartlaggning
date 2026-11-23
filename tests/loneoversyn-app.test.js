@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 
 // Demot förifyller sakliga skäl på tre rader (56-handlingsplan.js, _hpDemoSkal); testerna här börjar från en tom plan.
-const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); w.__state.handlingsplan = {}; return w; };
+const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__state.handlingsplan = {}; return w; };
 
 describe('Löneöversyn: förslaget nås från potten', () => {
     it('knappen vid potten är inaktiv utan pott, aktiv med pott, och fäller ut Riktade potter', () => {
@@ -87,7 +87,7 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ers
 describe('Löneöversyn utan påslag', () => {
     it('ett tal som inte ändras sägs vara oförändrat, inte med en ensam pil', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         // En pott men inget påslag: utfallet visas, och inget tal har ändrats.
         w.__state.forecast.budget = { mode: 'pct', value: 2 };
         w.__ritaFlik('loneoversyn');
@@ -111,7 +111,7 @@ describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => 
     const OFORKL = 'Of\u00F6rklarad skillnad \\(regressionen\\)', ANDEL = 'Kvinnors medianl\u00F6n i % av m\u00E4ns';
     it('generellt p\u00E5slag 2 % p\u00E5 demodatan: lika tal f\u00F6re och efter \u00E4r of\u00F6r\u00E4ndrat, utan r\u00F6d markering', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.forecast.generell = { mode: 'pct', value: 2 };
         const { el, text } = utfall(w);
         for (const etikett of [OFORKL, ANDEL]) {
@@ -127,7 +127,7 @@ describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => 
     });
     it('riktade p\u00E5slag till kvinnorna \u00E4ndrar den of\u00F6rklarade skillnaden, och ordet st\u00E4mmer med de visade talen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const bas = [...new Set(w.__state.data.map(r => r.bas))];
         w.__state.forecast.targets = bas.map(b => ({ bas: b, aid: '*', mode: 'pct', value: 6, dist: 'flat', kon: 'kvinna', pool: 'equity' }));
         const { el, text } = utfall(w);
@@ -185,7 +185,7 @@ describe('formulären i Löneöversyn', () => {
     });
     it('fälten styr prognosens värden', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('loneoversyn');
         const d = w.document;
         const satt = (id, v) => { const el = d.getElementById(id); el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); el.dispatchEvent(new w.Event('change', { bubbles: true })); };
@@ -201,7 +201,7 @@ describe('formulären i Löneöversyn', () => {
 describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
     const rita = budget => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.forecast.budget = budget;
         w.__state.forecast.generell = { mode: 'pct', value: 1 };
         w.__ritaFlik('loneoversyn');
@@ -238,7 +238,7 @@ describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
 // fältets min och max avvisas med en mening i stället för att tyst bli något annat.
 describe('Löneöversyn: målet i tröskelmålet', () => {
     const w = createAppWindow();
-    w.__loadDemoData();
+    w.__lasInDemodata();
     w.__ritaFlik('loneoversyn');
     const falt = w.document.getElementById('forecast-threshold-pct'), sig = w.document.getElementById('forecast-threshold-sig');
     const resultat = (varde, signifikans = false) => {

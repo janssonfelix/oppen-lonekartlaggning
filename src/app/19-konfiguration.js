@@ -22,7 +22,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE } from './10-diagramtema.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag, fyllValjare, UK_ETIKETT } from './13-oversikt.js';
-import { renderActionChecklist } from './18-atgardslista.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
 import { _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { sattOrgTyp } from './29-organisationspaket.js';
@@ -418,7 +418,7 @@ function _tillampaKonfiguration(cfg) {
     }
 
     // Återställ HR:s manuella arbete (endast om snapshoten bar det).
-    // Sätts före renderActionChecklist() nedan så avbockningarna slår igenom.
+    // Sätts före ritaAtgardslista() nedan så avbockningarna slår igenom.
     if (tmp.bes8) tmp.bes8.forEach(a => {
         const s = document.getElementById('bes8-status-' + a.n);
         const t = document.getElementById('bes8-note-' + a.n);
@@ -473,7 +473,7 @@ function _tillampaKonfiguration(cfg) {
     tomStatistikcacher({ recompute: false });
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker uppdateraAktivFlik och Att göra).
     if (kAndrad && state.data.length) { fyllValjare(); _ritaOmAllaFlikar(); }
-    else { uppdateraAktivFlik(); renderActionChecklist(); }
+    else { uppdateraAktivFlik(); ritaAtgardslista(); }
     // Påminnelse om organisationspaketet som konfigurationen skapades med.
     const op = tmp.organisationspaket;
     if (op && !(state.paket && state.paket.organisation === op.organisation && state.paket.skapat === op.skapat)) {

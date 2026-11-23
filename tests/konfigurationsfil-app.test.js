@@ -108,7 +108,7 @@ describe('konfig-snapshot: HR:s manuella arbete round-trips', () => {
 describe('ansvarskoden och konfigurationsfilen', () => {
     it('konfigurationsfilen innehåller varken ansvarskoder eller ansvarskolumnen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         // Handlingsplanens rader (demots förifyllda skäl) har fältet "ansvarig", en roll och inte ansvarskoden: töms här.
         w.__state.handlingsplan = {};
         expect(JSON.stringify(w.__byggKonfiguration())).not.toMatch(/ansvar/i);

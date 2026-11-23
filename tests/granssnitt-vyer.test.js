@@ -13,11 +13,11 @@ import { rot, las, papa, vanta, csvFil, okandaRader } from './helpers/granssnitt
 // rita dem är det dyra, inte att läsa. Ordningen spelar ingen roll (prövat: samma dokument, bortsett från
 // exportmenyernas löpnummer). Vakten i delatFonster fäller det test som ändrar tillståndet.
 const ALLA_FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info'];
-const allaFlikar = delatFonster(w => { w.__loadDemoData(); for (const f of ALLA_FLIKAR) w.__ritaFlik(f); });
+const allaFlikar = delatFonster(w => { w.__lasInDemodata(); for (const f of ALLA_FLIKAR) w.__ritaFlik(f); });
 // Med en pott och ett generellt påslag, så att Löneöversyn ritar prognosen. Procenttestet läser också Exportera, som det
 // förut inte ritade.
 const medPott = delatFonster(w => {
-    w.__loadDemoData();
+    w.__lasInDemodata();
     w.__state.forecast.budget = { mode: 'pct', value: 2 };
     w.__state.forecast.generell = { mode: 'pct', value: 1 };
     for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera']) w.__ritaFlik(f);
@@ -26,7 +26,7 @@ const medPott = delatFonster(w => {
 describe('tomma lägen som inte låter som fel', () => {
     it('Löneöversyn utan pott visar en rad om vad som behövs, inte en tom mätare och tabeller där före är lika med efter', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('loneoversyn');
         const d = w.document, vy = d.getElementById('view-loneoversyn');
         expect(vy.classList.contains('lo-tomt')).toBe(true);
@@ -43,7 +43,7 @@ describe('tomma lägen som inte låter som fel', () => {
     });
     it('Likvärdigt arbete utan jämförelsestatistik säger att den är valfri', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('likvardighet');
         const text = w.document.getElementById('view-likvardighet').textContent;
         expect(text).not.toContain('kontrollera att Excel-filen är uppladdad');
@@ -105,14 +105,14 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
         // Rensningen ändrar tillståndet och görs i ett eget fönster; notisen den lämnar är densamma med eller utan ritade
         // flikar (prövat).
         const rensat = createAppWindow();
-        rensat.__loadDemoData();
+        rensat.__lasInDemodata();
         rensat.eval('_rensaVidInaktivitet()');
         expect(BILDTECKEN.test(rensat.document.body.textContent.replace(/\s+/g, ' ').slice(-4000))).toBe(false);
         expect([...fynd]).toEqual([]);
     }, 30000);
     it('filkortets märke och filnamnsraden bär bocken som linjeikon', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const marke = w.document.querySelector('#upload-cell-data .upload-badge');
         expect(marke.textContent.trim()).toBe('Testdata');   // demots märke; en egen fil märks «Inläst»
         expect(marke.querySelector('svg.ikon-bock')).toBeTruthy();
@@ -202,7 +202,7 @@ describe('en låst flik svarar', () => {
     });
     it('upplåsning och låsning går genom egenskapen disabled', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const flik = w.document.getElementById('tab-matrix');
         expect(flik.disabled).toBe(false);
         expect(flik.hasAttribute('aria-disabled')).toBe(false);
@@ -345,7 +345,7 @@ describe('slutgranskningens fynd', () => {
     });
     it('regressionskortets tolkning har samma precision som huvudtalet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('struktur');
         expect(w.document.getElementById('regression-card').querySelector('.reg-verdict')?.closest('.card').textContent.match(/\d,\d\d\s% (mindre|mer)|skillnad på \d+,\d\d\s%/)).toBeNull();
     });
@@ -381,7 +381,7 @@ describe('procenttal i flikarna har en decimal', () => {
 describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () => {
     it('Lika arbetes kolumn Dominans skriver ut orden, också i cellens text för exporten', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('matrix');
         const d = w.document;
         const rubriker = [...d.querySelectorAll('#matrix-table thead th')];
@@ -394,7 +394,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
     });
     it('Likvärdigt arbetes kolumn heter Summa för gruppen, med verktygstips; Excel-bladen har samma rubrik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('likvardighet');
         const th = w.document.querySelector('#likvardighet-table thead th[data-kol="paverkan"]');
         expect(th.textContent.trim()).toBe('Summa för gruppen (kr/mån)');
@@ -448,7 +448,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         expect(rader().map(l => l.dataset.stod)).toEqual(['likvardighet', 'matrix', 'struktur']);
         const fast = rader().map(l => l.textContent.trim());
         for (const l of rader()) { expect(l.querySelector('a')).toBeNull(); expect(l.textContent).not.toContain('Gå dit'); }
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('bestammelser');
         for (const l of rader()) {
             const a = l.querySelector('a[data-go-to-tab]');

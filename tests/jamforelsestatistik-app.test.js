@@ -7,7 +7,7 @@ import { createAppWindow } from './helpers/app-harness.js';
 
 // Statistik per yrke och BAS i demodata: avsnittet mot statistiken ritas bara när den finns (ADR-55).
 const medPersonalStatistik = () => {
-    const w = createAppWindow(); w.__loadDemoData();
+    const w = createAppWindow(); w.__lasInDemodata();
     w.__state.statistik = [...new Set(w.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
     w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
     return w;
@@ -64,7 +64,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
     });
     it('bara ställningstagandet inläst: avsnittet säger att statistiken saknas och ritar inga rader', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('benchmark');
         expect(w.document.querySelectorAll('#benchmark-table tbody tr[data-rad]').length).toBe(0);
         expect(w.document.getElementById('benchmark-table').textContent).toMatch(/Jämförelsestatistik saknas/);
@@ -72,7 +72,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
     });
     it('utan statistik gömmer tabellen P10 och P90 som när statistik finns (Fler kolumner)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('benchmark');
         const rubrik = kol => /** @type {HTMLElement} */ (w.document.querySelector(`#benchmark-thead th[data-kol="${kol}"]`));
         for (const kol of ['p10org', 'p10jmf', 'p10diff', 'p90org', 'p90jmf', 'p90diff']) expect(rubrik(kol).hidden).toBe(true);
@@ -156,7 +156,7 @@ describe('Jämförelsestatistik: diagrammen', () => {
 describe('Jämförelsestatistik: exporten namnger statistiken', () => {
     it('Excel-rubrikerna för jmf-kolumnerna namnger statistiken', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.slice(0, 1).map(r => ({ aid: r.aid, bas: r.bas, median: 30000 }));
         w.__ritaFlik('benchmark');
         // Excelexporten läser rubrikerna ur den rensade klonen (data-export-label).
@@ -174,7 +174,7 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — Jämförelsest
     };
     const medStatistik = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }))
             .filter((s, i, a) => a.findIndex(x => x.aid === s.aid && x.bas === s.bas) === i);
         w.__state.statistikHasP10 = w.__state.statistikHasP90 = true;
@@ -225,7 +225,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         { aid: '207024', bas: '', median: 33000, p10: 29000, p90: 38000 },
         { aid: '207011', bas: 'E', median: 99999, p10: 90000, p90: 120000 }];
     const medMatchning = () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.__state.statistik = STATISTIK.map(s => ({ ...s }));
         w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
         w.__ritaFlik('benchmark');
@@ -268,7 +268,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         expect(panel).toMatch(/I urvalet: 1 AID-etikett i BAS-intervall på AID \+ BAS, 1 på endast AID, 6 utan statistik/);
     });
     it('utan statistik: ingen sammanfattning', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.__ritaFlik('benchmark');
         expect(w.document.getElementById('benchmark-matchning-info').textContent).toBe('');
     });
@@ -282,7 +282,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         expect(th.indexOf('Matchning')).toBe(1);
     });
     it('detaljlistan utan statistik har ingen kolumn Matchning', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.__ritaFlik('benchmark');
         expect([...w.document.querySelectorAll('#ref-tabell thead th')].map(t => t.textContent.trim())).not.toContain('Matchning');
     });

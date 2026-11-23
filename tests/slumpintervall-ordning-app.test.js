@@ -33,7 +33,7 @@ function identiska(a, b, vag = '') {
 /** Intervallen och statusarna i ett fönster med demodatan, med raderna i filens ordning eller omkastade. */
 function intervall(omkasta) {
     const w = createAppWindow();
-    w.__loadDemoData();
+    w.__lasInDemodata();
     if (omkasta) {
         const fore = w.__state.data;
         w.__state.data = omkastad(fore, 4711);

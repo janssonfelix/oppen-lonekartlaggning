@@ -16,7 +16,7 @@ import { arsjamforelseBlock, tillText, tillWordHtml } from '../src/lib/rapportun
 
 vi.setConfig({ testTimeout: 60000 });
 
-const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const utkast = w => /** @type {HTMLTextAreaElement} */ (w.document.getElementById('struktur-narrative'));
 const valjare = w => /** @type {HTMLSelectElement} */ (w.document.getElementById('struktur-narrative-omfang'));
 const valj = (w, v) => { const s = valjare(w); s.value = v; s.dispatchEvent(new w.Event('change', { bubbles: true })); };

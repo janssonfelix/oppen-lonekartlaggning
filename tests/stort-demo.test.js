@@ -28,7 +28,7 @@ const median = l => { const s = [...l].sort((a, b) => a - b); return (s[(s.lengt
 function bevaka(w) {
     w.eval(`window.__fel = []; window.__diagnostik = 0;
         { const rf = rapporteraFel; rapporteraFel = function (plats, e) { window.__fel.push(plats + ': ' + (e && e.message)); return rf(plats, e); }; }
-        { const rd = runDiagnostics; runDiagnostics = function () { window.__diagnostik++; return rd(); }; }`);
+        { const rd = korDiagnostik; korDiagnostik = function () { window.__diagnostik++; return rd(); }; }`);
     return w;
 }
 
@@ -226,7 +226,7 @@ describe('stort demo: nyckeltalen', () => {
 describe('det lilla demot är oförändrat', () => {
     it('260 rader, självdiagnostiken körs och bannern nämner inget stort demo', () => {
         const w = bevaka(createAppWindow()), d = w.document;
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.data).toHaveLength(260);
         expect(w.__diagnostik).toBe(1);
         expect(d.getElementById('diagnostic-results').style.display).toBe('block');
@@ -237,7 +237,7 @@ describe('det lilla demot är oförändrat', () => {
     it('det lilla demot efter det stora: 260 rader och referensen A–J', () => {
         const w = createAppWindow();
         w.eval('loadStortDemo()');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.data).toHaveLength(260);
         expect(w.__state.policy).toHaveLength(10);
         expect(utanMellanrum(w.document.getElementById('demo-mode-banner').textContent)).not.toMatch(/stort demo/i);
@@ -245,7 +245,7 @@ describe('det lilla demot är oförändrat', () => {
     it('det lilla demot efter det stora: ingen statistik kvar', () => {
         const w = createAppWindow();
         w.eval('loadStortDemo()');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.statistik).toHaveLength(0);
         expect(w.__state.statistikKalla).toBe(null);
         expect(w.document.getElementById('upload-cell-stat').classList.contains('loaded')).toBe(false);
@@ -417,7 +417,7 @@ describe('stort demo: Rensa all data', () => {
     it('tömmer allt, och lämnar samma tillstånd som efter det lilla demot', () => {
         const stort = createAppWindow(), litet = createAppWindow();
         stort.eval('loadStortDemo()');
-        litet.__loadDemoData();
+        litet.__lasInDemodata();
         stort.eval('_rensaAllData()');
         litet.eval('_rensaAllData()');
         expect(stort.__state.data).toHaveLength(0);

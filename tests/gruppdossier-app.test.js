@@ -10,7 +10,7 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // blocken nedan läser demodatan
+    win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
 describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
@@ -70,7 +70,7 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
     });
 
     it('modalen öppnas med vald grupp och stängs igen', () => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         const key = win.__gruppdossierCandidates()[0].key;
         win.__openGruppdossier(key);
         const modal = win.document.getElementById('dossier-modal');
@@ -99,7 +99,7 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
 
 describe('k-anonymitet, sortering, efterlevnad och dossiern — dossiern', () => {
     it('hypotesrutan i dossiern renderar markup i stället för att visa taggar', () => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         const key = win.__gruppdossierCandidates()[0].key;
         const d = win.__buildGruppdossier(key);
         win.__openGruppdossier(key);
@@ -168,7 +168,7 @@ describe('gruppdossiern', () => {
     });
     it('rubriken, väljaren och textkopian dubblerar inte AID-koden, och inget tal har decimalpunkt', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const kandidater = w.eval('gruppdossierCandidates().map(g => ({ key: g.key, aid: g.aid }))');
         expect(kandidater.length).toBeGreaterThan(3);
         const fel = [];

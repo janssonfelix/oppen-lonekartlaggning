@@ -3,7 +3,7 @@
 // ============================================================================
 // ÅTGÄRDSLISTA — samlad checklist från alla flikar
 // ============================================================================
-// buildActionChecklist är UTTÖMMANDE — den samlar varje grupp/par/flagga
+// byggAtgardslista är UTTÖMMANDE — den samlar varje grupp/par/flagga
 //   som HR behöver agera på, grupperad efter källa (U2): Lika arbete, Lika arbete, fördjupning, Likvärdigt
 //   arbete, Löneläge mot referens och underlagets kvalitet. HR kan klicka av punkterna när de hanterat dem.
 //   State sparas på state._actionChecklist (i minnet — försvinner vid reload).
@@ -47,7 +47,7 @@ const _agRiktning = v => (v < 0 ? 'lägre' : 'högre');
  * @param {{endastGrupper?: boolean, reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17)
  * @returns {Array<{id, kategori, prioritet, titel, detalj, tab, källa}>}
  */
-export function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
+export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
     /** @type {any[]} */
     const items = [];
     if (!state.data.length) return items;
@@ -277,7 +277,7 @@ function _attGoraParNot() {
  */
 /** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
-export function renderActionChecklist({ reg } = {}) {
+export function ritaAtgardslista({ reg } = {}) {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
@@ -285,7 +285,7 @@ export function renderActionChecklist({ reg } = {}) {
     if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return []; }
     if (kort) kort.hidden = false;
 
-    const items = buildActionChecklist({ reg });   // returneras, så att processöversikten kan läsa samma lista
+    const items = byggAtgardslista({ reg });   // returneras, så att processöversikten kan läsa samma lista
     // Hela listan är ett avsnitt som fälls ut: "Börja här" ovanför bär det som ska göras först.
     // Listan ritas om vid varje avbockning, så avsnittets läge bevaras.
     const varOppen = !!/** @type {HTMLDetailsElement} */ ((wrap.querySelector('#avsnitt-ov-punkter') || {})).open;
@@ -375,18 +375,18 @@ export function renderActionChecklist({ reg } = {}) {
             const id = /** @type {HTMLElement} */ (cb).dataset.id || '';
             if (/** @type {HTMLInputElement} */ (cb).checked) done.add(id);
             else done.delete(id);
-            renderActionChecklist();  // omrendrera för uppdaterad räknare + bakgrundsfärg
+            ritaAtgardslista();  // omrendrera för uppdaterad räknare + bakgrundsfärg
         });
     });
 
     // CSV-export
-    document.getElementById('btn-export-checklist')?.addEventListener('click', () => medExportLage(() => exportActionChecklistCSV(buildActionChecklist(), done)));
+    document.getElementById('btn-export-checklist')?.addEventListener('click', () => medExportLage(() => exportAtgardslistaCSV(byggAtgardslista(), done)));
 
     // Rensa markeringar
     document.getElementById('btn-checklist-clear-done')?.addEventListener('click', () => {
         if (!confirm('Avmarkera alla ' + done.size + ' hanterade punkter?')) return;
         state._actionChecklistDone = new Set();
-        renderActionChecklist();
+        ritaAtgardslista();
     });
     return items;
 }
@@ -395,8 +395,8 @@ export function renderActionChecklist({ reg } = {}) {
  * Exporterar åtgärdslistan som CSV.
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportActionChecklistCSV(...a) { return medExportLage(() => _exportActionChecklistCSVExport.apply(null, /** @type {any} */ (a))); }
-function _exportActionChecklistCSVExport(items, done) {
+function exportAtgardslistaCSV(...a) { return medExportLage(() => _exportAtgardslistaCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportAtgardslistaCSVExport(items, done) {
     if (!items.length) { alert('Det finns inget att exportera ännu. Läs in lönefilen först.'); return; }
     const rows = [[
         'Status', 'Prioritet', 'Kategori', 'Punkt', 'Detalj', 'Källa', 'Flik'

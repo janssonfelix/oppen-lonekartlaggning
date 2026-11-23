@@ -31,7 +31,7 @@ function spionera(w, namn) {
 
 describe('Flikbytet: rita först, räkna sedan', () => {
     it('fliken syns och markeras som räknas innan den ritas; sedan ritas den och markeringen går bort', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document, fore = runda(w, 'struktur');
         byt(w, 'struktur');
         const panel = d.getElementById('view-struktur');
@@ -51,7 +51,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('ett andra flikbyte under väntan avbryter det första: bara den sist valda fliken ritas', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const struktur = runda(w, 'struktur'), rapport = runda(w, 'rapporttext');
         byt(w, 'struktur');
         byt(w, 'rapporttext');
@@ -63,7 +63,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('ett block som väntar ritar inget när användaren har gått vidare, och fliken räknas då som inte ritad', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'rapporttext').click();
         const anrop = spionera(w, 'renderRapportunderlag');
         // Fliken ritas som från ett flikbyte: rapportunderlaget får en platshållare och väntar.
@@ -80,7 +80,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('en ändrad tröskel under väntan ger inget resultat ur den gamla tröskeln', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'dokumentera').click();
         const anrop = spionera(w, 'renderExportBesked');
         w.eval('_uppskjutNasta = "dokumentera"; ritaFlik("dokumentera")');
@@ -96,7 +96,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('en ändrad tröskel med omritning tar över: det väntande blocket ritar inget', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'dokumentera').click();
         w.eval('_uppskjutNasta = "dokumentera"; ritaFlik("dokumentera")');
         const anrop = spionera(w, 'renderExportBesked');
@@ -108,7 +108,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('exportläget, direkta anrop av ritaFlik och klick från koden ritar synkront som förut', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         nav(w, 'rapporttext').click();
         expect(d.getElementById('view-rapporttext').hasAttribute('aria-busy')).toBe(false);

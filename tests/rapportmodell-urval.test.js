@@ -37,7 +37,7 @@ describe('urvalets namn', () => {
 
 describe('förhandsbeskedet vid ett ändrat kryss räknar inte om avsnitten', () => {
     const w = createAppWindow();
-    w.__loadDemoData();
+    w.__lasInDemodata();
     w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
     const besked = () => w.document.getElementById('besked-word').textContent;
     const kryssa = (id, pa) => {
@@ -94,7 +94,7 @@ describe('förhandsbeskedet vid ett ändrat kryss räknar inte om avsnitten', ()
 describe('Excel-filens bladlista i förhandsbeskedet', () => {
     it('räknar inte regressionen för att veta att bladet Underlagets kvalitet följer med', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval(`window.__antal = 0; window.__orig = runOLSRegression; runOLSRegression = function () { window.__antal++; return window.__orig.apply(this, arguments); };`);
         const blad = w.eval('excelAlltBlad()');
         w.eval('runOLSRegression = window.__orig;');

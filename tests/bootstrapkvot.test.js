@@ -84,7 +84,7 @@ describe('[B4.1] appens intervall på mediankvoten är desamma som med sortering
         expect(w._gdBootstrapGapCI([1, 2, 3], [1, 2])).toBeNull();
     });
     it('raknaBootstrapKI på demodatan', () => {
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('raknaBootstrapKI()');
         const d = w.__state.data.filter(r => r.lon > 0);
         const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
@@ -103,7 +103,7 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
     const tal = t => Number(t.replace('−', '-').replace(',', '.'));
     it('på demodatan: intervallet är "−17,8 % till −11,9 %" och den råa skillnaden ligger inom det', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.raknaBootstrapKI();
         const r = w.runOLSRegression();
         const text = w.formateraKI(w.__state.bootstrapCI.gapPct).replace(/<[^>]*>/g, '').replace(/ /g, ' ');

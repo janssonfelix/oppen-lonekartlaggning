@@ -48,7 +48,7 @@ describe('Uppgift 1: kolumnmappningen', () => {
 
 describe('Uppgift 2: Lönestruktur', () => {
     it('Lönestruktur visar struktur, BAS-skevhet, regression och gapuppdelningen; Lika arbete bara yrkesgrupperna', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document, synlig = id => d.getElementById(id).style.display === 'block';
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(synlig('view-struktur') && synlig('view-skevhet') && synlig('view-regression')).toBe(true);
@@ -67,7 +67,7 @@ describe('Uppgift 2: Lönestruktur', () => {
             expect(w.eval('RM_DIAGRAM').find(r => r.id === id).flik, id).toBe('struktur');
     });
     it('Var uppstår löneskillnaden? står först i Lönestruktur och är det enda utfällda avsnittet efter inläsning', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const oppna = ['view-struktur', 'view-skevhet', 'view-regression']
@@ -78,7 +78,7 @@ describe('Uppgift 2: Lönestruktur', () => {
         expect(d.getElementById('avsnitt-ov-gap').nextElementSibling.id).toBe('avsnitt-st-representation');
     });
     it('Organisationen som karta är ett hopfällt avsnitt efter representationen, med antalet yrkesgrupper i rubriken', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const karta = d.getElementById('avsnitt-st-karta');
@@ -98,7 +98,7 @@ describe('Uppgift 2: Lönestruktur', () => {
         expect(w.eval('SOK_FUNKTIONER').some(r => r.avsnitt === 'avsnitt-st-karta' && r.flik === 'struktur')).toBe(true);
     });
     it('navigeraTill("skevhet") och navigeraTill("regression") öppnar Lönestruktur', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         for (const alias of ['skevhet', 'regression']) {
             w.eval(`navigeraTill('${alias}')`);
             expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab'), alias).toBe('struktur');
@@ -132,7 +132,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         }
     });
     it('Rapporttext och årsjämförelsen ritas i exportläge', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         w.eval(`window.__lagen = [];
             for (const namn of ['renderStrukturUtkast', 'renderRapportunderlag', 'renderArsjamforelse']) {
@@ -147,7 +147,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(w.eval('iExportLage()')).toBe(false);
     });
     it('Återskapa i Rapporttext nollar redigeringen och bygger utkastet på nytt i exportläge', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document, nb = d.getElementById('struktur-narrative');
         d.getElementById('tab-rapporttext').click();
         nb.value = 'Egen text';
@@ -162,7 +162,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(w.eval('iExportLage()')).toBe(false);
     });
     it('Rensa all data tömmer rapportutkastet, också ett redigerat', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const nb = w.document.getElementById('struktur-narrative');
         w.__ritaFlik('rapporttext');
         expect(nb.value).toContain('LÖNEKARTLÄGGNING');
@@ -172,7 +172,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(nb.dataset.dirty).toBeUndefined();
     });
     it('Lönestruktur bygger inte längre utkastet; årsjämförelsens bild ritas av Spara och jämför år', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(w.document.getElementById('struktur-narrative').value).toBe('');
         expect(w.eval('RM_DIAGRAM').find(r => r.id === 'chart-arsjamforelse').flik).toBe('arbetet');
@@ -201,7 +201,7 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
     });
     it('fliken säger om trösklarna är ändrade, och "Ändra" öppnar dialogen med fokus i granskningsgränsen', () => {
         const w = createAppWindow(), d = w.document;
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('prioritering');
         const rad = d.getElementById('pr-installningar-rad');
         expect(rad.textContent).toMatch(/^Trösklar och viktning: standardvärden/);
@@ -220,7 +220,7 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
         const falt = d.getElementById('prio-cfg-akutN');
         expect(d.getElementById('installningar-modal').contains(falt)).toBe(true);
         expect(falt.value).toBe('7');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('prioritering');
         expect(w.__state.prioConfig.akutMinN).toBe(7);
         expect(d.getElementById('pr-installningar-rad').textContent).toMatch(/anpassade värden/);
@@ -255,7 +255,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
             ['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport', 'Arbetet', 'Hjälp']);
         expect(d.querySelector('[data-tab="benchmark"] .nav-etikett').textContent.trim()).toBe('Löneläget');
         // Demot har ett ställningstagande.
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect([...d.querySelectorAll('.nav-item[data-tab]')].filter(b => !b.hidden).map(b => b.dataset.tab)).toEqual(MENYN);
         expect(d.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
         expect(d.querySelector('.nav-menu').textContent).toContain('4 · Rapport');
@@ -272,7 +272,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
     });
     it('sidhuvudet heter som menyn för varje flik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         for (const b of d.querySelectorAll('.nav-menu .nav-item')) {
             if (b.hidden || b.disabled) continue;
@@ -287,7 +287,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
         expect(kedja).toEqual(['benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'prioritering', 'loneoversyn',
             'handlingsplan', 'rapporttext', 'dokumentera']);
         expect(w.eval('_NASTA_STEG_VALFRIA')).toEqual(['benchmark', 'kon']);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="benchmark"]').disabled = true;
         w.document.querySelector('.nav-item[data-tab="kon"]').disabled = true;
         expect(w.eval("_nastaSteg('bestammelser').tab")).toBe('matrix');
@@ -310,7 +310,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
 
 describe('Lönestrukturens mått räknas på ett ställe', () => {
     it('strukturMatt ger fliken, rapportutkastet och EU-exporten samma mått som lib-funktionerna', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.eval('hamtaData()'), k = w.eval('kTroskel()');
         const m = w.eval('strukturMatt')(d, k);
         const arKv = r => r.kon && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
@@ -342,7 +342,7 @@ describe('Lönestrukturens mått räknas på ett ställe', () => {
 describe('Struktur: representation i BAS-ordning', () => {
     it('tabellen listar BAS A–Ö', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         const bas = [...w.document.querySelectorAll('#struktur-representation tbody tr td:first-child')].map(td => td.textContent.trim());
         expect(bas.length).toBeGreaterThan(1);

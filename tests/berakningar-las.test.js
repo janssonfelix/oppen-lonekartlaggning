@@ -38,7 +38,7 @@ const mansLoner = [34100, 33750, 35200, 34600, 33900, 35800];
 
 describe('beräkningar på demodatan (låsta tal)', () => {
     const w = createAppWindow();
-    beforeAll(() => { w.__loadDemoData(); });
+    beforeAll(() => { w.__lasInDemodata(); });
 
     it('[B3.1] regressionen (runOLSRegression) ger samma tal', () => {
         expect(stabil(w.__runOLS())).toMatchSnapshot('runOLSRegression');
@@ -73,7 +73,7 @@ describe('extremvärden med en påhittad avvikare', () => {
         // Eget fönster: testet ändrar data. hittaExtremvarden läser state.data direkt (hamtaData), så ingen cache behöver
         // ogiltigförklaras.
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const rader = w.__state.data;
         // Det största BAS-intervallet, och i det den första raden i datan (deterministiskt val).
         const antal = {};

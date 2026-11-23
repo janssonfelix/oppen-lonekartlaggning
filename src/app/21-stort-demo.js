@@ -6,7 +6,7 @@ import { ordForAntal } from '../lib/termer.js';
 import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { T } from './09-termer.js';
 import { hamtaBasIntervall, state } from './12-tillstand.js';
-import { _lasInDemounderlag, _renderDemoBanner } from './20-demodata-diagnostik.js';
+import { _lasInDemounderlag, _ritaDemoruta } from './20-demodata-diagnostik.js';
 
 // ---- Stort demo: 5 000 påhittade personer i 100 yrken ----
 // Generatorerna (genereraStortDemo, genereraStortDemoStatistik, _sdStallningstagande) och deras konstanter står i
@@ -18,7 +18,7 @@ export const STORT_DEMO_STATISTIKNAMN = 'Påhittad jämförelsestatistik (demo)'
 export function loadStortDemo() {
     if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
     /** @type {HTMLElement} */ (document.getElementById('diagnostic-results')).style.display = 'none';   // ett tidigare litet demos diagnostik gäller inte här
-    _renderDemoBanner();
+    _ritaDemoruta();
     meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
 }
 

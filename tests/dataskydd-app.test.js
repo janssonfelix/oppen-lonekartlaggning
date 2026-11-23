@@ -132,13 +132,13 @@ describe('säkerhet, dataskydd och HR-logik', () => {
 
     it('processöversikten: lika och likvärdigt arbete är inte klara medan punkter återstår i Att göra', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaKartlaggningensSteg();
         expect(status(w, /3\. Lika arbete/)).toBe('delvis');
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('delvis');
         expect(steg(w, /4\. Likvärdigt arbete/).textContent).toMatch(/0 av \d+ kandidatpar hanterade/);
         // När alla punkter för lika respektive likvärdigt arbete är hanterade blir stegen klara.
-        const punkter = w.eval('buildActionChecklist()');
+        const punkter = w.eval('byggAtgardslista()');
         const done = w.__state._actionChecklistDone || (w.__state._actionChecklistDone = new w.Set());
         punkter.filter(p => ['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete'].includes(p.kategori)).forEach(p => done.add(p.id));
         w.__ritaKartlaggningensSteg();
@@ -148,7 +148,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
 
     it('processöversikten: inga kandidatpar betyder att likvärdigt arbete är klart', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.likvardighet.result = { pairs: [] };
         w.__ritaKartlaggningensSteg();
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('klar');
@@ -156,18 +156,18 @@ describe('säkerhet, dataskydd och HR-logik', () => {
 
     it('Att göra: kandidatparen i likvärdigt arbete kommer med även utan jämförelsestatistik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.statistik.length).toBe(0);
-        expect(w.eval('buildActionChecklist()').filter(p => p.kategori === 'Likvärdigt arbete').length).toBeGreaterThan(0);
+        expect(w.eval('byggAtgardslista()').filter(p => p.kategori === 'Likvärdigt arbete').length).toBeGreaterThan(0);
     });
 
     it('Börja här: könsrelaterade fynd går före avvikelser mot lönepolitiken, utan dubblerad rubrik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('renderActionChecklist()');
+        w.__lasInDemodata();
+        w.eval('ritaAtgardslista()');
         const forsta = w.document.querySelector('#att-gora-borja li .att-gora-kat').textContent;
         expect(['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete']).toContain(forsta.trim());
-        expect(w.eval('buildActionChecklist()').filter(p => /^(Börja här|Värt att granska):/.test(p.titel))).toEqual([]);
+        expect(w.eval('byggAtgardslista()').filter(p => /^(Börja här|Värt att granska):/.test(p.titel))).toEqual([]);
     });
 });
 
@@ -254,7 +254,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
 describe('Rensa all data tömmer Dokumentera', () => {
     it('färdigcheck och robusthet är tomma efter rensning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
         w.__runRobusthet?.();
         expect(w.document.getElementById('fardigcheck-body').textContent.trim().length, 'färdigchecken ska ha ritats').toBeGreaterThan(0);
@@ -310,7 +310,7 @@ describe('Rensa all data står i Inställningar', () => {
     });
     it('knappen frågar först, rensar och stänger panelen; ett nej lämnar allt orört', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('oppnaInstallningar()');
         w.confirm = () => false;
         w.document.getElementById('btn-clear-all-data').click();
@@ -333,7 +333,7 @@ describe('Rensa all data står i Inställningar', () => {
 describe('«Vad lagras?»', () => {
     it('öppnas som övriga modaler (centrerad) och säger minne, inte RAM', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-modal').style.display).toBe('flex');
         expect(w.document.getElementById('data-residency-modal').textContent).not.toMatch(/\bRAM\b/);

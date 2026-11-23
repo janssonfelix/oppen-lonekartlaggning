@@ -128,9 +128,9 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         return normalisera((w.__csv || []).map(r => r.join(' | ')).join('\n'));
     };
     const attGora = w => {
-        w.eval('renderActionChecklist()');
+        w.eval('ritaAtgardslista()');
         return {
-            punkter: normalisera(w.eval('JSON.stringify(medExportLage(() => buildActionChecklist()))')),
+            punkter: normalisera(w.eval('JSON.stringify(medExportLage(() => byggAtgardslista()))')),
             kort: normalisera(w.document.getElementById('action-checklist-container').textContent
                 + w.document.getElementById('att-gora-borja').textContent),
             csv: fangaCsv(w),
@@ -275,7 +275,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         const par = w.eval('likvardighetResultat().pairs');
         expect(par.length).toBe(26);
         expect(par.slice(0, 20).some(p => p.kvN < 10)).toBe(true);   // annars prövar testet inget
-        const lv = w.eval("medExportLage(() => buildActionChecklist()).filter(i => i.kategori === 'Likvärdigt arbete').map(i => i.id)");
+        const lv = w.eval("medExportLage(() => byggAtgardslista()).filter(i => i.kategori === 'Likvärdigt arbete').map(i => i.id)");
         expect(lv.length).toBe(20);
         const smaAid = par.filter(p => p.kvN < 10).map(p => p.kvAid);
         expect(lv.some(id => smaAid.some(a => id.includes(`lv-${a}-`)))).toBe(false);
@@ -283,7 +283,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
     it('vid 6 (precis på den lilla gruppens storlek): paret finns', () => {
         const w = fonsterPar(6);
         expect(w.eval('_handlingsplanSeedRows().lvCount')).toBe(1);
-        expect(w.eval('buildActionChecklist().some(i => i.titel.includes("Yrke 5300"))')).toBe(true);
+        expect(w.eval('byggAtgardslista().some(i => i.titel.includes("Yrke 5300"))')).toBe(true);
     });
 });
 

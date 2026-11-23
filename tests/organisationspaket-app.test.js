@@ -266,7 +266,7 @@ describe('organisationspaket: läs in och skapa', () => {
     });
     it('paket i demoläget avslutar demot först', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         las(w, paket());
         expect(w.__state.isDemo).toBe(false);
         expect(w.__state.data).toEqual([]);
@@ -346,7 +346,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
     it('demot efter ett paket blandar inte in paketets verkliga delar', () => {
         const w = createAppWindow();
         las(w, paket());
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.paket).toBeNull();
         expect(w.__state.statistik).toEqual([]);
         expect(w.eval('referensNamn()')).toBe('Exempelkommunens lönepolitik');
@@ -416,7 +416,7 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
     });
     it('demot sätter Exempelkommunen; Rensa och ett paket ersätter', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.eval("orgNamn()")).toBe('Exempelkommunen');
         w.eval('_rensaAllData()');
         expect(w.eval("orgNamn()")).toBe('Organisationen');
@@ -433,7 +433,7 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
 describe('namnen i etiketterna', () => {
     const oppna = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.slice(0, 40).map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }));
         w.__state.statistikHasP10 = w.__state.statistikHasP90 = true;
         w.eval("sattOrgNamn('Testkommunen'); sattJmfNamn('Teststatistiken')");
@@ -460,7 +460,7 @@ describe('namnen i etiketterna', () => {
     });
     it('utan namn: etiketterna som i dag', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval("sattOrgNamn('')");   // demot heter Exempelkommunen
         w.__ritaFlik('likvardighet');
         expect(w.document.getElementById('likvardighet-content').textContent).toMatch(/Median org\./);
@@ -479,7 +479,7 @@ describe('namnen i etiketterna', () => {
 describe('Jämförelsestatistik, Översikt och namn: detaljer — namn', () => {
     const medStatistik = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }))
             .filter((s, i, a) => a.findIndex(x => x.aid === s.aid && x.bas === s.bas) === i);
         w.__state.statistikHasP10 = w.__state.statistikHasP90 = true;
@@ -507,7 +507,7 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — namn', () => {
     });
     it('ställningstagandets namn normaliseras; ett avvisat namn står inte kvar i fältet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval("_lasInReferens([{ bas: 'C', p10: 30000, med: 34000, p90: 39000 }], 'min.csv')");
         w.eval("sattReferensNamn('  Min   referens ')");
         expect(w.__state.policyNamn).toBe('Min referens');

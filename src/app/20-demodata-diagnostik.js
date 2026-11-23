@@ -14,7 +14,7 @@ import { bedomningUnderlag, fyllValjare, ritaKartlaggningensSteg, ritaUnderlaget
 import { ritaExtremvarden } from './15-extremvarden-basrang.js';
 import { ritaKonsistenskontroll, ritaValideringsrapport, synkaDatakvalitetspanel } from './16-inlasningskontroll.js';
 import { _fkSlapp } from './17-forhandskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
 import { STORT_DEMO_STATISTIKNAMN } from './21-stort-demo.js';
 import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
@@ -34,7 +34,7 @@ import { _hpDemoSkal } from './56-handlingsplan.js';
 // genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen importerar dem.
 
 // Reglerna står i demodiagnostik (src/lib/demodata.js); här läses tillståndet och orden.
-function runDiagnostics() {
+function korDiagnostik() {
     const reg = runOLSRegression();
     return demodiagnostik({ rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: hamtaBasIntervall().length },   // regressionen skickas vidare (ADR-17)
         { nivaFl: T.niva.fl, underlagEtikett: s => UK_ETIKETT[s], pText: _formatPValue });
@@ -115,7 +115,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     ritaUnderlagetsKvalitet({ reg });
     updateGdprBanner();
     ritaKonsistenskontroll();
-    renderActionChecklist({ reg });
+    ritaAtgardslista({ reg });
     ritaExtremvarden();
     ritaValideringsrapport();
     synkaDatakvalitetspanel({ reg });
@@ -130,11 +130,11 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     return true;
 }
 
-export function loadDemoData() {
+export function lasInDemodata() {
     if (!_lasInDemounderlag(genereraDemodata)) return;
 
     // Kör diagnostik
-    const tests = runDiagnostics();
+    const tests = korDiagnostik();
     const passCount = tests.filter(t => t.pass).length;
     const failCount = tests.length - passCount;
     const wrap = /** @type {HTMLElement} */ (document.getElementById('diagnostic-results'));
@@ -160,13 +160,13 @@ export function loadDemoData() {
             <p class="text-dampad-xs marg-t-8">Testdatan har 200 personer fördelade jämnt mellan kön. Modellen är konstruerad så att en oförklarad skillnad på ungefär −3 % ska finnas kvar efter kontroll för ålder och BAS. Kvinnor är i snitt yngre och tenderar att placeras i lägre BAS, vilket ger en större rå löneskillnad som delvis förklaras av strukturen.</p>
         </div>
     `;
-    _renderDemoBanner();
+    _ritaDemoruta();
 }
 
 // #9 Demo-/utbildningsläge: visa/dölj en tydlig banner så syntetisk demodata
 // aldrig förväxlas med verklig analys. Banner-elementet finns i index.html.
 // Döljer även första-intryck-hinten när data finns (anropas i alla data-lägesbyten).
-export function _renderDemoBanner() {
+export function _ritaDemoruta() {
     const b = document.getElementById('demo-mode-banner');
     if (b) b.style.display = state.isDemo ? 'flex' : 'none';
     // Det stora demot säger det i bannern; det lilla har kvar sin text.
@@ -188,6 +188,6 @@ export function uppstartDemodataDiagnostik() {
     // OCH länken i första-intryck-hinten.
     // Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
     ['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>
-        document.getElementById(id)?.addEventListener('click', loadDemoData));
+        document.getElementById(id)?.addEventListener('click', lasInDemodata));
     document.getElementById('btn-exit-demo')?.addEventListener('click', rensaAllData);
 }

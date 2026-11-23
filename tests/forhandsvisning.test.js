@@ -76,7 +76,7 @@ describe('tröskelbytet räknar bara om det som beror på tröskeln', () => {
     });
     it('Att göras lista byggs en gång för Att göra och processöversikten tillsammans', () => {
         const w = fonster(null);
-        w.eval('window.__byggda = 0; const __b = buildActionChecklist; buildActionChecklist = function (...a) { window.__byggda++; return __b.apply(null, a); };');
+        w.eval('window.__byggda = 0; const __b = byggAtgardslista; byggAtgardslista = function (...a) { window.__byggda++; return __b.apply(null, a); };');
         w.eval('ritaOversiktDelar()');
         expect(w.__byggda).toBe(1);
         w.eval('window.__byggda = 0; _ritaOmAllaFlikar()');
@@ -90,9 +90,9 @@ describe('regressionen körs en gång per funktion, inte en gång per läsare (A
     it('Att göra kör regressionen en gång och skickar den vidare till underlagsbedömningen', () => {
         const w = fonster(null);
         w.eval('window.__ols = 0; const __r = runOLSRegression; runOLSRegression = function () { window.__ols++; return __r(); };');
-        w.eval('buildActionChecklist()');
+        w.eval('byggAtgardslista()');
         expect(w.__ols).toBe(1);
-        w.eval('window.__ols = 0; buildActionChecklist({ endastGrupper: true })');
+        w.eval('window.__ols = 0; byggAtgardslista({ endastGrupper: true })');
         expect(w.__ols).toBe(0);
         w.eval('window.__ols = 0; rapportunderlagBlock()');
         expect(w.__ols).toBeLessThanOrEqual(2);                               // ett för blocken, inga fler ur underlagsbedömningen

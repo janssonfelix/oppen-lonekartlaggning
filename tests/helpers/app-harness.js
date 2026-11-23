@@ -101,7 +101,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
     Object.assign(window, {
         __state: (typeof state !== 'undefined' ? state : null),
         __ritaFlik: ritaFlik,
-        __loadDemoData: loadDemoData,
+        __lasInDemodata: lasInDemodata,
         __likvardighetspar: likvardighetspar,
         __metodbilaga: _metodbilaga,
         __stRepresentationPerBas: representationPerBas,
@@ -202,7 +202,7 @@ export function tillstandsavtryck(w) {
  * Ett fönster som testerna i gruppen delar (hela filen på toppnivå, annars en describe): skapas i beforeAll, stängs i
  * afterAll. Bara för tester som läser; afterEach fäller det test som lämnar tillståndet ändrat, så att nästa test
  * inte passerar eller faller av fel skäl. Håll dem få: varje levande fönster väger 25 MB (se _stang).
- * @param {((w: any) => any)|null} [forbered] - t.ex. `w => w.__loadDemoData()`
+ * @param {((w: any) => any)|null} [forbered] - t.ex. `w => w.__lasInDemodata()`
  * @param {() => any} [skapa] - en annan rigg än createAppWindow, t.ex. `() => fonster(25)`
  * @returns {() => any} fönstret
  */
@@ -230,7 +230,7 @@ export const MENYFLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet'
 export function delatFlikfonster() {
     const ritade = new Map();
     const flikfonster = delatFonster(w => {
-        w.__loadDemoData();
+        w.__lasInDemodata();
         for (const flik of MENYFLIKAR) {
             w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
             ritade.set(flik, {

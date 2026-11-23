@@ -7,7 +7,7 @@ import { valideraFigur, figurTillTabell, urvalLista, urvalSpann, urvalVarden } f
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { vanliga, figurMedLiten, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
 
-const demo = delatFonster(w => w.__loadDemoData());
+const demo = delatFonster(w => w.__lasInDemodata());
 it('det delade fönstret står i utgångsläget', () => {
     expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
 });
@@ -174,7 +174,7 @@ describe('Struktur: chart-sektorer', () => {
     it('den justerade seriens namn är tabellens kolumnrubrik, med och utan ålder i lönefilen', () => {
         const w2 = createAppWindow();
         for (const utanAlder of [false, true]) {
-            w2.__loadDemoData();
+            w2.__lasInDemodata();
             if (utanAlder) w2.__state.data = w2.__state.data.map(r => ({ ...r, alder: 0 }));
             w2.__ritaFlik('struktur');
             const rubrik = [...w2.document.querySelectorAll('#sektor-table thead th')].map(th => th.textContent.trim()).find(t => t.startsWith('Justerad'));
@@ -417,7 +417,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
     });
     it('sju diagram ritas i sina ordinarie behållare och i sin form', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__state.kLage = 'export';   // figurerna så som exporterna läser dem (ADR-51)
         for (const t of ['matrix', 'likvardighet', 'prioritering', 'kon', 'benchmark', 'loneoversyn']) w2.__ritaFlik(t);
         const d = w2.document, f = id => (d.getElementById(id) || {})._figur;
@@ -554,7 +554,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(f.lager[1].data[0]).toMatchObject({ y: 'Kvinnor', x: 50, fa: true });   // två personer: litet underlag, sägs i tipset
         expect(() => valideraFigur(f, 't')).not.toThrow();
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__state.kLage = 'export';
         w2.__ritaFlik('lonepolitik');
         expect(w2.document.getElementById('lp-konlagen-kort').hidden).toBe(false);
@@ -566,7 +566,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
     });
     it('i exportläget: de tre diagrammen ritas med demodatan, och höjd tröskel tar bort dem utan att något står kvar', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__state.kLage = 'export';
         for (const t of ['matrix', 'kon']) w2.__ritaFlik(t);
         const d = w2.document;
@@ -633,7 +633,7 @@ describe('Ålder & karriär: chart-demo-hist', () => {
     });
     it('ritas av kärnan: tio raka etiketter också på smal skärm, ingen zon, ZIP och meny känner diagrammet', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('demografi');
         const el = w2.document.getElementById('chart-demo-hist');
         expect(el.data).toBeUndefined();
@@ -741,7 +741,7 @@ describe('Ålder & karriär: chart-demo-agecurve, chart-demo-spread', () => {
     it('ritas av kärnan med demodatan: två diagram, kurvorna som en linje per serie', () => {
         const w2 = createAppWindow();
         w2.__state.kLage = 'export';
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('demografi');
         const el = id => w2.document.getElementById(id);
         for (const id of ['chart-demo-agecurve', 'chart-demo-spread']) {
@@ -920,7 +920,7 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
     });
     it('ritas av kärnan med demodatan, och exportknappen för matrisen ger en bild med alla etiketter', async () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('prioritering');
         const el = w2.document.getElementById('chart-prio-matrix');
         expect(el.data).toBeUndefined();
@@ -1218,7 +1218,7 @@ describe('länkade vyer: markering', () => {
     });
     it('i verktyget: ett klick på ett BAS i Lika arbete framhäver samma BAS i Lönepolitik, och gruppdossiern erbjuds för en yrkesgrupp', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('matrix');
         w2.__ritaFlik('lonepolitik');
         const skev = w2.document.getElementById('chart-skevhet-overview');
@@ -1303,7 +1303,7 @@ describe('länkade vyer: flera grupper, tabeller och pensling', () => {
     });
     it('i verktyget: tabellen i Lika arbete följer markeringen, också efter att fliken ritats om', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('matrix');
         // En rad med könsuppdelat gap (rader för BAS där ett kön är under tröskeln byggs för sig och går inte att markera).
         const bas = [...w2.document.querySelectorAll('#paygap-table tbody tr')].find(r => Array.isArray(r._markering)).cells[0].textContent.trim();
@@ -1705,7 +1705,7 @@ describe('Lönefördelningen per BAS-intervall som kvantilpunkter (figuren)', ()
 describe('radpaneler i vyerna', () => {
     it('Utforskas hantel och jämförelseflikens två figurer delas vid fler än femton kategorier', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('utforska');
         const d = w2.document;
         for (const [id, v] of Object.entries({ 'explore-rad': 'aidbas', 'explore-kolumn': 'ingen', 'explore-typ': 'hantel' })) d.getElementById(id).value = v;
@@ -1735,11 +1735,11 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
     const UTAN_BAS = { 'chart-demo-agecurve': ['alder'], 'chart-demo-spread': ['alder'], 'chart-kon-aldergap': ['aldersgrupp', 'nMin'], 'chart-sektorer': ['sektor', 'n'] };
     // Demot med jämförelsestatistik och förra årets bokslut (medianen 500 kr lägre), alla flikar ritade.
     const fonster = delatFonster(w2 => {
-        const a = createAppWindow(); a.__loadDemoData();
+        const a = createAppWindow(); a.__lasInDemodata();
         const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
         cfg.arsbokslut.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; });
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__cfg = cfg; w2.eval('tillampaKonfiguration(window.__cfg)');
         w2.__state.statistik = [...new Set(w2.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
         w2.__state.statistikHasP10 = true; w2.__state.statistikHasP90 = true;
@@ -1864,7 +1864,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
 // och yrkesgrupp och sektor står som listor i diagrammen med yrkesgrupper. Röktesterna klickar i den riktiga vyn.
 describe('Diagramfilter v3: filtren i vyerna', () => {
     const fonster = delatFonster(w2 => {
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         for (const t of ['kon', 'demografi', 'struktur', 'matrix', 'likvardighet']) w2.__ritaFlik(t);
     });
     // Figuren utan filter och härledning: bilden utan filter ska vara byte för byte densamma som den.
@@ -1913,7 +1913,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     });
     it('röktest (exportläget, k = 10): en yrkesgrupp i listan; ett kön under k synliga ritar ingen trendlinje för det, och noten säger varför', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__state.kLage = 'export';
         w2.__ritaFlik('kon');
         const el = w2.document.getElementById('chart-kon-scatter'), f = el._figur, k = w2.eval('kTroskel()');
@@ -1938,7 +1938,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     });
     it('färg efter BAS-intervall: trenden per kön räknas ur alla punktlager med punktens kön (villkor), hela urvalets trend byter R² i namnet', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.document.getElementById('kon-color-by').value = 'bas';
         w2.document.getElementById('kon-trend-alla').checked = true;
         w2.__ritaFlik('kon');
@@ -2038,7 +2038,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     });
     it('röktest: listan med yrkesgrupper i trattdiagrammet (Lika arbete) — Avmarkera alla och en yrkesgrupp ritar bara dess punkter', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('matrix');
         const el = w2.document.getElementById('chart-la-tratt'), f = el._figur;
         expect(urvalLista(f).map(u => u.falt)).toEqual(['bas', 'yrke', 'sektor', 'n']);
@@ -2056,7 +2056,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     });
     it('rutan Filter i trattdiagrammet (Lika arbete): utfälld, och rubriken visar ett aktivt filter direkt', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('matrix');
         const el = w2.document.getElementById('chart-la-tratt');
         const filter = el.previousElementSibling;

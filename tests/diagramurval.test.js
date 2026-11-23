@@ -249,7 +249,7 @@ describe('minnet', () => {
         w2.eval('ritaFigur(window.__el, window.__f, {})');
         el.previousElementSibling.querySelector('[data-urval="A"]').dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
         expect(el._figurFilter.kategori.get('bas').has('A')).toBe(true);
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.eval('ritaFigur(window.__el, window.__f, {})');
         expect(el._figurFilter.kategori.get('bas').size).toBe(0);
         // Det stora demot går samma väg (_lasInDemounderlag), före underlaget byts.

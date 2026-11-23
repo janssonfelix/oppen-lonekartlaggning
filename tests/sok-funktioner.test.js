@@ -21,7 +21,7 @@ describe('Funktionssök', () => {
     it('de dynamiska avsnitten har en post var och finns i sin flik när den ritats med demodata', () => {
         const w = createAppWindow(), d = w.document, reg = w.eval('SOK_FUNKTIONER');
         for (const id of DYNAMISKA) expect(d.getElementById(id), `${id} finns inte i index.html`).toBeNull();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         for (const flik of ['dashboard', 'likvardighet', 'benchmark']) w.__ritaFlik(flik);
         // Varje avsnitt som flikarna byggt (details.avsnitt med id) är antingen i index.html eller i listan ovan.
         const html = new Set([...createAppWindow().document.querySelectorAll('details.avsnitt[id]')].map(x => x.id));
@@ -42,7 +42,7 @@ describe('Funktionssök', () => {
         const li = d.querySelector('#sok-grupp-lista [data-sok-funktion]');
         expect(li.querySelector('.sok-namn').textContent).toBe('Att göra: alla punkter');
         expect(li.textContent).toContain('kräver lönefil');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         skriv(w, 'kvinnotröskel');
         const lv = [...d.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => /Likvärdigt arbete/.test(x.querySelector('.sok-namn').textContent));
         expect(lv.textContent).not.toContain('kräver lönefil');
@@ -142,7 +142,7 @@ describe('Funktionssök', () => {
         expect(aktivFlik(w)).toBe('filer');
         expect(d.getElementById('avsnitt-ls-regression').open).toBe(false);
         // Med lönefilen inläst är fliken öppen: samma val leder till avsnittet.
-        w.__loadDemoData();
+        w.__lasInDemodata();
         skriv(w, 'regression');
         const efter = d.querySelector('#sok-grupp-lista [data-sok-funktion]');
         expect(efter.textContent).not.toContain('kräver lönefil');
@@ -162,7 +162,7 @@ describe('Funktionssök', () => {
 
     it('med lönefil men utan referens säger Löneläget kräver referens och leder till referenskortet', () => {
         const w = createAppWindow(), d = w.document;
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.policy = []; w.__state.statistik = [];
         w.eval('synkaJamforelseFlik()');
         expect(d.getElementById('tab-benchmark').hidden).toBe(true);
@@ -183,7 +183,7 @@ describe('Funktionssök', () => {
         skriv(w, 'underlagets kvalitet');
         const li = [...d.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => x.querySelector('.sok-namn').textContent === 'Underlagets kvalitet');
         expect(li.textContent).toContain('kräver lönefil');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(false);
         w.eval('_rensaAllData()');
         expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(true);
@@ -191,7 +191,7 @@ describe('Funktionssök', () => {
 
     it('med lönefil leder ett mål som är dolt av annan orsak till flikens topp och säger det, utan att fokusera det dolda', () => {
         const w = createAppWindow(), d = w.document;
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('window.__sagt = []; { const o = meddelaSkarmlasare; window.meddelaSkarmlasare = m => { window.__sagt.push(m); return o(m); }; }');
         // Avsnittet döljs när fliken ritas, som ett avsnitt som inte gäller underlaget.
         w.eval(`{ const o = ritaFlik; window.ritaFlik = (...a) => { const r = o(...a); document.getElementById('avsnitt-ar-ogonblick').hidden = true; return r; }; }`);
@@ -218,7 +218,7 @@ describe('Funktionssök', () => {
 
     it('med lönefil: grupperna först, funktionerna efter, och tangentbordet går genom båda', () => {
         const w = createAppWindow(), d = w.document, falt = d.getElementById('sok-grupp'), lista = d.getElementById('sok-grupp-lista');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         skriv(w, 'bas');
         const opts = [...lista.querySelectorAll('[role="option"]')];
         const forstaFunktion = opts.findIndex(li => li.hasAttribute('data-sok-funktion'));

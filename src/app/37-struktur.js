@@ -22,7 +22,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, UNDERLAG, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
-import { buildActionChecklist } from './18-atgardslista.js';
+import { byggAtgardslista } from './18-atgardslista.js';
 import { _laggTillMetodblad, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
@@ -214,7 +214,7 @@ function _stRitaTopp(d, m) {
 function _sektorPunkter() {
     const ut = {};
     let punkter = [];
-    try { punkter = buildActionChecklist({ endastGrupper: true }); } catch (e) { rapporteraFel(`${stor(T.huvudomrade.fl)}: Att göra`, e); }
+    try { punkter = byggAtgardslista({ endastGrupper: true }); } catch (e) { rapporteraFel(`${stor(T.huvudomrade.fl)}: Att göra`, e); }
     for (const it of punkter) {
         if (!it.aid) continue;
         const s = sektorsnamn(it.aid);

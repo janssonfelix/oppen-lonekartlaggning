@@ -12,7 +12,7 @@ const oppna = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}
 
 describe('Sidindex', () => {
     it('indexet listar Lönestrukturs synliga avsnitt i ordning och hoppar över dolda', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'struktur');
         const lista = poster(w);
         expect(lista.slice(0, 3)).toEqual(['Var uppstår löneskillnaden?', 'Representation per BAS-intervall', 'Organisationen som karta']);
@@ -31,7 +31,7 @@ describe('Sidindex', () => {
     });
     it('rubriker utan id får ett på sitt avsnitt eller kort, och länken pekar dit', () => {
         // Regler & praxis: checklistans kort har ingen id (Lönestrukturs kort är numera avsnitt med id).
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'bestammelser');
         const a = [...w.document.querySelectorAll('#sidindex a')].find(x => x.textContent.trim() === KORT);
         const mal = w.document.getElementById(a.dataset.sidindex);
@@ -43,7 +43,7 @@ describe('Sidindex', () => {
         expect(w.document.querySelector(`#sidindex a[data-sidindex="${a.dataset.sidindex}"]`)).toBeTruthy();
     });
     it('ett klick fäller ut avsnittet och ger summaryn fokus', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'struktur');
         expect(w.document.getElementById('avsnitt-st-eu').open).toBe(false);
         const a = w.document.querySelector('#sidindex a[data-sidindex="avsnitt-st-eu"]'); a.click();
@@ -53,7 +53,7 @@ describe('Sidindex', () => {
         expect(w.location.hash).toBe('');
     });
     it('ett klick på ett kort ger rubriken fokus utan att ta den ur tabbordningen för andra', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'bestammelser');
         const a = [...w.document.querySelectorAll('#sidindex a')].find(x => x.textContent.trim() === KORT);
         a.click();
@@ -65,14 +65,14 @@ describe('Sidindex', () => {
         expect(w.document.querySelector('#avsnitt-rp-1 > summary').hasAttribute('tabindex')).toBe(false);
     });
     it('utan IntersectionObserver är första posten aktiv', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'matrix');
         const aktiva = [...w.document.querySelectorAll('#sidindex a.ar-aktiv')];
         expect(aktiva.length).toBe(1);
         expect(aktiva[0]).toBe(w.document.querySelector('#sidindex a'));
     });
     it('raden säger vilket avsnitt läsaren är i: först det första, sedan det som markeras', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'struktur');
         const summary = () => w.document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim();
         expect(summary()).toBe('På den här sidan: Var uppstår löneskillnaden?');
@@ -90,7 +90,7 @@ describe('Sidindex', () => {
         // Med en observatör följer markeringen rullningen (_sidindexFolj). I jsdom står alla rubriker överst (ingen
         // layout), som när sidan är slut och de sista avsnitten inte kan nå läslinjen: följningen pekar på den sista.
         w.IntersectionObserver = class { observe() {} disconnect() {} };
-        w.__loadDemoData();
+        w.__lasInDemodata();
         oppna(w, 'struktur');
         const aktiv = () => w.document.querySelector('#sidindex a.ar-aktiv').dataset.sidindex;
         const lankar = [...w.document.querySelectorAll('#sidindex a[data-sidindex]')];
@@ -128,7 +128,7 @@ describe('Sidindex', () => {
         expect(nav.hidden).toBe(false);
         expect(kropp.classList.contains('har-sidindex')).toBe(true);
         expect(poster(w).length).toBeGreaterThanOrEqual(3);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         oppna(w, 'matrix');
         expect(nav.hidden).toBe(false);
         expect(poster(w)).toContain('Personer att granska');
@@ -141,19 +141,19 @@ describe('Sidindex', () => {
         const w = createAppWindow();
         oppna(w, 'dokumentera');
         expect(poster(w)).not.toContain('Exportera — vilket underlag behöver du?');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         oppna(w, 'dokumentera');
         expect(poster(w)).toContain('Exportera — vilket underlag behöver du?');
     });
     it('en annan flik som ritas (för en bild) flyttar inte den synliga flikens index', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'matrix');
         const fore = poster(w);
         w.__ritaFlik('struktur');
         expect(poster(w)).toEqual(fore);
     });
     it('indexet lägger inga avsnitt till sidan och ser likadant ut i kompakt läge', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'struktur');
         const fore = poster(w);
         expect(w.document.querySelectorAll('#sidindex details.avsnitt, #sidindex h2, #sidindex h3').length).toBe(0);

@@ -9,7 +9,7 @@ vi.setConfig({ testTimeout: 30000 });
 
 const fonster = () => {
     const w = createAppWindow();
-    w.__loadDemoData();
+    w.__lasInDemodata();
     w.__ritaFlik('utforska');
     return w;
 };

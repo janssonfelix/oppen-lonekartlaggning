@@ -9,7 +9,7 @@ import { las, medDecimalpunkt } from './helpers/granssnitt-rigg.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const demo = delatFonster(w => w.__loadDemoData());
+const demo = delatFonster(w => w.__lasInDemodata());
 it('det delade fönstret står i utgångsläget', () => {
     expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
 });
@@ -17,7 +17,7 @@ it('det delade fönstret står i utgångsläget', () => {
 describe('modalerna skriver tal på svenska', () => {
     it('Inställningar och «Vad lagras?» har inget tal med decimalpunkt', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('oppnaInstallningar()');
         expect(medDecimalpunkt(w.document.getElementById('installningar-modal'))).toEqual([]);
         w.eval('oppnaVadLagras()');
@@ -25,7 +25,7 @@ describe('modalerna skriver tal på svenska', () => {
     });
     it('beräkningsbevisen har inget tal med decimalpunkt', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const fel = {};
         let oppnade = 0;
         for (const flik of ['matrix', 'prioritering', 'likvardighet', 'utforska', 'kon']) {
@@ -88,7 +88,7 @@ describe('en exportknapp per kort', () => {
     }, 30000);
     it('kandidatparens tabell har en meny Exportera med CSV och Excel', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('likvardighet');
         const meny = w.document.getElementById('lv-export-meny');
         const knapp = meny.parentElement.querySelector('.chart-export-btn');
@@ -109,7 +109,7 @@ describe('en exportknapp per kort', () => {
 describe('raden om det markerade', () => {
     it('står överst i innehållet på samma plats i alla flikar, och urvalsraden säger inte samma sak en gång till', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="matrix"]').click();
         w.eval("sattDiagramMarkering('grupp:207024|B')");
@@ -136,7 +136,7 @@ describe('raden om det markerade', () => {
 describe('samma skillnad sägs på ett sätt', () => {
     it('Att göra skriver den råa skillnaden per BAS som kvinnors lön i procent av mäns, som Lika arbete', () => {
         const w = demo();
-        const punkter = w.eval('buildActionChecklist()').filter(p => p.id.startsWith('gap-bas-'));
+        const punkter = w.eval('byggAtgardslista()').filter(p => p.id.startsWith('gap-bas-'));
         expect(punkter.length).toBeGreaterThan(0);
         for (const p of punkter) {
             expect(p.titel).toMatch(/^BAS \S+: kvinnors medianlön \d+,\d\s% av mäns$/);
@@ -194,14 +194,14 @@ describe('Regler & praxis visar vad som är bedömt', () => {
     });
     it('statusen följer med när allt rensas och när en konfigurationsfil läses in', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         satt(w, 5, 'Ej tillämplig');
         const cfg = w.eval('JSON.stringify(byggKonfiguration())');
         w.confirm = () => true;
         w.eval('rensaAllData()');
         expect(w.document.getElementById('nyckel-rp-5').textContent).toBe('Ej bedömt');
         expect(tal(w)[0][1]).toBe('0 av 6');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval(`tillampaKonfiguration(${cfg})`);
         expect(w.document.getElementById('nyckel-rp-5').textContent.trim()).toBe('Ej tillämplig');
         expect(tal(w)[0][1]).toBe('1 av 6');

@@ -9,7 +9,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — Lika arbete
     const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b ligger efter a
     it('Lika arbete visar slutsatser och yrkesgrupperna först, sedan personer att granska, per BAS, könsfördelningen och sist regressionen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const d = w.document;
         // Slutsatserna och yrkesgrupperna (trattdiagrammet och sedan tabellen) står överst; personer att granska och metoden sist.
@@ -35,7 +35,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — Lika arbete
     });
     it('Lika arbete, yrkesgrupperna: förklaringen, sedan överblicksdiagrammet och sist tabellen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const d = w.document, avsnitt = d.getElementById('avsnitt-la-yrkesgrupper');
         const kort = d.getElementById('la-tratt-kort'), tabell = d.getElementById('matrix-table');
@@ -54,7 +54,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — Lika arbete
 describe('Var uppstår löneskillnaden?', () => {
     it('ritas med demodata: tre delar, demomärkning, noten om rangordning', () => {
         const w = createAppWindow();
-        w.__loadDemoData(); w.__ritaFlik('struktur');
+        w.__lasInDemodata(); w.__ritaFlik('struktur');
         const host = w.document.getElementById('gap-uppdelning');
         expect(host.hidden).toBe(false);
         expect(host.querySelectorAll('[data-gu-del]').length).toBe(3);
@@ -65,7 +65,7 @@ describe('Var uppstår löneskillnaden?', () => {
     });
     it('Rensa all data döljer och tömmer kortet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__rensaAllData();
         const host = w.document.getElementById('gap-uppdelning');
         expect(host.hidden).toBe(true);
@@ -73,7 +73,7 @@ describe('Var uppstår löneskillnaden?', () => {
     });
     it('ett kön under k i urvalet (i exportläget): "För få personer", inga belopp', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.data = w.__state.data.filter((r, i) => r.kon.includes('kvinna') || i % 50 === 0).slice(0, 200);
         w.__state.kLage = 'export';
         w.eval('ritaGapUppdelning()');
@@ -83,7 +83,7 @@ describe('Var uppstår löneskillnaden?', () => {
     });
     it('noten om små grupper står bara när tröskeln är större än 1 (skärmen har tröskeln 1, ADR-51)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const not = () => w.document.getElementById('gap-uppdelning-innehall').textContent.replace(/\s+/g, ' ');
         w.__state.kLage = 'skarm';
         w.eval('ritaGapUppdelning()');
@@ -96,7 +96,7 @@ describe('Var uppstår löneskillnaden?', () => {
     });
     it('AID-namn kodas', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.data = w.__state.data.map(r => ({ ...r, aid: '<b>&"x' }));
         w.eval('ritaGapUppdelning()');
         expect(w.document.querySelector('#gap-uppdelning b')).toBeNull();
@@ -106,7 +106,7 @@ describe('Var uppstår löneskillnaden?', () => {
 describe('stabilitet i Lika arbete', () => {
     it('varje flaggad rad har märkningen, noten förklarar, ingen §', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const tabell = w.document.getElementById('matrix-table');
         const flaggade = [...tabell.querySelectorAll('tbody tr')].filter(tr => tr.textContent.includes('Värt att granska'));
@@ -143,7 +143,7 @@ describe('kvartiler utan enskilda löner', () => {
 // konfigurationsfilen, Rensa all data, rapportunderlaget och metodbilagan.
 // ===================================================================================
 describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)', () => {
-    const demo = () => { const w = createAppWindow(); w.__loadDemoData(); w.document.querySelector('.nav-item[data-tab="struktur"]').click(); return w; };
+    const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); w.document.querySelector('.nav-item[data-tab="struktur"]').click(); return w; };
     const kort = w => w.document.getElementById('gap-uppdelning');
     const rutor = w => [...kort(w).querySelectorAll('.gu-val input[data-gu-var]')];
     const valda = w => rutor(w).filter(r => r.checked).map(r => r.getAttribute('data-gu-var'));
@@ -240,7 +240,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
     });
     it('utan ålder i lönefilen erbjuds inte åldersgrupp, och ett sparat val med åldersgrupp räknas utan den', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
         w.__state.gapUppdelning = { variabler: ['bas', 'alder', 'aid'] };
         w.eval('tomStatistikcacher(); ritaGapUppdelning()');
@@ -253,7 +253,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         kryssa(w, 'alder');
         const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.gapUppdelning).toEqual({ variabler: ['bas', 'aid', 'alder'] });
-        const w2 = createAppWindow(); w2.__loadDemoData();
+        const w2 = createAppWindow(); w2.__lasInDemodata();
         w2.__cfg = cfg; w2.eval('window.__svar = tillampaKonfiguration(window.__cfg)');
         expect(JSON.parse(JSON.stringify(w2.__state.gapUppdelning))).toEqual({ variabler: ['bas', 'aid', 'alder'] });
         // Standardvalet sparas som null.
@@ -376,7 +376,7 @@ describe('ansvarskod i Lika arbete', () => {
 describe('Lika arbete och rapportunderlaget flaggar samma yrken', () => {
     it('EU-tabellens "Värt att granska" är exakt likaArbeteGrupper(...).flaggad vid k = 1 (skärmen maskerar inget, ADR-51)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const iTabell = [...w.document.querySelectorAll('#matrix-table tbody tr')]
             .filter(tr => tr.textContent.includes('Värt att granska'))
@@ -411,7 +411,7 @@ describe('protokollet för gemensam lönebedömning: kvinnors median i % av män
 });
 
 describe('yrkesgruppstabellen i Lika arbete', () => {
-    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__ritaFlik('matrix'); return w; };
+    const rita = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__ritaFlik('matrix'); return w; };
     const synlig = el => { const k = el.cloneNode(true); k.querySelectorAll('.bara-export').forEach(e => e.remove()); return k.textContent.replace(/\s+/g, ' ').trim(); };
     it('statusmärket står på en rad utan tröskeln, som finns i verktygstipset; cellens text för exporten är oförändrad', () => {
         const w = rita();

@@ -224,7 +224,7 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         w.__state.data = rader;
         w.eval('fyllValjare(); lasUppFlikar(); tomStatistikcacher();');
         // Som efter en vanlig inläsning (32-filinlasning.js): allt på Översikt är ritat.
-        w.eval('renderActionChecklist(); ritaKartlaggningensSteg(); ritaValideringsrapport(); ritaExtremvarden(); uppdateraAktivFlik();');
+        w.eval('ritaAtgardslista(); ritaKartlaggningensSteg(); ritaValideringsrapport(); ritaExtremvarden(); uppdateraAktivFlik();');
         return w;
     };
     const kort = w => normalisera(w.document.getElementById('action-checklist-container').textContent + w.document.getElementById('att-gora-borja').textContent);

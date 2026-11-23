@@ -7,7 +7,7 @@ import { createAppWindow } from './helpers/app-harness.js';
 describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     it('demot har ansvarskoder och en ansvarskolumn', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.ansvarKolumn).toMatchObject({ namn: 'Ansvarskod (demo)' });
         const grupper = new Set(w.__state.data.map(r => r.ansvarsgrupp));
         expect([...grupper].sort()).toEqual(['inget', 'ledning', 'uppdrag']);
@@ -15,7 +15,7 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     });
     it('demots huvudtal i regressionen är detsamma med och utan ansvaret', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const med = w.eval('runOLSRegression()');
         w.__state.data.forEach(r => { r.ansvarsgrupp = null; r.ansvarskoder = null; });
         const utan = w.eval('runOLSRegression()');
@@ -25,7 +25,7 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     });
     it('dossiern visar antal per ansvarsgrupp och kön, aldrig lön per ansvarsgrupp', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const kand = w.__gruppdossierCandidates().find(c => c.rows.some(r => r.ansvarsgrupp === 'ledning'));
         const d = w.__buildGruppdossier(kand.key);
         const nLed = kand.rows.filter(r => r.ansvarsgrupp === 'ledning');
@@ -36,7 +36,7 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     });
     it('dossiern utan ansvarskolumn har ingen ansvarsrad', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.data.forEach(r => { r.ansvarsgrupp = null; r.ansvarskoder = null; });
         w.__state.ansvarKolumn = null;
         const key = w.__gruppdossierCandidates()[0].key;
@@ -45,7 +45,7 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     });
     it('Personer att granska har kolumnen Ansvar bara när ansvarskolumnen finns', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('renderPersonerAttGranska(true)');
         const rubriker = () => [...w.document.querySelectorAll('#pag-tabell thead th')].map(th => th.textContent);
         expect(rubriker()).toContain('Ansvar');
@@ -79,7 +79,7 @@ describe('AID: metodtext enligt handboken', () => {
     });
     it('Word-utkastets avsnitt Lika arbete innehåller metodtexten', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const html = w.__docDraftHtml();
         const lika = html.slice(html.indexOf('Lika arbete — kvinnor och män i samma AID-etikett och BAS-intervall'), html.indexOf('Likvärdigt arbete — kvinnodominerade AID-etiketter'));
         expect(lika).toMatch(/AID är inte ett arbetsvärderingssystem/);

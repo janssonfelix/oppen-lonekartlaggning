@@ -9,7 +9,7 @@ vi.setConfig({ testTimeout: 30000 });
 
 const fonster = () => {
     const w = createAppWindow();
-    w.__loadDemoData();
+    w.__lasInDemodata();
     w.__state.handlingsplan = {};
     w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
     return w;
@@ -291,7 +291,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
 describe('Handlingsplan: Att göra-punkten för rader utan val', () => {
     it('räknar förifyllda rader med rullistan tom och försvinner när alla rader har ett val', () => {
         const w = fonster();
-        const punkt = () => w.eval('buildActionChecklist()').find(p => p.id === 'hp-sakliga-skal');
+        const punkt = () => w.eval('byggAtgardslista()').find(p => p.id === 'hp-sakliga-skal');
         const n = rader(w).length;
         const titel = m => `${m} ${m === 1 ? 'grupp i handlingsplanen är inte bedömd' : 'grupper i handlingsplanen är inte bedömda'} än`;
         expect(punkt()).toMatchObject({ kategori: 'Handlingsplan', prioritet: 'medel', tab: 'handlingsplan', titel: titel(n) });
@@ -305,9 +305,9 @@ describe('Handlingsplan: Att göra-punkten för rader utan val', () => {
     });
     it('punkten finns inte utan förifyllda rader och följer inte med i sektorsöversiktens urval', () => {
         const w = createAppWindow();
-        expect(w.eval('buildActionChecklist()').find(p => p.id === 'hp-sakliga-skal')).toBeUndefined();
-        w.__loadDemoData();
-        expect(w.eval('buildActionChecklist({ endastGrupper: true })').find(p => p.id === 'hp-sakliga-skal')).toBeUndefined();
+        expect(w.eval('byggAtgardslista()').find(p => p.id === 'hp-sakliga-skal')).toBeUndefined();
+        w.__lasInDemodata();
+        expect(w.eval('byggAtgardslista({ endastGrupper: true })').find(p => p.id === 'hp-sakliga-skal')).toBeUndefined();
     });
 });
 

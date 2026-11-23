@@ -249,7 +249,7 @@ export async function samlaUtdata(w) {
         headers: ['BAS', 'AID', 'Lön', 'Ålder', 'Kön', 'FKKOLUMN'],
         mappning: { bas: 'BAS', yrke: 'AID', lon: 'Lön', alder: 'Ålder', kon: 'Kön' }, k: kInstalld() })`);
     // Översikt som efter en inläsning, och en prognos i Löneöversyn så att utfallstabellen finns.
-    w.eval('tomStatistikcacher(); renderActionChecklist(); ritaKartlaggningensSteg(); ritaExtremvarden(); ritaValideringsrapport(); uppdateraAktivFlik();');
+    w.eval('tomStatistikcacher(); ritaAtgardslista(); ritaKartlaggningensSteg(); ritaExtremvarden(); ritaValideringsrapport(); uppdateraAktivFlik();');
     // Påslaget är 100 %: då är varje grupps kostnad lika med gruppens lönesumma, och kostnaden för en
     // ensam person hennes lön — så att en omaskerad kostnad syns i textsökningen.
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 100 }, years: 3 });
@@ -311,7 +311,7 @@ export async function samlaUtdata(w) {
     lagg('rapportutkastet', d.getElementById('struktur-narrative').value);
     lagg('rapportmodell: basintervall', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'basintervall') }))(rapportModell())"));
     for (const b of w.__rapportunderlagBlock()) lagg(`rapportunderlag: ${b.id}`, w.__ruTillWordHtml(b) + '\n' + w.__ruTillText(b));
-    lagg('Att göra-punkter', w.eval('JSON.stringify(medExportLage(() => buildActionChecklist()))'));
+    lagg('Att göra-punkter', w.eval('JSON.stringify(medExportLage(() => byggAtgardslista()))'));
     w.eval('window.__csv = null; window.__csvOrig = _laddaNedCSV; _laddaNedCSV = rows => { window.__csv = rows; }');
     d.getElementById('btn-export-checklist')?.click();
     lagg('Att göra-CSV', (w.__csv || []).map(r => r.join(' | ')).join('\n'));

@@ -4,10 +4,10 @@
 import { describe, it, expect } from 'vitest';
 import { createAppWindow, delatFonster } from './helpers/app-harness.js';
 
-const demo = delatFonster(w => w.__loadDemoData());
+const demo = delatFonster(w => w.__lasInDemodata());
 
 describe('Personer att granska', () => {
-    const oppna = w => { w.__loadDemoData(); w.document.querySelector('.nav-item[data-tab="matrix"]').click(); };
+    const oppna = w => { w.__lasInDemodata(); w.document.querySelector('.nav-item[data-tab="matrix"]').click(); };
     const sankEn = w => {
         // Sänk en person i största AID/BAS-gruppen till 60 % av gruppens median → flaggas.
         const d = w.__state.data, grupper = {};
@@ -31,7 +31,7 @@ describe('Personer att granska', () => {
     });
     it('en sänkt person flaggas med filens radnummer; gränsen ritar om', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const p = sankEn(w);
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const celler = [...w.document.querySelectorAll('#pag-tabell tbody tr')].map(tr => tr.cells[0].textContent.trim());
@@ -60,7 +60,7 @@ describe('Personer att granska', () => {
     });
     it('del C i "Var uppstår löneskillnaden?" länkar till panelen och skrollar fram den', () => {
         const w = createAppWindow();
-        w.__loadDemoData(); w.__ritaFlik('struktur');
+        w.__lasInDemodata(); w.__ritaFlik('struktur');
         const lank = w.document.querySelector('#gap-uppdelning [data-gu-del="C"] [data-go-to-anchor="personer-att-granska"]');
         expect(lank).not.toBeNull();
         let skrollad = false;
@@ -71,7 +71,7 @@ describe('Personer att granska', () => {
     });
     it('listan lämnar inte verktyget: den sänkta lönen finns inte i rapportunderlag eller Word-utkast', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const p = sankEn(w);
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         expect(w.__ifFlaggaIndivider(w.__hamtaData(), { minGrupp: w.__K }).flaggade.some(f => f.radnr === p.radnr)).toBe(true);
@@ -98,7 +98,7 @@ describe('Personer att granska', () => {
     });
     it('"Vad lagras?" redovisar fältet radnr', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('oppnaVadLagras()');
         const t = w.document.getElementById('data-residency-content').textContent;
         expect(t).toContain('radnr');
@@ -139,7 +139,7 @@ describe('Personer att granska', () => {
     });
     it('en förväntad lön som är gruppens median märks med en asterisk som noten förklarar', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         // Alla lika gamla: ingen åldersspridning att räkna med, så den förväntade lönen blir gruppens median.
         w.__state.data.forEach(r => { r.alder = 40; });
         w.eval('renderPersonerAttGranska(true)');

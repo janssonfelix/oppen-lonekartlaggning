@@ -245,7 +245,7 @@ describe('[I5] konfigurationsfil och organisationspaket: det som syns ritas om e
         a.eval('sattKTroskel(25, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const w = fonster(null);
-        w.eval('renderActionChecklist(); ritaKartlaggningensSteg(); ritaValideringsrapport(); uppdateraAktivFlik();');
+        w.eval('ritaAtgardslista(); ritaKartlaggningensSteg(); ritaValideringsrapport(); uppdateraAktivFlik();');
         ritaAlla(w);
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
         rakna(w);

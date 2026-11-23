@@ -433,7 +433,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         const w = createAppWindow();
         await lasIn(w, mallRader());
         expect(w.__state.importprofil).not.toBeNull();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.importprofil).toBeNull();
         expect(kortet(w).hidden).toBe(true);
     });

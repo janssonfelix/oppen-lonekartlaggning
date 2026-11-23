@@ -11,7 +11,7 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // blocken nedan läser demodatan
+    win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
 describe('punkt-sampling: stora punktmoln ritas som ett jämnt urval (perf vid stora underlag)', () => {
@@ -58,7 +58,7 @@ describe('Utforska 2.0', () => {
     // Tomlägets rad ("Inga grupper att visa") är ingen grupp.
     const kolumn0 = () => [...$('explore-table').querySelectorAll('tbody tr')].filter(tr => !tr.querySelector('.explore-tom')).map(tr => tr.cells[0].textContent.trim());
 
-    beforeAll(() => { win.__loadDemoData(); });
+    beforeAll(() => { win.__lasInDemodata(); });
 
     it('standardvyn ritar staplar per BAS i ordningen A → Z', () => {
         aterstall();
@@ -266,7 +266,7 @@ describe('Utforska: klick till gruppdossiern', () => {
     const spec = over => ({ rad: 'bas', kolumn: null, matt: 'median', delaKon: false, urval: { lage: 'alla', villkor: [] }, gruppVillkor: [], ...over });
     let kand;
     beforeAll(() => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         // Nollställ Utforska så att klicket tolkas mot en känd vy (rader = BAS).
         const doc = win.document;
         doc.getElementById('explore-rad').value = 'bas';
@@ -332,7 +332,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         $('explore-typ').value = 'auto'; $('explore-visa').value = 'helhet'; $('explore-inkludera-sma').checked = false;
         win.__explorerSetFilter({});
     };
-    beforeAll(() => { win.__loadDemoData(); grund(); win.__renderExplorer(); });
+    beforeAll(() => { win.__lasInDemodata(); grund(); win.__renderExplorer(); });
 
     it('korstabellens export utelämnar gap där ena könet är under tröskeln', () => {
         const w = createAppWindow();
@@ -412,7 +412,7 @@ describe('Utforska: urval med villkor', () => {
         win.__explorerSetFilter({});
         win.__renderExplorer();
     };
-    beforeAll(() => { win.__loadDemoData(); grund(); });
+    beforeAll(() => { win.__lasInDemodata(); grund(); });
 
     it('panelen har knappar för att lägga till person- och gruppvillkor', () => {
         expect(q('[data-urval-lagg-till="person"]')).not.toBeNull();
@@ -545,7 +545,7 @@ describe('Utforska: urval', () => {
 
     it('fokus stannar på jämförelselistan när man byter jämförelse', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="utforska"]').click();
         w.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: null, inte: false }] },
                              [{ matt: 'gap', op: 'mindre', varde: null }]);
@@ -572,7 +572,7 @@ describe('Utforska: helhet eller per kön, fler rader, urval alltid synligt', ()
         win.__explorerSetFilter({});
     };
     const opt = (id, v) => [...$(id).options].find(o => o.value === v);
-    beforeAll(() => { win.__loadDemoData(); grund(); rita(); });
+    beforeAll(() => { win.__lasInDemodata(); grund(); rita(); });
 
     it('Visa har Helhet som förval', () => {
         expect($('explore-visa').value).toBe('helhet');
@@ -699,7 +699,7 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         satt('explore-typ', 'auto'); satt('explore-visa', 'helhet'); $('explore-inkludera-sma').checked = false;
         win.__explorerSetFilter({});
     };
-    beforeAll(() => { win.__loadDemoData(); grund(); rita(); });
+    beforeAll(() => { win.__lasInDemodata(); grund(); rita(); });
 
     it('Visa visar det som gäller när det är låst, och ditt val kommer tillbaka', () => {
         grund(); satt('explore-visa', 'kon'); satt('explore-typ', 'bubbla'); rita();
@@ -788,7 +788,7 @@ describe('Utforska: tomläge, exportmeny och talfält', () => {
     const tomtUrval = () => win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'mindre', varde: 1, inte: false }] });
     const meny = () => $('chart-explore').parentElement.querySelector('.chart-export');
     const verktyg = () => $('explore-table').closest('.table-container').previousElementSibling;
-    beforeAll(async () => { win.__loadDemoData(); win.document.querySelector('.nav-item[data-tab="utforska"]').click(); grund(); rita(); await vanta(); });
+    beforeAll(async () => { win.__lasInDemodata(); win.document.querySelector('.nav-item[data-tab="utforska"]').click(); grund(); rita(); await vanta(); });
 
     it('tomläget döljer exportmenyn och tabellverktygen, och de kommer tillbaka', () => {
         grund(); tomtUrval(); rita();
@@ -903,7 +903,7 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
 describe('Rensa all data tömmer även Utforska', () => {
     it('inga individrader finns kvar i Utforskas minne efter rensning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('utforska');
         expect(w.__explorerMinne().rows).toBeGreaterThan(0);
         w.__rensaAllData();
@@ -913,7 +913,7 @@ describe('Rensa all data tömmer även Utforska', () => {
 });
 
 describe('Löneöversikten i Utforska', () => {
-    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__ritaFlik('utforska'); return w; };
+    const rita = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__ritaFlik('utforska'); return w; };
     it('heter Löneöversikt, och sökfältet säger vad man söker på', () => {
         const html = las('src/index.html');
         expect(html).not.toMatch(/Hierarkisk Rapport/i);
@@ -983,7 +983,7 @@ describe('Löneöversikten i Utforska', () => {
 
 describe('k-anonymitet, sortering, efterlevnad och dossiern — sortering', () => {
     it('utforskartabellen går att sortera även efter omritning', () => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         win.__renderExplorer();
         win.__renderExplorer();            // andra renderingen: tabellhuvudet behåller sina lyssnare
         const th = win.document.querySelectorAll('#explore-table thead th');

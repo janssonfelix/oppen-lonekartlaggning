@@ -21,7 +21,7 @@ const fil = ({ lon = i => 30000 + i * 10, alder = i => String(30 + i), kon = i =
 };
 const avsnitt = w => w.document.getElementById('avsnitt-fi-forhandskontroll');
 const nyckel = w => w.document.getElementById('nyckel-fi-forhandskontroll').textContent;
-const punkter = w => w.eval('buildActionChecklist()').filter(p => p.id.startsWith('fk-'));
+const punkter = w => w.eval('byggAtgardslista()').filter(p => p.id.startsWith('fk-'));
 const stoppa = (w, pa = true) => {
     w.eval('oppnaInstallningar()');
     const ruta = w.document.getElementById('inst-fk-stopp');
@@ -66,7 +66,7 @@ describe('förhandskontrollen efter inläsningen', () => {
         expect(p[0]).toMatchObject({ id: 'fk-lon-arslon', kategori: 'Underlagets kvalitet', prioritet: 'hög', tab: 'filer', källa: 'Förhandskontroll av lönefilen' });
         // Att göra leder till avsnittet.
         w.__ritaFlik('dashboard');
-        w.eval('renderActionChecklist()');
+        w.eval('ritaAtgardslista()');
         const lank = w.document.querySelector('#action-checklist-container a[data-go-to-anchor="avsnitt-fi-forhandskontroll"]');
         expect(lank).toBeTruthy();
         // Inläsningsrapporten länkar till avsnittet.
@@ -130,7 +130,7 @@ describe('förhandskontrollen efter inläsningen', () => {
     it('ett demo efter en fil tar bort förhandskontrollen (demot läses inte ur en fil)', async () => {
         const w = createAppWindow();
         await lasIn(w, fil());
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.forhandskontroll).toBeNull();
         expect(avsnitt(w).hidden).toBe(true);
     });
@@ -217,7 +217,7 @@ describe('Inställningar: stoppa och visa förhandskontrollen innan inläsning',
     it('demo och organisationspaket påverkas inte, och rensa all data släpper en väntande fil', async () => {
         const w = createAppWindow();
         stoppa(w);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.data.length).toBeGreaterThan(100);
         expect(w.__state.forhandskontroll).toBeNull();
         expect(avsnitt(w).hidden).toBe(true);
@@ -333,7 +333,7 @@ describe('förhandskontrollens punkter i Att göra', () => {
         const w = createAppWindow();
         // 2 av 30 rader utan BAS och en oläslig lön: Fullständighet och dq-lon säger det redan.
         await lasIn(w, fil({ lon: i => (i === 5 ? 'abc' : String(30000 + i * 10)) }).map((r, i) => (i === 1 || i === 2 ? r.replace(/^C;/, ';') : r)));
-        const ids = w.eval('buildActionChecklist()').map(p => p.id);
+        const ids = w.eval('byggAtgardslista()').map(p => p.id);
         expect(ids).toContain('dq-lon');
         expect(ids).toContain('dq-fullstandighet');
         expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toEqual(expect.arrayContaining(['bortfall-bas', 'bortfall-lon']));
@@ -343,7 +343,7 @@ describe('förhandskontrollens punkter i Att göra', () => {
     it('bortfallet blir en punkt när ingen annan punkt säger det', async () => {
         const w = createAppWindow();
         await lasIn(w, fil({ n: 120, alder: i => String(30 + (i % 30)) }).map((r, i) => (i === 1 ? r.replace(/^C;/, ';') : r)));
-        const ids = w.eval('buildActionChecklist()').map(p => p.id);
+        const ids = w.eval('byggAtgardslista()').map(p => p.id);
         expect(ids).not.toContain('dq-fullstandighet');
         expect(punkter(w).map(p => p.id)).toEqual(['fk-bortfall-bas']);
         expect(punkter(w)[0].titel).toBe('Förhandskontrollen: rader utan BAS-intervall');

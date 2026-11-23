@@ -18,7 +18,7 @@ import { ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
-import { buildActionChecklist } from './18-atgardslista.js';
+import { byggAtgardslista } from './18-atgardslista.js';
 import { byggOgonblicksbild } from './19-konfiguration.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
@@ -38,7 +38,7 @@ export function byggArsbokslutNu() {
         try { lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null; } catch (_e) { lv = null; }
         const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
         const klara = state._actionChecklistDone || new Set();
-        const punkter = typeof buildActionChecklist === 'function' ? buildActionChecklist() : [];
+        const punkter = typeof byggAtgardslista === 'function' ? byggAtgardslista() : [];
         return byggArsbokslut({
             ar: new Date().getFullYear(), skapat: idagDatum(), k, verktyg: `v${APP_VERSION}`,
             nyckeltal: { n: bild.n, nKv: bild.nKv, nMa: bild.nMa, medKv: bild.medianKv, medMa: bild.medianMa,

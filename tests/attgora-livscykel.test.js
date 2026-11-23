@@ -11,15 +11,15 @@ import { createAppWindow } from './helpers/app-harness.js';
 vi.setConfig({ testTimeout: 30000 });
 
 describe('Att göra: livscykelanalysen följer kortets BAS-val', () => {
-    it('buildActionChecklist anropar runLifecycleRegression med det valda BAS-intervallet', () => {
+    it('byggAtgardslista anropar runLifecycleRegression med det valda BAS-intervallet', () => {
         const win = createAppWindow();
-        win.__loadDemoData();
+        win.__lasInDemodata();
         // Fixera kortets val (samma tilldelning som select-lyssnaren i 52-livscykel.js gör).
         win.eval('_lifecycleFixBas = "B"');
         const anrop = [];
         const original = win.runLifecycleRegression;
         win.runLifecycleRegression = fixBas => { anrop.push(fixBas); return original(fixBas); };
-        win.buildActionChecklist();
+        win.byggAtgardslista();
         expect(anrop).toEqual(['B']);
     });
 });

@@ -11,7 +11,7 @@ import { sattDiagramMarkering } from './11-markering.js';
 import { aterstallReferens, state } from './12-tillstand.js';
 import { ovRitaLage, ritaKravstatus, skattningarSlapp } from './13-oversikt.js';
 import { _fkSlapp, _fkVantar } from './17-forhandskontroll.js';
-import { _renderDemoBanner } from './20-demodata-diagnostik.js';
+import { _ritaDemoruta } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
 import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
@@ -102,7 +102,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     state.statistik = [];
     state.isDemo = false;   // #9: lämna demoläge
     state.demoStort = false;
-    if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
+    if (typeof _ritaDemoruta === 'function') _ritaDemoruta();
     state._interntFel = [];   // interna fel gällde det rensade underlaget
     if (typeof visaInterntFel === 'function') visaInterntFel();
     state._lastStructureFile = null;   // släpp filreferensen (GDPR: inget kvar i RAM)

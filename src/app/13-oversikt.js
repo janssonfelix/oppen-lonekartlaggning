@@ -17,7 +17,7 @@ import { T } from './09-termer.js';
 import { hamtaBasIntervall, hamtaData, harReferens, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { ritaExtremvarden } from './15-extremvarden-basrang.js';
 import { ritaValideringsrapport } from './16-inlasningskontroll.js';
-import { buildActionChecklist, renderActionChecklist } from './18-atgardslista.js';
+import { byggAtgardslista, ritaAtgardslista } from './18-atgardslista.js';
 import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laOversiktRader } from './41-lika-arbete.js';
@@ -244,7 +244,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
 
     // Ett analyssteg är klart först när dess punkter i Att göra är hanterade — att analysen
     // har körts räcker inte (ADR-29). Listan byggs en gång för alla steg.
-    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist({ reg: givenReg }) : []), []) : []);
+    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof byggAtgardslista === 'function' ? byggAtgardslista({ reg: givenReg }) : []), []) : []);
     const klarmarkerade = state._actionChecklistDone || new Set();
     const hanterade = kategorier => _agHanterade(punkter, klarmarkerade, kategorier);   // src/lib/attgora.js
 
@@ -452,7 +452,7 @@ export function ritaOversiktDelar() {
     /** @type {any} */ let reg;   // och samma regression: körs en gång och skickas vidare (ADR-17)
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => ritaNyckeltal()], ['kompliansöversikt', () => ritaKravstatus()],
-        ['Att göra', () => { reg = runOLSRegression(); punkter = renderActionChecklist({ reg }); }],
+        ['Att göra', () => { reg = runOLSRegression(); punkter = ritaAtgardslista({ reg }); }],
         ['processöversikten', () => ritaKartlaggningensSteg({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (ritaFlik('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');

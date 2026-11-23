@@ -82,7 +82,7 @@ export async function prova(w, fran, gor) {
     await vila(w);
     return jamforAlla(w);
 }
-export const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+export const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 /** En lönefil med flera BAS-intervall, AID-etiketter och åldrar (påhittad). */
 export function lonefil(n = 240, bas = ['A', 'B', 'C', 'D']) {
     const rader = ['BAS;AID;Månadslön;Ålder;Kön'];

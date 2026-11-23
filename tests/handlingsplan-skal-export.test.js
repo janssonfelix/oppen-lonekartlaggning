@@ -9,7 +9,7 @@ import { laddaXlsx, fangaBocker } from './helpers/ktroskel-rigg.js';
 vi.setConfig({ testTimeout: 60000 });
 
 const ren = t => String(t).replace(/\s+/g, ' ').trim();
-const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const medSkal = w => Object.entries(w.__state.handlingsplan).filter(([, v]) => v.skal && v.skal.length);
 const atgarder = w => w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'atgarder');
 
@@ -120,7 +120,7 @@ describe('demot följer inte med till en riktig fil', () => {
         const { fileURLToPath } = await import('node:url');
         const w = createAppWindow();
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const demoNycklar = medSkal(w).map(([n]) => n);
         expect(demoNycklar).toHaveLength(3);
         // En riktig fil med demots personer: samma AID och BAS, så att nycklarna går att matcha.

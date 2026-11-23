@@ -235,7 +235,7 @@ describe('termerna i appen', () => {
         w.document.querySelector('.nav-item[data-tab="info"]').click();
         w.eval("renderInfoTab('metodik')");
         expect(w.document.getElementById('om-aid').textContent.replace(/\s+/g, ' ')).toContain(fyllTermer(AID_METODTEXT));
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const html = w.__docDraftHtml();
         expect(html).toContain('En AID-etikett består av en sexsiffrig AID-kod och ett etikettnamn');
         expect(html).not.toMatch(/\{(?:enhet|kod|namn|niva|jamforelse|huvudomrade)/i);

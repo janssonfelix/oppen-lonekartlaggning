@@ -475,7 +475,7 @@ describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ord
     const antalTester = w => (w.eval('runOLSRegression()').perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
     it('demodatan: texten säger hur många tester som körs, inte "20+"', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('struktur');
         const t = bhText(w), n = antalTester(w);
         expect(t).not.toMatch(/20\+/);
@@ -485,7 +485,7 @@ describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ord
     });
     it('fem eller fler tester: texten räknar det väntade antalet falskt positiva', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const r = w.eval('_bhTextFor')(8);
         expect(r).toContain('Här körs 8 tester samtidigt');
         expect(r).toMatch(/0,4 falskt positiva/);
@@ -506,7 +506,7 @@ describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ord
         const liten = tips(fonsterMan(5, SJU_MAN));
         expect(liten).toMatch(/Bygger på få män \(7 i modellen\)/);
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(tips(w)).not.toMatch(/Bygger på få/);
     });
 });

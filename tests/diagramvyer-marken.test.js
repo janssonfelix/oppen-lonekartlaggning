@@ -10,7 +10,7 @@ import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harnes
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 import { vanliga, KALLA, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
 
-const demo = delatFonster(w => w.__loadDemoData());
+const demo = delatFonster(w => w.__lasInDemodata());
 it('det delade fönstret står i utgångsläget', () => {
     expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
 });
@@ -1051,7 +1051,7 @@ describe('Löneöversyn: gapet per grupp före och efter står också i en tabel
 describe('ZIP-exporten: alla ritade diagram som får exporteras', () => {
     it('listan följer det som är ritat, i id-ordning, och aldrig diagrammet i Personer att granska', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         for (const t of ['matrix', 'struktur', 'kon']) w2.__ritaFlik(t);
         const ids = w2.eval('zipDiagram().map(el => el.id)');
         expect(ids).toEqual(ids.slice().sort((a, b) => a.localeCompare(b)));
@@ -1080,7 +1080,7 @@ describe('små multiplar: tak på antalet punkter per panel', () => {
 describe('utskriften ur rapportmodellen', () => {
     it('avsnittens diagram följer med som bilder med bildtext; bilagorna följer bara med hela dokumentationen', async () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.print = () => {};
         const bygg = async urval => { w2.eval(`sattRapportUrval(${JSON.stringify(urval)})`); await w2.eval('buildPrintReport()'); await new Promise(r => setTimeout(r, 0)); return w2.document.getElementById('print-report'); };
         const rubriker = el => [...el.querySelectorAll('h1, h2')].map(h => h.textContent);
@@ -1174,7 +1174,7 @@ describe('lönegapet visas som kvinnors lön i procent av mäns', () => {
     });
     it('Löneöversyn och lönesimulatorn säger procent av mäns för det råa gapet, och skillnad för det oförklarade', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__state.forecast.budget = { mode: 'pct', value: 2 };   // utan pott visas inget utfall
         w2.__ritaFlik('loneoversyn');
         const ut = t(w2.document.getElementById('forecast-outcome').textContent);
@@ -1223,7 +1223,7 @@ describe('ett bildspråk — linjeikoner i stället för bildtecken', () => {
     });
     it('statusmärkena är ikon plus ord, och tabellens text — det exporten läser — är ren text', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('matrix');
         w2.__ritaFlik('prioritering');
         const d = w2.document;
@@ -1277,7 +1277,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
     });
     it('markeringen står i raden under urvalsraden; "Rensa all data" tömmer toppen', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('matrix');
         const d = w2.document;
         w2.eval("sattDiagramMarkering('bas:C')");
@@ -1311,7 +1311,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
 // ---- Ålder & karriär i formen resultat först ----
 describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyckeltal', () => {
     const t = s => String(s).replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
-    const skapa = () => { const w2 = createAppWindow(); w2.__loadDemoData(); w2.__ritaFlik('kon'); return w2; };
+    const skapa = () => { const w2 = createAppWindow(); w2.__lasInDemodata(); w2.__ritaFlik('kon'); return w2; };
     const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
     it('väljaren i urvalsraden styr både lönedelen och åldersstrukturen; den dolda väljaren följer med', () => {
         const w2 = skapa(), d = w2.document;
@@ -1383,7 +1383,7 @@ describe('Prioritering i formen resultat först', () => {
     });
     it('nyckeltalen: listan och kostnaden säger samma som rutorna, och raden om inställningarna säger om de är ändrade', () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.__ritaFlik('prioritering');
         const d = w2.document;
         expect(t(d.getElementById('nyckel-pr-lista').textContent)).toMatch(/^\d+ grupp(er)?/);

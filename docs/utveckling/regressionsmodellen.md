@@ -77,7 +77,7 @@ personer. Kan inget steg skattas blir resultatet felet `all_failed`.
 
 **Ingen cache.** Regressionen räknas om vid varje anrop och får aldrig cachas (ADR-17). Inom ett varv körs den en gång
 och skickas vidare som argument (`{ reg }`): vid inläsningen och i omritningen efter ett tröskelbyte läser underlagets
-kvalitet (`bedomningUnderlag`), Att göra (`buildActionChecklist`) och processöversikten samma körning. En flik som
+kvalitet (`bedomningUnderlag`), Att göra (`byggAtgardslista`) och processöversikten samma körning. En flik som
 visas igen utan omritning (ADR-81) räknar ingenting och läser inget sparat resultat: den visar det som ritades, och
 bara när ingenting har ändrats sedan dess.
 

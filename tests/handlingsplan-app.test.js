@@ -8,9 +8,9 @@ import { laddaXlsx, fangaBocker } from './helpers/ktroskel-rigg.js';
 import { las } from './helpers/granssnitt-rigg.js';
 vi.setConfig({ testTimeout: 30000 });
 
-const demo = delatFonster(w => w.__loadDemoData());
+const demo = delatFonster(w => w.__lasInDemodata());
 // Demot förifyller sakliga skäl på tre rader (56-handlingsplan.js, _hpDemoSkal); testerna här börjar från en tom plan.
-const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); w.__state.handlingsplan = {}; return w; };
+const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__state.handlingsplan = {}; return w; };
 const UNDERLAG = ['Prioritering (under referensen)', 'Likvärdigt arbete (kandidatpar)'];
 const rader = w => [...w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-seeded')];
 // Gruppen som i exporterna: på skärmen står BAS och bokstaven ihop med ett hårt mellanslag.

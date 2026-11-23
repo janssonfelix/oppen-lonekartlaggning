@@ -41,7 +41,7 @@ const vantadRapportrad = rad => {
     expect(rad.textContent.replace(/\s+/g, ' ')).toMatch(/Personnamn i fältet för AID-etikett: rad 5 och 19/);
 };
 const avsnitt = w => w.document.getElementById('avsnitt-fi-forhandskontroll');
-const punkt = w => w.eval('buildActionChecklist()').find(p => p.id === 'fk-yrke-namn');
+const punkt = w => w.eval('byggAtgardslista()').find(p => p.id === 'fk-yrke-namn');
 const rapport = w => w.document.getElementById('data-validation-report');
 const UTAN_NAMN = /Anna|Andersson|Berg|Lisa/;
 
@@ -58,7 +58,7 @@ describe('namn i fältet för AID-etikett: demona', () => {
     });
     it('ett inläst demo ger ingen varning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(rapport(w).querySelector('[data-dvr="yrke-namn"]')).toBeNull();
         expect(punkt(w)).toBeUndefined();
     });

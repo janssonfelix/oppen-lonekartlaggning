@@ -20,8 +20,8 @@ import { raknaBootstrapKI, fyllValjare, ritaKartlaggningensSteg, ritaUnderlagets
 import { ritaExtremvarden } from './15-extremvarden-basrang.js';
 import { ritaKonsistenskontroll, ritaValideringsrapport, synkaDatakvalitetspanel } from './16-inlasningskontroll.js';
 import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, ritaForhandskontroll } from './17-forhandskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
-import { _renderDemoBanner } from './20-demodata-diagnostik.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
+import { _ritaDemoruta } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
 import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
@@ -122,7 +122,7 @@ function _efterInlastData() {
     state.demoStort = false;
     // Löneöversyns knappresultat (målet för skillnaden, känslighetskurvan, individnivån) gällde det förra underlaget.
     if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();
-    if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
+    if (typeof _ritaDemoruta === 'function') _ritaDemoruta();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     const poangCount = _harledArbetsvarderingUrData();
     // Föreslagna riktade rader (kalla: 'par') prövas mot paren i den nya lönefilen, också när de lästs in ur en
@@ -166,7 +166,7 @@ function _efterInlastData() {
                 ritaLoneskillnadPerBas(lsBasVymodell());
                 ritaAlderOchLon("__ALLA__");
                 raknaBootstrapKI();
-                renderActionChecklist();
+                ritaAtgardslista();
             } finally {
                 if (dataStatus) dataStatus.textContent = dataStatus.textContent.replace(DEFER_NOTE, '');
                 visningNy();   // det som räknades i bakgrunden visas när fliken ritas om (ADR-81)

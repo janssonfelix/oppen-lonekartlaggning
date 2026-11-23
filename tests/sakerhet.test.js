@@ -363,7 +363,7 @@ describe('diagram: beskrivning för skärmläsare, svenska talformat och Pareto'
     let w, diagram, karnans;
     beforeAll(async () => {
         w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         for (const t of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
             'handlingsplan', 'kon', 'utforska', 'benchmark']) w.__ritaFlik(t);
         await new Promise(r => setTimeout(r, 300));

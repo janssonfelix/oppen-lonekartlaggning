@@ -25,7 +25,7 @@ const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon
 describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osakerhet.js', () => {
     const w = createAppWindow();
     let demo;
-    beforeAll(() => { w.__loadDemoData(); demo = w.__state.data.map(r => ({ ...r })); });
+    beforeAll(() => { w.__lasInDemodata(); demo = w.__state.data.map(r => ({ ...r })); });
 
     const underlag = {
         demodatan: () => demo,

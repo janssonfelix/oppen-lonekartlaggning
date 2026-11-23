@@ -13,11 +13,11 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // exportmenyns block läser demodatan
+    win.__lasInDemodata();   // exportmenyns block läser demodatan
 });
 
 const nav = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); nav(w, 'utforska'); return w; };
+const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); nav(w, 'utforska'); return w; };
 const oppnaGrupp = (w, flik) => {
     const g = w.document.getElementById(`ut-alla-${flik}`);
     g.open = true;
@@ -237,7 +237,7 @@ describe('Alla diagram: grupperna och kopiorna', () => {
 
     it('flikarna utan grupp har inga diagram ritade med diagramkärnan', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         for (const f of ['dashboard', 'filer', 'bestammelser', 'handlingsplan']) w.__ritaFlik(f);
         const iFlik = w.eval("[..._rfBehallare].filter(el => el.isConnected && ['dashboard', 'filer', 'bestammelser', 'handlingsplan'].includes(_egFlikFor(el))).map(el => el.id)");
         expect(iFlik).toEqual([]);
@@ -247,7 +247,7 @@ describe('Alla diagram: grupperna och kopiorna', () => {
 describe('exportmeny på alla diagram', () => {
     const vanta = () => new Promise(r => setTimeout(r, 0));
     beforeAll(async () => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         for (const flik of ['matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
                             'kon', 'demografi', 'utforska', 'benchmark', 'kvalitet', 'rapport']) {
             win.__ritaFlik(flik);

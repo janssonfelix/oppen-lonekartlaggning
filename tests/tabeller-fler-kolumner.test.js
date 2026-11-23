@@ -19,7 +19,7 @@ const TABELLER = [
     { flik: 'matrix', id: 'aidbas-lika-tabell', nyckel: 'aidbasLika', dolda: ['nedre', 'ovre', 'direktiv'], forst: [] },
     { flik: 'likvardighet', id: 'aidbas-likvardigt-tabell', nyckel: 'aidbasLikvardigt', dolda: ['nationellt', 'brukar', 'spridning'], forst: [] }
 ];
-const rita = (flik) => { const w = createAppWindow(); w.__loadDemoData(); w.__ritaFlik(flik); return w; };
+const rita = (flik) => { const w = createAppWindow(); w.__lasInDemodata(); w.__ritaFlik(flik); return w; };
 const rubriker = (w, id) => [...w.document.querySelectorAll(`#${id} thead th`)];
 const knapp = (w, id) => w.document.querySelector(`[data-fler-kolumner="${id}"]`);
 const spann = td => +(td.getAttribute('colspan')) || 1;

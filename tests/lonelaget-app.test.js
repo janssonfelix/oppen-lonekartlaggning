@@ -6,7 +6,7 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { fonster as fonsterK, fangaBocker, laddaXlsx, SENT_SMA, SMA } from './helpers/ktroskel-rigg.js';
 vi.setConfig({ testTimeout: 30000 });
-const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const medStatistik = (w, { spann = true } = {}) => {
     w.__state.statistik = [...new Set(w.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return spann ? { aid, bas, median: 34000, p10: 30000, p90: 39000 } : { aid, bas, median: 34000 }; });
     w.__state.statistikHasP10 = spann; w.__state.statistikHasP90 = spann;
@@ -16,7 +16,7 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // blocken nedan läser demodatan
+    win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
 describe('överblicken: löneläget och statistiken mot ställningstagandet', () => {
@@ -231,7 +231,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
     // Demots åtta grupper: var tredje utan P10 och P90 (ingen punkt), annars AID + BAS eller en rad utan BAS (Endast AID),
     // och spann som lägger medianen över respektive under statistikens spann.
     const medBlandad = () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const rader = w.eval('jamforelseUnderlag()').rader;
         w.__state.statistik = rader.map((r, i) => {
             const m = r.org.median;
@@ -336,7 +336,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         expect(alla.some(r => r.n < 25)).toBe(true);
     });
     it('utan P10 och P90 i statistiken: ett meddelande i kortet i stället för diagrammet', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.__state.statistik = w.eval('jamforelseUnderlag()').rader.map(r => ({ aid: r.aid, bas: r.bas, median: 34000 }));
         w.__state.statistikHasP10 = false; w.__state.statistikHasP90 = false;
         w.__ritaFlik('benchmark');
@@ -345,7 +345,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         expect(el(w, 'chart-jmf-statlage').textContent).toMatch(/P10 och P90/);
     });
     it('utan statistik bara bandkartan; utan ställningstagande bara statistikens spann', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.__ritaFlik('benchmark');
         expect(el(w, 'lp-bandkarta-kort').hidden).toBe(false);
         expect(el(w, 'jmf-statlage-kort').hidden).toBe(true);
@@ -363,7 +363,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
 describe('Lönepolitik: organisationens band i bandkartan', () => {
     it('ett band per BAS med minst k personer, bredvid LPS-bandet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="benchmark"]').click();
         const lager = w.document.getElementById('chart-lp-bandmap')._figur.lager;   // ritat av diagramkärnan (ADR-39)
         const orgLager = lager.find(l => l.serie === `${w.eval('orgNamn()')} (P10–P90)`);   // demot heter Exempelkommunen (ADR-36)
@@ -422,7 +422,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
     });
 
     it('med policy byggs modellen med täckningsgrad och maskeringstrappa', () => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         const bas = [...new Set(win.__hamtaData().map(r => r.bas))];
         setPolicy(bas.map(b => ({ bas: b, p10: 25000, med: 32000, p90: 45000 })));
         const m = win.__lonepolitikVymodell().modell;

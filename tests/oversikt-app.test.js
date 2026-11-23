@@ -11,13 +11,13 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // blocken nedan läser demodatan
+    win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
 describe('Översikt: ordning, kvalitet och nyckeltal', () => {
     it('nyckeltal → Att göra → processen → löneskillnaden; kvaliteten står i Filer och kvalitet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         expect(d.getElementById('view-filer').contains(d.getElementById('underlagets-kvalitet'))).toBe(true);
         const ids = ['dashboard-summary', 'att-gora', 'process-tracker', 'gap-uppdelning'];
@@ -28,7 +28,7 @@ describe('Översikt: ordning, kvalitet och nyckeltal', () => {
     });
     it('kvaliteten sammanfattad; ihopfälld när allt är OK, utfälld vid varning; konsistensen inuti', () => {
         const w = createAppWindow();
-        w.__loadDemoData();   // demot har en varning (jämförbarhet)
+        w.__lasInDemodata();   // demot har en varning (jämförbarhet)
         const d = w.document;
         const fall = d.getElementById('uk-fallbar');
         expect(fall.tagName).toBe('DETAILS');
@@ -42,7 +42,7 @@ describe('Översikt: ordning, kvalitet och nyckeltal', () => {
     });
     it('nyckeltalen visar kvinnor och män i stället för antal BAS-intervall', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         expect(d.getElementById('stat-bas')).toBeNull();
         const kv = w.__state.data.filter(r => r.kon === 'kvinna').length, ma = w.__state.data.filter(r => r.kon === 'man').length;
@@ -54,7 +54,7 @@ describe('Översikt: ordning, kvalitet och nyckeltal', () => {
 describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
     it('statistikens och referensens namn sätts alltid som text i diagrammets verktygstips', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.slice(0, 40).map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }));
         w.eval("sattJmfNamn('<img src=x onerror=alert(1)>')");
         w.__ritaFlik('benchmark');
@@ -91,7 +91,7 @@ describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
         const { fileURLToPath } = await import('node:url');
         const w = createAppWindow();
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const rader = ['BAS;Månadslön;Ålder;Kön;AID'];
         for (let i = 0; i < 20; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301`);
         w.__state.data = [];
@@ -104,7 +104,7 @@ describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
     });
     it('en konsistensvarning fäller ut kvalitetsdelen även när kriterierna är OK', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval("bedomningUnderlag = () => ({ status: 'ok', kriterier: [{ id: 'a', namn: 'A', status: 'ok', text: 'x' }] })");
         w.document.getElementById('consistency-banner-container').innerHTML = '<div class="consistency-banner warn">Filerna matchar inte</div>';
         w.eval('ritaUnderlagetsKvalitet()');
@@ -115,7 +115,7 @@ describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
 describe('Jämförelsestatistik, Översikt och namn: detaljer — Översikt', () => {
     it('kvalitetsdelen fälls inte ut igen vid omritning när statusen är densamma', () => {
         const w = createAppWindow();
-        w.__loadDemoData();   // varning → utfälld
+        w.__lasInDemodata();   // varning → utfälld
         const fall = w.document.getElementById('uk-fallbar');
         expect(fall.open).toBe(true);
         fall.open = false;
@@ -128,7 +128,7 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — Översikt', ()
 
 describe('underlagets kvalitet (ADR-19)', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
+    beforeAll(() => { w = createAppWindow(); w.__lasInDemodata(); });
 
     it('panelen visar datakvalitetens fem kriterier, AID-kontrollen och en helhetsstatus, ingen 0–100-siffra', () => {
         const p = w.document.getElementById('underlagets-kvalitet');
@@ -158,7 +158,7 @@ describe('underlagets kvalitet (ADR-19)', () => {
 
 describe('samma bild på Översikt', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
+    beforeAll(() => { w = createAppWindow(); w.__lasInDemodata(); });
 
     it('kompliansen räknar bara jämförbara BAS och säger hur många intervall exporten inte redovisar', () => {
         w.__ritaKravstatus();
@@ -187,14 +187,14 @@ describe('samma bild på Översikt', () => {
     });
     it('en röd gap-ruta står aldrig bredvid en tom åtgärdslista', () => {
         w.__ritaKravstatus();
-        w.eval('renderActionChecklist()');
+        w.eval('ritaAtgardslista()');
         const kort = w.document.getElementById('comp-gap');
         const rod = /crit|warn/.test(kort.className);
         const lista = w.document.getElementById('action-checklist-container').textContent;
         if (rod) expect(lista).not.toContain('inga öppna punkter');
     });
     it('varje jämförbart BAS med statusen Värt att granska (säkerställd, minst 3 %) blir en punkt i åtgärdslistan, och inga andra', () => {
-        const ids = w.eval('buildActionChecklist()').map(i => i.id);
+        const ids = w.eval('byggAtgardslista()').map(i => i.id);
         const d = w.__hamtaData();
         const jb = new Set(w.__dqJamforbaraBas(d, w.__K).jamforbara);
         const rader = w.eval('_laOversiktRader(hamtaData())').filter(o => jb.has(o.bas));
@@ -237,7 +237,7 @@ describe('samma bild på Översikt', () => {
         expect(titlar).toBeDefined();
     });
     it('Löneöversyn och Översikt följer flikmallen: inledning, nyckeltal i toppen, sedan innehållet', () => {
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document, ren = t => t.replace(/[\u00a0\u202f]/g, ' ');
         d.querySelector('.nav-item[data-tab="loneoversyn"]').click();
         d.getElementById('forecast-budget-value').value = '2';
@@ -258,7 +258,7 @@ describe('samma bild på Översikt', () => {
         expect(d.getElementById('ov-intro').closest('.flik-intro-rad')).not.toBeNull();
     });
     it('rapporten bär de tre nya diagrammen, och åldersdiagrammet bara när Ålder & karriär visar hela urvalet', () => {
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const diagram = () => w.eval('rapportModell()').avsnitt.flatMap(a => a.delar.filter(x => x.typ === 'diagram').map(x => `${a.id}:${x.id}`));
         expect(diagram()).toEqual(expect.arrayContaining(['lika:chart-la-tratt', 'struktur:chart-kon-aldergap', 'struktur:chart-lp-konlagen']));
         w.__ritaFlik('kon');
@@ -269,7 +269,7 @@ describe('samma bild på Översikt', () => {
         expect(diagram()).toContain('struktur:chart-kon-aldergap');
     });
     it('nyckeltalen är korta tal med en förklarande rad, och Prioritering följer flikarnas form', () => {
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('kon');
         const d = w.document, ren = t => t.replace(/[\u00a0\u202f]/g, ' ');
         expect(ren(d.getElementById('kon-kpi-n').textContent)).toMatch(/^\d[\d ]*$/);              // bara antalet …
@@ -301,14 +301,14 @@ describe('Att göra', () => {
     };
     const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('fyllValjare(); lasUppFlikar();'); return w; };
     it('punkten om oförklarat gap: hög vid signifikant gap på minst 3 %, ingen när gapet inte är signifikant', () => {
-        const hog = med(rader(30000, 33000)).eval('buildActionChecklist()').find(i => i.id === 'reg-oforklarat');
+        const hog = med(rader(30000, 33000)).eval('byggAtgardslista()').find(i => i.id === 'reg-oforklarat');
         expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'struktur' });
         expect(hog.titel).toMatch(/Oförklarad löneskillnad i hela organisationen/);
-        expect(med(rader(30000, 30000)).eval('buildActionChecklist()').some(i => i.id === 'reg-oforklarat')).toBe(false);
+        expect(med(rader(30000, 30000)).eval('byggAtgardslista()').some(i => i.id === 'reg-oforklarat')).toBe(false);
     });
     it('ett kort: statusrad, Börja här och hela listan; inget iakttagelseblock', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         const kort = d.getElementById('att-gora');
         expect(kort.hidden).toBe(false);
@@ -320,10 +320,10 @@ describe('Att göra', () => {
     });
     it('Börja här: högst tre ej avbockade punkter, hög prioritet först, därefter underlag och könsrelaterade fynd; avbockning byter punkt', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         const titlar = () => [...d.querySelectorAll('#att-gora-borja [data-borja-id]')].map(li => li.dataset.borjaId);
-        const items = w.eval('buildActionChecklist()');
+        const items = w.eval('byggAtgardslista()');
         const vantat = borjaHar(items, new Set()).map(it => it.id);   // regeln: src/lib/attgora.js
         expect(titlar()).toEqual(vantat);
         const cb = d.querySelector(`.act-cb[data-id="${vantat[0]}"]`);
@@ -333,9 +333,9 @@ describe('Att göra', () => {
     });
     it('allt avbockat: "Alla punkter är hanterade."; Rensa döljer kortet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state._actionChecklistDone = new Set(w.eval('buildActionChecklist()').map(i => i.id));
-        w.eval('renderActionChecklist()');
+        w.__lasInDemodata();
+        w.__state._actionChecklistDone = new Set(w.eval('byggAtgardslista()').map(i => i.id));
+        w.eval('ritaAtgardslista()');
         expect(w.document.getElementById('att-gora-borja').textContent).toContain('Alla punkter är hanterade.');
         w.__rensaAllData();
         expect(w.document.getElementById('att-gora').hidden).toBe(true);
@@ -347,7 +347,7 @@ describe('Att göra', () => {
 describe('Underlagets kvalitet: AID-kodningen', () => {
     it('demot ger OK på alla AID-kriterier och de finns med i bedömningen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const b = w.eval('bedomningUnderlag()');
         const aid = b.kriterier.filter(c => c.id.startsWith('aid-'));
         expect(aid.map(c => c.id)).toEqual(['aid-okanda', 'aid-restkoder', 'aid-spridning', 'aid-ledning-utan-ansvar', 'aid-otillaten-ansvarskod']);
@@ -365,8 +365,8 @@ describe('Underlagets kvalitet: AID-kodningen', () => {
 describe('Att göra: en stil på status', () => {
     it('prioriteten bär statusmärket med egen form, och grupperna har den ritade pilen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('renderActionChecklist()');
+        w.__lasInDemodata();
+        w.eval('ritaAtgardslista()');
         const d = w.document;
         const prio = [...d.querySelectorAll('#action-checklist-container .ag-prio')];
         expect(prio.length).toBeGreaterThan(3);
@@ -388,7 +388,7 @@ describe('Att göra: en stil på status', () => {
 describe('sortering, Att göra, kopiering och Likvärdigt arbete — Att göra', () => {
     it('Att göra: länkarna går att skilja åt för skärmläsare; datakvalitet leder till Underlagets kvalitet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         const lankar = [...d.querySelectorAll('#att-gora a[data-go-to-tab]')];
         expect(lankar.length).toBeGreaterThan(4);
@@ -407,15 +407,15 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Att göra',
     });
     it('Att göra: oförklarat gap skrivs med riktningsord, inte med minustecken', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        const it = w.eval('buildActionChecklist()').find(x => x.id === 'reg-oforklarat');
+        w.__lasInDemodata();
+        const it = w.eval('byggAtgardslista()').find(x => x.id === 'reg-oforklarat');
         expect(it).toBeTruthy();
         expect(it.titel).not.toMatch(/: [−-]/);
         expect(it.titel).toMatch(/kvinnor .* (lägre|högre) lön än män/i);
     });
     it('Att göra: rubrikordning h2 → h3, och länken till Jämförelse döljs utan jämförelsestatistik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         const rubriker = [...d.querySelectorAll('#att-gora h1, #att-gora h2, #att-gora h3, #att-gora h4')].map(h => Number(h.tagName[1]));
         expect(rubriker[0]).toBe(2);
@@ -427,8 +427,8 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Att göra',
     });
     it('Att göra: procenttal med decimalkomma och riktningsord, inga bindestreck som minus', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        const texter = w.eval('buildActionChecklist()').flatMap(it => [it.titel, it.detalj]);
+        w.__lasInDemodata();
+        const texter = w.eval('byggAtgardslista()').flatMap(it => [it.titel, it.detalj]);
         expect(texter.length).toBeGreaterThan(3);
         for (const t of texter) {
             expect(t, t).not.toMatch(/\d\.\d/);
@@ -441,7 +441,7 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — efterlevnad', ()
     it('efterlevnadskortet blir inte grönt när policyn saknar BAS-nivårader', () => {
         const sparadPolicy = win.__state.policy;
         try {
-            win.__loadDemoData();
+            win.__lasInDemodata();
             win.__state.policy = [{ aid: '5301', p10: 25000, med: 30000, p90: 40000 }];   // endast AID
             win.__ritaKravstatus();
             const card = win.document.getElementById('comp-pol');

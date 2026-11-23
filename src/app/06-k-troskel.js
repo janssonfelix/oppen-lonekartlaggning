@@ -11,7 +11,7 @@ import { state } from './12-tillstand.js';
 import { raknaBootstrapKI, raknaStyrkeanalys, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { ritaExtremvarden } from './15-extremvarden-basrang.js';
 import { ritaValideringsrapport } from './16-inlasningskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
 import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { ritGenerationNy, tomFlikarUtom, visningNy } from './23-exportgrind.js';
 import { tomStatistikcacher } from './30-statistikcacher.js';
@@ -397,9 +397,9 @@ export function _omritningssteg() {
     /** @type {any[]|undefined} */ let punkter;
     /** @type {any} */ let punktFangst = null;
     steg.push(['Att göra', () => {
-        if (typeof renderActionChecklist !== 'function') return;
+        if (typeof ritaAtgardslista !== 'function') return;
         punktFangst = indata();
-        punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : undefined });
+        punkter = ritaAtgardslista({ reg: oforandrat(regFangst) ? reg : undefined });
     }]);
     steg.push(['processöversikten', () => {
         if (typeof ritaKartlaggningensSteg !== 'function') return;

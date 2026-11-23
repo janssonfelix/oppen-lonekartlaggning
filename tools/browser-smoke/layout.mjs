@@ -211,8 +211,8 @@ export async function utseende() {
         // dem som egna kolumner. Lilla demot i en egen sida, så att tidigare delar av röktestet inte påverkar raderna.
         const s = await browser.newPage({ viewport: { width: 1440, height: 900 } });
         await s.goto('file://' + FIL);
-        await s.waitForFunction(() => typeof window.loadDemoData === 'function', null, { timeout: 15000 });
-        await s.evaluate(() => loadDemoData());   /* global loadDemoData -- global i sidan */
+        await s.waitForFunction(() => typeof window.lasInDemodata === 'function', null, { timeout: 15000 });
+        await s.evaluate(() => lasInDemodata());   /* global lasInDemodata -- global i sidan */
         await s.waitForFunction(() => !!document.querySelector('#view-dashboard svg'), null, { timeout: 30000 });
         await oppnaFlik(s, '.nav-item[data-tab="handlingsplan"]');
         await s.waitForSelector('#handlingsplan-tbody tr.handlingsplan-seeded', { timeout: 15000 });

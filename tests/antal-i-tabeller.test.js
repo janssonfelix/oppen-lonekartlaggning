@@ -15,7 +15,7 @@ const tal = n => n.toLocaleString('sv-SE').replace(/[  ]/g, ' ');
 /** "n = 260; 150 kvinnor, 110 män", räknat ur raderna. */
 const nText = rader => `n = ${tal(rader.length)}; ${tal(rader.filter(arKv).length)} kvinnor, ${tal(rader.filter(arMa).length)} män`;
 
-const demo = delatFonster(w => { w.__loadDemoData(); });
+const demo = delatFonster(w => { w.__lasInDemodata(); });
 
 describe('Lönestruktur: antal i tabellerna', () => {
     it('Var i lönefördelningen är skillnaden störst? bär antalet kvinnor och män i tabellens rubrikrad', () => {
@@ -28,7 +28,7 @@ describe('Lönestruktur: antal i tabellerna', () => {
     });
 
     it('EU-rapportens blad Skillnad i lönefördelningen har kolumnerna Antal kvinnor och Antal män', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         await laddaXlsx(w);
         let bok = null;
         w.XLSX.writeFile = wb => { bok = wb; };
@@ -163,7 +163,7 @@ describe('Löneöversyn: löneskillnad per BAS-intervall före och efter', () =>
 
 describe('Handlingsplan: Antal berörda', () => {
     it('skärmen, Excel-underlaget, Word-utkastets tabell och rapportunderlaget har kolumnen; egna rader är tomma', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.__ritaFlik('handlingsplan');
         const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
         const i = rubriker(tabell).indexOf('Antal berörda');
@@ -211,7 +211,7 @@ describe('Handlingsplan: Antal berörda', () => {
 
 describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
     it('panelens och rapportmodellens grupptabeller har kolumnen Kvinnor / män med årtalet', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         // Förra årets bokslut: samma som i år, så att de flaggade grupperna står som kvar.
         w.__state.forraArsbokslut = JSON.parse(JSON.stringify(w.eval('byggArsbokslutNu()')));
         w.__state.forraArsbokslut.ar -= 1;
@@ -234,7 +234,7 @@ describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
     });
 
     it('en grupp som inte finns i år visar förra årets antal, märkt med förra årets årtal', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const forra = JSON.parse(JSON.stringify(w.eval('byggArsbokslutNu()')));
         forra.ar -= 1;
         forra.grupper.push({ yrke: 'Nedlagt yrke', bas: 'A', nKv: 12, nMa: 11, medKv: 30000, medMa: 33000, gapPct: -9.1, flaggad: true });

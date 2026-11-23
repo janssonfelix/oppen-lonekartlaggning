@@ -21,7 +21,7 @@ import { T } from './09-termer.js';
 import { aterstallReferens, harReferens, referensNamn, state } from './12-tillstand.js';
 import { fyllValjare, ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
 import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
 import { visningNy } from './23-exportgrind.js';
 import { _rensaAllData } from './26-rensning.js';
 import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
@@ -222,7 +222,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     ritaKonsistenskontroll();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).
     if (kAndrad && state.data.length) { fyllValjare(); _ritaOmAllaFlikar(); }
-    else { ritaKravstatus(); renderActionChecklist(); ritaKartlaggningensSteg(); uppdateraAktivFlik(); }
+    else { ritaKravstatus(); ritaAtgardslista(); ritaKartlaggningensSteg(); uppdateraAktivFlik(); }
 
     const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.`
         + (varningar.length ? ' ' + varningar.join(' ') : '');
@@ -581,7 +581,7 @@ export function uppstartOrganisationspaket() {
         if (!state.data.length) return;
         tomStatistikcacher();
         ritaKravstatus();
-        renderActionChecklist();
+        ritaAtgardslista();
         uppdateraAktivFlik();
     });
     _fyllPaketFormular();

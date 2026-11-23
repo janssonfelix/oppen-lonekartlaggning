@@ -9,7 +9,7 @@ import { T } from './09-termer.js';
 import { aterstallReferens, hamtaData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
 import { ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
 import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
 import { renderPaketInfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
 import { markeraFilrutaInlast, lasTabellfil, ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
@@ -124,7 +124,7 @@ export function uppstartReferensfiler() {
             state.filnamn.policy = file.name; ritaFilrutor();
             doljLaddning(); ritaKravstatus();
             ritaKonsistenskontroll();
-            renderActionChecklist();
+            ritaAtgardslista();
             ritaKartlaggningensSteg();
             if (hamtaData().length > 0) ritaLoneoversikt();
         }, 'stallningstagande');
@@ -228,7 +228,7 @@ export function uppstartReferensfiler() {
                 synkaJamforelseFlik();
                 doljLaddning(); ritaKravstatus();
                 ritaKonsistenskontroll();
-                renderActionChecklist();
+                ritaAtgardslista();
                 ritaKartlaggningensSteg();
             } catch (err) {
                 doljLaddning();

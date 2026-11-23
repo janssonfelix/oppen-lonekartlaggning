@@ -8,7 +8,7 @@ import { createAppWindow } from './helpers/app-harness.js';
 // uppmärksamhetstrappan för skillnaden mellan kvinnor och män (Värt att granska, Följ upp, Balanserat).
 describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
     const TRAPPAN = /Värt att granska|Följ upp|Balanserat/;
-    const oppna = () => { const w = createAppWindow(); w.__loadDemoData(); w.__ritaFlik('prioritering'); return w; };
+    const oppna = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__ritaFlik('prioritering'); return w; };
     it('fliken har Prioriteringens egna ord, och nyckeltalet heter Kostnad att nå referensen', () => {
         const w = oppna();
         const d = w.document;
@@ -147,7 +147,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
     });
     it('Att göra kallar grupperna under referensen Löneläge mot referens, inte Värt att granska', () => {
         const w = oppna();
-        const prio = w.eval('buildActionChecklist()').filter(i => i.källa === 'Prioriteringsanalys');
+        const prio = w.eval('byggAtgardslista()').filter(i => i.källa === 'Prioriteringsanalys');
         expect(prio.length).toBeGreaterThan(0);
         expect([...new Set(prio.map(i => i.kategori))]).toEqual(['Löneläge mot referens']);
         expect(prio.map(i => i.detalj).join(' ')).not.toMatch(/kostnad att lyfta till referens/);
@@ -157,7 +157,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
 describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
     const prio = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__ritaFlik('prioritering');
         w.document.querySelector('.nav-item[data-tab="prioritering"]').click();   // fokus når bara en flik som visas
         return w;

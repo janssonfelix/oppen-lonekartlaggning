@@ -27,7 +27,7 @@ const FALL = [
 describe('[B3.1] runOLSRegression är en tunn adapter till huvudregression', () => {
     const w = createAppWindow();
     let demo;
-    beforeAll(() => { w.__loadDemoData(); demo = w.__state.data.map(r => ({ ...r })); });
+    beforeAll(() => { w.__lasInDemodata(); demo = w.__state.data.map(r => ({ ...r })); });
 
     const underlag = {
         demodatan: () => demo,

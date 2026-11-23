@@ -9823,7 +9823,7 @@ var STORT_DEMO_STATISTIKNAMN = "Påhittad jämförelsestatistik (demo)";
 function loadStortDemo() {
   if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
   document.getElementById("diagnostic-results").style.display = "none";
-  _renderDemoBanner();
+  _ritaDemoruta();
   meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
 }
 function uppstartStortDemo() {
@@ -21603,7 +21603,7 @@ function _tillampaKonfiguration(cfg) {
     _ritaOmAllaFlikar();
   } else {
     uppdateraAktivFlik();
-    renderActionChecklist();
+    ritaAtgardslista();
   }
   const op = tmp.organisationspaket;
   if (op && !(state.paket && state.paket.organisation === op.organisation && state.paket.skapat === op.skapat)) {
@@ -21820,7 +21820,7 @@ function byggArsbokslutNu() {
     }
     const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
     const klara = state._actionChecklistDone || /* @__PURE__ */ new Set();
-    const punkter = typeof buildActionChecklist === "function" ? buildActionChecklist() : [];
+    const punkter = typeof byggAtgardslista === "function" ? byggAtgardslista() : [];
     return byggArsbokslut({
       ar: (/* @__PURE__ */ new Date()).getFullYear(),
       skapat: idagDatum(),
@@ -22514,7 +22514,7 @@ function _efterInlastData() {
   state.isDemo = false;
   state.demoStort = false;
   if (typeof _fcGlomKnappresultat === "function") _fcGlomKnappresultat();
-  if (typeof _renderDemoBanner === "function") _renderDemoBanner();
+  if (typeof _ritaDemoruta === "function") _ritaDemoruta();
   document.getElementById("dashboard-summary").style.display = "grid";
   const poangCount = _harledArbetsvarderingUrData();
   if (typeof _fcRensaParMal === "function") _fcRensaParMal();
@@ -22548,7 +22548,7 @@ function _efterInlastData() {
         ritaLoneskillnadPerBas(lsBasVymodell());
         ritaAlderOchLon("__ALLA__");
         raknaBootstrapKI();
-        renderActionChecklist();
+        ritaAtgardslista();
       } finally {
         if (dataStatus) dataStatus.textContent = dataStatus.textContent.replace(DEFER_NOTE, "");
         visningNy();
@@ -24628,7 +24628,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     _ritaOmAllaFlikar();
   } else {
     ritaKravstatus();
-    renderActionChecklist();
+    ritaAtgardslista();
     ritaKartlaggningensSteg();
     uppdateraAktivFlik();
   }
@@ -25026,7 +25026,7 @@ function uppstartOrganisationspaket() {
     if (!state.data.length) return;
     tomStatistikcacher();
     ritaKravstatus();
-    renderActionChecklist();
+    ritaAtgardslista();
     uppdateraAktivFlik();
   });
   _fyllPaketFormular();
@@ -25034,7 +25034,7 @@ function uppstartOrganisationspaket() {
 }
 
 // src/app/20-demodata-diagnostik.js
-function runDiagnostics() {
+function korDiagnostik() {
   const reg = runOLSRegression();
   return demodiagnostik(
     { rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: hamtaBasIntervall().length },
@@ -25105,7 +25105,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   ritaUnderlagetsKvalitet({ reg });
   updateGdprBanner();
   ritaKonsistenskontroll();
-  renderActionChecklist({ reg });
+  ritaAtgardslista({ reg });
   ritaExtremvarden();
   ritaValideringsrapport();
   synkaDatakvalitetspanel({ reg });
@@ -25122,9 +25122,9 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   visningNy();
   return true;
 }
-function loadDemoData() {
+function lasInDemodata() {
   if (!_lasInDemounderlag(genereraDemodata)) return;
-  const tests = runDiagnostics();
+  const tests = korDiagnostik();
   const passCount = tests.filter((t) => t.pass).length;
   const failCount = tests.length - passCount;
   const wrap = (
@@ -25153,9 +25153,9 @@ function loadDemoData() {
             <p class="text-dampad-xs marg-t-8">Testdatan har 200 personer fördelade jämnt mellan kön. Modellen är konstruerad så att en oförklarad skillnad på ungefär −3 % ska finnas kvar efter kontroll för ålder och BAS. Kvinnor är i snitt yngre och tenderar att placeras i lägre BAS, vilket ger en större rå löneskillnad som delvis förklaras av strukturen.</p>
         </div>
     `;
-  _renderDemoBanner();
+  _ritaDemoruta();
 }
-function _renderDemoBanner() {
+function _ritaDemoruta() {
   const b = document.getElementById("demo-mode-banner");
   if (b) b.style.display = state.isDemo ? "flex" : "none";
   const storlek = document.getElementById("demo-mode-storlek");
@@ -25168,7 +25168,7 @@ function _renderDemoBanner() {
   if (hub) hub.style.display = state.data.length ? "block" : "none";
 }
 function uppstartDemodataDiagnostik() {
-  ["btn-test-load", "first-run-demo-link", "upload-demo-litet"].forEach((id) => document.getElementById(id)?.addEventListener("click", loadDemoData));
+  ["btn-test-load", "first-run-demo-link", "upload-demo-litet"].forEach((id) => document.getElementById(id)?.addEventListener("click", lasInDemodata));
   document.getElementById("btn-exit-demo")?.addEventListener("click", rensaAllData);
 }
 
@@ -25261,7 +25261,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   state.statistik = [];
   state.isDemo = false;
   state.demoStort = false;
-  if (typeof _renderDemoBanner === "function") _renderDemoBanner();
+  if (typeof _ritaDemoruta === "function") _ritaDemoruta();
   state._interntFel = [];
   if (typeof visaInterntFel === "function") visaInterntFel();
   state._lastStructureFile = null;
@@ -26904,7 +26904,7 @@ function _sektorPunkter() {
   const ut = {};
   let punkter = [];
   try {
-    punkter = buildActionChecklist({ endastGrupper: true });
+    punkter = byggAtgardslista({ endastGrupper: true });
   } catch (e) {
     rapporteraFel(`${stor(T.huvudomrade.fl)}: Att göra`, e);
   }
@@ -28760,7 +28760,7 @@ function uppstartExporthjalpare() {
 var _agPct = (v) => Math.abs(v).toFixed(1).replace(".", ",");
 var _agTal = (v, dec) => v.toFixed(dec).replace(".", ",");
 var _agRiktning = (v) => v < 0 ? "lägre" : "högre";
-function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
+function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
   const items = [];
   if (!state.data.length) return items;
   const reg = endastGrupper ? null : given || (typeof runOLSRegression === "function" ? runOLSRegression() : null);
@@ -28972,7 +28972,7 @@ function _attGoraParNot() {
     return "";
   }
 }
-function renderActionChecklist({ reg } = {}) {
+function ritaAtgardslista({ reg } = {}) {
   const wrap = document.getElementById("action-checklist-container");
   const kort = document.getElementById("att-gora");
   const borja = document.getElementById("att-gora-borja");
@@ -28984,7 +28984,7 @@ function renderActionChecklist({ reg } = {}) {
     return [];
   }
   if (kort) kort.hidden = false;
-  const items = buildActionChecklist({ reg });
+  const items = byggAtgardslista({ reg });
   const varOppen = !!/** @type {HTMLDetailsElement} */
   (wrap.querySelector("#avsnitt-ov-punkter") || {}).open;
   const somAvsnitt = (nyckel, innehall) => `<details class="avsnitt" id="avsnitt-ov-punkter"${varOppen ? " open" : ""}>
@@ -29066,25 +29066,25 @@ function renderActionChecklist({ reg } = {}) {
         cb.checked
       ) done.add(id);
       else done.delete(id);
-      renderActionChecklist();
+      ritaAtgardslista();
     });
   });
-  document.getElementById("btn-export-checklist")?.addEventListener("click", () => medExportLage(() => exportActionChecklistCSV(buildActionChecklist(), done)));
+  document.getElementById("btn-export-checklist")?.addEventListener("click", () => medExportLage(() => exportAtgardslistaCSV(byggAtgardslista(), done)));
   document.getElementById("btn-checklist-clear-done")?.addEventListener("click", () => {
     if (!confirm("Avmarkera alla " + done.size + " hanterade punkter?")) return;
     state._actionChecklistDone = /* @__PURE__ */ new Set();
-    renderActionChecklist();
+    ritaAtgardslista();
   });
   return items;
 }
-function exportActionChecklistCSV(...a) {
-  return medExportLage(() => _exportActionChecklistCSVExport.apply(
+function exportAtgardslistaCSV(...a) {
+  return medExportLage(() => _exportAtgardslistaCSVExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportActionChecklistCSVExport(items, done) {
+function _exportAtgardslistaCSVExport(items, done) {
   if (!items.length) {
     alert("Det finns inget att exportera ännu. Läs in lönefilen först.");
     return;
@@ -29234,7 +29234,7 @@ function uppstartReferensfiler() {
       doljLaddning();
       ritaKravstatus();
       ritaKonsistenskontroll();
-      renderActionChecklist();
+      ritaAtgardslista();
       ritaKartlaggningensSteg();
       if (hamtaData().length > 0) ritaLoneoversikt();
     }, "stallningstagande");
@@ -29331,7 +29331,7 @@ function uppstartReferensfiler() {
         doljLaddning();
         ritaKravstatus();
         ritaKonsistenskontroll();
-        renderActionChecklist();
+        ritaAtgardslista();
         ritaKartlaggningensSteg();
       } catch (err) {
         doljLaddning();
@@ -30504,7 +30504,7 @@ function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) {
       return fallback;
     }
   };
-  const punkter = Array.isArray(givna) ? givna : hasData ? safe(() => typeof buildActionChecklist === "function" ? buildActionChecklist({ reg: givenReg }) : [], []) : [];
+  const punkter = Array.isArray(givna) ? givna : hasData ? safe(() => typeof byggAtgardslista === "function" ? byggAtgardslista({ reg: givenReg }) : [], []) : [];
   const klarmarkerade = state._actionChecklistDone || /* @__PURE__ */ new Set();
   const hanterade2 = (kategorier) => hanterade(punkter, klarmarkerade, kategorier);
   const rows = [];
@@ -30666,7 +30666,7 @@ function ritaOversiktDelar() {
     ["kompliansöversikt", () => ritaKravstatus()],
     ["Att göra", () => {
       reg = runOLSRegression();
-      punkter = renderActionChecklist({ reg });
+      punkter = ritaAtgardslista({ reg });
     }],
     ["processöversikten", () => ritaKartlaggningensSteg({ punkter, reg })]
   ];
@@ -30994,9 +30994,9 @@ function _omritningssteg() {
   let punkter;
   let punktFangst = null;
   steg.push(["Att göra", () => {
-    if (typeof renderActionChecklist !== "function") return;
+    if (typeof ritaAtgardslista !== "function") return;
     punktFangst = indata();
-    punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : void 0 });
+    punkter = ritaAtgardslista({ reg: oforandrat(regFangst) ? reg : void 0 });
   }]);
   steg.push(["processöversikten", () => {
     if (typeof ritaKartlaggningensSteg !== "function") return;
@@ -33486,7 +33486,7 @@ function ritaOmReferens() {
     uppdateraAktivFlik,
     ritaKravstatus,
     ritaKonsistenskontroll,
-    renderActionChecklist,
+    ritaAtgardslista,
     ritaKartlaggningensSteg
   ]) {
     if (typeof fn === "function") {
@@ -36837,7 +36837,7 @@ function uppstartSist() {
   try {
     const demoVal = new URLSearchParams(window.location.search).get("demo");
     const demo = demoVal === "1" || demoVal === "stor";
-    if (demo && !state.data.length) (demoVal === "stor" ? loadStortDemo : loadDemoData)();
+    if (demo && !state.data.length) (demoVal === "stor" ? loadStortDemo : lasInDemodata)();
     const inbakat = () => {
       if (!demo && typeof lasInInbakatPaket === "function") lasInInbakatPaket();
       else if (demo && document.getElementById("inbakat-organisationspaket") && typeof _paketStatus === "function") _paketStatus("Det inbakade paketet används inte i demoläget.", false);
