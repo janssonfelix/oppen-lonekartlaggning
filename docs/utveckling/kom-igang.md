@@ -80,7 +80,8 @@ Vad som krävs för att en ändring är klar står i *Definition of Done* i [`CO
 
 Varje beräkning är en ren funktion i `src/lib/`, utan DOM och utan tillstånd. Den går att köra i Node på egen data;
 appen använder samma funktion via spegeln. Börja i spårbarhetsmatrisen, [`sparbarhet.md`](sparbarhet.md): där står varje
-beräkning med funktion, vad den bygger på, tester och referensfall, och modellparametrarna.
+beräkning med ett ID, funktion, vad den bygger på, tester och referensfall, och modellparametrarna. Testerna bär
+samma ID i sitt namn, så `npx vitest run -t "\[B2.1\]"` kör testerna för en rad.
 
 ### Huvudtalet på ett påhittat underlag
 

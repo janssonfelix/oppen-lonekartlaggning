@@ -101,6 +101,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-92 | S4 gäller en fil i taget | Gällande | 2026-11-20 |
 | ADR-93 | JPA-protokollet redovisar alla grupper i lika arbete | Gällande | 2026-11-22 |
 | ADR-94 | Diagrammens filter står alltid utfällda | Gällande | 2026-11-22 |
+| ADR-95 | Beräkningsregistret blir spårbarhetsmatrisen | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -592,3 +593,14 @@ diagram står i en inramad ruta med rubriken *Filter* och antalet aktiva filter;
 aktivt filter får den accentfärgen. Hopfällda bakom en rad *Filter: …* missades filtren. *Avvisat:* att behålla den
 hopfällda raden men fälla ut den från början, som fortfarande låter filtren gömmas och kräver ett minne per diagram.
 *Gäller i dag:* `diagramkarnan.md`, *Rutan Filter*.
+
+**ADR-95 — Beräkningsregistret blir spårbarhetsmatrisen.** Beslutat av underhållaren 2026-11-23. Beräkningsregistret
+blir projektets enda spårbarhetsmatris, `sparbarhet.md`, med upplägget för en kravspårningsmatris (jfr ISO/IEC/IEEE
+29148 och IEC 62304): varje beräkning, varje test för minsta gruppstorlek och varje skydd har ett unikt och stabilt
+ID, testerna bär ID:t i sitt namn, och vakten `tests/sparbarhet.test.js` prövar att matrisen och testsviten pekar på
+varandra åt båda hållen. Testtabellen i `k-troskeln.md` avsnitt 10 flyttar dit; regeltexten stannar i `k-troskeln.md`
+och `skydd.md`. Skälen är extern granskning, där en granskare ska kunna gå från ett påstående till regel, kod och test
+och tillbaka utan att lita på att dokumentet stämmer, och att en uppgift ska stå på ett ställe. *Avvisat:* att
+behålla registret med testfiler i stället för tester, som inte går att pröva; ett eget dokument för spårbarheten
+bredvid registret och k-tröskelns tabell, som ger tre ställen för samma uppgift; att märka testerna i kommentarer,
+som inte syns i testkörningens utdata. *Gäller i dag:* `sparbarhet.md`, `k-troskeln.md` avsnitt 10.

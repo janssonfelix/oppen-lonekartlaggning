@@ -22,7 +22,8 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
  *
- * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B4.1, B4.2 och B4.4–B4.8).
  */
 import { median, linearRegression, percentilintervall } from './stat.js';
 import { rngFor } from './rng.js';

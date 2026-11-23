@@ -19,7 +19,8 @@
  * funktionerna räknar på det de får och rapporterar n så att anroparen kan
  * maskera.
  *
- * Bygger på: verktygets egen modell. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: verktygets egen modell.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B6.1–B6.3).
  */
 
 import { median as _median, quantile as _quantile } from './stat.js';

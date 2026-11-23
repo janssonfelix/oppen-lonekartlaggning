@@ -3682,7 +3682,8 @@ const __mirrorKostnad = (() => {
  * Multiplikationen görs i samma ordning som innan formeln samlades här (belopp × månader × PO-faktor), så att inget
  * tal ändras i sista decimalen. Därför ges PO-faktorn och månaderna var för sig och inte som en färdig produkt.
  *
- * Bygger på: verktygets egen modell; PO-påslagets standardvärde i ADR-84. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: verktygets egen modell; PO-påslagets standardvärde i ADR-84.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.1).
  */
 
 /**
@@ -3743,7 +3744,8 @@ const __mirrorStructure = (() => {
  * spegel (`_st*` i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra
  * här och kör `npm run build:app`, rör ej spegeln. Inga DOM-/state-beroenden.
  *
- * Bygger på: verktygets egen modell; tecknet i docs/utveckling/regressionsmodellen.md avsnitt 1. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: verktygets egen modell; tecknet i docs/utveckling/regressionsmodellen.md avsnitt 1.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B2.1–B2.5).
  */
 
 
@@ -5027,7 +5029,8 @@ const __mirrorForecast = (() => {
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
  *
- * Bygger på: verktygets egen modell, docs/utveckling/loneoversynsmodellen.md. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: verktygets egen modell, docs/utveckling/loneoversynsmodellen.md.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.2–B7.4 och B7.6–B7.9).
  */
 
 
@@ -6814,7 +6817,8 @@ const __mirrorOsakerhet = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
  *
- * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B4.1, B4.2 och B4.4–B4.8).
  */
 
 
@@ -7332,7 +7336,8 @@ const __mirrorLonepolitik = (() => {
  * funktionerna räknar på det de får och rapporterar n så att anroparen kan
  * maskera.
  *
- * Bygger på: verktygets egen modell. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: verktygets egen modell.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B6.1–B6.3).
  */
 
 
@@ -7640,7 +7645,8 @@ const __mirrorPrioritering = (() => {
  * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  *
- * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.10–B7.12).
  */
 
 
@@ -9661,7 +9667,8 @@ const __mirrorIndivid = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  *
- * Bygger på: ADR-23; i övrigt verktygets egen modell. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: ADR-23; i övrigt verktygets egen modell.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B5.6 och B5.7).
  */
 
 
@@ -10111,7 +10118,8 @@ const __mirrorSektor = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  *
- * Bygger på: ADR-33, ADR-78 och ADR-87; docs/utveckling/regressionsmodellen.md avsnitt 10. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: ADR-33, ADR-78 och ADR-87; docs/utveckling/regressionsmodellen.md avsnitt 10.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B3.8 och B3.9).
  */
 
 
@@ -12719,7 +12727,8 @@ const __mirrorPerBas = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  *
- * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B6.7).
  */
 
 

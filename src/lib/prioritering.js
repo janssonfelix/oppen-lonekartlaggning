@@ -14,7 +14,8 @@
  * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  *
- * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.10–B7.12).
  */
 import { median, quantile, avrundaSymmetriskt } from './stat.js';
 import { aidAvYrke, namnrader } from './aid.js';

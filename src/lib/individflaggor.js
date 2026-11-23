@@ -13,7 +13,8 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  *
- * Bygger på: ADR-23; i övrigt verktygets egen modell. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
+ * Bygger på: ADR-23; i övrigt verktygets egen modell.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B5.6 och B5.7).
  */
 
 import { groupKey, konOf } from './falt.js';
