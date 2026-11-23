@@ -113,7 +113,7 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(las(w2, skapat).ok).toBe(true);
         expect(w2.eval('referensNamn()')).toBe('Lönepolitiskt ställningstagande 2026');
         expect(w2.eval('referensKortnamn()')).toBe('ställningstagandet');
-        expect(w2.eval('getData().length')).toBeGreaterThan(0);
+        expect(w2.eval('hamtaData().length')).toBeGreaterThan(0);
         w2.__ritaLonepolitik();
         expect(w2.document.getElementById('lonepolitik-rubrik').textContent).toBe('Lönerna mot Lönepolitiskt ställningstagande 2026');
         // Namnfältet på Översikt är synligt för ett paket och byter namnet

@@ -58,9 +58,9 @@ describe('beräkningar på demodatan (låsta tal)', () => {
         expect(stabil(w.detectOutliers())).toMatchSnapshot('detectOutliers');
     });
 
-    it('regressionslinjens KI (linearRegressionCI) på en påhittad serie ger samma tal', () => {
+    it('regressionslinjens KI (linjarRegressionKI) på en påhittad serie ger samma tal', () => {
         const serie = [[1, 2.1], [2, 3.9], [3, 6.2], [4, 7.8], [5, 10.1], [6, 12.2], [7, 13.8], [8, 16.1]];
-        expect(stabil(w.linearRegressionCI(serie, 1, 8, 5))).toMatchSnapshot('linearRegressionCI');
+        expect(stabil(w.linjarRegressionKI(serie, 1, 8, 5))).toMatchSnapshot('linjarRegressionKI');
     });
 
     it('lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal', () => {
@@ -70,7 +70,7 @@ describe('beräkningar på demodatan (låsta tal)', () => {
 
 describe('extremvärden med en påhittad avvikare', () => {
     it('detectOutliers flaggar raden som multiplicerats med fem, och snapshoten låser listan', () => {
-        // Eget fönster: testet ändrar data. detectOutliers läser state.data direkt (getData), så ingen cache behöver
+        // Eget fönster: testet ändrar data. detectOutliers läser state.data direkt (hamtaData), så ingen cache behöver
         // ogiltigförklaras.
         const w = createAppWindow();
         w.__loadDemoData();

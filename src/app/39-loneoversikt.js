@@ -9,7 +9,7 @@ import { byggGrundberakning, sattBerakning, vaxlaAllaGrupper } from './05-tabell
 import { kTroskel } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
-import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { _evidenceForRapportRow, _openEvidenceModal } from './27-berakningsbevis.js';
@@ -20,7 +20,7 @@ export function ritaLoneoversikt() {
     const tbody = /** @type {HTMLElement} */ (document.querySelector("#rapport-table tbody"));
     tbody.innerHTML = "";
     const fmt = new Intl.NumberFormat('sv-SE', {style:'currency',currency:'SEK',maximumFractionDigits:0});
-    const vm = vymodellLoneoversikt(getData(), { bas: getBasIntervals(), k: kTroskel(), policyFor, statistik: state.statistik });
+    const vm = vymodellLoneoversikt(hamtaData(), { bas: hamtaBasIntervall(), k: kTroskel(), policyFor, statistik: state.statistik });
     const dossierBas = new Set(basdossierKandidater().map(x => x.bas));
 
     vm.block.forEach(({ bas: b, referens: pol, rader, utelamnade }) => {

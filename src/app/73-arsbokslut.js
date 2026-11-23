@@ -17,7 +17,7 @@ import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { buildActionChecklist } from './18-atgardslista.js';
 import { byggOgonblicksbild } from './19-konfiguration.js';
 import { medExportLage } from './23-exportgrind.js';
@@ -30,7 +30,7 @@ import { _hpArEgen, _hpSkalUnderlag } from './56-handlingsplan.js';
 export function byggArsbokslutNu() {
     if (!state.data.length || typeof byggArsbokslut !== 'function') return null;
     return medExportLage(() => {
-        const d = getData();
+        const d = hamtaData();
         const k = kTroskel();
         const bild = byggOgonblicksbild();
         const lika = typeof laLikaGrupper === 'function' ? laLikaGrupper(d, k) : { grupper: [] };   // flaggad = Värt att granska (ADR-59)
@@ -46,7 +46,7 @@ export function byggArsbokslutNu() {
                 antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },
             grupper: bokslutGrupper(lika.grupper, d, k),
             punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
-            basIntervall: getBasIntervals().map(b => bokslutBasRad(d, b, k)).filter(Boolean),
+            basIntervall: hamtaBasIntervall().map(b => bokslutBasRad(d, b, k)).filter(Boolean),
             bedomningar: _abBedomningarNu(),
         });
     });

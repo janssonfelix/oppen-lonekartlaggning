@@ -16,7 +16,7 @@ import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { gapStatusKI, PALETTE, UNDERLAG, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { colors, getBasIntervals, getData, linearRegressionCI, policyFor, Stat, state } from './12-tillstand.js';
+import { farger, hamtaBasIntervall, hamtaData, linjarRegressionKI, policyFor, Stat, state } from './12-tillstand.js';
 import { tomFlikarUtom } from './23-exportgrind.js';
 import { _ritaTungtBlock } from './31-navigering.js';
 import { _laNyckel, _SKEVHET_STATUS } from './41-lika-arbete.js';
@@ -42,7 +42,7 @@ export function ritaAlderOchLon(bas) {
     // Trendlinjen för hela urvalet är ett valbart lager, ett lönemått som bara visas när urvalet når tröskeln
     // (beslut av produktägaren 2026-10-16).
     const trendAlla = !!(/** @type {HTMLInputElement|null} */ (document.getElementById('kon-trend-alla'))?.checked);
-    const vm = vymodellAlderOchLon(getData(), { bas, k, statistik: state.statistik, termer: T, trendAlla });
+    const vm = vymodellAlderOchLon(hamtaData(), { bas, k, statistik: state.statistik, termer: T, trendAlla });
     if (!vm) return;
     const { isAll, df, dataKv, dataMa, kvOk, maOk, konOk, kvot, trendKv, trendMa } = vm;
     const unadjGap = kvot != null ? svPct(kvot, 1) : "–";
@@ -51,7 +51,7 @@ export function ritaAlderOchLon(bas) {
     const urvalText = document.getElementById('ak-urval-text');
     if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
     _laNyckel('nyckel-ak-fordelning', kvot != null ? `Kvinnors median ${unadjGap} av mäns` : '');
-    _laNyckel('nyckel-ak-alla', `${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}`);
+    _laNyckel('nyckel-ak-alla', `${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}`);
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-n")).textContent = svTal(df.length, 0);
     { const u = document.getElementById("kon-kpi-n-under"); if (u) u.textContent = `${svTal(dataKv.length, 0)} kvinnor · ${svTal(dataMa.length, 0)} män`; }
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-gap")).textContent = unadjGap;
@@ -234,7 +234,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
 function ritaKonMultiplar() {
     const el = document.getElementById('chart-kon-multiplar');
     if (!el) return;
-    const d = getData();
+    const d = hamtaData();
     const { figur, utanfor, nedsamplade } = _konMultiplarFigur(d, individLitenFor(d));
     if (figur.paneler.length) ritaFigur(el, figur); else rensaFigur(el);
     const not = document.getElementById('kon-multiplar-not');
@@ -320,7 +320,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
 }
 
 // Trendlinjen (och med `medBand` konfidensbandet) ur punkter i spridningsdiagrammet, för ett härlett lager: samma
-// funktioner som vyn (Stat.linjarRegression, linearRegressionCI), över de synliga punkternas åldersspann. null när
+// funktioner som vyn (Stat.linjarRegression, linjarRegressionKI), över de synliga punkternas åldersspann. null när
 // åldrarna inte spänner över något eller regressionen inte går att räkna.
 function _konScatterTrend(punkter, medBand = false) {
     const par = punkter.map(d => [d.x, d.y]), aldrar = par.map(p => p[0]);
@@ -328,7 +328,7 @@ function _konScatterTrend(punkter, medBand = false) {
     if (!(a1 > a0)) return null;
     const reg = Stat.linjarRegression(par);
     if (!reg || !isFinite(reg.m) || !isFinite(reg.b)) return null;
-    const ci = medBand ? linearRegressionCI(par, a0, a1, 25) : null;
+    const ci = medBand ? linjarRegressionKI(par, a0, a1, 25) : null;
     return { reg, linje: [{ x: a0, y: reg.m * a0 + reg.b }, { x: a1, y: reg.m * a1 + reg.b }],
              band: ci ? ci.map(p => ({ x: p.x, lag: p.lo, hog: p.hi })) : [] };
 }
@@ -371,7 +371,7 @@ function _akValj(varde, kalla) {
  */
 export function ritaAldersstruktur(bas) {
     if (!harAlder()) { _akTomUtanAlder(); return; }
-    const vm = vymodellAldersstruktur(getData(), { bas, k: kTroskel(), alla: state.data });
+    const vm = vymodellAldersstruktur(hamtaData(), { bas, k: kTroskel(), alla: state.data });
     if (!vm) return;
     const { isAll, n, pctKv, pctMa, andel60, andelU40, alderDiff, orgMedian } = vm;
     const scopeShort = isAll ? 'urvalet' : T.niva.bf;
@@ -478,9 +478,9 @@ function _demoBandFigur(df, k, pol, aLo, aHi, rader = alderBandRader(df, k)) {
         urval: [URVAL.alder], x: { skala: 'linjar', titel: 'Ålder (femårsgrupper)' }, y: { skala: 'linjar', titel: 'Kronor/månad', format: 'kr' },
         lager: [band('P10–P90', 'p10', 'p90', 0.16), band('Mittersta hälften (P25–P75)', 'p25', 'p75', 0.3),
                 { marke: 'linje', serie: 'Median', farg: PALETTE.serie[0], tjocklek: 2.5, punkter: true, data: rader.map(r => ({ x: r.x, y: r.p50, namn: r.namn, alder: r.alder, r })), tips },
-            ...(pol ? [_vagratLinje('Ställn. P10', colors.policy, pol.p10, aLo, aHi, { streck: 'streckad', tjocklek: 1 }),
-                       _vagratLinje('Ställn. Median', colors.policy, pol.med, aLo, aHi, { streck: 'streckad', tjocklek: 1.5 }),
-                       _vagratLinje('Ställn. P90', colors.policy, pol.p90, aLo, aHi, { streck: 'streckad', tjocklek: 1 })] : [])] };
+            ...(pol ? [_vagratLinje('Ställn. P10', farger.policy, pol.p10, aLo, aHi, { streck: 'streckad', tjocklek: 1 }),
+                       _vagratLinje('Ställn. Median', farger.policy, pol.med, aLo, aHi, { streck: 'streckad', tjocklek: 1.5 }),
+                       _vagratLinje('Ställn. P90', farger.policy, pol.p90, aLo, aHi, { streck: 'streckad', tjocklek: 1 })] : [])] };
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

@@ -27,7 +27,7 @@ import { _kSanktNot, _parUtelamnadeNot, kTroskel } from './06-k-troskel.js';
 import { _skrDel, skrForklaring, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { T } from './09-termer.js';
 import { gapStatusKI } from './10-diagramtema.js';
-import { getData, policyFor, policyLevelLabel, referensKortnamn, state } from './12-tillstand.js';
+import { hamtaData, policyFor, policyNivaEtikett, referensKortnamn, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline } from './41-lika-arbete.js';
@@ -45,7 +45,7 @@ export function _gdBootstrapGapCI(kvLons, maLons, B) {
 
 /** Alla grupper som får öppnas i dossier (minsta gruppstorlek som överallt annars): gruppdossierGrupper i src/lib/vymodell-gruppdossier.js. */
 export function gruppdossierCandidates() {
-    return gruppdossierGrupper(getData(), kTroskel());
+    return gruppdossierGrupper(hamtaData(), kTroskel());
 }
 
 /** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
@@ -76,7 +76,7 @@ export function buildGruppdossier(key, delat = null) {
     // Justerat (åldersrensat) gap för gruppens BAS. Utan ålder i lönefilen (ADR-64) visar dossiern inget sådant.
     let justerat = null;
     if (harAlder()) try {
-        const rakna = () => _computePerBasGap(getData(), [g.bas]);
+        const rakna = () => _computePerBasGap(hamtaData(), [g.bas]);
         let perBas;
         if (!delat) perBas = rakna();
         else { if (!delat.perBas.has(g.bas)) delat.perBas.set(g.bas, rakna()); perBas = delat.perBas.get(g.bas); }
@@ -104,7 +104,7 @@ export function buildGruppdossier(key, delat = null) {
 
     const referens = policyFor(g.aid, g.bas);
     return vymodellGruppdossier(g, { k: kTroskel(), ki: !(delat && delat.text), kostnad: state.costSettings, referens,
-        referensNiva: policyLevelLabel(referens), par, statistik: state.statistik, skrDel: _skrDel(), justerat, prio, forslag });
+        referensNiva: policyNivaEtikett(referens), par, statistik: state.statistik, skrDel: _skrDel(), justerat, prio, forslag });
 }
 
 // ---- Rendering --------------------------------------------------------------

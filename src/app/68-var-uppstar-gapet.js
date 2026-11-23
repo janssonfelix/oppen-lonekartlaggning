@@ -10,7 +10,7 @@ import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
 import { PALETTE } from './10-diagramtema.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { harAlder } from './50-regressionsmodeller.js';
 /**
  * Kort i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (ADR-65; standard BAS och AID ger
@@ -47,7 +47,7 @@ function sattGapVariabler(v, { rita = true } = {}) {
 }
 // Variablerna som kan väljas i det här underlaget: åldersgrupp kräver ålder, sektor och mellannivå AID-koder.
 function _guValbara() {
-    const harAid = getData().some(r => r.aid);
+    const harAid = hamtaData().some(r => r.aid);
     return gapAllaVariabler().filter(v => (v !== 'alder' || harAlder()) && (!['sektor', 'aidniva'].includes(v) || harAid));
 }
 const _GU_MAX = 4;
@@ -99,7 +99,7 @@ export function ritaGapUppdelning() {
     const body = document.getElementById('gap-uppdelning-innehall');
     if (!host || !body) return;
     /** @type {any} */
-    const vm = vymodellVarUppstarGapet(getData(), { k: kTroskel(), variabler: gapVariabler() });
+    const vm = vymodellVarUppstarGapet(hamtaData(), { k: kTroskel(), variabler: gapVariabler() });
     if (!vm) { host.hidden = true; body.innerHTML = ''; return; }
     host.hidden = false;
     const demo = state.isDemo ? '<p class="gu-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';

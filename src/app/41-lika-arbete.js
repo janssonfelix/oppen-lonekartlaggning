@@ -24,7 +24,7 @@ import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_ALLA, gapStatusKI, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { styrkaGallande } from './13-oversikt.js';
 import { _evidenceForEUMatrixRow, _evidenceForPaygapRow, _openEvidenceModal } from './27-berakningsbevis.js';
 import { _konTathetFigur } from './40-alder-karriar.js';
@@ -66,7 +66,7 @@ export function laMinneSlapp() { _laMinnen.clear(); }
  * rapportunderlaget, årsbokslutet och dossiererna. Golvet för prövningen är statGolv(), K_STANDARD på skärmen och
  * följer den inställda tröskeln i exportläget (ADR-103); minnet räknar om när golvet inte är det det räknades vid.
  */
-export function laLikaGrupper(d = getData(), k = kTroskel()) {
+export function laLikaGrupper(d = hamtaData(), k = kTroskel()) {
     const minne = _laMinneFor(d, k), golv = statGolv();
     if (!minne.lika || minne.likaGolv !== golv) { minne.lika = likaArbeteGrupper(d, { k, golv }); minne.likaGolv = golv; }
     return minne.lika;
@@ -89,7 +89,7 @@ function _direktivCell(markerad) {
     const b = _direktivBricka(markerad);
     return `<td class="t-mitt" data-sort-value="${b ? 1 : 0}">${b}</td>`;
 }
-export function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
+export function _laOversiktRader(d, bas = hamtaBasIntervall(), k = kTroskel()) {
     const minne = _laMinneFor(d, k), nyckel = bas.join('\u0000');
     if (minne.oversikt && minne.oversiktNyckel === nyckel) return minne.oversikt;
     // Räkningen är oversiktPerBas i src/lib/vymodell-lonestruktur.js.
@@ -112,8 +112,8 @@ export function _laOversiktStatus(o) { return gapStatusKI(o); }
 
 /** Lönestrukturs vymodell för avsnitten per BAS-intervall, ur tillståndet (src/lib/vymodell-lonestruktur.js). */
 export function lsBasVymodell() {
-    const d = getData();
-    return vymodellLonestruktur(d, { bas: getBasIntervals(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
+    const d = hamtaData();
+    return vymodellLonestruktur(d, { bas: hamtaBasIntervall(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
 }
 /** Ritar avsnitten Löneskillnad per BAS-intervall och Könsfördelning per BAS-intervall i Lönestruktur ur vymodellen. */
 export function ritaLoneskillnadPerBas(vm) {
@@ -130,7 +130,7 @@ export function ritaLoneskillnadPerBas(vm) {
         // ritar som täthetskurvor, här som lådor). Ett kön under tröskeln i ett intervall ritas inte.
         const ladEl = document.getElementById('chart-skevhet-lador');
         if (ladEl) {
-            const { figur, utelamnade } = _konTathetFigur(getData(), true, kTroskel(), 'lada');
+            const { figur, utelamnade } = _konTathetFigur(hamtaData(), true, kTroskel(), 'lada');
             if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` }); else rensaFigur(ladEl);
             const not = document.getElementById('skevhet-lador-not');
             if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} ${personOrd(kTroskel())}: ${utelamnade.join(', ')}.` : ''; }
@@ -289,7 +289,7 @@ const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 const LA_OVERSIKT_DOLDA_KOLUMNER = ['direktiv'];
 /** Lika arbetes vymodell ur tillståndet (src/lib/vymodell-lika-arbete.js), med appens minne för de dyra delarna. */
 export function laVymodell() {
-    const d = getData();
+    const d = hamtaData();
     return vymodellLikaArbete(d, { k: kTroskel(), golv: statGolv(), sigma: styrkaGallande()?.sigma,
         dominansDefinition: aidbasDefinition(), dominansGrans: aidbasGrans(), skrDel: _skrDel(),
         lika: d.length ? laLikaGrupper(d) : undefined, tratt: d.length ? _laTrattUnderlag(d) : undefined });
@@ -622,7 +622,7 @@ export function _laNyckel(id, text, kritisk) {
 }
 /** Urvalsraden: vad fliken gäller. Det markerade står i raden under den (11-markering.js), i alla flikar. */
 function _laRitaUrval() {
-    const urval = document.getElementById('la-urval'), d = getData();
+    const urval = document.getElementById('la-urval'), d = hamtaData();
     if (!urval) return;
     if (!d.length) { urval.textContent = ''; return; }
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(d.length, 0)} personer</span>${kTroskelLank()}`;
@@ -640,7 +640,7 @@ function _laRegFaNot(reg) {
 export function renderLikaArbeteTopp({ reg: given } = {}) {
     const urval = document.getElementById('la-urval'), ut = document.getElementById('la-slutsatser');
     if (!urval || !ut) return;
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) {
         urval.textContent = ''; ut.innerHTML = '';
         for (const id of ['nyckel-la-yrkesgrupper', 'nyckel-la-personer']) _laNyckel(id, '');
@@ -687,7 +687,7 @@ function _skevhetNot(lista) {
 
 /** Lönestrukturs avsnittsnyckeltal för BAS-skevheten, könsfördelningen och regressionen. Ritas efter ritaLoneskillnadPerBas och regressionskortet. */
 export function renderLonestrukturNycklar() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) { for (const id of ['nyckel-ls-bas', 'nyckel-ls-kon', 'nyckel-ls-regression']) _laNyckel(id, ''); return; }
     // Per BAS-intervall: översiktens rader (båda könen når tröskeln) med samma status som tabellen (ADR-59).
     const basKvot = _laOversiktRader(d).filter(o => isFinite(o.gap));

@@ -37,7 +37,7 @@ import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS, gapStatusNiva } from './10-diagramtema.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
-import { getBasIntervals, getData, policyFor, referensKalla, referensKortnamn, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, policyFor, referensKalla, referensKortnamn, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
 import { bedomningUnderlag, bootstrapCIGallande, styrkaGallande, UK_ETIKETT } from './13-oversikt.js';
 import { _metodbilaga, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
@@ -479,7 +479,7 @@ let _rmMinne = null;
 /** Rensa all data släpper minnet (26-rensning.js). */
 export function _rmMinneSlapp() { _rmMinne = null; }
 function _rmMinnesNyckel() {
-    return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
+    return [_rmHandelser, state.data.length, hamtaData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
         state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, bootstrapCIGallande(), styrkaGallande(), state.likvardighet && state.likvardighet.result, state.isDemo];
 }
 /** Ett avsnitt som förhandsbeskedet ser det: id, rubrik, delarnas typ och det utelämnade. */
@@ -515,14 +515,14 @@ function _rapportModellExport({ alla = false, bada = false, besked = false, ater
 }
 /** Rapportens avsnitt utom bilagan med gruppdossierer, oberoende av urvalet: det _rapportModellExport väljer och numrerar ur. */
 function _rmAvsnittenUtanUrval() {
-    const d = getData();
+    const d = hamtaData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
     const urval = 'Hela organisationen';
     const reg = runOLSRegression();
     const lvRes = likvardighetResultat();
     // Allt som räknas, maskeras och bedöms: src/lib/vymodell-rapport.js. Här skrivs orden och delarna.
-    const vm = vymodellRapport(d, { k, golv: statGolv(), bas: getBasIntervals(), reg, lika: laLikaGrupper(d, k), lvPar: lvRes && lvRes.pairs,
+    const vm = vymodellRapport(d, { k, golv: statGolv(), bas: hamtaBasIntervall(), reg, lika: laLikaGrupper(d, k), lvPar: lvRes && lvRes.pairs,
         oversikt: _laOversiktRader(d, undefined, k), recept: state.rapportTabeller || [],
         basEffektNot: utelamnade => _basEffektNot(utelamnade, k) });
     const { nKv: kvN, nMa: maN, medKv, medMa, kvotPct, konOk } = vm.sammanfattning;

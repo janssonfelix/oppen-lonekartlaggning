@@ -15,7 +15,7 @@ import { _kSanktNot, kInstalld, kStampel, kTroskel, statGolv } from './06-k-tros
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { T } from './09-termer.js';
 import { _diagramexportBild, diagramRitat, diagramTillBild } from './11-diagramexport.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag } from './13-oversikt.js';
 import { medExportLage } from './23-exportgrind.js';
 import { renderTabContent } from './31-navigering.js';
@@ -57,7 +57,7 @@ function _rapportHpRader(seedRows) {
 function rapportunderlagBlock(...a) { return medExportLage(() => _rapportunderlagBlockExport.apply(null, /** @type {any} */ (a))); }
 // Blocken räknas i vymodellen (src/lib/vymodell-rapportunderlag.js); här hämtas analysernas resultat ur tillståndet.
 function _rapportunderlagBlockExport() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return [];
     const k = kTroskel();
     const reg = runOLSRegression();
@@ -83,7 +83,7 @@ function _rapportunderlagBlockExport() {
 export function renderRapportunderlag() {
     const host = document.getElementById('rapportunderlag-innehall');
     if (!host) return;
-    if (!getData().length) {
+    if (!hamtaData().length) {
         _rapportBlockSenast = new Map();
         host.innerHTML = '<p class="ru-tom">Läs in underlag för att få rapportunderlaget.</p>';
         if (typeof _dkRitaTopp === 'function') _dkRitaTopp({ block: null });

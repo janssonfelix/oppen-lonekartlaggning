@@ -19,7 +19,7 @@ import { T, termText } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { bootstrapCIGallande, fmtCI } from './13-oversikt.js';
 import { iExportLage, visningNy } from './23-exportgrind.js';
 import { _evidenceForPerBasRow, _openEvidenceModal } from './27-berakningsbevis.js';
@@ -34,7 +34,7 @@ import { ritaLivscykel } from './52-livscykel.js';
  *   annars konPct, konPctLow, konPctHigh, sequential, perBas m.fl. — se huvudregression.
  */
 export function runOLSRegression() {
-    return huvudregression(getData(), regressionsval());
+    return huvudregression(hamtaData(), regressionsval());
 }
 
 /** Huvudregressionens val ur tillståndet, för den som kör den på andra rader (Löneöversyns före och efter, ADR-17). */
@@ -263,7 +263,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
         return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: 0, kiUtelamnad: `Konfidensintervallet räknas inte vid fler än ${svTal(REG_KVANTIL_KI_MAX_N, 0)} personer (tiden för ${REG_KVANTIL_KI_B} omsamplingar).` };
     }
     const modell = forklaringsmodell();
-    const raw = kvantilDesign(getData(), modell).rader;
+    const raw = kvantilDesign(hamtaData(), modell).rader;
     const arKv = arKvinna;
     const nyckel = `${froAvTal(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
@@ -467,7 +467,7 @@ export function ritaRegressionskort() {
 
     // ----- Lyckad estimering -----
     const vm = /** @type {NonNullable<ReturnType<typeof vymodellRegressionskort>>} */ (
-        vymodellRegressionskort(r, { k: kTroskel(), rader: getData(), medAlder: harAlder(), basEffektNot: u => _basEffektNot(u, kTroskel()) }));
+        vymodellRegressionskort(r, { k: kTroskel(), rader: hamtaData(), medAlder: harAlder(), basEffektNot: u => _basEffektNot(u, kTroskel()) }));
     const sig    = _formatPValue(r.pValue);
     const isSig  = vm.sakerstalld;
     const sign   = r.konPct >= 0 ? '+' : '';

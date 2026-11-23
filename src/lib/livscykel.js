@@ -11,7 +11,7 @@
  * tillstånd. Det analysen visar räknas i vymodellen (src/lib/vymodell-livscykel.js); orden och ritningen ligger i appen.
  *
  * Appen får modellen genom lib-speglarna (ADR-8); runLifecycleRegression() i
- * src/app/52-livscykel.js är den tunna adaptern som läser getData() och statGolv().
+ * src/app/52-livscykel.js är den tunna adaptern som läser hamtaData() och statGolv().
  */
 
 import { anpassaOLS, pVardeTvasidigt, tKvantil } from './stat.js';

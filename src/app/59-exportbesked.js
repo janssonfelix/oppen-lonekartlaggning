@@ -11,7 +11,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { excelAlltBlad } from './24-excelexport.js';
 import { _laNyckel } from './41-lika-arbete.js';
 import { harAlder } from './50-regressionsmodeller.js';
@@ -33,7 +33,7 @@ function _ebAntal(n, en, flera) { return `${n} ${n === 1 ? en : flera}`; }
  *   minne (58-rapportmodell.js) och beskedet för Excel och ZIP, som inte beror på urvalet, står kvar.
  */
 export function renderExportBesked({ baraUrval = false } = {}) {
-    const har = getData().length > 0;
+    const har = hamtaData().length > 0;
     const satt = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = har ? html : ''; };
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
     /** @type {any} */ let b = null;
@@ -72,7 +72,7 @@ function _ebRitaUrval(alla) {
     // Klassen urval-rad med data-urval-id och urval-fasta avgör vilka klick som inte gör förhandsbeskedets minne ogiltigt (_rmHandelser, 58-rapportmodell.js).
     const host = document.getElementById('rapport-urval');
     if (!host) return;
-    if (!getData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
+    if (!hamtaData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
     const u = rapportUrval();
     let rubriker = {};
     try { // Lagrummet i rubriken hör till dokumentet; i gränssnittet står avsnittets namn utan paragrafhänvisning.

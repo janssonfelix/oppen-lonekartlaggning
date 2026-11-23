@@ -99,7 +99,7 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
         iExport(w);
         w.__renderTabContent('loneoversyn');
         const s = scenario(w);
-        const o = w.eval('_fcBeraknaUtfall(getData())');
+        const o = w.eval('_fcBeraknaUtfall(hamtaData())');
         expect(krTal(s['Använt/mån'])).toBe(Math.round(o.använt));
         expect(krTal(s['Total kostnad'])).toBe(Math.round(o.totalKostnad));
     });

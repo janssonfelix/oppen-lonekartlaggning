@@ -19,7 +19,7 @@ import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troske
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS } from './10-diagramtema.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag, UK_ETIKETT } from './13-oversikt.js';
 import { _laggTillMetodblad, _tillampaTalformat, _excelBladnamn, _visaExportvarning, EU_LONEBEGREPP_RESERVATION, SV_TALFORMAT, tabellTillBlad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
@@ -50,7 +50,7 @@ function _excelAlltBladExport() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
     return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-lönekartläggning', ...(harRef ? ['Prioritering'] : []), 'Löneskillnad', 'Könsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, EXCEL_BLAD_HUVUDOMRADEN,
-        ...(state.statistik.length ? ['Jämförelsestatistik'] : []), ...(_excelSkalRader() ? ['Sakliga skäl'] : []), ...(getData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+        ...(state.statistik.length ? ['Jämförelsestatistik'] : []), ...(_excelSkalRader() ? ['Sakliga skäl'] : []), ...(hamtaData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
 }
 
 /**
@@ -82,7 +82,7 @@ function _excelEgnaRader() {
     const tal = (v, typ) => (v == null || typeof v !== 'number' || !isFinite(v) ? (v == null ? '' : v) : (typ === 'kr' || typ === 'antal' ? Math.round(v) : Math.round(v * 100) / 100));
     const rows = [['Egna tabeller', `byggda i Tabeller och egna vyer; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
     for (const r of recept) {
-        const tabeller = receptTillTabeller(getData(), r, { k: kTroskel() });
+        const tabeller = receptTillTabeller(hamtaData(), r, { k: kTroskel() });
         if (!tabeller.length) { rows.push([r.namn, 'ingen grupp når minsta gruppstorlek'], []); continue; }
         for (const t of tabeller) {
             rows.push([t.rubrik, receptBeskrivning(r)]);
@@ -97,7 +97,7 @@ function _excelEgnaRader() {
 
 /** Raderna i bladet Per BAS, eller null utan underlag. */
 function _excelPerBasRader() {
-    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(getData(), kTroskel()) : null;
+    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(hamtaData(), kTroskel()) : null;
     if (!pb || !pb.intervall.length) return null;
     const tal = v => (v == null || !isFinite(v) ? '' : Math.round(v));
     const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
@@ -144,7 +144,7 @@ function _excelPerBasRader() {
  * @returns {[string, any[][]][]} bladets namn och rader
  */
 function _excelDiagramBlad() {
-    const d = getData(), k = kTroskel(), ut = [], r1 = v => Math.round(v * 10) / 10;
+    const d = hamtaData(), k = kTroskel(), ut = [], r1 = v => Math.round(v * 10) / 10;
     const bas = _laOversiktRader(d);
     if (bas.length) ut.push(['Lika arbete per BAS', [
         [`Kvinnors och mäns lön per ${T.niva.en} (översiktstabellen i Lönestruktur)`], [],
@@ -245,7 +245,7 @@ function __excelAlltBokExport() {
     for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
 
     // Bladet per AID-huvudområde (ADR-33) — samma k-regler som vyn.
-    ensure('#sektor-table tbody tr', () => renderSektorer(getData()));
+    ensure('#sektor-table tbody tr', () => renderSektorer(hamtaData()));
     const sektorSheet = tableToSheet('sektor-table');
     if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, EXCEL_BLAD_HUVUDOMRADEN);
 
@@ -367,7 +367,7 @@ function _exportJPAProtokollExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
 
-    const d = getData();
+    const d = hamtaData();
     const now = new Date();
     const isoDate = idagDatum(now);
     const localDate = now.toLocaleDateString('sv-SE');

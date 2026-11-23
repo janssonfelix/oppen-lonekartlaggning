@@ -381,11 +381,11 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
         const rec = w.eval(`extractMinimalRecord({ BAS: 'A', 'Månadslön': '30000', 'Ålder': '40', 'Kön': 'Kvinna', AID: '5301', Ansvar: '110045' })`);
         expect('enhet' in rec).toBe(false);
     });
-    it('getData är hela datan, och tillståndet har inget enhetsfilter', () => {
+    it('hamtaData är hela datan, och tillståndet har inget enhetsfilter', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         expect(w.document.getElementById('enhet-select')).toBeNull();
-        expect(w.__getData()).toBe(w.__state.data);
+        expect(w.__hamtaData()).toBe(w.__state.data);
         expect('activeEnhet' in w.__state).toBe(false);
         expect(w.__state.data.every(r => !('enhet' in r))).toBe(true);
     });

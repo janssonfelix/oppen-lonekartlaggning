@@ -100,7 +100,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         // Prioriteringen prövar inte skillnaden mot slumpen: aldrig Värt att granska.
         expect(nivaer.has('granska')).toBe(false);
         // Exporten bär talet, inte brickan.
-        const matris = w.__tableToMatrix('prio-table');
+        const matris = w.__tabellTillMatris('prio-table');
         expect(matris.flat().join(' ')).not.toMatch(/Följ upp|Balanserat|Går ej att bedöma/);
     });
     it('inställningarnas förklaringar för Prioriteringens trösklar använder samma ord', () => {

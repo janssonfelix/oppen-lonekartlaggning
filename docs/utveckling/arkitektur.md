@@ -28,7 +28,7 @@ adaptrarna, som hämtar tillståndet, anropar en funktion i lib och ger tillbaka
    `minimeraRad` i `src/lib/inlasning.js`. Bara de godkända fälten (`TILLATNA_FALT`, också i `inlasning.js`) förs
    vidare; övriga kolumner tas inte med.
 3. `tolkaLonerad` i `src/lib/inlasning.js` tolkar talen, könet och BAS-intervallet.
-4. Raderna läggs i `state.data` (`src/app/12-tillstand.js`). Vyerna läser dem med `getData()`.
+4. Raderna läggs i `state.data` (`src/app/12-tillstand.js`). Vyerna läser dem med `hamtaData()`.
 5. Vyerna räknar genom tunna adaptrar till lib. Två exempel:
    - `runOLSRegression` (`src/app/51-lika-arbete-regressionskort.js`) skickar tillståndet till `huvudregression` i
      `src/lib/regression.js`.

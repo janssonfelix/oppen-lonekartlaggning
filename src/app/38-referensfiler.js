@@ -6,7 +6,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { hamtaFalt, doljLaddning, visaLaddning } from './03-hjalpfunktioner.js';
 import { _kopplaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
-import { aterstallReferens, getData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
+import { aterstallReferens, hamtaData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
 import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
 import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
@@ -126,7 +126,7 @@ export function uppstartReferensfiler() {
             renderConsistencyBanner();
             renderActionChecklist();
             renderProcessTracker();
-            if (getData().length > 0) ritaLoneoversikt();
+            if (hamtaData().length > 0) ritaLoneoversikt();
         }, 'stallningstagande');
     });
     statInput.addEventListener("change", e => {

@@ -311,7 +311,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
 describe('Lönestrukturens mått räknas på ett ställe', () => {
     it('strukturMatt ger fliken, rapportutkastet och EU-exporten samma mått som lib-funktionerna', () => {
         const w = createAppWindow(); w.__loadDemoData();
-        const d = w.eval('getData()'), k = w.eval('kTroskel()');
+        const d = w.eval('hamtaData()'), k = w.eval('kTroskel()');
         const m = w.eval('strukturMatt')(d, k);
         const arKv = r => r.kon && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
         const kv = d.filter(arKv).map(r => r.lon), ma = d.filter(arMa).map(r => r.lon);

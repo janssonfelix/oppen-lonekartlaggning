@@ -24,7 +24,7 @@ const fonster = () => { const w = createAppWindow(); w.__state.data = underlag()
 describe('[B5.1] Lika arbete i appen: en grupp per AID-kod', () => {
     it('laLikaGrupper: en grupp på 22 med 11 kvinnor och 11 män och könsmedianer, vid tröskeln 10', () => {
         const w = fonster();
-        const res = w.eval('laLikaGrupper(getData(), 10)');
+        const res = w.eval('laLikaGrupper(hamtaData(), 10)');
         expect(res.utelamnade).toEqual([]);
         expect(res.ejJamforbara).toEqual([]);
         expect(res.grupper.map(g => [g.yrke, g.aid, g.bas, g.nKv, g.nMa, g.tot, g.samladMedian])).toEqual([[TEXT_A, '207011', 'C', 11, 11, 22, false]]);
@@ -65,13 +65,13 @@ describe('[B5.1] Lika arbete i appen: en grupp per AID-kod', () => {
         const w = createAppWindow();
         const d = underlag();
         w.__state.data = [d[d.length - 1], ...d.slice(0, -1)];   // personnamnet på första raden
-        expect(w.eval('laLikaGrupper(getData(), 10)').grupper.map(g => g.yrke)).toEqual([TEXT_A]);
+        expect(w.eval('laLikaGrupper(hamtaData(), 10)').grupper.map(g => g.yrke)).toEqual([TEXT_A]);
         expect(w.eval('gruppdossierCandidates()').map(g => g.yrke)).toEqual([TEXT_A]);
         expect(w.eval("buildBasdossier('C')").yrken.map(y => y.yrke)).toEqual([TEXT_A]);
         expect(w.eval('byggArsbokslutNu()').grupper.map(g => g.yrke)).toEqual([TEXT_A]);
         expect(w.eval("_forecastAidsForBas('C')").map(g => g.label)).toEqual(['Handläggare']);
-        expect(w.eval("_lutningRader(getData(), getData().map(r => ({ lon: r.lon })), 'grupp')").map(g => g.yrke)).toEqual(['Handläggare']);
-        expect(w.eval('kravGrupper(getData(), { k: 10 })').grupper.map(g => g.namn)).toEqual(['Handläggare']);
+        expect(w.eval("_lutningRader(hamtaData(), hamtaData().map(r => ({ lon: r.lon })), 'grupp')").map(g => g.yrke)).toEqual(['Handläggare']);
+        expect(w.eval('kravGrupper(hamtaData(), { k: 10 })').grupper.map(g => g.namn)).toEqual(['Handläggare']);
     });
     it('BAS-dossiern: en yrkesrad för koden, med gruppens antal ur Lika arbete', () => {
         const w = fonster();

@@ -26,7 +26,7 @@ import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { nedborrningGlom } from './11-markering.js';
-import { addTableExportTools, getData, state } from './12-tillstand.js';
+import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { explorerFigure } from './71-utforska-figur.js';
 import { explorerNollstallUrval, explorerRensaUrval, explorerUrval, explorerUrvalSlappMinne, renderExplorerUrvalUi } from './72-utforska-urval.js';
 import { gruppdossierCandidates, openGruppdossier } from './80-gruppdossier.js';
@@ -249,7 +249,7 @@ export function explorerSynkaSmaLas() {
 export function renderExplorer() {
     if (!document.getElementById('explore-rad')) return;
     explorerSynkaSmaLas();
-    const rows = getData();
+    const rows = hamtaData();
     explorerRensaUrval(rows);
     const spec = _explorerSpec();
     if (spec.kolumn === spec.rad) {
@@ -385,13 +385,13 @@ function _renderExplorerTable(model, typ, inkl) {
         body = `<tr data-export-utelamna><td colspan="${bredd}" class="explore-tom">Inga grupper att visa för valt urval.</td></tr>`;
     }
     table.innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
-    // Tabellens export börjar med urvalet, som diagrammets gör (tableToMatrix).
+    // Tabellens export börjar med urvalet, som diagrammets gör (tabellTillMatris).
     table.setAttribute('data-export-beskrivning', beskrivUrval(spec.urval, spec.gruppVillkor));
     // innerHTML bygger ett NYTT thead; sorteringsflaggan sitter på tabellnoden
     // och måste nollställas, annars är sorteringen död från andra renderingen.
     table._sortInit = false;
     if (typeof aktiveraSortering === 'function') aktiveraSortering('explore-table');
-    if (typeof addTableExportTools === 'function') addTableExportTools('explore-table', 'utforska');
+    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('explore-table', 'utforska');
     const container = table.closest('.table-container');
     const verktyg = container && container.previousElementSibling;
     if (verktyg && verktyg.classList.contains('table-tools')) /** @type {HTMLElement} */ (verktyg).hidden = tom;
@@ -499,7 +499,7 @@ function explorerTillRapport() {
     const perBas = !!/** @type {HTMLInputElement} */ (document.getElementById('explore-rapport-perbas'))?.checked;
     const status = document.getElementById('explore-rapport-status');
     const satt = (text, ok) => { if (status) { status.textContent = text; status.className = `status-msg${ok ? ' success' : ''}`; } };
-    if (!getData().length) { satt('Läs in en lönefil först.', false); return null; }
+    if (!hamtaData().length) { satt('Läs in en lönefil först.', false); return null; }
     const spec = _explorerSpec();
     const recept = nyttRecept(spec, { namn: namnEl ? namnEl.value : '', upprepa: perBas ? 'bas' : null });
     if (!recept) { satt('Vyn går inte att spara som tabell.', false); return null; }

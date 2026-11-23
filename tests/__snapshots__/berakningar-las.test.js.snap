@@ -280,7 +280,7 @@ exports[`beräkningar på demodatan (låsta tal) > power-analysen (computePowerA
 }
 `;
 
-exports[`beräkningar på demodatan (låsta tal) > regressionslinjens KI (linearRegressionCI) på en påhittad serie ger samma tal > linearRegressionCI 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > regressionslinjens KI (linjarRegressionKI) på en påhittad serie ger samma tal > linjarRegressionKI 1`] = `
 [
   {
     "hi": 2.261276634,

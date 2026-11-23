@@ -276,7 +276,7 @@ describe('k-anonymitet: Utforskas export', () => {
     });
     it('tabellens export utelämnar dem när rutan är av', () => {
         kryss(false);
-        expect(harSentinel(w3.__tableToMatrix('explore-table'))).toBe(false);
+        expect(harSentinel(w3.__tabellTillMatris('explore-table'))).toBe(false);
     });
     it('diagrammets export utelämnar dem när rutan är av', () => {
         kryss(false);
@@ -284,19 +284,19 @@ describe('k-anonymitet: Utforskas export', () => {
     });
     it('båda tar med dem när rutan är ikryssad', () => {
         kryss(true);
-        expect(harSentinel(w3.__tableToMatrix('explore-table'))).toBe(true);
+        expect(harSentinel(w3.__tabellTillMatris('explore-table'))).toBe(true);
         expect(harSentinel(exportRader())).toBe(true);
     });
 
     it('ett lönevillkor som skapar en liten grupp: exporten utelämnar den med rutan av', () => {
         w3.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'mellan', varde: [SENTINEL[0], SENTINEL[0]], inte: false }] });
         kryss(false);
-        expect(harSentinel(w3.__tableToMatrix('explore-table').filter(r => !String(r[0]).startsWith('Urval:')))).toBe(false);
+        expect(harSentinel(w3.__tabellTillMatris('explore-table').filter(r => !String(r[0]).startsWith('Urval:')))).toBe(false);
         // Rad 2 ("Urval: … mellan 31 417 och 31 417 kr") är användarens egen villkorsgräns,
         // inte gruppens data — vakten gäller dataraderna.
         expect(harSentinel(exportRader().filter(r => !String(r[0]).startsWith('Urval:')))).toBe(false);
         kryss(true);
-        expect(harSentinel(w3.__tableToMatrix('explore-table'))).toBe(true);
+        expect(harSentinel(w3.__tabellTillMatris('explore-table'))).toBe(true);
         w3.__explorerSetUrval({ lage: 'alla', villkor: [] });
     });
 
@@ -308,10 +308,10 @@ describe('k-anonymitet: Utforskas export', () => {
         d.getElementById('explore-kolumn').value = 'kon';
         try {
             kryss(false);
-            expect(w3.__tableToMatrix('explore-table').map(r => r[0]).filter(x => sma.has(x))).toEqual([]);
+            expect(w3.__tabellTillMatris('explore-table').map(r => r[0]).filter(x => sma.has(x))).toEqual([]);
             expect(exportRader().flat().filter(x => sma.has(x))).toEqual([]);
             kryss(true);
-            expect(w3.__tableToMatrix('explore-table').map(r => r[0]).filter(x => sma.has(x))).toHaveLength(6);
+            expect(w3.__tabellTillMatris('explore-table').map(r => r[0]).filter(x => sma.has(x))).toHaveLength(6);
         } finally {
             d.getElementById('explore-kolumn').value = 'ingen';
             w3.__explorerSetUrval({ lage: 'alla', villkor: [] }, []);
@@ -325,10 +325,10 @@ describe('k-anonymitet: Utforskas export', () => {
         d.getElementById('explore-visa').value = 'kon';
         try {
             kryss(false);
-            expect(harSentinel(w3.__tableToMatrix('explore-table'))).toBe(false);
+            expect(harSentinel(w3.__tabellTillMatris('explore-table'))).toBe(false);
             expect(harSentinel(exportRader())).toBe(false);
             kryss(true);
-            expect(harSentinel(w3.__tableToMatrix('explore-table'))).toBe(true);
+            expect(harSentinel(w3.__tabellTillMatris('explore-table'))).toBe(true);
         } finally {
             d.getElementById('explore-kolumn').value = 'ingen';
             d.getElementById('explore-visa').value = 'helhet';
@@ -364,7 +364,7 @@ describe('k-anonymitet: kön under tröskeln inuti en större grupp (Per kön)',
             d.getElementById('explore-typ').value = typ;
             d.getElementById('explore-visa').value = 'kon';
             const kryss = pa => { d.getElementById('explore-inkludera-sma').checked = pa; w4.__renderExplorer(); };
-            const exporter = () => [w4.__tableToMatrix('explore-table'), w4.__diagramexportRader(d.getElementById('chart-explore'))];
+            const exporter = () => [w4.__tabellTillMatris('explore-table'), w4.__diagramexportRader(d.getElementById('chart-explore'))];
             kryss(false);
             for (const e of exporter()) expect(harMarkor(e)).toBe(false);
             kryss(true);
@@ -378,7 +378,7 @@ describe('k-anonymitet: kompliansöversikten', () => {
         win.__ritaKravstatus();
         const t = win.document.getElementById('comp-gap-val').textContent;
         const m = t.match(/(\d+) av (\d+)/);
-        const j = win.__dqJamforbaraBas(win.__getData(), win.__K);
+        const j = win.__dqJamforbaraBas(win.__hamtaData(), win.__K);
         expect(j.maskerade.length, 'datasetet ska ha maskerade BAS').toBeGreaterThan(0);
         expect(m, t).not.toBeNull();
         expect(Number(m[2])).toBe(j.jamforbara.length);
@@ -410,7 +410,7 @@ describe('k-anonymitet: var uppstår löneskillnaden', () => {
         expect(SENTINEL.filter(s => t.includes(String(s)))).toEqual([]);
     });
     it('små BAS namnges inte i topplistan', () => {
-        const u = win.__guGapUppdelning(win.__getData(), { k: win.__K });
+        const u = win.__guGapUppdelning(win.__hamtaData(), { k: win.__K });
         const namn = ['A', 'B', 'C'].flatMap(d => u.topp[d].map(p => p.namn));
         for (const b of SMA_BAS) expect(namn.filter(n => n.endsWith(`BAS ${b}`))).toEqual([]);
     });
@@ -522,7 +522,7 @@ describe('k-anonymitet: sektorsöversikten', () => {
         expect(harMarkor(t.textContent)).toBe(false);
     });
     it('Excel-bladet och rapportunderlaget röjer inte markörlönen', () => {
-        expect(w.__tableToMatrix('sektor-table').flat().some(harMarkor)).toBe(false);
+        expect(w.__tabellTillMatris('sektor-table').flat().some(harMarkor)).toBe(false);
         expect(harMarkor(w.document.getElementById('rapportunderlag-innehall').textContent)).toBe(false);
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).toMatch(/Per huvudområde/);
     });
@@ -551,7 +551,7 @@ describe('k-anonymitet: ansvarsunderrader i Lika arbete', () => {
         expect(under.some(tr => /Särskilt uppdrag/.test(tr.textContent))).toBe(true);
         expect(under.find(tr => /Särskilt uppdrag/.test(tr.textContent)).textContent).toMatch(/Färre än 10/);
         expect(harMarkor(t.textContent)).toBe(false);
-        expect(w.__tableToMatrix('matrix-table').flat().some(harMarkor)).toBe(false);
+        expect(w.__tabellTillMatris('matrix-table').flat().some(harMarkor)).toBe(false);
     });
 });
 
@@ -654,7 +654,7 @@ describe('k-anonymitet: organisationspaketet kan stänga av små grupper i Utfor
         w.__state.kLage = 'export'; w.__renderExplorer(); w.__state.kLage = 'skarm';
         expect(w.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(12);
         expect(w.document.getElementById('explore-inkludera-sma').checked).toBe(false);
-        expect(harSentinel(w.__tableToMatrix('explore-table'))).toBe(false);
+        expect(harSentinel(w.__tabellTillMatris('explore-table'))).toBe(false);
         expect(harSentinel(w.__diagramexportRader(w.document.getElementById('chart-explore')))).toBe(false);
     });
     it('Rensa all data tar bort låsningen: rutan visas igen och raden döljs', () => {

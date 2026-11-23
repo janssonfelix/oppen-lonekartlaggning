@@ -24,7 +24,7 @@ import { artikel } from '../lib/termer.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { _rfMarkeraAlla, _rfPenselRensaAlla, _rfVisad } from './10-diagramritare.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { visningNy } from './23-exportgrind.js';
 import { renderExplorer } from './70-utforska.js';
 import { explorerSattUrval, explorerUrval } from './72-utforska-urval.js';
@@ -62,7 +62,7 @@ function _mkTraffEn(nycklar, vald) {
 function _mkEtikett(nyckel) {
     if (nyckel.startsWith('bas:')) return `BAS ${nyckel.slice(4)}`;
     const [aid, bas] = nyckel.slice(6).split('|');
-    const rad = getData().find(r => r.bas === bas && String(r.yrke || '').startsWith(aid));
+    const rad = hamtaData().find(r => r.bas === bas && String(r.yrke || '').startsWith(aid));
     return `${rad ? rad.yrke : aid} · BAS ${bas}`;
 }
 

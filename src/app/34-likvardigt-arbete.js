@@ -34,7 +34,7 @@ import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { _STS_DIR_KOLUMN, _STS_DIR_TIPS, PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { addTableExportTools, getData, state } from './12-tillstand.js';
+import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
 import { _laggTillMetodblad, _laddaNedCSV, _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
@@ -671,12 +671,12 @@ export function ritaLikvardigtArbete() {
     });
 
     if (typeof aktiveraSortering === 'function') aktiveraSortering('likvardighet-table');
-    if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-table', 'likvardighet');
+    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('likvardighet-table', 'likvardighet');
     // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset i kolumnen Bevis).
     if (typeof flerKolumner === 'function') flerKolumner('likvardighet-table', LV_DOLDA_KOLUMNER, 'likvardighet');
     if (document.getElementById('likvardighet-lagre-krav-table')) {
         if (typeof aktiveraSortering === 'function') aktiveraSortering('likvardighet-lagre-krav-table');
-        if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
+        if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
         if (typeof flerKolumner === 'function') flerKolumner('likvardighet-lagre-krav-table', LV_LAGRE_KRAV_DOLDA_KOLUMNER, 'lvLagreKrav');
     }
 
@@ -695,7 +695,7 @@ function _lvRitaTopp(result, vm) {
     const urval = document.getElementById('lv-urval'), host = document.getElementById('lv-slutsatser');
     if (!urval || !host) return;
     if (!result) { urval.textContent = ''; host.innerHTML = ''; return; }
-    urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(getData().length, 0)} personer</span>${kTroskelLank()}`;
+    urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(hamtaData().length, 0)} personer</span>${kTroskelLank()}`;
     const { antal, storst } = vm;
     // Med arbetsvärderingspoäng jämförs bara organisationens egna (ADR-76).
     const statJmf = vm.statJamfor, poang = vm.poang;

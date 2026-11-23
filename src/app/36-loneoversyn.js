@@ -27,7 +27,7 @@ import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { _laggTillMetodblad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
@@ -54,7 +54,7 @@ function _forecastReadControls() {
 }
 // Distinkta AID (yrken) inom ett BAS, med visningsetikett + gruppstorlek.
 function _forecastAidsForBas(bas) {
-    const seen = new Map(), iBas = getData().filter(r => r.bas === bas);
+    const seen = new Map(), iBas = hamtaData().filter(r => r.bas === bas);
     // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
     const namnrad = namnrader(iBas, r => r.aid);
     iBas.forEach(r => {
@@ -67,13 +67,13 @@ function _forecastAidsForBas(bas) {
 function ritaRiktadeRader() {
     const host = document.getElementById('forecast-targets');
     if (!host) return;
-    const basList = getBasIntervals();
+    const basList = hamtaBasIntervall();
     const t = state.forecast.targets;
     if (!t.length) {
         host.innerHTML = '<p class="text-dampad-sm marg-4-0">Inga riktade potter tillagda. Lägg till en grupp eller använd förslagsknappen.</p>';
         return;
     }
-    const dAll = getData();
+    const dAll = hamtaData();
     // Radens urval ("*" = hela BAS-intervallet; kön och lönegräns snävar in). En rad som användaren själv
     // lägger på färre personer än tröskeln är tillåten (egen simulering, ADR-38 R2): beloppet räknas som
     // för andra rader, och noten under raden säger vad det bygger på (riktadRadInfo i src/lib/vymodell-loneoversyn.js).
@@ -181,7 +181,7 @@ function ritaPrognos() {
     if (!meterEl && !outEl) return;
     _forecastReadControls();
     _fcUppdateraForslagPott();
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) {
         if (meterEl) meterEl.innerHTML = '';
         { const topp = document.getElementById('lo-slutsatser'); if (topp) topp.innerHTML = ''; }
@@ -525,7 +525,7 @@ function _forecastOptimizeFranPott() {
     try { avsnitt.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_e) { /* äldre webbläsare: utfällt räcker */ }
 }
 function _forecastOptimize() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return;
     _forecastReadControls();
     const cand = _fcKandidater();
@@ -588,7 +588,7 @@ export function _fcRensaParMal() {
 }
 // Kriteriebaserad riktning: expandera en massregel till riktade rader.
 function _forecastAddByCriteria() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return;
     _forecastReadControls();
     const matcher = /** @type {HTMLInputElement} */ (document.getElementById('forecast-rule-match'))?.value || 'kvdom';
@@ -614,7 +614,7 @@ function _forecastAddByCriteria() {
 }
 // Mål-läge: bygg riktade rader som stänger en andel av de osakliga gapen (§ 3:10).
 function _forecastClosure() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return;
     _forecastReadControls();
     const fracPct = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-closure-pct'))?.value);
@@ -628,7 +628,7 @@ function _forecastClosure() {
 }
 // Scenario A/B: spara nuläget som ett scenario och jämför.
 function _forecastSaveScenario(slot) {
-    const d = getData();
+    const d = hamtaData();
     if (!state.forecast.result || !d.length) { alert('Det finns ingen prognos att spara. Ange en pott först.'); return; }
     const o = _fcBeraknaUtfall(d);
     // Det som scenariot bär räknas i scenarioUr (src/lib/vymodell-loneoversyn.js, regel R4): det råa gapet bara när
@@ -653,7 +653,7 @@ function _ritaScenariojamforelse() {
     // Ett scenario sparat vid en lägre tröskel kan bära ett rågap som inte längre får visas (som A/B-bilden i
     // 19-konfiguration.js); Till kv-dom följer regeln för Varav till kvinnodominerade grupper i utfallet, med samma
     // funktion (ADR-70). Båda prövas i scenariojamforelse (src/lib/vymodell-loneoversyn.js) mot den tröskel som gäller nu.
-    const vm = scenariojamforelse(sc, { nu: konAntal(getData()), k: kTroskel(), arKvDom: kvDomAv(_fcKostnadsval()) });
+    const vm = scenariojamforelse(sc, { nu: konAntal(hamtaData()), k: kTroskel(), arKvDom: kvDomAv(_fcKostnadsval()) });
     const maskerat = vm.maskerat;
     const col = (r) => r ? `<td class="t-hoger">${kr(r.anvant)}</td><td class="t-hoger">${kr(r.totalKostnad)}</td><td class="t-hoger">${andelAvMan(r.raEfter)}</td><td class="t-hoger">${pc(r.oforklaratEfter)}</td><td class="t-hoger">${kr(r.tillKvDom)}</td><td class="t-hoger">${r.omkorningar}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
     host.innerHTML = `<table class="data-table fs-sm">
@@ -678,7 +678,7 @@ function _forecastLasMal(falt, standard) {
 // likalonslyftForMal i src/lib/loneoversyn.js (_fcLyftForMal); här läses fälten, k-spärren prövas och resultatet ritas.
 function _forecastThreshold() {
     const host = document.getElementById('forecast-threshold-result');
-    const d = getData();
+    const d = hamtaData();
     if (!host) return;
     _fcKnappresultat.add('forecast-threshold-result');
     if (!d.length) { host.innerHTML = ''; return; }
@@ -708,7 +708,7 @@ function _forecastThreshold() {
 }
 // (E) Marknadspositionering: lyft grupper under marknad × factor.
 function _forecastMarket() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return;
     _forecastReadControls();
     const f = (parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-market-factor'))?.value) || 95) / 100;
@@ -727,7 +727,7 @@ function _forecastMarket() {
 // (F) Budgetkänslighetskurva (§3:10-stängning 0→100 %).
 function _forecastSensitivity() {
     const host = document.getElementById('forecast-sensitivity');
-    const d = getData();
+    const d = hamtaData();
     if (!host) return;
     _fcKnappresultat.add('forecast-sensitivity');
     if (!d.length) { host.innerHTML = ''; return; }
@@ -745,7 +745,7 @@ function _forecastSensitivity() {
 // (B) Individnivå-remediation (DiskrL 3:9).
 function _forecastRemediation() {
     const host = document.getElementById('forecast-rem-result');
-    const d = getData();
+    const d = hamtaData();
     if (!host) return;
     _fcKnappresultat.add('forecast-rem-result');
     if (!d.length) { host.innerHTML = ''; return; }
@@ -793,12 +793,12 @@ function _forecastRemediationSeed() {
 function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
 function _exportForecastExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    if (!state.forecast.result || !getData().length) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
-    const out = _fcBeraknaUtfall(getData());   // ur raderna som de står, inte ett utfall som räknades före en rensning
+    if (!state.forecast.result || !hamtaData().length) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
+    const out = _fcBeraknaUtfall(hamtaData());   // ur raderna som de står, inte ett utfall som räknades före en rensning
     _fcKandidater();   // uppdaterar meningen om utelämnade par efter gällande tröskel
     const kr = n => Math.round(n);
     const K = kTroskel();
-    const konOk = _konFarRedovisasFor(getData());
+    const konOk = _konFarRedovisasFor(hamtaData());
     // Kostnaden för de maskerade raderna står samlad, och andelen till kvinnodominerade grupper bara när den inte ger
     // en del av den (ADR-70, utfallsvy i src/lib/vymodell-loneoversyn.js: samma som fliken).
     const vy = utfallsvy(out, K, kvDomAv(_fcKostnadsval()));
@@ -870,7 +870,7 @@ export function uppstartLoneoversyn() {
         document.getElementById('forecast-save-a')?.addEventListener('click', () => _forecastSaveScenario('A'));
         document.getElementById('forecast-save-b')?.addEventListener('click', () => _forecastSaveScenario('B'));
         document.getElementById('forecast-add-target')?.addEventListener('click', () => {
-            const basList = getBasIntervals();
+            const basList = hamtaBasIntervall();
             const bas = basList[0] || '';
             const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
             state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });

@@ -50,7 +50,7 @@ describe('Lägre krav, högre lön', () => {
         w.document.querySelector(`[data-fler-kolumner="${id}"]`).click();
         expect(synliga()).toEqual(['Kvinnodominerad AID-etikett', 'Median', 'Jämförelseetikett', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
         // Exporten: samma tio kolumner som före, och etikettcellen utan BAS-texten.
-        const m = w.__tableToMatrix(id);
+        const m = w.__tabellTillMatris(id);
         expect(m[0]).toEqual(['Kvinnodominerad AID-etikett', 'BAS', 'Median', 'Jämförelseetikett', 'BAS', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
         expect(m[1].slice(0, 2)).toEqual(['Yrke 100', 'E']);
         expect(m[1][4]).toBe('C');
@@ -329,9 +329,9 @@ describe('visualisering: § 3:10 — kandidatparen som bild + tabellexport', () 
         if (pairs.length) expect(el).not.toBeNull();
     });
 
-    it('tableToMatrix läser rubrik + rader och rensar knappar/ikoner', () => {
+    it('tabellTillMatris läser rubrik + rader och rensar knappar/ikoner', () => {
         win.__renderTabContent('matrix');   // fyller matrix-table
-        const m = win.__tableToMatrix('matrix-table');
+        const m = win.__tabellTillMatris('matrix-table');
         expect(Array.isArray(m)).toBe(true);
         if (m.length) {
             const cols = m[0].length;
@@ -364,7 +364,7 @@ describe('kandidatparens tabell', () => {
         for (const k of ki) {
             expect(k.textContent).toMatch(/^[\d\s\u00a0\u2212-]+–[\d\s\u00a0\u2212-]+ kr$/);
             expect(k.closest('td').querySelector('.lv-ki-marke').textContent).toMatch(/^(säker skillnad|inom slumpfel)$/);
-            expect(w.eval('_tableCellText')(k.closest('td'))).toMatch(/^\[[^\]]+ kr, [^\]]+ kr\]\s?(säker skillnad|inom slumpfel)$/);
+            expect(w.eval('_tabellcellText')(k.closest('td'))).toMatch(/^\[[^\]]+ kr, [^\]]+ kr\]\s?(säker skillnad|inom slumpfel)$/);
         }
         const rubriker = [...d.querySelectorAll('#likvardighet-table thead th')].map(th => th.textContent);
         expect(rubriker).toContain('Summa för gruppen (kr/mån)');
@@ -440,7 +440,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
     it('Likvärdigt arbete i poängläget: fliken säger att kraven mäts med poäng och Lägre krav förklarar varför den är tom', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__state.arbetsvardering = { byKey: new Map(w.__getData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
+        w.__state.arbetsvardering = { byKey: new Map(w.__hamtaData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
         w.__state.likvardighet.result = null;
         w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
         const t = w.document.getElementById('view-likvardighet').textContent;
@@ -452,7 +452,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
     const poangFonster = () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__state.arbetsvardering = { byKey: new Map(w.__getData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
+        w.__state.arbetsvardering = { byKey: new Map(w.__hamtaData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
         w.__state.likvardighet.result = null;
         return w;
     };
@@ -471,7 +471,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
         w.__loadDemoData();
         // De kvinnodominerade AID-etiketterna får lägst poäng: ingen jämförelseetikett har lika eller lägre poäng.
         const andel = new Map();
-        for (const r of w.__getData()) {
+        for (const r of w.__hamtaData()) {
             const n = `${r.aid}|${r.bas}`, a = andel.get(n) || [0, 0];
             andel.set(n, [a[0] + (r.kon.includes('kvinna') ? 1 : 0), a[1] + 1]);
         }

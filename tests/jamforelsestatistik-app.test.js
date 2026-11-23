@@ -8,7 +8,7 @@ import { createAppWindow } from './helpers/app-harness.js';
 // Statistik per yrke och BAS i demodata: avsnittet mot statistiken ritas bara när den finns (ADR-55).
 const medPersonalStatistik = () => {
     const w = createAppWindow(); w.__loadDemoData();
-    w.__state.statistik = [...new Set(w.__getData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
+    w.__state.statistik = [...new Set(w.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
     w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
     return w;
 };

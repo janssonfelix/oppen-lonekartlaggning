@@ -9,7 +9,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getBasIntervals, referensKortnamn, state } from './12-tillstand.js';
+import { hamtaBasIntervall, referensKortnamn, state } from './12-tillstand.js';
 import { renderUnderlagetsKvalitet } from './13-oversikt.js';
 import { detectOutliers } from './15-extremvarden-basrang.js';
 import { _fkRapportrad } from './17-forhandskontroll.js';
@@ -39,7 +39,7 @@ export function renderDataValidationReport() {
 
     // Räkna varningar
     const outliers = detectOutliers(3);
-    const bas = getBasIntervals();
+    const bas = hamtaBasIntervall();
     const { enkonade: singleSexBas, underK: kMaskedBas } = basVarningar(state.data, bas, kInstalld());
 
     // Konsistenskontroll

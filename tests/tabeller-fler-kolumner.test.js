@@ -66,9 +66,9 @@ describe('Fler kolumner: grundvyn och full vy', () => {
         it(`${t.id}: kopian och CSV-underlaget har alla kolumner i båda vyerna`, async () => {
             const w = rita(t.flik);
             const alla = rubriker(w, t.id).length;
-            const grund = w.__tableToMatrix(t.id);
+            const grund = w.__tabellTillMatris(t.id);
             knapp(w, t.id).click();
-            const full = w.__tableToMatrix(t.id);
+            const full = w.__tabellTillMatris(t.id);
             expect(grund).toEqual(full);
             const huvud = grund.findIndex(r => r.length > 1);
             for (const rad of grund.slice(huvud)) expect(rad.length).toBe(grund[huvud].length);
@@ -80,7 +80,7 @@ describe('Fler kolumner: grundvyn och full vy', () => {
             Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: s => { kopia = s; return Promise.resolve(); } } });
             w.document.querySelector(`[data-copy-table="${t.id}"]`).click();
             await new Promise(r => setTimeout(r, 0));
-            const dolda = rubriker(w, t.id).filter(th => th.hidden).map(th => w.eval('_tableCellText')(th));
+            const dolda = rubriker(w, t.id).filter(th => th.hidden).map(th => w.eval('_tabellcellText')(th));
             expect(dolda.length).toBe(t.dolda.length);
             for (const r of dolda) expect(kopia).toContain(r);
             // Arbetsbokens kopia: inga gömda celler och hela colspan.

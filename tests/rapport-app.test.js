@@ -24,7 +24,7 @@ describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
 
     it('§3:10- och strukturmåtten kan beräknas på demodata', () => {
         expect(() => win.__likvardighetspar()).not.toThrow();
-        expect(() => win.__stRepresentationPerBas(win.__getData())).not.toThrow();
+        expect(() => win.__stRepresentationPerBas(win.__hamtaData())).not.toThrow();
     });
 });
 
@@ -532,7 +532,7 @@ describe('rapportunderlag', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const block = w.__rapportunderlagBlock();
-        const flaggade = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;   // rapportunderlaget lämnar verktyget: inställd tröskel
+        const flaggade = w.__ruLikaArbeteGrupper(w.__hamtaData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;   // rapportunderlaget lämnar verktyget: inställd tröskel
         const typer = block.map(b => b.id.split(':')[0]);
         expect(typer.filter(t => ['sammanfattning', 'lika', 'likvardigt', 'struktur', 'handlingsplan'].includes(t)).length).toBe(5);
         expect(typer.filter(t => t === 'yrke').length).toBe(flaggade);

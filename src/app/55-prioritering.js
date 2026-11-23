@@ -21,7 +21,7 @@ import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { gapStatus, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
+import { hamtaData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { computeGroupMDE, styrkaGallande } from './13-oversikt.js';
 import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
@@ -43,7 +43,7 @@ import { _laNyckel } from './41-lika-arbete.js';
 export function computePrioritization(reference) {
     // Modellen (grupperingen, indexet, k-regeln) ligger i src/lib/prioritering.js (ADR-8).
     // Här översätts bara state till referensFor och parametrar.
-    return prioritera(getData(), {
+    return prioritera(hamtaData(), {
         referensFor: (aid, bas) => {
             if (reference === 'stallningstagande') {
                 const pol = policyFor(aid, bas);
@@ -291,7 +291,7 @@ export function renderPrioritering() {
     // Audit
     const baseP = byggGrundberakning();
     // Räkna grupper utan referens
-    const dForCount = getData();
+    const dForCount = hamtaData();
     let smallCount = 0, noRefCount = 0;
     const groupCheck = {};
     dForCount.forEach(r => {

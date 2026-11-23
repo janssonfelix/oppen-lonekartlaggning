@@ -74,7 +74,7 @@ describe('Personer att granska', () => {
         w.__loadDemoData();
         const p = sankEn(w);
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
-        expect(w.__ifFlaggaIndivider(w.__getData(), { minGrupp: w.__K }).flaggade.some(f => f.radnr === p.radnr)).toBe(true);
+        expect(w.__ifFlaggaIndivider(w.__hamtaData(), { minGrupp: w.__K }).flaggade.some(f => f.radnr === p.radnr)).toBe(true);
         const norm = s => String(s).replace(/[\s  ]/g, '');
         const kanaler = {
             rapportunderlag: w.__rapportunderlagBlock().map(b => w.__ruTillText(b)).join('\n'),

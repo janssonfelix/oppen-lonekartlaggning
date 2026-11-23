@@ -20,7 +20,7 @@ import { COST_DEFAULTS, jmfNamn, orgNamn, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEF
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE } from './10-diagramtema.js';
-import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag, populateSelects, UK_ETIKETT } from './13-oversikt.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { _visaExportvarning } from './22-exporthjalpare.js';
@@ -381,7 +381,7 @@ function _tillampaKonfiguration(cfg) {
     }
     // Förklaringsmodellen (ADR-56): ett ogiltigt värde ger standard med varning, aldrig fel; utan fältet gäller standard.
     // Utan inläst lönefil prövas inte yrkesgrupp mot datat (det görs av forklaringsmodell() när filen finns).
-    const rader = getData();
+    const rader = hamtaData();
     const fm = normaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some(d => d.aid || d.yrke) });
     varningar.push(...fm.varningar);
     // Uppdelningens variabler (ADR-65): samma mönster. En äldre fil utan fältet ger standard (BAS, AID); ett ogiltigt
@@ -490,7 +490,7 @@ function _tillampaKonfiguration(cfg) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 export function byggOgonblicksbild(...a) { return medExportLage(() => _byggOgonblicksbildExport.apply(null, /** @type {any} */ (a))); }
 function _byggOgonblicksbildExport() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return null;
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
     // bilden visas i jämförelsetabellen och kan ligga kvar efter att urvalet ändrats.
@@ -510,7 +510,7 @@ function _byggOgonblicksbildExport() {
         unexplainedPValue: reg.error ? null : reg.pValue,
         underlag: dq ? UK_ETIKETT[dq.status] : null,
         avgAge: m.avgAge,
-        nBas: getBasIntervals().length
+        nBas: hamtaBasIntervall().length
     };
 }
 

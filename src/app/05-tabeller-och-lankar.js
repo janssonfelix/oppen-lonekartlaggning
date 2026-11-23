@@ -3,7 +3,7 @@
 import { svPct } from '../lib/talformat.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { T } from './09-termer.js';
-import { getData, referensKalla, referensNamn, state } from './12-tillstand.js';
+import { hamtaData, referensKalla, referensNamn, state } from './12-tillstand.js';
 import { klickaFlik, tabMal } from './31-navigering.js';
 
 // ---- Audit / spårbarhet av beräkningar ("Beräkning & urval") ----
@@ -21,7 +21,7 @@ export function byggGrundberakning() {
     const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
     const totalRaw   = da.totalRaw;
     const afterParse = state.data.length;
-    const afterFilter = getData().length;
+    const afterFilter = hamtaData().length;
     const parseExcl = [];
     if (da.excludedNoBas > 0)   parseExcl.push([`Saknar ${T.niva.en}`, da.excludedNoBas]);
     if (da.excludedZeroLon > 0) parseExcl.push(['Lön ≤ 0 eller saknas', da.excludedZeroLon]);
@@ -145,7 +145,7 @@ export function _cellSpann(cell) {
     return Math.max(1, parseInt(cell.getAttribute('data-hel-colspan') || cell.getAttribute('colspan') || '', 10) || 1);
 }
 /**
- * Kopplar växeln till en tabell och tillämpar vyn. Anropas efter addTableExportTools (knappen läggs i dess verktygsrad)
+ * Kopplar växeln till en tabell och tillämpar vyn. Anropas efter laggTillTabellverktyg (knappen läggs i dess verktygsrad)
  * och efter varje omritning av tabellen; att anropa den igen är ofarligt.
  * @param {string} tableId
  * @param {string[]} dolda  data-kol för kolumnerna som grundvyn gömmer

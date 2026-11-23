@@ -13,7 +13,7 @@ import { T } from './09-termer.js';
 import { PALETTE } from './10-diagramtema.js';
 import { markeraUtanExport } from './11-diagramexport.js';
 import { markeringFor } from './11-markering.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 /**
  * Panel sist i Lika arbete: personer minst X % under förväntad lön bland kollegor i samma
  * AID och BAS (logiken i src/lib/individflaggor.js). Listan lämnar aldrig verktyget:
@@ -38,7 +38,7 @@ export function renderPersonerAttGranska(visaAlla = false) {
     const host = document.getElementById('personer-att-granska');
     const body = document.getElementById('pag-innehall');
     if (!host || !body) return;
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) { host.hidden = true; body.innerHTML = ''; _pagRitaAvvikelse(null, 0); return; }
     host.hidden = false;
     const grans = _pagGrans();

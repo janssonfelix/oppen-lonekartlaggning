@@ -302,7 +302,7 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
         const w2 = demo();
         w2.__renderTabContent('matrix');
         const d = w2.document, rader = [...d.querySelectorAll('#la-oversikt tbody tr')];
-        const figur = d.getElementById('chart-skevhet-overview')._figur, ov = w2.eval('_laOversiktRader(getData())');
+        const figur = d.getElementById('chart-skevhet-overview')._figur, ov = w2.eval('_laOversiktRader(hamtaData())');
         expect(rader.map(r => r.querySelector('th').textContent)).toEqual(figur.y.ordning);
         expect(d.getElementById('la-huvuddiagram').contains(d.getElementById('la-oversikt'))).toBe(true);
         expect(d.getElementById('avsnitt-ls-bas').contains(d.getElementById('la-huvuddiagram'))).toBe(true);   // tabellen står i fördjupningen
@@ -1741,7 +1741,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
         cfg.arsbokslut.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; });
         w2.__loadDemoData();
         w2.__cfg = cfg; w2.eval('tillampaKonfiguration(window.__cfg)');
-        w2.__state.statistik = [...new Set(w2.__getData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
+        w2.__state.statistik = [...new Set(w2.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
         w2.__state.statistikHasP10 = true; w2.__state.statistikHasP90 = true;
         for (const t of ['dashboard', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'demografi', 'prioritering', 'loneoversyn', 'arbetet']) w2.__renderTabContent(t);
     });

@@ -21,7 +21,7 @@ import { T, termText } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, UNDERLAG, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { buildActionChecklist } from './18-atgardslista.js';
 import { _laggTillMetodblad, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
@@ -43,7 +43,7 @@ import { kTroskelLank } from './86-installningar.js';
 export function renderStructure() {
     const wrap = document.getElementById('view-struktur');
     if (!wrap) return;
-    const d = getData();
+    const d = hamtaData();
     const repEl = document.getElementById('struktur-representation');
     const distEl = document.getElementById('struktur-distribution');
     const euEl = document.getElementById('struktur-eu');
@@ -136,7 +136,7 @@ export function renderStrukturUtkast() {
     const nb = document.getElementById('struktur-narrative');
     if (!nb) return;
     _stSynkaUtkastValjare();
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) { /** @type {HTMLInputElement} */ (nb).value = ''; return; }
     if (nb.dataset.dirty) return;
     const k = kTroskel();
@@ -441,7 +441,7 @@ function _buildNarrative(d, ctx) {
     const lines = [];
     lines.push('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
     lines.push('');
-    lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
+    lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
     lines.push('');
     lines.push('Löneskillnad (kvinnors lön i procent av mäns):');
     if (ctx.konOk) lines.push(`  • Kvinnors genomsnittslön är ${andelAvMan(ctx.meanGap)} av mäns, och medianlönen ${andelAvMan(ctx.medGap)} av mäns.`);
@@ -491,7 +491,7 @@ function _buildNarrative(d, ctx) {
 function exportEuReport(...a) { return medExportLage(() => _exportEuReportExport.apply(null, /** @type {any} */ (a))); }
 function _exportEuReportExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) { alert('Ingen data.'); return; }
     const kr = n => n == null ? '' : Math.round(n);
     const k = kTroskel();

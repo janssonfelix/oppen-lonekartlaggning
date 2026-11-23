@@ -290,7 +290,7 @@ describe.each([[10, []], [25, SENT_MELLAN]])('[I7] uppdelningen med andra val av
         const w = iExport(fonsterKon(k === 10 ? null : k));
         w.eval(`sattGapVariabler(${JSON.stringify(val)}, { rita: false })`);
         w.__renderTabContent('struktur');
-        const u = w.eval('gapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
+        const u = w.eval('gapUppdelning(hamtaData(), { k: kTroskel(), variabler: gapVariabler() })');
         const block = w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
         return { u, utdata: [
             ['rapportunderlag: uppdelning', normalisera(w.__ruTillWordHtml(block) + '\n' + w.__ruTillText(block))],

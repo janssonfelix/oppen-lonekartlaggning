@@ -64,11 +64,11 @@ describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osaker
                     lika(w.eval('detectOutliers()'), extremvarden(d, golv, 3));
                     lika(w.eval('detectOutliers(2)'), extremvarden(d, golv, 2));
                 });
-                it('linearRegressionCI', () => {
+                it('linjarRegressionKI', () => {
                     const par = d.filter(r => r.alder > 0 && arKv(r)).map(r => [r.alder, r.lon]);
                     w.__par = par;
-                    lika(w.eval('linearRegressionCI(window.__par, 20, 65, 25)'), regressionslinjensBand(par, 20, 65, 25));
-                    lika(w.eval('linearRegressionCI(window.__par, 20, 65)'), regressionslinjensBand(par, 20, 65));
+                    lika(w.eval('linjarRegressionKI(window.__par, 20, 65, 25)'), regressionslinjensBand(par, 20, 65, 25));
+                    lika(w.eval('linjarRegressionKI(window.__par, 20, 65)'), regressionslinjensBand(par, 20, 65));
                     delete w.__par;
                 });
                 it('_laBootstrapGapCI och _gdBootstrapGapCI per BAS-intervall', () => {
@@ -80,7 +80,7 @@ describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osaker
                     }
                 });
                 it('_laTrattUnderlagRakna', () => {
-                    lika(utanHalv(w.eval(`_laTrattUnderlagRakna(getData(), ${k})`)), utanHalv(trattUnderlag(d, k)));
+                    lika(utanHalv(w.eval(`_laTrattUnderlagRakna(hamtaData(), ${k})`)), utanHalv(trattUnderlag(d, k)));
                 });
                 if (k === 10) {
                     it('_regKvantilBootstrap', () => {

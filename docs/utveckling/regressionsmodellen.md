@@ -17,7 +17,7 @@ och upprepas inte här (avsnitt 9).
 |---|---|
 | Modellerna: huvudregressionen (`huvudregression`) och dess golv, förklaringsmodellen, stegen, AID-etikett inom BAS, Blinder-Oaxaca, kvantilregressionen, gap per BAS | `src/lib/regression.js` |
 | OLS med HC3, t-fördelningen och normalfördelningen | `src/lib/stat.js` |
-| Adaptrarna som läser appens tillstånd (`getData()`, `statGolv()`, förklaringsmodellen, `harAlder()`) | `src/app/50-regressionsmodeller.js` |
+| Adaptrarna som läser appens tillstånd (`hamtaData()`, `statGolv()`, förklaringsmodellen, `harAlder()`) | `src/app/50-regressionsmodeller.js` |
 | Regressionskortets vymodell (ADR-99): stegen och budgeten efter tröskeln, kronexemplet, ansvarsraden, slutsatsen, BH-korrigeringen och signalen per BAS-intervall, BAS-effekterna efter tröskeln, varningarna om underlaget och tolkningen av gapet längs lönefördelningen | `src/lib/vymodell-regressionskort.js` (`vymodellRegressionskort`) |
 | Huvudregressionens adapter (`runOLSRegression`), modellpanelen, kvantilregressionens intervall och det som ritar regressionskortet (`ritaRegressionskort`) | `src/app/51-lika-arbete-regressionskort.js` |
 | Livscykelanalysens vymodell: nivåerna per BAS-intervall efter tröskeln, kurvan, mönstret och jämförelsen med huvudmodellen | `src/lib/vymodell-livscykel.js` (`vymodellLivscykel`); ritas av `ritaLivscykel` i `src/app/52-livscykel.js` |
@@ -32,10 +32,10 @@ och upprepas inte här (avsnitt 9).
 `rader` är lönefilens rader, `modell` förklaringsmodellen (avsnitt 2; normaliseras mot raderna, standardmodellen när
 den saknas), `medAlder` om lönefilen har ålder (avsnitt 8; räknas ur raderna när den saknas), `kInstalld` den
 inställda tröskeln (spärren i avsnitt 2) och `golv` det som appen kallar `statGolv()` (avsnitt 9). I appen är
-`runOLSRegression` (`51-lika-arbete-regressionskort.js`) en tunn adapter som läser `getData()`, `forklaringsmodell()`,
+`runOLSRegression` (`51-lika-arbete-regressionskort.js`) en tunn adapter som läser `hamtaData()`, `forklaringsmodell()`,
 `harAlder()`, `kInstalld()` och `statGolv()` och anropar den (`huvudregression`, importerad ur `src/lib/regression.js`).
 
-**Raderna.** Med rader menas lönefilens rader (`getData()` i appen) med lön över 0, kön kvinna eller man och, när
+**Raderna.** Med rader menas lönefilens rader (`hamtaData()` i appen) med lön över 0, kön kvinna eller man och, när
 lönefilen har ålder, en ålder över 0. Med färre än 30 sådana rader skattas ingen modell (`low_n`), och med färre än 5
 av något kön inte heller (`imbalance`); golven är konstanterna `HUVUDREGRESSION_MIN_N` och
 `HUVUDREGRESSION_MIN_PER_KON` i `regression.js`.
@@ -366,7 +366,7 @@ konfidensbandet kring regressionslinjen i Ålder & karriär (fast 1,96) och trat
 räknas i `src/lib/osakerhet.js` (`organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `kvantilBootstrap`,
 `regressionslinjensBand`, `trattUnderlag`), där antalen dragningar och faktorerna är namngivna konstanter; appens
 funktioner med de tidigare namnen (`computeBootstrapCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`,
-`_regKvantilBootstrap`, `linearRegressionCI`, `_laTrattUnderlagRakna`) är tunna adaptrar. Percentilgränserna tas på ett
+`_regKvantilBootstrap`, `linjarRegressionKI`, `_laTrattUnderlagRakna`) är tunna adaptrar. Percentilgränserna tas på ett
 ställe, `percentilintervall` i `src/lib/stat.js`, också för bootstrapintervallen i likvärdigt arbete och omkastningen i
 `src/lib/status.js`. Indexen i de stigande sorterade dragningarna är symmetriska (ADR-86): den nedre gränsen har index
 golvet av n · 0,025 och den övre n − 1 − golvet av n · 0,025, räknat från 0, så att lika många dragningar ligger under
@@ -560,7 +560,7 @@ testerna speglar den.
 | `tests/huvudregression-adapter.test.js` | Att `runOLSRegression` ger exakt samma returvärde som `huvudregression` med samma argument (varje tal med `Object.is`), på demodatan, utan ålder och i reservsteget |
 | `tests/berakningar-las.test.js` | Ögonblicksbilden av hela returvärdet från `runOLSRegression` på demodatan |
 | `tests/osakerhet.test.js` | `src/lib/osakerhet.js` direkt: bootstrapintervallen med en injicerad, seedad generator, konfidensbandet kring en regressionslinje och styrkan räknade för hand, extremvärdena, trattens underlag och kvantilregressionens intervall; `percentilintervall` i `src/lib/stat.js` |
-| `tests/osakerhet-adapter.test.js` | Att appens adaptrar (`computeBootstrapCI`, `computePowerAnalysis`, `computeGroupMDE`, `detectOutliers`, `linearRegressionCI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`, `_laTrattUnderlagRakna`, `_regKvantilBootstrap`) ger exakt samma tal som `src/lib/osakerhet.js` med samma argument, på demodatan och utan ålder vid tröskeln 3, 10 och 25 |
+| `tests/osakerhet-adapter.test.js` | Att appens adaptrar (`computeBootstrapCI`, `computePowerAnalysis`, `computeGroupMDE`, `detectOutliers`, `linjarRegressionKI`, `_laBootstrapGapCI`, `_gdBootstrapGapCI`, `_laTrattUnderlagRakna`, `_regKvantilBootstrap`) ger exakt samma tal som `src/lib/osakerhet.js` med samma argument, på demodatan och utan ålder vid tröskeln 3, 10 och 25 |
 | `tests/regression-app.test.js` | Appen: steget *+ AID-etikett inom BAS* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
 | `tests/gapuppdelning.test.js` | Var uppstår löneskillnaden: summorna, tecknet, skyddsregeln, topplistan och de valbara variablerna |

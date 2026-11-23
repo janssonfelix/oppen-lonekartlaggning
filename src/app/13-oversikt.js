@@ -14,7 +14,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getBasIntervals, getData, harReferens, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, harReferens, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderDataValidationReport } from './16-inlasningskontroll.js';
 import { buildActionChecklist, renderActionChecklist } from './18-atgardslista.js';
@@ -41,11 +41,11 @@ function setCompCard(id, count, total, valueText, cardState) {
 /** Läget mot lagkraven på Översikt, ur vymodellen (kravstatus i src/lib/vymodell-oversikt.js). */
 export function ritaKravstatus() {
     const overview = document.getElementById('compliance-overview');
-    const d = getData();
+    const d = hamtaData();
     if (!overview || !d.length) return;
     overview.style.display = 'block';
     // Det exporterna kan jämföra (ADR-51): den inställda tröskeln, också på skärmen.
-    const vm = /** @type {NonNullable<ReturnType<typeof kravstatus>>} */ (kravstatus(d, { bas: getBasIntervals(), k: kInstalld(), golv: statGolv(),
+    const vm = /** @type {NonNullable<ReturnType<typeof kravstatus>>} */ (kravstatus(d, { bas: hamtaBasIntervall(), k: kInstalld(), golv: statGolv(),
         oversikt: _laOversiktRader(d), policyFor: harReferens() ? policyFor : null, statistik: state.statistik }));
 
     // 1–2. Säkerställd skillnad och könsskevhet — bara i jämförbara BAS (båda könen ≥ k).
@@ -86,7 +86,7 @@ export function ritaKravstatus() {
 // ---- Underlagets kvalitet (ADR-19): svagaste länken avgör ----
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den — ett värde som skickas vidare, ingen cache (ADR-17) */
 export function bedomningUnderlag({ reg: given } = {}) {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return null;
     const reg = given || runOLSRegression();
     const modell = reg.error ? 'fel' : (reg.fellBackFromFull ? 'minimal' : 'full');   // 'full' = den valda modellen gick att skatta (ADR-56)
@@ -166,10 +166,10 @@ const _nollVid = /** @type {Record<string, number|undefined>} */ ({});
 const _andraGolv = new Map();
 const _RAKNA = {
     bootstrapCI: golv => {
-        const t0 = performance.now(), ki = organisationensKvotKI(getData(), golv);
+        const t0 = performance.now(), ki = organisationensKvotKI(hamtaData(), golv);
         return ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
     },
-    powerAnalysis: golv => styrkeanalys(getData(), golv),
+    powerAnalysis: golv => styrkeanalys(hamtaData(), golv),
 };
 function _skattning(falt, golv) {
     const ut = _RAKNA[falt](golv);
@@ -235,7 +235,7 @@ export function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
-    const hasData = (() => { try { return getData().length > 0; } catch (_e) { return false; } })();
+    const hasData = (() => { try { return hamtaData().length > 0; } catch (_e) { return false; } })();
     // `inget`: steget har inget att hantera i Att göra men är inte klart (alla kandidatpar har en grupp under tröskeln).
     const ICON = { klar: ikon('bock'), delvis: ikon('delvis'), ej: ikon('ruta'), manuell: ikon('streck'), inget: ikon('streck') };
 
@@ -252,7 +252,7 @@ export function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
 
     // 1. Underlag inläst
     rows.push(hasData
-        ? { n: 1, status: 'klar', title: '1. Underlag inläst', tab: 'dashboard', detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` }
+        ? { n: 1, status: 'klar', title: '1. Underlag inläst', tab: 'dashboard', detail: `${hamtaData().length} rader inlästa — allt nedan bygger på detta.` }
         : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: läs in lönefilen i Kom igång överst på Översikt eller i Filer och kvalitet (eller prova med demodata).' });
 
     // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
@@ -378,7 +378,7 @@ let _ovHadeData = null;
 export function ovRitaLage() {
     const vy = /** @type {HTMLElement} */ (document.getElementById('view-dashboard'));
     if (!vy) return;
-    const d = (() => { try { return getData(); } catch (_e) { return []; } })();
+    const d = (() => { try { return hamtaData(); } catch (_e) { return []; } })();
     const har = d.length > 0;
     vy.classList.toggle('har-data', har);
     // Filer och kvalitet: Underlagets kvalitet har inget att visa före inläsningen (sidindexet och sökningen hoppar över det då).
@@ -421,7 +421,7 @@ export function computeGroupMDE(nKv, nMa, sigmaLog) {
 // ---- Nyckeltalen ----
 /** Nyckeltalen överst på Översikt, ur vymodellen (oversiktNyckeltal i src/lib/vymodell-oversikt.js). */
 export function ritaNyckeltal() {
-    const vm = oversiktNyckeltal(getData(), kTroskel());
+    const vm = oversiktNyckeltal(hamtaData(), kTroskel());
     if (!vm) return;
     /** @type {HTMLElement} */ (document.getElementById("stat-n")).textContent = String(vm.n);
     const konEl = document.getElementById('stat-kon');
@@ -461,7 +461,7 @@ export function renderOversiktDelar() {
 
 // ---- Populate BAS selects ----
 export function populateSelects() {
-    const bas = getBasIntervals();
+    const bas = hamtaBasIntervall();
     ['bas-select-kon','bas-select-demo'].forEach(selId => {
         const sel = document.getElementById(selId);
         if (!sel) return;

@@ -8,7 +8,7 @@ import { _importprofilKalla } from './03-hjalpfunktioner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
-import { getData, referensNamn, state } from './12-tillstand.js';
+import { hamtaData, referensNamn, state } from './12-tillstand.js';
 import { sattMeny } from './31-navigering.js';
 import { COLMAP_ROLES, maybeShowColumnMapping, renderFilrutor } from './32-filinlasning.js';
 import { _pagGrans } from './43-personer-att-granska.js';
@@ -77,7 +77,7 @@ function _instRita() {
         { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', kraverData: true, namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
           lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
     ];
-    const utanData = !getData().length;
+    const utanData = !hamtaData().length;
     flikar.innerHTML = rader.map(r => `<li class="inst-flik${r.andrad ? ' ar-andrad' : ''}">
         <span class="inst-flik-namn"><strong>${esc(r.namn)}</strong> — ${esc(r.vad)}</span>
         <span class="inst-flik-lage">${esc(r.lage)}</span>

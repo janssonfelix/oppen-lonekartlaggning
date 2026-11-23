@@ -19,7 +19,7 @@ import { idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
 import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, _parUtelamnadeNot, kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { _laggTillMetodblad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
@@ -224,7 +224,7 @@ function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
  * @param {(delar: string[]) => string|boolean} passar
  */
 export function _hpBedomningar(passar) {
-    const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
+    const seed = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
     return seed.nycklar.map((nyckel, i) => ({ nyckel, i, roll: _hpArEgen(nyckel) ? '' : passar(nyckel.split('|')) })).filter(x => x.roll)
         .map(({ nyckel, i, roll }) => {
             const s = skalSammanstallning(_hpVarden(nyckel).skal || [], seed.skillnader[i]);
@@ -330,10 +330,10 @@ export function _hpDemoSkal() {
 // ovanför tomrader som syns på utskriften — så HR ser underlaget och kan fylla i planen utan att först exportera.
 export function renderHandlingsplanSeed() {
     // Samverkansknapparna (kortet Samverkan & uppföljning) exporterar underlag — inaktiva tills data finns.
-    document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !getData().length; });
+    document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !hamtaData().length; });
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
-    const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
+    const seed = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
     const fmtKr = n => (n ? svKr(n) : '');
     const lista = (id, nyckel, falt, val, alt, etikett) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett)}">`
         + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';

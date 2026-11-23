@@ -37,7 +37,7 @@ import { ikon } from './03-ikoner.js';
 import { _kUndantagFor, kIndividRad, kStampelFor } from './06-k-troskel.js';
 import { APP_VERSION } from './08-version.js';
 import { _rfExportFigur, _rfHarRitat, figurTillBild } from './10-diagramritare.js';
-import { _copyMatrixToClipboard, state } from './12-tillstand.js';
+import { _kopieraMatrisTillUrklipp, state } from './12-tillstand.js';
 import { _laddaNedCSV, _visaExportvarning } from './22-exporthjalpare.js';
 import { exportSakra, medExportLage } from './23-exportgrind.js';
 import { diagramKopiaKalla } from './74-alla-diagram.js';
@@ -247,7 +247,7 @@ function _exporteraDiagramExport(gd, val) {
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     // Räknat för ett underlag som inte går att rita (inga personer, eller vyns beräkning gav ingen figur): inget att exportera.
     if (underlag && underlag.underlag && underlag.underlag.tom) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
-    if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(diagramexportRader(gd, underlag)));
+    if (val === 'data-kopiera') return Promise.resolve(_kopieraMatrisTillUrklipp(diagramexportRader(gd, underlag)));
     if (val === 'data-csv') {
         return Promise.resolve(_laddaNedCSV(diagramexportRader(gd, underlag), diagramexportFilnamn(gd, 'csv').replace(/\.csv$/, '')));
     }

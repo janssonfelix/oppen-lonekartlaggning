@@ -13,7 +13,7 @@ import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
-import { addTableExportTools, getData, state } from './12-tillstand.js';
+import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { _laSlutsats } from './41-lika-arbete.js';
 import { jamforelseUnderlag } from './42-jamforelse.js';
 
@@ -25,7 +25,7 @@ const _RR_MAX = 25;
 /** Överblicken ur Jämförelses rader, med den referens som finns; null utan underlag eller utan någon referens. */
 export function referensOverblick() {
     const harStatistik = state.statistik.length > 0, harStallningstagande = state.policy.length > 0;
-    if (!getData().length || (!harStatistik && !harStallningstagande)) return null;
+    if (!hamtaData().length || (!harStatistik && !harStallningstagande)) return null;
     return referensOverblickUr(jamforelseUnderlag().rader, { harStatistik, harStallningstagande,
         statistikHarSpann: !!state.statistikHasP10 && !!state.statistikHasP90 });
 }
@@ -182,7 +182,7 @@ export function renderReferensOverblick() {
         <p class="muted">${flera ? `Visar de ${_RR_MAX} första ${T.enhet.bfl} av ${o.grupper.length} — tabellen har alla. ` : ''}${utanSpann ? 'P10 och P90 saknas i jämförelsestatistiken: den visas bara med sin median.' : ''}</p>
         ${har.harStatistik && har.harStallningstagande ? _rrStatTabellHtml(o.statistikMotStallningstagande) : ''}`;
     try { ritaFigur('chart-ref-hantel', _rrHantelFigur(_rrHantelRader(o.grupper.slice(0, _RR_MAX)), har)); } catch (e) { rapporteraFel('Löneläget: överblickens bild', e); }
-    addTableExportTools('ref-tabell', 'referenser');
+    laggTillTabellverktyg('ref-tabell', 'referenser');
     aktiveraSortering('ref-tabell');
     aktiveraSortering('ref-stat-mot-stallning');
 }

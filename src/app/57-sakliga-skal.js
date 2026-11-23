@@ -20,7 +20,7 @@ import { genitiv, stor, termFras } from '../lib/termer.js';
 import { _fokusfallor, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { _handlingsplanSeedRows, _hpArEgen, _hpGaTillRad, _hpLiknarPersonuppgift, _hpSatt, _hpSattSkal, _hpSkalEtikett, _hpSkalSammanfattning, _hpUtanBelopp, _hpVarden } from './56-handlingsplan.js';
 import { closeGruppdossier } from './80-gruppdossier.js';
@@ -50,7 +50,7 @@ function openSkalDialog(nyckel, opener) {
     if (!modal || !nyckel) return;
     // Gruppens skillnad och om raden följer med i exporterna: ur förifyllningen i exportläget.
     const iExport = medExportLage(() => _handlingsplanSeedRows());
-    const skarm = _handlingsplanSeedRows({ baraEgna: !getData().length });
+    const skarm = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
     const i = iExport.nycklar.indexOf(nyckel), j = skarm.nycklar.indexOf(nyckel);
     const rad = i >= 0 ? iExport.rows[i] : j >= 0 ? skarm.rows[j] : null;
     const egen = _hpArEgen(nyckel);

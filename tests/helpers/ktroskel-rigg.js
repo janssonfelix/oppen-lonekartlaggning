@@ -371,7 +371,7 @@ export async function samlaUtdata(w) {
         const t = d.getElementById(id);
         if (!t || undantagen(t)) continue;
         tabeller++;
-        lagg(`tabell-CSV: ${id}`, w.__tableToMatrix(id).map(r => r.join(' | ')).join('\n'));
+        lagg(`tabell-CSV: ${id}`, w.__tabellTillMatris(id).map(r => r.join(' | ')).join('\n'));
     }
     // Varje diagram som diagramkärnan har ritat, ur dess register (_rfBehallare, ADR-39), inte ur en väljare: de som
     // skärmen ritade (efter bakgrundsräkningen och nästa bildruta, ovan) och de som exportläget ritar. Alla läses i ett

@@ -8,7 +8,7 @@ import { fonster as fonsterK, fangaBocker, laddaXlsx, SENT_SMA, SMA } from './he
 vi.setConfig({ testTimeout: 30000 });
 const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
 const medStatistik = (w, { spann = true } = {}) => {
-    w.__state.statistik = [...new Set(w.__getData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return spann ? { aid, bas, median: 34000, p10: 30000, p90: 39000 } : { aid, bas, median: 34000 }; });
+    w.__state.statistik = [...new Set(w.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return spann ? { aid, bas, median: 34000, p10: 30000, p90: 39000 } : { aid, bas, median: 34000 }; });
     w.__state.statistikHasP10 = spann; w.__state.statistikHasP90 = spann;
 };
 
@@ -73,7 +73,7 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
     });
     it('ställningstagande per BAS: alla yrken i intervallet mäts mot samma spann', () => {
         const w = fonster();
-        w.__state.policy = [...new Set(w.__getData().map(r => r.bas))].map(bas => ({ bas, p10: 25000, med: 30000, p90: 35000 }));
+        w.__state.policy = [...new Set(w.__hamtaData().map(r => r.bas))].map(bas => ({ bas, p10: 25000, med: 30000, p90: 35000 }));
         const grupper = w.eval('referensOverblick()').grupper;
         expect(grupper.length).toBeGreaterThan(0);
         expect(grupper.every(g => g.stallningstagande.p10 === 25000 && g.stallningstagande.p90 === 35000)).toBe(true);
@@ -369,7 +369,7 @@ describe('Lönepolitik: organisationens band i bandkartan', () => {
         const orgLager = lager.find(l => l.serie === `${w.eval('orgNamn()')} (P10–P90)`);   // demot heter Exempelkommunen (ADR-36)
         expect(orgLager).toBeTruthy();
         expect(orgLager.marke).toBe('intervall');
-        const d = w.__getData();
+        const d = w.__hamtaData();
         const basMedK = [...new Set(d.map(r => r.bas))].filter(b => d.filter(r => r.bas === b && r.lon > 0).length >= w.__K);
         expect(orgLager.data.length).toBe(basMedK.length);
         expect(orgLager.data.every(p => p.hog >= p.med && p.med >= p.lag)).toBe(true);
@@ -406,11 +406,11 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
         expect(win.__policyFor(null, 'D')).toBeNull();
     });
 
-    it('policyLevelLabel beskriver referensens nivå', () => {
-        expect(win.__policyLevelLabel({ aid: '1', bas: 'D' })).toBe('AID + BAS');
-        expect(win.__policyLevelLabel({ aid: '1' })).toBe('AID-specifik');
-        expect(win.__policyLevelLabel({ bas: 'D' })).toBe('BAS-intervall');
-        expect(win.__policyLevelLabel(null)).toBeNull();
+    it('policyNivaEtikett beskriver referensens nivå', () => {
+        expect(win.__policyNivaEtikett({ aid: '1', bas: 'D' })).toBe('AID + BAS');
+        expect(win.__policyNivaEtikett({ aid: '1' })).toBe('AID-specifik');
+        expect(win.__policyNivaEtikett({ bas: 'D' })).toBe('BAS-intervall');
+        expect(win.__policyNivaEtikett(null)).toBeNull();
     });
 
     it('tom policy → modellen flaggar hasPolicy=false och fliken visar tomstatus', () => {
@@ -423,7 +423,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
 
     it('med policy byggs modellen med täckningsgrad och maskeringstrappa', () => {
         win.__loadDemoData();
-        const bas = [...new Set(win.__getData().map(r => r.bas))];
+        const bas = [...new Set(win.__hamtaData().map(r => r.bas))];
         setPolicy(bas.map(b => ({ bas: b, p10: 25000, med: 32000, p90: 45000 })));
         const m = win.__lonepolitikVymodell().modell;
         expect(m.hasPolicy).toBe(true);

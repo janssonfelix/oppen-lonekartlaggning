@@ -24,7 +24,7 @@
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _rfBehallare, _rfExportFigur, rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { diagramexportRubrik, exportTillaten } from './11-diagramexport.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { _egFlikFor, _exportDjup, _ritadVid, exportSakra, flikInaktuell, iExportLage, iForhandsvisning } from './23-exportgrind.js';
 import { renderTabContent } from './31-navigering.js';
 import { _wireTablistKeys } from './63-tangentbordsnavigering.js';
@@ -156,7 +156,7 @@ function utAllaDiagramRita() {
     const behallare = document.getElementById('ut-alla-grupper');
     if (!behallare) return;
     const tom = document.getElementById('ut-alla-tom');
-    if (!getData().length) {
+    if (!hamtaData().length) {
         _utAllaRensa(behallare);
         if (tom) tom.hidden = false;
         return;

@@ -15,7 +15,7 @@ import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
 import { gapStatusNiva, PALETTE } from './10-diagramtema.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { iExportLage } from './23-exportgrind.js';
 import { _openEvidenceModal } from './27-berakningsbevis.js';
 import { KOHORT_FORBEHALL } from './40-alder-karriar.js';
@@ -406,5 +406,5 @@ function _lifecycleFigur(r) {
 /** @param {string|null} [fixBas] BAS-intervall att fixera vid; null = det mest folkrika */
 export function runLifecycleRegression(fixBas) {
     // Modellen (designmatris, OLS, HC3, prediktioner) ligger i src/lib/livscykel.js (ADR-8).
-    return livscykelRegression(getData(), { fixBas, golv: statGolv() });
+    return livscykelRegression(hamtaData(), { fixBas, golv: statGolv() });
 }

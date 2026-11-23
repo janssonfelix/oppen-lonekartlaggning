@@ -9,7 +9,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laSlutsats, laLikaGrupper } from './41-lika-arbete.js';
 
@@ -110,7 +110,7 @@ const BES8_STOD = {
 };
 const BES8_STOD_FLIK = { likvardighet: 'Likvärdigt arbete', matrix: 'Lika arbete', struktur: 'Lönestruktur' };
 export function bes8Stod() {
-    const d = (() => { try { return getData(); } catch (_e) { return []; } })();
+    const d = (() => { try { return hamtaData(); } catch (_e) { return []; } })();
     document.querySelectorAll('.bes8-stod[data-stod]').forEach(el => {
         const li = /** @type {HTMLElement} */ (el), flik = li.dataset.stod || '';
         if (li.dataset.fast == null) li.dataset.fast = li.innerHTML;

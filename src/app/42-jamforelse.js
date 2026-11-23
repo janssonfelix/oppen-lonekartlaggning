@@ -17,7 +17,7 @@ import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
+import { hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { _lpForskjutning, _lpIngetDiagram, _lpKonsdominans } from './75-lonepolitik.js';
 
 // ---- Jämförelsestatistik (ADR-35) ----
@@ -32,7 +32,7 @@ export function jamforelseSattVal({ bas, sektor } = {}) {
     if (sektor !== undefined) _jmfVal.sektor = typeof sektor === 'string' ? sektor : '';
 }
 export function jamforelseUnderlag() {
-    return jamforelseRader(getData(), { statistik: state.statistik, policyFor, k: kTroskel() });
+    return jamforelseRader(hamtaData(), { statistik: state.statistik, policyFor, k: kTroskel() });
 }
 export function _jmfKallaNamn(kalla) {
     return kalla === 'stallningstagande' ? referensKortnamn() : jmfNamn('jämförelsestatistiken');
@@ -73,7 +73,7 @@ export function generateBenchmark() {
     const tbody = document.querySelector('#benchmark-table tbody');
     const infoEl = document.getElementById('benchmark-metric-info');
     if (!tbody) return;
-    const d = getData();
+    const d = hamtaData();
     if (!state.statistik.length || !d.length) {
         tbody.innerHTML = `<tr><td colspan="13" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
@@ -289,7 +289,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
 export function renderStatistikLage() {
     const kort = document.getElementById('jmf-statlage-kort'), el = document.getElementById('chart-jmf-statlage');
     if (!kort || !el) return;
-    if (!state.statistik.length || !getData().length) { rensaFigur(el); kort.hidden = true; return; }
+    if (!state.statistik.length || !hamtaData().length) { rensaFigur(el); kort.hidden = true; return; }
     kort.hidden = false;
     const rader = jamforelseUnderlag().rader.filter(r => lageISpann(r.org.median, r.statistik).pos != null);
     if (!rader.length) {

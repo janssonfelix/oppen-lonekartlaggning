@@ -21,7 +21,7 @@ import { _parForRedovisning, kInstalld } from './06-k-troskel.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { _STS_STORLEK } from './10-diagramtema.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag } from './13-oversikt.js';
 import { _fkAttGora } from './17-forhandskontroll.js';
 import { _laddaNedCSV } from './22-exporthjalpare.js';
@@ -101,7 +101,7 @@ export function buildActionChecklist({ endastGrupper = false, reg: given } = {})
         // === Lika arbete: BAS-intervall med statusen Värt att granska (ADR-59): den råa medianskillnadens bootstrap-KI
         // utesluter 100 % och skillnaden är minst 3 %, i jämförbara BAS (samma regel som översiktstabellen) ===
         try {
-            const d = getData();
+            const d = hamtaData();
             const jb = new Set(jamforbaraBas(d, kInstalld()).jamforbara);
             const perBas = (reg && !reg.error && reg.perBas) ? reg.perBas : [];
             _laOversiktRader(d).filter(o => jb.has(o.bas) && _laOversiktStatus(o).niva === 'granska').forEach(o => {

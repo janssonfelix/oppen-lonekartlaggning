@@ -338,7 +338,7 @@ skillnaden mot statistiken och överblickens bild (AID-etikett och huvudområde)
   och `lon` (samma tal som tipset) i stället för att filtren läser `x` och `y`: trendlinjerna och statistikens median har
   också `x` och `y` men ska inte döljas av dem. Trendlinjerna per kön, deras konfidensband och trenden för hela urvalet
   är härledda lager med `minN = kTroskel()` och samma funktioner som vyn (`Stat.linjarRegression`,
-  `linearRegressionCI`, med bandet ur `src/lib/osakerhet.js`, `_konScatterTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
+  `linjarRegressionKI`, med bandet ur `src/lib/osakerhet.js`, `_konScatterTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
   AID-etikett är källan alla punktlager och `villkor` väljer könet. Hela urvalets trend byter R² i namnet. Utan filter
   är bilden byte för byte densamma som förut. Lön mot ålder per BAS-intervall har samma filter, men trendlinjen i en
   panel räknas inte om (en mening per panel i noten); den gäller alla i intervallet och döljs med sitt BAS-intervall.

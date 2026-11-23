@@ -74,7 +74,7 @@ const maskeradRad = (bas, aid, n, andel, median = 'n<10') => `${bas} | ${aid} | 
 describe('[B7.3] [S4] Löneöversyns blad Fördelning: de små grupperna har sina rader, och summorna röjer ingen liten grupps kostnad (ADR-70)', () => {
     it('exportläget vid 10: varje liten grupp har sin rad med antal och andel; kostnaden står samlad; bladet summerar till Använt', async () => {
         const r = await exporteraFonster(forbered(iExport(fonsterKon(null))));
-        const alla = r.w.eval('_fcBeraknaUtfall(getData())').alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5);
+        const alla = r.w.eval('_fcBeraknaUtfall(hamtaData())').alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5);
         const sma = alla.filter(g => g.n < 10);
         expect(sma.map(g => [g.bas, g.aid]).sort()).toEqual([...SMA_GRUPPER].sort());
         for (const g of sma) expect(r.rad(g.bas, g.aid), `${g.bas} ${g.aid}`).toBe(maskeradRad(g.bas, g.aid, g.n, Math.round(g.andelKv)));
@@ -184,7 +184,7 @@ describe('Varav till kvinnodominerade grupper: ger ingen del av den samlade kost
         const r = await exportera([...STOR, ...grupp('C', '6200', 6, 31000, 'kvinna'), ...grupp('C', '6201', 5, 32000, 'kvinna'),
             ...grupp('D', '6300', 6, 33000), ...grupp('D', '6301', 5, 34000)]);
         const varav = Number(r.varde('Varav till kvinnodominerade grupper (kr/mån)'));
-        const alla = r.w.eval('_fcBeraknaUtfall(getData())');
+        const alla = r.w.eval('_fcBeraknaUtfall(hamtaData())');
         expect(Math.abs(varav - alla.equityCost)).toBeLessThanOrEqual(1);
         expect(varav).toBeGreaterThan(0);
     });

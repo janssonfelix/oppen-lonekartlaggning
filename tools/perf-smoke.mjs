@@ -136,7 +136,7 @@ console.log(kolumn('Utforska, yrke inom BAS × lönespann', tUtforska2d));
 
 // Omritningen av alla flikar efter ändrad minsta gruppstorlek (den stegvisa vägen från gränssnittet), och de
 // tyngsta delarna i Ålder & karriär var för sig — där ligger flest diagram.
-/* global sattKTroskel, getData, ritaKonMultiplar, individLitenFor, ritaAldersstruktur -- funktionerna nedan körs i sidan, där de finns */
+/* global sattKTroskel, hamtaData, ritaKonMultiplar, individLitenFor, ritaAldersstruktur -- funktionerna nedan körs i sidan, där de finns */
 const tTroskel = await page.evaluate(async () => {
     if (typeof sattKTroskel !== 'function') return null;
     const t0 = performance.now();
@@ -149,7 +149,7 @@ const tTroskel = await page.evaluate(async () => {
 });
 if (tTroskel != null) console.log(kolumn('Ändrad tröskel: det som syns ritas om', tTroskel));
 const tKonDelar = await page.evaluate(() => {
-    const ut = {}, d = typeof getData === 'function' ? getData() : [];
+    const ut = {}, d = typeof hamtaData === 'function' ? hamtaData() : [];
     const mat = (namn, fn) => { if (typeof fn !== 'function') return; const t0 = performance.now(); try { fn(); } catch (_e) { /* mäts ändå */ } ut[namn] = Math.round(performance.now() - t0); };
     mat('  små multiplar', typeof ritaKonMultiplar === 'function' ? () => ritaKonMultiplar() : null);
     mat('  individLitenFor', typeof individLitenFor === 'function' ? () => { const f = individLitenFor(d); d.filter(f); } : null);

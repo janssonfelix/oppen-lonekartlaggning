@@ -195,9 +195,9 @@ describe('samma bild på Översikt', () => {
     });
     it('varje jämförbart BAS med statusen Värt att granska (säkerställd, minst 3 %) blir en punkt i åtgärdslistan, och inga andra', () => {
         const ids = w.eval('buildActionChecklist()').map(i => i.id);
-        const d = w.__getData();
+        const d = w.__hamtaData();
         const jb = new Set(w.__dqJamforbaraBas(d, w.__K).jamforbara);
-        const rader = w.eval('_laOversiktRader(getData())').filter(o => jb.has(o.bas));
+        const rader = w.eval('_laOversiktRader(hamtaData())').filter(o => jb.has(o.bas));
         const flaggade = rader.filter(o => w.eval(`_laOversiktStatus(${JSON.stringify(o)}).niva`) === 'granska').map(o => o.bas);
         expect(flaggade.length, 'demodatan ska ha minst ett BAS att granska').toBeGreaterThan(0);
         flaggade.forEach(b => expect(ids).toContain('gap-bas-' + b));

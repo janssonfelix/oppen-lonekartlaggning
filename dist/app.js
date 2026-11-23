@@ -6009,7 +6009,7 @@ function kravstatus(rader, { bas, k, golv, oversikt, policyFor: policyFor2, stat
 
 // src/app/15-extremvarden-basrang.js
 function detectOutliers(threshold) {
-  return extremvarden(getData(), statGolv(), threshold);
+  return extremvarden(hamtaData(), statGolv(), threshold);
 }
 function renderOutliers() {
   const container = document.getElementById("outliers-container");
@@ -9824,7 +9824,7 @@ function loadStortDemo() {
   if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
   document.getElementById("diagnostic-results").style.display = "none";
   _renderDemoBanner();
-  meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
+  meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
 }
 function uppstartStortDemo() {
   ["first-run-stort-demo", "upload-demo-stort"].forEach((id) => document.getElementById(id)?.addEventListener("click", loadStortDemo));
@@ -10806,17 +10806,17 @@ var _harAlderFor = (
   { data: null, n: -1, varde: false }
 );
 function harAlder() {
-  const d = getData();
+  const d = hamtaData();
   if (_harAlderFor.data !== d || _harAlderFor.n !== d.length) _harAlderFor = { data: d, n: d.length, varde: harAlderIRader(d) };
   return _harAlderFor.varde;
 }
 var ALDER_METODVAL_TEXT = "Att ålder räknas bort är ett metodval för att skilja ut strukturella skillnader, inte ett ställningstagande om att ålder är ett sakligt skäl; det avgör ni.";
 var ALDER_SAKNAS_TEXT = "Lönefilen saknar ålder: analysen körs utan åldersjustering, och Ålder & karriär visas inte.";
 function forklaringsmodell() {
-  return normaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: getData().some((d) => d.aid || d.yrke), harAlder: harAlder() }).modell;
+  return normaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: hamtaData().some((d) => d.aid || d.yrke), harAlder: harAlder() }).modell;
 }
 function sattForklaringsmodell(v, { rita = true } = {}) {
-  const harYrke = getData().some((d) => d.aid || d.yrke);
+  const harYrke = hamtaData().some((d) => d.aid || d.yrke);
   const { modell, varningar } = normaliseraForklaringsmodell(v, { harYrke, harAlder: harAlder() });
   const lagras = normaliseraForklaringsmodell(v, { harYrke }).modell;
   const ny = forklaringsmodellArStandard(lagras) ? null : lagras;
@@ -10829,15 +10829,15 @@ function sattForklaringsmodell(v, { rita = true } = {}) {
   return { ok: true, modell, varningar, andrad };
 }
 function runBlinderOaxaca() {
-  return blinderOaxaca(getData(), { golv: statGolv(), modell: forklaringsmodell() });
+  return blinderOaxaca(hamtaData(), { golv: statGolv(), modell: forklaringsmodell() });
 }
 function runQuantileRegressionAtAllTau() {
-  return kvantilregressionAllaTau(getData(), { modell: forklaringsmodell() });
+  return kvantilregressionAllaTau(hamtaData(), { modell: forklaringsmodell() });
 }
 
 // src/app/55-prioritering.js
 function computePrioritization(reference) {
-  return prioritera(getData(), {
+  return prioritera(hamtaData(), {
     referensFor: (aid, bas) => {
       if (reference === "stallningstagande") {
         const pol = policyFor(aid, bas);
@@ -11043,7 +11043,7 @@ function renderPrioritering() {
   if (s2) s2.textContent = _fmtCost(levels[1]);
   if (s3) s3.textContent = _fmtCost(levels[2]) + "+";
   const baseP = byggGrundberakning();
-  const dForCount = getData();
+  const dForCount = hamtaData();
   let smallCount = 0, noRefCount = 0;
   const groupCheck = {};
   dForCount.forEach((r) => {
@@ -12201,7 +12201,7 @@ function utAllaDiagramRita() {
   const behallare = document.getElementById("ut-alla-grupper");
   if (!behallare) return;
   const tom = document.getElementById("ut-alla-tom");
-  if (!getData().length) {
+  if (!hamtaData().length) {
     _utAllaRensa(behallare);
     if (tom) tom.hidden = false;
     return;
@@ -12528,7 +12528,7 @@ function _exporteraDiagramExport(gd, val) {
   gd = _diagramexportAktuell(gd);
   if (underlag2 === null) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
   if (underlag2 && underlag2.underlag && underlag2.underlag.tom) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
-  if (val === "data-kopiera") return Promise.resolve(_copyMatrixToClipboard(diagramexportRader(gd, underlag2)));
+  if (val === "data-kopiera") return Promise.resolve(_kopieraMatrisTillUrklipp(diagramexportRader(gd, underlag2)));
   if (val === "data-csv") {
     return Promise.resolve(_laddaNedCSV(diagramexportRader(gd, underlag2), diagramexportFilnamn(gd, "csv").replace(/\.csv$/, "")));
   }
@@ -12655,7 +12655,7 @@ function renderPersonerAttGranska(visaAlla = false) {
   const host = document.getElementById("personer-att-granska");
   const body = document.getElementById("pag-innehall");
   if (!host || !body) return;
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     host.hidden = true;
     body.innerHTML = "";
@@ -12862,7 +12862,7 @@ function _instRita() {
       ) || 3) !== 3
     }
   ];
-  const utanData = !getData().length;
+  const utanData = !hamtaData().length;
   flikar.innerHTML = rader.map((r) => `<li class="inst-flik${r.andrad ? " ar-andrad" : ""}">
         <span class="inst-flik-namn"><strong>${esc(r.namn)}</strong> — ${esc(r.vad)}</span>
         <span class="inst-flik-lage">${esc(r.lage)}</span>
@@ -13522,11 +13522,11 @@ function ritaLikvardigtArbete() {
     });
   });
   if (typeof aktiveraSortering === "function") aktiveraSortering("likvardighet-table");
-  if (typeof addTableExportTools === "function") addTableExportTools("likvardighet-table", "likvardighet");
+  if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("likvardighet-table", "likvardighet");
   if (typeof flerKolumner === "function") flerKolumner("likvardighet-table", LV_DOLDA_KOLUMNER, "likvardighet");
   if (document.getElementById("likvardighet-lagre-krav-table")) {
     if (typeof aktiveraSortering === "function") aktiveraSortering("likvardighet-lagre-krav-table");
-    if (typeof addTableExportTools === "function") addTableExportTools("likvardighet-lagre-krav-table", "likvardighet_lagre_krav");
+    if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("likvardighet-lagre-krav-table", "likvardighet_lagre_krav");
     if (typeof flerKolumner === "function") flerKolumner("likvardighet-lagre-krav-table", LV_LAGRE_KRAV_DOLDA_KOLUMNER, "lvLagreKrav");
   }
   if (jamforOk && result.pairs.length) ritaKandidatparen(result.pairs);
@@ -13540,7 +13540,7 @@ function _lvRitaTopp(result, vm) {
     host.innerHTML = "";
     return;
   }
-  urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(getData().length, 0)} personer</span>${kTroskelLank()}`;
+  urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(hamtaData().length, 0)} personer</span>${kTroskelLank()}`;
   const { antal, storst } = vm;
   const statJmf = vm.statJamfor, poang = vm.poang;
   const kallor = poang ? "bara organisationens egna (jämförelsestatistiken har inga poäng)" : "egna och ur jämförelsestatistiken";
@@ -14151,7 +14151,7 @@ function ritaAlderOchLon(bas) {
   const k = kTroskel();
   const trendAlla = !!/** @type {HTMLInputElement|null} */
   document.getElementById("kon-trend-alla")?.checked;
-  const vm = vymodellAlderOchLon(getData(), { bas, k, statistik: state.statistik, termer: T, trendAlla });
+  const vm = vymodellAlderOchLon(hamtaData(), { bas, k, statistik: state.statistik, termer: T, trendAlla });
   if (!vm) return;
   const { isAll, df, dataKv, dataMa, kvOk, maOk, konOk, kvot, trendKv, trendMa } = vm;
   const unadjGap = kvot != null ? svPct(kvot, 1) : "–";
@@ -14159,7 +14159,7 @@ function ritaAlderOchLon(bas) {
   const urvalText = document.getElementById("ak-urval-text");
   if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
   _laNyckel("nyckel-ak-fordelning", kvot != null ? `Kvinnors median ${unadjGap} av mäns` : "");
-  _laNyckel("nyckel-ak-alla", `${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}`);
+  _laNyckel("nyckel-ak-alla", `${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}`);
   document.getElementById("kon-kpi-n").textContent = svTal(df.length, 0);
   {
     const u = document.getElementById("kon-kpi-n-under");
@@ -14415,7 +14415,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
 function ritaKonMultiplar() {
   const el = document.getElementById("chart-kon-multiplar");
   if (!el) return;
-  const d = getData();
+  const d = hamtaData();
   const { figur, utanfor, nedsamplade } = _konMultiplarFigur(d, individLitenFor(d));
   if (figur.paneler.length) ritaFigur(el, figur);
   else rensaFigur(el);
@@ -14539,7 +14539,7 @@ function _konScatterTrend(punkter, medBand = false) {
   if (!(a1 > a0)) return null;
   const reg = Stat.linjarRegression(par);
   if (!reg || !isFinite(reg.m) || !isFinite(reg.b)) return null;
-  const ci = medBand ? linearRegressionCI(par, a0, a1, 25) : null;
+  const ci = medBand ? linjarRegressionKI(par, a0, a1, 25) : null;
   return {
     reg,
     linje: [{ x: a0, y: reg.m * a0 + reg.b }, { x: a1, y: reg.m * a1 + reg.b }],
@@ -14591,7 +14591,7 @@ function ritaAldersstruktur(bas) {
     _akTomUtanAlder();
     return;
   }
-  const vm = vymodellAldersstruktur(getData(), { bas, k: kTroskel(), alla: state.data });
+  const vm = vymodellAldersstruktur(hamtaData(), { bas, k: kTroskel(), alla: state.data });
   if (!vm) return;
   const { isAll, n, pctKv, pctMa, andel60, andelU40, alderDiff, orgMedian } = vm;
   const scopeShort = isAll ? "urvalet" : T.niva.bf;
@@ -14732,9 +14732,9 @@ function _demoBandFigur(df, k, pol, aLo, aHi, rader = alderBandRader(df, k)) {
       band("Mittersta hälften (P25–P75)", "p25", "p75", 0.3),
       { marke: "linje", serie: "Median", farg: PALETTE.serie[0], tjocklek: 2.5, punkter: true, data: rader.map((r) => ({ x: r.x, y: r.p50, namn: r.namn, alder: r.alder, r })), tips },
       ...pol ? [
-        _vagratLinje("Ställn. P10", colors.policy, pol.p10, aLo, aHi, { streck: "streckad", tjocklek: 1 }),
-        _vagratLinje("Ställn. Median", colors.policy, pol.med, aLo, aHi, { streck: "streckad", tjocklek: 1.5 }),
-        _vagratLinje("Ställn. P90", colors.policy, pol.p90, aLo, aHi, { streck: "streckad", tjocklek: 1 })
+        _vagratLinje("Ställn. P10", farger.policy, pol.p10, aLo, aHi, { streck: "streckad", tjocklek: 1 }),
+        _vagratLinje("Ställn. Median", farger.policy, pol.med, aLo, aHi, { streck: "streckad", tjocklek: 1.5 }),
+        _vagratLinje("Ställn. P90", farger.policy, pol.p90, aLo, aHi, { streck: "streckad", tjocklek: 1 })
       ] : []
     ]
   };
@@ -15057,12 +15057,12 @@ function _lifecycleFigur(r) {
   };
 }
 function runLifecycleRegression(fixBas) {
-  return livscykelRegression(getData(), { fixBas, golv: statGolv() });
+  return livscykelRegression(hamtaData(), { fixBas, golv: statGolv() });
 }
 
 // src/app/51-lika-arbete-regressionskort.js
 function runOLSRegression() {
-  return huvudregression(getData(), regressionsval());
+  return huvudregression(hamtaData(), regressionsval());
 }
 function regressionsval() {
   return {
@@ -15256,7 +15256,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: 0, kiUtelamnad: `Konfidensintervallet räknas inte vid fler än ${svTal(REG_KVANTIL_KI_MAX_N, 0)} personer (tiden för ${REG_KVANTIL_KI_B} omsamplingar).` };
   }
   const modell = forklaringsmodell();
-  const raw = kvantilDesign(getData(), modell).rader;
+  const raw = kvantilDesign(hamtaData(), modell).rader;
   const arKv2 = arKvinna;
   const nyckel = `${froAvTal(raw.filter(arKv2).map((d) => d.lon), raw.filter((d) => !arKv2(d)).map((d) => d.lon), raw.map((d) => d.alder || 0))}|${raw.length}|${qr.kolumner.join(",")}|${results.map((r) => r.konPct).join(",")}`;
   if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
@@ -15469,7 +15469,7 @@ function ritaRegressionskort() {
   }
   const vm = (
     /** @type {NonNullable<ReturnType<typeof vymodellRegressionskort>>} */
-    vymodellRegressionskort(r, { k: kTroskel(), rader: getData(), medAlder: harAlder(), basEffektNot: (u) => _basEffektNot(u, kTroskel()) })
+    vymodellRegressionskort(r, { k: kTroskel(), rader: hamtaData(), medAlder: harAlder(), basEffektNot: (u) => _basEffektNot(u, kTroskel()) })
   );
   const sig = _formatPValue(r.pValue);
   const isSig = vm.sakerstalld;
@@ -16060,7 +16060,7 @@ function _forecastReadControls() {
   }
 }
 function _forecastAidsForBas(bas) {
-  const seen = /* @__PURE__ */ new Map(), iBas = getData().filter((r) => r.bas === bas);
+  const seen = /* @__PURE__ */ new Map(), iBas = hamtaData().filter((r) => r.bas === bas);
   const namnrad = namnrader(iBas, (r) => r.aid);
   iBas.forEach((r) => {
     let g = seen.get(r.aid);
@@ -16075,13 +16075,13 @@ function _forecastAidsForBas(bas) {
 function ritaRiktadeRader() {
   const host = document.getElementById("forecast-targets");
   if (!host) return;
-  const basList = getBasIntervals();
+  const basList = hamtaBasIntervall();
   const t = state.forecast.targets;
   if (!t.length) {
     host.innerHTML = '<p class="text-dampad-sm marg-4-0">Inga riktade potter tillagda. Lägg till en grupp eller använd förslagsknappen.</p>';
     return;
   }
-  const dAll = getData();
+  const dAll = hamtaData();
   host.innerHTML = t.map((tg, i) => {
     const info = riktadRadInfo(dAll, tg, { roundStep: state.forecast.roundStep, k: kInstalld() });
     const basOpts = basList.map((b) => `<option value="${esc(b)}"${tg.bas === b ? " selected" : ""}>${esc(b)}</option>`).join("");
@@ -16187,7 +16187,7 @@ function ritaPrognos() {
   if (!meterEl && !outEl) return;
   _forecastReadControls();
   _fcUppdateraForslagPott();
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     if (meterEl) meterEl.innerHTML = "";
     {
@@ -16506,7 +16506,7 @@ function _forecastOptimizeFranPott() {
   }
 }
 function _forecastOptimize() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return;
   _forecastReadControls();
   const cand = _fcKandidater();
@@ -16556,7 +16556,7 @@ function _fcRensaParMal() {
   return sakert + forsiktigt;
 }
 function _forecastAddByCriteria() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return;
   _forecastReadControls();
   const matcher = (
@@ -16598,7 +16598,7 @@ function _forecastAddByCriteria() {
   if (added === 0) alert("Grupperna finns redan bland de riktade raderna.");
 }
 function _forecastClosure() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return;
   _forecastReadControls();
   const fracPct = parseFloat(
@@ -16620,7 +16620,7 @@ function _forecastClosure() {
   ritaPrognos();
 }
 function _forecastSaveScenario(slot) {
-  const d = getData();
+  const d = hamtaData();
   if (!state.forecast.result || !d.length) {
     alert("Det finns ingen prognos att spara. Ange en pott först.");
     return;
@@ -16645,7 +16645,7 @@ function _ritaScenariojamforelse() {
   }
   const kr2 = (n) => svKr(n);
   const pc = (n) => n == null ? "–" : (n >= 0 ? "+" : "") + svPct(n, 1);
-  const vm = scenariojamforelse(sc, { nu: konAntal(getData()), k: kTroskel(), arKvDom: kvDomAv(_fcKostnadsval()) });
+  const vm = scenariojamforelse(sc, { nu: konAntal(hamtaData()), k: kTroskel(), arKvDom: kvDomAv(_fcKostnadsval()) });
   const maskerat = vm.maskerat;
   const col = (r) => r ? `<td class="t-hoger">${kr2(r.anvant)}</td><td class="t-hoger">${kr2(r.totalKostnad)}</td><td class="t-hoger">${andelAvMan(r.raEfter)}</td><td class="t-hoger">${pc(r.oforklaratEfter)}</td><td class="t-hoger">${kr2(r.tillKvDom)}</td><td class="t-hoger">${r.omkorningar}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
   host.innerHTML = `<table class="data-table fs-sm">
@@ -16665,7 +16665,7 @@ function _forecastLasMal(falt, standard) {
 }
 function _forecastThreshold() {
   const host = document.getElementById("forecast-threshold-result");
-  const d = getData();
+  const d = hamtaData();
   if (!host) return;
   _fcKnappresultat.add("forecast-threshold-result");
   if (!d.length) {
@@ -16721,7 +16721,7 @@ function _forecastThreshold() {
     </div>`;
 }
 function _forecastMarket() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return;
   _forecastReadControls();
   const f = (parseFloat(
@@ -16752,7 +16752,7 @@ function _forecastMarket() {
 }
 function _forecastSensitivity() {
   const host = document.getElementById("forecast-sensitivity");
-  const d = getData();
+  const d = hamtaData();
   if (!host) return;
   _fcKnappresultat.add("forecast-sensitivity");
   if (!d.length) {
@@ -16775,7 +16775,7 @@ function _forecastSensitivity() {
 }
 function _forecastRemediation() {
   const host = document.getElementById("forecast-rem-result");
-  const d = getData();
+  const d = hamtaData();
   if (!host) return;
   _fcKnappresultat.add("forecast-rem-result");
   if (!d.length) {
@@ -16837,15 +16837,15 @@ function _exportForecastExport() {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
-  if (!state.forecast.result || !getData().length) {
+  if (!state.forecast.result || !hamtaData().length) {
     alert("Det finns ingen prognos att exportera. Ange en pott först.");
     return;
   }
-  const out = _fcBeraknaUtfall(getData());
+  const out = _fcBeraknaUtfall(hamtaData());
   _fcKandidater();
   const kr2 = (n) => Math.round(n);
   const K = kTroskel();
-  const konOk = _konFarRedovisasFor(getData());
+  const konOk = _konFarRedovisasFor(hamtaData());
   const vy = utfallsvy(out, K, kvDomAv(_fcKostnadsval()));
   const { utfall, varavKvDom: varavKvDom2 } = vy;
   const meta = [
@@ -16921,7 +16921,7 @@ function uppstartLoneoversyn() {
     document.getElementById("forecast-save-a")?.addEventListener("click", () => _forecastSaveScenario("A"));
     document.getElementById("forecast-save-b")?.addEventListener("click", () => _forecastSaveScenario("B"));
     document.getElementById("forecast-add-target")?.addEventListener("click", () => {
-      const basList = getBasIntervals();
+      const basList = hamtaBasIntervall();
       const bas = basList[0] || "";
       const aid = (_forecastAidsForBas(bas)[0] || {}).aid || "";
       state.forecast.targets.push({ bas, aid, kon: "alla", lonCap: null, mode: "kr", value: null, dist: "lowest", targetLevel: "median", pool: "övrigt" });
@@ -17974,7 +17974,7 @@ function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
   return `<button type="button" class="btn-table-tool hp-skal" data-hp-skal="${esc(nyckel)}" data-hp-grupp="${esc(grupp)}" data-hp-skillnad="${skillnadKr == null ? "" : esc(String(skillnadKr))}" data-noprint aria-label="${esc(_hpSkalEtikett(nyckel, grupp, skillnadKr))}"><span class="hp-skal-sammanfattning">${esc(_hpSkalSammanfattning(nyckel, skillnadKr))}</span></button>`;
 }
 function _hpBedomningar(passar) {
-  const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
+  const seed = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
   return seed.nycklar.map((nyckel, i) => ({ nyckel, i, roll: _hpArEgen(nyckel) ? "" : passar(nyckel.split("|")) })).filter((x) => x.roll).map(({ nyckel, i, roll }) => {
     const s = skalSammanstallning(_hpVarden(nyckel).skal || [], seed.skillnader[i]);
     return { nyckel, grupp: seed.rows[i][1], kalla: nyckel.split("|")[0], roll, antal: s.antal, summa: s.summa, andel: s.forklaradAndel };
@@ -18064,11 +18064,11 @@ function _hpDemoSkal() {
 }
 function renderHandlingsplanSeed() {
   document.querySelectorAll("[data-dok-klick]").forEach((b) => {
-    b.disabled = !getData().length;
+    b.disabled = !hamtaData().length;
   });
   const tbody = document.getElementById("handlingsplan-tbody");
   if (!tbody) return;
-  const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
+  const seed = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
   const fmtKr = (n) => n ? svKr(n) : "";
   const lista = (id, nyckel, falt, val, alt, etikett2) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett2)}">` + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? " selected" : ""}>${esc(l)}</option>`).join("") + "</select>";
   const text = (id, nyckel, falt, val, platshallare, etikett2) => `<input type="text" id="${id}" class="hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" value="${esc(val)}" maxlength="${HP_MAX_TEXT}" autocomplete="off" placeholder="${esc(platshallare)}" aria-label="${esc(etikett2)}">`;
@@ -18480,9 +18480,9 @@ function _lpTier(n) {
   return maskeringsniva(n, kTroskel());
 }
 function lonepolitikVymodell() {
-  return vymodellLonepolitik(getData(), {
+  return vymodellLonepolitik(hamtaData(), {
     policyFor,
-    nivaEtikett: policyLevelLabel,
+    nivaEtikett: policyNivaEtikett,
     k: kTroskel(),
     harPolicy: (state.policy || []).length > 0
   });
@@ -18537,7 +18537,7 @@ function ritaLonepolitik() {
   _lpRitaKonLagen(vm);
   _lpRitaEfterlevnad(vm);
   if (typeof aktiveraSortering === "function") aktiveraSortering("lonepolitik-table");
-  if (typeof addTableExportTools === "function") addTableExportTools("lonepolitik-table", "lonepolitik");
+  if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("lonepolitik-table", "lonepolitik");
 }
 function _lpCoverageHtml(vm) {
   const c = vm.modell.coverage;
@@ -19003,7 +19003,7 @@ function jamforelseSattVal({ bas, sektor } = {}) {
   if (sektor !== void 0) _jmfVal.sektor = typeof sektor === "string" ? sektor : "";
 }
 function jamforelseUnderlag() {
-  return jamforelseRader(getData(), { statistik: state.statistik, policyFor, k: kTroskel() });
+  return jamforelseRader(hamtaData(), { statistik: state.statistik, policyFor, k: kTroskel() });
 }
 function _jmfKallaNamn(kalla) {
   return kalla === "stallningstagande" ? referensKortnamn() : jmfNamn("jämförelsestatistiken");
@@ -19044,7 +19044,7 @@ function generateBenchmark() {
   const tbody = document.querySelector("#benchmark-table tbody");
   const infoEl = document.getElementById("benchmark-metric-info");
   if (!tbody) return;
-  const d = getData();
+  const d = hamtaData();
   if (!state.statistik.length || !d.length) {
     tbody.innerHTML = `<tr><td colspan="13" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon("tomLada", 32)}</div><h2>Jämförelsestatistik saknas</h2>
@@ -19319,7 +19319,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
 function renderStatistikLage() {
   const kort = document.getElementById("jmf-statlage-kort"), el = document.getElementById("chart-jmf-statlage");
   if (!kort || !el) return;
-  if (!state.statistik.length || !getData().length) {
+  if (!state.statistik.length || !hamtaData().length) {
     rensaFigur(el);
     kort.hidden = true;
     return;
@@ -19781,7 +19781,7 @@ function uppstartOrdlista() {
 var _RR_MAX = 25;
 function referensOverblick() {
   const harStatistik = state.statistik.length > 0, harStallningstagande = state.policy.length > 0;
-  if (!getData().length || !harStatistik && !harStallningstagande) return null;
+  if (!hamtaData().length || !harStatistik && !harStallningstagande) return null;
   return referensOverblickUr(jamforelseUnderlag().rader, {
     harStatistik,
     harStallningstagande,
@@ -19968,7 +19968,7 @@ function renderReferensOverblick() {
   } catch (e) {
     rapporteraFel("Löneläget: överblickens bild", e);
   }
-  addTableExportTools("ref-tabell", "referenser");
+  laggTillTabellverktyg("ref-tabell", "referenser");
   aktiveraSortering("ref-tabell");
   aktiveraSortering("ref-stat-mot-stallning");
 }
@@ -20053,7 +20053,7 @@ var BES8_STOD_FLIK = { likvardighet: "Likvärdigt arbete", matrix: "Lika arbete"
 function bes8Stod() {
   const d = (() => {
     try {
-      return getData();
+      return hamtaData();
     } catch (_e) {
       return [];
     }
@@ -20092,7 +20092,7 @@ function _gdBootstrapGapCI(kvLons, maLons, B) {
   return medianKvotKIGiltiga(kvLons, maLons, { B });
 }
 function gruppdossierCandidates() {
-  return gruppdossierGrupper(getData(), kTroskel());
+  return gruppdossierGrupper(hamtaData(), kTroskel());
 }
 function _gdKon(rows) {
   return { kv: rows.filter((r) => arKvinna(r)), ma: rows.filter((r) => arMan(r)) };
@@ -20105,7 +20105,7 @@ function buildGruppdossier(key, delat = null) {
   if (!g) return null;
   let justerat = null;
   if (harAlder()) try {
-    const rakna = () => _computePerBasGap(getData(), [g.bas]);
+    const rakna = () => _computePerBasGap(hamtaData(), [g.bas]);
     let perBas;
     if (!delat) perBas = rakna();
     else {
@@ -20144,7 +20144,7 @@ function buildGruppdossier(key, delat = null) {
     ki: !(delat && delat.text),
     kostnad: state.costSettings,
     referens,
-    referensNiva: policyLevelLabel(referens),
+    referensNiva: policyNivaEtikett(referens),
     par,
     statistik: state.statistik,
     skrDel: _skrDel(),
@@ -20786,7 +20786,7 @@ function _rmMinnesNyckel() {
   return [
     _rmHandelser,
     state.data.length,
-    getData().length,
+    hamtaData().length,
     kTroskel(),
     state.policy,
     state.statistik,
@@ -20829,7 +20829,7 @@ function _rapportModellExport({ alla = false, bada = false, besked = false, ater
   return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
 }
 function _rmAvsnittenUtanUrval() {
-  const d = getData();
+  const d = hamtaData();
   const year = (/* @__PURE__ */ new Date()).getFullYear(), today = (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE");
   const k = kTroskel();
   const urval = "Hela organisationen";
@@ -20838,7 +20838,7 @@ function _rmAvsnittenUtanUrval() {
   const vm = vymodellRapport(d, {
     k,
     golv: statGolv(),
-    bas: getBasIntervals(),
+    bas: hamtaBasIntervall(),
     reg,
     lika: laLikaGrupper(d, k),
     lvPar: lvRes && lvRes.pairs,
@@ -21504,7 +21504,7 @@ function _tillampaKonfiguration(cfg) {
     if (typeof cfg.perBasRecept !== "object") throw new Error("perBasRecept måste vara ett objekt.");
     tmp.perBasRecept = valideraPerBasRecept(cfg.perBasRecept);
   }
-  const rader = getData();
+  const rader = hamtaData();
   const fm = normaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some((d) => d.aid || d.yrke) });
   varningar.push(...fm.varningar);
   const guRa = cfg.gapUppdelning;
@@ -21623,7 +21623,7 @@ function byggOgonblicksbild(...a) {
   ));
 }
 function _byggOgonblicksbildExport() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return null;
   const m = ogonblicksbildMatt(d, kTroskel());
   const reg = runOLSRegression();
@@ -21641,7 +21641,7 @@ function _byggOgonblicksbildExport() {
     unexplainedPValue: reg.error ? null : reg.pValue,
     underlag: dq ? UK_ETIKETT[dq.status] : null,
     avgAge: m.avgAge,
-    nBas: getBasIntervals().length
+    nBas: hamtaBasIntervall().length
   };
 }
 function ritaOgonblicksbildJamforelse() {
@@ -21808,7 +21808,7 @@ function uppstartKonfiguration() {
 function byggArsbokslutNu() {
   if (!state.data.length || typeof byggArsbokslut !== "function") return null;
   return medExportLage(() => {
-    const d = getData();
+    const d = hamtaData();
     const k = kTroskel();
     const bild = byggOgonblicksbild();
     const lika = typeof laLikaGrupper === "function" ? laLikaGrupper(d, k) : { grupper: [] };
@@ -21840,7 +21840,7 @@ function byggArsbokslutNu() {
       },
       grupper: bokslutGrupper(lika.grupper, d, k),
       punkter: punkter.map((p) => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
-      basIntervall: getBasIntervals().map((b) => bokslutBasRad(d, b, k)).filter(Boolean),
+      basIntervall: hamtaBasIntervall().map((b) => bokslutBasRad(d, b, k)).filter(Boolean),
       bedomningar: _abBedomningarNu()
     });
   });
@@ -22022,12 +22022,12 @@ function renderArsjamforelse() {
 
 // src/app/81-basdossier.js
 function basdossierKandidater() {
-  return basdossierIntervall(getData(), getBasIntervals(), kTroskel());
+  return basdossierIntervall(hamtaData(), hamtaBasIntervall(), kTroskel());
 }
 var BD_STATUS_TEXT = { granska: "Värt att granska", folj: "Följ upp", balanserat: "Balanserat", ejbedomd: "Går ej att bedöma", liten: "Könsuppdelningen är för liten" };
 var BD_STATUS_KLASS = { granska: ["farg-granska", "sok"], folj: ["farg-varning", "oga"], balanserat: ["farg-ok", "bock"], ejbedomd: ["f-dampad", "streck"], liten: ["f-dampad", null] };
 function buildBasdossier(bas) {
-  const k = kTroskel(), d = getData();
+  const k = kTroskel(), d = hamtaData();
   let likvardighet = null;
   try {
     likvardighet = likvardighetResultat();
@@ -22036,7 +22036,7 @@ function buildBasdossier(bas) {
   }
   return vymodellBasdossier(d, bas, {
     k,
-    basIntervall: getBasIntervals(),
+    basIntervall: hamtaBasIntervall(),
     golv: statGolv(),
     kInstalld: kInstalld(),
     referens: policyFor(null, bas),
@@ -22216,8 +22216,8 @@ function basdossierYrkesrader(d) {
 }
 var BD_YRKESKOLUMNER = ["AID", stor(T.namn.en), "Kvinnor / män", "Median kvinnor", "Median män", "Kvinnors median i % av mäns", "Status"];
 function basdossierUtelamnade() {
-  const d = getData(), kand = new Set(basdossierKandidater().map((x) => x.bas));
-  return getBasIntervals().filter((b) => !kand.has(b) && d.some((r) => r.bas === b && r.lon > 0));
+  const d = hamtaData(), kand = new Set(basdossierKandidater().map((x) => x.bas));
+  return hamtaBasIntervall().filter((b) => !kand.has(b) && d.some((r) => r.bas === b && r.lon > 0));
 }
 function basdossierText(bas) {
   return medExportLage(() => {
@@ -22304,7 +22304,7 @@ function ritaLoneoversikt() {
   );
   tbody.innerHTML = "";
   const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
-  const vm = vymodellLoneoversikt(getData(), { bas: getBasIntervals(), k: kTroskel(), policyFor, statistik: state.statistik });
+  const vm = vymodellLoneoversikt(hamtaData(), { bas: hamtaBasIntervall(), k: kTroskel(), policyFor, statistik: state.statistik });
   const dossierBas = new Set(basdossierKandidater().map((x) => x.bas));
   vm.block.forEach(({ bas: b, referens: pol, rader, utelamnade }) => {
     const trH = document.createElement("tr");
@@ -22522,7 +22522,7 @@ function _afterDataLoaded() {
   ritaNyckeltal();
   populateSelects();
   ritaLoneoversikt();
-  const bas = getBasIntervals();
+  const bas = hamtaBasIntervall();
   dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
   if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
   dataStatus.className = "status-msg success";
@@ -22538,7 +22538,7 @@ function _afterDataLoaded() {
   renderDataValidationReport();
   renderForhandskontroll();
   syncDatakvalitetPanel({ reg });
-  meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
+  meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
   doljLaddning();
   const DEFER_NOTE = " · förbereder analyser i bakgrunden…";
   setTimeout(() => {
@@ -24186,7 +24186,7 @@ function explorerSynkaSmaLas() {
 function renderExplorer() {
   if (!document.getElementById("explore-rad")) return;
   explorerSynkaSmaLas();
-  const rows = getData();
+  const rows = hamtaData();
   explorerRensaUrval(rows);
   const spec = _explorerSpec();
   if (spec.kolumn === spec.rad) {
@@ -24300,7 +24300,7 @@ function _renderExplorerTable(model, typ, inkl) {
   table.setAttribute("data-export-beskrivning", beskrivUrval(spec.urval, spec.gruppVillkor));
   table._sortInit = false;
   if (typeof aktiveraSortering === "function") aktiveraSortering("explore-table");
-  if (typeof addTableExportTools === "function") addTableExportTools("explore-table", "utforska");
+  if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("explore-table", "utforska");
   const container = table.closest(".table-container");
   const verktyg = container && container.previousElementSibling;
   if (verktyg && verktyg.classList.contains("table-tools")) verktyg.hidden = tom;
@@ -24392,7 +24392,7 @@ function explorerTillRapport() {
       status.className = `status-msg${ok ? " success" : ""}`;
     }
   };
-  if (!getData().length) {
+  if (!hamtaData().length) {
     satt("Läs in en lönefil först.", false);
     return null;
   }
@@ -25037,7 +25037,7 @@ function uppstartOrganisationspaket() {
 function runDiagnostics() {
   const reg = runOLSRegression();
   return demodiagnostik(
-    { rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: getBasIntervals().length },
+    { rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: hamtaBasIntervall().length },
     // regressionen skickas vidare (ADR-17)
     { nivaFl: T.niva.fl, underlagEtikett: (s) => UK_ETIKETT[s], pText: _formatPValue }
   );
@@ -25596,7 +25596,7 @@ function _mkTraffEn(nycklar, vald) {
 function _mkEtikett(nyckel) {
   if (nyckel.startsWith("bas:")) return `BAS ${nyckel.slice(4)}`;
   const [aid, bas] = nyckel.slice(6).split("|");
-  const rad = getData().find((r) => r.bas === bas && String(r.yrke || "").startsWith(aid));
+  const rad = hamtaData().find((r) => r.bas === bas && String(r.yrke || "").startsWith(aid));
   return `${rad ? rad.yrke : aid} · BAS ${bas}`;
 }
 function sattDiagramMarkering(nyckel, { lagg = false } = {}) {
@@ -25807,7 +25807,7 @@ function _laMinneFor(d, k) {
 function laMinneSlapp() {
   _laMinnen.clear();
 }
-function laLikaGrupper(d = getData(), k = kTroskel()) {
+function laLikaGrupper(d = hamtaData(), k = kTroskel()) {
   const minne = _laMinneFor(d, k), golv = statGolv();
   if (!minne.lika || minne.likaGolv !== golv) {
     minne.lika = likaArbeteGrupper(d, { k, golv });
@@ -25828,7 +25828,7 @@ function _direktivCell(markerad) {
   const b = _direktivBricka(markerad);
   return `<td class="t-mitt" data-sort-value="${b ? 1 : 0}">${b}</td>`;
 }
-function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
+function _laOversiktRader(d, bas = hamtaBasIntervall(), k = kTroskel()) {
   const minne = _laMinneFor(d, k), nyckel = bas.join("\0");
   if (minne.oversikt && minne.oversiktNyckel === nyckel) return minne.oversikt;
   const ut = oversiktPerBas(d, bas, k);
@@ -25845,8 +25845,8 @@ function _laOversiktStatus(o) {
   return gapStatusKI(o);
 }
 function lsBasVymodell() {
-  const d = getData();
-  return vymodellLonestruktur(d, { bas: getBasIntervals(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
+  const d = hamtaData();
+  return vymodellLonestruktur(d, { bas: hamtaBasIntervall(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
 }
 function ritaLoneskillnadPerBas(vm) {
   const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
@@ -25858,7 +25858,7 @@ function ritaLoneskillnadPerBas(vm) {
     _laOversiktTabell(vm.oversikt);
     const ladEl = document.getElementById("chart-skevhet-lador");
     if (ladEl) {
-      const { figur, utelamnade } = _konTathetFigur(getData(), true, kTroskel(), "lada");
+      const { figur, utelamnade } = _konTathetFigur(hamtaData(), true, kTroskel(), "lada");
       if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.niva))} ${T.niva.en} har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` });
       else rensaFigur(ladEl);
       const not = document.getElementById("skevhet-lador-not");
@@ -25987,7 +25987,7 @@ function _skrReferensCell(ref) {
 var LA_DOLDA_KOLUMNER = ["dominans", "nationellt"];
 var LA_OVERSIKT_DOLDA_KOLUMNER = ["direktiv"];
 function laVymodell() {
-  const d = getData();
+  const d = hamtaData();
   return vymodellLikaArbete(d, {
     k: kTroskel(),
     golv: statGolv(),
@@ -26294,7 +26294,7 @@ function _laNyckel(id, text, kritisk) {
   el.classList.toggle("ar-granska", kritisk === "granska");
 }
 function _laRitaUrval() {
-  const urval = document.getElementById("la-urval"), d = getData();
+  const urval = document.getElementById("la-urval"), d = hamtaData();
   if (!urval) return;
   if (!d.length) {
     urval.textContent = "";
@@ -26312,7 +26312,7 @@ function _laRegFaNot(reg) {
 function renderLikaArbeteTopp({ reg: given } = {}) {
   const urval = document.getElementById("la-urval"), ut = document.getElementById("la-slutsatser");
   if (!urval || !ut) return;
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     urval.textContent = "";
     ut.innerHTML = "";
@@ -26365,7 +26365,7 @@ function _skevhetNot(lista) {
   return `<p class="k-mask-note">${n} ${esc(_kNotForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: ${_kNotNamn(lista)}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och könsfördelningen skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
 }
 function renderLonestrukturNycklar() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     for (const id of ["nyckel-ls-bas", "nyckel-ls-kon", "nyckel-ls-regression"]) _laNyckel(id, "");
     return;
@@ -26456,7 +26456,7 @@ function _aidbasNationell(aid) {
   const r = typeof skrKvinnoandel === "function" ? skrKvinnoandel(aid, { del: _skrDel() }) : null;
   return r && typeof r.pct === "number" ? r.pct : null;
 }
-function aidbasTabeller(d = getData()) {
+function aidbasTabeller(d = hamtaData()) {
   const k = aidbasK(), golv = aidbasGolv(), definition = aidbasDefinition(), grans = aidbasGrans(), jamforelse = lvJamforelse();
   return {
     k,
@@ -26569,7 +26569,7 @@ function _aidbasTabellHtml(id, kolumner, rader, { not = "", tom = "Inga grupper 
 function _aidbasEfter(id, dolda, nyckel) {
   if (!document.getElementById(id)) return;
   if (typeof aktiveraSortering === "function") aktiveraSortering(id);
-  if (typeof addTableExportTools === "function") addTableExportTools(id, document.getElementById(id)?.getAttribute("data-aidbas-fil") || id);
+  if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg(id, document.getElementById(id)?.getAttribute("data-aidbas-fil") || id);
   if (dolda && nyckel && typeof flerKolumner === "function") flerKolumner(id, dolda, nyckel);
 }
 function _aidbasNyckel(id, text) {
@@ -26579,7 +26579,7 @@ function _aidbasNyckel(id, text) {
 function renderAidBasLika() {
   const lika = document.getElementById("aidbas-lika"), individ = document.getElementById("aidbas-individ");
   if (!lika || !individ) return;
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     lika.innerHTML = "";
     individ.innerHTML = "";
@@ -26600,7 +26600,7 @@ function renderAidBasLika() {
 function renderAidBasLikvardigt() {
   const lv = document.getElementById("aidbas-likvardigt"), hi = document.getElementById("aidbas-hierarki");
   if (!lv || !hi) return;
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     lv.innerHTML = "";
     hi.innerHTML = "";
@@ -26659,7 +26659,7 @@ function _aidbasLikaBlad(lika) {
   );
 }
 function _aidbasExcelBlad() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return [];
   const t = aidbasTabeller(d);
   const def = `Kvinnodominerad vid ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
@@ -26755,7 +26755,7 @@ function nationellAidKlass(aid) {
 function renderStructure() {
   const wrap = document.getElementById("view-struktur");
   if (!wrap) return;
-  const d = getData();
+  const d = hamtaData();
   const repEl = document.getElementById("struktur-representation");
   const distEl = document.getElementById("struktur-distribution");
   const euEl = document.getElementById("struktur-eu");
@@ -26836,7 +26836,7 @@ function renderStrukturUtkast() {
   const nb = document.getElementById("struktur-narrative");
   if (!nb) return;
   _stSynkaUtkastValjare();
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     nb.value = "";
     return;
@@ -27169,7 +27169,7 @@ function _buildNarrative(d, ctx) {
   const lines = [];
   lines.push("LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)");
   lines.push("");
-  lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
+  lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
   lines.push("");
   lines.push("Löneskillnad (kvinnors lön i procent av mäns):");
   if (ctx.konOk) lines.push(`  • Kvinnors genomsnittslön är ${andelAvMan(ctx.meanGap)} av mäns, och medianlönen ${andelAvMan(ctx.medGap)} av mäns.`);
@@ -27235,7 +27235,7 @@ function _exportEuReportExport() {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     alert("Ingen data.");
     return;
@@ -27363,7 +27363,7 @@ function _excelAlltBladExport() {
     EXCEL_BLAD_HUVUDOMRADEN,
     ...state.statistik.length ? ["Jämförelsestatistik"] : [],
     ..._excelSkalRader() ? ["Sakliga skäl"] : [],
-    ...getData().length ? ["Underlagets kvalitet"] : [],
+    ...hamtaData().length ? ["Underlagets kvalitet"] : [],
     "Metodik",
     "Metod & parametrar"
   ];
@@ -27403,7 +27403,7 @@ function _excelEgnaRader() {
   const tal = (v, typ) => v == null || typeof v !== "number" || !isFinite(v) ? v == null ? "" : v : typ === "kr" || typ === "antal" ? Math.round(v) : Math.round(v * 100) / 100;
   const rows = [["Egna tabeller", `byggda i Tabeller och egna vyer; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
   for (const r of recept) {
-    const tabeller = receptTillTabeller(getData(), r, { k: kTroskel() });
+    const tabeller = receptTillTabeller(hamtaData(), r, { k: kTroskel() });
     if (!tabeller.length) {
       rows.push([r.namn, "ingen grupp når minsta gruppstorlek"], []);
       continue;
@@ -27419,7 +27419,7 @@ function _excelEgnaRader() {
   return rows;
 }
 function _excelPerBasRader() {
-  const pb = typeof rmPerBasUnderlag === "function" ? rmPerBasUnderlag(getData(), kTroskel()) : null;
+  const pb = typeof rmPerBasUnderlag === "function" ? rmPerBasUnderlag(hamtaData(), kTroskel()) : null;
   if (!pb || !pb.intervall.length) return null;
   const tal = (v) => v == null || !isFinite(v) ? "" : Math.round(v);
   const pct = (v) => v == null || !isFinite(v) ? "" : Math.round(v * 10) / 10;
@@ -27456,7 +27456,7 @@ function _excelPerBasRader() {
   return rows;
 }
 function _excelDiagramBlad() {
-  const d = getData(), k = kTroskel(), ut = [], r1 = (v) => Math.round(v * 10) / 10;
+  const d = hamtaData(), k = kTroskel(), ut = [], r1 = (v) => Math.round(v * 10) / 10;
   const bas = _laOversiktRader(d);
   if (bas.length) ut.push(["Lika arbete per BAS", [
     [`Kvinnors och mäns lön per ${T.niva.en} (översiktstabellen i Lönestruktur)`],
@@ -27560,7 +27560,7 @@ function __excelAlltBokExport() {
   const diagramBlad = _excelDiagramBlad();
   for (const [namn, rader] of diagramBlad) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rader), namn);
   for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
-  ensure("#sektor-table tbody tr", () => renderSektorer(getData()));
+  ensure("#sektor-table tbody tr", () => renderSektorer(hamtaData()));
   const sektorSheet = tableToSheet("sektor-table");
   if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, EXCEL_BLAD_HUVUDOMRADEN);
   const bmSheet = state.statistik.length ? tableToSheet("benchmark-table") : null;
@@ -27646,7 +27646,7 @@ function _exportJPAProtokollExport() {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
-  const d = getData();
+  const d = hamtaData();
   const now = /* @__PURE__ */ new Date();
   const isoDate = idagDatum(now);
   const localDate = now.toLocaleDateString("sv-SE");
@@ -28199,7 +28199,7 @@ function sattGapVariabler(v, { rita = true } = {}) {
   return { variabler: gapVariabler(), varningar };
 }
 function _guValbara() {
-  const harAid = getData().some((r) => r.aid);
+  const harAid = hamtaData().some((r) => r.aid);
   return gapAllaVariabler().filter((v) => (v !== "alder" || harAlder()) && (!["sektor", "aidniva"].includes(v) || harAid));
 }
 var _GU_MAX = 4;
@@ -28258,7 +28258,7 @@ function ritaGapUppdelning() {
   const host = document.getElementById("gap-uppdelning");
   const body = document.getElementById("gap-uppdelning-innehall");
   if (!host || !body) return;
-  const vm = vymodellVarUppstarGapet(getData(), { k: kTroskel(), variabler: gapVariabler() });
+  const vm = vymodellVarUppstarGapet(hamtaData(), { k: kTroskel(), variabler: gapVariabler() });
   if (!vm) {
     host.hidden = true;
     body.innerHTML = "";
@@ -28427,7 +28427,7 @@ function uppstartVarUppstarGapet() {
 var EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 function _metodbilaga() {
   const total = state.data && state.data.length || 0;
-  const used = typeof getData === "function" ? getData().length : total;
+  const used = typeof hamtaData === "function" ? hamtaData().length : total;
   const ver = typeof APP_VERSION !== "undefined" ? APP_VERSION : "–";
   const medAlder = harAlder();
   const modell = forklaringsmodell();
@@ -28806,7 +28806,7 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
       rapporteraFel("Att göra: underlagets kvalitet", e);
     }
     try {
-      const d = getData();
+      const d = hamtaData();
       const jb = new Set(jamforbaraBas(d, kInstalld()).jamforbara);
       const perBas = reg && !reg.error && reg.perBas ? reg.perBas : [];
       _laOversiktRader(d).filter((o) => jb.has(o.bas) && _laOversiktStatus(o).niva === "granska").forEach((o) => {
@@ -29236,7 +29236,7 @@ function uppstartReferensfiler() {
       renderConsistencyBanner();
       renderActionChecklist();
       renderProcessTracker();
-      if (getData().length > 0) ritaLoneoversikt();
+      if (hamtaData().length > 0) ritaLoneoversikt();
     }, "stallningstagande");
   });
   statInput.addEventListener("change", (e) => {
@@ -29877,7 +29877,7 @@ function renderDataValidationReport() {
   const yrkeNamnRadnr = namnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
   const used = state.data.length;
   const outliers = detectOutliers(3);
-  const bas = getBasIntervals();
+  const bas = hamtaBasIntervall();
   const { enkonade: singleSexBas, underK: kMaskedBas } = basVarningar(state.data, bas, kInstalld());
   const dataBas = [...new Set(state.data.map((r) => r.bas))].sort();
   const dataAids = [...new Set(state.data.map((r) => sifferprefixAvYrke(r.yrke)).filter(Boolean))];
@@ -30096,7 +30096,7 @@ function _sokNorm(s) {
   return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 }
 function sokKandidater() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return [];
   const perBas = /* @__PURE__ */ new Map();
   for (const r of d) if (r.bas != null && r.bas !== "") perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
@@ -30122,7 +30122,7 @@ function sokFunktionsTraffar(text) {
 }
 function _sokHarData() {
   try {
-    return getData().length > 0;
+    return hamtaData().length > 0;
   } catch (_e) {
     return false;
   }
@@ -30329,13 +30329,13 @@ function setCompCard(id, count, total, valueText, cardState) {
 }
 function ritaKravstatus() {
   const overview = document.getElementById("compliance-overview");
-  const d = getData();
+  const d = hamtaData();
   if (!overview || !d.length) return;
   overview.style.display = "block";
   const vm = (
     /** @type {NonNullable<ReturnType<typeof kravstatus>>} */
     kravstatus(d, {
-      bas: getBasIntervals(),
+      bas: hamtaBasIntervall(),
       k: kInstalld(),
       golv: statGolv(),
       oversikt: _laOversiktRader(d),
@@ -30370,7 +30370,7 @@ function ritaKravstatus() {
   if (bmLank) bmLank.hidden = !state.statistik.length;
 }
 function bedomningUnderlag({ reg: given } = {}) {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return null;
   const reg = given || runOLSRegression();
   const modell = reg.error ? "fel" : reg.fellBackFromFull ? "minimal" : "full";
@@ -30434,10 +30434,10 @@ var _nollVid = (
 var _andraGolv = /* @__PURE__ */ new Map();
 var _RAKNA = {
   bootstrapCI: (golv) => {
-    const t0 = performance.now(), ki = organisationensKvotKI(getData(), golv);
+    const t0 = performance.now(), ki = organisationensKvotKI(hamtaData(), golv);
     return ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
   },
-  powerAnalysis: (golv) => styrkeanalys(getData(), golv)
+  powerAnalysis: (golv) => styrkeanalys(hamtaData(), golv)
 };
 function _skattning(falt, golv) {
   const ut = _RAKNA[falt](golv);
@@ -30489,7 +30489,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
   if (!host) return;
   const hasData = (() => {
     try {
-      return getData().length > 0;
+      return hamtaData().length > 0;
     } catch (_e) {
       return false;
     }
@@ -30508,7 +30508,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
   const klarmarkerade = state._actionChecklistDone || /* @__PURE__ */ new Set();
   const hanterade2 = (kategorier) => hanterade(punkter, klarmarkerade, kategorier);
   const rows = [];
-  rows.push(hasData ? { n: 1, status: "klar", title: "1. Underlag inläst", tab: "dashboard", detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` } : { n: 1, status: "ej", title: "1. Underlag inläst", tab: "dashboard", detail: "Börja här: läs in lönefilen i Kom igång överst på Översikt eller i Filer och kvalitet (eller prova med demodata)." });
+  rows.push(hasData ? { n: 1, status: "klar", title: "1. Underlag inläst", tab: "dashboard", detail: `${hamtaData().length} rader inlästa — allt nedan bygger på detta.` } : { n: 1, status: "ej", title: "1. Underlag inläst", tab: "dashboard", detail: "Börja här: läs in lönefilen i Kom igång överst på Översikt eller i Filer och kvalitet (eller prova med demodata)." });
   rows.push(safe(() => {
     const areas = typeof _bes8Areas === "function" ? _bes8Areas() : [];
     const total = areas.length || 6;
@@ -30606,7 +30606,7 @@ function ovRitaLage() {
   if (!vy) return;
   const d = (() => {
     try {
-      return getData();
+      return hamtaData();
     } catch (_e) {
       return [];
     }
@@ -30636,7 +30636,7 @@ function computeGroupMDE(nKv, nMa, sigmaLog) {
   return gruppMde(nKv, nMa, sigmaLog || styrkaGallande()?.sigma);
 }
 function ritaNyckeltal() {
-  const vm = oversiktNyckeltal(getData(), kTroskel());
+  const vm = oversiktNyckeltal(hamtaData(), kTroskel());
   if (!vm) return;
   document.getElementById("stat-n").textContent = String(vm.n);
   const konEl = document.getElementById("stat-kon");
@@ -30681,7 +30681,7 @@ function renderOversiktDelar() {
   if (ab && ab.style.display !== "none" && typeof ritaOgonblicksbildJamforelse === "function") ritaOgonblicksbildJamforelse();
 }
 function populateSelects() {
-  const bas = getBasIntervals();
+  const bas = hamtaBasIntervall();
   ["bas-select-kon", "bas-select-demo"].forEach((selId) => {
     const sel = document.getElementById(selId);
     if (!sel) return;
@@ -31102,7 +31102,7 @@ function _ebAntal(n, en, flera) {
   return `${n} ${n === 1 ? en : flera}`;
 }
 function renderExportBesked({ baraUrval = false } = {}) {
-  const har = getData().length > 0;
+  const har = hamtaData().length > 0;
   const satt = (id, html) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = har ? html : "";
@@ -31158,7 +31158,7 @@ function renderExportBesked({ baraUrval = false } = {}) {
 function _ebRitaUrval(alla) {
   const host = document.getElementById("rapport-urval");
   if (!host) return;
-  if (!getData().length) {
+  if (!hamtaData().length) {
     host.innerHTML = "";
     _laNyckel("nyckel-ex-urval", "");
     return;
@@ -31835,7 +31835,7 @@ function _dkRitaTopp(del) {
   Object.assign(_dkLage, del);
   const host = document.getElementById("dk-slutsatser");
   if (!host) return;
-  if (!getData().length) {
+  if (!hamtaData().length) {
     host.innerHTML = "";
     return;
   }
@@ -31854,11 +31854,11 @@ function renderRobusthet() {
   const host = document.getElementById("robusthet-body");
   if (!host) return;
   _dkRitaTopp({ robust: null });
-  if (!getData().length) {
+  if (!hamtaData().length) {
     host.innerHTML = "";
     return;
   }
-  const n = getData().length;
+  const n = hamtaData().length;
   host.innerHTML = `
         <p>Analysen kör om slutsatserna med andra rimliga inställningar och visar vad som står sig.
         Den räknar om de tyngsta stegen flera gånger${n > 5e3 ? ` — med ${n.toLocaleString("sv-SE")} rader i underlaget kan det ta en stund` : ""}.</p>
@@ -31866,7 +31866,7 @@ function renderRobusthet() {
 }
 function runRobusthet() {
   const host = document.getElementById("robusthet-body");
-  if (!host || !getData().length) return;
+  if (!host || !hamtaData().length) return;
   host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>';
   setTimeout(() => {
     try {
@@ -31913,7 +31913,7 @@ function __renderRobusthetResultExport(host) {
 }
 function buildFardigcheck() {
   const out = [];
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return out;
   try {
     const ref = typeof _selectedPrioReference === "function" ? _selectedPrioReference() : "statistik";
@@ -31933,7 +31933,7 @@ function buildFardigcheck() {
     rapporteraFel("Färdigcheck: flaggade grupper utan åtgärd", e);
   }
   if ((state.policy || []).length && typeof policyFor === "function") {
-    const utan = getBasIntervals().filter((b) => !policyFor(null, b));
+    const utan = hamtaBasIntervall().filter((b) => !policyFor(null, b));
     if (utan.length) {
       out.push({
         id: "bas-utan-policy",
@@ -32008,7 +32008,7 @@ function buildFardigcheck() {
 function renderFardigcheck() {
   const host = document.getElementById("fardigcheck-body");
   if (!host) return;
-  if (!getData().length) {
+  if (!hamtaData().length) {
     host.innerHTML = "";
     _dkRitaTopp({ fardig: null });
     return;
@@ -32068,7 +32068,7 @@ function rapportunderlagBlock(...a) {
   ));
 }
 function _rapportunderlagBlockExport() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return [];
   const k = kTroskel();
   const reg = runOLSRegression();
@@ -32113,7 +32113,7 @@ function _rapportunderlagBlockExport() {
 function renderRapportunderlag() {
   const host = document.getElementById("rapportunderlag-innehall");
   if (!host) return;
-  if (!getData().length) {
+  if (!hamtaData().length) {
     _rapportBlockSenast = /* @__PURE__ */ new Map();
     host.innerHTML = '<p class="ru-tom">Läs in underlag för att få rapportunderlaget.</p>';
     if (typeof _dkRitaTopp === "function") _dkRitaTopp({ block: null });
@@ -32466,7 +32466,7 @@ function _aktivFlik() {
   return a ? tabMal(a) : null;
 }
 function _ritaTungtBlock(flik, hostIds, fn) {
-  const hosts = _ritasUppskjutet === flik && getData().length ? (
+  const hosts = _ritasUppskjutet === flik && hamtaData().length ? (
     /** @type {HTMLElement[]} */
     hostIds.map((id) => document.getElementById(id)).filter(Boolean)
   ) : [];
@@ -32683,7 +32683,7 @@ function _ritaUtanAlder(target, utan) {
 }
 function _renderTabContent(target) {
   target = tabMal(target);
-  const d = getData();
+  const d = hamtaData();
   _ritaIngetUnderlag(target, !d.length);
   if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
   if (target === "kon" && d.length) {
@@ -32771,7 +32771,7 @@ function _flowNasta(target) {
 function renderFlowNav(target) {
   document.querySelectorAll(".flow-next-bar").forEach((el) => el.remove());
   const next = _flowNasta(target);
-  if (!next || target !== "bestammelser" && target !== "handlingsplan" && !getData().length) return;
+  if (!next || target !== "bestammelser" && target !== "handlingsplan" && !hamtaData().length) return;
   const view = document.getElementById("view-" + (PANEL_GROUPS[target] || [target]).at(-1));
   if (!view) return;
   const bar = document.createElement("div");
@@ -32966,7 +32966,7 @@ function byggGrundberakning() {
   const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
   const totalRaw = da.totalRaw;
   const afterParse = state.data.length;
-  const afterFilter = getData().length;
+  const afterFilter = hamtaData().length;
   const parseExcl = [];
   if (da.excludedNoBas > 0) parseExcl.push([`Saknar ${T.niva.en}`, da.excludedNoBas]);
   if (da.excludedZeroLon > 0) parseExcl.push(["Lön ≤ 0 eller saknas", da.excludedZeroLon]);
@@ -33411,11 +33411,11 @@ var state = {
   // Bara i minnet; följer med i konfigurationsfilen och exporterna, nollas av Rensa all data.
   handlingsplan: {}
 };
-function getData() {
+function hamtaData() {
   return state.data;
 }
-function getBasIntervals() {
-  return [...new Set(getData().map((d) => d.bas))].sort();
+function hamtaBasIntervall() {
+  return [...new Set(hamtaData().map((d) => d.bas))].sort();
 }
 function policyFor(aid, bas) {
   const pol = state.policy || [];
@@ -33437,7 +33437,7 @@ function policyFor(aid, bas) {
   }
   return null;
 }
-function policyLevelLabel(pol) {
+function policyNivaEtikett(pol) {
   if (!pol) return null;
   if (pol.aid && pol.bas) return "AID + BAS";
   if (pol.aid) return "AID-specifik";
@@ -33498,12 +33498,12 @@ function ritaOmReferens() {
     }
   }
 }
-var colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
+var farger = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
 var Stat = { median, kvantil, linjarRegression };
-function linearRegressionCI(data, minX, maxX, steps) {
+function linjarRegressionKI(data, minX, maxX, steps) {
   return regressionslinjensBand(data, minX, maxX, steps);
 }
-var ENHANCED_TABLES = [
+var HUVUDTABELLER = [
   { id: "rapport-table", file: "loneoversikt" },
   { id: "matrix-table", file: "lika-arbete-eu" },
   { id: "paygap-table", file: "lonegap-per-bas" },
@@ -33513,15 +33513,15 @@ var ENHANCED_TABLES = [
   { id: "prio-table", file: "prioritering" },
   { id: "likvardighet-table", file: "likvardighet" }
 ];
-function initTableEnhancements() {
-  ENHANCED_TABLES.forEach((t) => {
+function aktiveraHuvudtabeller() {
+  HUVUDTABELLER.forEach((t) => {
     aktiveraSortering(t.id);
-    addTableExportTools(t.id, t.file);
+    laggTillTabellverktyg(t.id, t.file);
   });
   kopplaHopfallbaraGrupper("rapport-table");
   kopplaHopfallbaraGrupper("benchmark-table");
 }
-function addTableExportTools(tableId, fileBase) {
+function laggTillTabellverktyg(tableId, fileBase) {
   const table = document.getElementById(tableId);
   if (!table || table._exportToolsInit) return;
   const anchor = table.closest(".table-container") || table;
@@ -33533,7 +33533,7 @@ function addTableExportTools(tableId, fileBase) {
   anchor.parentNode.insertBefore(bar, anchor);
   table._verktygsrad = bar;
 }
-function _tableCellText(cell) {
+function _tabellcellText(cell) {
   const clone = cell.cloneNode(true);
   clone.querySelectorAll("button, svg").forEach((e) => e.remove());
   _exportText(clone);
@@ -33544,21 +33544,21 @@ function _exportText(rot) {
     el.textContent = el.getAttribute("data-export-text");
   });
 }
-function tableToMatrix(...a) {
-  return medExportLage(() => _tableToMatrixExport.apply(
+function tabellTillMatris(...a) {
+  return medExportLage(() => _tabellTillMatrisExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _tableToMatrixExport(tableId) {
+function _tabellTillMatrisExport(tableId) {
   const table = typeof exportElement === "function" ? exportElement(tableId) : document.getElementById(tableId);
   if (!table) return [];
   const rows = [];
   const beskrivning = table.getAttribute("data-export-beskrivning");
   if (beskrivning) rows.push([`Urval: ${beskrivning}`]);
   const ths = table.querySelectorAll("thead th");
-  if (ths.length) rows.push(Array.from(ths).filter((th) => !th.hasAttribute("data-export-utelamna")).map(_tableCellText));
+  if (ths.length) rows.push(Array.from(ths).filter((th) => !th.hasAttribute("data-export-utelamna")).map(_tabellcellText));
   table.querySelectorAll("tbody tr").forEach((tr) => {
     if (tr.hasAttribute("data-export-utelamna")) return;
     const cells = tr.querySelectorAll("th, td");
@@ -33567,29 +33567,29 @@ function _tableToMatrixExport(tableId) {
     cells.forEach((c) => {
       if (c.hasAttribute("data-export-utelamna")) return;
       const span = _cellSpann(c);
-      rad.push(c.hasAttribute("data-export-tom") ? "" : _tableCellText(c));
+      rad.push(c.hasAttribute("data-export-tom") ? "" : _tabellcellText(c));
       for (let i = 1; i < span; i++) rad.push("");
     });
     rows.push(rad);
   });
   return rows;
 }
-function _copyTableToClipboard(...a) {
-  return medExportLage(() => __copyTableToClipboardExport.apply(
+function _kopieraTabellTillUrklipp(...a) {
+  return medExportLage(() => __kopieraTabellTillUrklippExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function __copyTableToClipboardExport(tableId, btn) {
-  const rows = tableToMatrix(tableId);
+function __kopieraTabellTillUrklippExport(tableId, btn) {
+  const rows = tabellTillMatris(tableId);
   if (!rows.length) {
     alert("Tabellen är tom, så det finns inget att kopiera.");
     return;
   }
-  _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
+  _kopieraMatrisTillUrklipp(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
 }
-function _copyMatrixToClipboard(rows, btn, { undantag = "" } = {}) {
+function _kopieraMatrisTillUrklipp(rows, btn, { undantag = "" } = {}) {
   const tsv = tillTsv(_tsvMedStampel(rows, undantag));
   const done = () => {
     if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Kopierat: " + (rows.length - 1) + " rader.");
@@ -33624,14 +33624,14 @@ function _copyMatrixToClipboard(rows, btn, { undantag = "" } = {}) {
   }
 }
 function uppstartTillstand() {
-  initTableEnhancements();
+  aktiveraHuvudtabeller();
   document.addEventListener("click", (e) => {
     const copyBtn = (
       /** @type {HTMLElement} */
       e.target.closest("[data-copy-table]")
     );
     if (copyBtn) {
-      _copyTableToClipboard(copyBtn.getAttribute("data-copy-table"), copyBtn);
+      _kopieraTabellTillUrklipp(copyBtn.getAttribute("data-copy-table"), copyBtn);
       return;
     }
     const csvBtn = (
@@ -33639,7 +33639,7 @@ function uppstartTillstand() {
       e.target.closest("[data-csv-table]")
     );
     if (csvBtn) {
-      const rows = tableToMatrix(csvBtn.getAttribute("data-csv-table"));
+      const rows = tabellTillMatris(csvBtn.getAttribute("data-csv-table"));
       if (rows.length) _laddaNedCSV(
         rows,
         csvBtn.getAttribute("data-csv-file") || "tabell",
@@ -35765,7 +35765,7 @@ function openSkalDialog(nyckel, opener) {
   const modal = document.getElementById("skal-modal");
   if (!modal || !nyckel) return;
   const iExport = medExportLage(() => _handlingsplanSeedRows());
-  const skarm = _handlingsplanSeedRows({ baraEgna: !getData().length });
+  const skarm = _handlingsplanSeedRows({ baraEgna: !hamtaData().length });
   const i = iExport.nycklar.indexOf(nyckel), j = skarm.nycklar.indexOf(nyckel);
   const rad = i >= 0 ? iExport.rows[i] : j >= 0 ? skarm.rows[j] : null;
   const egen = _hpArEgen(nyckel);
@@ -36022,7 +36022,7 @@ function buildPrintReport(...a) {
   ));
 }
 async function _buildPrintReportExport() {
-  if (!getData().length) {
+  if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return;
   }
@@ -36470,7 +36470,7 @@ function exportDocumentationDraft(...a) {
   ));
 }
 async function _exportDocumentationDraftExport() {
-  if (!getData().length) {
+  if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return false;
   }
@@ -36501,7 +36501,7 @@ function _exportBenchmarkExcelExport() {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     alert("Ingen lönefil är inläst. Läs in lönefilen först.");
     return;
@@ -36713,7 +36713,7 @@ async function _exportZipExport() {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return false;
   }
-  if (!getData().length) {
+  if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return false;
   }

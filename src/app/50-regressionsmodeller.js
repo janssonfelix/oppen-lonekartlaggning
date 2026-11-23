@@ -5,13 +5,13 @@
 // De rena modellerna (huvudregressionen, kollinearitet, gap per BAS, sekventiell dekomponering med
 // yrkesgrupp, kvantilregression, Blinder-Oaxaca) ligger i src/lib/regression.js, som
 // appen importerar (ADR-98). Här finns bara de tunna adaptrarna som
-// läser appens tillstånd (getData(), statGolv()) och skickar det som parametrar.
+// läser appens tillstånd (hamtaData(), statGolv()) och skickar det som parametrar.
 //
 // OLS-kärnan (anpassaOLS m.fl.) står i src/lib/stat.js.
 // Huvudregressionens adapter, runOLSRegression, står i 51-lika-arbete-regressionskort.js; den cachas aldrig (ADR-17).
 import { blinderOaxaca, forklaringsmodellArStandard, gapPerBas, harAlderIRader, kvantilregressionAllaTau, normaliseraForklaringsmodell, stegNamn } from '../lib/regression.js';
 import { _renderaOmAllaFlikar, statGolv } from './06-k-troskel.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { ritGenerationNy } from './23-exportgrind.js';
 
 // Stegens nycklar i den sekventiella dekomponeringen (ADR-74): kortet, rapporten och exporten slår upp stegen på dem.
@@ -30,7 +30,7 @@ export function _computePerBasGap(rows, basList) {
 let _harAlderFor = /** @type {{data: any[]|null, n: number, varde: boolean}} */ ({ data: null, n: -1, varde: false });
 /** Har den inlästa lönefilen ålder (minst en rad med ålder över 0)? */
 export function harAlder() {
-    const d = getData();
+    const d = hamtaData();
     if (_harAlderFor.data !== d || _harAlderFor.n !== d.length) _harAlderFor = { data: d, n: d.length, varde: harAlderIRader(d) };
     return _harAlderFor.varde;
 }
@@ -44,7 +44,7 @@ export const ALDER_SAKNAS_TEXT = 'Lönefilen saknar ålder: analysen körs utan 
 /** Den gällande modellen, normaliserad mot datat (yrkesgrupp kan bara väljas när lönefilen har AID eller yrke, ålder
  *  bara när lönefilen har ålder, ADR-64). */
 export function forklaringsmodell() {
-    return normaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: getData().some(d => d.aid || d.yrke), harAlder: harAlder() }).modell;
+    return normaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: hamtaData().some(d => d.aid || d.yrke), harAlder: harAlder() }).modell;
 }
 
 /**
@@ -56,7 +56,7 @@ export function forklaringsmodell() {
  * @returns {{ok: true, modell: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}, varningar: string[], andrad: boolean}}
  */
 export function sattForklaringsmodell(v, { rita = true } = {}) {
-    const harYrke = getData().some(d => d.aid || d.yrke);
+    const harYrke = hamtaData().some(d => d.aid || d.yrke);
     const { modell, varningar } = normaliseraForklaringsmodell(v, { harYrke, harAlder: harAlder() });
     // Det som lagras prövas inte mot åldern (ADR-64): en lönefil utan ålder ändrar inte valet för nästa fil.
     const lagras = normaliseraForklaringsmodell(v, { harYrke }).modell;
@@ -70,14 +70,14 @@ export function sattForklaringsmodell(v, { rita = true } = {}) {
     return { ok: true, modell, varningar, andrad };
 }
 
-// Blinder-Oaxaca-dekomposition på appens data (getData()).
+// Blinder-Oaxaca-dekomposition på appens data (hamtaData()).
 export function runBlinderOaxaca() {
     // Samma variabler som huvudmodellen (ADR-53): förklaringsmodellen ur tillståndet (ADR-56).
-    return blinderOaxaca(getData(), { golv: statGolv(), modell: forklaringsmodell() });
+    return blinderOaxaca(hamtaData(), { golv: statGolv(), modell: forklaringsmodell() });
 }
 
-// Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (getData()), på huvudmodellens variabler enligt
+// Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (hamtaData()), på huvudmodellens variabler enligt
 // förklaringsmodellen utan yrkesgrupp (ADR-63).
 export function runQuantileRegressionAtAllTau() {
-    return kvantilregressionAllaTau(getData(), { modell: forklaringsmodell() });
+    return kvantilregressionAllaTau(hamtaData(), { modell: forklaringsmodell() });
 }

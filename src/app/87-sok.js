@@ -9,7 +9,7 @@ import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { kMaskerad } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { diagramMarkering, sattDiagramMarkering } from './11-markering.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { visningNy } from './23-exportgrind.js';
 import { openDataResidency } from './28-vad-lagras-inaktivitet.js';
 import { visaAlderskravet, visaLonefilskortet, visaReferenskortet } from './31-navigering.js';
@@ -44,7 +44,7 @@ function _sokNorm(s) {
 
 /** Allt som går att söka fram: BAS-intervall och yrkesgrupper som når tröskeln. */
 function sokKandidater() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return [];
     const perBas = new Map();
     for (const r of d) if (r.bas != null && r.bas !== '') perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
@@ -77,7 +77,7 @@ function sokFunktionsTraffar(text) {
         .sort((a, b) => a.rang - b.rang || a.i - b.i).slice(0, SOK_MAX_FUNKTIONER).map(k => k.p);
 }
 
-function _sokHarData() { try { return getData().length > 0; } catch (_e) { return false; } }
+function _sokHarData() { try { return hamtaData().length > 0; } catch (_e) { return false; } }
 /** Avsnittet är dolt i sin flik (hidden, display: none eller .dold utan inline-stil), fram till panelen. Ett avsnitt
  *  som fliken bygger när den ritas och som inte finns i sidan räknas som dolt, så att valet säger vad som saknas. */
 function _sokMalDolt(p) {

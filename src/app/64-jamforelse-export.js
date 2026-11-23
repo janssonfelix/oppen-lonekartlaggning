@@ -10,7 +10,7 @@ import { kTroskel } from './06-k-troskel.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
-import { getData, policyFor, referensKalla, referensNamn, state } from './12-tillstand.js';
+import { hamtaData, policyFor, referensKalla, referensNamn, state } from './12-tillstand.js';
 import { _laggTillMetodblad, _tillampaTalformat, _visaExportvarning, SV_TALFORMAT } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 
@@ -31,7 +31,7 @@ import { medExportLage } from './23-exportgrind.js';
 function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmarkExcelExport.apply(null, /** @type {any} */ (a))); }
 function _exportBenchmarkExcelExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) { alert('Ingen lönefil är inläst. Läs in lönefilen först.'); return; }
     const hasStat = state.statistik.length > 0;
     const hasPolicy = state.policy.length > 0;

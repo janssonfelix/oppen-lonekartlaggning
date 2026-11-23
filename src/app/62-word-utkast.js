@@ -4,7 +4,7 @@
 import { docxDelar } from '../lib/docx.js';
 import { idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kSidfot } from './06-k-troskel.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { rapportModell, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
 
@@ -120,7 +120,7 @@ export async function byggWordUtkast() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportDocumentationDraft(...a) { return medExportLage(() => _exportDocumentationDraftExport.apply(null, /** @type {any} */ (a))); }
 async function _exportDocumentationDraftExport() {
-    if (!getData().length) { alert('Läs in lönefilen först.'); return false; }
+    if (!hamtaData().length) { alert('Läs in lönefilen först.'); return false; }
     try {
         const { blob, namn } = await byggWordUtkast();
         _laddaNerBlob(blob, namn);

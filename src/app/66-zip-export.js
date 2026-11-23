@@ -3,7 +3,7 @@
 import { doljLaddning, rapporteraFel, visaLaddning } from './03-hjalpfunktioner.js';
 import { _rfBehallare } from './10-diagramritare.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { exportSakraAlla, medExportLage } from './23-exportgrind.js';
 import { _excelAlltBok } from './24-excelexport.js';
 import { renderTabContent } from './31-navigering.js';
@@ -36,7 +36,7 @@ function _zipDiagramExport() {
 function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
 async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
-    if (!getData().length) { alert('Läs in lönefilen först.'); return false; }
+    if (!hamtaData().length) { alert('Läs in lönefilen först.'); return false; }
     const zip = new JSZip();
     if (typeof visaLaddning === 'function') visaLaddning();
     try {

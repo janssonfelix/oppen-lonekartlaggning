@@ -29,7 +29,7 @@ import { _konUtelamnatNot, _kSanktNot, _parUtelamnadeNot, kInstalld, kTroskel, s
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT } from './10-diagramtema.js';
-import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline, laLikaGrupper } from './41-lika-arbete.js';
@@ -40,7 +40,7 @@ import { closeGruppdossier, gruppNamn, openGruppdossier } from './80-gruppdossie
 
 /** BAS-intervallen som får öppnas i dossiern: minst k personer, i intervallens ordning (basdossierIntervall i src/lib/vymodell-basdossier.js). */
 export function basdossierKandidater() {
-    return basdossierIntervall(getData(), getBasIntervals(), kTroskel());
+    return basdossierIntervall(hamtaData(), hamtaBasIntervall(), kTroskel());
 }
 
 const BD_STATUS_TEXT = { granska: 'Värt att granska', folj: 'Följ upp', balanserat: 'Balanserat', ejbedomd: 'Går ej att bedöma', liten: 'Könsuppdelningen är för liten' };
@@ -52,11 +52,11 @@ const BD_STATUS_KLASS = { granska: ['farg-granska', 'sok'], folj: ['farg-varning
  * @param {string} bas
  */
 export function buildBasdossier(bas) {
-    const k = kTroskel(), d = getData();
+    const k = kTroskel(), d = hamtaData();
     let likvardighet = null;
     try { likvardighet = likvardighetResultat(); }
     catch (e) { rapporteraFel('BAS-dossier: likvärdigt arbete', e); }
-    return vymodellBasdossier(d, bas, { k, basIntervall: getBasIntervals(), golv: statGolv(), kInstalld: kInstalld(),
+    return vymodellBasdossier(d, bas, { k, basIntervall: hamtaBasIntervall(), golv: statGolv(), kInstalld: kInstalld(),
         referens: policyFor(null, bas), referensNamn: referensKortnamn(), lika: laLikaGrupper(d, k), likvardighet,
         harAlder: harAlder(), forraBokslut: state.forraArsbokslut });
 }
@@ -299,8 +299,8 @@ export const BD_YRKESKOLUMNER = ['AID', stor(T.namn.en), 'Kvinnor / män', 'Medi
 
 /** BAS-intervallen med lönerader som inte når k: de nämns i rapporten och utkastet, utan mått (som i Lönestruktur). */
 export function basdossierUtelamnade() {
-    const d = getData(), kand = new Set(basdossierKandidater().map(x => x.bas));
-    return getBasIntervals().filter(b => !kand.has(b) && d.some(r => r.bas === b && r.lon > 0));
+    const d = hamtaData(), kand = new Set(basdossierKandidater().map(x => x.bas));
+    return hamtaBasIntervall().filter(b => !kand.has(b) && d.some(r => r.bas === b && r.lon > 0));
 }
 
 /** Texten för ett BAS-intervall, byggd i exportläget (ADR-51); null när intervallet inte når den inställda tröskeln. */

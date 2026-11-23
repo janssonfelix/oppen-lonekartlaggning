@@ -163,7 +163,7 @@ describe('Utforska 2.0', () => {
 
     it('filtret begränsar urvalet och visas som etikett', () => {
         aterstall();
-        const forsta = win.__getData()[0].bas;
+        const forsta = win.__hamtaData()[0].bas;
         win.__explorerSetFilter({ bas: [forsta] });
         rita();
         expect(kolumn0()).toEqual([forsta]);
@@ -180,7 +180,7 @@ describe('Utforska 2.0', () => {
 
     it('filter som tillsammans ger noll personer visar tomläget, och Rensa filter fungerar', () => {
         aterstall();
-        const rows = win.__getData();
+        const rows = win.__hamtaData();
         const aidAv = r => win.__utGruppnyckel(r, 'aid');
         let par = null;
         for (const b of new Set(rows.map(r => r.bas))) {
@@ -196,14 +196,14 @@ describe('Utforska 2.0', () => {
         expect(kolumn0().length).toBeGreaterThan(1);
     });
 
-    it('tableToMatrix hoppar över rader och tömmer celler som är märkta för export', () => {
+    it('tabellTillMatris hoppar över rader och tömmer celler som är märkta för export', () => {
         const t = win.document.createElement('table');
         t.id = 'tmp-export-tabell';
         t.innerHTML = '<thead><tr><th>G</th><th>V</th></tr></thead><tbody>'
             + '<tr><td>A</td><td>1</td></tr><tr data-export-utelamna><td>B</td><td>2</td></tr>'
             + '<tr><td>C</td><td data-export-tom>3</td></tr></tbody>';
         win.document.body.appendChild(t);
-        expect(win.__tableToMatrix('tmp-export-tabell')).toEqual([['G', 'V'], ['A', '1'], ['C', '']]);
+        expect(win.__tabellTillMatris('tmp-export-tabell')).toEqual([['G', 'V'], ['A', '1'], ['C', '']]);
         t.remove();
     });
 
@@ -249,12 +249,12 @@ describe('Utforska 2.0', () => {
         gd = rita();
         expect(gd._figur.lager[0].punkter).toBe('alla');
         const antal = gd._figur.lager.reduce((s, l) => s + l.data.length, 0);
-        expect(antal).toBe(win.__getData().filter(r => r.lon > 0).length);
+        expect(antal).toBe(win.__hamtaData().filter(r => r.lon > 0).length);
     });
 
     it('individpunkter respekterar filtret', () => {
         aterstall(); satt('explore-typ', 'punkter');
-        const forsta = win.__getData()[0].bas;
+        const forsta = win.__hamtaData()[0].bas;
         win.__explorerSetFilter({ bas: [forsta] });
         const gd = rita();
         expect(gd._figur.lager.every(l => l.marke === 'lada' && l.punkter === 'alla')).toBe(true);
@@ -286,13 +286,13 @@ describe('Utforska: klick till gruppdossiern', () => {
 
     it('AID × BAS pekar ut exakt grupp', () => {
         const c = kand[0];
-        const aidEtikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
+        const aidEtikett = win.__hamtaData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
         expect(win.__explorerDossierTarget(spec({ rad: 'aid', kolumn: 'bas' }), aidEtikett, c.bas)).toEqual({ key: c.key });
     });
 
     it('ett filter med ett enda BAS räcker tillsammans med AID som rad', () => {
         const c = kand[0];
-        const aidEtikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
+        const aidEtikett = win.__hamtaData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
         expect(win.__explorerDossierTarget(spec({ rad: 'aid', urval: { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [c.bas] }] } }), aidEtikett, null))
             .toEqual({ key: c.key });
     });
@@ -349,7 +349,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         d.getElementById('explore-kolumn').value = 'aid';
         d.getElementById('explore-measure').value = 'gap';
         w.__renderExplorer();
-        const m = w.__tableToMatrix('explore-table');
+        const m = w.__tabellTillMatris('explore-table');
         const kol = e => m[0].findIndex(c => String(c).startsWith(e));
         expect(kol('100')).toBeGreaterThan(0);
         expect(m[1][kol('100')]).toBe('');
@@ -374,7 +374,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
 
     it('tomläget försvinner när diagrammet ritas igen', () => {
         grund();
-        const rows = win.__getData();
+        const rows = win.__hamtaData();
         const aidAv = r => win.__utGruppnyckel(r, 'aid');
         let par = null;
         for (const b of new Set(rows.map(r => r.bas))) {
@@ -468,7 +468,7 @@ describe('Utforska: urval med villkor', () => {
     });
 
     it('alla/något styr hur villkoren kombineras', () => {
-        const rows = win.__getData();
+        const rows = win.__hamtaData();
         const [b1, b2] = [...new Set(rows.map(r => r.bas))].sort((a, b) => a.localeCompare(b, 'sv'));
         win.__explorerSetUrval({ lage: 'alla', villkor: [
             { falt: 'bas', op: 'enAv', varde: [b1], inte: false },
@@ -657,7 +657,7 @@ describe('Utforska: helhet eller per kön, fler rader, urval alltid synligt', ()
 
     it('klick på en yrkesgrupp inom BAS pekar ut exakt den gruppens dossier', () => {
         const c = win.__gruppdossierCandidates()[0];
-        const etikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aidbas')).find(l => l.startsWith(c.aid + ' ') && l.endsWith(` · BAS ${c.bas}`));
+        const etikett = win.__hamtaData().map(r => win.__utGruppnyckel(r, 'aidbas')).find(l => l.startsWith(c.aid + ' ') && l.endsWith(` · BAS ${c.bas}`));
         const spec = { rad: 'aidbas', kolumn: null, matt: 'median', delaKon: false, urval: { lage: 'alla', villkor: [] }, gruppVillkor: [] };
         expect(win.__explorerDossierTarget(spec, etikett, null)).toEqual({ key: c.key });
     });
@@ -729,7 +729,7 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         d.getElementById('explore-measure').value = 'n';
         d.getElementById('explore-visa').value = 'kon';
         w.__renderExplorer();
-        const m = w.__tableToMatrix('explore-table');
+        const m = w.__tabellTillMatris('explore-table');
         expect(m[1][m[0].indexOf('Kvinnor')]).toBe('3');
     });
 
@@ -846,10 +846,10 @@ describe('Utforska: tomläge, exportmeny och talfält', () => {
         grund();
         win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] });
         rita();
-        const m = win.__tableToMatrix('explore-table');
+        const m = win.__tabellTillMatris('explore-table');
         expect(m[0][0].replace(/\u00a0/g, ' ')).toBe('Urval: Alla av: Lön minst 30 000 kr');
         grund(); rita();
-        expect(win.__tableToMatrix('explore-table')[0][0]).toBe('BAS-intervall');
+        expect(win.__tabellTillMatris('explore-table')[0][0]).toBe('BAS-intervall');
     });
 });
 

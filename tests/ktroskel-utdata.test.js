@@ -542,12 +542,12 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
         const text = await new Promise(res => { const fr = new w.FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsText(blob); });
         expect(sistaRaden(text)).toBe(STAMPEL_10);
     });
-    it.each([[6, true], [10, false]])('_copyMatrixToClipboard vid %i: stämpel=%s', (k, med) => {
+    it.each([[6, true], [10, false]])('_kopieraMatrisTillUrklipp vid %i: stämpel=%s', (k, med) => {
         const w = fonsterLitet(k);
         let kopierat = null;
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: t => { kopierat = t; return Promise.resolve(); } } });
         w.__rader = rader;
-        w.eval('_copyMatrixToClipboard(window.__rader)');
+        w.eval('_kopieraMatrisTillUrklipp(window.__rader)');
         expect(kopierat).not.toBeNull();
         if (med) expect(sistaRaden(kopierat)).toBe(STAMPEL_6);
         else expect(kopierat).not.toContain('Minsta gruppstorlek');
@@ -731,7 +731,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         return w;
     };
     const perBas = w => {
-        const pb = w.eval(`_computePerBasGap(getData(), ${JSON.stringify(BAS)})`);
+        const pb = w.eval(`_computePerBasGap(hamtaData(), ${JSON.stringify(BAS)})`);
         const q = w.eval(`bhJustera(${JSON.stringify(pb.map(b => b.pValue))})`);
         return Object.fromEntries(pb.map((b, i) => [b.bas, { ...b, q: q[i] }]));
     };
@@ -793,7 +793,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         }
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
-        const pb = w.eval(`_computePerBasGap(getData(), ['E'])`);
+        const pb = w.eval(`_computePerBasGap(hamtaData(), ['E'])`);
         expect(pb).toHaveLength(1);
         expect(pb[0].status).toBe('ok');
         const p = pb[0].pValue;

@@ -15,7 +15,7 @@ import { _hittaAnsvarKolumn, _lonefilensRubriker, extractMinimalRecord } from '.
 import { _kopplaNamnFalt, tillampaProfiletiketter, STANDARDPROFIL, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
-import { aterstallReferens, getBasIntervals, state } from './12-tillstand.js';
+import { aterstallReferens, hamtaBasIntervall, state } from './12-tillstand.js';
 import { computeBootstrapCI, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
@@ -132,7 +132,7 @@ function _afterDataLoaded() {
     ritaNyckeltal();
     populateSelects();
     ritaLoneoversikt();
-    const bas = getBasIntervals();
+    const bas = hamtaBasIntervall();
     dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
     if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
     dataStatus.className = "status-msg success";
@@ -151,7 +151,7 @@ function _afterDataLoaded() {
     renderDataValidationReport();
     renderForhandskontroll();
     syncDatakvalitetPanel({ reg });
-    meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
+    meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
     doljLaddning();
 
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden

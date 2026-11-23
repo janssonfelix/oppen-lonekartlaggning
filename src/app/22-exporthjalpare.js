@@ -15,7 +15,7 @@ import { _csvMedStampel, kInstalld } from './06-k-troskel.js';
 import { skrForklaring } from './06-kvinnoandel-referens.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
-import { _exportText, getData, referensKalla, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
+import { _exportText, hamtaData, referensKalla, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
 import { exportJPAProtokoll } from './24-excelexport.js';
 import { _RG_STEG_YRKE, forklaringsmodell, harAlder } from './50-regressionsmodeller.js';
@@ -33,7 +33,7 @@ export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 // ============================================================
 export function _metodbilaga() {
     const total = (state.data && state.data.length) || 0;
-    const used  = (typeof getData === 'function' ? getData().length : total);
+    const used  = (typeof hamtaData === 'function' ? hamtaData().length : total);
     const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
     const medAlder = harAlder();
     // Förklaringsmodellen (ADR-56): raderna säger den modell huvudtalet räknas med. Med ålder i lönefilen och BAS som

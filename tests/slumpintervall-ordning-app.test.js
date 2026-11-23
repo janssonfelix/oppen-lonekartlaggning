@@ -43,7 +43,7 @@ function intervall(omkasta) {
     }
     w.computeBootstrapCI();
     const { elapsed: _tid, ...bootstrapCI } = w.__state.bootstrapCI;
-    const d = w.getData();
+    const d = w.hamtaData();
     const oversikt = Object.fromEntries(w._laOversiktRader(d).map(o => [o.bas, { gap: o.gap, ci: o.ci, status: w.gapStatusKI(o).niva }]));
     const lika = Object.fromEntries(w.laLikaGrupper(d).grupper.map(g => [g.yrke, { niva: g.niva, sakerstalld: g.sakerstalld, flaggad: g.flaggad }]));
     const tratt = Object.fromEntries(w._laTrattUnderlag(d).punkter.map(p => [p.nyckel, { kvot: p.kvot, gransLag: p.gransLag, gransHog: p.gransHog, utanfor: p.utanfor }]));

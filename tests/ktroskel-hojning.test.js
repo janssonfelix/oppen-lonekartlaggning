@@ -51,7 +51,7 @@ describe('k-tröskeln styr varje flik', () => {
         await new Promise(r => setTimeout(r, 0));
         w.document.getElementById('explore-inkludera-sma').checked = false;
         const har = rader => rader.flat().some(c => SENT_MELLAN.some(v => normalisera(String(c)).includes(String(v))));
-        expect(har(w.__tableToMatrix('explore-table'))).toBe(false);
+        expect(har(w.__tabellTillMatris('explore-table'))).toBe(false);
         expect(har(w.__diagramexportRader(w.document.getElementById('chart-explore')))).toBe(false);
     });
     it('vid 5 syns även de små grupperna', () => {
@@ -61,7 +61,7 @@ describe('k-tröskeln styr varje flik', () => {
     });
     it('vid 5 körs ingen regression per BAS med färre än 10 av något kön', () => {
         const w = fonster(5);
-        const r = w.eval(`_computePerBasGap(getData(), ['E', 'S1'])`);
+        const r = w.eval(`_computePerBasGap(hamtaData(), ['E', 'S1'])`);
         expect(r.find(x => x.bas === 'E').status).toBe('too_few');
         expect(r.find(x => x.bas === 'S1').status).not.toBe('too_few');
     });
@@ -122,9 +122,9 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
     it('vid 25 prövas grupperna om 20 (10 av varje kön) på skärmen men inte i exporten', () => {
         const w = fonster(25);
         const status = uttryck => w.eval(uttryck).find(p => p.bas === 'A').status;
-        expect(status(`_computePerBasGap(getData(), ['A'])`)).not.toBe('too_few');
-        expect(status(`medExportLage(() => _computePerBasGap(getData(), ['A']))`)).toBe('too_few');
-        expect(status(`_computePerBasGap(getData(), ['A'])`)).not.toBe('too_few');
+        expect(status(`_computePerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
+        expect(status(`medExportLage(() => _computePerBasGap(hamtaData(), ['A']))`)).toBe('too_few');
+        expect(status(`_computePerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
         // Personer att granska (bara på skärmen): grupperna om 20 prövas; de två om 6 inte, och noten säger vad man kan göra.
         w.eval('renderPersonerAttGranska()');
         expect(normalisera(w.document.getElementById('pag-innehall').textContent))

@@ -33,7 +33,7 @@ import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { addTableExportTools, getData, harReferens, policyFor, policyLevelLabel, referensKortnamn, referensNamn, state } from './12-tillstand.js';
+import { laggTillTabellverktyg, hamtaData, harReferens, policyFor, policyNivaEtikett, referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
 import { _laSlutsats } from './41-lika-arbete.js';
 import { konsklassNu } from './45-aid-bas-tabeller.js';
@@ -46,8 +46,8 @@ export function _lpTier(n) { return maskeringsniva(n, kTroskel()); }
  * översätts bara state till policyuppslaget och tröskeln.
  */
 export function lonepolitikVymodell() {
-    return vymodellLonepolitik(getData(), {
-        policyFor, nivaEtikett: policyLevelLabel, k: kTroskel(), harPolicy: (state.policy || []).length > 0
+    return vymodellLonepolitik(hamtaData(), {
+        policyFor, nivaEtikett: policyNivaEtikett, k: kTroskel(), harPolicy: (state.policy || []).length > 0
     });
 }
 
@@ -105,7 +105,7 @@ export function ritaLonepolitik() {
     _lpRitaKonLagen(vm);
     _lpRitaEfterlevnad(vm);
     if (typeof aktiveraSortering === 'function') aktiveraSortering('lonepolitik-table');
-    if (typeof addTableExportTools === 'function') addTableExportTools('lonepolitik-table', 'lonepolitik');
+    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('lonepolitik-table', 'lonepolitik');
 }
 
 function _lpCoverageHtml(vm) {

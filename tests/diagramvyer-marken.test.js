@@ -249,7 +249,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         expect(el.textContent).toMatch(/I ingen AID-etikett med minst 10 kvinnor och 10 män ändras kvinnors median i procent av mäns/);
         // Med löner som ändras olika för könen: grupperna visas, den lilla aldrig.
         w2.__sim = w2.__state.data.map(r => ({ ...r, lon: r.kon === 'kvinna' ? r.lon * 1.05 : r.lon }));
-        const rader = w2.eval('_lutningRader(getData(), window.__sim, "grupp")');
+        const rader = w2.eval('_lutningRader(hamtaData(), window.__sim, "grupp")');
         expect(rader.map(r => r.namn).sort()).toEqual(['Yrke6000 · A', 'Yrke6100 · A']);
         expect(rader[0].markering).toEqual(['bas:A', 'grupp:6000|A']);
         expect(rader.every(r => r.efter > r.fore)).toBe(true);
@@ -546,7 +546,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
     });
     it('avvikelse från förväntad lön: andel per kön och BAS, bara där båda könen når tröskeln, i hela procent', () => {
         const w2 = skapa();
-        const rader = w2.eval('_pagAvvikelseRader(getData(), 10)');
+        const rader = w2.eval('_pagAvvikelseRader(hamtaData(), 10)');
         expect(rader.map(r => [r.bas, r.kon, r.n])).toEqual([['A', 'Kvinnor', 12], ['A', 'Män', 12]]);   // BAS S: tre kvinnor
         expect(rader[0].under).toBe(17);                                                // 2 av 12 kvinnor
         expect(rader[1].under).toBe(0);

@@ -16,7 +16,7 @@ import { statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 
 // Kanonisk färgpalett. All könsfärgning och alla semantiska färger härleds
-// härifrån (se `const colors` i 12-tillstand.js, som speglar PALETTE.kon).
+// härifrån (se `const farger` i 12-tillstand.js, som speglar PALETTE.kon).
 export const PALETTE = {
     // Kön — genomgående i hela verktyget. Plommon för kvinnor och olivgrönt för män (beslut 2026-10-17):
     // inte rosa och blått, som kopplar färgen till en stereotyp. Båda har minst 4,5:1 mot vit yta (7,1 och

@@ -186,8 +186,8 @@ describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
     });
     it('Lika arbetes minne har ett rum per tröskel: ett lägesbyte räknar inte om översiktens rader', () => {
         const w = fonster();
-        expect(w.eval('const a = _laOversiktRader(getData()); medExportLage(() => _laOversiktRader(getData())); _laOversiktRader(getData()) === a')).toBe(true);
-        expect(w.eval('medExportLage(() => _laOversiktRader(getData())) === _laOversiktRader(getData())')).toBe(false);
+        expect(w.eval('const a = _laOversiktRader(hamtaData()); medExportLage(() => _laOversiktRader(hamtaData())); _laOversiktRader(hamtaData()) === a')).toBe(true);
+        expect(w.eval('medExportLage(() => _laOversiktRader(hamtaData())) === _laOversiktRader(hamtaData())')).toBe(false);
     });
     it('efter en export ritas Översikt tillbaka bara när exporten ritade den', () => {
         const w = fonster();

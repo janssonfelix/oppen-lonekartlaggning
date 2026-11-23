@@ -6,7 +6,7 @@ import { stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 
 // ---- Outliers-detektor (rad-nivå) ----
 /**
@@ -16,7 +16,7 @@ import { getData, state } from './12-tillstand.js';
  * @returns {Array<Object>} Outlier-rader sorterade på |Z| desc.
  */
 export function detectOutliers(threshold) {
-    return extremvarden(getData(), statGolv(), threshold);
+    return extremvarden(hamtaData(), statGolv(), threshold);
 }
 
 export function renderOutliers() {

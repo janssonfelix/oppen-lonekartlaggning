@@ -6,7 +6,7 @@ import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { kInstalld } from './06-k-troskel.js';
 import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
 import { _mkTabeller, diagramMarkering } from './11-markering.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { populateSelects, renderFilerDelar, renderOversiktDelar, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderForhandskontroll } from './17-forhandskontroll.js';
 import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
@@ -186,7 +186,7 @@ export function _aktivFlik() {
  * @param {() => void} fn ritar blocket
  */
 export function _ritaTungtBlock(flik, hostIds, fn) {
-    const hosts = _ritasUppskjutet === flik && getData().length   // utan underlag finns inget att räkna
+    const hosts = _ritasUppskjutet === flik && hamtaData().length   // utan underlag finns inget att räkna
         ?/** @type {HTMLElement[]} */ (hostIds.map(id => document.getElementById(id)).filter(Boolean)) : [];
     if (!hosts.length) { fn(); return; }
     for (const h of hosts) {
@@ -334,7 +334,7 @@ export function unlockTabs() {
 
 // Enda källan för "rendera innehållet i flik X". Anropas både av nav-klick och
 // av refreshCurrentTab() så att de två aldrig glider isär. Datakrävande flikar
-// gatas på getData().length; info-fliken renderar sin egen tomstatus.
+// gatas på hamtaData().length; info-fliken renderar sin egen tomstatus.
 // Sammanslagna flikar renderar bägge sina paneler (matrix→skevhet+regression,
 // kon→kurvor+livscykel).
 // Länkade vyer (11-markering.js): när en flik har ritats om framhävs dess tabellrader för de markerade grupperna.
@@ -391,7 +391,7 @@ function _ritaUtanAlder(target, utan) {
 }
 function _renderTabContent(target) {
     target = tabMal(target);
-    const d = getData();
+    const d = hamtaData();
     _ritaIngetUnderlag(target, !d.length);
     if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
     if (target === "kon" && d.length) {
@@ -461,7 +461,7 @@ function renderFlowNav(target) {
     document.querySelectorAll('.flow-next-bar').forEach(el => el.remove());
     const next = _flowNasta(target);
     // bestammelser (§ 8) är statisk och alltid tillgänglig; övriga kräver data
-    if (!next || (target !== 'bestammelser' && target !== 'handlingsplan' && !getData().length)) return;
+    if (!next || (target !== 'bestammelser' && target !== 'handlingsplan' && !hamtaData().length)) return;
     const view = document.getElementById('view-' + (PANEL_GROUPS[target] || [target]).at(-1));
     if (!view) return;
     const bar = document.createElement('div');

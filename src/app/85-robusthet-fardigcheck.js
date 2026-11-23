@@ -23,7 +23,7 @@ import { ikon } from './03-ikoner.js';
 import { smaGrupperVid } from '../lib/ktroskel.js';
 import { _parForRedovisning, _parOverTroskel, _parUtelamnadeNot, kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getBasIntervals, getData, policyFor, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, policyFor, state } from './12-tillstand.js';
 import { bedomningUnderlag, statusMarke, UK_ETIKETT } from './13-oversikt.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
@@ -123,7 +123,7 @@ export function _dkRitaTopp(del) {
     Object.assign(_dkLage, del);
     const host = document.getElementById('dk-slutsatser');
     if (!host) return;
-    if (!getData().length) { host.innerHTML = ''; return; }
+    if (!hamtaData().length) { host.innerHTML = ''; return; }
     const f = _dkLage.fardig || [], r = _dkLage.robust, n = _dkLage.block;
     const varna = f.filter(i => i.level === 'warn').length;
     const robust = r ? (r.flippar ? `${r.flippar} nära en gräns` : 'Står sig') : 'Inte körd';
@@ -138,8 +138,8 @@ function renderRobusthet() {
     const host = document.getElementById('robusthet-body');
     if (!host) return;
     _dkRitaTopp({ robust: null });
-    if (!getData().length) { host.innerHTML = ''; return; }
-    const n = getData().length;
+    if (!hamtaData().length) { host.innerHTML = ''; return; }
+    const n = hamtaData().length;
     host.innerHTML = `
         <p>Analysen kör om slutsatserna med andra rimliga inställningar och visar vad som står sig.
         Den räknar om de tyngsta stegen flera gånger${n > 5000 ? ` — med ${n.toLocaleString('sv-SE')} rader i underlaget kan det ta en stund` : ''}.</p>
@@ -148,7 +148,7 @@ function renderRobusthet() {
 
 function runRobusthet() {
     const host = document.getElementById('robusthet-body');
-    if (!host || !getData().length) return;
+    if (!host || !hamtaData().length) return;
     host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>';
     // Låt webbläsaren rita om innan det blockerande arbetet startar.
     setTimeout(() => { try { _renderRobusthetResult(host); } finally { visningNy(); } }, 30);   // resultatet är nytt (ADR-81)
@@ -206,7 +206,7 @@ function __renderRobusthetResultExport(host) {
  */
 function buildFardigcheck() {
     const out = [];
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return out;
 
     // 1. Flaggade grupper utan rad i handlingsplanen
@@ -229,7 +229,7 @@ function buildFardigcheck() {
 
     // 2. BAS utan policyreferens
     if ((state.policy || []).length && typeof policyFor === 'function') {
-        const utan = getBasIntervals().filter(b => !policyFor(null, b));
+        const utan = hamtaBasIntervall().filter(b => !policyFor(null, b));
         if (utan.length) {
             out.push({
                 id: 'bas-utan-policy', level: 'warn', tab: 'benchmark',
@@ -296,7 +296,7 @@ function buildFardigcheck() {
 function renderFardigcheck() {
     const host = document.getElementById('fardigcheck-body');
     if (!host) return;
-    if (!getData().length) { host.innerHTML = ''; _dkRitaTopp({ fardig: null }); return; }
+    if (!hamtaData().length) { host.innerHTML = ''; _dkRitaTopp({ fardig: null }); return; }
     const items = buildFardigcheck();
     _dkRitaTopp({ fardig: items });
     if (!items.length) {

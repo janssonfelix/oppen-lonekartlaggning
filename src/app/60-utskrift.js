@@ -12,7 +12,7 @@ import { _kSanktStycke, kStampel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS } from './10-diagramtema.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { _exportUtanSkarmkolumner, _exportVisaAllaRader } from './22-exporthjalpare.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
@@ -77,7 +77,7 @@ function _utskriftAvstavar() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
 async function _buildPrintReportExport() {
-    if (!getData().length) { alert('Läs in lönefilen först.'); return; }
+    if (!hamtaData().length) { alert('Läs in lönefilen först.'); return; }
     visaLaddning();
     try {
         // Rapporten är rapportmodellen med gällande urval — samma innehåll som Word-utkastet (58-rapportmodell.js).

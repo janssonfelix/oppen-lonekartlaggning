@@ -81,7 +81,7 @@ describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på ind
         expect(w.document.getElementById('aidbas-individ').textContent).not.toMatch(/\d{2} \d{3} kr/);
         expect(w.document.getElementById('nyckel-la-individ').textContent).toBe('4 grupper');
         // Exporten (sist: den ritar fliken i exportläget) har alla kolumner.
-        expect(w.__tableToMatrix('aidbas-lika-tabell')[0]).toEqual(t.rubriker);
+        expect(w.__tabellTillMatris('aidbas-lika-tabell')[0]).toEqual(t.rubriker);
     });
     it('lönemånaden från Inställningar står ovanför tabellerna och följer med i konfigurationsfilen', () => {
         const w = fonster();
@@ -136,7 +136,7 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
         // Grundvyn gömmer de nationella kolumnerna och spridningen bakom Fler kolumner (F14); exporten har alla kolumner.
         expect(gomdaRubriker(w, 'aidbas-likvardigt-tabell')).toEqual(['Andel kvinnor nationellt (%)', 'Brukar anses kvinnodominerad', 'Lönespridning']);
-        expect(w.__tableToMatrix('aidbas-likvardigt-tabell')[0]).toEqual(t.rubriker);
+        expect(w.__tabellTillMatris('aidbas-likvardigt-tabell')[0]).toEqual(t.rubriker);
         const b = () => tabell(w, 'aidbas-likvardigt-tabell').rader.find(r => r[1] === '3003');
         expect(b()[4]).toBe('60,0 %'); expect(b()[6]).toBe('Könsblandad'); expect(b()[8]).toBe('–');   // 5 personer: ingen median
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Kvinnodominerad vid mer än 60 % kvinnor');
@@ -254,7 +254,7 @@ describe('Slumpens gränser räknar per AID-kod och BAS-intervall', () => {
         expect(s.some(r => r[0] === '1001 Yrke 1001')).toBe(false);   // inget intervall har 10 av varje kön
         // Trattens underlag på skärmen: samma nyckel.
         w.__renderTabContent('matrix');
-        const u = w.eval('_laTrattUnderlag(getData(), 10)');
+        const u = w.eval('_laTrattUnderlag(hamtaData(), 10)');
         expect(u.punkter.map(p => p.nyckel).sort()).toEqual(['7007|D', '7007|F']);
     });
 });

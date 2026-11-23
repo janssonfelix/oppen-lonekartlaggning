@@ -222,7 +222,7 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         // Flytta systemutvecklarna med lön under 37 000 kr från BAS C till BAS D: AID-etiketten finns då i två intervall
         // och är två grupper i Lika arbete (ADR-89). Dossiern för C läser gruppen i C direkt: antal, medianer och status.
         w.eval(`(() => { for (const r of state.data) if (r.aid === '502010' && r.bas === 'C' && r.lon < 37000) r.bas = 'D'; invalidateStatCaches(); populateSelects(); })()`);
-        const grupper = w.eval("laLikaGrupper(getData(), kTroskel()).grupper.filter(g => g.aid === '502010')");
+        const grupper = w.eval("laLikaGrupper(hamtaData(), kTroskel()).grupper.filter(g => g.aid === '502010')");
         expect(grupper.map(g => g.bas)).toEqual(['C', 'D']);
         const iC = grupper[0];
         const d = w.eval("buildBasdossier('C')");

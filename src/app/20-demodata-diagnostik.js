@@ -9,7 +9,7 @@ import { kInstalld } from './06-k-troskel.js';
 import { tillampaProfiletiketter, synkaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
-import { getBasIntervals, state } from './12-tillstand.js';
+import { hamtaBasIntervall, state } from './12-tillstand.js';
 import { bedomningUnderlag, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
@@ -36,7 +36,7 @@ import { _hpDemoSkal } from './56-handlingsplan.js';
 // Reglerna står i demodiagnostik (src/lib/demodata.js); här läses tillståndet och orden.
 function runDiagnostics() {
     const reg = runOLSRegression();
-    return demodiagnostik({ rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: getBasIntervals().length },   // regressionen skickas vidare (ADR-17)
+    return demodiagnostik({ rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: hamtaBasIntervall().length },   // regressionen skickas vidare (ADR-17)
         { nivaFl: T.niva.fl, underlagEtikett: s => UK_ETIKETT[s], pText: _formatPValue });
 }
 
