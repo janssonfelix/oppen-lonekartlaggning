@@ -217,31 +217,25 @@ export async function flikarOchDiagram() {
         await page.waitForTimeout(300);
         const efter = await etiketter();
         ok(efter.length === fore.length - 1 && !efter.includes(namn), `bandkartan: ett klick på ${namn} döljer intervallet (${fore.length} → ${efter.length} x-etiketter)`);
-        ok(await forsta.getAttribute('aria-pressed') === 'false', 'knappen är inte längre intryckt (aria-pressed="false")');
-        ok(await filterSum.textContent() === 'Filter: 1 aktivt' && await filter.evaluate(d => d.hasAttribute('data-aktivt')), 'rubriken säger "Filter: 1 aktivt" och rutan är markerad');
+        // Knappens läge och rubriken "Filter: 1 aktivt" prövas i jsdom (tests/diagramurval.test.js); här fokus efter klicket.
         ok(await forsta.evaluate(b => b === document.activeElement || b.contains(document.activeElement)), 'fokus står kvar på knappen');
         ok(konsolfel.length + sidfel.length === felFore, `inga konsolfel efter klicket${konsolfel.length + sidfel.length > felFore ? ': ' + [...konsolfel, ...sidfel].slice(felFore).join(' | ') : ''}`);
         // Tillbaka till alla, så att kontrollerna efter den här ser hela bandkartan.
         await filter.locator('[data-urval-alla]').click();
         await page.waitForTimeout(300);
-        ok((await etiketter()).length === fore.length, 'Visa alla ritar alla intervall igen');
     }
 
     console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram ──');
-    /* global diagramMarkering, sattDiagramMarkering, getData, explorerUrval, _chartExportRubrikFot -- funktionerna nedan körs i sidan, där de finns */
+    /* global diagramMarkering, _chartExportRubrikFot -- funktionerna nedan körs i sidan, där de finns */
     {
-        await oppnaFlik(page, '.nav-item[data-tab="benchmark"]');
-        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
-        await page.waitForTimeout(400);
         await oppnaFlik(page, '.nav-item[data-tab="struktur"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);
         await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
         await page.waitForTimeout(200);
-        const efterKlick = await page.evaluate(() => ({ nyckel: diagramMarkering(), rad: (document.getElementById('markering-rad') || {}).textContent || '',
-            har: document.querySelectorAll('#chart-skevhet-andel [data-markerad]').length, andra: document.querySelectorAll('#chart-lp-compliance [data-markerad]').length }));
+        // Att markeringen framhävs i alla ritade diagram prövas i jsdom (tests/diagramvyer.test.js); här klicket med pekaren.
+        const efterKlick = await page.evaluate(() => ({ nyckel: diagramMarkering(), rad: (document.getElementById('markering-rad') || {}).textContent || '' }));
         ok(Array.isArray(efterKlick.nyckel) && /^bas:/.test(efterKlick.nyckel[0] || '') && efterKlick.rad.includes('Markerat i alla diagram: BAS'), `ett klick på en stapel markerar dess BAS (${efterKlick.nyckel})`);
-        ok(efterKlick.har > 0 && efterKlick.andra > 0, `samma BAS framhävs i ett diagram i en annan flik (${efterKlick.andra} märken i Lönepolitik)`);
         await page.keyboard.press('Escape');
         await page.waitForTimeout(150);
         const efterEsc = await page.evaluate(() => ({ nyckel: diagramMarkering(), rad: !!document.getElementById('markering-rad'), kvar: document.querySelectorAll('[data-markerad], svg [opacity="0.22"]').length }));
@@ -298,22 +292,7 @@ export async function flikarOchDiagram() {
         ok(await page.evaluate(f => !document.querySelector('[data-rf="zoom"]') && [...document.querySelectorAll('#chart-kon-scatter [data-axel="y"]')].map(t => t.textContent).join('|') === f, taktFore),
             '"Visa hela diagrammet" tar bort utsnittet');
 
-        // Nedborrning: ett markerat BAS-intervall leder till yrkesgrupperna i Utforska, och raden där leder tillbaka.
-        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
-        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
-        await page.waitForTimeout(400);
-        const borrBas = await page.evaluate(() => { const b = getData()[0].bas; sattDiagramMarkering(`bas:${b}`); return b; });
-        await page.click('#markering-rad button[data-markering="borra"]');
-        await page.waitForTimeout(600);
-        const borr = await page.evaluate(() => ({ flik: (document.querySelector('.nav-item.active') || {}).getAttribute('data-tab'), rad: document.getElementById('explore-rad').value,
-            not: document.getElementById('explore-nedborrning').textContent, synlig: !document.getElementById('explore-nedborrning').hidden, ritat: !!document.querySelector('#chart-explore > svg') }));
-        ok(borr.flik === 'utforska' && borr.rad === 'aidbas' && borr.synlig && borr.not.includes(`BAS ${borrBas}`) && borr.ritat, `"Visa yrkesgrupperna" öppnar Utforska med yrkesgrupperna i BAS ${borrBas}`);
-        if (BILDER) await page.locator('#view-utforska').screenshot({ path: `${BILDER}/borr-${NAMN}.png` }).catch(() => {});
-        await page.click('#explore-nedborrning button');
-        await page.waitForTimeout(500);
-        ok(await page.evaluate(() => (document.querySelector('.nav-item.active') || {}).getAttribute('data-tab') === 'matrix' && document.getElementById('explore-nedborrning').hidden && explorerUrval().urval.villkor.length === 0),
-            '"Tillbaka till föregående urval" återställer urvalet och går tillbaka till fliken');
-        await page.keyboard.press('Escape');
+        // Nedborrningen till Utforska och tillbaka prövas i jsdom (tests/diagramvyer.test.js).
     }
 
     console.log('\n── Lika arbete i formen resultat först ──');
@@ -325,12 +304,11 @@ export async function flikarOchDiagram() {
         await page.evaluate(() => document.querySelector('.nav-item[data-tab="matrix"]').click());
         await page.waitForTimeout(1200);
         const form = await page.evaluate(() => { const a = [...document.querySelectorAll('#view-lika-yrken details.avsnitt[id^="avsnitt-la-"]')]; const m = document.getElementById('main-content');
-            return { slutsatser: document.querySelectorAll('#la-slutsatser .slutsats').length, oppna: a.filter(x => x.open).map(x => x.id), antal: a.length,
+            return { oppna: a.filter(x => x.open).map(x => x.id), antal: a.length,
                 nyckel: [...document.querySelectorAll('[id^="nyckel-la-"]')].filter(e => e.textContent.trim()).length, skarmar: +(Math.max(document.documentElement.scrollHeight, m.scrollHeight) / innerHeight).toFixed(1), lankrad: document.querySelectorAll('.sidans-innehall').length }; });
         const huvudet = await page.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(); const delar = ['#sok-grupp', '#btn-open-symbols', '#btn-open-installningar', '#btn-open-glossary'].map(r);
             return { overlapp: delar.some((d, i) => i > 0 && delar[i - 1].right > d.left + 0.5), utanfor: delar[delar.length - 1].right > r('.top-header').right + 0.5 }; });
         ok(!huvudet.overlapp && !huvudet.utanfor, 'sidhuvudet: sökfältet och knapparna står bredvid varandra utan att gå in över varandra');
-        ok(form.slutsatser === 4, 'toppen visar fyra slutsatser');
         ok(form.antal >= 4 && form.oppna.length === 1 && form.oppna[0] === 'avsnitt-la-yrkesgrupper' && form.nyckel >= 4 && form.lankrad === 0, `${form.antal} avsnitt, bara det första öppet, ${form.nyckel} med nyckeltal, ingen länkrad`);
         console.log(`    (fliken är ${form.skarmar} skärmhöjder med bara första avsnittet öppet)`);
         await page.evaluate(() => document.querySelector('.nav-item[data-tab="struktur"]').click());
@@ -359,39 +337,24 @@ export async function flikarOchDiagram() {
     {
         await page.evaluate(() => document.querySelector('.nav-item[data-tab="kon"]').click());
         await page.waitForTimeout(1200);
-        const fore = await page.evaluate(() => ({ n: document.getElementById('kon-kpi-n').textContent, oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-ak-"]')].filter(a => a.open).map(a => a.id),
-            skarmar: +(Math.max(document.documentElement.scrollHeight, document.getElementById('main-content').scrollHeight) / innerHeight).toFixed(1) }));
-        ok(fore.oppna.length === 1 && fore.oppna[0] === 'avsnitt-ak-karriar', 'bara avsnittet om gapet över karriären är öppet');
-        console.log(`    (fliken är ${fore.skarmar} skärmhöjder med bara första avsnittet öppet)`);
-        const bas = await page.evaluate(() => [...document.getElementById('bas-select-kon').options].map(o => o.value).find(v => v !== '__ALLA__'));
-        await page.selectOption('#bas-select-kon', bas);
-        await page.waitForTimeout(900);
-        const efter = await page.evaluate(() => ({ n: document.getElementById('kon-kpi-n').textContent, demo: document.getElementById('bas-select-demo').value, text: document.getElementById('ak-urval-text').textContent }));
-        ok(efter.n !== fore.n && efter.demo === bas && /personer/.test(efter.text), `väljaren i urvalsraden gäller hela fliken (${efter.text.trim()})`);
+        // Vilket avsnitt som är öppet och urvalet för hela fliken prövas i jsdom (tests/start-och-meny-app.test.js,
+        // tests/diagramvyer-marken.test.js); här bredden när ett avsnitt fälls ut.
+        const skarmar = await page.evaluate(() => +(Math.max(document.documentElement.scrollHeight, document.getElementById('main-content').scrollHeight) / innerHeight).toFixed(1));
+        console.log(`    (fliken är ${skarmar} skärmhöjder med bara första avsnittet öppet)`);
         await page.click('#avsnitt-ak-struktur > summary');
         await page.waitForTimeout(700);
         ok(await page.evaluate(() => { const s = document.querySelector('#chart-demo-pyramid svg'); return !!s && s.getBoundingClientRect().width > 300; }), 'åldersstrukturen ritas i full bredd när avsnittet fälls ut');
-        await page.selectOption('#bas-select-kon', '__ALLA__');
-        await page.waitForTimeout(600);
     }
 
     console.log('\n── Prioritering: resultatet först ──');
     {
         await page.evaluate(() => document.querySelector('.nav-item[data-tab="prioritering"]').click());
         await page.waitForTimeout(1200);
-        const pr = await page.evaluate(() => { const g = id => document.getElementById(id); const top = el => el.getBoundingClientRect().top;
-            return { matrisForst: top(g('chart-prio-matrix')) < top(g('avsnitt-pr-lista')), sist: top(g('pr-installningar-rad')) > top(g('avsnitt-pr-lista')),
-                oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-pr-"]')].filter(a => a.open).map(a => a.id).join(','), rad: g('pr-installningar-rad').textContent }; });
-        ok(pr.matrisForst && pr.sist && pr.oppna === 'avsnitt-pr-lista' && pr.rad.startsWith('Trösklar och viktning: standardvärden'), 'matrisen står före listan, och raden om trösklarna efter den säger standardvärden');
+        // Flikens ordning och raden om trösklarna prövas i jsdom (tests/diagramvyer-marken.test.js); här fokus.
         await page.click('#pr-installningar-rad [data-oppna-installningar="prio-cfg-atgard"]');
         // Väntar på fokus i stället för en fast tid: webkit flyttar det ibland senare än 300 ms.
         const fokus = await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'flex' && document.activeElement.id === 'prio-cfg-atgard', null, { timeout: 5000 }).then(() => true, () => false);
         ok(fokus, 'Ändra öppnar Inställningar med fokus i granskningsgränsen');
-        await page.fill('#prio-cfg-atgard', '-8');
-        await page.waitForTimeout(500);
-        ok(await page.evaluate(() => document.getElementById('pr-installningar-rad').textContent.startsWith('Trösklar och viktning: anpassade värden')), 'en ändrad tröskel i dialogen syns i flikens rad');
-        await page.click('#prio-cfg-reset');
-        await page.waitForTimeout(400);
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', null, { timeout: 5000 });
     }
@@ -413,13 +376,11 @@ export async function flikarOchDiagram() {
         await falt.press('Enter');
         await page.waitForTimeout(400);
         const efter = await punkter();
-        const not = await page.evaluate(() => { const n = document.getElementById('chart-prio-matrix').nextElementSibling; return n && n.getAttribute('data-rf') === 'urval' ? n.textContent : ''; });
         ok(efter > 0 && efter < fore, `Minst ${minst} ritar färre punkter (${fore} → ${efter})`);
-        ok(not.includes(`minst ${minst} personer i gruppen`) && not.includes('Talen i texten och tabellerna gäller hela underlaget'), `noten nämner intervallet (${not})`);
+        // Noten och Visa alla prövas i jsdom (tests/diagramurval.test.js).
         ok(konsolfel.length + sidfel.length === felFore, 'inga konsolfel efter filtret');
         await filter.locator('[data-urval-alla]').click();
         await page.waitForTimeout(400);
-        ok(await punkter() === fore && await falt.inputValue() === '', 'Visa alla ritar alla punkter igen och tömmer fältet');
     }
 
     console.log('\n── Alla diagram: kopiorna i Tabeller och egna vyer ──');
@@ -440,28 +401,17 @@ export async function flikarOchDiagram() {
             return Math.round(performance.now() - t0);
         });
         const info = await page.evaluate(() => {
-            const k = document.getElementById('ut-diagram-chart-prio-matrix'), kort = k.closest('.ut-kopia');
-            return { flik: document.querySelector('.nav-item.active').dataset.tab, rader: [...kort.querySelectorAll('.diagram-urval')].map(r => r.getAttribute('data-urval-falt')),
-                meny: !!kort.querySelector('.chart-export-btn'), punkter: k.querySelectorAll('svg [data-marke="punkt"]').length,
+            const k = document.getElementById('ut-diagram-chart-prio-matrix');
+            return { flik: document.querySelector('.nav-item.active').dataset.tab, punkter: k.querySelectorAll('svg [data-marke="punkt"]').length,
                 kalla: document.getElementById('chart-prio-matrix').querySelectorAll('svg [data-marke="punkt"]').length, hojd: k.getBoundingClientRect().height };
         });
         console.log(`  Gruppen Prioritering öppnad på ${tid} ms`);
         ok(info.flik === 'utforska', 'att öppna gruppen flyttar inte användaren från fliken');
-        ok(['bas', 'n', 'x'].every(f => info.rader.includes(f)) && info.meny, `kopian av prioriteringsmatrisen har filterraderna (${info.rader.join(', ')}) och en egen exportmeny`);
+        // Kopians filterrader och exportmeny, och att dess filter inte ändrar källan, prövas i jsdom (tests/alla-diagram.test.js).
         ok(info.punkter > 0 && info.punkter === info.kalla && info.hojd > 50, `kopian ritar samma punkter som källan (${info.punkter} och ${info.kalla})`);
-        // Kopians filter: ett Minst i kopian döljer punkter där, men inte i källan.
         // Kopian har sitt eget id och därmed sin egen ruta Filter.
         const kopiansFilter = page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-filter][1]');
         ok(await kopiansFilter.isVisible(), 'kopians ruta Filter syns från början');
-        const falt = kopiansFilter.locator('div[data-urval-falt="n"] input[data-urval-grans="min"]');
-        const minst = await page.evaluate(() => { const sp = _figUrvalSpann(document.getElementById('ut-diagram-chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
-        await falt.fill(String(minst));
-        await falt.press('Enter');
-        await page.waitForTimeout(300);
-        const efter = await page.evaluate(() => [document.querySelectorAll('#ut-diagram-chart-prio-matrix svg [data-marke="punkt"]').length,
-            document.querySelectorAll('#chart-prio-matrix svg [data-marke="punkt"]').length]);
-        ok(efter[0] < info.punkter && efter[1] === info.kalla, `kopians filter döljer punkter i kopian (${info.punkter} → ${efter[0]}) men inte i källan (${efter[1]})`);
-        await kopiansFilter.locator('[data-urval-alla]').click();
         // Mobilbredd: kopiorna och deras filterrader ger ingen vågrät rullning.
         await page.setViewportSize({ width: 375, height: 800 });
         await page.waitForTimeout(400);
@@ -487,11 +437,7 @@ export async function flikarOchDiagram() {
         await page.waitForTimeout(250);
         const oppen = await vinkel();
         ok(stangd === -45 && oppen === 45, `pilen framför ett område pekar åt höger när det är hopfällt och nedåt när det är utfällt (${stangd}° / ${oppen}°)`);
-        const stod = await page.evaluate(() => [...document.querySelectorAll('.bes8-stod')].map(l => ({ flik: l.dataset.stod, text: l.textContent.trim(), lank: l.querySelector('a[data-go-to-tab]')?.dataset.goToTab })));
-        ok(stod.length === 3 && stod.every(x => /\d/.test(x.text) && /Gå dit$/.test(x.text) && x.lank === x.flik), `Stöd i verktyget har talet och en länk till fliken (${stod.map(x => x.flik).join(', ')})`);
-        await page.click('#avsnitt-rp-1 a[data-go-to-tab]');
-        await page.waitForTimeout(600);
-        ok(await page.evaluate(() => document.querySelector('.nav-item.active').dataset.tab === 'likvardighet'), 'länken Gå dit öppnar Likvärdigt arbete');
+        // Stöd i verktyget och länken Gå dit prövas i jsdom (tests/granssnitt-vyer.test.js).
     }
 
     console.log('\n── Exportera: checklistan först, robustheten, exporterna som lista; Rapporttext ──');
@@ -512,21 +458,11 @@ export async function flikarOchDiagram() {
         ok(dk.oppna === 'avsnitt-dk-robusthet' && dk.skarmar < 4, `bara robustheten är utfälld och sidan är ${dk.skarmar.toFixed(1)} skärmar`);
         await page.click('#btn-run-robusthet');
         await page.waitForFunction(() => document.querySelector('#robusthet-body .gd-grid'), null, { timeout: 60000 });
-        ok(await page.evaluate(() => !/Inte körd/.test(document.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent) && document.getElementById('nyckel-dk-robusthet').textContent.length > 3), 'robusthetens utfall står i slutsatserna och i avsnittets rubrik');
+        // Utfallet i slutsatserna och rubriken prövas i jsdom (tests/start-och-meny-app.test.js).
         await page.evaluate(() => document.querySelector('.nav-item[data-tab="rapporttext"]').click());
         await page.waitForTimeout(1200);
         ok(await page.evaluate(() => document.getElementById('avsnitt-rt-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
-        // Väljaren Omfång: Hela organisationen tar bort delen per BAS-intervall, och Återskapa följer valet.
-        const perBas = () => page.evaluate(() => /\nPER BAS-INTERVALL\n/.test(document.getElementById('struktur-narrative').value));
-        const medDel = await perBas();
-        await page.selectOption('#struktur-narrative-omfang', 'hela');
-        const utanDel = await perBas();
-        await page.click('#struktur-narrative-regen');
-        const utanEfterAterskapa = await perBas();
-        await page.selectOption('#struktur-narrative-omfang', 'perBas');
-        const tillbaka = await perBas();
-        await page.click('#struktur-narrative-regen');
-        ok(medDel && !utanDel && !utanEfterAterskapa && tillbaka && await perBas(), `Rapporttext: Omfång tar bort och lägger tillbaka PER BAS-INTERVALL, och Återskapa följer valet (${[medDel, utanDel, utanEfterAterskapa, tillbaka].join(', ')})`);
+        // Väljaren Omfång och Återskapa prövas i jsdom (tests/rapportutkast-bas.test.js).
         await page.click('#avsnitt-dk-rapportunderlag > summary');
         await page.waitForTimeout(300);
         ok(await page.evaluate(() => { const k = document.querySelector('#rapportunderlag-innehall [data-rapport-kopiera]'); return !!k && k.offsetParent !== null; }), 'rapportunderlagets block går att nå när avsnittet fälls ut');
@@ -565,14 +501,7 @@ export async function flikarOchDiagram() {
         await ga('likvardighet');
         l = await lage('avsnitt-lv-');
         ok(l.oppna === 'avsnitt-lv-par' && l.rutor === 4 && l.skarmar < 4.5, `Likvärdigt arbete: fyra slutsatser, krav mot lön och paren utfällda (${l.skarmar.toFixed(1)} skärmar)`);
-        await page.click('#avsnitt-lv-installningar > summary');
-        await page.fill('#lv-min-gap', '2');
-        await page.dispatchEvent('#lv-min-gap', 'change');
-        await page.waitForTimeout(700);
-        ok(await page.evaluate(() => document.getElementById('avsnitt-lv-installningar').open && document.getElementById('nyckel-lv-installningar').textContent === 'Anpassade värden'), 'Likvärdigt arbete: inställningarna står kvar utfällda efter en ändring');
-        await page.fill('#lv-min-gap', '5');
-        await page.dispatchEvent('#lv-min-gap', 'change');
-        await page.waitForTimeout(500);
+        // Att inställningarna står kvar utfällda efter en ändring prövas i jsdom (tests/start-och-meny-app.test.js).
 
         await ga('loneoversyn');
         l = await lage('avsnitt-lo-');
@@ -586,11 +515,7 @@ export async function flikarOchDiagram() {
         await page.waitForTimeout(300);
         const lo = await page.evaluate(() => { const top = id => document.getElementById(id).getBoundingClientRect().top; return top('forecast-budget-value') < top('forecast-meter') && top('forecast-meter') < top('forecast-outcome') && top('forecast-outcome') < top('avsnitt-lo-riktade'); });
         ok(lo && l.oppna === 'avsnitt-lo-riktade', 'Löneöversyn: budget, budgetutnyttjande och utfall före avsnitten; riktade potter utfällt');
-        await page.click('#forecast-optimize');
-        await page.waitForTimeout(900);
-        ok(await page.evaluate(() => /^\d+ riktad/.test(document.getElementById('nyckel-lo-riktade').textContent)), 'Löneöversyn: förslaget syns som antal riktade potter i avsnittets rubrik');
-        await page.click('#forecast-reset');
-        await page.waitForTimeout(500);
+        // Antalet riktade potter i avsnittets rubrik prövas i jsdom (tests/start-och-meny-app.test.js).
 
         await ga('benchmark');
         await page.evaluate(() => { for (const [id, oppen] of [['avsnitt-jmf-bandkartor', false], ['avsnitt-jmf-stallningstagande', true], ['avsnitt-jmf-statistik', false], ['avsnitt-jmf-overblick', false]]) document.getElementById(id).open = oppen; });
@@ -625,14 +550,6 @@ export async function oversiktEfterInlasning() {
         await page.click('#ov-filrad [data-go-to-tab="filer"]');
         await page.waitForTimeout(300);
         ok(await page.evaluate(() => document.getElementById('upload-row').offsetParent !== null && document.querySelector('.nav-item.active').dataset.tab === 'filer'), 'länken i filraden öppnar Filer och kvalitet med uppladdningskorten');
-        await page.evaluate(() => { document.querySelector('.nav-item[data-tab="dashboard"]').click(); scrollTo(0, 0); });
-        await page.waitForTimeout(300);
-        await page.evaluate(() => { document.getElementById('avsnitt-ov-punkter').open = true; });
-        await page.waitForTimeout(300);
-        await page.click('#avsnitt-ov-punkter .act-cb');
-        await page.waitForTimeout(400);
-        ok(await page.evaluate(() => document.getElementById('avsnitt-ov-punkter').open && /^1 av \d+ hanterade$/.test(document.getElementById('nyckel-ov-punkter').textContent)), 'en avbockad punkt syns i avsnittets rubrik, och listan står kvar utfälld');
-        await page.click('#avsnitt-ov-punkter .act-cb');
-        await page.waitForTimeout(300);
+        // En avbockad punkt i Att göra prövas i jsdom (tests/start-och-meny-app.test.js).
     }
 }

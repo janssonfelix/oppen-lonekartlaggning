@@ -167,6 +167,17 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         expect(kort(w).textContent).toContain('Ordningen påverkar delarna: den första variabeln får det den förklarar ensam');
         expect(w.__state.gapUppdelning).toBeNull();
     });
+    it('valet är hopfällt bakom Ändra uppdelning, och står kvar utfällt när kortet ritas om', async () => {
+        const w = demo();
+        expect(w.document.getElementById('avsnitt-ov-gap').open).toBe(true);
+        const andra = () => kort(w).querySelector('.gu-andra');
+        expect(andra().open).toBe(false);
+        andra().open = true;
+        await new Promise(r => setTimeout(r, 0));   // toggle-händelsen köas
+        kryssa(w, 'alder');
+        expect(valda(w)).toEqual(['bas', 'aid', 'alder']);
+        expect(andra().open).toBe(true);
+    });
     it('röktest: AID bort och åldersgrupp till; delarna summerar till hela skillnaden, inga fel', () => {
         const w = bevaka(demo());
         kryssa(w, 'aid');

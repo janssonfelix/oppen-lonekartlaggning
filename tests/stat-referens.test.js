@@ -45,7 +45,7 @@
  *     vid df 5, 10, 26 och 99. Toleranserna i testerna av tDistCdf och pValue2Sided (3e-3 vid df 5 ned till 1e-5
  *     vid df 99) sattes efter felen i Hills approximation, som funktionen byggde på före ADR-45. De är äldre och
  *     generösare än funktionen kräver, och de är inte skärpta.
- *   - _quantileRegression (IRLS): könskoefficienten avviker 0,21 procentenheter från den exakta
+ *   - quantileRegression (IRLS, src/lib/regression.js): könskoefficienten avviker 0,21 procentenheter från den exakta
  *     lösningen vid τ = 0,5 men under 0,002 procentenheter vid τ = 0,1 och 0,9. Under den
  *     rapporteringsgräns på 0,5 procentenheter uppdraget satte; algoritmen är oförändrad.
  *   - Blinder-Oaxaca: komponenterna inom 1e-12.
@@ -63,6 +63,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { fitOLS, tDistCdf, pValue2Sided, bhJustera } from '../src/lib/stat.js';
 import { basRangFn } from '../src/lib/likvardighet.js';
+import { quantileRegression, kvantilDesign, computeSequentialGap } from '../src/lib/regression.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -150,14 +151,12 @@ describe('tDistCdf och pValue2Sided mot scipy.stats.t', () => {
     });
 });
 
-describe('kvantilregression (IRLS i app-scope) mot exakt LP-lösning (≡ quantreg::rq)', () => {
+describe('kvantilregression (IRLS) mot exakt LP-lösning (≡ quantreg::rq)', () => {
     // IRLS är en approximation; toleranserna är de uppmätta avvikelserna med marginal (se filhuvudet).
     const tolBeta = 3e-3, tolKonPp = 0.3;
     for (const tau of ['0.1', '0.5', '0.9']) {
         it(`τ = ${tau}: alla β inom ${tolBeta}, könskoefficienten inom ${tolKonPp} procentenheter`, () => {
-            const w = createAppWindow();
-            w.__X = X; w.__y = y;
-            const fit = w.eval(`_quantileRegression(window.__X, window.__y, ${tau})`);
+            const fit = quantileRegression(X, y, +tau);
             expect(fit).not.toBeNull();
             const rb = ref.quantreg[tau].beta;
             rb.forEach((b, i) => expect(Math.abs(fit.beta[i] - b)).toBeLessThan(tolBeta));
@@ -195,9 +194,7 @@ describe('kvantilregressionen på indikatormodellen mot exakt LP-lösning (ADR-6
         for (const tau of ['0.1', '0.5', '0.9']) {
             it(`${namn}, τ = ${tau}: könskoefficienten inom ${tolKonPp} procentenheter, förlusten vid optimum${tau === '0.5' ? '' : `, alla β inom ${tolBeta}`}`, () => {
                 const Xd = design(medAlder);
-                const w = createAppWindow();
-                w.__X = Xd; w.__y = y0;
-                const fit = w.eval(`_quantileRegression(window.__X, window.__y, ${tau})`);
+                const fit = quantileRegression(Xd, y0, +tau);
                 const rb = refKv[namn][tau].beta;
                 expect(rb).toHaveLength(refKv[namn].kolumner.length);
                 if (tau !== '0.5') rb.forEach((b, i) => expect(Math.abs(fit.beta[i] - b)).toBeLessThan(tolBeta));
@@ -212,9 +209,7 @@ describe('kvantilregressionen på indikatormodellen mot exakt LP-lösning (ADR-6
         }
     }
     it('appens design är indikatormodellen: kvantilDesign ger fixturens kolumner', () => {
-        const w = createAppWindow();
-        w.__rows = fx.rows.map(r => ({ ...r }));
-        const d = w.eval('_rgKvantilDesign(window.__rows, { bas: true, alder: true, yrkesgrupp: false, skal: "" })');
+        const d = kvantilDesign(fx.rows.map(r => ({ ...r })), { bas: true, alder: true, yrkesgrupp: false, skal: '' });
         expect(d.kolumner).toEqual(refKv.standard.kolumner);
         expect(d.X).toEqual(design(true));
     });
@@ -226,11 +221,9 @@ describe('sekventiell dekomponering (BAS som indikatorer, ADR-44)', () => {
     // (ref.sekventiell.endastKon); plusBas/plusAlder i referensfilen gäller den tidigare linjära
     // BAS-rangen och används inte längre.
     it('könsgapet i varje steg (kön; + BAS-indikatorer; + ålder; + yrkesgrupp)', () => {
-        const w = createAppWindow();
-        w.__rows = fx.rows.map(r => ({ ...r }));
         const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
-        w.__basList = basList;
-        const steg = w.eval(`_rgComputeSequentialGap(window.__rows, ${fx.ageMean}, window.__basList, { golv: statGolv() })`);
+        // golv 10 = statGolv() vid k-tröskelns standardvärde, det appen skickar i ett nytt fönster.
+        const steg = computeSequentialGap(fx.rows.map(r => ({ ...r })), fx.ageMean, basList, { golv: 10 });
         // Fixturen har ett yrke per BAS, så steget + Yrkesgrupp (inomtransformation på AID×BAS,
         // ADR-46) ska ge exakt samma könskoefficient som + Ålder med BAS-indikatorer
         // (Frisch–Waugh–Lovell) — en kontroll av inomskattaren mot indikatormodellen.

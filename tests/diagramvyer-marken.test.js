@@ -704,7 +704,8 @@ describe('Likvärdigt arbete: krav mot lön', () => {
         w2.__renderTabContent('likvardighet');
         const d = w2.document, el = () => d.getElementById('chart-likvardighet-krav');
         expect(el()._figur.lager.filter(l => l.marke === 'punkt').reduce((s, l) => s + l.data.length, 0)).toBe(5);
-        expect(d.getElementById('lv-krav-not').textContent).toMatch(/minst 10 personer/);
+        expect(d.getElementById('lv-krav-not').textContent).toMatch(/minst 10 personer\. Punktens storlek följer antalet personer\./);
+        expect(el().querySelectorAll('path[data-marke="linje"]')).toHaveLength(1);   // trendlinjen
         expect((el().outerHTML + JSON.stringify(w2.eval('chartExportRows(document.getElementById("chart-likvardighet-krav"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1')).not.toMatch(/7922\d|Yrke4000/);
         w2.eval('sattKTroskel(15, { fraga: false })');
         w2.__renderTabContent('likvardighet');
@@ -1095,6 +1096,9 @@ describe('utskriften ur rapportmodellen', () => {
         for (const t of ['Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan', 'Könsfördelning per BAS-intervall', 'Kvinnor och män per lönekvartil', 'Oförklarad löneskillnad per BAS-intervall']) expect(bildtexter, t).toContain(t);
         expect([...hela.querySelectorAll('img')].every(i => (i.getAttribute('alt') || '').length > 10 && /^data:image\/png/.test(i.getAttribute('src')))).toBe(true);
         expect(hela.textContent).toContain('Låst kopia');
+        // Det justerade lönegapet i detalj, och tröskeln i metodbilagan i stället för som egen rad.
+        expect(hela.textContent).toContain('Sekventiell dekomponering');
+        expect(hela.querySelector('.k-stampel')).toBeNull();
         expect(hela.textContent).not.toContain('UTKAST att färdigställa');
         // Bilagorna: flikarnas tabeller och diagram.
         for (const r of ['Bilagor: tabeller och diagram ur flikarna', 'Löneöversikt (organisation · kön · AID-etikett)', 'Lönespridning per BAS-intervall och kön', 'Bilaga: Metodik & urval (kvalitetssäkring)']) expect(rubriker(hela), r).toContain(r);
@@ -1108,6 +1112,7 @@ describe('utskriften ur rapportmodellen', () => {
         expect([...ledning.querySelectorAll('section.rm-avsnitt > h2')].map(h => h.textContent.slice(0, 2))).toEqual(['1.', '2.', '3.', '4.']);
         // Utan metodbilagan står tröskeln som en egen rad sist.
         expect(ledning.querySelector('.k-stampel').textContent).toMatch(/Minsta gruppstorlek för redovisning: 10/);
+        expect(rubriker(ledning).some(r => /^Bilagor:/.test(r))).toBe(false);
         // Väljaren för mallar är borta.
         expect(w2.document.getElementById('pdf-template')).toBeNull();
     }, 30000);

@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Webbläsar-röktestet, del: Dialogerna: gruppdossiern, inställningarna, sök och BAS-dossiern.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
-import { ok, page, osynlig, oppnaFlik } from './rigg.mjs';
+import { ok, page, oppnaFlik } from './rigg.mjs';
 /* global diagramMarkering, sattDiagramMarkering -- används i page.evaluate, där de finns i sidan */
 
 // Gruppdossiern (modal).
@@ -17,7 +17,7 @@ export async function gruppdossier() {
         await page.evaluate(() => document.querySelector('[data-open-dossier]').click());
         await page.waitForTimeout(400);
         ok(await page.evaluate(() => document.getElementById('dossier-modal').style.display === 'flex'), 'modalen öppnas från tabellraden');
-        ok(await page.evaluate(() => (document.getElementById('dossier-body').textContent || '').length > 100), 'modalen fylls med innehåll');
+        // Innehållet prövas i jsdom (tests/gruppdossier-app.test.js); här Escape med tangentbordet.
         await page.keyboard.press('Escape');
         await page.waitForTimeout(200);
         ok(await page.evaluate(() => document.getElementById('dossier-modal').style.display === 'none'), 'Escape stänger modalen');
@@ -27,8 +27,7 @@ export async function gruppdossier() {
 // Minsta gruppstorlek för redovisning (ADR-38) i inställningarna.
 export async function kTroskel() {
     console.log('\n── Minsta gruppstorlek för redovisning (ADR-38) ──');
-    // Sänkning under 10 kräver bekräftelse; varningen ligger utanför flikarna och ska synas överallt;
-    // att återställa tar bort den. Körs före lagringskontrollen: inget av detta får skrivas till lagring.
+    // Körs före lagringskontrollen: inget av detta får skrivas till lagring.
     await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(300);
@@ -37,37 +36,24 @@ export async function kTroskel() {
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => document.activeElement.id === 'k-troskel' && document.getElementById('installningar-modal').style.display === 'flex'), 'värdet för minsta gruppstorlek i filraden öppnar inställningarna med fokus i fältet');
     ok(await page.evaluate(() => { const p = document.querySelector('#installningar-modal .glossary-panel').getBoundingClientRect(); return p.width > 300 && p.right <= innerWidth && document.querySelectorAll('#inst-flikar .inst-flik').length === 4; }), 'panelen ryms i fönstret och listar flikarnas egna inställningar');
-    let bekraftelse = '';
-    page.once('dialog', d => { bekraftelse = d.message(); d.accept(); });
+    // Frågan, varningens text och återställningen prövas i jsdom (tests/ktroskel-utdata.test.js); här fokus och Escape.
+    page.once('dialog', d => d.accept());
     await page.fill('#k-troskel', '6');
     await page.dispatchEvent('#k-troskel', 'change');
-    await page.waitForTimeout(500);
-    ok(/Sänka minsta gruppstorlek till 6/.test(bekraftelse), 'sänkning under 10 frågar först');
-    ok(/sänkt till 6 \(standard 10\)/.test(await page.textContent('#k-troskel-varning-text') || ''), 'varningen anger det sänkta värdet');
-    ok(!(await osynlig('#k-troskel-varning')), 'varningen syns efter sänkning');
     // Medan flikarna räknas om efter en ändrad tröskel är inmatning spärrad (med avsikt): vänta in omräkningen.
     await page.waitForFunction(() => !document.getElementById('omritning-ruta'), null, { timeout: 60000 });
     await page.keyboard.press('Escape');
     const stangd = await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', null, { timeout: 5000 }).then(() => true, () => false);
     ok(stangd, 'Escape stänger inställningarna');
-    await oppnaFlik(page, '.nav-item[data-tab="prioritering"]');
-    await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
-    await page.waitForTimeout(300);
-    ok(!(await osynlig('#k-troskel-varning')), 'varningen syns också på en annan flik');
-    await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
-    await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.click('#k-troskel-varning-lank');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => document.activeElement.id === 'k-troskel'), 'länken i varningen öppnar inställningarna med fokus i fältet');
     await page.click('#btn-k-aterstall');
     await page.waitForTimeout(500);
-    ok(await osynlig('#k-troskel-varning'), 'varningen försvinner efter återställning');
-    ok(await page.inputValue('#k-troskel') === '10', 'fältet visar 10 efter återställning');
     ok(await page.evaluate(() => !!document.getElementById('prio-cfg-atgard').offsetParent && !!document.getElementById('prio-w-avvikelse').offsetParent), 'Prioriteringens trösklar och viktning står synliga i panelen');
-    await page.click('#inst-flikar [data-inst-flik="likvardighet"]');
-    await page.waitForTimeout(700);
-    ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'none' && document.getElementById('view-likvardighet').style.display === 'block' && document.getElementById('avsnitt-lv-installningar').open),
-        'Öppna i panelen går till Likvärdigt arbete och fäller ut avsnittet där inställningen står');
+    // Öppna i panelen (flik och avsnitt) prövas i jsdom (tests/start-och-meny-app.test.js); här stängs panelen.
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', null, { timeout: 5000 });
 }
 
 // Sök och hoppa, BAS-dossiern (modal).
@@ -106,12 +92,12 @@ export async function sokOchBasdossier() {
         const fore = await page.evaluate(k => document.querySelector(k)?.closest('tr').classList.contains('collapsed'), knapp);
         await page.click(knapp);
         await page.waitForTimeout(400);
+        // Dossierns innehåll prövas i jsdom (tests/basdossier.test.js); här det äkta klicket och att panelen ryms.
         const bd = await page.evaluate(k => ({ oppen: document.getElementById('basdossier-modal').style.display === 'flex',
-            text: (document.getElementById('basdossier-body').textContent || '').replace(/\s+/g, ' '),
             val: document.getElementById('basdossier-select').value, hopfalld: document.querySelector(k).closest('tr').classList.contains('collapsed'),
             synlig: (() => { const r = document.querySelector('#basdossier-modal .glossary-panel').getBoundingClientRect(); return r.width > 300 && r.height > 200 && r.left >= 0 && r.right <= innerWidth; })() }), knapp);
-        ok(bd.oppen && bd.synlig && bd.val === 'C' && /BAS-intervall C/.test(bd.text) && /AID-etiketterna i intervallet/.test(bd.text) && /Förra året/.test(bd.text) && bd.hopfalld === fore,
-            'knappen i Löneöversiktens BAS-rad öppnar BAS-dossiern för intervallet, utan att fälla raden');
+        ok(bd.oppen && bd.synlig && bd.val === 'C' && bd.hopfalld === fore,
+            'knappen i Löneöversiktens BAS-rad öppnar BAS-dossiern för intervallet, utan att fälla raden, och panelen ryms i fönstret');
         await page.keyboard.press('Escape');
         await page.waitForTimeout(300);
         ok(await page.evaluate(k => document.getElementById('basdossier-modal').style.display === 'none' && document.activeElement === document.querySelector(k), knapp),

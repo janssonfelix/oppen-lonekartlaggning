@@ -569,7 +569,7 @@ testerna speglar den.
 | `tests/ktroskel-utan-alder.test.js`, `tests/exports.golden.test.js` | Utan ålder: varje utdataväg, och facit *lönefil utan ålder* |
 | `tests/diagramritare.test.js` | Att ingen text i en ritad figur är ett tal med decimalpunkt (kvantildiagrammet, ADR-63) |
 | `tests/forhandsvisning.test.js` | Att regressionen inte cachas (ADR-17) |
-| `tools/browser-smoke/gapuppdelning.mjs` | Kortet *Förklara med:* i riktiga webbläsare |
+| `tools/browser-smoke/gapuppdelning.mjs` | Kortet *Förklara med:* i riktiga webbläsare: tangentbordet och ingen vågrät rullning |
 
 Golden-facit och docx-facit (`tests/exports.golden.test.js`) är oförändrade i standardläget, vilket är kontrollen att
 standardmodellen räknar som före ADR-56.

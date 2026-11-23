@@ -60,48 +60,17 @@ function tillampaDataStil(rot) {
     }
 }
 
+// ---- Kolumnerna: vilken rubrik som bär vilket fält ----
+// Reglerna (ALLOWED_FIELDS, _rubrikForRoll, _hittaRubrik och autoDetectColumnMap) bor i src/lib/inlasning.js; appen
+// når autoDetectColumnMap under samma namn genom spegeln. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
+// kolumnmappningen och importprofilen ur tillståndet.
+/** Kolumnmappningen och importprofilen ur tillståndet, som lib-funktionerna för kolumnvalet tar emot. */
+function _kolumnvalIState() {
+    return { columnMap: state.columnMap, importprofil: state.importprofil };
+}
+/** Radens värde i kolumnen som bär rollen (manuell mappning, importprofilen, namnet), eller tom sträng. */
 function getField(row, possibleNames, role) {
-    const key = _rubrikForRoll(Object.keys(row), possibleNames, role);
-    return key == null ? "" : row[key];
-}
-
-/**
- * Rubriken som bär rollen bland `headers`: #11 den manuella kolumnmappningen, därefter importprofilen som gäller för
- * filen (roll → filens rubrik), och för roller ingen av dem täcker namnet (_hittaRubrik). En vald rubrik gäller bara om
- * filen har den. undefined när ingen rubrik passar.
- */
-function _rubrikForRoll(headers, possibleNames, role) {
-    const mapped = role && state.columnMap && state.columnMap[role];
-    if (mapped && headers.includes(mapped)) return mapped;
-    const profil = role && state.importprofil && state.importprofil.mappning[role];
-    if (profil && headers.includes(profil)) return profil;
-    return _hittaRubrik(headers, possibleNames, role);
-}
-
-/**
- * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med sökordet, annars en som innehåller det; sökorden
- * prövas i tur och ordning. Exakt likhet först, så att "Lön" går före "Lönetillägg" för sökordet "ln".
- */
-function _hittaRubrik(headers, possibleNames, role) {
-    // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
-    // får aldrig tas för yrke (ADR-33).
-    const hoppa = h => role === 'yrke' && typeof _anArRubrik === 'function' && _anArRubrik(h);
-    const rensade = (headers || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
-    for (const name of possibleNames) {
-        const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        let i = rensade.indexOf(searchStr);
-        if (i < 0) i = rensade.findIndex(r => r !== null && r.includes(searchStr));
-        if (i >= 0) return headers[i];
-    }
-    return undefined;
-}
-
-// #11: vilken CSV-rubrik auto-matchar varje roll (samma logik som getField,
-// utan columnMap-override). Returnerar { roll: rubrik|null }.
-function autoDetectColumnMap(headers) {
-    const map = {};
-    for (const role of Object.keys(ALLOWED_FIELDS)) map[role] = _hittaRubrik(headers, ALLOWED_FIELDS[role], role) ?? null;
-    return map;
+    return _ilVardeForRoll(row, possibleNames, role, _kolumnvalIState());
 }
 
 // ---- Importprofiler: kända kolumnuppsättningar (src/lib/importprofiler.js) ----

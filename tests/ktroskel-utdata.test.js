@@ -351,10 +351,13 @@ describe('k-tröskeln i gränssnittet', () => {
         expect(d.getElementById('k-troskel-varning').hidden).toBe(true);
         expect(d.getElementById('btn-k-aterstall').hidden).toBe(true);
     });
-    it('sänkning visar varningen på alla flikar; återställ tar bort den', () => {
+    it('sänkning frågar först och visar varningen på alla flikar; återställ tar bort den', () => {
         const w = createAppWindow();
         const d = w.document;
+        let fraga = '';
+        w.confirm = m => { fraga = m; return true; };
         skriv(w, '6');
+        expect(fraga).toContain('Sänka minsta gruppstorlek till 6?');
         expect(w.eval('kInstalld()')).toBe(6);
         const varning = d.getElementById('k-troskel-varning');
         expect(varning.hidden).toBe(false);
@@ -364,6 +367,7 @@ describe('k-tröskeln i gränssnittet', () => {
         d.getElementById('btn-k-aterstall').click();
         expect(w.eval('kInstalld()')).toBe(10);
         expect(varning.hidden).toBe(true);
+        expect(d.getElementById('k-troskel').value).toBe('10');
     });
     it('höjt värde ger ingen varning men en återställ-knapp', () => {
         const w = createAppWindow();

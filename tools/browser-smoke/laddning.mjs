@@ -44,11 +44,9 @@ export async function laddningOchDemo() {
         await sida.waitForTimeout(300);
         const l = await sida.evaluate(() => {
             const r = document.getElementById('column-map-panel').getBoundingClientRect();
-            return { topp: r.top, botten: r.bottom, hojd: innerHeight, last: document.getElementById('tab-matrix').disabled,
-                marke: document.querySelector('#upload-cell-data .upload-badge').textContent,
-                fokus: document.activeElement?.getAttribute('data-colmap-role') };
+            return { topp: r.top, botten: r.bottom, hojd: innerHeight, fokus: document.activeElement?.getAttribute('data-colmap-role') };
         });
-        ok(l.last && /Kolumnmappning/.test(l.marke) && !/Inläst/.test(l.marke), `filen märks «${l.marke}» och flikarna är låsta`);
+        // Märket och de låsta flikarna prövas i jsdom (tests/inlasning-app.test.js); här läget i fönstret och fokus.
         ok(l.topp >= 0 && l.topp < l.hojd && l.botten <= l.hojd + 1, `kolumnmappningen är i bild efter inläsning (${Math.round(l.topp)}–${Math.round(l.botten)} av ${l.hojd})`);
         ok(l.fokus === 'bas', 'fokus står i första fältet som saknar kolumn');
         await sida.close();
@@ -66,14 +64,7 @@ export async function laddningOchDemo() {
     ok(await osynlig('#referens-namn-rad'), 'namnfältet för egen referens är dolt i demoläget');
     ok(await osynlig('#btn-referens-aterga'), '"Ta bort referensen" är dold i demoläget');
 
-    console.log('\n── Demolägets referens (Exempelkommunen, ADR-28) ──');
-    await oppnaFlik(page, '.nav-item[data-tab="prioritering"]');
-    await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
-    await page.waitForTimeout(400);
-    ok(await page.evaluate(() => document.querySelectorAll('#prio-table tbody tr').length > 0),
-        'Prioritering fungerar med demolägets referens');
-    ok(await page.evaluate(() => (document.getElementById('prio-ref-policy-namn') || {}).textContent === 'Exempelkommunens lönepolitik'),
-        'Prioritering namnger demolägets referens');
+    // Demolägets referens i Prioritering (ADR-28) prövas i jsdom (tests/referens.test.js).
     await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
 
@@ -95,8 +86,7 @@ export async function laddningOchDemo() {
         return el && /inlästa|inläst/i.test(el.textContent || '');
     }, null, { timeout: 15000 });
     ok(true, 'policyfilen lästes in via uppladdningsytan');
-    ok(await page.evaluate(() => document.getElementById('referens-namn').value === 'stallningstagande'),
-        'den egna referensen namngavs efter filen');
+    // Namnet efter filen prövas i jsdom (tests/inlasning-app.test.js); här att fältet och knappen syns.
     ok(!(await osynlig('#referens-namn-rad')) && !(await osynlig('#btn-referens-aterga')),
         'namnfältet och "Återgå" visas med egen referens');
 }
