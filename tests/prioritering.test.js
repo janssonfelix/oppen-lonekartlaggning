@@ -190,12 +190,20 @@ describe('prioritera: könsmedianer och lönegap (ADR-12)', () => {
         expect(item.median).toBe(31500);
     });
 
-    it('ett kön med färre än kTroskel personer ger null för just det könets median', () => {
+    it('ett kön med färre än kTroskel personer ger null för båda könens medianer och gapet (konsMedianer)', () => {
         const enkönat = grupp('5301 Undersköterska', 'B', 30000, 12, 33000, 3);
         const [e] = kör(enkönat, { kTroskel: 5, referensFor: () => ({ median: 35000, kalla: 'x' }) });
-        expect(e.medMa).toBeNull();
-        expect(e.gapPct).toBeNull();
-        expect(e.medKv).toBe(30000);
+        expect([e.medKv, e.medMa, e.gapPct]).toEqual([null, null, null]);
+        expect([e.kvN, e.maN]).toEqual([12, 3]);
+    });
+
+    it('könens medianer och gapet är konsMedianers: lön 0 räknas inte (inläsningen utesluter sådana rader ändå)', () => {
+        const rader0 = [...grupp('5301 Undersköterska', 'B', 30000, 10, 33000, 10), { yrke: '5301 Undersköterska', bas: 'B', kon: 'kvinna', lon: 0 }];
+        const [item] = kör(rader0, { kTroskel: 10 });
+        expect([item.medKv, item.kvN, item.n]).toEqual([30000, 10, 21]);
+        expect(item.gapPct).toBe((30000 - 33000) * 100 / 33000);
+        const [exakt] = kör(grupp('5301 Undersköterska', 'B', 38000, 10, 40000, 10));
+        expect(exakt.gapPct).toBe(-5);   // en enda avrundning, som i konsMedianer
     });
 
     it('gapScore tar bara hänsyn till gapet upp till 15 %', () => {

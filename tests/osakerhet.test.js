@@ -101,7 +101,7 @@ describe('[B4.1] bootstrapintervallen på mediankvoten', () => {
         expect(a.ratio.point).toBe(median(kv) / median(ma));
         expect(a.ratio.lo).toBeLessThanOrEqual(a.ratio.point);
         expect(a.ratio.hi).toBeGreaterThanOrEqual(a.ratio.point);
-        expect(a.gapPct).toEqual({ point: (a.ratio.point - 1) * 100, lo: (a.ratio.lo - 1) * 100, hi: (a.ratio.hi - 1) * 100 });
+        expect(a.gapPct).toEqual({ point: (median(kv) - median(ma)) * 100 / median(ma), lo: (a.ratio.lo - 1) * 100, hi: (a.ratio.hi - 1) * 100 });
     });
 });
 
@@ -110,7 +110,7 @@ describe('[B4.2] konskvotPerGrupp', () => {
     it('grupper där ett kön är färre än k är dolda och tomma hoppas över; löner som inte är över 0 räknas inte (konsMedianerUrLoner)', () => {
         const { visade, dolda } = konskvotPerGrupp([['A', kv, ma], ['tom', [], []], ['liten', kv.slice(0, 9), ma], ['noll', kv, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], ['bara noll', [0], [0, -1]]], { k: 10 });
         expect(dolda).toEqual(['liten', 'noll']);
-        expect(visade).toEqual([{ nyckel: 'A', nKv: 12, nMa: 15, medKv: median(kv), medMa: median(ma), gap: median(kv) / median(ma) * 100 }]);
+        expect(visade).toEqual([{ nyckel: 'A', nKv: 12, nMa: 15, medKv: median(kv), medMa: median(ma), gap: median(kv) * 100 / median(ma) }]);
     });
     it('med ki står medianKvotKI med standardvärdena i ci', () => {
         expect(konskvotPerGrupp([['A', kv, ma]], { k: 10, ki: true }).visade[0].ci).toEqual(medianKvotKI(kv, ma));

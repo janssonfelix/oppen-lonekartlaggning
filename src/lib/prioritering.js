@@ -22,6 +22,7 @@ import { aidAvYrke, namnrader } from './aid.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 import { arKvinna, arMan } from './kon.js';
 import { svPoPct } from './talformat.js';
+import { konsMedianer } from './struktur.js';
 
 // Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
 // Bevisrutan i appen hämtar dem genom prioKonstanter(), så förklaringarna och poängen visar samma tal.
@@ -195,13 +196,8 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
         const lons     = g.rows.map(r => r.lon);
         const med      = median(lons);
-        const kvLons   = g.rows.filter(r => arKvinna(r)).map(r => r.lon);
-        const maLons   = g.rows.filter(r => arMan(r)).map(r => r.lon);
         // ADR-12: könsjämförelsen kräver kTroskel personer av vartdera könet; annars bara gruppens samlade median.
-        const medKv    = kvLons.length >= kTroskel ? median(kvLons) : null;
-        const medMa    = maLons.length >= kTroskel ? median(maLons) : null;
-        // Skillnaden gånger 100 delat med jämförelsevärdet: en enda avrundning (se diffPct nedan).
-        const gapPct   = (medKv && medMa) ? (medKv - medMa) * 100 / medMa : null;
+        const { nKv: kvN, nMa: maN, medKv, medMa, gapPct } = konsMedianer(g.rows, { k: kTroskel });
 
         // Referensvärde (levereras av anroparen)
         const ref = referensFor(g.aid, g.bas);
@@ -249,7 +245,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
         items.push({
             yrke: g.yrke, aid: g.aid, bas: g.bas,
-            n: g.rows.length, kvN: kvLons.length, maN: maLons.length,
+            n: g.rows.length, kvN, maN,
             median: med, refMedian, refSource,
             diffPct, diffKr, annualGapTotal, annualOverTotal,
             costPerPerson, isQuickWin, isBrist,

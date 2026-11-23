@@ -33,8 +33,9 @@ analyser, så samma grupp heter samma sak i prioriteringen, Lika arbete, jämfö
 texterna syns inte i prioriteringen. Radernas fält `yrke`, `aid` och `bas` behåller sin betydelse (texten i fältet,
 koden och intervallet), och vyer som visar texterna som de står i filen, Löneöversikten, sökningen och
 punktdiagrammets färger per AID-etikett, grupperar inte på koden. En grupp med färre än k
-personer tas inte med. Könens medianer räknas bara för ett kön med minst k personer; annars är könsmedianen och
-könsskillnaden null och gruppen finns kvar med sin samlade median.
+personer tas inte med. Könens medianer och könsskillnaden räknas bara när båda könen har minst k personer
+(`konsMedianer` i `src/lib/struktur.js`, bara lön över 0); annars är de null och gruppen finns kvar med sin samlade
+median.
 
 Referensen hämtas per AID-kod och BAS-intervall:
 
@@ -48,7 +49,7 @@ En grupp utan referens, eller med referensmedianen 0, tas inte med.
     diffKr  = gruppens median − referensens median
     diffPct = diffKr × 100 / referensens median
 
-Könsskillnaden skrivs på samma sätt:
+Könsskillnaden skrivs på samma sätt, i `konsMedianer`:
 
     gapPct = (kvinnornas median − männens median) × 100 / männens median
 

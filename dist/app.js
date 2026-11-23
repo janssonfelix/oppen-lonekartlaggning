@@ -1792,7 +1792,7 @@ function konsMedianerUrLoner(kvLoner, maLoner, { k = 1 } = {}) {
   const konOk = kv.length >= Math.max(1, k) && ma.length >= Math.max(1, k);
   if (!konOk) return { nKv: kv.length, nMa: ma.length, medKv: null, medMa: null, kvotPct: null, gapPct: null, konOk };
   const medKv = median(kv), medMa = median(ma);
-  return { nKv: kv.length, nMa: ma.length, medKv, medMa, kvotPct: medKv / medMa * 100, gapPct: (medKv / medMa - 1) * 100, konOk };
+  return { nKv: kv.length, nMa: ma.length, medKv, medMa, kvotPct: medKv * 100 / medMa, gapPct: (medKv - medMa) * 100 / medMa, konOk };
 }
 function medianGapPct(rader, { k = 1 } = {}) {
   return konsMedianer(rader, { k }).gapPct;
@@ -6183,11 +6183,7 @@ function prioritera(rader, { referensFor, kTroskel: kTroskel2, prioConfig, prioW
     if (g.rows.length < kTroskel2) return;
     const lons = g.rows.map((r) => r.lon);
     const med = median(lons);
-    const kvLons = g.rows.filter((r) => arKvinna(r)).map((r) => r.lon);
-    const maLons = g.rows.filter((r) => arMan(r)).map((r) => r.lon);
-    const medKv = kvLons.length >= kTroskel2 ? median(kvLons) : null;
-    const medMa = maLons.length >= kTroskel2 ? median(maLons) : null;
-    const gapPct = medKv && medMa ? (medKv - medMa) * 100 / medMa : null;
+    const { nKv: kvN, nMa: maN, medKv, medMa, gapPct } = konsMedianer(g.rows, { k: kTroskel2 });
     const ref = referensFor(g.aid, g.bas);
     const refMedian = ref ? ref.median : null;
     const refSource = ref ? ref.kalla : null;
@@ -6223,8 +6219,8 @@ function prioritera(rader, { referensFor, kTroskel: kTroskel2, prioConfig, prioW
       aid: g.aid,
       bas: g.bas,
       n: g.rows.length,
-      kvN: kvLons.length,
-      maN: maLons.length,
+      kvN,
+      maN,
       median: med,
       refMedian,
       refSource,

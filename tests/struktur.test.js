@@ -60,6 +60,11 @@ describe('[B2.1] structure: konsMedianer', () => {
         expect(konsMedianerUrLoner(kv, ma, { k: 5 })).toEqual(konsMedianer(rows(), { k: 5 }));
         expect(konsMedianerUrLoner(undefined, null).konOk).toBe(false);
     });
+    it('en kvot som är exakt en procentsats blir exakt den: en enda avrundning', () => {
+        expect(konsMedianerUrLoner([38000], [40000])).toMatchObject({ kvotPct: 95, gapPct: -5 });
+        expect(konsMedianerUrLoner([39200], [40000])).toMatchObject({ kvotPct: 98, gapPct: -2 });
+        expect(konsMedianerUrLoner([42000], [40000])).toMatchObject({ kvotPct: 105, gapPct: 5 });
+    });
 });
 
 describe('[B2.2] structure: direktivets tecken (EU 2023/970 art. 9)', () => {

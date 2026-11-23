@@ -68,7 +68,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `jamforelse` | `aid`, `kon`, `stat`, `termer` |
 |  | `skrreferens` | `aid`, `skr-personal` |
 |  | `skr-personal` | – |
-| Simulering och prioritering | `prioritering` | `aid`, `kon`, `kostnad`, `stat`, `talformat` |
+| Simulering och prioritering | `prioritering` | `aid`, `kon`, `kostnad`, `stat`, `struktur`, `talformat` |
 |  | `kostnad` | – |
 |  | `loneoversyn` | `kon`, `kostnad`, `likvardighet`, `stat`, `struktur` |
 | Klassificering | `aid` | `aid-etiketter`, `termer` |

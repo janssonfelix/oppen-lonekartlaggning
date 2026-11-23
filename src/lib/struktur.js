@@ -44,9 +44,12 @@ export function konsMedianerUrLoner(kvLoner, maLoner, { k = 1 } = {}) {
     const kv = (kvLoner || []).filter(v => v > 0), ma = (maLoner || []).filter(v => v > 0);
     const konOk = kv.length >= Math.max(1, k) && ma.length >= Math.max(1, k);
     if (!konOk) return { nKv: kv.length, nMa: ma.length, medKv: null, medMa: null, kvotPct: null, gapPct: null, konOk };
-    // Bara löner över 0 räknas, så mäns median är alltid över 0 här.
+    // Bara löner över 0 räknas, så mäns median är alltid över 0 här. Täljaren gånger 100 före divisionen: för löner i
+    // hela kronor (en median kan bli en halv krona) är den exakt, så divisionen är den enda avrundningen och en kvot som
+    // är exakt en procentsats blir exakt den: 38 000 mot 40 000 ger gapet −5, inte −5,000000000000004 som
+    // (38 000 / 40 000 − 1) × 100. Då behövs ingen tolerans mot trösklar (prövas i tests/struktur.test.js).
     const medKv = _median(kv), medMa = _median(ma);
-    return { nKv: kv.length, nMa: ma.length, medKv, medMa, kvotPct: medKv / medMa * 100, gapPct: (medKv / medMa - 1) * 100, konOk };
+    return { nKv: kv.length, nMa: ma.length, medKv, medMa, kvotPct: medKv * 100 / medMa, gapPct: (medKv - medMa) * 100 / medMa, konOk };
 }
 
 /**
