@@ -182,7 +182,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     const fargskala = _rfFargskala(figurIn.fargskala);   // en gång per ritning: layouten, märkena och färgstapeln delar den
     const vag = _rfVagratLayout(figurIn, syn, yMarg, B, px, fargskala);
     const etiketter = _rfEtikettBeslut(figurIn, syn, px, lod.inreH, vag.panelB);
-    const rum = _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, vag.tak);
+    const rum = _rfPunktEtikettRum(_rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, vag.tak), figurIn, syn, px, vag.panelB, vag.tak);
     const yAx = _rfYAxlar(figurIn, syn, rum, B, px, lod.inreH, yMarg);
     const L = { ...lod, ...yAx, ...vag, rumX: rum.x, etiketter, fargskala };
 

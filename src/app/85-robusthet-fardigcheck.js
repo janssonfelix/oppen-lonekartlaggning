@@ -12,15 +12,14 @@
 // FÄRDIGCHECK: korsläser "vad flaggades" mot "vad hanterades" — lösa trådar
 // innan underlaget lämnas vidare. Observationer, inte fel; inget blockeras.
 //
-// KRITISKT: robusthetskörningarna muterar state tillfälligt och MÅSTE återställa
-// det i finally, annars förstörs användarens inställningar.
+// Robusthetskörningarna ändrar inte state: kvinnotröskeln och referensen skickas som argument.
 // ====================================================================
 
 // ---- Rang 3: Robusthetspanel ------------------------------------------------
 
 /**
  * Kör om § 3:10-kandidatlistan för flera kvinnotrösklar och mäter hur stabil
- * varje kandidatgrupp är. Återställer alltid state.likvardighet.
+ * varje kandidatgrupp är. Ändrar inte state: tröskeln skickas som argument till computeLikvardighetPairs.
  *
  * Panelen ligger utanför fliken Likvärdigt arbete och följer därför tröskeln som allt annat
  * (`_parForRedovisning`, ADR-38): ett par där någon grupp är under tröskeln namnges inte, och
@@ -29,39 +28,30 @@
  */
 function robusthetLikvardighet(trösklar = [55, 60, 65]) {
     if (typeof computeLikvardighetPairs !== 'function') return null;
-    const cfg = state.likvardighet || {};
-    const original = cfg.kvinnoTrosholdPct;
-    const originalResult = cfg.result;
+    const original = (state.likvardighet || {}).kvinnoTrosholdPct;
     const seen = new Map();
     const utelamnadePar = new Set();
-    try {
-        trösklar.forEach(t => {
-            state.likvardighet.kvinnoTrosholdPct = t;
-            // Vid den inställda kvinnotröskeln är paren flikens (samma val); de andra trösklarna räknas för sig och sparas inte.
-            let alla = [];
-            try { alla = ((t === original ? likvardighetResultat() : computeLikvardighetPairs()) || {}).pairs || []; } catch (_e) { alla = []; }
-            const { par: pairs } = _parForRedovisning(alla);
-            alla.forEach(p => { if (!_parOverTroskel(p)) utelamnadePar.add(`${p.kvAid}|${p.kvBas}|${p.maAid}|${p.maBas}`); });
-            const inThisRun = new Set();
-            pairs.forEach(p => {
-                const key = `${p.kvAid}|${p.kvBas}`;
-                if (inThisRun.has(key)) return;
-                inThisRun.add(key);
-                if (!seen.has(key)) {
-                    seen.set(key, {
-                        key,
-                        label: `${p.kvAid}${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + p.kvLabel : ''} (BAS ${p.kvBas})`,
-                        hits: 0
-                    });
-                }
-                seen.get(key).hits++;
-            });
+    trösklar.forEach(t => {
+        // Vid den inställda kvinnotröskeln är paren flikens (samma val); de andra trösklarna räknas för sig och sparas inte.
+        let alla = [];
+        try { alla = ((t === original ? likvardighetResultat() : computeLikvardighetPairs({ kvinnoTrosholdPct: t })) || {}).pairs || []; } catch (_e) { alla = []; }
+        const { par: pairs } = _parForRedovisning(alla);
+        alla.forEach(p => { if (!_parOverTroskel(p)) utelamnadePar.add(`${p.kvAid}|${p.kvBas}|${p.maAid}|${p.maBas}`); });
+        const inThisRun = new Set();
+        pairs.forEach(p => {
+            const key = `${p.kvAid}|${p.kvBas}`;
+            if (inThisRun.has(key)) return;
+            inThisRun.add(key);
+            if (!seen.has(key)) {
+                seen.set(key, {
+                    key,
+                    label: `${p.kvAid}${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + p.kvLabel : ''} (BAS ${p.kvBas})`,
+                    hits: 0
+                });
+            }
+            seen.get(key).hits++;
         });
-    } finally {
-        state.likvardighet.kvinnoTrosholdPct = original;
-        // Resultatet vid den inställda tröskeln står kvar om det räknades här; inget annat skrivs till det.
-        state.likvardighet.result = originalResult || state.likvardighet.result;
-    }
+    });
     const rows = [...seen.values()]
         .map(r => ({ ...r, of: trösklar.length }))
         .sort((a, b) => b.hits - a.hits || a.label.localeCompare(b.label, 'sv'));

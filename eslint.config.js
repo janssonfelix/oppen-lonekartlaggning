@@ -77,7 +77,8 @@ export default [
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: 'module',
-            globals: { ...globals.es2021 }
+            // TextDecoder (filtextens teckenkodning i inlasning.js) finns i Node och webbläsaren; ingen DOM, nät eller lagring
+            globals: { ...globals.es2021, TextDecoder: 'readonly' }
         },
         rules: {
             'no-undef': 'error',

@@ -1129,14 +1129,7 @@ describe('spridningsdiagrammen: en person i en grupp under tröskeln visas inte 
         ...Array.from({ length: 4 }, (_, i) => rad('502010 Sys', 'A', 'kvinna', MARKOR + i, 41 + i)),                          // liten grupp
         ...Array.from({ length: 14 }, (_, i) => rad('403010 Bsk', 'A', i < 3 ? 'man' : 'kvinna', i < 3 ? MARKOR + 10 + i : 28000 + i * 40, 25 + i))];   // 11 kv, 3 män
     const utdata2 = el => utdata(el).replace(/\s(?:c?[xy][12]?|r|d|width|height|transform)="[^"]*"/g, '').replace(/(\d)[\s  ](?=\d)/g, '$1');
-    it('individLitenFor: liten när gruppen eller personens kön i gruppen är under tröskeln', () => {
-        medData(data(), [], () => {
-            const sma = w.eval('(() => { const f = individLitenFor(getData()); return getData().filter(f).map(r => r.lon); })()');
-            expect(sma.sort()).toEqual([MARKOR, MARKOR + 1, MARKOR + 2, MARKOR + 3, MARKOR + 10, MARKOR + 11, MARKOR + 12]);
-            w.eval('sattKTroskel(3, { fraga: false })');
-            expect(w.eval('getData().filter(individLitenFor(getData())).length')).toBe(0);
-        });
-    });
+    // Regeln själv (individLitenFor) prövas i Node i tests/ktroskel-lib.test.js; här prövas vyerna som använder den.
     it.each([['chart-kon-scatter', "renderKon('__ALLA__')"]])(
         '%s: punkterna ritas inte, syns inte i exportbilden eller diagramdatan, och noten säger hur många', (id, rita) => {
         medData(data(), [], () => {

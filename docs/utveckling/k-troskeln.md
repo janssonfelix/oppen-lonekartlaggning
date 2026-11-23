@@ -16,7 +16,8 @@ Den som lägger till något som lämnar verktyget läser avsnitt 1, 2 och 9 för
 
 | Del | Fil |
 |---|---|
-| Tröskeln, golven, stämplarna, noterna om utelämnade kön och par, inställningen och omritningen | `src/app/06-k-troskel.js` |
+| Tröskeln, inställningen och omritningen | `src/app/06-k-troskel.js` |
+| Reglerna vid k: golven, stämplarna, noterna om utelämnade kön och par, BAS-effekterna, punkterna per person (tröskeln som argument; appens namn är adaptrar i `06-k-troskel.js`) | `src/lib/ktroskel.js` |
 | Maskeringsnoterna (`kMaskNote`, `kSamladNote`) | `src/app/06-maskeringsnoter.js` |
 | Exportläget, exportgrinden och förhandsvisningen | `src/app/23-exportgrind.js` |
 | Könsuppdelade mått i strukturen | `src/lib/struktur.js` |
@@ -120,7 +121,7 @@ om den justerade löneskillnaden i Word-utkastet, PDF-rapporten och utskriften, 
 specifikation i exportläget) skrivs effekten inte ut för ett intervall med färre än `kTroskel()` personer i modellen
 (`basN`); intervallen namnges i en not utan värden (`_kMaskNoteText`). Har referensintervallet självt färre skrivs
 ingen effekt ut, eftersom varje effekt då beskriver dess nivå baklänges, och noten säger varför. Modellen och dess
-referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-troskel.js`).
+referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-troskel.js`, regeln i `src/lib/ktroskel.js`).
 
 **Livscykelns lönekurva.** Kurvan i Ålder & karriär är livscykelmodellens lönenivå per kön i det valda BAS-intervallet
 (rullistan; som standard det mest folkrika). Översiktstabellen per intervall utelämnar ett intervall med färre än
@@ -381,7 +382,7 @@ Tröskeln är redovisningens gräns. Skattningar och några tabeller har egna go
 | Motiveringsregeln om medelålder per kön (`55-prioritering.js`) | 3 av varje kön | Fast golv (beslut, ADR-38). |
 | Löneöversiktens rader per AID-etikett (`39-loneoversikt.js`) | 5 | Fast golv (beslut, ADR-38). |
 | `LITET_UNDERLAG` (`litetUnderlag()`) | 5 | Ingen maskeringsgräns. I ett diagram ritas en stapel eller ett segment som gäller färre än fem personer med mönster, som en varning (ADR-39, `diagramkarnan.md`). I tabellerna per AID-kod och BAS-intervall är det gränsen för en egen rad i exportläget, och i könsfördelningen per BAS-intervall gränsen för en egen rad i båda lägena (avsnitt 4). |
-| Lönepolitikens mellannivå (`LP_COUNT_TIER_MIN` i `75-lonepolitik.js`) | Från 5 upp till tröskeln | Grupper mellan 5 och k redovisas med antal (bandplacering i antal), inga lönemått; under 5 maskeras raden, namnges i en not och räknas in i BAS-totalen. Mellannivån försvinner när tröskeln är 5 eller lägre. |
+| Lönepolitikens mellannivå (`ANTAL_MIN` och `maskeringsniva` i `src/lib/lonepolitik.js`) | Från 5 upp till tröskeln | Grupper mellan 5 och k redovisas med antal (bandplacering i antal), inga lönemått; under 5 maskeras raden, namnges i en not och räknas in i BAS-totalen. Mellannivån försvinner när tröskeln är 5 eller lägre. |
 
 ## 6. Inställningen
 

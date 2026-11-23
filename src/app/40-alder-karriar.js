@@ -6,12 +6,6 @@
 // skillnader mellan åldersgrupper nu, inte hur en persons lön utvecklas — åldersgrupperna skiljer sig också i
 // utbildning, yrkesval och anställningstid (kohorteffekter). Står under kurvorna, i Om verktyget och i metodbilagan.
 const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.';
-// Minsta och största värdet i en lista: en slinga, eftersom Math.min(...v) slår i taket för antal argument vid stora filer.
-function _omfang(v) {
-    let min = Infinity, max = -Infinity;
-    for (const x of v) { if (x < min) min = x; if (x > max) max = x; }
-    return [min, max];
-}
 // Raden under nyckeltalen, i klartext: stiger lönen lika mycket per levnadsår för kvinnor och män, och hur mycket av
 // skillnaden förklarar åldersfördelningen? Ren funktion. lutKv/lutMa är trendlinjernas lutning i kronor per år;
 // ra och vidSammaAlder är kvinnors lön i procent av mäns, utan justering respektive avläst vid medelåldern.
@@ -163,39 +157,8 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
 }
 document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
 
-// ---- Löneklasser: indelningen för histogrammet ----
-// Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
-// percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
-function _konLonesteg(loner, mal = 12) {
-    const spann = Stat.quantile(loner, 0.95) - Stat.quantile(loner, 0.05);
-    return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
-}
 const _konTkr = v => _figTalformat(v / 1000, Number.isInteger(v / 1000) ? 'antal' : undefined);
 
-// ---- Histogram: lönefördelningen för kvinnor och män, klass för klass ----
-// Andel av respektive kön per löneklass. Visas bara när båda könen når tröskeln. Ingen stapel får gälla en klass
-// med färre än tröskeln personer: klasserna i ändarna slås ihop inåt tills ändklassen når tröskeln ("under X",
-// "X eller mer"), och finns en gles klass i mitten fördubblas klassbredden och indelningen görs om. Går det inte
-// att få minst tre klasser ritas inget.
-function _konHistogramKlasser(kv, ma, k) {
-    const alla = [...kv, ...ma];
-    if (kv.length < k || ma.length < k) return null;
-    let steg = _konLonesteg(alla);
-    for (let varv = 0; varv < 6; varv++, steg *= 2) {
-        const [lagst, hogst] = _omfang(alla), golv = Math.floor(lagst / steg) * steg, antal = Math.floor((hogst - golv) / steg) + 1;
-        /** @type {Array<{fran: number, till: number, nKv: number, nMa: number, oppenNed?: boolean, oppenUpp?: boolean}>} */
-        let klasser = Array.from({ length: antal }, (_, i) => ({ fran: golv + i * steg, till: golv + (i + 1) * steg, nKv: 0, nMa: 0 }));
-        const plats = v => Math.min(antal - 1, Math.floor((v - golv) / steg));
-        for (const v of kv) klasser[plats(v)].nKv++;
-        for (const v of ma) klasser[plats(v)].nMa++;
-        const n = c => c.nKv + c.nMa;
-        const slaIhop = (a, b) => ({ fran: a.fran, till: b.till, nKv: a.nKv + b.nKv, nMa: a.nMa + b.nMa, ...(a.oppenNed ? { oppenNed: true } : {}), ...(b.oppenUpp ? { oppenUpp: true } : {}) });
-        while (klasser.length > 1 && n(klasser[0]) < k) klasser = [{ ...slaIhop(klasser[0], klasser[1]), oppenNed: true }, ...klasser.slice(2)];
-        while (klasser.length > 1 && n(klasser[klasser.length - 1]) < k) klasser = [...klasser.slice(0, -2), { ...slaIhop(klasser[klasser.length - 2], klasser[klasser.length - 1]), oppenUpp: true }];
-        if (klasser.length >= 3 && klasser.every(c => n(c) >= k)) return klasser;
-    }
-    return null;
-}
 function _konHistogramFigur(klasser, nKv, nMa, scope) {
     const namn = c => (c.oppenNed ? `under ${_konTkr(c.till)}` : c.oppenUpp ? `${_konTkr(c.fran)} eller mer` : `${_konTkr(c.fran)}–${_konTkr(c.till)}`);
     // De två fördelningarna ligger på samma plats, halvgenomskinliga: formen på vardera syns, och där de täcker
@@ -214,18 +177,13 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
 // (_laBootstrapGapCI). Visar VAR i karriären skillnaden finns — inte varför: det är den råa skillnaden mellan alla
 // kvinnor och män i åldersgruppen, oavsett yrke och BAS-intervall. En åldersgrupp där ett kön har färre än tröskeln visas inte.
 const KON_ALDERSGRUPPER = [[0, 29, 'Under 30 år'], [30, 39, '30–39 år'], [40, 49, '40–49 år'], [50, 59, '50–59 år'], [60, 200, '60 år och äldre']];
+// Kvoten, intervallet och prövningen mot k är konskvotPerGrupp i src/lib/osakerhet.js.
 function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
-    const visade = [], dolda = [];
-    for (const [fran, till, namn] of KON_ALDERSGRUPPER) {
+    const { visade, dolda } = _osKonskvotPerGrupp(KON_ALDERSGRUPPER.map(([fran, till, namn]) => {
         const i = r => r.alder > 0 && r.alder >= fran && r.alder <= till && r.lon > 0;   // ålder 0 = saknas (ADR-64)
-        const kv = dataKv.filter(i).map(r => r.lon), ma = dataMa.filter(i).map(r => r.lon);
-        if (!kv.length && !ma.length) continue;
-        if (kv.length < k || ma.length < k) { dolda.push(namn); continue; }
-        const medKv = Stat.median(kv), medMa = Stat.median(ma);
-        if (!(medMa > 0)) continue;
-        visade.push({ namn, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ci: _laBootstrapGapCI(kv, ma) });
-    }
-    return { visade, dolda };
+        return [namn, dataKv.filter(i).map(r => r.lon), dataMa.filter(i).map(r => r.lon)];
+    }), { k, ki: true });
+    return { visade: visade.map(({ nyckel: namn, ...v }) => ({ namn, ...v })), dolda };
 }
 function _konAlderGapFigur(rader, scope) {
     const status = o => gapStatusKI(o);   // uppmärksamhetstrappan (ADR-59): KI:t mot 100 % och golvet statGolv()

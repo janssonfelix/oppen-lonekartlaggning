@@ -18,15 +18,10 @@
  */
 import { quantile, avrundaSymmetriskt } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
+import { svTal } from './talformat.js';
 
 export const MARKEN = ['stapel', 'intervall', 'punkt', 'linje', 'band', 'lada', 'ruta', 'yta'];
 const SKALOR = ['band', 'linjar', 'log'];
-
-const _nf = new Map();
-function _tal(dec) {
-    if (!_nf.has(dec)) _nf.set(dec, new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }));
-    return _nf.get(dec);
-}
 
 /**
  * Tal som text med svensk lokal. Namngivna format i stället för formatsträngar i vyerna.
@@ -38,15 +33,14 @@ function _tal(dec) {
 export function talformat(v, namn, val) {
     const enhet = !val || val.enhet !== false;
     if (typeof v !== 'number' || !isFinite(v)) return '–';
-    // Avrunda först (halvorna bort från noll, så att ett tal och dess motsatta tal får samma siffror) och normalisera
-    // sedan: ett värde som blir noll i formatet får inget minustecken.
-    const rund = avrundaSymmetriskt;
-    if (namn === 'kr') return _tal(0).format(rund(v, 0)) + (enhet ? ' kr' : '');
-    if (namn === 'pct') return _tal(1).format(rund(v, 1)) + (enhet ? ' %' : '');
-    if (namn === 'pctAbs') { const a = Math.abs(rund(v, 1)); return _tal(Number.isInteger(a) ? 0 : 1).format(a) + (enhet ? ' %' : ''); }
-    if (namn === 'tal2') return _tal(2).format(rund(v, 2));
-    if (namn === 'antal' || namn === 'ar') return _tal(0).format(rund(v, 0));
-    return _tal(Number.isInteger(v) ? 0 : 1).format(rund(v, Number.isInteger(v) ? 0 : 1));
+    // svTal avrundar som appens tabeller (halvorna bort från noll, ingen "−0"). Före enheten står ett vanligt
+    // mellanslag, som i diagrammen förut.
+    if (namn === 'kr') return svTal(v, 0) + (enhet ? ' kr' : '');
+    if (namn === 'pct') return svTal(v, 1) + (enhet ? ' %' : '');
+    if (namn === 'pctAbs') { const a = Math.abs(avrundaSymmetriskt(v, 1)); return svTal(a, Number.isInteger(a) ? 0 : 1) + (enhet ? ' %' : ''); }
+    if (namn === 'tal2') return svTal(v, 2);
+    if (namn === 'antal' || namn === 'ar') return svTal(v, 0);
+    return svTal(v, Number.isInteger(v) ? 0 : 1);
 }
 
 /**

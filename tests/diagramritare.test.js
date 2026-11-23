@@ -3611,6 +3611,17 @@ describe('etiketter som inte täcker varandra (etapp 1b, U7)', () => {
         expect(ut[0].linje).toBeNull();                                  // den första står intill sin punkt
         expect(ut.some(q => q.linje)).toBe(true);                         // i en klunga måste några stå längre ut
     });
+    it("etikettLage 'hoger' och 'vanster': värdeaxeln får rum, så att etiketten vid axelns ände står inom diagrammet", () => {
+        const figur = lage => ({ beskrivning: 'Skillnad', x: { skala: 'linjar', titel: 'Procent' }, y: { skala: 'band', ordning: ['a', 'b'] },
+            lager: [{ marke: 'punkt', serie: 'S', farg: '#333', etikettLage: lage, data: [{ x: -20, y: 'a', etikett: 'kort' }, { x: -10, y: 'b', etikett: '−16,6 % lång' }].map(d => lage === 'vanster' ? { ...d, x: -30 - d.x } : d) }] });
+        for (const lage of ['hoger', 'vanster']) {
+            const svg = rita(figur(lage), 400), rot = svg.querySelector('g[data-del="rityta"] > g');
+            const vanster = Number(/translate\(([\d.]+)/.exec(rot.getAttribute('transform'))[1]);
+            const q = ruta(alla(svg, 'text[data-marke="punktetikett"]').find(t => /lång/.test(texten(t))));
+            if (lage === 'hoger') expect(vanster + q.x1, lage).toBeLessThanOrEqual(400);
+            else expect(q.x0, lage).toBeGreaterThanOrEqual(0);
+        }
+    });
     it("etikettLage 'undvik': etiketterna i en klunga täcker varken varandra eller punkterna, och den som flyttats ut har en hänvisningslinje", () => {
         const svg = rita(kluster(), 600);
         const t = alla(svg, 'text[data-marke="punktetikett"]'), rutor = t.map(ruta);

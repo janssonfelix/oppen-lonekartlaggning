@@ -11,10 +11,11 @@
  * spegeln (vaktas av artefaktgrinden).
  *
  * Själva uppslaget (vilken policyrad som gäller för en grupp) görs av
- * policyFor() i app.js, eftersom det läser state. Här hanteras bara matematiken
- * när bandet väl är känt.
+ * policyFor() i app.js, eftersom det läser state; lonepolitikModell() tar emot
+ * det som argument, liksom tröskeln k.
  *
- * Maskeringstrappan (tre steg, se `src/app/75-lonepolitik.js`) tillämpas av anroparen; de här
+ * Maskeringstrappan (tre steg, `maskeringsniva`) sätts på varje yrkesgrupp i
+ * modellen; ritningen tillämpar den (`src/app/75-lonepolitik.js`). De andra
  * funktionerna räknar på det de får och rapporterar n så att anroparen kan
  * maskera.
  *
@@ -23,6 +24,15 @@
 
 import { median as _median, quantile as _quantile } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
+import { aidAvYrke, namnrader } from './aid.js';
+
+/** Undre gräns för den antalsbaserade mellannivån i maskeringstrappan. */
+const ANTAL_MIN = 5;
+
+/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+export function lonepolitikKonstanter() {
+    return Object.freeze({ ANTAL_MIN });
+}
 
 /**
  * Organisationens faktiska lönespann i en grupp (P10, median, P90) — jämförs med
@@ -171,4 +181,104 @@ export function policyCoverage(groups) {
         personsCovered,
         personsPct: personsTotal ? (personsCovered / personsTotal) * 100 : 0
     };
+}
+
+/**
+ * Maskeringstrappan för en yrkesgrupp med n personer, vid tröskeln k:
+ *   n >= k                    → 'full': full analys (median, band, kön)
+ *   ANTAL_MIN <= n < k        → 'count': endast bandplacering i antal ("2 av 7 under P10")
+ *   n < min(ANTAL_MIN, k)     → 'masked': maskerad rad, men inräknad i BAS-totalen
+ * Är tröskeln ANTAL_MIN eller lägre finns ingen mellannivå.
+ * @returns {'full'|'count'|'masked'}
+ */
+export function maskeringsniva(n, k) {
+    if (n >= k) return 'full';
+    if (n >= ANTAL_MIN) return 'count';
+    return 'masked';
+}
+
+/**
+ * Lägesklassen för ett läge i spannet (0 = P10, 1 = P90): 0 under spannet, 1–3 nedre, mellersta och övre tredjedelen,
+ * 4 över spannet.
+ */
+export function lagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ? 2 : pos <= 1 ? 3 : 4; }
+
+/**
+ * Antalet kvinnor och män i varje lägesklass mot bandet (personer utan användbart läge räknas inte).
+ * @returns {{kv:number[], ma:number[]}}
+ */
+export function konLagen(rows, pol) {
+    const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
+    for (const r of rows) {
+        const kon = arKvinna(r) ? 'kv' : arMan(r) ? 'ma' : null;
+        const pos = kon ? bandPosition(r.lon, pol.p10, pol.p90) : null;
+        if (pos != null && isFinite(pos)) ut[kon][lagesklass(pos)]++;
+    }
+    return ut;
+}
+
+/**
+ * Hela analysmodellen för Löneläget mot ställningstagandet: per BAS-intervall, med AID-grupperna under sig.
+ * Grupperna är AID (ur yrkesfältet) × BAS; rader utan lön eller BAS räknas inte. BAS-intervallen sorteras i svensk
+ * ordning, grupperna i fallande storlek.
+ * @param {any[]} rader lönerader
+ * @param {{policyFor:(aid:any, bas:any)=>any, nivaEtikett:(pol:any)=>any, k:number, harPolicy:boolean}} opt
+ *   policyFor: policyraden som gäller (null om ingen); nivaEtikett: nivån som träffen kom ifrån, för visning;
+ *   k: tröskeln som maskeringstrappan, könsgapet och organisationens band prövas mot; harPolicy: om ett
+ *   ställningstagande är inläst (utan det byggs ingen modell).
+ * @returns {{byBas: any[], coverage: any, hasPolicy: boolean}}
+ */
+export function lonepolitikModell(rader, { policyFor, nivaEtikett, k, harPolicy }) {
+    /** @type {{byBas: any[], coverage: any, hasPolicy: boolean}} */
+    const out = { byBas: [], coverage: null, hasPolicy: !!harPolicy };
+    if (!rader.length || !out.hasPolicy) return out;
+
+    // Gruppera AID×BAS
+    const groups = new Map();
+    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const namnrad = namnrader(rader.filter(r => r.lon > 0 && r.bas), r => aidAvYrke(r.yrke) + '|' + r.bas);
+    rader.forEach(r => {
+        if (!(r.lon > 0) || !r.bas) return;
+        const aid = aidAvYrke(r.yrke);
+        const key = aid + '|' + r.bas;
+        if (!groups.has(key)) groups.set(key, { aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
+        groups.get(key).rows.push(r);
+    });
+
+    const coverageInput = [];
+    const basMap = new Map();
+    for (const g of groups.values()) {
+        const pol = policyFor(g.aid, g.bas);
+        coverageInput.push({ n: g.rows.length, hasPolicy: !!pol });
+        if (!basMap.has(g.bas)) basMap.set(g.bas, { bas: g.bas, rows: [], groups: [] });
+        const b = basMap.get(g.bas);
+        b.rows.push(...g.rows);
+        b.groups.push({
+            aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.rows.length, rows: g.rows,
+            pol, level: nivaEtikett(pol), tier: maskeringsniva(g.rows.length, k),
+            stats: pol ? groupBandStats(g.rows, pol) : null,
+            compliance: pol ? complianceCounts(g.rows, pol) : null
+        });
+    }
+    out.coverage = policyCoverage(coverageInput);
+
+    out.byBas = [...basMap.values()].map(b => {
+        // BAS-nivåns eget band (AID-specifika rader gäller bara sina yrken)
+        const pol = policyFor(null, b.bas);
+        return {
+            bas: b.bas,
+            pol,
+            level: nivaEtikett(pol),
+            n: b.rows.length,
+            stats: pol ? groupBandStats(b.rows, pol) : null,
+            compliance: pol ? complianceCounts(b.rows, pol) : null,
+            genderGap: pol ? genderBandGap(b.rows, pol, k) : null,
+            konLagen: pol ? konLagen(b.rows, pol) : null,
+            cost: pol ? costToFloor(b.rows, pol) : null,
+            orgBand: organisationsBand(b.rows, k),   // organisationens eget P10–P90 (null under k)
+            groups: b.groups.sort((x, y) => y.n - x.n)
+        };
+    }).sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));
+
+    return out;
 }

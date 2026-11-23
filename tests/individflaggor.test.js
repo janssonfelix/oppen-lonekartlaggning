@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { flaggaIndivider } from '../src/lib/individflaggor.js';
+import { flaggaIndivider, avvikelsePerKonOchBas } from '../src/lib/individflaggor.js';
 
 let nr = 2;
 const p = (kon, lon, alder, aid = '5301', bas = 'B') => ({ kon, lon, alder, aid, bas, radnr: nr++ });
@@ -92,5 +92,19 @@ describe('flaggaIndivider utan ålder i lönefilen (ADR-64)', () => {
         expect(res.flaggade).toHaveLength(1);
         expect(res.flaggade[0].metod).toBe('median');
         expect(res.flaggade[0].forvantad).toBe(30000);
+    });
+});
+
+describe('avvikelsePerKonOchBas', () => {
+    it('andelar per kön i BAS-intervall där båda könen når k, sorterat efter BAS-intervallet', () => {
+        // BAS 10: 5 kvinnor och 5 män på 30 000, en kvinna på 20 000 (långt under) och en man på 40 000 (långt över).
+        // BAS 2: bara 2 män, under k = 3.
+        const r = [...flera(5, 'kvinna', 30000, 40, '5301', '10'), p('kvinna', 20000, 40, '5301', '10'),
+            ...flera(5, 'man', 30000, 40, '5301', '10'), p('man', 40000, 40, '5301', '10'),
+            ...flera(8, 'kvinna', 30000, 40, '5301', '2'), ...flera(2, 'man', 30000, 40, '5301', '2')];
+        const ut = avvikelsePerKonOchBas(r, { k: 3, minGrupp: 10, grans: 10 });
+        expect(ut.map(o => [o.bas, o.kon, o.n, o.nUnder, o.nOver])).toEqual([['10', 'Kvinnor', 6, 1, 0], ['10', 'Män', 6, 0, 1]]);
+        expect(ut[0].under).toBe(17);
+        expect(avvikelsePerKonOchBas(r, { k: 7, minGrupp: 10, grans: 10 })).toEqual([]);
     });
 });

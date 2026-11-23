@@ -94,6 +94,27 @@ export async function utseende() {
             }).map(th => `#${id} «${th.textContent.replace(/\s+/g, ' ').trim()}»`), tabell));
         }
         ok(!ensam.length, `1100 punkter: infoikonerna i Prioriteringens och Löneöversiktens rubriker står på samma rad som sista ordet${ensam.length ? ' — ensamma: ' + ensam.join(', ') : ''}`);
+        // Punkt 26, under 1 100 punkter: det stora demots långa namn gjorde Löneläget bredare än fönstret (listrutan för
+        // huvudområde), och punktetiketter vid diagrammets kant klipptes (avvikelsen mot statistiken, Krav mot lön).
+        for (const bredd of [1100, 900]) {
+            await s.setViewportSize({ width: bredd, height: 900 });
+            const bred = [], klippta = [];
+            for (const flik of ['likvardighet', 'struktur', 'benchmark', 'loneoversyn']) {
+                await oppnaStortFlik(flik);
+                const m = await s.evaluate(() => {
+                    const mc = document.getElementById('main-content');
+                    const klippt = [...document.querySelectorAll('.view-panel text[data-marke="punktetikett"]')].filter(t => {
+                        const q = t.getBoundingClientRect(), sv = t.ownerSVGElement.getBoundingClientRect();
+                        return q.width > 0 && (q.left < sv.left - 1 || q.right > sv.right + 1);
+                    }).map(t => `${t.closest('[id]')?.id} «${t.textContent.slice(0, 20)}»`);
+                    return { over: Math.max(document.documentElement.scrollWidth - document.documentElement.clientWidth, mc.scrollWidth - mc.clientWidth), klippt };
+                });
+                if (m.over > 1) bred.push(`${flik} +${m.over}`);
+                klippta.push(...m.klippt);
+            }
+            ok(!bred.length, `${bredd} punkter, stort demo: ingen flik är bredare än fönstret${bred.length ? ' — ' + bred.join(', ') : ''}`);
+            ok(!klippta.length, `${bredd} punkter, stort demo: ingen punktetikett går utanför sitt diagram${klippta.length ? ' — ' + klippta.slice(0, 4).join(', ') : ''}`);
+        }
         await s.close();
         // Sökfältets platshållare ryms i fältet på de bredder verktyget är gjort för. Mellan 1 101 och 1 365 punkter, med
         // den utfällda sidomenyn, går rubriken och raden om lokal bearbetning före (F7 i punkt 26): där är sökfältet

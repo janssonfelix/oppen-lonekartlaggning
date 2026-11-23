@@ -244,7 +244,7 @@ describe('demodata med kandidatpar', () => {
 describe('Likvärdigt arbete räknas en gång per underlag', () => {
     // Adaptern computeLikvardighetPairs() är den enda som anropar spegeln (_lvComputePairs); den räknas.
     const raknaBerakningar = w => w.eval('window.__lvBerakningar = 0; const __lvOrig = computeLikvardighetPairs; '
-        + 'computeLikvardighetPairs = function () { window.__lvBerakningar++; return __lvOrig(); };');
+        + 'computeLikvardighetPairs = function (o) { window.__lvBerakningar++; return __lvOrig(o); };');
     const flik = (w, f) => w.document.querySelector(`.nav-item[data-tab="${f}"]`).click();
     const demo = () => { const w = createAppWindow(); raknaBerakningar(w); w.__loadDemoData(); return w; };
 
@@ -291,7 +291,10 @@ describe('Likvärdigt arbete räknas en gång per underlag', () => {
     it('robusthetsprövningen räknar bara de andra kvinnotrösklarna och lämnar flikens resultat orört', () => {
         const w = demo();
         const fore = w.__state.likvardighet.result;
+        let skrivningar = 0, troskel = w.__state.likvardighet.kvinnoTrosholdPct;
+        Object.defineProperty(w.__state.likvardighet, 'kvinnoTrosholdPct', { configurable: true, get: () => troskel, set: v => { skrivningar++; troskel = v; } });
         w.__robusthetLikvardighet([55, 60, 65]);
+        expect(skrivningar).toBe(0);
         expect(w.__lvBerakningar).toBe(3);
         expect(w.__state.likvardighet.result).toBe(fore);
         expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(60);

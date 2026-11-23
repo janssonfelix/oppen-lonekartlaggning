@@ -77,23 +77,9 @@ function renderPersonerAttGranska(visaAlla = false) {
 // ingen person och bär ingen lön. Som resten av panelen går det inte att exportera (markeraUtanExport på rutan,
 // skälet `individer` i 11-diagramexport.js): inget ur Personer att granska lämnar verktyget.
 markeraUtanExport(document.getElementById('pag-diagram-ruta'), 'individer');
+// Räkningen är avvikelsePerKonOchBas i src/lib/individflaggor.js; här läses tröskeln och golvet.
 function _pagAvvikelseRader(d, grans) {
-    const k = kTroskel(), perBas = new Map();
-    // Gränsen −∞ ger avvikelsen för alla prövade, inte bara de flaggade.
-    for (const f of _ifFlaggaIndivider(d, { minGrupp: statGolv(), grans: -Infinity }).flaggade) {
-        if (!perBas.has(f.bas)) perBas.set(f.bas, { Kvinna: [], Man: [] });
-        perBas.get(f.bas)[f.kon].push(f.avvikelsePct);
-    }
-    const ut = [];
-    for (const [bas, g] of [...perBas].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv', { numeric: true }))) {
-        if (g.Kvinna.length < k || g.Man.length < k) continue;
-        for (const [kon, namn] of [['Kvinna', 'Kvinnor'], ['Man', 'Män']]) {
-            const a = g[kon], andel = n => Math.round(100 * n / a.length);
-            const nUnder = a.filter(v => v <= -grans).length, nOver = a.filter(v => v >= grans).length;
-            ut.push({ bas, kon: namn, n: a.length, under: andel(nUnder), over: andel(nOver), nUnder, nOver });
-        }
-    }
-    return ut;
+    return _ifAvvikelsePerKonOchBas(d, { k: kTroskel(), minGrupp: statGolv(), grans });
 }
 // Avvikelsen per kön och BAS-intervall som tabell med inbyggd grafik: en rad per kön och intervall med antalet
 // prövade och andelen långt under respektive över förväntad lön, och de två andelarna ritade i raden kring en

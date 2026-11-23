@@ -163,7 +163,7 @@ differensskydd mot att räkna fram en liten grupp ur två filtrerade urval. *Gä
 **ADR-15 — Formler i CSV- och urklippsexport neutraliseras.** En textcell som börjar med `=`, `+`, `-` eller `@` (eller
 tabb eller CR) får ett inledande `'`, så att en fientlig lönefil inte kan lägga en formel i en export. Tal lämnas
 orörda, och ett tal som börjar med `−` (U+2212) skrivs med `-`, eftersom Excel annars läser det som text. Regeln bor i
-`_neutraliseraCell` (`22-exporthjalpare.js`). *Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.6.
+`neutraliseraCell` (`src/lib/csv.js`). *Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.6.
 
 **ADR-16 — Inga paragrafhänvisningar i gränssnittet, och sedan 2026-10-19 inte heller i hjälptexter eller exporter.**
 Verktyget hänvisar övergripande, aldrig med paragraf- eller artikelnummer, och lagrummen står bara i `lagrum.md`: 3 kap.

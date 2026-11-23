@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText,
-    formatTal, FRAGOR_YRKE, FRAGOR_PAR, stabilitetKort, referenserBlock } from '../src/lib/rapportunderlag.js';
+    FRAGOR_YRKE, FRAGOR_PAR, stabilitetKort, referenserBlock } from '../src/lib/rapportunderlag.js';
+import { svTal as formatTal } from '../src/lib/talformat.js';
 import { mulberry32 } from '../src/lib/rng.js';
 import { gapUppdelning } from '../src/lib/gapuppdelning.js';
 
@@ -101,14 +102,6 @@ const yrkesgrupp = {
     yrke: 'Undersköterska', nKv: 62, nMa: 22, tot: 84, samladMedian: false, medKv: 28830, medMa: 30000,
     kvot: 0.961, gapPct: 3.9, flaggad: true, p10Kv: 26000, p90Kv: 31000, p10Ma: 27000, p90Ma: 33500
 };
-
-describe('formatTal', () => {
-    it('svenskt format: decimalkomma och mellanslag', () => {
-        expect(norm(formatTal(96.1, 1))).toBe('96,1');
-        expect(norm(formatTal(28830, 0))).toBe('28 830');
-        expect(norm(formatTal(-2.84, 1))).toBe('-2,8');
-    });
-});
 
 describe('gruppBlock', () => {
     const b = gruppBlock(yrkesgrupp, { id: 'yrke:0', justerat: { gapPct: -2.8, n: 84 }, ki: { lo: 93.0, hi: 98.9 }, urval: 'Hela organisationen' });
@@ -504,15 +497,6 @@ describe('avsnittBlock lagreKrav', () => {
         const p = avsnittBlock('lagreKrav', { par: [], kravProxy: 'poäng' }, { k: 10 });
         expect(p.stycken.join(' ')).toContain('Med arbetsvärderingspoäng jämförs AID-etiketter över BAS-gränserna redan i Likvärdigt arbete.');
         expect(p.tabell).toBeNull();
-    });
-});
-
-describe('formatTal', () => {
-    it('visar aldrig −0 när ett negativt tal avrundas till noll', async () => {
-        const { formatTal } = await import('../src/lib/rapportunderlag.js');
-        expect(formatTal(-0.3)).toBe('0');
-        expect(formatTal(-0.04, 1)).toBe('0,0');
-        expect(formatTal(-12)).toMatch(/^[−-]12$/);
     });
 });
 

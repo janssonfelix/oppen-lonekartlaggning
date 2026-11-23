@@ -63,6 +63,7 @@ avsnitt 11.
 | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|
 | Bootstrapintervall (95 %) för mediankvoten: hela organisationen, per grupp, per dossier | `organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `osakerhet.js`; dragningarna i `bootstrapMedianer`, `likvardighet.js` | lön, kön | `regressionsmodellen.md` §7; ADR-86 | `tests/osakerhet.test.js`, `tests/bootstrapkvot.test.js`, `tests/osakerhet-adapter.test.js` | saknas |
+| Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, löneöversynens grupper före och efter), bara där båda könen når k, med intervallet per grupp | `konskvotPerGrupp`, `osakerhet.js` | lön, kön | `k-troskeln.md`; intervallet ADR-86 | `tests/osakerhet.test.js` | saknas |
 | Generatorn: seed ur lönerna (sorterade), FNV-1a och mulberry32 | `seedFromNumbers`, `rngFor`, `rng.js` | lönerna | ADR-86 | `tests/rng.test.js`, `tests/slumpintervall-ordning.test.js` | saknas |
 | Konfidensband kring en regressionslinje | `regressionslinjensBand`, `osakerhet.js` | x, y | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
 | Minsta upptäckbara skillnad vid 80 % styrka och α = 0,05 | `mdeProcent`, `styrkeanalys`, `gruppMde`, `osakerhet.js` | σ, antal per kön | verktygets eget val, ingen extern källa | `tests/osakerhet.test.js` | saknas |
@@ -82,12 +83,14 @@ avsnitt 11.
 | Åldersjusterad skillnad i ett par | `aldersjusteradSkillnad`, `likvardighet.js` | lön, ålder | `likvardighetsmodellen.md` §5 | `tests/likvardighet.test.js` | saknas |
 | Tabellerna per AID-kod och BAS-intervall, hierarkiska par; Lika arbete AID x BAS är Lika arbetes grupper och status (`likaArbeteGrupper`) i BAS-ordning, utan egen bedömning, och samma blad (`_aidbasLikaBlad`) är blad 2a i JPA-protokollet; gränserna i tabellen är de statusen prövades mot (`bedomSkillnad`, `status.js`) | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57, 90, 93 | `tests/aidbas.test.js`, `tests/aidbas-app.test.js`, `tests/ktroskel-utdata.test.js` | saknas |
 | Personer att granska: förväntad lön ur kollegorna (log-lön mot ålder när spridningen är minst 5 år, annars medianen), flagga vid minst `grans` % under | `flaggaIndivider`, `individflaggor.js` | lön, ålder, AID, BAS | ADR-23, 89 | `tests/individflaggor.test.js`, `tests/grupp-aid-kod.test.js` | `14-granska-median.json`, `15-granska-alder.json` |
+| Personer att granska per BAS-intervall och kön: andelen prövade minst `grans` % under och över förväntad lön, bara där båda könen når k | `avvikelsePerKonOchBas`, `individflaggor.js` | lön, ålder, kön, AID, BAS | ADR-23 | `tests/individflaggor.test.js` | saknas |
 
 ## 6. Löneläget mot referenserna
 
 | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|
 | Organisationens band, läget i bandet (lön − P10)/(P90 − P10), median mot ställningstagandet, avstånd till golvet | `organisationsBand`, `bandPosition`, `groupBandStats`, `complianceCounts`, `costToFloor`, `policyCoverage`, `lonepolitik.js` | lön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
+| Modellen per BAS-intervall med AID-grupperna under sig; maskeringstrappan (full analys från k, antal från 5, maskerad under); andelen per kön under spannet, i spannets tredjedelar och över | `lonepolitikModell`, `maskeringsniva`, `lagesklass`, `konLagen`, `lonepolitik.js` | lön, kön, AID, BAS, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
 | Könsgap i bandet; minst 10 av varje kön | `genderBandGap`, `lonepolitik.js` | lön, kön, ställningstagandet | verktygets eget val, ingen extern källa | `tests/lonepolitik.test.js` | saknas |
 | Jämförelsestatistikens matchning: samma AID och BAS, annars samma AID utan BAS | `statistikFor`, `jamforelse.js` | statistiken | ADR-35, 55 | `tests/jamforelse.test.js` | saknas |
 | Jämförelseraderna: P10, median, P90 per AID-kod och BAS, skillnad (org/ref − 1)·100 | `jamforelseRader`, `avvikelseRangordning`, `statistikMarknad`, `jamforelse.js` | lön, AID, BAS, referenserna | ADR-35, 55 | `tests/jamforelse.test.js`, `tests/jamforelsestatistik-app.test.js` | saknas |
@@ -151,8 +154,8 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 
 | Namn | Värde | Fil | Vad det styr | Vem ändrar |
 |---|---|---|---|---|
-| `K_STANDARD` | 10 | `src/app/06-k-troskel.js` | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (2–1000) och Organisationspaket |
-| `K_MIN`, `K_MAX` | 2, 1000 | `src/app/06-k-troskel.js` | tröskelns gränser | Fast |
+| `K_STANDARD` | 10 | `src/app/06-k-troskel.js` (samma värde i `src/lib/ktroskel.js`) | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (2–1000) och Organisationspaket |
+| `K_MIN`, `K_MAX` | 2, 1000 | `src/app/06-k-troskel.js` (samma värden i `src/lib/ktroskel.js`) | tröskelns gränser | Fast |
 | `K_SKARM` | 1 | `src/app/06-k-troskel.js` | tröskeln på skärmen | Fast |
 | `LITET_UNDERLAG` | 5 | `src/app/06-k-troskel.js` | en stapel för färre personer ritas med mönster; golvet för en egen rad i könsfördelningen i Lika arbete | Fast |
 | `KI_NEDRE` | 0,025 | `src/lib/stat.js` | percentilintervallens nedre andel | Fast |

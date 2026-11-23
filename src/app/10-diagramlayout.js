@@ -373,6 +373,25 @@ function _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, tak) {
     return rum;
 }
 
+// Punktetiketter bredvid punkten (lagrets `etikettLage: 'hoger'` eller `'vanster'`) som skulle gå utanför panelen får
+// rum på x: så mycket som texten sticker ut förbi panelens kant med omfånget utan rummet. Rummet krymper omfånget, så
+// punkten flyttas inåt och etiketten ryms. Samma tak som stapeletiketterna; 'auto' och 'undvik' byter själva sida.
+function _rfPunktEtikettRum(rum, figurIn, syn, px, panelB, tak) {
+    if (figurIn.x.skala === 'band') return rum;
+    const x = _rfSkala(figurIn.x, syn.doms.x, _rfXOmfang(figurIn, panelB, rum.x)), fpx = _rfLitenPx(px);
+    let { lo, hi } = rum.x;
+    for (const { l } of syn.synliga) {
+        if (l.marke !== 'punkt' || (l.etikettLage !== 'hoger' && l.etikettLage !== 'vanster')) continue;
+        for (const d of l.data) {
+            if (!d || syn.dold(d) || d.etikett == null || String(d.etikett) === '' || !_rfTal(d.x) || !_rfTal(x(d.x))) continue;
+            const ut = (_rfTal(d.storlek) ? d.storlek : (l.storlek || 4)) + 5 + _rfBredd(_rfKorta(String(d.etikett), 28), fpx);
+            if (l.etikettLage === 'hoger') hi = Math.max(hi, rum.x.hi + x(d.x) + ut - panelB);
+            else lo = Math.max(lo, rum.x.lo + ut - x(d.x));
+        }
+    }
+    return { ...rum, x: { lo: Math.min(lo, tak), hi: Math.min(hi, tak) } };
+}
+
 const _rfNf = new Map();
 function _rfDecimaler(vard) {
     for (let dec = 0; dec < 8; dec++) {

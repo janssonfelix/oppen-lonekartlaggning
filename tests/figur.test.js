@@ -515,7 +515,7 @@ describe('figurTillTabell', () => {
         ] }] }))).toEqual([['M', 'a', 'b'], ['P', '', 2]]);
     });
     it('kategorier som börjar med =, +, - eller @ passerar oförändrade', () => {
-        // Att neutralisera formelinledare är CSV-skrivarens jobb (_neutraliseraCell i src/app/22-exporthjalpare.js).
+        // Att neutralisera formelinledare är CSV-skrivarens jobb (neutraliseraCell i src/lib/csv.js).
         const kat = ['=1+1', '+1', '-1', '@sum'];
         expect(figurTillTabell(f({ lager: [{ marke: 'stapel', serie: 'S', data: kat.map(x => ({ x, y: 1 })) }] })).slice(1).map(r => r[1]))
             .toEqual(kat);

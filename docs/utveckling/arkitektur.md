@@ -11,7 +11,7 @@ Dokumentet beskriver den byggda koden. Där det skiljer sig från koden är det 
 | Lager | Var det bor | Ansvar |
 |---|---|---|
 | Sidan | `src/index.html`, `src/style.css` | Skalet, stilmallen och innehållspolicyn (CSP) som bygget gör till en fil. Sidan kör inget från nätet (S1). |
-| Beräkningskärnan | `src/lib/` (48 moduler) | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
+| Beräkningskärnan | `src/lib/` (50 moduler) | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
 | Spegeln | `src/app/09-lib-speglar.js` | Genererad av `tools/gen-mirrors.mjs`. Varje lib-modul är inlinad, med de alias som appen anropar. Redigeras aldrig för hand. |
 | Appen | `src/app/NN-*.js` (86 delar) | Ett enda globalt skript i prefixordning: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
 | Biblioteken | `vendor/` | D3, JSZip, PapaParse och SheetJS, låsta med kontrollsummor i `SHA256SUMS`. Licenserna står i `TREDJEPARTSLICENSER.md`. |
@@ -63,42 +63,49 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `sektor` | `aid`, `falt`, `namn`, `regression`, `skrreferens`, `stat`, `termer`, `undertryckning` |
 | Referenser och jämförelse | `referens` | – |
 |  | `referenser` | `lonepolitik` |
-|  | `lonepolitik` | `kon`, `stat` |
+|  | `lonepolitik` | `aid`, `kon`, `stat` |
 |  | `jamforelse` | `aid`, `kon`, `stat`, `termer` |
 |  | `skrreferens` | `aid`, `skr-personal` |
 |  | `skr-personal` | – |
-| Simulering och prioritering | `prioritering` | `aid`, `kon`, `kostnad`, `stat` |
+| Simulering och prioritering | `prioritering` | `aid`, `kon`, `kostnad`, `stat`, `talformat` |
 |  | `kostnad` | – |
 |  | `loneoversyn` | `kon`, `kostnad`, `likvardighet`, `stat` |
 | Klassificering | `aid` | `aid-etiketter`, `termer` |
 |  | `aid-etiketter` | – |
 |  | `aidkontroll` | `aid`, `stat`, `termer` |
 |  | `ansvar` | `falt`, `stat` |
-| Indata och format | `inlasning` | `ansvar` |
+| Indata och format | `inlasning` | `ansvar`, `importprofiler` |
 |  | `falt` | `aid`, `kon`, `termer` |
 |  | `kon` | – |
 |  | `importprofiler` | – |
+|  | `csv` | – |
+|  | `talformat` | `stat` |
 |  | `forhandskontroll` | `termer` |
 |  | `datakvalitet` | `falt`, `forhandskontroll`, `namn`, `stat`, `termer` |
 |  | `organisationsfil` | – |
 |  | `organisationspaket` | `importprofiler`, `installningsgranser`, `perbas`, `tabellrecept`, `termer` |
 |  | `installningsgranser` | – |
 | Skydd för små grupper | `undertryckning` | – |
+|  | `ktroskel` | `aid`, `kon`, `namn` |
 | Språk | `termer` | – |
 |  | `namn` | `termer` |
 |  | `htmltext` | – |
-| Diagram, rapport och utforskning | `figur` | `kon`, `stat` |
+| Diagram, rapport och utforskning | `figur` | `kon`, `stat`, `talformat` |
 |  | `docx` | `htmltext` |
-|  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `likvardighet`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `termer` |
+|  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `likvardighet`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `talformat`, `termer` |
 |  | `arsbokslut` | `aid`, `sakligaskal`, `stat`, `termer` |
 |  | `tabellrecept` | `namn`, `termer`, `utforska` |
 |  | `utforska` | `aid`, `falt`, `stat`, `termer`, `urval` |
 |  | `urval` | `falt`, `termer` |
 |  | `sakligaskal` | – |
 |  | `attgora` | `namn`, `termer` |
+| Demoläget | `demodata` | `ansvar`, `inlasning`, `kon`, `stat` |
 
-Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter:
-`prioritera` (`kTroskel`), `motiveringsgrunder` (`kInstalld`, `kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`) och `loneoversyn` (den gällande tröskeln). Lägena och
+Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter. Reglerna
+för vad som får redovisas vid k (könen, § 3:10-paren, regressionens steg och BAS-effekter, punkterna per person,
+stämpeln och noterna) står i `ktroskel`; adaptrarna i `06-k-troskel.js` behåller appens namn och skickar tröskeln.
+Övriga moduler:
+`prioritera` (`kTroskel`), `motiveringsgrunder` (`kInstalld`, `kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`), `avvikelsePerKonOchBas` (`k`, `minGrupp`), `konskvotPerGrupp` (`k`), `lonepolitikModell` och `maskeringsniva` (`k`) och `loneoversyn` (den gällande tröskeln). Lägena och
 vad som räknas med vilken tröskel står i [`k-troskeln.md`](k-troskeln.md). Modulen `undertryckning` har de två
 reglerna för vad som döljs eller räknas samman utöver de små grupperna själva: kompletterande undertryckning (ADR-83) och
 sammanslagning av delar där ett kön är för litet (ADR-87).

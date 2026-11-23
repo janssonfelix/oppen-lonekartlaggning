@@ -20,6 +20,7 @@ import { median, quantile, avrundaSymmetriskt } from './stat.js';
 import { aidAvYrke, namnrader } from './aid.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 import { arKvinna, arMan } from './kon.js';
+import { svPoPct } from './talformat.js';
 
 // Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
 // Bevisrutan i appen hämtar dem genom prioKonstanter(), så förklaringarna och poängen visar samma tal.
@@ -48,10 +49,6 @@ export function prioKonstanter() {
         SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });
 }
 
-// PO-påslaget med högst två decimaler och utan avslutande nollor (40 → "40", 39,15 → "39,15"), som svPoPct i appen
-// (src/app/03-hjalpfunktioner.js).
-const _PO_FORMAT = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
-
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
  * för gruppens kvinnor, eller null när kvinnornas median inte ligger minst 100 kr lägre (skillnaden avrundas till
@@ -69,7 +66,7 @@ export function arsbeloppMening(g, costSettings, kr) {
     const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
-        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${_PO_FORMAT.format(po)} %). Det är ett räkneexempel, `
+        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
 }
 

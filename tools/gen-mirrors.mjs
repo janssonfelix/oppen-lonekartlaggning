@@ -52,6 +52,11 @@ export const MODULES = [
         expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
     },
     {
+        // CSV- och urklippstext med formelskydd (ADR-15); importerar ingenting
+        file: 'csv.js', ns: '__mirrorCsv',
+        expose: { neutraliseraCell: '_neutraliseraCell', tillCsv: '_toCsv', tillTsv: '_tillTsv' }
+    },
+    {
         file: 'aid-etiketter.js', ns: '__mirrorAidEtiketter',
         expose: { aidEtikettlista: null }
     },
@@ -70,6 +75,20 @@ export const MODULES = [
         expose: { kompletterandeUndertryckning: null, sammanslagning: null, kompletterandeUndertryckningPerNyckel: '_kompletterandeUndertryckningPerNyckel' }
     },
     {
+        // Vad som får redovisas vid k (S4); importerar kon.js, aid.js och namn.js: efter dem. Funktionerna som inte läser
+        // tröskeln får appens namn direkt; de övriga når appen genom adaptrarna i 06-k-troskel.js, som läser kTroskel()
+        // eller kInstalld().
+        file: 'ktroskel.js', ns: '__mirrorKtroskel',
+        expose: {
+            kTolka: '_kTolka', konAntal: '_konAntal', parNarK: '_parNarK', kUndantagNot: '_kUndantagNot',
+            statGolv: '_ktStatGolv', konFarRedovisas: '_ktKonFarRedovisas', konFarRedovisasFor: '_ktKonFarRedovisasFor',
+            konUtelamnatNot: '_ktKonUtelamnatNot', raGapText: '_ktRaGapText', regStegForRedovisning: '_ktRegSteg',
+            basEffekterForRedovisning: '_ktBasEffekter', parUtelamnadeNot: '_ktParUtelamnadeNot', parForRedovisning: '_ktParForRedovisning',
+            kStampel: '_ktStampel', kStampelFor: '_ktStampelFor', kSanktNot: '_ktSanktNot', kSidfot: '_ktSidfot',
+            csvMedStampel: '_ktCsvMedStampel', tsvMedStampel: '_ktTsvMedStampel', kText: '_ktText', individLitenFor: '_ktIndividLitenFor'
+        }
+    },
+    {
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
             tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',
@@ -77,6 +96,12 @@ export const MODULES = [
             // returneras för att andra lib-moduler importerar dem (se _parseImports); appen använder dem inte
             matMul: null, invert: null, median: null, linearRegression: null, percentilintervall: null
         }
+    },
+    {
+        // Talformatet (svTal, svPct, svKr, svPoPct): appen får funktionerna under samma namn; importerar stat.js
+        // (avrundaSymmetriskt), och rapportunderlaget, prioriteringen och diagramkärnan importerar det: efter stat.js
+        file: 'talformat.js', ns: '__mirrorTalformat',
+        expose: { svTal: 'svTal', svPct: 'svPct', svKr: 'svKr', svPoPct: 'svPoPct' }
     },
     {
         // Kostnadsformeln (månadsbelopp × månader × PO-faktor): före löneöversynen och prioriteringen, som importerar den
@@ -88,7 +113,8 @@ export const MODULES = [
         expose: {
             medianGapPct: '_stMedianGapPct', representationByBas: '_stRepresentationByBas',
             quartileDistribution: '_stQuartileDistribution', distributionalGap: '_stDistributionalGap',
-            tillDirektivtecken: '_stTillDirektivtecken', lonebegreppReservation: '_stLonebegreppReservation'
+            tillDirektivtecken: '_stTillDirektivtecken', lonebegreppReservation: '_stLonebegreppReservation',
+            omfang: '_omfang', lonesteg: '_konLonesteg', histogramKlasser: '_konHistogramKlasser'
         }
     },
     {
@@ -106,7 +132,7 @@ export const MODULES = [
         file: 'likvardighet.js', ns: '__mirrorLikvardighet',
         expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn', bootstrapMedianer: '_lvBootstrapMedianer',
                   // Den enda definitionen av kvinnodominerat (ADR-60); aidbas.js och loneoversyn.js importerar dem
-                  arKvinnodominerad: '_arKvinnodominerad', konsklass: '_konsklass' }
+                  arKvinnodominerad: '_arKvinnodominerad', konsklass: '_konsklass', kravGrupper: '_lvKravGrupper' }
     },
     {
         // Löneöversynen — importerar likvardighet.js (definitionen av kvinnodominerat, ADR-60)
@@ -158,17 +184,21 @@ export const MODULES = [
         file: 'osakerhet.js', ns: '__mirrorOsakerhet',
         expose: {
             organisationensKvotKI: '_osOrganisationensKvotKI', medianKvotKI: '_osMedianKvotKI', medianKvotKIGiltiga: '_osMedianKvotKIGiltiga',
+            konskvotPerGrupp: '_osKonskvotPerGrupp',
             regressionslinjensBand: '_osRegressionslinjensBand', styrkeanalys: '_osStyrkeanalys', gruppMde: '_osGruppMde',
             extremvarden: '_osExtremvarden', trattUnderlag: '_osTrattUnderlag', kvantilBootstrap: '_osKvantilBootstrap',
             osakerhetKonstanter: '_osKonstanter'
         }
     },
     {
+        // Importerar stat.js, kon.js och aid.js: efter dem.
         file: 'lonepolitik.js', ns: '__mirrorLonepolitik',
         expose: {
             bandPosition: '_lpBandPosition', groupBandStats: '_lpGroupBandStats',
             complianceCounts: '_lpComplianceCounts', genderBandGap: '_lpGenderBandGap',
-            costToFloor: '_lpCostToFloor', policyCoverage: '_lpPolicyCoverage', organisationsBand: '_lpOrganisationsBand'
+            costToFloor: '_lpCostToFloor', policyCoverage: '_lpPolicyCoverage', organisationsBand: '_lpOrganisationsBand',
+            lonepolitikModell: '_lpLonepolitikModell', maskeringsniva: '_lpMaskeringsniva', lagesklass: '_lpLagesklass',
+            konLagen: '_lpKonLagen', lonepolitikKonstanter: '_lpKonstanter'
         }
     },
     {
@@ -233,7 +263,7 @@ export const MODULES = [
     },
     {
         file: 'individflaggor.js', ns: '__mirrorIndivid',
-        expose: { flaggaIndivider: '_ifFlaggaIndivider' }
+        expose: { flaggaIndivider: '_ifFlaggaIndivider', avvikelsePerKonOchBas: '_ifAvvikelsePerKonOchBas' }
     },
     {
         file: 'utforska.js', ns: '__mirrorUtforska',
@@ -256,14 +286,21 @@ export const MODULES = [
                   ansvarsUnderrader: '_anUnderrader' }
     },
     {
+        // Importprofiler: kända kolumnuppsättningar (bara rubriknamn). Organisationspaketet importerar valideringen och inläsningen matchningen: före dem.
+        file: 'importprofiler.js', ns: '__mirrorImportprofiler',
+        expose: { valideraImportprofil: '_ipValidera', valideraImportprofiler: '_ipValideraLista', matchaImportprofil: '_ipMatcha',
+                  profilFranMappning: '_ipFranMappning', importprofilerTillJson: '_ipTillJson', inbyggdaProfiler: '_ipInbyggda' }
+    },
+    {
         // Tolkningen av indata: talen, normaliseringarna och kärnan i uppgiftsminimeringen. Funktionerna behåller i appen
-        // namnen de hade där. Importerar ansvar.js (ansvarskoden i en lönerad): efter den.
+        // namnen de hade där. Importerar ansvar.js (ansvarskoden i en lönerad) och importprofiler.js (rubrikraden): efter dem.
         file: 'inlasning.js', ns: '__mirrorInlasning',
         expose: { _normalizeNumberString: '_normalizeNumberString', parseNumber: 'parseNumber', parseNumberStrict: 'parseNumberStrict',
                   _cleanYrkeField: '_cleanYrkeField', _stripHtmlMeta: '_stripHtmlMeta', _normalizeBas: '_normalizeBas',
                   _normalizePolicyAid: '_normalizePolicyAid', _normalizeKon: '_normalizeKon', tolkaLonerad: '_ilTolkaLonerad',
                   _pnrSampelSteg: '_pnrSampelSteg', detectSensitiveColumns: 'detectSensitiveColumns', yrkeNamnNyckel: '_ilYrkeNamnNyckel',
-                  sallsyntaNamnrader: '_ilSallsyntaNamnrader' }
+                  sallsyntaNamnrader: '_ilSallsyntaNamnrader', _decodeCsvBuffer: '_decodeCsvBuffer', delaRader: '_delaRader',
+                  _detectDelimiter: '_detectDelimiter', _findCsvHeader: '_findCsvHeader' }
     },
     {
         file: 'aidkontroll.js', ns: '__mirrorAidkontroll',
@@ -317,12 +354,6 @@ export const MODULES = [
                   jamforBedomningar: '_abJamforBedomningar' }
     },
     {
-        // Importprofiler: kända kolumnuppsättningar (bara rubriknamn). Organisationspaketet importerar valideringen: före det.
-        file: 'importprofiler.js', ns: '__mirrorImportprofiler',
-        expose: { valideraImportprofil: '_ipValidera', valideraImportprofiler: '_ipValideraLista', matchaImportprofil: '_ipMatcha',
-                  profilFranMappning: '_ipFranMappning', importprofilerTillJson: '_ipTillJson', inbyggdaProfiler: '_ipInbyggda' }
-    },
-    {
         // Gränserna för inställningarna och för inlästa filer: fältet, konfigurationsfilen och paketet läser dem.
         // Organisationspaketet importerar dem: före det.
         file: 'installningsgranser.js', ns: '__mirrorInstallningsgranser',
@@ -347,6 +378,13 @@ export const MODULES = [
                   underlagKonAntal: '_figUnderlagKonAntal', underlagSkyddat: '_figUnderlagSkyddat', underlagVarde: '_figUnderlagVarde',
                   underlagDimension: '_figUnderlagDimension', underlagVarden: '_figUnderlagVarden', underlagValet: '_figUnderlagValet',
                   underlagProva: '_figUnderlagProva', underlagBeskrivning: '_figUnderlagBeskrivning', namnIMening: '_figNamnIMening' }
+    },
+    {
+        // Demodatans generatorer (det lilla och det stora demot) under appens namn; importerar kon.js, ansvar.js,
+        // inlasning.js och stat.js: efter dem. Konstanterna (_SD_GAP m.fl.) får inget alias: spegeln ger bara funktioner.
+        file: 'demodata.js', ns: '__mirrorDemodata',
+        expose: { generateTestData: 'generateTestData', generateDemoData: 'generateDemoData', generateStortDemo: 'generateStortDemo',
+                  generateStortDemoStatistik: 'generateStortDemoStatistik', _sdStallningstagande: '_sdStallningstagande' }
     }
 ];
 

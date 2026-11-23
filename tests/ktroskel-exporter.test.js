@@ -25,7 +25,7 @@ describe('I4: listan över flikar är menyns flikar', () => {
 describe('I2: exporter som hör till ett undantag säger det, och notisen utlovar ingen aggregering', () => {
     const UNDANTAG_LV = 'Den här filen kan även innehålla grupper under tröskeln (undantag: Likvärdigt arbete).';
     const UNDANTAG_UT = 'Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).';
-    const fangaCsv = w => { w.eval('window.__csv = []; _toCsv = (rows => { window.__csv.push(rows); return ""; })'); return () => w.__csv.at(-1).map(r => r.join(' | ')); };
+    const fangaCsv = w => { w.eval('window.__csv = []; _csvMedStampel = (f => (rows, u) => { const ut = f(rows, u); window.__csv.push(ut); return ut; })(_csvMedStampel)'); return () => w.__csv.at(-1).map(r => r.join(' | ')); };
     it('Likvärdigt arbete: CSV-filens stämpel och Excel-filens metodblad', async () => {
         // Ett par där den kvinnodominerade gruppen har 6 personer: det står i den här exporten (undantaget).
         const w = createAppWindow();
@@ -215,7 +215,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         const antal = () => w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         expect(antal()).toBe(1);
         const par = w.eval('likvardighetResultat().pairs');
-        w.eval('window.__lvBerakningar = 0; const __lvOrig = computeLikvardighetPairs; computeLikvardighetPairs = function () { window.__lvBerakningar++; return __lvOrig(); };');
+        w.eval('window.__lvBerakningar = 0; const __lvOrig = computeLikvardighetPairs; computeLikvardighetPairs = function (o) { window.__lvBerakningar++; return __lvOrig(o); };');
         // Golvet för skattningarna står kvar (5 < 10) och flyttas (25): i inget av fallen räknas paren om.
         for (const [k, vantat] of [[5, 0], [25, 2], [10, 1]]) {
             w.eval(`sattKTroskel(${k}, { fraga: false })`);

@@ -16,7 +16,8 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 
 **Prestanda:**
 5. **Regressionen räknas om vid varje omritning** och får inte sparas mellan flikarna (ADR-17), omkring 0,3 s per
-   körning och en till tre gånger per flik. Det märks vid första besöket på en flik och efter en ändring; ett andra
+   körning och en eller två gånger per flik: inom ett varv räknas den en gång och skickas vidare (Lika arbete; i
+   Lönestruktur regressionskortet och livscykeln), men ett block som ritas efter fliken är ett eget varv. Det märks vid första besöket på en flik och efter en ändring; ett andra
    besök utan ändring visar den färdigritade fliken (ADR-81). Senaste mätningen (`npm run perf`, Chromium, 55 000
    syntetiska rader, 2026-11-15): uppladdning till klart gränssnitt ~3,7 s (budget 5 s) och till klara
    bakgrundsanalyser ~7,5 s; en ändrad minsta gruppstorlek tar 1,9 s. Äldre mätningar står i git-historiken.
@@ -56,8 +57,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     inget klipps i cellerna (vakt i `layout.mjs`); diagrammens namn och värden täcker inte varandra, punkterna eller
     andra namn (tester i `tests/diagramritare.test.js` och `tests/diagramvyer.test.js`). Word-utkastet och
     Excel-filen är renderade i LibreOffice.
-    Inte prövat: exporterna öppnade i Word och Excel, skärmen i Firefox och Safari för hand, och bredder under 1 100
-    punkter (till exempel Windows med skalning 125 %).
+    Bredder under 1 100 punkter är prövade i Chromium 2026-11-22 med det stora demot vid 1 024 och 900 punkter: ingen
+    flik blir bredare än fönstret och ingen punktetikett går utanför sitt diagram (vakt vid 900 punkter i `layout.mjs`).
+    Inte prövat: exporterna öppnade i Word och Excel, och skärmen i Firefox och Safari för hand.
 27. *Avslutad 2026-11-21:* termerna står i koden, inte i en fil, och det är ett beslut. En annan uppsättning (till
     exempel för en annan bransch) kräver ett eget bygge; organisationspaketet bär ingen uppsättning.
 30. *Avslutad 2026-11-15:* utseendebesluten är fattade i ADR-75 (kort ordform *AID* i kolumnrubriker, *AID median

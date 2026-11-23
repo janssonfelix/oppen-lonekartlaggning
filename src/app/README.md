@@ -29,7 +29,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `01-html-och-tillganglighet.js` | `esc`-hjälpare, fokusfällor, skärmläsarmeddelanden |
 | `01-farger.js` | `FARG`: gränssnittets färger på ett ställe — statusarna (text, botten, yta, kant), neutrala och blå accent. Mallar, palett och stilmallens `--status-*` läser härifrån; `tests/farger.test.js` håller hexkoderna borta från resten |
 | `02-verktygstips.js` | Diagrammens verktygstipsportal, gränsen för nedsampling av punktmoln, verktygstips |
-| `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator, fält- och kolumnigenkänning (`getField`, `autoDetectColumnMap`: vilken kolumn som bär vilket fält, med kolumnmappningen och importprofilen), svenska talformat (`svTal`, `svPct`, `svKr`) |
+| `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator, fält- och kolumnigenkänning (`getField`, `autoDetectColumnMap`: vilken kolumn som bär vilket fält, med kolumnmappningen och importprofilen) |
 | `03-ikoner.js` | Linjeikonerna (`ikon`): ett bildspråk i stället för bildtecken; statusmärken med egen form |
 | `04-ordlista.js` | Ordlistan, symbolförklaringen och metodtexten om AID (`AID_METODTEXT`); texterna är mallar med termerna (`{enhet.en}`), fyllda med `termText` |
 | `05-tabeller-och-lankar.js` | Beräkningspaneler (audit), sorterbara (underrader följer sin rad) och hopfällbara tabeller, växeln *Fler kolumner* för breda tabeller (`flerKolumner`; grundvyn gömmer sekundära kolumner, exporterna tar alla), `navigateTo`, korslänkar, stapelceller |
@@ -54,8 +54,8 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `17-forhandskontroll.js` | Förhandskontroll av lönefilen överst i Filer och kvalitet (`renderForhandskontroll`): tolkningen av de tio första raderna, sammandraget, värdefördelningen, varningarna (logiken i `src/lib/forhandskontroll.js`), punkterna i Att göra (`_fkAttGora`), raden i inläsningsrapporten, och det blockerande läget med *Läs in* och *Avbryt* (`_fkPausa`; inställningen `state.forhandskontrollStopp`) |
 | `18-atgardslista.js` | Kortet Att göra på Översikt: åtgärdslistan, Börja här (ordningen i `src/lib/attgora.js`) och CSV-export |
 | `19-konfiguration.js` | Spara/ladda konfiguration, jämförelse med ögonblicksbild (fliken Spara och jämför år) |
-| `20-demodata-diagnostik.js` | Demodata (med riktiga AID-koder och ansvarskoder), testdata, självdiagnostik, demobanner; inläsningen som det lilla och det stora demot delar (`_lasInDemounderlag`) |
-| `21-stort-demo.js` | Stort demo: `generateStortDemo` (5 000 påhittade personer med 100 AID-etiketter i BAS A–K, med inlagda gap, ett par för likvärdigt arbete och små grupper; påhittad jämförelsestatistik och ett ställningstagande ur demots löner) och `loadStortDemo` (som det lilla demot, utan självdiagnostik); ingångarna i Kom igång, lönefilskortet och `?demo=stor` |
+| `20-demodata-diagnostik.js` | Inläsningen av det lilla demot (`loadDemoData`), självdiagnostik, demobanner, demoreferensen; inläsningen som det lilla och det stora demot delar (`_lasInDemounderlag`). Generatorerna (demodata och testdata) står i `src/lib/demodata.js` |
+| `21-stort-demo.js` | Stort demo: `loadStortDemo` (som det lilla demot, utan självdiagnostik) och ingångarna i Kom igång, lönefilskortet och `?demo=stor`. Generatorn står i `src/lib/demodata.js`: `generateStortDemo` (5 000 påhittade personer med 100 AID-etiketter i BAS A–K, med inlagda gap, ett par för likvärdigt arbete och små grupper), påhittad jämförelsestatistik och ett ställningstagande ur demots löner |
 | `22-exporthjalpare.js` | Exportnavets knappar, metodbilagans data, Excel-/CSV-hjälpare, formelskydd |
 | `23-exportgrind.js` | Exportgrinden: ingen export läser en tabell eller ett diagram ur en flik som inte är ritad med gällande tröskel |
 | `24-excelexport.js` | Excel (alla flikar) och JPA-protokollet |

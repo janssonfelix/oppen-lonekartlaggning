@@ -89,3 +89,28 @@ export function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
         flaggade: flaggade.length ? kvFlagg / flaggade.length * 100 : null,
     } };
 }
+
+/**
+ * Avvikelsen från förväntad lön per BAS-intervall och kön: andelen av de prövade kvinnorna respektive männen som ligger
+ * minst `grans` procent under och minst `grans` procent över den förväntade lönen (hela procent). Bara BAS-intervall där
+ * både de prövade kvinnorna och de prövade männen är minst k (k-tröskeln, S4). Sorterat efter BAS-intervallet.
+ * @returns {Array<{bas: any, kon: string, n: number, under: number, over: number, nUnder: number, nOver: number}>}
+ */
+export function avvikelsePerKonOchBas(rader, { k, minGrupp, grans }) {
+    const perBas = new Map();
+    // Gränsen −∞ ger avvikelsen för alla prövade, inte bara de flaggade.
+    for (const f of flaggaIndivider(rader, { minGrupp, grans: -Infinity }).flaggade) {
+        if (!perBas.has(f.bas)) perBas.set(f.bas, { Kvinna: [], Man: [] });
+        perBas.get(f.bas)[f.kon].push(f.avvikelsePct);
+    }
+    const ut = [];
+    for (const [bas, g] of [...perBas].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv', { numeric: true }))) {
+        if (g.Kvinna.length < k || g.Man.length < k) continue;
+        for (const [kon, namn] of [['Kvinna', 'Kvinnor'], ['Man', 'Män']]) {
+            const a = g[kon], andel = n => Math.round(100 * n / a.length);
+            const nUnder = a.filter(v => v <= -grans).length, nOver = a.filter(v => v >= grans).length;
+            ut.push({ bas, kon: namn, n: a.length, under: andel(nUnder), over: andel(nOver), nUnder, nOver });
+        }
+    }
+    return ut;
+}

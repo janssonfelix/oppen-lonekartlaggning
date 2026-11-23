@@ -317,6 +317,59 @@ const _namnGenitiv = __mirrorNamn.namnGenitiv;
 const _namnNormalisera = __mirrorNamn.normaliseraNamn;
 const personOrd = __mirrorNamn.personOrd;
 
+// ---- speglar src/lib/csv.js ----
+const __mirrorCsv = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — CSV- och urklippstext med formelskydd (ADR-15).
+ *
+ * En textcell som börjar med = + - @ (eller tabb/CR) blir en formel när filen öppnas eller klistras in i Excel.
+ * Yrkesnamn och andra texter kommer ur lönefilen, så en fientlig fil kunde annars lägga en formel i HR:s export
+ * (CSV-injektion, OWASP). Sådana celler får ett inledande apostrof-tecken, som Excel visar som text. Tal — även
+ * formaterade som "-3,2 %" eller "-1 250 kr" — lämnas orörda. Modulen importerar ingenting.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+const FORMELSTART = /^[=+\-@\t\r]/;
+const TALLIKT = /^[+-]?\d[\d\s.,]*(\s?(%|kr|st|år))?$/;
+
+/**
+ * En cell med formelskydd. Tabellernas minustecken (U+2212, svTal/svPct) läser Excel som text; ett tal skrivs därför
+ * med '-'. Text som innehåller '−' men inte är ett tal (t.ex. ett intervall) står kvar som den är.
+ */
+function neutraliseraCell(v) {
+    if (typeof v === 'string' && v[0] === '−' && TALLIKT.test('-' + v.slice(1))) return '-' + v.slice(1);
+    if (typeof v !== 'string' || !FORMELSTART.test(v) || TALLIKT.test(v)) return v;
+    return "'" + v;
+}
+
+/** Rad-matris → CSV-text: semikolon som standard, CRLF-radslut och citerade fält där det behövs. */
+function tillCsv(rows, delimiter) {
+    delimiter = delimiter || ';';
+    const escapeCell = v => {
+        if (v == null) return '';
+        let s = String(neutraliseraCell(v));
+        if (s.includes(delimiter) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+            s = '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+    };
+    return rows.map(r => (Array.isArray(r) ? r : [r]).map(escapeCell).join(delimiter)).join('\r\n');
+}
+
+/** Rad-matris → TSV för urklipp, med samma formelskydd som CSV-exporten. */
+function tillTsv(rows) {
+    return rows.map(r => r.map(c => (c == null ? '' : neutraliseraCell(c))).join('\t')).join('\n');
+}
+
+    return { neutraliseraCell, tillCsv, tillTsv };
+})();
+const _neutraliseraCell = __mirrorCsv.neutraliseraCell;
+const _toCsv = __mirrorCsv.tillCsv;
+const _tillTsv = __mirrorCsv.tillTsv;
+
 // ---- speglar src/lib/aid-etiketter.js ----
 const __mirrorAidEtiketter = (() => {
 // SPDX-License-Identifier: MIT
@@ -875,6 +928,253 @@ function kompletterandeUndertryckningPerNyckel(totaler, delar, k) {
 })();
 const _kompletterandeUndertryckningPerNyckel = __mirrorUndertryckning.kompletterandeUndertryckningPerNyckel;
 
+// ---- speglar src/lib/ktroskel.js ----
+const __mirrorKtroskel = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
+    const aidAvYrke = __mirrorAid.aidAvYrke;
+    const personOrd = __mirrorNamn.personOrd;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — reglerna för vad som får redovisas vid minsta gruppstorlek k (skyddet S4,
+ * `docs/utveckling/k-troskeln.md`).
+ *
+ * Funktionerna tar tröskeln som argument. Vilken tröskel som gäller (den inställda i exportläget, 1 på skärmen; ADR-51)
+ * avgör appen: adaptrarna i `src/app/06-k-troskel.js` läser `kTroskel()` eller `kInstalld()` och behåller sina
+ * tidigare namn. Stämpeln och texterna om regeln får alltid den inställda tröskeln.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+
+
+/** Samma värden som K_STANDARD, K_MIN och K_MAX i src/app/06-k-troskel.js (tests/ktroskel-lib.test.js jämför). */
+const K_STANDARD = 10;
+const K_MIN = 2;
+const K_MAX = 1000;
+
+/** Golvet för skattningar: aldrig under standardvärdet, och följer en högre inställd tröskel uppåt. */
+function statGolv(kInstalld) { return Math.max(kInstalld, K_STANDARD); }
+
+/** Heltal K_MIN–K_MAX ur ett tal eller en sträng, annars null. Bara rena heltal godtas. */
+function kTolka(v) {
+    const s = typeof v === 'number' ? String(v) : (typeof v === 'string' ? v.trim() : '');
+    if (!/^\d+$/.test(s)) return null;
+    const n = Number(s);
+    return n >= K_MIN && n <= K_MAX ? n : null;
+}
+
+/**
+ * Får ett KÖNSUPPDELAT lönemått redovisas (ett köns median eller percentil, ett könsgap, en
+ * kostnad som räknats ur ett gap)? Varje kön ska nå tröskeln (ADR-12): annars pekar måttet ut
+ * de få i det mindre könet, även när gruppen som helhet är stor nog.
+ * @param {number} nKv - Antal kvinnor.
+ * @param {number} nMa - Antal män.
+ * @param {number} k
+ */
+function konFarRedovisas(nKv, nMa, k) {
+    return nKv >= k && nMa >= k;
+}
+
+/** Antal kvinnor och män i en radmängd (samma könsregler som i övriga verktyget). */
+function konAntal(rader) {
+    let nKv = 0, nMa = 0;
+    for (const r of rader || []) {
+        if (arKvinna(r)) nKv++;
+        else if (arMan(r)) nMa++;
+    }
+    return { nKv, nMa };
+}
+
+/** Får könsuppdelade lönemått för hela radmängden redovisas? */
+function konFarRedovisasFor(rader, k) {
+    const { nKv, nMa } = konAntal(rader);
+    return konFarRedovisas(nKv, nMa, k);
+}
+
+/** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
+function konUtelamnatNot(k) {
+    return k <= 1 ? 'Könsuppdelade lönemått redovisas inte eftersom ett av könen saknas i urvalet.'
+        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${k} ${personOrd(k)} i urvalet.`;
+}
+
+/**
+ * Regressionens råa mediangap som text. Regressionen själv har ett fast golv (5 per kön, ADR-38),
+ * men det råa gapet är ett beskrivande könsuppdelat mått och följer tröskeln: under den står ett
+ * streck med förklaring.
+ * @param {any} reg  regressionsresultatet (rawGapPct, nKvAnalysed, nMaAnalysed …)
+ * @param {(v:number)=>string} fmt
+ * @param {number} k
+ */
+function raGapText(reg, fmt, k) {
+    if (!reg || reg.rawGapPct == null) return '–';
+    return konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed, k) ? fmt(reg.rawGapPct) : (k <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${k} ${personOrd(k)})`);
+}
+
+/**
+ * Regressionens stegvisa uppdelning så som den får redovisas. Första steget ("Endast kön") är
+ * skillnaden mellan könens geometriska medellöner utan någon kontroll — ett beskrivande
+ * könsuppdelat mått som följer tröskeln, liksom allt som räknats ur det (förklarad andel,
+ * förklaringsbudgeten). Det justerade gapet berörs inte: det visas från regressionens eget golv
+ * (5 per kön, ADR-38). Beräkningen ändras inte; bara vad som visas.
+ * @param {any} reg  regressionsresultatet (sequential, explainedShare, nKvAnalysed, nMaAnalysed …)
+ * @param {number} k
+ * @returns {{steg:Array, explainedShare:number|null, utelamnat:boolean, not:string}}
+ */
+function regStegForRedovisning(reg, k) {
+    const alla = (reg && reg.sequential) || [];
+    if (!reg || konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed, k)) {
+        return { steg: alla, explainedShare: reg ? reg.explainedShare : null, utelamnat: false, not: '' };
+    }
+    return {
+        steg: alla.filter(s => s.name !== 'Endast kön'),
+        explainedShare: null,
+        utelamnat: true,
+        not: `Det ojusterade steget (endast kön) och den förklarade andelen visas inte eftersom ett kön har färre än ${k} ${personOrd(k)} i modellen.`
+    };
+}
+
+/**
+ * Regressionens BAS-effekter så som de får redovisas (ADR-70, beslut 2026-11-14). Effekten för ett BAS-intervall med
+ * färre personer än tröskeln ligger nära deras genomsnittliga lönenivå: den skrivs inte ut, och intervallet namnges i
+ * noten (redovisningsformen i ADR-12). Är referensintervallet självt under tröskeln beskriver varje effekt dess nivå
+ * baklänges; då skrivs ingen effekt ut. Modellen och dess referens (ADR-44) ändras inte; bara vad som visas. På
+ * skärmen är tröskeln 1 och allt visas (ADR-51).
+ * @param {any} reg  regressionsresultatet (basEffekter, basRef, basN)
+ * @param {number} k
+ * @param {(utelamnade:string[]) => string} maskNot  noten om utelämnade intervall (appen skriver den med sina termer)
+ * @returns {{effekter: Array|null, utelamnade: string[], referensUtelamnad: boolean, not: string}}
+ *   effekter är null när modellen inte har BAS-effekter; noten är text utan markup.
+ */
+function basEffekterForRedovisning(reg, k, maskNot) {
+    const alla = reg && reg.basEffekter;
+    if (!alla) return { effekter: null, utelamnade: [], referensUtelamnad: false, not: '' };
+    const n = b => (reg.basN && reg.basN[b]) || 0;
+    if (reg.basRef != null && n(reg.basRef) < k) {
+        return { effekter: [], utelamnade: alla.map(e => e.bas), referensUtelamnad: true,
+            not: `BAS-effekterna visas inte här: referensintervallet, BAS ${reg.basRef}, har färre än ${k} ${personOrd(k)}, och varje effekt mot det skulle visa dess lönenivå. Personerna ingår fortfarande i modellen.` };
+    }
+    const utelamnade = alla.filter(e => n(e.bas) < k).map(e => e.bas);
+    return { effekter: alla.filter(e => !(n(e.bas) < k)), utelamnade, referensUtelamnad: false,
+        not: utelamnade.length ? maskNot(utelamnade) : '' };
+}
+
+/** Når båda yrkesgrupperna i paret gränsen k? Ett jämförelseyrke ur statistiken (maN saknas) prövas inte. */
+function parNarK(p, k) {
+    return p.kvN >= k && (p.maN == null || p.maN >= k);
+}
+
+/** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
+function parUtelamnadeNot(antal, k) {
+    return antal ? `${antal} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.` : '';
+}
+
+/**
+ * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
+ * utelämnas. `not` är meningen om de utelämnade (tom när inga utelämnats). Ordningen bevaras och
+ * objekten är desamma som i indata.
+ * @param {any[]|undefined} pairs
+ * @param {number} k
+ */
+function parForRedovisning(pairs, k) {
+    const alla = pairs || [];
+    const par = alla.filter(p => parNarK(p, k));
+    const utelamnade = alla.length - par.length;
+    return { par, utelamnade, not: parUtelamnadeNot(utelamnade, k) };
+}
+
+/** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
+function kStampel(kInstalld) {
+    return `Minsta gruppstorlek för redovisning: ${kInstalld}.`
+        + (kInstalld < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
+}
+
+/**
+ * Tillägget för en export som medvetet kan innehålla grupper under tröskeln (dokumenterade
+ * undantag: Likvärdigt arbete, och Utforska när användaren kryssat i det). Utan tillägget läses
+ * stämpeln som ett löfte om att filen saknar sådana grupper.
+ */
+function kUndantagNot(undantag) {
+    return undantag ? `Den här filen kan även innehålla grupper under tröskeln (undantag: ${undantag}).` : '';
+}
+
+/** Stämpeln, med tillägget om undantag när exporten hör till ett. */
+function kStampelFor(undantag, kInstalld) {
+    return undantag ? `${kStampel(kInstalld)} ${kUndantagNot(undantag)}` : kStampel(kInstalld);
+}
+
+/** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
+function kSanktNot(kInstalld) { return kInstalld < K_STANDARD ? kStampel(kInstalld) : ''; }
+
+/** Sidfot med tillägg när tröskeln är sänkt under standard. */
+function kSidfot(text, kInstalld) {
+    return kInstalld < K_STANDARD ? `${text} · minsta gruppstorlek ${kInstalld} (standard ${K_STANDARD})` : text;
+}
+
+const harStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
+/** Tabell-CSV: stämpeln som sista rad, om den inte redan står i raderna (diagramdata). */
+function csvMedStampel(rows, undantag, kInstalld) {
+    return harStampel(rows) ? rows : [...rows, [], [kStampelFor(undantag, kInstalld)]];
+}
+/** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
+function tsvMedStampel(rows, undantag, kInstalld) {
+    return (kSanktNot(kInstalld) || undantag) && !harStampel(rows) ? [...rows, [], [kStampelFor(undantag, kInstalld)]] : rows;
+}
+
+/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
+function kText(s, kInstalld) {
+    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(statGolv(kInstalld)));
+}
+
+/**
+ * En punkt per person (spridningsdiagrammen lön mot ålder) röjer personens lön tillsammans med yrke och BAS.
+ * Punkten är därför liten — den ritas inte och exporteras inte — när personens grupp (AID-koden inom BAS-intervallet,
+ * samma indelning som gruppdossiern) har färre än k, eller när personens kön har det i gruppen (ADR-12).
+ * Antalen räknas på hela underlaget, inte på det urval diagrammet visar.
+ * @param {any[]} rader
+ * @param {number} k
+ * @returns {(rad:any) => boolean} sant om radens punkt är liten
+ */
+function individLitenFor(rader, k) {
+    const grupp = r => `${aidAvYrke(r.yrke)}|${r.bas}`;
+    const konAv = r => (arKvinna(r) ? 'kv' : (arMan(r) ? 'ma' : 'ovr'));
+    const n = new Map();
+    for (const r of rader) {
+        if (!(r.lon > 0) || !r.bas) continue;
+        const g = grupp(r);
+        n.set(g, (n.get(g) || 0) + 1);
+        n.set(`${g}|${konAv(r)}`, (n.get(`${g}|${konAv(r)}`) || 0) + 1);
+    }
+    return r => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv(r)}`) || 0) < k;
+}
+
+    return { kTolka, konAntal, parNarK, kUndantagNot, statGolv, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, raGapText, regStegForRedovisning, basEffekterForRedovisning, parUtelamnadeNot, parForRedovisning, kStampel, kStampelFor, kSanktNot, kSidfot, csvMedStampel, tsvMedStampel, kText, individLitenFor };
+})();
+const _kTolka = __mirrorKtroskel.kTolka;
+const _konAntal = __mirrorKtroskel.konAntal;
+const _parNarK = __mirrorKtroskel.parNarK;
+const _kUndantagNot = __mirrorKtroskel.kUndantagNot;
+const _ktStatGolv = __mirrorKtroskel.statGolv;
+const _ktKonFarRedovisas = __mirrorKtroskel.konFarRedovisas;
+const _ktKonFarRedovisasFor = __mirrorKtroskel.konFarRedovisasFor;
+const _ktKonUtelamnatNot = __mirrorKtroskel.konUtelamnatNot;
+const _ktRaGapText = __mirrorKtroskel.raGapText;
+const _ktRegSteg = __mirrorKtroskel.regStegForRedovisning;
+const _ktBasEffekter = __mirrorKtroskel.basEffekterForRedovisning;
+const _ktParUtelamnadeNot = __mirrorKtroskel.parUtelamnadeNot;
+const _ktParForRedovisning = __mirrorKtroskel.parForRedovisning;
+const _ktStampel = __mirrorKtroskel.kStampel;
+const _ktStampelFor = __mirrorKtroskel.kStampelFor;
+const _ktSanktNot = __mirrorKtroskel.kSanktNot;
+const _ktSidfot = __mirrorKtroskel.kSidfot;
+const _ktCsvMedStampel = __mirrorKtroskel.csvMedStampel;
+const _ktTsvMedStampel = __mirrorKtroskel.tsvMedStampel;
+const _ktText = __mirrorKtroskel.kText;
+const _ktIndividLitenFor = __mirrorKtroskel.individLitenFor;
+
 // ---- speglar src/lib/stat.js ----
 const __mirrorStat = (() => {
 // SPDX-License-Identifier: MIT
@@ -1249,6 +1549,64 @@ const _libQuantile = __mirrorStat.quantile;
 const _bhJustera = __mirrorStat.bhJustera;
 const _avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
 
+// ---- speglar src/lib/talformat.js ----
+const __mirrorTalformat = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — Tal som text, svenskt format (ren modul)
+ *
+ * Talformatet på ett ställe: appens tabeller (genom spegeln, under samma namn) och lib-modulerna som skriver text
+ * (rapportunderlaget, diagramkärnan, prioriteringen) använder samma funktioner och avrundar därför likadant.
+ *
+ * All text som visas ska ha decimalkomma och mellanslag före procenttecknet ("85,2 %"). toFixed ger decimalpunkt
+ * och används bara där ett tal ska läsas av kod (CSS-mått, sorteringsvärden, tal till Excel).
+ *
+ * Mellan talet och enheten står ett hårt mellanslag (U+00A0), som Intl redan skriver mellan tusentalen: då bryts
+ * «36 262 kr» och «73 %» aldrig isär i en smal kolumn, på skärmen eller i utskriften. Excel-exporten gör det hårda
+ * mellanslaget till ett vanligt (src/app/22-exporthjalpare.js), liksom CSV och urklipp (_tableCellText i
+ * src/app/12-tillstand.js), så där står talen som förut. Word-utkastet gör om allt blanktecken till vanligt
+ * mellanslag (src/app/62-word-utkast.js); där hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så
+ * att talet ryms på en rad.
+ */
+
+const _svNf = new Map();
+/**
+ * Talet med `dec` decimaler i svenskt format; "–" om det inte är ett ändligt tal. Halvorna avrundas bort från noll
+ * (avrundaSymmetriskt): −1 600,5 och 1 600,5 visas båda med siffrorna 1 601. Noll visas utan minustecken (ingen "−0,0").
+ * @param {unknown} v
+ * @param {number} [dec]
+ * @returns {string}
+ */
+function svTal(v, dec = 0) {
+    if (typeof v !== 'number' || !isFinite(v)) return '–';
+    if (!_svNf.has(dec)) _svNf.set(dec, new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }));
+    return _svNf.get(dec).format(avrundaSymmetriskt(v, dec));
+}
+
+/** Som svTal, med " %" efter (hårt mellanslag). @param {unknown} v @param {number} [dec] @returns {string} */
+function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+
+// PO-påslaget i procent med högst två decimaler och utan avslutande nollor, som användaren skrev det: 40 → "40 %",
+// 39,15 → "39,15 %", 31,4 → "31,4 %".
+const _svPoNf = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
+/** @param {unknown} v @returns {string} */
+function svPoPct(v) { return typeof v === 'number' && isFinite(v) ? `${_svPoNf.format(v)} %` : '–'; }
+
+/** Beloppet i hela kronor med " kr" efter (hårt mellanslag); `tom` när det inte är ett ändligt tal.
+ *  @param {unknown} v @param {string} [tom] @returns {string} */
+function svKr(v, tom = '–') { return typeof v === 'number' && isFinite(v) ? `${svTal(v, 0)} kr` : tom; }
+
+    return { svTal, svPct, svKr, svPoPct };
+})();
+const svTal = __mirrorTalformat.svTal;
+const svPct = __mirrorTalformat.svPct;
+const svKr = __mirrorTalformat.svKr;
+const svPoPct = __mirrorTalformat.svPoPct;
+
 // ---- speglar src/lib/kostnad.js ----
 const __mirrorKostnad = (() => {
 // SPDX-License-Identifier: MIT
@@ -1464,7 +1822,49 @@ const LONEBEGREPP_RESERVATION = 'Måtten är räknade på fast heltidsmånadslö
 /** @returns {string} reservationen om lönebegreppet vid EU-rapportmåtten */
 function lonebegreppReservation() { return LONEBEGREPP_RESERVATION; }
 
-    return { medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken, lonebegreppReservation };
+// ---- Lönefördelningen i Ålder & karriär: klasserna för histogrammet (flyttade från src/app/40-alder-karriar.js) ----
+
+// Minsta och största värdet i en lista: en slinga, eftersom Math.min(...v) slår i taket för antal argument vid stora filer.
+function omfang(v) {
+    let min = Infinity, max = -Infinity;
+    for (const x of v) { if (x < min) min = x; if (x > max) max = x; }
+    return [min, max];
+}
+
+// ---- Löneklasser: indelningen för histogrammet ----
+// Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
+// percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
+function lonesteg(loner, mal = 12) {
+    const spann = _quantile(loner, 0.95) - _quantile(loner, 0.05);
+    return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
+}
+
+// ---- Histogram: lönefördelningen för kvinnor och män, klass för klass ----
+// Andel av respektive kön per löneklass. Visas bara när båda könen når tröskeln. Ingen stapel får gälla en klass
+// med färre än tröskeln personer: klasserna i ändarna slås ihop inåt tills ändklassen når tröskeln ("under X",
+// "X eller mer"), och finns en gles klass i mitten fördubblas klassbredden och indelningen görs om. Går det inte
+// att få minst tre klasser ritas inget.
+function histogramKlasser(kv, ma, k) {
+    const alla = [...kv, ...ma];
+    if (kv.length < k || ma.length < k) return null;
+    let steg = lonesteg(alla);
+    for (let varv = 0; varv < 6; varv++, steg *= 2) {
+        const [lagst, hogst] = omfang(alla), golv = Math.floor(lagst / steg) * steg, antal = Math.floor((hogst - golv) / steg) + 1;
+        /** @type {Array<{fran: number, till: number, nKv: number, nMa: number, oppenNed?: boolean, oppenUpp?: boolean}>} */
+        let klasser = Array.from({ length: antal }, (_, i) => ({ fran: golv + i * steg, till: golv + (i + 1) * steg, nKv: 0, nMa: 0 }));
+        const plats = v => Math.min(antal - 1, Math.floor((v - golv) / steg));
+        for (const v of kv) klasser[plats(v)].nKv++;
+        for (const v of ma) klasser[plats(v)].nMa++;
+        const n = c => c.nKv + c.nMa;
+        const slaIhop = (a, b) => ({ fran: a.fran, till: b.till, nKv: a.nKv + b.nKv, nMa: a.nMa + b.nMa, ...(a.oppenNed ? { oppenNed: true } : {}), ...(b.oppenUpp ? { oppenUpp: true } : {}) });
+        while (klasser.length > 1 && n(klasser[0]) < k) klasser = [{ ...slaIhop(klasser[0], klasser[1]), oppenNed: true }, ...klasser.slice(2)];
+        while (klasser.length > 1 && n(klasser[klasser.length - 1]) < k) klasser = [...klasser.slice(0, -2), { ...slaIhop(klasser[klasser.length - 2], klasser[klasser.length - 1]), oppenUpp: true }];
+        if (klasser.length >= 3 && klasser.every(c => n(c) >= k)) return klasser;
+    }
+    return null;
+}
+
+    return { medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken, lonebegreppReservation, omfang, lonesteg, histogramKlasser };
 })();
 const _stMedianGapPct = __mirrorStructure.medianGapPct;
 const _stRepresentationByBas = __mirrorStructure.representationByBas;
@@ -1472,6 +1872,9 @@ const _stQuartileDistribution = __mirrorStructure.quartileDistribution;
 const _stDistributionalGap = __mirrorStructure.distributionalGap;
 const _stTillDirektivtecken = __mirrorStructure.tillDirektivtecken;
 const _stLonebegreppReservation = __mirrorStructure.lonebegreppReservation;
+const _omfang = __mirrorStructure.omfang;
+const _konLonesteg = __mirrorStructure.lonesteg;
+const _konHistogramKlasser = __mirrorStructure.histogramKlasser;
 
 // ---- speglar src/lib/rng.js ----
 const __mirrorRng = (() => {
@@ -2466,13 +2869,58 @@ function computeLikvardighetPairs({ data = [], statistik = [], nationellKlass = 
     };
 }
 
-    return { computeLikvardighetPairs, basRangFn, bootstrapMedianer, arKvinnodominerad, konsklass };
+// ---- Krav mot lön: en punkt per yrkesgrupp ----------------------------------
+// Kraven är arbetsvärderingspoäng när en poängtabell är inläst, annars BAS-intervallets rang — samma krav-proxy som
+// parbildningen. En grupp som saknar poäng i en inläst tabell placeras efter sitt BAS-intervall: medianpoängen för
+// intervallets värderade grupper; tipset och noten säger det. Finns ingen värderad grupp i
+// intervallet går gruppen inte att placera och namnges i noten.
+// Bara grupper som når tröskeln: diagrammet visar gruppens medianlön. Linjen räknas ur de grupper som visas.
+/**
+ * @param {any[]} rader
+ * @param {{k?: number, poangByKey?: Map<string, number>|null, definition?: string, grans?: number}} [opts] definition och
+ *   grans: appens val av definitionen av kvinnodominerat (konsklass)
+ */
+function kravGrupper(rader, { k = 10, poangByKey = null, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT } = {}) {
+    const map = new Map();
+    // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
+    const iGrupp = r => !!(r && String(r.aid || '').trim() && r.lon > 0 && r.bas);
+    const namnrad = namnrader((rader || []).filter(iGrupp), r => String(r.aid).trim() + '|' + r.bas);
+    for (const r of rader || []) {
+        if (!iGrupp(r)) continue;
+        const aid = String(r.aid).trim();
+        const key = aid + '|' + r.bas, nr = namnrad.get(key);
+        if (!map.has(key)) map.set(key, { aid, bas: r.bas, namn: nr.yrkeLabel || nr.yrke || aid, n: 0, nKv: 0, loner: [] });
+        const g = map.get(key);
+        g.n++; if (arKvinna(r)) g.nKv++; g.loner.push(r.lon);
+    }
+    const medPoang = !!(poangByKey && poangByKey.size);
+    const alla = [...map.values()].filter(g => g.n >= k).map(g => {
+        const andelKv = 100 * g.nKv / g.n;
+        const poang = medPoang ? (poangByKey.get(g.aid + '|' + g.bas) ?? poangByKey.get(g.aid) ?? null) : null;
+        return { aid: g.aid, bas: g.bas, namn: g.namn, n: g.n, andelKv, median: _median(g.loner), poang,
+                 dominans: konsklass(andelKv, definition, grans) };   // den enda definitionen av kvinnodominerat (ADR-60)
+    });
+    if (!medPoang) return { medPoang, grupper: alla, utanPlats: [] };
+    // Medianpoängen per BAS-intervall, ur de värderade grupper som visas.
+    const perBas = new Map();
+    for (const g of alla) if (g.poang != null) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.poang); }
+    const grupper = [], utanPlats = [];
+    for (const g of alla) {
+        if (g.poang != null) grupper.push({ ...g, krav: g.poang });
+        else if (perBas.has(g.bas)) grupper.push({ ...g, krav: _median(perBas.get(g.bas)), uppskattad: true });
+        else utanPlats.push(g);
+    }
+    return { medPoang, grupper, utanPlats };
+}
+
+    return { computeLikvardighetPairs, basRangFn, bootstrapMedianer, arKvinnodominerad, konsklass, kravGrupper };
 })();
 const _lvComputePairs = __mirrorLikvardighet.computeLikvardighetPairs;
 const _lvBasRangFn = __mirrorLikvardighet.basRangFn;
 const _lvBootstrapMedianer = __mirrorLikvardighet.bootstrapMedianer;
 const _arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
 const _konsklass = __mirrorLikvardighet.konsklass;
+const _lvKravGrupper = __mirrorLikvardighet.kravGrupper;
 
 // ---- speglar src/lib/loneoversyn.js ----
 const __mirrorForecast = (() => {
@@ -4407,6 +4855,27 @@ function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
 }
 
 /**
+ * Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, yrkesgrupp), bara där både kvinnorna och
+ * männen är minst k (k-tröskeln, S4). Den enda prövningen mot k för översikten per BAS-intervall, lönegapet per
+ * åldersgrupp och löneöversynens grupper före och efter. En grupp utan löner hoppas över, en grupp där ett kön har
+ * färre än k hamnar i `dolda`, och en grupp där männens median inte är positiv hoppas över (kvoten saknas).
+ * @param {Iterable<[any, number[], number[]]>} grupper  [nyckel, kvinnornas löner, männens löner], i visningsordning
+ * @param {{k: number, ki?: boolean}} val  ki: med medianKvotKI (B_PER_GRUPP) i `ci`
+ * @returns {{visade: Array<{nyckel: any, nKv: number, nMa: number, medKv: number, medMa: number, gap: number, ci?: null | {lo: number, hi: number}}>, dolda: any[]}}
+ */
+function konskvotPerGrupp(grupper, { k, ki = false }) {
+    const visade = [], dolda = [];
+    for (const [nyckel, kv, ma] of grupper) {
+        if (!kv.length && !ma.length) continue;
+        if (kv.length < k || ma.length < k) { dolda.push(nyckel); continue; }
+        const medKv = median(kv), medMa = median(ma);
+        if (!(medMa > 0)) continue;
+        visade.push({ nyckel, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ...(ki ? { ci: medianKvotKI(kv, ma) } : {}) });
+    }
+    return { visade, dolda };
+}
+
+/**
  * Som medianKvotKI, men dragningar där männens median inte är positiv räknas inte, och intervallet ges bara när minst
  * DOSSIER_MIN_GILTIGA dragningar återstår (gruppdossiern och rapportunderlaget).
  * @param {number[]} kvLons
@@ -4744,11 +5213,12 @@ function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng }
     return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
 }
 
-    return { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, regressionslinjensBand, styrkeanalys, gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter };
+    return { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, konskvotPerGrupp, regressionslinjensBand, styrkeanalys, gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter };
 })();
 const _osOrganisationensKvotKI = __mirrorOsakerhet.organisationensKvotKI;
 const _osMedianKvotKI = __mirrorOsakerhet.medianKvotKI;
 const _osMedianKvotKIGiltiga = __mirrorOsakerhet.medianKvotKIGiltiga;
+const _osKonskvotPerGrupp = __mirrorOsakerhet.konskvotPerGrupp;
 const _osRegressionslinjensBand = __mirrorOsakerhet.regressionslinjensBand;
 const _osStyrkeanalys = __mirrorOsakerhet.styrkeanalys;
 const _osGruppMde = __mirrorOsakerhet.gruppMde;
@@ -4764,6 +5234,8 @@ const __mirrorLonepolitik = (() => {
     const _quantile = __mirrorStat.quantile;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
+    const aidAvYrke = __mirrorAid.aidAvYrke;
+    const namnrader = __mirrorAid.namnrader;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4778,10 +5250,11 @@ const __mirrorLonepolitik = (() => {
  * spegeln (vaktas av artefaktgrinden).
  *
  * Själva uppslaget (vilken policyrad som gäller för en grupp) görs av
- * policyFor() i app.js, eftersom det läser state. Här hanteras bara matematiken
- * när bandet väl är känt.
+ * policyFor() i app.js, eftersom det läser state; lonepolitikModell() tar emot
+ * det som argument, liksom tröskeln k.
  *
- * Maskeringstrappan (tre steg, se `src/app/75-lonepolitik.js`) tillämpas av anroparen; de här
+ * Maskeringstrappan (tre steg, `maskeringsniva`) sätts på varje yrkesgrupp i
+ * modellen; ritningen tillämpar den (`src/app/75-lonepolitik.js`). De andra
  * funktionerna räknar på det de får och rapporterar n så att anroparen kan
  * maskera.
  *
@@ -4789,6 +5262,15 @@ const __mirrorLonepolitik = (() => {
  */
 
 
+
+
+/** Undre gräns för den antalsbaserade mellannivån i maskeringstrappan. */
+const ANTAL_MIN = 5;
+
+/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+function lonepolitikKonstanter() {
+    return Object.freeze({ ANTAL_MIN });
+}
 
 /**
  * Organisationens faktiska lönespann i en grupp (P10, median, P90) — jämförs med
@@ -4939,7 +5421,107 @@ function policyCoverage(groups) {
     };
 }
 
-    return { bandPosition, groupBandStats, complianceCounts, genderBandGap, costToFloor, policyCoverage, organisationsBand };
+/**
+ * Maskeringstrappan för en yrkesgrupp med n personer, vid tröskeln k:
+ *   n >= k                    → 'full': full analys (median, band, kön)
+ *   ANTAL_MIN <= n < k        → 'count': endast bandplacering i antal ("2 av 7 under P10")
+ *   n < min(ANTAL_MIN, k)     → 'masked': maskerad rad, men inräknad i BAS-totalen
+ * Är tröskeln ANTAL_MIN eller lägre finns ingen mellannivå.
+ * @returns {'full'|'count'|'masked'}
+ */
+function maskeringsniva(n, k) {
+    if (n >= k) return 'full';
+    if (n >= ANTAL_MIN) return 'count';
+    return 'masked';
+}
+
+/**
+ * Lägesklassen för ett läge i spannet (0 = P10, 1 = P90): 0 under spannet, 1–3 nedre, mellersta och övre tredjedelen,
+ * 4 över spannet.
+ */
+function lagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ? 2 : pos <= 1 ? 3 : 4; }
+
+/**
+ * Antalet kvinnor och män i varje lägesklass mot bandet (personer utan användbart läge räknas inte).
+ * @returns {{kv:number[], ma:number[]}}
+ */
+function konLagen(rows, pol) {
+    const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
+    for (const r of rows) {
+        const kon = arKvinna(r) ? 'kv' : arMan(r) ? 'ma' : null;
+        const pos = kon ? bandPosition(r.lon, pol.p10, pol.p90) : null;
+        if (pos != null && isFinite(pos)) ut[kon][lagesklass(pos)]++;
+    }
+    return ut;
+}
+
+/**
+ * Hela analysmodellen för Löneläget mot ställningstagandet: per BAS-intervall, med AID-grupperna under sig.
+ * Grupperna är AID (ur yrkesfältet) × BAS; rader utan lön eller BAS räknas inte. BAS-intervallen sorteras i svensk
+ * ordning, grupperna i fallande storlek.
+ * @param {any[]} rader lönerader
+ * @param {{policyFor:(aid:any, bas:any)=>any, nivaEtikett:(pol:any)=>any, k:number, harPolicy:boolean}} opt
+ *   policyFor: policyraden som gäller (null om ingen); nivaEtikett: nivån som träffen kom ifrån, för visning;
+ *   k: tröskeln som maskeringstrappan, könsgapet och organisationens band prövas mot; harPolicy: om ett
+ *   ställningstagande är inläst (utan det byggs ingen modell).
+ * @returns {{byBas: any[], coverage: any, hasPolicy: boolean}}
+ */
+function lonepolitikModell(rader, { policyFor, nivaEtikett, k, harPolicy }) {
+    /** @type {{byBas: any[], coverage: any, hasPolicy: boolean}} */
+    const out = { byBas: [], coverage: null, hasPolicy: !!harPolicy };
+    if (!rader.length || !out.hasPolicy) return out;
+
+    // Gruppera AID×BAS
+    const groups = new Map();
+    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
+    const namnrad = namnrader(rader.filter(r => r.lon > 0 && r.bas), r => aidAvYrke(r.yrke) + '|' + r.bas);
+    rader.forEach(r => {
+        if (!(r.lon > 0) || !r.bas) return;
+        const aid = aidAvYrke(r.yrke);
+        const key = aid + '|' + r.bas;
+        if (!groups.has(key)) groups.set(key, { aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
+        groups.get(key).rows.push(r);
+    });
+
+    const coverageInput = [];
+    const basMap = new Map();
+    for (const g of groups.values()) {
+        const pol = policyFor(g.aid, g.bas);
+        coverageInput.push({ n: g.rows.length, hasPolicy: !!pol });
+        if (!basMap.has(g.bas)) basMap.set(g.bas, { bas: g.bas, rows: [], groups: [] });
+        const b = basMap.get(g.bas);
+        b.rows.push(...g.rows);
+        b.groups.push({
+            aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.rows.length, rows: g.rows,
+            pol, level: nivaEtikett(pol), tier: maskeringsniva(g.rows.length, k),
+            stats: pol ? groupBandStats(g.rows, pol) : null,
+            compliance: pol ? complianceCounts(g.rows, pol) : null
+        });
+    }
+    out.coverage = policyCoverage(coverageInput);
+
+    out.byBas = [...basMap.values()].map(b => {
+        // BAS-nivåns eget band (AID-specifika rader gäller bara sina yrken)
+        const pol = policyFor(null, b.bas);
+        return {
+            bas: b.bas,
+            pol,
+            level: nivaEtikett(pol),
+            n: b.rows.length,
+            stats: pol ? groupBandStats(b.rows, pol) : null,
+            compliance: pol ? complianceCounts(b.rows, pol) : null,
+            genderGap: pol ? genderBandGap(b.rows, pol, k) : null,
+            konLagen: pol ? konLagen(b.rows, pol) : null,
+            cost: pol ? costToFloor(b.rows, pol) : null,
+            orgBand: organisationsBand(b.rows, k),   // organisationens eget P10–P90 (null under k)
+            groups: b.groups.sort((x, y) => y.n - x.n)
+        };
+    }).sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));
+
+    return out;
+}
+
+    return { bandPosition, groupBandStats, complianceCounts, genderBandGap, costToFloor, policyCoverage, organisationsBand, lonepolitikModell, maskeringsniva, lagesklass, konLagen, lonepolitikKonstanter };
 })();
 const _lpBandPosition = __mirrorLonepolitik.bandPosition;
 const _lpGroupBandStats = __mirrorLonepolitik.groupBandStats;
@@ -4948,6 +5530,11 @@ const _lpGenderBandGap = __mirrorLonepolitik.genderBandGap;
 const _lpCostToFloor = __mirrorLonepolitik.costToFloor;
 const _lpPolicyCoverage = __mirrorLonepolitik.policyCoverage;
 const _lpOrganisationsBand = __mirrorLonepolitik.organisationsBand;
+const _lpLonepolitikModell = __mirrorLonepolitik.lonepolitikModell;
+const _lpMaskeringsniva = __mirrorLonepolitik.maskeringsniva;
+const _lpLagesklass = __mirrorLonepolitik.lagesklass;
+const _lpKonLagen = __mirrorLonepolitik.konLagen;
+const _lpKonstanter = __mirrorLonepolitik.lonepolitikKonstanter;
 
 // ---- speglar src/lib/prioritering.js ----
 const __mirrorPrioritering = (() => {
@@ -4961,6 +5548,7 @@ const __mirrorPrioritering = (() => {
     const kostnadPerAr = __mirrorKostnad.kostnadPerAr;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
+    const svPoPct = __mirrorTalformat.svPoPct;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4980,6 +5568,7 @@ const __mirrorPrioritering = (() => {
  *
  * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
  */
+
 
 
 
@@ -5011,10 +5600,6 @@ function prioKonstanter() {
         SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });
 }
 
-// PO-påslaget med högst två decimaler och utan avslutande nollor (40 → "40", 39,15 → "39,15"), som svPoPct i appen
-// (src/app/03-hjalpfunktioner.js).
-const _PO_FORMAT = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 });
-
 /**
  * Räkneexemplet om könsskillnaden i en grupp: vad skillnaden i medianlön motsvarar per år
  * för gruppens kvinnor, eller null när kvinnornas median inte ligger minst 100 kr lägre (skillnaden avrundas till
@@ -5032,7 +5617,7 @@ function arsbeloppMening(g, costSettings, kr) {
     const { months, poPct: po } = kostnadsfaktor(costSettings);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
-        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${_PO_FORMAT.format(po)} %). Det är ett räkneexempel, `
+        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
 }
 
@@ -7078,9 +7663,35 @@ function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     } };
 }
 
-    return { flaggaIndivider };
+/**
+ * Avvikelsen från förväntad lön per BAS-intervall och kön: andelen av de prövade kvinnorna respektive männen som ligger
+ * minst `grans` procent under och minst `grans` procent över den förväntade lönen (hela procent). Bara BAS-intervall där
+ * både de prövade kvinnorna och de prövade männen är minst k (k-tröskeln, S4). Sorterat efter BAS-intervallet.
+ * @returns {Array<{bas: any, kon: string, n: number, under: number, over: number, nUnder: number, nOver: number}>}
+ */
+function avvikelsePerKonOchBas(rader, { k, minGrupp, grans }) {
+    const perBas = new Map();
+    // Gränsen −∞ ger avvikelsen för alla prövade, inte bara de flaggade.
+    for (const f of flaggaIndivider(rader, { minGrupp, grans: -Infinity }).flaggade) {
+        if (!perBas.has(f.bas)) perBas.set(f.bas, { Kvinna: [], Man: [] });
+        perBas.get(f.bas)[f.kon].push(f.avvikelsePct);
+    }
+    const ut = [];
+    for (const [bas, g] of [...perBas].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv', { numeric: true }))) {
+        if (g.Kvinna.length < k || g.Man.length < k) continue;
+        for (const [kon, namn] of [['Kvinna', 'Kvinnor'], ['Man', 'Män']]) {
+            const a = g[kon], andel = n => Math.round(100 * n / a.length);
+            const nUnder = a.filter(v => v <= -grans).length, nOver = a.filter(v => v >= grans).length;
+            ut.push({ bas, kon: namn, n: a.length, under: andel(nUnder), over: andel(nOver), nUnder, nOver });
+        }
+    }
+    return ut;
+}
+
+    return { flaggaIndivider, avvikelsePerKonOchBas };
 })();
 const _ifFlaggaIndivider = __mirrorIndivid.flaggaIndivider;
+const _ifAvvikelsePerKonOchBas = __mirrorIndivid.avvikelsePerKonOchBas;
 
 // ---- speglar src/lib/utforska.js ----
 const __mirrorUtforska = (() => {
@@ -7655,11 +8266,248 @@ const _anAndelGiltiga = __mirrorAnsvar.andelGiltiga;
 const _anArRubrik = __mirrorAnsvar.arAnsvarskodRubrik;
 const _anUnderrader = __mirrorAnsvar.ansvarsUnderrader;
 
+// ---- speglar src/lib/importprofiler.js ----
+const __mirrorImportprofiler = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — importprofiler: kända kolumnuppsättningar som gör kolumnmappningen automatisk.
+ *
+ * En importprofil är en sparad kolumnmappning: vilka rubriker i lönefilen som svarar mot verktygets roller (BAS,
+ * yrke, lön, ålder, kön och de valfria poäng och ansvarskod), och vilka rubriker som måste finnas för att profilen
+ * ska gälla (kännetecken). En profil bär BARA rubriknamn — aldrig värden ur filen. Valideringen här ser till att det
+ * gäller också för en fil som någon har skrivit för hand: bara vitlistade fält följer med, varje text är högst 80
+ * tecken och får inte likna ett personnummer eller en e-postadress, högst 20 rubriker per roll och högst 50
+ * profiler.
+ *
+ * Verktyget levererar inga påhittade profiler för namngivna lönesystem. De inbyggda profilerna gäller bara format
+ * som projektet självt definierar (CSV-mallen, testdatans fil och demodatans fältnamn); övriga kommer från
+ * organisationer som använt verktyget, via konfigurationsfilen eller organisationspaketet.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+const IMPORTPROFIL_FORMAT = 'lonekartlaggning-importprofiler';
+const IMPORTPROFIL_VERSION = 1;
+/** Rollerna i kolumnmappningens ordning. BAS, yrke, lön och kön är obligatoriska; ålder är valfri men rekommenderad (ADR-64). */
+const IMPORTPROFIL_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
+const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'kon'];
+/** Rollerna vars rubriker blir kännetecken när profilen inte anger egna: de obligatoriska och ålder, när den finns. */
+const KANNETECKEN_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon'];
+/** Källorna i prioritetsordning: organisationspaketets profiler prövas först, de inbyggda sist. */
+const IMPORTPROFIL_KALLOR = ['organisationspaket', 'konfiguration', 'inbyggd'];
+const MAX_PROFILER = 50;
+const MAX_RUBRIKER_PER_ROLL = 20;
+const MAX_TEXT = 80;
+
+const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
+const EPOST = /\S+@\S+\.\S+/;
+// Styrtecken och HTML-metatecken tas bort. Rubrikerna jämförs ändå utan andra tecken än a–z och 0–9 (se nedan),
+// så det ändrar aldrig vilken kolumn en profil pekar på.
+const BORT = /[\u0000-\u001f\u007f<>"'&]/g;
+
+/** Rubriken som den jämförs: gemener, bara a–z och 0–9 (samma regel som autoDetectColumnMap i appen). */
+function normaliseraRubrik(s) {
+    return String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/** En text i en profil: sanerad och trimmad, eller null när den inte får förekomma (ingen text, för lång, personuppgift). */
+function _text(v) {
+    if (typeof v !== 'string') return null;
+    const t = v.replace(BORT, '').trim();
+    if (!t || t.length > MAX_TEXT) return null;
+    if (PNR.test(t) || EPOST.test(t)) return null;
+    return t;
+}
+/** En rubrik: en tillåten text som inte blir tom när den normaliseras. */
+function _rubrik(v) {
+    const t = _text(v);
+    return t && normaliseraRubrik(t) ? t : null;
+}
+/** En lista med rubriker (högst `max`, utan dubbletter efter normalisering), eller null om något i den är ogiltigt. */
+function _rubrikLista(v, max) {
+    if (!Array.isArray(v) || !v.length || v.length > max) return null;
+    const ut = [], sedda = new Set();
+    for (const x of v) {
+        const r = _rubrik(x);
+        if (!r) return null;
+        const n = normaliseraRubrik(r);
+        if (!sedda.has(n)) { sedda.add(n); ut.push(r); }
+    }
+    return ut;
+}
+
+// Ett kort id ur namnet och kännetecknen, så att samma profil får samma id när den sparas igen.
+function _hash(s) {
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+}
+function _id(namn, kannetecken) {
+    const slug = namn.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '').slice(0, 40);
+    return `${slug || 'profil'}-${_hash(namn + '|' + kannetecken.map(normaliseraRubrik).join('|'))}`;
+}
+/**
+ * Validerar en profil. Bara vitlistade fält följer med; en profil med en ogiltig text (för lång, personnummer- eller
+ * e-postliknande) avvisas helt. Id:t härleds alltid ur namnet och kännetecknen: ett id i filen läses aldrig, så det
+ * kan inte bli en okontrollerad textkanal (till exempel ett personnummer) i exporter och paket.
+ * @param {any} o
+ * @param {{kalla?: string}} [val] Källan sätts av den som läser in (en fil kan inte göra sin profil inbyggd).
+ * @returns {{id:string, namn:string, kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}|null}
+ */
+function valideraImportprofil(o, { kalla } = {}) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+    const namn = _text(o.namn);
+    if (!namn) return null;
+    if (!o.rubriker || typeof o.rubriker !== 'object' || Array.isArray(o.rubriker)) return null;
+    /** @type {{[roll:string]:string[]}} */
+    const rubriker = {};
+    for (const roll of IMPORTPROFIL_ROLLER) {
+        if (o.rubriker[roll] == null) continue;
+        const lista = _rubrikLista(o.rubriker[roll], MAX_RUBRIKER_PER_ROLL);
+        if (!lista) return null;
+        rubriker[roll] = lista;
+    }
+    if (!Object.keys(rubriker).length) return null;
+    let kannetecken;
+    if (o.kannetecken == null) {
+        kannetecken = KANNETECKEN_ROLLER.filter(r => rubriker[r]).map(r => rubriker[r][0]);
+        if (!kannetecken.length) return null;
+    } else {
+        kannetecken = _rubrikLista(o.kannetecken, MAX_RUBRIKER_PER_ROLL);
+        if (!kannetecken) return null;
+    }
+    const k = IMPORTPROFIL_KALLOR.includes(/** @type {string} */ (kalla)) ? /** @type {string} */ (kalla)
+        : (o.kalla === 'organisationspaket' ? 'organisationspaket' : 'konfiguration');
+    return { id: _id(namn, kannetecken), namn, kalla: k, rubriker, kannetecken };
+}
+
+/**
+ * Validerar en lista med profiler. Fler än 50 avvisar hela listan; ogiltiga profiler hoppas över och räknas, och
+ * samma id tas bara en gång.
+ * @param {any} lista
+ * @param {{kalla?: string}} [val]
+ * @returns {{profiler: Array<NonNullable<ReturnType<typeof valideraImportprofil>>>, bort: number, fel: string|null}}
+ */
+function valideraImportprofiler(lista, val = {}) {
+    if (!Array.isArray(lista)) return { profiler: [], bort: 0, fel: 'Importprofilerna är inte en lista.' };
+    if (lista.length > MAX_PROFILER) return { profiler: [], bort: lista.length, fel: `Fler än ${MAX_PROFILER} importprofiler; ingen av dem läses in.` };
+    const profiler = [], ids = new Set();
+    let bort = 0;
+    for (const o of lista) {
+        const p = valideraImportprofil(o, val);
+        if (!p || ids.has(p.id)) { bort++; continue; }
+        ids.add(p.id);
+        profiler.push(p);
+    }
+    return { profiler, bort, fel: null };
+}
+
+/**
+ * Den första profilen som gäller för filens rubriker, i prioritetsordning (organisationspaketet, konfigurationsfilen,
+ * inbyggda; inom en källa listans ordning). En profil gäller när alla dess kännetecken finns bland rubrikerna.
+ * @param {string[]} rubriker filens rubriker
+ * @param {Array<{kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}>} profiler
+ * @returns {{profil: any, mappning: {[roll:string]: string}}|null} mappningen: roll → filens rubrik, bara för profilens roller
+ */
+function matchaImportprofil(rubriker, profiler) {
+    /** @type {Map<string, string>} */
+    const fil = new Map();
+    for (const r of rubriker || []) {
+        const n = normaliseraRubrik(r);
+        if (n && !fil.has(n)) fil.set(n, String(r));
+    }
+    const ordning = p => { const i = IMPORTPROFIL_KALLOR.indexOf(p.kalla); return i < 0 ? IMPORTPROFIL_KALLOR.length : i; };
+    const sorterade = (profiler || []).map((p, i) => ({ p, i })).sort((a, b) => ordning(a.p) - ordning(b.p) || a.i - b.i);
+    for (const { p } of sorterade) {
+        if (!p || !Array.isArray(p.kannetecken) || !p.kannetecken.length) continue;
+        if (!p.kannetecken.every(k => fil.has(normaliseraRubrik(k)))) continue;
+        /** @type {{[roll:string]: string}} */
+        const mappning = {};
+        for (const roll of IMPORTPROFIL_ROLLER) {
+            const hit = (p.rubriker[roll] || []).map(normaliseraRubrik).find(n => fil.has(n));
+            if (hit) mappning[roll] = /** @type {string} */ (fil.get(hit));
+        }
+        return { profil: p, mappning };
+    }
+    return null;
+}
+
+/**
+ * Bygger en profil ur en gjord kolumnmappning. Bara rubriker som finns i filen följer med, och alla obligatoriska
+ * roller måste vara mappade; kännetecknen är de obligatoriska rollernas rubriker och ålderns, när den är mappad.
+ * @param {{namn:string, kalla:string, mappning:{[roll:string]: string|null|undefined}, rubriker:string[]}} u
+ */
+function profilFranMappning({ namn, kalla, mappning, rubriker }) {
+    const iFilen = new Set((rubriker || []).map(String));
+    /** @type {{[roll:string]:string[]}} */
+    const r = {};
+    for (const roll of IMPORTPROFIL_ROLLER) {
+        const rubrik = mappning && mappning[roll];
+        if (rubrik && iFilen.has(rubrik)) r[roll] = [rubrik];
+    }
+    if (!OBLIGATORISKA_ROLLER.every(roll => r[roll])) return null;
+    return valideraImportprofil({ namn, rubriker: r }, { kalla });
+}
+
+/**
+ * Profilerna som en fil att dela eller bidra med: formatet, versionen och profilerna utan källan (den sätts av den
+ * som läser in).
+ * @param {Array<{id:string, namn:string, rubriker:Object, kannetecken:string[]}>} profiler
+ */
+function importprofilerTillJson(profiler) {
+    return JSON.stringify({
+        format: IMPORTPROFIL_FORMAT,
+        version: IMPORTPROFIL_VERSION,
+        profiler: (profiler || []).map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken })),
+    }, null, 2);
+}
+
+// ---- Inbyggda profiler: bara format som projektet självt definierar ----
+const _inbyggd = o => {
+    // De inbyggda profilerna har fasta id:n i koden (inte ur en fil), så de sätts efter valideringen.
+    const v = /** @type {NonNullable<ReturnType<typeof valideraImportprofil>>} */ (valideraImportprofil(o, { kalla: 'inbyggd' }));
+    const p = { ...v, id: o.id };
+    Object.values(p.rubriker).forEach(Object.freeze);
+    Object.freeze(p.rubriker); Object.freeze(p.kannetecken);
+    return Object.freeze(p);
+};
+const INBYGGDA_PROFILER = Object.freeze([
+    // CSV-mallen som lönefilens ruta laddar ner (strukturdata_mall.csv).
+    _inbyggd({ id: 'inbyggd-csv-mallen', namn: 'Verktygets CSV-mall',
+        rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'], poang: ['Poang'] } }),
+    // Testdatans personalfil (npm run gen:testdata, tools/lib/testdata.mjs). Kolumnen Ansvar är ett kännetecken men
+    // ingen roll: en kolumn som bara heter Ansvar läses aldrig som ansvarskod.
+    _inbyggd({ id: 'inbyggd-testdata', namn: 'Verktygets testdata',
+        rubriker: { bas: ['BAS'], yrke: ['AID-etikett'], lon: ['Månadslön'], alder: ['Ålder'], kon: ['Kön'] },
+        kannetecken: ['Ansvar', 'BAS', 'AID-etikett', 'Månadslön', 'Ålder', 'Kön'] }),
+    // Verktygets egna fältnamn (fälten i dess rader, som demodatan har). Namnet säger inte demo: en verklig fil kan ha
+    // just de rubrikerna. Id:t är det förra.
+    _inbyggd({ id: 'inbyggd-demodata', namn: 'Verktygets grundfält',
+        rubriker: { bas: ['bas'], yrke: ['yrke', 'aid'], lon: ['lon'], alder: ['alder'], kon: ['kon'] } }),
+]);
+
+/** De inbyggda profilerna (för appen, som bara når funktioner i spegeln). */
+function inbyggdaProfiler() {
+    return INBYGGDA_PROFILER;
+}
+
+    return { valideraImportprofil, valideraImportprofiler, matchaImportprofil, profilFranMappning, importprofilerTillJson, inbyggdaProfiler };
+})();
+const _ipValidera = __mirrorImportprofiler.valideraImportprofil;
+const _ipValideraLista = __mirrorImportprofiler.valideraImportprofiler;
+const _ipMatcha = __mirrorImportprofiler.matchaImportprofil;
+const _ipFranMappning = __mirrorImportprofiler.profilFranMappning;
+const _ipTillJson = __mirrorImportprofiler.importprofilerTillJson;
+const _ipInbyggda = __mirrorImportprofiler.inbyggdaProfiler;
+
 // ---- speglar src/lib/inlasning.js ----
 const __mirrorInlasning = (() => {
     // importer ur tidigare speglade lib-moduler
     const _anTolka = __mirrorAnsvar.tolkaAnsvarskod;
     const _anGrupp = __mirrorAnsvar.ansvarsgrupp;
+    const matchaImportprofil = __mirrorImportprofiler.matchaImportprofil;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -7677,6 +8525,7 @@ const __mirrorInlasning = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 // ---- Talen ----
 
@@ -8087,7 +8936,92 @@ function detectSensitiveColumns(rows) {
     return issues;
 }
 
-    return { _normalizeNumberString, parseNumber, parseNumberStrict, _cleanYrkeField, _stripHtmlMeta, _normalizeBas, _normalizePolicyAid, _normalizeKon, tolkaLonerad, _pnrSampelSteg, detectSensitiveColumns, yrkeNamnNyckel, sallsyntaNamnrader };
+// ---- Filtexten: teckenkodning, avgränsare och rubrikrad (flyttade från src/app/32-filinlasning.js) ----
+
+// #2: Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte
+// UTF-8) och ibland kommaseparerad. Vi detekterar teckenkodning och avgränsare
+// LOKALT (TextDecoder i webbläsaren, inga nätverksanrop) innan parsning så att
+// å/ä/ö inte mojibakar och raderna inte hamnar i en enda kolumn.
+function _decodeCsvBuffer(buf) {
+    const bytes = new Uint8Array(buf);
+    // UTF-16 (Excels "Unicode-text" sparar UTF-16LE med BOM, tab-avgränsat).
+    // Utan denna kontroll faller UTF-16 igenom till Windows-1252 och blir
+    // NUL-interfolierad rappakalja som parsern tuggar utan tydligt fel.
+    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+        return { text: new TextDecoder('utf-16le').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 LE' };
+    }
+    if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+        return { text: new TextDecoder('utf-16be').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 BE' };
+    }
+    if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+        return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (BOM)' };
+    }
+    try {
+        // Strikt UTF-8: kastar om byten inte är giltig UTF-8 (typiskt Windows-1252-åäö).
+        return { text: new TextDecoder('utf-8', { fatal: true }).decode(buf), encoding: 'UTF-8' };
+    } catch (_e) {
+        try {
+            return { text: new TextDecoder('windows-1252').decode(buf), encoding: 'Windows-1252' };
+        } catch (_e2) {
+            return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (osäker)' };
+        }
+    }
+}
+
+// Radslut: CRLF, LF eller bara CR (gamla Mac-filer) — samma regel i alla steg.
+const _RADSLUT = /\r\n|\r|\n/;
+/** Filtextens rader, med samma regel för radslut som avgränsaren och rubrikraden. */
+function delaRader(text) { return text.split(_RADSLUT); }
+
+function _detectDelimiter(text) {
+    const firstLine = (text.split(_RADSLUT).find(l => l.trim().length) || '');
+    let best = ';', bestN = 0;
+    for (const d of [';', ',', '\t', '|']) {
+        const n = firstLine.split(d).length - 1;
+        if (n > bestN) { bestN = n; best = d; }
+    }
+    return bestN > 0 ? best : ';';
+}
+
+/**
+ * Hittar rubrikraden i CSV-text och dess avgränsare. Exportverktyg lägger
+ * ofta försättsrader före rubrikerna ("Rapport uttagen 2026-01-15;;;;"), och
+ * de får inte tas för rubriker. Vi provar de
+ * 15 första raderna × alla avgränsare och väljer den kombination som matchar
+ * flest kända kolumnroller (synonymGroups = array av normaliserade substrängar
+ * per roll, t.ex. Object.values(ALLOWED_FIELDS)).
+ *
+ * @param {string} text - Avkodad filtext.
+ * @param {Array<Array<string>>} synonymGroups - En grupp synonymer per roll.
+ * @param {number} [minHits=2] - Min antal roller som måste matcha.
+ * @param {any[]} [profiler] - Importprofiler (lönefilen): den första raden där en profils alla kännetecken finns är
+ *          rubrikraden, också när den har färre delsträngsträffar än en försättsrad.
+ * @returns {{line:number, delim:string|null, hits:number}} line = 0-baserat radindex;
+ *          vid ingen träff: line 0 + avgränsaren från _detectDelimiter.
+ */
+function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
+    const lines = text.split(_RADSLUT).slice(0, 15);
+    /** @type {{line: number, delim: string|null, hits: number}} */
+    let best = { line: 0, delim: null, hits: -1 };
+    for (let i = 0; i < lines.length; i++) {
+        if (!lines[i] || !lines[i].trim()) continue;
+        for (const d of [';', ',', '\t', '|']) {
+            const raa = lines[i].split(d).map(c => c.replace(/^"+|"+$/g, ''));
+            if (raa.length < 2) continue;
+            if (profiler.length && matchaImportprofil(raa, profiler)) return { line: i, delim: d, hits: synonymGroups.length };
+            const cells = raa.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, ''));
+            let hits = 0;
+            for (const group of synonymGroups) {
+                if (group.some(syn => cells.some(c => c.includes(syn)))) hits++;
+            }
+            if (hits > best.hits) best = { line: i, delim: d, hits };
+        }
+    }
+    if (best.hits >= minHits) return best;
+    return { line: 0, delim: _detectDelimiter(text), hits: 0 };
+}
+
+    return { _normalizeNumberString, parseNumber, parseNumberStrict, _cleanYrkeField, _stripHtmlMeta, _normalizeBas, _normalizePolicyAid, _normalizeKon, tolkaLonerad, _pnrSampelSteg, detectSensitiveColumns, yrkeNamnNyckel, sallsyntaNamnrader, _decodeCsvBuffer, delaRader, _detectDelimiter, _findCsvHeader };
 })();
 const _normalizeNumberString = __mirrorInlasning._normalizeNumberString;
 const parseNumber = __mirrorInlasning.parseNumber;
@@ -8102,6 +9036,10 @@ const _pnrSampelSteg = __mirrorInlasning._pnrSampelSteg;
 const detectSensitiveColumns = __mirrorInlasning.detectSensitiveColumns;
 const _ilYrkeNamnNyckel = __mirrorInlasning.yrkeNamnNyckel;
 const _ilSallsyntaNamnrader = __mirrorInlasning.sallsyntaNamnrader;
+const _decodeCsvBuffer = __mirrorInlasning._decodeCsvBuffer;
+const _delaRader = __mirrorInlasning.delaRader;
+const _detectDelimiter = __mirrorInlasning._detectDelimiter;
+const _findCsvHeader = __mirrorInlasning._findCsvHeader;
 
 // ---- speglar src/lib/aidkontroll.js ----
 const __mirrorAidkontroll = (() => {
@@ -8579,6 +9517,7 @@ const __mirrorRapportunderlag = (() => {
     const adjektiv = __mirrorTermer.adjektiv;
     const termFras = __mirrorTermer.termFras;
     const arKvinna = __mirrorKon.arKvinna;
+    const formatTal = __mirrorTalformat.svTal;
     const aidAvRad = __mirrorAid.aidAvRad;
     const namnrader = __mirrorAid.namnrader;
 
@@ -8595,6 +9534,7 @@ const __mirrorRapportunderlag = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -8736,13 +9676,8 @@ const FRAGOR_PAR = Object.freeze([
     'Finns skillnader i arbetstid, arbetsmiljö eller ansvar som inte syns i BAS?',
 ]);
 
-/** Svenskt talformat (decimalkomma, hårt mellanslag som tusentalsavgränsare). */
-function formatTal(v, dec = 0) {
-    if (v == null || !isFinite(v)) return '–';
-    const t = new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v);
-    // Ett negativt tal som avrundas till noll ska inte bli "−0" (samma avrundning som övriga tabeller).
-    return /^[-−]0(,0+)?$/.test(t) ? t.slice(1) : t;
-}
+// Talen avrundas som i appens tabeller (formatTal är svTal ur talformat.js). Före enheten står här ett vanligt
+// mellanslag, som i blockens text förut.
 const _st = (n, en, flera) => `${formatTal(n)} ${n === 1 ? en : flera}`;
 const _kr = v => (v == null || !isFinite(v)) ? '–' : `${formatTal(v, 0)} kr`;
 const _pct = (v, dec = 1) => (v == null || !isFinite(v)) ? '–' : `${formatTal(v, dec)} %`;
@@ -10364,242 +11299,6 @@ const _abMedGrans = __mirrorArsbokslut.bokslutMedGrans;
 const _abSpridning = __mirrorArsbokslut.lonespridning;
 const _abJamforBedomningar = __mirrorArsbokslut.jamforBedomningar;
 
-// ---- speglar src/lib/importprofiler.js ----
-const __mirrorImportprofiler = (() => {
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — importprofiler: kända kolumnuppsättningar som gör kolumnmappningen automatisk.
- *
- * En importprofil är en sparad kolumnmappning: vilka rubriker i lönefilen som svarar mot verktygets roller (BAS,
- * yrke, lön, ålder, kön och de valfria poäng och ansvarskod), och vilka rubriker som måste finnas för att profilen
- * ska gälla (kännetecken). En profil bär BARA rubriknamn — aldrig värden ur filen. Valideringen här ser till att det
- * gäller också för en fil som någon har skrivit för hand: bara vitlistade fält följer med, varje text är högst 80
- * tecken och får inte likna ett personnummer eller en e-postadress, högst 20 rubriker per roll och högst 50
- * profiler.
- *
- * Verktyget levererar inga påhittade profiler för namngivna lönesystem. De inbyggda profilerna gäller bara format
- * som projektet självt definierar (CSV-mallen, testdatans fil och demodatans fältnamn); övriga kommer från
- * organisationer som använt verktyget, via konfigurationsfilen eller organisationspaketet.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- */
-
-const IMPORTPROFIL_FORMAT = 'lonekartlaggning-importprofiler';
-const IMPORTPROFIL_VERSION = 1;
-/** Rollerna i kolumnmappningens ordning. BAS, yrke, lön och kön är obligatoriska; ålder är valfri men rekommenderad (ADR-64). */
-const IMPORTPROFIL_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'kon'];
-/** Rollerna vars rubriker blir kännetecken när profilen inte anger egna: de obligatoriska och ålder, när den finns. */
-const KANNETECKEN_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon'];
-/** Källorna i prioritetsordning: organisationspaketets profiler prövas först, de inbyggda sist. */
-const IMPORTPROFIL_KALLOR = ['organisationspaket', 'konfiguration', 'inbyggd'];
-const MAX_PROFILER = 50;
-const MAX_RUBRIKER_PER_ROLL = 20;
-const MAX_TEXT = 80;
-
-const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
-const EPOST = /\S+@\S+\.\S+/;
-// Styrtecken och HTML-metatecken tas bort. Rubrikerna jämförs ändå utan andra tecken än a–z och 0–9 (se nedan),
-// så det ändrar aldrig vilken kolumn en profil pekar på.
-const BORT = /[\u0000-\u001f\u007f<>"'&]/g;
-
-/** Rubriken som den jämförs: gemener, bara a–z och 0–9 (samma regel som autoDetectColumnMap i appen). */
-function normaliseraRubrik(s) {
-    return String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-/** En text i en profil: sanerad och trimmad, eller null när den inte får förekomma (ingen text, för lång, personuppgift). */
-function _text(v) {
-    if (typeof v !== 'string') return null;
-    const t = v.replace(BORT, '').trim();
-    if (!t || t.length > MAX_TEXT) return null;
-    if (PNR.test(t) || EPOST.test(t)) return null;
-    return t;
-}
-/** En rubrik: en tillåten text som inte blir tom när den normaliseras. */
-function _rubrik(v) {
-    const t = _text(v);
-    return t && normaliseraRubrik(t) ? t : null;
-}
-/** En lista med rubriker (högst `max`, utan dubbletter efter normalisering), eller null om något i den är ogiltigt. */
-function _rubrikLista(v, max) {
-    if (!Array.isArray(v) || !v.length || v.length > max) return null;
-    const ut = [], sedda = new Set();
-    for (const x of v) {
-        const r = _rubrik(x);
-        if (!r) return null;
-        const n = normaliseraRubrik(r);
-        if (!sedda.has(n)) { sedda.add(n); ut.push(r); }
-    }
-    return ut;
-}
-
-// Ett kort id ur namnet och kännetecknen, så att samma profil får samma id när den sparas igen.
-function _hash(s) {
-    let h = 5381;
-    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
-    return h.toString(36);
-}
-function _id(namn, kannetecken) {
-    const slug = namn.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '').slice(0, 40);
-    return `${slug || 'profil'}-${_hash(namn + '|' + kannetecken.map(normaliseraRubrik).join('|'))}`;
-}
-/**
- * Validerar en profil. Bara vitlistade fält följer med; en profil med en ogiltig text (för lång, personnummer- eller
- * e-postliknande) avvisas helt. Id:t härleds alltid ur namnet och kännetecknen: ett id i filen läses aldrig, så det
- * kan inte bli en okontrollerad textkanal (till exempel ett personnummer) i exporter och paket.
- * @param {any} o
- * @param {{kalla?: string}} [val] Källan sätts av den som läser in (en fil kan inte göra sin profil inbyggd).
- * @returns {{id:string, namn:string, kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}|null}
- */
-function valideraImportprofil(o, { kalla } = {}) {
-    if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
-    const namn = _text(o.namn);
-    if (!namn) return null;
-    if (!o.rubriker || typeof o.rubriker !== 'object' || Array.isArray(o.rubriker)) return null;
-    /** @type {{[roll:string]:string[]}} */
-    const rubriker = {};
-    for (const roll of IMPORTPROFIL_ROLLER) {
-        if (o.rubriker[roll] == null) continue;
-        const lista = _rubrikLista(o.rubriker[roll], MAX_RUBRIKER_PER_ROLL);
-        if (!lista) return null;
-        rubriker[roll] = lista;
-    }
-    if (!Object.keys(rubriker).length) return null;
-    let kannetecken;
-    if (o.kannetecken == null) {
-        kannetecken = KANNETECKEN_ROLLER.filter(r => rubriker[r]).map(r => rubriker[r][0]);
-        if (!kannetecken.length) return null;
-    } else {
-        kannetecken = _rubrikLista(o.kannetecken, MAX_RUBRIKER_PER_ROLL);
-        if (!kannetecken) return null;
-    }
-    const k = IMPORTPROFIL_KALLOR.includes(/** @type {string} */ (kalla)) ? /** @type {string} */ (kalla)
-        : (o.kalla === 'organisationspaket' ? 'organisationspaket' : 'konfiguration');
-    return { id: _id(namn, kannetecken), namn, kalla: k, rubriker, kannetecken };
-}
-
-/**
- * Validerar en lista med profiler. Fler än 50 avvisar hela listan; ogiltiga profiler hoppas över och räknas, och
- * samma id tas bara en gång.
- * @param {any} lista
- * @param {{kalla?: string}} [val]
- * @returns {{profiler: Array<NonNullable<ReturnType<typeof valideraImportprofil>>>, bort: number, fel: string|null}}
- */
-function valideraImportprofiler(lista, val = {}) {
-    if (!Array.isArray(lista)) return { profiler: [], bort: 0, fel: 'Importprofilerna är inte en lista.' };
-    if (lista.length > MAX_PROFILER) return { profiler: [], bort: lista.length, fel: `Fler än ${MAX_PROFILER} importprofiler; ingen av dem läses in.` };
-    const profiler = [], ids = new Set();
-    let bort = 0;
-    for (const o of lista) {
-        const p = valideraImportprofil(o, val);
-        if (!p || ids.has(p.id)) { bort++; continue; }
-        ids.add(p.id);
-        profiler.push(p);
-    }
-    return { profiler, bort, fel: null };
-}
-
-/**
- * Den första profilen som gäller för filens rubriker, i prioritetsordning (organisationspaketet, konfigurationsfilen,
- * inbyggda; inom en källa listans ordning). En profil gäller när alla dess kännetecken finns bland rubrikerna.
- * @param {string[]} rubriker filens rubriker
- * @param {Array<{kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}>} profiler
- * @returns {{profil: any, mappning: {[roll:string]: string}}|null} mappningen: roll → filens rubrik, bara för profilens roller
- */
-function matchaImportprofil(rubriker, profiler) {
-    /** @type {Map<string, string>} */
-    const fil = new Map();
-    for (const r of rubriker || []) {
-        const n = normaliseraRubrik(r);
-        if (n && !fil.has(n)) fil.set(n, String(r));
-    }
-    const ordning = p => { const i = IMPORTPROFIL_KALLOR.indexOf(p.kalla); return i < 0 ? IMPORTPROFIL_KALLOR.length : i; };
-    const sorterade = (profiler || []).map((p, i) => ({ p, i })).sort((a, b) => ordning(a.p) - ordning(b.p) || a.i - b.i);
-    for (const { p } of sorterade) {
-        if (!p || !Array.isArray(p.kannetecken) || !p.kannetecken.length) continue;
-        if (!p.kannetecken.every(k => fil.has(normaliseraRubrik(k)))) continue;
-        /** @type {{[roll:string]: string}} */
-        const mappning = {};
-        for (const roll of IMPORTPROFIL_ROLLER) {
-            const hit = (p.rubriker[roll] || []).map(normaliseraRubrik).find(n => fil.has(n));
-            if (hit) mappning[roll] = /** @type {string} */ (fil.get(hit));
-        }
-        return { profil: p, mappning };
-    }
-    return null;
-}
-
-/**
- * Bygger en profil ur en gjord kolumnmappning. Bara rubriker som finns i filen följer med, och alla obligatoriska
- * roller måste vara mappade; kännetecknen är de obligatoriska rollernas rubriker och ålderns, när den är mappad.
- * @param {{namn:string, kalla:string, mappning:{[roll:string]: string|null|undefined}, rubriker:string[]}} u
- */
-function profilFranMappning({ namn, kalla, mappning, rubriker }) {
-    const iFilen = new Set((rubriker || []).map(String));
-    /** @type {{[roll:string]:string[]}} */
-    const r = {};
-    for (const roll of IMPORTPROFIL_ROLLER) {
-        const rubrik = mappning && mappning[roll];
-        if (rubrik && iFilen.has(rubrik)) r[roll] = [rubrik];
-    }
-    if (!OBLIGATORISKA_ROLLER.every(roll => r[roll])) return null;
-    return valideraImportprofil({ namn, rubriker: r }, { kalla });
-}
-
-/**
- * Profilerna som en fil att dela eller bidra med: formatet, versionen och profilerna utan källan (den sätts av den
- * som läser in).
- * @param {Array<{id:string, namn:string, rubriker:Object, kannetecken:string[]}>} profiler
- */
-function importprofilerTillJson(profiler) {
-    return JSON.stringify({
-        format: IMPORTPROFIL_FORMAT,
-        version: IMPORTPROFIL_VERSION,
-        profiler: (profiler || []).map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken })),
-    }, null, 2);
-}
-
-// ---- Inbyggda profiler: bara format som projektet självt definierar ----
-const _inbyggd = o => {
-    // De inbyggda profilerna har fasta id:n i koden (inte ur en fil), så de sätts efter valideringen.
-    const v = /** @type {NonNullable<ReturnType<typeof valideraImportprofil>>} */ (valideraImportprofil(o, { kalla: 'inbyggd' }));
-    const p = { ...v, id: o.id };
-    Object.values(p.rubriker).forEach(Object.freeze);
-    Object.freeze(p.rubriker); Object.freeze(p.kannetecken);
-    return Object.freeze(p);
-};
-const INBYGGDA_PROFILER = Object.freeze([
-    // CSV-mallen som lönefilens ruta laddar ner (strukturdata_mall.csv).
-    _inbyggd({ id: 'inbyggd-csv-mallen', namn: 'Verktygets CSV-mall',
-        rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'], poang: ['Poang'] } }),
-    // Testdatans personalfil (npm run gen:testdata, tools/lib/testdata.mjs). Kolumnen Ansvar är ett kännetecken men
-    // ingen roll: en kolumn som bara heter Ansvar läses aldrig som ansvarskod.
-    _inbyggd({ id: 'inbyggd-testdata', namn: 'Verktygets testdata',
-        rubriker: { bas: ['BAS'], yrke: ['AID-etikett'], lon: ['Månadslön'], alder: ['Ålder'], kon: ['Kön'] },
-        kannetecken: ['Ansvar', 'BAS', 'AID-etikett', 'Månadslön', 'Ålder', 'Kön'] }),
-    // Verktygets egna fältnamn (fälten i dess rader, som demodatan har). Namnet säger inte demo: en verklig fil kan ha
-    // just de rubrikerna. Id:t är det förra.
-    _inbyggd({ id: 'inbyggd-demodata', namn: 'Verktygets grundfält',
-        rubriker: { bas: ['bas'], yrke: ['yrke', 'aid'], lon: ['lon'], alder: ['alder'], kon: ['kon'] } }),
-]);
-
-/** De inbyggda profilerna (för appen, som bara når funktioner i spegeln). */
-function inbyggdaProfiler() {
-    return INBYGGDA_PROFILER;
-}
-
-    return { valideraImportprofil, valideraImportprofiler, matchaImportprofil, profilFranMappning, importprofilerTillJson, inbyggdaProfiler };
-})();
-const _ipValidera = __mirrorImportprofiler.valideraImportprofil;
-const _ipValideraLista = __mirrorImportprofiler.valideraImportprofiler;
-const _ipMatcha = __mirrorImportprofiler.matchaImportprofil;
-const _ipFranMappning = __mirrorImportprofiler.profilFranMappning;
-const _ipTillJson = __mirrorImportprofiler.importprofilerTillJson;
-const _ipInbyggda = __mirrorImportprofiler.inbyggdaProfiler;
-
 // ---- speglar src/lib/installningsgranser.js ----
 const __mirrorInstallningsgranser = (() => {
 // SPDX-License-Identifier: MIT
@@ -11015,6 +11714,7 @@ const __mirrorFigur = (() => {
     const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
+    const svTal = __mirrorTalformat.svTal;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -11036,14 +11736,9 @@ const __mirrorFigur = (() => {
  */
 
 
+
 const MARKEN = ['stapel', 'intervall', 'punkt', 'linje', 'band', 'lada', 'ruta', 'yta'];
 const SKALOR = ['band', 'linjar', 'log'];
-
-const _nf = new Map();
-function _tal(dec) {
-    if (!_nf.has(dec)) _nf.set(dec, new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }));
-    return _nf.get(dec);
-}
 
 /**
  * Tal som text med svensk lokal. Namngivna format i stället för formatsträngar i vyerna.
@@ -11055,15 +11750,14 @@ function _tal(dec) {
 function talformat(v, namn, val) {
     const enhet = !val || val.enhet !== false;
     if (typeof v !== 'number' || !isFinite(v)) return '–';
-    // Avrunda först (halvorna bort från noll, så att ett tal och dess motsatta tal får samma siffror) och normalisera
-    // sedan: ett värde som blir noll i formatet får inget minustecken.
-    const rund = avrundaSymmetriskt;
-    if (namn === 'kr') return _tal(0).format(rund(v, 0)) + (enhet ? ' kr' : '');
-    if (namn === 'pct') return _tal(1).format(rund(v, 1)) + (enhet ? ' %' : '');
-    if (namn === 'pctAbs') { const a = Math.abs(rund(v, 1)); return _tal(Number.isInteger(a) ? 0 : 1).format(a) + (enhet ? ' %' : ''); }
-    if (namn === 'tal2') return _tal(2).format(rund(v, 2));
-    if (namn === 'antal' || namn === 'ar') return _tal(0).format(rund(v, 0));
-    return _tal(Number.isInteger(v) ? 0 : 1).format(rund(v, Number.isInteger(v) ? 0 : 1));
+    // svTal avrundar som appens tabeller (halvorna bort från noll, ingen "−0"). Före enheten står ett vanligt
+    // mellanslag, som i diagrammen förut.
+    if (namn === 'kr') return svTal(v, 0) + (enhet ? ' kr' : '');
+    if (namn === 'pct') return svTal(v, 1) + (enhet ? ' %' : '');
+    if (namn === 'pctAbs') { const a = Math.abs(avrundaSymmetriskt(v, 1)); return svTal(a, Number.isInteger(a) ? 0 : 1) + (enhet ? ' %' : ''); }
+    if (namn === 'tal2') return svTal(v, 2);
+    if (namn === 'antal' || namn === 'ar') return svTal(v, 0);
+    return svTal(v, Number.isInteger(v) ? 0 : 1);
 }
 
 /**
@@ -11981,4 +12675,355 @@ const _figUnderlagValet = __mirrorFigur.underlagValet;
 const _figUnderlagProva = __mirrorFigur.underlagProva;
 const _figUnderlagBeskrivning = __mirrorFigur.underlagBeskrivning;
 const _figNamnIMening = __mirrorFigur.namnIMening;
+
+// ---- speglar src/lib/demodata.js ----
+const __mirrorDemodata = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const arKvinna = __mirrorKon.arKvinna;
+    const arMan = __mirrorKon.arMan;
+    const _anGrupp = __mirrorAnsvar.ansvarsgrupp;
+    const _normalizePolicyAid = __mirrorInlasning._normalizePolicyAid;
+    const median = __mirrorStat.median;
+    const quantile = __mirrorStat.quantile;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — demodatan: de påhittade underlagen i demoläget och självdiagnostiken.
+ *
+ * Rena generatorer med en egen deterministisk slump (LCG med fast frö): samma rader, i samma ordning, vid varje
+ * anrop. Det lilla demot (generateTestData, generateDemoData) är självdiagnostikens och testsvitens kända underlag;
+ * det stora (generateStortDemo m.fl.) visar verktyget i verklig storlek. Allt är påhittat: inga personer, inga namn,
+ * ingen verklig organisation. Inläsningen i demoläget (state, DOM) står i src/app/20-demodata-diagnostik.js och
+ * src/app/21-stort-demo.js.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js, under samma namn.
+ */
+
+
+
+
+// ---- Det lilla demot ----
+function generateTestData() {
+    // Syntetisk dataset: 200 personer, 5 BAS (A-E), känd struktur:
+    // - Lön = 30000 + BAS_rank*5000 + age_centered*200 + random_noise
+    // - Kön-effekt: kvinnor får -3% justerad lön (oförklarat gap = ~3%)
+    // - Naturligt råa gapet ca -8% pga att kvinnor är yngre i snitt
+    const data = [];
+    const basList = ['A','B','C','D','E'];
+    const aidList = ['402010 Förskollärare', '207024 Vårdbiträde', '502010 Systemutvecklare', '401011 Lärare grundskola', '206017 Sjuksköterska'];
+    let seed = 42;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const rndNorm = () => { let u = 0, v = 0; while(u === 0) u = rnd(); while(v === 0) v = rnd(); return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v); };
+    for (let i = 0; i < 200; i++) {
+        const isKvinna = i < 100; // 50/50
+        // Kvinnor är i snitt något yngre + tenderar att hamna i lägre BAS
+        const baseAge = isKvinna ? 38 : 44;
+        const alder = Math.max(22, Math.min(65, Math.round(baseAge + rndNorm() * 8)));
+        const basRank = isKvinna
+            ? Math.max(0, Math.min(4, Math.round(1.5 + rndNorm() * 1.2)))
+            : Math.max(0, Math.min(4, Math.round(2.5 + rndNorm() * 1.2)));
+        const bas = basList[basRank];
+        const yrke = aidList[basRank];
+        // Lön: baseras på BAS + ålder + ev kön-bias
+        const baseLon = 30000 + basRank * 5000 + (alder - 40) * 250;
+        const konPenalty = isKvinna ? -baseLon * 0.03 : 0; // -3% för kvinnor
+        const noise = rndNorm() * 1500;
+        const lon = Math.round(baseLon + konPenalty + noise);
+        data.push({
+            bas, yrke,
+            lon: Math.max(20000, lon),
+            alder,
+            kon: isKvinna ? 'kvinna' : 'man'
+        });
+        // Ett slumptal per person dras och används inte: testdatan — och självdiagnostikens
+        // förväntade värden — bygger på den dragningsföljden.
+        rnd();
+    }
+    return data;
+}
+
+// Demodata ("Prova med demodata"): självdiagnostikens 200 personer med AID och
+// yrkesnamn, plus tre yrken i BAS C som ger kandidatpar i likvärdigt arbete — två
+// kvinnodominerade yrken med lägre lön än ett mansdominerat på samma nivå. Systemutvecklare i BAS C (23 kvinnor av
+// 45) är blandad och därmed också jämförelseyrke (ADR-60).
+// generateTestData() lämnas orörd: självdiagnostiken bygger på dess kända egenskaper.
+function generateDemoData() {
+    const data = generateTestData().map(r => ({
+        ...r, aid: r.yrke.split(' ')[0], yrkeLabel: r.yrke.replace(/^\d+\s*/, '')
+    }));
+    const lagg = (yrke, n, kvinnor, grundlon) => {
+        for (let i = 0; i < n; i++) {
+            const alder = 26 + ((i * 7) % 34);
+            data.push({
+                bas: 'C', yrke, aid: yrke.split(' ')[0], yrkeLabel: yrke.replace(/^\d+\s*/, ''),
+                lon: Math.round(grundlon + (alder - 40) * 150 + ((i * 37) % 11 - 5) * 120),
+                alder, kon: i < kvinnor ? 'kvinna' : 'man'
+            });
+        }
+    };
+    lagg('403010 Barnskötare', 20, 18, 36500);    // 90 % kvinnor
+    lagg('207011 Undersköterska', 20, 17, 37500); // 85 % kvinnor
+    lagg('503012 Drifttekniker', 20, 3, 42500);   // 15 % kvinnor
+    // Ansvarskod (AID): var 15:e man och var 30:e kvinna har ledningsansvar, var 30:e person
+    // ett särskilt uppdrag och var 15:e lärare är förstelärare. Påverkar inte lönerna.
+    const raknare = { kvinna: 0, man: 0 };
+    let larare = 0;
+    data.forEach((r, i) => {
+        const nr = ++raknare[r.kon];
+        let koder = [];
+        if ((r.kon === 'man' && nr % 15 === 0) || (r.kon === 'kvinna' && nr % 30 === 0)) koder = ['C'];
+        else if (r.aid === '401011' && ++larare % 15 === 0) koder = ['1002'];
+        else if ((i + 1) % 30 === 0) koder = ['F'];
+        r.ansvarskoder = koder;
+        r.ansvarsgrupp = _anGrupp(koder);
+    });
+    return data;
+}
+
+// ---- Stort demo: 5 000 påhittade personer i 100 yrken ----
+// Bredvid det lilla demot (20-demodata-diagnostik.js, 260 personer), som självdiagnostiken och testsviten bygger på
+// och som lämnas orört. Det stora visar verktyget i verklig storlek, en mindre kommun eller en stor verksamhet, utan
+// riktig data. Allt är påhittat: inga personer, inga namn, ingen verklig organisation.
+//
+// Yrkena har riktiga koder ur etikettlistan (så att kontrollen av AID-kodningen är grön) och korta namn, som i det
+// lilla demot. Varje yrke hör till ett eller två BAS-intervall och har en egen storlek, könsfördelning, lönenivå per
+// intervall, spridning och medelålder, så att underlaget får en verklighetstrogen form: många yrken i B–G, få chefer
+// i J–K, stora och små grupper. Lön = yrkets nivå i intervallet, gånger en konkav ålderseffekt, gånger en könseffekt,
+// gånger brus som ger yrkets spridning. Inlagt finns:
+//   - ett oförklarat gap för kvinnor på 2,5–4 % i fyra blandade yrken (_SD_GAP);
+//   - likvärdigt arbete: ett mansdominerat tekniskt yrke med högre lön än ett kvinnodominerat vårdyrke i samma
+//     intervall (_SD_LIKVARDIGT);
+//   - män något oftare och äldre oftare i det högre av yrkets två intervall (struktur, inte lön för lika arbete);
+//   - små grupper: yrken under tio personer och yrken där ett kön är färre än tio, så att k-anonymitetens
+//     maskering syns i exporterna.
+// Ansvarskoderna följer det lilla demots regel (ledningsansvar, särskilt uppdrag, förstelärare); cheferna (AID som
+// börjar med 10) har ledningsansvar. Ansvarskoderna påverkar inte lönerna.
+
+const _SD_BAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+// [AID, namn, antal, andel kvinnor, BAS-intervall (det lägre, ev. det högre), andel i det högre intervallet,
+//  nivå i det lägre (kr), nivå i det högre (kr) eller null, spridning ((P90 − P10) / median), medelålder,
+//  påslag i den påhittade jämförelsestatistiken]
+// Antalen summerar till 5 000.
+/** @type {ReadonlyArray<[string, string, number, number, string[], number, number, number|null, number, number, number]>} */
+const _SD_YRKEN = Object.freeze([
+    ['103510', 'Chef individ- och familjeomsorg', 17, 0.95, ['J'], 0.0, 58900, null, 0.20, 51, 0.25],
+    ['103511', 'Enhetschef äldreomsorg', 50, 0.90, ['J'], 0.0, 55200, null, 0.36, 49, -0.02],
+    ['103512', 'Enhetschef funktionsnedsättning', 25, 0.75, ['J'], 0.0, 51400, null, 0.36, 50, 0.16],
+    ['104011', 'Rektor', 45, 0.80, ['J', 'K'], 0.2, 61600, 72700, 0.34, 49, 0.26],
+    ['104012', 'Chef förskola och fritid', 25, 0.95, ['J'], 0.0, 59500, null, 0.29, 47, 0.16],
+    ['105010', 'Chef teknik och samhällsbyggnad', 25, 0.70, ['I', 'J'], 0.7, 60700, 64900, 0.16, 45, 0.00],
+    ['109090', 'Chef övrig verksamhet', 15, 0.70, ['J'], 0.0, 65900, null, 0.27, 47, 0.18],
+    ['151010', 'Handläggare övergripande', 25, 0.70, ['G', 'J'], 0.4, 47500, 63800, 0.15, 44, 0.15],
+    ['151011', 'Ekonom', 35, 0.65, ['F', 'G'], 0.7, 44900, 48200, 0.27, 44, 0.27],
+    ['151013', 'Kommunikatör', 30, 0.75, ['F', 'G'], 0.7, 44400, 46600, 0.27, 43, 0.01],
+    ['151014', 'IT-handläggare', 45, 0.25, ['G', 'H'], 0.4, 49100, 58600, 0.25, 46, 0.21],
+    ['151015', 'Upphandlare', 15, 0.45, ['G', 'H'], 0.5, 39400, 47500, 0.33, 39, 0.17],
+    ['151016', 'Handläggare medborgarservice', 11, 0.90, ['G'], 0.0, 43800, null, 0.40, 41, 0.03],
+    ['151017', 'Miljöhandläggare', 17, 0.80, ['H'], 0.0, 49200, null, 0.33, 43, 0.02],
+    ['151018', 'Jurist', 8, 1.00, ['J'], 0.0, 61400, null, 0.23, 51, 0.27],
+    ['151019', 'Arkivarie', 7, 0.70, ['F'], 0.0, 40200, null, 0.29, 44, 0.15],
+    ['151020', 'Nämndsekreterare', 8, 0.80, ['G'], 0.0, 52000, null, 0.29, 47, 0.24],
+    ['151023', 'Handläggare socialtjänst', 40, 0.85, ['F', 'G'], 0.7, 41600, 47500, 0.30, 47, -0.02],
+    ['151024', 'Handläggare skola', 40, 0.85, ['F', 'G'], 0.4, 41700, 46700, 0.41, 46, 0.26],
+    ['151025', 'Trafikhandläggare', 25, 0.55, ['G', 'H'], 0.4, 47500, 49900, 0.30, 47, 0.24],
+    ['151026', 'Handläggare fastighet', 15, 0.65, ['G'], 0.0, 51200, null, 0.30, 46, 0.21],
+    ['151090', 'Handläggare övrigt', 40, 0.75, ['G', 'H'], 0.4, 46200, 48500, 0.31, 43, 0.00],
+    ['152010', 'Administratör', 7, 0.85, ['C'], 0.0, 31200, null, 0.24, 41, 0.20],
+    ['152011', 'Ekonomiadministratör', 12, 0.90, ['D'], 0.0, 34300, null, 0.21, 47, 0.17],
+    ['152012', 'Löneadministratör', 30, 0.85, ['D', 'E'], 0.5, 32600, 35100, 0.28, 43, 0.19],
+    ['152013', 'Administratör kommunikation', 20, 0.90, ['D'], 0.0, 33100, null, 0.20, 45, 0.01],
+    ['152014', 'IT-administratör', 4, 0.75, ['C'], 0.0, 38300, null, 0.17, 48, 0.21],
+    ['152015', 'Administratör socialtjänst', 85, 0.90, ['D'], 0.0, 35600, null, 0.27, 43, 0.13],
+    ['152016', 'Administratör skola', 40, 0.90, ['C'], 0.0, 37800, null, 0.29, 43, 0.25],
+    ['152020', 'Administratör teknik och fastighet', 8, 0.85, ['C'], 0.0, 32500, null, 0.39, 39, 0.02],
+    ['152090', 'Administratör övrigt', 25, 0.75, ['C', 'D'], 0.5, 34200, 38400, 0.25, 42, 0.20],
+    ['204510', 'Psykolog', 14, 0.85, ['G'], 0.0, 48400, null, 0.34, 42, 0.20],
+    ['206011', 'Distriktssköterska', 9, 1.00, ['H'], 0.0, 43200, null, 0.39, 48, 0.15],
+    ['206014', 'Sjuksköterska äldreomsorg', 10, 1.00, ['H'], 0.0, 50000, null, 0.21, 51, -0.02],
+    ['206019', 'Skolsköterska', 25, 1.00, ['G'], 0.0, 46600, null, 0.22, 47, 0.25],
+    ['206090', 'Sjuksköterska', 80, 0.85, ['G'], 0.0, 40700, null, 0.37, 44, 0.14],
+    ['207008', 'Specialistundersköterska', 25, 1.00, ['E'], 0.0, 37900, null, 0.24, 45, 0.24],
+    ['207009', 'Undersköterska hemtjänst', 230, 0.75, ['D'], 0.0, 33700, null, 0.32, 42, 0.00],
+    ['207011', 'Undersköterska särskilt boende', 401, 0.85, ['D'], 0.0, 33200, null, 0.32, 44, 0.14],
+    ['207024', 'Vårdbiträde särskilt boende', 45, 0.80, ['B'], 0.0, 29000, null, 0.33, 39, 0.20],
+    ['207029', 'Vårdbiträde hemtjänst', 35, 0.70, ['B'], 0.0, 29600, null, 0.25, 37, 0.25],
+    ['207090', 'Biträdesarbete övrigt', 105, 0.65, ['B'], 0.0, 27300, null, 0.26, 37, 0.01],
+    ['301010', 'Arbetsterapeut', 25, 0.80, ['G'], 0.0, 40600, null, 0.20, 43, 0.11],
+    ['301011', 'Fysioterapeut', 20, 0.85, ['G'], 0.0, 44000, null, 0.33, 43, 0.17],
+    ['301012', 'Arbetsterapibiträde', 25, 0.80, ['D', 'E'], 0.4, 36000, 37800, 0.23, 43, 0.20],
+    ['301014', 'Logoped', 4, 1.00, ['F'], 0.0, 43300, null, 0.08, 46, 0.02],
+    ['351008', 'Socialsekreterare barn och unga', 65, 0.95, ['H'], 0.0, 39600, null, 0.39, 45, 0.20],
+    ['351009', 'Socialsekreterare ekonomiskt bistånd', 60, 0.90, ['G'], 0.0, 40500, null, 0.39, 43, 0.24],
+    ['351010', 'Socialsekreterare övrigt', 145, 0.80, ['G', 'H'], 0.3, 42600, 44900, 0.30, 45, 0.17],
+    ['351011', 'Fältsekreterare', 9, 0.70, ['F'], 0.0, 36200, null, 0.23, 46, -0.02],
+    ['351012', 'Socialsekreterare vuxna och LSS', 75, 0.85, ['G'], 0.0, 41700, null, 0.32, 46, 0.16],
+    ['351015', 'Behandlingsassistent', 30, 0.70, ['E'], 0.0, 35500, null, 0.36, 43, 0.15],
+    ['351016', 'Arbetsmarknadskonsulent', 14, 0.75, ['F'], 0.0, 41000, null, 0.21, 46, 0.11],
+    ['351031', 'Stödassistent gruppboende', 265, 0.75, ['D'], 0.0, 32300, null, 0.31, 43, 0.00],
+    ['351032', 'Stödassistent dagverksamhet', 60, 0.75, ['D'], 0.0, 33700, null, 0.24, 43, 0.18],
+    ['351033', 'Stödbiträde', 55, 0.65, ['B'], 0.0, 28100, null, 0.29, 37, 0.20],
+    ['351040', 'Personlig assistent', 30, 0.65, ['C'], 0.0, 30400, null, 0.29, 43, 0.03],
+    ['352010', 'Kurator', 25, 0.80, ['G'], 0.0, 46100, null, 0.27, 46, 0.01],
+    ['352090', 'Kurativt arbete övrigt', 4, 1.00, ['G'], 0.0, 39900, null, 0.24, 46, 0.19],
+    ['401009', 'Lärare grundskola F-3', 180, 0.95, ['F'], 0.0, 42100, null, 0.33, 43, 0.22],
+    ['401010', 'Lärare grundskola 4-6', 150, 0.70, ['F', 'G'], 0.2, 43500, 53700, 0.38, 45, 0.18],
+    ['401011', 'Lärare grundskola 7-9', 120, 0.65, ['F'], 0.0, 44500, null, 0.36, 45, 0.02],
+    ['401012', 'Lärare gymnasieskola', 100, 0.65, ['G'], 0.0, 47000, null, 0.32, 45, 0.27],
+    ['401013', 'Yrkeslärare gymnasieskola', 30, 0.55, ['G'], 0.0, 44600, null, 0.31, 45, 0.19],
+    ['401017', 'Specialpedagog', 45, 0.90, ['G'], 0.0, 50300, null, 0.27, 44, 0.03],
+    ['401018', 'SFI-lärare', 6, 0.85, ['G'], 0.0, 41800, null, 0.15, 49, -0.02],
+    ['402010', 'Förskollärare', 295, 0.95, ['F'], 0.0, 38600, null, 0.34, 44, 0.20],
+    ['402011', 'Lärare i fritidshem', 70, 0.60, ['F'], 0.0, 39300, null, 0.33, 45, 0.20],
+    ['402090', 'Lärararbete övrigt', 15, 0.80, ['E', 'F'], 0.4, 37700, 44500, 0.42, 43, 0.20],
+    ['403010', 'Barnskötare', 355, 0.95, ['C'], 0.0, 29600, null, 0.36, 41, 0.00],
+    ['403011', 'Dagbarnvårdare', 7, 1.00, ['D'], 0.0, 33600, null, 0.14, 44, 0.23],
+    ['403013', 'Instruktör', 13, 0.65, ['E'], 0.0, 36200, null, 0.55, 37, 0.22],
+    ['403014', 'Studie- och yrkesvägledare', 16, 0.75, ['F'], 0.0, 40000, null, 0.36, 44, 0.27],
+    ['403015', 'Lärarassistent', 20, 0.60, ['C'], 0.0, 33400, null, 0.31, 42, 0.01],
+    ['403016', 'Elevassistent', 195, 0.70, ['C', 'D'], 0.6, 30700, 32200, 0.30, 42, 0.26],
+    ['403090', 'Skolarbete övrigt', 12, 0.50, ['E'], 0.0, 34000, null, 0.26, 45, 0.27],
+    ['451011', 'Kulturskolelärare', 25, 0.75, ['E', 'F'], 0.3, 37600, 39500, 0.30, 44, 0.25],
+    ['451014', 'Museiarbete', 15, 0.70, ['C'], 0.0, 28000, null, 0.48, 35, 0.02],
+    ['451015', 'Bibliotekarie', 35, 0.75, ['F'], 0.0, 37000, null, 0.26, 42, 0.14],
+    ['451016', 'Biblioteksassistent', 4, 1.00, ['B'], 0.0, 30100, null, 0.28, 35, 0.04],
+    ['452010', 'Fritidskonsulent', 4, 0.50, ['E'], 0.0, 43500, null, 0.17, 45, 0.21],
+    ['452011', 'Fritidsledare', 75, 0.55, ['C', 'F'], 0.2, 32700, 36700, 0.35, 44, -0.02],
+    ['452014', 'Badpersonal', 13, 0.55, ['C'], 0.0, 32000, null, 0.26, 39, 0.16],
+    ['501010', 'Samhällsplanerare', 35, 0.70, ['H', 'I'], 0.3, 46100, 57400, 0.33, 47, 0.19],
+    ['501011', 'Bygglovshandläggare', 4, 1.00, ['H'], 0.0, 45200, null, 0.09, 45, 0.25],
+    ['501012', 'Byggnadsinspektör', 5, 0.00, ['H'], 0.0, 45800, null, 0.19, 35, 0.00],
+    ['501013', 'Miljöinspektör', 12, 0.65, ['H'], 0.0, 41400, null, 0.27, 45, 0.21],
+    ['502010', 'Systemutvecklare', 18, 0.55, ['G', 'H'], 0.6, 43700, 46100, 0.39, 45, 0.19],
+    ['502012', 'Trafikingenjör', 19, 0.40, ['I'], 0.0, 65600, null, 0.40, 50, 0.21],
+    ['502013', 'Fastighetsingenjör', 35, 0.40, ['G', 'H'], 0.4, 49700, 52200, 0.38, 44, 0.01],
+    ['502014', 'VA-ingenjör', 35, 0.45, ['G', 'H'], 0.6, 44400, 53700, 0.33, 45, 0.25],
+    ['503010', 'IT-tekniker', 16, 0.10, ['E'], 0.0, 34700, null, 0.30, 38, 0.22],
+    ['503012', 'Drifttekniker', 20, 0.00, ['E'], 0.0, 38400, null, 0.24, 48, 0.20],
+    ['503090', 'Tekniker övrigt', 14, 0.05, ['D'], 0.0, 37400, null, 0.21, 42, 0.02],
+    ['521012', 'Anläggningsarbetare', 13, 0.10, ['C'], 0.0, 34800, null, 0.37, 43, 0.24],
+    ['521013', 'Hantverkare', 6, 0.00, ['D'], 0.0, 34600, null, 0.26, 42, 0.16],
+    ['521015', 'Vaktmästare', 45, 0.20, ['B', 'C'], 0.3, 30700, 33200, 0.31, 37, 0.27],
+    ['521018', 'Trädgårdsarbetare', 19, 0.65, ['C', 'D'], 0.7, 31300, 33700, 0.27, 46, -0.02],
+    ['601010', 'Kock', 115, 0.70, ['C'], 0.0, 31500, null, 0.26, 40, 0.17],
+    ['651010', 'Lokalvårdare', 105, 0.85, ['A'], 0.0, 28300, null, 0.28, 38, 0.19],
+]);
+// Oförklarat gap för kvinnor (andel av lönen) per AID, i fyra blandade yrken med minst 40 personer.
+/** @type {Readonly<Record<string, number>>} */
+const _SD_GAP = Object.freeze({ '401011': -0.025, '401012': -0.04, '207090': -0.035, '601010': -0.03 });
+// Likvärdigt arbete: ett mansdominerat tekniskt yrke (hog) med högre lön än ett kvinnodominerat vårdyrke (lag) i
+// samma BAS-intervall.
+const _SD_LIKVARDIGT = Object.freeze({ hog: '503090', lag: '207011', bas: 'D' });
+
+function generateStortDemo() {
+    // Samma slags seedade slump som generateTestData, med ett eget frö: samma underlag vid varje anrop.
+    let seed = 5000;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const rndNorm = () => { let u = 0, v = 0; while (u === 0) u = rnd(); while (v === 0) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    const data = [];
+    for (const [aid, namn, n, andelKv, basLista, andelHog, nivaL, nivaH, spridning, medelalder] of _SD_YRKEN) {
+        const kvinnor = Math.round(n * andelKv);
+        const yrke = `${aid} ${namn}`;
+        const gap = _SD_GAP[aid] || 0;
+        const chefKod = aid.startsWith('10') ? ['C'] : null;
+        const personer = [];
+        for (let i = 0; i < n; i++) {
+            const kon = i < kvinnor ? 'kvinna' : 'man';
+            const alder = Math.max(20, Math.min(66, Math.round(medelalder + rndNorm() * 10)));
+            // Plats i yrkets högre intervall: äldre och män hamnar där något oftare.
+            const poang = rnd() - (arMan({ kon }) ? 0.12 : 0) - (alder - 44) * 0.008;
+            personer.push({ kon, alder, poang });
+        }
+        // Andelen andelHog i det högre intervallet, när yrket har två.
+        const iHogre = basLista.length > 1 ? new Set([...personer].sort((a, b) => a.poang - b.poang).slice(0, Math.round(n * andelHog))) : new Set();
+        for (const p of personer) {
+            const hogre = iHogre.has(p);
+            const bas = basLista[hogre ? 1 : 0];
+            const niva = hogre ? /** @type {number} */ (nivaH) : nivaL;
+            const alderseffekt = 0.92 + 0.16 * (1 - Math.exp(-(p.alder - 20) / 12));   // brant tidigt, flack sent
+            const konseffekt = arKvinna(p) ? 1 + gap : 1;
+            // P10–P90 är ungefär ±1,28 standardavvikelser: spridningen / 2,56 ger yrkets spridning. Bruset kapas vid
+            // ±2,5 standardavvikelser, så att ingen lön hamnar orimligt lågt i ett yrke med stor spridning.
+            const brus = Math.max(-2.5, Math.min(2.5, rndNorm())) * spridning / 2.56;
+            const lon = Math.round(niva * alderseffekt * konseffekt * (1 + brus));
+            data.push({ bas, yrke, aid, yrkeLabel: namn, lon, alder: p.alder, kon: p.kon, ansvarskoder: chefKod ? [...chefKod] : null });
+        }
+    }
+    // Ansvarskod (AID) för alla utom cheferna, som i det lilla demot: var 15:e man och var 30:e kvinna har
+    // ledningsansvar, var 15:e lärare är förstelärare och var 30:e person har ett särskilt uppdrag.
+    const raknare = { kvinna: 0, man: 0 };
+    let larare = 0;
+    data.forEach((r, i) => {
+        if (!r.ansvarskoder) {
+            const nr = ++raknare[r.kon];
+            let koder = [];
+            if ((r.kon === 'man' && nr % 15 === 0) || (r.kon === 'kvinna' && nr % 30 === 0)) koder = ['C'];
+            else if ((r.aid === '401011' || r.aid === '401012') && ++larare % 15 === 0) koder = ['1002'];
+            else if ((i + 1) % 30 === 0) koder = ['F'];
+            r.ansvarskoder = koder;
+        }
+        r.ansvarsgrupp = _anGrupp(r.ansvarskoder);
+        r.radnr = i + 2;   // som en fil med rubrik på rad 1
+    });
+    return data;
+}
+
+// ---- Påhittad jämförelsestatistik och ett ställningstagande ur demots löner ----
+// Statistiken har en rad per yrke och BAS-intervall, eftersom statistiken bara matchar en rad i samma intervall (eller
+// en rad utan intervall). Medianen är yrkets nivå i intervallet gånger (1 + påslaget). Var fjärde yrke har ett
+// påslag kring noll, så att ungefär en fjärdedel av grupperna ligger över statistiken och inte alla ser underbetalda ut. Ingen verklig källa efterliknas.
+const _sdAvrunda = (x, steg) => Math.round(x / steg) * steg;
+
+function generateStortDemoStatistik() {
+    // Eget frö: samma statistik vid varje anrop, oberoende av lönerna.
+    let seed = 126;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const rader = [];
+    for (const [aid, namn, , andelKv, basLista, , nivaL, nivaH, spridning, , paslag] of _SD_YRKEN) {
+        basLista.forEach((bas, i) => {
+            const niva = i === 0 ? nivaL : /** @type {number} */ (nivaH);
+            const median = _sdAvrunda(niva * (1 + paslag), 100);
+            const forskjutning = Math.floor(rnd() * 11) - 5;   // −5 … +5 procentenheter
+            rader.push({
+                aid: _normalizePolicyAid(aid), aidFull: `${aid} ${namn}`, bas,
+                median, p10: _sdAvrunda(median * (1 - 0.45 * spridning), 100), p90: _sdAvrunda(median * (1 + 0.55 * spridning), 100),
+                nKv: null, nMa: null, andelKv: Math.max(0, Math.min(100, Math.round(andelKv * 100) + forskjutning)),
+            });
+        });
+    }
+    return rader;
+}
+
+// Ställningstagandet per BAS-intervall A–K räknas ur demots löner: medianen avrundad till 500 kr, P10 och P90 avrundade
+// till 100 kr; ett intervall under k-tröskeln (i dag K) får närmaste lägre intervalls rad gånger 1,10. I några stora
+// intervall ligger ställningstagandet 4–5 % över demots median, så att grupper hamnar under det och Prioritering och
+// Lönepolitik har något att visa.
+/** @type {Readonly<Record<string, number>>} */
+const _SD_POLICYLYFT = Object.freeze({ C: 1.04, F: 1.05, H: 1.04 });
+// k är den inställda tröskeln (appen skickar kInstalld()): raderna står i exporterna.
+function _sdStallningstagande(data, k = 10) {
+    /** @type {{aid: null, bas: string, p10: number, med: number, p90: number}|null} */
+    let senast = null;   // närmaste lägre intervall som räknats ur sina egna löner
+    return _SD_BAS.flatMap(bas => {
+        const loner = data.filter(r => r.bas === bas).map(r => r.lon);
+        // En rad ur färre än k personer skulle röja gruppens löner (S4): den stegas i stället från närmaste lägre rad.
+        if (loner.length < k) return senast ? [{ aid: null, bas, p10: _sdAvrunda(senast.p10 * 1.1, 100),
+            med: _sdAvrunda(senast.med * 1.1, 500), p90: _sdAvrunda(senast.p90 * 1.1, 100) }] : [];
+        senast = {
+            aid: null, bas,
+            p10: _sdAvrunda(quantile(loner, 0.1), 100),
+            med: _sdAvrunda(median(loner) * (_SD_POLICYLYFT[bas] || 1), 500),
+            p90: _sdAvrunda(quantile(loner, 0.9), 100),
+        };
+        return [senast];
+    });
+}
+
+    return { generateTestData, generateDemoData, generateStortDemo, generateStortDemoStatistik, _sdStallningstagande };
+})();
+const generateTestData = __mirrorDemodata.generateTestData;
+const generateDemoData = __mirrorDemodata.generateDemoData;
+const generateStortDemo = __mirrorDemodata.generateStortDemo;
+const generateStortDemoStatistik = __mirrorDemodata.generateStortDemoStatistik;
+const _sdStallningstagande = __mirrorDemodata._sdStallningstagande;
 /* eslint-enable */

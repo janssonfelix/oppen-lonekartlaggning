@@ -998,7 +998,7 @@ function renderRegressionCard() {
     `; tillampaDataStil(wrap);
 
     // #lifecycle: rendera sekundäranalys efter att placeholder finns i DOM
-    renderLifecycleAnalysis();
+    renderLifecycleAnalysis(r);
 
     // Per-BAS-diagram + växel för statistiska detaljer (pedagogik-omgången).
     // Diagrammet ritas efter innerHTML så containern finns; tabellen är kvar
