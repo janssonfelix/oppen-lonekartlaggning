@@ -22,6 +22,7 @@
  */
 import { median, percentilintervall } from './stat.js';
 import { slumpFor } from './rng.js';
+import { konsMedianerUrLoner } from './struktur.js';
 
 /** Verktygets egen storleksgräns för statusen, i procent av mäns lön. */
 export const STORLEKSGRANS = 3;
@@ -146,8 +147,7 @@ export function slumpensGranser(kv, ma) {
  * @param {{golv?: number, granser?: {lag:number, hog:number}|null}} [val]  `granser` om de redan är räknade
  */
 export function bedomSkillnad(kv, ma, { golv = 10, granser } = {}) {
-    const medKv = median(kv), medMa = median(ma);
-    const kvot = medMa > 0 ? medKv / medMa * 100 : NaN, avstand = Math.abs(100 - kvot);
+    const kvot = konsMedianerUrLoner(kv, ma).kvotPct ?? NaN, avstand = Math.abs(100 - kvot);
     const direktiv = direktivMarkering(kvot);
     if (kv.length < golv || ma.length < golv || kv.length < 2 || ma.length < 2 || !isFinite(kvot))
         return { kvot, avstand, sakerstalld: null, niva: /** @type {'ejbedomd'} */ ('ejbedomd'), direktiv, granser: null };

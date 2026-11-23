@@ -4071,6 +4071,7 @@ const __mirrorStatus = (() => {
     const median = __mirrorStat.median;
     const percentilintervall = __mirrorStat.percentilintervall;
     const slumpFor = __mirrorRng.slumpFor;
+    const konsMedianerUrLoner = __mirrorStruktur.konsMedianerUrLoner;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4094,6 +4095,7 @@ const __mirrorStatus = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
  */
+
 
 
 /** Verktygets egen storleksgräns för statusen, i procent av mäns lön. */
@@ -4219,8 +4221,7 @@ function slumpensGranser(kv, ma) {
  * @param {{golv?: number, granser?: {lag:number, hog:number}|null}} [val]  `granser` om de redan är räknade
  */
 function bedomSkillnad(kv, ma, { golv = 10, granser } = {}) {
-    const medKv = median(kv), medMa = median(ma);
-    const kvot = medMa > 0 ? medKv / medMa * 100 : NaN, avstand = Math.abs(100 - kvot);
+    const kvot = konsMedianerUrLoner(kv, ma).kvotPct ?? NaN, avstand = Math.abs(100 - kvot);
     const direktiv = direktivMarkering(kvot);
     if (kv.length < golv || ma.length < golv || kv.length < 2 || ma.length < 2 || !isFinite(kvot))
         return { kvot, avstand, sakerstalld: null, niva: /** @type {'ejbedomd'} */ ('ejbedomd'), direktiv, granser: null };
