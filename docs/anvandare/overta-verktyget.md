@@ -56,7 +56,7 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
 **fork** av repot, inte i den byggda filen.
 
 1. Läs [`arkitekturbeslut.md`](../utveckling/arkitekturbeslut.md). Besluten om
-   dataskyddet — inga nätverksanrop, ingen lagring, k-anonymitet i det som lämnar verktyget — är det som
+   dataskyddet — inga nätverksanrop, ingen lagring, minsta gruppstorlek i det som lämnar verktyget — är det som
    gör att dokumenten i `docs/dataskydd/` fortsätter att gälla. Behåll dem, så gäller risk- och
    sårbarhetsanalysen fortfarande för din version, med en anteckning om vad du ändrat.
 2. Ändra i `src/`, aldrig i `dist/`. Lägg till test. Kör `npm run build:app`, `npm run test:full`,

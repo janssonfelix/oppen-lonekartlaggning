@@ -2,9 +2,14 @@
 
 Minsta gruppstorlek för redovisning, k-tröskeln, är skyddet S4 i [`skydd.md`](skydd.md): inget som lämnar verktyget
 redovisar ett lönemått för en grupp, eller ett könsuppdelat lönemått för ett kön, med färre personer än den inställda
-tröskeln. Det här dokumentet bär den **gällande lydelsen**: hur tröskeln läses, hur det som utelämnas redovisas, vägen
-ut, undantagen, golven, inställningen och vakterna. Koden är sanningen; där dokumentet och koden skiljer sig är det
-dokumentet som ska rättas.
+tröskeln. Metoden är tröskelvärdesregeln (minsta gruppstorlek) för tabeller, Rådet för den officiella statistiken,
+[*Handbok i statistisk röjandekontroll*](https://scb.se/contentassets/0cd92207266d40eb8829244d51d90b94/handbok-i-statistisk-rojandekontroll.pdf)
+(2015, uppdaterad 2018), avsnitt 5.1, kompletterad med skyddet mot differenser inom en fil (avsnitt 9). Det är inte
+k-anonymitet, som är ett krav på en mikrodatafil (L. Sweeney, "k-anonymity: a model for protecting privacy",
+*International Journal of Uncertainty, Fuzziness and Knowledge-Based Systems* 10(5), 2002); verktyget lämnar inte ut
+mikrodata, och det användaren läser säger *minsta gruppstorlek*. Det här dokumentet bär den **gällande lydelsen**: hur
+tröskeln läses, hur det som utelämnas redovisas, vägen ut, undantagen, golven, inställningen och vakterna. Koden är
+sanningen; där dokumentet och koden skiljer sig är det dokumentet som ska rättas.
 
 Dokumentet är inte beslutsloggen. Varför det är så här, vad som övervägdes och när det beslutades står i besluten i
 [`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-12, 14, 23, 38, 47, 48, 51, 57, 69, 70 och 102. Diagrammens del — figurens

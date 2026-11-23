@@ -86,7 +86,7 @@ fyller i (ADR-79).
 
 | Moment | Artikel | Verktyget skriver | Status |
 |---|---|---|---|
-| k-anonymitet | uppgiftsminimering art. 5.1 c och inbyggt dataskydd art. 25, med skäl 26 som bakgrund; k = 10 är verktygets eget val | *uppgiftsminimering och inbyggt dataskydd*; inte "striktare än GDPR" | Förslag |
+| Minsta gruppstorlek | uppgiftsminimering art. 5.1 c och inbyggt dataskydd art. 25, med skäl 26 som bakgrund; k = 10 är verktygets eget val | *uppgiftsminimering och inbyggt dataskydd*; inte "striktare än GDPR" | Förslag |
 | Uppgifts- och lagringsminimering | art. 5.1 c, 5.1 e | *uppgiftsminimering*, *lagringsminimering* | Förslag |
 | Panelen *Vad lagras?* | inbyggt dataskydd art. 25 (art. 12–14 gäller information till registrerade, inte till användaren) | *inbyggt dataskydd* | Förslag |
 | Rensa all data | lagringsminimering art. 5.1 e och dataskydd som standard art. 25.2; rätten till radering (art. 17) utövas mot källsystemet | *rensning*, inte *rätt till radering* | Förslag |

@@ -94,7 +94,7 @@ Det som exporteras ligger sedan utanför verktyget. Vad filerna innehåller och 
   har en kontrollsumma (SHA-256) i `RELEASE.txt`; bygget är reproducerbart. Signaturen styrker
   äktheten, kontrollsumman bara att filen inte skadats.
 
-## 3. Små grupper (k-anonymitet)
+## 3. Små grupper: tröskelvärdesregeln (minsta gruppstorlek)
 
 **Regeln gäller det som lämnar verktyget (ADR-51, beslut 2026-10-29).** På skärmen visas alla
 grupper: den som arbetar i verktyget har redan lönefilen. Det som lämnar verktyget ritas och räknas i ett
