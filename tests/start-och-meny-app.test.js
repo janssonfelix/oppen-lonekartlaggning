@@ -51,7 +51,7 @@ describe('#1 röktest: boot', () => {
         expect(typeof win.__renderTabContent).toBe('function');
         expect(typeof win.__state).toBe('object');
         expect(typeof win.__loadDemoData).toBe('function');
-        expect(typeof win.__methodAppendixData).toBe('function');
+        expect(typeof win.__metodbilaga).toBe('function');
     });
 
     it('storage-tripwire är aktiv (kastar vid icke-tillåten skrivning)', () => {
@@ -1198,7 +1198,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         // Diagram: det tömda elementet sitter inte kvar i sidan och har inget att exportera.
         w.__tomt = kvartiler;
         expect(kvartiler.isConnected).toBe(false);
-        expect(w.eval('_chartExportUnderlag(window.__tomt)')).toBeNull();
+        expect(w.eval('_diagramexportUnderlag(window.__tomt)')).toBeNull();
         expect(w.eval('exportSakra(window.__tomt)')).toBe(false);
         // ZIP-exporten tar "allt som är ritat": den ritar först om varje flik som ritats förut men inte är aktuell.
         const zip = w.eval('zipDiagram().map(el => el.id)');   // i exportläget: varje flik som ritats ritas om före uppräkningen

@@ -26,8 +26,8 @@
 // behållaren har ingen figur (felläge, rensad) eller alla punkter hör till små grupper — lämnar ingenting
 // verktyget: menyn säger det i sin felrad.
 //
-// Underlaget (_chartExportUnderlag — där vyn tillfrågas om små grupper) bestäms EN gång per export, i
-// chartExportRun, och lämnas vidare till innehållet och stämpeln: de kan då aldrig komma ur olika svar.
+// Underlaget (_diagramexportUnderlag — där vyn tillfrågas om små grupper) bestäms EN gång per export, i
+// exporteraDiagram, och lämnas vidare till innehållet och stämpeln: de kan då aldrig komma ur olika svar.
 // Rensas eller ritas diagrammet om medan bilden görs laddas ingenting ner.
 // ====================================================================
 import { EXPORT_SKAL, exportSkal, figurTillTabell, harleddaLager, harlettNot, urvalBeskrivning, utanSmaGrupper } from '../lib/figur.js';
@@ -59,22 +59,22 @@ function _exportSkalFor(behallare) {
 /** Får diagrammet i behållaren lämna verktyget (meny, bild, diagramdata, ZIP, utskrift)? */
 export function exportTillaten(behallare) { return _exportSkalFor(behallare) == null; }
 
-const CHART_EXPORT_STORLEKAR = {
+const DIAGRAMEXPORT_STORLEKAR = {
     'png-presentation': [1920, 1080],
     'png-dokument':     [1600, 900],
     svg:                [1600, 900]
 };
-let _chartExportSeq = 0;
+let _diagramexportNr = 0;
 
-function _chartExportEl(graphDiv) {
+function _diagramexportElement(graphDiv) {
     return typeof graphDiv === 'string' ? document.getElementById(graphDiv) : graphDiv;
 }
-function _chartExportSlug(s) {
+function _diagramexportFilnamnsdel(s) {
     return String(s || '').normalize('NFC').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 }
 
 /** Diagrammets rubrik: närmaste h2/h3 i samma kort, annars elementets id. En kopia i Alla diagram har källans rubrik. */
-export function chartExportTitle(gd) {
+export function diagramexportRubrik(gd) {
     const egen = gd.closest ? gd.closest('.ut-kopia')?.querySelector(':scope > .ut-kopia-rubrik') : null;
     if (egen && egen.textContent.trim()) return egen.textContent.replace(/\s+/g, ' ').trim();
     const kort = gd.closest ? gd.closest('.card') : null;
@@ -84,37 +84,37 @@ export function chartExportTitle(gd) {
 }
 
 /** <DEMO_>Flik_Rubrik_ÅÅÅÅ-MM-DD.ext (en kopia i Alla diagram: källans flik) */
-function chartExportFilename(gd, ext, datum = new Date()) {
+function diagramexportFilnamn(gd, ext, datum = new Date()) {
     const kalla = typeof diagramKopiaKalla === 'function' ? diagramKopiaKalla(gd) : null;
     const panel = (kalla || gd).closest ? (kalla || gd).closest('.view-panel') : null;
     const flik = panel && panel.id ? panel.id.replace(/^view-/, '') : 'diagram';
     const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
     const dag = idagDatum(datum);
-    const titel = _chartExportSlug(chartExportTitle(gd)) || 'Diagram';
-    return `${state.isDemo ? 'DEMO_' : ''}${_chartExportSlug(Flik)}_${titel}_${dag}.${ext}`;
+    const titel = _diagramexportFilnamnsdel(diagramexportRubrik(gd)) || 'Diagram';
+    return `${state.isDemo ? 'DEMO_' : ''}${_diagramexportFilnamnsdel(Flik)}_${titel}_${dag}.${ext}`;
 }
 
 // Svensk Excel läser "89.73" som text eller datum ("12.5" blir 12 maj). Decimaltal
 // avrundas därför till två decimaler och skrivs med decimalkomma; heltal lämnas.
-function _chartExportCell(v) {
+function _diagramexportCell(v) {
     if (typeof v !== 'number' || Number.isInteger(v) || !isFinite(v)) return v;
     return String(Math.round(v * 100) / 100).replace('.', ',');
 }
 
 // Har ritaFigur ritat i behållaren? Ja om den bär en figur, eller har burit en (felläge eller rensad: menyn står kvar
 // utan figur, och svarar då att det inte finns något att exportera).
-function _chartExportKarna(gd) {
+function _diagramexportKarna(gd) {
     return !!gd && (!!gd._figur || _rfHarRitat(gd));
 }
 
 /** Behållaren som gäller nu: en omritning i exportgrinden kan ha ersatt den med en ny med samma id. */
-function _chartExportAktuell(gd) { return gd && gd.isConnected === false && gd.id ? (document.getElementById(gd.id) || gd) : gd; }
+function _diagramexportAktuell(gd) { return gd && gd.isConnected === false && gd.id ? (document.getElementById(gd.id) || gd) : gd; }
 
 /** Det som får exporteras ur ett diagram ritat med diagramkärnan, eller null när inget finns att exportera.
  *  Går alltid genom exportläget (ADR-51): figuren läses med den inställda tröskeln. Bilden görs asynkront av dem som
- *  anropar (chartExportRun, diagramTillBild), som själva står i exportläget tills bilden är klar. */
-function _chartExportUnderlag(...a) { return medExportLage(() => _chartExportUnderlagExport.apply(null, /** @type {any} */ (a))); }
-function _chartExportUnderlagExport(gd) {
+ *  anropar (exporteraDiagram, diagramTillBild), som själva står i exportläget tills bilden är klar. */
+function _diagramexportUnderlag(...a) { return medExportLage(() => _diagramexportUnderlagExport.apply(null, /** @type {any} */ (a))); }
+function _diagramexportUnderlagExport(gd) {
     // Ett diagram som inte får lämna verktyget (markeraUtanExport) har inget att exportera, vilken väg som än frågar.
     if (!exportTillaten(gd)) return null;
     // Exportgrinden (23-exportgrind.js): diagrammets flik ska vara ritad med det som gäller nu. Ett diagram som en
@@ -131,13 +131,13 @@ function _chartExportUnderlagExport(gd) {
 
 /** Urvalet i diagrammet som text, en del per aktiv dimension (t.ex. ['utan BAS A, BAS N', '10–50 personer i
  *  gruppen']), samma text som noten under diagrammet; [] utan urval. */
-function _chartExportDolt(ut) {
+function _diagramexportDolt(ut) {
     return ut && ut.filter ? urvalBeskrivning(ut.figur, ut.filter, { visaSma: !!ut.visaSma }) : [];
 }
 
 /** Meningarna om härledda lager (harleddAv) som inte ritas i exportmenyns bild: med urvalet har källagren färre än
  *  minN synliga punkter. Samma text som noten under diagrammet; [] utan urval eller utan sådana lager. */
-function _chartExportHarlett(ut) {
+function _diagramexportHarlett(ut) {
     if (!ut || !ut.filter) return [];
     return harlettNot(harleddaLager(ut.bild || ut.figur, ut.filter, { visaSma: !!ut.visaSma })).utelamnade;
 }
@@ -145,22 +145,22 @@ function _chartExportHarlett(ut) {
 /** Diagramdata med en spårbarhetsrad överst (ADR-13). Diagram ritade med diagramkärnan (ADR-39) går genom
  *  figurTillTabell — alla serier, också de som dolts via förklaringen; en låda blir statistik per kategori.
  *  Finns inget att exportera: inga rader alls.
- *  `underlag` är exportens underlag när anroparen redan har bestämt det (chartExportRun); utelämnat bestäms
+ *  `underlag` är exportens underlag när anroparen redan har bestämt det (exporteraDiagram); utelämnat bestäms
  *  det här. Stämpeln får samma svar om små grupper som innehållet. */
-function chartExportRows(gd, underlag) {
-    const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
+function diagramexportRader(gd, underlag) {
+    const ut = underlag === undefined ? _diagramexportUnderlag(gd) : underlag;
     if (!ut || (ut.underlag && ut.underlag.tom)) return [];
-    gd = _chartExportAktuell(gd);
+    gd = _diagramexportAktuell(gd);
     const medSma = ut.visaSma;
     // Med ett underlag är diagramdatan figuren för valet (det som visas), och raden "Räknat för" säger vilket.
     const kalla = ut.underlag && ut.underlag.figur ? ut.underlag.figur : ut.figur;
-    const rader = figurTillTabell(medSma ? kalla : utanSmaGrupper(kalla)).map(r => r.map(_chartExportCell));
+    const rader = figurTillTabell(medSma ? kalla : utanSmaGrupper(kalla)).map(r => r.map(_diagramexportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
     // En figur med en punkt per person (figurens `individer`) ger en rad per person: filen säger det på rad 2.
     const individer = ut.figur && ut.figur.individer === true;
     // Urvalet i diagrammet döljer bara märken i bilden: datan har alla rader, och raden säger vad bilden döljer.
-    const dolt = _chartExportDolt(ut);
-    return [[`${chartExportTitle(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
+    const dolt = _diagramexportDolt(ut);
+    return [[`${diagramexportRubrik(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
             ...(individer ? [[kIndividRad()]] : []),
             ...(beskrivning ? [[`Urval: ${beskrivning}`]] : []),
             ...(ut.underlag ? [[`Räknat för: ${ut.underlag.text}`]] : []),
@@ -169,12 +169,12 @@ function chartExportRows(gd, underlag) {
 
 /** Rubrik och fotrad till en exporterad bild av ett kärnritat diagram: bilden ska säga själv vad den visar när den
  *  klistras in i ett dokument. Foten: verktyget och dagens datum, och urvalet om vyn har angett ett.
- *  `dolt`: urvalet i diagrammet som text (_chartExportDolt; bara exportmenyns bild, aldrig diagramTillBild).
- *  `harlett`: härledda lager som inte ritas med urvalet (_chartExportHarlett).
+ *  `dolt`: urvalet i diagrammet som text (_diagramexportDolt; bara exportmenyns bild, aldrig diagramTillBild).
+ *  `harlett`: härledda lager som inte ritas med urvalet (_diagramexportHarlett).
  *  `underlag`: valet när diagrammet är räknat för en del av personerna (bara exportmenyns bild). Vyns anteckning
  *  (exportAnteckning) gäller hela underlaget och står då inte med.
  *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] @param {string} [underlag] */
-function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
+function _diagramexportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
     const dag = idagDatum(datum);
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
     // Ett zoomat diagram exporteras som det visas: fotraden säger att bilden är ett utsnitt.
@@ -184,12 +184,12 @@ function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], 
     const underlagText = underlag ? ` · Räknat för: ${underlag}` : '';
     const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join('; ')}` : '';
     const harlettText = (harlett || []).map(t => ` · ${String(t).replace(/\.$/, '')}`).join('');
-    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
+    return { rubrik: diagramexportRubrik(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
 }
 
 /** Bär elementet ett ritat diagram med något att visa? */
 export function diagramRitat(el) {
-    return !!el && !!_chartExportUnderlag(el);
+    return !!el && !!_diagramexportUnderlag(el);
 }
 
 /** Ett ritat diagram som PNG (data-URL) — den enda vägen till en diagrambild för rapportunderlag, ZIP, utskrift
@@ -201,35 +201,35 @@ async function _diagramTillBildExport(el, val) {
     const { bredd, hojd, utanRubrik = false } = val || {};
     const skal = _exportSkalFor(el);
     if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
-    const ut = _chartExportUnderlag(el);
-    el = _chartExportAktuell(el);
+    const ut = _diagramexportUnderlag(el);
+    el = _diagramexportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     // Användarens urval i diagrammet (ut.filter) och underlaget (ut.underlag) följer INTE med: rapporten, utskriften,
     // ZIP-filen och rapportunderlaget visar alltid hela diagrammet, räknat för hela underlaget.
-    const url = await figurTillBild(ut.hel || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
+    const url = await figurTillBild(ut.hel || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _diagramexportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
     return url;
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-export function _chartExportImage(...a) { return medExportLage(() => __chartExportImageExport.apply(null, /** @type {any} */ (a))); }
-async function __chartExportImageExport(gd, val, underlag) {
-    const [width, height] = CHART_EXPORT_STORLEKAR[val];
+export function _diagramexportBild(...a) { return medExportLage(() => __diagramexportBildExport.apply(null, /** @type {any} */ (a))); }
+async function __diagramexportBildExport(gd, val, underlag) {
+    const [width, height] = DIAGRAMEXPORT_STORLEKAR[val];
     const format = val === 'svg' ? 'svg' : 'png';
     // Originalfiguren med visaSma enligt vyn och de serier användaren dolt: samma bild som på skärmen,
     // utan små grupper. Meningen om sänkt tröskel lägger figurTillSvg dit.
-    const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
-    gd = _chartExportAktuell(gd);
+    const ut = underlag === undefined ? _diagramexportUnderlag(gd) : underlag;
+    gd = _diagramexportAktuell(gd);
     if (!ut || (ut.underlag && ut.underlag.tom)) throw new Error('Det finns inget att exportera i diagrammet.');
     // Exportmenyn ritar diagrammet som det visas: också med användarens urval och underlag, som fotraden då namnger.
     const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter,
-        ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut), _chartExportHarlett(ut), ut.underlag ? ut.underlag.text : '') });
+        ..._diagramexportRubrikFot(gd, new Date(), _diagramexportDolt(ut), _diagramexportHarlett(ut), ut.underlag ? ut.underlag.text : '') });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
     // lämnar bilden av den gamla inte verktyget.
     if (gd._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
     const a = document.createElement('a');
     a.href = url;
-    a.download = chartExportFilename(gd, format);
+    a.download = diagramexportFilnamn(gd, format);
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
@@ -238,36 +238,36 @@ async function __chartExportImageExport(gd, val, underlag) {
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function chartExportRun(...a) { return medExportLage(() => _chartExportRunExport.apply(null, /** @type {any} */ (a))); }
-function _chartExportRunExport(gd, val) {
+function exporteraDiagram(...a) { return medExportLage(() => _exporteraDiagramExport.apply(null, /** @type {any} */ (a))); }
+function _exporteraDiagramExport(gd, val) {
     // Underlaget bestäms här, en gång (ett anrop av vyns exportMedSma).
-    const underlag = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : undefined;
-    gd = _chartExportAktuell(gd);
+    const underlag = _diagramexportKarna(gd) ? _diagramexportUnderlag(gd) : undefined;
+    gd = _diagramexportAktuell(gd);
     // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     // Räknat för ett underlag som inte går att rita (inga personer, eller vyns beräkning gav ingen figur): inget att exportera.
     if (underlag && underlag.underlag && underlag.underlag.tom) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
-    if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag)));
+    if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(diagramexportRader(gd, underlag)));
     if (val === 'data-csv') {
-        return Promise.resolve(_laddaNedCSV(chartExportRows(gd, underlag), chartExportFilename(gd, 'csv').replace(/\.csv$/, '')));
+        return Promise.resolve(_laddaNedCSV(diagramexportRader(gd, underlag), diagramexportFilnamn(gd, 'csv').replace(/\.csv$/, '')));
     }
-    return _chartExportImage(gd, val, underlag);
+    return _diagramexportBild(gd, val, underlag);
 }
 
 /** Lägger exportknappen i diagrammets övre högra hörn. Idempotent. */
-export function _attachChartExport(graphDiv) {
-    const gd = _chartExportEl(graphDiv);
+export function _laggTillDiagramexport(graphDiv) {
+    const gd = _diagramexportElement(graphDiv);
     if (!gd || gd._chartExportAttached || !gd.parentElement) return;
     if (!exportTillaten(gd)) return;
     gd._chartExportAttached = true;
     const host = gd.parentElement;
     host.classList.add('chart-export-host');
-    const menyId = `chart-export-${++_chartExportSeq}`;
+    const menyId = `chart-export-${++_diagramexportNr}`;
     const wrap = document.createElement('div');
     wrap.className = 'chart-export';
     wrap.innerHTML =
         `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${menyId}" `
-        + `aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon('laddaNed', 14)} Exportera diagrammet</button>`
+        + `aria-label="Exportera diagrammet ${esc(diagramexportRubrik(gd))}">${ikon('laddaNed', 14)} Exportera diagrammet</button>`
         + `<div class="chart-export-meny" id="${menyId}" hidden>`
         + '<button type="button" data-chart-export="png-presentation">PNG, presentation (1920 × 1080)</button>'
         + '<button type="button" data-chart-export="png-dokument">PNG, dokument (1600 × 900)</button>'
@@ -280,7 +280,7 @@ export function _attachChartExport(graphDiv) {
     host.insertBefore(wrap, gd);
 }
 
-function _chartExportStang(utom) {
+function _diagramexportStang(utom) {
     document.querySelectorAll('.chart-export-meny:not([hidden])').forEach(m => {
         if (m === utom) return;
         /** @type {HTMLElement} */ (m).hidden = true;
@@ -296,7 +296,7 @@ export function uppstartDiagramexport() {
         if (btn) {
             const meny = /** @type {HTMLElement} */ (/** @type {HTMLElement} */ (btn.parentElement).querySelector('.chart-export-meny'));
             const oppna = /** @type {HTMLElement} */ (meny).hidden;
-            _chartExportStang(meny);
+            _diagramexportStang(meny);
             /** @type {HTMLElement} */ (meny).hidden = !oppna;
             btn.setAttribute('aria-expanded', String(oppna));
             if (oppna) meny.querySelector('button')?.focus();
@@ -307,9 +307,9 @@ export function uppstartDiagramexport() {
             const wrap = /** @type {HTMLElement} */ (val.closest('.chart-export'));
             const fel = /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-fel'));
             /** @type {HTMLElement} */ (fel).hidden = true;
-            chartExportRun(wrap._gd, val.getAttribute('data-chart-export'))
+            exporteraDiagram(wrap._gd, val.getAttribute('data-chart-export'))
                 .then(() => {
-                    _chartExportStang();
+                    _diagramexportStang();
                     /** @type {HTMLInputElement} */ (wrap.querySelector('.chart-export-btn'))?.focus();   // fokus tillbaka dit man var
                 })
                 .catch(err => {
@@ -319,7 +319,7 @@ export function uppstartDiagramexport() {
             return;
         }
         // En tabells exportmeny (.tabell-export) har egna knappar med egna lyssnare: menyn stängs när ett val gjorts.
-        if (!/** @type {HTMLElement} */ (e.target).closest('.chart-export') || /** @type {HTMLElement} */ (e.target).closest('.tabell-export .chart-export-meny button')) _chartExportStang();
+        if (!/** @type {HTMLElement} */ (e.target).closest('.chart-export') || /** @type {HTMLElement} */ (e.target).closest('.tabell-export .chart-export-meny button')) _diagramexportStang();
     });
     // Stäng menyn när tangentbordsfokus lämnar den (Tab ut).
     document.addEventListener('focusout', e => {
@@ -327,13 +327,13 @@ export function uppstartDiagramexport() {
         if (!wrap) return;
         if (e.relatedTarget && wrap.contains(/** @type {Node} */ (e.relatedTarget))) return;
         const meny = wrap.querySelector('.chart-export-meny');
-        if (meny && !/** @type {HTMLElement} */ (meny).hidden) _chartExportStang();
+        if (meny && !/** @type {HTMLElement} */ (meny).hidden) _diagramexportStang();
     });
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
         const oppen = document.querySelector('.chart-export-meny:not([hidden])');
         if (!oppen) return;
-        _chartExportStang();
+        _diagramexportStang();
         /** @type {HTMLElement} */ (/** @type {HTMLInputElement} */ (oppen.parentElement).querySelector('.chart-export-btn'))?.focus();
     });
 }

@@ -14,7 +14,7 @@ import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
 import { _kSanktNot, kInstalld, kStampel, kTroskel, statGolv } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { T } from './09-termer.js';
-import { _chartExportImage, diagramRitat, diagramTillBild } from './11-diagramexport.js';
+import { _diagramexportBild, diagramRitat, diagramTillBild } from './11-diagramexport.js';
 import { getData, state } from './12-tillstand.js';
 import { bedomningUnderlag } from './13-oversikt.js';
 import { medExportLage } from './23-exportgrind.js';
@@ -237,7 +237,7 @@ async function _kopieraRapportDiagramExport(id) {
         } catch (_e) { /* nekat — ladda ner i stället */ }
     }
     try {
-        await _chartExportImage(gd, 'png-dokument');
+        await _diagramexportBild(gd, 'png-dokument');
         return 'nedladdat';
     } catch (_e) {
         return 'fel';

@@ -206,7 +206,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
             expect(d.getElementById(id).querySelector(':scope > svg').getAttribute('aria-label'), id).not.toContain(gap);
         }
         // Exporterad diagramdata är det som ritats.
-        const rader = w.__chartExportRows(d.getElementById('chart-kon-boxplot')).map(r => r.join(' | ')).join('\n');
+        const rader = w.__diagramexportRader(d.getElementById('chart-kon-boxplot')).map(r => r.join(' | ')).join('\n');
         expect(harNagon(normalisera(rader), TRE_MAN)).toEqual([]);
     });
     it('ett valt BAS med 30 kvinnor och en man: samma regel som för hela urvalet (exportläget)', () => {

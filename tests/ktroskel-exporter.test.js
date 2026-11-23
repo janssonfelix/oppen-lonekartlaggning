@@ -64,13 +64,13 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         expect(rader().at(-1)).toBe('Minsta gruppstorlek för redovisning: 10.');
         kopieraKnapp.click();
         expect(kopierat).not.toContain('Minsta gruppstorlek');           // vid standard: en kopierad tabell klistras in som den är
-        expect(w.__chartExportRows(d.getElementById('chart-explore'))[0][0]).not.toContain('undantag');
+        expect(w.__diagramexportRader(d.getElementById('chart-explore'))[0][0]).not.toContain('undantag');
         kryss(true);
         csvKnapp.click();
         expect(rader().at(-1)).toBe(`Minsta gruppstorlek för redovisning: 10. ${UNDANTAG_UT}`);
         kopieraKnapp.click();
         expect(kopierat.split('\n').at(-1)).toBe(`Minsta gruppstorlek för redovisning: 10. ${UNDANTAG_UT}`);
-        expect(w.__chartExportRows(d.getElementById('chart-explore'))[0][0]).toContain(UNDANTAG_UT);
+        expect(w.__diagramexportRader(d.getElementById('chart-explore'))[0][0]).toContain(UNDANTAG_UT);
         // Löneöversikten ligger i samma flik men följer inte rutan
         expect(w.eval("_kUndantagFor(document.getElementById('rapport-table'))")).toBe('');
     });
@@ -84,8 +84,8 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         };
         const lv = gd('chart-lv-test', 'view-likvardighet');
         const annan = gd('chart-annan-test', 'view-struktur');
-        expect(w.__chartExportRows(lv)[0][0]).toContain(UNDANTAG_LV);
-        expect(w.__chartExportRows(annan)[0][0]).not.toContain('undantag');
+        expect(w.__diagramexportRader(lv)[0][0]).toContain(UNDANTAG_LV);
+        expect(w.__diagramexportRader(annan)[0][0]).not.toContain('undantag');
     });
     it('notisen efter export nämner varken aggregering eller gruppstorlek', () => {
         const w = fonsterKon(null);

@@ -23,7 +23,7 @@
 // ====================================================================
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _rfBehallare, _rfExportFigur, rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { chartExportTitle, exportTillaten } from './11-diagramexport.js';
+import { diagramexportRubrik, exportTillaten } from './11-diagramexport.js';
 import { getData } from './12-tillstand.js';
 import { _egFlikFor, _exportDjup, _ritadVid, exportSakra, flikInaktuell, iExportLage, iForhandsvisning } from './23-exportgrind.js';
 import { renderTabContent } from './31-navigering.js';
@@ -210,7 +210,7 @@ function utAllaGruppRita(grupp) {
     }
     for (const kalla of kallor) {
         const kort = fanns.get(kalla.id) || _utNyKopia(kalla, flik);
-        /** @type {HTMLElement} */ (kort.querySelector('.ut-kopia-rubrik')).textContent = chartExportTitle(kalla);
+        /** @type {HTMLElement} */ (kort.querySelector('.ut-kopia-rubrik')).textContent = diagramexportRubrik(kalla);
         yta.appendChild(kort);   // i flikens ordning
         const kopia = /** @type {HTMLElement} */ (kort.querySelector(`[id^="${UT_KOPIA_PREFIX}"]`));
         try { ritaFigur(kopia, kalla._figur, { ...kalla._figurVal }); } catch (e) { rapporteraFel(`Alla diagram: ${kalla.id}`, e); }

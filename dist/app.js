@@ -12263,7 +12263,7 @@ function utAllaGruppRita(grupp) {
   }
   for (const kalla of kallor) {
     const kort = fanns.get(kalla.id) || _utNyKopia(kalla, flik);
-    kort.querySelector(".ut-kopia-rubrik").textContent = chartExportTitle(kalla);
+    kort.querySelector(".ut-kopia-rubrik").textContent = diagramexportRubrik(kalla);
     yta.appendChild(kort);
     const kopia = (
       /** @type {HTMLElement} */
@@ -12375,19 +12375,19 @@ function _exportSkalFor(behallare) {
 function exportTillaten(behallare) {
   return _exportSkalFor(behallare) == null;
 }
-var CHART_EXPORT_STORLEKAR = {
+var DIAGRAMEXPORT_STORLEKAR = {
   "png-presentation": [1920, 1080],
   "png-dokument": [1600, 900],
   svg: [1600, 900]
 };
-var _chartExportSeq = 0;
-function _chartExportEl(graphDiv) {
+var _diagramexportNr = 0;
+function _diagramexportElement(graphDiv) {
   return typeof graphDiv === "string" ? document.getElementById(graphDiv) : graphDiv;
 }
-function _chartExportSlug(s) {
+function _diagramexportFilnamnsdel(s) {
   return String(s || "").normalize("NFC").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 60);
 }
-function chartExportTitle(gd) {
+function diagramexportRubrik(gd) {
   const egen = gd.closest ? gd.closest(".ut-kopia")?.querySelector(":scope > .ut-kopia-rubrik") : null;
   if (egen && egen.textContent.trim()) return egen.textContent.replace(/\s+/g, " ").trim();
   const kort = gd.closest ? gd.closest(".card") : null;
@@ -12395,33 +12395,33 @@ function chartExportTitle(gd) {
   const t = h ? h.textContent.replace(/\s+/g, " ").trim() : "";
   return t || gd.id || "Diagram";
 }
-function chartExportFilename(gd, ext, datum = /* @__PURE__ */ new Date()) {
+function diagramexportFilnamn(gd, ext, datum = /* @__PURE__ */ new Date()) {
   const kalla = typeof diagramKopiaKalla === "function" ? diagramKopiaKalla(gd) : null;
   const panel = (kalla || gd).closest ? (kalla || gd).closest(".view-panel") : null;
   const flik = panel && panel.id ? panel.id.replace(/^view-/, "") : "diagram";
   const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
   const dag = idagDatum(datum);
-  const titel = _chartExportSlug(chartExportTitle(gd)) || "Diagram";
-  return `${state.isDemo ? "DEMO_" : ""}${_chartExportSlug(Flik)}_${titel}_${dag}.${ext}`;
+  const titel = _diagramexportFilnamnsdel(diagramexportRubrik(gd)) || "Diagram";
+  return `${state.isDemo ? "DEMO_" : ""}${_diagramexportFilnamnsdel(Flik)}_${titel}_${dag}.${ext}`;
 }
-function _chartExportCell(v) {
+function _diagramexportCell(v) {
   if (typeof v !== "number" || Number.isInteger(v) || !isFinite(v)) return v;
   return String(Math.round(v * 100) / 100).replace(".", ",");
 }
-function _chartExportKarna(gd) {
+function _diagramexportKarna(gd) {
   return !!gd && (!!gd._figur || _rfHarRitat(gd));
 }
-function _chartExportAktuell(gd) {
+function _diagramexportAktuell(gd) {
   return gd && gd.isConnected === false && gd.id ? document.getElementById(gd.id) || gd : gd;
 }
-function _chartExportUnderlag(...a) {
-  return medExportLage(() => _chartExportUnderlagExport.apply(
+function _diagramexportUnderlag(...a) {
+  return medExportLage(() => _diagramexportUnderlagExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _chartExportUnderlagExport(gd) {
+function _diagramexportUnderlagExport(gd) {
   if (!exportTillaten(gd)) return null;
   if (typeof exportSakra === "function" && !exportSakra(gd)) {
     const ny = gd.isConnected === false && gd.id ? document.getElementById(gd.id) : null;
@@ -12431,25 +12431,25 @@ function _chartExportUnderlagExport(gd) {
   const ut = _rfExportFigur(gd);
   return ut && !ut.tom ? ut : null;
 }
-function _chartExportDolt(ut) {
+function _diagramexportDolt(ut) {
   return ut && ut.filter ? urvalBeskrivning(ut.figur, ut.filter, { visaSma: !!ut.visaSma }) : [];
 }
-function _chartExportHarlett(ut) {
+function _diagramexportHarlett(ut) {
   if (!ut || !ut.filter) return [];
   return harlettNot(harleddaLager(ut.bild || ut.figur, ut.filter, { visaSma: !!ut.visaSma })).utelamnade;
 }
-function chartExportRows(gd, underlag2) {
-  const ut = underlag2 === void 0 ? _chartExportUnderlag(gd) : underlag2;
+function diagramexportRader(gd, underlag2) {
+  const ut = underlag2 === void 0 ? _diagramexportUnderlag(gd) : underlag2;
   if (!ut || ut.underlag && ut.underlag.tom) return [];
-  gd = _chartExportAktuell(gd);
+  gd = _diagramexportAktuell(gd);
   const medSma = ut.visaSma;
   const kalla = ut.underlag && ut.underlag.figur ? ut.underlag.figur : ut.figur;
-  const rader = figurTillTabell(medSma ? kalla : utanSmaGrupper(kalla)).map((r) => r.map(_chartExportCell));
+  const rader = figurTillTabell(medSma ? kalla : utanSmaGrupper(kalla)).map((r) => r.map(_diagramexportCell));
   const beskrivning = typeof gd._exportBeskrivning === "string" ? gd._exportBeskrivning : "";
   const individer = ut.figur && ut.figur.individer === true;
-  const dolt = _chartExportDolt(ut);
+  const dolt = _diagramexportDolt(ut);
   return [
-    [`${chartExportTitle(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
+    [`${diagramexportRubrik(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
     ...individer ? [[kIndividRad()]] : [],
     ...beskrivning ? [[`Urval: ${beskrivning}`]] : [],
     ...ut.underlag ? [[`Räknat för: ${ut.underlag.text}`]] : [],
@@ -12457,17 +12457,17 @@ function chartExportRows(gd, underlag2) {
     ...rader
   ];
 }
-function _chartExportRubrikFot(gd, datum = /* @__PURE__ */ new Date(), dolt = [], harlett = [], underlag2 = "") {
+function _diagramexportRubrikFot(gd, datum = /* @__PURE__ */ new Date(), dolt = [], harlett = [], underlag2 = "") {
   const dag = idagDatum(datum);
   const urval = typeof gd._exportBeskrivning === "string" && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : "";
   const v = !underlag2 && gd._figurVal && typeof gd._figurVal.exportAnteckning === "string" ? gd._figurVal.exportAnteckning.trim() : "";
   const underlagText = underlag2 ? ` · Räknat för: ${underlag2}` : "";
   const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join("; ")}` : "";
   const harlettText = (harlett || []).map((t) => ` · ${String(t).replace(/\.$/, "")}`).join("");
-  return { rubrik: chartExportTitle(gd), fot: `${v ? v + " · " : ""}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? " · Utsnitt av diagrammet" : ""}` };
+  return { rubrik: diagramexportRubrik(gd), fot: `${v ? v + " · " : ""}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? " · Utsnitt av diagrammet" : ""}` };
 }
 function diagramRitat(el) {
-  return !!el && !!_chartExportUnderlag(el);
+  return !!el && !!_diagramexportUnderlag(el);
 }
 function diagramTillBild(...a) {
   return medExportLage(() => _diagramTillBildExport.apply(
@@ -12480,75 +12480,75 @@ async function _diagramTillBildExport(el, val) {
   const { bredd, hojd, utanRubrik = false } = val || {};
   const skal = _exportSkalFor(el);
   if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
-  const ut = _chartExportUnderlag(el);
-  el = _chartExportAktuell(el);
+  const ut = _diagramexportUnderlag(el);
+  el = _diagramexportAktuell(el);
   if (!ut) throw new Error("Det finns inget att exportera i diagrammet.");
-  const url = await figurTillBild(ut.hel || ut.figur, "png", bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...utanRubrik ? {} : _chartExportRubrikFot(el) });
+  const url = await figurTillBild(ut.hel || ut.figur, "png", bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...utanRubrik ? {} : _diagramexportRubrikFot(el) });
   if (el._figur !== ut.figur) throw new Error("Diagrammet rensades innan exporten blev klar.");
   return url;
 }
-function _chartExportImage(...a) {
-  return medExportLage(() => __chartExportImageExport.apply(
+function _diagramexportBild(...a) {
+  return medExportLage(() => __diagramexportBildExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-async function __chartExportImageExport(gd, val, underlag2) {
-  const [width, height] = CHART_EXPORT_STORLEKAR[val];
+async function __diagramexportBildExport(gd, val, underlag2) {
+  const [width, height] = DIAGRAMEXPORT_STORLEKAR[val];
   const format = val === "svg" ? "svg" : "png";
-  const ut = underlag2 === void 0 ? _chartExportUnderlag(gd) : underlag2;
-  gd = _chartExportAktuell(gd);
+  const ut = underlag2 === void 0 ? _diagramexportUnderlag(gd) : underlag2;
+  gd = _diagramexportAktuell(gd);
   if (!ut || ut.underlag && ut.underlag.tom) throw new Error("Det finns inget att exportera i diagrammet.");
   const url = await figurTillBild(ut.bild || ut.figur, format, width, height, {
     visaSma: ut.visaSma,
     dolda: ut.dolda,
     filter: ut.filter,
-    ..._chartExportRubrikFot(gd, /* @__PURE__ */ new Date(), _chartExportDolt(ut), _chartExportHarlett(ut), ut.underlag ? ut.underlag.text : "")
+    ..._diagramexportRubrikFot(gd, /* @__PURE__ */ new Date(), _diagramexportDolt(ut), _diagramexportHarlett(ut), ut.underlag ? ut.underlag.text : "")
   });
   if (gd._figur !== ut.figur) throw new Error("Diagrammet rensades innan exporten blev klar.");
   const a = document.createElement("a");
   a.href = url;
-  a.download = chartExportFilename(gd, format);
+  a.download = diagramexportFilnamn(gd, format);
   a.style.display = "none";
   document.body.appendChild(a);
   a.click();
   a.remove();
   if (typeof _visaExportvarning === "function") _visaExportvarning();
 }
-function chartExportRun(...a) {
-  return medExportLage(() => _chartExportRunExport.apply(
+function exporteraDiagram(...a) {
+  return medExportLage(() => _exporteraDiagramExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _chartExportRunExport(gd, val) {
-  const underlag2 = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : void 0;
-  gd = _chartExportAktuell(gd);
+function _exporteraDiagramExport(gd, val) {
+  const underlag2 = _diagramexportKarna(gd) ? _diagramexportUnderlag(gd) : void 0;
+  gd = _diagramexportAktuell(gd);
   if (underlag2 === null) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
   if (underlag2 && underlag2.underlag && underlag2.underlag.tom) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
-  if (val === "data-kopiera") return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag2)));
+  if (val === "data-kopiera") return Promise.resolve(_copyMatrixToClipboard(diagramexportRader(gd, underlag2)));
   if (val === "data-csv") {
-    return Promise.resolve(_laddaNedCSV(chartExportRows(gd, underlag2), chartExportFilename(gd, "csv").replace(/\.csv$/, "")));
+    return Promise.resolve(_laddaNedCSV(diagramexportRader(gd, underlag2), diagramexportFilnamn(gd, "csv").replace(/\.csv$/, "")));
   }
-  return _chartExportImage(gd, val, underlag2);
+  return _diagramexportBild(gd, val, underlag2);
 }
-function _attachChartExport(graphDiv) {
-  const gd = _chartExportEl(graphDiv);
+function _laggTillDiagramexport(graphDiv) {
+  const gd = _diagramexportElement(graphDiv);
   if (!gd || gd._chartExportAttached || !gd.parentElement) return;
   if (!exportTillaten(gd)) return;
   gd._chartExportAttached = true;
   const host = gd.parentElement;
   host.classList.add("chart-export-host");
-  const menyId = `chart-export-${++_chartExportSeq}`;
+  const menyId = `chart-export-${++_diagramexportNr}`;
   const wrap = document.createElement("div");
   wrap.className = "chart-export";
-  wrap.innerHTML = `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${menyId}" aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon("laddaNed", 14)} Exportera diagrammet</button><div class="chart-export-meny" id="${menyId}" hidden><button type="button" data-chart-export="png-presentation">PNG, presentation (1920 × 1080)</button><button type="button" data-chart-export="png-dokument">PNG, dokument (1600 × 900)</button><button type="button" data-chart-export="svg">SVG (vektor, skarp i Word)</button><button type="button" data-chart-export="data-kopiera">Kopiera diagramdata</button><button type="button" data-chart-export="data-csv">Ladda ner diagramdata (CSV)</button><p class="chart-export-fel" role="alert" hidden></p></div>`;
+  wrap.innerHTML = `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${menyId}" aria-label="Exportera diagrammet ${esc(diagramexportRubrik(gd))}">${ikon("laddaNed", 14)} Exportera diagrammet</button><div class="chart-export-meny" id="${menyId}" hidden><button type="button" data-chart-export="png-presentation">PNG, presentation (1920 × 1080)</button><button type="button" data-chart-export="png-dokument">PNG, dokument (1600 × 900)</button><button type="button" data-chart-export="svg">SVG (vektor, skarp i Word)</button><button type="button" data-chart-export="data-kopiera">Kopiera diagramdata</button><button type="button" data-chart-export="data-csv">Ladda ner diagramdata (CSV)</button><p class="chart-export-fel" role="alert" hidden></p></div>`;
   wrap._gd = gd;
   host.insertBefore(wrap, gd);
 }
-function _chartExportStang(utom) {
+function _diagramexportStang(utom) {
   document.querySelectorAll(".chart-export-meny:not([hidden])").forEach((m) => {
     if (m === utom) return;
     m.hidden = true;
@@ -12575,7 +12575,7 @@ function uppstartDiagramexport() {
         /** @type {HTMLElement} */
         meny.hidden
       );
-      _chartExportStang(meny);
+      _diagramexportStang(meny);
       meny.hidden = !oppna;
       btn.setAttribute("aria-expanded", String(oppna));
       if (oppna) meny.querySelector("button")?.focus();
@@ -12595,8 +12595,8 @@ function uppstartDiagramexport() {
         wrap.querySelector(".chart-export-fel")
       );
       fel.hidden = true;
-      chartExportRun(wrap._gd, val.getAttribute("data-chart-export")).then(() => {
-        _chartExportStang();
+      exporteraDiagram(wrap._gd, val.getAttribute("data-chart-export")).then(() => {
+        _diagramexportStang();
         wrap.querySelector(".chart-export-btn")?.focus();
       }).catch((err) => {
         fel.textContent = "Exporten misslyckades: " + (err && err.message || String(err));
@@ -12606,7 +12606,7 @@ function uppstartDiagramexport() {
     }
     if (!/** @type {HTMLElement} */
     e.target.closest(".chart-export") || /** @type {HTMLElement} */
-    e.target.closest(".tabell-export .chart-export-meny button")) _chartExportStang();
+    e.target.closest(".tabell-export .chart-export-meny button")) _diagramexportStang();
   });
   document.addEventListener("focusout", (e) => {
     const wrap = (
@@ -12621,13 +12621,13 @@ function uppstartDiagramexport() {
     )) return;
     const meny = wrap.querySelector(".chart-export-meny");
     if (meny && !/** @type {HTMLElement} */
-    meny.hidden) _chartExportStang();
+    meny.hidden) _diagramexportStang();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     const oppen = document.querySelector(".chart-export-meny:not([hidden])");
     if (!oppen) return;
-    _chartExportStang();
+    _diagramexportStang();
     /** @type {HTMLInputElement} */
     oppen.parentElement.querySelector(".chart-export-btn")?.focus();
   });
@@ -32274,7 +32274,7 @@ async function _kopieraRapportDiagramExport(id) {
     }
   }
   try {
-    await _chartExportImage(gd, "png-dokument");
+    await _diagramexportBild(gd, "png-dokument");
     return "nedladdat";
   } catch (_e) {
     return "fel";
@@ -34530,7 +34530,7 @@ function ritaFigur(id, figur, val) {
     el._exportBeskrivning = typeof el._figurVal.exportBeskrivning === "string" ? el._figurVal.exportBeskrivning : "";
     _rfRitaOm(el);
     _rfKoppla(el);
-    _attachChartExport(el);
+    _laggTillDiagramexport(el);
     _rfUrvalVisa(el);
   } catch (e) {
     _rfVisaFel(el, e);

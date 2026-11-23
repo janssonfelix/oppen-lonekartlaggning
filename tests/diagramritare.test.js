@@ -2693,7 +2693,7 @@ const korMeny = async (el, menyval) => {
     w._laddaNedCSV = rader => { ut.csv.push(rader); };
     w._copyMatrixToClipboard = rader => { ut.urklipp.push(rader); };
     w.__el = el;
-    try { for (const v of menyval) await w.eval(`chartExportRun(window.__el, ${JSON.stringify(v)})`); } catch (e) { ut.fel = e; } finally {
+    try { for (const v of menyval) await w.eval(`exporteraDiagram(window.__el, ${JSON.stringify(v)})`); } catch (e) { ut.fel = e; } finally {
         w.figurTillBild = org.bild; w._laddaNedCSV = org.csv; w._copyMatrixToClipboard = org.kopiera;
     }
     return ut;
@@ -2811,7 +2811,7 @@ describe('export av figurer', () => {
         w.eval('ritaFigur(window.__el, window.__f, { visaSma: true, exportBeskrivning: "BAS = A" })');
         expect(el.querySelector('svg')).not.toBeNull();                 // ritad trots bredd 0
         expect(el.querySelector('svg').textContent).toContain('Liten'); // på skärmen syns den lilla gruppen (visaSma)
-        const rader = w.__chartExportRows(el);
+        const rader = w.__diagramexportRader(el);
         expect(rader[0][0]).toMatch(/^Medianlön per BAS — Lönekartläggning .*Minsta gruppstorlek för redovisning: 10\.$/);
         expect(rader[1]).toEqual(['Urval: BAS = A']);
         expect(rader.slice(2)).toEqual([['Serie', 'BAS', 'Kronor/månad'], ['Alla', 'A', 30000], ['Alla', 'B', '31000,46']]);
@@ -2822,18 +2822,18 @@ describe('export av figurer', () => {
         let med = false;
         w.__el = el; w.__f = medSma(); w.__med = () => med;
         w.eval('ritaFigur(window.__el, window.__f, { visaSma: true, exportMedSma: window.__med })');
-        expect(JSON.stringify(w.__chartExportRows(el))).not.toContain('77777');
-        expect(w.__chartExportRows(el)[0][0]).not.toContain('undantag');
+        expect(JSON.stringify(w.__diagramexportRader(el))).not.toContain('77777');
+        expect(w.__diagramexportRader(el)[0][0]).not.toContain('undantag');
         expect(w.eval('_rfExportFigur(window.__el).visaSma')).toBe(false);
         med = true;
-        expect(JSON.stringify(w.__chartExportRows(el))).toContain('77777');
-        expect(w.__chartExportRows(el)[0][0]).toContain('Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).');
+        expect(JSON.stringify(w.__diagramexportRader(el))).toContain('77777');
+        expect(w.__diagramexportRader(el)[0][0]).toContain('Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).');
         expect(w.eval('_rfExportFigur(window.__el).visaSma')).toBe(true);
         // En exportMedSma som kastar räknas som nej (och rapporteras) — aldrig som ja.
         w.__state._interntFel = [];
         w.__med = () => { throw new Error('trasig'); };
         w.eval('ritaFigur(window.__el, window.__f, { visaSma: true, exportMedSma: window.__med })');
-        expect(JSON.stringify(w.__chartExportRows(el))).not.toContain('77777');
+        expect(JSON.stringify(w.__diagramexportRader(el))).not.toContain('77777');
         expect(w.__state._interntFel.some(f => /diagramexport chart-exp/.test(f.plats))).toBe(true);
         w.__state._interntFel = [];
         // Bara exakt `true` är ett ja: ett löfte, en sträng eller ett tal får aldrig släppa ut små grupper.
@@ -2841,7 +2841,7 @@ describe('export av figurer', () => {
             w.__med = svar;
             w.eval('ritaFigur(window.__el, window.__f, { visaSma: true, exportMedSma: window.__med })');
             expect(w.eval('_rfExportFigur(window.__el).visaSma')).toBe(false);
-            expect(JSON.stringify(w.__chartExportRows(el))).not.toMatch(/77777|undantag/);
+            expect(JSON.stringify(w.__diagramexportRader(el))).not.toMatch(/77777|undantag/);
         }
     });
     it('undantaget "Likvärdigt arbete" gäller ALLT i fliken, också ett ritat diagram vars export inte bär märkta små grupper', () => {
@@ -2855,21 +2855,21 @@ describe('export av figurer', () => {
             const omarkt = staplar({ lager: [{ marke: 'stapel', serie: 'Alla', data: [{ x: 'A', y: 30000 }, { x: 'Liten', y: 77777 }] }] });
             w.__el = el; w.__f = omarkt;
             w.eval('ritaFigur(window.__el, window.__f, {})');
-            expect(JSON.stringify(w.__chartExportRows(el))).toContain('77777');
-            expect(w.__chartExportRows(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
+            expect(JSON.stringify(w.__diagramexportRader(el))).toContain('77777');
+            expect(w.__diagramexportRader(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
             w.__f = medSma();
             w.eval('ritaFigur(window.__el, window.__f, {})');
-            expect(w.__chartExportRows(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
+            expect(w.__diagramexportRader(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
             w.eval('ritaFigur(window.__el, window.__f, { exportMedSma: () => true })');
-            expect(w.__chartExportRows(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
+            expect(w.__diagramexportRader(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
         } finally { el.closest('.card').remove(); w.document.getElementById('view-likvardighet-test')?.remove(); }
         // Utanför fliken: "valt i Tabeller och egna vyer" bara när exporten faktiskt bär små grupper.
         const annan = nyBehallare();
         w.__el = annan; w.__f = medSma();
         w.eval('ritaFigur(window.__el, window.__f, {})');
-        expect(w.__chartExportRows(annan)[0][0]).not.toContain('undantag');
+        expect(w.__diagramexportRader(annan)[0][0]).not.toContain('undantag');
         w.eval('ritaFigur(window.__el, window.__f, { exportMedSma: () => true })');
-        expect(w.__chartExportRows(annan)[0][0]).toContain('(undantag: valt i Tabeller och egna vyer)');
+        expect(w.__diagramexportRader(annan)[0][0]).toContain('(undantag: valt i Tabeller och egna vyer)');
     });
     it('exportens underlag bestäms EN gång per export: exportMedSma anropas en gång, och stämpel och innehåll följer samma svar', async () => {
         const el = nyBehallare();
@@ -2940,7 +2940,7 @@ describe('export av figurer', () => {
             // Den riktiga figurTillBild lämnar valet vidare till figurTillSvg (SVG-vägen går i jsdom).
             w.figurTillSvg = (figur, bredd, hojd, val) => { sedda.push(val.visaSma); return org(figur, bredd, hojd, val); };
             try {
-                await w.eval('chartExportRun(window.__el, "svg")');
+                await w.eval('exporteraDiagram(window.__el, "svg")');
                 expect(decodeURIComponent(href.split(',')[1]).includes('Liten')).toBe(svar);
             } finally { w.figurTillSvg = org; }
         }
@@ -3042,7 +3042,7 @@ describe('export av figurer', () => {
             { marke: 'punkt', serie: 'Dold', data: [{ x: 1, y: 2 }] }] };
         ritaI(el, figur);
         el._figurDolda.add('Dold');
-        const rader = w.__chartExportRows(el);
+        const rader = w.__diagramexportRader(el);
         expect(rader.length).toBe(1 + 1 + max + 5 + 1);
         expect(rader[rader.length - 1]).toEqual(['Dold', 1, 2]);
     });
@@ -3051,7 +3051,7 @@ describe('export av figurer', () => {
         const loner = [30000, 31000, 32000, 33000, 34000, 35000, 36000, 37000, 38000, 39000];
         const figur = staplar({ lager: [{ marke: 'lada', serie: 'Löner', punkter: 'alla', data: [...individer('A', loner), ...individer('A', [91234], [0]), ...individer('B', [41234, 42345, 43456], [0, 1, 2])] }] });
         ritaI(el, figur, { visaSma: true });
-        const rader = w.__chartExportRows(el);
+        const rader = w.__diagramexportRader(el);
         const st = ladstatistik(loner);
         expect(rader.slice(1)).toEqual([['Serie', 'BAS', 'Kronor/månad', 'Undre', 'Övre'], ['Löner', 'A', st.median, st.q1, st.q3]]);
         const platt = JSON.stringify(rader);
@@ -3065,13 +3065,13 @@ describe('export av figurer', () => {
         // Det enda som kan exporteras är en figur som ritaFigur har ritat.
         const el = nyBehallare('chart-utan-figur');
         el.data = [{ type: 'bar', name: 'A', x: ['a'], y: [1] }]; el.layout = {};
-        expect(w.__chartExportRows(el)).toEqual([]);
+        expect(w.__diagramexportRader(el)).toEqual([]);
         const ut = await korMeny(el, ['svg']);
         expect(ut.bilder).toHaveLength(0);
     });
     it('utan något att exportera lämnar ingenting verktyget: behållare utan figur (felläge, rensad) och tomt läge (alla punkter små)', async () => {
         const inget = async (el, vad) => {
-            expect(w.__chartExportRows(el), vad).toEqual([]);
+            expect(w.__diagramexportRader(el), vad).toEqual([]);
             for (const v of ALLA_MENYVAL) {
                 const ut = await korMeny(el, [v]);
                 expect(ut.fel && ut.fel.message, `${vad}: ${v}`).toBe('Det finns inget att exportera i diagrammet.');
@@ -3102,7 +3102,7 @@ describe('export av figurer', () => {
         await inget(tom, 'tomt läge');
         // Säger vyn att små grupper följer med finns det något att exportera.
         ritaI(tom, baraSma(), { visaSma: true, exportMedSma: () => true });
-        expect(JSON.stringify(w.__chartExportRows(tom))).toContain('77777');
+        expect(JSON.stringify(w.__diagramexportRader(tom))).toContain('77777');
         expect((await korMeny(tom, ['svg'])).bilder).toHaveLength(1);
         // Menyn i sidan: klicket visar felraden i stället för att ladda ner något, och kastar inte.
         ritaI(tom, baraSma());
@@ -3149,13 +3149,13 @@ describe('export av figurer', () => {
 describe('[S4] export: det som lämnar verktyget är identiskt med exporten av en figur där de små punkterna tagits bort', () => {
     // Differentialtest över hela figurlistan (samma som DS1 använder för skärmen). Bilden jämförs tecken för tecken,
     // utan normalisering: den exporterade SVG:n bär inga index. Diagramdatan går den riktiga vägen (ritaFigur →
-    // chartExportRows). En läcka — ett värde, en kategori, ett serienamn, ett antal, en förskjuten geometri,
+    // diagramexportRader). En läcka — ett värde, en kategori, ett serienamn, ett antal, en förskjuten geometri,
     // en not — gör att texterna skiljer sig.
     const HEMLIGT = /HEMLIG|NYCK|ETIK|98765|91111|99333/;
     const rader = figur => {
         const el = nyBehallare();
         ritaI(el, figur);
-        const ut = w.__chartExportRows(el);
+        const ut = w.__diagramexportRader(el);
         w.__el = el; w.eval('rensaFigur(window.__el)');
         return ut;
     };

@@ -52,7 +52,7 @@ describe('k-tröskeln styr varje flik', () => {
         w.document.getElementById('explore-inkludera-sma').checked = false;
         const har = rader => rader.flat().some(c => SENT_MELLAN.some(v => normalisera(String(c)).includes(String(v))));
         expect(har(w.__tableToMatrix('explore-table'))).toBe(false);
-        expect(har(w.__chartExportRows(w.document.getElementById('chart-explore')))).toBe(false);
+        expect(har(w.__diagramexportRader(w.document.getElementById('chart-explore')))).toBe(false);
     });
     it('vid 5 syns även de små grupperna', () => {
         const w = fonster(5);

@@ -36,7 +36,7 @@ import { _kSanktNot } from './06-k-troskel.js';
 import { _RF, _rfBredvid, _rfEtikettBeslut, _rfEtikettRum, _rfIPanel, _rfKorta, _rfLitenPx, _rfLodratLayout, _rfPunktEtikettRum, _rfSkala, _rfStapelEtikettRum, _rfTal, _rfText, _rfVagratLayout, _rfXEtiketter, _rfXOmfang, _rfYAxlar } from './10-diagramlayout.js';
 import { _RF_MARKEN, _rfEtikettKrockar, _rfFargskala, _rfFargstapel, _rfLadIndivider, _rfLadKategori, _rfMonster, _rfOfylld, _rfReferenser, _rfSymbol, _rfUndvikEtiketter } from './10-diagrammarken.js';
 import { CHART_FONT, PALETTE } from './10-diagramtema.js';
-import { _attachChartExport } from './11-diagramexport.js';
+import { _laggTillDiagramexport } from './11-diagramexport.js';
 import { _mkTillampa, sattDiagramMarkering } from './11-markering.js';
 import { Stat } from './12-tillstand.js';
 
@@ -951,7 +951,7 @@ export function ritaFigur(id, figur, val) {
         el._exportBeskrivning = typeof el._figurVal.exportBeskrivning === 'string' ? el._figurVal.exportBeskrivning : '';
         _rfRitaOm(el);
         _rfKoppla(el);
-        _attachChartExport(el);
+        _laggTillDiagramexport(el);
         _rfUrvalVisa(el);  // filterraderna direkt före behållaren (efter exportmenyn) och noten under den
     } catch (e) {
         _rfVisaFel(el, e);

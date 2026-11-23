@@ -277,7 +277,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
     it('rapportunderlaget och metodbilagan följer valet och nämner variablerna; standardvalet ger dagens text', () => {
         const w = demo();
         const block = () => w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
-        const metod = () => w.__methodAppendixData().map(r => r.join(': ')).join('\n');
+        const metod = () => w.__metodbilaga().map(r => r.join(': ')).join('\n');
         const std = block();
         expect(std.stycken.join(' ')).toMatch(/på att kvinnor och män är olika fördelade över BAS, .* på olika AID inom samma BAS och .* på löneskillnader inom samma AID och BAS\./);
         expect(std.stycken.join(' ')).not.toContain('Uppdelningen förklarar med');

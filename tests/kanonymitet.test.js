@@ -140,7 +140,7 @@ function karnansUtdata(w, el) {
     // Lägesattributen (pixlar med många decimaler) tas bort: de bär ingen lön men kan av en slump likna ett belopp.
     return [utanLagen(el.outerHTML),
         utanLagen(w.eval('(() => { const u = _rfExportFigur(window.__kel); return u && !u.tom ? figurTillSvg(u.figur, 1600, 900, { visaSma: u.visaSma, dolda: u.dolda }) : ""; })()')),
-        JSON.stringify(w.eval('chartExportRows(window.__kel)'))];
+        JSON.stringify(w.eval('diagramexportRader(window.__kel)'))];
 }
 
 let win;
@@ -256,7 +256,7 @@ describe('k-anonymitet: Utforskas export', () => {
         w3.document.getElementById('explore-inkludera-sma').checked = pa;
         w3.__renderExplorer();
     };
-    const exportRader = () => w3.__chartExportRows(w3.document.getElementById('chart-explore'));
+    const exportRader = () => w3.__diagramexportRader(w3.document.getElementById('chart-explore'));
 
     beforeAll(async () => {
         w3 = createAppWindow();
@@ -364,7 +364,7 @@ describe('k-anonymitet: kön under tröskeln inuti en större grupp (Per kön)',
             d.getElementById('explore-typ').value = typ;
             d.getElementById('explore-visa').value = 'kon';
             const kryss = pa => { d.getElementById('explore-inkludera-sma').checked = pa; w4.__renderExplorer(); };
-            const exporter = () => [w4.__tableToMatrix('explore-table'), w4.__chartExportRows(d.getElementById('chart-explore'))];
+            const exporter = () => [w4.__tableToMatrix('explore-table'), w4.__diagramexportRader(d.getElementById('chart-explore'))];
             kryss(false);
             for (const e of exporter()) expect(harMarkor(e)).toBe(false);
             kryss(true);
@@ -655,7 +655,7 @@ describe('k-anonymitet: organisationspaketet kan stänga av små grupper i Utfor
         expect(w.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(12);
         expect(w.document.getElementById('explore-inkludera-sma').checked).toBe(false);
         expect(harSentinel(w.__tableToMatrix('explore-table'))).toBe(false);
-        expect(harSentinel(w.__chartExportRows(w.document.getElementById('chart-explore')))).toBe(false);
+        expect(harSentinel(w.__diagramexportRader(w.document.getElementById('chart-explore')))).toBe(false);
     });
     it('Rensa all data tar bort låsningen: rutan visas igen och raden döljs', () => {
         w.eval('_rensaAllData()');

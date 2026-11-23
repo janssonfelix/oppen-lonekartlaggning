@@ -275,7 +275,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
             expect(el.querySelectorAll('[data-del="forklaring"] [data-prov="punkt"]').length, id).toBe(serier.length);   // förklaringen visar symbolen
         }
         // Diagramdatan bär status som serie och konfidensintervallet som Undre/Övre.
-        const rader = w2.eval('chartExportRows(document.getElementById("chart-skevhet-overview"))');
+        const rader = w2.eval('diagramexportRader(document.getElementById("chart-skevhet-overview"))');
         expect(rader.some(r => r.includes('Undre') && r.includes('Övre'))).toBe(true);
     });
     it('ett BAS där ett kön är under tröskeln når varken diagram (i exportläget), exportbild eller diagramdata', () => {
@@ -672,7 +672,7 @@ describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
             expect([...new Set(lada._figur.lager[0].data.map(p => p.x))]).toEqual(['Kvinna', 'Man']);
             expect(lada.querySelectorAll('[data-marke="lada"]')).toHaveLength(2);
             // Diagramdatan för lådagrammet är statistik per kön, aldrig en rad per person.
-            const tabell = w.eval('chartExportRows(document.getElementById("chart-kon-boxplot"))');
+            const tabell = w.eval('diagramexportRader(document.getElementById("chart-kon-boxplot"))');
             expect(tabell.filter(r => r[0] === 'Lön')).toHaveLength(2);
         });
     });
@@ -961,7 +961,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
         const el = w2.document.getElementById('chart-likvardighet-heatmap');
         if (!el || !el._figur) return;   // demodatan har för få kandidatpar: vyns text visas
         expect(el.data).toBeUndefined();
-        expect(w2.eval('chartExportRows(document.getElementById("chart-likvardighet-heatmap"))')[0][0]).toContain('(undantag: Likvärdigt arbete)');
+        expect(w2.eval('diagramexportRader(document.getElementById("chart-likvardighet-heatmap"))')[0][0]).toContain('(undantag: Likvärdigt arbete)');
     });
 });
 
@@ -984,7 +984,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
     const export_ = w2 => {
         const u = w2.eval('_rfExportFigur(document.getElementById("chart-explore"))');
         const svg = u.tom ? '' : w2.figurTillSvg(u.figur, 1600, 900, { visaSma: u.visaSma, dolda: u.dolda });
-        return (svg + JSON.stringify(w2.eval('chartExportRows(document.getElementById("chart-explore"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1');
+        return (svg + JSON.stringify(w2.eval('diagramexportRader(document.getElementById("chart-explore"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1');
     };
     const TYPER = [['staplar', 'ingen', 'kon'], ['liggande', 'ingen', 'kon'], ['hantel', 'ingen', 'helhet'], ['lada', 'ingen', 'kon'], ['punkter', 'ingen', 'kon'], ['svarm', 'ingen', 'kon'], ['regnmoln', 'ingen', 'kon'], ['kvantilpunkter', 'ingen', 'kon'],
                    ['heatmap', 'kon', 'helhet'], ['grupperade', 'kon', 'helhet'], ['bubbla', 'ingen', 'helhet']];
@@ -1073,7 +1073,7 @@ describe('tydligare diagram: kärnan', () => {
         const el = behallare('chart-rubrik');
         w.__el = el;
         w.eval('ritaFigur(window.__el, window.__f, { exportBeskrivning: "BAS A" })');
-        expect(w.eval('_chartExportRubrikFot(window.__el, new Date(2026, 9, 9))')).toEqual({ rubrik: 'chart-rubrik', fot: 'Lönekartläggning 2026-10-09 · Urval: BAS A' });
+        expect(w.eval('_diagramexportRubrikFot(window.__el, new Date(2026, 9, 9))')).toEqual({ rubrik: 'chart-rubrik', fot: 'Lönekartläggning 2026-10-09 · Urval: BAS A' });
         w.eval('rensaFigur(window.__el)');
     });
 });
@@ -1203,7 +1203,7 @@ describe('länkade vyer: markering', () => {
         expect(lage(a)).toEqual([[true, null], [false, '0.22']]);
         const svg = w.figurTillSvg(f, 1600, 900, {});
         expect(svg).not.toMatch(/data-markerad|opacity="0\.22"|markering/);
-        expect(JSON.stringify(w.eval('chartExportRows(window.__el)'))).not.toContain('markering');
+        expect(JSON.stringify(w.eval('diagramexportRader(window.__el)'))).not.toContain('markering');
         w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(w.eval('diagramMarkering()')).toBeNull();
         w.eval("sattDiagramMarkering('bas:B')");
@@ -1389,16 +1389,16 @@ describe('länkade vyer: flera grupper, tabeller och pensling', () => {
         expect(u.utsnitt).toBe(true);
         expect(u.bild.x.doman).toEqual(z.x);
         expect(u.bild.lager).toBe(f.lager);
-        expect(w.eval('_chartExportRubrikFot(window.__el, new Date(2026, 9, 10)).fot')).toMatch(/Utsnitt av diagrammet$/);
+        expect(w.eval('_diagramexportRubrikFot(window.__el, new Date(2026, 9, 10)).fot')).toMatch(/Utsnitt av diagrammet$/);
         expect(w.figurTillSvg(u.bild, 1600, 900, {})).not.toMatch(/(?<![\d.])99[\s\u00a0\u202f]?999(?!\d)/);
-        expect(w.eval('chartExportRows(window.__el)').length).toBe(w.eval('(() => { const e = window.__el, z = e._rfZoom; delete e._rfZoom; const n = chartExportRows(e).length; e._rfZoom = z; return n; })()'));
+        expect(w.eval('diagramexportRader(window.__el)').length).toBe(w.eval('(() => { const e = window.__el, z = e._rfZoom; delete e._rfZoom; const n = diagramexportRader(e).length; e._rfZoom = z; return n; })()'));
         // Storleksändring behåller utsnittet; "Visa hela diagrammet" tar bort det.
         w.eval('_rfRitaOm(window.__el)');
         expect(el._rfZoom).toEqual(z);
         not.querySelector('button').click();
         expect(el._rfZoom).toBeUndefined();
         expect(w.document.querySelector('[data-rf="zoom"]')).toBeNull();
-        expect(w.eval('_chartExportRubrikFot(window.__el, new Date(2026, 9, 10)).fot')).not.toMatch(/Utsnitt/);
+        expect(w.eval('_diagramexportRubrikFot(window.__el, new Date(2026, 9, 10)).fot')).not.toMatch(/Utsnitt/);
         // En ny figur från vyn, och rensaFigur, tar också bort utsnittet.
         for (const slut of ['ritaFigur(window.__el, window.__f, { bredd: 480 })', 'rensaFigur(window.__el)']) {
             w.eval('ritaFigur(window.__el, window.__f, { bredd: 500 })');

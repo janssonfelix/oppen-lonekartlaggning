@@ -68,7 +68,7 @@ async function livscykelVagar(w) {
     const d = w.document, ut = [];
     const el = () => d.getElementById('lifecycle-chart');
     const rader = r => r.map(x => x.join(' | ')).join('\n');
-    ut.push(['diagramdata', rader(w.__chartExportRows(el()))]);
+    ut.push(['diagramdata', rader(w.__diagramexportRader(el()))]);
     await vanta();
     const svg = [];
     const orig = w.figurTillBild;
@@ -88,7 +88,7 @@ async function livscykelVagar(w) {
         await vanta();
     }
     const kopia = d.getElementById('ut-diagram-lifecycle-chart');
-    ut.push(['kopian i Alla diagram', kopia ? rader(w.medExportLage(() => w.__chartExportRows(kopia))) : '']);
+    ut.push(['kopian i Alla diagram', kopia ? rader(w.medExportLage(() => w.__diagramexportRader(kopia))) : '']);
     d.getElementById('ut-flik-egna').click();
     oppnaFlik(w, 'kon');
     await vanta();

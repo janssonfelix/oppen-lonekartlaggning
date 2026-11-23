@@ -296,7 +296,7 @@ BAS-intervall med minst tröskeln personer, och en kort not säger hur många me
 rapportunderlaget, gruppdossierns textkopia, Att göra-CSV, konfigurationsfilens ögonblicksbild — körs i
 `medExportLage()` (`23-exportgrind.js`): generationen ökar så att grinden ritar om varje flik som läses, och efteråt
 ritas skärmen tillbaka. Nästlade anrop byter inte läge. De två funktioner all export av tabeller och diagram går genom,
-`_tabellkopiaForExport` och `_chartExportUnderlag`, går själva in i läget, så ingen väg kan läsa skärmens tal.
+`_tabellkopiaForExport` och `_diagramexportUnderlag`, går själva in i läget, så ingen väg kan läsa skärmens tal.
 Flikarna Rapporttext, Exportera och Spara och jämför år ritas alltid i exportläget. Alla diagram har en gemensam
 exportmeny (`11-diagramexport.js`) som diagramkärnan kopplar in, så att nya diagram får den automatiskt; vägen från
 diagram till bild står i `diagramkarnan.md` §6 och §8.

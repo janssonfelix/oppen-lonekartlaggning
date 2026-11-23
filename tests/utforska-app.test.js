@@ -394,7 +394,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         grund();
         $('explore-measure').value = 'medel';
         win.__renderExplorer();
-        const celler = win.__chartExportRows($('chart-explore')).flat();
+        const celler = win.__diagramexportRader($('chart-explore')).flat();
         expect(celler.filter(v => typeof v === 'number' && !Number.isInteger(v))).toEqual([]);
         expect(celler.some(v => typeof v === 'string' && /^\d+,\d{1,2}$/.test(v))).toBe(true);
     });
@@ -500,13 +500,13 @@ describe('Utforska: urval med villkor', () => {
         grund();
         win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] });
         win.__renderExplorer();
-        const rader = win.__chartExportRows($('chart-explore'));
+        const rader = win.__diagramexportRader($('chart-explore'));
         expect(rader[1][0].replace(/ /g, ' ')).toBe('Urval: Alla av: Lön minst 30 000 kr');
     });
 
     it('utan villkor har diagramdatan ingen urvalsrad', () => {
         grund();
-        expect(win.__chartExportRows($('chart-explore'))[1][0]).toBe('Serie');
+        expect(win.__diagramexportRader($('chart-explore'))[1][0]).toBe('Serie');
     });
 
     it('Rensa allt tar bort alla villkor', () => {

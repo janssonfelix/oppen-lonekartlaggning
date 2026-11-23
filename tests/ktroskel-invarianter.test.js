@@ -224,14 +224,14 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
         const w = fonsterUnderlag(9);
         const el = w.document.getElementById(id);
         expect(el._figur.underlag.k, id).toBe(10);
-        const fore = w.__chartExportRows(el);
+        const fore = w.__diagramexportRader(el);
         const { ruta } = valjBaraVard(w, id);
         expect(el._rfUnderlagText, id).toBeUndefined();
         expect(el._rfUnderlagFigur, id).toBeUndefined();
         expect(ruta.checked, id).toBe(true);
         expect(ruta.getAttribute('aria-invalid'), id).toBe('true');
         expect(el.parentElement.querySelector('[data-rf="urval"]').textContent, id).toContain('Urvalet eller resten har färre än 10 kvinnor eller män.');
-        const efter = w.__chartExportRows(el);
+        const efter = w.__diagramexportRader(el);
         expect(efter.slice(1), id).toEqual(fore.slice(1));
         expect(efter.map(r => r.join(' | ')).join('\n'), id).not.toMatch(/Räknat för/);
     });
@@ -242,7 +242,7 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
         expect(el._rfUnderlagText, id).toBe(`huvudområde ${VARD} (60 personer)`);
         expect(el._rfUnderlagFigur, id).toBeTruthy();
         expect(el._rfUnderlagFigur.beskrivning, id).toContain(VARD);
-        const rader = w.__chartExportRows(el);
+        const rader = w.__diagramexportRader(el);
         expect(rader.some(r => r[0] === `Räknat för: huvudområde ${VARD} (60 personer)`), id).toBe(true);
         expect(normalisera(rader.join('\n')), id).not.toContain(String(LEDNING_MAN));
     });
@@ -254,10 +254,10 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
             oppnaFlik(w, id.startsWith('chart-kon') ? 'kon' : 'struktur');   // den öppna fliken ritas om på skärmen efter en export
             const el0 = w.document.getElementById(id);
             expect(el0._figur.underlag.k, id).toBe(1);
-            const hel = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
+            const hel = w.eval('medExportLage')(() => w.__diagramexportRader(w.document.getElementById(id)));
             valjBaraVard(w, id, [HANDL, 'Ledningsarbete', VARD]);
             expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`huvudområde ${VARD} (60 personer)`);
-            const rader = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
+            const rader = w.eval('medExportLage')(() => w.__diagramexportRader(w.document.getElementById(id)));
             const text = rader.map(r => r.join(' | ')).join('\n');
             if (raknat) {
                 expect(text, `${id}, ${man} män`).toContain(`Räknat för: huvudområde ${VARD} (60 personer)`);
@@ -295,7 +295,7 @@ describe.each([[10, []], [25, SENT_MELLAN]])('[I7] uppdelningen med andra val av
         return { u, utdata: [
             ['rapportunderlag: uppdelning', normalisera(w.__ruTillWordHtml(block) + '\n' + w.__ruTillText(block))],
             ['kortet (exportläget)', normalisera(w.document.getElementById('gap-uppdelning').textContent)],
-            ['metodbilagan', normalisera(w.__methodAppendixData().map(r => r.join(' | ')).join('\n'))],
+            ['metodbilagan', normalisera(w.__metodbilaga().map(r => r.join(' | ')).join('\n'))],
         ] };
     };
     const ingaLackor = utdata => {

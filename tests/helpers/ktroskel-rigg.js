@@ -332,7 +332,7 @@ export async function samlaUtdata(w) {
         for (const el of w.__rfBehallare().filter(e => e.isConnected && w.arDiagramKopia(e))) {
             if (diagramUndantag(w, el)) continue;
             kopior++;
-            const rader = w.__chartExportRows(el);
+            const rader = w.__diagramexportRader(el);
             lagg(`diagramdata (Alla diagram): ${el.id}`, diagramText(rader, !!w.diagramKopiaKalla(el)?._figur));
         }
     });
@@ -389,7 +389,7 @@ export async function samlaUtdata(w) {
             // Ett diagram som finns på skärmen men inte i exportläget (t.ex. lönehistogrammet per kön) ger ingen
             // diagramdata: vägen noteras så att tystnaden inte ser ut som en läcka.
             const el = d.getElementById(id);
-            const rader = el ? w.__chartExportRows(el) : [];
+            const rader = el ? w.__diagramexportRader(el) : [];
             lagg(`diagramdata: ${id}`, diagramText(rader, !!d.getElementById(id)?._figur));
         }
     });
@@ -437,7 +437,7 @@ export async function samlaUtdata(w) {
         const bokslut = ritade.filter(e => e.steg === 'bokslut');
         for (const id of new Set(bokslut.filter(e => !bokslut.some(u => u.id === e.id && u.undantag)).map(e => e.id))) {
             const el = d.getElementById(id);
-            lagg(`diagramdata: ${id} (med bokslut)`, diagramText(el ? w.__chartExportRows(el) : [], !!d.getElementById(id)?._figur));
+            lagg(`diagramdata: ${id} (med bokslut)`, diagramText(el ? w.__diagramexportRader(el) : [], !!d.getElementById(id)?._figur));
         }
     });
     return ut;

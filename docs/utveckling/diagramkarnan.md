@@ -527,7 +527,7 @@ SVG:n läses som bild från en `data:`-adress (inte en blob — WebKit har vägr
 ritas på en canvas med samma mått som SVG:n. Okänt format, ogiltig figur, en bild som inte går att läsa
 eller en canvas som ger en tom bild avvisas.
 
-**Exportmenyn** (`11-diagramexport.js`) läggs till av `ritaFigur`. `chartExportRun` bestämmer underlaget en
+**Exportmenyn** (`11-diagramexport.js`) läggs till av `ritaFigur`. `exporteraDiagram` bestämmer underlaget en
 gång (`_rfExportFigur`: figuren, svaret från `exportMedSma`, de dolda serierna) och ger samma underlag till
 bilden, diagramdatan och stämpeln.
 - Bilden ritas ur originalfiguren med `visaSma` enligt svaret och utan de serier användaren dolt.

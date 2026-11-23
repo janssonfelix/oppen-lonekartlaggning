@@ -239,7 +239,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         expect(allt(el)).not.toMatch(/7712[345]|BAS S/);
         expect(w2.document.getElementById('forecast-lutning-not').textContent).toMatch(/minst 10 kvinnor och 10 män/);
         // Diagramdatan bär förändringen som ett spann och de två värdena var för sig.
-        expect(w2.eval('chartExportRows(document.getElementById("chart-forecast-lutning"))').filter(r => r.includes('BAS A'))).toHaveLength(3);
+        expect(w2.eval('diagramexportRader(document.getElementById("chart-forecast-lutning"))').filter(r => r.includes('BAS A'))).toHaveLength(3);
     });
     it('Löneöversyn per yrkesgrupp: bara grupper där gapet ändras; annars en text', () => {
         const w2 = skapa(), d = w2.document, el = d.getElementById('chart-forecast-lutning');
@@ -444,7 +444,7 @@ describe('Utforska: staplade staplar, i antal eller som andel av raden', () => {
         expect(w2.document.getElementById('explore-chart-title').textContent).toMatch(/^Andel per/);
         // Fyra segment på skärmen (den lilla cellen visas markerad); exporten bär bara tre, och aldrig de tre kvinnornas lön.
         expect(el2.querySelectorAll('rect[data-marke="stapel"]')).toHaveLength(4);
-        const rader = w2.eval('chartExportRows(document.getElementById("chart-explore"))');
+        const rader = w2.eval('diagramexportRader(document.getElementById("chart-explore"))');
         expect(rader.filter(r => r[1] === 'B').map(r => r[0])).toEqual(['Man']);
         expect(JSON.stringify(rader) + el2.outerHTML).not.toContain(String(MARKOR));
     });
@@ -511,7 +511,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         const el = d.getElementById('chart-skevhet-andel');
         expect(el._figur.lager[0].data.map(p => p.y)).toEqual(['BAS A', 'BAS B']);
         expect(el.outerHTML).not.toContain('BAS C');
-        const exportRader = w2.eval('chartExportRows(document.getElementById("chart-skevhet-andel"))');
+        const exportRader = w2.eval('diagramexportRader(document.getElementById("chart-skevhet-andel"))');
         expect(JSON.stringify(exportRader)).not.toContain('BAS C');
         expect(exportRader.some(r => r.includes('BAS B'))).toBe(true);
         // Excel-bladet Könsskevhet: samma rader och noten, ingen rad för C.
@@ -703,7 +703,7 @@ describe('Likvärdigt arbete: krav mot lön', () => {
         expect(el()._figur.lager.filter(l => l.marke === 'punkt').reduce((s, l) => s + l.data.length, 0)).toBe(5);
         expect(d.getElementById('lv-krav-not').textContent).toMatch(/minst 10 personer\. Punktens storlek följer antalet personer\./);
         expect(el().querySelectorAll('path[data-marke="linje"]')).toHaveLength(1);   // trendlinjen
-        expect((el().outerHTML + JSON.stringify(w2.eval('chartExportRows(document.getElementById("chart-likvardighet-krav"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1')).not.toMatch(/7922\d|Yrke4000/);
+        expect((el().outerHTML + JSON.stringify(w2.eval('diagramexportRader(document.getElementById("chart-likvardighet-krav"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1')).not.toMatch(/7922\d|Yrke4000/);
         w2.eval('sattKTroskel(15, { fraga: false })');
         w2.__renderTabContent('likvardighet');
         expect(el()._figur).toBeUndefined();
@@ -787,10 +787,10 @@ describe('Lönefördelningen per BAS-intervall (figuren och Lika arbetes lådor)
         const d = w2.document, el = d.getElementById('chart-skevhet-lador');
         expect(el.querySelectorAll('[data-marke="lada"]').length).toBe(3);               // A kvinnor, A män, B män
         expect(d.getElementById('skevhet-lador-not').textContent).toMatch(/BAS B \(kvinnor\), BAS S \(män\)/);
-        const allt = (el.outerHTML + JSON.stringify(w2.eval('chartExportRows(document.getElementById("chart-skevhet-lador"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1');
+        const allt = (el.outerHTML + JSON.stringify(w2.eval('diagramexportRader(document.getElementById("chart-skevhet-lador"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1');
         expect(allt).not.toMatch(/7655\d|7665\d|BAS S/);
         // Diagramdatan: en rad per låda med median och kvartiler — aldrig en rad per person.
-        expect(w2.eval('chartExportRows(document.getElementById("chart-skevhet-lador"))').filter(r => /^BAS /.test(String(r[1])))).toHaveLength(3);
+        expect(w2.eval('diagramexportRader(document.getElementById("chart-skevhet-lador"))').filter(r => /^BAS /.test(String(r[1])))).toHaveLength(3);
     });
 
 });
@@ -851,7 +851,7 @@ describe('Ålder & karriär: lön mot ålder i små multiplar', () => {
         expect(el.querySelectorAll('[data-marke="punkt"]')).toHaveLength(46);
         expect(el.querySelectorAll('svg[data-del="panel"]')).toHaveLength(2);
         expect(d.getElementById('kon-multiplar-not').textContent).toMatch(/BAS S/);
-        const allt = (el.outerHTML + JSON.stringify(w2.eval('chartExportRows(document.getElementById("chart-kon-multiplar"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1').replace(/\s(?:d|c?[xy][12]?|transform|width|height|r)="[^"]*"/g, '');
+        const allt = (el.outerHTML + JSON.stringify(w2.eval('diagramexportRader(document.getElementById("chart-kon-multiplar"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1').replace(/\s(?:d|c?[xy][12]?|transform|width|height|r)="[^"]*"/g, '');
         expect(allt).not.toMatch(/7533\d|7538\d|BAS S/);
         expect(d.getElementById('kon-multiplar-not').textContent).toMatch(/^Visas inte här \(färre än \d+ personer, eller fler intervall än \d+\): BAS S\./);
     });
@@ -915,9 +915,9 @@ describe('anteckning i exportbilden', () => {
         const f = { beskrivning: 'A', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 1 }] }] };
         const el = behallare('chart-anteckning'); w.__el = el; w.__f = f;
         w.eval('ritaFigur(window.__el, window.__f, { bredd: 500, exportAnteckning: "Störst skillnad: BAS C" })');
-        expect(w.eval('_chartExportRubrikFot(window.__el, new Date(2026, 9, 10)).fot')).toBe('Störst skillnad: BAS C · Lönekartläggning 2026-10-10');
+        expect(w.eval('_diagramexportRubrikFot(window.__el, new Date(2026, 9, 10)).fot')).toBe('Störst skillnad: BAS C · Lönekartläggning 2026-10-10');
         w.eval('ritaFigur(window.__el, window.__f, { bredd: 500 })');
-        expect(w.eval('_chartExportRubrikFot(window.__el, new Date(2026, 9, 10)).fot')).toBe('Lönekartläggning 2026-10-10');
+        expect(w.eval('_diagramexportRubrikFot(window.__el, new Date(2026, 9, 10)).fot')).toBe('Lönekartläggning 2026-10-10');
         w.eval('rensaFigur(window.__el)');
     });
 });
@@ -985,7 +985,7 @@ describe('Struktur: organisationen som trädkarta', () => {
         const el = w2.document.getElementById('chart-struktur-tradkarta');
         expect(el.querySelectorAll('rect[data-marke="yta"]')).toHaveLength(6);           // två BAS + fyra ytor
         expect(el.querySelectorAll('[data-marke="fargstapel"]').length).toBeGreaterThan(0);
-        const rader = w2.eval('chartExportRows(document.getElementById("chart-struktur-tradkarta"))');
+        const rader = w2.eval('diagramexportRader(document.getElementById("chart-struktur-tradkarta"))');
         expect(rader.some(r => r[0] === 'AID-etiketter' && r[1] === 'Yrke3000 · BAS B' && r[2] === 40)).toBe(true);
         expect(JSON.stringify(rader) + el.outerHTML).not.toMatch(/Yrke2200|Yrke2300|73777/);
     });

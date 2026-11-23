@@ -37,7 +37,7 @@ describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
         const el = ritad(w, 'chart-kon-scatter');
         w.HTMLAnchorElement.prototype.click = () => {};
         w.__el = el;
-        await w.eval("_chartExportImage(window.__el, 'png-dokument')");
+        await w.eval("_diagramexportBild(window.__el, 'png-dokument')");
         expect(bilder).toHaveLength(1);
         kontrollera(bilder[0], k);
         expect(el.textContent).not.toContain('Tröskeln är sänkt');   // diagrammet på skärmen är orört

@@ -425,7 +425,7 @@ describe('k-tröskeln i gränssnittet', () => {
 describe('k-tröskeln i utdata', () => {
     const STAMPEL_10 = 'Minsta gruppstorlek för redovisning: 10.';
     const STAMPEL_6 = 'Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.';
-    const metodrad = w => w.__methodAppendixData().find(r => r[0] === 'Minsta gruppstorlek för redovisning');
+    const metodrad = w => w.__metodbilaga().find(r => r[0] === 'Minsta gruppstorlek för redovisning');
 
     it('vid standard: metodbilagan, Word-utkastet och sammanfattningen anger 10', () => {
         const w = fonsterLitet(null);
@@ -461,7 +461,7 @@ describe('k-tröskeln i utdata', () => {
         w.document.body.appendChild(gd);
         w.__el = gd; w.__f = { beskrivning: 'T', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [{ marke: 'stapel', serie: 'A', farg: '#2563eb', data: [{ x: 'a', y: 1 }] }] };
         w.eval('ritaFigur(window.__el, window.__f, {})');
-        const rader = w.__chartExportRows(gd);
+        const rader = w.__diagramexportRader(gd);
         expect(rader[0][0]).toContain(STAMPEL_6);
         expect(w.eval('_csvMedStampel')(rader).filter(r => String(r[0] || '').includes('Minsta gruppstorlek'))).toHaveLength(1);
     });

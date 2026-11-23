@@ -17,7 +17,7 @@ beforeAll(() => {
 
 describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
     it('metod-appendix byggs och innehåller demo-flagga + modellspec', () => {
-        const data = JSON.stringify(win.__methodAppendixData());
+        const data = JSON.stringify(win.__metodbilaga());
         expect(data).toContain('DEMODATA');          // #9 demoläge syns
         expect(data).toContain('HC3');                // modellspec finns
     });
