@@ -9,7 +9,7 @@ import { arKvinna, arMan } from '../lib/kon.js';
 import { tolkaPaket } from '../lib/organisationspaket.js';
 import { ordForAntal, stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { _importprofilFor, _importprofilKalla, _importprofilLista, hideLoading, importprofilText, showLoading } from './03-hjalpfunktioner.js';
+import { _importprofilFor, _importprofilKalla, _importprofilLista, doljLaddning, importprofilText, visaLaddning } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _hittaAnsvarKolumn, _lonefilensRubriker, extractMinimalRecord } from './06-uppgiftsminimering.js';
 import { _kopplaNamnFalt, applyProfileLabels, DEFAULT_PROFILE, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
@@ -37,7 +37,7 @@ import { _hpRensaDemoSkal } from './56-handlingsplan.js';
 
 // ---- File Upload: Struktur CSV ----
 // Radnummer i källfilen (Excel-numrering) på varje rårad — en Symbol, så att
-// PII-detektorn och getField inte ser den som en kolumn.
+// PII-detektorn och hamtaFalt inte ser den som en kolumn.
 const _RADNR = Symbol('radnr');
 const dataInput  = document.getElementById("file-input-data");
 export const dataStatus = /** @type {HTMLElement} */ (document.getElementById("data-status"));
@@ -152,7 +152,7 @@ function _afterDataLoaded() {
     renderForhandskontroll();
     syncDatakvalitetPanel({ reg });
     meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
-    hideLoading();
+    doljLaddning();
 
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden
     // vid stora underlag. De körs EFTER att gränssnittet målats (deferrade i två steg så
@@ -188,7 +188,7 @@ const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 
  * Läser första bladet i en XLSX-buffer till rad-objekt (samma form som
  * PapaParse header:true ger), med rubrikradssökning bland de 20 första raderna
  * (samma princip som _hittaCsvRubrik — tål försättsrader i kalkylblad).
- * Cellvärden konverteras till strängar så resten av pipelinen (getField,
+ * Cellvärden konverteras till strängar så resten av pipelinen (hamtaFalt,
  * tolkaTalStrikt, hittaKansligaKolumner) fungerar identiskt med CSV.
  *
  * @param {ArrayBuffer} buf
@@ -315,7 +315,7 @@ function loadStructureFile(file) {
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
     // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
     // Kolumnmappningen läser om den senast inlästa filen, också en som inte gav några rader; den sätts i finishLoad.
-    showLoading();
+    visaLaddning();
     _profilBesked = '';
     let capturedHeaders = null;   // #11: rubriker för kolumnmappnings-guiden
 
@@ -475,7 +475,7 @@ function loadStructureFile(file) {
         state.importprofil = tidigareImportprofil;
         // Nolla bufferten direkt så raw rows blir GC-bara
         sampleBuffer = null;
-        hideLoading();
+        doljLaddning();
         _renderSensitiveRejection(sensitive);
     }
 
@@ -564,7 +564,7 @@ function loadStructureFile(file) {
         namnRaknare.clear();
         state.ansvarKolumn = tidigareAnsvarKolumn;
         state.importprofil = tidigareImportprofil;
-        hideLoading();
+        doljLaddning();
         dataStatus.textContent = msg;
         dataStatus.className = 'status-msg';
     }
@@ -775,7 +775,7 @@ function _kolumnerSomSaknas(headers) {
  * saknar kolumn.
  */
 function _visaEjInlast(saknas, stats) {
-    hideLoading();
+    doljLaddning();
     const harUnderlag = state.data.length > 0;
     const skal = [];
     if (saknas.length) skal.push(`filens rubriker kändes inte igen (${saknas.map(m => m.label).join(', ')} saknas)`);

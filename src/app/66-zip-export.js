@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { hideLoading, rapporteraFel, showLoading } from './03-hjalpfunktioner.js';
+import { doljLaddning, rapporteraFel, visaLaddning } from './03-hjalpfunktioner.js';
 import { _rfBehallare } from './10-diagramritare.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
 import { getData, state } from './12-tillstand.js';
@@ -38,7 +38,7 @@ async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
     if (!getData().length) { alert('Läs in lönefilen först.'); return false; }
     const zip = new JSZip();
-    if (typeof showLoading === 'function') showLoading();
+    if (typeof visaLaddning === 'function') visaLaddning();
     try {
         // Excel-filen först: den byggs utan väntan, före Word-utkastets bilder.
         // Ett fel i en del stoppar inte de andra: det rapporteras, och filen får det som gick att bygga.
@@ -68,7 +68,7 @@ async function _exportZipExport() {
         a.href = URL.createObjectURL(blob); a.download = 'lonekartlaggning_export.zip'; a.click();
         return true;
     } finally {
-        if (typeof hideLoading === 'function') hideLoading();
+        if (typeof doljLaddning === 'function') doljLaddning();
         const oppen = document.querySelector('.nav-item.active[data-tab]');
         if (oppen && oppen.getAttribute('data-tab') === 'dokumentera' && typeof renderExportBesked === 'function') renderExportBesked();
     }

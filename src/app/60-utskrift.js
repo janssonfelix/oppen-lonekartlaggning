@@ -6,7 +6,7 @@ import { stor } from '../lib/termer.js';
 import { arHelaDokumentationen } from '../lib/vymodell-rapport.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { hideLoading, rapporteraFel, showLoading, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { doljLaddning, rapporteraFel, visaLaddning, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { auditPoster } from './05-tabeller-och-lankar.js';
 import { _kSanktStycke, kStampel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -78,7 +78,7 @@ function _utskriftAvstavar() {
 function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
 async function _buildPrintReportExport() {
     if (!getData().length) { alert('Läs in lönefilen först.'); return; }
-    showLoading();
+    visaLaddning();
     try {
         // Rapporten är rapportmodellen med gällande urval — samma innehåll som Word-utkastet (58-rapportmodell.js).
         const bada = rapportModellBada(), modell = bada.urval;
@@ -164,13 +164,13 @@ async function _buildPrintReportExport() {
         if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (arTal(td.textContent)) td.classList.add('pr-tal'); });
 
         document.body.classList.add('print-mode');
-        hideLoading();
+        doljLaddning();
         await new Promise(r => setTimeout(r, 200));
         window.print();
         // Klassen tas bort när utskriftsdialogen stängts (afterprint nedan); tidsgränsen är för webbläsare utan händelsen.
         setTimeout(() => document.body.classList.remove('print-mode'), 1000);
     } catch (err) {
-        hideLoading();
+        doljLaddning();
         document.body.classList.remove('print-mode');
         alert('Fel vid PDF-generering: ' + err.message);
     }

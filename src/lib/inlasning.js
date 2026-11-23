@@ -10,7 +10,7 @@
  *
  * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgörs här (TILLATNA_FALT,
  * _rubrikForRoll), men kolumnmappningen, importprofilen och ansvarskolumnen kommer ur appens tillstånd och skickas in,
- * liksom året som ett födelseår i ålderskolumnen räknas mot. Appens tunna adaptrar (getField, _lonefilensRubriker,
+ * liksom året som ett födelseår i ålderskolumnen räknas mot. Appens tunna adaptrar (hamtaFalt, _lonefilensRubriker,
  * _hittaAnsvarKolumn och extractMinimalRecord) läser tillståndet. Funktionerna utan adapter behåller namnen de hade i
  * appen.
  */
@@ -347,13 +347,13 @@ export function _rubrikForRoll(rubriker, sokord, roll, val = {}) {
     return _hittaRubrik(rubriker, sokord, roll);
 }
 
-/** Radens värde i kolumnen som bär rollen (_rubrikForRoll), eller tom sträng. Appens getField skickar tillståndets val. */
+/** Radens värde i kolumnen som bär rollen (_rubrikForRoll), eller tom sträng. Appens hamtaFalt skickar tillståndets val. */
 export function vardeForRoll(rad, sokord, roll, val = {}) {
     const key = _rubrikForRoll(Object.keys(rad), sokord, roll, val);
     return key == null ? "" : rad[key];
 }
 
-// #11: vilken rubrik auto-matchar varje roll (samma logik som getField,
+// #11: vilken rubrik auto-matchar varje roll (samma logik som hamtaFalt,
 // utan columnMap-override). Returnerar { roll: rubrik|null }.
 export function gissaKolumnmappning(rubriker) {
     const map = {};
@@ -372,7 +372,7 @@ export function lonefilensRubriker(filrubriker, val = {}) {
     for (const role of Object.keys(TILLATNA_FALT)) rubriker[role] = _rubrikForRoll(filrubriker, TILLATNA_FALT[role], role, val);
     return rubriker;
 }
-/** Radens värde för rollen, som getField: tom sträng när filen saknar kolumnen. */
+/** Radens värde för rollen, som hamtaFalt: tom sträng när filen saknar kolumnen. */
 export function _faltIRad(rad, rubriker, roll) {
     return rubriker[roll] == null ? '' : rad[rubriker[roll]] ?? '';
 }

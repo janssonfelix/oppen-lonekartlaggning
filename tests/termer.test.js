@@ -212,7 +212,7 @@ describe('termerna i appen', () => {
     });
     it('ordlistan visar posterna med termerna och hittar dem på de gamla orden (fältet sok)', () => {
         const w = createAppWindow(), d = w.document;
-        const termer = t => { w.eval(`renderGlossary(${JSON.stringify(t)})`); return [...d.querySelectorAll('#glossary-content .glossary-term')].map(e => e.textContent); };
+        const termer = t => { w.eval(`ritaOrdlista(${JSON.stringify(t)})`); return [...d.querySelectorAll('#glossary-content .glossary-term')].map(e => e.textContent); };
         const alla = termer('');
         for (const t of ['AID-etikett', 'AID-kod', 'Huvudområde', 'BAS-intervall', 'Oförklarad skillnad per BAS-intervall']) expect(alla).toContain(t);
         expect(alla).not.toContain('Yrkesgrupp');
@@ -224,7 +224,7 @@ describe('termerna i appen', () => {
     });
     it('ordlistans mallar blir hela texter också med en annan uppsättning', () => {
         const w = createAppWindow();
-        for (const g of w.eval('GLOSSARY')) {
+        for (const g of w.eval('ORDLISTA')) {
             for (const t of [STANDARDTERMER, YRKE]) {
                 for (const falt of [g.term, g.short, g.long]) expect(fyllTermer(falt, t), g.term).not.toMatch(/\{(?!k\}|golv\})[^}]*\}/);
             }

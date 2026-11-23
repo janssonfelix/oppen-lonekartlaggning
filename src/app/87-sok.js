@@ -4,7 +4,7 @@
 import { svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { openGlossary } from './04-ordlista.js';
+import { oppnaOrdlista } from './04-ordlista.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
 import { kMaskerad } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -177,7 +177,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
     if (kraver === 'referens') { visaReferenskortet(p.namn); return; }
     if (kraver === 'alder') { visaAlderskravet(p.namn); return; }
     if (p.dialog === 'installningar') oppnaInstallningar({ fokus: p.falt || null });
-    else if (p.dialog === 'ordlista') openGlossary();
+    else if (p.dialog === 'ordlista') oppnaOrdlista();
     else if (p.dialog === 'lagras') openDataResidency();
     else if (p.dialog === 'basdossier') openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();

@@ -304,7 +304,7 @@ describe('k-tröskeln i texterna', () => {
         }
         expect(d.getElementById('explore-inkludera-sma-label').textContent).toBe('Ta med grupper under 7 i exporten');
         expect(w.eval('_kText("färre än {k}, minst {golv}")')).toBe('färre än 7, minst 10');
-        w.eval('renderGlossary("")');
+        w.eval('ritaOrdlista("")');
         const ordlista = d.body.textContent;
         expect(ordlista).not.toMatch(/\{k\}|\{golv\}/);
         expect(ordlista).toContain('färre än 7 personer');

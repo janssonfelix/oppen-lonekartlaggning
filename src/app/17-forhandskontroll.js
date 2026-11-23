@@ -5,7 +5,7 @@ import { personOrd } from '../lib/namn.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { hideLoading, importprofilText } from './03-hjalpfunktioner.js';
+import { doljLaddning, importprofilText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -71,7 +71,7 @@ export function _fkPausa(fk, lasIn) {
     const tidigare = _fkVantar ? _fkVantar.tidigare : state.forhandskontroll;
     _fkVantar = { lasIn, tidigare };
     state.forhandskontroll = { ...fk, vantar: true };
-    hideLoading();
+    doljLaddning();
     dataStatus.textContent = 'Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.';
     dataStatus.className = 'status-msg warning';
     renderForhandskontroll();

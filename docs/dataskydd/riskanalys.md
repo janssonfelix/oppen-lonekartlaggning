@@ -262,7 +262,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   värdena — talen, kön, BAS, saneringen av AID-etiketten, kärnan i `extractMinimalRecord` (`minimeraRad`,
   `tolkaLonerad`) — och `hittaKansligaKolumner` är rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan
   klocka. Kolumnmappningen, importprofilen, den godkända ansvarskolumnen och året som ett födelseår räknas mot skickas
-  in av appens tunna adaptrar (`getField`, `extractMinimalRecord` m.fl. i `src/app/03-hjalpfunktioner.js` och
+  in av appens tunna adaptrar (`hamtaFalt`, `extractMinimalRecord` m.fl. i `src/app/03-hjalpfunktioner.js` och
   `src/app/06-uppgiftsminimering.js`). Reglerna prövas i `tests/inlasning.test.js`, adaptrarna och hela filer i
   `tests/inlasning-app.test.js`.
 - **Fältvitlista** (`TILLATNA_FALT`): endast BAS, AID-etikett, lön och kön, samt valfri ålder

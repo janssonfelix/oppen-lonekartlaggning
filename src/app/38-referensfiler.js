@@ -3,7 +3,7 @@
 import { _normaliseraBas, _normaliseraPolicyAid, _utanHtmlTecken, tolkaTal } from '../lib/inlasning.js';
 import { namnFranFil } from '../lib/referens.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { getField, hideLoading, showLoading } from './03-hjalpfunktioner.js';
+import { hamtaFalt, doljLaddning, visaLaddning } from './03-hjalpfunktioner.js';
 import { _kopplaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, getData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
@@ -19,11 +19,11 @@ import { ritaLoneoversikt } from './39-loneoversikt.js';
 // filen (ADR-28). Returnerar antal giltiga rader; 0 = inget ändrat.
 function _lasInReferens(rader, filnamn) {
     const policy = rader.map(row => ({
-        aid: _normaliseraPolicyAid(row.aid ?? getField(row, ["aid","yrkeskod","befattningskod"])),
-        bas: _normaliseraBas(row.bas ?? getField(row, ["bas","basintervall"])),
-        p10: typeof row.p10 === 'number' ? row.p10 : tolkaTal(getField(row, ["10e","p10","10"])),
-        med: typeof row.med === 'number' ? row.med : tolkaTal(getField(row, ["median","med"])),
-        p90: typeof row.p90 === 'number' ? row.p90 : tolkaTal(getField(row, ["90e","p90","90"]))
+        aid: _normaliseraPolicyAid(row.aid ?? hamtaFalt(row, ["aid","yrkeskod","befattningskod"])),
+        bas: _normaliseraBas(row.bas ?? hamtaFalt(row, ["bas","basintervall"])),
+        p10: typeof row.p10 === 'number' ? row.p10 : tolkaTal(hamtaFalt(row, ["10e","p10","10"])),
+        med: typeof row.med === 'number' ? row.med : tolkaTal(hamtaFalt(row, ["median","med"])),
+        p90: typeof row.p90 === 'number' ? row.p90 : tolkaTal(hamtaFalt(row, ["90e","p90","90"]))
     })).filter(p => p.bas || p.aid);
     if (!policy.length) return 0;
     state.policy = policy;
@@ -93,7 +93,7 @@ export function uppstartReferensfiler() {
     policyInput.addEventListener("change", e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
-        showLoading();
+        visaLaddning();
         // Gemensam läsväg: CSV (alla kodningar/avgränsare, preamble-tolerant) + XLSX.
         // `aid` är VALFRI: en policyrad får vara BAS-nivå, AID-specifik
         // (yrke oavsett BAS) eller AID+BAS (mest specifik). Uppslaget sker via
@@ -101,14 +101,14 @@ export function uppstartReferensfiler() {
         // synonymträffar (kräver inte alla grupper), så BAS-only-filer hittas också.
         readTabularFile(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], res => {
             if (!res.ok) {
-                hideLoading();
+                doljLaddning();
                 policyStatus.textContent = '' + res.error;
                 policyStatus.className = "status-msg";
                 return;
             }
             const nInlasta = _lasInReferens(res.rows, file.name);
             if (!nInlasta) {
-                hideLoading();
+                doljLaddning();
                 policyStatus.textContent = 'Inga giltiga rader — varje rad behöver en BAS-kolumn, en AID-kolumn eller båda.';
                 policyStatus.className = "status-msg";
                 return;
@@ -122,7 +122,7 @@ export function uppstartReferensfiler() {
             synkaJamforelseFlik();
             markUploadLoaded('upload-cell-policy', 'Inläst');
             state.filnamn.policy = file.name; renderFilrutor();
-            hideLoading(); ritaKravstatus();
+            doljLaddning(); ritaKravstatus();
             renderConsistencyBanner();
             renderActionChecklist();
             renderProcessTracker();
@@ -132,13 +132,13 @@ export function uppstartReferensfiler() {
     statInput.addEventListener("change", e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
-        showLoading();
+        visaLaddning();
         // Gemensam läsväg (samma som struktur/policy/historik): CSV alla kodningar +
         // preamble-tolerans, XLSX, och tydligt .xls-besked. Rubrikraden hittas av readTabularFile via synonymerna
         // AID + Median; kolumnrollerna mappas därefter på de funna rubrikerna.
         readTabularFile(file, [["aid", "yrkesgrupp"], ["median"]], res => {
             if (!res.ok) {
-                hideLoading();
+                doljLaddning();
                 statStatus.textContent = "Fel: " + res.error;
                 statStatus.className = "status-msg error";
                 return;
@@ -226,12 +226,12 @@ export function uppstartReferensfiler() {
                 state.filnamn.statistik = file.name; renderFilrutor();
                 if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
                 synkaJamforelseFlik();
-                hideLoading(); ritaKravstatus();
+                doljLaddning(); ritaKravstatus();
                 renderConsistencyBanner();
                 renderActionChecklist();
                 renderProcessTracker();
             } catch (err) {
-                hideLoading();
+                doljLaddning();
                 statStatus.textContent = "Fel: " + err.message;
                 statStatus.className = "status-msg error";
             }

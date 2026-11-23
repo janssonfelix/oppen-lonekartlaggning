@@ -321,7 +321,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
         const { fileURLToPath } = await import('node:url');
         const rot = join(dirname(fileURLToPath(import.meta.url)), '..');
         const risk = readFileSync(join(rot, 'docs', 'dataskydd', 'riskanalys.md'), 'utf8');
-        // GLOSSARY är en const och nås inte i testfönstret — läs ordlistans källa.
+        // ORDLISTA är en const och nås inte i testfönstret — läs ordlistans källa.
         const ord = readFileSync(join(rot, 'src', 'app', '04-ordlista.js'), 'utf8').split('\n').find(l => l.includes("term:'Uppgiftsminimering'"));
         expect(ord).not.toMatch(/ansvar/i);
         expect(risk).not.toMatch(/sex minimerade|sex obligatoriska/);
@@ -659,9 +659,9 @@ describe('inläsning i appen: kolumnvalet', () => {
     it('kolumnerna slås upp en gång per fil, inte för varje rad', async () => {
         const w = createAppWindow();
         papa(w);
-        const original = w.getField;
+        const original = w.hamtaFalt;
         let anrop = 0;
-        w.getField = (...a) => { anrop++; return original(...a); };
+        w.hamtaFalt = (...a) => { anrop++; return original(...a); };
         const rader = ['BAS;AID;Månadslön;Ålder;Kön'];
         for (let i = 0; i < 40; i++) rader.push(`C;207011 Handläggare;${30000 + i * 10};40;${i % 2 ? 'Man' : 'Kvinna'}`);
         w.loadStructureFile(csvFil(w, rader, 'uppslag.csv'));

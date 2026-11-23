@@ -14784,7 +14784,7 @@ function ritaLivscykel(given) {
   const primary = given || runOLSRegression();
   const vm = vymodellLivscykel(result, { rader: state.data, k: kTroskel(), huvud: primary });
   const h = vm.huvud;
-  const modellCaption = !h || vm.sammaUrval ? antalCaption(result.kvN, result.maN) : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
+  const modellCaption = !h || vm.sammaUrval ? antalRubrik(result.kvN, result.maN) : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
   const sigBadge = (p) => p < 1e-3 ? `<span class="farg-kritisk">***</span>` : p < 0.01 ? `<span class="farg-kritisk">**</span>` : p < 0.05 ? `<span class="farg-varning">*</span>` : "";
   const sakerOrd = (p) => samspelSakerstallt(p) ? "säkerställd" : '<span class="f-dampad">inte säkerställd</span>';
   const pText = (p) => p < 1e-3 ? "< 0,001" : svTal(p, 3);
@@ -15379,7 +15379,7 @@ function ritaForklaringsmodellPanel(r) {
             ${r.modellVarning ? `<p class="k-mask-note" role="note">${esc(r.modellVarning)}</p>` : ""}
             ${r.fellBackFromFull ? `<p class="k-mask-note" role="note">Den valda modellen kunde inte skattas (multikollinearitet); verktyget räknar på ${esc(r.modelDesc)}.</p>` : ""}
             <table class="data-table st-09 marg-t-10">
-                ${antalCaption(r.nKvAnalysed, r.nMaAnalysed, "Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)")}
+                ${antalRubrik(r.nKvAnalysed, r.nMaAnalysed, "Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)")}
                 <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Löneskillnaden utan variabeln, sedan med variabeln">Flyttar skillnaden</th><th>Bedömning</th></tr></thead>
                 <tbody>${rader}</tbody>
             </table>
@@ -15785,7 +15785,7 @@ function ritaRegressionskort() {
                     </p>
                     <div class="rulla-x">
                         <div class="chart-container"><div id="chart-reg-kvantil"></div></div>
-                        <table class="data-table fs-sm marg-t-8">${antalCaption(qr.nKv, qr.nMa)}
+                        <table class="data-table fs-sm marg-t-8">${antalRubrik(qr.nKv, qr.nMa)}
                             <thead><tr><th>Position i lönefördelningen</th><th class="t-hoger">Oförklarad skillnad</th><th>95 % KI (bootstrap)</th><th>Tolkning</th></tr></thead>
                             <tbody>
                                 ${fmtRow("<strong>P10 — Klibbigt golv</strong>", "Löneskillnaden bland de lägst betalda", p10)}
@@ -15863,7 +15863,7 @@ function ritaRegressionskort() {
                     ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje ${T.niva.en} har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
-                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
+                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalRubrik(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
                         ${basEffUt.effekter.map((e) => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? "+" : ""}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join("")}
                     </table>` : ""}
@@ -15979,7 +15979,7 @@ function renderBlinderOaxacaCard(reg) {
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
                 <div class="marg-t-10">
-                    <table class="data-table st-09">${antalCaption(r.nKv, r.nMa)}
+                    <table class="data-table st-09">${antalRubrik(r.nKv, r.nMa)}
                         <thead>
                             <tr>
                                 <th>Variabel</th>
@@ -19576,7 +19576,7 @@ function perBasUtelamnat(pb) {
 
 // src/app/04-ordlista.js
 var AID_METODTEXT = "AID är ett klassificeringssystem för att gruppera arbetsuppgifter, som SKR och de fackliga organisationerna använder gemensamt för lönestatistik. {Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en} och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga; för det behöver AID kompletteras. {Enhet.bfl} är därför en utgångspunkt för lika arbete, som arbetsgivaren bekräftar; för likvärdigt arbete kompletterar {niva.bfl} eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).";
-var GLOSSARY = [
+var ORDLISTA = [
   // Statistik
   { cat: "Statistik", term: "Median (P50)", short: "Mittersta värdet av sorterad lista", long: "Den lön där exakt hälften av gruppen tjänar mer och hälften tjänar mindre. Påverkas mindre än medelvärdet av enstaka mycket höga eller låga löner." },
   { cat: "Statistik", term: "P10 (10:e percentilen)", short: "Värdet där 10 % av gruppen tjänar mindre", long: 'Speglar lönenivån för de lägst betalda i gruppen. Används som "lägsta önskad nivå" i lönepolitiska ställningstaganden.' },
@@ -19648,7 +19648,7 @@ var GLOSSARY = [
   { cat: "GDPR", term: "Content Security Policy (CSP)", short: "Webbläsar-policy som blockerar nätverksanrop", long: "En meta-tagg i HTML-filen som instruerar webbläsaren att förbjuda alla utgående nätverksanslutningar (connect-src 'none'). Hård teknisk spärr mot att data förs ut: även om en framtida bug skulle försöka göra fetch/XHR/WebSocket blockeras anropet." },
   { cat: "GDPR", term: "Beräkning och urval", short: "Spårbarhet från lönefil till analys", long: 'I flera analysflikar finns en panel "Beräkning och urval" som redovisar exakt hur många rader som ingår, vilka som exkluderats och varför. Möjliggör kvalitetssäkring och svar på frågan "Stämmer denna siffra?".' }
 ];
-function _normalizeTerm(s) {
+function _normaliseraTerm(s) {
   return s.toLowerCase().replace(/[åä]/g, "a").replace(/ö/g, "o").replace(/[^a-z0-9]/g, "");
 }
 var STATISTIK_101 = `
@@ -19693,12 +19693,12 @@ var STATISTIK_101 = `
     </div>
 </details>
 `;
-function renderGlossary(filterText = "") {
+function ritaOrdlista(filterText = "") {
   const wrap = document.getElementById("glossary-content");
   if (!wrap) return;
-  const filter = _normalizeTerm(filterText.trim());
-  const lista = GLOSSARY.map((g) => ({ ...g, term: termText(g.term), short: termText(_kText(g.short)), long: termText(_kText(g.long)) }));
-  const matches = filter ? lista.filter((g) => _normalizeTerm(g.term + " " + g.short + " " + g.long + " " + (g.sok || "")).includes(filter)) : lista;
+  const filter = _normaliseraTerm(filterText.trim());
+  const lista = ORDLISTA.map((g) => ({ ...g, term: termText(g.term), short: termText(_kText(g.short)), long: termText(_kText(g.long)) }));
+  const matches = filter ? lista.filter((g) => _normaliseraTerm(g.term + " " + g.short + " " + g.long + " " + (g.sok || "")).includes(filter)) : lista;
   if (!matches.length) {
     wrap.innerHTML = `<div class="glossary-empty">Inga termer matchar "${esc(filterText)}".</div>`;
     return;
@@ -19723,14 +19723,14 @@ function renderGlossary(filterText = "") {
   });
   wrap.innerHTML = html;
 }
-function openGlossary() {
+function oppnaOrdlista() {
   const m = document.getElementById("glossary-modal");
   if (!m) return;
   m.style.display = "flex";
-  renderGlossary("");
+  ritaOrdlista("");
   fangaFokus(m);
 }
-function closeGlossary() {
+function stangOrdlista() {
   const m = document.getElementById("glossary-modal");
   if (m) {
     slappFokus(m);
@@ -19738,16 +19738,16 @@ function closeGlossary() {
   }
 }
 function uppstartOrdlista() {
-  document.getElementById("btn-open-glossary")?.addEventListener("click", openGlossary);
-  document.getElementById("glossary-close")?.addEventListener("click", closeGlossary);
-  document.querySelector("#glossary-modal .glossary-backdrop")?.addEventListener("click", closeGlossary);
-  document.getElementById("glossary-search")?.addEventListener("input", (e) => renderGlossary(
+  document.getElementById("btn-open-glossary")?.addEventListener("click", oppnaOrdlista);
+  document.getElementById("glossary-close")?.addEventListener("click", stangOrdlista);
+  document.querySelector("#glossary-modal .glossary-backdrop")?.addEventListener("click", stangOrdlista);
+  document.getElementById("glossary-search")?.addEventListener("input", (e) => ritaOrdlista(
     /** @type {HTMLInputElement} */
     e.target.value
   ));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && /** @type {HTMLElement} */
-    document.getElementById("glossary-modal").style.display === "flex") closeGlossary();
+    document.getElementById("glossary-modal").style.display === "flex") stangOrdlista();
   });
   document.getElementById("btn-open-symbols")?.addEventListener("click", () => {
     const m = document.getElementById("symbols-modal");
@@ -22539,7 +22539,7 @@ function _afterDataLoaded() {
   renderForhandskontroll();
   syncDatakvalitetPanel({ reg });
   meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
-  hideLoading();
+  doljLaddning();
   const DEFER_NOTE = " · förbereder analyser i bakgrunden…";
   setTimeout(() => {
     if (dataStatus) dataStatus.textContent += DEFER_NOTE;
@@ -22683,7 +22683,7 @@ function loadStructureFile(file) {
     return;
   }
   const franOversikt = _aktivFlik() === "dashboard";
-  showLoading();
+  visaLaddning();
   _profilBesked = "";
   let capturedHeaders = null;
   const SAMPLE_SIZE = 50;
@@ -22826,7 +22826,7 @@ function loadStructureFile(file) {
     state.ansvarKolumn = tidigareAnsvarKolumn;
     state.importprofil = tidigareImportprofil;
     sampleBuffer = null;
-    hideLoading();
+    doljLaddning();
     _renderSensitiveRejection(sensitive);
   }
   function finishLoad(metaText) {
@@ -22906,7 +22906,7 @@ function loadStructureFile(file) {
     namnRaknare.clear();
     state.ansvarKolumn = tidigareAnsvarKolumn;
     state.importprofil = tidigareImportprofil;
-    hideLoading();
+    doljLaddning();
     dataStatus.textContent = msg;
     dataStatus.className = "status-msg";
   }
@@ -23099,7 +23099,7 @@ function _kolumnerSomSaknas(headers) {
   return COLMAP_ROLES.filter((r) => r.required && !eff[r.role]);
 }
 function _visaEjInlast(saknas, stats) {
-  hideLoading();
+  doljLaddning();
   const harUnderlag = state.data.length > 0;
   const skal = [];
   if (saknas.length) skal.push(`filens rubriker kändes inte igen (${saknas.map((m) => m.label).join(", ")} saknas)`);
@@ -26796,7 +26796,7 @@ function renderStructure() {
       const maxG = Math.max(...dist.map((x) => Math.abs(x.gapPct || 0)), 0.01);
       distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
             <div class="mb-10" id="chart-struktur-percentiler"></div>
-            <table class="data-table st-088">${antalCaption(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
+            <table class="data-table st-088">${antalRubrik(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
             ${dist.map((x) => `<tr><td>P${x.p}</td><td class="t-hoger">${kr2(x.kv)}</td><td class="t-hoger">${kr2(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 bg-accent" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join("")}
             </tbody></table>${tolk ? `<p class="fs-sm marg-8-0-0">${tolk}</p>` : ""}`;
       tillampaDataStil(distEl);
@@ -29123,11 +29123,11 @@ function _exportActionChecklistCSVExport(items, done) {
 // src/app/38-referensfiler.js
 function _lasInReferens(rader, filnamn) {
   const policy = rader.map((row) => ({
-    aid: _normaliseraPolicyAid(row.aid ?? getField(row, ["aid", "yrkeskod", "befattningskod"])),
-    bas: _normaliseraBas(row.bas ?? getField(row, ["bas", "basintervall"])),
-    p10: typeof row.p10 === "number" ? row.p10 : tolkaTal(getField(row, ["10e", "p10", "10"])),
-    med: typeof row.med === "number" ? row.med : tolkaTal(getField(row, ["median", "med"])),
-    p90: typeof row.p90 === "number" ? row.p90 : tolkaTal(getField(row, ["90e", "p90", "90"]))
+    aid: _normaliseraPolicyAid(row.aid ?? hamtaFalt(row, ["aid", "yrkeskod", "befattningskod"])),
+    bas: _normaliseraBas(row.bas ?? hamtaFalt(row, ["bas", "basintervall"])),
+    p10: typeof row.p10 === "number" ? row.p10 : tolkaTal(hamtaFalt(row, ["10e", "p10", "10"])),
+    med: typeof row.med === "number" ? row.med : tolkaTal(hamtaFalt(row, ["median", "med"])),
+    p90: typeof row.p90 === "number" ? row.p90 : tolkaTal(hamtaFalt(row, ["90e", "p90", "90"]))
   })).filter((p) => p.bas || p.aid);
   if (!policy.length) return 0;
   state.policy = policy;
@@ -29208,17 +29208,17 @@ function uppstartReferensfiler() {
       e.target.files?.[0]
     );
     if (!file) return;
-    showLoading();
+    visaLaddning();
     readTabularFile(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], (res) => {
       if (!res.ok) {
-        hideLoading();
+        doljLaddning();
         policyStatus.textContent = "" + res.error;
         policyStatus.className = "status-msg";
         return;
       }
       const nInlasta = _lasInReferens(res.rows, file.name);
       if (!nInlasta) {
-        hideLoading();
+        doljLaddning();
         policyStatus.textContent = "Inga giltiga rader — varje rad behöver en BAS-kolumn, en AID-kolumn eller båda.";
         policyStatus.className = "status-msg";
         return;
@@ -29231,7 +29231,7 @@ function uppstartReferensfiler() {
       markUploadLoaded("upload-cell-policy", "Inläst");
       state.filnamn.policy = file.name;
       renderFilrutor();
-      hideLoading();
+      doljLaddning();
       ritaKravstatus();
       renderConsistencyBanner();
       renderActionChecklist();
@@ -29245,10 +29245,10 @@ function uppstartReferensfiler() {
       e.target.files?.[0]
     );
     if (!file) return;
-    showLoading();
+    visaLaddning();
     readTabularFile(file, [["aid", "yrkesgrupp"], ["median"]], (res) => {
       if (!res.ok) {
-        hideLoading();
+        doljLaddning();
         statStatus.textContent = "Fel: " + res.error;
         statStatus.className = "status-msg error";
         return;
@@ -29328,13 +29328,13 @@ function uppstartReferensfiler() {
           uppdateraPaketKnapp();
         }
         synkaJamforelseFlik();
-        hideLoading();
+        doljLaddning();
         ritaKravstatus();
         renderConsistencyBanner();
         renderActionChecklist();
         renderProcessTracker();
       } catch (err) {
-        hideLoading();
+        doljLaddning();
         statStatus.textContent = "Fel: " + err.message;
         statStatus.className = "status-msg error";
       }
@@ -29700,7 +29700,7 @@ function _fkPausa(fk, lasIn) {
   const tidigare = _fkVantar ? _fkVantar.tidigare : state.forhandskontroll;
   _fkVantar = { lasIn, tidigare };
   state.forhandskontroll = { ...fk, vantar: true };
-  hideLoading();
+  doljLaddning();
   dataStatus.textContent = "Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.";
   dataStatus.className = "status-msg warning";
   renderForhandskontroll();
@@ -30241,7 +30241,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
     return;
   }
   if (p.dialog === "installningar") oppnaInstallningar({ fokus: p.falt || null });
-  else if (p.dialog === "ordlista") openGlossary();
+  else if (p.dialog === "ordlista") oppnaOrdlista();
   else if (p.dialog === "lagras") openDataResidency();
   else if (p.dialog === "basdossier") openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById("sok-grupp"));
   else if (p.dialog === "symboler") document.getElementById("btn-open-symbols")?.click();
@@ -33652,11 +33652,11 @@ function uppstartTillstand() {
 
 // src/app/03-hjalpfunktioner.js
 var ANSVARSFORBEHALL = "Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.";
-function showLoading() {
+function visaLaddning() {
   const el = document.getElementById("loading-overlay");
   if (el) el.style.display = "flex";
 }
-function hideLoading() {
+function doljLaddning() {
   const el = document.getElementById("loading-overlay");
   if (el) el.style.display = "none";
 }
@@ -33674,7 +33674,7 @@ function tillampaDataStil(rot) {
 function _kolumnvalIState() {
   return { columnMap: state.columnMap, importprofil: state.importprofil };
 }
-function getField(row, possibleNames, role) {
+function hamtaFalt(row, possibleNames, role) {
   return vardeForRoll(row, possibleNames, role, _kolumnvalIState());
 }
 function _importprofilLista() {
@@ -33703,7 +33703,7 @@ function idagDatum(datum = /* @__PURE__ */ new Date()) {
 function antalText(nKv, nMa) {
   return `n = ${svTal(nKv + nMa, 0)}; ${svTal(nKv, 0)} kvinnor, ${svTal(nMa, 0)} män`;
 }
-function antalCaption(nKv, nMa, fore = "") {
+function antalRubrik(nKv, nMa, fore = "") {
   return `<caption class="text-dampad-sm ta-vanster">${fore ? `${esc(fore)} · ` : ""}${antalText(nKv, nMa)}</caption>`;
 }
 function direktivGap(gapPct, dec = 1) {
@@ -36026,7 +36026,7 @@ async function _buildPrintReportExport() {
     alert("Läs in lönefilen först.");
     return;
   }
-  showLoading();
+  visaLaddning();
   try {
     const bada = rapportModellBada(), modell = bada.urval;
     const ritade = /* @__PURE__ */ new Set(), bilder = /* @__PURE__ */ new Map();
@@ -36106,12 +36106,12 @@ async function _buildPrintReportExport() {
       if (arTal(td.textContent)) td.classList.add("pr-tal");
     });
     document.body.classList.add("print-mode");
-    hideLoading();
+    doljLaddning();
     await new Promise((r) => setTimeout(r, 200));
     window.print();
     setTimeout(() => document.body.classList.remove("print-mode"), 1e3);
   } catch (err) {
-    hideLoading();
+    doljLaddning();
     document.body.classList.remove("print-mode");
     alert("Fel vid PDF-generering: " + err.message);
   }
@@ -36718,7 +36718,7 @@ async function _exportZipExport() {
     return false;
   }
   const zip = new JSZip();
-  if (typeof showLoading === "function") showLoading();
+  if (typeof visaLaddning === "function") visaLaddning();
   try {
     if (typeof XLSX !== "undefined") {
       try {
@@ -36768,7 +36768,7 @@ async function _exportZipExport() {
     a.click();
     return true;
   } finally {
-    if (typeof hideLoading === "function") hideLoading();
+    if (typeof doljLaddning === "function") doljLaddning();
     const oppen = document.querySelector(".nav-item.active[data-tab]");
     if (oppen && oppen.getAttribute("data-tab") === "dokumentera" && typeof renderExportBesked === "function") renderExportBesked();
   }

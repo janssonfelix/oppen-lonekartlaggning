@@ -12,7 +12,7 @@ import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { kvantilVymodell, perBasNiva, sistaSteg, vymodellRegressionskort } from '../lib/vymodell-regressionskort.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { antalCaption, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { antalRubrik, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _basEffektNot, _raGapText, kInstalld, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { T, termText } from './09-termer.js';
@@ -383,7 +383,7 @@ function ritaForklaringsmodellPanel(r) {
             ${r.modellVarning ? `<p class="k-mask-note" role="note">${esc(r.modellVarning)}</p>` : ''}
             ${r.fellBackFromFull ? `<p class="k-mask-note" role="note">Den valda modellen kunde inte skattas (multikollinearitet); verktyget räknar på ${esc(r.modelDesc)}.</p>` : ''}
             <table class="data-table st-09 marg-t-10">
-                ${antalCaption(r.nKvAnalysed, r.nMaAnalysed, 'Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)')}
+                ${antalRubrik(r.nKvAnalysed, r.nMaAnalysed, 'Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)')}
                 <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Löneskillnaden utan variabeln, sedan med variabeln">Flyttar skillnaden</th><th>Bedömning</th></tr></thead>
                 <tbody>${rader}</tbody>
             </table>
@@ -859,7 +859,7 @@ export function ritaRegressionskort() {
                     </p>
                     <div class="rulla-x">
                         <div class="chart-container"><div id="chart-reg-kvantil"></div></div>
-                        <table class="data-table fs-sm marg-t-8">${antalCaption(qr.nKv, qr.nMa)}
+                        <table class="data-table fs-sm marg-t-8">${antalRubrik(qr.nKv, qr.nMa)}
                             <thead><tr><th>Position i lönefördelningen</th><th class="t-hoger">Oförklarad skillnad</th><th>95 % KI (bootstrap)</th><th>Tolkning</th></tr></thead>
                             <tbody>
                                 ${fmtRow('<strong>P10 — Klibbigt golv</strong>', 'Löneskillnaden bland de lägst betalda', p10)}
@@ -934,7 +934,7 @@ export function ritaRegressionskort() {
                     ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje ${T.niva.en} har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
-                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
+                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalRubrik(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
                         ${basEffUt.effekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
                     </table>` : ''}
@@ -1066,7 +1066,7 @@ export function renderBlinderOaxacaCard(reg) {
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
                 <div class="marg-t-10">
-                    <table class="data-table st-09">${antalCaption(r.nKv, r.nMa)}
+                    <table class="data-table st-09">${antalRubrik(r.nKv, r.nMa)}
                         <thead>
                             <tr>
                                 <th>Variabel</th>

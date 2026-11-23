@@ -7,7 +7,7 @@ import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { livscykelKurvaUtelamnad, vymodellLivscykel } from '../lib/vymodell-livscykel.js';
 import { adjektiv, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { antalCaption, antalText } from './03-hjalpfunktioner.js';
+import { antalRubrik, antalText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { buildBaseAudit, setAudit } from './05-tabeller-och-lankar.js';
 import { kMaskerad, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
@@ -61,7 +61,7 @@ export function ritaLivscykel(given) {
     const h = vm.huvud;
     // Modelljämförelsens rubrikrad: urvalet bakom modellerna. Bygger de på samma personer står det en gång.
     const modellCaption = !h || vm.sammaUrval
-        ? antalCaption(result.kvN, result.maN)
+        ? antalRubrik(result.kvN, result.maN)
         : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
 
     // Modelljämförelsens tabell markerar säkerheten med stjärnor, som tabellens not förklarar; utan stjärna är

@@ -126,7 +126,7 @@ describe('Funktionssök', () => {
         const valjForsta = t => { skriv(w, t); d.querySelector('#sok-grupp-lista [data-sok-funktion]').click(); };
         valjForsta('ordlista');
         expect(d.getElementById('glossary-modal').style.display).toBe('flex');
-        w.eval('closeGlossary()');
+        w.eval('stangOrdlista()');
         valjForsta('symboler');
         expect(d.getElementById('symbols-modal').style.display).toBe('flex');
         valjForsta('vad lagras');
@@ -266,7 +266,7 @@ describe('Funktionssök', () => {
 });
 
 describe('ordlistans sökning: de gamla orden hittar rätt post (fältet sok)', () => {
-    const termer = (w, t) => { w.eval(`renderGlossary(${JSON.stringify(t)})`);
+    const termer = (w, t) => { w.eval(`ritaOrdlista(${JSON.stringify(t)})`);
         return [...w.document.querySelectorAll('#glossary-content .glossary-term')].map(e => e.textContent); };
     it('"lönegap" hittar kvoten och de tre sorternas löneskillnad, fast ordet inte står i posterna', () => {
         const w = createAppWindow();

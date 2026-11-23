@@ -37,7 +37,7 @@ describe('#1 röktest: boot', () => {
         const fore = JSON.stringify(tillstandsavtryck(w));
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(JSON.stringify(tillstandsavtryck(w))).toBe(fore);
-        w.eval('openGlossary()');
+        w.eval('oppnaOrdlista()');
         w.eval('sattKTroskel(25, { fraga: false })');
         expect(utgangslage(w)).toEqual({ troskel: 25, dialoger: 1, flik: 'struktur' });
         const andrat = tillstandsavtryck(w), bas = JSON.parse(fore);
