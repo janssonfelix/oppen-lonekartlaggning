@@ -49,7 +49,7 @@ function utfall(w) {
     return { synlig, varav };
 }
 
-describe('[B7.4] Scenariojämförelsen A/B: Till kv-dom följer regeln för Varav till kvinnodominerade grupper (ADR-70)', () => {
+describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för Varav till kvinnodominerade grupper (ADR-70)', () => {
     it('fixturen: på skärmen är Till kv-dom den ensamma kvinnans påslag', () => {
         const w = fonster(STRECK);
         w.eval("_forecastSaveScenario('A')");

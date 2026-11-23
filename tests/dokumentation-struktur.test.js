@@ -84,7 +84,7 @@ describe('dokumentation: CLAUDE.md är en kort ingång', () => {
     });
 });
 
-// skydd.md är källan för skyddens vakter: varje fil och mapp det pekar ut ska finnas. En sökväg med snedstreck
+// skydd.md är källan för skyddens vakter utanför testsviten (testerna står i spårbarhetsmatrisen): varje fil och mapp det pekar ut ska finnas. En sökväg med snedstreck
 // läses från roten; ett bart filnamn (`app.js`, `k-troskeln.md`) ska finnas någonstans i repot. Adresser som
 // file:// prövas inte.
 describe('dokumentation: skydd.md pekar bara på det som finns', () => {

@@ -54,7 +54,7 @@ const lackorI = (utdata, dolda) => {
 };
 const RAPPORTER = ['Word-utkastet', 'utskrift: komplett', 'utskrift: facklig'];
 
-describe('BAS-effekterna i regressionen: ett intervall under tröskeln har ingen effekt i det som lämnar verktyget (ADR-70)', () => {
+describe('[S4] BAS-effekterna i regressionen: ett intervall under tröskeln har ingen effekt i det som lämnar verktyget (ADR-70)', () => {
     it('fixturen: modellen skattas med alla intervall, och det lilla intervallets effekt är ett tal som inte står någon annanstans', () => {
         const e = effekter(fonsterMed(LITET_D));
         expect(e.map(x => x.bas)).toEqual(['B', 'C', 'D']);

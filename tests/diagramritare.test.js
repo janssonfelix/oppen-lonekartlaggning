@@ -3146,7 +3146,7 @@ describe('export av figurer', () => {
     });
 });
 
-describe('export: det som lämnar verktyget är identiskt med exporten av en figur där de små punkterna tagits bort', () => {
+describe('[S4] export: det som lämnar verktyget är identiskt med exporten av en figur där de små punkterna tagits bort', () => {
     // Differentialtest över hela figurlistan (samma som DS1 använder för skärmen). Bilden jämförs tecken för tecken,
     // utan normalisering: den exporterade SVG:n bär inga index. Diagramdatan går den riktiga vägen (ritaFigur →
     // chartExportRows). En läcka — ett värde, en kategori, ett serienamn, ett antal, en förskjuten geometri,

@@ -94,7 +94,7 @@ describe('hjälparen', () => {
 
 // Självtest för differensprovet i invarianten (differensprov i tests/helpers/differens.js): en påhittad tabell med en
 // total och delar, skriven som exporterna skriver den.
-describe('differensprovet i invarianten (självtest)', () => {
+describe('[S4] differensprovet i invarianten (självtest)', () => {
     // A–C når tröskeln och visas; D (4 personer) utelämnas. Raden Alla räknas på alla 71.
     const GRUPPER = [['A', 30, 30000], ['B', 25, 32000], ['C', 12, 28000], ['D', 4, 41000]];
     const N = GRUPPER.reduce((s, g) => s + g[1], 0);
