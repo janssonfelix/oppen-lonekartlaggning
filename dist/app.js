@@ -5986,6 +5986,312 @@ function uppstartExtremvardenBasrang() {
   document.getElementById("outliers-threshold")?.addEventListener("input", renderOutliers);
 }
 
+// src/lib/livscykel.js
+function livscykelNiva(g) {
+  if (!g || !isFinite(g.gapPct) || !isFinite(g.gapLoPct) || !isFinite(g.gapHiPct)) return "ejbedomd";
+  return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
+}
+var SAMSPEL_GRANS = 0.1;
+function samspelSakerstallt(...pVarden) {
+  return pVarden.some((p) => typeof p === "number" && p < SAMSPEL_GRANS);
+}
+function livscykelRegression(rader, { fixBas, golv }) {
+  if ((rader || []).length && !(rader || []).some((d) => d && d.alder > 0))
+    return { error: "Lönefilen saknar ålder, så löneskillnaden över karriären kan inte skattas.", errorCode: "no_age" };
+  const raw = (rader || []).filter((d) => d.lon > 0 && d.alder > 0 && (arKvinna(d) || arMan(d)));
+  if (raw.length < 50) return { error: "För få observationer (n < 50) för meningsfull livscykelanalys.", errorCode: "low_n" };
+  const kvN = raw.filter((d) => arKvinna(d)).length;
+  const maN = raw.filter((d) => arMan(d)).length;
+  if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: "imbalance" };
+  const basList = [...new Set(raw.map((d) => d.bas))].sort();
+  if (basList.length < 2) return { error: `Minst 2 ${STANDARDTERMER.niva.fl} krävs för kategorisk kodning.`, errorCode: "single_bas" };
+  if (!fixBas || !basList.includes(fixBas)) {
+    const counts = {};
+    raw.forEach((d) => {
+      counts[d.bas] = (counts[d.bas] || 0) + 1;
+    });
+    fixBas = basList.reduce((a, b) => (counts[b] || 0) > (counts[a] || 0) ? b : a, basList[0]);
+  }
+  const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
+  const ageVals = raw.map((d) => d.alder - ageMean);
+  const refBas = basList[0];
+  const dummyBas = basList.slice(1);
+  const X = [];
+  const y = [];
+  raw.forEach((d, i) => {
+    const isKv = arKvinna(d) ? 1 : 0;
+    const ac = ageVals[i];
+    const ac2 = ac * ac;
+    const row = [1, isKv, ac, ac2, isKv * ac, isKv * ac2];
+    dummyBas.forEach((b) => row.push(d.bas === b ? 1 : 0));
+    X.push(row);
+    y.push(Math.log(d.lon));
+  });
+  const fit = anpassaOLS(X, y);
+  if (!fit) return { error: "Modellen kunde inte estimeras — möjlig multikollinearitet bland BAS-dummies.", errorCode: "singular" };
+  const n = fit.n;
+  const k = fit.k;
+  const adjR2 = 1 - (1 - fit.R2) * (n - 1) / (n - k);
+  const yMedel = y.reduce((a, b) => a + b, 0) / n;
+  const rss = (1 - fit.R2) * y.reduce((s, v) => s + (v - yMedel) * (v - yMedel), 0);
+  const aic = n * Math.log(rss / n) + 2 * k;
+  const Z = tKvantil(0.975, fit.n - fit.k);
+  const idxKv = 1;
+  const idxKvAge = 4;
+  const idxKvAge2 = 5;
+  const kvCoef = fit.beta[idxKv];
+  const kvSE = Math.sqrt(fit.vcovHC3[idxKv][idxKv]);
+  const kvT = kvSE > 0 ? kvCoef / kvSE : 0;
+  const kvPValue = pVardeTvasidigt(kvT, fit.n, fit.k);
+  const kvAgeSE = Math.sqrt(fit.vcovHC3[idxKvAge][idxKvAge]);
+  const kvAgeT = kvAgeSE > 0 ? fit.beta[idxKvAge] / kvAgeSE : 0;
+  const kvAgePVal = pVardeTvasidigt(kvAgeT, fit.n, fit.k);
+  const kvAge2SE = Math.sqrt(fit.vcovHC3[idxKvAge2][idxKvAge2]);
+  const kvAge2T = kvAge2SE > 0 ? fit.beta[idxKvAge2] / kvAge2SE : 0;
+  const kvAge2PVal = pVardeTvasidigt(kvAge2T, fit.n, fit.k);
+  const ages = [];
+  for (let a = 25; a <= 65; a++) ages.push(a);
+  const predict = (isKv) => ages.map((a) => {
+    const ac = a - ageMean;
+    const ac2 = ac * ac;
+    const xRow = [1, isKv, ac, ac2, isKv * ac, isKv * ac2];
+    dummyBas.forEach((b) => xRow.push(b === fixBas ? 1 : 0));
+    let logLon = 0;
+    for (let i = 0; i < xRow.length; i++) logLon += xRow[i] * fit.beta[i];
+    let variance = 0;
+    for (let i = 0; i < xRow.length; i++) {
+      let inner = 0;
+      for (let j = 0; j < xRow.length; j++) inner += fit.vcovHC3[i][j] * xRow[j];
+      variance += xRow[i] * inner;
+    }
+    const se = Math.sqrt(Math.max(0, variance));
+    return {
+      age: a,
+      lon: Math.exp(logLon),
+      lo: Math.exp(logLon - Z * se),
+      hi: Math.exp(logLon + Z * se)
+    };
+  });
+  const predKvinna = predict(1);
+  const predMan = predict(0);
+  const idxBas = (b) => 6 + dummyBas.indexOf(b);
+  const betaBas = (b) => b === refBas ? 0 : fit.beta[idxBas(b)];
+  const basFaktor = Object.fromEntries(basList.map((b) => [b, Math.exp(betaBas(b) - betaBas(fixBas))]));
+  const gapPerAge = ages.map((a) => {
+    const ac = a - ageMean;
+    const ac2 = ac * ac;
+    const logGap = fit.beta[idxKv] + fit.beta[idxKvAge] * ac + fit.beta[idxKvAge2] * ac2;
+    const c = [1, ac, ac2];
+    const idxs = [idxKv, idxKvAge, idxKvAge2];
+    let v = 0;
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+      v += c[i] * c[j] * fit.vcovHC3[idxs[i]][idxs[j]];
+    }
+    const se = Math.sqrt(Math.max(0, v));
+    const gapPct = (Math.exp(logGap) - 1) * 100;
+    const gapLoPct = (Math.exp(logGap - Z * se) - 1) * 100;
+    const gapHiPct = (Math.exp(logGap + Z * se) - 1) * 100;
+    return { age: a, gapPct, gapLoPct, gapHiPct };
+  });
+  const gapAt25 = gapPerAge[0].gapPct;
+  const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
+  const gapDelta = gapAt65 - gapAt25;
+  const niva25 = livscykelNiva(gapPerAge[0]);
+  const niva65 = livscykelNiva(gapPerAge[gapPerAge.length - 1]);
+  return {
+    ok: true,
+    n,
+    kvN,
+    maN,
+    k,
+    R2: fit.R2,
+    adjR2,
+    aic,
+    ageMean,
+    basList,
+    fixBas,
+    refBas,
+    basFaktor,
+    predKvinna,
+    predMan,
+    gapPerAge,
+    kvCoef,
+    kvSE,
+    kvPValue,
+    kvAgeCoef: fit.beta[idxKvAge],
+    kvAgePVal,
+    kvAge2Coef: fit.beta[idxKvAge2],
+    kvAge2PVal,
+    gapAt25,
+    gapAt65,
+    gapDelta,
+    niva25,
+    niva65
+  };
+}
+
+// src/lib/vymodell-livscykel.js
+function livscykelBasRader(res, rader) {
+  const sista = res.predKvinna.length - 1;
+  return res.basList.map((b) => {
+    const skala = res.basFaktor?.[b] ?? 1;
+    const kv25 = res.predKvinna[0].lon * skala, kv65 = res.predKvinna[sista].lon * skala;
+    const ma25 = res.predMan[0].lon * skala, ma65 = res.predMan[sista].lon * skala;
+    return {
+      bas: b,
+      n: rader.filter((r) => r.bas === b && r.lon > 0).length,
+      kv25,
+      kv65,
+      ma25,
+      ma65,
+      gap25Pct: res.gapAt25,
+      gap65Pct: res.gapAt65,
+      gap25Kr: kv25 - ma25,
+      gap65Kr: kv65 - ma65
+    };
+  });
+}
+function livscykelKurvaUtelamnad(res, basRader, k) {
+  const fix = (basRader || []).find((r) => r.bas === res.fixBas);
+  return !!fix && fix.n < k;
+}
+function livscykelMonster(res) {
+  if (!samspelSakerstallt(res.kvAgePVal, res.kvAge2PVal)) return "konstant";
+  return res.gapDelta < -2 ? "växande" : res.gapDelta > 2 ? "krympande" : "praktiskt konstant";
+}
+function vymodellLivscykel(res, { rader, k, huvud }) {
+  const basRader = livscykelBasRader(res, rader);
+  const h = huvud && !huvud.error ? { adjR2: huvud.adjR2, gapPct: huvud.konPct, p: huvud.pValue, n: huvud.n, nKv: huvud.nKvAnalysed, nMa: huvud.nMaAnalysed } : null;
+  const adjR2Delta = h && h.adjR2 != null ? (res.adjR2 - h.adjR2) * 100 : null;
+  return {
+    basRader,
+    visade: basRader.filter((r) => !(r.n < k)),
+    utelamnade: basRader.filter((r) => r.n < k).map((r) => r.bas),
+    kurvaUtelamnad: livscykelKurvaUtelamnad(res, basRader, k),
+    kvot25: 100 + res.gapAt25,
+    kvot65: 100 + res.gapAt65,
+    samspel: samspelSakerstallt(res.kvAgePVal, res.kvAge2PVal),
+    monster: livscykelMonster(res),
+    huvud: h,
+    sammaUrval: !h || h.nKv === res.kvN && h.nMa === res.maN,
+    adjR2Delta,
+    mervarde: adjR2Delta == null ? null : adjR2Delta < 1 ? "liten" : adjR2Delta < 3 ? "måttlig" : "stor",
+    livscykelGapPct: (Math.exp(res.kvCoef) - 1) * 100
+  };
+}
+
+// src/lib/vymodell-regressionskort.js
+var STEG_NYCKEL = { [STEG_BAS]: "bas", "+ Ålder": "alder", [STEG_YRKE]: "yrke" };
+function regressionKronor(r) {
+  if (!r || typeof r.konPct !== "number" || !isFinite(r.konPct) || !(r.medianMa > 0)) return null;
+  const refMan = r.medianMa;
+  const refKvinna = refMan * (1 + r.konPct / 100);
+  const krMonth = refMan - refKvinna;
+  return { refMan, refKvinna, krMonth, krYear: krMonth * 12, krTotalYear: krMonth * 12 * (r.nKvAnalysed || 0) };
+}
+function forklaringsbudget(seqOk) {
+  if (!Array.isArray(seqOk) || seqOk.length < 2) return null;
+  const ok = seqOk.filter((s) => typeof s.gapPct === "number");
+  if (ok.length < 2 || ok[0].name !== "Endast kön") return null;
+  const g0 = Math.abs(ok[0].gapPct);
+  if (!(g0 > 0)) return null;
+  const parts = [];
+  for (let i = 1; i < ok.length; i++) {
+    const key = STEG_NYCKEL[ok[i].name];
+    if (key) parts.push({ key, val: Math.abs(ok[i - 1].gapPct) - Math.abs(ok[i].gapPct), share: 0 });
+  }
+  if (!parts.length) return null;
+  const last = Math.abs(ok[ok.length - 1].gapPct);
+  const anyNegative = parts.some((p) => p.val < -5e-3);
+  const posSum = parts.reduce((s, p) => s + Math.max(0, p.val), 0);
+  const denom = Math.max(0.01, posSum + last);
+  parts.forEach((p) => {
+    p.share = Math.max(0, p.val) / denom * 100;
+  });
+  return { g0, remaining: last, parts, denom, anyNegative, remainingShare: last / denom * 100 };
+}
+function sistaSteg(m) {
+  return m.yrkesgrupp ? STEG_YRKE : m.alder ? "+ Ålder" : m.bas ? STEG_BAS : "Endast kön";
+}
+function trappaVisas(stegUt) {
+  return !!stegUt && !stegUt.utelamnat && stegUt.steg.filter((s) => s.status === "ok").length >= 2 && stegUt.steg[0].status === "ok";
+}
+function perBasNiva(p, q) {
+  return perBasSignal(p.gapPct, p.pValue < 0.05 && (q == null || q < 0.05), p.pValue < 0.05).niva;
+}
+function perBasRegression(perBas) {
+  const tester = (perBas || []).filter((p) => p.status === "ok" && isFinite(p.pValue));
+  const q = bhJustera(tester.map((t) => t.pValue));
+  const qPerBas = {};
+  tester.forEach((t, i) => {
+    qPerBas[t.bas] = q[i];
+  });
+  const rader = (perBas || []).map((p) => {
+    if (p.status !== "ok") return { ...p };
+    const qp = qPerBas[p.bas], niva = perBasNiva(p, qp);
+    return { ...p, q: qp, niva, ejEfterKorrigering: niva === "osakert" && qp >= 0.05 };
+  });
+  return { rader, qPerBas, antalTester: tester.length };
+}
+function tillforlitlighet(r) {
+  const obsPerParam = r.n / Math.max(1, r.k);
+  const kiBredd = r.konPctHigh != null && r.konPctLow != null ? r.konPctHigh - r.konPctLow : null;
+  const minKon = Math.min(r.nKvAnalysed, r.nMaAnalysed);
+  return {
+    litetUrval: r.n < 50,
+    faObsPerParam: obsPerParam < 15,
+    obsPerParam,
+    brettKi: kiBredd != null && kiBredd > 10,
+    kiBredd,
+    svagKontrast: minKon < 10
+  };
+}
+function kvantilVymodell(qr) {
+  if (!qr) return { visas: false };
+  const giltiga = qr.results.filter((x) => !x.error);
+  if (giltiga.length < 2) return { visas: false };
+  const vid = (tau) => qr.results.find((x) => x.tau === tau);
+  const diff = qr.diff || { varde: null, ki: null };
+  const harDiff = typeof diff.varde === "number" && isFinite(diff.varde);
+  const tolkning = !harDiff ? null : diff.ki && diff.ki.hog < 0 ? "glastak" : diff.ki && diff.ki.lag > 0 ? "golv" : diff.ki ? "ingen" : qr.kiUtelamnad ? "utanIntervall" : null;
+  return { visas: true, giltiga, p10: vid(0.1), p50: vid(0.5), p90: vid(0.9), diff, harDiff, tolkning };
+}
+function vymodellRegressionskort(r, { k, rader, medAlder, basEffektNot }) {
+  if (!r || r.error) return null;
+  const stegUt = regStegForRedovisning(r, k);
+  const sista = sistaSteg(r.modell);
+  const seqOk = stegUt.steg.filter((s) => s.status === "ok" && (r.modell.yrkesgrupp || s.name !== STEG_YRKE));
+  const yrkeVisas = r.yrkesSteg?.status === "ok" && !r.modell.yrkesgrupp && seqOk.some((s) => s.name === sista);
+  const stegIKortet = yrkeVisas ? [...seqOk, r.yrkesSteg] : seqOk;
+  const budget = stegUt.utelamnat ? null : forklaringsbudget(stegIKortet);
+  const konOk = konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed, k);
+  const kronor = konOk ? regressionKronor(r) : null;
+  const lonesummaKvAr = konOk ? rader.filter((d) => d.lon > 0 && (!medAlder || d.alder > 0) && arKvinna(d)).reduce((s, d) => s + d.lon, 0) * 12 : 0;
+  const sistaISteg = seqOk[seqOk.length - 1];
+  const sakerstalld = r.pValue < 0.05;
+  return {
+    stegUt,
+    seqOk,
+    yrkeVisas,
+    stegIKortet,
+    sista,
+    visaSteg: seqOk.length >= (stegUt.utelamnat ? 1 : 2),
+    stegMax: Math.max(...stegIKortet.map((s) => Math.abs(s.gapPct)), 0.01),
+    budget,
+    budgetMedYrke: !!budget && !r.modell.yrkesgrupp && budget.parts.some((p) => p.key === "yrke"),
+    trappa: trappaVisas(stegUt),
+    konOk,
+    kronor,
+    andelAvLonesumma: kronor && lonesummaKvAr > 0 ? Math.abs(kronor.krTotalYear) / lonesummaKvAr * 100 : null,
+    ansvar: r.ansvarSteg?.status === "ok" && sistaISteg?.name === sista ? { fore: sistaISteg.gapPct, efter: r.ansvarSteg.gapPct } : null,
+    sakerstalld,
+    niva: !sakerstalld ? "ingen" : Math.abs(r.konPct) >= STORLEKSGRANS ? "titta" : "dokumentera",
+    perBas: perBasRegression(r.perBas),
+    basEffekter: basEffekterForRedovisning(r, k, basEffektNot),
+    tillforlitlighet: tillforlitlighet(r)
+  };
+}
+
 // src/app/08-version.js
 var APP_VERSION = "2026.11.22";
 var APP_BUILD_DATE = "2026-11-22";
@@ -13205,150 +13511,6 @@ function uppstartLikvardigtArbete() {
   });
 }
 
-// src/lib/livscykel.js
-function livscykelNiva(g) {
-  if (!g || !isFinite(g.gapPct) || !isFinite(g.gapLoPct) || !isFinite(g.gapHiPct)) return "ejbedomd";
-  return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
-}
-var SAMSPEL_GRANS = 0.1;
-function samspelSakerstallt(...pVarden) {
-  return pVarden.some((p) => typeof p === "number" && p < SAMSPEL_GRANS);
-}
-function livscykelRegression(rader, { fixBas, golv }) {
-  if ((rader || []).length && !(rader || []).some((d) => d && d.alder > 0))
-    return { error: "Lönefilen saknar ålder, så löneskillnaden över karriären kan inte skattas.", errorCode: "no_age" };
-  const raw = (rader || []).filter((d) => d.lon > 0 && d.alder > 0 && (arKvinna(d) || arMan(d)));
-  if (raw.length < 50) return { error: "För få observationer (n < 50) för meningsfull livscykelanalys.", errorCode: "low_n" };
-  const kvN = raw.filter((d) => arKvinna(d)).length;
-  const maN = raw.filter((d) => arMan(d)).length;
-  if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: "imbalance" };
-  const basList = [...new Set(raw.map((d) => d.bas))].sort();
-  if (basList.length < 2) return { error: `Minst 2 ${STANDARDTERMER.niva.fl} krävs för kategorisk kodning.`, errorCode: "single_bas" };
-  if (!fixBas || !basList.includes(fixBas)) {
-    const counts = {};
-    raw.forEach((d) => {
-      counts[d.bas] = (counts[d.bas] || 0) + 1;
-    });
-    fixBas = basList.reduce((a, b) => (counts[b] || 0) > (counts[a] || 0) ? b : a, basList[0]);
-  }
-  const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
-  const ageVals = raw.map((d) => d.alder - ageMean);
-  const refBas = basList[0];
-  const dummyBas = basList.slice(1);
-  const X = [];
-  const y = [];
-  raw.forEach((d, i) => {
-    const isKv = arKvinna(d) ? 1 : 0;
-    const ac = ageVals[i];
-    const ac2 = ac * ac;
-    const row = [1, isKv, ac, ac2, isKv * ac, isKv * ac2];
-    dummyBas.forEach((b) => row.push(d.bas === b ? 1 : 0));
-    X.push(row);
-    y.push(Math.log(d.lon));
-  });
-  const fit = anpassaOLS(X, y);
-  if (!fit) return { error: "Modellen kunde inte estimeras — möjlig multikollinearitet bland BAS-dummies.", errorCode: "singular" };
-  const n = fit.n;
-  const k = fit.k;
-  const adjR2 = 1 - (1 - fit.R2) * (n - 1) / (n - k);
-  const yMedel = y.reduce((a, b) => a + b, 0) / n;
-  const rss = (1 - fit.R2) * y.reduce((s, v) => s + (v - yMedel) * (v - yMedel), 0);
-  const aic = n * Math.log(rss / n) + 2 * k;
-  const Z = tKvantil(0.975, fit.n - fit.k);
-  const idxKv = 1;
-  const idxKvAge = 4;
-  const idxKvAge2 = 5;
-  const kvCoef = fit.beta[idxKv];
-  const kvSE = Math.sqrt(fit.vcovHC3[idxKv][idxKv]);
-  const kvT = kvSE > 0 ? kvCoef / kvSE : 0;
-  const kvPValue = pVardeTvasidigt(kvT, fit.n, fit.k);
-  const kvAgeSE = Math.sqrt(fit.vcovHC3[idxKvAge][idxKvAge]);
-  const kvAgeT = kvAgeSE > 0 ? fit.beta[idxKvAge] / kvAgeSE : 0;
-  const kvAgePVal = pVardeTvasidigt(kvAgeT, fit.n, fit.k);
-  const kvAge2SE = Math.sqrt(fit.vcovHC3[idxKvAge2][idxKvAge2]);
-  const kvAge2T = kvAge2SE > 0 ? fit.beta[idxKvAge2] / kvAge2SE : 0;
-  const kvAge2PVal = pVardeTvasidigt(kvAge2T, fit.n, fit.k);
-  const ages = [];
-  for (let a = 25; a <= 65; a++) ages.push(a);
-  const predict = (isKv) => ages.map((a) => {
-    const ac = a - ageMean;
-    const ac2 = ac * ac;
-    const xRow = [1, isKv, ac, ac2, isKv * ac, isKv * ac2];
-    dummyBas.forEach((b) => xRow.push(b === fixBas ? 1 : 0));
-    let logLon = 0;
-    for (let i = 0; i < xRow.length; i++) logLon += xRow[i] * fit.beta[i];
-    let variance = 0;
-    for (let i = 0; i < xRow.length; i++) {
-      let inner = 0;
-      for (let j = 0; j < xRow.length; j++) inner += fit.vcovHC3[i][j] * xRow[j];
-      variance += xRow[i] * inner;
-    }
-    const se = Math.sqrt(Math.max(0, variance));
-    return {
-      age: a,
-      lon: Math.exp(logLon),
-      lo: Math.exp(logLon - Z * se),
-      hi: Math.exp(logLon + Z * se)
-    };
-  });
-  const predKvinna = predict(1);
-  const predMan = predict(0);
-  const idxBas = (b) => 6 + dummyBas.indexOf(b);
-  const betaBas = (b) => b === refBas ? 0 : fit.beta[idxBas(b)];
-  const basFaktor = Object.fromEntries(basList.map((b) => [b, Math.exp(betaBas(b) - betaBas(fixBas))]));
-  const gapPerAge = ages.map((a) => {
-    const ac = a - ageMean;
-    const ac2 = ac * ac;
-    const logGap = fit.beta[idxKv] + fit.beta[idxKvAge] * ac + fit.beta[idxKvAge2] * ac2;
-    const c = [1, ac, ac2];
-    const idxs = [idxKv, idxKvAge, idxKvAge2];
-    let v = 0;
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
-      v += c[i] * c[j] * fit.vcovHC3[idxs[i]][idxs[j]];
-    }
-    const se = Math.sqrt(Math.max(0, v));
-    const gapPct = (Math.exp(logGap) - 1) * 100;
-    const gapLoPct = (Math.exp(logGap - Z * se) - 1) * 100;
-    const gapHiPct = (Math.exp(logGap + Z * se) - 1) * 100;
-    return { age: a, gapPct, gapLoPct, gapHiPct };
-  });
-  const gapAt25 = gapPerAge[0].gapPct;
-  const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
-  const gapDelta = gapAt65 - gapAt25;
-  const niva25 = livscykelNiva(gapPerAge[0]);
-  const niva65 = livscykelNiva(gapPerAge[gapPerAge.length - 1]);
-  return {
-    ok: true,
-    n,
-    kvN,
-    maN,
-    k,
-    R2: fit.R2,
-    adjR2,
-    aic,
-    ageMean,
-    basList,
-    fixBas,
-    refBas,
-    basFaktor,
-    predKvinna,
-    predMan,
-    gapPerAge,
-    kvCoef,
-    kvSE,
-    kvPValue,
-    kvAgeCoef: fit.beta[idxKvAge],
-    kvAgePVal,
-    kvAge2Coef: fit.beta[idxKvAge2],
-    kvAge2PVal,
-    gapAt25,
-    gapAt65,
-    gapDelta,
-    niva25,
-    niva65
-  };
-}
-
 // src/lib/vymodell-alder-karriar.js
 var kr = (v) => `${v >= 0 ? "+" : "−"}${svKr(Math.abs(v))}`;
 function alderInsiktText(lutKv, lutMa, ra, vidSammaAlder, termer = STANDARDTERMER) {
@@ -14184,7 +14346,7 @@ function uppstartAlderKarriar() {
 
 // src/app/52-livscykel.js
 var _lifecycleFixBas = null;
-function renderLifecycleAnalysis(given) {
+function ritaLivscykel(given) {
   const wrap = document.getElementById("livscykel-content") || document.getElementById("lifecycle-content");
   if (!wrap) return;
   const result = runLifecycleRegression(_lifecycleFixBas);
@@ -14198,11 +14360,9 @@ function renderLifecycleAnalysis(given) {
   }
   _lifecycleFixBas = result.fixBas;
   const primary = given || runOLSRegression();
-  const primaryAdjR2 = primary && !primary.error ? primary.adjR2 : null;
-  const primaryGap = primary && !primary.error ? primary.konPct : null;
-  const primaryP = primary && !primary.error ? primary.pValue : null;
-  const primaryN = primary && !primary.error ? [primary.nKvAnalysed, primary.nMaAnalysed] : null;
-  const modellCaption = !primaryN || primaryN[0] === result.kvN && primaryN[1] === result.maN ? antalCaption(result.kvN, result.maN) : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(primaryN[0], primaryN[1])} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
+  const vm = vymodellLivscykel(result, { rader: state.data, k: kTroskel(), huvud: primary });
+  const h = vm.huvud;
+  const modellCaption = !h || vm.sammaUrval ? antalCaption(result.kvN, result.maN) : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
   const sigBadge = (p) => p < 1e-3 ? `<span class="farg-kritisk">***</span>` : p < 0.01 ? `<span class="farg-kritisk">**</span>` : p < 0.05 ? `<span class="farg-varning">*</span>` : "";
   const sakerOrd = (p) => samspelSakerstallt(p) ? "säkerställd" : '<span class="f-dampad">inte säkerställd</span>';
   const pText = (p) => p < 1e-3 ? "< 0,001" : svTal(p, 3);
@@ -14217,52 +14377,27 @@ function renderLifecycleAnalysis(given) {
     return `<div class="fs-xl fw-700 ${klass}" data-niva="${st.niva}" title="${esc(st.serie)}">${ikon(st.ikon)} ${svPct(kvot, 1)}</div>
                 <span class="sr-only">${esc(st.serie)}</span>`;
   };
-  const kvot25 = 100 + gapStart, kvot65 = 100 + gapEnd;
+  const { kvot25, kvot65 } = vm;
   const kvotMening = `Modellen ger skillnaden i procent, kvinnor mot män: ${gapStart >= 0 ? "+" : ""}${svPct(gapStart, 1)} vid 25 år och ${gapEnd >= 0 ? "+" : ""}${svPct(gapEnd, 1)} vid 65 år. Det är samma sak som att kvinnors lön är ${svPct(kvot25, 1)} respektive ${svPct(kvot65, 1)} av mäns, talen ovan.`;
-  const basRows = result.basList.map((b) => {
-    const dB = state.data.filter((r) => r.bas === b && r.lon > 0);
-    const skala = result.basFaktor?.[b] ?? 1;
-    const kv25 = result.predKvinna[0].lon * skala;
-    const kv65 = result.predKvinna[result.predKvinna.length - 1].lon * skala;
-    const ma25 = result.predMan[0].lon * skala;
-    const ma65 = result.predMan[result.predMan.length - 1].lon * skala;
-    return {
-      bas: b,
-      n: dB.length,
-      kv25,
-      kv65,
-      ma25,
-      ma65,
-      gap25Pct: result.gapAt25,
-      gap65Pct: result.gapAt65,
-      gap25Kr: kv25 - ma25,
-      gap65Kr: kv65 - ma65
-      // kvinnor mot män: negativt när kvinnor ligger lägre
-    };
-  });
-  const basVisade = basRows.filter((r) => !isKMasked(r.n));
-  const basUtelamnade = basRows.filter((r) => isKMasked(r.n)).map((r) => r.bas);
-  const kurvaUtelamnad = _lifecycleKurvaUtelamnad(result, basRows);
+  const basVisade = vm.visade;
+  const basUtelamnade = vm.utelamnade;
+  const kurvaUtelamnad = vm.kurvaUtelamnad;
   const kurvNot = kurvaUtelamnad ? `BAS ${result.fixBas} är valt. Lönekurvan visas inte här: intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}, och dess lönenivå skulle kunna peka ut enskilda. Personerna ingår fortfarande i modellen. Välj ett intervall med minst ${kTroskel()} ${personOrd(kTroskel())} för att se kurvan.` : "";
-  const adjR2Delta = primaryAdjR2 != null ? (result.adjR2 - primaryAdjR2) * 100 : null;
-  const modelMervarde = adjR2Delta != null ? adjR2Delta < 1 ? "liten" : adjR2Delta < 3 ? "måttlig" : "stor" : null;
+  const { adjR2Delta, mervarde: modelMervarde } = vm;
   const modellMening = adjR2Delta != null ? ` Jämfört med huvudmodellen i Lönestruktur förklarar livscykelmodellen ${adjR2Delta >= 0 ? "+" : "−"}${svTal(Math.abs(adjR2Delta), 1)} procentenheter mer av lönespridningen (${modelMervarde === "stor" ? "ett stort" : modelMervarde === "måttlig" ? "ett måttligt" : "ett litet"} tillägg${modelMervarde === "liten" ? "; den enklare modellen räcker" : ""}).` : "";
-  const interaktionSig = samspelSakerstallt(result.kvAgePVal, result.kvAge2PVal);
-  let coachKategori, coachRubrik, coachText;
-  if (!interaktionSig) {
-    coachKategori = "konstant";
+  const interaktionSig = vm.samspel;
+  const coachKategori = vm.monster;
+  let coachRubrik, coachText;
+  if (coachKategori === "konstant") {
     coachRubrik = "Samma skillnad över karriären";
     coachText = `Skillnaden ändras <strong>inte säkert</strong> med åldern (p<sub>kön×ålder</sub> = ${result.kvAgePVal < 1e-3 ? "< 0,001" : svTal(result.kvAgePVal, 3)}, p<sub>kön×ålder²</sub> = ${result.kvAge2PVal < 1e-3 ? "< 0,001" : svTal(result.kvAge2PVal, 3)}). Skillnaden är ungefär densamma i alla åldrar. <strong>Att utforska:</strong> lägg kraften på de strukturella analyserna (${T.niva.fl}, likvärdigt arbete) snarare än på karriären.`;
-  } else if (result.gapDelta < -2) {
-    coachKategori = "växande";
+  } else if (coachKategori === "växande") {
     coachRubrik = "Skillnaden växer med åldern";
     coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns sjunker med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska löneöversynernas utfall per kön i organisationens egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringar per ${T.niva.en}, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
-  } else if (result.gapDelta > 2) {
-    coachKategori = "krympande";
+  } else if (coachKategori === "krympande") {
     coachRubrik = "Skillnaden krymper med åldern";
     coachText = `Skillnaden är mindre i de högre åldrarna än i de lägre: kvinnors lön mot mäns stiger med ${svTal(result.gapDelta, 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men en hypotes att pröva är att <strong>skillnaden uppstår vid rekryteringen</strong>: kvinnor och män börjar med olika ingångslöner och ligger närmare varandra i de äldre grupperna. <strong>Att utforska:</strong> granska ingångslöner per kön och BAS, undersök rekryteringsprocessen, kontrollera lönesättningen för nyanställda.`;
   } else {
-    coachKategori = "praktiskt konstant";
     coachRubrik = "Skillnaden är i praktiken densamma";
     coachText = `Löneskillnaden ändras med åldern (p under 0,10), men lite: ${result.gapDelta >= 0 ? "+" : ""}${svTal(result.gapDelta, 1)} procentenheter. I praktiken är skillnaden densamma över karriären. <strong>Att utforska:</strong> behandla den som en strukturell skillnad och arbeta med huvudregressionen och ${T.niva.bfl}, inte med insatser för karriären.`;
   }
@@ -14372,10 +14507,10 @@ function renderLifecycleAnalysis(given) {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td><strong>Antal personer</strong></td><td>${primary ? primary.n : "—"}</td><td>${result.n}</td></tr>
-                        <tr><td><strong>Förklarad del av lönespridningen (justerat R²)</strong></td><td>${primaryAdjR2 != null ? svPct(primaryAdjR2 * 100, 1) : "—"}</td><td>${svPct(result.adjR2 * 100, 1)}</td></tr>
-                        <tr><td><strong>Löneskillnad kvinnor mot män</strong></td><td>${primaryGap != null ? (primaryGap >= 0 ? "+" : "") + svPct(primaryGap, 1) : "—"}</td><td>${(Math.exp(result.kvCoef) - 1) * 100 >= 0 ? "+" : ""}${svPct((Math.exp(result.kvCoef) - 1) * 100, 1)} (vid medelåldern ${Math.round(result.ageMean)} år)</td></tr>
-                        <tr><td><strong>Kön — p-värde</strong></td><td>${primaryP != null ? primaryP < 1e-3 ? "< 0,001" : svTal(primaryP, 3) : "—"} ${primaryP != null ? sigBadge(primaryP) : ""}</td><td>${pText(result.kvPValue)} ${sigBadge(result.kvPValue)}</td></tr>
+                        <tr><td><strong>Antal personer</strong></td><td>${h ? h.n : "—"}</td><td>${result.n}</td></tr>
+                        <tr><td><strong>Förklarad del av lönespridningen (justerat R²)</strong></td><td>${h && h.adjR2 != null ? svPct(h.adjR2 * 100, 1) : "—"}</td><td>${svPct(result.adjR2 * 100, 1)}</td></tr>
+                        <tr><td><strong>Löneskillnad kvinnor mot män</strong></td><td>${h && h.gapPct != null ? (h.gapPct >= 0 ? "+" : "") + svPct(h.gapPct, 1) : "—"}</td><td>${vm.livscykelGapPct >= 0 ? "+" : ""}${svPct(vm.livscykelGapPct, 1)} (vid medelåldern ${Math.round(result.ageMean)} år)</td></tr>
+                        <tr><td><strong>Kön — p-värde</strong></td><td>${h && h.p != null ? h.p < 1e-3 ? "< 0,001" : svTal(h.p, 3) : "—"} ${h && h.p != null ? sigBadge(h.p) : ""}</td><td>${pText(result.kvPValue)} ${sigBadge(result.kvPValue)}</td></tr>
                         <tr><td><strong>Kön×ålder — p-värde</strong></td><td><em class="f-dampad">ej i modellen</em></td><td>${result.kvAgePVal < 1e-3 ? "< 0,001" : svTal(result.kvAgePVal, 3)} ${sigBadge(result.kvAgePVal)}</td></tr>
                         <tr><td><strong>Kön×ålder² — p-värde</strong></td><td><em class="f-dampad">ej i modellen</em></td><td>${result.kvAge2PVal < 1e-3 ? "< 0,001" : svTal(result.kvAge2PVal, 3)} ${sigBadge(result.kvAge2PVal)}</td></tr>
                     </tbody>
@@ -14413,7 +14548,7 @@ function renderLifecycleAnalysis(given) {
       esc(KOHORT_FORBEHALL)
     ]
   });
-  state._lifecycleCache = { result, basRows, primary };
+  state._lifecycleCache = { result, basRows: vm.basRader };
   const behallare = document.getElementById("lifecycle-chart");
   if (kurvaUtelamnad || !behallare) {
   } else if (typeof iExportLage === "function" && iExportLage()) _renderLifecycleChart(result, behallare);
@@ -14424,7 +14559,7 @@ function renderLifecycleAnalysis(given) {
   if (sel) sel.addEventListener("change", () => {
     _lifecycleFixBas = /** @type {HTMLInputElement} */
     sel.value;
-    renderLifecycleAnalysis();
+    ritaLivscykel();
   });
   wrap.querySelectorAll(".btn-evidence[data-livscykel-bas]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -14436,13 +14571,9 @@ function renderLifecycleAnalysis(given) {
       if (!row) return;
       if (isKMasked(row.n)) return;
       const c = state._lifecycleCache;
-      _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, _lifecycleKurvaUtelamnad(c.result, c.basRows)));
+      _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
     });
   });
-}
-function _lifecycleKurvaUtelamnad(result, basRows) {
-  const fix = (basRows || []).find((r) => r.bas === result.fixBas);
-  return !!fix && isKMasked(fix.n);
 }
 function _evidenceForLifecycleBas(row, result, utanKurva = false) {
   const fmtKr = (v) => svKr(v, "—");
@@ -14504,20 +14635,7 @@ function _lifecycleFigur(r) {
   };
 }
 function runLifecycleRegression(fixBas) {
-  const res = livscykelRegression(getData(), { fixBas, golv: statGolv() });
-  if (res.error) return res;
-  const { gapAt25, gapAt65, gapDelta, kvAgePVal, kvAge2PVal } = res;
-  let interpretation;
-  if (!samspelSakerstallt(kvAgePVal, kvAge2PVal)) {
-    interpretation = "Skillnaden är **densamma över karriären** (samspelet mellan kön och ålder är inte statistiskt signifikant).";
-  } else if (gapDelta < -1) {
-    interpretation = `Skillnaden **växer med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på ett glastak och behöver granskas.`;
-  } else if (gapDelta > 1) {
-    interpretation = `Skillnaden **krymper med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på att kvinnorna hämtar in under karriären.`;
-  } else {
-    interpretation = `Skillnaden är **i princip densamma** över åldersspannet (${svPct(gapAt25, 1)} till ${svPct(gapAt65, 1)}).`;
-  }
-  return { ...res, interpretation };
+  return livscykelRegression(getData(), { fixBas, golv: statGolv() });
 }
 
 // src/app/51-lika-arbete-regressionskort.js
@@ -14545,19 +14663,6 @@ function _sigPlainText(p) {
   if (p < 0.05) return 'Signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 5 av 100 fall. Den vanliga tröskeln för en "statistiskt säkerställd" skillnad.';
   return `Ej signifikant (p=${svTal(p, 3)}): datat är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slumpvariation.`;
 }
-function _regressionKronor(r) {
-  if (!r || typeof r.konPct !== "number" || !isFinite(r.konPct) || !(r.medianMa > 0)) return null;
-  const refMan = r.medianMa;
-  const refKvinna = refMan * (1 + r.konPct / 100);
-  const krMonth = refMan - refKvinna;
-  return {
-    refMan,
-    refKvinna,
-    krMonth,
-    krYear: krMonth * 12,
-    krTotalYear: krMonth * 12 * (r.nKvAnalysed || 0)
-  };
-}
 function _ansvarRadText(fore, efter) {
   const sv = (v) => v.toFixed(2).replace(".", ",");
   const tkn = (v) => `${v >= 0 ? "+" : "−"}${sv(Math.abs(v))} %`;
@@ -14584,29 +14689,8 @@ function _budgetOrdningNot(budget) {
   const namn = { bas: "BAS", alder: "ålder", yrke: `${T.enhet.en} inom BAS` };
   return `<p class="rb-note">Stegen läggs till i ordningen ${esc(budget.parts.map((p) => namn[p.key] || p.key).join(", "))}; vad som tillskrivs varje steg beror på ordningen. Kortet Vad varje variabel tillför mäter varje variabel ovanpå alla andra.</p>`;
 }
-function _explanationBudget(seqOk) {
-  if (!Array.isArray(seqOk) || seqOk.length < 2) return null;
-  const ok = seqOk.filter((s) => typeof s.gapPct === "number");
-  if (ok.length < 2 || ok[0].name !== "Endast kön") return null;
-  const g0 = Math.abs(ok[0].gapPct);
-  if (!(g0 > 0)) return null;
-  const nyckel = { [_RG_STEG_BAS]: "bas", "+ Ålder": "alder", [_RG_STEG_YRKE]: "yrke" };
-  const etikett2 = { bas: "Förklaras av BAS-placering", alder: "Förklaras av ålder", yrke: `Förklaras av ${T.enhet.en} inom BAS` };
-  const parts = [];
-  for (let i = 1; i < ok.length; i++) {
-    const key = nyckel[ok[i].name];
-    if (!key) continue;
-    parts.push({ key, label: etikett2[key], val: Math.abs(ok[i - 1].gapPct) - Math.abs(ok[i].gapPct) });
-  }
-  if (!parts.length) return null;
-  const last = Math.abs(ok[ok.length - 1].gapPct);
-  const anyNegative = parts.some((p) => p.val < -5e-3);
-  const posSum = parts.reduce((s, p) => s + Math.max(0, p.val), 0);
-  const denom = Math.max(0.01, posSum + last);
-  parts.forEach((p) => {
-    p.share = Math.max(0, p.val) / denom * 100;
-  });
-  return { g0, remaining: last, parts, denom, anyNegative, remainingShare: last / denom * 100 };
+function _budgetEtikett() {
+  return { bas: "Förklaras av BAS-placering", alder: "Förklaras av ålder", yrke: `Förklaras av ${T.enhet.en} inom BAS` };
 }
 function _renderPerBasGapChart(perBas, bhQByBas) {
   const el = document.getElementById("chart-perbas-gap");
@@ -14630,11 +14714,7 @@ function _perBasDoman(sorted) {
   return [Math.floor((lag - luft) * 2) / 2, Math.ceil((hog + luft) * 2) / 2];
 }
 function _perBasFigur(sorted, bhQByBas) {
-  const status = (p) => {
-    const q = (bhQByBas || {})[p.bas];
-    const sig = p.pValue < 0.05 && (q == null || q < 0.05);
-    return _PERBAS_STATUS[{ titta: 0, dokumentera: 1 }[perBasSignal(p.gapPct, sig, p.pValue < 0.05).niva] ?? 2];
-  };
+  const status = (p) => _PERBAS_STATUS[{ titta: 0, dokumentera: 1 }[perBasNiva(p, (bhQByBas || {})[p.bas])] ?? 2];
   const pkt = (p) => ({
     y: "BAS " + p.bas,
     x: +p.gapPct.toFixed(2),
@@ -14669,9 +14749,6 @@ function _perBasFigur(sorted, bhQByBas) {
       tips
     })).filter((l) => l.data.length)
   };
-}
-function _regTrappaVisas(stegUt) {
-  return !!stegUt && !stegUt.utelamnat && stegUt.steg.filter((s) => s.status === "ok").length >= 2 && stegUt.steg[0].status === "ok";
 }
 var _REG_TRAPPSTEG = { [_RG_STEG_BAS]: stor(T.niva.en), "+ Ålder": "Ålder", [_RG_STEG_YRKE]: `${stor(T.enhet.en)} inom BAS` };
 function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en}`) {
@@ -14769,7 +14846,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
       try {
         if (!(_regKvantilMinne && _regKvantilMinne.nyckel === nyckel)) rakna();
         const kort = document.getElementById("regression-card");
-        if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !(typeof iExportLage === "function" && iExportLage())) renderRegressionCard();
+        if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !(typeof iExportLage === "function" && iExportLage())) ritaRegressionskort();
       } catch (e) {
         rapporteraFel("kvantilregressionens intervall", e);
       } finally {
@@ -14829,13 +14906,13 @@ function _fmTexter(m) {
   const motiv = lista([...m.alder ? ["att kvinnor är yngre"] : [], ...m.bas ? [`arbetar i andra ${T.niva.fl}`] : [], ...m.yrkesgrupp ? [`har andra ${T.enhet.fl}`] : []], " eller ");
   const variabler = ["kön", ...m.alder ? ["ålder"] : [], ...m.bas ? [_FM_I_MENING.bas] : [], ...m.yrkesgrupp ? [_FM_I_MENING.yrkesgrupp] : []];
   const antalOrd = ["", "en sak", "två saker", "tre saker", "fyra saker"][variabler.length];
-  const sista = m.yrkesgrupp ? _RG_STEG_YRKE : m.alder ? "+ Ålder" : m.bas ? _RG_STEG_BAS : "Endast kön";
+  const sista = sistaSteg(m);
   return { fras, nar: fras ? `när ${fras} räknats bort` : "utan att något räknats bort", forklarasAv, samma, motiv, variabler, antalOrd, sista };
 }
 function _fmNoteringText(b) {
   return bortvaltNotering(b).replace("ingår inte i siffrorna.", "ingår inte i siffrorna nedan.");
 }
-function renderForklaringsmodellPanel(r) {
+function ritaForklaringsmodellPanel(r) {
   const wrap = document.getElementById("forklaringsmodell-panel");
   if (!wrap) return;
   if (!r || r.error) {
@@ -14916,7 +14993,7 @@ function renderForklaringsmodellPanel(r) {
       }
       if (not) not.hidden = true;
       sattForklaringsmodell({ ...nu, skal: inp.value.trim() }, { rita: false });
-      renderForklaringsmodellPanel(runOLSRegression());
+      ritaForklaringsmodellPanel(runOLSRegression());
     }
   };
   wrap.onclick = (e) => {
@@ -14938,11 +15015,11 @@ function renderForklaringsmodellPanel(r) {
     sattForklaringsmodell(ny);
   };
 }
-function renderRegressionCard() {
+function ritaRegressionskort() {
   const wrap = document.getElementById("regression-card");
   if (!wrap) return;
   const r = runOLSRegression();
-  renderForklaringsmodellPanel(r);
+  ritaForklaringsmodellPanel(r);
   const fmT = _fmTexter(r.error ? normaliseraForklaringsmodell(null).modell : r.modell);
   const fmRubrik = document.querySelector("[data-fm-rubrik]"), fmInledning = document.querySelector("[data-fm-inledning]");
   if (fmRubrik) fmRubrik.textContent = fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : "Den råa skillnaden, utan att något räknats bort";
@@ -14965,18 +15042,22 @@ function renderRegressionCard() {
         `;
     return r;
   }
+  const vm = (
+    /** @type {NonNullable<ReturnType<typeof vymodellRegressionskort>>} */
+    vymodellRegressionskort(r, { k: kTroskel(), rader: getData(), medAlder: harAlder(), basEffektNot: (u) => _basEffektNot(u, kTroskel()) })
+  );
   const sig = _formatPValue(r.pValue);
-  const isSig = r.pValue < 0.05;
+  const isSig = vm.sakerstalld;
   const sign = r.konPct >= 0 ? "+" : "";
   let verdict;
-  if (!isSig) {
+  if (vm.niva === "ingen") {
     verdict = {
       cls: "ok",
       icon: ikon("bock", 28),
       title: "Ingen kvarstående skillnad",
       sub: `${fmT.nar.charAt(0).toUpperCase()}${fmT.nar.slice(1)} finns ingen skillnad som går att säkerställa. Det betyder inte att allt är perfekt — men underlaget ger inget stöd för en generell skillnad.`
     };
-  } else if (Math.abs(r.konPct) >= _STS_STORLEK) {
+  } else if (vm.niva === "titta") {
     verdict = {
       cls: "crit",
       icon: ikon("nal", 28),
@@ -14996,8 +15077,7 @@ function renderRegressionCard() {
               <strong>Notering:</strong> Fullmodellen kunde inte estimeras (multikollinearitet). Föll tillbaka till <code>${esc(r.modelDesc)}</code>.
               ${r.diagnostics.length ? `<details class="marg-t-6" open><summary class="pekare">Visa orsak</summary><ul class="lh-1_6 marg-6-0-0-18">${r.diagnostics.map((d) => `<li>${d}</li>`).join("")}</ul></details>` : ""}
            </div>` : "";
-  const stegUt = _regStegForRedovisning(r);
-  const seqOk = stegUt.steg.filter((s) => s.status === "ok" && (r.modell.yrkesgrupp || s.name !== _RG_STEG_YRKE));
+  const { stegUt, seqOk, yrkeVisas, stegIKortet } = vm;
   const stepDescription = {
     "Endast kön": "Endast kön (utan strukturell kontroll)",
     [_RG_STEG_BAS]: r.modell.alder ? `Efter kontroll för ${T.niva.en}` : `Efter kontroll för ${T.niva.en} (full modell)`,
@@ -15010,10 +15090,8 @@ function renderRegressionCard() {
     [_RG_STEG_YRKE]: `rensar ${forsta ? "" : "dessutom "}bort löneskillnader mellan ${T.enhet.fl} inom samma ${T.niva.en}`
   })[name];
   let waterfallHtml = "";
-  const yrkeVisas = r.yrkesSteg?.status === "ok" && !r.modell.yrkesgrupp && seqOk.some((s) => s.name === fmT.sista);
-  const stegIKortet = yrkeVisas ? [...seqOk, r.yrkesSteg] : seqOk;
-  if (seqOk.length >= (stegUt.utelamnat ? 1 : 2)) {
-    const maxAbs = Math.max(...stegIKortet.map((s) => Math.abs(s.gapPct)), 0.01);
+  if (vm.visaSteg) {
+    const maxAbs = vm.stegMax;
     stegIKortet.forEach((s, idx) => {
       const isLast = idx === seqOk.length - 1;
       const isYrke = s.name === _RG_STEG_YRKE;
@@ -15038,17 +15116,13 @@ function renderRegressionCard() {
             `;
     });
   }
-  const medYrkesSteg = (budget2) => !r.modell.yrkesgrupp && budget2.parts.some((p) => p.key === "yrke");
-  const yrkesStegKvar = (budget2) => budget2 && medYrkesSteg(budget2) ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${svPct(budget2.remainingShare, 0)} kvar (steget ${stegEtikett(_RG_STEG_YRKE)}, som inte ingår i huvudtalet).` : "";
+  const yrkesStegKvar = (budget2) => vm.budgetMedYrke ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${svPct(budget2.remainingShare, 0)} kvar (steget ${stegEtikett(_RG_STEG_YRKE)}, som inte ingår i huvudtalet).` : "";
   const explainedRowHtml = (budget2) => stegUt.explainedShare !== null ? `<div class="bak-info-bg rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
             <strong>Slutsats:</strong> ${esc(fmT.forklarasAv)} förklarar ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden; <strong>${svPct(100 - stegUt.explainedShare, 0)}</strong> blir kvar som huvudtalets oförklarade skillnad.${yrkesStegKvar(budget2)} Det oförklarade är det som <em>inte</em> kan tillskrivas ${fmT.variabler.length > 2 ? "dessa faktorer" : "den faktorn"} och som lönekartläggningen ska granska närmare.
            </div>` : "";
   const krFmt = (v) => svKr(v);
-  const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);
-  const kr2 = konOk ? _regressionKronor(r) : null;
-  const lonesummaKvAr = konOk ? getData().filter((d) => d.lon > 0 && (!harAlder() || d.alder > 0) && arKvinna(d)).reduce((s, d) => s + d.lon, 0) * 12 : 0;
-  const andelAvLonesumma = kr2 && lonesummaKvAr > 0 ? Math.abs(kr2.krTotalYear) / lonesummaKvAr * 100 : null;
-  const budget = stegUt.utelamnat ? null : _explanationBudget(yrkeVisas ? stegIKortet : seqOk);
+  const { konOk, kronor: kr2, andelAvLonesumma } = vm;
+  const budget = vm.budget;
   const caveatInline = `
         <p class="reg-caveat-inline" role="note"><strong>Kom ihåg:</strong> <em>oförklarat</em> betyder att skillnaden
         ${fmT.fras ? `inte fångas upp av ${esc(fmT.forklarasAv)}` : "här är hela skillnaden, utan att något räknats bort"} — <strong>inte</strong> att den beror på kön eller är osaklig.
@@ -15090,16 +15164,16 @@ function renderRegressionCard() {
             missvisande här: den observerade skillnaden är förenlig med slumpmässig variation.</p>`}
         </div>` : "";
   let ansvarHtml = "";
-  const sistaSteg = seqOk[seqOk.length - 1];
-  if (r.ansvarSteg?.status === "ok" && sistaSteg?.name === fmT.sista) {
-    ansvarHtml = `<p class="reg-ansvar">${_ansvarRadText(sistaSteg.gapPct, r.ansvarSteg.gapPct)}
+  if (vm.ansvar) {
+    ansvarHtml = `<p class="reg-ansvar">${_ansvarRadText(vm.ansvar.fore, vm.ansvar.efter)}
             Ansvar är ett tänkbart sakligt skäl. Om det är det avgör du. Huvudtalet ovan räknar inte bort ansvaret.</p>`;
   }
   let budgetHtml = "";
   if (budget) {
-    const segs = budget.parts.filter((p) => p.share > 0.05).map((p) => `<div class="rb-seg rb-${p.key}" data-stil-bredd="${p.share.toFixed(1)}%" title="${esc(p.label)}: ${svTal(p.val, 2)} procentenheter"></div>`).join("");
+    const etikett2 = _budgetEtikett();
+    const segs = budget.parts.filter((p) => p.share > 0.05).map((p) => `<div class="rb-seg rb-${p.key}" data-stil-bredd="${p.share.toFixed(1)}%" title="${esc(etikett2[p.key])}: ${svTal(p.val, 2)} procentenheter"></div>`).join("");
     const legend = budget.parts.map((p) => `
-            <li><span class="rb-key rb-${p.key}"></span>${esc(p.label)}:
+            <li><span class="rb-key rb-${p.key}"></span>${esc(etikett2[p.key])}:
                 <strong>${p.val < 0 ? "−" : ""}${svTal(Math.abs(p.val), 2)} procentenheter</strong>
                 <span class="f-dampad">(${svPct(Math.max(0, p.val) / budget.denom * 100, 0)} av skillnaden)</span></li>`).join("");
     budgetHtml = `
@@ -15114,31 +15188,25 @@ function renderRegressionCard() {
                     <li><span class="rb-key rb-kvar"></span><strong>Kvarstår oförklarat: ${svTal(budget.remaining, 2)} procentenheter</strong>
                         <span class="f-dampad">(${svPct(budget.remainingShare, 0)} av skillnaden)</span></li>
                 </ul>
-                ${medYrkesSteg(budget) ? `<p class="rb-note">${_FM_ETIKETT.yrkesgrupp} räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma ${T.enhet.en}, ${T.niva.en} och ålder.</p>` : ""}
+                ${vm.budgetMedYrke ? `<p class="rb-note">${_FM_ETIKETT.yrkesgrupp} räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma ${T.enhet.en}, ${T.niva.en} och ålder.</p>` : ""}
                 ${_budgetOrdningNot(budget)}
                 ${budget.anyNegative ? `<p class="rb-note">${ikon("statusVarning")} En kontrollvariabel <em>ökade</em> skillnaden i stället för att förklara den.
                     Det betyder att den strukturella faktorn <strong>dolde</strong> en del av skillnaden — utan den kontrollen
                     såg läget bättre ut än det är.</p>` : ""}
             </div>`;
   }
-  const okTests = (r.perBas || []).filter((p) => p.status === "ok" && isFinite(p.pValue));
-  const bhQByBas = {};
-  const qOk = bhJustera(okTests.map((t) => t.pValue));
-  okTests.forEach((t, i) => {
-    bhQByBas[t.bas] = qOk[i];
-  });
-  const allM = (r.perBas || []).filter((p) => p.status === "ok" && isFinite(p.pValue)).length;
-  const basEffUt = _basEffekterForRedovisning(r);
-  const perBasRows = (r.perBas || []).map((p) => {
+  const bhQByBas = vm.perBas.qPerBas;
+  const allM = vm.perBas.antalTester;
+  const basEffUt = vm.basEffekter;
+  const perBasRows = vm.perBas.rader.map((p) => {
     if (p.status !== "ok") {
       const note = p.status === "too_few" ? `För få: ${p.kvN} kvinnor, ${p.maN} män (kräver minst ${statGolv()} av varje kön)` : "Singulär";
       return `<tr><td>${esc(p.bas)}</td><td class="t-hoger">${p.n}</td><td class="t-mitt">${p.kvN}/${p.maN}</td><td class="farg-dampad kursiv">${note}</td><td class="t-mitt f-dampad">Går ej att bedöma</td><td class="col-stat t-mitt f-dampad">—</td><td class="col-stat t-mitt f-dampad">—</td><td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa varför denna BAS inte kunde analyseras" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon("sok")}</button></td></tr>`;
     }
     const sgn = p.gapPct >= 0 ? "+" : "";
-    const q = bhQByBas[p.bas];
-    const sigAfterCorrection = p.pValue < 0.05 && (q == null || q < 0.05);
-    const sigNiva = perBasSignal(p.gapPct, sigAfterCorrection, p.pValue < 0.05).niva;
-    const flag = sigNiva === "titta" ? ikon("nal") : sigNiva === "dokumentera" ? ikon("oga") : sigNiva === "osakert" && q >= 0.05 ? ikon("statusVarning") + ' <span class="text-dampad-xs">(ej efter korr.)</span>' : "";
+    const q = p.q;
+    const sigNiva = p.niva;
+    const flag = sigNiva === "titta" ? ikon("nal") : sigNiva === "dokumentera" ? ikon("oga") : p.ejEfterKorrigering ? ikon("statusVarning") + ' <span class="text-dampad-xs">(ej efter korr.)</span>' : "";
     const cellKlass = sigNiva === "titta" ? " farg-granska fet" : "";
     const qCell = q != null ? _formatPValue(q) : '<span class="f-dampad">—</span>';
     const signal = sigNiva === "titta" ? { txt: ikon("statusKritisk") + " Titta närmare", title: "Statistiskt säkerställd även efter korrigering och minst 3 % (verktygets storleksgräns). Pröva om skillnaden har sakliga skäl." } : sigNiva === "dokumentera" ? { txt: ikon("statusVarning") + " Dokumentera", title: "Statistiskt säkerställd efter korrigering, men under 3 % (verktygets storleksgräns). Dokumentera sakliga skäl och följ upp." } : sigNiva === "osakert" ? { txt: ikon("statusOsaker") + " Osäkert utslag", title: "Ser signifikant ut i råa p-värdet men håller inte efter korrigering för multipel jämförelse. Presentera inte som säkerställt." } : { txt: ikon("statusIngen") + " Inget utslag", title: `Ingen statistiskt säkerställd oförklarad skillnad i ${T.niva.bf}.` };
@@ -15150,18 +15218,18 @@ function renderRegressionCard() {
     return `${sym} <code class="fs-xs">${esc(s.desc)}</code><span class="text-dampad-xs">${note}</span>`;
   }).join(" &nbsp;|&nbsp; ");
   const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : "";
-  const tolkning = isSig ? Math.abs(r.konPct) >= _STS_STORLEK ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : "utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den."} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.` : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under verktygets storleksgräns på 3 %. Lagen kräver att du analyserar också den: dokumentera de sakliga skälen och följ upp den över tid.` : `<strong>Den råa löneskillnaden (${_raGapText(r, (v) => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : "är statistiskt obetydligt redan utan kontroller"}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig: underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
-  const _obsPerParam = r.n / Math.max(1, r.k);
-  const _ciWidth = r.konPctHigh != null && r.konPctLow != null ? r.konPctHigh - r.konPctLow : null;
-  const _minKon = Math.min(r.nKvAnalysed, r.nMaAnalysed);
+  const tolkning = isSig ? vm.niva === "titta" ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : "utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den."} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.` : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under verktygets storleksgräns på 3 %. Lagen kräver att du analyserar också den: dokumentera de sakliga skälen och följ upp den över tid.` : `<strong>Den råa löneskillnaden (${_raGapText(r, (v) => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : "är statistiskt obetydligt redan utan kontroller"}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig: underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
+  const tf = vm.tillforlitlighet;
+  const _obsPerParam = tf.obsPerParam;
+  const _ciWidth = tf.kiBredd;
   const _relFlags = [];
-  if (r.n < 50)
+  if (tf.litetUrval)
     _relFlags.push(`<strong>Litet urval (n=${r.n}).</strong> Skattningen har låg statistisk styrka — även en reell skillnad kan bli "ej signifikant", och punktvärdet svänger lätt med enstaka individer.`);
-  if (_obsPerParam < 15)
+  if (tf.faObsPerParam)
     _relFlags.push(`<strong>Få observationer per modellparameter (${svTal(_obsPerParam, 0)} st på ${r.k} parametrar).</strong> Med många ${T.niva.fl} relativt urvalet blir koefficienterna instabila (överanpassningsrisk). Överväg att slå ihop sällan förekommande BAS eller analysera en delmängd.`);
-  if (_ciWidth != null && _ciWidth > 10)
+  if (tf.brettKi)
     _relFlags.push(`<strong>Brett konfidensintervall (${svTal(r.konPctLow, 1)}–${svPct(r.konPctHigh, 1)}, bredd ${svTal(_ciWidth, 1)} p.e.).</strong> Den verkliga oförklarade skillnaden kan ligga var som helst i ett brett spann. Låt inte punktvärdet ensamt avgöra en åtgärd.`);
-  if (_minKon < 10)
+  if (tf.svagKontrast)
     _relFlags.push(`<strong>Svag könskontrast (${r.nKvAnalysed} kvinnor / ${r.nMaAnalysed} män i modellen).</strong> När det ena könet är fåtaligt blir kön-koefficienten känslig för enskilda löner.`);
   const reliabilityHtml = _relFlags.length ? `
         <div class="notis-varning fs-sm lh-1_55 marg-b-12 pad-10-14" role="note">
@@ -15208,7 +15276,7 @@ function renderRegressionCard() {
                 <strong>Tolkning:</strong> ${tolkning}
             </div>
 
-            ${_regTrappaVisas(stegUt) ? '<div class="chart-container mt-14"><div id="chart-reg-trappa"></div></div>' : ""}
+            ${vm.trappa ? '<div class="chart-container mt-14"><div id="chart-reg-trappa"></div></div>' : ""}
             ${waterfallHtml ? `
             <details class="marg-t-18" open>
                 <summary class="pekare fw-600 pad-8-0 ej-markerbar">Hur räknas siffran fram? (steg för steg)
@@ -15220,7 +15288,7 @@ function renderRegressionCard() {
                 ${stegUt.utelamnat ? `<p class="k-mask-note">${esc(stegUt.not)}</p>` : ""}
                 ${budgetHtml}
                 ${ansvarHtml}
-                <div class="reg-waterfall${_regTrappaVisas(stegUt) ? " sr-only" : ""}"${_regTrappaVisas(stegUt) ? ' aria-label="Stegen som lista"' : ""}>${waterfallHtml}</div>
+                <div class="reg-waterfall${vm.trappa ? " sr-only" : ""}"${vm.trappa ? ' aria-label="Stegen som lista"' : ""}>${waterfallHtml}</div>
                 ${explainedRowHtml(budget)}
             </details>
             ` : ""}
@@ -15259,14 +15327,11 @@ function renderRegressionCard() {
 
             ${(() => {
     const qr = _regKvantilBerakna();
+    const kv = kvantilVymodell(qr);
     _regKvantilSenast = null;
-    if (!qr) return "";
-    const validResults = qr.results.filter((x) => !x.error);
-    if (validResults.length < 2) return "";
-    _regKvantilSenast = validResults;
-    const p10 = qr.results.find((x) => x.tau === 0.1);
-    const p50 = qr.results.find((x) => x.tau === 0.5);
-    const p90 = qr.results.find((x) => x.tau === 0.9);
+    if (!qr || !kv.visas) return "";
+    _regKvantilSenast = kv.giltiga;
+    const { p10, p50, p90 } = kv;
     const pctTecken = (v) => `${v >= 0 ? "+" : "−"}${svPct(Math.abs(v), 1)}`;
     const peTecken = (v) => `${v >= 0 ? "+" : "−"}${svTal(Math.abs(v), 1)}`;
     const kiCell = (ki, fmt) => ki ? `${fmt(ki.lag)} till ${fmt(ki.hog)}` : qr.kiVantar ? '<span class="f-dampad">räknas i bakgrunden…</span>' : '<span class="f-dampad">–</span>';
@@ -15274,20 +15339,14 @@ function renderRegressionCard() {
       if (!x || x.error) return `<tr><td>${label}</td><td><em class="f-dampad">Kunde ej estimeras</em></td><td>–</td><td>${helper}</td></tr>`;
       return `<tr><td>${label}</td><td class="halvfet tabelltal">${pctTecken(x.konPct)}</td><td class="tabelltal">${kiCell(x.ki, pctTecken)}</td><td class="text-dampad-sm">${helper}</td></tr>`;
     };
-    const diff = qr.diff || { varde: null, ki: null };
-    const diffRad = typeof diff.varde === "number" && isFinite(diff.varde) ? `<tr><td><strong>P90 − P10</strong></td><td class="halvfet tabelltal">${peTecken(diff.varde)} procentenheter</td><td class="tabelltal">${kiCell(diff.ki, (v) => `${peTecken(v)}`)}</td><td class="text-dampad-sm">Skillnaden mellan toppen och botten. Negativ: löneskillnaden till kvinnornas nackdel är större bland de högst betalda</td></tr>` : "";
-    let tolkning2 = "";
-    if (diffRad) {
-      if (diff.ki && diff.ki.hog < 0) {
-        tolkning2 = `<strong>Glastaket väger tyngre än det klibbiga golvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`;
-      } else if (diff.ki && diff.ki.lag > 0) {
-        tolkning2 = `<strong>Det klibbiga golvet väger tyngre än glastaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`;
-      } else if (diff.ki) {
-        tolkning2 = `Ingen säkerställd skillnad mellan delarna av lönefördelningen.`;
-      } else if (qr.kiUtelamnad) {
-        tolkning2 = `Utan konfidensintervall går det inte att säga om löneskillnaden skiljer sig mellan delarna av lönefördelningen.`;
-      }
-    }
+    const diff = kv.diff;
+    const diffRad = kv.harDiff ? `<tr><td><strong>P90 − P10</strong></td><td class="halvfet tabelltal">${peTecken(diff.varde)} procentenheter</td><td class="tabelltal">${kiCell(diff.ki, (v) => `${peTecken(v)}`)}</td><td class="text-dampad-sm">Skillnaden mellan toppen och botten. Negativ: löneskillnaden till kvinnornas nackdel är större bland de högst betalda</td></tr>` : "";
+    const tolkning2 = {
+      glastak: `<strong>Glastaket väger tyngre än det klibbiga golvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`,
+      golv: `<strong>Det klibbiga golvet väger tyngre än glastaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`,
+      ingen: `Ingen säkerställd skillnad mellan delarna av lönefördelningen.`,
+      utanIntervall: `Utan konfidensintervall går det inte att säga om löneskillnaden skiljer sig mellan delarna av lönefördelningen.`
+    }[kv.tolkning] || "";
     if (qr.kiVantar) wrap.dataset.kvantilNyckel = qr.nyckel;
     else delete wrap.dataset.kvantilNyckel;
     return `
@@ -15391,7 +15450,7 @@ function renderRegressionCard() {
         </div>
     `;
   tillampaDataStil(wrap);
-  renderLifecycleAnalysis(r);
+  ritaLivscykel(r);
   _renderPerBasGapChart(r.perBas, bhQByBas);
   const trappa = document.getElementById("chart-reg-trappa");
   if (trappa) ritaFigur(trappa, _regTrappaFigur(seqOk, yrkeVisas ? r.yrkesSteg : null, fmT.fras));
@@ -15413,7 +15472,7 @@ function renderRegressionCard() {
       );
       const p = (r.perBas || []).find((x) => x.bas === basName);
       if (!p) return;
-      const q = bhQByBas[basName];
+      const q = bhQByBas[p.bas];
       _openEvidenceModal(_evidenceForPerBasRow(p, { q, allM }));
     });
   });
@@ -20488,7 +20547,7 @@ function _rmAvsnittenUtanUrval() {
     lvPar: lvRes && lvRes.pairs,
     oversikt: _laOversiktRader(d, void 0, k),
     recept: state.rapportTabeller || [],
-    basEffektNot: (utelamnade) => _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, "deras effekt i modellen skulle visa deras genomsnittliga lönenivå", "modellen")
+    basEffektNot: (utelamnade) => _basEffektNot(utelamnade, k)
   });
   const { nKv: kvN, nMa: maN, medKv, medMa, kvotPct, konOk } = vm.sammanfattning;
   const { par, utelamnade: parUtelamnade, not: parNot } = vm.likvardigt;
@@ -28638,17 +28697,10 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
   if (!endastGrupper) {
     try {
       if (reg && !reg.error && reg.perBas) {
-        const okTests = reg.perBas.filter((p) => p.status === "ok" && isFinite(p.pValue));
-        const bhQ = {};
-        const qOk = bhJustera(okTests.map((t) => t.pValue));
-        okTests.forEach((t, i) => {
-          bhQ[t.bas] = qOk[i];
-        });
-        reg.perBas.forEach((p) => {
+        perBasRegression(reg.perBas).rader.forEach((p) => {
           if (p.status !== "ok") return;
-          const q = bhQ[p.bas];
-          const sig = p.pValue < 0.05 && (q == null || q < 0.05);
-          if (perBasSignal(p.gapPct, sig, p.pValue < 0.05).niva === "titta") {
+          const q = p.q;
+          if (p.niva === "titta") {
             items.push({
               id: `eu-bas-${p.bas}`,
               kategori: "Lika arbete, fördjupning",
@@ -28683,7 +28735,7 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
     }
     try {
       const life = typeof runLifecycleRegression === "function" ? runLifecycleRegression(_lifecycleFixBas) : null;
-      if (life && life.ok && life.gapDelta < -2 && (life.kvAgePVal < 0.1 || life.kvAge2PVal < 0.1)) {
+      if (life && life.ok && livscykelMonster(life) === "växande") {
         items.push({
           id: "livscykel-vaxer",
           kategori: "Livscykel",
@@ -30469,12 +30521,8 @@ function _konUtelamnatNot() {
 function _raGapText(reg, fmt) {
   return raGapText(reg, fmt, kTroskel());
 }
-function _regStegForRedovisning(reg) {
-  return regStegForRedovisning(reg, kTroskel());
-}
-function _basEffekterForRedovisning(reg) {
-  const k = kTroskel();
-  return basEffekterForRedovisning(reg, k, (utelamnade) => _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, "deras effekt i modellen skulle visa deras genomsnittliga lönenivå", "modellen"));
+function _basEffektNot(utelamnade, k) {
+  return _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, "deras effekt i modellen skulle visa deras genomsnittliga lönenivå", "modellen");
 }
 function _setDiagramKNot(chartId, text) {
   const chart = document.getElementById(chartId);
@@ -32434,7 +32482,7 @@ function _renderTabContent(target) {
       /** @type {HTMLInputElement} */
       s.value
     );
-    renderLifecycleAnalysis();
+    ritaLivscykel();
     const s2 = document.getElementById("bas-select-demo");
     if (s2) ritaAldersstruktur(
       /** @type {HTMLInputElement} */
@@ -32455,7 +32503,7 @@ function _renderTabContent(target) {
   else if (target === "struktur" && d.length) {
     renderStructure();
     ritaLoneskillnadPerBas(lsBasVymodell());
-    _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => renderBlinderOaxacaCard(renderRegressionCard()));
+    _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => renderBlinderOaxacaCard(ritaRegressionskort()));
     ritaGapUppdelning();
     renderLonestrukturNycklar();
   } else if (target === "loneoversyn" && d.length) renderForecast();
