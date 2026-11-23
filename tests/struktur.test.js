@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     histogramKlasser, omfang,
-    konsMedianer, medianGapPct, representationPerBas, kvartilfordelning, fordelningsgap, tillDirektivtecken
+    konsMedianer, konsMedianerUrLoner, medianGapPct, representationPerBas, kvartilfordelning, fordelningsgap, tillDirektivtecken
 } from '../src/lib/struktur.js';
 
 const rows = () => [
@@ -52,6 +52,13 @@ describe('[B2.1] structure: konsMedianer', () => {
         expect(m.kvotPct).toBeCloseTo(34000 / 41000 * 100, 9);
         expect(m.gapPct).toBeCloseTo(m.kvotPct - 100, 9);
         expect(medianGapPct(rows())).toBe(m.gapPct);
+    });
+    it('konsMedianerUrLoner: samma tal ur lönerna delade efter kön, med samma regel för lön och k', () => {
+        expect(konsMedianerUrLoner([0, -5, 30000], [40000])).toEqual(konsMedianer([{ kon: 'kvinna', lon: 0 }, { kon: 'kvinna', lon: -5 }, { kon: 'kvinna', lon: 30000 }, { kon: 'man', lon: 40000 }]));
+        const kv = rows().filter(r => r.kon === 'kvinna').map(r => r.lon), ma = rows().filter(r => r.kon === 'man').map(r => r.lon);
+        expect(konsMedianerUrLoner(kv, ma)).toEqual(konsMedianer(rows()));
+        expect(konsMedianerUrLoner(kv, ma, { k: 5 })).toEqual(konsMedianer(rows(), { k: 5 }));
+        expect(konsMedianerUrLoner(undefined, null).konOk).toBe(false);
     });
 });
 

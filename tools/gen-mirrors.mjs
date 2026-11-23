@@ -111,7 +111,7 @@ export const MODULES = [
     {
         file: 'struktur.js', ns: '__mirrorStruktur',
         expose: {
-            konsMedianer: '_stKonsMedianer', medianGapPct: '_stMedianGapPct', representationPerBas: '_stRepresentationPerBas',
+            konsMedianer: '_stKonsMedianer', konsMedianerUrLoner: null, medianGapPct: '_stMedianGapPct', representationPerBas: '_stRepresentationPerBas',
             kvartilfordelning: '_stKvartilfordelning', fordelningsgap: '_stFordelningsgap',
             tillDirektivtecken: '_stTillDirektivtecken', lonebegreppReservation: '_stLonebegreppReservation',
             omfang: '_omfang', lonesteg: '_konLonesteg', histogramKlasser: '_konHistogramKlasser'

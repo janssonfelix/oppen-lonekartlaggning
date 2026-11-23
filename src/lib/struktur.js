@@ -28,7 +28,20 @@ import { arKvinna, arMan } from './kon.js';
  */
 export function konsMedianer(rader, { k = 1 } = {}) {
     const kv = [], ma = [];
-    (rader || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
+    (rader || []).forEach(r => { if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
+    return konsMedianerUrLoner(kv, ma, { k });
+}
+
+/**
+ * Som konsMedianer, för den som redan har delat lönerna efter kön: kvinnornas och männens löner var för sig. Samma
+ * regel: bara löner över 0 räknas, och konOk kräver minst max(1, k) av vardera könet.
+ * @param {number[]} kvLoner
+ * @param {number[]} maLoner
+ * @param {{k?: number}} [val]
+ * @returns {ReturnType<typeof konsMedianer>}
+ */
+export function konsMedianerUrLoner(kvLoner, maLoner, { k = 1 } = {}) {
+    const kv = (kvLoner || []).filter(v => v > 0), ma = (maLoner || []).filter(v => v > 0);
     const konOk = kv.length >= Math.max(1, k) && ma.length >= Math.max(1, k);
     if (!konOk) return { nKv: kv.length, nMa: ma.length, medKv: null, medMa: null, kvotPct: null, gapPct: null, konOk };
     // Bara löner över 0 räknas, så mäns median är alltid över 0 här.
@@ -74,7 +87,7 @@ export function representationPerBas(rader, { k = 1 } = {}) {
             median: _median(g.lons),
             medianKv: visaKv ? _median(g.kvLons) : null,
             medianMa: visaMa ? _median(g.maLons) : null,
-            gapPct: (visaKv && visaMa) ? (_median(g.kvLons) / _median(g.maLons) - 1) * 100 : null,
+            gapPct: konsMedianerUrLoner(g.kvLons, g.maLons, { k: minst }).gapPct,
             konLitet
         };
     }).sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));   // BAS A–Ö, som i övriga verktyget
