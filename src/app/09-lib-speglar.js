@@ -1190,9 +1190,9 @@ const __mirrorStat = (() => {
  * resultaten; artefaktgrinden vaktar att spegeln är i synk med src/lib/.
  *
  * Funktioner exporterade:
- *   - median, quantile, linearRegression  (Stat-objektet i appen pekar hit)
- *   - matMul, transpose, invert            (matrisalgebra)
- *   - fitOLS                                (OLS + HC3-robusta SE)
+ *   - median, kvantil, linjarRegression     (Stat-objektet i appen pekar hit)
+ *   - matrisprodukt, transponera, invertera (matrisalgebra)
+ *   - anpassaOLS                            (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
@@ -1214,25 +1214,25 @@ function avrundaSymmetriskt(x, dec = 0) {
 
 /**
  * Beräknar median (P50) av en talsekvens.
- * @param {number[]} arr
+ * @param {number[]} varden
  * @returns {number} 0 om tom, annars mittenelementet i sorterad lista.
  */
-function median(arr) {
-    if (!arr.length) return 0;
-    const s = [...arr].sort((a, b) => a - b);
+function median(varden) {
+    if (!varden.length) return 0;
+    const s = [...varden].sort((a, b) => a - b);
     const m = Math.floor(s.length / 2);
     return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
 /**
  * Kvantil via linjär interpolation (typ 7, samma som R's default).
- * @param {number[]} arr
+ * @param {number[]} varden
  * @param {number} q ∈ [0,1]
  * @returns {number}
  */
-function quantile(arr, q) {
-    if (!arr.length) return 0;
-    const s = [...arr].sort((a, b) => a - b);
+function kvantil(varden, q) {
+    if (!varden.length) return 0;
+    const s = [...varden].sort((a, b) => a - b);
     const pos = (s.length - 1) * q;
     const lo = Math.floor(pos);
     const hi = Math.ceil(pos);
@@ -1245,7 +1245,7 @@ function quantile(arr, q) {
  * @returns {{m:number, b:number, r2:number} | null} null med färre än två punkter eller utan spridning i x
  *   (alla x lika): då finns ingen lutning att räkna
  */
-function linearRegression(data) {
+function linjarRegression(data) {
     const n = data.length;
     if (n < 2) return null;
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
@@ -1295,10 +1295,10 @@ function _lnGamma(x) {
  * (Numerical Recipes, betacf). Konvergerar snabbt för x < (a+1)/(a+b+2);
  * annars används symmetrin I_x(a,b) = 1 − I_{1−x}(b,a).
  */
-function _regIncBeta(x, a, b) {
+function _regOfullstandigBeta(x, a, b) {
     if (x <= 0) return 0;
     if (x >= 1) return 1;
-    if (x > (a + 1) / (a + b + 2)) return 1 - _regIncBeta(1 - x, b, a);
+    if (x > (a + 1) / (a + b + 2)) return 1 - _regOfullstandigBeta(1 - x, b, a);
     const lnFront = _lnGamma(a + b) - _lnGamma(a) - _lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x);
     const tiny = 1e-300;
     let c = 1, d = 1 - (a + b) * x / (a + 1);
@@ -1331,26 +1331,26 @@ function _regIncBeta(x, a, b) {
  * @param {number} df - frihetsgrader (n − k)
  * @returns {number} P(T ≤ t)
  */
-function tDistCdf(t, df) {
+function tFordelningCdf(t, df) {
     if (!isFinite(t) || !(df > 0)) return NaN;
     if (df > 1e6) return normalCdf(t);
     const x = df / (df + t * t);
-    const twoSided = _regIncBeta(x, df / 2, 0.5);   // P(|T| > |t|)
+    const twoSided = _regOfullstandigBeta(x, df / 2, 0.5);   // P(|T| > |t|)
     return t >= 0 ? 1 - twoSided / 2 : twoSided / 2;
 }
 
 /**
  * t-fördelningens kvantil: det t för vilket P(T ≤ t | df) = p. Används för
- * konfidensintervall (p = 0,975 ger halvbredden för 95 %). Inverterar tDistCdf
+ * konfidensintervall (p = 0,975 ger halvbredden för 95 %). Inverterar tFordelningCdf
  * med bisektion; vid df ≥ 100 används normalfördelningen (1,96 för 95 %), samma
- * gräns som pValue2Sided.
+ * gräns som pVardeTvasidigt.
  * @param {number} p  - sannolikhet i (0, 1)
  * @param {number} df - frihetsgrader (n − k)
  * @returns {number} kvantilen, NaN vid ogiltiga argument
  */
-function tQuantile(p, df) {
+function tKvantil(p, df) {
     if (!(p > 0 && p < 1) || !(df > 0)) return NaN;
-    const cdf = df >= 100 ? normalCdf : t => tDistCdf(t, df);
+    const cdf = df >= 100 ? normalCdf : t => tFordelningCdf(t, df);
     let lo = -1, hi = 1;
     while (cdf(lo) > p) lo *= 2;
     while (cdf(hi) < p) hi *= 2;
@@ -1364,21 +1364,21 @@ function tQuantile(p, df) {
 /**
  * Tvåsidigt p-värde för en regressionskoefficient. Använder t-fördelning
  * vid små df (< 100), annars normalfördelning.
- * @param {number} stat - β / SE
+ * @param {number} t - β / SE
  * @param {number} n    - antal observationer
  * @param {number} k    - antal regressorer
  * @returns {number} 2-sidigt p-värde
  */
-function pValue2Sided(stat, n, k) {
+function pVardeTvasidigt(t, n, k) {
     const df = n - k;
-    if (!isFinite(stat) || !(df > 0)) return NaN;
-    const absT = Math.abs(stat);
+    if (!isFinite(t) || !(df > 0)) return NaN;
+    const absT = Math.abs(t);
     if (df >= 100) return 2 * (1 - normalCdf(absT));
-    return 2 * (1 - tDistCdf(absT, df));
+    return 2 * (1 - tFordelningCdf(absT, df));
 }
 
 /** Matrisprodukt C = A·B. */
-function matMul(A, B) {
+function matrisprodukt(A, B) {
     const m = A.length, n = B[0].length, p = B.length;
     const C = Array.from({ length: m }, () => new Array(n).fill(0));
     for (let i = 0; i < m; i++) {
@@ -1391,8 +1391,8 @@ function matMul(A, B) {
     return C;
 }
 
-/** Transpose Aᵀ. */
-function transpose(A) {
+/** Transponatet Aᵀ. */
+function transponera(A) {
     return A[0].map((_, i) => A.map(r => r[i]));
 }
 
@@ -1401,7 +1401,7 @@ function transpose(A) {
  * @param {number[][]} A
  * @returns {number[][]|null} null om singulär (pivotelement < 1e-10).
  */
-function invert(A) {
+function invertera(A) {
     const n = A.length;
     const M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
     for (let i = 0; i < n; i++) {
@@ -1424,7 +1424,7 @@ function invert(A) {
 /**
  * OLS-estimat med klassisk + HC3-robusta vcov (Long & Ervin 2000).
  *
- * Returnerar identiskt fältnamn-gränssnitt som app.js _fitOLS:
+ * Returnerar identiskt fältnamn-gränssnitt som app.js _anpassaOLS:
  *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
  * hHoga = antalet observationer med hävstång h_i > 0,99 (B4). De har (nästan) noll residual och bidrar inte till
  * HC3-köttet; antalet visas i regressionskortets tekniska specifikation (en ensam person i en indikator ger h = 1).
@@ -1437,7 +1437,7 @@ function invert(A) {
  * @param {number[]|null} [hTillagg] - n-vektor som läggs till hävstången h_i (gruppdelen vid inomtransformation).
  * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][], hHoga:number}}
  */
-function fitOLS(X, y, hTillagg = null) {
+function anpassaOLS(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 2) return null;
     // Indikatorerna gör X glest: varje rad har få nollskilda kolumner. Summorna räknas bara över dem, i samma ordning
@@ -1453,9 +1453,9 @@ function fitOLS(X, y, hTillagg = null) {
             Xty[a] += va * yi;
         }
     }
-    const XtXinv = invert(XtX);
+    const XtXinv = invertera(XtX);
     if (!XtXinv) return null;
-    const beta = matMul(XtXinv, Xty.map(v => [v])).map(r => r[0]);
+    const beta = matrisprodukt(XtXinv, Xty.map(v => [v])).map(r => r[0]);
 
     const yhat = X.map((row, i) => { let s = 0; for (const a of nz[i]) s += row[a] * beta[a]; return s; });
     const resid = y.map((yi, i) => yi - yhat[i]);
@@ -1493,8 +1493,8 @@ function fitOLS(X, y, hTillagg = null) {
             for (let q = 0; q < ix.length; q++) { const b = ix[q]; rad[b] += wa * xi[b]; }
         }
     }
-    const breadMeat = matMul(XtXinv, meat);
-    const vcovHC3 = matMul(breadMeat, XtXinv);
+    const breadMeat = matrisprodukt(XtXinv, meat);
+    const vcovHC3 = matrisprodukt(breadMeat, XtXinv);
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
 
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
@@ -1540,12 +1540,12 @@ function bhJustera(pVarden) {
     return q;
 }
 
-    return { tQuantile, pValue2Sided, fitOLS, quantile, bhJustera, avrundaSymmetriskt, matMul, invert, median, linearRegression, percentilintervall };
+    return { tKvantil, pVardeTvasidigt, anpassaOLS, kvantil, bhJustera, avrundaSymmetriskt, matrisprodukt, invertera, median, linjarRegression, percentilintervall };
 })();
-const _tQuantile = __mirrorStat.tQuantile;
-const _pValue2Sided = __mirrorStat.pValue2Sided;
-const _fitOLS = __mirrorStat.fitOLS;
-const _libQuantile = __mirrorStat.quantile;
+const _tKvantil = __mirrorStat.tKvantil;
+const _pVardeTvasidigt = __mirrorStat.pVardeTvasidigt;
+const _anpassaOLS = __mirrorStat.anpassaOLS;
+const _libKvantil = __mirrorStat.kvantil;
 const _bhJustera = __mirrorStat.bhJustera;
 const _avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
 
@@ -1670,7 +1670,7 @@ const _kostPeriod = __mirrorKostnad.periodkostnad;
 const __mirrorStructure = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
-    const _quantile = __mirrorStat.quantile;
+    const _quantile = __mirrorStat.kvantil;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
 
@@ -2946,7 +2946,7 @@ const __mirrorForecast = (() => {
     const arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
     const periodkostnad = __mirrorKostnad.periodkostnad;
     const _medianStat = __mirrorStat.median;
-    const _quantileStat = __mirrorStat.quantile;
+    const _quantileStat = __mirrorStat.kvantil;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
 
@@ -3524,7 +3524,7 @@ const _fcMedian = __mirrorForecast._median;
 const __mirrorAidbas = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
     const basRangFn = __mirrorLikvardighet.basRangFn;
     const konsklass = __mirrorLikvardighet.konsklass;
     const arKvinna = __mirrorKon.arKvinna;
@@ -3693,7 +3693,7 @@ function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = 
         const nat = typeof nationell === 'function' ? nationell(g.aid) : null;
         const andelKvNat = typeof nat === 'number' && isFinite(nat) ? nat : null;
         const stor = g.n >= k;
-        const med = stor ? median(g.loner) : null, p10 = stor ? quantile(g.loner, 0.1) : null, p90 = stor ? quantile(g.loner, 0.9) : null;
+        const med = stor ? median(g.loner) : null, p10 = stor ? kvantil(g.loner, 0.1) : null, p90 = stor ? kvantil(g.loner, 0.9) : null;
         const spridning = med != null && p10 != null && p90 != null && med > 0 ? (p90 - p10) / med : null;
         return { bas: g.bas, aid: g.aid, yrke: g.yrke, n: g.n, nKv: g.nKv, nMa: g.nMa, andelKv, andelKvNat,
                  klass: dominans(andelKv, definition, grans),
@@ -3761,12 +3761,12 @@ const _aidbasKlassNamn = __mirrorAidbas.klassNamn;
 // ---- speglar src/lib/regression.js ----
 const __mirrorRegression = (() => {
     // importer ur tidigare speglade lib-moduler
-    const fitOLS = __mirrorStat.fitOLS;
-    const invert = __mirrorStat.invert;
-    const matMul = __mirrorStat.matMul;
+    const anpassaOLS = __mirrorStat.anpassaOLS;
+    const invertera = __mirrorStat.invertera;
+    const matrisprodukt = __mirrorStat.matrisprodukt;
     const median = __mirrorStat.median;
-    const pValue2Sided = __mirrorStat.pValue2Sided;
-    const tQuantile = __mirrorStat.tQuantile;
+    const pVardeTvasidigt = __mirrorStat.pVardeTvasidigt;
+    const tKvantil = __mirrorStat.tKvantil;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const fyllTermer = __mirrorTermer.fyllTermer;
     const ordForAntal = __mirrorTermer.ordForAntal;
@@ -3791,7 +3791,7 @@ const __mirrorRegression = (() => {
  * Appen får dem genom lib-speglarna (ADR-8); src/app/50-regressionsmodeller.js
  * och runOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
  * som läser getData(), statGolv() och resten av tillståndet. OLS-kärnan
- * (fitOLS, invert, matMul, pValue2Sided, tQuantile) ligger i stat.js. Ingen modell här
+ * (anpassaOLS, invertera, matrisprodukt, pVardeTvasidigt, tKvantil) ligger i stat.js. Ingen modell här
  * räknar BAS som ett tal; BAS-rangen (basRangFn) finns kvar i likvardighet.js för Lägre krav.
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
@@ -3951,12 +3951,12 @@ function computePerBasGap(rows, basList, { golv }) {
         const aMean = harAlder ? sub.reduce((s,d)=>s+d.alder,0)/sub.length : 0;
         const X = sub.map(d => [1, arKvinna(d)?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
         const y = sub.map(d => Math.log(d.lon));
-        const fit = fitOLS(X, y);
+        const fit = anpassaOLS(X, y);
         if (!fit) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'singular' }); return; }
         const beta = fit.beta[1];
         const se   = Math.sqrt(fit.vcovHC3[1][1]); // HC3 robust SE
-        const p    = pValue2Sided(beta/se, fit.n, fit.k);
-        const tq   = tQuantile(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
+        const p    = pVardeTvasidigt(beta/se, fit.n, fit.k);
+        const tq   = tKvantil(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
         const ciLo = (Math.exp(beta - tq*se) - 1) * 100;
         const ciHi = (Math.exp(beta + tq*se) - 1) * 100;
         // Lönenivåerna för samma personer som regressionen (protokollet redovisar median och medelvärde, ADR-79). De
@@ -4023,10 +4023,10 @@ function justeradSkillnad(rows0, { medAlder = harAlderIRader(rows0) } = {}) {
     for (const medBas of [true, false]) {
         const X = bygg(medBas ? [...alder, 'bas'] : alder);
         if (giltiga.length < X[0].length + 5) continue;
-        const fit = fitOLS(X, y);
+        const fit = anpassaOLS(X, y);
         if (!fit) continue;
         const b = fit.beta[1], se = Math.sqrt(fit.vcovHC3[1][1]);
-        const tq = tQuantile(0.975, fit.n - fit.k);
+        const tq = tKvantil(0.975, fit.n - fit.k);
         return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - tq * se) - 1) * 100, high: (Math.exp(b + tq * se) - 1) * 100,
             n: fit.n, k: fit.k, medBas, medAlder, antalBas: basList.length };
     }
@@ -4086,7 +4086,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
     const skatta = s => {
         if (!N || N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
-        const fit = fitOLS(s.X, y);
+        const fit = anpassaOLS(s.X, y);
         if (!fit) return { name: s.name, status: 'singular' };
         return { name: s.name, status: 'ok', gapPct: (Math.exp(fit.beta[1]) - 1) * 100, R2: fit.R2, k: fit.k };
     };
@@ -4121,7 +4121,7 @@ function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = nu
     const kol = rows.map((_, i) => [isKv[i], ...(medAlder ? [ageC[i]] : []), ...(extra ? extra[i] : [])]);
     const inom = inomYrkesgrupp(rows, y, kol);
     if (!inom.ok) return { name, status: 'too_few', ...inom.meta };
-    const fit = fitOLS(inom.X, inom.yW);
+    const fit = anpassaOLS(inom.X, inom.yW);
     if (!fit) return { name, status: 'singular', ...inom.meta };
     return {
         name, status: 'ok',
@@ -4192,7 +4192,7 @@ function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = null) {
     let beta;
     if (Array.isArray(start) && start.length === k && start.every(Number.isFinite)) beta = start.slice();
     else {
-        const olsFit = fitOLS(X, y);
+        const olsFit = anpassaOLS(X, y);
         if (!olsFit) return null;
         beta = olsFit.beta.slice();
     }
@@ -4225,9 +4225,9 @@ function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = null) {
             }
         }
         const XtWX = Array.from({ length: k }, (_, a) => Array.from(S.subarray(a * k, a * k + k)));
-        const inv = invert(XtWX);
+        const inv = invertera(XtWX);
         if (!inv) return null;
-        const newBeta = matMul(inv, XtWy.map(v => [v])).map(r => r[0]);
+        const newBeta = matrisprodukt(inv, XtWy.map(v => [v])).map(r => r[0]);
         // Konvergens-check
         let delta = 0;
         for (let i = 0; i < k; i++) delta += Math.abs(newBeta[i] - beta[i]);
@@ -4310,8 +4310,8 @@ function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
         y: group.map(d => Math.log(d.lon)) });
     const medKv = kolumner(kv), medMa = kolumner(ma);
     const dKv = design(kv, medKv), dMa = design(ma, medMa);
-    const fitK = fitOLS(dKv.X, dKv.y);
-    const fitM = fitOLS(dMa.X, dMa.y);
+    const fitK = anpassaOLS(dKv.X, dKv.y);
+    const fitM = anpassaOLS(dMa.X, dMa.y);
     if (!fitK || !fitM) return null;
     const fasta = m.alder ? 2 : 1;
     // Koefficienter i full längd, 0 där gruppen saknas hos könet.
@@ -4524,7 +4524,7 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
             triedSteps.push({ name: step.name, desc: step.desc, status: 'too_few', k: step.X[0].length });
             continue;
         }
-        const fit = fitOLS(step.X, y);
+        const fit = anpassaOLS(step.X, y);
         if (!fit) {
             triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: step.X[0].length });
             continue;
@@ -4549,10 +4549,10 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
     const seKonR   = Math.sqrt(chosen.vcovHC3[1][1]);
     const seKonC   = Math.sqrt(chosen.vcovClassic[1][1]);
     const tStat    = betaKon / seKonR;
-    const pValue   = pValue2Sided(tStat, chosen.n, chosen.k);
+    const pValue   = pVardeTvasidigt(tStat, chosen.n, chosen.k);
     const pct      = (Math.exp(betaKon) - 1) * 100;
     // Halvbredden för 95 % KI: t-fördelningens kvantil vid df = n − k (1,96 först vid df ≥ 100)
-    const tq       = tQuantile(0.975, chosen.n - chosen.k);
+    const tq       = tKvantil(0.975, chosen.n - chosen.k);
     const pctLow   = (Math.exp(betaKon - tq*seKonR) - 1) * 100;
     const pctHigh  = (Math.exp(betaKon + tq*seKonR) - 1) * 100;
     const pctLowC  = (Math.exp(betaKon - tq*seKonC) - 1) * 100;
@@ -4565,7 +4565,7 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
         const betaAge   = chosen.beta[2];
         const seAge     = Math.sqrt(chosen.vcovHC3[2][2]);
         ageEffect = (Math.exp(betaAge) - 1) * 100;
-        ageP      = pValue2Sided(betaAge/seAge, chosen.n, chosen.k);
+        ageP      = pVardeTvasidigt(betaAge/seAge, chosen.n, chosen.k);
     }
 
     // BAS-koefficienter: lönenivå per BAS-intervall i procent mot referensintervallet, när BAS-indikatorerna är med
@@ -4583,7 +4583,7 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
                 pct: (Math.exp(beta) - 1) * 100,
                 low: (Math.exp(beta - tq*se) - 1) * 100,
                 high: (Math.exp(beta + tq*se) - 1) * 100,
-                p: pValue2Sided(beta/se, chosen.n, chosen.k)
+                p: pVardeTvasidigt(beta/se, chosen.n, chosen.k)
             };
         });
     }
@@ -4678,7 +4678,7 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
  * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Standardfelen är
  * den fulla designens (ADR-77): HC3 räknas med hävstången h_i + 1/n_g, den fulla designens, och skalas inte; den
  * klassiska kovariansen skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader. k räknas med gruppnivåerna,
- * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
+ * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som anpassaOLS med intercept (index 0 är en
  * tom konstant), så att resten av huvudregression läser kön på index 1 och ålder på index 2.
  * hHoga räknas på samma fulla hävstång: en ensam person i en grupp har h = 1.
  * @param {any[]} raw @param {number[]} y @param {number[]} isKv @param {number[]} ageC @param {boolean} medAlder
@@ -4688,7 +4688,7 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
     const inom = inomYrkesgrupp(raw, y, kol);
     if (!inom.ok) return null;
-    const fit = fitOLS(inom.X, inom.yW, inom.hGrupp);
+    const fit = anpassaOLS(inom.X, inom.yW, inom.hGrupp);
     if (!fit) return null;
     const n = raw.length, p = kol[0].length, k = inom.k;
     if (n - k <= 0) return null;
@@ -4722,7 +4722,7 @@ const _rgStegEtikett = __mirrorRegression.stegEtikett;
 const __mirrorOsakerhet = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const linearRegression = __mirrorStat.linearRegression;
+    const linjarRegression = __mirrorStat.linjarRegression;
     const percentilintervall = __mirrorStat.percentilintervall;
     const rngFor = __mirrorRng.rngFor;
     const slumpensGranser = __mirrorStatus.slumpensGranser;
@@ -4932,7 +4932,7 @@ function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {}) {
 function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
     const n = data.length;
     if (n < BAND_MIN_N) return null;
-    const reg = linearRegression(data);
+    const reg = linjarRegression(data);
     if (!reg) return null;
     const meanX = data.reduce((s, p) => s + p[0], 0) / n;
     let ssX = 0, rss = 0;
@@ -5250,7 +5250,7 @@ const _osKonstanter = __mirrorOsakerhet.osakerhetKonstanter;
 const __mirrorLonepolitik = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
-    const _quantile = __mirrorStat.quantile;
+    const _quantile = __mirrorStat.kvantil;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
     const aidAvYrke = __mirrorAid.aidAvYrke;
@@ -5560,7 +5560,7 @@ const _lpKonstanter = __mirrorLonepolitik.lonepolitikKonstanter;
 const __mirrorPrioritering = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
     const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const aidAvYrke = __mirrorAid.aidAvYrke;
     const namnrader = __mirrorAid.namnrader;
@@ -5678,7 +5678,7 @@ function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGrans }) {
 
     // Lönepositionsmått per kön: kräver tröskeln för båda könen (ADR-12)
     if (item.kvN >= kTroskel && item.maN >= kTroskel) {
-        const q1 = quantile(rows.map(r => r.lon), 0.2);
+        const q1 = kvantil(rows.map(r => r.lon), 0.2);
         const andelKv = item.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / item.kvN : 0;
         const andelMa = item.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / item.maN : 0;
         if (andelKv >= 0.4 && andelKv - andelMa >= 0.2) out.push({ kod: 'kvintil', type: 'flag', andelKv, andelMa });
@@ -5835,9 +5835,9 @@ const _prMotiveringsgrunder = __mirrorPrioritering.motiveringsgrunder;
 // ---- speglar src/lib/livscykel.js ----
 const __mirrorLivscykel = (() => {
     // importer ur tidigare speglade lib-moduler
-    const fitOLS = __mirrorStat.fitOLS;
-    const pValue2Sided = __mirrorStat.pValue2Sided;
-    const tQuantile = __mirrorStat.tQuantile;
+    const anpassaOLS = __mirrorStat.anpassaOLS;
+    const pVardeTvasidigt = __mirrorStat.pVardeTvasidigt;
+    const tKvantil = __mirrorStat.tKvantil;
     const statusNiva = __mirrorStatus.statusNiva;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const arKvinna = __mirrorKon.arKvinna;
@@ -5947,7 +5947,7 @@ function livscykelRegression(rader, { fixBas, golv }) {
         y.push(Math.log(d.lon));
     });
 
-    const fit = fitOLS(X, y);
+    const fit = anpassaOLS(X, y);
     if (!fit) return { error: 'Modellen kunde inte estimeras — möjlig multikollinearitet bland BAS-dummies.', errorCode: 'singular' };
 
     // Adj-R² och AIC för modelljämförelse
@@ -5963,20 +5963,20 @@ function livscykelRegression(rader, { fixBas, golv }) {
     const aic = n * Math.log(rss / n) + 2 * k;
 
     // Tester på kön-relaterade koefficienter (huvudeffekt + interaktioner)
-    const Z = tQuantile(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
+    const Z = tKvantil(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
     const idxKv      = 1;
     const idxKvAge   = 4;
     const idxKvAge2  = 5;
     const kvCoef     = fit.beta[idxKv];
     const kvSE       = Math.sqrt(fit.vcovHC3[idxKv][idxKv]);
     const kvT        = kvSE > 0 ? kvCoef / kvSE : 0;
-    const kvPValue   = pValue2Sided(kvT, fit.n, fit.k);
+    const kvPValue   = pVardeTvasidigt(kvT, fit.n, fit.k);
     const kvAgeSE    = Math.sqrt(fit.vcovHC3[idxKvAge][idxKvAge]);
     const kvAgeT     = kvAgeSE > 0 ? fit.beta[idxKvAge] / kvAgeSE : 0;
-    const kvAgePVal  = pValue2Sided(kvAgeT, fit.n, fit.k);
+    const kvAgePVal  = pVardeTvasidigt(kvAgeT, fit.n, fit.k);
     const kvAge2SE   = Math.sqrt(fit.vcovHC3[idxKvAge2][idxKvAge2]);
     const kvAge2T    = kvAge2SE > 0 ? fit.beta[idxKvAge2] / kvAge2SE : 0;
-    const kvAge2PVal = pValue2Sided(kvAge2T, fit.n, fit.k);
+    const kvAge2PVal = pVardeTvasidigt(kvAge2T, fit.n, fit.k);
 
     // Prediktioner för ålder 25..65 vid fixerad BAS, för båda könen
     // SE för prediktion: x' · vcovHC3 · x  → 95 % KI = exp(logLon ± Z · SE)
@@ -7719,7 +7719,7 @@ const _ifAvvikelsePerKonOchBas = __mirrorIndivid.avvikelsePerKonOchBas;
 const __mirrorUtforska = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
     const gruppnycklar = __mirrorFalt.gruppnycklar;
     const konOf = __mirrorFalt.konOf;
     const jamforAldersgrupp = __mirrorFalt.jamforAldersgrupp;
@@ -7775,13 +7775,13 @@ function _matt(lons, matt) {
     switch (matt) {
         case 'n': return lons.length;
         case 'medel': return lons.reduce((s, v) => s + v, 0) / lons.length;
-        case 'p10': return quantile(lons, 0.10);
-        case 'p25': return quantile(lons, 0.25);
-        case 'p75': return quantile(lons, 0.75);
-        case 'p90': return quantile(lons, 0.90);
+        case 'p10': return kvantil(lons, 0.10);
+        case 'p25': return kvantil(lons, 0.25);
+        case 'p75': return kvantil(lons, 0.75);
+        case 'p90': return kvantil(lons, 0.90);
         case 'spridning': {
-            const p10 = quantile(lons, 0.10);
-            return p10 > 0 ? quantile(lons, 0.90) / p10 : null;
+            const p10 = kvantil(lons, 0.10);
+            return p10 > 0 ? kvantil(lons, 0.90) / p10 : null;
         }
         default: return median(lons);
     }
@@ -9336,7 +9336,7 @@ const __mirrorAidkontroll = (() => {
     const arRestkod = __mirrorAid.arRestkod;
     const arLedningsetikett = __mirrorAid.arLedningsetikett;
     const normaliseraAid = __mirrorAid.normaliseraAid;
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const stor = __mirrorTermer.stor;
     const adjektiv = __mirrorTermer.adjektiv;
@@ -9395,7 +9395,7 @@ function aidKriterier(rader, { k, harAnsvar = false }) {
     const per = new Map();
     d.forEach(r => { const key = normaliseraAid(r.aid); if (!per.has(key)) per.set(key, []); per.get(key).push(r.lon); });
     const breda = [...per].filter(([, l]) => l.length >= k).map(([aid, l]) => {
-        const p10 = quantile(l, 0.1), p90 = quantile(l, 0.9);
+        const p10 = kvantil(l, 0.1), p90 = kvantil(l, 0.9);
         return { aid, kvot: p10 > 0 ? p90 / p10 : null };
     }).filter(x => x.kvot != null && x.kvot > SPRIDNING_GRANS);
     ut.push({ id: 'aid-spridning', namn: 'Lönespridning inom AID', status: breda.length ? 'varning' : 'ok', varde: breda.length,
@@ -9427,7 +9427,7 @@ const _akAidKriterier = __mirrorAidkontroll.aidKriterier;
 const __mirrorJamforelse = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
     const sektorsnamn = __mirrorAid.sektorsnamn;
     const aidAvYrke = __mirrorAid.aidAvYrke;
     const namnrader = __mirrorAid.namnrader;
@@ -9565,7 +9565,7 @@ function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
         for (const bas of [...perBas.keys()].sort()) {
             const { yrke, lons, kvinnor } = perBas.get(bas);
             if (lons.length < k) { utelamnade.push(`${aid} (BAS ${bas})`); continue; }
-            const org = _tre(quantile(lons, 0.1), median(lons), quantile(lons, 0.9));
+            const org = _tre(kvantil(lons, 0.1), median(lons), kvantil(lons, 0.9));
             const traff = statistikFor(statistik, aid, bas), s = traff?.rad;
             const p = policyFor(aid, bas);
             const stat = _tre(s?.p10, s?.median, s?.p90), pol = _tre(p?.p10, p?.med, p?.p90);
@@ -9781,8 +9781,8 @@ const _rrLageOchForslag = __mirrorReferenser.lageOchForslag;
 const __mirrorRapportunderlag = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const quantile = __mirrorStat.quantile;
-    const fitOLS = __mirrorStat.fitOLS;
+    const kvantil = __mirrorStat.kvantil;
+    const anpassaOLS = __mirrorStat.anpassaOLS;
     const skrDelText = __mirrorSkrReferens.skrDelText;
     const matchningEtikett = __mirrorJamforelse.matchningEtikett;
     const bedomSkillnad = __mirrorStatus.bedomSkillnad;
@@ -9904,7 +9904,7 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
         const g = { yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
             medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             lag: b.granser ? b.granser.lag : null, hog: b.granser ? b.granser.hog : null,
-            p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
+            p10Kv: kvantil(kv, 0.1), p90Kv: kvantil(kv, 0.9), p10Ma: kvantil(ma, 0.1), p90Ma: kvantil(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
         // varje grupp på minst 3 % och visas för grupperna Värt att granska.
         if (gapPct >= STORLEKSGRANS) g.stabilitet = _stabilitet(kv, ma, { k, troskel: STORLEKSGRANS });
@@ -9940,7 +9940,7 @@ function justeratGapInomYrke(rader, { k }) {
     if (d.length < p + 5) return { forFa: true };
     const X = d.map(r => [1, arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
     const y = d.map(r => Math.log(r.lon));
-    const fit = fitOLS(X, y);
+    const fit = anpassaOLS(X, y);
     // Singulär modell: kön och BAS sammanfaller inom yrket (t.ex. alla kvinnor i ett BAS).
     if (!fit || !isFinite(fit.beta[1])) return { ejSkattbar: true };
     return { gapPct: (Math.exp(fit.beta[1]) - 1) * 100, n: d.length };
@@ -10724,7 +10724,7 @@ const _docxDelar = __mirrorDocx.docxDelar;
 const __mirrorPerBas = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
     const sektorsnamn = __mirrorAid.sektorsnamn;
     const aidAvRad = __mirrorAid.aidAvRad;
     const namnrader = __mirrorAid.namnrader;
@@ -10795,7 +10795,7 @@ function perBasReceptArStandard(r) { return JSON.stringify(valideraPerBasRecept(
 const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
-const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), p25: quantile(l, 0.25), med: median(l), p75: quantile(l, 0.75), p90: quantile(l, 0.9), medel: _medel(l) } : null; };
+const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: kvantil(l, 0.1), p25: kvantil(l, 0.25), med: median(l), p75: kvantil(l, 0.75), p90: kvantil(l, 0.9), medel: _medel(l) } : null; };
 
 /** Yrkesgruppens namn: AID-koden och etiketten. */
 function yrkesnamn(r) {
@@ -11245,7 +11245,7 @@ const _sakPerKategori = __mirrorSakligaskal.skalPerKategori;
 const __mirrorArsbokslut = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
     const skapaTermer = __mirrorTermer.skapaTermer;
     const valideraSkal = __mirrorSakligaskal.valideraSkal;
     const skalPerKategori = __mirrorSakligaskal.skalPerKategori;
@@ -11292,7 +11292,7 @@ function lonespridning(lon, k) {
     if (!Array.isArray(lon) || !lon.length || lon.length < k) return null;
     const med = median(lon);
     if (!(med > 0)) return null;
-    return Math.round((quantile(lon, 0.9) - quantile(lon, 0.1)) / med * 1e4) / 1e4;
+    return Math.round((kvantil(lon, 0.9) - kvantil(lon, 0.1)) / med * 1e4) / 1e4;
 }
 
 /**
@@ -11998,7 +11998,7 @@ const _opLiknarPersonuppgift = __mirrorOrganisationspaket.liknarPersonuppgift;
 // ---- speglar src/lib/figur.js ----
 const __mirrorFigur = (() => {
     // importer ur tidigare speglade lib-moduler
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
     const avrundaSymmetriskt = __mirrorStat.avrundaSymmetriskt;
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
@@ -12051,7 +12051,7 @@ function talformat(v, namn, val) {
 /**
  * Kvantilpunkterna i ett kvantilpunktdiagram (lada med form: 'kvantiler'): `antal` lika
  * stora andelar av gruppen, var och en företrädd av kvantilen i sin mitt, (i + 0,5) / antal, med samma
- * interpolation som stat.quantile. Antalet är högst `antalMax` och högst halva gruppen, så att en prick aldrig
+ * interpolation som stat.kvantil. Antalet är högst `antalMax` och högst halva gruppen, så att en prick aldrig
  * står för färre än två personer. null när gruppen har färre än två värden.
  * @param {number[]} varden
  * @param {number} [antalMax]
@@ -12219,14 +12219,14 @@ function antalPunkter(figur) {
 }
 
 /**
- * Lådans mått: kvartiler med samma metod som verktygets tabeller (stat.js quantile), morrhår
+ * Lådans mått: kvartiler med samma metod som verktygets tabeller (stat.js kvantil), morrhår
  * till yttersta värdet inom 1,5 kvartilavstånd, övriga som avvikare.
  * @returns {{q1:number, median:number, q3:number, lag:number, hog:number, avvikare:number[]} | null}
  */
 function ladstatistik(varden) {
     const v = (varden || []).filter(x => typeof x === 'number' && isFinite(x)).sort((a, b) => a - b);
     if (!v.length) return null;
-    const q1 = quantile(v, 0.25), median = quantile(v, 0.5), q3 = quantile(v, 0.75);
+    const q1 = kvantil(v, 0.25), median = kvantil(v, 0.5), q3 = kvantil(v, 0.75);
     const kant = 1.5 * (q3 - q1);
     const inom = v.filter(x => x >= q1 - kant && x <= q3 + kant);
     return { q1, median, q3, lag: inom[0], hog: inom[inom.length - 1], avvikare: v.filter(x => x < q1 - kant || x > q3 + kant) };
@@ -12972,7 +12972,7 @@ const __mirrorDemodata = (() => {
     const _anGrupp = __mirrorAnsvar.ansvarsgrupp;
     const _normalizePolicyAid = __mirrorInlasning._normalizePolicyAid;
     const median = __mirrorStat.median;
-    const quantile = __mirrorStat.quantile;
+    const kvantil = __mirrorStat.kvantil;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -13299,9 +13299,9 @@ function _sdStallningstagande(data, k = 10) {
             med: _sdAvrunda(senast.med * 1.1, 500), p90: _sdAvrunda(senast.p90 * 1.1, 100) }] : [];
         senast = {
             aid: null, bas,
-            p10: _sdAvrunda(quantile(loner, 0.1), 100),
+            p10: _sdAvrunda(kvantil(loner, 0.1), 100),
             med: _sdAvrunda(median(loner) * (_SD_POLICYLYFT[bas] || 1), 500),
-            p90: _sdAvrunda(quantile(loner, 0.9), 100),
+            p90: _sdAvrunda(kvantil(loner, 0.9), 100),
         };
         return [senast];
     });

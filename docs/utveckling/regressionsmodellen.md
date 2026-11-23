@@ -49,7 +49,7 @@ flikarnas nyckeltalsrader. Med standardmodellen är huvudtalet steget *+ Ålder*
 inom BAS vald är det steget *+ AID-etikett inom BAS*. Huvudtalet är detsamma i regressionskortet, Word-utkastet, PDF-rapporten och
 överallt där det används (avsnitt 2).
 
-**Standardfel** är HC3-robusta (`vcovHC3` ur `fitOLS`, Long & Ervin 2000). Kortet redovisar också intervallet med
+**Standardfel** är HC3-robusta (`vcovHC3` ur `anpassaOLS`, Long & Ervin 2000). Kortet redovisar också intervallet med
 klassiska standardfel (`konPctLowClassical`, `konPctHighClassical`). p-värdet och konfidensintervallet räknas som i
 avsnitt 7. Ålderns effekt redovisas som procent per år (`ageEffect`, `ageP`) när ålder är med. `hHoga` är antalet
 observationer med hävstång över 0,99; de bidrar inte till HC3 och antalet står i kortets tekniska specifikation.
@@ -67,7 +67,7 @@ bootstrapintervallet för hela organisationen (`organisationensKvotKI` i `src/li
 skillnaden har samma tecken som talet.
 
 **Reservstegen.** Kan den valda modellen inte skattas — för få rader (färre än kolumnerna + 5) eller singulär design
-(`fitOLS` ger null) — prövas nästa steg: först utan AID-etikett inom BAS, sedan utan BAS. Inget bortvalt läggs tillbaka, så med
+(`anpassaOLS` ger null) — prövas nästa steg: först utan AID-etikett inom BAS, sedan utan BAS. Inget bortvalt läggs tillbaka, så med
 standardmodellen är reserven kön + ålder och med bara BAS vald är den endast kön. `modellVald` är den valda modellen,
 `modell` den som skattades. När reserven används (`fellBackFromFull`) säger panelen och kortet det, med orsakerna ur
 `diagnoseCollinearity`: helt enkönade BAS-intervall (med minst 3 personer), färre än två BAS-intervall och under 50
@@ -249,12 +249,12 @@ på de transformerade kolumnerna [kön, (ålder)]. Koefficienterna är desamma s
 (Frisch–Waugh–Lovell), och standardfelen är den fulla designens (ADR-77). Hävstången i den fulla designen är
 h_i + 1/n_g, där h_i räknas på de transformerade kolumnerna och n_g är antalet personer i radens grupp (gruppens
 projektion är ortogonal mot de transformerade kolumnerna). HC3 räknas med den hävstången (`hGrupp` ur
-`inomYrkesgrupp`, som `fitOLS` lägger till) och skalas inte: HC3 har ingen korrektion för frihetsgrader. Den klassiska
+`inomYrkesgrupp`, som `anpassaOLS` lägger till) och skalas inte: HC3 har ingen korrektion för frihetsgrader. Den klassiska
 kovariansen skalas med (n − p) / (n − p − G), där p är antalet lutningar och G antalet grupper, så att σ² delas med
 gruppnivåernas frihetsgrader. Antalet parametrar k = p + G räknar dem, så att t-kvantilen och p-värdet använder
 df = n − p − G. Båda kovarianserna är då de som statsmodels `cov_HC3` och R `sandwich::vcovHC(type = "HC3")` ger
 med en indikator per grupp (prövas i `tests/stat-referens.test.js`). En person ensam i en grupp har h = 1 och
-residualen 0; `fitOLS` ger raden vikten 0, vilket ger samma tal som statsmodels och R när de personerna tas bort (med
+residualen 0; `anpassaOLS` ger raden vikten 0, vilket ger samma tal som statsmodels och R när de personerna tas bort (med
 dem kvar ger statsmodels och R NaN eller ett tal som avrundningen avgör). Resultatet får samma form som en vanlig skattning (kön på plats 1, ålder på
 plats 2), R² räknas mot lönens totala variation och `hHoga` på den fulla hävstången, så att en ensam person i en
 grupp räknas. Steget
@@ -345,15 +345,15 @@ skattningarna som avstånd från nollinjen med intervallet. Kortet visas när mi
 ## 7. Konfidensintervall och p-värden
 
 **t-kvantilen.** Konfidensintervallen i huvudregressionen (huvudtalet och `basEffekter`), regressionerna per
-BAS-intervall, översikten per huvudområde och livscykelmodellen är exp(β ± t(0,975; n − k) · SE) − 1, i procent, med `tQuantile(p, df)` i
-`src/lib/stat.js`. Funktionen inverterar `tDistCdf` med bisektion. Vid **df ≥ 100** används normalfördelningen (1,96),
-samma gräns som `pValue2Sided`; vid färre frihetsgrader är intervallet bredare (df 5: 2,571; df 10: 2,228; df 26:
+BAS-intervall, översikten per huvudområde och livscykelmodellen är exp(β ± t(0,975; n − k) · SE) − 1, i procent, med `tKvantil(p, df)` i
+`src/lib/stat.js`. Funktionen inverterar `tFordelningCdf` med bisektion. Vid **df ≥ 100** används normalfördelningen (1,96),
+samma gräns som `pVardeTvasidigt`; vid färre frihetsgrader är intervallet bredare (df 5: 2,571; df 10: 2,228; df 26:
 2,056; df 60: 2,000).
 
-**p-värdet.** `pValue2Sided(stat, n, k)` är det tvåsidiga p-värdet med df = n − k: t-fördelningen vid df under 100,
+**p-värdet.** `pVardeTvasidigt(t, n, k)` är det tvåsidiga p-värdet med df = n − k: t-fördelningen vid df under 100,
 normalfördelningen därifrån. Signifikansnivån är 0,05.
 
-**t-fördelningen** (`tDistCdf`) är exakt, via den regulariserade ofullständiga betafunktionen: P(|T| > t) = I_x(df/2,
+**t-fördelningen** (`tFordelningCdf`) är exakt, via den regulariserade ofullständiga betafunktionen: P(|T| > t) = I_x(df/2,
 1/2) med x = df / (df + t²), räknad med kedjebråk och ln Γ enligt Lanczos. Över df 1 000 000 används
 normalfördelningen. Normalfördelningens fördelningsfunktion (`normalCdf`) är approximationen Abramowitz & Stegun
 26.2.17.
@@ -540,7 +540,7 @@ nollställer valet, och organisationspaketet bär det inte.
 | Fil | Vad | Hur den togs fram |
 |---|---|---|
 | `stat-referens.json` | 100 rader med heteroskedastiskt brus, och designkolumnerna; ett BAS-intervall (F) finns bara hos männen, så regeln i avsnitt 5 prövas | `gen-stat-referens.mjs`, seedad mulberry32 (seed 20261016) |
-| `stat-referens-varden.json` | OLS-koefficienter, klassisk kovarians och HC3; t-fördelningens CDF; kvantilregressionen på den äldre rangdesignen; den stegvisa uppdelningen, där bara steget *Endast kön* används (stegen med BAS gäller den äldre rangen, och stegen med indikatorer prövas mot `fitOLS`, som är prövad mot statsmodels); Blinder-Oaxaca med BAS som indikatorer och på modellerna bara BAS, bara ålder och ålder + AID-etikett inom BAS | `ref-stat-referens.py`, körd med `python3 -I` i en tillfällig miljö: statsmodels (OLS, HC3 ≡ R `sandwich::vcovHC` type HC3), scipy (`stats.t.cdf`; kvantilregressionen som exakt LP med HiGHS ≡ R `quantreg::rq`). Kördes 2026-10-16, Blinder-Oaxaca om 2026-10-29 (indikatorer) och 2026-11-05 (de valbara modellerna). CI behöver inte Python. |
+| `stat-referens-varden.json` | OLS-koefficienter, klassisk kovarians och HC3; t-fördelningens CDF; kvantilregressionen på den äldre rangdesignen; den stegvisa uppdelningen, där bara steget *Endast kön* används (stegen med BAS gäller den äldre rangen, och stegen med indikatorer prövas mot `anpassaOLS`, som är prövad mot statsmodels); Blinder-Oaxaca med BAS som indikatorer och på modellerna bara BAS, bara ålder och ålder + AID-etikett inom BAS | `ref-stat-referens.py`, körd med `python3 -I` i en tillfällig miljö: statsmodels (OLS, HC3 ≡ R `sandwich::vcovHC` type HC3), scipy (`stats.t.cdf`; kvantilregressionen som exakt LP med HiGHS ≡ R `quantreg::rq`). Kördes 2026-10-16, Blinder-Oaxaca om 2026-10-29 (indikatorer) och 2026-11-05 (de valbara modellerna). CI behöver inte Python. |
 | `stat-referens-kvantil.json` | Den exakta LP-lösningen för indikatormodellen (`standard`) och för bara BAS (`baraBas`) vid τ = 0,1, 0,5 och 0,9 | En tabellsimplex med Blands regel i ett engångsskript i Node som inte är incheckat, med kontrollerna i filhuvudet till `tests/stat-referens.test.js` |
 
 Filhuvudet i `tests/stat-referens.test.js` beskriver framtagningen och den uppmätta avvikelsen, och toleranserna i
@@ -550,7 +550,7 @@ testerna speglar den.
 
 | Fil | Prövar |
 |---|---|
-| `tests/stat.test.js` | OLS, HC3, `tDistCdf`, `tQuantile` mot t-tabellen, `pValue2Sided` och matrisalgebran: egenskaper; `bhJustera` mot handräknade fall |
+| `tests/stat.test.js` | OLS, HC3, `tFordelningCdf`, `tKvantil` mot t-tabellen, `pVardeTvasidigt` och matrisalgebran: egenskaper; `bhJustera` mot handräknade fall |
 | `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell; `bhJustera` mot statsmodels `multipletests(method='fdr_bh')` |
 | `tests/sektor.test.js` | Översikten per huvudområde: könskoefficienten som huvudregressionens på samma urval, med och utan ålder (mot stegen och mot `runOLSRegression`: koefficienten, gränserna, n och k), intervallet med HC3 och t-kvantil, k-villkoren, inget tal när kön och BAS inte går att skilja åt, och rubrikregeln |
 | `tests/regression.test.js` | `src/lib/regression.js` direkt: förklaringsmodellen som värde, stegen på vald modell, vad varje variabel tillför, `kvantilDesign` och `quantileRegressionAtAllTau`, modellerna utan ålder och radfiltret |

@@ -232,7 +232,7 @@ function ritaOmReferens() {
 const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
 
 // Statistiska helpers för vyerna; en källa: src/lib/stat.js via spegeln (tests/stat.test.js prövar den).
-const Stat = { median: __mirrorStat.median, quantile: __mirrorStat.quantile, linearRegression: __mirrorStat.linearRegression };
+const Stat = { median: __mirrorStat.median, kvantil: __mirrorStat.kvantil, linjarRegression: __mirrorStat.linjarRegression };
 
 // Talen i indata (_normalizeNumberString, parseNumber, parseNumberStrict) tolkas i src/lib/inlasning.js och nås här
 // genom spegeln under samma namn.

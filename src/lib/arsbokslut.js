@@ -9,7 +9,7 @@
 // Version 2: handlingsplanens sakliga skäl per grupp (bedomningar: kategori och belopp, aldrig kommentarerna), så att
 // jämförelsen kan visa fördelningen per kategori båda åren. Ett bokslut från version 1 läses som förut, utan skäl.
 
-import { median, quantile } from './stat.js';
+import { median, kvantil } from './stat.js';
 import { skapaTermer } from './termer.js';
 import { valideraSkal, skalPerKategori, skalSammanstallning, skalKategorier } from './sakligaskal.js';
 import { aidAvYrke } from './aid.js';
@@ -38,7 +38,7 @@ export function lonespridning(lon, k) {
     if (!Array.isArray(lon) || !lon.length || lon.length < k) return null;
     const med = median(lon);
     if (!(med > 0)) return null;
-    return Math.round((quantile(lon, 0.9) - quantile(lon, 0.1)) / med * 1e4) / 1e4;
+    return Math.round((kvantil(lon, 0.9) - kvantil(lon, 0.1)) / med * 1e4) / 1e4;
 }
 
 /**

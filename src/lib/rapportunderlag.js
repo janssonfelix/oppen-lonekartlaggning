@@ -11,7 +11,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { median, quantile, fitOLS } from './stat.js';
+import { median, kvantil, anpassaOLS } from './stat.js';
 import { skrDelText } from './skrreferens.js';
 import { matchningEtikett } from './jamforelse.js';
 import { bedomSkillnad, statusKonstanter } from './status.js';
@@ -95,7 +95,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
         const g = { yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
             medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             lag: b.granser ? b.granser.lag : null, hog: b.granser ? b.granser.hog : null,
-            p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
+            p10Kv: kvantil(kv, 0.1), p90Kv: kvantil(kv, 0.9), p10Ma: kvantil(ma, 0.1), p90Ma: kvantil(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
         // varje grupp på minst 3 % och visas för grupperna Värt att granska.
         if (gapPct >= STORLEKSGRANS) g.stabilitet = _stabilitet(kv, ma, { k, troskel: STORLEKSGRANS });
@@ -131,7 +131,7 @@ export function justeratGapInomYrke(rader, { k }) {
     if (d.length < p + 5) return { forFa: true };
     const X = d.map(r => [1, arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
     const y = d.map(r => Math.log(r.lon));
-    const fit = fitOLS(X, y);
+    const fit = anpassaOLS(X, y);
     // Singulär modell: kön och BAS sammanfaller inom yrket (t.ex. alla kvinnor i ett BAS).
     if (!fit || !isFinite(fit.beta[1])) return { ejSkattbar: true };
     return { gapPct: (Math.exp(fit.beta[1]) - 1) * 100, n: d.length };

@@ -5,7 +5,7 @@
  * tools/gen-mirrors.mjs (endast `export` strippas), så kropparna kan inte
  * glida isär. Att den incheckade spegeln är i synk med src/lib/ prövar artefaktgrinden
  * (tools/kontroll.mjs och .github/workflows/ci.yml). Detta test vaktar ALIAS-WIRING:
- * att varje app-globalt spegelnamn (_fitOLS, _fcComputePott …) faktiskt pekar på
+ * att varje app-globalt spegelnamn (_anpassaOLS, _fcComputePott …) faktiskt pekar på
  * RÄTT lib-funktion (en felmappning i manifestet fångas).
  *
  * Själva lib-logiken testas direkt i stat/loneoversyn/struktur.test.js m.fl., och
@@ -140,8 +140,8 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
         const rnd = lcg(99);
         for (let i = 0; i < 200; i++) {
             const x = rnd() * 12 - 6;
-            expect(M._pValue2Sided(x, 202, 2)).toBe(libStat.pValue2Sided(x, 202, 2));   // df = 200 ≥ 100: går genom normalCdf
-            expect(M._pValue2Sided(x, 22, 2)).toBe(libStat.pValue2Sided(x, 22, 2));     // df = 20: går genom tDistCdf
+            expect(M._pVardeTvasidigt(x, 202, 2)).toBe(libStat.pVardeTvasidigt(x, 202, 2));   // df = 200 ≥ 100: går genom normalCdf
+            expect(M._pVardeTvasidigt(x, 22, 2)).toBe(libStat.pVardeTvasidigt(x, 22, 2));     // df = 20: går genom tFordelningCdf
         }
         // forecast: summarizeGroups + computePott speglar lib på slumprader
         const rows = Array.from({ length: 60 }, () => ({
@@ -155,10 +155,10 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
         expect(M._stRepresentationByBas(rows)).toEqual(libSt.representationByBas(rows));
         expect(M._stQuartileDistribution(rows)).toEqual(libSt.quartileDistribution(rows));
         expect(M._stDistributionalGap(rows)).toEqual(libSt.distributionalGap(rows));
-        // stat: fitOLS speglar lib (känd linjär modell + brus)
+        // stat: anpassaOLS speglar lib (känd linjär modell + brus)
         const X = rows.slice(0, 20).map((_, i) => [1, i, (i % 3)]);
         const y = X.map(r => 2 + 3 * r[1] - r[2]);
-        expect(M._fitOLS(X, y)).toEqual(libStat.fitOLS(X, y));
+        expect(M._anpassaOLS(X, y)).toEqual(libStat.anpassaOLS(X, y));
     });
 });
 
@@ -312,7 +312,7 @@ describe('regression: 50-regressionsmodeller.js är en tunn adapter', () => {
 
     it('innehåller inga egna beräkningar (ingen log eller OLS-anrop)', () => {
         expect(regSrc, 'log-lön räknas i src/lib/regression.js').not.toContain('Math.log(');
-        expect(regSrc, 'OLS anropas i src/lib/regression.js').not.toContain('_fitOLS(');
+        expect(regSrc, 'OLS anropas i src/lib/regression.js').not.toContain('_anpassaOLS(');
     });
 
     for (const namn of adaptrar) {
@@ -348,7 +348,7 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till sp
     it('runLifecycleRegression delegerar till _lcLivscykelRegression och bygger ingen egen modell', () => {
         const kropp = extractFn(lcSrc, 'runLifecycleRegression');
         expect(kropp).toContain('_lcLivscykelRegression(');
-        expect(lcSrc, 'OLS anropas i src/lib/livscykel.js').not.toContain('_fitOLS(');
+        expect(lcSrc, 'OLS anropas i src/lib/livscykel.js').not.toContain('_anpassaOLS(');
         expect(kropp, 'log-lön räknas i src/lib/livscykel.js').not.toContain('Math.log(');
         expect(kropp, 'designmatrisen hör hemma i src/lib/livscykel.js').not.toContain('dummyBas');
     });

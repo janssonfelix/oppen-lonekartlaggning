@@ -136,7 +136,7 @@ function buildGruppdossier(key, delat = null) {
         key: g.key, aid: g.aid, bas: g.bas, yrke: g.yrke,
         n: g.rows.length, nKv: kv.length, nMa: ma.length,
         median: Stat.median(lons),
-        p10: Stat.quantile(lons, 0.10), p90: Stat.quantile(lons, 0.90),
+        p10: Stat.kvantil(lons, 0.10), p90: Stat.kvantil(lons, 0.90),
         gap, adjusted, ansvar, skr: _skrKvinnoandel(g.aid, { del: _skrDel() }), pol, polLevel: policyLevelLabel(pol), band, compliance,
         lvAsSubject, lvAsComparator, lvUtelamnade, bench, prio, suggestions
     };

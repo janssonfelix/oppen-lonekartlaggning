@@ -34,7 +34,7 @@ function generateRapport() {
             // Gruppen räknas i stället upp i noten sist i BAS-blocket.
             if (isKMasked(subset.length)) { kMaskedRowsCount++; basUtelamnade.push(kategori); return; }
             const lons = subset.map(r => r.lon);
-            const med = Stat.median(lons), p10 = Stat.quantile(lons, 0.1), p90 = Stat.quantile(lons, 0.9);
+            const med = Stat.median(lons), p10 = Stat.kvantil(lons, 0.1), p90 = Stat.kvantil(lons, 0.9);
             const isWarn = pol && pol.p10 && med < pol.p10;
             const spreadTal = p10 > 0 ? p90 / p10 : null;
             const spread = spreadTal != null ? svTal(spreadTal, 2) : "-";

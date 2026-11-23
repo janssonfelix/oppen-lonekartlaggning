@@ -7,7 +7,7 @@
 // speglas in i 09-lib-speglar.js (ADR-8). Här finns bara de tunna adaptrarna som
 // läser appens tillstånd (getData(), statGolv()) och skickar det som parametrar.
 //
-// OLS-kärnan (_fitOLS m.fl.) är också speglad.
+// OLS-kärnan (_anpassaOLS m.fl.) är också speglad.
 // Huvudregressionens adapter, runOLSRegression, står i 51-lika-arbete-regressionskort.js; den cachas aldrig (ADR-17).
 
 // Stegens nycklar i den sekventiella dekomponeringen (ADR-74): kortet, rapporten och exporten slår upp stegen på dem.

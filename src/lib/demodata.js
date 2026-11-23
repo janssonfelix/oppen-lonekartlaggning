@@ -14,7 +14,7 @@
 import { arKvinna, arMan } from './kon.js';
 import { ansvarsgrupp as _anGrupp } from './ansvar.js';
 import { _normalizePolicyAid } from './inlasning.js';
-import { median, quantile } from './stat.js';
+import { median, kvantil } from './stat.js';
 
 // ---- Det lilla demot ----
 export function generateTestData() {
@@ -324,9 +324,9 @@ export function _sdStallningstagande(data, k = 10) {
             med: _sdAvrunda(senast.med * 1.1, 500), p90: _sdAvrunda(senast.p90 * 1.1, 100) }] : [];
         senast = {
             aid: null, bas,
-            p10: _sdAvrunda(quantile(loner, 0.1), 100),
+            p10: _sdAvrunda(kvantil(loner, 0.1), 100),
             med: _sdAvrunda(median(loner) * (_SD_POLICYLYFT[bas] || 1), 500),
-            p90: _sdAvrunda(quantile(loner, 0.9), 100),
+            p90: _sdAvrunda(kvantil(loner, 0.9), 100),
         };
         return [senast];
     });

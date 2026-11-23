@@ -65,7 +65,7 @@ function _abBasRad(d, bas, k) {
     if (df.length < k) return null;
     const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
     const lon = df.map(r => r.lon), konOk = kv.length >= k && ma.length >= k;
-    return { bas, n: df.length, nKv: kv.length, nMa: ma.length, p10: Stat.quantile(lon, 0.10), med: Stat.median(lon), p90: Stat.quantile(lon, 0.90),
+    return { bas, n: df.length, nKv: kv.length, nMa: ma.length, p10: Stat.kvantil(lon, 0.10), med: Stat.median(lon), p90: Stat.kvantil(lon, 0.90),
         medKv: konOk ? Stat.median(kv.map(r => r.lon)) : null, medMa: konOk ? Stat.median(ma.map(r => r.lon)) : null,
         spridning: _abSpridning(lon, k) };
 }

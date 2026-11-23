@@ -291,8 +291,8 @@ function _evidenceForRapportRow(p) {
     const n = (p.lons || []).length;
     const masked = !!p.masked;
     const med = masked || !n ? null : Stat.median(p.lons);
-    const p10 = masked || !n ? null : Stat.quantile(p.lons, 0.1);
-    const p90 = masked || !n ? null : Stat.quantile(p.lons, 0.9);
+    const p10 = masked || !n ? null : Stat.kvantil(p.lons, 0.1);
+    const p90 = masked || !n ? null : Stat.kvantil(p.lons, 0.9);
     const spread = (p10 != null && p10 > 0 && p90 != null) ? p90 / p10 : null;
     const statDiffPct = (med != null && p.statRefMedian) ? ((med / p.statRefMedian) - 1) * 100 : null;
 

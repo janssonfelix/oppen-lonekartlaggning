@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { fitOLS as fitOLSRef } from '../src/lib/stat.js';
+import { anpassaOLS as fitOLSRef } from '../src/lib/stat.js';
 import { computeSequentialGap, quantileRegression, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP,
     normaliseraForklaringsmodell, forklaringsmodellArStandard, modellFras, modellBeskrivning, modellVariabler,
     computeVariabelTillfor, computePerBasGap, blinderOaxaca, kvantilDesign, quantileRegressionAtAllTau, harAlderIRader } from '../src/lib/regression.js';

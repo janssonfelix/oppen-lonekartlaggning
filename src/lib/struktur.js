@@ -13,7 +13,7 @@
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B2.1–B2.5).
  */
 
-import { median as _median, quantile as _quantile } from './stat.js';
+import { median as _median, kvantil as _quantile } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
 
 

@@ -25,7 +25,7 @@
  * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B4.1, B4.2 och B4.4–B4.8).
  */
-import { median, linearRegression, percentilintervall } from './stat.js';
+import { median, linjarRegression, percentilintervall } from './stat.js';
 import { rngFor } from './rng.js';
 import { slumpensGranser } from './status.js';
 import { bootstrapMedianer } from './likvardighet.js';
@@ -197,7 +197,7 @@ export function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {})
 export function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
     const n = data.length;
     if (n < BAND_MIN_N) return null;
-    const reg = linearRegression(data);
+    const reg = linjarRegression(data);
     if (!reg) return null;
     const meanX = data.reduce((s, p) => s + p[0], 0) / n;
     let ssX = 0, rss = 0;

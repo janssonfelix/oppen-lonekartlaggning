@@ -10,7 +10,7 @@ const grupp = (yrke, bas, loner) => loner.map(lon => ({ yrke, bas, lon }));
 const tio = (_bas = 'C', start = 30000) => Array.from({ length: 10 }, (_, i) => start + i * 1000);   // 30 000 … 39 000
 
 describe('[B6.5] jamforelse: organisationens percentiler och skillnader', () => {
-    it('räknar P10, median och P90 som quantile och skillnaden mot statistiken', () => {
+    it('räknar P10, median och P90 som kvantil och skillnaden mot statistiken', () => {
         const { rader } = jamforelseRader(grupp('402010 Förskollärare', 'C', tio()),
             { statistik: [{ aid: '402010', bas: 'C', p10: 31000, median: 35000, p90: 40000 }], policyFor: () => null, k: 10 });
         expect(rader).toHaveLength(1);

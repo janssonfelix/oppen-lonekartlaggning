@@ -38,8 +38,8 @@ function renderKon(bas) {
     if (df.length < 2) return;
     const dataKv = df.filter(d => arKvinna(d));
     const dataMa = df.filter(d => arMan(d));
-    const regKv  = Stat.linearRegression(dataKv.map(d => [d.alder, d.lon]));
-    const regMa  = Stat.linearRegression(dataMa.map(d => [d.alder, d.lon]));
+    const regKv  = Stat.linjarRegression(dataKv.map(d => [d.alder, d.lon]));
+    const regMa  = Stat.linjarRegression(dataMa.map(d => [d.alder, d.lon]));
     const allAges  = df.map(d => d.alder);
     const [minAlder, maxAlder] = _omfang(allAges);
     const avgAlder = allAges.reduce((a,b)=>a+b,0) / allAges.length;
@@ -83,7 +83,7 @@ function renderKon(bas) {
     // urvalet (alla BAS eller det valda) når tröskeln (beslut av produktägaren 2026-10-16).
     const trendAllaVald = !!(/** @type {HTMLInputElement|null} */ (document.getElementById('kon-trend-alla'))?.checked);
     const trendAllaOk = df.length >= kTroskel();
-    const trendAlla = trendAllaVald && trendAllaOk ? Stat.linearRegression(df.map(d => [d.alder, d.lon])) : null;
+    const trendAlla = trendAllaVald && trendAllaOk ? Stat.linjarRegression(df.map(d => [d.alder, d.lon])) : null;
     // Trendlinjer per kön med 95 % KI-band — bara för ett kön som når tröskeln.
     const ciKv = kvOk ? linearRegressionCI(dataKv.map(d => [d.alder, d.lon]), minAlder, maxAlder, 25) : null;
     const ciMa = maOk ? linearRegressionCI(dataMa.map(d => [d.alder, d.lon]), minAlder, maxAlder, 25) : null;
@@ -276,7 +276,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
             const data = g.filter(ar).filter(r => !urval || liten(r) || urval.has(r)).map(r => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...(liten(r) ? { liten: true } : {}), markering: markeringFor(r.bas, r.yrke) }));
             if (data.length) lager.push({ marke: 'punkt', serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
         }
-        const reg = Stat.linearRegression(g.map(r => [r.alder, r.lon])), [a0, a1] = _omfang(g.map(r => r.alder));
+        const reg = Stat.linjarRegression(g.map(r => [r.alder, r.lon])), [a0, a1] = _omfang(g.map(r => r.alder));
         if (reg) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
     }
     return { utanfor, nedsamplade, figur: { beskrivning: `Lön mot ålder i ${valda.length} ${termForAntal(valda.length, T.niva)}, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
@@ -371,13 +371,13 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
 }
 
 // Trendlinjen (och med `medBand` konfidensbandet) ur punkter i spridningsdiagrammet, för ett härlett lager: samma
-// funktioner som vyn (Stat.linearRegression, linearRegressionCI), över de synliga punkternas åldersspann. null när
+// funktioner som vyn (Stat.linjarRegression, linearRegressionCI), över de synliga punkternas åldersspann. null när
 // åldrarna inte spänner över något eller regressionen inte går att räkna.
 function _konScatterTrend(punkter, medBand = false) {
     const par = punkter.map(d => [d.x, d.y]), aldrar = par.map(p => p[0]);
     const [a0, a1] = _omfang(aldrar);
     if (!(a1 > a0)) return null;
-    const reg = Stat.linearRegression(par);
+    const reg = Stat.linjarRegression(par);
     if (!reg || !isFinite(reg.m) || !isFinite(reg.b)) return null;
     const ci = medBand ? linearRegressionCI(par, a0, a1, 25) : null;
     return { reg, linje: [{ x: a0, y: reg.m * a0 + reg.b }, { x: a1, y: reg.m * a1 + reg.b }],
@@ -491,7 +491,7 @@ function renderDemografi(bas) {
     // Successionszonen är 60+ (motsvarar riktålder 60–67); trösklarna följer den.
     const pct60p = +(df.filter(d => d.alder >= 60).length / n * 100).toFixed(1);
     const pctU40 = +(df.filter(d => d.alder < 40).length / n * 100).toFixed(1);
-    const q25 = Math.round(Stat.quantile(ages, 0.25)), q75 = Math.round(Stat.quantile(ages, 0.75));
+    const q25 = Math.round(Stat.kvantil(ages, 0.25)), q75 = Math.round(Stat.kvantil(ages, 0.75));
     const ageDiff = +(medianAge - orgMedian).toFixed(1);
     const ageEl = document.getElementById('demo-kpi-age');
     if (ageEl) {
@@ -595,7 +595,7 @@ function _demoBandFigur(df, k, pol, aLo, aHi) {
     const grupper = new Map();
     for (const r of df) { const a = Number(r.alder), l = Number(r.lon); if (!isFinite(a) || !(l > 0)) continue; const g = Math.floor(a / 5) * 5; if (!grupper.has(g)) grupper.set(g, []); grupper.get(g).push(l); }
     const rader = [...grupper.entries()].sort((x, y) => x[0] - y[0]).filter(([, v]) => v.length >= k).map(([g, v]) => {
-        const s = v.slice().sort((x, y) => x - y), q = p => Math.round(_libQuantile(s, p));
+        const s = v.slice().sort((x, y) => x - y), q = p => Math.round(_libKvantil(s, p));
         return { x: g + 2.5, alder: g, namn: `${g}–${g + 4} år`, n: s.length, p10: q(0.1), p25: q(0.25), p50: q(0.5), p75: q(0.75), p90: q(0.9) };
     });
     if (rader.length < 2) return null;

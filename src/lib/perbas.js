@@ -21,7 +21,7 @@
  * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B6.7).
  */
-import { median, quantile } from './stat.js';
+import { median, kvantil } from './stat.js';
 import { sektorsnamn, aidAvRad, namnrader } from './aid.js';
 import { statistikFor } from './jamforelse.js';
 import { skapaTermer, stor, adjektiv } from './termer.js';
@@ -57,7 +57,7 @@ export function perBasReceptArStandard(r) { return JSON.stringify(valideraPerBas
 const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
-const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), p25: quantile(l, 0.25), med: median(l), p75: quantile(l, 0.75), p90: quantile(l, 0.9), medel: _medel(l) } : null; };
+const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: kvantil(l, 0.1), p25: kvantil(l, 0.25), med: median(l), p75: kvantil(l, 0.75), p90: kvantil(l, 0.9), medel: _medel(l) } : null; };
 
 /** Yrkesgruppens namn: AID-koden och etiketten. */
 export function yrkesnamn(r) {

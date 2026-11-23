@@ -2,12 +2,12 @@
  * Lib-tester för src/lib/livscykel.js, direkt mot modulen (utan jsdom och utan appen).
  *
  * Fixturen är deterministisk (LCG) och har ett känt kön-effekt-mönster. Könskoefficienten
- * jämförs mot fitOLS på samma designmatris, skriven här för hand, så att modellen inte
+ * jämförs mot anpassaOLS på samma designmatris, skriven här för hand, så att modellen inte
  * bara "ser rimlig ut" utan faktiskt skattar det den säger att den skattar.
  */
 import { describe, it, expect } from 'vitest';
 import { livscykelRegression, livscykelNiva, samspelSakerstallt, SAMSPEL_GRANS } from '../src/lib/livscykel.js';
-import { fitOLS } from '../src/lib/stat.js';
+import { anpassaOLS } from '../src/lib/stat.js';
 import { readFileSync } from 'node:fs';
 
 function lcg(seed) {
@@ -82,10 +82,10 @@ describe('[B3.10] livscykelRegression: skattning', () => {
         expect(res.predKvinna[40].age).toBe(65);
     });
 
-    it('könskoefficienten är exakt den som fitOLS ger på samma designmatris', () => {
+    it('könskoefficienten är exakt den som anpassaOLS ger på samma designmatris', () => {
         const basList = ['A', 'B', 'C'];
         const { X, y } = designMatris(rader, basList);
-        const fit = fitOLS(X, y);
+        const fit = anpassaOLS(X, y);
         expect(res.kvCoef).toBeCloseTo(fit.beta[1], 12);
         expect(res.kvSE).toBeCloseTo(Math.sqrt(fit.vcovHC3[1][1]), 12);
         expect(res.kvAgeCoef).toBeCloseTo(fit.beta[4], 12);

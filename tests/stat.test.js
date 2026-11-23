@@ -4,11 +4,11 @@
  * Körs med: npm test
  *
  * Täcker:
- *   - median / quantile (kanttillstånd, jämn/udda längd, P10/P50/P90)
- *   - linearRegression (perfekt linje, brusig data)
+ *   - median / kvantil (kanttillstånd, jämn/udda längd, P10/P50/P90)
+ *   - linjarRegression (perfekt linje, brusig data)
  *   - normalCdf (Φ vid kända punkter ±1σ ±2σ)
- *   - matMul / transpose / invert (identitet, singulär)
- *   - fitOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2, exakt samma tal som fulla matrisprodukter)
+ *   - matrisprodukt / transponera / invertera (identitet, singulär)
+ *   - anpassaOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2, exakt samma tal som fulla matrisprodukter)
  *   - bhJustera (Benjamini–Hochberg: ordning, m = 1, tom lista, lika p-värden, tak 1, monotonicitet)
  *   - avrundaSymmetriskt (visningens avrundning: halvorna bort från noll, ingen −0)
  */
@@ -16,17 +16,17 @@
 import { describe, it, expect } from 'vitest';
 import {
     median,
-    quantile,
-    linearRegression,
+    kvantil,
+    linjarRegression,
     normalCdf,
-    tDistCdf,
-    tQuantile,
-    pValue2Sided,
+    tFordelningCdf,
+    tKvantil,
+    pVardeTvasidigt,
     avrundaSymmetriskt,
-    matMul,
-    transpose,
-    invert,
-    fitOLS,
+    matrisprodukt,
+    transponera,
+    invertera,
+    anpassaOLS,
     bhJustera
 } from '../src/lib/stat.js';
 
@@ -52,31 +52,31 @@ describe('[B1.1] median', () => {
     });
 });
 
-describe('[B1.2] quantile', () => {
+describe('[B1.2] kvantil', () => {
     const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     it('q=0 → minimum', () => {
-        expect(quantile(arr, 0)).toBe(1);
+        expect(kvantil(arr, 0)).toBe(1);
     });
     it('q=1 → maximum', () => {
-        expect(quantile(arr, 1)).toBe(10);
+        expect(kvantil(arr, 1)).toBe(10);
     });
     it('q=0.5 → median', () => {
-        expect(quantile(arr, 0.5)).toBe(5.5);
+        expect(kvantil(arr, 0.5)).toBe(5.5);
     });
     it('linjär interpolation vid q=0.1', () => {
         // pos = 9 * 0.1 = 0.9 → mellan arr[0]=1 och arr[1]=2 → 1.9
-        expect(close(quantile(arr, 0.1), 1.9)).toBe(true);
+        expect(close(kvantil(arr, 0.1), 1.9)).toBe(true);
     });
     it('linjär interpolation vid q=0.9', () => {
         // pos = 9 * 0.9 = 8.1 → mellan arr[8]=9 och arr[9]=10 → 9.1
-        expect(close(quantile(arr, 0.9), 9.1)).toBe(true);
+        expect(close(kvantil(arr, 0.9), 9.1)).toBe(true);
     });
     it('returnerar 0 för tom array', () => {
-        expect(quantile([], 0.5)).toBe(0);
+        expect(kvantil([], 0.5)).toBe(0);
     });
 });
 
-describe('linearRegression', () => {
+describe('linjarRegression', () => {
     it('perfekt linje y = 2x + 1', () => {
         const data = [
             [0, 1],
@@ -85,7 +85,7 @@ describe('linearRegression', () => {
             [3, 7],
             [4, 9]
         ];
-        const r = linearRegression(data);
+        const r = linjarRegression(data);
         expect(close(r.m, 2)).toBe(true);
         expect(close(r.b, 1)).toBe(true);
         expect(close(r.r2, 1)).toBe(true);
@@ -96,17 +96,17 @@ describe('linearRegression', () => {
             [2, 5],
             [3, 5]
         ];
-        const r = linearRegression(data);
+        const r = linjarRegression(data);
         expect(close(r.m, 0)).toBe(true);
         expect(close(r.b, 5)).toBe(true);
         // ssTot = 0 → R² returneras som 0
         expect(r.r2).toBe(0);
     });
     it('null utan lutning att räkna: tom, en punkt, eller alla x lika', () => {
-        expect(linearRegression([])).toBeNull();
-        expect(linearRegression([[40, 30000]])).toBeNull();
-        expect(linearRegression([[40, 30000], [40, 32000], [40, 35000]])).toBeNull();
-        expect(linearRegression([[0.1, 1], [0.1, 2], [0.1, 3]])).toBeNull();
+        expect(linjarRegression([])).toBeNull();
+        expect(linjarRegression([[40, 30000]])).toBeNull();
+        expect(linjarRegression([[40, 30000], [40, 32000], [40, 35000]])).toBeNull();
+        expect(linjarRegression([[0.1, 1], [0.1, 2], [0.1, 3]])).toBeNull();
     });
 });
 
@@ -127,8 +127,8 @@ describe('[B1.5] normalCdf', () => {
     });
 });
 
-describe('matMul / transpose / invert', () => {
-    it('matMul: 2×3 · 3×2', () => {
+describe('matrisprodukt / transponera / invertera', () => {
+    it('matrisprodukt: 2×3 · 3×2', () => {
         const A = [
             [1, 2, 3],
             [4, 5, 6]
@@ -138,14 +138,14 @@ describe('matMul / transpose / invert', () => {
             [9, 10],
             [11, 12]
         ];
-        expect(matMul(A, B)).toEqual([
+        expect(matrisprodukt(A, B)).toEqual([
             [58, 64],
             [139, 154]
         ]);
     });
-    it('transpose 2×3 → 3×2', () => {
+    it('transponera 2×3 → 3×2', () => {
         expect(
-            transpose([
+            transponera([
                 [1, 2, 3],
                 [4, 5, 6]
             ])
@@ -155,42 +155,42 @@ describe('matMul / transpose / invert', () => {
             [3, 6]
         ]);
     });
-    it('invert(I) = I', () => {
+    it('invertera(I) = I', () => {
         const I = [
             [1, 0, 0],
             [0, 1, 0],
             [0, 0, 1]
         ];
-        const inv = invert(I);
+        const inv = invertera(I);
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
                 expect(close(inv[i][j], I[i][j])).toBe(true);
             }
         }
     });
-    it('invert · A = I', () => {
+    it('invertera · A = I', () => {
         const A = [
             [4, 7],
             [2, 6]
         ];
-        const inv = invert(A);
-        const I = matMul(A, inv);
+        const inv = invertera(A);
+        const I = matrisprodukt(A, inv);
         expect(close(I[0][0], 1, 1e-9)).toBe(true);
         expect(close(I[0][1], 0, 1e-9)).toBe(true);
         expect(close(I[1][0], 0, 1e-9)).toBe(true);
         expect(close(I[1][1], 1, 1e-9)).toBe(true);
     });
-    it('invert returnerar null för singulär matris', () => {
+    it('invertera returnerar null för singulär matris', () => {
         // Rad 2 = 2 · rad 1
         const sing = [
             [1, 2],
             [2, 4]
         ];
-        expect(invert(sing)).toBeNull();
+        expect(invertera(sing)).toBeNull();
     });
 });
 
-describe('[B1.3] fitOLS', () => {
+describe('[B1.3] anpassaOLS', () => {
     it('återskapar kända koefficienter på brusfri data: y = 3 + 2·x1 - 1·x2', () => {
         const X = [];
         const y = [];
@@ -200,7 +200,7 @@ describe('[B1.3] fitOLS', () => {
             X.push([1, x1, x2]);
             y.push(3 + 2 * x1 - 1 * x2);
         }
-        const fit = fitOLS(X, y);
+        const fit = anpassaOLS(X, y);
         expect(fit).not.toBeNull();
         expect(close(fit.beta[0], 3, 1e-6)).toBe(true);
         expect(close(fit.beta[1], 2, 1e-6)).toBe(true);
@@ -213,7 +213,7 @@ describe('[B1.3] fitOLS', () => {
             [1, 2, 4]
         ];
         const y = [3, 5];
-        expect(fitOLS(X, y)).toBeNull();
+        expect(anpassaOLS(X, y)).toBeNull();
     });
     it('returnerar null när X singulär (perfekt kolinearitet)', () => {
         const X = [];
@@ -222,7 +222,7 @@ describe('[B1.3] fitOLS', () => {
             X.push([1, i, 2 * i]); // kolumn 2 = 2 · kolumn 1 → singulär
             y.push(i + Math.random());
         }
-        expect(fitOLS(X, y)).toBeNull();
+        expect(anpassaOLS(X, y)).toBeNull();
     });
     it('HC3 vcov är symmetrisk + skiljer sig från klassisk vid heteroskedastik', () => {
         // Variansen i residualerna växer med x → klassisk SE undervärderar.
@@ -240,7 +240,7 @@ describe('[B1.3] fitOLS', () => {
             const noise = (rand() - 0.5) * 2 * x; // växande varians
             y.push(2 + 3 * x + noise);
         }
-        const fit = fitOLS(X, y);
+        const fit = anpassaOLS(X, y);
         expect(fit).not.toBeNull();
         // Symmetri
         expect(close(fit.vcovHC3[0][1], fit.vcovHC3[1][0], 1e-12)).toBe(true);
@@ -254,13 +254,13 @@ describe('[B1.3] fitOLS', () => {
     it('hHoga räknar observationer med hävstång > 0,99 (en singelindikator ger minst en)', () => {
         const X = [], y = [];
         for (let i = 0; i < 40; i++) { X.push([1, i % 7, i === 13 ? 1 : 0]); y.push(1 + 0.1 * (i % 7) + ((i * 37) % 11) / 100); }
-        const fit = fitOLS(X, y);
+        const fit = anpassaOLS(X, y);
         expect(fit.hHoga).toBeGreaterThanOrEqual(1);
-        const utan = fitOLS(X.map(r => r.slice(0, 2)), y);
+        const utan = anpassaOLS(X.map(r => r.slice(0, 2)), y);
         expect(utan.hHoga).toBe(0);
     });
 
-    // fitOLS summerar bara över de nollskilda kolumnerna i varje rad, i samma ordning som en full matrisprodukt.
+    // anpassaOLS summerar bara över de nollskilda kolumnerna i varje rad, i samma ordning som en full matrisprodukt.
     // Referensen är den tidigare algoritmen med fulla produkter; talen ska vara exakt desamma, inte bara nära.
     it('ger exakt samma tal som de fulla matrisprodukterna (indikatorer, ålder, en ensam person i en grupp)', () => {
         let seed = 7;
@@ -277,7 +277,7 @@ describe('[B1.3] fitOLS', () => {
         }
         const hTillagg = X.map((_, i) => 1 / (2 + (i % 9)));
         for (const h of [null, hTillagg]) {
-            const ny = fitOLS(X, y, h), ref = fitOLSFull(X, y, h);
+            const ny = anpassaOLS(X, y, h), ref = fitOLSFull(X, y, h);
             expect(ny).not.toBeNull();
             expect(ny.hHoga).toBe(ref.hHoga);
             expect(ny.hHoga).toBeGreaterThanOrEqual(1);
@@ -290,16 +290,16 @@ describe('[B1.3] fitOLS', () => {
     });
 });
 
-// Den tidigare fitOLS, med fulla matrisprodukter över alla kolumner: referensen för testet ovan.
+// Den tidigare anpassaOLS, med fulla matrisprodukter över alla kolumner: referensen för testet ovan.
 function fitOLSFull(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 2) return null;
-    const Xt = transpose(X);
-    const XtX = matMul(Xt, X);
-    const XtXinv = invert(XtX);
+    const Xt = transponera(X);
+    const XtX = matrisprodukt(Xt, X);
+    const XtXinv = invertera(XtX);
     if (!XtXinv) return null;
-    const Xty = matMul(Xt, y.map(v => [v])).map(r => r[0]);
-    const beta = matMul(XtXinv, Xty.map(v => [v])).map(r => r[0]);
+    const Xty = matrisprodukt(Xt, y.map(v => [v])).map(r => r[0]);
+    const beta = matrisprodukt(XtXinv, Xty.map(v => [v])).map(r => r[0]);
     const yhat = X.map(row => row.reduce((s, v, i) => s + v * beta[i], 0));
     const resid = y.map((yi, i) => yi - yhat[i]);
     const ymean = y.reduce((s, v) => s + v, 0) / n;
@@ -331,35 +331,35 @@ function fitOLSFull(X, y, hTillagg = null) {
             }
         }
     }
-    const breadMeat = matMul(XtXinv, meat);
-    const vcovHC3 = matMul(breadMeat, XtXinv);
+    const breadMeat = matrisprodukt(XtXinv, meat);
+    const vcovHC3 = matrisprodukt(breadMeat, XtXinv);
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }
 
-describe('[B1.4] tDistCdf', () => {
+describe('[B1.4] tFordelningCdf', () => {
     // Kända t-fördelningsvärden från standardtabeller (R: pt(q, df))
     // df=1 (Cauchy): pt(0, 1) = 0.5; pt(1, 1) ≈ 0.75; pt(-1, 1) ≈ 0.25
     it('returnerar 0,5 vid t=0', () => {
-        expect(close(tDistCdf(0, 10), 0.5, 1e-3)).toBe(true);
-        expect(close(tDistCdf(0, 30), 0.5, 1e-3)).toBe(true);
+        expect(close(tFordelningCdf(0, 10), 0.5, 1e-3)).toBe(true);
+        expect(close(tFordelningCdf(0, 30), 0.5, 1e-3)).toBe(true);
     });
     it('är symmetrisk runt 0', () => {
         for (const df of [5, 20, 50]) {
-            const a = tDistCdf(2.0, df);
-            const b = tDistCdf(-2.0, df);
+            const a = tFordelningCdf(2.0, df);
+            const b = tFordelningCdf(-2.0, df);
             expect(close(a + b, 1, 1e-3)).toBe(true);
         }
     });
     it('approximerar normalfördelningen vid stora df', () => {
         // df=10000 → praktiskt taget identisk med N(0,1)
-        expect(close(tDistCdf(1.96, 10000), normalCdf(1.96), 1e-3)).toBe(true);
-        expect(close(tDistCdf(-1.0, 10000), normalCdf(-1.0), 1e-3)).toBe(true);
+        expect(close(tFordelningCdf(1.96, 10000), normalCdf(1.96), 1e-3)).toBe(true);
+        expect(close(tFordelningCdf(-1.0, 10000), normalCdf(-1.0), 1e-3)).toBe(true);
     });
     it('ger bredare svansar än normalfördelningen vid små df', () => {
         // Vid t=1,96 och df=10 ska CDF vara LÄGRE än normalens 0,975
         // (eftersom t har tjockare svansar — mer sannolikhet i extremerna)
-        const tProb = tDistCdf(1.96, 10);
+        const tProb = tFordelningCdf(1.96, 10);
         const nProb = normalCdf(1.96);  // ≈ 0,975
         expect(tProb).toBeLessThan(nProb);
         // Men inte orimligt mycket lägre — t(10) 0,975-tröskel är 2,228
@@ -369,70 +369,70 @@ describe('[B1.4] tDistCdf', () => {
     });
     it('matchar kända t-tabellsvärden inom ~0,005', () => {
         // R: pt(2.0, 20) = 0.9703, pt(2.5, 20) = 0.9893
-        expect(close(tDistCdf(2.0, 20), 0.9703, 0.005)).toBe(true);
-        expect(close(tDistCdf(2.5, 20), 0.9893, 0.005)).toBe(true);
+        expect(close(tFordelningCdf(2.0, 20), 0.9703, 0.005)).toBe(true);
+        expect(close(tFordelningCdf(2.5, 20), 0.9893, 0.005)).toBe(true);
         // R: pt(1.96, 50) = 0.9722
-        expect(close(tDistCdf(1.96, 50), 0.9722, 0.005)).toBe(true);
+        expect(close(tFordelningCdf(1.96, 50), 0.9722, 0.005)).toBe(true);
     });
     it('returnerar NaN för ogiltig df', () => {
-        expect(Number.isNaN(tDistCdf(1, 0))).toBe(true);
-        expect(Number.isNaN(tDistCdf(1, -1))).toBe(true);
+        expect(Number.isNaN(tFordelningCdf(1, 0))).toBe(true);
+        expect(Number.isNaN(tFordelningCdf(1, -1))).toBe(true);
     });
 });
 
-describe('tQuantile', () => {
+describe('tKvantil', () => {
     it('matchar t-tabellens 0,975-kvantiler', () => {
         // Tabellvärden (R: qt(0.975, df))
-        expect(tQuantile(0.975, 5)).toBeCloseTo(2.571, 3);
-        expect(tQuantile(0.975, 10)).toBeCloseTo(2.228, 3);
-        expect(tQuantile(0.975, 26)).toBeCloseTo(2.056, 3);
-        expect(tQuantile(0.975, 60)).toBeCloseTo(2.000, 3);
+        expect(tKvantil(0.975, 5)).toBeCloseTo(2.571, 3);
+        expect(tKvantil(0.975, 10)).toBeCloseTo(2.228, 3);
+        expect(tKvantil(0.975, 26)).toBeCloseTo(2.056, 3);
+        expect(tKvantil(0.975, 60)).toBeCloseTo(2.000, 3);
     });
     it('faller tillbaka på normalfördelningens 1,96 vid df ≥ 100', () => {
-        expect(tQuantile(0.975, 100)).toBeCloseTo(1.96, 3);
-        expect(tQuantile(0.975, 5000)).toBeCloseTo(1.96, 3);
-        expect(tQuantile(0.975, 99)).toBeGreaterThan(1.96);
+        expect(tKvantil(0.975, 100)).toBeCloseTo(1.96, 3);
+        expect(tKvantil(0.975, 5000)).toBeCloseTo(1.96, 3);
+        expect(tKvantil(0.975, 99)).toBeGreaterThan(1.96);
     });
-    it('inverterar tDistCdf och är symmetrisk', () => {
+    it('inverterar tFordelningCdf och är symmetrisk', () => {
         for (const df of [3, 12, 40]) {
-            const q = tQuantile(0.9, df);
-            expect(tDistCdf(q, df)).toBeCloseTo(0.9, 6);
-            expect(tQuantile(0.1, df)).toBeCloseTo(-q, 6);
+            const q = tKvantil(0.9, df);
+            expect(tFordelningCdf(q, df)).toBeCloseTo(0.9, 6);
+            expect(tKvantil(0.1, df)).toBeCloseTo(-q, 6);
         }
-        expect(tQuantile(0.5, 7)).toBeCloseTo(0, 6);
+        expect(tKvantil(0.5, 7)).toBeCloseTo(0, 6);
     });
     it('returnerar NaN för ogiltiga argument', () => {
-        expect(Number.isNaN(tQuantile(0, 5))).toBe(true);
-        expect(Number.isNaN(tQuantile(1, 5))).toBe(true);
-        expect(Number.isNaN(tQuantile(0.975, 0))).toBe(true);
+        expect(Number.isNaN(tKvantil(0, 5))).toBe(true);
+        expect(Number.isNaN(tKvantil(1, 5))).toBe(true);
+        expect(Number.isNaN(tKvantil(0.975, 0))).toBe(true);
     });
 });
 
-describe('pValue2Sided', () => {
+describe('pVardeTvasidigt', () => {
     it('är 1 när teststatistikan är 0', () => {
-        const p = pValue2Sided(0, 50, 3);
+        const p = pVardeTvasidigt(0, 50, 3);
         expect(close(p, 1, 1e-3)).toBe(true);
     });
     it('är symmetriskt för positivt/negativt t', () => {
-        const pPos = pValue2Sided(2.5, 30, 3);
-        const pNeg = pValue2Sided(-2.5, 30, 3);
+        const pPos = pVardeTvasidigt(2.5, 30, 3);
+        const pNeg = pVardeTvasidigt(-2.5, 30, 3);
         expect(close(pPos, pNeg, 1e-9)).toBe(true);
     });
     it('ger högre p-värde med t-fördelning än normal vid små df', () => {
         // Liten df → t-fördelning → större p-värde än ren z-approximation
-        const pSmall = pValue2Sided(1.96, 15, 3);  // df=12 → t
-        const pLarge = pValue2Sided(1.96, 200, 3); // df=197 → normal
+        const pSmall = pVardeTvasidigt(1.96, 15, 3);  // df=12 → t
+        const pLarge = pVardeTvasidigt(1.96, 200, 3); // df=197 → normal
         expect(pSmall).toBeGreaterThan(pLarge);
     });
     it('växlar till normalfördelning vid df ≥ 100', () => {
         // df=100 ska använda normal, df=99 ska använda t
-        const pNormal = pValue2Sided(2.0, 103, 3);
+        const pNormal = pVardeTvasidigt(2.0, 103, 3);
         const expected = 2 * (1 - normalCdf(2.0));
         expect(close(pNormal, expected, 1e-9)).toBe(true);
     });
     it('returnerar NaN för df ≤ 0', () => {
-        expect(Number.isNaN(pValue2Sided(1, 3, 3))).toBe(true);
-        expect(Number.isNaN(pValue2Sided(1, 2, 3))).toBe(true);
+        expect(Number.isNaN(pVardeTvasidigt(1, 3, 3))).toBe(true);
+        expect(Number.isNaN(pVardeTvasidigt(1, 2, 3))).toBe(true);
     });
 });
 
@@ -472,7 +472,7 @@ describe('[B1.6] bhJustera', () => {
     });
 });
 
-describe('median och quantile: kanttillstånd (characterization)', () => {
+describe('median och kvantil: kanttillstånd (characterization)', () => {
     it('median: ett värde är medianen', () => {
         expect(median([7])).toBe(7);
     });
@@ -480,24 +480,24 @@ describe('median och quantile: kanttillstånd (characterization)', () => {
         expect(median([9, 2])).toBe(5.5);
         expect(median([2, 9])).toBe(5.5);
     });
-    it('quantile: tom lista ger 0 även för q = 0 och q = 1', () => {
-        expect(quantile([], 0)).toBe(0);
-        expect(quantile([], 1)).toBe(0);
+    it('kvantil: tom lista ger 0 även för q = 0 och q = 1', () => {
+        expect(kvantil([], 0)).toBe(0);
+        expect(kvantil([], 1)).toBe(0);
     });
-    it('quantile: ett värde ger det värdet för alla q', () => {
-        expect(quantile([7], 0)).toBe(7);
-        expect(quantile([7], 0.5)).toBe(7);
-        expect(quantile([7], 1)).toBe(7);
+    it('kvantil: ett värde ger det värdet för alla q', () => {
+        expect(kvantil([7], 0)).toBe(7);
+        expect(kvantil([7], 0.5)).toBe(7);
+        expect(kvantil([7], 1)).toBe(7);
     });
-    it('quantile: två värden interpoleras linjärt (q = 0 → minst, q = 1 → störst, q = 0,25 → 3,5)', () => {
-        expect(quantile([8, 2], 0)).toBe(2);
-        expect(quantile([8, 2], 1)).toBe(8);
-        expect(quantile([8, 2], 0.5)).toBe(5);
-        expect(quantile([8, 2], 0.25)).toBe(3.5);
+    it('kvantil: två värden interpoleras linjärt (q = 0 → minst, q = 1 → störst, q = 0,25 → 3,5)', () => {
+        expect(kvantil([8, 2], 0)).toBe(2);
+        expect(kvantil([8, 2], 1)).toBe(8);
+        expect(kvantil([8, 2], 0.5)).toBe(5);
+        expect(kvantil([8, 2], 0.25)).toBe(3.5);
     });
-    it('quantile vid q = 0 och q = 1 på osorterad lista ger min och max', () => {
-        expect(quantile([5, 1, 4], 0)).toBe(1);
-        expect(quantile([5, 1, 4], 1)).toBe(5);
+    it('kvantil vid q = 0 och q = 1 på osorterad lista ger min och max', () => {
+        expect(kvantil([5, 1, 4], 0)).toBe(1);
+        expect(kvantil([5, 1, 4], 1)).toBe(5);
     });
 });
 

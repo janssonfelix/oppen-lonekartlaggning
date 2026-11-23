@@ -24,7 +24,7 @@
 
 import { arKvinnodominerad } from './likvardighet.js';
 import { periodkostnad } from './kostnad.js';
-import { median as _medianStat, quantile as _quantileStat } from './stat.js';
+import { median as _medianStat, kvantil as _quantileStat } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
 
 // Omslag: tål null/undefined som indata (0 för tom), vilket stat.js inte gör. Algoritmen finns bara i stat.js.

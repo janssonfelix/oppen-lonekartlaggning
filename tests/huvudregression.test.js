@@ -13,7 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fitOLS, tQuantile } from '../src/lib/stat.js';
+import { anpassaOLS, tKvantil } from '../src/lib/stat.js';
 import { huvudregression, HUVUDREGRESSION_MIN_N, HUVUDREGRESSION_MIN_PER_KON, FORKLARINGSMODELL_STANDARD,
     STEG_YRKE } from '../src/lib/regression.js';
 
@@ -48,9 +48,9 @@ describe('[B3.1] huvudregression: påhittat underlag', () => {
         expect(r.error).toBeUndefined();
         const ageMean = rader.reduce((s, d) => s + d.alder, 0) / rader.length;
         const X = rader.map(d => [1, d.kon === 'kvinna' ? 1 : 0, d.alder - ageMean, ...['B', 'C', 'D'].map(b => (d.bas === b ? 1 : 0))]);
-        const fit = fitOLS(X, rader.map(d => Math.log(d.lon)));
+        const fit = anpassaOLS(X, rader.map(d => Math.log(d.lon)));
         const se = Math.sqrt(fit.vcovHC3[1][1]);
-        const tq = tQuantile(0.975, fit.n - fit.k);
+        const tq = tKvantil(0.975, fit.n - fit.k);
         expect(r.konPct).toBe(pct(fit.beta[1]));
         expect(r.konPctLow).toBe(pct(fit.beta[1] - tq * se));
         expect(r.konPctHigh).toBe(pct(fit.beta[1] + tq * se));

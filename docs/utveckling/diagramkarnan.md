@@ -148,7 +148,7 @@ och finns till för `tips`.
   ritas. Etiketter i staplade staplar ligger i sitt segment och ritas bara där de ryms.
 - En `linje` får träffytor för verktygstips bara när lagret har `tips`.
 - `ruta`: `text` ritas bara med `visaText`, och bara om varje ritad cells text ryms — alla eller inga.
-- `lada`: måtten räknas med `ladstatistik` (kvartiler med `quantile` ur `src/lib/stat.js`, morrhår till
+- `lada`: måtten räknas med `ladstatistik` (kvartiler med `kvantil` ur `src/lib/stat.js`, morrhår till
   yttersta värdet inom 1,5 kvartilavstånd) ur de individer som ritas i kategorin. Flera lådlager i samma
   panel delar kategorins band sida vid sida. Har lådans alla ritade individer samma `farg` får lådan den färgen
   (ett lager med en färg per kategori); annars lagrets.
@@ -337,7 +337,7 @@ skillnaden mot statistiken och överblickens bild (AID-etikett och huvudområde)
 - Lön mot ålder (`_konScatterFigur`): BAS (bara när hela urvalet visas), AID-etikett, ålder och lön. Punkterna bär `alder`
   och `lon` (samma tal som tipset) i stället för att filtren läser `x` och `y`: trendlinjerna och statistikens median har
   också `x` och `y` men ska inte döljas av dem. Trendlinjerna per kön, deras konfidensband och trenden för hela urvalet
-  är härledda lager med `minN = kTroskel()` och samma funktioner som vyn (`Stat.linearRegression`,
+  är härledda lager med `minN = kTroskel()` och samma funktioner som vyn (`Stat.linjarRegression`,
   `linearRegressionCI`, med bandet ur `src/lib/osakerhet.js`, `_konScatterTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
   AID-etikett är källan alla punktlager och `villkor` väljer könet. Hela urvalets trend byter R² i namnet. Utan filter
   är bilden byte för byte densamma som förut. Lön mot ålder per BAS-intervall har samma filter, men trendlinjen i en

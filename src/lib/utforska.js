@@ -13,7 +13,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js
  * (tools/gen-mirrors.mjs). Ändra här och kör `npm run build:app`.
  */
-import { median, quantile } from './stat.js';
+import { median, kvantil } from './stat.js';
 import { gruppnycklar, konOf, jamforAldersgrupp, jamforLonespann } from './falt.js';
 import { jamforSektor, mellannivaEtikett, huvudomrade } from './aid.js';
 import { personFilter, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
@@ -40,13 +40,13 @@ function _matt(lons, matt) {
     switch (matt) {
         case 'n': return lons.length;
         case 'medel': return lons.reduce((s, v) => s + v, 0) / lons.length;
-        case 'p10': return quantile(lons, 0.10);
-        case 'p25': return quantile(lons, 0.25);
-        case 'p75': return quantile(lons, 0.75);
-        case 'p90': return quantile(lons, 0.90);
+        case 'p10': return kvantil(lons, 0.10);
+        case 'p25': return kvantil(lons, 0.25);
+        case 'p75': return kvantil(lons, 0.75);
+        case 'p90': return kvantil(lons, 0.90);
         case 'spridning': {
-            const p10 = quantile(lons, 0.10);
-            return p10 > 0 ? quantile(lons, 0.90) / p10 : null;
+            const p10 = kvantil(lons, 0.10);
+            return p10 > 0 ? kvantil(lons, 0.90) / p10 : null;
         }
         default: return median(lons);
     }

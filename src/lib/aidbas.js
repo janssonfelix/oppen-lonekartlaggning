@@ -22,7 +22,7 @@
  *
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { median, quantile } from './stat.js';
+import { median, kvantil } from './stat.js';
 import { basRangFn, konsklass } from './likvardighet.js';
 import { arKvinna, arMan } from './kon.js';
 import { namnrader } from './aid.js';
@@ -161,7 +161,7 @@ export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', g
         const nat = typeof nationell === 'function' ? nationell(g.aid) : null;
         const andelKvNat = typeof nat === 'number' && isFinite(nat) ? nat : null;
         const stor = g.n >= k;
-        const med = stor ? median(g.loner) : null, p10 = stor ? quantile(g.loner, 0.1) : null, p90 = stor ? quantile(g.loner, 0.9) : null;
+        const med = stor ? median(g.loner) : null, p10 = stor ? kvantil(g.loner, 0.1) : null, p90 = stor ? kvantil(g.loner, 0.9) : null;
         const spridning = med != null && p10 != null && p90 != null && med > 0 ? (p90 - p10) / med : null;
         return { bas: g.bas, aid: g.aid, yrke: g.yrke, n: g.n, nKv: g.nKv, nMa: g.nMa, andelKv, andelKvNat,
                  klass: dominans(andelKv, definition, grans),

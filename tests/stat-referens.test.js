@@ -38,11 +38,11 @@
  *     utan enpersonsgrupperna (med dem kvar ger statsmodels och R NaN eller ett tal som avrundningen avgör). Talen
  *     står som konstanter i testet.
  *
- * Uppmätt avvikelse i verktyget (toleranserna nedan speglar den, utom för tDistCdf):
- *   - fitOLS: β, vcovClassic, vcovHC3, R², σ² inom relativt 1e-12 av statsmodels.
- *   - tDistCdf: exakt sedan ADR-45, via den regulariserade ofullständiga betafunktionen
+ * Uppmätt avvikelse i verktyget (toleranserna nedan speglar den, utom för tFordelningCdf):
+ *   - anpassaOLS: β, vcovClassic, vcovHC3, R², σ² inom relativt 1e-12 av statsmodels.
+ *   - tFordelningCdf: exakt sedan ADR-45, via den regulariserade ofullständiga betafunktionen
  *     (P(|T| > t) = I_x(df/2, 1/2) med x = df / (df + t²)); avvikelsen från scipy är avrundningsfel, under 1e-14
- *     vid df 5, 10, 26 och 99. Toleranserna i testerna av tDistCdf och pValue2Sided (3e-3 vid df 5 ned till 1e-5
+ *     vid df 5, 10, 26 och 99. Toleranserna i testerna av tFordelningCdf och pVardeTvasidigt (3e-3 vid df 5 ned till 1e-5
  *     vid df 99) sattes efter felen i Hills approximation, som funktionen byggde på före ADR-45. De är äldre och
  *     generösare än funktionen kräver, och de är inte skärpta.
  *   - quantileRegression (IRLS, src/lib/regression.js): könskoefficienten avviker 0,21 procentenheter från den exakta
@@ -61,7 +61,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { fitOLS, tDistCdf, pValue2Sided, bhJustera } from '../src/lib/stat.js';
+import { anpassaOLS, tFordelningCdf, pVardeTvasidigt, bhJustera } from '../src/lib/stat.js';
 import { basRangFn } from '../src/lib/likvardighet.js';
 import { quantileRegression, kvantilDesign, computeSequentialGap } from '../src/lib/regression.js';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -98,8 +98,8 @@ describe('fixturen', () => {
     });
 });
 
-describe('[B1.3] fitOLS mot statsmodels', () => {
-    const fit = fitOLS(X, y);
+describe('[B1.3] anpassaOLS mot statsmodels', () => {
+    const fit = anpassaOLS(X, y);
     it('β (6 decimaler) och R², adjR², σ², RSS', () => {
         expect(fit).not.toBeNull();
         ref.ols.beta.forEach((b, i) => expect(fit.beta[i]).toBeCloseTo(b, 6));
@@ -122,32 +122,32 @@ describe('[B1.3] fitOLS mot statsmodels', () => {
     it('p-värdet för könskoefficienten (t = β/SE_HC3, df = n−k) mot scipy', () => {
         const t = fit.beta[1] / Math.sqrt(fit.vcovHC3[1][1]);
         expect(t).toBeCloseTo(ref.ols.tKon, 8);
-        // df = 96: tDistCdf är exakt (ADR-45); toleransen är äldre och generösare än funktionen kräver.
-        expect(pValue2Sided(t, fit.n, fit.k)).toBeCloseTo(ref.ols.pKon, 4);
+        // df = 96: tFordelningCdf är exakt (ADR-45); toleransen är äldre och generösare än funktionen kräver.
+        expect(pVardeTvasidigt(t, fit.n, fit.k)).toBeCloseTo(ref.ols.pKon, 4);
     });
 });
 
-describe('[B1.4] tDistCdf och pValue2Sided mot scipy.stats.t', () => {
+describe('[B1.4] tFordelningCdf och pVardeTvasidigt mot scipy.stats.t', () => {
     // Hills approximations uppmätta maxfel per df med marginal, från före ADR-45; inte skärpta (se filhuvudet).
     const tol = { 5: 3e-3, 10: 1e-3, 26: 1e-4, 99: 1e-5 };
     for (const df of [5, 10, 26, 99]) {
         it(`CDF vid df=${df} inom ${tol[df]}`, () => {
             for (const [t, p] of Object.entries(ref.tcdf[df])) {
-                expect(Math.abs(tDistCdf(+t, df) - p)).toBeLessThan(tol[df]);
-                expect(Math.abs(tDistCdf(-t, df) - (1 - p))).toBeLessThan(tol[df]);
+                expect(Math.abs(tFordelningCdf(+t, df) - p)).toBeLessThan(tol[df]);
+                expect(Math.abs(tFordelningCdf(-t, df) - (1 - p))).toBeLessThan(tol[df]);
             }
         });
         it(`tvåsidigt p vid df=${df} inom ${2 * tol[df]}`, () => {
             for (const [t, p] of Object.entries(ref.tcdf[df])) {
-                // pValue2Sided tar n och k; df = n − k.
-                expect(Math.abs(pValue2Sided(+t, df + 4, 4) - 2 * (1 - p))).toBeLessThan(2 * tol[df]);
+                // pVardeTvasidigt tar n och k; df = n − k.
+                expect(Math.abs(pVardeTvasidigt(+t, df + 4, 4) - 2 * (1 - p))).toBeLessThan(2 * tol[df]);
             }
         });
     }
     it('tabellvärdet t = 2,056 vid df 26 ger p ≈ 0,05', () => {
         // qt(0.975, 26) = 2.0555; scipy: 2·(1 − pt(2.056, 26)) = 0.04995.
-        expect(pValue2Sided(2.056, 30, 4)).toBeCloseTo(0.05, 3);
-        expect(pValue2Sided(2.056, 30, 4)).toBeCloseTo(2 * (1 - ref.tcdf[26]['2.056']), 3);
+        expect(pVardeTvasidigt(2.056, 30, 4)).toBeCloseTo(0.05, 3);
+        expect(pVardeTvasidigt(2.056, 30, 4)).toBeCloseTo(2 * (1 - ref.tcdf[26]['2.056']), 3);
     });
 });
 
@@ -216,7 +216,7 @@ describe('kvantilregressionen på indikatormodellen mot exakt LP-lösning (ADR-6
 });
 
 describe('[B3.2] sekventiell dekomponering (BAS som indikatorer, ADR-44)', () => {
-    // Referensen för stegen med BAS-indikatorer räknas här med lib-fitOLS, som ovan är prövad mot
+    // Referensen för stegen med BAS-indikatorer räknas här med lib-anpassaOLS, som ovan är prövad mot
     // statsmodels på samma fixtur. Steget "Endast kön" jämförs därtill mot statsmodels-värdet
     // (ref.sekventiell.endastKon); plusBas/plusAlder i referensfilen gäller den tidigare linjära
     // BAS-rangen och används inte längre.
@@ -235,8 +235,8 @@ describe('[B3.2] sekventiell dekomponering (BAS som indikatorer, ADR-44)', () =>
         const yl = fx.rows.map(r => Math.log(r.lon));
         const vantat = [
             pct(ref.sekventiell.endastKon[1]),
-            pct(fitOLS(fx.rows.map(r => rad(r, false, true)), yl).beta[1]),
-            pct(fitOLS(fx.rows.map(r => rad(r, true, true)), yl).beta[1]),
+            pct(anpassaOLS(fx.rows.map(r => rad(r, false, true)), yl).beta[1]),
+            pct(anpassaOLS(fx.rows.map(r => rad(r, true, true)), yl).beta[1]),
         ];
         vantat.push(vantat[2]);
         steg.forEach((s, i) => {
@@ -248,7 +248,7 @@ describe('[B3.2] sekventiell dekomponering (BAS som indikatorer, ADR-44)', () =>
 
 describe('[B3.4] Blinder-Oaxaca (BAS som indikatorer, ADR-53)', () => {
     const bo = ref.blinderOaxaca;
-    it('komponenterna från två fitOLS-regressioner, handräknade i testet, matchar referensens', () => {
+    it('komponenterna från två anpassaOLS-regressioner, handräknade i testet, matchar referensens', () => {
         // Oberoende av app-scope: samma regel som blinderOaxaca, men handskriven här. Referens = alfabetiskt första
         // BAS hos båda könen; ett BAS som saknas hos ett kön får β = 0 i det könets ekvation.
         const rader = fx.rows.map((r, i) => ({ ...r, y: fx.design[i].y, alderC: fx.design[i].alderC }));
@@ -261,7 +261,7 @@ describe('[B3.4] Blinder-Oaxaca (BAS som indikatorer, ADR-53)', () => {
         expect(ind).toEqual(bo.basIndikatorer);
         const grupp = g => {
             const kol = ind.filter(b => finns(g).has(b));
-            const f = fitOLS(g.map(r => [1, r.alderC, ...kol.map(b => (r.bas === b ? 1 : 0))]), g.map(r => r.y));
+            const f = anpassaOLS(g.map(r => [1, r.alderC, ...kol.map(b => (r.bas === b ? 1 : 0))]), g.map(r => r.y));
             const beta = [f.beta[0], f.beta[1], ...ind.map(b => (kol.includes(b) ? f.beta[2 + kol.indexOf(b)] : 0))];
             const xbar = [1, g.reduce((s, r) => s + r.alderC, 0) / g.length, ...ind.map(b => g.filter(r => r.bas === b).length / g.length)];
             return { beta, xbar };
@@ -387,7 +387,7 @@ describe('HC3 med AID-etikett inom BAS mot statsmodels: hävstången med gruppde
     it('HC3-standardfelet för kön och p-värdet för ålder som statsmodels (relativt 1e-9)', () => {
         const ut = kor();
         relNara(ut.seKonR, REF.seKonHC3, 1e-9);
-        relNara(ut.ageP, pValue2Sided(REF.betaAlder / REF.seAlderHC3, REF.n, REF.k), 1e-9);
+        relNara(ut.ageP, pVardeTvasidigt(REF.betaAlder / REF.seAlderHC3, REF.n, REF.k), 1e-9);
     });
     it('den klassiska kovariansen som statsmodels (relativt 1e-9)', () => {
         relNara(kor().seKonC, REF.seKonKlassisk, 1e-9);

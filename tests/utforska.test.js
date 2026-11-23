@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { computePivot, DIMENSIONER, slaIhopSmaAid } from '../src/lib/utforska.js';
 import { groupKey, ageBucket, konOf, jamforAldersgrupp } from '../src/lib/falt.js';
-import { median, quantile } from '../src/lib/stat.js';
+import { median, kvantil } from '../src/lib/stat.js';
 
 const rad = (bas, kon, lon, extra = {}) => ({
     bas, kon, lon, alder: 40, aid: '100', yrkeLabel: 'Yrke 100', yrke: '100 Yrke 100', ...extra
@@ -111,11 +111,11 @@ describe('computePivot — en dimension', () => {
         expect(v('median')).toBe(median(lons));
         expect(v('medel')).toBeCloseTo(lons.reduce((s, x) => s + x, 0) / lons.length, 9);
         expect(v('n')).toBe(20);
-        expect(v('p10')).toBe(quantile(lons, 0.10));
-        expect(v('p25')).toBe(quantile(lons, 0.25));
-        expect(v('p75')).toBe(quantile(lons, 0.75));
-        expect(v('p90')).toBe(quantile(lons, 0.90));
-        expect(v('spridning')).toBeCloseTo(quantile(lons, 0.9) / quantile(lons, 0.1), 12);
+        expect(v('p10')).toBe(kvantil(lons, 0.10));
+        expect(v('p25')).toBe(kvantil(lons, 0.25));
+        expect(v('p75')).toBe(kvantil(lons, 0.75));
+        expect(v('p90')).toBe(kvantil(lons, 0.90));
+        expect(v('spridning')).toBeCloseTo(kvantil(lons, 0.9) / kvantil(lons, 0.1), 12);
         expect(v('andelKv')).toBe(50);
         const kv = rows.filter(r => r.kon === 'kvinna').map(r => r.lon);
         const ma = rows.filter(r => r.kon === 'man').map(r => r.lon);

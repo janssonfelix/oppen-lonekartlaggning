@@ -14,13 +14,13 @@
  * Appen får dem genom lib-speglarna (ADR-8); src/app/50-regressionsmodeller.js
  * och runOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
  * som läser getData(), statGolv() och resten av tillståndet. OLS-kärnan
- * (fitOLS, invert, matMul, pValue2Sided, tQuantile) ligger i stat.js. Ingen modell här
+ * (anpassaOLS, invertera, matrisprodukt, pVardeTvasidigt, tKvantil) ligger i stat.js. Ingen modell här
  * räknar BAS som ett tal; BAS-rangen (basRangFn) finns kvar i likvardighet.js för Lägre krav.
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
 
-import { fitOLS, invert, matMul, median, pValue2Sided, tQuantile } from './stat.js';
+import { anpassaOLS, invertera, matrisprodukt, median, pVardeTvasidigt, tKvantil } from './stat.js';
 import { skapaTermer, fyllTermer, ordForAntal, stor } from './termer.js';
 import { personOrd } from './namn.js';
 import { arKvinna, arMan } from './kon.js';
@@ -175,12 +175,12 @@ export function computePerBasGap(rows, basList, { golv }) {
         const aMean = harAlder ? sub.reduce((s,d)=>s+d.alder,0)/sub.length : 0;
         const X = sub.map(d => [1, arKvinna(d)?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
         const y = sub.map(d => Math.log(d.lon));
-        const fit = fitOLS(X, y);
+        const fit = anpassaOLS(X, y);
         if (!fit) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'singular' }); return; }
         const beta = fit.beta[1];
         const se   = Math.sqrt(fit.vcovHC3[1][1]); // HC3 robust SE
-        const p    = pValue2Sided(beta/se, fit.n, fit.k);
-        const tq   = tQuantile(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
+        const p    = pVardeTvasidigt(beta/se, fit.n, fit.k);
+        const tq   = tKvantil(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
         const ciLo = (Math.exp(beta - tq*se) - 1) * 100;
         const ciHi = (Math.exp(beta + tq*se) - 1) * 100;
         // Lönenivåerna för samma personer som regressionen (protokollet redovisar median och medelvärde, ADR-79). De
@@ -247,10 +247,10 @@ export function justeradSkillnad(rows0, { medAlder = harAlderIRader(rows0) } = {
     for (const medBas of [true, false]) {
         const X = bygg(medBas ? [...alder, 'bas'] : alder);
         if (giltiga.length < X[0].length + 5) continue;
-        const fit = fitOLS(X, y);
+        const fit = anpassaOLS(X, y);
         if (!fit) continue;
         const b = fit.beta[1], se = Math.sqrt(fit.vcovHC3[1][1]);
-        const tq = tQuantile(0.975, fit.n - fit.k);
+        const tq = tKvantil(0.975, fit.n - fit.k);
         return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - tq * se) - 1) * 100, high: (Math.exp(b + tq * se) - 1) * 100,
             n: fit.n, k: fit.k, medBas, medAlder, antalBas: basList.length };
     }
@@ -310,7 +310,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
     const skatta = s => {
         if (!N || N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
-        const fit = fitOLS(s.X, y);
+        const fit = anpassaOLS(s.X, y);
         if (!fit) return { name: s.name, status: 'singular' };
         return { name: s.name, status: 'ok', gapPct: (Math.exp(fit.beta[1]) - 1) * 100, R2: fit.R2, k: fit.k };
     };
@@ -345,7 +345,7 @@ export function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, ext
     const kol = rows.map((_, i) => [isKv[i], ...(medAlder ? [ageC[i]] : []), ...(extra ? extra[i] : [])]);
     const inom = inomYrkesgrupp(rows, y, kol);
     if (!inom.ok) return { name, status: 'too_few', ...inom.meta };
-    const fit = fitOLS(inom.X, inom.yW);
+    const fit = anpassaOLS(inom.X, inom.yW);
     if (!fit) return { name, status: 'singular', ...inom.meta };
     return {
         name, status: 'ok',
@@ -416,7 +416,7 @@ export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = 
     let beta;
     if (Array.isArray(start) && start.length === k && start.every(Number.isFinite)) beta = start.slice();
     else {
-        const olsFit = fitOLS(X, y);
+        const olsFit = anpassaOLS(X, y);
         if (!olsFit) return null;
         beta = olsFit.beta.slice();
     }
@@ -449,9 +449,9 @@ export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = 
             }
         }
         const XtWX = Array.from({ length: k }, (_, a) => Array.from(S.subarray(a * k, a * k + k)));
-        const inv = invert(XtWX);
+        const inv = invertera(XtWX);
         if (!inv) return null;
-        const newBeta = matMul(inv, XtWy.map(v => [v])).map(r => r[0]);
+        const newBeta = matrisprodukt(inv, XtWy.map(v => [v])).map(r => r[0]);
         // Konvergens-check
         let delta = 0;
         for (let i = 0; i < k; i++) delta += Math.abs(newBeta[i] - beta[i]);
@@ -534,8 +534,8 @@ export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD 
         y: group.map(d => Math.log(d.lon)) });
     const medKv = kolumner(kv), medMa = kolumner(ma);
     const dKv = design(kv, medKv), dMa = design(ma, medMa);
-    const fitK = fitOLS(dKv.X, dKv.y);
-    const fitM = fitOLS(dMa.X, dMa.y);
+    const fitK = anpassaOLS(dKv.X, dKv.y);
+    const fitM = anpassaOLS(dMa.X, dMa.y);
     if (!fitK || !fitM) return null;
     const fasta = m.alder ? 2 : 1;
     // Koefficienter i full längd, 0 där gruppen saknas hos könet.
@@ -748,7 +748,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
             triedSteps.push({ name: step.name, desc: step.desc, status: 'too_few', k: step.X[0].length });
             continue;
         }
-        const fit = fitOLS(step.X, y);
+        const fit = anpassaOLS(step.X, y);
         if (!fit) {
             triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: step.X[0].length });
             continue;
@@ -773,10 +773,10 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
     const seKonR   = Math.sqrt(chosen.vcovHC3[1][1]);
     const seKonC   = Math.sqrt(chosen.vcovClassic[1][1]);
     const tStat    = betaKon / seKonR;
-    const pValue   = pValue2Sided(tStat, chosen.n, chosen.k);
+    const pValue   = pVardeTvasidigt(tStat, chosen.n, chosen.k);
     const pct      = (Math.exp(betaKon) - 1) * 100;
     // Halvbredden för 95 % KI: t-fördelningens kvantil vid df = n − k (1,96 först vid df ≥ 100)
-    const tq       = tQuantile(0.975, chosen.n - chosen.k);
+    const tq       = tKvantil(0.975, chosen.n - chosen.k);
     const pctLow   = (Math.exp(betaKon - tq*seKonR) - 1) * 100;
     const pctHigh  = (Math.exp(betaKon + tq*seKonR) - 1) * 100;
     const pctLowC  = (Math.exp(betaKon - tq*seKonC) - 1) * 100;
@@ -789,7 +789,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
         const betaAge   = chosen.beta[2];
         const seAge     = Math.sqrt(chosen.vcovHC3[2][2]);
         ageEffect = (Math.exp(betaAge) - 1) * 100;
-        ageP      = pValue2Sided(betaAge/seAge, chosen.n, chosen.k);
+        ageP      = pVardeTvasidigt(betaAge/seAge, chosen.n, chosen.k);
     }
 
     // BAS-koefficienter: lönenivå per BAS-intervall i procent mot referensintervallet, när BAS-indikatorerna är med
@@ -807,7 +807,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
                 pct: (Math.exp(beta) - 1) * 100,
                 low: (Math.exp(beta - tq*se) - 1) * 100,
                 high: (Math.exp(beta + tq*se) - 1) * 100,
-                p: pValue2Sided(beta/se, chosen.n, chosen.k)
+                p: pVardeTvasidigt(beta/se, chosen.n, chosen.k)
             };
         });
     }
@@ -902,7 +902,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
  * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Standardfelen är
  * den fulla designens (ADR-77): HC3 räknas med hävstången h_i + 1/n_g, den fulla designens, och skalas inte; den
  * klassiska kovariansen skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader. k räknas med gruppnivåerna,
- * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
+ * så att t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som anpassaOLS med intercept (index 0 är en
  * tom konstant), så att resten av huvudregression läser kön på index 1 och ålder på index 2.
  * hHoga räknas på samma fulla hävstång: en ensam person i en grupp har h = 1.
  * @param {any[]} raw @param {number[]} y @param {number[]} isKv @param {number[]} ageC @param {boolean} medAlder
@@ -912,7 +912,7 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
     const inom = inomYrkesgrupp(raw, y, kol);
     if (!inom.ok) return null;
-    const fit = fitOLS(inom.X, inom.yW, inom.hGrupp);
+    const fit = anpassaOLS(inom.X, inom.yW, inom.hGrupp);
     if (!fit) return null;
     const n = raw.length, p = kol[0].length, k = inom.k;
     if (n - k <= 0) return null;

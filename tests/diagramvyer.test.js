@@ -1902,7 +1902,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
             // Trenden är regressionen ur de synliga punkterna (samma funktion som vyn).
             const synliga = f.lager.find(l => l.serie === 'Kvinna').data.filter(d => !d.liten && d.bas !== knapp.getAttribute('data-urval'));
             w2.__p = synliga.map(d => [d.x, d.y]);
-            const reg = w2.eval('Stat.linearRegression(window.__p)'), t = trend(visad, 'Kvinna (trend)').data;
+            const reg = w2.eval('Stat.linjarRegression(window.__p)'), t = trend(visad, 'Kvinna (trend)').data;
             expect(t[0].y).toBeCloseTo(reg.m * t[0].x + reg.b, 6);
             expect(not(el)).toMatch(/Diagrammet visar ett urval: utan BAS \S+\..*Trendlinjen och konfidensbandet för kvinnor gäller urvalet\. Trendlinjen och konfidensbandet för män gäller urvalet\./);
             // Den ritade linjen är den nya, och exportens bild räknar om på samma sätt.

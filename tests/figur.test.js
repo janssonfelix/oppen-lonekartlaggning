@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalIntervallText, TALFORMAT,
     URVAL_LISTA_MAX, urvalSomLista, urvalAktivt, harleddaLager, harlettNamn, harlettNot,
     underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening } from '../src/lib/figur.js';
-import { quantile } from '../src/lib/stat.js';
+import { kvantil } from '../src/lib/stat.js';
 
 const blank = s => s.replace(/\s/g, ' ').replace('−', '-');
 const bas = (over = {}) => ({
@@ -281,12 +281,12 @@ describe('skalDoman', () => {
 });
 
 describe('ladstatistik', () => {
-    it('kvartiler som stat.js quantile; morrhår inom 1,5 kvartilavstånd; avvikare utanför', () => {
+    it('kvartiler som stat.js kvantil; morrhår inom 1,5 kvartilavstånd; avvikare utanför', () => {
         const v = [10, 12, 13, 14, 15, 16, 17, 18, 40];
         const s = ladstatistik(v);
-        expect(s.q1).toBe(quantile(v, 0.25));
-        expect(s.median).toBe(quantile(v, 0.5));
-        expect(s.q3).toBe(quantile(v, 0.75));
+        expect(s.q1).toBe(kvantil(v, 0.25));
+        expect(s.median).toBe(kvantil(v, 0.5));
+        expect(s.q3).toBe(kvantil(v, 0.75));
         expect(s.lag).toBe(10);
         expect(s.hog).toBe(18);
         expect(s.avvikare).toEqual([40]);

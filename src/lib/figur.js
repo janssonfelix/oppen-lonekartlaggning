@@ -16,7 +16,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { quantile, avrundaSymmetriskt } from './stat.js';
+import { kvantil, avrundaSymmetriskt } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
 import { svTal } from './talformat.js';
 
@@ -46,7 +46,7 @@ export function talformat(v, namn, val) {
 /**
  * Kvantilpunkterna i ett kvantilpunktdiagram (lada med form: 'kvantiler'): `antal` lika
  * stora andelar av gruppen, var och en företrädd av kvantilen i sin mitt, (i + 0,5) / antal, med samma
- * interpolation som stat.quantile. Antalet är högst `antalMax` och högst halva gruppen, så att en prick aldrig
+ * interpolation som stat.kvantil. Antalet är högst `antalMax` och högst halva gruppen, så att en prick aldrig
  * står för färre än två personer. null när gruppen har färre än två värden.
  * @param {number[]} varden
  * @param {number} [antalMax]
@@ -214,14 +214,14 @@ export function antalPunkter(figur) {
 }
 
 /**
- * Lådans mått: kvartiler med samma metod som verktygets tabeller (stat.js quantile), morrhår
+ * Lådans mått: kvartiler med samma metod som verktygets tabeller (stat.js kvantil), morrhår
  * till yttersta värdet inom 1,5 kvartilavstånd, övriga som avvikare.
  * @returns {{q1:number, median:number, q3:number, lag:number, hog:number, avvikare:number[]} | null}
  */
 export function ladstatistik(varden) {
     const v = (varden || []).filter(x => typeof x === 'number' && isFinite(x)).sort((a, b) => a - b);
     if (!v.length) return null;
-    const q1 = quantile(v, 0.25), median = quantile(v, 0.5), q3 = quantile(v, 0.75);
+    const q1 = kvantil(v, 0.25), median = kvantil(v, 0.5), q3 = kvantil(v, 0.75);
     const kant = 1.5 * (q3 - q1);
     const inom = v.filter(x => x >= q1 - kant && x <= q3 + kant);
     return { q1, median, q3, lag: inom[0], hog: inom[inom.length - 1], avvikare: v.filter(x => x < q1 - kant || x > q3 + kant) };

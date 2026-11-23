@@ -43,9 +43,9 @@ avsnitt 11.
 | ID | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|---|
 | B1.1 | Median; 0 för en tom lista | `median`, `stat.js` | tal | – | `tests/stat.test.js` | `stat-referens-varden.json` (indirekt) |
-| B1.2 | Kvantil med linjär interpolation (typ 7, samma som R:s standard och som PERCENTIL.INK i kalkylprogram) | `quantile`, `stat.js` | tal, andel 0–1 | Hyndman och Fan typ 7 | `tests/stat.test.js` | saknas |
-| B1.3 | OLS med klassisk kovarians och HC3; null när n < antal parametrar + 2 | `fitOLS`, `stat.js` | designmatris, lön | `regressionsmodellen.md` §1, §7; ADR-77 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `stat-referens-varden.json` |
-| B1.4 | t-fördelningens CDF och kvantil, tvåsidigt p | `tDistCdf`, `tQuantile`, `pValue2Sided`, `stat.js` | t, frihetsgrader | `regressionsmodellen.md` §7; ADR-45 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `stat-referens-varden.json` |
+| B1.2 | Kvantil med linjär interpolation (typ 7, samma som R:s standard och som PERCENTIL.INK i kalkylprogram) | `kvantil`, `stat.js` | tal, andel 0–1 | Hyndman och Fan typ 7 | `tests/stat.test.js` | saknas |
+| B1.3 | OLS med klassisk kovarians och HC3; null när n < antal parametrar + 2 | `anpassaOLS`, `stat.js` | designmatris, lön | `regressionsmodellen.md` §1, §7; ADR-77 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `stat-referens-varden.json` |
+| B1.4 | t-fördelningens CDF och kvantil, tvåsidigt p | `tFordelningCdf`, `tKvantil`, `pVardeTvasidigt`, `stat.js` | t, frihetsgrader | `regressionsmodellen.md` §7; ADR-45 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `stat-referens-varden.json` |
 | B1.5 | Normalfördelningens CDF | `normalCdf`, `stat.js` | z | Abramowitz och Stegun 26.2.17 (kommentaren i koden) | `tests/stat.test.js` | saknas |
 | B1.6 | Benjamini–Hochberg (q-värden) | `bhJustera`, `stat.js` | p-värden | `regressionsmodellen.md` §7 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `bh-justera-referens.json` |
 | B1.7 | Percentilintervall ur bootstrapdragningar: index ⌊n·0,025⌋ och n − 1 − ⌊n·0,025⌋ | `percentilintervall`, `stat.js` | sorterade dragningar | ADR-86 | `tests/osakerhet.test.js`, `tests/slumpintervall-ordning.test.js` | saknas |

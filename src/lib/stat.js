@@ -11,9 +11,9 @@
  * resultaten; artefaktgrinden vaktar att spegeln är i synk med src/lib/.
  *
  * Funktioner exporterade:
- *   - median, quantile, linearRegression  (Stat-objektet i appen pekar hit)
- *   - matMul, transpose, invert            (matrisalgebra)
- *   - fitOLS                                (OLS + HC3-robusta SE)
+ *   - median, kvantil, linjarRegression     (Stat-objektet i appen pekar hit)
+ *   - matrisprodukt, transponera, invertera (matrisalgebra)
+ *   - anpassaOLS                            (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ för p-värden)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
@@ -35,25 +35,25 @@ export function avrundaSymmetriskt(x, dec = 0) {
 
 /**
  * Beräknar median (P50) av en talsekvens.
- * @param {number[]} arr
+ * @param {number[]} varden
  * @returns {number} 0 om tom, annars mittenelementet i sorterad lista.
  */
-export function median(arr) {
-    if (!arr.length) return 0;
-    const s = [...arr].sort((a, b) => a - b);
+export function median(varden) {
+    if (!varden.length) return 0;
+    const s = [...varden].sort((a, b) => a - b);
     const m = Math.floor(s.length / 2);
     return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
 /**
  * Kvantil via linjär interpolation (typ 7, samma som R's default).
- * @param {number[]} arr
+ * @param {number[]} varden
  * @param {number} q ∈ [0,1]
  * @returns {number}
  */
-export function quantile(arr, q) {
-    if (!arr.length) return 0;
-    const s = [...arr].sort((a, b) => a - b);
+export function kvantil(varden, q) {
+    if (!varden.length) return 0;
+    const s = [...varden].sort((a, b) => a - b);
     const pos = (s.length - 1) * q;
     const lo = Math.floor(pos);
     const hi = Math.ceil(pos);
@@ -66,7 +66,7 @@ export function quantile(arr, q) {
  * @returns {{m:number, b:number, r2:number} | null} null med färre än två punkter eller utan spridning i x
  *   (alla x lika): då finns ingen lutning att räkna
  */
-export function linearRegression(data) {
+export function linjarRegression(data) {
     const n = data.length;
     if (n < 2) return null;
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
@@ -116,10 +116,10 @@ function _lnGamma(x) {
  * (Numerical Recipes, betacf). Konvergerar snabbt för x < (a+1)/(a+b+2);
  * annars används symmetrin I_x(a,b) = 1 − I_{1−x}(b,a).
  */
-function _regIncBeta(x, a, b) {
+function _regOfullstandigBeta(x, a, b) {
     if (x <= 0) return 0;
     if (x >= 1) return 1;
-    if (x > (a + 1) / (a + b + 2)) return 1 - _regIncBeta(1 - x, b, a);
+    if (x > (a + 1) / (a + b + 2)) return 1 - _regOfullstandigBeta(1 - x, b, a);
     const lnFront = _lnGamma(a + b) - _lnGamma(a) - _lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x);
     const tiny = 1e-300;
     let c = 1, d = 1 - (a + b) * x / (a + 1);
@@ -152,26 +152,26 @@ function _regIncBeta(x, a, b) {
  * @param {number} df - frihetsgrader (n − k)
  * @returns {number} P(T ≤ t)
  */
-export function tDistCdf(t, df) {
+export function tFordelningCdf(t, df) {
     if (!isFinite(t) || !(df > 0)) return NaN;
     if (df > 1e6) return normalCdf(t);
     const x = df / (df + t * t);
-    const twoSided = _regIncBeta(x, df / 2, 0.5);   // P(|T| > |t|)
+    const twoSided = _regOfullstandigBeta(x, df / 2, 0.5);   // P(|T| > |t|)
     return t >= 0 ? 1 - twoSided / 2 : twoSided / 2;
 }
 
 /**
  * t-fördelningens kvantil: det t för vilket P(T ≤ t | df) = p. Används för
- * konfidensintervall (p = 0,975 ger halvbredden för 95 %). Inverterar tDistCdf
+ * konfidensintervall (p = 0,975 ger halvbredden för 95 %). Inverterar tFordelningCdf
  * med bisektion; vid df ≥ 100 används normalfördelningen (1,96 för 95 %), samma
- * gräns som pValue2Sided.
+ * gräns som pVardeTvasidigt.
  * @param {number} p  - sannolikhet i (0, 1)
  * @param {number} df - frihetsgrader (n − k)
  * @returns {number} kvantilen, NaN vid ogiltiga argument
  */
-export function tQuantile(p, df) {
+export function tKvantil(p, df) {
     if (!(p > 0 && p < 1) || !(df > 0)) return NaN;
-    const cdf = df >= 100 ? normalCdf : t => tDistCdf(t, df);
+    const cdf = df >= 100 ? normalCdf : t => tFordelningCdf(t, df);
     let lo = -1, hi = 1;
     while (cdf(lo) > p) lo *= 2;
     while (cdf(hi) < p) hi *= 2;
@@ -185,21 +185,21 @@ export function tQuantile(p, df) {
 /**
  * Tvåsidigt p-värde för en regressionskoefficient. Använder t-fördelning
  * vid små df (< 100), annars normalfördelning.
- * @param {number} stat - β / SE
+ * @param {number} t - β / SE
  * @param {number} n    - antal observationer
  * @param {number} k    - antal regressorer
  * @returns {number} 2-sidigt p-värde
  */
-export function pValue2Sided(stat, n, k) {
+export function pVardeTvasidigt(t, n, k) {
     const df = n - k;
-    if (!isFinite(stat) || !(df > 0)) return NaN;
-    const absT = Math.abs(stat);
+    if (!isFinite(t) || !(df > 0)) return NaN;
+    const absT = Math.abs(t);
     if (df >= 100) return 2 * (1 - normalCdf(absT));
-    return 2 * (1 - tDistCdf(absT, df));
+    return 2 * (1 - tFordelningCdf(absT, df));
 }
 
 /** Matrisprodukt C = A·B. */
-export function matMul(A, B) {
+export function matrisprodukt(A, B) {
     const m = A.length, n = B[0].length, p = B.length;
     const C = Array.from({ length: m }, () => new Array(n).fill(0));
     for (let i = 0; i < m; i++) {
@@ -212,8 +212,8 @@ export function matMul(A, B) {
     return C;
 }
 
-/** Transpose Aᵀ. */
-export function transpose(A) {
+/** Transponatet Aᵀ. */
+export function transponera(A) {
     return A[0].map((_, i) => A.map(r => r[i]));
 }
 
@@ -222,7 +222,7 @@ export function transpose(A) {
  * @param {number[][]} A
  * @returns {number[][]|null} null om singulär (pivotelement < 1e-10).
  */
-export function invert(A) {
+export function invertera(A) {
     const n = A.length;
     const M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
     for (let i = 0; i < n; i++) {
@@ -245,7 +245,7 @@ export function invert(A) {
 /**
  * OLS-estimat med klassisk + HC3-robusta vcov (Long & Ervin 2000).
  *
- * Returnerar identiskt fältnamn-gränssnitt som app.js _fitOLS:
+ * Returnerar identiskt fältnamn-gränssnitt som app.js _anpassaOLS:
  *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
  * hHoga = antalet observationer med hävstång h_i > 0,99 (B4). De har (nästan) noll residual och bidrar inte till
  * HC3-köttet; antalet visas i regressionskortets tekniska specifikation (en ensam person i en indikator ger h = 1).
@@ -258,7 +258,7 @@ export function invert(A) {
  * @param {number[]|null} [hTillagg] - n-vektor som läggs till hävstången h_i (gruppdelen vid inomtransformation).
  * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][], hHoga:number}}
  */
-export function fitOLS(X, y, hTillagg = null) {
+export function anpassaOLS(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 2) return null;
     // Indikatorerna gör X glest: varje rad har få nollskilda kolumner. Summorna räknas bara över dem, i samma ordning
@@ -274,9 +274,9 @@ export function fitOLS(X, y, hTillagg = null) {
             Xty[a] += va * yi;
         }
     }
-    const XtXinv = invert(XtX);
+    const XtXinv = invertera(XtX);
     if (!XtXinv) return null;
-    const beta = matMul(XtXinv, Xty.map(v => [v])).map(r => r[0]);
+    const beta = matrisprodukt(XtXinv, Xty.map(v => [v])).map(r => r[0]);
 
     const yhat = X.map((row, i) => { let s = 0; for (const a of nz[i]) s += row[a] * beta[a]; return s; });
     const resid = y.map((yi, i) => yi - yhat[i]);
@@ -314,8 +314,8 @@ export function fitOLS(X, y, hTillagg = null) {
             for (let q = 0; q < ix.length; q++) { const b = ix[q]; rad[b] += wa * xi[b]; }
         }
     }
-    const breadMeat = matMul(XtXinv, meat);
-    const vcovHC3 = matMul(breadMeat, XtXinv);
+    const breadMeat = matrisprodukt(XtXinv, meat);
+    const vcovHC3 = matrisprodukt(breadMeat, XtXinv);
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
 
     return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };

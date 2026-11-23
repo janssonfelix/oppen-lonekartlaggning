@@ -7,7 +7,7 @@
 // src/lib/. src/lib/ är enda källa: varje modul inlinas VERBATIM i en
 // IIFE (endast `export` strippas — funktionskropparna rörs aldrig) och de namn
 // som app.js anropar exponeras som const-alias med oförändrade speglingsnamn
-// (_fitOLS, _fcComputePott, _stMedianGapPct, _rngFor, _lpBandPosition …).
+// (_anpassaOLS, _fcComputePott, _stMedianGapPct, _rngFor, _lpBandPosition …).
 //
 // Eftersom kropparna inlinas oförändrade kan spegel och lib inte glida isär.
 // tests/drift.test.js vaktar att den incheckade 09-lib-speglar.js är i synk med
@@ -91,10 +91,10 @@ export const MODULES = [
     {
         file: 'stat.js', ns: '__mirrorStat',
         expose: {
-            tQuantile: '_tQuantile', pValue2Sided: '_pValue2Sided', fitOLS: '_fitOLS', quantile: '_libQuantile',
+            tKvantil: '_tKvantil', pVardeTvasidigt: '_pVardeTvasidigt', anpassaOLS: '_anpassaOLS', kvantil: '_libKvantil',
             bhJustera: '_bhJustera', avrundaSymmetriskt: '_avrundaSymmetriskt',
             // returneras för att andra lib-moduler importerar dem (se _parseImports); appen använder dem inte
-            matMul: null, invert: null, median: null, linearRegression: null, percentilintervall: null
+            matrisprodukt: null, invertera: null, median: null, linjarRegression: null, percentilintervall: null
         }
     },
     {

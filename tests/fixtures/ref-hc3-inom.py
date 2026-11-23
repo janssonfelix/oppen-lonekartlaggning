@@ -65,7 +65,7 @@ f = sm.OLS(y[behall], Xr).fit()
 V, Vc = np.asarray(f.cov_HC3), np.asarray(f.cov_params())
 assert f.df_resid == n - k, 'df ska vara desamma som på hela designen'
 
-# Kontroll: numpy på hela designen med vikten 0 när (1 − h)² ≤ 1e-12, som fitOLS.
+# Kontroll: numpy på hela designen med vikten 0 när (1 − h)² ≤ 1e-12, som anpassaOLS.
 XtXi = np.linalg.inv(X.T @ X)
 e = y - X @ (XtXi @ X.T @ y)
 hn = np.einsum('ij,jk,ik->i', X, XtXi, X)

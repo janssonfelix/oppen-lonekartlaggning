@@ -46,7 +46,7 @@ function buildBasdossier(bas) {
     const df = getData().filter(r => r.bas === bas && r.lon > 0);
     const arKv = arKvinna, arMa = arMan;
     const lon = df.map(r => r.lon);
-    const median = Stat.median(lon), p10 = Stat.quantile(lon, 0.10), p90 = Stat.quantile(lon, 0.90);
+    const median = Stat.median(lon), p10 = Stat.kvantil(lon, 0.10), p90 = Stat.kvantil(lon, 0.90);
     const { nKv, nMa, medKv, medMa, kvotPct, konOk } = _stKonsMedianer(df, { k });
 
     // 1. Läget mot ställningstagandet: referensens rad för BAS-intervallet (inte en yrkesrad).

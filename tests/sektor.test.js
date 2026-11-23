@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot } from '../src/lib/sektor.js';
 import { computeSequentialGap } from '../src/lib/regression.js';
-import { fitOLS, tQuantile } from '../src/lib/stat.js';
+import { anpassaOLS, tKvantil } from '../src/lib/stat.js';
 import { gapUppdelning } from '../src/lib/gapuppdelning.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
@@ -93,8 +93,8 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
         const rader = vard();
         const ageMean = rader.reduce((s, r) => s + r.alder, 0) / rader.length;
         const X = rader.map(r => [1, r.kon === 'kvinna' ? 1 : 0, r.alder - ageMean, r.bas === 'C' ? 1 : 0, r.bas === 'D' ? 1 : 0]);
-        const fit = fitOLS(X, rader.map(r => Math.log(r.lon)));
-        const se = Math.sqrt(fit.vcovHC3[1][1]), tq = tQuantile(0.975, fit.n - fit.k);
+        const fit = anpassaOLS(X, rader.map(r => Math.log(r.lon)));
+        const se = Math.sqrt(fit.vcovHC3[1][1]), tq = tKvantil(0.975, fit.n - fit.k);
         expect(tq).toBeGreaterThan(2);   // 35 frihetsgrader: inte 1,96
         const j = sektorsTabell(rader, { k: 10 })[0].justerat;
         expect(j.low).toBeCloseTo((Math.exp(fit.beta[1] - tq * se) - 1) * 100, 10);

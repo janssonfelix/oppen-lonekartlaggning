@@ -44,7 +44,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
             const d = getData(); const am = d.reduce((s, x) => s + x.alder, 0) / d.length;
             const g = [...new Set(d.map(x => x.aid + '|' + x.bas))].sort();
             const X = d.map(x => [x.kon === 'kvinna' ? 1 : 0, x.alder - am, ...g.map(k => (x.aid + '|' + x.bas === k ? 1 : 0))]);
-            const fit = _fitOLS(X, d.map(x => Math.log(x.lon)));
+            const fit = _anpassaOLS(X, d.map(x => Math.log(x.lon)));
             return (Math.exp(fit.beta[0]) - 1) * 100;
         })()`);
         expect(r.yrkesSteg.gapPct).toBeCloseTo(ref, 8);
@@ -628,7 +628,7 @@ describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-5
 });
 
 describe('regressionskortets tekniska specifikation', () => {
-    it('visar antalet observationer med hävstång > 0,99, som fitOLS räknar', () => {
+    it('visar antalet observationer med hävstång > 0,99, som anpassaOLS räknar', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const r = w.eval('runOLSRegression()');

@@ -8,7 +8,7 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { etikett, huvudomrade, arRestkod, arLedningsetikett, normaliseraAid } from './aid.js';
-import { quantile } from './stat.js';
+import { kvantil } from './stat.js';
 import { skapaTermer, stor, adjektiv, ordForAntal } from './termer.js';
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -51,7 +51,7 @@ export function aidKriterier(rader, { k, harAnsvar = false }) {
     const per = new Map();
     d.forEach(r => { const key = normaliseraAid(r.aid); if (!per.has(key)) per.set(key, []); per.get(key).push(r.lon); });
     const breda = [...per].filter(([, l]) => l.length >= k).map(([aid, l]) => {
-        const p10 = quantile(l, 0.1), p90 = quantile(l, 0.9);
+        const p10 = kvantil(l, 0.1), p90 = kvantil(l, 0.9);
         return { aid, kvot: p10 > 0 ? p90 / p10 : null };
     }).filter(x => x.kvot != null && x.kvot > SPRIDNING_GRANS);
     ut.push({ id: 'aid-spridning', namn: 'Lönespridning inom AID', status: breda.length ? 'varning' : 'ok', varde: breda.length,

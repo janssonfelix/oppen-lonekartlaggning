@@ -12,7 +12,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { median, quantile } from './stat.js';
+import { median, kvantil } from './stat.js';
 import { sektorsnamn, aidAvYrke, namnrader } from './aid.js';
 import { skapaTermer, ordForAntal, adjektiv } from './termer.js';
 import { arKvinna } from './kon.js';
@@ -129,7 +129,7 @@ export function jamforelseRader(rader, { statistik = [], policyFor = () => null,
         for (const bas of [...perBas.keys()].sort()) {
             const { yrke, lons, kvinnor } = perBas.get(bas);
             if (lons.length < k) { utelamnade.push(`${aid} (BAS ${bas})`); continue; }
-            const org = _tre(quantile(lons, 0.1), median(lons), quantile(lons, 0.9));
+            const org = _tre(kvantil(lons, 0.1), median(lons), kvantil(lons, 0.9));
             const traff = statistikFor(statistik, aid, bas), s = traff?.rad;
             const p = policyFor(aid, bas);
             const stat = _tre(s?.p10, s?.median, s?.p90), pol = _tre(p?.p10, p?.med, p?.p90);

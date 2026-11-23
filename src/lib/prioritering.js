@@ -17,7 +17,7 @@
  * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.10–B7.12).
  */
-import { median, quantile, avrundaSymmetriskt } from './stat.js';
+import { median, kvantil, avrundaSymmetriskt } from './stat.js';
 import { aidAvYrke, namnrader } from './aid.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 import { arKvinna, arMan } from './kon.js';
@@ -107,7 +107,7 @@ export function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGran
 
     // Lönepositionsmått per kön: kräver tröskeln för båda könen (ADR-12)
     if (item.kvN >= kTroskel && item.maN >= kTroskel) {
-        const q1 = quantile(rows.map(r => r.lon), 0.2);
+        const q1 = kvantil(rows.map(r => r.lon), 0.2);
         const andelKv = item.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / item.kvN : 0;
         const andelMa = item.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / item.maN : 0;
         if (andelKv >= 0.4 && andelKv - andelMa >= 0.2) out.push({ kod: 'kvintil', type: 'flag', andelKv, andelMa });
