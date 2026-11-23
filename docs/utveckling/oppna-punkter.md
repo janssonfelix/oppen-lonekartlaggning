@@ -93,6 +93,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     arkivering av utdata, mall för konsekvensbedömning; en jurist-granskad metodbeskrivning och en handledning
     för facklig samverkan. (Textförslaget till information till de anställda, tillgänglighetsredogörelsen och
     säkerhetsbeskrivningen på en sida finns i `docs/anvandare/`; textförslaget är inte juridiskt granskat.)
+33. **Före release: systemförvaltarens väg för organisationspaketet.** Hur systemförvaltaren lägger in
+    organisationens paket och sprider det till handläggarna ska bli enklare (noterat 2026-11-23). I dag läser varje
+    handläggare in paketet själv (`docs/anvandare/organisationspaket.md`).
 
 **Juridiska frågor.** Hänvisningarna gicks igenom 2026-10-19 (status *Förslag* i [`lagrum.md`](lagrum.md): inte
 juridiskt granskade). Beslut som följde: verktyget hänvisar övergripande
