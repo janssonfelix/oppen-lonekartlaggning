@@ -11963,7 +11963,8 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
                 gapPct: 0, medTot: median(kv.concat(ma)), lag: null, hog: null });
             continue;
         }
-        const km = konsMedianerUrLoner(kv, ma), { medKv, medMa } = km;
+        // Båda könen har minst två löner här (över 0 efter inläsningen), så konOk är sant och talen finns.
+        const km = /** @type {{medKv:number, medMa:number, kvotPct:number}} */ (konsMedianerUrLoner(kv, ma)), { medKv, medMa } = km;
         // Medelvärdet på samma löner som medianen; protokollet redovisar båda (ADR-79), statusen följer medianen.
         const medelKv = kv.reduce((s, x) => s + x, 0) / kv.length, medelMa = ma.reduce((s, x) => s + x, 0) / ma.length;
         const kvot = medKv / medMa;
