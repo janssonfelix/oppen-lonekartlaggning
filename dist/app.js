@@ -11699,8 +11699,8 @@ function _evidenceForPerBasRow(p, bhCtx) {
       rows: [
         { label: stor(T.niva.en), value: p.bas },
         { label: "Antal totalt", value: (p.n || 0).toLocaleString("sv-SE") },
-        { label: "Antal kvinnor", value: (p.kvN || 0).toLocaleString("sv-SE"), note: (p.kvN || 0) < statGolv() ? `Under k=${statGolv()}` : "" },
-        { label: "Antal män", value: (p.maN || 0).toLocaleString("sv-SE"), note: (p.maN || 0) < statGolv() ? `Under k=${statGolv()}` : "" },
+        { label: "Antal kvinnor", value: (p.kvN || 0).toLocaleString("sv-SE"), note: (p.kvN || 0) < statGolv() ? `Färre än ${statGolv()} (golvet för skattningar)` : "" },
+        { label: "Antal män", value: (p.maN || 0).toLocaleString("sv-SE"), note: (p.maN || 0) < statGolv() ? `Färre än ${statGolv()} (golvet för skattningar)` : "" },
         { label: "Status", value: p.status === "too_few" ? "För få observationer" : "Singulär designmatris" }
       ]
     };

@@ -325,7 +325,7 @@ describe('k-tröskeln i texterna', () => {
         w.eval('sattKTroskel(5, { fraga: false })');
         const rad = w.eval('_evidenceForPerBasRow({ bas: "X", n: 17, kvN: 7, maN: 10, status: "too_few" })').rows;
         const kv = rad.find(r => r.label === 'Antal kvinnor');
-        expect(kv.note).toBe('Under k=10');
+        expect(kv.note).toBe('Färre än 10 (golvet för skattningar)');
         expect(rad.find(r => r.label === 'Antal män').note).toBe('');
     });
     it('Excel-protokollets rad om BAS-regressionen citerar statistiska golvet, raden om yrken tröskeln', () => {
