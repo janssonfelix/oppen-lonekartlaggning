@@ -36,7 +36,7 @@ import { aidbasDefinition, aidbasGrans, kvDomGransText } from './45-aid-bas-tabe
 import { regressionsval } from './51-lika-arbete-regressionskort.js';
 
 // ---- UI: Löneöversyn-fliken ----
-function _forecastReadControls() {
+function _fcLasReglage() {
     const bm = document.getElementById('forecast-budget-mode');
     const bv = document.getElementById('forecast-budget-value');
     const gm = document.getElementById('forecast-generell-mode');
@@ -53,7 +53,7 @@ function _forecastReadControls() {
     if (yr) { const v = parseInt(/** @type {HTMLInputElement} */ (yr).value, 10); state.forecast.years = isFinite(v) && v >= 1 ? v : 1; }
 }
 // Distinkta AID (yrken) inom ett BAS, med visningsetikett + gruppstorlek.
-function _forecastAidsForBas(bas) {
+function _fcAidForBas(bas) {
     const seen = new Map(), iBas = hamtaData().filter(r => r.bas === bas);
     // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
     const namnrad = namnrader(iBas, r => r.aid);
@@ -81,7 +81,7 @@ function ritaRiktadeRader() {
         // #13 Isolerad kostnad för raden (vad den äter av potten) och antalet den berör
         const info = riktadRadInfo(dAll, tg, { roundStep: state.forecast.roundStep, k: kInstalld() });
         const basOpts = basList.map(b => `<option value="${esc(b)}"${tg.bas === b ? ' selected' : ''}>${esc(b)}</option>`).join('');
-        const aids = _forecastAidsForBas(tg.bas || basList[0]);
+        const aids = _fcAidForBas(tg.bas || basList[0]);
         const aidOpts = `<option value="*"${tg.aid === '*' ? ' selected' : ''}>Hela BAS (alla ${T.enhet.fl})</option>`
             + aids.map(a => `<option value="${esc(a.aid)}"${tg.aid === a.aid ? ' selected' : ''}>${esc(a.label)} (n=${a.n})</option>`).join('');
         const distOpts = [['flat', 'Lika % till alla'], ['lowest', 'Lyft lägst betalda först'], ['target', 'Lyft mot målnivå']]
@@ -118,7 +118,7 @@ function ritaRiktadeRader() {
                 if (field === 'value') tg.value = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 else if (field === 'lonCap') tg.lonCap = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 else tg[field] = /** @type {HTMLInputElement} */ (ctrl).value;
-                if (field === 'bas') { tg.aid = (_forecastAidsForBas(tg.bas)[0] || {}).aid || ''; ritaRiktadeRader(); }
+                if (field === 'bas') { tg.aid = (_fcAidForBas(tg.bas)[0] || {}).aid || ''; ritaRiktadeRader(); }
                 if (field === 'dist' || field === 'mode' || field === 'kon' || field === 'lonCap') ritaRiktadeRader();
                 ritaPrognos();
             });
@@ -179,7 +179,7 @@ function ritaPrognos() {
     const meterEl = document.getElementById('forecast-meter');
     const outEl = document.getElementById('forecast-outcome');
     if (!meterEl && !outEl) return;
-    _forecastReadControls();
+    _fcLasReglage();
     _fcUppdateraForslagPott();
     const d = hamtaData();
     if (!d.length) {
@@ -443,9 +443,9 @@ export function ritaLoneoversyn() {
 // räknas utan knapptryck. Rensa all data, en ny lönefil och Nollställ glömmer resultaten (_fcGlomKnappresultat).
 const _fcKnappresultat = new Set();   // id:n för rutorna som visar ett resultat
 function _fcRitaOmKnappresultat() {
-    if (_fcKnappresultat.has('forecast-threshold-result')) _forecastThreshold();
-    if (_fcKnappresultat.has('forecast-sensitivity')) _forecastSensitivity();
-    if (_fcKnappresultat.has('forecast-rem-result')) _forecastRemediation();
+    if (_fcKnappresultat.has('forecast-threshold-result')) _fcLyftMotMal();
+    if (_fcKnappresultat.has('forecast-sensitivity')) _fcKanslighet();
+    if (_fcKnappresultat.has('forecast-rem-result')) _fcAtgard();
 }
 export function _fcGlomKnappresultat() {
     for (const id of _fcKnappresultat) { const el = document.getElementById(id); if (el) el.innerHTML = ''; }
@@ -517,17 +517,17 @@ function _fcUppdateraForslagPott() {
     knapp.disabled = !(typeof v === 'number' && isFinite(v) && v > 0);
 }
 // Fäller ut Riktade potter och rullar dit, så att det syns vad förslaget gjorde.
-function _forecastOptimizeFranPott() {
-    _forecastOptimize();
+function _fcOptimeraFranPott() {
+    _fcOptimera();
     const avsnitt = /** @type {HTMLDetailsElement|null} */ (document.getElementById('avsnitt-lo-riktade'));
     if (!avsnitt) return;
     avsnitt.open = true;
     try { avsnitt.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_e) { /* äldre webbläsare: utfällt räcker */ }
 }
-function _forecastOptimize() {
+function _fcOptimera() {
     const d = hamtaData();
     if (!d.length) return;
-    _forecastReadControls();
+    _fcLasReglage();
     const cand = _fcKandidater();
     const targets = forslagUrPotten(d, { budget: state.forecast.budget, generell: state.forecast.generell, kandidater: cand, minN: state.forecast.minGroupN || 0 });
     if (!targets.length) {
@@ -587,10 +587,10 @@ export function _fcRensaParMal() {
     return sakert + forsiktigt;
 }
 // Kriteriebaserad riktning: expandera en massregel till riktade rader.
-function _forecastAddByCriteria() {
+function _fcLaggTillEfterVillkor() {
     const d = hamtaData();
     if (!d.length) return;
-    _forecastReadControls();
+    _fcLasReglage();
     const matcher = /** @type {HTMLInputElement} */ (document.getElementById('forecast-rule-match'))?.value || 'kvdom';
     const mode = /** @type {HTMLInputElement} */ (document.getElementById('forecast-rule-mode'))?.value || 'pct';
     const dist = /** @type {HTMLInputElement} */ (document.getElementById('forecast-rule-dist'))?.value || 'lowest';
@@ -613,10 +613,10 @@ function _forecastAddByCriteria() {
     if (added === 0) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // Mål-läge: bygg riktade rader som stänger en andel av de osakliga gapen (§ 3:10).
-function _forecastClosure() {
+function _fcStangGap() {
     const d = hamtaData();
     if (!d.length) return;
-    _forecastReadControls();
+    _fcLasReglage();
     const fracPct = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-closure-pct'))?.value);
     if (!isFinite(fracPct) || fracPct <= 0) { alert('Ange med hur många procent skillnaderna i likvärdigt arbete ska minska.'); return; }
     const cand = _fcKandidater();
@@ -627,7 +627,7 @@ function _forecastClosure() {
     ritaPrognos();
 }
 // Scenario A/B: spara nuläget som ett scenario och jämför.
-function _forecastSaveScenario(slot) {
+function _fcSparaScenario(slot) {
     const d = hamtaData();
     if (!state.forecast.result || !d.length) { alert('Det finns ingen prognos att spara. Ange en pott först.'); return; }
     const o = _fcBeraknaUtfall(d);
@@ -666,7 +666,7 @@ function _ritaScenariojamforelse() {
 // Målet i fältet för tröskelmålet: 0 är ett giltigt mål (ingen oförklarad skillnad), ett tomt fält eller text som inte
 // är ett tal ger standardmålet, och ett tal utanför fältets min och max avvisas (ok: false) i stället för att tyst ändras.
 /** @returns {{ok: boolean, pct: number, min: number, max: number}} */
-function _forecastLasMal(falt, standard) {
+function _fcLasMal(falt, standard) {
     const min = parseFloat(falt?.min ?? ''), max = parseFloat(falt?.max ?? '');
     const lo = isFinite(min) ? min : 0, hi = isFinite(max) ? max : Infinity;
     const text = String(falt?.value ?? '').trim().replace(',', '.');
@@ -676,7 +676,7 @@ function _forecastLasMal(falt, standard) {
 }
 // (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans. Sökningen är
 // likalonslyftForMal i src/lib/loneoversyn.js (_fcLyftForMal); här läses fälten, k-spärren prövas och resultatet ritas.
-function _forecastThreshold() {
+function _fcLyftMotMal() {
     const host = document.getElementById('forecast-threshold-result');
     const d = hamtaData();
     if (!host) return;
@@ -688,7 +688,7 @@ function _forecastThreshold() {
     // src/lib/vymodell-loneoversyn.js (regel R5), med huvudregressionen på raderna (ADR-17).
     const { STANDARD_PCT, MAX_LYFT_PCT, SIGNIFIKANS_P } = troskelmalKonstanter();
     const useSig = !!/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-sig'))?.checked;
-    const mal = _forecastLasMal(/** @type {HTMLInputElement|null} */ (document.getElementById('forecast-threshold-pct')), STANDARD_PCT);
+    const mal = _fcLasMal(/** @type {HTMLInputElement|null} */ (document.getElementById('forecast-threshold-pct')), STANDARD_PCT);
     const tgt = mal.ok ? mal.pct : STANDARD_PCT;
     const svar = vymodellTroskelmal(d, { k: kTroskel(), malPct: tgt, malOk: mal.ok, signifikans: useSig, regval: regressionsval() });
     if (svar.status === 'konUnderK') { host.innerHTML = `<span class="f-dampad">– ${esc(_konUtelamnatNot())}</span>`; return; }
@@ -707,10 +707,10 @@ function _forecastThreshold() {
     </div>`;
 }
 // (E) Marknadspositionering: lyft grupper under marknad × factor.
-function _forecastMarket() {
+function _fcMarknad() {
     const d = hamtaData();
     if (!d.length) return;
-    _forecastReadControls();
+    _fcLasReglage();
     const f = (parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-market-factor'))?.value) || 95) / 100;
     if (!(state.statistik || []).some(s => s.median > 0)) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
     const groups = sammanstallGrupper(d);
@@ -725,13 +725,13 @@ function _forecastMarket() {
     if (!added) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // (F) Budgetkänslighetskurva (§3:10-stängning 0→100 %).
-function _forecastSensitivity() {
+function _fcKanslighet() {
     const host = document.getElementById('forecast-sensitivity');
     const d = hamtaData();
     if (!host) return;
     _fcKnappresultat.add('forecast-sensitivity');
     if (!d.length) { host.innerHTML = ''; return; }
-    _forecastReadControls();
+    _fcLasReglage();
     const cand = _fcKandidater();
     if (!cand.length) { host.innerHTML = '<span class="text-dampad-sm">Verktyget hittade inga skillnader i likvärdigt arbete att räkna på.</span>'; return; }
     const cost = _fcKostnadsval();   // samma kostnadsinställningar och definition av kvinnodominerat som prognosen
@@ -743,7 +743,7 @@ function _forecastSensitivity() {
     </tbody></table><p class="text-dampad-xs marg-6-0-0">Avtagande avkastning: visar hur den råa skillnaden och kostnaden utvecklas när skillnaderna i likvärdigt arbete minskar allt mer.${_fcParNot ? ' ' + esc(_fcParNot) : ''}</p>`; tillampaDataStil(host);
 }
 // (B) Individnivå-remediation (DiskrL 3:9).
-function _forecastRemediation() {
+function _fcAtgard() {
     const host = document.getElementById('forecast-rem-result');
     const d = hamtaData();
     if (!host) return;
@@ -772,7 +772,7 @@ function _forecastRemediation() {
         ${rowsHtml ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th>${stor(T.kod.en)}</th><th class="t-hoger">Antal</th><th class="t-hoger">Kostnad</th></tr></thead><tbody>${rowsHtml}</tbody></table>` : ''}${doldaNot}
         <p class="text-dampad-xs marg-6-0-0">Jämförelsevärdet är mäns median med samma ${T.enhet.en} i samma ${T.niva.en} när minst ${K} män finns där, annars mäns median i BAS (också minst ${K} män). Endast aggregat visas. Den slutliga bedömningen av sakliga skäl görs manuellt.</p>`;
 }
-function _forecastRemediationSeed() {
+function _fcAtgardTillRader() {
     const rem = state.forecast._remediation;
     if (!rem || !rem.perGroup.length) { alert('Klicka på Analysera först.'); return; }
     let added = 0;
@@ -790,8 +790,8 @@ function _forecastRemediationSeed() {
     if (!added) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
-function _exportForecastExport() {
+function exportPrognos(...a) { return medExportLage(() => _exportPrognosExport.apply(null, /** @type {any} */ (a))); }
+function _exportPrognosExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     if (!state.forecast.result || !hamtaData().length) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
     const out = _fcBeraknaUtfall(hamtaData());   // ur raderna som de står, inte ett utfall som räknades före en rensning
@@ -861,27 +861,27 @@ export function uppstartLoneoversyn() {
             const el = document.getElementById(id);
             if (el) { el.addEventListener('input', ritaPrognos); el.addEventListener('change', ritaPrognos); }
         });
-        document.getElementById('forecast-closure')?.addEventListener('click', _forecastClosure);
-        document.getElementById('forecast-market-btn')?.addEventListener('click', _forecastMarket);
-        document.getElementById('forecast-threshold-btn')?.addEventListener('click', _forecastThreshold);
-        document.getElementById('forecast-sensitivity-btn')?.addEventListener('click', _forecastSensitivity);
-        document.getElementById('forecast-rem-btn')?.addEventListener('click', _forecastRemediation);
-        document.getElementById('forecast-rem-seed')?.addEventListener('click', _forecastRemediationSeed);
-        document.getElementById('forecast-save-a')?.addEventListener('click', () => _forecastSaveScenario('A'));
-        document.getElementById('forecast-save-b')?.addEventListener('click', () => _forecastSaveScenario('B'));
+        document.getElementById('forecast-closure')?.addEventListener('click', _fcStangGap);
+        document.getElementById('forecast-market-btn')?.addEventListener('click', _fcMarknad);
+        document.getElementById('forecast-threshold-btn')?.addEventListener('click', _fcLyftMotMal);
+        document.getElementById('forecast-sensitivity-btn')?.addEventListener('click', _fcKanslighet);
+        document.getElementById('forecast-rem-btn')?.addEventListener('click', _fcAtgard);
+        document.getElementById('forecast-rem-seed')?.addEventListener('click', _fcAtgardTillRader);
+        document.getElementById('forecast-save-a')?.addEventListener('click', () => _fcSparaScenario('A'));
+        document.getElementById('forecast-save-b')?.addEventListener('click', () => _fcSparaScenario('B'));
         document.getElementById('forecast-add-target')?.addEventListener('click', () => {
             const basList = hamtaBasIntervall();
             const bas = basList[0] || '';
-            const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
+            const aid = (_fcAidForBas(bas)[0] || {}).aid || '';
             state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
             ritaRiktadeRader();
             ritaPrognos();
         });
-        document.getElementById('forecast-add-criteria')?.addEventListener('click', _forecastAddByCriteria);
-        document.getElementById('forecast-optimize')?.addEventListener('click', _forecastOptimize);
-        document.getElementById('forecast-optimize-pott')?.addEventListener('click', _forecastOptimizeFranPott);
+        document.getElementById('forecast-add-criteria')?.addEventListener('click', _fcLaggTillEfterVillkor);
+        document.getElementById('forecast-optimize')?.addEventListener('click', _fcOptimera);
+        document.getElementById('forecast-optimize-pott')?.addEventListener('click', _fcOptimeraFranPott);
         _fcUppdateraForslagPott();
-        document.getElementById('forecast-export')?.addEventListener('click', exportForecast);
+        document.getElementById('forecast-export')?.addEventListener('click', exportPrognos);
         document.getElementById('forecast-reset')?.addEventListener('click', () => {
             state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
             ['forecast-budget-value', 'forecast-generell-value'].forEach(id => { const el = document.getElementById(id); if (el) /** @type {HTMLInputElement} */ (el).value = ''; });

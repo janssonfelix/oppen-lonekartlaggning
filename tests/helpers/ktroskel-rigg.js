@@ -267,7 +267,7 @@ export async function samlaUtdata(w) {
     await new Promise(r => w.requestAnimationFrame(() => r()));
     const ritade = ritadeDiagram(w, 'skärmen');
     ut.diagram = ritade;
-    w.eval('_forecastRemediation(); _forecastSensitivity();');
+    w.eval('_fcAtgard(); _fcKanslighet();');
     d.getElementById('explore-inkludera-sma').checked = false;
     w.__renderExplorer();
     // Robusthetspanelen (Dokumentera & exportera) räknas bara på knapptryck; här körs den direkt.
@@ -280,7 +280,7 @@ export async function samlaUtdata(w) {
     // ritades i exportläget är inaktuella tills de öppnas eller en export behöver dem (23-exportgrind.js), som efter en export.
     lagg('skärm i exportläget: alla flikar', w.eval('medExportLage')(() => {
         for (const f of flikar) w.__ritaFlik(f);
-        w.eval('_forecastRemediation(); _forecastSensitivity();');
+        w.eval('_fcAtgard(); _fcKanslighet();');
         const rader = [];
         for (const el of d.body.querySelectorAll('*')) {
             if (el.closest(EXPORTLAGE_UNDANTAG) || el.closest('#outliers-container, #print-report') || el.children.length) continue;
@@ -343,7 +343,7 @@ export async function samlaUtdata(w) {
     for (const [namn, kor] of [
         ['Excel alla flikar', () => w.eval('exportAlltTillExcel()')], ['protokollet', () => w.eval('exportJPAProtokoll()')],
         ['EU-lönerapporten', () => w.eval('exportEuReport()')], ['handlingsplanen', () => w.eval('exportHandlingsplan()')],
-        ['jämförelseexporten', () => w.eval('exportBenchmarkExcel()')], ['Löneöversyn', () => w.eval('exportForecast()')],
+        ['jämförelseexporten', () => w.eval('exportBenchmarkExcel()')], ['Löneöversyn', () => w.eval('exportPrognos()')],
         ['Löneöversikten', () => d.getElementById('btn-export-excel').click()],
         ['prioriteringslistan', () => d.getElementById('btn-export-prio-excel').click()],
     ]) {

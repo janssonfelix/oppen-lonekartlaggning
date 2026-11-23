@@ -33,7 +33,7 @@ async function exporteraFonster(w) {
     const tabell = [...w.document.querySelectorAll('#forecast-outcome .table-wrap tbody tr')].map(tr => [...tr.children].map(c => normalisera(c.textContent).trim()));
     const skarmText = normalisera(w.document.getElementById('forecast-outcome').textContent);
     await laddaXlsx(w);
-    const bok = Object.values(fangaBocker(w, () => w.eval('exportForecast()')))[0];
+    const bok = Object.values(fangaBocker(w, () => w.eval('exportPrognos()')))[0];
     const blad = bladRader(bok, 'Fördelning'), rader = blad.filter(r => r.includes(' | ')).slice(1);
     const meta = bladRader(bok, 'Sammanfattning');
     const varde = namn => meta.find(r => r.startsWith(`${namn} |`)).split(' | ')[1];

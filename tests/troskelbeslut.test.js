@@ -55,7 +55,7 @@ describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräv
 });
 
 describe('[R5] Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
-    const resultat = w => { iExport(w); w.eval("ritaFlik('loneoversyn'); _forecastThreshold()"); return text(w.document.getElementById('forecast-threshold-result')); };
+    const resultat = w => { iExport(w); w.eval("ritaFlik('loneoversyn'); _fcLyftMotMal()"); return text(w.document.getElementById('forecast-threshold-result')); };
     it('med 6 kvinnor i urvalet: streck och meningen om utelämnat könsuppdelat mått', () => {
         const alla = byggDataset();
         const kvinnor = alla.filter(r => r.kon === 'kvinna').slice(0, 6);
@@ -92,7 +92,7 @@ function parFonster(k = 5) {
 function parFonsterMedRader() {
     const w = parFonster(5);
     Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
-    w.eval("ritaFlik('loneoversyn'); _forecastOptimize()");
+    w.eval("ritaFlik('loneoversyn'); _fcOptimera()");
     expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
     w.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
     return w;

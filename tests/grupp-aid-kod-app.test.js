@@ -69,7 +69,7 @@ describe('[B5.1] Lika arbete i appen: en grupp per AID-kod', () => {
         expect(w.eval('gruppdossierCandidates()').map(g => g.yrke)).toEqual([TEXT_A]);
         expect(w.eval("buildBasdossier('C')").yrken.map(y => y.yrke)).toEqual([TEXT_A]);
         expect(w.eval('byggArsbokslutNu()').grupper.map(g => g.yrke)).toEqual([TEXT_A]);
-        expect(w.eval("_forecastAidsForBas('C')").map(g => g.label)).toEqual(['Handläggare']);
+        expect(w.eval("_fcAidForBas('C')").map(g => g.label)).toEqual(['Handläggare']);
         expect(w.eval("_lutningRader(hamtaData(), hamtaData().map(r => ({ lon: r.lon })), 'grupp')").map(g => g.yrke)).toEqual(['Handläggare']);
         expect(w.eval('kravGrupper(hamtaData(), { k: 10 })').grupper.map(g => g.namn)).toEqual(['Handläggare']);
     });

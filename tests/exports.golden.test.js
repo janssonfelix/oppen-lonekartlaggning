@@ -594,7 +594,7 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
             bocker = { ...win.__captured };
             // Arbetsböckerna utanför de sex ovan: Löneöversikten, prioriteringslistan, löneöversynen och ZIP-filens bok.
             win.document.getElementById('forecast-budget-value').value = '2';   // utan pott finns ingen prognos att exportera
-            win.eval('ritaPrognos(); exportForecast()');
+            win.eval('ritaPrognos(); exportPrognos()');
             win.document.getElementById('btn-export-excel').click();
             win.document.getElementById('btn-export-prio-excel').click();
             Object.assign(bocker, win.__captured, { 'ZIP-filens Excel-fil': win.eval('_excelAlltBok()') });

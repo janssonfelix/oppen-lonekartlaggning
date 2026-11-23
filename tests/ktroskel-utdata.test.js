@@ -251,7 +251,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
             w.alert = () => {};
             Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
             w.__ritaFlik('loneoversyn');
-            w.eval('_forecastOptimize()');
+            w.eval('_fcOptimera()');
             return { w, aid: w.__state.forecast.targets.map(t => t.aid) };
         };
         const a10 = forslag(null);

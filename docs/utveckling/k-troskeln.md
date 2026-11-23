@@ -165,7 +165,7 @@ kvinnor och män, så att gapet prövas mot den tröskel som gäller när jämf�
 tröskel visar ett streck och en not när tröskeln har höjts.
 
 **Kostnaden på individnivå** i Löneöversyn (`vymodellIndividlyft` i `src/lib/vymodell-loneoversyn.js`, med
-`individlyft` i `src/lib/loneoversyn.js`; ritas av `_forecastRemediation`)
+`individlyft` i `src/lib/loneoversyn.js`; ritas av `_fcAtgard`)
 jämför varje kvinna med männens median i hennes grupp när minst `kTroskel()` män finns där, annars med männens median i
 BAS-intervallet (också minst `kTroskel()` män); mot en enda mans lön vore kostnaden hans lön minus hennes. En grupp får
 egen rad, och kan bli en riktad rad, först när minst `kTroskel()` kvinnor i den berörs, och den samlade kostnaden står
@@ -528,7 +528,7 @@ Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38).
   tröskeln för varje kön (`vymodellPrognos`; ett sparat scenario bär gapet bara då och prövas igen när jämförelsen
   visas, `scenarioUr` och `scenariojamforelse` i `src/lib/vymodell-loneoversyn.js`). Vaktas av R4, C3 och röktest.
 - **R5. Löneöversyns tröskelmål följer tröskeln** (`vymodellTroskelmal` i `src/lib/vymodell-loneoversyn.js`, ritad av
-  `_forecastThreshold`; beslut 2026-10-16): lyftet i procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger
+  `_fcLyftMotMal`; beslut 2026-10-16): lyftet i procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger
   procentsatsen) räknas och visas bara när varje kön i urvalet når tröskeln (`konFarRedovisasFor`), annars ett streck
   med `_konUtelamnatNot()`. Vaktas av R5 i `tests/vymodeller.test.js` och `tests/troskelbeslut.test.js`.
 

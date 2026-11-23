@@ -78,7 +78,7 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ers
         rad(w, { kon: 'kvinna', lonCap: 26000, mode: 'till', value: 26000 });
         let rader = null;
         w.XLSX.writeFile = wb => { rader = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }); };
-        w.eval('exportForecast()');
+        w.eval('exportPrognos()');
         const r = rader.find(x => String(x[0]).startsWith('Riktad pott 1'));
         expect(r[1]).toBe('BAS A, AID 6000, bara kvinnor, löner under 26000 kr: höj till 26000 kr/mån');
     });
@@ -229,7 +229,7 @@ describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
     });
     it('scenariot utan pott säger att ingen pott är angiven, inte 0 kr', () => {
         const { w, d } = rita({ mode: 'kr', value: null });
-        w.eval("_forecastSaveScenario('A')");
+        w.eval("_fcSparaScenario('A')");
         expect(d.getElementById('forecast-scenarios').textContent).toContain('(ingen pott angiven, 0 riktade)');
     });
 });
@@ -243,7 +243,7 @@ describe('Löneöversyn: målet i tröskelmålet', () => {
     const falt = w.document.getElementById('forecast-threshold-pct'), sig = w.document.getElementById('forecast-threshold-sig');
     const resultat = (varde, signifikans = false) => {
         falt.value = varde; sig.checked = signifikans;
-        w.eval('_forecastThreshold()');
+        w.eval('_fcLyftMotMal()');
         return w.document.getElementById('forecast-threshold-result').textContent.replace(/\s+/g, ' ').trim();
     };
     it('målet 0 % räknas som 0 %, inte som standardmålet', () => {

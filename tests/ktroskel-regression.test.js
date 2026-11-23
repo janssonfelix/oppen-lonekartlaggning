@@ -104,7 +104,7 @@ describe('[R4] Löneöversynens scenariojämförelse maskerar ett rågap som spa
         const w = iExport(fonsterMan(5, SJU_MAN));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
         oppnaFlik(w, 'loneoversyn');
-        w.eval("_forecastSaveScenario('A')");
+        w.eval("_fcSparaScenario('A')");
         const sparat = w.__state.forecast.scenarios.A.summary.rawGapEfter;
         expect(typeof sparat).toBe('number');
         const el = w.document.getElementById('forecast-scenarios');
@@ -126,7 +126,7 @@ describe('[R4] Löneöversynens scenariojämförelse maskerar ett rågap som spa
         const m = w.document.getElementById('forecast-outcome').textContent.match(/Spillover: (\d+) grupp/);
         const filtrerat = m ? Number(m[1]) : 0;
         expect((o.leapfrog || []).length).toBeGreaterThan(filtrerat);   // den ensamma personen går om andra grupper
-        w.eval("_forecastSaveScenario('A')");
+        w.eval("_fcSparaScenario('A')");
         expect(w.__state.forecast.scenarios.A.summary.leapfrog).toBe(filtrerat);
     });
 });
@@ -153,7 +153,7 @@ describe('[R2] en egen riktad rad på en grupp under tröskeln är tillåten och
         w.__state.forecast.targets = [{ bas: 'S1', aid: '7001', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
         w.__ritaFlik('loneoversyn');
         await laddaXlsx(w);
-        const blad = Object.values(fangaBocker(w, () => w.eval('exportForecast()')))[0].split('[Sammanfattning]')[1].split('[')[0].split('\n');
+        const blad = Object.values(fangaBocker(w, () => w.eval('exportPrognos()')))[0].split('[Sammanfattning]')[1].split('[')[0].split('\n');
         const belopp = String(Math.round(ENSAM * 0.1));   // en persons lön gånger procentsatsen
         for (const rad of ['Använt (kr/mån)', 'Riktat (kr/mån)', 'Varav till kvinnodominerade grupper (kr/mån)'])
             expect(blad.find(r => r.startsWith(rad + ' |')), rad).toBe(`${rad} | ${belopp}`);

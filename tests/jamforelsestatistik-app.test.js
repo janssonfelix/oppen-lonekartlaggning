@@ -316,7 +316,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         w.__ritaFlik('loneoversyn');
         w.__state.forecast.targets = [];
         w.document.getElementById('forecast-market-factor').value = '100';
-        w.eval('_forecastMarket()');
+        w.eval('_fcMarknad()');
         const mal = w.__state.forecast.targets.map(t => `${t.aid}|${t.bas}`);
         expect(mal).not.toContain('207011|C');   // bara en rad för BAS E: ingen marknadsnivå
         expect(mal).toEqual(['207024|B']);       // en rad utan BAS: används

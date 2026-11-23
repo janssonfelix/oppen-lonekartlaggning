@@ -19,13 +19,13 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
     it('individnivån: på skärmen visas jämförelsen också mot få män (skärmen maskerar inget, ADR-51)', () => {
         const w = fonsterKon(null);
         w.__ritaFlik('loneoversyn');
-        w.eval('_forecastRemediation()');
+        w.eval('_fcAtgard()');
         expect(w.document.querySelectorAll('#forecast-rem-result tbody tr').length).toBeGreaterThan(0);
     });
     it('individnivån i exportläget: jämförelsen kräver tröskeln i antal män, och kostnaden visas inte där antalet maskeras', () => {
         const w = iExport(fonsterKon(null));
         w.__ritaFlik('loneoversyn');
-        w.eval('_forecastRemediation()');
+        w.eval('_fcAtgard()');
         const t = normalisera(w.document.getElementById('forecast-rem-result').textContent);
         expect(t).not.toContain(String(PAR_MA - PAR_KV));                       // en man minus en kvinna
         for (const [i] of KON_BAS.entries()) expect(t).not.toContain(String(30 * (KON_MA[i] - KON_KV[i])));   // mot 1–3 mäns median
@@ -43,13 +43,13 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         w.eval('fyllValjare(); lasUppFlikar();');
         iExport(w);
         w.__ritaFlik('loneoversyn');
-        w.eval('_forecastRemediation()');
+        w.eval('_fcAtgard()');
         const el = w.document.getElementById('forecast-rem-result');
         const kostnad = String(Math.round(3 * (40005.5 - 31117)));
         expect(normalisera(el.textContent)).not.toContain(kostnad);
         expect(el.textContent).toMatch(/färre än 10/);
         w.alert = () => {};
-        w.eval('_forecastRemediationSeed()');
+        w.eval('_fcAtgardTillRader()');
         expect(w.__state.forecast.targets).toEqual([]);
     });
     it('utfallstabellen (i exportläget) och Excel: kostnaden maskeras där medianerna maskeras, och antalet grupper anges', async () => {
@@ -70,7 +70,7 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         expect(normalisera(rad('6000').textContent)).toMatch(/\d kr\/mån/);
         expect(w.document.getElementById('forecast-outcome').textContent).toMatch(/\d+ grupper med färre än 10 personer ingår i summorna/);
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportForecast()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportPrognos()')))[0];
         const blad = bok.split('[Fördelning]')[1].split('[')[0].split('\n');
         for (const aid of ['7001', '7300', '7002']) {
             expect(blad.find(r => r.includes(`| ${aid} |`)), aid).toMatch(/\|\s*$/);
@@ -94,7 +94,7 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         w.alert = () => {};
         Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
         oppnaFlik(w, 'loneoversyn');
-        w.eval('_forecastOptimize()');
+        w.eval('_fcOptimera()');
         expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
         w.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         w.eval('sattKTroskel(10, { fraga: false })');
@@ -118,7 +118,7 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         const w = fonsterKon(null);
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 100 }, years: 3 });
         oppnaFlik(w, 'loneoversyn');
-        w.eval('_forecastRemediation(); _forecastSensitivity();');
+        w.eval('_fcAtgard(); _fcKanslighet();');
         expect(kostnader(w).length).toBeGreaterThan(0);                 // skärmen jämför också mot 1–3 män
         return w;
     };
