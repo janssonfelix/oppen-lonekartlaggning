@@ -590,10 +590,7 @@ function _rmAvsnittenUtanUrval() {
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
     const urval = 'Hela organisationen';
-    const arKv = arKvinna, arMa = arMan;
-    const kvN = d.filter(arKv).length, maN = d.filter(arMa).length;
-    const konOk = _konFarRedovisas(kvN, maN);
-    const medKv = Stat.median(d.filter(arKv).map(r => r.lon)), medMa = Stat.median(d.filter(arMa).map(r => r.lon));
+    const { nKv: kvN, nMa: maN, medKv, medMa, kvotPct, konOk } = _stKonsMedianer(d, { k });
     const reg = typeof runOLSRegression === 'function' ? runOLSRegression() : null;
     const lvRes = typeof computeLikvardighetPairs === 'function' ? likvardighetResultat() : null;
     const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);   // som rapportunderlaget
@@ -614,7 +611,7 @@ function _rmAvsnittenUtanUrval() {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: [
             ['Antal anställda', `${d.length} (kvinnor: ${kvN}, män: ${maN})`],
             ['Medianlön kvinnor / män', konOk ? `${rmCell(medKv, 'kr')} / ${rmCell(medMa, 'kr')}` : _konUtelamnatNot()],
-            ...(konOk && medMa > 0 ? [['Kvinnors medianlön i procent av mäns', svPct(medKv / medMa * 100, 1)]] : []),
+            ...(kvotPct != null ? [['Kvinnors medianlön i procent av mäns', svPct(kvotPct, 1)]] : []),
             ['Urval', urval],
             ['Referens för lönenivåer', `${referensNamn()}${referensKalla()}`],
             ['Jämförelsestatistik', statistikBeskrivning()],
