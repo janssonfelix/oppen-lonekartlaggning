@@ -8,7 +8,8 @@
  * esc() (src/app/01-html-och-tillganglighet.js). CSP:n stoppar skript och händelsehanterare, så en miss ger
  * förfalskat innehåll, inte kodkörning (docs/dataskydd/riskanalys.md §7, A3). Vakten läser källtexten i src/app/
  * med en liten tokeniserare, utan att ladda appen; src/lib/ läses för att slå upp funktionerna som appen importerar
- * (libSomKalla). Motorn står i tests/helpers/htmlmallar.js.
+ * (libSomKalla). Importer och exporter läses med acorn, och ett namn slås upp via filens egen import, så att
+ * utslaget inte beror på filordningen. Motorn står i tests/helpers/htmlmallar.js.
  *
  * Vad som prövas:
  *   - varje ${…} i en mallsträng vars fasta text har en HTML-tagg (<td, </p, <!--),
@@ -79,8 +80,8 @@ const UNDANTAG = [
 const appKallor = () => {
     const app = readdirSync(APP).filter(f => /^\d\d-.*\.js$/.test(f)).sort()
         .map(f => ({ namn: f, text: readFileSync(join(APP, f), 'utf8') }));
-    // Importraderna töms (radnumren står kvar): namnen i dem är inga värden; libSomKalla läser dem.
-    return [...app.map(a => ({ namn: a.namn, src: a.text.replace(/^import .*$/gm, ''), prova: true })),
+    // Importerna läses med acorn i granska (namnen slås upp via filens import) och i libSomKalla.
+    return [...app.map(a => ({ namn: a.namn, src: a.text, prova: true })),
         { namn: LIB, src: libSomKalla(join(APP, '..', 'lib'), app.map(a => a.text)), prova: false }];
 };
 
@@ -107,6 +108,21 @@ rita(document.body, JSON.parse(text));`;
         expect(granska([{ namn: 'prov.js', src: prov('${r.yrke}') }]).fynd.map(f => f.uttryck)).toEqual(['JSON.parse(text)']);
         expect(granska([{ namn: 'prov.js', src: prov('${esc(r.yrke)}') }]).fynd).toEqual([]);
         expect(granska([{ namn: 'prov.js', src: prov('${r.yrke.length}') }]).fynd).toEqual([]);
+    });
+    it('följer en flerradig import och ger samma utslag i båda filordningarna', () => {
+        // Två filer deklarerar etikett; b.js importerar den osäkra ur a.js över flera rader.
+        const filer = [
+            { namn: 'a.js', src: 'export function etikett(r) { return r.yrke; }' },
+            { namn: 'c.js', src: 'const esc = s => String(s);\nexport function etikett(r) { return esc(r.yrke); }' },
+            { namn: 'b.js', src: `import {
+    etikett,
+} from './a.js';
+const rader = JSON.parse(text);
+document.body.innerHTML = rader.map(r => \`<td>\${etikett(r)}</td>\`).join('');` },
+        ];
+        const utslag = kallor => granska(kallor).fynd.map(f => `${f.fil}:${f.rad} ${f.uttryck}`).sort();
+        expect(utslag(filer)).toEqual(['b.js:4 JSON.parse(text)']);
+        expect(utslag([...filer].reverse())).toEqual(utslag(filer));
     });
     it('fäller en undantagspost som inte träffar något', () => {
         const { fynd, oanvanda } = granska([{ namn: 'prov.js', src: prov('${esc(r.yrke)}') }], [{ fil: 'prov.js', uttryck: 'r.ort', skal: 'prov' }]);

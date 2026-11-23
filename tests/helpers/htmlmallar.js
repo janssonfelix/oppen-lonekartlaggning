@@ -15,6 +15,7 @@
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { parse } from 'acorn';
 
 const PUNKT = ['>>>=', '...', '===', '!==', '**=', '<<=', '>>=', '>>>', '&&=', '||=', '??=', '=>', '==', '!=', '<=', '>=', '&&',
     '||', '??', '?.', '++', '--', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '**', '<<', '>>'];
@@ -456,8 +457,9 @@ function tilldelningMot(P, lage) {
 }
 
 function skapaBedomare(filer, undantag = []) {
+    // Alla globala deklarationer per namn; vilken som gäller avgörs i slaUpp, så att filordningen inte spelar roll.
     const globala = new Map();
-    for (const fil of filer) for (const d of fil.dekl) if (arGlobal(d) && d.typ !== 'param' && !globala.has(d.namn)) globala.set(d.namn, d);
+    for (const fil of filer) for (const d of fil.dekl) if (arGlobal(d) && d.typ !== 'param') (globala.get(d.namn) || globala.set(d.namn, []).get(d.namn)).push(d);
     const undantagMap = new Map(undantag.map(u => [`${u.fil}\u0000${u.uttryck.replace(/\s+/g, ' ').trim()}`, u]));
     const anvanda = new Set();
     const memo = new Map();
@@ -514,7 +516,30 @@ function skapaBedomare(filer, undantag = []) {
             if (!bast || d.scope[0] > bast.scope[0] || (d.scope[0] === bast.scope[0] && d.typ === 'param')) bast = d;
         }
         if (bast) return bast;
-        return globala.get(namn) || null;
+        return globalFor(fil, namn);
+    }
+    /**
+     * Den globala deklarationen som namnet syftar på i filen: filens egen, annars den som filens import pekar på,
+     * annars den enda med namnet. Ett namn som inte går att avgöra ger null, som vakten fäller.
+     */
+    function globalFor(fil, namn) {
+        const kand = globala.get(namn) || [];
+        const egen = kand.find(d => d.fil === fil);
+        if (egen) return egen;
+        const imp = fil.importer.get(namn);
+        if (imp) {
+            const lib = /^\.\.\/lib\/([\w.-]+)\.js$/.exec(imp.kalla);
+            if (lib) return kand.find(d => d.typ === 'const' && d.init && d.fil.text(d.init[0], d.init[1]) === `${ns(lib[1])}.${imp.ex}`) || null;
+            // En annan appfil: dess egen deklaration, eller den som filen i sin tur importerar (re-export).
+            const kalla = filer.find(f => f.namn === imp.kalla.replace(/^\.\//, ''));
+            return kalla ? globalFor(kalla, imp.ex) : null;
+        }
+        return kand.length === 1 ? kand[0] : null;
+    }
+    /** Alla deklarationer namnet vid index u kan syfta på: en, eller alla med namnet när det inte går att avgöra. */
+    function kandidater(fil, u) {
+        const d = slaUpp(fil, u);
+        return d ? [d] : globala.get(fil.tok[u].v) || [];
     }
 
     function prova(fil, a, b, lage = 'varde', ctx = null) {
@@ -968,7 +993,7 @@ function skapaBedomare(filer, undantag = []) {
             // Ett globalt namn ändras i alla filer: varje ändring som träffar namnet prövas.
             const andringar = arGlobal(d) ? filer.flatMap(f => f.tilldelningar.map(t => [f, t])) : df.tilldelningar.map(t => [df, t]);
             for (const [tf, t] of andringar) {
-                if (t.namn !== d.namn || (tf === df && (t.idx < d.scope[0] || t.idx > d.scope[1])) || slaUpp(tf, t.idx) !== d) continue;
+                if (t.namn !== d.namn || (tf === df && (t.idx < d.scope[0] || t.idx > d.scope[1])) || !kandidater(tf, t.idx).includes(d)) continue;
                 const m = tilldelningMot(t.steg, genom(lage));
                 if (!m) continue;
                 if (d.monster && t.steg.length === 0) return fel(tf, t.idx, t.idx + 1, 'namn ur ett mönster tilldelas');
@@ -1054,8 +1079,7 @@ function skapaBedomare(filer, undantag = []) {
             for (const fil of arGlobal(sok) ? filer : [df]) {
                 for (const j of fil.forekomster.get(sok.namn) || []) {
                     if (fil === df && j === sok.idx) continue;
-                    const d = slaUpp(fil, j);
-                    if (d !== sok) continue;
+                    if (!kandidater(fil, j).includes(sok)) continue;
                     if (ar(fil.tok[j - 1], 'namn', 'typeof')) continue;
                     // Spegelns modul lämnar ut funktionen i sitt return-objekt ({ a, b }); aliaset prövas för sig.
                     if (funk.alias && sok === funk.dekl && (op(fil.tok[j - 1], '{') || op(fil.tok[j - 1], ',')) && (op(fil.tok[j + 1], ',') || op(fil.tok[j + 1], '}'))) continue;
@@ -1076,7 +1100,7 @@ function skapaBedomare(filer, undantag = []) {
 
     // Lib-importerna (const termFras = __lib_termer.termFras, se libSomKalla) kopplas till funktionerna innan något
     // prövas, så att anropen räknas som anrop av funktionen.
-    for (const d of globala.values()) if (d.typ === 'const' && d.init && d.fil.tok[d.init[0]].v?.startsWith?.('__lib')) funktionFor(d);
+    for (const d of [...globala.values()].flat()) if (d.typ === 'const' && d.init && d.fil.tok[d.init[0]].v?.startsWith?.('__lib')) funktionFor(d);
 
     return { prova, anvanda, undantag };
 }
@@ -1156,7 +1180,10 @@ function uttrycksSlutKedja(fil, i, grans) {
 
 /** Kör vakten över källorna: [{ namn, src, prova? }]. Spegeln (prova: false) läses bara för uppslag. */
 function granska(kallor, undantag = []) {
-    const filer = kallor.map(k => Object.assign(bygg(k.namn, k.src), { provas: k.prova !== false }));
+    const filer = kallor.map(k => {
+        const { importer, kropp } = modulDelar(k.src);
+        return Object.assign(bygg(k.namn, kropp), { provas: k.prova !== false, importer: new Map(importer.map(i => [i.lok, i])) });
+    });
     const bed = skapaBedomare(filer, undantag);
     const resultat = [];
     for (const fil of filer.filter(f => f.provas)) {
@@ -1173,25 +1200,50 @@ function granska(kallor, undantag = []) {
     return { resultat, fynd: [...fynd.values()], oanvanda: undantag.filter(u => !bed.anvanda.has(u)) };
 }
 
+const ns = modul => `__lib_${modul.replace(/\W/g, '_')}`;
+
+/**
+ * Importerna i en ES-modul och texten utan import- och exportsatser, lästa med acorn. Importerna blir
+ * [{ kalla, ex, lok }]; importsatserna och export-listorna blankas och ordet export framför en deklaration tas bort.
+ * Radbrytningarna står kvar, så att radnumren stämmer. En form vakten inte kan följa (standardimport, import * as,
+ * export … from, export default) fälls, så att inget namn slinker förbi.
+ * @param {string} text
+ */
+function modulDelar(text) {
+    const importer = [];
+    const blanka = [];
+    for (const n of parse(text, { ecmaVersion: 'latest', sourceType: 'module' }).body) {
+        if (n.type === 'ImportDeclaration') {
+            for (const s of n.specifiers) {
+                if (s.type !== 'ImportSpecifier') throw new Error(`escaping-vakten följer bara namngivna importer: ${text.slice(n.start, n.end)}`);
+                importer.push({ kalla: n.source.value, ex: s.imported.name, lok: s.local.name });
+            }
+            blanka.push([n.start, n.end]);
+        } else if (n.type === 'ExportNamedDeclaration' && !n.source) blanka.push([n.start, n.declaration ? n.declaration.start : n.end]);
+        else if (n.type.startsWith('Export')) throw new Error(`escaping-vakten följer inte ${n.type}: ${text.slice(n.start, n.end).slice(0, 80)}`);
+    }
+    let kropp = text;
+    for (const [a, b] of blanka.reverse()) kropp = kropp.slice(0, a) + kropp.slice(a, b).replace(/[^\n]/g, ' ') + kropp.slice(b);
+    return { importer, kropp };
+}
+
 /**
  * src/lib/ som en källa vakten kan läsa: varje modul i en IIFE (`const __lib_<modul> = (() => { … })()`) med sina
  * importer som alias inuti, och appens importer ur lib (`import { x as y } from '../lib/m.js'`) som globala alias
  * (`const y = __lib_m.x;`). Vakten känner inte ES-moduler; så når den lib-funktionerna som appen anropar, utan att
- * lib:s privata namn blir globala.
+ * lib:s privata namn blir globala. Vilket alias en appfil menar avgörs av filens egen import (slaUpp).
  * @param {string} libDir
  * @param {string[]} appTexter
  */
 function libSomKalla(libDir, appTexter) {
-    const IMPORT = /^import\s*\{([^}]*)\}\s*from\s*'(?:\.\/|\.\.\/lib\/)([\w.-]+)\.js';?\s*$/gm;
-    const ns = fil => `__lib_${fil.replace(/\W/g, '_')}`;
-    const alias = text => [...text.matchAll(IMPORT)].flatMap(m => m[1].split(',').map(b => b.trim()).filter(Boolean)
-        .map(b => { const [ex, lok = ex] = b.split(/\s+as\s+/); return `const ${lok} = ${ns(m[2])}.${ex};`; }));
+    const alias = (importer, prefix) => importer.filter(i => i.kalla.startsWith(prefix))
+        .map(i => `const ${i.lok} = ${ns(i.kalla.slice(prefix.length, -3))}.${i.ex};`);
     const moduler = readdirSync(libDir).filter(f => f.endsWith('.js')).sort().map(f => {
-        const text = readFileSync(join(libDir, f), 'utf8');
-        const kropp = text.replace(IMPORT, '').replace(/^export\s+(?=(async\s+)?function\b|const\b|let\b|class\b)/gm, '');
-        return `const ${ns(f.slice(0, -3))} = (() => {\n${alias(text).join('\n')}\n${kropp}\n})();`;
+        const { importer, kropp } = modulDelar(readFileSync(join(libDir, f), 'utf8'));
+        if (importer.some(i => !i.kalla.startsWith('./'))) throw new Error(`${f}: lib importerar bara ur lib`);
+        return `const ${ns(f.slice(0, -3))} = (() => {\n${alias(importer, './').join('\n')}\n${kropp}\n})();`;
     });
-    return [...moduler, ...new Set(appTexter.flatMap(t => alias(t.split('\n').filter(r => r.includes("'../lib/")).join('\n'))))].join('\n');
+    return [...moduler, ...new Set(appTexter.flatMap(t => alias(modulDelar(t).importer, '../lib/')))].join('\n');
 }
 
 export { granska, lexa, libSomKalla };
