@@ -10,7 +10,7 @@ import { getData, state } from './12-tillstand.js';
 import { populateSelects, renderFilerDelar, renderOversiktDelar, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { renderForhandskontroll } from './17-forhandskontroll.js';
 import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
-import { renderLikvardighet } from './34-likvardigt-arbete.js';
+import { ritaLikvardigtArbete } from './34-likvardigt-arbete.js';
 import { renderForecast } from './36-loneoversyn.js';
 import { renderStructure, renderStrukturUtkast } from './37-struktur.js';
 import { synkaJamforelseFlik } from './38-referensfiler.js';
@@ -411,7 +411,7 @@ function _renderTabContent(target) {
         ritaGapUppdelning(); renderLonestrukturNycklar();
     }
     else if (target === "loneoversyn"  && d.length) renderForecast();
-    else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
+    else if (target === "likvardighet" && (d.length || state.statistik.length)) { ritaLikvardigtArbete(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { ritaLoneoversikt(); renderExplorer(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
     // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.

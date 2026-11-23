@@ -11,6 +11,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import * as libLv from '../src/lib/likvardighet.js';
+import { svPct } from '../src/lib/talformat.js';
+import { kompletteraDiagnostik, likvardighetFelresultat } from '../src/lib/vymodell-likvardigt-arbete.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -43,18 +45,17 @@ const appLVSrc = (() => {
     return extractFn(appSrc.slice(i), 'likvardighetspar');
 })();
 // kTroskel() läses ur state, som i appen (adaptern skickar värdet vidare till lib).
-const makeAppLV = new Function('state', 'nationellAidKlass', 'likvardighetsparUr', `
+// Vymodellens felresultat och flikens diagnostik (src/lib/vymodell-likvardigt-arbete.js) ges som i appen.
+const _makeAppLV = new Function('state', 'nationellAidKlass', 'likvardighetsparUr', 'kompletteraDiagnostik', 'likvardighetFelresultat', `
     const kTroskel = () => state.kTroskel ?? 10;
     const kInstalld = kTroskel;
     // Definitionen och jämförelsemängden ur 45-aid-bas-tabeller.js (ADR-60), lästa ur state som i appen.
     const aidbasDefinition = () => state.likvardighet && state.likvardighet.kvDomDefinition === 'scb' ? 'scb' : 'do';
     const lvJamforelse = () => state.likvardighet && state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
-    // Talformatshjälparna ur 03-hjalpfunktioner.js: adaptern skriver diagnostik med dem.
-    const svTal = (v, dec = 0) => Number(v).toFixed(dec).replace('.', ',');
-    const svPct = (v, dec = 1) => svTal(v, dec) + ' %';
     ${appLVSrc}
     return likvardighetspar;
 `);
+const makeAppLV = (state, nationellAidKlass, ur) => _makeAppLV(state, nationellAidKlass, ur, kompletteraDiagnostik, likvardighetFelresultat);
 
 const tomtResultat = () => ({
     orgKvDom: [{ aid: '5301', bas: 'B', label: 'Undersköterska', n: 12, kvAndel: 80 }],
@@ -117,7 +118,8 @@ describe('likvärdigt arbete: appen delegerar till lib', () => {
         };
         const res = makeAppLV(state, () => null, () => tomtResultat())();
         expect(res.diagnostik.organisation.exempelKvDom).toEqual(['5301 (Undersköterska) BAS B n=12']);
-        expect(res.diagnostik.statistik.exempelIckeKv).toEqual(['2000 (Ingenjör) BAS B 14 %kv']);
+        // Procenttalet skrivs av vymodellen med talformat.js (hårt mellanslag före %), som i appen.
+        expect(res.diagnostik.statistik.exempelIckeKv).toEqual([`2000 (Ingenjör) BAS B ${svPct(14, 0)}kv`]);
         expect(res.diagnostik.statistik.harLokalKonsdata).toBe(true);
         expect(res.diagnostik.fel).toEqual([]);
     });

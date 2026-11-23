@@ -59,7 +59,7 @@ Exempel ur koden i dag:
 - **Varningar och noter om tröskeln.** Noten under en egen riktad rad i Löneöversyn (`36-loneoversyn.js`), varningen
   *Underlaget är litet* i Prioriteringens motiveringsförslag (`55-prioritering.js`, som står när något kön i
   gruppen har färre än tröskeln och gäller skattningens säkerhet, inte läget) och antalet små grupper i
-  likvärdighetsanalysens diagnostik (`34-likvardigt-arbete.js`) läser
+  likvärdighetsanalysens diagnostik (`kvDomUnderK` i `src/lib/vymodell-likvardigt-arbete.js`, `34-likvardigt-arbete.js`) läser
   `kInstalld()`.
 - **Texterna.** Stämpeln (`kStampel`), metodbilagan (`_methodAppendixData` i `22-exporthjalpare.js`), sidfoten
   (`_kSidfot`), exportbeskeden och appens texter (`_kText`, `_fyllKTexter`) nämner den inställda tröskeln.

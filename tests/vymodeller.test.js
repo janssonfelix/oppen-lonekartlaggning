@@ -5,7 +5,10 @@
 // (src/lib/vymodell-alder-karriar.js), kortet Var uppstår löneskillnaden? (src/lib/vymodell-var-uppstar-gapet.js),
 // Översikt (src/lib/vymodell-oversikt.js), Löneöversikten (src/lib/vymodell-loneoversikt.js), dossiererna
 // (src/lib/vymodell-gruppdossier.js, src/lib/vymodell-basdossier.js), rapportmodellen (src/lib/vymodell-rapport.js)
-// och rapportunderlaget (src/lib/vymodell-rapportunderlag.js).
+// och rapportunderlaget (src/lib/vymodell-rapportunderlag.js), och fliken Likvärdigt arbete
+// (src/lib/vymodell-likvardigt-arbete.js), med två kvinnodominerade grupper till:
+//   BAS A  100006 Undersköterska  12 kvinnor, 2 män
+//   BAS B  100007 Biträde          3 kvinnor
 // Underlaget är påhittat:
 //   BAS A  100001 Handläggare   15 kvinnor, 15 män (kvinnorna ungefär 10 % lägre)
 //   BAS B  100002 Utredare      30 kvinnor, 30 män (hälften av varje kön med ledningsansvar, resten inget ansvar)
@@ -32,6 +35,9 @@ import { arHelaDokumentationen, perBasUtelamnat, rapportAvsnittIUrval, rapportDo
     RM_URVAL, vymodellRapport } from '../src/lib/vymodell-rapport.js';
 import { rapportunderlagDiagram, vymodellRapportunderlag } from '../src/lib/vymodell-rapportunderlag.js';
 import { perBasTabeller } from '../src/lib/perbas.js';
+import { likvardighetsparUr, parAntal } from '../src/lib/likvardighet.js';
+import { justeradSaknas, kandidatparRader, kompletteraDiagnostik, kvDomUnderK, likvardighetFelresultat, LV_STANDARD, lvParAntal, lvPoang, lvStatJamfor,
+    parSakerhet, vymodellKravMotLon, vymodellLikvardigtArbete } from '../src/lib/vymodell-likvardigt-arbete.js';
 
 const rad = (yrke, bas, kon, lon, extra) => ({ yrke, aid: yrke.slice(0, 6), yrkeLabel: yrke.slice(7), bas, kon, lon, alder: 40, ...extra });
 const flera = (yrke, bas, kon, n, lon, extra = () => ({})) => Array.from({ length: n }, (_, i) => rad(yrke, bas, kon, lon + 100 * i, extra(i)));
@@ -44,6 +50,10 @@ const underlag = () => [
     ...flera('100005 Vaktmästare', 'E', 'kvinna', 3, 27000), ...flera('100005 Vaktmästare', 'E', 'man', 3, 27000),
 ];
 const BAS = ['A', 'B', 'C', 'D', 'E'];
+const lvUnderlag = () => [...underlag(), ...flera('100006 Undersköterska', 'A', 'kvinna', 12, 26000), ...flera('100006 Undersköterska', 'A', 'man', 2, 26000),
+    ...flera('100007 Biträde', 'B', 'kvinna', 3, 30000)];
+const lvRes = (opts = {}) => likvardighetsparUr({ data: lvUnderlag(), opts: { k: 10, topN: 20, ...opts } });
+const lv = (res = lvRes(), val = {}) => vymodellLikvardigtArbete(res, { harData: true, harStatistik: false, installningar: LV_STANDARD, definition: 'do', jamforelse: 'alla', ...val });
 const ls = (k, golv = Math.max(k, 10)) => vymodellLonestruktur(underlag(), { bas: BAS, k, golv, litetUnderlag: 5 });
 const la = (k, golv = Math.max(k, 10)) => vymodellLikaArbete(underlag(), { k, golv, sigma: 0.1 });
 
@@ -315,6 +325,90 @@ describe('[B2.10] Översiktens läge mot lagkraven', () => {
         expect(ks({ statistik }).statistik).toEqual({ antal: 2, av: 2, lage: 'crit', utelamnade: 1 });
         expect(ks({ statistik, k: 25 }).statistik).toEqual({ antal: 1, av: 1, lage: 'crit', utelamnade: 2 });
         expect(ks({ statistik, k: 40 }).statistik).toEqual({ antal: 0, av: 0, lage: 'na', utelamnade: 3 });
+    });
+});
+
+describe('[B5.11] Likvärdigt arbetes vymodell', () => {
+    it('jämförelsen, antalen, det största paret och om inställningarna är anpassade', () => {
+        const res = lvRes(), vm = lv(res);
+        expect(vm).toMatchObject({ poang: false, orgOk: true, internOk: true, statOk: false, jamforOk: true, visaAlla: false, anpassat: false });
+        expect(res.pairs.map(p => [p.kvAid, p.maAid])).toEqual(expect.arrayContaining([['100006', '100001'], ['100007', '100002']]));
+        expect(vm.antal).toEqual(parAntal(res.pairs));
+        expect(vm.antalAttJamfora).toBe(res.orgIckeKv.length);
+        const storst = res.pairs.reduce((a, p) => (p.gapPct > a.gapPct ? p : a));
+        expect(vm.storst.par).toBe(storst);
+        expect(vm.storst.kvotPct).toBeCloseTo(storst.kvMedian / storst.maMedian * 100, 9);
+        // Visa max: tabellen har färre par än alla.
+        expect(lv(lvRes({ topN: 1 })).visaAlla).toBe(true);
+        expect(lv(res, { installningar: { ...LV_STANDARD, minGapPct: 5 } }).anpassat).toBe(true);
+        expect(lv(res, { jamforelse: 'mansdominerade' }).anpassat).toBe(true);
+        // Utan lönefil, och utan jämförelsekälla.
+        expect(lv(res, { harData: false })).toMatchObject({ orgOk: false, jamforOk: false });
+        const utanPar = likvardighetsparUr({ data: underlag().filter(r => r.bas === 'C'), opts: { k: 10 } });   // bara Assistent, kvinnodominerad
+        expect(lv(utanPar)).toMatchObject({ orgOk: true, internOk: false, jamforOk: false, storst: null });
+    });
+
+    it('poängläget och jämförelsestatistiken: i poängläget används statistiken inte', () => {
+        const res = { ...lvRes(), statIckeKv: [{ aid: '200001' }] };
+        expect(lvStatJamfor(res)).toEqual([{ aid: '200001' }]);
+        expect(lv(res, { harStatistik: true })).toMatchObject({ statOk: true, antalAttJamfora: res.orgIckeKv.length + 1 });
+        const poang = { ...res, diagnostik: { ...res.diagnostik, jämförelse: { ...res.diagnostik.jämförelse, kravProxy: 'poäng' } } };
+        expect(lvPoang(poang)).toBe(true);
+        expect(lvStatJamfor(poang)).toEqual([]);
+        expect(lv(poang, { harStatistik: true }).statOk).toBe(false);
+    });
+
+    it('parens säkerhet, den åldersjusterade skillnaden och antalen ur paren när räkningen saknas', () => {
+        expect(parSakerhet({ gapCI: { lo: 1, hi: 5 } })).toBe('saker');
+        expect(parSakerhet({ gapCI: { lo: 0, hi: 5 } })).toBe('slumpfel');
+        expect(parSakerhet({ gapCI: { lo: null } })).toBeNull();
+        expect(parSakerhet({})).toBeNull();
+        expect(justeradSaknas({ jamforKalla: 'intern', aldersJusterad: { gapPct: 3 } })).toBeNull();
+        expect(justeradSaknas({ jamforKalla: 'intern', aldersJusterad: null })).toBe('underlag');
+        expect(justeradSaknas({ jamforKalla: 'extern' })).toBe('extern');
+        const res = lvRes();
+        expect(lvParAntal({ pairs: res.pairs })).toEqual(parAntal(res.pairs));
+        expect(lvParAntal(res)).toBe(res.parAntal);
+    });
+
+    it('felresultatet och flikens diagnostik', () => {
+        const fel = likvardighetFelresultat({ antalRader: 7, antalStatistik: 2, poang: true, opts: { topN: 20 } });
+        kompletteraDiagnostik(fel, { harLokalKonsdata: false, fel: ['trasig'] });
+        expect(fel).toMatchObject({ pairs: [], diagnostik: { organisation: { totalRader: 7, kvDomFunna: 0, exempelKvDom: [] },
+            statistik: { totalRader: 2, harLokalKonsdata: false, exempelIckeKv: [] }, jämförelse: { kravProxy: 'poäng' }, fel: ['trasig'] }, opts: { topN: 20 } });
+        expect(lv(fel)).toMatchObject({ orgOk: false, jamforOk: false, antal: { totalt: 0 }, storst: null });
+        const res = kompletteraDiagnostik(lvRes(), { harLokalKonsdata: true, fel: [] });
+        expect(res.diagnostik.organisation.exempelKvDom).toHaveLength(3);
+        expect(res.diagnostik.organisation.exempelKvDom[0]).toMatch(/^\d{6} \(.+\) BAS [A-E] n=\d+$/);
+    });
+
+    it('raderna i diagrammet över kandidatparen: de allvarligaste först, ett par per namn, bara med båda medianerna', () => {
+        const par = [{ kvLabel: 'a', maLabel: 'x', allvarsindex: 1, kvMedian: 1, maMedian: 2 }, { kvLabel: 'b', maLabel: 'x', allvarsindex: 3, kvMedian: 1, maMedian: 2 },
+            { kvLabel: 'b', maLabel: 'x', allvarsindex: 2, kvMedian: 1, maMedian: 2 }, { kvLabel: 'c', maLabel: 'x', allvarsindex: 5, kvMedian: NaN, maMedian: 2 }];
+        const rader = kandidatparRader(par, p => `${p.kvLabel} mot ${p.maLabel}`);
+        expect(rader.map(r => [r.y, r.p.allvarsindex])).toEqual([['b mot x', 3], ['a mot x', 1]]);
+        expect(kandidatparRader(par, p => p.kvLabel, 2).map(r => r.y)).toEqual(['b']);
+    });
+});
+
+describe('[B5.12] Diagrammet Krav mot lön', () => {
+    it('grupper med minst k, nivån per BAS-intervall, avståndet och de kvinnodominerade under nivån med namn', () => {
+        const vm = vymodellKravMotLon(lvUnderlag(), { k: 10 });
+        expect(vm).toMatchObject({ forFa: false, medPoang: false, basOrdning: ['A', 'B', 'C'], antalUnder: 1, uppskattade: 0, utanPlats: [] });
+        expect(vm.punkter.map(p => [p.aid, p.n, p.avstand, p.etikett]).sort()).toEqual([
+            ['100001', 30, 2875, false], ['100002', 60, 0, false], ['100003', 16, 0, false], ['100006', 14, -2875, true]]);
+        // Nivån i A är medianen av gruppmedianerna 32 200 och 26 450.
+        expect(vm.linje).toEqual([{ bas: 'A', y: 29325 }, { bas: 'B', y: 41700 }, { bas: 'C', y: 28600 }]);
+        expect(vm.punkter.some(p => p.forskjutning)).toBe(false);   // grupperna i A ligger långt isär
+        expect(vymodellKravMotLon(lvUnderlag(), { k: 25 })).toEqual({ forFa: true });
+    });
+    it('med poäng: en rät linje, och en grupp utan poäng efter sitt BAS-intervall', () => {
+        const poangByKey = new Map([['100001|A', 200], ['100006|A', 100], ['100002|B', 300]]);
+        const vm = vymodellKravMotLon(lvUnderlag(), { k: 10, poangByKey });
+        expect(vm.medPoang).toBe(true);
+        expect(vm.utanPlats.map(g => g.aid)).toEqual(['100003']);   // ingen värderad grupp i C
+        expect(vm.linje.map(l => l.x)).toEqual([100, 300]);
+        expect(vm.punkter.every(p => !p.forskjutning)).toBe(true);
     });
 });
 
@@ -637,6 +731,14 @@ describe.each([10, 25])('[I9] vymodellerna vid k = %i', k => {
             if (vm.forra.lage === 'ok') expect(vm.forra.rad.n.forra).toBeGreaterThanOrEqual(k);
             expect(vm.forra.lage).toBe(k === 10 ? 'ok' : 'saknasIntervall');
         }
+    });
+    it('Likvärdigt arbete: Krav mot lön visar bara grupper som når k; diagnostiken räknar de små vid k', () => {
+        const vm = vymodellKravMotLon(lvUnderlag(), { k });
+        if (!vm.forFa) for (const p of vm.punkter) expect(p.n).toBeGreaterThanOrEqual(k);
+        expect(vm.forFa).toBe(k === 25);
+        const res = likvardighetsparUr({ data: lvUnderlag(), opts: { k } });
+        expect(kvDomUnderK(res.orgKvDom, k)).toBe(res.diagnostik.organisation.kvDomMedNLessThanK);
+        expect(kvDomUnderK(res.orgKvDom, k)).toBe(k === 10 ? 2 : 4);   // Biträde och Tekniker; vid 25 också Undersköterska och Assistent
     });
     it('Rapportmodellen och rapportunderlaget: grupper, par, intervall och dossierer bara där k nås', () => {
         const vm = rm(k);

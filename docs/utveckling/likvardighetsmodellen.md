@@ -16,7 +16,8 @@ regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 | Del | Fil |
 |---|---|
 | Modellen: definitionen, de tre stegen, bootstrappen, åldersjusteringen, poängläget, *Lägre krav*, BAS-rangen | `src/lib/likvardighet.js` |
-| Adaptern som läser appens tillstånd, fliken, diagrammen och flikens CSV- och Excel-export | `src/app/34-likvardigt-arbete.js` |
+| Vymodellen för fliken (ADR-99): felresultatet och flikens diagnostik, antalet små grupper vid k, om jämförelsen kan genomföras, antalen och det största paret, parets säkerhet, varför den åldersjusterade skillnaden saknas, diagrammet *Krav mot lön* och raderna i diagrammet över kandidatparen | `src/lib/vymodell-likvardigt-arbete.js` |
+| Adaptern som läser appens tillstånd, och det som ritar fliken, diagrammen och flikens CSV- och Excel-export | `src/app/34-likvardigt-arbete.js` |
 | Inställningarna och deras standardvärden | `state.likvardighet` i `src/app/12-tillstand.js` |
 | Definitionen i appen (`kvDomNu`, `konsklassNu`, `aidbasDefinition`, `lvJamforelse`) | `src/app/45-aid-bas-tabeller.js` |
 | Reserven för kvinnoandel (`nationellAidKlass`) och regeln för paren utanför fliken (`_parForRedovisning`) | `src/app/06-kvinnoandel-referens.js` (`nationellAidKlass`), `src/app/06-k-troskel.js` (`_parForRedovisning`), `src/lib/skrreferens.js` |
@@ -26,8 +27,10 @@ regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 ## 1. Vad modellen gör och var den bor
 
 Modellen bor i `src/lib/likvardighet.js` och speglas in i bygget som övriga kärnmoduler (ADR-8).
-`src/app/34-likvardigt-arbete.js` innehåller bara tillståndsadaptern och gränssnittet: rendering, diagram och export.
-Att adaptern verkligen delegerar vaktas av `tests/drift.test.js`.
+Det fliken räknar och bedömer utöver paren står i vymodellen `src/lib/vymodell-likvardigt-arbete.js` (ADR-99), prövad i
+Node i `tests/vymodeller.test.js` (B5.11, B5.12). `src/app/34-likvardigt-arbete.js` innehåller bara tillståndsadaptern
+och det som ritar: fliken (`ritaLikvardigtArbete`), diagrammen (`ritaKravMotLon`, `ritaKandidatparen`) och exporten. Att
+adaptern verkligen delegerar vaktas av `tests/drift.test.js`.
 
 **Orkestratorn** `likvardighetsparUr({ data, statistik, nationellKlass, opts })` i lib kör stegen i ordning:
 `aggregeraOrgKvDom` (steg 1, och organisationens jämförelseetiketter), `klassificeraStatistik` (jämförelsestatistikens
@@ -38,14 +41,14 @@ jämförelseetiketter), filtret för jämförelsemängden (avsnitt 4), `byggPar`
 **Adaptern** `likvardighetspar()` i appen läser `state.likvardighet`, `state.data`, `state.statistik` och
 `state.arbetsvardering`, anropar `likvardighetsparUr` i lib med `nationellAidKlass` som reserv för kvinnoandel och
 `kInstalld()` som `k`, och fyller på med diagnostik som bara gränssnittet behöver (exempelrader, om statistiken har
-egen könsfördelning). Kastar lib-funktionen returneras ändå ett strukturerat resultat, med tomma listor och felet i
-`diagnostik.fel`, så att fliken kan visa vad som gick fel. `likvardighetResultat()` sparar resultatet i
+egen könsfördelning; `kompletteraDiagnostik` i vymodellen). Kastar lib-funktionen returneras ändå ett strukturerat
+resultat (`likvardighetFelresultat`), med tomma listor och felet i `diagnostik.fel`, så att fliken kan visa vad som gick fel. `likvardighetResultat()` sparar resultatet i
 `state.likvardighet.result`; fliken, Översikt, exporterna och allt annat som läser paren går via den, så att paren
 räknas en gång per underlag och val. Varje ändring av något som beräkningen läser nollställer resultatet: underlaget,
 jämförelsestatistiken, arbetsvärderingen, organisationstypen (reserven för kvinnoandel) och valen i fliken. Bara
 robusthetsprövningen räknar med andra kvinnotrösklar, och de resultaten sparas inte. Ett byte av k-tröskeln nollställer
 inte: paren läser ingen tröskel, och antalet små kvinnodominerade grupper (`kvDomMedNLessThanK`) räknas med gällande
-tröskel varje gång resultatet läses.
+tröskel varje gång resultatet läses (`kvDomUnderK` i vymodellen).
 
 ## 2. En definition av kvinnodominerat
 
@@ -218,8 +221,8 @@ justerad skillnad finns kvar.
 
 Den justerade skillnaden står i flikens kolumn *Justerad för ålder* (verktygstipset säger varför den saknas),
 bevis-popupen (med medelålder per sida), flikens CSV- och Excel-export (med en metodrad) och rapportunderlagets
-parblock. Utanför fliken lyder den samma regel som paret (`k-troskeln.md` §2). Kraven 10 och 5 speglas i adaptern
-(`ALDERS_GOLV`, `ALDERS_SPRIDNING`) för texterna.
+parblock. Utanför fliken lyder den samma regel som paret (`k-troskeln.md` §2). Texterna läser kraven 10 och 5 ur lib
+(`ALDERS_GOLV_STANDARD`, `ALDERS_SPRIDNING_MIN`), och varför skillnaden saknas är `justeradSaknas` i vymodellen.
 
 ## 6. Lägre krav, högre lön
 
@@ -252,9 +255,9 @@ befattningsbeskrivningarna. Regressionerna räknar inte BAS som ett tal; var ran
 ## 7. Var resultatet visas och vad som följer med ut
 
 **Fliken Likvärdigt arbete** visar överst nyckeltalen (kvinnodominerade AID-etiketter, jämförelseetiketter, par att
-titta närmare på, största skillnaden) och diagrammet *Krav mot lön* (en punkt per AID-etikett som når `kTroskel()`, krav mot medianlön,
+titta närmare på, största skillnaden; `vymodellLikvardigtArbete`) och diagrammet *Krav mot lön* (`vymodellKravMotLon`: en punkt per AID-etikett som når `kTroskel()`, krav mot medianlön,
 form och färg efter `konsklassNu`; med poäng placeras en grupp utan poäng efter sitt BAS-intervall). Avsnittet *Par att
-titta närmare på* har kandidatparen som bild (de 14 paren med störst `allvarsindex`), partabellen (jämförelseetikettens
+titta närmare på* har kandidatparen som bild (de 14 paren med störst `allvarsindex`, `kandidatparRader`), partabellen (jämförelseetikettens
 andel kvinnor och klass i kolumnen *Könsandel*) med bevis-popup och listan *Lägre krav, högre lön*. Avsnittet
 *AID-etiketterna bakom jämförelsen* visar Steg 1, Steg 2a (organisationens jämförelseetiketter) och Steg 2b
 (statistikens), med klass och den
@@ -313,6 +316,7 @@ bär inte minsta skillnaden (ADR-61), antalet par, kvinnotröskeln eller definit
 | Fil | Prövar |
 |---|---|
 | `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med båda definitionerna vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget (inga par mot statistiken), *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangordning`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
+| `tests/vymodeller.test.js` | Vymodellen (B5.11, B5.12, I9): om jämförelsen kan genomföras, antalen, det största paret, anpassade val, poängläget, parets säkerhet, den åldersjusterade skillnaden, felresultatet och diagnostiken, diagrammet över kandidatparen och *Krav mot lön* (grupperna med minst k vid 10 och 25, nivån, avståndet, namnen) |
 | `tests/drift.test.js` | Att adaptern delegerar till lib och översätter tillståndet till anropet, att den ger ett strukturerat resultat när lib kastar, och att lib ger reproducerbara konfidensintervall |
 | `tests/aidbas.test.js`, `tests/aidbas-app.test.js` | Definitionen och jämförelsemängden i tabellerna per AID-kod och BAS-intervall; definitionen och jämförelsemängden i konfigurationsfilen; att definitionernas namn säger lydelsen och inte en avsändare (ADR-72) |
 | `tests/likvardigt-arbete-app.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseetikett i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock; att paren räknas en gång vid inläsning, flikbyten och protokollet, och att fliken och valen nollställer resultatet; partabellens intervall och märke, att ett par under 5 % syns utan att något ändrats och fältets text; poängläget i fliken och att resultatet nollställs; att BAS-ordningen inte har panel, tillstånd eller fält i konfigurationsfilen, och att robusthetspanelen prövar Likvärdigt arbete |

@@ -102,6 +102,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `attgora` | `namn`, `termer` |
 | Demoläget | `demodata` | `ansvar`, `inlasning`, `kon`, `stat` |
 | Vymodeller (ADR-99) | `vymodell-lika-arbete` | `aid`, `aidbas`, `ansvar`, `namn`, `osakerhet`, `rapportunderlag`, `skrreferens`, `struktur` |
+|  | `vymodell-likvardigt-arbete` | `likvardighet`, `stat`, `talformat` |
 |  | `vymodell-alder-karriar` | `aid`, `jamforelse`, `kon`, `ktroskel`, `osakerhet`, `stat`, `struktur`, `talformat`, `termer` |
 |  | `vymodell-basdossier` | `aid`, `arsbokslut`, `kon`, `ktroskel`, `perbas`, `rapportunderlag`, `stat`, `struktur`, `vymodell-gruppdossier` |
 |  | `vymodell-gruppdossier` | `aid`, `figur`, `jamforelse`, `kon`, `ktroskel`, `lonepolitik`, `osakerhet`, `prioritering`, `skrreferens`, `stat`, `struktur` |

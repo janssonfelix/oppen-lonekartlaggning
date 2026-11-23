@@ -405,7 +405,7 @@ describe('Krav mot lön med många yrkesgrupper', () => {
         grupp(100001, 'B', 30000, 0.8); grupp(100002, 'B', 30050, 0.5); grupp(100003, 'B', 30100, 0.2); grupp(100004, 'B', 36000, 0.5);
         grupp(100005, 'C', 34000, 0.5); grupp(100006, 'D', 42000, 0.5);
         w.__d = rader;
-        const f = w.eval('_lvKravFigur(kravGrupper(window.__d, { kvinnoThr: 60, k: 10 }))');
+        const f = w.eval('_lvKravFigur(vymodellKravMotLon(window.__d, { k: 10 }))');
         const punkter = f.lager.filter(l => l.marke === 'punkt').flatMap(l => l.data);
         const iB = punkter.filter(p => p.bas === 'B' && p.y < 31000).map(p => p.forskjutning || 0).sort((a, b) => a - b);
         expect(new Set(iB).size).toBe(3);                                   // tre nära varandra: tre filer

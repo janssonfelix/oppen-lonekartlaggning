@@ -3,13 +3,14 @@
 import { kvartilfordelning } from '../lib/struktur.js';
 import { svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, ordForAntal } from '../lib/termer.js';
+import { lvParAntal } from '../lib/vymodell-likvardigt-arbete.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { getData } from './12-tillstand.js';
-import { likvardighetResultat, lvParAntal } from './34-likvardigt-arbete.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laSlutsats, laLikaGrupper } from './41-lika-arbete.js';
 
 // ---- § 8-ställning: bedömning per granskningsområde (in-memory) ----

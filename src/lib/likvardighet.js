@@ -382,7 +382,7 @@ export function orgIckeKvPerBas(orgIckeKv) {
  * @param {Array} candidates
  * @returns {{totalt:number, overDirektiv:number, sakra:number}}
  */
-function _parAntal(candidates) {
+export function parAntal(candidates) {
     let overDirektiv = 0, sakra = 0;
     for (const p of candidates) {
         if (p.maMedian > 0 && direktivMarkering(p.kvMedian / p.maMedian * 100)) overDirektiv++;
@@ -421,7 +421,7 @@ export function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
     const pairs = [];
     internPerBas = internPerBas || new Map();
     externPerBas = externPerBas || new Map();
-    if (!orgKvDom?.length || (!internPerBas.size && !externPerBas.size)) return { pairs, jämförelse, antal: _parAntal(pairs) };
+    if (!orgKvDom?.length || (!internPerBas.size && !externPerBas.size)) return { pairs, jämförelse, antal: parAntal(pairs) };
 
     const orgBasSet = new Set(orgKvDom.map(f => f.bas));
     const jämförBasSet = new Set([...internPerBas.keys(), ...externPerBas.keys()]);
@@ -478,7 +478,7 @@ export function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
         }
     }
     candidates.sort((a, b) => b.gapPct - a.gapPct);
-    return { pairs: candidates.slice(0, topN), jämförelse, antal: _parAntal(candidates) };
+    return { pairs: candidates.slice(0, topN), jämförelse, antal: parAntal(candidates) };
 }
 
 /**
@@ -517,7 +517,7 @@ export function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
     orgKvDom = orgKvDom || [];
     internAlla = internAlla || [];
     poangPerNyckel = poangPerNyckel || new Map();
-    if (!orgKvDom.length || !poangPerNyckel.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
+    if (!orgKvDom.length || !poangPerNyckel.size) return { pairs, jämförelse, antal: parAntal(pairs) };
 
     const poangFor = g => poangPerNyckel.get(g.aid + '|' + g.bas) ?? poangPerNyckel.get(String(g.aid)) ?? null;
     const candidates = [];
@@ -559,7 +559,7 @@ export function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
         }
     }
     candidates.sort((a, b) => b.gapPct - a.gapPct);
-    return { pairs: candidates.slice(0, topN), jämförelse, antal: _parAntal(candidates) };
+    return { pairs: candidates.slice(0, topN), jämförelse, antal: parAntal(candidates) };
 }
 
 /**

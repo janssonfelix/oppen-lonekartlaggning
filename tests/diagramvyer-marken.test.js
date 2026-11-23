@@ -665,7 +665,7 @@ describe('Likvärdigt arbete: krav mot lön', () => {
         const u = w.eval('kravGrupper(window.__d, { kvinnoThr: 60, k: 10 })');
         expect(u.medPoang).toBe(false);
         expect(u.grupper.map(g => [g.aid, g.dominans]).sort()).toEqual([['2000', 'kvinnodominerad'], ['2100', 'mansdominerad'], ['3000', 'kvinnodominerad'], ['3100', 'blandad'], ['3200', 'mansdominerad']]);
-        const f = w.eval('_lvKravFigur(kravGrupper(window.__d, { kvinnoThr: 60, k: 10 }))');
+        const f = w.eval('_lvKravFigur(vymodellKravMotLon(window.__d, { k: 10 }))');
         expect(f.x).toMatchObject({ skala: 'band', ordning: ['BAS A', 'BAS B'] });
         expect(f.lager.map(l => [l.marke, l.serie, l.symbol || null])).toEqual([['linje', 'Nivå per BAS-intervall', null],
             ['punkt', 'Kvinnodominerad', 'cirkel'], ['punkt', 'Mansdominerad', 'triangelHoger'], ['punkt', 'Blandad', 'cirkel']]);
@@ -685,7 +685,7 @@ describe('Likvärdigt arbete: krav mot lön', () => {
         const utan = u.grupper.find(g => g.aid === '3100');
         expect(utan).toMatchObject({ uppskattad: true, krav: 320 });                     // medianen av 300 och 340 i BAS B
         expect(u.utanPlats).toEqual([]);
-        const f = w.eval('_lvKravFigur(kravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p }))');
+        const f = w.eval('_lvKravFigur(vymodellKravMotLon(window.__d, { k: 10, poangByKey: window.__p }))');
         expect(f.x).toMatchObject({ skala: 'linjar', titel: 'Arbetsvärderingspoäng' });
         expect(f.lager[0]).toMatchObject({ marke: 'linje', serie: 'Nivå efter kraven (trend)' });
         expect(f.lager[0].data.map(d => d.x)).toEqual([200, 340]);
