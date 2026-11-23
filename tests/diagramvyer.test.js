@@ -1649,18 +1649,18 @@ describe('skillnaden i kronor per månad', () => {
 });
 
 describe('metodförbehåll under diagram', () => {
-    it('_setDiagramMetodNot: egen not efter k-noten, skriver inte över den, och tom text tar bort den', () => {
+    it('_sattDiagramMetodNot: egen not efter k-noten, skriver inte över den, och tom text tar bort den', () => {
         const w2 = createAppWindow(), d = w2.document;
         const yta = d.createElement('div'); yta.innerHTML = '<div class="chart-container"><div id="chart-provnot"></div></div>'; d.body.appendChild(yta);
-        w2.eval(`_setDiagramKNot('chart-provnot', 'K-noten.'); _setDiagramMetodNot('chart-provnot', 'Förbehållet.')`);
+        w2.eval(`_sattDiagramKNot('chart-provnot', 'K-noten.'); _sattDiagramMetodNot('chart-provnot', 'Förbehållet.')`);
         const k = d.getElementById('chart-provnot-k-not'), m = d.getElementById('chart-provnot-metod-not');
         expect(k.textContent).toBe('K-noten.');
         expect(m.textContent).toBe('Förbehållet.');
         expect(k.nextElementSibling).toBe(m);
-        w2.eval(`_setDiagramMetodNot('chart-provnot', 'Nytt förbehåll.')`);
+        w2.eval(`_sattDiagramMetodNot('chart-provnot', 'Nytt förbehåll.')`);
         expect(d.getElementById('chart-provnot-k-not').textContent).toBe('K-noten.');
         expect(d.querySelectorAll('#chart-provnot-metod-not')).toHaveLength(1);
-        w2.eval(`_setDiagramMetodNot('chart-provnot', '')`);
+        w2.eval(`_sattDiagramMetodNot('chart-provnot', '')`);
         expect(d.getElementById('chart-provnot-metod-not')).toBeNull();
         expect(d.getElementById('chart-provnot-k-not')).not.toBeNull();
     });

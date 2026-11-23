@@ -4,7 +4,7 @@ import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_SKARM, K_STANDARD, k
 import { personOrd } from '../lib/namn.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
-import { _kMaskNoteText } from './06-maskeringsnoter.js';
+import { _kMaskNotText } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _rfExportFigur } from './10-diagramritare.js';
 import { state } from './12-tillstand.js';
@@ -73,7 +73,7 @@ export function provaEnskiltText() {
  * @param {number} n - Antal personer i gruppen.
  * @returns {boolean}
  */
-export function isKMasked(n) { return n < kTroskel(); }
+export function kMaskerad(n) { return n < kTroskel(); }
 
 /** Gränsen för "litet underlag" i ett diagram (LITET_UNDERLAG, src/lib/ktroskel.js). */
 export function litetUnderlag() { return LITET_UNDERLAG; }
@@ -96,7 +96,7 @@ export function _raGapText(reg, fmt) { return raGapText(reg, fmt, kTroskel()); }
  * @param {string[]} utelamnade @param {number} k
  */
 export function _basEffektNot(utelamnade, k) {
-    return _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen');
+    return _kMaskNotText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen');
 }
 
 /**
@@ -104,7 +104,7 @@ export function _basEffektNot(utelamnade, k) {
  * noter). Tom text tar bort noten. Noten läggs efter diagrammets behållare, så att den inte tränger
  * ihop ritytan.
  */
-export function _setDiagramKNot(chartId, text) {
+export function _sattDiagramKNot(chartId, text) {
     const chart = document.getElementById(chartId);
     if (!chart) return;
     const noteId = chartId + '-k-not';
@@ -125,7 +125,7 @@ export function _setDiagramKNot(chartId, text) {
  * skriver över den andra. Tom text tar bort noten. Läggs efter k-noten om den finns, annars efter behållaren. Id:t
  * börjar med diagrammets (chart-…), så *Rensa all data* tömmer den med diagrammen.
  */
-export function _setDiagramMetodNot(chartId, text) {
+export function _sattDiagramMetodNot(chartId, text) {
     const chart = document.getElementById(chartId);
     if (!chart) return;
     const noteId = chartId + '-metod-not';

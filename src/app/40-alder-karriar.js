@@ -10,7 +10,7 @@ import { alderBandRader, alderGapRader, ALDERSKLASSER, konHistogram, ladaPerKon,
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { _kronorFalt, _kvantilTipsRader } from './03-hjalpfunktioner.js';
-import { _konUtelamnatNot, _setDiagramKNot, individLitenFor, kInstalld, kTroskel, litetUnderlag } from './06-k-troskel.js';
+import { _konUtelamnatNot, _sattDiagramKNot, individLitenFor, kInstalld, kTroskel, litetUnderlag } from './06-k-troskel.js';
 import { jmfNamn, plotNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
@@ -93,9 +93,9 @@ export function ritaAlderOchLon(bas) {
         ritaFigur(boxEl, { ...lada, underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp], rader: [...dataKv, ...dataMa], k,
             rita: (rader, { beskrivning }) => _konLadFigurFor(ladaPerKon(rader, k), `${scope2}, ${beskrivning}`, k) } }, { hojd: 420 });
     } else if (boxEl) rensaFigur(boxEl);
-    _setDiagramKNot('chart-kon-scatter', [utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : '',
+    _sattDiagramKNot('chart-kon-scatter', [utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : '',
         trendAlla && !vm.trendAllaOk ? _demoTrendNot(df.length) : '', _individNot(vm.dolda)].filter(Boolean).join(' '));
-    _setDiagramKNot('chart-kon-boxplot', utan ? `Lådan visas inte för ${utan}: ${skal}.` : '');
+    _sattDiagramKNot('chart-kon-boxplot', utan ? `Lådan visas inte för ${utan}: ${skal}.` : '');
     ritaKonMultiplar();
     ritaKonHistogram(vm, scope2);
     // Löneskillnaden per åldersgrupp (bootstrapintervall per grupp) ritas efter flikens övre del vid ett flikbyte (ADR-80).

@@ -15,7 +15,7 @@ import { _kronorFalt, andelAvMan, antalCaption, direktivGap, idagDatum, rapporte
 import { ikon } from './03-ikoner.js';
 import { _konUtelamnatNot, _kSanktNot, _parForRedovisning, kTroskel } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
-import { kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
+import { kMaskNot, kSamladNot } from './06-maskeringsnoter.js';
 import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
@@ -72,8 +72,8 @@ export function renderStructure() {
             <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ''}</td></tr>`;
         }).join('')}
         </tbody></table>` : ''}
-        ${kMaskNote(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
-        ${kSamladNote(repVisade.filter(g => g.konLitet).map(g => g.bas), `${T.niva.en}|${T.niva.fl}`)}`; if (repEl) tillampaDataStil(repEl);
+        ${kMaskNot(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+        ${kSamladNot(repVisade.filter(g => g.konLitet).map(g => g.bas), `${T.niva.en}|${T.niva.fl}`)}`; if (repEl) tillampaDataStil(repEl);
 
     // (3) Distributionellt gap
     if (distEl) {

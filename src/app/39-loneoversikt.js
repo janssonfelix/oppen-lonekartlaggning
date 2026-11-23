@@ -7,7 +7,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { buildBaseAudit, setAudit, toggleAllGroups } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
-import { kMaskNote } from './06-maskeringsnoter.js';
+import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
@@ -58,7 +58,7 @@ export function ritaLoneoversikt() {
         }
         if (utelamnade.length) {
             const trN = document.createElement("tr");
-            trN.innerHTML = `<td colspan="8">${kMaskNote(utelamnade, 'grupp i detta BAS|grupper i detta BAS')}</td>`;
+            trN.innerHTML = `<td colspan="8">${kMaskNot(utelamnade, 'grupp i detta BAS|grupper i detta BAS')}</td>`;
             tbody.appendChild(trN);
         }
     });

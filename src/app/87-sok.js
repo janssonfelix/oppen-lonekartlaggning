@@ -6,7 +6,7 @@ import { stor } from '../lib/termer.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { openGlossary } from './04-ordlista.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
-import { isKMasked } from './06-k-troskel.js';
+import { kMaskerad } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { diagramMarkering, sattDiagramMarkering } from './11-markering.js';
 import { getData } from './12-tillstand.js';
@@ -48,7 +48,7 @@ function sokKandidater() {
     if (!d.length) return [];
     const perBas = new Map();
     for (const r of d) if (r.bas != null && r.bas !== '') perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
-    const ut = [...perBas].filter(([, n]) => !isKMasked(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv'))
+    const ut = [...perBas].filter(([, n]) => !kMaskerad(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv'))
         .map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
     for (const g of gruppdossierCandidates()) {
         ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${stor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });

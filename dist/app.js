@@ -5421,38 +5421,38 @@ function termText(mall) {
 }
 
 // src/app/06-maskeringsnoter.js
-var K_NOTE_MAX_NAMN = 12;
-function _kNoteForm(sammanhang, antal) {
+var K_NOT_MAX_NAMN = 12;
+function _kNotForm(sammanhang, antal) {
   const delar = String(sammanhang || "grupp|grupper").split("|");
   return antal === 1 ? delar[0] : delar[1] || delar[0];
 }
-function _kNoteNamn(lista) {
-  const visade = lista.slice(0, K_NOTE_MAX_NAMN).map(esc).join(", ");
-  return visade + (lista.length > K_NOTE_MAX_NAMN ? ` och ${lista.length - K_NOTE_MAX_NAMN} till` : "");
+function _kNotNamn(lista) {
+  const visade = lista.slice(0, K_NOT_MAX_NAMN).map(esc).join(", ");
+  return visade + (lista.length > K_NOT_MAX_NAMN ? ` och ${lista.length - K_NOT_MAX_NAMN} till` : "");
 }
-function kMaskNote(namn, sammanhang, trosk) {
+function kMaskNot(namn, sammanhang, trosk) {
   const lista = (namn || []).filter(Boolean);
   if (!lista.length) return "";
   const n = lista.length;
   const t = trosk || kTroskel();
   const den = n === 1 ? "Den har" : "De har";
   const dess = n === 1 ? "dess" : "deras";
-  return `<p class="k-mask-note">${n} ${esc(_kNoteForm(sammanhang, n))} visas inte här: ${_kNoteNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är redovisningen per grupp som utgår.</p>`;
+  return `<p class="k-mask-note">${n} ${esc(_kNotForm(sammanhang, n))} visas inte här: ${_kNotNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är redovisningen per grupp som utgår.</p>`;
 }
-function _kMaskNoteText(namn, sammanhang, t, vad, dar) {
+function _kMaskNotText(namn, sammanhang, t, vad, dar) {
   const lista = (namn || []).filter(Boolean);
   if (!lista.length) return "";
   const n = lista.length;
-  const visade = lista.slice(0, K_NOTE_MAX_NAMN).join(", ") + (n > K_NOTE_MAX_NAMN ? ` och ${n - K_NOTE_MAX_NAMN} till` : "");
+  const visade = lista.slice(0, K_NOT_MAX_NAMN).join(", ") + (n > K_NOT_MAX_NAMN ? ` och ${n - K_NOT_MAX_NAMN} till` : "");
   const text = n === 1 ? vad.replace(/\bderas\b/g, "dess") : vad;
-  return `${n} ${_kNoteForm(sammanhang, n)} visas inte här: ${visade}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och ${text}. Personerna ingår fortfarande i ${dar}; det är redovisningen per ${_kNoteForm(sammanhang, 1)} som utgår.`;
+  return `${n} ${_kNotForm(sammanhang, n)} visas inte här: ${visade}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och ${text}. Personerna ingår fortfarande i ${dar}; det är redovisningen per ${_kNotForm(sammanhang, 1)} som utgår.`;
 }
-function kSamladNote(namn, sammanhang) {
+function kSamladNot(namn, sammanhang) {
   const lista = (namn || []).filter(Boolean);
   if (!lista.length) return "";
   const n = lista.length;
   const stora = n === 1 ? "Gruppen är stor nog" : "Grupperna är stora nog";
-  return `<p class="k-mask-note">${n} ${esc(_kNoteForm(sammanhang, n))} visas med gruppens samlade median i stället för könsuppdelade medianer: ${_kNoteNamn(lista)}. ${stora} att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
+  return `<p class="k-mask-note">${n} ${esc(_kNotForm(sammanhang, n))} visas med gruppens samlade median i stället för könsuppdelade medianer: ${_kNotNamn(lista)}. ${stora} att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 
 // src/lib/aidkontroll.js
@@ -11053,7 +11053,7 @@ function renderPrioritering() {
     groupCheck[k].n++;
   });
   Object.values(groupCheck).forEach((g) => {
-    if (isKMasked(g.n)) {
+    if (kMaskerad(g.n)) {
       smallCount++;
       return;
     }
@@ -14224,12 +14224,12 @@ function ritaAlderOchLon(bas) {
       rita: (rader, { beskrivning }) => _konLadFigurFor(ladaPerKon(rader, k), `${scope2}, ${beskrivning}`, k)
     } }, { hojd: 420 });
   } else if (boxEl) rensaFigur(boxEl);
-  _setDiagramKNot("chart-kon-scatter", [
+  _sattDiagramKNot("chart-kon-scatter", [
     utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : "",
     trendAlla && !vm.trendAllaOk ? _demoTrendNot(df.length) : "",
     _individNot(vm.dolda)
   ].filter(Boolean).join(" "));
-  _setDiagramKNot("chart-kon-boxplot", utan ? `Lådan visas inte för ${utan}: ${skal}.` : "");
+  _sattDiagramKNot("chart-kon-boxplot", utan ? `Lådan visas inte för ${utan}: ${skal}.` : "");
   ritaKonMultiplar();
   ritaKonHistogram(vm, scope2);
   _ritaTungtBlock("kon", ["chart-kon-aldergap", "kon-aldergap-not"], () => ritaAlderGap(dataKv, dataMa, scope2));
@@ -14907,7 +14907,7 @@ function ritaLivscykel(given) {
                             </tr>`).join("")}
                     </tbody>
                 </table>
-                ${kMaskNote(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+                ${kMaskNot(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
                 <p class="text-dampad-xs lh-1_5 marg-10-0-0">
                     <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent, kvinnor mot män (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65), är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
                 </p>
@@ -14991,7 +14991,7 @@ function ritaLivscykel(given) {
       );
       const row = (state._lifecycleCache?.basRows || []).find((r) => r.bas === bas);
       if (!row) return;
-      if (isKMasked(row.n)) return;
+      if (kMaskerad(row.n)) return;
       const c = state._lifecycleCache;
       _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
     });
@@ -16163,7 +16163,7 @@ var _fcGruppnamn = (g) => `BAS ${g.bas} · ${g.aid}`;
 function _fcUtfallsNot(utfall, K) {
   const a = utfall.sma.length;
   if (!a) return "";
-  const lista = (gs) => gs.slice(0, K_NOTE_MAX_NAMN).map(_fcGruppnamn).join(", ") + (gs.length > K_NOTE_MAX_NAMN ? ` och ${gs.length - K_NOTE_MAX_NAMN} till` : "");
+  const lista = (gs) => gs.slice(0, K_NOT_MAX_NAMN).map(_fcGruppnamn).join(", ") + (gs.length > K_NOT_MAX_NAMN ? ` och ${gs.length - K_NOT_MAX_NAMN} till` : "");
   let t = `${a} ${a === 1 ? "grupp" : "grupper"} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${a === 1 ? "dess" : "deras"} medianer och kostnad redovisas inte per grupp.`;
   if (utfall.invikta.length) t += ` Medianerna och kostnaden för ${lista(utfall.invikta)} redovisas inte heller per grupp: grupperna under tröskeln har tillsammans färre än ${K} ${personOrd(K)}, och annars skulle deras kostnad gå att räkna fram ur summorna.`;
   t += utfall.samlad.kostnad != null ? ` Kostnaden för ${utfall.maskerade.length === 1 ? "gruppen" : `de ${utfall.maskerade.length} grupperna`} står samlad på raden Kostnad för grupper under tröskeln, så att kostnaderna summerar till det använda.` : ` Grupperna med påslag har tillsammans färre än ${K} ${personOrd(K)}, så ingen kostnad redovisas per grupp; den står bara i summorna.`;
@@ -16237,7 +16237,7 @@ function ritaPrognos() {
         <strong class="block-mb6">Lönespann per BAS (P25 / median / P75)</strong>
         ${bandVisade.length ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">P25</th><th class="t-hoger">Median</th><th class="t-hoger">P75</th></tr></thead>
         <tbody>${bandVisade.map((b) => `<tr><td>${esc(b.bas)}</td><td class="t-hoger">${b.n}</td><td class="t-hoger">${kr2(b.p25)}</td><td class="t-hoger">${kr2(b.median)}</td><td class="t-hoger">${kr2(b.p75)}</td></tr>`).join("")}</tbody></table>` : ""}
-        ${kMaskNote(vm.band.utelamnade, `${T.niva.en}|${T.niva.fl}`)}
+        ${kMaskNot(vm.band.utelamnade, `${T.niva.en}|${T.niva.fl}`)}
         <p class="text-dampad-xs marg-6-0-0">Läget mot BAS-medianen i tabellen nedan är gruppens nya median delad med BAS-medianen: över 1,10 märks «över», under 0,90 märks «under».</p>
     </div>` : "";
   const { perPott: poolCost, potter: poolRows } = vm.potter;
@@ -18856,7 +18856,7 @@ function _lpRitaEfterlevnad(vm) {
   if (dolda.length) {
     const note = document.createElement("div");
     note.setAttribute("data-lp-not", "komplians");
-    note.innerHTML = kMaskNote(dolda, `${T.niva.en}|${T.niva.fl}`);
+    note.innerHTML = kMaskNot(dolda, `${T.niva.en}|${T.niva.fl}`);
     el.insertAdjacentElement("afterend", note);
   }
 }
@@ -18891,7 +18891,7 @@ function _lpTableHtml(vm) {
       rows.push(`<tr><td>${name}</td><td class="t-hoger">${g.n}</td><td class="tabelltal ta-hoger" data-sort-value="${s.median}">${kr2(s.median)}</td><td class="t-tal">${kr2(g.pol.p10)}–${kr2(g.pol.p90)}</td><td class="t-tal${posKlass}" data-sort-value="${posPct == null ? "" : posPct}">${posPct == null ? "Spann för smalt" : svPct(posPct, 0)}</td><td class="t-mitt" data-sort-value="${c ? c.under : 0}">${c ? `${c.under} av ${c.n}` : "–"}</td><td class="t-mitt">${esc(g.level || "–")}</td></tr>`);
     });
     if (utelamnade.length) {
-      rows.push(`<tr><td colspan="7">${kMaskNote(utelamnade.map(_lpGruppnamn), `${T.enhet.en}|${T.enhet.fl}`, vm.antalMin)}</td></tr>`);
+      rows.push(`<tr><td colspan="7">${kMaskNot(utelamnade.map(_lpGruppnamn), `${T.enhet.en}|${T.enhet.fl}`, vm.antalMin)}</td></tr>`);
     }
   });
   return `
@@ -20969,7 +20969,7 @@ function _rmAvsnittenUtanUrval() {
   }
   likvardigt.delar.push(...diagram("likvardigt"));
   likvardigt.delar.push(fyllIn(`Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om ${genitiv(T.jamforelse.bf)} krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.`));
-  const repNot = [_rmNotText(kMaskNote(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNote(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
+  const repNot = [_rmNotText(kMaskNot(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNot(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
   const oversikt = vm.oversikt;
   const struktur = repVisade.length || repNot.length ? {
     id: "struktur",
@@ -22110,7 +22110,7 @@ function _bdRitaInnehall(d) {
     return `<span class="la-status ${klass}">${ik ? ikon(ik) : ""} ${BD_STATUS_TEXT[y.status]}</span>`;
   };
   const yrkesrad = (y) => `<tr><td>${esc(y.aid)}</td><td>${esc(String(y.yrke).replace(/^\d+\s*/, "") || y.yrke)}</td><td class="t-tal">${y.tot} (${y.nKv}/${y.nMa})</td>` + (y.samlad ? `<td colspan="3" class="t-mitt">Gruppens median ${_bdKr(y.medTot)}</td>` : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}${_direktivInline(y.kvotPct)}</td>`) + `<td>${status(y)}${y.ocksaI.length ? `<br><span class="gd-note">${esc(_bdHelaYrketNot(y))}</span>` : ""}</td><td class="t-mitt">${y.dossierKey ? `<button type="button" class="btn-table-tool" data-bd-gruppdossier="${esc(y.dossierKey)}" aria-label="Öppna gruppdossiern för ${esc(y.yrke)}">Gruppdossier</button>` : ""}</td></tr>`;
-  const yrken = (d.yrken.length ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">${stor(T.namn.en)}</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join("")}</tbody></table></div>` : missing(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`)) + (d.yrkenUtelamnade.length ? kMaskNote(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : "") + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(", "))}.</p>` : "");
+  const yrken = (d.yrken.length ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">${stor(T.namn.en)}</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join("")}</tbody></table></div>` : missing(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`)) + (d.yrkenUtelamnade.length ? kMaskNot(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : "") + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(", "))}.</p>` : "");
   const parLista = (lista) => `<ul class="gd-list">${lista.map((p) => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} (BAS ${esc(p.kvBas)}) mot ${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} (BAS ${esc(p.maBas)}): ${_bdKr(p.kvMedian)} mot ${_bdKr(p.maMedian)}, skillnad ${_bdKr(p.gapKr)} (${svPct(p.gapPct, 1)})</li>`).join("")}</ul>`;
   const parNot = d.par.utelamnade ? `<p class="gd-note">${esc(_parUtelamnadeNot(d.par.utelamnade))}</p>` : "";
   const likvardigt = d.par.kandidat.length || d.par.hierarkiska.length ? (d.par.kandidat.length ? `<p><strong>Kandidatpar där ${termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad" })} ligger i intervallet</strong></p>${parLista(d.par.kandidat)}` : `<p>Inga kandidatpar där ${termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad" })} ligger i intervallet.</p>`) + (d.par.hierarkiska.length ? `<p><strong>Lägre krav, högre lön</strong> (${T.jamforelse.bf} ligger i ett lägre intervall)</p>${parLista(d.par.hierarkiska)}` : "") + parNot : parNot || missing(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${termFras(T.enhet, "en", { adjektiv: "kvinnodominerad" })} i intervallet ingår i en jämförelse av likvärdigt arbete.`);
@@ -22334,7 +22334,7 @@ function ritaLoneoversikt() {
     }
     if (utelamnade.length) {
       const trN = document.createElement("tr");
-      trN.innerHTML = `<td colspan="8">${kMaskNote(utelamnade, "grupp i detta BAS|grupper i detta BAS")}</td>`;
+      trN.innerHTML = `<td colspan="8">${kMaskNot(utelamnade, "grupp i detta BAS|grupper i detta BAS")}</td>`;
       tbody.appendChild(trN);
     }
   });
@@ -25839,7 +25839,7 @@ function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
 function _laSamladNot(namn) {
   const lista = (namn || []).filter(Boolean);
   if (!lista.length) return "";
-  return `<p class="k-mask-note">${lista.length} ${ordForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNoteNamn(lista)}. ${lista.length === 1 ? "Intervallet är stort" : "Intervallen är stora"} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
+  return `<p class="k-mask-note">${lista.length} ${ordForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNotNamn(lista)}. ${lista.length === 1 ? "Intervallet är stort" : "Intervallen är stora"} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 function _laOversiktStatus(o) {
   return gapStatusKI(o);
@@ -25891,7 +25891,7 @@ function ritaLoneskillnadPerBas(vm) {
   }
   if (skillnad.utelamnade.length || skillnad.samlade.length) {
     const trN = document.createElement("tr");
-    trN.innerHTML = `<td colspan="6">${kMaskNote(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}${kSamladNote(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
+    trN.innerHTML = `<td colspan="6">${kMaskNot(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}${kSamladNot(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
     pgBody.appendChild(trN);
   }
   pgBody.querySelectorAll(".btn-evidence[data-paygap-row]").forEach((btn) => {
@@ -26055,7 +26055,7 @@ function ritaLikaArbete(vm, { reg: given } = {}) {
   });
   if (vm.utelamnade.length || vm.samlade.length) {
     const trN = document.createElement("tr");
-    trN.innerHTML = `<td colspan="11">${kMaskNote(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}${kSamladNote(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
+    trN.innerHTML = `<td colspan="11">${kMaskNot(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}${kSamladNot(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
     tbody.appendChild(trN);
   }
   if (vm.skor) {
@@ -26166,7 +26166,7 @@ function _laOversiktTabell(ov) {
   tb.innerHTML = "";
   const bars = ov.rader;
   const not = document.getElementById("la-oversikt-not");
-  if (not) not.innerHTML = kMaskNote(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
+  if (not) not.innerHTML = kMaskNot(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
   if (skala) skala.innerHTML = "";
   if (!bars.length) {
     tb.innerHTML = `<tr><td colspan="9" class="la-oversikt-tom">För få ${T.niva.fl} där både kvinnor och män når minsta gruppstorlek.</td></tr>`;
@@ -26255,11 +26255,11 @@ function _laRitaTratt(u) {
   if (!u) {
     rensaFigur(el);
     if (not) not.textContent = "";
-    _setDiagramMetodNot("chart-la-tratt", null);
+    _sattDiagramMetodNot("chart-la-tratt", null);
     return;
   }
   ritaFigur(el, _laTrattFigur(u));
-  _setDiagramMetodNot("chart-la-tratt", _laTrattGlesNot(u.punkter.length));
+  _sattDiagramMetodNot("chart-la-tratt", _laTrattGlesNot(u.punkter.length));
   if (not) not.textContent = `En punkt per ${T.enhet.en} i ${artikel(T.niva)} ${T.niva.en} där både kvinnor och män når minsta gruppstorlek. Statusen per grupp står i tabellen nedan och i Lika arbete AID × BAS; en punkt utanför gränserna är en av statusens två delar, den andra är storleken (minst 3 %). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
 function _skevhetAndelFigur(rader) {
@@ -26362,7 +26362,7 @@ function renderLikaArbeteTopp({ reg: given } = {}) {
 }
 function _skevhetNot(lista) {
   const n = lista.length, t = LITET_UNDERLAG;
-  return `<p class="k-mask-note">${n} ${esc(_kNoteForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: ${_kNoteNamn(lista)}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och könsfördelningen skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
+  return `<p class="k-mask-note">${n} ${esc(_kNotForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: ${_kNotNamn(lista)}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och könsfördelningen skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
 }
 function renderLonestrukturNycklar() {
   const d = getData();
@@ -26779,8 +26779,8 @@ function renderStructure() {
             <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ""}</td></tr>`;
   }).join("")}
         </tbody></table>` : ""}
-        ${kMaskNote(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
-        ${kSamladNote(repVisade.filter((g) => g.konLitet).map((g) => g.bas), `${T.niva.en}|${T.niva.fl}`)}`;
+        ${kMaskNot(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+        ${kSamladNot(repVisade.filter((g) => g.konLitet).map((g) => g.bas), `${T.niva.en}|${T.niva.fl}`)}`;
   if (repEl) tillampaDataStil(repEl);
   if (distEl) {
     if (!dist.length) {
@@ -30100,7 +30100,7 @@ function sokKandidater() {
   if (!d.length) return [];
   const perBas = /* @__PURE__ */ new Map();
   for (const r of d) if (r.bas != null && r.bas !== "") perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
-  const ut = [...perBas].filter(([, n]) => !isKMasked(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), "sv")).map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
+  const ut = [...perBas].filter(([, n]) => !kMaskerad(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), "sv")).map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
   for (const g of gruppdossierCandidates()) {
     ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${stor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
   }
@@ -30724,7 +30724,7 @@ function statGolv() {
 function provaEnskiltText() {
   return state.kLage === "export" ? "" : " Se lönerna under Tabeller och egna vyer och dokumentera bedömningen under Sakliga skäl i Handlingsplan.";
 }
-function isKMasked(n) {
+function kMaskerad(n) {
   return n < kTroskel();
 }
 function litetUnderlag() {
@@ -30743,9 +30743,9 @@ function _raGapText(reg, fmt) {
   return raGapText(reg, fmt, kTroskel());
 }
 function _basEffektNot(utelamnade, k) {
-  return _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, "deras effekt i modellen skulle visa deras genomsnittliga lönenivå", "modellen");
+  return _kMaskNotText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, "deras effekt i modellen skulle visa deras genomsnittliga lönenivå", "modellen");
 }
-function _setDiagramKNot(chartId, text) {
+function _sattDiagramKNot(chartId, text) {
   const chart = document.getElementById(chartId);
   if (!chart) return;
   const noteId = chartId + "-k-not";
@@ -30763,7 +30763,7 @@ function _setDiagramKNot(chartId, text) {
   }
   note.textContent = text;
 }
-function _setDiagramMetodNot(chartId, text) {
+function _sattDiagramMetodNot(chartId, text) {
   const chart = document.getElementById(chartId);
   if (!chart) return;
   const noteId = chartId + "-metod-not";

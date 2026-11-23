@@ -200,7 +200,7 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till li
     it('computePrioritization delegerar till prioritera och bygger ingen egen beräkning', () => {
         const kropp = extractFn(prioSrc, 'computePrioritization');
         expect(kropp).toContain('prioritera(');
-        for (const spår of ['Stat.median', 'isKMasked', 'priorityIndex', 'sevScore', 'annualGapTotal', 'groups[']) {
+        for (const spår of ['Stat.median', 'kMaskerad', 'priorityIndex', 'sevScore', 'annualGapTotal', 'groups[']) {
             expect(kropp, `"${spår}" hör hemma i src/lib/prioritering.js`).not.toContain(spår);
         }
     });

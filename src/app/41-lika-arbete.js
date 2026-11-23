@@ -16,9 +16,9 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { _kronorFalt, rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { buildBaseAudit, flerKolumner, setAudit } from './05-tabeller-och-lankar.js';
-import { _setDiagramMetodNot, kTroskel, LITET_UNDERLAG, statGolv } from './06-k-troskel.js';
+import { _sattDiagramMetodNot, kTroskel, LITET_UNDERLAG, statGolv } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
-import { _kNoteForm, _kNoteNamn, kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
+import { _kNotForm, _kNotNamn, kMaskNot, kSamladNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
@@ -101,7 +101,7 @@ export function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
 function _laSamladNot(namn) {
     const lista = (namn || []).filter(Boolean);
     if (!lista.length) return '';
-    return `<p class="k-mask-note">${lista.length} ${ordForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNoteNamn(lista)}. `
+    return `<p class="k-mask-note">${lista.length} ${ordForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNotNamn(lista)}. `
         + `${lista.length === 1 ? 'Intervallet är stort' : 'Intervallen är stora'} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 /**
@@ -162,8 +162,8 @@ export function ritaLoneskillnadPerBas(vm) {
     }
     if (skillnad.utelamnade.length || skillnad.samlade.length) {
         const trN = document.createElement("tr");
-        trN.innerHTML = `<td colspan="6">${kMaskNote(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}`
-            + `${kSamladNote(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
+        trN.innerHTML = `<td colspan="6">${kMaskNot(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}`
+            + `${kSamladNot(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
         pgBody.appendChild(trN);
     }
 
@@ -362,8 +362,8 @@ export function ritaLikaArbete(vm, { reg: given } = {}) {
     });
     if (vm.utelamnade.length || vm.samlade.length) {
         const trN = document.createElement("tr");
-        trN.innerHTML = `<td colspan="11">${kMaskNote(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}`
-            + `${kSamladNote(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
+        trN.innerHTML = `<td colspan="11">${kMaskNot(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}`
+            + `${kSamladNot(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
         tbody.appendChild(trN);
     }
     if (vm.skor) {
@@ -477,7 +477,7 @@ function _laOversiktTabell(ov) {
     // Tabellen har bara rader där båda könen når tröskeln. Intervallen som saknas sägs under den: hela intervallet
     // under tröskeln, eller ett kön under den (då skulle en könsjämförelse peka ut enskilda).
     const not = document.getElementById('la-oversikt-not');
-    if (not) not.innerHTML = kMaskNote(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
+    if (not) not.innerHTML = kMaskNot(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
     if (skala) skala.innerHTML = '';
     if (!bars.length) {
         tb.innerHTML = `<tr><td colspan="9" class="la-oversikt-tom">För få ${T.niva.fl} där både kvinnor och män når minsta gruppstorlek.</td></tr>`;
@@ -577,9 +577,9 @@ function _laRitaTratt(u) {
     const el = document.getElementById('chart-la-tratt'), kort = document.getElementById('la-tratt-kort'), not = document.getElementById('la-tratt-not');
     if (!el) return;
     if (kort) kort.hidden = !u;
-    if (!u) { rensaFigur(el); if (not) not.textContent = ''; _setDiagramMetodNot('chart-la-tratt', null); return; }
+    if (!u) { rensaFigur(el); if (not) not.textContent = ''; _sattDiagramMetodNot('chart-la-tratt', null); return; }
     ritaFigur(el, _laTrattFigur(u));
-    _setDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
+    _sattDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
     // Diagrammet ger ingen egen status (ADR-90): statusen står i tabellerna, och gränserna är en av dess två delar.
     if (not) not.textContent = `En punkt per ${T.enhet.en} i ${artikel(T.niva)} ${T.niva.en} där både kvinnor och män når minsta gruppstorlek. Statusen per grupp står i tabellen nedan och i Lika arbete AID × BAS; en punkt utanför gränserna är en av statusens två delar, den andra är storleken (minst 3 %). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
@@ -675,13 +675,13 @@ export function renderLikaArbeteTopp({ reg: given } = {}) {
 
 /**
  * Noten under Könsfördelning per BAS-intervall: intervall med färre än LITET_UNDERLAG personer får ingen rad
- * (ADR-57). Samma form som kMaskNote, men utan lönemått att tala om: det är andelarna som skulle peka ut enskilda.
+ * (ADR-57). Samma form som kMaskNot, men utan lönemått att tala om: det är andelarna som skulle peka ut enskilda.
  * @param {string[]} lista  BAS-intervallen som utelämnats.
  */
 function _skevhetNot(lista) {
     const n = lista.length, t = LITET_UNDERLAG;
-    return `<p class="k-mask-note">${n} ${esc(_kNoteForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: `
-        + `${_kNoteNamn(lista)}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, och könsfördelningen `
+    return `<p class="k-mask-note">${n} ${esc(_kNotForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: `
+        + `${_kNotNamn(lista)}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, och könsfördelningen `
         + `skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
 }
 

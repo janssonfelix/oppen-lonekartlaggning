@@ -26,7 +26,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { navigateTo } from './05-tabeller-och-lankar.js';
 import { _konUtelamnatNot, _kSanktNot, _parUtelamnadeNot, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
-import { kMaskNote } from './06-maskeringsnoter.js';
+import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT } from './10-diagramtema.js';
 import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
@@ -145,7 +145,7 @@ function _bdRitaInnehall(d) {
     const yrken = (d.yrken.length
         ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">${stor(T.namn.en)}</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join('')}</tbody></table></div>`
         : missing(`${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`))
-        + (d.yrkenUtelamnade.length ? kMaskNote(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : '')
+        + (d.yrkenUtelamnade.length ? kMaskNot(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : '')
         + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(', '))}.</p>` : '');
 
     // 3. Likvärdigt arbete

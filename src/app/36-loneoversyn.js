@@ -20,7 +20,7 @@ import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { andelAvMan, idagDatum, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _konFarRedovisasFor, _konUtelamnatNot, kInstalld, kTroskel } from './06-k-troskel.js';
-import { K_NOTE_MAX_NAMN, kMaskNote } from './06-maskeringsnoter.js';
+import { K_NOT_MAX_NAMN, kMaskNot } from './06-maskeringsnoter.js';
 import { jmfNamnGenitiv } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
@@ -144,7 +144,7 @@ const _fcGruppnamn = g => `BAS ${g.bas} · ${g.aid}`;
 function _fcUtfallsNot(utfall, K) {
     const a = utfall.sma.length;
     if (!a) return '';
-    const lista = gs => gs.slice(0, K_NOTE_MAX_NAMN).map(_fcGruppnamn).join(', ') + (gs.length > K_NOTE_MAX_NAMN ? ` och ${gs.length - K_NOTE_MAX_NAMN} till` : '');
+    const lista = gs => gs.slice(0, K_NOT_MAX_NAMN).map(_fcGruppnamn).join(', ') + (gs.length > K_NOT_MAX_NAMN ? ` och ${gs.length - K_NOT_MAX_NAMN} till` : '');
     let t = `${a} ${a === 1 ? 'grupp' : 'grupper'} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${a === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.`;
     if (utfall.invikta.length) t += ` Medianerna och kostnaden för ${lista(utfall.invikta)} redovisas inte heller per grupp: grupperna under tröskeln har tillsammans färre än ${K} ${personOrd(K)}, och annars skulle deras kostnad gå att räkna fram ur summorna.`;
     t += utfall.samlad.kostnad != null
@@ -237,7 +237,7 @@ function ritaPrognos() {
         <strong class="block-mb6">Lönespann per BAS (P25 / median / P75)</strong>
         ${bandVisade.length ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">P25</th><th class="t-hoger">Median</th><th class="t-hoger">P75</th></tr></thead>
         <tbody>${bandVisade.map(b => `<tr><td>${esc(b.bas)}</td><td class="t-hoger">${b.n}</td><td class="t-hoger">${kr(b.p25)}</td><td class="t-hoger">${kr(b.median)}</td><td class="t-hoger">${kr(b.p75)}</td></tr>`).join('')}</tbody></table>` : ''}
-        ${kMaskNote(vm.band.utelamnade, `${T.niva.en}|${T.niva.fl}`)}
+        ${kMaskNot(vm.band.utelamnade, `${T.niva.en}|${T.niva.fl}`)}
         <p class="text-dampad-xs marg-6-0-0">Läget mot BAS-medianen i tabellen nedan är gruppens nya median delad med BAS-medianen: över 1,10 märks «över», under 0,90 märks «under».</p>
     </div>` : '';
     // (D) Kostnad per pott (ring-fenced)

@@ -14,7 +14,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { buildBarCell, buildBaseAudit, flerKolumner, setAudit, tillampaFlerKolumner } from './05-tabeller-och-lankar.js';
-import { isKMasked, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { kMaskerad, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { COST_DEFAULTS, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
@@ -301,7 +301,7 @@ export function renderPrioritering() {
         groupCheck[k].n++;
     });
     Object.values(groupCheck).forEach(g => {
-        if (isKMasked(g.n)) { smallCount++; return; }
+        if (kMaskerad(g.n)) { smallCount++; return; }
         if (ref === 'stallningstagande') {
             const pol = policyFor(g.aid, g.bas);
             if (!pol || !pol.med) noRefCount++;

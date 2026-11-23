@@ -10,8 +10,8 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { antalCaption, antalText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { buildBaseAudit, setAudit } from './05-tabeller-och-lankar.js';
-import { isKMasked, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
-import { kMaskNote } from './06-maskeringsnoter.js';
+import { kMaskerad, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
+import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
 import { gapStatusNiva, PALETTE } from './10-diagramtema.js';
@@ -227,7 +227,7 @@ export function ritaLivscykel(given) {
                             </tr>`).join('')}
                     </tbody>
                 </table>
-                ${kMaskNote(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+                ${kMaskNot(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
                 <p class="text-dampad-xs lh-1_5 marg-10-0-0">
                     <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent, kvinnor mot män (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65), är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
                 </p>
@@ -319,7 +319,7 @@ export function ritaLivscykel(given) {
             const bas = /** @type {HTMLElement} */ (btn).dataset.livscykelBas;
             const row = (state._lifecycleCache?.basRows || []).find(r => r.bas === bas);
             if (!row) return;
-            if (isKMasked(row.n)) return;   // Minsta gruppstorlek: knappen ritas inte för
+            if (kMaskerad(row.n)) return;   // Minsta gruppstorlek: knappen ritas inte för
                                             // maskerade BAS, men vägen stängs även här
             const c = state._lifecycleCache;
             _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));

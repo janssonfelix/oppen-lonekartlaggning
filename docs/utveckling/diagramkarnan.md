@@ -667,7 +667,7 @@ ett moln (trattdiagrammet, prioriteringsmatrisen) undviker punkterna och varandr
 värde vid änden av en stapel står utanför stapeln (datapunktens `etikettLage`, trapporna). Pröva det med det stora
 demot: ett namn som täcker en annan punkt går inte att knyta till sin egen.
 
-**Förbehåll under diagrammet.** Ett metodförbehåll står i en egen not under diagrammet (`_setDiagramMetodNot` i
+**Förbehåll under diagrammet.** Ett metodförbehåll står i en egen not under diagrammet (`_sattDiagramMetodNot` i
 `06-k-troskel.js`), efter k-noten och utan att skriva över den, och samma mening står under
 diagrammet i Word och PDF (`metodNot` i `RM_DIAGRAM`). Trattdiagrammet med färre än tio grupper har ett
 (`LA_TRATT_GLEST`). Under ett diagram där två punkter med var sitt konfidensintervall jämförs ska det stå att

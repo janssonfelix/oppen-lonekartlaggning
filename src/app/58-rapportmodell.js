@@ -31,7 +31,7 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { andelAvMan, ANSVARSFORBEHALL, antalText } from './03-hjalpfunktioner.js';
 import { AID_METODTEXT } from './04-ordlista.js';
 import { _basEffektNot, _konUtelamnatNot, _kSanktNot, _raGapText, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
-import { kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
+import { kMaskNot, kSamladNot } from './06-maskeringsnoter.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
@@ -82,7 +82,7 @@ function rmCell(v, typ) {
     return String(v);
 }
 
-// Texten ur en not som vyerna bygger som HTML (kMaskNote, kSamladNote): namnen är redan escapade där.
+// Texten ur en not som vyerna bygger som HTML (kMaskNot, kSamladNot): namnen är redan escapade där.
 function _rmNotText(html) {
     if (!html) return '';
     const d = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
@@ -630,7 +630,7 @@ function _rmAvsnittenUtanUrval() {
     // Lönemåtten (median, lönegapet per BAS) redovisas bara för BAS-intervall med minst tröskeln personer.
     // Gapet per BAS står med direktivets tecken (rmDirektivGap), som i EU-lönerapportens blad; översikten per
     // BAS-intervall från Lönestruktur längre ned behåller flikens form (kvinnors lön i procent av mäns med konfidensintervall).
-    const repNot = [_rmNotText(kMaskNote(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNote(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
+    const repNot = [_rmNotText(kMaskNot(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNot(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
     const oversikt = vm.oversikt;
     const struktur = (repVisade.length || repNot.length) ? { id: 'struktur', numrerad: true, rubrik: 'Struktur och lönetransparens',
         utelamnat: [...(repDolda.length ? [`BAS ${repDolda.join(', ')} (färre än ${k} ${personOrd(k)})`] : []),

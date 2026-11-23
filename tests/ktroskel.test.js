@@ -14,12 +14,12 @@ vi.setConfig({ testTimeout: 30000 });
 
 describe('k-tröskeln: standardvärde och validering', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); w.__state.kLage = 'export'; });   // isKMasked prövas så som exporterna ser den
+    beforeAll(() => { w = createAppWindow(); w.__state.kLage = 'export'; });   // kMaskerad prövas så som exporterna ser den
     it('är 10 vid start', () => {
         expect(w.eval('kInstalld()')).toBe(10);
         expect(w.eval('statGolv()')).toBe(10);
-        expect(w.eval('isKMasked(9)')).toBe(true);
-        expect(w.eval('isKMasked(10)')).toBe(false);
+        expect(w.eval('kMaskerad(9)')).toBe(true);
+        expect(w.eval('kMaskerad(10)')).toBe(false);
     });
     // Vilka värden som godtas prövas i tests/ktroskel-lib.test.js (kTolka); här att sattKTroskel lämnar tröskeln orörd
     // och ger felet, och att den sätter ett godtaget värde.
@@ -50,7 +50,7 @@ describe('k-tröskeln i texterna: "1 person", inte "1 personer"', () => {
     it('böjs efter tröskeln', () => {
         const w = createAppWindow();
         w.__state.kLage = 'export';
-        const texter = () => [w.eval("kMaskNote(['Yrke A'], undefined)"), w.eval('_individNot(3, false)')];
+        const texter = () => [w.eval("kMaskNot(['Yrke A'], undefined)"), w.eval('_individNot(3, false)')];
         w.__state.kTroskel = 1;
         const [mask1, individ1] = texter();
         expect(mask1).toContain('färre än 1 person,');

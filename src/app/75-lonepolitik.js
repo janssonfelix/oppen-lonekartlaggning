@@ -27,7 +27,7 @@ import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { enableTableSort } from './05-tabeller-och-lankar.js';
 import { _konUtelamnatNot, kTroskel, litetUnderlag } from './06-k-troskel.js';
-import { kMaskNote } from './06-maskeringsnoter.js';
+import { kMaskNot } from './06-maskeringsnoter.js';
 import { orgNamn, plotNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
@@ -361,7 +361,7 @@ function _lpRitaEfterlevnad(vm) {
         // samma princip som noterna under tabellerna.
         const note = document.createElement('div');
         note.setAttribute('data-lp-not', 'komplians');
-        note.innerHTML = kMaskNote(dolda, `${T.niva.en}|${T.niva.fl}`);
+        note.innerHTML = kMaskNot(dolda, `${T.niva.en}|${T.niva.fl}`);
         el.insertAdjacentElement('afterend', note);
     }
 }
@@ -414,7 +414,7 @@ function _lpTableHtml(vm) {
         // Minsta gruppstorlek, nedersta steget: gruppen är så liten att inte ens antalet får visas. Raden utelämnas och
         // gruppen räknas upp i noten sist i BAS-blocket. Personerna ingår fortfarande i BAS-totalen.
         if (utelamnade.length) {
-            rows.push(`<tr><td colspan="7">${kMaskNote(utelamnade.map(_lpGruppnamn), `${T.enhet.en}|${T.enhet.fl}`, vm.antalMin)}</td></tr>`);
+            rows.push(`<tr><td colspan="7">${kMaskNot(utelamnade.map(_lpGruppnamn), `${T.enhet.en}|${T.enhet.fl}`, vm.antalMin)}</td></tr>`);
         }
     });
     return `

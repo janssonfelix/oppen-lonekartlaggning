@@ -331,7 +331,7 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 .diagramkort-rubrik { margin: 0 0 4px; font-size: var(--fs-lg); font-weight: 600; }
 .diagramkort-forklaring { margin: 0 0 10px; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
 .diagramkort-not { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--text-muted); }
-/* Metodförbehåll under ett diagram (_setDiagramMetodNot): dämpad text, skild från k-noten och utan dess lås. */
+/* Metodförbehåll under ett diagram (_sattDiagramMetodNot): dämpad text, skild från k-noten och utan dess lås. */
 .metod-not { margin: 6px 0 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--text-muted); font-style: italic; }
 /* Lika arbetes huvudvy: tabell med inbyggd grafik (kvoten ritad i raden mot 100 %). */
 /* Dubblerad klass: annars vinner .data-table th/td (samma specificitet, senare i filen) och cellerna får 16 px. */

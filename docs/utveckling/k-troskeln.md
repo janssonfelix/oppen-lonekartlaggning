@@ -23,7 +23,7 @@ Den som lägger till något som lämnar verktyget läser avsnitt 1, 2 och 9 för
 |---|---|
 | Tröskeln, inställningen och omritningen | `src/app/06-k-troskel.js` |
 | Reglerna vid k: golven, stämplarna, noterna om utelämnade kön och par, BAS-effekterna, punkterna per person (tröskeln som argument; appens namn är adaptrar i `06-k-troskel.js`) | `src/lib/ktroskel.js` |
-| Maskeringsnoterna (`kMaskNote`, `kSamladNote`) | `src/app/06-maskeringsnoter.js` |
+| Maskeringsnoterna (`kMaskNot`, `kSamladNot`) | `src/app/06-maskeringsnoter.js` |
 | Exportläget, exportgrinden och förhandsvisningen | `src/app/23-exportgrind.js`; grindens regel (`skaRitasForeExport`) i `src/lib/exportgrind.js` |
 | Könsuppdelade mått i strukturen | `src/lib/struktur.js` |
 | Organisationspaketets låsningar | `src/lib/organisationspaket.js` (`_lasningar`), `src/app/29-organisationspaket.js` |
@@ -36,7 +36,7 @@ lönefilen. Allt som lämnar verktyget ritas och räknas i exportläget (avsnitt
 
 | Funktion | Värde | Används till |
 |---|---|---|
-| `kTroskel()` | `K_SKARM` = 1 i skärmläget, den inställda tröskeln i exportläget | Det som ska tillämpas just nu, på det som ritas. Enda vägen att läsa det. `isKMasked(n)` är `n < kTroskel()`. |
+| `kTroskel()` | `K_SKARM` = 1 i skärmläget, den inställda tröskeln i exportläget | Det som ska tillämpas just nu, på det som ritas. Enda vägen att läsa det. `kMaskerad(n)` är `n < kTroskel()`. |
 | `kInstalld()` | Den inställda tröskeln (`state.kTroskel`), oavsett läge | Inställningen, stämpeln, metodbilagan och texterna om regeln; det som ska vara samma tal i båda lägena. |
 | `statGolv()` | `statGolvVid(kTroskel())`: `K_STANDARD` = 10 i skärmläget, `max(kInstalld(), K_STANDARD)` i exportläget (ADR-103) | Skattningarnas tillförlitlighet (avsnitt 5). En höjd tröskel hindrar inte analysen på skärmen; skattningar som sparas har golvet i nyckeln, så att skärmens aldrig följer med ut. |
 
@@ -70,7 +70,7 @@ Exempel ur koden i dag:
   `kInstalld()`.
 - **Texterna.** Stämpeln (`kStampel`), metodbilagan (`_methodAppendixData` i `22-exporthjalpare.js`), sidfoten
   (`_kSidfot`), exportbeskeden och appens texter (`_kText`, `_fyllKTexter`) nämner den inställda tröskeln.
-- **Det som ritas.** Noterna (`kMaskNote`, `kSamladNote`), `_konFarRedovisas`, `_parForRedovisning` (utan andra
+- **Det som ritas.** Noterna (`kMaskNot`, `kSamladNot`), `_konFarRedovisas`, `_parForRedovisning` (utan andra
   argument), `individLitenFor` och vyernas `liten`-flaggor läser `kTroskel()`.
 
 ## 2. Redovisningsformen
@@ -78,10 +78,10 @@ Exempel ur koden i dag:
 Redovisningsformen (ADR-12) gäller det som lämnar verktyget, alltså exportläget. Den är tvådelad:
 
 1. **Hela gruppen under tröskeln** → raden utelämnas, och gruppen räknas upp **med namn** i en not vid tabellen
-   (`kMaskNote()`). Handläggaren ser exakt vad som saknas och varför. Personerna ingår fortfarande i underlaget och i
+   (`kMaskNot()`). Handläggaren ser exakt vad som saknas och varför. Personerna ingår fortfarande i underlaget och i
    totalsummorna.
 2. **Bara könsuppdelningen för liten**, medan gruppen som helhet ligger över tröskeln → gruppens **samlade median**
-   redovisas (`kSamladNote()`). Den bygger på n ≥ `kTroskel()` och röjer ingen enskild, men ger ändå ett lönemått att
+   redovisas (`kSamladNot()`). Den bygger på n ≥ `kTroskel()` och röjer ingen enskild, men ger ändå ett lönemått att
    förhålla sig till. Könsjämförelsen utgår, med förklaring.
 
 **En fil i taget** (ADR-92). Redovisningsformen och reglerna nedan gäller varje fil som lämnar verktyget för sig: en
@@ -126,7 +126,7 @@ som lämnas ut. I Tabeller och egna vyer följer antal (n, och n per kön) med i
 för ett intervall med få personer nära deras genomsnittliga lönenivå. I det som lämnar verktyget (rapportens bilaga
 om den justerade löneskillnaden i Word-utkastet, PDF-rapporten och utskriften, och regressionskortets tekniska
 specifikation i exportläget) skrivs effekten inte ut för ett intervall med färre än `kTroskel()` personer i modellen
-(`basN`); intervallen namnges i en not utan värden (`_kMaskNoteText`). Har referensintervallet självt färre skrivs
+(`basN`); intervallen namnges i en not utan värden (`_kMaskNotText`). Har referensintervallet självt färre skrivs
 ingen effekt ut, eftersom varje effekt då beskriver dess nivå baklänges, och noten säger varför. Modellen och dess
 referens (ADR-44) ändras inte. Allt går genom `basEffekterForRedovisning` i `src/lib/ktroskel.js`, anropad av
 vymodellerna för regressionskortet (`vymodellRegressionskort`) och rapportmodellen (`vymodellRapport`); noten skrivs
@@ -518,7 +518,7 @@ Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38).
   står kvar med noten.
 - **R3. Ålder & karriär följer regeln.** Ojusterat och åldersjusterat gap kräver tröskeln för båda könen; lutning,
   trendlinje med konfidensband och låda kräver den för det könet (`vymodellAlderOchLon` i `src/lib/vymodell-alder-karriar.js`,
-  `_setDiagramKNot` för noten under diagrammet). Demografidelens trendlinje och lutning för hela urvalet (alla BAS eller det valda) kräver att
+  `_sattDiagramKNot` för noten under diagrammet). Demografidelens trendlinje och lutning för hela urvalet (alla BAS eller det valda) kräver att
   urvalet når tröskeln (beslut 2026-10-16); annars utelämnas de och noten under diagrammet säger det. Punkterna per
   person följer sin egen regel (avsnitt 2). Åldersfördelningen per kön är antal, inte lönemått, och lönespridningen över
   ålder ritar bara de femårsgrupper som når tröskeln (`alderBandRader` i `src/lib/vymodell-alder-karriar.js`).

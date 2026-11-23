@@ -1,7 +1,7 @@
 /**
  * Invariant: k-anonymiteten, inte stickprov på den.
  *
- * BAKGRUND: `isKMasked` anropas på ett sextiotal ställen i src/app/, men bara
+ * BAKGRUND: `kMaskerad` anropas på ett sextiotal ställen i src/app/, men bara
  * ett par av dem hade test. Under arbetet med lönepolitikfliken läckte
  * _lpRenderCompliance grupper under tröskeln — i nyskriven kod som ingen
  * befintlig vakt fångade. Fler stickprov löser inte det; varje ny vy behöver
