@@ -106,7 +106,7 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
         // flikar (prövat).
         const rensat = createAppWindow();
         rensat.__loadDemoData();
-        rensat.eval('_autoClearOnInactivity()');
+        rensat.eval('_rensaVidInaktivitet()');
         expect(BILDTECKEN.test(rensat.document.body.textContent.replace(/\s+/g, ' ').slice(-4000))).toBe(false);
         expect([...fynd]).toEqual([]);
     }, 30000);
@@ -209,7 +209,7 @@ describe('en låst flik svarar', () => {
         flik.click();
         expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('matrix');
         w.confirm = () => true;
-        w.eval('clearAllData()');
+        w.eval('rensaAllData()');
         expect(flik.getAttribute('aria-disabled')).toBe('true');
     });
 });

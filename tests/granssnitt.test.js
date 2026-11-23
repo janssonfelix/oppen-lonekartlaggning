@@ -20,7 +20,7 @@ describe('modalerna skriver tal på svenska', () => {
         w.__loadDemoData();
         w.eval('oppnaInstallningar()');
         expect(medDecimalpunkt(w.document.getElementById('installningar-modal'))).toEqual([]);
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(medDecimalpunkt(w.document.getElementById('data-residency-modal'))).toEqual([]);
     });
     it('beräkningsbevisen har inget tal med decimalpunkt', () => {
@@ -198,7 +198,7 @@ describe('Regler & praxis visar vad som är bedömt', () => {
         satt(w, 5, 'Ej tillämplig');
         const cfg = w.eval('JSON.stringify(byggKonfiguration())');
         w.confirm = () => true;
-        w.eval('clearAllData()');
+        w.eval('rensaAllData()');
         expect(w.document.getElementById('nyckel-rp-5').textContent).toBe('Ej bedömt');
         expect(tal(w)[0][1]).toBe('0 av 6');
         w.__loadDemoData();

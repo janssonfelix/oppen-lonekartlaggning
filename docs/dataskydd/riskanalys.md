@@ -247,7 +247,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   30, 60, 120 minuter eller av under *Vad lagras?*), via **samma** rensningsväg
   (`_rensaAllData`) men utan bekräftelsefråga. Varning och möjlighet att förlänga visas en
   minut innan. Organisationspaketet kan låsa tiden (5–120 minuter; läget av kan inte låsas,
-  ADR-47). Rullistan står då på värdet, och `setInactivityTimeout()` tar inte emot något annat.
+  ADR-47). Rullistan står då på värdet, och `sattInaktivitetstid()` tar inte emot något annat.
   *Rensa all data* häver låsningen tillsammans med paketet.
 - **Vaktas av en invariant** (`tests/dataskydd-app.test.js`): alla flikar, extremvärdesdetektorn
   och utskriftsrapporten ritas med löner i ett unikt intervall (inklusive ett

@@ -337,7 +337,7 @@ describe('Att göra', () => {
         w.__state._actionChecklistDone = new Set(w.eval('buildActionChecklist()').map(i => i.id));
         w.eval('renderActionChecklist()');
         expect(w.document.getElementById('att-gora-borja').textContent).toContain('Alla punkter är hanterade.');
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.document.getElementById('att-gora').hidden).toBe(true);
         expect(w.document.getElementById('att-gora-borja').textContent.trim()).toBe('');
     });

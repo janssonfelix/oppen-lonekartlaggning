@@ -39,7 +39,7 @@ function intervall(omkasta) {
         w.__state.data = omkastad(fore, 4711);
         expect(w.__state.data.map(r => r.lon)).not.toEqual(fore.map(r => r.lon));
         // Översiktens intervall, Lika arbetes minne och likvärdighetens par följer underlaget.
-        w.eval('invalidateStatCaches({ recompute: false })');
+        w.eval('tomStatistikcacher({ recompute: false })');
     }
     w.computeBootstrapCI();
     const { elapsed: _tid, ...bootstrapCI } = w.__state.bootstrapCI;

@@ -18,7 +18,7 @@ import { renderActionChecklist } from './18-atgardslista.js';
 import { STORT_DEMO_STATISTIKNAMN } from './21-stort-demo.js';
 import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
-import { _rensaAllData, clearAllData } from './26-rensning.js';
+import { _rensaAllData, rensaAllData } from './26-rensning.js';
 import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
 import { unlockTabs } from './31-navigering.js';
 import { _deriveArbetsvarderingFromData, markUploadLoaded } from './32-filinlasning.js';
@@ -189,5 +189,5 @@ export function uppstartDemodataDiagnostik() {
     // Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
     ['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>
         document.getElementById(id)?.addEventListener('click', loadDemoData));
-    document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData);
+    document.getElementById('btn-exit-demo')?.addEventListener('click', rensaAllData);
 }

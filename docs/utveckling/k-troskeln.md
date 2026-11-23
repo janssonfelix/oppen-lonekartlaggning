@@ -352,7 +352,7 @@ Att göra (vars CSV-knapp bär listan den ritades med), processöversikten, inl�
 visad A/B-jämförelse och en öppen gruppdossier (`_renderaOmAllaFlikar`). Från fältet ritas allt om ett steg i taget, med
 en ruta som visar förloppet och tar emot alla klick och tangenter tills omritningen är klar. Inläsning av
 konfigurationsfil och organisationspaket sätter värdet med `rita: false` och gör omritningen själva, sist, så att allt
-ritas en gång. Ett tröskelbyte räknar om skattningarna (`invalidateStatCaches`) bara när `statGolv()` ändras, alltså bara
+ritas en gång. Ett tröskelbyte räknar om skattningarna (`tomStatistikcacher`) bara när `statGolv()` ändras, alltså bara
 i förhandsvisningen: på skärmen är golvet 10 vid varje tröskel. Bootstrap-KI:t och styrkan läses genom
 `bootstrapCIGallande()` och `styrkaGallande()` (`13-oversikt.js`), som bara ger ett resultat räknat vid golvet som
 gäller och annars räknar det en gång per golv och underlag; Lika arbetes grupper (`laLikaGrupper`) har golvet i
@@ -446,7 +446,7 @@ tillsammans med paketet; konfigurationsfilen bär dem inte, så en fil kan varke
   visar gränsen, återställningsknappen går till `max(10, golvet)`, och en gällande tröskel under golvet höjs när paketet
   läses in (en höjning frågar inte). Ett nytt paket med lägre eller inget golv kräver bekräftelse (samma `confirm` som
   vid sänkt tröskel); nekas den står det gamla golvet kvar och resten av paketet läses in.
-- **Rensningstiden.** `setInactivityTimeout()` tar inte emot något annat än det låsta värdet; rullistan i *Vad lagras?*
+- **Rensningstiden.** `sattInaktivitetstid()` tar inte emot något annat än det låsta värdet; rullistan i *Vad lagras?*
   är låst (`disabled`) på värdet, som alltid finns bland alternativen, och en rad säger att organisationspaketet har låst
   tiden. Ett `inaktivitetMin` utan `inaktivitetLast` är en förinställning som handläggaren får ändra.
 - **Exporten.** `explorerSmaIExport()` är enda vägen att läsa rutan för små grupper i Tabeller och egna vyer (tabellen,

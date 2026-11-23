@@ -420,7 +420,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
         const w = createAppWindow(); await laddaXlsx(w); w.__loadDemoData();
         if (utanAlder) {
             w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
-            w.eval('invalidateStatCaches(); populateSelects(); unlockTabs();');
+            w.eval('tomStatistikcacher(); populateSelects(); unlockTabs();');
         }
         w.__state.forklaringsmodell = modell;
         const blad = w.eval('_excelAlltBok()').Sheets['Metod & parametrar'];

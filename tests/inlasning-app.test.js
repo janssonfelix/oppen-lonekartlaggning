@@ -313,7 +313,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
     it('ordlistan, Vad lagras? och riskanalysen beskriver fem fält, utan enhet', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-content').textContent).not.toMatch(/\bsex fält\b/);
         expect(w.document.body.innerHTML).not.toMatch(/hur en enhet skiljer sig/);
         const { readFileSync } = await import('node:fs');
@@ -352,7 +352,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
         w.__loadDemoData();
         const html = w.__docDraftHtml();
         expect(html).not.toMatch(/Enhet \d|enhetsfilter/i);
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-content').textContent).not.toMatch(/\benhet\b/);
     });
     it('ingen vy erbjuder enhet som val, och rapportunderlaget har inga enhetsblock', () => {
@@ -414,7 +414,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         }
         expect(d.querySelector('.gdpr-info-compact').hidden).toBe(true);
         expect(d.getElementById('gdpr-banner').style.display).toBe('inline-flex');
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(data.classList.contains('loaded')).toBe(false);
         expect(data.querySelector('.upload-inlast').hidden).toBe(true);
         expect(d.querySelector('.gdpr-info-compact').hidden).toBe(false);
@@ -485,7 +485,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         expect(pol.classList.contains('loaded')).toBe(true);
         expect(pol.querySelector('.upload-filnamn').textContent).toMatch(/Demots ställningstagande/);
         expect(d.querySelector('#organisationspaket .paket-lage').textContent).toMatch(/Organisationen är: en kommun/);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(pol.classList.contains('loaded')).toBe(false);
     });
     it('startytan har de två demovalen bredvid ytan för lönefilen (stort och litet demo)', () => {

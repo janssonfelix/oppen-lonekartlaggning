@@ -222,7 +222,7 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         for (let i = 0; i < 19; i++) rader.push({ bas: 'D', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 20, alder: 30 + i, yrke: '6200 Yrke 6200', aid: '6200', yrkeLabel: 'Yrke 6200', enhet: '' });
         rader.push({ bas: 'D', kon: 'man', lon: 91357, alder: 50, yrke: '6200 Yrke 6200', aid: '6200', yrkeLabel: 'Yrke 6200', enhet: '' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs(); invalidateStatCaches();');
+        w.eval('populateSelects(); unlockTabs(); tomStatistikcacher();');
         // Som efter en vanlig inläsning (32-filinlasning.js): allt på Översikt är ritat.
         w.eval('renderActionChecklist(); renderProcessTracker(); renderDataValidationReport(); renderOutliers(); refreshCurrentTab();');
         return w;

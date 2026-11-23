@@ -11,7 +11,7 @@ import { laMinneSlapp } from './41-lika-arbete.js';
  * Återskapar dem direkt — billigt nog att göra synkront, undviker att
  * UI:t visar inaktuella CI/MDE-värden för felaktigt urval.
  */
-export function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
+export function tomStatistikcacher({ recompute = true, likvardighet = true } = {}) {
     if (typeof ritGenerationNy === 'function') ritGenerationNy();   // det som är ritat bygger på det som nu räknas om (exportgrinden)
     state.bootstrapCI = null;
     state.powerAnalysis = null;

@@ -11,7 +11,7 @@ import { T } from './09-termer.js';
 import { diagramMarkering, sattDiagramMarkering } from './11-markering.js';
 import { hamtaData } from './12-tillstand.js';
 import { visningNy } from './23-exportgrind.js';
-import { openDataResidency } from './28-vad-lagras-inaktivitet.js';
+import { oppnaVadLagras } from './28-vad-lagras-inaktivitet.js';
 import { visaAlderskravet, visaLonefilskortet, visaReferenskortet } from './31-navigering.js';
 import { utVisaUnderflikFor } from './74-alla-diagram.js';
 import { gruppdossierCandidates } from './80-gruppdossier.js';
@@ -178,7 +178,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
     if (kraver === 'alder') { visaAlderskravet(p.namn); return; }
     if (p.dialog === 'installningar') oppnaInstallningar({ fokus: p.falt || null });
     else if (p.dialog === 'ordlista') oppnaOrdlista();
-    else if (p.dialog === 'lagras') openDataResidency();
+    else if (p.dialog === 'lagras') oppnaVadLagras();
     else if (p.dialog === 'basdossier') openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();
     else {

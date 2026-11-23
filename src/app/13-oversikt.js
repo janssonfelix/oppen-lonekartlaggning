@@ -176,7 +176,7 @@ function _skattning(falt, golv) {
     if (ut) _golvFor.set(ut, golv); else _nollVid[falt] = golv;
     return ut;
 }
-/** Glömmer skattningarna vid andra golv (invalidateStatCaches och Rensa all data). */
+/** Glömmer skattningarna vid andra golv (tomStatistikcacher och Rensa all data). */
 export function skattningarSlapp() { _andraGolv.clear(); delete _nollVid.bootstrapCI; delete _nollVid.powerAnalysis; }
 function _vidGolv(falt) {
     const golv = statGolv(), v = state[falt];

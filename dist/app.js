@@ -9940,7 +9940,7 @@ function skriptBlock(html) {
 }
 
 // src/app/30-statistikcacher.js
-function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
+function tomStatistikcacher({ recompute = true, likvardighet = true } = {}) {
   if (typeof ritGenerationNy === "function") ritGenerationNy();
   state.bootstrapCI = null;
   state.powerAnalysis = null;
@@ -21597,7 +21597,7 @@ function _tillampaKonfiguration(cfg) {
     sattOrgTyp(tmp.ui.organisationstyp);
     if (tmp.ui.jamforelse && typeof tmp.ui.jamforelse === "object") jamforelseSattVal(tmp.ui.jamforelse);
   }
-  invalidateStatCaches({ recompute: false });
+  tomStatistikcacher({ recompute: false });
   if (kAndrad && state.data.length) {
     populateSelects();
     _renderaOmAllaFlikar();
@@ -22532,7 +22532,7 @@ function _afterDataLoaded() {
   renderUnderlagetsKvalitet({ reg });
   renderProcessTracker({ reg });
   updateGdprBanner();
-  if (typeof _resetInactivityTimer === "function") _resetInactivityTimer();
+  if (typeof _aterstallInaktivitetstimer === "function") _aterstallInaktivitetstimer();
   renderConsistencyBanner();
   renderOutliers();
   renderDataValidationReport();
@@ -22859,7 +22859,7 @@ function loadStructureFile(file) {
       _fkSlappVantande();
       state.forhandskontroll = { ...fkEj, ejInlast: true };
       renderForhandskontroll();
-      _resetInactivityTimer();
+      _aterstallInaktivitetstimer();
       state.ansvarKolumn = tidigareAnsvarKolumn;
       state.importprofil = tidigareImportprofil;
       _senasteInlasningLyckades = false;
@@ -24543,7 +24543,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   if (state.paket) {
     state.costSettings = { ...state.costSettings, poPct: COST_DEFAULTS.poPct, months: COST_DEFAULTS.months };
     state.paketLas = _paketLasStandard();
-    setInactivityTimeout(INAKTIVITET_STANDARD_MIN);
+    sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
     if (!referens && state.policyKalla === "paket") {
       aterstallReferens();
       if (typeof resetUploadCell === "function") resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
@@ -24567,7 +24567,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
     smaGrupperIExport: installningar.smaGrupperIExport !== false
   };
-  if (installningar.inaktivitetMin != null) setInactivityTimeout(installningar.inaktivitetMin);
+  if (installningar.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
   if (typeof explorerSynkaSmaLas === "function") explorerSynkaSmaLas();
   let kAndrad = false;
   if (installningar.kTroskel != null) {
@@ -24619,7 +24619,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   _synkaOrgTyp();
   _synkaKostnadsfalt();
   _fyllPaketFormular();
-  invalidateStatCaches();
+  tomStatistikcacher();
   renderReferensKort();
   renderPaketInfo();
   renderConsistencyBanner();
@@ -25024,7 +25024,7 @@ function uppstartOrganisationspaket() {
       e.target.value
     );
     if (!state.data.length) return;
-    invalidateStatCaches();
+    tomStatistikcacher();
     ritaKravstatus();
     renderActionChecklist();
     refreshCurrentTab();
@@ -25169,11 +25169,11 @@ function _renderDemoBanner() {
 }
 function uppstartDemodataDiagnostik() {
   ["btn-test-load", "first-run-demo-link", "upload-demo-litet"].forEach((id) => document.getElementById(id)?.addEventListener("click", loadDemoData));
-  document.getElementById("btn-exit-demo")?.addEventListener("click", clearAllData);
+  document.getElementById("btn-exit-demo")?.addEventListener("click", rensaAllData);
 }
 
 // src/app/26-rensning.js
-function clearAllData() {
+function rensaAllData() {
   const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length || _fkVantar || state.forhandskontroll;
   if (!hasAny) {
     meddelaSkarmlasare("Ingen data finns i minnet att rensa.");
@@ -25233,7 +25233,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   state.lonemanad = "";
   const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
   state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
-  if (inaktivitetVarLast && typeof setInactivityTimeout === "function") setInactivityTimeout(INAKTIVITET_STANDARD_MIN);
+  if (inaktivitetVarLast && typeof sattInaktivitetstid === "function") sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
   if (typeof explorerSynkaSmaLas === "function") explorerSynkaSmaLas();
   if (typeof _kVisaFel === "function") _kVisaFel("");
   if (typeof _synkaKTroskel === "function") _synkaKTroskel();
@@ -29462,7 +29462,7 @@ function uppstartStandardinstallningar() {
 }
 
 // src/app/28-vad-lagras-inaktivitet.js
-function openDataResidency() {
+function oppnaVadLagras() {
   const modal = document.getElementById("data-residency-modal");
   const content = document.getElementById("data-residency-content");
   if (!modal || !content) return;
@@ -29529,21 +29529,21 @@ function openDataResidency() {
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal);
 }
-var _inactivityIdleTimer = null;
-var _inactivityWarningTimer = null;
-var _inactivityWarnEl = null;
-function _hideInactivityWarning() {
-  if (_inactivityWarnEl) {
-    _inactivityWarnEl.remove();
-    _inactivityWarnEl = null;
+var _inaktivitetstimer = null;
+var _inaktivitetsvarningTimer = null;
+var _inaktivitetsvarningElement = null;
+function _doljInaktivitetsvarning() {
+  if (_inaktivitetsvarningElement) {
+    _inaktivitetsvarningElement.remove();
+    _inaktivitetsvarningElement = null;
   }
-  if (_inactivityWarningTimer) {
-    clearInterval(_inactivityWarningTimer);
-    _inactivityWarningTimer = null;
+  if (_inaktivitetsvarningTimer) {
+    clearInterval(_inaktivitetsvarningTimer);
+    _inaktivitetsvarningTimer = null;
   }
 }
-function _showInactivityWarning() {
-  if (_inactivityWarnEl) return;
+function _visaInaktivitetsvarning() {
+  if (_inaktivitetsvarningElement) return;
   const warn = document.createElement("div");
   warn.className = "inactivity-warn-overlay";
   warn.setAttribute("role", "alertdialog");
@@ -29563,26 +29563,26 @@ function _showInactivityWarning() {
             </div>
         </div>`;
   document.body.appendChild(warn);
-  _inactivityWarnEl = warn;
+  _inaktivitetsvarningElement = warn;
   const slut = Date.now() + 60 * 1e3;
   const countdownEl = warn.querySelector("#inactivity-countdown");
-  _inactivityWarningTimer = setInterval(() => {
+  _inaktivitetsvarningTimer = setInterval(() => {
     const secondsLeft = Math.max(0, Math.ceil((slut - Date.now()) / 1e3));
     if (countdownEl) countdownEl.textContent = String(secondsLeft);
     if (secondsLeft <= 0) {
-      _autoClearOnInactivity();
+      _rensaVidInaktivitet();
     }
   }, 1e3);
   warn.querySelector("#inactivity-clear-now")?.addEventListener("click", () => {
-    _autoClearOnInactivity();
+    _rensaVidInaktivitet();
   });
   warn.querySelector("#inactivity-extend")?.addEventListener("click", () => {
-    _hideInactivityWarning();
-    _resetInactivityTimer();
+    _doljInaktivitetsvarning();
+    _aterstallInaktivitetstimer();
   });
 }
-function _autoClearOnInactivity() {
-  _hideInactivityWarning();
+function _rensaVidInaktivitet() {
+  _doljInaktivitetsvarning();
   const hadData = state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;
   _rensaAllData();
   if (hadData) {
@@ -29595,28 +29595,28 @@ function _autoClearOnInactivity() {
     }, 3e4);
   }
 }
-function _resetInactivityTimer() {
-  if (_inactivityIdleTimer) {
-    clearTimeout(_inactivityIdleTimer);
-    _inactivityIdleTimer = null;
+function _aterstallInaktivitetstimer() {
+  if (_inaktivitetstimer) {
+    clearTimeout(_inaktivitetstimer);
+    _inaktivitetstimer = null;
   }
   if (state.inactivityTimeoutMin <= 0) return;
   if (state.data.length === 0 && !_fkVantar && !state.forhandskontroll) return;
   const warnAfterMs = Math.max(0, state.inactivityTimeoutMin * 60 * 1e3 - 60 * 1e3);
-  _inactivityIdleTimer = setTimeout(_showInactivityWarning, warnAfterMs);
+  _inaktivitetstimer = setTimeout(_visaInaktivitetsvarning, warnAfterMs);
 }
-function setInactivityTimeout(minutes) {
+function sattInaktivitetstid(minutes) {
   const last = state.paketLas.inaktivitetMin;
   state.inactivityTimeoutMin = last != null ? last : Math.max(0, parseInt(minutes, 10) || 0);
-  _hideInactivityWarning();
-  _resetInactivityTimer();
+  _doljInaktivitetsvarning();
+  _aterstallInaktivitetstimer();
 }
 function uppstartVadLagrasInaktivitet() {
   document.getElementById("btn-clear-all-data")?.addEventListener("click", () => {
-    clearAllData();
+    rensaAllData();
     if (!state.data.length && typeof stangInstallningar === "function") stangInstallningar();
   });
-  document.getElementById("btn-data-residency")?.addEventListener("click", openDataResidency);
+  document.getElementById("btn-data-residency")?.addEventListener("click", oppnaVadLagras);
   document.getElementById("data-residency-content")?.addEventListener("change", (e) => {
     const sel = (
       /** @type {HTMLSelectElement} */
@@ -29624,13 +29624,13 @@ function uppstartVadLagrasInaktivitet() {
     );
     if (sel.id !== "inactivity-timeout-select") return;
     const min = parseInt(sel.value, 10) || 0;
-    setInactivityTimeout(min);
+    sattInaktivitetstid(min);
     const status = document.getElementById("inactivity-status");
     if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : "Av";
   });
   ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"].forEach((evt) => {
     window.addEventListener(evt, () => {
-      if (state.inactivityTimeoutMin > 0 && !_inactivityWarnEl) _resetInactivityTimer();
+      if (state.inactivityTimeoutMin > 0 && !_inaktivitetsvarningElement) _aterstallInaktivitetstimer();
     }, { passive: true });
   });
   document.getElementById("data-residency-close")?.addEventListener("click", () => {
@@ -29705,7 +29705,7 @@ function _fkPausa(fk, lasIn) {
   dataStatus.className = "status-msg warning";
   renderForhandskontroll();
   maybeShowColumnMapping();
-  _resetInactivityTimer();
+  _aterstallInaktivitetstimer();
   const av = document.getElementById("avsnitt-fi-forhandskontroll");
   const filer = document.querySelector('.nav-item[data-tab="filer"]');
   if (filer && !filer.classList.contains("active")) filer.click();
@@ -30242,7 +30242,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
   }
   if (p.dialog === "installningar") oppnaInstallningar({ fokus: p.falt || null });
   else if (p.dialog === "ordlista") oppnaOrdlista();
-  else if (p.dialog === "lagras") openDataResidency();
+  else if (p.dialog === "lagras") oppnaVadLagras();
   else if (p.dialog === "basdossier") openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById("sok-grupp"));
   else if (p.dialog === "symboler") document.getElementById("btn-open-symbols")?.click();
   else {
@@ -30903,7 +30903,7 @@ Lönemått kommer att redovisas för grupper med ned till ${n} ${personOrd(n)}. 
   state.kTroskel = n;
   state._lifecycleCache = null;
   const golvAndrat = statGolv() !== golvFore;
-  if (golvAndrat && typeof invalidateStatCaches === "function") invalidateStatCaches({ recompute: false, likvardighet: false });
+  if (golvAndrat && typeof tomStatistikcacher === "function") tomStatistikcacher({ recompute: false, likvardighet: false });
   else if (typeof ritGenerationNy === "function") ritGenerationNy();
   if (typeof _fcRensaParMal === "function") _fcRensaParMal();
   _synkaKTroskel();

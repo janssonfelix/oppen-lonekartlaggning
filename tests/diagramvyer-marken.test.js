@@ -1286,7 +1286,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         w2.eval('sattDiagramMarkering(null)');
         expect(d.getElementById('markering-rad')).toBeNull();
         w2.confirm = () => true;
-        w2.eval('clearAllData()');
+        w2.eval('rensaAllData()');
         expect(d.getElementById('la-slutsatser').innerHTML).toBe('');
         expect(d.getElementById('la-urval').textContent).toBe('');
         // Avsnittens nyckeltal är tomma; Regler & praxis säger att inget område är bedömt.

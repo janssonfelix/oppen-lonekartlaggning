@@ -21,7 +21,7 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         expect(await prova(w, 'struktur', w => { expect(w.lasInPaket(paket).ok).toBe(true); }), 'paketet').toEqual([]);
         const snap = w.__byggKonfiguration();
         expect(await prova(w, 'dashboard', w => { w.__tillampaKonfiguration({ ...snap, kostnad: { ...snap.kostnad, manader: 9 } }); }), 'konfigurationsfilen').toEqual([]);
-        expect(await prova(w, 'prioritering', w => w.__autoClearOnInactivity()), 'rensningen efter en tid').toEqual([]);
+        expect(await prova(w, 'prioritering', w => w.__rensaVidInaktivitet()), 'rensningen efter en tid').toEqual([]);
     });
 
     it('bakgrundsberäkningar som blir klara: skattningarna efter ett tröskelbyte, kvantilregressionens intervall och inläsningens efterarbete', async () => {
@@ -29,7 +29,7 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         await ritaAlla(w);
         // Skattningarna (bootstrap-KI, styrkan) räknas i bakgrunden när golvet ändras. Flikarna ritas innan de är klara.
         // På skärmen ändrar ett tröskelbyte inte golvet (ADR-103); bakgrundsräkningen startas som efter ett golvbyte.
-        w.eval('invalidateStatCaches({ recompute: false, likvardighet: false }); _skattningarIBakgrunden()');
+        w.eval('tomStatistikcacher({ recompute: false, likvardighet: false }); _skattningarIBakgrunden()');
         expect(w.eval('!!_bakgrundsrakning')).toBe(true);
         ritaAllaDirekt(w);
         await byt(w, 'filer');

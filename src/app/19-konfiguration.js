@@ -26,7 +26,7 @@ import { renderActionChecklist } from './18-atgardslista.js';
 import { _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { sattOrgTyp } from './29-organisationspaket.js';
-import { invalidateStatCaches } from './30-statistikcacher.js';
+import { tomStatistikcacher } from './30-statistikcacher.js';
 import { refreshCurrentTab } from './31-navigering.js';
 import { _fcRensaParMal, foreEfterFigur, ritaLoneoversyn } from './36-loneoversyn.js';
 import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
@@ -470,7 +470,7 @@ function _tillampaKonfiguration(cfg) {
         sattOrgTyp(tmp.ui.organisationstyp);   // vitlistas i sattOrgTyp
         if (tmp.ui.jamforelse && typeof tmp.ui.jamforelse === 'object') jamforelseSattVal(tmp.ui.jamforelse);
     }
-    invalidateStatCaches({ recompute: false });
+    tomStatistikcacher({ recompute: false });
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker refreshCurrentTab och Att göra).
     if (kAndrad && state.data.length) { populateSelects(); _renderaOmAllaFlikar(); }
     else { refreshCurrentTab(); renderActionChecklist(); }

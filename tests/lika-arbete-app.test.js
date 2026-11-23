@@ -66,7 +66,7 @@ describe('Var uppstår löneskillnaden?', () => {
     it('Rensa all data döljer och tömmer kortet', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__clearAllData();
+        w.__rensaAllData();
         const host = w.document.getElementById('gap-uppdelning');
         expect(host.hidden).toBe(true);
         expect(w.document.getElementById('gap-uppdelning-innehall').textContent.trim()).toBe('');
@@ -243,7 +243,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         w.__loadDemoData();
         w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
         w.__state.gapUppdelning = { variabler: ['bas', 'alder', 'aid'] };
-        w.eval('invalidateStatCaches(); ritaGapUppdelning()');
+        w.eval('tomStatistikcacher(); ritaGapUppdelning()');
         expect(rutor(w).map(r => r.getAttribute('data-gu-var'))).not.toContain('alder');
         expect(valda(w)).toEqual(['bas', 'aid']);
         expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Oförklarat: lön inom samma AID och BAS']);
@@ -271,7 +271,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         const w = demo();
         kryssa(w, 'alder');
         expect(w.__state.gapUppdelning).not.toBeNull();
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.gapUppdelning).toBeNull();
     });
     it('rapportunderlaget och metodbilagan följer valet och nämner variablerna; standardvalet ger dagens text', () => {

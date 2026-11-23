@@ -366,7 +366,7 @@ describe('menystruktur', () => {
         w.__state.statistik = [{ aid: '1', bas: 'A', median: 30000 }];
         w.eval('_visaJamforelseFlik(true)');
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').getAttribute('aria-disabled')).toBe('true');
     });
 });
@@ -469,7 +469,7 @@ describe('interna fel syns i stället för att sväljas', () => {
         expect(banner.textContent).toMatch(/ofullständigt/);
         expect(varningar.join('\n')).toMatch(/Att göra: likvärdigt arbete/);
         expect(varningar.join('\n')).not.toMatch(/\d/);                          // inga siffror (kan vara data) i konsolen
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(banner.hidden).toBe(true);
         expect(w.__state._interntFel).toEqual([]);
     });
@@ -541,7 +541,7 @@ describe('[S5] organisationsneutralt standardläge', () => {
         expect(w.eval('referensNamn()')).toBe('Exempelkommunens lönepolitik');
         expect(w.__state.policy.length).toBeGreaterThan(0);
         expect(w.__state.profile.name).toBe('Exempelkommunen');
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.policy).toEqual([]);
         expect(w.__state.profile.name).toBe('Organisationen');
         expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');

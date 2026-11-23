@@ -243,7 +243,7 @@ describe('en väntande fil och en fil som inte lästes in', () => {
         await lasIn(w, fil());
         expect(w.eval('_fkVantar')).toBeTruthy();
         w.confirm = () => true;
-        w.eval('clearAllData()');
+        w.eval('rensaAllData()');
         expect(w.eval('_fkVantar')).toBeNull();
         expect(w.__state.forhandskontroll).toBeNull();
         expect(avsnitt(w).hidden).toBe(true);
@@ -254,11 +254,11 @@ describe('en väntande fil och en fil som inte lästes in', () => {
         const w = createAppWindow();
         stoppa(w);
         await lasIn(w, fil());
-        expect(w.eval('_inactivityIdleTimer')).toBeTruthy();
+        expect(w.eval('_inaktivitetstimer')).toBeTruthy();
         // Vad lagras i minnet säger att en fil väntar.
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-content').textContent).toMatch(/väntar på Läs in/);
-        w.eval('_autoClearOnInactivity()');
+        w.eval('_rensaVidInaktivitet()');
         expect(w.eval('_fkVantar')).toBeNull();
         expect(w.__state.forhandskontroll).toBeNull();
         expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
@@ -269,8 +269,8 @@ describe('en väntande fil och en fil som inte lästes in', () => {
         await lasIn(w, fil({ kon: () => '1' }), 'b.csv');
         expect(w.__state.data.length).toBe(0);
         expect(w.__state.forhandskontroll.ejInlast).toBe(true);
-        expect(w.eval('_inactivityIdleTimer')).toBeTruthy();
-        w.eval('_autoClearOnInactivity()');
+        expect(w.eval('_inaktivitetstimer')).toBeTruthy();
+        w.eval('_rensaVidInaktivitet()');
         expect(w.__state.forhandskontroll).toBeNull();
         expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
     });

@@ -521,7 +521,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(w.eval('_laMinnen.size')).toBe(0);
         // Rensningen och ogiltigförklaringen av statistiken släpper minnet (det håller en referens till dataraderna).
         w.eval('_laOversiktRader(window.__d, ["A"], 10)');
-        w.eval('invalidateStatCaches({ recompute: false })');
+        w.eval('tomStatistikcacher({ recompute: false })');
         expect(w.eval('_laMinnen.size')).toBe(0);
     });
     it('trattdiagrammet: en grupp över 300 personer bedöms med gruppens egen spridning, och högst sex grupper namnges', () => {

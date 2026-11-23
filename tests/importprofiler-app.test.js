@@ -411,7 +411,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         expect(w.lasInPaket(paketText(w)).ok).toBe(true);
         await lasIn(w, okandaRader());
         expect(w.__state.importprofil).not.toBeNull();
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.importprofiler).toEqual([]);
         expect(w.__state.importprofil).toBeNull();
         expect(kortet(w).hidden).toBe(true);
@@ -425,7 +425,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         expect(w.__state.importprofiler.map(p => p.kalla)).toEqual(['organisationspaket']);
         w.__p = [{ ...PROFIL, id: 'egen', namn: 'Egen lista' }];
         w.eval("state.importprofiler.push(...valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler)");
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.importprofiler.map(p => `${p.kalla}:${p.id}`)).toEqual(['organisationspaket:' + PID]);
     });
 

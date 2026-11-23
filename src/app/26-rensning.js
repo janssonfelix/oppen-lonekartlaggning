@@ -14,7 +14,7 @@ import { _fkSlapp, _fkVantar } from './17-forhandskontroll.js';
 import { _renderDemoBanner } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
-import { setInactivityTimeout } from './28-vad-lagras-inaktivitet.js';
+import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
 import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, renderPaketInfo } from './29-organisationspaket.js';
 import { renderFilrutor, resetUploadCell } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
@@ -33,7 +33,7 @@ import { explorerSlappMinne, explorerSynkaSmaLas } from './70-utforska.js';
  * personuppgifter. Användaren har samma effekt om de stänger fliken — denna
  * knapp gör rensningen till en explicit, dokumenterad åtgärd. Rätten till radering utövas mot källsystemet.
  */
-export function clearAllData() {
+export function rensaAllData() {
     const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length
         || _fkVantar || state.forhandskontroll;   // en fil som väntar på Läs in, eller förhandskontrollens tio rader
     if (!hasAny) {
@@ -76,7 +76,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // Organisationspaketets låsningar (ADR-47) följer med paketet; en låst rensningstid går tillbaka till standard.
     const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
     state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
-    if (inaktivitetVarLast && typeof setInactivityTimeout === 'function') setInactivityTimeout(INAKTIVITET_STANDARD_MIN);
+    if (inaktivitetVarLast && typeof sattInaktivitetstid === 'function') sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
     if (typeof explorerSynkaSmaLas === 'function') explorerSynkaSmaLas();
     if (typeof _kVisaFel === 'function') _kVisaFel('');   // ett felmeddelande vid fältet hör till det rensade läget
     if (typeof _synkaKTroskel === 'function') _synkaKTroskel();

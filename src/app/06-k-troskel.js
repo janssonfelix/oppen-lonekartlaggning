@@ -14,7 +14,7 @@ import { renderDataValidationReport } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { ritGenerationNy, tomFlikarUtom, visningNy } from './23-exportgrind.js';
-import { invalidateStatCaches } from './30-statistikcacher.js';
+import { tomStatistikcacher } from './30-statistikcacher.js';
 import { renderTabContent } from './31-navigering.js';
 import { _fcRensaParMal } from './36-loneoversyn.js';
 import { forklaringsmodell } from './50-regressionsmodeller.js';
@@ -302,7 +302,7 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     // exportens golv räknas när en export läser det (bootstrapCIGallande, styrkaGallande). § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
     // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
-    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
+    if (golvAndrat && typeof tomStatistikcacher === 'function') tomStatistikcacher({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
     // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.

@@ -69,7 +69,7 @@ describe('k-tröskeln styr varje flik', () => {
         const w = fonster(null);
         const bild = () => FLIKAR.map(f => { w.__renderTabContent(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
         // Grundtillstånd som efter en vanlig inläsning (32-filinlasning.js): också Översiktens delar är ritade.
-        w.eval('invalidateStatCaches(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); refreshCurrentTab();');
+        w.eval('tomStatistikcacher(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); refreshCurrentTab();');
         w.__renderTabContent('matrix'); await w.eval('_regKvantilKlar()');   // kvantilregressionens intervall räknas i bakgrunden efter första ritningen
         const fore = bild();
         // Golvet ändras (10 → 25 → 10): bootstrap-KI och styrkan räknas om i bakgrunden efter omritningen; vänta in den.
@@ -132,7 +132,7 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
     });
     it('bootstrap-KI och styrkan som räknats på skärmen följer inte med ut', () => {
         const w = fonsterObalans();
-        w.eval('invalidateStatCaches()');                                       // skärmen först (golvet 10)
+        w.eval('tomStatistikcacher()');                                       // skärmen först (golvet 10)
         expect(w.__state.bootstrapCI).not.toBeNull();
         expect(w.eval('bootstrapCIGallande()')).toBe(w.__state.bootstrapCI);
         expect(w.eval('medExportLage(() => bootstrapCIGallande())')).toBeNull();  // 15 kvinnor når inte 25
@@ -144,7 +144,7 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
     });
     it('räknade i exportläget först ger de skärmen dess egna, och exporten sina', () => {
         const w = fonsterObalans();
-        w.eval('medExportLage(() => invalidateStatCaches())');                  // exporten först (golvet 25)
+        w.eval('medExportLage(() => tomStatistikcacher())');                  // exporten först (golvet 25)
         expect(w.__state.bootstrapCI).toBeNull();
         expect(w.eval('bootstrapCIGallande()')).not.toBeNull();                 // skärmen räknar sitt
         expect(w.eval('medExportLage(() => bootstrapCIGallande())')).toBeNull();

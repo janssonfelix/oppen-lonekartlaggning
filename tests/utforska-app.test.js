@@ -906,7 +906,7 @@ describe('Rensa all data tömmer även Utforska', () => {
         w.__loadDemoData();
         w.__renderTabContent('utforska');
         expect(w.__explorerMinne().rows).toBeGreaterThan(0);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.data).toHaveLength(0);
         expect(w.__explorerMinne()).toEqual({ rows: 0, urval: 0, exportFigur: 'undefined' });
     });

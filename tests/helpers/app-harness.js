@@ -115,8 +115,8 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __renderProcessTracker: renderProcessTracker,
         __tabellTillMatris: tabellTillMatris,
         __tillCsv: tillCsv,
-        __clearAllData: clearAllData,
-        __autoClearOnInactivity: _autoClearOnInactivity,
+        __rensaAllData: rensaAllData,
+        __rensaVidInaktivitet: _rensaVidInaktivitet,
         __explorerMinne: () => ({
             rows: _explorerState ? _explorerState.rows.length : 0,
             urval: _urvalDataRef ? _urvalDataRef.length : 0,

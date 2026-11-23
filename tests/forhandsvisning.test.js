@@ -56,7 +56,7 @@ describe('förhandsvisning: Som i exporten', () => {
 describe('tröskelbytet räknar bara om det som beror på tröskeln', () => {
     it('bootstrap-KI och styrkan står kvar när det statistiska golvet är detsamma, och räknas om i bakgrunden när det ändras', async () => {
         const w = fonster(null);
-        w.eval('invalidateStatCaches()');
+        w.eval('tomStatistikcacher()');
         const ci = w.__state.bootstrapCI, styrka = w.__state.powerAnalysis;
         expect(ci).not.toBeNull();
         w.eval('sattKTroskel(8, { fraga: false })');                            // statGolv 10 → 10

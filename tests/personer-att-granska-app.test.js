@@ -54,7 +54,7 @@ describe('Personer att granska', () => {
     it('Rensa all data tömmer och döljer panelen', () => {
         const w = createAppWindow();
         oppna(w);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.document.getElementById('personer-att-granska').hidden).toBe(true);
         expect(w.document.getElementById('pag-innehall').textContent.trim()).toBe('');
     });
@@ -99,7 +99,7 @@ describe('Personer att granska', () => {
     it('"Vad lagras?" redovisar fältet radnr', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         const t = w.document.getElementById('data-residency-content').textContent;
         expect(t).toContain('radnr');
         expect(t).toContain('radnummer i lönefilen');

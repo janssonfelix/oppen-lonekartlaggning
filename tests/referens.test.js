@@ -74,11 +74,11 @@ describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
         w.document.getElementById('btn-referens-aterga').click();
         expect(w.__referensNamn()).toBe('Ingen referens inläst');
         w.__lasInReferens([{ bas: 'A', p10: 1, med: 2, p90: 3 }], 'x.csv');
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.policy).toEqual([]);
         w.__loadDemoData();
         w.__lasInReferens([{ bas: 'A', p10: 1, med: 2, p90: 3 }], 'y.csv');
-        w.__autoClearOnInactivity();
+        w.__rensaVidInaktivitet();
         expect(w.__state.policy).toEqual([]);
     });
     it('en ren AID-policy med eget namn ger "saknar rader per BAS-intervall" i kompliansrutan', () => {

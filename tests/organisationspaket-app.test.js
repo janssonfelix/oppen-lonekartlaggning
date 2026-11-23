@@ -169,7 +169,7 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(las(w, paket({ organisation: { namn: 'Annan organisation' } })).ok).toBe(true);
         expect(w.__state.paket).toMatchObject({ organisation: 'Annan organisation', kalla: 'fil' });
         expect(w.document.getElementById('paket-info').textContent).toMatch(/ersätter det inbakade paketet/);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.paket).toMatchObject({ organisation: 'Exempelregionen', kalla: 'inbakat' });
         expect(w.__state.policy).toHaveLength(3);
     });
@@ -237,7 +237,7 @@ describe('organisationspaket: läs in och skapa', () => {
     it('Rensa all data tar bort paketet och återställer neutralt läge', () => {
         const w = createAppWindow();
         las(w, paket());
-        w.__clearAllData();
+        w.__rensaAllData();
         const s = w.__state;
         expect(s.paket).toBeNull();
         expect(s.profile.name).toBe('Organisationen');

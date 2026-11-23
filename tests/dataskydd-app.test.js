@@ -58,9 +58,9 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         const w = createAppWindow();
         expect(lasPaket(w, inaktivitetsPaket({ inaktivitetMin: 45, inaktivitetLast: true })).ok).toBe(true);
         expect(w.__state.inactivityTimeoutMin).toBe(45);
-        w.eval('setInactivityTimeout(0)');   // ingen väg runt låsningen
+        w.eval('sattInaktivitetstid(0)');   // ingen väg runt låsningen
         expect(w.__state.inactivityTimeoutMin).toBe(45);
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         const sel = w.document.getElementById('inactivity-timeout-select');
         expect(sel.disabled).toBe(true);
         expect(sel.value).toBe('45');
@@ -72,7 +72,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         w.eval('_rensaAllData()');
         expect(w.__state.paketLas.inaktivitetMin).toBeNull();
         expect(w.__state.inactivityTimeoutMin).toBe(90);
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('inactivity-timeout-select').disabled).toBe(false);
         expect(w.document.getElementById('inactivity-last').hidden).toBe(true);
     });
@@ -80,14 +80,14 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         const w = createAppWindow();
         expect(lasPaket(w, inaktivitetsPaket({ inaktivitetMin: 60 })).ok).toBe(true);
         expect(w.__state.inactivityTimeoutMin).toBe(60);
-        w.eval('setInactivityTimeout(15)');
+        w.eval('sattInaktivitetstid(15)');
         expect(w.__state.inactivityTimeoutMin).toBe(15);
         const r = lasPaket(w, inaktivitetsPaket({ inaktivitetMin: 0, inaktivitetLast: true }));
         expect(r.ok).toBe(true);
         expect(r.meddelande).toMatch(/kan inte låsas i läget Av/);
         expect(w.__state.inactivityTimeoutMin).toBe(0);
         expect(w.__state.paketLas.inaktivitetMin).toBeNull();
-        w.eval('setInactivityTimeout(30)');
+        w.eval('sattInaktivitetstid(30)');
         expect(w.__state.inactivityTimeoutMin).toBe(30);
     });
 
@@ -98,7 +98,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         w.setInterval = fn => { tick = fn; return 1; };   // intervallet körs för hand, som när webbläsaren stryper det
         const start = w.Date.now();
         w.Date.now = () => start;
-        w.eval('_showInactivityWarning()');
+        w.eval('_visaInaktivitetsvarning()');
         expect(w.document.querySelector('.inactivity-warn-overlay')).not.toBeNull();
         w.Date.now = () => start + 30 * 1000;
         tick();
@@ -121,7 +121,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         valj(30);
         expect(w.__state.inactivityTimeoutMin).toBe(30);
         expect(w.document.getElementById('inactivity-status').textContent).toBe('Aktiv (30 min)');
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         valj(0);
         expect(w.__state.inactivityTimeoutMin).toBe(0);
         expect(w.document.getElementById('inactivity-status').textContent).toBe('Av');
@@ -177,8 +177,8 @@ describe('säkerhet, dataskydd och HR-logik', () => {
 // varje gruppmått (median, percentil, kvartilgräns) hamnar i samma intervall och
 // syns som "876xx" när mellanslag mellan siffror tas bort.
 describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => {
-    for (const [namn, rensa] of [['knappen Rensa all data', w => w.__clearAllData()],
-                                 ['automatisk rensning vid inaktivitet', w => w.__autoClearOnInactivity()]]) {
+    for (const [namn, rensa] of [['knappen Rensa all data', w => w.__rensaAllData()],
+                                 ['automatisk rensning vid inaktivitet', w => w.__rensaVidInaktivitet()]]) {
     it(`${namn}: inget lönevärde kvar i någon flik`, async () => {
         const w = createAppWindow();
         const rader = [];
@@ -258,7 +258,7 @@ describe('Rensa all data tömmer Dokumentera', () => {
         w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
         w.__runRobusthet?.();
         expect(w.document.getElementById('fardigcheck-body').textContent.trim().length, 'färdigchecken ska ha ritats').toBeGreaterThan(0);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.document.getElementById('fardigcheck-body').textContent.trim()).toBe('');
         expect(w.document.getElementById('robusthet-body').textContent.trim()).toBe('');
     });
@@ -334,7 +334,7 @@ describe('«Vad lagras?»', () => {
     it('öppnas som övriga modaler (centrerad) och säger minne, inte RAM', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-modal').style.display).toBe('flex');
         expect(w.document.getElementById('data-residency-modal').textContent).not.toMatch(/\bRAM\b/);
     });

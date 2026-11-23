@@ -583,7 +583,7 @@ describe('rapportunderlag', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).not.toContain('Sammanfattning');
     });
 });

@@ -24,7 +24,7 @@ import { renderActionChecklist } from './18-atgardslista.js';
 import { _renderDemoBanner } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
-import { _resetInactivityTimer } from './28-vad-lagras-inaktivitet.js';
+import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
 import { _paketFilnamn, _synkaOrgTyp, _tomStatistik, skapaPaketMedImportprofil } from './29-organisationspaket.js';
 import { _aktivFlik, _visaFilkortet, unlockTabs } from './31-navigering.js';
 import { _fcGlomKnappresultat, _fcRensaParMal } from './36-loneoversyn.js';
@@ -145,7 +145,7 @@ function _afterDataLoaded() {
     renderProcessTracker({ reg });
     updateGdprBanner();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
-    if (typeof _resetInactivityTimer === 'function') _resetInactivityTimer();
+    if (typeof _aterstallInaktivitetstimer === 'function') _aterstallInaktivitetstimer();
     renderConsistencyBanner();
     renderOutliers();
     renderDataValidationReport();
@@ -313,7 +313,7 @@ function loadStructureFile(file) {
     if (storlekFel) { dataStatus.textContent = storlekFel; dataStatus.className = 'status-msg'; return; }
     const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
-    // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
+    // alltid kan läsa om filen, även om filväljaren tömts. Nollas i rensaAllData.
     // Kolumnmappningen läser om den senast inlästa filen, också en som inte gav några rader; den sätts i finishLoad.
     visaLaddning();
     _profilBesked = '';
@@ -512,7 +512,7 @@ function loadStructureFile(file) {
             _fkSlappVantande();
             state.forhandskontroll = { ...fkEj, ejInlast: true };
             renderForhandskontroll();
-            _resetInactivityTimer();   // de tio raderna på skärmen rensas också vid inaktivitet
+            _aterstallInaktivitetstimer();   // de tio raderna på skärmen rensas också vid inaktivitet
             state.ansvarKolumn = tidigareAnsvarKolumn;
             state.importprofil = tidigareImportprofil;
             _senasteInlasningLyckades = false;
@@ -964,7 +964,7 @@ export function renderFilrutor() {
 }
 
 // #8: kollapsa uppladdningsraden när data lästs in så att översikten/insikterna
-// hamnar överst. Återställs av clearAllData.
+// hamnar överst. Återställs av rensaAllData.
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartFilinlasning() {

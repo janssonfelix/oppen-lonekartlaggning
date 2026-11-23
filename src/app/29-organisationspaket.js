@@ -24,8 +24,8 @@ import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { visningNy } from './23-exportgrind.js';
 import { _rensaAllData } from './26-rensning.js';
-import { setInactivityTimeout } from './28-vad-lagras-inaktivitet.js';
-import { invalidateStatCaches } from './30-statistikcacher.js';
+import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
+import { tomStatistikcacher } from './30-statistikcacher.js';
 import { refreshCurrentTab } from './31-navigering.js';
 import { markUploadLoaded, resetUploadCell } from './32-filinlasning.js';
 import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
@@ -143,7 +143,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     if (state.paket) {
         state.costSettings = { ...state.costSettings, poPct: COST_DEFAULTS.poPct, months: COST_DEFAULTS.months };
         state.paketLas = _paketLasStandard();
-        setInactivityTimeout(INAKTIVITET_STANDARD_MIN);
+        sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
         if (!referens && state.policyKalla === 'paket') {
             aterstallReferens();
             if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
@@ -160,7 +160,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     // Låsningarna (ADR-47) sätts före tröskeln, så att sattKTroskel() prövar paketets eget värde mot golvet.
     state.paketLas = { kTroskelLagst: nyttGolv, inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
                        smaGrupperIExport: installningar.smaGrupperIExport !== false };
-    if (installningar.inaktivitetMin != null) setInactivityTimeout(installningar.inaktivitetMin);
+    if (installningar.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
     if (typeof explorerSynkaSmaLas === 'function') explorerSynkaSmaLas();
     // ADR-38: frågar vid sänkning under standard; nekad bekräftelse behåller värdet.
     // Omritningen görs en gång, sist (se nedan), eftersom paketet ändrar mer än tröskeln.
@@ -216,7 +216,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     _synkaOrgTyp();
     _synkaKostnadsfalt();
     _fyllPaketFormular();
-    invalidateStatCaches();
+    tomStatistikcacher();
     renderReferensKort();
     renderPaketInfo();
     renderConsistencyBanner();
@@ -579,7 +579,7 @@ export function uppstartOrganisationspaket() {
     document.getElementById('org-typ')?.addEventListener('change', e => {
         sattOrgTyp(/** @type {HTMLInputElement} */ (e.target).value);
         if (!state.data.length) return;
-        invalidateStatCaches();
+        tomStatistikcacher();
         ritaKravstatus();
         renderActionChecklist();
         refreshCurrentTab();

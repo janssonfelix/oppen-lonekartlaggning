@@ -10,7 +10,7 @@ import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { state } from './12-tillstand.js';
-import { _resetInactivityTimer } from './28-vad-lagras-inaktivitet.js';
+import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
 import { _kolumnval, dataStatus, maybeShowColumnMapping } from './32-filinlasning.js';
 import { _laNyckel } from './41-lika-arbete.js';
 
@@ -76,7 +76,7 @@ export function _fkPausa(fk, lasIn) {
     dataStatus.className = 'status-msg warning';
     renderForhandskontroll();
     maybeShowColumnMapping();   // förra filens kolumnmappning döljs medan filen väntar
-    _resetInactivityTimer();    // den väntande filen rensas vid inaktivitet som ett inläst underlag
+    _aterstallInaktivitetstimer();    // den väntande filen rensas vid inaktivitet som ett inläst underlag
     const av = document.getElementById('avsnitt-fi-forhandskontroll');
     const filer = document.querySelector('.nav-item[data-tab="filer"]');
     if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
