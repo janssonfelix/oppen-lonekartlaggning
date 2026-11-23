@@ -441,7 +441,7 @@ låsas, och paketets egen `kTroskel` under golvet höjs till golvet. Låsningarn
 tillsammans med paketet; konfigurationsfilen bär dem inte, så en fil kan varken sätta eller häva en låsning.
 
 - **Golvet** (`installningar.kTroskelLagst`). `sattKTroskel()` avvisar ett värde under `kTroskelLagst()` med felet
-  "Lägst N enligt organisationspaketet", oavsett om det kommer från fältet, en konfigurationsfil (`applyConfigSnapshot` returnerar det
+  "Lägst N enligt organisationspaketet", oavsett om det kommer från fältet, en konfigurationsfil (`tillampaKonfiguration` returnerar det
   som varning och visar felet vid fältet; resten av filen läses in) eller ett annat paket. Fältets hjälptext och `min`
   visar gränsen, återställningsknappen går till `max(10, golvet)`, och en gällande tröskel under golvet höjs när paketet
   läses in (en höjning frågar inte). Ett nytt paket med lägre eller inget golv kräver bekräftelse (samma `confirm` som

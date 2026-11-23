@@ -196,13 +196,13 @@ describe('Regler & praxis visar vad som är bedömt', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         satt(w, 5, 'Ej tillämplig');
-        const cfg = w.eval('JSON.stringify(buildConfigSnapshot())');
+        const cfg = w.eval('JSON.stringify(byggKonfiguration())');
         w.confirm = () => true;
         w.eval('clearAllData()');
         expect(w.document.getElementById('nyckel-rp-5').textContent).toBe('Ej bedömt');
         expect(tal(w)[0][1]).toBe('0 av 6');
         w.__loadDemoData();
-        w.eval(`applyConfigSnapshot(${cfg})`);
+        w.eval(`tillampaKonfiguration(${cfg})`);
         expect(w.document.getElementById('nyckel-rp-5').textContent.trim()).toBe('Ej tillämplig');
         expect(tal(w)[0][1]).toBe('1 av 6');
     });

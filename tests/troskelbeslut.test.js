@@ -104,33 +104,33 @@ function parFonsterMedRader() {
 describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag under den inställda tröskeln rensas, också på skärmen (ADR-69)', () => {
     const aids = w => w.__state.forecast.targets.map(t => t.aid).sort();
     it('filen bär kalla på förslaget men inte på den egna raden, och versionen är oförändrad', () => {
-        const cfg = parFonsterMedRader().eval('buildConfigSnapshot()');
+        const cfg = parFonsterMedRader().eval('byggKonfiguration()');
         expect(cfg.version).toBe(3);
         expect(cfg.loneoversyn.mal.find(t => t.aid === '5300').kalla).toBe('par');
         expect(cfg.loneoversyn.mal.find(t => t.aid === '6000').kalla).toBeUndefined();
     });
     it('spara vid 5, höj till 10, läs in: förslaget rensas, också på skärmen, och den egna raden står kvar', () => {
         const w = parFonsterMedRader();
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         delete cfg.kTroskel;   // filen ska inte sänka tröskeln igen
         w.eval('sattKTroskel(10, { fraga: false })');
         expect(aids(w)).toEqual(['6000']);
         w.__cfg = JSON.parse(JSON.stringify(cfg));
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(aids(w)).toEqual(['6000']);
         // En egen rad på en grupp under tröskeln läses in som egen och får noten.
         w.__cfg.loneoversyn.mal = [{ bas: 'C', aid: '5300', enhet: 'kr', varde: 500, fordelning: 'lowest', malniva: 'median', pott: 'övrigt' }];
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(aids(w)).toEqual(['5300']);
         expect(w.__state.forecast.targets[0].kalla).toBeUndefined();
         expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
     });
     it('läs in vid 5 och höj sedan: raden ur filen bär kalla och rensas när tröskeln höjs', () => {
         const w = parFonsterMedRader();
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         w.__state.forecast.targets = [];
         w.__cfg = JSON.parse(JSON.stringify(cfg));
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(aids(w)).toEqual(['5300', '6000']);
         expect(w.__state.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
         w.eval('sattKTroskel(10, { fraga: false })');

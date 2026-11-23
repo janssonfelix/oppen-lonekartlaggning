@@ -79,9 +79,9 @@ describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
     });
     it('en konfigurationsfil utan namn raderar inte paketets namn', () => {
         const w = createAppWindow();
-        const cfg = w.__buildConfigSnapshot();   // utan namn
+        const cfg = w.__byggKonfiguration();   // utan namn
         w.eval("sattOrgNamn('Paketkommunen'); sattJmfNamn('SKR-statistik')");
-        w.__applyConfigSnapshot(cfg);
+        w.__tillampaKonfiguration(cfg);
         expect(w.eval('orgNamn()')).toBe('Paketkommunen');
         expect(w.eval('jmfNamn()')).toBe('SKR-statistik');
     });

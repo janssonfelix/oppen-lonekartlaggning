@@ -53,7 +53,7 @@ function _konfigImportprofiler() {
  * äldre namnen står bara i namnbytenas tabell i src/lib/konfiguration.js (ADR-96).
  * @returns {Object} JSON-säker konfigurationsstruktur.
  */
-function buildConfigSnapshot() {
+function byggKonfiguration() {
     return {
         version: konfigurationVersion(),
         sparad: new Date().toISOString(),
@@ -91,7 +91,7 @@ function buildConfigSnapshot() {
             ar: state.forecast.years
         } : null,
         // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
-        // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (applyConfigSnapshot).
+        // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (tillampaKonfiguration).
         ..._konfigImportprofiler(),
         // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
         // den som läser in konfigurationen kan läsa in samma paket.
@@ -136,19 +136,19 @@ function buildConfigSnapshot() {
  * tillstånd (vissa fält ändrade, andra kvar) — vilket annars kan leda till
  * tysta felaktiga analyser.
  *
- * @param {Object} cfg - Snapshot från buildConfigSnapshot(), version 3, eller en äldre fil i version 2 (de gamla namnen
+ * @param {Object} cfg - Snapshot från byggKonfiguration(), version 3, eller en äldre fil i version 2 (de gamla namnen
  *   byts mot de nya före valideringen, ADR-96).
  * @returns {{varningar: string[]}} Det i filen som inte tillämpades fast filen var giltig (en tröskel under
  *   organisationspaketets golv, ADR-47).
  * @throws {Error} Med beskrivande meddelande vid valideringsfel. State opåverkat.
  */
 // En konfigurationsfil kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81).
-function applyConfigSnapshot(cfg) { try { return _applyConfigSnapshot(cfg); } finally { visningNy(); } }
+function tillampaKonfiguration(cfg) { try { return _tillampaKonfiguration(cfg); } finally { visningNy(); } }
 /**
  * @param {Object} cfg
  * @returns {{varningar: string[]}}
  */
-function _applyConfigSnapshot(cfg) {
+function _tillampaKonfiguration(cfg) {
     // ---- FAS 1: Validera + bygg upp i isolerat temp-objekt ----
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');
@@ -488,8 +488,8 @@ function _applyConfigSnapshot(cfg) {
 
 // ---- #18 A/B-jämförelse via snapshot ----
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-export function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
-function _buildAnalysisSnapshotExport() {
+export function byggOgonblicksbild(...a) { return medExportLage(() => _byggOgonblicksbildExport.apply(null, /** @type {any} */ (a))); }
+function _byggOgonblicksbildExport() {
     const d = getData();
     if (!d.length) return null;
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
@@ -514,13 +514,13 @@ function _buildAnalysisSnapshotExport() {
     };
 }
 
-export function renderSnapshotComparison() {
+export function ritaOgonblicksbildJamforelse() {
     const wrap = document.getElementById('snapshot-comparison');
     if (!wrap) return;
     const snap = state.snapshot;
-    if (!snap) { wrap.style.display = 'none'; _snapshotLutning(null, null); return; }
-    const cur = buildAnalysisSnapshot();
-    if (!cur) { wrap.style.display = 'none'; _snapshotLutning(null, null); return; }
+    if (!snap) { wrap.style.display = 'none'; _ogonblicksbildLutning(null, null); return; }
+    const cur = byggOgonblicksbild();
+    if (!cur) { wrap.style.display = 'none'; _ogonblicksbildLutning(null, null); return; }
     // En bild sparad vid en lägre tröskel kan bära könsuppdelade mått som inte längre får visas.
     const snapKon = _konFarRedovisas(snap.nKv, snap.nMa);
     const sk = v => (snapKon ? v : null);
@@ -561,11 +561,11 @@ export function renderSnapshotComparison() {
             </table>
         </div>
     `;
-    _snapshotLutning({ ...snap, medianKv: sk(snap.medianKv), medianMa: sk(snap.medianMa) }, cur);
+    _ogonblicksbildLutning({ ...snap, medianKv: sk(snap.medianKv), medianMa: sk(snap.medianMa) }, cur);
 }
 // Medianlönen per kön i ögonblicksbilden och nu, en rad per kön (foreEfterFigur). Samma tal som tabellen ovanför, och samma
 // villkor: ett köns median visas bara när den får visas i båda lägena.
-function _snapshotLutning(snap, cur) {
+function _ogonblicksbildLutning(snap, cur) {
     const ruta = document.getElementById('snapshot-lutning-ruta'), el = document.getElementById('chart-snapshot-lutning');
     if (!ruta || !el) return;
     const rader = !snap || !cur ? [] : [['Kvinnor', snap.medianKv, cur.medianKv, PALETTE.kon.kvinna], ['Män', snap.medianMa, cur.medianMa, PALETTE.kon.man]]
@@ -580,7 +580,7 @@ function _snapshotLutning(snap, cur) {
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartKonfiguration() {
     document.getElementById('btn-config-save')?.addEventListener('click', () => {
-        const cfg = buildConfigSnapshot();
+        const cfg = byggKonfiguration();
         const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -610,7 +610,7 @@ export function uppstartKonfiguration() {
         reader.onload = ev => {
             try {
                 const cfg = JSON.parse(String(/** @type {FileReader} */ (ev.target).result));
-                const { varningar } = applyConfigSnapshot(cfg);
+                const { varningar } = tillampaKonfiguration(cfg);
                 const status = document.getElementById('config-status');
                 if (status) {
                     status.textContent = 'Konfiguration laddad' + (varningar.length ? '. ' + varningar.join(' ') : '');
@@ -626,7 +626,7 @@ export function uppstartKonfiguration() {
         reader.readAsText(file);
     });
     document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
-        const snap = buildAnalysisSnapshot();
+        const snap = byggOgonblicksbild();
         if (!snap) { alert('Läs in lönefilen först.'); return; }
         // I: möjlighet att namnge scenariot
         const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
@@ -641,7 +641,7 @@ export function uppstartKonfiguration() {
         const status = document.getElementById('snapshot-status');
         if (status) status.textContent = `Ögonblicksbild "${name}" sparad (${state.scenarios.length} scenario${state.scenarios.length>1?'n':''} totalt)`;
     });
-    document.getElementById('btn-snapshot-compare')?.addEventListener('click', renderSnapshotComparison);
+    document.getElementById('btn-snapshot-compare')?.addEventListener('click', ritaOgonblicksbildJamforelse);
     document.getElementById('btn-snapshot-clear')?.addEventListener('click', () => {
         state.snapshot = null;
         /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = true;

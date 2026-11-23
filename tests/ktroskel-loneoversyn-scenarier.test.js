@@ -107,7 +107,7 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
     it('scenarierna lämnar inte verktyget: konfigurationsfilen bär dem inte, och tabellen har ingen egen CSV- eller kopieringsknapp', () => {
         const w = fonster(STRECK);
         w.eval("_forecastSaveScenario('A')");
-        const cfg = JSON.stringify(w.__buildConfigSnapshot());
+        const cfg = JSON.stringify(w.__byggKonfiguration());
         expect(cfg).not.toMatch(/scenari/i);
         const host = w.document.getElementById('forecast-scenarios');
         expect(host.querySelector('table').id).toBe('');

@@ -375,14 +375,14 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
     it('konfigurationsfilen: ett värde under golvet används inte, resten läses in, och felet står vid fältet', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(5, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.orgNamn = 'Ur filen';
         expect('kTroskelLagst' in cfg).toBe(false);   // konfigurationsfilen bär inte låsningarna
         const b = medGolv(8, 12);
         let fragor = 0;
         b.confirm = () => { fragor++; return true; };
         b.__cfg = cfg;
-        const r = b.eval('applyConfigSnapshot(window.__cfg)');
+        const r = b.eval('tillampaKonfiguration(window.__cfg)');
         expect(r.varningar).toEqual(['Filens minsta gruppstorlek 5 används inte: Lägst 8 enligt organisationspaketet.']);
         expect(fragor).toBe(0);
         expect(b.eval('kInstalld()')).toBe(12);

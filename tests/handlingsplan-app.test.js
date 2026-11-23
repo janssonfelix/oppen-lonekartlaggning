@@ -68,16 +68,16 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         a.__renderTabContent('handlingsplan');
         const falt = rader(a)[0].cells[7].querySelector('input');
         fyll(a, falt, 'Avdelningschef');
-        const cfg = JSON.parse(a.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(a.eval('JSON.stringify(byggKonfiguration())'));
         expect(cfg.handlingsplan).toEqual([{ nyckel: falt.dataset.hpNyckel, sakligt: '', ansvarig: 'Avdelningschef', tidsplan: '', status: '' }]);
         const b = fonster();
         b.__cfg = { ...cfg, handlingsplan: [...cfg.handlingsplan, { nyckel: 'prio|9|Z', status: 'Okänd', tidsplan: 'Hösten' }] };
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(b.__state.handlingsplan[falt.dataset.hpNyckel].ansvarig).toBe('Avdelningschef');
         expect(b.__state.handlingsplan['prio|9|Z']).toEqual({ sakligt: '', ansvarig: '', tidsplan: 'Hösten', status: '' });
         b.__renderTabContent('handlingsplan');   // en rad som inte finns i underlaget ritas inte och kraschar inget
         expect(rader(b).length).toBe(rader(a).length);
-        expect(() => b.eval("applyConfigSnapshot({ version: 2, handlingsplan: [{ nyckel: 5 }] })")).toThrow();
+        expect(() => b.eval("tillampaKonfiguration({ version: 2, handlingsplan: [{ nyckel: 5 }] })")).toThrow();
     });
     it('följer med i Excel-filen, Word-utkastets åtgärdstabell och utskriften', async () => {
         const w = fonster();
@@ -123,10 +123,10 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(seed.rows[seed.rows.length - 1]).toEqual(['Se över lönekriterierna', 'Alla chefer', 'Egen rad', '', null, '', '', 'Planerad', null]);
         expect(w.document.getElementById('handlingsplan-seed-note').textContent).toContain('En egen rad står sist.');
         // Konfigurationsfilen bär raden med åtgärd och grupp; en annan session läser in den igen.
-        const cfg = JSON.parse(w.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(w.eval('JSON.stringify(byggKonfiguration())'));
         expect(cfg.handlingsplan.find(r => r.nyckel === nyckel)).toMatchObject({ egen: true, atgard: 'Se över lönekriterierna', grupp: 'Alla chefer' });
         const b = fonster();
-        b.__cfg = cfg; b.eval('applyConfigSnapshot(window.__cfg)'); b.__renderTabContent('handlingsplan');
+        b.__cfg = cfg; b.eval('tillampaKonfiguration(window.__cfg)'); b.__renderTabContent('handlingsplan');
         expect(b.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-egen')).toHaveLength(1);
         expect(b.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen').cells[0].querySelector('[data-hp-falt="grupp"]').value).toBe('Alla chefer');
         // Översikt-kortet räknar raderna efter status, inte åtgärdslistans bockar.
@@ -306,13 +306,13 @@ describe('Handlingsplan: Kostnaden avser', () => {
         a.__renderTabContent('handlingsplan');
         fyll(a, rader(a)[0].cells[4].querySelector('select'), 'Pågår');
         a.eval('_hpLaggTillEgen()');
-        const cfg = JSON.parse(a.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(a.eval('JSON.stringify(byggKonfiguration())'));
         const text = JSON.stringify(cfg.handlingsplan);
         expect(text).not.toMatch(/kostnad|Nå referensens median|Nå jämförelseetikettens median/i);
         for (const r of cfg.handlingsplan) expect(Object.keys(r).every(f => ['nyckel', 'sakligt', 'ansvarig', 'tidsplan', 'status', 'egen', 'atgard', 'grupp', 'skal'].includes(f))).toBe(true);
         const b = fonster();
-        b.__cfg = cfg; b.eval('applyConfigSnapshot(window.__cfg)');
-        expect(JSON.parse(b.eval('JSON.stringify(buildConfigSnapshot())')).handlingsplan).toEqual(cfg.handlingsplan);
+        b.__cfg = cfg; b.eval('tillampaKonfiguration(window.__cfg)');
+        expect(JSON.parse(b.eval('JSON.stringify(byggKonfiguration())')).handlingsplan).toEqual(cfg.handlingsplan);
     });
 });
 

@@ -30,7 +30,7 @@ describe('[B8.2] årsbokslutet i verktyget', () => {
     });
     it('konfigurationsfilen bär bokslutet; inläst blir det förra årets, och panelen visar jämförelsen', () => {
         const a = fonster(null);
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         expect(cfg.arsbokslut).toMatchObject({ version: 2, k: 10 });
         // Nästa år: samma underlag, ett bokslut från förra året i filen.
         cfg.arsbokslut.ar = cfg.arsbokslut.ar - 1;
@@ -38,7 +38,7 @@ describe('[B8.2] årsbokslutet i verktyget', () => {
         cfg.arsbokslut.grupper[0].flaggad = !cfg.arsbokslut.grupper[0].flaggad;   // en grupp bytte läge
         const w = fonster(null);
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.forraArsbokslut).toMatchObject({ ar: cfg.arsbokslut.ar });
         w.__renderTabContent('arbetet');
         const host = w.document.getElementById('arsjamforelse');
@@ -57,11 +57,11 @@ describe('[B8.2] årsbokslutet i verktyget', () => {
         const w = createAppWindow();
         w.__renderTabContent('arbetet');
         expect(w.document.getElementById('arsjamforelse').textContent).toContain('Inget årsbokslut inläst');
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.arsbokslut).toBeNull();
         cfg.arsbokslut = { ar: 'förra året' };
         w.__cfg = cfg;
-        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        const r = w.eval('tillampaKonfiguration(window.__cfg)');
         expect(JSON.stringify(r)).toMatch(/årsbokslut gick inte att läsa/);
         expect(w.__state.forraArsbokslut).toBeNull();
     });
@@ -70,12 +70,12 @@ describe('[B8.2] årsbokslutet i verktyget', () => {
 describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-54)', () => {
     const medBokslut = () => {
         const a = fonster(null);
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
         // Vartannat yrke var sämre förra året (närmar sig lika lön i år), vart tredje oförändrat men flaggat.
         cfg.arsbokslut.grupper.forEach((g, i) => { if (i % 2) { g.gapPct -= 4; g.flaggad = true; } else if (i % 3 === 0) g.flaggad = true; });
         const w = fonster(null);
-        w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
         return { w, cfg };
     };
     it('utan bokslut har rapporten sina fjorton avsnitt (med bilagan med gruppdossierer); med bokslut står Jämförelse med förra året efter Åtgärder och tidsplan, också i ledningsbriefen', () => {
@@ -137,7 +137,7 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         if (andra) andra(cfg.arsbokslut);
         return cfg;
     };
-    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)'); };
+    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)'); };
 
     it('bokslutet bär en rad per BAS-intervall med minst k personer, byggd i exportläget; intervallen om 6 saknas', () => {
         const w = fonster(null);
@@ -150,7 +150,7 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
     });
     it('med demodatan och ett konstruerat förra-års-bokslut visar panelen tabellen med antal och hanteln för medianen', () => {
         const a = createAppWindow(); a.__loadDemoData();
-        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; }));
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => ab.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; }));
         const w = createAppWindow(); w.__loadDemoData();
         lasIn(w, cfg);
         w.__renderTabContent('arbetet');
@@ -174,7 +174,7 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
     });
     it('ett bokslut utan fältet (äldre fil) ger en rad om att det saknas, och ingen tabell eller hantel', () => {
         const a = createAppWindow(); a.__loadDemoData();
-        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => { delete ab.basIntervall; });
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => { delete ab.basIntervall; });
         const w = createAppWindow(); w.__loadDemoData();
         lasIn(w, cfg);
         expect(w.__state.forraArsbokslut.basIntervall).toBeNull();
@@ -187,7 +187,7 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
     });
     it('rapportmodellen har tabellen under avsnittet Jämförelse med förra året, med antal och förändringen', () => {
         const a = fonster(null);
-        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { r.med -= 300; }));
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => ab.basIntervall.forEach(r => { r.med -= 300; }));
         const w = fonster(null); lasIn(w, cfg);
         const avsnitt = w.eval('rapportModell()').avsnitt.find(x => x.id === 'arsjamforelse');
         const i = avsnitt.delar.findIndex(p => p.typ === 'rubrik' && p.text === 'Löneutveckling per BAS-intervall');
@@ -207,11 +207,11 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
         if (andra) andra(cfg.arsbokslut);
         return cfg;
     };
-    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)'); };
+    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)'); };
 
     it('panelen har kolumnen Lönespridning förra året och i år i tabellen per BAS-intervall och i de flaggade gruppernas tabeller', () => {
         const a = createAppWindow(); a.__loadDemoData();
-        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { r.spridning = 0.5; }));
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => ab.basIntervall.forEach(r => { r.spridning = 0.5; }));
         const w = createAppWindow(); w.__loadDemoData();
         lasIn(w, cfg);
         w.__renderTabContent('arbetet');
@@ -231,7 +231,7 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
 
     it('rapportens tabell per BAS-intervall har kolumnen Lönespridning; en äldre fil utan fältet visar streck för förra året', () => {
         const a = fonster(null);
-        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { delete r.spridning; }));
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => ab.basIntervall.forEach(r => { delete r.spridning; }));
         const w = fonster(null); lasIn(w, cfg);
         const avsnitt = w.eval('rapportModell()').avsnitt.find(x => x.id === 'arsjamforelse');
         const i = avsnitt.delar.findIndex(p => p.typ === 'rubrik' && p.text === 'Löneutveckling per BAS-intervall');
@@ -251,13 +251,13 @@ describe('ett bokslut sparat med lägre tröskel än årets', () => {
     const SMALL = [77771, 77777, 77779, 66661, 66663];
     const lagK = k => {
         const a = fonster(null);
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`; cfg.arsbokslut.k = k;
         cfg.arsbokslut.basIntervall = cfg.arsbokslut.basIntervall.filter(r => r.bas !== MELLAN[0] && r.bas !== STORA[0]);
         cfg.arsbokslut.basIntervall.push(k === 1 ? { bas: MELLAN[0], n: 1, nKv: 1, nMa: 0, p10: 77771, med: 77777, p90: 77779 }
             : { bas: MELLAN[0], n: 7, nKv: 4, nMa: 3, p10: 77771, med: 77777, p90: 77779 });
         cfg.arsbokslut.basIntervall.push({ bas: STORA[0], n: 150, nKv: k === 1 ? 1 : 6, nMa: 149, p10: 24000, med: 24400, p90: 24800, medKv: 66661, medMa: 66663 });
-        const w = fonster(null); w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        const w = fonster(null); w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
         return w;
     };
     for (const k of [1, 5]) {

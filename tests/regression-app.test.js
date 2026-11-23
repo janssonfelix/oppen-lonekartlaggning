@@ -191,31 +191,31 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
         const r = w.eval('sattForklaringsmodell({ bas: true, alder: false, yrkesgrupp: false, skal: "ingen lön efter ålder" }, { rita: false })');
         expect(r.ok).toBe(true);
         expect(w.__state.forklaringsmodell.alder).toBe(false);
-        expect(w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))').forklaringsmodell).toEqual({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        expect(w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))').forklaringsmodell).toEqual({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
         w.eval('sattForklaringsmodell({ bas: true, alder: true, yrkesgrupp: false, skal: "" }, { rita: false })');
         expect(w.__state.forklaringsmodell).toBeNull();
-        expect(w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))').forklaringsmodell).toBeNull();
+        expect(w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))').forklaringsmodell).toBeNull();
     });
     it('konfigurationsfilen: ett trasigt värde ger standard med varning, en fil utan fältet ger standard utan varning', () => {
         const w = fonster();
-        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'), forklaringsmodell: { alder: 'ja', bas: true } };
-        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))'), forklaringsmodell: { alder: 'ja', bas: true } };
+        const r = w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.forklaringsmodell).toEqual({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
         expect(r.varningar.length).toBe(0);   // "ja" tvingas till falskt utan varning: fältet är giltigt men avslaget
-        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'), forklaringsmodell: 'full' };
-        const r2 = w.eval('applyConfigSnapshot(window.__cfg)');
+        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))'), forklaringsmodell: 'full' };
+        const r2 = w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.forklaringsmodell).toBeNull();
         expect(r2.varningar.join(' ')).toMatch(/[Ff]örklaringsmodellen/);
-        const utan = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'); delete utan.forklaringsmodell;
+        const utan = w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))'); delete utan.forklaringsmodell;
         w.__state.forklaringsmodell = { bas: false, alder: true, yrkesgrupp: false, skal: '' };
         w.__cfg = utan;
-        expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.length).toBe(0);
+        expect(w.eval('tillampaKonfiguration(window.__cfg)').varningar.length).toBe(0);
         expect(w.__state.forklaringsmodell).toBeNull();
     });
     it('konfigurationsfilen: PO-påslaget, månaderna och prioriteringens värden prövas mot fältens gränser', () => {
         const w = fonster();
-        const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
-        const las = ändring => () => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, ...ändring }) + ')');
+        const cfg = w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))');
+        const las = ändring => () => w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, ...ändring }) + ')');
         expect(las({ kostnad: { poPct: 100, manader: 12 } })).not.toThrow();
         expect(las({ kostnad: { poPct: 150, manader: 12 } })).toThrow('kostnad.poPct måste vara ett tal mellan 0 och 100.');
         expect(las({ kostnad: { poPct: 39.15, manader: 61 } })).toThrow('kostnad.manader måste vara ett tal mellan 1 och 60.');
@@ -226,7 +226,7 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
     it('en konfigurationsfil som läses in före lönefilen behåller yrkesgrupp (valet prövas mot datat när det finns)', () => {
         const w = createAppWindow();
         w.__cfg = { version: 2, forklaringsmodell: { bas: true, alder: true, yrkesgrupp: true, skal: '' } };
-        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        const r = w.eval('tillampaKonfiguration(window.__cfg)');
         expect(r.varningar.length).toBe(0);
         expect(w.__state.forklaringsmodell).toEqual({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
         w.__loadDemoData();

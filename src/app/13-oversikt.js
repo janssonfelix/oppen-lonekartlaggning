@@ -18,7 +18,7 @@ import { getBasIntervals, getData, harReferens, policyFor, referensKortnamn, ref
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderDataValidationReport } from './16-inlasningskontroll.js';
 import { buildActionChecklist, renderActionChecklist } from './18-atgardslista.js';
-import { renderSnapshotComparison } from './19-konfiguration.js';
+import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laOversiktRader } from './41-lika-arbete.js';
 import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
@@ -456,7 +456,7 @@ export function renderOversiktDelar() {
         ['processöversikten', () => renderProcessTracker({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
-    if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
+    if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();
 }
 
 // ---- Populate BAS selects ----

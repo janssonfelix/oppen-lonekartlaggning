@@ -120,7 +120,7 @@ describe('BAS-ordningen är fast (se §6 i likvardighetsmodellen.md)', () => {
         w.__loadDemoData();
         expect(w.document.getElementById('bas-rank-config-container')).toBeNull();
         expect('basRankOverride' in w.__state).toBe(false);
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect('basRankOverride' in cfg).toBe(false);
     });
     it('robusthetspanelen prövar Likvärdigt arbete och Prioritering, inte BAS-ordningen', async () => {

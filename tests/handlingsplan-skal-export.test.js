@@ -133,7 +133,7 @@ describe('demot följer inte med till en riktig fil', () => {
         const nya = w.eval('medExportLage(() => _handlingsplanSeedRows().nycklar)');
         expect(demoNycklar.some(k => nya.includes(k)), 'minst en av demots nycklar finns i den riktiga filen').toBe(true);
         expect(w.eval('medExportLage(() => _hpSkalUnderlag().grupper.length)')).toBe(0);
-        const cfg = JSON.parse(w.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(w.eval('JSON.stringify(byggKonfiguration())'));
         expect((cfg.handlingsplan || []).filter(r => r.skal)).toEqual([]);
         expect(JSON.stringify(cfg)).not.toContain('Exempel i demot');
     });
@@ -147,9 +147,9 @@ describe('demot följer inte med till en riktig fil', () => {
     it('en konfigurationsfil som ersätter handlingsplanen glömmer demots nycklar: filens skäl på en demonyckel står kvar', () => {
         const w = demo();
         const [n] = medSkal(w)[0];
-        const cfg = JSON.parse(w.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(w.eval('JSON.stringify(byggKonfiguration())'));
         cfg.handlingsplan = [{ nyckel: n, skal: [{ kategori: 'marknad', belopp: 500, kommentar: 'ur filen' }] }];
-        w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.handlingsplan[n].skal).toEqual([{ kategori: 'marknad', belopp: 500, kommentar: 'ur filen' }]);
         expect(w.eval('_hpDemoNycklar.size')).toBe(0);
         // Som när en riktig lönefil läses in efter demot.

@@ -318,12 +318,12 @@ describe('Handlingsplan: skälen i konfigurationsfilen', () => {
         oppna(a, radMedSkillnad(a));
         laggTill(a, 'marknad', 800, 'Svårrekryterat');
         laggTill(a, 'erfarenhet', 400);
-        const cfg = JSON.parse(a.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(a.eval('JSON.stringify(byggKonfiguration())'));
         expect(cfg.handlingsplan.find(r => r.nyckel === nyckel)).toEqual({ nyckel, sakligt: '', ansvarig: '', tidsplan: '', status: '',
             skal: [{ kategori: 'marknad', belopp: 800, kommentar: 'Svårrekryterat' }, { kategori: 'erfarenhet', belopp: 400, kommentar: '' }] });
         const b = fonster();
         b.__cfg = { ...cfg, handlingsplan: [...cfg.handlingsplan, { nyckel: 'prio|9|Z', status: 'Planerad' }] };
-        const { varningar } = b.eval('applyConfigSnapshot(window.__cfg)');
+        const { varningar } = b.eval('tillampaKonfiguration(window.__cfg)');
         expect(varningar).toEqual([]);
         expect(b.__state.handlingsplan[nyckel].skal).toEqual(cfg.handlingsplan.find(r => r.nyckel === nyckel).skal);
         expect(b.__state.handlingsplan['prio|9|Z']).toEqual({ sakligt: '', ansvarig: '', tidsplan: '', status: 'Planerad' });
@@ -334,7 +334,7 @@ describe('Handlingsplan: skälen i konfigurationsfilen', () => {
             { nyckel: 'prio|1|A', skal: [{ kategori: 'marknad', belopp: 500 }, { kategori: 'lojalitet', belopp: 500 }, { kategori: 'annat', belopp: 300000 }] },
             { nyckel: 'prio|2|B', skal: 'inte en lista' },
         ] };
-        const { varningar } = b.eval('applyConfigSnapshot(window.__cfg)');
+        const { varningar } = b.eval('tillampaKonfiguration(window.__cfg)');
         expect(varningar).toEqual(['3 sakliga skäl i filens handlingsplan gick inte att läsa och hoppas över.']);
         expect(b.__state.handlingsplan['prio|1|A']).toEqual({ sakligt: '', ansvarig: '', tidsplan: '', status: '', skal: [{ kategori: 'marknad', belopp: 500, kommentar: '' }] });
         expect(b.__state.handlingsplan['prio|2|B']).toBeUndefined();

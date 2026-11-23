@@ -135,10 +135,10 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
 describe('BAS-dossiern: förra året och textversionen', () => {
     const medBokslut = (andra) => {
         const a = demo();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
         andra(cfg.arsbokslut);
-        const w = demo(); w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        const w = demo(); w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
         return { w, cfg };
     };
 

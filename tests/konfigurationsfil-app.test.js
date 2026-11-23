@@ -31,7 +31,7 @@ describe('konfig-snapshot: HR:s manuella arbete round-trips', () => {
 
     it('snapshoten är version 3 och bär bes8/attGoraKlara/orgNamn', () => {
         resetFields();
-        const snap = win.__buildConfigSnapshot();
+        const snap = win.__byggKonfiguration();
         expect(snap.version).toBe(3);
         expect(Array.isArray(snap.bes8)).toBe(true);
         expect(snap.bes8.length).toBe(6);
@@ -52,13 +52,13 @@ describe('konfig-snapshot: HR:s manuella arbete round-trips', () => {
         orgFalt.value = 'Exempelorganisationen';
         orgFalt.dispatchEvent(new win.Event('change'));   // fältet är kopplat till profilen (ADR-36)
 
-        const snap = win.__buildConfigSnapshot();
+        const snap = win.__byggKonfiguration();
         expect(snap.attGoraKlara).toContain('prio-row-x');
 
         resetFields();   // simulera "rensa all data" + omladdning
         expect(win.document.getElementById('bes8-note-2').value).toBe('');
 
-        win.__applyConfigSnapshot(snap);
+        win.__tillampaKonfiguration(snap);
         expect(win.document.getElementById('bes8-status-2').value).toBe(STATUS);
         expect(win.document.getElementById('bes8-note-2').value).toBe(NOTE);
         expect(win.__state._actionChecklistDone.has('prio-row-x')).toBe(true);
@@ -68,39 +68,39 @@ describe('konfig-snapshot: HR:s manuella arbete round-trips', () => {
     });
 
     it('en konfigurationsfil med annat formatnummer än 2 och 3 avvisas', () => {
-        const snap = win.__buildConfigSnapshot();
-        expect(() => win.__applyConfigSnapshot({ ...snap, version: 1 })).toThrow(/version 2 och 3/);
-        expect(() => win.__applyConfigSnapshot({ ...snap, version: 4 })).toThrow(/version 2 och 3/);
+        const snap = win.__byggKonfiguration();
+        expect(() => win.__tillampaKonfiguration({ ...snap, version: 1 })).toThrow(/version 2 och 3/);
+        expect(() => win.__tillampaKonfiguration({ ...snap, version: 4 })).toThrow(/version 2 och 3/);
     });
     it('visning.prioReferens i en konfigurationsfil väljer motsvarande referens; värden utanför vitlistan lämnar valet orört', () => {
-        const snap = win.__buildConfigSnapshot();
+        const snap = win.__byggKonfiguration();
         const vald = () => win.document.querySelector('input[name="prio-ref"]:checked')?.value;
-        win.__applyConfigSnapshot({ ...snap, visning: { ...snap.visning, prioReferens: 'statistik' } });
+        win.__tillampaKonfiguration({ ...snap, visning: { ...snap.visning, prioReferens: 'statistik' } });
         expect(vald()).toBe('statistik');
-        win.__applyConfigSnapshot({ ...snap, visning: { ...snap.visning, prioReferens: 'stallningstagande' } });
+        win.__tillampaKonfiguration({ ...snap, visning: { ...snap.visning, prioReferens: 'stallningstagande' } });
         expect(vald()).toBe('stallningstagande');
-        expect(() => win.__applyConfigSnapshot({ ...snap, visning: { ...snap.visning, prioReferens: 'x"]' } })).not.toThrow();
+        expect(() => win.__tillampaKonfiguration({ ...snap, visning: { ...snap.visning, prioReferens: 'x"]' } })).not.toThrow();
         expect(vald()).toBe('stallningstagande');
         resetFields();
     });
     it('okända fält i en konfigurationsfil ignoreras utan att kasta och hamnar inte i tillståndet', () => {
-        const snap = win.__buildConfigSnapshot();
-        win.__applyConfigSnapshot({ ...snap, okantFalt: [1, 2, 3] });
+        const snap = win.__byggKonfiguration();
+        win.__tillampaKonfiguration({ ...snap, okantFalt: [1, 2, 3] });
         expect('okantFalt' in win.__state).toBe(false);
         resetFields();
     });
 
     it('ogiltigt bes8-fält (n utanför 1–6) kastar och muterar inte state', () => {
-        const snap = win.__buildConfigSnapshot();
+        const snap = win.__byggKonfiguration();
         snap.bes8 = [{ n: 9, status: '', anteckning: '' }];
-        expect(() => win.__applyConfigSnapshot(snap)).toThrow(/bes8/);
+        expect(() => win.__tillampaKonfiguration(snap)).toThrow(/bes8/);
         resetFields();
     });
 
     it('odirtyat struktur-narrativ sparas som null (auto-genereras vid inläsning)', () => {
         const nb = win.document.getElementById('struktur-narrative');
         if (nb) { nb.value = 'auto text'; delete nb.dataset.dirty; }
-        const snap = win.__buildConfigSnapshot();
+        const snap = win.__byggKonfiguration();
         expect(snap.strukturNarrativ).toBeNull();
     });
 });
@@ -111,7 +111,7 @@ describe('ansvarskoden och konfigurationsfilen', () => {
         w.__loadDemoData();
         // Handlingsplanens rader (demots förifyllda skäl) har fältet "ansvarig", en roll och inte ansvarskoden: töms här.
         w.__state.handlingsplan = {};
-        expect(JSON.stringify(w.__buildConfigSnapshot())).not.toMatch(/ansvar/i);
+        expect(JSON.stringify(w.__byggKonfiguration())).not.toMatch(/ansvar/i);
     });
 });
 
@@ -136,7 +136,7 @@ describe('äldre konfigurationsfiler (version 2, de gamla fältnamnen, ADR-96)',
     });
     const kopia = o => JSON.parse(JSON.stringify(o));
     // Det inlästa tillståndet som det skrivs tillbaka, utan tidpunkten (sparad).
-    const lasIn = cfg => { const w = createAppWindow(); w.__applyConfigSnapshot(kopia(cfg)); const s = kopia(w.__buildConfigSnapshot()); delete s.sparad; return s; };
+    const lasIn = cfg => { const w = createAppWindow(); w.__tillampaKonfiguration(kopia(cfg)); const s = kopia(w.__byggKonfiguration()); delete s.sparad; return s; };
 
     it('en fil med de gamla namnen ger samma tillstånd som samma fil med de nya', () => {
         const franGammal = lasIn(GAMMAL_FIL);
@@ -159,11 +159,11 @@ describe('äldre konfigurationsfiler (version 2, de gamla fältnamnen, ADR-96)',
     it('gränserna gäller under båda namnen: kvinnotröskeln 50–70 och beräkningsperioden', () => {
         const w = createAppWindow();
         const fore = w.__state.likvardighet.kvinnoTrosholdPct;
-        expect(() => w.__applyConfigSnapshot({ version: 2, likvardighet: { kvinnoTrosholdPct: 40 } })).toThrow(/likvardighet\.kvinnoTroskelPct måste vara ett tal mellan 50 och 70/);
-        expect(() => w.__applyConfigSnapshot({ version: 3, likvardighet: { kvinnoTroskelPct: 75 } })).toThrow(/mellan 50 och 70/);
+        expect(() => w.__tillampaKonfiguration({ version: 2, likvardighet: { kvinnoTrosholdPct: 40 } })).toThrow(/likvardighet\.kvinnoTroskelPct måste vara ett tal mellan 50 och 70/);
+        expect(() => w.__tillampaKonfiguration({ version: 3, likvardighet: { kvinnoTroskelPct: 75 } })).toThrow(/mellan 50 och 70/);
         expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(fore);   // tillståndet orört
-        expect(() => w.__applyConfigSnapshot({ version: 2, costSettings: { months: 0 } })).toThrow(/kostnad\.manader/);
-        expect(() => w.__applyConfigSnapshot({ version: 3, kostnad: { manader: 61 } })).toThrow(/kostnad\.manader/);
-        expect(() => w.__applyConfigSnapshot({ version: 2, prioConfig: { akutMinN: 0 } })).toThrow(/prioTrosklar\.akutMinstN/);
+        expect(() => w.__tillampaKonfiguration({ version: 2, costSettings: { months: 0 } })).toThrow(/kostnad\.manader/);
+        expect(() => w.__tillampaKonfiguration({ version: 3, kostnad: { manader: 61 } })).toThrow(/kostnad\.manader/);
+        expect(() => w.__tillampaKonfiguration({ version: 2, prioConfig: { akutMinN: 0 } })).toThrow(/prioTrosklar\.akutMinstN/);
     });
 });

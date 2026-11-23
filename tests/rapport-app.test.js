@@ -271,20 +271,20 @@ describe('Word-utkastet som .docx', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.eval("sattRapportUrval('facklig')");
-        const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
+        const cfg = w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))');
         expect(cfg.rapportUrval.med).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod']);
         w.eval("sattRapportUrval('hela')");
-        expect(w.eval('buildConfigSnapshot().rapportUrval')).toBeNull();
+        expect(w.eval('byggKonfiguration().rapportUrval')).toBeNull();
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.eval('rapportUrval()').namn).toBe('Facklig dialog');
         w.__cfg = { ...cfg, rapportUrval: { ordning: 'lika', med: [] } };
-        expect(() => w.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/rapportUrval/);
+        expect(() => w.eval('tillampaKonfiguration(window.__cfg)')).toThrow(/rapportUrval/);
         expect(w.eval('rapportUrval()').namn).toBe('Facklig dialog');
         // En fil utan fältet ger hela dokumentationen.
         const { rapportUrval: _bort, ...utanUrval } = cfg;
         w.__cfg = utanUrval;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
     });
     it('förhandsbeskedet säger vad filen innehåller och utelämnar, och räknas ur samma källa som filen', async () => {

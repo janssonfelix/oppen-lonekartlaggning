@@ -140,19 +140,19 @@ describe('Inställningar: stoppa och visa förhandskontrollen innan inläsning',
     it('är av som standard och följer med i konfigurationsfilen', () => {
         const w = createAppWindow();
         expect(w.__state.forhandskontrollStopp).toBe(false);
-        expect(w.__buildConfigSnapshot().forhandskontrollStopp).toBe(false);
+        expect(w.__byggKonfiguration().forhandskontrollStopp).toBe(false);
         stoppa(w);
         expect(w.__state.forhandskontrollStopp).toBe(true);
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.forhandskontrollStopp).toBe(true);
         const w2 = createAppWindow();
         w2.__cfg = cfg;
-        w2.eval('applyConfigSnapshot(window.__cfg)');
+        w2.eval('tillampaKonfiguration(window.__cfg)');
         expect(w2.__state.forhandskontrollStopp).toBe(true);
         w2.eval('oppnaInstallningar()');
         expect(w2.document.getElementById('inst-fk-stopp').checked).toBe(true);
         w2.__cfg = { ...cfg, forhandskontrollStopp: 'ja' };
-        expect(() => w2.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/forhandskontrollStopp/);
+        expect(() => w2.eval('tillampaKonfiguration(window.__cfg)')).toThrow(/forhandskontrollStopp/);
     });
 
     it('med den på pausas inläsningen tills Läs in klickas', async () => {

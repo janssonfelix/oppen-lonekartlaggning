@@ -119,7 +119,7 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
         expect(eu.split('[Kvartilfördelning]')[1].split('[')[0]).not.toMatch(/Q4 \|[^\n]*\| 3 \|/);
     });
     it('A/B-ögonblicksbilden bär inga könsuppdelade medianer', () => {
-        const s = fonster3(null).eval('buildAnalysisSnapshot()');
+        const s = fonster3(null).eval('byggOgonblicksbild()');
         expect(s.medianKv).toBeNull();
         expect(s.medianMa).toBeNull();
         expect(s.rawGapPct).toBeNull();
@@ -151,7 +151,7 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
     it('vid 3 (männens antal) redovisas måtten', async () => {
         const w = fonster3(3);
         expect(normalisera(w.__docDraftHtml())).toContain(String(MAN[1]));
-        expect(w.eval('buildAnalysisSnapshot()').medianMa).toBe(MAN[1]);
+        expect(w.eval('byggOgonblicksbild()').medianMa).toBe(MAN[1]);
         w.__renderTabContent('struktur');
         expect(normalisera(w.document.getElementById('struktur-distribution').textContent)).toContain(String(MAN[1]));
     });

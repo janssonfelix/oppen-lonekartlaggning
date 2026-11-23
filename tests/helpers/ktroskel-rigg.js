@@ -415,13 +415,13 @@ export async function samlaUtdata(w) {
     w.eval(`state.importprofiler = [profilFranMappning({ namn: 'Vår personallista', kalla: 'konfiguration',
         mappning: { bas: 'BAS', yrke: 'AID', lon: 'Månadslön', alder: 'Ålder', kon: 'Kön' }, rubriker: ['BAS', 'AID', 'Månadslön', 'Ålder', 'Kön'] })]`);
     lagg('importprofilerna (Exportera JSON)', w.eval('importprofilExport()'));
-    const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+    const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
     lagg('konfigurationsfilen: importprofilerna', JSON.stringify(cfg.importprofiler));
     lagg('konfigurationsfilen (hela)', JSON.stringify(cfg));
     // Konfigurationsfilens årsbokslut (nyckeltal, yrkesgrupper och BAS-intervall med lönespridningen) lämnar verktyget i filen.
     lagg('konfigurationsfilen: årsbokslutet', JSON.stringify(cfg.arsbokslut));
     cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
-    w.__cfg = cfg; w.eval("applyConfigSnapshot(window.__cfg); sattRapportUrval('hela')");
+    w.__cfg = cfg; w.eval("tillampaKonfiguration(window.__cfg); sattRapportUrval('hela')");
     const ars = w.__rapportunderlagBlock().find(b => b.id === 'arsjamforelse');
     if (!ars || !ars.tabeller) throw new Error('blocket om förra året saknar tabellen per BAS-intervall');
     lagg('rapportunderlag: arsjamforelse (med bokslut)', w.__ruTillWordHtml(ars) + '\n' + w.__ruTillText(ars));

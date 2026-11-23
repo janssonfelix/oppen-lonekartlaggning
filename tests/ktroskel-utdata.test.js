@@ -571,50 +571,50 @@ describe('k-tröskeln i konfigurationsfilen', () => {
     it('tur och retur bär värdet', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(15, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         expect(cfg.kTroskel).toBe(15);
         const b = createAppWindow();
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(b.eval('kInstalld()')).toBe(15);
         expect(b.document.getElementById('k-troskel').value).toBe('15');
     });
     it('en fil utan fältet lämnar gällande värde orört (som ett organisationspaket utan fältet)', () => {
         const a = createAppWindow();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         delete cfg.kTroskel;
         cfg.orgNamn = 'Exempelorganisationen';
         const b = createAppWindow();
         b.eval('sattKTroskel(15, { fraga: false })');
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(b.eval('kInstalld()')).toBe(15);
         expect(b.eval('orgNamn("")')).toBe('Exempelorganisationen');   // resten av filen läses in
     });
     it.each([1, 2, 2.5, '12', 1001, null])('ogiltigt värde %p avvisas och lämnar allt orört', v => {
         const a = createAppWindow();
         a.eval('sattKTroskel(15, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.kTroskel = v;
         cfg.orgNamn = 'Ska inte läsas in';
         a.__cfg = cfg;
         // null räknas som att fältet saknas: värdet står kvar och resten läses in.
-        if (v === null) { a.eval('applyConfigSnapshot(window.__cfg)'); expect(a.eval('kInstalld()')).toBe(15); return; }
+        if (v === null) { a.eval('tillampaKonfiguration(window.__cfg)'); expect(a.eval('kInstalld()')).toBe(15); return; }
         a.eval('sattKTroskel(15, { fraga: false })');
-        expect(() => a.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 3 och 1000/);
+        expect(() => a.eval('tillampaKonfiguration(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 3 och 1000/);
         expect(a.eval('kInstalld()')).toBe(15);
         expect(a.eval('orgNamn("")')).not.toBe('Ska inte läsas in');
     });
     it('värde under 10: nekad bekräftelse behåller värdet men läser in resten', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(6, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.orgNamn = 'Exempelorganisationen';
         const b = createAppWindow();
         let fragor = 0;
         b.confirm = () => { fragor++; return false; };
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(fragor).toBe(1);
         expect(b.eval('kInstalld()')).toBe(10);
         expect(b.eval('orgNamn("")')).toBe('Exempelorganisationen');
@@ -622,25 +622,25 @@ describe('k-tröskeln i konfigurationsfilen', () => {
     it('värde under 10: godkänd bekräftelse tillämpar värdet', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(6, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const b = createAppWindow();
         let fragor = 0;
         b.confirm = () => { fragor++; return true; };
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(fragor).toBe(1);
         expect(b.eval('kInstalld()')).toBe(6);
     });
     it('en fil utan fältet: ett sänkt värde står också kvar, utan fråga', () => {
         const a = createAppWindow();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         delete cfg.kTroskel;
         const b = createAppWindow();
         let fragor = 0;
         b.confirm = () => { fragor++; return true; };
         b.eval('sattKTroskel(6, { fraga: false })');
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(b.eval('kInstalld()')).toBe(6);
         expect(fragor).toBe(0);
         expect(b.document.getElementById('k-troskel-varning').hidden).toBe(false);

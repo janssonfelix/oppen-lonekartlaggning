@@ -1266,7 +1266,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         // Inget lagras och inget följer med i konfigurationsfilen.
         expect(w.localStorage.length).toBe(0);
         expect(w.sessionStorage.length).toBe(0);
-        expect(JSON.stringify(w.eval('buildConfigSnapshot()'))).not.toMatch(/kompakt|"lage"/);
+        expect(JSON.stringify(w.eval('byggKonfiguration()'))).not.toMatch(/kompakt|"lage"/);
         // Rensning av data rör inte läget (det är en inställning för visningen), och ett okänt värde ger vägledande.
         w.eval('_rensaAllData()');
         expect(w.eval('lage()')).toBe('kompakt');

@@ -93,16 +93,16 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         expect(namn()).toEqual(['Första', 'Andra']);
         d.querySelector('#rapport-egna [data-egen-id] [data-egen-flytta="1"]').click();
         expect(namn()).toEqual(['Andra', 'Första']);
-        const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
+        const cfg = w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))');
         expect(cfg.rapportTabeller.map(t => t.namn)).toEqual(['Andra', 'Första']);
         d.querySelector('#rapport-egna [data-egen-id] [data-egen-bort]').click();
         expect(namn()).toEqual(['Första']);
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.rapportTabeller.map(t => t.namn)).toEqual(['Andra', 'Första']);
         // En ogiltig tabell i filen hoppas över med en varning; resten läses.
         w.__cfg = { ...cfg, rapportTabeller: [cfg.rapportTabeller[0], { spec: { rad: 'hemlig' } }] };
-        expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.join(' ')).toMatch(/1 egna tabeller i filen gick inte att läsa/);
+        expect(w.eval('tillampaKonfiguration(window.__cfg)').varningar.join(' ')).toMatch(/1 egna tabeller i filen gick inte att läsa/);
         expect(w.__state.rapportTabeller.map(t => t.namn)).toEqual(['Andra']);
         w.eval('_rensaAllData()');
         expect(w.__state.rapportTabeller).toEqual([]);
@@ -125,13 +125,13 @@ describe('egna tabeller: receptet för avsnittet per BAS-intervall', () => {
         expect(tabell.kolumner.map(c => c.rubrik)).toEqual(['Grupp', 'Antal', 'P25', 'Median', 'P90']);
         expect(perbas.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).not.toContain('Löneskillnader inom likvärdigt arbete, per BAS-intervall');
         expect(perbas.delar.some(p => p.typ === 'stycke' && /–29, 30–39, 40–54, 55–/.test(p.text))).toBe(true);
-        const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
+        const cfg = w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))');
         expect(cfg.perBasRecept.matt).toEqual(['p25', 'med', 'p90']);
         d.getElementById('pb-aterstall').click();
         expect(w.__state.perBasRecept).toBeNull();
         expect(d.getElementById('pb-recept-status').textContent).toBe('Standardreceptet.');
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.perBasRecept.aldersgranser).toEqual([30, 40, 55]);
     });
     it('per sektor: avsnittet heter Lönestruktur per sektor och tabellerna saknar referensrad', () => {

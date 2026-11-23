@@ -197,13 +197,13 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
     it('konfigurationsfilen bär organisationstypen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect(cfg.visning.organisationstyp).toBe('kommun');
         const w2 = createAppWindow();
-        w2.__applyConfigSnapshot({ ...cfg, visning: { ...cfg.visning, organisationstyp: 'region' } });
+        w2.__tillampaKonfiguration({ ...cfg, visning: { ...cfg.visning, organisationstyp: 'region' } });
         expect(w2.__state.profile.orgTyp).toBe('region');
         expect(w2.document.getElementById('org-typ').value).toBe('region');
-        w2.__applyConfigSnapshot({ ...cfg, visning: { ...cfg.visning, organisationstyp: 'stat' } });
+        w2.__tillampaKonfiguration({ ...cfg, visning: { ...cfg.visning, organisationstyp: 'stat' } });
         expect(w2.__state.profile.orgTyp).toBe('region');   // okänt värde ignoreras
     });
     it('Rensa all data återställer till båda', () => {

@@ -73,13 +73,13 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         expect(panel(w).querySelector('#colmap-spara-profil')).toBeNull();
 
         // Konfigurationsfilen bär profilen — bara rubriknamn.
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.importprofiler).toEqual([{ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken }]);
 
         // Ny session: konfigurationen läses in, sedan samma fil.
         const w2 = createAppWindow();
         w2.__cfg = cfg;
-        const r = w2.eval('applyConfigSnapshot(window.__cfg)');
+        const r = w2.eval('tillampaKonfiguration(window.__cfg)');
         expect(r.varningar).toEqual([]);
         expect(w2.__state.importprofiler).toHaveLength(1);
         await lasIn(w2, okandaRader());
@@ -181,7 +181,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
 
     it('en äldre konfigurationsfil utan profiler tar inte bort sessionens sparade profil', async () => {
         const w = createAppWindow();
-        const aldre = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const aldre = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         // En tom lista skrivs inte i konfigurationsfilen.
         expect('importprofiler' in aldre).toBe(false);
         await lasIn(w, okandaRader());
@@ -190,23 +190,23 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         panel(w).querySelector('#colmap-spara-profil').click();
         expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
         w.__cfg = aldre;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
         w.__cfg = { ...aldre, importprofiler: [] };
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
     });
 
     it('en konfigurationsfil med en ogiltig profil läses in med en varning, utan profilen', () => {
         const w = createAppWindow();
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         cfg.importprofiler = [PROFIL, { ...PROFIL, id: 'x', namn: 'Anna 19850101-1234' }];
         w.__cfg = cfg;
-        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        const r = w.eval('tillampaKonfiguration(window.__cfg)');
         expect(r.varningar.join(' ')).toMatch(/1 importprofil i filen gick inte att läsa/);
         expect(w.__state.importprofiler.map(p => p.id)).toEqual([PID]);
         cfg.importprofiler = Array.from({ length: 51 }, (_, i) => ({ ...PROFIL, id: `p-${i}` }));
-        expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.join(' ')).toMatch(/50/);
+        expect(w.eval('tillampaKonfiguration(window.__cfg)').varningar.join(' ')).toMatch(/50/);
     });
 
     it('en fil som känns igen av sig själv visar ingen sparknapp, och en inbyggd profil säger sitt namn', async () => {

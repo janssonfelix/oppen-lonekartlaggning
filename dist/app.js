@@ -21190,7 +21190,7 @@ function _konfigImportprofiler() {
   const egna = (state.importprofiler || []).filter((p) => p.kalla === "konfiguration").map((p) => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken }));
   return egna.length ? { importprofiler: egna } : {};
 }
-function buildConfigSnapshot() {
+function byggKonfiguration() {
   return {
     version: konfigurationVersion(),
     sparad: (/* @__PURE__ */ new Date()).toISOString(),
@@ -21245,7 +21245,7 @@ function buildConfigSnapshot() {
       ar: state.forecast.years
     } : null,
     // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
-    // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (applyConfigSnapshot).
+    // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (tillampaKonfiguration).
     ..._konfigImportprofiler(),
     // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
     // den som läser in konfigurationen kan läsa in samma paket.
@@ -21289,14 +21289,14 @@ function buildConfigSnapshot() {
     })()
   };
 }
-function applyConfigSnapshot(cfg) {
+function tillampaKonfiguration(cfg) {
   try {
-    return _applyConfigSnapshot(cfg);
+    return _tillampaKonfiguration(cfg);
   } finally {
     visningNy();
   }
 }
-function _applyConfigSnapshot(cfg) {
+function _tillampaKonfiguration(cfg) {
   if (!cfg || typeof cfg !== "object")
     throw new Error("Konfigurationen är inte ett giltigt objekt.");
   const versionFel = konfigurationVersionFel(
@@ -21615,14 +21615,14 @@ function _applyConfigSnapshot(cfg) {
   }
   return { varningar };
 }
-function buildAnalysisSnapshot(...a) {
-  return medExportLage(() => _buildAnalysisSnapshotExport.apply(
+function byggOgonblicksbild(...a) {
+  return medExportLage(() => _byggOgonblicksbildExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _buildAnalysisSnapshotExport() {
+function _byggOgonblicksbildExport() {
   const d = getData();
   if (!d.length) return null;
   const m = ogonblicksbildMatt(d, kTroskel());
@@ -21644,19 +21644,19 @@ function _buildAnalysisSnapshotExport() {
     nBas: getBasIntervals().length
   };
 }
-function renderSnapshotComparison() {
+function ritaOgonblicksbildJamforelse() {
   const wrap = document.getElementById("snapshot-comparison");
   if (!wrap) return;
   const snap = state.snapshot;
   if (!snap) {
     wrap.style.display = "none";
-    _snapshotLutning(null, null);
+    _ogonblicksbildLutning(null, null);
     return;
   }
-  const cur = buildAnalysisSnapshot();
+  const cur = byggOgonblicksbild();
   if (!cur) {
     wrap.style.display = "none";
-    _snapshotLutning(null, null);
+    _ogonblicksbildLutning(null, null);
     return;
   }
   const snapKon = _konFarRedovisas(snap.nKv, snap.nMa);
@@ -21698,9 +21698,9 @@ function renderSnapshotComparison() {
             </table>
         </div>
     `;
-  _snapshotLutning({ ...snap, medianKv: sk(snap.medianKv), medianMa: sk(snap.medianMa) }, cur);
+  _ogonblicksbildLutning({ ...snap, medianKv: sk(snap.medianKv), medianMa: sk(snap.medianMa) }, cur);
 }
-function _snapshotLutning(snap, cur) {
+function _ogonblicksbildLutning(snap, cur) {
   const ruta = document.getElementById("snapshot-lutning-ruta"), el = document.getElementById("chart-snapshot-lutning");
   if (!ruta || !el) return;
   const rader = !snap || !cur ? [] : [["Kvinnor", snap.medianKv, cur.medianKv, PALETTE.kon.kvinna], ["Män", snap.medianMa, cur.medianMa, PALETTE.kon.man]].filter(([, a, b]) => typeof a === "number" && typeof b === "number").map(([namn, fore, efter, farg]) => ({ namn, fore: Math.round(fore), efter: Math.round(efter), farg }));
@@ -21719,7 +21719,7 @@ function _snapshotLutning(snap, cur) {
 }
 function uppstartKonfiguration() {
   document.getElementById("btn-config-save")?.addEventListener("click", () => {
-    const cfg = buildConfigSnapshot();
+    const cfg = byggKonfiguration();
     const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -21759,7 +21759,7 @@ function uppstartKonfiguration() {
           /** @type {FileReader} */
           ev.target.result
         ));
-        const { varningar } = applyConfigSnapshot(cfg);
+        const { varningar } = tillampaKonfiguration(cfg);
         const status2 = document.getElementById("config-status");
         if (status2) {
           status2.textContent = "Konfiguration laddad" + (varningar.length ? ". " + varningar.join(" ") : "");
@@ -21778,7 +21778,7 @@ function uppstartKonfiguration() {
     reader.readAsText(file);
   });
   document.getElementById("btn-snapshot-save")?.addEventListener("click", () => {
-    const snap = buildAnalysisSnapshot();
+    const snap = byggOgonblicksbild();
     if (!snap) {
       alert("Läs in lönefilen först.");
       return;
@@ -21794,7 +21794,7 @@ function uppstartKonfiguration() {
     const status = document.getElementById("snapshot-status");
     if (status) status.textContent = `Ögonblicksbild "${name}" sparad (${state.scenarios.length} scenario${state.scenarios.length > 1 ? "n" : ""} totalt)`;
   });
-  document.getElementById("btn-snapshot-compare")?.addEventListener("click", renderSnapshotComparison);
+  document.getElementById("btn-snapshot-compare")?.addEventListener("click", ritaOgonblicksbildJamforelse);
   document.getElementById("btn-snapshot-clear")?.addEventListener("click", () => {
     state.snapshot = null;
     document.getElementById("btn-snapshot-compare").disabled = true;
@@ -21810,7 +21810,7 @@ function byggArsbokslutNu() {
   return medExportLage(() => {
     const d = getData();
     const k = kTroskel();
-    const bild = buildAnalysisSnapshot();
+    const bild = byggOgonblicksbild();
     const lika = typeof laLikaGrupper === "function" ? laLikaGrupper(d, k) : { grupper: [] };
     let lv = null;
     try {
@@ -30678,7 +30678,7 @@ function renderOversiktDelar() {
     }
   }
   const ab = document.getElementById("snapshot-comparison");
-  if (ab && ab.style.display !== "none" && typeof renderSnapshotComparison === "function") renderSnapshotComparison();
+  if (ab && ab.style.display !== "none" && typeof ritaOgonblicksbildJamforelse === "function") ritaOgonblicksbildJamforelse();
 }
 function populateSelects() {
   const bas = getBasIntervals();
@@ -31010,7 +31010,7 @@ function _omritningssteg() {
   }]);
   steg.push(["A/B-jämförelsen", () => {
     const ab = document.getElementById("snapshot-comparison");
-    if (ab && ab.style.display !== "none" && typeof renderSnapshotComparison === "function") renderSnapshotComparison();
+    if (ab && ab.style.display !== "none" && typeof ritaOgonblicksbildJamforelse === "function") ritaOgonblicksbildJamforelse();
   }]);
   const oppen = document.querySelector(".nav-item.active[data-tab]");
   if (oppen && oppen.getAttribute("data-tab") !== "dashboard") steg.push([oppen.getAttribute("data-tab"), () => renderTabContent(oppen.getAttribute("data-tab"))]);

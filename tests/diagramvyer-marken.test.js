@@ -270,16 +270,16 @@ describe('före och efter: lutningsdiagrammen', () => {
     it('ögonblicksbilden: medianlön per kön, en rad per kön, bara när könen får visas i båda lägena', () => {
         const w2 = skapa(), d = w2.document, ruta = d.getElementById('snapshot-lutning-ruta'), el = d.getElementById('chart-snapshot-lutning');
         expect(ruta.hidden).toBe(true);
-        w2.__state.snapshot = w2.eval('buildAnalysisSnapshot()');
+        w2.__state.snapshot = w2.eval('byggOgonblicksbild()');
         w2.__state.snapshot.medianKv -= 1000;
-        w2.eval('renderSnapshotComparison()');
+        w2.eval('ritaOgonblicksbildJamforelse()');
         expect(ruta.hidden).toBe(false);
         expect(el._figur.y.ordning).toEqual(['Kvinnor', 'Män']);
         expect(el._figur.lager.map(l => l.serie)).toEqual(['Förändring', 'Ögonblicksbild', 'Nuvarande']);
         expect(el._figur.lager[2].data[0].x - el._figur.lager[1].data[0].x).toBe(1000);
         // Bilden sparad med för få av ett kön: inga könsuppdelade medianer, och inget diagram.
         w2.__state.snapshot.nKv = 3;
-        w2.eval('renderSnapshotComparison()');
+        w2.eval('ritaOgonblicksbildJamforelse()');
         expect(ruta.hidden).toBe(true);
         expect(el._figur).toBeUndefined();
     });

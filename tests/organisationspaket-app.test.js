@@ -251,7 +251,7 @@ describe('organisationspaket: läs in och skapa', () => {
         const w = createAppWindow();
         w.__state.data = rader();
         las(w, paket());
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect(cfg.organisationspaket).toEqual({ organisation: 'Exempelregionen', skapat: '2026-10-01' });
         expect(JSON.stringify(cfg)).not.toContain('Regionens lönepolicy');
         // Yrkets namn finns i lönefilen och får stå i årsbokslutet (ADR-54); paketets egna tal får inte.
@@ -406,11 +406,11 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
         const kl = w.document.getElementById('kl-org-name');
         kl.value = 'Ny region'; kl.dispatchEvent(new w.Event('change'));
         expect(w.eval("orgNamn()")).toBe('Ny region');
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect(cfg.orgNamn).toBe('Ny region');
         expect(cfg.jmfNamn).toBe('Regionstatistiken');
         const w2 = createAppWindow();
-        w2.__applyConfigSnapshot(cfg);
+        w2.__tillampaKonfiguration(cfg);
         expect(w2.eval("orgNamn()")).toBe('Ny region');
         expect(w2.eval("jmfNamn()")).toBe('Regionstatistiken');
     });

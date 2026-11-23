@@ -216,7 +216,7 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
     });
     it('en konfigurationsfil som läses in före lönefilen sätter trösklarna i dialogen', () => {
         const w = createAppWindow(), d = w.document;
-        w.eval(`applyConfigSnapshot(${JSON.stringify({ version: 2, prioConfig: { akutMinN: 7 } })})`);
+        w.eval(`tillampaKonfiguration(${JSON.stringify({ version: 2, prioConfig: { akutMinN: 7 } })})`);
         const falt = d.getElementById('prio-cfg-akutN');
         expect(d.getElementById('installningar-modal').contains(falt)).toBe(true);
         expect(falt.value).toBe('7');

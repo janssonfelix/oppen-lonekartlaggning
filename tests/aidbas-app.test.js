@@ -90,29 +90,29 @@ describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på ind
         expect(w.__state.lonemanad).toBe('2026-10');
         w.__renderTabContent('matrix');
         expect(w.document.getElementById('aidbas-lika').textContent).toContain('Lönemånad: 2026-10');
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         expect(cfg.lonemanad).toBe('2026-10');
         expect(cfg.likvardighet.kvDomDefinition).toBe('do');
-        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, lonemanad: '2025-11', likvardighet: { ...cfg.likvardighet, kvDomDefinition: 'scb' } }) + ')');
+        w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, lonemanad: '2025-11', likvardighet: { ...cfg.likvardighet, kvDomDefinition: 'scb' } }) + ')');
         expect(w.__state.lonemanad).toBe('2025-11');
         expect(w.__state.likvardighet.kvDomDefinition).toBe('scb');
-        expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { kvDomDefinition: 'annat' } }) + ')')).toThrow(/kvDomDefinition/);
+        expect(() => w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { kvDomDefinition: 'annat' } }) + ')')).toThrow(/kvDomDefinition/);
         // Jämförelseyrkena (ADR-60): standard alla som inte är kvinnodominerade; filtret följer med och valideras.
         expect(cfg.likvardighet.jamforelse).toBe('alla');
-        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, jamforelse: 'mansdominerade' } }) + ')');
+        w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, jamforelse: 'mansdominerade' } }) + ')');
         expect(w.__state.likvardighet.jamforelse).toBe('mansdominerade');
-        expect(w.eval('buildConfigSnapshot()').likvardighet.jamforelse).toBe('mansdominerade');
-        expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { jamforelse: 'blandade' } }) + ')')).toThrow(/jamforelse/);
+        expect(w.eval('byggKonfiguration()').likvardighet.jamforelse).toBe('mansdominerade');
+        expect(() => w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { jamforelse: 'blandade' } }) + ')')).toThrow(/jamforelse/);
     });
     it('likvärdighetens fält i konfigurationsfilen: utan source, och talen prövas mot fältens gränser', () => {
         const w = fonster();
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         expect(Object.keys(cfg.likvardighet)).not.toContain('source');
         // En äldre fil med fältet source läses in utan fel; fältet hoppas över.
-        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, source: 'statistik' } }) + ')');
+        w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, source: 'statistik' } }) + ')');
         expect(Object.keys(w.__state.likvardighet)).not.toContain('source');
         // Utanför gränserna: kvinnotröskeln 50–70, minsta skillnad 0–50, antal par minst 1. Inget ändras.
-        const fel = lv => () => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, ...lv } }) + ')');
+        const fel = lv => () => w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, ...lv } }) + ')');
         expect(fel({ kvinnoTroskelPct: 80 })).toThrow(/kvinnoTroskelPct måste vara ett tal mellan 50 och 70/);
         expect(fel({ kvinnoTroskelPct: 45 })).toThrow(/kvinnoTroskelPct/);
         expect(fel({ minstaGapPct: -1 })).toThrow(/minstaGapPct måste vara ett tal mellan 0 och 50/);
@@ -121,9 +121,9 @@ describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på ind
         expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(60);
         // Visa alla sätter antalet par till hela listan, som kan vara fler än fältets 500; ett sparat sådant värde läses in.
         w.__state.likvardighet.topN = 750;
-        const allaPar = w.eval('buildConfigSnapshot()');
+        const allaPar = w.eval('byggKonfiguration()');
         w.__state.likvardighet.topN = 20;
-        w.eval('applyConfigSnapshot(' + JSON.stringify(allaPar) + ')');
+        w.eval('tillampaKonfiguration(' + JSON.stringify(allaPar) + ')');
         expect(w.__state.likvardighet.topN).toBe(750);
     });
 });

@@ -52,17 +52,17 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         const w = demo();
         await ritaAlla(w);
         await byt(w, 'dashboard');
-        // En konfigurationsfil utan ökningen (som om applyConfigSnapshot saknade den): Prioritering visar då det som
+        // En konfigurationsfil utan ökningen (som om tillampaKonfiguration saknade den): Prioritering visar då det som
         // ritades med den förra kostnadsperioden.
-        const snap = w.__buildConfigSnapshot();
+        const snap = w.__byggKonfiguration();
         const visningNy = w.visningNy;
         w.visningNy = () => {};
-        w.__applyConfigSnapshot({ ...snap, kostnad: { ...snap.kostnad, manader: 9 } });
+        w.__tillampaKonfiguration({ ...snap, kostnad: { ...snap.kostnad, manader: 9 } });
         w.visningNy = visningNy;
         const fel = await jamforAlla(w);
         expect(fel.map(f => f.split('\n')[0])).toContain('prioritering');
         // Med ökningen visas ingenting som det var.
-        expect(await prova(w, 'dashboard', w => { w.__applyConfigSnapshot({ ...snap, kostnad: { ...snap.kostnad, manader: 4 } }); })).toEqual([]);
+        expect(await prova(w, 'dashboard', w => { w.__tillampaKonfiguration({ ...snap, kostnad: { ...snap.kostnad, manader: 4 } }); })).toEqual([]);
     });
 
     it('direkta anrop, exportläget och klick från koden ritar alltid', async () => {

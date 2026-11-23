@@ -1736,11 +1736,11 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
     // Demot med jämförelsestatistik och förra årets bokslut (medianen 500 kr lägre), alla flikar ritade.
     const fonster = delatFonster(w2 => {
         const a = createAppWindow(); a.__loadDemoData();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
         cfg.arsbokslut.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; });
         w2.__loadDemoData();
-        w2.__cfg = cfg; w2.eval('applyConfigSnapshot(window.__cfg)');
+        w2.__cfg = cfg; w2.eval('tillampaKonfiguration(window.__cfg)');
         w2.__state.statistik = [...new Set(w2.__getData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
         w2.__state.statistikHasP10 = true; w2.__state.statistikHasP90 = true;
         for (const t of ['dashboard', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'demografi', 'prioritering', 'loneoversyn', 'arbetet']) w2.__renderTabContent(t);

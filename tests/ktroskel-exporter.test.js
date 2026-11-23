@@ -243,14 +243,14 @@ describe('[I5] konfigurationsfil och organisationspaket: det som syns ritas om e
     it('konfigurationsfil med annan tröskel: Översikts delar ritas av stegen (ingen flik genom renderTabContent), övriga töms, och Att göra följer den nya tröskeln', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(25, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const w = fonster(null);
         w.eval('renderActionChecklist(); renderProcessTracker(); renderDataValidationReport(); refreshCurrentTab();');
         ritaAlla(w);
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
         rakna(w);
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.eval('kInstalld()')).toBe(25);
         expect(Object.entries(w.__antal).filter(([, n]) => n !== 1)).toEqual([]);
         expect(Object.keys(w.__antal).length).toBe(0);                              // den öppna fliken är Översikt, vars delar stegen ritar själva
@@ -259,11 +259,11 @@ describe('[I5] konfigurationsfil och organisationspaket: det som syns ritas om e
     });
     it('konfigurationsfil med samma tröskel: bara den öppna fliken ritas', () => {
         const a = createAppWindow();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const w = fonster(null);
         rakna(w);
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(Object.keys(w.__antal).length).toBe(1);
     });
     it('organisationspaket med annan tröskel: ingen flik ritas mer än en gång, och ingen mellangrupp står kvar', () => {

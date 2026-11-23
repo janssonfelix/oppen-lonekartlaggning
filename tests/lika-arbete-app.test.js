@@ -251,19 +251,19 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
     it('konfigurationsfilen fram och tillbaka; en äldre fil utan fältet ger standard; ogiltigt ger varning', () => {
         const w = demo();
         kryssa(w, 'alder');
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.gapUppdelning).toEqual({ variabler: ['bas', 'aid', 'alder'] });
         const w2 = createAppWindow(); w2.__loadDemoData();
-        w2.__cfg = cfg; w2.eval('window.__svar = applyConfigSnapshot(window.__cfg)');
+        w2.__cfg = cfg; w2.eval('window.__svar = tillampaKonfiguration(window.__cfg)');
         expect(JSON.parse(JSON.stringify(w2.__state.gapUppdelning))).toEqual({ variabler: ['bas', 'aid', 'alder'] });
         // Standardvalet sparas som null.
-        expect(JSON.parse(JSON.stringify(demo().__buildConfigSnapshot())).gapUppdelning).toBeNull();
+        expect(JSON.parse(JSON.stringify(demo().__byggKonfiguration())).gapUppdelning).toBeNull();
         // En fil från v2 (utan fältet) ger standard, också när ett val var gjort.
         const aldre = { ...cfg }; delete aldre.gapUppdelning;
-        w2.__cfg = aldre; w2.eval('window.__svar = applyConfigSnapshot(window.__cfg)');
+        w2.__cfg = aldre; w2.eval('window.__svar = tillampaKonfiguration(window.__cfg)');
         expect(w2.__state.gapUppdelning).toBeNull();
         expect(w2.eval('window.__svar.varningar').join(' ')).not.toMatch(/Uppdelningen/);
-        w2.__cfg = { ...cfg, gapUppdelning: { variabler: 'fel' } }; w2.eval('window.__svar = applyConfigSnapshot(window.__cfg)');
+        w2.__cfg = { ...cfg, gapUppdelning: { variabler: 'fel' } }; w2.eval('window.__svar = tillampaKonfiguration(window.__cfg)');
         expect(w2.__state.gapUppdelning).toBeNull();
         expect(w2.eval('window.__svar.varningar').join(' ')).toContain('Uppdelningens variabler gick inte att läsa');
     });

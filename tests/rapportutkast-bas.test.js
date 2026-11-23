@@ -23,11 +23,11 @@ const valj = (w, v) => { const s = valjare(w); s.value = v; s.dispatchEvent(new 
 /** Förra årets bokslut ur årets (konfigurationsfilen), med medianen 500 kr lägre i varje intervall. */
 const medBokslut = (andra = ab => ab.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; })) => {
     const a = demo();
-    const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+    const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
     cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
     andra(cfg.arsbokslut);
     const w = demo();
-    w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+    w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
     return { w, cfg };
 };
 
@@ -91,8 +91,8 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
         expect(w.__state.utkastPerBas).toBe(false);
         expect(utkast(w).value).not.toContain('PER BAS-INTERVALL');
         expect(utkast(w).value).toContain('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
-        expect(w.__buildConfigSnapshot()).not.toHaveProperty('utkastPerBas');
-        expect(JSON.stringify(w.__buildConfigSnapshot())).not.toContain('utkastPerBas');
+        expect(w.__byggKonfiguration()).not.toHaveProperty('utkastPerBas');
+        expect(JSON.stringify(w.__byggKonfiguration())).not.toContain('utkastPerBas');
         // Ett redigerat utkast skrivs inte över av väljaren; Återskapa ritar om efter valet.
         utkast(w).value = 'Egen text'; utkast(w).dispatchEvent(new w.Event('input', { bubbles: true }));
         valj(w, 'perBas');
@@ -325,18 +325,18 @@ describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer me
     const GAMLA_12 = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
     const GAMLA_FACKLIG = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'];
     const lasIn = (w, rapportUrval) => {
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         w.__cfg = { ...cfg, rapportUrval };
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
     };
     it('ett färdigt urval sparas med fast i state och i konfigurationsfilen, och läses tillbaka som samma urval', () => {
         const w = demo();
         w.eval("sattRapportUrval('facklig')");
         expect(w.__state.rapportUrval.fast).toBe('facklig');
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.rapportUrval.fast).toBe('facklig');
         const w2 = demo();
-        w2.__cfg = cfg; w2.eval('applyConfigSnapshot(window.__cfg)');
+        w2.__cfg = cfg; w2.eval('tillampaKonfiguration(window.__cfg)');
         expect(w2.__state.rapportUrval.fast).toBe('facklig');
         expect(w2.eval('rapportUrval()').namn).toBe('Facklig dialog');
     });
@@ -374,7 +374,7 @@ describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer me
         ruta.checked = false; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(w.__state.rapportUrval.fast).toBeUndefined();
         expect(w.eval('rapportUrval()').namn).toMatch(/^Eget urval/);
-        expect(JSON.parse(JSON.stringify(w.__buildConfigSnapshot())).rapportUrval).not.toHaveProperty('fast');
+        expect(JSON.parse(JSON.stringify(w.__byggKonfiguration())).rapportUrval).not.toHaveProperty('fast');
     });
     it('en fil med ett okänt fast-värde avvisas inte; det hoppas över', () => {
         const w = demo();

@@ -90,10 +90,10 @@ describe('Jämförelsestatistik: tre block och filter', () => {
     it('valen följer med konfigurationsfilen; en källa i en äldre fil ignoreras; Rensa återställer', () => {
         const w = oppna();
         w.eval("jamforelseSattVal({ bas: 'C', sektor: 'Teknikarbete' })");
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect(cfg.visning.jamforelse).toEqual({ bas: 'C', sektor: 'Teknikarbete' });
         const w2 = oppna();
-        w2.__applyConfigSnapshot({ ...cfg, visning: { ...cfg.visning, jamforelse: { kalla: 'stallningstagande', bas: 'C', sektor: '' } } });
+        w2.__tillampaKonfiguration({ ...cfg, visning: { ...cfg.visning, jamforelse: { kalla: 'stallningstagande', bas: 'C', sektor: '' } } });
         expect(w2.eval('jamforelseVal()')).toEqual({ bas: 'C', sektor: '' });
         w2.eval('_rensaAllData()');
         expect(w2.eval('jamforelseVal()')).toEqual({ bas: '', sektor: '' });

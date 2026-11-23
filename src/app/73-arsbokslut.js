@@ -19,7 +19,7 @@ import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { getBasIntervals, getData, state } from './12-tillstand.js';
 import { buildActionChecklist } from './18-atgardslista.js';
-import { buildAnalysisSnapshot } from './19-konfiguration.js';
+import { byggOgonblicksbild } from './19-konfiguration.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { foreEfterFigur } from './36-loneoversyn.js';
@@ -32,7 +32,7 @@ export function byggArsbokslutNu() {
     return medExportLage(() => {
         const d = getData();
         const k = kTroskel();
-        const bild = buildAnalysisSnapshot();
+        const bild = byggOgonblicksbild();
         const lika = typeof laLikaGrupper === 'function' ? laLikaGrupper(d, k) : { grupper: [] };   // flaggad = Värt att granska (ADR-59)
         /** @type {any} */ let lv = null;
         try { lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null; } catch (_e) { lv = null; }

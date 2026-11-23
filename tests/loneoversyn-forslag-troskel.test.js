@@ -81,7 +81,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(bok).toContain('[Sammanfattning]');
         expect(bok).toContain('[Fördelning]');
         expect(bok).toContain(NOT_10);
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         expect(cfg.loneoversyn.mal.filter(t => t.kalla === 'par')).toEqual([]);
         // Löneöversyns del av filen: resten bär BAS-intervallets percentiler, och med 17 personer i BAS C kan dess övre
         // kvartil vara jämförelseyrkets lön utan att något läcker.
@@ -93,7 +93,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(parRader(w)).toEqual([]);
         expect(text(w, 'forecast-par-not')).toBe(NOT_10);
         const bok = await excel(w);
-        const cfg = normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').loneoversyn));
+        const cfg = normalisera(JSON.stringify(w.eval('byggKonfiguration()').loneoversyn));
         forvantaInget(w, 6, { Excel: bok, konfigurationsfilen: cfg });
         expect(bok).not.toContain(String(KV_LON));
     });
@@ -138,7 +138,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(aids(w)).toEqual(['6000']);
         expect(text(w, 'forecast-par-not')).toBe(`${NOT_10} 1 föreslagen rad togs bort eftersom paret den räknades ur har en grupp under 10 personer. `
             + 'Klicka på Föreslå fördelning mot skillnaderna i likvärdigt arbete för ett nytt förslag.');
-        forvantaInget(w, 6, { 'hela arbetsboken': await excel(w), konfigurationsfilen: normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').loneoversyn)) });
+        forvantaInget(w, 6, { 'hela arbetsboken': await excel(w), konfigurationsfilen: normalisera(JSON.stringify(w.eval('byggKonfiguration()').loneoversyn)) });
         // Sänks tröskeln igen följer meningen om utelämnade par med; raden kommer inte tillbaka av sig själv, och
         // meningen om den borttagna raden står kvar tills ett nytt förslag görs.
         w.eval('sattKTroskel(5, { fraga: false })');
@@ -159,14 +159,14 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         const fran = fonsterPar({ kvN: 6, jmfN: 24, k: 5 });
         fran.eval('_forecastOptimize()');
         fran.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
-        const cfg = JSON.parse(JSON.stringify(fran.eval('buildConfigSnapshot()')));
+        const cfg = JSON.parse(JSON.stringify(fran.eval('byggKonfiguration()')));
         expect(cfg.loneoversyn.mal.filter(t => t.kalla === 'par')).toHaveLength(1);
         // Filen läses in vid tröskeln 10: med fältet kTroskel i filen satt till 10, och utan fältet.
         for (const kTroskel of [10, undefined]) {
             const w = fonsterPar({ kvN: 6, jmfN: 24 });
             w.__cfg = { ...cfg, kTroskel };
             if (kTroskel === undefined) delete w.__cfg.kTroskel;
-            w.eval('applyConfigSnapshot(window.__cfg)');
+            w.eval('tillampaKonfiguration(window.__cfg)');
             expect(w.eval('kInstalld()')).toBe(10);
             expect(parRader(w)).toEqual([]);
             expect(aids(w)).toEqual(['6000']);
@@ -175,13 +175,13 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
     it('en konfigurationsfil som läses in före lönefilen: den föreslagna raden prövas när lönefilen läses in', () => {
         const fran = fonsterPar({ kvN: 6, jmfN: 24, k: 5 });
         fran.eval('_forecastOptimize()');
-        const cfg = JSON.parse(JSON.stringify(fran.eval('buildConfigSnapshot()')));
+        const cfg = JSON.parse(JSON.stringify(fran.eval('byggKonfiguration()')));
         const rader = JSON.parse(JSON.stringify(fran.__state.data));
         delete cfg.kTroskel;
         const w = createAppWindow();
         w.alert = () => {};
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(parRader(w)).toHaveLength(1);   // utan lönefil finns inga par att pröva mot
         w.__state.data = rader;
         w.eval('_afterDataLoaded()');
@@ -209,11 +209,11 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
     const sokInte = (t, tal, namn) => { for (const v of tal) expect(t, `${namn}: ${v}`).not.toContain(String(v)); };
     const litetTal = [GAP2, GAP2 * 12, JMF2_LON];
     const cfgFran = (w, { utanK = false } = {}) => {
-        const cfg = JSON.parse(JSON.stringify(w.eval('buildConfigSnapshot()')));
+        const cfg = JSON.parse(JSON.stringify(w.eval('byggKonfiguration()')));
         if (utanK) delete cfg.kTroskel;
         return cfg;
     };
-    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)'); };
+    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)'); };
     const parRad = varde => ({ bas: 'C', aid: '5300', enhet: 'kr', varde, fordelning: 'lowest', malniva: 'median', pott: 'equity', kalla: 'par' });
 
     it('dubbelräkningen: två godkända jämförelseyrken ger en rad, och exporten stämmer med ett par', async () => {
@@ -246,7 +246,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         expect(text(w, 'forecast-par-not')).toMatch(BORTTAGEN);
         const bok = await excel(w);
         sokInte(bok, litetTal, 'Excel');
-        sokInte(normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').loneoversyn)), litetTal, 'konfigurationsfilen');
+        sokInte(normalisera(JSON.stringify(w.eval('byggKonfiguration()').loneoversyn)), litetTal, 'konfigurationsfilen');
     });
     it('väg 1, säkert: förslaget vid 5 ur det stora jämförelseyrket står kvar när tröskeln höjs till 10', () => {
         const w = tvaJmf(6, 5, 40000);   // 6200 har lägre lön än 6100: paret med 6100 har störst skillnad
@@ -320,7 +320,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         sokInte(await excel(w), litetTal, `${namn}: Löneöversyns export`);
         // Alla flikar bär BAS-intervallets percentiler, och 6200:s lön är den högsta i BAS C: där söks skillnaden och beloppet.
         sokInte(await excelAlla(w), [GAP2, GAP2 * 12], `${namn}: Excel (alla flikar)`);
-        sokInte(normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').loneoversyn)), litetTal, `${namn}: konfigurationsfilen`);
+        sokInte(normalisera(JSON.stringify(w.eval('byggKonfiguration()').loneoversyn)), litetTal, `${namn}: konfigurationsfilen`);
         sokInte(text(w, 'view-loneoversyn'), [GAP2 * 12], `${namn}: Löneöversyn på skärmen`);
     };
     it('utfallet: tröskeln höjs medan en annan flik är öppen; inget ur den borttagna raden i exporten eller filen', async () => {

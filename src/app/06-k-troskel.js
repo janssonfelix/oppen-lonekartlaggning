@@ -12,7 +12,7 @@ import { computeBootstrapCI, computePowerAnalysis, renderProcessTracker, renderU
 import { renderOutliers } from './15-extremvarden-basrang.js';
 import { renderDataValidationReport } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
-import { renderSnapshotComparison } from './19-konfiguration.js';
+import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { ritGenerationNy, tomFlikarUtom, visningNy } from './23-exportgrind.js';
 import { invalidateStatCaches } from './30-statistikcacher.js';
 import { renderTabContent } from './31-navigering.js';
@@ -409,7 +409,7 @@ export function _omritningssteg() {
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {
         const ab = document.getElementById('snapshot-comparison');
-        if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
+        if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();
     }]);
     // Bara den öppna fliken. De övriga är inaktuella tills de öppnas eller en export behöver dem (exportgrinden).
     // Översikt är redan ritad av stegen ovan (renderTabContent('dashboard') gör inget annat).

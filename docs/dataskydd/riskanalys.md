@@ -592,7 +592,7 @@ Konfig-JSON:en (**version 3**) innehåller tre slags uppgifter. Fälten har sven
   läses aldrig ur filen. Vid inläsning prövas varje text mot längden (80 tecken) och mot personnummer och e-post
   (`valideraImportprofil` i `src/lib/importprofiler.js`). En fil utan profiler tar inte bort sessionens.
 
-`state.data` (individrader) ingår **aldrig**. Det är verifierat mot `buildConfigSnapshot()` i koden (ingen
+`state.data` (individrader) ingår **aldrig**. Det är verifierat mot `byggKonfiguration()` i koden (ingen
 `state.data`-referens). Organisationens namn och jämförelsestatistikens namn ingår. Det är användarens egna namn,
 och text som liknar personnummer eller e-post avvisas. Organisationstypen (kommun, region eller båda) ingår som
 inställning. Ansvarskoderna och ansvarskolumnens namn ingår inte heller (vaktas av röktest). Inte heller lönedata
@@ -773,7 +773,7 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Lokala exporter | Blob/`<a download>`/print-läsning | ✔ inga uppladdningar |
 | Hash-baserad CSP (ADR-9) | Hash-jämförelse + webbläsarröktestet: injicerat `<script>`, inline-`onclick` och `<img onerror>`; skadlig text i lönefil och paket i jsdom (`tests/dataskydd-app.test.js`) | ✔ ingen av dem exekverades; appen fullt funktionell |
 | XSS-utdatakodning | `esc()` escapear `& < > " '` + regressionstester (`tests/sakerhet.test.js`) | ✔ säker även i attributkontext |
-| Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och 3 och avvisar andra versioner |
+| Konfigfilens innehåll | Kodläsning av `byggKonfiguration()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och 3 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
 | Automatiska tester | `npm run test:full` (hela Vitest-sviten; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
