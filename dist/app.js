@@ -31915,11 +31915,6 @@ function _computePerBasGap(rows, basList) {
     return _rgComputePerBasGap(rows, basList, { golv: statGolv() });
 }
 
-// Kvantilregression via IRLS; standardvärdena för maxIter och tol ligger i src/lib/regression.js.
-function _quantileRegression(X, y, tau, maxIter, tol, start) {
-    return _rgQuantileRegression(X, y, tau, maxIter, tol, start);
-}
-
 // ---- Ålder i lönefilen (ADR-64) ----
 // Ålderskolumnen är valfri. Utan den läser inläsningen ålder 0 på varje rad: modellerna räknas då utan ålder,
 // fliken Ålder & karriär låses och exporterna hoppar åldersavsnitten. Svaret sparas per inläst underlag.
@@ -32238,8 +32233,8 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
 let _regKvantilSenast = null;
 // Bootstrap-KI på könskoefficienten och på skillnaden P90 − P10 (ADR-63): B omsamplingar av raderna, percentilintervall, seedat ur datat (_rngFor) så
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
-// tabellen säger det. IRLS-skattningen (_quantileRegression) är en approximation av kvantillösningen; intervallet
-// bootstrappar den approximationen, inte den exakta LP-lösningen.
+// tabellen säger det. IRLS-skattningen (quantileRegression i src/lib/regression.js) är en approximation av
+// kvantillösningen; intervallet bootstrappar den approximationen, inte den exakta LP-lösningen.
 const REG_KVANTIL_KI_B = _osKonstanter().KVANTIL_KI_B, REG_KVANTIL_KI_MAX_N = _osKonstanter().KVANTIL_KI_MAX_N;
 // Minne för senaste beräkning: kortet ritas om vid varje flikbyte, och bootstrappen är det dyra (uppmätt ~0,5 s
 // på demodatat, ~11 s på 5 000 rader, därav gränsen 2 000 ≈ 4 s). Nyckeln är datats eget frö (antal och lönesummor per kön) plus ålderssumman.

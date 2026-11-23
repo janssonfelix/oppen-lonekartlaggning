@@ -20,11 +20,6 @@ function _computePerBasGap(rows, basList) {
     return _rgComputePerBasGap(rows, basList, { golv: statGolv() });
 }
 
-// Kvantilregression via IRLS; standardvärdena för maxIter och tol ligger i src/lib/regression.js.
-function _quantileRegression(X, y, tau, maxIter, tol, start) {
-    return _rgQuantileRegression(X, y, tau, maxIter, tol, start);
-}
-
 // ---- Ålder i lönefilen (ADR-64) ----
 // Ålderskolumnen är valfri. Utan den läser inläsningen ålder 0 på varje rad: modellerna räknas då utan ålder,
 // fliken Ålder & karriär låses och exporterna hoppar åldersavsnitten. Svaret sparas per inläst underlag.
