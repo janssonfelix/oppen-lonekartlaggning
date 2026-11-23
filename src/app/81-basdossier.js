@@ -45,11 +45,9 @@ function buildBasdossier(bas) {
     const k = kTroskel();
     const df = getData().filter(r => r.bas === bas && r.lon > 0);
     const arKv = arKvinna, arMa = arMan;
-    const kv = df.filter(arKv), ma = df.filter(arMa);
     const lon = df.map(r => r.lon);
-    const konOk = _konFarRedovisas(kv.length, ma.length);
     const median = Stat.median(lon), p10 = Stat.quantile(lon, 0.10), p90 = Stat.quantile(lon, 0.90);
-    const medKv = konOk ? Stat.median(kv.map(r => r.lon)) : null, medMa = konOk ? Stat.median(ma.map(r => r.lon)) : null;
+    const { nKv, nMa, medKv, medMa, kvotPct, konOk } = _stKonsMedianer(df, { k });
 
     // 1. Läget mot ställningstagandet: referensens rad för BAS-intervallet (inte en yrkesrad).
     const pol = typeof policyFor === 'function' ? policyFor(null, bas) : null;
@@ -111,8 +109,8 @@ function buildBasdossier(bas) {
         forra = j && j[0] ? { lage: 'ok', ar: fb.ar, rad: j[0] } : { lage: 'saknasIntervall', ar: fb.ar };
     }
 
-    return { bas, n: df.length, nKv: kv.length, nMa: ma.length, andelKv: df.length ? kv.length / df.length * 100 : null,
-        median, p10, p90, konOk, medKv, medMa, kvotPct: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
+    return { bas, n: df.length, nKv, nMa, andelKv: df.length ? nKv / df.length * 100 : null,
+        median, p10, p90, konOk, medKv, medMa, kvotPct,
         referens, yrken, yrkenUtelamnade: lika.utelamnadeGrupper.filter(iBas).map(g => g.yrke).sort((a, b) => String(a).localeCompare(String(b), 'sv')),
         ejJamforbara: lika.ejJamforbaraGrupper.filter(iBas).map(g => g.yrke),
         par: { kandidat: kandidat.map(parRad), hierarkiska: hierarkiska.map(parRad), utelamnade: parUtelamnade },
