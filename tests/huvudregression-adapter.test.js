@@ -42,7 +42,7 @@ describe('[B3.1] runOLSRegression är en tunn adapter till huvudregression', () 
                 w.__state.kTroskel = k;
                 w.eval(`sattForklaringsmodell(${JSON.stringify(modell)}, { rita: false })`);
                 const app = w.__runOLS();
-                const lib = huvudregression(w.__state.data, { modell, kInstalld: k, golv: Math.max(k, w.__K) });
+                const lib = huvudregression(w.__state.data, { modell, kInstalld: k, golv: w.__K });   // på skärmen är golvet 10 (ADR-103)
                 expect(forstaSkillnad(app, lib)).toBeNull();
             });
         }

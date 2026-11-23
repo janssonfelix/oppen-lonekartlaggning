@@ -28,7 +28,8 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         const w = demo();
         await ritaAlla(w);
         // Skattningarna (bootstrap-KI, styrkan) räknas i bakgrunden när golvet ändras. Flikarna ritas innan de är klara.
-        w.eval('sattKTroskel(15, { fraga: false })');
+        // På skärmen ändrar ett tröskelbyte inte golvet (ADR-103); bakgrundsräkningen startas som efter ett golvbyte.
+        w.eval('invalidateStatCaches({ recompute: false, likvardighet: false }); _skattningarIBakgrunden()');
         expect(w.eval('!!_bakgrundsrakning')).toBe(true);
         ritaAllaDirekt(w);
         await byt(w, 'filer');

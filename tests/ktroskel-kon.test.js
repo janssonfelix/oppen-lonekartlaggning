@@ -255,7 +255,10 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).toContain('91357');
         w.eval('sattKTroskel(25, { fraga: false })');
         expect(maskerade()).toEqual([25, 1]);                 // D (20) är nu under den inställda tröskeln
-        // Extremvärdeslistan följer det statistiska golvet, max(inställd tröskel, 10) — samma i båda lägena (ADR-51).
+        // Extremvärdena följer golvet för skattningar: 10 på skärmen, max(inställd tröskel, 10) i exportläget (ADR-103).
+        expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).toContain('91357');
+        expect(d.getElementById('data-validation-report').textContent).not.toMatch(/Inga extremvärden/);
+        w.eval('medExportLage(() => { renderOutliers(); renderDataValidationReport(); })');
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).not.toContain('91357');
         expect(d.getElementById('data-validation-report').textContent).toMatch(/Inga extremvärden/);
     });
