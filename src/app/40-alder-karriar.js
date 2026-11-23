@@ -43,15 +43,13 @@ function renderKon(bas) {
     const allAges  = df.map(d => d.alder);
     const [minAlder, maxAlder] = _omfang(allAges);
     const avgAlder = allAges.reduce((a,b)=>a+b,0) / allAges.length;
-    const rawLonKv = dataKv.map(d => d.lon);
-    const rawLonMa = dataMa.map(d => d.lon);
     // Könsuppdelade lönemått följer tröskeln (ADR-12): gapen kräver den för båda könen; ett köns
     // trendlinje, konfidensband och låda kräver den för det könet. En enskild punkt i
     // spridningsdiagrammet ritas bara för en person vars grupp och kön i gruppen når tröskeln.
     const kvOk = !isKMasked(dataKv.length), maOk = !isKMasked(dataMa.length);
     const konOk = kvOk && maOk;
-    const medKv = Stat.median(rawLonKv) || 0, medMa = Stat.median(rawLonMa) || 0;
-    const unadjGap = !konOk ? "–" : medMa > 0 ? svPct((medKv/medMa)*100, 1) : "–";
+    const kvot = _stKonsMedianer(df, { k: kTroskel() }).kvotPct;   // null när ett kön är under tröskeln
+    const unadjGap = kvot != null ? svPct(kvot, 1) : "–";
     // Ett köns regression är null när könet bara har en ålder i urvalet: då finns ingen lutning och ingen justering.
     const medAlder = !!(regKv && regMa);
     const expKv = medAlder ? regKv.m * avgAlder + regKv.b : NaN, expMa = medAlder ? regMa.m * avgAlder + regMa.b : NaN;
@@ -59,7 +57,7 @@ function renderKon(bas) {
     // Urvalsraden och avsnittens nyckeltal (ADR-41).
     const urvalText = document.getElementById('ak-urval-text');
     if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
-    _laNyckel('nyckel-ak-fordelning', konOk && medMa > 0 ? `Kvinnors median ${unadjGap} av mäns` : '');
+    _laNyckel('nyckel-ak-fordelning', kvot != null ? `Kvinnors median ${unadjGap} av mäns` : '');
     _laNyckel('nyckel-ak-alla', `${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}`);
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-n")).textContent = svTal(df.length, 0);
     { const u = document.getElementById("kon-kpi-n-under"); if (u) u.textContent = `${svTal(dataKv.length, 0)} kvinnor · ${svTal(dataMa.length, 0)} män`; }
@@ -75,8 +73,8 @@ function renderKon(bas) {
     const insightEl = document.getElementById("p-value-insight");
     if (insightEl) {
         const scope = isAll ? "Hela urvalet" : `BAS ${bas}`;
-        insightEl.innerHTML = regKv && regMa && konOk && medMa > 0 && expMa > 0
-            ? `<strong>${esc(scope)}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
+        insightEl.innerHTML = regKv && regMa && kvot != null && expMa > 0
+            ? `<strong>${esc(scope)}:</strong> ${_akInsiktText(regKv.m, regMa.m, kvot, (expKv / expMa) * 100)}`
             : `<strong>${esc(scope)}:</strong> ${esc(konOk && !medAlder ? 'Lönens samband med åldern kan inte räknas eftersom ett av könen bara har en ålder i urvalet.' : _konUtelamnatNot())}`;
     }
     { const not = document.getElementById('kon-kohort-not'); if (not) not.textContent = KOHORT_FORBEHALL; }
