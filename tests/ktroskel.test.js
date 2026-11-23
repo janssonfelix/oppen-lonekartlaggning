@@ -21,14 +21,16 @@ describe('k-tröskeln: standardvärde och validering', () => {
         expect(w.eval('isKMasked(9)')).toBe(true);
         expect(w.eval('isKMasked(10)')).toBe(false);
     });
-    it.each([2, 1, 0, -3, 2.5, 1001, '', ' ', 'tio', '10,0', '1e2', null, undefined, NaN])('avvisar %p och lämnar värdet orört', v => {
+    // Vilka värden som godtas prövas i tests/ktroskel-lib.test.js (kTolka); här att sattKTroskel lämnar tröskeln orörd
+    // och ger felet, och att den sätter ett godtaget värde.
+    it.each([2, 'tio'])('avvisar %p och lämnar värdet orört', v => {
         w.__v = v;
         const r = w.eval('sattKTroskel(window.__v, { fraga: false })');
         expect(r.ok).toBe(false);
         expect(r.fel).toMatch(/heltal mellan 3 och 1000/);
         expect(w.eval('kInstalld()')).toBe(10);
     });
-    it.each([[3, 3], [1000, 1000], ['12', 12], [' 15 ', 15]])('godtar %p', (v, n) => {
+    it.each([[3, 3], [' 15 ', 15]])('godtar %p', (v, n) => {
         w.__v = v;
         expect(w.eval('sattKTroskel(window.__v, { fraga: false })')).toMatchObject({ ok: true, varde: n });
         expect(w.eval('kInstalld()')).toBe(n);

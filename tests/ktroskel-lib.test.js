@@ -118,6 +118,8 @@ describe('texterna om tröskeln', () => {
     });
     it('kTolka: bara rena heltal 3–1000 (ADR-102)', () => {
         expect([1, 2, 3, '10', ' 1000 ', 1001, '2.5', '-3', 'x', null, 7.5].map(kTolka)).toEqual([null, null, 3, 10, 1000, null, null, null, null, null, null]);
+        expect([0, -3, 2.5, '', ' ', 'tio', '10,0', '1e2', undefined, NaN].map(kTolka)).toEqual(Array(10).fill(null));
+        expect([1000, '12', ' 15 '].map(kTolka)).toEqual([1000, 12, 15]);
     });
 });
 
