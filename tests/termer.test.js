@@ -273,17 +273,17 @@ const UNDANTAG_FRASER = [
     { fil: 'src/lib/sakligaskal.js', fras: 'Svårrekryterade yrken eller konkurrens', skal: 'kategorin Marknad bland de sakliga skälen, vardagligt ord om arbetsmarknaden' },
     { fil: 'src/lib/sakligaskal.js', fras: 'Dokumenterad yrkeserfarenhet', skal: 'kategorin Erfarenhet bland de sakliga skälen, personens erfarenhet' },
     { fil: 'src/index.html', fras: 'Markera som bristyrke: yrken som organisationen har svårt att rekrytera till', skal: 'vad ett bristyrke är (Prioritering), vardagligt ord' },
-    { fil: 'src/index.html', fras: 'i lönefilen ofta Yrke eller Befattning', skal: 'lönefilens kolumnrubriker, som verktyget känner igen (ALLOWED_FIELDS)' },
-    { fil: 'src/app/32-filinlasning.js', fras: 'i lönefilen ofta Yrke eller Befattning', skal: 'lönefilens kolumnrubriker i kolumnmappningen, som verktyget känner igen (ALLOWED_FIELDS)' },
+    { fil: 'src/index.html', fras: 'i lönefilen ofta Yrke eller Befattning', skal: 'lönefilens kolumnrubriker, som verktyget känner igen (TILLATNA_FALT)' },
+    { fil: 'src/app/32-filinlasning.js', fras: 'i lönefilen ofta Yrke eller Befattning', skal: 'lönefilens kolumnrubriker i kolumnmappningen, som verktyget känner igen (TILLATNA_FALT)' },
     { fil: 'src/app/65-om-verktyget.js', fras: 'utbildning, yrkesval och anställningstid', skal: 'vardagligt ord om personers val, inte AID' },
     { fil: 'src/lib/demodata.js', fras: 'Yrkeslärare gymnasieskola', skal: 'AID:s egen etikett i det stora demot (som i aid-etiketter.js)' },
     { fil: 'src/lib/demodata.js', fras: 'Studie- och yrkesvägledare', skal: 'AID:s egen etikett i det stora demot (som i aid-etiketter.js)' },
 ];
 // Kolumnigenkänningen jämför med lönefilens rubriker, som är filens ord och inte verktygets: lönefiler med rubriken
-// Yrke, Yrkesgrupp eller Befattning ska fortfarande läsas in (ALLOWED_FIELDS), och importprofilernas rubriker och
+// Yrke, Yrkesgrupp eller Befattning ska fortfarande läsas in (TILLATNA_FALT), och importprofilernas rubriker och
 // kännetecken är rubrikerna i en känd uppsättning. De blocken prövas inte.
 const KOLUMNIGENKANNING = [
-    { fil: 'src/lib/inlasning.js', block: /const ALLOWED_FIELDS = \{[\s\S]*?\n\};/g },
+    { fil: 'src/lib/inlasning.js', block: /const TILLATNA_FALT = \{[\s\S]*?\n\};/g },
     { fil: 'src/lib/importprofiler.js', block: /\b(?:rubriker|kannetecken):\s*(?:\{[^}]*\}|\[[^\]]*\])/g },
     // CSV-mallens rubriker är kolumnnamnen i filen som laddas ned, och de ska kännas igen när filen läses in igen.
     { fil: 'src/app/32-filinlasning.js', block: /const CSV_MALL_RUBRIKER = \[[^\]]*\];/g },
@@ -381,8 +381,8 @@ const DOK_KATALOGER = ['docs/anvandare', 'docs/dataskydd'];
 // Ord: verbet styrka (styrker) är inget yrke.
 const DOK_UNDANTAG_ORD = /^[Ss]tyrk\p{Ll}*$/u;
 const DOK_UNDANTAG_FRASER = [
-    { fil: 'docs/anvandare/datauttag.md', fras: '*Yrke* eller *Befattning*', skal: 'lönefilens kolumnnamn, som verktyget känner igen (ALLOWED_FIELDS)' },
-    { fil: 'docs/anvandare/korguide.md', fras: '*Yrke* eller *Befattning*', skal: 'lönefilens kolumnnamn, som verktyget känner igen (ALLOWED_FIELDS)' },
+    { fil: 'docs/anvandare/datauttag.md', fras: '*Yrke* eller *Befattning*', skal: 'lönefilens kolumnnamn, som verktyget känner igen (TILLATNA_FALT)' },
+    { fil: 'docs/anvandare/korguide.md', fras: '*Yrke* eller *Befattning*', skal: 'lönefilens kolumnnamn, som verktyget känner igen (TILLATNA_FALT)' },
 ];
 const DOKUMENT = DOK_KATALOGER.flatMap(k => readdirSync(join(ROOT, k)).filter(f => f.endsWith('.md')).map(f => `${k}/${f}`));
 

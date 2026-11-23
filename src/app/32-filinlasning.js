@@ -35,7 +35,7 @@ setupDrop("drop-area-policy", "file-input-policy");
 setupDrop("drop-area-stat", "file-input-stat");
 
 /**
- * Visar GDPR-avvisning i UI:t när detectSensitiveColumns flaggat känsliga fält.
+ * Visar GDPR-avvisning i UI:t när hittaKansligaKolumner flaggat känsliga fält.
  * @param {Array<{col:string, reason:string}>} sensitive
  */
 function _renderSensitiveRejection(sensitive) {
@@ -149,7 +149,7 @@ function _afterDataLoaded() {
 // ---- CSV-mall: nedladdning ----
 // Genererar en tom CSV med rätt headers + 3 exempelrader så förstagångsanvändare
 // inte behöver gissa kolumnnamn. Innehåller ingen riktig data — bara mall.
-// Mallens rubriker är rubriker som kolumnigenkänningen (ALLOWED_FIELDS) känner igen, alltså filens ord och inte
+// Mallens rubriker är rubriker som kolumnigenkänningen (TILLATNA_FALT) känner igen, alltså filens ord och inte
 // verktygets; de byts inte med termerna (ADR-74).
 const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 'Poang'];
 document.getElementById('btn-download-csv-template')?.addEventListener('click', () => {
@@ -183,19 +183,19 @@ document.getElementById('btn-download-csv-template')?.addEventListener('click', 
     announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
 });
 
-// _sniffTabularFormat (filformatet ur de magiska byten) bor i src/lib/inlasning.js och nås genom spegeln.
+// _gissaTabellformat (filformatet ur de magiska byten) bor i src/lib/inlasning.js och nås genom spegeln.
 
 /**
  * Läser första bladet i en XLSX-buffer till rad-objekt (samma form som
  * PapaParse header:true ger), med rubrikradssökning bland de 20 första raderna
- * (samma princip som _findCsvHeader — tål försättsrader i kalkylblad).
+ * (samma princip som _hittaCsvRubrik — tål försättsrader i kalkylblad).
  * Cellvärden konverteras till strängar så resten av pipelinen (getField,
- * parseNumberStrict, detectSensitiveColumns) fungerar identiskt med CSV.
+ * tolkaTalStrikt, hittaKansligaKolumner) fungerar identiskt med CSV.
  *
  * @param {ArrayBuffer} buf
- * @param {Array<Array<string>>} synonymGroups - Som i _findCsvHeader.
+ * @param {Array<Array<string>>} synonymGroups - Som i _hittaCsvRubrik.
  * @param {number} [minHits=2]
- * @param {any[]} [profiler] - Importprofiler, som i _findCsvHeader.
+ * @param {any[]} [profiler] - Importprofiler, som i _hittaCsvRubrik.
  * @returns {{headers:string[], rows:Array<Object<string,string>>, sheet:string}}
  * @throws {Error} om arbetsboken inte kan läsas eller saknar datarader.
  */
@@ -275,7 +275,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
     reader.onload = () => {
         try {
             const buf = reader.result;
-            const fmt = _sniffTabularFormat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
+            const fmt = _gissaTabellformat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
             if (fmt === 'xls-legacy') {
                 callback({ ok: false, error: 'Filen är i äldre Excel-format (.xls). Spara om som .xlsx eller .csv och försök igen.' });
                 return;
@@ -285,8 +285,8 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
                 callback({ ok: true, format: `Excel (blad "${x.sheet}")`, encoding: 'XLSX', headers: x.headers, rows: x.rows });
                 return;
             }
-            const dec = _decodeCsvBuffer(buf);
-            const hdr = _findCsvHeader(dec.text, synonymGroups);
+            const dec = _avkodaCsv(buf);
+            const hdr = _hittaCsvRubrik(dec.text, synonymGroups);
             const csvText = hdr.line > 0
                 ? _delaRader(dec.text).slice(hdr.line).join('\n')
                 : dec.text;
@@ -322,7 +322,7 @@ function loadStructureFile(file) {
 
     // GDPR Art. 25.2: minimal data resident i minnet under parsning.
     // Streaming step-mode → en rad i taget. Var ⌈n/50⌉:e rad (_pnrSampelSteg) sparas
-    // i en sample-buffer på högst 50 rader för detectSensitiveColumns (värdebaserad upptäckt
+    // i en sample-buffer på högst 50 rader för hittaKansligaKolumner (värdebaserad upptäckt
     // över hela filen, B4). Varje rad processas direkt till `parsed[]`, som bara har de
     // minimerade fälten; kontrollen körs när filen är läst, och fälls filen släpps allt.
     const SAMPLE_SIZE = 50;
@@ -578,7 +578,7 @@ function loadStructureFile(file) {
     _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); _beskedEfterOversikt(franOversikt); } };
     const _lasLonefil = () => {
       const buf = _csvReader.result;
-      const fmt = _sniffTabularFormat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
+      const fmt = _gissaTabellformat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
       if (fmt === 'xls-legacy') {
           failLoad('Filen är i äldre Excel-format (.xls). Spara om som .xlsx eller .csv och försök igen.');
           return;
@@ -592,7 +592,7 @@ function loadStructureFile(file) {
           capturedHeaders = x.headers.filter(h => h);
           valjImportprofil(capturedHeaders);
           parseStats.totalRaw = x.rows.length;
-          const sensitive = detectSensitiveColumns(x.rows);   // samplar själv jämnt över bladet (B4)
+          const sensitive = hittaKansligaKolumner(x.rows);   // samplar själv jämnt över bladet (B4)
           if (sensitive.length > 0) { rejectFile(sensitive); return; }
           x.rows.forEach(processRow);
           x.rows.length = 0;   // släpp raw rows (GDPR: minimera residens)
@@ -600,9 +600,9 @@ function loadStructureFile(file) {
           return;
       }
       // Text-/CSV-väg: avkoda → hitta rubrikrad (preamble-tolerant) → strömma.
-      const _dec = _decodeCsvBuffer(buf);
+      const _dec = _avkodaCsv(buf);
       detectedEnc = _dec.encoding;
-      const hdrInfo = _findCsvHeader(_dec.text, _ilRubrikgrupper(), 2, _importprofilLista());
+      const hdrInfo = _hittaCsvRubrik(_dec.text, _ilRubrikgrupper(), 2, _importprofilLista());
       detectedDelim = hdrInfo.delim || ';';
       // Filen delas i rader en gång: försättsraderna före rubriken tas bort, och filens
       // radnummer för varje datarad räknas ur samma rader. Papa hoppar över tomma rader
@@ -632,7 +632,7 @@ function loadStructureFile(file) {
             if (aborted) return;
             // PII-kontrollen på samplet från hela filen; fälls filen släpps de lästa raderna.
             if (sampleBuffer && sampleBuffer.length > 0) {
-                const sensitive = detectSensitiveColumns(sampleBuffer);
+                const sensitive = hittaKansligaKolumner(sampleBuffer);
                 if (sensitive.length > 0) {
                     parsed.length = 0;
                     rejectFile(sensitive);
@@ -681,7 +681,7 @@ const COLMAP_ROLES = [
  * rubrikerna (organisationspaketets, konfigurationsfilens, de inbyggda), annars det som känns igen på delsträng.
  */
 function _kolumnval(headers) {
-    const auto = autoDetectColumnMap(headers), eff = {};
+    const auto = gissaKolumnmappning(headers), eff = {};
     const profil = _importprofilFor(headers);
     const prof = profil ? profil.mappning : {};
     COLMAP_ROLES.forEach(({ role }) => {

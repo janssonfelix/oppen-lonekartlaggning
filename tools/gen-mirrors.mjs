@@ -300,16 +300,16 @@ export const MODULES = [
         // Tolkningen av indata: talen, normaliseringarna och kärnan i uppgiftsminimeringen. Funktionerna behåller i appen
         // namnen de hade där. Importerar ansvar.js (ansvarskoden i en lönerad) och importprofiler.js (rubrikraden): efter dem.
         file: 'inlasning.js', ns: '__mirrorInlasning',
-        expose: { _normalizeNumberString: '_normalizeNumberString', parseNumber: 'parseNumber', parseNumberStrict: 'parseNumberStrict',
-                  _cleanYrkeField: '_cleanYrkeField', _stripHtmlMeta: '_stripHtmlMeta', _normalizeBas: '_normalizeBas',
-                  _normalizePolicyAid: '_normalizePolicyAid', _normalizeKon: '_normalizeKon', tolkaLonerad: '_ilTolkaLonerad',
-                  _pnrSampelSteg: '_pnrSampelSteg', detectSensitiveColumns: 'detectSensitiveColumns', yrkeNamnNyckel: '_ilYrkeNamnNyckel',
-                  sallsyntaNamnrader: '_ilSallsyntaNamnrader', _decodeCsvBuffer: '_decodeCsvBuffer', delaRader: '_delaRader',
-                  _detectDelimiter: '_detectDelimiter', _findCsvHeader: '_findCsvHeader', _sniffTabularFormat: '_sniffTabularFormat',
+        expose: { _normaliseraTaltext: '_normaliseraTaltext', tolkaTal: 'tolkaTal', tolkaTalStrikt: 'tolkaTalStrikt',
+                  _stadaYrkesfalt: '_stadaYrkesfalt', _utanHtmlTecken: '_utanHtmlTecken', _normaliseraBas: '_normaliseraBas',
+                  _normaliseraPolicyAid: '_normaliseraPolicyAid', _normaliseraKon: '_normaliseraKon', tolkaLonerad: '_ilTolkaLonerad',
+                  _pnrSampelSteg: '_pnrSampelSteg', hittaKansligaKolumner: 'hittaKansligaKolumner', yrkeNamnNyckel: '_ilYrkeNamnNyckel',
+                  sallsyntaNamnrader: '_ilSallsyntaNamnrader', _avkodaCsv: '_avkodaCsv', delaRader: '_delaRader',
+                  _gissaAvgransare: '_gissaAvgransare', _hittaCsvRubrik: '_hittaCsvRubrik', _gissaTabellformat: '_gissaTabellformat',
                   // Kolumnvalet och uppgiftsminimeringen: lib tar kolumnmappningen, importprofilen och ansvarskolumnen som
                   // argument, och appens adaptrar (getField, _lonefilensRubriker, _hittaAnsvarKolumn, extractMinimalRecord)
-                  // läser dem ur tillståndet. ALLOWED_FIELDS är en konstant och får inget alias; appen når sökorden med rubrikgrupper.
-                  rubrikgrupper: '_ilRubrikgrupper', vardeForRoll: '_ilVardeForRoll', autoDetectColumnMap: 'autoDetectColumnMap',
+                  // läser dem ur tillståndet. TILLATNA_FALT är en konstant och får inget alias; appen når sökorden med rubrikgrupper.
+                  rubrikgrupper: '_ilRubrikgrupper', vardeForRoll: '_ilVardeForRoll', gissaKolumnmappning: 'gissaKolumnmappning',
                   lonefilensRubriker: '_ilLonefilensRubriker', _faltIRad: '_faltIRad', hittaAnsvarKolumn: '_ilHittaAnsvarKolumn',
                   _bedomAnsvarKolumn: '_bedomAnsvarKolumn', minimeraRad: '_ilMinimeraRad' }
     },

@@ -1217,7 +1217,7 @@ function _rfUrvalDoljerAllt(el) {
 // Ett tal ur ett intervallfält med verktygets talinläsning ("1,5", "1 500", "−5"): null när fältet är tomt, NaN
 // när det inte går att läsa.
 function _rfUrvalLasTal(text) {
-    const r = parseNumberStrict(String(text == null ? '' : text).replace(/−/g, '-'));
+    const r = tolkaTalStrikt(String(text == null ? '' : text).replace(/−/g, '-'));
     if (r.status === 'empty') return null;
     return r.status === 'ok' && isFinite(r.value) ? r.value : NaN;
 }

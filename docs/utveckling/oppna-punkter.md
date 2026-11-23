@@ -95,6 +95,6 @@ och lagrummen står bara i [`lagrum.md`](lagrum.md) (ADR-16); kvinnodominerat ar
 direktivet beskrivs som inte infört i Sverige, med möjlig direkt verkan mot kommun och region. Genomfört
 och kvar att pröva juridiskt: 5 %-gränsen används bara för gemensam lönebedömning, aldrig för att flagga lika eller
 likvärdigt arbete (ADR-59); inläsningen avvisar kolumner vars rubrik antyder fackmedlemskap, hälsa eller andra
-särskilda kategorier (`detectSensitiveColumns`). Fliken *Handlingsplan* behåller namnet, som är neutralt (beslut
+särskilda kategorier (`hittaKansligaKolumner`). Fliken *Handlingsplan* behåller namnet, som är neutralt (beslut
 2026-11-15). Protokollet för gemensam lönebedömning är kartlagt led för led mot art. 10.2 a–g i [`lagrum.md`](lagrum.md).
 Ingen juridisk granskning har gjorts; varje arbetsgivare stämmer av mot sin egen rådgivning.

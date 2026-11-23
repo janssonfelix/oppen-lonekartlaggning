@@ -42,7 +42,7 @@ hanteras med de organisatoriska åtgärderna i §8.
 ## 2. Personuppgifter som behandlas
 
 Verktyget minimerar indata till **fyra obligatoriska fält per anställd** plus en
-**valfri ålder** (rekommenderad, ADR-64), en **valfri arbetsvärderingspoäng** och en **valfri ansvarskod** (vitlista `ALLOWED_FIELDS`, verifierad i koden).
+**valfri ålder** (rekommenderad, ADR-64), en **valfri arbetsvärderingspoäng** och en **valfri ansvarskod** (vitlista `TILLATNA_FALT`, verifierad i koden).
 Poängen är en egenskap hos **befattningen** (arbetsvärderingens resultat), inte
 hos individen, och tillför därmed ingen ny integritetsrisk:
 
@@ -258,14 +258,14 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - Vid fliksstängning försvinner allt minne (ingen persistens).
 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
-- **Var koden bor:** vitlistan och kolumnvalet (`ALLOWED_FIELDS`, kolumnuppslaget, ansvarskolumnen), tolkningen av
+- **Var koden bor:** vitlistan och kolumnvalet (`TILLATNA_FALT`, kolumnuppslaget, ansvarskolumnen), tolkningen av
   värdena — talen, kön, BAS, saneringen av AID-etiketten, kärnan i `extractMinimalRecord` (`minimeraRad`,
-  `tolkaLonerad`) — och `detectSensitiveColumns` är rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan
+  `tolkaLonerad`) — och `hittaKansligaKolumner` är rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan
   klocka. Kolumnmappningen, importprofilen, den godkända ansvarskolumnen och året som ett födelseår räknas mot skickas
   in av appens tunna adaptrar (`getField`, `extractMinimalRecord` m.fl. i `src/app/03-hjalpfunktioner.js` och
   `src/app/06-uppgiftsminimering.js`). Reglerna prövas i `tests/inlasning.test.js`, adaptrarna och hela filer i
   `tests/inlasning-app.test.js`.
-- **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID-etikett, lön och kön, samt valfri ålder
+- **Fältvitlista** (`TILLATNA_FALT`): endast BAS, AID-etikett, lön och kön, samt valfri ålder
   (ADR-64; saknas kolumnen blir åldern 0 på varje rad och betyder *saknas*), valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
   (ADR-33) läses in. Kolumnen *Ansvar* (ofta kostnadsställe) läses inte in (se avgränsningen i
   `docs/utveckling/mal.md`).
@@ -283,7 +283,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   prövas innan filen läses, och en större fil avvisas med ett besked om gränsen; det som redan var inläst står kvar.
 - **Alla BAS-intervall ingår (ADR-21, upphävd 2026-10):** även chefsnivåerna K och uppåt läses in
   och analyseras. Små intervall skyddas som alla andra grupper av minsta gruppstorlek vid export.
-- **PII-detektor** (`detectSensitiveColumns`): känner igen och **avvisar** lönefiler vars kolumner
+- **PII-detektor** (`hittaKansligaKolumner`): känner igen och **avvisar** lönefiler vars kolumner
   innehåller personnummer-, e-post- eller namnmönster, i både CSV- och Excel-vägen. Lönefilen är den enda
   filen med en rad per person. Kontrollen ser på kolumnrubrikerna och på värdena i **50 rader spridda jämnt
   över filen** (var ⌈n/50⌉:e rad, `_pnrSampelSteg`; den strömmande CSV-vägen samlar raderna under läsningen
@@ -305,7 +305,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   jämförelsestatistik kontrolleras inte av detektorn.** Från dem läses bara godkända
   kolumner med gruppvärden in (BAS, AID, percentiler, median, antal, andel kvinnor), och övriga kolumner lämnas.
   BAS- och AID-värdena saneras på samma sätt som lönefilens (tecknen `< > " ' &` tas bort,
-  `_stripHtmlMeta`), och talen läses som tal.
+  `_utanHtmlTecken`), och talen läses som tal.
   Det finns **ingen inbyggd referens** (ADR-28). Ställningstagandet och statistiken läses
   in som egna filer eller ur ett **organisationspaket** (JSON). Paketet valideras mot en lista över godkända fält:
   organisation, utgivare, datum, benämningar, organisationstyp, PO-påslag, period, minsta gruppstorlek, valet av
@@ -316,12 +316,12 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   namn och källa följer med i exporterna. Paketet lagras aldrig i verktyget. Demoläget har
   en påhittad referens, och det stora demot också påhittad jämförelsestatistik (`statistikKalla` `'demo'`); båda
   tas bort när en lönefil läses in.
-- **Fältet för AID-etikett saneras på tecken, inte på namn** (`_cleanYrkeField`): AID-koden behålls, tecknen
+- **Fältet för AID-etikett saneras på tecken, inte på namn** (`_stadaYrkesfalt`): AID-koden behålls, tecknen
   `< > " ' &` tas bort ur etiketten och etiketten kortas till 40 tecken. Ingenting i texten maskeras (ADR-85): ett
   namn som uttaget lagt i fältet visas i tabellerna och följer med i exporterna. En grupp heter efter texten på flest
   av dess rader (`namnrader`, ADR-89), så ett namn på en enstaka rad blir inte gruppens namn när etiketten står på
   fler; det står ändå kvar på personens rad, och en grupp där namnet står på flest rader heter efter det. Prövat i
-  `tests/grupp-aid-kod.test.js`. `_normalizeBas` tar bort samma tecken
+  `tests/grupp-aid-kod.test.js`. `_normaliseraBas` tar bort samma tecken
   ur BAS-värdet. Vad skydden gör och inte gör står samlat i [`dataskydd.md`](dataskydd.md) avsnitt 2.
 - **Varningen för personnamn i fältet för AID-etikett** (`yrkeNamnNyckel` och `sallsyntaNamnrader` i
   `src/lib/inlasning.js`): en rad räknas när texten efter koden har ett namnmönster (två eller fler versalinledda ord i
@@ -630,7 +630,7 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 |---|---|---|---|---|---|
 | A1 | Exfiltrering av data via nätverk | Låg | Hög | CSP `connect-src 'none'` + 0 nätverksanrop + 0 externa resurser | **Låg** |
 | A2 | Spår kvar på disk (lagring) | Låg | Medel | Ingen kod eller inbyggt bibliotek skriver till lagringen (webbläsartestet kräver tom lagring); storage-tripwire som reserv, med kända luckor (§6.2); ingen IndexedDB/cache; rensningsknapp | **Låg** (OS-swap utanför kontroll; spärren hindrar inte en framtida kodändring som skriver utan `setItem`) |
-| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering av tecken (`_cleanYrkeField` och `_normalizeBas` tar bort `< > " ' &`; ingen namnmaskering, ADR-85); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Escaping-vakten (`tests/escaping.test.js`) läser källkoden och kräver att varje värde i appens HTML-mallar och HTML-sänkor går genom `esc()` eller bevisas säkert (tal, termer, konstanter, dataflöde); det den inte kan bevisa står i en granskad undantagslista. Den täcker inte HTML som byggs på annat sätt än med mallsträngar och `+`, attributkontexten (citering, `href`) eller ändringar genom alias, och antar säkert i en krets i dataflödet. Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
+| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering av tecken (`_stadaYrkesfalt` och `_normaliseraBas` tar bort `< > " ' &`; ingen namnmaskering, ADR-85); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Escaping-vakten (`tests/escaping.test.js`) läser källkoden och kräver att varje värde i appens HTML-mallar och HTML-sänkor går genom `esc()` eller bevisas säkert (tal, termer, konstanter, dataflöde); det den inte kan bevisa står i en granskad undantagslista. Den täcker inte HTML som byggs på annat sätt än med mallsträngar och `+`, attributkontexten (citering, `href`) eller ändringar genom alias, och antar säkert i en krets i dataflödet. Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
 | A4 | Sårbarhet i tredjepartsbibliotek | Medel | Medel | Lokalt buntade, fastställda versioner, SHA i bygget; CSP hindrar exfiltrering även vid kompromiss; veckovis sårbarhetsbevakning av biblioteken mot OSV i CI (`.github/workflows/sarbarheter.yml`), som bara täcker brister som förts in i databasen | **Låg–medel** |
 | A5 | Skadligt webbläsartillägg / komprometterad enhet läser DOM | Medel | Hög | Utanför verktygets kontroll | **Medel** (organisatorisk åtgärd, §8) |
 | A6 | Manipulerad/utbytt HTML-fil distribueras | Låg | Hög | Sigstore-signatur från release-arbetsflödet, verifieras med `cosign verify-blob` (`SECURITY.md`); SHA-256 i `RELEASE.txt` skyddar bara mot en skadad fil. En organisationsfil (§6.9) har en annan kontrollsumma än den publicerade versionen och kan inte verifieras mot den: systemägaren verifierar den nedladdade versionen och sprider organisationsfilen via en behörighetsstyrd intern yta; *Visa paketet* anger kontrollsumman för den verktygsfil den byggdes av, som en uppgift i filen, inte ett äkthetsbevis | **Låg** (kräver att signaturen verifieras och att organisationsfilen sprids internt) |
@@ -752,9 +752,9 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Lagringsspärren | Automatiskt test i jsdom och röktest i Chromium och Firefox: `setItem` med olika nycklar, direkt tilldelning och `defineProperty`, i localStorage och sessionStorage; cookie; sökning efter `setItem` i biblioteksfilerna | ✔ varje skrivning kastar, inga undantag, inget lagras; ✔ 0 `setItem` i de fyra biblioteken (§6.2) |
 | Web Workers | Webbläsarröktestet skapar en worker från `blob:` | ✔ avvisas av CSP (`script-src` som reserv för `worker-src`) |
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
-| Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/inlasning-app.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
-| PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ lönefilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/inlasning.test.js` (§6.4) |
-| Namn i fältet för AID-etikett | `_cleanYrkeField`, `yrkeNamnNyckel` och `sallsyntaNamnrader`; jsdom-prov med CSV och Excel | ✔ ingen maskering (ADR-85): "101010 Anna Andersson" behålls; ✔ två namnrader ger varningen med antal och radnummer på de tre ställena; ✔ "Sjuksköterska Natt" på 20 rader varnar inte; ✔ ingen etikett i etikettlistan och ingen AID-etikett i demona träffas |
+| Dataminimering | `TILLATNA_FALT` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/inlasning-app.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
+| PII-avvisning | `hittaKansligaKolumner` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ lönefilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/inlasning.test.js` (§6.4) |
+| Namn i fältet för AID-etikett | `_stadaYrkesfalt`, `yrkeNamnNyckel` och `sallsyntaNamnrader`; jsdom-prov med CSV och Excel | ✔ ingen maskering (ADR-85): "101010 Anna Andersson" behålls; ✔ två namnrader ger varningen med antal och radnummer på de tre ställena; ✔ "Sjuksköterska Natt" på 20 rader varnar inte; ✔ ingen etikett i etikettlistan och ingen AID-etikett i demona träffas |
 | k-anonymitet | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |
 | k-anonymitet i exporten från Tabeller och egna vyer (ADR-14) | Exporttester i `tests/kanonymitet.test.js` + genomsökning i Chromium av alla kombinationer rad × kolumn × diagramtyp × helhet/per kön × mått med rutan urkryssad | ✔ inga grupper eller kön under 10 i tabell- eller diagramexport |
 | Personer att granska och extremvärdeslistan stannar i verktyget (ADR-23) | Test i `tests/personer-att-granska-app.test.js` (en flaggad persons lön finns inte i rapportunderlag eller Word-utkast) + webbläsarröktestet (extremvärdeslistan med rader syns inte i utskrift) + kodläsning (inga exportverktyg; bilagorna hämtar bara namngivna tabeller) | ✔ lönen och radnumret finns inte i någon utdata; båda döljs vid utskrift |

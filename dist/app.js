@@ -542,8 +542,8 @@ function tillampaDataStil(rot) {
 }
 
 // ---- Kolumnerna: vilken rubrik som bär vilket fält ----
-// Reglerna (ALLOWED_FIELDS, _rubrikForRoll, _hittaRubrik och autoDetectColumnMap) bor i src/lib/inlasning.js; appen
-// når autoDetectColumnMap under samma namn genom spegeln. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
+// Reglerna (TILLATNA_FALT, _rubrikForRoll, _hittaRubrik och gissaKolumnmappning) bor i src/lib/inlasning.js; appen
+// når gissaKolumnmappning under samma namn genom spegeln. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
 // kolumnmappningen och importprofilen ur tillståndet.
 /** Kolumnmappningen och importprofilen ur tillståndet, som lib-funktionerna för kolumnvalet tar emot. */
 function _kolumnvalIState() {
@@ -1870,7 +1870,7 @@ function kSamladNote(namn, sammanhang) {
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- GDPR uppgiftsminimering (Art. 5(1)(c)) ----
-// Vitlistan över tillåtna datafält (ALLOWED_FIELDS), uppslaget av rubrikerna, bedömningen av ansvarskolumnen och
+// Vitlistan över tillåtna datafält (TILLATNA_FALT), uppslaget av rubrikerna, bedömningen av ansvarskolumnen och
 // tolkningen av en rad bor i src/lib/inlasning.js. Här står de tunna adaptrarna som läser tillståndet: kolumnmappningen
 // och importprofilen (_kolumnvalIState i 03-hjalpfunktioner.js), den godkända ansvarskolumnen och innevarande år.
 // _faltIRad och _bedomAnsvarKolumn når appen under samma namn genom spegeln.
@@ -1886,7 +1886,7 @@ function _hittaAnsvarKolumn(rubriker) {
 }
 
 /**
- * Rubriken för varje fält i ALLOWED_FIELDS bland lönefilens rubriker (kolumnmappningen, importprofilen, namnet).
+ * Rubriken för varje fält i TILLATNA_FALT bland lönefilens rubriker (kolumnmappningen, importprofilen, namnet).
  * Slås upp en gång per fil; en ändrad mappning läser in filen på nytt.
  */
 function _lonefilensRubriker(headers) {
@@ -10388,7 +10388,7 @@ const EPOST = /\S+@\S+\.\S+/;
 // så det ändrar aldrig vilken kolumn en profil pekar på.
 const BORT = /[\u0000-\u001f\u007f<>"'&]/g;
 
-/** Rubriken som den jämförs: gemener, bara a–z och 0–9 (samma regel som autoDetectColumnMap i appen). */
+/** Rubriken som den jämförs: gemener, bara a–z och 0–9 (samma regel som gissaKolumnmappning i appen). */
 function normaliseraRubrik(s) {
     return String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -10691,7 +10691,7 @@ const __mirrorInlasning = (() => {
  * Fältet för AID-etikett maskeras inte (ADR-85): verktyget behåller koden och högst 40 tecken av etiketten, utan
  * tecknen < > " ' &. Ser fältet ut att innehålla personnamn varnar inläsningen (yrkeNamnNyckel, sallsyntaNamnrader).
  *
- * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgörs här (ALLOWED_FIELDS,
+ * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgörs här (TILLATNA_FALT,
  * _rubrikForRoll), men kolumnmappningen, importprofilen och ansvarskolumnen kommer ur appens tillstånd och skickas in,
  * liksom året som ett födelseår i ålderskolumnen räknas mot. Appens tunna adaptrar (getField, _lonefilensRubriker,
  * _hittaAnsvarKolumn och extractMinimalRecord) läser tillståndet. Funktionerna utan adapter behåller namnen de hade i
@@ -10730,12 +10730,12 @@ const __mirrorInlasning = (() => {
  *   - ett ensamt tecken eller decimaltecken ("-", ".") är inget tal.
  * Ett värde som redan är ett tal (ur Excel) skrivs som det är, så att också 1e-7 läses rätt.
  *
- * @param {*} raw - Råvärde från CSV-/Excel-cell.
+ * @param {*} varde - Råvärde från CSV-/Excel-cell.
  * @returns {string} parseFloat-bar sträng ("" när värdet inte är ett tal i något av formaten).
  */
-function _normalizeNumberString(raw) {
-    if (typeof raw === 'number') return isFinite(raw) ? String(raw) : '';
-    let s = raw.toString().trim()
+function _normaliseraTaltext(varde) {
+    if (typeof varde === 'number') return isFinite(varde) ? String(varde) : '';
+    let s = varde.toString().trim()
         .replace(/[\s  ']/g, '')        // mellanslag, NBSP, smal NBSP, apostrof-tusental
         .replace(/(kronor|kr|sek|år|:-|,-|%)\.?$/i, '')   // valutasuffix, procenttecken och år
         .replace(/^(kr|sek)\.?/i, '')                  // valutan före talet
@@ -10763,14 +10763,14 @@ function _normalizeNumberString(raw) {
     return /^-?(\d+(\.\d*)?|\.\d+)$/.test(s) ? s : '';
 }
 
-function parseNumber(v) {
+function tolkaTal(v) {
     if (v == null) return 0;
-    const n = parseFloat(_normalizeNumberString(v));
+    const n = parseFloat(_normaliseraTaltext(v));
     return isNaN(n) ? 0 : n;
 }
 
 /**
- * Graderad version av parseNumber som spårar varför
+ * Graderad version av tolkaTal som spårar varför
  * en parse misslyckas. Distinguerar tre fall:
  *   - 'empty'   — null/undefined/tom sträng (legitim avsaknad)
  *   - 'invalid' — icke-tomt värde som inte kan tolkas (t.ex. "saknas")
@@ -10783,11 +10783,11 @@ function parseNumber(v) {
  * @param {*} v
  * @returns {{status:'ok'|'empty'|'invalid', value:number, raw:*}}
  */
-function parseNumberStrict(v) {
+function tolkaTalStrikt(v) {
     if (v == null) return { status: 'empty', value: 0, raw: v };
     const raw = v.toString();
     if (raw.trim() === '') return { status: 'empty', value: 0, raw };
-    const n = parseFloat(_normalizeNumberString(v));
+    const n = parseFloat(_normaliseraTaltext(v));
     if (isNaN(n)) return { status: 'invalid', value: 0, raw };
     return { status: 'ok', value: n, raw };
 }
@@ -10813,12 +10813,12 @@ function _yrkeEtikett(s) {
  * med i exporter. Ser fältet ut att innehålla personnamn varnar inläsningen i stället (yrkeNamnNyckel,
  * sallsyntaNamnrader); den som tar ut filen ansvarar för att fältet bara bär kod och etikett.
  *
- * @param {*} raw - Rått värde från CSV-cellen.
+ * @param {*} varde - Rått värde från CSV-cellen.
  * @returns {string} "AID Etikett" eller bara AID/etikett om endera saknas.
  */
-function _cleanYrkeField(raw) {
-    if (!raw) return "";
-    const s = raw.toString().trim();
+function _stadaYrkesfalt(varde) {
+    if (!varde) return "";
+    const s = varde.toString().trim();
     if (!s) return "";
     const aidMatch = s.match(/^(\d+)/);
     const aid = aidMatch ? aidMatch[1] : "";
@@ -10848,23 +10848,23 @@ const YRKE_NAMNMONSTER = Object.freeze([
  *
  * Mönstret ensamt träffar också etiketter med versal på två ord ("Sjuksköterska Natt"). Därför avgör mönstret bara
  * vilka texter som räknas; varningen gäller de som också är sällsynta i filen (sallsyntaNamnrader).
- * @param {*} raw - Fältets råvärde.
+ * @param {*} varde - Fältets råvärde.
  * @returns {boolean}
  */
-function yrkeLiknarNamn(raw) {
-    return yrkeNamnNyckel(raw) !== '';
+function yrkeLiknarNamn(varde) {
+    return yrkeNamnNyckel(varde) !== '';
 }
 
 /**
  * Nyckeln som en text med namnmönster räknas under: etikettexten efter AID-koden i gemener, med blanksteg slagna
  * samman till ett, så att skiftläge och extra blanksteg räknas som samma text. Tom sträng när texten saknar
  * namnmönster (yrkeLiknarNamn). Nyckeln finns bara i inläsningens tillfälliga räknare och släpps när filen är läst.
- * @param {*} raw - Fältets råvärde.
+ * @param {*} varde - Fältets råvärde.
  * @returns {string}
  */
-function yrkeNamnNyckel(raw) {
-    if (raw == null) return '';
-    const s = raw.toString().trim();
+function yrkeNamnNyckel(varde) {
+    if (varde == null) return '';
+    const s = varde.toString().trim();
     if (!s) return '';
     const label = _yrkeEtikett(s);
     if (!YRKE_NAMNMONSTER.some(re => re.test(label))) return '';
@@ -10902,10 +10902,10 @@ function sallsyntaNamnrader(raknare, hogstRadnr = 5) {
  * Tar bort HTML-metatecken (< > " ' &) ur ett textfält vid inläsning. esc() vid
  * rendering är det egentliga skyddet; detta är ett extra lager ("defensive depth")
  * för korta koder (BAS, AID) som renderas i attribut- och option-kontext och som
- * aldrig legitimt innehåller tecknen. Delas av lönefilen (_normalizeBas),
- * ställningstagandet (_normalizePolicyAid) och jämförelsestatistiken.
+ * aldrig legitimt innehåller tecknen. Delas av lönefilen (_normaliseraBas),
+ * ställningstagandet (_normaliseraPolicyAid) och jämförelsestatistiken.
  */
-function _stripHtmlMeta(s) {
+function _utanHtmlTecken(s) {
     return s.toString().replace(/[<>"'&]/g, '');
 }
 
@@ -10913,16 +10913,16 @@ function _stripHtmlMeta(s) {
  * Normaliserar BAS-värden: trimma, versalisera och strippa ev. "BAS"-prefix
  * ("BAS A" → "A", "bas-2" → "2") så samma intervall inte splittras i två
  * kategorier beroende på exportformat. Ett ensamt "BAS" lämnas orört.
- * @param {*} raw
+ * @param {*} varde
  * @returns {string}
  */
-function _normalizeBas(raw) {
-    if (!raw) return "";
+function _normaliseraBas(varde) {
+    if (!varde) return "";
     // Strippar HTML-meta-tecken (< > " ' &) vid inläsning som extra XSS-lager:
     // BAS renderas i attributkontext (data-bas="…", <option value="…">). esc()
     // escapear också citattecken, men detta är samma "defensive depth" som
-    // _cleanYrkeField — BAS är legitimt korta koder (A, B, 1…) så det är ofarligt.
-    const v = _stripHtmlMeta(raw).trim().toUpperCase();
+    // _stadaYrkesfalt — BAS är legitimt korta koder (A, B, 1…) så det är ofarligt.
+    const v = _utanHtmlTecken(varde).trim().toUpperCase();
     return v.replace(/^BAS\b[\s\-_:]*/i, '').trim() || v;
 }
 
@@ -10932,9 +10932,9 @@ function _normalizeBas(raw) {
  * Tar sifferprefixet när det finns ("207 Förskollärare" → "207"), annars den
  * rensade strängen. Tom sträng betyder "ingen AID" (= BAS-nivårad).
  */
-function _normalizePolicyAid(raw) {
-    if (!raw) return "";
-    const v = _stripHtmlMeta(raw).trim();
+function _normaliseraPolicyAid(varde) {
+    if (!varde) return "";
+    const v = _utanHtmlTecken(varde).trim();
     const m = v.match(/^(\d+)/);
     return m ? m[1] : v;
 }
@@ -10951,12 +10951,12 @@ function _normalizePolicyAid(raw) {
  * specifik och en gissning vore farligare än att visa raderna som "okänt kön"
  * i inläsningsrapporten (exempelvärdena visas där).
  *
- * @param {*} raw - Råvärde från kön-kolumnen.
+ * @param {*} varde - Råvärde från kön-kolumnen.
  * @returns {string} 'kvinna' | 'man' | normaliserad reststräng (okänd).
  */
-function _normalizeKon(raw) {
-    if (!raw) return "";
-    const s = raw.toString().toLowerCase().replace(/[^a-zåäö]/g, '');
+function _normaliseraKon(varde) {
+    if (!varde) return "";
+    const s = varde.toString().toLowerCase().replace(/[^a-zåäö]/g, '');
     const MAP = {
         k: 'kvinna', kv: 'kvinna', kvinna: 'kvinna', kvinnor: 'kvinna',
         f: 'kvinna', female: 'kvinna', w: 'kvinna', woman: 'kvinna',
@@ -10969,7 +10969,7 @@ function _normalizeKon(raw) {
 
 // GDPR uppgiftsminimering (Art. 5(1)(c)): vitlista över tillåtna datafält. Verktyget extraherar ENBART dessa roller
 // från lönefilen. Alla övriga kolumner ignoreras helt även om de finns i filen.
-const ALLOWED_FIELDS = {
+const TILLATNA_FALT = {
     bas:     ["bas","basintervall"],
     // Yrke matchas via mönster på rensat kolumnnamn (lowercase, å→a, ö→o, alfanum).
     // Ordningen spelar roll — specifika mönster först, generella sist.
@@ -10993,25 +10993,25 @@ const ALLOWED_FIELDS = {
     ansvar:  ["ansvarskod","aidansvar","ansvarsniv"]
 };
 
-/** Sökorden per roll i ALLOWED_FIELDS, för rubrikradssökningen (_findCsvHeader och Excelläsaren i appen). */
+/** Sökorden per roll i TILLATNA_FALT, för rubrikradssökningen (_hittaCsvRubrik och Excelläsaren i appen). */
 function rubrikgrupper() {
-    return Object.values(ALLOWED_FIELDS);
+    return Object.values(TILLATNA_FALT);
 }
 
 /**
  * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med sökordet, annars en som innehåller det; sökorden
  * prövas i tur och ordning. Exakt likhet först, så att "Lön" går före "Lönetillägg" för sökordet "ln".
  */
-function _hittaRubrik(headers, possibleNames, role) {
+function _hittaRubrik(rubriker, sokord, roll) {
     // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
     // får aldrig tas för yrke (ADR-33).
-    const hoppa = h => role === 'yrke' && _anArRubrik(h);
-    const rensade = (headers || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
-    for (const name of possibleNames) {
+    const hoppa = h => roll === 'yrke' && _anArRubrik(h);
+    const rensade = (rubriker || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
+    for (const name of sokord) {
         const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
         let i = rensade.indexOf(searchStr);
         if (i < 0) i = rensade.findIndex(r => r !== null && r.includes(searchStr));
-        if (i >= 0) return headers[i];
+        if (i >= 0) return rubriker[i];
     }
     return undefined;
 }
@@ -11023,42 +11023,42 @@ function _hittaRubrik(headers, possibleNames, role) {
  * @param {{columnMap?: Object<string,string>|null, importprofil?: {mappning: Object<string,string>}|null}} [val] -
  *   Kolumnmappningen och importprofilen ur appens tillstånd.
  */
-function _rubrikForRoll(headers, possibleNames, role, val = {}) {
-    const mapped = role && val.columnMap && val.columnMap[role];
-    if (mapped && headers.includes(mapped)) return mapped;
-    const profil = role && val.importprofil && val.importprofil.mappning[role];
-    if (profil && headers.includes(profil)) return profil;
-    return _hittaRubrik(headers, possibleNames, role);
+function _rubrikForRoll(rubriker, sokord, roll, val = {}) {
+    const mapped = roll && val.columnMap && val.columnMap[roll];
+    if (mapped && rubriker.includes(mapped)) return mapped;
+    const profil = roll && val.importprofil && val.importprofil.mappning[roll];
+    if (profil && rubriker.includes(profil)) return profil;
+    return _hittaRubrik(rubriker, sokord, roll);
 }
 
 /** Radens värde i kolumnen som bär rollen (_rubrikForRoll), eller tom sträng. Appens getField skickar tillståndets val. */
-function vardeForRoll(row, possibleNames, role, val = {}) {
-    const key = _rubrikForRoll(Object.keys(row), possibleNames, role, val);
-    return key == null ? "" : row[key];
+function vardeForRoll(rad, sokord, roll, val = {}) {
+    const key = _rubrikForRoll(Object.keys(rad), sokord, roll, val);
+    return key == null ? "" : rad[key];
 }
 
 // #11: vilken rubrik auto-matchar varje roll (samma logik som getField,
 // utan columnMap-override). Returnerar { roll: rubrik|null }.
-function autoDetectColumnMap(headers) {
+function gissaKolumnmappning(rubriker) {
     const map = {};
-    for (const role of Object.keys(ALLOWED_FIELDS)) map[role] = _hittaRubrik(headers, ALLOWED_FIELDS[role], role) ?? null;
+    for (const role of Object.keys(TILLATNA_FALT)) map[role] = _hittaRubrik(rubriker, TILLATNA_FALT[role], role) ?? null;
     return map;
 }
 
 /**
- * Rubriken för varje fält i ALLOWED_FIELDS bland lönefilens rubriker (_rubrikForRoll: kolumnmappningen, importprofilen,
+ * Rubriken för varje fält i TILLATNA_FALT bland lönefilens rubriker (_rubrikForRoll: kolumnmappningen, importprofilen,
  * namnet). Slås upp en gång per fil; en ändrad mappning läser in filen på nytt.
- * @param {string[]} headers
+ * @param {string[]} filrubriker
  * @param {{columnMap?: Object<string,string>|null, importprofil?: {mappning: Object<string,string>}|null}} [val]
  */
-function lonefilensRubriker(headers, val = {}) {
+function lonefilensRubriker(filrubriker, val = {}) {
     const rubriker = {};
-    for (const role of Object.keys(ALLOWED_FIELDS)) rubriker[role] = _rubrikForRoll(headers, ALLOWED_FIELDS[role], role, val);
+    for (const role of Object.keys(TILLATNA_FALT)) rubriker[role] = _rubrikForRoll(filrubriker, TILLATNA_FALT[role], role, val);
     return rubriker;
 }
 /** Radens värde för rollen, som getField: tom sträng när filen saknar kolumnen. */
-function _faltIRad(row, rubriker, roll) {
-    return rubriker[roll] == null ? '' : row[rubriker[roll]] ?? '';
+function _faltIRad(rad, rubriker, roll) {
+    return rubriker[roll] == null ? '' : rad[rubriker[roll]] ?? '';
 }
 
 /**
@@ -11092,9 +11092,9 @@ function _bedomAnsvarKolumn(namn, varden) {
 
 /**
  * Kärnan i uppgiftsminimeringen (GDPR Art. 5(1)(c)): de vitlistade fälten ur en lönerad, tolkade och normaliserade.
- * minimeraRad slår upp råvärdena i raden (rubrikerna ur lonefilensRubriker, med ALLOWED_FIELDS) och skickar in dem
+ * minimeraRad slår upp råvärdena i raden (rubrikerna ur lonefilensRubriker, med TILLATNA_FALT) och skickar in dem
  * här; inga andra kolumner når hit.
- * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, utan tecknen < > " ' &; ingen namnmaskering, ADR-85).
+ * Yrke saneras via _stadaYrkesfalt (AID + 40 tecken etikett, utan tecknen < > " ' &; ingen namnmaskering, ADR-85).
  * Ger { bas, yrke, aid, yrkeLabel, lon, alder, kon, poang, ansvarskoder, ansvarsgrupp, _lonStatus, _alderStatus }.
  * @param {{bas:*, kon:*, lon:*, alder:*, poang:*, yrke:*, ansvar?:*}} falt - Råvärdet per roll ur raden.
  * @param {number} referensar - Året som ett födelseår i ålderskolumnen räknas mot (appen skickar innevarande år).
@@ -11103,13 +11103,13 @@ function _bedomAnsvarKolumn(namn, varden) {
 function tolkaLonerad(falt, referensar, medAnsvar = false) {
     const basRaw    = falt.bas;
     const konRaw    = falt.kon;
-    // Använd parseNumberStrict så vi kan särskilja
+    // Använd tolkaTalStrikt så vi kan särskilja
     // legit-tomma fält från icke-tomma men ogiltiga värden.
-    const lonParsed   = parseNumberStrict(falt.lon);
-    const alderParsed = parseNumberStrict(falt.alder);
+    const lonParsed   = tolkaTalStrikt(falt.lon);
+    const alderParsed = tolkaTalStrikt(falt.alder);
     // Valfri arbetsvärderingspoäng (per befattning) — null när kolumn saknas/tom.
-    const poangParsed = parseNumberStrict(falt.poang);
-    const yrkeFull    = _cleanYrkeField(falt.yrke);
+    const poangParsed = tolkaTalStrikt(falt.poang);
+    const yrkeFull    = _stadaYrkesfalt(falt.yrke);
     // AID och etikett hålls isär. `r.yrke` är "AID Etikett"-strängen (den som vyerna visar);
     // `r.aid` och `r.yrkeLabel` ger ren AID-kod respektive enbart etikett-delen
     // för analyser som behöver något entydigt nyckel (t.ex. § 3:10-paret).
@@ -11126,13 +11126,13 @@ function tolkaLonerad(falt, referensar, medAnsvar = false) {
         alderStatus = 'birthyear';
     }
     return {
-        bas:       _normalizeBas(basRaw),
+        bas:       _normaliseraBas(basRaw),
         yrke:      yrkeFull,
         aid,
         yrkeLabel,
         lon:       lonParsed.value,
         alder:     alderVal,
-        kon:       _normalizeKon(konRaw),
+        kon:       _normaliseraKon(konRaw),
         poang:     poangParsed.status === 'ok' ? poangParsed.value : null,
         // AID:s ansvarskod (valfri): koderna för kodkontrollen, ansvarsgruppen för analyserna.
         // Ett ogiltigt enskilt värde i en godkänd kolumn räknas som "inget särskilt ansvar".
@@ -11151,13 +11151,13 @@ function tolkaLonerad(falt, referensar, medAnsvar = false) {
  * aldrig laddar identifierande fält (PNR, namn, e-post) även om användarens fil innehåller dem. Råvärdena slås upp i
  * raden (rubrikerna ur lonefilensRubriker, och den godkända ansvarskolumnen) och tolkas av tolkaLonerad.
  * Appens extractMinimalRecord (src/app/06-uppgiftsminimering.js) skickar tillståndets ansvarskolumn och innevarande år.
- * @param {Object<string,*>} row - Rå rad (PapaParse-objekt).
+ * @param {Object<string,*>} rad - Rå rad (PapaParse-objekt).
  * @param {Object<string,string|undefined>} rubriker - Uppslaget för filen (lonefilensRubriker).
  * @param {{namn: string}|null} ansvarKolumn - Den godkända kolumnen för AID:s ansvarskod, eller null.
  * @param {number} referensar - Året som ett födelseår i ålderskolumnen räknas mot.
  */
-function minimeraRad(row, rubriker, ansvarKolumn, referensar) {
-    const falt = roll => _faltIRad(row, rubriker, roll);
+function minimeraRad(rad, rubriker, ansvarKolumn, referensar) {
+    const falt = roll => _faltIRad(rad, rubriker, roll);
     return tolkaLonerad({
         bas:    falt('bas'),
         kon:    falt('kon'),
@@ -11165,13 +11165,13 @@ function minimeraRad(row, rubriker, ansvarKolumn, referensar) {
         alder:  falt('alder'),
         poang:  falt('poang'),
         yrke:   falt('yrke'),
-        ansvar: ansvarKolumn ? row[ansvarKolumn.namn] : undefined
+        ansvar: ansvarKolumn ? rad[ansvarKolumn.namn] : undefined
     }, referensar, !!ansvarKolumn);
 }
 
 /**
  * Steget mellan raderna som PII-kontrollen samplar i en fil med n rader: ⌈n/50⌉ (minst 1), så att högst 50 rader
- * sprids jämnt över filen (B4). Delas av detectSensitiveColumns och den strömmande CSV-inläsningen.
+ * sprids jämnt över filen (B4). Delas av hittaKansligaKolumner och den strömmande CSV-inläsningen.
  * @param {number} n
  */
 function _pnrSampelSteg(n) {
@@ -11184,15 +11184,15 @@ function _pnrSampelSteg(n) {
  * (samplar 50 rader jämnt över filen, var ⌈n/50⌉:e rad, och matchar mot regex). Trösklar är konservativa för att
  * minimera falska positiv på godtyckliga sifferserier (t.ex. anställningsnummer). Den strömmande CSV-inläsningen
  * samlar själv var ⌈n/50⌉:e rad (_pnrSampelSteg) och lämnar högst 50 rader hit.
- * @param {Array<Object>} rows - Råa CSV-rader.
+ * @param {Array<Object>} rader - Råa CSV-rader.
  * @returns {Array<{col:string, reason:string}>} Tom array om inga känsliga kolumner.
  */
-function detectSensitiveColumns(rows) {
-    if (!rows || !rows.length) return [];
+function hittaKansligaKolumner(rader) {
+    if (!rader || !rader.length) return [];
     // Jämnt över filen (B4): personnummer eller namn som bara finns längre ned ska också hittas.
-    const steg = _pnrSampelSteg(rows.length);
-    const sample = rows.filter((_, i) => i % steg === 0);
-    const cols = Object.keys(rows[0] || {});
+    const steg = _pnrSampelSteg(rader.length);
+    const sample = rader.filter((_, i) => i % steg === 0);
+    const cols = Object.keys(rader[0] || {});
     // Strikt PNR-mönster: kräver giltig månad (01-12) och dag (01-31) för att undvika
     // falska träffar på godtyckliga sifferserier som anställningsnummer.
     const PNR  = /^(?:19|20)?\d{2}[-/]?[01]\d[-/]?[0-3]\d[-+]?\d{4}$/;
@@ -11264,14 +11264,14 @@ function detectSensitiveColumns(rows) {
  *   - "xlsx"       : ZIP-container (PK..) — .xlsx
  *   - "xls-legacy" : OLE2-container — gammalt .xls (stöds ej av mini-bygget)
  *   - "text"       : allt annat — behandlas som CSV/text
- * @param {Uint8Array} bytes
+ * @param {Uint8Array} byte
  * @returns {'xlsx'|'xls-legacy'|'text'}
  */
-function _sniffTabularFormat(bytes) {
-    if (bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4B &&
-        (bytes[2] === 0x03 || bytes[2] === 0x05 || bytes[2] === 0x07)) return 'xlsx';
-    if (bytes.length >= 4 && bytes[0] === 0xD0 && bytes[1] === 0xCF &&
-        bytes[2] === 0x11 && bytes[3] === 0xE0) return 'xls-legacy';
+function _gissaTabellformat(byte) {
+    if (byte.length >= 4 && byte[0] === 0x50 && byte[1] === 0x4B &&
+        (byte[2] === 0x03 || byte[2] === 0x05 || byte[2] === 0x07)) return 'xlsx';
+    if (byte.length >= 4 && byte[0] === 0xD0 && byte[1] === 0xCF &&
+        byte[2] === 0x11 && byte[3] === 0xE0) return 'xls-legacy';
     return 'text';
 }
 
@@ -11279,28 +11279,28 @@ function _sniffTabularFormat(bytes) {
 // UTF-8) och ibland kommaseparerad. Vi detekterar teckenkodning och avgränsare
 // LOKALT (TextDecoder i webbläsaren, inga nätverksanrop) innan parsning så att
 // å/ä/ö inte mojibakar och raderna inte hamnar i en enda kolumn.
-function _decodeCsvBuffer(buf) {
-    const bytes = new Uint8Array(buf);
+function _avkodaCsv(buffert) {
+    const bytes = new Uint8Array(buffert);
     // UTF-16 (Excels "Unicode-text" sparar UTF-16LE med BOM, tab-avgränsat).
     // Utan denna kontroll faller UTF-16 igenom till Windows-1252 och blir
     // NUL-interfolierad rappakalja som parsern tuggar utan tydligt fel.
     if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
-        return { text: new TextDecoder('utf-16le').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 LE' };
+        return { text: new TextDecoder('utf-16le').decode(buffert).replace(/^﻿/, ''), encoding: 'UTF-16 LE' };
     }
     if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
-        return { text: new TextDecoder('utf-16be').decode(buf).replace(/^﻿/, ''), encoding: 'UTF-16 BE' };
+        return { text: new TextDecoder('utf-16be').decode(buffert).replace(/^﻿/, ''), encoding: 'UTF-16 BE' };
     }
     if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
-        return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (BOM)' };
+        return { text: new TextDecoder('utf-8').decode(buffert), encoding: 'UTF-8 (BOM)' };
     }
     try {
         // Strikt UTF-8: kastar om byten inte är giltig UTF-8 (typiskt Windows-1252-åäö).
-        return { text: new TextDecoder('utf-8', { fatal: true }).decode(buf), encoding: 'UTF-8' };
+        return { text: new TextDecoder('utf-8', { fatal: true }).decode(buffert), encoding: 'UTF-8' };
     } catch (_e) {
         try {
-            return { text: new TextDecoder('windows-1252').decode(buf), encoding: 'Windows-1252' };
+            return { text: new TextDecoder('windows-1252').decode(buffert), encoding: 'Windows-1252' };
         } catch (_e2) {
-            return { text: new TextDecoder('utf-8').decode(buf), encoding: 'UTF-8 (osäker)' };
+            return { text: new TextDecoder('utf-8').decode(buffert), encoding: 'UTF-8 (osäker)' };
         }
     }
 }
@@ -11310,7 +11310,7 @@ const _RADSLUT = /\r\n|\r|\n/;
 /** Filtextens rader, med samma regel för radslut som avgränsaren och rubrikraden. */
 function delaRader(text) { return text.split(_RADSLUT); }
 
-function _detectDelimiter(text) {
+function _gissaAvgransare(text) {
     const firstLine = (text.split(_RADSLUT).find(l => l.trim().length) || '');
     let best = ';', bestN = 0;
     for (const d of [';', ',', '\t', '|']) {
@@ -11329,14 +11329,14 @@ function _detectDelimiter(text) {
  * per roll, t.ex. rubrikgrupper()).
  *
  * @param {string} text - Avkodad filtext.
- * @param {Array<Array<string>>} synonymGroups - En grupp synonymer per roll.
- * @param {number} [minHits=2] - Min antal roller som måste matcha.
+ * @param {Array<Array<string>>} sokordsgrupper - En grupp synonymer per roll.
+ * @param {number} [minTraffar=2] - Min antal roller som måste matcha.
  * @param {any[]} [profiler] - Importprofiler (lönefilen): den första raden där en profils alla kännetecken finns är
  *          rubrikraden, också när den har färre delsträngsträffar än en försättsrad.
  * @returns {{line:number, delim:string|null, hits:number}} line = 0-baserat radindex;
- *          vid ingen träff: line 0 + avgränsaren från _detectDelimiter.
+ *          vid ingen träff: line 0 + avgränsaren från _gissaAvgransare.
  */
-function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
+function _hittaCsvRubrik(text, sokordsgrupper, minTraffar = 2, profiler = []) {
     const lines = text.split(_RADSLUT).slice(0, 15);
     /** @type {{line: number, delim: string|null, hits: number}} */
     let best = { line: 0, delim: null, hits: -1 };
@@ -11345,42 +11345,42 @@ function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
         for (const d of [';', ',', '\t', '|']) {
             const raa = lines[i].split(d).map(c => c.replace(/^"+|"+$/g, ''));
             if (raa.length < 2) continue;
-            if (profiler.length && matchaImportprofil(raa, profiler)) return { line: i, delim: d, hits: synonymGroups.length };
+            if (profiler.length && matchaImportprofil(raa, profiler)) return { line: i, delim: d, hits: sokordsgrupper.length };
             const cells = raa.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, ''));
             let hits = 0;
-            for (const group of synonymGroups) {
+            for (const group of sokordsgrupper) {
                 if (group.some(syn => cells.some(c => c.includes(syn)))) hits++;
             }
             if (hits > best.hits) best = { line: i, delim: d, hits };
         }
     }
-    if (best.hits >= minHits) return best;
-    return { line: 0, delim: _detectDelimiter(text), hits: 0 };
+    if (best.hits >= minTraffar) return best;
+    return { line: 0, delim: _gissaAvgransare(text), hits: 0 };
 }
 
-    return { _normalizeNumberString, parseNumber, parseNumberStrict, _cleanYrkeField, _stripHtmlMeta, _normalizeBas, _normalizePolicyAid, _normalizeKon, tolkaLonerad, _pnrSampelSteg, detectSensitiveColumns, yrkeNamnNyckel, sallsyntaNamnrader, _decodeCsvBuffer, delaRader, _detectDelimiter, _findCsvHeader, _sniffTabularFormat, rubrikgrupper, vardeForRoll, autoDetectColumnMap, lonefilensRubriker, _faltIRad, hittaAnsvarKolumn, _bedomAnsvarKolumn, minimeraRad };
+    return { _normaliseraTaltext, tolkaTal, tolkaTalStrikt, _stadaYrkesfalt, _utanHtmlTecken, _normaliseraBas, _normaliseraPolicyAid, _normaliseraKon, tolkaLonerad, _pnrSampelSteg, hittaKansligaKolumner, yrkeNamnNyckel, sallsyntaNamnrader, _avkodaCsv, delaRader, _gissaAvgransare, _hittaCsvRubrik, _gissaTabellformat, rubrikgrupper, vardeForRoll, gissaKolumnmappning, lonefilensRubriker, _faltIRad, hittaAnsvarKolumn, _bedomAnsvarKolumn, minimeraRad };
 })();
-const _normalizeNumberString = __mirrorInlasning._normalizeNumberString;
-const parseNumber = __mirrorInlasning.parseNumber;
-const parseNumberStrict = __mirrorInlasning.parseNumberStrict;
-const _cleanYrkeField = __mirrorInlasning._cleanYrkeField;
-const _stripHtmlMeta = __mirrorInlasning._stripHtmlMeta;
-const _normalizeBas = __mirrorInlasning._normalizeBas;
-const _normalizePolicyAid = __mirrorInlasning._normalizePolicyAid;
-const _normalizeKon = __mirrorInlasning._normalizeKon;
+const _normaliseraTaltext = __mirrorInlasning._normaliseraTaltext;
+const tolkaTal = __mirrorInlasning.tolkaTal;
+const tolkaTalStrikt = __mirrorInlasning.tolkaTalStrikt;
+const _stadaYrkesfalt = __mirrorInlasning._stadaYrkesfalt;
+const _utanHtmlTecken = __mirrorInlasning._utanHtmlTecken;
+const _normaliseraBas = __mirrorInlasning._normaliseraBas;
+const _normaliseraPolicyAid = __mirrorInlasning._normaliseraPolicyAid;
+const _normaliseraKon = __mirrorInlasning._normaliseraKon;
 const _ilTolkaLonerad = __mirrorInlasning.tolkaLonerad;
 const _pnrSampelSteg = __mirrorInlasning._pnrSampelSteg;
-const detectSensitiveColumns = __mirrorInlasning.detectSensitiveColumns;
+const hittaKansligaKolumner = __mirrorInlasning.hittaKansligaKolumner;
 const _ilYrkeNamnNyckel = __mirrorInlasning.yrkeNamnNyckel;
 const _ilSallsyntaNamnrader = __mirrorInlasning.sallsyntaNamnrader;
-const _decodeCsvBuffer = __mirrorInlasning._decodeCsvBuffer;
+const _avkodaCsv = __mirrorInlasning._avkodaCsv;
 const _delaRader = __mirrorInlasning.delaRader;
-const _detectDelimiter = __mirrorInlasning._detectDelimiter;
-const _findCsvHeader = __mirrorInlasning._findCsvHeader;
-const _sniffTabularFormat = __mirrorInlasning._sniffTabularFormat;
+const _gissaAvgransare = __mirrorInlasning._gissaAvgransare;
+const _hittaCsvRubrik = __mirrorInlasning._hittaCsvRubrik;
+const _gissaTabellformat = __mirrorInlasning._gissaTabellformat;
 const _ilRubrikgrupper = __mirrorInlasning.rubrikgrupper;
 const _ilVardeForRoll = __mirrorInlasning.vardeForRoll;
-const autoDetectColumnMap = __mirrorInlasning.autoDetectColumnMap;
+const gissaKolumnmappning = __mirrorInlasning.gissaKolumnmappning;
 const _ilLonefilensRubriker = __mirrorInlasning.lonefilensRubriker;
 const _faltIRad = __mirrorInlasning._faltIRad;
 const _ilHittaAnsvarKolumn = __mirrorInlasning.hittaAnsvarKolumn;
@@ -15029,7 +15029,7 @@ const __mirrorDemodata = (() => {
     const arKvinna = __mirrorKon.arKvinna;
     const arMan = __mirrorKon.arMan;
     const _anGrupp = __mirrorAnsvar.ansvarsgrupp;
-    const _normalizePolicyAid = __mirrorInlasning._normalizePolicyAid;
+    const _normaliseraPolicyAid = __mirrorInlasning._normaliseraPolicyAid;
     const median = __mirrorStat.median;
     const kvantil = __mirrorStat.kvantil;
 
@@ -15332,7 +15332,7 @@ function genereraStortDemoStatistik() {
             const median = _sdAvrunda(niva * (1 + paslag), 100);
             const forskjutning = Math.floor(rnd() * 11) - 5;   // −5 … +5 procentenheter
             rader.push({
-                aid: _normalizePolicyAid(aid), aidFull: `${aid} ${namn}`, bas,
+                aid: _normaliseraPolicyAid(aid), aidFull: `${aid} ${namn}`, bas,
                 median, p10: _sdAvrunda(median * (1 - 0.45 * spridning), 100), p90: _sdAvrunda(median * (1 + 0.55 * spridning), 100),
                 nKv: null, nMa: null, andelKv: Math.max(0, Math.min(100, Math.round(andelKv * 100) + forskjutning)),
             });
@@ -18230,7 +18230,7 @@ function _rfUrvalDoljerAllt(el) {
 // Ett tal ur ett intervallfält med verktygets talinläsning ("1,5", "1 500", "−5"): null när fältet är tomt, NaN
 // när det inte går att läsa.
 function _rfUrvalLasTal(text) {
-    const r = parseNumberStrict(String(text == null ? '' : text).replace(/−/g, '-'));
+    const r = tolkaTalStrikt(String(text == null ? '' : text).replace(/−/g, '-'));
     if (r.status === 'empty') return null;
     return r.status === 'ok' && isFinite(r.value) ? r.value : NaN;
 }
@@ -19961,7 +19961,7 @@ const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALET
 // Statistiska helpers för vyerna; en källa: src/lib/stat.js via spegeln (tests/stat.test.js prövar den).
 const Stat = { median: __mirrorStat.median, kvantil: __mirrorStat.kvantil, linjarRegression: __mirrorStat.linjarRegression };
 
-// Talen i indata (_normalizeNumberString, parseNumber, parseNumberStrict) tolkas i src/lib/inlasning.js och nås här
+// Talen i indata (_normaliseraTaltext, tolkaTal, tolkaTalStrikt) tolkas i src/lib/inlasning.js och nås här
 // genom spegeln under samma namn.
 
 /**
@@ -25763,7 +25763,7 @@ setupDrop("drop-area-policy", "file-input-policy");
 setupDrop("drop-area-stat", "file-input-stat");
 
 /**
- * Visar GDPR-avvisning i UI:t när detectSensitiveColumns flaggat känsliga fält.
+ * Visar GDPR-avvisning i UI:t när hittaKansligaKolumner flaggat känsliga fält.
  * @param {Array<{col:string, reason:string}>} sensitive
  */
 function _renderSensitiveRejection(sensitive) {
@@ -25877,7 +25877,7 @@ function _afterDataLoaded() {
 // ---- CSV-mall: nedladdning ----
 // Genererar en tom CSV med rätt headers + 3 exempelrader så förstagångsanvändare
 // inte behöver gissa kolumnnamn. Innehåller ingen riktig data — bara mall.
-// Mallens rubriker är rubriker som kolumnigenkänningen (ALLOWED_FIELDS) känner igen, alltså filens ord och inte
+// Mallens rubriker är rubriker som kolumnigenkänningen (TILLATNA_FALT) känner igen, alltså filens ord och inte
 // verktygets; de byts inte med termerna (ADR-74).
 const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 'Poang'];
 document.getElementById('btn-download-csv-template')?.addEventListener('click', () => {
@@ -25911,19 +25911,19 @@ document.getElementById('btn-download-csv-template')?.addEventListener('click', 
     announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
 });
 
-// _sniffTabularFormat (filformatet ur de magiska byten) bor i src/lib/inlasning.js och nås genom spegeln.
+// _gissaTabellformat (filformatet ur de magiska byten) bor i src/lib/inlasning.js och nås genom spegeln.
 
 /**
  * Läser första bladet i en XLSX-buffer till rad-objekt (samma form som
  * PapaParse header:true ger), med rubrikradssökning bland de 20 första raderna
- * (samma princip som _findCsvHeader — tål försättsrader i kalkylblad).
+ * (samma princip som _hittaCsvRubrik — tål försättsrader i kalkylblad).
  * Cellvärden konverteras till strängar så resten av pipelinen (getField,
- * parseNumberStrict, detectSensitiveColumns) fungerar identiskt med CSV.
+ * tolkaTalStrikt, hittaKansligaKolumner) fungerar identiskt med CSV.
  *
  * @param {ArrayBuffer} buf
- * @param {Array<Array<string>>} synonymGroups - Som i _findCsvHeader.
+ * @param {Array<Array<string>>} synonymGroups - Som i _hittaCsvRubrik.
  * @param {number} [minHits=2]
- * @param {any[]} [profiler] - Importprofiler, som i _findCsvHeader.
+ * @param {any[]} [profiler] - Importprofiler, som i _hittaCsvRubrik.
  * @returns {{headers:string[], rows:Array<Object<string,string>>, sheet:string}}
  * @throws {Error} om arbetsboken inte kan läsas eller saknar datarader.
  */
@@ -26003,7 +26003,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
     reader.onload = () => {
         try {
             const buf = reader.result;
-            const fmt = _sniffTabularFormat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
+            const fmt = _gissaTabellformat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
             if (fmt === 'xls-legacy') {
                 callback({ ok: false, error: 'Filen är i äldre Excel-format (.xls). Spara om som .xlsx eller .csv och försök igen.' });
                 return;
@@ -26013,8 +26013,8 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
                 callback({ ok: true, format: `Excel (blad "${x.sheet}")`, encoding: 'XLSX', headers: x.headers, rows: x.rows });
                 return;
             }
-            const dec = _decodeCsvBuffer(buf);
-            const hdr = _findCsvHeader(dec.text, synonymGroups);
+            const dec = _avkodaCsv(buf);
+            const hdr = _hittaCsvRubrik(dec.text, synonymGroups);
             const csvText = hdr.line > 0
                 ? _delaRader(dec.text).slice(hdr.line).join('\n')
                 : dec.text;
@@ -26050,7 +26050,7 @@ function loadStructureFile(file) {
 
     // GDPR Art. 25.2: minimal data resident i minnet under parsning.
     // Streaming step-mode → en rad i taget. Var ⌈n/50⌉:e rad (_pnrSampelSteg) sparas
-    // i en sample-buffer på högst 50 rader för detectSensitiveColumns (värdebaserad upptäckt
+    // i en sample-buffer på högst 50 rader för hittaKansligaKolumner (värdebaserad upptäckt
     // över hela filen, B4). Varje rad processas direkt till `parsed[]`, som bara har de
     // minimerade fälten; kontrollen körs när filen är läst, och fälls filen släpps allt.
     const SAMPLE_SIZE = 50;
@@ -26306,7 +26306,7 @@ function loadStructureFile(file) {
     _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); _beskedEfterOversikt(franOversikt); } };
     const _lasLonefil = () => {
       const buf = _csvReader.result;
-      const fmt = _sniffTabularFormat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
+      const fmt = _gissaTabellformat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
       if (fmt === 'xls-legacy') {
           failLoad('Filen är i äldre Excel-format (.xls). Spara om som .xlsx eller .csv och försök igen.');
           return;
@@ -26320,7 +26320,7 @@ function loadStructureFile(file) {
           capturedHeaders = x.headers.filter(h => h);
           valjImportprofil(capturedHeaders);
           parseStats.totalRaw = x.rows.length;
-          const sensitive = detectSensitiveColumns(x.rows);   // samplar själv jämnt över bladet (B4)
+          const sensitive = hittaKansligaKolumner(x.rows);   // samplar själv jämnt över bladet (B4)
           if (sensitive.length > 0) { rejectFile(sensitive); return; }
           x.rows.forEach(processRow);
           x.rows.length = 0;   // släpp raw rows (GDPR: minimera residens)
@@ -26328,9 +26328,9 @@ function loadStructureFile(file) {
           return;
       }
       // Text-/CSV-väg: avkoda → hitta rubrikrad (preamble-tolerant) → strömma.
-      const _dec = _decodeCsvBuffer(buf);
+      const _dec = _avkodaCsv(buf);
       detectedEnc = _dec.encoding;
-      const hdrInfo = _findCsvHeader(_dec.text, _ilRubrikgrupper(), 2, _importprofilLista());
+      const hdrInfo = _hittaCsvRubrik(_dec.text, _ilRubrikgrupper(), 2, _importprofilLista());
       detectedDelim = hdrInfo.delim || ';';
       // Filen delas i rader en gång: försättsraderna före rubriken tas bort, och filens
       // radnummer för varje datarad räknas ur samma rader. Papa hoppar över tomma rader
@@ -26360,7 +26360,7 @@ function loadStructureFile(file) {
             if (aborted) return;
             // PII-kontrollen på samplet från hela filen; fälls filen släpps de lästa raderna.
             if (sampleBuffer && sampleBuffer.length > 0) {
-                const sensitive = detectSensitiveColumns(sampleBuffer);
+                const sensitive = hittaKansligaKolumner(sampleBuffer);
                 if (sensitive.length > 0) {
                     parsed.length = 0;
                     rejectFile(sensitive);
@@ -26409,7 +26409,7 @@ const COLMAP_ROLES = [
  * rubrikerna (organisationspaketets, konfigurationsfilens, de inbyggda), annars det som känns igen på delsträng.
  */
 function _kolumnval(headers) {
-    const auto = autoDetectColumnMap(headers), eff = {};
+    const auto = gissaKolumnmappning(headers), eff = {};
     const profil = _importprofilFor(headers);
     const prof = profil ? profil.mappning : {};
     COLMAP_ROLES.forEach(({ role }) => {
@@ -29406,11 +29406,11 @@ function _kvartilSpann(x, kr) {
 // filen (ADR-28). Returnerar antal giltiga rader; 0 = inget ändrat.
 function _lasInReferens(rader, filnamn) {
     const policy = rader.map(row => ({
-        aid: _normalizePolicyAid(row.aid ?? getField(row, ["aid","yrkeskod","befattningskod"])),
-        bas: _normalizeBas(row.bas ?? getField(row, ["bas","basintervall"])),
-        p10: typeof row.p10 === 'number' ? row.p10 : parseNumber(getField(row, ["10e","p10","10"])),
-        med: typeof row.med === 'number' ? row.med : parseNumber(getField(row, ["median","med"])),
-        p90: typeof row.p90 === 'number' ? row.p90 : parseNumber(getField(row, ["90e","p90","90"]))
+        aid: _normaliseraPolicyAid(row.aid ?? getField(row, ["aid","yrkeskod","befattningskod"])),
+        bas: _normaliseraBas(row.bas ?? getField(row, ["bas","basintervall"])),
+        p10: typeof row.p10 === 'number' ? row.p10 : tolkaTal(getField(row, ["10e","p10","10"])),
+        med: typeof row.med === 'number' ? row.med : tolkaTal(getField(row, ["median","med"])),
+        p90: typeof row.p90 === 'number' ? row.p90 : tolkaTal(getField(row, ["90e","p90","90"]))
     })).filter(p => p.bas || p.aid);
     if (!policy.length) return 0;
     state.policy = policy;
@@ -29463,7 +29463,7 @@ policyInput.addEventListener("change", e => {
     // Gemensam läsväg: CSV (alla kodningar/avgränsare, preamble-tolerant) + XLSX.
     // `aid` är VALFRI: en policyrad får vara BAS-nivå, AID-specifik
     // (yrke oavsett BAS) eller AID+BAS (mest specifik). Uppslaget sker via
-    // policyFor(), som följer specificitetsordningen. _findCsvHeader poängsätter
+    // policyFor(), som följer specificitetsordningen. _hittaCsvRubrik poängsätter
     // synonymträffar (kräver inte alla grupper), så BAS-only-filer hittas också.
     readTabularFile(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], res => {
         if (!res.ok) {
@@ -29573,15 +29573,15 @@ statInput.addEventListener("change", e => {
             res.rows.forEach(r => {
                 // Samma sanering som lönefilen och ställningstagandet: HTML-metatecken bort
                 // vid inläsning (esc() vid rendering är det egentliga skyddet).
-                const aidRaw = cAID && r[cAID] != null ? _stripHtmlMeta(r[cAID]).trim() : "";
-                const basRaw = cBAS && r[cBAS] != null ? _normalizeBas(r[cBAS]) : "";
-                const median = parseNumber(r[/** @type {string} */ (cMed)]);
-                const p10 = cP10 ? parseNumber(r[cP10]) : 0;
-                const p90 = cP90 ? parseNumber(r[cP90]) : 0;
+                const aidRaw = cAID && r[cAID] != null ? _utanHtmlTecken(r[cAID]).trim() : "";
+                const basRaw = cBAS && r[cBAS] != null ? _normaliseraBas(r[cBAS]) : "";
+                const median = tolkaTal(r[/** @type {string} */ (cMed)]);
+                const p10 = cP10 ? tolkaTal(r[cP10]) : 0;
+                const p90 = cP90 ? tolkaTal(r[cP90]) : 0;
                 // Könsfördelning (om finns)
-                const nKv = cNKv ? parseNumber(r[cNKv]) : null;
-                const nMa = cNMa ? parseNumber(r[cNMa]) : null;
-                let andelKv = cAndel ? parseNumber(r[cAndel]) : null;
+                const nKv = cNKv ? tolkaTal(r[cNKv]) : null;
+                const nMa = cNMa ? tolkaTal(r[cNMa]) : null;
+                let andelKv = cAndel ? tolkaTal(r[cAndel]) : null;
                 // Konvertera till %: om värdet är ≤ 1 antas det vara decimal (0.65), annars %
                 if (andelKv != null && andelKv > 0 && andelKv <= 1) andelKv = andelKv * 100;
                 // Beräkna andelKv från antal om kolumn saknas
@@ -29590,7 +29590,7 @@ statInput.addEventListener("change", e => {
                 }
                 if (aidRaw && median > 0) {
                     state.statistik.push({
-                        aid: _normalizePolicyAid(aidRaw), aidFull: aidRaw, bas: basRaw,
+                        aid: _normaliseraPolicyAid(aidRaw), aidFull: aidRaw, bas: basRaw,
                         median, p10, p90,
                         nKv: nKv != null && nKv >= 0 ? nKv : null,
                         nMa: nMa != null && nMa >= 0 ? nMa : null,
@@ -37081,9 +37081,9 @@ const INFO_SECTIONS = {
 
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
-            <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
+            <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
-            <li><code>_cleanYrkeField()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
+            <li><code>_stadaYrkesfalt()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
         <h4>Lager 3 — Allt ligger i arbetsminnet</h4>

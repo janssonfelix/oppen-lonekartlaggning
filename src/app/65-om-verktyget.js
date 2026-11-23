@@ -73,9 +73,9 @@ const INFO_SECTIONS = {
 
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
-            <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
+            <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
-            <li><code>_cleanYrkeField()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
+            <li><code>_stadaYrkesfalt()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
         <h4>Lager 3 — Allt ligger i arbetsminnet</h4>

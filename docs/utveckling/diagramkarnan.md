@@ -272,7 +272,7 @@ aktivt och inget fält är fel); den nollställer alla dimensioner, tömmer fäl
 - Intervall (`aria-label="<namn>"`): namnet och två fält, Minst och Högst (`<label>` med `<input type="text"
   inputmode="decimal" data-urval-grans="min|max" aria-label="<namn>, minst|högst">`). Platshållarna är figurens minsta
   och största tal i dimensionens format. Fälten verkställs vid `change` och läses med verktygets talinläsning
-  (`parseNumberStrict`: "1,5", "1 500", "−5"); ett textfält och inte `type="number"`, eftersom en webbläsare med annat
+  (`tolkaTalStrikt`: "1,5", "1 500", "−5"); ett textfält och inte `type="number"`, eftersom en webbläsare med annat
   språk annars lämnar ett tomt värde för "1,5". Tomt fält är ingen gräns. Ett tal som inte går att läsa, eller Minst
   större än Högst, markerar fältet (`aria-invalid="true"`), ändrar inget och står först i noten ("<namn>: Minst är
   större än högst. Filtret är oförändrat."). Ett intervall får dölja allt: då står "Inga grupper i urvalet" i

@@ -61,8 +61,8 @@ function tillampaDataStil(rot) {
 }
 
 // ---- Kolumnerna: vilken rubrik som bär vilket fält ----
-// Reglerna (ALLOWED_FIELDS, _rubrikForRoll, _hittaRubrik och autoDetectColumnMap) bor i src/lib/inlasning.js; appen
-// når autoDetectColumnMap under samma namn genom spegeln. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
+// Reglerna (TILLATNA_FALT, _rubrikForRoll, _hittaRubrik och gissaKolumnmappning) bor i src/lib/inlasning.js; appen
+// når gissaKolumnmappning under samma namn genom spegeln. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
 // kolumnmappningen och importprofilen ur tillståndet.
 /** Kolumnmappningen och importprofilen ur tillståndet, som lib-funktionerna för kolumnvalet tar emot. */
 function _kolumnvalIState() {

@@ -124,8 +124,8 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         ['Successionszon', /[Ss]uccessions(?:zon|risk)/],
         ['conditional gap', /[Cc]onditional gap/],
         ['Privacy by Design', /Privacy by [Dd]esign/],
-        // "vitlista" får stå bredvid kodnamnet ALLOWED_FIELDS; annars "godkända fält".
-        ['vitlista', /^(?![\s\S]*ALLOWED_FIELDS)[\s\S]*[Vv]itlist/],
+        // "vitlista" får stå bredvid kodnamnet TILLATNA_FALT; annars "godkända fält".
+        ['vitlista', /^(?![\s\S]*TILLATNA_FALT)[\s\S]*[Vv]itlist/],
         ['datafunnel', /[Dd]atafunnel/],
         ['lokal-only', /lokal-only/i],
         ['leverage', /[Ll]everage/],
@@ -153,7 +153,7 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
             expect(traffar(t, AVFORDA), t).not.toEqual([]);
         for (const t of ['gapPct', 'meanGap', '68-var-uppstar-gapet.js', 'chart-perbas-gap', 'BAS-nivå B',
             'löneskillnad', 'anställda', 'BAS-intervall', 'likvärdigt arbete', 'lönefilen', '`gap`',
-            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'vitlista `ALLOWED_FIELDS`', 'inflytelserika punkter', 'rekryteringen'])
+            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'vitlista `TILLATNA_FALT`', 'inflytelserika punkter', 'rekryteringen'])
             expect(traffar(t, AVFORDA), t).toEqual([]);
         for (const t of ['(§ 8)', 'art. 9', 'Art. 9', 'artikel 10', '3 kap. 9 §']) expect(traffar(t, LAGRUM_UI), t).not.toEqual([]);
         for (const t of ['Diskrimineringslagen kräver att du analyserar varje skillnad (3 kap.).', 'lagen'])

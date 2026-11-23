@@ -9,16 +9,16 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-    parseNumber, parseNumberStrict, _normalizeKon, _normalizeBas, _normalizePolicyAid, _cleanYrkeField,
-    _pnrSampelSteg, detectSensitiveColumns, tolkaLonerad, yrkeLiknarNamn, YRKE_NAMNMONSTER,
+    tolkaTal, tolkaTalStrikt, _normaliseraKon, _normaliseraBas, _normaliseraPolicyAid, _stadaYrkesfalt,
+    _pnrSampelSteg, hittaKansligaKolumner, tolkaLonerad, yrkeLiknarNamn, YRKE_NAMNMONSTER,
     yrkeNamnNyckel, sallsyntaNamnrader, YRKE_NAMN_HOGST_RADER,
-    _detectDelimiter, _decodeCsvBuffer, _findCsvHeader, _sniffTabularFormat,
-    _rubrikForRoll, vardeForRoll, autoDetectColumnMap, lonefilensRubriker, hittaAnsvarKolumn, _bedomAnsvarKolumn, minimeraRad
+    _gissaAvgransare, _avkodaCsv, _hittaCsvRubrik, _gissaTabellformat,
+    _rubrikForRoll, vardeForRoll, gissaKolumnmappning, lonefilensRubriker, hittaAnsvarKolumn, _bedomAnsvarKolumn, minimeraRad
 } from '../src/lib/inlasning.js';
 import { aidEtikettlista } from '../src/lib/aid-etiketter.js';
 
-describe('[B9.1] inlasning: tal (parseNumber, parseNumberStrict)', () => {
-    // [råvärde, parseNumber, parseNumberStrict.status]
+describe('[B9.1] inlasning: tal (tolkaTal, tolkaTalStrikt)', () => {
+    // [råvärde, tolkaTal, tolkaTalStrikt.status]
     it.each([
         ['32 500,50', 32500.5, 'ok'],
         ['32 500', 32500, 'ok'],
@@ -83,13 +83,13 @@ describe('[B9.1] inlasning: tal (parseNumber, parseNumberStrict)', () => {
         ['3,25 %', 3.25, 'ok'],
         [' 42 ', 42, 'ok'],
     ])('%o → %o, status %o', (raw, value, status) => {
-        expect(parseNumber(raw)).toBe(value);
-        expect(parseNumberStrict(raw)).toEqual({ status, value, raw });
+        expect(tolkaTal(raw)).toBe(value);
+        expect(tolkaTalStrikt(raw)).toEqual({ status, value, raw });
     });
     it('ett värde som redan är ett tal (ur Excel) läses som det är, också i exponentform', () => {
-        expect(parseNumberStrict(1e-7)).toEqual({ status: 'ok', value: 1e-7, raw: '1e-7' });
-        expect(parseNumber(32500.5)).toBe(32500.5);
-        expect(parseNumberStrict(NaN).status).toBe('invalid');
+        expect(tolkaTalStrikt(1e-7)).toEqual({ status: 'ok', value: 1e-7, raw: '1e-7' });
+        expect(tolkaTal(32500.5)).toBe(32500.5);
+        expect(tolkaTalStrikt(NaN).status).toBe('invalid');
     });
 });
 
@@ -106,7 +106,7 @@ describe('[B9.2] [B9.3] inlasning: kön, BAS och AID', () => {
         // (gemener, utan skiljetecken).
         ['1', ''], ['2', ''], ['x', 'x'], ['X', 'x'], ['', ''], [null, ''], [undefined, ''],
     ])('kön %o → %o', (raw, forvantat) => {
-        expect(_normalizeKon(raw)).toBe(forvantat);
+        expect(_normaliseraKon(raw)).toBe(forvantat);
     });
     it.each([
         // BAS-prefixet strippas så att intervallet inte splittras; utan separator ("BASA") eller ensamt lämnas det.
@@ -118,16 +118,16 @@ describe('[B9.2] [B9.3] inlasning: kön, BAS och AID', () => {
         ['A<script>', 'ASCRIPT'], ['<script>', 'SCRIPT'], ['A" onmouseover="alert(1)', 'A ONMOUSEOVER=ALERT(1)'], ['A"b', 'AB'], ["B'", 'B'],
         ['', ''], [null, ''], [undefined, ''],
     ])('BAS %o → %o', (raw, forvantat) => {
-        expect(_normalizeBas(raw)).toBe(forvantat);
+        expect(_normaliseraBas(raw)).toBe(forvantat);
     });
     it('AID i ställningstagandet: sifferprefixet, annars den rensade strängen', () => {
-        expect(_normalizePolicyAid('207 Förskollärare')).toBe('207');
-        expect(_normalizePolicyAid(' <Ledning> ')).toBe('Ledning');
-        expect(_normalizePolicyAid('')).toBe('');
+        expect(_normaliseraPolicyAid('207 Förskollärare')).toBe('207');
+        expect(_normaliseraPolicyAid(' <Ledning> ')).toBe('Ledning');
+        expect(_normaliseraPolicyAid('')).toBe('');
     });
 });
 
-describe('[B9.5] inlasning: yrke (_cleanYrkeField)', () => {
+describe('[B9.5] inlasning: yrke (_stadaYrkesfalt)', () => {
     it.each([
         ['101010 Ledning', '101010 Ledning'],
         ['203010 Förskollärare', '203010 Förskollärare'],
@@ -162,14 +162,14 @@ describe('[B9.5] inlasning: yrke (_cleanYrkeField)', () => {
         ['101010 Ledning, övergripande', '101010 Ledning, övergripande'],
         ['', ''], [null, ''], [undefined, ''], ['   ', ''],
     ])('%o → %o', (raw, forvantat) => {
-        expect(_cleanYrkeField(raw)).toBe(forvantat);
+        expect(_stadaYrkesfalt(raw)).toBe(forvantat);
     });
     // Genomgång av hela etikettlistan: ingen riktig etikett ändras, utom av 40-teckensgränsen.
     it('ingen av de AID-etiketter som verktyget känner till ändras, utom av 40-teckensgränsen', () => {
         const andrade = [];
         for (const [kod, namn] of aidEtikettlista().etiketter) {
             const forvantat = namn.length > 40 ? namn.substring(0, 40).trim() + '…' : namn;
-            const ut = _cleanYrkeField(kod + ' ' + namn);
+            const ut = _stadaYrkesfalt(kod + ' ' + namn);
             if (ut !== kod + ' ' + forvantat) andrade.push(`${kod} ${namn} → ${ut}`);
         }
         expect(andrade).toEqual([]);
@@ -216,11 +216,11 @@ describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
         expect(etiketter.filter(([, namn]) => yrkeLiknarNamn(namn)).map(([, namn]) => namn)).toEqual([]);
     });
 
-    it('mönstren bär inget tillstånd, och etiketten skiljs ut som i _cleanYrkeField', () => {
+    it('mönstren bär inget tillstånd, och etiketten skiljs ut som i _stadaYrkesfalt', () => {
         expect(YRKE_NAMNMONSTER).toHaveLength(2);
         for (const re of YRKE_NAMNMONSTER) expect(re.flags).toBe('');   // utan /g: test() bär inget tillstånd mellan anropen
         // Båda tar etiketten ur samma hjälpfunktion.
-        for (const f of [_cleanYrkeField, yrkeNamnNyckel]) expect(f.toString()).toContain('_yrkeEtikett(s)');
+        for (const f of [_stadaYrkesfalt, yrkeNamnNyckel]) expect(f.toString()).toContain('_yrkeEtikett(s)');
     });
 
     it('nyckeln: etikettexten i gemener med blanksteg samman, tom utan namnmönster', () => {
@@ -232,10 +232,10 @@ describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
     });
 
     it('prövas på råvärdet: ett namn efter kortningsgränsen på 40 tecken räknas också', () => {
-        expect(_cleanYrkeField('101010 Sjuksköterska Anna Andersson')).toBe('101010 Sjuksköterska Anna Andersson');
+        expect(_stadaYrkesfalt('101010 Sjuksköterska Anna Andersson')).toBe('101010 Sjuksköterska Anna Andersson');
         expect(yrkeLiknarNamn('101010 Sjuksköterska Anna Andersson')).toBe(true);
         const lang = '101010 handläggare med särskilt ansvar för samordning Anna Andersson';
-        expect(_cleanYrkeField(lang)).not.toMatch(/Anna|Andersson/);
+        expect(_stadaYrkesfalt(lang)).not.toMatch(/Anna|Andersson/);
         expect(yrkeLiknarNamn(lang)).toBe(true);
     });
 });
@@ -346,30 +346,30 @@ describe('inlasning: känsliga kolumner', () => {
             'Anst.nr': String(1000 + i), 'Förnamn': 'x', 'Id': `19800101-123${i}`, 'Kontakt': `p${i}@exempel.se`,
             'Person': ['Anna Andersson', 'Bo Berg', 'Cecilia Ek'][i % 3], 'Befattning': 'Lärare grundskola'
         }));
-        expect(detectSensitiveColumns(rader).map(f => f.col)).toEqual(['Förnamn', 'Id', 'Kontakt', 'Person']);
-        expect(detectSensitiveColumns([])).toEqual([]);
+        expect(hittaKansligaKolumner(rader).map(f => f.col)).toEqual(['Förnamn', 'Id', 'Kontakt', 'Person']);
+        expect(hittaKansligaKolumner([])).toEqual([]);
     });
 });
 
-describe('detectSensitiveColumns (PII-rubriker)', () => {
+describe('hittaKansligaKolumner (PII-rubriker)', () => {
     // Rader vars värden inte själva utlöser värdekontrollen (ett ord, inte "Förnamn Efternamn").
     const rader = kol => Array.from({ length: 10 }, (_, i) => ({ BAS: 'C', [kol]: `V${i}` }));
     it('rubriken Förnamn avvisas, med och utan ö (var en känd brist)', () => {
         for (const kol of ['Förnamn', 'Fornamn', 'FÖRNAMN', 'Förnamn ']) {
-            const fel = detectSensitiveColumns(rader(kol));
+            const fel = hittaKansligaKolumner(rader(kol));
             expect(fel.map(f => f.col), kol).toEqual([kol]);
             expect(fel[0].reason).toMatch(/personnamn/);
         }
     });
     it('Efternamn, Namn och e-post känns igen även med svenska tecken i rubriken', () => {
-        expect(detectSensitiveColumns(rader('Efternamn')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder personnamn']);
-        expect(detectSensitiveColumns(rader('Namn')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder personnamn']);
-        expect(detectSensitiveColumns(rader('E-postadress')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder e-postadress']);
+        expect(hittaKansligaKolumner(rader('Efternamn')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder personnamn']);
+        expect(hittaKansligaKolumner(rader('Namn')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder personnamn']);
+        expect(hittaKansligaKolumner(rader('E-postadress')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder e-postadress']);
     });
     it('vanliga rubriker avvisas inte', () => {
         for (const kol of ['BAS', 'Månadslön', 'Ålder', 'Kön', 'AID', 'Ansvarskod', 'Enhet', 'Benämning', 'Anställningsnummer',
                            'Sjukhus', 'Lönepolitik', 'Religionskunskap (ämne)', 'Fackområde']) {
-            expect(detectSensitiveColumns(rader(kol)), kol).toEqual([]);
+            expect(hittaKansligaKolumner(rader(kol)), kol).toEqual([]);
         }
     });
     // Särskilda kategorier (dataskyddsförordningen art. 9): underlaget ska inte innehålla dem, och riskanalysen
@@ -379,24 +379,24 @@ describe('detectSensitiveColumns (PII-rubriker)', () => {
                            'Sjukfrånvaro', 'Sjukskrivning', 'Sjukdom', 'Diagnos', 'Etnicitet', 'Etniskt ursprung', 'Religion',
                            'Trosuppfattning', 'Politisk tillhörighet', 'Sexuell läggning', 'Funktionsnedsättning',
                            'Genetisk', 'Biometri', 'HALSA', 'sexuell laggning']) {
-            const fel = detectSensitiveColumns(rader(kol));
+            const fel = hittaKansligaKolumner(rader(kol));
             expect(fel.map(f => f.col), kol).toEqual([kol]);
             expect(fel[0].reason, kol).toMatch(/särskild kategori/);
         }
     });
 });
 
-describe('detectSensitiveColumns (värdena)', () => {
+describe('hittaKansligaKolumner (värdena)', () => {
     // 300 rader; personnumren börjar på rad 200. De 50 första raderna är rena, så bara en sampling över hela filen
     // (var ⌈n/50⌉:e rad) hittar dem.
     const fil = (kol, varde) => Array.from({ length: 300 }, (_, i) => ({ BAS: 'C', Lön: String(30000 + i), [kol]: varde(i) }));
     it('personnummer som börjar på rad 200 hittas', () => {
-        const fel = detectSensitiveColumns(fil('Id', i => (i >= 200 ? `19800101-${1000 + i}` : `A${i}`)));
+        const fel = hittaKansligaKolumner(fil('Id', i => (i >= 200 ? `19800101-${1000 + i}` : `A${i}`)));
         expect(fel.map(f => f.col)).toEqual(['Id']);
         expect(fel[0].reason).toMatch(/personnummer/);
     });
     it('samplingen täcker hela filen: e-post bara i slutet hittas', () => {
-        const fel = detectSensitiveColumns(fil('Kontakt', i => (i >= 250 ? `p${i}@exempel.se` : '')));
+        const fel = hittaKansligaKolumner(fil('Kontakt', i => (i >= 250 ? `p${i}@exempel.se` : '')));
         expect(fel.map(f => f.reason)).toEqual([expect.stringMatching(/e-post/)]);
     });
     const namn = ['Anna Andersson', 'Bo Berg', 'Cecilia Carlsson', 'David Dahl', 'Eva Ek', 'Fredrik Falk'];
@@ -405,13 +405,13 @@ describe('detectSensitiveColumns (värdena)', () => {
         const omvand = n => n.split(' ').reverse().join(', ');
         for (const [etikett, f] of [['Versaler', n => n.toUpperCase()], ['Gemener', n => n.toLowerCase()],
             ['Komma', omvand], ['Komma versaler', n => omvand(n).toUpperCase()], ['Komma utan mellanslag', n => omvand(n).replace(' ', '')]]) {
-            const fel = detectSensitiveColumns(tio('Person', f));
+            const fel = hittaKansligaKolumner(tio('Person', f));
             expect(fel.map(x => x.reason), etikett).toEqual([expect.stringMatching(/personnamn/)]);
         }
     });
     it('befattningar med stor bokstav bara först räknas inte som namn', () => {
         const titlar = ['Lärare grundskola', 'Undersköterska hemtjänst', 'Lärare fritidshem', 'Administratör ekonomi', 'Kock storkök'];
-        expect(detectSensitiveColumns(Array.from({ length: 50 }, (_, i) => ({ BAS: 'C', Befattning: titlar[i % 5] })))).toEqual([]);
+        expect(hittaKansligaKolumner(Array.from({ length: 50 }, (_, i) => ({ BAS: 'C', Befattning: titlar[i % 5] })))).toEqual([]);
     });
 });
 
@@ -419,72 +419,72 @@ describe('detectSensitiveColumns (värdena)', () => {
 const win1252 = (str) => new Uint8Array([...str].map(c => c.charCodeAt(0))).buffer;  // codepoint<256
 const utf8 = (str) => new TextEncoder().encode(str).buffer;
 
-describe('_detectDelimiter', () => {
+describe('_gissaAvgransare', () => {
     it('detekterar semikolon, komma och tab', () => {
-        expect(_detectDelimiter('A;B;C\n1;2;3')).toBe(';');
-        expect(_detectDelimiter('A,B,C\n1,2,3')).toBe(',');
-        expect(_detectDelimiter('A\tB\tC')).toBe('\t');
+        expect(_gissaAvgransare('A;B;C\n1;2;3')).toBe(';');
+        expect(_gissaAvgransare('A,B,C\n1,2,3')).toBe(',');
+        expect(_gissaAvgransare('A\tB\tC')).toBe('\t');
     });
     it('faller tillbaka på ; när ingen avgränsare hittas', () => {
-        expect(_detectDelimiter('EnEndaKolumn')).toBe(';');
+        expect(_gissaAvgransare('EnEndaKolumn')).toBe(';');
     });
 });
 
-describe('_decodeCsvBuffer (teckenkodning)', () => {
+describe('_avkodaCsv (teckenkodning)', () => {
     it('läser UTF-8 korrekt', () => {
-        const d = _decodeCsvBuffer(utf8('Lön;Ålder;Kön'));
+        const d = _avkodaCsv(utf8('Lön;Ålder;Kön'));
         expect(d.encoding).toBe('UTF-8');
         expect(d.text).toBe('Lön;Ålder;Kön');
     });
     it('faller tillbaka på Windows-1252 vid ogiltig UTF-8 (Excel-CSV)', () => {
-        const d = _decodeCsvBuffer(win1252('Lön;Ålder;Kön'));
+        const d = _avkodaCsv(win1252('Lön;Ålder;Kön'));
         expect(d.encoding).toBe('Windows-1252');
         expect(d.text).toBe('Lön;Ålder;Kön');   // å/ä/ö intakt — ingen mojibake
     });
     it('hanterar UTF-8 BOM', () => {
         const withBom = new Uint8Array([0xEF, 0xBB, 0xBF, ...new TextEncoder().encode('AID;Poäng')]).buffer;
-        const d = _decodeCsvBuffer(withBom);
+        const d = _avkodaCsv(withBom);
         expect(d.encoding).toBe('UTF-8 (BOM)');
         expect(d.text).toBe('AID;Poäng');
     });
     it('läser UTF-16 LE med BOM (Excels "Unicode-text")', () => {
         const codes = [0xFF, 0xFE];
         for (const ch of 'Lön\tÅlder\tKön') { const c = ch.charCodeAt(0); codes.push(c & 0xFF, c >> 8); }
-        const d = _decodeCsvBuffer(new Uint8Array(codes).buffer);
+        const d = _avkodaCsv(new Uint8Array(codes).buffer);
         expect(d.encoding).toBe('UTF-16 LE');
         expect(d.text).toBe('Lön\tÅlder\tKön');   // ingen NUL-interfoliering, BOM struken
     });
 });
 
-describe('_sniffTabularFormat (magiska bytes)', () => {
+describe('_gissaTabellformat (magiska bytes)', () => {
     it('identifierar XLSX (ZIP), legacy XLS (OLE2) och text', () => {
-        expect(_sniffTabularFormat(new Uint8Array([0x50, 0x4B, 0x03, 0x04, 0]))).toBe('xlsx');
-        expect(_sniffTabularFormat(new Uint8Array([0xD0, 0xCF, 0x11, 0xE0, 0xA1]))).toBe('xls-legacy');
-        expect(_sniffTabularFormat(new TextEncoder().encode('BAS;Lön;Kön'))).toBe('text');
-        expect(_sniffTabularFormat(new Uint8Array([0xEF, 0xBB, 0xBF, 0x42]))).toBe('text');  // UTF-8 BOM = text
+        expect(_gissaTabellformat(new Uint8Array([0x50, 0x4B, 0x03, 0x04, 0]))).toBe('xlsx');
+        expect(_gissaTabellformat(new Uint8Array([0xD0, 0xCF, 0x11, 0xE0, 0xA1]))).toBe('xls-legacy');
+        expect(_gissaTabellformat(new TextEncoder().encode('BAS;Lön;Kön'))).toBe('text');
+        expect(_gissaTabellformat(new Uint8Array([0xEF, 0xBB, 0xBF, 0x42]))).toBe('text');  // UTF-8 BOM = text
     });
 });
 
-describe('_findCsvHeader (rubrikrad + preamble-tolerans)', () => {
+describe('_hittaCsvRubrik (rubrikrad + preamble-tolerans)', () => {
     const GROUPS = [['bas', 'basintervall'], ['mnadsln', 'lon', 'ln'], ['kon', 'kn'], ['lder', 'alder']];
     it('hittar rubrikraden på rad 0 utan preamble', () => {
-        const h = _findCsvHeader('BAS;Månadslön;Kön;Ålder\nA;30000;Kvinna;45', GROUPS);
+        const h = _hittaCsvRubrik('BAS;Månadslön;Kön;Ålder\nA;30000;Kvinna;45', GROUPS);
         expect(h.line).toBe(0);
         expect(h.delim).toBe(';');
     });
     it('hoppar över försättsrader från exportverktyg', () => {
         const text = 'Rapport uttagen 2026-01-15;;;\nOrganisation: Testorganisationen;;;\n\nBAS;Månadslön;Kön;Ålder\nA;30000;Kvinna;45';
-        const h = _findCsvHeader(text, GROUPS);
+        const h = _hittaCsvRubrik(text, GROUPS);
         expect(h.line).toBe(3);
         expect(h.delim).toBe(';');
     });
     it('detekterar avgränsare per rubrikrad (komma)', () => {
-        const h = _findCsvHeader('Preamble utan struktur\nBAS,Lön,Kön\nA,30000,K', GROUPS);
+        const h = _hittaCsvRubrik('Preamble utan struktur\nBAS,Lön,Kön\nA,30000,K', GROUPS);
         expect(h.line).toBe(1);
         expect(h.delim).toBe(',');
     });
     it('utan träffar: rad 0 och avgränsaren ur första raden', () => {
-        const h = _findCsvHeader('X;Y;Z\n1;2;3', GROUPS);
+        const h = _hittaCsvRubrik('X;Y;Z\n1;2;3', GROUPS);
         expect(h.line).toBe(0);
         expect(h.delim).toBe(';');
     });
@@ -510,16 +510,16 @@ describe('getField (kolumnmatchning + manuell mappning)', () => {
     });
 });
 
-describe('autoDetectColumnMap', () => {
+describe('gissaKolumnmappning', () => {
     it('känner igen standardrubriker', () => {
-        const m = autoDetectColumnMap(['Ansvar', 'BAS-intervall', 'AID', 'Månadslön', 'Ålder', 'Kön']);
+        const m = gissaKolumnmappning(['Ansvar', 'BAS-intervall', 'AID', 'Månadslön', 'Ålder', 'Kön']);
         expect(m.bas).toBe('BAS-intervall');
         expect(m.lon).toBe('Månadslön');
         expect(m.kon).toBe('Kön');
         expect(m.yrke).toBe('AID');
     });
     it('lämnar omatchade roller null', () => {
-        const m = autoDetectColumnMap(['Kostnadsställe', 'Befattning']);
+        const m = gissaKolumnmappning(['Kostnadsställe', 'Befattning']);
         expect(m.bas).toBeNull();
         expect(m.yrke).toBe('Befattning');
     });
@@ -532,18 +532,18 @@ describe('inläsning: kolumnvalet', () => {
     // "Lön" rensas till "ln", och "Lönetillägg" till "lnetillgg", som också innehåller "ln".
     const rubriker = ['Lönetillägg', 'Kön', 'BAS', 'Lön'];
     it('en rubrik som är exakt lika sökordet går före en som bara innehåller det', () => {
-        expect(autoDetectColumnMap(rubriker).lon).toBe('Lön');
+        expect(gissaKolumnmappning(rubriker).lon).toBe('Lön');
         const row = { 'Lönetillägg': '500', 'Kön': 'Kvinna', 'BAS': 'A', 'Lön': '30000' };
         expect(vardeForRoll(row, ['mnadsln', 'lon', 'ln'], 'lon')).toBe('30000');
         expect(minimera(row).lon).toBe(30000);
     });
     it('delsträngen gäller när ingen rubrik är exakt lika, och sökordens ordning står sig', () => {
-        expect(autoDetectColumnMap(['Lönetillägg', 'Kön']).lon).toBe('Lönetillägg');
-        expect(autoDetectColumnMap(['Lön', 'Månadslön']).lon).toBe('Månadslön');
+        expect(gissaKolumnmappning(['Lönetillägg', 'Kön']).lon).toBe('Lönetillägg');
+        expect(gissaKolumnmappning(['Lön', 'Månadslön']).lon).toBe('Månadslön');
     });
 });
 
-describe('_normalizeBas + extractMinimalRecord', () => {
+describe('_normaliseraBas + extractMinimalRecord', () => {
     it('vanlig ålder påverkas inte av födelseårsheuristiken', () => {
         const rec = minimera({ 'BAS': 'A', 'Månadslön': '30000', 'Ålder': '45', 'Kön': 'Man', 'AID': '5301' });
         expect(rec.alder).toBe(45);
@@ -576,7 +576,7 @@ describe('inläsning: lönefil utan ålderskolumn', () => {
 describe('inläsning: AID:s ansvarskod', () => {
     const rad = extra => ({ 'BAS': 'C', 'Månadslön': '30000', 'Ålder': '40', 'Kön': 'Kvinna', 'AID': '207011', ...extra });
     it('yrkeskolumnen blir AID även när AID-ansvar står före den', () => {
-        const map = autoDetectColumnMap(['AID-ansvar', 'AID', 'BAS', 'Månadslön', 'Ålder', 'Kön']);
+        const map = gissaKolumnmappning(['AID-ansvar', 'AID', 'BAS', 'Månadslön', 'Ålder', 'Kön']);
         expect(map.yrke).toBe('AID');
         const rec = minimera({ 'AID-ansvar': 'C', ...rad() });
         expect(rec.aid).toBe('207011');

@@ -13,7 +13,7 @@
  */
 import { arKvinna, arMan } from './kon.js';
 import { ansvarsgrupp as _anGrupp } from './ansvar.js';
-import { _normalizePolicyAid } from './inlasning.js';
+import { _normaliseraPolicyAid } from './inlasning.js';
 import { median, kvantil } from './stat.js';
 
 // ---- Det lilla demot ----
@@ -298,7 +298,7 @@ export function genereraStortDemoStatistik() {
             const median = _sdAvrunda(niva * (1 + paslag), 100);
             const forskjutning = Math.floor(rnd() * 11) - 5;   // −5 … +5 procentenheter
             rader.push({
-                aid: _normalizePolicyAid(aid), aidFull: `${aid} ${namn}`, bas,
+                aid: _normaliseraPolicyAid(aid), aidFull: `${aid} ${namn}`, bas,
                 median, p10: _sdAvrunda(median * (1 - 0.45 * spridning), 100), p90: _sdAvrunda(median * (1 + 0.55 * spridning), 100),
                 nKv: null, nMa: null, andelKv: Math.max(0, Math.min(100, Math.round(andelKv * 100) + forskjutning)),
             });

@@ -36,7 +36,7 @@ const EPOST = /\S+@\S+\.\S+/;
 // så det ändrar aldrig vilken kolumn en profil pekar på.
 const BORT = /[\u0000-\u001f\u007f<>"'&]/g;
 
-/** Rubriken som den jämförs: gemener, bara a–z och 0–9 (samma regel som autoDetectColumnMap i appen). */
+/** Rubriken som den jämförs: gemener, bara a–z och 0–9 (samma regel som gissaKolumnmappning i appen). */
 export function normaliseraRubrik(s) {
     return String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }

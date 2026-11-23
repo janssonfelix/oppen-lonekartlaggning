@@ -6,11 +6,11 @@
 // filen (ADR-28). Returnerar antal giltiga rader; 0 = inget ändrat.
 function _lasInReferens(rader, filnamn) {
     const policy = rader.map(row => ({
-        aid: _normalizePolicyAid(row.aid ?? getField(row, ["aid","yrkeskod","befattningskod"])),
-        bas: _normalizeBas(row.bas ?? getField(row, ["bas","basintervall"])),
-        p10: typeof row.p10 === 'number' ? row.p10 : parseNumber(getField(row, ["10e","p10","10"])),
-        med: typeof row.med === 'number' ? row.med : parseNumber(getField(row, ["median","med"])),
-        p90: typeof row.p90 === 'number' ? row.p90 : parseNumber(getField(row, ["90e","p90","90"]))
+        aid: _normaliseraPolicyAid(row.aid ?? getField(row, ["aid","yrkeskod","befattningskod"])),
+        bas: _normaliseraBas(row.bas ?? getField(row, ["bas","basintervall"])),
+        p10: typeof row.p10 === 'number' ? row.p10 : tolkaTal(getField(row, ["10e","p10","10"])),
+        med: typeof row.med === 'number' ? row.med : tolkaTal(getField(row, ["median","med"])),
+        p90: typeof row.p90 === 'number' ? row.p90 : tolkaTal(getField(row, ["90e","p90","90"]))
     })).filter(p => p.bas || p.aid);
     if (!policy.length) return 0;
     state.policy = policy;
@@ -63,7 +63,7 @@ policyInput.addEventListener("change", e => {
     // Gemensam läsväg: CSV (alla kodningar/avgränsare, preamble-tolerant) + XLSX.
     // `aid` är VALFRI: en policyrad får vara BAS-nivå, AID-specifik
     // (yrke oavsett BAS) eller AID+BAS (mest specifik). Uppslaget sker via
-    // policyFor(), som följer specificitetsordningen. _findCsvHeader poängsätter
+    // policyFor(), som följer specificitetsordningen. _hittaCsvRubrik poängsätter
     // synonymträffar (kräver inte alla grupper), så BAS-only-filer hittas också.
     readTabularFile(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], res => {
         if (!res.ok) {
@@ -173,15 +173,15 @@ statInput.addEventListener("change", e => {
             res.rows.forEach(r => {
                 // Samma sanering som lönefilen och ställningstagandet: HTML-metatecken bort
                 // vid inläsning (esc() vid rendering är det egentliga skyddet).
-                const aidRaw = cAID && r[cAID] != null ? _stripHtmlMeta(r[cAID]).trim() : "";
-                const basRaw = cBAS && r[cBAS] != null ? _normalizeBas(r[cBAS]) : "";
-                const median = parseNumber(r[/** @type {string} */ (cMed)]);
-                const p10 = cP10 ? parseNumber(r[cP10]) : 0;
-                const p90 = cP90 ? parseNumber(r[cP90]) : 0;
+                const aidRaw = cAID && r[cAID] != null ? _utanHtmlTecken(r[cAID]).trim() : "";
+                const basRaw = cBAS && r[cBAS] != null ? _normaliseraBas(r[cBAS]) : "";
+                const median = tolkaTal(r[/** @type {string} */ (cMed)]);
+                const p10 = cP10 ? tolkaTal(r[cP10]) : 0;
+                const p90 = cP90 ? tolkaTal(r[cP90]) : 0;
                 // Könsfördelning (om finns)
-                const nKv = cNKv ? parseNumber(r[cNKv]) : null;
-                const nMa = cNMa ? parseNumber(r[cNMa]) : null;
-                let andelKv = cAndel ? parseNumber(r[cAndel]) : null;
+                const nKv = cNKv ? tolkaTal(r[cNKv]) : null;
+                const nMa = cNMa ? tolkaTal(r[cNMa]) : null;
+                let andelKv = cAndel ? tolkaTal(r[cAndel]) : null;
                 // Konvertera till %: om värdet är ≤ 1 antas det vara decimal (0.65), annars %
                 if (andelKv != null && andelKv > 0 && andelKv <= 1) andelKv = andelKv * 100;
                 // Beräkna andelKv från antal om kolumn saknas
@@ -190,7 +190,7 @@ statInput.addEventListener("change", e => {
                 }
                 if (aidRaw && median > 0) {
                     state.statistik.push({
-                        aid: _normalizePolicyAid(aidRaw), aidFull: aidRaw, bas: basRaw,
+                        aid: _normaliseraPolicyAid(aidRaw), aidFull: aidRaw, bas: basRaw,
                         median, p10, p90,
                         nKv: nKv != null && nKv >= 0 ? nKv : null,
                         nMa: nMa != null && nMa >= 0 ? nMa : null,

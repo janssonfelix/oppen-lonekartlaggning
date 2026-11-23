@@ -371,7 +371,7 @@ const TALNAMN = Object.fromEntries([
         + 'groupsCovered groupsTotal utelamnade kvDomFunna ickeKvFunna kvDomMedNLessThanK kvUtanPoang gemensammaBas möjligaPar statHögre '
         + 'statLägreEllerLika internaPar externaPar basMedExternFallback leapfrog hHoga kiB'],
     ['en persons ålder och rad i lönefilen: tal ur extractMinimalRecord (06-uppgiftsminimering.js)', 'alder radnr'],
-    ['lönemått i kronor, räknade med Stat eller lästa som tal (parseNumber) ur ställningstagandet och jämförelsestatistiken',
+    ['lönemått i kronor, räknade med Stat eller lästa som tal (tolkaTal) ur ställningstagandet och jämförelsestatistiken',
         'median med p10 p90 medTot medKv medMa kvMedian maMedian refMedian diffKr gapKr costPerPerson annualGapTotal valueKv valueMa'],
     ['procent, andelar och index som räknas', 'gapPct diffPct maKvAndel priorityIndex'],
     ['inställningar som fälten, konfigurationsfilen och organisationspaketet prövar som tal (19-konfiguration.js, src/lib/organisationspaket.js)',
