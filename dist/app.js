@@ -30675,13 +30675,11 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
         return tr;
     });
     if (under.some(u => u.grupp === 'ledning')) {
-        const ovriga = yrkesRader.filter(x => x.ansvarsgrupp && x.ansvarsgrupp !== 'ledning' && x.lon > 0);
-        const kv = ovriga.filter(x => _utKonAv(x) === 'Kvinna').map(x => x.lon);
-        const ma = ovriga.filter(x => _utKonAv(x) === 'Man').map(x => x.lon);
-        if (kv.length >= kTroskel() && ma.length >= kTroskel()) {
+        const ovriga = _stKonsMedianer(yrkesRader.filter(x => x.ansvarsgrupp && x.ansvarsgrupp !== 'ledning'), { k: kTroskel() });
+        if (ovriga.konOk) {
             const tr = document.createElement('tr');
             tr.className = 'la-underrad';
-            tr.innerHTML = `<td colspan="11" class="la-underrad-namn">Utan ledningsansvar: kvinnors lön i % av mäns ${pct(Stat.median(kv) / Stat.median(ma) * 100)}</td>`;
+            tr.innerHTML = `<td colspan="11" class="la-underrad-namn">Utan ledningsansvar: kvinnors lön i % av mäns ${pct(ovriga.kvotPct)}</td>`;
             tr.hidden = true;   // fälls ut med ansvarsgrupperna
             ut.push(tr);
         }
