@@ -622,14 +622,14 @@ describe('rapportunderlag: kopiera diagram', () => {
 });
 
 describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
-    it('I2: kandidatparens diagram erbjuds bara när inga par uteslutits', () => {
+    it('kandidatparens diagram erbjuds bara när inga par uteslutits', () => {
         const w = createAppWindow();
         const ids = (harPar, exkl) => w._rapportDiagramLista(harPar, exkl).map(g => g.id);
         expect(ids(true, 0)).toContain('chart-likvardighet-heatmap');
         expect(ids(true, 1)).not.toContain('chart-likvardighet-heatmap');
         expect(ids(false, 0)).not.toContain('chart-likvardighet-heatmap');
     });
-    it('I4: diagrammet ritas alltid om före kopiering (aktuellt urval)', async () => {
+    it('diagrammet ritas alltid om före kopiering (aktuellt urval)', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
@@ -641,7 +641,7 @@ describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
         await w.__kopieraRapportDiagram('chart-skevhet-overview');
         expect(anrop).toContain('struktur');
     });
-    it('I5: misslyckad nedladdning ger "fel" utan att kasta', async () => {
+    it('misslyckad nedladdning ger "fel" utan att kasta', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();

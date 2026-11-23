@@ -592,7 +592,7 @@ ett trasigt diagram.
 
 - **Ett vakttest per vy:** ingen cell under tröskeln når SVG:n, verktygstipset eller tabellen
   (diagramdatan). Testet bygger vyns figur ur data med en cell under tröskeln och prövar alla tre.
-  Kärnans differentialtester (`S1: …` för skärmen och `export: det som lämnar verktyget …` i
+  Kärnans differentialtester (`DS1: …` för skärmen och `export: det som lämnar verktyget …` i
   `tests/diagramritare.test.js`) vaktar att kärnan respekterar `liten`; de vaktar inte att vyn sätter den.
 - **Inget ritas förbi kärnan:** ett test håller andra ritande och exporterande anrop borta från källan.
 - **En gemensam väg från diagram till bild.** ZIP-exporten (`66`), "Kopiera diagram" i

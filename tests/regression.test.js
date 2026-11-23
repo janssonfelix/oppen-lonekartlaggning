@@ -316,7 +316,7 @@ describe('modellerna utan ålder i lönefilen (ADR-64)', () => {
     });
 });
 
-describe('modellerna filtrerar själva bort rader de inte kan räkna (B4)', () => {
+describe('modellerna filtrerar själva bort rader de inte kan räkna', () => {
     const rader = () => fx.rows.map(r => ({ ...r }));
     const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
     // En rad med okänt kön skulle annars kodas som man (kvinna = 0) och flytta könsgapet.

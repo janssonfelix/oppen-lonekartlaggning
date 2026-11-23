@@ -582,8 +582,8 @@ reglernas i avsnitt 8:
 | R4 | Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel (lönegapet före och efter) | `tests/ktroskel-regression.test.js` |
 | R5 | Löneöversyns tröskelmål (lyft i procent och kostnad) kräver tröskeln för varje kön | `tests/troskelbeslut.test.js` |
 
-Det finns ingen C1. Regel R4 vaktas också av C3 och röktest. Två andra serier med samma bokstäver hör inte hit:
-ritarens regler R1–R11 i `tests/diagramritare.test.js` och I2, I4 och I5 i `tests/rapport-app.test.js`. De övriga
+Det finns ingen C1. Regel R4 vaktas också av C3 och röktest. Ritarens rättningsomgångar i
+`tests/diagramritare.test.js` (DR, DS, DT, DU, DV, DF och DG) hör inte hit. De övriga
 testerna i `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js` och `tests/troskelbeslut.test.js` heter efter det de
 prövar. `tests/ktroskel-utan-alder.test.js` hör till regeln om ålder (ADR-64), inte till tröskeln.
 
