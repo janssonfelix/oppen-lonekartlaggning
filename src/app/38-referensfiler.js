@@ -1,5 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { _normaliseraBas, _normaliseraPolicyAid, _utanHtmlTecken, tolkaTal } from '../lib/inlasning.js';
+import { namnFranFil } from '../lib/referens.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { getField, hideLoading, showLoading } from './03-hjalpfunktioner.js';
+import { _kopplaNamnFalt } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { aterstallReferens, getData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
+import { renderProcessTracker, updateCompliance } from './13-oversikt.js';
+import { renderConsistencyBanner } from './16-inlasningskontroll.js';
+import { renderActionChecklist } from './18-atgardslista.js';
+import { renderPaketInfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
+import { markUploadLoaded, readTabularFile, renderFilrutor, resetUploadCell } from './32-filinlasning.js';
+import { generateRapport } from './39-loneoversikt.js';
 
 // ---- File Upload: Policy CSV ----
 // Läser in ett eget ställningstagande (redan tolkade rader) och namnger det efter
@@ -15,7 +28,7 @@ function _lasInReferens(rader, filnamn) {
     if (!policy.length) return 0;
     state.policy = policy;
     state.policyKalla = 'fil';
-    const namn = _refNamnFranFil(filnamn);
+    const namn = namnFranFil(filnamn);
     state.policyNamn = namn;
     state.policyKortnamn = namn;
     renderReferensKort();
@@ -25,7 +38,7 @@ function _lasInReferens(rader, filnamn) {
 
 // Referenskortet i Filer och kvalitet: vilken referens som används, namnfält för egen fil
 // och knappen som tar bort den.
-function renderReferensKort() {
+export function renderReferensKort() {
     const el = document.getElementById('referens-status');
     if (!el) return;
     const har = harReferens();
@@ -98,7 +111,7 @@ policyInput.addEventListener("change", e => {
 
 // Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
 // flikarna; med underlag men utan referens är den dold (ADR-55).
-function _visaJamforelseFlik(synlig) {
+export function _visaJamforelseFlik(synlig) {
     const tb = document.getElementById('tab-benchmark');
     if (!tb) return;
     tb.hidden = !synlig && state.data.length > 0;
@@ -108,7 +121,7 @@ function _visaJamforelseFlik(synlig) {
     if (!synlig && tb.classList.contains('active')) /** @type {HTMLElement} */ (document.querySelector('.nav-item[data-tab="dashboard"]'))?.click();
 }
 
-function synkaJamforelseFlik() { _visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0)); }
+export function synkaJamforelseFlik() { _visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0)); }
 
 // ---- File Upload: External Statistics (Excel) ----
 const statInput = /** @type {HTMLElement} */ (document.getElementById("file-input-stat"));
@@ -162,7 +175,7 @@ statInput.addEventListener("change", e => {
                   cP10 = col(idxP10), cP90 = col(idxP90),
                   cNKv = col(idxNKv), cNMa = col(idxNMa), cAndel = col(idxAndelKv);
             state.statistik = [];
-            state.statistikNamn = _refNamnFranFil(file.name);
+            state.statistikNamn = namnFranFil(file.name);
             state.statistikKalla = 'fil';
             // Likvärdighetsparen jämförs mot statistiken — ett sparat resultat gäller inte längre.
             if (state.likvardighet) state.likvardighet.result = null;

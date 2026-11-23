@@ -1,5 +1,21 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { sektorsnamn } from '../lib/aid.js';
+import { talformat } from '../lib/figur.js';
+import { matchningEtikett } from '../lib/jamforelse.js';
+import { hantelRader as _rrHantelRader, referensOverblickUr } from '../lib/referenser.js';
+import { svPct, svTal } from '../lib/talformat.js';
+import { ordForAntal, stor } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { enableTableSort } from './05-tabeller-och-lankar.js';
+import { kTroskel } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { PALETTE, URVAL } from './10-diagramtema.js';
+import { addTableExportTools, getData, state } from './12-tillstand.js';
+import { _laSlutsats } from './41-lika-arbete.js';
+import { jamforelseUnderlag } from './42-jamforelse.js';
 
 // ---- Överblicken i Löneläget: löneläget och statistiken mot ställningstagandet (ADR-55) ----
 // Beräkningen är src/lib/referenser.js. Ställningstagandet är referenspunkten: dess kolumner och rader står först,
@@ -7,10 +23,10 @@
 const _RR_MAX = 25;
 
 /** Överblicken ur Jämförelses rader, med den referens som finns; null utan underlag eller utan någon referens. */
-function referensOverblick() {
+export function referensOverblick() {
     const harStatistik = state.statistik.length > 0, harStallningstagande = state.policy.length > 0;
     if (!getData().length || (!harStatistik && !harStallningstagande)) return null;
-    return _rrOverblick(jamforelseUnderlag().rader, { harStatistik, harStallningstagande,
+    return referensOverblickUr(jamforelseUnderlag().rader, { harStatistik, harStallningstagande,
         statistikHarSpann: !!state.statistikHasP10 && !!state.statistikHasP90 });
 }
 // Läget i spannet är ett index: rubriken säger skalan, verktygstipset vad talet betyder.
@@ -26,9 +42,9 @@ function _rrKolumner({ harStatistik, harStallningstagande }) {
     const skillnad = (kort, nyckel) => per.map(([t, p]) => ({ rubrik: `${t} mot ${kort} (%)`, typ: 'pct', varde: g => _rrSkillnad(g.org[p], g[nyckel][p]) }));
     const lage = g => [harStallningstagande && _rrLageText(g.lage.stallningstagande), harStatistik && _rrLageText(g.lage.statistik)].filter(Boolean).join(' · ');
     return [
-        { rubrik: termStor(T.enhet.en), typ: 'text', varde: g => `${g.yrke} · BAS ${g.bas}` },
+        { rubrik: stor(T.enhet.en), typ: 'text', varde: g => `${g.yrke} · BAS ${g.bas}` },
         // Statistikens matchning (samma ord som tabellen mot jämförelsestatistiken), bara när statistik finns.
-        ...(harStatistik ? [{ rubrik: 'Matchning', tips: _RR_MATCHNING_TIPS, typ: 'text', varde: g => _jfMatchningEtikett(g.statistikMatchning),
+        ...(harStatistik ? [{ rubrik: 'Matchning', tips: _RR_MATCHNING_TIPS, typ: 'text', varde: g => matchningEtikett(g.statistikMatchning),
             sortering: g => ({ 'aid-bas': 1, aid: 2 })[g.statistikMatchning] || 3 }] : []),
         { rubrik: 'n', typ: 'antal', varde: g => g.n },
         ...per.map(([t, p]) => ({ rubrik: `${t} (kr/mån)`, typ: 'kr', varde: g => g.org[p] })),
@@ -59,7 +75,7 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
     const monsterRuta = (etikett, m) => ruta(etikett, `${m.grupper} · ${svPct(m.andel, 0)}`);
     const pm = tal.perMonster;
     return '<div class="summary-stats">' + [
-        ruta(`${termStor(T.enhet.fl)} i ${T.niva.en}`, String(tal.antalGrupper)),
+        ruta(`${stor(T.enhet.fl)} i ${T.niva.en}`, String(tal.antalGrupper)),
         ...(harStatistik && harStallningstagande ? [
             monsterRuta('Båda över ställningstagandet', pm.badaOver), monsterRuta('Bara löneläget över', pm.baraLonelageOver),
             monsterRuta('Bara statistiken över', pm.baraStatistikOver), monsterRuta('Båda inom', pm.badaInom),
@@ -79,16 +95,16 @@ function _rrHantelFigur(rader, { harStatistik }) {
         { namn: 'Organisationen', nyckel: 'org', farg: PALETTE.semantic.mork }
     ];
     const steg = serier.length === 3 ? 0.27 : 0.2;   // seriernas läge i raden, i andelar av radens höjd
-    const kr = v => _figTalformat(v, 'kr');
+    const kr = v => talformat(v, 'kr');
     const lager = serier.flatMap((s, i) => {
         const forskjutning = (i - (serier.length - 1) / 2) * steg;
         // Filtrens fält: BAS, yrket (som i radens namn), sektorn ur AID och antalet (listans kolumn n).
-        const med = rader.map(r => ({ y: r.namn, bas: r.bas, yrke: r.yrke, sektor: r.aid != null ? _aidSektorsnamn(r.aid) : undefined, n: r.n, v: r[s.nyckel] })).filter(d => d.v && d.v.median != null);
+        const med = rader.map(r => ({ y: r.namn, bas: r.bas, yrke: r.yrke, sektor: r.aid != null ? sektorsnamn(r.aid) : undefined, n: r.n, v: r[s.nyckel] })).filter(d => d.v && d.v.median != null);
         const falt = d => ({ ...(d.bas != null ? { bas: d.bas } : {}), ...(d.yrke != null ? { yrke: d.yrke } : {}), ...(d.sektor != null ? { sektor: d.sektor } : {}), ...(d.n != null ? { n: d.n } : {}) });
         return [
             { marke: 'intervall', riktning: 'liggande', serie: s.namn, farg: s.farg, tjocklek: 8, opacitet: 0.45,
               data: med.filter(d => d.v.p10 != null && d.v.p90 != null).map(d => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, forskjutning, ...falt(d) })),
-              tips: d => [[d.y], [s.namn], ['P10–P90', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
+              tips: d => [[d.y], [s.namn], ['P10–P90', `${talformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
             { marke: 'punkt', symbol: 'streck', serie: s.namn, farg: s.farg, storlek: 5,
               data: med.map(d => ({ y: d.y, x: d.v.median, forskjutning, ...falt(d) })), tips: d => [[d.y], [s.namn], ['Median', kr(d.x)]] }
         ];
@@ -103,14 +119,14 @@ function _rrStatTabellHtml(rader) {
     return `<h3 class="jmf-diagram-rubrik">Statistiken mot ställningstagandet</h3>
         <p class="muted">Positivt: statistiken ligger över ställningstagandet. Negativt: statistiken ligger under det. Organisationens löner ingår inte.</p>
         <div class="table-container" tabindex="0" role="region" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><table id="ref-stat-mot-stallning" class="data-table" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>
-        <th scope="col">${termStor(T.enhet.en)}</th><th scope="col">BAS</th><th scope="col">P10 (%)</th><th scope="col">Median (%)</th><th scope="col">P90 (%)</th></tr></thead><tbody>`
+        <th scope="col">${stor(T.enhet.en)}</th><th scope="col">BAS</th><th scope="col">P10 (%)</th><th scope="col">Median (%)</th><th scope="col">P90 (%)</th></tr></thead><tbody>`
         + rader.map(r => `<tr><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>${['p10', 'median', 'p90'].map(p => (r[p] == null
             ? '<td class="num muted" data-sort-value="">–</td>' : `<td class="num" data-sort-value="${r[p].toFixed(2)}">${_rrPct(r[p])}</td>`)).join('')}</tr>`).join('')
         + '</tbody></table></div>';
 }
 
 /** Excel-bladet Referenser: skärmens lista med tal som tal, följt av statistiken mot ställningstagandet. */
-function _rrExcelBlad() {
+export function _rrExcelBlad() {
     const o = referensOverblick();
     if (!o) return null;
     const har = { harStatistik: state.statistik.length > 0, harStallningstagande: state.policy.length > 0 };
@@ -122,13 +138,13 @@ function _rrExcelBlad() {
         [`Minsta gruppstorlek ${kTroskel()}: ${T.enhet.fl} i ${T.niva.en} med färre personer redovisas inte. Ställningstagandet är referenspunkten.`], [],
         kolumner.map(k => k.rubrik),
         ...o.grupper.map(g => kolumner.map(k => cell(k, g))),
-        ...(har.harStatistik && har.harStallningstagande ? [[], ['Statistiken mot ställningstagandet (%)'], [termStor(T.enhet.en), 'BAS', 'P10', 'Median', 'P90'],
+        ...(har.harStatistik && har.harStallningstagande ? [[], ['Statistiken mot ställningstagandet (%)'], [stor(T.enhet.en), 'BAS', 'P10', 'Median', 'P90'],
             ...o.statistikMotStallningstagande.map(r => [r.yrke, r.bas, pct(r.p10), pct(r.median), pct(r.p90)])] : [])
     ];
 }
 
 /** Utskriftens bilaga: listan ur överblicken och statistiken mot ställningstagandet. cloneTable går genom exportgrinden. */
-function _utskriftReferenserHtml(cloneTable) {
+export function _utskriftReferenserHtml(cloneTable) {
     if (!state.policy.length && !state.statistik.length) return '';
     return `<section class="page-break"><h2>Löneläget och statistiken mot ställningstagandet</h2>${cloneTable('ref-tabell')}${cloneTable('ref-stat-mot-stallning')}</section>`;
 }
@@ -139,14 +155,14 @@ function _rrRitaTopp(o, { harStatistik, harStallningstagande }) {
     if (!host) return;
     if (!o) { host.innerHTML = ''; return; }
     const antal = villkor => o.grupper.filter(villkor).length;
-    const grupper = n => `${n} ${termForAntal(n, T.enhet)} i ${T.niva.en}`;
+    const grupper = n => `${n} ${ordForAntal(n, T.enhet)} i ${T.niva.en}`;
     host.innerHTML = _laSlutsats('Referenser', harStatistik && harStallningstagande ? 'Båda' : harStatistik ? 'Statistiken' : 'Ställningstagandet',
             harStatistik && harStallningstagande ? 'Ställningstagandet är referenspunkten' : 'Bara den referensen är inläst')
         + (harStallningstagande ? _laSlutsats('Löneläget utanför ställningstagandet', grupper(antal(g => g.monster.lonelage === 'ovanför' || g.monster.lonelage === 'nedanför')), `av ${o.tal.antalGrupper}`) : '')
         + (harStatistik && harStallningstagande ? _laSlutsats('Statistiken över ställningstagandet', grupper(antal(g => g.monster.statistik === 'över')), `av ${o.tal.antalGrupper}`) : '');
 }
 
-function renderReferensOverblick() {
+export function renderReferensOverblick() {
     const host = document.getElementById('ref-overblick');
     if (!host) return;
     rensaFigur('chart-ref-hantel');

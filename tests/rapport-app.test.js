@@ -546,7 +546,7 @@ describe('rapportunderlag', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const celler = [...w.document.querySelectorAll('#rapportunderlag-innehall .ru-innehall td')];
-        const tal = celler.filter(td => w.eval('_cellArTal')(td.textContent));
+        const tal = celler.filter(td => w.eval('arTal')(td.textContent));
         const intervall = tal.filter(td => /\d\s*(–|till)\s*[−+]?\d/.test(td.textContent));
         expect(intervall.length).toBeGreaterThan(0);
         expect(tal.every(td => td.classList.contains('ru-tal'))).toBe(true);

@@ -149,7 +149,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
     const valda = w => rutor(w).filter(r => r.checked).map(r => r.getAttribute('data-gu-var'));
     const kryssa = (w, v) => { const r = kort(w).querySelector(`input[data-gu-var="${v}"]`); r.checked = !r.checked; r.dispatchEvent(new w.Event('change', { bubbles: true })); };
     const delnamn = w => [...kort(w).querySelectorAll('[data-gu-del] .gu-rubrik strong')].map(e => e.textContent);
-    const u = w => w.eval('_guGapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
+    const u = w => w.eval('gapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
     const bevaka = w => { w.eval(`window.__fel = []; { const rf = rapporteraFel; rapporteraFel = function (plats, e) { window.__fel.push(plats + ': ' + (e && e.message)); return rf(plats, e); }; }
         { const ce = console.error; console.error = function (...a) { window.__fel.push(a.join(' ')); return ce.apply(console, a); }; }`); return w; };
 
@@ -359,7 +359,7 @@ describe('ansvarskod i Lika arbete', () => {
     });
     it('den sekventiella dekomponeringen får steget + Ansvar sist när raderna har ansvarsgrupp', () => {
         const w = oppna(true);
-        const steg = w.eval(`(() => { const d = getData(); return _rgStegvisGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
+        const steg = w.eval(`(() => { const d = getData(); return stegvisGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
         expect(steg).toEqual(['Endast kön', '+ BAS-intervall', '+ Ålder', '+ Yrkesgrupp', '+ Ansvar']);
     });
     it('kortet visar ansvaret på en egen rad under budgeten, inte i den', () => {

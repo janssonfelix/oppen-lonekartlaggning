@@ -47,7 +47,7 @@ const PID = valideraImportprofil(PROFIL).id;
 const EID = valideraImportprofil({ ...PROFIL, namn: 'Egen lista' }).id;
 const paketText = (w, profiler = [PROFIL], org = 'Exempelregionen') => {
     w.__p = profiler;
-    return w.eval(`JSON.stringify(_opByggPaket({ organisation: ${JSON.stringify(org)}, skapat: '2026-10-01',
+    return w.eval(`JSON.stringify(byggPaket({ organisation: ${JSON.stringify(org)}, skapat: '2026-10-01',
         referens: { namn: 'Ställningstagande', rader: [{ aid: null, bas: 'A', p10: 25000, med: 28000, p90: 31000 }] },
         importprofiler: window.__p }))`);
 };
@@ -98,7 +98,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
     it('en mappning som ändrats för hand efter att profilen känt igen filen: filkortet säger Känd uppsättning, ändrad', async () => {
         const w = createAppWindow();
         w.__p = [PROFIL];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         await lasIn(w, okandaRader());
         expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
         // Samma rubriker som profilen ger i varje val: ingen ändring.
@@ -127,7 +127,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         expect(w.__state.importprofil).toMatchObject({ id: 'inbyggd-csv-mallen' });
         // En profil som inte täcker poängen: rubrikigenkänningen fyller rullistan för Poang.
         w.__p = [{ id: 'utan-poang', namn: 'Mallen utan poäng', rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'] } }];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         await lasIn(w, mallRader(true));
         expect(w.__state.importprofil).toMatchObject({ namn: 'Mallen utan poäng' });
         expect(kortet(w).textContent).toBe('Känd uppsättning: Mallen utan poäng (konfigurationsfilen)');
@@ -142,7 +142,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
     it('en mappning för en fil följer inte med som "ändrad" till nästa fil som en profil känner igen', async () => {
         const w = createAppWindow();
         w.__p = [{ id: 'utan-poang', namn: 'Mallen utan poäng', rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'] } }, PROFIL];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         await lasIn(w, mallRader(true));
         const fore = w.__state.data;
         panel(w).querySelector('#colmap-apply').click();   // fil A tillämpad utan ändring: columnMap bär A:s rubriker
@@ -158,7 +158,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
     it('samma sak i stoppläget: förhandskontrollen för den väntande filen och efter Läs in säger inte "ändrad"', async () => {
         const w = createAppWindow();
         w.__p = [{ id: 'utan-poang', namn: 'Mallen utan poäng', rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'] } }, PROFIL];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         await lasIn(w, mallRader(true));
         const fore = w.__state.data;
         panel(w).querySelector('#colmap-apply').click();
@@ -225,7 +225,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
     it('rubrikraden hittas efter försättsrader också när bara profilen känner igen den', async () => {
         const w = createAppWindow();
         w.__p = [PROFIL];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         // Försättsraden ger två delsträngsträffar (Lonelista, Kontor), lika många som rubrikraden (Befattning,
         // Grundlon): utan profilen tas försättsraden, den första, för rubrikrad.
         await lasIn(w, ['Rapport uttagen;Lonelista;Kontor', 'Avd;Befattning;Grundlon;Fodd;Sex', ...okandaRader().slice(1)]);
@@ -238,7 +238,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         const w = createAppWindow();
         w.eval(readFileSync(join(rot, 'vendor', 'xlsx.mini.min.js'), 'utf8'));
         w.__p = [PROFIL];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         const X = w.XLSX;
         // Samma försättsrad som i CSV-testet ovan: två delsträngsträffar, lika många som rubrikraden.
         const rader = [['Rapport uttagen', 'Lonelista', 'Kontor'], ['Avd', 'Befattning', 'Grundlon', 'Fodd', 'Sex'],
@@ -258,7 +258,7 @@ describe('importprofiler: organisationspaketet', () => {
     it('ett paket med en profil känns igen före konfigurationsfilens, och visar källan', async () => {
         const w = createAppWindow();
         w.__p = [{ ...PROFIL, id: 'egen', namn: 'Egen lista' }];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         expect(w.lasInPaket(paketText(w)).ok).toBe(true);
         expect(w.__state.importprofiler.map(p => `${p.kalla}:${p.id}`)).toEqual(['konfiguration:' + EID, 'organisationspaket:' + PID]);
         expect(w.document.getElementById('paket-info').textContent).toContain('1 importprofil');
@@ -289,7 +289,7 @@ describe('importprofiler: organisationspaketet', () => {
         knapp.click();
         await vanta(() => fangad);
         const text = await fangad.text();
-        const t = w.eval('_opTolkaPaket')(text);
+        const t = w.eval('tolkaPaket')(text);
         expect(t.ok).toBe(true);
         expect(t.delar.importprofiler.map(p => p.namn)).toEqual(['Personallistan ur lönesystemet']);
         expect(t.paket.organisation).toBe('Exempelregionen');
@@ -301,7 +301,7 @@ describe('importprofiler: organisationspaketet', () => {
 
 describe('importprofiler: "Lägg till i organisationspaketet" bygger på paketets egna delar', () => {
     // Ett paket med egna värden som skiljer sig från sessionens.
-    const egetPaket = w => w.eval(`JSON.stringify(_opByggPaket({ organisation: 'Exempelregionen', utgivare: 'Lönegruppen', skapat: '2026-10-01',
+    const egetPaket = w => w.eval(`JSON.stringify(byggPaket({ organisation: 'Exempelregionen', utgivare: 'Lönegruppen', skapat: '2026-10-01',
         avserAr: 2026, profil: { benchmarkLabel: 'Riksstatistiken', basSystem: 'BAS' },
         installningar: { poPct: 40, kTroskel: 7, kTroskelLagst: 6 },
         referens: { namn: 'Paketets ställningstagande', rader: [{ aid: null, bas: 'A', p10: 25000, med: 28000, p90: 31000 }] } }))`);
@@ -329,7 +329,7 @@ describe('importprofiler: "Lägg till i organisationspaketet" bygger på paketet
         const f = fanga(w);
         await tillPaket(w);
         await vanta(() => f.blob);
-        const t = w.eval('_opTolkaPaket')(await f.blob.text());
+        const t = w.eval('tolkaPaket')(await f.blob.text());
         expect(t.ok).toBe(true);
         expect(t.paket).toMatchObject({ organisation: 'Exempelregionen', utgivare: 'Lönegruppen', avserAr: 2026 });
         expect(t.delar.installningar).toMatchObject({ poPct: 40, kTroskel: 7, kTroskelLagst: 6 });
@@ -348,7 +348,7 @@ describe('importprofiler: "Lägg till i organisationspaketet" bygger på paketet
         expect(d.getElementById('paket-status').textContent).toMatch(/^Paketet sparades inte\. Minsta gruppstorlek: /);   // Spara paketet har kvar kontrollen
         await tillPaket(w);
         await vanta(() => f.blob);
-        const t = w.eval('_opTolkaPaket')(await f.blob.text());
+        const t = w.eval('tolkaPaket')(await f.blob.text());
         expect(t.ok).toBe(true);
         expect(t.delar.installningar).toMatchObject({ kTroskel: 7 });
     });
@@ -358,7 +358,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
     it('Inställningar listar profilerna med namn, källa och rubriker; Ta bort och Exportera JSON', () => {
         const w = createAppWindow(), d = w.document;
         w.__p = [PROFIL];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         w.eval('oppnaInstallningar()');
         const lista = d.getElementById('inst-importprofiler');
         expect(lista.textContent).toContain('Lönesystemets personallista');
@@ -378,7 +378,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
     it('Ta bort på profilen som gällde för filen nollar den, så att filrutan inte nämner en borttagen profil', async () => {
         const w = createAppWindow(), d = w.document;
         w.__p = [PROFIL];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         await lasIn(w, okandaRader());
         expect(w.__state.importprofil?.id).toBe(PID);
         expect(kortet(w).hidden).toBe(false);
@@ -391,7 +391,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
     it('exporten är bara rubriknamn', () => {
         const w = createAppWindow();
         w.__p = [PROFIL];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'organisationspaket' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'organisationspaket' }).profiler");
         const o = JSON.parse(w.eval(`importprofilExport('${PID}')`));
         expect(o.format).toBe('lonekartlaggning-importprofiler');
         expect(o.profiler).toEqual([{ id: PID, namn: PROFIL.namn, rubriker: PROFIL.rubriker,
@@ -407,7 +407,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
     it('Rensa all data tar bort konfigurationsfilens profiler och paketets, och nollar den som gällde', async () => {
         const w = createAppWindow();
         w.__p = [{ ...PROFIL, id: 'egen', namn: 'Egen lista' }];
-        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        w.eval("state.importprofiler = valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler");
         expect(w.lasInPaket(paketText(w)).ok).toBe(true);
         await lasIn(w, okandaRader());
         expect(w.__state.importprofil).not.toBeNull();
@@ -424,7 +424,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         const w = createAppWindow({ html: r.html });
         expect(w.__state.importprofiler.map(p => p.kalla)).toEqual(['organisationspaket']);
         w.__p = [{ ...PROFIL, id: 'egen', namn: 'Egen lista' }];
-        w.eval("state.importprofiler.push(..._ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler)");
+        w.eval("state.importprofiler.push(...valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler)");
         w.__clearAllData();
         expect(w.__state.importprofiler.map(p => `${p.kalla}:${p.id}`)).toEqual(['organisationspaket:' + PID]);
     });

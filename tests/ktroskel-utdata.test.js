@@ -732,7 +732,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
     };
     const perBas = w => {
         const pb = w.eval(`_computePerBasGap(getData(), ${JSON.stringify(BAS)})`);
-        const q = w.eval(`_bhJustera(${JSON.stringify(pb.map(b => b.pValue))})`);
+        const q = w.eval(`bhJustera(${JSON.stringify(pb.map(b => b.pValue))})`);
         return Object.fromEntries(pb.map((b, i) => [b.bas, { ...b, q: q[i] }]));
     };
     const protokollet = async w => {
@@ -798,7 +798,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         expect(pb[0].status).toBe('ok');
         const p = pb[0].pValue;
         expect(p).toBeLessThan(0.05);
-        expect(w.eval(`_bhJustera([${p}])`)).toEqual([p]);
+        expect(w.eval(`bhJustera([${p}])`)).toEqual([p]);
         // Kortet: q-cellen visar talet, inte —.
         w.eval('renderRegressionCard()');
         const rad = [...w.document.querySelectorAll('#perbas-table tbody tr')].find(tr => tr.cells[0].textContent.trim() === 'E');

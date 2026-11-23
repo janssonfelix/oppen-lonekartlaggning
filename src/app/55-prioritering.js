@@ -1,5 +1,33 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { aidAvYrke, sektorsnamn } from '../lib/aid.js';
+import { talformat } from '../lib/figur.js';
+import { installningsGrans } from '../lib/installningsgranser.js';
+import { statistikFor } from '../lib/jamforelse.js';
+import { personOrd } from '../lib/namn.js';
+import { motiveringsgrunder, prioKonstanter, prioritera } from '../lib/prioritering.js';
+import { avrundaSymmetriskt } from '../lib/stat.js';
+import { svKr, svPct, svPoPct, svTal } from '../lib/talformat.js';
+import { adjektiv, stor as termStor } from '../lib/termer.js';
+import { FARG } from './01-farger.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { tillampaDataStil } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { buildBarCell, buildBaseAudit, flerKolumner, setAudit, tillampaFlerKolumner } from './05-tabeller-och-lankar.js';
+import { isKMasked, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { COST_DEFAULTS, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { _rfKorta } from './10-diagramlayout.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { gapStatus, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
+import { markeringFor } from './11-markering.js';
+import { getData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
+import { computeGroupMDE } from './13-oversikt.js';
+import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
+import { medExportLage, visningNy } from './23-exportgrind.js';
+import { _evidenceForPrioItem, _openEvidenceModal } from './27-berakningsbevis.js';
+import { renderTabContent } from './31-navigering.js';
+import { _laNyckel } from './41-lika-arbete.js';
 
 // ---- Prioriteringsanalys ----
 // Samlar yrkesgrupper × BAS, beräknar avvikelse mot vald referens
@@ -12,17 +40,17 @@
  * @param {string} reference - Referens-mätsticka: 'stallningstagande'|'statistik'
  * @returns {Array<Object>} Lista av prio-items, sorterade på score desc.
  */
-function computePrioritization(reference) {
+export function computePrioritization(reference) {
     // Modellen (grupperingen, indexet, k-regeln) ligger i src/lib/prioritering.js (ADR-8).
     // Här översätts bara state till referensFor och parametrar.
-    return _prPrioritera(getData(), {
+    return prioritera(getData(), {
         referensFor: (aid, bas) => {
             if (reference === 'stallningstagande') {
                 const pol = policyFor(aid, bas);
                 return pol && pol.med ? { median: pol.med, kalla: referensKortnamn() } : null;
             }
             // 'statistik'
-            const sr = _jfStatistikFor(state.statistik, aid, bas)?.rad;
+            const sr = statistikFor(state.statistik, aid, bas)?.rad;
             return sr && sr.median > 0 ? { median: sr.median, kalla: 'jämförelsestatistiken' } : null;
         },
         kTroskel: kTroskel(),
@@ -44,8 +72,8 @@ function computePrioritization(reference) {
  * @param {Object} item - Prio-item med _rows.
  * @returns {Array<{type:'warn'|'info'|'ok'|'flag', text:string}>}
  */
-function generateMotivationSuggestions(item) {
-    return _prMotiveringsgrunder(item, {
+export function generateMotivationSuggestions(item) {
+    return motiveringsgrunder(item, {
         kInstalld: kInstalld(), kTroskel: kTroskel(),
         mdePct: state.powerAnalysis?.mdePct, naraGrans: state.prioConfig.bevakaThreshold
     }).map(g => ({ type: g.type, text: _motiveringText(g) }));
@@ -59,7 +87,7 @@ function _motiveringText(g) {
         case 'alder': return `${g.medelMa > g.medelKv ? 'Männen' : 'Kvinnorna'} är i snitt <strong>${svTal(Math.abs(g.medelMa - g.medelKv), 1)} år äldre</strong> än motparten i denna grupp (${svTal(g.medelMa, 0)} mot ${svTal(g.medelKv, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`;
         case 'kvintil': return `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((g.andelKv*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((g.andelMa*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`;
         case 'brist': return 'Markerat som <strong>bristyrke</strong>. Marknadsläge (rekryteringssvårighet) kan vara ett sakligt skäl — dokumentera gärna marknadsläget med stöd av extern statistik (t.ex. från SCB lönestrukturstatistik).';
-        case 'snabbVinst': { const K = _prKonstanter(); return `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${g.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`; }
+        case 'snabbVinst': { const K = prioKonstanter(); return `<strong>Snabb vinst:</strong> gruppen ligger mer än ${svPct(K.SNABB_VINST_AVVIKELSE, 0)} under referensen, och kostnaden per person är under ${svKr(K.SNABB_VINST_KR)} per månad (${g.n} personer). Lämplig för pilotåtgärd för att visa förändringsvilja.`; }
         case 'over': return `Ligger ${svPct(g.diffPct, 1)} över referensen. Dokumentera gärna varför.`;
         default: return `Gruppens median ligger inom ±${svTal(g.nara, g.nara % 1 ? 1 : 0)} % av referensen.`;   // 'nara'
     }
@@ -70,7 +98,7 @@ function _motiveringText(g) {
 // referens, inte lönekartläggningens könsskillnader. Statusvärdena i src/lib/prioritering.js är oförändrade; «Nära
 // referens» har två färger, under uppföljningsgränsen och däröver. «Under referens, liten grupp» säger att Börja här
 // är samma läge i en större grupp; nyckeltalen räknar statusarna och heter som dem.
-const PRIO_STATUS_INFO = {
+export const PRIO_STATUS_INFO = {
     akut:      { label: 'Börja här',     icon: ikon('nal'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
     atgard:    { label: 'Under referens, liten grupp', icon: ikon('sok'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
     bevaka:    { label: 'Nära referens, under', icon: ikon('oga'), color: FARG.varning, bg: FARG.varningBg, klass: 'bricka-varning' },
@@ -78,7 +106,7 @@ const PRIO_STATUS_INFO = {
     analysera: { label: 'Över referens', icon: ikon('info'), color: FARG.info, bg: FARG.infoBg, klass: 'bricka-info' }
 };
 /** En gräns ur state.prioConfig som text utan tecken, med decimaler bara när gränsen har några («5 %», «2,5 %»). */
-function _prioGrans(v) {
+export function _prioGrans(v) {
     const a = Math.abs(v);
     return svPct(a, Number.isInteger(a) ? 0 : Number.isInteger(a * 10) ? 1 : 2);
 }
@@ -117,7 +145,7 @@ function _prioPoText() {
         : `inkl. PO-påslag ${svPoPct(po)} (ändras under Inställningar)`;
 }
 
-function _selectedPrioReference() {
+export function _selectedPrioReference() {
     const r = document.querySelector('input[name="prio-ref"]:checked');
     return r ? /** @type {HTMLInputElement} */ (r).value : 'stallningstagande';
 }
@@ -162,7 +190,7 @@ function _fmtCost(kr) {
 // Median och Referens göms också: utan dem ryms grundvyn vid 1280 px med menyn utfälld, och Avvikelse % säger hur de
 // förhåller sig. Båda står i beviset (förstoringsglaset), liksom Kv/Mä, avvikelsen i kronor, kostnaden per person och bristyrket.
 const PRIO_DOLDA_KOLUMNER = ['kvma', 'median', 'referens', 'avvikelsekr', 'kostnadpers', 'brist'];
-function renderPrioritering() {
+export function renderPrioritering() {
     const ref = _selectedPrioReference();
     const empty   = document.getElementById('prio-empty');
     const content = document.getElementById('prio-content');
@@ -186,7 +214,7 @@ function renderPrioritering() {
 
     const items = computePrioritization(ref);
     if (!items.length) {
-        content.innerHTML = `<p class="farg-dampad pad-32 ta-mitt">${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} har matchande referens i den valda jämförelsen. Kontrollera att <code>${ref === 'stallningstagande' ? T.niva.bfl : T.kod.bfl}</code> i lönefilen matchar jämförelsefilen.</p>`;
+        content.innerHTML = `<p class="farg-dampad pad-32 ta-mitt">${termStor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} har matchande referens i den valda jämförelsen. Kontrollera att <code>${ref === 'stallningstagande' ? T.niva.bfl : T.kod.bfl}</code> i lönefilen matchar jämförelsefilen.</p>`;
         return;
     }
 
@@ -286,7 +314,7 @@ function renderPrioritering() {
             const pol = policyFor(g.aid, g.bas);
             if (!pol || !pol.med) noRefCount++;
         } else {
-            const sr = _jfStatistikFor(state.statistik, g.aid, g.bas)?.rad;
+            const sr = statistikFor(state.statistik, g.aid, g.bas)?.rad;
             if (!sr) noRefCount++;
         }
     });
@@ -302,7 +330,7 @@ function renderPrioritering() {
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
             ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPoPct(state.costSettings.poPct)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
-            ['Riktningsvikt', `${_prKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${_prKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
+            ['Riktningsvikt', `${prioKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${prioKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
             ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
         ],
         notes: [
@@ -367,7 +395,7 @@ function renderPrioritering() {
             <td class="t-hoger" data-sort-value="${i.median}">${fmt.format(Math.round(i.median))}</td>
             <td class="farg-dampad ta-hoger" data-sort-value="${i.refMedian}">${fmt.format(Math.round(i.refMedian))}</td>
             <td class="t-hoger">${diffBar}</td>
-            <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(_avrundaSymmetriskt(i.diffKr))}</td>
+            <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(avrundaSymmetriskt(i.diffKr))}</td>
             <td class="t-hoger">${gapBar}${_prioKonStatus(i)}</td>
             <td class="t-hoger${i.costPerPerson > 0 ? ' f-kritisk' : ''}" data-sort-value="${i.costPerPerson}">${costPerPersonTxt}</td>
             <td class="fw-600 ta-hoger" data-sort-value="${costSort}">${costTxt}</td>
@@ -575,14 +603,14 @@ document.getElementById('prio-w-reset')?.addEventListener('click', () => {
 });
 
 // Kostnadsberäknings-inputs (månader + PO-påslag)
-function _readCostSettings() {
+export function _readCostSettings() {
     const monthsEl = document.getElementById('prio-cost-months');
     const poEl     = document.getElementById('prio-po-pct');
     const months   = monthsEl ? parseInt(/** @type {HTMLInputElement} */ (monthsEl).value, 10) || COST_DEFAULTS.months : COST_DEFAULTS.months;
     const poPct    = poEl ? parseFloat(/** @type {HTMLInputElement} */ (poEl).value) : COST_DEFAULTS.poPct;
     state.costSettings = {
-        months: Math.max(_igGrans('manader').min, Math.min(_igGrans('manader').max, months)),
-        poPct:  Math.max(_igGrans('poPct').min, Math.min(_igGrans('poPct').max, isNaN(poPct) ? COST_DEFAULTS.poPct : poPct))
+        months: Math.max(installningsGrans('manader').min, Math.min(installningsGrans('manader').max, months)),
+        poPct:  Math.max(installningsGrans('poPct').min, Math.min(installningsGrans('poPct').max, isNaN(poPct) ? COST_DEFAULTS.poPct : poPct))
     };
     const sum = document.getElementById('prio-cost-summary');
     if (sum) {
@@ -635,7 +663,7 @@ function _prioKostnadNot(alla, totalt) {
     const rest = alla.slice(PRIO_KOSTNAD_MAX);
     if (!rest.length || !(totalt > 0)) return '';
     const summa = rest.reduce((s, i) => s + i.annualGapTotal, 0);
-    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${_figTalformat(summa, 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
+    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${talformat(summa, 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
 }
 function _prioKostnadFigur(allaVisade, allCumPct) {
     // Högst PRIO_KOSTNAD_MAX grupper ritas; resten redovisas som en mening under diagrammet (_prioKostnadNot) — en
@@ -646,9 +674,9 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     const y = visade.map(namn), n80 = cumPct.findIndex(p => p >= 80);
     const inom = n => n80 < 0 || n <= n80;
     const lager = (serie, farg, opacitet, valj) => ({ marke: 'stapel', riktning: 'liggande', lage: 'overlagrad', serie, farg, opacitet,
-        data: visade.map((i, n) => ({ i, n })).filter(({ n }) => valj(n)).map(({ i, n }) => ({ y: y[n], x: i.annualGapTotal, yrke: i.yrke, bas: i.bas, sektor: _aidSektorsnamn(i.aid), n: i.n, kum: cumPct[n],
+        data: visade.map((i, n) => ({ i, n })).filter(({ n }) => valj(n)).map(({ i, n }) => ({ y: y[n], x: i.annualGapTotal, yrke: i.yrke, bas: i.bas, sektor: sektorsnamn(i.aid), n: i.n, kum: cumPct[n],
             etikett: `${_fmtCost(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`, markering: markeringFor(i.bas, i.yrke) })),
-        tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${_figTalformat(d.x, 'kr')}/år`], ['Kumulativ andel', _figTalformat(d.kum, 'pct')]] });
+        tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${talformat(d.x, 'kr')}/år`], ['Kumulativ andel', talformat(d.kum, 'pct')]] });
     return { beskrivning: 'Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.',
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
         hojd: Math.max(170, 90 + visade.length * 28),
@@ -671,7 +699,7 @@ function _prioZonNamn(zon, cfg) {
 // Matrisen: en punktserie per status (förklaringen kan dölja en status), zoner för tröskelvärdena med namn, och
 // gruppens namn som text på punkten enligt valt etikettläge.
 function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
-    const kr = v => _figTalformat(v, 'kr');
+    const kr = v => talformat(v, 'kr');
     const pm = (v, dec) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(dec).replace('.', ',')}`;
     const kostnad = i => Math.max(i.annualGapTotal, i.annualOverTotal);
     const storst = Math.max(1, ...items.map(kostnad));
@@ -687,7 +715,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         data: items.filter(i => i.status === status && isFinite(i.diffPct) && i.n > 0).map(i => {
             const etikett = _makePrioLabel(i, i.rank, etikettlage);
             return { x: +i.diffPct.toFixed(2), y: i.n, storlek: Math.max(4, 16 * Math.sqrt(Math.max(kostnad(i), storst * 0.02) / storst)),
-                     ...(etikett ? { etikett } : {}), rang: i.rank, yrke: i.yrke, bas: i.bas, sektor: _aidSektorsnamn(i.aid), n: i.n, kvN: i.kvN, maN: i.maN, median: i.median,
+                     ...(etikett ? { etikett } : {}), rang: i.rank, yrke: i.yrke, bas: i.bas, sektor: sektorsnamn(i.aid), n: i.n, kvN: i.kvN, maN: i.maN, median: i.median,
                      refKalla: i.refSource, refMedian: i.refMedian, diffKr: i.diffKr, gapPct: i.gapPct, atgard: i.annualGapTotal, over: i.annualOverTotal,
                      index: i.priorityIndex, markering: markeringFor(i.bas, i.yrke) };
         })

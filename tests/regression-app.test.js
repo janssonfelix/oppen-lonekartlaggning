@@ -44,7 +44,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
             const d = getData(); const am = d.reduce((s, x) => s + x.alder, 0) / d.length;
             const g = [...new Set(d.map(x => x.aid + '|' + x.bas))].sort();
             const X = d.map(x => [x.kon === 'kvinna' ? 1 : 0, x.alder - am, ...g.map(k => (x.aid + '|' + x.bas === k ? 1 : 0))]);
-            const fit = _anpassaOLS(X, d.map(x => Math.log(x.lon)));
+            const fit = anpassaOLS(X, d.map(x => Math.log(x.lon)));
             return (Math.exp(fit.beta[0]) - 1) * 100;
         })()`);
         expect(r.yrkesSteg.gapPct).toBeCloseTo(ref, 8);

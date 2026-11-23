@@ -696,7 +696,7 @@ describe('DR11: smärre rättelser', () => {
 });
 
 describe('DS1: ritning utan visaSma är identisk med ritning av en figur där de små punkterna tagits bort', () => {
-    // Bara data-l och data-i får skilja (DR1). Axlarna tas ur _figUtanSma (kategoriordningen, DS5); lagren
+    // Bara data-l och data-i får skilja (DR1). Axlarna tas ur utanSmaGrupper (kategoriordningen, DS5); lagren
     // behålls (tömda) så att färger efter lagerindex är desamma.
     const borttagen = f => {
         const u = utanSmaGrupper(f);

@@ -1,12 +1,25 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Personer att granska (ADR-23) ----
+import { talformat } from '../lib/figur.js';
+import { avvikelsePerKonOchBas, flaggaIndivider } from '../lib/individflaggor.js';
+import { personOrd } from '../lib/namn.js';
+import { svKr } from '../lib/talformat.js';
+import { stor } from '../lib/termer.js';
+import { FARG } from './01-farger.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { kTroskel, litetUnderlag, statGolv } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { PALETTE } from './10-diagramtema.js';
+import { markeraUtanExport } from './11-diagramexport.js';
+import { markeringFor } from './11-markering.js';
+import { getData, state } from './12-tillstand.js';
 /**
  * Panel sist i Lika arbete: personer minst X % under förväntad lön bland kollegor i samma
  * AID och BAS (logiken i src/lib/individflaggor.js). Listan lämnar aldrig verktyget:
  * inga exportverktyg på tabellen, inget i exporterna, dold vid utskrift (ADR-23).
  */
-function _pagGrans() {
+export function _pagGrans() {
     const el = document.getElementById('pag-grans');
     const v = el ? parseFloat(String(/** @type {HTMLInputElement} */ (el).value).replace(',', '.')) : NaN;
     if (!Number.isFinite(v)) return 10;
@@ -21,7 +34,7 @@ function ansvarsgruppNamn(g) { return _ANSVARSGRUPP_NAMN[g] || '—'; }
 /** Ansvarsgruppens namn i tabellens smala kolumn; hela namnet står i cellens verktygstips. */
 function _pagAnsvarKort(g) { return ansvarsgruppNamn(g).replace(/^(Inget särskilt) ansvar$/, '$1'); }
 
-function renderPersonerAttGranska(visaAlla = false) {
+export function renderPersonerAttGranska(visaAlla = false) {
     const host = document.getElementById('personer-att-granska');
     const body = document.getElementById('pag-innehall');
     if (!host || !body) return;
@@ -29,7 +42,7 @@ function renderPersonerAttGranska(visaAlla = false) {
     if (!d.length) { host.hidden = true; body.innerHTML = ''; _pagRitaAvvikelse(null, 0); return; }
     host.hidden = false;
     const grans = _pagGrans();
-    const r = _ifFlaggaIndivider(d, { minGrupp: statGolv(), grans });
+    const r = flaggaIndivider(d, { minGrupp: statGolv(), grans });
     _pagRitaAvvikelse(d, grans);
     const tal = (v, dec = 0) => new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v);
     const g = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1 }).format(grans);
@@ -79,7 +92,7 @@ function renderPersonerAttGranska(visaAlla = false) {
 markeraUtanExport(document.getElementById('pag-diagram-ruta'), 'individer');
 // Räkningen är avvikelsePerKonOchBas i src/lib/individflaggor.js; här läses tröskeln och golvet.
 function _pagAvvikelseRader(d, grans) {
-    return _ifAvvikelsePerKonOchBas(d, { k: kTroskel(), minGrupp: statGolv(), grans });
+    return avvikelsePerKonOchBas(d, { k: kTroskel(), minGrupp: statGolv(), grans });
 }
 // Avvikelsen per kön och BAS-intervall som tabell med inbyggd grafik: en rad per kön och intervall med antalet
 // prövade och andelen långt under respektive över förväntad lön, och de två andelarna ritade i raden kring en
@@ -98,8 +111,8 @@ function _pagAvvikelseTabell(rader, grans) {
     if (!t) return false;
     const g = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1 }).format(grans);
     const kant = Math.min(100, Math.ceil(Math.max(10, ...rader.map(o => Math.max(o.under, o.over))) * 1.2 / 10) * 10);
-    const andel = (v, antal) => `${_figTalformat(v, 'antal')} %${antal > 0 && antal < litetUnderlag() ? '<span class="pag-litet" title="Litet underlag">*</span>' : ''}`;
-    /** @type {HTMLElement} */ (t.querySelector('thead')).innerHTML = `<tr><th scope="col">${termStor(T.niva.en)}</th><th scope="col" class="ta-vanster">Kön</th><th scope="col" class="tal">Prövade</th>`
+    const andel = (v, antal) => `${talformat(v, 'antal')} %${antal > 0 && antal < litetUnderlag() ? '<span class="pag-litet" title="Litet underlag">*</span>' : ''}`;
+    /** @type {HTMLElement} */ (t.querySelector('thead')).innerHTML = `<tr><th scope="col">${stor(T.niva.en)}</th><th scope="col" class="ta-vanster">Kön</th><th scope="col" class="tal">Prövade</th>`
         + `<th scope="col" class="tal">Minst ${g} % under</th><th scope="col" class="la-oversikt-skala t-mitt" data-export-skip>under åt vänster · över åt höger</th><th scope="col" class="ta-vanster">Minst ${g} % över</th></tr>`;
     const tb = /** @type {HTMLElement} */ (t.querySelector('tbody'));
     tb.innerHTML = '';

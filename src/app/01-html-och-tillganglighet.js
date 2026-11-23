@@ -12,7 +12,7 @@
  * @param {*} s - Värde att eskapera (null/undefined → tom sträng).
  * @returns {string} HTML-säker sträng (text- och attributkontext).
  */
-const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+export const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
 
 // GDPR: stäng av webbläsarens autofyllning på alla input/select/textarea så att organisationsnamn, sökord,
@@ -25,7 +25,7 @@ const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
  * Sätter autocomplete="off" på varje fält under `rot` (och på `rot` självt) som saknar attributet.
  * @param {Document|Element} [rot]
  */
-function stangAutofyll(rot = document) {
+export function stangAutofyll(rot = document) {
     if (!rot || typeof rot.querySelectorAll !== 'function') return;
     const satt = el => { if (/** @type {HTMLInputElement} */ (el).type !== 'file' && !el.hasAttribute('autocomplete')) el.setAttribute('autocomplete', 'off'); };
     if (rot instanceof Element && rot.matches('input, select, textarea')) satt(rot);
@@ -44,7 +44,7 @@ if (typeof MutationObserver === 'function') {
 
 // Focus trap för modaler: håller tabbning kvar inom modalen och
 // återställer fokus till öppnande element vid stängning.
-const _focusTraps = new Map();
+export const _focusTraps = new Map();
 /**
  * Aktiverar focus trap i en modal: Tab/Shift+Tab cyklar mellan första/sista
  * fokuserbara element. Sparar referens till opener-elementet så fokus kan
@@ -55,7 +55,7 @@ const _focusTraps = new Map();
  *   Fokus står då kvar där det är; annars flyttas det till det första elementet en kort stund senare, och text som
  *   användaren hunnit börja skriva i ett annat fält hamnar där i stället.
  */
-function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
+export function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
     if (!modalEl) return;
     const focusables = modalEl.querySelectorAll(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), summary'
@@ -80,7 +80,7 @@ function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
  * Lossar focus trap från modal och återställer fokus till opener-elementet.
  * @param {HTMLElement} modalEl
  */
-function releaseFocus(modalEl) {
+export function releaseFocus(modalEl) {
     const trap = _focusTraps.get(modalEl);
     if (trap) {
         modalEl.removeEventListener('keydown', trap.handler);
@@ -108,7 +108,7 @@ function _ensureLiveRegion() {
  * samma text annonceras igen. WCAG 4.1.3 Status Messages.
  * @param {string} message
  */
-function announceToScreenReader(message) {
+export function announceToScreenReader(message) {
     const region = _ensureLiveRegion();
     region.textContent = '';
     setTimeout(() => { region.textContent = message; }, 50);

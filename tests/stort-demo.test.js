@@ -72,7 +72,7 @@ describe('stort demo: inläsningen', () => {
     it('jämförelsestatistiken har en rad per yrke och intervall, märkt som påhittad', () => {
         const s = w.__state;
         const grupper = [...new Set(s.data.map(r => `${r.aid}|${r.bas}`))];
-        const utan = grupper.filter(g => { const [aid, bas] = g.split('|'); return w.eval(`_jfStatistikFor(__state.statistik, ${JSON.stringify(aid)}, ${JSON.stringify(bas)})?.matchning`) !== 'aid-bas'; });
+        const utan = grupper.filter(g => { const [aid, bas] = g.split('|'); return w.eval(`statistikFor(__state.statistik, ${JSON.stringify(aid)}, ${JSON.stringify(bas)})?.matchning`) !== 'aid-bas'; });
         expect(utan).toEqual([]);
         expect(s.statistik.filter(x => !grupper.includes(`${x.aid}|${x.bas}`))).toEqual([]);
         expect(s.statistik).toHaveLength(grupper.length);
@@ -354,7 +354,7 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
         w = createAppWindow();
         w.eval(readFileSync(join(root, 'vendor', 'xlsx.mini.min.js'), 'utf8'));
         const data = w.eval('genereraStortDemo()');
-        const sektor = w.eval(`Object.fromEntries(${JSON.stringify([...new Set(data.map(r => r.aid))])}.map(a => [a, _aidSektorsnamn(a)]))`);
+        const sektor = w.eval(`Object.fromEntries(${JSON.stringify([...new Set(data.map(r => r.aid))])}.map(a => [a, sektorsnamn(a)]))`);
         ({ varden: sentinel, block, provade } = sattSentinel(data, sektor));
         w.__sdJson = JSON.stringify(data);
         w.eval('_lasInDemounderlag(() => JSON.parse(window.__sdJson), { stort: true })');   // som loadStortDemo, med sentinellönerna

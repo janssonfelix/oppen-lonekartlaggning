@@ -411,7 +411,7 @@ describe('ordlistan och Om verktyget', () => {
     it('termen Sakliga skäl i ordlistan räknar upp kategorierna, och Om verktyget nämner skälen i Handlingsplan', () => {
         const w = createAppWindow();
         const post = w.eval('GLOSSARY').find(g => g.term === 'Sakliga skäl');
-        for (const k of w.eval('_sakKategorier()')) expect(post.long).toContain(k.namn);
+        for (const k of w.eval('skalKategorier()')) expect(post.long).toContain(k.namn);
         expect(post.long).toContain('Lagen räknar inte upp några skäl; indelningen är verktygets.');
         const om = w.eval('Object.values(INFO_SECTIONS).map(f => f()).join(" ")').replace(/\s+/g, ' ');
         expect(om).toMatch(/sakliga skäl per grupp/i);

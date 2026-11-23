@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { _rfTipsDolt } from './10-diagramritare.js';
 
 // ---- Diagrammens verktygstips: en portal i <body> ----
 //
@@ -21,7 +22,7 @@ function _ensureChartTip() {
  * Visar chart-tooltipen vid muspekarens position.
  * Använder fixed positioning så ingen overflow:auto-container kan klippa den.
  */
-function _showChartTip(html, mouseX, mouseY) {
+export function _showChartTip(html, mouseX, mouseY) {
     if (!html) return;
     const tip = _ensureChartTip();
     tip.innerHTML = html;
@@ -51,7 +52,7 @@ function _showChartTip(html, mouseX, mouseY) {
  * fönsterstorlek, pekaren lämnar diagrammet). _showChartTip sätter innehållet på nytt varje gång. Ett tips
  * som ägs av ett diagram ritat med diagramkärnan (ADR-39) släpper samtidigt sin ägare — _rfTipsDolt i 10-diagramritare.js (funktionsdeklaration: finns i hela bygget).
  */
-function _hideChartTip() {
+export function _hideChartTip() {
     if (_chartTipEl) {
         _chartTipEl.classList.remove('visible');
         _chartTipEl.textContent = '';
@@ -69,13 +70,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideChartTi
 // Vid mycket stora underlag (tiotusentals rader) blir punktmolnet trögt och punkterna överlappar ändå till
 // oläsbarhet. Diagramkärnan ritar då ett DETERMINISTISKT, jämnt fördelat urval (var k:te punkt) — ENBART
 // visualiseringen. Alla statistiska mått räknas på FULL data före det steget.
-const SCATTER_MAX_POINTS = 8000;
+export const SCATTER_MAX_POINTS = 8000;
 
 /**
  * Visar/uppdaterar en diskret notis under diagrammet när sampling är aktiv.
  * `chartId` är diagrammets id eller elementet självt; ett element utan id får notisen som nästa syskon.
  */
-function _setScatterSampleNote(chartId, sampled) {
+export function _setScatterSampleNote(chartId, sampled) {
     const chart = typeof chartId === 'string' ? document.getElementById(chartId) : chartId;
     if (!chart) return;
     const noteId = chart.id ? chart.id + '-sample-note' : '';

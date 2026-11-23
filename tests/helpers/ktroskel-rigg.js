@@ -239,7 +239,7 @@ export async function samlaUtdata(w) {
     // Förhandskontrollen som efter en inläsning: tio rader med märkorden som råvärden, en oanvänd kolumn och två
     // varningar (personnamn i fältet för AID-etikett, med antal och radnummer, och ålder ur födelseår), så att de syns i
     // Filer och kvalitet och i Att göra.
-    w.eval(`state.forhandskontroll = _fkBygg({
+    w.eval(`state.forhandskontroll = byggForhandskontroll({
         rader: Array.from({ length: 10 }, (_, i) => ({ radnr: i + 2, anvands: true,
             ra: { bas: 'FKBAS', lon: 'FKLON', alder: 'FKALDER', kon: 'FKKON' },
             tolkat: { bas: 'S1', yrke: '6000 Säkeryrke 0', lon: 24000, alder: 40, kon: 'kvinna' },
@@ -412,7 +412,7 @@ export async function samlaUtdata(w) {
     // BAS-intervall, rapportens avsnitt och BAS-hantelns diagramdata. Sist, eftersom inläsningen ändrar tillståndet.
     // Importprofilerna lämnar verktyget som JSON (Exportera JSON i Inställningar) och i konfigurationsfilen: bara
     // rubriknamn, inga lönemått. En profil sparas som efter en mappning i kolumnmappningen.
-    w.eval(`state.importprofiler = [_ipFranMappning({ namn: 'Vår personallista', kalla: 'konfiguration',
+    w.eval(`state.importprofiler = [profilFranMappning({ namn: 'Vår personallista', kalla: 'konfiguration',
         mappning: { bas: 'BAS', yrke: 'AID', lon: 'Månadslön', alder: 'Ålder', kon: 'Kön' }, rubriker: ['BAS', 'AID', 'Månadslön', 'Ålder', 'Kön'] })]`);
     lagg('importprofilerna (Exportera JSON)', w.eval('importprofilExport()'));
     const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));

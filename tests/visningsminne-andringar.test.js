@@ -15,7 +15,7 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
     it('en ny lönefil, ett organisationspaket, en konfigurationsfil och rensningen', async () => {
         const w = demo();
         expect(await prova(w, 'kon', w => lasInLonefil(w, lonefil())), 'ny lönefil').toEqual([]);
-        const paket = w.eval(`JSON.stringify(_opByggPaket({ organisation: 'Exempelorganisationen', skapat: '2026-10-01',
+        const paket = w.eval(`JSON.stringify(byggPaket({ organisation: 'Exempelorganisationen', skapat: '2026-10-01',
             installningar: { months: 6 },
             referens: { namn: 'Ställningstagande', rader: [{ aid: null, bas: 'A', p10: 25000, med: 30000, p90: 36000 }, { aid: null, bas: 'C', p10: 30000, med: 35000, p90: 41000 }] } }))`);
         expect(await prova(w, 'struktur', w => { expect(w.lasInPaket(paket).ok).toBe(true); }), 'paketet').toEqual([]);

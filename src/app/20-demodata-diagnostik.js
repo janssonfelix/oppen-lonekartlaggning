@@ -1,5 +1,36 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { _sdStallningstagande, genereraDemodata, genereraStortDemoStatistik } from '../lib/demodata.js';
+import { basRangordning } from '../lib/likvardighet.js';
+import { konsMedianer } from '../lib/struktur.js';
+import { svPct, svTal } from '../lib/talformat.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { kInstalld } from './06-k-troskel.js';
+import { applyProfileLabels, synkaNamnFalt } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { _rfUrvalGlom } from './10-diagramritare.js';
+import { getBasIntervals, state } from './12-tillstand.js';
+import { bedomningUnderlag, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, UK_ETIKETT, updateCompliance, updateDashboardStats } from './13-oversikt.js';
+import { renderOutliers } from './15-extremvarden-basrang.js';
+import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
+import { _fkSlapp } from './17-forhandskontroll.js';
+import { renderActionChecklist } from './18-atgardslista.js';
+import { STORT_DEMO_STATISTIKNAMN } from './21-stort-demo.js';
+import { visningNy } from './23-exportgrind.js';
+import { updateGdprBanner } from './25-dataskyddsinfo.js';
+import { _rensaAllData, clearAllData } from './26-rensning.js';
+import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
+import { unlockTabs } from './31-navigering.js';
+import { _deriveArbetsvarderingFromData, markUploadLoaded } from './32-filinlasning.js';
+import { _fcGlomKnappresultat } from './36-loneoversyn.js';
+import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
+import { generateRapport } from './39-loneoversikt.js';
+import { renderKon } from './40-alder-karriar.js';
+import { generateSkevhet } from './41-lika-arbete.js';
+import { _formatPValue, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _hpDemoSkal } from './56-handlingsplan.js';
 
 // ---- #16 Testdata + självdiagnostik ----
 // genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen når dem genom spegeln.
@@ -8,7 +39,7 @@ function runDiagnostics() {
     const tests = [];
 
     // Test 1: råa gapet ska vara märkbart negativt (kvinnor yngre + lägre BAS = lägre lön)
-    const rawGap = _stKonsMedianer(state.data).gapPct;   // diagnostik på demodata: ingen tröskel (k = 1)
+    const rawGap = konsMedianer(state.data).gapPct;   // diagnostik på demodata: ingen tröskel (k = 1)
     tests.push({
         name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',
         expected: '< -3%',
@@ -34,7 +65,7 @@ function runDiagnostics() {
         // BAS-effekt ska finnas: nivån i högsta BAS mot referensen, utslagen per bokstavssteg
         if (reg.basEffekter && reg.basEffekter.length) {
             const sista = reg.basEffekter[reg.basEffekter.length - 1];
-            const rang = _lvBasRangordning(reg.basList);
+            const rang = basRangordning(reg.basList);
             const steg = rang(sista.bas) - rang(reg.basRef);
             const perSteg = (Math.exp(Math.log(1 + sista.pct / 100) / steg) - 1) * 100;
             tests.push({
@@ -121,7 +152,7 @@ function _lasInDemoStatistik({ stort = false } = {}) {
 // Det som det lilla och det stora demot (21-stort-demo.js) gör lika: frågan om befintlig data, rensningen av verkliga
 // delar, underlaget, demoläget, referensen och ritningen av Översikt och Filer och kvalitet. Bannern ritar anroparen sist.
 // Ger false om användaren avbröt.
-function _lasInDemounderlag(skapa, { stort = false } = {}) {
+export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     // Demots egen statistik (statistikKalla 'demo') är ingen verklig del: den ersätts eller tas bort nedan.
@@ -166,7 +197,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     return true;
 }
 
-function loadDemoData() {
+export function loadDemoData() {
     if (!_lasInDemounderlag(genereraDemodata)) return;
 
     // Kör diagnostik
@@ -208,7 +239,7 @@ document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData
 // #9 Demo-/utbildningsläge: visa/dölj en tydlig banner så syntetisk demodata
 // aldrig förväxlas med verklig analys. Banner-elementet finns i index.html.
 // Döljer även första-intryck-hinten när data finns (anropas i alla data-lägesbyten).
-function _renderDemoBanner() {
+export function _renderDemoBanner() {
     const b = document.getElementById('demo-mode-banner');
     if (b) b.style.display = state.isDemo ? 'flex' : 'none';
     // Det stora demot säger det i bannern; det lilla har kvar sin text.

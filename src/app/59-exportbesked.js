@@ -1,6 +1,20 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Förhandsbesked och urval (ADR-40) ----
+import { personOrd } from '../lib/namn.js';
+import { perBasReceptArStandard, valideraPerBasRecept } from '../lib/perbas.js';
+import { receptBeskrivning } from '../lib/tabellrecept.js';
+import { stor } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { kInstalld } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { getData, state } from './12-tillstand.js';
+import { excelAlltBlad } from './24-excelexport.js';
+import { _laNyckel } from './41-lika-arbete.js';
+import { harAlder } from './50-regressionsmodeller.js';
+import { rapportModell, rapportModellBada, rapportUrval, RM_URVAL, rmArHelaDokumentationen, rmBesked, sattRapportUrval } from './58-rapportmodell.js';
 /**
  * Dokumentera visar före exporten vad varje fil kommer att innehålla och vad som utelämnas, och låter användaren
  * välja vilka avsnitt som följer med i rapporten och i vilken ordning (nivå 1). Urvalet ligger i minnet
@@ -17,7 +31,7 @@ function _ebAntal(n, en, flera) { return `${n} ${n === 1 ? en : flera}`; }
  * @param {{baraUrval?: boolean}} [val] baraUrval: bara urvalet i listan har ändrats. Avsnitten tas då ur rapportmodellens
  *   minne (58-rapportmodell.js) och beskedet för Excel och ZIP, som inte beror på urvalet, står kvar.
  */
-function renderExportBesked({ baraUrval = false } = {}) {
+export function renderExportBesked({ baraUrval = false } = {}) {
     const har = getData().length > 0;
     const satt = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = har ? html : ''; };
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
@@ -78,7 +92,7 @@ function _ebRitaUrval(alla) {
 function _ebEgnaTabellerHtml() {
     const t = state.rapportTabeller || [];
     const rader = t.map((r, i) => `<li class="urval-rad" data-egen-id="${esc(r.id)}">
-            <span><strong>${esc(r.namn)}</strong><br><small class="f-dampad">${esc(_trBeskrivning(r))}</small></span>
+            <span><strong>${esc(r.namn)}</strong><br><small class="f-dampad">${esc(receptBeskrivning(r))}</small></span>
             <span class="urval-flytta"><button type="button" class="btn-table-tool" data-egen-flytta="-1" aria-label="Flytta upp: ${esc(r.namn)}"${i === 0 ? ' disabled' : ''}>${ikon('pilUpp', 14)}</button>
             <button type="button" class="btn-table-tool" data-egen-flytta="1" aria-label="Flytta ned: ${esc(r.namn)}"${i === t.length - 1 ? ' disabled' : ''}>${ikon('pilNed', 14)}</button>
             <button type="button" class="btn-table-tool" data-egen-bort aria-label="Ta bort: ${esc(r.namn)}">Ta bort</button></span></li>`).join('');
@@ -86,13 +100,13 @@ function _ebEgnaTabellerHtml() {
         <p class="text-dampad-sm marg-0-0-6">Tabeller du byggt i Tabeller och egna vyer och lagt till med <em>Lägg till i rapporten</em>. De står i avsnittet <em>Egna tabeller</em> i Word-utkastet och PDF-rapporten och i bladet <em>Egna tabeller</em> i Excel-filen, räknade med minsta gruppstorlek.</p>
         ${t.length ? `<ol class="urval-lista">${rader}</ol>` : '<p class="text-dampad-sm">Inga egna tabeller ännu.</p>'}</div>`;
 }
-const EB_PERBAS_RADER = [['referens', 'Referensen (ställningstagandet)'], ['organisation', 'Organisationen'], ['yrken', termStor(T.enhet.bfl)], ['statistik', `Jämförelsestatistikens rad under varje ${T.enhet.en}`], ['kvinnor', 'Kvinnor'], ['man', 'Män']];
+const EB_PERBAS_RADER = [['referens', 'Referensen (ställningstagandet)'], ['organisation', 'Organisationen'], ['yrken', stor(T.enhet.bfl)], ['statistik', `Jämförelsestatistikens rad under varje ${T.enhet.en}`], ['kvinnor', 'Kvinnor'], ['man', 'Män']];
 // Receptets dimensionsnyckel för upprepning per AID-huvudområde. Den sparas i konfigurationsfiler och
 // organisationspaket och byts därför inte med termerna (ADR-74).
 const PB_DIM_HUVUDOMRADE = 'sektor';
 const EB_PERBAS_MATT = [['p10', 'P10'], ['p25', 'P25'], ['med', 'Median'], ['p75', 'P75'], ['p90', 'P90'], ['medel', 'Medellön']];
 function _ebPerBasReceptHtml() {
-    const r = _pbValideraRecept(state.perBasRecept);
+    const r = valideraPerBasRecept(state.perBasRecept);
     const kryss = (id, text, pa) => `<label class="fs-sm"><input type="checkbox" id="${id}"${pa ? ' checked' : ''}> ${esc(text)}</label>`;
     return `<div id="rapport-perbas" class="marg-t-14"><h3 class="fs-md marg-0-0-6">Tabellerna per ${T.niva.en}</h3>
         <p class="text-dampad-sm marg-0-0-6">Avsnittet <em>Lönestruktur per ${T.niva.en}</em> följer det här receptet. Standard är tabellerna som i en skriven lönekartläggning.</p>
@@ -103,8 +117,8 @@ function _ebPerBasReceptHtml() {
             <fieldset class="falt-grupp"><legend>Summeringstabeller</legend>${kryss('pb-konsgap', 'Löneskillnader inom likvärdigt arbete', r.konsgap)} ${harAlder() ? kryss('pb-aldersgrupper', 'Löneskillnader i åldersgrupper', r.aldersgrupper) : '<span class="fs-sm text-dampad-sm">Löneskillnader i åldersgrupper: kräver ålder i lönefilen</span>'}
                 <label class="fs-sm">Åldersgränser <input type="text" id="pb-aldersgranser" class="form-select bredd-6em" value="${esc(r.aldersgranser.join(', '))}" autocomplete="off" title="Gränser mellan åldersgrupperna, t.ex. 35, 50 ger –34, 35–49 och 50–"></label></fieldset>
         </div>
-        <p class="rad-mitt gap-8 marg-6-0-0"><span id="pb-recept-status" class="text-dampad-sm">${_pbReceptArStandard(state.perBasRecept) ? 'Standardreceptet.' : 'Eget recept — följer med i konfigurationsfilen.'}</span>
-        <button type="button" id="pb-aterstall" class="btn btn-secondary btn-sm"${_pbReceptArStandard(state.perBasRecept) ? ' hidden' : ''}>Återställ standard</button></p></div>`;
+        <p class="rad-mitt gap-8 marg-6-0-0"><span id="pb-recept-status" class="text-dampad-sm">${perBasReceptArStandard(state.perBasRecept) ? 'Standardreceptet.' : 'Eget recept — följer med i konfigurationsfilen.'}</span>
+        <button type="button" id="pb-aterstall" class="btn btn-secondary btn-sm"${perBasReceptArStandard(state.perBasRecept) ? ' hidden' : ''}>Återställ standard</button></p></div>`;
 }
 /** Läser receptformuläret till state. Standardreceptet sparas som null. */
 function _ebLasPerBasRecept() {
@@ -114,11 +128,11 @@ function _ebLasPerBasRecept() {
         dim: v('pb-dim').value,
         rader: EB_PERBAS_RADER.map(([x]) => x).filter(x => v('pb-rad-' + x)?.checked),
         matt: EB_PERBAS_MATT.map(([x]) => x).filter(x => v('pb-matt-' + x)?.checked),
-        konsgap: !!v('pb-konsgap')?.checked, aldersgrupper: v('pb-aldersgrupper') ? !!v('pb-aldersgrupper').checked : _pbValideraRecept(state.perBasRecept).aldersgrupper,
+        konsgap: !!v('pb-konsgap')?.checked, aldersgrupper: v('pb-aldersgrupper') ? !!v('pb-aldersgrupper').checked : valideraPerBasRecept(state.perBasRecept).aldersgrupper,
         aldersgranser: String(v('pb-aldersgranser')?.value || '').split(/[,;\s]+/).map(Number).filter(x => Number.isInteger(x) && x > 0)
     };
-    const giltigt = _pbValideraRecept(r);
-    state.perBasRecept = _pbReceptArStandard(giltigt) ? null : giltigt;
+    const giltigt = valideraPerBasRecept(r);
+    state.perBasRecept = perBasReceptArStandard(giltigt) ? null : giltigt;
 }
 document.addEventListener('change', e => {
     const el = /** @type {HTMLElement} */ (e.target);

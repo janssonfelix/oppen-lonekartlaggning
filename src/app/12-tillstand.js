@@ -1,5 +1,28 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { tillTsv } from '../lib/csv.js';
+import { K_STANDARD } from '../lib/ktroskel.js';
+import { normaliseraNamn } from '../lib/namn.js';
+import { liknarPersonuppgift } from '../lib/organisationspaket.js';
+import { regressionslinjensBand } from '../lib/osakerhet.js';
+import { namnFranFil } from '../lib/referens.js';
+import { kvantil, linjarRegression, median } from '../lib/stat.js';
+import { stor } from '../lib/termer.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _cellSpann, enableTableSort, setupCollapsibleGroups } from './05-tabeller-och-lankar.js';
+import { _kUndantagFor, _tsvMedStampel } from './06-k-troskel.js';
+import { COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { PALETTE } from './10-diagramtema.js';
+import { renderProcessTracker, updateCompliance } from './13-oversikt.js';
+import { renderConsistencyBanner } from './16-inlasningskontroll.js';
+import { renderActionChecklist } from './18-atgardslista.js';
+import { _downloadCSV } from './22-exporthjalpare.js';
+import { exportElement, medExportLage } from './23-exportgrind.js';
+import { refreshCurrentTab } from './31-navigering.js';
+import { renderReferensKort } from './38-referensfiler.js';
 /**
  * Appens tillstånd. Fälten som bär inlästa eller beräknade data är löst typade (`any`): deras form
  * beskrivs i respektive modul, och typkontrollen (tsconfig.app.json) vaktar i första hand null-hantering,
@@ -39,7 +62,7 @@
  *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string, egen?: boolean, atgard?: string, grupp?: string, skal?: {kategori: string, belopp: number, kommentar: string}[]}},
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
-const state = {
+export const state = {
     data: [],        // full dataset, never filtered
     // Referensen (ADR-28): ingen inbyggd — ställningstagandet läses in som fil eller ur ett
     // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
@@ -131,14 +154,14 @@ const state = {
  * Returnerar hela datasetet; det finns inget enhetsfilter (se avgränsningen i docs/utveckling/mal.md).
  * @returns {Array<{bas:string, yrke:string, lon:number, alder:number, kon:string, aid?:string, yrkeLabel?:string, ansvarsgrupp?:string, [k:string]:any}>}
  */
-function getData() {
+export function getData() {
     return state.data;
 }
 /**
  * Lista av unika BAS-intervall (sorterade alfabetiskt) i aktivt dataset.
  * @returns {string[]}
  */
-function getBasIntervals() {
+export function getBasIntervals() {
     return [...new Set(getData().map(d => d.bas))].sort();
 }
 
@@ -161,7 +184,7 @@ function getBasIntervals() {
  * @param {string|null} bas - BAS-intervall, eller null.
  * @returns {null|{aid?:string, bas?:string, p10:number, med:number, p90:number}}
  */
-function policyFor(aid, bas) {
+export function policyFor(aid, bas) {
     const pol = state.policy || [];
     if (!pol.length) return null;
     const a = (aid == null || aid === '') ? null : String(aid).trim();
@@ -174,19 +197,19 @@ function policyFor(aid, bas) {
 }
 
 /** Vilken nivå en policyträff kom ifrån — måste visas i UI för att en avvikelse ska gå att tolka. */
-function policyLevelLabel(pol) {
+export function policyLevelLabel(pol) {
     if (!pol) return null;
     if (pol.aid && pol.bas) return 'AID + BAS';
     if (pol.aid) return 'AID-specifik';
-    return termStor(T.niva.en);
+    return stor(T.niva.en);
 }
 
 // ---- Referens (ADR-28): egen fil, organisationspaket eller demoläget — ingen inbyggd ----
-function harReferens()      { return state.policy.length > 0; }
-function referensNamn()     { return harReferens() ? (state.policyNamn || 'Eget ställningstagande') : 'Ingen referens inläst'; }
-function referensKortnamn() { return harReferens() ? (state.policyKortnamn || state.policyNamn || 'ställningstagandet') : 'ingen referens'; }
+export function harReferens()      { return state.policy.length > 0; }
+export function referensNamn()     { return harReferens() ? (state.policyNamn || 'Eget ställningstagande') : 'Ingen referens inläst'; }
+export function referensKortnamn() { return harReferens() ? (state.policyKortnamn || state.policyNamn || 'ställningstagandet') : 'ingen referens'; }
 /** Varifrån referensen kommer, som ett tillägg till namnet: " (egen fil)" m.fl.; tomt utan referens. */
-function referensKalla() {
+export function referensKalla() {
     if (!harReferens()) return '';
     if (state.policyKalla === 'demo') return ' (påhittad, demoläge)';
     if (state.policyKalla === 'paket' && state.paket) return state.paket.kalla === 'inbakat'
@@ -195,7 +218,7 @@ function referensKalla() {
     return ' (egen fil)';
 }
 /** Jämförelsestatistikens namn och källa, t.ex. "Lönestatistik 2025 (organisationspaket från X, 2026-10-01)". */
-function statistikBeskrivning() {
+export function statistikBeskrivning() {
     if (!state.statistik.length) return 'Ingen jämförelsestatistik inläst';
     const namn = state.statistikNamn || 'Jämförelsestatistik';
     if (state.statistikKalla === 'demo') return `${namn} (påhittad, demoläge)`;
@@ -204,23 +227,23 @@ function statistikBeskrivning() {
         : `${namn} (organisationspaket från ${state.paket.organisation}, ${state.paket.skapat})`;
     return `${namn} (egen fil)`;
 }
-function aterstallReferens() {
+export function aterstallReferens() {
     state.policy = [];
     state.policyNamn = null;
     state.policyKortnamn = null;
     state.policyKalla = null;
 }
-function sattReferensNamn(namn) {
-    const t = _namnNormalisera(namn);
-    if (t && _opLiknarPersonuppgift(t)) return { ok: false, fel: 'Namnet liknar ett personnummer eller en e-postadress och sparades inte.' };
-    const n = t || _refNamnFranFil('');
+export function sattReferensNamn(namn) {
+    const t = normaliseraNamn(namn);
+    if (t && liknarPersonuppgift(t)) return { ok: false, fel: 'Namnet liknar ett personnummer eller en e-postadress och sparades inte.' };
+    const n = t || namnFranFil('');
     state.policyNamn = n;
     state.policyKortnamn = n;
     ritaOmReferens();
     return { ok: true };
 }
 // Allt som namnger eller räknar mot referensen ritas om när den byts eller döps om.
-function ritaOmReferens() {
+export function ritaOmReferens() {
     for (const fn of [renderReferensKort, refreshCurrentTab, updateCompliance, renderConsistencyBanner,
                       renderActionChecklist, renderProcessTracker]) {
         if (typeof fn === 'function') { try { fn(); } catch (e) { rapporteraFel(`Omritning (${fn.name})`, e); } }   // en vy får inte stoppa de andra
@@ -229,10 +252,10 @@ function ritaOmReferens() {
 
 // ---- Colors & Stats ----
 // Härleds ur PALETTE (10-diagramtema.js) så könsfärgerna har EN källa.
-const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
+export const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
 
 // Statistiska helpers för vyerna; en källa: src/lib/stat.js via spegeln (tests/stat.test.js prövar den).
-const Stat = { median: __mirrorStat.median, kvantil: __mirrorStat.kvantil, linjarRegression: __mirrorStat.linjarRegression };
+export const Stat = { median: median, kvantil: kvantil, linjarRegression: linjarRegression };
 
 // Talen i indata (_normaliseraTaltext, tolkaTal, tolkaTalStrikt) tolkas i src/lib/inlasning.js och nås här
 // genom spegeln under samma namn.
@@ -246,8 +269,8 @@ const Stat = { median: __mirrorStat.median, kvantil: __mirrorStat.kvantil, linja
  * @param {number} [steps=30] - antal punkter att returnera
  * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>}
  */
-function linearRegressionCI(data, minX, maxX, steps) {
-    return _osRegressionslinjensBand(data, minX, maxX, steps);
+export function linearRegressionCI(data, minX, maxX, steps) {
+    return regressionslinjensBand(data, minX, maxX, steps);
 }
 
 // ---- Aktivera sortering, kollaps & export på alla huvudtabeller (en gång) ----
@@ -277,7 +300,7 @@ initTableEnhancements();
 // delegerat så att tabellen läses LIVE — sorterad ordning och omritad tbody
 // följer med. CSV återanvänder _downloadCSV; kopiering ger TAB-separerat så
 // att inklistring i Excel hamnar i kolumner.
-function addTableExportTools(tableId, fileBase) {
+export function addTableExportTools(tableId, fileBase) {
     const table = document.getElementById(tableId);
     if (!table || table._exportToolsInit) return;
     const anchor = table.closest('.table-container') || table;
@@ -303,7 +326,7 @@ function _tableCellText(cell) {
 }
 // Skärmen skriver procenttal med en decimal; exporterna bär talet med två. Ett element med data-export-text får den
 // texten i exporten (kopian av tabellen, CSV och Excel), så att avrundningen på skärmen inte följer med ut.
-function _exportText(rot) {
+export function _exportText(rot) {
     rot.querySelectorAll('[data-export-text]').forEach(el => { el.textContent = el.getAttribute('data-export-text'); });
 }
 // Tabell → rad-matris (thead + tbody), i nuvarande (ev. sorterade) DOM-ordning.
@@ -347,8 +370,8 @@ function __copyTableToClipboardExport(tableId, btn) {
     _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
 }
 // Rad-matris → TSV i urklipp (_tillTsv, src/lib/csv.js). Delas av tabellverktygen och diagrammens exportmeny.
-function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
-    const tsv = _tillTsv(_tsvMedStampel(rows, undantag));
+export function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
+    const tsv = tillTsv(_tsvMedStampel(rows, undantag));
     const done = () => {
         if (typeof announceToScreenReader === 'function') announceToScreenReader('Kopierat: ' + (rows.length - 1) + ' rader.');
         // Knappens innehåll (ikonen och texten) läggs tillbaka som det var.

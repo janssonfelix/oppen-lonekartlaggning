@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { state } from './12-tillstand.js';
 
 // ---- GDPR info-modal (kompakt -> full info) ----
 document.getElementById('gdpr-info-readmore')?.addEventListener('click', () => {
@@ -23,7 +25,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ---- GDPR-banner: visar lokal-bearbetning-status ----
-function updateGdprBanner() {
+export function updateGdprBanner() {
     const banner = document.getElementById('gdpr-banner');
     const count  = document.getElementById('gdpr-banner-count');
     if (!banner || !count) return;

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Sidindex ("På den här sidan") ----
+import { esc } from './01-html-och-tillganglighet.js';
+import { oppnaHopfallda, PANEL_GROUPS } from './31-navigering.js';
 /**
  * En lista över flikens avsnitt som följer med när sidan rullas: rubriken i varje utfällbart avsnitt
  * (details.avsnitt > summary h2|h3) och varje kort (.card-header > h2) som syns. Ett avsnitt som är dolt (hidden,
@@ -89,7 +91,7 @@ function _sidindexHojd(nav) {
 }
 
 /** Fyller #sidindex med flikens synliga avsnitt, eller döljer det när de är färre än tre. */
-function sidindexBygg(flik) {
+export function sidindexBygg(flik) {
     const nav = document.getElementById('sidindex');
     if (!nav) return;
     if (_sidindexBevakare) { _sidindexBevakare.disconnect(); _sidindexBevakare = null; }
@@ -125,7 +127,7 @@ function sidindexBygg(flik) {
 }
 
 /** Leder till ett avsnitt: fäller ut det (och det det ligger i), rullar fram det och ger summaryn fokus. */
-function sidindexGaTill(id) {
+export function sidindexGaTill(id) {
     const mal = document.getElementById(id);
     if (!mal) return;
     oppnaHopfallda(mal);

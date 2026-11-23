@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Inställningar ----
+import { importprofilerTillJson, inbyggdaProfiler } from '../lib/importprofiler.js';
+import { svTal } from '../lib/talformat.js';
+import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { _importprofilKalla } from './03-hjalpfunktioner.js';
+import { kInstalld } from './06-k-troskel.js';
+import { orgNamn } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { getData, referensNamn, state } from './12-tillstand.js';
+import { sattMeny } from './31-navigering.js';
+import { COLMAP_ROLES, maybeShowColumnMapping, renderFilrutor } from './32-filinlasning.js';
+import { _pagGrans } from './43-personer-att-granska.js';
+import { aidbasDefinition, lvJamforelse } from './45-aid-bas-tabeller.js';
 /**
  * Panelen samlar det som gäller flera flikar: minsta gruppstorlek, organisationstyp, PO-påslag och beräkningsperiod,
  * och Prioriteringens trösklar och viktning (de styr åtgärdslistan, kostnaden, handlingsplanen och rapporterna).
@@ -12,7 +24,7 @@ function installningarOppna() {
     return !!m && m.style.display === 'flex';
 }
 /** @param {{fokus?: string|null}} [val] fokus: id på fältet som ska få fokus */
-function oppnaInstallningar({ fokus = null } = {}) {
+export function oppnaInstallningar({ fokus = null } = {}) {
     const m = document.getElementById('installningar-modal');
     if (!m) return;
     if (typeof sattMeny === 'function') sattMeny(false, { fokus: false });
@@ -24,7 +36,7 @@ function oppnaInstallningar({ fokus = null } = {}) {
     // trapFocus sätter fokus på panelens första knapp efter en kort stund: det efterfrågade fältet tar över efter det.
     if (mal) { mal.focus(); setTimeout(() => { if (installningarOppna()) mal.focus(); }, 80); }
 }
-function stangInstallningar() {
+export function stangInstallningar() {
     const m = document.getElementById('installningar-modal');
     if (!m || !installningarOppna()) return;
     releaseFocus(m);
@@ -32,7 +44,7 @@ function stangInstallningar() {
 }
 
 /** Länken "Minsta gruppstorlek N" i flikarnas urvalsrad och i Översikts filrad: öppnar panelen med fokus i fältet. */
-function kTroskelLank() {
+export function kTroskelLank() {
     return `<button type="button" class="ov-filrad-lank" data-oppna-installningar="k-troskel" title="Ändra minsta gruppstorlek">Minsta gruppstorlek ${kInstalld()}</button>`;
 }
 
@@ -95,12 +107,12 @@ function _instRitaImportprofiler() {
     </li>`;
     el.innerHTML = (profiler.length ? `<ul class="inst-ip-lista">${profiler.map(rad).join('')}</ul>`
         : '<p class="text-dampad-sm">Inga sparade importprofiler. Peka ut kolumnerna i kolumnmappningen och spara mappningen där.</p>')
-        + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${_ipInbyggda().map(p => esc(p.namn)).join(', ')}.</p>`;
+        + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${inbyggdaProfiler().map(p => esc(p.namn)).join(', ')}.</p>`;
 }
 /** Profilen (eller alla sessionens profiler utan id) som JSON att dela eller bidra med: bara rubriknamn. */
 function importprofilExport(id) {
     const profiler = (state.importprofiler || []).filter(p => id == null || p.id === id);
-    return _ipTillJson(profiler);
+    return importprofilerTillJson(profiler);
 }
 function _ipExportera(id) {
     const p = (state.importprofiler || []).find(x => x.id === id);

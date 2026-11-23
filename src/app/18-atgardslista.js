@@ -7,6 +7,31 @@
 //   som HR behöver agera på, grupperad efter källa (U2): Lika arbete, Lika arbete, fördjupning, Likvärdigt
 //   arbete, Löneläge mot referens och underlagets kvalitet. HR kan klicka av punkterna när de hanterat dem.
 //   State sparas på state._actionChecklist (i minnet — försvinner vid reload).
+import { borjaHar } from '../lib/attgora.js';
+import { jamforbaraBas } from '../lib/datakvalitet.js';
+import { bhJustera } from '../lib/stat.js';
+import { direktivMarkering, perBasSignal } from '../lib/status.js';
+import { svPct, svTal } from '../lib/talformat.js';
+import { artikel, genitiv, termFras } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { andelAvMan, idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _parForRedovisning, kInstalld } from './06-k-troskel.js';
+import { APP_VERSION } from './08-version.js';
+import { T } from './09-termer.js';
+import { _STS_STORLEK } from './10-diagramtema.js';
+import { getData, state } from './12-tillstand.js';
+import { bedomningUnderlag } from './13-oversikt.js';
+import { _fkAttGora } from './17-forhandskontroll.js';
+import { _downloadCSV } from './22-exporthjalpare.js';
+import { medExportLage } from './23-exportgrind.js';
+import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
+import { _laOversiktRader, _laOversiktStatus } from './41-lika-arbete.js';
+import { konsklassOrd } from './45-aid-bas-tabeller.js';
+import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _lifecycleFixBas, runLifecycleRegression } from './52-livscykel.js';
+import { _selectedPrioReference, computePrioritization } from './55-prioritering.js';
+import { _handlingsplanSeedRows, _hpArEgen } from './56-handlingsplan.js';
 
 // Tal i punkternas texter: decimalkomma och belopp utan tecken — riktningen skrivs med ord.
 const _agPct = v => Math.abs(v).toFixed(1).replace('.', ',');
@@ -21,7 +46,7 @@ const _agRiktning = v => (v < 0 ? 'lägre' : 'högre');
  * @param {{endastGrupper?: boolean, reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17)
  * @returns {Array<{id, kategori, prioritet, titel, detalj, tab, källa}>}
  */
-function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
+export function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
     /** @type {any[]} */
     const items = [];
     if (!state.data.length) return items;
@@ -76,7 +101,7 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
         // utesluter 100 % och skillnaden är minst 3 %, i jämförbara BAS (samma regel som översiktstabellen) ===
         try {
             const d = getData();
-            const jb = new Set(_dqJamforbaraBas(d, kInstalld()).jamforbara);
+            const jb = new Set(jamforbaraBas(d, kInstalld()).jamforbara);
             const perBas = (reg && !reg.error && reg.perBas) ? reg.perBas : [];
             _laOversiktRader(d).filter(o => jb.has(o.bas) && _laOversiktStatus(o).niva === 'granska').forEach(o => {
                 const b = o.bas, gap = o.gap - 100;
@@ -86,11 +111,11 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
                         ? ` Efter hänsyn till ålder har kvinnor ${_agPct(pb.gapPct)} % ${_agRiktning(pb.gapPct)} lön — under 3 %.`
                         : ` Efter hänsyn till ålder har kvinnor ${_agPct(pb.gapPct)} % ${_agRiktning(pb.gapPct)} lön.`)
                     : '';
-                const direktiv = _stsDirektiv(o.gap) ? ' Den råa skillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '';
+                const direktiv = direktivMarkering(o.gap) ? ' Den råa skillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '';
                 items.push({
                     id: 'gap-bas-' + b, kategori: 'Lika arbete', prioritet: 'medel',
                     titel: `BAS ${b}: kvinnors medianlön ${andelAvMan(gap)} av mäns`,   // rå skillnad: samma form som i Lika arbete
-                    detalj: `Rå skillnad som är statistiskt säkerställd och minst 3 % i ${termArtikel(T.niva)} ${termFras(T.niva, 'en', { adjektiv: 'jämförbar' })}.${direktiv}${forklaring} Pröva om skillnaden har sakliga skäl.`,
+                    detalj: `Rå skillnad som är statistiskt säkerställd och minst 3 % i ${artikel(T.niva)} ${termFras(T.niva, 'en', { adjektiv: 'jämförbar' })}.${direktiv}${forklaring} Pröva om skillnaden har sakliga skäl.`,
                     tab: 'matrix', källa: 'Lika arbete'
                 });
             });
@@ -158,7 +183,7 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
                     prioritet: p.gapPct >= 10 ? 'hög' : 'medel',
                     titel: `${p.kvLabel || p.kvAid} (BAS ${p.kvBas}, ${svPct(p.kvKvinnoPct, 0)} kv) ligger ${_agPct(p.gapPct)} % under ${p.maLabel || p.maAid} (${svPct(p.maKvAndel, 0)} kv${p.maKlass ? `, ${konsklassOrd(p.maKlass)}` : ''})`,
                     // ADR-60: jämförelseyrket är ett yrke som inte är kvinnodominerat; klassen står i titeln.
-                    detalj: `Organisationens median ${Math.round(p.kvMedian).toLocaleString('sv-SE')} kr mot ${p.jamforKalla === 'extern' ? 'jämförelsestatistikens' : termGenitiv(T.jamforelse.bf)} ${Math.round(p.maMedian).toLocaleString('sv-SE')} kr. Granska om kraven är likvärdiga och dokumentera sakliga skäl.`,
+                    detalj: `Organisationens median ${Math.round(p.kvMedian).toLocaleString('sv-SE')} kr mot ${p.jamforKalla === 'extern' ? 'jämförelsestatistikens' : genitiv(T.jamforelse.bf)} ${Math.round(p.maMedian).toLocaleString('sv-SE')} kr. Granska om kraven är likvärdiga och dokumentera sakliga skäl.`,
                     tab: 'likvardighet',
                     källa: 'Likvärdighetsanalys'
                 });
@@ -175,13 +200,13 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
                 // enda test ger q = p
                 const okTests = reg.perBas.filter(p => p.status === 'ok' && isFinite(p.pValue));
                 const bhQ = {};
-                const qOk = _bhJustera(okTests.map(t => t.pValue));
+                const qOk = bhJustera(okTests.map(t => t.pValue));
                 okTests.forEach((t, i) => { bhQ[t.bas] = qOk[i]; });
                 reg.perBas.forEach(p => {
                     if (p.status !== 'ok') return;
                     const q = bhQ[p.bas];
                     const sig = p.pValue < 0.05 && (q == null || q < 0.05);
-                    if (_stsPerBasSignal(p.gapPct, sig, p.pValue < 0.05).niva === 'titta') {
+                    if (perBasSignal(p.gapPct, sig, p.pValue < 0.05).niva === 'titta') {
                         items.push({
                             id: `eu-bas-${p.bas}`,
                             kategori: 'Lika arbete, fördjupning',
@@ -257,7 +282,7 @@ function _attGoraParNot() {
  */
 /** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
-function renderActionChecklist({ reg } = {}) {
+export function renderActionChecklist({ reg } = {}) {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
@@ -344,7 +369,7 @@ function renderActionChecklist({ reg } = {}) {
         </div>
     `);
 
-    const oppna = _agBorjaHar(items, done);   // ordningen: src/lib/attgora.js (ADR-29)
+    const oppna = borjaHar(items, done);   // ordningen: src/lib/attgora.js (ADR-29)
     if (borja) borja.innerHTML = `<h3 class="att-gora-borja-rubrik">Börja här</h3>` + (oppna.length
         ? `<ol class="att-gora-borja-lista">${oppna.map(it => `<li data-borja-id="${esc(it.id)}">${esc(it.titel)} <span class="att-gora-kat">${esc(it.kategori)}</span>${it.tab ? ' ' + _attGoraLank(it, 'Gå dit') : ''}</li>`).join('')}</ol>`
         : '<p>Alla punkter är hanterade.</p>');

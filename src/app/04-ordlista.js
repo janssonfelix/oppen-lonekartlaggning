@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { _kText } from './06-k-troskel.js';
+import { termText } from './09-termer.js';
 
 // Metodtexten om AID (ADR-33, ADR-74) — samma text i Om verktyget, Lika arbete och Word-utkastet. Den är en mall med
 // termerna ({enhet.en} med flera, src/lib/termer.js) och fylls med termText där den visas; index.html har samma mall
 // i data-term-template, och tests/termer.test.js håller de två lika.
-const AID_METODTEXT = 'AID är ett klassificeringssystem för att gruppera arbetsuppgifter, som SKR och de fackliga organisationerna använder gemensamt för lönestatistik. {Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en} och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga; för det behöver AID kompletteras. {Enhet.bfl} är därför en utgångspunkt för lika arbete, som arbetsgivaren bekräftar; för likvärdigt arbete kompletterar {niva.bfl} eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).';
+export const AID_METODTEXT = 'AID är ett klassificeringssystem för att gruppera arbetsuppgifter, som SKR och de fackliga organisationerna använder gemensamt för lönestatistik. {Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en} och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga; för det behöver AID kompletteras. {Enhet.bfl} är därför en utgångspunkt för lika arbete, som arbetsgivaren bekräftar; för likvärdigt arbete kompletterar {niva.bfl} eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).';
 
 // ---- Ordlista (Glossary) ----
 // Texterna är mallar: {k} och {golv} fylls med tröskeln (_kText), {enhet.en} och de andra termerna med termText
@@ -162,7 +165,7 @@ function renderGlossary(filterText = '') {
     wrap.innerHTML = html;
 }
 
-function openGlossary() {
+export function openGlossary() {
     const m = document.getElementById('glossary-modal');
     if (!m) return;
     m.style.display = 'flex';

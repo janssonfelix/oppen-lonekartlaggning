@@ -1,14 +1,48 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Excel-export: alla flikar och JPA-protokollet (EU 2023/970 art. 10) ----
+import { likaArbeteTabell } from '../lib/aidbas.js';
+import { htmlTillText } from '../lib/htmltext.js';
+import { arKvinna, arMan } from '../lib/kon.js';
+import { personOrd } from '../lib/namn.js';
+import { gruppMedBas, skalSammanstallningNot } from '../lib/rapportunderlag.js';
+import { bhJustera } from '../lib/stat.js';
+import { direktivMarkering, perBasSignal } from '../lib/status.js';
+import { receptBeskrivning, receptTillTabeller } from '../lib/tabellrecept.js';
+import { adjektiv, artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
+import { kompletterandeUndertryckningPerNyckel } from '../lib/undertryckning.js';
+import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { idagDatum } from './03-hjalpfunktioner.js';
+import { auditPoster } from './05-tabeller-och-lankar.js';
+import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { APP_VERSION } from './08-version.js';
+import { T } from './09-termer.js';
+import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS } from './10-diagramtema.js';
+import { getData, state } from './12-tillstand.js';
+import { bedomningUnderlag, UK_ETIKETT } from './13-oversikt.js';
+import { _appendMethodSheet, _applyColumnNumFormats, _excelBladnamn, _showExportSensitivityToast, EU_LONEBEGREPP_RESERVATION, SV_NUM_FORMATS, tableToCleanSheet } from './22-exporthjalpare.js';
+import { medExportLage } from './23-exportgrind.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
+import { renderSektorer } from './37-struktur.js';
+import { generateRapport } from './39-loneoversikt.js';
+import { _konAlderGapRader } from './40-alder-karriar.js';
+import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, generateEUDirectiveMatrix, generateSkevhet, laLikaGrupper } from './41-lika-arbete.js';
+import { generateBenchmark, jamforelseUrvalText } from './42-jamforelse.js';
+import { _rrExcelBlad } from './44-referensoverblick.js';
+import { _aidbasExcelBlad, _aidbasLikaBlad, _aidbasMetodRader, AIDBAS_BLADNAMN, konsklassOrd } from './45-aid-bas-tabeller.js';
+import { _computePerBasGap, harAlder } from './50-regressionsmodeller.js';
+import { renderPrioritering } from './55-prioritering.js';
+import { _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
+import { rmPerBasUnderlag, rmPerBasUndertryckNoter } from './58-rapportmodell.js';
+import { _lpExcelBlad } from './75-lonepolitik.js';
 /**
  * Bladen som "Excel (alla flikar)" kommer att innehålla, i ordning — underlaget till exportens förhandsbesked.
  * Listan följer villkoren i _excelAlltBok nedan; ett test håller dem lika.
  */
 // Bladlistan räknas som exporten: i exportläget (ADR-51), så att beskedet och arbetsboken får samma blad.
-function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
+export function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
 /** Bladet med översikten per AID-huvudområde (ADR-33); namnet kommer ur termerna (ADR-74). */
-const EXCEL_BLAD_HUVUDOMRADEN = _excelBladnamn(termStor(T.huvudomrade.fl), 'Områden');
+const EXCEL_BLAD_HUVUDOMRADEN = _excelBladnamn(stor(T.huvudomrade.fl), 'Områden');
 
 function _excelAlltBladExport() {
     // Bladet Underlagets kvalitet finns när bedomningUnderlag() ger något, alltså när det finns rader; listan räknar
@@ -37,21 +71,21 @@ function _excelSkalRader() {
     rows.push([], ['Sammanställning per kategori'], ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl (%)', 'Antal grupper']);
     for (const k of pk.kategorier) rows.push([k.namn, k.summa, pct(k.andel), k.antalGrupper]);
     rows.push(['Totalt', pk.summa, pct(pk.andel), pk.antalGrupper], [],
-        ['Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. ' + _ruSkalNot(kInstalld())]);
+        ['Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. ' + skalSammanstallningNot(kInstalld())]);
     return rows;
 }
 
 /** Raderna i bladet Egna tabeller, eller null när inga recept finns. Tal som tal, med kolumnrubriken som enhet. */
 function _excelEgnaRader() {
     const recept = state.rapportTabeller || [];
-    if (!recept.length || typeof _trTabeller !== 'function') return null;
+    if (!recept.length || typeof receptTillTabeller !== 'function') return null;
     const tal = (v, typ) => (v == null || typeof v !== 'number' || !isFinite(v) ? (v == null ? '' : v) : (typ === 'kr' || typ === 'antal' ? Math.round(v) : Math.round(v * 100) / 100));
     const rows = [['Egna tabeller', `byggda i Tabeller och egna vyer; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
     for (const r of recept) {
-        const tabeller = _trTabeller(getData(), r, { k: kTroskel() });
+        const tabeller = receptTillTabeller(getData(), r, { k: kTroskel() });
         if (!tabeller.length) { rows.push([r.namn, 'ingen grupp når minsta gruppstorlek'], []); continue; }
         for (const t of tabeller) {
-            rows.push([t.rubrik, _trBeskrivning(r)]);
+            rows.push([t.rubrik, receptBeskrivning(r)]);
             rows.push(t.kolumner.map(c => c.rubrik + (c.typ === 'kr' ? ' (kr/mån)' : c.typ === 'pct1' ? ' (%)' : '')));
             t.rader.forEach(rad => rows.push(rad.map((v, i) => tal(v, t.kolumner[i].typ))));
             if (t.not) rows.push([t.not]);
@@ -69,11 +103,11 @@ function _excelPerBasRader() {
     const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
     const MATT = { p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' };
     const matt = pb.recept.matt;
-    const per = pb.dim === 'sektor' ? T.huvudomrade.en : T.niva.en, kort = pb.dim === 'sektor' ? termStor(T.huvudomrade.en) : 'BAS';
+    const per = pb.dim === 'sektor' ? T.huvudomrade.en : T.niva.en, kort = pb.dim === 'sektor' ? stor(T.huvudomrade.en) : 'BAS';
     const rows = [[`Lönestruktur per ${per}`, `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
     const undertryckNoter = rmPerBasUndertryckNoter(pb, pb.k);
     for (const i of pb.intervall) {
-        rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} ${termForAntal(i.antalYrken, T.enhet)}`]);
+        rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} ${ordForAntal(i.antalYrken, T.enhet)}`]);
         rows.push(['Grupp', 'Antal', ...matt.map(m => MATT[m])]);
         i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, ...matt.map(m => tal(r[m]))]));
         if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} ${personOrd(pb.k)}): ${i.utelamnade.join(', ')}`]);
@@ -114,14 +148,14 @@ function _excelDiagramBlad() {
     const bas = _laOversiktRader(d);
     if (bas.length) ut.push(['Lika arbete per BAS', [
         [`Kvinnors och mäns lön per ${T.niva.en} (översiktstabellen i Lönestruktur)`], [],
-        [termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Skillnad (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre', 'Status', _STS_DIR_KOLUMN],
-        ...bas.map(o => [o.bas, o.nKv, o.nMa, Math.round(o.medKv), Math.round(o.medMa), Math.round(o.medKv - o.medMa), r1(o.gap), o.ci ? r1(o.ci.lo) : '', o.ci ? r1(o.ci.hi) : '', _laOversiktStatus(o).serie, _stsDirektiv(o.gap) ? _STS_DIR_ETIKETT : '']),
+        [stor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Skillnad (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre', 'Status', _STS_DIR_KOLUMN],
+        ...bas.map(o => [o.bas, o.nKv, o.nMa, Math.round(o.medKv), Math.round(o.medMa), Math.round(o.medKv - o.medMa), r1(o.gap), o.ci ? r1(o.ci.lo) : '', o.ci ? r1(o.ci.hi) : '', _laOversiktStatus(o).serie, direktivMarkering(o.gap) ? _STS_DIR_ETIKETT : '']),
         [], [`Status: Värt att granska = konfidensintervallet utesluter 100 % och skillnaden är minst 3 % (verktygets storleksgräns). ${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`]]]);
     const tratt = _laTrattUnderlag(d);
     if (tratt) ut.push(['Slumpens gränser', [
-        [`${termStor(T.enhet.bfl)} mot slumpens gränser (trattdiagrammet på Lika arbete)`],
+        [`${stor(T.enhet.bfl)} mot slumpens gränser (trattdiagrammet på Lika arbete)`],
         [`En rad per ${T.enhet.en} och ${T.niva.en} där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
-        [termStor(T.enhet.en), termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Mot gränserna'],
+        [stor(T.enhet.en), stor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Mot gränserna'],
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna']),
         [], ['Bladet visar gränserna, inte statusen: statusen per grupp står i bladen EU-lönekartläggning och Lika arbete AID x BAS och väger samman gränserna med storleken, minst 3 %.']]]);
     const arKv = arKvinna, arMa = arMan;
@@ -157,7 +191,7 @@ function _exportAllToExcelExport() {
 
 /** Bygger arbetsboken för "Excel (alla flikar)". */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function _excelAlltBok(...a) { return medExportLage(() => __excelAlltBokExport.apply(null, /** @type {any} */ (a))); }
+export function _excelAlltBok(...a) { return medExportLage(() => __excelAlltBokExport.apply(null, /** @type {any} */ (a))); }
 function __excelAlltBokExport() {
 
     // Self-healing: säkerställ att flik-tabellerna är renderade innan de läses.
@@ -250,19 +284,19 @@ function __excelAlltBokExport() {
         metRows.push([a.title || id]);
         metRows.push(['Total i datafilen', a.totalRaw]);
         [...(a.parseExcl||[]), ...(a.analysisExclusions||[])].forEach(([r,c]) => {
-            metRows.push(['− ' + _htmlTillText(r), c]);
+            metRows.push(['− ' + htmlTillText(r), c]);
         });
         const used = a.usedInAnalysis !== undefined ? a.usedInAnalysis : a.afterFilter;
         metRows.push(['= Använda i analysen', used]);
         metRows.push([]);
         if (a.formler && a.formler.length) {
             metRows.push(['Formler & definitioner']);
-            a.formler.forEach(([n, dsc]) => metRows.push(['  ' + n, _htmlTillText(dsc)]));
+            a.formler.forEach(([n, dsc]) => metRows.push(['  ' + n, htmlTillText(dsc)]));
             metRows.push([]);
         }
         if (a.notes && a.notes.length) {
             metRows.push(['Speciella regler']);
-            a.notes.forEach(n => metRows.push(['  ' + _htmlTillText(n)]));
+            a.notes.forEach(n => metRows.push(['  ' + htmlTillText(n)]));
             metRows.push([]);
         }
     });
@@ -328,7 +362,7 @@ const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
+export function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
 function _exportJPAProtocolExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
@@ -372,7 +406,7 @@ function _exportJPAProtocolExport() {
     // Korrigering för många samtidiga tester (Benjamini–Hochberg) över samma tester som regressionskortet och Att
     // göra: intervallen med status ok och ändligt p-värde. Ett enda test ger q = p.
     const okTests = perBas.filter(b => b.status === 'ok' && isFinite(b.pValue));
-    const qVarden = _bhJustera(okTests.map(b => b.pValue));
+    const qVarden = bhJustera(okTests.map(b => b.pValue));
     const bhQ = new Map(okTests.map((b, i) => [b, qVarden[i]]));
     let basExkluderadeMaskerade = 0;
     let basExkluderadeSingular = 0;
@@ -384,7 +418,7 @@ function _exportJPAProtocolExport() {
         // Regressionens tal är justerat: samma regel som statusen (säkerställd efter korrigering och minst 3 %), ingen
         // direktivmarkering. Ett intervall utan ändligt p-värde har inget q och räknas som inte säkerställt.
         const q = bhQ.get(b);
-        if (q == null || _stsPerBasSignal(b.gapPct, q < 0.05, b.pValue < 0.05).niva !== 'titta') { basExkluderadeUnderTröskel++; return; }
+        if (q == null || perBasSignal(b.gapPct, q < 0.05, b.pValue < 0.05).niva !== 'titta') { basExkluderadeUnderTröskel++; return; }
         jpaBas.push({ ...b, q });
     });
     jpaBas.sort((a, b) => a.gapPct - b.gapPct);
@@ -393,7 +427,7 @@ function _exportJPAProtocolExport() {
     // samma intervall i blad 2 får inte ge medelvärdet för 1 till k − 1 personer av ett kön. Annars döljs medelvärdena
     // för den minsta gruppen i blad 2, och så vidare; intervallets rad i blad 3 står som förut, och medianerna står kvar.
     const kJpa = kTroskel();
-    const jpaUndertryckta = _kompletterandeUndertryckningPerNyckel(
+    const jpaUndertryckta = kompletterandeUndertryckningPerNyckel(
         jpaBas.filter(b => b.kvN >= kJpa && b.maN >= kJpa).map(b => ({ nyckel: String(b.bas), nKv: b.kvN, nMa: b.maN })),
         jpaYrken.map(j => ({ nyckel: String(j.bas ?? ''), nKv: j.nKv, nMa: j.nMa, namn: j.yrke, dold: j.medel[0] === '—' })), kJpa)
         .map(i => { jpaYrken[i].medel = ['—', '—', '—', '—']; return jpaYrken[i]; });
@@ -417,7 +451,7 @@ function _exportJPAProtocolExport() {
         [`Antal ${T.enhet.fl} med statusen Värt att granska: säkerställd skillnad på minst 3 % (lika arbete)`, jpaYrken.length],
         ['  varav ojusterad löneskillnad ≥ 5 % (direktivmarkeringen)', jpaYrken.filter(j => j.direktiv).length],
         [`Antal ${T.niva.fl} med en säkerställd oförklarad skillnad på minst 3 %`, jpaBas.length],
-        [`Antal ${lvRedovisning.not ? 'redovisade ' : ''}kandidatpar i likvärdigt arbete (${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} mot ${termArtikel(T.enhet)} ${T.enhet.en} som inte är ${termAdjektiv('kvinnodominerad', T.enhet)}, med lika eller lägre krav)`, lvPairsCount],
+        [`Antal ${lvRedovisning.not ? 'redovisade ' : ''}kandidatpar i likvärdigt arbete (${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} mot ${artikel(T.enhet)} ${T.enhet.en} som inte är ${adjektiv('kvinnodominerad', T.enhet)}, med lika eller lägre krav)`, lvPairsCount],
         ...(lvRedovisning.not ? [['  Utelämnade kandidatpar', lvRedovisning.not]] : []),
         ['', ''],
         ['— DELTAGARE I SAMRÅDET —', '(fylls i av parterna)'],
@@ -458,7 +492,7 @@ function _exportJPAProtocolExport() {
 
     // === Sheet 2: Yrkesgrupper med statusen Värt att granska (lika arbete) ===
     const yrkenHeaderRow = [
-        'Nr', termStor(T.enhet.en), termStor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
+        'Nr', stor(T.enhet.en), stor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
         ..._JPA_MEDIAN_KOLUMNER, _STS_DIR_KOLUMN, ..._JPA_MEDEL_KOLUMNER,
         // Tomma protokollfält
         'Sakliga skäl — arbetsgivarens analys',
@@ -482,7 +516,7 @@ function _exportJPAProtocolExport() {
         });
     }
     if (jpaYrken.length) yrkenRows.push([], ['', `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`]);
-    if (jpaUndertryckta.length) yrkenRows.push([], ['', `Medelvärdena för ${jpaUndertryckta.map(j => _ruGruppMedBas(j)).join(', ')} står inte i bladet: `
+    if (jpaUndertryckta.length) yrkenRows.push([], ['', `Medelvärdena för ${jpaUndertryckta.map(j => gruppMedBas(j)).join(', ')} står inte i bladet: `
         + `tillsammans med medelvärdet för ${T.niva.bf} i bladet 3. Likvärdigt arbete (BAS) skulle de ge medelvärdet för `
         + `färre än ${kJpa} ${personOrd(kJpa)} av ett kön i ${T.niva.bf} (kompletterande undertryckning). Medianerna står kvar.`]);
     const yrkenSheet = XLSX.utils.aoa_to_sheet(yrkenRows);
@@ -499,11 +533,11 @@ function _exportJPAProtocolExport() {
     // === Sheet 2a: Alla grupper i lika arbete (art. 10.2 a och c för alla kategorier) ===
     // Samma blad som Lika arbete AID x BAS i Excel (alla flikar), ur samma grupper som blad 2: antal och medianer,
     // inga medelvärden, så det ger ingen ny skillnad mot blad 3 (medianer går inte att dela upp, k-troskeln.md avsnitt 11).
-    XLSX.utils.book_append_sheet(wb, _aidbasLikaBlad(_aidbasLika(lika)), JPA_BLAD_ALLA_GRUPPER);
+    XLSX.utils.book_append_sheet(wb, _aidbasLikaBlad(likaArbeteTabell(lika)), JPA_BLAD_ALLA_GRUPPER);
 
     // === Sheet 3: BAS-intervall med säkerställd oförklarad skillnad på minst 3 % (likvärdigt arbete) ===
     const basHeaderRow = [
-        'Nr', termStor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
+        'Nr', stor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
         'Oförklarad skillnad (%)', '95 % KI lägre', '95 % KI övre',
         'p-värde', 'q-värde (BH-justerat)', 'R² för modellen', 'Säkerställd efter korrigering (q < 0,05)',
         // Lönenivåerna för samma personer som regressionen (ADR-79)
@@ -651,7 +685,7 @@ function _exportJPAProtocolExport() {
         ['— Begränsningar att vara medvetna om —', ''],
         ['Sakliga skäl', 'Verktyget identifierar löneskillnader men avgör inte vad som är saklig grund. Den bedömningen är gemensamma parters ansvar.'],
         ...(harAlder() ? [['Modellantaganden', 'OLS antar linjär samband mellan ålder och log(lön). Lifecycle-analysen (i verktygets EU-flik) testar detta antagande med kvadratisk åldersterm.']] : []),
-        ['Multipel jämförelse', `Ett test per ${T.niva.en} körs samtidigt, och av ren slump förväntas ungefär 1 falskt positivt resultat per 20 tester. Därför korrigeras p-värdena med Benjamini–Hochbergs metod (andelen falska upptäckter). Flik 3 tar med ${termArtikel(T.niva)} ${T.niva.en} bara när q-värdet efter korrigeringen är under 0,05 och skillnaden är minst 3 %, samma regel som i verktyget. Det råa p-värdet står bredvid för jämförelse.`]
+        ['Multipel jämförelse', `Ett test per ${T.niva.en} körs samtidigt, och av ren slump förväntas ungefär 1 falskt positivt resultat per 20 tester. Därför korrigeras p-värdena med Benjamini–Hochbergs metod (andelen falska upptäckter). Flik 3 tar med ${artikel(T.niva)} ${T.niva.en} bara när q-värdet efter korrigeringen är under 0,05 och skillnaden är minst 3 %, samma regel som i verktyget. Det råa p-värdet står bredvid för jämförelse.`]
     ];
     const metodikSheet = XLSX.utils.aoa_to_sheet(metodikRows);
     metodikSheet['!cols'] = [{ wch: 32 }, { wch: 90 }];
@@ -704,7 +738,7 @@ function _exportJPAProtocolExport() {
     _appendMethodSheet(wb);
     XLSX.writeFile(wb, filename);
     _showExportSensitivityToast();
-    announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${termForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${termForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
+    announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 
 // Multi-flik Excel-export

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { fyllTermer, skapaTermer } from '../lib/termer.js';
 
 // ---- Termerna (ADR-74) ----
 // Orden för AID:s begrepp står i src/lib/termer.js, speglad i 09-lib-speglar.js. Den här delen kommer efter
@@ -14,10 +15,10 @@
 // exempel data-tip); applyProfileLabels fyller dem, och standardtexten står kvar i elementet för sidan utan skript.
 
 /** Den gällande uppsättningen termer. */
-const T = _tmSkapa();
+export const T = skapaTermer();
 
 /** Fyller en mall med de gällande termerna; andra klamrar ({k}, {golv}) står kvar. */
-function termText(mall) {
-    return _tmFyll(mall, T);
+export function termText(mall) {
+    return fyllTermer(mall, T);
 }
 

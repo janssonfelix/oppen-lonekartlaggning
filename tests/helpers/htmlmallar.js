@@ -13,6 +13,9 @@
 // Ger en platt lista: namn, tal, str (med värdet), regex, op och mall-delar (hel, huvud, mitt, svans), som i en
 // riktig JavaScript-lexer. ${ och } runt ett uttryck i en mallsträng blir del av mallens delar.
 
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
 const PUNKT = ['>>>=', '...', '===', '!==', '**=', '<<=', '>>=', '>>>', '&&=', '||=', '??=', '=>', '==', '!=', '<=', '>=', '&&',
     '||', '??', '?.', '++', '--', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '**', '<<', '>>'];
 const FORE_UTTRYCK = new Set(['return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'new', 'delete', 'void', 'throw', 'yield', 'await', 'instanceof']);
@@ -239,7 +242,7 @@ function analyseraStruktur(fil) {
             const kb = par[j] + 1;
             const funk = laggFunk(k, j + 1, par[j], { typ: 'block', a: kb, b: par[kb] }, namn);
             const f = ar(tok[k - 1], 'namn', 'async') ? tok[k - 2] : tok[k - 1];
-            if (namn && (!f || op(f, ';') || op(f, '}') || op(f, '{'))) {
+            if (namn && (!f || op(f, ';') || op(f, '}') || op(f, '{') || ar(f, 'namn', 'export'))) {
                 fil.dekl.push({ namn, typ: 'funktion', idx: k + 1, funk, scope: fil.omfang(block[k]) });
             }
         } else if (op(t, '=>')) {
@@ -388,23 +391,23 @@ const VITLISTA = {
     kTroskel: 'tröskeln: state.kTroskel eller K_SKARM, ett heltal som sattKTroskel och paketläsningen prövar (06-k-troskel.js)',
     statGolv: 'golvet för statistik, ett heltal ur kTroskel (06-k-troskel.js)',
     personOrd: '"person" eller "personer" (src/lib/namn.js)',
-    termArtikel: 'artikeln en/ett/den/det/de (src/lib/termer.js, artikel)',
+    artikel: 'artikeln en/ett/den/det/de (src/lib/termer.js, artikel)',
     'Math.*': 'tal',
     'Number.*': 'tal eller sanningsvärde',
     'Date.now': 'tal',
     'Stat.*': 'median, kvantil och andra mått ur lönelistan: räknar på talen den får och ger tal (12-tillstand.js)',
-    _figTalformat: 'talformat i src/lib/figur.js: "–" eller ett tal med Intl.NumberFormat, med " kr" eller " %"',
+    talformat: 'talformat i src/lib/figur.js: "–" eller ett tal med Intl.NumberFormat, med " kr" eller " %"',
 };
 /**
  * Funktioner som ger säker text när argumenten är säkra: de böjer eller fyller i det de får, utan att lägga till
  * något ur indata. Argumenten prövas i stället för funktionen.
  */
 const GENOMSKINLIGA = {
-    termStor: 'stor begynnelsebokstav på texten (src/lib/termer.js, stor)',
-    termGenitiv: 'texten med -s (src/lib/termer.js, genitiv)',
-    termAdjektiv: 'adjektivet böjt efter termens genus (src/lib/termer.js, adjektiv)',
+    stor: 'stor begynnelsebokstav på texten (src/lib/termer.js, stor)',
+    genitiv: 'texten med -s (src/lib/termer.js, genitiv)',
+    adjektiv: 'adjektivet böjt efter termens genus (src/lib/termer.js, adjektiv)',
     termFras: 'termens ordform, med adjektiv och genitiv (src/lib/termer.js, termFras)',
-    termForAntal: 'termens en- eller plurala form (src/lib/termer.js, ordForAntal)',
+    ordForAntal: 'termens en- eller plurala form (src/lib/termer.js, ordForAntal)',
     termText: 'mallen fylld med termerna; klamrar som inte är termer står kvar (09-termer.js, src/lib/termer.js fyllTermer)',
     String: 'värdet som text',
 };
@@ -893,7 +896,7 @@ function skapaBedomare(filer, undantag = []) {
         if (!((d.typ === 'const' || d.typ === 'let') && d.init)) return null;
         const f = d.fil.funkVidStart.get(d.init[0]);
         if (f) return f;
-        // Spegelns alias: const termFras = __mirrorTermer.termFras pekar på funktionen i modulens IIFE.
+        // En lib-import: const termFras = __mirror_termer.termFras pekar på funktionen i modulens IIFE (libSomKalla).
         const { tok } = d.fil;
         const [s, e] = d.init;
         if (e - s === 3 && ar(tok[s], 'namn') && tok[s].v.startsWith('__mirror') && op(tok[s + 1], '.') && ar(tok[s + 2], 'namn')) {
@@ -1071,8 +1074,8 @@ function skapaBedomare(filer, undantag = []) {
         return ut;
     }
 
-    // Spegelns alias (const termFras = __mirrorTermer.termFras) kopplas till funktionerna innan något prövas, så att
-    // anropen via aliaset räknas som anrop av funktionen.
+    // Lib-importerna (const termFras = __mirror_termer.termFras, se libSomKalla) kopplas till funktionerna innan något
+    // prövas, så att anropen räknas som anrop av funktionen.
     for (const d of globala.values()) if (d.typ === 'const' && d.init && d.fil.tok[d.init[0]].v?.startsWith?.('__mirror')) funktionFor(d);
 
     return { prova, anvanda, undantag };
@@ -1170,4 +1173,25 @@ function granska(kallor, undantag = []) {
     return { resultat, fynd: [...fynd.values()], oanvanda: undantag.filter(u => !bed.anvanda.has(u)) };
 }
 
-export { granska, lexa };
+/**
+ * src/lib/ som en källa vakten kan läsa: varje modul i en IIFE (`const __mirror_<modul> = (() => { … })()`) med sina
+ * importer som alias inuti, och appens importer ur lib (`import { x as y } from '../lib/m.js'`) som globala alias
+ * (`const y = __mirror_m.x;`). Vakten känner inte ES-moduler; så når den lib-funktionerna som appen anropar, utan att
+ * lib:s privata namn blir globala.
+ * @param {string} libDir
+ * @param {string[]} appTexter
+ */
+function libSomKalla(libDir, appTexter) {
+    const IMPORT = /^import\s*\{([^}]*)\}\s*from\s*'(?:\.\/|\.\.\/lib\/)([\w.-]+)\.js';?\s*$/gm;
+    const ns = fil => `__mirror_${fil.replace(/\W/g, '_')}`;
+    const alias = text => [...text.matchAll(IMPORT)].flatMap(m => m[1].split(',').map(b => b.trim()).filter(Boolean)
+        .map(b => { const [ex, lok = ex] = b.split(/\s+as\s+/); return `const ${lok} = ${ns(m[2])}.${ex};`; }));
+    const moduler = readdirSync(libDir).filter(f => f.endsWith('.js')).sort().map(f => {
+        const text = readFileSync(join(libDir, f), 'utf8');
+        const kropp = text.replace(IMPORT, '').replace(/^export\s+(?=(async\s+)?function\b|const\b|let\b|class\b)/gm, '');
+        return `const ${ns(f.slice(0, -3))} = (() => {\n${alias(text).join('\n')}\n${kropp}\n})();`;
+    });
+    return [...moduler, ...new Set(appTexter.flatMap(t => alias(t.split('\n').filter(r => r.includes("'../lib/")).join('\n'))))].join('\n');
+}
+
+export { granska, lexa, libSomKalla };

@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { FARG } from './01-farger.js';
+import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { ikon } from './03-ikoner.js';
+import { INAKTIVITET_STANDARD_MIN } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { referensKalla, referensNamn, state } from './12-tillstand.js';
+import { _fkVantar } from './17-forhandskontroll.js';
+import { _rensaAllData, clearAllData } from './26-rensning.js';
+import { stangInstallningar } from './86-installningar.js';
 
 // ---- Vad lagras i minnet just nu? (inbyggt dataskydd, art. 25) ----
 /**
@@ -8,7 +17,7 @@
  * konkret insyn i exakt vad verktyget håller i RAM.
  */
 
-function openDataResidency() {
+export function openDataResidency() {
     const modal = document.getElementById('data-residency-modal');
     const content = document.getElementById('data-residency-content');
     if (!modal || !content) return;
@@ -186,7 +195,7 @@ function _autoClearOnInactivity() {
     }
 }
 
-function _resetInactivityTimer() {
+export function _resetInactivityTimer() {
     if (_inactivityIdleTimer) {
         clearTimeout(_inactivityIdleTimer);
         _inactivityIdleTimer = null;
@@ -199,7 +208,7 @@ function _resetInactivityTimer() {
 }
 
 // Ett värde låst av organisationspaketet (ADR-47) gäller oavsett vad som begärs.
-function setInactivityTimeout(minutes) {
+export function setInactivityTimeout(minutes) {
     const last = state.paketLas.inaktivitetMin;
     state.inactivityTimeoutMin = last != null ? last : Math.max(0, parseInt(minutes, 10) || 0);
     _hideInactivityWarning();

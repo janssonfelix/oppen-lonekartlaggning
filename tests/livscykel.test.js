@@ -246,6 +246,6 @@ describe('samspelSakerstallt: en gräns för samspelet kön × ålder (ADR-71)',
     it('appens livscykel har ingen egen gräns: nyckeltalet, Att utforska och tolkningen använder funktionen', () => {
         const kalla = readFileSync(new URL('../src/app/52-livscykel.js', import.meta.url), 'utf8');
         expect(kalla).not.toMatch(/(?:PVal|\bp)\s*[<>]=?\s*0?\.10?\b/);
-        expect((kalla.match(/_lcSamspelSakerstallt\(/g) || []).length).toBeGreaterThanOrEqual(3);
+        expect((kalla.match(/samspelSakerstallt\(/g) || []).length).toBeGreaterThanOrEqual(3);
     });
 });

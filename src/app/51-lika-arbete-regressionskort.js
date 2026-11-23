@@ -1,5 +1,31 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { talformat } from '../lib/figur.js';
+import { arKvinna } from '../lib/kon.js';
+import { personOrd } from '../lib/namn.js';
+import { liknarPersonuppgift } from '../lib/organisationspaket.js';
+import { kvantilBootstrap, osakerhetKonstanter } from '../lib/osakerhet.js';
+import { bortvaltNotering } from '../lib/rapportunderlag.js';
+import { forklaringsmodellArStandard, huvudregression, kvantilDesign, modellFras, normaliseraForklaringsmodell, stegEtikett, tillforGransPp } from '../lib/regression.js';
+import { froAvTal } from '../lib/rng.js';
+import { bhJustera } from '../lib/stat.js';
+import { perBasSignal } from '../lib/status.js';
+import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { stor } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { antalCaption, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _basEffekterForRedovisning, _konFarRedovisas, _raGapText, _regStegForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { T, termText } from './09-termer.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { _STS_STORLEK, PALETTE, URVAL } from './10-diagramtema.js';
+import { markeringFor } from './11-markering.js';
+import { getData, state } from './12-tillstand.js';
+import { fmtCI } from './13-oversikt.js';
+import { iExportLage, visningNy } from './23-exportgrind.js';
+import { _evidenceForPerBasRow, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _RG_STEG_BAS, _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, forklaringsmodell, harAlder, runBlinderOaxaca, runQuantileRegressionAtAllTau, sattForklaringsmodell } from './50-regressionsmodeller.js';
+import { renderLifecycleAnalysis } from './52-livscykel.js';
 
 /**
  * Huvudregression för "oförklarad löneskillnad" (EU 2023/970), verktygets huvudtal: en tunn adapter som läser
@@ -8,8 +34,8 @@
  * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
  *   annars konPct, konPctLow, konPctHigh, sequential, perBas m.fl. — se huvudregression.
  */
-function runOLSRegression() {
-    return _rgHuvudregression(getData(), {
+export function runOLSRegression() {
+    return huvudregression(getData(), {
         modell: forklaringsmodell(),   // normaliserad mot datat (ADR-56)
         medAlder: harAlder(),          // ADR-64
         kInstalld: kInstalld(),        // spärren för "Endast kön" följer den inställda tröskeln
@@ -18,7 +44,7 @@ function runOLSRegression() {
 }
 
 // Hårda mellanslag (U+00A0): «p < 0,001» bryts inte mellan tecknet och talet i en smal kolumn.
-function _formatPValue(p) {
+export function _formatPValue(p) {
     if (p < 0.001) return 'p\u00a0<\u00a00,001';
     if (p < 0.01)  return 'p\u00a0<\u00a00,01';
     if (p < 0.05)  return 'p\u00a0<\u00a00,05';
@@ -86,13 +112,13 @@ function _ansvarRadText(fore, efter) {
  * ålder, och är huvudtalet när yrkesgrupp är vald.
  * @param {any} s @param {{alder: boolean, yrkesgrupp: boolean}} modell
  */
-function _yrkesStegText(s, modell) {
+export function _yrkesStegText(s, modell) {
     const sv = v => v.toFixed(1).replace('.', ',');
     const tkn = v => `${v >= 0 ? '+' : '−'}${sv(Math.abs(v))} %`;
     return `<strong>${tkn(s.gapPct)}</strong> är löneskillnaden mellan kvinnor och män med samma ${T.enhet.en}${modell.alder ? ', ' + T.niva.en + ' och ålder' : ' och ' + T.niva.en} `
         + `(fasta effekter för ${T.enhet.en} inom BAS). Bygger på ${s.nPersoner} personer i ${s.nGrupperBada} grupper (samma ${T.enhet.en} i samma ${T.niva.en}) där båda könen finns`
         + (s.nEnkonade ? `; ${s.nEnkonade} enkönade grupper bidrar inte` : '')
-        + (modell.yrkesgrupp ? `. ${termStor(T.enhet.en)} inom BAS är vald i förklaringsmodellen, så det här är huvudtalet.` : `. Huvudtalet ovan räknar inte bort ${T.enhet.bf}.`);
+        + (modell.yrkesgrupp ? `. ${stor(T.enhet.en)} inom BAS är vald i förklaringsmodellen, så det här är huvudtalet.` : `. Huvudtalet ovan räknar inte bort ${T.enhet.bf}.`);
 }
 
 /**
@@ -187,12 +213,12 @@ function _perBasFigur(sorted, bhQByBas) {
     const status = p => {
         const q = (bhQByBas || {})[p.bas];
         const sig = p.pValue < 0.05 && (q == null || q < 0.05);
-        return _PERBAS_STATUS[{ titta: 0, dokumentera: 1 }[_stsPerBasSignal(p.gapPct, sig, p.pValue < 0.05).niva] ?? 2];
+        return _PERBAS_STATUS[{ titta: 0, dokumentera: 1 }[perBasSignal(p.gapPct, sig, p.pValue < 0.05).niva] ?? 2];
     };
     const pkt = p => ({ y: 'BAS ' + p.bas, x: +p.gapPct.toFixed(2), fel: { lag: Math.min(p.ciLow, p.gapPct), hog: Math.max(p.ciHigh, p.gapPct) },
                         n: p.n, kvN: p.kvN, maN: p.maN, bas: p.bas, markering: markeringFor(p.bas) });
-    const tips = d => [[d.y], ['Oförklarad skillnad', `${_figTalformat(d.x, 'tal2')} %`],
-        ['95 % KI', `${_figTalformat(d.fel.lag, 'pct', { enhet: false })} – ${_figTalformat(d.fel.hog, 'pct')}`],
+    const tips = d => [[d.y], ['Oförklarad skillnad', `${talformat(d.x, 'tal2')} %`],
+        ['95 % KI', `${talformat(d.fel.lag, 'pct', { enhet: false })} – ${talformat(d.fel.hog, 'pct')}`],
         ['Antal', `${d.n} (${d.kvN} kv / ${d.maN} mä)`]];
     return { beskrivning: `Oförklarad löneskillnad per ${T.niva.en} med 95 % konfidensintervall. Samma siffror finns i tabellen under diagrammet.`,
         // Noll ska ligga INOM axeln med luft på båda sidor, så att nollinjen syns också när alla gap har samma tecken.
@@ -210,7 +236,7 @@ function _perBasFigur(sorted, bhQByBas) {
 function _regTrappaVisas(stegUt) {
     return !!stegUt && !stegUt.utelamnat && stegUt.steg.filter(s => s.status === 'ok').length >= 2 && stegUt.steg[0].status === 'ok';
 }
-const _REG_TRAPPSTEG = { [_RG_STEG_BAS]: termStor(T.niva.en), '+ Ålder': 'Ålder', [_RG_STEG_YRKE]: `${termStor(T.enhet.en)} inom BAS` };
+const _REG_TRAPPSTEG = { [_RG_STEG_BAS]: stor(T.niva.en), '+ Ålder': 'Ålder', [_RG_STEG_YRKE]: `${stor(T.enhet.en)} inom BAS` };
 /** @param {any[]} seqOk @param {any} [yrkesSteg] yrkesgruppssteget efter huvudtalet (när det inte är valt in i modellen) @param {string} [fras] */
 function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en}`) {
     const forst = seqOk[0], sist = seqOk[seqOk.length - 1];
@@ -261,7 +287,7 @@ let _regKvantilSenast = null;
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
 // tabellen säger det. IRLS-skattningen (kvantilregression i src/lib/regression.js) är en approximation av
 // kvantillösningen; intervallet bootstrappar den approximationen, inte den exakta LP-lösningen.
-const REG_KVANTIL_KI_B = _osKonstanter().KVANTIL_KI_B, REG_KVANTIL_KI_MAX_N = _osKonstanter().KVANTIL_KI_MAX_N;
+const REG_KVANTIL_KI_B = osakerhetKonstanter().KVANTIL_KI_B, REG_KVANTIL_KI_MAX_N = osakerhetKonstanter().KVANTIL_KI_MAX_N;
 // Minne för senaste beräkning: kortet ritas om vid varje flikbyte, och bootstrappen är det dyra (uppmätt ~0,5 s
 // på demodatat, ~11 s på 5 000 rader, därav gränsen 2 000 ≈ 4 s). Nyckeln är datats eget frö (antal och lönesummor per kön) plus ålderssumman.
 /** @type {{nyckel: string, ut: any}|null} */
@@ -274,7 +300,7 @@ let _regKvantilMinne = null;
 /** @type {Promise<void>|null} */
 let _regKvantilBakgrund = null;
 /** Löftet för den pågående bakgrundsberäkningen, eller ett uppfyllt när ingen pågår (tester väntar in det). */
-function _regKvantilKlar() { return _regKvantilBakgrund || Promise.resolve(); }
+export function _regKvantilKlar() { return _regKvantilBakgrund || Promise.resolve(); }
 /**
  * Kvantilregressionens tre skattningar (runQuantileRegressionAtAllTau) med ett percentil-bootstrap-KI per τ och för
  * skillnaden P90 − P10 (ADR-63). Designen är _rgKvantilDesign — samma byggare och samma radurval som punktskattningen
@@ -296,9 +322,9 @@ function _regKvantilBerakna({ direkt = false } = {}) {
         return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: 0, kiUtelamnad: `Konfidensintervallet räknas inte vid fler än ${svTal(REG_KVANTIL_KI_MAX_N, 0)} personer (tiden för ${REG_KVANTIL_KI_B} omsamplingar).` };
     }
     const modell = forklaringsmodell();
-    const raw = _rgKvantilDesign(getData(), modell).rader;
+    const raw = kvantilDesign(getData(), modell).rader;
     const arKv = arKvinna;
-    const nyckel = `${_slumpFroAvTal(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
+    const nyckel = `${froAvTal(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
     const rakna = () => { const ut = _regKvantilBootstrap(raw, modell, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, diff: { varde: diff.varde, ki: ut.diffKi }, n: qr.n, nKv: qr.nKv, nMa: qr.nMa } }; return _regKvantilMinne.ut; };
     if (direkt) return rakna();
@@ -318,7 +344,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
 // Omsamplingarna och percentilintervallen är kvantilBootstrap i src/lib/osakerhet.js (B = REG_KVANTIL_KI_B, seedad ur
 // lönerna per kön).
 function _regKvantilBootstrap(raw, modell, results, arKv) {
-    return _osKvantilBootstrap(raw, modell, results, arKv);
+    return kvantilBootstrap(raw, modell, results, arKv);
 }
 // Tre skattningar är ingen trend: en rad per del av lönefördelningen, med gapet som ett streck från
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.
@@ -330,7 +356,7 @@ function _regKvantilFigur(resultat) {
     const kanter = data.flatMap(d => d.fel ? [d.x, d.fel.lag, d.fel.hog] : [d.x]);
     const lag = Math.min(0, ...kanter), hog = Math.max(0, ...kanter), luft = Math.max(0.5, (hog - lag) * 0.12);
     const medKi = data.some(d => d.fel);
-    const fras = _rgModellFras({ ...forklaringsmodell(), yrkesgrupp: false });
+    const fras = modellFras({ ...forklaringsmodell(), yrkesgrupp: false });
     return { beskrivning: `Löneskillnaden i olika delar av lönefördelningen: vid P10, medianen och P90${fras ? `, efter kontroll för ${fras}` : ''}, som avstånd från nollinjen. Negativ skillnad betyder att kvinnor har lägre lön.`
             + (medKi ? ' Strecket genom punkten är ett 95-procentigt bootstrap-konfidensintervall.' : ''),
         legend: false, y: { skala: 'band', ordning: data.map(d => d.y) }, x: { skala: 'linjar', titel: 'Löneskillnad (%), negativt = kvinnor lägre', nollinje: true, doman: [lag - luft, hog + luft] },
@@ -345,7 +371,7 @@ function _regKvantilFigur(resultat) {
 // ---- Modellpanelen (ADR-56) ----
 // Vilka variabler som räknas bort, vad var och en tillför (alltid mot fullmodellen), verktygets förslag, skälet
 // utanför siffrorna och noteringen om det bortvalda. Ritas av renderRegressionCard med samma regressionsresultat.
-const _FM_ETIKETT = { bas: termStor(T.niva.en), alder: 'Ålder', yrkesgrupp: `${termStor(T.enhet.en)} inom BAS` };
+const _FM_ETIKETT = { bas: stor(T.niva.en), alder: 'Ålder', yrkesgrupp: `${stor(T.enhet.en)} inom BAS` };
 // Samma variabler inne i en mening. Termerna gemenas inte: en term kan ha versaler (AID-etikett).
 const _FM_I_MENING = { bas: T.niva.en, alder: 'ålder', yrkesgrupp: `${T.enhet.en} inom BAS` };
 /**
@@ -353,7 +379,7 @@ const _FM_I_MENING = { bas: T.niva.en, alder: 'ålder', yrkesgrupp: `${T.enhet.e
  * @param {{bas:boolean, alder:boolean, yrkesgrupp:boolean}} m
  */
 function _fmTexter(m) {
-    const fras = _rgModellFras(m);
+    const fras = modellFras(m);
     const lista = (delar, skilj = ' och ') => (delar.length <= 1 ? delar.join('') : `${delar.slice(0, -1).join(', ')}${skilj}${delar[delar.length - 1]}`);
     const forklarasAv = lista([...(m.alder ? ['åldersfördelning'] : []), ...(m.bas ? ['BAS-placering'] : []), ...(m.yrkesgrupp ? [_FM_I_MENING.yrkesgrupp] : [])]);
     const samma = m.alder || m.bas ? `i ${lista([...(m.alder ? ['samma ålder'] : []), ...(m.bas ? [`samma ${T.niva.en}`] : []), ...(m.yrkesgrupp ? [`samma ${T.enhet.en}`] : [])])}` : `oavsett ålder och ${T.niva.en}`;
@@ -365,7 +391,7 @@ function _fmTexter(m) {
 }
 /** Noteringen om en bortvald variabel, som den står i panelen och i rapporten (ren text). */
 function _fmNoteringText(b) {
-    return _ruBortvaltNotering(b).replace('ingår inte i siffrorna.', 'ingår inte i siffrorna nedan.');
+    return bortvaltNotering(b).replace('ingår inte i siffrorna.', 'ingår inte i siffrorna nedan.');
 }
 function renderForklaringsmodellPanel(r) {
     const wrap = document.getElementById('forklaringsmodell-panel');
@@ -376,7 +402,7 @@ function renderForklaringsmodellPanel(r) {
     const visad = r.modellVarning ? r.modell : r.modellVald;
     if (r.modellVarning && state.forklaringsmodell && (!state.forklaringsmodell.bas && !state.forklaringsmodell.alder)) {
         const ny = { ...state.forklaringsmodell, bas: true, alder: true };
-        state.forklaringsmodell = _rgForklaringsmodellArStandard(ny) ? null : ny;
+        state.forklaringsmodell = forklaringsmodellArStandard(ny) ? null : ny;
     }
     const harYrke = r.tillfor.rader.some(x => x.variabel === 'yrkesgrupp');
     const fmtGap = v => (typeof v === 'number' && isFinite(v) ? `${v >= 0 ? '+' : '−'}${svPct(Math.abs(v), 1)}` : '–');
@@ -420,7 +446,7 @@ function renderForklaringsmodellPanel(r) {
                 <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Löneskillnaden utan variabeln, sedan med variabeln">Flyttar skillnaden</th><th>Bedömning</th></tr></thead>
                 <tbody>${rader}</tbody>
             </table>
-            <p class="text-dampad-xs marg-t-6">Under ${svTal(_rgTillforGransPp(), 1)} procentenheter räknas som <em>tillför lite</em>. Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test.</p>
+            <p class="text-dampad-xs marg-t-6">Under ${svTal(tillforGransPp(), 1)} procentenheter räknas som <em>tillför lite</em>. Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test.</p>
             ${forslagHtml}
             <p class="rad-mitt gap-8 marg-t-10 fs-sm"><label for="fm-skal">Skäl utanför siffrorna (valfritt)</label>
                 <input type="text" id="fm-skal" class="form-select flex-1" maxlength="300" value="${esc(visad.skal || '')}" placeholder="t.ex. organisationen sätter inte lön efter ålder" autocomplete="off"></p>
@@ -439,7 +465,7 @@ function renderForklaringsmodellPanel(r) {
             sattForklaringsmodell(ny);
         } else if (t.id === 'fm-skal') {
             const not = document.getElementById('fm-skal-not');
-            if (_opLiknarPersonuppgift(inp.value)) {
+            if (liknarPersonuppgift(inp.value)) {
                 inp.value = nu.skal || '';
                 if (not) { not.textContent = 'Skälet ser ut att innehålla en personuppgift (personnummer eller e-post) och sparas inte. Skriv på gruppnivå.'; not.hidden = false; }
                 return;
@@ -461,12 +487,12 @@ function renderForklaringsmodellPanel(r) {
     };
 }
 
-function renderRegressionCard() {
+export function renderRegressionCard() {
     const wrap = document.getElementById('regression-card');
     if (!wrap) return;
     const r = runOLSRegression();
     renderForklaringsmodellPanel(r);
-    const fmT = _fmTexter(r.error ? _rgNormaliseraForklaringsmodell(null).modell : r.modell);
+    const fmT = _fmTexter(r.error ? normaliseraForklaringsmodell(null).modell : r.modell);
     const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
     if (fmRubrik) fmRubrik.textContent = fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Den råa skillnaden, utan att något räknats bort';
     if (fmInledning && !r.error) fmInledning.innerHTML = fmT.fras
@@ -573,7 +599,7 @@ function renderRegressionCard() {
     // kvar med det inräknat — annars står två olika "kvarstår" i samma block (30 % här, 15 % i budgeten).
     const medYrkesSteg = budget => !r.modell.yrkesgrupp && budget.parts.some(p => p.key === 'yrke');
     const yrkesStegKvar = budget => budget && medYrkesSteg(budget)
-        ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${svPct(budget.remainingShare, 0)} kvar (steget ${_rgStegEtikett(_RG_STEG_YRKE)}, som inte ingår i huvudtalet).` : '';
+        ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${svPct(budget.remainingShare, 0)} kvar (steget ${stegEtikett(_RG_STEG_YRKE)}, som inte ingår i huvudtalet).` : '';
     const explainedRowHtml = budget => stegUt.explainedShare !== null
         ? `<div class="bak-info-bg rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
             <strong>Slutsats:</strong> ${esc(fmT.forklarasAv)} förklarar ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden; <strong>${svPct((100-stegUt.explainedShare), 0)}</strong> blir kvar som huvudtalets oförklarade skillnad.${yrkesStegKvar(budget)} Det oförklarade är det som <em>inte</em> kan tillskrivas ${fmT.variabler.length > 2 ? 'dessa faktorer' : 'den faktorn'} och som lönekartläggningen ska granska närmare.
@@ -687,7 +713,7 @@ function renderRegressionCard() {
     // lönebedömning och Att göra. Ett enda test ger q = p, och tabellen visar talet.
     const okTests = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue));
     const bhQByBas = {};
-    const qOk = _bhJustera(okTests.map(t => t.pValue));
+    const qOk = bhJustera(okTests.map(t => t.pValue));
     okTests.forEach((t, i) => { bhQByBas[t.bas] = qOk[i]; });
 
     // Bevis-knapp per BAS-rad. Bevis-payload
@@ -711,7 +737,7 @@ function renderRegressionCard() {
         // Flagga: kräver att BÅDE rå p OCH justerat q < 0.05. Skyddar mot falska positiv. Storleken prövas mot
         // statusens storleksgräns 3 % (ADR-59, src/lib/status.js); regressionens tal bär ingen direktivmarkering.
         const sigAfterCorrection = p.pValue < 0.05 && (q == null || q < 0.05);
-        const sigNiva = _stsPerBasSignal(p.gapPct, sigAfterCorrection, p.pValue < 0.05).niva;
+        const sigNiva = perBasSignal(p.gapPct, sigAfterCorrection, p.pValue < 0.05).niva;
         const flag = sigNiva === 'titta' ? ikon('nal')
                    : sigNiva === 'dokumentera' ? ikon('oga')
                    : sigNiva === 'osakert' && q >= 0.05 ? ikon('statusVarning') + ' <span class="text-dampad-xs">(ej efter korr.)</span>'
@@ -921,7 +947,7 @@ function renderRegressionCard() {
                     </div>
                     ${tolkning ? `<div class="bak-info-yta rund-4 fs-sm marg-t-10 pad-10-14">${tolkning}</div>` : ''}
                     <p class="text-dampad-xs lh-1_5 marg-t-8">
-                        <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma variabler som huvudregressionen (utan ${T.enhet.en} inom BAS)${(() => { const f = _rgModellFras({ ...forklaringsmodell(), yrkesgrupp: false }); return f ? `: kön, ${f}` : ': bara kön'; })()} — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
+                        <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma variabler som huvudregressionen (utan ${T.enhet.en} inom BAS)${(() => { const f = modellFras({ ...forklaringsmodell(), yrkesgrupp: false }); return f ? `: kön, ${f}` : ': bara kön'; })()} — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
                         ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>
                     </p>
                 </details>`;
@@ -1037,7 +1063,7 @@ function renderRegressionCard() {
  * Renderar Blinder-Oaxaca-kortet i EU-matris-fliken (efter renderRegressionCard).
  * @param {any} [reg] huvudregressionens resultat från den som just kört den (ADR-17); bär det bortvalda (ADR-56)
  */
-function renderBlinderOaxacaCard(reg) {
+export function renderBlinderOaxacaCard(reg) {
     const wrap = document.getElementById('blinder-oaxaca-card');
     if (!wrap) return;
     const modell = forklaringsmodell();

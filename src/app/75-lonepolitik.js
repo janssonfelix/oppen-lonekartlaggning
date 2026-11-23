@@ -15,24 +15,46 @@
 //   n < min(LP_COUNT_TIER_MIN, k)  → maskerad rad, men inräknad i BAS-totalen
 // Är tröskeln satt till LP_COUNT_TIER_MIN eller lägre finns ingen mellannivå.
 // ====================================================================
+import { talformat } from '../lib/figur.js';
+import { arKvinna } from '../lib/kon.js';
+import { lonepolitikKonstanter, lonepolitikModell, maskeringsniva } from '../lib/lonepolitik.js';
+import { personOrd } from '../lib/namn.js';
+import { froAvText } from '../lib/rng.js';
+import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { adjektiv, genitiv, ordForAntal, stor } from '../lib/termer.js';
+import { FARG } from './01-farger.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { enableTableSort } from './05-tabeller-och-lankar.js';
+import { _konFarRedovisas, _konUtelamnatNot, isKMasked, kTroskel, litetUnderlag } from './06-k-troskel.js';
+import { kMaskNote } from './06-maskeringsnoter.js';
+import { orgNamn, plotNamn } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { PALETTE, URVAL } from './10-diagramtema.js';
+import { markeringFor } from './11-markering.js';
+import { addTableExportTools, getData, harReferens, policyFor, policyLevelLabel, referensKortnamn, referensNamn, state } from './12-tillstand.js';
+import { statusMarke } from './13-oversikt.js';
+import { _laSlutsats } from './41-lika-arbete.js';
+import { konsklassNu } from './45-aid-bas-tabeller.js';
+import { kTroskelLank } from './86-installningar.js';
 
-const LP_COUNT_TIER_MIN = _lpKonstanter().ANTAL_MIN;   // undre gräns för antalsbaserad redovisning
+const LP_COUNT_TIER_MIN = lonepolitikKonstanter().ANTAL_MIN;   // undre gräns för antalsbaserad redovisning
 
-function _lpTier(n) { return _lpMaskeringsniva(n, kTroskel()); }
+export function _lpTier(n) { return maskeringsniva(n, kTroskel()); }
 
 /**
  * Hela analysmodellen för fliken: per BAS, med AID-grupper under sig. Modellen ligger i src/lib/lonepolitik.js;
  * här översätts bara state till policyuppslaget och tröskeln.
  */
 function buildLonepolitikModel() {
-    return _lpLonepolitikModell(getData(), {
+    return lonepolitikModell(getData(), {
         policyFor, nivaEtikett: policyLevelLabel, k: kTroskel(), harPolicy: (state.policy || []).length > 0
     });
 }
 
 // ---- Renderare --------------------------------------------------------------
 
-function renderLonepolitik() {
+export function renderLonepolitik() {
     const wrap = document.getElementById('lonepolitik-content');
     const empty = document.getElementById('lonepolitik-empty');
     if (!wrap || !empty) return;
@@ -73,8 +95,8 @@ function renderLonepolitik() {
     };
     const lage = _lpRitaTopp(model);
     const [konsposition, efterlevnad] = _lpChartShellsHtml();
-    wrap.innerHTML = avsnitt('tabell', `${termStor(T.enhet.fl)} mot sitt spann`, 'Var varje grupps median ligger i spannet, och hur många som ligger under',
-            `${lage.provade} ${termForAntal(lage.provade, T.enhet)} i ${T.niva.en}`, _lpTableHtml(model))
+    wrap.innerHTML = avsnitt('tabell', `${stor(T.enhet.fl)} mot sitt spann`, 'Var varje grupps median ligger i spannet, och hur många som ligger under',
+            `${lage.provade} ${ordForAntal(lage.provade, T.enhet)} i ${T.niva.en}`, _lpTableHtml(model))
         + avsnitt('kon', 'Könsposition i bandet', 'Placeras kvinnor lägre i samma lönespann än män?', '', konsposition)
         + avsnitt('efterlevnad', 'Efterlevnad', `Andel under, inom eller över eget spann per ${T.niva.en}`, '', efterlevnad)
         + avsnitt('tackning', 'Täckningsgrad', 'Hur mycket av personalen har en policyreferens?', svPct(model.coverage.personsPct, 0), _lpCoverageHtml(model));
@@ -97,7 +119,7 @@ function _lpCoverageHtml(model) {
             <div class="fs-2rem tabelltal fw-700 fg-${farg}">${svPct(pct, 0)}</div>
             ${statusMarke(farg)}
             <div class="text-dampad-sm">
-                ${c.personsCovered} av ${c.personsTotal} personer · ${c.groupsCovered} av ${c.groupsTotal} ${termForAntal(c.groupsTotal, T.enhet)} i ${T.niva.en}
+                ${c.personsCovered} av ${c.personsTotal} personer · ${c.groupsCovered} av ${c.groupsTotal} ${ordForAntal(c.groupsTotal, T.enhet)} i ${T.niva.en}
             </div>
         </div>
         ${pct < 100 ? `<p class="reg-caveat-inline marg-t-10"><strong>Läs resultatet mot detta:</strong>
@@ -114,7 +136,7 @@ function _lpBandkartaKort(model) {
     if (!model.hasPolicy) { rensaFigur(el); el.innerHTML = ''; kort.hidden = true; return; }
     kort.hidden = false;
     const forklaring = document.getElementById('lp-bandkarta-forklaring');
-    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} ${personOrd(kTroskel())}). Punkt = ${termGenitiv(T.enhet.bf)} median: ${termAdjektiv('kvinnodominerad', T.enhet)}, ${termAdjektiv('mansdominerad', T.enhet)} eller ${termAdjektiv('blandad', T.enhet)}.`;
+    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} ${personOrd(kTroskel())}). Punkt = ${genitiv(T.enhet.bf)} median: ${adjektiv('kvinnodominerad', T.enhet)}, ${adjektiv('mansdominerad', T.enhet)} eller ${adjektiv('blandad', T.enhet)}.`;
     if (!model.byBas.length) { _lpIngetDiagram(el, `Ställningstagandet har inga rader för underlagets ${T.niva.fl} eller ${T.kod.fl}.`); return; }
     _lpRenderBandMap(model);
 }
@@ -162,7 +184,7 @@ function _lpRitaTopp(model) {
     if (!urval || !host) return lage;
     const c = model.coverage;
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(c.personsTotal, 0)} personer</span><span>Referens: ${esc(referensNamn())}</span>${kTroskelLank()}`;
-    const grupper = n => `${termForAntal(n, T.enhet)} i ${T.niva.en}`;
+    const grupper = n => `${ordForAntal(n, T.enhet)} i ${T.niva.en}`;
     host.innerHTML = _laSlutsats('Täckningsgrad', svPct(c.personsPct, 0), `${c.personsCovered} av ${c.personsTotal} personer har en referens`, c.personsPct < 60)
         + _laSlutsats('Median under spannet', svTal(lage.under, 0), `${grupper(lage.under)} av ${lage.provade} prövade`)
         + _laSlutsats('Median inom spannet', svTal(lage.provade - lage.under - lage.over, 0), grupper(lage.provade - lage.under - lage.over))
@@ -174,25 +196,25 @@ function _lpRenderBandMap(model) {
     const el = document.getElementById('chart-lp-bandmap');
     if (!el) return;
     const bas = model.byBas.filter(b => b.pol && b.pol.p10 > 0 && b.pol.p90 > 0);
-    if (!bas.length) { _lpIngetDiagram(el, `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har ett användbart P10–P90-spann i policyn.`); return; }
+    if (!bas.length) { _lpIngetDiagram(el, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har ett användbart P10–P90-spann i policyn.`); return; }
     ritaFigur(el, _lpBandkartaFigur(bas), { hojd: 460 });
 }
 
 // Yrkesgruppernas könsdominans efter andelen kvinnor i procent: namn, färg och villkor. Bandkartan och statistikens
 // spann i Löneläget (42-jamforelse.js) delar klasserna, så att samma färg betyder samma sak i båda.
 /** @returns {Array<[string, string, (a: number) => boolean]>} */
-function _lpKonsdominans() {
+export function _lpKonsdominans() {
     return [['Kvinnodominerad', PALETTE.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad', PALETTE.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad', PALETTE.semantic.neutral, a => konsklassNu(a) === 'blandad']];
 }
 // Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
-function _lpForskjutning(aid, bas) { return ((_slumpFroAvText(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
+export function _lpForskjutning(aid, bas) { return ((froAvText(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
 
 // Bandkartans figur (diagramkärnan, ADR-39): referensens spann och organisationens faktiska spann per BAS som märket
 // `intervall`, med varje yrkesgrupps median som punkt.
 // Organisationens spann finns bara för BAS med minst k personer (`b.orgBand`), och punkterna bara för grupper på full
 // nivå (percentiler kräver n ≥ k) — inget annat når figuren.
 function _lpBandkartaFigur(bas) {
-    const x = b => 'BAS ' + b.bas, kr = v => _figTalformat(v, 'kr'), utanKr = v => _figTalformat(v, 'kr', { enhet: false });
+    const x = b => 'BAS ' + b.bas, kr = v => talformat(v, 'kr'), utanKr = v => talformat(v, 'kr', { enhet: false });
     const refNamn = referensKortnamn(), org = plotNamn(orgNamn());
     const refMed = b => (b.pol.med > 0 ? b.pol.med : (b.pol.p10 + b.pol.p90) / 2);
     const medOrgBand = bas.filter(b => b.orgBand);
@@ -203,7 +225,7 @@ function _lpBandkartaFigur(bas) {
         pts.push({ x: x(b), y: g.stats.median, forskjutning: _lpForskjutning(g.aid, g.bas),
                    storlek: Math.max(3.5, Math.min(9, Math.sqrt(g.n) * 1.1)), kvAndel, n: g.n, yrke: g.yrke, bas: b.bas, niva: g.level || '—', markering: markeringFor(b.bas, g.aid) });
     }));
-    return { beskrivning: `Referensens lönespann och organisationens faktiska lönespann per ${T.niva.en}, med varje ${termGenitiv(T.enhet.en)} median inlagd som punkt. Samma värden finns i tabellen nedan.`,
+    return { beskrivning: `Referensens lönespann och organisationens faktiska lönespann per ${T.niva.en}, med varje ${genitiv(T.enhet.en)} median inlagd som punkt. Samma värden finns i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.konsdominans, URVAL.antal], x: { skala: 'band', ordning: bas.map(x) }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },
         lager: [
             { marke: 'intervall', serie: `${refNamn} (P10–P90)`, farg: PALETTE.semantic.spann, tjocklek: 14,
@@ -216,8 +238,8 @@ function _lpBandkartaFigur(bas) {
               tips: d => [[d.x], ['Organisationen', `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr(d.hog)}`], ['Antal', String(d.antal)]] },
             // Yrkesgrupperna i tre klasser efter könsfördelning (som i Likvärdigt arbete) i stället för en färgskala:
             // tre färger går att läsa mot spannen, en glidande skala gör det inte.
-            ..._lpKonsdominans().map(([klass, farg, hor]) => ({ marke: 'punkt', serie: `${termStor(termAdjektiv(klass.toLowerCase(), T.enhet))} ${T.enhet.en}`, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)).map(p => ({ ...p, konsdom: klass })),
-                    tips: d => [[d.yrke], [`BAS ${d.bas}`, `median ${kr(d.y)}`], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Referens', d.niva], ['Antal', String(d.n)]] }))
+            ..._lpKonsdominans().map(([klass, farg, hor]) => ({ marke: 'punkt', serie: `${stor(adjektiv(klass.toLowerCase(), T.enhet))} ${T.enhet.en}`, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)).map(p => ({ ...p, konsdom: klass })),
+                    tips: d => [[d.yrke], [`BAS ${d.bas}`, `median ${kr(d.y)}`], ['Kvinnor', talformat(d.kvAndel, 'antal') + ' %'], ['Referens', d.niva], ['Antal', String(d.n)]] }))
         ].filter(l => l.data.length) };
 }
 
@@ -228,7 +250,7 @@ function _lpFigurKonHantel(rows) {
     const y = b => 'BAS ' + b.bas, pos = (b, f) => +(b.genderGap[f] * 100).toFixed(1);
     const alla = rows.flatMap(b => [pos(b, 'kvPos'), pos(b, 'maPos')]);
     const punkt = (namn, farg, falt) => ({ marke: 'punkt', serie: namn, farg, storlek: 6,
-        data: rows.map(b => ({ y: y(b), x: pos(b, falt), bas: b.bas, markering: markeringFor(b.bas) })), tips: d => [[d.y], [namn, `${_figTalformat(d.x, 'pct')} in i spannet`]] });
+        data: rows.map(b => ({ y: y(b), x: pos(b, falt), bas: b.bas, markering: markeringFor(b.bas) })), tips: d => [[d.y], [namn, `${talformat(d.x, 'pct')} in i spannet`]] });
     return { beskrivning: `Kvinnors respektive mäns genomsnittliga position i ställningstagandets lönespann per ${T.niva.en}, som två punkter på spannet: 0 procent är spannets nedre gräns (P10), 100 procent den övre (P90).`,
         urval: URVAL.bas, y: { skala: 'band', ordning: rows.map(y) }, x: { skala: 'linjar', titel: 'Position i spannet (%) — 0 = P10, 100 = P90', doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
         hojd: Math.max(170, 100 + rows.length * 34),
@@ -252,12 +274,12 @@ function _lpKonLagenSumma(model) {
 }
 function _lpFigurKonLagen(sum) {
     const rader = [['Kvinnor', sum.kv, sum.nKv], ['Män', sum.ma, sum.nMa]];
-    return { beskrivning: `Andel av kvinnorna respektive männen i policyspannets nedre, mellersta och övre tredjedel samt under och över spannet, staplat till 100 procent. Varje person räknas mot sitt ${termGenitiv(T.niva.en)} spann.`,
+    return { beskrivning: `Andel av kvinnorna respektive männen i policyspannets nedre, mellersta och övre tredjedel samt under och över spannet, staplat till 100 procent. Varje person räknas mot sitt ${genitiv(T.niva.en)} spann.`,
         y: { skala: 'band', ordning: rader.map(r => r[0]) }, x: { skala: 'linjar', titel: 'Andel av könet (%)', doman: [0, 100] }, hojd: 190,
         lager: _LP_LAGEN.map(([serie, farg], i) => ({ marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie, farg,
             data: rader.map(([namn, antal, n]) => { const a = +(100 * antal[i] / n).toFixed(1), fa = antal[i] > 0 && antal[i] < litetUnderlag();
                 return { y: namn, x: a, n, ...(fa ? { fa: true } : {}), ...(a >= 7 ? { etikett: svPct(a, 0) } : {}) }; }),
-            tips: d => [[d.y], [serie, _figTalformat(d.x, 'pct')], ['Antal i könet', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${litetUnderlag()} personer`]] : [])] })) };
+            tips: d => [[d.y], [serie, talformat(d.x, 'pct')], ['Antal i könet', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${litetUnderlag()} personer`]] : [])] })) };
 }
 function _lpRitaKonLagen(model) {
     const el = document.getElementById('chart-lp-konlagen'), kort = document.getElementById('lp-konlagen-kort'), not = document.getElementById('lp-konlagen-not');
@@ -276,7 +298,7 @@ function _lpFigurKomplians(rows) {
     const serie = (namn, farg, falt) => ({
         marke: 'stapel', lage: 'staplad', serie: namn, farg,
         data: rows.map(b => ({ x: 'BAS ' + b.bas, y: pct(b.compliance[falt], b.compliance.n), bas: b.bas, markering: markeringFor(b.bas) })),
-        tips: d => [[d.x], [namn, _figTalformat(d.y, 'pct')]]
+        tips: d => [[d.x], [namn, talformat(d.y, 'pct')]]
     });
     return { beskrivning: `Andel anställda under, inom och över ställningstagandets lönespann per ${T.niva.en}`,
         urval: URVAL.bas, x: { skala: 'band' }, y: { skala: 'linjar', titel: 'Andel av de anställda (%)', doman: [0, 100] },
@@ -298,9 +320,9 @@ function _lpFigurKompliansMitt(rows) {
         data: sorterade.map(b => {
             const andel = pct(b.compliance[falt], b.compliance.n);
             return { y: 'BAS ' + b.bas, x: tecken * andel || 0, andel, inom: pct(b.compliance.within, b.compliance.n), bas: b.bas, markering: markeringFor(b.bas),
-                     ...(andel > 0 ? { etikett: _figTalformat(andel, 'pct') } : {}) };
+                     ...(andel > 0 ? { etikett: talformat(andel, 'pct') } : {}) };
         }),
-        tips: d => [[d.y], [namn, _figTalformat(d.andel, 'pct')], ['Inom spann', _figTalformat(d.inom, 'pct')]]
+        tips: d => [[d.y], [namn, talformat(d.andel, 'pct')], ['Inom spann', talformat(d.inom, 'pct')]]
     });
     const storst = Math.max(10, ...sorterade.map(b => Math.max(pct(b.compliance.under, b.compliance.n), pct(b.compliance.over, b.compliance.n))));
     const grans = Math.min(100, Math.ceil(storst * 1.15 / 10) * 10);
@@ -317,7 +339,7 @@ document.addEventListener('change', e => {
 });
 
 // Ett meddelande i stället för diagrammet: figuren släpps först, så att ingen export eller omritning finns kvar.
-function _lpIngetDiagram(el, text) {
+export function _lpIngetDiagram(el, text) {
     rensaFigur(el);
     const p = document.createElement('p');
     p.style.cssText = 'color:var(--text-muted);font-size:0.9rem;margin:8px 0;';
@@ -330,7 +352,7 @@ function _lpRenderGenderPosition(model) {
     if (!el) return;
     const rows = model.byBas.filter(b => b.genderGap);
     if (!rows.length) {
-        _lpIngetDiagram(el, `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${kTroskel()} av varje kön med användbart policyspann — könsanalysen kan inte redovisas.`);
+        _lpIngetDiagram(el, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${kTroskel()} av varje kön med användbart policyspann — könsanalysen kan inte redovisas.`);
         return;
     }
     ritaFigur(el, _lpFigurKonHantel(rows));
@@ -430,9 +452,9 @@ function _lpTableHtml(model) {
             men de räknas alltid in i BAS-totalen.
         </p>
         <div class="table-container">
-            <table id="lonepolitik-table" class="data-table fs-sm" aria-label="${termStor(T.enhet.fl)} jämförda mot ${esc(referensNamn())}">
+            <table id="lonepolitik-table" class="data-table fs-sm" aria-label="${stor(T.enhet.fl)} jämförda mot ${esc(referensNamn())}">
                 <thead><tr>
-                    <th>${termStor(T.enhet.en)}</th>
+                    <th>${stor(T.enhet.en)}</th>
                     <th class="t-hoger">N</th>
                     <th class="t-hoger">Median</th>
                     <th class="t-hoger">Policyspann</th>
@@ -455,7 +477,7 @@ function _lpTableHtml(model) {
  * för efterlevnaden (isKMasked). Finns inget ställningstagande, eller matchar det inte underlaget, blir det inget blad.
  * @returns {null|any[][]} bladets rader
  */
-function _lpExcelBlad() {
+export function _lpExcelBlad() {
     const model = buildLonepolitikModel();
     if (!model.hasPolicy || !model.byBas.length) return null;
     const k = kTroskel(), r1 = v => Math.round(v * 10) / 10, kr = v => Math.round(v);
@@ -464,11 +486,11 @@ function _lpExcelBlad() {
     const ut = [
         [`Lönerna mot ${referensNamn()} (fliken Löneläget)`],
         [`Position är var medianen ligger i referensens spann: 0 % = på P10, 100 % = på P90; under 0 eller över 100 betyder utanför spannet. `
-            + `${termStor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} står med antal men utan lönemått, och med färre än ${Math.min(LP_COUNT_TIER_MIN, k)} utelämnas de; de räknas alltid in i ${termGenitiv(T.niva.bf)} rader. `
+            + `${stor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} står med antal men utan lönemått, och med färre än ${Math.min(LP_COUNT_TIER_MIN, k)} utelämnas de; de räknas alltid in i ${genitiv(T.niva.bf)} rader. `
             + `Könsuppdelade mått redovisas bara där varje kön har minst ${k} ${personOrd(k)}.`],
         [],
-        [`${termStor(T.enhet.fl)} mot sitt spann`],
-        [termStor(T.niva.en), 'AID', termStor(T.namn.en), 'Antal', 'Median (kr)', 'Referensens P10 (kr)', 'Referensens P90 (kr)', 'Position (%)', 'Under P10 (antal)', 'Referensnivå']
+        [`${stor(T.enhet.fl)} mot sitt spann`],
+        [stor(T.niva.en), 'AID', stor(T.namn.en), 'Antal', 'Median (kr)', 'Referensens P10 (kr)', 'Referensens P90 (kr)', 'Position (%)', 'Under P10 (antal)', 'Referensnivå']
     ];
     const utelamnade = [];
     for (const b of model.byBas) {
@@ -486,7 +508,7 @@ function _lpExcelBlad() {
 
     // Läget i spannet per kön: bara BAS-intervall där varje kön når tröskeln (samma villkor som hanteldiagrammet).
     ut.push([], [`Läget i spannet per kön, per ${T.niva.en} (genomsnittlig position: 0 % = P10, 100 % = P90)`],
-        [termStor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors läge (%)', 'Mäns läge (%)', 'Skillnad kvinnor − män (procentenheter)']);
+        [stor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors läge (%)', 'Mäns läge (%)', 'Skillnad kvinnor − män (procentenheter)']);
     const konDolda = [];
     for (const b of model.byBas) {
         if (!b.pol) continue;
@@ -506,7 +528,7 @@ function _lpExcelBlad() {
 
     // Efterlevnad per BAS-intervall: som diagrammet, intervall under tröskeln utelämnas och namnges.
     ut.push([], [`Efterlevnad per ${T.niva.en}`],
-        [termStor(T.niva.en), 'Antal', 'Under P10 (antal)', 'Inom spannet (antal)', 'Över P90 (antal)', 'Under P10 (%)', 'Inom spannet (%)', 'Över P90 (%)']);
+        [stor(T.niva.en), 'Antal', 'Under P10 (antal)', 'Inom spannet (antal)', 'Över P90 (antal)', 'Under P10 (%)', 'Inom spannet (%)', 'Över P90 (%)']);
     const efterDolda = [];
     for (const b of model.byBas) {
         const c = b.compliance;

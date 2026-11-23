@@ -11,6 +11,12 @@
 // jämförelse) eller datan byts — inte när ett värde ändras. Annars tappar
 // den som skriver ett tal eller kryssar i en lista fokus.
 // ====================================================================
+import { jamforAldersgrupp } from '../lib/falt.js';
+import { beskrivUrval, faltInfo, gruppMattInfo, gruppVillkorAktivt, villkorAktivt } from '../lib/urval.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { ikon } from './03-ikoner.js';
+import { state } from './12-tillstand.js';
+import { _utNycklar, renderExplorer } from './70-utforska.js';
 
 /** @type {{lage: string, villkor: any[]}} */
 let _urvalState = { lage: 'alla', villkor: [] };
@@ -39,19 +45,19 @@ function _urvalFranOpVarde(val) {
 }
 const _kopia = x => JSON.parse(JSON.stringify(x));
 
-function explorerUrval() {
+export function explorerUrval() {
     return { urval: _kopia(_urvalState), gruppVillkor: _kopia(_gruppState) };
 }
-function explorerSattUrval(urval, gruppVillkor) {
+export function explorerSattUrval(urval, gruppVillkor) {
     _urvalState = { lage: urval && urval.lage === 'nagot' ? 'nagot' : 'alla',
                     villkor: _kopia((urval && urval.villkor) || []).map(v => ({ inte: false, ...v })) };
     _gruppState = _kopia(gruppVillkor || []);
     _urvalSignatur = null;
 }
-function explorerNollstallUrval() { explorerSattUrval({ lage: 'alla', villkor: [] }, []); }
+export function explorerNollstallUrval() { explorerSattUrval({ lage: 'alla', villkor: [] }, []); }
 
 /** Släpper referensen till datan som värdelistorna byggdes för ("Rensa all data"). */
-function explorerUrvalSlappMinne() {
+export function explorerUrvalSlappMinne() {
     _urvalDataRef = null;
     _urvalSignatur = null;
 }
@@ -65,12 +71,12 @@ function _urvalVarden(rows, dim) {
         if (k != null) set.add(k);
     }
     const vals = [...set];
-    return dim === 'alder' ? vals.sort(_faltJamforAlder) : vals.sort((a, b) => a.localeCompare(b, 'sv'));
+    return dim === 'alder' ? vals.sort(jamforAldersgrupp) : vals.sort((a, b) => a.localeCompare(b, 'sv'));
 }
 
 /** Tar bort kategorivärden som inte finns i datan (efter en ny inläsning). */
-function explorerRensaUrval(rows) {
-    const falt = _urFaltInfo();
+export function explorerRensaUrval(rows) {
+    const falt = faltInfo();
     const cache = {};
     for (const v of _urvalState.villkor) {
         const f = falt[v.falt];
@@ -95,7 +101,7 @@ function _urvalTalHtml(attr, i, varde, enhet, etikett) {
 }
 
 function _urvalRadHtml(v, i, rows) {
-    const falt = _urFaltInfo();
+    const falt = faltInfo();
     const f = falt[v.falt] || falt.bas;
     const nr = `Villkor ${i + 1}`;
     const faltOpts = Object.entries(falt).map(([k, d]) =>
@@ -121,13 +127,13 @@ function _urvalRadHtml(v, i, rows) {
         + `<select class="form-select" data-urval-falt="${i}" aria-label="${nr}: fält">${faltOpts}</select>`
         + `<select class="form-select" data-urval-op="${i}" aria-label="${nr}: jämförelse">${opOpts}</select>`
         + varde
-        + `<span class="explore-urval-ofullst"${_urVillkorAktivt(v) ? ' hidden' : ''}>Ofullständigt – ignoreras</span>`
+        + `<span class="explore-urval-ofullst"${villkorAktivt(v) ? ' hidden' : ''}>Ofullständigt – ignoreras</span>`
         + `<button type="button" class="explore-urval-bort" data-urval-bort="person:${i}" aria-label="Ta bort ${nr.toLowerCase()}">${ikon('kryss', 14)}</button>`
         + '</div>';
 }
 
 function _gruppRadHtml(g, i) {
-    const matt = _urGruppMattInfo();
+    const matt = gruppMattInfo();
     const m = matt[g.matt] || matt.gap;
     const nr = `Gruppvillkor ${i + 1}`;
     const mattOpts = Object.entries(matt).map(([k, d]) =>
@@ -137,7 +143,7 @@ function _gruppRadHtml(g, i) {
         + `<select class="form-select" data-gv-matt="${i}" aria-label="${nr}: mått">${mattOpts}</select>`
         + `<select class="form-select" data-gv-op="${i}" aria-label="${nr}: jämförelse">${opOpts}</select>`
         + _urvalTalHtml('data-gv-tal', i, g.varde, m.enhet, `${nr}: värde`)
-        + `<span class="explore-urval-ofullst"${_urGruppVillkorAktivt(g) ? ' hidden' : ''}>Ofullständigt – ignoreras</span>`
+        + `<span class="explore-urval-ofullst"${gruppVillkorAktivt(g) ? ' hidden' : ''}>Ofullständigt – ignoreras</span>`
         + `<button type="button" class="explore-urval-bort" data-urval-bort="grupp:${i}" aria-label="Ta bort ${nr.toLowerCase()}">${ikon('kryss', 14)}</button>`
         + '</div>';
 }
@@ -159,17 +165,17 @@ function _urvalFokusNyckel() {
 function _urvalUppdateraMarkorer() {
     document.querySelectorAll('#explore-urval-villkor .explore-urval-rad').forEach((rad, i) => {
         const m = rad.querySelector('.explore-urval-ofullst');
-        if (m) /** @type {HTMLElement} */ (m).hidden = _urVillkorAktivt(_urvalState.villkor[i]);
+        if (m) /** @type {HTMLElement} */ (m).hidden = villkorAktivt(_urvalState.villkor[i]);
         const antal = rad.querySelector('[data-urval-antal]');
         if (antal) antal.textContent = `Välj värden (${(_urvalState.villkor[i].varde || []).length})`;
     });
     document.querySelectorAll('#explore-urval-grupp .explore-urval-rad').forEach((rad, i) => {
         const m = rad.querySelector('.explore-urval-ofullst');
-        if (m) /** @type {HTMLElement} */ (m).hidden = _urGruppVillkorAktivt(_gruppState[i]);
+        if (m) /** @type {HTMLElement} */ (m).hidden = gruppVillkorAktivt(_gruppState[i]);
     });
 }
 
-function renderExplorerUrvalUi(rows) {
+export function renderExplorerUrvalUi(rows) {
     const lista = document.getElementById('explore-urval-villkor');
     const grupp = document.getElementById('explore-urval-grupp');
     const lage = document.getElementById('explore-urval-lage');
@@ -189,7 +195,7 @@ function renderExplorerUrvalUi(rows) {
     }
     _urvalUppdateraMarkorer();
     if (chips) {
-        const text = _urBeskrivUrval(_urvalState, _gruppState);
+        const text = beskrivUrval(_urvalState, _gruppState);
         chips.innerHTML = text
             ? `<span class="explore-urval-text">${esc(text)}</span><button type="button" class="btn-table-tool" data-explore-clear>Rensa allt</button>`
             : '';
@@ -210,7 +216,7 @@ function _urvalSattTal(obj, el) {
 const _urvalPanel = document.getElementById('explore-urval');
 _urvalPanel?.addEventListener('change', e => {
     const t = /** @type {HTMLInputElement} */ (e.target);
-    const falt = _urFaltInfo();
+    const falt = faltInfo();
     let i;
     if (/** @type {HTMLElement} */ (t).id === 'explore-urval-lage') {
         _urvalState.lage = /** @type {HTMLInputElement} */ (t).value === 'nagot' ? 'nagot' : 'alla';

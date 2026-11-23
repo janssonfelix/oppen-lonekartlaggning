@@ -1,8 +1,24 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { aidAvYrke } from '../lib/aid.js';
+import { statistikFor } from '../lib/jamforelse.js';
+import { arKvinna, arMan } from '../lib/kon.js';
+import { svPct, svTal } from '../lib/talformat.js';
+import { stor } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { ikon } from './03-ikoner.js';
+import { buildBaseAudit, setAudit, toggleAllGroups } from './05-tabeller-och-lankar.js';
+import { isKMasked, kTroskel } from './06-k-troskel.js';
+import { kMaskNote } from './06-maskeringsnoter.js';
+import { T } from './09-termer.js';
+import { getBasIntervals, getData, policyFor, referensKortnamn, Stat, state } from './12-tillstand.js';
+import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
+import { medExportLage } from './23-exportgrind.js';
+import { _evidenceForRapportRow, _openEvidenceModal } from './27-berakningsbevis.js';
+import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
 // ---- Löneöversikten (tabellen överst i Utforska) ----
-function generateRapport() {
+export function generateRapport() {
     const tbody = /** @type {HTMLElement} */ (document.querySelector("#rapport-table tbody"));
     tbody.innerHTML = "";
     const fmt = new Intl.NumberFormat('sv-SE', {style:'currency',currency:'SEK',maximumFractionDigits:0});
@@ -43,7 +59,7 @@ function generateRapport() {
             /** @type {number|null} */ let statDiffRaw = null;
             if (state.statistik.length > 0) {
                 const aidCode = aidAvYrke(kategori);
-                const sr = _jfStatistikFor(state.statistik, aidCode, b)?.rad;
+                const sr = statistikFor(state.statistik, aidCode, b)?.rad;
                 if (sr && sr.median > 0) {
                     statMed = fmt.format(sr.median);
                     statRefMedian = sr.median;
@@ -103,7 +119,7 @@ function generateRapport() {
         ...base,
         usedInAnalysis: base.afterFilter,
         analysisExclusions: [
-            ...(yrkenSkippedCount > 0 ? [[`${termStor(T.enhet.fl)} med <5 personer (slås ihop med "Organisationen"-raden)`, yrkenSkippedCount]] : [])
+            ...(yrkenSkippedCount > 0 ? [[`${stor(T.enhet.fl)} med <5 personer (slås ihop med "Organisationen"-raden)`, yrkenSkippedCount]] : [])
         ],
         formler: [
             ['Median', 'P50, mittersta värdet av sorterad lönelista'],
@@ -136,7 +152,7 @@ function _rapportTillampaHopfallning() {
         for (let n = tr.nextElementSibling; n && !n.classList.contains('group-header'); n = n.nextElementSibling) /** @type {HTMLElement} */ (n).style.display = hop ? 'none' : '';
     }
 }
-function rapportGlomHopfallning() { _rapportHopfallda = null; }
+export function rapportGlomHopfallning() { _rapportHopfallda = null; }
 document.querySelector('#rapport-table tbody')?.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest('tr.group-header')) return;
     // Raden fälls av tabellens gemensamma lyssnare; här noteras bara läget när den har gjort sitt.

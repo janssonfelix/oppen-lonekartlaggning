@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // Högst så många gruppnamn räknas upp i noten innan resten summeras.
-const K_NOTE_MAX_NAMN = 12;
+import { personOrd } from '../lib/namn.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { kTroskel } from './06-k-troskel.js';
+export const K_NOTE_MAX_NAMN = 12;
 
 // "grupp|grupper" -> rätt form efter antal. Anropare skickar båda formerna
 // eftersom svensk pluralböjning inte går att härleda ur en ändelse.
-function _kNoteForm(sammanhang, antal) {
+export function _kNoteForm(sammanhang, antal) {
     const delar = String(sammanhang || 'grupp|grupper').split('|');
     return antal === 1 ? delar[0] : (delar[1] || delar[0]);
 }
@@ -14,7 +17,7 @@ function _kNoteForm(sammanhang, antal) {
 // (table_to_sheet) trimmar varje elements text var för sig och slår ihop dem
 // utan avskiljare, så ett <strong> mitt i meningen gav "4 yrkesgruppervisas"
 // i Excel-exporten. Noten är ändå visuellt avskild via .k-mask-note.
-function _kNoteNamn(lista) {
+export function _kNoteNamn(lista) {
     const visade = lista.slice(0, K_NOTE_MAX_NAMN).map(esc).join(', ');
     return visade + (lista.length > K_NOTE_MAX_NAMN ? ` och ${lista.length - K_NOTE_MAX_NAMN} till` : '');
 }
@@ -33,7 +36,7 @@ function _kNoteNamn(lista) {
  * @param {number} [trosk]       Tröskel att nämna (default kTroskel()).
  * @returns {string} HTML, eller tom sträng om inget utelämnats.
  */
-function kMaskNote(namn, sammanhang, trosk) {
+export function kMaskNote(namn, sammanhang, trosk) {
     const lista = (namn || []).filter(Boolean);
     if (!lista.length) return '';
     const n = lista.length;
@@ -55,7 +58,7 @@ function kMaskNote(namn, sammanhang, trosk) {
  * @param {string} vad
  * @param {string} dar
  */
-function _kMaskNoteText(namn, sammanhang, t, vad, dar) {
+export function _kMaskNoteText(namn, sammanhang, t, vad, dar) {
     const lista = (namn || []).filter(Boolean);
     if (!lista.length) return '';
     const n = lista.length;
@@ -74,7 +77,7 @@ function _kMaskNoteText(namn, sammanhang, t, vad, dar) {
  * @param {string} [sammanhang] "singular|plural".
  * @returns {string} HTML, eller tom sträng.
  */
-function kSamladNote(namn, sammanhang) {
+export function kSamladNote(namn, sammanhang) {
     const lista = (namn || []).filter(Boolean);
     if (!lista.length) return '';
     const n = lista.length;

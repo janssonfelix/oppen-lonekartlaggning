@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Excel-export av jämförelsen mot jämförelsestatistiken ----
+import { jamforelseRader, matchningEtikett } from '../lib/jamforelse.js';
+import { personOrd } from '../lib/namn.js';
+import { stor } from '../lib/termer.js';
+import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { idagDatum } from './03-hjalpfunktioner.js';
+import { kTroskel } from './06-k-troskel.js';
+import { orgNamn } from './07-standardinstallningar.js';
+import { APP_VERSION } from './08-version.js';
+import { T } from './09-termer.js';
+import { getData, policyFor, referensKalla, referensNamn, state } from './12-tillstand.js';
+import { _appendMethodSheet, _applyColumnNumFormats, _showExportSensitivityToast, SV_NUM_FORMATS } from './22-exporthjalpare.js';
+import { medExportLage } from './23-exportgrind.js';
 
 /**
  * Exporterar samlad benchmark-jämförelse till Excel-fil.
@@ -44,7 +56,7 @@ function _exportBenchmarkExcelExport() {
         referensNamn(), '', '', '', '', '', '', ''
     ];
     const headerRow2 = [
-        termStor(T.enhet.en), 'BAS', 'Matchning', 'N (organisationen)',
+        stor(T.enhet.en), 'BAS', 'Matchning', 'N (organisationen)',
         'P10', 'Median', 'P90', 'Bredd P90/P10',
         'P10', 'Diff P10 (kr)', 'Diff P10 (%)',
         'Median', 'Diff Median (kr)', 'Diff Median (%)',
@@ -55,11 +67,11 @@ function _exportBenchmarkExcelExport() {
     ];
 
     // Raderna kommer ur src/lib/jamforelse.js — samma som tabellen och diagrammen.
-    const { rader, utelamnade: maskedGroups } = _jfRader(d, { statistik: state.statistik, policyFor, k: kTroskel() });
+    const { rader, utelamnade: maskedGroups } = jamforelseRader(d, { statistik: state.statistik, policyFor, k: kTroskel() });
     const dataRows = rader.map(r => {
         const s = r.statistik, p = r.stallningstagande, o = r.org;
         return [
-            r.yrke, r.bas, _jfMatchningEtikett(r.statistikMatchning), r.n,
+            r.yrke, r.bas, matchningEtikett(r.statistikMatchning), r.n,
             rOrNull(o.p10), rOrNull(o.median), rOrNull(o.p90), breddOrNull(o.p10, o.p90),
             rOrNull(s.p10),    diffOrNull(o.p10, s.p10),       pctOrNull(o.p10, s.p10),
             rOrNull(s.median), diffOrNull(o.median, s.median), pctOrNull(o.median, s.median),

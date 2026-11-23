@@ -182,7 +182,7 @@ const appLVSrc = (() => {
     return extractFn(appSrc.slice(i), 'likvardighetspar');
 })();
 // kTroskel() läses ur state, som i appen (adaptern skickar värdet vidare till lib).
-const makeAppLV = new Function('state', 'nationellAidKlass', '_lvLikvardighetspar', `
+const makeAppLV = new Function('state', 'nationellAidKlass', 'likvardighetsparUr', `
     const kTroskel = () => state.kTroskel ?? 10;
     const kInstalld = kTroskel;
     // Definitionen och jämförelsemängden ur 45-aid-bas-tabeller.js (ADR-60), lästa ur state som i appen.
@@ -206,7 +206,7 @@ const tomtResultat = () => ({
 
 describe('likvärdigt arbete: app.js delegerar till lib-spegeln', () => {
     it('adaptern innehåller ingen egen implementation', () => {
-        expect(appLVSrc).toContain('_lvLikvardighetspar(');
+        expect(appLVSrc).toContain('likvardighetsparUr(');
         // Namn som bara en egen implementation av algoritmen har. Dyker något av dem upp
         // har någon börjat implementera i app.js i stället för i src/lib/.
         for (const spår of ['orgMap', 'statByBas', 'bootstrapMedianskillnadKr', '_bootstrapMedianDiffKr']) {
@@ -311,16 +311,17 @@ describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', ()
 describe('regression: 50-regressionsmodeller.js är en tunn adapter', () => {
     const regSrc = readFileSync(join(root, 'src', 'app', '50-regressionsmodeller.js'), 'utf8');
     const adaptrar = ['_computePerBasGap', 'runBlinderOaxaca', 'runQuantileRegressionAtAllTau'];
+    const libNamn = /import \{([^}]*)\} from '\.\.\/lib\/regression\.js'/.exec(regSrc)[1].split(',').map(s => s.trim().split(/\s+as\s+/).pop());
 
     it('innehåller inga egna beräkningar (ingen log eller OLS-anrop)', () => {
         expect(regSrc, 'log-lön räknas i src/lib/regression.js').not.toContain('Math.log(');
-        expect(regSrc, 'OLS anropas i src/lib/regression.js').not.toContain('_anpassaOLS(');
+        expect(regSrc, 'OLS anropas i src/lib/regression.js').not.toContain('anpassaOLS(');
     });
 
     for (const namn of adaptrar) {
         it(`${namn} delegerar till spegeln`, () => {
             const kropp = extractFn(regSrc, namn);
-            expect(kropp, `${namn} ska anropa en _rg-spegel`).toMatch(/_rg[A-Z]\w*\(/);
+            expect(libNamn.some(n => kropp.includes(`${n}(`)), `${namn} ska anropa en funktion ur src/lib/regression.js`).toBe(true);
         });
     }
 
@@ -341,7 +342,7 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till sp
 
     it('computePrioritization delegerar till _prPrioritera och bygger ingen egen beräkning', () => {
         const kropp = extractFn(prioSrc, 'computePrioritization');
-        expect(kropp).toContain('_prPrioritera(');
+        expect(kropp).toContain('prioritera(');
         for (const spår of ['Stat.median', 'isKMasked', 'priorityIndex', 'sevScore', 'annualGapTotal', 'groups[']) {
             expect(kropp, `"${spår}" hör hemma i src/lib/prioritering.js`).not.toContain(spår);
         }
@@ -349,8 +350,8 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till sp
 
     it('runLifecycleRegression delegerar till _lcLivscykelRegression och bygger ingen egen modell', () => {
         const kropp = extractFn(lcSrc, 'runLifecycleRegression');
-        expect(kropp).toContain('_lcLivscykelRegression(');
-        expect(lcSrc, 'OLS anropas i src/lib/livscykel.js').not.toContain('_anpassaOLS(');
+        expect(kropp).toContain('livscykelRegression(');
+        expect(lcSrc, 'OLS anropas i src/lib/livscykel.js').not.toContain('anpassaOLS(');
         expect(kropp, 'log-lön räknas i src/lib/livscykel.js').not.toContain('Math.log(');
         expect(kropp, 'designmatrisen hör hemma i src/lib/livscykel.js').not.toContain('dummyBas');
     });

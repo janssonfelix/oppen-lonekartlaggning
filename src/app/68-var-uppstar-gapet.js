@@ -1,6 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Var uppstår löneskillnaden? (ADR-22) ----
+import { gapAllaVariabler, gapDelar, gapDelarIText, gapOvrigaText, gapStandardVariabler, gapUppdelning, gapVariabelEtikett, gapVariablerArStandard, gapVariablerIText, normaliseraGapVariabler } from '../lib/gapuppdelning.js';
+import { personOrd } from '../lib/namn.js';
+import { konsMedianer } from '../lib/struktur.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { ikon } from './03-ikoner.js';
+import { kTroskel } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { ritaFigur } from './10-diagramritare.js';
+import { PALETTE } from './10-diagramtema.js';
+import { getData, state } from './12-tillstand.js';
+import { harAlder } from './50-regressionsmodeller.js';
 /**
  * Kort i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (ADR-65; standard BAS och AID ger
  * BAS-fördelning (A), AID inom BAS (B) och lön inom samma AID och BAS (C)), med de grupper som bidrar mest.
@@ -18,13 +29,13 @@ const _GU_ATGARD = {
 };
 /** Delarna för ett val, med åtgärd och länk. @param {string[]} variabler */
 function _guDelarMedAtgard(variabler) {
-    return _guDelar(variabler).map(d => ({ ...d, ..._GU_ATGARD[d.variabel || 'inom'] }));
+    return gapDelar(variabler).map(d => ({ ...d, ..._GU_ATGARD[d.variabel || 'inom'] }));
 }
 
 // ---- Valet av förklaringsvariabler (ADR-65) ----
 /** De gällande variablerna, normaliserade mot datat: åldersgrupp bara när lönefilen har ålder (ADR-64). */
-function gapVariabler() {
-    return _guNormaliseraVariabler(state.gapUppdelning && state.gapUppdelning.variabler, { harAlder: harAlder() }).variabler;
+export function gapVariabler() {
+    return normaliseraGapVariabler(state.gapUppdelning && state.gapUppdelning.variabler, { harAlder: harAlder() }).variabler;
 }
 /**
  * Sätter variablerna. Standardvalet lagras som null. Det som lagras prövas inte mot åldern, som förklaringsmodellen
@@ -33,15 +44,15 @@ function gapVariabler() {
  * @param {{rita?: boolean}} [opts]
  */
 function sattGapVariabler(v, { rita = true } = {}) {
-    const { variabler, varningar } = _guNormaliseraVariabler(v);
-    state.gapUppdelning = _guVariablerArStandard(variabler) ? null : { variabler };
+    const { variabler, varningar } = normaliseraGapVariabler(v);
+    state.gapUppdelning = gapVariablerArStandard(variabler) ? null : { variabler };
     if (rita) renderGapUppdelning();
     return { variabler: gapVariabler(), varningar };
 }
 // Variablerna som kan väljas i det här underlaget: åldersgrupp kräver ålder, sektor och mellannivå AID-koder.
 function _guValbara() {
     const harAid = getData().some(r => r.aid);
-    return _guAllaVariabler().filter(v => (v !== 'alder' || harAlder()) && (!['sektor', 'aidniva'].includes(v) || harAid));
+    return gapAllaVariabler().filter(v => (v !== 'alder' || harAlder()) && (!['sektor', 'aidniva'].includes(v) || harAid));
 }
 const _GU_MAX = 4;
 function _guValHtml() {
@@ -50,9 +61,9 @@ function _guValHtml() {
     // Flytten prövas genom normaliseringen: AID-nivåerna står alltid grovt till fint, så en flytt förbi en annan
     // AID-nivå går inte och knappen är då avstängd.
     const kanFlytta = (i, steg) => { const j = i + steg; if (j < 0 || j >= val.length) return false;
-        const ny = [...val]; [ny[i], ny[j]] = [ny[j], ny[i]]; return _guNormaliseraVariabler(ny).variabler.join() !== val.join(); };
+        const ny = [...val]; [ny[i], ny[j]] = [ny[j], ny[i]]; return normaliseraGapVariabler(ny).variabler.join() !== val.join(); };
     const rad = (v, i) => {
-        const namn = esc(_guVariabelEtikett(v));
+        const namn = esc(gapVariabelEtikett(v));
         return `<li class="urval-rad" data-gu-rad="${v}"><label><input type="checkbox" data-gu-var="${v}" checked${val.length === 1 ? ' disabled title="Minst en variabel"' : ''}> <span class="gu-plats">${i + 1}.</span> ${namn}</label>
             <span class="urval-flytta"><button type="button" class="btn-table-tool" data-gu-flytta="-1" aria-label="Flytta upp: ${namn}"${kanFlytta(i, -1) ? '' : ' disabled'}>${ikon('pilUpp', 14)}</button>
             <button type="button" class="btn-table-tool" data-gu-flytta="1" aria-label="Flytta ned: ${namn}"${kanFlytta(i, 1) ? '' : ' disabled'}>${ikon('pilNed', 14)}</button></span></li>`;
@@ -62,8 +73,8 @@ function _guValHtml() {
     // (_guValOppen), så att fokus och skärmläsarens meddelande i _guAndra hamnar i en synlig lista.
     return `<details class="gu-andra"${_guValOppen ? ' open' : ''}><summary>Ändra uppdelning</summary><fieldset class="gu-val"><legend>Förklara med:</legend>
         <p class="gu-not" id="gu-val-hjalp">Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare. Välj en till fyra; AID-nivåerna ordnas alltid från grov till fin.</p>
-        <ol class="urval-lista gu-val-lista" aria-describedby="gu-val-hjalp">${val.map(rad).join('')}${ovriga.map(v => `<li class="urval-rad" data-gu-rad="${v}"><label><input type="checkbox" data-gu-var="${v}"${fler ? ' disabled title="Högst fyra variabler"' : ''}> ${esc(_guVariabelEtikett(v))}</label></li>`).join('')}</ol>
-        ${_guVariablerArStandard(val) ? '' : '<button type="button" class="btn btn-secondary btn-sm" data-gu-standard>Återställ standard (BAS, AID)</button>'}
+        <ol class="urval-lista gu-val-lista" aria-describedby="gu-val-hjalp">${val.map(rad).join('')}${ovriga.map(v => `<li class="urval-rad" data-gu-rad="${v}"><label><input type="checkbox" data-gu-var="${v}"${fler ? ' disabled title="Högst fyra variabler"' : ''}> ${esc(gapVariabelEtikett(v))}</label></li>`).join('')}</ol>
+        ${gapVariablerArStandard(val) ? '' : '<button type="button" class="btn btn-secondary btn-sm" data-gu-standard>Återställ standard (BAS, AID)</button>'}
     </fieldset></details>`;
 }
 let _guValOppen = false;
@@ -87,7 +98,7 @@ document.addEventListener('change', e => {
     const val = gapVariabler();
     const ny = el.checked ? [...val, v].slice(0, _GU_MAX) : val.filter(x => x !== v);
     if (!ny.length) { el.checked = true; return; }
-    _guAndra(ny, `[data-gu-var="${v}"]`, `Uppdelningen förklarar nu med ${_guVariablerIText(_guNormaliseraVariabler(ny).variabler)}.`);
+    _guAndra(ny, `[data-gu-var="${v}"]`, `Uppdelningen förklarar nu med ${gapVariablerIText(normaliseraGapVariabler(ny).variabler)}.`);
 });
 document.addEventListener('click', e => {
     const t = /** @type {HTMLElement} */ (e.target);
@@ -100,7 +111,7 @@ document.addEventListener('click', e => {
     const val = gapVariabler(), i = val.indexOf(/** @type {string} */ (v)), j = i + steg;
     if (i < 0 || j < 0 || j >= val.length) return;
     const ny = [...val]; [ny[i], ny[j]] = [ny[j], ny[i]];
-    _guAndra(ny, `[data-gu-rad="${v}"] [data-gu-flytta="${steg}"]`, `${_guVariabelEtikett(/** @type {string} */ (v))} flyttad ${steg < 0 ? 'upp' : 'ned'}. Ordningen är nu ${_guVariablerIText(_guNormaliseraVariabler(ny).variabler)}.`);
+    _guAndra(ny, `[data-gu-rad="${v}"] [data-gu-flytta="${steg}"]`, `${gapVariabelEtikett(/** @type {string} */ (v))} flyttad ${steg < 0 ? 'upp' : 'ned'}. Ordningen är nu ${gapVariablerIText(normaliseraGapVariabler(ny).variabler)}.`);
 });
 
 function _guKr(v, tecken = true) {
@@ -112,7 +123,7 @@ function _guPct(v, dec = 1) {
     return `${new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)}\u00a0%`;
 }
 
-function renderGapUppdelning() {
+export function renderGapUppdelning() {
     const host = document.getElementById('gap-uppdelning');
     const body = document.getElementById('gap-uppdelning-innehall');
     if (!host || !body) return;
@@ -122,7 +133,7 @@ function renderGapUppdelning() {
     const demo = state.isDemo ? '<p class="gu-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';
     const variabler = gapVariabler();
     /** @type {any} */
-    const u = _guGapUppdelning(d, { k: kTroskel(), variabler });
+    const u = gapUppdelning(d, { k: kTroskel(), variabler });
     if (!u) {
         body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>`;
         return;
@@ -130,7 +141,7 @@ function renderGapUppdelning() {
     const inledning = u.gap <= 0
         ? `Kvinnors medellön är <strong>${_guKr(-u.gap, false)}</strong> lägre än mäns, det är ${_guPct(-u.gapPct)} av mäns medellön.`
         : `Kvinnors medellön är <strong>${_guKr(u.gap, false)}</strong> högre än mäns, det är ${_guPct(u.gapPct)} av mäns medellön.`;
-    const kvot = _stKonsMedianer(d, { k: kTroskel() }).kvotPct;
+    const kvot = konsMedianer(d, { k: kTroskel() }).kvotPct;
     const medianText = kvot != null ? ` Kvinnors medianlön är ${_guPct(kvot)} av mäns.` : '';
     const delar = _guDelarMedAtgard(u.variabler || variabler);
     const max = Math.max(1, ...delar.map(x => Math.abs(u.delar[x.id])));
@@ -142,7 +153,7 @@ function renderGapUppdelning() {
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
         const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
             // Grupper som räknats samman (ADR-87) redovisas bara med antal — deras belopp kunde röja en liten grupp.
-            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${esc(_guOvrigaText(u.ovrigaAntal[del.id], kTroskel()))}</li>` : '');
+            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${esc(gapOvrigaText(u.ovrigaAntal[del.id], kTroskel()))}</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><svg class="gu-ruta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="2" fill="${farg}"/></svg><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
             <div class="gu-stapel" aria-hidden="true"><svg width="100%" height="10" focusable="false"><rect x="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" width="${bredd.toFixed(1)}%" height="10" rx="2" fill="${farg}"/></svg></div>
@@ -175,8 +186,8 @@ function _guAndel(u, v) {
     return a >= 0 && a <= 100 ? a : null;
 }
 function _guTrappaFigur(u) {
-    const variabler = u.variabler || _guStandardVariabler();
-    const delar = _guDelar(variabler);
+    const variabler = u.variabler || gapStandardVariabler();
+    const delar = gapDelar(variabler);
     const kategorier = [_GU_SERIE.helhet, ...delar.map(d => `${d.id}. ${d.namn}`)];
     const gap = Math.round(u.gap);
     // Från hela skillnaden dras delarna av en i taget: nivån efter den sista är noll.
@@ -203,7 +214,7 @@ function _guTrappaFigur(u) {
     // flyttas det i sidled, och med hela skillnaden först hamnar det då på nästa stapel). Bara delsummor och helheten.
     const nivaer = [0, u.gap, ...steg.map(s => s.efter)], lag = Math.min(...nivaer), hog = Math.max(...nivaer), luft = (hog - lag || 1) * 0.12;
     const delLager = (inom, serie, farg) => ({ marke: 'intervall', serie, farg, tjocklek: 44, data: steg.filter(s => s.inom === inom), tips });
-    return { beskrivning: `Skillnaden i medellön, kvinnor mot män: först hela skillnaden, ${_guKr(u.gap)}, och sedan ${antal} delar som tillsammans blir hela skillnaden, en i taget från hela skillnaden mot noll: ${_guDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
+    return { beskrivning: `Skillnaden i medellön, kvinnor mot män: först hela skillnaden, ${_guKr(u.gap)}, och sedan ${antal} delar som tillsammans blir hela skillnaden, en i taget från hela skillnaden mot noll: ${gapDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
         hojd: 320,
         x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true, ...(hog > lag ? { doman: [lag - luft, hog + luft] } : {}) },
         lager: [{ marke: 'intervall', serie: _GU_SERIE.helhet, farg: PALETTE.uppdelning.helhet, tjocklek: 44,

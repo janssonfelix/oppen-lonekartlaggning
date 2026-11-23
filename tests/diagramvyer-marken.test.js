@@ -662,10 +662,10 @@ describe('Likvärdigt arbete: krav mot lön', () => {
                         ...grupp('3200', 'B', 1, 13, 37000), ...grupp('4000', 'C', 3, 1, MARKOR)];
     it('grupperna: bara de som når tröskeln, dominans efter andel kvinnor, utan poäng efter BAS-intervall', () => {
         w.__d = data();
-        const u = w.eval('_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10 })');
+        const u = w.eval('kravGrupper(window.__d, { kvinnoThr: 60, k: 10 })');
         expect(u.medPoang).toBe(false);
         expect(u.grupper.map(g => [g.aid, g.dominans]).sort()).toEqual([['2000', 'kvinnodominerad'], ['2100', 'mansdominerad'], ['3000', 'kvinnodominerad'], ['3100', 'blandad'], ['3200', 'mansdominerad']]);
-        const f = w.eval('_lvKravFigur(_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10 }))');
+        const f = w.eval('_lvKravFigur(kravGrupper(window.__d, { kvinnoThr: 60, k: 10 }))');
         expect(f.x).toMatchObject({ skala: 'band', ordning: ['BAS A', 'BAS B'] });
         expect(f.lager.map(l => [l.marke, l.serie, l.symbol || null])).toEqual([['linje', 'Nivå per BAS-intervall', null],
             ['punkt', 'Kvinnodominerad', 'cirkel'], ['punkt', 'Mansdominerad', 'triangelHoger'], ['punkt', 'Blandad', 'cirkel']]);
@@ -680,18 +680,18 @@ describe('Likvärdigt arbete: krav mot lön', () => {
     it('med poängtabell: poängen på x-axeln, en rät trendlinje, och en grupp utan poäng placeras efter sitt BAS-intervall', () => {
         w.__d = data();
         w.__p = new Map([['2000|A', 200], ['2100|A', 220], ['3000|B', 300], ['3200|B', 340]]);   // 3100|B saknar poäng
-        const u = w.eval('_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p })');
+        const u = w.eval('kravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p })');
         expect(u.medPoang).toBe(true);
         const utan = u.grupper.find(g => g.aid === '3100');
         expect(utan).toMatchObject({ uppskattad: true, krav: 320 });                     // medianen av 300 och 340 i BAS B
         expect(u.utanPlats).toEqual([]);
-        const f = w.eval('_lvKravFigur(_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p }))');
+        const f = w.eval('_lvKravFigur(kravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p }))');
         expect(f.x).toMatchObject({ skala: 'linjar', titel: 'Arbetsvärderingspoäng' });
         expect(f.lager[0]).toMatchObject({ marke: 'linje', serie: 'Nivå efter kraven (trend)' });
         expect(f.lager[0].data.map(d => d.x)).toEqual([200, 340]);
         // Ingen värderad grupp i intervallet: gruppen går inte att placera.
         w.__p = new Map([['2000|A', 200], ['2100|A', 220]]);
-        const u2 = w.eval('_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p })');
+        const u2 = w.eval('kravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p })');
         expect(u2.grupper.map(g => g.aid).sort()).toEqual(['2000', '2100']);
         expect(u2.utanPlats.map(g => g.aid).sort()).toEqual(['3000', '3100', '3200']);
     });
@@ -874,7 +874,7 @@ describe('Ålder & karriär: histogram med kön mot kön', () => {
     it('varje klass rymmer minst tröskeln, ändarna slås ihop, och andelarna summerar till 100 % per kön', () => {
         w.__kv = [...Array.from({ length: 30 }, (_, i) => 30000 + i * 300), 61000];        // en ensam kvinna högt upp
         w.__ma = [...Array.from({ length: 30 }, (_, i) => 33000 + i * 300), 21000];        // en ensam man långt ned
-        const klasser = w.eval('_konHistogramKlasser(window.__kv, window.__ma, 10)');
+        const klasser = w.eval('histogramKlasser(window.__kv, window.__ma, 10)');
         expect(klasser.length).toBeGreaterThanOrEqual(3);
         expect(klasser.every(c => c.nKv + c.nMa >= 10)).toBe(true);
         expect(klasser[0].oppenNed).toBe(true);
@@ -890,9 +890,9 @@ describe('Ålder & karriär: histogram med kön mot kön', () => {
     });
     it('ett kön under tröskeln, eller löner som inte går att dela in: inga klasser', () => {
         w.__kv = [30000, 31000, 32000]; w.__ma = Array.from({ length: 30 }, (_, i) => 33000 + i * 300);
-        expect(w.eval('_konHistogramKlasser(window.__kv, window.__ma, 10)')).toBeNull();
+        expect(w.eval('histogramKlasser(window.__kv, window.__ma, 10)')).toBeNull();
         w.__kv = Array.from({ length: 10 }, () => 30000); w.__ma = Array.from({ length: 10 }, () => 30000);
-        expect(w.eval('_konHistogramKlasser(window.__kv, window.__ma, 10)')).toBeNull();
+        expect(w.eval('histogramKlasser(window.__kv, window.__ma, 10)')).toBeNull();
     });
 });
 
@@ -1412,7 +1412,7 @@ describe('kvantilpunkter: gruppen som lika stora andelar, aldrig individer', () 
         expect(prickar).toHaveLength(20);
         expect(el.querySelectorAll('[data-marke="individ"], [data-marke="avvikare"]')).toHaveLength(0);
         // Prickarnas kvantiler ligger inom min–max; skärmläget följer värdeaxeln (högre värde = högre upp).
-        const kp = w.eval('_figKvantilpunkter(window.__f.lager[0].data.map(d => d.y), 20)');
+        const kp = w.eval('kvantilpunkter(window.__f.lager[0].data.map(d => d.y), 20)');
         expect(kp.varden.every(v => v >= 20 && v <= 79)).toBe(true);
         // Ingen prick täcker en annan: två prickar i samma kolumn ligger minst en diameter isär i sidled.
         const pos = prickar.map(c => [Number(c.getAttribute('cx')), Number(c.getAttribute('cy')), Number(c.getAttribute('r'))]);

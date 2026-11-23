@@ -1,5 +1,16 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { kvartilfordelning } from '../lib/struktur.js';
+import { svPct, svTal } from '../lib/talformat.js';
+import { adjektiv, ordForAntal } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { kTroskel } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { getData } from './12-tillstand.js';
+import { likvardighetResultat, lvParAntal } from './34-likvardigt-arbete.js';
+import { _laSlutsats, laLikaGrupper } from './41-lika-arbete.js';
 
 // ---- § 8-ställning: bedömning per granskningsområde (in-memory) ----
 // § 8 del 1 (bestämmelser & praxis) är kvalitativ. Fliken ger vägledning per
@@ -38,7 +49,7 @@ function _setupBes8Assessment() {
 _setupBes8Assessment();
 
 /** Läser § 8-områdenas titel + bedömning + anteckning från DOM (sorterat). */
-function _bes8Areas() {
+export function _bes8Areas() {
     const out = [];
     document.querySelectorAll('[id^="bes8-status-"]').forEach(sel => {
         const n = sel.id.replace('bes8-status-', '');
@@ -52,7 +63,7 @@ function _bes8Areas() {
 // Utan den syns det först i Dokumentera att inget är ifyllt. Uppdateras när en bedömning ändras, när fliken visas,
 // när en konfigurationsfil lästs in och när allt rensats.
 const BES8_IKON = { 'Ingen risk identifierad': 'bock', 'Möjlig risk – utreds vidare': 'statusVarning', 'Åtgärd krävs': 'statusKritisk', 'Ej tillämplig': 'streck' };
-function bes8Uppdatera() {
+export function bes8Uppdatera() {
     const omraden = _bes8Areas();
     const antal = s => omraden.filter(a => a.status === s).length;
     const bedomda = omraden.filter(a => a.status).length, atgard = antal('Åtgärd krävs'), risk = antal('Möjlig risk – utreds vidare');
@@ -85,22 +96,22 @@ const BES8_STOD = {
         if (!lv || !Array.isArray(lv.pairs) || !d.length) return null;
         const { totalt, sakra } = lvParAntal(lv);
         return totalt ? `Likvärdigt arbete har ${svTal(totalt, 0)} par att titta närmare på, ${svTal(sakra, 0)} med säker skillnad.`
-            : `Likvärdigt arbete har inget par att titta närmare på: ${termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.jamforelse)} ${T.jamforelse.en} ligger högre.`;
+            : `Likvärdigt arbete har inget par att titta närmare på: ${adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.jamforelse)} ${T.jamforelse.en} ligger högre.`;
     },
     matrix(d) {
         const rader = laLikaGrupper(d).grupper.filter(g => !g.samladMedian);
         if (!rader.length) return null;
         const granska = rader.filter(g => g.flaggad).length;
-        return `Lika arbete har ${svTal(granska, 0)} av ${svTal(rader.length, 0)} ${termForAntal(rader.length, T.enhet)} i ${T.niva.en} att granska (statistiskt säkerställd skillnad, minst 3 %).`;
+        return `Lika arbete har ${svTal(granska, 0)} av ${svTal(rader.length, 0)} ${ordForAntal(rader.length, T.enhet)} i ${T.niva.en} att granska (statistiskt säkerställd skillnad, minst 3 %).`;
     },
     struktur(d) {
-        const q = _stKvartilfordelning(d, { k: kTroskel() }) || [];
+        const q = kvartilfordelning(d, { k: kTroskel() }) || [];
         if (!q.length || !q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) return null;
         return `I Lönestruktur är ${svPct(q[q.length - 1].andelKv, 0)} kvinnor i den högsta lönekvartilen och ${svPct(q[0].andelKv, 0)} i den lägsta.`;
     }
 };
 const BES8_STOD_FLIK = { likvardighet: 'Likvärdigt arbete', matrix: 'Lika arbete', struktur: 'Lönestruktur' };
-function bes8Stod() {
+export function bes8Stod() {
     const d = (() => { try { return getData(); } catch (_e) { return []; } })();
     document.querySelectorAll('.bes8-stod[data-stod]').forEach(el => {
         const li = /** @type {HTMLElement} */ (el), flik = li.dataset.stod || '';

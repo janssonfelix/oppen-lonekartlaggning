@@ -11,6 +11,10 @@
 // VIKTIGT: detta är en NATIONELL referens. Organisationens egen kvinnodominans räknas alltid
 // ur den inlästa personalfilen, och organisationens egen statistik (organisationspaketet)
 // har företräde framför referensen.
+import { skrDelText, skrKvinnoandel, skrKvinnoandelPrefix, skrReferensInfo } from '../lib/skrreferens.js';
+import { T } from './09-termer.js';
+import { state } from './12-tillstand.js';
+import { konsklassNu } from './45-aid-bas-tabeller.js';
 
 /**
  * Slår upp en AID-kod i SKR:s personalstatistik.
@@ -20,7 +24,7 @@
  * @returns {null | {kvAndel:number, klass:string, kalla:string, prefix:string, niva:string}}
  */
 /** Vilken del av SKR:s statistik som är referens: organisationstypen i profilen (ADR-34). */
-function _skrDel() {
+export function _skrDel() {
     const t = state.profile && state.profile.orgTyp;
     return t === 'kommun' || t === 'region' ? t : 'alla';
 }
@@ -34,22 +38,22 @@ function _skrPeriodText(period) {
     return namn && ar ? `${namn} ${ar}` : String(period || '');
 }
 /** Kort källtext: "SKR:s personalstatistik, november 2025". */
-function skrKallaKort() { return `SKR:s personalstatistik, ${_skrPeriodText(_skrReferensInfo().period)}`; }
+export function skrKallaKort() { return `SKR:s personalstatistik, ${_skrPeriodText(skrReferensInfo().period)}`; }
 /** Hela förklaringen, för tooltips och metodbilagan. */
-function skrForklaring() {
-    return `Nationell andel kvinnor per ${T.kod.en} i ${_skrDelText(_skrDel())}, ur ${skrKallaKort()} (SKR är Sveriges Kommuner och Regioner). `
+export function skrForklaring() {
+    return `Nationell andel kvinnor per ${T.kod.en} i ${skrDelText(_skrDel())}, ur ${skrKallaKort()} (SKR är Sveriges Kommuner och Regioner). `
         + 'Ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete när jämförelsestatistiken saknar könsfördelning. Valet kommun eller region görs under Inställningar.';
 }
 
-function nationellAidKlass(aid) {
+export function nationellAidKlass(aid) {
     if (!aid) return null;
     const s = String(aid).trim();
     const del = _skrDel();
-    const ref = /^\d{6}/.test(s) ? _skrKvinnoandel(s, { del }) : (/^\d{3}/.test(s) ? _skrKvinnoandelPrefix(s.slice(0, 3), { del }) : null);
+    const ref = /^\d{6}/.test(s) ? skrKvinnoandel(s, { del }) : (/^\d{3}/.test(s) ? skrKvinnoandelPrefix(s.slice(0, 3), { del }) : null);
     if (!ref) return null;
     const kvAndel = Math.round(ref.pct * 10) / 10;
     // Samma definition som resten av verktyget (ADR-60); likvärdighetsanalysen läser bara kvAndel.
     const kl = konsklassNu(kvAndel);
     const klass = kl === 'kvinnodominerad' ? 'kvinnodominerat' : kl === 'mansdominerad' ? 'icke-kvinnodominerat' : 'blandat';
-    return { kvAndel, klass, prefix: ref.prefix || s.slice(0, 3), niva: ref.niva, del: ref.del, kalla: _skrReferensInfo().kalla };
+    return { kvAndel, klass, prefix: ref.prefix || s.slice(0, 3), niva: ref.niva, del: ref.del, kalla: skrReferensInfo().kalla };
 }

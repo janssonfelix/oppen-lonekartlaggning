@@ -1,5 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { byggForhandskontroll, forhandskontrollGranser } from '../lib/forhandskontroll.js';
+import { personOrd } from '../lib/namn.js';
+import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { stor } from '../lib/termer.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { hideLoading, importprofilText } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { kInstalld } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { state } from './12-tillstand.js';
+import { _resetInactivityTimer } from './28-vad-lagras-inaktivitet.js';
+import { _kolumnval, dataStatus, maybeShowColumnMapping } from './32-filinlasning.js';
+import { _laNyckel } from './41-lika-arbete.js';
 
 // ---- Förhandskontroll av lönefilen ----
 // Avsnittet överst i Filer och kvalitet: hur den senast inlästa lönefilen tolkades — de tio första raderna med filens
@@ -13,15 +26,15 @@
 // och påverkas inte.
 
 /** Den fil som väntar på Läs in: { lasIn, tidigare } (tidigare: förhandskontrollen som gällde före), eller null. */
-let _fkVantar = /** @type {{lasIn: () => void, tidigare: any}|null} */ (null);
+export let _fkVantar = /** @type {{lasIn: () => void, tidigare: any}|null} */ (null);
 /** Förhandskontrollen som avsnittet senast ritades för: utfällt eller hopfällt sätts bara när en ny ritas. */
 let _fkRitad = /** @type {any} */ (null);
 const FK_MAX_KONVARDEN = 20;
 const FK_OVRIGA = '(övriga värden)';
-const FK_ROLLNAMN = { bas: 'BAS', yrke: termStor(T.enhet.en), lon: 'Lön', alder: 'Ålder', kon: 'Kön', poang: 'Poäng', ansvar: 'Ansvar' };
+const FK_ROLLNAMN = { bas: 'BAS', yrke: stor(T.enhet.en), lon: 'Lön', alder: 'Ålder', kon: 'Kön', poang: 'Poäng', ansvar: 'Ansvar' };
 
 /** Räknar ett värde i kön-kolumnen med verktygets tolkning (kvinna, man eller null). Högst 20 olika värden. */
-function _fkRaknaKon(karta, ra, tolkat) {
+export function _fkRaknaKon(karta, ra, tolkat) {
     const nyckel = String(ra ?? '').trim();
     const k = karta.has(nyckel) || karta.size < FK_MAX_KONVARDEN ? nyckel : FK_OVRIGA;
     const v = karta.get(k) || { 'rå': k, tolkat: k === FK_OVRIGA ? null : tolkat, antal: 0 };
@@ -34,10 +47,10 @@ function _fkRaknaKon(karta, ra, tolkat) {
  * delsträng); ansvarskoden bara om kolumnen godkändes.
  * @param {{forsta: any[], konVarden: Map<string, any>, parseStats: any, headers: string[], data: any[], filnamn?: string|null}} u
  */
-function _fkForFil({ forsta, konVarden, parseStats, headers, data, filnamn = null }) {
+export function _fkForFil({ forsta, konVarden, parseStats, headers, data, filnamn = null }) {
     const mappning = { ..._kolumnval(headers).eff, ansvar: state.ansvarKolumn ? state.ansvarKolumn.namn : null };
     const p = state.importprofil;
-    const fk = _fkBygg({ rader: forsta, data, konVarden: [...konVarden.values()], parseStats, headers, mappning,
+    const fk = byggForhandskontroll({ rader: forsta, data, konVarden: [...konVarden.values()], parseStats, headers, mappning,
         k: kInstalld(), profil: p ? { namn: p.namn, kalla: p.kalla } : null });
     // Raden om importprofilen räknas här, ur den här filens rubriker (en väntande fil är ännu inte den inlästa).
     if (fk.kolumner.profil) fk.kolumner.profil.text = importprofilText(p, headers);
@@ -54,7 +67,7 @@ function _fkNyckeltext(fk) {
 }
 
 /** Filen väntar på Läs in: förhandskontrollen visas med knapparna, och det tidigare underlaget ligger kvar. */
-function _fkPausa(fk, lasIn) {
+export function _fkPausa(fk, lasIn) {
     const tidigare = _fkVantar ? _fkVantar.tidigare : state.forhandskontroll;
     _fkVantar = { lasIn, tidigare };
     state.forhandskontroll = { ...fk, vantar: true };
@@ -72,7 +85,7 @@ function _fkPausa(fk, lasIn) {
     announceToScreenReader(dataStatus.textContent);
 }
 /** En fil som väntade på Läs in ersätts av en ny inläsning (32-filinlasning.js). */
-function _fkSlappVantande() { _fkVantar = null; }
+export function _fkSlappVantande() { _fkVantar = null; }
 /** Läs in: filen läses in som om inställningen vore av. */
 function _fkLasIn() {
     const v = _fkVantar;
@@ -95,7 +108,7 @@ function _fkAvbryt() {
     announceToScreenReader(dataStatus.textContent);
 }
 /** Rensa all data och en ny inläsning av demot: förhandskontrollen och en väntande fil släpps. */
-function _fkSlapp() {
+export function _fkSlapp() {
     _fkVantar = null;
     _fkRitad = null;
     state.forhandskontroll = null;
@@ -120,7 +133,7 @@ const _fkPrioritet = v => (v.niva === 'fel' || v.kod === 'yrke-namn' ? 'hög' : 
  * säger (FK_SAGS_AV) läggs inte till. Inga punkter medan filen väntar på Läs in eller när den inte lästes in.
  * @param {Set<string>} [befintliga] id för punkterna som redan står i listan
  */
-function _fkAttGora(befintliga = new Set()) {
+export function _fkAttGora(befintliga = new Set()) {
     const fk = state.forhandskontroll;
     if (!fk || fk.vantar || fk.ejInlast) return [];
     return fk.varningar.filter(v => !(FK_SAGS_AV[v.kod] || []).some(id => befintliga.has(id))).map(v => ({
@@ -136,7 +149,7 @@ function _fkAttGora(befintliga = new Set()) {
 }
 
 /** Raden i inläsningsrapporten: förhandskontrollens nyckeltal och länken till avsnittet. */
-function _fkRapportrad() {
+export function _fkRapportrad() {
     const fk = state.forhandskontroll;
     if (!fk || fk.vantar || fk.ejInlast) return '';
     const n = fk.varningar.length;
@@ -155,7 +168,7 @@ const _fkLista = (rader) => `<ul class="fk-lista">${rader.map(r => `<li>${r}</li
 const _fkKr = v => svKr(v);
 
 /** Ritar avsnittet Förhandskontroll av lönefilen ur state.forhandskontroll (dolt när den saknas). */
-function renderForhandskontroll() {
+export function renderForhandskontroll() {
     const av = /** @type {HTMLDetailsElement|null} */ (document.getElementById('avsnitt-fi-forhandskontroll'));
     const host = document.getElementById('forhandskontroll');
     if (!av || !host) return;
@@ -171,7 +184,7 @@ function renderForhandskontroll() {
     const n = fk.varningar.length, fel = fk.varningar.some(v => v.niva === 'fel');
     _laNyckel('nyckel-fi-forhandskontroll', _fkNyckeltext(fk), fk.ejInlast ? true : fk.vantar ? 'granska' : n ? (fel ? true : 'granska') : false);
     if (_fkRitad !== fk) { av.open = !!fk.vantar || !!fk.ejInlast || n > 0; _fkRitad = fk; }
-    const g = _fkGranser();
+    const g = forhandskontrollGranser();
     const roller = fk.tolkning.length ? Object.keys(fk.tolkning[0].celler) : ['bas', 'yrke', 'lon', 'kon'];
     const p = fk.kolumner.profil;
     const vantar = fk.vantar ? `<div class="fk-vantar">
@@ -201,7 +214,7 @@ function renderForhandskontroll() {
         `Kön-värden: ${kon || '–'}`,
         `Lön: lägst ${_fkKr(f.lon?.min)}, median ${_fkKr(f.lon?.median)}, högst ${_fkKr(f.lon?.max)} (en median över ${esc(svTal(g.arslonMedian, 0))} kr ser ut som årslön, under ${esc(svTal(g.timlonMedian, 0))} kr som timlön)`,
         `Ålder: ${f.alder ? `lägst ${esc(svTal(f.alder.min, 0))}, högst ${esc(svTal(f.alder.max, 0))} år; utanför ${g.alderMin}–${g.alderMax} år: ${esc(svTal(f.alder.utanfor, 0))}` : 'saknas i filen (valfri)'}`,
-        `${termStor(T.niva.fl)} med färre än ${esc(svTal(f.smaBas.k, 0))} ${personOrd(f.smaBas.k)}: ${f.smaBas.bas.length ? `${f.smaBas.bas.map(esc).join(', ')} (${esc(svPct(f.smaBas.andel * 100, 1))} av raderna)` : 'inga'}`,
+        `${stor(T.niva.fl)} med färre än ${esc(svTal(f.smaBas.k, 0))} ${personOrd(f.smaBas.k)}: ${f.smaBas.bas.length ? `${f.smaBas.bas.map(esc).join(', ')} (${esc(svPct(f.smaBas.andel * 100, 1))} av raderna)` : 'inga'}`,
     ]);
 
     const kol = fk.kolumner;

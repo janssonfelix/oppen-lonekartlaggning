@@ -5,6 +5,38 @@
 // Bedömningen (sakliga skäl) skrivs av verksamheten — här finns bara underlaget.
 // Blocken byggs i src/lib/rapportunderlag.js (_ru*); här hämtas resultaten ur de
 // befintliga analyserna och kopieringen till urklipp sköts.
+import { aidAvRad } from '../lib/aid.js';
+import { talformat } from '../lib/figur.js';
+import { gapUppdelning } from '../lib/gapuppdelning.js';
+import { arTal } from '../lib/htmltext.js';
+import { arKvinna } from '../lib/kon.js';
+import { arsbeloppMening } from '../lib/prioritering.js';
+import { arsjamforelseBlock, avsnittBlock, basintervallBlock, egenTabellBlock, gruppBlock, justeratGapInomYrke, parBlock, referenserBlock, tillText, tillWordHtml } from '../lib/rapportunderlag.js';
+import { sektorernasAndel, sektorsTabell } from '../lib/sektor.js';
+import { konsMedianerUrLoner, kvartilfordelning, representationPerBas } from '../lib/struktur.js';
+import { receptTillTabeller } from '../lib/tabellrecept.js';
+import { stor } from '../lib/termer.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
+import { _kSanktNot, _parForRedovisning, _parOverTroskel, kInstalld, kStampel, kTroskel, statGolv } from './06-k-troskel.js';
+import { _skrDel } from './06-kvinnoandel-referens.js';
+import { T } from './09-termer.js';
+import { _chartExportImage, diagramRitat, diagramTillBild } from './11-diagramexport.js';
+import { getData, state } from './12-tillstand.js';
+import { bedomningUnderlag } from './13-oversikt.js';
+import { medExportLage } from './23-exportgrind.js';
+import { renderTabContent } from './31-navigering.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
+import { laLikaGrupper } from './41-lika-arbete.js';
+import { referensOverblick } from './44-referensoverblick.js';
+import { aidbasDefinition, aidbasGrans, lvJamforelse } from './45-aid-bas-tabeller.js';
+import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _handlingsplanSeedRows, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
+import { gapVariabler } from './68-var-uppstar-gapet.js';
+import { arsjamforelse } from './73-arsbokslut.js';
+import { _gdBootstrapGapCI } from './80-gruppdossier.js';
+import { basdossierKandidater, basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, buildBasdossier } from './81-basdossier.js';
+import { _dkRitaTopp } from './85-robusthet-fardigcheck.js';
 
 // Förledet i id:t för blocken per AID-etikett i Lika arbete ("yrke:0"); en nyckel, inte text, så den byts inte med
 // termerna (ADR-74).
@@ -49,7 +81,7 @@ function _rapportunderlagBlockExport() {
 
     // Sammanfattning
     const kvLon = d.filter(arKv).map(r => r.lon), maLon = d.filter(arMa).map(r => r.lon);
-    const km = _stKonsMedianerUrLoner(kvLon, maLon);   // k prövas i avsnittet
+    const km = konsMedianerUrLoner(kvLon, maLon);   // k prövas i avsnittet
     const reg = runOLSRegression();
     const uk = bedomningUnderlag({ reg });
     const sammanfattning = {
@@ -70,8 +102,8 @@ function _rapportunderlagBlockExport() {
     const kravProxy = (lv && lv.diagnostik && lv.diagnostik.jämförelse && lv.diagnostik.jämförelse.kravProxy) || 'bas';
 
     // Struktur
-    const representation = (_stRepresentationPerBas(d, { k: kTroskel() }) || []).slice().sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));
-    const kvartiler = _stKvartilfordelning(d, { k: kTroskel() }) || [];
+    const representation = (representationPerBas(d, { k: kTroskel() }) || []).slice().sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));
+    const kvartiler = kvartilfordelning(d, { k: kTroskel() }) || [];
     _rapportParLage = { harPar: par.length > 0, exkluderade: parUtelamnade };
 
     // Handlingsplan — samma förifyllning som fliken (som redan utelämnar par under k)
@@ -84,54 +116,54 @@ function _rapportunderlagBlockExport() {
 
     /** @type {any[]} */
     const block = [
-        _ruAvsnittBlock('sammanfattning', sammanfattning, { ...opt, troskelNot: kStampel() }),
-        _ruAvsnittBlock('uppdelning', _guGapUppdelning(d, { k, variabler: gapVariabler() }), opt),   // valda variabler (ADR-65)
-        _ruAvsnittBlock('lika', lika, opt),
-        _ruAvsnittBlock('likvardigt', { par, exkluderade: parUtelamnade, kravProxy,
+        avsnittBlock('sammanfattning', sammanfattning, { ...opt, troskelNot: kStampel() }),
+        avsnittBlock('uppdelning', gapUppdelning(d, { k, variabler: gapVariabler() }), opt),   // valda variabler (ADR-65)
+        avsnittBlock('lika', lika, opt),
+        avsnittBlock('likvardigt', { par, exkluderade: parUtelamnade, kravProxy,
             kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), topN }, opt),
-        _ruAvsnittBlock('lagreKrav', {
+        avsnittBlock('lagreKrav', {
             par: ((lv && lv.lagreKrav) || []).filter(_parOverTroskel),
             exkluderade: ((lv && lv.lagreKrav) || []).filter(p => !_parOverTroskel(p)).length,
             kravProxy, topN }, opt),
-        _ruAvsnittBlock('struktur', { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
-        _ruAvsnittBlock('sektorer', { sektorer: _skSektorsTabell(d, { k, skrDel: _skrDel() }), andel: _skSektorernasAndel(d, { k }) }, opt),
-        _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0),
+        avsnittBlock('struktur', { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
+        avsnittBlock('sektorer', { sektorer: sektorsTabell(d, { k, skrDel: _skrDel() }), andel: sektorernasAndel(d, { k }) }, opt),
+        avsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0),
             summaReferens: hpRader.filter(r => r.underlag === HP_UNDERLAG_PRIO).reduce((s, r) => s + (r.kostnad || 0), 0),
             summaJamforelse: hpRader.filter(r => r.underlag === HP_UNDERLAG_PAR).reduce((s, r) => s + (r.kostnad || 0), 0),
             ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
     ];
     const referenser = referensOverblick();
     // Kolumnen Matchning bara när statistik finns, som i detaljlistan.
-    if (referenser) block.push(_ruReferenserBlock(referenser, { ...opt, harStatistik: state.statistik.length > 0 }));
+    if (referenser) block.push(referenserBlock(referenser, { ...opt, harStatistik: state.statistik.length > 0 }));
     lika.grupper.filter(g => g.flaggad).forEach((g, i) => {
         const rader = d.filter(r => aidAvRad(r) === g.aid && String(r.bas) === g.bas);   // gruppens rader: koden i BAS-intervallet, alla stavningar
         const ki = _gdBootstrapGapCI(rader.filter(arKv).map(r => r.lon), rader.filter(arMa).map(r => r.lon));
-        const arsbelopp = _prArsbeloppMening(g, state.costSettings, v => _figTalformat(v, 'kr'));
-        block.push(_ruGruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
+        const arsbelopp = arsbeloppMening(g, state.costSettings, v => talformat(v, 'kr'));
+        block.push(gruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: justeratGapInomYrke(rader, { k: statGolv() }), ki, arsbelopp }));
     });
-    par.forEach((p, i) => block.push(_ruParBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
+    par.forEach((p, i) => block.push(parBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
     // Jämförelsen med förra året (ADR-54), när ett bokslut är inläst.
-    if (typeof arsjamforelse === 'function' && typeof _ruArsjamforelseBlock === 'function') {
+    if (typeof arsjamforelse === 'function' && typeof arsjamforelseBlock === 'function') {
         const jf = arsjamforelse();
-        if (jf) block.push(_ruArsjamforelseBlock(jf.j, { ...opt, forraAr: jf.forra.ar, nuAr: jf.nu.ar }));
+        if (jf) block.push(arsjamforelseBlock(jf.j, { ...opt, forraAr: jf.forra.ar, nuAr: jf.nu.ar }));
     }
     // Per BAS-intervall: ett block per intervall som når k, med BAS-dossierns stycken (samma text som dossierns kopia,
     // rapportutkastet och rapportens avsnitt) och intervallets yrkesgruppstabell.
-    if (typeof basdossierKandidater === 'function' && typeof _ruBasintervallBlock === 'function') {
+    if (typeof basdossierKandidater === 'function' && typeof basintervallBlock === 'function') {
         for (const { bas } of basdossierKandidater()) {
             const bd = buildBasdossier(bas);
-            if (bd) block.push(_ruBasintervallBlock({ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd), bedomning: BD_BEDOMNING }, opt));
+            if (bd) block.push(basintervallBlock({ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd), bedomning: BD_BEDOMNING }, opt));
         }
     }
     // Egna tabeller (ADR-52): ett block per tabell, ur samma recept som Word-utkastet, PDF-rapporten och Excel.
     (state.rapportTabeller || []).forEach((r, i) => {
-        if (typeof _trTabeller !== 'function' || typeof _ruEgenTabellBlock !== 'function') return;
-        _trTabeller(d, r, { k }).forEach((t, j) => block.push(_ruEgenTabellBlock(t, { ...opt, id: `egen:${i}:${j}` })));
+        if (typeof receptTillTabeller !== 'function' || typeof egenTabellBlock !== 'function') return;
+        receptTillTabeller(d, r, { k }).forEach((t, j) => block.push(egenTabellBlock(t, { ...opt, id: `egen:${i}:${j}` })));
     });
     return block;
 }
 
-function renderRapportunderlag() {
+export function renderRapportunderlag() {
     const host = document.getElementById('rapportunderlag-innehall');
     if (!host) return;
     if (!getData().length) {
@@ -146,7 +178,7 @@ function renderRapportunderlag() {
     const grupp = (rubrik, lista) => lista.length
         ? `<h3 class="ru-grupprubrik">${esc(rubrik)}</h3>` + lista.map(b => `
             <article class="ru-block" id="${esc(_ruBlockId(b.id))}" data-block-id="${esc(b.id)}">
-                <div class="ru-innehall">${_ruTillWordHtml(b)}</div>
+                <div class="ru-innehall">${tillWordHtml(b)}</div>
                 <div class="ru-atgard">
                     <button type="button" class="btn btn-secondary btn-sm" data-rapport-kopiera="${esc(b.id)}">Kopiera</button>
                     <span class="ru-kvitto" role="status"></span>
@@ -171,15 +203,15 @@ function renderRapportunderlag() {
     const toc = (rubrik, lista) => lista.length
         ? `<li><strong>${esc(rubrik)}</strong>: ${lista.map(b => `<a href="#" data-hoppa-till="${esc(_ruBlockId(b.id))}">${esc(b.rubrik)}</a>`).join(' · ')}</li>` : '';
     const forteckning = `<nav class="ru-toc" aria-label="Innehåll i rapportunderlaget"><ul>`
-        + toc('Avsnitt', avsnitt) + toc(`Per ${T.niva.en}`, basBl) + toc(termStor(T.enhet.fl), yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
+        + toc('Avsnitt', avsnitt) + toc(`Per ${T.niva.en}`, basBl) + toc(stor(T.enhet.fl), yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
-    host.innerHTML = `<p class="ru-forbehall">${esc(ANSVARSFORBEHALL)}</p>` + forteckning + grupp('Avsnitt', avsnitt) + grupp(`Per ${T.niva.en}`, basBl) + grupp(`${termStor(T.enhet.fl)} i Lika arbete`, yrken)
+    host.innerHTML = `<p class="ru-forbehall">${esc(ANSVARSFORBEHALL)}</p>` + forteckning + grupp('Avsnitt', avsnitt) + grupp(`Per ${T.niva.en}`, basBl) + grupp(`${stor(T.enhet.fl)} i Lika arbete`, yrken)
         + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
     // Ett tal eller intervall står på en rad (95 % KI bröts annars på tre rader i en smal kolumn). Bara på skärmen:
     // urklippet byggs om ur blocket, utan klasser.
-    host.querySelectorAll('.ru-innehall td').forEach(td => { if (_cellArTal(td.textContent)) td.classList.add('ru-tal'); });
+    host.querySelectorAll('.ru-innehall td').forEach(td => { if (arTal(td.textContent)) td.classList.add('ru-tal'); });
 }
 
 // Blockets element-id för hopplänkar (block-id:n innehåller ':').
@@ -191,8 +223,8 @@ function kopieraRapportAvsnitt(...a) { return medExportLage(() => _kopieraRappor
 async function _kopieraRapportAvsnittExport() {
     const avsnitt = [..._rapportBlockSenast.values()].filter(b => !b.id.includes(':'));
     if (!avsnitt.length) return 'saknas';
-    const html = avsnitt.map(b => _ruTillWordHtml(b)).join('\n');
-    const text = avsnitt.map(b => _ruTillText(b)).join('\n\n');
+    const html = avsnitt.map(b => tillWordHtml(b)).join('\n');
+    const text = avsnitt.map(b => tillText(b)).join('\n\n');
     try {
         if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
             await navigator.clipboard.write([new ClipboardItem({
@@ -237,7 +269,7 @@ function kopieraRapportBlock(...a) { return medExportLage(() => _kopieraRapportB
 async function _kopieraRapportBlockExport(id) {
     const b = _rapportBlockSenast.get(id);
     if (!b) return 'saknas';
-    const html = _ruTillWordHtml(b), text = _ruTillText(b);
+    const html = tillWordHtml(b), text = tillText(b);
     try {
         if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
             await navigator.clipboard.write([new ClipboardItem({

@@ -314,7 +314,7 @@ describe('[C6] räkneexemplet i kronor per år bara när båda könen når trös
         expect(JSON.stringify(block)).not.toMatch(/8812\d/);
     });
     it('ingen mening när skillnaden är under 100 kr eller kvinnorna ligger högre', () => {
-        const w = fonster(), f = w.eval('_prArsbeloppMening'), kr = v => `${v} kr`;
+        const w = fonster(), f = w.eval('arsbeloppMening'), kr = v => `${v} kr`;
         expect(f({ medKv: 30000, medMa: 30040, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toBeNull();
         expect(f({ medKv: 31000, medMa: 30000, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toBeNull();
         expect(f({ medKv: 30000, medMa: 31000, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toMatch(/omkring 120000 kr per år/);

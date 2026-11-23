@@ -18,11 +18,23 @@
 // inte med i någon export (exporten ritas på nytt ur figuren) och sparas inte — den ligger i minnet och
 // försvinner med "Rensa all data". Det går bara att markera det som går att klicka på, alltså det som visas.
 // ====================================================================
+import { aidAvYrke } from '../lib/aid.js';
+import { personOrd } from '../lib/namn.js';
+import { artikel } from '../lib/termer.js';
+import { kInstalld } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { _rfMarkeraAlla, _rfPenselRensaAlla, _rfVisad } from './10-diagramritare.js';
+import { getData } from './12-tillstand.js';
+import { visningNy } from './23-exportgrind.js';
+import { renderExplorer } from './70-utforska.js';
+import { explorerSattUrval, explorerUrval } from './72-utforska-urval.js';
+import { gruppdossierCandidates, openGruppdossier } from './80-gruppdossier.js';
+import { basdossierKandidater, openBasdossier } from './81-basdossier.js';
 
 let _markering = [];   // de markerade gruppernas nycklar, i den ordning de markerades
 
 /** Fältet `markering` för en datapunkt: BAS-intervallet, och yrkesgruppen när `aid` är angiven. */
-function markeringFor(bas, aid) {
+export function markeringFor(bas, aid) {
     if (bas == null || bas === '') return [];
     const b = String(bas);
     if (aid == null || aid === '') return [`bas:${b}`];
@@ -30,7 +42,7 @@ function markeringFor(bas, aid) {
 }
 
 /** De markerade gruppernas nycklar, eller null när inget är markerat. */
-function diagramMarkering() { return _markering.length ? _markering.slice() : null; }
+export function diagramMarkering() { return _markering.length ? _markering.slice() : null; }
 
 // Hör en datapunkt (eller tabellrad) med de här nycklarna till någon av de markerade grupperna?
 function _mkTraff(nycklar, valda) {
@@ -59,7 +71,7 @@ function _mkEtikett(nyckel) {
  * markerade gruppen tar bort markeringen); med `lagg` läggs den till, eller tas bort om den redan är markerad.
  * `null` tar bort allt.
  */
-function sattDiagramMarkering(nyckel, { lagg = false } = {}) {
+export function sattDiagramMarkering(nyckel, { lagg = false } = {}) {
     if (typeof visningNy === 'function') visningNy();   // markeringen visas i alla flikar (ADR-81)
     if (!nyckel) _markering = [];
     else if (lagg) _markering = _markering.includes(nyckel) ? _markering.filter(k => k !== nyckel) : [..._markering, nyckel];
@@ -81,7 +93,7 @@ function _mkRadNycklar(tr) {
     return knapp ? markeringFor(knapp.getAttribute('data-bas'), knapp.getAttribute('data-yrke')) : null;
 }
 /** Framhäver tabellraderna för de markerade grupperna. Anropas när markeringen ändras och när en flik har ritats. */
-function _mkTabeller() {
+export function _mkTabeller() {
     const valda = _markering;
     for (const tr of document.querySelectorAll('tbody tr')) {
         const nycklar = _mkRadNycklar(tr);
@@ -104,7 +116,7 @@ document.addEventListener('click', e => {
  * data-markerad, övriga märken med en grupp tonas ned. Ett diagram där inget märke hör till markeringen lämnas
  * orört — det har inget att säga om gruppen. Märken utan grupp (linjer, band, referenser) rörs aldrig.
  */
-function _mkTillampa(el) {
+export function _mkTillampa(el) {
     const figur = el && el._figur ? _rfVisad(el) : null;   // figuren bilden är ritad ur (härledda lager omräknade)
     if (!figur || !el.querySelector) return;
     const vald = _markering.length ? _markering : null;
@@ -219,14 +231,14 @@ function nedborrningTillbaka() {
     if (nav) /** @type {HTMLElement} */ (nav).click(); else if (typeof renderExplorer === 'function') renderExplorer();
 }
 /** Glömmer vägen tillbaka ("Rensa all data"): det sparade urvalet namnger grupper. */
-function nedborrningGlom() { _mkTillbaka = null; _mkBorrRad(); }
+export function nedborrningGlom() { _mkTillbaka = null; _mkBorrRad(); }
 function _mkBorrRad() {
     const el = document.getElementById('explore-nedborrning');
     if (!el) return;
     el.textContent = '';
     el.hidden = !_mkTillbaka;
     if (!_mkTillbaka) return;
-    el.appendChild(document.createTextNode(`Du kom hit från BAS ${_mkTillbaka.bas}: urvalet är satt till ${termArtikel(T.niva, { bestamd: true })} ${T.niva.bf} och raderna till ${T.enhet.en} i ${T.niva.en}. `
+    el.appendChild(document.createTextNode(`Du kom hit från BAS ${_mkTillbaka.bas}: urvalet är satt till ${artikel(T.niva, { bestamd: true })} ${T.niva.bf} och raderna till ${T.enhet.en} i ${T.niva.en}. `
         + `Grupper med färre än ${kInstalld()} ${personOrd(kInstalld())} följer inte med i en export om du inte kryssar i rutan. `));
     const b = _mkKnapp('tillbaka', 'Tillbaka till föregående urval');
     b.addEventListener('click', nedborrningTillbaka);

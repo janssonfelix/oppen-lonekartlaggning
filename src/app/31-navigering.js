@@ -1,5 +1,42 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { announceToScreenReader, esc, stangAutofyll } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { navigateTo } from './05-tabeller-och-lankar.js';
+import { kInstalld } from './06-k-troskel.js';
+import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
+import { _mkTabeller, diagramMarkering } from './11-markering.js';
+import { getData, state } from './12-tillstand.js';
+import { populateSelects, renderFilerDelar, renderOversiktDelar, renderUnderlagetsKvalitet, updateCompliance, updateDashboardStats } from './13-oversikt.js';
+import { renderForhandskontroll } from './17-forhandskontroll.js';
+import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
+import { renderLikvardighet } from './34-likvardigt-arbete.js';
+import { renderForecast } from './36-loneoversyn.js';
+import { renderStructure, renderStrukturUtkast } from './37-struktur.js';
+import { synkaJamforelseFlik } from './38-referensfiler.js';
+import { generateRapport } from './39-loneoversikt.js';
+import { renderDemografi, renderKon } from './40-alder-karriar.js';
+import { generateEUDirectiveMatrix, generateSkevhet, renderLikaArbeteTopp, renderLonestrukturNycklar } from './41-lika-arbete.js';
+import { generateBenchmark, renderStatistikLage } from './42-jamforelse.js';
+import { renderPersonerAttGranska } from './43-personer-att-granska.js';
+import { renderReferensOverblick } from './44-referensoverblick.js';
+import { renderAidBasLika, renderAidBasLikvardigt } from './45-aid-bas-tabeller.js';
+import { harAlder } from './50-regressionsmodeller.js';
+import { renderBlinderOaxacaCard, renderRegressionCard, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { renderLifecycleAnalysis } from './52-livscykel.js';
+import { renderPrioritering } from './55-prioritering.js';
+import { renderHandlingsplanSeed } from './56-handlingsplan.js';
+import { renderExportBesked } from './59-exportbesked.js';
+import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
+import { renderInfoTab } from './65-om-verktyget.js';
+import { renderRapportunderlag } from './67-rapportunderlag.js';
+import { renderGapUppdelning } from './68-var-uppstar-gapet.js';
+import { renderExplorer } from './70-utforska.js';
+import { renderArsjamforelse } from './73-arsbokslut.js';
+import { utAllaDiagramVidRitning, utVisaUnderflikFor } from './74-alla-diagram.js';
+import { renderLonepolitik } from './75-lonepolitik.js';
+import { renderKvalitetssakring } from './85-robusthet-fardigcheck.js';
+import { sidindexBygg } from './89-sidindex.js';
 
 // ---- Tab Navigation ----
 // En låst flik är aria-disabled, inte disabled: knappen går att nå och klicka på, skärmläsaren hör den och skälet, och
@@ -13,7 +50,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
     });
 });
 /** Visar Filer och kvalitet, rullar fram filkortet `kortId`, ger dess filväljare fokus, markerar kortet en stund och läser upp `text`. */
-function _visaFilkortet(kortId, inputId, text) {
+export function _visaFilkortet(kortId, inputId, text) {
     const filer = document.querySelector('.nav-item[data-tab="filer"]');
     if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
     const kort = document.getElementById(kortId);
@@ -25,19 +62,19 @@ function _visaFilkortet(kortId, inputId, text) {
     announceToScreenReader(text);
 }
 /** En låst flik har klickats: visa lönefilskortet i Filer och kvalitet. */
-function visaLonefilskortet(flikNamn) {
+export function visaLonefilskortet(flikNamn) {
     _visaFilkortet('upload-cell-data', 'file-input-data',
         `${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här under Filer och kvalitet, så låses flikarna upp.`);
 }
 /** Lönefilen är inläst men Löneläget kräver en referens eller jämförelsestatistik (38-referensfiler.js): visa
  *  referenskortet (ställningstagandet, annars jämförelsestatistiken) i Filer och kvalitet. */
-function visaReferenskortet(namn) {
+export function visaReferenskortet(namn) {
     const policy = !!document.getElementById('upload-cell-policy');
     _visaFilkortet(policy ? 'upload-cell-policy' : 'upload-cell-stat', policy ? 'file-input-policy' : 'file-input-stat',
         `${namn ? namn + ' kräver en referens eller jämförelsestatistik. ' : ''}Läs in ett lönepolitiskt ställningstagande eller jämförelsestatistik här under Filer och kvalitet, så visas fliken Löneläget.`);
 }
 /** Ålder & karriär är låst för att lönefilen saknar ålder (ADR-64): visa lönefilskortet och säg varför. */
-function visaAlderskravet(flikNamn) {
+export function visaAlderskravet(flikNamn) {
     _visaFilkortet('upload-cell-data', 'file-input-data',
         `${flikNamn || 'Ålder & karriär'} kräver ålder i lönefilen. Lägg till en kolumn med ålder och läs in filen igen.`);
 }
@@ -118,7 +155,7 @@ let _nastaFlikbyte = null;
  * @param {{uppskjut?: boolean, efter?: (() => void)|null}} [val] uppskjut: visa fliken först och räkna den sedan;
  *   efter: körs när fliken är färdigritad (direkt efter ritningen när den inte skjuts upp)
  */
-function klickaFlik(nav, { uppskjut = false, efter = null } = {}) {
+export function klickaFlik(nav, { uppskjut = false, efter = null } = {}) {
     _nastaFlikbyte = { uppskjut, efter };
     try { /** @type {HTMLElement} */ (nav).click(); } finally { _nastaFlikbyte = null; }
 }
@@ -190,7 +227,7 @@ function _sammaFangst(f) {
     const nu = _blockFangst();
     return f.data === nu.data && f.k === nu.k && f.forhand === nu.forhand && f.val === nu.val;
 }
-function _aktivFlik() {
+export function _aktivFlik() {
     const a = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
     return a ? tabMal(a) : null;
 }
@@ -201,7 +238,7 @@ function _aktivFlik() {
  * @param {string[]} hostIds behållarna som blocket ritar i (platshållaren står i dem under väntan)
  * @param {() => void} fn ritar blocket
  */
-function _ritaTungtBlock(flik, hostIds, fn) {
+export function _ritaTungtBlock(flik, hostIds, fn) {
     const hosts = _ritasUppskjutet === flik && getData().length   // utan underlag finns inget att räkna
         ?/** @type {HTMLElement[]} */ (hostIds.map(id => document.getElementById(id)).filter(Boolean)) : [];
     if (!hosts.length) { fn(); return; }
@@ -324,7 +361,7 @@ function _efterRitning(flik) {
 // ---- Tabs ----
 // Sammanslagna flikar: en nav-knapp kan visa/rendera flera view-paneler.
 // Panelerna ligger redan i rätt DOM-ordning (skevhet före matrix, kon före livscykel).
-const PANEL_GROUPS = {
+export const PANEL_GROUPS = {
     matrix:      ['lika-yrken'],                       // Lika arbete: yrkesgrupperna, personer att granska, AID × BAS
     struktur:    ['struktur', 'skevhet', 'regression'], // Lönestruktur: fördelning, BAS-skevhet, vad som blir kvar (regression/Oaxaca)
     kon:         ['kon', 'demografi', 'livscykel'],  // Ålder & karriär: kurvor per kön, demografi, gap över karriären
@@ -333,8 +370,8 @@ const PANEL_GROUPS = {
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
 const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur', spara: 'arbetet' };
-function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
-function unlockTabs() {
+export function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
+export function unlockTabs() {
     ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -356,7 +393,7 @@ function unlockTabs() {
 // kon→kurvor+livscykel).
 // Länkade vyer (11-markering.js): när en flik har ritats om framhävs dess tabellrader för de markerade grupperna.
 // Ett uppskjutet flikbyte (flikbyte ovan) ritar här som alla andra; bara flikens tunga block väntar (_ritaTungtBlock).
-function renderTabContent(target) {
+export function renderTabContent(target) {
     const flik = tabMal(target), yttre = !_ritasNu.has(flik);
     _ritasNu.add(flik);
     // Varje yttersta ritning är en ny runda: block som väntar från en tidigare ritning av fliken ritar inget.
@@ -504,7 +541,7 @@ document.addEventListener('click', e => {
     if (!last) window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-function refreshCurrentTab() {
+export function refreshCurrentTab() {
     const active = document.querySelector('.nav-item.active');
     if (!active) return;
     const target = active.getAttribute('data-tab');
@@ -532,7 +569,7 @@ document.addEventListener('click', e => {
 });
 /** Fäller ut ett avsnitt som en länk leder till: elementet självt om det är ett hopfällt avsnitt, och varje hopfällt
  *  avsnitt det ligger i. Annars landar länken på en rubrik vars innehåll inte syns. */
-function oppnaHopfallda(el) {
+export function oppnaHopfallda(el) {
     if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(el);   // underfliken i Tabeller och egna vyer som avsnittet står i
     for (let n = el; n; n = n.parentElement) {
         if (n.tagName === 'DETAILS' && !(/** @type {HTMLDetailsElement} */ (n).open)) /** @type {HTMLDetailsElement} */ (n).open = true;
@@ -544,7 +581,7 @@ function oppnaHopfallda(el) {
 // av ett val i menyn, av Escape och av ett klick utanför. Fokus går till menyn när den öppnas och tillbaka till
 // knappen när den stängs. På bredare skärmar finns knappen inte, och koden gör ingenting.
 function menyOppen() { return document.body.classList.contains('meny-oppen'); }
-function sattMeny(oppen, { fokus = true } = {}) {
+export function sattMeny(oppen, { fokus = true } = {}) {
     const knapp = document.getElementById('btn-meny'), skugga = document.getElementById('meny-skugga');
     if (!knapp || oppen === menyOppen()) return;
     document.body.classList.toggle('meny-oppen', oppen);

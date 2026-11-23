@@ -1,7 +1,6 @@
 // ESLint flat config (ESLint 10) för Öppen lönekartläggning.
-// dist/app.js körs som klassisk browser-script (inga ES-moduler); src/lib/ är rena
-// ES-moduler; tester körs som ESM under Node/Vitest.
-// Kör linten med npm run lint (tools/lint.mjs): den lintar appen hopslagen men anger felen i src/app/NN-*.js.
+// src/app/ och src/lib/ är ES-moduler; appen byggs till ett klassiskt skript (dist/app.js), som inte lintas.
+// Tester körs som ESM under Node/Vitest.
 import globals from 'globals';
 
 const browserLibs = {
@@ -41,7 +40,7 @@ const natOchLagring = {
 export default [
     {
         ignores: [
-            'dist/oppen-lonekartlaggning.html',
+            'dist/**',
             'vendor/**',
             '*.min.js',
             'node_modules/**',
@@ -49,16 +48,15 @@ export default [
         ]
     },
     {
-        files: ['dist/app.js'],
+        files: ['src/app/**/*.js'],
         languageOptions: {
             ecmaVersion: 2022,
-            sourceType: 'script',
+            sourceType: 'module',
             globals: browserLibs
         },
         rules: {
             'no-undef': 'error',
             'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
-            'no-implicit-globals': 'off', // dist/app.js definierar globaler avsiktligt
             'no-constant-condition': ['error', { checkLoops: false }],
             'no-dupe-keys': 'error',
             'no-unreachable': 'error',
@@ -90,8 +88,7 @@ export default [
         }
     },
     {
-        // Bygg- och generatorskripten producerar den skeppade artefakten och var
-        // tidigare helt olintade (npm run lint tog bara app.js, lib och tests — nu dist/app.js, src/lib och tests).
+        // Bygg- och generatorskripten producerar den skeppade artefakten.
         files: ['tools/**/*.mjs'],
         languageOptions: {
             ecmaVersion: 2022,

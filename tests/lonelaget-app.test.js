@@ -194,10 +194,10 @@ describe('överblicken i exporterna', () => {
         const b = w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser');
         expect(b.tabell.rubriker.slice(0, 3)).toEqual(['AID-etikett', 'Matchning', 'n']);
         const grupper = w.eval('medExportLage(() => referensOverblick())').grupper;
-        expect(b.tabell.rader.map(r => r[1])).toEqual(grupper.map(g => w.eval('_jfMatchningEtikett')(g.statistikMatchning)));
+        expect(b.tabell.rader.map(r => r[1])).toEqual(grupper.map(g => w.eval('matchningEtikett')(g.statistikMatchning)));
         expect(new Set(b.tabell.rader.map(r => r[1]))).toEqual(new Set(['AID + BAS', 'Endast AID']));
         for (const r of b.tabell.rader) expect(r).toHaveLength(b.tabell.rubriker.length);
-        expect(w.eval('_ruTillWordHtml')(b)).toContain('<th>Matchning</th>');
+        expect(w.eval('tillWordHtml')(b)).toContain('<th>Matchning</th>');
     });
     it('utskriften tar med listan ur överblicken före avsnittet mot statistiken', () => {
         const w = fonster(); medStatistik(w);
@@ -265,7 +265,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
     it('[B6.6] en punkt per yrkesgrupp med P10 och P90: läget 0 = P10, 100 = P90; fylld = AID + BAS, ofylld = Endast AID', () => {
         const w = medBlandad();
         const rader = w.eval('jamforelseUnderlag()').rader, f = el(w, 'chart-jmf-statlage')._figur;
-        expect(() => w.eval('_figValidera')(f, 't')).not.toThrow();
+        expect(() => w.eval('valideraFigur')(f, 't')).not.toThrow();
         const pts = punkter(f);
         const medSpann = rader.filter(r => r.statistik.p10 !== null && r.statistik.p90 !== null);
         expect(pts).toHaveLength(medSpann.length);

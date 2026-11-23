@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Word-utkast: hela dokumentationen som redigerbar .doc ----
+import { docxDelar } from '../lib/docx.js';
+import { idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
+import { _kSidfot } from './06-k-troskel.js';
+import { getData, state } from './12-tillstand.js';
+import { medExportLage } from './23-exportgrind.js';
+import { rapportModell, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
 
 /**
  * Bygger dokumentationsutkastets HTML-kropp (testbar; ren av nedladdning).
@@ -91,13 +97,13 @@ async function _utkastFyllBilder(block) {
 }
 
 /** Bygger Word-utkastet som .docx: filen som Blob och dess namn. Används av knappen och av ZIP-exporten. */
-async function byggWordUtkast() {
+export async function byggWordUtkast() {
     if (typeof JSZip === 'undefined') throw new Error('zip-biblioteket saknas');
     const year = new Date().getFullYear();
     const stamp = idagDatum();
     const demo = state.isDemo;
     const { block } = await _utkastFyllBilder(_utkastTillBlock(_buildDocumentationDraftHtml()));
-    const delar = _docxDelar(block, {
+    const delar = docxDelar(block, {
         titel: `Lönekartläggning ${year} — dokumentation (utkast)`,
         sidfot: _kSidfot(`Lönekartläggning ${year} — ${demo ? 'DEMODATA, UTKAST' : 'UTKAST'}`),
         skapad: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),

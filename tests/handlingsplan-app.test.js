@@ -297,7 +297,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
         expect(pr.tabell.textContent).not.toMatch(/undefined|null/);
         const t = atgardsTabell(w), j = t.kolumner.findIndex(c => c.rubrik === 'Kostnaden avser');
         expect(w.eval('rmCell')(t.rader[0][j], t.kolumner[j].typ)).toBe('');
-        const ru = w.eval('_ruAvsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanSeedRows().rows)') }, { k: 10 });
+        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanSeedRows().rows)') }, { k: 10 });
         expect(ru.tabell.rader[0][ru.tabell.rubriker.indexOf('Kostnaden avser')]).toBe('');
         expect(JSON.stringify(ru.tabell)).not.toMatch(/undefined|null/);
     });

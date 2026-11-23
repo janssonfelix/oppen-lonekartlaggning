@@ -347,7 +347,7 @@ describe('panelen: Sakliga skäl per kategori', () => {
         forra.bedomningar = forra.bedomningar.map(b => ({ ...b, skal: b.skal.map(s => ({ ...s, belopp: s.belopp + 100 })) }));
         forra.bedomningar.push({ ...forra.bedomningar[0], nyckel: 'prio|9999|Z', grupp: 'Bortflyttad grupp' });
         w.__forra = andra(forra);
-        w.eval('state.forraArsbokslut = _abValidera(window.__forra)');
+        w.eval('state.forraArsbokslut = valideraArsbokslut(window.__forra)');
         w.__renderTabContent('arbetet');
         return { w, nu, host: w.document.getElementById('arsjamforelse') };
     };

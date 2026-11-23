@@ -65,7 +65,7 @@ beforeAll(() => {
         __appVersion: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : ''),
         __XLSX: XLSX,
         __docDraftHtml: _buildDocumentationDraftHtml,
-        __docxDocumentXml: () => _docxDelar(_utkastTillBlock(_buildDocumentationDraftHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
+        __docxDocumentXml: () => docxDelar(_utkastTillBlock(_buildDocumentationDraftHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
         __buildPrintReport: buildPrintReport,
         __excelBlad: () => ({ besked: excelAlltBlad(), bok: _excelAlltBok().SheetNames }),
         __loadFixture: function(utanAlder) {

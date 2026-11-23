@@ -42,7 +42,7 @@ const _IKON = {
     statusIngen:   '<circle cx="12" cy="12" r="8"/>'
 };
 /** En linjeikon som HTML-text. Dekoration: aria-hidden, och betydelsen ska stå i texten bredvid. */
-function ikon(namn, storlek = 16) {
+export function ikon(namn, storlek = 16) {
     const inre = _IKON[namn];
     if (!inre) return '';
     return `<svg class="ikon ikon-${namn}" width="${storlek}" height="${storlek}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${inre}</svg>`;

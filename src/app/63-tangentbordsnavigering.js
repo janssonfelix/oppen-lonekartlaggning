@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { klickaFlik, PANEL_GROUPS } from './31-navigering.js';
 
 // ---- A11y: Sidopanels-NAVIGATION ----
 // Sidopanelen är PRIMÄR navigation, inte ett ARIA-tabs-widget: <nav> ger
@@ -8,7 +9,7 @@
 // med den hopfällbara sekundärgruppens disclosure-knapp — aria-required-children,
 // ADR-10 — eftersom en tablist bara får innehålla role="tab"-barn.) Alla nav-knappar
 // ligger i naturlig Tab-ordning; pil-/Home/End-tangenter behålls som tillägg.
-function setupTabA11y() {
+export function setupTabA11y() {
     const tabs = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.nav-item')]);
     const syncCurrent = () => tabs.forEach(t => {
         if (t.classList.contains('active')) t.setAttribute('aria-current', 'page');
@@ -71,7 +72,7 @@ function setupTabA11y() {
  *
  * @param {HTMLElement[]} buttons - knapparna i tablisten, i DOM-ordning.
  */
-function _wireTablistKeys(buttons) {
+export function _wireTablistKeys(buttons) {
     if (!Array.isArray(buttons) || buttons.length < 2) return;
     // Endast den aktiva knappen ligger i Tab-ordningen. `fallback` används när
     // ingen knapp hunnit bli aktiv (t.ex. benchmark innan data är inläst).

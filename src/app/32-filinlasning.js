@@ -1,12 +1,46 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { tolkaAnsvarskod } from '../lib/ansvar.js';
+import { forhandskontrollGranser } from '../lib/forhandskontroll.js';
+import { matchaImportprofil, profilFranMappning, valideraImportprofiler } from '../lib/importprofiler.js';
+import { _avkodaCsv, _bedomAnsvarKolumn, _faltIRad, _gissaTabellformat, _hittaCsvRubrik, _pnrSampelSteg, delaRader, gissaKolumnmappning, hittaKansligaKolumner, rubrikgrupper, sallsyntaNamnrader, yrkeNamnNyckel } from '../lib/inlasning.js';
+import { filStorlekFel } from '../lib/installningsgranser.js';
+import { arKvinna, arMan } from '../lib/kon.js';
+import { tolkaPaket } from '../lib/organisationspaket.js';
+import { ordForAntal, stor } from '../lib/termer.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { _importprofilFor, _importprofilKalla, _importprofilLista, hideLoading, importprofilText, showLoading } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _hittaAnsvarKolumn, _lonefilensRubriker, extractMinimalRecord } from './06-uppgiftsminimering.js';
+import { _kopplaNamnFalt, applyProfileLabels, DEFAULT_PROFILE, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { _rfUrvalGlom } from './10-diagramritare.js';
+import { aterstallReferens, getBasIntervals, state } from './12-tillstand.js';
+import { computeBootstrapCI, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, updateCompliance, updateDashboardStats } from './13-oversikt.js';
+import { renderOutliers } from './15-extremvarden-basrang.js';
+import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
+import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, renderForhandskontroll } from './17-forhandskontroll.js';
+import { renderActionChecklist } from './18-atgardslista.js';
+import { _renderDemoBanner } from './20-demodata-diagnostik.js';
+import { visningNy } from './23-exportgrind.js';
+import { updateGdprBanner } from './25-dataskyddsinfo.js';
+import { _resetInactivityTimer } from './28-vad-lagras-inaktivitet.js';
+import { _paketFilnamn, _synkaOrgTyp, _tomStatistik, skapaPaketMedImportprofil } from './29-organisationspaket.js';
+import { _aktivFlik, _visaFilkortet, unlockTabs } from './31-navigering.js';
+import { _fcGlomKnappresultat, _fcRensaParMal } from './36-loneoversyn.js';
+import { renderReferensKort } from './38-referensfiler.js';
+import { generateRapport } from './39-loneoversikt.js';
+import { renderKon } from './40-alder-karriar.js';
+import { generateSkevhet } from './41-lika-arbete.js';
+import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _hpRensaDemoSkal } from './56-handlingsplan.js';
 
 // ---- File Upload: Struktur CSV ----
 // Radnummer i källfilen (Excel-numrering) på varje rårad — en Symbol, så att
 // PII-detektorn och getField inte ser den som en kolumn.
 const _RADNR = Symbol('radnr');
 const dataInput  = document.getElementById("file-input-data");
-const dataStatus = /** @type {HTMLElement} */ (document.getElementById("data-status"));
+export const dataStatus = /** @type {HTMLElement} */ (document.getElementById("data-status"));
 
 function setupDrop(dropId, inputId) {
     const drop = document.getElementById(dropId);
@@ -57,7 +91,7 @@ function _renderSensitiveRejection(sensitive) {
 // en del av samma fil som BAS, INTE en separat uppladdning. Bygger samma
 // interna struktur som § 3:10-motorn alltid använt: Map "aid|bas" → poäng.
 // Returnerar antal befattningar med poäng (0 = ingen kolumn → BAS-rank-proxy).
-function _deriveArbetsvarderingFromData() {
+export function _deriveArbetsvarderingFromData() {
     const byKey = new Map();
     let count = 0;
     for (const r of state.data) {
@@ -122,7 +156,7 @@ function _afterDataLoaded() {
     renderDataValidationReport();
     renderForhandskontroll();
     syncDatakvalitetPanel({ reg });
-    announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
+    announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
     hideLoading();
 
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden
@@ -210,7 +244,7 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
     // Rubrikradssökning (max 20 rader)
     let hdrIdx = 0, bestHits = -1;
     for (let i = 0; i < Math.min(20, grid.length); i++) {
-        if (profiler.length && _ipMatcha((grid[i] || []).map(c => String(c ?? '').trim()), profiler)) { hdrIdx = i; bestHits = synonymGroups.length; break; }
+        if (profiler.length && matchaImportprofil((grid[i] || []).map(c => String(c ?? '').trim()), profiler)) { hdrIdx = i; bestHits = synonymGroups.length; break; }
         const cells = (grid[i] || []).map(c =>
             String(c ?? '').toLowerCase().replace(/[^a-z0-9]/g, ''));
         let hits = 0;
@@ -262,13 +296,13 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
  *             | {ok:false, error:string}) => void} utfall
  * @param {'stallningstagande'|'jamforelsestatistik'} typ - filtypen, som bestämmer storleksgränsen (FIL_MAX)
  */
-function readTabularFile(file, synonymGroups, utfall, typ) {
+export function readTabularFile(file, synonymGroups, utfall, typ) {
     // En fil som blivit läst kan ändra det som visas, hur det än gick: ingen ritad flik visas igen som den är (ADR-81).
     /** @type {typeof utfall} */
     const callback = res => { try { utfall(res); } finally { visningNy(); } };
     if (!file) { callback({ ok: false, error: 'Ingen fil vald.' }); return; }
     // Storleken prövas innan filen läses eller tolkas.
-    const storlekFel = _igFilFel(file.size, typ);
+    const storlekFel = filStorlekFel(file.size, typ);
     if (storlekFel) { callback({ ok: false, error: storlekFel }); return; }
     const reader = new FileReader();
     reader.onerror = () => callback({ ok: false, error: 'Kunde inte läsa filen.' });
@@ -288,7 +322,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
             const dec = _avkodaCsv(buf);
             const hdr = _hittaCsvRubrik(dec.text, synonymGroups);
             const csvText = hdr.line > 0
-                ? _delaRader(dec.text).slice(hdr.line).join('\n')
+                ? delaRader(dec.text).slice(hdr.line).join('\n')
                 : dec.text;
             const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true, delimiter: hdr.delim });
             const rows = (parsed.data || []).filter(r => r && typeof r === 'object');
@@ -310,7 +344,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
 function loadStructureFile(file) {
     if (!file) return;
     // Storleken prövas innan filen läses eller tolkas: en för stor fil lämnar det som var inläst orört.
-    const storlekFel = _igFilFel(file.size, 'lonefil');
+    const storlekFel = filStorlekFel(file.size, 'lonefil');
     if (storlekFel) { dataStatus.textContent = storlekFel; dataStatus.className = 'status-msg'; return; }
     const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
@@ -360,14 +394,14 @@ function loadStructureFile(file) {
     // (yrkets råvärde sparas inte), och kön-kolumnens värden med antal. Bara i minnet; släpps i finishLoad.
     const fkForsta = [];
     const fkKon = new Map();
-    const FK_RADER = _fkGranser().antalRader;
+    const FK_RADER = forhandskontrollGranser().antalRader;
     // Personnamn i fältet för AID-etikett: under inläsningen en räknare per text med namnmönster (yrkeNamnNyckel: texten
     // efter AID-koden i gemener) med antal och de första radnumren. Den töms i _namnTillStats när filen är läst, och när
     // filen avvisas eller inte går att läsa; kvar i parseStats blir bara antalet misstänkta rader och radnumren.
     const namnRaknare = new Map();
-    const NAMN_RADNR = _fkGranser().namnRadnr;
+    const NAMN_RADNR = forhandskontrollGranser().namnRadnr;
     const _namnTillStats = () => {
-        const s = _ilSallsyntaNamnrader(namnRaknare, NAMN_RADNR);
+        const s = sallsyntaNamnrader(namnRaknare, NAMN_RADNR);
         parseStats.yrkeNamn = s.antal;
         parseStats.yrkeNamnRadnr = s.radnr;
         namnRaknare.clear();
@@ -424,7 +458,7 @@ function loadStructureFile(file) {
         // Personnamn i fältet för AID-etikett: råvärdet (före maskering och kortning) prövas på varje rad i filen, också
         // en rad som sedan faller bort. En text med namnmönster räknas i den tillfälliga räknaren; vilka som är sällsynta
         // nog att varna för avgörs när hela filen är läst (_namnTillStats).
-        const namnNyckel = _ilYrkeNamnNyckel(falt('yrke'));
+        const namnNyckel = yrkeNamnNyckel(falt('yrke'));
         if (namnNyckel) {
             const v = namnRaknare.get(namnNyckel) || { antal: 0, radnr: [] };
             v.antal++;
@@ -451,7 +485,7 @@ function loadStructureFile(file) {
                 tolkat: { bas: rec.bas, yrke: rec.yrke, lon: rec.lon, alder: rec.alder, kon: rec.kon, poang: rec.poang, ansvar: rec.ansvarsgrupp },
                 status: { lon: rec._lonStatus, alder: rec._alderStatus,
                           poang: String(poangRa ?? '').trim() === '' ? 'empty' : rec.poang == null ? 'invalid' : 'ok',
-                          ansvar: String(ansvarRa ?? '').trim() === '' ? 'empty' : _anTolka(ansvarRa) === null ? 'invalid' : 'ok' }
+                          ansvar: String(ansvarRa ?? '').trim() === '' ? 'empty' : tolkaAnsvarskod(ansvarRa) === null ? 'invalid' : 'ok' }
             };
             fkForsta.push(fkRad);
         }
@@ -491,7 +525,7 @@ function loadStructureFile(file) {
                 state.ansvarKolumn = { namn: b.namn, giltiga: b.giltiga };
                 const antal = g => parsed.filter(r => r.ansvarsgrupp === g).length;
                 ansvarNot = ` · ansvarskod: ${antal('ledning')} med ledningsansvar, ${antal('uppdrag')} med särskilt uppdrag`;
-                const ogiltiga = ansvarVarden.filter(v => String(v ?? '').trim() !== '' && _anTolka(v) === null).length;
+                const ogiltiga = ansvarVarden.filter(v => String(v ?? '').trim() !== '' && tolkaAnsvarskod(v) === null).length;
                 if (ogiltiga) ansvarNot += `; ${ogiltiga} ${ogiltiga === 1 ? 'ogiltigt värde räknades' : 'ogiltiga värden räknades'} som inget särskilt ansvar`;
             } else {
                 parsed.forEach(r => { r.ansvarskoder = null; r.ansvarsgrupp = null; });
@@ -587,7 +621,7 @@ function loadStructureFile(file) {
           // Excel-väg: hela bladet läses (kan inte strömmas), därefter exakt
           // samma pipeline som CSV — PII-detektering på sample, sedan processRow.
           let x;
-          try { x = _xlsxToObjects(/** @type {ArrayBuffer} */ (buf), _ilRubrikgrupper(), 2, _importprofilLista()); }
+          try { x = _xlsxToObjects(/** @type {ArrayBuffer} */ (buf), rubrikgrupper(), 2, _importprofilLista()); }
           catch (err) { failLoad('Kunde inte läsa Excel-filen: ' + err.message); return; }
           capturedHeaders = x.headers.filter(h => h);
           valjImportprofil(capturedHeaders);
@@ -602,13 +636,13 @@ function loadStructureFile(file) {
       // Text-/CSV-väg: avkoda → hitta rubrikrad (preamble-tolerant) → strömma.
       const _dec = _avkodaCsv(buf);
       detectedEnc = _dec.encoding;
-      const hdrInfo = _hittaCsvRubrik(_dec.text, _ilRubrikgrupper(), 2, _importprofilLista());
+      const hdrInfo = _hittaCsvRubrik(_dec.text, rubrikgrupper(), 2, _importprofilLista());
       detectedDelim = hdrInfo.delim || ';';
       // Filen delas i rader en gång: försättsraderna före rubriken tas bort, och filens
       // radnummer för varje datarad räknas ur samma rader. Papa hoppar över tomma rader
       // (skipEmptyLines), så listan byggs med samma regel. Citerade fält med
       // radbrytning förskjuter numreringen (accepterad begränsning, ADR-23).
-      const linjer = _delaRader(_dec.text).slice(hdrInfo.line);
+      const linjer = delaRader(_dec.text).slice(hdrInfo.line);
       const csvText = linjer.join('\n');
       const radLista = [];
       for (let j = 1; j < linjer.length; j++) if (linjer[j] !== '') radLista.push(hdrInfo.line + j + 1);
@@ -666,10 +700,10 @@ function _beskedEfterOversikt(franOversikt) {
 // #11: Kolumnmappnings-guide. Visas efter inläsning om en obligatorisk roll
 // inte kunde auto-matchas mot någon CSV-rubrik (olika personalsystem döper
 // kolumner olika). Låter användaren peka ut rätt kolumn och läsa in igen.
-const COLMAP_ROLES = [
-    { role: 'bas',    label: termStor(T.niva.en), required: true },
+export const COLMAP_ROLES = [
+    { role: 'bas',    label: stor(T.niva.en), required: true },
     // Fältet är AID-etiketten; kolumnen i lönefilen heter ofta något annat, och tipset säger det.
-    { role: 'yrke',   label: termStor(T.enhet.en), required: true, tips: 'i lönefilen ofta Yrke eller Befattning' },
+    { role: 'yrke',   label: stor(T.enhet.en), required: true, tips: 'i lönefilen ofta Yrke eller Befattning' },
     { role: 'lon',    label: 'Månadslön', required: true },
     { role: 'alder',  label: 'Ålder', required: false },   // valfri men rekommenderad (ADR-64)
     { role: 'kon',    label: 'Kön', required: true },
@@ -680,7 +714,7 @@ const COLMAP_ROLES = [
  * Vilka värden kolumnmappningen har för varje roll: det användaren valt, annars importprofilen som gäller för
  * rubrikerna (organisationspaketets, konfigurationsfilens, de inbyggda), annars det som känns igen på delsträng.
  */
-function _kolumnval(headers) {
+export function _kolumnval(headers) {
     const auto = gissaKolumnmappning(headers), eff = {};
     const profil = _importprofilFor(headers);
     const prof = profil ? profil.mappning : {};
@@ -704,7 +738,7 @@ const IMPORTPROFIL_NAMNFEL = 'Profilen sparades inte: namnet ska vara högst 80 
 /** Den gjorda mappningen som profil (källan konfiguration), eller null när den inte går att spara. */
 function _profilUrMappning(namn) {
     const headers = state._dataHeaders || [];
-    return _ipFranMappning({ namn, kalla: 'konfiguration', mappning: _kolumnval(headers).eff, rubriker: headers });
+    return profilFranMappning({ namn, kalla: 'konfiguration', mappning: _kolumnval(headers).eff, rubriker: headers });
 }
 /** En sparad profil med samma rubriker som den gjorda mappningen, eller null. */
 function _sparadProfilForMappning() {
@@ -722,7 +756,7 @@ function sparaImportprofil(namn) {
     if (!p) return { ok: false, fel: IMPORTPROFIL_NAMNFEL };
     const ovriga = (state.importprofiler || []).filter(x => !(x.kalla === 'konfiguration' && x.id === p.id));
     const egna = ovriga.filter(x => x.kalla === 'konfiguration');
-    const kontroll = _ipValideraLista([...egna, p], { kalla: 'konfiguration' });
+    const kontroll = valideraImportprofiler([...egna, p], { kalla: 'konfiguration' });
     if (kontroll.fel) return { ok: false, fel: `Profilen sparades inte: ${kontroll.fel} Ta bort någon i Inställningar först.` };
     state.importprofiler = [...ovriga, p];
     return { ok: true, profil: p };
@@ -735,7 +769,7 @@ function laggTillImportprofilIPaket(profil) {
     if (!state.paket) return { ok: false, fel: 'Inget organisationspaket är inläst.' };
     // Paketet byggs ur det inlästa paketets delar; formuläret Skapa paket påverkar det inte och prövas inte här.
     const paket = skapaPaketMedImportprofil(profil);
-    const kontroll = _opTolkaPaket(JSON.stringify(paket));
+    const kontroll = tolkaPaket(JSON.stringify(paket));
     if (!kontroll.ok) return { ok: false, fel: 'Paketet kan inte skapas: ' + kontroll.fel };
     const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
@@ -815,7 +849,7 @@ function _visaKolumnmappning() {
     panel.scrollIntoView?.({ block: 'center' });
     /** @type {HTMLInputElement} */ ((panel.querySelector('select.colmap-saknas') || panel.querySelector('select')))?.focus?.({ preventScroll: true });
 }
-function maybeShowColumnMapping() {
+export function maybeShowColumnMapping() {
     const headers = state._dataHeaders || [];
     let panel = document.getElementById('column-map-panel');
     // En fil som väntar på Läs in (förhandskontrollen) har inte tagit över rubrikerna: förra filens mappning visas inte.
@@ -910,7 +944,7 @@ function maybeShowColumnMapping() {
 // ============================================================
 
 // ---- Markera upload-cell som "loaded" + visuell badge ----
-function markUploadLoaded(cellId, badgeText) {
+export function markUploadLoaded(cellId, badgeText) {
     const cell = document.getElementById(cellId);
     if (!cell) return;
     cell.classList.remove('required', 'optional');
@@ -925,7 +959,7 @@ function markUploadLoaded(cellId, badgeText) {
     if (inl) /** @type {HTMLElement} */ (inl).hidden = false;
     renderFilrutor();
 }
-function resetUploadCell(cellId, originalClass, originalBadge) {
+export function resetUploadCell(cellId, originalClass, originalBadge) {
     const cell = document.getElementById(cellId);
     if (!cell) return;
     // classList.add kastar på tokens med mellanslag ("upload-cell required") —
@@ -947,7 +981,7 @@ function resetUploadCell(cellId, originalClass, originalBadge) {
 }
 
 // Filnamnsraden i varje inläst filruta (ADR-36).
-function renderFilrutor() {
+export function renderFilrutor() {
     const fn = state.filnamn || {};
     const rad = (cellId, text) => {
         const el = document.querySelector(`#${cellId} .upload-filnamn`);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Två lägen ----
+import { announceToScreenReader } from './01-html-och-tillganglighet.js';
 /**
  * Vägledande läge är verktyget som det är: varje flik förklarar sig och "nästa steg" står sist. Kompakt läge är för
  * den som kan verktyget: förklaringarna är undanfällda och sidorna tätare (style.css, klassen lage-kompakt på sidan).
@@ -12,7 +13,7 @@
  * hur ett resultat ska läsas visas i båda lägena.
  */
 let _lage = 'vagledande';
-function lage() { return _lage; }   // eslint-disable-line no-unused-vars -- läses av testerna och av den som felsöker i konsolen
+export function lage() { return _lage; }   // eslint-disable-line no-unused-vars -- läses av testerna och av den som felsöker i konsolen
 
 function sattLage(nytt) {
     const l = nytt === 'kompakt' ? 'kompakt' : 'vagledande';

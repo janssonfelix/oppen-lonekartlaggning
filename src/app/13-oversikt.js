@@ -1,6 +1,34 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Compliance overview ----
+import { aidAvYrke } from '../lib/aid.js';
+import { aidKriterier } from '../lib/aidkontroll.js';
+import { hanterade as _agHanterade, stegLikaArbete, stegLikvardigt } from '../lib/attgora.js';
+import { bedomUnderlag, jamforbaraBas, mdeFranSe } from '../lib/datakvalitet.js';
+import { statistikFor } from '../lib/jamforelse.js';
+import { arKvinna, arMan } from '../lib/kon.js';
+import { personOrd } from '../lib/namn.js';
+import { gruppMde, organisationensKvotKI, osakerhetKonstanter, styrkeanalys } from '../lib/osakerhet.js';
+import { forklaringsmodellArStandard } from '../lib/regression.js';
+import { konsMedianer } from '../lib/struktur.js';
+import { svPct, svTal } from '../lib/talformat.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { getBasIntervals, getData, harReferens, policyFor, referensKortnamn, referensNamn, Stat, state } from './12-tillstand.js';
+import { renderOutliers } from './15-extremvarden-basrang.js';
+import { renderDataValidationReport } from './16-inlasningskontroll.js';
+import { buildActionChecklist, renderActionChecklist } from './18-atgardslista.js';
+import { renderSnapshotComparison } from './19-konfiguration.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
+import { _laNyckel, _laOversiktRader, _laOversiktStatus } from './41-lika-arbete.js';
+import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _handlingsplanSeedRows } from './56-handlingsplan.js';
+import { _bes8Areas } from './61-regler-och-praxis.js';
+import { kTroskelLank } from './86-installningar.js';
+import { sokUppdatera } from './87-sok.js';
 function setCompCard(id, count, total, valueText, cardState) {
     const card = document.getElementById(id);
     const icon = document.getElementById(`${id}-icon`);
@@ -13,7 +41,7 @@ function setCompCard(id, count, total, valueText, cardState) {
     card.className = `compliance-card ${cardState}`;
 }
 
-function updateCompliance() {
+export function updateCompliance() {
     const overview = document.getElementById('compliance-overview');
     if (!overview || !getData().length) return;
     overview.style.display = 'block';
@@ -23,7 +51,7 @@ function updateCompliance() {
     // 1–2. Säkerställd skillnad och könsskevhet — bara i jämförbara BAS (båda könen ≥ k), samma regel som Lika arbete
     // och Underlagets kvalitet använder. Säkerställd = statusen Värt att granska i översiktstabellen per BAS (ADR-59):
     // bootstrap-KI:t för kvoten utesluter 100 % och skillnaden är minst 3 %.
-    const jb = _dqJamforbaraBas(d, kInstalld());   // säger vad exporterna kan jämföra (ADR-51)
+    const jb = jamforbaraBas(d, kInstalld());   // säger vad exporterna kan jämföra (ADR-51)
     const gapTotal = jb.jamforbara.length;
     const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : '';
     let gapCrit = 0, skevCount = 0;
@@ -79,7 +107,7 @@ function updateCompliance() {
             const key = `${aid}|${r.bas}`;
             if (seen.has(key)) return;
             seen.add(key);
-            const statRow = _jfStatistikFor(state.statistik, aid, r.bas)?.rad;
+            const statRow = statistikFor(state.statistik, aid, r.bas)?.rad;
             if (!statRow) return;
             bmTotal++;
             const orgMed = Stat.median(d.filter(x => { return aidAvYrke(x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
@@ -96,25 +124,25 @@ function updateCompliance() {
 
 // ---- Underlagets kvalitet (ADR-19): svagaste länken avgör ----
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den — ett värde som skickas vidare, ingen cache (ADR-17) */
-function bedomningUnderlag({ reg: given } = {}) {
+export function bedomningUnderlag({ reg: given } = {}) {
     const d = getData();
     if (!d.length) return null;
     const reg = given || runOLSRegression();
     const modell = reg.error ? 'fel' : (reg.fellBackFromFull ? 'minimal' : 'full');   // 'full' = den valda modellen gick att skatta (ADR-56)
-    const mde = reg.error ? null : _dqMdeFranSe(reg.seKonR);
+    const mde = reg.error ? null : mdeFranSe(reg.seKonR);
     // Frasen följer med bara när modellen inte är standard, så att standardtexten (och golden-facit) står still (ADR-56).
-    const modellFras = !reg.error && reg.modell && !_rgForklaringsmodellArStandard({ ...reg.modell, skal: '' }) ? reg.fras : undefined;
-    const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell, modellFras });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
+    const modellFras = !reg.error && reg.modell && !forklaringsmodellArStandard({ ...reg.modell, skal: '' }) ? reg.fras : undefined;
+    const b = bedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell, modellFras });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
     // Kontrollen av AID-kodningen (ADR-33) läggs till datakvalitetens kriterier.
     let aid = [];
-    try { aid = _akAidKriterier(d, { k: kInstalld(), harAnsvar: !!state.ansvarKolumn }); }
+    try { aid = aidKriterier(d, { k: kInstalld(), harAnsvar: !!state.ansvarKolumn }); }
     catch (e) { rapporteraFel('Underlagets kvalitet: AID-kodning', e); }
     const kriterier = [...b.kriterier, ...aid];
     const rang = { ok: 0, varning: 1, kritisk: 2 };
     return { ...b, status: kriterier.reduce((s, c) => (rang[c.status] > rang[s] ? c.status : s), b.status), kriterier };
 }
 
-const UK_ETIKETT = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' };
+export const UK_ETIKETT = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' };
 const UK_IKON = { ok: 'bock', varning: 'statusVarning', kritisk: 'statusKritisk', info: 'info' };
 /**
  * Statusmärket med ikon och ord, i samma form som märkena i Underlagets kvalitet. Ikonen är dold för hjälpmedel
@@ -122,11 +150,11 @@ const UK_IKON = { ok: 'bock', varning: 'statusVarning', kritisk: 'statusKritisk'
  * @param {'ok'|'varning'|'kritisk'|'info'} status
  * @param {string} [ord] ordet, om det inte är UK_ETIKETT:s (upplysningen har inget där)
  */
-function statusMarke(status, ord = UK_ETIKETT[status]) {
+export function statusMarke(status, ord = UK_ETIKETT[status]) {
     return `<span class="uk-marke uk-${status}">${ikon(UK_IKON[status], 14)} ${esc(ord)}</span>`;
 }
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
-function renderUnderlagetsKvalitet({ reg } = {}) {
+export function renderUnderlagetsKvalitet({ reg } = {}) {
     const host = document.getElementById('underlagets-kvalitet');
     if (!host) return;
     const b = bedomningUnderlag({ reg });
@@ -162,9 +190,9 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
  * cachar det så att det inte räknas om vid varje rendering; null när något kön är under statGolv(). Skillnaden i
  * procent (gapPct) har verktygets tecken, negativ när kvinnor ligger lägre.
  */
-function computeBootstrapCI() {
+export function computeBootstrapCI() {
     const t0 = performance.now();
-    const ki = _osOrganisationensKvotKI(getData(), statGolv());
+    const ki = organisationensKvotKI(getData(), statGolv());
     state.bootstrapCI = ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
 }
 
@@ -175,10 +203,10 @@ function computeBootstrapCI() {
  * @param {{lo:number, hi:number}} ci
  * @param {number} [decimals=1]
  */
-function fmtCI(ci, decimals = 1) {
+export function fmtCI(ci, decimals = 1) {
     if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return '';
     const intervall = ci.lo < 0 || ci.hi < 0 ? `${svPct(ci.lo, decimals)} till ${svPct(ci.hi, decimals)}` : `${svTal(ci.lo, decimals)}–${svPct(ci.hi, decimals)}`;
-    const B = Number(state.bootstrapCI?.B || _osKonstanter().B_ORGANISATION);
+    const B = Number(state.bootstrapCI?.B || osakerhetKonstanter().B_ORGANISATION);
     return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${B})">[95 % KI: ${intervall}]</span>`;
 }
 
@@ -189,8 +217,8 @@ function fmtCI(ci, decimals = 1) {
  * @returns {null | {n:number, nKv:number, nMa:number, mdePct:number, sigma:number, sigmaKalla:'inomGrupp'|'helaUrvalet',
  *                   sigmaHela:number, sigmaGrupper:number, balanced:boolean}}
  */
-function computePowerAnalysis() {
-    return _osStyrkeanalys(getData(), statGolv());
+export function computePowerAnalysis() {
+    return styrkeanalys(getData(), statGolv());
 }
 
 // ---- Process-tracker: status för hela lagresan (kap. 3, §§ 8–14) ----
@@ -210,7 +238,7 @@ function computePowerAnalysis() {
  * @param {{punkter?: any[], reg?: any}} [val] punkter: Att göras lista; reg: regressionen när anroparen just kört den i
  *   samma varv (ADR-17). Båda är värden som skickas vidare, ingen cache.
  */
-function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
+export function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
@@ -252,7 +280,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
         const reg = givenReg || ((typeof runOLSRegression === 'function') ? runOLSRegression() : null);
         const ok = !!(reg && !reg.error);
         const { t, d } = hanterade(['Lika arbete', 'Lika arbete, fördjupning']);
-        return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
+        return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ...stegLikaArbete({ regressionOk: ok, t, d }) };
     }, { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' }));
 
     // 4. § 3:10 Likvärdigt arbete (antal kandidatpar)
@@ -264,7 +292,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
         // par säger steget det självt (tillståndet `inget`, knappen leder till fliken).
         const { par, utelamnade, not } = _parForRedovisning(lv && lv.pairs);
         const { t, d } = hanterade(['Likvärdigt arbete']);
-        const steg = _agStegLikvardigt({ analys: !!lv, antalPar: par.length, utelamnade, k: kTroskel(), t, d });
+        const steg = stegLikvardigt({ analys: !!lv, antalPar: par.length, utelamnade, k: kTroskel(), t, d });
         return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', ...steg, detail: steg.detail + (not && steg.status !== 'inget' ? ' ' + not : '') };
     }, { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
@@ -345,7 +373,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
  * kvartilerna står i Filer och kvalitet respektive Lönestruktur. Klassen `har-data` på panelen styr vad som visas.
  */
 /** Filer och kvalitet: underlagets kvalitet, extremvärdena och inläsningsrapporten. Ritas vid inläsning och vid flikbyte. */
-function renderFilerDelar() {
+export function renderFilerDelar() {
     /** @type {[string, () => void][]} */
     const delar = [['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['extremvärden', () => renderOutliers()],
         ['inläsningsrapporten', () => renderDataValidationReport()]];
@@ -354,7 +382,7 @@ function renderFilerDelar() {
 
 /** @type {boolean|null} */
 let _ovHadeData = null;
-function ovRitaLage() {
+export function ovRitaLage() {
     const vy = /** @type {HTMLElement} */ (document.getElementById('view-dashboard'));
     if (!vy) return;
     const d = (() => { try { return getData(); } catch (_e) { return []; } })();
@@ -393,16 +421,16 @@ function _ovRitaFilrad(har, antal) {
  * @param {number} [sigmaLog] - σ för log(lön) (default: hämta från cache)
  * @returns {null | {mdePct:number, level:'good'|'fair'|'poor', tooSmall:boolean}}
  */
-function computeGroupMDE(nKv, nMa, sigmaLog) {
-    return _osGruppMde(nKv, nMa, sigmaLog || state.powerAnalysis?.sigma);
+export function computeGroupMDE(nKv, nMa, sigmaLog) {
+    return gruppMde(nKv, nMa, sigmaLog || state.powerAnalysis?.sigma);
 }
 
 // ---- Dashboard stats ----
-function updateDashboardStats() {
+export function updateDashboardStats() {
     const d   = getData();
     if (!d.length) return;
     const allAges = d.map(r => r.alder).filter(a => a && !isNaN(a));
-    const m = _stKonsMedianer(d, { k: kTroskel() }), { nKv, nMa } = m;
+    const m = konsMedianer(d, { k: kTroskel() }), { nKv, nMa } = m;
     /** @type {HTMLElement} */ (document.getElementById("stat-n")).textContent = String(d.length);
     const konEl = document.getElementById('stat-kon');
     if (konEl) konEl.textContent = `${nKv.toLocaleString('sv-SE')} / ${nMa.toLocaleString('sv-SE')}`;
@@ -427,7 +455,7 @@ function updateDashboardStats() {
 }
 
 /** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
-function renderOversiktDelar() {
+export function renderOversiktDelar() {
     /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
     /** @type {any} */ let reg;   // och samma regression: körs en gång och skickas vidare (ADR-17)
     /** @type {[string, () => void][]} */
@@ -440,7 +468,7 @@ function renderOversiktDelar() {
 }
 
 // ---- Populate BAS selects ----
-function populateSelects() {
+export function populateSelects() {
     const bas = getBasIntervals();
     ['bas-select-kon','bas-select-demo'].forEach(selId => {
         const sel = document.getElementById(selId);

@@ -1,5 +1,24 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { talformat } from '../lib/figur.js';
+import { livscykelRegression, samspelSakerstallt } from '../lib/livscykel.js';
+import { personOrd } from '../lib/namn.js';
+import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { adjektiv, stor } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { antalCaption, antalText } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { buildBaseAudit, setAudit } from './05-tabeller-och-lankar.js';
+import { isKMasked, kTroskel, statGolv } from './06-k-troskel.js';
+import { kMaskNote } from './06-maskeringsnoter.js';
+import { T } from './09-termer.js';
+import { ritaFigur } from './10-diagramritare.js';
+import { gapStatusNiva, PALETTE } from './10-diagramtema.js';
+import { getData, state } from './12-tillstand.js';
+import { iExportLage } from './23-exportgrind.js';
+import { _openEvidenceModal } from './27-berakningsbevis.js';
+import { KOHORT_FORBEHALL } from './40-alder-karriar.js';
+import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
 
 // ---- Livscykelanalys (sekundär regression) ----
 /**
@@ -7,7 +26,7 @@
  * val inte återställs varje gång regressionskortet renderas om).
  */
 /** @type {string|null} */
-let _lifecycleFixBas = null;
+export let _lifecycleFixBas = null;
 
 /**
  * Renderar livscykelanalys-fliken: klarspråklig rubrik,
@@ -19,7 +38,7 @@ let _lifecycleFixBas = null;
  *
  * @param {any} [given] huvudregressionen från regressionskortet i samma varv (ADR-17)
  */
-function renderLifecycleAnalysis(given) {
+export function renderLifecycleAnalysis(given) {
     // Flikens container är #livscykel-content (#lifecycle-content som reserv)
     const wrap = document.getElementById('livscykel-content') || document.getElementById('lifecycle-content');
     if (!wrap) return;
@@ -52,7 +71,7 @@ function renderLifecycleAnalysis(given) {
                        : p < 0.01  ? `<span class="farg-kritisk">**</span>`
                        : p < 0.05  ? `<span class="farg-varning">*</span>`
                        : '';
-    const sakerOrd = p => _lcSamspelSakerstallt(p) ? 'säkerställd' : '<span class="f-dampad">inte säkerställd</span>';
+    const sakerOrd = p => samspelSakerstallt(p) ? 'säkerställd' : '<span class="f-dampad">inte säkerställd</span>';
     const pText = p => p < 0.001 ? '< 0,001' : svTal(p, 3);
 
     const basOptions = result.basList.map(b =>
@@ -121,7 +140,7 @@ function renderLifecycleAnalysis(given) {
         : '';
 
     // ====== B7: Regelbaserad HR-coach ======
-    const interaktionSig = _lcSamspelSakerstallt(result.kvAgePVal, result.kvAge2PVal);
+    const interaktionSig = samspelSakerstallt(result.kvAgePVal, result.kvAge2PVal);
     let coachKategori, coachRubrik, coachText;
     if (!interaktionSig) {
         coachKategori = 'konstant';
@@ -288,7 +307,7 @@ function renderLifecycleAnalysis(given) {
         formler: [
             ['Modell', '<code>log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)</code>, skattad med minsta kvadratmetoden'],
             ['Standardfel', 'HC3-robusta standardfel (tål att lönespridningen skiljer mellan grupper)'],
-            [termStor(T.niva.en), `Indikatorvariabler; i kodningen är BAS ${esc(result.refBas)} referensintervall. Kurvan visas för det valda intervallet (${esc(result.fixBas)}), övriga intervall får sin nivå ur sin BAS-koefficient${kurvaUtelamnad ? `. Här visas ingen kurva: det valda intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}` : ''}`],
+            [stor(T.niva.en), `Indikatorvariabler; i kodningen är BAS ${esc(result.refBas)} referensintervall. Kurvan visas för det valda intervallet (${esc(result.fixBas)}), övriga intervall får sin nivå ur sin BAS-koefficient${kurvaUtelamnad ? `. Här visas ingen kurva: det valda intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}` : ''}`],
             ['Skillnad kvinnor mot män', '<code>(exp(skillnaden på log-skalan) − 1) × 100</code> vid varje ålder; kvinnors lön i % av mäns är 100 plus skillnaden'],
             ['Skuggade band', '95 % konfidensintervall för den predicerade lönen'],
             ['Säkerställd förändring', 'Kön×ålder eller kön×ålder² med p under 0,10 (tolkningsregeln). Stjärnorna i modelljämförelsen: * p under 0,05, ** p under 0,01, *** p under 0,001']
@@ -353,9 +372,9 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
         title: `Beräkningen — BAS ${row.bas} (ålder och karriär)`,
         intro: `Predikterade lönenivåer från livscykelmodellen för BAS <strong>${esc(row.bas)}</strong>. Modellen är global (en regression över alla BAS samtidigt); nivån per BAS kommer ur modellens egen BAS-koefficient.`,
         rows: [
-            { label: termStor(T.niva.en),                  value: row.bas },
+            { label: stor(T.niva.en),                  value: row.bas },
             { label: 'Antal personer i BAS (organisation)',  value: row.n.toLocaleString('sv-SE') },
-            { label: `${termStor(termAdjektiv('visad', T.niva))} ${T.niva.en}`, value: result.fixBas, note: 'Intervallet som lönekurvan räknas för direkt. Övriga intervall får sin nivå ur sin BAS-koefficient.' },
+            { label: `${stor(adjektiv('visad', T.niva))} ${T.niva.en}`, value: result.fixBas, note: 'Intervallet som lönekurvan räknas för direkt. Övriga intervall får sin nivå ur sin BAS-koefficient.' },
             utanKurva
                 ? { label: 'Nivåfaktor mot visat intervall',    value: '—', note: `Visas inte: kurvan för BAS ${result.fixBas} visas inte, eftersom intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}.` }
                 : { label: 'Nivåfaktor mot visat intervall',    value: result.basFaktor?.[row.bas] != null ? svTal(result.basFaktor[row.bas], 3) : '—', note: 'exp(β_BAS − β_visat); 1,000 för det visade intervallet.' },
@@ -393,7 +412,7 @@ function _renderLifecycleChart(r, el) {
 function _lifecycleFigur(r) {
     const band = (serie, farg, pred) => ({ marke: 'band', serie, farg, opacitet: 0.18, legend: false, data: pred.map(p => ({ x: p.age, lag: p.lo, hog: p.hi })) });
     const kurva = (serie, kon, farg, pred, streck) => ({ marke: 'linje', serie, farg, tjocklek: 3, streck, data: pred.map(p => ({ x: p.age, y: p.lon })),
-        tips: d => [[`${kon}, ${d.x} år`], ['Predikterad lön', _figTalformat(d.y, 'kr')]] });
+        tips: d => [[`${kon}, ${d.x} år`], ['Predikterad lön', talformat(d.y, 'kr')]] });
     return { beskrivning: `Predikterade lönekurvor för kvinnor och män, ålder 25 till 65, vid BAS ${r.fixBas} (valt intervall). ` +
             `Vid 25 år är skillnaden, kvinnor mot män, ${svTal(r.gapAt25, 1)} procent, vid 65 år ${svTal(r.gapAt65, 1)} procent. Skuggade band visar 95 % konfidensintervall.`,
         x: { skala: 'linjar', titel: `Ålder — predikterad lönekurva för BAS ${r.fixBas} (valt intervall)` },
@@ -418,15 +437,15 @@ function _lifecycleFigur(r) {
  * @returns {Object} { error } eller fullt resultat med predKvinna, predMan, gapPerAge, model fit
  */
 /** @param {string|null} [fixBas] BAS-intervall att fixera vid; null = det mest folkrika */
-function runLifecycleRegression(fixBas) {
+export function runLifecycleRegression(fixBas) {
     // Modellen (designmatris, OLS, HC3, prediktioner) ligger i src/lib/livscykel.js (ADR-8).
-    const res = _lcLivscykelRegression(getData(), { fixBas, golv: statGolv() });
+    const res = livscykelRegression(getData(), { fixBas, golv: statGolv() });
     if (res.error) return res;
 
     const { gapAt25, gapAt65, gapDelta, kvAgePVal, kvAge2PVal } = res;
     // Tolkningstexten är presentation och hör därför till appen.
     let interpretation;
-    if (!_lcSamspelSakerstallt(kvAgePVal, kvAge2PVal)) {
+    if (!samspelSakerstallt(kvAgePVal, kvAge2PVal)) {
         interpretation = 'Skillnaden är **densamma över karriären** (samspelet mellan kön och ålder är inte statistiskt signifikant).';
     } else if (gapDelta < -1) {
         interpretation = `Skillnaden **växer med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på ett glastak och behöver granskas.`;

@@ -14,7 +14,7 @@
 // byte-reproducerbart, och ett `new Date()` här hade gjort SHA-256:an olika
 // vid varje körning och slagit sönder artefaktgrinden i CI.
 //
-// Körs av tools/build-app.mjs före hopslagningen, precis som gen-mirrors.
+// Körs av tools/build-app.mjs före bygget.
 // Vaktas av tests/version.test.js.
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -68,8 +68,8 @@ export function generateVersionSource() {
         '// Genererad av tools/gen-version.mjs; vaktas av tests/version.test.js.',
         '// ====================================================================',
         '',
-        `const APP_VERSION = '${version}';`,
-        `const APP_BUILD_DATE = '${buildDateFor(version)}';`,
+        `export const APP_VERSION = '${version}';`,
+        `export const APP_BUILD_DATE = '${buildDateFor(version)}';`,
         ''
     ].join('\n');
 }

@@ -11,16 +11,44 @@
 // Dossiern DOKUMENTERAR INTE sakliga skäl; det är en medveten produktgräns
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
+import { aidAvYrke, namnrader } from '../lib/aid.js';
+import { talformat } from '../lib/figur.js';
+import { htmlTillText } from '../lib/htmltext.js';
+import { statistikFor } from '../lib/jamforelse.js';
+import { arKvinna, arMan } from '../lib/kon.js';
+import { antalMotBand, gruppMotBand } from '../lib/lonepolitik.js';
+import { personOrd } from '../lib/namn.js';
+import { medianKvotKIGiltiga } from '../lib/osakerhet.js';
+import { arsbeloppMening } from '../lib/prioritering.js';
+import { skrDelText, skrKvinnoandel } from '../lib/skrreferens.js';
+import { konsMedianer } from '../lib/struktur.js';
+import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { adjektiv, stor } from '../lib/termer.js';
+import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _kSanktNot, _parForRedovisning, _parUtelamnadeNot, isKMasked, kTroskel } from './06-k-troskel.js';
+import { _skrDel, skrForklaring, skrKallaKort } from './06-kvinnoandel-referens.js';
+import { T } from './09-termer.js';
+import { gapStatusKI } from './10-diagramtema.js';
+import { getData, policyFor, policyLevelLabel, referensKortnamn, Stat, state } from './12-tillstand.js';
+import { medExportLage } from './23-exportgrind.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
+import { _direktivInline } from './41-lika-arbete.js';
+import { _computePerBasGap, harAlder } from './50-regressionsmodeller.js';
+import { _selectedPrioReference, computePrioritization, generateMotivationSuggestions } from './55-prioritering.js';
+import { _hpBedomningar, _hpBedomningHtml, _hpPassarGrupp } from './56-handlingsplan.js';
+import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
 // Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
 // dragningar som översikten per BAS-intervall (_laBootstrapGapCI), med B = 2000 som computeBootstrapCI; dragningar
 // där männens median inte är positiv räknas inte.
-function _gdBootstrapGapCI(kvLons, maLons, B) {
-    return _osMedianKvotKIGiltiga(kvLons, maLons, { B });
+export function _gdBootstrapGapCI(kvLons, maLons, B) {
+    return medianKvotKIGiltiga(kvLons, maLons, { B });
 }
 
 /** Alla grupper som får öppnas i dossier (k-anonymitet som överallt annars). */
-function gruppdossierCandidates() {
+export function gruppdossierCandidates() {
     const map = new Map(), d = getData();
     // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
     const namnrad = namnrader(d.filter(r => r.lon > 0 && r.bas), r => aidAvYrke(r.yrke) + '|' + r.bas);
@@ -37,7 +65,7 @@ function gruppdossierCandidates() {
 }
 
 /** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
-function _gdKon(rows) {
+export function _gdKon(rows) {
     return { kv: rows.filter(r => arKvinna(r)), ma: rows.filter(r => arMan(r)) };
 }
 
@@ -48,7 +76,7 @@ function _gdKon(rows) {
  * var nästan hela bilagans kostnad).
  * @param {{text?: boolean}} [val]
  */
-function gruppdossierDelat({ text = false } = {}) {
+export function gruppdossierDelat({ text = false } = {}) {
     return { kandidater: gruppdossierCandidates(), perBas: new Map(), prio: new Map(), text };
 }
 
@@ -57,7 +85,7 @@ function gruppdossierDelat({ text = false } = {}) {
  * @param {string} key
  * @param {any} [delat] ur gruppdossierDelat(), när flera dossierer byggs i samma anrop
  */
-function buildGruppdossier(key, delat = null) {
+export function buildGruppdossier(key, delat = null) {
     const g = (delat ? delat.kandidater : gruppdossierCandidates()).find(x => x.key === key);
     if (!g) return null;
 
@@ -67,7 +95,7 @@ function buildGruppdossier(key, delat = null) {
 
     // Ojusterat gap — visas bara när bägge könen når k-tröskeln
     /** @type {any} */ let gap = null;
-    const km = _stKonsMedianer(g.rows, { k: kTroskel() });
+    const km = konsMedianer(g.rows, { k: kTroskel() });
     if (km.konOk) {
         const mKv = km.medKv, mMa = km.medMa;
         gap = {
@@ -75,7 +103,7 @@ function buildGruppdossier(key, delat = null) {
             medKv: mKv, medMa: mMa,
             ci: delat && delat.text ? null : _gdBootstrapGapCI(kvLons, maLons),
             // Räkneexemplet i kronor per år, med prioriteringens kostnadsinställningar.
-            arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(v, 'kr'))
+            arsbelopp: arsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => talformat(v, 'kr'))
         };
     }
 
@@ -100,8 +128,8 @@ function buildGruppdossier(key, delat = null) {
 
     // Lönepolitiskt ställningstagande
     const pol = (typeof policyFor === 'function') ? policyFor(g.aid, g.bas) : null;
-    const band = pol ? _lpGruppMotBand(g.rows, pol) : null;
-    const compliance = pol ? _lpAntalMotBand(g.rows, pol) : null;
+    const band = pol ? gruppMotBand(g.rows, pol) : null;
+    const compliance = pol ? antalMotBand(g.rows, pol) : null;
 
     // § 3:10-par där gruppen ingår (som subjekt eller som jämförelseyrke)
     // Par där den andra gruppen är under tröskeln redovisas inte här (undantaget gäller bara fliken).
@@ -117,7 +145,7 @@ function buildGruppdossier(key, delat = null) {
     } catch (e) { rapporteraFel('Gruppdossier: likvärdigt arbete', e); }
 
     // Extern jämförelsestatistik
-    const bench = _jfStatistikFor(state.statistik, g.aid, g.bas)?.rad || null;
+    const bench = statistikFor(state.statistik, g.aid, g.bas)?.rad || null;
 
     // Prioritering + hypoteser
     let prio = null, suggestions = [];
@@ -138,7 +166,7 @@ function buildGruppdossier(key, delat = null) {
         n: g.rows.length, nKv: kv.length, nMa: ma.length,
         median: Stat.median(lons),
         p10: Stat.kvantil(lons, 0.10), p90: Stat.kvantil(lons, 0.90),
-        gap, adjusted, ansvar, skr: _skrKvinnoandel(g.aid, { del: _skrDel() }), pol, polLevel: policyLevelLabel(pol), band, compliance,
+        gap, adjusted, ansvar, skr: skrKvinnoandel(g.aid, { del: _skrDel() }), pol, polLevel: policyLevelLabel(pol), band, compliance,
         lvAsSubject, lvAsComparator, lvUtelamnade, bench, prio, suggestions
     };
 }
@@ -147,21 +175,21 @@ function buildGruppdossier(key, delat = null) {
 
 // Dossiern är en DETALJVY för en rad, inte ett eget arbetsläge — därför modal
 // som nås från tabellrader, inte en post i huvudmenyn.
-function openGruppdossier(preselectKey) {
+export function openGruppdossier(preselectKey) {
     const modal = document.getElementById('dossier-modal');
     if (!modal) return;
     renderGruppdossier(preselectKey);
     modal.style.display = 'flex';
     if (typeof trapFocus === 'function') trapFocus(modal);
 }
-function closeGruppdossier() {
+export function closeGruppdossier() {
     const modal = document.getElementById('dossier-modal');
     if (!modal) return;
     if (typeof releaseFocus === 'function') releaseFocus(modal);
     modal.style.display = 'none';
 }
 
-function renderGruppdossier(preselectKey) {
+export function renderGruppdossier(preselectKey) {
     const sel = document.getElementById('dossier-select');
     const body = document.getElementById('dossier-body');
     if (!sel || !body) return;
@@ -171,7 +199,7 @@ function renderGruppdossier(preselectKey) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
             <h3>Inga grupper att visa</h3>
-            <p>${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} når tröskeln på ${kTroskel()} ${personOrd(kTroskel())}. Läs in en större lönefil, eller analysera per ${T.niva.en} i stället.</p></div>`;
+            <p>${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} når tröskeln på ${kTroskel()} ${personOrd(kTroskel())}. Läs in en större lönefil, eller analysera per ${T.niva.en} i stället.</p></div>`;
         return;
     }
     // Fyll väljaren (bevara valet om det fortfarande finns)
@@ -195,7 +223,7 @@ function renderGruppdossier(preselectKey) {
 }
 
 /** Gruppens namn med AID-koden en gång: yrkesetiketten börjar oftast redan med koden. */
-function gruppNamn(g) {
+export function gruppNamn(g) {
     const aid = String(g.aid ?? ''), yrke = String(g.yrke ?? '').trim();
     if (!yrke || yrke === aid) return aid;
     return yrke.startsWith(aid) ? yrke : `${aid} ${yrke}`;
@@ -218,7 +246,7 @@ function _gdRenderBody(d) {
         <div class="gd-kpis">
             <div class="gd-kpi"><span>${d.n}</span><small>personer</small></div>
             <div class="gd-kpi"><span>${d.nKv} / ${d.nMa}</span><small>kvinnor / män (${svPct(kvPct, 0)} kv)${d.skr
-                ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}</span>` : ''}</small></div>
+                ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${skrDelText(d.skr.del)}</span>` : ''}</small></div>
             <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
             <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
         </div>${basdossierKandidater().some(x => x.bas === d.bas) ? `<p class="gd-note">${basdossierKnapp(d.bas, { text: `Hela BAS ${d.bas}` })} allt om intervallet på en sida</p>` : ''}${d.ansvar ? `
@@ -242,7 +270,7 @@ function _gdRenderBody(d) {
         ? `<div class="gd-big">${d.adjusted.gapPct >= 0 ? '+' : ''}${svPct(d.adjusted.gapPct, 1)}</div>
            <p>Åldersrensad skillnad för hela BAS ${esc(d.bas)} (gruppens arbetsvärderingsnivå), 95 % KI ${svTal(d.adjusted.ciLow, 1)} – ${svPct(d.adjusted.ciHigh, 1)}.</p>
            <p class="gd-note">Avser ${T.niva.bf}, inte enbart den här gruppen.</p>`
-        : missing(`${termStor(T.niva.bf)} har inte tillräcklig könsbalans för en åldersrensad skattning.`);
+        : missing(`${stor(T.niva.bf)} har inte tillräcklig könsbalans för en åldersrensad skattning.`);
 
     // 4. Mot ställningstagandet
     const polInner = d.pol
@@ -307,12 +335,12 @@ function _gdRenderBody(d) {
  * @param {any} d
  * @param {{stampel?: boolean}} [val]
  */
-function gruppdossierAsText(d, { stampel = true } = {}) {
+export function gruppdossierAsText(d, { stampel = true } = {}) {
     const kr = v => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
     const L = [];
     L.push(`Gruppdossier: ${gruppNamn(d)} – BAS ${d.bas}`);
     L.push(`Antal: ${d.n} (${d.nKv} kvinnor, ${d.nMa} män) · median ${kr(d.median)} · P10–P90 ${kr(d.p10)}–${kr(d.p90)}`);
-    if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${skrKallaKort()})`);
+    if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${skrDelText(d.skr.del)} (${skrKallaKort()})`);
     if (d.ansvar) L.push(`Ansvar: ledningsansvar ${d.ansvar.ledning.kv} kvinnor / ${d.ansvar.ledning.ma} män · särskilt uppdrag ${d.ansvar.uppdrag.kv} kvinnor / ${d.ansvar.uppdrag.ma} män`);
     if (d.gap && d.gap.pct != null) L.push(`Ojusterad löneskillnad: ${svPct(d.gap.pct, 1)} av männens median`);
     if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
@@ -322,7 +350,7 @@ function gruppdossierAsText(d, { stampel = true } = {}) {
     if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per år`);
     // Förslagen är HTML (fetstil m.m.); textkopian tar bort taggarna och avkodar tecknen
     // utan att tolka HTML.
-    const somText = h => _htmlTillText(h);
+    const somText = h => htmlTillText(h);
     if (d.suggestions.length) { L.push('Frågor att undersöka:'); d.suggestions.forEach(s => L.push('  – ' + somText(s.text))); }
     if (d.lvUtelamnade) L.push(_parUtelamnadeNot(d.lvUtelamnade));
     L.push('Obs! Dossiern dokumenterar inte sakliga skäl – den bedömningen görs separat.');

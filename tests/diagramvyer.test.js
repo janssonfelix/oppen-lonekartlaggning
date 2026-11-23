@@ -546,8 +546,8 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         const pol = { p10: 30000, p90: 36000 };
         w.__pol = pol;
         w.__rows = [p('kvinna', 40, 29000), p('kvinna', 40, 30500), p('kvinna', 40, 31000), p('kvinna', 40, 33000), p('man', 40, 35500), p('man', 40, 37000), p('man', 40, 33000)];
-        expect(w.eval('_lpKonLagen(window.__rows, window.__pol)')).toEqual({ kv: [1, 2, 1, 0, 0], ma: [0, 0, 1, 1, 1] });
-        expect([-0.1, 0, 0.33, 0.34, 0.66, 0.67, 1, 1.01].map(v => w.eval(`_lpLagesklass(${v})`))).toEqual([0, 1, 1, 2, 2, 3, 3, 4]);
+        expect(w.eval('konLagen(window.__rows, window.__pol)')).toEqual({ kv: [1, 2, 1, 0, 0], ma: [0, 0, 1, 1, 1] });
+        expect([-0.1, 0, 0.33, 0.34, 0.66, 0.67, 1, 1.01].map(v => w.eval(`lagesklass(${v})`))).toEqual([0, 1, 1, 2, 2, 3, 3, 4]);
         const f = w.eval('_lpFigurKonLagen({ kv: [1, 2, 1, 0, 0], ma: [0, 0, 1, 1, 2], nKv: 4, nMa: 4 })');
         expect(f.lager.map(l => l.serie)).toEqual(['Under spannet', 'Nedre tredjedelen', 'Mellersta tredjedelen', 'Övre tredjedelen', 'Över spannet']);
         for (const i of [0, 1]) expect(f.lager.reduce((s, l) => s + l.data[i].x, 0)).toBeCloseTo(100, 6);
@@ -1697,7 +1697,7 @@ describe('Lönefördelningen per BAS-intervall som kvantilpunkter (figuren)', ()
         expect(utelamnade).toEqual(['BAS B (män)']);
         expect(figur.beskrivning).toMatch(/tjugondel/);
         expect(() => valideraFigur(figur, 't')).not.toThrow();
-        expect(JSON.stringify(figurTillTabell(w.eval('_figUtanSma')(figur)))).not.toMatch(/7777/);
+        expect(JSON.stringify(figurTillTabell(w.eval('utanSmaGrupper')(figur)))).not.toMatch(/7777/);
     });
 
 });
@@ -1771,7 +1771,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
     it.each(MED_URVAL)('%s: ett bortvalt BAS-intervall ritas inte, och resten ritas utan fel', id => {
         const w3 = fonster(), f = figur(id);
         w3.__f = f;
-        const varden = w3.eval('_figUrvalVarden(window.__f)');
+        const varden = w3.eval('urvalVarden(window.__f)');
         expect(varden.length, id).toBeGreaterThanOrEqual(2);
         const hel = w3.eval('figurTillSvg(window.__f, 1400, 800, {})');
         w3.__v = varden[0];
@@ -1996,11 +1996,11 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
                   ...Array.from({ length: 3 }, () => ({ bas: 'A', aid: '502010', yrke: '502010 Sys', kon: 'man' }))];
         const f = w2.eval('_strukturTradkartaFigur(window.__r, 10)');
         const [stor, ovr] = f.lager[1].data;
-        expect(stor.sektor).toBe(w2.eval('_aidSektorsnamn("207011")'));
+        expect(stor.sektor).toBe(w2.eval('sektorsnamn("207011")'));
         expect(ovr.ovriga).toBe(true);
         expect(ovr.sektor).toBeUndefined();
         w2.__f = f;
-        expect(w2.eval(`_figArBortvald(window.__f, { kategori: new Map([['sektor', new Set([window.__f.lager[1].data[0].sektor])]]), intervall: new Map() }, window.__f.lager[1].data[1])`)).toBe(false);
+        expect(w2.eval(`arBortvald(window.__f, { kategori: new Map([['sektor', new Set([window.__f.lager[1].data[0].sektor])]]), intervall: new Map() }, window.__f.lager[1].data[1])`)).toBe(false);
     });
     it('löneskillnaden per åldersgrupp: åldersgrupp och antal av det minsta könet, samma tal som tipset; också i ett underlag', () => {
         const w2 = fonster(), el = w2.document.getElementById('chart-kon-aldergap'), f = el._figur;
@@ -2043,7 +2043,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         const el = w2.document.getElementById('chart-la-tratt'), f = el._figur;
         expect(urvalLista(f).map(u => u.falt)).toEqual(['bas', 'yrke', 'sektor', 'n']);
         const p = f.lager.filter(l => l.marke === 'punkt').flatMap(l => l.data);
-        for (const d of p) { expect(d.yrke).toBe(d.p.yrke); expect(d.sektor).toBe(w2.eval(`_aidSektorsnamn(${JSON.stringify(d.p.aid)})`)); }
+        for (const d of p) { expect(d.yrke).toBe(d.p.yrke); expect(d.sektor).toBe(w2.eval(`sektorsnamn(${JSON.stringify(d.p.aid)})`)); }
         const yrken = urvalVarden(f, 'yrke');
         expect(yrken.length).toBeGreaterThanOrEqual(2);
         rad(el, 'yrke').querySelector('[data-urval-markera="inga"]').click();
@@ -2105,7 +2105,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         const w2 = fonster();
         const g = (bas, gapPct) => ({ yrke: '101 Usk', bas, nKv: 12, nMa: 12, medKv: 30000, medMa: 31000, gapPct, flaggad: true });
         const b = (ar, grupper) => ({ version: 2, ar, skapat: `${ar}-11-01`, k: 10, verktyg: 't', nyckeltal: {}, grupper, punkter: [] });
-        w2.__j = w2.eval('_abJamfor')(w2.eval('_abValidera')(b(2025, [g('C', -6), g('D', -4)])), w2.eval('_abValidera')(b(2026, [g('C', -3), g('D', -5)])));
+        w2.__j = w2.eval('jamforArsbokslut')(w2.eval('valideraArsbokslut')(b(2025, [g('C', -6), g('D', -4)])), w2.eval('valideraArsbokslut')(b(2026, [g('C', -3), g('D', -5)])));
         const f = w2.eval('_abHantelFigur(window.__j, 2025, 2026)');
         const rader = f.lager.flatMap(l => l.data || []).map(d => d.r).filter(Boolean);
         expect([...new Set(rader.map(r => `${r.namn}|${r.bas}`))].sort()).toEqual(['101 Usk (BAS C)|C', '101 Usk (BAS D)|D']);

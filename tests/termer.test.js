@@ -190,7 +190,7 @@ describe('termerna i appen', () => {
         const w = createAppWindow();
         expect(w.eval('T.enhet.fl')).toBe('AID-etiketter');
         expect(w.eval('termText("{Enhet.bfl} i samma {niva.en}, minst {k}")')).toBe('AID-etiketterna i samma BAS-intervall, minst {k}');
-        expect(w.eval('termArtikel(T.enhet) + " " + termFras(T.enhet, "en", { adjektiv: "kvinnodominerad" })')).toBe('en kvinnodominerad AID-etikett');
+        expect(w.eval('artikel(T.enhet) + " " + termFras(T.enhet, "en", { adjektiv: "kvinnodominerad" })')).toBe('en kvinnodominerad AID-etikett');
     });
     it('data-term-template fyller texten eller attributet i data-term-attr', () => {
         const w = createAppWindow(), d = w.document;
