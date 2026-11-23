@@ -92,7 +92,7 @@ först i utfilen och sätter lagringsspärren innan något annat körs.
 | `55-prioritering.js` | Prioriteringsanalys: adaptern till `src/lib/prioritering.js`, matrisen, kostnadsdiagrammet (sorterade staplar, högst 15 grupper), texterna till motiveringsförslagen (reglerna är `motiveringsgrunder` i lib), trösklarna och viktningen (fälten står i Inställningar; fliken visar raden *Trösklar och viktning*) och export |
 | `56-handlingsplan.js` | Handlingsplan: mall, förifyllning och export |
 | `57-sakliga-skal.js` | Dialogen Sakliga skäl i Handlingsplan: kategori, belopp och kommentar per grupp |
-| `58-rapportmodell.js` | Rapportmodellen: rapportens avsnitt som data (stycken, typade tabeller, diagram, fält att fylla i) som Word-utkastet och PDF-kopian ritas ur; vilka diagram som följer med (`RM_DIAGRAM`) och urvalen (`RM_URVAL`) |
+| `58-rapportmodell.js` | Rapportmodellen: rapportens avsnitt som data (stycken, typade tabeller, diagram, fält att fylla i) som Word-utkastet och PDF-kopian ritas ur, med orden ur vymodellen i `src/lib/vymodell-rapport.js` (det som räknas och maskeras, och urvalen `RM_URVAL`, ADR-99); vilka diagram som följer med (`RM_DIAGRAM`) |
 | `59-exportbesked.js` | Förhandsbesked per export i Exportera, och urvalet av rapportens avsnitt (ordning och vilka som följer med) |
 | `60-utskrift.js` | PDF-rapporten: en låst kopia av Word-utkastet, ritad ur rapportmodellen; utskrift av handlingsplanens mall och checklistan |
 | `61-regler-och-praxis.js` | Regler & praxis: bedömning per område |
@@ -101,7 +101,7 @@ först i utfilen och sätter lagringsspärren innan något annat körs.
 | `64-jamforelse-export.js` | Samlad Excel-export av jämförelsen (raderna ur `src/lib/jamforelse.js`) |
 | `65-om-verktyget.js` | Fliken Om verktyget (`INFO_SECTIONS`) |
 | `66-zip-export.js` | ZIP-exporten: Word-utkastet, Excel-filen med alla flikar och diagrammen från alla flikar som bilder |
-| `67-rapportunderlag.js` | Rapportunderlag i Rapporttext: kopierbara avsnitt, AID-etiketter, kandidatpar och diagram (logiken i `src/lib/rapportunderlag.js`) |
+| `67-rapportunderlag.js` | Rapportunderlag i Rapporttext: kopierbara avsnitt, AID-etiketter, kandidatpar och diagram (blocken ur vymodellen i `src/lib/vymodell-rapportunderlag.js`, ADR-99, och `src/lib/rapportunderlag.js`) |
 | `68-var-uppstar-gapet.js` | Avsnittet "Var uppstår löneskillnaden?" i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (standard BAS-fördelning, AID inom BAS och inom AID och BAS), valet *Förklara med:* (`gapVariabler`, `sattGapVariabler`, ADR-65) och trappan som visar delarna (`ritaGapUppdelning`, ur vymodellen i `src/lib/vymodell-var-uppstar-gapet.js`, ADR-99; logiken i `src/lib/gapuppdelning.js`) |
 | `70-utforska.js` | Tabeller och egna vyer (fliken `utforska`), Egna vyer: kontroller, tabell, små grupper, klick till gruppdossier; AID-etiketten grupperas på koden (`_utNycklar`, `gruppnycklar` i `src/lib/falt.js`, ADR-89) |
 | `71-utforska-figur.js` | Egna vyer: figur per diagramtyp ur pivotmodellen (`src/lib/utforska.js`) |

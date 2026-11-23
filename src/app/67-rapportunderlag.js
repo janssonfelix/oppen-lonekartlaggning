@@ -3,22 +3,15 @@
 // ---- Rapportunderlag (ADR-20): kopierbara block för en egen Word-mall ----
 // Faktastycken, rena tabeller och diagram som klistras in i kommunens mall.
 // Bedömningen (sakliga skäl) skrivs av verksamheten — här finns bara underlaget.
-// Blocken byggs i src/lib/rapportunderlag.js (_ru*); här hämtas resultaten ur de
-// befintliga analyserna och kopieringen till urklipp sköts.
-import { aidAvRad } from '../lib/aid.js';
-import { talformat } from '../lib/figur.js';
-import { gapUppdelning } from '../lib/gapuppdelning.js';
+// Blocken väljs och räknas i src/lib/vymodell-rapportunderlag.js och byggs i src/lib/rapportunderlag.js;
+// här hämtas resultaten ur de befintliga analyserna och kopieringen till urklipp sköts.
 import { arTal } from '../lib/htmltext.js';
-import { arKvinna, arMan } from '../lib/kon.js';
-import { arsbeloppMening } from '../lib/prioritering.js';
-import { arsjamforelseBlock, avsnittBlock, basintervallBlock, egenTabellBlock, gruppBlock, justeratGapInomYrke, parBlock, referenserBlock, tillText, tillWordHtml } from '../lib/rapportunderlag.js';
-import { sektorernasAndel, sektorsTabell } from '../lib/sektor.js';
-import { konsMedianerUrLoner, kvartilfordelning, representationPerBas } from '../lib/struktur.js';
-import { receptTillTabeller } from '../lib/tabellrecept.js';
+import { tillText, tillWordHtml } from '../lib/rapportunderlag.js';
 import { stor } from '../lib/termer.js';
+import { rapportunderlagDiagram, RU_GRUPPBLOCK, vymodellRapportunderlag } from '../lib/vymodell-rapportunderlag.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
-import { _kSanktNot, _parForRedovisning, _parOverTroskel, kInstalld, kStampel, kTroskel, statGolv } from './06-k-troskel.js';
+import { _kSanktNot, kInstalld, kStampel, kTroskel, statGolv } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { T } from './09-termer.js';
 import { _chartExportImage, diagramRitat, diagramTillBild } from './11-diagramexport.js';
@@ -34,13 +27,8 @@ import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _handlingsplanSeedRows, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 import { arsjamforelse } from './73-arsbokslut.js';
-import { _gdBootstrapGapCI } from './80-gruppdossier.js';
 import { basdossierKandidater, basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, buildBasdossier } from './81-basdossier.js';
 import { _dkRitaTopp } from './85-robusthet-fardigcheck.js';
-
-// Förledet i id:t för blocken per AID-etikett i Lika arbete ("yrke:0"); en nyckel, inte text, så den byts inte med
-// termerna (ADR-74).
-const RU_GRUPPBLOCK = 'yrke:';
 
 // Diagram som kan kopieras som bild: id på diagrammet och fliken som ritar det.
 const RAPPORT_DIAGRAM = [
@@ -52,14 +40,10 @@ const RAPPORT_DIAGRAM = [
 let _rapportBlockSenast = new Map();
 let _rapportParLage = { harPar: false, exkluderade: 0 };
 
-// Kandidatparens diagram visar alla par i fliken — även par med en grupp under k, som
-// underlaget inte redovisar. Det erbjuds därför bara när inget par har uteslutits.
 // Maxantalet par som likvärdighetsberäkningen tar fram (samma standard som 34).
 function _ruTopN() { return (state.likvardighet && state.likvardighet.topN) ?? 100; }
 
-function _rapportDiagramLista(harPar, exkluderade) {
-    return RAPPORT_DIAGRAM.filter(g => g.flik !== 'likvardighet' || (harPar && !exkluderade));
-}
+function _rapportDiagramLista(harPar, exkluderade) { return rapportunderlagDiagram(RAPPORT_DIAGRAM, harPar, exkluderade); }
 
 // Handlingsplanens rader för rapportunderlaget. Förifyllningen (_handlingsplanSeedRows) tar
 // redan bort par med en grupp under k, så raderna används som de är — en enda regel för
@@ -71,95 +55,29 @@ function _rapportHpRader(seedRows) {
 /** Alla textblock: avsnitt, yrkesgrupper, kandidatpar, förra året, per BAS-intervall och egna tabeller (visas i grupper). */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function rapportunderlagBlock(...a) { return medExportLage(() => _rapportunderlagBlockExport.apply(null, /** @type {any} */ (a))); }
+// Blocken räknas i vymodellen (src/lib/vymodell-rapportunderlag.js); här hämtas analysernas resultat ur tillståndet.
 function _rapportunderlagBlockExport() {
     const d = getData();
     if (!d.length) return [];
     const k = kTroskel();
-    const opt = { k, urval: 'Hela organisationen', demo: !!state.isDemo, troskelNot: _kSanktNot() || undefined };
-    const arKv = arKvinna, arMa = arMan;
-
-    // Sammanfattning
-    const kvLon = d.filter(arKv).map(r => r.lon), maLon = d.filter(arMa).map(r => r.lon);
-    const km = konsMedianerUrLoner(kvLon, maLon);   // k prövas i avsnittet
     const reg = runOLSRegression();
-    const uk = bedomningUnderlag({ reg });
-    const sammanfattning = {
-        n: d.length, nKv: kvLon.length, nMa: maLon.length, medKv: km.medKv, medMa: km.medMa, kvotPct: km.kvotPct,
-        oforklarat: reg.error ? null : { pct: reg.konPct, lo: reg.konPctLow, hi: reg.konPctHigh, fras: reg.fras, bortvalt: reg.bortvalt },   // frasen och det bortvalda följer modellen (ADR-56)
-        kvalitet: uk ? { status: uk.status, brister: uk.kriterier.filter(c => c.status !== 'ok').map(c => c.namn) } : null,
-    };
-
-    // Lika arbete — samma grupper som EU-tabellen
-    const lika = laLikaGrupper(d, k);   // flaggad = Värt att granska (ADR-59)
-
-    // Likvärdigt arbete — par med en grupp under k redovisas inte (fliken är undantagen från k, underlaget inte)
     /** @type {any} */ let lv = null;
     try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
-    const { par, utelamnade: parUtelamnade } = _parForRedovisning(lv && lv.pairs);
-    // Maxantalet som resultatet faktiskt räknades med (faller tillbaka på inställningen).
-    const topN = (lv && lv.opts && lv.opts.topN) ?? _ruTopN();
-    const kravProxy = (lv && lv.diagnostik && lv.diagnostik.jämförelse && lv.diagnostik.jämförelse.kravProxy) || 'bas';
-
-    // Struktur
-    const representation = (representationPerBas(d, { k: kTroskel() }) || []).slice().sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));
-    const kvartiler = kvartilfordelning(d, { k: kTroskel() }) || [];
-    _rapportParLage = { harPar: par.length > 0, exkluderade: parUtelamnade };
-
-    // Handlingsplan — samma förifyllning som fliken (som redan utelämnar par under k)
     const hpSeed = _handlingsplanSeedRows();
-    const hpRader = _rapportHpRader(hpSeed.rows);
-    // De sakliga skälen per grupp och per kategori (56-handlingsplan.js), ur samma förifyllning.
-    const hpSkal = typeof _hpSkalUnderlag === 'function' ? _hpSkalUnderlag(hpSeed) : null;
-    const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map(g => ({ grupp: g.grupp, antal: g.antal, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal,
-        utanBelopp: !!g.utanBelopp, summa: g.sammanstallning.summa, overstiger: !!g.sammanstallning.overstiger })), perKategori: hpSkal.perKategori, notUtanBelopp: HP_SKAL_UTAN_BELOPP, k: kInstalld() } : null;
-
-    /** @type {any[]} */
-    const block = [
-        avsnittBlock('sammanfattning', sammanfattning, { ...opt, troskelNot: kStampel() }),
-        avsnittBlock('uppdelning', gapUppdelning(d, { k, variabler: gapVariabler() }), opt),   // valda variabler (ADR-65)
-        avsnittBlock('lika', lika, opt),
-        avsnittBlock('likvardigt', { par, exkluderade: parUtelamnade, kravProxy,
-            kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), topN }, opt),
-        avsnittBlock('lagreKrav', {
-            par: ((lv && lv.lagreKrav) || []).filter(_parOverTroskel),
-            exkluderade: ((lv && lv.lagreKrav) || []).filter(p => !_parOverTroskel(p)).length,
-            kravProxy, topN }, opt),
-        avsnittBlock('struktur', { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
-        avsnittBlock('sektorer', { sektorer: sektorsTabell(d, { k, skrDel: _skrDel() }), andel: sektorernasAndel(d, { k }) }, opt),
-        avsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0),
-            summaReferens: hpRader.filter(r => r.underlag === HP_UNDERLAG_PRIO).reduce((s, r) => s + (r.kostnad || 0), 0),
-            summaJamforelse: hpRader.filter(r => r.underlag === HP_UNDERLAG_PAR).reduce((s, r) => s + (r.kostnad || 0), 0),
-            ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
-    ];
-    const referenser = referensOverblick();
-    // Kolumnen Matchning bara när statistik finns, som i detaljlistan.
-    if (referenser) block.push(referenserBlock(referenser, { ...opt, harStatistik: state.statistik.length > 0 }));
-    lika.grupper.filter(g => g.flaggad).forEach((g, i) => {
-        const rader = d.filter(r => aidAvRad(r) === g.aid && String(r.bas) === g.bas);   // gruppens rader: koden i BAS-intervallet, alla stavningar
-        const ki = _gdBootstrapGapCI(rader.filter(arKv).map(r => r.lon), rader.filter(arMa).map(r => r.lon));
-        const arsbelopp = arsbeloppMening(g, state.costSettings, v => talformat(v, 'kr'));
-        block.push(gruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: justeratGapInomYrke(rader, { k: statGolv() }), ki, arsbelopp }));
-    });
-    par.forEach((p, i) => block.push(parBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
-    // Jämförelsen med förra året (ADR-54), när ett bokslut är inläst.
-    if (typeof arsjamforelse === 'function' && typeof arsjamforelseBlock === 'function') {
-        const jf = arsjamforelse();
-        if (jf) block.push(arsjamforelseBlock(jf.j, { ...opt, forraAr: jf.forra.ar, nuAr: jf.nu.ar }));
-    }
-    // Per BAS-intervall: ett block per intervall som når k, med BAS-dossierns stycken (samma text som dossierns kopia,
-    // rapportutkastet och rapportens avsnitt) och intervallets yrkesgruppstabell.
-    if (typeof basdossierKandidater === 'function' && typeof basintervallBlock === 'function') {
-        for (const { bas } of basdossierKandidater()) {
+    const vm = vymodellRapportunderlag(d, {
+        k, golv: statGolv(), demo: !!state.isDemo, troskelNot: _kSanktNot(), kStampel: kStampel(),
+        reg, kvalitet: bedomningUnderlag({ reg }), lika: laLikaGrupper(d, k), lv, topN: _ruTopN(),
+        kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), gapVariabler: gapVariabler(), skrDel: _skrDel(),
+        hp: { rader: _rapportHpRader(hpSeed.rows), skal: _hpSkalUnderlag(hpSeed), utanBelopp: HP_SKAL_UTAN_BELOPP, kInstalld: kInstalld(), prio: HP_UNDERLAG_PRIO, par: HP_UNDERLAG_PAR },
+        referenser: referensOverblick(), harStatistik: state.statistik.length > 0, kostnad: state.costSettings, arsjamforelse: arsjamforelse(),
+        basintervall: basdossierKandidater().flatMap(({ bas }) => {
             const bd = buildBasdossier(bas);
-            if (bd) block.push(basintervallBlock({ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd), bedomning: BD_BEDOMNING }, opt));
-        }
-    }
-    // Egna tabeller (ADR-52): ett block per tabell, ur samma recept som Word-utkastet, PDF-rapporten och Excel.
-    (state.rapportTabeller || []).forEach((r, i) => {
-        if (typeof receptTillTabeller !== 'function' || typeof egenTabellBlock !== 'function') return;
-        receptTillTabeller(d, r, { k }).forEach((t, j) => block.push(egenTabellBlock(t, { ...opt, id: `egen:${i}:${j}` })));
+            return bd ? [{ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd) }] : [];
+        }),
+        basBedomning: BD_BEDOMNING, recept: state.rapportTabeller || [],
     });
-    return block;
+    _rapportParLage = { harPar: vm.harPar, exkluderade: vm.exkluderade };
+    return vm.block;
 }
 
 export function renderRapportunderlag() {

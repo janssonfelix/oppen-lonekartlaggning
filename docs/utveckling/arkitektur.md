@@ -108,6 +108,8 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `vymodell-loneoversikt` | `aid`, `jamforelse`, `kon`, `stat` |
 |  | `vymodell-lonestruktur` | `figur`, `kon`, `osakerhet`, `stat`, `status`, `struktur` |
 |  | `vymodell-oversikt` | `aid`, `datakvalitet`, `jamforelse`, `kon`, `stat`, `struktur`, `vymodell-lonestruktur` |
+|  | `vymodell-rapport` | `kon`, `ktroskel`, `rapportunderlag`, `status`, `struktur`, `tabellrecept`, `vymodell-basdossier`, `vymodell-lonestruktur` |
+|  | `vymodell-rapportunderlag` | `aid`, `figur`, `gapuppdelning`, `kon`, `ktroskel`, `osakerhet`, `prioritering`, `rapportunderlag`, `sektor`, `struktur`, `tabellrecept` |
 |  | `vymodell-var-uppstar-gapet` | `gapuppdelning`, `struktur` |
 
 Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter. Reglerna

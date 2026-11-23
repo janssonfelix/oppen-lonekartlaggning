@@ -5,6 +5,7 @@ import { personOrd } from '../lib/namn.js';
 import { perBasReceptArStandard, valideraPerBasRecept } from '../lib/perbas.js';
 import { receptBeskrivning } from '../lib/tabellrecept.js';
 import { stor } from '../lib/termer.js';
+import { arHelaDokumentationen, RM_URVAL } from '../lib/vymodell-rapport.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
@@ -14,7 +15,7 @@ import { getData, state } from './12-tillstand.js';
 import { excelAlltBlad } from './24-excelexport.js';
 import { _laNyckel } from './41-lika-arbete.js';
 import { harAlder } from './50-regressionsmodeller.js';
-import { rapportModell, rapportModellBada, rapportUrval, RM_URVAL, rmArHelaDokumentationen, rmBesked, sattRapportUrval } from './58-rapportmodell.js';
+import { rapportModell, rapportModellBada, rapportUrval, rmBesked, sattRapportUrval } from './58-rapportmodell.js';
 /**
  * Dokumentera visar före exporten vad varje fil kommer att innehålla och vad som utelämnas, och låter användaren
  * välja vilka avsnitt som följer med i rapporten och i vilken ordning (nivå 1). Urvalet ligger i minnet
@@ -43,7 +44,7 @@ export function renderExportBesked({ baraUrval = false } = {}) {
         satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
         // PDF-rapporten är samma modell; flikarnas tabeller följer med som bilagor när inget avsnitt är bortvalt.
-        const hela = !!alla && rmArHelaDokumentationen(bada.urval, alla);
+        const hela = !!alla && arHelaDokumentationen(bada.urval, alla);
         satt('besked-pdf', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'),
             hela ? 'bilagor med flikarnas tabeller och diagram' : 'inga bilagor (ett kortare urval är just avsnitten)']))}`
             + `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(' · ') : 'ingenting')}`);

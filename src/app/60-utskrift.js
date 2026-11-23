@@ -3,6 +3,7 @@
 // ---- PDF-rapporten (utskrift): rapportmodellen som låst kopia, med flikarnas tabeller som bilagor ----
 import { arTal, htmlTillText } from '../lib/htmltext.js';
 import { stor } from '../lib/termer.js';
+import { arHelaDokumentationen } from '../lib/vymodell-rapport.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { hideLoading, rapporteraFel, showLoading, tillampaDataStil } from './03-hjalpfunktioner.js';
@@ -19,7 +20,7 @@ import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { _jmfKallaNamn, generateBenchmark, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
 import { _utskriftReferenserHtml } from './44-referensoverblick.js';
-import { rapportModellBada, rmArHelaDokumentationen, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
+import { rapportModellBada, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
 /**
  * Hjälpklasserna (src/style.css, "Hjälpklasser") för utskriftsfönstret, som inte har verktygets stilmall: utan dem
  * tappar en utskriven flik sin högerjustering och sin dämpade text. tests/farger.test.js håller listan lika med stilmallens.
@@ -86,7 +87,7 @@ async function _buildPrintReportExport() {
             const b = await rmDiagramBild(del, ritade);
             if (b) bilder.set(del.id, b);
         }
-        const helaDokumentationen = rmArHelaDokumentationen(modell, bada.alla);
+        const helaDokumentationen = arHelaDokumentationen(modell, bada.alla);
         let bilagor = '';
         if (helaDokumentationen) {
             // Bilagor med flikarnas egna tabeller och diagram — underlaget bakom avsnitten. De följer bara med när hela

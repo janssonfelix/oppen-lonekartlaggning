@@ -223,7 +223,8 @@ tröskeln är `liten` och ritas inte i exportläget, om inte rutan i avsnitt 4 �
 prick står aldrig för färre än två personer, och diagramdatan är kvantilerna, aldrig enskilda löner (`kvantilpunkter` i `src/lib/figur.js`).
 
 **Kandidatparen utanför fliken.** Kandidatpar ur Likvärdigt arbete redovisas utanför fliken och dess egen CSV- och
-Excel-export bara när båda grupperna når tröskeln, med antalet utelämnade angivet (`_parForRedovisning`): Word-utkastet,
+Excel-export bara när båda grupperna når tröskeln, med antalet utelämnade angivet (`parForRedovisning` i
+`src/lib/ktroskel.js`; för rapporten och rapportunderlaget i `vymodellRapport` och `vymodellRapportunderlag`): Word-utkastet,
 PDF-rapporten, JPA-protokollet (bladet för likvärdigt arbete och försättsbladets antal), Rapporttextens utkast
 (`_buildNarrative`), BAS-dossiern, årsbokslutet, Att göra och dess CSV, handlingsplanens förifyllda rader,
 gruppdossiern, Löneöversyns
@@ -231,7 +232,8 @@ förslag, mål-läge och känslighetskurva samt robusthetspanelen i Exportera (`
 `85-robusthet-fardigcheck.js`: par med en grupp under tröskeln namnges inte i någon körning, och panelen anger antalet
 sådana par; beslut). Löneöversyns förslag prövas mot den inställda tröskeln också på skärmen (ADR-69, avsnitt 1); de
 övriga ritas på skärmen med alla par och i exportläget utan de små. I fliken gäller undantaget i avsnitt 4. Listan
-*Lägre krav, högre lön* följer samma regel i rapportunderlaget och BAS-dossiern (`_parOverTroskel`). Har alla
+*Lägre krav, högre lön* följer samma regel i rapportunderlaget och BAS-dossiern (`parNarK`; rapportunderlagets i
+`src/lib/vymodell-rapportunderlag.js`). Har alla
 kandidatpar en grupp under tröskeln blir processöversiktens steg 4 inte klart: steget säger att inget finns att hantera
 i Att göra och hur många par som bara redovisas i fliken Likvärdigt arbete, och leder dit (`_agStegLikvardigt` i
 `src/lib/attgora.js`, ADR-29).
@@ -514,9 +516,9 @@ söker igenom, och de riktade testerna för det I4 inte ser. Tabellen är förte
 | Varje flik i menyn, ritad i exportläget (det *Som i exporten* visar och exporterna läser) | Avsnitt 1–2 | I4; *[I4] listan över flikar är menyns flikar* i `tests/ktroskel-exporter.test.js`; läsning vid 10, 25 och 5 i `tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js` |
 | Översiktens delar: Att göra, processöversikten, inläsningsrapporten | Avsnitt 1–2 | I4 |
 | Att göra-punkterna och Att göra-CSV | Avsnitt 2, kandidatparen | I4; `tests/ktroskel-utdata.test.js` (par utanför fliken) |
-| Word-utkastet, rapportens avsnitt per BAS-intervall och bilagan med gruppdossierer | Avsnitt 2 | I4; `tests/ktroskel-utdata.test.js` (par i Word-utkastet och utskriften) |
+| Word-utkastet, rapportens avsnitt per BAS-intervall och bilagan med gruppdossierer | Avsnitt 2 | I4; I9 (`vymodellRapport`, `rapportDossierGrupper`); `tests/ktroskel-utdata.test.js` (par i Word-utkastet och utskriften) |
 | Utskriften: komplett, ledning, facklig, med gruppdossierer | Avsnitt 2 och 7 | I4 (texten; bilderna tas bort före sökningen); I3 |
-| Rapportunderlagets block (HTML och text) och Rapporttextens utkast | Avsnitt 2 och 7 | I4; `tests/kanonymitet.test.js` (parblocket) |
+| Rapportunderlagets block (HTML och text) och Rapporttextens utkast | Avsnitt 2 och 7 | I4; I9 (`vymodellRapportunderlag`); `tests/kanonymitet.test.js` (parblocket) |
 | Excel: alla flikar, JPA-protokollet, EU-lönerapporten, handlingsplanen, jämförelseexporten, Löneöversyn, Löneöversikten, prioriteringslistan | Avsnitt 2, 5 och 8 | I4; C5 (bladet Lönepolitik); I1 (Löneöversyn) |
 | ZIP-filens Excel-fil | Avsnitt 2 och 7 | I4; I3 |
 | ZIP-filens bilder | Avsnitt 2 och 4 (ADR-48) | Bildernas innehåll prövas inte (avsnitt 11); `tests/ktroskel-bilder.test.js` prövar meningen under 10 |
