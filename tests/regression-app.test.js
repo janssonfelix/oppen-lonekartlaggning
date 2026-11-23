@@ -27,32 +27,6 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
         return rader;
     };
     const kör = () => { const w = createAppWindow(); w.__state.data = underlag(); return { w, r: w.eval('runOLSRegression()') }; };
-    it('gapet efter yrkesgrupp är noll medan huvudtalet och steget + Ålder är kvar', () => {
-        const { r } = kör();
-        expect(r.error).toBeUndefined();
-        const alder = r.sequential.find(s => s.name === '+ Ålder');
-        expect(r.sequential.at(-1).name).toBe('+ Yrkesgrupp');
-        expect(r.yrkesSteg.status).toBe('ok');
-        expect(Math.abs(r.yrkesSteg.gapPct)).toBeLessThan(0.05);
-        expect(alder.gapPct).toBeLessThan(-3);
-        expect(r.konPct).toBeCloseTo(alder.gapPct, 6);   // huvudtalet är oförändrat: steget + Ålder
-        expect(r.yrkesSteg.R2).toBeGreaterThan(alder.R2);
-    });
-    it('inomtransformationen ger samma könskoefficient som en indikator per grupp', () => {
-        const { w, r } = kör();
-        const ref = w.eval(`(() => {
-            const d = getData(); const am = d.reduce((s, x) => s + x.alder, 0) / d.length;
-            const g = [...new Set(d.map(x => x.aid + '|' + x.bas))].sort();
-            const X = d.map(x => [x.kon === 'kvinna' ? 1 : 0, x.alder - am, ...g.map(k => (x.aid + '|' + x.bas === k ? 1 : 0))]);
-            const fit = anpassaOLS(X, d.map(x => Math.log(x.lon)));
-            return (Math.exp(fit.beta[0]) - 1) * 100;
-        })()`);
-        expect(r.yrkesSteg.gapPct).toBeCloseTo(ref, 8);
-    });
-    it('redovisar grupper och personer: enkönade grupper räknas men bidrar inte', () => {
-        const { r } = kör();
-        expect(r.yrkesSteg).toMatchObject({ nGrupper: 5, nGrupperBada: 4, nEnkonade: 1, nPersoner: 114 });
-    });
     it('kortet visar steget med sin mening och budgeten en del för yrkesgrupp; huvudtalet är steget + Ålder', () => {
         const { w, r } = kör();
         w.eval('ritaRegressionskort()');
@@ -89,23 +63,6 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         return rader;
     };
     const med = (brus = 0) => { const w = createAppWindow(); w.__state.data = underlag(brus); return w; };
-    it('regressionen: inget oförklarat gap och varje BAS-indikator ger 5 % per bokstavssteg mot referensen A', () => {
-        const r = med().__runOLS();
-        expect(r.error).toBeUndefined();
-        expect(Math.abs(r.konPct)).toBeLessThan(0.05);
-        expect(r.basRef).toBe('A');
-        expect(r.basEffekter.map(e => e.bas)).toEqual(['B', 'D', 'E']);
-        for (const e of r.basEffekter) expect(e.pct).toBeCloseTo((Math.exp(0.05 * (PLATS[e.bas] - 1)) - 1) * 100, 1);
-    });
-    it('Blinder-Oaxaca: den oförklarade delen är noll', () => {
-        const r = med().eval('runBlinderOaxaca()');
-        expect(Math.abs(r.coefficientPct)).toBeLessThan(0.05);
-    });
-    it('kvantilregressionen: inget gap i någon kvantil', () => {
-        const r = med(0.01).eval('runQuantileRegressionAtAllTau()');
-        expect(r.results).toHaveLength(3);
-        for (const q of r.results) { expect(q.error).toBeUndefined(); expect(Math.abs(q.konPct)).toBeLessThan(0.5); }
-    });
     it('kvantilregressionen: bootstrap-KI omsluter punktskattningen, är reproducerbart och visas i tabell och diagram', async () => {
         const a = med(0.01).eval('_regKvantilBerakna({ direkt: true })');
         expect(a.kiB).toBe(200);

@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { anpassaOLS, tKvantil } from '../src/lib/stat.js';
 import { huvudregression, HUVUDREGRESSION_MIN_N, HUVUDREGRESSION_MIN_PER_KON, FORKLARINGSMODELL_STANDARD,
-    STEG_YRKE } from '../src/lib/regression.js';
+    STEG_YRKE, blinderOaxaca, kvantilregressionAllaTau } from '../src/lib/regression.js';
 
 const las = f => JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures', f), 'utf8'));
 const pct = b => (Math.exp(b) - 1) * 100;
@@ -181,5 +181,73 @@ describe('huvudregression: fixturen stat-referens.json', () => {
         expect(r.basList).toEqual(['A', 'B', 'C', 'D', 'E', 'F']);
         expect(r.k).toBe(8);
         expect(r.ageMean).toBeCloseTo(fx.ageMean, 12);
+    });
+});
+
+describe('huvudregression: steget + Yrkesgrupp, fasta effekter för AID×BAS med inomtransformation (ADR-46)', () => {
+    // Två yrken i samma BAS med olika lönenivå: kvinnorna finns mest i det lägre betalda yrket. Inom varje yrke är lönen
+    // identisk för kvinnor och män (bara ålder skiljer), så gapet efter yrkesgrupp är noll — medan gapet efter BAS och
+    // ålder är klart negativt.
+    const rader = (() => {
+        const ut = [];
+        const lägg = (aid, bas, niva, kon, n) => { for (let i = 0; i < n; i++) { const alder = 28 + ((i * 5) % 30); ut.push({ aid, yrke: 'Yrke ' + aid, bas, kon, alder, lon: Math.round(niva * Math.exp(0.004 * (alder - 40))) }); } };
+        lägg('101', 'C', 28000, 'kvinna', 24); lägg('101', 'C', 28000, 'man', 6);
+        lägg('102', 'C', 34000, 'kvinna', 6);  lägg('102', 'C', 34000, 'man', 24);
+        lägg('201', 'E', 38000, 'kvinna', 15); lägg('201', 'E', 38000, 'man', 15);
+        lägg('202', 'E', 44000, 'kvinna', 12); lägg('202', 'E', 44000, 'man', 12);
+        lägg('301', 'F', 50000, 'man', 8);   // enkönad grupp: bidrar inte
+        return ut;
+    })();
+    const r = huvudregression(rader, opts());
+    it('gapet efter yrkesgrupp är noll medan huvudtalet och steget + Ålder är kvar', () => {
+        expect(r.error).toBeUndefined();
+        const alder = r.sequential.find(s => s.name === '+ Ålder');
+        expect(r.sequential.at(-1).name).toBe(STEG_YRKE);
+        expect(r.yrkesSteg.status).toBe('ok');
+        expect(Math.abs(r.yrkesSteg.gapPct)).toBeLessThan(0.05);
+        expect(alder.gapPct).toBeLessThan(-3);
+        expect(r.konPct).toBeCloseTo(alder.gapPct, 6);   // huvudtalet är oförändrat: steget + Ålder
+        expect(r.yrkesSteg.R2).toBeGreaterThan(alder.R2);
+    });
+    it('inomtransformationen ger samma könskoefficient som en indikator per grupp', () => {
+        const am = rader.reduce((s, x) => s + x.alder, 0) / rader.length;
+        const g = [...new Set(rader.map(x => x.aid + '|' + x.bas))].sort();
+        const X = rader.map(x => [x.kon === 'kvinna' ? 1 : 0, x.alder - am, ...g.map(k => (x.aid + '|' + x.bas === k ? 1 : 0))]);
+        expect(r.yrkesSteg.gapPct).toBeCloseTo(pct(anpassaOLS(X, rader.map(x => Math.log(x.lon))).beta[0]), 8);
+    });
+    it('redovisar grupper och personer: enkönade grupper räknas men bidrar inte', () => {
+        expect(r.yrkesSteg).toMatchObject({ nGrupper: 5, nGrupperBada: 4, nEnkonade: 1, nPersoner: 114 });
+    });
+});
+
+describe('BAS-steg räknas i bokstäver i huvudregressionen, Blinder-Oaxaca och kvantilregressionen (regressionsmodellen.md §3)', () => {
+    // Lönen beror bara på bokstaven: +5 % per BAS-intervall. C saknas, så B → D är två intervall. Kvinnorna finns mest
+    // i B, männen mest i D. Med rätt numrering förklarar BAS hela skillnaden.
+    const PLATS = { A: 1, B: 2, D: 4, E: 5 };
+    // brus: ±1 % i ett mönster med medelvärde noll per grupp (alla gruppstorlekar är delbara med 3)
+    const rader = (brus = 0) => {
+        const ut = [];
+        const lägg = (bas, kon, n) => { for (let i = 0; i < n; i++) ut.push({ bas, kon, alder: 30 + ((i * 7) % 25), lon: Math.round(30000 * Math.exp(0.05 * PLATS[bas] + brus * ((i % 3) - 1))), aid: '100', yrke: '100 Yrke', yrkeLabel: 'Yrke' }); };
+        lägg('A', 'kvinna', 12); lägg('A', 'man', 12);
+        lägg('B', 'kvinna', 30); lägg('B', 'man', 3);
+        lägg('D', 'kvinna', 3);  lägg('D', 'man', 30);
+        lägg('E', 'kvinna', 12); lägg('E', 'man', 12);
+        return ut;
+    };
+    it('huvudregressionen: inget oförklarat gap och varje BAS-indikator ger 5 % per bokstavssteg mot referensen A', () => {
+        const r = huvudregression(rader(), opts());
+        expect(r.error).toBeUndefined();
+        expect(Math.abs(r.konPct)).toBeLessThan(0.05);
+        expect(r.basRef).toBe('A');
+        expect(r.basEffekter.map(e => e.bas)).toEqual(['B', 'D', 'E']);
+        for (const e of r.basEffekter) expect(e.pct).toBeCloseTo((Math.exp(0.05 * (PLATS[e.bas] - 1)) - 1) * 100, 1);
+    });
+    it('Blinder-Oaxaca: den oförklarade delen är noll', () => {
+        expect(Math.abs(blinderOaxaca(rader(), { golv: 10, modell: STD }).coefficientPct)).toBeLessThan(0.05);
+    });
+    it('kvantilregressionen: inget gap i någon kvantil', () => {
+        const r = kvantilregressionAllaTau(rader(0.01), { modell: STD });
+        expect(r.results).toHaveLength(3);
+        for (const q of r.results) { expect(q.error).toBeUndefined(); expect(Math.abs(q.konPct)).toBeLessThan(0.5); }
     });
 });
